@@ -33,6 +33,7 @@ function RootLayoutNav() {
       <Stack.Screen name="gorev" />
       <Stack.Screen name="malzeme" />
       <Stack.Screen name="butce" />
+      <Stack.Screen name="hakedis" />
     </Stack>
   );
 }

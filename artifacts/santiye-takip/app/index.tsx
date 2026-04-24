@@ -25,15 +25,16 @@ interface Section {
 }
 
 const SECTIONS: Section[] = [
-  { key: "proje", label: "Proje", icon: "briefcase", route: "/proje", color: "#e85d04", bg: "#fef3e2", count: (a) => a.projects.length },
-  { key: "kesif", label: "Keşif", icon: "search", route: "/kesif", color: "#0ea5e9", bg: "#e0f2fe", count: (a) => a.surveys.length },
-  { key: "is-programi", label: "İş Programı", icon: "calendar", route: "/is-programi", color: "#8b5cf6", bg: "#ede9fe", count: (a) => a.scheduleTasks.length },
-  { key: "puantaj", label: "Puantaj", icon: "users", route: "/puantaj", color: "#16a34a", bg: "#dcfce7", count: (a) => a.attendance.length },
-  { key: "gunluk-rapor", label: "Günlük Rapor", icon: "file-text", route: "/gunluk-rapor", color: "#0891b2", bg: "#cffafe", count: (a) => a.dailyReports.length },
-  { key: "imalat", label: "İmalat", icon: "tool", route: "/imalat", color: "#d97706", bg: "#fef3c7", count: (a) => a.productions.length },
-  { key: "gorev", label: "Görev", icon: "check-square", route: "/gorev", color: "#dc2626", bg: "#fee2e2", count: (a) => a.tasks.length },
-  { key: "malzeme", label: "Malzeme", icon: "package", route: "/malzeme", color: "#059669", bg: "#d1fae5", count: (a) => a.materials.length },
-  { key: "butce", label: "Bütçe", icon: "dollar-sign", route: "/butce", color: "#16213e", bg: "#e0e7ff", count: (a) => a.budget.length },
+  { key: "proje",       label: "Proje",        icon: "briefcase",  route: "/proje",       color: "#e85d04", bg: "#fef3e2", count: (a) => a.projects.length },
+  { key: "kesif",       label: "Keşif",         icon: "search",     route: "/kesif",       color: "#0ea5e9", bg: "#e0f2fe", count: (a) => a.surveys.length },
+  { key: "is-programi", label: "İş Programı",   icon: "calendar",   route: "/is-programi", color: "#8b5cf6", bg: "#ede9fe", count: (a) => a.scheduleTasks.length },
+  { key: "puantaj",     label: "Puantaj",       icon: "users",      route: "/puantaj",     color: "#16a34a", bg: "#dcfce7", count: (a) => a.attendance.length },
+  { key: "gunluk-rapor",label: "Günlük Rapor",  icon: "file-text",  route: "/gunluk-rapor",color: "#0891b2", bg: "#cffafe", count: (a) => a.dailyReports.length },
+  { key: "imalat",      label: "İmalat",        icon: "tool",       route: "/imalat",      color: "#d97706", bg: "#fef3c7", count: (a) => a.productions.length },
+  { key: "gorev",       label: "Görev",         icon: "check-square",route: "/gorev",      color: "#dc2626", bg: "#fee2e2", count: (a) => a.tasks.length },
+  { key: "malzeme",     label: "Malzeme",       icon: "package",    route: "/malzeme",     color: "#059669", bg: "#d1fae5", count: (a) => a.materials.length },
+  { key: "butce",       label: "Bütçe",         icon: "dollar-sign",route: "/butce",       color: "#16213e", bg: "#e0e7ff", count: (a) => a.budget.length },
+  { key: "hakedis",     label: "Hakediş",       icon: "file-text",  route: "/hakedis",     color: "#be185d", bg: "#fce7f3", count: (a) => a.hakedisler.length },
 ];
 
 export default function HomeScreen() {
@@ -78,7 +79,7 @@ export default function HomeScreen() {
               activeOpacity={0.85}
             >
               <View style={[styles.tileIcon, { backgroundColor: s.bg }]}>
-                <Feather name={s.icon as any} size={26} color={s.color} />
+                <Feather name={s.icon as any} size={28} color={s.color} />
               </View>
               <Text
                 style={[styles.tileLabel, { color: colors.foreground }]}
@@ -137,11 +138,12 @@ const styles = StyleSheet.create({
     gap: 12,
   },
   tile: {
-    width: "31.5%",
-    aspectRatio: 1,
+    width: "47.5%",
+    paddingVertical: 18,
+    paddingHorizontal: 16,
     borderRadius: 14,
-    padding: 12,
-    justifyContent: "space-between",
+    justifyContent: "flex-start",
+    gap: 10,
     shadowColor: "#000",
     shadowOffset: { width: 0, height: 1 },
     shadowOpacity: 0.06,
@@ -149,19 +151,18 @@ const styles = StyleSheet.create({
     elevation: 2,
   },
   tileIcon: {
-    width: 44,
-    height: 44,
-    borderRadius: 22,
+    width: 50,
+    height: 50,
+    borderRadius: 25,
     justifyContent: "center",
     alignItems: "center",
   },
   tileLabel: {
-    fontSize: 13,
+    fontSize: 15,
     fontFamily: "Inter_600SemiBold",
   },
   tileCount: {
-    fontSize: 11,
+    fontSize: 12,
     fontFamily: "Inter_400Regular",
-    marginTop: 2,
   },
 });

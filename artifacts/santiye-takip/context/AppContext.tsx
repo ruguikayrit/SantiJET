@@ -124,6 +124,26 @@ export interface BudgetEntry {
   date: string;
 }
 
+export interface HakedisItem {
+  id: string;
+  description: string;
+  unit: string;
+  quantity: number;
+  unitPrice: number;
+}
+
+export interface Hakedis {
+  id: string;
+  projectId: string;
+  number: string;
+  date: string;
+  period: string;
+  contractor: string;
+  status: "draft" | "submitted" | "approved" | "paid";
+  notes: string;
+  items: HakedisItem[];
+}
+
 interface AppState {
   projects: Project[];
   surveys: Survey[];
@@ -135,6 +155,7 @@ interface AppState {
   tasks: Task[];
   materials: Material[];
   budget: BudgetEntry[];
+  hakedisler: Hakedis[];
 }
 
 interface AppContextType extends AppState {
@@ -177,6 +198,10 @@ interface AppContextType extends AppState {
   addBudget: (b: Omit<BudgetEntry, "id">) => void;
   updateBudget: (id: string, b: Partial<BudgetEntry>) => void;
   deleteBudget: (id: string) => void;
+
+  addHakedis: (h: Omit<Hakedis, "id">) => void;
+  updateHakedis: (id: string, h: Partial<Hakedis>) => void;
+  deleteHakedis: (id: string) => void;
 }
 
 const AppContext = createContext<AppContextType | undefined>(undefined);
@@ -199,6 +224,7 @@ const INITIAL: AppState = {
   tasks: [],
   materials: [],
   budget: [],
+  hakedisler: [],
 };
 
 async function loadInitialState(): Promise<AppState> {
@@ -315,6 +341,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
         tasks: prev.tasks.filter((x) => x.projectId !== id),
         materials: prev.materials.filter((x) => x.projectId !== id),
         budget: prev.budget.filter((x) => x.projectId !== id),
+        hakedisler: prev.hakedisler.filter((x) => x.projectId !== id),
       })),
 
     addSurvey: makeAdd("surveys") as any,
@@ -352,6 +379,10 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     addBudget: makeAdd("budget") as any,
     updateBudget: makeUpdate("budget") as any,
     deleteBudget: makeDelete("budget") as any,
+
+    addHakedis: makeAdd("hakedisler") as any,
+    updateHakedis: makeUpdate("hakedisler") as any,
+    deleteHakedis: makeDelete("hakedisler") as any,
   };
 
   return <AppContext.Provider value={ctx}>{children}</AppContext.Provider>;
