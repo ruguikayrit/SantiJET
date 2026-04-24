@@ -114,6 +114,18 @@ export interface Material {
   unitPrice: number;
 }
 
+export interface MaterialRequest {
+  id: string;
+  projectId: string;
+  name: string;
+  unit: string;
+  quantity: number;
+  requestDate: string;
+  requestedBy: string;
+  status: "pending" | "approved" | "delivered" | "rejected";
+  note: string;
+}
+
 export interface BudgetEntry {
   id: string;
   projectId: string;
@@ -267,6 +279,7 @@ interface AppState {
   productions: Production[];
   tasks: Task[];
   materials: Material[];
+  materialRequests: MaterialRequest[];
   budget: BudgetEntry[];
   hakedisler: Hakedis[];
   roles: Role[];
@@ -318,6 +331,10 @@ interface AppContextType extends AppState {
   updateMaterial: (id: string, m: Partial<Material>) => void;
   deleteMaterial: (id: string) => void;
 
+  addMaterialRequest: (r: Omit<MaterialRequest, "id">) => void;
+  updateMaterialRequest: (id: string, r: Partial<MaterialRequest>) => void;
+  deleteMaterialRequest: (id: string) => void;
+
   addBudget: (b: Omit<BudgetEntry, "id">) => void;
   updateBudget: (id: string, b: Partial<BudgetEntry>) => void;
   deleteBudget: (id: string) => void;
@@ -355,6 +372,7 @@ const INITIAL: AppState = {
   productions: [],
   tasks: [],
   materials: [],
+  materialRequests: [],
   budget: [],
   hakedisler: [],
   roles: [],
@@ -512,6 +530,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
         productions: prev.productions.filter((x) => x.projectId !== id),
         tasks: prev.tasks.filter((x) => x.projectId !== id),
         materials: prev.materials.filter((x) => x.projectId !== id),
+        materialRequests: prev.materialRequests.filter((x) => x.projectId !== id),
         budget: prev.budget.filter((x) => x.projectId !== id),
         hakedisler: prev.hakedisler.filter((x) => x.projectId !== id),
         roles: prev.roles,
@@ -550,6 +569,10 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     addMaterial: makeAdd("materials") as any,
     updateMaterial: makeUpdate("materials") as any,
     deleteMaterial: makeDelete("materials") as any,
+
+    addMaterialRequest: makeAdd("materialRequests") as any,
+    updateMaterialRequest: makeUpdate("materialRequests") as any,
+    deleteMaterialRequest: makeDelete("materialRequests") as any,
 
     addBudget: makeAdd("budget") as any,
     updateBudget: makeUpdate("budget") as any,
