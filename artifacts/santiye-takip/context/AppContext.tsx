@@ -16,8 +16,36 @@ export interface Project {
   endDate: string;
   budget: number;
   status: "active" | "paused" | "completed";
-  progress: number;
   description: string;
+}
+
+export interface SurveyItem {
+  id: string;
+  description: string;
+  unit: string;
+  quantity: number;
+  unitPrice: number;
+}
+
+export interface Survey {
+  id: string;
+  projectId: string;
+  title: string;
+  date: string;
+  location: string;
+  notes: string;
+  items: SurveyItem[];
+}
+
+export interface ScheduleTask {
+  id: string;
+  projectId: string;
+  name: string;
+  startDate: string;
+  endDate: string;
+  progress: number;
+  status: "planned" | "in_progress" | "completed" | "delayed";
+  responsible: string;
 }
 
 export interface Worker {
@@ -27,7 +55,6 @@ export interface Worker {
   role: string;
   phone: string;
   dailyRate: number;
-  status: "active" | "inactive";
 }
 
 export interface Attendance {
@@ -37,55 +64,7 @@ export interface Attendance {
   workerName: string;
   date: string;
   status: "present" | "absent" | "half";
-  note: string;
-}
-
-export interface WorkItem {
-  id: string;
-  projectId: string;
-  name: string;
-  unit: string;
-  plannedQty: number;
-  completedQty: number;
-  unitPrice: number;
-}
-
-export interface Material {
-  id: string;
-  projectId: string;
-  name: string;
-  unit: string;
-  quantity: number;
-  usedQty: number;
-  supplier: string;
-  deliveryDate: string;
-}
-
-export interface Equipment {
-  id: string;
-  projectId: string;
-  name: string;
-  type: string;
-  status: "active" | "maintenance" | "idle";
-  operator: string;
-  dailyCost: number;
-}
-
-export interface SafetyCheck {
-  id: string;
-  projectId: string;
-  date: string;
-  inspector: string;
-  items: SafetyItem[];
-  overallStatus: "pass" | "fail" | "partial";
-  notes: string;
-}
-
-export interface SafetyItem {
-  id: string;
-  category: string;
-  description: string;
-  status: "ok" | "issue" | "na";
+  hours: number;
   note: string;
 }
 
@@ -98,29 +77,78 @@ export interface DailyReport {
   workerCount: number;
   activities: string;
   issues: string;
-  photos: string[];
   createdBy: string;
+}
+
+export interface Production {
+  id: string;
+  projectId: string;
+  name: string;
+  unit: string;
+  plannedQty: number;
+  completedQty: number;
+  unitPrice: number;
+  date: string;
+}
+
+export interface Task {
+  id: string;
+  projectId: string;
+  title: string;
+  description: string;
+  assignee: string;
+  deadline: string;
+  priority: "low" | "medium" | "high";
+  status: "open" | "in_progress" | "done";
+}
+
+export interface Material {
+  id: string;
+  projectId: string;
+  name: string;
+  unit: string;
+  quantity: number;
+  usedQty: number;
+  supplier: string;
+  deliveryDate: string;
+  unitPrice: number;
+}
+
+export interface BudgetEntry {
+  id: string;
+  projectId: string;
+  type: "income" | "expense";
+  category: string;
+  description: string;
+  amount: number;
+  date: string;
 }
 
 interface AppState {
   projects: Project[];
+  surveys: Survey[];
+  scheduleTasks: ScheduleTask[];
   workers: Worker[];
   attendance: Attendance[];
-  workItems: WorkItem[];
-  materials: Material[];
-  equipment: Equipment[];
-  safetyChecks: SafetyCheck[];
   dailyReports: DailyReport[];
-  selectedProjectId: string | null;
+  productions: Production[];
+  tasks: Task[];
+  materials: Material[];
+  budget: BudgetEntry[];
 }
 
 interface AppContextType extends AppState {
-  selectedProject: Project | undefined;
-  setSelectedProjectId: (id: string | null) => void;
-
-  addProject: (p: Omit<Project, "id">) => void;
+  addProject: (p: Omit<Project, "id">) => string;
   updateProject: (id: string, p: Partial<Project>) => void;
   deleteProject: (id: string) => void;
+
+  addSurvey: (s: Omit<Survey, "id">) => void;
+  updateSurvey: (id: string, s: Partial<Survey>) => void;
+  deleteSurvey: (id: string) => void;
+
+  addScheduleTask: (t: Omit<ScheduleTask, "id">) => void;
+  updateScheduleTask: (id: string, t: Partial<ScheduleTask>) => void;
+  deleteScheduleTask: (id: string) => void;
 
   addWorker: (w: Omit<Worker, "id">) => void;
   updateWorker: (id: string, w: Partial<Worker>) => void;
@@ -128,23 +156,27 @@ interface AppContextType extends AppState {
 
   addAttendance: (a: Omit<Attendance, "id">) => void;
   updateAttendance: (id: string, a: Partial<Attendance>) => void;
+  deleteAttendance: (id: string) => void;
 
-  addWorkItem: (w: Omit<WorkItem, "id">) => void;
-  updateWorkItem: (id: string, w: Partial<WorkItem>) => void;
-  deleteWorkItem: (id: string) => void;
+  addDailyReport: (r: Omit<DailyReport, "id">) => void;
+  updateDailyReport: (id: string, r: Partial<DailyReport>) => void;
+  deleteDailyReport: (id: string) => void;
+
+  addProduction: (p: Omit<Production, "id">) => void;
+  updateProduction: (id: string, p: Partial<Production>) => void;
+  deleteProduction: (id: string) => void;
+
+  addTask: (t: Omit<Task, "id">) => void;
+  updateTask: (id: string, t: Partial<Task>) => void;
+  deleteTask: (id: string) => void;
 
   addMaterial: (m: Omit<Material, "id">) => void;
   updateMaterial: (id: string, m: Partial<Material>) => void;
   deleteMaterial: (id: string) => void;
 
-  addEquipment: (e: Omit<Equipment, "id">) => void;
-  updateEquipment: (id: string, e: Partial<Equipment>) => void;
-  deleteEquipment: (id: string) => void;
-
-  addSafetyCheck: (s: Omit<SafetyCheck, "id">) => void;
-
-  addDailyReport: (r: Omit<DailyReport, "id">) => void;
-  updateDailyReport: (id: string, r: Partial<DailyReport>) => void;
+  addBudget: (b: Omit<BudgetEntry, "id">) => void;
+  updateBudget: (id: string, b: Partial<BudgetEntry>) => void;
+  deleteBudget: (id: string) => void;
 }
 
 const AppContext = createContext<AppContextType | undefined>(undefined);
@@ -153,183 +185,173 @@ function genId() {
   return Date.now().toString() + Math.random().toString(36).substr(2, 9);
 }
 
-const STORAGE_KEY = "santiye_app_data";
+const STORAGE_KEY = "santiye_app_data_v2";
+const LEGACY_KEY = "santiye_app_data";
 
-const DEFAULT_SAFETY_ITEMS: Omit<SafetyItem, "id">[] = [
-  { category: "KKD", description: "Baret takılı mı?", status: "ok", note: "" },
-  { category: "KKD", description: "Güvenlik yeleği var mı?", status: "ok", note: "" },
-  { category: "KKD", description: "İş ayakkabısı kullanılıyor mu?", status: "ok", note: "" },
-  { category: "Saha", description: "Çalışma alanı temiz ve düzenli mi?", status: "ok", note: "" },
-  { category: "Saha", description: "İkaz levhaları yerinde mi?", status: "ok", note: "" },
-  { category: "Saha", description: "Yangın tüpü erişilebilir mi?", status: "ok", note: "" },
-  { category: "Ekipman", description: "İş makineleri kontrol edildi mi?", status: "ok", note: "" },
-  { category: "Ekipman", description: "Elektrik bağlantıları güvenli mi?", status: "ok", note: "" },
-  { category: "Sağlık", description: "İlk yardım çantası hazır mı?", status: "ok", note: "" },
-  { category: "Sağlık", description: "Acil çıkış yolları açık mı?", status: "ok", note: "" },
-];
+const INITIAL: AppState = {
+  projects: [],
+  surveys: [],
+  scheduleTasks: [],
+  workers: [],
+  attendance: [],
+  dailyReports: [],
+  productions: [],
+  tasks: [],
+  materials: [],
+  budget: [],
+};
 
-export function createDefaultSafetyItems(): SafetyItem[] {
-  return DEFAULT_SAFETY_ITEMS.map((item) => ({ ...item, id: genId() }));
+async function loadInitialState(): Promise<AppState> {
+  const raw = await AsyncStorage.getItem(STORAGE_KEY);
+  if (raw) {
+    try {
+      return { ...INITIAL, ...JSON.parse(raw) };
+    } catch {
+      return INITIAL;
+    }
+  }
+
+  const legacy = await AsyncStorage.getItem(LEGACY_KEY);
+  if (legacy) {
+    try {
+      const old = JSON.parse(legacy);
+      const migrated: AppState = {
+        ...INITIAL,
+        projects: Array.isArray(old.projects) ? old.projects : [],
+        workers: Array.isArray(old.workers) ? old.workers : [],
+        attendance: Array.isArray(old.attendance)
+          ? old.attendance.map((a: any) => ({
+              hours: a.status === "present" ? 8 : a.status === "half" ? 4 : 0,
+              ...a,
+            }))
+          : [],
+        materials: Array.isArray(old.materials)
+          ? old.materials.map((m: any) => ({ unitPrice: 0, ...m }))
+          : [],
+        dailyReports: Array.isArray(old.dailyReports)
+          ? old.dailyReports.map((r: any) => {
+              const { photos, ...rest } = r || {};
+              return rest;
+            })
+          : [],
+        productions: Array.isArray(old.workItems)
+          ? old.workItems.map((w: any) => ({ date: "", ...w }))
+          : [],
+      };
+      await AsyncStorage.setItem(STORAGE_KEY, JSON.stringify(migrated));
+      return migrated;
+    } catch {}
+  }
+
+  return INITIAL;
 }
 
 export function AppProvider({ children }: { children: React.ReactNode }) {
-  const [state, setState] = useState<AppState>({
-    projects: [],
-    workers: [],
-    attendance: [],
-    workItems: [],
-    materials: [],
-    equipment: [],
-    safetyChecks: [],
-    dailyReports: [],
-    selectedProjectId: null,
-  });
+  const [state, setState] = useState<AppState>(INITIAL);
+  const [loaded, setLoaded] = useState(false);
 
   useEffect(() => {
-    AsyncStorage.getItem(STORAGE_KEY).then((raw) => {
-      if (raw) {
-        try {
-          const parsed = JSON.parse(raw);
-          setState((prev) => ({ ...prev, ...parsed }));
-        } catch {}
-      }
+    loadInitialState().then((s) => {
+      setState(s);
+      setLoaded(true);
     });
   }, []);
 
   const persist = useCallback((newState: AppState) => {
-    const { selectedProjectId, ...toSave } = newState;
-    AsyncStorage.setItem(STORAGE_KEY, JSON.stringify(toSave));
+    AsyncStorage.setItem(STORAGE_KEY, JSON.stringify(newState));
   }, []);
 
+  useEffect(() => {
+    if (loaded) persist(state);
+  }, [state, loaded, persist]);
+
   function update(updater: (prev: AppState) => AppState) {
-    setState((prev) => {
-      const next = updater(prev);
-      persist(next);
-      return next;
-    });
+    setState((prev) => updater(prev));
+  }
+
+  function makeAdd<K extends keyof AppState>(key: K) {
+    return (item: any) => {
+      const id = genId();
+      update((prev) => ({
+        ...prev,
+        [key]: [...(prev[key] as any[]), { ...item, id }],
+      }));
+      return id;
+    };
+  }
+
+  function makeUpdate<K extends keyof AppState>(key: K) {
+    return (id: string, patch: any) =>
+      update((prev) => ({
+        ...prev,
+        [key]: (prev[key] as any[]).map((x) =>
+          x.id === id ? { ...x, ...patch } : x
+        ),
+      }));
+  }
+
+  function makeDelete<K extends keyof AppState>(key: K) {
+    return (id: string) =>
+      update((prev) => ({
+        ...prev,
+        [key]: (prev[key] as any[]).filter((x) => x.id !== id),
+      }));
   }
 
   const ctx: AppContextType = {
     ...state,
-    selectedProject: state.projects.find((p) => p.id === state.selectedProjectId),
 
-    setSelectedProjectId: (id) =>
-      setState((prev) => ({ ...prev, selectedProjectId: id })),
-
-    addProject: (p) =>
-      update((prev) => ({
-        ...prev,
-        projects: [...prev.projects, { ...p, id: genId() }],
-      })),
-    updateProject: (id, p) =>
-      update((prev) => ({
-        ...prev,
-        projects: prev.projects.map((x) => (x.id === id ? { ...x, ...p } : x)),
-      })),
+    addProject: makeAdd("projects") as any,
+    updateProject: makeUpdate("projects") as any,
     deleteProject: (id) =>
       update((prev) => ({
-        ...prev,
         projects: prev.projects.filter((x) => x.id !== id),
+        surveys: prev.surveys.filter((x) => x.projectId !== id),
+        scheduleTasks: prev.scheduleTasks.filter((x) => x.projectId !== id),
         workers: prev.workers.filter((x) => x.projectId !== id),
         attendance: prev.attendance.filter((x) => x.projectId !== id),
-        workItems: prev.workItems.filter((x) => x.projectId !== id),
-        materials: prev.materials.filter((x) => x.projectId !== id),
-        equipment: prev.equipment.filter((x) => x.projectId !== id),
-        safetyChecks: prev.safetyChecks.filter((x) => x.projectId !== id),
         dailyReports: prev.dailyReports.filter((x) => x.projectId !== id),
+        productions: prev.productions.filter((x) => x.projectId !== id),
+        tasks: prev.tasks.filter((x) => x.projectId !== id),
+        materials: prev.materials.filter((x) => x.projectId !== id),
+        budget: prev.budget.filter((x) => x.projectId !== id),
       })),
 
-    addWorker: (w) =>
-      update((prev) => ({
-        ...prev,
-        workers: [...prev.workers, { ...w, id: genId() }],
-      })),
-    updateWorker: (id, w) =>
-      update((prev) => ({
-        ...prev,
-        workers: prev.workers.map((x) => (x.id === id ? { ...x, ...w } : x)),
-      })),
-    deleteWorker: (id) =>
-      update((prev) => ({
-        ...prev,
-        workers: prev.workers.filter((x) => x.id !== id),
-      })),
+    addSurvey: makeAdd("surveys") as any,
+    updateSurvey: makeUpdate("surveys") as any,
+    deleteSurvey: makeDelete("surveys") as any,
 
-    addAttendance: (a) =>
-      update((prev) => ({
-        ...prev,
-        attendance: [...prev.attendance, { ...a, id: genId() }],
-      })),
-    updateAttendance: (id, a) =>
-      update((prev) => ({
-        ...prev,
-        attendance: prev.attendance.map((x) => (x.id === id ? { ...x, ...a } : x)),
-      })),
+    addScheduleTask: makeAdd("scheduleTasks") as any,
+    updateScheduleTask: makeUpdate("scheduleTasks") as any,
+    deleteScheduleTask: makeDelete("scheduleTasks") as any,
 
-    addWorkItem: (w) =>
-      update((prev) => ({
-        ...prev,
-        workItems: [...prev.workItems, { ...w, id: genId() }],
-      })),
-    updateWorkItem: (id, w) =>
-      update((prev) => ({
-        ...prev,
-        workItems: prev.workItems.map((x) => (x.id === id ? { ...x, ...w } : x)),
-      })),
-    deleteWorkItem: (id) =>
-      update((prev) => ({
-        ...prev,
-        workItems: prev.workItems.filter((x) => x.id !== id),
-      })),
+    addWorker: makeAdd("workers") as any,
+    updateWorker: makeUpdate("workers") as any,
+    deleteWorker: makeDelete("workers") as any,
 
-    addMaterial: (m) =>
-      update((prev) => ({
-        ...prev,
-        materials: [...prev.materials, { ...m, id: genId() }],
-      })),
-    updateMaterial: (id, m) =>
-      update((prev) => ({
-        ...prev,
-        materials: prev.materials.map((x) => (x.id === id ? { ...x, ...m } : x)),
-      })),
-    deleteMaterial: (id) =>
-      update((prev) => ({
-        ...prev,
-        materials: prev.materials.filter((x) => x.id !== id),
-      })),
+    addAttendance: makeAdd("attendance") as any,
+    updateAttendance: makeUpdate("attendance") as any,
+    deleteAttendance: makeDelete("attendance") as any,
 
-    addEquipment: (e) =>
-      update((prev) => ({
-        ...prev,
-        equipment: [...prev.equipment, { ...e, id: genId() }],
-      })),
-    updateEquipment: (id, e) =>
-      update((prev) => ({
-        ...prev,
-        equipment: prev.equipment.map((x) => (x.id === id ? { ...x, ...e } : x)),
-      })),
-    deleteEquipment: (id) =>
-      update((prev) => ({
-        ...prev,
-        equipment: prev.equipment.filter((x) => x.id !== id),
-      })),
+    addDailyReport: makeAdd("dailyReports") as any,
+    updateDailyReport: makeUpdate("dailyReports") as any,
+    deleteDailyReport: makeDelete("dailyReports") as any,
 
-    addSafetyCheck: (s) =>
-      update((prev) => ({
-        ...prev,
-        safetyChecks: [...prev.safetyChecks, { ...s, id: genId() }],
-      })),
+    addProduction: makeAdd("productions") as any,
+    updateProduction: makeUpdate("productions") as any,
+    deleteProduction: makeDelete("productions") as any,
 
-    addDailyReport: (r) =>
-      update((prev) => ({
-        ...prev,
-        dailyReports: [...prev.dailyReports, { ...r, id: genId() }],
-      })),
-    updateDailyReport: (id, r) =>
-      update((prev) => ({
-        ...prev,
-        dailyReports: prev.dailyReports.map((x) => (x.id === id ? { ...x, ...r } : x)),
-      })),
+    addTask: makeAdd("tasks") as any,
+    updateTask: makeUpdate("tasks") as any,
+    deleteTask: makeDelete("tasks") as any,
+
+    addMaterial: makeAdd("materials") as any,
+    updateMaterial: makeUpdate("materials") as any,
+    deleteMaterial: makeDelete("materials") as any,
+
+    addBudget: makeAdd("budget") as any,
+    updateBudget: makeUpdate("budget") as any,
+    deleteBudget: makeDelete("budget") as any,
   };
 
   return <AppContext.Provider value={ctx}>{children}</AppContext.Provider>;

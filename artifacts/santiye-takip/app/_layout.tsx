@@ -24,9 +24,15 @@ function RootLayoutNav() {
   return (
     <Stack screenOptions={{ headerShown: false }}>
       <Stack.Screen name="index" />
-      <Stack.Screen name="project" />
-      <Stack.Screen name="new-project" />
-      <Stack.Screen name="edit-project" />
+      <Stack.Screen name="proje" />
+      <Stack.Screen name="kesif" />
+      <Stack.Screen name="is-programi" />
+      <Stack.Screen name="puantaj" />
+      <Stack.Screen name="gunluk-rapor" />
+      <Stack.Screen name="imalat" />
+      <Stack.Screen name="gorev" />
+      <Stack.Screen name="malzeme" />
+      <Stack.Screen name="butce" />
     </Stack>
   );
 }
