@@ -1,6 +1,6 @@
 import { Feather } from "@expo/vector-icons";
 import { useRouter } from "expo-router";
-import React, { useMemo, useState } from "react";
+import React, { useEffect, useMemo, useState } from "react";
 import {
   FlatList,
   StyleSheet,
@@ -17,6 +17,7 @@ import PrimaryButton from "@/components/PrimaryButton";
 import ProjectPicker from "@/components/ProjectPicker";
 import { Production, useApp } from "@/context/AppContext";
 import { useColors } from "@/hooks/useColors";
+import { usePermission } from "@/hooks/usePermission";
 
 interface F {
   projectId: string;
@@ -42,6 +43,9 @@ export default function ImalatScreen() {
   const colors = useColors();
   const router = useRouter();
   const { projects, productions, addProduction, updateProduction, deleteProduction } = useApp();
+  const perm = usePermission("imalat");
+  const canEdit = perm === "edit";
+  useEffect(() => { if (perm === "none") router.back(); }, [perm]);
 
   const [filter, setFilter] = useState<string | null>(null);
   const [visible, setVisible] = useState(false);
@@ -102,7 +106,7 @@ export default function ImalatScreen() {
       <Header
         title="İmalat"
         onBack={() => router.back()}
-        rightAction={projects.length > 0 ? { icon: "plus", onPress: () => open() } : undefined}
+        rightAction={canEdit && projects.length > 0 ? { icon: "plus", onPress: () => open() } : undefined}
       />
 
       <ProjectPicker projects={projects} value={filter} onChange={setFilter} />
@@ -254,10 +258,11 @@ export default function ImalatScreen() {
           placeholder="GG.AA.YYYY"
         />
 
-        <PrimaryButton label="Kaydet" onPress={save} style={{ marginTop: 8 }} />
-        {editId ? (
+        {canEdit ? <PrimaryButton label="Kaydet" onPress={save} style={{ marginTop: 8 }} /> : null}
+        {canEdit && editId ? (
           <PrimaryButton label="Sil" variant="danger" onPress={remove} style={{ marginTop: 10 }} />
         ) : null}
+        {!canEdit ? <PrimaryButton label="Kapat" onPress={() => setVisible(false)} style={{ marginTop: 8 }} /> : null}
       </BottomSheet>
     </View>
   );

@@ -1,6 +1,6 @@
 import { Feather } from "@expo/vector-icons";
 import { useRouter } from "expo-router";
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import {
   FlatList,
   StyleSheet,
@@ -16,6 +16,7 @@ import Header from "@/components/Header";
 import PrimaryButton from "@/components/PrimaryButton";
 import { Project, useApp } from "@/context/AppContext";
 import { useColors } from "@/hooks/useColors";
+import { usePermission } from "@/hooks/usePermission";
 
 const STATUS_LABEL: Record<Project["status"], string> = {
   active: "Aktif",
@@ -54,6 +55,9 @@ export default function ProjectsScreen() {
   const colors = useColors();
   const router = useRouter();
   const { projects, addProject, updateProject, deleteProject } = useApp();
+  const perm = usePermission("proje");
+  const canEdit = perm === "edit";
+  useEffect(() => { if (perm === "none") router.back(); }, [perm]);
 
   const [visible, setVisible] = useState(false);
   const [editId, setEditId] = useState<string | null>(null);
@@ -106,7 +110,7 @@ export default function ProjectsScreen() {
       <Header
         title="Projeler"
         onBack={() => router.back()}
-        rightAction={{ icon: "plus", onPress: () => open() }}
+        rightAction={canEdit ? { icon: "plus", onPress: () => open() } : undefined}
       />
 
       {projects.length === 0 ? (
@@ -253,15 +257,11 @@ export default function ProjectsScreen() {
           style={{ height: 80, textAlignVertical: "top" }}
         />
 
-        <PrimaryButton label="Kaydet" onPress={save} style={{ marginTop: 8 }} />
-        {editId ? (
-          <PrimaryButton
-            label="Sil"
-            variant="danger"
-            onPress={remove}
-            style={{ marginTop: 10 }}
-          />
+        {canEdit ? <PrimaryButton label="Kaydet" onPress={save} style={{ marginTop: 8 }} /> : null}
+        {canEdit && editId ? (
+          <PrimaryButton label="Sil" variant="danger" onPress={remove} style={{ marginTop: 10 }} />
         ) : null}
+        {!canEdit ? <PrimaryButton label="Kapat" onPress={() => setVisible(false)} style={{ marginTop: 8 }} /> : null}
       </BottomSheet>
     </View>
   );

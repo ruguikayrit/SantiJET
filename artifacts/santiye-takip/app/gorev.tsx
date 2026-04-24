@@ -1,6 +1,6 @@
 import { Feather } from "@expo/vector-icons";
 import { useRouter } from "expo-router";
-import React, { useMemo, useState } from "react";
+import React, { useEffect, useMemo, useState } from "react";
 import {
   FlatList,
   StyleSheet,
@@ -17,6 +17,7 @@ import PrimaryButton from "@/components/PrimaryButton";
 import ProjectPicker from "@/components/ProjectPicker";
 import { Task, useApp } from "@/context/AppContext";
 import { useColors } from "@/hooks/useColors";
+import { usePermission } from "@/hooks/usePermission";
 
 const STATUS_LABEL: Record<Task["status"], string> = {
   open: "Açık",
@@ -63,6 +64,10 @@ export default function GorevScreen() {
   const colors = useColors();
   const router = useRouter();
   const { projects, tasks, addTask, updateTask, deleteTask } = useApp();
+
+  const perm = usePermission("gorev");
+  const canEdit = perm === "edit";
+  useEffect(() => { if (perm === "none") router.back(); }, [perm]);
 
   const [filter, setFilter] = useState<string | null>(null);
   const [visible, setVisible] = useState(false);
@@ -130,7 +135,7 @@ export default function GorevScreen() {
       <Header
         title="Görevler"
         onBack={() => router.back()}
-        rightAction={projects.length > 0 ? { icon: "plus", onPress: () => open() } : undefined}
+        rightAction={canEdit && projects.length > 0 ? { icon: "plus", onPress: () => open() } : undefined}
       />
 
       <ProjectPicker projects={projects} value={filter} onChange={setFilter} />
@@ -163,7 +168,7 @@ export default function GorevScreen() {
               onPress={() => open(item)}
             >
               <View style={styles.row}>
-                <TouchableOpacity onPress={() => toggleStatus(item)} style={styles.checkBox}>
+                <TouchableOpacity onPress={canEdit ? () => toggleStatus(item) : undefined} style={styles.checkBox}>
                   <View
                     style={[
                       styles.check,
@@ -320,10 +325,11 @@ export default function GorevScreen() {
           ))}
         </View>
 
-        <PrimaryButton label="Kaydet" onPress={save} style={{ marginTop: 8 }} />
-        {editId ? (
+        {canEdit ? <PrimaryButton label="Kaydet" onPress={save} style={{ marginTop: 8 }} /> : null}
+        {canEdit && editId ? (
           <PrimaryButton label="Sil" variant="danger" onPress={remove} style={{ marginTop: 10 }} />
         ) : null}
+        {!canEdit ? <PrimaryButton label="Kapat" onPress={() => setVisible(false)} style={{ marginTop: 8 }} /> : null}
       </BottomSheet>
     </View>
   );

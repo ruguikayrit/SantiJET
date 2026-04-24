@@ -144,6 +144,119 @@ export interface Hakedis {
   items: HakedisItem[];
 }
 
+export type Permission = "none" | "view" | "edit";
+
+export const ALL_PAGE_KEYS = [
+  "proje",
+  "kesif",
+  "is-programi",
+  "puantaj",
+  "gunluk-rapor",
+  "imalat",
+  "gorev",
+  "malzeme",
+  "butce",
+  "hakedis",
+  "kullanicilar",
+] as const;
+
+export type PageKey = (typeof ALL_PAGE_KEYS)[number];
+
+export const PAGE_LABELS: Record<PageKey, string> = {
+  proje: "Proje",
+  kesif: "Keşif",
+  "is-programi": "İş Programı",
+  puantaj: "Puantaj",
+  "gunluk-rapor": "Günlük Rapor",
+  imalat: "İmalat",
+  gorev: "Görev",
+  malzeme: "Malzeme",
+  butce: "Bütçe",
+  hakedis: "Hakediş",
+  kullanicilar: "Kullanıcılar",
+};
+
+export interface Role {
+  id: string;
+  name: string;
+  isAdmin: boolean;
+  permissions: Record<PageKey, Permission>;
+}
+
+export interface AppUser {
+  id: string;
+  name: string;
+  roleId: string;
+  pin: string;
+}
+
+const ALL_EDIT: Record<PageKey, Permission> = Object.fromEntries(
+  ALL_PAGE_KEYS.map((k) => [k, "edit" as Permission])
+) as Record<PageKey, Permission>;
+
+const DEFAULT_ROLES: Role[] = [
+  {
+    id: "santiye-sefi",
+    name: "Şantiye Şefi",
+    isAdmin: true,
+    permissions: { ...ALL_EDIT },
+  },
+  {
+    id: "saha-muhendisi",
+    name: "Saha Mühendisi",
+    isAdmin: false,
+    permissions: {
+      proje: "view",
+      kesif: "none",
+      "is-programi": "edit",
+      puantaj: "edit",
+      "gunluk-rapor": "edit",
+      imalat: "edit",
+      gorev: "edit",
+      malzeme: "view",
+      butce: "none",
+      hakedis: "none",
+      kullanicilar: "none",
+    },
+  },
+  {
+    id: "muhendis",
+    name: "Mühendis",
+    isAdmin: false,
+    permissions: {
+      proje: "view",
+      kesif: "edit",
+      "is-programi": "view",
+      puantaj: "none",
+      "gunluk-rapor": "view",
+      imalat: "edit",
+      gorev: "view",
+      malzeme: "view",
+      butce: "view",
+      hakedis: "edit",
+      kullanicilar: "none",
+    },
+  },
+  {
+    id: "yuklenici",
+    name: "Yüklenici",
+    isAdmin: false,
+    permissions: {
+      proje: "view",
+      kesif: "none",
+      "is-programi": "view",
+      puantaj: "none",
+      "gunluk-rapor": "edit",
+      imalat: "view",
+      gorev: "view",
+      malzeme: "none",
+      butce: "none",
+      hakedis: "view",
+      kullanicilar: "none",
+    },
+  },
+];
+
 interface AppState {
   projects: Project[];
   surveys: Survey[];
@@ -156,9 +269,19 @@ interface AppState {
   materials: Material[];
   budget: BudgetEntry[];
   hakedisler: Hakedis[];
+  roles: Role[];
+  appUsers: AppUser[];
+  currentUserId: string | null;
 }
 
 interface AppContextType extends AppState {
+  loaded: boolean;
+  currentAppUser: AppUser | null;
+  currentRole: Role | null;
+
+  login: (userId: string) => void;
+  logout: () => void;
+
   addProject: (p: Omit<Project, "id">) => string;
   updateProject: (id: string, p: Partial<Project>) => void;
   deleteProject: (id: string) => void;
@@ -202,6 +325,14 @@ interface AppContextType extends AppState {
   addHakedis: (h: Omit<Hakedis, "id">) => void;
   updateHakedis: (id: string, h: Partial<Hakedis>) => void;
   deleteHakedis: (id: string) => void;
+
+  addRole: (r: Omit<Role, "id">) => void;
+  updateRole: (id: string, r: Partial<Role>) => void;
+  deleteRole: (id: string) => void;
+
+  addAppUser: (u: Omit<AppUser, "id">) => void;
+  updateAppUser: (id: string, u: Partial<AppUser>) => void;
+  deleteAppUser: (id: string) => void;
 }
 
 const AppContext = createContext<AppContextType | undefined>(undefined);
@@ -210,8 +341,9 @@ function genId() {
   return Date.now().toString() + Math.random().toString(36).substr(2, 9);
 }
 
-const STORAGE_KEY = "santiye_app_data_v2";
-const LEGACY_KEY = "santiye_app_data";
+const STORAGE_KEY = "santiye_app_data_v3";
+const LEGACY_V2_KEY = "santiye_app_data_v2";
+const LEGACY_V1_KEY = "santiye_app_data";
 
 const INITIAL: AppState = {
   projects: [],
@@ -225,22 +357,46 @@ const INITIAL: AppState = {
   materials: [],
   budget: [],
   hakedisler: [],
+  roles: [],
+  appUsers: [],
+  currentUserId: null,
 };
 
 async function loadInitialState(): Promise<AppState> {
   const raw = await AsyncStorage.getItem(STORAGE_KEY);
   if (raw) {
     try {
-      return { ...INITIAL, ...JSON.parse(raw) };
+      const parsed = JSON.parse(raw);
+      const state: AppState = { ...INITIAL, ...parsed };
+      if (!state.roles || state.roles.length === 0) {
+        state.roles = DEFAULT_ROLES;
+      }
+      return state;
     } catch {
-      return INITIAL;
+      return { ...INITIAL, roles: DEFAULT_ROLES };
     }
   }
 
-  const legacy = await AsyncStorage.getItem(LEGACY_KEY);
-  if (legacy) {
+  const v2 = await AsyncStorage.getItem(LEGACY_V2_KEY);
+  if (v2) {
     try {
-      const old = JSON.parse(legacy);
+      const old = JSON.parse(v2);
+      const migrated: AppState = {
+        ...INITIAL,
+        ...old,
+        roles: DEFAULT_ROLES,
+        appUsers: [],
+        currentUserId: null,
+      };
+      await AsyncStorage.setItem(STORAGE_KEY, JSON.stringify(migrated));
+      return migrated;
+    } catch {}
+  }
+
+  const v1 = await AsyncStorage.getItem(LEGACY_V1_KEY);
+  if (v1) {
+    try {
+      const old = JSON.parse(v1);
       const migrated: AppState = {
         ...INITIAL,
         projects: Array.isArray(old.projects) ? old.projects : [],
@@ -263,13 +419,16 @@ async function loadInitialState(): Promise<AppState> {
         productions: Array.isArray(old.workItems)
           ? old.workItems.map((w: any) => ({ date: "", ...w }))
           : [],
+        roles: DEFAULT_ROLES,
+        appUsers: [],
+        currentUserId: null,
       };
       await AsyncStorage.setItem(STORAGE_KEY, JSON.stringify(migrated));
       return migrated;
     } catch {}
   }
 
-  return INITIAL;
+  return { ...INITIAL, roles: DEFAULT_ROLES };
 }
 
 export function AppProvider({ children }: { children: React.ReactNode }) {
@@ -324,8 +483,21 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
       }));
   }
 
+  const currentAppUser =
+    state.appUsers.find((u) => u.id === state.currentUserId) ?? null;
+  const currentRole = currentAppUser
+    ? state.roles.find((r) => r.id === currentAppUser.roleId) ?? null
+    : null;
+
   const ctx: AppContextType = {
     ...state,
+    loaded,
+    currentAppUser,
+    currentRole,
+
+    login: (userId) =>
+      setState((prev) => ({ ...prev, currentUserId: userId })),
+    logout: () => setState((prev) => ({ ...prev, currentUserId: null })),
 
     addProject: makeAdd("projects") as any,
     updateProject: makeUpdate("projects") as any,
@@ -342,6 +514,9 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
         materials: prev.materials.filter((x) => x.projectId !== id),
         budget: prev.budget.filter((x) => x.projectId !== id),
         hakedisler: prev.hakedisler.filter((x) => x.projectId !== id),
+        roles: prev.roles,
+        appUsers: prev.appUsers,
+        currentUserId: prev.currentUserId,
       })),
 
     addSurvey: makeAdd("surveys") as any,
@@ -383,6 +558,19 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     addHakedis: makeAdd("hakedisler") as any,
     updateHakedis: makeUpdate("hakedisler") as any,
     deleteHakedis: makeDelete("hakedisler") as any,
+
+    addRole: makeAdd("roles") as any,
+    updateRole: makeUpdate("roles") as any,
+    deleteRole: makeDelete("roles") as any,
+
+    addAppUser: makeAdd("appUsers") as any,
+    updateAppUser: makeUpdate("appUsers") as any,
+    deleteAppUser: (id) =>
+      update((prev) => ({
+        ...prev,
+        appUsers: prev.appUsers.filter((u) => u.id !== id),
+        currentUserId: prev.currentUserId === id ? null : prev.currentUserId,
+      })),
   };
 
   return <AppContext.Provider value={ctx}>{children}</AppContext.Provider>;

@@ -1,6 +1,6 @@
 import { Feather } from "@expo/vector-icons";
 import { useRouter } from "expo-router";
-import React, { useMemo, useState } from "react";
+import React, { useEffect, useMemo, useState } from "react";
 import {
   FlatList,
   StyleSheet,
@@ -17,6 +17,7 @@ import PrimaryButton from "@/components/PrimaryButton";
 import ProjectPicker from "@/components/ProjectPicker";
 import { Survey, useApp } from "@/context/AppContext";
 import { useColors } from "@/hooks/useColors";
+import { usePermission } from "@/hooks/usePermission";
 
 interface FormState {
   projectId: string;
@@ -46,6 +47,10 @@ export default function KesifScreen() {
   const colors = useColors();
   const router = useRouter();
   const { projects, surveys, addSurvey, updateSurvey, deleteSurvey } = useApp();
+
+  const perm = usePermission("kesif");
+  const canEdit = perm === "edit";
+  useEffect(() => { if (perm === "none") router.back(); }, [perm]);
 
   const [filter, setFilter] = useState<string | null>(null);
   const [visible, setVisible] = useState(false);
@@ -124,11 +129,7 @@ export default function KesifScreen() {
       <Header
         title="Keşif"
         onBack={() => router.back()}
-        rightAction={
-          projects.length > 0
-            ? { icon: "plus", onPress: () => open() }
-            : undefined
-        }
+        rightAction={canEdit && projects.length > 0 ? { icon: "plus", onPress: () => open() } : undefined}
       />
 
       <ProjectPicker projects={projects} value={filter} onChange={setFilter} />
@@ -289,15 +290,11 @@ export default function KesifScreen() {
           </View>
         </View>
 
-        <PrimaryButton label="Kaydet" onPress={save} style={{ marginTop: 8 }} />
-        {editId ? (
-          <PrimaryButton
-            label="Sil"
-            variant="danger"
-            onPress={remove}
-            style={{ marginTop: 10 }}
-          />
+        {canEdit ? <PrimaryButton label="Kaydet" onPress={save} style={{ marginTop: 8 }} /> : null}
+        {canEdit && editId ? (
+          <PrimaryButton label="Sil" variant="danger" onPress={remove} style={{ marginTop: 10 }} />
         ) : null}
+        {!canEdit ? <PrimaryButton label="Kapat" onPress={() => setVisible(false)} style={{ marginTop: 8 }} /> : null}
       </BottomSheet>
     </View>
   );

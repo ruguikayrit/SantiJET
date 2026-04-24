@@ -1,6 +1,6 @@
 import { Feather } from "@expo/vector-icons";
 import { useRouter } from "expo-router";
-import React, { useMemo, useState } from "react";
+import React, { useEffect, useMemo, useState } from "react";
 import {
   ScrollView,
   StyleSheet,
@@ -17,6 +17,7 @@ import PrimaryButton from "@/components/PrimaryButton";
 import ProjectPicker from "@/components/ProjectPicker";
 import { Attendance, Worker, useApp } from "@/context/AppContext";
 import { useColors } from "@/hooks/useColors";
+import { usePermission } from "@/hooks/usePermission";
 
 function todayStr() {
   const d = new Date();
@@ -56,6 +57,9 @@ export default function PuantajScreen() {
     addAttendance,
     updateAttendance,
   } = useApp();
+  const perm = usePermission("puantaj");
+  const canEdit = perm === "edit";
+  useEffect(() => { if (perm === "none") router.back(); }, [perm]);
 
   const [filter, setFilter] = useState<string | null>(projects[0]?.id || null);
   const [date, setDate] = useState(todayStr());
@@ -147,7 +151,7 @@ export default function PuantajScreen() {
       <Header
         title="Puantaj"
         onBack={() => router.back()}
-        rightAction={projects.length > 0 ? { icon: "user-plus", onPress: () => openWorker() } : undefined}
+        rightAction={canEdit && projects.length > 0 ? { icon: "user-plus", onPress: () => openWorker() } : undefined}
       />
 
       <ProjectPicker
@@ -215,7 +219,7 @@ export default function PuantajScreen() {
                   >
                     <TouchableOpacity
                       style={styles.cardLeft}
-                      onPress={() => openWorker(w)}
+                      onPress={canEdit ? () => openWorker(w) : undefined}
                       activeOpacity={0.8}
                     >
                       <Text style={[styles.wname, { color: colors.foreground }]}>
@@ -233,7 +237,7 @@ export default function PuantajScreen() {
                       {(["present", "half", "absent"] as const).map((s) => (
                         <TouchableOpacity
                           key={s}
-                          onPress={() => setStatus(w, s)}
+                          onPress={canEdit ? () => setStatus(w, s) : undefined}
                           style={[
                             styles.statBtn,
                             {
@@ -292,15 +296,11 @@ export default function PuantajScreen() {
           onChangeText={(v) => setWForm({ ...wForm, dailyRate: v })}
           keyboardType="numeric"
         />
-        <PrimaryButton label="Kaydet" onPress={saveWorker} style={{ marginTop: 8 }} />
-        {editWorkerId ? (
-          <PrimaryButton
-            label="Sil"
-            variant="danger"
-            onPress={removeWorker}
-            style={{ marginTop: 10 }}
-          />
+        {canEdit ? <PrimaryButton label="Kaydet" onPress={saveWorker} style={{ marginTop: 8 }} /> : null}
+        {canEdit && editWorkerId ? (
+          <PrimaryButton label="Sil" variant="danger" onPress={removeWorker} style={{ marginTop: 10 }} />
         ) : null}
+        {!canEdit ? <PrimaryButton label="Kapat" onPress={() => setWorkerSheet(false)} style={{ marginTop: 8 }} /> : null}
       </BottomSheet>
     </View>
   );

@@ -1,6 +1,6 @@
 import { Feather } from "@expo/vector-icons";
 import { useRouter } from "expo-router";
-import React, { useMemo, useState } from "react";
+import React, { useEffect, useMemo, useState } from "react";
 import {
   FlatList,
   ScrollView,
@@ -18,6 +18,7 @@ import PrimaryButton from "@/components/PrimaryButton";
 import ProjectPicker from "@/components/ProjectPicker";
 import { Hakedis, HakedisItem, useApp } from "@/context/AppContext";
 import { useColors } from "@/hooks/useColors";
+import { usePermission } from "@/hooks/usePermission";
 
 type Status = Hakedis["status"];
 
@@ -76,6 +77,9 @@ export default function HakedisScreen() {
   const colors = useColors();
   const router = useRouter();
   const { projects, hakedisler, addHakedis, updateHakedis, deleteHakedis } = useApp();
+  const perm = usePermission("hakedis");
+  const canEdit = perm === "edit";
+  useEffect(() => { if (perm === "none") router.back(); }, [perm]);
 
   const [filter, setFilter] = useState<string | null>(null);
   const [visible, setVisible] = useState(false);
@@ -161,7 +165,7 @@ export default function HakedisScreen() {
       <Header
         title="Hakediş"
         onBack={() => router.back()}
-        rightAction={projects.length > 0 ? { icon: "plus", onPress: () => open() } : undefined}
+        rightAction={canEdit && projects.length > 0 ? { icon: "plus", onPress: () => open() } : undefined}
       />
 
       <ProjectPicker projects={projects} value={filter} onChange={setFilter} />
@@ -423,17 +427,12 @@ export default function HakedisScreen() {
             </View>
           ) : null}
 
-          <PrimaryButton label="Kaydet" onPress={save} style={{ marginTop: 12 }} />
-          {editId ? (
-            <PrimaryButton
-              label="Sil"
-              variant="danger"
-              onPress={remove}
-              style={{ marginTop: 10, marginBottom: 8 }}
-            />
-          ) : (
-            <View style={{ height: 8 }} />
-          )}
+          {canEdit ? <PrimaryButton label="Kaydet" onPress={save} style={{ marginTop: 12 }} /> : null}
+          {canEdit && editId ? (
+            <PrimaryButton label="Sil" variant="danger" onPress={remove} style={{ marginTop: 10, marginBottom: 8 }} />
+          ) : null}
+          {!canEdit ? <PrimaryButton label="Kapat" onPress={() => setVisible(false)} style={{ marginTop: 12, marginBottom: 8 }} /> : null}
+          {canEdit && !editId ? <View style={{ height: 8 }} /> : null}
         </ScrollView>
       </BottomSheet>
     </View>
