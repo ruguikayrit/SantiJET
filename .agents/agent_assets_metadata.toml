@@ -1,0 +1,8 @@
+uploads = []
+outputs = []
+
+[[generated]]
+id = "hA-TfgIsQdSfvlz1jYm0z"
+uri = "file://artifacts/santiye-takip/assets/images/icon.png"
+type = "image"
+title = "construction app icon"
