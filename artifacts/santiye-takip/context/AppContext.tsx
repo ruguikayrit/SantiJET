@@ -126,6 +126,21 @@ export interface MaterialRequest {
   note: string;
 }
 
+export interface Subcontractor {
+  id: string;
+  projectId: string;
+  name: string;
+  contactPerson: string;
+  phone: string;
+  email: string;
+  specialty: string;
+  contractAmount: number;
+  startDate: string;
+  endDate: string;
+  status: "active" | "completed" | "cancelled";
+  notes: string;
+}
+
 export interface BudgetEntry {
   id: string;
   projectId: string;
@@ -167,6 +182,7 @@ export const ALL_PAGE_KEYS = [
   "imalat",
   "gorev",
   "malzeme",
+  "taseron",
   "butce",
   "hakedis",
   "kullanicilar",
@@ -183,6 +199,7 @@ export const PAGE_LABELS: Record<PageKey, string> = {
   imalat: "İmalat",
   gorev: "Görev",
   malzeme: "Malzeme",
+  taseron: "Taşeron",
   butce: "Bütçe",
   hakedis: "Hakediş",
   kullanicilar: "Kullanıcılar",
@@ -226,6 +243,7 @@ const DEFAULT_ROLES: Role[] = [
       imalat: "edit",
       gorev: "edit",
       malzeme: "view",
+      taseron: "view",
       butce: "none",
       hakedis: "none",
       kullanicilar: "none",
@@ -244,6 +262,7 @@ const DEFAULT_ROLES: Role[] = [
       imalat: "edit",
       gorev: "view",
       malzeme: "view",
+      taseron: "view",
       butce: "view",
       hakedis: "edit",
       kullanicilar: "none",
@@ -262,6 +281,7 @@ const DEFAULT_ROLES: Role[] = [
       imalat: "view",
       gorev: "view",
       malzeme: "none",
+      taseron: "none",
       butce: "none",
       hakedis: "view",
       kullanicilar: "none",
@@ -280,6 +300,7 @@ interface AppState {
   tasks: Task[];
   materials: Material[];
   materialRequests: MaterialRequest[];
+  subcontractors: Subcontractor[];
   budget: BudgetEntry[];
   hakedisler: Hakedis[];
   roles: Role[];
@@ -335,6 +356,10 @@ interface AppContextType extends AppState {
   updateMaterialRequest: (id: string, r: Partial<MaterialRequest>) => void;
   deleteMaterialRequest: (id: string) => void;
 
+  addSubcontractor: (s: Omit<Subcontractor, "id">) => void;
+  updateSubcontractor: (id: string, s: Partial<Subcontractor>) => void;
+  deleteSubcontractor: (id: string) => void;
+
   addBudget: (b: Omit<BudgetEntry, "id">) => void;
   updateBudget: (id: string, b: Partial<BudgetEntry>) => void;
   deleteBudget: (id: string) => void;
@@ -376,6 +401,7 @@ const INITIAL: AppState = {
   tasks: [],
   materials: [],
   materialRequests: [],
+  subcontractors: [],
   budget: [],
   hakedisler: [],
   roles: [],
@@ -534,6 +560,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
         tasks: prev.tasks.filter((x) => x.projectId !== id),
         materials: prev.materials.filter((x) => x.projectId !== id),
         materialRequests: prev.materialRequests.filter((x) => x.projectId !== id),
+        subcontractors: prev.subcontractors.filter((x) => x.projectId !== id),
         budget: prev.budget.filter((x) => x.projectId !== id),
         hakedisler: prev.hakedisler.filter((x) => x.projectId !== id),
         roles: prev.roles,
@@ -576,6 +603,10 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     addMaterialRequest: makeAdd("materialRequests") as any,
     updateMaterialRequest: makeUpdate("materialRequests") as any,
     deleteMaterialRequest: makeDelete("materialRequests") as any,
+
+    addSubcontractor: makeAdd("subcontractors") as any,
+    updateSubcontractor: makeUpdate("subcontractors") as any,
+    deleteSubcontractor: makeDelete("subcontractors") as any,
 
     addBudget: makeAdd("budget") as any,
     updateBudget: makeUpdate("budget") as any,

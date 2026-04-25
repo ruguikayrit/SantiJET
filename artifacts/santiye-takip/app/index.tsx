@@ -40,6 +40,7 @@ const SECTIONS: Section[] = [
   { key: "imalat",       label: "İmalat",        icon: "tool",        route: "/imalat",       color: "#d97706", bg: "#fef3c7", count: (a) => a.productions.length },
   { key: "gorev",        label: "Görev",         icon: "check-square",route: "/gorev",        color: "#dc2626", bg: "#fee2e2", count: (a) => a.tasks.length },
   { key: "malzeme",      label: "Malzeme",       icon: "package",     route: "/malzeme",      color: "#059669", bg: "#d1fae5", count: (a) => a.materials.length },
+  { key: "taseron",      label: "Taşeron",       icon: "truck",       route: "/taseron",      color: "#7c3aed", bg: "#ede9fe", count: (a) => a.subcontractors.length },
   { key: "butce",        label: "Bütçe",         icon: "dollar-sign", route: "/butce",        color: "#16213e", bg: "#e0e7ff", count: (a) => a.budget.length },
   { key: "hakedis",      label: "Hakediş",       icon: "file-text",   route: "/hakedis",      color: "#be185d", bg: "#fce7f3", count: (a) => a.hakedisler.length },
   { key: "kullanicilar", label: "Kullanıcılar",  icon: "shield",      route: "/kullanicilar", color: "#7c3aed", bg: "#ede9fe", count: (a) => a.appUsers.length },
