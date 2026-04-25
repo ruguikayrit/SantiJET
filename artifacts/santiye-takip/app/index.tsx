@@ -331,24 +331,17 @@ export default function HomeScreen() {
         <Text style={[styles.sheetDesc, { color: colors.mutedForeground }]}>
           Tüm projeler, personel, kayıtlar ve roller dahil tüm uygulama verisi.
         </Text>
-        <View style={[styles.jsonBox, { backgroundColor: colors.muted }]}>
-          <ScrollView style={{ maxHeight: 180 }} nestedScrollEnabled>
-            <Text style={[styles.jsonText, { color: colors.foreground }]} selectable>
-              {exportText}
-            </Text>
-          </ScrollView>
-        </View>
         <PrimaryButton
-          label={Platform.OS === "web" ? "Dosyayı İndir" : "Paylaş"}
+          label={Platform.OS === "web" ? "Dosyayı İndir" : "Kaydet"}
           onPress={downloadJson}
           style={{ marginTop: 12 }}
         />
-        <TouchableOpacity
+        <PrimaryButton
+          label="İptal"
+          variant="danger"
           onPress={() => setExportVisible(false)}
-          style={styles.cancelBtn}
-        >
-          <Text style={[styles.cancelText, { color: colors.mutedForeground }]}>Kapat</Text>
-        </TouchableOpacity>
+          style={{ marginTop: 10 }}
+        />
       </BottomSheet>
 
       <BottomSheet
