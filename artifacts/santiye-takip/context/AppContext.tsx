@@ -64,7 +64,7 @@ export interface Attendance {
   workerId: string;
   workerName: string;
   date: string;
-  status: "present" | "absent" | "half";
+  status: "present" | "absent" | "half" | "izinli" | "raporlu" | "mazeret" | "tatil";
   hours: number;
   note: string;
 }
