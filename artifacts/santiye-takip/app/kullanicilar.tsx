@@ -63,10 +63,17 @@ const PERM_OPTIONS: { value: Permission; label: string; color: string }[] = [
 ];
 
 const ROLE_COLORS: Record<string, string> = {
-  "santiye-sefi": "#e85d04",
-  "saha-muhendisi": "#16a34a",
-  muhendis: "#0ea5e9",
-  yuklenici: "#8b5cf6",
+  "isveren":                "#7c3aed",
+  "proje-muduru":           "#e85d04",
+  "santiye-sefi":           "#dc2626",
+  "saha-muhendisi":         "#16a34a",
+  "teknik-ofis-muhendisi":  "#0ea5e9",
+  "isg-birimi":             "#f59e0b",
+  "taseron":                "#64748b",
+  "satin-alma-birimi":      "#0891b2",
+  "muhasebe-birimi":        "#059669",
+  "ik-birimi":              "#8b5cf6",
+  "diger-kullanicilar":     "#94a3b8",
 };
 
 function getRoleColor(roleId: string) {
