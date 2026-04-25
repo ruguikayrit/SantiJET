@@ -71,6 +71,10 @@ export default function KullanicilarScreen() {
   const [uName, setUName] = useState("");
   const [uRoleId, setURoleId] = useState(roles[0]?.id || "");
   const [uPin, setUPin] = useState("");
+  const [uProfession, setUProfession] = useState("");
+  const [uPhone, setUPhone] = useState("");
+  const [uAddress, setUAddress] = useState("");
+  const [uCompany, setUCompany] = useState("");
 
   const [roleSheet, setRoleSheet] = useState(false);
   const [editRoleId, setEditRoleId] = useState<string | null>(null);
@@ -86,18 +90,34 @@ export default function KullanicilarScreen() {
       setUName(u.name);
       setURoleId(u.roleId);
       setUPin(u.pin);
+      setUProfession(u.profession || "");
+      setUPhone(u.phone || "");
+      setUAddress(u.address || "");
+      setUCompany(u.company || "");
     } else {
       setEditUserId(null);
       setUName("");
       setURoleId(roles[0]?.id || "");
       setUPin("");
+      setUProfession("");
+      setUPhone("");
+      setUAddress("");
+      setUCompany("");
     }
     setUserSheet(true);
   }
 
   function saveUser() {
     if (!uName.trim()) return;
-    const data = { name: uName.trim(), roleId: uRoleId, pin: uPin };
+    const data = {
+      name: uName.trim(),
+      roleId: uRoleId,
+      pin: uPin,
+      profession: uProfession.trim(),
+      phone: uPhone.trim(),
+      address: uAddress.trim(),
+      company: uCompany.trim(),
+    };
     if (editUserId) updateAppUser(editUserId, data);
     else addAppUser(data);
     setUserSheet(false);
@@ -243,6 +263,11 @@ export default function KullanicilarScreen() {
                         />
                       ) : null}
                     </View>
+                    {(u.profession || u.company || u.phone) ? (
+                      <Text style={[styles.cardSub, { color: colors.mutedForeground }]} numberOfLines={1}>
+                        {[u.profession, u.company, u.phone].filter(Boolean).join(" · ")}
+                      </Text>
+                    ) : null}
                   </View>
                   {canEdit ? (
                     <Feather
@@ -323,27 +348,59 @@ export default function KullanicilarScreen() {
         onClose={() => setUserSheet(false)}
         title={editUserId ? "Kullanıcıyı Düzenle" : "Yeni Kullanıcı"}
       >
-        <Text style={[styles.formLabel, { color: colors.foreground }]}>
-          Ad Soyad
-        </Text>
+        <Text style={[styles.formLabel, { color: colors.foreground }]}>Ad Soyad</Text>
         <TextInput
-          style={[
-            styles.formInput,
-            {
-              backgroundColor: colors.muted,
-              color: colors.foreground,
-              borderColor: colors.border,
-            },
-          ]}
+          style={[styles.formInput, { backgroundColor: colors.muted, color: colors.foreground, borderColor: colors.border }]}
           value={uName}
           onChangeText={setUName}
           placeholder="Örn: Ahmet Yılmaz"
           placeholderTextColor={colors.mutedForeground}
         />
 
-        <Text style={[styles.formLabel, { color: colors.foreground, marginTop: 12 }]}>
-          Rol
-        </Text>
+        <View style={styles.row}>
+          <View style={{ flex: 1 }}>
+            <Text style={[styles.formLabel, { color: colors.foreground, marginTop: 12 }]}>Meslek</Text>
+            <TextInput
+              style={[styles.formInput, { backgroundColor: colors.muted, color: colors.foreground, borderColor: colors.border }]}
+              value={uProfession}
+              onChangeText={setUProfession}
+              placeholder="Örn: Mühendis"
+              placeholderTextColor={colors.mutedForeground}
+            />
+          </View>
+          <View style={{ flex: 1 }}>
+            <Text style={[styles.formLabel, { color: colors.foreground, marginTop: 12 }]}>Telefon</Text>
+            <TextInput
+              style={[styles.formInput, { backgroundColor: colors.muted, color: colors.foreground, borderColor: colors.border }]}
+              value={uPhone}
+              onChangeText={setUPhone}
+              placeholder="05XX XXX XX XX"
+              placeholderTextColor={colors.mutedForeground}
+              keyboardType="phone-pad"
+            />
+          </View>
+        </View>
+
+        <Text style={[styles.formLabel, { color: colors.foreground, marginTop: 12 }]}>Şirket / Firma</Text>
+        <TextInput
+          style={[styles.formInput, { backgroundColor: colors.muted, color: colors.foreground, borderColor: colors.border }]}
+          value={uCompany}
+          onChangeText={setUCompany}
+          placeholder="Örn: ABC Taşeronluk"
+          placeholderTextColor={colors.mutedForeground}
+        />
+
+        <Text style={[styles.formLabel, { color: colors.foreground, marginTop: 12 }]}>Adres</Text>
+        <TextInput
+          style={[styles.formInput, { backgroundColor: colors.muted, color: colors.foreground, borderColor: colors.border, minHeight: 64, textAlignVertical: "top" }]}
+          value={uAddress}
+          onChangeText={setUAddress}
+          placeholder="İl, İlçe..."
+          placeholderTextColor={colors.mutedForeground}
+          multiline
+        />
+
+        <Text style={[styles.formLabel, { color: colors.foreground, marginTop: 12 }]}>Rol</Text>
         <View style={styles.chips}>
           {roles.map((r) => {
             const rColor = getRoleColor(r.id);
@@ -351,22 +408,9 @@ export default function KullanicilarScreen() {
               <TouchableOpacity
                 key={r.id}
                 onPress={() => setURoleId(r.id)}
-                style={[
-                  styles.chip,
-                  {
-                    backgroundColor:
-                      uRoleId === r.id ? rColor : colors.muted,
-                  },
-                ]}
+                style={[styles.chip, { backgroundColor: uRoleId === r.id ? rColor : colors.muted }]}
               >
-                <Text
-                  style={[
-                    styles.chipText,
-                    {
-                      color: uRoleId === r.id ? "#fff" : colors.foreground,
-                    },
-                  ]}
-                >
+                <Text style={[styles.chipText, { color: uRoleId === r.id ? "#fff" : colors.foreground }]}>
                   {r.name}
                 </Text>
               </TouchableOpacity>
@@ -374,22 +418,11 @@ export default function KullanicilarScreen() {
           })}
         </View>
 
-        <Text style={[styles.formLabel, { color: colors.foreground, marginTop: 4 }]}>
-          PIN (Opsiyonel, 4 haneli)
-        </Text>
+        <Text style={[styles.formLabel, { color: colors.foreground, marginTop: 4 }]}>PIN (Opsiyonel, 4 haneli)</Text>
         <TextInput
-          style={[
-            styles.formInput,
-            {
-              backgroundColor: colors.muted,
-              color: colors.foreground,
-              borderColor: colors.border,
-            },
-          ]}
+          style={[styles.formInput, { backgroundColor: colors.muted, color: colors.foreground, borderColor: colors.border }]}
           value={uPin}
-          onChangeText={(v) => {
-            if (v.length <= 4 && /^\d*$/.test(v)) setUPin(v);
-          }}
+          onChangeText={(v) => { if (v.length <= 4 && /^\d*$/.test(v)) setUPin(v); }}
           placeholder="Boş bırakılırsa şifresiz"
           placeholderTextColor={colors.mutedForeground}
           keyboardType="number-pad"
@@ -399,12 +432,7 @@ export default function KullanicilarScreen() {
 
         <PrimaryButton label="Kaydet" onPress={saveUser} style={{ marginTop: 12 }} />
         {editUserId ? (
-          <PrimaryButton
-            label="Sil"
-            variant="danger"
-            onPress={removeUser}
-            style={{ marginTop: 10 }}
-          />
+          <PrimaryButton label="Sil" variant="danger" onPress={removeUser} style={{ marginTop: 10 }} />
         ) : null}
       </BottomSheet>
 
@@ -549,6 +577,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: 14,
     borderWidth: 1,
   },
+  row: { flexDirection: "row", gap: 8 },
   chips: { flexDirection: "row", flexWrap: "wrap", gap: 8, marginBottom: 14 },
   chip: { paddingHorizontal: 14, paddingVertical: 8, borderRadius: 999 },
   chipText: { fontSize: 13, fontFamily: "Inter_500Medium" },

@@ -74,6 +74,10 @@ export default function LoginScreen() {
       name: newName.trim(),
       roleId: newRoleId,
       pin: newPin.length === 4 ? newPin : "",
+      profession: "",
+      phone: "",
+      address: "",
+      company: "",
     });
     setNewName("");
     setNewPin("");

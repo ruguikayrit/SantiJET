@@ -218,6 +218,10 @@ export interface AppUser {
   name: string;
   roleId: string;
   pin: string;
+  profession: string;
+  phone: string;
+  address: string;
+  company: string;
 }
 
 const ALL_EDIT: Record<PageKey, Permission> = Object.fromEntries(
