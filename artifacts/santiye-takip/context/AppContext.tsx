@@ -350,6 +350,9 @@ interface AppContextType extends AppState {
   addAppUser: (u: Omit<AppUser, "id">) => void;
   updateAppUser: (id: string, u: Partial<AppUser>) => void;
   deleteAppUser: (id: string) => void;
+
+  exportData: () => string;
+  importData: (json: string) => { ok: true; counts: Record<string, number> } | { ok: false; error: string };
 }
 
 const AppContext = createContext<AppContextType | undefined>(undefined);
@@ -594,6 +597,42 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
         appUsers: prev.appUsers.filter((u) => u.id !== id),
         currentUserId: prev.currentUserId === id ? null : prev.currentUserId,
       })),
+
+    exportData: () => {
+      const payload = {
+        version: 3,
+        exportedAt: new Date().toISOString(),
+        data: { ...state, currentUserId: null },
+      };
+      return JSON.stringify(payload, null, 2);
+    },
+
+    importData: (json: string) => {
+      try {
+        const parsed = JSON.parse(json);
+        const incoming = parsed?.data ?? parsed;
+        if (!incoming || typeof incoming !== "object") {
+          return { ok: false as const, error: "Geçersiz dosya formatı" };
+        }
+        const next: AppState = {
+          ...INITIAL,
+          ...incoming,
+          roles: Array.isArray(incoming.roles) && incoming.roles.length > 0
+            ? incoming.roles
+            : DEFAULT_ROLES,
+          currentUserId: null,
+        };
+        setState(next);
+        const counts: Record<string, number> = {};
+        (Object.keys(INITIAL) as (keyof AppState)[]).forEach((k) => {
+          const val = (next as any)[k];
+          if (Array.isArray(val)) counts[k] = val.length;
+        });
+        return { ok: true as const, counts };
+      } catch (e: any) {
+        return { ok: false as const, error: e?.message || "JSON ayrıştırılamadı" };
+      }
+    },
   };
 
   return <AppContext.Provider value={ctx}>{children}</AppContext.Provider>;

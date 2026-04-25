@@ -1,16 +1,21 @@
 import { Feather } from "@expo/vector-icons";
 import { useRouter } from "expo-router";
-import React from "react";
+import React, { useState } from "react";
 import {
+  Alert,
   Platform,
   ScrollView,
+  Share,
   StyleSheet,
   Text,
+  TextInput,
   TouchableOpacity,
   View,
 } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
+import BottomSheet from "@/components/BottomSheet";
+import PrimaryButton from "@/components/PrimaryButton";
 import { PageKey, Permission, useApp } from "@/context/AppContext";
 import { useColors } from "@/hooks/useColors";
 
@@ -45,7 +50,15 @@ export default function HomeScreen() {
   const insets = useSafeAreaInsets();
   const topPad = Platform.OS === "web" ? 67 : insets.top;
 
-  const { currentRole, currentAppUser, logout } = app;
+  const { currentRole, currentAppUser, logout, exportData, importData } = app;
+  const isAdmin = currentRole?.isAdmin === true;
+
+  const [exportVisible, setExportVisible] = useState(false);
+  const [exportText, setExportText] = useState("");
+
+  const [importVisible, setImportVisible] = useState(false);
+  const [importText, setImportText] = useState("");
+  const [importMsg, setImportMsg] = useState<{ type: "ok" | "err"; text: string } | null>(null);
 
   function getPermission(key: PageKey): Permission {
     if (!currentRole) return "none";
@@ -55,6 +68,90 @@ export default function HomeScreen() {
   const visibleSections = SECTIONS.filter(
     (s) => getPermission(s.key) !== "none"
   );
+
+  function openExport() {
+    const json = exportData();
+    setExportText(json);
+    setExportVisible(true);
+  }
+
+  function downloadJson() {
+    const json = exportText || exportData();
+    const stamp = new Date().toISOString().slice(0, 19).replace(/[:T]/g, "-");
+    const filename = `santiye-takip-${stamp}.json`;
+
+    if (Platform.OS === "web") {
+      const blob = new Blob([json], { type: "application/json" });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = filename;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      setTimeout(() => URL.revokeObjectURL(url), 1000);
+    } else {
+      Share.share({ message: json, title: filename }).catch(() => {});
+    }
+  }
+
+  function pickFile() {
+    if (Platform.OS !== "web") return;
+    const input = document.createElement("input");
+    input.type = "file";
+    input.accept = "application/json,.json";
+    input.onchange = () => {
+      const file = input.files?.[0];
+      if (!file) return;
+      const reader = new FileReader();
+      reader.onload = () => {
+        const txt = String(reader.result || "");
+        setImportText(txt);
+        setImportMsg(null);
+      };
+      reader.readAsText(file);
+    };
+    input.click();
+  }
+
+  function doImport() {
+    if (!importText.trim()) {
+      setImportMsg({ type: "err", text: "Önce bir dosya seçin veya JSON yapıştırın" });
+      return;
+    }
+    const proceed = (confirmed: boolean) => {
+      if (!confirmed) return;
+      const result = importData(importText);
+      if (result.ok) {
+        const total = Object.values(result.counts).reduce((a, b) => a + b, 0);
+        setImportMsg({ type: "ok", text: `Başarılı: ${total} kayıt yüklendi. Yeniden giriş yapmanız gerekecek.` });
+        setImportText("");
+        setTimeout(() => {
+          setImportVisible(false);
+          setImportMsg(null);
+          logout();
+        }, 1500);
+      } else {
+        setImportMsg({ type: "err", text: result.error });
+      }
+    };
+
+    if (Platform.OS === "web") {
+      const ok = window.confirm(
+        "Mevcut tüm veriler içe aktarılan dosyayla değiştirilecek. Devam edilsin mi?"
+      );
+      proceed(ok);
+    } else {
+      Alert.alert(
+        "Verileri Değiştir",
+        "Mevcut tüm veriler içe aktarılan dosyayla değiştirilecek. Devam edilsin mi?",
+        [
+          { text: "İptal", style: "cancel" },
+          { text: "Devam Et", style: "destructive", onPress: () => proceed(true) },
+        ]
+      );
+    }
+  }
 
   return (
     <View style={[styles.root, { backgroundColor: colors.background }]}>
@@ -144,7 +241,151 @@ export default function HomeScreen() {
             );
           })}
         </View>
+
+        {isAdmin ? (
+          <>
+            <Text style={[styles.sectionLabel, { color: colors.foreground, marginTop: 24 }]}>
+              Veri Yönetimi
+            </Text>
+            <View style={styles.dataRow}>
+              <TouchableOpacity
+                style={[styles.dataBtn, { backgroundColor: colors.card, borderColor: colors.muted }]}
+                onPress={openExport}
+                activeOpacity={0.85}
+              >
+                <View style={[styles.dataIcon, { backgroundColor: "#dcfce7" }]}>
+                  <Feather name="download" size={20} color="#16a34a" />
+                </View>
+                <Text style={[styles.dataLabel, { color: colors.foreground }]}>
+                  Verileri Dışa Aktar
+                </Text>
+                <Text style={[styles.dataDesc, { color: colors.mutedForeground }]}>
+                  Tüm kayıtları JSON dosyası olarak kaydet
+                </Text>
+              </TouchableOpacity>
+
+              <TouchableOpacity
+                style={[styles.dataBtn, { backgroundColor: colors.card, borderColor: colors.muted }]}
+                onPress={() => { setImportText(""); setImportMsg(null); setImportVisible(true); }}
+                activeOpacity={0.85}
+              >
+                <View style={[styles.dataIcon, { backgroundColor: "#dbeafe" }]}>
+                  <Feather name="upload" size={20} color="#2563eb" />
+                </View>
+                <Text style={[styles.dataLabel, { color: colors.foreground }]}>
+                  Verileri İçe Aktar
+                </Text>
+                <Text style={[styles.dataDesc, { color: colors.mutedForeground }]}>
+                  JSON yedeğinden geri yükle
+                </Text>
+              </TouchableOpacity>
+            </View>
+          </>
+        ) : null}
       </ScrollView>
+
+      <BottomSheet
+        visible={exportVisible}
+        onClose={() => setExportVisible(false)}
+        title="Verileri Dışa Aktar"
+      >
+        <Text style={[styles.sheetDesc, { color: colors.mutedForeground }]}>
+          Tüm projeler, personel, kayıtlar ve roller dahil tüm uygulama verisi.
+        </Text>
+        <View style={[styles.jsonBox, { backgroundColor: colors.muted }]}>
+          <ScrollView style={{ maxHeight: 180 }} nestedScrollEnabled>
+            <Text style={[styles.jsonText, { color: colors.foreground }]} selectable>
+              {exportText}
+            </Text>
+          </ScrollView>
+        </View>
+        <PrimaryButton
+          label={Platform.OS === "web" ? "Dosyayı İndir" : "Paylaş"}
+          onPress={downloadJson}
+          style={{ marginTop: 12 }}
+        />
+        <TouchableOpacity
+          onPress={() => setExportVisible(false)}
+          style={styles.cancelBtn}
+        >
+          <Text style={[styles.cancelText, { color: colors.mutedForeground }]}>Kapat</Text>
+        </TouchableOpacity>
+      </BottomSheet>
+
+      <BottomSheet
+        visible={importVisible}
+        onClose={() => setImportVisible(false)}
+        title="Verileri İçe Aktar"
+      >
+        <Text style={[styles.sheetDesc, { color: colors.mutedForeground }]}>
+          Mevcut tüm veriler içe aktarılan dosyayla değiştirilecek. Önce yedek almanız önerilir.
+        </Text>
+
+        {Platform.OS === "web" ? (
+          <PrimaryButton
+            label="JSON Dosyası Seç"
+            onPress={pickFile}
+            style={{ marginTop: 8, marginBottom: 12 }}
+          />
+        ) : null}
+
+        <Text style={[styles.label, { color: colors.foreground, marginTop: 4 }]}>
+          {Platform.OS === "web" ? "Veya JSON'u yapıştırın:" : "JSON'u yapıştırın:"}
+        </Text>
+        <TextInput
+          value={importText}
+          onChangeText={(t) => { setImportText(t); setImportMsg(null); }}
+          multiline
+          placeholder='{"version":3,"data":{...}}'
+          placeholderTextColor={colors.mutedForeground}
+          style={[
+            styles.importInput,
+            {
+              backgroundColor: colors.muted,
+              color: colors.foreground,
+              borderColor: colors.muted,
+            },
+          ]}
+        />
+
+        {importMsg ? (
+          <View
+            style={[
+              styles.msgBox,
+              {
+                backgroundColor: importMsg.type === "ok" ? "#dcfce7" : "#fee2e2",
+              },
+            ]}
+          >
+            <Feather
+              name={importMsg.type === "ok" ? "check-circle" : "alert-circle"}
+              size={14}
+              color={importMsg.type === "ok" ? "#16a34a" : "#dc2626"}
+            />
+            <Text
+              style={[
+                styles.msgText,
+                { color: importMsg.type === "ok" ? "#16a34a" : "#dc2626" },
+              ]}
+            >
+              {importMsg.text}
+            </Text>
+          </View>
+        ) : null}
+
+        <PrimaryButton
+          label="İçe Aktar"
+          onPress={doImport}
+          variant="danger"
+          style={{ marginTop: 12 }}
+        />
+        <TouchableOpacity
+          onPress={() => setImportVisible(false)}
+          style={styles.cancelBtn}
+        >
+          <Text style={[styles.cancelText, { color: colors.mutedForeground }]}>Kapat</Text>
+        </TouchableOpacity>
+      </BottomSheet>
     </View>
   );
 }
@@ -277,5 +518,84 @@ const styles = StyleSheet.create({
     fontSize: 9,
     fontFamily: "Inter_600SemiBold",
     color: "#0ea5e9",
+  },
+  dataRow: {
+    flexDirection: "row",
+    gap: 12,
+  },
+  dataBtn: {
+    flex: 1,
+    padding: 14,
+    borderRadius: 14,
+    borderWidth: 1,
+    gap: 8,
+  },
+  dataIcon: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    justifyContent: "center",
+    alignItems: "center",
+  },
+  dataLabel: {
+    fontSize: 14,
+    fontFamily: "Inter_600SemiBold",
+  },
+  dataDesc: {
+    fontSize: 11,
+    fontFamily: "Inter_400Regular",
+    lineHeight: 15,
+  },
+  sheetDesc: {
+    fontSize: 13,
+    fontFamily: "Inter_400Regular",
+    marginBottom: 12,
+    lineHeight: 18,
+  },
+  jsonBox: {
+    borderRadius: 8,
+    padding: 10,
+    marginBottom: 4,
+  },
+  jsonText: {
+    fontSize: 11,
+    fontFamily: Platform.OS === "ios" ? "Menlo" : "monospace",
+  },
+  label: {
+    fontSize: 13,
+    fontFamily: "Inter_600SemiBold",
+    marginBottom: 6,
+  },
+  importInput: {
+    minHeight: 120,
+    maxHeight: 180,
+    borderRadius: 8,
+    padding: 10,
+    fontSize: 12,
+    fontFamily: Platform.OS === "ios" ? "Menlo" : "monospace",
+    textAlignVertical: "top",
+    borderWidth: 1,
+  },
+  msgBox: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 8,
+    padding: 10,
+    borderRadius: 8,
+    marginTop: 10,
+  },
+  msgText: {
+    flex: 1,
+    fontSize: 12,
+    fontFamily: "Inter_500Medium",
+  },
+  cancelBtn: {
+    alignItems: "center",
+    paddingVertical: 12,
+    marginTop: 4,
+  },
+  cancelText: {
+    fontSize: 13,
+    fontFamily: "Inter_500Medium",
   },
 });
