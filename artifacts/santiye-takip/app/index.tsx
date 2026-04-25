@@ -5,6 +5,7 @@ import { useRouter } from "expo-router";
 import * as Sharing from "expo-sharing";
 import React, { useState } from "react";
 import {
+  ActivityIndicator,
   Alert,
   Platform,
   ScrollView,
@@ -53,7 +54,7 @@ export default function HomeScreen() {
   const insets = useSafeAreaInsets();
   const topPad = Platform.OS === "web" ? 67 : insets.top;
 
-  const { currentRole, currentAppUser, logout, exportData, importData } = app;
+  const { currentRole, currentAppUser, logout, exportData, importData, workspaceInfo, syncStatus, pushToCloud, pullFromCloud } = app;
   const isAdmin = currentRole?.isAdmin === true;
 
   const [exportVisible, setExportVisible] = useState(false);
@@ -233,6 +234,61 @@ export default function HomeScreen() {
             </View>
           ) : null}
         </View>
+
+        {/* Workspace sync bar */}
+        {workspaceInfo && (
+          <View style={styles.syncBar}>
+            <View style={styles.syncLeft}>
+              <Feather name="layers" size={12} color="#e85d04" />
+              <Text style={styles.syncCode} numberOfLines={1}>
+                {workspaceInfo.id === "local"
+                  ? "Yerel Kullanım"
+                  : workspaceInfo.company_name}
+              </Text>
+              {workspaceInfo.id !== "local" && (
+                <View style={styles.codePill}>
+                  <Text style={styles.codePillText}>{workspaceInfo.invite_code}</Text>
+                </View>
+              )}
+            </View>
+            {workspaceInfo.id !== "local" && (
+              <View style={styles.syncBtns}>
+                <TouchableOpacity
+                  onPress={pullFromCloud}
+                  disabled={syncStatus === "syncing"}
+                  style={[styles.syncBtn, { opacity: syncStatus === "syncing" ? 0.5 : 1 }]}
+                  hitSlop={6}
+                >
+                  {syncStatus === "syncing" ? (
+                    <ActivityIndicator size={13} color="#0ea5e9" />
+                  ) : (
+                    <Feather
+                      name="download-cloud"
+                      size={14}
+                      color={syncStatus === "error" ? "#dc2626" : syncStatus === "success" ? "#16a34a" : "#0ea5e9"}
+                    />
+                  )}
+                </TouchableOpacity>
+                <TouchableOpacity
+                  onPress={pushToCloud}
+                  disabled={syncStatus === "syncing"}
+                  style={[styles.syncBtn, { opacity: syncStatus === "syncing" ? 0.5 : 1 }]}
+                  hitSlop={6}
+                >
+                  {syncStatus === "syncing" ? (
+                    <ActivityIndicator size={13} color="#e85d04" />
+                  ) : (
+                    <Feather
+                      name="upload-cloud"
+                      size={14}
+                      color={syncStatus === "error" ? "#dc2626" : syncStatus === "success" ? "#16a34a" : "#e85d04"}
+                    />
+                  )}
+                </TouchableOpacity>
+              </View>
+            )}
+          </View>
+        )}
       </View>
 
       <ScrollView
@@ -523,6 +579,52 @@ const styles = StyleSheet.create({
     color: "#94a3b8",
     fontSize: 11,
     fontFamily: "Inter_500Medium",
+  },
+  syncBar: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    marginTop: 10,
+    paddingTop: 8,
+    borderTopWidth: 1,
+    borderTopColor: "rgba(255,255,255,0.08)",
+  },
+  syncLeft: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 6,
+    flex: 1,
+  },
+  syncCode: {
+    color: "#cbd5e1",
+    fontSize: 11,
+    fontFamily: "Inter_500Medium",
+    flex: 1,
+  },
+  codePill: {
+    backgroundColor: "rgba(232,93,4,0.18)",
+    borderRadius: 6,
+    paddingHorizontal: 6,
+    paddingVertical: 2,
+  },
+  codePillText: {
+    color: "#e85d04",
+    fontSize: 10,
+    fontFamily: "Inter_700Bold",
+    letterSpacing: 1,
+  },
+  syncBtns: {
+    flexDirection: "row",
+    gap: 10,
+    marginLeft: 10,
+  },
+  syncBtn: {
+    width: 28,
+    height: 28,
+    borderRadius: 8,
+    backgroundColor: "rgba(255,255,255,0.07)",
+    justifyContent: "center",
+    alignItems: "center",
   },
   scroll: { padding: 16 },
   sectionLabel: {

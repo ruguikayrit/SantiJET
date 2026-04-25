@@ -20,30 +20,37 @@ SplashScreen.preventAutoHideAsync();
 
 const queryClient = new QueryClient();
 
-function LoginGate({ children }: { children: React.ReactNode }) {
-  const { currentUserId, loaded } = useApp();
+function AppGate({ children }: { children: React.ReactNode }) {
+  const { currentUserId, loaded, workspaceInfo } = useApp();
   const router = useRouter();
   const segments = useSegments();
 
   useEffect(() => {
     if (!loaded) return;
     const inLogin = segments[0] === "login";
-    if (!currentUserId && !inLogin) {
+    const inWorkspace = segments[0] === "workspace-setup";
+
+    if (!workspaceInfo && !inWorkspace) {
+      router.replace("/workspace-setup" as any);
+      return;
+    }
+    if (!currentUserId && !inLogin && !inWorkspace) {
       router.replace("/login" as any);
-    } else if (currentUserId && inLogin) {
+    } else if (currentUserId && (inLogin || inWorkspace)) {
       router.replace("/");
     }
-  }, [loaded, currentUserId, segments]);
+  }, [loaded, currentUserId, workspaceInfo, segments]);
 
   return <>{children}</>;
 }
 
 function RootLayoutNav() {
   return (
-    <LoginGate>
+    <AppGate>
       <Stack screenOptions={{ headerShown: false }}>
         <Stack.Screen name="index" />
         <Stack.Screen name="login" />
+        <Stack.Screen name="workspace-setup" />
         <Stack.Screen name="kullanicilar" />
         <Stack.Screen name="proje" />
         <Stack.Screen name="kesif" />
@@ -58,7 +65,7 @@ function RootLayoutNav() {
         <Stack.Screen name="hakedis" />
         <Stack.Screen name="rapor" />
       </Stack>
-    </LoginGate>
+    </AppGate>
   );
 }
 

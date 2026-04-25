@@ -6,6 +6,7 @@ import React, {
   useEffect,
   useState,
 } from "react";
+import { WorkspaceInfo, loadWorkspace } from "@/utils/workspace";
 
 export interface Project {
   id: string;
@@ -352,13 +353,20 @@ interface AppState {
   currentUserId: string | null;
 }
 
+export type SyncStatus = "idle" | "syncing" | "success" | "error";
+
 interface AppContextType extends AppState {
   loaded: boolean;
   currentAppUser: AppUser | null;
   currentRole: Role | null;
+  workspaceInfo: WorkspaceInfo | null;
+  syncStatus: SyncStatus;
+  lastSyncAt: string | null;
 
   login: (userId: string) => void;
   logout: () => void;
+  pushToCloud: () => Promise<void>;
+  pullFromCloud: () => Promise<void>;
 
   addProject: (p: Omit<Project, "id">) => string;
   updateProject: (id: string, p: Partial<Project>) => void;
@@ -532,12 +540,16 @@ async function loadInitialState(): Promise<AppState> {
 export function AppProvider({ children }: { children: React.ReactNode }) {
   const [state, setState] = useState<AppState>(INITIAL);
   const [loaded, setLoaded] = useState(false);
+  const [workspaceInfo, setWorkspaceInfo] = useState<WorkspaceInfo | null>(null);
+  const [syncStatus, setSyncStatus] = useState<SyncStatus>("idle");
+  const [lastSyncAt, setLastSyncAt] = useState<string | null>(null);
 
   useEffect(() => {
     loadInitialState().then((s) => {
       setState(s);
       setLoaded(true);
     });
+    loadWorkspace().then(setWorkspaceInfo);
   }, []);
 
   const persist = useCallback((newState: AppState) => {
@@ -587,15 +599,69 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     ? state.roles.find((r) => r.id === currentAppUser.roleId) ?? null
     : null;
 
+  async function pushToCloud() {
+    if (!workspaceInfo || workspaceInfo.id === "local") return;
+    setSyncStatus("syncing");
+    try {
+      const payload = { version: 3, exportedAt: new Date().toISOString(), data: { ...state, currentUserId: null } };
+      const res = await fetch(
+        `${workspaceInfo.api_url}/api/workspaces/${workspaceInfo.invite_code}/push`,
+        { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(payload) }
+      );
+      if (!res.ok) throw new Error("Push failed");
+      const now = new Date().toISOString();
+      setLastSyncAt(now);
+      setSyncStatus("success");
+      setTimeout(() => setSyncStatus("idle"), 3000);
+    } catch {
+      setSyncStatus("error");
+      setTimeout(() => setSyncStatus("idle"), 4000);
+    }
+  }
+
+  async function pullFromCloud() {
+    if (!workspaceInfo || workspaceInfo.id === "local") return;
+    setSyncStatus("syncing");
+    try {
+      const res = await fetch(
+        `${workspaceInfo.api_url}/api/workspaces/${workspaceInfo.invite_code}/pull`
+      );
+      if (!res.ok) throw new Error("Pull failed");
+      const json = await res.json();
+      if (!json.data) {
+        setSyncStatus("idle");
+        return;
+      }
+      const incoming = json.data?.data ?? json.data;
+      if (incoming && typeof incoming === "object") {
+        const next: AppState = { ...INITIAL, ...incoming, roles: Array.isArray(incoming.roles) && incoming.roles.length > 0 ? incoming.roles : DEFAULT_ROLES, currentUserId: null };
+        setState(next);
+        AsyncStorage.setItem(STORAGE_KEY, JSON.stringify(next));
+      }
+      const now = new Date().toISOString();
+      setLastSyncAt(now);
+      setSyncStatus("success");
+      setTimeout(() => setSyncStatus("idle"), 3000);
+    } catch {
+      setSyncStatus("error");
+      setTimeout(() => setSyncStatus("idle"), 4000);
+    }
+  }
+
   const ctx: AppContextType = {
     ...state,
     loaded,
     currentAppUser,
     currentRole,
+    workspaceInfo,
+    syncStatus,
+    lastSyncAt,
 
     login: (userId) =>
       setState((prev) => ({ ...prev, currentUserId: userId })),
     logout: () => setState((prev) => ({ ...prev, currentUserId: null })),
+    pushToCloud,
+    pullFromCloud,
 
     addProject: makeAdd("projects") as any,
     updateProject: makeUpdate("projects") as any,
