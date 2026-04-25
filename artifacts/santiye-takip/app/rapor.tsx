@@ -297,7 +297,8 @@ export default function RaporScreen() {
 
   const { projects, surveys, scheduleTasks, attendance, dailyReports, productions, tasks, materials, materialRequests, subcontractors, budget, hakedisler, appUsers, roles } = app;
 
-  const [selected, setSelected] = useState<Set<ModKey>>(new Set());
+  const [selectedOrder, setSelectedOrder] = useState<ModKey[]>([]);
+  const selected = useMemo(() => new Set(selectedOrder), [selectedOrder]);
   const [format, setFormat] = useState<"pdf" | "excel">("pdf");
   const [loading, setLoading] = useState(false);
 
@@ -334,10 +335,20 @@ export default function RaporScreen() {
   }
 
   function toggle(key: ModKey) {
-    setSelected(prev => { const n = new Set(prev); n.has(key) ? n.delete(key) : n.add(key); return n; });
+    setSelectedOrder(prev => prev.includes(key) ? prev.filter(k => k !== key) : [...prev, key]);
   }
-  function selectAll() { setSelected(new Set(MODULES.map(m => m.key))); }
-  function clearAll()  { setSelected(new Set()); }
+  function selectAll() { setSelectedOrder(MODULES.map(m => m.key)); }
+  function clearAll()  { setSelectedOrder([]); }
+  function moveUp(idx: number) {
+    if (idx === 0) return;
+    setSelectedOrder(prev => { const n = [...prev]; [n[idx-1], n[idx]] = [n[idx], n[idx-1]]; return n; });
+  }
+  function moveDown(idx: number) {
+    setSelectedOrder(prev => { if (idx === prev.length - 1) return prev; const n = [...prev]; [n[idx], n[idx+1]] = [n[idx+1], n[idx]]; return n; });
+  }
+  function removeFromOrder(key: ModKey) {
+    setSelectedOrder(prev => prev.filter(k => k !== key));
+  }
 
   function getProjectName(id: string) { return projects.find(p => p.id === id)?.name || id; }
 
@@ -374,10 +385,10 @@ export default function RaporScreen() {
   }
 
   async function generate() {
-    if (selected.size === 0) { Alert.alert("Seçim Gerekli", "En az bir modül seçmelisiniz."); return; }
+    if (selectedOrder.length === 0) { Alert.alert("Seçim Gerekli", "En az bir modül seçmelisiniz."); return; }
     setLoading(true);
     try {
-      const sections = Array.from(selected).map(k => buildSection(k));
+      const sections = selectedOrder.map(k => buildSection(k));
 
       if (format === "pdf") {
         const html = buildHtml(sections, projects.length);
@@ -422,7 +433,7 @@ export default function RaporScreen() {
 
         {/* Modules */}
         <View style={styles.moduleHeader}>
-          <Text style={[styles.sectionTitle, { color: colors.foreground }]}>Modüller ({selected.size}/{MODULES.length})</Text>
+          <Text style={[styles.sectionTitle, { color: colors.foreground }]}>Modüller ({selectedOrder.length}/{MODULES.length})</Text>
           <View style={styles.quickBtns}>
             <TouchableOpacity onPress={selectAll} style={[styles.quickBtn, { backgroundColor: colors.primary+"20" }]}>
               <Text style={[styles.quickBtnText, { color: colors.primary }]}>Tümü</Text>
@@ -449,6 +460,72 @@ export default function RaporScreen() {
             );
           })}
         </View>
+
+        {/* ── Rapor sırası paneli ── */}
+        {selectedOrder.length > 0 && (
+          <View style={[styles.orderBox, { backgroundColor: colors.card, borderColor: colors.border }]}>
+            <View style={styles.orderBoxHeader}>
+              <Feather name="list" size={15} color={colors.primary} />
+              <Text style={[styles.orderBoxTitle, { color: colors.foreground }]}>
+                Rapor Sırası
+              </Text>
+              <Text style={[styles.orderBoxHint, { color: colors.mutedForeground }]}>
+                Sırayı değiştirmek için ↑ ↓ kullanın
+              </Text>
+            </View>
+
+            {selectedOrder.map((key, idx) => {
+              const mod = MODULES.find(m => m.key === key)!;
+              return (
+                <View
+                  key={key}
+                  style={[
+                    styles.orderItem,
+                    { borderBottomColor: colors.muted },
+                    idx === selectedOrder.length - 1 && { borderBottomWidth: 0 },
+                  ]}
+                >
+                  {/* Index badge */}
+                  <View style={[styles.orderBadge, { backgroundColor: colors.primary }]}>
+                    <Text style={styles.orderBadgeText}>{idx + 1}</Text>
+                  </View>
+
+                  {/* Icon + label */}
+                  <View style={[styles.orderIcon, { backgroundColor: colors.muted }]}>
+                    <Feather name={mod.icon as any} size={14} color={colors.mutedForeground} />
+                  </View>
+                  <Text style={[styles.orderLabel, { color: colors.foreground }]} numberOfLines={1}>
+                    {PAGE_LABELS[key]}
+                  </Text>
+
+                  {/* Controls */}
+                  <View style={styles.orderControls}>
+                    <TouchableOpacity
+                      onPress={() => moveUp(idx)}
+                      style={[styles.orderBtn, { backgroundColor: idx === 0 ? colors.muted + "60" : colors.muted }]}
+                      disabled={idx === 0}
+                    >
+                      <Feather name="chevron-up" size={14} color={idx === 0 ? colors.mutedForeground + "60" : colors.foreground} />
+                    </TouchableOpacity>
+                    <TouchableOpacity
+                      onPress={() => moveDown(idx)}
+                      style={[styles.orderBtn, { backgroundColor: idx === selectedOrder.length - 1 ? colors.muted + "60" : colors.muted }]}
+                      disabled={idx === selectedOrder.length - 1}
+                    >
+                      <Feather name="chevron-down" size={14} color={idx === selectedOrder.length - 1 ? colors.mutedForeground + "60" : colors.foreground} />
+                    </TouchableOpacity>
+                    <TouchableOpacity
+                      onPress={() => removeFromOrder(key)}
+                      style={[styles.orderBtn, { backgroundColor: "#dc262620" }]}
+                    >
+                      <Feather name="x" size={14} color="#dc2626" />
+                    </TouchableOpacity>
+                  </View>
+                </View>
+              );
+            })}
+          </View>
+        )}
 
         {/* ── Puantaj cetvel options (shown when puantaj is selected) ── */}
         {selected.has("puantaj") && (
@@ -525,7 +602,7 @@ export default function RaporScreen() {
               <Text style={styles.loadingText}>Oluşturuluyor...</Text>
             </View>
           ) : (
-            <PrimaryButton label={`${format==="pdf"?"PDF":"Excel"} Raporu Oluştur  →`} onPress={generate} style={{ opacity: selected.size===0?0.5:1 }} />
+            <PrimaryButton label={`${format==="pdf"?"PDF":"Excel"} Raporu Oluştur  →`} onPress={generate} style={{ opacity: selectedOrder.length===0?0.5:1 }} />
           )}
         </View>
       </ScrollView>
@@ -581,6 +658,18 @@ const styles = StyleSheet.create({
   tTotalNum: { fontSize: 11, fontFamily: "Inter_700Bold" },
   tCompRow: { paddingHorizontal: 6, paddingVertical: 4 },
   tCompTxt: { fontSize: 10, fontFamily: "Inter_700Bold" },
+
+  orderBox: { borderRadius: 14, borderWidth: 1, marginBottom: 16, overflow: "hidden" },
+  orderBoxHeader: { flexDirection: "row", alignItems: "center", gap: 7, paddingHorizontal: 14, paddingVertical: 12, borderBottomWidth: StyleSheet.hairlineWidth, borderBottomColor: "#e2e8f020" },
+  orderBoxTitle: { fontSize: 14, fontFamily: "Inter_700Bold" },
+  orderBoxHint: { flex: 1, fontSize: 11, fontFamily: "Inter_400Regular", textAlign: "right" },
+  orderItem: { flexDirection: "row", alignItems: "center", paddingHorizontal: 12, paddingVertical: 10, gap: 9, borderBottomWidth: StyleSheet.hairlineWidth },
+  orderBadge: { width: 22, height: 22, borderRadius: 6, alignItems: "center", justifyContent: "center" },
+  orderBadgeText: { fontSize: 11, fontFamily: "Inter_700Bold", color: "#fff" },
+  orderIcon: { width: 28, height: 28, borderRadius: 7, alignItems: "center", justifyContent: "center" },
+  orderLabel: { flex: 1, fontSize: 13, fontFamily: "Inter_600SemiBold" },
+  orderControls: { flexDirection: "row", gap: 5 },
+  orderBtn: { width: 28, height: 28, borderRadius: 7, alignItems: "center", justifyContent: "center" },
 
   footer: { marginTop: 8 },
   loadingBtn: { flexDirection: "row", alignItems: "center", justifyContent: "center", gap: 10, paddingVertical: 16, borderRadius: 12 },
