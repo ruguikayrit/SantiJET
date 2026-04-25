@@ -94,6 +94,7 @@ export default function HomeScreen() {
       a.click();
       document.body.removeChild(a);
       setTimeout(() => URL.revokeObjectURL(url), 1000);
+      setExportVisible(false);
     } else {
       try {
         const uri = (FileSystem.cacheDirectory ?? "") + filename;
@@ -105,6 +106,7 @@ export default function HomeScreen() {
             dialogTitle: "Dosyayı kaydet veya paylaş",
             UTI: "public.json",
           });
+          setExportVisible(false);
         } else {
           Alert.alert("Hata", "Paylaşım bu cihazda desteklenmiyor.");
         }
