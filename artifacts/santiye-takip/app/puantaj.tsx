@@ -10,6 +10,7 @@ import {
 } from "react-native";
 
 import BottomSheet from "@/components/BottomSheet";
+import DatePickerInput from "@/components/DatePickerInput";
 import EmptyState from "@/components/EmptyState";
 import FormInput from "@/components/FormInput";
 import Header from "@/components/Header";
@@ -172,17 +173,10 @@ export default function PuantajScreen() {
       ) : (
         <>
           <View style={[styles.dateBar, { backgroundColor: colors.card }]}>
-            <Feather name="calendar" size={16} color={colors.mutedForeground} />
-            <FormInput
-              label=""
+            <DatePickerInput
               value={date}
-              onChangeText={setDate}
-              placeholder="GG.AA.YYYY"
-              style={{ flex: 1, height: 36, marginBottom: 0 }}
+              onChange={setDate}
             />
-            <TouchableOpacity onPress={() => setDate(todayStr())} activeOpacity={0.8}>
-              <Text style={[styles.todayBtn, { color: colors.primary }]}>Bugün</Text>
-            </TouchableOpacity>
           </View>
 
           <View style={styles.summary}>
@@ -309,19 +303,8 @@ export default function PuantajScreen() {
 const styles = StyleSheet.create({
   root: { flex: 1 },
   dateBar: {
-    flexDirection: "row",
-    alignItems: "center",
-    paddingHorizontal: 12,
-    gap: 8,
-    marginHorizontal: 16,
+    paddingHorizontal: 16,
     marginTop: 12,
-    paddingVertical: 6,
-    borderRadius: 10,
-  },
-  todayBtn: {
-    fontSize: 13,
-    fontFamily: "Inter_600SemiBold",
-    paddingHorizontal: 8,
   },
   summary: {
     flexDirection: "row",

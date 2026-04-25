@@ -10,6 +10,7 @@ import {
 } from "react-native";
 
 import BottomSheet from "@/components/BottomSheet";
+import DatePickerInput from "@/components/DatePickerInput";
 import EmptyState from "@/components/EmptyState";
 import FormInput from "@/components/FormInput";
 import Header from "@/components/Header";
@@ -219,11 +220,10 @@ export default function GunlukRaporScreen() {
           ))}
         </View>
 
-        <FormInput
+        <DatePickerInput
           label="Tarih"
           value={form.date}
-          onChangeText={(v) => setForm({ ...form, date: v })}
-          placeholder="GG.AA.YYYY"
+          onChange={(v) => setForm({ ...form, date: v })}
         />
 
         <Text style={[styles.label, { color: colors.foreground }]}>Hava Durumu</Text>
