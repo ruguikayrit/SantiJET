@@ -434,6 +434,7 @@ const STORAGE_KEY = "santiye_app_data_v3";
 const LEGACY_V2_KEY = "santiye_app_data_v2";
 const LEGACY_V1_KEY = "santiye_app_data";
 
+
 const INITIAL: AppState = {
   projects: [],
   surveys: [],
@@ -453,13 +454,19 @@ const INITIAL: AppState = {
   currentUserId: null,
 };
 
+function needsRoleMigration(roles: Role[]): boolean {
+  // Sadece yeni sette olan bir ID eksikse migrate et ("isveren" v1'de yoktu)
+  const storedIds = new Set(roles.map(r => r.id));
+  return !storedIds.has("isveren") || !storedIds.has("proje-muduru");
+}
+
 async function loadInitialState(): Promise<AppState> {
   const raw = await AsyncStorage.getItem(STORAGE_KEY);
   if (raw) {
     try {
       const parsed = JSON.parse(raw);
       const state: AppState = { ...INITIAL, ...parsed };
-      if (!state.roles || state.roles.length === 0) {
+      if (!state.roles || state.roles.length === 0 || needsRoleMigration(state.roles)) {
         state.roles = DEFAULT_ROLES;
       }
       return state;
