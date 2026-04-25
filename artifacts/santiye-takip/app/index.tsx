@@ -428,7 +428,6 @@ export default function HomeScreen() {
         <PrimaryButton
           label="İçe Aktar"
           onPress={doImport}
-          variant="danger"
           style={{ marginTop: 12 }}
         />
         <TouchableOpacity
