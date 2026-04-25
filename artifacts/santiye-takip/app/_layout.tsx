@@ -24,22 +24,25 @@ function AppGate({ children }: { children: React.ReactNode }) {
   const { currentUserId, loaded, workspaceInfo } = useApp();
   const router = useRouter();
   const segments = useSegments();
+  const firstSegment = segments[0] ?? "";
 
   useEffect(() => {
     if (!loaded) return;
-    const inLogin = segments[0] === "login";
-    const inWorkspace = segments[0] === "workspace-setup";
+    const inLogin = firstSegment === "login";
+    const inWorkspace = firstSegment === "workspace-setup";
 
     if (!workspaceInfo && !inWorkspace) {
       router.replace("/workspace-setup" as any);
       return;
     }
-    if (!currentUserId && !inLogin && !inWorkspace) {
+    if (workspaceInfo && !currentUserId && !inLogin && !inWorkspace) {
       router.replace("/login" as any);
-    } else if (currentUserId && (inLogin || inWorkspace)) {
+      return;
+    }
+    if (workspaceInfo && currentUserId && (inLogin || inWorkspace)) {
       router.replace("/");
     }
-  }, [loaded, currentUserId, workspaceInfo, segments]);
+  }, [loaded, currentUserId, workspaceInfo?.id, firstSegment]);
 
   return <>{children}</>;
 }

@@ -289,6 +289,23 @@ export default function HomeScreen() {
             )}
           </View>
         )}
+
+        {workspaceInfo && workspaceInfo.id !== "local" && syncStatus === "conflict" && (
+          <View style={styles.conflictBar}>
+            <Feather name="alert-triangle" size={13} color="#fbbf24" />
+            <Text style={styles.conflictText} numberOfLines={2}>
+              Başka biri değişiklik yaptı. Kendi yüklemenizden önce indirin.
+            </Text>
+          </View>
+        )}
+        {workspaceInfo && workspaceInfo.id !== "local" && syncStatus === "auth_error" && (
+          <View style={styles.conflictBar}>
+            <Feather name="lock" size={13} color="#fbbf24" />
+            <Text style={styles.conflictText} numberOfLines={2}>
+              Oturum süresi doldu. Lütfen tekrar giriş yapın.
+            </Text>
+          </View>
+        )}
       </View>
 
       <ScrollView
@@ -588,6 +605,24 @@ const styles = StyleSheet.create({
     paddingTop: 8,
     borderTopWidth: 1,
     borderTopColor: "rgba(255,255,255,0.08)",
+  },
+  conflictBar: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 8,
+    marginTop: 8,
+    paddingHorizontal: 10,
+    paddingVertical: 8,
+    borderRadius: 8,
+    backgroundColor: "rgba(251,191,36,0.15)",
+    borderWidth: 1,
+    borderColor: "rgba(251,191,36,0.4)",
+  },
+  conflictText: {
+    color: "#fef3c7",
+    fontSize: 11,
+    fontFamily: "Inter_500Medium",
+    flex: 1,
   },
   syncLeft: {
     flexDirection: "row",

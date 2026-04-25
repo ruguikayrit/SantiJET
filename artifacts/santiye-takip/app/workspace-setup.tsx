@@ -34,6 +34,8 @@ export default function WorkspaceSetupScreen() {
   const [tab, setTab] = useState<Tab>("create");
   const [companyName, setCompanyName] = useState("");
   const [joinCode, setJoinCode] = useState("");
+  const [createPassword, setCreatePassword] = useState("");
+  const [joinPassword, setJoinPassword] = useState("");
   const [apiUrl, setApiUrl] = useState(defaultApiUrl);
   const [loading, setLoading] = useState(false);
   const [showAdvanced, setShowAdvanced] = useState(false);
@@ -62,6 +64,10 @@ export default function WorkspaceSetupScreen() {
       notifyError("Firma adını girin.");
       return;
     }
+    if (!createPassword || createPassword.length < 4) {
+      notifyError("Şifre en az 4 karakter olmalı.");
+      return;
+    }
     setLoading(true);
     try {
       const baseUrl = apiUrl.trim().replace(/\/$/, "");
@@ -74,7 +80,7 @@ export default function WorkspaceSetupScreen() {
       const res = await fetch(`${baseUrl}/api/workspaces`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ company_name: companyName.trim() }),
+        body: JSON.stringify({ company_name: companyName.trim(), password: createPassword }),
       });
       if (!res.ok) {
         const err = await res.json().catch(() => ({}));
@@ -86,8 +92,17 @@ export default function WorkspaceSetupScreen() {
         id: string;
         invite_code: string;
         company_name: string;
+        revision: number;
+        auth_token: string;
       };
-      const ws: WorkspaceInfo = { ...data, api_url: baseUrl };
+      const ws: WorkspaceInfo = {
+        id: data.id,
+        invite_code: data.invite_code,
+        company_name: data.company_name,
+        api_url: baseUrl,
+        revision: data.revision,
+        auth_token: data.auth_token,
+      };
       await setWorkspace(ws);
       try { await pushToCloud(); } catch {}
       setCreatedInfo(ws);
@@ -105,6 +120,10 @@ export default function WorkspaceSetupScreen() {
       notifyError("Geçerli bir davet kodu girin.");
       return;
     }
+    if (!joinPassword) {
+      notifyError("Çalışma alanı şifresini girin.");
+      return;
+    }
     setLoading(true);
     try {
       const baseUrl = apiUrl.trim().replace(/\/$/, "");
@@ -114,10 +133,14 @@ export default function WorkspaceSetupScreen() {
         setLoading(false);
         return;
       }
-      const res = await fetch(`${baseUrl}/api/workspaces/${code}`);
+      const res = await fetch(`${baseUrl}/api/workspaces/${code}/join`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ password: joinPassword }),
+      });
       if (!res.ok) {
         const err = await res.json().catch(() => ({}));
-        notifyError((err as any).error ?? "Davet kodu bulunamadı.");
+        notifyError((err as any).error ?? "Davet kodu veya şifre hatalı.");
         setLoading(false);
         return;
       }
@@ -125,8 +148,17 @@ export default function WorkspaceSetupScreen() {
         id: string;
         invite_code: string;
         company_name: string;
+        revision: number;
+        auth_token: string;
       };
-      const ws: WorkspaceInfo = { ...data, api_url: baseUrl };
+      const ws: WorkspaceInfo = {
+        id: data.id,
+        invite_code: data.invite_code,
+        company_name: data.company_name,
+        api_url: baseUrl,
+        revision: data.revision,
+        auth_token: data.auth_token,
+      };
       await setWorkspace(ws);
       try { await pullFromCloud(); } catch {}
       router.replace("/");
@@ -256,6 +288,28 @@ export default function WorkspaceSetupScreen() {
                 placeholderTextColor={colors.mutedForeground}
                 autoCapitalize="words"
               />
+              <Text style={[styles.label, { color: colors.foreground, marginTop: 12 }]}>
+                Çalışma Alanı Şifresi
+              </Text>
+              <TextInput
+                style={[
+                  styles.input,
+                  {
+                    color: colors.foreground,
+                    backgroundColor: colors.muted,
+                    borderColor: colors.border,
+                  },
+                ]}
+                value={createPassword}
+                onChangeText={setCreatePassword}
+                placeholder="En az 4 karakter"
+                placeholderTextColor={colors.mutedForeground}
+                secureTextEntry
+                autoCapitalize="none"
+              />
+              <Text style={[styles.subtitle, { color: colors.mutedForeground, fontSize: 12, marginTop: 6, marginBottom: 0 }]}>
+                Bu şifreyi ekibinizle paylaşın. Davet kodu ile birlikte gerekecek.
+              </Text>
             </>
           ) : (
             <>
@@ -274,10 +328,29 @@ export default function WorkspaceSetupScreen() {
                 ]}
                 value={joinCode}
                 onChangeText={(v) => setJoinCode(v.toUpperCase())}
-                placeholder="AB3X9Z"
+                placeholder="AB3X9Z2K7M"
                 placeholderTextColor={colors.mutedForeground}
                 autoCapitalize="characters"
-                maxLength={8}
+                maxLength={12}
+              />
+              <Text style={[styles.label, { color: colors.foreground, marginTop: 12 }]}>
+                Çalışma Alanı Şifresi
+              </Text>
+              <TextInput
+                style={[
+                  styles.input,
+                  {
+                    color: colors.foreground,
+                    backgroundColor: colors.muted,
+                    borderColor: colors.border,
+                  },
+                ]}
+                value={joinPassword}
+                onChangeText={setJoinPassword}
+                placeholder="Yöneticinizden alın"
+                placeholderTextColor={colors.mutedForeground}
+                secureTextEntry
+                autoCapitalize="none"
               />
             </>
           )}

@@ -7,6 +7,8 @@ export interface WorkspaceInfo {
   invite_code: string;
   company_name: string;
   api_url: string;
+  auth_token?: string;
+  revision?: number;
 }
 
 export async function loadWorkspace(): Promise<WorkspaceInfo | null> {

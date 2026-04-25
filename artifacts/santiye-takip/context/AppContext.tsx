@@ -353,7 +353,7 @@ interface AppState {
   currentUserId: string | null;
 }
 
-export type SyncStatus = "idle" | "syncing" | "success" | "error";
+export type SyncStatus = "idle" | "syncing" | "success" | "error" | "conflict" | "auth_error";
 
 interface AppContextType extends AppState {
   loaded: boolean;
@@ -606,16 +606,41 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     ? state.roles.find((r) => r.id === currentAppUser.roleId) ?? null
     : null;
 
+  function authHeaders(): Record<string, string> {
+    const h: Record<string, string> = { "Content-Type": "application/json" };
+    if (workspaceInfo?.auth_token) h["Authorization"] = `Bearer ${workspaceInfo.auth_token}`;
+    return h;
+  }
+
   async function pushToCloud() {
     if (!workspaceInfo || workspaceInfo.id === "local") return;
     setSyncStatus("syncing");
     try {
-      const payload = { version: 3, exportedAt: new Date().toISOString(), data: { ...state, currentUserId: null } };
+      const baseRev = workspaceInfo.revision ?? 0;
+      const payload = {
+        data: { version: 3, exportedAt: new Date().toISOString(), data: { ...state, currentUserId: null } },
+        base_revision: baseRev,
+      };
       const res = await fetch(
         `${workspaceInfo.api_url}/api/workspaces/${workspaceInfo.invite_code}/push`,
-        { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(payload) }
+        { method: "POST", headers: authHeaders(), body: JSON.stringify(payload) }
       );
+      if (res.status === 409) {
+        setSyncStatus("conflict");
+        setTimeout(() => setSyncStatus("idle"), 6000);
+        return;
+      }
+      if (res.status === 401) {
+        setSyncStatus("auth_error");
+        setTimeout(() => setSyncStatus("idle"), 5000);
+        return;
+      }
       if (!res.ok) throw new Error("Push failed");
+      const json = await res.json();
+      if (typeof json.revision === "number") {
+        setWorkspaceInfo({ ...workspaceInfo, revision: json.revision });
+        await saveWorkspace({ ...workspaceInfo, revision: json.revision });
+      }
       const now = new Date().toISOString();
       setLastSyncAt(now);
       setSyncStatus("success");
@@ -631,27 +656,37 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     setSyncStatus("syncing");
     try {
       const res = await fetch(
-        `${workspaceInfo.api_url}/api/workspaces/${workspaceInfo.invite_code}/pull`
+        `${workspaceInfo.api_url}/api/workspaces/${workspaceInfo.invite_code}/pull`,
+        { headers: authHeaders() }
       );
-      if (!res.ok) throw new Error("Pull failed");
-      const json = await res.json();
-      if (!json.data) {
-        setSyncStatus("idle");
+      if (res.status === 401) {
+        setSyncStatus("auth_error");
+        setTimeout(() => setSyncStatus("idle"), 5000);
         return;
       }
-      const incoming = json.data?.data ?? json.data;
-      if (incoming && typeof incoming === "object") {
-        const prevUserId = state.currentUserId;
-        const incomingUsers: AppUser[] = Array.isArray(incoming.appUsers) ? incoming.appUsers : [];
-        const userStillExists = prevUserId && incomingUsers.some((u) => u.id === prevUserId);
-        const next: AppState = {
-          ...INITIAL,
-          ...incoming,
-          roles: Array.isArray(incoming.roles) && incoming.roles.length > 0 ? incoming.roles : DEFAULT_ROLES,
-          currentUserId: userStillExists ? prevUserId : null,
-        };
-        setState(next);
-        AsyncStorage.setItem(STORAGE_KEY, JSON.stringify(next));
+      if (!res.ok) throw new Error("Pull failed");
+      const json = await res.json();
+      const serverRev: number | undefined = typeof json.revision === "number" ? json.revision : undefined;
+      if (json.data) {
+        const incoming = json.data?.data ?? json.data;
+        if (incoming && typeof incoming === "object") {
+          const prevUserId = state.currentUserId;
+          const incomingUsers: AppUser[] = Array.isArray(incoming.appUsers) ? incoming.appUsers : [];
+          const userStillExists = prevUserId && incomingUsers.some((u) => u.id === prevUserId);
+          const next: AppState = {
+            ...INITIAL,
+            ...incoming,
+            roles: Array.isArray(incoming.roles) && incoming.roles.length > 0 ? incoming.roles : DEFAULT_ROLES,
+            currentUserId: userStillExists ? prevUserId : null,
+          };
+          setState(next);
+          AsyncStorage.setItem(STORAGE_KEY, JSON.stringify(next));
+        }
+      }
+      if (serverRev !== undefined) {
+        const updated = { ...workspaceInfo, revision: serverRev };
+        setWorkspaceInfo(updated);
+        await saveWorkspace(updated);
       }
       const now = new Date().toISOString();
       setLastSyncAt(now);
