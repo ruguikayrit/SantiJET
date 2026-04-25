@@ -38,12 +38,13 @@ const STATUS_COLOR: Record<Attendance["status"], string> = {
 
 interface WForm {
   name: string;
+  company: string;
   role: string;
   phone: string;
   dailyRate: string;
 }
 
-const EMPTY_W: WForm = { name: "", role: "", phone: "", dailyRate: "" };
+const EMPTY_W: WForm = { name: "", company: "", role: "", phone: "", dailyRate: "" };
 
 export default function PuantajScreen() {
   const colors = useColors();
@@ -73,6 +74,25 @@ export default function PuantajScreen() {
     if (!id) return [];
     return workers.filter((w) => w.projectId === id);
   }, [workers, filter, projects]);
+
+  const groupedWorkers = useMemo(() => {
+    const map: Record<string, Worker[]> = {};
+    for (const w of projectWorkers) {
+      const key = w.company?.trim() || "";
+      if (!map[key]) map[key] = [];
+      map[key].push(w);
+    }
+    const keys = Object.keys(map).sort((a, b) => {
+      if (!a && b) return 1;
+      if (a && !b) return -1;
+      return a.localeCompare(b, "tr");
+    });
+    return keys.map((key) => ({
+      company: key || "Diğer",
+      isOther: !key,
+      workers: map[key],
+    }));
+  }, [projectWorkers]);
 
   function attFor(workerId: string): Attendance | undefined {
     return attendance.find((a) => a.workerId === workerId && a.date === date);
@@ -104,6 +124,7 @@ export default function PuantajScreen() {
       setEditWorkerId(w.id);
       setWForm({
         name: w.name,
+        company: w.company || "",
         role: w.role,
         phone: w.phone,
         dailyRate: String(w.dailyRate || ""),
@@ -122,6 +143,7 @@ export default function PuantajScreen() {
     const data = {
       projectId: projId,
       name: wForm.name.trim(),
+      company: wForm.company.trim(),
       role: wForm.role.trim(),
       phone: wForm.phone.trim(),
       dailyRate: parseFloat(wForm.dailyRate) || 0,
@@ -172,11 +194,8 @@ export default function PuantajScreen() {
         />
       ) : (
         <>
-          <View style={[styles.dateBar, { backgroundColor: colors.card }]}>
-            <DatePickerInput
-              value={date}
-              onChange={setDate}
-            />
+          <View style={styles.dateBar}>
+            <DatePickerInput value={date} onChange={setDate} />
           </View>
 
           <View style={styles.summary}>
@@ -204,59 +223,75 @@ export default function PuantajScreen() {
             />
           ) : (
             <ScrollView contentContainerStyle={styles.list}>
-              {projectWorkers.map((w) => {
-                const att = attFor(w.id);
-                return (
-                  <View
-                    key={w.id}
-                    style={[styles.card, { backgroundColor: colors.card }]}
-                  >
-                    <TouchableOpacity
-                      style={styles.cardLeft}
-                      onPress={canEdit ? () => openWorker(w) : undefined}
-                      activeOpacity={0.8}
-                    >
-                      <Text style={[styles.wname, { color: colors.foreground }]}>
-                        {w.name}
+              {groupedWorkers.map((group) => (
+                <View key={group.company}>
+                  <View style={[styles.groupHeader, { borderLeftColor: colors.primary }]}>
+                    <Feather name="briefcase" size={13} color={colors.primary} />
+                    <Text style={[styles.groupTitle, { color: colors.foreground }]}>
+                      {group.company}
+                    </Text>
+                    <View style={[styles.groupCount, { backgroundColor: colors.muted }]}>
+                      <Text style={[styles.groupCountText, { color: colors.mutedForeground }]}>
+                        {group.workers.length} kişi
                       </Text>
-                      {w.role ? (
-                        <Text style={[styles.wmeta, { color: colors.mutedForeground }]}>
-                          {w.role}
-                          {w.dailyRate ? ` · ${w.dailyRate} ₺/gün` : ""}
-                        </Text>
-                      ) : null}
-                    </TouchableOpacity>
-
-                    <View style={styles.statusRow}>
-                      {(["present", "half", "absent"] as const).map((s) => (
-                        <TouchableOpacity
-                          key={s}
-                          onPress={canEdit ? () => setStatus(w, s) : undefined}
-                          style={[
-                            styles.statBtn,
-                            {
-                              backgroundColor:
-                                att?.status === s ? STATUS_COLOR[s] : colors.muted,
-                            },
-                          ]}
-                          activeOpacity={0.8}
-                        >
-                          <Text
-                            style={[
-                              styles.statText,
-                              {
-                                color: att?.status === s ? "#fff" : colors.foreground,
-                              },
-                            ]}
-                          >
-                            {STATUS_LABEL[s]}
-                          </Text>
-                        </TouchableOpacity>
-                      ))}
                     </View>
                   </View>
-                );
-              })}
+
+                  <View style={styles.groupCards}>
+                    {group.workers.map((w) => {
+                      const att = attFor(w.id);
+                      return (
+                        <View
+                          key={w.id}
+                          style={[styles.card, { backgroundColor: colors.card }]}
+                        >
+                          <TouchableOpacity
+                            style={styles.cardLeft}
+                            onPress={canEdit ? () => openWorker(w) : undefined}
+                            activeOpacity={0.8}
+                          >
+                            <Text style={[styles.wname, { color: colors.foreground }]}>
+                              {w.name}
+                            </Text>
+                            {w.role ? (
+                              <Text style={[styles.wmeta, { color: colors.mutedForeground }]}>
+                                {w.role}
+                                {w.dailyRate ? ` · ${w.dailyRate} ₺/gün` : ""}
+                              </Text>
+                            ) : null}
+                          </TouchableOpacity>
+
+                          <View style={styles.statusRow}>
+                            {(["present", "half", "absent"] as const).map((s) => (
+                              <TouchableOpacity
+                                key={s}
+                                onPress={canEdit ? () => setStatus(w, s) : undefined}
+                                style={[
+                                  styles.statBtn,
+                                  {
+                                    backgroundColor:
+                                      att?.status === s ? STATUS_COLOR[s] : colors.muted,
+                                  },
+                                ]}
+                                activeOpacity={0.8}
+                              >
+                                <Text
+                                  style={[
+                                    styles.statText,
+                                    { color: att?.status === s ? "#fff" : colors.foreground },
+                                  ]}
+                                >
+                                  {STATUS_LABEL[s]}
+                                </Text>
+                              </TouchableOpacity>
+                            ))}
+                          </View>
+                        </View>
+                      );
+                    })}
+                  </View>
+                </View>
+              ))}
             </ScrollView>
           )}
         </>
@@ -271,6 +306,12 @@ export default function PuantajScreen() {
           label="Ad Soyad"
           value={wForm.name}
           onChangeText={(v) => setWForm({ ...wForm, name: v })}
+        />
+        <FormInput
+          label="Şirket / Firma"
+          value={wForm.company}
+          onChangeText={(v) => setWForm({ ...wForm, company: v })}
+          placeholder="Örn: ABC Taşeronluk"
         />
         <FormInput
           label="Görev"
@@ -320,7 +361,31 @@ const styles = StyleSheet.create({
   },
   sumNum: { fontSize: 22, fontFamily: "Inter_700Bold" },
   sumLabel: { fontSize: 12, fontFamily: "Inter_500Medium", marginTop: 2 },
-  list: { padding: 16, gap: 10 },
+  list: { padding: 16, gap: 0, paddingBottom: 32 },
+  groupHeader: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 7,
+    marginTop: 16,
+    marginBottom: 8,
+    paddingLeft: 10,
+    borderLeftWidth: 3,
+  },
+  groupTitle: {
+    fontSize: 14,
+    fontFamily: "Inter_700Bold",
+    flex: 1,
+  },
+  groupCount: {
+    paddingHorizontal: 8,
+    paddingVertical: 2,
+    borderRadius: 999,
+  },
+  groupCountText: {
+    fontSize: 11,
+    fontFamily: "Inter_500Medium",
+  },
+  groupCards: { gap: 8 },
   card: {
     borderRadius: 12,
     padding: 12,

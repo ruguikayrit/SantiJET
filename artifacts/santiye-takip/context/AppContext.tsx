@@ -55,6 +55,7 @@ export interface Worker {
   role: string;
   phone: string;
   dailyRate: number;
+  company: string;
 }
 
 export interface Attendance {
