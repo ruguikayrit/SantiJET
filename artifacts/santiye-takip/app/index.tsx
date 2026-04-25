@@ -277,6 +277,21 @@ export default function HomeScreen() {
           })}
         </View>
 
+        <TouchableOpacity
+          style={[styles.raporBtn, { backgroundColor: colors.card, borderColor: colors.primary + "40" }]}
+          onPress={() => router.push("/rapor" as any)}
+          activeOpacity={0.85}
+        >
+          <View style={[styles.raporIcon, { backgroundColor: colors.primary + "20" }]}>
+            <Feather name="bar-chart-2" size={20} color={colors.primary} />
+          </View>
+          <View style={{ flex: 1 }}>
+            <Text style={[styles.raporTitle, { color: colors.foreground }]}>Rapor Oluştur</Text>
+            <Text style={[styles.raporSub, { color: colors.mutedForeground }]}>PDF veya Excel formatında dışa aktar</Text>
+          </View>
+          <Feather name="chevron-right" size={18} color={colors.mutedForeground} />
+        </TouchableOpacity>
+
         {isAdmin ? (
           <>
             <Text style={[styles.sectionLabel, { color: colors.foreground, marginTop: 24 }]}>
@@ -566,6 +581,23 @@ const styles = StyleSheet.create({
     fontFamily: "Inter_600SemiBold",
     color: "#0ea5e9",
   },
+  raporBtn: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 12,
+    padding: 14,
+    borderRadius: 14,
+    borderWidth: 1.5,
+    marginTop: 16,
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.05,
+    shadowRadius: 4,
+    elevation: 2,
+  },
+  raporIcon: { width: 42, height: 42, borderRadius: 10, alignItems: "center", justifyContent: "center" },
+  raporTitle: { fontSize: 15, fontFamily: "Inter_700Bold" },
+  raporSub: { fontSize: 12, fontFamily: "Inter_400Regular", marginTop: 2 },
   dataRow: {
     flexDirection: "row",
     gap: 12,

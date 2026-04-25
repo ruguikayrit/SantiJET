@@ -56,6 +56,7 @@ function RootLayoutNav() {
         <Stack.Screen name="taseron" />
         <Stack.Screen name="butce" />
         <Stack.Screen name="hakedis" />
+        <Stack.Screen name="rapor" />
       </Stack>
     </LoginGate>
   );
