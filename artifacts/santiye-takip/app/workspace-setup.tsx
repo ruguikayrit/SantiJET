@@ -15,8 +15,9 @@ import {
 } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
+import { useApp } from "@/context/AppContext";
 import { useColors } from "@/hooks/useColors";
-import { WorkspaceInfo, saveWorkspace } from "@/utils/workspace";
+import { WorkspaceInfo } from "@/utils/workspace";
 
 type Tab = "create" | "join";
 
@@ -24,9 +25,10 @@ export default function WorkspaceSetupScreen() {
   const colors = useColors();
   const router = useRouter();
   const insets = useSafeAreaInsets();
+  const { setWorkspace, pushToCloud, pullFromCloud } = useApp();
 
   const defaultApiUrl = process.env.EXPO_PUBLIC_DOMAIN
-    ? `https://${process.env.EXPO_PUBLIC_DOMAIN}/api-server`
+    ? `https://${process.env.EXPO_PUBLIC_DOMAIN}`
     : "";
 
   const [tab, setTab] = useState<Tab>("create");
@@ -35,6 +37,13 @@ export default function WorkspaceSetupScreen() {
   const [apiUrl, setApiUrl] = useState(defaultApiUrl);
   const [loading, setLoading] = useState(false);
   const [showAdvanced, setShowAdvanced] = useState(false);
+  const [createdInfo, setCreatedInfo] = useState<WorkspaceInfo | null>(null);
+  const [errorMsg, setErrorMsg] = useState<string | null>(null);
+
+  function notifyError(msg: string) {
+    setErrorMsg(msg);
+    if (Platform.OS !== "web") Alert.alert("Hata", msg);
+  }
 
   async function testConnection(url: string): Promise<boolean> {
     try {
@@ -48,8 +57,9 @@ export default function WorkspaceSetupScreen() {
   }
 
   async function handleCreate() {
+    setErrorMsg(null);
     if (!companyName.trim()) {
-      Alert.alert("Hata", "Firma adını girin.");
+      notifyError("Firma adını girin.");
       return;
     }
     setLoading(true);
@@ -57,10 +67,7 @@ export default function WorkspaceSetupScreen() {
       const baseUrl = apiUrl.trim().replace(/\/$/, "");
       const ok = await testConnection(baseUrl);
       if (!ok) {
-        Alert.alert(
-          "Bağlantı Hatası",
-          "Sunucuya ulaşılamadı. Sunucu URL'sini kontrol edin.\n\n" + baseUrl
-        );
+        notifyError("Sunucuya ulaşılamadı. Sunucu URL'sini kontrol edin: " + baseUrl);
         setLoading(false);
         return;
       }
@@ -71,7 +78,7 @@ export default function WorkspaceSetupScreen() {
       });
       if (!res.ok) {
         const err = await res.json().catch(() => ({}));
-        Alert.alert("Hata", (err as any).error ?? "Çalışma alanı oluşturulamadı.");
+        notifyError((err as any).error ?? "Çalışma alanı oluşturulamadı.");
         setLoading(false);
         return;
       }
@@ -81,23 +88,21 @@ export default function WorkspaceSetupScreen() {
         company_name: string;
       };
       const ws: WorkspaceInfo = { ...data, api_url: baseUrl };
-      await saveWorkspace(ws);
-      Alert.alert(
-        "Çalışma Alanı Oluşturuldu!",
-        `Davet Kodunuz:\n\n${data.invite_code}\n\nBu kodu ekibinizle paylaşın. Herkes bu kodla aynı verilere erişebilir.`,
-        [{ text: "Tamam", onPress: () => router.replace("/") }]
-      );
+      await setWorkspace(ws);
+      try { await pushToCloud(); } catch {}
+      setCreatedInfo(ws);
     } catch (e: any) {
-      Alert.alert("Hata", e?.message ?? "Beklenmeyen hata.");
+      notifyError(e?.message ?? "Beklenmeyen hata.");
     } finally {
       setLoading(false);
     }
   }
 
   async function handleJoin() {
+    setErrorMsg(null);
     const code = joinCode.trim().toUpperCase();
     if (!code || code.length < 4) {
-      Alert.alert("Hata", "Geçerli bir davet kodu girin.");
+      notifyError("Geçerli bir davet kodu girin.");
       return;
     }
     setLoading(true);
@@ -105,17 +110,14 @@ export default function WorkspaceSetupScreen() {
       const baseUrl = apiUrl.trim().replace(/\/$/, "");
       const ok = await testConnection(baseUrl);
       if (!ok) {
-        Alert.alert(
-          "Bağlantı Hatası",
-          "Sunucuya ulaşılamadı. Sunucu URL'sini kontrol edin.\n\n" + baseUrl
-        );
+        notifyError("Sunucuya ulaşılamadı. Sunucu URL'sini kontrol edin: " + baseUrl);
         setLoading(false);
         return;
       }
       const res = await fetch(`${baseUrl}/api/workspaces/${code}`);
       if (!res.ok) {
         const err = await res.json().catch(() => ({}));
-        Alert.alert("Hata", (err as any).error ?? "Davet kodu bulunamadı.");
+        notifyError((err as any).error ?? "Davet kodu bulunamadı.");
         setLoading(false);
         return;
       }
@@ -125,14 +127,11 @@ export default function WorkspaceSetupScreen() {
         company_name: string;
       };
       const ws: WorkspaceInfo = { ...data, api_url: baseUrl };
-      await saveWorkspace(ws);
-      Alert.alert(
-        "Başarılı",
-        `"${data.company_name}" çalışma alanına katıldınız.`,
-        [{ text: "Tamam", onPress: () => router.replace("/") }]
-      );
+      await setWorkspace(ws);
+      try { await pullFromCloud(); } catch {}
+      router.replace("/");
     } catch (e: any) {
-      Alert.alert("Hata", e?.message ?? "Beklenmeyen hata.");
+      notifyError(e?.message ?? "Beklenmeyen hata.");
     } finally {
       setLoading(false);
     }
@@ -145,7 +144,7 @@ export default function WorkspaceSetupScreen() {
       company_name: "Yerel Kullanım",
       api_url: apiUrl.trim().replace(/\/$/, ""),
     };
-    await saveWorkspace(ws);
+    await setWorkspace(ws);
     router.replace("/");
   }
 
@@ -176,7 +175,43 @@ export default function WorkspaceSetupScreen() {
           </Text>
         </View>
 
-        {/* Tabs */}
+        {/* Success view after create */}
+        {createdInfo && (
+          <View style={[styles.card, { backgroundColor: colors.card, marginTop: 12 }]}>
+            <View style={{ alignItems: "center", marginBottom: 12 }}>
+              <View style={{ width: 56, height: 56, borderRadius: 28, backgroundColor: "#16a34a20", justifyContent: "center", alignItems: "center", marginBottom: 8 }}>
+                <Feather name="check-circle" size={28} color="#16a34a" />
+              </View>
+              <Text style={[styles.label, { color: colors.foreground, fontSize: 17, marginBottom: 4 }]}>Çalışma Alanı Oluşturuldu!</Text>
+              <Text style={[styles.subtitle, { color: colors.mutedForeground, marginBottom: 0 }]} numberOfLines={2}>
+                {createdInfo.company_name}
+              </Text>
+            </View>
+            <Text style={[styles.label, { color: colors.foreground, textAlign: "center", marginBottom: 6 }]}>
+              Davet Kodunuz
+            </Text>
+            <View style={{ backgroundColor: "#e85d0420", borderColor: "#e85d04", borderWidth: 1, borderRadius: 12, paddingVertical: 16, marginBottom: 12 }}>
+              <Text style={{ color: "#e85d04", fontFamily: "Inter_700Bold", fontSize: 32, textAlign: "center", letterSpacing: 6 }}>
+                {createdInfo.invite_code}
+              </Text>
+            </View>
+            <Text style={[styles.subtitle, { color: colors.mutedForeground, fontSize: 12, marginBottom: 12 }]}>
+              Bu kodu ekibinizle paylaşın. Aynı kodu kullanan herkes verileri paylaşır.
+            </Text>
+            <TouchableOpacity
+              style={[styles.primaryBtn, { backgroundColor: "#e85d04" }]}
+              onPress={() => router.replace("/")}
+              activeOpacity={0.85}
+            >
+              <Feather name="arrow-right" size={16} color="#fff" />
+              <Text style={styles.primaryBtnText}>Devam Et</Text>
+            </TouchableOpacity>
+          </View>
+        )}
+
+        {/* Tabs + Form */}
+        {!createdInfo && (
+        <>
         <View style={[styles.tabs, { backgroundColor: colors.card }]}>
           {(["create", "join"] as Tab[]).map((t) => (
             <TouchableOpacity
@@ -314,14 +349,25 @@ export default function WorkspaceSetupScreen() {
               />
             </View>
           )}
+          {errorMsg && (
+            <View style={{ marginTop: 12, padding: 10, borderRadius: 8, backgroundColor: "#dc262620", borderWidth: 1, borderColor: "#dc2626" }}>
+              <Text style={{ color: "#dc2626", fontSize: 12, fontFamily: "Inter_500Medium" }}>
+                {errorMsg}
+              </Text>
+            </View>
+          )}
         </View>
+        </>
+        )}
 
         {/* Skip */}
+        {!createdInfo && (
         <TouchableOpacity style={styles.skipBtn} onPress={handleSkip}>
           <Text style={[styles.skipText, { color: colors.mutedForeground }]}>
             Şimdilik Atla — Yalnızca Yerel Kullanım
           </Text>
         </TouchableOpacity>
+        )}
       </ScrollView>
     </KeyboardAvoidingView>
   );

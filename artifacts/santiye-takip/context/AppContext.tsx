@@ -6,7 +6,7 @@ import React, {
   useEffect,
   useState,
 } from "react";
-import { WorkspaceInfo, loadWorkspace } from "@/utils/workspace";
+import { WorkspaceInfo, loadWorkspace, saveWorkspace, clearWorkspace } from "@/utils/workspace";
 
 export interface Project {
   id: string;
@@ -365,6 +365,7 @@ interface AppContextType extends AppState {
 
   login: (userId: string) => void;
   logout: () => void;
+  setWorkspace: (info: WorkspaceInfo | null) => Promise<void>;
   pushToCloud: () => Promise<void>;
   pullFromCloud: () => Promise<void>;
 
@@ -539,17 +540,23 @@ async function loadInitialState(): Promise<AppState> {
 
 export function AppProvider({ children }: { children: React.ReactNode }) {
   const [state, setState] = useState<AppState>(INITIAL);
-  const [loaded, setLoaded] = useState(false);
+  const [stateLoaded, setStateLoaded] = useState(false);
+  const [workspaceLoaded, setWorkspaceLoaded] = useState(false);
   const [workspaceInfo, setWorkspaceInfo] = useState<WorkspaceInfo | null>(null);
   const [syncStatus, setSyncStatus] = useState<SyncStatus>("idle");
   const [lastSyncAt, setLastSyncAt] = useState<string | null>(null);
 
+  const loaded = stateLoaded && workspaceLoaded;
+
   useEffect(() => {
     loadInitialState().then((s) => {
       setState(s);
-      setLoaded(true);
+      setStateLoaded(true);
     });
-    loadWorkspace().then(setWorkspaceInfo);
+    loadWorkspace().then((ws) => {
+      setWorkspaceInfo(ws);
+      setWorkspaceLoaded(true);
+    });
   }, []);
 
   const persist = useCallback((newState: AppState) => {
@@ -634,7 +641,15 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
       }
       const incoming = json.data?.data ?? json.data;
       if (incoming && typeof incoming === "object") {
-        const next: AppState = { ...INITIAL, ...incoming, roles: Array.isArray(incoming.roles) && incoming.roles.length > 0 ? incoming.roles : DEFAULT_ROLES, currentUserId: null };
+        const prevUserId = state.currentUserId;
+        const incomingUsers: AppUser[] = Array.isArray(incoming.appUsers) ? incoming.appUsers : [];
+        const userStillExists = prevUserId && incomingUsers.some((u) => u.id === prevUserId);
+        const next: AppState = {
+          ...INITIAL,
+          ...incoming,
+          roles: Array.isArray(incoming.roles) && incoming.roles.length > 0 ? incoming.roles : DEFAULT_ROLES,
+          currentUserId: userStillExists ? prevUserId : null,
+        };
         setState(next);
         AsyncStorage.setItem(STORAGE_KEY, JSON.stringify(next));
       }
@@ -660,6 +675,11 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     login: (userId) =>
       setState((prev) => ({ ...prev, currentUserId: userId })),
     logout: () => setState((prev) => ({ ...prev, currentUserId: null })),
+    setWorkspace: async (info) => {
+      if (info) await saveWorkspace(info);
+      else await clearWorkspace();
+      setWorkspaceInfo(info);
+    },
     pushToCloud,
     pullFromCloud,
 
