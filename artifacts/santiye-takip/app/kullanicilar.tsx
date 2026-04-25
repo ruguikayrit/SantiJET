@@ -2,7 +2,6 @@ import { Feather } from "@expo/vector-icons";
 import { useRouter } from "expo-router";
 import React, { useEffect, useState } from "react";
 import {
-  Modal,
   ScrollView,
   StyleSheet,
   Text,
@@ -387,32 +386,55 @@ export default function KullanicilarScreen() {
           placeholderTextColor={colors.mutedForeground}
         />
 
-        <View style={styles.row}>
-          <View style={{ flex: 1 }}>
-            <Text style={[styles.formLabel, { color: colors.foreground, marginTop: 12 }]}>Meslek</Text>
-            <TouchableOpacity
-              style={[styles.formInput, styles.profTrigger, { backgroundColor: colors.muted, borderColor: profDropOpen ? colors.primary : colors.border }]}
-              onPress={() => setProfDropOpen(true)}
-              activeOpacity={0.8}
-            >
-              <Text style={{ flex: 1, color: uProfession ? colors.foreground : colors.mutedForeground, fontSize: 14, fontFamily: "Inter_400Regular" }} numberOfLines={1}>
-                {uProfession || "Meslek seçin..."}
-              </Text>
-              <Feather name="chevron-down" size={16} color={colors.mutedForeground} />
-            </TouchableOpacity>
+        {/* Meslek — tam genişlik + satır içi açılır liste */}
+        <Text style={[styles.formLabel, { color: colors.foreground, marginTop: 12 }]}>Meslek</Text>
+        <TouchableOpacity
+          style={[styles.formInput, styles.profTrigger, { backgroundColor: colors.muted, borderColor: profDropOpen ? colors.primary : colors.border }]}
+          onPress={() => setProfDropOpen(v => !v)}
+          activeOpacity={0.8}
+        >
+          <Text style={{ flex: 1, color: uProfession ? colors.foreground : colors.mutedForeground, fontSize: 14, fontFamily: "Inter_400Regular" }} numberOfLines={1}>
+            {uProfession || "Meslek seçin..."}
+          </Text>
+          <Feather name={profDropOpen ? "chevron-up" : "chevron-down"} size={16} color={colors.mutedForeground} />
+        </TouchableOpacity>
+
+        {profDropOpen && (
+          <View style={[styles.profInlineList, { backgroundColor: colors.muted, borderColor: colors.primary }]}>
+            {MESLEKLER.map((m, i) => {
+              const isSelected = uProfession === m;
+              return (
+                <TouchableOpacity
+                  key={m}
+                  style={[
+                    styles.profInlineItem,
+                    { borderBottomColor: colors.border },
+                    i === MESLEKLER.length - 1 && { borderBottomWidth: 0 },
+                    isSelected && { backgroundColor: colors.primary + "20" },
+                  ]}
+                  onPress={() => { setUProfession(m); setProfDropOpen(false); }}
+                  activeOpacity={0.75}
+                >
+                  <Text style={[styles.profInlineText, { color: isSelected ? colors.primary : colors.foreground, fontFamily: isSelected ? "Inter_600SemiBold" : "Inter_400Regular" }]}>
+                    {m}
+                  </Text>
+                  {isSelected && <Feather name="check" size={14} color={colors.primary} />}
+                </TouchableOpacity>
+              );
+            })}
           </View>
-          <View style={{ flex: 1 }}>
-            <Text style={[styles.formLabel, { color: colors.foreground, marginTop: 12 }]}>Telefon</Text>
-            <TextInput
-              style={[styles.formInput, { backgroundColor: colors.muted, color: colors.foreground, borderColor: colors.border }]}
-              value={uPhone}
-              onChangeText={setUPhone}
-              placeholder="05XX XXX XX XX"
-              placeholderTextColor={colors.mutedForeground}
-              keyboardType="phone-pad"
-            />
-          </View>
-        </View>
+        )}
+
+        {/* Telefon — tam genişlik */}
+        <Text style={[styles.formLabel, { color: colors.foreground, marginTop: 12 }]}>Telefon</Text>
+        <TextInput
+          style={[styles.formInput, { backgroundColor: colors.muted, color: colors.foreground, borderColor: colors.border }]}
+          value={uPhone}
+          onChangeText={setUPhone}
+          placeholder="05XX XXX XX XX"
+          placeholderTextColor={colors.mutedForeground}
+          keyboardType="phone-pad"
+        />
 
         <Text style={[styles.formLabel, { color: colors.foreground, marginTop: 12 }]}>Şirket / Firma</Text>
         <TextInput
@@ -534,50 +556,6 @@ export default function KullanicilarScreen() {
         </ScrollView>
       </BottomSheet>
 
-      {/* ── Meslek seçici Modal ── */}
-      <Modal
-        visible={profDropOpen}
-        transparent
-        animationType="fade"
-        onRequestClose={() => setProfDropOpen(false)}
-      >
-        <TouchableOpacity
-          style={styles.profOverlay}
-          activeOpacity={1}
-          onPress={() => setProfDropOpen(false)}
-        >
-          <View style={[styles.profModal, { backgroundColor: colors.card }]}>
-            <View style={[styles.profModalHeader, { borderBottomColor: colors.border }]}>
-              <Text style={[styles.profModalTitle, { color: colors.foreground }]}>Meslek Seçin</Text>
-              <TouchableOpacity onPress={() => setProfDropOpen(false)}>
-                <Feather name="x" size={20} color={colors.mutedForeground} />
-              </TouchableOpacity>
-            </View>
-            <ScrollView showsVerticalScrollIndicator={false} style={{ maxHeight: 400 }}>
-              {MESLEKLER.map((m) => {
-                const isSelected = uProfession === m;
-                return (
-                  <TouchableOpacity
-                    key={m}
-                    style={[
-                      styles.profItem,
-                      { borderBottomColor: colors.border },
-                      isSelected && { backgroundColor: colors.primary + "15" },
-                    ]}
-                    onPress={() => { setUProfession(m); setProfDropOpen(false); }}
-                    activeOpacity={0.75}
-                  >
-                    <Text style={[styles.profItemText, { color: isSelected ? colors.primary : colors.foreground }]}>
-                      {m}
-                    </Text>
-                    {isSelected && <Feather name="check" size={16} color={colors.primary} />}
-                  </TouchableOpacity>
-                );
-              })}
-            </ScrollView>
-          </View>
-        </TouchableOpacity>
-      </Modal>
     </View>
   );
 }
@@ -685,10 +663,7 @@ const styles = StyleSheet.create({
   permBtnText: { fontSize: 11, fontFamily: "Inter_600SemiBold" },
 
   profTrigger: { flexDirection: "row", alignItems: "center" },
-  profOverlay: { flex: 1, backgroundColor: "rgba(0,0,0,0.55)", justifyContent: "center", paddingHorizontal: 20 },
-  profModal: { borderRadius: 18, overflow: "hidden", shadowColor: "#000", shadowOffset: { width: 0, height: 8 }, shadowOpacity: 0.35, shadowRadius: 20, elevation: 20 },
-  profModalHeader: { flexDirection: "row", alignItems: "center", justifyContent: "space-between", paddingHorizontal: 18, paddingVertical: 14, borderBottomWidth: StyleSheet.hairlineWidth },
-  profModalTitle: { fontSize: 16, fontFamily: "Inter_700Bold" },
-  profItem: { flexDirection: "row", alignItems: "center", justifyContent: "space-between", paddingHorizontal: 18, paddingVertical: 13, borderBottomWidth: StyleSheet.hairlineWidth },
-  profItemText: { fontSize: 14, fontFamily: "Inter_400Regular" },
+  profInlineList: { borderWidth: 1.5, borderRadius: 10, marginTop: 4, overflow: "hidden" },
+  profInlineItem: { flexDirection: "row", alignItems: "center", justifyContent: "space-between", paddingHorizontal: 14, paddingVertical: 12, borderBottomWidth: StyleSheet.hairlineWidth },
+  profInlineText: { fontSize: 14 },
 });
