@@ -240,10 +240,6 @@ export default function HomeScreen() {
         ]}
         showsVerticalScrollIndicator={false}
       >
-        <Text style={[styles.sectionLabel, { color: colors.foreground }]}>
-          Bölümler
-        </Text>
-
         <View style={styles.grid}>
           {visibleSections.map((s) => {
             const perm = getPermission(s.key);
