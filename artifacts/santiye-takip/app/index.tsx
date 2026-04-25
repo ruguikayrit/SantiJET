@@ -1,11 +1,13 @@
 import { Feather } from "@expo/vector-icons";
+import * as DocumentPicker from "expo-document-picker";
+import * as FileSystem from "expo-file-system/legacy";
 import { useRouter } from "expo-router";
+import * as Sharing from "expo-sharing";
 import React, { useState } from "react";
 import {
   Alert,
   Platform,
   ScrollView,
-  Share,
   StyleSheet,
   Text,
   TextInput,
@@ -58,6 +60,7 @@ export default function HomeScreen() {
 
   const [importVisible, setImportVisible] = useState(false);
   const [importText, setImportText] = useState("");
+  const [importFileName, setImportFileName] = useState<string | null>(null);
   const [importMsg, setImportMsg] = useState<{ type: "ok" | "err"; text: string } | null>(null);
 
   function getPermission(key: PageKey): Permission {
@@ -75,7 +78,7 @@ export default function HomeScreen() {
     setExportVisible(true);
   }
 
-  function downloadJson() {
+  async function downloadJson() {
     const json = exportText || exportData();
     const stamp = new Date().toISOString().slice(0, 19).replace(/[:T]/g, "-");
     const filename = `santiye-takip-${stamp}.json`;
@@ -91,7 +94,22 @@ export default function HomeScreen() {
       document.body.removeChild(a);
       setTimeout(() => URL.revokeObjectURL(url), 1000);
     } else {
-      Share.share({ message: json, title: filename }).catch(() => {});
+      try {
+        const uri = (FileSystem.cacheDirectory ?? "") + filename;
+        await FileSystem.writeAsStringAsync(uri, json, { encoding: FileSystem.EncodingType.UTF8 });
+        const canShare = await Sharing.isAvailableAsync();
+        if (canShare) {
+          await Sharing.shareAsync(uri, {
+            mimeType: "application/json",
+            dialogTitle: "Dosyayı kaydet veya paylaş",
+            UTI: "public.json",
+          });
+        } else {
+          Alert.alert("Hata", "Paylaşım bu cihazda desteklenmiyor.");
+        }
+      } catch (e: any) {
+        Alert.alert("Hata", e?.message || "Dışa aktarma başarısız");
+      }
     }
   }
 
@@ -105,13 +123,32 @@ export default function HomeScreen() {
       if (!file) return;
       const reader = new FileReader();
       reader.onload = () => {
-        const txt = String(reader.result || "");
-        setImportText(txt);
+        setImportText(String(reader.result || ""));
+        setImportFileName(file.name);
         setImportMsg(null);
       };
       reader.readAsText(file);
     };
     input.click();
+  }
+
+  async function pickFileMobile() {
+    try {
+      const result = await DocumentPicker.getDocumentAsync({
+        type: ["application/json", "text/plain", "*/*"],
+        copyToCacheDirectory: true,
+      });
+      if (result.canceled) return;
+      const asset = result.assets[0];
+      const content = await FileSystem.readAsStringAsync(asset.uri, {
+        encoding: FileSystem.EncodingType.UTF8,
+      });
+      setImportText(content);
+      setImportFileName(asset.name);
+      setImportMsg(null);
+    } catch (e: any) {
+      Alert.alert("Hata", e?.message || "Dosya okunamadı");
+    }
   }
 
   function doImport() {
@@ -126,6 +163,7 @@ export default function HomeScreen() {
         const total = Object.values(result.counts).reduce((a, b) => a + b, 0);
         setImportMsg({ type: "ok", text: `Başarılı: ${total} kayıt yüklendi. Yeniden giriş yapmanız gerekecek.` });
         setImportText("");
+        setImportFileName(null);
         setTimeout(() => {
           setImportVisible(false);
           setImportMsg(null);
@@ -314,7 +352,7 @@ export default function HomeScreen() {
 
       <BottomSheet
         visible={importVisible}
-        onClose={() => setImportVisible(false)}
+        onClose={() => { setImportVisible(false); setImportText(""); setImportFileName(null); setImportMsg(null); }}
         title="Verileri İçe Aktar"
       >
         <Text style={[styles.sheetDesc, { color: colors.mutedForeground }]}>
@@ -322,39 +360,59 @@ export default function HomeScreen() {
         </Text>
 
         {Platform.OS === "web" ? (
-          <PrimaryButton
-            label="JSON Dosyası Seç"
-            onPress={pickFile}
-            style={{ marginTop: 8, marginBottom: 12 }}
-          />
-        ) : null}
-
-        <Text style={[styles.label, { color: colors.foreground, marginTop: 4 }]}>
-          {Platform.OS === "web" ? "Veya JSON'u yapıştırın:" : "JSON'u yapıştırın:"}
-        </Text>
-        <TextInput
-          value={importText}
-          onChangeText={(t) => { setImportText(t); setImportMsg(null); }}
-          multiline
-          placeholder='{"version":3,"data":{...}}'
-          placeholderTextColor={colors.mutedForeground}
-          style={[
-            styles.importInput,
-            {
-              backgroundColor: colors.muted,
-              color: colors.foreground,
-              borderColor: colors.muted,
-            },
-          ]}
-        />
+          <>
+            <PrimaryButton
+              label="JSON Dosyası Seç"
+              onPress={pickFile}
+              style={{ marginBottom: 12 }}
+            />
+            <Text style={[styles.label, { color: colors.foreground }]}>
+              Veya JSON'u yapıştırın:
+            </Text>
+            <TextInput
+              value={importText}
+              onChangeText={(t) => { setImportText(t); setImportFileName(null); setImportMsg(null); }}
+              multiline
+              placeholder='{"version":3,"data":{...}}'
+              placeholderTextColor={colors.mutedForeground}
+              style={[
+                styles.importInput,
+                { backgroundColor: colors.muted, color: colors.foreground, borderColor: colors.muted },
+              ]}
+            />
+          </>
+        ) : (
+          <>
+            <TouchableOpacity
+              style={[styles.filePickBtn, { backgroundColor: colors.muted, borderColor: importFileName ? "#16a34a" : colors.muted }]}
+              onPress={pickFileMobile}
+              activeOpacity={0.8}
+            >
+              <View style={[styles.filePickIcon, { backgroundColor: importFileName ? "#dcfce7" : "#dbeafe" }]}>
+                <Feather
+                  name={importFileName ? "check-circle" : "folder"}
+                  size={22}
+                  color={importFileName ? "#16a34a" : "#2563eb"}
+                />
+              </View>
+              <View style={{ flex: 1 }}>
+                <Text style={[styles.filePickLabel, { color: colors.foreground }]}>
+                  {importFileName ? importFileName : "Dosya Seç"}
+                </Text>
+                <Text style={[styles.filePickSub, { color: colors.mutedForeground }]}>
+                  {importFileName ? "Dosyalar uygulamasından seçildi" : "Dosyalar uygulamasından JSON seç"}
+                </Text>
+              </View>
+              <Feather name="chevron-right" size={18} color={colors.mutedForeground} />
+            </TouchableOpacity>
+          </>
+        )}
 
         {importMsg ? (
           <View
             style={[
               styles.msgBox,
-              {
-                backgroundColor: importMsg.type === "ok" ? "#dcfce7" : "#fee2e2",
-              },
+              { backgroundColor: importMsg.type === "ok" ? "#dcfce7" : "#fee2e2" },
             ]}
           >
             <Feather
@@ -380,7 +438,7 @@ export default function HomeScreen() {
           style={{ marginTop: 12 }}
         />
         <TouchableOpacity
-          onPress={() => setImportVisible(false)}
+          onPress={() => { setImportVisible(false); setImportText(""); setImportFileName(null); setImportMsg(null); }}
           style={styles.cancelBtn}
         >
           <Text style={[styles.cancelText, { color: colors.mutedForeground }]}>Kapat</Text>
@@ -597,5 +655,30 @@ const styles = StyleSheet.create({
   cancelText: {
     fontSize: 13,
     fontFamily: "Inter_500Medium",
+  },
+  filePickBtn: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 12,
+    padding: 14,
+    borderRadius: 12,
+    borderWidth: 1.5,
+    marginBottom: 4,
+  },
+  filePickIcon: {
+    width: 44,
+    height: 44,
+    borderRadius: 22,
+    justifyContent: "center",
+    alignItems: "center",
+  },
+  filePickLabel: {
+    fontSize: 14,
+    fontFamily: "Inter_600SemiBold",
+  },
+  filePickSub: {
+    fontSize: 11,
+    fontFamily: "Inter_400Regular",
+    marginTop: 2,
   },
 });
