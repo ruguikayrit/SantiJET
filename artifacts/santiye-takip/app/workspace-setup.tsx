@@ -47,15 +47,11 @@ export default function WorkspaceSetupScreen() {
     if (Platform.OS !== "web") Alert.alert("Hata", msg);
   }
 
-  async function testConnection(url: string): Promise<boolean> {
-    try {
-      const res = await fetch(`${url}/api/healthz`, {
-        signal: AbortSignal.timeout(5000),
-      });
-      return res.ok;
-    } catch {
-      return false;
-    }
+  function withTimeout<T>(p: Promise<T>, ms: number): Promise<T> {
+    return new Promise<T>((resolve, reject) => {
+      const t = setTimeout(() => reject(new Error("Sunucu yanıt vermedi (zaman aşımı).")), ms);
+      p.then((v) => { clearTimeout(t); resolve(v); }, (e) => { clearTimeout(t); reject(e); });
+    });
   }
 
   async function handleCreate() {
@@ -71,20 +67,24 @@ export default function WorkspaceSetupScreen() {
     setLoading(true);
     try {
       const baseUrl = apiUrl.trim().replace(/\/$/, "");
-      const ok = await testConnection(baseUrl);
-      if (!ok) {
-        notifyError("Sunucuya ulaşılamadı. Sunucu URL'sini kontrol edin: " + baseUrl);
+      let res: Response;
+      try {
+        res = await withTimeout(
+          fetch(`${baseUrl}/api/workspaces`, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ company_name: companyName.trim(), password: createPassword }),
+          }),
+          15000,
+        );
+      } catch (e: any) {
+        notifyError(`Sunucuya ulaşılamadı (${e?.message ?? "bilinmeyen hata"}). URL: ${baseUrl}`);
         setLoading(false);
         return;
       }
-      const res = await fetch(`${baseUrl}/api/workspaces`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ company_name: companyName.trim(), password: createPassword }),
-      });
       if (!res.ok) {
         const err = await res.json().catch(() => ({}));
-        notifyError((err as any).error ?? "Çalışma alanı oluşturulamadı.");
+        notifyError((err as any).error ?? `Çalışma alanı oluşturulamadı (HTTP ${res.status}).`);
         setLoading(false);
         return;
       }
@@ -127,17 +127,21 @@ export default function WorkspaceSetupScreen() {
     setLoading(true);
     try {
       const baseUrl = apiUrl.trim().replace(/\/$/, "");
-      const ok = await testConnection(baseUrl);
-      if (!ok) {
-        notifyError("Sunucuya ulaşılamadı. Sunucu URL'sini kontrol edin: " + baseUrl);
+      let res: Response;
+      try {
+        res = await withTimeout(
+          fetch(`${baseUrl}/api/workspaces/${code}/join`, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ password: joinPassword }),
+          }),
+          15000,
+        );
+      } catch (e: any) {
+        notifyError(`Sunucuya ulaşılamadı (${e?.message ?? "bilinmeyen hata"}). URL: ${baseUrl}`);
         setLoading(false);
         return;
       }
-      const res = await fetch(`${baseUrl}/api/workspaces/${code}/join`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ password: joinPassword }),
-      });
       if (!res.ok) {
         const err = await res.json().catch(() => ({}));
         notifyError((err as any).error ?? "Davet kodu veya şifre hatalı.");
