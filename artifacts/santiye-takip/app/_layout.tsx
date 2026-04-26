@@ -38,7 +38,7 @@ function AppGate({ children }: { children: React.ReactNode }) {
       router.replace("/login" as any);
       return;
     }
-    if (workspaceInfo && currentUserId && (inLogin || inWorkspace)) {
+    if (workspaceInfo && currentUserId && inLogin) {
       router.replace("/");
     }
   }, [loaded, currentUserId, workspaceInfo?.id, firstSegment]);

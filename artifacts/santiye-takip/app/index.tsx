@@ -251,7 +251,7 @@ export default function HomeScreen() {
                 </View>
               )}
             </View>
-            {workspaceInfo.id !== "local" && (
+            {workspaceInfo.id !== "local" ? (
               <View style={styles.syncBtns}>
                 <TouchableOpacity
                   onPress={pullFromCloud}
@@ -286,6 +286,16 @@ export default function HomeScreen() {
                   )}
                 </TouchableOpacity>
               </View>
+            ) : (
+              <TouchableOpacity
+                onPress={() => router.push("/workspace-setup" as any)}
+                style={styles.switchWsBtn}
+                hitSlop={6}
+                activeOpacity={0.85}
+              >
+                <Feather name="log-in" size={12} color="#e85d04" />
+                <Text style={styles.switchWsText}>Çalışma Alanına Bağlan</Text>
+              </TouchableOpacity>
             )}
           </View>
         )}
@@ -660,6 +670,23 @@ const styles = StyleSheet.create({
     backgroundColor: "rgba(255,255,255,0.07)",
     justifyContent: "center",
     alignItems: "center",
+  },
+  switchWsBtn: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 6,
+    marginLeft: 10,
+    backgroundColor: "rgba(232,93,4,0.15)",
+    borderColor: "#e85d04",
+    borderWidth: 1,
+    borderRadius: 8,
+    paddingHorizontal: 10,
+    paddingVertical: 6,
+  },
+  switchWsText: {
+    color: "#e85d04",
+    fontSize: 11,
+    fontFamily: "Inter_600SemiBold",
   },
   scroll: { padding: 16 },
   sectionLabel: {
