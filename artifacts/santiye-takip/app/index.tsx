@@ -19,6 +19,7 @@ import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 import BottomSheet from "@/components/BottomSheet";
 import PrimaryButton from "@/components/PrimaryButton";
+import SmartSearch from "@/components/SmartSearch";
 import { PageKey, Permission, useApp } from "@/context/AppContext";
 import { useColors } from "@/hooks/useColors";
 
@@ -324,7 +325,10 @@ export default function HomeScreen() {
           { paddingBottom: insets.bottom + 24 },
         ]}
         showsVerticalScrollIndicator={false}
+        keyboardShouldPersistTaps="handled"
       >
+        <SmartSearch topInset={insets.bottom} />
+
         <View style={styles.grid}>
           {visibleSections.map((s) => {
             const perm = getPermission(s.key);

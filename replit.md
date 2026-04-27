@@ -16,7 +16,9 @@ The active product in this workspace is **Şantiye Takip** — a Turkish-languag
 ## Artifacts
 
 - `artifacts/santiye-takip` (Expo mobile app) — main product
-- `artifacts/api-server` (Express, unused by mobile app — kept from template)
+- `artifacts/api-server` (Express + PostgreSQL) — multi-tenant workspace sync
+  (push/pull JSON state by invite code) and `/api/workspaces/:code/ask` AI
+  endpoint backed by Replit AI Integrations (OpenAI gpt-5-mini).
 - `artifacts/mockup-sandbox` (component preview, unused — kept from template)
 
 ## Şantiye Takip — Architecture
@@ -46,7 +48,11 @@ The active product in this workspace is **Şantiye Takip** — a Turkish-languag
 
 - `Header`, `BottomSheet`, `FormInput`, `PrimaryButton`, `EmptyState`
 - `ProjectPicker` — horizontal chips for filtering by project
-- `ErrorBoundary`, `ErrorFallback`, `KeyboardAwareScrollViewCompat`
+- `ErrorBoundary`, `ErrorFallback`
+- `SmartSearch` — top-of-home search bar; instant fuzzy search across all entities
+  (Turkish-aware normalization), respects role permissions; "Yapay Zekaya Sor"
+  button calls `/api/workspaces/:code/ask` (cloud workspace required) for
+  natural-language Q&A via OpenAI.
 
 ### Data entities (`context/AppContext.tsx`)
 
