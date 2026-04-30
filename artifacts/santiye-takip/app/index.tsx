@@ -207,7 +207,7 @@ export default function HomeScreen() {
         <View style={styles.heroRow}>
           <View style={{ flex: 1 }}>
             <Text style={styles.heroSub}>Hoş Geldiniz</Text>
-            <Text style={styles.heroTitle}>Şantiye Takip</Text>
+            <Text style={styles.heroTitle}>ŞantiJET</Text>
             <Text style={styles.heroDesc}>
               {app.projects.length} aktif proje · {app.workers.length} personel
             </Text>

@@ -4,7 +4,7 @@
 
 pnpm workspace monorepo using TypeScript. Each package manages its own dependencies.
 
-The active product in this workspace is **Şantiye Takip** — a Turkish-language construction site management mobile app for civil engineers managing multiple sites.
+The active product in this workspace is **ŞantiJET** — a Turkish-language construction site management mobile app for civil engineers managing multiple sites.
 
 ## Stack
 
@@ -21,7 +21,7 @@ The active product in this workspace is **Şantiye Takip** — a Turkish-languag
   endpoint backed by Replit AI Integrations (OpenAI gpt-5-mini).
 - `artifacts/mockup-sandbox` (component preview, unused — kept from template)
 
-## Şantiye Takip — Architecture
+## ŞantiJET — Architecture
 
 - **Framework**: Expo + expo-router (Stack navigation)
 - **Storage**: AsyncStorage (no backend, all data local on device)

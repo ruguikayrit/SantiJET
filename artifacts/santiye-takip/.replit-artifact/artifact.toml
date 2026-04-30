@@ -1,6 +1,6 @@
 kind = "mobile"
 previewPath = "/"
-title = "Şantiye Takip"
+title = "ŞantiJET"
 version = "1.0.0"
 id = "artifacts/santiye-takip"
 router = "expo-domain"

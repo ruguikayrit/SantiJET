@@ -113,7 +113,7 @@ export default function LoginScreen() {
         <View style={styles.logoBox}>
           <Feather name="hard-drive" size={36} color="#e85d04" />
         </View>
-        <Text style={styles.appName}>Şantiye Takip</Text>
+        <Text style={styles.appName}>ŞantiJET</Text>
         <Text style={styles.subtitle}>Hesabınızı seçin</Text>
       </View>
 

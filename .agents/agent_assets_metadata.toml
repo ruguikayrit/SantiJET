@@ -6,3 +6,57 @@ id = "hA-TfgIsQdSfvlz1jYm0z"
 uri = "file://artifacts/santiye-takip/assets/images/icon.png"
 type = "image"
 title = "construction app icon"
+
+[[generated]]
+id = "wXbeOXw1lSp9nc-1K-AvF"
+uri = "file://attached_assets/santijet_logos/01_helmet_jet.png"
+type = "image"
+title = "santijet logo helmet jet"
+
+[[generated]]
+id = "CWs8c0iNCS6doFlLi88Km"
+uri = "file://attached_assets/santijet_logos/02_crane_motion.png"
+type = "image"
+title = "santijet logo crane motion"
+
+[[generated]]
+id = "DcELrO7oRnsadW-mV6lbf"
+uri = "file://attached_assets/santijet_logos/03_lightning_brick.png"
+type = "image"
+title = "santijet logo lightning brick"
+
+[[generated]]
+id = "d7q7Ps5obu8Fpg2yOfWEw"
+uri = "file://attached_assets/santijet_logos/04_paper_plane.png"
+type = "image"
+title = "santijet logo paper plane"
+
+[[generated]]
+id = "bUpcIlG9zV9U_Mzfm_MnK"
+uri = "file://attached_assets/santijet_logos/05_hex_helmet_wing.png"
+type = "image"
+title = "santijet logo hex helmet wing"
+
+[[generated]]
+id = "y987MzTaMjh5zcU9347qM"
+uri = "file://attached_assets/santijet_logos/06_arrow_beams.png"
+type = "image"
+title = "santijet logo arrow beams"
+
+[[generated]]
+id = "ZoOkmzYafSFNj8e63g4yv"
+uri = "file://attached_assets/santijet_logos/07_circle_crane_rays.png"
+type = "image"
+title = "santijet logo circle crane rays"
+
+[[generated]]
+id = "I-jSnCo7sSA_Lt2fNeBFl"
+uri = "file://attached_assets/santijet_logos/08_rocket_building.png"
+type = "image"
+title = "santijet logo rocket building"
+
+[[generated]]
+id = "MCdA1BOQFKeJbOsFoNG2s"
+uri = "file://attached_assets/santijet_logos/09_shield_tools.png"
+type = "image"
+title = "santijet logo shield tools"

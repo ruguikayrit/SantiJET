@@ -285,7 +285,7 @@ function buildHtml(sections: { title: string; headers: string[]; rows: (string |
   }).join("");
 
   return `<!DOCTYPE html><html><head><meta charset="utf-8"/><style>body{font-family:Arial,sans-serif;margin:24px;color:#16213e;}h1{font-size:20px;color:#e85d04;margin-bottom:4px;}p{margin:0 0 24px 0;color:#666;font-size:12px;}</style></head><body>
-<h1>Şantiye Takip – Rapor</h1><p>${new Date().toLocaleDateString("tr-TR")} · ${projectsCount} Proje</p>${body}</body></html>`;
+<h1>ŞantiJET – Rapor</h1><p>${new Date().toLocaleDateString("tr-TR")} · ${projectsCount} Proje</p>${body}</body></html>`;
 }
 
 // ─── main component ───────────────────────────────────────────────────────────

@@ -203,7 +203,7 @@ export default function WorkspaceSetupScreen() {
             <Feather name="layers" size={32} color="#fff" />
           </View>
           <Text style={[styles.title, { color: colors.foreground }]}>
-            Şantiye Takip
+            ŞantiJET
           </Text>
           <Text style={[styles.subtitle, { color: colors.mutedForeground }]}>
             Ekibinizle veri paylaşmak için bir çalışma alanı oluşturun veya
