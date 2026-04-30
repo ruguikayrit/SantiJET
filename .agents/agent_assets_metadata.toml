@@ -60,3 +60,51 @@ id = "MCdA1BOQFKeJbOsFoNG2s"
 uri = "file://attached_assets/santijet_logos/09_shield_tools.png"
 type = "image"
 title = "santijet logo shield tools"
+
+[[generated]]
+id = "6JVdO3Fi_UcYy06ca0H8V"
+uri = "file://attached_assets/santijet_logos_v2/01_helmet_trail.png"
+type = "image"
+title = "santijet v2 helmet trail"
+
+[[generated]]
+id = "0hC3DZRrWNMA58DVehcXs"
+uri = "file://attached_assets/santijet_logos_v2/02_crane_badge.png"
+type = "image"
+title = "santijet v2 crane badge"
+
+[[generated]]
+id = "r8gNWfgExKp9GGoPqZ1WA"
+uri = "file://attached_assets/santijet_logos_v2/03_building_rocket.png"
+type = "image"
+title = "santijet v2 building rocket framed"
+
+[[generated]]
+id = "3upMZ_vEi4FQikys6gi70"
+uri = "file://attached_assets/santijet_logos_v2/04_hex_emblem_crane.png"
+type = "image"
+title = "santijet v2 hex emblem clean"
+
+[[generated]]
+id = "JTqLeRWHDOjJHRxV_DGPc"
+uri = "file://attached_assets/santijet_logos_v2/05_arrow_beams.png"
+type = "image"
+title = "santijet v2 arrow beams clean"
+
+[[generated]]
+id = "A3M2Z3hh2aU26tkIrQs5L"
+uri = "file://attached_assets/santijet_logos_v2/06_jet_swoosh_helmet.png"
+type = "image"
+title = "santijet v2 swoosh helmet clean"
+
+[[generated]]
+id = "wPgADO1tOHCzEj005cfl_"
+uri = "file://attached_assets/santijet_logos_v2/07_circle_progress_crane.png"
+type = "image"
+title = "santijet v2 circle progress crane"
+
+[[generated]]
+id = "nKMyUeK3PgghjvBFqPRO7"
+uri = "file://attached_assets/santijet_logos_v2/08_monogram_beam.png"
+type = "image"
+title = "santijet v2 monogram simple"
