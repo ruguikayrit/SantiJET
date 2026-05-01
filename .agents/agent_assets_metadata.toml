@@ -1,5 +1,4 @@
 uploads = []
-outputs = []
 
 [[generated]]
 id = "hA-TfgIsQdSfvlz1jYm0z"
@@ -192,3 +191,15 @@ id = "2sji19o9pBGGzjFgXdS47"
 uri = "file://attached_assets/santijet_wordmarks/04_hardhat_dot.png"
 type = "image"
 title = "santijet wordmark hardhat dot"
+
+[[outputs]]
+id = "mbAHasy31iVfgN0s-g0ur"
+uri = "file://exports/santijet-source.zip"
+type = "unspecified"
+title = "ŞantiJET Kaynak Kodu (ZIP) — 7.2 MB"
+
+[[outputs]]
+id = "4kJGZg4RyWwZ4DqcF-B2w"
+uri = "file://exports/santijet-source.tar.gz"
+type = "unspecified"
+title = "ŞantiJET Kaynak Kodu (TAR.GZ) — 7.2 MB"
