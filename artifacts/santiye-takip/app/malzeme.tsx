@@ -2,6 +2,7 @@ import { Feather } from "@expo/vector-icons";
 import { useRouter } from "expo-router";
 import React, { useEffect, useMemo, useState } from "react";
 import {
+  Alert,
   FlatList,
   ScrollView,
   StyleSheet,
@@ -312,6 +313,19 @@ export default function MalzemeScreen() {
     return materials.filter((m) => m.projectId === movForm.projectId);
   }, [materials, movForm.projectId]);
 
+  // Kullanılan malzeme, projedeki Gelen Malzeme listesinde yoksa uyar
+  const stoksuzKullanim = useMemo(() => {
+    if (movForm.type !== "kullanim") return false;
+    const name = movForm.name.trim().toLowerCase();
+    if (!name || !movForm.projectId) return false;
+    const exists = materials.some(
+      (m) =>
+        m.projectId === movForm.projectId &&
+        m.name.trim().toLowerCase() === name
+    );
+    return !exists;
+  }, [movForm.type, movForm.name, movForm.projectId, materials]);
+
   function pickKnownMaterial(m: Material) {
     setMovForm((prev) => ({
       ...prev,
@@ -336,9 +350,24 @@ export default function MalzemeScreen() {
       reason: movForm.reason.trim(),
       note: movForm.note.trim(),
     };
-    if (movEditId) updateMaterialMovement(movEditId, data);
-    else addMaterialMovement(data);
-    setMovVisible(false);
+    const commit = () => {
+      if (movEditId) updateMaterialMovement(movEditId, data);
+      else addMaterialMovement(data);
+      setMovVisible(false);
+    };
+
+    if (stoksuzKullanim) {
+      Alert.alert(
+        "Stoksuz Malzeme Kullanımı",
+        `"${data.name}" malzemesi "${projectName(data.projectId)}" projesinin Gelen Malzeme listesinde bulunmuyor. Stok takibi yapılamayacak.\n\nYine de kaydetmek istiyor musunuz?`,
+        [
+          { text: "Vazgeç", style: "cancel" },
+          { text: "Yine de Kaydet", style: "destructive", onPress: commit },
+        ]
+      );
+      return;
+    }
+    commit();
   }
   function removeMovement() {
     if (movEditId) deleteMaterialMovement(movEditId);
@@ -595,6 +624,19 @@ export default function MalzemeScreen() {
               />
             </View>
           </View>
+          {stoksuzKullanim ? (
+            <View style={styles.warnBox}>
+              <Feather name="alert-triangle" size={16} color="#b45309" />
+              <View style={{ flex: 1 }}>
+                <Text style={styles.warnTitle}>Stoksuz Malzeme Kullanımı</Text>
+                <Text style={styles.warnBody}>
+                  Bu malzeme bu projenin Gelen Malzeme listesinde bulunmuyor.
+                  Önce Gelen Malzeme olarak ekleyin ya da yine de kaydedebilirsiniz
+                  (stok takibi yapılamaz).
+                </Text>
+              </View>
+            </View>
+          ) : null}
           <DatePickerInput
             label="Tarih"
             value={movForm.date}
@@ -1040,6 +1082,29 @@ const styles = StyleSheet.create({
   projLabel: { fontSize: 12, fontFamily: "Inter_600SemiBold", marginBottom: 2 },
   cardTitle: { fontSize: 16, fontFamily: "Inter_700Bold" },
   catLabel: { fontSize: 11, fontFamily: "Inter_500Medium", marginTop: 2 },
+  warnBox: {
+    flexDirection: "row",
+    alignItems: "flex-start",
+    gap: 10,
+    backgroundColor: "#fef3c7",
+    borderWidth: 1,
+    borderColor: "#fcd34d",
+    borderRadius: 10,
+    padding: 12,
+    marginBottom: 14,
+  },
+  warnTitle: {
+    fontSize: 13,
+    fontFamily: "Inter_700Bold",
+    color: "#92400e",
+    marginBottom: 2,
+  },
+  warnBody: {
+    fontSize: 12,
+    fontFamily: "Inter_500Medium",
+    color: "#78350f",
+    lineHeight: 17,
+  },
   badge: {
     flexDirection: "row",
     alignItems: "center",
