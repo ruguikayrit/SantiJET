@@ -11,6 +11,7 @@ import {
 } from "react-native";
 
 import BottomSheet from "@/components/BottomSheet";
+import DatePickerInput from "@/components/DatePickerInput";
 import EmptyState from "@/components/EmptyState";
 import FormInput from "@/components/FormInput";
 import Header from "@/components/Header";
@@ -459,11 +460,10 @@ export default function MalzemeScreen() {
             value={mForm.supplier}
             onChangeText={(v) => setMForm({ ...mForm, supplier: v })}
           />
-          <FormInput
+          <DatePickerInput
             label="Teslim Tarihi"
             value={mForm.deliveryDate}
-            onChangeText={(v) => setMForm({ ...mForm, deliveryDate: v })}
-            placeholder="GG.AA.YYYY"
+            onChange={(v) => setMForm({ ...mForm, deliveryDate: v })}
           />
           {canEdit ? <PrimaryButton label="Kaydet" onPress={saveMaterial} style={{ marginTop: 8 }} /> : null}
           {canEdit && mEditId ? (
@@ -556,11 +556,10 @@ export default function MalzemeScreen() {
               />
             </View>
           </View>
-          <FormInput
+          <DatePickerInput
             label="Tarih"
             value={movForm.date}
-            onChangeText={(v) => setMovForm({ ...movForm, date: v })}
-            placeholder="GG.AA.YYYY"
+            onChange={(v) => setMovForm({ ...movForm, date: v })}
           />
           <FormInput
             label={movForm.type === "kullanim" ? "Kullanan / Sorumlu" : "Alan kişi / firma"}
@@ -645,11 +644,10 @@ export default function MalzemeScreen() {
             value={rForm.requestedBy}
             onChangeText={(v) => setRForm({ ...rForm, requestedBy: v })}
           />
-          <FormInput
+          <DatePickerInput
             label="Talep Tarihi"
             value={rForm.requestDate}
-            onChangeText={(v) => setRForm({ ...rForm, requestDate: v })}
-            placeholder="GG.AA.YYYY"
+            onChange={(v) => setRForm({ ...rForm, requestDate: v })}
           />
           <Text style={[styles.label, { color: colors.foreground, marginTop: 4 }]}>Durum</Text>
           <View style={styles.chips}>

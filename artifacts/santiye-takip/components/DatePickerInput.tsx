@@ -1,7 +1,8 @@
 import { Feather } from "@expo/vector-icons";
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useMemo, useState } from "react";
 import {
   Modal,
+  ScrollView,
   StyleSheet,
   Text,
   TouchableOpacity,
@@ -102,10 +103,30 @@ export default function DatePickerInput({ label, value, onChange }: Props) {
     setOpen(false);
   }
 
-  function goToday() {
-    onChange(formatDate(today));
+  function pickOffset(days: number) {
+    const d = new Date(today);
+    d.setDate(d.getDate() + days);
+    onChange(formatDate(d));
     setOpen(false);
   }
+
+  const [yearPickerOpen, setYearPickerOpen] = useState(false);
+
+  const yearOptions = useMemo(() => {
+    const base = today.getFullYear();
+    const arr: number[] = [];
+    for (let y = base - 5; y <= base + 10; y++) arr.push(y);
+    return arr;
+  }, [today]);
+
+  const QUICK = [
+    { label: "Dün", offset: -1 },
+    { label: "Bugün", offset: 0 },
+    { label: "Yarın", offset: 1 },
+    { label: "+7g", offset: 7 },
+    { label: "+15g", offset: 15 },
+    { label: "+30g", offset: 30 },
+  ];
 
   const grid = buildGrid(cursor.year, cursor.month);
 
@@ -134,17 +155,115 @@ export default function DatePickerInput({ label, value, onChange }: Props) {
         >
           <TouchableOpacity activeOpacity={1} onPress={() => {}}>
             <View style={[styles.sheet, { backgroundColor: colors.card }]}>
+              <ScrollView
+                horizontal
+                showsHorizontalScrollIndicator={false}
+                contentContainerStyle={styles.quickRow}
+              >
+                {QUICK.map((q) => (
+                  <TouchableOpacity
+                    key={q.label}
+                    onPress={() => pickOffset(q.offset)}
+                    style={[
+                      styles.quickChip,
+                      { backgroundColor: colors.muted, borderColor: colors.border ?? colors.muted },
+                    ]}
+                    activeOpacity={0.7}
+                  >
+                    <Text style={[styles.quickChipText, { color: colors.foreground }]}>
+                      {q.label}
+                    </Text>
+                  </TouchableOpacity>
+                ))}
+              </ScrollView>
+
               <View style={styles.navRow}>
                 <TouchableOpacity onPress={prev} style={styles.navBtn} activeOpacity={0.7}>
                   <Feather name="chevron-left" size={20} color={colors.foreground} />
                 </TouchableOpacity>
-                <Text style={[styles.monthTitle, { color: colors.foreground }]}>
-                  {MONTHS[cursor.month]} {cursor.year}
-                </Text>
+                <TouchableOpacity
+                  onPress={() => setYearPickerOpen((v) => !v)}
+                  style={styles.monthTitleBtn}
+                  activeOpacity={0.7}
+                >
+                  <Text style={[styles.monthTitle, { color: colors.foreground }]}>
+                    {MONTHS[cursor.month]} {cursor.year}
+                  </Text>
+                  <Feather
+                    name={yearPickerOpen ? "chevron-up" : "chevron-down"}
+                    size={14}
+                    color={colors.mutedForeground}
+                  />
+                </TouchableOpacity>
                 <TouchableOpacity onPress={next} style={styles.navBtn} activeOpacity={0.7}>
                   <Feather name="chevron-right" size={20} color={colors.foreground} />
                 </TouchableOpacity>
               </View>
+
+              {yearPickerOpen ? (
+                <View style={styles.ymPanel}>
+                  <ScrollView
+                    horizontal
+                    showsHorizontalScrollIndicator={false}
+                    contentContainerStyle={styles.ymRow}
+                  >
+                    {MONTHS.map((m, i) => {
+                      const sel = i === cursor.month;
+                      return (
+                        <TouchableOpacity
+                          key={m}
+                          onPress={() => setCursor((c) => ({ ...c, month: i }))}
+                          style={[
+                            styles.ymChip,
+                            sel
+                              ? { backgroundColor: colors.primary }
+                              : { backgroundColor: colors.muted },
+                          ]}
+                        >
+                          <Text
+                            style={[
+                              styles.ymChipText,
+                              { color: sel ? "#fff" : colors.foreground },
+                            ]}
+                          >
+                            {m.slice(0, 3)}
+                          </Text>
+                        </TouchableOpacity>
+                      );
+                    })}
+                  </ScrollView>
+                  <ScrollView
+                    horizontal
+                    showsHorizontalScrollIndicator={false}
+                    contentContainerStyle={styles.ymRow}
+                  >
+                    {yearOptions.map((y) => {
+                      const sel = y === cursor.year;
+                      return (
+                        <TouchableOpacity
+                          key={y}
+                          onPress={() => setCursor((c) => ({ ...c, year: y }))}
+                          style={[
+                            styles.ymChip,
+                            sel
+                              ? { backgroundColor: colors.primary }
+                              : { backgroundColor: colors.muted },
+                          ]}
+                        >
+                          <Text
+                            style={[
+                              styles.ymChipText,
+                              { color: sel ? "#fff" : colors.foreground },
+                            ]}
+                          >
+                            {y}
+                          </Text>
+                        </TouchableOpacity>
+                      );
+                    })}
+                  </ScrollView>
+                </View>
+              ) : null}
 
               <View style={styles.dayHeader}>
                 {DAYS.map((d) => (
@@ -189,14 +308,31 @@ export default function DatePickerInput({ label, value, onChange }: Props) {
                 </View>
               ))}
 
-              <TouchableOpacity
-                style={[styles.todayRow, { borderTopColor: colors.muted }]}
-                onPress={goToday}
-                activeOpacity={0.8}
-              >
-                <Feather name="crosshair" size={14} color={colors.primary} />
-                <Text style={[styles.todayText, { color: colors.primary }]}>Bugün</Text>
-              </TouchableOpacity>
+              <View style={[styles.footerRow, { borderTopColor: colors.muted }]}>
+                {value ? (
+                  <TouchableOpacity
+                    onPress={() => {
+                      onChange("");
+                      setOpen(false);
+                    }}
+                    style={styles.footerBtn}
+                    activeOpacity={0.8}
+                  >
+                    <Feather name="x-circle" size={14} color={colors.mutedForeground} />
+                    <Text style={[styles.footerText, { color: colors.mutedForeground }]}>
+                      Temizle
+                    </Text>
+                  </TouchableOpacity>
+                ) : <View style={{ flex: 1 }} />}
+                <TouchableOpacity
+                  onPress={() => pickOffset(0)}
+                  style={styles.footerBtn}
+                  activeOpacity={0.8}
+                >
+                  <Feather name="crosshair" size={14} color={colors.primary} />
+                  <Text style={[styles.footerText, { color: colors.primary }]}>Bugün</Text>
+                </TouchableOpacity>
+              </View>
             </View>
           </TouchableOpacity>
         </TouchableOpacity>
@@ -250,9 +386,53 @@ const styles = StyleSheet.create({
     marginBottom: 14,
   },
   navBtn: { padding: 6 },
+  monthTitleBtn: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 6,
+    paddingHorizontal: 10,
+    paddingVertical: 4,
+    borderRadius: 8,
+  },
   monthTitle: {
     fontSize: 16,
     fontFamily: "Inter_700Bold",
+  },
+  quickRow: {
+    flexDirection: "row",
+    gap: 6,
+    paddingBottom: 12,
+    paddingHorizontal: 2,
+  },
+  quickChip: {
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    borderRadius: 16,
+    borderWidth: 1,
+  },
+  quickChipText: {
+    fontSize: 12,
+    fontFamily: "Inter_600SemiBold",
+  },
+  ymPanel: {
+    marginBottom: 10,
+    gap: 6,
+  },
+  ymRow: {
+    flexDirection: "row",
+    gap: 6,
+    paddingHorizontal: 2,
+  },
+  ymChip: {
+    paddingHorizontal: 10,
+    paddingVertical: 5,
+    borderRadius: 8,
+    minWidth: 44,
+    alignItems: "center",
+  },
+  ymChipText: {
+    fontSize: 12,
+    fontFamily: "Inter_600SemiBold",
   },
   dayHeader: {
     flexDirection: "row",
@@ -280,16 +460,22 @@ const styles = StyleSheet.create({
     fontSize: 13,
     fontFamily: "Inter_400Regular",
   },
-  todayRow: {
+  footerRow: {
     flexDirection: "row",
     alignItems: "center",
-    justifyContent: "center",
-    gap: 6,
+    justifyContent: "space-between",
     marginTop: 12,
     paddingTop: 12,
     borderTopWidth: 1,
   },
-  todayText: {
+  footerBtn: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 6,
+    paddingHorizontal: 10,
+    paddingVertical: 6,
+  },
+  footerText: {
     fontSize: 14,
     fontFamily: "Inter_600SemiBold",
   },

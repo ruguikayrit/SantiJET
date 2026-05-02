@@ -11,6 +11,7 @@ import {
 
 import BottomSheet from "@/components/BottomSheet";
 import EmptyState from "@/components/EmptyState";
+import DatePickerInput from "@/components/DatePickerInput";
 import FormInput from "@/components/FormInput";
 import Header from "@/components/Header";
 import PrimaryButton from "@/components/PrimaryButton";
@@ -288,11 +289,10 @@ export default function GorevScreen() {
           value={form.assignee}
           onChangeText={(v) => setForm({ ...form, assignee: v })}
         />
-        <FormInput
+        <DatePickerInput
           label="Son Tarih"
           value={form.deadline}
-          onChangeText={(v) => setForm({ ...form, deadline: v })}
-          placeholder="GG.AA.YYYY"
+          onChange={(v) => setForm({ ...form, deadline: v })}
         />
 
         <Text style={[styles.label, { color: colors.foreground }]}>Öncelik</Text>

@@ -11,6 +11,7 @@ import {
 
 import BottomSheet from "@/components/BottomSheet";
 import EmptyState from "@/components/EmptyState";
+import DatePickerInput from "@/components/DatePickerInput";
 import FormInput from "@/components/FormInput";
 import Header from "@/components/Header";
 import PrimaryButton from "@/components/PrimaryButton";
@@ -201,17 +202,15 @@ export default function ProjectsScreen() {
           value={form.contractor}
           onChangeText={(v) => setForm({ ...form, contractor: v })}
         />
-        <FormInput
+        <DatePickerInput
           label="Başlangıç Tarihi"
           value={form.startDate}
-          onChangeText={(v) => setForm({ ...form, startDate: v })}
-          placeholder="GG.AA.YYYY"
+          onChange={(v) => setForm({ ...form, startDate: v })}
         />
-        <FormInput
+        <DatePickerInput
           label="Bitiş Tarihi"
           value={form.endDate}
-          onChangeText={(v) => setForm({ ...form, endDate: v })}
-          placeholder="GG.AA.YYYY"
+          onChange={(v) => setForm({ ...form, endDate: v })}
         />
         <FormInput
           label="Bütçe (₺)"

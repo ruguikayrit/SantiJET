@@ -11,6 +11,7 @@ import {
 
 import BottomSheet from "@/components/BottomSheet";
 import EmptyState from "@/components/EmptyState";
+import DatePickerInput from "@/components/DatePickerInput";
 import FormInput from "@/components/FormInput";
 import Header from "@/components/Header";
 import PrimaryButton from "@/components/PrimaryButton";
@@ -240,11 +241,10 @@ export default function KesifScreen() {
           value={form.location}
           onChangeText={(v) => setForm({ ...form, location: v })}
         />
-        <FormInput
+        <DatePickerInput
           label="Tarih"
           value={form.date}
-          onChangeText={(v) => setForm({ ...form, date: v })}
-          placeholder="GG.AA.YYYY"
+          onChange={(v) => setForm({ ...form, date: v })}
         />
         <FormInput
           label="Notlar"

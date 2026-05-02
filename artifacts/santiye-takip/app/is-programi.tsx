@@ -11,6 +11,7 @@ import {
 
 import BottomSheet from "@/components/BottomSheet";
 import EmptyState from "@/components/EmptyState";
+import DatePickerInput from "@/components/DatePickerInput";
 import FormInput from "@/components/FormInput";
 import Header from "@/components/Header";
 import PrimaryButton from "@/components/PrimaryButton";
@@ -234,19 +235,17 @@ export default function IsProgramiScreen() {
         />
         <View style={styles.row2}>
           <View style={{ flex: 1 }}>
-            <FormInput
+            <DatePickerInput
               label="Başlangıç"
               value={form.startDate}
-              onChangeText={(v) => setForm({ ...form, startDate: v })}
-              placeholder="GG.AA.YYYY"
+              onChange={(v) => setForm({ ...form, startDate: v })}
             />
           </View>
           <View style={{ flex: 1 }}>
-            <FormInput
+            <DatePickerInput
               label="Bitiş"
               value={form.endDate}
-              onChangeText={(v) => setForm({ ...form, endDate: v })}
-              placeholder="GG.AA.YYYY"
+              onChange={(v) => setForm({ ...form, endDate: v })}
             />
           </View>
         </View>
