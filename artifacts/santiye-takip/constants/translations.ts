@@ -109,6 +109,9 @@ const tr: Dict = {
   "settings.matUnit.confirmDelete": "\"{name}\" birimini silmek istediğinize emin misiniz?",
   "settings.refWarn": "Uyarı: Bu öğeye bağlı {count} kayıt var. Silindiğinde bu kayıtlar etkilenebilir.",
   "settings.adminOnly": "Bu sayfayı yalnızca yöneticiler görüntüleyebilir.",
+  "settings.title": "Ayarlar",
+  "settings.sub": "Tema, dil ve malzeme ayarları",
+  "settings.general": "Genel",
 };
 
 const en: Dict = {
@@ -209,6 +212,9 @@ const en: Dict = {
   "settings.matUnit.confirmDelete": "Are you sure you want to delete \"{name}\"?",
   "settings.refWarn": "Warning: {count} record(s) reference this item. They may be affected by deletion.",
   "settings.adminOnly": "Only admins can view this page.",
+  "settings.title": "Settings",
+  "settings.sub": "Theme, language and material settings",
+  "settings.general": "General",
 };
 
 const ar: Dict = {
@@ -309,6 +315,9 @@ const ar: Dict = {
   "settings.matUnit.confirmDelete": "هل تريد حقًا حذف \"{name}\"؟",
   "settings.refWarn": "تحذير: يوجد {count} سجل مرتبط بهذا العنصر. قد تتأثر عند الحذف.",
   "settings.adminOnly": "يمكن للمسؤولين فقط عرض هذه الصفحة.",
+  "settings.title": "الإعدادات",
+  "settings.sub": "السمة واللغة وإعدادات المواد",
+  "settings.general": "عام",
 };
 
 const ru: Dict = {
@@ -409,6 +418,9 @@ const ru: Dict = {
   "settings.matUnit.confirmDelete": "Удалить \"{name}\"?",
   "settings.refWarn": "Внимание: этот элемент используется в {count} записях. Они могут быть затронуты при удалении.",
   "settings.adminOnly": "Только администраторы могут просматривать эту страницу.",
+  "settings.title": "Настройки",
+  "settings.sub": "Тема, язык и настройки материалов",
+  "settings.general": "Общие",
 };
 
 const de: Dict = {
@@ -509,6 +521,9 @@ const de: Dict = {
   "settings.matUnit.confirmDelete": "\"{name}\" wirklich löschen?",
   "settings.refWarn": "Warnung: {count} Datensatz/-sätze verweisen auf diesen Eintrag. Sie können beim Löschen betroffen sein.",
   "settings.adminOnly": "Nur Administratoren können diese Seite anzeigen.",
+  "settings.title": "Einstellungen",
+  "settings.sub": "Thema, Sprache und Material-Einstellungen",
+  "settings.general": "Allgemein",
 };
 
 export const TRANSLATIONS: Record<LanguageCode, Dict> = { tr, en, ar, ru, de };
