@@ -16,6 +16,7 @@ import FormInput from "@/components/FormInput";
 import Header from "@/components/Header";
 import PrimaryButton from "@/components/PrimaryButton";
 import ProjectPicker from "@/components/ProjectPicker";
+import UnitPicker from "@/components/UnitPicker";
 import {
   Material,
   MaterialMovement,
@@ -432,11 +433,10 @@ export default function MalzemeScreen() {
           />
           <View style={styles.twoCol}>
             <View style={{ flex: 1 }}>
-              <FormInput
+              <UnitPicker
                 label="Birim"
                 value={mForm.unit}
-                onChangeText={(v) => setMForm({ ...mForm, unit: v })}
-                placeholder="kg, ton, m³"
+                onChange={(v) => setMForm({ ...mForm, unit: v })}
               />
             </View>
             <View style={{ flex: 1 }}>
@@ -541,11 +541,10 @@ export default function MalzemeScreen() {
           />
           <View style={styles.twoCol}>
             <View style={{ flex: 1 }}>
-              <FormInput
+              <UnitPicker
                 label="Birim"
                 value={movForm.unit}
-                onChangeText={(v) => setMovForm({ ...movForm, unit: v })}
-                placeholder="kg, adet, m³"
+                onChange={(v) => setMovForm({ ...movForm, unit: v })}
               />
             </View>
             <View style={{ flex: 1 }}>
@@ -626,11 +625,10 @@ export default function MalzemeScreen() {
           />
           <View style={styles.twoCol}>
             <View style={{ flex: 1 }}>
-              <FormInput
+              <UnitPicker
                 label="Birim"
                 value={rForm.unit}
-                onChangeText={(v) => setRForm({ ...rForm, unit: v })}
-                placeholder="kg, adet, m²"
+                onChange={(v) => setRForm({ ...rForm, unit: v })}
               />
             </View>
             <View style={{ flex: 1 }}>
