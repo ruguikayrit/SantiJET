@@ -140,6 +140,11 @@ export interface MaterialRequest {
   requestedBy: string;
   status: "pending" | "approved" | "delivered" | "rejected";
   note: string;
+  approvals?: {
+    sef?: boolean;
+    mudur?: boolean;
+    satinAlma?: boolean;
+  };
 }
 
 export interface MaterialMovement {

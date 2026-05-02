@@ -1061,6 +1061,55 @@ export default function MalzemeScreen() {
                   <Text style={[styles.metaText, { color: colors.mutedForeground }]}>{item.note}</Text>
                 </View>
               ) : null}
+
+              <View style={[styles.approvalsRow, { borderTopColor: colors.border }]}>
+                {(["sef", "mudur", "satinAlma"] as const).map((k) => {
+                  const checked = item.approvals?.[k] === true;
+                  const labelMap: Record<typeof k, string> = {
+                    sef: "Şantiye Şefi",
+                    mudur: "Proje Müdürü",
+                    satinAlma: "Satın Alma",
+                  };
+                  return (
+                    <TouchableOpacity
+                      key={k}
+                      activeOpacity={canEdit ? 0.7 : 1}
+                      onPress={
+                        canEdit
+                          ? (e) => {
+                              e.stopPropagation?.();
+                              updateMaterialRequest(item.id, {
+                                approvals: { ...(item.approvals || {}), [k]: !checked },
+                              });
+                            }
+                          : undefined
+                      }
+                      style={styles.approvalItem}
+                    >
+                      <View
+                        style={[
+                          styles.approvalBox,
+                          {
+                            borderColor: checked ? colors.primary : colors.border,
+                            backgroundColor: checked ? colors.primary : "transparent",
+                          },
+                        ]}
+                      >
+                        {checked ? <Feather name="check" size={12} color="#fff" /> : null}
+                      </View>
+                      <Text
+                        style={[
+                          styles.approvalLabel,
+                          { color: checked ? colors.foreground : colors.mutedForeground },
+                        ]}
+                        numberOfLines={1}
+                      >
+                        {labelMap[k]}
+                      </Text>
+                    </TouchableOpacity>
+                  );
+                })}
+              </View>
             </TouchableOpacity>
           );
         }}
@@ -1097,6 +1146,34 @@ const styles = StyleSheet.create({
   projLabel: { fontSize: 12, fontFamily: "Inter_600SemiBold", marginBottom: 2 },
   cardTitle: { fontSize: 16, fontFamily: "Inter_700Bold" },
   catLabel: { fontSize: 11, fontFamily: "Inter_500Medium", marginTop: 2 },
+  approvalsRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    gap: 8,
+    marginTop: 12,
+    paddingTop: 10,
+    borderTopWidth: 1,
+  },
+  approvalItem: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 6,
+    flex: 1,
+  },
+  approvalBox: {
+    width: 18,
+    height: 18,
+    borderRadius: 4,
+    borderWidth: 1.5,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  approvalLabel: {
+    fontSize: 11,
+    fontFamily: "Inter_600SemiBold",
+    flexShrink: 1,
+  },
   rowCard: {
     flexDirection: "row",
     alignItems: "center",
