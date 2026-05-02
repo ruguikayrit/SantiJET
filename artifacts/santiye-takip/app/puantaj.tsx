@@ -312,37 +312,6 @@ export default function PuantajScreen() {
           </View>
         </ScrollView>
 
-        {/* ── Personel Özeti (only monthly) ── */}
-        {showSummary && appUsers.length > 0 && (
-          <View style={[styles.ozet, { backgroundColor: colors.card, borderColor: colors.border }]}>
-            <Text style={[styles.ozetTitle, { color: colors.foreground }]}>Personel Özeti — {monthLabel()}</Text>
-            <View style={[styles.ozetHeaderRow, { borderBottomColor: colors.border }]}>
-              <Text style={[styles.ozetHCell, { flex: 2, color: colors.mutedForeground }]}>Ad</Text>
-              <Text style={[styles.ozetHCell, { color: colors.mutedForeground }]}>Gün</Text>
-              <Text style={[styles.ozetHCell, { color: colors.mutedForeground }]}>Saat</Text>
-              <Text style={[styles.ozetHCell, { color: colors.mutedForeground }]}>Devam</Text>
-            </View>
-            {appUsers.map(u => {
-              let workDays = 0, totalHours = 0;
-              const workingDays = days.filter(d => { const dow = parseDate(d).getDay(); return dow !== 0; });
-              for (const d of days) {
-                const att = getAtt(u.id, d);
-                if (att?.status === "present" || att?.status === "half") workDays++;
-                totalHours += att ? hoursFor(att.status) : 0;
-              }
-              const pct = workingDays.length > 0 ? Math.round((workDays / workingDays.length) * 100) : 0;
-              const pctColor = pct >= 80 ? "#16a34a" : pct >= 50 ? "#d97706" : "#dc2626";
-              return (
-                <View key={u.id} style={[styles.ozetRow, { borderBottomColor: colors.border }]}>
-                  <Text style={[styles.ozetCell, { flex: 2, color: colors.foreground, fontFamily: "Inter_600SemiBold" }]} numberOfLines={1}>{u.name}</Text>
-                  <Text style={[styles.ozetCell, { color: colors.foreground }]}>{workDays}</Text>
-                  <Text style={[styles.ozetCell, { color: colors.foreground }]}>{totalHours}s</Text>
-                  <Text style={[styles.ozetCell, { color: pctColor, fontFamily: "Inter_700Bold" }]}>%{pct}</Text>
-                </View>
-              );
-            })}
-          </View>
-        )}
       </ScrollView>
     );
   }
