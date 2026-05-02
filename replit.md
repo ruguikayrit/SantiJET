@@ -48,6 +48,12 @@ The active product in this workspace is **ŞantiJET** — a Turkish-language con
 
 - `Header`, `BottomSheet`, `FormInput`, `PrimaryButton`, `EmptyState`
 - `ProjectPicker` — horizontal chips for filtering by project
+- `UnitPicker` — searchable picker for material units (constants/units.ts)
+- `MaterialPicker` — searchable dropdown of construction materials grouped by
+  category, with horizontal category filter chips and custom-entry support;
+  auto-fills category and default unit on selection
+- `CategoryPicker` — searchable picker for material categories
+  (constants/materials.ts), supports custom category entry
 - `ErrorBoundary`, `ErrorFallback`
 - `SmartSearch` — top-of-home search bar; instant fuzzy search across all entities
   (Turkish-aware normalization), respects role permissions; "Yapay Zekaya Sor"

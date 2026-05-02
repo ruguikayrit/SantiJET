@@ -108,6 +108,7 @@ export interface Material {
   id: string;
   projectId: string;
   name: string;
+  category?: string;
   unit: string;
   quantity: number;
   usedQty: number;
@@ -120,6 +121,7 @@ export interface MaterialRequest {
   id: string;
   projectId: string;
   name: string;
+  category?: string;
   unit: string;
   quantity: number;
   requestDate: string;
@@ -133,6 +135,7 @@ export interface MaterialMovement {
   projectId: string;
   type: "kullanim" | "giden";
   name: string;
+  category?: string;
   unit: string;
   quantity: number;
   date: string;

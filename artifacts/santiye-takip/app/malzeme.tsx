@@ -11,13 +11,16 @@ import {
 } from "react-native";
 
 import BottomSheet from "@/components/BottomSheet";
+import CategoryPicker from "@/components/CategoryPicker";
 import DatePickerInput from "@/components/DatePickerInput";
 import EmptyState from "@/components/EmptyState";
 import FormInput from "@/components/FormInput";
 import Header from "@/components/Header";
+import MaterialPicker from "@/components/MaterialPicker";
 import PrimaryButton from "@/components/PrimaryButton";
 import ProjectPicker from "@/components/ProjectPicker";
 import UnitPicker from "@/components/UnitPicker";
+import { findMaterialByName } from "@/constants/materials";
 import {
   Material,
   MaterialMovement,
@@ -46,6 +49,7 @@ const REQUEST_STATUS = {
 interface MF {
   projectId: string;
   name: string;
+  category: string;
   unit: string;
   quantity: string;
   supplier: string;
@@ -56,6 +60,7 @@ interface MF {
 interface RF {
   projectId: string;
   name: string;
+  category: string;
   unit: string;
   quantity: string;
   requestDate: string;
@@ -68,6 +73,7 @@ interface MovF {
   projectId: string;
   type: "kullanim" | "giden";
   name: string;
+  category: string;
   unit: string;
   quantity: string;
   date: string;
@@ -78,17 +84,17 @@ interface MovF {
 }
 
 const EMPTY_M: MF = {
-  projectId: "", name: "", unit: "", quantity: "",
+  projectId: "", name: "", category: "", unit: "", quantity: "",
   supplier: "", deliveryDate: "", unitPrice: "",
 };
 
 const EMPTY_R: RF = {
-  projectId: "", name: "", unit: "", quantity: "",
+  projectId: "", name: "", category: "", unit: "", quantity: "",
   requestDate: "", requestedBy: "", status: "pending", note: "",
 };
 
 const EMPTY_MOV: MovF = {
-  projectId: "", type: "kullanim", name: "", unit: "", quantity: "",
+  projectId: "", type: "kullanim", name: "", category: "", unit: "", quantity: "",
   date: "", person: "", location: "", reason: "", note: "",
 };
 
@@ -181,6 +187,7 @@ export default function MalzemeScreen() {
       setMForm({
         projectId: m.projectId,
         name: m.name,
+        category: m.category || findMaterialByName(m.name)?.category || "",
         unit: m.unit,
         quantity: String(m.quantity || ""),
         supplier: m.supplier,
@@ -202,6 +209,7 @@ export default function MalzemeScreen() {
     const data = {
       projectId: mForm.projectId,
       name: mForm.name.trim(),
+      category: mForm.category.trim() || undefined,
       unit: mForm.unit.trim(),
       quantity: parseFloat(mForm.quantity) || 0,
       usedQty: 0,
@@ -229,6 +237,7 @@ export default function MalzemeScreen() {
       setRForm({
         projectId: r.projectId,
         name: r.name,
+        category: r.category || findMaterialByName(r.name)?.category || "",
         unit: r.unit,
         quantity: String(r.quantity || ""),
         requestDate: r.requestDate,
@@ -251,6 +260,7 @@ export default function MalzemeScreen() {
     const data = {
       projectId: rForm.projectId,
       name: rForm.name.trim(),
+      category: rForm.category.trim() || undefined,
       unit: rForm.unit.trim(),
       quantity: parseFloat(rForm.quantity) || 0,
       requestDate: rForm.requestDate.trim(),
@@ -275,6 +285,7 @@ export default function MalzemeScreen() {
         projectId: existing.projectId,
         type: existing.type,
         name: existing.name,
+        category: existing.category || findMaterialByName(existing.name)?.category || "",
         unit: existing.unit,
         quantity: String(existing.quantity || ""),
         date: existing.date,
@@ -305,6 +316,7 @@ export default function MalzemeScreen() {
     setMovForm((prev) => ({
       ...prev,
       name: m.name,
+      category: m.category || findMaterialByName(m.name)?.category || prev.category,
       unit: m.unit,
     }));
   }
@@ -315,6 +327,7 @@ export default function MalzemeScreen() {
       projectId: movForm.projectId,
       type: movForm.type,
       name: movForm.name.trim(),
+      category: movForm.category.trim() || undefined,
       unit: movForm.unit.trim(),
       quantity: parseFloat(movForm.quantity) || 0,
       date: movForm.date.trim(),
@@ -426,11 +439,24 @@ export default function MalzemeScreen() {
               </TouchableOpacity>
             ))}
           </View>
-          <FormInput
+          <CategoryPicker
+            label="Kategori"
+            value={mForm.category}
+            onChange={(v) => setMForm({ ...mForm, category: v })}
+          />
+          <MaterialPicker
             label="Malzeme Adı"
             value={mForm.name}
-            onChangeText={(v) => setMForm({ ...mForm, name: v })}
-            placeholder="Örn: Çimento CEM I 42.5"
+            category={mForm.category}
+            onChange={(name, cat, defUnit) =>
+              setMForm({
+                ...mForm,
+                name,
+                category: cat,
+                unit: mForm.unit || defUnit || "",
+              })
+            }
+            placeholder="Örn: 10 cm Gazbeton"
           />
           <View style={styles.twoCol}>
             <View style={{ flex: 1 }}>
@@ -533,11 +559,24 @@ export default function MalzemeScreen() {
             </>
           ) : null}
 
-          <FormInput
+          <CategoryPicker
+            label="Kategori"
+            value={movForm.category}
+            onChange={(v) => setMovForm({ ...movForm, category: v })}
+          />
+          <MaterialPicker
             label="Malzeme Adı"
             value={movForm.name}
-            onChangeText={(v) => setMovForm({ ...movForm, name: v })}
-            placeholder="Örn: Demir Ø12"
+            category={movForm.category}
+            onChange={(name, cat, defUnit) =>
+              setMovForm({
+                ...movForm,
+                name,
+                category: cat,
+                unit: movForm.unit || defUnit || "",
+              })
+            }
+            placeholder="Örn: Nervürlü Demir Ø12"
           />
           <View style={styles.twoCol}>
             <View style={{ flex: 1 }}>
@@ -616,11 +655,24 @@ export default function MalzemeScreen() {
               </TouchableOpacity>
             ))}
           </View>
-          <FormInput
+          <CategoryPicker
+            label="Kategori"
+            value={rForm.category}
+            onChange={(v) => setRForm({ ...rForm, category: v })}
+          />
+          <MaterialPicker
             label="Malzeme Adı"
             value={rForm.name}
-            onChangeText={(v) => setRForm({ ...rForm, name: v })}
-            placeholder="Örn: Demir Ø12"
+            category={rForm.category}
+            onChange={(name, cat, defUnit) =>
+              setRForm({
+                ...rForm,
+                name,
+                category: cat,
+                unit: rForm.unit || defUnit || "",
+              })
+            }
+            placeholder="Örn: Nervürlü Demir Ø12"
           />
           <View style={styles.twoCol}>
             <View style={{ flex: 1 }}>
@@ -726,6 +778,11 @@ export default function MalzemeScreen() {
                   <Text style={[styles.cardTitle, { color: colors.foreground }]}>
                     {item.name}
                   </Text>
+                  {item.category ? (
+                    <Text style={[styles.catLabel, { color: colors.mutedForeground }]}>
+                      {item.category}
+                    </Text>
+                  ) : null}
                 </View>
                 {lowStock ? (
                   <View style={[styles.badge, { backgroundColor: "#fee2e2" }]}>
@@ -824,6 +881,11 @@ export default function MalzemeScreen() {
                 <Text style={[styles.cardTitle, { color: colors.foreground }]}>
                   {item.name}
                 </Text>
+                {item.category ? (
+                  <Text style={[styles.catLabel, { color: colors.mutedForeground }]}>
+                    {item.category}
+                  </Text>
+                ) : null}
               </View>
               <View style={[styles.qtyPill, { backgroundColor: meta.accent + "18" }]}>
                 <Text style={[styles.qtyPillText, { color: meta.accent }]}>
@@ -904,6 +966,11 @@ export default function MalzemeScreen() {
                   <Text style={[styles.cardTitle, { color: colors.foreground }]}>
                     {item.name}
                   </Text>
+                  {item.category ? (
+                    <Text style={[styles.catLabel, { color: colors.mutedForeground }]}>
+                      {item.category}
+                    </Text>
+                  ) : null}
                 </View>
                 <View style={[styles.badge, { backgroundColor: st.bg }]}>
                   <Text style={[styles.badgeText, { color: st.color }]}>{st.label}</Text>
@@ -972,6 +1039,7 @@ const styles = StyleSheet.create({
   cardHead: { flexDirection: "row", alignItems: "flex-start", gap: 8, marginBottom: 12 },
   projLabel: { fontSize: 12, fontFamily: "Inter_600SemiBold", marginBottom: 2 },
   cardTitle: { fontSize: 16, fontFamily: "Inter_700Bold" },
+  catLabel: { fontSize: 11, fontFamily: "Inter_500Medium", marginTop: 2 },
   badge: {
     flexDirection: "row",
     alignItems: "center",
