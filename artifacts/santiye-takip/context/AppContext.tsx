@@ -221,6 +221,7 @@ export const ALL_PAGE_KEYS = [
   "taseron",
   "butce",
   "hakedis",
+  "ilerleme",
   "kullanicilar",
 ] as const;
 
@@ -238,6 +239,7 @@ export const PAGE_LABELS: Record<PageKey, string> = {
   taseron: "Taşeron",
   butce: "Bütçe",
   hakedis: "Hakediş",
+  ilerleme: "İlerleme",
   kullanicilar: "Kullanıcılar",
 };
 
@@ -271,7 +273,7 @@ const DEFAULT_ROLES: Role[] = [
     permissions: {
       proje: "view", kesif: "view", "is-programi": "view", puantaj: "view",
       "gunluk-rapor": "view", imalat: "view", gorev: "view", malzeme: "view",
-      taseron: "view", butce: "view", hakedis: "view", kullanicilar: "view",
+      taseron: "view", butce: "view", hakedis: "view", ilerleme: "view", kullanicilar: "view",
     },
   },
   {
@@ -293,7 +295,7 @@ const DEFAULT_ROLES: Role[] = [
     permissions: {
       proje: "view", kesif: "none", "is-programi": "edit", puantaj: "edit",
       "gunluk-rapor": "edit", imalat: "edit", gorev: "edit", malzeme: "view",
-      taseron: "view", butce: "none", hakedis: "none", kullanicilar: "none",
+      taseron: "view", butce: "none", hakedis: "none", ilerleme: "view", kullanicilar: "none",
     },
   },
   {
@@ -303,7 +305,7 @@ const DEFAULT_ROLES: Role[] = [
     permissions: {
       proje: "view", kesif: "edit", "is-programi": "view", puantaj: "none",
       "gunluk-rapor": "view", imalat: "edit", gorev: "view", malzeme: "view",
-      taseron: "view", butce: "view", hakedis: "edit", kullanicilar: "none",
+      taseron: "view", butce: "view", hakedis: "edit", ilerleme: "edit", kullanicilar: "none",
     },
   },
   {
@@ -313,7 +315,7 @@ const DEFAULT_ROLES: Role[] = [
     permissions: {
       proje: "view", kesif: "none", "is-programi": "view", puantaj: "none",
       "gunluk-rapor": "edit", imalat: "view", gorev: "edit", malzeme: "none",
-      taseron: "none", butce: "none", hakedis: "none", kullanicilar: "none",
+      taseron: "none", butce: "none", hakedis: "none", ilerleme: "view", kullanicilar: "none",
     },
   },
   {
@@ -323,7 +325,7 @@ const DEFAULT_ROLES: Role[] = [
     permissions: {
       proje: "view", kesif: "none", "is-programi": "view", puantaj: "none",
       "gunluk-rapor": "edit", imalat: "view", gorev: "view", malzeme: "none",
-      taseron: "none", butce: "none", hakedis: "view", kullanicilar: "none",
+      taseron: "none", butce: "none", hakedis: "view", ilerleme: "view", kullanicilar: "none",
     },
   },
   {
@@ -333,7 +335,7 @@ const DEFAULT_ROLES: Role[] = [
     permissions: {
       proje: "view", kesif: "none", "is-programi": "none", puantaj: "none",
       "gunluk-rapor": "none", imalat: "none", gorev: "none", malzeme: "edit",
-      taseron: "view", butce: "view", hakedis: "none", kullanicilar: "none",
+      taseron: "view", butce: "view", hakedis: "none", ilerleme: "none", kullanicilar: "none",
     },
   },
   {
@@ -343,7 +345,7 @@ const DEFAULT_ROLES: Role[] = [
     permissions: {
       proje: "view", kesif: "none", "is-programi": "none", puantaj: "none",
       "gunluk-rapor": "none", imalat: "none", gorev: "none", malzeme: "none",
-      taseron: "none", butce: "view", hakedis: "view", kullanicilar: "none",
+      taseron: "none", butce: "view", hakedis: "view", ilerleme: "none", kullanicilar: "none",
     },
   },
   {
@@ -353,7 +355,7 @@ const DEFAULT_ROLES: Role[] = [
     permissions: {
       proje: "view", kesif: "none", "is-programi": "none", puantaj: "edit",
       "gunluk-rapor": "none", imalat: "none", gorev: "none", malzeme: "none",
-      taseron: "none", butce: "none", hakedis: "none", kullanicilar: "edit",
+      taseron: "none", butce: "none", hakedis: "none", ilerleme: "none", kullanicilar: "edit",
     },
   },
   {
@@ -363,7 +365,7 @@ const DEFAULT_ROLES: Role[] = [
     permissions: {
       proje: "view", kesif: "none", "is-programi": "none", puantaj: "none",
       "gunluk-rapor": "view", imalat: "none", gorev: "view", malzeme: "none",
-      taseron: "none", butce: "none", hakedis: "none", kullanicilar: "none",
+      taseron: "none", butce: "none", hakedis: "none", ilerleme: "none", kullanicilar: "none",
     },
   },
 ];

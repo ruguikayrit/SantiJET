@@ -37,6 +37,7 @@ const TYPE_META: Record<PageKey, { label: string; icon: string; color: string; b
   taseron:      { label: "Taşeron",       icon: "truck",       color: "#7c3aed", bg: "#ede9fe" },
   butce:        { label: "Bütçe",         icon: "dollar-sign", color: "#16213e", bg: "#e0e7ff" },
   hakedis:      { label: "Hakediş",       icon: "file-text",   color: "#be185d", bg: "#fce7f3" },
+  ilerleme:     { label: "İlerleme",      icon: "trending-up", color: "#0d9488", bg: "#ccfbf1" },
   kullanicilar: { label: "Kullanıcılar",  icon: "shield",      color: "#7c3aed", bg: "#ede9fe" },
 };
 
