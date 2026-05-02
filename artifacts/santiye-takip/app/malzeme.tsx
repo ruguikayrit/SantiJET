@@ -453,7 +453,7 @@ export default function MalzemeScreen() {
                 ...mForm,
                 name,
                 category: cat,
-                unit: mForm.unit || defUnit || "",
+                unit: defUnit || mForm.unit || "",
               })
             }
             placeholder="Örn: 10 cm Gazbeton"
@@ -573,7 +573,7 @@ export default function MalzemeScreen() {
                 ...movForm,
                 name,
                 category: cat,
-                unit: movForm.unit || defUnit || "",
+                unit: defUnit || movForm.unit || "",
               })
             }
             placeholder="Örn: Nervürlü Demir Ø12"
@@ -669,7 +669,7 @@ export default function MalzemeScreen() {
                 ...rForm,
                 name,
                 category: cat,
-                unit: rForm.unit || defUnit || "",
+                unit: defUnit || rForm.unit || "",
               })
             }
             placeholder="Örn: Nervürlü Demir Ø12"
