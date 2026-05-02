@@ -11,6 +11,7 @@ import {
 } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
+import { useI18n } from "@/context/I18nContext";
 import { useTheme } from "@/context/ThemeContext";
 import { useColors } from "@/hooks/useColors";
 
@@ -18,6 +19,7 @@ export default function TemalarScreen() {
   const colors = useColors();
   const router = useRouter();
   const { themeId, themes, setThemeId } = useTheme();
+  const { t, language, languages, setLanguage } = useI18n();
   const insets = useSafeAreaInsets();
   const topPad = Platform.OS === "web" ? 16 : insets.top;
 
@@ -40,7 +42,7 @@ export default function TemalarScreen() {
           <Feather name="arrow-left" size={22} color={colors.secondaryForeground} />
         </TouchableOpacity>
         <Text style={[styles.headerTitle, { color: colors.secondaryForeground }]}>
-          Tema Seçimi
+          {t("common.settings")}
         </Text>
         <View style={{ width: 40 }} />
       </View>
@@ -51,18 +53,74 @@ export default function TemalarScreen() {
           { paddingBottom: insets.bottom + 24 },
         ]}
       >
+        {/* ── Dil Seçimi ── */}
+        <Text style={[styles.sectionTitle, { color: colors.foreground }]}>
+          {t("settings.language.title")}
+        </Text>
         <Text style={[styles.intro, { color: colors.mutedForeground }]}>
-          Lacivert, beyaz ve turuncu tonlarından sevdiğin paleti seç.
-          Tüm uygulama anında bu temaya geçer.
+          {t("settings.language.intro")}
+        </Text>
+        <View style={styles.langRow}>
+          {languages.map((l) => {
+            const selected = l.code === language;
+            return (
+              <TouchableOpacity
+                key={l.code}
+                onPress={() => setLanguage(l.code)}
+                activeOpacity={0.85}
+                style={[
+                  styles.langChip,
+                  {
+                    backgroundColor: selected ? colors.primary : colors.card,
+                    borderColor: selected ? colors.primary : colors.border,
+                  },
+                ]}
+              >
+                <Text style={styles.langFlag}>{l.flag}</Text>
+                <Text
+                  style={[
+                    styles.langName,
+                    {
+                      color: selected
+                        ? colors.primaryForeground
+                        : colors.foreground,
+                    },
+                  ]}
+                >
+                  {l.native}
+                </Text>
+                {selected ? (
+                  <Feather
+                    name="check"
+                    size={14}
+                    color={colors.primaryForeground}
+                  />
+                ) : null}
+              </TouchableOpacity>
+            );
+          })}
+        </View>
+
+        {/* ── Tema Seçimi ── */}
+        <Text
+          style={[
+            styles.sectionTitle,
+            { color: colors.foreground, marginTop: 24 },
+          ]}
+        >
+          {t("settings.theme.title")}
+        </Text>
+        <Text style={[styles.intro, { color: colors.mutedForeground }]}>
+          {t("settings.theme.intro")}
         </Text>
 
-        {themes.map((t) => {
-          const selected = t.id === themeId;
+        {themes.map((th) => {
+          const selected = th.id === themeId;
           return (
             <TouchableOpacity
-              key={t.id}
+              key={th.id}
               activeOpacity={0.85}
-              onPress={() => setThemeId(t.id)}
+              onPress={() => setThemeId(th.id)}
               style={[
                 styles.card,
                 {
@@ -77,7 +135,7 @@ export default function TemalarScreen() {
                   style={[
                     styles.previewBox,
                     {
-                      backgroundColor: t.preview.bg,
+                      backgroundColor: th.preview.bg,
                       borderColor: colors.border,
                     },
                   ]}
@@ -85,21 +143,21 @@ export default function TemalarScreen() {
                   <View
                     style={[
                       styles.previewBar,
-                      { backgroundColor: t.preview.secondary },
+                      { backgroundColor: th.preview.secondary },
                     ]}
                   />
                   <View style={styles.previewBody}>
                     <View
                       style={[
                         styles.previewChip,
-                        { backgroundColor: t.preview.primary },
+                        { backgroundColor: th.preview.primary },
                       ]}
                     />
                     <View
                       style={[
                         styles.previewLine,
                         {
-                          backgroundColor: t.isDark
+                          backgroundColor: th.isDark
                             ? "rgba(255,255,255,0.4)"
                             : "rgba(0,0,0,0.15)",
                         },
@@ -109,7 +167,7 @@ export default function TemalarScreen() {
                       style={[
                         styles.previewLineShort,
                         {
-                          backgroundColor: t.isDark
+                          backgroundColor: th.isDark
                             ? "rgba(255,255,255,0.25)"
                             : "rgba(0,0,0,0.1)",
                         },
@@ -121,7 +179,7 @@ export default function TemalarScreen() {
                 <View style={styles.cardTextBlock}>
                   <View style={styles.titleRow}>
                     <Text style={[styles.cardTitle, { color: colors.foreground }]}>
-                      {t.name}
+                      {th.name}
                     </Text>
                     {selected ? (
                       <View
@@ -141,7 +199,7 @@ export default function TemalarScreen() {
                             { color: colors.primaryForeground },
                           ]}
                         >
-                          Aktif
+                          {t("settings.theme.active")}
                         </Text>
                       </View>
                     ) : null}
@@ -152,32 +210,32 @@ export default function TemalarScreen() {
                       { color: colors.mutedForeground },
                     ]}
                   >
-                    {t.description}
+                    {th.description}
                   </Text>
                   <View style={styles.swatches}>
                     <View
                       style={[
                         styles.swatch,
-                        { backgroundColor: t.colors.navy },
+                        { backgroundColor: th.colors.navy },
                       ]}
                     />
                     <View
                       style={[
                         styles.swatch,
-                        { backgroundColor: t.colors.orange },
+                        { backgroundColor: th.colors.orange },
                       ]}
                     />
                     <View
                       style={[
                         styles.swatch,
                         {
-                          backgroundColor: t.colors.background,
+                          backgroundColor: th.colors.background,
                           borderWidth: 1,
                           borderColor: colors.border,
                         },
                       ]}
                     />
-                    {t.isDark ? (
+                    {th.isDark ? (
                       <View
                         style={[
                           styles.darkPill,
@@ -195,7 +253,7 @@ export default function TemalarScreen() {
                             { color: colors.mutedForeground },
                           ]}
                         >
-                          Karanlık
+                          {t("settings.theme.dark")}
                         </Text>
                       </View>
                     ) : null}
@@ -234,12 +292,34 @@ const styles = StyleSheet.create({
     fontFamily: "Inter_700Bold",
   },
   scroll: { padding: 16, gap: 12 },
+  sectionTitle: {
+    fontSize: 16,
+    fontFamily: "Inter_700Bold",
+    marginBottom: 6,
+  },
   intro: {
     fontSize: 13,
     lineHeight: 18,
     marginBottom: 12,
     fontFamily: "Inter_400Regular",
   },
+  langRow: {
+    flexDirection: "row",
+    flexWrap: "wrap",
+    gap: 8,
+    marginBottom: 8,
+  },
+  langChip: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 8,
+    paddingHorizontal: 12,
+    paddingVertical: 10,
+    borderRadius: 12,
+    borderWidth: 1,
+  },
+  langFlag: { fontSize: 18 },
+  langName: { fontSize: 14, fontFamily: "Inter_600SemiBold" },
   card: {
     borderRadius: 14,
     padding: 14,

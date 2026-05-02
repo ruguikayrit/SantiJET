@@ -16,6 +16,7 @@ import { ErrorBoundary } from "@/components/ErrorBoundary";
 import WebFrame from "@/components/WebFrame";
 import { AppProvider, useApp } from "@/context/AppContext";
 import { ThemeProvider } from "@/context/ThemeContext";
+import { I18nProvider } from "@/context/I18nContext";
 
 SplashScreen.preventAutoHideAsync();
 
@@ -94,17 +95,19 @@ export default function RootLayout() {
   return (
     <SafeAreaProvider>
       <ThemeProvider>
-        <ErrorBoundary>
-          <QueryClientProvider client={queryClient}>
-            <GestureHandlerRootView style={{ flex: 1 }}>
-              <WebFrame>
-                <AppProvider>
-                  <RootLayoutNav />
-                </AppProvider>
-              </WebFrame>
-            </GestureHandlerRootView>
-          </QueryClientProvider>
-        </ErrorBoundary>
+        <I18nProvider>
+          <ErrorBoundary>
+            <QueryClientProvider client={queryClient}>
+              <GestureHandlerRootView style={{ flex: 1 }}>
+                <WebFrame>
+                  <AppProvider>
+                    <RootLayoutNav />
+                  </AppProvider>
+                </WebFrame>
+              </GestureHandlerRootView>
+            </QueryClientProvider>
+          </ErrorBoundary>
+        </I18nProvider>
       </ThemeProvider>
     </SafeAreaProvider>
   );

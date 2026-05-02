@@ -21,6 +21,7 @@ import BottomSheet from "@/components/BottomSheet";
 import PrimaryButton from "@/components/PrimaryButton";
 import SmartSearch from "@/components/SmartSearch";
 import { PageKey, Permission, useApp } from "@/context/AppContext";
+import { useI18n } from "@/context/I18nContext";
 import { useColors } from "@/hooks/useColors";
 
 interface Section {
@@ -52,6 +53,7 @@ export default function HomeScreen() {
   const colors = useColors();
   const router = useRouter();
   const app = useApp();
+  const { t } = useI18n();
   const insets = useSafeAreaInsets();
   const topPad = Platform.OS === "web" ? 67 : insets.top;
 
@@ -206,8 +208,8 @@ export default function HomeScreen() {
       >
         <View style={styles.heroRow}>
           <View style={{ flex: 1 }}>
-            <Text style={styles.heroSub}>Hoş Geldiniz</Text>
-            <Text style={styles.heroTitle}>ŞantiJET</Text>
+            <Text style={styles.heroSub}>{t("home.welcome")}</Text>
+            <Text style={styles.heroTitle}>{t("app.title")}</Text>
             <Text style={styles.heroDesc}>
               {app.projects.length} aktif proje · {app.workers.length} personel
             </Text>
@@ -230,7 +232,7 @@ export default function HomeScreen() {
                 hitSlop={8}
               >
                 <Feather name="log-out" size={14} color="#94a3b8" />
-                <Text style={styles.logoutText}>Çıkış</Text>
+                <Text style={styles.logoutText}>{t("home.logout")}</Text>
               </TouchableOpacity>
             </View>
           ) : null}
@@ -346,13 +348,13 @@ export default function HomeScreen() {
                   style={[styles.tileLabel, { color: colors.foreground }]}
                   numberOfLines={1}
                 >
-                  {s.label}
+                  {t(`menu.${s.key}`)}
                 </Text>
                 <View style={styles.tileBottom}>
                   <Text
                     style={[styles.tileCount, { color: colors.mutedForeground }]}
                   >
-                    {s.count(app)} kayıt
+                    {s.count(app)}
                   </Text>
                   {perm === "view" ? (
                     <View style={styles.viewBadge}>
