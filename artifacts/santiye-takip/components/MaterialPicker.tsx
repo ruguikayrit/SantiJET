@@ -42,10 +42,13 @@ export default function MaterialPicker({
   const [search, setSearch] = useState("");
   const [activeCat, setActiveCat] = useState<string | null>(null);
 
+  const lockedCat = category && category.trim().length > 0 ? category : null;
+  const effectiveCat = lockedCat ?? activeCat;
+
   const matches = useMemo(() => {
     const q = search.trim().toLowerCase();
     let list = materialList;
-    if (activeCat) list = list.filter((m) => m.category === activeCat);
+    if (effectiveCat) list = list.filter((m) => m.category === effectiveCat);
     if (q) {
       list = list.filter(
         (m) =>
@@ -54,10 +57,10 @@ export default function MaterialPicker({
       );
     }
     return list;
-  }, [search, activeCat, materialList]);
+  }, [search, effectiveCat, materialList]);
 
   const rows = useMemo<Row[]>(() => {
-    if (activeCat) {
+    if (effectiveCat) {
       return matches.map((m) => ({ type: "item" as const, material: m }));
     }
     const out: Row[] = [];
@@ -70,7 +73,7 @@ export default function MaterialPicker({
       out.push({ type: "item", material: m });
     }
     return out;
-  }, [matches, activeCat]);
+  }, [matches, effectiveCat]);
 
   const showCustomOption =
     search.trim().length >= 2 &&
@@ -176,39 +179,48 @@ export default function MaterialPicker({
               ) : null}
             </View>
 
-            <View style={styles.catRow}>
-              <FlatList
-                horizontal
-                showsHorizontalScrollIndicator={false}
-                data={[null, ...materialList.map((m) => m.category).filter((c, i, a) => a.indexOf(c) === i)]}
-                keyExtractor={(c) => c ?? "__all"}
-                contentContainerStyle={{ gap: 6 }}
-                renderItem={({ item }) => {
-                  const sel = item === activeCat;
-                  return (
-                    <TouchableOpacity
-                      onPress={() => setActiveCat(item)}
-                      style={[
-                        styles.catChip,
-                        {
-                          backgroundColor: sel ? colors.primary : colors.muted,
-                        },
-                      ]}
-                      activeOpacity={0.7}
-                    >
-                      <Text
+            {lockedCat ? (
+              <View style={[styles.lockedCat, { backgroundColor: colors.primary + "15", borderColor: colors.primary + "40" }]}>
+                <Feather name="filter" size={12} color={colors.primary} />
+                <Text style={[styles.lockedCatText, { color: colors.primary }]} numberOfLines={1}>
+                  {lockedCat}
+                </Text>
+              </View>
+            ) : (
+              <View style={styles.catRow}>
+                <FlatList
+                  horizontal
+                  showsHorizontalScrollIndicator={false}
+                  data={[null, ...materialList.map((m) => m.category).filter((c, i, a) => a.indexOf(c) === i)]}
+                  keyExtractor={(c) => c ?? "__all"}
+                  contentContainerStyle={{ gap: 6 }}
+                  renderItem={({ item }) => {
+                    const sel = item === activeCat;
+                    return (
+                      <TouchableOpacity
+                        onPress={() => setActiveCat(item)}
                         style={[
-                          styles.catChipText,
-                          { color: sel ? "#fff" : colors.foreground },
+                          styles.catChip,
+                          {
+                            backgroundColor: sel ? colors.primary : colors.muted,
+                          },
                         ]}
+                        activeOpacity={0.7}
                       >
-                        {item ?? "Tümü"}
-                      </Text>
-                    </TouchableOpacity>
-                  );
-                }}
-              />
-            </View>
+                        <Text
+                          style={[
+                            styles.catChipText,
+                            { color: sel ? "#fff" : colors.foreground },
+                          ]}
+                        >
+                          {item ?? "Tümü"}
+                        </Text>
+                      </TouchableOpacity>
+                    );
+                  }}
+                />
+              </View>
+            )}
 
             <FlatList
               data={rows}
@@ -421,6 +433,18 @@ const styles = StyleSheet.create({
     padding: 0,
   },
   catRow: { marginBottom: 8 },
+  lockedCat: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 6,
+    alignSelf: "flex-start",
+    paddingHorizontal: 10,
+    paddingVertical: 6,
+    borderRadius: 999,
+    borderWidth: 1,
+    marginBottom: 8,
+  },
+  lockedCatText: { fontSize: 12, fontFamily: "Inter_600SemiBold" },
   catChip: {
     paddingHorizontal: 12,
     paddingVertical: 6,
