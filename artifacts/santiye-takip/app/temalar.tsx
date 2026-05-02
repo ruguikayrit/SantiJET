@@ -30,7 +30,10 @@ export default function TemalarScreen() {
         ]}
       >
         <TouchableOpacity
-          onPress={() => router.back()}
+          onPress={() => {
+            if (router.canGoBack()) router.back();
+            else router.replace("/" as any);
+          }}
           style={styles.backBtn}
           accessibilityLabel="Geri"
         >

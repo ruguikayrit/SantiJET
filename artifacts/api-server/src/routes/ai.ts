@@ -48,16 +48,27 @@ const openai = openaiBaseUrl && openaiApiKey
 const MAX_QUESTION_LEN = 500;
 const MAX_SNAPSHOT_BYTES = 200_000;
 
-const SYSTEM_PROMPT = `Sen bir Türk inşaat şantiye yönetim uygulamasının yardımcı asistanısın.
+const SYSTEM_PROMPT = `Sen bir Türk inşaat şantiye yönetim uygulamasının (ŞantiJET) yardımcı asistanısın.
 Görevin: kullanıcının doğal dildeki sorusunu, ona verilen JSON formatındaki şantiye verileri üzerinden cevaplamak.
+Şantiye terimleri (m3, m2, ton, beton, demir, kalıp, hakediş, puantaj, keşif, imalat) ile rahat çalışırsın.
 Kurallar:
-- Cevabını sadece Türkçe ver.
-- Kısa, net ve listele halinde cevap ver. Mümkün olduğunda madde işareti kullan.
-- Sayısal toplamlar isteniyorsa hesapla ve net rakam ver.
-- Para birimi TL'dir, gerektiğinde "₺" kullan.
-- Veride bulunmayan bir bilgi sorulursa "Bu bilgi mevcut verilerde bulunmuyor." de, bilgi uydurma.
+- Cevabını her zaman ve sadece Türkçe ver.
+- Kısa, net ve gerektiğinde madde işareti / kalın başlık ile cevap ver.
+- Sayısal toplamlar isteniyorsa hesapla ve net rakam ver. Birimi de yaz (m3, m2, kg, ton, gün, saat...).
+- Para birimi TL'dir, "₺" kullan. Büyük rakamları okunaklı yaz (örn. 1.250.000 ₺).
+- Tarih aralığı sorulduğunda ("bu ay", "geçen hafta", "x tarihinde") doğru filtreleme yap.
+- Veride olmayan bir bilgi sorulursa "Bu bilgi mevcut verilerde bulunmuyor." de — asla uydurma.
 - Tarihleri "DD.MM.YYYY" formatında göster.
-- Cevabı en fazla 200 kelime ile sınırla.`;
+- Cevabı en fazla 250 kelime ile sınırla. Yeterince bilgi varsa başında 1 cümle özet ver.
+- Geçmiş mesajlar varsa onlara referans verebilir, takip sorularını kullanıcının önceki sorusuyla bağlantılı cevaplayabilirsin.`;
+
+interface ChatMessage {
+  role: "user" | "assistant";
+  content: string;
+}
+
+const MAX_HISTORY_MESSAGES = 10;
+const MAX_HISTORY_CHAR_PER_MSG = 4000;
 
 router.post("/workspaces/:code/ask", aiLimiter, requireAuth, async (req: AuthedRequest, res) => {
   try {
@@ -65,7 +76,7 @@ router.post("/workspaces/:code/ask", aiLimiter, requireAuth, async (req: AuthedR
       res.status(503).json({ error: "Yapay zeka servisi şu anda kullanılamıyor." });
       return;
     }
-    const body = req.body as { question?: unknown; snapshot?: unknown };
+    const body = req.body as { question?: unknown; snapshot?: unknown; history?: unknown };
     const question = typeof body.question === "string" ? body.question.trim() : "";
     const snapshot = body.snapshot;
     if (question.length < 2 || question.length > MAX_QUESTION_LEN) {
@@ -83,12 +94,31 @@ router.post("/workspaces/:code/ask", aiLimiter, requireAuth, async (req: AuthedR
       return;
     }
 
+    const safeHistory: ChatMessage[] = Array.isArray(body.history)
+      ? body.history
+          .filter((m): m is { role: string; content: string } =>
+            !!m && typeof m === "object" &&
+            (m as any).role && typeof (m as any).content === "string"
+          )
+          .filter((m) => m.role === "user" || m.role === "assistant")
+          .map((m) => ({
+            role: m.role as "user" | "assistant",
+            content: m.content.slice(0, MAX_HISTORY_CHAR_PER_MSG),
+          }))
+          .slice(-MAX_HISTORY_MESSAGES)
+      : [];
+
+    const today = new Date().toISOString().slice(0, 10);
+
     const completion = await openai.chat.completions.create({
       model: "gpt-5-mini",
       max_completion_tokens: 1024,
       messages: [
         { role: "system", content: SYSTEM_PROMPT },
-        { role: "user", content: `Veriler:\n${snapshotJson}\n\nSoru: ${question}` },
+        { role: "system", content: `Bugünün tarihi: ${today}` },
+        { role: "system", content: `Şantiye verileri (JSON):\n${snapshotJson}` },
+        ...safeHistory.map((m) => ({ role: m.role, content: m.content })),
+        { role: "user", content: question },
       ],
     });
 

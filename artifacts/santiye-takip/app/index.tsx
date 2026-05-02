@@ -367,7 +367,24 @@ export default function HomeScreen() {
         </View>
 
         <TouchableOpacity
-          style={[styles.raporBtn, { backgroundColor: colors.card, borderColor: colors.primary + "40" }]}
+          style={[styles.raporBtn, { backgroundColor: colors.card, borderColor: colors.primary + "60", borderWidth: 1.5 }]}
+          onPress={() => router.push("/asistan" as any)}
+          activeOpacity={0.85}
+        >
+          <View style={[styles.raporIcon, { backgroundColor: colors.primary }]}>
+            <Feather name="cpu" size={20} color={colors.primaryForeground} />
+          </View>
+          <View style={{ flex: 1 }}>
+            <Text style={[styles.raporTitle, { color: colors.foreground }]}>AI Asistan</Text>
+            <Text style={[styles.raporSub, { color: colors.mutedForeground }]}>Geçmiş kayıtlara doğal dilde soru sor</Text>
+          </View>
+          <View style={[styles.aiPill, { backgroundColor: colors.primary + "20" }]}>
+            <Text style={[styles.aiPillText, { color: colors.primary }]}>YENİ</Text>
+          </View>
+        </TouchableOpacity>
+
+        <TouchableOpacity
+          style={[styles.raporBtn, { backgroundColor: colors.card, borderColor: colors.primary + "40", marginTop: 10 }]}
           onPress={() => router.push("/rapor" as any)}
           activeOpacity={0.85}
         >
@@ -783,6 +800,8 @@ const styles = StyleSheet.create({
   raporIcon: { width: 42, height: 42, borderRadius: 10, alignItems: "center", justifyContent: "center" },
   raporTitle: { fontSize: 15, fontFamily: "Inter_700Bold" },
   raporSub: { fontSize: 12, fontFamily: "Inter_400Regular", marginTop: 2 },
+  aiPill: { paddingHorizontal: 8, paddingVertical: 3, borderRadius: 999 },
+  aiPillText: { fontSize: 10, fontWeight: "800", letterSpacing: 0.5, fontFamily: "Inter_700Bold" },
   dataRow: {
     flexDirection: "row",
     gap: 12,
