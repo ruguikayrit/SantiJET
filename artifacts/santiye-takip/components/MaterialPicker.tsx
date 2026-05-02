@@ -12,11 +12,8 @@ import {
 } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
-import {
-  CONSTRUCTION_MATERIALS,
-  ConstructionMaterial,
-  MATERIAL_CATEGORIES,
-} from "@/constants/materials";
+import { ConstructionMaterial } from "@/constants/materials";
+import { useApp } from "@/context/AppContext";
 import { useColors } from "@/hooks/useColors";
 
 interface Props {
@@ -40,13 +37,14 @@ export default function MaterialPicker({
 }: Props) {
   const colors = useColors();
   const insets = useSafeAreaInsets();
+  const { materialList } = useApp();
   const [open, setOpen] = useState(false);
   const [search, setSearch] = useState("");
   const [activeCat, setActiveCat] = useState<string | null>(null);
 
   const matches = useMemo(() => {
     const q = search.trim().toLowerCase();
-    let list = CONSTRUCTION_MATERIALS;
+    let list = materialList;
     if (activeCat) list = list.filter((m) => m.category === activeCat);
     if (q) {
       list = list.filter(
@@ -56,7 +54,7 @@ export default function MaterialPicker({
       );
     }
     return list;
-  }, [search, activeCat]);
+  }, [search, activeCat, materialList]);
 
   const rows = useMemo<Row[]>(() => {
     if (activeCat) {
@@ -76,7 +74,7 @@ export default function MaterialPicker({
 
   const showCustomOption =
     search.trim().length >= 2 &&
-    !CONSTRUCTION_MATERIALS.some(
+    !materialList.some(
       (m) => m.name.toLowerCase() === search.trim().toLowerCase()
     );
 
@@ -182,7 +180,7 @@ export default function MaterialPicker({
               <FlatList
                 horizontal
                 showsHorizontalScrollIndicator={false}
-                data={[null, ...MATERIAL_CATEGORIES]}
+                data={[null, ...materialList.map((m) => m.category).filter((c, i, a) => a.indexOf(c) === i)]}
                 keyExtractor={(c) => c ?? "__all"}
                 contentContainerStyle={{ gap: 6 }}
                 renderItem={({ item }) => {

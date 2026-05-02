@@ -12,7 +12,7 @@ import {
 } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
-import { MATERIAL_CATEGORIES } from "@/constants/materials";
+import { useApp } from "@/context/AppContext";
 import { useColors } from "@/hooks/useColors";
 
 interface Props {
@@ -30,18 +30,19 @@ export default function CategoryPicker({
 }: Props) {
   const colors = useColors();
   const insets = useSafeAreaInsets();
+  const { materialCategories } = useApp();
   const [open, setOpen] = useState(false);
   const [search, setSearch] = useState("");
 
   const filtered = useMemo(() => {
     const q = search.trim().toLowerCase();
-    if (!q) return MATERIAL_CATEGORIES as readonly string[];
-    return MATERIAL_CATEGORIES.filter((c) => c.toLowerCase().includes(q));
-  }, [search]);
+    if (!q) return materialCategories;
+    return materialCategories.filter((c) => c.toLowerCase().includes(q));
+  }, [search, materialCategories]);
 
   const showCustomOption =
     search.trim().length > 0 &&
-    !MATERIAL_CATEGORIES.some(
+    !materialCategories.some(
       (c) => c.toLowerCase() === search.trim().toLowerCase()
     );
 

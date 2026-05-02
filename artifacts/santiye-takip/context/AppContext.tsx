@@ -7,6 +7,12 @@ import React, {
   useState,
 } from "react";
 import { WorkspaceInfo, loadWorkspace, saveWorkspace, clearWorkspace } from "@/utils/workspace";
+import {
+  CONSTRUCTION_MATERIALS,
+  ConstructionMaterial,
+  MATERIAL_CATEGORIES,
+} from "@/constants/materials";
+import { MATERIAL_UNITS, UnitOption } from "@/constants/units";
 
 export interface Project {
   id: string;
@@ -375,6 +381,9 @@ interface AppState {
   roles: Role[];
   appUsers: AppUser[];
   currentUserId: string | null;
+  materialCategories: string[];
+  materialList: ConstructionMaterial[];
+  materialUnits: UnitOption[];
 }
 
 export type SyncStatus = "idle" | "syncing" | "success" | "error" | "conflict" | "auth_error";
@@ -459,6 +468,15 @@ interface AppContextType extends AppState {
 
   exportData: () => string;
   importData: (json: string) => { ok: true; counts: Record<string, number> } | { ok: false; error: string };
+
+  addMaterialCategory: (name: string) => void;
+  deleteMaterialCategory: (name: string) => void;
+
+  addMaterialItem: (item: ConstructionMaterial) => void;
+  deleteMaterialItem: (name: string) => void;
+
+  addMaterialUnit: (unit: UnitOption) => void;
+  deleteMaterialUnit: (code: string) => void;
 }
 
 const AppContext = createContext<AppContextType | undefined>(undefined);
@@ -490,6 +508,9 @@ const INITIAL: AppState = {
   roles: [],
   appUsers: [],
   currentUserId: null,
+  materialCategories: [...MATERIAL_CATEGORIES],
+  materialList: [...CONSTRUCTION_MATERIALS],
+  materialUnits: [...MATERIAL_UNITS],
 };
 
 function needsRoleMigration(roles: Role[]): boolean {
@@ -506,6 +527,15 @@ async function loadInitialState(): Promise<AppState> {
       const state: AppState = { ...INITIAL, ...parsed };
       if (!state.roles || state.roles.length === 0 || needsRoleMigration(state.roles)) {
         state.roles = DEFAULT_ROLES;
+      }
+      if (!Array.isArray(state.materialCategories)) {
+        state.materialCategories = [...MATERIAL_CATEGORIES];
+      }
+      if (!Array.isArray(state.materialList)) {
+        state.materialList = [...CONSTRUCTION_MATERIALS];
+      }
+      if (!Array.isArray(state.materialUnits)) {
+        state.materialUnits = [...MATERIAL_UNITS];
       }
       return state;
     } catch {
@@ -706,6 +736,12 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
             ...INITIAL,
             ...incoming,
             roles: Array.isArray(incoming.roles) && incoming.roles.length > 0 ? incoming.roles : DEFAULT_ROLES,
+            materialCategories: Array.isArray(incoming.materialCategories)
+              ? incoming.materialCategories : [...MATERIAL_CATEGORIES],
+            materialList: Array.isArray(incoming.materialList)
+              ? incoming.materialList : [...CONSTRUCTION_MATERIALS],
+            materialUnits: Array.isArray(incoming.materialUnits)
+              ? incoming.materialUnits : [...MATERIAL_UNITS],
             currentUserId: userStillExists ? prevUserId : null,
           };
           setState(next);
@@ -751,6 +787,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     updateProject: makeUpdate("projects") as any,
     deleteProject: (id) =>
       update((prev) => ({
+        ...prev,
         projects: prev.projects.filter((x) => x.id !== id),
         surveys: prev.surveys.filter((x) => x.projectId !== id),
         scheduleTasks: prev.scheduleTasks.filter((x) => x.projectId !== id),
@@ -833,6 +870,42 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
         ...prev,
         appUsers: prev.appUsers.filter((u) => u.id !== id),
         currentUserId: prev.currentUserId === id ? null : prev.currentUserId,
+      })),
+
+    addMaterialCategory: (name) =>
+      update((prev) =>
+        prev.materialCategories.some((c) => c.toLowerCase() === name.toLowerCase())
+          ? prev
+          : { ...prev, materialCategories: [...prev.materialCategories, name] }
+      ),
+    deleteMaterialCategory: (name) =>
+      update((prev) => ({
+        ...prev,
+        materialCategories: prev.materialCategories.filter((c) => c !== name),
+      })),
+
+    addMaterialItem: (item) =>
+      update((prev) =>
+        prev.materialList.some((m) => m.name.toLowerCase() === item.name.toLowerCase())
+          ? prev
+          : { ...prev, materialList: [...prev.materialList, item] }
+      ),
+    deleteMaterialItem: (name) =>
+      update((prev) => ({
+        ...prev,
+        materialList: prev.materialList.filter((m) => m.name !== name),
+      })),
+
+    addMaterialUnit: (unit) =>
+      update((prev) =>
+        prev.materialUnits.some((u) => u.code.toUpperCase() === unit.code.toUpperCase())
+          ? prev
+          : { ...prev, materialUnits: [...prev.materialUnits, unit] }
+      ),
+    deleteMaterialUnit: (code) =>
+      update((prev) => ({
+        ...prev,
+        materialUnits: prev.materialUnits.filter((u) => u.code !== code),
       })),
 
     exportData: () => {

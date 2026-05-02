@@ -71,6 +71,9 @@ function RootLayoutNav() {
         <Stack.Screen name="rapor" />
         <Stack.Screen name="temalar" />
         <Stack.Screen name="dil" />
+        <Stack.Screen name="malzeme-kategorisi" />
+        <Stack.Screen name="malzeme-listesi" />
+        <Stack.Screen name="malzeme-birimi" />
         <Stack.Screen name="asistan" />
       </Stack>
     </AppGate>

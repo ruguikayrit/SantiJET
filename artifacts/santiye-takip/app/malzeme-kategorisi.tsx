@@ -1,0 +1,146 @@
+import { Feather } from "@expo/vector-icons";
+import { useRouter } from "expo-router";
+import React, { useState } from "react";
+import {
+  Alert,
+  FlatList,
+  Platform,
+  StyleSheet,
+  Text,
+  TextInput,
+  TouchableOpacity,
+  View,
+} from "react-native";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
+
+import PrimaryButton from "@/components/PrimaryButton";
+import { useApp } from "@/context/AppContext";
+import { useI18n } from "@/context/I18nContext";
+import { useColors } from "@/hooks/useColors";
+
+export default function MalzemeKategorisiScreen() {
+  const colors = useColors();
+  const router = useRouter();
+  const { t } = useI18n();
+  const {
+    materialCategories,
+    addMaterialCategory,
+    deleteMaterialCategory,
+    materialList,
+    materials,
+    materialRequests,
+    materialMovements,
+    currentRole,
+  } = useApp();
+  const isAdmin = currentRole?.isAdmin === true;
+  const insets = useSafeAreaInsets();
+  const topPad = Platform.OS === "web" ? 16 : insets.top;
+  const [newName, setNewName] = useState("");
+
+  function handleAdd() {
+    const name = newName.trim();
+    if (!name) return;
+    if (materialCategories.some((c) => c.toLowerCase() === name.toLowerCase())) {
+      Alert.alert(t("settings.matCat.title"), t("settings.matCat.exists"));
+      return;
+    }
+    addMaterialCategory(name);
+    setNewName("");
+  }
+
+  function handleDelete(name: string) {
+    const refs =
+      materialList.filter((m) => m.category === name).length +
+      materials.filter((m) => m.category === name).length +
+      materialRequests.filter((m) => m.category === name).length +
+      materialMovements.filter((m) => m.category === name).length;
+    const msg =
+      t("settings.matCat.confirmDelete").replace("{name}", name) +
+      (refs > 0 ? "\n\n" + t("settings.refWarn").replace("{count}", String(refs)) : "");
+    Alert.alert(t("common.delete"), msg, [
+      { text: t("common.cancel"), style: "cancel" },
+      { text: t("common.delete"), style: "destructive", onPress: () => deleteMaterialCategory(name) },
+    ]);
+  }
+
+  if (!isAdmin) {
+    return (
+      <View style={[styles.root, { backgroundColor: colors.background, alignItems: "center", justifyContent: "center", padding: 24 }]}>
+        <Text style={{ color: colors.mutedForeground, textAlign: "center" }}>{t("settings.adminOnly")}</Text>
+        <TouchableOpacity onPress={() => router.back()} style={{ marginTop: 16 }}>
+          <Text style={{ color: colors.primary, fontFamily: "Inter_600SemiBold" }}>{t("common.back")}</Text>
+        </TouchableOpacity>
+      </View>
+    );
+  }
+
+  return (
+    <View style={[styles.root, { backgroundColor: colors.background }]}>
+      <View
+        style={[
+          styles.header,
+          { backgroundColor: colors.secondary, paddingTop: topPad + 12 },
+        ]}
+      >
+        <TouchableOpacity
+          onPress={() => (router.canGoBack() ? router.back() : router.replace("/" as any))}
+          style={styles.backBtn}
+          accessibilityLabel={t("common.back")}
+        >
+          <Feather name="arrow-left" size={22} color={colors.secondaryForeground} />
+        </TouchableOpacity>
+        <Text style={[styles.headerTitle, { color: colors.secondaryForeground }]}>
+          {t("settings.matCat.title")}
+        </Text>
+        <View style={{ width: 40 }} />
+      </View>
+
+      <View style={[styles.addBar, { backgroundColor: colors.card, borderColor: colors.border }]}>
+        <TextInput
+          value={newName}
+          onChangeText={setNewName}
+          placeholder={t("settings.matCat.placeholder")}
+          placeholderTextColor={colors.mutedForeground}
+          style={[styles.input, { color: colors.foreground, borderColor: colors.border, backgroundColor: colors.background }]}
+          onSubmitEditing={handleAdd}
+        />
+        <PrimaryButton label={t("common.add")} onPress={handleAdd} />
+      </View>
+
+      <FlatList
+        data={materialCategories}
+        keyExtractor={(item) => item}
+        contentContainerStyle={{ padding: 16, paddingBottom: insets.bottom + 24 }}
+        ListEmptyComponent={
+          <Text style={{ color: colors.mutedForeground, textAlign: "center", marginTop: 24 }}>
+            {t("settings.matCat.empty")}
+          </Text>
+        }
+        renderItem={({ item }) => (
+          <View style={[styles.row, { backgroundColor: colors.card, borderColor: colors.border }]}>
+            <Text style={[styles.rowText, { color: colors.foreground }]}>{item}</Text>
+            <TouchableOpacity
+              onPress={() => handleDelete(item)}
+              style={[styles.delBtn, { backgroundColor: "#ef4444" + "15" }]}
+              accessibilityLabel={t("common.delete")}
+            >
+              <Feather name="trash-2" size={18} color="#ef4444" />
+            </TouchableOpacity>
+          </View>
+        )}
+      />
+    </View>
+  );
+}
+
+const styles = StyleSheet.create({
+  root: { flex: 1 },
+  header: { flexDirection: "row", alignItems: "center", paddingHorizontal: 12, paddingBottom: 14, gap: 8 },
+  backBtn: { width: 40, height: 40, borderRadius: 20, alignItems: "center", justifyContent: "center" },
+  headerTitle: { flex: 1, fontSize: 18, fontWeight: "700", textAlign: "center", fontFamily: "Inter_700Bold" },
+  addBar: { flexDirection: "row", gap: 10, padding: 12, alignItems: "center", borderBottomWidth: 1 },
+  input: { flex: 1, height: 42, borderWidth: 1, borderRadius: 10, paddingHorizontal: 12, fontSize: 14, fontFamily: "Inter_400Regular" },
+  row: { flexDirection: "row", alignItems: "center", justifyContent: "space-between", padding: 14, marginBottom: 8, borderRadius: 12, borderWidth: 1 },
+  rowText: { fontSize: 15, fontFamily: "Inter_600SemiBold", flex: 1, marginRight: 12 },
+  delBtn: { width: 36, height: 36, borderRadius: 18, alignItems: "center", justifyContent: "center" },
+});

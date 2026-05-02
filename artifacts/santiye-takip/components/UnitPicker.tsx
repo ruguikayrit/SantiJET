@@ -12,7 +12,7 @@ import {
 } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
-import { MATERIAL_UNITS } from "@/constants/units";
+import { useApp } from "@/context/AppContext";
 import { useColors } from "@/hooks/useColors";
 
 interface Props {
@@ -30,22 +30,23 @@ export default function UnitPicker({
 }: Props) {
   const colors = useColors();
   const insets = useSafeAreaInsets();
+  const { materialUnits } = useApp();
   const [open, setOpen] = useState(false);
   const [search, setSearch] = useState("");
 
   const filtered = useMemo(() => {
     const q = search.trim().toLowerCase();
-    if (!q) return MATERIAL_UNITS;
-    return MATERIAL_UNITS.filter(
+    if (!q) return materialUnits;
+    return materialUnits.filter(
       (u) =>
         u.code.toLowerCase().includes(q) ||
         u.label.toLowerCase().includes(q)
     );
-  }, [search]);
+  }, [search, materialUnits]);
 
   const showCustomOption =
     search.trim().length > 0 &&
-    !MATERIAL_UNITS.some(
+    !materialUnits.some(
       (u) => u.code.toLowerCase() === search.trim().toLowerCase()
     );
 
