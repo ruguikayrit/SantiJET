@@ -62,9 +62,18 @@ export function buildAiSnapshot(app: AppLike, role: RoleLike) {
     }));
   }
   if (allowed("malzeme")) {
-    out.malzemeler = trim(app.materials).map((m) => ({
+    out.malzeme_gelen = trim(app.materials).map((m) => ({
       proje: pn(m.projectId), ad: m.name, birim: m.unit, miktar: m.quantity,
       kullanilan: m.usedQty, tedarikci: m.supplier, teslimat: m.deliveryDate, fiyat: m.unitPrice,
+    }));
+    const movs = app.materialMovements ?? [];
+    out.malzeme_kullanim = trim(movs.filter((m) => m.type === "kullanim"), 400).map((m) => ({
+      proje: pn(m.projectId), ad: m.name, birim: m.unit, miktar: m.quantity,
+      tarih: m.date, kullanan: m.person, lokasyon: m.location, not: m.note,
+    }));
+    out.malzeme_giden = trim(movs.filter((m) => m.type === "giden"), 400).map((m) => ({
+      proje: pn(m.projectId), ad: m.name, birim: m.unit, miktar: m.quantity,
+      tarih: m.date, alan_kisi: m.person, hedef: m.location, sebep: m.reason, not: m.note,
     }));
   }
   if (allowed("taseron")) {

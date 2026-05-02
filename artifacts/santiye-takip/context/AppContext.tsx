@@ -128,6 +128,20 @@ export interface MaterialRequest {
   note: string;
 }
 
+export interface MaterialMovement {
+  id: string;
+  projectId: string;
+  type: "kullanim" | "giden";
+  name: string;
+  unit: string;
+  quantity: number;
+  date: string;
+  person: string;
+  location: string;
+  reason: string;
+  note: string;
+}
+
 export interface Subcontractor {
   id: string;
   projectId: string;
@@ -345,6 +359,7 @@ interface AppState {
   tasks: Task[];
   materials: Material[];
   materialRequests: MaterialRequest[];
+  materialMovements: MaterialMovement[];
   subcontractors: Subcontractor[];
   budget: BudgetEntry[];
   hakedisler: Hakedis[];
@@ -409,6 +424,10 @@ interface AppContextType extends AppState {
   updateMaterialRequest: (id: string, r: Partial<MaterialRequest>) => void;
   deleteMaterialRequest: (id: string) => void;
 
+  addMaterialMovement: (m: Omit<MaterialMovement, "id">) => void;
+  updateMaterialMovement: (id: string, m: Partial<MaterialMovement>) => void;
+  deleteMaterialMovement: (id: string) => void;
+
   addSubcontractor: (s: Omit<Subcontractor, "id">) => void;
   updateSubcontractor: (id: string, s: Partial<Subcontractor>) => void;
   deleteSubcontractor: (id: string) => void;
@@ -455,6 +474,7 @@ const INITIAL: AppState = {
   tasks: [],
   materials: [],
   materialRequests: [],
+  materialMovements: [],
   subcontractors: [],
   budget: [],
   hakedisler: [],
@@ -732,6 +752,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
         tasks: prev.tasks.filter((x) => x.projectId !== id),
         materials: prev.materials.filter((x) => x.projectId !== id),
         materialRequests: prev.materialRequests.filter((x) => x.projectId !== id),
+        materialMovements: prev.materialMovements.filter((x) => x.projectId !== id),
         subcontractors: prev.subcontractors.filter((x) => x.projectId !== id),
         budget: prev.budget.filter((x) => x.projectId !== id),
         hakedisler: prev.hakedisler.filter((x) => x.projectId !== id),
@@ -775,6 +796,10 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     addMaterialRequest: makeAdd("materialRequests") as any,
     updateMaterialRequest: makeUpdate("materialRequests") as any,
     deleteMaterialRequest: makeDelete("materialRequests") as any,
+
+    addMaterialMovement: makeAdd("materialMovements") as any,
+    updateMaterialMovement: makeUpdate("materialMovements") as any,
+    deleteMaterialMovement: makeDelete("materialMovements") as any,
 
     addSubcontractor: makeAdd("subcontractors") as any,
     updateSubcontractor: makeUpdate("subcontractors") as any,
