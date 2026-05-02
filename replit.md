@@ -43,6 +43,16 @@ The active product in this workspace is **ŞantiJET** — a Turkish-language con
 - `gorev.tsx` — Görev (tasks with priority/status)
 - `malzeme.tsx` — Malzeme (materials & stock)
 - `butce.tsx` — Bütçe (income/expense ledger)
+- `finans/` — Embedded **KasaFON** finance app (Yol A integration). Full
+  KasaFON sources copied under namespaced subdirs (`components/finans/`,
+  `context/finans/`, `constants/finans/`, `hooks/finans/`, `utils/finans/`,
+  `lib/finans/`, `i18n-finans/`, `assets/images/finans/`). Wrapped in its own
+  provider stack inside `app/finans/_layout.tsx`. RevenueCat is stubbed
+  (`lib/finans/revenuecat.tsx`, no native purchases) so premium gating is
+  always on. Accessible via the "Finans" tile (credit-card icon, emerald
+  `#00C896`) on the home grid; permissions added to all 10 default roles.
+  KasaFON-only routes (`/membership`, `/pricing`, `/bank-limits`,
+  `/privacy-policy`) redirect back to `/finans` since they were not copied.
 
 ### Shared components (`components/`)
 
