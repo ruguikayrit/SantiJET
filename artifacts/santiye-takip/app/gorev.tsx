@@ -68,7 +68,7 @@ export default function GorevScreen() {
 
   const perm = usePermission("gorev");
   const canEdit = perm === "edit";
-  useEffect(() => { if (perm === "none") router.back(); }, [perm]);
+  useEffect(() => { if (perm === "none") { if (router.canGoBack()) router.back(); else router.replace("/"); } }, [perm]);
 
   const [filter, setFilter] = useState<string | null>(null);
   const [visible, setVisible] = useState(false);
@@ -135,7 +135,7 @@ export default function GorevScreen() {
     <View style={[styles.root, { backgroundColor: colors.background }]}>
       <Header
         title="Görevler"
-        onBack={() => router.back()}
+        onBack={() => (router.canGoBack() ? router.back() : router.replace("/"))}
         rightAction={canEdit && projects.length > 0 ? { icon: "plus", onPress: () => open() } : undefined}
       />
 

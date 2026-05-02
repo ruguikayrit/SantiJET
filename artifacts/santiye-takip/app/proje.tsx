@@ -58,7 +58,7 @@ export default function ProjectsScreen() {
   const { projects, addProject, updateProject, deleteProject } = useApp();
   const perm = usePermission("proje");
   const canEdit = perm === "edit";
-  useEffect(() => { if (perm === "none") router.back(); }, [perm]);
+  useEffect(() => { if (perm === "none") { if (router.canGoBack()) router.back(); else router.replace("/"); } }, [perm]);
 
   const [visible, setVisible] = useState(false);
   const [editId, setEditId] = useState<string | null>(null);
@@ -110,7 +110,7 @@ export default function ProjectsScreen() {
     <View style={[styles.root, { backgroundColor: colors.background }]}>
       <Header
         title="Projeler"
-        onBack={() => router.back()}
+        onBack={() => (router.canGoBack() ? router.back() : router.replace("/"))}
         rightAction={canEdit ? { icon: "plus", onPress: () => open() } : undefined}
       />
 

@@ -96,7 +96,7 @@ export default function KullanicilarScreen() {
   const perm = usePermission("kullanicilar");
 
   useEffect(() => {
-    if (perm === "none") router.back();
+    if (perm === "none") { if (router.canGoBack()) router.back(); else router.replace("/"); }
   }, [perm]);
 
   const [tab, setTab] = useState<Tab>("users");
@@ -189,7 +189,7 @@ export default function KullanicilarScreen() {
     <View style={[styles.root, { backgroundColor: colors.background }]}>
       <Header
         title="Kullanıcı Yönetimi"
-        onBack={() => router.back()}
+        onBack={() => (router.canGoBack() ? router.back() : router.replace("/"))}
         rightAction={
           tab === "users" && canEdit
             ? { icon: "user-plus", onPress: () => openUser() }

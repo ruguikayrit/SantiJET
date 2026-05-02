@@ -135,7 +135,7 @@ export default function MalzemeScreen() {
 
   const perm = usePermission("malzeme");
   const canEdit = perm === "edit";
-  useEffect(() => { if (perm === "none") router.back(); }, [perm]);
+  useEffect(() => { if (perm === "none") { if (router.canGoBack()) router.back(); else router.replace("/"); } }, [perm]);
 
   const [tab, setTab] = useState<Tab>("gelen");
   const [filter, setFilter] = useState<string | null>(null);
@@ -397,7 +397,7 @@ export default function MalzemeScreen() {
     <View style={[styles.root, { backgroundColor: colors.background }]}>
       <Header
         title="Malzeme"
-        onBack={() => router.back()}
+        onBack={() => (router.canGoBack() ? router.back() : router.replace("/"))}
         rightAction={addAction}
       />
 

@@ -416,7 +416,7 @@ export default function RaporScreen() {
 
   return (
     <View style={[styles.root, { backgroundColor: colors.background }]}>
-      <Header title="Rapor Oluştur" onBack={() => router.back()} />
+      <Header title="Rapor Oluştur" onBack={() => (router.canGoBack() ? router.back() : router.replace("/"))} />
 
       <ScrollView contentContainerStyle={[styles.content, { paddingBottom: insets.bottom + 24 }]} showsVerticalScrollIndicator={false}>
 

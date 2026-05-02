@@ -74,7 +74,7 @@ export default function PuantajScreen() {
 
   const perm = usePermission("puantaj");
   const canEdit = perm === "edit";
-  useEffect(() => { if (perm === "none") router.back(); }, [perm]);
+  useEffect(() => { if (perm === "none") { if (router.canGoBack()) router.back(); else router.replace("/"); } }, [perm]);
 
   const [filter, setFilter] = useState<string | null>(projects[0]?.id || null);
   const [date, setDate] = useState(todayStr());
@@ -350,7 +350,7 @@ export default function PuantajScreen() {
   // ─── render ───────────────────────────────────────────────────────────────
   return (
     <View style={[styles.root, { backgroundColor: colors.background }]}>
-      <Header title="Puantaj" onBack={() => router.back()} />
+      <Header title="Puantaj" onBack={() => (router.canGoBack() ? router.back() : router.replace("/"))} />
       <ProjectPicker projects={projects} value={filter} onChange={setFilter} includeAll={false} />
 
       {projects.length === 0 ? (
