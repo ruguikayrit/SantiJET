@@ -211,7 +211,7 @@ export default function HomeScreen() {
             <Text style={styles.heroSub}>{t("home.welcome")}</Text>
             <Text style={styles.heroTitle}>{t("app.title")}</Text>
             <Text style={styles.heroDesc}>
-              {app.projects.length} aktif proje · {app.workers.length} personel
+              {app.projects.length} {t("home.stats.activeProjects")} · {app.workers.length} {t("home.stats.workers")}
             </Text>
           </View>
 
@@ -245,7 +245,7 @@ export default function HomeScreen() {
               <Feather name="layers" size={12} color="#e85d04" />
               <Text style={styles.syncCode} numberOfLines={1}>
                 {workspaceInfo.id === "local"
-                  ? "Yerel Kullanım"
+                  ? t("home.workspace.local")
                   : workspaceInfo.company_name}
               </Text>
               {workspaceInfo.id !== "local" && (
@@ -297,7 +297,7 @@ export default function HomeScreen() {
                 activeOpacity={0.85}
               >
                 <Feather name="log-in" size={12} color="#e85d04" />
-                <Text style={styles.switchWsText}>Çalışma Alanına Bağlan</Text>
+                <Text style={styles.switchWsText}>{t("home.workspace.connect")}</Text>
               </TouchableOpacity>
             )}
           </View>
@@ -307,7 +307,7 @@ export default function HomeScreen() {
           <View style={styles.conflictBar}>
             <Feather name="alert-triangle" size={13} color="#fbbf24" />
             <Text style={styles.conflictText} numberOfLines={2}>
-              Başka biri değişiklik yaptı. Kendi yüklemenizden önce indirin.
+              {t("home.workspace.conflict")}
             </Text>
           </View>
         )}
@@ -315,7 +315,7 @@ export default function HomeScreen() {
           <View style={styles.conflictBar}>
             <Feather name="lock" size={13} color="#fbbf24" />
             <Text style={styles.conflictText} numberOfLines={2}>
-              Oturum süresi doldu. Lütfen tekrar giriş yapın.
+              {t("home.workspace.authError")}
             </Text>
           </View>
         )}
@@ -359,7 +359,7 @@ export default function HomeScreen() {
                   {perm === "view" ? (
                     <View style={styles.viewBadge}>
                       <Feather name="eye" size={10} color="#0ea5e9" />
-                      <Text style={styles.viewBadgeText}>Salt okunur</Text>
+                      <Text style={styles.viewBadgeText}>{t("home.tile.readonly")}</Text>
                     </View>
                   ) : null}
                 </View>
@@ -377,11 +377,11 @@ export default function HomeScreen() {
             <Feather name="cpu" size={20} color={colors.primaryForeground} />
           </View>
           <View style={{ flex: 1 }}>
-            <Text style={[styles.raporTitle, { color: colors.foreground }]}>AI Asistan</Text>
-            <Text style={[styles.raporSub, { color: colors.mutedForeground }]}>Geçmiş kayıtlara doğal dilde soru sor</Text>
+            <Text style={[styles.raporTitle, { color: colors.foreground }]}>{t("home.assistant.title")}</Text>
+            <Text style={[styles.raporSub, { color: colors.mutedForeground }]}>{t("home.assistant.sub")}</Text>
           </View>
           <View style={[styles.aiPill, { backgroundColor: colors.primary + "20" }]}>
-            <Text style={[styles.aiPillText, { color: colors.primary }]}>YENİ</Text>
+            <Text style={[styles.aiPillText, { color: colors.primary }]}>{t("home.assistant.new")}</Text>
           </View>
         </TouchableOpacity>
 
@@ -394,8 +394,8 @@ export default function HomeScreen() {
             <Feather name="bar-chart-2" size={20} color={colors.primary} />
           </View>
           <View style={{ flex: 1 }}>
-            <Text style={[styles.raporTitle, { color: colors.foreground }]}>Rapor Oluştur</Text>
-            <Text style={[styles.raporSub, { color: colors.mutedForeground }]}>PDF veya Excel formatında dışa aktar</Text>
+            <Text style={[styles.raporTitle, { color: colors.foreground }]}>{t("home.report.title")}</Text>
+            <Text style={[styles.raporSub, { color: colors.mutedForeground }]}>{t("home.report.sub")}</Text>
           </View>
           <Feather name="chevron-right" size={18} color={colors.mutedForeground} />
         </TouchableOpacity>
@@ -409,8 +409,8 @@ export default function HomeScreen() {
             <Feather name="droplet" size={20} color={colors.secondary} />
           </View>
           <View style={{ flex: 1 }}>
-            <Text style={[styles.raporTitle, { color: colors.foreground }]}>Tema Seçimi</Text>
-            <Text style={[styles.raporSub, { color: colors.mutedForeground }]}>Lacivert, beyaz, turuncu paletleri</Text>
+            <Text style={[styles.raporTitle, { color: colors.foreground }]}>{t("home.theme.title")}</Text>
+            <Text style={[styles.raporSub, { color: colors.mutedForeground }]}>{t("home.theme.sub")}</Text>
           </View>
           <Feather name="chevron-right" size={18} color={colors.mutedForeground} />
         </TouchableOpacity>
@@ -418,7 +418,7 @@ export default function HomeScreen() {
         {isAdmin ? (
           <>
             <Text style={[styles.sectionLabel, { color: colors.foreground, marginTop: 24 }]}>
-              Veri Yönetimi
+              {t("home.data.title")}
             </Text>
             <View style={styles.dataRow}>
               <TouchableOpacity
@@ -430,10 +430,10 @@ export default function HomeScreen() {
                   <Feather name="download" size={20} color="#16a34a" />
                 </View>
                 <Text style={[styles.dataLabel, { color: colors.foreground }]}>
-                  Verileri Dışa Aktar
+                  {t("home.data.export")}
                 </Text>
                 <Text style={[styles.dataDesc, { color: colors.mutedForeground }]}>
-                  Tüm kayıtları JSON dosyası olarak kaydet
+                  {t("home.data.export.sub")}
                 </Text>
               </TouchableOpacity>
 
@@ -446,10 +446,10 @@ export default function HomeScreen() {
                   <Feather name="upload" size={20} color="#2563eb" />
                 </View>
                 <Text style={[styles.dataLabel, { color: colors.foreground }]}>
-                  Verileri İçe Aktar
+                  {t("home.data.import")}
                 </Text>
                 <Text style={[styles.dataDesc, { color: colors.mutedForeground }]}>
-                  JSON yedeğinden geri yükle
+                  {t("home.data.import.sub")}
                 </Text>
               </TouchableOpacity>
             </View>
@@ -460,18 +460,18 @@ export default function HomeScreen() {
       <BottomSheet
         visible={exportVisible}
         onClose={() => setExportVisible(false)}
-        title="Verileri Dışa Aktar"
+        title={t("home.data.export")}
       >
         <Text style={[styles.sheetDesc, { color: colors.mutedForeground }]}>
-          Tüm projeler, personel, kayıtlar ve roller dahil tüm uygulama verisi.
+          {t("home.data.export.desc")}
         </Text>
         <PrimaryButton
-          label={Platform.OS === "web" ? "Dosyayı İndir" : "Kaydet"}
+          label={Platform.OS === "web" ? t("home.data.download") : t("common.save")}
           onPress={downloadJson}
           style={{ marginTop: 12 }}
         />
         <PrimaryButton
-          label="İptal"
+          label={t("common.cancel")}
           variant="cancel"
           onPress={() => setExportVisible(false)}
           style={{ marginTop: 10 }}
@@ -481,21 +481,21 @@ export default function HomeScreen() {
       <BottomSheet
         visible={importVisible}
         onClose={() => { setImportVisible(false); setImportText(""); setImportFileName(null); setImportMsg(null); }}
-        title="Verileri İçe Aktar"
+        title={t("home.data.import")}
       >
         <Text style={[styles.sheetDesc, { color: colors.mutedForeground }]}>
-          Mevcut tüm veriler içe aktarılan dosyayla değiştirilecek. Önce yedek almanız önerilir.
+          {t("home.data.import.desc")}
         </Text>
 
         {Platform.OS === "web" ? (
           <>
             <PrimaryButton
-              label="JSON Dosyası Seç"
+              label={t("home.data.pickFile")}
               onPress={pickFile}
               style={{ marginBottom: 12 }}
             />
             <Text style={[styles.label, { color: colors.foreground }]}>
-              Veya JSON'u yapıştırın:
+              {t("home.data.orPaste")}
             </Text>
             <TextInput
               value={importText}
@@ -525,10 +525,10 @@ export default function HomeScreen() {
               </View>
               <View style={{ flex: 1 }}>
                 <Text style={[styles.filePickLabel, { color: colors.foreground }]}>
-                  {importFileName ? importFileName : "Dosya Seç"}
+                  {importFileName ? importFileName : t("home.data.fileSelect")}
                 </Text>
                 <Text style={[styles.filePickSub, { color: colors.mutedForeground }]}>
-                  {importFileName ? "Dosyalar uygulamasından seçildi" : "Dosyalar uygulamasından JSON seç"}
+                  {importFileName ? t("home.data.fileSelected") : t("home.data.fileHelp")}
                 </Text>
               </View>
               <Feather name="chevron-right" size={18} color={colors.mutedForeground} />
@@ -560,7 +560,7 @@ export default function HomeScreen() {
         ) : null}
 
         <PrimaryButton
-          label="İçe Aktar"
+          label={t("home.data.doImport")}
           onPress={doImport}
           style={{ marginTop: 12 }}
         />
@@ -568,7 +568,7 @@ export default function HomeScreen() {
           onPress={() => { setImportVisible(false); setImportText(""); setImportFileName(null); setImportMsg(null); }}
           style={styles.cancelBtn}
         >
-          <Text style={[styles.cancelText, { color: colors.mutedForeground }]}>Kapat</Text>
+          <Text style={[styles.cancelText, { color: colors.mutedForeground }]}>{t("common.close")}</Text>
         </TouchableOpacity>
       </BottomSheet>
     </View>
