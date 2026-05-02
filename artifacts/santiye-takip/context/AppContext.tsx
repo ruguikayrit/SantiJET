@@ -177,6 +177,29 @@ export interface Subcontractor {
   notes: string;
 }
 
+export type PurchaseStatus = "pending" | "approved" | "paid" | "cancelled";
+export type PurchasePaymentMethod = "nakit" | "havale" | "kredi-karti" | "cek" | "vadeli";
+
+export interface Purchase {
+  id: string;
+  projectId: string;
+  date: string;            // sipariş / fatura tarihi
+  supplier: string;        // tedarikçi adı
+  itemName: string;        // ürün / hizmet adı
+  category: string;        // örn: "İnşaat Malzemesi", "Akaryakıt"
+  unit: string;            // birim (adet, m3, kg, ton...)
+  quantity: number;
+  unitPrice: number;       // KDV hariç birim fiyat
+  vatRate: number;         // % (0, 1, 8, 18, 20...)
+  status: PurchaseStatus;
+  paymentMethod: PurchasePaymentMethod;
+  paidDate: string;        // ödendi olarak işaretlenince doldurulur
+  invoiceNo: string;       // fatura no
+  notes: string;
+  // KasaFON köprüsü için (sonradan kullanılacak)
+  finansTransactionId?: string;
+}
+
 export interface BudgetEntry {
   id: string;
   projectId: string;
@@ -219,6 +242,7 @@ export const ALL_PAGE_KEYS = [
   "gorev",
   "malzeme",
   "taseron",
+  "satin-alma",
   "butce",
   "hakedis",
   "ilerleme",
@@ -238,6 +262,7 @@ export const PAGE_LABELS: Record<PageKey, string> = {
   gorev: "Görev",
   malzeme: "Malzeme",
   taseron: "Taşeron",
+  "satin-alma": "Satın Alma",
   butce: "Bütçe",
   hakedis: "Hakediş",
   ilerleme: "İlerleme",
@@ -275,7 +300,7 @@ const DEFAULT_ROLES: Role[] = [
     permissions: {
       proje: "view", kesif: "view", "is-programi": "view", puantaj: "view",
       "gunluk-rapor": "view", imalat: "view", gorev: "view", malzeme: "view",
-      taseron: "view", butce: "view", hakedis: "view", ilerleme: "view", finans: "view", kullanicilar: "view",
+      taseron: "view", "satin-alma": "view", butce: "view", hakedis: "view", ilerleme: "view", finans: "view", kullanicilar: "view",
     },
   },
   {
@@ -297,7 +322,7 @@ const DEFAULT_ROLES: Role[] = [
     permissions: {
       proje: "view", kesif: "none", "is-programi": "edit", puantaj: "edit",
       "gunluk-rapor": "edit", imalat: "edit", gorev: "edit", malzeme: "view",
-      taseron: "view", butce: "none", hakedis: "none", ilerleme: "view", finans: "none", kullanicilar: "none",
+      taseron: "view", "satin-alma": "view", butce: "none", hakedis: "none", ilerleme: "view", finans: "none", kullanicilar: "none",
     },
   },
   {
@@ -307,7 +332,7 @@ const DEFAULT_ROLES: Role[] = [
     permissions: {
       proje: "view", kesif: "edit", "is-programi": "view", puantaj: "none",
       "gunluk-rapor": "view", imalat: "edit", gorev: "view", malzeme: "view",
-      taseron: "view", butce: "view", hakedis: "edit", ilerleme: "edit", finans: "view", kullanicilar: "none",
+      taseron: "view", "satin-alma": "view", butce: "view", hakedis: "edit", ilerleme: "edit", finans: "view", kullanicilar: "none",
     },
   },
   {
@@ -317,7 +342,7 @@ const DEFAULT_ROLES: Role[] = [
     permissions: {
       proje: "view", kesif: "none", "is-programi": "view", puantaj: "none",
       "gunluk-rapor": "edit", imalat: "view", gorev: "edit", malzeme: "none",
-      taseron: "none", butce: "none", hakedis: "none", ilerleme: "view", finans: "none", kullanicilar: "none",
+      taseron: "none", "satin-alma": "none", butce: "none", hakedis: "none", ilerleme: "view", finans: "none", kullanicilar: "none",
     },
   },
   {
@@ -327,7 +352,7 @@ const DEFAULT_ROLES: Role[] = [
     permissions: {
       proje: "view", kesif: "none", "is-programi": "view", puantaj: "none",
       "gunluk-rapor": "edit", imalat: "view", gorev: "view", malzeme: "none",
-      taseron: "none", butce: "none", hakedis: "view", ilerleme: "view", finans: "none", kullanicilar: "none",
+      taseron: "none", "satin-alma": "none", butce: "none", hakedis: "view", ilerleme: "view", finans: "none", kullanicilar: "none",
     },
   },
   {
@@ -337,7 +362,7 @@ const DEFAULT_ROLES: Role[] = [
     permissions: {
       proje: "view", kesif: "none", "is-programi": "none", puantaj: "none",
       "gunluk-rapor": "none", imalat: "none", gorev: "none", malzeme: "edit",
-      taseron: "view", butce: "view", hakedis: "none", ilerleme: "none", finans: "view", kullanicilar: "none",
+      taseron: "view", "satin-alma": "edit", butce: "view", hakedis: "none", ilerleme: "none", finans: "view", kullanicilar: "none",
     },
   },
   {
@@ -347,7 +372,7 @@ const DEFAULT_ROLES: Role[] = [
     permissions: {
       proje: "view", kesif: "none", "is-programi": "none", puantaj: "none",
       "gunluk-rapor": "none", imalat: "none", gorev: "none", malzeme: "none",
-      taseron: "none", butce: "view", hakedis: "view", ilerleme: "none", finans: "edit", kullanicilar: "none",
+      taseron: "none", "satin-alma": "view", butce: "view", hakedis: "view", ilerleme: "none", finans: "edit", kullanicilar: "none",
     },
   },
   {
@@ -357,7 +382,7 @@ const DEFAULT_ROLES: Role[] = [
     permissions: {
       proje: "view", kesif: "none", "is-programi": "none", puantaj: "edit",
       "gunluk-rapor": "none", imalat: "none", gorev: "none", malzeme: "none",
-      taseron: "none", butce: "none", hakedis: "none", ilerleme: "none", finans: "none", kullanicilar: "edit",
+      taseron: "none", "satin-alma": "none", butce: "none", hakedis: "none", ilerleme: "none", finans: "none", kullanicilar: "edit",
     },
   },
   {
@@ -367,7 +392,7 @@ const DEFAULT_ROLES: Role[] = [
     permissions: {
       proje: "view", kesif: "none", "is-programi": "none", puantaj: "none",
       "gunluk-rapor": "view", imalat: "none", gorev: "view", malzeme: "none",
-      taseron: "none", butce: "none", hakedis: "none", ilerleme: "none", finans: "none", kullanicilar: "none",
+      taseron: "none", "satin-alma": "none", butce: "none", hakedis: "none", ilerleme: "none", finans: "none", kullanicilar: "none",
     },
   },
 ];
@@ -385,6 +410,7 @@ interface AppState {
   materialRequests: MaterialRequest[];
   materialMovements: MaterialMovement[];
   subcontractors: Subcontractor[];
+  purchases: Purchase[];
   budget: BudgetEntry[];
   hakedisler: Hakedis[];
   roles: Role[];
@@ -459,6 +485,11 @@ interface AppContextType extends AppState {
   updateSubcontractor: (id: string, s: Partial<Subcontractor>) => void;
   deleteSubcontractor: (id: string) => void;
 
+  addPurchase: (p: Omit<Purchase, "id">) => string;
+  updatePurchase: (id: string, p: Partial<Purchase>) => void;
+  deletePurchase: (id: string) => void;
+  markPurchasePaid: (id: string, paidDate: string) => void;
+
   addBudget: (b: Omit<BudgetEntry, "id">) => void;
   updateBudget: (id: string, b: Partial<BudgetEntry>) => void;
   deleteBudget: (id: string) => void;
@@ -512,6 +543,7 @@ const INITIAL: AppState = {
   materialRequests: [],
   materialMovements: [],
   subcontractors: [],
+  purchases: [],
   budget: [],
   hakedisler: [],
   roles: [],
@@ -829,6 +861,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
         materialRequests: prev.materialRequests.filter((x) => x.projectId !== id),
         materialMovements: prev.materialMovements.filter((x) => x.projectId !== id),
         subcontractors: prev.subcontractors.filter((x) => x.projectId !== id),
+        purchases: prev.purchases.filter((x) => x.projectId !== id),
         budget: prev.budget.filter((x) => x.projectId !== id),
         hakedisler: prev.hakedisler.filter((x) => x.projectId !== id),
         roles: prev.roles,
@@ -879,6 +912,17 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     addSubcontractor: makeAdd("subcontractors") as any,
     updateSubcontractor: makeUpdate("subcontractors") as any,
     deleteSubcontractor: makeDelete("subcontractors") as any,
+
+    addPurchase: makeAdd("purchases") as any,
+    updatePurchase: makeUpdate("purchases") as any,
+    deletePurchase: makeDelete("purchases") as any,
+    markPurchasePaid: (id, paidDate) =>
+      update((prev) => ({
+        ...prev,
+        purchases: prev.purchases.map((p) =>
+          p.id === id ? { ...p, status: "paid" as PurchaseStatus, paidDate } : p
+        ),
+      })),
 
     addBudget: makeAdd("budget") as any,
     updateBudget: makeUpdate("budget") as any,
@@ -957,8 +1001,9 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
           ...INITIAL,
           ...incoming,
           roles: Array.isArray(incoming.roles) && incoming.roles.length > 0
-            ? incoming.roles
+            ? backfillRolePermissions(incoming.roles)
             : DEFAULT_ROLES,
+          purchases: Array.isArray(incoming.purchases) ? incoming.purchases : [],
           currentUserId: null,
         };
         setState(next);

@@ -35,6 +35,7 @@ const TYPE_META: Record<PageKey, { label: string; icon: string; color: string; b
   gorev:        { label: "Görev",         icon: "check-square",color: "#dc2626", bg: "#fee2e2" },
   malzeme:      { label: "Malzeme",       icon: "package",     color: "#059669", bg: "#d1fae5" },
   taseron:      { label: "Taşeron",       icon: "truck",       color: "#7c3aed", bg: "#ede9fe" },
+  "satin-alma": { label: "Satın Alma",    icon: "shopping-cart", color: "#ea580c", bg: "#ffedd5" },
   butce:        { label: "Bütçe",         icon: "dollar-sign", color: "#16213e", bg: "#e0e7ff" },
   hakedis:      { label: "Hakediş",       icon: "file-text",   color: "#be185d", bg: "#fce7f3" },
   ilerleme:     { label: "İlerleme",      icon: "trending-up", color: "#0d9488", bg: "#ccfbf1" },
@@ -152,6 +153,19 @@ function buildIndex(app: ReturnType<typeof useApp>): IndexEntry[] {
       sublabel: [s.specialty, s.contactPerson, projectName(s.projectId)].filter(Boolean).join(" · "),
       route: "/taseron",
       haystack: norm([s.name, s.contactPerson, s.phone, s.email, s.specialty, s.notes, projectName(s.projectId)].join(" ")),
+    });
+  }
+  for (const pu of app.purchases) {
+    const total = (pu.quantity || 0) * (pu.unitPrice || 0) * (1 + (pu.vatRate || 0) / 100);
+    const statusLabel =
+      pu.status === "paid" ? "Ödendi"
+        : pu.status === "approved" ? "Onaylandı"
+        : pu.status === "cancelled" ? "İptal" : "Bekliyor";
+    idx.push({
+      id: pu.id, type: "satin-alma", label: `${pu.itemName} (${fmtTL(total)})`,
+      sublabel: [projectName(pu.projectId), pu.supplier, statusLabel, fmtDate(pu.date)].filter(Boolean).join(" · "),
+      route: "/satin-alma",
+      haystack: norm([pu.itemName, pu.supplier, pu.category, pu.invoiceNo, pu.notes, statusLabel, projectName(pu.projectId)].join(" ")),
     });
   }
   for (const b of app.budget) {
@@ -317,7 +331,7 @@ export default function SmartSearch({ topInset }: Props) {
   const index = useMemo(() => buildIndex(app), [
     app.projects, app.surveys, app.scheduleTasks, app.workers, app.attendance,
     app.dailyReports, app.productions, app.tasks, app.materials, app.subcontractors,
-    app.budget, app.hakedisler, app.appUsers, app.roles,
+    app.purchases, app.budget, app.hakedisler, app.appUsers, app.roles,
   ]);
 
   const results = useMemo(() => search(index, query, isPermitted), [index, query, currentRole]);
