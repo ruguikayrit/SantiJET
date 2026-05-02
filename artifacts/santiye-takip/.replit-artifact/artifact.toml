@@ -25,3 +25,15 @@ run = [ "pnpm", "--filter", "@workspace/santiye-takip", "run", "serve" ]
 [services.env]
 PORT = "24914"
 BASE_PATH = "/"
+
+[[services]]
+name = "web"
+paths = [ "/web" ]
+localPort = 24915
+
+[services.development]
+run = "pnpm --filter @workspace/santiye-takip run dev:web"
+
+[services.env]
+PORT = "24915"
+BASE_PATH = "/web"

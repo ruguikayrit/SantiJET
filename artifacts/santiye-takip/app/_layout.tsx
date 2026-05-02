@@ -13,6 +13,7 @@ import { GestureHandlerRootView } from "react-native-gesture-handler";
 import { SafeAreaProvider } from "react-native-safe-area-context";
 
 import { ErrorBoundary } from "@/components/ErrorBoundary";
+import WebFrame from "@/components/WebFrame";
 import { AppProvider, useApp } from "@/context/AppContext";
 import { ThemeProvider } from "@/context/ThemeContext";
 
@@ -95,10 +96,12 @@ export default function RootLayout() {
       <ThemeProvider>
         <ErrorBoundary>
           <QueryClientProvider client={queryClient}>
-            <GestureHandlerRootView>
-              <AppProvider>
-                <RootLayoutNav />
-              </AppProvider>
+            <GestureHandlerRootView style={{ flex: 1 }}>
+              <WebFrame>
+                <AppProvider>
+                  <RootLayoutNav />
+                </AppProvider>
+              </WebFrame>
             </GestureHandlerRootView>
           </QueryClientProvider>
         </ErrorBoundary>
