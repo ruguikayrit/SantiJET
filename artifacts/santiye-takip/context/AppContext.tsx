@@ -528,6 +528,22 @@ function needsRoleMigration(roles: Role[]): boolean {
   return !storedIds.has("isveren") || !storedIds.has("proje-muduru");
 }
 
+function backfillRolePermissions(roles: Role[]): Role[] {
+  // Yeni eklenen PageKey'leri (örn: "finans") mevcut rollere ekle.
+  // Kullanıcının özelleştirdiği izinler korunur; yalnızca eksik anahtarlar
+  // DEFAULT_ROLES'taki aynı id'li roldeki değer (yoksa "none") ile doldurulur.
+  return roles.map((r) => {
+    const def = DEFAULT_ROLES.find((d) => d.id === r.id);
+    const merged: Record<string, Permission> = { ...(r.permissions as any) };
+    for (const key of ALL_PAGE_KEYS) {
+      if (merged[key] === undefined) {
+        merged[key] = (def?.permissions as any)?.[key] ?? "none";
+      }
+    }
+    return { ...r, permissions: merged as Role["permissions"] };
+  });
+}
+
 async function loadInitialState(): Promise<AppState> {
   const raw = await AsyncStorage.getItem(STORAGE_KEY);
   if (raw) {
@@ -536,6 +552,8 @@ async function loadInitialState(): Promise<AppState> {
       const state: AppState = { ...INITIAL, ...parsed };
       if (!state.roles || state.roles.length === 0 || needsRoleMigration(state.roles)) {
         state.roles = DEFAULT_ROLES;
+      } else {
+        state.roles = backfillRolePermissions(state.roles);
       }
       if (!Array.isArray(state.materialCategories)) {
         state.materialCategories = [...MATERIAL_CATEGORIES];
@@ -744,7 +762,9 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
           const next: AppState = {
             ...INITIAL,
             ...incoming,
-            roles: Array.isArray(incoming.roles) && incoming.roles.length > 0 ? incoming.roles : DEFAULT_ROLES,
+            roles: Array.isArray(incoming.roles) && incoming.roles.length > 0
+              ? backfillRolePermissions(incoming.roles)
+              : DEFAULT_ROLES,
             materialCategories: Array.isArray(incoming.materialCategories)
               ? incoming.materialCategories : [...MATERIAL_CATEGORIES],
             materialList: Array.isArray(incoming.materialList)
