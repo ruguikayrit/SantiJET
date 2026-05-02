@@ -470,7 +470,7 @@ export default function HomeScreen() {
         />
         <PrimaryButton
           label="İptal"
-          variant="danger"
+          variant="cancel"
           onPress={() => setExportVisible(false)}
           style={{ marginTop: 10 }}
         />

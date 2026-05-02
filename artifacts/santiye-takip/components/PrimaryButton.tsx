@@ -2,10 +2,14 @@ import React from "react";
 import { ActivityIndicator, StyleSheet, Text, TouchableOpacity, TouchableOpacityProps } from "react-native";
 import { useColors } from "@/hooks/useColors";
 
+// Sabit marka renkleri — tema değişse bile bu butonlar değişmez
+const SAVE_NAVY = "#16213e";
+const CANCEL_ORANGE = "#e85d04";
+
 interface Props extends TouchableOpacityProps {
   label: string;
   loading?: boolean;
-  variant?: "primary" | "secondary" | "danger";
+  variant?: "primary" | "secondary" | "danger" | "cancel";
 }
 
 export default function PrimaryButton({ label, loading, variant = "primary", style, ...props }: Props) {
@@ -16,7 +20,9 @@ export default function PrimaryButton({ label, loading, variant = "primary", sty
       ? colors.destructive
       : variant === "secondary"
       ? colors.muted
-      : colors.primary;
+      : variant === "cancel"
+      ? CANCEL_ORANGE
+      : SAVE_NAVY;
 
   const fg =
     variant === "secondary" ? colors.foreground : "#ffffff";

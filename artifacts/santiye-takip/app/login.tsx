@@ -416,9 +416,9 @@ const styles = StyleSheet.create({
   pinError: { color: "#dc2626", fontSize: 13, fontFamily: "Inter_500Medium", marginBottom: 8 },
   pinInput: { backgroundColor: "#0f172a", color: "#f1f5f9", fontSize: 28, fontFamily: "Inter_700Bold", textAlign: "center", letterSpacing: 8, borderRadius: 12, paddingVertical: 14, paddingHorizontal: 24, width: "100%", marginBottom: 20 },
   pinBtnRow: { flexDirection: "row", gap: 12, width: "100%" },
-  pinCancel: { flex: 1, backgroundColor: "#334155", borderRadius: 10, paddingVertical: 12, alignItems: "center" },
-  pinCancelText: { color: "#94a3b8", fontSize: 15, fontFamily: "Inter_600SemiBold" },
-  pinConfirm: { flex: 1, backgroundColor: "#e85d04", borderRadius: 10, paddingVertical: 12, alignItems: "center" },
+  pinCancel: { flex: 1, backgroundColor: "#e85d04", borderRadius: 10, paddingVertical: 12, alignItems: "center" },
+  pinCancelText: { color: "#ffffff", fontSize: 15, fontFamily: "Inter_600SemiBold" },
+  pinConfirm: { flex: 1, backgroundColor: "#16213e", borderRadius: 10, paddingVertical: 12, alignItems: "center" },
   pinConfirmText: { color: "#fff", fontSize: 15, fontFamily: "Inter_600SemiBold" },
 
   // New user form
