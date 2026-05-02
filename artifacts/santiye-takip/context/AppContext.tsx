@@ -115,6 +115,12 @@ export interface Material {
   supplier: string;
   deliveryDate: string;
   unitPrice: number;
+  recordDetail?: string;
+  description?: string;
+  code?: string;
+  shippingMethod?: string;
+  waybillNo?: string;
+  invoiceNo?: string;
 }
 
 export interface MaterialRequest {

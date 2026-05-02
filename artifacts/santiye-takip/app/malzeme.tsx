@@ -56,6 +56,12 @@ interface MF {
   supplier: string;
   deliveryDate: string;
   unitPrice: string;
+  recordDetail: string;
+  description: string;
+  code: string;
+  shippingMethod: string;
+  waybillNo: string;
+  invoiceNo: string;
 }
 
 interface RF {
@@ -87,6 +93,8 @@ interface MovF {
 const EMPTY_M: MF = {
   projectId: "", name: "", category: "", unit: "", quantity: "",
   supplier: "", deliveryDate: "", unitPrice: "",
+  recordDetail: "", description: "", code: "",
+  shippingMethod: "", waybillNo: "", invoiceNo: "",
 };
 
 const EMPTY_R: RF = {
@@ -165,18 +173,6 @@ export default function MalzemeScreen() {
     [materialMovements, filter]
   );
 
-  // Stok özeti: aynı proje + isim + birim için (gelen toplamı + eski usedQty düşülmüş) - kullanım - giden
-  function stockFor(material: Material) {
-    const key = (m: { projectId: string; name: string; unit: string }) =>
-      `${m.projectId}|${m.name.trim().toLowerCase()}|${m.unit.trim().toLowerCase()}`;
-    const k = key(material);
-    const usedFromMovements = materialMovements
-      .filter((m) => key(m) === k)
-      .reduce((s, m) => s + (m.quantity || 0), 0);
-    const remaining = (material.quantity || 0) - (material.usedQty || 0) - usedFromMovements;
-    return { remaining, usedFromMovements };
-  }
-
   function projectName(id: string) {
     return projects.find((p) => p.id === id)?.name || "—";
   }
@@ -194,6 +190,12 @@ export default function MalzemeScreen() {
         supplier: m.supplier,
         deliveryDate: m.deliveryDate,
         unitPrice: String(m.unitPrice || ""),
+        recordDetail: m.recordDetail ?? "",
+        description: m.description ?? "",
+        code: m.code ?? "",
+        shippingMethod: m.shippingMethod ?? "",
+        waybillNo: m.waybillNo ?? "",
+        invoiceNo: m.invoiceNo ?? "",
       });
     } else {
       setMEditId(null);
@@ -217,6 +219,12 @@ export default function MalzemeScreen() {
       supplier: mForm.supplier.trim(),
       deliveryDate: mForm.deliveryDate.trim(),
       unitPrice: parseFloat(mForm.unitPrice) || 0,
+      recordDetail: mForm.recordDetail.trim() || undefined,
+      description: mForm.description.trim() || undefined,
+      code: mForm.code.trim() || undefined,
+      shippingMethod: mForm.shippingMethod.trim() || undefined,
+      waybillNo: mForm.waybillNo.trim() || undefined,
+      invoiceNo: mForm.invoiceNo.trim() || undefined,
     };
     if (mEditId) {
       const existing = materials.find((m) => m.id === mEditId);
@@ -487,6 +495,58 @@ export default function MalzemeScreen() {
             }
             placeholder="Örn: 10 cm Gazbeton"
           />
+          <FormInput
+            label="Kayıt Detayları"
+            value={mForm.recordDetail}
+            onChangeText={(v) => setMForm({ ...mForm, recordDetail: v })}
+            placeholder="Kısa başlık / referans"
+          />
+          <DatePickerInput
+            label="Tarih"
+            value={mForm.deliveryDate}
+            onChange={(v) => setMForm({ ...mForm, deliveryDate: v })}
+          />
+          <FormInput
+            label="Açıklama"
+            value={mForm.description}
+            onChangeText={(v) => setMForm({ ...mForm, description: v })}
+            placeholder="Ek bilgi / notlar"
+            multiline
+          />
+          <FormInput
+            label="Poz"
+            value={mForm.code}
+            onChangeText={(v) => setMForm({ ...mForm, code: v })}
+            placeholder="Poz no / iş kalemi"
+          />
+          <FormInput
+            label="Sevk Şekli"
+            value={mForm.shippingMethod}
+            onChangeText={(v) => setMForm({ ...mForm, shippingMethod: v })}
+            placeholder="Tır / Kamyon / Kargo / Elden"
+          />
+          <View style={styles.twoCol}>
+            <View style={{ flex: 1 }}>
+              <FormInput
+                label="İrsaliye No"
+                value={mForm.waybillNo}
+                onChangeText={(v) => setMForm({ ...mForm, waybillNo: v })}
+              />
+            </View>
+            <View style={{ flex: 1 }}>
+              <FormInput
+                label="Fatura No"
+                value={mForm.invoiceNo}
+                onChangeText={(v) => setMForm({ ...mForm, invoiceNo: v })}
+              />
+            </View>
+          </View>
+          <FormInput
+            label="Temin Edilen Firma"
+            value={mForm.supplier}
+            onChangeText={(v) => setMForm({ ...mForm, supplier: v })}
+            placeholder="Tedarikçi adı"
+          />
           <View style={styles.twoCol}>
             <View style={{ flex: 1 }}>
               <UnitPicker
@@ -497,29 +557,13 @@ export default function MalzemeScreen() {
             </View>
             <View style={{ flex: 1 }}>
               <FormInput
-                label="Birim Fiyat (₺)"
-                value={mForm.unitPrice}
-                onChangeText={(v) => setMForm({ ...mForm, unitPrice: v })}
+                label="Miktar"
+                value={mForm.quantity}
+                onChangeText={(v) => setMForm({ ...mForm, quantity: v })}
                 keyboardType="numeric"
               />
             </View>
           </View>
-          <FormInput
-            label="Gelen Miktar"
-            value={mForm.quantity}
-            onChangeText={(v) => setMForm({ ...mForm, quantity: v })}
-            keyboardType="numeric"
-          />
-          <FormInput
-            label="Tedarikçi"
-            value={mForm.supplier}
-            onChangeText={(v) => setMForm({ ...mForm, supplier: v })}
-          />
-          <DatePickerInput
-            label="Teslim Tarihi"
-            value={mForm.deliveryDate}
-            onChange={(v) => setMForm({ ...mForm, deliveryDate: v })}
-          />
           {canEdit ? <PrimaryButton label="Kaydet" onPress={saveMaterial} style={{ marginTop: 8 }} /> : null}
           {canEdit && mEditId ? (
             <PrimaryButton label="Sil" variant="danger" onPress={removeMaterial} style={{ marginTop: 10 }} />
@@ -800,74 +844,45 @@ export default function MalzemeScreen() {
         keyExtractor={(m) => m.id}
         contentContainerStyle={styles.list}
         renderItem={({ item }) => {
-          const { remaining, usedFromMovements } = stockFor(item);
-          const totalUsed = (item.usedQty || 0) + usedFromMovements;
-          const pct = item.quantity > 0
-            ? Math.min(100, Math.max(0, Math.round((totalUsed / item.quantity) * 100)))
-            : 0;
-          const lowStock = item.quantity > 0 && remaining / item.quantity < 0.2;
+          const metaParts: string[] = [];
+          if (item.deliveryDate) metaParts.push(item.deliveryDate);
+          if (item.supplier) metaParts.push(item.supplier);
+          if (item.code) metaParts.push(`Poz: ${item.code}`);
+          if (item.waybillNo) metaParts.push(`İrs: ${item.waybillNo}`);
+          if (item.invoiceNo) metaParts.push(`Fat: ${item.invoiceNo}`);
           return (
             <TouchableOpacity
-              style={[styles.card, { backgroundColor: colors.card }]}
+              style={[styles.rowCard, { backgroundColor: colors.card }]}
               activeOpacity={0.85}
               onPress={canEdit ? () => openMaterial(item) : undefined}
             >
-              <View style={styles.cardHead}>
-                <View style={{ flex: 1 }}>
-                  <Text style={[styles.projLabel, { color: colors.primary }]}>
-                    {projectName(item.projectId)}
+              <View style={{ flex: 1, paddingRight: 10 }}>
+                <Text style={[styles.projLabel, { color: colors.primary }]}>
+                  {projectName(item.projectId)}
+                </Text>
+                <Text style={[styles.cardTitle, { color: colors.foreground }]} numberOfLines={1}>
+                  {item.name}
+                </Text>
+                {item.category ? (
+                  <Text style={[styles.catLabel, { color: colors.mutedForeground }]} numberOfLines={1}>
+                    {item.category}
                   </Text>
-                  <Text style={[styles.cardTitle, { color: colors.foreground }]}>
-                    {item.name}
+                ) : null}
+                {item.recordDetail ? (
+                  <Text style={[styles.metaText, { color: colors.mutedForeground, marginTop: 4 }]} numberOfLines={1}>
+                    {item.recordDetail}
                   </Text>
-                  {item.category ? (
-                    <Text style={[styles.catLabel, { color: colors.mutedForeground }]}>
-                      {item.category}
-                    </Text>
-                  ) : null}
-                </View>
-                {lowStock ? (
-                  <View style={[styles.badge, { backgroundColor: "#fee2e2" }]}>
-                    <Feather name="alert-triangle" size={11} color="#dc2626" />
-                    <Text style={[styles.badgeText, { color: "#dc2626" }]}>Az Stok</Text>
-                  </View>
+                ) : null}
+                {metaParts.length > 0 ? (
+                  <Text style={[styles.metaText, { color: colors.mutedForeground, marginTop: 4 }]} numberOfLines={2}>
+                    {metaParts.join(" · ")}
+                  </Text>
                 ) : null}
               </View>
-
-              <View style={styles.qtyRow}>
-                <View style={styles.qtyBox}>
-                  <Text style={[styles.qtyLabel, { color: colors.mutedForeground }]}>Gelen</Text>
-                  <Text style={[styles.qtyVal, { color: colors.foreground }]}>{item.quantity} {item.unit}</Text>
-                </View>
-                <View style={styles.qtyBox}>
-                  <Text style={[styles.qtyLabel, { color: colors.mutedForeground }]}>Kullanılan</Text>
-                  <Text style={[styles.qtyVal, { color: colors.foreground }]}>{totalUsed} {item.unit}</Text>
-                </View>
-                <View style={styles.qtyBox}>
-                  <Text style={[styles.qtyLabel, { color: colors.mutedForeground }]}>Kalan</Text>
-                  <Text style={[styles.qtyVal, { color: lowStock ? "#dc2626" : "#16a34a" }]}>
-                    {remaining} {item.unit}
-                  </Text>
-                </View>
+              <View style={[styles.gelenQtyPill, { backgroundColor: colors.muted }]}>
+                <Text style={[styles.gelenQtyVal, { color: colors.foreground }]}>{item.quantity}</Text>
+                <Text style={[styles.gelenQtyUnit, { color: colors.mutedForeground }]}>{item.unit}</Text>
               </View>
-
-              <View style={[styles.bar, { backgroundColor: colors.muted }]}>
-                <View style={[styles.barFill, { width: `${pct}%`, backgroundColor: colors.primary }]} />
-              </View>
-
-              {item.supplier ? (
-                <View style={styles.metaRow}>
-                  <Feather name="truck" size={12} color={colors.mutedForeground} />
-                  <Text style={[styles.metaText, { color: colors.mutedForeground }]}>
-                    {item.supplier}{item.deliveryDate ? ` · ${item.deliveryDate}` : ""}
-                  </Text>
-                  {item.unitPrice > 0 ? (
-                    <Text style={[styles.metaText, { color: colors.mutedForeground, marginLeft: "auto", flex: 0 }]}>
-                      {item.unitPrice.toLocaleString("tr-TR")} ₺/{item.unit}
-                    </Text>
-                  ) : null}
-                </View>
-              ) : null}
             </TouchableOpacity>
           );
         }}
@@ -1082,6 +1097,23 @@ const styles = StyleSheet.create({
   projLabel: { fontSize: 12, fontFamily: "Inter_600SemiBold", marginBottom: 2 },
   cardTitle: { fontSize: 16, fontFamily: "Inter_700Bold" },
   catLabel: { fontSize: 11, fontFamily: "Inter_500Medium", marginTop: 2 },
+  rowCard: {
+    flexDirection: "row",
+    alignItems: "center",
+    padding: 14,
+    borderRadius: 14,
+    marginBottom: 10,
+  },
+  gelenQtyPill: {
+    flexDirection: "row",
+    alignItems: "baseline",
+    gap: 4,
+    paddingHorizontal: 12,
+    paddingVertical: 8,
+    borderRadius: 10,
+  },
+  gelenQtyVal: { fontSize: 16, fontFamily: "Inter_700Bold" },
+  gelenQtyUnit: { fontSize: 11, fontFamily: "Inter_500Medium" },
   warnBox: {
     flexDirection: "row",
     alignItems: "flex-start",
