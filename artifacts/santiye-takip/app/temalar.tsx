@@ -19,7 +19,7 @@ export default function TemalarScreen() {
   const colors = useColors();
   const router = useRouter();
   const { themeId, themes, setThemeId } = useTheme();
-  const { t, language, languages, setLanguage } = useI18n();
+  const { t } = useI18n();
   const insets = useSafeAreaInsets();
   const topPad = Platform.OS === "web" ? 16 : insets.top;
 
@@ -42,7 +42,7 @@ export default function TemalarScreen() {
           <Feather name="arrow-left" size={22} color={colors.secondaryForeground} />
         </TouchableOpacity>
         <Text style={[styles.headerTitle, { color: colors.secondaryForeground }]}>
-          {t("common.settings")}
+          {t("settings.theme.title")}
         </Text>
         <View style={{ width: 40 }} />
       </View>
@@ -53,63 +53,6 @@ export default function TemalarScreen() {
           { paddingBottom: insets.bottom + 24 },
         ]}
       >
-        {/* ── Dil Seçimi ── */}
-        <Text style={[styles.sectionTitle, { color: colors.foreground }]}>
-          {t("settings.language.title")}
-        </Text>
-        <Text style={[styles.intro, { color: colors.mutedForeground }]}>
-          {t("settings.language.intro")}
-        </Text>
-        <View style={styles.langRow}>
-          {languages.map((l) => {
-            const selected = l.code === language;
-            return (
-              <TouchableOpacity
-                key={l.code}
-                onPress={() => setLanguage(l.code)}
-                activeOpacity={0.85}
-                style={[
-                  styles.langChip,
-                  {
-                    backgroundColor: selected ? colors.primary : colors.card,
-                    borderColor: selected ? colors.primary : colors.border,
-                  },
-                ]}
-              >
-                <Text style={styles.langFlag}>{l.flag}</Text>
-                <Text
-                  style={[
-                    styles.langName,
-                    {
-                      color: selected
-                        ? colors.primaryForeground
-                        : colors.foreground,
-                    },
-                  ]}
-                >
-                  {l.native}
-                </Text>
-                {selected ? (
-                  <Feather
-                    name="check"
-                    size={14}
-                    color={colors.primaryForeground}
-                  />
-                ) : null}
-              </TouchableOpacity>
-            );
-          })}
-        </View>
-
-        {/* ── Tema Seçimi ── */}
-        <Text
-          style={[
-            styles.sectionTitle,
-            { color: colors.foreground, marginTop: 24 },
-          ]}
-        >
-          {t("settings.theme.title")}
-        </Text>
         <Text style={[styles.intro, { color: colors.mutedForeground }]}>
           {t("settings.theme.intro")}
         </Text>
@@ -292,34 +235,12 @@ const styles = StyleSheet.create({
     fontFamily: "Inter_700Bold",
   },
   scroll: { padding: 16, gap: 12 },
-  sectionTitle: {
-    fontSize: 16,
-    fontFamily: "Inter_700Bold",
-    marginBottom: 6,
-  },
   intro: {
     fontSize: 13,
     lineHeight: 18,
     marginBottom: 12,
     fontFamily: "Inter_400Regular",
   },
-  langRow: {
-    flexDirection: "row",
-    flexWrap: "wrap",
-    gap: 8,
-    marginBottom: 8,
-  },
-  langChip: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 8,
-    paddingHorizontal: 12,
-    paddingVertical: 10,
-    borderRadius: 12,
-    borderWidth: 1,
-  },
-  langFlag: { fontSize: 18 },
-  langName: { fontSize: 14, fontFamily: "Inter_600SemiBold" },
   card: {
     borderRadius: 14,
     padding: 14,

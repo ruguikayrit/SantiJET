@@ -415,6 +415,21 @@ export default function HomeScreen() {
           <Feather name="chevron-right" size={18} color={colors.mutedForeground} />
         </TouchableOpacity>
 
+        <TouchableOpacity
+          style={[styles.raporBtn, { backgroundColor: colors.card, borderColor: colors.secondary + "40", marginTop: 10 }]}
+          onPress={() => router.push("/dil" as any)}
+          activeOpacity={0.85}
+        >
+          <View style={[styles.raporIcon, { backgroundColor: colors.secondary + "20" }]}>
+            <Feather name="globe" size={20} color={colors.secondary} />
+          </View>
+          <View style={{ flex: 1 }}>
+            <Text style={[styles.raporTitle, { color: colors.foreground }]}>{t("settings.language.title")}</Text>
+            <Text style={[styles.raporSub, { color: colors.mutedForeground }]}>{t("settings.language.intro")}</Text>
+          </View>
+          <Feather name="chevron-right" size={18} color={colors.mutedForeground} />
+        </TouchableOpacity>
+
         {isAdmin ? (
           <>
             <Text style={[styles.sectionLabel, { color: colors.foreground, marginTop: 24 }]}>

@@ -70,6 +70,7 @@ function RootLayoutNav() {
         <Stack.Screen name="hakedis" />
         <Stack.Screen name="rapor" />
         <Stack.Screen name="temalar" />
+        <Stack.Screen name="dil" />
         <Stack.Screen name="asistan" />
       </Stack>
     </AppGate>
