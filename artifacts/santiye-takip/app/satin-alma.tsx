@@ -63,6 +63,7 @@ interface F {
   paidDate: string;
   invoiceNo: string;
   notes: string;
+  invoiceReceived: boolean;
 }
 
 const EMPTY: F = {
@@ -80,6 +81,7 @@ const EMPTY: F = {
   paidDate: "",
   invoiceNo: "",
   notes: "",
+  invoiceReceived: false,
 };
 
 function fmtTL(n: number) {
@@ -102,6 +104,7 @@ export default function SatinAlmaScreen() {
     updatePurchase,
     deletePurchase,
     markPurchasePaid,
+    markPurchaseInvoiceReceived,
   } = useApp();
 
   const perm = usePermission("satin-alma");
@@ -129,13 +132,15 @@ export default function SatinAlmaScreen() {
     let total = 0;
     let paid = 0;
     let pending = 0;
+    let waitingInvoice = 0;
     for (const p of list) {
       const { total: t } = calcTotal(p.quantity || 0, p.unitPrice || 0, p.vatRate || 0);
       total += t;
       if (p.status === "paid") paid += t;
       else if (p.status === "pending" || p.status === "approved") pending += t;
+      if (!p.invoiceReceived && p.status !== "cancelled") waitingInvoice += 1;
     }
-    return { total, paid, pending, count: list.length };
+    return { total, paid, pending, waitingInvoice, count: list.length };
   }, [list]);
 
   function open(p?: Purchase) {
@@ -156,6 +161,7 @@ export default function SatinAlmaScreen() {
         paidDate: p.paidDate,
         invoiceNo: p.invoiceNo,
         notes: p.notes,
+        invoiceReceived: !!p.invoiceReceived,
       });
     } else {
       setEditId(null);
@@ -185,10 +191,15 @@ export default function SatinAlmaScreen() {
       paidDate: form.status === "paid" ? (form.paidDate || new Date().toISOString().slice(0, 10)) : "",
       invoiceNo: form.invoiceNo.trim(),
       notes: form.notes.trim(),
+      invoiceReceived: form.invoiceReceived,
     };
     if (editId) updatePurchase(editId, data);
     else addPurchase(data);
     setVisible(false);
+  }
+
+  function toggleInvoice(p: Purchase) {
+    markPurchaseInvoiceReceived(p.id, !p.invoiceReceived);
   }
 
   function remove() {
@@ -321,6 +332,40 @@ export default function SatinAlmaScreen() {
                     </View>
                     <View style={{ alignItems: "flex-end", gap: 6 }}>
                       <Text style={[styles.amount, { color: colors.foreground }]}>{fmtTL(total)} ₺</Text>
+                      {item.materialRequestId ? (
+                        <View style={[styles.linkBadge, { backgroundColor: "#7c3aed22" }]}>
+                          <Feather name="link" size={10} color="#7c3aed" />
+                          <Text style={[styles.linkBadgeText, { color: "#7c3aed" }]}>Talepten</Text>
+                        </View>
+                      ) : null}
+                      {canEdit && item.status !== "cancelled" ? (
+                        <TouchableOpacity
+                          onPress={(e) => {
+                            e.stopPropagation();
+                            toggleInvoice(item);
+                          }}
+                          style={[
+                            styles.payBtn,
+                            {
+                              backgroundColor: item.invoiceReceived ? "#0891b2" : colors.muted,
+                            },
+                          ]}
+                        >
+                          <Feather
+                            name={item.invoiceReceived ? "check" : "file-text"}
+                            size={11}
+                            color={item.invoiceReceived ? "#fff" : colors.foreground}
+                          />
+                          <Text
+                            style={[
+                              styles.payBtnText,
+                              { color: item.invoiceReceived ? "#fff" : colors.foreground },
+                            ]}
+                          >
+                            {item.invoiceReceived ? "Fatura ✓" : "Fatura"}
+                          </Text>
+                        </TouchableOpacity>
+                      ) : null}
                       {canEdit && item.status !== "paid" && item.status !== "cancelled" ? (
                         <TouchableOpacity
                           onPress={(e) => {
@@ -459,6 +504,38 @@ export default function SatinAlmaScreen() {
           onChangeText={(v) => setForm({ ...form, invoiceNo: v })}
         />
 
+        <TouchableOpacity
+          onPress={() => setForm({ ...form, invoiceReceived: !form.invoiceReceived })}
+          style={[
+            styles.invoiceToggle,
+            {
+              backgroundColor: form.invoiceReceived ? "#0891b222" : colors.muted,
+              borderColor: form.invoiceReceived ? "#0891b2" : colors.border,
+            },
+          ]}
+          activeOpacity={0.7}
+        >
+          <View
+            style={[
+              styles.invoiceCheckBox,
+              {
+                borderColor: form.invoiceReceived ? "#0891b2" : colors.border,
+                backgroundColor: form.invoiceReceived ? "#0891b2" : "transparent",
+              },
+            ]}
+          >
+            {form.invoiceReceived ? <Feather name="check" size={12} color="#fff" /> : null}
+          </View>
+          <View style={{ flex: 1 }}>
+            <Text style={[styles.invoiceTitle, { color: colors.foreground }]}>Faturası Geldi</Text>
+            <Text style={[styles.invoiceDesc, { color: colors.mutedForeground }]}>
+              {form.invoiceReceived
+                ? "Tedarikçiden fatura teslim alındı"
+                : "Fatura henüz teslim alınmadı"}
+            </Text>
+          </View>
+        </TouchableOpacity>
+
         <Text style={[styles.label, { color: colors.foreground }]}>Durum</Text>
         <View style={styles.chips}>
           {(Object.keys(STATUS_LABEL) as PurchaseStatus[]).map((s) => (
@@ -596,6 +673,34 @@ const styles = StyleSheet.create({
     borderRadius: 999,
   },
   payBtnText: { color: "#fff", fontSize: 11, fontFamily: "Inter_600SemiBold" },
+  linkBadge: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 3,
+    paddingHorizontal: 6,
+    paddingVertical: 2,
+    borderRadius: 999,
+  },
+  linkBadgeText: { fontSize: 10, fontFamily: "Inter_600SemiBold" },
+  invoiceToggle: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 12,
+    padding: 12,
+    borderRadius: 10,
+    borderWidth: 1,
+    marginBottom: 14,
+  },
+  invoiceCheckBox: {
+    width: 22,
+    height: 22,
+    borderRadius: 6,
+    borderWidth: 2,
+    justifyContent: "center",
+    alignItems: "center",
+  },
+  invoiceTitle: { fontSize: 14, fontFamily: "Inter_600SemiBold" },
+  invoiceDesc: { fontSize: 11, fontFamily: "Inter_400Regular", marginTop: 2 },
   label: { fontSize: 14, fontFamily: "Inter_600SemiBold", marginBottom: 8, marginTop: 4 },
   chips: { flexDirection: "row", flexWrap: "wrap", gap: 8, marginBottom: 14 },
   chip: { paddingHorizontal: 14, paddingVertical: 8, borderRadius: 999 },

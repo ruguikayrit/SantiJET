@@ -196,6 +196,9 @@ export interface Purchase {
   paidDate: string;        // ödendi olarak işaretlenince doldurulur
   invoiceNo: string;       // fatura no
   notes: string;
+  invoiceReceived: boolean; // Faturası geldi olarak işaretlendi mi
+  // İlişkili malzeme talebi (otomatik oluşturulan kayıtlar için)
+  materialRequestId?: string;
   // KasaFON köprüsü için (sonradan kullanılacak)
   finansTransactionId?: string;
 }
@@ -489,6 +492,7 @@ interface AppContextType extends AppState {
   updatePurchase: (id: string, p: Partial<Purchase>) => void;
   deletePurchase: (id: string) => void;
   markPurchasePaid: (id: string, paidDate: string) => void;
+  markPurchaseInvoiceReceived: (id: string, received: boolean, invoiceNo?: string) => void;
 
   addBudget: (b: Omit<BudgetEntry, "id">) => void;
   updateBudget: (id: string, b: Partial<BudgetEntry>) => void;
@@ -576,6 +580,16 @@ function backfillRolePermissions(roles: Role[]): Role[] {
   });
 }
 
+function normalizePurchases(arr: any): Purchase[] {
+  if (!Array.isArray(arr)) return [];
+  return arr.map((p: any) => ({
+    ...p,
+    invoiceReceived: !!p?.invoiceReceived,
+    materialRequestId:
+      typeof p?.materialRequestId === "string" ? p.materialRequestId : undefined,
+  })) as Purchase[];
+}
+
 async function loadInitialState(): Promise<AppState> {
   const raw = await AsyncStorage.getItem(STORAGE_KEY);
   if (raw) {
@@ -596,6 +610,7 @@ async function loadInitialState(): Promise<AppState> {
       if (!Array.isArray(state.materialUnits)) {
         state.materialUnits = [...MATERIAL_UNITS];
       }
+      state.purchases = normalizePurchases(state.purchases);
       return state;
     } catch {
       return { ...INITIAL, roles: DEFAULT_ROLES };
@@ -803,6 +818,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
               ? incoming.materialList : [...CONSTRUCTION_MATERIALS],
             materialUnits: Array.isArray(incoming.materialUnits)
               ? incoming.materialUnits : [...MATERIAL_UNITS],
+            purchases: normalizePurchases(incoming.purchases),
             currentUserId: userStillExists ? prevUserId : null,
           };
           setState(next);
@@ -901,8 +917,104 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     updateMaterial: makeUpdate("materials") as any,
     deleteMaterial: makeDelete("materials") as any,
 
-    addMaterialRequest: makeAdd("materialRequests") as any,
-    updateMaterialRequest: makeUpdate("materialRequests") as any,
+    addMaterialRequest: ((item: Omit<MaterialRequest, "id">) => {
+      const id = genId();
+      update((prev) => {
+        const newReq: MaterialRequest = { ...(item as any), id };
+        const next: AppState = {
+          ...prev,
+          materialRequests: [...prev.materialRequests, newReq],
+        };
+        // Talep ilk eklenirken zaten "approved" ise otomatik satın alma oluştur
+        if (
+          newReq.status === "approved" &&
+          !prev.purchases.some((p) => p.materialRequestId === id)
+        ) {
+          const today = new Date().toISOString().slice(0, 10);
+          const auto: Purchase = {
+            id: genId(),
+            projectId: newReq.projectId,
+            date: today,
+            supplier: "",
+            itemName: newReq.name,
+            category: newReq.category || "",
+            unit: newReq.unit || "",
+            quantity: newReq.quantity || 0,
+            unitPrice: 0,
+            vatRate: 20,
+            status: "pending",
+            paymentMethod: "havale",
+            paidDate: "",
+            invoiceNo: "",
+            notes: newReq.note ? `Talepten: ${newReq.note}` : "Malzeme talebinden otomatik oluşturuldu",
+            invoiceReceived: false,
+            materialRequestId: id,
+          };
+          next.purchases = [...next.purchases, auto];
+        }
+        return next;
+      });
+      return id;
+    }) as any,
+    updateMaterialRequest: ((id: string, patch: Partial<MaterialRequest>) => {
+      update((prev) => {
+        const before = prev.materialRequests.find((r) => r.id === id);
+        if (!before) return prev;
+        // approvals alanı varsa daima MEVCUT state ile alan-bazlı birleştir;
+        // böylece eş zamanlı onay tıklamaları birbirinin üzerine yazmaz.
+        const mergedApprovals =
+          patch.approvals !== undefined
+            ? { ...(before.approvals || {}), ...patch.approvals }
+            : before.approvals;
+        const after: MaterialRequest = { ...before, ...patch, approvals: mergedApprovals };
+        let nextMaterialRequests = prev.materialRequests.map((r) => (r.id === id ? after : r));
+        let nextPurchases = prev.purchases;
+
+        // Onay geçişi tespiti
+        const wasApprovedStatus = before.status === "approved";
+        const isApprovedStatus = after.status === "approved";
+        const beforeAllChecked =
+          !!(before.approvals?.sef && before.approvals?.mudur && before.approvals?.satinAlma);
+        const afterAllChecked =
+          !!(after.approvals?.sef && after.approvals?.mudur && after.approvals?.satinAlma);
+
+        // 3 onay yeni tamamlandıysa talep durumunu daima "approved" yap (purchase olsa da olmasa da)
+        if (!beforeAllChecked && afterAllChecked && !isApprovedStatus) {
+          const synced: MaterialRequest = { ...after, status: "approved" };
+          nextMaterialRequests = nextMaterialRequests.map((r) => (r.id === id ? synced : r));
+        }
+
+        const justApproved =
+          (!wasApprovedStatus && isApprovedStatus) ||
+          (!beforeAllChecked && afterAllChecked);
+        const alreadyHasPurchase = prev.purchases.some((p) => p.materialRequestId === id);
+        if (justApproved && !alreadyHasPurchase) {
+          const today = new Date().toISOString().slice(0, 10);
+          const auto: Purchase = {
+            id: genId(),
+            projectId: after.projectId,
+            date: today,
+            supplier: "",
+            itemName: after.name,
+            category: after.category || "",
+            unit: after.unit || "",
+            quantity: after.quantity || 0,
+            unitPrice: 0,
+            vatRate: 20,
+            status: "pending",
+            paymentMethod: "havale",
+            paidDate: "",
+            invoiceNo: "",
+            notes: after.note ? `Talepten: ${after.note}` : "Malzeme talebinden otomatik oluşturuldu",
+            invoiceReceived: false,
+            materialRequestId: id,
+          };
+          nextPurchases = [...nextPurchases, auto];
+        }
+
+        return { ...prev, materialRequests: nextMaterialRequests, purchases: nextPurchases };
+      });
+    }) as any,
     deleteMaterialRequest: makeDelete("materialRequests") as any,
 
     addMaterialMovement: makeAdd("materialMovements") as any,
@@ -921,6 +1033,19 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
         ...prev,
         purchases: prev.purchases.map((p) =>
           p.id === id ? { ...p, status: "paid" as PurchaseStatus, paidDate } : p
+        ),
+      })),
+    markPurchaseInvoiceReceived: (id, received, invoiceNo) =>
+      update((prev) => ({
+        ...prev,
+        purchases: prev.purchases.map((p) =>
+          p.id === id
+            ? {
+                ...p,
+                invoiceReceived: received,
+                invoiceNo: invoiceNo !== undefined ? invoiceNo : p.invoiceNo,
+              }
+            : p
         ),
       })),
 
@@ -1003,7 +1128,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
           roles: Array.isArray(incoming.roles) && incoming.roles.length > 0
             ? backfillRolePermissions(incoming.roles)
             : DEFAULT_ROLES,
-          purchases: Array.isArray(incoming.purchases) ? incoming.purchases : [],
+          purchases: normalizePurchases(incoming.purchases),
           currentUserId: null,
         };
         setState(next);
