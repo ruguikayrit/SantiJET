@@ -1,0 +1,51 @@
+#!/usr/bin/env node
+/**
+ * This script fixes the expo-router symlink created by pnpm.
+ * pnpm creates node_modules/expo-router as a symlink to the pnpm virtual store
+ * (a very long path with @ and + chars). Expo CLI resolves this via realpathSync,
+ * producing a mainModuleName with special characters that the Replit proxy cannot route.
+ * We replace the symlink with a real directory containing a stub entry.js.
+ */
+const fs = require('fs');
+const path = require('path');
+
+const artifactDir = path.resolve(__dirname, '..');
+const stubDir = path.join(artifactDir, 'node_modules', 'expo-router');
+const stubEntry = path.join(stubDir, 'entry.js');
+const stubPkg = path.join(stubDir, 'package.json');
+
+// Find the real expo-router entry in pnpm private hoist
+const realEntryPaths = [
+  path.join(artifactDir, '../../node_modules/.pnpm/node_modules/expo-router/entry.js'),
+];
+
+let realEntry = realEntryPaths.find(p => {
+  try { return fs.existsSync(fs.realpathSync(p)); } catch { return false; }
+});
+
+if (!realEntry) {
+  console.log('[fix-expo-router-stub] Could not find real expo-router entry, skipping.');
+  process.exit(0);
+}
+realEntry = fs.realpathSync(realEntry);
+
+// Check if stub already correctly set up
+if (!fs.existsSync(stubDir) || fs.lstatSync(stubDir).isSymbolicLink()) {
+  // Remove symlink if present
+  if (fs.existsSync(stubDir) || fs.lstatSync(stubDir).isSymbolicLink()) {
+    fs.rmSync(stubDir, { recursive: true, force: true });
+  }
+  fs.mkdirSync(stubDir, { recursive: true });
+}
+
+// Write stub files
+fs.writeFileSync(stubPkg, JSON.stringify({
+  name: 'expo-router',
+  version: '6.0.23',
+  main: 'entry.js'
+}, null, 2));
+
+fs.writeFileSync(stubEntry, `import '${realEntry}';\n`);
+
+console.log('[fix-expo-router-stub] Stub created at', stubDir);
+console.log('[fix-expo-router-stub] -> entry:', realEntry);
