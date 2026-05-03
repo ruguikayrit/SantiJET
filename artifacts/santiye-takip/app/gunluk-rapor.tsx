@@ -96,7 +96,6 @@ export default function GunlukRaporScreen() {
     tasks,
     materials,
     weighbridges,
-    purchases,
   } = useApp();
 
   const perm = usePermission("gunluk-rapor");
@@ -294,25 +293,6 @@ export default function GunlukRaporScreen() {
         color: "#9333ea",
         bg: "#9333ea1a",
         metric: `${kantarToday.length} fiş`,
-        lines,
-      });
-    }
-
-    // SATIN ALMA
-    const purchToday = purchases.filter((p) => p.projectId === projectId && same(p.date));
-    if (purchToday.length) {
-      const totalKDVli = purchToday.reduce((s, p) => s + (p.quantity || 0) * (p.unitPrice || 0) * (1 + (p.vatRate || 0) / 100), 0);
-      const pending = purchToday.filter((p) => p.status === "pending").length;
-      const lines = purchToday.slice(0, 4).map((p) => `${p.itemName}: ${fmtNum(p.quantity)} ${p.unit} · ${p.supplier}`);
-      if (purchToday.length > 4) lines.push(`+${purchToday.length - 4} sipariş daha`);
-      lines.push(`Toplam: ${fmtTL(totalKDVli)} (KDV dahil)${pending ? ` · ${pending} bekleyen` : ""}`);
-      cards.push({
-        key: "satinalma",
-        icon: "shopping-cart",
-        title: "Satın Alma",
-        color: "#0d9488",
-        bg: "#0d94881a",
-        metric: `${purchToday.length} sipariş`,
         lines,
       });
     }
@@ -579,7 +559,7 @@ export default function GunlukRaporScreen() {
             <View style={{ flex: 1 }}>
               <Text style={[styles.autoBtnText, { color: colors.primary }]}>İşçi Sayısını Puantajdan Doldur</Text>
               <Text style={[styles.autoBtnSub, { color: colors.mutedForeground }]}>
-                Modül özetleri rapor kartında otomatik görünür; burada sadece serbest notlar ve sorunlar girilir.
+                Puantaj, imalat, görev, malzeme ve kantar özetleri rapor kartında otomatik görünür.
               </Text>
             </View>
           </TouchableOpacity>
