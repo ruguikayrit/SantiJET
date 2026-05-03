@@ -396,28 +396,37 @@ export default function HomeScreen() {
               <View
                 style={[
                   styles.tileInner,
-                  { backgroundColor: colors.card },
+                  {
+                    backgroundColor: colors.card,
+                    borderColor: colors.border,
+                  },
                 ]}
               >
-                <View style={[styles.tileIcon, { backgroundColor: s.bg }]}>
-                  <Feather name={s.icon as any} size={28} color={s.color} />
-                </View>
-                <Text
-                  style={[styles.tileLabel, { color: colors.foreground }]}
-                  numberOfLines={1}
-                >
-                  {t(`menu.${s.key}`)}
-                </Text>
-                <View style={styles.tileBottom}>
-                  <Text style={[styles.tileCount, { color: colors.mutedForeground }]}>
-                    {s.count(app)}
-                  </Text>
+                <View style={[styles.tileAccent, { backgroundColor: s.color }]} />
+                <View style={styles.tileHead}>
+                  <View style={[styles.tileIcon, { backgroundColor: s.bg }]}>
+                    <Feather name={s.icon as any} size={20} color={s.color} />
+                  </View>
                   {perm === "view" ? (
                     <View style={styles.viewBadge}>
-                      <Feather name="eye" size={10} color="#0ea5e9" />
+                      <Feather name="eye" size={9} color="#0ea5e9" />
                       <Text style={styles.viewBadgeText}>{t("home.tile.readonly")}</Text>
                     </View>
                   ) : null}
+                </View>
+                <Text
+                  style={[styles.tileLabel, { color: colors.foreground }]}
+                  numberOfLines={2}
+                >
+                  {t(`menu.${s.key}`)}
+                </Text>
+                <View style={styles.tileFootRow}>
+                  <Text style={[styles.tileCount, { color: colors.mutedForeground }]} numberOfLines={1}>
+                    {s.count(app)}
+                  </Text>
+                  <View style={[styles.tileChev, { backgroundColor: colors.muted }]}>
+                    <Feather name="chevron-right" size={12} color={colors.mutedForeground} />
+                  </View>
                 </View>
               </View>
             );
@@ -1020,31 +1029,65 @@ const styles = StyleSheet.create({
   },
   tileInner: {
     flex: 1,
-    paddingVertical: 18,
-    paddingHorizontal: 16,
-    borderRadius: 14,
-    gap: 8,
+    paddingTop: 14,
+    paddingBottom: 12,
+    paddingHorizontal: 14,
+    paddingLeft: 16,
+    borderRadius: 12,
+    borderWidth: StyleSheet.hairlineWidth,
+    gap: 10,
+    overflow: "hidden",
+    shadowColor: "#0B1E33",
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.06,
+    shadowRadius: 6,
+    elevation: 2,
+    justifyContent: "space-between",
+  },
+  tileAccent: {
+    position: "absolute",
+    left: 0,
+    top: 0,
+    bottom: 0,
+    width: 4,
+  },
+  tileHead: {
+    flexDirection: "row",
+    alignItems: "flex-start",
+    justifyContent: "space-between",
+    gap: 6,
   },
   tileIcon: {
-    width: 50,
-    height: 50,
-    borderRadius: 25,
+    width: 38,
+    height: 38,
+    borderRadius: 9,
     justifyContent: "center",
     alignItems: "center",
   },
   tileLabel: {
-    fontSize: 15,
-    fontFamily: "Inter_600SemiBold",
+    fontSize: 14,
+    lineHeight: 18,
+    fontFamily: "Inter_700Bold",
+    letterSpacing: 0.1,
   },
-  tileBottom: {
+  tileFootRow: {
     flexDirection: "row",
     alignItems: "center",
+    justifyContent: "space-between",
     gap: 6,
-    flexWrap: "wrap",
+  },
+  tileChev: {
+    width: 22,
+    height: 22,
+    borderRadius: 11,
+    alignItems: "center",
+    justifyContent: "center",
   },
   tileCount: {
-    fontSize: 12,
-    fontFamily: "Inter_400Regular",
+    flex: 1,
+    fontSize: 11,
+    fontFamily: "Inter_500Medium",
+    letterSpacing: 0.1,
   },
   viewBadge: {
     flexDirection: "row",
@@ -1053,7 +1096,7 @@ const styles = StyleSheet.create({
     backgroundColor: "#e0f2fe",
     paddingHorizontal: 6,
     paddingVertical: 2,
-    borderRadius: 999,
+    borderRadius: 4,
   },
   viewBadgeText: {
     fontSize: 9,
