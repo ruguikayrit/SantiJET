@@ -1110,13 +1110,6 @@ export default function MalzemeScreen() {
                 placeholder="İsteğe bağlı"
               />
               <FormInput
-                label="Birim Fiyat (KDV hariç)"
-                value={purchaseSendUnitPrice}
-                onChangeText={setPurchaseSendUnitPrice}
-                placeholder="0"
-                keyboardType="numeric"
-              />
-              <FormInput
                 label="Not (zorunlu değil ama tavsiye edilir)"
                 value={purchaseSendNote}
                 onChangeText={setPurchaseSendNote}
