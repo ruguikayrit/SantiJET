@@ -6,6 +6,7 @@ import {
   ScrollView,
   StyleSheet,
   Text,
+  TextInput,
   TouchableOpacity,
   View,
 } from "react-native";
@@ -143,12 +144,26 @@ export default function SatinAlmaScreen() {
     }
   }, [materialFilter, materialNames]);
 
+  const [searchText, setSearchText] = useState("");
+  const [searchDate, setSearchDate] = useState("");
+  const hasFilter = !!(searchText.trim() || searchDate.trim());
+  function clearFilters() { setSearchText(""); setSearchDate(""); }
+
   const list = useMemo(() => {
     let arr = projScoped;
     if (statusFilter !== "all") arr = arr.filter((p) => p.status === statusFilter);
     if (materialFilter) arr = arr.filter((p) => (p.itemName || "").trim() === materialFilter);
+    const q = searchText.trim().toLocaleLowerCase("tr-TR");
+    if (q) {
+      arr = arr.filter((p) =>
+        [p.supplier, p.itemName, p.category, p.invoiceNo, p.notes, p.unit]
+          .filter(Boolean).join(" ").toLocaleLowerCase("tr-TR").includes(q)
+      );
+    }
+    const d = searchDate.trim();
+    if (d) arr = arr.filter((p) => p.date === d || p.paidDate === d);
     return [...arr].sort((a, b) => (b.date || "").localeCompare(a.date || ""));
-  }, [projScoped, statusFilter, materialFilter]);
+  }, [projScoped, statusFilter, materialFilter, searchText, searchDate]);
 
   const summary = useMemo(() => {
     let total = 0;
@@ -278,6 +293,32 @@ export default function SatinAlmaScreen() {
             <View style={[styles.sumBox, { backgroundColor: STATUS_COLOR.pending + "22" }]}>
               <Text style={[styles.sumLabel, { color: colors.foreground }]}>Bekleyen</Text>
               <Text style={[styles.sumNum, { color: STATUS_COLOR.pending }]}>{fmtTL(summary.pending)} ₺</Text>
+            </View>
+          </View>
+
+          <View style={[styles.filterBar, { borderBottomColor: colors.border, backgroundColor: colors.card }]}>
+            <View style={styles.filterRow}>
+              <View style={[styles.searchBox, { backgroundColor: colors.muted, flex: 1 }]}>
+                <Feather name="search" size={13} color={colors.mutedForeground} />
+                <TextInput
+                  value={searchText}
+                  onChangeText={setSearchText}
+                  placeholder="Tedarikçi, ürün, fatura no, not..."
+                  placeholderTextColor={colors.mutedForeground}
+                  style={[styles.searchInput, { color: colors.foreground }]}
+                />
+              </View>
+            </View>
+            <View style={styles.filterRow}>
+              <View style={{ flex: 1 }}>
+                <DatePickerInput value={searchDate} onChange={setSearchDate} />
+              </View>
+              {hasFilter ? (
+                <TouchableOpacity onPress={clearFilters} style={[styles.clearBtn, { backgroundColor: colors.muted }]} activeOpacity={0.7}>
+                  <Feather name="x" size={14} color={colors.foreground} />
+                  <Text style={[styles.clearBtnText, { color: colors.foreground }]}>Temizle</Text>
+                </TouchableOpacity>
+              ) : null}
             </View>
           </View>
 
@@ -810,4 +851,10 @@ const styles = StyleSheet.create({
   totalRow: { flexDirection: "row", justifyContent: "space-between" },
   totalLabel: { fontSize: 13, fontFamily: "Inter_500Medium" },
   totalValue: { fontSize: 14, fontFamily: "Inter_600SemiBold" },
+  filterBar: { paddingHorizontal: 12, paddingVertical: 10, gap: 8, borderBottomWidth: StyleSheet.hairlineWidth },
+  filterRow: { flexDirection: "row", gap: 8, alignItems: "center" },
+  searchBox: { flexDirection: "row", alignItems: "center", gap: 6, paddingHorizontal: 10, paddingVertical: 8, borderRadius: 8, minHeight: 38 },
+  searchInput: { flex: 1, fontSize: 13, fontFamily: "Inter_500Medium", padding: 0 },
+  clearBtn: { flexDirection: "row", alignItems: "center", gap: 4, paddingHorizontal: 10, paddingVertical: 8, borderRadius: 8 },
+  clearBtnText: { fontSize: 12, fontFamily: "Inter_600SemiBold" },
 });

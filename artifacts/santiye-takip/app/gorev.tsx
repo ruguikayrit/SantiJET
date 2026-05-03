@@ -5,6 +5,7 @@ import {
   FlatList,
   StyleSheet,
   Text,
+  TextInput,
   TouchableOpacity,
   View,
 } from "react-native";
@@ -74,11 +75,25 @@ export default function GorevScreen() {
   const [editId, setEditId] = useState<string | null>(null);
   const [form, setForm] = useState<F>(EMPTY);
 
+  const [searchText, setSearchText] = useState("");
+  const [searchDate, setSearchDate] = useState("");
+  const hasFilter = !!(searchText.trim() || searchDate.trim());
+  function clearFilters() { setSearchText(""); setSearchDate(""); }
+
   const list = useMemo(() => {
-    const arr = filter ? tasks.filter((t) => t.projectId === filter) : tasks;
+    let arr = filter ? tasks.filter((t) => t.projectId === filter) : tasks;
+    const q = searchText.trim().toLocaleLowerCase("tr-TR");
+    if (q) {
+      arr = arr.filter((t) =>
+        [t.title, t.description, t.assignee]
+          .filter(Boolean).join(" ").toLocaleLowerCase("tr-TR").includes(q)
+      );
+    }
+    const d = searchDate.trim();
+    if (d) arr = arr.filter((t) => t.deadline === d);
     const order = { open: 0, in_progress: 1, done: 2 };
     return [...arr].sort((a, b) => order[a.status] - order[b.status]);
-  }, [tasks, filter]);
+  }, [tasks, filter, searchText, searchDate]);
 
   function open(t?: Task) {
     if (t) {
@@ -138,6 +153,34 @@ export default function GorevScreen() {
         rightAction={canEdit && projects.length > 0 ? { icon: "plus", onPress: () => open() } : undefined}
       />
 
+
+      {projects.length > 0 ? (
+        <View style={[styles.filterBar, { borderBottomColor: colors.border, backgroundColor: colors.card }]}>
+          <View style={styles.filterRow}>
+            <View style={[styles.searchBox, { backgroundColor: colors.muted, flex: 1 }]}>
+              <Feather name="search" size={13} color={colors.mutedForeground} />
+              <TextInput
+                value={searchText}
+                onChangeText={setSearchText}
+                placeholder="Başlık, açıklama, sorumlu..."
+                placeholderTextColor={colors.mutedForeground}
+                style={[styles.searchInput, { color: colors.foreground }]}
+              />
+            </View>
+          </View>
+          <View style={styles.filterRow}>
+            <View style={{ flex: 1 }}>
+              <DatePickerInput value={searchDate} onChange={setSearchDate} />
+            </View>
+            {hasFilter ? (
+              <TouchableOpacity onPress={clearFilters} style={[styles.clearBtn, { backgroundColor: colors.muted }]} activeOpacity={0.7}>
+                <Feather name="x" size={14} color={colors.foreground} />
+                <Text style={[styles.clearBtnText, { color: colors.foreground }]}>Temizle</Text>
+              </TouchableOpacity>
+            ) : null}
+          </View>
+        </View>
+      ) : null}
 
       {projects.length === 0 ? (
         <EmptyState
@@ -374,4 +417,10 @@ const styles = StyleSheet.create({
   chips: { flexDirection: "row", flexWrap: "wrap", gap: 8, marginBottom: 14 },
   chip: { paddingHorizontal: 14, paddingVertical: 8, borderRadius: 999 },
   chipText: { fontSize: 13, fontFamily: "Inter_500Medium" },
+  filterBar: { paddingHorizontal: 12, paddingVertical: 10, gap: 8, borderBottomWidth: StyleSheet.hairlineWidth },
+  filterRow: { flexDirection: "row", gap: 8, alignItems: "center" },
+  searchBox: { flexDirection: "row", alignItems: "center", gap: 6, paddingHorizontal: 10, paddingVertical: 8, borderRadius: 8, minHeight: 38 },
+  searchInput: { flex: 1, fontSize: 13, fontFamily: "Inter_500Medium", padding: 0 },
+  clearBtn: { flexDirection: "row", alignItems: "center", gap: 4, paddingHorizontal: 10, paddingVertical: 8, borderRadius: 8 },
+  clearBtnText: { fontSize: 12, fontFamily: "Inter_600SemiBold" },
 });

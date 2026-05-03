@@ -6,11 +6,13 @@ import {
   ScrollView,
   StyleSheet,
   Text,
+  TextInput,
   TouchableOpacity,
   View,
 } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
+import DatePickerInput from "@/components/DatePickerInput";
 import EmptyState from "@/components/EmptyState";
 import { useApp } from "@/context/AppContext";
 import { useColors } from "@/hooks/useColors";
@@ -48,6 +50,10 @@ export default function IlerlemeScreen() {
   const { projects, surveys, productions, materials, materialList } = useApp();
   const [filter, setFilter] = useState<string | null>(projects[0]?.id ?? null);
   const [tab, setTab] = useState<Tab>("malzeme");
+  const [searchText, setSearchText] = useState("");
+  const [searchDate, setSearchDate] = useState("");
+  const hasFilter = !!(searchText.trim() || searchDate.trim());
+  function clearFilters() { setSearchText(""); setSearchDate(""); }
 
   const projectId = filter || projects[0]?.id || "";
 
@@ -63,13 +69,15 @@ export default function IlerlemeScreen() {
   }, [surveys, projectId]);
 
   const projectMaterials = useMemo(
-    () => materials.filter((m) => m.projectId === projectId),
-    [materials, projectId]
+    () => materials.filter((m) => m.projectId === projectId)
+      .filter((m) => !searchDate.trim() || (m.deliveryDate || "") <= searchDate.trim()),
+    [materials, projectId, searchDate]
   );
 
   const projectProductions = useMemo(
-    () => productions.filter((p) => p.projectId === projectId),
-    [productions, projectId]
+    () => productions.filter((p) => p.projectId === projectId)
+      .filter((p) => !searchDate.trim() || (p.date || "") <= searchDate.trim()),
+    [productions, projectId, searchDate]
   );
 
   const malzemeRows: Row[] = useMemo(() => {
@@ -134,7 +142,14 @@ export default function IlerlemeScreen() {
     return Array.from(map.values()).sort((a, b) => a.description.localeCompare(b.description, "tr"));
   }, [surveyItems, projectProductions, materialNamesLower]);
 
-  const rows = tab === "malzeme" ? malzemeRows : iscilikRows;
+  const baseRows = tab === "malzeme" ? malzemeRows : iscilikRows;
+  const rows = useMemo(() => {
+    const q = searchText.trim().toLocaleLowerCase("tr-TR");
+    if (!q) return baseRows;
+    return baseRows.filter((r) =>
+      [r.description, r.unit].filter(Boolean).join(" ").toLocaleLowerCase("tr-TR").includes(q)
+    );
+  }, [baseRows, searchText]);
 
   const totals = useMemo(() => {
     let plannedValue = 0;
@@ -196,6 +211,32 @@ export default function IlerlemeScreen() {
                 </TouchableOpacity>
               );
             })}
+          </View>
+
+          <View style={[styles.filterBar, { borderBottomColor: colors.border, backgroundColor: colors.card }]}>
+            <View style={styles.filterRow}>
+              <View style={[styles.searchBox, { backgroundColor: colors.muted, flex: 1 }]}>
+                <Feather name="search" size={13} color={colors.mutedForeground} />
+                <TextInput
+                  value={searchText}
+                  onChangeText={setSearchText}
+                  placeholder="İş / malzeme adı, birim..."
+                  placeholderTextColor={colors.mutedForeground}
+                  style={[styles.searchInput, { color: colors.foreground }]}
+                />
+              </View>
+            </View>
+            <View style={styles.filterRow}>
+              <View style={{ flex: 1 }}>
+                <DatePickerInput value={searchDate} onChange={setSearchDate} />
+              </View>
+              {hasFilter ? (
+                <TouchableOpacity onPress={clearFilters} style={[styles.clearBtn, { backgroundColor: colors.muted }]} activeOpacity={0.7}>
+                  <Feather name="x" size={14} color={colors.foreground} />
+                  <Text style={[styles.clearBtnText, { color: colors.foreground }]}>Temizle</Text>
+                </TouchableOpacity>
+              ) : null}
+            </View>
           </View>
 
           <ScrollView
@@ -400,4 +441,10 @@ const styles = StyleSheet.create({
   },
   emptyTitle: { fontSize: 14, fontFamily: "Inter_700Bold", marginTop: 6 },
   emptySub: { fontSize: 12, fontFamily: "Inter_400Regular", textAlign: "center", lineHeight: 17 },
+  filterBar: { paddingHorizontal: 12, paddingVertical: 10, gap: 8, borderBottomWidth: StyleSheet.hairlineWidth },
+  filterRow: { flexDirection: "row", gap: 8, alignItems: "center" },
+  searchBox: { flexDirection: "row", alignItems: "center", gap: 6, paddingHorizontal: 10, paddingVertical: 8, borderRadius: 8, minHeight: 38 },
+  searchInput: { flex: 1, fontSize: 13, fontFamily: "Inter_500Medium", padding: 0 },
+  clearBtn: { flexDirection: "row", alignItems: "center", gap: 4, paddingHorizontal: 10, paddingVertical: 8, borderRadius: 8 },
+  clearBtnText: { fontSize: 12, fontFamily: "Inter_600SemiBold" },
 });
