@@ -378,18 +378,6 @@ export default function GunlukRaporScreen() {
       ) : (
         <View style={[styles.filterBar, { borderBottomColor: colors.border, backgroundColor: colors.card }]}>
           <View style={styles.filterRow}>
-            <View style={[styles.searchBox, { backgroundColor: colors.muted, flex: 1 }]}>
-              <Feather name="search" size={13} color={colors.mutedForeground} />
-              <TextInput
-                value={searchText}
-                onChangeText={setSearchText}
-                placeholder="Faaliyet, sorun, hava, ekleyen..."
-                placeholderTextColor={colors.mutedForeground}
-                style={[styles.searchInput, { color: colors.foreground }]}
-              />
-            </View>
-          </View>
-          <View style={styles.filterRow}>
             <View style={{ flex: 1 }}>
               <DatePickerInput value={searchDate} onChange={setSearchDate} />
             </View>
