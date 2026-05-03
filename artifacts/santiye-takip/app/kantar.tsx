@@ -63,6 +63,7 @@ export default function KantarScreen() {
   const router = useRouter();
   const {
     projects,
+    materials,
     weighbridges,
     addWeighbridge,
     updateWeighbridge,
@@ -105,18 +106,20 @@ export default function KantarScreen() {
   function open(w?: Weighbridge) {
     if (w) {
       setEditId(w.id);
+      // Bağlı malzemeden güncel ad/kategori/birim bilgisini çek (varsa)
+      const linked = w.materialId ? materials.find((m) => m.id === w.materialId) : undefined;
       setForm({
         projectId: w.projectId,
         date: w.date,
-        materialName: w.materialName,
-        category: w.category || "",
-        supplier: w.supplier,
+        materialName: linked?.name || w.materialName,
+        category: linked?.category || w.category || "",
+        supplier: w.supplier || linked?.supplier || "",
         plate: w.plate,
         driver: w.driver,
         irsaliyeNo: w.irsaliyeNo,
         grossWeight: String(w.grossWeight || ""),
         tareWeight: String(w.tareWeight || ""),
-        unit: w.unit || "kg",
+        unit: w.unit || linked?.unit || "kg",
         notes: w.notes,
       });
     } else {
