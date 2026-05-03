@@ -64,6 +64,13 @@ export default function AyarlarScreen() {
       sub: "Kullanıcı meslek kategorilerini ekleyin, düzenleyin, sıralayın",
       route: "/meslekler",
     },
+    {
+      key: "meslekGrubu",
+      icon: "layers",
+      title: "Meslek Grubu",
+      sub: "Kalıp, Demir, Duvar, Çelik gibi inşaat meslek gruplarını yönetin",
+      route: "/meslek-grubu",
+    },
   ];
 
   const material: Row[] = [

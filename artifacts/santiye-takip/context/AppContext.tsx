@@ -387,6 +387,32 @@ export const DEFAULT_PROFESSIONS: string[] = [
   "Gece Bekçisi",
 ];
 
+export const DEFAULT_TRADE_GROUPS: string[] = [
+  "Hafriyat",
+  "Kaba İnşaat",
+  "Kalıp",
+  "Demir",
+  "Beton",
+  "Duvar",
+  "Çelik",
+  "Sıva",
+  "Şap",
+  "İzolasyon",
+  "Çatı",
+  "Seramik / Fayans",
+  "Boya",
+  "Alçı / Asma Tavan",
+  "Alüminyum / Doğrama",
+  "Su Tesisatı",
+  "Elektrik",
+  "Mekanik / Havalandırma",
+  "Yangın Tesisatı",
+  "Asansör",
+  "Peyzaj",
+  "Altyapı",
+  "İnce İşler",
+];
+
 const ALL_EDIT: Record<PageKey, Permission> = Object.fromEntries(
   ALL_PAGE_KEYS.map((k) => [k, "edit" as Permission])
 ) as Record<PageKey, Permission>;
@@ -521,6 +547,7 @@ interface AppState {
   materialUnits: UnitOption[];
   imalatPozlari: ImalatPoz[];
   professions: string[];
+  tradeGroups: string[];
 }
 
 export type SyncStatus = "idle" | "syncing" | "success" | "error" | "conflict" | "auth_error";
@@ -633,6 +660,12 @@ interface AppContextType extends AppState {
   updateProfession: (oldName: string, newName: string) => void;
   deleteProfession: (name: string) => void;
   moveProfession: (name: string, dir: -1 | 1) => void;
+
+  addTradeGroup: (name: string) => void;
+  updateTradeGroup: (oldName: string, newName: string) => void;
+  deleteTradeGroup: (name: string) => void;
+  moveTradeGroup: (name: string, dir: -1 | 1) => void;
+  resetTradeGroups: () => void;
 }
 
 const AppContext = createContext<AppContextType | undefined>(undefined);
@@ -671,6 +704,7 @@ const INITIAL: AppState = {
   materialUnits: [...MATERIAL_UNITS],
   imalatPozlari: [...DEFAULT_IMALAT_POZLARI],
   professions: [...DEFAULT_PROFESSIONS],
+  tradeGroups: [...DEFAULT_TRADE_GROUPS],
 };
 
 function needsRoleMigration(roles: Role[]): boolean {
@@ -853,6 +887,9 @@ async function loadInitialState(): Promise<AppState> {
       state.imalatPozlari = mergeImalatPozlari(state.imalatPozlari);
       if (!Array.isArray(state.professions) || state.professions.length === 0) {
         state.professions = [...DEFAULT_PROFESSIONS];
+      }
+      if (!Array.isArray(state.tradeGroups) || state.tradeGroups.length === 0) {
+        state.tradeGroups = [...DEFAULT_TRADE_GROUPS];
       }
       state.purchases = normalizePurchases(state.purchases);
       state.weighbridges = normalizeWeighbridges(state.weighbridges);
@@ -1066,6 +1103,8 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
             imalatPozlari: mergeImalatPozlari(incoming.imalatPozlari),
             professions: Array.isArray(incoming.professions) && incoming.professions.length > 0
               ? incoming.professions : [...DEFAULT_PROFESSIONS],
+            tradeGroups: Array.isArray(incoming.tradeGroups) && incoming.tradeGroups.length > 0
+              ? incoming.tradeGroups : [...DEFAULT_TRADE_GROUPS],
             purchases: normalizePurchases(incoming.purchases),
             currentUserId: userStillExists ? prevUserId : null,
           };
@@ -1611,6 +1650,34 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
         [arr[i], arr[j]] = [arr[j], arr[i]];
         return { ...prev, professions: arr };
       }),
+
+    addTradeGroup: (name) =>
+      update((prev) =>
+        prev.tradeGroups.some((p) => p.toLowerCase() === name.toLowerCase())
+          ? prev
+          : { ...prev, tradeGroups: [...prev.tradeGroups, name] }
+      ),
+    updateTradeGroup: (oldName, newName) =>
+      update((prev) => ({
+        ...prev,
+        tradeGroups: prev.tradeGroups.map((p) => (p === oldName ? newName : p)),
+      })),
+    deleteTradeGroup: (name) =>
+      update((prev) => ({
+        ...prev,
+        tradeGroups: prev.tradeGroups.filter((p) => p !== name),
+      })),
+    moveTradeGroup: (name, dir) =>
+      update((prev) => {
+        const arr = [...prev.tradeGroups];
+        const i = arr.indexOf(name);
+        const j = i + dir;
+        if (i < 0 || j < 0 || j >= arr.length) return prev;
+        [arr[i], arr[j]] = [arr[j], arr[i]];
+        return { ...prev, tradeGroups: arr };
+      }),
+    resetTradeGroups: () =>
+      update((prev) => ({ ...prev, tradeGroups: [...DEFAULT_TRADE_GROUPS] })),
 
     addMaterialItem: (item) =>
       update((prev) =>
