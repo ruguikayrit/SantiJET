@@ -5,6 +5,7 @@ import {
   FlatList,
   StyleSheet,
   Text,
+  TextInput,
   TouchableOpacity,
   View,
 } from "react-native";
@@ -62,10 +63,31 @@ export default function GunlukRaporScreen() {
   const [editId, setEditId] = useState<string | null>(null);
   const [form, setForm] = useState<F>(EMPTY);
 
+  const [searchText, setSearchText] = useState("");
+  const [searchDate, setSearchDate] = useState("");
+  const hasFilter = !!(searchText.trim() || searchDate.trim());
+
   const list = useMemo(() => {
-    const arr = filter ? dailyReports.filter((r) => r.projectId === filter) : dailyReports;
+    let arr = filter ? dailyReports.filter((r) => r.projectId === filter) : dailyReports;
+    const q = searchText.trim().toLocaleLowerCase("tr-TR");
+    const d = searchDate.trim();
+    if (q) {
+      arr = arr.filter((r) =>
+        [r.activities, r.issues, r.createdBy, r.weather, r.temperature]
+          .filter(Boolean)
+          .join(" ")
+          .toLocaleLowerCase("tr-TR")
+          .includes(q)
+      );
+    }
+    if (d) arr = arr.filter((r) => r.date === d);
     return [...arr].sort((a, b) => b.date.localeCompare(a.date));
-  }, [dailyReports, filter]);
+  }, [dailyReports, filter, searchText, searchDate]);
+
+  function clearFilters() {
+    setSearchText("");
+    setSearchDate("");
+  }
 
   function open(r?: DailyReport) {
     if (r) {
@@ -130,7 +152,35 @@ export default function GunlukRaporScreen() {
           actionLabel="Projelere Git"
           onAction={() => router.push("/proje" as any)}
         />
-      ) : list.length === 0 ? (
+      ) : (
+        <View style={[styles.filterBar, { borderBottomColor: colors.border, backgroundColor: colors.card }]}>
+          <View style={styles.filterRow}>
+            <View style={[styles.searchBox, { backgroundColor: colors.muted, flex: 1 }]}>
+              <Feather name="search" size={13} color={colors.mutedForeground} />
+              <TextInput
+                value={searchText}
+                onChangeText={setSearchText}
+                placeholder="Faaliyet, sorun, hava, ekleyen..."
+                placeholderTextColor={colors.mutedForeground}
+                style={[styles.searchInput, { color: colors.foreground }]}
+              />
+            </View>
+          </View>
+          <View style={styles.filterRow}>
+            <View style={{ flex: 1 }}>
+              <DatePickerInput value={searchDate} onChange={setSearchDate} />
+            </View>
+            {hasFilter ? (
+              <TouchableOpacity onPress={clearFilters} style={[styles.clearBtn, { backgroundColor: colors.muted }]} activeOpacity={0.7}>
+                <Feather name="x" size={14} color={colors.foreground} />
+                <Text style={[styles.clearBtnText, { color: colors.foreground }]}>Temizle</Text>
+              </TouchableOpacity>
+            ) : null}
+          </View>
+        </View>
+      )}
+
+      {projects.length === 0 ? null : list.length === 0 ? (
         <EmptyState
           icon="file-text"
           title="Rapor yok"
@@ -334,4 +384,10 @@ const styles = StyleSheet.create({
   chip: { paddingHorizontal: 14, paddingVertical: 8, borderRadius: 999 },
   chipText: { fontSize: 13, fontFamily: "Inter_500Medium" },
   row: { flexDirection: "row", gap: 8 },
+  filterBar: { paddingHorizontal: 12, paddingVertical: 10, gap: 8, borderBottomWidth: StyleSheet.hairlineWidth },
+  filterRow: { flexDirection: "row", gap: 8, alignItems: "center" },
+  searchBox: { flexDirection: "row", alignItems: "center", gap: 6, paddingHorizontal: 10, paddingVertical: 8, borderRadius: 8, minHeight: 38 },
+  searchInput: { flex: 1, fontSize: 13, fontFamily: "Inter_500Medium", padding: 0 },
+  clearBtn: { flexDirection: "row", alignItems: "center", gap: 4, paddingHorizontal: 10, paddingVertical: 8, borderRadius: 8 },
+  clearBtnText: { fontSize: 12, fontFamily: "Inter_600SemiBold" },
 });

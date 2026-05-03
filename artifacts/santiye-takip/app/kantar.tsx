@@ -6,6 +6,7 @@ import {
   ScrollView,
   StyleSheet,
   Text,
+  TextInput,
   TouchableOpacity,
   View,
 } from "react-native";
@@ -116,12 +117,33 @@ export default function KantarScreen() {
     }
   }, [materialFilter, materialNames]);
 
+  const [searchText, setSearchText] = useState("");
+  const [searchDate, setSearchDate] = useState("");
+  const hasFilter = !!(searchText.trim() || searchDate.trim());
+
   const list = useMemo(() => {
-    const arr = materialFilter
+    let arr = materialFilter
       ? projectScoped.filter((w) => (w.materialName || "").trim() === materialFilter)
       : projectScoped;
+    const q = searchText.trim().toLocaleLowerCase("tr-TR");
+    const d = searchDate.trim();
+    if (q) {
+      arr = arr.filter((w) =>
+        [w.plate, w.supplier, w.irsaliyeNo, w.materialName, w.supplierIrsaliyeNo]
+          .filter(Boolean)
+          .join(" ")
+          .toLocaleLowerCase("tr-TR")
+          .includes(q)
+      );
+    }
+    if (d) arr = arr.filter((w) => w.date === d);
     return [...arr].sort((a, b) => (b.date || "").localeCompare(a.date || ""));
-  }, [projectScoped, materialFilter]);
+  }, [projectScoped, materialFilter, searchText, searchDate]);
+
+  function clearFilters() {
+    setSearchText("");
+    setSearchDate("");
+  }
 
   const summary = useMemo(() => {
     let totalNet = 0;
@@ -240,6 +262,31 @@ export default function KantarScreen() {
         />
       ) : (
         <>
+          <View style={[styles.filterBar, { borderBottomColor: colors.border, backgroundColor: colors.card }]}>
+            <View style={styles.filterRow}>
+              <View style={[styles.searchBox, { backgroundColor: colors.muted, flex: 1 }]}>
+                <Feather name="search" size={13} color={colors.mutedForeground} />
+                <TextInput
+                  value={searchText}
+                  onChangeText={setSearchText}
+                  placeholder="Plaka, tedarikçi, irsaliye, malzeme..."
+                  placeholderTextColor={colors.mutedForeground}
+                  style={[styles.searchInput, { color: colors.foreground }]}
+                />
+              </View>
+            </View>
+            <View style={styles.filterRow}>
+              <View style={{ flex: 1 }}>
+                <DatePickerInput value={searchDate} onChange={setSearchDate} />
+              </View>
+              {hasFilter ? (
+                <TouchableOpacity onPress={clearFilters} style={[styles.clearBtn, { backgroundColor: colors.muted }]} activeOpacity={0.7}>
+                  <Feather name="x" size={14} color={colors.foreground} />
+                  <Text style={[styles.clearBtnText, { color: colors.foreground }]}>Temizle</Text>
+                </TouchableOpacity>
+              ) : null}
+            </View>
+          </View>
           {materialNames.length > 0 ? (
             <ScrollView
               horizontal
@@ -731,4 +778,10 @@ const styles = StyleSheet.create({
     borderTopWidth: 1,
   },
   sectionTitle: { fontSize: 13, fontFamily: "Inter_600SemiBold" },
+  filterBar: { paddingHorizontal: 12, paddingVertical: 10, gap: 8, borderBottomWidth: StyleSheet.hairlineWidth },
+  filterRow: { flexDirection: "row", gap: 8, alignItems: "center" },
+  searchBox: { flexDirection: "row", alignItems: "center", gap: 6, paddingHorizontal: 10, paddingVertical: 8, borderRadius: 8, minHeight: 38 },
+  searchInput: { flex: 1, fontSize: 13, fontFamily: "Inter_500Medium", padding: 0 },
+  clearBtn: { flexDirection: "row", alignItems: "center", gap: 4, paddingHorizontal: 10, paddingVertical: 8, borderRadius: 8 },
+  clearBtnText: { fontSize: 12, fontFamily: "Inter_600SemiBold" },
 });

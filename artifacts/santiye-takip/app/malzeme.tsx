@@ -7,6 +7,7 @@ import {
   ScrollView,
   StyleSheet,
   Text,
+  TextInput,
   TouchableOpacity,
   View,
 } from "react-native";
@@ -216,22 +217,54 @@ export default function MalzemeScreen() {
   const matchesMat = (name: string) =>
     !materialFilter || (name || "").trim() === materialFilter;
 
+  const [searchText, setSearchText] = useState("");
+  const [searchDate, setSearchDate] = useState("");
+  const hasFilter = !!(searchText.trim() || searchDate.trim());
+  const q = searchText.trim().toLocaleLowerCase("tr-TR");
+  const d = searchDate.trim();
+
+  const matchText = (parts: (string | undefined | null)[]) => {
+    if (!q) return true;
+    return parts.filter(Boolean).join(" ").toLocaleLowerCase("tr-TR").includes(q);
+  };
+
   const filteredMaterials = useMemo(
-    () => projMaterials.filter((m) => matchesMat(m.name)),
-    [projMaterials, materialFilter]
+    () =>
+      projMaterials
+        .filter((m) => matchesMat(m.name))
+        .filter((m) => matchText([m.name, m.supplier, m.code, m.category, m.waybillNo, m.invoiceNo]))
+        .filter((m) => !d || m.deliveryDate === d),
+    [projMaterials, materialFilter, q, d]
   );
   const filteredRequests = useMemo(
-    () => projRequests.filter((r) => matchesMat(r.name)),
-    [projRequests, materialFilter]
+    () =>
+      projRequests
+        .filter((r) => matchesMat(r.name))
+        .filter((r) => matchText([r.name, r.requestedBy, r.category, r.usageLocation, r.note]))
+        .filter((r) => !d || r.requestDate === d),
+    [projRequests, materialFilter, q, d]
   );
   const filteredKullanim = useMemo(
-    () => projKullanim.filter((m) => matchesMat(m.name)),
-    [projKullanim, materialFilter]
+    () =>
+      projKullanim
+        .filter((m) => matchesMat(m.name))
+        .filter((m) => matchText([m.name, m.person, m.location, m.reason, m.category, m.note]))
+        .filter((m) => !d || m.date === d),
+    [projKullanim, materialFilter, q, d]
   );
   const filteredGiden = useMemo(
-    () => projGiden.filter((m) => matchesMat(m.name)),
-    [projGiden, materialFilter]
+    () =>
+      projGiden
+        .filter((m) => matchesMat(m.name))
+        .filter((m) => matchText([m.name, m.person, m.location, m.reason, m.category, m.note]))
+        .filter((m) => !d || m.date === d),
+    [projGiden, materialFilter, q, d]
   );
+
+  function clearFilters() {
+    setSearchText("");
+    setSearchDate("");
+  }
 
   function projectName(id: string) {
     return projects.find((p) => p.id === id)?.name || "—";
@@ -613,6 +646,32 @@ export default function MalzemeScreen() {
         })}
       </ScrollView>
 
+
+      <View style={[styles.filterBar, { borderBottomColor: colors.border, backgroundColor: colors.card }]}>
+        <View style={styles.filterRow}>
+          <View style={[styles.searchBox, { backgroundColor: colors.muted, flex: 1 }]}>
+            <Feather name="search" size={13} color={colors.mutedForeground} />
+            <TextInput
+              value={searchText}
+              onChangeText={setSearchText}
+              placeholder="Ad, tedarikçi, kod, kişi..."
+              placeholderTextColor={colors.mutedForeground}
+              style={[styles.searchInput, { color: colors.foreground }]}
+            />
+          </View>
+        </View>
+        <View style={styles.filterRow}>
+          <View style={{ flex: 1 }}>
+            <DatePickerInput value={searchDate} onChange={setSearchDate} />
+          </View>
+          {hasFilter ? (
+            <TouchableOpacity onPress={clearFilters} style={[styles.clearBtn, { backgroundColor: colors.muted }]} activeOpacity={0.7}>
+              <Feather name="x" size={14} color={colors.foreground} />
+              <Text style={[styles.clearBtnText, { color: colors.foreground }]}>Temizle</Text>
+            </TouchableOpacity>
+          ) : null}
+        </View>
+      </View>
 
       {materialNames.length > 0 ? (
         <ScrollView
@@ -1909,4 +1968,10 @@ const styles = StyleSheet.create({
     marginRight: 8,
   },
   twoCol: { flexDirection: "row", gap: 8 },
+  filterBar: { paddingHorizontal: 12, paddingVertical: 10, gap: 8, borderBottomWidth: StyleSheet.hairlineWidth },
+  filterRow: { flexDirection: "row", gap: 8, alignItems: "center" },
+  searchBox: { flexDirection: "row", alignItems: "center", gap: 6, paddingHorizontal: 10, paddingVertical: 8, borderRadius: 8, minHeight: 38 },
+  searchInput: { flex: 1, fontSize: 13, fontFamily: "Inter_500Medium", padding: 0 },
+  clearBtn: { flexDirection: "row", alignItems: "center", gap: 4, paddingHorizontal: 10, paddingVertical: 8, borderRadius: 8 },
+  clearBtnText: { fontSize: 12, fontFamily: "Inter_600SemiBold" },
 });
