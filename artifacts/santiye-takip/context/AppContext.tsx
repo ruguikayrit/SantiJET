@@ -1302,9 +1302,19 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
           nextPurchases = [...nextPurchases, auto];
         }
 
-        // 3 onay tamamlandığında Gelen Malzeme listesine de ekle
+        // 3 onay geri çekildiğinde otomatik oluşturulan Gelen Malzeme + Satın Alma kayıtlarını sil
+        const justUnapproved =
+          (wasApprovedStatus && !isApprovedStatus) ||
+          (beforeAllChecked && !afterAllChecked);
         let nextMaterials = prev.materials;
-        const alreadyHasMaterial = prev.materials.some((m) => m.materialRequestId === id);
+        if (justUnapproved) {
+          nextMaterials = nextMaterials.filter((m) => m.materialRequestId !== id);
+          nextPurchases = nextPurchases.filter((p) => p.materialRequestId !== id);
+          nextMaterialRequests = nextMaterialRequests.map((r) =>
+            r.id === id ? { ...r, status: r.status === "approved" ? "pending" : r.status } : r
+          );
+        }
+        const alreadyHasMaterial = nextMaterials.some((m) => m.materialRequestId === id);
         if (justApproved && !alreadyHasMaterial) {
           const today = new Date().toISOString().slice(0, 10);
           const autoMat: Material = {
