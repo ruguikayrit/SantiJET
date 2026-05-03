@@ -129,6 +129,8 @@ export interface Material {
   invoiceNo?: string;
   kantarEnabled?: boolean;
   kantarSlipId?: string;
+  supplierKantarSlip?: boolean;
+  weighApproved?: boolean;
 }
 
 export interface Weighbridge {
