@@ -215,3 +215,9 @@ id = "8nflgLFhpGhlt5jeeaF0H"
 uri = "file://exports/santijet-tam-paket.zip"
 type = "unspecified"
 title = "ŞantiJET — \"Dosya Arşivi\" olarak yeniden adlandırıldı"
+
+[[outputs]]
+id = "wNDJ5R1PVXnMTcT-AxCtL"
+uri = "file://exports/SantiJET.zip"
+type = "unspecified"
+title = "SantiJET.zip"
