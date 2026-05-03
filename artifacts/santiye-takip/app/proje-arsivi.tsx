@@ -229,7 +229,7 @@ export default function ProjeArsiviScreen() {
   return (
     <View style={[styles.root, { backgroundColor: colors.background }]}>
       <Header
-        title="Proje Arşivi"
+        title="Dosya Arşivi"
         subtitle="DWG ve PDF dosyaları"
         onBack={() => (router.canGoBack() ? router.back() : router.replace("/" as any))}
         rightAction={canEdit && !noProjects ? { icon: "upload", onPress: handlePick } : undefined}
