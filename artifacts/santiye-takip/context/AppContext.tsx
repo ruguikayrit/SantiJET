@@ -314,7 +314,7 @@ export type Permission = "none" | "view" | "edit";
 
 export const ALL_PAGE_KEYS = [
   "proje",
-  "proje-arsivi",
+  "dosyalar",
   "kesif",
   "is-programi",
   "puantaj",
@@ -336,7 +336,7 @@ export type PageKey = (typeof ALL_PAGE_KEYS)[number];
 
 export const PAGE_LABELS: Record<PageKey, string> = {
   proje: "Proje",
-  "proje-arsivi": "Dosyalar",
+  "dosyalar": "Dosyalar",
   kesif: "Keşif",
   "is-programi": "İş Programı",
   puantaj: "Puantaj",
@@ -437,7 +437,7 @@ const DEFAULT_ROLES: Role[] = [
     name: "İşveren",
     isAdmin: false,
     permissions: {
-      proje: "view", "proje-arsivi": "view", kesif: "view", "is-programi": "view", puantaj: "view",
+      proje: "view", "dosyalar": "view", kesif: "view", "is-programi": "view", puantaj: "view",
       "gunluk-rapor": "view", imalat: "view", gorev: "view", malzeme: "view",
       taseron: "view", "satin-alma": "view", kantar: "view", butce: "view", hakedis: "view", ilerleme: "view", finans: "view", kullanicilar: "view",
     },
@@ -459,7 +459,7 @@ const DEFAULT_ROLES: Role[] = [
     name: "Saha Mühendisi",
     isAdmin: false,
     permissions: {
-      proje: "view", "proje-arsivi": "edit", kesif: "none", "is-programi": "edit", puantaj: "edit",
+      proje: "view", "dosyalar": "edit", kesif: "none", "is-programi": "edit", puantaj: "edit",
       "gunluk-rapor": "edit", imalat: "edit", gorev: "edit", malzeme: "view",
       taseron: "view", "satin-alma": "view", kantar: "edit", butce: "none", hakedis: "none", ilerleme: "view", finans: "none", kullanicilar: "none",
     },
@@ -469,7 +469,7 @@ const DEFAULT_ROLES: Role[] = [
     name: "Teknik Ofis Mühendisi",
     isAdmin: false,
     permissions: {
-      proje: "view", "proje-arsivi": "edit", kesif: "edit", "is-programi": "view", puantaj: "none",
+      proje: "view", "dosyalar": "edit", kesif: "edit", "is-programi": "view", puantaj: "none",
       "gunluk-rapor": "view", imalat: "edit", gorev: "view", malzeme: "view",
       taseron: "view", "satin-alma": "view", kantar: "view", butce: "view", hakedis: "edit", ilerleme: "edit", finans: "view", kullanicilar: "none",
     },
@@ -479,7 +479,7 @@ const DEFAULT_ROLES: Role[] = [
     name: "İSG Birimi",
     isAdmin: false,
     permissions: {
-      proje: "view", "proje-arsivi": "view", kesif: "none", "is-programi": "view", puantaj: "none",
+      proje: "view", "dosyalar": "view", kesif: "none", "is-programi": "view", puantaj: "none",
       "gunluk-rapor": "edit", imalat: "view", gorev: "edit", malzeme: "none",
       taseron: "none", "satin-alma": "none", kantar: "none", butce: "none", hakedis: "none", ilerleme: "view", finans: "none", kullanicilar: "none",
     },
@@ -489,7 +489,7 @@ const DEFAULT_ROLES: Role[] = [
     name: "Taşeron",
     isAdmin: false,
     permissions: {
-      proje: "view", "proje-arsivi": "view", kesif: "none", "is-programi": "view", puantaj: "none",
+      proje: "view", "dosyalar": "view", kesif: "none", "is-programi": "view", puantaj: "none",
       "gunluk-rapor": "edit", imalat: "view", gorev: "view", malzeme: "none",
       taseron: "none", "satin-alma": "none", kantar: "none", butce: "none", hakedis: "view", ilerleme: "view", finans: "none", kullanicilar: "none",
     },
@@ -499,7 +499,7 @@ const DEFAULT_ROLES: Role[] = [
     name: "Satın Alma Birimi",
     isAdmin: false,
     permissions: {
-      proje: "view", "proje-arsivi": "view", kesif: "none", "is-programi": "none", puantaj: "none",
+      proje: "view", "dosyalar": "view", kesif: "none", "is-programi": "none", puantaj: "none",
       "gunluk-rapor": "none", imalat: "none", gorev: "none", malzeme: "edit",
       taseron: "view", "satin-alma": "edit", kantar: "edit", butce: "view", hakedis: "none", ilerleme: "none", finans: "view", kullanicilar: "none",
     },
@@ -509,7 +509,7 @@ const DEFAULT_ROLES: Role[] = [
     name: "Muhasebe Birimi",
     isAdmin: false,
     permissions: {
-      proje: "view", "proje-arsivi": "view", kesif: "none", "is-programi": "none", puantaj: "none",
+      proje: "view", "dosyalar": "view", kesif: "none", "is-programi": "none", puantaj: "none",
       "gunluk-rapor": "none", imalat: "none", gorev: "none", malzeme: "none",
       taseron: "none", "satin-alma": "view", kantar: "view", butce: "view", hakedis: "view", ilerleme: "none", finans: "edit", kullanicilar: "none",
     },
@@ -519,7 +519,7 @@ const DEFAULT_ROLES: Role[] = [
     name: "İK Birimi",
     isAdmin: false,
     permissions: {
-      proje: "view", "proje-arsivi": "view", kesif: "none", "is-programi": "none", puantaj: "edit",
+      proje: "view", "dosyalar": "view", kesif: "none", "is-programi": "none", puantaj: "edit",
       "gunluk-rapor": "none", imalat: "none", gorev: "none", malzeme: "none",
       taseron: "none", "satin-alma": "none", kantar: "none", butce: "none", hakedis: "none", ilerleme: "none", finans: "none", kullanicilar: "edit",
     },
@@ -529,7 +529,7 @@ const DEFAULT_ROLES: Role[] = [
     name: "Diğer Kullanıcılar",
     isAdmin: false,
     permissions: {
-      proje: "view", "proje-arsivi": "view", kesif: "none", "is-programi": "none", puantaj: "none",
+      proje: "view", "dosyalar": "view", kesif: "none", "is-programi": "none", puantaj: "none",
       "gunluk-rapor": "view", imalat: "none", gorev: "view", malzeme: "none",
       taseron: "none", "satin-alma": "none", kantar: "none", butce: "none", hakedis: "none", ilerleme: "none", finans: "none", kullanicilar: "none",
     },
@@ -740,6 +740,11 @@ function backfillRolePermissions(roles: Role[]): Role[] {
   return roles.map((r) => {
     const def = DEFAULT_ROLES.find((d) => d.id === r.id);
     const merged: Record<string, Permission> = { ...(r.permissions as any) };
+    // Eski "proje-arsivi" anahtarını yeni "dosyalar" anahtarına taşı
+    if (merged["proje-arsivi"] !== undefined && merged["dosyalar"] === undefined) {
+      merged["dosyalar"] = merged["proje-arsivi"];
+    }
+    delete merged["proje-arsivi"];
     for (const key of ALL_PAGE_KEYS) {
       if (merged[key] === undefined) {
         merged[key] = (def?.permissions as any)?.[key] ?? "none";

@@ -84,11 +84,11 @@ function notify(title: string, msg: string) {
   }
 }
 
-export default function ProjeArsiviScreen() {
+export default function DosyalarScreen() {
   const colors = useColors();
   const router = useRouter();
   const { projects, archiveFiles, addArchiveFile, updateArchiveFile, deleteArchiveFile } = useApp();
-  const perm = usePermission("proje-arsivi");
+  const perm = usePermission("dosyalar");
   const canEdit = perm === "edit";
 
   useEffect(() => {
