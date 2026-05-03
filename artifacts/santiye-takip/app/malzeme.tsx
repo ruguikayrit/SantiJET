@@ -340,7 +340,28 @@ export default function MalzemeScreen() {
     commit();
   }
   function removeMaterial() {
-    if (mEditId) deleteMaterial(mEditId);
+    if (!mEditId) return;
+    const m = materials.find((x) => x.id === mEditId);
+    if (m?.materialRequestId) {
+      const req = materialRequests.find((r) => r.id === m.materialRequestId);
+      Alert.alert(
+        "Silinemez",
+        `Bu malzeme bir Malzeme Talebinden otomatik oluşturulmuştur. Listeden silinemez.\n\nKaldırmak için ilgili talebi${req ? ` ("${req.name}")` : ""} silmeniz veya 3 onaydan birini geri çekmeniz gerekir. Onay geri çekildiğinde bu Gelen Malzeme kaydı otomatik kaldırılır.`,
+        [
+          { text: "Tamam", style: "cancel" },
+          {
+            text: "Talebe Git",
+            onPress: () => {
+              setMVisible(false);
+              setTab("talep");
+              if (req) openRequest(req);
+            },
+          },
+        ],
+      );
+      return;
+    }
+    deleteMaterial(mEditId);
     setMVisible(false);
   }
 
