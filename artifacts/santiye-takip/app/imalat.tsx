@@ -36,6 +36,9 @@ interface F {
   date: string;
   description: string;
   images: string[];
+  mixerCount: string;
+  pumpCount: string;
+  pumpInfo: string;
 }
 
 const EMPTY: F = {
@@ -49,6 +52,9 @@ const EMPTY: F = {
   date: "",
   description: "",
   images: [],
+  mixerCount: "",
+  pumpCount: "",
+  pumpInfo: "",
 };
 
 export default function ImalatScreen() {
@@ -83,6 +89,9 @@ export default function ImalatScreen() {
         date: p.date,
         description: p.description || "",
         images: Array.isArray(p.images) ? p.images : [],
+        mixerCount: p.mixerCount || "",
+        pumpCount: p.pumpCount || "",
+        pumpInfo: p.pumpInfo || "",
       });
     } else {
       setEditId(null);
@@ -90,6 +99,8 @@ export default function ImalatScreen() {
     }
     setVisible(true);
   }
+
+  const isBetonForm = /beton/i.test(form.name) || /beton/i.test(form.category);
 
   function save() {
     if (!form.projectId || !form.name.trim()) return;
@@ -105,6 +116,9 @@ export default function ImalatScreen() {
       pozCategory: form.category.trim() || undefined,
       description: form.description.trim() || undefined,
       images: form.images.length > 0 ? form.images : undefined,
+      mixerCount: isBetonForm ? (form.mixerCount.trim() || undefined) : undefined,
+      pumpCount: isBetonForm ? (form.pumpCount.trim() || undefined) : undefined,
+      pumpInfo: isBetonForm ? (form.pumpInfo.trim() || undefined) : undefined,
     };
     if (editId) updateProduction(editId, data);
     else addProduction(data);
@@ -307,6 +321,43 @@ export default function ImalatScreen() {
           value={form.date}
           onChange={(v) => setForm({ ...form, date: v })}
         />
+
+        {isBetonForm ? (
+          <>
+            <Text style={[styles.label, { color: colors.foreground, marginTop: 6 }]}>
+              Beton Dökümü Detayları
+            </Text>
+            <View style={styles.row}>
+              <View style={{ flex: 1 }}>
+                <FormInput
+                  label="Mikser Sayısı"
+                  value={form.mixerCount}
+                  onChangeText={(v) => setForm({ ...form, mixerCount: v })}
+                  placeholder="Örn: 8"
+                  keyboardType="numeric"
+                />
+              </View>
+              <View style={{ flex: 1 }}>
+                <FormInput
+                  label="Pompa Sayısı"
+                  value={form.pumpCount}
+                  onChangeText={(v) => setForm({ ...form, pumpCount: v })}
+                  placeholder="Örn: 1"
+                  keyboardType="numeric"
+                />
+              </View>
+            </View>
+            <FormInput
+              label="Pompa Bilgileri"
+              value={form.pumpInfo}
+              onChangeText={(v) => setForm({ ...form, pumpInfo: v })}
+              placeholder="Örn: 42m boom, firma adı, plaka"
+              multiline
+              numberOfLines={3}
+              style={{ minHeight: 70, paddingTop: 10 }}
+            />
+          </>
+        ) : null}
 
         <FormInput
           label="Açıklama"

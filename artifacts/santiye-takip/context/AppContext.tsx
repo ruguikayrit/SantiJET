@@ -120,6 +120,9 @@ export interface Production {
   pozCategory?: string;
   description?: string;
   images?: string[];
+  mixerCount?: string;
+  pumpCount?: string;
+  pumpInfo?: string;
 }
 
 export interface Task {
