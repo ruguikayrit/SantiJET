@@ -1095,7 +1095,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
             grossWeight: 0,
             tareWeight: 0,
             netWeight: 0,
-            unit: created.unit || "kg",
+            unit: "ton",
             notes: "Gelen Malzeme'den otomatik oluşturuldu",
           };
           next.weighbridges = [...prev.weighbridges, slip];
@@ -1131,7 +1131,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
             grossWeight: 0,
             tareWeight: 0,
             netWeight: 0,
-            unit: after.unit || "kg",
+            unit: "ton",
             notes: "Gelen Malzeme'den otomatik oluşturuldu",
           };
           const linked: Material = { ...after, kantarSlipId: slipId };
