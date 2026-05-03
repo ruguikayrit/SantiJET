@@ -20,6 +20,7 @@ import EmptyState from "@/components/EmptyState";
 import DatePickerInput from "@/components/DatePickerInput";
 import FormInput from "@/components/FormInput";
 import Header from "@/components/Header";
+import MultiSelectBar from "@/components/MultiSelectBar";
 import PozPicker from "@/components/PozPicker";
 import UnitPicker from "@/components/UnitPicker";
 import PrimaryButton from "@/components/PrimaryButton";
@@ -75,6 +76,25 @@ export default function ImalatScreen() {
   const [searchName, setSearchName] = useState("");
   const [searchPoz, setSearchPoz] = useState("");
   const [searchDate, setSearchDate] = useState("");
+
+  const [selectMode, setSelectMode] = useState(false);
+  const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
+  function toggleSelect(id: string) {
+    setSelectedIds((prev) => {
+      const next = new Set(prev);
+      if (next.has(id)) next.delete(id); else next.add(id);
+      return next;
+    });
+  }
+  function exitSelect() { setSelectMode(false); setSelectedIds(new Set()); }
+  function bulkDelete() {
+    selectedIds.forEach((id) => deleteProduction(id));
+    exitSelect();
+  }
+  function enterSelectWith(id: string) {
+    setSelectMode(true);
+    setSelectedIds(new Set([id]));
+  }
 
   const hasFilter = !!(searchName.trim() || searchPoz.trim() || searchDate.trim());
 
@@ -217,8 +237,22 @@ export default function ImalatScreen() {
       <Header
         title="İmalat"
         onBack={() => (router.canGoBack() ? router.back() : router.replace("/"))}
-        rightAction={canEdit && projects.length > 0 ? { icon: "plus", onPress: () => open() } : undefined}
+        rightAction={
+          selectMode
+            ? undefined
+            : canEdit && projects.length > 0
+            ? { icon: "plus", onPress: () => open() }
+            : undefined
+        }
       />
+      {selectMode ? (
+        <MultiSelectBar
+          count={selectedIds.size}
+          onCancel={exitSelect}
+          onDelete={bulkDelete}
+          itemLabel="imalat kaydı"
+        />
+      ) : null}
 
 
       {projects.length === 0 ? (
@@ -287,11 +321,22 @@ export default function ImalatScreen() {
           data={list}
           keyExtractor={(p) => p.id}
           contentContainerStyle={styles.list}
-          renderItem={({ item }) => (
+          renderItem={({ item }) => {
+            const isSel = selectedIds.has(item.id);
+            return (
             <TouchableOpacity
-              style={[styles.card, styles.cardRow, { backgroundColor: colors.card }]}
+              style={[
+                styles.card,
+                styles.cardRow,
+                { backgroundColor: colors.card },
+                isSel && { borderWidth: 2, borderColor: "#dc2626" },
+              ]}
               activeOpacity={0.85}
-              onPress={() => open(item)}
+              onPress={() => {
+                if (selectMode) toggleSelect(item.id);
+                else open(item);
+              }}
+              onLongPress={() => { if (canEdit) enterSelectWith(item.id); }}
             >
               <View style={{ flex: 1, paddingRight: 10 }}>
                 <Text style={[styles.proj, { color: colors.primary }]}>
@@ -320,8 +365,14 @@ export default function ImalatScreen() {
                   {item.completedQty} {item.unit}
                 </Text>
               </View>
+              {selectMode ? (
+                <View style={[styles.selDot, { borderColor: isSel ? "#dc2626" : colors.mutedForeground, backgroundColor: isSel ? "#dc2626" : "transparent" }]}>
+                  {isSel ? <Feather name="check" size={12} color="#fff" /> : null}
+                </View>
+              ) : null}
             </TouchableOpacity>
-          )}
+            );
+          }}
         />
       )}
 
@@ -476,6 +527,7 @@ export default function ImalatScreen() {
 }
 
 const styles = StyleSheet.create({
+  selDot: { width: 22, height: 22, borderRadius: 11, borderWidth: 2, alignItems: "center", justifyContent: "center", marginLeft: 8 },
   root: { flex: 1 },
   list: { padding: 16, gap: 12 },
   card: {

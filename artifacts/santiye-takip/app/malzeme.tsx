@@ -23,6 +23,7 @@ import DatePickerInput from "@/components/DatePickerInput";
 import EmptyState from "@/components/EmptyState";
 import FormInput from "@/components/FormInput";
 import Header from "@/components/Header";
+import MultiSelectBar from "@/components/MultiSelectBar";
 import MaterialPicker from "@/components/MaterialPicker";
 import PozPicker from "@/components/PozPicker";
 import PrimaryButton from "@/components/PrimaryButton";
@@ -168,6 +169,26 @@ export default function MalzemeScreen() {
   useEffect(() => { if (perm === "none") { if (router.canGoBack()) router.back(); else router.replace("/"); } }, [perm]);
 
   const [tab, setTab] = useState<Tab>("gelen");
+
+  const [selectMode, setSelectMode] = useState(false);
+  const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
+  function toggleSelect(id: string) {
+    setSelectedIds((prev) => {
+      const next = new Set(prev);
+      if (next.has(id)) next.delete(id); else next.add(id);
+      return next;
+    });
+  }
+  function exitSelect() { setSelectMode(false); setSelectedIds(new Set()); }
+  function bulkDeleteGelen() {
+    selectedIds.forEach((id) => deleteMaterial(id));
+    exitSelect();
+  }
+  function enterSelectWith(id: string) {
+    setSelectMode(true);
+    setSelectedIds(new Set([id]));
+  }
+  useEffect(() => { if (tab !== "gelen") exitSelect(); }, [tab]);
   const [purchaseSendVisible, setPurchaseSendVisible] = useState(false);
   const [purchaseSendMatId, setPurchaseSendMatId] = useState<string | null>(null);
   const [purchaseSendNote, setPurchaseSendNote] = useState("");
@@ -693,8 +714,16 @@ export default function MalzemeScreen() {
       <Header
         title="Malzeme"
         onBack={() => (router.canGoBack() ? router.back() : router.replace("/"))}
-        rightAction={addAction}
+        rightAction={selectMode ? undefined : addAction}
       />
+      {selectMode && tab === "gelen" ? (
+        <MultiSelectBar
+          count={selectedIds.size}
+          onCancel={exitSelect}
+          onDelete={bulkDeleteGelen}
+          itemLabel="gelen malzeme"
+        />
+      ) : null}
 
       <ScrollView
         horizontal
@@ -1406,12 +1435,26 @@ export default function MalzemeScreen() {
           const siteFromKantar = !!(linkedSlip && (linkedSlip.netWeight || 0) > 0);
           const supplierChecked = supplierFromKantar;
           const siteChecked = siteFromKantar;
+          const isSel = selectedIds.has(item.id);
           return (
             <TouchableOpacity
-              style={[styles.rowCard, { backgroundColor: colors.card }]}
+              style={[
+                styles.rowCard,
+                { backgroundColor: colors.card },
+                isSel && { borderWidth: 2, borderColor: "#dc2626" },
+              ]}
               activeOpacity={0.85}
-              onPress={canEdit ? () => openMaterial(item) : undefined}
+              onPress={() => {
+                if (selectMode) toggleSelect(item.id);
+                else if (canEdit) openMaterial(item);
+              }}
+              onLongPress={() => { if (canEdit) enterSelectWith(item.id); }}
             >
+              {selectMode ? (
+                <View style={[styles.selDot, { borderColor: isSel ? "#dc2626" : colors.mutedForeground, backgroundColor: isSel ? "#dc2626" : "transparent" }]}>
+                  {isSel ? <Feather name="check" size={12} color="#fff" /> : null}
+                </View>
+              ) : null}
               <View style={{ flex: 1, paddingRight: 10 }}>
                 <Text style={[styles.projLabel, { color: colors.primary }]}>
                   {projectName(item.projectId)}
@@ -1879,6 +1922,7 @@ export default function MalzemeScreen() {
 }
 
 const styles = StyleSheet.create({
+  selDot: { width: 22, height: 22, borderRadius: 11, borderWidth: 2, alignItems: "center", justifyContent: "center", marginRight: 8 },
   root: { flex: 1 },
   tabBar: { borderBottomWidth: 1, maxHeight: 48 },
   tabBarContent: { paddingHorizontal: 4 },

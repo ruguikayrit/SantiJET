@@ -17,6 +17,7 @@ import DatePickerInput from "@/components/DatePickerInput";
 import EmptyState from "@/components/EmptyState";
 import FormInput from "@/components/FormInput";
 import Header from "@/components/Header";
+import MultiSelectBar from "@/components/MultiSelectBar";
 import MaterialPicker from "@/components/MaterialPicker";
 import PrimaryButton from "@/components/PrimaryButton";
 import UnitPicker from "@/components/UnitPicker";
@@ -95,6 +96,25 @@ export default function KantarScreen() {
   const [visible, setVisible] = useState(false);
   const [editId, setEditId] = useState<string | null>(null);
   const [form, setForm] = useState<F>(EMPTY);
+
+  const [selectMode, setSelectMode] = useState(false);
+  const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
+  function toggleSelect(id: string) {
+    setSelectedIds((prev) => {
+      const next = new Set(prev);
+      if (next.has(id)) next.delete(id); else next.add(id);
+      return next;
+    });
+  }
+  function exitSelect() { setSelectMode(false); setSelectedIds(new Set()); }
+  function bulkDelete() {
+    selectedIds.forEach((id) => deleteWeighbridge(id));
+    exitSelect();
+  }
+  function enterSelectWith(id: string) {
+    setSelectMode(true);
+    setSelectedIds(new Set([id]));
+  }
 
   const projectScoped = useMemo(
     () => (filter ? weighbridges.filter((w) => w.projectId === filter) : weighbridges),
@@ -248,8 +268,22 @@ export default function KantarScreen() {
       <Header
         title="Kantar"
         onBack={() => (router.canGoBack() ? router.back() : router.replace("/"))}
-        rightAction={canEdit && projects.length > 0 ? { icon: "plus", onPress: () => open() } : undefined}
+        rightAction={
+          selectMode
+            ? undefined
+            : canEdit && projects.length > 0
+            ? { icon: "plus", onPress: () => open() }
+            : undefined
+        }
       />
+      {selectMode ? (
+        <MultiSelectBar
+          count={selectedIds.size}
+          onCancel={exitSelect}
+          onDelete={bulkDelete}
+          itemLabel="kantar fişi"
+        />
+      ) : null}
 
 
       {projects.length === 0 ? (
@@ -381,12 +415,26 @@ export default function KantarScreen() {
                     `${item.entryTime || "—"} → ${item.exitTime || "—"}`
                   );
                 }
+                const isSel = selectedIds.has(item.id);
                 return (
                   <TouchableOpacity
-                    style={[styles.card, { backgroundColor: colors.card }]}
+                    style={[
+                      styles.card,
+                      { backgroundColor: colors.card },
+                      isSel && { borderWidth: 2, borderColor: "#dc2626" },
+                    ]}
                     activeOpacity={0.85}
-                    onPress={canEdit ? () => open(item) : undefined}
+                    onPress={() => {
+                      if (selectMode) toggleSelect(item.id);
+                      else if (canEdit) open(item);
+                    }}
+                    onLongPress={() => { if (canEdit) enterSelectWith(item.id); }}
                   >
+                    {selectMode ? (
+                      <View style={[styles.selDot, { borderColor: isSel ? "#dc2626" : colors.mutedForeground, backgroundColor: isSel ? "#dc2626" : "transparent" }]}>
+                        {isSel ? <Feather name="check" size={12} color="#fff" /> : null}
+                      </View>
+                    ) : null}
                     <View
                       style={[
                         styles.iconBox,
@@ -687,6 +735,7 @@ export default function KantarScreen() {
 }
 
 const styles = StyleSheet.create({
+  selDot: { width: 22, height: 22, borderRadius: 11, borderWidth: 2, alignItems: "center", justifyContent: "center", marginRight: 8 },
   root: { flex: 1 },
   matFiltersWrap: {
     flexGrow: 0,
