@@ -242,6 +242,13 @@ export default function KesifScreen() {
           Yeni Kalem Ekle
         </Text>
 
+        <FormInput
+          label="Poz No"
+          value={form.itemPozCode}
+          onChangeText={(v) => setForm({ ...form, itemPozCode: v })}
+          placeholder="Örn: Y.16.050/01"
+        />
+
         <PozPicker
           label="Poz Tarifi"
           value={form.itemPozCode}
@@ -254,13 +261,6 @@ export default function KesifScreen() {
               itemUnit: poz.unit,
             })
           }
-        />
-
-        <FormInput
-          label="Poz No"
-          value={form.itemPozCode}
-          onChangeText={(v) => setForm({ ...form, itemPozCode: v })}
-          placeholder="Örn: Y.16.050/01"
         />
 
         <FormInput
