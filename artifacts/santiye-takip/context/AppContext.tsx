@@ -111,6 +111,8 @@ export interface Production {
   completedQty: number;
   unitPrice: number;
   date: string;
+  pozCode?: string;
+  pozCategory?: string;
 }
 
 export interface Task {

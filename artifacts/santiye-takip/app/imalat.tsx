@@ -1,4 +1,3 @@
-import { Feather } from "@expo/vector-icons";
 import { useRouter } from "expo-router";
 import React, { useEffect, useMemo, useState } from "react";
 import {
@@ -14,6 +13,7 @@ import EmptyState from "@/components/EmptyState";
 import DatePickerInput from "@/components/DatePickerInput";
 import FormInput from "@/components/FormInput";
 import Header from "@/components/Header";
+import PozPicker from "@/components/PozPicker";
 import PrimaryButton from "@/components/PrimaryButton";
 import { Production, useApp } from "@/context/AppContext";
 import { useColors } from "@/hooks/useColors";
@@ -21,21 +21,23 @@ import { usePermission } from "@/hooks/usePermission";
 
 interface F {
   projectId: string;
+  pozCode: string;
   name: string;
   unit: string;
+  category: string;
   plannedQty: string;
   completedQty: string;
-  unitPrice: string;
   date: string;
 }
 
 const EMPTY: F = {
   projectId: "",
+  pozCode: "",
   name: "",
   unit: "",
+  category: "",
   plannedQty: "",
   completedQty: "",
-  unitPrice: "",
   date: "",
 };
 
@@ -62,11 +64,12 @@ export default function ImalatScreen() {
       setEditId(p.id);
       setForm({
         projectId: p.projectId,
+        pozCode: p.pozCode || "",
         name: p.name,
         unit: p.unit,
+        category: p.pozCategory || "",
         plannedQty: String(p.plannedQty || ""),
         completedQty: String(p.completedQty || ""),
-        unitPrice: String(p.unitPrice || ""),
         date: p.date,
       });
     } else {
@@ -84,8 +87,10 @@ export default function ImalatScreen() {
       unit: form.unit.trim(),
       plannedQty: parseFloat(form.plannedQty) || 0,
       completedQty: parseFloat(form.completedQty) || 0,
-      unitPrice: parseFloat(form.unitPrice) || 0,
+      unitPrice: 0,
       date: form.date.trim(),
+      pozCode: form.pozCode.trim() || undefined,
+      pozCategory: form.category.trim() || undefined,
     };
     if (editId) updateProduction(editId, data);
     else addProduction(data);
@@ -135,7 +140,6 @@ export default function ImalatScreen() {
             const pct = item.plannedQty > 0
               ? Math.min(100, Math.round((item.completedQty / item.plannedQty) * 100))
               : 0;
-            const total = item.completedQty * item.unitPrice;
             return (
               <TouchableOpacity
                 style={[styles.card, { backgroundColor: colors.card }]}
@@ -145,6 +149,12 @@ export default function ImalatScreen() {
                 <Text style={[styles.proj, { color: colors.primary }]}>
                   {projectName(item.projectId)}
                 </Text>
+                {item.pozCode ? (
+                  <Text style={[styles.pozCode, { color: colors.mutedForeground }]}>
+                    {item.pozCode}
+                    {item.pozCategory ? ` · ${item.pozCategory}` : ""}
+                  </Text>
+                ) : null}
                 <Text style={[styles.title, { color: colors.foreground }]}>
                   {item.name}
                 </Text>
@@ -168,10 +178,10 @@ export default function ImalatScreen() {
                   </View>
                   <View style={styles.qtyBox}>
                     <Text style={[styles.qtyLabel, { color: colors.mutedForeground }]}>
-                      Hak Ediş
+                      Kalan
                     </Text>
                     <Text style={[styles.qtyVal, { color: colors.foreground }]}>
-                      {total.toLocaleString("tr-TR")} ₺
+                      {Math.max(0, item.plannedQty - item.completedQty)} {item.unit}
                     </Text>
                   </View>
                 </View>
@@ -208,11 +218,25 @@ export default function ImalatScreen() {
           ))}
         </View>
 
+        <PozPicker
+          label="Poz Tarifi"
+          value={form.pozCode}
+          onChange={(poz) =>
+            setForm({
+              ...form,
+              pozCode: poz.code,
+              name: poz.name,
+              unit: poz.unit,
+              category: poz.category,
+            })
+          }
+        />
+
         <FormInput
           label="İmalat Adı"
           value={form.name}
           onChangeText={(v) => setForm({ ...form, name: v })}
-          placeholder="Örn: Kolon betonu C30"
+          placeholder="Poz seçince otomatik dolar"
         />
         <View style={styles.row}>
           <View style={{ flex: 1 }}>
@@ -225,22 +249,14 @@ export default function ImalatScreen() {
           </View>
           <View style={{ flex: 1 }}>
             <FormInput
-              label="Birim Fiyat (₺)"
-              value={form.unitPrice}
-              onChangeText={(v) => setForm({ ...form, unitPrice: v })}
-              keyboardType="numeric"
-            />
-          </View>
-        </View>
-        <View style={styles.row}>
-          <View style={{ flex: 1 }}>
-            <FormInput
               label="Planlanan"
               value={form.plannedQty}
               onChangeText={(v) => setForm({ ...form, plannedQty: v })}
               keyboardType="numeric"
             />
           </View>
+        </View>
+        <View style={styles.row}>
           <View style={{ flex: 1 }}>
             <FormInput
               label="Tamamlanan"
@@ -249,12 +265,14 @@ export default function ImalatScreen() {
               keyboardType="numeric"
             />
           </View>
+          <View style={{ flex: 1 }}>
+            <DatePickerInput
+              label="Tarih"
+              value={form.date}
+              onChange={(v) => setForm({ ...form, date: v })}
+            />
+          </View>
         </View>
-        <DatePickerInput
-          label="Tarih"
-          value={form.date}
-          onChange={(v) => setForm({ ...form, date: v })}
-        />
 
         {canEdit ? <PrimaryButton label="Kaydet" onPress={save} style={{ marginTop: 8 }} /> : null}
         {canEdit && editId ? (
@@ -279,6 +297,7 @@ const styles = StyleSheet.create({
     elevation: 2,
   },
   proj: { fontSize: 12, fontFamily: "Inter_600SemiBold", marginBottom: 4 },
+  pozCode: { fontSize: 11, fontFamily: "Inter_500Medium", marginBottom: 2 },
   title: { fontSize: 16, fontFamily: "Inter_700Bold", marginBottom: 12 },
   qtyRow: { flexDirection: "row", gap: 8, marginBottom: 12 },
   qtyBox: { flex: 1 },
