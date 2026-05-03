@@ -63,6 +63,7 @@ interface MF {
   waybillNo: string;
   invoiceNo: string;
   kantarEnabled: boolean;
+  writeToKantar: boolean;
   supplierKantarSlip: boolean;
   weighApproved: boolean;
 }
@@ -99,6 +100,7 @@ const EMPTY_M: MF = {
   recordDetail: "", description: "", code: "",
   shippingMethod: "", waybillNo: "", invoiceNo: "",
   kantarEnabled: false,
+  writeToKantar: false,
   supplierKantarSlip: false,
   weighApproved: false,
 };
@@ -246,6 +248,7 @@ export default function MalzemeScreen() {
         waybillNo: m.waybillNo ?? "",
         invoiceNo: m.invoiceNo ?? "",
         kantarEnabled: !!m.kantarEnabled,
+        writeToKantar: !!m.writeToKantar,
         supplierKantarSlip: !!m.supplierKantarSlip,
         weighApproved: !!m.weighApproved,
       });
@@ -278,6 +281,7 @@ export default function MalzemeScreen() {
       waybillNo: mForm.waybillNo.trim() || undefined,
       invoiceNo: mForm.invoiceNo.trim() || undefined,
       kantarEnabled: mForm.kantarEnabled,
+      writeToKantar: mForm.writeToKantar,
       supplierKantarSlip: mForm.supplierKantarSlip,
       weighApproved: mForm.weighApproved,
     };
@@ -630,6 +634,32 @@ export default function MalzemeScreen() {
             onChangeText={(v) => setMForm({ ...mForm, shippingMethod: v })}
             placeholder="Tır / Kamyon / Kargo / Elden"
           />
+          <TouchableOpacity
+            onPress={() =>
+              canEdit && setMForm({ ...mForm, writeToKantar: !mForm.writeToKantar })
+            }
+            disabled={!canEdit}
+            activeOpacity={0.7}
+            style={[styles.kgHeader, { borderTopColor: colors.muted }]}
+          >
+            <View
+              style={[
+                styles.kgBox,
+                {
+                  borderColor: mForm.writeToKantar ? "#0d9488" : colors.mutedForeground,
+                  backgroundColor: mForm.writeToKantar ? "#0d9488" : "transparent",
+                },
+              ]}
+            >
+              {mForm.writeToKantar ? <Feather name="check" size={12} color="#fff" /> : null}
+            </View>
+            <Text style={[styles.kgTitle, { color: colors.foreground }]}>
+              Kantara Girsin
+            </Text>
+            <Text style={[styles.kgHint, { color: colors.mutedForeground }]}>
+              {mForm.writeToKantar ? "Kantar sayfasına yazılacak" : "Kantar sayfasına yazılmayacak"}
+            </Text>
+          </TouchableOpacity>
           <View style={styles.twoCol}>
             <View style={{ flex: 1 }}>
               <FormInput
@@ -1439,6 +1469,25 @@ const styles = StyleSheet.create({
     marginTop: 6,
   },
   kantarBadgeText: { fontSize: 10, fontFamily: "Inter_600SemiBold" },
+  kgHeader: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 10,
+    paddingTop: 14,
+    marginTop: 8,
+    marginBottom: 12,
+    borderTopWidth: 1,
+  },
+  kgBox: {
+    width: 22,
+    height: 22,
+    borderRadius: 5,
+    borderWidth: 1.5,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  kgTitle: { fontSize: 14, fontFamily: "Inter_600SemiBold" },
+  kgHint: { fontSize: 11, fontFamily: "Inter_400Regular", marginLeft: "auto" },
   matFiltersWrap: { flexGrow: 0, flexShrink: 0 },
   matFilters: {
     paddingHorizontal: 16,

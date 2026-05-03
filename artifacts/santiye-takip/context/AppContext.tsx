@@ -128,6 +128,7 @@ export interface Material {
   waybillNo?: string;
   invoiceNo?: string;
   kantarEnabled?: boolean;
+  writeToKantar?: boolean;
   kantarSlipId?: string;
   supplierKantarSlip?: boolean;
   weighApproved?: boolean;
@@ -1070,7 +1071,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
 
     addMaterial: ((item: Omit<Material, "id">) => {
       const id = genId();
-      const willBridge = !!(item as any).kantarEnabled && !(item as any).kantarSlipId;
+      const willBridge = !!(item as any).writeToKantar && !(item as any).kantarSlipId;
       const slipId = willBridge ? genId() : undefined;
       const created: Material = {
         ...(item as any),
@@ -1111,8 +1112,8 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
         let nextMaterials = prev.materials.map((m) => (m.id === id ? after : m));
         let nextWeighbridges = prev.weighbridges;
 
-        const turningOn = !!after.kantarEnabled && !before.kantarEnabled;
-        const turningOff = !after.kantarEnabled && !!before.kantarEnabled;
+        const turningOn = !!after.writeToKantar && !before.writeToKantar;
+        const turningOff = !after.writeToKantar && !!before.writeToKantar;
 
         if (turningOn && !after.kantarSlipId) {
           const slipId = genId();
@@ -1145,7 +1146,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
           );
           const cleared: Material = { ...after, kantarSlipId: undefined };
           nextMaterials = nextMaterials.map((m) => (m.id === id ? cleared : m));
-        } else if (after.kantarEnabled && after.kantarSlipId) {
+        } else if (after.writeToKantar && after.kantarSlipId) {
           // Kantar açık + bağlı fiş: malzeme adı/kategorisi değişmişse fişe yansıt
           const nameChanged = after.name !== before.name;
           const catChanged = after.category !== before.category;
@@ -1376,7 +1377,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
         weighbridges: prev.weighbridges.filter((w) => w.id !== id),
         // Bu fişe bağlı malzemenin bağlantısını da temizle
         materials: prev.materials.map((m) =>
-          m.kantarSlipId === id ? { ...m, kantarSlipId: undefined, kantarEnabled: false } : m
+          m.kantarSlipId === id ? { ...m, kantarSlipId: undefined, writeToKantar: false } : m
         ),
       }));
     }) as any,
