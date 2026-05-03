@@ -2,9 +2,12 @@
 type ModuleMap = Record<string, () => Promise<Record<string, unknown>>>;
 export const modules: ModuleMap = {
   "./components/mockups/santijet-tiles/Blueprint.tsx": () => import("../components/mockups/santijet-tiles/Blueprint.tsx"),
+  "./components/mockups/santijet-tiles/Concrete.tsx": () => import("../components/mockups/santijet-tiles/Concrete.tsx"),
   "./components/mockups/santijet-tiles/Glass.tsx": () => import("../components/mockups/santijet-tiles/Glass.tsx"),
+  "./components/mockups/santijet-tiles/HiVis.tsx": () => import("../components/mockups/santijet-tiles/HiVis.tsx"),
   "./components/mockups/santijet-tiles/Liste.tsx": () => import("../components/mockups/santijet-tiles/Liste.tsx"),
   "./components/mockups/santijet-tiles/Minimal.tsx": () => import("../components/mockups/santijet-tiles/Minimal.tsx"),
+  "./components/mockups/santijet-tiles/Scaffold.tsx": () => import("../components/mockups/santijet-tiles/Scaffold.tsx"),
   "./components/mockups/santijet-tiles/StatHero.tsx": () => import("../components/mockups/santijet-tiles/StatHero.tsx"),
   "./components/mockups/santijet-tiles/Steel.tsx": () => import("../components/mockups/santijet-tiles/Steel.tsx")
 };
