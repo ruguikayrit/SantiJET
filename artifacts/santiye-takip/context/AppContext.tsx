@@ -132,6 +132,7 @@ export interface Material {
   kantarSlipId?: string;
   supplierKantarSlip?: boolean;
   weighApproved?: boolean;
+  materialRequestId?: string;
 }
 
 export interface Weighbridge {
@@ -1214,6 +1215,33 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
           };
           next.purchases = [...next.purchases, auto];
         }
+        // 3 onaylı (veya doğrudan approved) talepten Gelen Malzeme oluştur
+        const allChecked = !!(
+          newReq.approvals?.sef &&
+          newReq.approvals?.mudur &&
+          newReq.approvals?.satinAlma
+        );
+        if (
+          (newReq.status === "approved" || allChecked) &&
+          !prev.materials.some((m) => m.materialRequestId === id)
+        ) {
+          const today = new Date().toISOString().slice(0, 10);
+          const autoMat: Material = {
+            id: genId(),
+            projectId: newReq.projectId,
+            name: newReq.name,
+            category: newReq.category || "",
+            unit: newReq.unit || "",
+            quantity: newReq.quantity || 0,
+            usedQty: 0,
+            supplier: "",
+            deliveryDate: today,
+            unitPrice: 0,
+            description: newReq.note || "Malzeme talebinden otomatik oluşturuldu",
+            materialRequestId: id,
+          };
+          next.materials = [...next.materials, autoMat];
+        }
         return next;
       });
       return id;
@@ -1274,7 +1302,34 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
           nextPurchases = [...nextPurchases, auto];
         }
 
-        return { ...prev, materialRequests: nextMaterialRequests, purchases: nextPurchases };
+        // 3 onay tamamlandığında Gelen Malzeme listesine de ekle
+        let nextMaterials = prev.materials;
+        const alreadyHasMaterial = prev.materials.some((m) => m.materialRequestId === id);
+        if (justApproved && !alreadyHasMaterial) {
+          const today = new Date().toISOString().slice(0, 10);
+          const autoMat: Material = {
+            id: genId(),
+            projectId: after.projectId,
+            name: after.name,
+            category: after.category || "",
+            unit: after.unit || "",
+            quantity: after.quantity || 0,
+            usedQty: 0,
+            supplier: "",
+            deliveryDate: today,
+            unitPrice: 0,
+            description: after.note || "Malzeme talebinden otomatik oluşturuldu",
+            materialRequestId: id,
+          };
+          nextMaterials = [...nextMaterials, autoMat];
+        }
+
+        return {
+          ...prev,
+          materialRequests: nextMaterialRequests,
+          purchases: nextPurchases,
+          materials: nextMaterials,
+        };
       });
     }) as any,
     deleteMaterialRequest: makeDelete("materialRequests") as any,
