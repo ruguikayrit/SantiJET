@@ -359,7 +359,7 @@ export default function MalzemeScreen() {
     const m = materials.find((x) => x.id === purchaseSendMatId);
     if (!m) return;
     if (purchases.some((p) => p.materialId === m.id)) {
-      Alert.alert("Zaten gönderildi", "Bu malzeme için Satın Alma kaydı mevcut.");
+      Alert.alert("Zaten gönderildi", "Bu malzeme zaten Satın Alma birimine gönderilmiş.");
       setPurchaseSendVisible(false);
       return;
     }
@@ -386,7 +386,7 @@ export default function MalzemeScreen() {
       materialId: m.id,
     } as any);
     setPurchaseSendVisible(false);
-    Alert.alert("Gönderildi", `"${m.name}" Satın Alma listesine eklendi.`);
+    Alert.alert("Gönderildi", `"${m.name}" Satın Alma birimine gönderildi.`);
   }
 
   function removeMaterial() {
@@ -1086,7 +1086,7 @@ export default function MalzemeScreen() {
       <BottomSheet
         visible={purchaseSendVisible}
         onClose={() => setPurchaseSendVisible(false)}
-        title="Satın Alma'ya Gönder"
+        title="Satın Alma Birimine Gönder"
       >
         {(() => {
           const m = purchaseSendMatId ? materials.find((x) => x.id === purchaseSendMatId) : null;
@@ -1125,7 +1125,7 @@ export default function MalzemeScreen() {
                 numberOfLines={4}
                 style={{ minHeight: 90, paddingTop: 10 }}
               />
-              <PrimaryButton label="Satın Alma'ya Gönder" onPress={confirmSendPurchase} style={{ marginTop: 8 }} />
+              <PrimaryButton label="Satın Alma Birimine Gönder" onPress={confirmSendPurchase} style={{ marginTop: 8 }} />
             </>
           );
         })()}
@@ -1309,7 +1309,7 @@ export default function MalzemeScreen() {
                   purchases.some((p) => p.materialId === item.id) ? (
                     <View style={[styles.fromReqBadge, { backgroundColor: "#16a34a" }]}>
                       <Feather name="check" size={10} color="#fff" />
-                      <Text style={styles.fromReqBadgeText}>Satın Alma'da</Text>
+                      <Text style={styles.fromReqBadgeText}>Birime Gönderildi</Text>
                     </View>
                   ) : canEdit ? (
                     <TouchableOpacity
@@ -1318,7 +1318,7 @@ export default function MalzemeScreen() {
                       style={styles.sendPurchaseBtn}
                     >
                       <Feather name="shopping-cart" size={11} color="#fff" />
-                      <Text style={styles.sendPurchaseBtnText}>Satın Alma'ya Ekle</Text>
+                      <Text style={styles.sendPurchaseBtnText}>Satın Alma Birimine Gönder</Text>
                     </TouchableOpacity>
                   ) : null
                 ) : null}
