@@ -298,10 +298,23 @@ export interface Hakedis {
   items: HakedisItem[];
 }
 
+export interface ArchiveFile {
+  id: string;
+  projectId: string;
+  name: string;
+  ext: string;
+  mime: string;
+  size: number;
+  storageKey: string;
+  addedAt: string;
+  note: string;
+}
+
 export type Permission = "none" | "view" | "edit";
 
 export const ALL_PAGE_KEYS = [
   "proje",
+  "proje-arsivi",
   "kesif",
   "is-programi",
   "puantaj",
@@ -323,6 +336,7 @@ export type PageKey = (typeof ALL_PAGE_KEYS)[number];
 
 export const PAGE_LABELS: Record<PageKey, string> = {
   proje: "Proje",
+  "proje-arsivi": "Proje Arşivi",
   kesif: "Keşif",
   "is-programi": "İş Programı",
   puantaj: "Puantaj",
@@ -423,7 +437,7 @@ const DEFAULT_ROLES: Role[] = [
     name: "İşveren",
     isAdmin: false,
     permissions: {
-      proje: "view", kesif: "view", "is-programi": "view", puantaj: "view",
+      proje: "view", "proje-arsivi": "view", kesif: "view", "is-programi": "view", puantaj: "view",
       "gunluk-rapor": "view", imalat: "view", gorev: "view", malzeme: "view",
       taseron: "view", "satin-alma": "view", kantar: "view", butce: "view", hakedis: "view", ilerleme: "view", finans: "view", kullanicilar: "view",
     },
@@ -445,7 +459,7 @@ const DEFAULT_ROLES: Role[] = [
     name: "Saha Mühendisi",
     isAdmin: false,
     permissions: {
-      proje: "view", kesif: "none", "is-programi": "edit", puantaj: "edit",
+      proje: "view", "proje-arsivi": "edit", kesif: "none", "is-programi": "edit", puantaj: "edit",
       "gunluk-rapor": "edit", imalat: "edit", gorev: "edit", malzeme: "view",
       taseron: "view", "satin-alma": "view", kantar: "edit", butce: "none", hakedis: "none", ilerleme: "view", finans: "none", kullanicilar: "none",
     },
@@ -455,7 +469,7 @@ const DEFAULT_ROLES: Role[] = [
     name: "Teknik Ofis Mühendisi",
     isAdmin: false,
     permissions: {
-      proje: "view", kesif: "edit", "is-programi": "view", puantaj: "none",
+      proje: "view", "proje-arsivi": "edit", kesif: "edit", "is-programi": "view", puantaj: "none",
       "gunluk-rapor": "view", imalat: "edit", gorev: "view", malzeme: "view",
       taseron: "view", "satin-alma": "view", kantar: "view", butce: "view", hakedis: "edit", ilerleme: "edit", finans: "view", kullanicilar: "none",
     },
@@ -465,7 +479,7 @@ const DEFAULT_ROLES: Role[] = [
     name: "İSG Birimi",
     isAdmin: false,
     permissions: {
-      proje: "view", kesif: "none", "is-programi": "view", puantaj: "none",
+      proje: "view", "proje-arsivi": "view", kesif: "none", "is-programi": "view", puantaj: "none",
       "gunluk-rapor": "edit", imalat: "view", gorev: "edit", malzeme: "none",
       taseron: "none", "satin-alma": "none", kantar: "none", butce: "none", hakedis: "none", ilerleme: "view", finans: "none", kullanicilar: "none",
     },
@@ -475,7 +489,7 @@ const DEFAULT_ROLES: Role[] = [
     name: "Taşeron",
     isAdmin: false,
     permissions: {
-      proje: "view", kesif: "none", "is-programi": "view", puantaj: "none",
+      proje: "view", "proje-arsivi": "view", kesif: "none", "is-programi": "view", puantaj: "none",
       "gunluk-rapor": "edit", imalat: "view", gorev: "view", malzeme: "none",
       taseron: "none", "satin-alma": "none", kantar: "none", butce: "none", hakedis: "view", ilerleme: "view", finans: "none", kullanicilar: "none",
     },
@@ -485,7 +499,7 @@ const DEFAULT_ROLES: Role[] = [
     name: "Satın Alma Birimi",
     isAdmin: false,
     permissions: {
-      proje: "view", kesif: "none", "is-programi": "none", puantaj: "none",
+      proje: "view", "proje-arsivi": "view", kesif: "none", "is-programi": "none", puantaj: "none",
       "gunluk-rapor": "none", imalat: "none", gorev: "none", malzeme: "edit",
       taseron: "view", "satin-alma": "edit", kantar: "edit", butce: "view", hakedis: "none", ilerleme: "none", finans: "view", kullanicilar: "none",
     },
@@ -495,7 +509,7 @@ const DEFAULT_ROLES: Role[] = [
     name: "Muhasebe Birimi",
     isAdmin: false,
     permissions: {
-      proje: "view", kesif: "none", "is-programi": "none", puantaj: "none",
+      proje: "view", "proje-arsivi": "view", kesif: "none", "is-programi": "none", puantaj: "none",
       "gunluk-rapor": "none", imalat: "none", gorev: "none", malzeme: "none",
       taseron: "none", "satin-alma": "view", kantar: "view", butce: "view", hakedis: "view", ilerleme: "none", finans: "edit", kullanicilar: "none",
     },
@@ -505,7 +519,7 @@ const DEFAULT_ROLES: Role[] = [
     name: "İK Birimi",
     isAdmin: false,
     permissions: {
-      proje: "view", kesif: "none", "is-programi": "none", puantaj: "edit",
+      proje: "view", "proje-arsivi": "view", kesif: "none", "is-programi": "none", puantaj: "edit",
       "gunluk-rapor": "none", imalat: "none", gorev: "none", malzeme: "none",
       taseron: "none", "satin-alma": "none", kantar: "none", butce: "none", hakedis: "none", ilerleme: "none", finans: "none", kullanicilar: "edit",
     },
@@ -515,7 +529,7 @@ const DEFAULT_ROLES: Role[] = [
     name: "Diğer Kullanıcılar",
     isAdmin: false,
     permissions: {
-      proje: "view", kesif: "none", "is-programi": "none", puantaj: "none",
+      proje: "view", "proje-arsivi": "view", kesif: "none", "is-programi": "none", puantaj: "none",
       "gunluk-rapor": "view", imalat: "none", gorev: "view", malzeme: "none",
       taseron: "none", "satin-alma": "none", kantar: "none", butce: "none", hakedis: "none", ilerleme: "none", finans: "none", kullanicilar: "none",
     },
@@ -535,6 +549,7 @@ interface AppState {
   materialRequests: MaterialRequest[];
   materialMovements: MaterialMovement[];
   subcontractors: Subcontractor[];
+  archiveFiles: ArchiveFile[];
   purchases: Purchase[];
   weighbridges: Weighbridge[];
   budget: BudgetEntry[];
@@ -614,6 +629,10 @@ interface AppContextType extends AppState {
   updateSubcontractor: (id: string, s: Partial<Subcontractor>) => void;
   deleteSubcontractor: (id: string) => void;
 
+  addArchiveFile: (f: Omit<ArchiveFile, "id">) => string;
+  updateArchiveFile: (id: string, f: Partial<ArchiveFile>) => void;
+  deleteArchiveFile: (id: string) => void;
+
   addPurchase: (p: Omit<Purchase, "id">) => string;
   updatePurchase: (id: string, p: Partial<Purchase>) => void;
   deletePurchase: (id: string) => void;
@@ -692,6 +711,7 @@ const INITIAL: AppState = {
   materialRequests: [],
   materialMovements: [],
   subcontractors: [],
+  archiveFiles: [],
   purchases: [],
   weighbridges: [],
   budget: [],
@@ -1164,6 +1184,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
         materialRequests: prev.materialRequests.filter((x) => x.projectId !== id),
         materialMovements: prev.materialMovements.filter((x) => x.projectId !== id),
         subcontractors: prev.subcontractors.filter((x) => x.projectId !== id),
+        archiveFiles: prev.archiveFiles.filter((x) => x.projectId !== id),
         purchases: prev.purchases.filter((x) => x.projectId !== id),
         weighbridges: prev.weighbridges.filter((x) => x.projectId !== id),
         budget: prev.budget.filter((x) => x.projectId !== id),
@@ -1482,6 +1503,10 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     addSubcontractor: makeAdd("subcontractors") as any,
     updateSubcontractor: makeUpdate("subcontractors") as any,
     deleteSubcontractor: makeDelete("subcontractors") as any,
+
+    addArchiveFile: makeAdd("archiveFiles") as any,
+    updateArchiveFile: makeUpdate("archiveFiles") as any,
+    deleteArchiveFile: makeDelete("archiveFiles") as any,
 
     addPurchase: ((p: Omit<Purchase, "id">) => {
       const id = genId();
