@@ -206,16 +206,13 @@ export default function ImalatScreen() {
           data={list}
           keyExtractor={(p) => p.id}
           contentContainerStyle={styles.list}
-          renderItem={({ item }) => {
-            const pct = item.plannedQty > 0
-              ? Math.min(100, Math.round((item.completedQty / item.plannedQty) * 100))
-              : 0;
-            return (
-              <TouchableOpacity
-                style={[styles.card, { backgroundColor: colors.card }]}
-                activeOpacity={0.85}
-                onPress={() => open(item)}
-              >
+          renderItem={({ item }) => (
+            <TouchableOpacity
+              style={[styles.card, styles.cardRow, { backgroundColor: colors.card }]}
+              activeOpacity={0.85}
+              onPress={() => open(item)}
+            >
+              <View style={{ flex: 1, paddingRight: 10 }}>
                 <Text style={[styles.proj, { color: colors.primary }]}>
                   {projectName(item.projectId)}
                 </Text>
@@ -225,46 +222,25 @@ export default function ImalatScreen() {
                     {item.pozCategory ? ` · ${item.pozCategory}` : ""}
                   </Text>
                 ) : null}
-                <Text style={[styles.title, { color: colors.foreground }]}>
+                <Text style={[styles.title, { color: colors.foreground, marginBottom: 0 }]} numberOfLines={2}>
                   {item.name}
                 </Text>
-
-                <View style={styles.qtyRow}>
-                  <View style={styles.qtyBox}>
-                    <Text style={[styles.qtyLabel, { color: colors.mutedForeground }]}>
-                      Planlanan
-                    </Text>
-                    <Text style={[styles.qtyVal, { color: colors.foreground }]}>
-                      {item.plannedQty} {item.unit}
-                    </Text>
-                  </View>
-                  <View style={styles.qtyBox}>
-                    <Text style={[styles.qtyLabel, { color: colors.mutedForeground }]}>
-                      Tamamlanan
-                    </Text>
-                    <Text style={[styles.qtyVal, { color: "#16a34a" }]}>
-                      {item.completedQty} {item.unit}
-                    </Text>
-                  </View>
-                  <View style={styles.qtyBox}>
-                    <Text style={[styles.qtyLabel, { color: colors.mutedForeground }]}>
-                      Kalan
-                    </Text>
-                    <Text style={[styles.qtyVal, { color: colors.foreground }]}>
-                      {Math.max(0, item.plannedQty - item.completedQty)} {item.unit}
-                    </Text>
-                  </View>
-                </View>
-
-                <View style={[styles.bar, { backgroundColor: colors.muted }]}>
-                  <View style={[styles.barFill, { width: `${pct}%`, backgroundColor: colors.primary }]} />
-                </View>
-                <Text style={[styles.pct, { color: colors.mutedForeground }]}>
-                  %{pct} tamamlandı
+                {item.description ? (
+                  <Text style={[styles.desc, { color: colors.mutedForeground }]} numberOfLines={3}>
+                    {item.description}
+                  </Text>
+                ) : null}
+              </View>
+              <View style={[styles.metrajPill, { backgroundColor: colors.muted }]}>
+                <Text style={[styles.metrajLabel, { color: colors.mutedForeground }]}>
+                  Gerçekleşen Metraj
                 </Text>
-              </TouchableOpacity>
-            );
-          }}
+                <Text style={[styles.metrajVal, { color: "#16a34a" }]}>
+                  {item.completedQty} {item.unit}
+                </Text>
+              </View>
+            </TouchableOpacity>
+          )}
         />
       )}
 
@@ -409,6 +385,17 @@ const styles = StyleSheet.create({
   chip: { paddingHorizontal: 14, paddingVertical: 8, borderRadius: 999 },
   chipText: { fontSize: 13, fontFamily: "Inter_500Medium" },
   row: { flexDirection: "row", gap: 8 },
+  cardRow: { flexDirection: "row", alignItems: "center" },
+  metrajPill: {
+    alignItems: "flex-end",
+    paddingHorizontal: 12,
+    paddingVertical: 10,
+    borderRadius: 12,
+    minWidth: 110,
+  },
+  metrajLabel: { fontSize: 10, fontFamily: "Inter_500Medium", marginBottom: 4, textTransform: "uppercase", letterSpacing: 0.4 },
+  metrajVal: { fontSize: 16, fontFamily: "Inter_700Bold" },
+  desc: { fontSize: 12, fontFamily: "Inter_400Regular", marginTop: 6, lineHeight: 17 },
   thumbWrap: { marginRight: 8, position: "relative" },
   thumb: { width: 92, height: 92, borderRadius: 10, backgroundColor: "#0001" },
   thumbRemove: {
