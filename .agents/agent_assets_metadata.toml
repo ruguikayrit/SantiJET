@@ -203,3 +203,9 @@ id = "4kJGZg4RyWwZ4DqcF-B2w"
 uri = "file://exports/santijet-source.tar.gz"
 type = "unspecified"
 title = "ŞantiJET Kaynak Kodu (TAR.GZ) — 7.2 MB"
+
+[[outputs]]
+id = "zypgCz6S9p4P5nez9xmuO"
+uri = "file://exports/santiye-takip-source.zip"
+type = "unspecified"
+title = "ŞantiJET Kaynak Kodları (güncel)"
