@@ -586,8 +586,8 @@ export default function HomeScreen() {
           onPress={() => router.push("/ayarlar" as any)}
           activeOpacity={0.85}
         >
-          <View style={[styles.raporIcon, { backgroundColor: colors.secondary + "20" }]}>
-            <Feather name="settings" size={20} color={colors.secondary} />
+          <View style={[styles.raporIcon, { backgroundColor: colors.foreground + "1A" }]}>
+            <Feather name="settings" size={20} color={colors.foreground} />
           </View>
           <View style={{ flex: 1 }}>
             <Text style={[styles.raporTitle, { color: colors.foreground }]}>{t("settings.title")}</Text>

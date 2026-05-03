@@ -112,8 +112,8 @@ export default function AyarlarScreen() {
         onPress={() => router.push(r.route as any)}
         activeOpacity={0.85}
       >
-        <View style={[styles.icon, { backgroundColor: colors.secondary + "20" }]}>
-          <Feather name={r.icon} size={20} color={colors.secondary} />
+        <View style={[styles.icon, { backgroundColor: colors.foreground + "1A" }]}>
+          <Feather name={r.icon} size={20} color={colors.foreground} />
         </View>
         <View style={{ flex: 1 }}>
           <Text style={[styles.title, { color: colors.foreground }]}>{r.title}</Text>
