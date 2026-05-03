@@ -25,6 +25,23 @@ function todayStr() {
   return `${String(d.getDate()).padStart(2, "0")}.${String(d.getMonth() + 1).padStart(2, "0")}.${d.getFullYear()}`;
 }
 
+function dateAliases(s: string): string[] {
+  if (!s) return [];
+  const ymd = /^(\d{4})-(\d{2})-(\d{2})$/.exec(s.trim());
+  if (ymd) return [s.trim(), `${ymd[3]}.${ymd[2]}.${ymd[1]}`];
+  const dmy = /^(\d{2})\.(\d{2})\.(\d{4})$/.exec(s.trim());
+  if (dmy) return [s.trim(), `${dmy[3]}-${dmy[2]}-${dmy[1]}`];
+  return [s.trim()];
+}
+
+function fmtTL(n: number) {
+  return new Intl.NumberFormat("tr-TR", { maximumFractionDigits: 0 }).format(n) + " ₺";
+}
+
+function fmtNum(n: number) {
+  return new Intl.NumberFormat("tr-TR", { maximumFractionDigits: 2 }).format(n);
+}
+
 interface F {
   projectId: string;
   date: string;
@@ -52,7 +69,19 @@ const WEATHER_OPTS = ["Güneşli", "Bulutlu", "Yağmurlu", "Karlı", "Rüzgarlı
 export default function GunlukRaporScreen() {
   const colors = useColors();
   const router = useRouter();
-  const { projects, dailyReports, addDailyReport, updateDailyReport, deleteDailyReport } = useApp();
+  const {
+    projects,
+    dailyReports,
+    addDailyReport,
+    updateDailyReport,
+    deleteDailyReport,
+    attendance,
+    productions,
+    tasks,
+    materials,
+    weighbridges,
+    purchases,
+  } = useApp();
 
   const perm = usePermission("gunluk-rapor");
   const canEdit = perm === "edit";
@@ -107,6 +136,126 @@ export default function GunlukRaporScreen() {
       setForm({ ...EMPTY, projectId: filter || projects[0]?.id || "" });
     }
     setVisible(true);
+  }
+
+  function buildAutoSummary(projectId: string, dateStr: string): { text: string; workerCount: number; issues: string } {
+    const dates = dateAliases(dateStr);
+    const same = (d?: string) => !!d && dates.includes(d);
+    const out: string[] = [];
+    const issueLines: string[] = [];
+    let workerCount = 0;
+
+    // PUANTAJ
+    const att = attendance.filter((a) => a.projectId === projectId && same(a.date));
+    if (att.length) {
+      const cnt = (st: string) => att.filter((a) => a.status === st).length;
+      const present = cnt("present");
+      const half = cnt("half");
+      const absent = cnt("absent");
+      const izinli = cnt("izinli");
+      const raporlu = cnt("raporlu");
+      const mazeret = cnt("mazeret");
+      const tatil = cnt("tatil");
+      const totalHours = att.reduce((s, a) => s + (a.hours || 0), 0);
+      workerCount = present + half;
+      const parts = [`${present} tam`];
+      if (half) parts.push(`${half} yarım`);
+      if (izinli) parts.push(`${izinli} izinli`);
+      if (raporlu) parts.push(`${raporlu} raporlu`);
+      if (mazeret) parts.push(`${mazeret} mazeret`);
+      if (tatil) parts.push(`${tatil} tatil`);
+      if (absent) parts.push(`${absent} gelmedi`);
+      out.push(`[PUANTAJ] ${workerCount} kişi sahada — ${parts.join(", ")} (toplam ${fmtNum(totalHours)} saat)`);
+    }
+
+    // İMALAT
+    const prods = productions.filter((p) => p.projectId === projectId && same(p.date));
+    if (prods.length) {
+      out.push(`[İMALAT] ${prods.length} kalem yapıldı:`);
+      for (const p of prods) {
+        const pct = p.plannedQty > 0 ? Math.round((p.completedQty / p.plannedQty) * 100) : 0;
+        out.push(`  - ${p.name}: ${fmtNum(p.completedQty)} ${p.unit}${p.plannedQty ? ` / planlanan ${fmtNum(p.plannedQty)} (%${pct})` : ""}`);
+      }
+    }
+
+    // GÖREV
+    const projTasks = tasks.filter((t) => t.projectId === projectId);
+    const doneToday = projTasks.filter((t) => t.status === "done" && same(t.deadline));
+    const dueToday = projTasks.filter((t) => same(t.deadline) && t.status !== "done");
+    const ymdToday = dates.find((d) => /^\d{4}-\d{2}-\d{2}$/.test(d)) || "";
+    const overdue = ymdToday
+      ? projTasks.filter((t) => t.status !== "done" && t.deadline && /^\d{4}-\d{2}-\d{2}$/.test(t.deadline) && t.deadline < ymdToday)
+      : [];
+    if (doneToday.length || dueToday.length || overdue.length) {
+      const segs: string[] = [];
+      if (doneToday.length) segs.push(`${doneToday.length} görev tamamlandı`);
+      if (dueToday.length) segs.push(`${dueToday.length} görev bugün vadeli (açık)`);
+      if (overdue.length) segs.push(`${overdue.length} görev gecikmiş`);
+      out.push(`[GÖREV] ${segs.join(" • ")}`);
+      for (const t of doneToday.slice(0, 5)) out.push(`  - Bitti: ${t.title}${t.assignee ? ` (${t.assignee})` : ""}`);
+      if (overdue.length) {
+        for (const t of overdue.slice(0, 3)) issueLines.push(`Gecikmiş görev: ${t.title}${t.assignee ? ` (${t.assignee})` : ""}`);
+      }
+    }
+
+    // İLERLEME (proje genel)
+    const allProds = productions.filter((p) => p.projectId === projectId);
+    if (allProds.length) {
+      const tp = allProds.reduce((s, p) => s + (p.plannedQty || 0), 0);
+      const tc = allProds.reduce((s, p) => s + (p.completedQty || 0), 0);
+      const overallPct = tp > 0 ? Math.round((tc / tp) * 100) : 0;
+      out.push(`[İLERLEME] Proje geneli: %${overallPct} (${allProds.length} imalat kalemi üzerinden)`);
+    }
+
+    // MALZEME (teslimat)
+    const matsToday = materials.filter((m) => m.projectId === projectId && same(m.deliveryDate));
+    if (matsToday.length) {
+      const totalVal = matsToday.reduce((s, m) => s + (m.quantity || 0) * (m.unitPrice || 0), 0);
+      out.push(`[MALZEME] ${matsToday.length} kalem teslim alındı${totalVal ? ` — toplam ${fmtTL(totalVal)}` : ""}:`);
+      for (const m of matsToday.slice(0, 6)) {
+        out.push(`  - ${m.name}: ${fmtNum(m.quantity)} ${m.unit}${m.supplier ? ` (${m.supplier})` : ""}`);
+      }
+    }
+
+    // KANTAR
+    const kantarToday = weighbridges.filter((w) => w.projectId === projectId && same(w.date));
+    if (kantarToday.length) {
+      const totalNet = kantarToday.reduce((s, w) => s + (w.netWeight || 0), 0);
+      out.push(`[KANTAR] ${kantarToday.length} fiş — toplam net ${fmtNum(totalNet)} kg (${fmtNum(totalNet / 1000)} ton)`);
+      const bySupplier = new Map<string, number>();
+      for (const w of kantarToday) bySupplier.set(w.supplier || "—", (bySupplier.get(w.supplier || "—") || 0) + (w.netWeight || 0));
+      for (const [sup, net] of Array.from(bySupplier.entries()).slice(0, 4)) {
+        out.push(`  - ${sup}: ${fmtNum(net)} kg`);
+      }
+    }
+
+    // SATIN ALMA
+    const purchToday = purchases.filter((p) => p.projectId === projectId && same(p.date));
+    if (purchToday.length) {
+      const totalKDVli = purchToday.reduce((s, p) => s + (p.quantity || 0) * (p.unitPrice || 0) * (1 + (p.vatRate || 0) / 100), 0);
+      const pending = purchToday.filter((p) => p.status === "pending").length;
+      out.push(`[SATIN ALMA] ${purchToday.length} sipariş — toplam ${fmtTL(totalKDVli)} (KDV dahil)${pending ? ` • ${pending} bekleyen` : ""}`);
+      for (const p of purchToday.slice(0, 5)) {
+        out.push(`  - ${p.itemName}: ${fmtNum(p.quantity)} ${p.unit} • ${p.supplier}`);
+      }
+    }
+
+    if (!out.length) {
+      out.push("Bu tarih için kayıt bulunamadı. Modüllere veri girdikten sonra tekrar deneyin.");
+    }
+
+    return { text: out.join("\n"), workerCount, issues: issueLines.join("\n") };
+  }
+
+  function autoFill() {
+    if (!form.projectId || !form.date.trim()) return;
+    const r = buildAutoSummary(form.projectId, form.date);
+    setForm({
+      ...form,
+      activities: r.text,
+      workerCount: r.workerCount > 0 ? String(r.workerCount) : form.workerCount,
+      issues: r.issues ? (form.issues ? form.issues + "\n" + r.issues : r.issues) : form.issues,
+    });
   }
 
   function save() {
@@ -308,12 +457,28 @@ export default function GunlukRaporScreen() {
           </View>
         </View>
 
+        {canEdit ? (
+          <TouchableOpacity
+            onPress={autoFill}
+            activeOpacity={0.85}
+            style={[styles.autoBtn, { backgroundColor: colors.primary + "1a", borderColor: colors.primary }]}
+          >
+            <Feather name="zap" size={14} color={colors.primary} />
+            <View style={{ flex: 1 }}>
+              <Text style={[styles.autoBtnText, { color: colors.primary }]}>Verilerden Özet Oluştur</Text>
+              <Text style={[styles.autoBtnSub, { color: colors.mutedForeground }]}>
+                Puantaj, imalat, görev, ilerleme, malzeme, kantar ve satın alma verilerinden otomatik doldurur
+              </Text>
+            </View>
+          </TouchableOpacity>
+        ) : null}
+
         <FormInput
           label="Yapılan Faaliyetler"
           value={form.activities}
           onChangeText={(v) => setForm({ ...form, activities: v })}
           multiline
-          style={{ height: 90, textAlignVertical: "top" }}
+          style={{ height: 160, textAlignVertical: "top" }}
         />
         <FormInput
           label="Sorunlar / Notlar"
@@ -390,4 +555,7 @@ const styles = StyleSheet.create({
   searchInput: { flex: 1, fontSize: 13, fontFamily: "Inter_500Medium", padding: 0 },
   clearBtn: { flexDirection: "row", alignItems: "center", gap: 4, paddingHorizontal: 10, paddingVertical: 8, borderRadius: 8 },
   clearBtnText: { fontSize: 12, fontFamily: "Inter_600SemiBold" },
+  autoBtn: { flexDirection: "row", alignItems: "center", gap: 10, paddingHorizontal: 12, paddingVertical: 10, borderRadius: 10, borderWidth: 1, marginBottom: 12 },
+  autoBtnText: { fontSize: 13, fontFamily: "Inter_700Bold" },
+  autoBtnSub: { fontSize: 11, fontFamily: "Inter_400Regular", marginTop: 2 },
 });
