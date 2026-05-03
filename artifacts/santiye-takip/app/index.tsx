@@ -32,6 +32,7 @@ import PrimaryButton from "@/components/PrimaryButton";
 import SmartSearch from "@/components/SmartSearch";
 import { PageKey, Permission, useApp } from "@/context/AppContext";
 import { useI18n } from "@/context/I18nContext";
+import { useTheme } from "@/context/ThemeContext";
 import { useColors } from "@/hooks/useColors";
 
 interface Section {
@@ -41,31 +42,58 @@ interface Section {
   route: string;
   color: string;
   bg: string;
+  code: string;
   count: (a: ReturnType<typeof useApp>) => number;
 }
 
 const SECTIONS: Section[] = [
-  { key: "proje",        label: "Proje",        icon: "briefcase",   route: "/proje",        color: "#e85d04", bg: "#fef3e2", count: (a) => a.projects.length },
-  { key: "dosyalar", label: "Dosyalar",      icon: "folder",      route: "/dosyalar", color: "#475569", bg: "#e2e8f0", count: (a) => a.archiveFiles.length },
-  { key: "kesif",        label: "Keşif",         icon: "search",      route: "/kesif",        color: "#0ea5e9", bg: "#e0f2fe", count: (a) => a.surveys.length },
-  { key: "is-programi",  label: "İş Programı",   icon: "calendar",    route: "/is-programi",  color: "#8b5cf6", bg: "#ede9fe", count: (a) => a.scheduleTasks.length },
-  { key: "puantaj",      label: "Puantaj",       icon: "users",       route: "/puantaj",      color: "#16a34a", bg: "#dcfce7", count: (a) => a.attendance.length },
-  { key: "gunluk-rapor", label: "Günlük Rapor",  icon: "file-text",   route: "/gunluk-rapor", color: "#0891b2", bg: "#cffafe", count: (a) => a.dailyReports.length },
-  { key: "imalat",       label: "İmalat",        icon: "tool",        route: "/imalat",       color: "#d97706", bg: "#fef3c7", count: (a) => a.productions.length },
-  { key: "gorev",        label: "Görev",         icon: "check-square",route: "/gorev",        color: "#dc2626", bg: "#fee2e2", count: (a) => a.tasks.length },
-  { key: "malzeme",      label: "Malzeme",       icon: "package",     route: "/malzeme",      color: "#059669", bg: "#d1fae5", count: (a) => a.materials.length },
-  { key: "taseron",      label: "Taşeron",       icon: "truck",       route: "/taseron",      color: "#7c3aed", bg: "#ede9fe", count: (a) => a.subcontractors.length },
-  { key: "satin-alma",   label: "Satın Alma",    icon: "shopping-cart", route: "/satin-alma", color: "#ea580c", bg: "#ffedd5", count: (a) => a.purchases.length },
-  { key: "kantar",       label: "Kantar",        icon: "truck",       route: "/kantar",       color: "#0d9488", bg: "#ccfbf1", count: (a) => a.weighbridges.length },
-  { key: "butce",        label: "Bütçe",         icon: "dollar-sign", route: "/butce",        color: "#16213e", bg: "#e0e7ff", count: (a) => a.budget.length },
-  { key: "hakedis",      label: "Hakediş",       icon: "file-text",   route: "/hakedis",      color: "#be185d", bg: "#fce7f3", count: (a) => a.hakedisler.length },
-  { key: "ilerleme",     label: "İlerleme",      icon: "trending-up", route: "/ilerleme",     color: "#0d9488", bg: "#ccfbf1", count: (a) => a.surveys.length + a.productions.length },
-  { key: "finans",       label: "Finans",        icon: "credit-card", route: "/finans",       color: "#00C896", bg: "#d1fae5", count: () => 0 },
-  { key: "kullanicilar", label: "Kullanıcılar",  icon: "shield",      route: "/kullanicilar", color: "#7c3aed", bg: "#ede9fe", count: (a) => a.appUsers.length },
+  { key: "proje",        label: "Proje",        icon: "briefcase",   route: "/proje",        color: "#e85d04", bg: "#fef3e2", code: "PR-01", count: (a) => a.projects.length },
+  { key: "dosyalar",     label: "Dosyalar",     icon: "folder",      route: "/dosyalar",     color: "#475569", bg: "#e2e8f0", code: "DS-02", count: (a) => a.archiveFiles.length },
+  { key: "kesif",        label: "Keşif",         icon: "search",      route: "/kesif",        color: "#0ea5e9", bg: "#e0f2fe", code: "KS-03", count: (a) => a.surveys.length },
+  { key: "is-programi",  label: "İş Programı",   icon: "calendar",    route: "/is-programi",  color: "#8b5cf6", bg: "#ede9fe", code: "IP-04", count: (a) => a.scheduleTasks.length },
+  { key: "puantaj",      label: "Puantaj",       icon: "users",       route: "/puantaj",      color: "#16a34a", bg: "#dcfce7", code: "PU-05", count: (a) => a.attendance.length },
+  { key: "gunluk-rapor", label: "Günlük Rapor",  icon: "file-text",   route: "/gunluk-rapor", color: "#0891b2", bg: "#cffafe", code: "GR-06", count: (a) => a.dailyReports.length },
+  { key: "imalat",       label: "İmalat",        icon: "tool",        route: "/imalat",       color: "#d97706", bg: "#fef3c7", code: "IM-07", count: (a) => a.productions.length },
+  { key: "gorev",        label: "Görev",         icon: "check-square",route: "/gorev",        color: "#dc2626", bg: "#fee2e2", code: "GV-08", count: (a) => a.tasks.length },
+  { key: "malzeme",      label: "Malzeme",       icon: "package",     route: "/malzeme",      color: "#059669", bg: "#d1fae5", code: "MZ-09", count: (a) => a.materials.length },
+  { key: "taseron",      label: "Taşeron",       icon: "truck",       route: "/taseron",      color: "#7c3aed", bg: "#ede9fe", code: "TS-10", count: (a) => a.subcontractors.length },
+  { key: "satin-alma",   label: "Satın Alma",    icon: "shopping-cart", route: "/satin-alma", color: "#ea580c", bg: "#ffedd5", code: "SA-11", count: (a) => a.purchases.length },
+  { key: "kantar",       label: "Kantar",        icon: "truck",       route: "/kantar",       color: "#0d9488", bg: "#ccfbf1", code: "KN-12", count: (a) => a.weighbridges.length },
+  { key: "butce",        label: "Bütçe",         icon: "dollar-sign", route: "/butce",        color: "#16213e", bg: "#e0e7ff", code: "BT-13", count: (a) => a.budget.length },
+  { key: "hakedis",      label: "Hakediş",       icon: "file-text",   route: "/hakedis",      color: "#be185d", bg: "#fce7f3", code: "HK-14", count: (a) => a.hakedisler.length },
+  { key: "ilerleme",     label: "İlerleme",      icon: "trending-up", route: "/ilerleme",     color: "#0d9488", bg: "#ccfbf1", code: "IL-15", count: (a) => a.surveys.length + a.productions.length },
+  { key: "finans",       label: "Finans",        icon: "credit-card", route: "/finans",       color: "#00C896", bg: "#d1fae5", code: "FN-16", count: () => 0 },
+  { key: "kullanicilar", label: "Kullanıcılar",  icon: "shield",      route: "/kullanicilar", color: "#7c3aed", bg: "#ede9fe", code: "KU-17", count: (a) => a.appUsers.length },
 ];
+
+const HIVIS_YELLOW = "#facc15";
+const HIVIS_BG = "#fef3c7";
+const HIVIS_BLACK = "#1c1917";
+
+function HazardStripe({ height = 8, segments = 28 }: { height?: number; segments?: number }) {
+  return (
+    <View style={{ height, backgroundColor: HIVIS_YELLOW, overflow: "hidden", flexDirection: "row" }}>
+      {Array.from({ length: segments }).map((_, i) => (
+        <View
+          key={i}
+          style={{
+            width: 14,
+            height: height * 3,
+            marginTop: -height,
+            backgroundColor: i % 2 === 0 ? HIVIS_BLACK : "transparent",
+            transform: [{ skewX: "-30deg" }],
+            marginLeft: -3,
+          }}
+        />
+      ))}
+    </View>
+  );
+}
 
 export default function HomeScreen() {
   const colors = useColors();
+  const { themeId } = useTheme();
+  const isHiVis = themeId === "hivis";
   const router = useRouter();
   const app = useApp();
   const { t } = useI18n();
@@ -387,11 +415,57 @@ export default function HomeScreen() {
       >
         <SmartSearch topInset={insets.bottom} />
 
+        {isHiVis ? (
+          <View style={styles.hiVisBanner}>
+            <View style={styles.hiVisBannerRow}>
+              <Feather name="alert-triangle" size={12} color={HIVIS_BLACK} />
+              <Text style={styles.hiVisBannerText}>HI-VIS · İSG MODU</Text>
+            </View>
+            <HazardStripe height={8} />
+          </View>
+        ) : null}
+
         <DraggableGrid
           sections={visibleSections}
           onReorder={(newOrder) => setTileOrder(newOrder)}
+          tileH={isHiVis ? DG_TILE_H_HIVIS : DG_TILE_H_DEFAULT}
           renderTile={(s) => {
             const perm = getPermission(s.key);
+            if (isHiVis) {
+              return (
+                <View style={styles.hiVisTileWrap}>
+                  <View style={styles.hiVisTileShadow} />
+                  <View style={styles.hiVisTileInner}>
+                    <View style={styles.hiVisHeader}>
+                      <Feather name="alert-triangle" size={9} color={HIVIS_YELLOW} />
+                      <Text style={styles.hiVisDikkat}>DİKKAT</Text>
+                      <View style={{ flex: 1 }} />
+                      <Text style={styles.hiVisCode}>{s.code}</Text>
+                    </View>
+                    <View style={styles.hiVisBody}>
+                      <View style={styles.hiVisHeadRow}>
+                        <View style={styles.hiVisIconBox}>
+                          <Feather name={s.icon as any} size={20} color={HIVIS_YELLOW} />
+                        </View>
+                        <Text style={styles.hiVisCount} numberOfLines={1}>
+                          {s.count(app)}
+                        </Text>
+                      </View>
+                      <Text style={styles.hiVisLabel} numberOfLines={2}>
+                        {t(`menu.${s.key}`)}
+                      </Text>
+                      {perm === "view" ? (
+                        <View style={styles.hiVisViewBadge}>
+                          <Feather name="eye" size={9} color={HIVIS_YELLOW} />
+                          <Text style={styles.hiVisViewText}>{t("home.tile.readonly")}</Text>
+                        </View>
+                      ) : null}
+                    </View>
+                    <HazardStripe height={6} segments={20} />
+                  </View>
+                </View>
+              );
+            }
             return (
               <View
                 style={[
@@ -647,7 +721,8 @@ export default function HomeScreen() {
 
 const DG_COLS = 2;
 const DG_GAP = 12;
-const DG_TILE_H = 144;
+const DG_TILE_H_DEFAULT = 144;
+const DG_TILE_H_HIVIS = 188;
 
 interface DGSection {
   key: string;
@@ -659,13 +734,14 @@ interface DGProps<T extends DGSection> {
   onReorder: (newOrder: string[]) => void;
   renderTile: (s: T) => React.ReactNode;
   onTilePress: (s: T) => void;
+  tileH?: number;
 }
 
-function slotPos(idx: number, tileW: number) {
+function slotPos(idx: number, tileW: number, tileH: number) {
   "worklet";
   const col = idx % DG_COLS;
   const row = Math.floor(idx / DG_COLS);
-  return { x: col * (tileW + DG_GAP), y: row * (DG_TILE_H + DG_GAP) };
+  return { x: col * (tileW + DG_GAP), y: row * (tileH + DG_GAP) };
 }
 
 function DraggableGrid<T extends DGSection>({
@@ -673,11 +749,12 @@ function DraggableGrid<T extends DGSection>({
   onReorder,
   renderTile,
   onTilePress,
+  tileH = DG_TILE_H_DEFAULT,
 }: DGProps<T>) {
   const [containerW, setContainerW] = useState(0);
   const tileW = containerW > 0 ? (containerW - DG_GAP * (DG_COLS - 1)) / DG_COLS : 0;
   const totalRows = Math.ceil(sections.length / DG_COLS);
-  const containerH = totalRows > 0 ? totalRows * DG_TILE_H + (totalRows - 1) * DG_GAP : 0;
+  const containerH = totalRows > 0 ? totalRows * tileH + (totalRows - 1) * DG_GAP : 0;
 
   // key -> index (canlı sıralama, drag esnasında güncellenir)
   const positions = useSharedValue<Record<string, number>>(
@@ -711,6 +788,7 @@ function DraggableGrid<T extends DGSection>({
               itemKey={s.key}
               total={sections.length}
               tileW={tileW}
+              tileH={tileH}
               tileWShared={tileWShared}
               positions={positions}
               draggingKey={draggingKey}
@@ -729,6 +807,7 @@ interface DTProps {
   itemKey: string;
   total: number;
   tileW: number;
+  tileH: number;
   tileWShared: SharedValue<number>;
   positions: SharedValue<Record<string, number>>;
   draggingKey: SharedValue<string | null>;
@@ -741,6 +820,7 @@ function DraggableTile({
   itemKey,
   total,
   tileW,
+  tileH,
   tileWShared,
   positions,
   draggingKey,
@@ -748,6 +828,10 @@ function DraggableTile({
   onPress,
   children,
 }: DTProps) {
+  const tileHShared = useSharedValue(tileH);
+  useEffect(() => {
+    tileHShared.value = tileH;
+  }, [tileH]);
   const tx = useSharedValue(0);
   const ty = useSharedValue(0);
   const scale = useSharedValue(1);
@@ -760,12 +844,13 @@ function DraggableTile({
     () => ({
       idx: positions.value[itemKey],
       w: tileWShared.value,
+      h: tileHShared.value,
       isDragging: draggingKey.value === itemKey,
     }),
     (cur, prev) => {
       if (cur.w === 0 || cur.idx === undefined) return;
       if (cur.isDragging) return;
-      const { x, y } = slotPos(cur.idx, cur.w);
+      const { x, y } = slotPos(cur.idx, cur.w, cur.h);
       if (!prev || prev.w === 0) {
         // ilk yerleşim — animasyonsuz
         tx.value = x;
@@ -796,14 +881,15 @@ function DraggableTile({
     })
     .onChange((e) => {
       const w = tileWShared.value;
+      const h = tileHShared.value;
       if (w === 0) return;
       tx.value = startX.value + e.translationX;
       ty.value = startY.value + e.translationY;
       // Parmağın hangi slot üzerinde olduğunu hesapla
       const cx = tx.value + w / 2;
-      const cy = ty.value + DG_TILE_H / 2;
+      const cy = ty.value + h / 2;
       const col = Math.max(0, Math.min(DG_COLS - 1, Math.floor(cx / (w + DG_GAP))));
-      const row = Math.max(0, Math.floor(cy / (DG_TILE_H + DG_GAP)));
+      const row = Math.max(0, Math.floor(cy / (h + DG_GAP)));
       const newIdx = Math.max(0, Math.min(total - 1, row * DG_COLS + col));
       const myIdx = positions.value[itemKey];
       if (myIdx === undefined || newIdx === myIdx) return;
@@ -826,7 +912,7 @@ function DraggableTile({
       const idx = positions.value[itemKey];
       const w = tileWShared.value;
       if (idx !== undefined && w > 0) {
-        const { x, y } = slotPos(idx, w);
+        const { x, y } = slotPos(idx, w, tileHShared.value);
         tx.value = withSpring(x, { damping: 20, stiffness: 220 });
         ty.value = withSpring(y, { damping: 20, stiffness: 220 });
       }
@@ -861,7 +947,7 @@ function DraggableTile({
   return (
     <Animated.View style={[{ shadowColor: "#000", shadowOffset: { width: 0, height: 2 } }, animStyle]}>
       <GestureDetector gesture={composed}>
-        <Animated.View style={{ width: "100%", height: DG_TILE_H }}>
+        <Animated.View style={{ width: "100%", height: tileH }}>
           {children}
         </Animated.View>
       </GestureDetector>
@@ -1102,6 +1188,107 @@ const styles = StyleSheet.create({
     fontSize: 9,
     fontFamily: "Inter_600SemiBold",
     color: "#0ea5e9",
+  },
+  hiVisBanner: {
+    marginBottom: 12,
+    gap: 6,
+  },
+  hiVisBannerRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 6,
+    paddingHorizontal: 4,
+  },
+  hiVisBannerText: {
+    fontSize: 10,
+    fontFamily: "Inter_700Bold",
+    color: HIVIS_BLACK,
+    letterSpacing: 2.5,
+  },
+  hiVisTileWrap: {
+    flex: 1,
+    position: "relative",
+  },
+  hiVisTileShadow: {
+    position: "absolute",
+    left: 4,
+    top: 4,
+    right: -4,
+    bottom: -4,
+    backgroundColor: HIVIS_BLACK,
+    borderRadius: 6,
+  },
+  hiVisTileInner: {
+    flex: 1,
+    backgroundColor: HIVIS_YELLOW,
+    borderColor: HIVIS_BLACK,
+    borderWidth: 2,
+    borderRadius: 6,
+    overflow: "hidden",
+  },
+  hiVisHeader: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 4,
+    backgroundColor: HIVIS_BLACK,
+    paddingHorizontal: 8,
+    paddingVertical: 4,
+  },
+  hiVisDikkat: {
+    fontSize: 9,
+    fontFamily: "Inter_700Bold",
+    color: HIVIS_YELLOW,
+    letterSpacing: 1.5,
+  },
+  hiVisCode: {
+    fontSize: 9,
+    fontFamily: "Inter_700Bold",
+    color: HIVIS_YELLOW,
+    letterSpacing: 0.5,
+  },
+  hiVisBody: {
+    padding: 12,
+    gap: 8,
+  },
+  hiVisHeadRow: {
+    flexDirection: "row",
+    alignItems: "flex-start",
+    justifyContent: "space-between",
+  },
+  hiVisIconBox: {
+    width: 38,
+    height: 38,
+    borderRadius: 6,
+    backgroundColor: HIVIS_BLACK,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  hiVisCount: {
+    fontSize: 26,
+    lineHeight: 28,
+    fontFamily: "Inter_700Bold",
+    color: HIVIS_BLACK,
+  },
+  hiVisLabel: {
+    fontSize: 13,
+    fontFamily: "Inter_700Bold",
+    color: HIVIS_BLACK,
+    letterSpacing: 0.8,
+  },
+  hiVisViewBadge: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 3,
+    alignSelf: "flex-start",
+    backgroundColor: HIVIS_BLACK,
+    paddingHorizontal: 6,
+    paddingVertical: 2,
+    borderRadius: 3,
+  },
+  hiVisViewText: {
+    fontSize: 9,
+    fontFamily: "Inter_600SemiBold",
+    color: HIVIS_YELLOW,
   },
   raporBtn: {
     flexDirection: "row",

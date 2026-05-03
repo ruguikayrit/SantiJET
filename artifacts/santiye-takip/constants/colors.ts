@@ -214,6 +214,34 @@ const kremSicak: ThemeColors = {
   darkNavy: "#0f3460",
 };
 
+const hivis: ThemeColors = {
+  text: "#1c1917",
+  tint: "#facc15",
+  background: "#fef3c7",
+  foreground: "#1c1917",
+  card: "#facc15",
+  cardForeground: "#1c1917",
+  primary: "#1c1917",
+  primaryForeground: "#facc15",
+  secondary: "#1c1917",
+  secondaryForeground: "#facc15",
+  muted: "#fde68a",
+  mutedForeground: "#57534e",
+  accent: "#facc15",
+  accentForeground: "#1c1917",
+  destructive: "#b91c1c",
+  destructiveForeground: "#ffffff",
+  success: "#15803d",
+  successForeground: "#ffffff",
+  warning: "#b45309",
+  warningForeground: "#ffffff",
+  border: "#1c1917",
+  input: "#fde68a",
+  orange: "#f59e0b",
+  navy: "#1c1917",
+  darkNavy: "#0c0a09",
+};
+
 export const THEMES: ThemeDefinition[] = [
   {
     id: "klasik",
@@ -262,6 +290,14 @@ export const THEMES: ThemeDefinition[] = [
     isDark: false,
     preview: { bg: "#fbf6ee", primary: "#d2691e", secondary: "#16213e" },
     colors: kremSicak,
+  },
+  {
+    id: "hivis",
+    name: "Hi-Vis İSG",
+    description: "Sarı/siyah iş güvenliği modu",
+    isDark: false,
+    preview: { bg: "#fef3c7", primary: "#1c1917", secondary: "#facc15" },
+    colors: hivis,
   },
 ];
 
