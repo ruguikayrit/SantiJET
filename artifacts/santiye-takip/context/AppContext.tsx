@@ -336,7 +336,7 @@ export type PageKey = (typeof ALL_PAGE_KEYS)[number];
 
 export const PAGE_LABELS: Record<PageKey, string> = {
   proje: "Proje",
-  "proje-arsivi": "Dosya Arşivi",
+  "proje-arsivi": "Dosyalar",
   kesif: "Keşif",
   "is-programi": "İş Programı",
   puantaj: "Puantaj",

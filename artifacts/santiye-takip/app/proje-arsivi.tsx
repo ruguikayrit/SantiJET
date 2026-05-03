@@ -30,11 +30,20 @@ import {
   saveAsset,
 } from "@/lib/archiveStorage";
 
-const ALLOWED_EXTS = ["pdf", "dwg"];
+const ALLOWED_EXTS = ["pdf", "dwg", "xlsx", "xls"];
 const MIME_BY_EXT: Record<string, string> = {
   pdf: "application/pdf",
   dwg: "application/acad",
+  xlsx: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+  xls: "application/vnd.ms-excel",
 };
+const EXT_COLOR: Record<string, string> = {
+  pdf: "#dc2626",
+  dwg: "#0369a1",
+  xlsx: "#16a34a",
+  xls: "#16a34a",
+};
+type ExtFilter = "all" | "pdf" | "dwg" | "excel";
 
 function fmtDate(d?: string): string {
   if (!d) return "—";
@@ -91,7 +100,7 @@ export default function ProjeArsiviScreen() {
 
   const [projectId, setProjectId] = useState<string>(() => projects[0]?.id ?? "");
   const [search, setSearch] = useState("");
-  const [extFilter, setExtFilter] = useState<"all" | "pdf" | "dwg">("all");
+  const [extFilter, setExtFilter] = useState<ExtFilter>("all");
   const [busy, setBusy] = useState(false);
   const [openingId, setOpeningId] = useState<string | null>(null);
   const [editFile, setEditFile] = useState<ArchiveFile | null>(null);
@@ -103,7 +112,8 @@ export default function ProjeArsiviScreen() {
 
   const filtered = useMemo(() => {
     let list = archiveFiles.filter((f) => f.projectId === projectId);
-    if (extFilter !== "all") list = list.filter((f) => f.ext === extFilter);
+    if (extFilter === "excel") list = list.filter((f) => f.ext === "xlsx" || f.ext === "xls");
+    else if (extFilter !== "all") list = list.filter((f) => f.ext === extFilter);
     const q = norm(search);
     if (q) list = list.filter((f) => norm([f.name, f.note].join(" ")).includes(q));
     list.sort((a, b) => {
@@ -119,7 +129,8 @@ export default function ProjeArsiviScreen() {
     const size = list.reduce((s, f) => s + (f.size || 0), 0);
     const pdf = list.filter((f) => f.ext === "pdf").length;
     const dwg = list.filter((f) => f.ext === "dwg").length;
-    return { count: list.length, size, pdf, dwg };
+    const xls = list.filter((f) => f.ext === "xlsx" || f.ext === "xls").length;
+    return { count: list.length, size, pdf, dwg, xls };
   }, [archiveFiles, projectId]);
 
   async function handlePick() {
@@ -131,7 +142,14 @@ export default function ProjeArsiviScreen() {
     setBusy(true);
     try {
       const res = await DocumentPicker.getDocumentAsync({
-        type: ["application/pdf", "application/acad", "image/vnd.dwg", "*/*"],
+        type: [
+          "application/pdf",
+          "application/acad",
+          "image/vnd.dwg",
+          "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+          "application/vnd.ms-excel",
+          "*/*",
+        ],
         multiple: true,
         copyToCacheDirectory: true,
       });
@@ -169,7 +187,7 @@ export default function ProjeArsiviScreen() {
       if (rejected > 0) {
         notify(
           "Bazı dosyalar atlandı",
-          `${rejected} dosya desteklenmeyen uzantıya sahip. Yalnızca .pdf ve .dwg kabul edilir.`
+          `${rejected} dosya desteklenmeyen uzantıya sahip. Yalnızca .pdf, .dwg, .xlsx ve .xls kabul edilir.`
         );
       }
       if (added > 0 && rejected === 0) {
@@ -229,8 +247,8 @@ export default function ProjeArsiviScreen() {
   return (
     <View style={[styles.root, { backgroundColor: colors.background }]}>
       <Header
-        title="Dosya Arşivi"
-        subtitle="DWG ve PDF dosyaları"
+        title="Dosyalar"
+        subtitle="PDF · DWG · Excel"
         onBack={() => (router.canGoBack() ? router.back() : router.replace("/" as any))}
         rightAction={canEdit && !noProjects ? { icon: "upload", onPress: handlePick } : undefined}
       />
@@ -267,6 +285,10 @@ export default function ProjeArsiviScreen() {
                 <Text style={[styles.statL, { color: colors.mutedForeground }]}>DWG</Text>
               </View>
               <View style={[styles.statCell, { backgroundColor: colors.muted }]}>
+                <Text style={[styles.statN, { color: colors.foreground }]}>{totals.xls}</Text>
+                <Text style={[styles.statL, { color: colors.mutedForeground }]}>EXCEL</Text>
+              </View>
+              <View style={[styles.statCell, { backgroundColor: colors.muted }]}>
                 <Text style={[styles.statN, { color: colors.foreground }]}>{formatBytes(totals.size)}</Text>
                 <Text style={[styles.statL, { color: colors.mutedForeground }]}>Boyut</Text>
               </View>
@@ -289,7 +311,7 @@ export default function ProjeArsiviScreen() {
                 ) : null}
               </View>
 
-              {(["all", "pdf", "dwg"] as const).map((k) => (
+              {(["all", "pdf", "dwg", "excel"] as const).map((k) => (
                 <TouchableOpacity
                   key={k}
                   onPress={() => setExtFilter(k)}
@@ -326,7 +348,7 @@ export default function ProjeArsiviScreen() {
                   <Feather name="upload" size={16} color="#fff" />
                 )}
                 <Text style={styles.uploadBtnText}>
-                  {busy ? "Yükleniyor..." : "Dosya Yükle (PDF / DWG)"}
+                  {busy ? "Yükleniyor..." : "Dosya Yükle (PDF / DWG / Excel)"}
                 </Text>
               </TouchableOpacity>
             ) : null}
@@ -340,7 +362,7 @@ export default function ProjeArsiviScreen() {
                 search || extFilter !== "all"
                   ? "Arama kriterine uyan dosya bulunamadı."
                   : canEdit
-                  ? "Üstteki 'Dosya Yükle' düğmesi ile bu projeye .pdf veya .dwg dosyaları ekleyebilirsiniz."
+                  ? "Üstteki 'Dosya Yükle' düğmesi ile bu projeye .pdf, .dwg, .xlsx veya .xls dosyaları ekleyebilirsiniz."
                   : "Bu projede henüz arşivlenmiş dosya yok."
               }
             />
@@ -351,7 +373,8 @@ export default function ProjeArsiviScreen() {
               contentContainerStyle={styles.list}
               renderItem={({ item }) => {
                 const opening = openingId === item.id;
-                const color = item.ext === "pdf" ? "#dc2626" : "#0369a1";
+                const color = EXT_COLOR[item.ext] || "#475569";
+                const label = item.ext === "xlsx" || item.ext === "xls" ? "XLS" : item.ext.toUpperCase();
                 return (
                   <TouchableOpacity
                     style={[styles.card, { backgroundColor: colors.card }]}
@@ -364,7 +387,7 @@ export default function ProjeArsiviScreen() {
                         <ActivityIndicator size="small" color={color} />
                       ) : (
                         <Text style={[styles.fileExt, { color }]}>
-                          {item.ext.toUpperCase()}
+                          {label}
                         </Text>
                       )}
                     </View>
