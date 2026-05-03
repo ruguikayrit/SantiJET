@@ -1,9 +1,10 @@
+import AsyncStorage from "@react-native-async-storage/async-storage";
 import { Feather } from "@expo/vector-icons";
 import * as DocumentPicker from "expo-document-picker";
 import * as FileSystem from "expo-file-system/legacy";
 import { useRouter } from "expo-router";
 import * as Sharing from "expo-sharing";
-import React, { useState } from "react";
+import React, { useEffect, useMemo, useState } from "react";
 import {
   ActivityIndicator,
   Alert,
@@ -77,9 +78,63 @@ export default function HomeScreen() {
     return currentRole.permissions[key] ?? "none";
   }
 
-  const visibleSections = SECTIONS.filter(
-    (s) => getPermission(s.key) !== "none"
-  );
+  // ---- Modül sıralama (cihaza özel) ----
+  const ORDER_KEY = "santiye-tile-order-v1";
+  const [tileOrder, setTileOrder] = useState<string[]>([]);
+  const [reorderMode, setReorderMode] = useState(false);
+  const [orderLoaded, setOrderLoaded] = useState(false);
+
+  useEffect(() => {
+    AsyncStorage.getItem(ORDER_KEY)
+      .then((raw) => {
+        if (raw) {
+          try {
+            const arr = JSON.parse(raw);
+            if (Array.isArray(arr)) setTileOrder(arr.filter((x) => typeof x === "string"));
+          } catch {
+            // ignore
+          }
+        }
+      })
+      .finally(() => setOrderLoaded(true));
+  }, []);
+
+  useEffect(() => {
+    if (!orderLoaded) return;
+    AsyncStorage.setItem(ORDER_KEY, JSON.stringify(tileOrder)).catch(() => {});
+  }, [tileOrder, orderLoaded]);
+
+  const orderedSections = useMemo(() => {
+    const allowed = SECTIONS.filter((s) => getPermission(s.key) !== "none");
+    const byKey = new Map(allowed.map((s) => [s.key as string, s]));
+    const result: typeof allowed = [];
+    for (const k of tileOrder) {
+      const s = byKey.get(k);
+      if (s) {
+        result.push(s);
+        byKey.delete(k);
+      }
+    }
+    // Listede olmayan (yeni eklenmiş) modüller sona eklenir
+    for (const s of allowed) {
+      if (byKey.has(s.key as string)) result.push(s);
+    }
+    return result;
+  }, [tileOrder, currentRole]);
+
+  function moveSection(key: string, dir: -1 | 1) {
+    const keys = orderedSections.map((s) => s.key as string);
+    const i = keys.indexOf(key);
+    if (i < 0) return;
+    const j = i + dir;
+    if (j < 0 || j >= keys.length) return;
+    const tmp = keys[i];
+    keys[i] = keys[j];
+    keys[j] = tmp;
+    setTileOrder(keys);
+  }
+
+  const visibleSections = orderedSections;
 
   function openExport() {
     const json = exportData();
@@ -335,15 +390,46 @@ export default function HomeScreen() {
       >
         <SmartSearch topInset={insets.bottom} />
 
+        {reorderMode ? (
+          <View style={[styles.reorderBar, { backgroundColor: colors.primary + "15", borderColor: colors.primary }]}>
+            <Feather name="move" size={14} color={colors.primary} />
+            <Text style={[styles.reorderText, { color: colors.primary }]} numberOfLines={2}>
+              Sıralama modu — okları kullanarak modülleri taşıyın
+            </Text>
+            <TouchableOpacity
+              onPress={() => setReorderMode(false)}
+              style={[styles.reorderDone, { backgroundColor: colors.primary }]}
+              hitSlop={6}
+            >
+              <Feather name="check" size={14} color="#fff" />
+              <Text style={styles.reorderDoneText}>Bitti</Text>
+            </TouchableOpacity>
+          </View>
+        ) : null}
+
         <View style={styles.grid}>
-          {visibleSections.map((s) => {
+          {visibleSections.map((s, idx) => {
             const perm = getPermission(s.key);
+            const isFirst = idx === 0;
+            const isLast = idx === visibleSections.length - 1;
             return (
               <TouchableOpacity
                 key={s.key}
-                style={[styles.tile, { backgroundColor: colors.card }]}
-                onPress={() => router.push(s.route as any)}
-                activeOpacity={0.85}
+                style={[
+                  styles.tile,
+                  {
+                    backgroundColor: colors.card,
+                    borderWidth: reorderMode ? 1.5 : 0,
+                    borderColor: reorderMode ? colors.primary : "transparent",
+                  },
+                ]}
+                onPress={() => {
+                  if (reorderMode) return;
+                  router.push(s.route as any);
+                }}
+                onLongPress={() => setReorderMode(true)}
+                delayLongPress={350}
+                activeOpacity={reorderMode ? 1 : 0.85}
               >
                 <View style={[styles.tileIcon, { backgroundColor: s.bg }]}>
                   <Feather name={s.icon as any} size={28} color={s.color} />
@@ -354,19 +440,49 @@ export default function HomeScreen() {
                 >
                   {t(`menu.${s.key}`)}
                 </Text>
-                <View style={styles.tileBottom}>
-                  <Text
-                    style={[styles.tileCount, { color: colors.mutedForeground }]}
-                  >
-                    {s.count(app)}
-                  </Text>
-                  {perm === "view" ? (
-                    <View style={styles.viewBadge}>
-                      <Feather name="eye" size={10} color="#0ea5e9" />
-                      <Text style={styles.viewBadgeText}>{t("home.tile.readonly")}</Text>
-                    </View>
-                  ) : null}
-                </View>
+                {reorderMode ? (
+                  <View style={styles.reorderArrows}>
+                    <TouchableOpacity
+                      onPress={() => moveSection(s.key as string, -1)}
+                      disabled={isFirst}
+                      style={[
+                        styles.arrowBtn,
+                        { backgroundColor: isFirst ? colors.muted : colors.primary + "20", opacity: isFirst ? 0.4 : 1 },
+                      ]}
+                      hitSlop={8}
+                    >
+                      <Feather name="arrow-left" size={16} color={colors.primary} />
+                    </TouchableOpacity>
+                    <Text style={[styles.posText, { color: colors.mutedForeground }]}>
+                      {idx + 1}/{visibleSections.length}
+                    </Text>
+                    <TouchableOpacity
+                      onPress={() => moveSection(s.key as string, 1)}
+                      disabled={isLast}
+                      style={[
+                        styles.arrowBtn,
+                        { backgroundColor: isLast ? colors.muted : colors.primary + "20", opacity: isLast ? 0.4 : 1 },
+                      ]}
+                      hitSlop={8}
+                    >
+                      <Feather name="arrow-right" size={16} color={colors.primary} />
+                    </TouchableOpacity>
+                  </View>
+                ) : (
+                  <View style={styles.tileBottom}>
+                    <Text
+                      style={[styles.tileCount, { color: colors.mutedForeground }]}
+                    >
+                      {s.count(app)}
+                    </Text>
+                    {perm === "view" ? (
+                      <View style={styles.viewBadge}>
+                        <Feather name="eye" size={10} color="#0ea5e9" />
+                        <Text style={styles.viewBadgeText}>{t("home.tile.readonly")}</Text>
+                      </View>
+                    ) : null}
+                  </View>
+                )}
               </TouchableOpacity>
             );
           })}
@@ -765,6 +881,42 @@ const styles = StyleSheet.create({
     fontSize: 15,
     fontFamily: "Inter_600SemiBold",
   },
+  reorderBar: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 8,
+    paddingVertical: 10,
+    paddingHorizontal: 12,
+    borderRadius: 10,
+    borderWidth: 1,
+    marginHorizontal: 16,
+    marginBottom: 10,
+  },
+  reorderText: { flex: 1, fontSize: 12, fontFamily: "Inter_500Medium" },
+  reorderDone: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 4,
+    paddingHorizontal: 10,
+    paddingVertical: 6,
+    borderRadius: 999,
+  },
+  reorderDoneText: { color: "#fff", fontSize: 12, fontFamily: "Inter_600SemiBold" },
+  reorderArrows: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    marginTop: 8,
+    gap: 4,
+  },
+  arrowBtn: {
+    width: 30,
+    height: 30,
+    borderRadius: 15,
+    justifyContent: "center",
+    alignItems: "center",
+  },
+  posText: { fontSize: 11, fontFamily: "Inter_600SemiBold" },
   tileBottom: {
     flexDirection: "row",
     alignItems: "center",
