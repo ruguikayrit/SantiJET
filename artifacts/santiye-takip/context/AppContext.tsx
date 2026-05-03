@@ -150,6 +150,8 @@ export interface Material {
   recordDetail?: string;
   description?: string;
   code?: string;
+  pozCode?: string;
+  pozCategory?: string;
   shippingMethod?: string;
   waybillNo?: string;
   invoiceNo?: string;
@@ -197,6 +199,8 @@ export interface MaterialRequest {
   status: "pending" | "approved" | "delivered" | "rejected";
   note: string;
   usageLocation?: string;
+  pozCode?: string;
+  pozCategory?: string;
   approvals?: {
     sef?: boolean;
     mudur?: boolean;
@@ -217,6 +221,8 @@ export interface MaterialMovement {
   location: string;
   reason: string;
   note: string;
+  pozCode?: string;
+  pozCategory?: string;
 }
 
 export interface Subcontractor {

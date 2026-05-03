@@ -19,6 +19,7 @@ import EmptyState from "@/components/EmptyState";
 import FormInput from "@/components/FormInput";
 import Header from "@/components/Header";
 import MaterialPicker from "@/components/MaterialPicker";
+import PozPicker from "@/components/PozPicker";
 import PrimaryButton from "@/components/PrimaryButton";
 import UnitPicker from "@/components/UnitPicker";
 import { findMaterialByName } from "@/constants/materials";
@@ -66,6 +67,8 @@ interface MF {
   writeToKantar: boolean;
   supplierKantarSlip: boolean;
   weighApproved: boolean;
+  pozCode: string;
+  pozCategory: string;
 }
 
 interface RF {
@@ -79,6 +82,8 @@ interface RF {
   status: MaterialRequest["status"];
   note: string;
   usageLocation: string;
+  pozCode: string;
+  pozCategory: string;
 }
 
 interface MovF {
@@ -93,6 +98,8 @@ interface MovF {
   location: string;
   reason: string;
   note: string;
+  pozCode: string;
+  pozCategory: string;
 }
 
 const EMPTY_M: MF = {
@@ -104,17 +111,20 @@ const EMPTY_M: MF = {
   writeToKantar: false,
   supplierKantarSlip: false,
   weighApproved: false,
+  pozCode: "", pozCategory: "",
 };
 
 const EMPTY_R: RF = {
   projectId: "", name: "", category: "", unit: "", quantity: "",
   requestDate: "", requestedBy: "", status: "pending", note: "",
   usageLocation: "",
+  pozCode: "", pozCategory: "",
 };
 
 const EMPTY_MOV: MovF = {
   projectId: "", type: "kullanim", name: "", category: "", unit: "", quantity: "",
   date: "", person: "", location: "", reason: "", note: "",
+  pozCode: "", pozCategory: "",
 };
 
 function todayStr() {
@@ -293,6 +303,8 @@ export default function MalzemeScreen() {
         writeToKantar: !!m.writeToKantar,
         supplierKantarSlip: !!m.supplierKantarSlip,
         weighApproved: !!m.weighApproved,
+        pozCode: m.pozCode || "",
+        pozCategory: m.pozCategory || "",
       });
     } else {
       setMEditId(null);
@@ -326,6 +338,8 @@ export default function MalzemeScreen() {
       writeToKantar: mForm.writeToKantar,
       supplierKantarSlip: mForm.supplierKantarSlip,
       weighApproved: mForm.weighApproved,
+      pozCode: mForm.pozCode.trim() || undefined,
+      pozCategory: mForm.pozCategory.trim() || undefined,
     };
     const commit = () => {
       if (mEditId) {
@@ -463,6 +477,8 @@ export default function MalzemeScreen() {
         status: r.status,
         note: r.note,
         usageLocation: r.usageLocation || "",
+        pozCode: r.pozCode || "",
+        pozCategory: r.pozCategory || "",
       });
     } else {
       setREditId(null);
@@ -487,6 +503,8 @@ export default function MalzemeScreen() {
       status: rForm.status,
       note: rForm.note.trim(),
       usageLocation: rForm.usageLocation.trim() || undefined,
+      pozCode: rForm.pozCode.trim() || undefined,
+      pozCategory: rForm.pozCategory.trim() || undefined,
     };
     if (rEditId) updateMaterialRequest(rEditId, data);
     else addMaterialRequest(data);
@@ -513,6 +531,8 @@ export default function MalzemeScreen() {
         location: existing.location,
         reason: existing.reason,
         note: existing.note,
+        pozCode: existing.pozCode || "",
+        pozCategory: existing.pozCategory || "",
       });
     } else {
       setMovEditId(null);
@@ -568,6 +588,8 @@ export default function MalzemeScreen() {
       location: movForm.location.trim(),
       reason: movForm.reason.trim(),
       note: movForm.note.trim(),
+      pozCode: movForm.pozCode.trim() || undefined,
+      pozCategory: movForm.pozCategory.trim() || undefined,
     };
     const commit = () => {
       if (movEditId) updateMaterialMovement(movEditId, data);
@@ -799,11 +821,17 @@ export default function MalzemeScreen() {
             placeholder="Ek bilgi / notlar"
             multiline
           />
+          <PozPicker
+            label="Bağlı Poz (İmalat Kalemi)"
+            value={mForm.pozCode}
+            onChange={(p) => setMForm({ ...mForm, pozCode: p.code, pozCategory: p.category })}
+            placeholder="Poz seçin (opsiyonel)"
+          />
           <FormInput
-            label="Poz"
+            label="Eski Poz / Kod (manuel)"
             value={mForm.code}
             onChangeText={(v) => setMForm({ ...mForm, code: v })}
-            placeholder="Poz no / iş kalemi"
+            placeholder="Listede yoksa serbest yazabilirsiniz"
           />
           <FormInput
             label="Sevk Şekli"
@@ -1008,6 +1036,14 @@ export default function MalzemeScreen() {
             value={movForm.location}
             onChangeText={(v) => setMovForm({ ...movForm, location: v })}
           />
+          {movForm.type === "kullanim" ? (
+            <PozPicker
+              label="Bağlı Poz (İmalat Kalemi)"
+              value={movForm.pozCode}
+              onChange={(p) => setMovForm({ ...movForm, pozCode: p.code, pozCategory: p.category })}
+              placeholder="Hangi imalatta kullanıldı"
+            />
+          ) : null}
           {movForm.type === "giden" ? (
             <FormInput
               label="Sebep"
@@ -1127,6 +1163,12 @@ export default function MalzemeScreen() {
             onChangeText={(v) => setRForm({ ...rForm, usageLocation: v })}
             placeholder="Örn: B Blok 3. kat kalıp"
           />
+          <PozPicker
+            label="Bağlı Poz (İmalat Kalemi)"
+            value={rForm.pozCode}
+            onChange={(p) => setRForm({ ...rForm, pozCode: p.code, pozCategory: p.category })}
+            placeholder="Hangi poz için talep edildi"
+          />
           <FormInput
             label="Not / Açıklama"
             value={rForm.note}
@@ -1207,7 +1249,8 @@ export default function MalzemeScreen() {
           const metaParts: string[] = [];
           if (item.deliveryDate) metaParts.push(item.deliveryDate);
           if (item.supplier) metaParts.push(item.supplier);
-          if (item.code) metaParts.push(`Poz: ${item.code}`);
+          if (item.pozCode) metaParts.push(`Poz: ${item.pozCode}${item.pozCategory ? ` · ${item.pozCategory}` : ""}`);
+          else if (item.code) metaParts.push(`Poz: ${item.code}`);
           if (item.waybillNo) metaParts.push(`İrs: ${item.waybillNo}`);
           if (item.invoiceNo) metaParts.push(`Fat: ${item.invoiceNo}`);
           const linkedSlip = item.kantarSlipId
