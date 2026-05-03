@@ -1003,9 +1003,17 @@ export default function MalzemeScreen() {
                 <Text style={[styles.projLabel, { color: colors.primary }]}>
                   {projectName(item.projectId)}
                 </Text>
-                <Text style={[styles.cardTitle, { color: colors.foreground }]} numberOfLines={1}>
-                  {item.name}
-                </Text>
+                <View style={styles.titleRow}>
+                  <Text style={[styles.cardTitle, { color: colors.foreground, flexShrink: 1 }]} numberOfLines={1}>
+                    {item.name}
+                  </Text>
+                  {item.materialRequestId ? (
+                    <View style={styles.fromReqBadge}>
+                      <Feather name="clipboard" size={10} color="#fff" />
+                      <Text style={styles.fromReqBadgeText}>Talepten Gelen</Text>
+                    </View>
+                  ) : null}
+                </View>
                 {item.category ? (
                   <Text style={[styles.catLabel, { color: colors.mutedForeground }]} numberOfLines={1}>
                     {item.category}
@@ -1486,6 +1494,27 @@ const styles = StyleSheet.create({
     fontSize: 10,
     fontFamily: "Inter_400Regular",
     marginLeft: 4,
+  },
+  titleRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 8,
+    flexWrap: "wrap",
+  },
+  fromReqBadge: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 4,
+    backgroundColor: "#7c3aed",
+    paddingHorizontal: 8,
+    paddingVertical: 3,
+    borderRadius: 999,
+  },
+  fromReqBadgeText: {
+    color: "#fff",
+    fontSize: 10,
+    fontFamily: "Inter_700Bold",
+    letterSpacing: 0.3,
   },
   rowCard: {
     flexDirection: "row",
