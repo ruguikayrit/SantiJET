@@ -46,6 +46,7 @@ interface Section {
 
 const SECTIONS: Section[] = [
   { key: "proje",        label: "Proje",        icon: "briefcase",   route: "/proje",        color: "#e85d04", bg: "#fef3e2", count: (a) => a.projects.length },
+  { key: "proje-kalemleri", label: "Proje Kalemleri", icon: "layers", route: "/proje-kalemleri", color: "#0369a1", bg: "#e0f2fe", count: (a) => a.projectItems.length },
   { key: "kesif",        label: "Keşif",         icon: "search",      route: "/kesif",        color: "#0ea5e9", bg: "#e0f2fe", count: (a) => a.surveys.length },
   { key: "is-programi",  label: "İş Programı",   icon: "calendar",    route: "/is-programi",  color: "#8b5cf6", bg: "#ede9fe", count: (a) => a.scheduleTasks.length },
   { key: "puantaj",      label: "Puantaj",       icon: "users",       route: "/puantaj",      color: "#16a34a", bg: "#dcfce7", count: (a) => a.attendance.length },
