@@ -131,6 +131,17 @@ export default function KesifScreen() {
     return projects.find((p) => p.id === id)?.name || "—";
   }
 
+  function deleteItem(itemId: string) {
+    if (!editId) return;
+    const s = surveys.find((x) => x.id === editId);
+    if (!s) return;
+    updateSurvey(editId, { ...s, items: s.items.filter((i) => i.id !== itemId) });
+  }
+
+  const currentItems = editId
+    ? surveys.find((x) => x.id === editId)?.items || []
+    : [];
+
   return (
     <View style={[styles.root, { backgroundColor: colors.background }]}>
       <Header
@@ -238,6 +249,47 @@ export default function KesifScreen() {
           style={{ height: 70, textAlignVertical: "top" }}
         />
 
+        {editId && currentItems.length > 0 ? (
+          <>
+            <Text style={[styles.label, { color: colors.foreground, marginTop: 8 }]}>
+              Kalemler ({currentItems.length})
+            </Text>
+            <View style={{ marginBottom: 14 }}>
+              {currentItems.map((it) => (
+                <View
+                  key={it.id}
+                  style={[styles.itemRow, { backgroundColor: colors.muted, borderColor: colors.border }]}
+                >
+                  <View style={{ flex: 1 }}>
+                    {it.pozCode ? (
+                      <Text style={[styles.itemCode, { color: colors.primary }]} numberOfLines={1}>
+                        {it.pozCode}
+                        {it.pozCategory ? ` · ${it.pozCategory}` : ""}
+                      </Text>
+                    ) : null}
+                    <Text style={[styles.itemDesc, { color: colors.foreground }]} numberOfLines={2}>
+                      {it.description}
+                    </Text>
+                    <Text style={[styles.itemMeta, { color: colors.mutedForeground }]} numberOfLines={1}>
+                      {it.quantity} {it.unit}
+                      {it.date ? ` · ${it.date}` : ""}
+                    </Text>
+                  </View>
+                  {canEdit ? (
+                    <TouchableOpacity
+                      onPress={() => deleteItem(it.id)}
+                      hitSlop={8}
+                      style={styles.itemDel}
+                    >
+                      <Feather name="trash-2" size={16} color="#ef4444" />
+                    </TouchableOpacity>
+                  ) : null}
+                </View>
+              ))}
+            </View>
+          </>
+        ) : null}
+
         <Text style={[styles.label, { color: colors.foreground, marginTop: 8 }]}>
           Yeni Kalem Ekle
         </Text>
@@ -334,4 +386,17 @@ const styles = StyleSheet.create({
   chips: { flexDirection: "row", flexWrap: "wrap", gap: 8, marginBottom: 14 },
   chip: { paddingHorizontal: 14, paddingVertical: 8, borderRadius: 999 },
   chipText: { fontSize: 13, fontFamily: "Inter_500Medium" },
+  itemRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 10,
+    padding: 10,
+    borderRadius: 8,
+    borderWidth: StyleSheet.hairlineWidth,
+    marginBottom: 6,
+  },
+  itemCode: { fontSize: 11, fontFamily: "Inter_700Bold", marginBottom: 2 },
+  itemDesc: { fontSize: 13, fontFamily: "Inter_600SemiBold", marginBottom: 2 },
+  itemMeta: { fontSize: 11, fontFamily: "Inter_400Regular" },
+  itemDel: { padding: 6 },
 });
