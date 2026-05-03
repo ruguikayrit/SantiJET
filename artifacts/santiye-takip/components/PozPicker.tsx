@@ -91,6 +91,18 @@ export default function PozPicker({
     close();
   }
 
+  function addManual() {
+    const text = search.trim();
+    const name = text.length > 0 ? text : "Yeni Poz";
+    const code = `MAN-${Date.now().toString(36).toUpperCase().slice(-6)}`;
+    pick({
+      code,
+      name,
+      category: activeCat ?? "Diğer",
+      unit: "br",
+    });
+  }
+
   function close() {
     setOpen(false);
     setSearch("");
@@ -289,13 +301,35 @@ export default function PozPicker({
               }}
               ListEmptyComponent={
                 <View style={styles.empty}>
-                  <Text style={{ color: colors.mutedForeground }}>
+                  <Text style={{ color: colors.mutedForeground, marginBottom: 12 }}>
                     Poz bulunamadı
                   </Text>
+                  <TouchableOpacity
+                    onPress={addManual}
+                    style={[styles.manualBtn, { backgroundColor: colors.primary }]}
+                    activeOpacity={0.8}
+                  >
+                    <Feather name="plus" size={16} color="#fff" />
+                    <Text style={styles.manualBtnText} numberOfLines={1}>
+                      {search.trim().length > 0
+                        ? `Manuel ekle: "${search.trim()}"`
+                        : "Manuel Poz Girişi"}
+                    </Text>
+                  </TouchableOpacity>
                 </View>
               }
               style={{ maxHeight: 420 }}
             />
+            <TouchableOpacity
+              onPress={addManual}
+              style={[styles.manualFooter, { borderTopColor: colors.border }]}
+              activeOpacity={0.7}
+            >
+              <Feather name="edit-3" size={14} color={colors.primary} />
+              <Text style={[styles.manualFooterText, { color: colors.primary }]}>
+                Listede yok — Manuel Poz Girişi
+              </Text>
+            </TouchableOpacity>
           </Pressable>
         </Pressable>
       </Modal>
@@ -390,4 +424,23 @@ const styles = StyleSheet.create({
     letterSpacing: 0.5,
   },
   empty: { paddingVertical: 24, alignItems: "center" },
+  manualBtn: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 6,
+    paddingHorizontal: 14,
+    paddingVertical: 10,
+    borderRadius: 10,
+  },
+  manualBtnText: { color: "#fff", fontSize: 13, fontFamily: "Inter_600SemiBold" },
+  manualFooter: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    gap: 6,
+    paddingVertical: 12,
+    marginTop: 4,
+    borderTopWidth: StyleSheet.hairlineWidth,
+  },
+  manualFooterText: { fontSize: 13, fontFamily: "Inter_600SemiBold" },
 });
