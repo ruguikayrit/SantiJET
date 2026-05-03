@@ -1,7 +1,8 @@
 import { Feather } from "@expo/vector-icons";
 import { useRouter } from "expo-router";
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useMemo, useState } from "react";
 import {
+  Alert,
   FlatList,
   StyleSheet,
   Text,
@@ -55,9 +56,11 @@ const EMPTY_FORM: FormState = {
 export default function ProjectsScreen() {
   const colors = useColors();
   const router = useRouter();
-  const { projects, addProject, updateProject, deleteProject } = useApp();
+  const { projects, addProject, updateProject, deleteProject, archiveProject } = useApp();
   const perm = usePermission("proje");
   const canEdit = perm === "edit";
+  const activeProjects = useMemo(() => projects.filter((p) => !p.archived), [projects]);
+  const archivedCount = useMemo(() => projects.filter((p) => p.archived).length, [projects]);
   useEffect(() => { if (perm === "none") { if (router.canGoBack()) router.back(); else router.replace("/"); } }, [perm]);
 
   const [visible, setVisible] = useState(false);
@@ -102,8 +105,40 @@ export default function ProjectsScreen() {
   }
 
   function remove() {
-    if (editId) deleteProject(editId);
-    setVisible(false);
+    if (!editId) return;
+    Alert.alert(
+      "Sil",
+      "Bu projeyi ve tüm bağlı verilerini (puantaj, imalat, görev vb.) silmek istiyor musunuz? Bu işlem geri alınamaz. Veriyi korumak için 'Arşivle' seçeneğini kullanabilirsiniz.",
+      [
+        { text: "Vazgeç", style: "cancel" },
+        {
+          text: "Sil",
+          style: "destructive",
+          onPress: () => {
+            deleteProject(editId);
+            setVisible(false);
+          },
+        },
+      ]
+    );
+  }
+
+  function archive() {
+    if (!editId) return;
+    Alert.alert(
+      "Arşivle",
+      "Bu proje arşive taşınacak ve aktif proje listesinden gizlenecek. Tüm veriler korunur ve istediğinizde geri yüklenebilir.",
+      [
+        { text: "Vazgeç", style: "cancel" },
+        {
+          text: "Arşivle",
+          onPress: () => {
+            archiveProject(editId);
+            setVisible(false);
+          },
+        },
+      ]
+    );
   }
 
   return (
@@ -114,7 +149,24 @@ export default function ProjectsScreen() {
         rightAction={canEdit ? { icon: "plus", onPress: () => open() } : undefined}
       />
 
-      {projects.length === 0 ? (
+      <TouchableOpacity
+        onPress={() => router.push("/arsiv" as any)}
+        activeOpacity={0.85}
+        style={[styles.archiveBar, { backgroundColor: colors.card, borderBottomColor: colors.border }]}
+      >
+        <Feather name="archive" size={16} color={colors.mutedForeground} />
+        <Text style={[styles.archiveText, { color: colors.foreground }]}>
+          Arşiv
+        </Text>
+        <View style={[styles.archivePill, { backgroundColor: colors.muted }]}>
+          <Text style={[styles.archivePillText, { color: colors.mutedForeground }]}>
+            {archivedCount}
+          </Text>
+        </View>
+        <Feather name="chevron-right" size={16} color={colors.mutedForeground} />
+      </TouchableOpacity>
+
+      {activeProjects.length === 0 ? (
         <EmptyState
           icon="briefcase"
           title="Henüz proje yok"
@@ -124,7 +176,7 @@ export default function ProjectsScreen() {
         />
       ) : (
         <FlatList
-          data={projects}
+          data={activeProjects}
           keyExtractor={(p) => p.id}
           contentContainerStyle={styles.list}
           renderItem={({ item }) => (
@@ -258,6 +310,14 @@ export default function ProjectsScreen() {
 
         {canEdit ? <PrimaryButton label="Kaydet" onPress={save} style={{ marginTop: 8 }} /> : null}
         {canEdit && editId ? (
+          <PrimaryButton
+            label="Arşivle"
+            variant="secondary"
+            onPress={archive}
+            style={{ marginTop: 10 }}
+          />
+        ) : null}
+        {canEdit && editId ? (
           <PrimaryButton label="Sil" variant="danger" onPress={remove} style={{ marginTop: 10 }} />
         ) : null}
         {!canEdit ? <PrimaryButton label="Kapat" onPress={() => setVisible(false)} style={{ marginTop: 8 }} /> : null}
@@ -268,6 +328,17 @@ export default function ProjectsScreen() {
 
 const styles = StyleSheet.create({
   root: { flex: 1 },
+  archiveBar: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 10,
+    paddingHorizontal: 14,
+    paddingVertical: 12,
+    borderBottomWidth: StyleSheet.hairlineWidth,
+  },
+  archiveText: { flex: 1, fontSize: 14, fontFamily: "Inter_600SemiBold" },
+  archivePill: { paddingHorizontal: 10, paddingVertical: 3, borderRadius: 999, minWidth: 24, alignItems: "center" },
+  archivePillText: { fontSize: 12, fontFamily: "Inter_600SemiBold" },
   list: { padding: 16, gap: 12 },
   card: {
     borderRadius: 12,

@@ -28,6 +28,7 @@ interface IndexEntry {
 const TYPE_META: Record<PageKey, { label: string; icon: string; color: string; bg: string }> = {
   proje:        { label: "Proje",        icon: "briefcase",   color: "#e85d04", bg: "#fef3e2" },
   "proje-kalemleri": { label: "Proje Kalemleri", icon: "layers", color: "#0369a1", bg: "#e0f2fe" },
+  arsiv:        { label: "Arşiv",         icon: "archive",     color: "#475569", bg: "#e2e8f0" },
   kesif:        { label: "Keşif",         icon: "search",      color: "#0ea5e9", bg: "#e0f2fe" },
   "is-programi":{ label: "İş Programı",   icon: "calendar",    color: "#8b5cf6", bg: "#ede9fe" },
   puantaj:      { label: "Puantaj",       icon: "users",       color: "#16a34a", bg: "#dcfce7" },
@@ -78,6 +79,15 @@ function buildIndex(app: ReturnType<typeof useApp>): IndexEntry[] {
     app.projects.find((p) => p.id === id)?.name ?? "";
 
   for (const p of app.projects) {
+    if (p.archived) {
+      idx.push({
+        id: p.id, type: "arsiv", label: p.name,
+        sublabel: [p.location, p.contractor, "Arşiv"].filter(Boolean).join(" · "),
+        route: "/arsiv",
+        haystack: norm([p.name, p.location, p.contractor, p.description, p.status, "arsiv arşiv"].join(" ")),
+      });
+      continue;
+    }
     idx.push({
       id: p.id, type: "proje", label: p.name,
       sublabel: [p.location, p.contractor].filter(Boolean).join(" · "),
