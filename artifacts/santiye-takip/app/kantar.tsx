@@ -80,14 +80,38 @@ export default function KantarScreen() {
   }, [perm]);
 
   const [filter, setFilter] = useState<string | null>(null);
+  const [materialFilter, setMaterialFilter] = useState<string | null>(null);
   const [visible, setVisible] = useState(false);
   const [editId, setEditId] = useState<string | null>(null);
   const [form, setForm] = useState<F>(EMPTY);
 
+  const projectScoped = useMemo(
+    () => (filter ? weighbridges.filter((w) => w.projectId === filter) : weighbridges),
+    [weighbridges, filter]
+  );
+
+  const materialNames = useMemo(() => {
+    const set = new Set<string>();
+    for (const w of projectScoped) {
+      const name = (w.materialName || "").trim();
+      if (name) set.add(name);
+    }
+    return Array.from(set).sort((a, b) => a.localeCompare(b, "tr"));
+  }, [projectScoped]);
+
+  // Aktif malzeme filtresi mevcut listede yoksa otomatik temizle
+  useEffect(() => {
+    if (materialFilter && !materialNames.includes(materialFilter)) {
+      setMaterialFilter(null);
+    }
+  }, [materialFilter, materialNames]);
+
   const list = useMemo(() => {
-    const arr = filter ? weighbridges.filter((w) => w.projectId === filter) : weighbridges;
+    const arr = materialFilter
+      ? projectScoped.filter((w) => (w.materialName || "").trim() === materialFilter)
+      : projectScoped;
     return [...arr].sort((a, b) => (b.date || "").localeCompare(a.date || ""));
-  }, [weighbridges, filter]);
+  }, [projectScoped, materialFilter]);
 
   const summary = useMemo(() => {
     let totalNet = 0;
@@ -188,6 +212,60 @@ export default function KantarScreen() {
         />
       ) : (
         <>
+          {materialNames.length > 0 ? (
+            <ScrollView
+              horizontal
+              showsHorizontalScrollIndicator={false}
+              contentContainerStyle={styles.matFilters}
+            >
+              <TouchableOpacity
+                onPress={() => setMaterialFilter(null)}
+                style={[
+                  styles.matChip,
+                  {
+                    backgroundColor:
+                      materialFilter === null ? "#0d9488" : colors.muted,
+                  },
+                ]}
+              >
+                <Text
+                  style={[
+                    styles.matChipText,
+                    { color: materialFilter === null ? "#fff" : colors.foreground },
+                  ]}
+                >
+                  Tümü ({projectScoped.length})
+                </Text>
+              </TouchableOpacity>
+              {materialNames.map((name) => {
+                const count = projectScoped.filter(
+                  (w) => (w.materialName || "").trim() === name
+                ).length;
+                const active = materialFilter === name;
+                return (
+                  <TouchableOpacity
+                    key={name}
+                    onPress={() => setMaterialFilter(active ? null : name)}
+                    style={[
+                      styles.matChip,
+                      { backgroundColor: active ? "#0d9488" : colors.muted },
+                    ]}
+                  >
+                    <Text
+                      style={[
+                        styles.matChipText,
+                        { color: active ? "#fff" : colors.foreground },
+                      ]}
+                      numberOfLines={1}
+                    >
+                      {name} ({count})
+                    </Text>
+                  </TouchableOpacity>
+                );
+              })}
+            </ScrollView>
+          ) : null}
+
           <View style={styles.summaryRow}>
             <View style={[styles.sumBox, { backgroundColor: "#16213e22" }]}>
               <Text style={[styles.sumLabel, { color: colors.foreground }]}>Fiş</Text>
@@ -452,7 +530,20 @@ export default function KantarScreen() {
 
 const styles = StyleSheet.create({
   root: { flex: 1 },
-  summaryRow: { flexDirection: "row", gap: 8, paddingHorizontal: 16, marginTop: 12 },
+  matFilters: {
+    paddingHorizontal: 16,
+    paddingVertical: 10,
+    gap: 8,
+    flexDirection: "row",
+  },
+  matChip: {
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    borderRadius: 999,
+    maxWidth: 220,
+  },
+  matChipText: { fontSize: 12, fontFamily: "Inter_500Medium" },
+  summaryRow: { flexDirection: "row", gap: 8, paddingHorizontal: 16, marginTop: 4 },
   sumBox: { flex: 1, padding: 10, borderRadius: 10, alignItems: "center" },
   sumLabel: { fontSize: 11, fontFamily: "Inter_500Medium" },
   sumNum: { fontSize: 13, fontFamily: "Inter_700Bold", marginTop: 4 },
