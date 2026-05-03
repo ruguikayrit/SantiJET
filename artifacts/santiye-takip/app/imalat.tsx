@@ -20,6 +20,7 @@ import DatePickerInput from "@/components/DatePickerInput";
 import FormInput from "@/components/FormInput";
 import Header from "@/components/Header";
 import PozPicker from "@/components/PozPicker";
+import UnitPicker from "@/components/UnitPicker";
 import PrimaryButton from "@/components/PrimaryButton";
 import { Production, useApp } from "@/context/AppContext";
 import { useColors } from "@/hooks/useColors";
@@ -300,11 +301,10 @@ export default function ImalatScreen() {
         />
         <View style={styles.row}>
           <View style={{ flex: 1 }}>
-            <FormInput
+            <UnitPicker
               label="Birim"
               value={form.unit}
-              onChangeText={(v) => setForm({ ...form, unit: v })}
-              placeholder="m³, m², ad"
+              onChange={(v) => setForm({ ...form, unit: v })}
             />
           </View>
           <View style={{ flex: 1 }}>
