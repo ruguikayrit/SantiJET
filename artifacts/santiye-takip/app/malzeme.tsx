@@ -895,6 +895,43 @@ export default function MalzemeScreen() {
                     onPress={(e) => {
                       e.stopPropagation();
                       if (!canEdit) return;
+                      updateMaterial(item.id, { kantarEnabled: !item.kantarEnabled });
+                    }}
+                    disabled={!canEdit}
+                    activeOpacity={0.7}
+                    style={[
+                      styles.apprChip,
+                      {
+                        borderColor: item.kantarEnabled ? "#0d9488" : colors.muted,
+                        backgroundColor: item.kantarEnabled ? "#0d94881a" : "transparent",
+                      },
+                    ]}
+                  >
+                    <View
+                      style={[
+                        styles.apprBox,
+                        {
+                          borderColor: item.kantarEnabled ? "#0d9488" : colors.mutedForeground,
+                          backgroundColor: item.kantarEnabled ? "#0d9488" : "transparent",
+                        },
+                      ]}
+                    >
+                      {item.kantarEnabled ? <Feather name="check" size={10} color="#fff" /> : null}
+                    </View>
+                    <Text
+                      style={[
+                        styles.apprText,
+                        { color: item.kantarEnabled ? "#0d9488" : colors.mutedForeground },
+                      ]}
+                    >
+                      Kantar İzni
+                    </Text>
+                  </TouchableOpacity>
+
+                  <TouchableOpacity
+                    onPress={(e) => {
+                      e.stopPropagation();
+                      if (!canEdit) return;
                       updateMaterial(item.id, { supplierKantarSlip: !item.supplierKantarSlip });
                     }}
                     disabled={!canEdit}
