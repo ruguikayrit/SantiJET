@@ -28,6 +28,7 @@ interface F {
   plannedQty: string;
   completedQty: string;
   date: string;
+  description: string;
 }
 
 const EMPTY: F = {
@@ -39,6 +40,7 @@ const EMPTY: F = {
   plannedQty: "",
   completedQty: "",
   date: "",
+  description: "",
 };
 
 export default function ImalatScreen() {
@@ -71,6 +73,7 @@ export default function ImalatScreen() {
         plannedQty: String(p.plannedQty || ""),
         completedQty: String(p.completedQty || ""),
         date: p.date,
+        description: p.description || "",
       });
     } else {
       setEditId(null);
@@ -91,6 +94,7 @@ export default function ImalatScreen() {
       date: form.date.trim(),
       pozCode: form.pozCode.trim() || undefined,
       pozCategory: form.category.trim() || undefined,
+      description: form.description.trim() || undefined,
     };
     if (editId) updateProduction(editId, data);
     else addProduction(data);
@@ -273,6 +277,16 @@ export default function ImalatScreen() {
             />
           </View>
         </View>
+
+        <FormInput
+          label="Açıklama"
+          value={form.description}
+          onChangeText={(v) => setForm({ ...form, description: v })}
+          placeholder="İmalat ile ilgili notlar, detaylar..."
+          multiline
+          numberOfLines={4}
+          style={{ minHeight: 90, paddingTop: 10 }}
+        />
 
         {canEdit ? <PrimaryButton label="Kaydet" onPress={save} style={{ marginTop: 8 }} /> : null}
         {canEdit && editId ? (

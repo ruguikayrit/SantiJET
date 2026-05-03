@@ -118,6 +118,7 @@ export interface Production {
   date: string;
   pozCode?: string;
   pozCategory?: string;
+  description?: string;
 }
 
 export interface Task {
