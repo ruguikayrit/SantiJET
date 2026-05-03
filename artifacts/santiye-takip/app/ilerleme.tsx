@@ -12,7 +12,6 @@ import {
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 import EmptyState from "@/components/EmptyState";
-import ProjectPicker from "@/components/ProjectPicker";
 import { useApp } from "@/context/AppContext";
 import { useColors } from "@/hooks/useColors";
 
@@ -164,7 +163,6 @@ export default function IlerlemeScreen() {
         <View style={{ width: 40 }} />
       </View>
 
-      <ProjectPicker projects={projects} value={filter} onChange={setFilter} includeAll={false} />
 
       {noProject ? (
         <EmptyState

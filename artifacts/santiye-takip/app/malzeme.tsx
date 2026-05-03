@@ -19,7 +19,6 @@ import FormInput from "@/components/FormInput";
 import Header from "@/components/Header";
 import MaterialPicker from "@/components/MaterialPicker";
 import PrimaryButton from "@/components/PrimaryButton";
-import ProjectPicker from "@/components/ProjectPicker";
 import UnitPicker from "@/components/UnitPicker";
 import { findMaterialByName } from "@/constants/materials";
 import {
@@ -495,7 +494,6 @@ export default function MalzemeScreen() {
         })}
       </ScrollView>
 
-      <ProjectPicker projects={projects} value={filter} onChange={setFilter} />
 
       {materialNames.length > 0 ? (
         <ScrollView

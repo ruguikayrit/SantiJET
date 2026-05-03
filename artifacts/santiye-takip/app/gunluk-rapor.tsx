@@ -15,7 +15,6 @@ import EmptyState from "@/components/EmptyState";
 import FormInput from "@/components/FormInput";
 import Header from "@/components/Header";
 import PrimaryButton from "@/components/PrimaryButton";
-import ProjectPicker from "@/components/ProjectPicker";
 import { DailyReport, useApp } from "@/context/AppContext";
 import { useColors } from "@/hooks/useColors";
 import { usePermission } from "@/hooks/usePermission";
@@ -122,7 +121,6 @@ export default function GunlukRaporScreen() {
         rightAction={canEdit && projects.length > 0 ? { icon: "plus", onPress: () => open() } : undefined}
       />
 
-      <ProjectPicker projects={projects} value={filter} onChange={setFilter} />
 
       {projects.length === 0 ? (
         <EmptyState

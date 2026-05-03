@@ -15,7 +15,6 @@ import { useSafeAreaInsets } from "react-native-safe-area-context";
 import DatePickerInput from "@/components/DatePickerInput";
 import EmptyState from "@/components/EmptyState";
 import Header from "@/components/Header";
-import ProjectPicker from "@/components/ProjectPicker";
 import { AppUser, Attendance, useApp } from "@/context/AppContext";
 import { useColors } from "@/hooks/useColors";
 import { usePermission } from "@/hooks/usePermission";
@@ -320,7 +319,6 @@ export default function PuantajScreen() {
   return (
     <View style={[styles.root, { backgroundColor: colors.background }]}>
       <Header title="Puantaj" onBack={() => (router.canGoBack() ? router.back() : router.replace("/"))} />
-      <ProjectPicker projects={projects} value={filter} onChange={setFilter} includeAll={false} />
 
       {projects.length === 0 ? (
         <EmptyState icon="briefcase" title="Önce proje ekleyin" description="Puantaj tutmak için en az bir projeniz olmalı" actionLabel="Projelere Git" onAction={() => router.push("/proje" as any)} />
