@@ -139,6 +139,7 @@ export default function MalzemeScreen() {
     addMaterialMovement,
     updateMaterialMovement,
     deleteMaterialMovement,
+    weighbridges,
   } = useApp();
 
   const perm = usePermission("malzeme");
@@ -985,6 +986,13 @@ export default function MalzemeScreen() {
           if (item.code) metaParts.push(`Poz: ${item.code}`);
           if (item.waybillNo) metaParts.push(`İrs: ${item.waybillNo}`);
           if (item.invoiceNo) metaParts.push(`Fat: ${item.invoiceNo}`);
+          const linkedSlip = item.kantarSlipId
+            ? weighbridges.find((w) => w.id === item.kantarSlipId)
+            : undefined;
+          const supplierFromKantar = !!(linkedSlip && (linkedSlip.supplierTonnage || 0) > 0);
+          const siteFromKantar = !!(linkedSlip && (linkedSlip.netWeight || 0) > 0);
+          const supplierChecked = !!item.supplierKantarSlip || supplierFromKantar;
+          const siteChecked = !!item.weighApproved || siteFromKantar;
           return (
             <TouchableOpacity
               style={[styles.rowCard, { backgroundColor: colors.card }]}
@@ -1054,16 +1062,16 @@ export default function MalzemeScreen() {
                   <TouchableOpacity
                     onPress={(e) => {
                       e.stopPropagation();
-                      if (!canEdit) return;
+                      if (!canEdit || supplierFromKantar) return;
                       updateMaterial(item.id, { supplierKantarSlip: !item.supplierKantarSlip });
                     }}
-                    disabled={!canEdit}
+                    disabled={!canEdit || supplierFromKantar}
                     activeOpacity={0.7}
                     style={[
                       styles.apprChip,
                       {
-                        borderColor: item.supplierKantarSlip ? "#0ea5e9" : colors.muted,
-                        backgroundColor: item.supplierKantarSlip ? "#0ea5e91a" : "transparent",
+                        borderColor: supplierChecked ? "#0ea5e9" : colors.muted,
+                        backgroundColor: supplierChecked ? "#0ea5e91a" : "transparent",
                       },
                     ]}
                   >
@@ -1071,17 +1079,17 @@ export default function MalzemeScreen() {
                       style={[
                         styles.apprBox,
                         {
-                          borderColor: item.supplierKantarSlip ? "#0ea5e9" : colors.mutedForeground,
-                          backgroundColor: item.supplierKantarSlip ? "#0ea5e9" : "transparent",
+                          borderColor: supplierChecked ? "#0ea5e9" : colors.mutedForeground,
+                          backgroundColor: supplierChecked ? "#0ea5e9" : "transparent",
                         },
                       ]}
                     >
-                      {item.supplierKantarSlip ? <Feather name="check" size={10} color="#fff" /> : null}
+                      {supplierChecked ? <Feather name="check" size={10} color="#fff" /> : null}
                     </View>
                     <Text
                       style={[
                         styles.apprText,
-                        { color: item.supplierKantarSlip ? "#0ea5e9" : colors.mutedForeground },
+                        { color: supplierChecked ? "#0ea5e9" : colors.mutedForeground },
                       ]}
                     >
                       Tedarikçi Kantar Fişi
@@ -1091,16 +1099,16 @@ export default function MalzemeScreen() {
                   <TouchableOpacity
                     onPress={(e) => {
                       e.stopPropagation();
-                      if (!canEdit) return;
+                      if (!canEdit || siteFromKantar) return;
                       updateMaterial(item.id, { weighApproved: !item.weighApproved });
                     }}
-                    disabled={!canEdit}
+                    disabled={!canEdit || siteFromKantar}
                     activeOpacity={0.7}
                     style={[
                       styles.apprChip,
                       {
-                        borderColor: item.weighApproved ? "#9333ea" : colors.muted,
-                        backgroundColor: item.weighApproved ? "#9333ea1a" : "transparent",
+                        borderColor: siteChecked ? "#9333ea" : colors.muted,
+                        backgroundColor: siteChecked ? "#9333ea1a" : "transparent",
                       },
                     ]}
                   >
@@ -1108,17 +1116,17 @@ export default function MalzemeScreen() {
                       style={[
                         styles.apprBox,
                         {
-                          borderColor: item.weighApproved ? "#9333ea" : colors.mutedForeground,
-                          backgroundColor: item.weighApproved ? "#9333ea" : "transparent",
+                          borderColor: siteChecked ? "#9333ea" : colors.mutedForeground,
+                          backgroundColor: siteChecked ? "#9333ea" : "transparent",
                         },
                       ]}
                     >
-                      {item.weighApproved ? <Feather name="check" size={10} color="#fff" /> : null}
+                      {siteChecked ? <Feather name="check" size={10} color="#fff" /> : null}
                     </View>
                     <Text
                       style={[
                         styles.apprText,
-                        { color: item.weighApproved ? "#9333ea" : colors.mutedForeground },
+                        { color: siteChecked ? "#9333ea" : colors.mutedForeground },
                       ]}
                     >
                       Şantiye Kantar
