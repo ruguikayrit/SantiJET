@@ -1,9 +1,14 @@
 import { Feather } from "@expo/vector-icons";
+import * as ImagePicker from "expo-image-picker";
 import { useRouter } from "expo-router";
 import React, { useEffect, useMemo, useState } from "react";
 import {
   Alert,
   FlatList,
+  Image,
+  Modal,
+  Platform,
+  Pressable,
   ScrollView,
   StyleSheet,
   Text,
@@ -69,6 +74,7 @@ interface MF {
   weighApproved: boolean;
   pozCode: string;
   pozCategory: string;
+  irsaliyePhoto: string;
 }
 
 interface RF {
@@ -112,6 +118,7 @@ const EMPTY_M: MF = {
   supplierKantarSlip: false,
   weighApproved: false,
   pozCode: "", pozCategory: "",
+  irsaliyePhoto: "",
 };
 
 const EMPTY_R: RF = {
@@ -180,6 +187,59 @@ export default function MalzemeScreen() {
   const [movVisible, setMovVisible] = useState(false);
   const [movEditId, setMovEditId] = useState<string | null>(null);
   const [movForm, setMovForm] = useState<MovF>(EMPTY_MOV);
+
+  const [photoViewerUri, setPhotoViewerUri] = useState<string | null>(null);
+
+  async function pickIrsaliyeFromCamera() {
+    try {
+      const perm = await ImagePicker.requestCameraPermissionsAsync();
+      if (!perm.granted) {
+        Alert.alert("İzin gerekli", "Kameraya erişim izni verilmedi.");
+        return;
+      }
+      const res = await ImagePicker.launchCameraAsync({
+        mediaTypes: ImagePicker.MediaTypeOptions.Images,
+        quality: 0.7,
+      });
+      if (!res.canceled && res.assets?.[0]?.uri) {
+        setMForm((f) => ({ ...f, irsaliyePhoto: res.assets[0].uri }));
+      }
+    } catch (e: any) {
+      Alert.alert("Hata", e?.message || "Kamera açılamadı.");
+    }
+  }
+  async function pickIrsaliyeFromGallery() {
+    try {
+      const perm = await ImagePicker.requestMediaLibraryPermissionsAsync();
+      if (!perm.granted) {
+        Alert.alert("İzin gerekli", "Galeriye erişim izni verilmedi.");
+        return;
+      }
+      const res = await ImagePicker.launchImageLibraryAsync({
+        mediaTypes: ImagePicker.MediaTypeOptions.Images,
+        quality: 0.7,
+      });
+      if (!res.canceled && res.assets?.[0]?.uri) {
+        setMForm((f) => ({ ...f, irsaliyePhoto: res.assets[0].uri }));
+      }
+    } catch (e: any) {
+      Alert.alert("Hata", e?.message || "Galeri açılamadı.");
+    }
+  }
+  function pickIrsaliye() {
+    if (Platform.OS === "web") {
+      pickIrsaliyeFromGallery();
+      return;
+    }
+    Alert.alert("İrsaliye Fotoğrafı", "Kaynak seçin", [
+      { text: "Kamera", onPress: pickIrsaliyeFromCamera },
+      { text: "Galeri", onPress: pickIrsaliyeFromGallery },
+      { text: "İptal", style: "cancel" },
+    ]);
+  }
+  function removeIrsaliyePhoto() {
+    setMForm((f) => ({ ...f, irsaliyePhoto: "" }));
+  }
 
   const projMaterials = useMemo(
     () => (filter ? materials.filter((m) => m.projectId === filter) : materials),
@@ -305,6 +365,7 @@ export default function MalzemeScreen() {
         weighApproved: !!m.weighApproved,
         pozCode: m.pozCode || "",
         pozCategory: m.pozCategory || "",
+        irsaliyePhoto: m.irsaliyePhoto || "",
       });
     } else {
       setMEditId(null);
@@ -340,6 +401,7 @@ export default function MalzemeScreen() {
       weighApproved: mForm.weighApproved,
       pozCode: mForm.pozCode.trim() || undefined,
       pozCategory: mForm.pozCategory.trim() || undefined,
+      irsaliyePhoto: mForm.irsaliyePhoto || undefined,
     };
     const commit = () => {
       if (mEditId) {
@@ -881,6 +943,63 @@ export default function MalzemeScreen() {
               />
             </View>
           </View>
+
+          <View style={{ marginBottom: 12 }}>
+            <Text style={[styles.fieldLabel, { color: colors.foreground }]}>
+              İrsaliye Fotoğrafı
+            </Text>
+            {mForm.irsaliyePhoto ? (
+              <View style={styles.irsThumbWrap}>
+                <TouchableOpacity
+                  activeOpacity={0.85}
+                  onPress={() => setPhotoViewerUri(mForm.irsaliyePhoto)}
+                  style={[styles.irsThumb, { borderColor: colors.muted }]}
+                >
+                  <Image
+                    source={{ uri: mForm.irsaliyePhoto }}
+                    style={styles.irsThumbImg}
+                    resizeMode="cover"
+                  />
+                </TouchableOpacity>
+                {canEdit ? (
+                  <View style={styles.irsThumbActions}>
+                    <TouchableOpacity
+                      onPress={pickIrsaliye}
+                      activeOpacity={0.85}
+                      style={[styles.irsActionBtn, { backgroundColor: colors.primary }]}
+                    >
+                      <Feather name="refresh-ccw" size={14} color="#fff" />
+                      <Text style={styles.irsActionText}>Değiştir</Text>
+                    </TouchableOpacity>
+                    <TouchableOpacity
+                      onPress={removeIrsaliyePhoto}
+                      activeOpacity={0.85}
+                      style={[styles.irsActionBtn, { backgroundColor: "#dc2626" }]}
+                    >
+                      <Feather name="trash-2" size={14} color="#fff" />
+                      <Text style={styles.irsActionText}>Sil</Text>
+                    </TouchableOpacity>
+                  </View>
+                ) : null}
+              </View>
+            ) : canEdit ? (
+              <TouchableOpacity
+                onPress={pickIrsaliye}
+                activeOpacity={0.85}
+                style={[styles.irsAddBtn, { borderColor: colors.primary }]}
+              >
+                <Feather name="camera" size={18} color={colors.primary} />
+                <Text style={[styles.irsAddText, { color: colors.primary }]}>
+                  {Platform.OS === "web" ? "Fotoğraf Yükle" : "Fotoğraf Çek / Yükle"}
+                </Text>
+              </TouchableOpacity>
+            ) : (
+              <Text style={[styles.metaText, { color: colors.mutedForeground }]}>
+                Eklenmedi
+              </Text>
+            )}
+          </View>
+
           <FormInput
             label="Temin Edilen Firma"
             value={mForm.supplier}
@@ -1224,6 +1343,33 @@ export default function MalzemeScreen() {
           );
         })()}
       </BottomSheet>
+
+      <Modal
+        visible={!!photoViewerUri}
+        transparent
+        animationType="fade"
+        onRequestClose={() => setPhotoViewerUri(null)}
+      >
+        <Pressable style={styles.photoViewerBackdrop} onPress={() => setPhotoViewerUri(null)}>
+          <View style={styles.photoViewerHeader}>
+            <Text style={styles.photoViewerTitle}>İrsaliye Fotoğrafı</Text>
+            <TouchableOpacity
+              onPress={() => setPhotoViewerUri(null)}
+              style={styles.photoViewerClose}
+              activeOpacity={0.85}
+            >
+              <Feather name="x" size={22} color="#fff" />
+            </TouchableOpacity>
+          </View>
+          {photoViewerUri ? (
+            <Image
+              source={{ uri: photoViewerUri }}
+              style={styles.photoViewerImg}
+              resizeMode="contain"
+            />
+          ) : null}
+        </Pressable>
+      </Modal>
     </View>
   );
 
@@ -1400,6 +1546,16 @@ export default function MalzemeScreen() {
                   <Text style={[styles.gelenQtyVal, { color: colors.foreground }]}>{item.quantity}</Text>
                   <Text style={[styles.gelenQtyUnit, { color: colors.mutedForeground }]}>{item.unit}</Text>
                 </View>
+                {item.irsaliyePhoto ? (
+                  <TouchableOpacity
+                    onPress={(e) => { e.stopPropagation(); setPhotoViewerUri(item.irsaliyePhoto || null); }}
+                    activeOpacity={0.85}
+                    style={styles.openPhotoBtn}
+                  >
+                    <Feather name="image" size={11} color="#fff" />
+                    <Text style={styles.openPhotoBtnText}>İrsaliye Resmini Aç</Text>
+                  </TouchableOpacity>
+                ) : null}
                 {!item.materialRequestId ? (
                   purchases.some((p) => p.materialId === item.id) ? (
                     <View style={[styles.fromReqBadge, { backgroundColor: "#16a34a" }]}>
@@ -2017,4 +2173,40 @@ const styles = StyleSheet.create({
   searchInput: { flex: 1, fontSize: 13, fontFamily: "Inter_500Medium", padding: 0 },
   clearBtn: { flexDirection: "row", alignItems: "center", gap: 4, paddingHorizontal: 10, paddingVertical: 8, borderRadius: 8 },
   clearBtnText: { fontSize: 12, fontFamily: "Inter_600SemiBold" },
+  fieldLabel: { fontSize: 13, fontFamily: "Inter_600SemiBold", marginBottom: 8 },
+  irsAddBtn: {
+    flexDirection: "row", alignItems: "center", justifyContent: "center", gap: 8,
+    paddingVertical: 14, paddingHorizontal: 14, borderRadius: 10,
+    borderWidth: 1.5, borderStyle: "dashed",
+  },
+  irsAddText: { fontSize: 13, fontFamily: "Inter_600SemiBold" },
+  irsThumbWrap: { gap: 8 },
+  irsThumb: { width: "100%", height: 200, borderRadius: 10, overflow: "hidden", borderWidth: 1 },
+  irsThumbImg: { width: "100%", height: "100%" },
+  irsThumbActions: { flexDirection: "row", gap: 8 },
+  irsActionBtn: {
+    flex: 1, flexDirection: "row", alignItems: "center", justifyContent: "center",
+    gap: 6, paddingVertical: 10, borderRadius: 8,
+  },
+  irsActionText: { color: "#fff", fontSize: 12, fontFamily: "Inter_600SemiBold" },
+  openPhotoBtn: {
+    flexDirection: "row", alignItems: "center", gap: 4,
+    backgroundColor: "#0369a1", paddingHorizontal: 10, paddingVertical: 6, borderRadius: 999,
+  },
+  openPhotoBtnText: { color: "#fff", fontSize: 11, fontFamily: "Inter_600SemiBold" },
+  photoViewerBackdrop: {
+    flex: 1, backgroundColor: "rgba(0,0,0,0.92)", alignItems: "center", justifyContent: "center",
+  },
+  photoViewerHeader: {
+    position: "absolute", top: 0, left: 0, right: 0,
+    flexDirection: "row", alignItems: "center", justifyContent: "space-between",
+    paddingHorizontal: 16, paddingTop: 50, paddingBottom: 16,
+  },
+  photoViewerTitle: { color: "#fff", fontSize: 16, fontFamily: "Inter_700Bold" },
+  photoViewerClose: {
+    width: 36, height: 36, borderRadius: 18,
+    backgroundColor: "rgba(255,255,255,0.15)",
+    alignItems: "center", justifyContent: "center",
+  },
+  photoViewerImg: { width: "100%", height: "100%" },
 });

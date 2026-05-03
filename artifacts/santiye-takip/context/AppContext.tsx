@@ -161,6 +161,7 @@ export interface Material {
   supplierKantarSlip?: boolean;
   weighApproved?: boolean;
   materialRequestId?: string;
+  irsaliyePhoto?: string;
 }
 
 export interface Weighbridge {
