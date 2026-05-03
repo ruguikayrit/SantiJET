@@ -576,126 +576,6 @@ export default function MalzemeScreen() {
               />
             </View>
           </View>
-          <TouchableOpacity
-            onPress={() => setMForm({ ...mForm, kantarEnabled: !mForm.kantarEnabled })}
-            disabled={!canEdit}
-            activeOpacity={0.7}
-            style={[
-              styles.kantarToggle,
-              {
-                borderColor: mForm.kantarEnabled ? "#0d9488" : colors.muted,
-                backgroundColor: mForm.kantarEnabled ? "#0d948811" : colors.card,
-              },
-            ]}
-          >
-            <View
-              style={[
-                styles.kantarCheck,
-                {
-                  borderColor: mForm.kantarEnabled ? "#0d9488" : colors.mutedForeground,
-                  backgroundColor: mForm.kantarEnabled ? "#0d9488" : "transparent",
-                },
-              ]}
-            >
-              {mForm.kantarEnabled ? (
-                <Feather name="check" size={14} color="#fff" />
-              ) : null}
-            </View>
-            <View style={{ flex: 1 }}>
-              <Text style={[styles.kantarTitle, { color: colors.foreground }]}>
-                Kantar
-              </Text>
-              <Text style={[styles.kantarDesc, { color: colors.mutedForeground }]}>
-                {mForm.kantarEnabled
-                  ? "Kantar fişi otomatik oluşturulur. Tartım verilerini Kantar sayfasında girin."
-                  : mEditId
-                  ? "Kapatırsanız bağlı fiş silinmez; bağlantı kopar, fiş Kantar sayfasında kalır"
-                  : "Bu malzeme kantara giriyorsa aktif edin"}
-              </Text>
-            </View>
-            <Feather
-              name="truck"
-              size={20}
-              color={mForm.kantarEnabled ? "#0d9488" : colors.mutedForeground}
-            />
-          </TouchableOpacity>
-
-          <TouchableOpacity
-            onPress={() => setMForm({ ...mForm, supplierKantarSlip: !mForm.supplierKantarSlip })}
-            disabled={!canEdit}
-            activeOpacity={0.7}
-            style={[
-              styles.kantarToggle,
-              {
-                borderColor: mForm.supplierKantarSlip ? "#0ea5e9" : colors.muted,
-                backgroundColor: mForm.supplierKantarSlip ? "#0ea5e911" : colors.card,
-              },
-            ]}
-          >
-            <View
-              style={[
-                styles.kantarCheck,
-                {
-                  borderColor: mForm.supplierKantarSlip ? "#0ea5e9" : colors.mutedForeground,
-                  backgroundColor: mForm.supplierKantarSlip ? "#0ea5e9" : "transparent",
-                },
-              ]}
-            >
-              {mForm.supplierKantarSlip ? <Feather name="check" size={14} color="#fff" /> : null}
-            </View>
-            <View style={{ flex: 1 }}>
-              <Text style={[styles.kantarTitle, { color: colors.foreground }]}>
-                Tedarikçi Kantar Fişi
-              </Text>
-              <Text style={[styles.kantarDesc, { color: colors.mutedForeground }]}>
-                Tedarikçinin kantar fişi teslim alındıysa işaretleyin
-              </Text>
-            </View>
-            <Feather
-              name="file-text"
-              size={20}
-              color={mForm.supplierKantarSlip ? "#0ea5e9" : colors.mutedForeground}
-            />
-          </TouchableOpacity>
-
-          <TouchableOpacity
-            onPress={() => setMForm({ ...mForm, weighApproved: !mForm.weighApproved })}
-            disabled={!canEdit}
-            activeOpacity={0.7}
-            style={[
-              styles.kantarToggle,
-              {
-                borderColor: mForm.weighApproved ? "#16a34a" : colors.muted,
-                backgroundColor: mForm.weighApproved ? "#16a34a11" : colors.card,
-              },
-            ]}
-          >
-            <View
-              style={[
-                styles.kantarCheck,
-                {
-                  borderColor: mForm.weighApproved ? "#16a34a" : colors.mutedForeground,
-                  backgroundColor: mForm.weighApproved ? "#16a34a" : "transparent",
-                },
-              ]}
-            >
-              {mForm.weighApproved ? <Feather name="check" size={14} color="#fff" /> : null}
-            </View>
-            <View style={{ flex: 1 }}>
-              <Text style={[styles.kantarTitle, { color: colors.foreground }]}>
-                Tartı Onayı
-              </Text>
-              <Text style={[styles.kantarDesc, { color: colors.mutedForeground }]}>
-                Tartım kontrol edildi ve onaylandıysa işaretleyin
-              </Text>
-            </View>
-            <Feather
-              name="check-circle"
-              size={20}
-              color={mForm.weighApproved ? "#16a34a" : colors.mutedForeground}
-            />
-          </TouchableOpacity>
-
           {canEdit ? <PrimaryButton label="Kaydet" onPress={saveMaterial} style={{ marginTop: 8 }} /> : null}
           {canEdit && mEditId ? (
             <PrimaryButton label="Sil" variant="danger" onPress={removeMaterial} style={{ marginTop: 10 }} />
@@ -1010,37 +890,81 @@ export default function MalzemeScreen() {
                     {metaParts.join(" · ")}
                   </Text>
                 ) : null}
-                {(item.kantarEnabled || item.supplierKantarSlip || item.weighApproved) ? (
-                  <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 6, marginTop: 6 }}>
-                    {item.kantarEnabled ? (
-                      <TouchableOpacity
-                        onPress={(e) => { e.stopPropagation(); router.push("/kantar" as any); }}
-                        style={[styles.kantarBadge, { backgroundColor: "#0d948822" }]}
-                      >
-                        <Feather name="truck" size={10} color="#0d9488" />
-                        <Text style={[styles.kantarBadgeText, { color: "#0d9488" }]}>
-                          Kantar
-                        </Text>
-                      </TouchableOpacity>
-                    ) : null}
-                    {item.supplierKantarSlip ? (
-                      <View style={[styles.kantarBadge, { backgroundColor: "#0ea5e922" }]}>
-                        <Feather name="check-square" size={10} color="#0ea5e9" />
-                        <Text style={[styles.kantarBadgeText, { color: "#0ea5e9" }]}>
-                          Tedarikçi Fişi
-                        </Text>
-                      </View>
-                    ) : null}
-                    {item.weighApproved ? (
-                      <View style={[styles.kantarBadge, { backgroundColor: "#16a34a22" }]}>
-                        <Feather name="check-circle" size={10} color="#16a34a" />
-                        <Text style={[styles.kantarBadgeText, { color: "#16a34a" }]}>
-                          Tartı Onaylı
-                        </Text>
-                      </View>
-                    ) : null}
-                  </View>
-                ) : null}
+                <View style={styles.apprRow}>
+                  <TouchableOpacity
+                    onPress={(e) => {
+                      e.stopPropagation();
+                      if (!canEdit) return;
+                      updateMaterial(item.id, { supplierKantarSlip: !item.supplierKantarSlip });
+                    }}
+                    disabled={!canEdit}
+                    activeOpacity={0.7}
+                    style={[
+                      styles.apprChip,
+                      {
+                        borderColor: item.supplierKantarSlip ? "#0ea5e9" : colors.muted,
+                        backgroundColor: item.supplierKantarSlip ? "#0ea5e91a" : "transparent",
+                      },
+                    ]}
+                  >
+                    <View
+                      style={[
+                        styles.apprBox,
+                        {
+                          borderColor: item.supplierKantarSlip ? "#0ea5e9" : colors.mutedForeground,
+                          backgroundColor: item.supplierKantarSlip ? "#0ea5e9" : "transparent",
+                        },
+                      ]}
+                    >
+                      {item.supplierKantarSlip ? <Feather name="check" size={10} color="#fff" /> : null}
+                    </View>
+                    <Text
+                      style={[
+                        styles.apprText,
+                        { color: item.supplierKantarSlip ? "#0ea5e9" : colors.mutedForeground },
+                      ]}
+                    >
+                      Tedarikçi Kantar Fişi
+                    </Text>
+                  </TouchableOpacity>
+
+                  <TouchableOpacity
+                    onPress={(e) => {
+                      e.stopPropagation();
+                      if (!canEdit) return;
+                      updateMaterial(item.id, { weighApproved: !item.weighApproved });
+                    }}
+                    disabled={!canEdit}
+                    activeOpacity={0.7}
+                    style={[
+                      styles.apprChip,
+                      {
+                        borderColor: item.weighApproved ? "#16a34a" : colors.muted,
+                        backgroundColor: item.weighApproved ? "#16a34a1a" : "transparent",
+                      },
+                    ]}
+                  >
+                    <View
+                      style={[
+                        styles.apprBox,
+                        {
+                          borderColor: item.weighApproved ? "#16a34a" : colors.mutedForeground,
+                          backgroundColor: item.weighApproved ? "#16a34a" : "transparent",
+                        },
+                      ]}
+                    >
+                      {item.weighApproved ? <Feather name="check" size={10} color="#fff" /> : null}
+                    </View>
+                    <Text
+                      style={[
+                        styles.apprText,
+                        { color: item.weighApproved ? "#16a34a" : colors.mutedForeground },
+                      ]}
+                    >
+                      Şantiye Kantar
+                    </Text>
+                  </TouchableOpacity>
+                </View>
               </View>
               <View style={[styles.gelenQtyPill, { backgroundColor: colors.muted }]}>
                 <Text style={[styles.gelenQtyVal, { color: colors.foreground }]}>{item.quantity}</Text>
@@ -1385,6 +1309,30 @@ const styles = StyleSheet.create({
     marginTop: 6,
   },
   kantarBadgeText: { fontSize: 10, fontFamily: "Inter_600SemiBold" },
+  apprRow: {
+    flexDirection: "row",
+    flexWrap: "wrap",
+    gap: 6,
+    marginTop: 8,
+  },
+  apprChip: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 6,
+    paddingHorizontal: 8,
+    paddingVertical: 5,
+    borderRadius: 8,
+    borderWidth: 1,
+  },
+  apprBox: {
+    width: 16,
+    height: 16,
+    borderRadius: 4,
+    borderWidth: 1.5,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  apprText: { fontSize: 11, fontFamily: "Inter_600SemiBold" },
   warnBox: {
     flexDirection: "row",
     alignItems: "flex-start",
