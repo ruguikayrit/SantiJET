@@ -15,6 +15,19 @@ import {
 import { MATERIAL_UNITS, UnitOption } from "@/constants/units";
 import { DEFAULT_IMALAT_POZLARI, ImalatPoz } from "@/constants/imalatPozlari";
 
+function mergeImalatPozlari(stored: unknown): ImalatPoz[] {
+  if (!Array.isArray(stored) || stored.length === 0) {
+    return [...DEFAULT_IMALAT_POZLARI];
+  }
+  const existingCodes = new Set(
+    (stored as ImalatPoz[]).map((p) => (p?.code || "").toLowerCase())
+  );
+  const additions = DEFAULT_IMALAT_POZLARI.filter(
+    (p) => !existingCodes.has(p.code.toLowerCase())
+  );
+  return additions.length > 0 ? [...(stored as ImalatPoz[]), ...additions] : (stored as ImalatPoz[]);
+}
+
 export interface Project {
   id: string;
   name: string;
@@ -773,9 +786,7 @@ async function loadInitialState(): Promise<AppState> {
       if (!Array.isArray(state.materialUnits)) {
         state.materialUnits = [...MATERIAL_UNITS];
       }
-      if (!Array.isArray(state.imalatPozlari) || state.imalatPozlari.length === 0) {
-        state.imalatPozlari = [...DEFAULT_IMALAT_POZLARI];
-      }
+      state.imalatPozlari = mergeImalatPozlari(state.imalatPozlari);
       state.purchases = normalizePurchases(state.purchases);
       state.weighbridges = normalizeWeighbridges(state.weighbridges);
       return state;
@@ -985,8 +996,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
               ? incoming.materialList : [...CONSTRUCTION_MATERIALS],
             materialUnits: Array.isArray(incoming.materialUnits)
               ? incoming.materialUnits : [...MATERIAL_UNITS],
-            imalatPozlari: Array.isArray(incoming.imalatPozlari) && incoming.imalatPozlari.length > 0
-              ? incoming.imalatPozlari : [...DEFAULT_IMALAT_POZLARI],
+            imalatPozlari: mergeImalatPozlari(incoming.imalatPozlari),
             purchases: normalizePurchases(incoming.purchases),
             currentUserId: userStillExists ? prevUserId : null,
           };
