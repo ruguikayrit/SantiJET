@@ -66,6 +66,7 @@ export default function KullanicilarScreen() {
     deleteAppUser,
     updateRole,
     professions,
+    tradeGroups,
   } = useApp();
   const perm = usePermission("kullanicilar");
 
@@ -87,15 +88,6 @@ export default function KullanicilarScreen() {
   const [uTeam, setUTeam] = useState("");
   const [profDropOpen, setProfDropOpen] = useState(false);
   const [teamDropOpen, setTeamDropOpen] = useState(false);
-
-  const existingTeams = React.useMemo(() => {
-    const s = new Set<string>();
-    for (const u of appUsers) {
-      const t = (u.team || "").trim();
-      if (t) s.add(t);
-    }
-    return Array.from(s).sort((a, b) => a.localeCompare(b, "tr"));
-  }, [appUsers]);
 
   const [roleSheet, setRoleSheet] = useState(false);
   const [editRoleId, setEditRoleId] = useState<string | null>(null);
@@ -289,7 +281,7 @@ export default function KullanicilarScreen() {
                     </View>
                     {(u.profession || u.company || u.phone || u.team) ? (
                       <Text style={[styles.cardSub, { color: colors.mutedForeground }]} numberOfLines={2}>
-                        {[u.profession, u.team ? `Ekip: ${u.team}` : "", u.company, u.phone].filter(Boolean).join(" · ")}
+                        {[u.profession, u.team ? `Grup: ${u.team}` : "", u.company, u.phone].filter(Boolean).join(" · ")}
                       </Text>
                     ) : null}
                   </View>
@@ -426,44 +418,27 @@ export default function KullanicilarScreen() {
           </View>
         )}
 
-        <Text style={[styles.formLabel, { color: colors.foreground, marginTop: 12 }]}>Ekip Adı</Text>
+        <Text style={[styles.formLabel, { color: colors.foreground, marginTop: 12 }]}>Meslek Grubu</Text>
         <TouchableOpacity
           style={[styles.formInput, styles.profTrigger, { backgroundColor: colors.muted, borderColor: teamDropOpen ? colors.primary : colors.border }]}
           onPress={() => setTeamDropOpen(v => !v)}
           activeOpacity={0.8}
         >
           <Text style={{ flex: 1, color: uTeam ? colors.foreground : colors.mutedForeground, fontSize: 14, fontFamily: "Inter_400Regular" }} numberOfLines={1}>
-            {uTeam || "Ekip seçin veya yeni yazın..."}
+            {uTeam || "Meslek grubu seçin..."}
           </Text>
           <Feather name={teamDropOpen ? "chevron-up" : "chevron-down"} size={16} color={colors.mutedForeground} />
         </TouchableOpacity>
 
         {teamDropOpen && (
           <View style={[styles.profInlineList, { backgroundColor: colors.muted, borderColor: colors.primary }]}>
-            <View style={[styles.profInlineItem, { borderBottomColor: colors.border, gap: 8 }]}>
-              <TextInput
-                value={uTeam}
-                onChangeText={setUTeam}
-                placeholder="Yeni ekip adı yazın..."
-                placeholderTextColor={colors.mutedForeground}
-                autoFocus
-                style={{ flex: 1, fontSize: 14, fontFamily: "Inter_500Medium", color: colors.foreground, paddingVertical: 0 }}
-                onSubmitEditing={() => setTeamDropOpen(false)}
-              />
-              {uTeam ? (
-                <TouchableOpacity onPress={() => setUTeam("")} activeOpacity={0.7}>
-                  <Feather name="x" size={16} color={colors.mutedForeground} />
-                </TouchableOpacity>
-              ) : null}
-            </View>
-
-            {existingTeams.length === 0 ? (
+            {tradeGroups.length === 0 ? (
               <View style={styles.profInlineItem}>
-                <Text style={{ color: colors.mutedForeground, fontFamily: "Inter_400Regular", fontSize: 12 }}>
-                  Mevcut ekip yok. Yukarıya yeni bir ekip adı yazabilirsiniz.
+                <Text style={{ color: colors.mutedForeground, fontFamily: "Inter_400Regular", fontSize: 13 }}>
+                  Meslek grubu tanımlı değil. Ayarlar &gt; Meslek Grubu menüsünden ekleyin.
                 </Text>
               </View>
-            ) : existingTeams.map((tm, i) => {
+            ) : tradeGroups.map((tm, i) => {
               const isSelected = uTeam === tm;
               return (
                 <TouchableOpacity
@@ -471,7 +446,7 @@ export default function KullanicilarScreen() {
                   style={[
                     styles.profInlineItem,
                     { borderBottomColor: colors.border },
-                    i === existingTeams.length - 1 && { borderBottomWidth: 0 },
+                    i === tradeGroups.length - 1 && { borderBottomWidth: 0 },
                     isSelected && { backgroundColor: colors.primary + "20" },
                   ]}
                   onPress={() => { setUTeam(tm); setTeamDropOpen(false); }}
