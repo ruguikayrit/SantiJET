@@ -1,8 +1,13 @@
 import { Feather } from "@expo/vector-icons";
+import * as DocumentPicker from "expo-document-picker";
+import * as FileSystem from "expo-file-system";
 import { useRouter } from "expo-router";
+import * as Sharing from "expo-sharing";
 import React, { useEffect, useMemo, useState } from "react";
 import {
+  Alert,
   FlatList,
+  Platform,
   StyleSheet,
   Text,
   TouchableOpacity,
@@ -19,6 +24,12 @@ import PrimaryButton from "@/components/PrimaryButton";
 import { Survey, SurveyItem, useApp } from "@/context/AppContext";
 import { useColors } from "@/hooks/useColors";
 import { usePermission } from "@/hooks/usePermission";
+import {
+  buildKesifCsv,
+  groupRowsByProjectAndTitle,
+  parseKesifCsv,
+  rowToSurveyItem,
+} from "@/constants/kesifCsv";
 
 interface FormState {
   projectId: string;
@@ -62,6 +73,9 @@ export default function KesifScreen() {
   const [editId, setEditId] = useState<string | null>(null);
   const [editItemId, setEditItemId] = useState<string | null>(null);
   const [form, setForm] = useState<FormState>(EMPTY);
+  const [importVisible, setImportVisible] = useState(false);
+  const [importText, setImportText] = useState("");
+  const [importBusy, setImportBusy] = useState(false);
 
   const list = useMemo(
     () => (filter ? surveys.filter((s) => s.projectId === filter) : surveys),
@@ -164,6 +178,121 @@ export default function KesifScreen() {
     return projects.find((p) => p.id === id)?.name || "—";
   }
 
+  function applyImport(text: string) {
+    const result = parseKesifCsv(text);
+    if (result.rows.length === 0) {
+      Alert.alert(
+        "İçe aktarma başarısız",
+        result.errors.length > 0
+          ? result.errors.slice(0, 5).join("\n")
+          : "Hiç geçerli satır bulunamadı.",
+      );
+      return;
+    }
+    const { groups, missingProjects } = groupRowsByProjectAndTitle(
+      result.rows,
+      projects,
+    );
+    let created = 0;
+    let updated = 0;
+    let addedItems = 0;
+    let suffix = 0;
+    const norm = (s: string) => s.trim().toLowerCase();
+    for (const g of Array.from(groups.values())) {
+      const existing = surveys.find(
+        (s) => s.projectId === g.projectId && norm(s.title) === norm(g.title),
+      );
+      const newItems: SurveyItem[] = g.rows.map((r) => rowToSurveyItem(r, suffix++));
+      const firstRow = g.rows[0];
+      if (existing) {
+        updateSurvey(existing.id, {
+          ...existing,
+          date: existing.date || firstRow.surveyDate,
+          notes: existing.notes || firstRow.surveyNotes,
+          items: [...existing.items, ...newItems],
+        });
+        updated++;
+      } else {
+        addSurvey({
+          projectId: g.projectId,
+          title: g.title,
+          date: firstRow.surveyDate,
+          location: "",
+          notes: firstRow.surveyNotes,
+          items: newItems,
+        });
+        created++;
+      }
+      addedItems += newItems.length;
+    }
+    setImportVisible(false);
+    setImportText("");
+    const lines = [
+      `${created} yeni keşif oluşturuldu.`,
+      `${updated} mevcut keşfe kalem eklendi.`,
+      `Toplam ${addedItems} kalem aktarıldı.`,
+    ];
+    if (missingProjects.length > 0)
+      lines.push(`Atlanan proje (kayıtlı değil): ${missingProjects.join(", ")}`);
+    if (result.errors.length > 0)
+      lines.push(`${result.errors.length} satır hatalı.`);
+    Alert.alert("İçe aktarıldı", lines.join("\n"));
+  }
+
+  async function pickCsvFile() {
+    try {
+      setImportBusy(true);
+      const res = await DocumentPicker.getDocumentAsync({
+        type: ["text/csv", "text/comma-separated-values", "application/vnd.ms-excel", "text/plain", "*/*"],
+        copyToCacheDirectory: true,
+      });
+      if (res.canceled || !res.assets?.[0]) return;
+      const asset = res.assets[0];
+      let text = "";
+      if (Platform.OS === "web" && (asset as any).file) {
+        text = await ((asset as any).file as File).text();
+      } else {
+        text = await (FileSystem as any).readAsStringAsync(asset.uri, { encoding: "utf8" });
+      }
+      applyImport(text);
+    } catch (e: any) {
+      Alert.alert("Hata", String(e?.message || e));
+    } finally {
+      setImportBusy(false);
+    }
+  }
+
+  async function exportCsv() {
+    try {
+      setImportBusy(true);
+      const csv = buildKesifCsv(surveys, projects);
+      if (Platform.OS === "web") {
+        const blob = new Blob([csv], { type: "text/csv;charset=utf-8" });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement("a");
+        a.href = url;
+        a.download = "kesif.csv";
+        document.body.appendChild(a);
+        a.click();
+        a.remove();
+        URL.revokeObjectURL(url);
+      } else {
+        const dir = (FileSystem as any).cacheDirectory ?? (FileSystem as any).documentDirectory;
+        const fileUri = `${dir}kesif.csv`;
+        await (FileSystem as any).writeAsStringAsync(fileUri, csv, { encoding: "utf8" });
+        if (await Sharing.isAvailableAsync()) {
+          await Sharing.shareAsync(fileUri, { mimeType: "text/csv", dialogTitle: "Keşif Verisini Paylaş" });
+        } else {
+          Alert.alert("Kaydedildi", fileUri);
+        }
+      }
+    } catch (e: any) {
+      Alert.alert("Hata", String(e?.message || e));
+    } finally {
+      setImportBusy(false);
+    }
+  }
+
   function deleteItem(itemId: string) {
     if (!editId) return;
     const s = surveys.find((x) => x.id === editId);
@@ -181,6 +310,14 @@ export default function KesifScreen() {
         title="Keşif"
         onBack={() => (router.canGoBack() ? router.back() : router.replace("/"))}
         rightAction={canEdit && projects.length > 0 ? { icon: "plus", onPress: () => open() } : undefined}
+        extraActions={
+          canEdit
+            ? [
+                { icon: "upload", onPress: () => { setImportText(""); setImportVisible(true); } },
+                { icon: "download", onPress: exportCsv },
+              ]
+            : undefined
+        }
       />
 
 
@@ -401,6 +538,41 @@ export default function KesifScreen() {
           <PrimaryButton label="Sil" variant="danger" onPress={remove} style={{ marginTop: 10 }} />
         ) : null}
         {!canEdit ? <PrimaryButton label="Kapat" onPress={() => setVisible(false)} style={{ marginTop: 8 }} /> : null}
+      </BottomSheet>
+
+      <BottomSheet
+        visible={importVisible}
+        onClose={() => setImportVisible(false)}
+        title="Keşif İçe Aktar (CSV)"
+      >
+        <Text style={{ fontSize: 12, color: colors.mutedForeground, lineHeight: 18, marginBottom: 12, fontFamily: "Inter_400Regular" }}>
+          Format: proje;baslik;tarih;aciklama;poz_kodu;poz_kategori;kalem_aciklama;birim;metraj;kalem_tarih{"\n"}
+          İlk satır başlık. Ayraç olarak ; , veya TAB desteklenir.{"\n"}
+          Aynı proje + başlık satırları tek keşifte gruplanır. Mevcut keşfe kalem eklenir, yenisi varsa oluşturulur.{"\n"}
+          Proje adı sistemde mevcut olmalı.
+        </Text>
+        <PrimaryButton
+          label={importBusy ? "Yükleniyor..." : "Dosya Seç (CSV)"}
+          onPress={pickCsvFile}
+          style={{ marginTop: 4 }}
+        />
+        <Text style={[styles.label, { color: colors.foreground, marginTop: 16 }]}>
+          veya CSV içeriğini yapıştırın
+        </Text>
+        <FormInput
+          label=""
+          value={importText}
+          onChangeText={setImportText}
+          placeholder={"proje;baslik;tarih;aciklama;poz_kodu;poz_kategori;kalem_aciklama;birim;metraj;kalem_tarih\nA Şantiye;Bodrum kazı;2026-05-01;;Y.14.002/01;Hafriyat ve Toprak;Makine ile yumuşak toprak kazısı;m³;120;2026-05-01"}
+          multiline
+          numberOfLines={8}
+          style={{ minHeight: 160, paddingTop: 12, fontFamily: "Inter_400Regular" }}
+        />
+        <PrimaryButton
+          label="Yapıştırılanı İçe Aktar"
+          onPress={() => applyImport(importText)}
+          style={{ marginTop: 8 }}
+        />
       </BottomSheet>
     </View>
   );

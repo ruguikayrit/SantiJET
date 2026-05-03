@@ -15,9 +15,10 @@ interface Props {
   subtitle?: string;
   onBack?: () => void;
   rightAction?: { icon: string; onPress: () => void };
+  extraActions?: { icon: string; onPress: () => void }[];
 }
 
-export default function Header({ title, subtitle, onBack, rightAction }: Props) {
+export default function Header({ title, subtitle, onBack, rightAction, extraActions }: Props) {
   const colors = useColors();
   const insets = useSafeAreaInsets();
   const topPad = Platform.OS === "web" ? 67 : insets.top;
@@ -53,17 +54,29 @@ export default function Header({ title, subtitle, onBack, rightAction }: Props) 
           ) : null}
         </View>
 
-        {rightAction ? (
-          <TouchableOpacity
-            onPress={rightAction.onPress}
-            style={[styles.rightBtn, { backgroundColor: colors.primary }]}
-            activeOpacity={0.8}
-          >
-            <Feather name={rightAction.icon as any} size={20} color="#fff" />
-          </TouchableOpacity>
-        ) : (
-          <View style={styles.rightBtn} />
-        )}
+        <View style={{ flexDirection: "row", alignItems: "center", gap: 6 }}>
+          {extraActions?.map((a, i) => (
+            <TouchableOpacity
+              key={i}
+              onPress={a.onPress}
+              style={[styles.rightBtn, { backgroundColor: colors.muted }]}
+              activeOpacity={0.8}
+            >
+              <Feather name={a.icon as any} size={18} color={colors.foreground} />
+            </TouchableOpacity>
+          ))}
+          {rightAction ? (
+            <TouchableOpacity
+              onPress={rightAction.onPress}
+              style={[styles.rightBtn, { backgroundColor: colors.primary }]}
+              activeOpacity={0.8}
+            >
+              <Feather name={rightAction.icon as any} size={20} color="#fff" />
+            </TouchableOpacity>
+          ) : !extraActions?.length ? (
+            <View style={styles.rightBtn} />
+          ) : null}
+        </View>
       </View>
     </View>
   );
