@@ -68,6 +68,7 @@ export default function KullanicilarScreen() {
     professions,
     tradeGroups,
     subcontractors,
+    projects,
   } = useApp();
 
   const subcontractorNames = React.useMemo(() => {
@@ -76,8 +77,12 @@ export default function KullanicilarScreen() {
       const n = (sc.name || "").trim();
       if (n) s.add(n);
     }
+    for (const p of projects) {
+      const c = ((p as any).contractor || "").trim();
+      if (c) s.add(c);
+    }
     return Array.from(s).sort((a, b) => a.localeCompare(b, "tr"));
-  }, [subcontractors]);
+  }, [subcontractors, projects]);
   const perm = usePermission("kullanicilar");
 
   useEffect(() => {
