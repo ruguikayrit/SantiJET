@@ -210,6 +210,7 @@ export default function Imalat() {
                   onValueChange={(vals) => handleProgressUpdate(item.id, vals, item.isEmri)}
                   max={100} step={5}
                   className="w-full"
+                  data-testid={`slider-ilerleme-${item.id}`}
                 />
               </div>
               <div className="w-16 text-right">

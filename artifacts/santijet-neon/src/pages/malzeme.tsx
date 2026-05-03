@@ -15,7 +15,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 const moduleColor = '#a78bfa';
 
 const formSchema = z.object({
-  id: z.string(),
+  id: z.string().min(1, 'Malzeme seçiniz.'),
   tip: z.enum(['giris', 'cikis']),
   miktar: z.coerce.number().min(1, 'Miktar 0\'dan büyük olmalıdır.'),
 });
@@ -34,7 +34,14 @@ export default function Malzeme() {
 
   const onSubmit = (values: z.infer<typeof formSchema>) => {
     const item = malzeme.find(m => m.id === values.id);
-    if (!item) return;
+    if (!item) {
+      toast({
+        title: "HATA",
+        description: "Geçerli bir malzeme seçiniz.",
+        className: "bg-[#0b1224] border border-red-500 text-red-500 font-mono",
+      });
+      return;
+    }
 
     const yeniStok = values.tip === 'giris' 
       ? Number(item.stok) + Number(values.miktar)
@@ -254,6 +261,7 @@ export default function Malzeme() {
                         setOpen(true);
                       }}
                       className="text-emerald-400 hover:text-emerald-300 flex items-center gap-1"
+                      data-testid={`button-giris-${item.id}`}
                     >
                       <ArrowDownRight size={12} /> GİRİŞ
                     </button>
@@ -264,6 +272,7 @@ export default function Malzeme() {
                         setOpen(true);
                       }}
                       className="text-red-400 hover:text-red-300 flex items-center gap-1"
+                      data-testid={`button-cikis-${item.id}`}
                     >
                       <ArrowUpRight size={12} /> ÇIKIŞ
                     </button>

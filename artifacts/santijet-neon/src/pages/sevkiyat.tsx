@@ -215,7 +215,7 @@ export default function Sevkiyat() {
                         defaultValue={row.durum} 
                         onValueChange={(val) => updateStatus(row.id, val, row.plaka)}
                       >
-                        <SelectTrigger className={`h-7 w-[130px] font-mono text-[10px] font-bold uppercase tracking-wider rounded-sm ${getStatusColor(row.durum)}`}>
+                        <SelectTrigger className={`h-7 w-[130px] font-mono text-[10px] font-bold uppercase tracking-wider rounded-sm ${getStatusColor(row.durum)}`} data-testid={`select-durum-${row.id}`}>
                           <SelectValue />
                         </SelectTrigger>
                         <SelectContent className="bg-[#0b1224] border-slate-700 text-slate-200 font-mono">
