@@ -376,11 +376,13 @@ const styles = StyleSheet.create({
   projChip: { paddingHorizontal: 10, paddingVertical: 5, borderRadius: 999, maxWidth: 160 },
   projChipText: { fontSize: 11, fontFamily: "Inter_600SemiBold" },
   ganttRoot: { flex: 1, padding: 12 },
-  ganttSplit: { flex: 1, flexDirection: "row", borderRadius: 10, overflow: "hidden", borderWidth: StyleSheet.hairlineWidth },
-  ganttLeft: { width: 140 },
-  ganttHeadCell: { height: 44, borderBottomWidth: StyleSheet.hairlineWidth, paddingHorizontal: 10, justifyContent: "center" },
+  ganttCanvas: { borderRadius: 10, borderWidth: StyleSheet.hairlineWidth, overflow: "hidden" },
   ganttHeadText: { fontSize: 11, fontFamily: "Inter_700Bold", textTransform: "uppercase", letterSpacing: 0.5 },
   ganttRowLeft: { paddingHorizontal: 10, justifyContent: "center", borderBottomWidth: StyleSheet.hairlineWidth },
+  legend: { flexDirection: "row", flexWrap: "wrap", gap: 12, padding: 10, marginTop: 10, borderRadius: 8, borderWidth: StyleSheet.hairlineWidth },
+  legendItem: { flexDirection: "row", alignItems: "center", gap: 6 },
+  legendDot: { width: 10, height: 10, borderRadius: 3 },
+  legendText: { fontSize: 11, fontFamily: "Inter_500Medium" },
   ganttRowName: { fontSize: 12, fontFamily: "Inter_600SemiBold" },
   ganttRowSub: { fontSize: 10, fontFamily: "Inter_400Regular", marginTop: 1 },
   ganttRight: { flex: 1 },
@@ -494,173 +496,184 @@ function GanttView(props: {
 
   const showDayNum = dayWidth >= 14;
 
+  const NAME_W = 140;
+
   return (
     <View style={styles.ganttRoot}>
-      <View style={[styles.ganttSplit, { borderColor: colors.border, backgroundColor: colors.card }]}>
-        {/* Left: task names */}
-        <View style={[styles.ganttLeft, { borderRightWidth: StyleSheet.hairlineWidth, borderRightColor: colors.border }]}>
-          <View style={[styles.ganttHeadCell, { borderBottomColor: colors.border, height: headerHeight }]}>
-            <Text style={[styles.ganttHeadText, { color: colors.mutedForeground }]}>İş Kalemi</Text>
-          </View>
-          <ScrollView style={{ flex: 1 }} showsVerticalScrollIndicator={false}>
-            {dated.map(({ t }) => (
-              <TouchableOpacity
-                key={t.id}
-                onPress={() => onPressTask(t)}
-                activeOpacity={0.7}
-                style={[styles.ganttRowLeft, { height: rowHeight, borderBottomColor: colors.border }]}
-              >
-                <Text style={[styles.ganttRowName, { color: colors.foreground }]} numberOfLines={1}>
-                  {t.name}
-                </Text>
-                <Text style={[styles.ganttRowSub, { color: colors.mutedForeground }]} numberOfLines={1}>
-                  {projectName(t.projectId)}
-                </Text>
-              </TouchableOpacity>
-            ))}
-          </ScrollView>
-        </View>
-
-        {/* Right: timeline */}
-        <ScrollView horizontal showsHorizontalScrollIndicator={true} style={styles.ganttRight}>
-          <View style={{ width: totalWidth }}>
-            {/* Header: months + days */}
-            <View style={[styles.ganttHeadCell, { borderBottomColor: colors.border, height: headerHeight, paddingHorizontal: 0 }]}>
-              <View style={{ flexDirection: "row", height: 18 }}>
-                {monthBands.map((b, i) => (
-                  <View
-                    key={i}
-                    style={{
-                      position: "absolute",
-                      left: b.offset,
-                      width: b.width,
-                      borderLeftWidth: i === 0 ? 0 : StyleSheet.hairlineWidth,
-                      borderLeftColor: colors.border,
-                    }}
-                  >
-                    <Text style={[styles.ganttMonthLabel, { color: colors.foreground }]} numberOfLines={1}>
-                      {b.label}
-                    </Text>
-                  </View>
-                ))}
+      <ScrollView
+        style={{ flex: 1 }}
+        contentContainerStyle={{ paddingBottom: 16 }}
+        showsVerticalScrollIndicator={true}
+      >
+        <ScrollView
+          horizontal
+          showsHorizontalScrollIndicator={true}
+          contentContainerStyle={{ flexGrow: 1 }}
+        >
+          <View
+            style={[
+              styles.ganttCanvas,
+              { borderColor: colors.border, backgroundColor: colors.card, width: NAME_W + totalWidth },
+            ]}
+          >
+            {/* Header row */}
+            <View style={{ flexDirection: "row", height: headerHeight, borderBottomWidth: StyleSheet.hairlineWidth, borderBottomColor: colors.border }}>
+              <View style={{ width: NAME_W, justifyContent: "center", paddingHorizontal: 10, borderRightWidth: StyleSheet.hairlineWidth, borderRightColor: colors.border }}>
+                <Text style={[styles.ganttHeadText, { color: colors.mutedForeground }]}>İş Kalemi</Text>
               </View>
-              {showDayNum ? (
-                <View style={{ flexDirection: "row", height: 16, marginTop: 4 }}>
-                  {days.map((d, i) => {
-                    const isToday = d.getTime() === today.getTime();
-                    const isWeekend = d.getDay() === 0 || d.getDay() === 6;
-                    return (
-                      <View key={i} style={{ width: dayWidth, alignItems: "center", justifyContent: "center" }}>
-                        <Text
-                          style={[
-                            styles.ganttDayLabel,
-                            {
-                              color: isToday
-                                ? colors.primary
-                                : isWeekend
-                                ? colors.mutedForeground
-                                : colors.foreground,
-                            },
-                          ]}
-                        >
-                          {d.getDate()}
-                        </Text>
-                      </View>
-                    );
-                  })}
-                </View>
-              ) : null}
-            </View>
-
-            {/* Body rows */}
-            <ScrollView showsVerticalScrollIndicator={false}>
-              <View>
-                {/* Background day grid (drawn per row) */}
-                {dated.map(({ t, s, e }) => {
-                  const offset = daysBetween(range.start, s) * dayWidth;
-                  const width = (daysBetween(s, e) + 1) * dayWidth;
-                  const fillPct = Math.max(0, Math.min(100, t.progress || 0));
-                  const c = statusColor[t.status];
-                  return (
-                    <TouchableOpacity
-                      key={t.id}
-                      activeOpacity={0.7}
-                      onPress={() => onPressTask(t)}
+              <View style={{ width: totalWidth }}>
+                <View style={{ height: 20, position: "relative" }}>
+                  {monthBands.map((b, i) => (
+                    <View
+                      key={i}
                       style={{
-                        height: rowHeight,
-                        borderBottomWidth: StyleSheet.hairlineWidth,
-                        borderBottomColor: colors.border,
-                        position: "relative",
+                        position: "absolute",
+                        left: b.offset,
+                        width: b.width,
+                        top: 0,
+                        bottom: 0,
+                        borderLeftWidth: i === 0 ? 0 : StyleSheet.hairlineWidth,
+                        borderLeftColor: colors.border,
+                        justifyContent: "center",
                       }}
                     >
-                      {/* weekend stripes */}
-                      {days.map((d, i) => {
-                        const wknd = d.getDay() === 0 || d.getDay() === 6;
-                        if (!wknd) return null;
-                        return (
-                          <View
-                            key={i}
-                            style={{
-                              position: "absolute",
-                              left: i * dayWidth,
-                              width: dayWidth,
-                              top: 0,
-                              bottom: 0,
-                              backgroundColor: colors.muted,
-                              opacity: 0.4,
-                            }}
-                          />
-                        );
-                      })}
-                      {/* today line */}
-                      {todayOffset >= 0 ? (
+                      <Text style={[styles.ganttMonthLabel, { color: colors.foreground }]} numberOfLines={1}>
+                        {b.label}
+                      </Text>
+                    </View>
+                  ))}
+                </View>
+                {showDayNum ? (
+                  <View style={{ flexDirection: "row", height: 20 }}>
+                    {days.map((d, i) => {
+                      const isToday = d.getTime() === today.getTime();
+                      const isWeekend = d.getDay() === 0 || d.getDay() === 6;
+                      return (
+                        <View key={i} style={{ width: dayWidth, alignItems: "center", justifyContent: "center" }}>
+                          <Text
+                            style={[
+                              styles.ganttDayLabel,
+                              {
+                                color: isToday
+                                  ? colors.primary
+                                  : isWeekend
+                                  ? colors.mutedForeground
+                                  : colors.foreground,
+                                fontFamily: isToday ? "Inter_700Bold" : "Inter_500Medium",
+                              },
+                            ]}
+                          >
+                            {d.getDate()}
+                          </Text>
+                        </View>
+                      );
+                    })}
+                  </View>
+                ) : null}
+              </View>
+            </View>
+
+            {/* Task rows */}
+            {dated.map(({ t, s, e }) => {
+              const offset = daysBetween(range.start, s) * dayWidth;
+              const width = (daysBetween(s, e) + 1) * dayWidth;
+              const fillPct = Math.max(0, Math.min(100, t.progress || 0));
+              const c = statusColor[t.status];
+              const overdue = today.getTime() > e.getTime() && fillPct < 100;
+              return (
+                <View key={t.id} style={{ flexDirection: "row", height: rowHeight, borderBottomWidth: StyleSheet.hairlineWidth, borderBottomColor: colors.border }}>
+                  <TouchableOpacity
+                    onPress={() => onPressTask(t)}
+                    activeOpacity={0.7}
+                    style={{ width: NAME_W, paddingHorizontal: 10, justifyContent: "center", borderRightWidth: StyleSheet.hairlineWidth, borderRightColor: colors.border }}
+                  >
+                    <Text style={[styles.ganttRowName, { color: colors.foreground }]} numberOfLines={1}>
+                      {t.name}
+                    </Text>
+                    <Text style={[styles.ganttRowSub, { color: colors.mutedForeground }]} numberOfLines={1}>
+                      {projectName(t.projectId)}
+                    </Text>
+                  </TouchableOpacity>
+                  <View style={{ width: totalWidth, position: "relative" }}>
+                    {/* weekend stripes */}
+                    {days.map((d, i) => {
+                      const wknd = d.getDay() === 0 || d.getDay() === 6;
+                      if (!wknd) return null;
+                      return (
                         <View
-                          style={[
-                            styles.todayLine,
-                            { left: todayOffset - 1, backgroundColor: colors.primary, opacity: 0.6 },
-                          ]}
+                          key={i}
+                          style={{
+                            position: "absolute",
+                            left: i * dayWidth,
+                            width: dayWidth,
+                            top: 0,
+                            bottom: 0,
+                            backgroundColor: colors.muted,
+                            opacity: 0.35,
+                          }}
                         />
-                      ) : null}
-                      {/* bar */}
+                      );
+                    })}
+                    {todayOffset >= 0 ? (
                       <View
                         style={[
-                          styles.ganttBar,
-                          {
-                            left: offset,
-                            width: Math.max(width, 6),
-                            backgroundColor: c + "33",
-                            borderWidth: 1,
-                            borderColor: c,
-                          },
+                          styles.todayLine,
+                          { left: todayOffset - 1, backgroundColor: colors.primary, opacity: 0.55 },
                         ]}
-                      >
-                        <View style={[styles.ganttBarFill, { width: `${fillPct}%`, backgroundColor: c }]} />
-                        {width >= 60 ? (
-                          <Text
-                            style={[styles.ganttBarText, { color: colors.foreground }]}
-                            numberOfLines={1}
-                          >
-                            %{fillPct}
-                          </Text>
-                        ) : null}
-                      </View>
+                      />
+                    ) : null}
+                    <TouchableOpacity
+                      activeOpacity={0.8}
+                      onPress={() => onPressTask(t)}
+                      style={[
+                        styles.ganttBar,
+                        {
+                          left: offset,
+                          width: Math.max(width, 6),
+                          backgroundColor: c + "33",
+                          borderWidth: 1,
+                          borderColor: overdue ? "#dc2626" : c,
+                        },
+                      ]}
+                    >
+                      <View style={[styles.ganttBarFill, { width: `${fillPct}%`, backgroundColor: c }]} />
+                      {width >= 56 ? (
+                        <Text style={[styles.ganttBarText, { color: colors.foreground }]} numberOfLines={1}>
+                          %{fillPct}
+                        </Text>
+                      ) : null}
                     </TouchableOpacity>
-                  );
-                })}
-              </View>
-            </ScrollView>
+                  </View>
+                </View>
+              );
+            })}
           </View>
         </ScrollView>
-      </View>
 
-      {undated > 0 ? (
-        <View style={[styles.noDateBanner, { backgroundColor: colors.muted }]}>
-          <Feather name="alert-circle" size={14} color={colors.mutedForeground} />
-          <Text style={[styles.noDateText, { color: colors.mutedForeground }]}>
-            {undated} kalemde başlangıç/bitiş tarihi eksik — Gantt'ta görünmez. Liste görünümünden düzenleyebilirsiniz.
-          </Text>
+        {undated > 0 ? (
+          <View style={[styles.noDateBanner, { backgroundColor: colors.muted }]}>
+            <Feather name="alert-circle" size={14} color={colors.mutedForeground} />
+            <Text style={[styles.noDateText, { color: colors.mutedForeground }]}>
+              {undated} kalemde başlangıç/bitiş tarihi eksik — Gantt'ta görünmez. Liste görünümünden tarih girin.
+            </Text>
+          </View>
+        ) : null}
+
+        <View style={[styles.legend, { backgroundColor: colors.card, borderColor: colors.border }]}>
+          {(Object.keys(statusColor) as ScheduleTask["status"][]).map((s) => (
+            <View key={s} style={styles.legendItem}>
+              <View style={[styles.legendDot, { backgroundColor: statusColor[s] }]} />
+              <Text style={[styles.legendText, { color: colors.foreground }]}>
+                {s === "planned" ? "Planlandı" : s === "in_progress" ? "Devam" : s === "completed" ? "Tamamlandı" : "Gecikti"}
+              </Text>
+            </View>
+          ))}
+          <View style={styles.legendItem}>
+            <View style={[styles.legendDot, { backgroundColor: colors.primary }]} />
+            <Text style={[styles.legendText, { color: colors.foreground }]}>Bugün</Text>
+          </View>
         </View>
-      ) : null}
+      </ScrollView>
     </View>
   );
 }
