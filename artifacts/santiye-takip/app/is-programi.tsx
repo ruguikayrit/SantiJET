@@ -408,6 +408,11 @@ const styles = StyleSheet.create({
   emptyGanttSub: { fontSize: 12, fontFamily: "Inter_400Regular", textAlign: "center", lineHeight: 17 },
   emptyGanttBtn: { flexDirection: "row", alignItems: "center", gap: 6, paddingHorizontal: 16, paddingVertical: 10, borderRadius: 8, marginTop: 8 },
   emptyGanttBtnText: { color: "#fff", fontSize: 13, fontFamily: "Inter_600SemiBold" },
+  hdrMainText: { color: "#fff", fontSize: 11, fontFamily: "Inter_700Bold", letterSpacing: 0.5 },
+  hdrDayNum: { fontSize: 10, fontFamily: "Inter_700Bold" },
+  wkdText: { fontSize: 9, fontFamily: "Inter_600SemiBold" },
+  taskLabelText: { color: "#fff", fontSize: 10, fontFamily: "Inter_600SemiBold" },
+  cellNumText: { fontSize: 9, fontFamily: "Inter_700Bold" },
   ganttRowName: { fontSize: 12, fontFamily: "Inter_600SemiBold" },
   ganttRowSub: { fontSize: 10, fontFamily: "Inter_400Regular", marginTop: 1 },
   ganttRight: { flex: 1 },
@@ -424,6 +429,13 @@ const styles = StyleSheet.create({
 });
 
 const TR_MONTHS = ["Oca", "Şub", "Mar", "Nis", "May", "Haz", "Tem", "Ağu", "Eyl", "Eki", "Kas", "Ara"];
+const TR_WEEKDAY_SHORT = ["Paz", "Pzt", "Sal", "Çar", "Per", "Cum", "Cmt"];
+
+const HDR_BLUE = "#1e3a8a";
+const HDR_BLUE_2 = "#1e40af";
+const TASK_LABEL_BLUE = "#1d4ed8";
+const CELL_BLUE = "#3b82f6";
+const CELL_BLUE_LIGHT = "#bfdbfe";
 
 function parseYMD(s: string): Date | null {
   if (!s) return null;
@@ -479,10 +491,15 @@ function GanttView(props: {
     return { start, end, days: daysBetween(start, end) + 1 };
   }, [dated, today]);
 
-  const dayWidth = range.days <= 21 ? 36 : range.days <= 60 ? 22 : range.days <= 120 ? 14 : 9;
-  const rowHeight = 44;
-  const headerHeight = 44;
+  const dayWidth = range.days <= 21 ? 36 : range.days <= 60 ? 24 : range.days <= 120 ? 16 : 11;
+  const rowHeight = 28;
   const totalWidth = range.days * dayWidth;
+  const showWkd = dayWidth >= 14;
+  const showCellNum = dayWidth >= 16;
+  const HDR_MONTHS_H = 26;
+  const HDR_DAYS_H = 22;
+  const HDR_WKD_H = showWkd ? 22 : 0;
+  const headerHeight = HDR_MONTHS_H + HDR_DAYS_H + HDR_WKD_H;
 
   const days = useMemo(() => {
     const arr: Date[] = [];
@@ -519,9 +536,7 @@ function GanttView(props: {
     return d * dayWidth + dayWidth / 2;
   })();
 
-  const showDayNum = dayWidth >= 14;
-
-  const NAME_W = 140;
+  const NAME_W = 160;
 
   return (
     <View style={styles.ganttRoot}>
@@ -541,133 +556,162 @@ function GanttView(props: {
               { borderColor: colors.border, backgroundColor: colors.card, width: NAME_W + totalWidth },
             ]}
           >
-            {/* Header row */}
-            <View style={{ flexDirection: "row", height: headerHeight, borderBottomWidth: StyleSheet.hairlineWidth, borderBottomColor: colors.border }}>
-              <View style={{ width: NAME_W, justifyContent: "center", paddingHorizontal: 10, borderRightWidth: StyleSheet.hairlineWidth, borderRightColor: colors.border }}>
-                <Text style={[styles.ganttHeadText, { color: colors.mutedForeground }]}>İş Kalemi</Text>
+            {/* AYLAR (months) row */}
+            <View style={{ flexDirection: "row", height: HDR_MONTHS_H, backgroundColor: HDR_BLUE }}>
+              <View style={{ width: NAME_W, justifyContent: "center", alignItems: "center", borderRightWidth: 1, borderRightColor: "#fff" }}>
+                <Text style={[styles.hdrMainText]}>AYLAR</Text>
               </View>
-              <View style={{ width: totalWidth }}>
-                <View style={{ height: 20, position: "relative" }}>
-                  {monthBands.map((b, i) => (
-                    <View
-                      key={i}
-                      style={{
-                        position: "absolute",
-                        left: b.offset,
-                        width: b.width,
-                        top: 0,
-                        bottom: 0,
-                        borderLeftWidth: i === 0 ? 0 : StyleSheet.hairlineWidth,
-                        borderLeftColor: colors.border,
-                        justifyContent: "center",
-                      }}
-                    >
-                      <Text style={[styles.ganttMonthLabel, { color: colors.foreground }]} numberOfLines={1}>
-                        {b.label}
-                      </Text>
-                    </View>
-                  ))}
-                </View>
-                {showDayNum ? (
-                  <View style={{ flexDirection: "row", height: 20 }}>
-                    {days.map((d, i) => {
-                      const isToday = d.getTime() === today.getTime();
-                      const isWeekend = d.getDay() === 0 || d.getDay() === 6;
-                      return (
-                        <View key={i} style={{ width: dayWidth, alignItems: "center", justifyContent: "center" }}>
-                          <Text
-                            style={[
-                              styles.ganttDayLabel,
-                              {
-                                color: isToday
-                                  ? colors.primary
-                                  : isWeekend
-                                  ? colors.mutedForeground
-                                  : colors.foreground,
-                                fontFamily: isToday ? "Inter_700Bold" : "Inter_500Medium",
-                              },
-                            ]}
-                          >
-                            {d.getDate()}
-                          </Text>
-                        </View>
-                      );
-                    })}
+              <View style={{ width: totalWidth, position: "relative" }}>
+                {monthBands.map((b, i) => (
+                  <View
+                    key={i}
+                    style={{
+                      position: "absolute",
+                      left: b.offset,
+                      width: b.width,
+                      top: 0,
+                      bottom: 0,
+                      borderRightWidth: 1,
+                      borderRightColor: "#ffffff66",
+                      justifyContent: "center",
+                      alignItems: "center",
+                    }}
+                  >
+                    <Text style={styles.hdrMainText} numberOfLines={1}>{b.label}</Text>
                   </View>
-                ) : null}
+                ))}
               </View>
             </View>
 
+            {/* GÜNLER (day numbers) row */}
+            <View style={{ flexDirection: "row", height: HDR_DAYS_H, backgroundColor: HDR_BLUE_2 }}>
+              <View style={{ width: NAME_W, justifyContent: "center", alignItems: "center", borderRightWidth: 1, borderRightColor: "#fff" }}>
+                <Text style={[styles.hdrMainText]}>GÜNLER</Text>
+              </View>
+              <View style={{ width: totalWidth, flexDirection: "row" }}>
+                {days.map((d, i) => {
+                  const isToday = d.getTime() === today.getTime();
+                  return (
+                    <View
+                      key={i}
+                      style={{
+                        width: dayWidth,
+                        alignItems: "center",
+                        justifyContent: "center",
+                        borderRightWidth: StyleSheet.hairlineWidth,
+                        borderRightColor: "#ffffff44",
+                        backgroundColor: isToday ? "#fbbf24" : "transparent",
+                      }}
+                    >
+                      <Text style={[styles.hdrDayNum, { color: isToday ? "#1e3a8a" : "#fff" }]}>
+                        {d.getDate()}
+                      </Text>
+                    </View>
+                  );
+                })}
+              </View>
+            </View>
+
+            {/* WEEKDAY row (only if dayWidth allows) */}
+            {showWkd ? (
+              <View style={{ flexDirection: "row", height: HDR_WKD_H, backgroundColor: "#eff6ff", borderBottomWidth: StyleSheet.hairlineWidth, borderBottomColor: colors.border }}>
+                <View style={{ width: NAME_W, borderRightWidth: StyleSheet.hairlineWidth, borderRightColor: colors.border }} />
+                <View style={{ width: totalWidth, flexDirection: "row" }}>
+                  {days.map((d, i) => {
+                    const wd = d.getDay();
+                    const isWeekend = wd === 0 || wd === 6;
+                    return (
+                      <View
+                        key={i}
+                        style={{
+                          width: dayWidth,
+                          alignItems: "center",
+                          justifyContent: "center",
+                          borderRightWidth: StyleSheet.hairlineWidth,
+                          borderRightColor: "#cbd5e1",
+                          backgroundColor: isWeekend ? "#dbeafe" : "transparent",
+                        }}
+                      >
+                        <Text style={[styles.wkdText, { color: isWeekend ? "#64748b" : "#1e3a8a" }]}>
+                          {TR_WEEKDAY_SHORT[wd]}
+                        </Text>
+                      </View>
+                    );
+                  })}
+                </View>
+              </View>
+            ) : null}
+
             {/* Task rows */}
             {dated.map(({ t, s, e }) => {
-              const offset = daysBetween(range.start, s) * dayWidth;
-              const width = (daysBetween(s, e) + 1) * dayWidth;
+              const startIdx = daysBetween(range.start, s);
+              const duration = daysBetween(s, e) + 1;
               const fillPct = Math.max(0, Math.min(100, t.progress || 0));
-              const c = statusColor[t.status];
+              const baseColor = statusColor[t.status];
               const overdue = today.getTime() > e.getTime() && fillPct < 100;
+              const filledDays = Math.round((duration * fillPct) / 100);
+
               return (
                 <View key={t.id} style={{ flexDirection: "row", height: rowHeight, borderBottomWidth: StyleSheet.hairlineWidth, borderBottomColor: colors.border }}>
                   <TouchableOpacity
                     onPress={() => onPressTask(t)}
                     activeOpacity={0.7}
-                    style={{ width: NAME_W, paddingHorizontal: 10, justifyContent: "center", borderRightWidth: StyleSheet.hairlineWidth, borderRightColor: colors.border }}
+                    style={{
+                      width: NAME_W,
+                      paddingHorizontal: 8,
+                      justifyContent: "center",
+                      backgroundColor: TASK_LABEL_BLUE,
+                      borderRightWidth: 1,
+                      borderRightColor: "#fff",
+                    }}
                   >
-                    <Text style={[styles.ganttRowName, { color: colors.foreground }]} numberOfLines={1}>
+                    <Text style={styles.taskLabelText} numberOfLines={1}>
                       {t.name}
                     </Text>
-                    <Text style={[styles.ganttRowSub, { color: colors.mutedForeground }]} numberOfLines={1}>
-                      {projectName(t.projectId)}
-                    </Text>
                   </TouchableOpacity>
-                  <View style={{ width: totalWidth, position: "relative" }}>
-                    {/* weekend stripes */}
+                  <View style={{ width: totalWidth, flexDirection: "row", position: "relative" }}>
                     {days.map((d, i) => {
-                      const wknd = d.getDay() === 0 || d.getDay() === 6;
-                      if (!wknd) return null;
+                      const wd = d.getDay();
+                      const isWeekend = wd === 0 || wd === 6;
+                      const isInTask = i >= startIdx && i < startIdx + duration;
+                      const dayInTask = i - startIdx + 1;
+                      const isFilled = isInTask && dayInTask <= filledDays;
+                      const cellBg = isInTask
+                        ? overdue
+                          ? isFilled ? "#dc2626" : "#fecaca"
+                          : isFilled ? baseColor : CELL_BLUE_LIGHT
+                        : isWeekend ? "#f8fafc" : "transparent";
+                      const numColor = isInTask ? (isFilled ? "#fff" : "#1e3a8a") : "transparent";
                       return (
-                        <View
+                        <TouchableOpacity
                           key={i}
+                          onPress={() => onPressTask(t)}
+                          activeOpacity={isInTask ? 0.7 : 1}
                           style={{
-                            position: "absolute",
-                            left: i * dayWidth,
                             width: dayWidth,
-                            top: 0,
-                            bottom: 0,
-                            backgroundColor: colors.muted,
-                            opacity: 0.35,
+                            height: rowHeight,
+                            alignItems: "center",
+                            justifyContent: "center",
+                            backgroundColor: cellBg,
+                            borderRightWidth: StyleSheet.hairlineWidth,
+                            borderRightColor: isInTask ? "#ffffff66" : "#e2e8f0",
                           }}
-                        />
+                        >
+                          {isInTask && showCellNum ? (
+                            <Text style={[styles.cellNumText, { color: numColor }]}>{dayInTask}</Text>
+                          ) : null}
+                        </TouchableOpacity>
                       );
                     })}
                     {todayOffset >= 0 ? (
                       <View
+                        pointerEvents="none"
                         style={[
                           styles.todayLine,
-                          { left: todayOffset - 1, backgroundColor: colors.primary, opacity: 0.55 },
+                          { left: todayOffset - 1, backgroundColor: "#fbbf24", opacity: 0.7 },
                         ]}
                       />
                     ) : null}
-                    <TouchableOpacity
-                      activeOpacity={0.8}
-                      onPress={() => onPressTask(t)}
-                      style={[
-                        styles.ganttBar,
-                        {
-                          left: offset,
-                          width: Math.max(width, 6),
-                          backgroundColor: c + "33",
-                          borderWidth: 1,
-                          borderColor: overdue ? "#dc2626" : c,
-                        },
-                      ]}
-                    >
-                      <View style={[styles.ganttBarFill, { width: `${fillPct}%`, backgroundColor: c }]} />
-                      {width >= 56 ? (
-                        <Text style={[styles.ganttBarText, { color: colors.foreground }]} numberOfLines={1}>
-                          %{fillPct}
-                        </Text>
-                      ) : null}
-                    </TouchableOpacity>
                   </View>
                 </View>
               );
