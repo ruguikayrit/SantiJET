@@ -13,6 +13,7 @@ import {
   MATERIAL_CATEGORIES,
 } from "@/constants/materials";
 import { MATERIAL_UNITS, UnitOption } from "@/constants/units";
+import { DEFAULT_IMALAT_POZLARI, ImalatPoz } from "@/constants/imalatPozlari";
 
 export interface Project {
   id: string;
@@ -456,6 +457,7 @@ interface AppState {
   materialCategories: string[];
   materialList: ConstructionMaterial[];
   materialUnits: UnitOption[];
+  imalatPozlari: ImalatPoz[];
 }
 
 export type SyncStatus = "idle" | "syncing" | "success" | "error" | "conflict" | "auth_error";
@@ -557,6 +559,10 @@ interface AppContextType extends AppState {
   addMaterialItem: (item: ConstructionMaterial) => void;
   deleteMaterialItem: (name: string) => void;
 
+  addImalatPoz: (poz: ImalatPoz) => void;
+  updateImalatPoz: (code: string, patch: Partial<ImalatPoz>) => void;
+  deleteImalatPoz: (code: string) => void;
+
   addMaterialUnit: (unit: UnitOption) => void;
   deleteMaterialUnit: (code: string) => void;
 }
@@ -595,6 +601,7 @@ const INITIAL: AppState = {
   materialCategories: [...MATERIAL_CATEGORIES],
   materialList: [...CONSTRUCTION_MATERIALS],
   materialUnits: [...MATERIAL_UNITS],
+  imalatPozlari: [...DEFAULT_IMALAT_POZLARI],
 };
 
 function needsRoleMigration(roles: Role[]): boolean {
@@ -765,6 +772,9 @@ async function loadInitialState(): Promise<AppState> {
       }
       if (!Array.isArray(state.materialUnits)) {
         state.materialUnits = [...MATERIAL_UNITS];
+      }
+      if (!Array.isArray(state.imalatPozlari) || state.imalatPozlari.length === 0) {
+        state.imalatPozlari = [...DEFAULT_IMALAT_POZLARI];
       }
       state.purchases = normalizePurchases(state.purchases);
       state.weighbridges = normalizeWeighbridges(state.weighbridges);
@@ -975,6 +985,8 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
               ? incoming.materialList : [...CONSTRUCTION_MATERIALS],
             materialUnits: Array.isArray(incoming.materialUnits)
               ? incoming.materialUnits : [...MATERIAL_UNITS],
+            imalatPozlari: Array.isArray(incoming.imalatPozlari) && incoming.imalatPozlari.length > 0
+              ? incoming.imalatPozlari : [...DEFAULT_IMALAT_POZLARI],
             purchases: normalizePurchases(incoming.purchases),
             currentUserId: userStillExists ? prevUserId : null,
           };
@@ -1498,6 +1510,25 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
           ? prev
           : { ...prev, materialList: [...prev.materialList, item] }
       ),
+    addImalatPoz: (poz) =>
+      update((prev) =>
+        prev.imalatPozlari.some((p) => p.code.toLowerCase() === poz.code.toLowerCase())
+          ? prev
+          : { ...prev, imalatPozlari: [...prev.imalatPozlari, poz] }
+      ),
+    updateImalatPoz: (code, patch) =>
+      update((prev) => ({
+        ...prev,
+        imalatPozlari: prev.imalatPozlari.map((p) =>
+          p.code === code ? { ...p, ...patch } : p
+        ),
+      })),
+    deleteImalatPoz: (code) =>
+      update((prev) => ({
+        ...prev,
+        imalatPozlari: prev.imalatPozlari.filter((p) => p.code !== code),
+      })),
+
     deleteMaterialItem: (name) =>
       update((prev) => ({
         ...prev,

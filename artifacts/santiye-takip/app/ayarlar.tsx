@@ -49,6 +49,16 @@ export default function AyarlarScreen() {
     },
   ];
 
+  const construction: Row[] = [
+    {
+      key: "imalatPoz",
+      icon: "book-open",
+      title: "İmalat Poz Tarifleri",
+      sub: "İnşaat imalat pozlarını ve tariflerini yönetin",
+      route: "/imalat-pozlari",
+    },
+  ];
+
   const material: Row[] = [
     {
       key: "matCat",
@@ -134,6 +144,11 @@ export default function AyarlarScreen() {
 
         {isAdmin ? (
           <>
+            <Text style={[styles.section, { color: colors.foreground, marginTop: 24 }]}>
+              İnşaat
+            </Text>
+            {construction.map((r, i) => renderRow(r, i === 0))}
+
             <Text style={[styles.section, { color: colors.foreground, marginTop: 24 }]}>
               {t("home.materialSettings")}
             </Text>
