@@ -77,6 +77,7 @@ interface RF {
   requestedBy: string;
   status: MaterialRequest["status"];
   note: string;
+  usageLocation: string;
 }
 
 interface MovF {
@@ -107,6 +108,7 @@ const EMPTY_M: MF = {
 const EMPTY_R: RF = {
   projectId: "", name: "", category: "", unit: "", quantity: "",
   requestDate: "", requestedBy: "", status: "pending", note: "",
+  usageLocation: "",
 };
 
 const EMPTY_MOV: MovF = {
@@ -312,6 +314,7 @@ export default function MalzemeScreen() {
         requestedBy: r.requestedBy,
         status: r.status,
         note: r.note,
+        usageLocation: r.usageLocation || "",
       });
     } else {
       setREditId(null);
@@ -335,6 +338,7 @@ export default function MalzemeScreen() {
       requestedBy: rForm.requestedBy.trim(),
       status: rForm.status,
       note: rForm.note.trim(),
+      usageLocation: rForm.usageLocation.trim() || undefined,
     };
     if (rEditId) updateMaterialRequest(rEditId, data);
     else addMaterialRequest(data);
@@ -944,6 +948,12 @@ export default function MalzemeScreen() {
             ))}
           </View>
           <FormInput
+            label="Kullanım Yeri"
+            value={rForm.usageLocation}
+            onChangeText={(v) => setRForm({ ...rForm, usageLocation: v })}
+            placeholder="Örn: B Blok 3. kat kalıp"
+          />
+          <FormInput
             label="Not / Açıklama"
             value={rForm.note}
             onChangeText={(v) => setRForm({ ...rForm, note: v })}
@@ -1303,6 +1313,15 @@ export default function MalzemeScreen() {
                   </View>
                 ) : null}
               </View>
+
+              {item.usageLocation ? (
+                <View style={styles.metaRow}>
+                  <Feather name="map-pin" size={12} color={colors.mutedForeground} />
+                  <Text style={[styles.metaText, { color: colors.mutedForeground }]}>
+                    {item.usageLocation}
+                  </Text>
+                </View>
+              ) : null}
 
               {item.note ? (
                 <View style={styles.metaRow}>

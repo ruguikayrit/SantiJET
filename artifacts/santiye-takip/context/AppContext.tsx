@@ -170,6 +170,7 @@ export interface MaterialRequest {
   requestedBy: string;
   status: "pending" | "approved" | "delivered" | "rejected";
   note: string;
+  usageLocation?: string;
   approvals?: {
     sef?: boolean;
     mudur?: boolean;
