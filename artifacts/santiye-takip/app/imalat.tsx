@@ -319,30 +319,18 @@ export default function ImalatScreen() {
           </View>
           <View style={{ flex: 1 }}>
             <FormInput
-              label="Planlanan"
-              value={form.plannedQty}
-              onChangeText={(v) => setForm({ ...form, plannedQty: v })}
-              keyboardType="numeric"
-            />
-          </View>
-        </View>
-        <View style={styles.row}>
-          <View style={{ flex: 1 }}>
-            <FormInput
-              label="Gerçekleşen"
+              label="Gerçekleşen Metraj"
               value={form.completedQty}
               onChangeText={(v) => setForm({ ...form, completedQty: v })}
               keyboardType="numeric"
             />
           </View>
-          <View style={{ flex: 1 }}>
-            <DatePickerInput
-              label="Tarih"
-              value={form.date}
-              onChange={(v) => setForm({ ...form, date: v })}
-            />
-          </View>
         </View>
+        <DatePickerInput
+          label="Tarih"
+          value={form.date}
+          onChange={(v) => setForm({ ...form, date: v })}
+        />
 
         <FormInput
           label="Açıklama"
