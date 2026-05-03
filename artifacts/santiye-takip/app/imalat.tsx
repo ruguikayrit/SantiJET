@@ -259,7 +259,7 @@ export default function ImalatScreen() {
         <View style={styles.row}>
           <View style={{ flex: 1 }}>
             <FormInput
-              label="Tamamlanan"
+              label="Gerçekleşen"
               value={form.completedQty}
               onChangeText={(v) => setForm({ ...form, completedQty: v })}
               keyboardType="numeric"
