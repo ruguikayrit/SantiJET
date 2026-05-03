@@ -172,40 +172,38 @@ export default function GunlukRaporScreen() {
       const raporlu = cnt("raporlu");
       const mazeret = cnt("mazeret");
       const tatil = cnt("tatil");
-      const totalHours = att.reduce((s, a) => s + (a.hours || 0), 0);
+      const calismadi = absent + izinli + raporlu + mazeret + tatil;
       workerCount = present + half;
       const lines: string[] = [];
-      const parts: string[] = [`${present} tam`];
-      if (half) parts.push(`${half} yarım`);
-      if (izinli) parts.push(`${izinli} izinli`);
-      if (raporlu) parts.push(`${raporlu} raporlu`);
-      if (mazeret) parts.push(`${mazeret} mazeret`);
-      if (tatil) parts.push(`${tatil} tatil`);
-      if (absent) parts.push(`${absent} gelmedi`);
-      lines.push(parts.join(" · "));
-      lines.push(`Toplam ${fmtNum(totalHours)} saat`);
 
-      // Meslek grubu kırılımı (sadece çalışanlar: tam + yarım)
+      // Firma > Meslek/Branş kırılımı (sadece çalışanlar: tam + yarım)
       const userById = new Map(appUsers.map(u => [u.id, u] as const));
-      const groupMap = new Map<string, { count: number; profs: Map<string, number> }>();
+      const companyMap = new Map<string, Map<string, number>>();
       for (const a of att) {
         if (a.status !== "present" && a.status !== "half") continue;
         const u = userById.get(a.workerId);
-        const group = ((u?.team || "").trim()) || "Diğer";
-        const prof = ((u?.profession || "").trim()) || "Çalışan";
-        let g = groupMap.get(group);
-        if (!g) { g = { count: 0, profs: new Map() }; groupMap.set(group, g); }
-        g.count += 1;
-        g.profs.set(prof, (g.profs.get(prof) || 0) + 1);
+        const company = ((u?.company || "").trim()) || "DİĞER";
+        const trade = ((u?.team || "").trim()) || ((u?.profession || "").trim()) || "Çalışan";
+        let m = companyMap.get(company);
+        if (!m) { m = new Map(); companyMap.set(company, m); }
+        m.set(trade, (m.get(trade) || 0) + 1);
       }
-      if (groupMap.size > 0) {
-        const ordered = Array.from(groupMap.entries()).sort((a, b) => b[1].count - a[1].count);
-        for (const [grp, info] of ordered) {
-          let topProf = "Çalışan"; let topN = -1;
-          for (const [p, n] of info.profs) { if (n > topN) { topProf = p; topN = n; } }
-          lines.push(`${grp} - ${info.count} ${topProf}`);
+      const orderedCompanies = Array.from(companyMap.entries()).sort(
+        (a, b) => Array.from(b[1].values()).reduce((s, n) => s + n, 0)
+                - Array.from(a[1].values()).reduce((s, n) => s + n, 0),
+      );
+      for (const [company, trades] of orderedCompanies) {
+        lines.push(company.toUpperCase());
+        const orderedTrades = Array.from(trades.entries()).sort((a, b) => b[1] - a[1]);
+        for (const [trade, n] of orderedTrades) {
+          lines.push(`${trade}-${n} usta`);
         }
+        lines.push("");
       }
+      const summaryParts: string[] = [`${present} tam`];
+      if (half) summaryParts.push(`${half} yarım`);
+      if (calismadi) summaryParts.push(`${calismadi} çalışmadı`);
+      lines.push(`Toplam kayıtlı personel sayısı ${att.length} adam – ${summaryParts.join(" – ")}.`);
 
       cards.push({
         key: "puantaj",
