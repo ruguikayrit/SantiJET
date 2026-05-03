@@ -1347,8 +1347,7 @@ const styles = StyleSheet.create({
   },
   kantarBadgeText: { fontSize: 10, fontFamily: "Inter_600SemiBold" },
   apprRow: {
-    flexDirection: "row",
-    flexWrap: "wrap",
+    flexDirection: "column",
     gap: 6,
     marginTop: 8,
   },
@@ -1360,6 +1359,7 @@ const styles = StyleSheet.create({
     paddingVertical: 5,
     borderRadius: 8,
     borderWidth: 1,
+    alignSelf: "flex-start",
   },
   apprBox: {
     width: 16,
