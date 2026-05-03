@@ -5,8 +5,8 @@ export interface UnitOption {
 
 export const MATERIAL_UNITS: UnitOption[] = [
   { code: "MT", label: "MT — Metre" },
-  { code: "M2", label: "M² — Metrekare" },
-  { code: "M3", label: "M³ — Metreküp" },
+  { code: "M²", label: "M² — Metrekare" },
+  { code: "M³", label: "M³ — Metreküp" },
   { code: "KG", label: "KG — Kilogram" },
   { code: "TON", label: "TON — Ton" },
   { code: "ADET", label: "ADET" },

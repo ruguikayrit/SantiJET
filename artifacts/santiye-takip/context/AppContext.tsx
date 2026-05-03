@@ -801,6 +801,12 @@ async function loadInitialState(): Promise<AppState> {
       }
       if (!Array.isArray(state.materialUnits)) {
         state.materialUnits = [...MATERIAL_UNITS];
+      } else {
+        state.materialUnits = state.materialUnits.map((u: UnitOption) => {
+          if (u.code === "M2") return { code: "M²", label: "M² — Metrekare" };
+          if (u.code === "M3") return { code: "M³", label: "M³ — Metreküp" };
+          return u;
+        });
       }
       state.imalatPozlari = mergeImalatPozlari(state.imalatPozlari);
       state.purchases = normalizePurchases(state.purchases);
