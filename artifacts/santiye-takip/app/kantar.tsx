@@ -303,7 +303,7 @@ export default function KantarScreen() {
             <View style={[styles.sumBox, { backgroundColor: "#0d948822" }]}>
               <Text style={[styles.sumLabel, { color: colors.foreground }]}>Toplam Net</Text>
               <Text style={[styles.sumNum, { color: "#0d9488" }]}>
-                {fmtNum(summary.totalNet)} kg
+                {materialFilter ? `${fmtNum(summary.totalNet)} kg` : "-"}
               </Text>
             </View>
             <View style={[styles.sumBox, { backgroundColor: "#d9770622" }]}>
