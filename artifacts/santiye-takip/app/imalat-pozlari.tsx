@@ -229,7 +229,7 @@ export default function ImalatPozlariScreen() {
                 </View>
               </View>
               {item.description ? (
-                <Text style={[styles.desc, { color: colors.mutedForeground }]} numberOfLines={2}>
+                <Text style={[styles.desc, { color: colors.mutedForeground }]}>
                   {item.description}
                 </Text>
               ) : null}
@@ -291,8 +291,11 @@ export default function ImalatPozlariScreen() {
           label="Tarif / Açıklama"
           value={form.description}
           onChangeText={(v) => setForm({ ...form, description: v })}
-          placeholder="İsteğe bağlı uzun tarif"
+          placeholder="İsteğe bağlı uzun tarif (Enter ile satır eklenebilir)"
           multiline
+          numberOfLines={6}
+          textAlignVertical="top"
+          style={{ minHeight: 120, paddingTop: 12 }}
         />
         <PrimaryButton label="Kaydet" onPress={save} style={{ marginTop: 8 }} />
         {editCode ? (
@@ -373,7 +376,7 @@ const styles = StyleSheet.create({
   meta: { fontSize: 11, fontFamily: "Inter_400Regular", flex: 1 },
   unitBadge: { paddingHorizontal: 8, paddingVertical: 2, borderRadius: 999 },
   unitText: { fontSize: 11, fontFamily: "Inter_600SemiBold" },
-  desc: { fontSize: 11, fontFamily: "Inter_400Regular", marginTop: 4 },
+  desc: { fontSize: 11, fontFamily: "Inter_400Regular", marginTop: 4, lineHeight: 16 },
   label: {
     fontSize: 13,
     fontFamily: "Inter_600SemiBold",
