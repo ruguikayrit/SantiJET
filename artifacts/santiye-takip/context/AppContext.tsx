@@ -251,6 +251,8 @@ export interface Purchase {
   invoiceReceived: boolean; // Faturası geldi olarak işaretlendi mi
   // İlişkili malzeme talebi (otomatik oluşturulan kayıtlar için)
   materialRequestId?: string;
+  // İlişkili Gelen Malzeme (talepsiz girilip Satın Alma'ya gönderilen kayıtlar için)
+  materialId?: string;
   // KasaFON köprüsü için (sonradan kullanılacak)
   finansTransactionId?: string;
 }
@@ -736,6 +738,8 @@ function normalizePurchases(arr: any): Purchase[] {
     invoiceReceived: !!p?.invoiceReceived,
     materialRequestId:
       typeof p?.materialRequestId === "string" ? p.materialRequestId : undefined,
+    materialId:
+      typeof p?.materialId === "string" ? p.materialId : undefined,
   })) as Purchase[];
 }
 

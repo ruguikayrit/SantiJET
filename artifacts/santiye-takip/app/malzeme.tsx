@@ -141,6 +141,8 @@ export default function MalzemeScreen() {
     updateMaterialMovement,
     deleteMaterialMovement,
     weighbridges,
+    purchases,
+    addPurchase,
   } = useApp();
 
   const perm = usePermission("malzeme");
@@ -148,6 +150,11 @@ export default function MalzemeScreen() {
   useEffect(() => { if (perm === "none") { if (router.canGoBack()) router.back(); else router.replace("/"); } }, [perm]);
 
   const [tab, setTab] = useState<Tab>("gelen");
+  const [purchaseSendVisible, setPurchaseSendVisible] = useState(false);
+  const [purchaseSendMatId, setPurchaseSendMatId] = useState<string | null>(null);
+  const [purchaseSendNote, setPurchaseSendNote] = useState("");
+  const [purchaseSendSupplier, setPurchaseSendSupplier] = useState("");
+  const [purchaseSendUnitPrice, setPurchaseSendUnitPrice] = useState("");
   const [filter, setFilter] = useState<string | null>(null);
   const [materialFilter, setMaterialFilter] = useState<string | null>(null);
 
@@ -339,6 +346,49 @@ export default function MalzemeScreen() {
     }
     commit();
   }
+  function openSendPurchase(m: Material) {
+    setPurchaseSendMatId(m.id);
+    setPurchaseSendNote("");
+    setPurchaseSendSupplier(m.supplier || "");
+    setPurchaseSendUnitPrice(m.unitPrice ? String(m.unitPrice) : "");
+    setPurchaseSendVisible(true);
+  }
+
+  function confirmSendPurchase() {
+    if (!purchaseSendMatId) return;
+    const m = materials.find((x) => x.id === purchaseSendMatId);
+    if (!m) return;
+    if (purchases.some((p) => p.materialId === m.id)) {
+      Alert.alert("Zaten gönderildi", "Bu malzeme için Satın Alma kaydı mevcut.");
+      setPurchaseSendVisible(false);
+      return;
+    }
+    const note = purchaseSendNote.trim();
+    const today = new Date().toISOString().slice(0, 10);
+    addPurchase({
+      projectId: m.projectId,
+      date: m.deliveryDate || today,
+      supplier: purchaseSendSupplier.trim() || m.supplier || "",
+      itemName: m.name,
+      category: m.category || "",
+      unit: m.unit,
+      quantity: m.quantity || 0,
+      unitPrice: parseFloat(purchaseSendUnitPrice) || m.unitPrice || 0,
+      vatRate: 20,
+      status: "pending",
+      paymentMethod: "havale",
+      paidDate: "",
+      invoiceNo: m.invoiceNo || "",
+      notes: note
+        ? `Talepsiz Gelen Malzemeden gönderildi.\nNot: ${note}`
+        : "Talepsiz Gelen Malzemeden gönderildi.",
+      invoiceReceived: false,
+      materialId: m.id,
+    } as any);
+    setPurchaseSendVisible(false);
+    Alert.alert("Gönderildi", `"${m.name}" Satın Alma listesine eklendi.`);
+  }
+
   function removeMaterial() {
     if (!mEditId) return;
     const m = materials.find((x) => x.id === mEditId);
@@ -1033,6 +1083,53 @@ export default function MalzemeScreen() {
           ) : null}
         </ScrollView>
       </BottomSheet>
+      <BottomSheet
+        visible={purchaseSendVisible}
+        onClose={() => setPurchaseSendVisible(false)}
+        title="Satın Alma'ya Gönder"
+      >
+        {(() => {
+          const m = purchaseSendMatId ? materials.find((x) => x.id === purchaseSendMatId) : null;
+          if (!m) return null;
+          return (
+            <>
+              <Text style={{ fontSize: 13, color: colors.mutedForeground, marginBottom: 4, fontFamily: "Inter_400Regular" }}>
+                {projectName(m.projectId)}
+              </Text>
+              <Text style={{ fontSize: 16, color: colors.foreground, marginBottom: 4, fontFamily: "Inter_700Bold" }}>
+                {m.name}
+              </Text>
+              <Text style={{ fontSize: 12, color: colors.mutedForeground, marginBottom: 14, fontFamily: "Inter_400Regular" }}>
+                {m.quantity} {m.unit}
+                {m.deliveryDate ? ` · ${m.deliveryDate}` : ""}
+              </Text>
+              <FormInput
+                label="Tedarikçi"
+                value={purchaseSendSupplier}
+                onChangeText={setPurchaseSendSupplier}
+                placeholder="İsteğe bağlı"
+              />
+              <FormInput
+                label="Birim Fiyat (KDV hariç)"
+                value={purchaseSendUnitPrice}
+                onChangeText={setPurchaseSendUnitPrice}
+                placeholder="0"
+                keyboardType="numeric"
+              />
+              <FormInput
+                label="Not (zorunlu değil ama tavsiye edilir)"
+                value={purchaseSendNote}
+                onChangeText={setPurchaseSendNote}
+                placeholder="Neden talep edilmeden alındı? Acil mi? Onayı kim verdi?"
+                multiline
+                numberOfLines={4}
+                style={{ minHeight: 90, paddingTop: 10 }}
+              />
+              <PrimaryButton label="Satın Alma'ya Gönder" onPress={confirmSendPurchase} style={{ marginTop: 8 }} />
+            </>
+          );
+        })()}
+      </BottomSheet>
     </View>
   );
 
@@ -1203,9 +1300,28 @@ export default function MalzemeScreen() {
                   </View>
                 </View>
               </View>
-              <View style={[styles.gelenQtyPill, { backgroundColor: colors.muted }]}>
-                <Text style={[styles.gelenQtyVal, { color: colors.foreground }]}>{item.quantity}</Text>
-                <Text style={[styles.gelenQtyUnit, { color: colors.mutedForeground }]}>{item.unit}</Text>
+              <View style={{ alignItems: "flex-end", gap: 6 }}>
+                <View style={[styles.gelenQtyPill, { backgroundColor: colors.muted }]}>
+                  <Text style={[styles.gelenQtyVal, { color: colors.foreground }]}>{item.quantity}</Text>
+                  <Text style={[styles.gelenQtyUnit, { color: colors.mutedForeground }]}>{item.unit}</Text>
+                </View>
+                {!item.materialRequestId ? (
+                  purchases.some((p) => p.materialId === item.id) ? (
+                    <View style={[styles.fromReqBadge, { backgroundColor: "#16a34a" }]}>
+                      <Feather name="check" size={10} color="#fff" />
+                      <Text style={styles.fromReqBadgeText}>Satın Alma'da</Text>
+                    </View>
+                  ) : canEdit ? (
+                    <TouchableOpacity
+                      onPress={(e) => { e.stopPropagation(); openSendPurchase(item); }}
+                      activeOpacity={0.85}
+                      style={styles.sendPurchaseBtn}
+                    >
+                      <Feather name="shopping-cart" size={11} color="#fff" />
+                      <Text style={styles.sendPurchaseBtnText}>Satın Alma'ya Ekle</Text>
+                    </TouchableOpacity>
+                  ) : null
+                ) : null}
               </View>
             </TouchableOpacity>
           );
@@ -1594,6 +1710,21 @@ const styles = StyleSheet.create({
     paddingHorizontal: 8,
     paddingVertical: 3,
     borderRadius: 999,
+  },
+  sendPurchaseBtn: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 4,
+    backgroundColor: "#0ea5e9",
+    paddingHorizontal: 10,
+    paddingVertical: 6,
+    borderRadius: 999,
+  },
+  sendPurchaseBtnText: {
+    color: "#fff",
+    fontSize: 11,
+    fontFamily: "Inter_700Bold",
+    letterSpacing: 0.2,
   },
   fromReqBadgeText: {
     color: "#fff",
