@@ -338,6 +338,18 @@ export default function SatinAlmaScreen() {
                           <Text style={[styles.linkBadgeText, { color: "#7c3aed" }]}>Talepten</Text>
                         </View>
                       ) : null}
+                      {item.finansTransactionId ? (
+                        <TouchableOpacity
+                          onPress={(e) => {
+                            e.stopPropagation();
+                            router.push("/finans" as any);
+                          }}
+                          style={[styles.linkBadge, { backgroundColor: "#0B1E3322" }]}
+                        >
+                          <Feather name="dollar-sign" size={10} color="#0B1E33" />
+                          <Text style={[styles.linkBadgeText, { color: "#0B1E33" }]}>KasaFON</Text>
+                        </TouchableOpacity>
+                      ) : null}
                       {canEdit && item.status !== "cancelled" ? (
                         <TouchableOpacity
                           onPress={(e) => {

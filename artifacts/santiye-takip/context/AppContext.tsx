@@ -580,6 +580,89 @@ function backfillRolePermissions(roles: Role[]): Role[] {
   });
 }
 
+// ---------------------------------------------------------------------------
+// KasaFON (finans) köprüsü
+// BudgetProvider yalnızca /finans altında mount olduğundan, doğrudan paylaşılan
+// AsyncStorage'a yazıyoruz. Kullanıcı /finans'a girdiğinde KasaFON kayıtları
+// okuyacak.
+// ---------------------------------------------------------------------------
+const FINANS_TX_STORAGE_KEY = "@budget_transactions";
+
+function purchaseTotalWithVat(p: Pick<Purchase, "quantity" | "unitPrice" | "vatRate">): number {
+  const sub = (p.quantity || 0) * (p.unitPrice || 0);
+  const t = sub * (1 + (p.vatRate || 0) / 100);
+  return Math.round(t * 100) / 100;
+}
+
+function mapPurchasePaymentToFinans(pm: PurchasePaymentMethod): "cash" | "card" | "transfer" {
+  if (pm === "nakit") return "cash";
+  if (pm === "kredi-karti") return "card";
+  return "transfer"; // havale, cek, vadeli
+}
+
+function buildFinansTxFromPurchase(p: Purchase, projectName?: string) {
+  const noteParts: string[] = [];
+  if (p.supplier?.trim()) noteParts.push(p.supplier.trim());
+  if (p.itemName?.trim()) noteParts.push(p.itemName.trim());
+  if (p.invoiceNo?.trim()) noteParts.push(`Fatura: ${p.invoiceNo.trim()}`);
+  if (projectName) noteParts.push(`[${projectName}]`);
+  return {
+    type: "expense" as const,
+    amount: purchaseTotalWithVat(p),
+    category: p.category?.trim() || "Şantiye Alımı",
+    note: noteParts.join(" · "),
+    date: p.paidDate || p.date || new Date().toISOString().slice(0, 10),
+    paymentMethod: mapPurchasePaymentToFinans(p.paymentMethod),
+  };
+}
+
+// In-flight köprü işlemleri kuyruğu — aynı txId için yazma/silme sırasını korur,
+// "ödendi yap → hemen sil" gibi yarış durumlarında orphan kayıt bırakmaz.
+const pendingFinansOps = new Map<string, Promise<void>>();
+
+function chainFinansOp(txId: string, op: () => Promise<void>): Promise<void> {
+  const prev = pendingFinansOps.get(txId) ?? Promise.resolve();
+  const next = prev.then(op, op).finally(() => {
+    if (pendingFinansOps.get(txId) === next) {
+      pendingFinansOps.delete(txId);
+    }
+  });
+  pendingFinansOps.set(txId, next);
+  return next;
+}
+
+function generateFinansTxId(): string {
+  return `${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
+}
+
+function writeFinansExpense(txId: string, p: Purchase, projectName?: string): Promise<void> {
+  return chainFinansOp(txId, async () => {
+    const raw = await AsyncStorage.getItem(FINANS_TX_STORAGE_KEY);
+    const arr: any[] = raw
+      ? (() => { try { return JSON.parse(raw) || []; } catch { return []; } })()
+      : [];
+    if (arr.some((t) => t?.id === txId)) return; // idempotent
+    const newTx = { id: txId, ...buildFinansTxFromPurchase(p, projectName) };
+    await AsyncStorage.setItem(FINANS_TX_STORAGE_KEY, JSON.stringify([newTx, ...arr]));
+  });
+}
+
+function deleteFinansExpense(txId: string): Promise<void> {
+  return chainFinansOp(txId, async () => {
+    const raw = await AsyncStorage.getItem(FINANS_TX_STORAGE_KEY);
+    if (!raw) return;
+    try {
+      const arr: any[] = JSON.parse(raw) || [];
+      await AsyncStorage.setItem(
+        FINANS_TX_STORAGE_KEY,
+        JSON.stringify(arr.filter((t) => t?.id !== txId))
+      );
+    } catch {
+      // sessizce geç — KasaFON içinde manuel silme yedeği var
+    }
+  });
+}
+
 function normalizePurchases(arr: any): Purchase[] {
   if (!Array.isArray(arr)) return [];
   return arr.map((p: any) => ({
@@ -1025,16 +1108,85 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     updateSubcontractor: makeUpdate("subcontractors") as any,
     deleteSubcontractor: makeDelete("subcontractors") as any,
 
-    addPurchase: makeAdd("purchases") as any,
-    updatePurchase: makeUpdate("purchases") as any,
-    deletePurchase: makeDelete("purchases") as any,
-    markPurchasePaid: (id, paidDate) =>
-      update((prev) => ({
-        ...prev,
-        purchases: prev.purchases.map((p) =>
-          p.id === id ? { ...p, status: "paid" as PurchaseStatus, paidDate } : p
-        ),
-      })),
+    addPurchase: ((p: Omit<Purchase, "id">) => {
+      const id = genId();
+      // Form üzerinden zaten "paid" olarak ekleniyorsa köprü txId'sini ÖNCEDEN üret,
+      // state'e tek seferde işle — bu sayede silme-yarış durumunda txId daima bilinir.
+      const willBridge = p.status === "paid" && !(p as any).finansTransactionId;
+      const txId = willBridge ? generateFinansTxId() : undefined;
+      const created: Purchase = {
+        ...(p as any),
+        id,
+        finansTransactionId: txId ?? (p as any).finansTransactionId,
+      };
+      let projectName: string | undefined;
+      update((prev) => {
+        projectName = prev.projects.find((pr) => pr.id === created.projectId)?.name;
+        return { ...prev, purchases: [...prev.purchases, created] };
+      });
+      if (willBridge && txId) {
+        writeFinansExpense(txId, created, projectName).catch(() => {});
+      }
+      return id;
+    }) as any,
+    updatePurchase: ((id: string, patch: Partial<Purchase>) => {
+      // Geçişi karar vermek için MEVCUT durumu önden okuyalım (state ref güncel).
+      const before = state.purchases.find((x) => x.id === id);
+      if (!before) return;
+      const willBe: Purchase = { ...before, ...patch };
+      const willBridge =
+        willBe.status === "paid" &&
+        !willBe.finansTransactionId &&
+        before.status !== "paid";
+      const txId = willBridge ? generateFinansTxId() : undefined;
+      const finalPurchase: Purchase = {
+        ...willBe,
+        finansTransactionId: txId ?? willBe.finansTransactionId,
+      };
+      let projectName: string | undefined;
+      update((prev) => {
+        projectName = prev.projects.find((pr) => pr.id === finalPurchase.projectId)?.name;
+        return {
+          ...prev,
+          purchases: prev.purchases.map((x) => (x.id === id ? finalPurchase : x)),
+        };
+      });
+      if (willBridge && txId) {
+        writeFinansExpense(txId, finalPurchase, projectName).catch(() => {});
+      }
+    }) as any,
+    deletePurchase: ((id: string) => {
+      const target = state.purchases.find((x) => x.id === id);
+      const txIdToDelete = target?.finansTransactionId;
+      update((prev) => ({ ...prev, purchases: prev.purchases.filter((x) => x.id !== id) }));
+      if (txIdToDelete) {
+        // chainFinansOp sıralaması sayesinde, bekleyen write tamamlanınca delete çalışır.
+        deleteFinansExpense(txIdToDelete).catch(() => {});
+      }
+    }) as any,
+    markPurchasePaid: ((id: string, paidDate: string) => {
+      const before = state.purchases.find((x) => x.id === id);
+      if (!before) return;
+      const willBridge = !before.finansTransactionId; // ilk kez ödeniyor
+      const txId = willBridge ? generateFinansTxId() : undefined;
+      const updated: Purchase = {
+        ...before,
+        status: "paid" as PurchaseStatus,
+        paidDate,
+        finansTransactionId: txId ?? before.finansTransactionId,
+      };
+      let projectName: string | undefined;
+      update((prev) => {
+        projectName = prev.projects.find((pr) => pr.id === updated.projectId)?.name;
+        return {
+          ...prev,
+          purchases: prev.purchases.map((x) => (x.id === id ? updated : x)),
+        };
+      });
+      if (willBridge && txId) {
+        writeFinansExpense(txId, updated, projectName).catch(() => {});
+      }
+    }) as any,
     markPurchaseInvoiceReceived: (id, received, invoiceNo) =>
       update((prev) => ({
         ...prev,
