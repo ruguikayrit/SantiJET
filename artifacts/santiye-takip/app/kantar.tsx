@@ -31,12 +31,12 @@ interface F {
   category: string;
   supplier: string;
   plate: string;
-  driver: string;
   irsaliyeNo: string;
   grossWeight: string;
   tareWeight: string;
   unit: string;
-  notes: string;
+  entryTime: string;
+  exitTime: string;
 }
 
 const EMPTY: F = {
@@ -46,13 +46,18 @@ const EMPTY: F = {
   category: "",
   supplier: "",
   plate: "",
-  driver: "",
   irsaliyeNo: "",
   grossWeight: "",
   tareWeight: "",
   unit: "kg",
-  notes: "",
+  entryTime: "",
+  exitTime: "",
 };
+
+function nowHHmm() {
+  const d = new Date();
+  return `${String(d.getHours()).padStart(2, "0")}:${String(d.getMinutes()).padStart(2, "0")}`;
+}
 
 function fmtNum(n: number) {
   return n.toLocaleString("tr-TR", { maximumFractionDigits: 2 });
@@ -139,12 +144,12 @@ export default function KantarScreen() {
         category: linked?.category || w.category || "",
         supplier: w.supplier || linked?.supplier || "",
         plate: w.plate,
-        driver: w.driver,
         irsaliyeNo: w.irsaliyeNo,
         grossWeight: String(w.grossWeight || ""),
         tareWeight: String(w.tareWeight || ""),
         unit: w.unit || linked?.unit || "kg",
-        notes: w.notes,
+        entryTime: w.entryTime || "",
+        exitTime: w.exitTime || "",
       });
     } else {
       setEditId(null);
@@ -152,6 +157,7 @@ export default function KantarScreen() {
         ...EMPTY,
         projectId: filter || projects[0]?.id || "",
         date: new Date().toISOString().slice(0, 10),
+        entryTime: nowHHmm(),
       });
     }
     setVisible(true);
@@ -168,13 +174,15 @@ export default function KantarScreen() {
       category: form.category.trim() || undefined,
       supplier: form.supplier.trim(),
       plate: form.plate.trim().toUpperCase(),
-      driver: form.driver.trim(),
+      driver: "",
       irsaliyeNo: form.irsaliyeNo.trim(),
       grossWeight: gross,
       tareWeight: tare,
       netWeight: Math.max(0, gross - tare),
       unit: form.unit.trim() || "kg",
-      notes: form.notes.trim(),
+      notes: "",
+      entryTime: form.entryTime.trim() || undefined,
+      exitTime: form.exitTime.trim() || undefined,
     };
     if (editId) updateWeighbridge(editId, data);
     else addWeighbridge(data);
@@ -301,9 +309,13 @@ export default function KantarScreen() {
                 const metaParts: string[] = [];
                 if (item.date) metaParts.push(item.date);
                 if (item.supplier) metaParts.push(item.supplier);
-                if (item.irsaliyeNo) metaParts.push(`İrs: ${item.irsaliyeNo}`);
+                if (item.irsaliyeNo) metaParts.push(`Fiş: ${item.irsaliyeNo}`);
                 if (item.plate) metaParts.push(item.plate);
-                if (item.driver) metaParts.push(item.driver);
+                if (item.entryTime || item.exitTime) {
+                  metaParts.push(
+                    `${item.entryTime || "—"} → ${item.exitTime || "—"}`
+                  );
+                }
                 return (
                   <TouchableOpacity
                     style={[styles.card, { backgroundColor: colors.card }]}
@@ -434,23 +446,10 @@ export default function KantarScreen() {
             placeholder="Örn: Hazır Beton C25"
           />
 
-          <FormInput
-            label="İrsaliye No"
-            value={form.irsaliyeNo}
-            onChangeText={(v) => setForm({ ...form, irsaliyeNo: v })}
-            placeholder="İrsaliye numarası"
-          />
-          <FormInput
-            label="Tedarikçi"
-            value={form.supplier}
-            onChangeText={(v) => setForm({ ...form, supplier: v })}
-            placeholder="Firma adı"
-          />
-
           <View style={styles.twoCol}>
             <View style={{ flex: 1 }}>
               <FormInput
-                label="Plaka"
+                label="Araç Plaka"
                 value={form.plate}
                 onChangeText={(v) => setForm({ ...form, plate: v })}
                 placeholder="34 ABC 123"
@@ -459,16 +458,23 @@ export default function KantarScreen() {
             </View>
             <View style={{ flex: 1 }}>
               <FormInput
-                label="Şoför"
-                value={form.driver}
-                onChangeText={(v) => setForm({ ...form, driver: v })}
-                placeholder="Ad Soyad"
+                label="Kantar Fiş No"
+                value={form.irsaliyeNo}
+                onChangeText={(v) => setForm({ ...form, irsaliyeNo: v })}
+                placeholder="Fiş numarası"
               />
             </View>
           </View>
 
+          <FormInput
+            label="Firma Adı"
+            value={form.supplier}
+            onChangeText={(v) => setForm({ ...form, supplier: v })}
+            placeholder="Firma / Tedarikçi adı"
+          />
+
           <UnitPicker
-            label="Birim"
+            label="Malzeme Birimi"
             value={form.unit}
             onChange={(v) => setForm({ ...form, unit: v })}
           />
@@ -476,7 +482,7 @@ export default function KantarScreen() {
           <View style={styles.twoCol}>
             <View style={{ flex: 1 }}>
               <FormInput
-                label="Brüt Ağırlık"
+                label="Dolu Miktar"
                 value={form.grossWeight}
                 onChangeText={(v) => setForm({ ...form, grossWeight: v })}
                 keyboardType="numeric"
@@ -485,7 +491,7 @@ export default function KantarScreen() {
             </View>
             <View style={{ flex: 1 }}>
               <FormInput
-                label="Dara"
+                label="Boş Miktar"
                 value={form.tareWeight}
                 onChangeText={(v) => setForm({ ...form, tareWeight: v })}
                 keyboardType="numeric"
@@ -497,10 +503,10 @@ export default function KantarScreen() {
           <View style={[styles.netBox, { backgroundColor: "#0d948822" }]}>
             <View>
               <Text style={[styles.netBoxLabel, { color: colors.foreground }]}>
-                Net Ağırlık
+                Net Miktar
               </Text>
               <Text style={[styles.netBoxHint, { color: colors.mutedForeground }]}>
-                Brüt − Dara otomatik hesaplanır
+                Dolu − Boş otomatik hesaplanır
               </Text>
             </View>
             <Text style={[styles.netBoxVal, { color: "#0d9488" }]}>
@@ -508,13 +514,38 @@ export default function KantarScreen() {
             </Text>
           </View>
 
-          <FormInput
-            label="Notlar"
-            value={form.notes}
-            onChangeText={(v) => setForm({ ...form, notes: v })}
-            multiline
-            style={{ height: 70, textAlignVertical: "top" }}
-          />
+          <View style={styles.twoCol}>
+            <View style={{ flex: 1 }}>
+              <FormInput
+                label="Giriş Saati"
+                value={form.entryTime}
+                onChangeText={(v) => setForm({ ...form, entryTime: v })}
+                placeholder="08:30"
+              />
+            </View>
+            <View style={{ flex: 1 }}>
+              <FormInput
+                label="Çıkış Saati"
+                value={form.exitTime}
+                onChangeText={(v) => setForm({ ...form, exitTime: v })}
+                placeholder="09:15"
+              />
+            </View>
+          </View>
+          <View style={{ flexDirection: "row", gap: 8, marginTop: -6, marginBottom: 12 }}>
+            <TouchableOpacity
+              onPress={() => setForm({ ...form, entryTime: nowHHmm() })}
+              style={{ paddingHorizontal: 10, paddingVertical: 6, borderRadius: 999, backgroundColor: colors.muted }}
+            >
+              <Text style={{ fontSize: 11, color: colors.foreground }}>Şimdi (Giriş)</Text>
+            </TouchableOpacity>
+            <TouchableOpacity
+              onPress={() => setForm({ ...form, exitTime: nowHHmm() })}
+              style={{ paddingHorizontal: 10, paddingVertical: 6, borderRadius: 999, backgroundColor: colors.muted }}
+            >
+              <Text style={{ fontSize: 11, color: colors.foreground }}>Şimdi (Çıkış)</Text>
+            </TouchableOpacity>
+          </View>
 
           {canEdit ? <PrimaryButton label="Kaydet" onPress={save} style={{ marginTop: 8 }} /> : null}
           {canEdit && editId ? (

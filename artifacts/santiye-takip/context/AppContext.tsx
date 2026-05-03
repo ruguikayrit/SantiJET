@@ -147,6 +147,8 @@ export interface Weighbridge {
   netWeight: number;
   unit: string;
   notes: string;
+  entryTime?: string;
+  exitTime?: string;
 }
 
 export interface MaterialRequest {
@@ -725,6 +727,8 @@ function normalizeWeighbridges(arr: any): Weighbridge[] {
       netWeight: net,
       unit: String(w?.unit || "kg"),
       notes: String(w?.notes || ""),
+      entryTime: typeof w?.entryTime === "string" ? w.entryTime : undefined,
+      exitTime: typeof w?.exitTime === "string" ? w.exitTime : undefined,
     };
   });
 }
