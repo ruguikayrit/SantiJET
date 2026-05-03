@@ -309,8 +309,6 @@ export default function KantarScreen() {
                 const metaParts: string[] = [];
                 if (item.date) metaParts.push(item.date);
                 if (item.supplier) metaParts.push(item.supplier);
-                if (item.irsaliyeNo) metaParts.push(`Fiş: ${item.irsaliyeNo}`);
-                if (item.plate) metaParts.push(item.plate);
                 if (item.entryTime || item.exitTime) {
                   metaParts.push(
                     `${item.entryTime || "—"} → ${item.exitTime || "—"}`
