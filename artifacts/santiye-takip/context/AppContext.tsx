@@ -1303,9 +1303,9 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
         }
 
         // 3 onay geri çekildiğinde otomatik oluşturulan Gelen Malzeme + Satın Alma kayıtlarını sil
+        // (status "delivered" geçişlerinde tetiklenmez — onaylar hâlâ tam)
         const justUnapproved =
-          (wasApprovedStatus && !isApprovedStatus) ||
-          (beforeAllChecked && !afterAllChecked);
+          beforeAllChecked && !afterAllChecked;
         let nextMaterials = prev.materials;
         if (justUnapproved) {
           nextMaterials = nextMaterials.filter((m) => m.materialRequestId !== id);

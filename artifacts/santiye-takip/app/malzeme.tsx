@@ -923,7 +923,9 @@ export default function MalzemeScreen() {
           />
           <Text style={[styles.label, { color: colors.foreground, marginTop: 4 }]}>Durum</Text>
           <View style={styles.chips}>
-            {(Object.keys(REQUEST_STATUS) as MaterialRequest["status"][]).map((s) => (
+            {(Object.keys(REQUEST_STATUS) as MaterialRequest["status"][])
+              .filter((s) => s !== "delivered")
+              .map((s) => (
               <TouchableOpacity
                 key={s}
                 onPress={() => canEdit && setRForm({ ...rForm, status: s })}
@@ -1301,6 +1303,65 @@ export default function MalzemeScreen() {
                 </View>
               ) : null}
 
+              {(() => {
+                const allChecked = !!(
+                  item.approvals?.sef &&
+                  item.approvals?.mudur &&
+                  item.approvals?.satinAlma
+                );
+                const delivered = item.status === "delivered";
+                return (
+                  <TouchableOpacity
+                    activeOpacity={canEdit && allChecked ? 0.7 : 1}
+                    onPress={
+                      canEdit && allChecked
+                        ? (e) => {
+                            e.stopPropagation?.();
+                            updateMaterialRequest(item.id, {
+                              status: delivered ? "approved" : "delivered",
+                            });
+                          }
+                        : undefined
+                    }
+                    style={[
+                      styles.deliveredRow,
+                      {
+                        borderTopColor: colors.border,
+                        opacity: allChecked ? 1 : 0.4,
+                      },
+                    ]}
+                  >
+                    <View
+                      style={[
+                        styles.approvalBox,
+                        {
+                          borderColor: delivered ? "#2563eb" : colors.border,
+                          backgroundColor: delivered ? "#2563eb" : "transparent",
+                        },
+                      ]}
+                    >
+                      {delivered ? <Feather name="check" size={12} color="#fff" /> : null}
+                    </View>
+                    <Text
+                      style={[
+                        styles.approvalLabel,
+                        {
+                          color: delivered ? "#2563eb" : colors.foreground,
+                          fontFamily: "Inter_600SemiBold",
+                        },
+                      ]}
+                    >
+                      Teslim Alındı
+                    </Text>
+                    {!allChecked ? (
+                      <Text style={[styles.deliveredHint, { color: colors.mutedForeground }]}>
+                        (3 onay gerekli)
+                      </Text>
+                    ) : null}
+                  </TouchableOpacity>
+                );
+              })()}
+
               <View style={[styles.approvalsRow, { borderTopColor: colors.border }]}>
                 {(["sef", "mudur", "satinAlma"] as const).map((k) => {
                   const checked = item.approvals?.[k] === true;
@@ -1412,6 +1473,19 @@ const styles = StyleSheet.create({
     fontSize: 11,
     fontFamily: "Inter_600SemiBold",
     flexShrink: 1,
+  },
+  deliveredRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 8,
+    marginTop: 12,
+    paddingTop: 10,
+    borderTopWidth: 1,
+  },
+  deliveredHint: {
+    fontSize: 10,
+    fontFamily: "Inter_400Regular",
+    marginLeft: 4,
   },
   rowCard: {
     flexDirection: "row",
