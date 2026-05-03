@@ -86,6 +86,16 @@ export default function KullanicilarScreen() {
   const [uCompany, setUCompany] = useState("");
   const [uTeam, setUTeam] = useState("");
   const [profDropOpen, setProfDropOpen] = useState(false);
+  const [teamDropOpen, setTeamDropOpen] = useState(false);
+
+  const existingTeams = React.useMemo(() => {
+    const s = new Set<string>();
+    for (const u of appUsers) {
+      const t = (u.team || "").trim();
+      if (t) s.add(t);
+    }
+    return Array.from(s).sort((a, b) => a.localeCompare(b, "tr"));
+  }, [appUsers]);
 
   const [roleSheet, setRoleSheet] = useState(false);
   const [editRoleId, setEditRoleId] = useState<string | null>(null);
@@ -417,13 +427,65 @@ export default function KullanicilarScreen() {
         )}
 
         <Text style={[styles.formLabel, { color: colors.foreground, marginTop: 12 }]}>Ekip Adı</Text>
-        <TextInput
-          style={[styles.formInput, { backgroundColor: colors.muted, color: colors.foreground, borderColor: colors.border }]}
-          value={uTeam}
-          onChangeText={setUTeam}
-          placeholder="Örn: Kalıp Ekibi 1, Demir Ekibi A"
-          placeholderTextColor={colors.mutedForeground}
-        />
+        <TouchableOpacity
+          style={[styles.formInput, styles.profTrigger, { backgroundColor: colors.muted, borderColor: teamDropOpen ? colors.primary : colors.border }]}
+          onPress={() => setTeamDropOpen(v => !v)}
+          activeOpacity={0.8}
+        >
+          <Text style={{ flex: 1, color: uTeam ? colors.foreground : colors.mutedForeground, fontSize: 14, fontFamily: "Inter_400Regular" }} numberOfLines={1}>
+            {uTeam || "Ekip seçin veya yeni yazın..."}
+          </Text>
+          <Feather name={teamDropOpen ? "chevron-up" : "chevron-down"} size={16} color={colors.mutedForeground} />
+        </TouchableOpacity>
+
+        {teamDropOpen && (
+          <View style={[styles.profInlineList, { backgroundColor: colors.muted, borderColor: colors.primary }]}>
+            <View style={[styles.profInlineItem, { borderBottomColor: colors.border, gap: 8 }]}>
+              <TextInput
+                value={uTeam}
+                onChangeText={setUTeam}
+                placeholder="Yeni ekip adı yazın..."
+                placeholderTextColor={colors.mutedForeground}
+                autoFocus
+                style={{ flex: 1, fontSize: 14, fontFamily: "Inter_500Medium", color: colors.foreground, paddingVertical: 0 }}
+                onSubmitEditing={() => setTeamDropOpen(false)}
+              />
+              {uTeam ? (
+                <TouchableOpacity onPress={() => setUTeam("")} activeOpacity={0.7}>
+                  <Feather name="x" size={16} color={colors.mutedForeground} />
+                </TouchableOpacity>
+              ) : null}
+            </View>
+
+            {existingTeams.length === 0 ? (
+              <View style={styles.profInlineItem}>
+                <Text style={{ color: colors.mutedForeground, fontFamily: "Inter_400Regular", fontSize: 12 }}>
+                  Mevcut ekip yok. Yukarıya yeni bir ekip adı yazabilirsiniz.
+                </Text>
+              </View>
+            ) : existingTeams.map((tm, i) => {
+              const isSelected = uTeam === tm;
+              return (
+                <TouchableOpacity
+                  key={tm}
+                  style={[
+                    styles.profInlineItem,
+                    { borderBottomColor: colors.border },
+                    i === existingTeams.length - 1 && { borderBottomWidth: 0 },
+                    isSelected && { backgroundColor: colors.primary + "20" },
+                  ]}
+                  onPress={() => { setUTeam(tm); setTeamDropOpen(false); }}
+                  activeOpacity={0.75}
+                >
+                  <Text style={[styles.profInlineText, { color: isSelected ? colors.primary : colors.foreground, fontFamily: isSelected ? "Inter_600SemiBold" : "Inter_400Regular" }]}>
+                    {tm}
+                  </Text>
+                  {isSelected && <Feather name="check" size={14} color={colors.primary} />}
+                </TouchableOpacity>
+              );
+            })}
+          </View>
+        )}
 
         {/* Telefon — tam genişlik */}
         <Text style={[styles.formLabel, { color: colors.foreground, marginTop: 12 }]}>Telefon</Text>
