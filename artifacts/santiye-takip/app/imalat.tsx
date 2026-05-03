@@ -100,7 +100,7 @@ export default function ImalatScreen() {
     setVisible(true);
   }
 
-  const isBetonForm = /beton/i.test(form.name) || /beton/i.test(form.category);
+  const isBetonForm = form.name.trim().toLocaleLowerCase("tr-TR") === "beton dökümü";
 
   function save() {
     if (!form.projectId || !form.name.trim()) return;
