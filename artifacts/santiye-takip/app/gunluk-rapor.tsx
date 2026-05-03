@@ -66,6 +66,22 @@ const EMPTY: F = {
 
 const WEATHER_OPTS = ["Güneşli", "Bulutlu", "Yağmurlu", "Karlı", "Rüzgarlı"];
 
+interface SectionCard {
+  key: string;
+  icon: string;
+  title: string;
+  color: string;
+  bg: string;
+  metric: string;
+  lines: string[];
+}
+
+interface AutoSummary {
+  cards: SectionCard[];
+  workerCount: number;
+  issues: string[];
+}
+
 export default function GunlukRaporScreen() {
   const colors = useColors();
   const router = useRouter();
@@ -138,11 +154,11 @@ export default function GunlukRaporScreen() {
     setVisible(true);
   }
 
-  function buildAutoSummary(projectId: string, dateStr: string): { text: string; workerCount: number; issues: string } {
+  function buildAutoSummary(projectId: string, dateStr: string): AutoSummary {
     const dates = dateAliases(dateStr);
     const same = (d?: string) => !!d && dates.includes(d);
-    const out: string[] = [];
-    const issueLines: string[] = [];
+    const cards: SectionCard[] = [];
+    const issues: string[] = [];
     let workerCount = 0;
 
     // PUANTAJ
@@ -158,24 +174,44 @@ export default function GunlukRaporScreen() {
       const tatil = cnt("tatil");
       const totalHours = att.reduce((s, a) => s + (a.hours || 0), 0);
       workerCount = present + half;
-      const parts = [`${present} tam`];
+      const lines: string[] = [];
+      const parts: string[] = [`${present} tam`];
       if (half) parts.push(`${half} yarım`);
       if (izinli) parts.push(`${izinli} izinli`);
       if (raporlu) parts.push(`${raporlu} raporlu`);
       if (mazeret) parts.push(`${mazeret} mazeret`);
       if (tatil) parts.push(`${tatil} tatil`);
       if (absent) parts.push(`${absent} gelmedi`);
-      out.push(`[PUANTAJ] ${workerCount} kişi sahada — ${parts.join(", ")} (toplam ${fmtNum(totalHours)} saat)`);
+      lines.push(parts.join(" · "));
+      lines.push(`Toplam ${fmtNum(totalHours)} saat`);
+      cards.push({
+        key: "puantaj",
+        icon: "users",
+        title: "Puantaj",
+        color: "#0ea5e9",
+        bg: "#0ea5e91a",
+        metric: `${workerCount} kişi`,
+        lines,
+      });
     }
 
     // İMALAT
     const prods = productions.filter((p) => p.projectId === projectId && same(p.date));
     if (prods.length) {
-      out.push(`[İMALAT] ${prods.length} kalem yapıldı:`);
-      for (const p of prods) {
+      const lines = prods.slice(0, 4).map((p) => {
         const pct = p.plannedQty > 0 ? Math.round((p.completedQty / p.plannedQty) * 100) : 0;
-        out.push(`  - ${p.name}: ${fmtNum(p.completedQty)} ${p.unit}${p.plannedQty ? ` / planlanan ${fmtNum(p.plannedQty)} (%${pct})` : ""}`);
-      }
+        return `${p.name}: ${fmtNum(p.completedQty)} ${p.unit}${p.plannedQty ? ` (%${pct})` : ""}`;
+      });
+      if (prods.length > 4) lines.push(`+${prods.length - 4} kalem daha`);
+      cards.push({
+        key: "imalat",
+        icon: "tool",
+        title: "İmalat",
+        color: "#16a34a",
+        bg: "#16a34a1a",
+        metric: `${prods.length} kalem`,
+        lines,
+      });
     }
 
     // GÖREV
@@ -187,15 +223,23 @@ export default function GunlukRaporScreen() {
       ? projTasks.filter((t) => t.status !== "done" && t.deadline && /^\d{4}-\d{2}-\d{2}$/.test(t.deadline) && t.deadline < ymdToday)
       : [];
     if (doneToday.length || dueToday.length || overdue.length) {
-      const segs: string[] = [];
-      if (doneToday.length) segs.push(`${doneToday.length} görev tamamlandı`);
-      if (dueToday.length) segs.push(`${dueToday.length} görev bugün vadeli (açık)`);
-      if (overdue.length) segs.push(`${overdue.length} görev gecikmiş`);
-      out.push(`[GÖREV] ${segs.join(" • ")}`);
-      for (const t of doneToday.slice(0, 5)) out.push(`  - Bitti: ${t.title}${t.assignee ? ` (${t.assignee})` : ""}`);
+      const lines: string[] = [];
+      if (doneToday.length) lines.push(`${doneToday.length} tamamlandı`);
+      if (dueToday.length) lines.push(`${dueToday.length} bugün vadeli (açık)`);
+      if (overdue.length) lines.push(`${overdue.length} gecikmiş`);
+      for (const t of doneToday.slice(0, 3)) lines.push(`Bitti: ${t.title}`);
       if (overdue.length) {
-        for (const t of overdue.slice(0, 3)) issueLines.push(`Gecikmiş görev: ${t.title}${t.assignee ? ` (${t.assignee})` : ""}`);
+        for (const t of overdue.slice(0, 3)) issues.push(`Gecikmiş görev: ${t.title}${t.assignee ? ` (${t.assignee})` : ""}`);
       }
+      cards.push({
+        key: "gorev",
+        icon: "check-square",
+        title: "Görevler",
+        color: overdue.length ? "#dc2626" : "#7c3aed",
+        bg: overdue.length ? "#dc26261a" : "#7c3aed1a",
+        metric: `${doneToday.length}/${doneToday.length + dueToday.length}`,
+        lines,
+      });
     }
 
     // İLERLEME (proje genel)
@@ -204,29 +248,54 @@ export default function GunlukRaporScreen() {
       const tp = allProds.reduce((s, p) => s + (p.plannedQty || 0), 0);
       const tc = allProds.reduce((s, p) => s + (p.completedQty || 0), 0);
       const overallPct = tp > 0 ? Math.round((tc / tp) * 100) : 0;
-      out.push(`[İLERLEME] Proje geneli: %${overallPct} (${allProds.length} imalat kalemi üzerinden)`);
+      cards.push({
+        key: "ilerleme",
+        icon: "bar-chart-2",
+        title: "Proje İlerleme",
+        color: "#1d4ed8",
+        bg: "#1d4ed81a",
+        metric: `%${overallPct}`,
+        lines: [`${allProds.length} imalat kalemi üzerinden`],
+      });
     }
 
-    // MALZEME (teslimat)
+    // MALZEME
     const matsToday = materials.filter((m) => m.projectId === projectId && same(m.deliveryDate));
     if (matsToday.length) {
       const totalVal = matsToday.reduce((s, m) => s + (m.quantity || 0) * (m.unitPrice || 0), 0);
-      out.push(`[MALZEME] ${matsToday.length} kalem teslim alındı${totalVal ? ` — toplam ${fmtTL(totalVal)}` : ""}:`);
-      for (const m of matsToday.slice(0, 6)) {
-        out.push(`  - ${m.name}: ${fmtNum(m.quantity)} ${m.unit}${m.supplier ? ` (${m.supplier})` : ""}`);
-      }
+      const lines = matsToday.slice(0, 4).map((m) => `${m.name}: ${fmtNum(m.quantity)} ${m.unit}${m.supplier ? ` · ${m.supplier}` : ""}`);
+      if (matsToday.length > 4) lines.push(`+${matsToday.length - 4} kalem daha`);
+      if (totalVal) lines.push(`Toplam: ${fmtTL(totalVal)}`);
+      cards.push({
+        key: "malzeme",
+        icon: "package",
+        title: "Malzeme (Gelen)",
+        color: "#ea580c",
+        bg: "#ea580c1a",
+        metric: `${matsToday.length} kalem`,
+        lines,
+      });
     }
 
     // KANTAR
     const kantarToday = weighbridges.filter((w) => w.projectId === projectId && same(w.date));
     if (kantarToday.length) {
       const totalNet = kantarToday.reduce((s, w) => s + (w.netWeight || 0), 0);
-      out.push(`[KANTAR] ${kantarToday.length} fiş — toplam net ${fmtNum(totalNet)} kg (${fmtNum(totalNet / 1000)} ton)`);
       const bySupplier = new Map<string, number>();
       for (const w of kantarToday) bySupplier.set(w.supplier || "—", (bySupplier.get(w.supplier || "—") || 0) + (w.netWeight || 0));
+      const lines: string[] = [`Toplam net: ${fmtNum(totalNet / 1000)} ton`];
       for (const [sup, net] of Array.from(bySupplier.entries()).slice(0, 4)) {
-        out.push(`  - ${sup}: ${fmtNum(net)} kg`);
+        lines.push(`${sup}: ${fmtNum(net / 1000)} ton`);
       }
+      cards.push({
+        key: "kantar",
+        icon: "truck",
+        title: "Kantar",
+        color: "#9333ea",
+        bg: "#9333ea1a",
+        metric: `${kantarToday.length} fiş`,
+        lines,
+      });
     }
 
     // SATIN ALMA
@@ -234,28 +303,29 @@ export default function GunlukRaporScreen() {
     if (purchToday.length) {
       const totalKDVli = purchToday.reduce((s, p) => s + (p.quantity || 0) * (p.unitPrice || 0) * (1 + (p.vatRate || 0) / 100), 0);
       const pending = purchToday.filter((p) => p.status === "pending").length;
-      out.push(`[SATIN ALMA] ${purchToday.length} sipariş — toplam ${fmtTL(totalKDVli)} (KDV dahil)${pending ? ` • ${pending} bekleyen` : ""}`);
-      for (const p of purchToday.slice(0, 5)) {
-        out.push(`  - ${p.itemName}: ${fmtNum(p.quantity)} ${p.unit} • ${p.supplier}`);
-      }
+      const lines = purchToday.slice(0, 4).map((p) => `${p.itemName}: ${fmtNum(p.quantity)} ${p.unit} · ${p.supplier}`);
+      if (purchToday.length > 4) lines.push(`+${purchToday.length - 4} sipariş daha`);
+      lines.push(`Toplam: ${fmtTL(totalKDVli)} (KDV dahil)${pending ? ` · ${pending} bekleyen` : ""}`);
+      cards.push({
+        key: "satinalma",
+        icon: "shopping-cart",
+        title: "Satın Alma",
+        color: "#0d9488",
+        bg: "#0d94881a",
+        metric: `${purchToday.length} sipariş`,
+        lines,
+      });
     }
 
-    if (!out.length) {
-      out.push("Bu tarih için kayıt bulunamadı. Modüllere veri girdikten sonra tekrar deneyin.");
-    }
-
-    return { text: out.join("\n"), workerCount, issues: issueLines.join("\n") };
+    return { cards, workerCount, issues };
   }
 
   function autoFill() {
     if (!form.projectId || !form.date.trim()) return;
     const r = buildAutoSummary(form.projectId, form.date);
-    setForm({
-      ...form,
-      activities: r.text,
-      workerCount: r.workerCount > 0 ? String(r.workerCount) : form.workerCount,
-      issues: r.issues ? (form.issues ? form.issues + "\n" + r.issues : r.issues) : form.issues,
-    });
+    if (r.workerCount > 0 && !form.workerCount) {
+      setForm({ ...form, workerCount: String(r.workerCount) });
+    }
   }
 
   function save() {
@@ -342,58 +412,100 @@ export default function GunlukRaporScreen() {
           data={list}
           keyExtractor={(r) => r.id}
           contentContainerStyle={styles.list}
-          renderItem={({ item }) => (
-            <TouchableOpacity
-              style={[styles.card, { backgroundColor: colors.card }]}
-              activeOpacity={0.85}
-              onPress={() => open(item)}
-            >
-              <View style={styles.head}>
-                <View>
-                  <Text style={[styles.proj, { color: colors.primary }]}>
-                    {projectName(item.projectId)}
-                  </Text>
-                  <Text style={[styles.date, { color: colors.foreground }]}>
-                    {item.date}
-                  </Text>
+          renderItem={({ item }) => {
+            const summary = buildAutoSummary(item.projectId, item.date);
+            const issuesCombined = [item.issues, summary.issues.join("\n")].filter(Boolean).join("\n").trim();
+            return (
+              <TouchableOpacity
+                style={[styles.card, { backgroundColor: colors.card }]}
+                activeOpacity={0.85}
+                onPress={() => open(item)}
+              >
+                <View style={styles.head}>
+                  <View style={{ flex: 1 }}>
+                    <Text style={[styles.proj, { color: colors.primary }]}>
+                      {projectName(item.projectId)}
+                    </Text>
+                    <Text style={[styles.date, { color: colors.foreground }]}>
+                      {item.date}
+                    </Text>
+                  </View>
+                  <View style={styles.metaRow}>
+                    {item.weather ? (
+                      <View style={[styles.tag, { backgroundColor: colors.muted }]}>
+                        <Text style={[styles.tagText, { color: colors.foreground }]}>
+                          {item.weather}
+                          {item.temperature ? ` ${item.temperature}°` : ""}
+                        </Text>
+                      </View>
+                    ) : null}
+                    {item.workerCount > 0 ? (
+                      <View style={[styles.tag, { backgroundColor: colors.muted }]}>
+                        <Feather name="users" size={11} color={colors.foreground} />
+                        <Text style={[styles.tagText, { color: colors.foreground }]}>
+                          {item.workerCount}
+                        </Text>
+                      </View>
+                    ) : null}
+                  </View>
                 </View>
-                <View style={styles.metaRow}>
-                  {item.weather ? (
-                    <View style={[styles.tag, { backgroundColor: colors.muted }]}>
-                      <Text style={[styles.tagText, { color: colors.foreground }]}>
-                        {item.weather}
-                      </Text>
-                    </View>
-                  ) : null}
-                  {item.workerCount > 0 ? (
-                    <View style={[styles.tag, { backgroundColor: colors.muted }]}>
-                      <Feather name="users" size={11} color={colors.foreground} />
-                      <Text style={[styles.tagText, { color: colors.foreground }]}>
-                        {item.workerCount}
-                      </Text>
-                    </View>
-                  ) : null}
-                </View>
-              </View>
 
-              {item.activities ? (
-                <Text
-                  style={[styles.body, { color: colors.foreground }]}
-                  numberOfLines={3}
-                >
-                  {item.activities}
-                </Text>
-              ) : null}
-              {item.issues ? (
-                <View style={[styles.issueBox, { backgroundColor: "#fee2e2" }]}>
-                  <Feather name="alert-triangle" size={13} color="#dc2626" />
-                  <Text style={[styles.issueText, { color: "#dc2626" }]} numberOfLines={2}>
-                    {item.issues}
+                {summary.cards.length > 0 ? (
+                  <View style={styles.modCardGrid}>
+                    {summary.cards.map((sc) => (
+                      <View
+                        key={sc.key}
+                        style={[styles.modCard, { backgroundColor: sc.bg, borderColor: sc.color + "33" }]}
+                      >
+                        <View style={styles.modCardHead}>
+                          <Feather name={sc.icon as any} size={13} color={sc.color} />
+                          <Text style={[styles.modCardTitle, { color: sc.color }]}>{sc.title}</Text>
+                          <Text style={[styles.modCardMetric, { color: sc.color }]}>{sc.metric}</Text>
+                        </View>
+                        {sc.lines.map((ln, i) => (
+                          <Text
+                            key={i}
+                            style={[styles.modCardLine, { color: colors.foreground }]}
+                            numberOfLines={2}
+                          >
+                            {ln}
+                          </Text>
+                        ))}
+                      </View>
+                    ))}
+                  </View>
+                ) : (
+                  <Text style={[styles.emptySummary, { color: colors.mutedForeground }]}>
+                    Bu tarih için modül verisi yok. Puantaj, imalat, görev, malzeme vs. eklediğinizde burada özet kartları görünür.
                   </Text>
-                </View>
-              ) : null}
-            </TouchableOpacity>
-          )}
+                )}
+
+                {item.activities ? (
+                  <View style={[styles.notesBox, { backgroundColor: colors.muted }]}>
+                    <Feather name="file-text" size={12} color={colors.mutedForeground} />
+                    <Text style={[styles.notesText, { color: colors.foreground }]} numberOfLines={4}>
+                      {item.activities}
+                    </Text>
+                  </View>
+                ) : null}
+
+                {issuesCombined ? (
+                  <View style={[styles.issueBox, { backgroundColor: "#fee2e2" }]}>
+                    <Feather name="alert-triangle" size={13} color="#dc2626" />
+                    <Text style={[styles.issueText, { color: "#dc2626" }]} numberOfLines={4}>
+                      {issuesCombined}
+                    </Text>
+                  </View>
+                ) : null}
+
+                {item.createdBy ? (
+                  <Text style={[styles.byline, { color: colors.mutedForeground }]}>
+                    Hazırlayan: {item.createdBy}
+                  </Text>
+                ) : null}
+              </TouchableOpacity>
+            );
+          }}
         />
       )}
 
@@ -465,20 +577,21 @@ export default function GunlukRaporScreen() {
           >
             <Feather name="zap" size={14} color={colors.primary} />
             <View style={{ flex: 1 }}>
-              <Text style={[styles.autoBtnText, { color: colors.primary }]}>Verilerden Özet Oluştur</Text>
+              <Text style={[styles.autoBtnText, { color: colors.primary }]}>İşçi Sayısını Puantajdan Doldur</Text>
               <Text style={[styles.autoBtnSub, { color: colors.mutedForeground }]}>
-                Puantaj, imalat, görev, ilerleme, malzeme, kantar ve satın alma verilerinden otomatik doldurur
+                Modül özetleri rapor kartında otomatik görünür; burada sadece serbest notlar ve sorunlar girilir.
               </Text>
             </View>
           </TouchableOpacity>
         ) : null}
 
         <FormInput
-          label="Yapılan Faaliyetler"
+          label="Ek Notlar / Faaliyetler (serbest)"
           value={form.activities}
           onChangeText={(v) => setForm({ ...form, activities: v })}
           multiline
-          style={{ height: 160, textAlignVertical: "top" }}
+          style={{ height: 120, textAlignVertical: "top" }}
+          placeholder="Modüllerde olmayan ek bilgi, ziyaretçi, denetim, hava olayı, vs."
         />
         <FormInput
           label="Sorunlar / Notlar"
@@ -519,7 +632,7 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     justifyContent: "space-between",
     alignItems: "flex-start",
-    marginBottom: 8,
+    marginBottom: 10,
     gap: 8,
   },
   proj: { fontSize: 12, fontFamily: "Inter_600SemiBold", marginBottom: 2 },
@@ -534,7 +647,27 @@ const styles = StyleSheet.create({
     borderRadius: 999,
   },
   tagText: { fontSize: 11, fontFamily: "Inter_500Medium" },
-  body: { fontSize: 13, fontFamily: "Inter_400Regular", lineHeight: 18, marginTop: 4 },
+  modCardGrid: { gap: 8, marginTop: 4 },
+  modCard: {
+    borderWidth: 1,
+    borderRadius: 10,
+    padding: 10,
+    gap: 4,
+  },
+  modCardHead: { flexDirection: "row", alignItems: "center", gap: 6, marginBottom: 4 },
+  modCardTitle: { flex: 1, fontSize: 12, fontFamily: "Inter_700Bold" },
+  modCardMetric: { fontSize: 12, fontFamily: "Inter_700Bold" },
+  modCardLine: { fontSize: 11.5, fontFamily: "Inter_400Regular", lineHeight: 16 },
+  emptySummary: { fontSize: 12, fontFamily: "Inter_400Regular", fontStyle: "italic", marginTop: 4 },
+  notesBox: {
+    flexDirection: "row",
+    gap: 6,
+    alignItems: "flex-start",
+    padding: 10,
+    borderRadius: 8,
+    marginTop: 10,
+  },
+  notesText: { flex: 1, fontSize: 12, fontFamily: "Inter_400Regular", lineHeight: 17 },
   issueBox: {
     flexDirection: "row",
     gap: 6,
@@ -544,6 +677,7 @@ const styles = StyleSheet.create({
     marginTop: 10,
   },
   issueText: { flex: 1, fontSize: 12, fontFamily: "Inter_500Medium" },
+  byline: { fontSize: 11, fontFamily: "Inter_500Medium", marginTop: 8, textAlign: "right" },
   label: { fontSize: 14, fontFamily: "Inter_600SemiBold", marginBottom: 8 },
   chips: { flexDirection: "row", flexWrap: "wrap", gap: 8, marginBottom: 14 },
   chip: { paddingHorizontal: 14, paddingVertical: 8, borderRadius: 999 },
