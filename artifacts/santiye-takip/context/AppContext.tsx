@@ -151,6 +151,7 @@ export interface Weighbridge {
   notes: string;
   entryTime?: string;
   exitTime?: string;
+  supplierIrsaliyeNo?: string;
 }
 
 export interface MaterialRequest {
@@ -731,6 +732,7 @@ function normalizeWeighbridges(arr: any): Weighbridge[] {
       notes: String(w?.notes || ""),
       entryTime: typeof w?.entryTime === "string" ? w.entryTime : undefined,
       exitTime: typeof w?.exitTime === "string" ? w.exitTime : undefined,
+      supplierIrsaliyeNo: typeof w?.supplierIrsaliyeNo === "string" ? w.supplierIrsaliyeNo : undefined,
     };
   });
 }

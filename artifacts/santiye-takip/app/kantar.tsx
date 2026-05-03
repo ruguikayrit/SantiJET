@@ -37,6 +37,7 @@ interface F {
   unit: string;
   entryTime: string;
   exitTime: string;
+  supplierIrsaliyeNo: string;
 }
 
 const EMPTY: F = {
@@ -52,6 +53,7 @@ const EMPTY: F = {
   unit: "kg",
   entryTime: "",
   exitTime: "",
+  supplierIrsaliyeNo: "",
 };
 
 function nowHHmm() {
@@ -150,6 +152,7 @@ export default function KantarScreen() {
         unit: w.unit || linked?.unit || "kg",
         entryTime: w.entryTime || "",
         exitTime: w.exitTime || "",
+        supplierIrsaliyeNo: w.supplierIrsaliyeNo || "",
       });
     } else {
       setEditId(null);
@@ -183,6 +186,7 @@ export default function KantarScreen() {
       notes: "",
       entryTime: form.entryTime.trim() || undefined,
       exitTime: form.exitTime.trim() || undefined,
+      supplierIrsaliyeNo: form.supplierIrsaliyeNo.trim() || undefined,
     };
     if (editId) updateWeighbridge(editId, data);
     else addWeighbridge(data);
@@ -545,6 +549,19 @@ export default function KantarScreen() {
             </TouchableOpacity>
           </View>
 
+          <View style={[styles.sectionHeader, { borderTopColor: colors.muted }]}>
+            <Feather name="file-text" size={14} color={colors.primary} />
+            <Text style={[styles.sectionTitle, { color: colors.foreground }]}>
+              Tedarikçi Kantar Fişi Bilgileri
+            </Text>
+          </View>
+          <FormInput
+            label="İrsaliye Numarası"
+            value={form.supplierIrsaliyeNo}
+            onChangeText={(v) => setForm({ ...form, supplierIrsaliyeNo: v })}
+            placeholder="Tedarikçi irsaliye no"
+          />
+
           {canEdit ? <PrimaryButton label="Kaydet" onPress={save} style={{ marginTop: 8 }} /> : null}
           {canEdit && editId ? (
             <PrimaryButton label="Sil" variant="danger" onPress={remove} style={{ marginTop: 10 }} />
@@ -637,4 +654,14 @@ const styles = StyleSheet.create({
   netBoxLabel: { fontSize: 13, fontFamily: "Inter_600SemiBold" },
   netBoxHint: { fontSize: 11, fontFamily: "Inter_400Regular", marginTop: 2 },
   netBoxVal: { fontSize: 18, fontFamily: "Inter_700Bold" },
+  sectionHeader: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 8,
+    paddingTop: 14,
+    marginTop: 8,
+    marginBottom: 10,
+    borderTopWidth: 1,
+  },
+  sectionTitle: { fontSize: 13, fontFamily: "Inter_600SemiBold" },
 });
