@@ -3,6 +3,7 @@ import { useRouter } from "expo-router";
 import React, { useEffect, useMemo, useState } from "react";
 import {
   FlatList,
+  ScrollView,
   StyleSheet,
   Text,
   TouchableOpacity,
@@ -117,15 +118,37 @@ export default function SatinAlmaScreen() {
 
   const [filter, setFilter] = useState<string | null>(null);
   const [statusFilter, setStatusFilter] = useState<PurchaseStatus | "all">("all");
+  const [materialFilter, setMaterialFilter] = useState<string | null>(null);
   const [visible, setVisible] = useState(false);
   const [editId, setEditId] = useState<string | null>(null);
   const [form, setForm] = useState<F>(EMPTY);
 
+  const projScoped = useMemo(
+    () => (filter ? purchases.filter((p) => p.projectId === filter) : purchases),
+    [purchases, filter]
+  );
+
+  const materialNames = useMemo(() => {
+    const set = new Set<string>();
+    for (const p of projScoped) {
+      const v = (p.itemName || "").trim();
+      if (v) set.add(v);
+    }
+    return Array.from(set).sort((a, b) => a.localeCompare(b, "tr"));
+  }, [projScoped]);
+
+  useEffect(() => {
+    if (materialFilter && !materialNames.includes(materialFilter)) {
+      setMaterialFilter(null);
+    }
+  }, [materialFilter, materialNames]);
+
   const list = useMemo(() => {
-    let arr = filter ? purchases.filter((p) => p.projectId === filter) : purchases;
+    let arr = projScoped;
     if (statusFilter !== "all") arr = arr.filter((p) => p.status === statusFilter);
+    if (materialFilter) arr = arr.filter((p) => (p.itemName || "").trim() === materialFilter);
     return [...arr].sort((a, b) => (b.date || "").localeCompare(a.date || ""));
-  }, [purchases, filter, statusFilter]);
+  }, [projScoped, statusFilter, materialFilter]);
 
   const summary = useMemo(() => {
     let total = 0;
@@ -276,6 +299,58 @@ export default function SatinAlmaScreen() {
               );
             })}
           </View>
+
+          {materialNames.length > 0 ? (
+            <ScrollView
+              horizontal
+              showsHorizontalScrollIndicator={false}
+              contentContainerStyle={styles.matFilters}
+              style={styles.matFiltersWrap}
+            >
+              <TouchableOpacity
+                onPress={() => setMaterialFilter(null)}
+                style={[
+                  styles.matChip,
+                  { backgroundColor: materialFilter === null ? colors.primary : colors.muted },
+                ]}
+              >
+                <Text
+                  style={[
+                    styles.matChipText,
+                    { color: materialFilter === null ? "#fff" : colors.foreground },
+                  ]}
+                >
+                  Tümü ({projScoped.length})
+                </Text>
+              </TouchableOpacity>
+              {materialNames.map((name) => {
+                const count = projScoped.filter(
+                  (p) => (p.itemName || "").trim() === name
+                ).length;
+                const active = materialFilter === name;
+                return (
+                  <TouchableOpacity
+                    key={name}
+                    onPress={() => setMaterialFilter(active ? null : name)}
+                    style={[
+                      styles.matChip,
+                      { backgroundColor: active ? colors.primary : colors.muted },
+                    ]}
+                  >
+                    <Text
+                      style={[
+                        styles.matChipText,
+                        { color: active ? "#fff" : colors.foreground },
+                      ]}
+                      numberOfLines={1}
+                    >
+                      {name} ({count})
+                    </Text>
+                  </TouchableOpacity>
+                );
+              })}
+            </ScrollView>
+          ) : null}
 
           {list.length === 0 ? (
             <EmptyState
@@ -645,6 +720,22 @@ const styles = StyleSheet.create({
   },
   statChip: { paddingHorizontal: 12, paddingVertical: 6, borderRadius: 999 },
   statChipText: { fontSize: 12, fontFamily: "Inter_500Medium" },
+  matFiltersWrap: { flexGrow: 0, flexShrink: 0 },
+  matFilters: {
+    paddingHorizontal: 16,
+    paddingVertical: 10,
+    gap: 8,
+    flexDirection: "row",
+    alignItems: "center",
+  },
+  matChip: {
+    paddingHorizontal: 12,
+    height: 32,
+    justifyContent: "center",
+    borderRadius: 999,
+    maxWidth: 220,
+  },
+  matChipText: { fontSize: 12, fontFamily: "Inter_500Medium" },
   list: { padding: 16, gap: 10 },
   card: {
     borderRadius: 12,
