@@ -287,13 +287,57 @@ export default function MalzemeScreen() {
       supplierKantarSlip: mForm.supplierKantarSlip,
       weighApproved: mForm.weighApproved,
     };
-    if (mEditId) {
-      const existing = materials.find((m) => m.id === mEditId);
-      updateMaterial(mEditId, { ...data, usedQty: existing?.usedQty ?? 0 });
-    } else {
-      addMaterial(data);
+    const commit = () => {
+      if (mEditId) {
+        const existing = materials.find((m) => m.id === mEditId);
+        updateMaterial(mEditId, { ...data, usedQty: existing?.usedQty ?? 0 });
+      } else {
+        addMaterial(data);
+      }
+      setMVisible(false);
+    };
+
+    if (!mEditId) {
+      const norm = (s: string) => s.trim().toLowerCase();
+      const linked = materialRequests.some(
+        (r) =>
+          r.projectId === data.projectId &&
+          norm(r.name) === norm(data.name) &&
+          (r.status === "approved" ||
+            r.status === "delivered" ||
+            !!(r.approvals?.sef && r.approvals?.mudur && r.approvals?.satinAlma)),
+      );
+      if (!linked) {
+        Alert.alert(
+          "Talepsiz Malzeme Girişi",
+          `"${data.name}" için "${projectName(data.projectId)}" projesinde onaylı bir Malzeme Talebi bulunmuyor.\n\nSistem, malzemenin önce talep edilip onaylanması üzerine kuruludur. Talepsiz girilen malzeme Satın Alma modülüne otomatik aktarılmaz ve onay zinciri dışında kalır.\n\nYine de eklemek ister misiniz?`,
+          [
+            { text: "Vazgeç", style: "cancel" },
+            {
+              text: "Talep Oluştur",
+              onPress: () => {
+                setMVisible(false);
+                setRForm({
+                  ...EMPTY_R,
+                  projectId: data.projectId,
+                  name: data.name,
+                  category: data.category || "",
+                  unit: data.unit,
+                  quantity: String(data.quantity || ""),
+                  requestDate: todayStr(),
+                });
+                setREditId(null);
+                setTab("talep");
+                setRVisible(true);
+              },
+            },
+            { text: "Yine de Ekle", style: "destructive", onPress: commit },
+          ],
+        );
+        return;
+      }
     }
-    setMVisible(false);
+    commit();
   }
   function removeMaterial() {
     if (mEditId) deleteMaterial(mEditId);
