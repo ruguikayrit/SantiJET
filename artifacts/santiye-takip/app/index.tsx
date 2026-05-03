@@ -4,7 +4,7 @@ import * as DocumentPicker from "expo-document-picker";
 import * as FileSystem from "expo-file-system/legacy";
 import { useRouter } from "expo-router";
 import * as Sharing from "expo-sharing";
-import React, { useEffect, useMemo, useState } from "react";
+import React, { useEffect, useMemo, useRef, useState } from "react";
 import {
   ActivityIndicator,
   Alert,
@@ -16,6 +16,15 @@ import {
   TouchableOpacity,
   View,
 } from "react-native";
+import { Gesture, GestureDetector } from "react-native-gesture-handler";
+import Animated, {
+  runOnJS,
+  SharedValue,
+  useAnimatedReaction,
+  useAnimatedStyle,
+  useSharedValue,
+  withSpring,
+} from "react-native-reanimated";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 import BottomSheet from "@/components/BottomSheet";
@@ -81,7 +90,6 @@ export default function HomeScreen() {
   // ---- Modül sıralama (cihaza özel) ----
   const ORDER_KEY = "santiye-tile-order-v1";
   const [tileOrder, setTileOrder] = useState<string[]>([]);
-  const [reorderMode, setReorderMode] = useState(false);
   const [orderLoaded, setOrderLoaded] = useState(false);
 
   useEffect(() => {
@@ -121,18 +129,6 @@ export default function HomeScreen() {
     }
     return result;
   }, [tileOrder, currentRole]);
-
-  function moveSection(key: string, dir: -1 | 1) {
-    const keys = orderedSections.map((s) => s.key as string);
-    const i = keys.indexOf(key);
-    if (i < 0) return;
-    const j = i + dir;
-    if (j < 0 || j >= keys.length) return;
-    const tmp = keys[i];
-    keys[i] = keys[j];
-    keys[j] = tmp;
-    setTileOrder(keys);
-  }
 
   const visibleSections = orderedSections;
 
@@ -390,46 +386,17 @@ export default function HomeScreen() {
       >
         <SmartSearch topInset={insets.bottom} />
 
-        {reorderMode ? (
-          <View style={[styles.reorderBar, { backgroundColor: colors.primary + "15", borderColor: colors.primary }]}>
-            <Feather name="move" size={14} color={colors.primary} />
-            <Text style={[styles.reorderText, { color: colors.primary }]} numberOfLines={2}>
-              Sıralama modu — okları kullanarak modülleri taşıyın
-            </Text>
-            <TouchableOpacity
-              onPress={() => setReorderMode(false)}
-              style={[styles.reorderDone, { backgroundColor: colors.primary }]}
-              hitSlop={6}
-            >
-              <Feather name="check" size={14} color="#fff" />
-              <Text style={styles.reorderDoneText}>Bitti</Text>
-            </TouchableOpacity>
-          </View>
-        ) : null}
-
-        <View style={styles.grid}>
-          {visibleSections.map((s, idx) => {
+        <DraggableGrid
+          sections={visibleSections}
+          onReorder={(newOrder) => setTileOrder(newOrder)}
+          renderTile={(s) => {
             const perm = getPermission(s.key);
-            const isFirst = idx === 0;
-            const isLast = idx === visibleSections.length - 1;
             return (
-              <TouchableOpacity
-                key={s.key}
+              <View
                 style={[
-                  styles.tile,
-                  {
-                    backgroundColor: colors.card,
-                    borderWidth: reorderMode ? 1.5 : 0,
-                    borderColor: reorderMode ? colors.primary : "transparent",
-                  },
+                  styles.tileInner,
+                  { backgroundColor: colors.card },
                 ]}
-                onPress={() => {
-                  if (reorderMode) return;
-                  router.push(s.route as any);
-                }}
-                onLongPress={() => setReorderMode(true)}
-                delayLongPress={350}
-                activeOpacity={reorderMode ? 1 : 0.85}
               >
                 <View style={[styles.tileIcon, { backgroundColor: s.bg }]}>
                   <Feather name={s.icon as any} size={28} color={s.color} />
@@ -440,53 +407,22 @@ export default function HomeScreen() {
                 >
                   {t(`menu.${s.key}`)}
                 </Text>
-                {reorderMode ? (
-                  <View style={styles.reorderArrows}>
-                    <TouchableOpacity
-                      onPress={() => moveSection(s.key as string, -1)}
-                      disabled={isFirst}
-                      style={[
-                        styles.arrowBtn,
-                        { backgroundColor: isFirst ? colors.muted : colors.primary + "20", opacity: isFirst ? 0.4 : 1 },
-                      ]}
-                      hitSlop={8}
-                    >
-                      <Feather name="arrow-left" size={16} color={colors.primary} />
-                    </TouchableOpacity>
-                    <Text style={[styles.posText, { color: colors.mutedForeground }]}>
-                      {idx + 1}/{visibleSections.length}
-                    </Text>
-                    <TouchableOpacity
-                      onPress={() => moveSection(s.key as string, 1)}
-                      disabled={isLast}
-                      style={[
-                        styles.arrowBtn,
-                        { backgroundColor: isLast ? colors.muted : colors.primary + "20", opacity: isLast ? 0.4 : 1 },
-                      ]}
-                      hitSlop={8}
-                    >
-                      <Feather name="arrow-right" size={16} color={colors.primary} />
-                    </TouchableOpacity>
-                  </View>
-                ) : (
-                  <View style={styles.tileBottom}>
-                    <Text
-                      style={[styles.tileCount, { color: colors.mutedForeground }]}
-                    >
-                      {s.count(app)}
-                    </Text>
-                    {perm === "view" ? (
-                      <View style={styles.viewBadge}>
-                        <Feather name="eye" size={10} color="#0ea5e9" />
-                        <Text style={styles.viewBadgeText}>{t("home.tile.readonly")}</Text>
-                      </View>
-                    ) : null}
-                  </View>
-                )}
-              </TouchableOpacity>
+                <View style={styles.tileBottom}>
+                  <Text style={[styles.tileCount, { color: colors.mutedForeground }]}>
+                    {s.count(app)}
+                  </Text>
+                  {perm === "view" ? (
+                    <View style={styles.viewBadge}>
+                      <Feather name="eye" size={10} color="#0ea5e9" />
+                      <Text style={styles.viewBadgeText}>{t("home.tile.readonly")}</Text>
+                    </View>
+                  ) : null}
+                </View>
+              </View>
             );
-          })}
-        </View>
+          }}
+          onTilePress={(s) => router.push(s.route as any)}
+        />
 
         <TouchableOpacity
           style={[styles.raporBtn, { backgroundColor: colors.card, borderColor: colors.primary + "60", borderWidth: 1.5 }]}
@@ -695,6 +631,234 @@ export default function HomeScreen() {
   );
 }
 
+// ============================================================================
+// DraggableGrid: Uzun bas + sürükle ile yeniden sıralanabilen 2 sütunlu grid
+// ============================================================================
+
+const DG_COLS = 2;
+const DG_GAP = 12;
+const DG_TILE_H = 144;
+
+interface DGSection {
+  key: string;
+  [k: string]: any;
+}
+
+interface DGProps<T extends DGSection> {
+  sections: T[];
+  onReorder: (newOrder: string[]) => void;
+  renderTile: (s: T) => React.ReactNode;
+  onTilePress: (s: T) => void;
+}
+
+function slotPos(idx: number, tileW: number) {
+  "worklet";
+  const col = idx % DG_COLS;
+  const row = Math.floor(idx / DG_COLS);
+  return { x: col * (tileW + DG_GAP), y: row * (DG_TILE_H + DG_GAP) };
+}
+
+function DraggableGrid<T extends DGSection>({
+  sections,
+  onReorder,
+  renderTile,
+  onTilePress,
+}: DGProps<T>) {
+  const [containerW, setContainerW] = useState(0);
+  const tileW = containerW > 0 ? (containerW - DG_GAP * (DG_COLS - 1)) / DG_COLS : 0;
+  const totalRows = Math.ceil(sections.length / DG_COLS);
+  const containerH = totalRows > 0 ? totalRows * DG_TILE_H + (totalRows - 1) * DG_GAP : 0;
+
+  // key -> index (canlı sıralama, drag esnasında güncellenir)
+  const positions = useSharedValue<Record<string, number>>(
+    Object.fromEntries(sections.map((s, i) => [s.key, i]))
+  );
+  const draggingKey = useSharedValue<string | null>(null);
+  const tileWShared = useSharedValue(tileW);
+
+  // sections değişince pozisyonları yeniden senkronize et
+  useEffect(() => {
+    const next: Record<string, number> = {};
+    sections.forEach((s, i) => {
+      next[s.key] = i;
+    });
+    positions.value = next;
+  }, [sections]);
+
+  useEffect(() => {
+    tileWShared.value = tileW;
+  }, [tileW]);
+
+  return (
+    <View
+      onLayout={(e) => setContainerW(e.nativeEvent.layout.width)}
+      style={{ width: "100%", height: containerH, marginBottom: 24 }}
+    >
+      {tileW > 0
+        ? sections.map((s) => (
+            <DraggableTile
+              key={s.key}
+              itemKey={s.key}
+              total={sections.length}
+              tileW={tileW}
+              tileWShared={tileWShared}
+              positions={positions}
+              draggingKey={draggingKey}
+              onReorder={onReorder}
+              onPress={() => onTilePress(s)}
+            >
+              {renderTile(s)}
+            </DraggableTile>
+          ))
+        : null}
+    </View>
+  );
+}
+
+interface DTProps {
+  itemKey: string;
+  total: number;
+  tileW: number;
+  tileWShared: SharedValue<number>;
+  positions: SharedValue<Record<string, number>>;
+  draggingKey: SharedValue<string | null>;
+  onReorder: (newOrder: string[]) => void;
+  onPress: () => void;
+  children: React.ReactNode;
+}
+
+function DraggableTile({
+  itemKey,
+  total,
+  tileW,
+  tileWShared,
+  positions,
+  draggingKey,
+  onReorder,
+  onPress,
+  children,
+}: DTProps) {
+  const tx = useSharedValue(0);
+  const ty = useSharedValue(0);
+  const scale = useSharedValue(1);
+  const z = useSharedValue(0);
+  const shadow = useSharedValue(0);
+  const initialized = useRef(false);
+
+  // Slot pozisyonuna otomatik geçiş (drag yapılmadığında)
+  useAnimatedReaction(
+    () => ({
+      idx: positions.value[itemKey],
+      w: tileWShared.value,
+      isDragging: draggingKey.value === itemKey,
+    }),
+    (cur, prev) => {
+      if (cur.w === 0 || cur.idx === undefined) return;
+      if (cur.isDragging) return;
+      const { x, y } = slotPos(cur.idx, cur.w);
+      if (!prev || prev.w === 0) {
+        // ilk yerleşim — animasyonsuz
+        tx.value = x;
+        ty.value = y;
+      } else {
+        tx.value = withSpring(x, { damping: 20, stiffness: 220 });
+        ty.value = withSpring(y, { damping: 20, stiffness: 220 });
+      }
+    }
+  );
+
+  useEffect(() => {
+    initialized.current = true;
+  }, []);
+
+  const startX = useSharedValue(0);
+  const startY = useSharedValue(0);
+
+  const drag = Gesture.Pan()
+    .activateAfterLongPress(300)
+    .onStart(() => {
+      draggingKey.value = itemKey;
+      startX.value = tx.value;
+      startY.value = ty.value;
+      scale.value = withSpring(1.08, { damping: 14, stiffness: 220 });
+      z.value = 100;
+      shadow.value = withSpring(1);
+    })
+    .onChange((e) => {
+      const w = tileWShared.value;
+      if (w === 0) return;
+      tx.value = startX.value + e.translationX;
+      ty.value = startY.value + e.translationY;
+      // Parmağın hangi slot üzerinde olduğunu hesapla
+      const cx = tx.value + w / 2;
+      const cy = ty.value + DG_TILE_H / 2;
+      const col = Math.max(0, Math.min(DG_COLS - 1, Math.floor(cx / (w + DG_GAP))));
+      const row = Math.max(0, Math.floor(cy / (DG_TILE_H + DG_GAP)));
+      const newIdx = Math.max(0, Math.min(total - 1, row * DG_COLS + col));
+      const myIdx = positions.value[itemKey];
+      if (myIdx === undefined || newIdx === myIdx) return;
+      // Sırayı yeniden kur ve diğer karelere dağıt
+      const entries = Object.entries(positions.value).sort((a, b) => a[1] - b[1]);
+      const keys = entries.map(([k]) => k);
+      keys.splice(myIdx, 1);
+      keys.splice(newIdx, 0, itemKey);
+      const next: Record<string, number> = {};
+      keys.forEach((k, i) => {
+        next[k] = i;
+      });
+      positions.value = next;
+      runOnJS(onReorder)(keys);
+    })
+    .onEnd(() => {
+      draggingKey.value = null;
+      scale.value = withSpring(1, { damping: 16, stiffness: 220 });
+      shadow.value = withSpring(0);
+      const idx = positions.value[itemKey];
+      const w = tileWShared.value;
+      if (idx !== undefined && w > 0) {
+        const { x, y } = slotPos(idx, w);
+        tx.value = withSpring(x, { damping: 20, stiffness: 220 });
+        ty.value = withSpring(y, { damping: 20, stiffness: 220 });
+      }
+      z.value = 0;
+    });
+
+  const tap = Gesture.Tap()
+    .maxDuration(280)
+    .onEnd((_e, success) => {
+      if (success) runOnJS(onPress)();
+    });
+
+  const composed = Gesture.Simultaneous(drag, tap);
+
+  const animStyle = useAnimatedStyle(() => ({
+    position: "absolute",
+    left: 0,
+    top: 0,
+    width: tileWShared.value,
+    transform: [
+      { translateX: tx.value },
+      { translateY: ty.value },
+      { scale: scale.value },
+    ],
+    zIndex: z.value,
+    elevation: z.value > 0 ? 10 : 2,
+    shadowOpacity: 0.06 + shadow.value * 0.18,
+    shadowRadius: 4 + shadow.value * 10,
+    opacity: draggingKey.value === itemKey ? 0.95 : 1,
+  }));
+
+  return (
+    <Animated.View style={[{ shadowColor: "#000", shadowOffset: { width: 0, height: 2 } }, animStyle]}>
+      <GestureDetector gesture={composed}>
+        <Animated.View style={{ width: "100%", height: DG_TILE_H }}>
+          {children}
+        </Animated.View>
+      </GestureDetector>
+    </Animated.View>
+  );
+}
+
 const styles = StyleSheet.create({
   root: { flex: 1 },
   hero: {
@@ -853,22 +1017,12 @@ const styles = StyleSheet.create({
     marginBottom: 12,
     marginLeft: 4,
   },
-  grid: {
-    flexDirection: "row",
-    flexWrap: "wrap",
-    gap: 12,
-  },
-  tile: {
-    width: "47.5%",
+  tileInner: {
+    flex: 1,
     paddingVertical: 18,
     paddingHorizontal: 16,
     borderRadius: 14,
     gap: 8,
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.06,
-    shadowRadius: 4,
-    elevation: 2,
   },
   tileIcon: {
     width: 50,
@@ -881,42 +1035,6 @@ const styles = StyleSheet.create({
     fontSize: 15,
     fontFamily: "Inter_600SemiBold",
   },
-  reorderBar: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 8,
-    paddingVertical: 10,
-    paddingHorizontal: 12,
-    borderRadius: 10,
-    borderWidth: 1,
-    marginHorizontal: 16,
-    marginBottom: 10,
-  },
-  reorderText: { flex: 1, fontSize: 12, fontFamily: "Inter_500Medium" },
-  reorderDone: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 4,
-    paddingHorizontal: 10,
-    paddingVertical: 6,
-    borderRadius: 999,
-  },
-  reorderDoneText: { color: "#fff", fontSize: 12, fontFamily: "Inter_600SemiBold" },
-  reorderArrows: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "space-between",
-    marginTop: 8,
-    gap: 4,
-  },
-  arrowBtn: {
-    width: 30,
-    height: 30,
-    borderRadius: 15,
-    justifyContent: "center",
-    alignItems: "center",
-  },
-  posText: { fontSize: 11, fontFamily: "Inter_600SemiBold" },
   tileBottom: {
     flexDirection: "row",
     alignItems: "center",
