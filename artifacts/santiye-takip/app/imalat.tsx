@@ -247,7 +247,7 @@ export default function ImalatScreen() {
               </View>
               <View style={[styles.metrajPill, { backgroundColor: colors.muted }]}>
                 <Text style={[styles.metrajLabel, { color: colors.mutedForeground }]}>
-                  Gerçekleşen Metraj
+                  Gerçekleşen Miktar
                 </Text>
                 <Text style={[styles.metrajVal, { color: "#16a34a" }]}>
                   {item.completedQty} {item.unit}
@@ -309,7 +309,7 @@ export default function ImalatScreen() {
           </View>
           <View style={{ flex: 1 }}>
             <FormInput
-              label="Gerçekleşen Metraj"
+              label="Gerçekleşen Miktar"
               value={form.completedQty}
               onChangeText={(v) => setForm({ ...form, completedQty: v })}
               keyboardType="numeric"
