@@ -209,3 +209,9 @@ id = "zypgCz6S9p4P5nez9xmuO"
 uri = "file://exports/santiye-takip-source.zip"
 type = "unspecified"
 title = "ŞantiJET Kaynak Kodları (güncel)"
+
+[[outputs]]
+id = "8nflgLFhpGhlt5jeeaF0H"
+uri = "file://exports/santijet-tam-paket.zip"
+type = "unspecified"
+title = "ŞantiJET - Tam Çalışan Paket (kurulum talimatlarıyla)"
