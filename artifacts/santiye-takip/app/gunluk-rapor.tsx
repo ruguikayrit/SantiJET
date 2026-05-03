@@ -96,6 +96,7 @@ export default function GunlukRaporScreen() {
     tasks,
     materials,
     weighbridges,
+    appUsers,
   } = useApp();
 
   const perm = usePermission("gunluk-rapor");
@@ -183,6 +184,29 @@ export default function GunlukRaporScreen() {
       if (absent) parts.push(`${absent} gelmedi`);
       lines.push(parts.join(" · "));
       lines.push(`Toplam ${fmtNum(totalHours)} saat`);
+
+      // Meslek grubu kırılımı (sadece çalışanlar: tam + yarım)
+      const userById = new Map(appUsers.map(u => [u.id, u] as const));
+      const groupMap = new Map<string, { count: number; profs: Map<string, number> }>();
+      for (const a of att) {
+        if (a.status !== "present" && a.status !== "half") continue;
+        const u = userById.get(a.workerId);
+        const group = ((u?.team || "").trim()) || "Diğer";
+        const prof = ((u?.profession || "").trim()) || "Çalışan";
+        let g = groupMap.get(group);
+        if (!g) { g = { count: 0, profs: new Map() }; groupMap.set(group, g); }
+        g.count += 1;
+        g.profs.set(prof, (g.profs.get(prof) || 0) + 1);
+      }
+      if (groupMap.size > 0) {
+        const ordered = Array.from(groupMap.entries()).sort((a, b) => b[1].count - a[1].count);
+        for (const [grp, info] of ordered) {
+          let topProf = "Çalışan"; let topN = -1;
+          for (const [p, n] of info.profs) { if (n > topN) { topProf = p; topN = n; } }
+          lines.push(`${grp} - ${info.count} ${topProf}`);
+        }
+      }
+
       cards.push({
         key: "puantaj",
         icon: "users",
