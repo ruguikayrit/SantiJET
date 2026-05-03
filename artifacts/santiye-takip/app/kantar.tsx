@@ -38,7 +38,8 @@ interface F {
   entryTime: string;
   exitTime: string;
   supplierIrsaliyeNo: string;
-  supplierTonnage: string;
+  supplierGrossWeight: string;
+  supplierTareWeight: string;
 }
 
 const EMPTY: F = {
@@ -55,7 +56,8 @@ const EMPTY: F = {
   entryTime: "",
   exitTime: "",
   supplierIrsaliyeNo: "",
-  supplierTonnage: "",
+  supplierGrossWeight: "",
+  supplierTareWeight: "",
 };
 
 function nowHHmm() {
@@ -155,7 +157,8 @@ export default function KantarScreen() {
         entryTime: w.entryTime || "",
         exitTime: w.exitTime || "",
         supplierIrsaliyeNo: w.supplierIrsaliyeNo || "",
-        supplierTonnage: w.supplierTonnage != null ? String(w.supplierTonnage) : "",
+        supplierGrossWeight: w.supplierGrossWeight != null ? String(w.supplierGrossWeight) : "",
+        supplierTareWeight: w.supplierTareWeight != null ? String(w.supplierTareWeight) : "",
       });
     } else {
       setEditId(null);
@@ -190,7 +193,12 @@ export default function KantarScreen() {
       entryTime: form.entryTime.trim() || undefined,
       exitTime: form.exitTime.trim() || undefined,
       supplierIrsaliyeNo: form.supplierIrsaliyeNo.trim() || undefined,
-      supplierTonnage: form.supplierTonnage.trim() ? parseFloat(form.supplierTonnage) || 0 : undefined,
+      supplierGrossWeight: form.supplierGrossWeight.trim() ? parseFloat(form.supplierGrossWeight) || 0 : undefined,
+      supplierTareWeight: form.supplierTareWeight.trim() ? parseFloat(form.supplierTareWeight) || 0 : undefined,
+      supplierTonnage:
+        form.supplierGrossWeight.trim() || form.supplierTareWeight.trim()
+          ? Math.max(0, (parseFloat(form.supplierGrossWeight) || 0) - (parseFloat(form.supplierTareWeight) || 0))
+          : undefined,
     };
     if (editId) updateWeighbridge(editId, data);
     else addWeighbridge(data);
@@ -207,6 +215,12 @@ export default function KantarScreen() {
     const t = parseFloat(form.tareWeight) || 0;
     return Math.max(0, g - t);
   }, [form.grossWeight, form.tareWeight]);
+
+  const supplierFormNet = useMemo(() => {
+    const g = parseFloat(form.supplierGrossWeight) || 0;
+    const t = parseFloat(form.supplierTareWeight) || 0;
+    return Math.max(0, g - t);
+  }, [form.supplierGrossWeight, form.supplierTareWeight]);
 
   return (
     <View style={[styles.root, { backgroundColor: colors.background }]}>
@@ -572,24 +586,46 @@ export default function KantarScreen() {
               Tedarikçi Kantar Fişi Bilgileri
             </Text>
           </View>
+          <FormInput
+            label="İrsaliye Numarası"
+            value={form.supplierIrsaliyeNo}
+            onChangeText={(v) => setForm({ ...form, supplierIrsaliyeNo: v })}
+            placeholder="Tedarikçi irsaliye no"
+          />
+
           <View style={styles.twoCol}>
             <View style={{ flex: 1 }}>
               <FormInput
-                label="İrsaliye Numarası"
-                value={form.supplierIrsaliyeNo}
-                onChangeText={(v) => setForm({ ...form, supplierIrsaliyeNo: v })}
-                placeholder="Tedarikçi irsaliye no"
-              />
-            </View>
-            <View style={{ flex: 1 }}>
-              <FormInput
-                label={`Tedarikçi Net Tonaj (${form.unit || "kg"})`}
-                value={form.supplierTonnage}
-                onChangeText={(v) => setForm({ ...form, supplierTonnage: v })}
+                label="Dolu Miktar"
+                value={form.supplierGrossWeight}
+                onChangeText={(v) => setForm({ ...form, supplierGrossWeight: v })}
                 keyboardType="numeric"
                 placeholder="0"
               />
             </View>
+            <View style={{ flex: 1 }}>
+              <FormInput
+                label="Boş Miktar"
+                value={form.supplierTareWeight}
+                onChangeText={(v) => setForm({ ...form, supplierTareWeight: v })}
+                keyboardType="numeric"
+                placeholder="0"
+              />
+            </View>
+          </View>
+
+          <View style={[styles.netBox, { backgroundColor: "#0ea5e922" }]}>
+            <View>
+              <Text style={[styles.netBoxLabel, { color: colors.foreground }]}>
+                Tedarikçi Net Miktar
+              </Text>
+              <Text style={[styles.netBoxHint, { color: colors.mutedForeground }]}>
+                Dolu − Boş otomatik hesaplanır
+              </Text>
+            </View>
+            <Text style={[styles.netBoxVal, { color: "#0ea5e9" }]}>
+              {fmtNum(supplierFormNet)} {form.unit || "kg"}
+            </Text>
           </View>
 
           {canEdit ? <PrimaryButton label="Kaydet" onPress={save} style={{ marginTop: 8 }} /> : null}

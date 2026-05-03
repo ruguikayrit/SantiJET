@@ -153,6 +153,8 @@ export interface Weighbridge {
   exitTime?: string;
   supplierIrsaliyeNo?: string;
   supplierTonnage?: number;
+  supplierGrossWeight?: number;
+  supplierTareWeight?: number;
 }
 
 export interface MaterialRequest {
@@ -735,6 +737,8 @@ function normalizeWeighbridges(arr: any): Weighbridge[] {
       exitTime: typeof w?.exitTime === "string" ? w.exitTime : undefined,
       supplierIrsaliyeNo: typeof w?.supplierIrsaliyeNo === "string" ? w.supplierIrsaliyeNo : undefined,
       supplierTonnage: Number.isFinite(Number(w?.supplierTonnage)) ? Number(w.supplierTonnage) : undefined,
+      supplierGrossWeight: Number.isFinite(Number(w?.supplierGrossWeight)) ? Number(w.supplierGrossWeight) : undefined,
+      supplierTareWeight: Number.isFinite(Number(w?.supplierTareWeight)) ? Number(w.supplierTareWeight) : undefined,
     };
   });
 }
