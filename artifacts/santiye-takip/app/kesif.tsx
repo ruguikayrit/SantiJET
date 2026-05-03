@@ -30,8 +30,7 @@ interface FormState {
   itemPozCategory: string;
   itemDesc: string;
   itemUnit: string;
-  itemPlanned: string;
-  itemCompleted: string;
+  itemMetraj: string;
   itemDate: string;
 }
 
@@ -45,8 +44,7 @@ const EMPTY: FormState = {
   itemPozCategory: "",
   itemDesc: "",
   itemUnit: "",
-  itemPlanned: "",
-  itemCompleted: "",
+  itemMetraj: "",
   itemDate: "",
 };
 
@@ -82,8 +80,7 @@ export default function KesifScreen() {
         itemPozCategory: "",
         itemDesc: "",
         itemUnit: "",
-        itemPlanned: "",
-        itemCompleted: "",
+        itemMetraj: "",
         itemDate: "",
       });
     } else {
@@ -100,18 +97,15 @@ export default function KesifScreen() {
         ? [...(surveys.find((x) => x.id === editId)?.items || [])]
         : [];
     if (form.itemDesc.trim()) {
-      const planned = parseFloat(form.itemPlanned) || 0;
-      const completed = parseFloat(form.itemCompleted) || 0;
+      const metraj = parseFloat(form.itemMetraj) || 0;
       items.push({
         id: Date.now().toString(),
         description: form.itemDesc.trim(),
         unit: form.itemUnit.trim(),
-        quantity: completed || planned,
+        quantity: metraj,
         unitPrice: 0,
         pozCode: form.itemPozCode.trim() || undefined,
         pozCategory: form.itemPozCategory.trim() || undefined,
-        plannedQty: planned,
-        completedQty: completed,
         date: form.itemDate.trim() || undefined,
       });
     }
@@ -297,30 +291,18 @@ export default function KesifScreen() {
           </View>
           <View style={{ flex: 1 }}>
             <FormInput
-              label="Planlanan"
-              value={form.itemPlanned}
-              onChangeText={(v) => setForm({ ...form, itemPlanned: v })}
+              label="Metraj"
+              value={form.itemMetraj}
+              onChangeText={(v) => setForm({ ...form, itemMetraj: v })}
               keyboardType="numeric"
             />
           </View>
         </View>
-        <View style={styles.row2}>
-          <View style={{ flex: 1 }}>
-            <FormInput
-              label="Tamamlanan"
-              value={form.itemCompleted}
-              onChangeText={(v) => setForm({ ...form, itemCompleted: v })}
-              keyboardType="numeric"
-            />
-          </View>
-          <View style={{ flex: 1 }}>
-            <DatePickerInput
-              label="Tarih"
-              value={form.itemDate}
-              onChange={(v) => setForm({ ...form, itemDate: v })}
-            />
-          </View>
-        </View>
+        <DatePickerInput
+          label="Tarih"
+          value={form.itemDate}
+          onChange={(v) => setForm({ ...form, itemDate: v })}
+        />
 
         {canEdit ? <PrimaryButton label="Kaydet" onPress={save} style={{ marginTop: 8 }} /> : null}
         {canEdit && editId ? (
