@@ -902,8 +902,8 @@ export default function MalzemeScreen() {
                     style={[
                       styles.apprChip,
                       {
-                        borderColor: item.kantarEnabled ? "#0d9488" : colors.muted,
-                        backgroundColor: item.kantarEnabled ? "#0d94881a" : "transparent",
+                        borderColor: item.kantarEnabled ? "#f59e0b" : colors.muted,
+                        backgroundColor: item.kantarEnabled ? "#f59e0b1a" : "transparent",
                       },
                     ]}
                   >
@@ -911,8 +911,8 @@ export default function MalzemeScreen() {
                       style={[
                         styles.apprBox,
                         {
-                          borderColor: item.kantarEnabled ? "#0d9488" : colors.mutedForeground,
-                          backgroundColor: item.kantarEnabled ? "#0d9488" : "transparent",
+                          borderColor: item.kantarEnabled ? "#f59e0b" : colors.mutedForeground,
+                          backgroundColor: item.kantarEnabled ? "#f59e0b" : "transparent",
                         },
                       ]}
                     >
@@ -921,7 +921,7 @@ export default function MalzemeScreen() {
                     <Text
                       style={[
                         styles.apprText,
-                        { color: item.kantarEnabled ? "#0d9488" : colors.mutedForeground },
+                        { color: item.kantarEnabled ? "#f59e0b" : colors.mutedForeground },
                       ]}
                     >
                       Kantar İzni
@@ -976,8 +976,8 @@ export default function MalzemeScreen() {
                     style={[
                       styles.apprChip,
                       {
-                        borderColor: item.weighApproved ? "#16a34a" : colors.muted,
-                        backgroundColor: item.weighApproved ? "#16a34a1a" : "transparent",
+                        borderColor: item.weighApproved ? "#9333ea" : colors.muted,
+                        backgroundColor: item.weighApproved ? "#9333ea1a" : "transparent",
                       },
                     ]}
                   >
@@ -985,8 +985,8 @@ export default function MalzemeScreen() {
                       style={[
                         styles.apprBox,
                         {
-                          borderColor: item.weighApproved ? "#16a34a" : colors.mutedForeground,
-                          backgroundColor: item.weighApproved ? "#16a34a" : "transparent",
+                          borderColor: item.weighApproved ? "#9333ea" : colors.mutedForeground,
+                          backgroundColor: item.weighApproved ? "#9333ea" : "transparent",
                         },
                       ]}
                     >
@@ -995,7 +995,7 @@ export default function MalzemeScreen() {
                     <Text
                       style={[
                         styles.apprText,
-                        { color: item.weighApproved ? "#16a34a" : colors.mutedForeground },
+                        { color: item.weighApproved ? "#9333ea" : colors.mutedForeground },
                       ]}
                     >
                       Şantiye Kantar
