@@ -27,33 +27,6 @@ import {
 import { usePermission } from "@/hooks/usePermission";
 import { useColors } from "@/hooks/useColors";
 
-const MESLEKLER = [
-  "Proje Koordinatörü",
-  "Proje Müdürü",
-  "Şantiye Şefi",
-  "Saha Mühendisi",
-  "Teknik Ofis Mühendisi",
-  "Harita Mühendisi",
-  "Jeoloji Mühendisi",
-  "İSG Uzmanı",
-  "Şenör",
-  "Puantör",
-  "Saha Formeni",
-  "Makine Formeni",
-  "Ekskavatör Operatörü",
-  "JCB Operatörü",
-  "Kamyon Şoförü",
-  "Kule Vinç Operatörü",
-  "Mobil Vinç Operatörü",
-  "Kantar Personeli",
-  "Depo & Ambar Personeli",
-  "Kalfa",
-  "Kalfa Yardımcısı",
-  "Saha Düz İşçi",
-  "Gündüz Bekçisi",
-  "Gece Bekçisi",
-];
-
 type Tab = "users" | "roles";
 
 const PERM_OPTIONS: { value: Permission; label: string; color: string }[] = [
@@ -92,6 +65,7 @@ export default function KullanicilarScreen() {
     updateAppUser,
     deleteAppUser,
     updateRole,
+    professions,
   } = useApp();
   const perm = usePermission("kullanicilar");
 
@@ -110,6 +84,7 @@ export default function KullanicilarScreen() {
   const [uPhone, setUPhone] = useState("");
   const [uAddress, setUAddress] = useState("");
   const [uCompany, setUCompany] = useState("");
+  const [uTeam, setUTeam] = useState("");
   const [profDropOpen, setProfDropOpen] = useState(false);
 
   const [roleSheet, setRoleSheet] = useState(false);
@@ -130,6 +105,7 @@ export default function KullanicilarScreen() {
       setUPhone(u.phone || "");
       setUAddress(u.address || "");
       setUCompany(u.company || "");
+      setUTeam(u.team || "");
     } else {
       setEditUserId(null);
       setUName("");
@@ -139,6 +115,7 @@ export default function KullanicilarScreen() {
       setUPhone("");
       setUAddress("");
       setUCompany("");
+      setUTeam("");
     }
     setUserSheet(true);
   }
@@ -153,6 +130,7 @@ export default function KullanicilarScreen() {
       phone: uPhone.trim(),
       address: uAddress.trim(),
       company: uCompany.trim(),
+      team: uTeam.trim(),
     };
     if (editUserId) updateAppUser(editUserId, data);
     else addAppUser(data);
@@ -299,9 +277,9 @@ export default function KullanicilarScreen() {
                         />
                       ) : null}
                     </View>
-                    {(u.profession || u.company || u.phone) ? (
-                      <Text style={[styles.cardSub, { color: colors.mutedForeground }]} numberOfLines={1}>
-                        {[u.profession, u.company, u.phone].filter(Boolean).join(" · ")}
+                    {(u.profession || u.company || u.phone || u.team) ? (
+                      <Text style={[styles.cardSub, { color: colors.mutedForeground }]} numberOfLines={2}>
+                        {[u.profession, u.team ? `Ekip: ${u.team}` : "", u.company, u.phone].filter(Boolean).join(" · ")}
                       </Text>
                     ) : null}
                   </View>
@@ -408,7 +386,13 @@ export default function KullanicilarScreen() {
 
         {profDropOpen && (
           <View style={[styles.profInlineList, { backgroundColor: colors.muted, borderColor: colors.primary }]}>
-            {MESLEKLER.map((m, i) => {
+            {professions.length === 0 ? (
+              <View style={styles.profInlineItem}>
+                <Text style={{ color: colors.mutedForeground, fontFamily: "Inter_400Regular", fontSize: 13 }}>
+                  Meslek tanımlı değil. Ayarlar &gt; Meslekler menüsünden ekleyin.
+                </Text>
+              </View>
+            ) : professions.map((m, i) => {
               const isSelected = uProfession === m;
               return (
                 <TouchableOpacity
@@ -416,7 +400,7 @@ export default function KullanicilarScreen() {
                   style={[
                     styles.profInlineItem,
                     { borderBottomColor: colors.border },
-                    i === MESLEKLER.length - 1 && { borderBottomWidth: 0 },
+                    i === professions.length - 1 && { borderBottomWidth: 0 },
                     isSelected && { backgroundColor: colors.primary + "20" },
                   ]}
                   onPress={() => { setUProfession(m); setProfDropOpen(false); }}
@@ -431,6 +415,15 @@ export default function KullanicilarScreen() {
             })}
           </View>
         )}
+
+        <Text style={[styles.formLabel, { color: colors.foreground, marginTop: 12 }]}>Ekip Adı</Text>
+        <TextInput
+          style={[styles.formInput, { backgroundColor: colors.muted, color: colors.foreground, borderColor: colors.border }]}
+          value={uTeam}
+          onChangeText={setUTeam}
+          placeholder="Örn: Kalıp Ekibi 1, Demir Ekibi A"
+          placeholderTextColor={colors.mutedForeground}
+        />
 
         {/* Telefon — tam genişlik */}
         <Text style={[styles.formLabel, { color: colors.foreground, marginTop: 12 }]}>Telefon</Text>

@@ -57,6 +57,13 @@ export default function AyarlarScreen() {
       sub: "İnşaat imalat pozlarını ve tariflerini yönetin",
       route: "/imalat-pozlari",
     },
+    {
+      key: "meslekler",
+      icon: "briefcase",
+      title: "Meslekler",
+      sub: "Kullanıcı meslek kategorilerini ekleyin, düzenleyin, sıralayın",
+      route: "/meslekler",
+    },
   ];
 
   const material: Row[] = [

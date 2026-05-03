@@ -356,7 +356,36 @@ export interface AppUser {
   phone: string;
   address: string;
   company: string;
+  team?: string;
 }
+
+export const DEFAULT_PROFESSIONS: string[] = [
+  "Proje Koordinatörü",
+  "Proje Müdürü",
+  "Şantiye Şefi",
+  "Saha Mühendisi",
+  "Teknik Ofis Mühendisi",
+  "Harita Mühendisi",
+  "Jeoloji Mühendisi",
+  "İSG Uzmanı",
+  "Şenör",
+  "Puantör",
+  "Saha Formeni",
+  "Makine Formeni",
+  "Usta",
+  "Ekskavatör Operatörü",
+  "JCB Operatörü",
+  "Kamyon Şoförü",
+  "Kule Vinç Operatörü",
+  "Mobil Vinç Operatörü",
+  "Kantar Personeli",
+  "Depo & Ambar Personeli",
+  "Kalfa",
+  "Kalfa Yardımcısı",
+  "Saha Düz İşçi",
+  "Gündüz Bekçisi",
+  "Gece Bekçisi",
+];
 
 const ALL_EDIT: Record<PageKey, Permission> = Object.fromEntries(
   ALL_PAGE_KEYS.map((k) => [k, "edit" as Permission])
@@ -491,6 +520,7 @@ interface AppState {
   materialList: ConstructionMaterial[];
   materialUnits: UnitOption[];
   imalatPozlari: ImalatPoz[];
+  professions: string[];
 }
 
 export type SyncStatus = "idle" | "syncing" | "success" | "error" | "conflict" | "auth_error";
@@ -598,6 +628,11 @@ interface AppContextType extends AppState {
 
   addMaterialUnit: (unit: UnitOption) => void;
   deleteMaterialUnit: (code: string) => void;
+
+  addProfession: (name: string) => void;
+  updateProfession: (oldName: string, newName: string) => void;
+  deleteProfession: (name: string) => void;
+  moveProfession: (name: string, dir: -1 | 1) => void;
 }
 
 const AppContext = createContext<AppContextType | undefined>(undefined);
@@ -635,6 +670,7 @@ const INITIAL: AppState = {
   materialList: [...CONSTRUCTION_MATERIALS],
   materialUnits: [...MATERIAL_UNITS],
   imalatPozlari: [...DEFAULT_IMALAT_POZLARI],
+  professions: [...DEFAULT_PROFESSIONS],
 };
 
 function needsRoleMigration(roles: Role[]): boolean {
@@ -815,6 +851,9 @@ async function loadInitialState(): Promise<AppState> {
         });
       }
       state.imalatPozlari = mergeImalatPozlari(state.imalatPozlari);
+      if (!Array.isArray(state.professions) || state.professions.length === 0) {
+        state.professions = [...DEFAULT_PROFESSIONS];
+      }
       state.purchases = normalizePurchases(state.purchases);
       state.weighbridges = normalizeWeighbridges(state.weighbridges);
       return state;
@@ -1025,6 +1064,8 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
             materialUnits: Array.isArray(incoming.materialUnits)
               ? incoming.materialUnits : [...MATERIAL_UNITS],
             imalatPozlari: mergeImalatPozlari(incoming.imalatPozlari),
+            professions: Array.isArray(incoming.professions) && incoming.professions.length > 0
+              ? incoming.professions : [...DEFAULT_PROFESSIONS],
             purchases: normalizePurchases(incoming.purchases),
             currentUserId: userStillExists ? prevUserId : null,
           };
@@ -1541,6 +1582,35 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
         ...prev,
         materialCategories: prev.materialCategories.filter((c) => c !== name),
       })),
+
+    addProfession: (name) =>
+      update((prev) =>
+        prev.professions.some((p) => p.toLowerCase() === name.toLowerCase())
+          ? prev
+          : { ...prev, professions: [...prev.professions, name] }
+      ),
+    updateProfession: (oldName, newName) =>
+      update((prev) => ({
+        ...prev,
+        professions: prev.professions.map((p) => (p === oldName ? newName : p)),
+        appUsers: prev.appUsers.map((u) =>
+          u.profession === oldName ? { ...u, profession: newName } : u
+        ),
+      })),
+    deleteProfession: (name) =>
+      update((prev) => ({
+        ...prev,
+        professions: prev.professions.filter((p) => p !== name),
+      })),
+    moveProfession: (name, dir) =>
+      update((prev) => {
+        const arr = [...prev.professions];
+        const i = arr.indexOf(name);
+        const j = i + dir;
+        if (i < 0 || j < 0 || j >= arr.length) return prev;
+        [arr[i], arr[j]] = [arr[j], arr[i]];
+        return { ...prev, professions: arr };
+      }),
 
     addMaterialItem: (item) =>
       update((prev) =>
