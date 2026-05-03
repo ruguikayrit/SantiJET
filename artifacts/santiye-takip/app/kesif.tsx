@@ -243,11 +243,6 @@ export default function KesifScreen() {
           value={form.location}
           onChangeText={(v) => setForm({ ...form, location: v })}
         />
-        <DatePickerInput
-          label="Tarih"
-          value={form.date}
-          onChange={(v) => setForm({ ...form, date: v })}
-        />
         <FormInput
           label="Notlar"
           value={form.notes}
