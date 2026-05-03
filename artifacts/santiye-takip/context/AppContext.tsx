@@ -119,6 +119,7 @@ export interface Production {
   pozCode?: string;
   pozCategory?: string;
   description?: string;
+  images?: string[];
 }
 
 export interface Task {

@@ -1,12 +1,18 @@
 import { useRouter } from "expo-router";
 import React, { useEffect, useMemo, useState } from "react";
 import {
+  Alert,
   FlatList,
+  Image,
+  Platform,
+  ScrollView,
   StyleSheet,
   Text,
   TouchableOpacity,
   View,
 } from "react-native";
+import { Feather } from "@expo/vector-icons";
+import * as ImagePicker from "expo-image-picker";
 
 import BottomSheet from "@/components/BottomSheet";
 import EmptyState from "@/components/EmptyState";
@@ -29,6 +35,7 @@ interface F {
   completedQty: string;
   date: string;
   description: string;
+  images: string[];
 }
 
 const EMPTY: F = {
@@ -41,6 +48,7 @@ const EMPTY: F = {
   completedQty: "",
   date: "",
   description: "",
+  images: [],
 };
 
 export default function ImalatScreen() {
@@ -74,6 +82,7 @@ export default function ImalatScreen() {
         completedQty: String(p.completedQty || ""),
         date: p.date,
         description: p.description || "",
+        images: Array.isArray(p.images) ? p.images : [],
       });
     } else {
       setEditId(null);
@@ -95,6 +104,7 @@ export default function ImalatScreen() {
       pozCode: form.pozCode.trim() || undefined,
       pozCategory: form.category.trim() || undefined,
       description: form.description.trim() || undefined,
+      images: form.images.length > 0 ? form.images : undefined,
     };
     if (editId) updateProduction(editId, data);
     else addProduction(data);
@@ -104,6 +114,62 @@ export default function ImalatScreen() {
   function remove() {
     if (editId) deleteProduction(editId);
     setVisible(false);
+  }
+
+  async function pickFromCamera() {
+    try {
+      const perm = await ImagePicker.requestCameraPermissionsAsync();
+      if (!perm.granted) {
+        Alert.alert("İzin gerekli", "Kameraya erişim izni verilmedi.");
+        return;
+      }
+      const res = await ImagePicker.launchCameraAsync({
+        mediaTypes: ImagePicker.MediaTypeOptions.Images,
+        quality: 0.7,
+      });
+      if (!res.canceled && res.assets?.[0]?.uri) {
+        setForm((f) => ({ ...f, images: [...f.images, res.assets[0].uri] }));
+      }
+    } catch (e: any) {
+      Alert.alert("Hata", e?.message || "Kamera açılamadı.");
+    }
+  }
+
+  async function pickFromGallery() {
+    try {
+      const perm = await ImagePicker.requestMediaLibraryPermissionsAsync();
+      if (!perm.granted) {
+        Alert.alert("İzin gerekli", "Galeriye erişim izni verilmedi.");
+        return;
+      }
+      const res = await ImagePicker.launchImageLibraryAsync({
+        mediaTypes: ImagePicker.MediaTypeOptions.Images,
+        quality: 0.7,
+        allowsMultipleSelection: true,
+      });
+      if (!res.canceled && res.assets?.length) {
+        const uris = res.assets.map((a) => a.uri).filter(Boolean);
+        setForm((f) => ({ ...f, images: [...f.images, ...uris] }));
+      }
+    } catch (e: any) {
+      Alert.alert("Hata", e?.message || "Galeri açılamadı.");
+    }
+  }
+
+  function addImage() {
+    if (Platform.OS === "web") {
+      pickFromGallery();
+      return;
+    }
+    Alert.alert("İmalat Resmi Ekle", "Kaynak seçin", [
+      { text: "Vazgeç", style: "cancel" },
+      { text: "Kamera", onPress: pickFromCamera },
+      { text: "Galeri", onPress: pickFromGallery },
+    ]);
+  }
+
+  function removeImage(idx: number) {
+    setForm((f) => ({ ...f, images: f.images.filter((_, i) => i !== idx) }));
   }
 
   function projectName(id: string) {
@@ -288,6 +354,36 @@ export default function ImalatScreen() {
           style={{ minHeight: 90, paddingTop: 10 }}
         />
 
+        <Text style={[styles.label, { color: colors.foreground, marginTop: 4 }]}>İmalat Resimleri</Text>
+        {form.images.length > 0 ? (
+          <ScrollView horizontal showsHorizontalScrollIndicator={false} style={{ marginBottom: 10 }}>
+            {form.images.map((uri, idx) => (
+              <View key={`${uri}-${idx}`} style={styles.thumbWrap}>
+                <Image source={{ uri }} style={styles.thumb} />
+                {canEdit ? (
+                  <TouchableOpacity
+                    onPress={() => removeImage(idx)}
+                    style={styles.thumbRemove}
+                    activeOpacity={0.85}
+                  >
+                    <Feather name="x" size={12} color="#fff" />
+                  </TouchableOpacity>
+                ) : null}
+              </View>
+            ))}
+          </ScrollView>
+        ) : null}
+        {canEdit ? (
+          <TouchableOpacity
+            onPress={addImage}
+            activeOpacity={0.85}
+            style={[styles.addImgBtn, { borderColor: colors.primary }]}
+          >
+            <Feather name="camera" size={16} color={colors.primary} />
+            <Text style={[styles.addImgBtnText, { color: colors.primary }]}>İmalat Resmi Ekle</Text>
+          </TouchableOpacity>
+        ) : null}
+
         {canEdit ? <PrimaryButton label="Kaydet" onPress={save} style={{ marginTop: 8 }} /> : null}
         {canEdit && editId ? (
           <PrimaryButton label="Sil" variant="danger" onPress={remove} style={{ marginTop: 10 }} />
@@ -325,4 +421,30 @@ const styles = StyleSheet.create({
   chip: { paddingHorizontal: 14, paddingVertical: 8, borderRadius: 999 },
   chipText: { fontSize: 13, fontFamily: "Inter_500Medium" },
   row: { flexDirection: "row", gap: 8 },
+  thumbWrap: { marginRight: 8, position: "relative" },
+  thumb: { width: 92, height: 92, borderRadius: 10, backgroundColor: "#0001" },
+  thumbRemove: {
+    position: "absolute",
+    top: -6,
+    right: -6,
+    width: 22,
+    height: 22,
+    borderRadius: 11,
+    backgroundColor: "#dc2626",
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  addImgBtn: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    gap: 8,
+    paddingVertical: 12,
+    paddingHorizontal: 14,
+    borderRadius: 10,
+    borderWidth: 1.5,
+    borderStyle: "dashed",
+    marginBottom: 6,
+  },
+  addImgBtnText: { fontSize: 14, fontFamily: "Inter_600SemiBold" },
 });
