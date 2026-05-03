@@ -646,7 +646,6 @@ const styles = StyleSheet.create({
   matFiltersWrap: {
     flexGrow: 0,
     flexShrink: 0,
-    maxHeight: 52,
   },
   matFilters: {
     paddingHorizontal: 16,

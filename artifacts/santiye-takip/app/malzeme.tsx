@@ -1439,7 +1439,7 @@ const styles = StyleSheet.create({
     marginTop: 6,
   },
   kantarBadgeText: { fontSize: 10, fontFamily: "Inter_600SemiBold" },
-  matFiltersWrap: { flexGrow: 0, flexShrink: 0, maxHeight: 52 },
+  matFiltersWrap: { flexGrow: 0, flexShrink: 0 },
   matFilters: {
     paddingHorizontal: 16,
     paddingVertical: 10,
