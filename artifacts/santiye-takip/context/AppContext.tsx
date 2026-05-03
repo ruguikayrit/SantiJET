@@ -1138,12 +1138,9 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
           nextMaterials = nextMaterials.map((m) => (m.id === id ? linked : m));
           nextWeighbridges = [...nextWeighbridges, slip];
         } else if (turningOff && before.kantarSlipId) {
-          // Kantar kapatıldı: fişi SİLME, sadece bağlantıyı kopart.
-          // Tartım verisi korunur; fiş Kantar sayfasında bağımsız fiş olarak kalır.
+          // Kantara Girsin kapatıldı: kantar fişini sil ve bağlantıyı kopart.
           const slipId = before.kantarSlipId;
-          nextWeighbridges = nextWeighbridges.map((w) =>
-            w.id === slipId ? { ...w, materialId: undefined } : w
-          );
+          nextWeighbridges = nextWeighbridges.filter((w) => w.id !== slipId);
           const cleared: Material = { ...after, kantarSlipId: undefined };
           nextMaterials = nextMaterials.map((m) => (m.id === id ? cleared : m));
         } else if (after.writeToKantar && after.kantarSlipId) {
