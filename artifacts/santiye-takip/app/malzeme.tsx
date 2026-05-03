@@ -654,7 +654,7 @@ export default function MalzemeScreen() {
               {mForm.writeToKantar ? <Feather name="check" size={12} color="#fff" /> : null}
             </View>
             <Text style={[styles.kgTitle, { color: colors.foreground }]}>
-              Kantara Girsin
+              Kantara Uygun Malzeme
             </Text>
             <Text style={[styles.kgHint, { color: colors.mutedForeground }]}>
               {mForm.writeToKantar ? "Kantar sayfasına yazılacak" : "Kantar sayfasına yazılmayacak"}
