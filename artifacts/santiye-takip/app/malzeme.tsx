@@ -1318,11 +1318,12 @@ export default function MalzemeScreen() {
                   item.approvals?.satinAlma
                 );
                 const delivered = item.status === "delivered";
+                const canDeliver = allChecked || item.status === "approved" || delivered;
                 return (
                   <TouchableOpacity
-                    activeOpacity={canEdit && allChecked ? 0.7 : 1}
+                    activeOpacity={canEdit && canDeliver ? 0.7 : 1}
                     onPress={
-                      canEdit && allChecked
+                      canEdit && canDeliver
                         ? (e) => {
                             e.stopPropagation?.();
                             updateMaterialRequest(item.id, {
@@ -1335,7 +1336,7 @@ export default function MalzemeScreen() {
                       styles.deliveredRow,
                       {
                         borderTopColor: colors.border,
-                        opacity: allChecked ? 1 : 0.4,
+                        opacity: canDeliver ? 1 : 0.4,
                       },
                     ]}
                   >
@@ -1361,9 +1362,9 @@ export default function MalzemeScreen() {
                     >
                       Teslim Alındı
                     </Text>
-                    {!allChecked ? (
+                    {!canDeliver ? (
                       <Text style={[styles.deliveredHint, { color: colors.mutedForeground }]}>
-                        (3 onay gerekli)
+                        (önce onay gerekli)
                       </Text>
                     ) : null}
                   </TouchableOpacity>
