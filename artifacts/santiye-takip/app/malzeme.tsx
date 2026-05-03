@@ -62,6 +62,7 @@ interface MF {
   shippingMethod: string;
   waybillNo: string;
   invoiceNo: string;
+  kantarEnabled: boolean;
 }
 
 interface RF {
@@ -95,6 +96,7 @@ const EMPTY_M: MF = {
   supplier: "", deliveryDate: "", unitPrice: "",
   recordDetail: "", description: "", code: "",
   shippingMethod: "", waybillNo: "", invoiceNo: "",
+  kantarEnabled: false,
 };
 
 const EMPTY_R: RF = {
@@ -196,6 +198,7 @@ export default function MalzemeScreen() {
         shippingMethod: m.shippingMethod ?? "",
         waybillNo: m.waybillNo ?? "",
         invoiceNo: m.invoiceNo ?? "",
+        kantarEnabled: !!m.kantarEnabled,
       });
     } else {
       setMEditId(null);
@@ -225,6 +228,7 @@ export default function MalzemeScreen() {
       shippingMethod: mForm.shippingMethod.trim() || undefined,
       waybillNo: mForm.waybillNo.trim() || undefined,
       invoiceNo: mForm.invoiceNo.trim() || undefined,
+      kantarEnabled: mForm.kantarEnabled,
     };
     if (mEditId) {
       const existing = materials.find((m) => m.id === mEditId);
@@ -564,6 +568,49 @@ export default function MalzemeScreen() {
               />
             </View>
           </View>
+          <TouchableOpacity
+            onPress={() => setMForm({ ...mForm, kantarEnabled: !mForm.kantarEnabled })}
+            disabled={!canEdit}
+            activeOpacity={0.7}
+            style={[
+              styles.kantarToggle,
+              {
+                borderColor: mForm.kantarEnabled ? "#0d9488" : colors.muted,
+                backgroundColor: mForm.kantarEnabled ? "#0d948811" : colors.card,
+              },
+            ]}
+          >
+            <View
+              style={[
+                styles.kantarCheck,
+                {
+                  borderColor: mForm.kantarEnabled ? "#0d9488" : colors.mutedForeground,
+                  backgroundColor: mForm.kantarEnabled ? "#0d9488" : "transparent",
+                },
+              ]}
+            >
+              {mForm.kantarEnabled ? (
+                <Feather name="check" size={14} color="#fff" />
+              ) : null}
+            </View>
+            <View style={{ flex: 1 }}>
+              <Text style={[styles.kantarTitle, { color: colors.foreground }]}>
+                Kantar
+              </Text>
+              <Text style={[styles.kantarDesc, { color: colors.mutedForeground }]}>
+                {mForm.kantarEnabled
+                  ? "Kantar fişi otomatik oluşturulur. Tartım verilerini Kantar sayfasında girin."
+                  : mEditId
+                  ? "Kapatırsanız bağlı fiş silinmez; bağlantı kopar, fiş Kantar sayfasında kalır"
+                  : "Bu malzeme kantara giriyorsa aktif edin"}
+              </Text>
+            </View>
+            <Feather
+              name="truck"
+              size={20}
+              color={mForm.kantarEnabled ? "#0d9488" : colors.mutedForeground}
+            />
+          </TouchableOpacity>
           {canEdit ? <PrimaryButton label="Kaydet" onPress={saveMaterial} style={{ marginTop: 8 }} /> : null}
           {canEdit && mEditId ? (
             <PrimaryButton label="Sil" variant="danger" onPress={removeMaterial} style={{ marginTop: 10 }} />
@@ -878,6 +925,17 @@ export default function MalzemeScreen() {
                     {metaParts.join(" · ")}
                   </Text>
                 ) : null}
+                {item.kantarEnabled ? (
+                  <TouchableOpacity
+                    onPress={(e) => { e.stopPropagation(); router.push("/kantar" as any); }}
+                    style={[styles.kantarBadge, { backgroundColor: "#0d948822" }]}
+                  >
+                    <Feather name="truck" size={10} color="#0d9488" />
+                    <Text style={[styles.kantarBadgeText, { color: "#0d9488" }]}>
+                      Kantar
+                    </Text>
+                  </TouchableOpacity>
+                ) : null}
               </View>
               <View style={[styles.gelenQtyPill, { backgroundColor: colors.muted }]}>
                 <Text style={[styles.gelenQtyVal, { color: colors.foreground }]}>{item.quantity}</Text>
@@ -1191,6 +1249,37 @@ const styles = StyleSheet.create({
   },
   gelenQtyVal: { fontSize: 16, fontFamily: "Inter_700Bold" },
   gelenQtyUnit: { fontSize: 11, fontFamily: "Inter_500Medium" },
+  kantarToggle: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 12,
+    padding: 12,
+    borderRadius: 10,
+    borderWidth: 1,
+    marginTop: 6,
+    marginBottom: 4,
+  },
+  kantarCheck: {
+    width: 22,
+    height: 22,
+    borderRadius: 6,
+    borderWidth: 2,
+    justifyContent: "center",
+    alignItems: "center",
+  },
+  kantarTitle: { fontSize: 14, fontFamily: "Inter_600SemiBold" },
+  kantarDesc: { fontSize: 11, fontFamily: "Inter_400Regular", marginTop: 2 },
+  kantarBadge: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 4,
+    paddingHorizontal: 8,
+    paddingVertical: 3,
+    borderRadius: 999,
+    alignSelf: "flex-start",
+    marginTop: 6,
+  },
+  kantarBadgeText: { fontSize: 10, fontFamily: "Inter_600SemiBold" },
   warnBox: {
     flexDirection: "row",
     alignItems: "flex-start",

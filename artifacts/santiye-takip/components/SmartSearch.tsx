@@ -36,6 +36,7 @@ const TYPE_META: Record<PageKey, { label: string; icon: string; color: string; b
   malzeme:      { label: "Malzeme",       icon: "package",     color: "#059669", bg: "#d1fae5" },
   taseron:      { label: "Taşeron",       icon: "truck",       color: "#7c3aed", bg: "#ede9fe" },
   "satin-alma": { label: "Satın Alma",    icon: "shopping-cart", color: "#ea580c", bg: "#ffedd5" },
+  kantar:       { label: "Kantar",        icon: "truck",       color: "#0d9488", bg: "#ccfbf1" },
   butce:        { label: "Bütçe",         icon: "dollar-sign", color: "#16213e", bg: "#e0e7ff" },
   hakedis:      { label: "Hakediş",       icon: "file-text",   color: "#be185d", bg: "#fce7f3" },
   ilerleme:     { label: "İlerleme",      icon: "trending-up", color: "#0d9488", bg: "#ccfbf1" },
@@ -166,6 +167,15 @@ function buildIndex(app: ReturnType<typeof useApp>): IndexEntry[] {
       sublabel: [projectName(pu.projectId), pu.supplier, statusLabel, fmtDate(pu.date)].filter(Boolean).join(" · "),
       route: "/satin-alma",
       haystack: norm([pu.itemName, pu.supplier, pu.category, pu.invoiceNo, pu.notes, statusLabel, projectName(pu.projectId)].join(" ")),
+    });
+  }
+  for (const w of app.weighbridges) {
+    idx.push({
+      id: w.id, type: "kantar",
+      label: `${w.materialName} (${w.netWeight} ${w.unit || "kg"} net)`,
+      sublabel: [projectName(w.projectId), w.supplier, w.plate, w.irsaliyeNo ? `İrs: ${w.irsaliyeNo}` : "", fmtDate(w.date)].filter(Boolean).join(" · "),
+      route: "/kantar",
+      haystack: norm([w.materialName, w.supplier, w.plate, w.driver, w.irsaliyeNo, w.notes, projectName(w.projectId)].join(" ")),
     });
   }
   for (const b of app.budget) {

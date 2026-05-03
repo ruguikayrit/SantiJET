@@ -127,6 +127,26 @@ export interface Material {
   shippingMethod?: string;
   waybillNo?: string;
   invoiceNo?: string;
+  kantarEnabled?: boolean;
+  kantarSlipId?: string;
+}
+
+export interface Weighbridge {
+  id: string;
+  projectId: string;
+  date: string;
+  materialId?: string;
+  materialName: string;
+  category?: string;
+  supplier: string;
+  plate: string;
+  driver: string;
+  irsaliyeNo: string;
+  grossWeight: number;
+  tareWeight: number;
+  netWeight: number;
+  unit: string;
+  notes: string;
 }
 
 export interface MaterialRequest {
@@ -246,6 +266,7 @@ export const ALL_PAGE_KEYS = [
   "malzeme",
   "taseron",
   "satin-alma",
+  "kantar",
   "butce",
   "hakedis",
   "ilerleme",
@@ -266,6 +287,7 @@ export const PAGE_LABELS: Record<PageKey, string> = {
   malzeme: "Malzeme",
   taseron: "Taşeron",
   "satin-alma": "Satın Alma",
+  kantar: "Kantar",
   butce: "Bütçe",
   hakedis: "Hakediş",
   ilerleme: "İlerleme",
@@ -303,7 +325,7 @@ const DEFAULT_ROLES: Role[] = [
     permissions: {
       proje: "view", kesif: "view", "is-programi": "view", puantaj: "view",
       "gunluk-rapor": "view", imalat: "view", gorev: "view", malzeme: "view",
-      taseron: "view", "satin-alma": "view", butce: "view", hakedis: "view", ilerleme: "view", finans: "view", kullanicilar: "view",
+      taseron: "view", "satin-alma": "view", kantar: "view", butce: "view", hakedis: "view", ilerleme: "view", finans: "view", kullanicilar: "view",
     },
   },
   {
@@ -325,7 +347,7 @@ const DEFAULT_ROLES: Role[] = [
     permissions: {
       proje: "view", kesif: "none", "is-programi": "edit", puantaj: "edit",
       "gunluk-rapor": "edit", imalat: "edit", gorev: "edit", malzeme: "view",
-      taseron: "view", "satin-alma": "view", butce: "none", hakedis: "none", ilerleme: "view", finans: "none", kullanicilar: "none",
+      taseron: "view", "satin-alma": "view", kantar: "edit", butce: "none", hakedis: "none", ilerleme: "view", finans: "none", kullanicilar: "none",
     },
   },
   {
@@ -335,7 +357,7 @@ const DEFAULT_ROLES: Role[] = [
     permissions: {
       proje: "view", kesif: "edit", "is-programi": "view", puantaj: "none",
       "gunluk-rapor": "view", imalat: "edit", gorev: "view", malzeme: "view",
-      taseron: "view", "satin-alma": "view", butce: "view", hakedis: "edit", ilerleme: "edit", finans: "view", kullanicilar: "none",
+      taseron: "view", "satin-alma": "view", kantar: "view", butce: "view", hakedis: "edit", ilerleme: "edit", finans: "view", kullanicilar: "none",
     },
   },
   {
@@ -345,7 +367,7 @@ const DEFAULT_ROLES: Role[] = [
     permissions: {
       proje: "view", kesif: "none", "is-programi": "view", puantaj: "none",
       "gunluk-rapor": "edit", imalat: "view", gorev: "edit", malzeme: "none",
-      taseron: "none", "satin-alma": "none", butce: "none", hakedis: "none", ilerleme: "view", finans: "none", kullanicilar: "none",
+      taseron: "none", "satin-alma": "none", kantar: "none", butce: "none", hakedis: "none", ilerleme: "view", finans: "none", kullanicilar: "none",
     },
   },
   {
@@ -355,7 +377,7 @@ const DEFAULT_ROLES: Role[] = [
     permissions: {
       proje: "view", kesif: "none", "is-programi": "view", puantaj: "none",
       "gunluk-rapor": "edit", imalat: "view", gorev: "view", malzeme: "none",
-      taseron: "none", "satin-alma": "none", butce: "none", hakedis: "view", ilerleme: "view", finans: "none", kullanicilar: "none",
+      taseron: "none", "satin-alma": "none", kantar: "none", butce: "none", hakedis: "view", ilerleme: "view", finans: "none", kullanicilar: "none",
     },
   },
   {
@@ -365,7 +387,7 @@ const DEFAULT_ROLES: Role[] = [
     permissions: {
       proje: "view", kesif: "none", "is-programi": "none", puantaj: "none",
       "gunluk-rapor": "none", imalat: "none", gorev: "none", malzeme: "edit",
-      taseron: "view", "satin-alma": "edit", butce: "view", hakedis: "none", ilerleme: "none", finans: "view", kullanicilar: "none",
+      taseron: "view", "satin-alma": "edit", kantar: "edit", butce: "view", hakedis: "none", ilerleme: "none", finans: "view", kullanicilar: "none",
     },
   },
   {
@@ -375,7 +397,7 @@ const DEFAULT_ROLES: Role[] = [
     permissions: {
       proje: "view", kesif: "none", "is-programi": "none", puantaj: "none",
       "gunluk-rapor": "none", imalat: "none", gorev: "none", malzeme: "none",
-      taseron: "none", "satin-alma": "view", butce: "view", hakedis: "view", ilerleme: "none", finans: "edit", kullanicilar: "none",
+      taseron: "none", "satin-alma": "view", kantar: "view", butce: "view", hakedis: "view", ilerleme: "none", finans: "edit", kullanicilar: "none",
     },
   },
   {
@@ -385,7 +407,7 @@ const DEFAULT_ROLES: Role[] = [
     permissions: {
       proje: "view", kesif: "none", "is-programi": "none", puantaj: "edit",
       "gunluk-rapor": "none", imalat: "none", gorev: "none", malzeme: "none",
-      taseron: "none", "satin-alma": "none", butce: "none", hakedis: "none", ilerleme: "none", finans: "none", kullanicilar: "edit",
+      taseron: "none", "satin-alma": "none", kantar: "none", butce: "none", hakedis: "none", ilerleme: "none", finans: "none", kullanicilar: "edit",
     },
   },
   {
@@ -395,7 +417,7 @@ const DEFAULT_ROLES: Role[] = [
     permissions: {
       proje: "view", kesif: "none", "is-programi": "none", puantaj: "none",
       "gunluk-rapor": "view", imalat: "none", gorev: "view", malzeme: "none",
-      taseron: "none", "satin-alma": "none", butce: "none", hakedis: "none", ilerleme: "none", finans: "none", kullanicilar: "none",
+      taseron: "none", "satin-alma": "none", kantar: "none", butce: "none", hakedis: "none", ilerleme: "none", finans: "none", kullanicilar: "none",
     },
   },
 ];
@@ -414,6 +436,7 @@ interface AppState {
   materialMovements: MaterialMovement[];
   subcontractors: Subcontractor[];
   purchases: Purchase[];
+  weighbridges: Weighbridge[];
   budget: BudgetEntry[];
   hakedisler: Hakedis[];
   roles: Role[];
@@ -494,6 +517,10 @@ interface AppContextType extends AppState {
   markPurchasePaid: (id: string, paidDate: string) => void;
   markPurchaseInvoiceReceived: (id: string, received: boolean, invoiceNo?: string) => void;
 
+  addWeighbridge: (w: Omit<Weighbridge, "id">) => string;
+  updateWeighbridge: (id: string, w: Partial<Weighbridge>) => void;
+  deleteWeighbridge: (id: string) => void;
+
   addBudget: (b: Omit<BudgetEntry, "id">) => void;
   updateBudget: (id: string, b: Partial<BudgetEntry>) => void;
   deleteBudget: (id: string) => void;
@@ -548,6 +575,7 @@ const INITIAL: AppState = {
   materialMovements: [],
   subcontractors: [],
   purchases: [],
+  weighbridges: [],
   budget: [],
   hakedisler: [],
   roles: [],
@@ -673,6 +701,34 @@ function normalizePurchases(arr: any): Purchase[] {
   })) as Purchase[];
 }
 
+function normalizeWeighbridges(arr: any): Weighbridge[] {
+  if (!Array.isArray(arr)) return [];
+  return arr.map((w: any) => {
+    const gross = Number(w?.grossWeight) || 0;
+    const tare = Number(w?.tareWeight) || 0;
+    const net = Number.isFinite(Number(w?.netWeight))
+      ? Number(w.netWeight)
+      : Math.max(0, gross - tare);
+    return {
+      id: String(w?.id || ""),
+      projectId: String(w?.projectId || ""),
+      date: String(w?.date || ""),
+      materialId: typeof w?.materialId === "string" ? w.materialId : undefined,
+      materialName: String(w?.materialName || ""),
+      category: typeof w?.category === "string" ? w.category : undefined,
+      supplier: String(w?.supplier || ""),
+      plate: String(w?.plate || ""),
+      driver: String(w?.driver || ""),
+      irsaliyeNo: String(w?.irsaliyeNo || ""),
+      grossWeight: gross,
+      tareWeight: tare,
+      netWeight: net,
+      unit: String(w?.unit || "kg"),
+      notes: String(w?.notes || ""),
+    };
+  });
+}
+
 async function loadInitialState(): Promise<AppState> {
   const raw = await AsyncStorage.getItem(STORAGE_KEY);
   if (raw) {
@@ -694,6 +750,7 @@ async function loadInitialState(): Promise<AppState> {
         state.materialUnits = [...MATERIAL_UNITS];
       }
       state.purchases = normalizePurchases(state.purchases);
+      state.weighbridges = normalizeWeighbridges(state.weighbridges);
       return state;
     } catch {
       return { ...INITIAL, roles: DEFAULT_ROLES };
@@ -961,6 +1018,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
         materialMovements: prev.materialMovements.filter((x) => x.projectId !== id),
         subcontractors: prev.subcontractors.filter((x) => x.projectId !== id),
         purchases: prev.purchases.filter((x) => x.projectId !== id),
+        weighbridges: prev.weighbridges.filter((x) => x.projectId !== id),
         budget: prev.budget.filter((x) => x.projectId !== id),
         hakedisler: prev.hakedisler.filter((x) => x.projectId !== id),
         roles: prev.roles,
@@ -996,9 +1054,118 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     updateTask: makeUpdate("tasks") as any,
     deleteTask: makeDelete("tasks") as any,
 
-    addMaterial: makeAdd("materials") as any,
-    updateMaterial: makeUpdate("materials") as any,
-    deleteMaterial: makeDelete("materials") as any,
+    addMaterial: ((item: Omit<Material, "id">) => {
+      const id = genId();
+      const willBridge = !!(item as any).kantarEnabled && !(item as any).kantarSlipId;
+      const slipId = willBridge ? genId() : undefined;
+      const created: Material = {
+        ...(item as any),
+        id,
+        kantarSlipId: slipId ?? (item as any).kantarSlipId,
+      };
+      update((prev) => {
+        const next: AppState = { ...prev, materials: [...prev.materials, created] };
+        if (willBridge && slipId) {
+          const slip: Weighbridge = {
+            id: slipId,
+            projectId: created.projectId,
+            date: created.deliveryDate || new Date().toISOString().slice(0, 10),
+            materialId: id,
+            materialName: created.name,
+            category: created.category,
+            supplier: created.supplier,
+            plate: "",
+            driver: "",
+            irsaliyeNo: created.waybillNo || "",
+            grossWeight: 0,
+            tareWeight: 0,
+            netWeight: 0,
+            unit: created.unit || "kg",
+            notes: "Gelen Malzeme'den otomatik oluşturuldu",
+          };
+          next.weighbridges = [...prev.weighbridges, slip];
+        }
+        return next;
+      });
+      return id;
+    }) as any,
+    updateMaterial: ((id: string, patch: Partial<Material>) => {
+      update((prev) => {
+        const before = prev.materials.find((m) => m.id === id);
+        if (!before) return prev;
+        const after: Material = { ...before, ...patch };
+        let nextMaterials = prev.materials.map((m) => (m.id === id ? after : m));
+        let nextWeighbridges = prev.weighbridges;
+
+        const turningOn = !!after.kantarEnabled && !before.kantarEnabled;
+        const turningOff = !after.kantarEnabled && !!before.kantarEnabled;
+
+        if (turningOn && !after.kantarSlipId) {
+          const slipId = genId();
+          const slip: Weighbridge = {
+            id: slipId,
+            projectId: after.projectId,
+            date: after.deliveryDate || new Date().toISOString().slice(0, 10),
+            materialId: id,
+            materialName: after.name,
+            category: after.category,
+            supplier: after.supplier,
+            plate: "",
+            driver: "",
+            irsaliyeNo: after.waybillNo || "",
+            grossWeight: 0,
+            tareWeight: 0,
+            netWeight: 0,
+            unit: after.unit || "kg",
+            notes: "Gelen Malzeme'den otomatik oluşturuldu",
+          };
+          const linked: Material = { ...after, kantarSlipId: slipId };
+          nextMaterials = nextMaterials.map((m) => (m.id === id ? linked : m));
+          nextWeighbridges = [...nextWeighbridges, slip];
+        } else if (turningOff && before.kantarSlipId) {
+          // Kantar kapatıldı: fişi SİLME, sadece bağlantıyı kopart.
+          // Tartım verisi korunur; fiş Kantar sayfasında bağımsız fiş olarak kalır.
+          const slipId = before.kantarSlipId;
+          nextWeighbridges = nextWeighbridges.map((w) =>
+            w.id === slipId ? { ...w, materialId: undefined } : w
+          );
+          const cleared: Material = { ...after, kantarSlipId: undefined };
+          nextMaterials = nextMaterials.map((m) => (m.id === id ? cleared : m));
+        } else if (after.kantarEnabled && after.kantarSlipId) {
+          // Kantar açık + bağlı fiş: malzeme adı/kategorisi değişmişse fişe yansıt
+          const nameChanged = after.name !== before.name;
+          const catChanged = after.category !== before.category;
+          const supChanged = after.supplier !== before.supplier;
+          if (nameChanged || catChanged || supChanged) {
+            nextWeighbridges = nextWeighbridges.map((w) =>
+              w.id === after.kantarSlipId
+                ? {
+                    ...w,
+                    materialName: nameChanged ? after.name : w.materialName,
+                    category: catChanged ? after.category : w.category,
+                    supplier: supChanged ? after.supplier : w.supplier,
+                  }
+                : w
+            );
+          }
+        }
+
+        return { ...prev, materials: nextMaterials, weighbridges: nextWeighbridges };
+      });
+    }) as any,
+    deleteMaterial: ((id: string) => {
+      update((prev) => {
+        const target = prev.materials.find((m) => m.id === id);
+        const slipId = target?.kantarSlipId;
+        return {
+          ...prev,
+          materials: prev.materials.filter((m) => m.id !== id),
+          weighbridges: slipId
+            ? prev.weighbridges.filter((w) => w.id !== slipId)
+            : prev.weighbridges,
+        };
+      });
+    }) as any,
 
     addMaterialRequest: ((item: Omit<MaterialRequest, "id">) => {
       const id = genId();
@@ -1187,6 +1354,19 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
         writeFinansExpense(txId, updated, projectName).catch(() => {});
       }
     }) as any,
+    addWeighbridge: makeAdd("weighbridges") as any,
+    updateWeighbridge: makeUpdate("weighbridges") as any,
+    deleteWeighbridge: ((id: string) => {
+      update((prev) => ({
+        ...prev,
+        weighbridges: prev.weighbridges.filter((w) => w.id !== id),
+        // Bu fişe bağlı malzemenin bağlantısını da temizle
+        materials: prev.materials.map((m) =>
+          m.kantarSlipId === id ? { ...m, kantarSlipId: undefined, kantarEnabled: false } : m
+        ),
+      }));
+    }) as any,
+
     markPurchaseInvoiceReceived: (id, received, invoiceNo) =>
       update((prev) => ({
         ...prev,
@@ -1281,6 +1461,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
             ? backfillRolePermissions(incoming.roles)
             : DEFAULT_ROLES,
           purchases: normalizePurchases(incoming.purchases),
+          weighbridges: normalizeWeighbridges(incoming.weighbridges),
           currentUserId: null,
         };
         setState(next);
