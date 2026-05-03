@@ -8,6 +8,7 @@ import {
   ScrollView,
   StyleSheet,
   Text,
+  TextInput,
   TouchableOpacity,
   View,
 } from "react-native";
@@ -71,10 +72,30 @@ export default function ImalatScreen() {
   const [editId, setEditId] = useState<string | null>(null);
   const [form, setForm] = useState<F>(EMPTY);
 
-  const list = useMemo(
-    () => (filter ? productions.filter((p) => p.projectId === filter) : productions),
-    [productions, filter]
-  );
+  const [searchName, setSearchName] = useState("");
+  const [searchPoz, setSearchPoz] = useState("");
+  const [searchDate, setSearchDate] = useState("");
+
+  const hasFilter = !!(searchName.trim() || searchPoz.trim() || searchDate.trim());
+
+  const list = useMemo(() => {
+    let l = filter ? productions.filter((p) => p.projectId === filter) : productions;
+    const n = searchName.trim().toLocaleLowerCase("tr-TR");
+    const pz = searchPoz.trim().toLocaleLowerCase("tr-TR");
+    const d = searchDate.trim();
+    if (n) l = l.filter((p) => (p.name || "").toLocaleLowerCase("tr-TR").includes(n));
+    if (pz) l = l.filter((p) =>
+      ((p.pozCode || "") + " " + (p.pozCategory || "")).toLocaleLowerCase("tr-TR").includes(pz)
+    );
+    if (d) l = l.filter((p) => p.date === d);
+    return l;
+  }, [productions, filter, searchName, searchPoz, searchDate]);
+
+  function clearFilters() {
+    setSearchName("");
+    setSearchPoz("");
+    setSearchDate("");
+  }
 
   function open(p?: Production) {
     if (p) {
@@ -208,7 +229,52 @@ export default function ImalatScreen() {
           actionLabel="Projelere Git"
           onAction={() => router.push("/proje" as any)}
         />
-      ) : list.length === 0 ? (
+      ) : (
+        <View style={[styles.filterBar, { borderBottomColor: colors.border, backgroundColor: colors.card }]}>
+          <View style={styles.filterRow}>
+            <View style={[styles.searchBox, { backgroundColor: colors.muted, flex: 1 }]}>
+              <Feather name="tool" size={13} color={colors.mutedForeground} />
+              <TextInput
+                value={searchName}
+                onChangeText={setSearchName}
+                placeholder="İmalat adı"
+                placeholderTextColor={colors.mutedForeground}
+                style={[styles.searchInput, { color: colors.foreground }]}
+              />
+            </View>
+            <View style={[styles.searchBox, { backgroundColor: colors.muted, flex: 1 }]}>
+              <Feather name="hash" size={13} color={colors.mutedForeground} />
+              <TextInput
+                value={searchPoz}
+                onChangeText={setSearchPoz}
+                placeholder="Poz"
+                placeholderTextColor={colors.mutedForeground}
+                style={[styles.searchInput, { color: colors.foreground }]}
+              />
+            </View>
+          </View>
+          <View style={styles.filterRow}>
+            <View style={{ flex: 1 }}>
+              <DatePickerInput
+                value={searchDate}
+                onChange={setSearchDate}
+              />
+            </View>
+            {hasFilter ? (
+              <TouchableOpacity
+                onPress={clearFilters}
+                style={[styles.clearBtn, { backgroundColor: colors.muted }]}
+                activeOpacity={0.7}
+              >
+                <Feather name="x" size={14} color={colors.foreground} />
+                <Text style={[styles.clearBtnText, { color: colors.foreground }]}>Temizle</Text>
+              </TouchableOpacity>
+            ) : null}
+          </View>
+        </View>
+      )}
+
+      {projects.length === 0 ? null : list.length === 0 ? (
         <EmptyState
           icon="tool"
           title="İmalat kaydı yok"
@@ -473,4 +539,35 @@ const styles = StyleSheet.create({
     marginBottom: 6,
   },
   addImgBtnText: { fontSize: 14, fontFamily: "Inter_600SemiBold" },
+  filterBar: {
+    paddingHorizontal: 12,
+    paddingVertical: 10,
+    gap: 8,
+    borderBottomWidth: StyleSheet.hairlineWidth,
+  },
+  filterRow: { flexDirection: "row", gap: 8, alignItems: "center" },
+  searchBox: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 6,
+    paddingHorizontal: 10,
+    paddingVertical: 8,
+    borderRadius: 8,
+    minHeight: 38,
+  },
+  searchInput: {
+    flex: 1,
+    fontSize: 13,
+    fontFamily: "Inter_500Medium",
+    padding: 0,
+  },
+  clearBtn: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 4,
+    paddingHorizontal: 10,
+    paddingVertical: 8,
+    borderRadius: 8,
+  },
+  clearBtnText: { fontSize: 12, fontFamily: "Inter_600SemiBold" },
 });
