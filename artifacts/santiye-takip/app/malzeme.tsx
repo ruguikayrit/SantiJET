@@ -145,6 +145,7 @@ export default function MalzemeScreen() {
 
   const [tab, setTab] = useState<Tab>("gelen");
   const [filter, setFilter] = useState<string | null>(null);
+  const [materialFilter, setMaterialFilter] = useState<string | null>(null);
 
   const [mVisible, setMVisible] = useState(false);
   const [mEditId, setMEditId] = useState<string | null>(null);
@@ -158,25 +159,67 @@ export default function MalzemeScreen() {
   const [movEditId, setMovEditId] = useState<string | null>(null);
   const [movForm, setMovForm] = useState<MovF>(EMPTY_MOV);
 
-  const filteredMaterials = useMemo(
+  const projMaterials = useMemo(
     () => (filter ? materials.filter((m) => m.projectId === filter) : materials),
     [materials, filter]
   );
-  const filteredRequests = useMemo(
+  const projRequests = useMemo(
     () => (filter ? materialRequests.filter((r) => r.projectId === filter) : materialRequests),
     [materialRequests, filter]
   );
-  const filteredKullanim = useMemo(
+  const projKullanim = useMemo(
     () =>
       (filter ? materialMovements.filter((m) => m.projectId === filter) : materialMovements)
         .filter((m) => m.type === "kullanim"),
     [materialMovements, filter]
   );
-  const filteredGiden = useMemo(
+  const projGiden = useMemo(
     () =>
       (filter ? materialMovements.filter((m) => m.projectId === filter) : materialMovements)
         .filter((m) => m.type === "giden"),
     [materialMovements, filter]
+  );
+
+  const tabSource = useMemo(() => {
+    if (tab === "gelen") return projMaterials.map((m) => m.name);
+    if (tab === "talep") return projRequests.map((r) => r.name);
+    if (tab === "kullanim") return projKullanim.map((m) => m.name);
+    return projGiden.map((m) => m.name);
+  }, [tab, projMaterials, projRequests, projKullanim, projGiden]);
+
+  const materialNames = useMemo(() => {
+    const set = new Set<string>();
+    for (const n of tabSource) {
+      const v = (n || "").trim();
+      if (v) set.add(v);
+    }
+    return Array.from(set).sort((a, b) => a.localeCompare(b, "tr"));
+  }, [tabSource]);
+
+  useEffect(() => {
+    if (materialFilter && !materialNames.includes(materialFilter)) {
+      setMaterialFilter(null);
+    }
+  }, [materialFilter, materialNames]);
+
+  const matchesMat = (name: string) =>
+    !materialFilter || (name || "").trim() === materialFilter;
+
+  const filteredMaterials = useMemo(
+    () => projMaterials.filter((m) => matchesMat(m.name)),
+    [projMaterials, materialFilter]
+  );
+  const filteredRequests = useMemo(
+    () => projRequests.filter((r) => matchesMat(r.name)),
+    [projRequests, materialFilter]
+  );
+  const filteredKullanim = useMemo(
+    () => projKullanim.filter((m) => matchesMat(m.name)),
+    [projKullanim, materialFilter]
+  );
+  const filteredGiden = useMemo(
+    () => projGiden.filter((m) => matchesMat(m.name)),
+    [projGiden, materialFilter]
   );
 
   function projectName(id: string) {
@@ -448,6 +491,56 @@ export default function MalzemeScreen() {
       </ScrollView>
 
       <ProjectPicker projects={projects} value={filter} onChange={setFilter} />
+
+      {materialNames.length > 0 ? (
+        <ScrollView
+          horizontal
+          showsHorizontalScrollIndicator={false}
+          contentContainerStyle={styles.matFilters}
+          style={styles.matFiltersWrap}
+        >
+          <TouchableOpacity
+            onPress={() => setMaterialFilter(null)}
+            style={[
+              styles.matChip,
+              { backgroundColor: materialFilter === null ? colors.primary : colors.muted },
+            ]}
+          >
+            <Text
+              style={[
+                styles.matChipText,
+                { color: materialFilter === null ? "#fff" : colors.foreground },
+              ]}
+            >
+              Tümü ({tabSource.length})
+            </Text>
+          </TouchableOpacity>
+          {materialNames.map((name) => {
+            const count = tabSource.filter((n) => (n || "").trim() === name).length;
+            const active = materialFilter === name;
+            return (
+              <TouchableOpacity
+                key={name}
+                onPress={() => setMaterialFilter(active ? null : name)}
+                style={[
+                  styles.matChip,
+                  { backgroundColor: active ? colors.primary : colors.muted },
+                ]}
+              >
+                <Text
+                  style={[
+                    styles.matChipText,
+                    { color: active ? "#fff" : colors.foreground },
+                  ]}
+                  numberOfLines={1}
+                >
+                  {name} ({count})
+                </Text>
+              </TouchableOpacity>
+            );
+          })}
+        </ScrollView>
+      ) : null}
 
       {projects.length === 0 ? (
         <EmptyState
@@ -1346,6 +1439,22 @@ const styles = StyleSheet.create({
     marginTop: 6,
   },
   kantarBadgeText: { fontSize: 10, fontFamily: "Inter_600SemiBold" },
+  matFiltersWrap: { flexGrow: 0, flexShrink: 0, maxHeight: 52 },
+  matFilters: {
+    paddingHorizontal: 16,
+    paddingVertical: 10,
+    gap: 8,
+    flexDirection: "row",
+    alignItems: "center",
+  },
+  matChip: {
+    paddingHorizontal: 12,
+    height: 32,
+    justifyContent: "center",
+    borderRadius: 999,
+    maxWidth: 220,
+  },
+  matChipText: { fontSize: 12, fontFamily: "Inter_500Medium" },
   apprRow: {
     flexDirection: "column",
     gap: 6,
