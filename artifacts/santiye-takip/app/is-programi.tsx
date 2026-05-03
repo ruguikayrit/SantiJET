@@ -190,13 +190,33 @@ export default function IsProgramiScreen() {
           onAction={() => open()}
         />
       ) : view === "gantt" ? (
-        <GanttView
-          tasks={list}
-          colors={colors}
-          projectName={projectName}
-          onPressTask={(t) => open(t)}
-          statusColor={STATUS_COLOR}
-        />
+        list.every((t) => !t.startDate || !t.endDate) ? (
+          <View style={{ padding: 16 }}>
+            <View style={[styles.emptyGantt, { backgroundColor: colors.card, borderColor: colors.border }]}>
+              <Feather name="calendar" size={28} color={colors.mutedForeground} />
+              <Text style={[styles.emptyGanttTitle, { color: colors.foreground }]}>Gantt için tarih gerekli</Text>
+              <Text style={[styles.emptyGanttSub, { color: colors.mutedForeground }]}>
+                {list.length} iş kalemi var ama başlangıç/bitiş tarihi girilmemiş. Liste görünümünden tarihleri girin; Gantt otomatik oluşacaktır.
+              </Text>
+              <TouchableOpacity
+                onPress={() => setView("liste")}
+                style={[styles.emptyGanttBtn, { backgroundColor: colors.primary }]}
+                activeOpacity={0.85}
+              >
+                <Feather name="list" size={14} color="#fff" />
+                <Text style={styles.emptyGanttBtnText}>Liste Görünümüne Geç</Text>
+              </TouchableOpacity>
+            </View>
+          </View>
+        ) : (
+          <GanttView
+            tasks={list}
+            colors={colors}
+            projectName={projectName}
+            onPressTask={(t) => open(t)}
+            statusColor={STATUS_COLOR}
+          />
+        )
       ) : (
         <FlatList
           data={list}
@@ -383,6 +403,11 @@ const styles = StyleSheet.create({
   legendItem: { flexDirection: "row", alignItems: "center", gap: 6 },
   legendDot: { width: 10, height: 10, borderRadius: 3 },
   legendText: { fontSize: 11, fontFamily: "Inter_500Medium" },
+  emptyGantt: { padding: 24, borderRadius: 12, borderWidth: StyleSheet.hairlineWidth, alignItems: "center", gap: 8 },
+  emptyGanttTitle: { fontSize: 15, fontFamily: "Inter_700Bold", marginTop: 4 },
+  emptyGanttSub: { fontSize: 12, fontFamily: "Inter_400Regular", textAlign: "center", lineHeight: 17 },
+  emptyGanttBtn: { flexDirection: "row", alignItems: "center", gap: 6, paddingHorizontal: 16, paddingVertical: 10, borderRadius: 8, marginTop: 8 },
+  emptyGanttBtnText: { color: "#fff", fontSize: 13, fontFamily: "Inter_600SemiBold" },
   ganttRowName: { fontSize: 12, fontFamily: "Inter_600SemiBold" },
   ganttRowSub: { fontSize: 10, fontFamily: "Inter_400Regular", marginTop: 1 },
   ganttRight: { flex: 1 },
