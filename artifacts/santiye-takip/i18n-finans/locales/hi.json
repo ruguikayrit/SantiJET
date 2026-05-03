@@ -416,7 +416,7 @@
       "continueQuestion": "जारी रखें?"
     },
     "cloud": {
-      "title": "KasaFON क्लाउड",
+      "title": "ŞantiJET क्लाउड",
       "backupNow": "क्लाउड में बैकअप लें",
       "backupDesc": "सुरक्षित सर्वर पर डेटा सहेजें",
       "restore": "कोड से पुनर्स्थापित करें",
@@ -437,7 +437,7 @@
       "invalidCode": "एक वैध कोड दर्ज करें।",
       "restoreTitle": "पुनर्स्थापित करें",
       "restorePrompt": "मौजूदा डेटा के साथ कैसे मर्ज करें?",
-      "comingSoon": "{{provider}} बैकअप जल्द आ रहा है। अभी KasaFON क्लाउड उपयोग करें।",
+      "comingSoon": "{{provider}} बैकअप जल्द आ रहा है। अभी ŞantiJET क्लाउड उपयोग करें।",
       "integration": "{{provider}} एकीकरण"
     },
     "security": {
@@ -558,7 +558,7 @@
     "resetData": "डेटा रीसेट करें"
   },
   "membership": {
-    "title": "KasaFON Premium",
+    "title": "ŞantiJET Premium",
     "subtitle": "सभी सुविधाएं अनलॉक करें",
     "monthly": "मासिक",
     "yearly": "वार्षिक",

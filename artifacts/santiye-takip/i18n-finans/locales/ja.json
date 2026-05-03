@@ -416,7 +416,7 @@
       "continueQuestion": "続行しますか？"
     },
     "cloud": {
-      "title": "KasaFONクラウド",
+      "title": "ŞantiJETクラウド",
       "backupNow": "クラウドにバックアップ",
       "backupDesc": "安全なサーバーにデータを保存",
       "restore": "コードで復元",
@@ -437,7 +437,7 @@
       "invalidCode": "有効なコードを入力してください。",
       "restoreTitle": "復元",
       "restorePrompt": "既存のデータとどのように統合しますか？",
-      "comingSoon": "{{provider}}バックアップは近日公開予定です。現在はKasaFONクラウドをご利用ください。",
+      "comingSoon": "{{provider}}バックアップは近日公開予定です。現在はŞantiJETクラウドをご利用ください。",
       "integration": "{{provider}}連携"
     },
     "security": {
@@ -558,7 +558,7 @@
     "resetData": "データをリセット"
   },
   "membership": {
-    "title": "KasaFON Premium",
+    "title": "ŞantiJET Premium",
     "subtitle": "すべての機能を解放",
     "monthly": "月間",
     "yearly": "年間",

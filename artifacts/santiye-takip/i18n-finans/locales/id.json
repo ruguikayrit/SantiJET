@@ -416,7 +416,7 @@
       "continueQuestion": "Lanjutkan?"
     },
     "cloud": {
-      "title": "KasaFON Cloud",
+      "title": "ŞantiJET Cloud",
       "backupNow": "Cadangkan ke Cloud",
       "backupDesc": "Simpan data ke server aman",
       "restore": "Pulihkan dengan Kode",
@@ -437,7 +437,7 @@
       "invalidCode": "Masukkan kode yang valid.",
       "restoreTitle": "Pulihkan",
       "restorePrompt": "Bagaimana menggabungkan dengan data yang ada?",
-      "comingSoon": "Cadangan {{provider}} segera hadir. Gunakan KasaFON Cloud untuk sementara.",
+      "comingSoon": "Cadangan {{provider}} segera hadir. Gunakan ŞantiJET Cloud untuk sementara.",
       "integration": "Integrasi {{provider}}"
     },
     "security": {
@@ -558,7 +558,7 @@
     "resetData": "Reset data"
   },
   "membership": {
-    "title": "KasaFON Premium",
+    "title": "ŞantiJET Premium",
     "subtitle": "Buka semua fitur",
     "monthly": "Bulanan",
     "yearly": "Tahunan",

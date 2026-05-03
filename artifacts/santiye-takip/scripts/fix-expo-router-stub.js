@@ -38,11 +38,14 @@ if (!fs.existsSync(stubDir) || fs.lstatSync(stubDir).isSymbolicLink()) {
   fs.mkdirSync(stubDir, { recursive: true });
 }
 
-// Write stub files
+// Write stub files — types points to real package declarations for TypeScript
+const realPkgDir = path.dirname(realEntry);
+const typesRelPath = path.relative(stubDir, path.join(realPkgDir, 'build/index.d.ts'));
 fs.writeFileSync(stubPkg, JSON.stringify({
   name: 'expo-router',
   version: '6.0.23',
-  main: 'entry.js'
+  main: 'entry.js',
+  types: typesRelPath,
 }, null, 2));
 
 fs.writeFileSync(stubEntry, `import '${realEntry}';\n`);

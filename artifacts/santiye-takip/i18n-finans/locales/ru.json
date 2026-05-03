@@ -416,7 +416,7 @@
       "continueQuestion": "Продолжить?"
     },
     "cloud": {
-      "title": "KasaFON Облако",
+      "title": "ŞantiJET Облако",
       "backupNow": "Резервная копия в облаке",
       "backupDesc": "Сохраните данные на защищённых серверах",
       "restore": "Восстановить по коду",
@@ -437,7 +437,7 @@
       "invalidCode": "Введите действительный код.",
       "restoreTitle": "Восстановление",
       "restorePrompt": "Как объединить с существующими данными?",
-      "comingSoon": "Резервное копирование {{provider}} скоро появится. Пока используйте KasaFON Облако.",
+      "comingSoon": "Резервное копирование {{provider}} скоро появится. Пока используйте ŞantiJET Облако.",
       "integration": "Интеграция {{provider}}"
     },
     "security": {
@@ -558,7 +558,7 @@
     "resetData": "Сбросить данные"
   },
   "membership": {
-    "title": "KasaFON Premium",
+    "title": "ŞantiJET Premium",
     "subtitle": "Разблокировать все функции",
     "monthly": "Ежемесячно",
     "yearly": "Ежегодно",

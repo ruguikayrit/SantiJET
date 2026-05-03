@@ -12,8 +12,6 @@ import { CurrencyProvider } from "@/context/finans/CurrencyContext";
 import { PinProvider } from "@/context/finans/PinContext";
 import { ThemeProvider } from "@/context/finans/ThemeContext";
 import { VoiceAssistantProvider } from "@/context/finans/VoiceAssistantContext";
-import { SubscriptionProvider } from "@/lib/finans/revenuecat";
-
 function FinansHeader() {
   const router = useRouter();
   return (
@@ -45,26 +43,24 @@ function FinansHeader() {
 export default function FinansLayout() {
   return (
     <ErrorBoundary>
-      <SubscriptionProvider>
-        <ThemeProvider>
-          <CurrencyProvider>
-            <AuthProvider>
-              <BudgetProvider>
-                <VoiceAssistantProvider>
-                  <PinProvider>
-                    <GestureHandlerRootView style={{ flex: 1 }}>
-                      {Platform.OS === "web" ? <FinansHeader /> : null}
-                      <Stack screenOptions={{ headerShown: false }}>
-                        <Stack.Screen name="(tabs)" />
-                      </Stack>
-                    </GestureHandlerRootView>
-                  </PinProvider>
-                </VoiceAssistantProvider>
-              </BudgetProvider>
-            </AuthProvider>
-          </CurrencyProvider>
-        </ThemeProvider>
-      </SubscriptionProvider>
+      <ThemeProvider>
+        <CurrencyProvider>
+          <AuthProvider>
+            <BudgetProvider>
+              <VoiceAssistantProvider>
+                <PinProvider>
+                  <GestureHandlerRootView style={{ flex: 1 }}>
+                    {Platform.OS === "web" ? <FinansHeader /> : null}
+                    <Stack screenOptions={{ headerShown: false }}>
+                      <Stack.Screen name="(tabs)" />
+                    </Stack>
+                  </GestureHandlerRootView>
+                </PinProvider>
+              </VoiceAssistantProvider>
+            </BudgetProvider>
+          </AuthProvider>
+        </CurrencyProvider>
+      </ThemeProvider>
     </ErrorBoundary>
   );
 }

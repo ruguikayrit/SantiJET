@@ -548,7 +548,7 @@ function buildHtml(
     </tfoot>
   </table>
 
-  <div class="footer">KasaFON — otomatik oluşturuldu · ${now}</div>
+  <div class="footer">ŞantiJET — otomatik oluşturuldu · ${now}</div>
 </div>
 
 <!-- SAYFA 2 — İşlemler -->
@@ -620,7 +620,7 @@ function buildHtml(
         </tfoot>
       </table>`}
 
-  <div class="footer">KasaFON — İşlemler sayfası</div>
+  <div class="footer">ŞantiJET — İşlemler sayfası</div>
 </div>
 
 <!-- SAYFA 3 — Nakit Akışı -->
@@ -652,7 +652,7 @@ function buildHtml(
         </tfoot>
       </table>`}
 
-  <div class="footer">KasaFON — Nakit Akışı sayfası</div>
+  <div class="footer">ŞantiJET — Nakit Akışı sayfası</div>
 </div>
 
 <!-- SAYFA 4 — Borçlar (Özetler üstte, Detay altta) -->
@@ -694,7 +694,7 @@ function buildHtml(
   </table>
   `}
 
-  <div class="footer">KasaFON — Borçlar sayfası</div>
+  <div class="footer">ŞantiJET — Borçlar sayfası</div>
 </div>
 
 <!-- SAYFA 5 — Varlıklar -->
@@ -748,7 +748,7 @@ function buildHtml(
   </table>
   `}
 
-  <div class="footer">KasaFON — Varlıklar sayfası</div>
+  <div class="footer">ŞantiJET — Varlıklar sayfası</div>
 </div>
 
 <!-- SAYFA 6 — Banka Limitleri -->
@@ -799,7 +799,7 @@ function buildHtml(
     </table>
   </div>
 
-  <div class="footer">KasaFON — Banka Limitleri sayfası</div>
+  <div class="footer">ŞantiJET — Banka Limitleri sayfası</div>
 </div>
 
 </body>
@@ -819,7 +819,7 @@ export async function exportAsPdf(
     const url  = URL.createObjectURL(blob);
     const a    = document.createElement("a");
     a.href     = url;
-    a.download = "kasafon-raporu.html"; 
+    a.download = "santijet-raporu.html"; 
     a.click();
     URL.revokeObjectURL(url);
     return;

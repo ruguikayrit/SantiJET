@@ -307,7 +307,7 @@ export async function sendTestNotification(): Promise<boolean> {
     await Notifications.scheduleNotificationAsync({
       identifier: `${ID_PREFIX}test_${Date.now()}`,
       content: {
-        title: "KasaFON — Test",
+        title: "ŞantiJET — Test",
         body: "Bildirimler çalışıyor. Hatırlatıcılarını planladık.",
         ...(Platform.OS === "android" ? { channelId: "reminders" } : {}),
       },

@@ -150,7 +150,7 @@ export default function PinLockScreen() {
       <View style={s.logo}>
         <Feather name="lock" size={32} color="#FFFFFF" />
       </View>
-      <Text style={s.title}>KasaFON</Text>
+      <Text style={s.title}>Finans</Text>
       <Text style={s.subtitle}>PIN kodunu gir</Text>
 
       <Animated.View

@@ -12,7 +12,7 @@ export default function TabLayout() {
   return (
     <View style={{ flex: 1 }}>
       <Tabs
-        tabBar={(props) => <CustomTabBar {...props} />}
+        tabBar={(props: any) => <CustomTabBar {...props} />}
         screenOptions={{
           headerShown: false,
           tabBarStyle: { display: "none" },

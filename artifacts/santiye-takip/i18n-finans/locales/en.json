@@ -867,7 +867,7 @@
       "cancelBtn": "Cancel"
     },
     "cloud": {
-      "title": "KasaFON Cloud",
+      "title": "ŞantiJET Cloud",
       "backupNow": "Back Up to Cloud",
       "backupDesc": "Save your data to secure servers",
       "restore": "Restore with Code",
@@ -888,16 +888,16 @@
       "invalidCode": "Enter a valid code.",
       "restoreTitle": "Restore",
       "restorePrompt": "How should this be merged with existing data?",
-      "comingSoon": "{{provider}} backup coming soon. For now, use KasaFON Cloud to back up your data.",
+      "comingSoon": "{{provider}} backup coming soon. For now, use ŞantiJET Cloud to back up your data.",
       "integration": "{{provider}} Integration",
-      "kasafonCloud": "KasaFON Cloud",
+      "santijetCloud": "ŞantiJET Cloud",
       "backing": "Backing up...",
       "backupToCloud": "Back up to cloud",
       "restoreLabel": "Restore",
       "restoreWithCode": "With backup code",
       "soon": "Coming Soon",
       "soonBadge": "SOON",
-      "keyLabel": "KASAFON CLOUD — YOUR BACKUP CODE",
+      "keyLabel": "ŞANTİJET BULUT — YOUR BACKUP CODE",
       "keyHint": "Note this code — you need it to restore on another device",
       "regenerateBtn": "Generate new code",
       "restoreModalTitle": "Restore from Cloud",
@@ -1160,7 +1160,7 @@
     "pinMismatch": "PINs do not match"
   },
   "membership": {
-    "title": "KasaFON Premium",
+    "title": "ŞantiJET Premium",
     "subtitle": "Unlock all features",
     "monthly": "Monthly",
     "yearly": "Yearly",

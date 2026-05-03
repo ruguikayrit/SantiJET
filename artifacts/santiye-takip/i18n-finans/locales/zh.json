@@ -416,7 +416,7 @@
       "continueQuestion": "继续吗？"
     },
     "cloud": {
-      "title": "KasaFON云端",
+      "title": "ŞantiJET云端",
       "backupNow": "云端备份",
       "backupDesc": "将数据保存到安全服务器",
       "restore": "用代码恢复",
@@ -437,7 +437,7 @@
       "invalidCode": "请输入有效代码。",
       "restoreTitle": "恢复",
       "restorePrompt": "如何与现有数据合并？",
-      "comingSoon": "{{provider}}备份即将推出，暂请使用KasaFON云端。",
+      "comingSoon": "{{provider}}备份即将推出，暂请使用ŞantiJET云端。",
       "integration": "{{provider}}集成"
     },
     "security": {
@@ -558,7 +558,7 @@
     "resetData": "重置数据"
   },
   "membership": {
-    "title": "KasaFON高级版",
+    "title": "ŞantiJET高级版",
     "subtitle": "解锁全部功能",
     "monthly": "按月",
     "yearly": "按年",

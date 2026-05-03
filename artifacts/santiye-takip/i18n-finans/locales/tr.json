@@ -867,7 +867,7 @@
       "cancelBtn": "Vazgeç"
     },
     "cloud": {
-      "title": "KasaFON Bulut",
+      "title": "ŞantiJET Bulut",
       "backupNow": "Buluta Yedekle",
       "backupDesc": "Verilerini güvenli sunucuya kaydet",
       "restore": "Kodla Geri Yükle",
@@ -888,16 +888,16 @@
       "invalidCode": "Geçerli bir kod gir.",
       "restoreTitle": "Geri Yükle",
       "restorePrompt": "Mevcut verilerle nasıl birleştirilsin?",
-      "comingSoon": "{{provider}} yedekleme yakında eklenecek. Şimdilik KasaFON Bulut'u kullanarak verilerini yedekleyebilirsin.",
+      "comingSoon": "{{provider}} yedekleme yakında eklenecek. Şimdilik ŞantiJET Bulut'u kullanarak verilerini yedekleyebilirsin.",
       "integration": "{{provider}} Entegrasyonu",
-      "kasafonCloud": "KasaFON Bulut",
+      "santijetCloud": "ŞantiJET Bulut",
       "backing": "Yedekleniyor...",
       "backupToCloud": "Buluta yedekle",
       "restoreLabel": "Geri Yükle",
       "restoreWithCode": "Yedek kodu ile",
       "soon": "Yakında",
       "soonBadge": "YAKINDA",
-      "keyLabel": "KASAFON BULUT — YEDEK KODUN",
+      "keyLabel": "ŞANTİJET BULUT — YEDEK KODUN",
       "keyHint": "Bu kodu not al — başka cihazdan geri yüklemek için gerekli",
       "regenerateBtn": "Yeni kod oluştur",
       "restoreModalTitle": "Buluttan Geri Yükle",
@@ -1160,7 +1160,7 @@
     "pinMismatch": "PIN'ler eşleşmiyor"
   },
   "membership": {
-    "title": "KasaFON Premium",
+    "title": "ŞantiJET Premium",
     "subtitle": "Tüm özelliklerin kilidini aç",
     "monthly": "Aylık",
     "yearly": "Yıllık",

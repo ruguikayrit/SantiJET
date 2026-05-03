@@ -19,7 +19,6 @@ import {
 } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
-import MembershipCard from "@/components/finans/MembershipCard";
 import CategoryManagerModal from "@/components/finans/CategoryManagerModal";
 import NotificationSettingsSheet from "@/components/finans/NotificationSettingsSheet";
 import PinSetupModal from "@/components/finans/PinSetupModal";
@@ -1048,9 +1047,6 @@ export default function SettingsScreen() {
           </TouchableOpacity>
         )}
 
-        {/* ── Üyelik Paneli ── */}
-        <MembershipCard />
-
         {/* ── Dil Seçici ── */}
         <View style={styles.section}>
           <Text style={styles.sectionTitle}>{t("settings.sections.language").toUpperCase()}</Text>
@@ -1226,7 +1222,7 @@ export default function SettingsScreen() {
                     <View style={[styles.cloudIconRing, { backgroundColor: "#E6FBF4" }]}>
                       <Feather name="cloud" size={18} color="#00C896" />
                     </View>
-                    <Text style={styles.cloudLabel}>{cloudBusy ? t("settings.cloud.backing") : t("settings.cloud.kasafonCloud")}</Text>
+                    <Text style={styles.cloudLabel}>{cloudBusy ? t("settings.cloud.backing") : t("settings.cloud.backupToCloud")}</Text>
                     <Text style={styles.cloudSub}>{t("settings.cloud.backupToCloud")}</Text>
                   </TouchableOpacity>
                   <TouchableOpacity style={[styles.cloudBox, cloudBusy && { opacity: 0.5 }]} onPress={() => { Haptics.selectionAsync(); setRestoreModal(true); }} disabled={cloudBusy} activeOpacity={0.82}>
@@ -1593,7 +1589,7 @@ export default function SettingsScreen() {
         </View>
 
         <View style={styles.footer}>
-          <Text style={styles.footerText}>KasaFON • v1.0</Text>
+          <Text style={styles.footerText}>ŞantiJET Finans • v1.0</Text>
         </View>
       </ScrollView>
 

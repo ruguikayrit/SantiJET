@@ -416,7 +416,7 @@
       "continueQuestion": "Doorgaan?"
     },
     "cloud": {
-      "title": "KasaFON Cloud",
+      "title": "ŞantiJET Cloud",
       "backupNow": "Back-up naar Cloud",
       "backupDesc": "Sla gegevens op op beveiligde servers",
       "restore": "Herstellen met Code",
@@ -437,7 +437,7 @@
       "invalidCode": "Voer een geldige code in.",
       "restoreTitle": "Herstellen",
       "restorePrompt": "Hoe samenvoegen met bestaande gegevens?",
-      "comingSoon": "{{provider}} back-up binnenkort beschikbaar. Gebruik voorlopig KasaFON Cloud.",
+      "comingSoon": "{{provider}} back-up binnenkort beschikbaar. Gebruik voorlopig ŞantiJET Cloud.",
       "integration": "{{provider}} Integratie"
     },
     "security": {
@@ -558,7 +558,7 @@
     "resetData": "Gegevens resetten"
   },
   "membership": {
-    "title": "KasaFON Premium",
+    "title": "ŞantiJET Premium",
     "subtitle": "Ontgrendel alle functies",
     "monthly": "Maandelijks",
     "yearly": "Jaarlijks",

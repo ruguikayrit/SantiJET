@@ -416,7 +416,7 @@
       "continueQuestion": "Fortsätta?"
     },
     "cloud": {
-      "title": "KasaFON Molnet",
+      "title": "ŞantiJET Molnet",
       "backupNow": "Säkerhetskopiera till Molnet",
       "backupDesc": "Spara data på säkra servrar",
       "restore": "Återställ med Kod",
@@ -437,7 +437,7 @@
       "invalidCode": "Ange en giltig kod.",
       "restoreTitle": "Återställ",
       "restorePrompt": "Hur slå samman med befintlig data?",
-      "comingSoon": "{{provider}}-säkerhetskopia kommer snart. Använd KasaFON Molnet tills vidare.",
+      "comingSoon": "{{provider}}-säkerhetskopia kommer snart. Använd ŞantiJET Molnet tills vidare.",
       "integration": "{{provider}}-integration"
     },
     "security": {
@@ -558,7 +558,7 @@
     "resetData": "Återställ data"
   },
   "membership": {
-    "title": "KasaFON Premium",
+    "title": "ŞantiJET Premium",
     "subtitle": "Lås upp alla funktioner",
     "monthly": "Månadsvis",
     "yearly": "Årsvis",

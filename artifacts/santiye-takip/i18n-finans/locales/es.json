@@ -416,7 +416,7 @@
       "continueQuestion": "¿Continuar?"
     },
     "cloud": {
-      "title": "KasaFON Nube",
+      "title": "ŞantiJET Nube",
       "backupNow": "Respaldar en la Nube",
       "backupDesc": "Guarda tus datos en servidores seguros",
       "restore": "Restaurar con Código",
@@ -437,7 +437,7 @@
       "invalidCode": "Ingresa un código válido.",
       "restoreTitle": "Restaurar",
       "restorePrompt": "¿Cómo combinar con los datos existentes?",
-      "comingSoon": "Respaldo de {{provider}} próximamente. Por ahora, usa KasaFON Nube.",
+      "comingSoon": "Respaldo de {{provider}} próximamente. Por ahora, usa ŞantiJET Nube.",
       "integration": "Integración con {{provider}}"
     },
     "security": {
@@ -558,7 +558,7 @@
     "resetData": "Restablecer datos"
   },
   "membership": {
-    "title": "KasaFON Premium",
+    "title": "ŞantiJET Premium",
     "subtitle": "Desbloquea todas las funciones",
     "monthly": "Mensual",
     "yearly": "Anual",

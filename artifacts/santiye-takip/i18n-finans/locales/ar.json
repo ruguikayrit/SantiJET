@@ -416,7 +416,7 @@
       "continueQuestion": "هل تريد الاستمرار؟"
     },
     "cloud": {
-      "title": "KasaFON السحابي",
+      "title": "ŞantiJET السحابي",
       "backupNow": "نسخ احتياطي سحابي",
       "backupDesc": "احفظ بياناتك على خوادم آمنة",
       "restore": "استعادة بالرمز",
@@ -437,7 +437,7 @@
       "invalidCode": "أدخل رمزاً صحيحاً.",
       "restoreTitle": "استعادة",
       "restorePrompt": "كيف تريد دمجها مع البيانات الموجودة؟",
-      "comingSoon": "نسخ {{provider}} الاحتياطي قادم قريباً. استخدم KasaFON السحابي الآن.",
+      "comingSoon": "نسخ {{provider}} الاحتياطي قادم قريباً. استخدم ŞantiJET السحابي الآن.",
       "integration": "تكامل {{provider}}"
     },
     "security": {
@@ -558,7 +558,7 @@
     "resetData": "إعادة تعيين البيانات"
   },
   "membership": {
-    "title": "KasaFON Premium",
+    "title": "ŞantiJET Premium",
     "subtitle": "افتح جميع الميزات",
     "monthly": "شهري",
     "yearly": "سنوي",

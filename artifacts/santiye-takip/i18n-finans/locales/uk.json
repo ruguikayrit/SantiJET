@@ -416,7 +416,7 @@
       "continueQuestion": "Продовжити?"
     },
     "cloud": {
-      "title": "KasaFON Хмара",
+      "title": "ŞantiJET Хмара",
       "backupNow": "Резервна копія в хмарі",
       "backupDesc": "Збережіть дані на захищених серверах",
       "restore": "Відновити за кодом",
@@ -437,7 +437,7 @@
       "invalidCode": "Введіть дійсний код.",
       "restoreTitle": "Відновлення",
       "restorePrompt": "Як об'єднати з наявними даними?",
-      "comingSoon": "Резервне копіювання {{provider}} незабаром. Наразі використовуйте KasaFON Хмара.",
+      "comingSoon": "Резервне копіювання {{provider}} незабаром. Наразі використовуйте ŞantiJET Хмара.",
       "integration": "Інтеграція {{provider}}"
     },
     "security": {
@@ -558,7 +558,7 @@
     "resetData": "Скинути дані"
   },
   "membership": {
-    "title": "KasaFON Premium",
+    "title": "ŞantiJET Premium",
     "subtitle": "Розблокувати всі функції",
     "monthly": "Щомісячно",
     "yearly": "Щорічно",

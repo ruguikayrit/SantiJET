@@ -416,7 +416,7 @@
       "continueQuestion": "Kontynuować?"
     },
     "cloud": {
-      "title": "KasaFON Chmura",
+      "title": "ŞantiJET Chmura",
       "backupNow": "Kopia do Chmury",
       "backupDesc": "Zapisz dane na bezpiecznych serwerach",
       "restore": "Przywróć z Kodem",
@@ -437,7 +437,7 @@
       "invalidCode": "Wprowadź prawidłowy kod.",
       "restoreTitle": "Przywróć",
       "restorePrompt": "Jak scalić z istniejącymi danymi?",
-      "comingSoon": "Kopia {{provider}} wkrótce. Na razie korzystaj z KasaFON Chmura.",
+      "comingSoon": "Kopia {{provider}} wkrótce. Na razie korzystaj z ŞantiJET Chmura.",
       "integration": "Integracja {{provider}}"
     },
     "security": {
@@ -558,7 +558,7 @@
     "resetData": "Zresetuj dane"
   },
   "membership": {
-    "title": "KasaFON Premium",
+    "title": "ŞantiJET Premium",
     "subtitle": "Odblokuj wszystkie funkcje",
     "monthly": "Miesięcznie",
     "yearly": "Rocznie",
