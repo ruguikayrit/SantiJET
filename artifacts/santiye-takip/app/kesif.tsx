@@ -173,14 +173,6 @@ export default function KesifScreen() {
               <Text style={[styles.title, { color: colors.foreground }]}>
                 {item.title}
               </Text>
-              {item.location ? (
-                <View style={styles.row}>
-                  <Feather name="map-pin" size={13} color={colors.mutedForeground} />
-                  <Text style={[styles.meta, { color: colors.mutedForeground }]}>
-                    {item.location}
-                  </Text>
-                </View>
-              ) : null}
               {item.date ? (
                 <View style={styles.row}>
                   <Feather name="calendar" size={13} color={colors.mutedForeground} />
@@ -237,11 +229,6 @@ export default function KesifScreen() {
           value={form.title}
           onChangeText={(v) => setForm({ ...form, title: v })}
           placeholder="Örn: Bodrum kazı keşfi"
-        />
-        <FormInput
-          label="Konum"
-          value={form.location}
-          onChangeText={(v) => setForm({ ...form, location: v })}
         />
         <FormInput
           label="Notlar"
