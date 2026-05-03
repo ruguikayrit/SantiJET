@@ -9,5 +9,8 @@ export const modules: ModuleMap = {
   "./components/mockups/santijet-tiles/Minimal.tsx": () => import("../components/mockups/santijet-tiles/Minimal.tsx"),
   "./components/mockups/santijet-tiles/Scaffold.tsx": () => import("../components/mockups/santijet-tiles/Scaffold.tsx"),
   "./components/mockups/santijet-tiles/StatHero.tsx": () => import("../components/mockups/santijet-tiles/StatHero.tsx"),
-  "./components/mockups/santijet-tiles/Steel.tsx": () => import("../components/mockups/santijet-tiles/Steel.tsx")
+  "./components/mockups/santijet-tiles/Steel.tsx": () => import("../components/mockups/santijet-tiles/Steel.tsx"),
+  "./components/mockups/santijet-tiles/Tugla.tsx": () => import("../components/mockups/santijet-tiles/Tugla.tsx"),
+  "./components/mockups/santijet-tiles/Tutanak.tsx": () => import("../components/mockups/santijet-tiles/Tutanak.tsx"),
+  "./components/mockups/santijet-tiles/Vinc.tsx": () => import("../components/mockups/santijet-tiles/Vinc.tsx")
 };
