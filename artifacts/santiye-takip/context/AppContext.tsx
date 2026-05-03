@@ -46,6 +46,11 @@ export interface SurveyItem {
   unit: string;
   quantity: number;
   unitPrice: number;
+  pozCode?: string;
+  pozCategory?: string;
+  plannedQty?: number;
+  completedQty?: number;
+  date?: string;
 }
 
 export interface Survey {

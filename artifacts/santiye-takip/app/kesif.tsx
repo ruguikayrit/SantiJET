@@ -14,6 +14,7 @@ import EmptyState from "@/components/EmptyState";
 import DatePickerInput from "@/components/DatePickerInput";
 import FormInput from "@/components/FormInput";
 import Header from "@/components/Header";
+import PozPicker from "@/components/PozPicker";
 import PrimaryButton from "@/components/PrimaryButton";
 import { Survey, useApp } from "@/context/AppContext";
 import { useColors } from "@/hooks/useColors";
@@ -25,10 +26,13 @@ interface FormState {
   date: string;
   location: string;
   notes: string;
+  itemPozCode: string;
+  itemPozCategory: string;
   itemDesc: string;
   itemUnit: string;
-  itemQty: string;
-  itemPrice: string;
+  itemPlanned: string;
+  itemCompleted: string;
+  itemDate: string;
 }
 
 const EMPTY: FormState = {
@@ -37,10 +41,13 @@ const EMPTY: FormState = {
   date: "",
   location: "",
   notes: "",
+  itemPozCode: "",
+  itemPozCategory: "",
   itemDesc: "",
   itemUnit: "",
-  itemQty: "",
-  itemPrice: "",
+  itemPlanned: "",
+  itemCompleted: "",
+  itemDate: "",
 };
 
 export default function KesifScreen() {
@@ -71,10 +78,13 @@ export default function KesifScreen() {
         date: s.date,
         location: s.location,
         notes: s.notes,
+        itemPozCode: "",
+        itemPozCategory: "",
         itemDesc: "",
         itemUnit: "",
-        itemQty: "",
-        itemPrice: "",
+        itemPlanned: "",
+        itemCompleted: "",
+        itemDate: "",
       });
     } else {
       setEditId(null);
@@ -87,15 +97,22 @@ export default function KesifScreen() {
     if (!form.projectId || !form.title.trim()) return;
     const items =
       editId
-        ? surveys.find((x) => x.id === editId)?.items || []
+        ? [...(surveys.find((x) => x.id === editId)?.items || [])]
         : [];
     if (form.itemDesc.trim()) {
+      const planned = parseFloat(form.itemPlanned) || 0;
+      const completed = parseFloat(form.itemCompleted) || 0;
       items.push({
         id: Date.now().toString(),
         description: form.itemDesc.trim(),
         unit: form.itemUnit.trim(),
-        quantity: parseFloat(form.itemQty) || 0,
-        unitPrice: parseFloat(form.itemPrice) || 0,
+        quantity: completed || planned,
+        unitPrice: 0,
+        pozCode: form.itemPozCode.trim() || undefined,
+        pozCategory: form.itemPozCategory.trim() || undefined,
+        plannedQty: planned,
+        completedQty: completed,
+        date: form.itemDate.trim() || undefined,
       });
     }
     const data = {
@@ -118,10 +135,6 @@ export default function KesifScreen() {
 
   function projectName(id: string) {
     return projects.find((p) => p.id === id)?.name || "—";
-  }
-
-  function totalCost(s: Survey) {
-    return s.items.reduce((sum, i) => sum + i.quantity * i.unitPrice, 0);
   }
 
   return (
@@ -185,9 +198,6 @@ export default function KesifScreen() {
               <View style={styles.footer}>
                 <Text style={[styles.itemCount, { color: colors.mutedForeground }]}>
                   {item.items.length} kalem
-                </Text>
-                <Text style={[styles.total, { color: colors.foreground }]}>
-                  {totalCost(item).toLocaleString("tr-TR")} ₺
                 </Text>
               </View>
             </TouchableOpacity>
@@ -255,35 +265,59 @@ export default function KesifScreen() {
         <Text style={[styles.label, { color: colors.foreground, marginTop: 8 }]}>
           Yeni Kalem Ekle
         </Text>
+
+        <PozPicker
+          label="Poz Tarifi"
+          value={form.itemPozCode}
+          onChange={(poz) =>
+            setForm({
+              ...form,
+              itemPozCode: poz.code,
+              itemPozCategory: poz.category,
+              itemDesc: poz.name,
+              itemUnit: poz.unit,
+            })
+          }
+        />
+
         <FormInput
-          label="Açıklama"
+          label="İmalat Adı"
           value={form.itemDesc}
           onChangeText={(v) => setForm({ ...form, itemDesc: v })}
-          placeholder="Örn: Beton dökümü"
+          placeholder="Poz seçince otomatik dolar"
         />
-        <View style={styles.three}>
+        <View style={styles.row2}>
           <View style={{ flex: 1 }}>
             <FormInput
               label="Birim"
               value={form.itemUnit}
               onChangeText={(v) => setForm({ ...form, itemUnit: v })}
-              placeholder="m³"
+              placeholder="m³, m², ad"
             />
           </View>
           <View style={{ flex: 1 }}>
             <FormInput
-              label="Miktar"
-              value={form.itemQty}
-              onChangeText={(v) => setForm({ ...form, itemQty: v })}
+              label="Planlanan"
+              value={form.itemPlanned}
+              onChangeText={(v) => setForm({ ...form, itemPlanned: v })}
+              keyboardType="numeric"
+            />
+          </View>
+        </View>
+        <View style={styles.row2}>
+          <View style={{ flex: 1 }}>
+            <FormInput
+              label="Tamamlanan"
+              value={form.itemCompleted}
+              onChangeText={(v) => setForm({ ...form, itemCompleted: v })}
               keyboardType="numeric"
             />
           </View>
           <View style={{ flex: 1 }}>
-            <FormInput
-              label="Fiyat (₺)"
-              value={form.itemPrice}
-              onChangeText={(v) => setForm({ ...form, itemPrice: v })}
-              keyboardType="numeric"
+            <DatePickerInput
+              label="Tarih"
+              value={form.itemDate}
+              onChange={(v) => setForm({ ...form, itemDate: v })}
             />
           </View>
         </View>
@@ -313,6 +347,7 @@ const styles = StyleSheet.create({
   proj: { fontSize: 12, fontFamily: "Inter_600SemiBold", marginBottom: 4 },
   title: { fontSize: 16, fontFamily: "Inter_700Bold", marginBottom: 6 },
   row: { flexDirection: "row", alignItems: "center", gap: 6, marginTop: 4 },
+  row2: { flexDirection: "row", gap: 8 },
   meta: { fontSize: 13, fontFamily: "Inter_400Regular" },
   footer: {
     flexDirection: "row",
@@ -324,10 +359,8 @@ const styles = StyleSheet.create({
     borderTopColor: "#e5e7eb",
   },
   itemCount: { fontSize: 12, fontFamily: "Inter_500Medium" },
-  total: { fontSize: 15, fontFamily: "Inter_700Bold" },
   label: { fontSize: 14, fontFamily: "Inter_600SemiBold", marginBottom: 8 },
   chips: { flexDirection: "row", flexWrap: "wrap", gap: 8, marginBottom: 14 },
   chip: { paddingHorizontal: 14, paddingVertical: 8, borderRadius: 999 },
   chipText: { fontSize: 13, fontFamily: "Inter_500Medium" },
-  three: { flexDirection: "row", gap: 8 },
 });
