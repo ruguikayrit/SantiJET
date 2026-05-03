@@ -16,7 +16,7 @@ import FormInput from "@/components/FormInput";
 import Header from "@/components/Header";
 import PozPicker from "@/components/PozPicker";
 import PrimaryButton from "@/components/PrimaryButton";
-import { Survey, useApp } from "@/context/AppContext";
+import { Survey, SurveyItem, useApp } from "@/context/AppContext";
 import { useColors } from "@/hooks/useColors";
 import { usePermission } from "@/hooks/usePermission";
 
@@ -60,6 +60,7 @@ export default function KesifScreen() {
   const [filter, setFilter] = useState<string | null>(null);
   const [visible, setVisible] = useState(false);
   const [editId, setEditId] = useState<string | null>(null);
+  const [editItemId, setEditItemId] = useState<string | null>(null);
   const [form, setForm] = useState<FormState>(EMPTY);
 
   const list = useMemo(
@@ -68,6 +69,7 @@ export default function KesifScreen() {
   );
 
   function open(s?: Survey) {
+    setEditItemId(null);
     if (s) {
       setEditId(s.id);
       setForm({
@@ -90,16 +92,42 @@ export default function KesifScreen() {
     setVisible(true);
   }
 
+  function loadItemForEdit(it: SurveyItem) {
+    setEditItemId(it.id);
+    setForm((prev) => ({
+      ...prev,
+      itemPozCode: it.pozCode || "",
+      itemPozCategory: it.pozCategory || "",
+      itemDesc: it.description,
+      itemUnit: it.unit,
+      itemMetraj: String(it.quantity || ""),
+      itemDate: it.date || "",
+    }));
+  }
+
+  function clearItemForm() {
+    setEditItemId(null);
+    setForm((prev) => ({
+      ...prev,
+      itemPozCode: "",
+      itemPozCategory: "",
+      itemDesc: "",
+      itemUnit: "",
+      itemMetraj: "",
+      itemDate: "",
+    }));
+  }
+
   function save() {
     if (!form.projectId || !form.title.trim()) return;
-    const items =
+    let items =
       editId
         ? [...(surveys.find((x) => x.id === editId)?.items || [])]
         : [];
     if (form.itemDesc.trim()) {
       const metraj = parseFloat(form.itemMetraj) || 0;
-      items.push({
-        id: Date.now().toString(),
+      const newItem = {
+        id: editItemId || Date.now().toString(),
         description: form.itemDesc.trim(),
         unit: form.itemUnit.trim(),
         quantity: metraj,
@@ -107,7 +135,12 @@ export default function KesifScreen() {
         pozCode: form.itemPozCode.trim() || undefined,
         pozCategory: form.itemPozCategory.trim() || undefined,
         date: form.itemDate.trim() || undefined,
-      });
+      };
+      if (editItemId) {
+        items = items.map((i) => (i.id === editItemId ? newItem : i));
+      } else {
+        items.push(newItem);
+      }
     }
     const data = {
       projectId: form.projectId,
@@ -255,44 +288,62 @@ export default function KesifScreen() {
               Kalemler ({currentItems.length})
             </Text>
             <View style={{ marginBottom: 14 }}>
-              {currentItems.map((it) => (
-                <View
-                  key={it.id}
-                  style={[styles.itemRow, { backgroundColor: colors.muted, borderColor: colors.border }]}
-                >
-                  <View style={{ flex: 1 }}>
-                    {it.pozCode ? (
-                      <Text style={[styles.itemCode, { color: colors.primary }]} numberOfLines={1}>
-                        {it.pozCode}
-                        {it.pozCategory ? ` · ${it.pozCategory}` : ""}
+              {currentItems.map((it) => {
+                const sel = editItemId === it.id;
+                return (
+                  <TouchableOpacity
+                    key={it.id}
+                    onPress={() => canEdit && loadItemForEdit(it)}
+                    activeOpacity={0.7}
+                    style={[
+                      styles.itemRow,
+                      {
+                        backgroundColor: sel ? colors.primary + "18" : colors.muted,
+                        borderColor: sel ? colors.primary : colors.border,
+                      },
+                    ]}
+                  >
+                    <View style={{ flex: 1 }}>
+                      {it.pozCode ? (
+                        <Text style={[styles.itemCode, { color: colors.primary }]} numberOfLines={1}>
+                          {it.pozCode}
+                          {it.pozCategory ? ` · ${it.pozCategory}` : ""}
+                        </Text>
+                      ) : null}
+                      <Text style={[styles.itemDesc, { color: colors.foreground }]} numberOfLines={2}>
+                        {it.description}
                       </Text>
+                      <Text style={[styles.itemMeta, { color: colors.mutedForeground }]} numberOfLines={1}>
+                        {it.quantity} {it.unit}
+                        {it.date ? ` · ${it.date}` : ""}
+                      </Text>
+                    </View>
+                    {canEdit ? (
+                      <TouchableOpacity
+                        onPress={() => deleteItem(it.id)}
+                        hitSlop={8}
+                        style={styles.itemDel}
+                      >
+                        <Feather name="trash-2" size={16} color="#ef4444" />
+                      </TouchableOpacity>
                     ) : null}
-                    <Text style={[styles.itemDesc, { color: colors.foreground }]} numberOfLines={2}>
-                      {it.description}
-                    </Text>
-                    <Text style={[styles.itemMeta, { color: colors.mutedForeground }]} numberOfLines={1}>
-                      {it.quantity} {it.unit}
-                      {it.date ? ` · ${it.date}` : ""}
-                    </Text>
-                  </View>
-                  {canEdit ? (
-                    <TouchableOpacity
-                      onPress={() => deleteItem(it.id)}
-                      hitSlop={8}
-                      style={styles.itemDel}
-                    >
-                      <Feather name="trash-2" size={16} color="#ef4444" />
-                    </TouchableOpacity>
-                  ) : null}
-                </View>
-              ))}
+                  </TouchableOpacity>
+                );
+              })}
             </View>
           </>
         ) : null}
 
-        <Text style={[styles.label, { color: colors.foreground, marginTop: 8 }]}>
-          Yeni Kalem Ekle
-        </Text>
+        <View style={styles.itemHeaderRow}>
+          <Text style={[styles.label, { color: colors.foreground, marginTop: 8, marginBottom: 0 }]}>
+            {editItemId ? "Kalemi Düzenle" : "Yeni Kalem Ekle"}
+          </Text>
+          {editItemId ? (
+            <TouchableOpacity onPress={clearItemForm} hitSlop={8}>
+              <Text style={[styles.clearLink, { color: colors.primary }]}>Yeni Ekle</Text>
+            </TouchableOpacity>
+          ) : null}
+        </View>
 
         <FormInput
           label="Poz No"
@@ -399,4 +450,12 @@ const styles = StyleSheet.create({
   itemDesc: { fontSize: 13, fontFamily: "Inter_600SemiBold", marginBottom: 2 },
   itemMeta: { fontSize: 11, fontFamily: "Inter_400Regular" },
   itemDel: { padding: 6 },
+  itemHeaderRow: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+    marginBottom: 8,
+    marginTop: 8,
+  },
+  clearLink: { fontSize: 13, fontFamily: "Inter_600SemiBold" },
 });
