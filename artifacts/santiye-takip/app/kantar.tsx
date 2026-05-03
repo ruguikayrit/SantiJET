@@ -38,6 +38,7 @@ interface F {
   entryTime: string;
   exitTime: string;
   supplierIrsaliyeNo: string;
+  supplierTonnage: string;
 }
 
 const EMPTY: F = {
@@ -54,6 +55,7 @@ const EMPTY: F = {
   entryTime: "",
   exitTime: "",
   supplierIrsaliyeNo: "",
+  supplierTonnage: "",
 };
 
 function nowHHmm() {
@@ -153,6 +155,7 @@ export default function KantarScreen() {
         entryTime: w.entryTime || "",
         exitTime: w.exitTime || "",
         supplierIrsaliyeNo: w.supplierIrsaliyeNo || "",
+        supplierTonnage: w.supplierTonnage != null ? String(w.supplierTonnage) : "",
       });
     } else {
       setEditId(null);
@@ -187,6 +190,7 @@ export default function KantarScreen() {
       entryTime: form.entryTime.trim() || undefined,
       exitTime: form.exitTime.trim() || undefined,
       supplierIrsaliyeNo: form.supplierIrsaliyeNo.trim() || undefined,
+      supplierTonnage: form.supplierTonnage.trim() ? parseFloat(form.supplierTonnage) || 0 : undefined,
     };
     if (editId) updateWeighbridge(editId, data);
     else addWeighbridge(data);
@@ -372,15 +376,28 @@ export default function KantarScreen() {
                       ) : null}
                     </View>
                     <View style={styles.weightCol}>
-                      <Text style={[styles.netVal, { color: "#0d9488" }]}>
-                        {fmtNum(item.netWeight)}
-                      </Text>
-                      <Text style={[styles.netUnit, { color: colors.mutedForeground }]}>
-                        {item.unit || "kg"} net
-                      </Text>
-                      <Text style={[styles.subWeight, { color: colors.mutedForeground }]}>
-                        Brüt {fmtNum(item.grossWeight)} · Dara {fmtNum(item.tareWeight)}
-                      </Text>
+                      <View style={styles.tonRow}>
+                        <Text style={[styles.tonLabel, { color: colors.mutedForeground }]}>
+                          Tedarikçi
+                        </Text>
+                        <Text style={[styles.tonVal, { color: "#0ea5e9" }]}>
+                          {item.supplierTonnage != null ? fmtNum(item.supplierTonnage) : "—"}
+                          <Text style={[styles.tonUnit, { color: colors.mutedForeground }]}>
+                            {" "}{item.unit || "kg"}
+                          </Text>
+                        </Text>
+                      </View>
+                      <View style={[styles.tonRow, { marginTop: 6 }]}>
+                        <Text style={[styles.tonLabel, { color: colors.mutedForeground }]}>
+                          Şantiye
+                        </Text>
+                        <Text style={[styles.tonVal, { color: "#0d9488" }]}>
+                          {fmtNum(item.netWeight)}
+                          <Text style={[styles.tonUnit, { color: colors.mutedForeground }]}>
+                            {" "}{item.unit || "kg"}
+                          </Text>
+                        </Text>
+                      </View>
                     </View>
                   </TouchableOpacity>
                 );
@@ -555,12 +572,25 @@ export default function KantarScreen() {
               Tedarikçi Kantar Fişi Bilgileri
             </Text>
           </View>
-          <FormInput
-            label="İrsaliye Numarası"
-            value={form.supplierIrsaliyeNo}
-            onChangeText={(v) => setForm({ ...form, supplierIrsaliyeNo: v })}
-            placeholder="Tedarikçi irsaliye no"
-          />
+          <View style={styles.twoCol}>
+            <View style={{ flex: 1 }}>
+              <FormInput
+                label="İrsaliye Numarası"
+                value={form.supplierIrsaliyeNo}
+                onChangeText={(v) => setForm({ ...form, supplierIrsaliyeNo: v })}
+                placeholder="Tedarikçi irsaliye no"
+              />
+            </View>
+            <View style={{ flex: 1 }}>
+              <FormInput
+                label={`Tedarikçi Net Tonaj (${form.unit || "kg"})`}
+                value={form.supplierTonnage}
+                onChangeText={(v) => setForm({ ...form, supplierTonnage: v })}
+                keyboardType="numeric"
+                placeholder="0"
+              />
+            </View>
+          </View>
 
           {canEdit ? <PrimaryButton label="Kaydet" onPress={save} style={{ marginTop: 8 }} /> : null}
           {canEdit && editId ? (
@@ -634,7 +664,11 @@ const styles = StyleSheet.create({
     borderRadius: 999,
   },
   linkBadgeText: { fontSize: 10, fontFamily: "Inter_600SemiBold" },
-  weightCol: { alignItems: "flex-end", minWidth: 110 },
+  weightCol: { alignItems: "flex-end", minWidth: 130 },
+  tonRow: { alignItems: "flex-end" },
+  tonLabel: { fontSize: 10, fontFamily: "Inter_500Medium" },
+  tonVal: { fontSize: 15, fontFamily: "Inter_700Bold", marginTop: 1 },
+  tonUnit: { fontSize: 10, fontFamily: "Inter_500Medium" },
   netVal: { fontSize: 18, fontFamily: "Inter_700Bold" },
   netUnit: { fontSize: 11, fontFamily: "Inter_500Medium", marginTop: 1 },
   subWeight: { fontSize: 10, fontFamily: "Inter_400Regular", marginTop: 4, textAlign: "right" },
