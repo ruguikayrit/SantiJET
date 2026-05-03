@@ -217,6 +217,7 @@ export default function KantarScreen() {
               horizontal
               showsHorizontalScrollIndicator={false}
               contentContainerStyle={styles.matFilters}
+              style={styles.matFiltersWrap}
             >
               <TouchableOpacity
                 onPress={() => setMaterialFilter(null)}
@@ -530,15 +531,22 @@ export default function KantarScreen() {
 
 const styles = StyleSheet.create({
   root: { flex: 1 },
+  matFiltersWrap: {
+    flexGrow: 0,
+    flexShrink: 0,
+    maxHeight: 52,
+  },
   matFilters: {
     paddingHorizontal: 16,
     paddingVertical: 10,
     gap: 8,
     flexDirection: "row",
+    alignItems: "center",
   },
   matChip: {
     paddingHorizontal: 12,
-    paddingVertical: 6,
+    height: 32,
+    justifyContent: "center",
     borderRadius: 999,
     maxWidth: 220,
   },
