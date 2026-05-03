@@ -991,8 +991,8 @@ export default function MalzemeScreen() {
             : undefined;
           const supplierFromKantar = !!(linkedSlip && (linkedSlip.supplierTonnage || 0) > 0);
           const siteFromKantar = !!(linkedSlip && (linkedSlip.netWeight || 0) > 0);
-          const supplierChecked = !!item.supplierKantarSlip || supplierFromKantar;
-          const siteChecked = !!item.weighApproved || siteFromKantar;
+          const supplierChecked = supplierFromKantar;
+          const siteChecked = siteFromKantar;
           return (
             <TouchableOpacity
               style={[styles.rowCard, { backgroundColor: colors.card }]}
@@ -1059,14 +1059,7 @@ export default function MalzemeScreen() {
                     </Text>
                   </TouchableOpacity>
 
-                  <TouchableOpacity
-                    onPress={(e) => {
-                      e.stopPropagation();
-                      if (!canEdit || supplierFromKantar) return;
-                      updateMaterial(item.id, { supplierKantarSlip: !item.supplierKantarSlip });
-                    }}
-                    disabled={!canEdit || supplierFromKantar}
-                    activeOpacity={0.7}
+                  <View
                     style={[
                       styles.apprChip,
                       {
@@ -1094,16 +1087,9 @@ export default function MalzemeScreen() {
                     >
                       Tedarikçi Kantar Fişi
                     </Text>
-                  </TouchableOpacity>
+                  </View>
 
-                  <TouchableOpacity
-                    onPress={(e) => {
-                      e.stopPropagation();
-                      if (!canEdit || siteFromKantar) return;
-                      updateMaterial(item.id, { weighApproved: !item.weighApproved });
-                    }}
-                    disabled={!canEdit || siteFromKantar}
-                    activeOpacity={0.7}
+                  <View
                     style={[
                       styles.apprChip,
                       {
@@ -1131,7 +1117,7 @@ export default function MalzemeScreen() {
                     >
                       Şantiye Kantar
                     </Text>
-                  </TouchableOpacity>
+                  </View>
                 </View>
               </View>
               <View style={[styles.gelenQtyPill, { backgroundColor: colors.muted }]}>
