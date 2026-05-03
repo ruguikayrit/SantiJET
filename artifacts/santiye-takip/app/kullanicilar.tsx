@@ -67,7 +67,17 @@ export default function KullanicilarScreen() {
     updateRole,
     professions,
     tradeGroups,
+    subcontractors,
   } = useApp();
+
+  const subcontractorNames = React.useMemo(() => {
+    const s = new Set<string>();
+    for (const sc of subcontractors) {
+      const n = (sc.name || "").trim();
+      if (n) s.add(n);
+    }
+    return Array.from(s).sort((a, b) => a.localeCompare(b, "tr"));
+  }, [subcontractors]);
   const perm = usePermission("kullanicilar");
 
   useEffect(() => {
@@ -88,6 +98,7 @@ export default function KullanicilarScreen() {
   const [uTeam, setUTeam] = useState("");
   const [profDropOpen, setProfDropOpen] = useState(false);
   const [teamDropOpen, setTeamDropOpen] = useState(false);
+  const [companyDropOpen, setCompanyDropOpen] = useState(false);
 
   const [roleSheet, setRoleSheet] = useState(false);
   const [editRoleId, setEditRoleId] = useState<string | null>(null);
@@ -473,14 +484,62 @@ export default function KullanicilarScreen() {
           keyboardType="phone-pad"
         />
 
-        <Text style={[styles.formLabel, { color: colors.foreground, marginTop: 12 }]}>Şirket / Firma</Text>
-        <TextInput
-          style={[styles.formInput, { backgroundColor: colors.muted, color: colors.foreground, borderColor: colors.border }]}
-          value={uCompany}
-          onChangeText={setUCompany}
-          placeholder="Örn: ABC Taşeronluk"
-          placeholderTextColor={colors.mutedForeground}
-        />
+        <Text style={[styles.formLabel, { color: colors.foreground, marginTop: 12 }]}>Şirket / Firma (Taşeron)</Text>
+        <TouchableOpacity
+          style={[styles.formInput, styles.profTrigger, { backgroundColor: colors.muted, borderColor: companyDropOpen ? colors.primary : colors.border }]}
+          onPress={() => setCompanyDropOpen(v => !v)}
+          activeOpacity={0.8}
+        >
+          <Text style={{ flex: 1, color: uCompany ? colors.foreground : colors.mutedForeground, fontSize: 14, fontFamily: "Inter_400Regular" }} numberOfLines={1}>
+            {uCompany || "Taşeron firma seçin..."}
+          </Text>
+          <Feather name={companyDropOpen ? "chevron-up" : "chevron-down"} size={16} color={colors.mutedForeground} />
+        </TouchableOpacity>
+
+        {companyDropOpen && (
+          <View style={[styles.profInlineList, { backgroundColor: colors.muted, borderColor: colors.primary }]}>
+            {uCompany ? (
+              <TouchableOpacity
+                style={[styles.profInlineItem, { borderBottomColor: colors.border }]}
+                onPress={() => { setUCompany(""); setCompanyDropOpen(false); }}
+                activeOpacity={0.75}
+              >
+                <Text style={[styles.profInlineText, { color: colors.mutedForeground, fontFamily: "Inter_500Medium" }]}>
+                  — Seçimi temizle —
+                </Text>
+                <Feather name="x" size={14} color={colors.mutedForeground} />
+              </TouchableOpacity>
+            ) : null}
+
+            {subcontractorNames.length === 0 ? (
+              <View style={styles.profInlineItem}>
+                <Text style={{ color: colors.mutedForeground, fontFamily: "Inter_400Regular", fontSize: 13 }}>
+                  Taşeron tanımlı değil. Taşeron modülünden firma ekleyin.
+                </Text>
+              </View>
+            ) : subcontractorNames.map((nm, i) => {
+              const isSelected = uCompany === nm;
+              return (
+                <TouchableOpacity
+                  key={nm}
+                  style={[
+                    styles.profInlineItem,
+                    { borderBottomColor: colors.border },
+                    i === subcontractorNames.length - 1 && { borderBottomWidth: 0 },
+                    isSelected && { backgroundColor: colors.primary + "20" },
+                  ]}
+                  onPress={() => { setUCompany(nm); setCompanyDropOpen(false); }}
+                  activeOpacity={0.75}
+                >
+                  <Text style={[styles.profInlineText, { color: isSelected ? colors.primary : colors.foreground, fontFamily: isSelected ? "Inter_600SemiBold" : "Inter_400Regular" }]}>
+                    {nm}
+                  </Text>
+                  {isSelected && <Feather name="check" size={14} color={colors.primary} />}
+                </TouchableOpacity>
+              );
+            })}
+          </View>
+        )}
 
         <Text style={[styles.formLabel, { color: colors.foreground, marginTop: 12 }]}>Adres</Text>
         <TextInput
