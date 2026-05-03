@@ -214,6 +214,34 @@ const kremSicak: ThemeColors = {
   darkNavy: "#0f3460",
 };
 
+const steel: ThemeColors = {
+  text: "#e2e8f0",
+  tint: "#f59e0b",
+  background: "#0f172a",
+  foreground: "#e2e8f0",
+  card: "#1e293b",
+  cardForeground: "#e2e8f0",
+  primary: "#f59e0b",
+  primaryForeground: "#0f172a",
+  secondary: "#1e293b",
+  secondaryForeground: "#e2e8f0",
+  muted: "#1e293b",
+  mutedForeground: "#94a3b8",
+  accent: "#0ea5e9",
+  accentForeground: "#0f172a",
+  destructive: "#ef4444",
+  destructiveForeground: "#ffffff",
+  success: "#10b981",
+  successForeground: "#ffffff",
+  warning: "#f59e0b",
+  warningForeground: "#0f172a",
+  border: "#334155",
+  input: "#334155",
+  orange: "#f59e0b",
+  navy: "#0f172a",
+  darkNavy: "#020617",
+};
+
 const hivis: ThemeColors = {
   text: "#1c1917",
   tint: "#facc15",
@@ -298,6 +326,14 @@ export const THEMES: ThemeDefinition[] = [
     isDark: false,
     preview: { bg: "#fef3c7", primary: "#1c1917", secondary: "#facc15" },
     colors: hivis,
+  },
+  {
+    id: "steel",
+    name: "Steel & Concrete",
+    description: "Koyu lacivert, renkli kart şeritleri",
+    isDark: true,
+    preview: { bg: "#0f172a", primary: "#f59e0b", secondary: "#1e293b" },
+    colors: steel,
   },
 ];
 

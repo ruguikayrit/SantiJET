@@ -43,27 +43,28 @@ interface Section {
   color: string;
   bg: string;
   code: string;
+  sub: string;
   count: (a: ReturnType<typeof useApp>) => number;
 }
 
 const SECTIONS: Section[] = [
-  { key: "proje",        label: "Proje",        icon: "briefcase",   route: "/proje",        color: "#e85d04", bg: "#fef3e2", code: "PR-01", count: (a) => a.projects.length },
-  { key: "dosyalar",     label: "Dosyalar",     icon: "folder",      route: "/dosyalar",     color: "#475569", bg: "#e2e8f0", code: "DS-02", count: (a) => a.archiveFiles.length },
-  { key: "kesif",        label: "Keşif",         icon: "search",      route: "/kesif",        color: "#0ea5e9", bg: "#e0f2fe", code: "KS-03", count: (a) => a.surveys.length },
-  { key: "is-programi",  label: "İş Programı",   icon: "calendar",    route: "/is-programi",  color: "#8b5cf6", bg: "#ede9fe", code: "IP-04", count: (a) => a.scheduleTasks.length },
-  { key: "puantaj",      label: "Puantaj",       icon: "users",       route: "/puantaj",      color: "#16a34a", bg: "#dcfce7", code: "PU-05", count: (a) => a.attendance.length },
-  { key: "gunluk-rapor", label: "Günlük Rapor",  icon: "file-text",   route: "/gunluk-rapor", color: "#0891b2", bg: "#cffafe", code: "GR-06", count: (a) => a.dailyReports.length },
-  { key: "imalat",       label: "İmalat",        icon: "tool",        route: "/imalat",       color: "#d97706", bg: "#fef3c7", code: "IM-07", count: (a) => a.productions.length },
-  { key: "gorev",        label: "Görev",         icon: "check-square",route: "/gorev",        color: "#dc2626", bg: "#fee2e2", code: "GV-08", count: (a) => a.tasks.length },
-  { key: "malzeme",      label: "Malzeme",       icon: "package",     route: "/malzeme",      color: "#059669", bg: "#d1fae5", code: "MZ-09", count: (a) => a.materials.length },
-  { key: "taseron",      label: "Taşeron",       icon: "truck",       route: "/taseron",      color: "#7c3aed", bg: "#ede9fe", code: "TS-10", count: (a) => a.subcontractors.length },
-  { key: "satin-alma",   label: "Satın Alma",    icon: "shopping-cart", route: "/satin-alma", color: "#ea580c", bg: "#ffedd5", code: "SA-11", count: (a) => a.purchases.length },
-  { key: "kantar",       label: "Kantar",        icon: "truck",       route: "/kantar",       color: "#0d9488", bg: "#ccfbf1", code: "KN-12", count: (a) => a.weighbridges.length },
-  { key: "butce",        label: "Bütçe",         icon: "dollar-sign", route: "/butce",        color: "#16213e", bg: "#e0e7ff", code: "BT-13", count: (a) => a.budget.length },
-  { key: "hakedis",      label: "Hakediş",       icon: "file-text",   route: "/hakedis",      color: "#be185d", bg: "#fce7f3", code: "HK-14", count: (a) => a.hakedisler.length },
-  { key: "ilerleme",     label: "İlerleme",      icon: "trending-up", route: "/ilerleme",     color: "#0d9488", bg: "#ccfbf1", code: "IL-15", count: (a) => a.surveys.length + a.productions.length },
-  { key: "finans",       label: "Finans",        icon: "credit-card", route: "/finans",       color: "#00C896", bg: "#d1fae5", code: "FN-16", count: () => 0 },
-  { key: "kullanicilar", label: "Kullanıcılar",  icon: "shield",      route: "/kullanicilar", color: "#7c3aed", bg: "#ede9fe", code: "KU-17", count: (a) => a.appUsers.length },
+  { key: "proje",        label: "Proje",        icon: "briefcase",   route: "/proje",        color: "#e85d04", bg: "#fef3e2", code: "PR-01", sub: "Aktif şantiye", count: (a) => a.projects.length },
+  { key: "dosyalar",     label: "Dosyalar",     icon: "folder",      route: "/dosyalar",     color: "#475569", bg: "#e2e8f0", code: "DS-02", sub: "Arşiv", count: (a) => a.archiveFiles.length },
+  { key: "kesif",        label: "Keşif",         icon: "search",      route: "/kesif",        color: "#0ea5e9", bg: "#e0f2fe", code: "KS-03", sub: "Bina", count: (a) => a.surveys.length },
+  { key: "is-programi",  label: "İş Programı",   icon: "calendar",    route: "/is-programi",  color: "#8b5cf6", bg: "#ede9fe", code: "IP-04", sub: "Görev", count: (a) => a.scheduleTasks.length },
+  { key: "puantaj",      label: "Puantaj",       icon: "users",       route: "/puantaj",      color: "#16a34a", bg: "#dcfce7", code: "PU-05", sub: "Personel", count: (a) => a.attendance.length },
+  { key: "gunluk-rapor", label: "Günlük Rapor",  icon: "file-text",   route: "/gunluk-rapor", color: "#0891b2", bg: "#cffafe", code: "GR-06", sub: "Rapor", count: (a) => a.dailyReports.length },
+  { key: "imalat",       label: "İmalat",        icon: "tool",        route: "/imalat",       color: "#d97706", bg: "#fef3c7", code: "IM-07", sub: "Aktif kayıt", count: (a) => a.productions.length },
+  { key: "gorev",        label: "Görev",         icon: "check-square",route: "/gorev",        color: "#dc2626", bg: "#fee2e2", code: "GV-08", sub: "Bekleyen", count: (a) => a.tasks.length },
+  { key: "malzeme",      label: "Malzeme",       icon: "package",     route: "/malzeme",      color: "#059669", bg: "#d1fae5", code: "MZ-09", sub: "Stok hareketi", count: (a) => a.materials.length },
+  { key: "taseron",      label: "Taşeron",       icon: "truck",       route: "/taseron",      color: "#7c3aed", bg: "#ede9fe", code: "TS-10", sub: "Firma", count: (a) => a.subcontractors.length },
+  { key: "satin-alma",   label: "Satın Alma",    icon: "shopping-cart", route: "/satin-alma", color: "#ea580c", bg: "#ffedd5", code: "SA-11", sub: "Bekleyen", count: (a) => a.purchases.length },
+  { key: "kantar",       label: "Kantar",        icon: "truck",       route: "/kantar",       color: "#0d9488", bg: "#ccfbf1", code: "KN-12", sub: "Tartım", count: (a) => a.weighbridges.length },
+  { key: "butce",        label: "Bütçe",         icon: "dollar-sign", route: "/butce",        color: "#16213e", bg: "#e0e7ff", code: "BT-13", sub: "Kalem", count: (a) => a.budget.length },
+  { key: "hakedis",      label: "Hakediş",       icon: "file-text",   route: "/hakedis",      color: "#be185d", bg: "#fce7f3", code: "HK-14", sub: "Dönem", count: (a) => a.hakedisler.length },
+  { key: "ilerleme",     label: "İlerleme",      icon: "trending-up", route: "/ilerleme",     color: "#0d9488", bg: "#ccfbf1", code: "IL-15", sub: "Kayıt", count: (a) => a.surveys.length + a.productions.length },
+  { key: "finans",       label: "Finans",        icon: "credit-card", route: "/finans",       color: "#00C896", bg: "#d1fae5", code: "FN-16", sub: "Hareket", count: () => 0 },
+  { key: "kullanicilar", label: "Kullanıcılar",  icon: "shield",      route: "/kullanicilar", color: "#7c3aed", bg: "#ede9fe", code: "KU-17", sub: "Kişi", count: (a) => a.appUsers.length },
 ];
 
 const HIVIS_YELLOW = "#facc15";
@@ -94,6 +95,7 @@ export default function HomeScreen() {
   const colors = useColors();
   const { themeId } = useTheme();
   const isHiVis = themeId === "hivis";
+  const isSteel = themeId === "steel";
   const router = useRouter();
   const app = useApp();
   const { t } = useI18n();
@@ -425,12 +427,51 @@ export default function HomeScreen() {
           </View>
         ) : null}
 
+        {isSteel ? (
+          <Text style={styles.steelBanner}>{t("home.steel.banner")}</Text>
+        ) : null}
+
         <DraggableGrid
           sections={visibleSections}
           onReorder={(newOrder) => setTileOrder(newOrder)}
-          tileH={isHiVis ? DG_TILE_H_HIVIS : DG_TILE_H_DEFAULT}
+          tileH={isHiVis ? DG_TILE_H_HIVIS : isSteel ? DG_TILE_H_STEEL : DG_TILE_H_DEFAULT}
           renderTile={(s) => {
             const perm = getPermission(s.key);
+            if (isSteel) {
+              const idx = visibleSections.indexOf(s) + 1;
+              return (
+                <View style={styles.steelTileWrap}>
+                  <View style={[styles.steelAccent, { backgroundColor: s.color }]} />
+                  <View style={styles.steelHead}>
+                    <View
+                      style={[
+                        styles.steelIcon,
+                        { backgroundColor: s.color + "22", borderColor: s.color + "55" },
+                      ]}
+                    >
+                      <Feather name={s.icon as any} size={18} color={s.color} />
+                    </View>
+                    <Text style={styles.steelNum}>#{String(idx).padStart(2, "0")}</Text>
+                  </View>
+                  <Text style={styles.steelLabel} numberOfLines={1}>
+                    {t(`menu.${s.key}`).toUpperCase()}
+                  </Text>
+                  <View style={styles.steelCountRow}>
+                    <Text style={styles.steelCount} numberOfLines={1}>
+                      {s.count(app)}
+                    </Text>
+                    <Text style={styles.steelSub} numberOfLines={1}>
+                      {perm === "view" ? t("home.tile.readonly") : t(`home.steel.sub.${s.key}`)}
+                    </Text>
+                  </View>
+                  <View style={styles.steelDivider} />
+                  <View style={styles.steelFootRow}>
+                    <Text style={styles.steelOpen}>{t("home.steel.open")}</Text>
+                    <Feather name="chevron-right" size={12} color="#64748b" />
+                  </View>
+                </View>
+              );
+            }
             if (isHiVis) {
               return (
                 <View style={styles.hiVisTileWrap}>
@@ -723,6 +764,7 @@ const DG_COLS = 2;
 const DG_GAP = 12;
 const DG_TILE_H_DEFAULT = 144;
 const DG_TILE_H_HIVIS = 188;
+const DG_TILE_H_STEEL = 160;
 
 interface DGSection {
   key: string;
@@ -1289,6 +1331,94 @@ const styles = StyleSheet.create({
     fontSize: 9,
     fontFamily: "Inter_600SemiBold",
     color: HIVIS_YELLOW,
+  },
+  steelBanner: {
+    fontSize: 10,
+    fontFamily: "Inter_700Bold",
+    color: "#94a3b8",
+    letterSpacing: 2,
+    paddingHorizontal: 4,
+    marginBottom: 12,
+  },
+  steelTileWrap: {
+    flex: 1,
+    backgroundColor: "#1e293b",
+    borderColor: "rgba(51,65,85,0.6)",
+    borderWidth: 1,
+    borderRadius: 8,
+    overflow: "hidden",
+    paddingVertical: 12,
+    paddingRight: 12,
+    paddingLeft: 16,
+    position: "relative",
+  },
+  steelAccent: {
+    position: "absolute",
+    left: 0,
+    top: 0,
+    bottom: 0,
+    width: 4,
+  },
+  steelHead: {
+    flexDirection: "row",
+    alignItems: "flex-start",
+    justifyContent: "space-between",
+    marginBottom: 10,
+  },
+  steelIcon: {
+    width: 36,
+    height: 36,
+    borderRadius: 6,
+    borderWidth: 1,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  steelNum: {
+    fontSize: 9,
+    fontFamily: "Inter_700Bold",
+    color: "#64748b",
+    letterSpacing: 1,
+    marginTop: 2,
+  },
+  steelLabel: {
+    fontSize: 12,
+    fontFamily: "Inter_700Bold",
+    color: "#ffffff",
+    letterSpacing: 0.8,
+  },
+  steelCountRow: {
+    flexDirection: "row",
+    alignItems: "baseline",
+    gap: 6,
+    marginTop: 4,
+  },
+  steelCount: {
+    fontSize: 22,
+    fontFamily: "Inter_700Bold",
+    color: "#ffffff",
+  },
+  steelSub: {
+    fontSize: 10,
+    fontFamily: "Inter_500Medium",
+    color: "#94a3b8",
+    flexShrink: 1,
+  },
+  steelDivider: {
+    height: 1,
+    backgroundColor: "rgba(51,65,85,0.6)",
+    marginTop: 8,
+  },
+  steelFootRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    marginTop: 6,
+  },
+  steelOpen: {
+    fontSize: 9,
+    fontFamily: "Inter_700Bold",
+    color: "#64748b",
+    letterSpacing: 2,
   },
   raporBtn: {
     flexDirection: "row",
