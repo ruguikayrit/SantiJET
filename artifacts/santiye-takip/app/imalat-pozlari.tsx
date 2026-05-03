@@ -1,5 +1,8 @@
 import { Feather } from "@expo/vector-icons";
+import * as DocumentPicker from "expo-document-picker";
+import * as FileSystem from "expo-file-system";
 import { useRouter } from "expo-router";
+import * as Sharing from "expo-sharing";
 import React, { useMemo, useState } from "react";
 import {
   Alert,
@@ -19,7 +22,12 @@ import FormInput from "@/components/FormInput";
 import PrimaryButton from "@/components/PrimaryButton";
 import { useApp } from "@/context/AppContext";
 import { useColors } from "@/hooks/useColors";
-import { ImalatPoz, IMALAT_POZ_KATEGORILERI } from "@/constants/imalatPozlari";
+import {
+  ImalatPoz,
+  IMALAT_POZ_KATEGORILERI,
+  buildImalatPozCsv,
+  parseImalatPozCsv,
+} from "@/constants/imalatPozlari";
 
 interface PF {
   code: string;
@@ -44,6 +52,9 @@ export default function ImalatPozlariScreen() {
   const [visible, setVisible] = useState(false);
   const [editCode, setEditCode] = useState<string | null>(null);
   const [form, setForm] = useState<PF>(EMPTY);
+  const [importVisible, setImportVisible] = useState(false);
+  const [importText, setImportText] = useState("");
+  const [busy, setBusy] = useState(false);
 
   const categories = useMemo(() => {
     const set = new Set<string>(IMALAT_POZ_KATEGORILERI as readonly string[]);
@@ -109,6 +120,101 @@ export default function ImalatPozlariScreen() {
     setVisible(false);
   }
 
+  function applyImport(text: string) {
+    const result = parseImalatPozCsv(text);
+    if (result.rows.length === 0) {
+      Alert.alert(
+        "İçe aktarma başarısız",
+        result.errors.length > 0
+          ? result.errors.slice(0, 5).join("\n")
+          : "Hiç geçerli satır bulunamadı."
+      );
+      return;
+    }
+    let added = 0;
+    let updated = 0;
+    const existing = new Set(imalatPozlari.map((p) => p.code.toLowerCase()));
+    for (const r of result.rows) {
+      if (existing.has(r.code.toLowerCase())) {
+        updateImalatPoz(r.code, r);
+        updated++;
+      } else {
+        addImalatPoz(r);
+        added++;
+      }
+    }
+    setImportVisible(false);
+    setImportText("");
+    const lines = [
+      `${added} yeni poz eklendi.`,
+      `${updated} mevcut poz güncellendi.`,
+    ];
+    if (result.duplicates.length > 0)
+      lines.push(`${result.duplicates.length} satır içeride tekrar olduğu için atlandı.`);
+    if (result.errors.length > 0)
+      lines.push(`${result.errors.length} satır hatalı (kod/ad/birim eksik).`);
+    Alert.alert("İçe aktarıldı", lines.join("\n"));
+  }
+
+  async function pickCsvFile() {
+    try {
+      setBusy(true);
+      const res = await DocumentPicker.getDocumentAsync({
+        type: ["text/csv", "text/comma-separated-values", "application/vnd.ms-excel", "text/plain", "*/*"],
+        copyToCacheDirectory: true,
+      });
+      if (res.canceled || !res.assets?.[0]) return;
+      const asset = res.assets[0];
+      let text = "";
+      if (Platform.OS === "web" && (asset as any).file) {
+        text = await ((asset as any).file as File).text();
+      } else {
+        text = await (FileSystem as any).readAsStringAsync(asset.uri, { encoding: "utf8" });
+      }
+      applyImport(text);
+    } catch (e: any) {
+      Alert.alert("Hata", String(e?.message || e));
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  async function exportCsv() {
+    try {
+      setBusy(true);
+      const csv = buildImalatPozCsv(imalatPozlari);
+      if (Platform.OS === "web") {
+        const blob = new Blob([csv], { type: "text/csv;charset=utf-8" });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement("a");
+        a.href = url;
+        a.download = "imalat-pozlari.csv";
+        document.body.appendChild(a);
+        a.click();
+        a.remove();
+        URL.revokeObjectURL(url);
+      } else {
+        const dir = (FileSystem as any).cacheDirectory ?? (FileSystem as any).documentDirectory;
+        const fileUri = `${dir}imalat-pozlari.csv`;
+        await (FileSystem as any).writeAsStringAsync(fileUri, csv, { encoding: "utf8" });
+        if (await Sharing.isAvailableAsync()) {
+          await Sharing.shareAsync(fileUri, { mimeType: "text/csv", dialogTitle: "İmalat Pozlarını Paylaş" });
+        } else {
+          Alert.alert("Kaydedildi", fileUri);
+        }
+      }
+    } catch (e: any) {
+      Alert.alert("Hata", String(e?.message || e));
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  function openImportSheet() {
+    setImportText("");
+    setImportVisible(true);
+  }
+
   function remove() {
     if (!editCode) return;
     Alert.alert("Sil", `${editCode} pozu silinsin mi?`, [
@@ -149,6 +255,12 @@ export default function ImalatPozlariScreen() {
         <Text style={[styles.headerTitle, { color: colors.secondaryForeground }]}>
           İmalat Poz Tarifleri
         </Text>
+        <TouchableOpacity onPress={openImportSheet} style={styles.backBtn} disabled={busy}>
+          <Feather name="upload" size={20} color={colors.secondaryForeground} />
+        </TouchableOpacity>
+        <TouchableOpacity onPress={exportCsv} style={styles.backBtn} disabled={busy}>
+          <Feather name="download" size={20} color={colors.secondaryForeground} />
+        </TouchableOpacity>
         <TouchableOpacity onPress={() => open()} style={styles.backBtn}>
           <Feather name="plus" size={22} color={colors.secondaryForeground} />
         </TouchableOpacity>
@@ -302,6 +414,42 @@ export default function ImalatPozlariScreen() {
           <PrimaryButton label="Sil" variant="danger" onPress={remove} style={{ marginTop: 10 }} />
         ) : null}
       </BottomSheet>
+
+      <BottomSheet
+        visible={importVisible}
+        onClose={() => setImportVisible(false)}
+        title="CSV / Excel İçe Aktar"
+      >
+        <Text style={[styles.helpText, { color: colors.mutedForeground }]}>
+          Format: kod;kategori;ad;birim;tarif{"\n"}
+          İlk satır başlık olabilir. Ayraç olarak ; , veya TAB desteklenir.{"\n"}
+          Tarif içinde \n yazarak satır kırılması ekleyebilirsiniz.{"\n"}
+          Mevcut kodlar güncellenir, yeni kodlar eklenir.
+        </Text>
+        <PrimaryButton
+          label={busy ? "Yükleniyor..." : "Dosya Seç (CSV)"}
+          onPress={pickCsvFile}
+          style={{ marginTop: 4 }}
+        />
+        <Text style={[styles.label, { color: colors.foreground, marginTop: 16 }]}>
+          veya CSV içeriğini yapıştırın
+        </Text>
+        <FormInput
+          label=""
+          value={importText}
+          onChangeText={setImportText}
+          placeholder={"kod;kategori;ad;birim;tarif\nY.99.001;Diğer;Örnek poz;m²;Açıklama"}
+          multiline
+          numberOfLines={8}
+          textAlignVertical="top"
+          style={{ minHeight: 160, paddingTop: 12, fontFamily: "Inter_400Regular" }}
+        />
+        <PrimaryButton
+          label="Yapıştırılanı İçe Aktar"
+          onPress={() => applyImport(importText)}
+          style={{ marginTop: 8 }}
+        />
+      </BottomSheet>
     </View>
   );
 }
@@ -382,5 +530,11 @@ const styles = StyleSheet.create({
     fontFamily: "Inter_600SemiBold",
     marginTop: 4,
     marginBottom: 6,
+  },
+  helpText: {
+    fontSize: 12,
+    fontFamily: "Inter_400Regular",
+    lineHeight: 18,
+    marginBottom: 12,
   },
 });
