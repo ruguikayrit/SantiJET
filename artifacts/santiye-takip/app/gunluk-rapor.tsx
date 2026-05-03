@@ -176,34 +176,41 @@ export default function GunlukRaporScreen() {
       workerCount = present + half;
       const lines: string[] = [];
 
-      // Firma > Meslek/Branş kırılımı (sadece çalışanlar: tam + yarım)
+      // Firma > Meslek grubu > Meslek kırılımı (sadece çalışanlar: tam + yarım)
       const userById = new Map(appUsers.map(u => [u.id, u] as const));
-      const companyMap = new Map<string, Map<string, number>>();
+      type Bucket = { count: number; profs: Map<string, number> };
+      const companyMap = new Map<string, Map<string, Bucket>>();
       for (const a of att) {
         if (a.status !== "present" && a.status !== "half") continue;
         const u = userById.get(a.workerId);
         const company = ((u?.company || "").trim()) || "DİĞER";
-        const trade = ((u?.team || "").trim()) || ((u?.profession || "").trim()) || "Çalışan";
-        let m = companyMap.get(company);
-        if (!m) { m = new Map(); companyMap.set(company, m); }
-        m.set(trade, (m.get(trade) || 0) + 1);
+        const group = ((u?.team || "").trim()) || ((u?.profession || "").trim()) || "Diğer";
+        const prof = ((u?.profession || "").trim()) || "usta";
+        let g = companyMap.get(company);
+        if (!g) { g = new Map(); companyMap.set(company, g); }
+        let b = g.get(group);
+        if (!b) { b = { count: 0, profs: new Map() }; g.set(group, b); }
+        b.count += 1;
+        b.profs.set(prof, (b.profs.get(prof) || 0) + 1);
       }
       const orderedCompanies = Array.from(companyMap.entries()).sort(
-        (a, b) => Array.from(b[1].values()).reduce((s, n) => s + n, 0)
-                - Array.from(a[1].values()).reduce((s, n) => s + n, 0),
+        (a, b) => Array.from(b[1].values()).reduce((s, x) => s + x.count, 0)
+                - Array.from(a[1].values()).reduce((s, x) => s + x.count, 0),
       );
-      for (const [company, trades] of orderedCompanies) {
+      for (const [company, groups] of orderedCompanies) {
         lines.push(company.toUpperCase());
-        const orderedTrades = Array.from(trades.entries()).sort((a, b) => b[1] - a[1]);
-        for (const [trade, n] of orderedTrades) {
-          lines.push(`${trade}-${n} usta`);
+        const orderedGroups = Array.from(groups.entries()).sort((a, b) => b[1].count - a[1].count);
+        for (const [group, info] of orderedGroups) {
+          let topProf = "usta"; let topN = -1;
+          for (const [p, n] of info.profs) { if (n > topN) { topProf = p; topN = n; } }
+          lines.push(`${group} - ${info.count} ${topProf}`);
         }
         lines.push("");
       }
-      const summaryParts: string[] = [`${present} tam`];
-      if (half) summaryParts.push(`${half} yarım`);
-      if (calismadi) summaryParts.push(`${calismadi} çalışmadı`);
-      lines.push(`Toplam kayıtlı personel sayısı ${att.length} adam – ${summaryParts.join(" – ")}.`);
+      lines.push(`TOPLAM KAYITLI PERSONEL SAYISI ${att.length}`);
+      lines.push(`TAM ÇALIŞAN SAYISI ${present}`);
+      if (half) lines.push(`YARIM ÇALIŞAN SAYISI ${half}`);
+      if (calismadi) lines.push(`ÇALIŞMAYAN SAYISI ${calismadi}`);
 
       cards.push({
         key: "puantaj",
