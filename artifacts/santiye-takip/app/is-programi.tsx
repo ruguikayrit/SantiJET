@@ -3,6 +3,7 @@ import { useRouter } from "expo-router";
 import React, { useEffect, useMemo, useState } from "react";
 import {
   FlatList,
+  ScrollView,
   StyleSheet,
   Text,
   TouchableOpacity,
@@ -62,6 +63,7 @@ export default function IsProgramiScreen() {
   useEffect(() => { if (perm === "none") { if (router.canGoBack()) router.back(); else router.replace("/"); } }, [perm]);
 
   const [filter, setFilter] = useState<string | null>(null);
+  const [view, setView] = useState<"liste" | "gantt">("gantt");
   const [visible, setVisible] = useState(false);
   const [editId, setEditId] = useState<string | null>(null);
   const [form, setForm] = useState<F>(EMPTY);
@@ -124,6 +126,53 @@ export default function IsProgramiScreen() {
       />
 
 
+      {projects.length > 0 ? (
+        <View style={[styles.toolbar, { backgroundColor: colors.card, borderBottomColor: colors.border }]}>
+          <View style={[styles.tabs, { backgroundColor: colors.muted }]}>
+            <TouchableOpacity
+              onPress={() => setView("gantt")}
+              style={[styles.tabBtn, view === "gantt" && { backgroundColor: colors.primary }]}
+              activeOpacity={0.85}
+            >
+              <Feather name="bar-chart-2" size={13} color={view === "gantt" ? "#fff" : colors.foreground} />
+              <Text style={[styles.tabText, { color: view === "gantt" ? "#fff" : colors.foreground }]}>Gantt</Text>
+            </TouchableOpacity>
+            <TouchableOpacity
+              onPress={() => setView("liste")}
+              style={[styles.tabBtn, view === "liste" && { backgroundColor: colors.primary }]}
+              activeOpacity={0.85}
+            >
+              <Feather name="list" size={13} color={view === "liste" ? "#fff" : colors.foreground} />
+              <Text style={[styles.tabText, { color: view === "liste" ? "#fff" : colors.foreground }]}>Liste</Text>
+            </TouchableOpacity>
+          </View>
+          {projects.length > 1 ? (
+            <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.projChips}>
+              <TouchableOpacity
+                onPress={() => setFilter(null)}
+                style={[styles.projChip, { backgroundColor: filter === null ? colors.primary : colors.muted }]}
+              >
+                <Text style={[styles.projChipText, { color: filter === null ? "#fff" : colors.foreground }]}>Tümü</Text>
+              </TouchableOpacity>
+              {projects.map((p) => {
+                const active = filter === p.id;
+                return (
+                  <TouchableOpacity
+                    key={p.id}
+                    onPress={() => setFilter(active ? null : p.id)}
+                    style={[styles.projChip, { backgroundColor: active ? colors.primary : colors.muted }]}
+                  >
+                    <Text style={[styles.projChipText, { color: active ? "#fff" : colors.foreground }]} numberOfLines={1}>
+                      {p.name}
+                    </Text>
+                  </TouchableOpacity>
+                );
+              })}
+            </ScrollView>
+          ) : null}
+        </View>
+      ) : null}
+
       {projects.length === 0 ? (
         <EmptyState
           icon="briefcase"
@@ -139,6 +188,14 @@ export default function IsProgramiScreen() {
           description="Yeni iş kalemi eklemek için + düğmesine dokunun"
           actionLabel="İş Ekle"
           onAction={() => open()}
+        />
+      ) : view === "gantt" ? (
+        <GanttView
+          tasks={list}
+          colors={colors}
+          projectName={projectName}
+          onPressTask={(t) => open(t)}
+          statusColor={STATUS_COLOR}
         />
       ) : (
         <FlatList
@@ -311,4 +368,299 @@ const styles = StyleSheet.create({
   chip: { paddingHorizontal: 14, paddingVertical: 8, borderRadius: 999 },
   chipText: { fontSize: 13, fontFamily: "Inter_500Medium" },
   row2: { flexDirection: "row", gap: 8 },
+  toolbar: { paddingHorizontal: 12, paddingVertical: 8, gap: 8, borderBottomWidth: StyleSheet.hairlineWidth },
+  tabs: { flexDirection: "row", padding: 3, borderRadius: 10, gap: 3, alignSelf: "flex-start" },
+  tabBtn: { flexDirection: "row", alignItems: "center", gap: 5, paddingHorizontal: 12, paddingVertical: 6, borderRadius: 8 },
+  tabText: { fontSize: 12, fontFamily: "Inter_600SemiBold" },
+  projChips: { gap: 6, paddingVertical: 2 },
+  projChip: { paddingHorizontal: 10, paddingVertical: 5, borderRadius: 999, maxWidth: 160 },
+  projChipText: { fontSize: 11, fontFamily: "Inter_600SemiBold" },
+  ganttRoot: { flex: 1, padding: 12 },
+  ganttSplit: { flex: 1, flexDirection: "row", borderRadius: 10, overflow: "hidden", borderWidth: StyleSheet.hairlineWidth },
+  ganttLeft: { width: 140 },
+  ganttHeadCell: { height: 44, borderBottomWidth: StyleSheet.hairlineWidth, paddingHorizontal: 10, justifyContent: "center" },
+  ganttHeadText: { fontSize: 11, fontFamily: "Inter_700Bold", textTransform: "uppercase", letterSpacing: 0.5 },
+  ganttRowLeft: { paddingHorizontal: 10, justifyContent: "center", borderBottomWidth: StyleSheet.hairlineWidth },
+  ganttRowName: { fontSize: 12, fontFamily: "Inter_600SemiBold" },
+  ganttRowSub: { fontSize: 10, fontFamily: "Inter_400Regular", marginTop: 1 },
+  ganttRight: { flex: 1 },
+  ganttDayCol: { borderRightWidth: StyleSheet.hairlineWidth },
+  ganttMonthLabel: { fontSize: 10, fontFamily: "Inter_700Bold", textAlign: "center", marginTop: 2 },
+  ganttDayLabel: { fontSize: 10, fontFamily: "Inter_500Medium", textAlign: "center" },
+  ganttBar: { position: "absolute", height: 22, borderRadius: 6, top: 11, overflow: "hidden", flexDirection: "row" },
+  ganttBarFill: { height: "100%" },
+  ganttBarText: { position: "absolute", left: 6, right: 6, top: 4, fontSize: 10, fontFamily: "Inter_700Bold" },
+  todayLine: { position: "absolute", top: 0, bottom: 0, width: 2 },
+  todayDot: { position: "absolute", top: 4, width: 8, height: 8, borderRadius: 4, marginLeft: -3 },
+  noDateBanner: { paddingVertical: 10, paddingHorizontal: 12, borderRadius: 8, marginTop: 10, flexDirection: "row", alignItems: "center", gap: 8 },
+  noDateText: { fontSize: 12, fontFamily: "Inter_500Medium", flex: 1 },
 });
+
+const TR_MONTHS = ["Oca", "Şub", "Mar", "Nis", "May", "Haz", "Tem", "Ağu", "Eyl", "Eki", "Kas", "Ara"];
+
+function parseYMD(s: string): Date | null {
+  if (!s) return null;
+  const m = /^(\d{4})-(\d{2})-(\d{2})$/.exec(s.trim());
+  if (!m) return null;
+  const d = new Date(Number(m[1]), Number(m[2]) - 1, Number(m[3]));
+  return isNaN(d.getTime()) ? null : d;
+}
+function daysBetween(a: Date, b: Date) {
+  return Math.round((b.getTime() - a.getTime()) / 86400000);
+}
+function addDays(d: Date, n: number) {
+  const r = new Date(d);
+  r.setDate(r.getDate() + n);
+  return r;
+}
+
+function GanttView(props: {
+  tasks: ScheduleTask[];
+  colors: ReturnType<typeof useColors>;
+  projectName: (id: string) => string;
+  onPressTask: (t: ScheduleTask) => void;
+  statusColor: Record<ScheduleTask["status"], string>;
+}) {
+  const { tasks, colors, projectName, onPressTask, statusColor } = props;
+
+  const dated = useMemo(() => {
+    return tasks
+      .map((t) => ({ t, s: parseYMD(t.startDate), e: parseYMD(t.endDate) }))
+      .filter((x) => x.s && x.e && x.e!.getTime() >= x.s!.getTime()) as { t: ScheduleTask; s: Date; e: Date }[];
+  }, [tasks]);
+  const undated = tasks.length - dated.length;
+
+  const today = useMemo(() => {
+    const n = new Date();
+    return new Date(n.getFullYear(), n.getMonth(), n.getDate());
+  }, []);
+
+  const range = useMemo(() => {
+    if (dated.length === 0) {
+      const start = addDays(today, -3);
+      const end = addDays(today, 14);
+      return { start, end, days: daysBetween(start, end) + 1 };
+    }
+    let minS = dated[0].s;
+    let maxE = dated[0].e;
+    for (const x of dated) {
+      if (x.s.getTime() < minS.getTime()) minS = x.s;
+      if (x.e.getTime() > maxE.getTime()) maxE = x.e;
+    }
+    const start = addDays(minS, -1);
+    const end = addDays(maxE, 1);
+    return { start, end, days: daysBetween(start, end) + 1 };
+  }, [dated, today]);
+
+  const dayWidth = range.days <= 21 ? 36 : range.days <= 60 ? 22 : range.days <= 120 ? 14 : 9;
+  const rowHeight = 44;
+  const headerHeight = 44;
+  const totalWidth = range.days * dayWidth;
+
+  const days = useMemo(() => {
+    const arr: Date[] = [];
+    for (let i = 0; i < range.days; i++) arr.push(addDays(range.start, i));
+    return arr;
+  }, [range]);
+
+  const monthBands = useMemo(() => {
+    const bands: { label: string; offset: number; width: number }[] = [];
+    let curM = days[0]?.getMonth();
+    let curY = days[0]?.getFullYear();
+    let startIdx = 0;
+    for (let i = 1; i <= days.length; i++) {
+      const d = days[i];
+      if (i === days.length || d.getMonth() !== curM || d.getFullYear() !== curY) {
+        bands.push({
+          label: `${TR_MONTHS[curM]} ${curY}`,
+          offset: startIdx * dayWidth,
+          width: (i - startIdx) * dayWidth,
+        });
+        if (i < days.length) {
+          curM = d.getMonth();
+          curY = d.getFullYear();
+          startIdx = i;
+        }
+      }
+    }
+    return bands;
+  }, [days, dayWidth]);
+
+  const todayOffset = (() => {
+    const d = daysBetween(range.start, today);
+    if (d < 0 || d > range.days) return -1;
+    return d * dayWidth + dayWidth / 2;
+  })();
+
+  const showDayNum = dayWidth >= 14;
+
+  return (
+    <View style={styles.ganttRoot}>
+      <View style={[styles.ganttSplit, { borderColor: colors.border, backgroundColor: colors.card }]}>
+        {/* Left: task names */}
+        <View style={[styles.ganttLeft, { borderRightWidth: StyleSheet.hairlineWidth, borderRightColor: colors.border }]}>
+          <View style={[styles.ganttHeadCell, { borderBottomColor: colors.border, height: headerHeight }]}>
+            <Text style={[styles.ganttHeadText, { color: colors.mutedForeground }]}>İş Kalemi</Text>
+          </View>
+          <ScrollView style={{ flex: 1 }} showsVerticalScrollIndicator={false}>
+            {dated.map(({ t }) => (
+              <TouchableOpacity
+                key={t.id}
+                onPress={() => onPressTask(t)}
+                activeOpacity={0.7}
+                style={[styles.ganttRowLeft, { height: rowHeight, borderBottomColor: colors.border }]}
+              >
+                <Text style={[styles.ganttRowName, { color: colors.foreground }]} numberOfLines={1}>
+                  {t.name}
+                </Text>
+                <Text style={[styles.ganttRowSub, { color: colors.mutedForeground }]} numberOfLines={1}>
+                  {projectName(t.projectId)}
+                </Text>
+              </TouchableOpacity>
+            ))}
+          </ScrollView>
+        </View>
+
+        {/* Right: timeline */}
+        <ScrollView horizontal showsHorizontalScrollIndicator={true} style={styles.ganttRight}>
+          <View style={{ width: totalWidth }}>
+            {/* Header: months + days */}
+            <View style={[styles.ganttHeadCell, { borderBottomColor: colors.border, height: headerHeight, paddingHorizontal: 0 }]}>
+              <View style={{ flexDirection: "row", height: 18 }}>
+                {monthBands.map((b, i) => (
+                  <View
+                    key={i}
+                    style={{
+                      position: "absolute",
+                      left: b.offset,
+                      width: b.width,
+                      borderLeftWidth: i === 0 ? 0 : StyleSheet.hairlineWidth,
+                      borderLeftColor: colors.border,
+                    }}
+                  >
+                    <Text style={[styles.ganttMonthLabel, { color: colors.foreground }]} numberOfLines={1}>
+                      {b.label}
+                    </Text>
+                  </View>
+                ))}
+              </View>
+              {showDayNum ? (
+                <View style={{ flexDirection: "row", height: 16, marginTop: 4 }}>
+                  {days.map((d, i) => {
+                    const isToday = d.getTime() === today.getTime();
+                    const isWeekend = d.getDay() === 0 || d.getDay() === 6;
+                    return (
+                      <View key={i} style={{ width: dayWidth, alignItems: "center", justifyContent: "center" }}>
+                        <Text
+                          style={[
+                            styles.ganttDayLabel,
+                            {
+                              color: isToday
+                                ? colors.primary
+                                : isWeekend
+                                ? colors.mutedForeground
+                                : colors.foreground,
+                            },
+                          ]}
+                        >
+                          {d.getDate()}
+                        </Text>
+                      </View>
+                    );
+                  })}
+                </View>
+              ) : null}
+            </View>
+
+            {/* Body rows */}
+            <ScrollView showsVerticalScrollIndicator={false}>
+              <View>
+                {/* Background day grid (drawn per row) */}
+                {dated.map(({ t, s, e }) => {
+                  const offset = daysBetween(range.start, s) * dayWidth;
+                  const width = (daysBetween(s, e) + 1) * dayWidth;
+                  const fillPct = Math.max(0, Math.min(100, t.progress || 0));
+                  const c = statusColor[t.status];
+                  return (
+                    <TouchableOpacity
+                      key={t.id}
+                      activeOpacity={0.7}
+                      onPress={() => onPressTask(t)}
+                      style={{
+                        height: rowHeight,
+                        borderBottomWidth: StyleSheet.hairlineWidth,
+                        borderBottomColor: colors.border,
+                        position: "relative",
+                      }}
+                    >
+                      {/* weekend stripes */}
+                      {days.map((d, i) => {
+                        const wknd = d.getDay() === 0 || d.getDay() === 6;
+                        if (!wknd) return null;
+                        return (
+                          <View
+                            key={i}
+                            style={{
+                              position: "absolute",
+                              left: i * dayWidth,
+                              width: dayWidth,
+                              top: 0,
+                              bottom: 0,
+                              backgroundColor: colors.muted,
+                              opacity: 0.4,
+                            }}
+                          />
+                        );
+                      })}
+                      {/* today line */}
+                      {todayOffset >= 0 ? (
+                        <View
+                          style={[
+                            styles.todayLine,
+                            { left: todayOffset - 1, backgroundColor: colors.primary, opacity: 0.6 },
+                          ]}
+                        />
+                      ) : null}
+                      {/* bar */}
+                      <View
+                        style={[
+                          styles.ganttBar,
+                          {
+                            left: offset,
+                            width: Math.max(width, 6),
+                            backgroundColor: c + "33",
+                            borderWidth: 1,
+                            borderColor: c,
+                          },
+                        ]}
+                      >
+                        <View style={[styles.ganttBarFill, { width: `${fillPct}%`, backgroundColor: c }]} />
+                        {width >= 60 ? (
+                          <Text
+                            style={[styles.ganttBarText, { color: colors.foreground }]}
+                            numberOfLines={1}
+                          >
+                            %{fillPct}
+                          </Text>
+                        ) : null}
+                      </View>
+                    </TouchableOpacity>
+                  );
+                })}
+              </View>
+            </ScrollView>
+          </View>
+        </ScrollView>
+      </View>
+
+      {undated > 0 ? (
+        <View style={[styles.noDateBanner, { backgroundColor: colors.muted }]}>
+          <Feather name="alert-circle" size={14} color={colors.mutedForeground} />
+          <Text style={[styles.noDateText, { color: colors.mutedForeground }]}>
+            {undated} kalemde başlangıç/bitiş tarihi eksik — Gantt'ta görünmez. Liste görünümünden düzenleyebilirsiniz.
+          </Text>
+        </View>
+      ) : null}
+    </View>
+  );
+}
