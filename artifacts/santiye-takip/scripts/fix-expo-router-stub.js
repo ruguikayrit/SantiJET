@@ -38,13 +38,17 @@ if (!fs.existsSync(stubDir) || fs.lstatSync(stubDir).isSymbolicLink()) {
   fs.mkdirSync(stubDir, { recursive: true });
 }
 
-// Write stub files — types points to real package declarations for TypeScript
+// Write stub files.
+// - main: points to real build/index.js so `import { Stack } from "expo-router"` works
+// - types: points to real declarations for TypeScript
+// - entry.js stays in stub so `expo-router/entry` (the app entry) still resolves here
 const realPkgDir = path.dirname(realEntry);
+const mainRelPath  = path.relative(stubDir, path.join(realPkgDir, 'build/index.js'));
 const typesRelPath = path.relative(stubDir, path.join(realPkgDir, 'build/index.d.ts'));
 fs.writeFileSync(stubPkg, JSON.stringify({
   name: 'expo-router',
   version: '6.0.23',
-  main: 'entry.js',
+  main: mainRelPath,
   types: typesRelPath,
 }, null, 2));
 
