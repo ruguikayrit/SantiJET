@@ -221,3 +221,9 @@ id = "wNDJ5R1PVXnMTcT-AxCtL"
 uri = "file://exports/SantiJET.zip"
 type = "unspecified"
 title = "SantiJET.zip"
+
+[[outputs]]
+id = "OvK7L0uOt6Gx3hfyM5ul7"
+uri = "file://santijet-kaynak.tar.gz"
+type = "unspecified"
+title = "ŞantiJET Kaynak Kodları"
