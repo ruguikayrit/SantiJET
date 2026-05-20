@@ -4,7 +4,6 @@ import * as WebBrowser from "expo-web-browser";
 import React, { useState } from "react";
 import {
   Alert,
-  Modal,
   Platform,
   Pressable,
   ScrollView,
@@ -17,15 +16,14 @@ import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 import { useColors } from "@/hooks/useColors";
 import {
-  MEVCUT_YILLAR,
-  YYBM_PDF_URLS,
-  YYBM_VERILER,
+  YYBM_DONEMLER,
+  YYBM_DONEM_MAP,
+  type YybmDonem,
   artisOrani,
   formatFiyat,
 } from "@/constants/yybm";
 
-const ONDALIK_ARALIK = 10;
-const BASLANGIC_DEKAD = Math.floor(new Date().getFullYear() / ONDALIK_ARALIK) * ONDALIK_ARALIK;
+const COLS = 4;
 
 export default function YYBMScreen() {
   const colors = useColors();
@@ -33,27 +31,19 @@ export default function YYBMScreen() {
   const insets = useSafeAreaInsets();
   const topPad = Platform.OS === "web" ? 16 : insets.top;
 
-  const [dekadBaslangic, setDekadBaslangic] = useState(BASLANGIC_DEKAD);
-  const [seciliYillar, setSeciliYillar] = useState<number[]>([]);
+  const [seciliIds, setSeciliIds] = useState<string[]>([]);
   const [karsilastirmaGoster, setKarsilastirmaGoster] = useState(false);
-  const [detayYil, setDetayYil] = useState<number | null>(null);
 
-  const dekadYillari = Array.from({ length: 10 }, (_, i) => dekadBaslangic + i);
-
-  function yilSecToggle(yil: number) {
-    if (!MEVCUT_YILLAR.includes(yil)) {
-      Alert.alert("Veri Mevcut Değil", `${yil} yılı için tebliğ verisi henüz eklenmemiştir.`);
-      return;
-    }
-    setSeciliYillar((prev) =>
-      prev.includes(yil) ? prev.filter((y) => y !== yil) : [...prev, yil]
+  function donemSecToggle(id: string) {
+    setSeciliIds((prev) =>
+      prev.includes(id) ? prev.filter((x) => x !== id) : [...prev, id]
     );
     setKarsilastirmaGoster(false);
   }
 
-  async function pdfAc(yil: number) {
-    const url = YYBM_PDF_URLS[yil];
-    if (!url) return;
+  async function pdfAc(donem: YybmDonem) {
+    if (!donem.pdfMevcut) return;
+    const url = donem.pdfUrl;
     try {
       if (Platform.OS === "web") {
         const fullUrl =
@@ -73,19 +63,23 @@ export default function YYBMScreen() {
     }
   }
 
-  function tekYilIslem() {
-    if (seciliYillar.length === 1) {
-      pdfAc(seciliYillar[0]!);
-    }
-  }
-
   function karsilastir() {
-    if (seciliYillar.length >= 2) {
+    if (seciliIds.length >= 2) {
       setKarsilastirmaGoster(true);
     }
   }
 
-  const siraliSecili = [...seciliYillar].sort((a, b) => a - b);
+  const siraliSecili = [...seciliIds].sort((a, b) => {
+    const da = YYBM_DONEM_MAP[a];
+    const db = YYBM_DONEM_MAP[b];
+    if (!da || !db) return 0;
+    if (da.yil !== db.yil) return da.yil - db.yil;
+    return (da.altDonem ?? 0) - (db.altDonem ?? 0);
+  });
+
+  // Pad grid to a multiple of COLS
+  const padded = [...YYBM_DONEMLER];
+  while (padded.length % COLS !== 0) padded.push(null as unknown as YybmDonem);
 
   return (
     <View style={[styles.root, { backgroundColor: colors.background }]}>
@@ -115,75 +109,72 @@ export default function YYBMScreen() {
         showsVerticalScrollIndicator={false}
       >
         <Text style={[styles.aciklama, { color: colors.mutedForeground }]}>
-          T.C. Çevre, Şehircilik ve İklim Değişikliği Bakanlığı tarafından yayımlanan yıllık
-          tebliğler. Mimarlık ve mühendislik hizmet bedellerinin hesabında kullanılır.
+          T.C. Çevre, Şehircilik ve İklim Değişikliği Bakanlığı tarafından yayımlanan tebliğler.
+          Mimarlık ve mühendislik hizmet bedellerinin hesabında kullanılır.
         </Text>
 
         <View style={[styles.pickerCard, { backgroundColor: colors.card, borderColor: colors.secondary + "40" }]}>
-          <View style={styles.dekadSatir}>
-            <TouchableOpacity
-              onPress={() => setDekadBaslangic((d) => d - 10)}
-              style={[styles.navBtn, { backgroundColor: colors.secondary }]}
-            >
-              <Feather name="chevron-left" size={20} color={colors.secondaryForeground} />
-            </TouchableOpacity>
-            <Text style={[styles.dekadText, { color: colors.foreground }]}>
-              {dekadBaslangic}–{dekadBaslangic + 9}
+          <View style={styles.gridBaslik}>
+            <Feather name="calendar" size={15} color={colors.mutedForeground} />
+            <Text style={[styles.gridBaslikText, { color: colors.mutedForeground }]}>
+              Dönem seçin
             </Text>
-            <TouchableOpacity
-              onPress={() => setDekadBaslangic((d) => d + 10)}
-              style={[styles.navBtn, { backgroundColor: colors.secondary }]}
-            >
-              <Feather name="chevron-right" size={20} color={colors.secondaryForeground} />
-            </TouchableOpacity>
           </View>
 
-          <View style={styles.yilGrid}>
-            {dekadYillari.map((yil) => {
-              const mevcut = MEVCUT_YILLAR.includes(yil);
-              const secili = seciliYillar.includes(yil);
+          <View style={styles.grid}>
+            {padded.map((donem, idx) => {
+              if (!donem) {
+                return <View key={`empty-${idx}`} style={styles.donemBosHucre} />;
+              }
+              const secili = seciliIds.includes(donem.id);
+              const eskiYapi = donem.yapiSinifiTipi === "eski";
               return (
                 <TouchableOpacity
-                  key={yil}
-                  onPress={() => yilSecToggle(yil)}
+                  key={donem.id}
+                  onPress={() => donemSecToggle(donem.id)}
                   style={[
-                    styles.yilBtn,
+                    styles.donemBtn,
                     {
                       backgroundColor: secili
                         ? "#1a6e4a"
-                        : mevcut
-                        ? colors.card
-                        : "transparent",
-                      borderWidth: secili ? 0 : mevcut ? 1 : 0,
+                        : colors.card,
+                      borderWidth: secili ? 0 : 1,
                       borderColor: colors.secondary + "60",
                     },
                   ]}
                 >
                   <Text
                     style={[
-                      styles.yilBtnText,
+                      styles.donemBtnText,
                       {
-                        color: secili
-                          ? "#4fffb0"
-                          : mevcut
-                          ? colors.foreground
-                          : colors.mutedForeground + "60",
+                        color: secili ? "#4fffb0" : colors.foreground,
                         fontFamily: secili ? "JetBrainsMono_700Bold" : "JetBrainsMono_400Regular",
                       },
                     ]}
                   >
-                    {yil}
+                    {donem.etiket}
                   </Text>
-                  {mevcut && !secili && (
-                    <View style={[styles.pdfDot, { backgroundColor: "#4fffb0" }]} />
+                  {donem.pdfMevcut && !secili && (
+                    <View style={[styles.pdfDot, { backgroundColor: eskiYapi ? "#aaa" : "#4fffb0" }]} />
                   )}
                 </TouchableOpacity>
               );
             })}
           </View>
 
-          {seciliYillar.length > 0 && (
-            <View style={styles.seciliInfo}>
+          <View style={[styles.lejand, { borderTopColor: colors.secondary + "30" }]}>
+            <View style={styles.lejandItem}>
+              <View style={[styles.lejandDot, { backgroundColor: "#4fffb0" }]} />
+              <Text style={[styles.lejandText, { color: colors.mutedForeground }]}>Yeni sınıf yapısı (2025+)</Text>
+            </View>
+            <View style={styles.lejandItem}>
+              <View style={[styles.lejandDot, { backgroundColor: "#aaa" }]} />
+              <Text style={[styles.lejandText, { color: colors.mutedForeground }]}>Eski sınıf yapısı (2020–2024)</Text>
+            </View>
+          </View>
+
+          {seciliIds.length > 0 && (
+            <View style={[styles.seciliInfo, { borderTopColor: colors.secondary + "30" }]}>
               <Text style={[styles.seciliLabel, { color: colors.mutedForeground }]}>
                 Seçili:{" "}
                 <Text style={{ color: colors.foreground }}>
@@ -196,7 +187,7 @@ export default function YYBMScreen() {
           <View style={styles.btnSatir}>
             <TouchableOpacity
               onPress={() => {
-                setSeciliYillar([]);
+                setSeciliIds([]);
                 setKarsilastirmaGoster(false);
               }}
               style={[styles.iptalBtn, { backgroundColor: colors.secondary }]}
@@ -206,9 +197,9 @@ export default function YYBMScreen() {
               </Text>
             </TouchableOpacity>
 
-            {seciliYillar.length === 1 && (
+            {seciliIds.length === 1 && YYBM_DONEM_MAP[seciliIds[0]!] && (
               <TouchableOpacity
-                onPress={tekYilIslem}
+                onPress={() => pdfAc(YYBM_DONEM_MAP[seciliIds[0]!]!)}
                 style={styles.aksiyonBtn}
               >
                 <Feather name="file-text" size={16} color="#fff" />
@@ -216,7 +207,7 @@ export default function YYBMScreen() {
               </TouchableOpacity>
             )}
 
-            {seciliYillar.length >= 2 && (
+            {seciliIds.length >= 2 && (
               <TouchableOpacity
                 onPress={karsilastir}
                 style={[styles.aksiyonBtn, { backgroundColor: "#1a6e4a" }]}
@@ -230,9 +221,9 @@ export default function YYBMScreen() {
           </View>
         </View>
 
-        {seciliYillar.length === 1 && YYBM_VERILER[seciliYillar[0]!] && (
-          <YilDetay
-            yil={seciliYillar[0]!}
+        {seciliIds.length === 1 && YYBM_DONEM_MAP[seciliIds[0]!] && (
+          <DonemDetay
+            donem={YYBM_DONEM_MAP[seciliIds[0]!]!}
             colors={colors}
             onPdfAc={pdfAc}
           />
@@ -240,7 +231,7 @@ export default function YYBMScreen() {
 
         {karsilastirmaGoster && siraliSecili.length >= 2 && (
           <KarsilastirmaTablosu
-            yillar={siraliSecili}
+            donemIds={siraliSecili}
             colors={colors}
           />
         )}
@@ -249,31 +240,28 @@ export default function YYBMScreen() {
   );
 }
 
-function YilDetay({
-  yil,
+function DonemDetay({
+  donem,
   colors,
   onPdfAc,
 }: {
-  yil: number;
+  donem: YybmDonem;
   colors: ReturnType<typeof import("@/hooks/useColors").useColors>;
-  onPdfAc: (yil: number) => void;
+  onPdfAc: (d: YybmDonem) => void;
 }) {
-  const veri = YYBM_VERILER[yil];
-  if (!veri) return null;
-
   return (
     <View style={{ marginTop: 16 }}>
       <View style={styles.bolumBaslik}>
         <Text style={[styles.bolumBaslikText, { color: colors.foreground }]}>
-          {veri.yil} Yılı Yapı Sınıfları
+          {donem.etiket} Dönemi Yapı Sınıfları
         </Text>
         <Text style={[styles.bolumAlt, { color: colors.mutedForeground }]}>
-          Resmî Gazete: {veri.gazeteKarariTarihi} — Sayı: {veri.gazeteNo}
+          Resmî Gazete: {donem.gazeteKarariTarihi} — Sayı: {donem.gazeteNo}
         </Text>
       </View>
 
       <TouchableOpacity
-        onPress={() => onPdfAc(yil)}
+        onPress={() => onPdfAc(donem)}
         style={[styles.pdfBtn, { borderColor: "#4fffb0" + "40", backgroundColor: "#1a6e4a" + "20" }]}
       >
         <Feather name="file-text" size={18} color="#4fffb0" />
@@ -283,7 +271,16 @@ function YilDetay({
         <Feather name="external-link" size={14} color="#4fffb0" />
       </TouchableOpacity>
 
-      {veri.siniflar.map((s) => (
+      {donem.yapiSinifiTipi === "eski" && (
+        <View style={[styles.uyariSatir, { backgroundColor: colors.secondary + "30", borderColor: colors.secondary + "60" }]}>
+          <Feather name="info" size={13} color={colors.mutedForeground} />
+          <Text style={[styles.uyariText, { color: colors.mutedForeground }]}>
+            Bu dönem eski sınıf yapısını kullanır (I–V, A–D). 2025 sonrası tebliğlerle karşılaştırma yapılamaz.
+          </Text>
+        </View>
+      )}
+
+      {donem.siniflar.map((s) => (
         <View
           key={s.kod}
           style={[styles.sinifKart, { backgroundColor: colors.card, borderColor: colors.secondary + "30" }]}
@@ -305,27 +302,44 @@ function YilDetay({
 }
 
 function KarsilastirmaTablosu({
-  yillar,
+  donemIds,
   colors,
 }: {
-  yillar: number[];
+  donemIds: string[];
   colors: ReturnType<typeof import("@/hooks/useColors").useColors>;
 }) {
-  const veriSet = yillar.map((y) => YYBM_VERILER[y]).filter(Boolean);
-  if (veriSet.length < 2) return null;
+  const donemler = donemIds.map((id) => YYBM_DONEM_MAP[id]).filter(Boolean) as YybmDonem[];
+  if (donemler.length < 2) return null;
 
-  const ilkVeri = veriSet[0]!;
-  const sonVeri = veriSet[veriSet.length - 1]!;
+  // Only allow same-type comparison
+  const tipler = new Set(donemler.map((d) => d.yapiSinifiTipi));
+  const karisik = tipler.size > 1;
 
-  const toplamArtis = sonVeri.siniflar.reduce((s, sin) => s + sin.fiyat, 0);
-  const toplamEski = ilkVeri.siniflar.reduce((s, sin) => s + sin.fiyat, 0);
-  const genelArtis = artisOrani(toplamEski, toplamArtis);
+  if (karisik) {
+    return (
+      <View style={{ marginTop: 16 }}>
+        <View style={[styles.uyariKart, { backgroundColor: colors.card, borderColor: "#ff6b6b40" }]}>
+          <Feather name="alert-triangle" size={18} color="#ff6b6b" />
+          <Text style={[styles.uyariKartText, { color: colors.mutedForeground }]}>
+            Eski sınıf yapısı (2020–2024) ile yeni sınıf yapısı (2025+) dönemleri farklı sınıflar içerdiğinden
+            doğrudan karşılaştırma yapılamaz. Lütfen aynı yapı sistemine ait dönemleri seçin.
+          </Text>
+        </View>
+      </View>
+    );
+  }
+
+  const ilk = donemler[0]!;
+  const son = donemler[donemler.length - 1]!;
+  const toplamSon = son.siniflar.reduce((s, x) => s + x.fiyat, 0);
+  const toplamIlk = ilk.siniflar.reduce((s, x) => s + x.fiyat, 0);
+  const genelArtis = artisOrani(toplamIlk, toplamSon);
 
   return (
     <View style={{ marginTop: 16 }}>
       <View style={styles.bolumBaslik}>
         <Text style={[styles.bolumBaslikText, { color: colors.foreground }]}>
-          Mukayese Tablosu — {yillar.join(" / ")}
+          Mukayese Tablosu — {donemIds.join(" / ")}
         </Text>
         <Text style={[styles.bolumAlt, { color: colors.mutedForeground }]}>
           Genel ortalama artış: %{genelArtis.toFixed(1)}
@@ -337,22 +351,22 @@ function KarsilastirmaTablosu({
           <Text style={[styles.tabloBaslikHucre, styles.hucreSinif, { color: colors.secondaryForeground }]}>
             Sınıf
           </Text>
-          {yillar.map((y) => (
-            <Text key={y} style={[styles.tabloBaslikHucre, styles.hucreFiyat, { color: colors.secondaryForeground }]}>
-              {y}
+          {donemler.map((d) => (
+            <Text key={d.id} style={[styles.tabloBaslikHucre, styles.hucreFiyat, { color: colors.secondaryForeground }]}>
+              {d.etiket}
             </Text>
           ))}
-          {yillar.length === 2 && (
+          {donemler.length === 2 && (
             <Text style={[styles.tabloBaslikHucre, styles.hucreDegisim, { color: colors.secondaryForeground }]}>
               Artış
             </Text>
           )}
         </View>
 
-        {ilkVeri.siniflar.map((sinif, idx) => {
-          const fiyatlar = veriSet.map((v) => v!.siniflar[idx]?.fiyat ?? 0);
+        {ilk.siniflar.map((sinif, idx) => {
+          const fiyatlar = donemler.map((d) => d.siniflar[idx]?.fiyat ?? 0);
           const degisim =
-            yillar.length === 2 && fiyatlar[0]! > 0
+            donemler.length === 2 && fiyatlar[0]! > 0
               ? artisOrani(fiyatlar[0]!, fiyatlar[fiyatlar.length - 1]!)
               : null;
           const pozitif = degisim !== null && degisim >= 0;
@@ -436,41 +450,38 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     padding: 16,
   },
-  dekadSatir: {
+  gridBaslik: {
     flexDirection: "row",
     alignItems: "center",
-    justifyContent: "space-between",
-    marginBottom: 20,
+    gap: 6,
+    marginBottom: 14,
   },
-  navBtn: {
-    width: 40,
-    height: 40,
+  gridBaslikText: {
+    fontSize: 12,
+    fontFamily: "Inter_600SemiBold",
+    letterSpacing: 0.5,
+    textTransform: "uppercase",
+  },
+  grid: {
+    flexDirection: "row",
+    flexWrap: "wrap",
+    gap: 8,
+  },
+  donemBtn: {
+    width: `${(100 / COLS) - 2.5}%` as any,
+    paddingVertical: 14,
     borderRadius: 12,
     alignItems: "center",
     justifyContent: "center",
-  },
-  dekadText: {
-    fontSize: 26,
-    fontFamily: "JetBrainsMono_700Bold",
-    letterSpacing: 1,
-  },
-  yilGrid: {
-    flexDirection: "row",
-    flexWrap: "wrap",
-    gap: 10,
-    justifyContent: "flex-start",
-  },
-  yilBtn: {
-    width: "30%",
-    minWidth: 80,
-    paddingVertical: 16,
-    borderRadius: 14,
-    alignItems: "center",
-    justifyContent: "center",
     position: "relative",
+    minHeight: 52,
   },
-  yilBtnText: {
-    fontSize: 17,
+  donemBosHucre: {
+    width: `${(100 / COLS) - 2.5}%` as any,
+    minHeight: 52,
+  },
+  donemBtnText: {
+    fontSize: 15,
     letterSpacing: 0.5,
   },
   pdfDot: {
@@ -480,11 +491,32 @@ const styles = StyleSheet.create({
     height: 5,
     borderRadius: 3,
   },
-  seciliInfo: {
-    marginTop: 16,
+  lejand: {
+    flexDirection: "row",
+    gap: 16,
+    marginTop: 14,
     paddingTop: 12,
     borderTopWidth: 1,
-    borderTopColor: "rgba(255,255,255,0.08)",
+    flexWrap: "wrap",
+  },
+  lejandItem: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 6,
+  },
+  lejandDot: {
+    width: 8,
+    height: 8,
+    borderRadius: 4,
+  },
+  lejandText: {
+    fontSize: 11,
+    fontFamily: "Inter_400Regular",
+  },
+  seciliInfo: {
+    marginTop: 14,
+    paddingTop: 12,
+    borderTopWidth: 1,
   },
   seciliLabel: {
     fontSize: 13,
@@ -521,6 +553,35 @@ const styles = StyleSheet.create({
     fontSize: 14,
     fontFamily: "Inter_700Bold",
     color: "#fff",
+  },
+  uyariSatir: {
+    flexDirection: "row",
+    alignItems: "flex-start",
+    gap: 8,
+    padding: 10,
+    borderRadius: 10,
+    borderWidth: 1,
+    marginBottom: 12,
+  },
+  uyariText: {
+    flex: 1,
+    fontSize: 11,
+    fontFamily: "Inter_400Regular",
+    lineHeight: 16,
+  },
+  uyariKart: {
+    flexDirection: "row",
+    alignItems: "flex-start",
+    gap: 12,
+    padding: 14,
+    borderRadius: 12,
+    borderWidth: 1,
+  },
+  uyariKartText: {
+    flex: 1,
+    fontSize: 13,
+    fontFamily: "Inter_400Regular",
+    lineHeight: 19,
   },
   bolumBaslik: { marginBottom: 12 },
   bolumBaslikText: {

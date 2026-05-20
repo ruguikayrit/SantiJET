@@ -1186,7 +1186,7 @@ export const RESMI_POZ_ANALIZLERI = [
   {
     id: "sys-15x115x1003",
     pozNo: "15.115.1003",
-    analizAdi: "parçalanıp el ile atılabilen 0,100 m3 e kadar büyüklükteki her cins blok taşlar, kazı güçlüğü",
+    analizAdi: "El ile yumuşak küskülük kazılması (sert kil, yumuşak marn ve tüf, sıkışık gravye, parçalanıp el ile atılabilen 0,100 m3 e kadar büyüklükteki her cins blok taşlar, kazı güçlüğü benzerliğinden dolayı çamur ve benzeri zeminler)",
     olcuBirimi: "m³",
     kategori: "Kazı İşleri",
     kaynakTip: "sistem" as const,
@@ -1208,7 +1208,7 @@ export const RESMI_POZ_ANALIZLERI = [
   {
     id: "sys-15x115x1004",
     pozNo: "15.115.1004",
-    analizAdi: "marn ve kil, 0,100-0,400 m³ büyüklükte parçalanıp el ile atılabilen her cins blok taşlar ve",
+    analizAdi: "El ile sert küskülük kazılması (ayrışmış ve çatlaklı kaya, ayrışmış yapıdaki gre, şist, taşlaşmış marn ve kil, 0,100-0,400 m³ büyüklükte parçalanıp el ile atılabilen her cins blok taşlar ve benzeri zeminler)",
     olcuBirimi: "m³",
     kategori: "Kazı İşleri",
     kaynakTip: "sistem" as const,
@@ -1230,7 +1230,7 @@ export const RESMI_POZ_ANALIZLERI = [
   {
     id: "sys-15x115x1005",
     pozNo: "15.115.1005",
-    analizAdi: "kalker, marnlı kalker, marn, şist, gre, gevşek konglomera, alçı taşı, volkanik tüfler (bazalt",
+    analizAdi: "El veya kompresör ile patlayıcı madde kullanarak yumuşak kaya kazılması (tabakalaşmış kalker, marnlı kalker, marn, şist, gre, gevşek konglomera, alçı taşı, volkanik tüfler (bazalt tüfleri hariç), 0,400 m³ den büyük aynı cins blok taşlar ve benzeri zeminler)",
     olcuBirimi: "m³",
     kategori: "Kazı İşleri",
     kaynakTip: "sistem" as const,
@@ -1257,7 +1257,7 @@ export const RESMI_POZ_ANALIZLERI = [
   {
     id: "sys-15x115x1006",
     pozNo: "15.115.1006",
-    analizAdi: "halinde sert gre, betonlaşmış konglomera, kesif kalker, mermer, ayrışmamış serpantin,",
+    analizAdi: "El veya kompresörle patlayıcı madde kullanarak sert kaya kazılması (kalın tabaka ve kitle halinde sert gre, betonlaşmış konglomera, kesif kalker, mermer, ayrışmamış serpantin, andezit, trakit bazalt tüfleri, 0,400 m³ den büyük aynı cins blok taşlar ve benzeri zeminler)",
     olcuBirimi: "m³",
     kategori: "Kazı İşleri",
     kaynakTip: "sistem" as const,
@@ -1284,7 +1284,7 @@ export const RESMI_POZ_ANALIZLERI = [
   {
     id: "sys-15x115x1007",
     pozNo: "15.115.1007",
-    analizAdi: "ve benzeri, bazalt, profir, kuvars, 0,400 m³ den büyük aynı cins blok taşlar ve benzeri",
+    analizAdi: "El veya kompresörle patlayıcı madde kullanarak çok sert kaya kazılması (ayrışmamış granit ve benzeri, bazalt, profir, kuvars, 0,400 m³ den büyük aynı cins blok taşlar ve benzeri zeminler)",
     olcuBirimi: "m³",
     kategori: "Kazı İşleri",
     kaynakTip: "sistem" as const,
@@ -1311,7 +1311,7 @@ export const RESMI_POZ_ANALIZLERI = [
   {
     id: "sys-15x115x1008",
     pozNo: "15.115.1008",
-    analizAdi: "kalker, marnlı kalker, marn, şist, gre, gevşek konglomera, alçı taşı, volkanik tüfler (bazalt",
+    analizAdi: "El veya kompresörle patlayıcı madde kullanmadan yumuşak kaya kazılması (tabakalaşmış kalker, marnlı kalker, marn, şist, gre, gevşek konglomera, alçı taşı, volkanik tüfler (bazalt tüfleri hariç) 0,400 m³ den büyük aynı cins blok taşlar ve benzeri zeminler)",
     olcuBirimi: "m³",
     kategori: "Kazı İşleri",
     kaynakTip: "sistem" as const,
@@ -1335,7 +1335,7 @@ export const RESMI_POZ_ANALIZLERI = [
   {
     id: "sys-15x115x1009",
     pozNo: "15.115.1009",
-    analizAdi: "konglomera, kesif kalker, mermer, ayrışmamış serpantin, andezit, trakit bazalt tüfleri ve",
+    analizAdi: "El veya kompresörle patlayıcı madde kullanmadan sert kaya kazılması (sert gre, betonlaşmış konglomera, kesif kalker, mermer, ayrışmamış serpantin, andezit, trakit bazalt tüfleri ve 0,400 m³ den büyük aynı cins blok taşlar ve benzeri zeminler)",
     olcuBirimi: "m³",
     kategori: "Kazı İşleri",
     kaynakTip: "sistem" as const,
@@ -1359,7 +1359,7 @@ export const RESMI_POZ_ANALIZLERI = [
   {
     id: "sys-15x115x1010",
     pozNo: "15.115.1010",
-    analizAdi: "granit ve benzeri, bazalt, profir, kuvars, 0,400 m³ den büyük aynı cins blok taşlar ve benzeri",
+    analizAdi: "El veya kompresörle patlayıcı madde kullanmadan çok sert kaya kazılması (ayrışmamış granit ve benzeri, bazalt, profir, kuvars, 0,400 m³ den büyük aynı cins blok taşlar ve benzeri zeminler)",
     olcuBirimi: "m³",
     kategori: "Kazı İşleri",
     kaynakTip: "sistem" as const,
@@ -1383,7 +1383,7 @@ export const RESMI_POZ_ANALIZLERI = [
   {
     id: "sys-15x115x1201",
     pozNo: "15.115.1201",
-    analizAdi: "toprak, gevşek silt, kum, kil, siltli, kumlu ve gevşek kil, killi kum ve çakıl, kürekle atılabilen",
+    analizAdi: "El ile her derinlikte yumuşak ve sert toprakta geniş derin kazı yapılması (gevşek ve bitkisel toprak, gevşek silt, kum, kil, siltli, kumlu ve gevşek kil, killi kum ve çakıl, kürekle atılabilen taşlı toprak ve benzeri zeminler)",
     olcuBirimi: "m³",
     kategori: "Kazı İşleri",
     kaynakTip: "sistem" as const,
@@ -1406,7 +1406,7 @@ export const RESMI_POZ_ANALIZLERI = [
   {
     id: "sys-15x115x1202",
     pozNo: "15.115.1202",
-    analizAdi: "toprak, gevşek silt, kum, kil, siltli, kumlu ve gevşek kil, killi kum ve çakıl, kürekle atılabilen",
+    analizAdi: "El ile her derinlikte yumuşak ve sert toprakta dar derin kazı yapılması(gevşek ve bitkisel toprak, gevşek silt, kum, kil, siltli, kumlu ve gevşek kil, killi kum ve çakıl, kürekle atılabilen taşlı toprak ve benzeri zeminler)",
     olcuBirimi: "m³",
     kategori: "Kazı İşleri",
     kaynakTip: "sistem" as const,
@@ -1426,7 +1426,7 @@ export const RESMI_POZ_ANALIZLERI = [
   {
     id: "sys-15x115x1211",
     pozNo: "15.115.1211",
-    analizAdi: "derin kazı yapılması (ayrışmamış granit ve benzeri, bazalt, profir, kuvars, 0,400 m³ den",
+    analizAdi: "El veya kompresörle patlayıcı madde kullanmadan her derinlikte çok sert kayada geniş derin kazı yapılması (ayrışmamış granit ve benzeri, bazalt, profir, kuvars, 0,400 m³ den büyük aynı cins blok taşlar ve benzeri zeminler)",
     olcuBirimi: "m³",
     kategori: "Kazı İşleri",
     kaynakTip: "sistem" as const,
@@ -1451,7 +1451,7 @@ export const RESMI_POZ_ANALIZLERI = [
   {
     id: "sys-15x115x1212",
     pozNo: "15.115.1212",
-    analizAdi: "kazı yapılması (ayrışmamış granit ve benzeri, bazalt, profir, kuvars, 0,400 m³ den büyük",
+    analizAdi: "El veya kompresörle patlayıcı madde kullanmadan her derinlikte çok sert kayada dar derin kazı yapılması (ayrışmamış granit ve benzeri, bazalt, profir, kuvars, 0,400 m³ den büyük aynı cins blok taşlar ve benzeri zeminler)",
     olcuBirimi: "m³",
     kategori: "Kazı İşleri",
     kaynakTip: "sistem" as const,
@@ -2097,14 +2097,14 @@ export const RESMI_POZ_ANALIZLERI = [
   {
     id: "sys-15x145x1001",
     pozNo: "15.145.1001",
-    analizAdi: "basınç dayanımımda yerinde dökme beton ile diyafram duvar yapılması (0,00 - 36,00 m",
+    analizAdi: "Dikey basınç değeri 0-1 Mpa arası zemin için, grab makinesi ile, hertürlü ölçüde, C30/35 basınç dayanımımda yerinde dökme beton ile diyafram duvar yapılması (0,00 - 36,00 m arası, 36,00 m dahil)",
     olcuBirimi: "m³",
     kategori: "Temel İşleri",
     kaynakTip: "sistem" as const,
     yukleniciKarOrani: 25,
-    malzemeIscilikToplami: 3475.87,
-    yukleniciKarTutari: 868.97,
-    birimFiyati: 4344.84,
+    malzemeIscilikToplami: 6005.94,
+    yukleniciKarTutari: 1501.49,
+    birimFiyati: 7507.43,
     olusturmaTarihi: "2026-01-01T00:00:00.000Z",
     guncellemeTarihi: "2026-01-01T00:00:00.000Z",
     pozTarifi: "İdarece onanmış uygulama projesi ve teknik şartnamesine uygun olarak, dikey basınç değeri 0-1 Mpa arası zemin için, her ölçüde, 0,00-36,00 m. (36,00 m. dahil) derinliğinde, kuruda veya su altında, grab makinesi ile yerinde dökme diyafram duvar yapılması için gerekli araç, gereç, makine, teçhizat, ekip, ekipmanın denetiminin iş başında temini ile montajlarının yapılması, çalışma platformunun hazırlanması, iş bitiminden sonra demontajı, nakilleri, klavuz duvarlar arasında anolar halinde kazının yapılması, bentonit ünitesinde bentonit bulamacının hazırlanması, hazırlanan bulamacın kazı süresince kuyuya pompalanması ve devir daiminin yapılması, kazıdan çıkan pasa ve çamur karışımının ayrıştırma ünitesine (desander) pompalanması, pasanın vasıtalara yüklenmesi, ortalama 60 m’ye kadar nakli, boşaltılması, depo ve imla yerinde serilmesi ve düzeltilmesi, projesine göre hazırlanmış demir donatının projesine uygun olarak yerine yerleştirilmesi, hazır betonun tekniğine uygun olarak (tremi borusu ile) yerine yerleştirilmesi, gerekmesi halinde betonun döküm yerine beton pompası ile basılması, beton dökümünde stop-end ekipmanın kullanılması, beton numuneleri üzerinde ve bentonit bulamacında gerekli deneylerin yapılması, su içinde çalışma güçlüğü, inşaat yerinde her türlü yükleme boşaltma, yatay ve düşey taşıma, yerinde dökme diyafram duvar yapılması için aşağıda “Birim Fiyata Dahil Olmayan Masraflar” dışında kalan diğer tüm işlerin yapılması için gerekli olan her türlü malzeme ve zayiatı, işçilik, makine, araç ve gereç giderleri ile yüklenici genel giderleri ve kârı dâhil 1 m³ fiyatı: Birim Fiyata Dahil Olmayan Masraflar: 1) İnşaat bünyesine giren betonarme demiri ve demirin projesine göre kesilip bükülerek hazırlanması yerine konulması bedeli, demirin fabrikadan iş başına kadar nakli, yüklenmesi ve boşaltılması bedeli birim fiyata dahil değildir. 2) Kazıdan çıkan malzemenin 60 m’den fazla mesafeye taşınması halinde buna ait taşıma bedeli birim fiyata dahil değildir. 3) Klavuz duvar imalatının olması durumunda, projesine uygun olarak hazırlanacak kalıp, demir, beton, malzeme ve işçilik giderleri ayrıca hesaplanacaktır.",
@@ -2124,14 +2124,14 @@ export const RESMI_POZ_ANALIZLERI = [
   {
     id: "sys-15x145x1002",
     pozNo: "15.145.1002",
-    analizAdi: "basınç dayanımımda yerinde dökme beton ile diyafram duvar yapılması (36,00 - 72,00 m",
+    analizAdi: "Dikey basınç değeri 0-1 Mpa arası zemin için, grab makinesi ile, hertürlü ölçüde, C30/35 basınç dayanımımda yerinde dökme beton ile diyafram duvar yapılması (36,00 - 72,00 m arası, 72,00 m dahil)",
     olcuBirimi: "m³",
     kategori: "Temel İşleri",
     kaynakTip: "sistem" as const,
     yukleniciKarOrani: 25,
-    malzemeIscilikToplami: 3538.62,
-    yukleniciKarTutari: 884.65,
-    birimFiyati: 4423.27,
+    malzemeIscilikToplami: 7696.44,
+    yukleniciKarTutari: 1924.11,
+    birimFiyati: 9620.55,
     olusturmaTarihi: "2026-01-01T00:00:00.000Z",
     guncellemeTarihi: "2026-01-01T00:00:00.000Z",
     pozTarifi: "İdarece onanmış uygulama projesi ve teknik şartnamesine uygun olarak, dikey basınç değeri 0-1 Mpa arası zemin için, her ölçüde, 36,00-72,00 m. (72,00 m. dahil) derinliğinde, kuruda veya su altında, grab makinesi ile yerinde dökme diyafram duvar yapılması için gerekli araç, gereç, makine, teçhizat, ekip, ekipmanın denetiminin iş başında temini ile montajlarının yapılması, çalışma platformunun hazırlanması, iş bitiminden sonra demontajı, nakilleri, klavuz duvarlar arasında anolar halinde kazının yapılması, bentonit ünitesinde bentonit bulamacının hazırlanması, hazırlanan bulamacın kazı süresince kuyuya pompalanması ve devir daiminin yapılması, kazıdan çıkan pasa ve çamur karışımının ayrıştırma ünitesine (desander) pompalanması, pasanın vasıtalara yüklenmesi, ortalama 60 m’ye kadar nakli, boşaltılması, depo ve imla yerinde serilmesi ve düzeltilmesi, projesine göre hazırlanmış demir donatının projesine uygun olarak yerine yerleştirilmesi, hazır betonun tekniğine uygun olarak (tremi borusu ile) yerine yerleştirilmesi, gerekmesi halinde betonun döküm yerine beton pompası ile basılması, beton dökümünde stop-end ekipmanın kullanılması, beton numuneleri üzerinde ve bentonit bulamacında gerekli deneylerin yapılması, su içinde çalışma güçlüğü, inşaat yerinde her türlü yükleme boşaltma, yatay ve düşey taşıma, yerinde dökme diyafram duvar yapılması için aşağıda “Birim Fiyata Dahil Olmayan Masraflar” dışında kalan diğer tüm işlerin yapılması için gerekli olan her türlü malzeme ve zayiatı, işçilik, makine, araç ve gereç giderleri ile yüklenici genel giderleri ve kârı dâhil 1 m³ fiyatı: Birim Fiyata Dahil Olmayan Masraflar: 1) İnşaat bünyesine giren betonarme demiri ve demirin projesine göre kesilip bükülerek hazırlanması yerine konulması bedeli, demirin fabrikadan iş başına kadar nakli, yüklenmesi ve boşaltılması bedeli birim fiyata dahil değildir. 2) Kazıdan çıkan malzemenin 60 m’den fazla mesafeye taşınması halinde buna ait taşıma bedeli birim fiyata dahil değildir. 3) Klavuz duvar imalatının olması durumunda, projesine uygun olarak hazırlanacak kalıp, demir, beton, malzeme ve işçilik giderleri ayrıca hesaplanacaktır.",
@@ -2151,14 +2151,14 @@ export const RESMI_POZ_ANALIZLERI = [
   {
     id: "sys-15x145x1003",
     pozNo: "15.145.1003",
-    analizAdi: "C30/35 basınç dayanımımda yerinde dökme beton ile diyafram duvar yapılması (0,00 - 36,00",
+    analizAdi: "Dikey basınç değeri 0-1 Mpa arası zemin için, hidrofreze makinesi ile, her türlü ölçüde, C30/35 basınç dayanımımda yerinde dökme beton ile diyafram duvar yapılması (0,00 - 36,00 m arası, 36,00 m dahil)",
     olcuBirimi: "m³",
     kategori: "Temel İşleri",
     kaynakTip: "sistem" as const,
     yukleniciKarOrani: 25,
-    malzemeIscilikToplami: 3669.46,
-    yukleniciKarTutari: 917.36,
-    birimFiyati: 4586.82,
+    malzemeIscilikToplami: 7925.36,
+    yukleniciKarTutari: 1981.34,
+    birimFiyati: 9906.7,
     olusturmaTarihi: "2026-01-01T00:00:00.000Z",
     guncellemeTarihi: "2026-01-01T00:00:00.000Z",
     pozTarifi: "İdarece onanmış uygulama projesi ve teknik şartnamesine uygun olarak, dikey basınç değeri 0-1 Mpa arası zemin için, her ölçüde, 0,00-36,00 m. (36,00 m. dahil) derinliğinde, kuruda veya su altında, hidrofreze makinesi ile yerinde dökme diyafram duvar yapılması için gerekli araç, gereç, makine, teçhizat, ekip, ekipmanın denetiminin iş başında temini ile montajlarının yapılması, çalışma platformunun hazırlanması, iş bitiminden sonra demontajı, nakilleri, klavuz duvarlar arasında anolar halinde kazının yapılması, bentonit ünitesinde bentonit bulamacının hazırlanması, hazırlanan bulamacın kazı süresince kuyuya pompalanması ve devir daiminin yapılması, kazıdan çıkan pasa ve çamur karışımının ayrıştırma ünitesine (desander) pompalanması, pasanın vasıtalara yüklenmesi, ortalama 60 m’ye kadar nakli, boşaltılması, depo ve imla yerinde serilmesi ve düzeltilmesi, projesine göre hazırlanmış demir donatının projesine uygun olarak yerine yerleştirilmesi, hazır betonun tekniğine uygun olarak (tremi borusu ile) yerine yerleştirilmesi, gerekmesi halinde betonun döküm yerine beton pompası ile basılması, birincil ve ikincil anoların kesişimindeki betonların hidrofreze makinesi ile traşlanması, beton numuneleri üzerinde ve bentonit bulamacında gerekli deneylerin yapılması, su içinde çalışma güçlüğü, inşaat yerinde her türlü yükleme boşaltma, yatay ve düşey taşıma, yerinde dökme diyafram duvar yapılması için aşağıda “Birim Fiyata Dahil Olmayan Masraflar” dışında kalan diğer tüm işlerin yapılması için gerekli olan her türlü malzeme ve zayiatı, işçilik, makine, araç ve gereç giderleri ile yüklenici genel giderleri ve kârı dâhil 1 m³ fiyatı: Birim Fiyata Dahil Olmayan Masraflar: 1) İnşaat bünyesine giren betonarme demiri ve demirin projesine göre kesilip bükülerek hazırlanması yerine konulması bedeli, demirin fabrikadan iş başına kadar nakli, yüklenmesi ve boşaltılması bedeli birim fiyata dahil değildir. 2) Kazıdan çıkan pasanın 60 m’den fazla mesafeye taşınması halinde buna ait taşıma bedeli birim fiyata dahil değildir. 3) Klavuz duvar imalatının olması durumunda, projesine uygun olarak hazırlanacak kalıp, demir, beton, malzeme ve işçilik giderleri ayrıca hesaplanacaktır.",
@@ -2179,14 +2179,14 @@ export const RESMI_POZ_ANALIZLERI = [
   {
     id: "sys-15x145x1004",
     pozNo: "15.145.1004",
-    analizAdi: "C30/35 basınç dayanımımda yerinde dökme beton ile diyafram duvar yapılması (36,00 -",
+    analizAdi: "Dikey basınç değeri 0-1 Mpa arası zemin için, hidrofreze makinesi ile, her türlü ölçüde, C30/35 basınç dayanımımda yerinde dökme beton ile diyafram duvar yapılması (36,00 - 72,00 m arası, 72,00 m dahil)",
     olcuBirimi: "m³",
     kategori: "Temel İşleri",
     kaynakTip: "sistem" as const,
     yukleniciKarOrani: 25,
-    malzemeIscilikToplami: 3694.56,
-    yukleniciKarTutari: 923.64,
-    birimFiyati: 4618.2,
+    malzemeIscilikToplami: 9603.22,
+    yukleniciKarTutari: 2400.81,
+    birimFiyati: 12004.03,
     olusturmaTarihi: "2026-01-01T00:00:00.000Z",
     guncellemeTarihi: "2026-01-01T00:00:00.000Z",
     pozTarifi: "İdarece onanmış uygulama projesi ve teknik şartnamesine uygun olarak, dikey basınç değeri 0-1 Mpa arası zemin için, her ölçüde, 36,00-72,00 m. (72,00 m. dahil) derinliğinde, kuruda veya su altında, hidrofreze makinesi ile yerinde dökme diyafram duvar yapılması için gerekli araç, gereç, makine, teçhizat, ekip, ekipmanın denetiminin iş başında temini ile montajlarının yapılması, çalışma platformunun hazırlanması, iş bitiminden sonra demontajı, nakilleri, klavuz duvarlar arasında anolar halinde kazının yapılması, bentonit ünitesinde bentonit bulamacının hazırlanması, hazırlanan bulamacın kazı süresince kuyuya pompalanması ve devir daiminin yapılması, kazıdan çıkan pasa ve çamur karışımının ayrıştırma ünitesine (desander) pompalanması, pasanın vasıtalara yüklenmesi, ortalama 60 m’ye kadar nakli, boşaltılması, depo ve imla yerinde serilmesi ve düzeltilmesi, projesine göre hazırlanmış demir donatının projesine uygun olarak yerine yerleştirilmesi, hazır betonun tekniğine uygun olarak (tremi borusu ile) yerine yerleştirilmesi, gerekmesi halinde betonun döküm yerine beton pompası ile basılması, birincil ve ikincil anoların kesişimindeki betonların hidrofreze makinesi ile traşlanması, beton numuneleri üzerinde ve bentonit bulamacında gerekli deneylerin yapılması, su içinde çalışma güçlüğü, inşaat yerinde her türlü yükleme boşaltma, yatay ve düşey taşıma, yerinde dökme diyafram duvar yapılması için aşağıda “Birim Fiyata Dahil Olmayan Masraflar” dışında kalan diğer tüm işlerin yapılması için gerekli olan her türlü malzeme ve zayiatı, işçilik, makine, araç ve gereç giderleri ile yüklenici genel giderleri ve kârı dâhil 1 m³ fiyatı: Birim Fiyata Dahil Olmayan Masraflar: 1) İnşaat bünyesine giren betonarme demiri ve demirin projesine göre kesilip bükülerek hazırlanması yerine konulması bedeli, demirin fabrikadan iş başına kadar nakli, yüklenmesi ve boşaltılması bedeli birim fiyata dahil değildir. 2) Kazıdan çıkan pasanın 60 m’den fazla mesafeye taşınması halinde buna ait taşıma bedeli birim fiyata dahil değildir. 3) Klavuz duvar imalatının olması durumunda, projesine uygun olarak hazırlanacak kalıp, demir, beton, malzeme ve işçilik giderleri ayrıca hesaplanacaktır.",
@@ -2207,14 +2207,14 @@ export const RESMI_POZ_ANALIZLERI = [
   {
     id: "sys-15x145x1005",
     pozNo: "15.145.1005",
-    analizAdi: "C30/35 basınç dayanımımda yerinde dökme beton ile diyafram duvar yapılması (72,00 m",
+    analizAdi: "Dikey basınç değeri 0-1 Mpa arası zemin için, hidrofreze makinesi ile, her türlü ölçüde, C30/35 basınç dayanımımda yerinde dökme beton ile diyafram duvar yapılması (72,00 m üzeri)",
     olcuBirimi: "m³",
     kategori: "Temel İşleri",
     kaynakTip: "sistem" as const,
     yukleniciKarOrani: 25,
-    malzemeIscilikToplami: 3769.86,
-    yukleniciKarTutari: 942.46,
-    birimFiyati: 4712.32,
+    malzemeIscilikToplami: 14636.81,
+    yukleniciKarTutari: 3659.2,
+    birimFiyati: 18296.01,
     olusturmaTarihi: "2026-01-01T00:00:00.000Z",
     guncellemeTarihi: "2026-01-01T00:00:00.000Z",
     pozTarifi: "İdarece onanmış uygulama projesi ve teknik şartnamesine uygun olarak, dikey basınç değeri 0-1 Mpa arası zemin için, her ölçüde, 72,00 m. üzeri derinliğinde, kuruda veya su altında, hidrofreze makinesi ile yerinde dökme diyafram duvar yapılması için gerekli araç, gereç, makine, teçhizat, ekip, ekipmanın denetiminin iş başında temini ile montajlarının yapılması, çalışma platformunun hazırlanması, iş bitiminden sonra demontajı, nakilleri, klavuz duvarlar arasında anolar halinde kazının yapılması, bentonit ünitesinde bentonit bulamacının hazırlanması, hazırlanan bulamacın kazı süresince kuyuya pompalanması ve devir daiminin yapılması, kazıdan çıkan pasa ve çamur karışımının ayrıştırma ünitesine (desander) pompalanması, pasanın vasıtalara yüklenmesi, ortalama 60 m’ye kadar nakli, boşaltılması, depo ve imla yerinde serilmesi ve düzeltilmesi, projesine göre hazırlanmış demir donatının projesine uygun olarak yerine yerleştirilmesi, hazır betonun tekniğine uygun olarak (tremi borusu ile) yerine yerleştirilmesi, gerekmesi halinde betonun döküm yerine beton pompası ile basılması, birincil ve ikincil anoların kesişimindeki betonların hidrofreze makinesi ile traşlanması, beton numuneleri üzerinde ve bentonit bulamacında gerekli deneylerin yapılması, su içinde çalışma güçlüğü, inşaat yerinde her türlü yükleme boşaltma, yatay ve düşey taşıma, yerinde dökme diyafram duvar yapılması için aşağıda “Birim Fiyata Dahil Olmayan Masraflar” dışında kalan diğer tüm işlerin yapılması için gerekli olan her türlü malzeme ve zayiatı, işçilik, makine, araç ve gereç giderleri ile yüklenici genel giderleri ve kârı dâhil 1 m³ fiyatı: Birim Fiyata Dahil Olmayan Masraflar: 1) İnşaat bünyesine giren betonarme demiri ve demirin projesine göre kesilip bükülerek hazırlanması yerine konulması bedeli, demirin fabrikadan iş başına kadar nakli, yüklenmesi ve boşaltılması bedeli birim fiyata dahil değildir. 2) Kazıdan çıkan pasanın 60 m’den fazla mesafeye taşınması halinde buna ait taşıma bedeli birim fiyata dahil değildir. 3) Klavuz duvar imalatının olması durumunda, projesine uygun olarak hazırlanacak kalıp, demir, beton, malzeme ve işçilik giderleri ayrıca hesaplanacaktır.",
@@ -2235,14 +2235,14 @@ export const RESMI_POZ_ANALIZLERI = [
   {
     id: "sys-15x145x1006",
     pozNo: "15.145.1006",
-    analizAdi: "basınç dayanımımda yerinde dökme beton ile diyafram duvar yapılması (0,00 - 36,00 m",
+    analizAdi: "Dikey basınç değeri 1-2 Mpa arası zemin için, grab makinesi ile, hertürlü ölçüde, C30/35 basınç dayanımımda yerinde dökme beton ile diyafram duvar yapılması (0,00 - 36,00 m arası, 36,00 m dahil)",
     olcuBirimi: "m³",
     kategori: "Temel İşleri",
     kaynakTip: "sistem" as const,
     yukleniciKarOrani: 25,
-    malzemeIscilikToplami: 3538.62,
-    yukleniciKarTutari: 884.65,
-    birimFiyati: 4423.27,
+    malzemeIscilikToplami: 7696.44,
+    yukleniciKarTutari: 1924.11,
+    birimFiyati: 9620.55,
     olusturmaTarihi: "2026-01-01T00:00:00.000Z",
     guncellemeTarihi: "2026-01-01T00:00:00.000Z",
     pozTarifi: "İdarece onanmış uygulama projesi ve teknik şartnamesine uygun olarak, dikey basınç değeri 1-2 Mpa arası zemin için, her ölçüde, 0,00-36,00 m. (36,00 m. dahil) derinliğinde, kuruda veya su altında, grab makinesi ile yerinde dökme diyafram duvar yapılması için gerekli araç, gereç, makine, teçhizat, ekip, ekipmanın denetiminin iş başında temini ile montajlarının yapılması, çalışma platformunun hazırlanması, iş bitiminden sonra demontajı, nakilleri, klavuz duvarlar arasında anolar halinde kazının yapılması, bentonit ünitesinde bentonit bulamacının hazırlanması, hazırlanan bulamacın kazı süresince kuyuya pompalanması ve devir daiminin yapılması, kazıdan çıkan pasa ve çamur karışımının ayrıştırma ünitesine (desander) pompalanması, pasanın vasıtalara yüklenmesi, ortalama 60 m’ye kadar nakli, boşaltılması, depo ve imla yerinde serilmesi ve düzeltilmesi, projesine göre hazırlanmış demir donatının projesine uygun olarak yerine yerleştirilmesi, hazır betonun tekniğine uygun olarak (tremi borusu ile) yerine yerleştirilmesi, gerekmesi halinde betonun döküm yerine beton pompası ile basılması, beton dökümünde stop-end ekipmanın kullanılması, beton numuneleri üzerinde ve bentonit bulamacında gerekli deneylerin yapılması, su içinde çalışma güçlüğü, inşaat yerinde her türlü yükleme boşaltma, yatay ve düşey taşıma, yerinde dökme diyafram duvar yapılması için aşağıda “Birim Fiyata Dahil Olmayan Masraflar” dışında kalan diğer tüm işlerin yapılması için gerekli olan her türlü malzeme ve zayiatı, işçilik, makine, araç ve gereç giderleri ile yüklenici genel giderleri ve kârı dâhil 1 m³ fiyatı: Birim Fiyata Dahil Olmayan Masraflar: 1) İnşaat bünyesine giren betonarme demiri ve demirin projesine göre kesilip bükülerek hazırlanması yerine konulması bedeli, demirin fabrikadan iş başına kadar nakli, yüklenmesi ve boşaltılması bedeli birim fiyata dahil değildir. 2) Kazıdan çıkan malzemenin 60 m’den fazla mesafeye taşınması halinde buna ait taşıma bedeli birim fiyata dahil değildir. 3) Klavuz duvar imalatının olması durumunda, projesine uygun olarak hazırlanacak kalıp, demir, beton, malzeme ve işçilik giderleri ayrıca hesaplanacaktır.",
@@ -2262,14 +2262,14 @@ export const RESMI_POZ_ANALIZLERI = [
   {
     id: "sys-15x145x1007",
     pozNo: "15.145.1007",
-    analizAdi: "basınç dayanımımda yerinde dökme beton ile diyafram duvar yapılması (36,00 - 72,00 m",
+    analizAdi: "Dikey basınç değeri 1-2 Mpa arası zemin için, grab makinesi ile, hertürlü ölçüde, C30/35 basınç dayanımımda yerinde dökme beton ile diyafram duvar yapılması (36,00 - 72,00 m arası, 72,00 m dahil)",
     olcuBirimi: "m³",
     kategori: "Temel İşleri",
     kaynakTip: "sistem" as const,
     yukleniciKarOrani: 25,
-    malzemeIscilikToplami: 3639.02,
-    yukleniciKarTutari: 909.75,
-    birimFiyati: 4548.77,
+    malzemeIscilikToplami: 10401.24,
+    yukleniciKarTutari: 2600.31,
+    birimFiyati: 13001.55,
     olusturmaTarihi: "2026-01-01T00:00:00.000Z",
     guncellemeTarihi: "2026-01-01T00:00:00.000Z",
     pozTarifi: "İdarece onanmış uygulama projesi ve teknik şartnamesine uygun olarak, dikey basınç değeri 1-2 Mpa arası zemin için, her ölçüde, 36,00-72,00 m. (72,00 m. dahil) derinliğinde, kuruda veya su altında, grab makinesi ile yerinde dökme diyafram duvar yapılması için gerekli araç, gereç, makine, teçhizat, ekip, ekipmanın denetiminin iş başında temini ile montajlarının yapılması, çalışma platformunun hazırlanması, iş bitiminden sonra demontajı, nakilleri, klavuz duvarlar arasında anolar halinde kazının yapılması, bentonit ünitesinde bentonit bulamacının hazırlanması, hazırlanan bulamacın kazı süresince kuyuya pompalanması ve devir daiminin yapılması, kazıdan çıkan pasa ve çamur karışımının ayrıştırma ünitesine (desander) pompalanması, pasanın vasıtalara yüklenmesi, ortalama 60 m’ye kadar nakli, boşaltılması, depo ve imla yerinde serilmesi ve düzeltilmesi, projesine göre hazırlanmış demir donatının projesine uygun olarak yerine yerleştirilmesi, hazır betonun tekniğine uygun olarak (tremi borusu ile) yerine yerleştirilmesi, gerekmesi halinde betonun döküm yerine beton pompası ile basılması, beton dökümünde stop-end ekipmanın kullanılması, beton numuneleri üzerinde ve bentonit bulamacında gerekli deneylerin yapılması, su içinde çalışma güçlüğü, inşaat yerinde her türlü yükleme boşaltma, yatay ve düşey taşıma, yerinde dökme diyafram duvar yapılması için aşağıda “Birim Fiyata Dahil Olmayan Masraflar” dışında kalan diğer tüm işlerin yapılması için gerekli olan her türlü malzeme ve zayiatı, işçilik, makine, araç ve gereç giderleri ile yüklenici genel giderleri ve kârı dâhil 1 m³ fiyatı: Birim Fiyata Dahil Olmayan Masraflar: 1) İnşaat bünyesine giren betonarme demiri ve demirin projesine göre kesilip bükülerek hazırlanması yerine konulması bedeli, demirin fabrikadan iş başına kadar nakli, yüklenmesi ve boşaltılması bedeli birim fiyata dahil değildir. 2) Kazıdan çıkan malzemenin 60 m’den fazla mesafeye taşınması halinde buna ait taşıma bedeli birim fiyata dahil değildir. 3) Klavuz duvar imalatının olması durumunda, projesine uygun olarak hazırlanacak kalıp, demir, beton, malzeme ve işçilik giderleri ayrıca hesaplanacaktır.",
@@ -2289,14 +2289,14 @@ export const RESMI_POZ_ANALIZLERI = [
   {
     id: "sys-15x145x1008",
     pozNo: "15.145.1008",
-    analizAdi: "C30/35 basınç dayanımımda yerinde dökme beton ile diyafram duvar yapılması (0,00 - 36,00",
+    analizAdi: "Dikey basınç değeri 1-20 Mpa arası zemin için, hidrofreze makinesi ile, hertürlü ölçüde, C30/35 basınç dayanımımda yerinde dökme beton ile diyafram duvar yapılması (0,00 - 36,00 m arası, 36,00 m dahil)",
     olcuBirimi: "m³",
     kategori: "Temel İşleri",
     kaynakTip: "sistem" as const,
     yukleniciKarOrani: 25,
-    malzemeIscilikToplami: 3694.56,
-    yukleniciKarTutari: 923.64,
-    birimFiyati: 4618.2,
+    malzemeIscilikToplami: 9603.22,
+    yukleniciKarTutari: 2400.81,
+    birimFiyati: 12004.03,
     olusturmaTarihi: "2026-01-01T00:00:00.000Z",
     guncellemeTarihi: "2026-01-01T00:00:00.000Z",
     pozTarifi: "İdarece onanmış uygulama projesi ve teknik şartnamesine uygun olarak, dikey basınç değeri 1-20 Mpa arası zemin için, her ölçüde, 0,00-36,00 m. (36,00 m. dahil) derinliğinde, kuruda veya su altında, hidrofreze makinesi ile yerinde dökme diyafram duvar yapılması için gerekli araç, gereç, makine, teçhizat, ekip, ekipmanın denetiminin iş başında temini ile montajlarının yapılması, çalışma platformunun hazırlanması, iş bitiminden sonra demontajı, nakilleri, klavuz duvarlar arasında anolar halinde kazının yapılması, bentonit ünitesinde bentonit bulamacının hazırlanması, hazırlanan bulamacın kazı süresince kuyuya pompalanması ve devir daiminin yapılması, kazıdan çıkan pasa ve çamur karışımının ayrıştırma ünitesine (desander) pompalanması, pasanın vasıtalara yüklenmesi, ortalama 60 m’ye kadar nakli, boşaltılması, depo ve imla yerinde serilmesi ve düzeltilmesi, projesine göre hazırlanmış demir donatının projesine uygun olarak yerine yerleştirilmesi, hazır betonun tekniğine uygun olarak (tremi borusu ile) yerine yerleştirilmesi, gerekmesi halinde betonun döküm yerine beton pompası ile basılması, birincil ve ikincil anoların kesişimindeki betonların hidrofreze makinesi ile traşlanması, beton numuneleri üzerinde ve bentonit bulamacında gerekli deneylerin yapılması, su içinde çalışma güçlüğü, inşaat yerinde her türlü yükleme boşaltma, yatay ve düşey taşıma, yerinde dökme diyafram duvar yapılması için aşağıda “Birim Fiyata Dahil Olmayan Masraflar” dışında kalan diğer tüm işlerin yapılması için gerekli olan her türlü malzeme ve zayiatı, işçilik, makine, araç ve gereç giderleri ile yüklenici genel giderleri ve kârı dâhil 1 m³ fiyatı: Birim Fiyata Dahil Olmayan Masraflar: 1) İnşaat bünyesine giren betonarme demiri ve demirin projesine göre kesilip bükülerek hazırlanması yerine konulması bedeli, demirin fabrikadan iş başına kadar nakli, yüklenmesi ve boşaltılması bedeli birim fiyata dahil değildir. 2) Kazıdan çıkan pasanın 60 m’den fazla mesafeye taşınması halinde buna ait taşıma bedeli birim fiyata dahil değildir. 3) Klavuz duvar imalatının olması durumunda, projesine uygun olarak hazırlanacak kalıp, demir, beton, malzeme ve işçilik giderleri ayrıca hesaplanacaktır.",
@@ -2317,14 +2317,14 @@ export const RESMI_POZ_ANALIZLERI = [
   {
     id: "sys-15x145x1009",
     pozNo: "15.145.1009",
-    analizAdi: "C30/35 basınç dayanımımda yerinde dökme beton ile diyafram duvar yapılması (36,00 -",
+    analizAdi: "Dikey basınç değeri 1-20 Mpa arası zemin için, hidrofreze makinesi ile, hertürlü ölçüde, C30/35 basınç dayanımımda yerinde dökme beton ile diyafram duvar yapılması (36,00 - 72,00 m arası, 72,00 m dahil)",
     olcuBirimi: "m³",
     kategori: "Temel İşleri",
     kaynakTip: "sistem" as const,
     yukleniciKarOrani: 25,
-    malzemeIscilikToplami: 3744.76,
-    yukleniciKarTutari: 936.19,
-    birimFiyati: 4680.95,
+    malzemeIscilikToplami: 12958.95,
+    yukleniciKarTutari: 3239.74,
+    birimFiyati: 16198.69,
     olusturmaTarihi: "2026-01-01T00:00:00.000Z",
     guncellemeTarihi: "2026-01-01T00:00:00.000Z",
     pozTarifi: "İdarece onanmış uygulama projesi ve teknik şartnamesine uygun olarak, dikey basınç değeri 1-20 Mpa arası zemin için, her ölçüde, 36,00-72,00 m. (72,00 m. dahil) derinliğinde, kuruda veya su altında, hidrofreze makinesi ile yerinde dökme diyafram duvar yapılması için gerekli araç, gereç, makine, teçhizat, ekip, ekipmanın denetiminin iş başında temini ile montajlarının yapılması, çalışma platformunun hazırlanması, iş bitiminden sonra demontajı, nakilleri, klavuz duvarlar arasında anolar halinde kazının yapılması, bentonit ünitesinde bentonit bulamacının hazırlanması, hazırlanan bulamacın kazı süresince kuyuya pompalanması ve devir daiminin yapılması, kazıdan çıkan pasa ve çamur karışımının ayrıştırma ünitesine (desander) pompalanması, pasanın vasıtalara yüklenmesi, ortalama 60 m’ye kadar nakli, boşaltılması, depo ve imla yerinde serilmesi ve düzeltilmesi, projesine göre hazırlanmış demir donatının projesine uygun olarak yerine yerleştirilmesi, hazır betonun tekniğine uygun olarak (tremi borusu ile) yerine yerleştirilmesi, gerekmesi halinde betonun döküm yerine beton pompası ile basılması, birincil ve ikincil anoların kesişimindeki betonların hidrofreze makinesi ile traşlanması, beton numuneleri üzerinde ve bentonit bulamacında gerekli deneylerin yapılması, su içinde çalışma güçlüğü, inşaat yerinde her türlü yükleme boşaltma, yatay ve düşey taşıma, yerinde dökme diyafram duvar yapılması için aşağıda “Birim Fiyata Dahil Olmayan Masraflar” dışında kalan diğer tüm işlerin yapılması için gerekli olan her türlü malzeme ve zayiatı, işçilik, makine, araç ve gereç giderleri ile yüklenici genel giderleri ve kârı dâhil 1 m³ fiyatı: Birim Fiyata Dahil Olmayan Masraflar: 1) İnşaat bünyesine giren betonarme demiri ve demirin projesine göre kesilip bükülerek hazırlanması yerine konulması bedeli, demirin fabrikadan iş başına kadar nakli, yüklenmesi ve boşaltılması bedeli birim fiyata dahil değildir. 2) Kazıdan çıkan pasanın 60 m’den fazla mesafeye taşınması halinde buna ait taşıma bedeli birim fiyata dahil değildir. 3) Klavuz duvar imalatının olması durumunda, projesine uygun olarak hazırlanacak kalıp, demir, beton, malzeme ve işçilik giderleri ayrıca hesaplanacaktır.",
@@ -2345,14 +2345,14 @@ export const RESMI_POZ_ANALIZLERI = [
   {
     id: "sys-15x145x1010",
     pozNo: "15.145.1010",
-    analizAdi: "C30/35 basınç dayanımımda yerinde dökme beton ile diyafram duvar yapılması (72,00 m",
+    analizAdi: "Dikey basınç değeri 1-20 Mpa arası zemin için, hidrofreze makinesi ile, hertürlü ölçüde, C30/35 basınç dayanımımda yerinde dökme beton ile diyafram duvar yapılması (72,00 m üzeri)",
     olcuBirimi: "m³",
     kategori: "Temel İşleri",
     kaynakTip: "sistem" as const,
     yukleniciKarOrani: 25,
-    malzemeIscilikToplami: 3832.61,
-    yukleniciKarTutari: 958.15,
-    birimFiyati: 4790.76,
+    malzemeIscilikToplami: 18831.46,
+    yukleniciKarTutari: 4707.87,
+    birimFiyati: 23539.33,
     olusturmaTarihi: "2026-01-01T00:00:00.000Z",
     guncellemeTarihi: "2026-01-01T00:00:00.000Z",
     pozTarifi: "İdarece onanmış uygulama projesi ve teknik şartnamesine uygun olarak, dikey basınç değeri 1-20 Mpa arası zemin için, her ölçüde, 72,00 m. üzerinde derinliğinde, kuruda veya su altında, hidrofreze makinesi ile yerinde dökme diyafram duvar yapılması için gerekli araç, gereç, makine, teçhizat, ekip, ekipmanın denetiminin iş başında temini ile montajlarının yapılması, çalışma platformunun hazırlanması, iş bitiminden sonra demontajı, nakilleri, klavuz duvarlar arasında anolar halinde kazının yapılması, bentonit ünitesinde bentonit bulamacının hazırlanması, hazırlanan bulamacın kazı süresince kuyuya pompalanması ve devir daiminin yapılması, kazıdan çıkan pasa ve çamur karışımının ayrıştırma ünitesine (desander) pompalanması, pasanın vasıtalara yüklenmesi, ortalama 60 m’ye kadar nakli, boşaltılması, depo ve imla yerinde serilmesi ve düzeltilmesi, projesine göre hazırlanmış demir donatının projesine uygun olarak yerine yerleştirilmesi, hazır betonun tekniğine uygun olarak (tremi borusu ile) yerine yerleştirilmesi, gerekmesi halinde betonun döküm yerine beton pompası ile basılması, birincil ve ikincil anoların kesişimindeki betonların hidrofreze makinesi ile traşlanması, beton numuneleri üzerinde ve bentonit bulamacında gerekli deneylerin yapılması, su içinde çalışma güçlüğü, inşaat yerinde her türlü yükleme boşaltma, yatay ve düşey taşıma, yerinde dökme diyafram duvar yapılması için aşağıda “Birim Fiyata Dahil Olmayan Masraflar” dışında kalan diğer tüm işlerin yapılması için gerekli olan her türlü malzeme ve zayiatı, işçilik, makine, araç ve gereç giderleri ile yüklenici genel giderleri ve kârı dâhil 1 m³ fiyatı: Birim Fiyata Dahil Olmayan Masraflar: 1) İnşaat bünyesine giren betonarme demiri ve demirin projesine göre kesilip bükülerek hazırlanması yerine konulması bedeli, demirin fabrikadan iş başına kadar nakli, yüklenmesi ve boşaltılması bedeli birim fiyata dahil değildir. 2) Kazıdan çıkan pasanın 60 m’den fazla mesafeye taşınması halinde buna ait taşıma bedeli birim fiyata dahil değildir. 3) Klavuz duvar imalatının olması durumunda, projesine uygun olarak hazırlanacak kalıp, demir, beton, malzeme ve işçilik giderleri ayrıca hesaplanacaktır.",
@@ -2373,14 +2373,14 @@ export const RESMI_POZ_ANALIZLERI = [
   {
     id: "sys-15x145x1011",
     pozNo: "15.145.1011",
-    analizAdi: "C30/35 basınç dayanımımda yerinde dökme beton ile diyafram duvar yapılması (0,00 - 36,00",
+    analizAdi: "Dikey basınç değeri 20-60 Mpa arası zemin için, hidrofreze makinesi ile, hertürlü ölçüde, C30/35 basınç dayanımımda yerinde dökme beton ile diyafram duvar yapılması (0,00 - 36,00 m arası, 36,00 m dahil)",
     olcuBirimi: "m³",
     kategori: "Temel İşleri",
     kaynakTip: "sistem" as const,
     yukleniciKarOrani: 25,
-    malzemeIscilikToplami: 3744.76,
-    yukleniciKarTutari: 936.19,
-    birimFiyati: 4680.95,
+    malzemeIscilikToplami: 12958.95,
+    yukleniciKarTutari: 3239.74,
+    birimFiyati: 16198.69,
     olusturmaTarihi: "2026-01-01T00:00:00.000Z",
     guncellemeTarihi: "2026-01-01T00:00:00.000Z",
     pozTarifi: "İdarece onanmış uygulama projesi ve teknik şartnamesine uygun olarak, dikey basınç değeri 20-60 Mpa arası zemin için, her ölçüde, 0,00-36,00 m. (36,00 m. dahil) derinliğinde, kuruda veya su altında, hidrofreze makinesi ile yerinde dökme diyafram duvar yapılması için gerekli araç, gereç, makine, teçhizat, ekip, ekipmanın denetiminin iş başında temini ile montajlarının yapılması, çalışma platformunun hazırlanması, iş bitiminden sonra demontajı, nakilleri, klavuz duvarlar arasında anolar halinde kazının yapılması, bentonit ünitesinde bentonit bulamacının hazırlanması, hazırlanan bulamacın kazı süresince kuyuya pompalanması ve devir daiminin yapılması, kazıdan çıkan pasa ve çamur karışımının ayrıştırma ünitesine (desander) pompalanması, pasanın vasıtalara yüklenmesi, ortalama 60 m’ye kadar nakli, boşaltılması, depo ve imla yerinde serilmesi ve düzeltilmesi, projesine göre hazırlanmış demir donatının projesine uygun olarak yerine yerleştirilmesi, hazır betonun tekniğine uygun olarak (tremi borusu ile) yerine yerleştirilmesi, gerekmesi halinde betonun döküm yerine beton pompası ile basılması, birincil ve ikincil anoların kesişimindeki betonların hidrofreze makinesi ile traşlanması, beton numuneleri üzerinde ve bentonit bulamacında gerekli deneylerin yapılması, su içinde çalışma güçlüğü, inşaat yerinde her türlü yükleme boşaltma, yatay ve düşey taşıma, yerinde dökme diyafram duvar yapılması için aşağıda “Birim Fiyata Dahil Olmayan Masraflar” dışında kalan diğer tüm işlerin yapılması için gerekli olan her türlü malzeme ve zayiatı, işçilik, makine, araç ve gereç giderleri ile yüklenici genel giderleri ve kârı dâhil 1 m³ fiyatı: Birim Fiyata Dahil Olmayan Masraflar: 1) İnşaat bünyesine giren betonarme demiri ve demirin projesine göre kesilip bükülerek hazırlanması yerine konulması bedeli, demirin fabrikadan iş başına kadar nakli, yüklenmesi ve boşaltılması bedeli birim fiyata dahil değildir. 2) Kazıdan çıkan pasanın 60 m’den fazla mesafeye taşınması halinde buna ait taşıma bedeli birim fiyata dahil değildir. 3) Klavuz duvar imalatının olması durumunda, projesine uygun olarak hazırlanacak kalıp, demir, beton, malzeme ve işçilik giderleri ayrıca hesaplanacaktır.",
@@ -2401,14 +2401,14 @@ export const RESMI_POZ_ANALIZLERI = [
   {
     id: "sys-15x145x1012",
     pozNo: "15.145.1012",
-    analizAdi: "C30/35 basınç dayanımımda yerinde dökme beton ile diyafram duvar yapılması (36,00 -",
+    analizAdi: "Dikey basınç değeri 20-60 Mpa arası zemin için, hidrofreze makinesi ile, hertürlü ölçüde, C30/35 basınç dayanımımda yerinde dökme beton ile diyafram duvar yapılması (36,00 - 72,00 m arası, 72,00 m dahil)",
     olcuBirimi: "m³",
     kategori: "Temel İşleri",
     kaynakTip: "sistem" as const,
     yukleniciKarOrani: 25,
-    malzemeIscilikToplami: 3832.61,
-    yukleniciKarTutari: 958.15,
-    birimFiyati: 4790.76,
+    malzemeIscilikToplami: 18831.46,
+    yukleniciKarTutari: 4707.87,
+    birimFiyati: 23539.33,
     olusturmaTarihi: "2026-01-01T00:00:00.000Z",
     guncellemeTarihi: "2026-01-01T00:00:00.000Z",
     pozTarifi: "İdarece onanmış uygulama projesi ve teknik şartnamesine uygun olarak, dikey basınç değeri 20-60 Mpa arası zemin için, her ölçüde, 36,00-72,00 m. (72,00 m. dahil) derinliğinde, kuruda veya su altında, hidrofreze makinesi ile yerinde dökme diyafram duvar yapılması için gerekli araç, gereç, makine, teçhizat, ekip, ekipmanın denetiminin iş başında temini ile montajlarının yapılması, çalışma platformunun hazırlanması, iş bitiminden sonra demontajı, nakilleri, klavuz duvarlar arasında anolar halinde kazının yapılması, bentonit ünitesinde bentonit bulamacının hazırlanması, hazırlanan bulamacın kazı süresince kuyuya pompalanması ve devir daiminin yapılması, kazıdan çıkan pasa ve çamur karışımının ayrıştırma ünitesine (desander) pompalanması, pasanın vasıtalara yüklenmesi, ortalama 60 m’ye kadar nakli, boşaltılması, depo ve imla yerinde serilmesi ve düzeltilmesi, projesine göre hazırlanmış demir donatının projesine uygun olarak yerine yerleştirilmesi, hazır betonun tekniğine uygun olarak (tremi borusu ile) yerine yerleştirilmesi, gerekmesi halinde betonun döküm yerine beton pompası ile basılması, birincil ve ikincil anoların kesişimindeki betonların hidrofreze makinesi ile traşlanması, beton numuneleri üzerinde ve bentonit bulamacında gerekli deneylerin yapılması, su içinde çalışma güçlüğü, inşaat yerinde her türlü yükleme boşaltma, yatay ve düşey taşıma, yerinde dökme diyafram duvar yapılması için aşağıda “Birim Fiyata Dahil Olmayan Masraflar” dışında kalan diğer tüm işlerin yapılması için gerekli olan her türlü malzeme ve zayiatı, işçilik, makine, araç ve gereç giderleri ile yüklenici genel giderleri ve kârı dâhil 1 m³ fiyatı: Birim Fiyata Dahil Olmayan Masraflar: 1) İnşaat bünyesine giren betonarme demiri ve demirin projesine göre kesilip bükülerek hazırlanması yerine konulması bedeli, demirin fabrikadan iş başına kadar nakli, yüklenmesi ve boşaltılması bedeli birim fiyata dahil değildir. 2) Kazıdan çıkan pasanın 60 m’den fazla mesafeye taşınması halinde buna ait taşıma bedeli birim fiyata dahil değildir. 3) Klavuz duvar imalatının olması durumunda, projesine uygun olarak hazırlanacak kalıp, demir, beton, malzeme ve işçilik giderleri ayrıca hesaplanacaktır.",
@@ -2429,14 +2429,14 @@ export const RESMI_POZ_ANALIZLERI = [
   {
     id: "sys-15x145x1013",
     pozNo: "15.145.1013",
-    analizAdi: "C30/35 basınç dayanımımda yerinde dökme beton ile diyafram duvar yapılması (72,00 m",
+    analizAdi: "Dikey basınç değeri 20-60 Mpa arası zemin için, hidrofreze makinesi ile, hertürlü ölçüde, C30/35 basınç dayanımımda yerinde dökme beton ile diyafram duvar yapılması (72,00 m üzeri)",
     olcuBirimi: "m³",
     kategori: "Temel İşleri",
     kaynakTip: "sistem" as const,
     yukleniciKarOrani: 25,
-    malzemeIscilikToplami: 3945.56,
-    yukleniciKarTutari: 986.39,
-    birimFiyati: 4931.95,
+    malzemeIscilikToplami: 26381.84,
+    yukleniciKarTutari: 6595.46,
+    birimFiyati: 32977.3,
     olusturmaTarihi: "2026-01-01T00:00:00.000Z",
     guncellemeTarihi: "2026-01-01T00:00:00.000Z",
     pozTarifi: "İdarece onanmış uygulama projesi ve teknik şartnamesine uygun olarak, dikey basınç değeri 20-60 Mpa arası zemin için, her ölçüde, 72,00 m. üzerinde derinliğinde, kuruda veya su altında, hidrofreze makinesi ile yerinde dökme diyafram duvar yapılması için gerekli araç, gereç, makine, teçhizat, ekip, ekipmanın denetiminin iş başında temini ile montajlarının yapılması, çalışma platformunun hazırlanması, iş bitiminden sonra demontajı, nakilleri, klavuz duvarlar arasında anolar halinde kazının yapılması, bentonit ünitesinde bentonit bulamacının hazırlanması, hazırlanan bulamacın kazı süresince kuyuya pompalanması ve devir daiminin yapılması, kazıdan çıkan pasa ve çamur karışımının ayrıştırma ünitesine (desander) pompalanması, pasanın vasıtalara yüklenmesi, ortalama 60 m’ye kadar nakli, boşaltılması, depo ve imla yerinde serilmesi ve düzeltilmesi, projesine göre hazırlanmış demir donatının projesine uygun olarak yerine yerleştirilmesi, hazır betonun tekniğine uygun olarak (tremi borusu ile) yerine yerleştirilmesi, gerekmesi halinde betonun döküm yerine beton pompası ile basılması, birincil ve ikincil anoların kesişimindeki betonların hidrofreze makinesi ile traşlanması, beton numuneleri üzerinde ve bentonit bulamacında gerekli deneylerin yapılması, su içinde çalışma güçlüğü, inşaat yerinde her türlü yükleme boşaltma, yatay ve düşey taşıma, yerinde dökme diyafram duvar yapılması için aşağıda “Birim Fiyata Dahil Olmayan Masraflar” dışında kalan diğer tüm işlerin yapılması için gerekli olan her türlü malzeme ve zayiatı, işçilik, makine, araç ve gereç giderleri ile yüklenici genel giderleri ve kârı dâhil 1 m³ fiyatı: Birim Fiyata Dahil Olmayan Masraflar: 1) İnşaat bünyesine giren betonarme demiri ve demirin projesine göre kesilip bükülerek hazırlanması yerine konulması bedeli, demirin fabrikadan iş başına kadar nakli, yüklenmesi ve boşaltılması bedeli birim fiyata dahil değildir. 2) Kazıdan çıkan pasanın 60 m’den fazla mesafeye taşınması halinde buna ait taşıma bedeli birim fiyata dahil değildir. 3) Klavuz duvar imalatının olması durumunda, projesine uygun olarak hazırlanacak kalıp, demir, beton, malzeme ve işçilik giderleri ayrıca hesaplanacaktır.",
@@ -2457,14 +2457,14 @@ export const RESMI_POZ_ANALIZLERI = [
   {
     id: "sys-15x145x1014",
     pozNo: "15.145.1014",
-    analizAdi: "C30/35 basınç dayanımımda yerinde dökme beton ile diyafram duvar yapılması (0,00 - 36,00",
+    analizAdi: "Dikey basınç değeri 60 Mpa ve üzeri zemin için, hidrofreze makinesi ile, hertürlü ölçüde, C30/35 basınç dayanımımda yerinde dökme beton ile diyafram duvar yapılması (0,00 - 36,00 m arası, 36,00 m dahil)",
     olcuBirimi: "m³",
     kategori: "Temel İşleri",
     kaynakTip: "sistem" as const,
     yukleniciKarOrani: 25,
-    malzemeIscilikToplami: 3845.16,
-    yukleniciKarTutari: 961.29,
-    birimFiyati: 4806.45,
+    malzemeIscilikToplami: 19670.4,
+    yukleniciKarTutari: 4917.6,
+    birimFiyati: 24588.0,
     olusturmaTarihi: "2026-01-01T00:00:00.000Z",
     guncellemeTarihi: "2026-01-01T00:00:00.000Z",
     pozTarifi: "İdarece onanmış uygulama projesi ve teknik şartnamesine uygun olarak, dikey basınç değeri 60 Mpa ve üzeri zemin için, her ölçüde, 0,00-36,00 m. (36,00 m. dahil) derinliğinde, kuruda veya su altında, hidrofreze makinesi ile yerinde dökme diyafram duvar yapılması için gerekli araç, gereç, makine, teçhizat, ekip, ekipmanın denetiminin iş başında temini ile montajlarının yapılması, çalışma platformunun hazırlanması, iş bitiminden sonra demontajı, nakilleri, klavuz duvarlar arasında anolar halinde kazının yapılması, bentonit ünitesinde bentonit bulamacının hazırlanması, hazırlanan bulamacın kazı süresince kuyuya pompalanması ve devir daiminin yapılması, kazıdan çıkan pasa ve çamur karışımının ayrıştırma ünitesine (desander) pompalanması, pasanın vasıtalara yüklenmesi, ortalama 60 m’ye kadar nakli, boşaltılması, depo ve imla yerinde serilmesi ve düzeltilmesi, projesine göre hazırlanmış demir donatının projesine uygun olarak yerine yerleştirilmesi, hazır betonun tekniğine uygun olarak (tremi borusu ile) yerine yerleştirilmesi, gerekmesi halinde betonun döküm yerine beton pompası ile basılması, birincil ve ikincil anoların kesişimindeki betonların hidrofreze makinesi ile traşlanması, beton numuneleri üzerinde ve bentonit bulamacında gerekli deneylerin yapılması, su içinde çalışma güçlüğü, inşaat yerinde her türlü yükleme boşaltma, yatay ve düşey taşıma, yerinde dökme diyafram duvar yapılması için aşağıda “Birim Fiyata Dahil Olmayan Masraflar” dışında kalan diğer tüm işlerin yapılması için gerekli olan her türlü malzeme ve zayiatı, işçilik, makine, araç ve gereç giderleri ile yüklenici genel giderleri ve kârı dâhil 1 m³ fiyatı: Birim Fiyata Dahil Olmayan Masraflar: 1) İnşaat bünyesine giren betonarme demiri ve demirin projesine göre kesilip bükülerek hazırlanması yerine konulması bedeli, demirin fabrikadan iş başına kadar nakli, yüklenmesi ve boşaltılması bedeli birim fiyata dahil değildir. 2) Kazıdan çıkan pasanın 60 m’den fazla mesafeye taşınması halinde buna ait taşıma bedeli birim fiyata dahil değildir. 3) Klavuz duvar imalatının olması durumunda, projesine uygun olarak hazırlanacak kalıp, demir, beton, malzeme ve işçilik giderleri ayrıca hesaplanacaktır.",
@@ -2485,14 +2485,14 @@ export const RESMI_POZ_ANALIZLERI = [
   {
     id: "sys-15x145x1015",
     pozNo: "15.145.1015",
-    analizAdi: "C30/35 basınç dayanımımda yerinde dökme beton ile diyafram duvar yapılması (36,00 -",
+    analizAdi: "Dikey basınç değeri 60 Mpa ve üzeri zemin için, hidrofreze makinesi ile, hertürlü ölçüde, C30/35 basınç dayanımımda yerinde dökme beton ile diyafram duvar yapılması (36,00 - 72,00 m arası, 72,00 m dahil)",
     olcuBirimi: "m³",
     kategori: "Temel İşleri",
     kaynakTip: "sistem" as const,
     yukleniciKarOrani: 25,
-    malzemeIscilikToplami: 3945.56,
-    yukleniciKarTutari: 986.39,
-    birimFiyati: 4931.95,
+    malzemeIscilikToplami: 26381.84,
+    yukleniciKarTutari: 6595.46,
+    birimFiyati: 32977.3,
     olusturmaTarihi: "2026-01-01T00:00:00.000Z",
     guncellemeTarihi: "2026-01-01T00:00:00.000Z",
     pozTarifi: "İdarece onanmış uygulama projesi ve teknik şartnamesine uygun olarak, dikey basınç değeri 60 Mpa ve üzeri zemin için, her ölçüde, 36,00-72,00 m. (72,00 m. dahil) derinliğinde, kuruda veya su altında, hidrofreze makinesi ile yerinde dökme diyafram duvar yapılması için gerekli araç, gereç, makine, teçhizat, ekip, ekipmanın denetiminin iş başında temini ile montajlarının yapılması, çalışma platformunun hazırlanması, iş bitiminden sonra demontajı, nakilleri, klavuz duvarlar arasında anolar halinde kazının yapılması, bentonit ünitesinde bentonit bulamacının hazırlanması, hazırlanan bulamacın kazı süresince kuyuya pompalanması ve devir daiminin yapılması, kazıdan çıkan pasa ve çamur karışımının ayrıştırma ünitesine (desander) pompalanması, pasanın vasıtalara yüklenmesi, ortalama 60 m’ye kadar nakli, boşaltılması, depo ve imla yerinde serilmesi ve düzeltilmesi, projesine göre hazırlanmış demir donatının projesine uygun olarak yerine yerleştirilmesi, hazır betonun tekniğine uygun olarak (tremi borusu ile) yerine yerleştirilmesi, gerekmesi halinde betonun döküm yerine beton pompası ile basılması, birincil ve ikincil anoların kesişimindeki betonların hidrofreze makinesi ile traşlanması, beton numuneleri üzerinde ve bentonit bulamacında gerekli deneylerin yapılması, su içinde çalışma güçlüğü, inşaat yerinde her türlü yükleme boşaltma, yatay ve düşey taşıma, yerinde dökme diyafram duvar yapılması için aşağıda “Birim Fiyata Dahil Olmayan Masraflar” dışında kalan diğer tüm işlerin yapılması için gerekli olan her türlü malzeme ve zayiatı, işçilik, makine, araç ve gereç giderleri ile yüklenici genel giderleri ve kârı dâhil 1 m³ fiyatı: Birim Fiyata Dahil Olmayan Masraflar: 1) İnşaat bünyesine giren betonarme demiri ve demirin projesine göre kesilip bükülerek hazırlanması yerine konulması bedeli, demirin fabrikadan iş başına kadar nakli, yüklenmesi ve boşaltılması bedeli birim fiyata dahil değildir. 2) Kazıdan çıkan pasanın 60 m’den fazla mesafeye taşınması halinde buna ait taşıma bedeli birim fiyata dahil değildir. 3) Klavuz duvar imalatının olması durumunda, projesine uygun olarak hazırlanacak kalıp, demir, beton, malzeme ve işçilik giderleri ayrıca hesaplanacaktır.",
@@ -2513,14 +2513,14 @@ export const RESMI_POZ_ANALIZLERI = [
   {
     id: "sys-15x145x1016",
     pozNo: "15.145.1016",
-    analizAdi: "C30/35 basınç dayanımımda yerinde dökme beton ile diyafram duvar yapılması (72,00 m",
+    analizAdi: "Dikey basınç değeri 60 Mpa ve üzeri zemin için, hidrofreze makinesi ile, hertürlü ölçüde, C30/35 basınç dayanımımda yerinde dökme beton ile diyafram duvar yapılması (72,00 m üzeri)",
     olcuBirimi: "m³",
     kategori: "Temel İşleri",
     kaynakTip: "sistem" as const,
     yukleniciKarOrani: 25,
-    malzemeIscilikToplami: 4096.16,
-    yukleniciKarTutari: 1024.04,
-    birimFiyati: 5120.2,
+    malzemeIscilikToplami: 36449.01,
+    yukleniciKarTutari: 9112.25,
+    birimFiyati: 45561.26,
     olusturmaTarihi: "2026-01-01T00:00:00.000Z",
     guncellemeTarihi: "2026-01-01T00:00:00.000Z",
     pozTarifi: "İdarece onanmış uygulama projesi ve teknik şartnamesine uygun olarak, dikey basınç değeri 60 Mpa ve üzeri zemin için, her ölçüde, 72,00 m. üzeri derinliğinde, kuruda veya su altında, hidrofreze makinesi ile yerinde dökme diyafram duvar yapılması için gerekli araç, gereç, makine, teçhizat, ekip, ekipmanın denetiminin iş başında temini ile montajlarının yapılması, çalışma platformunun hazırlanması, iş bitiminden sonra demontajı, nakilleri, klavuz duvarlar arasında anolar halinde kazının yapılması, bentonit ünitesinde bentonit bulamacının hazırlanması, hazırlanan bulamacın kazı süresince kuyuya pompalanması ve devir daiminin yapılması, kazıdan çıkan pasa ve çamur karışımının ayrıştırma ünitesine (desander) pompalanması, pasanın vasıtalara yüklenmesi, ortalama 60 m’ye kadar nakli, boşaltılması, depo ve imla yerinde serilmesi ve düzeltilmesi, projesine göre hazırlanmış demir donatının projesine uygun olarak yerine yerleştirilmesi, hazır betonun tekniğine uygun olarak (tremi borusu ile) yerine yerleştirilmesi, gerekmesi halinde betonun döküm yerine beton pompası ile basılması, birincil ve ikincil anoların kesişimindeki betonların hidrofreze makinesi ile traşlanması, beton numuneleri üzerinde ve bentonit bulamacında gerekli deneylerin yapılması, su içinde çalışma güçlüğü, inşaat yerinde her türlü yükleme boşaltma, yatay ve düşey taşıma, yerinde dökme diyafram duvar yapılması için aşağıda “Birim Fiyata Dahil Olmayan Masraflar” dışında kalan diğer tüm işlerin yapılması için gerekli olan her türlü malzeme ve zayiatı, işçilik, makine, araç ve gereç giderleri ile yüklenici genel giderleri ve kârı dâhil 1 m³ fiyatı: Birim Fiyata Dahil Olmayan Masraflar: 1) İnşaat bünyesine giren betonarme demiri ve demirin projesine göre kesilip bükülerek hazırlanması yerine konulması bedeli, demirin fabrikadan iş başına kadar nakli, yüklenmesi ve boşaltılması bedeli birim fiyata dahil değildir. 2) Kazıdan çıkan pasanın 60 m’den fazla mesafeye taşınması halinde buna ait taşıma bedeli birim fiyata dahil değildir. 3) Klavuz duvar imalatının olması durumunda, projesine uygun olarak hazırlanacak kalıp, demir, beton, malzeme ve işçilik giderleri ayrıca hesaplanacaktır.",
@@ -2644,7 +2644,7 @@ export const RESMI_POZ_ANALIZLERI = [
   {
     id: "sys-15x165x1001",
     pozNo: "15.165.1001",
-    analizAdi: "kullanılan münferit çatı aşıkları ve mertekleri, lentolar, hurdi döşemeler, köşe takviye",
+    analizAdi: "Her türlü profil demirlerin münferit veya birleşik olarak hazırlanması ve yerine tespit edilmesi (aşık olarak yapılan mertekler, hurdi döşemeler, mütemadi kirişler, basit olarak kullanılan münferit çatı aşıkları ve mertekleri, lentolar, hurdi döşemeler, köşe takviye demirleri, kolonlar, dikmeli kolonların bağlanmasında kullanılan hatıllar ve benzeri imalatlar)",
     olcuBirimi: "Ton",
     kategori: "Ahşap Kalıp",
     kaynakTip: "sistem" as const,
@@ -2694,7 +2694,7 @@ export const RESMI_POZ_ANALIZLERI = [
   {
     id: "sys-15x165x1003",
     pozNo: "15.165.1003",
-    analizAdi: "(yapı karkası, köprülerde profil demirlerinden kirişler, başlıklar, bağlantılar ve benzeri",
+    analizAdi: "Her çeşit profil, çelik çubuk ve çelik saçlarla karkas, (çerçeve) inşaat yapılması, yerine tespiti (yapı karkası, köprülerde profil demirlerinden kirişler, başlıklar, bağlantılar ve benzeri imalatlar)",
     olcuBirimi: "Ton",
     kategori: "Ahşap Kalıp",
     kaynakTip: "sistem" as const,
@@ -2959,8 +2959,8 @@ export const RESMI_POZ_ANALIZLERI = [
   {
     id: "sys-15x185x1031",
     pozNo: "15.185.1031",
-    analizAdi: "Ön Yapımlı Bileşenlerden Oluşan Tam Güvenlikli Tavanlar İçin İş İskelesi Yapılması.(3,01-21,5 m arası)                                                                                                        m3",
-    olcuBirimi: "",
+    analizAdi: "Ön Yapımlı Bileşenlerden Oluşan Tam Güvenlikli Tavanlar İçin İş İskelesi Yapılması.(3,01-21,5 m arası)",
+    olcuBirimi: "m³",
     kategori: "Çelik İskele",
     kaynakTip: "sistem" as const,
     yukleniciKarOrani: 25,
@@ -2982,8 +2982,8 @@ export const RESMI_POZ_ANALIZLERI = [
   {
     id: "sys-15x185x1032",
     pozNo: "15.185.1032",
-    analizAdi: "Ön Yapımlı Bileşenlerden Oluşan Tam Güvenlikli Tavanlar İçin İş İskelesi Yapılması(21,51 m ve sonrası)                                                                                                                        m3",
-    olcuBirimi: "",
+    analizAdi: "Ön Yapımlı Bileşenlerden Oluşan Tam Güvenlikli Tavanlar İçin İş İskelesi Yapılması(21,51 m ve sonrası)",
+    olcuBirimi: "m³",
     kategori: "Çelik İskele",
     kaynakTip: "sistem" as const,
     yukleniciKarOrani: 25,
@@ -3291,7 +3291,7 @@ export const RESMI_POZ_ANALIZLERI = [
   {
     id: "sys-15x190x1015",
     pozNo: "15.190.1015",
-    analizAdi: "bakteriostatik, iki bileşenli, poliüretan esaslı, şeffaf veya pigmentli, mat yüzey bitişli son kat",
+    analizAdi: "Poliüretan esaslı zemin kaplaması üzerine su bazlı, solventsiz, düşük emisyonlu, bakteriostatik, iki bileşenli, poliüretan esaslı, şeffaf veya pigmentli, mat yüzey bitişli son kat kaplama malzemesi ile kaplama yapılması",
     olcuBirimi: "m²",
     kategori: "Zemin Sertleştirme",
     kaynakTip: "sistem" as const,
@@ -3312,7 +3312,7 @@ export const RESMI_POZ_ANALIZLERI = [
   {
     id: "sys-15x190x1016",
     pozNo: "15.190.1016",
-    analizAdi: "uygulaması üzerine, anti-statik, iki bileşenli, poliüretan esaslı, mat, su bazlı ve düşük",
+    analizAdi: "Poliüretan esaslı - ESD yüzey (statik elektriği yüzeyde tutmayıp, toprağa ileten yüzey) zemin uygulaması üzerine, anti-statik, iki bileşenli, poliüretan esaslı, mat, su bazlı ve düşük emisyonlu, ESD özellikli, mat yüzey bitişli son kat kaplama malzemesi ile kaplama yapılması",
     olcuBirimi: "m²",
     kategori: "Zemin Sertleştirme",
     kaynakTip: "sistem" as const,
@@ -3358,7 +3358,7 @@ export const RESMI_POZ_ANALIZLERI = [
   {
     id: "sys-15x200x1001",
     pozNo: "15.200.1001",
-    analizAdi: "esaslı drenaj ve koruma levhası temini ve yerine döşenmesi",
+    analizAdi: "Bodrum perdelerinde su yalıtımı ve izolasyon pimi ile uygulanmış ısı yalıtımı üzerine HDPE esaslı drenaj ve koruma levhası temini ve yerine döşenmesi (150≤basınç dayanımı<200 kN/m2)",
     olcuBirimi: "m²",
     kategori: "Drenaj ve Boru",
     kaynakTip: "sistem" as const,
@@ -3380,7 +3380,7 @@ export const RESMI_POZ_ANALIZLERI = [
   {
     id: "sys-15x200x1002",
     pozNo: "15.200.1002",
-    analizAdi: "esaslı drenaj ve koruma levhası temini ve yerine döşenmesi",
+    analizAdi: "Bodrum perdelerinde su yalıtımı ve izolasyon pimi ile uygulanmış ısı yalıtımı üzerine HDPE esaslı drenaj ve koruma levhası temini ve yerine döşenmesi (200≤basınç dayanımı<250 KN/m²)",
     olcuBirimi: "m²",
     kategori: "Drenaj ve Boru",
     kaynakTip: "sistem" as const,
@@ -3402,7 +3402,7 @@ export const RESMI_POZ_ANALIZLERI = [
   {
     id: "sys-15x200x1003",
     pozNo: "15.200.1003",
-    analizAdi: "esaslı drenaj ve koruma levhası temini ve yerine döşenmesi",
+    analizAdi: "Bodrum perdelerinde su yalıtımı ve izolasyon pimi ile uygulanmış ısı yalıtımı üzerine HDPE esaslı drenaj ve koruma levhası temini ve yerine döşenmesi (250≤basınç dayanımı<350 KN/m²)",
     olcuBirimi: "m²",
     kategori: "Drenaj ve Boru",
     kaynakTip: "sistem" as const,
@@ -3424,7 +3424,7 @@ export const RESMI_POZ_ANALIZLERI = [
   {
     id: "sys-15x200x1004",
     pozNo: "15.200.1004",
-    analizAdi: "yerine döşenmesi",
+    analizAdi: "Bodrum perdelerinde su yalıtımı üzerine HDPE esaslı drenaj ve koruma levhası temini ve yerine döşenmesi (150≤basınç dayanımı<200 KN/m2)",
     olcuBirimi: "m²",
     kategori: "Drenaj ve Boru",
     kaynakTip: "sistem" as const,
@@ -3447,7 +3447,7 @@ export const RESMI_POZ_ANALIZLERI = [
   {
     id: "sys-15x200x1005",
     pozNo: "15.200.1005",
-    analizAdi: "yerine döşenmesi",
+    analizAdi: "Bodrum perdelerinde su yalıtımı üzerine HDPE esaslı drenaj ve koruma levhası temini ve yerine döşenmesi (200≤basınç dayanımı<250 KN/m²)",
     olcuBirimi: "m²",
     kategori: "Drenaj ve Boru",
     kaynakTip: "sistem" as const,
@@ -3470,7 +3470,7 @@ export const RESMI_POZ_ANALIZLERI = [
   {
     id: "sys-15x200x1006",
     pozNo: "15.200.1006",
-    analizAdi: "yerine döşenmesi",
+    analizAdi: "Bodrum perdelerinde su yalıtımı üzerine HDPE esaslı drenaj ve koruma levhası temini ve yerine döşenmesi (250≤basınç dayanımı<350 KN/m²)",
     olcuBirimi: "m²",
     kategori: "Drenaj ve Boru",
     kaynakTip: "sistem" as const,
@@ -3586,9 +3586,9 @@ export const RESMI_POZ_ANALIZLERI = [
     kategori: "Taş Duvar",
     kaynakTip: "sistem" as const,
     yukleniciKarOrani: 25,
-    malzemeIscilikToplami: 1162.36,
-    yukleniciKarTutari: 290.59,
-    birimFiyati: 1452.95,
+    malzemeIscilikToplami: 1197.23,
+    yukleniciKarTutari: 299.31,
+    birimFiyati: 1496.54,
     olusturmaTarihi: "2026-01-01T00:00:00.000Z",
     guncellemeTarihi: "2026-01-01T00:00:00.000Z",
     pozTarifi: "1,250 m³ ocak taşı ile (Poz. No: 19.100.2015) görünen yüzeyleri düzenlenerek kuru duvarın yapılması, inşaat yerindeki yükleme, yatay ve düşey taşıma, boşaltma, gerektiğinde çalışma sehpaları, indirme tertibatı, şablon kullanılması, taşın ocaktan yüklenmesi, boşaltılması ve figüre edilmesi (yalnız, taşın ocaktan işbaşına taşıma bedeli hariç) için gerekli her türlü malzeme ve zaiyatı, işçilik, araç ve gereç giderleri ile yüklenici genel giderleri ve kârı dâhil, ocak taşı ile 1 m³ kârgir inşaatın fiyatı:",
@@ -3633,9 +3633,9 @@ export const RESMI_POZ_ANALIZLERI = [
     kategori: "Taş Duvar",
     kaynakTip: "sistem" as const,
     yukleniciKarOrani: 25,
-    malzemeIscilikToplami: 1852.25,
-    yukleniciKarTutari: 463.06,
-    birimFiyati: 2315.31,
+    malzemeIscilikToplami: 1907.82,
+    yukleniciKarTutari: 476.96,
+    birimFiyati: 2384.78,
     olusturmaTarihi: "2026-01-01T00:00:00.000Z",
     guncellemeTarihi: "2026-01-01T00:00:00.000Z",
     pozTarifi: "1,200 m³ ocak taşı (Poz. No: 19.100.2015) ve 0,330 m³ harç ile kârgir inşaatın yapılması, görünen yüzeylerin düzenlenmesi, inşaat yerindeki yükleme, yatay ve düşey taşıma, boşaltma, gerektiğinde çalışma sehpaları, indirme tertibatı, şablon kullanılması, taşın ocaktan yüklenmesi, boşaltılması ve figüre edilmesi (yalnız, taşın ocaktan işbaşına taşıma bedeli hariç) için gerekli her türlü malzeme ve zaiyatı, işçilik, araç ve gereç giderleri ile yüklenici genel giderleri ve kârı dâhil, ocak taşı ile 1 m³ kârgir inşaatın fiyatı:",
@@ -3658,9 +3658,9 @@ export const RESMI_POZ_ANALIZLERI = [
     kategori: "Taş Duvar",
     kaynakTip: "sistem" as const,
     yukleniciKarOrani: 25,
-    malzemeIscilikToplami: 3038.18,
-    yukleniciKarTutari: 759.54,
-    birimFiyati: 3797.72,
+    malzemeIscilikToplami: 3129.33,
+    yukleniciKarTutari: 782.33,
+    birimFiyati: 3911.66,
     olusturmaTarihi: "2026-01-01T00:00:00.000Z",
     guncellemeTarihi: "2026-01-01T00:00:00.000Z",
     pozTarifi: "1,100 m³ ocaktan çaplanmış moloz taşı (Poz No: 19.100.2020) ve 0,250 m³ harç ile kargir inşaat yapılması, görünen yüzeylerin düzenlenmesi, inşaat yerindeki yükleme, yatay ve düşey taşıma boşaltma, gerektiğinde çalışma sehpaları, indirme tertibatı, şablon kullanılması, taşın ocaktan yüklenmesi, boşaltılması ve figüre edilmesi (yalnız, taşın ocaktan işbaşına taşıma bedeli hariç) için gerekli her türlü malzeme ve zaiyatı, işçilik, araç ve gereç giderleri ile yüklenici genel giderleri ve kârı dâhil, ocak taşı ile 1 m³ kârgir inşaatın fiyatı:",
@@ -4106,7 +4106,7 @@ export const RESMI_POZ_ANALIZLERI = [
   {
     id: "sys-15x225x1013",
     pozNo: "15.225.1013",
-    analizAdi: "tutkalı ile)",
+    analizAdi: "27,5 cm kalınlığındaki teçhizatsız gazbeton duvar blokları ile duvar yapılması (gazbeton tutkalı ile) (2,50 N/mm² ve 400 kg/m³)",
     olcuBirimi: "m²",
     kategori: "Kagir ve Tuğla",
     kaynakTip: "sistem" as const,
@@ -4129,7 +4129,7 @@ export const RESMI_POZ_ANALIZLERI = [
   {
     id: "sys-15x225x1015",
     pozNo: "15.225.1015",
-    analizAdi: "tutkalı ile)",
+    analizAdi: "32,5 cm kalınlığındaki teçhizatsız gazbeton duvar blokları ile duvar yapılması (gazbeton tutkalı ile) (2,50 N/mm² ve 400 kg/m³)",
     olcuBirimi: "m²",
     kategori: "Kagir ve Tuğla",
     kaynakTip: "sistem" as const,
@@ -4152,7 +4152,7 @@ export const RESMI_POZ_ANALIZLERI = [
   {
     id: "sys-15x225x1063",
     pozNo: "15.225.1063",
-    analizAdi: "tutkalı ile)",
+    analizAdi: "27,5 cm kalınlığındaki teçhizatsız gazbeton duvar blokları ile duvar yapılması (gazbeton tutkalı ile) (3,50 N/mm² ve 500 kg/m³)",
     olcuBirimi: "m²",
     kategori: "Kagir ve Tuğla",
     kaynakTip: "sistem" as const,
@@ -4175,7 +4175,7 @@ export const RESMI_POZ_ANALIZLERI = [
   {
     id: "sys-15x225x1065",
     pozNo: "15.225.1065",
-    analizAdi: "tutkalı ile)",
+    analizAdi: "32,5 cm kalınlığındaki teçhizatsız gazbeton duvar blokları ile duvar yapılması (gazbeton tutkalı ile) (3,50 N/mm² ve 500 kg/m³)",
     olcuBirimi: "m²",
     kategori: "Kagir ve Tuğla",
     kaynakTip: "sistem" as const,
@@ -4198,7 +4198,7 @@ export const RESMI_POZ_ANALIZLERI = [
   {
     id: "sys-15x225x1113",
     pozNo: "15.225.1113",
-    analizAdi: "tutkalı ile)",
+    analizAdi: "27,5 cm kalınlığındaki teçhizatsız gazbeton duvar blokları ile duvar yapılması (gazbeton tutkalı ile) (5,00 N/mm² ve 600 kg/m³)",
     olcuBirimi: "m²",
     kategori: "Kagir ve Tuğla",
     kaynakTip: "sistem" as const,
@@ -4221,7 +4221,7 @@ export const RESMI_POZ_ANALIZLERI = [
   {
     id: "sys-15x225x1115",
     pozNo: "15.225.1115",
-    analizAdi: "tutkalı ile)",
+    analizAdi: "32,5 cm kalınlığındaki teçhizatsız gazbeton duvar blokları ile duvar yapılması (gazbeton tutkalı ile) (5,00 N/mm² ve 600 kg/m³)",
     olcuBirimi: "m²",
     kategori: "Kagir ve Tuğla",
     kaynakTip: "sistem" as const,
@@ -4244,7 +4244,7 @@ export const RESMI_POZ_ANALIZLERI = [
   {
     id: "sys-15x225x1151",
     pozNo: "15.225.1151",
-    analizAdi: "tutkalı ile)",
+    analizAdi: "7,5 cm kalınlığındaki teçhizatsız gazbeton duvar blokları ile duvar yapılması (gazbeton tutkalı ile) (≥ 2,00 N/mm² ve 350 kg/m³)",
     olcuBirimi: "m²",
     kategori: "Kagir ve Tuğla",
     kaynakTip: "sistem" as const,
@@ -4267,7 +4267,7 @@ export const RESMI_POZ_ANALIZLERI = [
   {
     id: "sys-15x225x1152",
     pozNo: "15.225.1152",
-    analizAdi: "tutkalı ile)",
+    analizAdi: "8,5 cm kalınlığındaki teçhizatsız gazbeton duvar blokları ile duvar yapılması (gazbeton tutkalı ile) (≥ 2,00 N/mm² ve 350 kg/m³)",
     olcuBirimi: "m²",
     kategori: "Kagir ve Tuğla",
     kaynakTip: "sistem" as const,
@@ -4290,7 +4290,7 @@ export const RESMI_POZ_ANALIZLERI = [
   {
     id: "sys-15x225x1153",
     pozNo: "15.225.1153",
-    analizAdi: "ile)",
+    analizAdi: "9 cm kalınlığındaki teçhizatsız gazbeton duvar blokları ile duvar yapılması (gazbeton tutkalı ile) (≥ 2,00 N/mm² ve 350 kg/m³)",
     olcuBirimi: "m²",
     kategori: "Kagir ve Tuğla",
     kaynakTip: "sistem" as const,
@@ -4313,7 +4313,7 @@ export const RESMI_POZ_ANALIZLERI = [
   {
     id: "sys-15x225x1154",
     pozNo: "15.225.1154",
-    analizAdi: "tutkalı ile)",
+    analizAdi: "10 cm kalınlığındaki teçhizatsız gazbeton duvar blokları ile duvar yapılması (gazbeton tutkalı ile) (≥ 2,00 N/mm² ve 350 kg/m³)",
     olcuBirimi: "m²",
     kategori: "Kagir ve Tuğla",
     kaynakTip: "sistem" as const,
@@ -4336,7 +4336,7 @@ export const RESMI_POZ_ANALIZLERI = [
   {
     id: "sys-15x225x1155",
     pozNo: "15.225.1155",
-    analizAdi: "tutkalı ile)",
+    analizAdi: "12,5 cm kalınlığındaki teçhizatsız gazbeton duvar blokları ile duvar yapılması (gazbeton tutkalı ile) (≥ 2,00 N/mm² ve 350 kg/m³)",
     olcuBirimi: "m²",
     kategori: "Kagir ve Tuğla",
     kaynakTip: "sistem" as const,
@@ -4359,7 +4359,7 @@ export const RESMI_POZ_ANALIZLERI = [
   {
     id: "sys-15x225x1156",
     pozNo: "15.225.1156",
-    analizAdi: "tutkalı ile)",
+    analizAdi: "13,5 cm kalınlığındaki teçhizatsız gazbeton duvar blokları ile duvar yapılması (gazbeton tutkalı ile) (≥ 2,00 N/mm² ve 350 kg/m³)",
     olcuBirimi: "m²",
     kategori: "Kagir ve Tuğla",
     kaynakTip: "sistem" as const,
@@ -4382,7 +4382,7 @@ export const RESMI_POZ_ANALIZLERI = [
   {
     id: "sys-15x225x1157",
     pozNo: "15.225.1157",
-    analizAdi: "tutkalı ile)",
+    analizAdi: "15 cm kalınlığındaki teçhizatsız gazbeton duvar blokları ile duvar yapılması (gazbeton tutkalı ile) (≥ 2,00 N/mm² ve 350 kg/m³)",
     olcuBirimi: "m²",
     kategori: "Kagir ve Tuğla",
     kaynakTip: "sistem" as const,
@@ -4405,7 +4405,7 @@ export const RESMI_POZ_ANALIZLERI = [
   {
     id: "sys-15x225x1158",
     pozNo: "15.225.1158",
-    analizAdi: "tutkalı ile)",
+    analizAdi: "17,5 cm kalınlığındaki teçhizatsız gazbeton duvar blokları ile duvar yapılması (gazbeton tutkalı ile) (≥ 2,00 N/mm² ve 350 kg/m³)",
     olcuBirimi: "m²",
     kategori: "Kagir ve Tuğla",
     kaynakTip: "sistem" as const,
@@ -4428,7 +4428,7 @@ export const RESMI_POZ_ANALIZLERI = [
   {
     id: "sys-15x225x1159",
     pozNo: "15.225.1159",
-    analizAdi: "tutkalı ile)",
+    analizAdi: "19 cm kalınlığındaki teçhizatsız gazbeton duvar blokları ile duvar yapılması (gazbeton tutkalı ile) (≥ 2,00 N/mm² ve 350 kg/m³)",
     olcuBirimi: "m²",
     kategori: "Kagir ve Tuğla",
     kaynakTip: "sistem" as const,
@@ -4451,7 +4451,7 @@ export const RESMI_POZ_ANALIZLERI = [
   {
     id: "sys-15x225x1160",
     pozNo: "15.225.1160",
-    analizAdi: "tutkalı ile)",
+    analizAdi: "20 cm kalınlığındaki teçhizatsız gazbeton duvar blokları ile duvar yapılması (gazbeton tutkalı ile) (≥ 2,00 N/mm² ve 350 kg/m³)",
     olcuBirimi: "m²",
     kategori: "Kagir ve Tuğla",
     kaynakTip: "sistem" as const,
@@ -4474,7 +4474,7 @@ export const RESMI_POZ_ANALIZLERI = [
   {
     id: "sys-15x225x1161",
     pozNo: "15.225.1161",
-    analizAdi: "tutkalı ile)",
+    analizAdi: "22,5 cm kalınlığındaki teçhizatsız gazbeton duvar blokları ile duvar yapılması (gazbeton tutkalı ile) (≥ 2,00 N/mm² ve 350 kg/m³)",
     olcuBirimi: "m²",
     kategori: "Kagir ve Tuğla",
     kaynakTip: "sistem" as const,
@@ -4497,7 +4497,7 @@ export const RESMI_POZ_ANALIZLERI = [
   {
     id: "sys-15x225x1162",
     pozNo: "15.225.1162",
-    analizAdi: "tutkalı ile)",
+    analizAdi: "25 cm kalınlığındaki teçhizatsız gazbeton duvar blokları ile duvar yapılması (gazbeton tutkalı ile) (≥ 2,00 N/mm² ve 350 kg/m³)",
     olcuBirimi: "m²",
     kategori: "Kagir ve Tuğla",
     kaynakTip: "sistem" as const,
@@ -4520,7 +4520,7 @@ export const RESMI_POZ_ANALIZLERI = [
   {
     id: "sys-15x225x1163",
     pozNo: "15.225.1163",
-    analizAdi: "tutkalı ile)",
+    analizAdi: "27,5 cm kalınlığındaki teçhizatsız gazbeton duvar blokları ile duvar yapılması (gazbeton tutkalı ile) (≥ 2,00 N/mm² ve 350 kg/m³)",
     olcuBirimi: "m²",
     kategori: "Kagir ve Tuğla",
     kaynakTip: "sistem" as const,
@@ -4543,7 +4543,7 @@ export const RESMI_POZ_ANALIZLERI = [
   {
     id: "sys-15x225x1164",
     pozNo: "15.225.1164",
-    analizAdi: "tutkalı ile)",
+    analizAdi: "30 cm kalınlığındaki teçhizatsız gazbeton duvar blokları ile duvar yapılması (gazbeton tutkalı ile) (≥ 2,00 N/mm² ve 350 kg/m³)",
     olcuBirimi: "m²",
     kategori: "Kagir ve Tuğla",
     kaynakTip: "sistem" as const,
@@ -4566,7 +4566,7 @@ export const RESMI_POZ_ANALIZLERI = [
   {
     id: "sys-15x225x1165",
     pozNo: "15.225.1165",
-    analizAdi: "tutkalı ile)",
+    analizAdi: "32,5 cm kalınlığındaki teçhizatsız gazbeton duvar blokları ile duvar yapılması (gazbeton tutkalı ile) (≥ 2,00 N/mm² ve 350 kg/m³)",
     olcuBirimi: "m²",
     kategori: "Kagir ve Tuğla",
     kaynakTip: "sistem" as const,
@@ -4589,7 +4589,7 @@ export const RESMI_POZ_ANALIZLERI = [
   {
     id: "sys-15x225x1166",
     pozNo: "15.225.1166",
-    analizAdi: "tutkalı ile)",
+    analizAdi: "35 cm kalınlığındaki teçhizatsız gazbeton duvar blokları ile duvar yapılması (gazbeton tutkalı ile) (≥ 2,00 N/mm² ve 350 kg/m³)",
     olcuBirimi: "m²",
     kategori: "Kagir ve Tuğla",
     kaynakTip: "sistem" as const,
@@ -5135,7 +5135,7 @@ export const RESMI_POZ_ANALIZLERI = [
   {
     id: "sys-15x255x1001",
     pozNo: "15.255.1001",
-    analizAdi: "kalınlıkta plastomer esaslı (-5 °C soğukta bükülmeli) polyester keçe taşıyıcılı polimer",
+    analizAdi: "3 mm kalınlıkta plastomer esaslı (-5 °C soğukta bükülmeli) cam tülü taşıyıcılı ve 3 mm kalınlıkta plastomer esaslı (-5 °C soğukta bükülmeli) polyester keçe taşıyıcılı polimer bitümlü örtüler ile iki kat su yalıtımı yapılması",
     olcuBirimi: "m²",
     kategori: "Su Yalıtımı",
     kaynakTip: "sistem" as const,
@@ -5160,7 +5160,7 @@ export const RESMI_POZ_ANALIZLERI = [
   {
     id: "sys-15x255x1002",
     pozNo: "15.255.1002",
-    analizAdi: "kalınlıkta plastomer esaslı (-10 °C soğukta bükülmeli) polyester keçe taşıyıcılı polimer",
+    analizAdi: "3 mm kalınlıkta plastomer esaslı (-10 °C soğukta bükülmeli) cam tülü taşıyıcılı ve 3 mm kalınlıkta plastomer esaslı (-10 °C soğukta bükülmeli) polyester keçe taşıyıcılı polimer bitümlü örtüler ile iki kat su yalıtımı yapılması",
     olcuBirimi: "m²",
     kategori: "Su Yalıtımı",
     kaynakTip: "sistem" as const,
@@ -5185,7 +5185,7 @@ export const RESMI_POZ_ANALIZLERI = [
   {
     id: "sys-15x255x1003",
     pozNo: "15.255.1003",
-    analizAdi: "kalınlıkta elastomer esaslı (-20 °C soğukta bükülmeli) polyester keçe taşıyıcılı polimer",
+    analizAdi: "3 mm kalınlıkta elastomer esaslı (-20 °C soğukta bükülmeli) cam tülü taşıyıcılı ve 3 mm kalınlıkta elastomer esaslı (-20 °C soğukta bükülmeli) polyester keçe taşıyıcılı polimer bitümlü örtüler ile iki kat su yalıtımı yapılması",
     olcuBirimi: "m²",
     kategori: "Su Yalıtımı",
     kaynakTip: "sistem" as const,
@@ -5210,7 +5210,7 @@ export const RESMI_POZ_ANALIZLERI = [
   {
     id: "sys-15x255x1010",
     pozNo: "15.255.1010",
-    analizAdi: "kalınlıkta plastomer esaslı (-5 °C soğukta bükülmeli) polyester keçe taşıyıcılı bir yüzü",
+    analizAdi: "3 mm kalınlıkta plastomer esaslı (-5 °C soğukta bükülmeli) cam tülü taşıyıcılı ve 3,3 mm kalınlıkta plastomer esaslı (-5 °C soğukta bükülmeli) polyester keçe taşıyıcılı bir yüzü mineral kaplı polimer bitümlü örtüler ile iki kat su yalıtımı yapılması",
     olcuBirimi: "m²",
     kategori: "Su Yalıtımı",
     kaynakTip: "sistem" as const,
@@ -5235,7 +5235,7 @@ export const RESMI_POZ_ANALIZLERI = [
   {
     id: "sys-15x255x1011",
     pozNo: "15.255.1011",
-    analizAdi: "kalınlıkta plastomer esaslı (-10 °C soğukta bükülmeli) polyester keçe taşıyıcılı bir yüzü",
+    analizAdi: "3 mm kalınlıkta plastomer esaslı (-10 °C soğukta bükülmeli) cam tülü taşıyıcılı ve 3,3 mm kalınlıkta plastomer esaslı (-10 °C soğukta bükülmeli) polyester keçe taşıyıcılı bir yüzü mineral kaplı polimer bitümlü örtüler ile iki kat su yalıtımı yapılması",
     olcuBirimi: "m²",
     kategori: "Su Yalıtımı",
     kaynakTip: "sistem" as const,
@@ -5260,7 +5260,7 @@ export const RESMI_POZ_ANALIZLERI = [
   {
     id: "sys-15x255x1012",
     pozNo: "15.255.1012",
-    analizAdi: "kalınlıkta elastomer esaslı (-20 °C soğukta bükülmeli) polyester keçe taşıyıcılı bir yüzü",
+    analizAdi: "3 mm kalınlıkta elastomer esaslı (-20 °C soğukta bükülmeli) cam tülü taşıyıcılı ve 3,3 mm kalınlıkta elastomer esaslı (-20 °C soğukta bükülmeli) polyester keçe taşıyıcılı bir yüzü mineral kaplı polimer bitümlü örtüler ile iki kat su yalıtımı yapılması",
     olcuBirimi: "m²",
     kategori: "Su Yalıtımı",
     kaynakTip: "sistem" as const,
@@ -5285,7 +5285,7 @@ export const RESMI_POZ_ANALIZLERI = [
   {
     id: "sys-15x255x1013",
     pozNo: "15.255.1013",
-    analizAdi: "mm kalınlıkta plastomer esaslı (-5 °C soğukta bükülmeli) polyester keçe taşıyıcılı bir yüzü",
+    analizAdi: "3 mm kalınlıkta plastomer esaslı (-5 °C soğukta bükülmeli) polyester keçe taşıyıcılı ve 3,3 mm kalınlıkta plastomer esaslı (-5 °C soğukta bükülmeli) polyester keçe taşıyıcılı bir yüzü mineral kaplı polimer bitümlü örtüler ile iki kat su yalıtımı yapılması",
     olcuBirimi: "m²",
     kategori: "Su Yalıtımı",
     kaynakTip: "sistem" as const,
@@ -5310,7 +5310,7 @@ export const RESMI_POZ_ANALIZLERI = [
   {
     id: "sys-15x255x1014",
     pozNo: "15.255.1014",
-    analizAdi: "mm kalınlıkta plastomer esaslı (-10 °C soğukta bükülmeli) polyester keçe taşıyıcılı bir yüzü",
+    analizAdi: "3 mm kalınlıkta plastomer esaslı (-10 °C soğukta bükülmeli) polyester keçe taşıyıcılı ve 3,3 mm kalınlıkta plastomer esaslı (-10 °C soğukta bükülmeli) polyester keçe taşıyıcılı bir yüzü mineral kaplı polimer bitümlü örtüler ile iki kat su yalıtımı yapılması",
     olcuBirimi: "m²",
     kategori: "Su Yalıtımı",
     kaynakTip: "sistem" as const,
@@ -5335,7 +5335,7 @@ export const RESMI_POZ_ANALIZLERI = [
   {
     id: "sys-15x255x1015",
     pozNo: "15.255.1015",
-    analizAdi: "mm kalınlıkta elastomer esaslı (-20 °C soğukta bükülmeli) polyester keçe taşıyıcılı bir yüzü",
+    analizAdi: "3 mm kalınlıkta elastomer esaslı (-20 °C soğukta bükülmeli) polyester keçe taşıyıcılı ve 3,3 mm kalınlıkta elastomer esaslı (-20 °C soğukta bükülmeli) polyester keçe taşıyıcılı bir yüzü mineral kaplı polimer bitümlü örtüler ile iki kat su yalıtımı yapılması",
     olcuBirimi: "m²",
     kategori: "Su Yalıtımı",
     kaynakTip: "sistem" as const,
@@ -5671,7 +5671,7 @@ export const RESMI_POZ_ANALIZLERI = [
   {
     id: "sys-15x270x1202",
     pozNo: "15.270.1202",
-    analizAdi: "Örgülü Geotekstil, Üst Tabaka 200 gr/m² PP Örgüsüz Geotekstil, Toplam Ağırlık 5500",
+    analizAdi: "Bina temellerinde geosentetik kil örtüler ile su yalıtımı yapılması (Alt Tabaka 100 gr/m² PP Örgülü Geotekstil, Üst Tabaka 200 gr/m² PP Örgüsüz Geotekstil, Toplam Ağırlık 5500 gr/m²)",
     olcuBirimi: "m²",
     kategori: "Geotekstil",
     kaynakTip: "sistem" as const,
@@ -5693,7 +5693,7 @@ export const RESMI_POZ_ANALIZLERI = [
   {
     id: "sys-15x270x1203",
     pozNo: "15.270.1203",
-    analizAdi: "Örgülü Geotekstil, Üst Tabaka 200 gr/m² PP Örgüsüz Geotekstil, Toplam Ağırlık 6500",
+    analizAdi: "Bina temellerinde geosentetik kil örtüler ile su yalıtımı yapılması (Alt Tabaka 100 gr/m² PP Örgülü Geotekstil, Üst Tabaka 200 gr/m² PP Örgüsüz Geotekstil, Toplam Ağırlık 6500 gr/m²)",
     olcuBirimi: "m²",
     kategori: "Geotekstil",
     kaynakTip: "sistem" as const,
@@ -6477,7 +6477,7 @@ export const RESMI_POZ_ANALIZLERI = [
   {
     id: "sys-15x305x1213",
     pozNo: "15.305.1213",
-    analizAdi: "yapışkanlı, UV dayanımlı duvar baca dibi bandı ile duvar, baca dibi vb. yerlerde su yalıtımı",
+    analizAdi: "Alüminyum ile güçlendirilmiş polibitülen/vulkanize termoplastik (tpv) kaplı, kendinden yapışkanlı, UV dayanımlı duvar baca dibi bandı ile duvar, baca dibi vb. yerlerde su yalıtımı yapılması (Toplam 25-40 cm genişlikte)",
     olcuBirimi: "m",
     kategori: "Çatı Örtüsü",
     kaynakTip: "sistem" as const,
@@ -7262,7 +7262,7 @@ export const RESMI_POZ_ANALIZLERI = [
   {
     id: "sys-15x320x1001",
     pozNo: "15.320.1001",
-    analizAdi: "mm kalınlıkta boyalı galvanizli sac ve altı 0.40 mm kalınlıkta boyalı galvanizli sac) çatı",
+    analizAdi: "Mevcut ahşap, betonarme yada çelik aşıklar üzerine, 50 mm poliüretan yalıtımlı (üstü 0.50 mm kalınlıkta boyalı galvanizli sac ve altı 0.40 mm kalınlıkta boyalı galvanizli sac) çatı paneli ile çatı örtüsü yapılması.",
     olcuBirimi: "m²",
     kategori: "Metal Çatı",
     kaynakTip: "sistem" as const,
@@ -7288,7 +7288,7 @@ export const RESMI_POZ_ANALIZLERI = [
   {
     id: "sys-15x320x1002",
     pozNo: "15.320.1002",
-    analizAdi: "mm kalınlıkta PVC membranlı, altı 0.60 mm kalınlıkta boyalı galvanizli sac) çatı paneli ile",
+    analizAdi: "Mevcut ahşap, betonarme yada çelik aşıklar üzerine, 50 mm poliüretan yalıtımlı (üstü 1.20 mm kalınlıkta PVC membranlı, altı 0.60 mm kalınlıkta boyalı galvanizli sac) çatı paneli ile çatı örtüsü yapılması.",
     olcuBirimi: "m²",
     kategori: "Metal Çatı",
     kaynakTip: "sistem" as const,
@@ -7313,7 +7313,7 @@ export const RESMI_POZ_ANALIZLERI = [
   {
     id: "sys-15x320x1003",
     pozNo: "15.320.1003",
-    analizAdi: "mm kalınlıkta TPO membranlı, altı 0.60 mm kalınlıkta boyalı galvanizli sac) çatı paneli ile",
+    analizAdi: "Mevcut ahşap, betonarme yada çelik aşıklar üzerine, 50 mm poliüretan yalıtımlı (üstü 1.20 mm kalınlıkta TPO membranlı, altı 0.60 mm kalınlıkta boyalı galvanizli sac) çatı paneli ile çatı örtüsü yapılması.",
     olcuBirimi: "m²",
     kategori: "Metal Çatı",
     kaynakTip: "sistem" as const,
@@ -7338,7 +7338,7 @@ export const RESMI_POZ_ANALIZLERI = [
   {
     id: "sys-15x320x1004",
     pozNo: "15.320.1004",
-    analizAdi: "0.50 mm kalınlıkta boyalı galvanizli sac ve altı 0.40 mm kalınlıkta boyalı galvanizli sac) çatı",
+    analizAdi: "Mevcut ahşap, betonarme yada çelik aşıklar üzerine, 50 mm poliizosiyanurat yalıtımlı (üstü 0.50 mm kalınlıkta boyalı galvanizli sac ve altı 0.40 mm kalınlıkta boyalı galvanizli sac) çatı paneli ile çatı örtüsü yapılması.",
     olcuBirimi: "m²",
     kategori: "Metal Çatı",
     kaynakTip: "sistem" as const,
@@ -7364,7 +7364,7 @@ export const RESMI_POZ_ANALIZLERI = [
   {
     id: "sys-15x320x1005",
     pozNo: "15.320.1005",
-    analizAdi: "1.20 mm kalınlıkta PVC membranlı, altı 0.60 mm kalınlıkta boyalı galvanizli sac) çatı paneli",
+    analizAdi: "Mevcut ahşap, betonarme yada çelik aşıklar üzerine, 50 mm poliizosiyanurat yalıtımlı (üstü 1.20 mm kalınlıkta PVC membranlı, altı 0.60 mm kalınlıkta boyalı galvanizli sac) çatı paneli ile çatı örtüsü yapılması.",
     olcuBirimi: "m²",
     kategori: "Metal Çatı",
     kaynakTip: "sistem" as const,
@@ -7389,7 +7389,7 @@ export const RESMI_POZ_ANALIZLERI = [
   {
     id: "sys-15x320x1006",
     pozNo: "15.320.1006",
-    analizAdi: "1.20 mm kalınlıkta TPO membranlı, altı 0.60 mm kalınlıkta boyalı galvanizli sac) çatı paneli",
+    analizAdi: "Mevcut ahşap, betonarme yada çelik aşıklar üzerine, 50 mm poliizosiyanurat yalıtımlı (üstü 1.20 mm kalınlıkta TPO membranlı, altı 0.60 mm kalınlıkta boyalı galvanizli sac) çatı paneli ile çatı örtüsü yapılması.",
     olcuBirimi: "m²",
     kategori: "Metal Çatı",
     kaynakTip: "sistem" as const,
@@ -7414,7 +7414,7 @@ export const RESMI_POZ_ANALIZLERI = [
   {
     id: "sys-15x320x1007",
     pozNo: "15.320.1007",
-    analizAdi: "mm kalınlıkta, altı 0.50 mm kalınlıkta naturel, gofrajlı alüminyum) çatı paneli ile çatı örtüsü",
+    analizAdi: "Mevcut ahşap, betonarme yada çelik aşıklar üzerine, 60 mm polistren yalıtımlı (üstü 0.70 mm kalınlıkta, altı 0.50 mm kalınlıkta naturel, gofrajlı alüminyum) çatı paneli ile çatı örtüsü yapılması.",
     olcuBirimi: "m²",
     kategori: "Metal Çatı",
     kaynakTip: "sistem" as const,
@@ -7440,7 +7440,7 @@ export const RESMI_POZ_ANALIZLERI = [
   {
     id: "sys-15x320x1008",
     pozNo: "15.320.1008",
-    analizAdi: "mm kalınlıkta boyalı galvanizli sac, altı 0.40 mm kalınlıkta boyalı galvanizli sac) çatı paneli",
+    analizAdi: "Mevcut ahşap, betonarme yada çelik aşıklar üzerine, 60 mm polistren yalıtımlı (üstü 0.50 mm kalınlıkta boyalı galvanizli sac, altı 0.40 mm kalınlıkta boyalı galvanizli sac) çatı paneli ile çatı örtüsü yapılması.",
     olcuBirimi: "m²",
     kategori: "Metal Çatı",
     kaynakTip: "sistem" as const,
@@ -7466,7 +7466,7 @@ export const RESMI_POZ_ANALIZLERI = [
   {
     id: "sys-15x320x1009",
     pozNo: "15.320.1009",
-    analizAdi: "mm kalınlıkta boyalı galvanizli sac, altı 0.40 mm kalınlıkta, naturel, gofrajlı alüminyum) çatı",
+    analizAdi: "Mevcut ahşap, betonarme yada çelik aşıklar üzerine, 60 mm polistren yalıtımlı (üstü 0.50 mm kalınlıkta boyalı galvanizli sac, altı 0.40 mm kalınlıkta, naturel, gofrajlı alüminyum) çatı paneli ile çatı örtüsü yapılması.",
     olcuBirimi: "m²",
     kategori: "Metal Çatı",
     kaynakTip: "sistem" as const,
@@ -7492,7 +7492,7 @@ export const RESMI_POZ_ANALIZLERI = [
   {
     id: "sys-15x320x1010",
     pozNo: "15.320.1010",
-    analizAdi: "galvanizli sac ve altı 0.50 mm kalınlıkta boyalı galvanizli sac) çatı paneli ile çatı örtüsü",
+    analizAdi: "Mevcut çelik aşıklar üzerine, 60 mm taşyünü yalıtımlı (üstü 0.50 mm kalınlıkta boyalı galvanizli sac ve altı 0.50 mm kalınlıkta boyalı galvanizli sac) çatı paneli ile çatı örtüsü yapılması.",
     olcuBirimi: "m²",
     kategori: "Metal Çatı",
     kaynakTip: "sistem" as const,
@@ -7518,7 +7518,7 @@ export const RESMI_POZ_ANALIZLERI = [
   {
     id: "sys-15x320x1014",
     pozNo: "15.320.1014",
-    analizAdi: "kalınlıkta PVC membranlı, altı 0.60 mm kalınlıkta boyalı galvanizli sac) çatı paneli ile çatı",
+    analizAdi: "Mevcut çelik aşıklar üzerine, 50 mm taşyünü + 25 mm poliüretan yalıtımlı (üstü 1.20 mm kalınlıkta PVC membranlı, altı 0.60 mm kalınlıkta boyalı galvanizli sac) çatı paneli ile çatı örtüsü yapılması.",
     olcuBirimi: "m²",
     kategori: "Metal Çatı",
     kaynakTip: "sistem" as const,
@@ -7543,7 +7543,7 @@ export const RESMI_POZ_ANALIZLERI = [
   {
     id: "sys-15x320x1015",
     pozNo: "15.320.1015",
-    analizAdi: "kalınlıkta TPO membranlı, altı 0.60 mm kalınlıkta boyalı galvanizli sac) çatı paneli ile çatı",
+    analizAdi: "Mevcut çelik aşıklar üzerine, 50 mm taşyünü + 25 mm poliüretan yalıtımlı (üstü 1.20 mm kalınlıkta TPO membranlı, altı 0.60 mm kalınlıkta boyalı galvanizli sac) çatı paneli ile çatı örtüsü yapılması.",
     olcuBirimi: "m²",
     kategori: "Metal Çatı",
     kaynakTip: "sistem" as const,
@@ -7646,7 +7646,7 @@ export const RESMI_POZ_ANALIZLERI = [
   {
     id: "sys-15x325x1007",
     pozNo: "15.325.1007",
-    analizAdi: "üzerine 0.70 mm kalınlığında trapezoidal alüminyum levhalar (EN AW 3003 Al-Mn1 Cu) ile",
+    analizAdi: "Mevcut betonarme, ön yapımlı hazır beton plak veya kaplama tahtalı ahşap çatı döşemesi üzerine 0.70 mm kalınlığında trapezoidal alüminyum levhalar (EN AW 3003 Al-Mn1 Cu) ile çatı örtüsü yapılması",
     olcuBirimi: "m²",
     kategori: "Çinko Çatı",
     kaynakTip: "sistem" as const,
@@ -7675,7 +7675,7 @@ export const RESMI_POZ_ANALIZLERI = [
   {
     id: "sys-15x325x1103",
     pozNo: "15.325.1103",
-    analizAdi: "mevcut çatı döşemesi üzerine 0.50 mm kalınlıkta sıcak daldırma galvanizli, oluklu/trapez sac",
+    analizAdi: "Betonarme veya techizatlı hazır (hafif veya normal agrega ile) beton plaklarla yapılmış mevcut çatı döşemesi üzerine 0.50 mm kalınlıkta sıcak daldırma galvanizli, oluklu/trapez sac ile çatı örtüsü yapılması.",
     olcuBirimi: "m²",
     kategori: "Çinko Çatı",
     kaynakTip: "sistem" as const,
@@ -7704,7 +7704,7 @@ export const RESMI_POZ_ANALIZLERI = [
   {
     id: "sys-15x325x1104",
     pozNo: "15.325.1104",
-    analizAdi: "mevcut çatı döşemesi üzerine elyaflı çimentodan yapılmış oluklu levhalarla çatı örtüsü",
+    analizAdi: "Betonarme veya teçhizatlı hazır (hafif veya normal agrega ile) beton plaklarla yapılmış mevcut çatı döşemesi üzerine elyaflı çimentodan yapılmış oluklu levhalarla çatı örtüsü yapılması",
     olcuBirimi: "m²",
     kategori: "Çinko Çatı",
     kaynakTip: "sistem" as const,
@@ -7732,7 +7732,7 @@ export const RESMI_POZ_ANALIZLERI = [
   {
     id: "sys-15x325x1105",
     pozNo: "15.325.1105",
-    analizAdi: "mevcut çatı döşemesi üzerine her renkte oluklu bitümlü levhalarla çatı örtüsü yapılması",
+    analizAdi: "Betonarme veya teçhizatlı hazır (hafif veya normal agrega ile) beton plaklarla yapılmış mevcut çatı döşemesi üzerine her renkte oluklu bitümlü levhalarla çatı örtüsü yapılması (KATEGORİ R >=1400 N/M2) (Yangın Sınıfı Broof)",
     olcuBirimi: "m²",
     kategori: "Çinko Çatı",
     kaynakTip: "sistem" as const,
@@ -7782,7 +7782,7 @@ export const RESMI_POZ_ANALIZLERI = [
   {
     id: "sys-15x341x1001",
     pozNo: "15.341.1001",
-    analizAdi: "levhalar (EPS ) ile dış duvarlarda dıştan ısı yalıtımı ve üzerine ısı yalıtım sıvası yapılması",
+    analizAdi: "5 cm kalınlıkta Yüzeye dik çekme mukavemeti en az 100kPa (TR100) ekspande polistren levhalar (EPS ) ile dış duvarlarda dıştan ısı yalıtımı ve üzerine ısı yalıtım sıvası yapılması (Mantolama)",
     olcuBirimi: "m²",
     kategori: "Isı Yalıtımı",
     kaynakTip: "sistem" as const,
@@ -7811,7 +7811,7 @@ export const RESMI_POZ_ANALIZLERI = [
   {
     id: "sys-15x341x1002",
     pozNo: "15.341.1002",
-    analizAdi: "levhalar (EPS) ile dış duvarlarda dıştan ısı yalıtımı ve üzerine ısı yalıtım sıvası yapılması",
+    analizAdi: "6 cm kalınlıkta Yüzeye dik çekme mukavemeti en az 100kPa (TR100) ekspande polistren levhalar (EPS) ile dış duvarlarda dıştan ısı yalıtımı ve üzerine ısı yalıtım sıvası yapılması (Mantolama)",
     olcuBirimi: "m²",
     kategori: "Isı Yalıtımı",
     kaynakTip: "sistem" as const,
@@ -7840,7 +7840,7 @@ export const RESMI_POZ_ANALIZLERI = [
   {
     id: "sys-15x341x1003",
     pozNo: "15.341.1003",
-    analizAdi: "levhalar (EPS) ile dış duvarlarda dıştan ısı yalıtımı ve üzerine ısı yalıtım sıvası yapılması",
+    analizAdi: "8 cm kalınlıkta Yüzeye dik çekme mukavemeti en az 100kPa (TR100) ekspande polistren levhalar (EPS) ile dış duvarlarda dıştan ısı yalıtımı ve üzerine ısı yalıtım sıvası yapılması (Mantolama)",
     olcuBirimi: "m²",
     kategori: "Isı Yalıtımı",
     kaynakTip: "sistem" as const,
@@ -7869,7 +7869,7 @@ export const RESMI_POZ_ANALIZLERI = [
   {
     id: "sys-15x341x1004",
     pozNo: "15.341.1004",
-    analizAdi: "levhalar ile (EPS) dış duvarlarda dıştan ısı yalıtımı ve üzerine ısı yalıtım sıvası yapılması",
+    analizAdi: "10 cm kalınlıkta Yüzeye dik çekme mukavemeti en az 100kPa (TR100) ekspande polistren levhalar ile (EPS) dış duvarlarda dıştan ısı yalıtımı ve üzerine ısı yalıtım sıvası yapılması (Mantolama)",
     olcuBirimi: "m²",
     kategori: "Isı Yalıtımı",
     kaynakTip: "sistem" as const,
@@ -7898,7 +7898,7 @@ export const RESMI_POZ_ANALIZLERI = [
   {
     id: "sys-15x341x1021",
     pozNo: "15.341.1021",
-    analizAdi: "ekspande polistren levhalar ile dış duvarlarda dıştan ısı yalıtımı ve üzerine ısı yalıtım sıvası",
+    analizAdi: "5 cm kalınlıkta yüzeye dik çekme mukavemeti en az 100kPa (TR100) grafit/karbon esaslı ekspande polistren levhalar ile dış duvarlarda dıştan ısı yalıtımı ve üzerine ısı yalıtım sıvası yapılması (Mantolama)",
     olcuBirimi: "m²",
     kategori: "Isı Yalıtımı",
     kaynakTip: "sistem" as const,
@@ -7927,7 +7927,7 @@ export const RESMI_POZ_ANALIZLERI = [
   {
     id: "sys-15x341x1022",
     pozNo: "15.341.1022",
-    analizAdi: "ekspande polistren (EPS) levhalar ile dış duvarlarda dıştan ısı yalıtımı ve üzerine ısı yalıtım",
+    analizAdi: "6 cm kalınlıkta yüzeye dik çekme mukavemeti en az 100kPa (TR100) grafit/karbon esaslı ekspande polistren (EPS) levhalar ile dış duvarlarda dıştan ısı yalıtımı ve üzerine ısı yalıtım sıvası yapılması (Mantolama)",
     olcuBirimi: "m²",
     kategori: "Isı Yalıtımı",
     kaynakTip: "sistem" as const,
@@ -7956,7 +7956,7 @@ export const RESMI_POZ_ANALIZLERI = [
   {
     id: "sys-15x341x1023",
     pozNo: "15.341.1023",
-    analizAdi: "ekspande polistren levhalar (EPS) ile dış duvarlarda dıştan ısı yalıtımı ve üzerine ısı yalıtım",
+    analizAdi: "8 cm kalınlıkta yüzeye dik çekme mukavemeti en az 100kPa (TR100) grafit/karbon esaslı ekspande polistren levhalar (EPS) ile dış duvarlarda dıştan ısı yalıtımı ve üzerine ısı yalıtım sıvası yapılması (Mantolama)",
     olcuBirimi: "m²",
     kategori: "Isı Yalıtımı",
     kaynakTip: "sistem" as const,
@@ -7985,7 +7985,7 @@ export const RESMI_POZ_ANALIZLERI = [
   {
     id: "sys-15x341x1024",
     pozNo: "15.341.1024",
-    analizAdi: "ekspande polistren levhalar ile dış duvarlarda dıştan ısı yalıtımı ve üzerine ısı yalıtım sıvası",
+    analizAdi: "10 cm kalınlıkta yüzeye dik çekme mukavemeti en az 100kPa (TR100) grafit/karbon esaslı ekspande polistren levhalar ile dış duvarlarda dıştan ısı yalıtımı ve üzerine ısı yalıtım sıvası yapılması (Mantolama)",
     olcuBirimi: "m²",
     kategori: "Isı Yalıtımı",
     kaynakTip: "sistem" as const,
@@ -8014,7 +8014,7 @@ export const RESMI_POZ_ANALIZLERI = [
   {
     id: "sys-15x341x1083",
     pozNo: "15.341.1083",
-    analizAdi: "Polistren levhalar (EPS) ile duvarlarda içten ısı yalıtımı ve üzerine ısı yalıtım sıvası",
+    analizAdi: "5 cm kalınlıkta Grafit/Karbon esaslı basma mukavemeti en az 90 kPa (CS(10)90) Ekspande Polistren levhalar (EPS) ile duvarlarda içten ısı yalıtımı ve üzerine ısı yalıtım sıvası yapılması",
     olcuBirimi: "m²",
     kategori: "Isı Yalıtımı",
     kaynakTip: "sistem" as const,
@@ -8041,7 +8041,7 @@ export const RESMI_POZ_ANALIZLERI = [
   {
     id: "sys-15x341x1084",
     pozNo: "15.341.1084",
-    analizAdi: "Ekspande Polistren levhalar (EPS) ile duvarlarda içten ısı yalıtımı ve üzerine ısı yalıtım",
+    analizAdi: "5 cm kalınlıkta Grafit/Karbon esaslı basma mukavemeti en az 150 kPa (CS(10)150) Ekspande Polistren levhalar (EPS) ile duvarlarda içten ısı yalıtımı ve üzerine ısı yalıtım sıvası yapılması",
     olcuBirimi: "m²",
     kategori: "Isı Yalıtımı",
     kaynakTip: "sistem" as const,
@@ -8068,7 +8068,7 @@ export const RESMI_POZ_ANALIZLERI = [
   {
     id: "sys-15x341x2001",
     pozNo: "15.341.2001",
-    analizAdi: "pürüzlü kanallı ekstrüde polistren levhalar ile dış duvarlarda dıştan ısı yalıtımı ve üzerine",
+    analizAdi: "6 cm kalınlıkta yüzeye dik çekme mukavemeti en az 200 kPa olan, yüzeyi pürüzlü veya pürüzlü kanallı ekstrüde polistren levhalar ile dış duvarlarda dıştan ısı yalıtımı ve üzerine ısı yalıtım sıvası yapılması (Mantolama)",
     olcuBirimi: "m²",
     kategori: "Isı Yalıtımı",
     kaynakTip: "sistem" as const,
@@ -8097,7 +8097,7 @@ export const RESMI_POZ_ANALIZLERI = [
   {
     id: "sys-15x341x2002",
     pozNo: "15.341.2002",
-    analizAdi: "pürüzlü kanallı ekstrüde polistren levhalar ile dış duvarlarda dıştan ısı yalıtımı ve üzerine ısı",
+    analizAdi: "6 cm kalınlıkta yüzeye dik çekme mukavemeti en az 400 kPa olan, yüzeyi pürüzlü veya pürüzlü kanallı ekstrüde polistren levhalar ile dış duvarlarda dıştan ısı yalıtımı ve üzerine ısı yalıtım sıvası yapılması (Mantolama)",
     olcuBirimi: "m²",
     kategori: "Isı Yalıtımı",
     kaynakTip: "sistem" as const,
@@ -8126,7 +8126,7 @@ export const RESMI_POZ_ANALIZLERI = [
   {
     id: "sys-15x341x2003",
     pozNo: "15.341.2003",
-    analizAdi: "pürüzlü kanallı ekstrüde polistren levhalar ile dış duvarlarda dıştan ısı yalıtımı ve üzerine ısı",
+    analizAdi: "8 cm kalınlıkta yüzeye dik çekme mukavemeti en az 200 kPa olan, yüzeyi pürüzlü veya pürüzlü kanallı ekstrüde polistren levhalar ile dış duvarlarda dıştan ısı yalıtımı ve üzerine ısı yalıtım sıvası yapılması (Mantolama)",
     olcuBirimi: "m²",
     kategori: "Isı Yalıtımı",
     kaynakTip: "sistem" as const,
@@ -8155,7 +8155,7 @@ export const RESMI_POZ_ANALIZLERI = [
   {
     id: "sys-15x341x2004",
     pozNo: "15.341.2004",
-    analizAdi: "pürüzlü kanallı ekstrüde polistren levhalar ile dış duvarlarda dıştan ısı yalıtımı ve üzerine ısı",
+    analizAdi: "8 cm kalınlıkta yüzeye dik çekme mukavemeti en az 400 kPa olan, yüzeyi pürüzlü veya pürüzlü kanallı ekstrüde polistren levhalar ile dış duvarlarda dıştan ısı yalıtımı ve üzerine ısı yalıtım sıvası yapılması (Mantolama)",
     olcuBirimi: "m²",
     kategori: "Isı Yalıtımı",
     kaynakTip: "sistem" as const,
@@ -8184,7 +8184,7 @@ export const RESMI_POZ_ANALIZLERI = [
   {
     id: "sys-15x341x2041",
     pozNo: "15.341.2041",
-    analizAdi: "kalınlıkta (XPS levhalar yüklenebilen) levhalar ile yatayda (geleneksel gezilebilir teras çatı",
+    analizAdi: "Basma mukavemeti en az 300 kPa, 0.030<Isıl iletkenlik katsayısı ≤ 0.035 W/(m.K) olan, 5 cm kalınlıkta (XPS levhalar yüklenebilen) levhalar ile yatayda (geleneksel gezilebilir teras çatı vb.) ısı yalıtımı yapılması",
     olcuBirimi: "m²",
     kategori: "Isı Yalıtımı",
     kaynakTip: "sistem" as const,
@@ -8205,7 +8205,7 @@ export const RESMI_POZ_ANALIZLERI = [
   {
     id: "sys-15x341x2042",
     pozNo: "15.341.2042",
-    analizAdi: "cm kalınlıkta (XPS levhalar yüklenebilen) levhalar ile yatayda (geleneksel gezilebilir teras",
+    analizAdi: "Basma mukavemeti en az 300 kPa, 0.030<Isıl iletkenlik katsayısı ≤ 0.035 W/(m.K) olan), 6 cm kalınlıkta (XPS levhalar yüklenebilen) levhalar ile yatayda (geleneksel gezilebilir teras çatı vb.) ısı yalıtımı yapılması",
     olcuBirimi: "m²",
     kategori: "Isı Yalıtımı",
     kaynakTip: "sistem" as const,
@@ -8226,7 +8226,7 @@ export const RESMI_POZ_ANALIZLERI = [
   {
     id: "sys-15x341x2043",
     pozNo: "15.341.2043",
-    analizAdi: "cm kalınlıkta (XPS levhalar yüklenebilen) levhalar ile yatayda (geleneksel gezilebilir teras",
+    analizAdi: "Basma mukavemeti en az 300 kPa, 0.030<Isıl iletkenlik katsayısı ≤ 0.035 W/(m.K) olan), 8 cm kalınlıkta (XPS levhalar yüklenebilen) levhalar ile yatayda (geleneksel gezilebilir teras çatı vb.) ısı yalıtımı yapılması",
     olcuBirimi: "m²",
     kategori: "Isı Yalıtımı",
     kaynakTip: "sistem" as const,
@@ -8247,7 +8247,7 @@ export const RESMI_POZ_ANALIZLERI = [
   {
     id: "sys-15x341x2044",
     pozNo: "15.341.2044",
-    analizAdi: "cm kalınlıkta (XPS levhalar yüklenebilen) levhalar ile yatayda (geleneksel gezilebilir teras",
+    analizAdi: "Basma mukavemeti en az 300 kPa, 0.030<Isıl iletkenlik katsayısı ≤ 0.035 W/(m.K) olan), 10 cm kalınlıkta (XPS levhalar yüklenebilen) levhalar ile yatayda (geleneksel gezilebilir teras çatı vb.) ısı yalıtımı yapılması",
     olcuBirimi: "m²",
     kategori: "Isı Yalıtımı",
     kaynakTip: "sistem" as const,
@@ -8268,7 +8268,7 @@ export const RESMI_POZ_ANALIZLERI = [
   {
     id: "sys-15x341x2045",
     pozNo: "15.341.2045",
-    analizAdi: "kalınlıkta (XPS levhalar yüklenebilen) levhalar ile yatayda (geleneksel gezilebilir teras çatı",
+    analizAdi: "Basma mukavemeti en az 300 kPa, 0.035<Isıl iletkenlik katsayısı ≤ 0.040 W/(m.K) olan, 5 cm kalınlıkta (XPS levhalar yüklenebilen) levhalar ile yatayda (geleneksel gezilebilir teras çatı vb.) ısı yalıtımı yapılması",
     olcuBirimi: "m²",
     kategori: "Isı Yalıtımı",
     kaynakTip: "sistem" as const,
@@ -8289,7 +8289,7 @@ export const RESMI_POZ_ANALIZLERI = [
   {
     id: "sys-15x341x2046",
     pozNo: "15.341.2046",
-    analizAdi: "kalınlıkta (XPS levhalar yüklenebilen) levhalar ile yatayda (geleneksel gezilebilir teras çatı",
+    analizAdi: "Basma mukavemeti en az 300 kPa, 0.035<Isıl iletkenlik katsayısı ≤ 0.040 W/(m.K) olan, 6 cm kalınlıkta (XPS levhalar yüklenebilen) levhalar ile yatayda (geleneksel gezilebilir teras çatı vb.) ısı yalıtımı yapılması",
     olcuBirimi: "m²",
     kategori: "Isı Yalıtımı",
     kaynakTip: "sistem" as const,
@@ -8310,7 +8310,7 @@ export const RESMI_POZ_ANALIZLERI = [
   {
     id: "sys-15x341x2047",
     pozNo: "15.341.2047",
-    analizAdi: "kalınlıkta (XPS levhalar yüklenebilen) levhalar ile yatayda (geleneksel gezilebilir teras çatı",
+    analizAdi: "Basma mukavemeti en az 300 kPa, 0.035<Isıl iletkenlik katsayısı ≤ 0.040 W/(m.K) olan, 8 cm kalınlıkta (XPS levhalar yüklenebilen) levhalar ile yatayda (geleneksel gezilebilir teras çatı vb.) ısı yalıtımı yapılması",
     olcuBirimi: "m²",
     kategori: "Isı Yalıtımı",
     kaynakTip: "sistem" as const,
@@ -8331,7 +8331,7 @@ export const RESMI_POZ_ANALIZLERI = [
   {
     id: "sys-15x341x2048",
     pozNo: "15.341.2048",
-    analizAdi: "cm kalınlıkta (XPS levhalar yüklenebilen) levhalar ile yatayda (geleneksel gezilebilir teras",
+    analizAdi: "Basma mukavemeti en az 300 kPa, 0.035<Isıl iletkenlik katsayısı ≤ 0.040 W/(m.K) olan, 10 cm kalınlıkta (XPS levhalar yüklenebilen) levhalar ile yatayda (geleneksel gezilebilir teras çatı vb.) ısı yalıtımı yapılması",
     olcuBirimi: "m²",
     kategori: "Isı Yalıtımı",
     kaynakTip: "sistem" as const,
@@ -8352,7 +8352,7 @@ export const RESMI_POZ_ANALIZLERI = [
   {
     id: "sys-15x341x2061",
     pozNo: "15.341.2061",
-    analizAdi: "cm kalınlıkta yüzeyi düzgün XPS levhalar ile (üzeri gezilmeyen ters teras çatılarda) ısı",
+    analizAdi: "Basma mukavemeti en az 200 kPa, 0.030<Isıl iletkenlik katsayısı ≤ 0.035 W/(m.K) olan, 10 cm kalınlıkta yüzeyi düzgün XPS levhalar ile (üzeri gezilmeyen ters teras çatılarda) ısı yalıtımı yapılması",
     olcuBirimi: "m²",
     kategori: "Isı Yalıtımı",
     kaynakTip: "sistem" as const,
@@ -8373,7 +8373,7 @@ export const RESMI_POZ_ANALIZLERI = [
   {
     id: "sys-15x341x2062",
     pozNo: "15.341.2062",
-    analizAdi: "cm kalınlıkta yüzeyi düzgün XPS levhalar ile (üzeri gezilmeyen ters teras çatılarda) ısı",
+    analizAdi: "Basma mukavemeti en az 200 kPa, 0.035<Isıl iletkenlik katsayısı ≤ 0.040 W/(m.K) olan, 10 cm kalınlıkta yüzeyi düzgün XPS levhalar ile (üzeri gezilmeyen ters teras çatılarda) ısı yalıtımı yapılması",
     olcuBirimi: "m²",
     kategori: "Isı Yalıtımı",
     kaynakTip: "sistem" as const,
@@ -8394,7 +8394,7 @@ export const RESMI_POZ_ANALIZLERI = [
   {
     id: "sys-15x341x2063",
     pozNo: "15.341.2063",
-    analizAdi: "cm kalınlıkta yüzeyi düzgün XPS levhalar ile (üzeri gezilmeyen ters teras çatılarda) ısı",
+    analizAdi: "Basma mukavemeti en az 200 kPa, 0.040<Isıl iletkenlik katsayısı ≤ 0.045 W/(m.K) olan, 10 cm kalınlıkta yüzeyi düzgün XPS levhalar ile (üzeri gezilmeyen ters teras çatılarda) ısı yalıtımı yapılması",
     olcuBirimi: "m²",
     kategori: "Isı Yalıtımı",
     kaynakTip: "sistem" as const,
@@ -8415,7 +8415,7 @@ export const RESMI_POZ_ANALIZLERI = [
   {
     id: "sys-15x341x2064",
     pozNo: "15.341.2064",
-    analizAdi: "cm kalınlıkta yüzeyi düzgün XPS levhalar ile (üzeri gezilen ters teras çatılarda) ısı yalıtımı",
+    analizAdi: "Basma mukavemeti en az 300 kPa, 0.030<Isıl iletkenlik katsayısı ≤ 0.035 W/(m.K) olan, 10 cm kalınlıkta yüzeyi düzgün XPS levhalar ile (üzeri gezilen ters teras çatılarda) ısı yalıtımı yapılması",
     olcuBirimi: "m²",
     kategori: "Isı Yalıtımı",
     kaynakTip: "sistem" as const,
@@ -8436,7 +8436,7 @@ export const RESMI_POZ_ANALIZLERI = [
   {
     id: "sys-15x341x2065",
     pozNo: "15.341.2065",
-    analizAdi: "cm kalınlıkta yüzeyi düzgün XPS levhalar ile (üzeri gezilen ters teras çatılarda) ısı yalıtımı",
+    analizAdi: "Basma mukavemeti en az 300 kPa, 0.035<Isıl iletkenlik katsayısı ≤ 0.040 W/(m.K) olan, 10 cm kalınlıkta yüzeyi düzgün XPS levhalar ile (üzeri gezilen ters teras çatılarda) ısı yalıtımı yapılması",
     olcuBirimi: "m²",
     kategori: "Isı Yalıtımı",
     kaynakTip: "sistem" as const,
@@ -8457,7 +8457,7 @@ export const RESMI_POZ_ANALIZLERI = [
   {
     id: "sys-15x341x2066",
     pozNo: "15.341.2066",
-    analizAdi: "cm kalınlıkta yüzeyi düzgün XPS levhalar ile (üzeri gezilen ters teras çatılarda) ısı yalıtımı",
+    analizAdi: "Basma mukavemeti en az 300 kPa, 0.040<Isıl iletkenlik katsayısı ≤ 0.045 W/(m.K) olan, 10 cm kalınlıkta yüzeyi düzgün XPS levhalar ile (üzeri gezilen ters teras çatılarda) ısı yalıtımı yapılması",
     olcuBirimi: "m²",
     kategori: "Isı Yalıtımı",
     kaynakTip: "sistem" as const,
@@ -8478,7 +8478,7 @@ export const RESMI_POZ_ANALIZLERI = [
   {
     id: "sys-15x341x2081",
     pozNo: "15.341.2081",
-    analizAdi: "basınç dayanımlı) ile toprak temaslı temel perde ve duvarlarında su yalıtımı üzerine ısı",
+    analizAdi: "6 cm kalınlıkta 0.030<Isıl iletkenlik katsayısı ≤ 0.035 W/(m.K) olan levhalar (XPS - 300 Kpa basınç dayanımlı) ile toprak temaslı temel perde ve duvarlarında su yalıtımı üzerine ısı yalıtımı yapılması",
     olcuBirimi: "m²",
     kategori: "Isı Yalıtımı",
     kaynakTip: "sistem" as const,
@@ -8500,7 +8500,7 @@ export const RESMI_POZ_ANALIZLERI = [
   {
     id: "sys-15x341x2082",
     pozNo: "15.341.2082",
-    analizAdi: "basınç dayanımlı) ile toprak temaslı temel perde ve duvarlarında su yalıtımı üzerine ısı",
+    analizAdi: "6 cm kalınlıkta 0.035<Isıl iletkenlik katsayısı ≤ 0.040 W/(m.K) olan levhalar (XPS - 300 Kpa basınç dayanımlı) ile toprak temaslı temel perde ve duvarlarında su yalıtımı üzerine ısı yalıtımı yapılması",
     olcuBirimi: "m²",
     kategori: "Isı Yalıtımı",
     kaynakTip: "sistem" as const,
@@ -8522,7 +8522,7 @@ export const RESMI_POZ_ANALIZLERI = [
   {
     id: "sys-15x341x2083",
     pozNo: "15.341.2083",
-    analizAdi: "basınç dayanımlı) ile toprak temaslı temel perde ve duvarlarında su yalıtımı üzerine ısı",
+    analizAdi: "6 cm kalınlıkta 0.040<Isıl iletkenlik katsayısı ≤ 0.045 W/(m.K) olan levhalar (XPS - 300 Kpa basınç dayanımlı) ile toprak temaslı temel perde ve duvarlarında su yalıtımı üzerine ısı yalıtımı yapılması",
     olcuBirimi: "m²",
     kategori: "Isı Yalıtımı",
     kaynakTip: "sistem" as const,
@@ -8544,7 +8544,7 @@ export const RESMI_POZ_ANALIZLERI = [
   {
     id: "sys-15x341x2084",
     pozNo: "15.341.2084",
-    analizAdi: "basınç dayanımlı) ile toprak temaslı temel perde ve duvarlarında su yalıtımı üzerine ısı",
+    analizAdi: "6 cm kalınlıkta 0.030<Isıl iletkenlik katsayısı ≤ 0.035 W/(m.K) olan levhalar (XPS - 400 Kpa basınç dayanımlı) ile toprak temaslı temel perde ve duvarlarında su yalıtımı üzerine ısı yalıtımı yapılması",
     olcuBirimi: "m²",
     kategori: "Isı Yalıtımı",
     kaynakTip: "sistem" as const,
@@ -8566,7 +8566,7 @@ export const RESMI_POZ_ANALIZLERI = [
   {
     id: "sys-15x341x2085",
     pozNo: "15.341.2085",
-    analizAdi: "basınç dayanımlı) ile toprak temaslı temel perde ve duvarlarında su yalıtımı üzerine ısı",
+    analizAdi: "6 cm kalınlıkta 0.035<Isıl iletkenlik katsayısı ≤ 0.040 W/(m.K) olan levhalar (XPS - 400 Kpa basınç dayanımlı) ile toprak temaslı temel perde ve duvarlarında su yalıtımı üzerine ısı yalıtımı yapılması",
     olcuBirimi: "m²",
     kategori: "Isı Yalıtımı",
     kaynakTip: "sistem" as const,
@@ -8588,7 +8588,7 @@ export const RESMI_POZ_ANALIZLERI = [
   {
     id: "sys-15x341x2086",
     pozNo: "15.341.2086",
-    analizAdi: "basınç dayanımlı) ile toprak temaslı temel perde ve duvarlarında su yalıtımı üzerine ısı",
+    analizAdi: "6 cm kalınlıkta 0.040<Isıl iletkenlik katsayısı ≤ 0.045 W/(m.K) olan levhalar (XPS - 400 Kpa basınç dayanımlı) ile toprak temaslı temel perde ve duvarlarında su yalıtımı üzerine ısı yalıtımı yapılması",
     olcuBirimi: "m²",
     kategori: "Isı Yalıtımı",
     kaynakTip: "sistem" as const,
@@ -8610,7 +8610,7 @@ export const RESMI_POZ_ANALIZLERI = [
   {
     id: "sys-15x341x3041",
     pozNo: "15.341.3041",
-    analizAdi: "yada arakat döşeme betonu üzerinde yüke maruz kalan yüzer döşeme uygulaması vb.) ısı",
+    analizAdi: "Basma mukavemeti en az 10 kPa olan 2,5 cm kalınlıkta taşyünü levhalar ile yatayda (zemin yada arakat döşeme betonu üzerinde yüke maruz kalan yüzer döşeme uygulaması vb.) ısı yalıtımı yapılması",
     olcuBirimi: "m²",
     kategori: "Isı Yalıtımı",
     kaynakTip: "sistem" as const,
@@ -8631,7 +8631,7 @@ export const RESMI_POZ_ANALIZLERI = [
   {
     id: "sys-15x341x3042",
     pozNo: "15.341.3042",
-    analizAdi: "yada arakat döşeme betonu üzerinde yüke maruz kalan yüzer döşeme uygulaması vb.) ısı",
+    analizAdi: "Basma mukavemeti en az 15 kPa olan 2,5 cm kalınlıkta taşyünü levhalarile yatayda (zemin yada arakat döşeme betonu üzerinde yüke maruz kalan yüzer döşeme uygulaması vb.) ısı yalıtımı yapılması",
     olcuBirimi: "m²",
     kategori: "Isı Yalıtımı",
     kaynakTip: "sistem" as const,
@@ -8652,7 +8652,7 @@ export const RESMI_POZ_ANALIZLERI = [
   {
     id: "sys-15x341x3061",
     pozNo: "15.341.3061",
-    analizAdi: "(yüke maruz kalmayan uygulamalarda, yükseltilmiş döşeme uygulaması vb.) ısı yalıtımı",
+    analizAdi: "0,030 ≤ Isıl iletkenliği < 0,035W/(m.K) olan 2,5 cm kalınlıkta taşyünü levhalar ile yatayda (yüke maruz kalmayan uygulamalarda, yükseltilmiş döşeme uygulaması vb.) ısı yalıtımı yapılması",
     olcuBirimi: "m²",
     kategori: "Isı Yalıtımı",
     kaynakTip: "sistem" as const,
@@ -8673,7 +8673,7 @@ export const RESMI_POZ_ANALIZLERI = [
   {
     id: "sys-15x341x3062",
     pozNo: "15.341.3062",
-    analizAdi: "(yüke maruz kalmayan uygulamalarda, yükseltilmiş döşeme uygulaması vb.) ısı yalıtımı",
+    analizAdi: "0,035 ≤ Isıl iletkenliği ≤ 0,040 W/(m.K) olan 2,5 cm kalınlıkta taşyünü levhalar ile yatayda (yüke maruz kalmayan uygulamalarda, yükseltilmiş döşeme uygulaması vb.) ısı yalıtımı yapılması",
     olcuBirimi: "m²",
     kategori: "Isı Yalıtımı",
     kaynakTip: "sistem" as const,
@@ -8694,7 +8694,7 @@ export const RESMI_POZ_ANALIZLERI = [
   {
     id: "sys-15x341x3081",
     pozNo: "15.341.3081",
-    analizAdi: "döşemelerde ısı ve ses yalıtımı yapılması (Ses yutma katsayısı (ortalama) ≥ 0,80 olan",
+    analizAdi: "6 cm kalınlıkta taşyünü levhalar ile asma tavanlarda, bölme duvarlarda ve yükseltilmiş döşemelerde ısı ve ses yalıtımı yapılması (Ses yutma katsayısı (ortalama) ≥ 0,80 olan levhalar)",
     olcuBirimi: "m²",
     kategori: "Isı Yalıtımı",
     kaynakTip: "sistem" as const,
@@ -8715,7 +8715,7 @@ export const RESMI_POZ_ANALIZLERI = [
   {
     id: "sys-15x341x3082",
     pozNo: "15.341.3082",
-    analizAdi: "döşemelerde ısı ve ses yalıtımı yapılması (Ses yutma katsayısı (ortalama) ≥ 0,90 olan",
+    analizAdi: "6 cm kalınlıkta taşyünü levhalar ile asma tavanlarda, bölme duvarlarda ve yükseltilmiş döşemelerde ısı ve ses yalıtımı yapılması (Ses yutma katsayısı (ortalama) ≥ 0,90 olan levhalar)",
     olcuBirimi: "m²",
     kategori: "Isı Yalıtımı",
     kaynakTip: "sistem" as const,
@@ -8736,7 +8736,7 @@ export const RESMI_POZ_ANALIZLERI = [
   {
     id: "sys-15x341x3083",
     pozNo: "15.341.3083",
-    analizAdi: "döşemelerde ısı ve ses yalıtımı yapılması (Ses yutma katsayısı (ortalama) ≥ 1,00 olan",
+    analizAdi: "6 cm kalınlıkta taşyünü levhalar ile asma tavanlarda, bölme duvarlarda ve yükseltilmiş döşemelerde ısı ve ses yalıtımı yapılması (Ses yutma katsayısı (ortalama) ≥ 1,00 olan levhalar)",
     olcuBirimi: "m²",
     kategori: "Isı Yalıtımı",
     kaynakTip: "sistem" as const,
@@ -8757,7 +8757,7 @@ export const RESMI_POZ_ANALIZLERI = [
   {
     id: "sys-15x341x4001",
     pozNo: "15.341.4001",
-    analizAdi: "8 cm kalınlıkta kaplamasız camyünü şilte ve üzerine su buharı geçişine açık su yalıtım örtüsü",
+    analizAdi: "Çatı arasına döşeme üzerine uygulamalar için, 0,035 ≤ Isıl iletkenliği < 0,040W/(m.K) olan, 8 cm kalınlıkta kaplamasız camyünü şilte ve üzerine su buharı geçişine açık su yalıtım örtüsü serilmesi",
     olcuBirimi: "m²",
     kategori: "Isı Yalıtımı",
     kaynakTip: "sistem" as const,
@@ -8779,7 +8779,7 @@ export const RESMI_POZ_ANALIZLERI = [
   {
     id: "sys-15x341x4002",
     pozNo: "15.341.4002",
-    analizAdi: "8 cm kalınlıkta kaplamasız camyünü şilte ve üzerine su buharı geçişine açık su yalıtım örtüsü",
+    analizAdi: "Çatı arasına döşeme üzerine uygulamalar için, 0,040 ≤ Isıl iletkenliği ≤ 0,045W/(m.K) olan, 8 cm kalınlıkta kaplamasız camyünü şilte ve üzerine su buharı geçişine açık su yalıtım örtüsü serilmesi",
     olcuBirimi: "m²",
     kategori: "Isı Yalıtımı",
     kaynakTip: "sistem" as const,
@@ -8801,7 +8801,7 @@ export const RESMI_POZ_ANALIZLERI = [
   {
     id: "sys-15x341x4003",
     pozNo: "15.341.4003",
-    analizAdi: "8 cm kalınlıkta bir yüzü cam tülü kaplamalı camyünü şilte ve üzerine su buharı geçişine açık",
+    analizAdi: "Çatı arasına döşeme üzerine uygulamalar için, 0,035 ≤ Isıl iletkenliği < 0,040W/(m.K) olan, 8 cm kalınlıkta bir yüzü cam tülü kaplamalı camyünü şilte ve üzerine su buharı geçişine açık su yalıtım örtüsü serilmesi",
     olcuBirimi: "m²",
     kategori: "Isı Yalıtımı",
     kaynakTip: "sistem" as const,
@@ -8823,7 +8823,7 @@ export const RESMI_POZ_ANALIZLERI = [
   {
     id: "sys-15x341x4004",
     pozNo: "15.341.4004",
-    analizAdi: "8 cm kalınlıkta bir yüzü camtülü kaplamalı camyünü şilte ve üzerine su buharı geçişine açık",
+    analizAdi: "Çatı arasına döşeme üzerine uygulamalar için, 0,040 ≤ Isıl iletkenliği ≤ 0,045W/(m.K) olan, 8 cm kalınlıkta bir yüzü camtülü kaplamalı camyünü şilte ve üzerine su buharı geçişine açık su yalıtım örtüsü serilmesi",
     olcuBirimi: "m²",
     kategori: "Isı Yalıtımı",
     kaynakTip: "sistem" as const,
@@ -8845,7 +8845,7 @@ export const RESMI_POZ_ANALIZLERI = [
   {
     id: "sys-15x341x4005",
     pozNo: "15.341.4005",
-    analizAdi: "16 cm kalınlıkta kaplamasız camyünü şilte ve üzerine su buharı geçişine açık su yalıtım",
+    analizAdi: "Çatı arasına döşeme üzerine uygulamalar için, 0,035 ≤ Isıl iletkenliği < 0,040W/(m.K) olan, 16 cm kalınlıkta kaplamasız camyünü şilte ve üzerine su buharı geçişine açık su yalıtım örtüsü serilmesi",
     olcuBirimi: "m²",
     kategori: "Isı Yalıtımı",
     kaynakTip: "sistem" as const,
@@ -8867,7 +8867,7 @@ export const RESMI_POZ_ANALIZLERI = [
   {
     id: "sys-15x341x4006",
     pozNo: "15.341.4006",
-    analizAdi: "16 cm kalınlıkta kaplamasız camyünü şilte ve üzerine su buharı geçişine açık su yalıtım",
+    analizAdi: "Çatı arasına döşeme üzerine uygulamalar için, 0,040 ≤ Isıl iletkenliği ≤ 0,045W/(m.K) olan, 16 cm kalınlıkta kaplamasız camyünü şilte ve üzerine su buharı geçişine açık su yalıtım örtüsü serilmesi",
     olcuBirimi: "m²",
     kategori: "Isı Yalıtımı",
     kaynakTip: "sistem" as const,
@@ -8889,7 +8889,7 @@ export const RESMI_POZ_ANALIZLERI = [
   {
     id: "sys-15x341x4007",
     pozNo: "15.341.4007",
-    analizAdi: "16 cm kalınlıkta bir yüzü camtülü kaplamalı camyünü şilte ve üzerine su buharı geçişine açık",
+    analizAdi: "Çatı arasına döşeme üzerine uygulamalar için, 0,035 ≤ Isıl iletkenliği < 0,040W/(m.K) olan, 16 cm kalınlıkta bir yüzü camtülü kaplamalı camyünü şilte ve üzerine su buharı geçişine açık su yalıtım örtüsü serilmesi",
     olcuBirimi: "m²",
     kategori: "Isı Yalıtımı",
     kaynakTip: "sistem" as const,
@@ -8911,7 +8911,7 @@ export const RESMI_POZ_ANALIZLERI = [
   {
     id: "sys-15x341x4008",
     pozNo: "15.341.4008",
-    analizAdi: "16 cm kalınlıkta bir yüzü camtülü kaplamalı camyünü şilte ve üzerine su buharı geçişine açık",
+    analizAdi: "Çatı arasına döşeme üzerine uygulamalar için, 0,040 ≤ Isıl iletkenliği ≤ 0,045W/(m.K) olan, 16 cm kalınlıkta bir yüzü camtülü kaplamalı camyünü şilte ve üzerine su buharı geçişine açık su yalıtım örtüsü serilmesi",
     olcuBirimi: "m²",
     kategori: "Isı Yalıtımı",
     kaynakTip: "sistem" as const,
@@ -9021,7 +9021,7 @@ export const RESMI_POZ_ANALIZLERI = [
   {
     id: "sys-15x365x1001",
     pozNo: "15.365.1001",
-    analizAdi: "tesviyesi yapılması ve üzerine 2 mm kalınlıkta PVC esaslı yer döseme malzemeleri ile döseme",
+    analizAdi: "Çimento esaslı kendiliğinden yerleşen (self leveling) harç ile ortalama 2 mm kalınlıkta zemin tesviyesi yapılması ve üzerine 2 mm kalınlıkta PVC esaslı yer döseme malzemeleri ile döseme kaplaması yapılması (homojen - Grup P)",
     olcuBirimi: "m²",
     kategori: "PVC Zemin Kaplama",
     kaynakTip: "sistem" as const,
@@ -9047,7 +9047,7 @@ export const RESMI_POZ_ANALIZLERI = [
   {
     id: "sys-15x365x1002",
     pozNo: "15.365.1002",
-    analizAdi: "tesviyesi yapılması ve üzerine 2mm kalınlıkda PVC esaslı yer döseme kaplaması yapılması",
+    analizAdi: "Çimento esaslı kendiliğinden yerleşen (self leveling) harç ile ortalama 2 mm kalınlıkta zemin tesviyesi yapılması ve üzerine 2mm kalınlıkda PVC esaslı yer döseme kaplaması yapılması (heterojen - Grup T)",
     olcuBirimi: "m²",
     kategori: "PVC Zemin Kaplama",
     kaynakTip: "sistem" as const,
@@ -9073,7 +9073,7 @@ export const RESMI_POZ_ANALIZLERI = [
   {
     id: "sys-15x365x1003",
     pozNo: "15.365.1003",
-    analizAdi: "tesviyesi yapılması ve üzerine 2 mm kalınlıkta Pvc esaslı yer döseme malzemeleri ile döseme",
+    analizAdi: "Çimento esaslı kendiliğinden yerleşen (self leveling) harç ile ortalama 2 mm kalınlıkta zemin tesviyesi yapılması ve üzerine 2 mm kalınlıkta Pvc esaslı yer döseme malzemeleri ile döseme kaplaması yapılması (heterojen - Grup T)",
     olcuBirimi: "m²",
     kategori: "PVC Zemin Kaplama",
     kaynakTip: "sistem" as const,
@@ -9099,7 +9099,7 @@ export const RESMI_POZ_ANALIZLERI = [
   {
     id: "sys-15x365x1004",
     pozNo: "15.365.1004",
-    analizAdi: "tesviyesi yapılması ve üzerine 2 mm kalınlıkta PVC esaslı karo yer döseme malzemeleri ile",
+    analizAdi: "Çimento esaslı kendiliğinden yerleşen (self leveling) harç ile ortalama 2 mm kalınlıkta zemin tesviyesi yapılması ve üzerine 2 mm kalınlıkta PVC esaslı karo yer döseme malzemeleri ile döseme kaplaması yapılması (homojen - Grup P)",
     olcuBirimi: "m²",
     kategori: "PVC Zemin Kaplama",
     kaynakTip: "sistem" as const,
@@ -9125,7 +9125,7 @@ export const RESMI_POZ_ANALIZLERI = [
   {
     id: "sys-15x365x1005",
     pozNo: "15.365.1005",
-    analizAdi: "tesviyesi yapılması ve üzerine 2 mm kalınlıkta Pvc esaslı yer döseme malzemeleri ile döseme",
+    analizAdi: "Çimento esaslı kendiliğinden yerleşen (self leveling) harç ile ortalama 2 mm kalınlıkta zemin tesviyesi yapılması ve üzerine 2 mm kalınlıkta Pvc esaslı yer döseme malzemeleri ile döseme kaplaması yapılması (heterojen - Grup T)",
     olcuBirimi: "m²",
     kategori: "PVC Zemin Kaplama",
     kaynakTip: "sistem" as const,
@@ -9151,7 +9151,7 @@ export const RESMI_POZ_ANALIZLERI = [
   {
     id: "sys-15x365x1006",
     pozNo: "15.365.1006",
-    analizAdi: "tesviyesi yapılması ve üzerine 2 mm kalınlıkta Pvc esaslı yer döseme malzemeleri ile döseme",
+    analizAdi: "Çimento esaslı kendiliğinden yerleşen (self leveling) harç ile ortalama 2 mm kalınlıkta zemin tesviyesi yapılması ve üzerine 2 mm kalınlıkta Pvc esaslı yer döseme malzemeleri ile döseme kaplaması yapılması (heterojen - Grup T)",
     olcuBirimi: "m²",
     kategori: "PVC Zemin Kaplama",
     kaynakTip: "sistem" as const,
@@ -9177,7 +9177,7 @@ export const RESMI_POZ_ANALIZLERI = [
   {
     id: "sys-15x365x1007",
     pozNo: "15.365.1007",
-    analizAdi: "tesviyesi yapılması ve üzerine 3 mm kalınlıkta Pvc esaslı yer döseme malzemeleri ile döseme",
+    analizAdi: "Çimento esaslı kendiliğinden yerleşen (self leveling) harç ile ortalama 2 mm kalınlıkta zemin tesviyesi yapılması ve üzerine 3 mm kalınlıkta Pvc esaslı yer döseme malzemeleri ile döseme kaplamas yapılması (heterojen - Grup T)",
     olcuBirimi: "m²",
     kategori: "PVC Zemin Kaplama",
     kaynakTip: "sistem" as const,
@@ -9203,7 +9203,7 @@ export const RESMI_POZ_ANALIZLERI = [
   {
     id: "sys-15x365x1008",
     pozNo: "15.365.1008",
-    analizAdi: "tesviyesi yapılması ve üzerine 2mm kalınlıkda PVC esaslı yer döseme kaplaması yapılması",
+    analizAdi: "Çimento esaslı kendiliğinden yerleşen (self leveling) harç ile ortalama 2 mm kalınlıkta zemin tesviyesi yapılması ve üzerine 2mm kalınlıkda PVC esaslı yer döseme kaplaması yapılması (homojen - Grup T)",
     olcuBirimi: "m²",
     kategori: "PVC Zemin Kaplama",
     kaynakTip: "sistem" as const,
@@ -9229,7 +9229,7 @@ export const RESMI_POZ_ANALIZLERI = [
   {
     id: "sys-15x365x1009",
     pozNo: "15.365.1009",
-    analizAdi: "tesviyesi yapılması ve üzerine 2mm kalınlıkda PVC esaslı karo yer döseme kaplaması",
+    analizAdi: "Çimento esaslı kendiliğinden yerleşen (self leveling) harç ile ortalama 2 mm kalınlıkta zemin tesviyesi yapılması ve üzerine 2mm kalınlıkda PVC esaslı karo yer döseme kaplaması yapılması (homojen - Grup T)",
     olcuBirimi: "m²",
     kategori: "PVC Zemin Kaplama",
     kaynakTip: "sistem" as const,
@@ -9255,7 +9255,7 @@ export const RESMI_POZ_ANALIZLERI = [
   {
     id: "sys-15x365x1021",
     pozNo: "15.365.1021",
-    analizAdi: "tesviyesi yapılması ve üzerine 2 mm kalınlıkta PVC esaslı yer döseme malzemeleri ile döseme",
+    analizAdi: "Alçı esaslı kendiliğinden yerleşen (self leveling) harç ile ortalama 2 mm kalınlıkta zemin tesviyesi yapılması ve üzerine 2 mm kalınlıkta PVC esaslı yer döseme malzemeleri ile döseme kaplaması yapılması (homojen - Grup P)",
     olcuBirimi: "m²",
     kategori: "PVC Zemin Kaplama",
     kaynakTip: "sistem" as const,
@@ -9281,7 +9281,7 @@ export const RESMI_POZ_ANALIZLERI = [
   {
     id: "sys-15x365x1022",
     pozNo: "15.365.1022",
-    analizAdi: "tesviyesi yapılması ve üzerine 2mm kalınlıkda PVC esaslı yer döseme kaplaması yapılması",
+    analizAdi: "Alçı esaslı kendiliğinden yerleşen (self leveling) harç ile ortalama 2 mm kalınlıkta zemin tesviyesi yapılması ve üzerine 2mm kalınlıkda PVC esaslı yer döseme kaplaması yapılması (heterojen - Grup T)",
     olcuBirimi: "m²",
     kategori: "PVC Zemin Kaplama",
     kaynakTip: "sistem" as const,
@@ -9307,7 +9307,7 @@ export const RESMI_POZ_ANALIZLERI = [
   {
     id: "sys-15x365x1023",
     pozNo: "15.365.1023",
-    analizAdi: "tesviyesi yapılması ve üzerine 2 mm kalınlıkta Pvc esaslı yer döseme malzemeleri ile döseme",
+    analizAdi: "Alçı esaslı kendiliğinden yerleşen (self leveling) harç ile ortalama 2 mm kalınlıkta zemin tesviyesi yapılması ve üzerine 2 mm kalınlıkta Pvc esaslı yer döseme malzemeleri ile döseme kaplaması yapılması (heterojen - Grup T)",
     olcuBirimi: "m²",
     kategori: "PVC Zemin Kaplama",
     kaynakTip: "sistem" as const,
@@ -9333,7 +9333,7 @@ export const RESMI_POZ_ANALIZLERI = [
   {
     id: "sys-15x365x1024",
     pozNo: "15.365.1024",
-    analizAdi: "tesviyesi yapılması ve üzerine 2 mm kalınlıkta PVC esaslı karo yer döseme malzemeleri ile",
+    analizAdi: "Alçı esaslı kendiliğinden yerleşen (self leveling) harç ile ortalama 2 mm kalınlıkta zemin tesviyesi yapılması ve üzerine 2 mm kalınlıkta PVC esaslı karo yer döseme malzemeleri ile döseme kaplaması yapılması (homojen - Grup P)",
     olcuBirimi: "m²",
     kategori: "PVC Zemin Kaplama",
     kaynakTip: "sistem" as const,
@@ -9359,7 +9359,7 @@ export const RESMI_POZ_ANALIZLERI = [
   {
     id: "sys-15x365x1025",
     pozNo: "15.365.1025",
-    analizAdi: "tesviyesi yapılması ve üzerine 2 mm kalınlıkta Pvc esaslı yer döseme malzemeleri ile döseme",
+    analizAdi: "Alçı esaslı kendiliğinden yerleşen (self leveling) harç ile ortalama 2 mm kalınlıkta zemin tesviyesi yapılması ve üzerine 2 mm kalınlıkta Pvc esaslı yer döseme malzemeleri ile döseme kaplaması yapılması (heterojen - Grup T)",
     olcuBirimi: "m²",
     kategori: "PVC Zemin Kaplama",
     kaynakTip: "sistem" as const,
@@ -9385,7 +9385,7 @@ export const RESMI_POZ_ANALIZLERI = [
   {
     id: "sys-15x365x1026",
     pozNo: "15.365.1026",
-    analizAdi: "tesviyesi yapılması ve üzerine 2 mm kalınlıkta Pvc esaslı yer döseme malzemeleri ile döseme",
+    analizAdi: "Alçı esaslı kendiliğinden yerleşen (self leveling) harç ile ortalama 2 mm kalınlıkta zemin tesviyesi yapılması ve üzerine 2 mm kalınlıkta Pvc esaslı yer döseme malzemeleri ile döseme kaplaması yapılması (heterojen - Grup T)",
     olcuBirimi: "m²",
     kategori: "PVC Zemin Kaplama",
     kaynakTip: "sistem" as const,
@@ -9411,7 +9411,7 @@ export const RESMI_POZ_ANALIZLERI = [
   {
     id: "sys-15x365x1027",
     pozNo: "15.365.1027",
-    analizAdi: "tesviyesi yapılması ve üzerine 3 mm kalınlıkta Pvc esaslı yer döseme malzemeleri ile döseme",
+    analizAdi: "Alçı esaslı kendiliğinden yerleşen (self leveling) harç ile ortalama 2 mm kalınlıkta zemin tesviyesi yapılması ve üzerine 3 mm kalınlıkta Pvc esaslı yer döseme malzemeleri ile döseme kaplamas yapılması (heterojen - Grup T)",
     olcuBirimi: "m²",
     kategori: "PVC Zemin Kaplama",
     kaynakTip: "sistem" as const,
@@ -9437,7 +9437,7 @@ export const RESMI_POZ_ANALIZLERI = [
   {
     id: "sys-15x365x1028",
     pozNo: "15.365.1028",
-    analizAdi: "tesviyesi yapılması ve üzerine 2mm kalınlıkda PVC esaslı yer döseme kaplaması yapılması",
+    analizAdi: "Alçı esaslı kendiliğinden yerleşen (self leveling) harç ile ortalama 2 mm kalınlıkta zemin tesviyesi yapılması ve üzerine 2mm kalınlıkda PVC esaslı yer döseme kaplaması yapılması (homojen - Grup T)",
     olcuBirimi: "m²",
     kategori: "PVC Zemin Kaplama",
     kaynakTip: "sistem" as const,
@@ -9463,7 +9463,7 @@ export const RESMI_POZ_ANALIZLERI = [
   {
     id: "sys-15x365x1029",
     pozNo: "15.365.1029",
-    analizAdi: "tesviyesi yapılması ve üzerine 2mm kalınlıkda PVC esaslı karo yer döseme kaplaması",
+    analizAdi: "Alçı esaslı kendiliğinden yerleşen (self leveling) harç ile ortalama 2 mm kalınlıkta zemin tesviyesi yapılması ve üzerine 2mm kalınlıkda PVC esaslı karo yer döseme kaplaması yapılması (homojen - Grup T)",
     olcuBirimi: "m²",
     kategori: "PVC Zemin Kaplama",
     kaynakTip: "sistem" as const,
@@ -9489,7 +9489,7 @@ export const RESMI_POZ_ANALIZLERI = [
   {
     id: "sys-15x365x1101",
     pozNo: "15.365.1101",
-    analizAdi: "tesviyesi yapılması ve üzerine PVC esaslı spor zemin malzemeleri ile kapalı spor zeminlerde",
+    analizAdi: "Çimento esaslı kendiliğinden yerleşen (self leveling) harç ile ortalama 2 mm kalınlıkta zemin tesviyesi yapılması ve üzerine PVC esaslı spor zemin malzemeleri ile kapalı spor zeminlerde döşeme kaplaması yapılması (P1)",
     olcuBirimi: "m²",
     kategori: "PVC Zemin Kaplama",
     kaynakTip: "sistem" as const,
@@ -9515,7 +9515,7 @@ export const RESMI_POZ_ANALIZLERI = [
   {
     id: "sys-15x365x1102",
     pozNo: "15.365.1102",
-    analizAdi: "tesviyesi yapılması ve üzerine PVC esaslı spor zemin malzemeleri ile kapalı spor zeminlerde",
+    analizAdi: "Çimento esaslı kendiliğinden yerleşen (self leveling) harç ile ortalama 2 mm kalınlıkta zemin tesviyesi yapılması ve üzerine PVC esaslı spor zemin malzemeleri ile kapalı spor zeminlerde döşeme kaplaması yapılması (P2)",
     olcuBirimi: "m²",
     kategori: "PVC Zemin Kaplama",
     kaynakTip: "sistem" as const,
@@ -9541,7 +9541,7 @@ export const RESMI_POZ_ANALIZLERI = [
   {
     id: "sys-15x365x1103",
     pozNo: "15.365.1103",
-    analizAdi: "tesviyesi yapılması ve üzerine PVC esaslı spor zemin malzemeleri ile kapalı spor zeminlerde",
+    analizAdi: "Çimento esaslı kendiliğinden yerleşen (self leveling) harç ile ortalama 2 mm kalınlıkta zemin tesviyesi yapılması ve üzerine PVC esaslı spor zemin malzemeleri ile kapalı spor zeminlerde döşeme kaplaması yapılması (P3)",
     olcuBirimi: "m²",
     kategori: "PVC Zemin Kaplama",
     kaynakTip: "sistem" as const,
@@ -9567,7 +9567,7 @@ export const RESMI_POZ_ANALIZLERI = [
   {
     id: "sys-15x365x1111",
     pozNo: "15.365.1111",
-    analizAdi: "tesviyesi yapılması ve üzerine PVC esaslı spor zemin malzemeleri ile kapalı spor zeminlerde",
+    analizAdi: "Alçı esaslı kendiliğinden yerleşen (self leveling) harç ile ortalama 2 mm kalınlıkta zemin tesviyesi yapılması ve üzerine PVC esaslı spor zemin malzemeleri ile kapalı spor zeminlerde döşeme kaplaması yapılması (P1)",
     olcuBirimi: "m²",
     kategori: "PVC Zemin Kaplama",
     kaynakTip: "sistem" as const,
@@ -9593,7 +9593,7 @@ export const RESMI_POZ_ANALIZLERI = [
   {
     id: "sys-15x365x1112",
     pozNo: "15.365.1112",
-    analizAdi: "tesviyesi yapılması ve üzerine PVC esaslı spor zemin malzemeleri ile kapalı spor zeminlerde",
+    analizAdi: "Alçı esaslı kendiliğinden yerleşen (self leveling) harç ile ortalama 2 mm kalınlıkta zemin tesviyesi yapılması ve üzerine PVC esaslı spor zemin malzemeleri ile kapalı spor zeminlerde döşeme kaplaması yapılması (P2)",
     olcuBirimi: "m²",
     kategori: "PVC Zemin Kaplama",
     kaynakTip: "sistem" as const,
@@ -9619,7 +9619,7 @@ export const RESMI_POZ_ANALIZLERI = [
   {
     id: "sys-15x365x1113",
     pozNo: "15.365.1113",
-    analizAdi: "tesviyesi yapılması ve üzerine PVC esaslı spor zemin malzemeleri ile kapalı spor zeminlerde",
+    analizAdi: "Alçı esaslı kendiliğinden yerleşen (self leveling) harç ile ortalama 2 mm kalınlıkta zemin tesviyesi yapılması ve üzerine PVC esaslı spor zemin malzemeleri ile kapalı spor zeminlerde döşeme kaplaması yapılması (P3)",
     olcuBirimi: "m²",
     kategori: "PVC Zemin Kaplama",
     kaynakTip: "sistem" as const,
@@ -9645,7 +9645,7 @@ export const RESMI_POZ_ANALIZLERI = [
   {
     id: "sys-15x365x1501",
     pozNo: "15.365.1501",
-    analizAdi: "tesviyesi yapılması ve üzerine 2 mm kalınlıkta Linolyum zemin kaplaması yapılması (Sınıf",
+    analizAdi: "Çimento esaslı kendiliğinden yerleşen (self leveling) harç ile ortalama 2 mm kalınlıkta zemin tesviyesi yapılması ve üzerine 2 mm kalınlıkta Linolyum zemin kaplaması yapılması (Sınıf 32-41)",
     olcuBirimi: "m²",
     kategori: "PVC Zemin Kaplama",
     kaynakTip: "sistem" as const,
@@ -9671,7 +9671,7 @@ export const RESMI_POZ_ANALIZLERI = [
   {
     id: "sys-15x365x1502",
     pozNo: "15.365.1502",
-    analizAdi: "tesviyesi yapılması ve üzerine 2,5 mm kalınlıkta Linolyum zemin kaplaması yapılması (Sınıf",
+    analizAdi: "Çimento esaslı kendiliğinden yerleşen (self leveling) harç ile ortalama 2 mm kalınlıkta zemin tesviyesi yapılması ve üzerine 2,5 mm kalınlıkta Linolyum zemin kaplaması yapılması (Sınıf 34-43)",
     olcuBirimi: "m²",
     kategori: "PVC Zemin Kaplama",
     kaynakTip: "sistem" as const,
@@ -9697,7 +9697,7 @@ export const RESMI_POZ_ANALIZLERI = [
   {
     id: "sys-15x365x1503",
     pozNo: "15.365.1503",
-    analizAdi: "tesviyesi yapılması ve üzerine 3,2 mm kalınlıkta Linolyum zemin kaplaması yapılması (Sınıf",
+    analizAdi: "Çimento esaslı kendiliğinden yerleşen (self leveling) harç ile ortalama 2 mm kalınlıkta zemin tesviyesi yapılması ve üzerine 3,2 mm kalınlıkta Linolyum zemin kaplaması yapılması (Sınıf 34-43)",
     olcuBirimi: "m²",
     kategori: "PVC Zemin Kaplama",
     kaynakTip: "sistem" as const,
@@ -9723,7 +9723,7 @@ export const RESMI_POZ_ANALIZLERI = [
   {
     id: "sys-15x365x1511",
     pozNo: "15.365.1511",
-    analizAdi: "tesviyesi yapılması ve üzerine 2 mm kalınlıkta Linolyum zemin kaplaması yapılması (Sınıf",
+    analizAdi: "Alçı esaslı kendiliğinden yerleşen (self leveling) harç ile ortalama 2 mm kalınlıkta zemin tesviyesi yapılması ve üzerine 2 mm kalınlıkta Linolyum zemin kaplaması yapılması (Sınıf 32-41)",
     olcuBirimi: "m²",
     kategori: "PVC Zemin Kaplama",
     kaynakTip: "sistem" as const,
@@ -9749,7 +9749,7 @@ export const RESMI_POZ_ANALIZLERI = [
   {
     id: "sys-15x365x1512",
     pozNo: "15.365.1512",
-    analizAdi: "tesviyesi yapılması ve üzerine 2,5 mm kalınlıkta Linolyum zemin kaplaması yapılması (Sınıf",
+    analizAdi: "Alçı esaslı kendiliğinden yerleşen (self leveling) harç ile ortalama 2 mm kalınlıkta zemin tesviyesi yapılması ve üzerine 2,5 mm kalınlıkta Linolyum zemin kaplaması yapılması (Sınıf 34-43)",
     olcuBirimi: "m²",
     kategori: "PVC Zemin Kaplama",
     kaynakTip: "sistem" as const,
@@ -9775,7 +9775,7 @@ export const RESMI_POZ_ANALIZLERI = [
   {
     id: "sys-15x365x1513",
     pozNo: "15.365.1513",
-    analizAdi: "tesviyesi yapılması ve üzerine 3,2 mm kalınlıkta Linolyum zemin kaplaması yapılması (Sınıf",
+    analizAdi: "Alçı esaslı kendiliğinden yerleşen (self leveling) harç ile ortalama 2 mm kalınlıkta zemin tesviyesi yapılması ve üzerine 3,2 mm kalınlıkta Linolyum zemin kaplaması yapılması (Sınıf 34-43)",
     olcuBirimi: "m²",
     kategori: "PVC Zemin Kaplama",
     kaynakTip: "sistem" as const,
@@ -9891,7 +9891,7 @@ export const RESMI_POZ_ANALIZLERI = [
   {
     id: "sys-15x375x1002",
     pozNo: "15.375.1002",
-    analizAdi: "I.kalite, beyaz seramik yer karoları ile 3 mm derz aralıklı döşeme kaplaması yapılması (karo",
+    analizAdi: "(30 x 30 cm) veya (33 x 33 cm) anma ebatlarında, her türlü desen ve yüzey özelliğinde, I.kalite, beyaz seramik yer karoları ile 3 mm derz aralıklı döşeme kaplaması yapılması (karo yapıştırıcısı ile)",
     olcuBirimi: "m²",
     kategori: "Seramik Döşeme",
     kaynakTip: "sistem" as const,
@@ -9916,7 +9916,7 @@ export const RESMI_POZ_ANALIZLERI = [
   {
     id: "sys-15x375x1004",
     pozNo: "15.375.1004",
-    analizAdi: "I.kalite, beyaz seramik yer karoları ile 3 mm derz aralıklı döşeme kaplaması yapılması (karo",
+    analizAdi: "(42,5 x 42,5 cm) veya (45 x 45 cm) anma ebatlarında, her türlü desen ve yüzey özelliğinde, I.kalite, beyaz seramik yer karoları ile 3 mm derz aralıklı döşeme kaplaması yapılması (karo yapıştırıcısı ile)",
     olcuBirimi: "m²",
     kategori: "Seramik Döşeme",
     kaynakTip: "sistem" as const,
@@ -9941,7 +9941,7 @@ export const RESMI_POZ_ANALIZLERI = [
   {
     id: "sys-15x375x1052",
     pozNo: "15.375.1052",
-    analizAdi: "I.kalite, renkli seramik yer karoları ile 3 mm derz aralıklı döşeme kaplaması yapılması (karo",
+    analizAdi: "(30 x 30 cm) veya (33 x 33 cm) anma ebatlarında, her türlü desen ve yüzey özelliğinde, I.kalite, renkli seramik yer karoları ile 3 mm derz aralıklı döşeme kaplaması yapılması (karo yapıştırıcısı ile)",
     olcuBirimi: "m²",
     kategori: "Seramik Döşeme",
     kaynakTip: "sistem" as const,
@@ -9966,7 +9966,7 @@ export const RESMI_POZ_ANALIZLERI = [
   {
     id: "sys-15x375x1054",
     pozNo: "15.375.1054",
-    analizAdi: "I.kalite, renkli seramik yer karoları ile 3 mm derz aralıklı döşeme kaplaması yapılması (karo",
+    analizAdi: "(42,5 x 42,5 cm) veya (45 x 45 cm) anma ebatlarında, her türlü desen ve yüzey özelliğinde, I.kalite, renkli seramik yer karoları ile 3 mm derz aralıklı döşeme kaplaması yapılması (karo yapıştırıcısı ile)",
     olcuBirimi: "m²",
     kategori: "Seramik Döşeme",
     kaynakTip: "sistem" as const,
@@ -9991,7 +9991,7 @@ export const RESMI_POZ_ANALIZLERI = [
   {
     id: "sys-15x380x1003",
     pozNo: "15.380.1003",
-    analizAdi: "I.kalite, beyaz seramik duvar karoları ile 3 mm derz aralıklı duvar kaplaması yapılması",
+    analizAdi: "(20 x 25 cm) veya (20 x 30 cm) anma ebatlarında, her türlü desen ve yüzey özelliğinde, I.kalite, beyaz seramik duvar karoları ile 3 mm derz aralıklı duvar kaplaması yapılması (karo yapıştırıcısı ile)",
     olcuBirimi: "m²",
     kategori: "Seramik Duvar",
     kaynakTip: "sistem" as const,
@@ -10016,7 +10016,7 @@ export const RESMI_POZ_ANALIZLERI = [
   {
     id: "sys-15x380x1005",
     pozNo: "15.380.1005",
-    analizAdi: "I.kalite, beyaz seramik duvar karoları ile 3 mm derz aralıklı duvar kaplaması yapılması",
+    analizAdi: "(25 x 33 cm) veya (25 x 40 cm) anma ebatlarında, her türlü desen ve yüzey özelliğinde, I.kalite, beyaz seramik duvar karoları ile 3 mm derz aralıklı duvar kaplaması yapılması (karo yapıştırıcısı ile)",
     olcuBirimi: "m²",
     kategori: "Seramik Duvar",
     kaynakTip: "sistem" as const,
@@ -10041,7 +10041,7 @@ export const RESMI_POZ_ANALIZLERI = [
   {
     id: "sys-15x380x1006",
     pozNo: "15.380.1006",
-    analizAdi: "özelliğinde, I.kalite, beyaz seramik duvar karoları ile 3 mm derz aralıklı duvar kaplaması",
+    analizAdi: "(20 x 60 cm) veya (30 x 60 cm) veya (33 x 60 cm) anma ebatlarında, her türlü desen ve yüzey özelliğinde, I.kalite, beyaz seramik duvar karoları ile 3 mm derz aralıklı duvar kaplaması yapılması (karo yapıştırıcısı ile)",
     olcuBirimi: "m²",
     kategori: "Seramik Duvar",
     kaynakTip: "sistem" as const,
@@ -10066,7 +10066,7 @@ export const RESMI_POZ_ANALIZLERI = [
   {
     id: "sys-15x380x1007",
     pozNo: "15.380.1007",
-    analizAdi: "türlü desen ve yüzey özelliğinde, I.kalite, beyaz seramik duvar karoları ile 3 mm derz aralıklı",
+    analizAdi: "(20 x 50 cm) veya (25 x 50 cm) veya (30 x 45 cm) veya (33 x 45 cm) anma ebatlarında, her türlü desen ve yüzey özelliğinde, I.kalite, beyaz seramik duvar karoları ile 3 mm derz aralıklı duvar kaplaması yapılması (karo yapıştırıcısı ile)",
     olcuBirimi: "m²",
     kategori: "Seramik Duvar",
     kaynakTip: "sistem" as const,
@@ -10091,7 +10091,7 @@ export const RESMI_POZ_ANALIZLERI = [
   {
     id: "sys-15x380x1053",
     pozNo: "15.380.1053",
-    analizAdi: "I.kalite, renkli seramik duvar karoları ile 3 mm derz aralıklı duvar kaplaması yapılması",
+    analizAdi: "(20 x 25 cm) veya (20 x 30 cm) anma ebatlarında, her türlü desen ve yüzey özelliğinde, I.kalite, renkli seramik duvar karoları ile 3 mm derz aralıklı duvar kaplaması yapılması (karo yapıştırıcısı ile)",
     olcuBirimi: "m²",
     kategori: "Seramik Duvar",
     kaynakTip: "sistem" as const,
@@ -10116,7 +10116,7 @@ export const RESMI_POZ_ANALIZLERI = [
   {
     id: "sys-15x380x1055",
     pozNo: "15.380.1055",
-    analizAdi: "I.kalite, renkli seramik duvar karoları ile 3 mm derz aralıklı duvar kaplaması yapılması",
+    analizAdi: "(25 x 33 cm) veya (25 x 40 cm) anma ebatlarında, her türlü desen ve yüzey özelliğinde, I.kalite, renkli seramik duvar karoları ile 3 mm derz aralıklı duvar kaplaması yapılması (karo yapıştırıcısı ile)",
     olcuBirimi: "m²",
     kategori: "Seramik Duvar",
     kaynakTip: "sistem" as const,
@@ -10141,7 +10141,7 @@ export const RESMI_POZ_ANALIZLERI = [
   {
     id: "sys-15x380x1056",
     pozNo: "15.380.1056",
-    analizAdi: "özelliğinde, I.kalite, renkli seramik duvar karoları ile 3 mm derz aralıklı duvar kaplaması",
+    analizAdi: "(20 x 60 cm) veya (30 x 60 cm) veya (33 x 60 cm) anma ebatlarında, her türlü desen ve yüzey özelliğinde, I.kalite, renkli seramik duvar karoları ile 3 mm derz aralıklı duvar kaplaması yapılması (karo yapıştırıcısı ile)",
     olcuBirimi: "m²",
     kategori: "Seramik Duvar",
     kaynakTip: "sistem" as const,
@@ -10166,7 +10166,7 @@ export const RESMI_POZ_ANALIZLERI = [
   {
     id: "sys-15x380x1057",
     pozNo: "15.380.1057",
-    analizAdi: "türlü desen ve yüzey özelliğinde, I.kalite, renkli seramik duvar karoları ile 3 mm derz",
+    analizAdi: "(20 x 50 cm) veya (25 x 50 cm) veya (30 x 45 cm) veya (33 x 45 cm) anma ebatlarında, her türlü desen ve yüzey özelliğinde, I.kalite, renkli seramik duvar karoları ile 3 mm derz aralıklı duvar kaplaması yapılması (karo yapıştırıcısı ile)",
     olcuBirimi: "m²",
     kategori: "Seramik Duvar",
     kaynakTip: "sistem" as const,
@@ -10191,7 +10191,7 @@ export const RESMI_POZ_ANALIZLERI = [
   {
     id: "sys-15x385x1004",
     pozNo: "15.385.1004",
-    analizAdi: "I.kalite, beyaz, sırlı porselen karo ile 3 mm derz aralıklı döşeme kaplaması yapılması (karo",
+    analizAdi: "(30 x 30 cm) veya (33 x 33 cm) anma ebatlarında, her türlü desen ve yüzey özelliğinde, I.kalite, beyaz, sırlı porselen karo ile 3 mm derz aralıklı döşeme kaplaması yapılması (karo yapıştırıcısı ile)",
     olcuBirimi: "m²",
     kategori: "Porselen Döşeme",
     kaynakTip: "sistem" as const,
@@ -10216,7 +10216,7 @@ export const RESMI_POZ_ANALIZLERI = [
   {
     id: "sys-15x385x1006",
     pozNo: "15.385.1006",
-    analizAdi: "I.kalite, beyaz, sırlı porselen karo ile 3 mm derz aralıklı döşeme kaplaması yapılması (karo",
+    analizAdi: "(42,5 x 42,5 cm) veya (45 x 45 cm) anma ebatlarında, her türlü desen ve yüzey özelliğinde, I.kalite, beyaz, sırlı porselen karo ile 3 mm derz aralıklı döşeme kaplaması yapılması (karo yapıştırıcısı ile)",
     olcuBirimi: "m²",
     kategori: "Porselen Döşeme",
     kaynakTip: "sistem" as const,
@@ -10241,7 +10241,7 @@ export const RESMI_POZ_ANALIZLERI = [
   {
     id: "sys-15x385x1024",
     pozNo: "15.385.1024",
-    analizAdi: "I.kalite, renkli, sırlı porselen karo ile 3 mm derz aralıklı döşeme kaplaması yapılması (karo",
+    analizAdi: "(30 x 30 cm) veya (33 x 33 cm) anma ebatlarında, her türlü desen ve yüzey özelliğinde, I.kalite, renkli, sırlı porselen karo ile 3 mm derz aralıklı döşeme kaplaması yapılması (karo yapıştırıcısı ile)",
     olcuBirimi: "m²",
     kategori: "Porselen Döşeme",
     kaynakTip: "sistem" as const,
@@ -10266,7 +10266,7 @@ export const RESMI_POZ_ANALIZLERI = [
   {
     id: "sys-15x385x1026",
     pozNo: "15.385.1026",
-    analizAdi: "I.kalite, renkli, sırlı porselen karo ile 3 mm derz aralıklı döşeme kaplaması yapılması (karo",
+    analizAdi: "(42,5 x 42,5 cm) veya (45 x 45 cm) anma ebatlarında, her türlü desen ve yüzey özelliğinde, I.kalite, renkli, sırlı porselen karo ile 3 mm derz aralıklı döşeme kaplaması yapılması (karo yapıştırıcısı ile)",
     olcuBirimi: "m²",
     kategori: "Porselen Döşeme",
     kaynakTip: "sistem" as const,
@@ -10291,7 +10291,7 @@ export const RESMI_POZ_ANALIZLERI = [
   {
     id: "sys-15x385x1043",
     pozNo: "15.385.1043",
-    analizAdi: "porselen karo ile 3 mm derz aralıklı duvar ve cephe kaplaması yapılması (karo yapıştırıcısı",
+    analizAdi: "20 x 20 cm anma ebatlarında, her türlü desen ve yüzey özelliğinde, I.kalite, beyaz, sırlı porselen karo ile 3 mm derz aralıklı duvar ve cephe kaplaması yapılması (karo yapıştırıcısı ile)",
     olcuBirimi: "m²",
     kategori: "Porselen Döşeme",
     kaynakTip: "sistem" as const,
@@ -10316,7 +10316,7 @@ export const RESMI_POZ_ANALIZLERI = [
   {
     id: "sys-15x385x1044",
     pozNo: "15.385.1044",
-    analizAdi: "I.kalite, beyaz, sırlı porselen karo ile 3 mm derz aralıklı duvar ve cephe kaplaması yapılması",
+    analizAdi: "(30 x 30 cm) veya (33 x 33 cm) anma ebatlarında, her türlü desen ve yüzey özelliğinde, I.kalite, beyaz, sırlı porselen karo ile 3 mm derz aralıklı duvar ve cephe kaplaması yapılması (karo yapıştırıcısı ile)",
     olcuBirimi: "m²",
     kategori: "Porselen Döşeme",
     kaynakTip: "sistem" as const,
@@ -10341,7 +10341,7 @@ export const RESMI_POZ_ANALIZLERI = [
   {
     id: "sys-15x385x1045",
     pozNo: "15.385.1045",
-    analizAdi: "porselen karo ile 3 mm derz aralıklı duvar ve cephe kaplaması yapılması (karo yapıştırıcısı",
+    analizAdi: "40 x 40 cm anma ebatlarında, her türlü desen ve yüzey özelliğinde, I.kalite, beyaz, sırlı porselen karo ile 3 mm derz aralıklı duvar ve cephe kaplaması yapılması (karo yapıştırıcısı ile)",
     olcuBirimi: "m²",
     kategori: "Porselen Döşeme",
     kaynakTip: "sistem" as const,
@@ -10366,7 +10366,7 @@ export const RESMI_POZ_ANALIZLERI = [
   {
     id: "sys-15x385x1046",
     pozNo: "15.385.1046",
-    analizAdi: "I.kalite, beyaz, sırlı porselen karo ile 3 mm derz aralıklı duvar ve cephe kaplaması yapılması",
+    analizAdi: "(42,5 x 42,5 cm) veya (45 x 45 cm) anma ebatlarında, her türlü desen ve yüzey özelliğinde, I.kalite, beyaz, sırlı porselen karo ile 3 mm derz aralıklı duvar ve cephe kaplaması yapılması (karo yapıştırıcısı ile)",
     olcuBirimi: "m²",
     kategori: "Porselen Döşeme",
     kaynakTip: "sistem" as const,
@@ -10391,7 +10391,7 @@ export const RESMI_POZ_ANALIZLERI = [
   {
     id: "sys-15x385x1049",
     pozNo: "15.385.1049",
-    analizAdi: "porselen karo ile 3 mm derz aralıklı duvar ve cephe kaplaması yapılması (karo yapıştırıcısı",
+    analizAdi: "15 x 60 cm anma ebatlarında, her türlü desen ve yüzey özelliğinde, I.kalite, beyaz, sırlı porselen karo ile 3 mm derz aralıklı duvar ve cephe kaplaması yapılması (karo yapıştırıcısı ile)",
     olcuBirimi: "m²",
     kategori: "Porselen Döşeme",
     kaynakTip: "sistem" as const,
@@ -10416,7 +10416,7 @@ export const RESMI_POZ_ANALIZLERI = [
   {
     id: "sys-15x385x1050",
     pozNo: "15.385.1050",
-    analizAdi: "porselen karo ile 3 mm derz aralıklı duvar ve cephe kaplaması yapılması (karo yapıştırıcısı",
+    analizAdi: "30 x 60 cm anma ebatlarında, her türlü desen ve yüzey özelliğinde, I.kalite, beyaz, sırlı porselen karo ile 3 mm derz aralıklı duvar ve cephe kaplaması yapılması (karo yapıştırıcısı ile)",
     olcuBirimi: "m²",
     kategori: "Porselen Döşeme",
     kaynakTip: "sistem" as const,
@@ -10441,7 +10441,7 @@ export const RESMI_POZ_ANALIZLERI = [
   {
     id: "sys-15x385x1063",
     pozNo: "15.385.1063",
-    analizAdi: "porselen karo ile 3 mm derz aralıklı duvar ve cephe kaplaması yapılması (karo yapıştırıcısı",
+    analizAdi: "20 x 20 cm anma ebatlarında, her türlü desen ve yüzey özelliğinde, I.kalite, renkli, sırlı porselen karo ile 3 mm derz aralıklı duvar ve cephe kaplaması yapılması (karo yapıştırıcısı ile)",
     olcuBirimi: "m²",
     kategori: "Porselen Döşeme",
     kaynakTip: "sistem" as const,
@@ -10466,7 +10466,7 @@ export const RESMI_POZ_ANALIZLERI = [
   {
     id: "sys-15x385x1064",
     pozNo: "15.385.1064",
-    analizAdi: "I.kalite, renkli, sırlı porselen karo ile 3 mm derz aralıklı duvar ve cephe kaplaması yapılması",
+    analizAdi: "(30 x 30 cm) veya (33 x 33 cm) anma ebatlarında, her türlü desen ve yüzey özelliğinde, I.kalite, renkli, sırlı porselen karo ile 3 mm derz aralıklı duvar ve cephe kaplaması yapılması (karo yapıştırıcısı ile)",
     olcuBirimi: "m²",
     kategori: "Porselen Döşeme",
     kaynakTip: "sistem" as const,
@@ -10491,7 +10491,7 @@ export const RESMI_POZ_ANALIZLERI = [
   {
     id: "sys-15x385x1065",
     pozNo: "15.385.1065",
-    analizAdi: "porselen karo ile 3 mm derz aralıklı duvar ve cephe kaplaması yapılması (karo yapıştırıcısı",
+    analizAdi: "40 x 40 cm anma ebatlarında, her türlü desen ve yüzey özelliğinde, I.kalite, renkli, sırlı porselen karo ile 3 mm derz aralıklı duvar ve cephe kaplaması yapılması (karo yapıştırıcısı ile)",
     olcuBirimi: "m²",
     kategori: "Porselen Döşeme",
     kaynakTip: "sistem" as const,
@@ -10516,7 +10516,7 @@ export const RESMI_POZ_ANALIZLERI = [
   {
     id: "sys-15x385x1066",
     pozNo: "15.385.1066",
-    analizAdi: "I.kalite, renkli, sırlı porselen karo ile 3 mm derz aralıklı duvar ve cephe kaplaması yapılması",
+    analizAdi: "(42,5 x 42,5 cm) veya (45 x 45 cm) anma ebatlarında, her türlü desen ve yüzey özelliğinde, I.kalite, renkli, sırlı porselen karo ile 3 mm derz aralıklı duvar ve cephe kaplaması yapılması (karo yapıştırıcısı ile)",
     olcuBirimi: "m²",
     kategori: "Porselen Döşeme",
     kaynakTip: "sistem" as const,
@@ -10541,7 +10541,7 @@ export const RESMI_POZ_ANALIZLERI = [
   {
     id: "sys-15x385x1069",
     pozNo: "15.385.1069",
-    analizAdi: "porselen karo ile 3 mm derz aralıklı duvar ve cephe kaplaması yapılması (karo yapıştırıcısı",
+    analizAdi: "15 x 60 cm anma ebatlarında, her türlü desen ve yüzey özelliğinde, I.kalite, renkli, sırlı porselen karo ile 3 mm derz aralıklı duvar ve cephe kaplaması yapılması (karo yapıştırıcısı ile)",
     olcuBirimi: "m²",
     kategori: "Porselen Döşeme",
     kaynakTip: "sistem" as const,
@@ -10566,7 +10566,7 @@ export const RESMI_POZ_ANALIZLERI = [
   {
     id: "sys-15x385x1070",
     pozNo: "15.385.1070",
-    analizAdi: "porselen karo ile 3 mm derz aralıklı duvar ve cephe kaplaması yapılması (karo yapıştırıcısı",
+    analizAdi: "30 x 60 cm anma ebatlarında, her türlü desen ve yüzey özelliğinde, I.kalite, renkl, sırlı porselen karo ile 3 mm derz aralıklı duvar ve cephe kaplaması yapılması (karo yapıştırıcısı ile)",
     olcuBirimi: "m²",
     kategori: "Porselen Döşeme",
     kaynakTip: "sistem" as const,
@@ -10591,7 +10591,7 @@ export const RESMI_POZ_ANALIZLERI = [
   {
     id: "sys-15x390x1004",
     pozNo: "15.390.1004",
-    analizAdi: "I.kalite, mat, sırsız porselen karo ile 3 mm derz aralıklı döşeme kaplaması yapılması (karo",
+    analizAdi: "(30 x 30 cm) veya (33 x 33 cm) anma ebatlarında, her türlü renk, desen ve yüzey özelliğinde, I.kalite, mat, sırsız porselen karo ile 3 mm derz aralıklı döşeme kaplaması yapılması (karo yapıştırıcısı ile)",
     olcuBirimi: "m²",
     kategori: "Porselen Döşeme",
     kaynakTip: "sistem" as const,
@@ -10616,7 +10616,7 @@ export const RESMI_POZ_ANALIZLERI = [
   {
     id: "sys-15x390x1006",
     pozNo: "15.390.1006",
-    analizAdi: "yüzey özelliğinde, I.kalite, mat, sırsız porselen karo ile 3 mm derz aralıklı döşeme kaplaması",
+    analizAdi: "(42,5 x 42,5 cm) veya (45 x 45 cm) anma ebatlarında, rektifiyeli, her türlü renk, desen ve yüzey özelliğinde, I.kalite, mat, sırsız porselen karo ile 3 mm derz aralıklı döşeme kaplaması yapılması (karo yapıştırıcısı ile)",
     olcuBirimi: "m²",
     kategori: "Porselen Döşeme",
     kaynakTip: "sistem" as const,
@@ -10641,7 +10641,7 @@ export const RESMI_POZ_ANALIZLERI = [
   {
     id: "sys-15x390x1008",
     pozNo: "15.390.1008",
-    analizAdi: "mat, sırsız porselen karo ile 3 mm derz aralıklı döşeme kaplaması yapılması (karo",
+    analizAdi: "60 x 60 cm anma ebatlarında, rektifiyeli, her türlü renk, desen ve yüzey özelliğinde, I.kalite, mat, sırsız porselen karo ile 3 mm derz aralıklı döşeme kaplaması yapılması (karo yapıştırıcısı ile)",
     olcuBirimi: "m²",
     kategori: "Porselen Döşeme",
     kaynakTip: "sistem" as const,
@@ -10666,7 +10666,7 @@ export const RESMI_POZ_ANALIZLERI = [
   {
     id: "sys-15x390x1009",
     pozNo: "15.390.1009",
-    analizAdi: "mat, sırsız porselen karo ile 3 mm derz aralıklı döşeme kaplaması yapılması (karo",
+    analizAdi: "15 x 60 cm anma ebatlarında, rektifiyeli, her türlü renk, desen ve yüzey özelliğinde, I.kalite, mat, sırsız porselen karo ile 3 mm derz aralıklı döşeme kaplaması yapılması (karo yapıştırıcısı ile)",
     olcuBirimi: "m²",
     kategori: "Porselen Döşeme",
     kaynakTip: "sistem" as const,
@@ -10691,7 +10691,7 @@ export const RESMI_POZ_ANALIZLERI = [
   {
     id: "sys-15x390x1010",
     pozNo: "15.390.1010",
-    analizAdi: "mat, sırsız porselen karo ile 3 mm derz aralıklı döşeme kaplaması yapılması (karo",
+    analizAdi: "30 x 60 cm anma ebatlarında, rektifiyeli, her türlü renk, desen ve yüzey özelliğinde, I.kalite, mat, sırsız porselen karo ile 3 mm derz aralıklı döşeme kaplaması yapılması (karo yapıştırıcısı ile)",
     olcuBirimi: "m²",
     kategori: "Porselen Döşeme",
     kaynakTip: "sistem" as const,
@@ -10716,7 +10716,7 @@ export const RESMI_POZ_ANALIZLERI = [
   {
     id: "sys-15x390x1024",
     pozNo: "15.390.1024",
-    analizAdi: "özelliğinde, I.kalite, parlak, sırsız porselen karo ile 3 mm derz aralıklı döşeme kaplaması",
+    analizAdi: "(30 x 30 cm) veya (33 x 33 cm) anma ebatlarında, rektifiyeli, her türlü renk, desen ve yüzey özelliğinde, I.kalite, parlak, sırsız porselen karo ile 3 mm derz aralıklı döşeme kaplaması yapılması (karo yapıştırıcısı ile)",
     olcuBirimi: "m²",
     kategori: "Porselen Döşeme",
     kaynakTip: "sistem" as const,
@@ -10741,7 +10741,7 @@ export const RESMI_POZ_ANALIZLERI = [
   {
     id: "sys-15x390x1025",
     pozNo: "15.390.1025",
-    analizAdi: "parlak, sırsız porselen karo ile 3 mm derz aralıklı döşeme kaplaması yapılması (karo",
+    analizAdi: "40 x 40 cm anma ebatlarında, rektifiyeli, her türlü renk, desen ve yüzey özelliğinde, I.kalite, parlak, sırsız porselen karo ile 3 mm derz aralıklı döşeme kaplaması yapılması (karo yapıştırıcısı ile)",
     olcuBirimi: "m²",
     kategori: "Porselen Döşeme",
     kaynakTip: "sistem" as const,
@@ -10766,7 +10766,7 @@ export const RESMI_POZ_ANALIZLERI = [
   {
     id: "sys-15x390x1026",
     pozNo: "15.390.1026",
-    analizAdi: "yüzey özelliğinde, I.kalite, parlak, sırsız porselen karo ile 3 mm derz aralıklı döşeme",
+    analizAdi: "(42,5 x 42,5 cm) veya (45 x 45 cm) anma ebatlarında, rektifiyeli, her türlü renk, desen ve yüzey özelliğinde, I.kalite, parlak, sırsız porselen karo ile 3 mm derz aralıklı döşeme kaplaması yapılması (karo yapıştırıcısı ile)",
     olcuBirimi: "m²",
     kategori: "Porselen Döşeme",
     kaynakTip: "sistem" as const,
@@ -10791,7 +10791,7 @@ export const RESMI_POZ_ANALIZLERI = [
   {
     id: "sys-15x390x1028",
     pozNo: "15.390.1028",
-    analizAdi: "parlak, sırsız porselen karo ile 3 mm derz aralıklı döşeme kaplaması yapılması (karo",
+    analizAdi: "60 x 60 cm anma ebatlarında, rektifiyeli, her türlü renk, desen ve yüzey özelliğinde, I.kalite, parlak, sırsız porselen karo ile 3 mm derz aralıklı döşeme kaplaması yapılması (karo yapıştırıcısı ile)",
     olcuBirimi: "m²",
     kategori: "Porselen Döşeme",
     kaynakTip: "sistem" as const,
@@ -10816,7 +10816,7 @@ export const RESMI_POZ_ANALIZLERI = [
   {
     id: "sys-15x390x1029",
     pozNo: "15.390.1029",
-    analizAdi: "parlak, sırsız porselen karo ile 3 mm derz aralıklı döşeme kaplaması yapılması (karo",
+    analizAdi: "15 x 60 cm anma ebatlarında, rektifiyeli, her türlü renk, desen ve yüzey özelliğinde, I.kalite, parlak, sırsız porselen karo ile 3 mm derz aralıklı döşeme kaplaması yapılması (karo yapıştırıcısı ile)",
     olcuBirimi: "m²",
     kategori: "Porselen Döşeme",
     kaynakTip: "sistem" as const,
@@ -10841,7 +10841,7 @@ export const RESMI_POZ_ANALIZLERI = [
   {
     id: "sys-15x390x1030",
     pozNo: "15.390.1030",
-    analizAdi: "parlak, sırsız porselen karo ile 3 mm derz aralıklı döşeme kaplaması yapılması (karo",
+    analizAdi: "30 x 60 cm anma ebatlarında, rektifiyeli, her türlü renk, desen ve yüzey özelliğinde, I.kalite, parlak, sırsız porselen karo ile 3 mm derz aralıklı döşeme kaplaması yapılması (karo yapıştırıcısı ile)",
     olcuBirimi: "m²",
     kategori: "Porselen Döşeme",
     kaynakTip: "sistem" as const,
@@ -10866,7 +10866,7 @@ export const RESMI_POZ_ANALIZLERI = [
   {
     id: "sys-15x390x1043",
     pozNo: "15.390.1043",
-    analizAdi: "porselen karo ile 3 mm derz aralıklı duvar ve cephe kaplaması yapılması (karo yapıştırıcısı",
+    analizAdi: "20 x 20 cm anma ebatlarında, her türlü renk, desen ve yüzey özelliğinde, I.kalite, mat, sırsız porselen karo ile 3 mm derz aralıklı duvar ve cephe kaplaması yapılması (karo yapıştırıcısı ile)",
     olcuBirimi: "m²",
     kategori: "Porselen Döşeme",
     kaynakTip: "sistem" as const,
@@ -10891,7 +10891,7 @@ export const RESMI_POZ_ANALIZLERI = [
   {
     id: "sys-15x390x1044",
     pozNo: "15.390.1044",
-    analizAdi: "I.kalite, mat, sırsız porselen karo ile 3 mm derz aralıklı duvar ve cephe kaplaması yapılması",
+    analizAdi: "(30 x 30 cm) veya (33 x 33 cm) anma ebatlarında, her türlü renk, desen ve yüzey özelliğinde, I.kalite, mat, sırsız porselen karo ile 3 mm derz aralıklı duvar ve cephe kaplaması yapılması (karo yapıştırıcısı ile)",
     olcuBirimi: "m²",
     kategori: "Porselen Döşeme",
     kaynakTip: "sistem" as const,
@@ -10916,7 +10916,7 @@ export const RESMI_POZ_ANALIZLERI = [
   {
     id: "sys-15x390x1045",
     pozNo: "15.390.1045",
-    analizAdi: "porselen karo ile 3 mm derz aralıklı duvar ve cephe kaplaması yapılması (karo yapıştırıcısı",
+    analizAdi: "40 x 40 cm anma ebatlarında, her türlü renk, desen ve yüzey özelliğinde, I.kalite, mat, sırsız porselen karo ile 3 mm derz aralıklı duvar ve cephe kaplaması yapılması (karo yapıştırıcısı ile)",
     olcuBirimi: "m²",
     kategori: "Porselen Döşeme",
     kaynakTip: "sistem" as const,
@@ -10941,7 +10941,7 @@ export const RESMI_POZ_ANALIZLERI = [
   {
     id: "sys-15x390x1046",
     pozNo: "15.390.1046",
-    analizAdi: "yüzey özelliğinde, I.kalite, mat, sırsız porselen karo ile 3 mm derz aralıklı duvar ve cephe",
+    analizAdi: "(42,5 x 42,5 cm) veya (45 x 45 cm) anma ebatlarında, rektifiyeli, her türlü renk, desen ve yüzey özelliğinde, I.kalite, mat, sırsız porselen karo ile 3 mm derz aralıklı duvar ve cephe kaplaması yapılması (karo yapıştırıcısı ile)",
     olcuBirimi: "m²",
     kategori: "Porselen Döşeme",
     kaynakTip: "sistem" as const,
@@ -10966,7 +10966,7 @@ export const RESMI_POZ_ANALIZLERI = [
   {
     id: "sys-15x390x1049",
     pozNo: "15.390.1049",
-    analizAdi: "mat, sırsız porselen karo ile 3 mm derz aralıklı duvar ve cephe kaplaması yapılması (karo",
+    analizAdi: "15 x 60 cm anma ebatlarında, rektifiyeli, her türlü renk, desen ve yüzey özelliğinde, I.kalite, mat, sırsız porselen karo ile 3 mm derz aralıklı duvar ve cephe kaplaması yapılması (karo yapıştırıcısı ile)",
     olcuBirimi: "m²",
     kategori: "Porselen Döşeme",
     kaynakTip: "sistem" as const,
@@ -10991,7 +10991,7 @@ export const RESMI_POZ_ANALIZLERI = [
   {
     id: "sys-15x390x1050",
     pozNo: "15.390.1050",
-    analizAdi: "mat, sırsız porselen karo ile 3 mm derz aralıklı duvar ve cephe kaplaması yapılması (karo",
+    analizAdi: "30 x 60 cm anma ebatlarında, rektifiyeli, her türlü renk, desen ve yüzey özelliğinde, I.kalite, mat, sırsız porselen karo ile 3 mm derz aralıklı duvar ve cephe kaplaması yapılması (karo yapıştırıcısı ile)",
     olcuBirimi: "m²",
     kategori: "Porselen Döşeme",
     kaynakTip: "sistem" as const,
@@ -11016,7 +11016,7 @@ export const RESMI_POZ_ANALIZLERI = [
   {
     id: "sys-15x390x1063",
     pozNo: "15.390.1063",
-    analizAdi: "parlak, sırsız porselen karo ile 3 mm derz aralıklı duvar ve cephe kaplaması yapılması (karo",
+    analizAdi: "20 x 20 cm anma ebatlarında, rektifiyeli, her türlü renk, desen ve yüzey özelliğinde, I.kalite, parlak, sırsız porselen karo ile 3 mm derz aralıklı duvar ve cephe kaplaması yapılması (karo yapıştırıcısı ile)",
     olcuBirimi: "m²",
     kategori: "Porselen Döşeme",
     kaynakTip: "sistem" as const,
@@ -11041,7 +11041,7 @@ export const RESMI_POZ_ANALIZLERI = [
   {
     id: "sys-15x390x1064",
     pozNo: "15.390.1064",
-    analizAdi: "özelliğinde, I.kalite, parlak, sırsız porselen karo ile 3 mm derz aralıklı duvar ve cephe",
+    analizAdi: "(30 x 30 cm) veya (33 x 33 cm) anma ebatlarında, rektifiyeli, her türlü renk, desen ve yüzey özelliğinde, I.kalite, parlak, sırsız porselen karo ile 3 mm derz aralıklı duvar ve cephe kaplaması yapılması (karo yapıştırıcısı ile)",
     olcuBirimi: "m²",
     kategori: "Porselen Döşeme",
     kaynakTip: "sistem" as const,
@@ -11066,7 +11066,7 @@ export const RESMI_POZ_ANALIZLERI = [
   {
     id: "sys-15x390x1065",
     pozNo: "15.390.1065",
-    analizAdi: "parlak, sırsız porselen karo ile 3 mm derz aralıklı duvar ve cephe kaplaması yapılması (karo",
+    analizAdi: "40 x 40 cm anma ebatlarında, rektifiyeli, her türlü renk, desen ve yüzey özelliğinde, I.kalite, parlak, sırsız porselen karo ile 3 mm derz aralıklı duvar ve cephe kaplaması yapılması (karo yapıştırıcısı ile)",
     olcuBirimi: "m²",
     kategori: "Porselen Döşeme",
     kaynakTip: "sistem" as const,
@@ -11091,7 +11091,7 @@ export const RESMI_POZ_ANALIZLERI = [
   {
     id: "sys-15x390x1066",
     pozNo: "15.390.1066",
-    analizAdi: "yüzey özelliğinde, I.kalite, parlak, sırsız porselen karo ile 3 mm derz aralıklı duvar ve cephe",
+    analizAdi: "(42,5 x 42,5 cm) veya (45 x 45 cm) anma ebatlarında, rektifiyeli, her türlü renk, desen ve yüzey özelliğinde, I.kalite, parlak, sırsız porselen karo ile 3 mm derz aralıklı duvar ve cephe kaplaması yapılması (karo yapıştırıcısı ile)",
     olcuBirimi: "m²",
     kategori: "Porselen Döşeme",
     kaynakTip: "sistem" as const,
@@ -11116,7 +11116,7 @@ export const RESMI_POZ_ANALIZLERI = [
   {
     id: "sys-15x390x1069",
     pozNo: "15.390.1069",
-    analizAdi: "parlak, sırsız porselen karo ile 3 mm derz aralıklı duvar ve cephe kaplaması yapılması (karo",
+    analizAdi: "15 x 60 cm anma ebatlarında, rektifiyeli, her türlü renk, desen ve yüzey özelliğinde, I.kalite, parlak, sırsız porselen karo ile 3 mm derz aralıklı duvar ve cephe kaplaması yapılması (karo yapıştırıcısı ile)",
     olcuBirimi: "m²",
     kategori: "Porselen Döşeme",
     kaynakTip: "sistem" as const,
@@ -11141,7 +11141,7 @@ export const RESMI_POZ_ANALIZLERI = [
   {
     id: "sys-15x390x1070",
     pozNo: "15.390.1070",
-    analizAdi: "parlak, sırsız porselen karo ile 3 mm derz aralıklı duvar ve cephe kaplaması yapılması (karo",
+    analizAdi: "30 x 60 cm anma ebatlarında, rektifiyeli, her türlü renk, desen ve yüzey özelliğinde, I.kalite, parlak, sırsız porselen karo ile 3 mm derz aralıklı duvar ve cephe kaplaması yapılması (karo yapıştırıcısı ile)",
     olcuBirimi: "m²",
     kategori: "Porselen Döşeme",
     kaynakTip: "sistem" as const,
@@ -11166,7 +11166,7 @@ export const RESMI_POZ_ANALIZLERI = [
   {
     id: "sys-15x400x1013",
     pozNo: "15.400.1013",
-    analizAdi: "Şartları (Sınıf 2) Yüzey alanı <= 1100cm² ebatlarda ve kırılma dayanımı > 2,5 kN, honlu",
+    analizAdi: "Mermer agregalı terrazo karo ile iç mekan döşeme kaplaması yapılması (Kırılma Yükü Şartları (Sınıf 2) Yüzey alanı <= 1100cm² ebatlarda ve kırılma dayanımı > 2,5 kN, honlu veya cilalı)",
     olcuBirimi: "m²",
     kategori: "Terrazo Kaplama",
     kaynakTip: "sistem" as const,
@@ -11193,7 +11193,7 @@ export const RESMI_POZ_ANALIZLERI = [
   {
     id: "sys-15x400x1014",
     pozNo: "15.400.1014",
-    analizAdi: "Şartları (Sınıf 3) 1100 cm²< Yüzey alanı < 1800 cm² ebatlarda ve kırılma dayanımı > 3 kN,",
+    analizAdi: "Mermer agregalı terrazo karo ile iç mekan döşeme kaplaması yapılması (Kırılma Yükü Şartları (Sınıf 3) 1100 cm²< Yüzey alanı < 1800 cm² ebatlarda ve kırılma dayanımı > 3 kN, honlu veya cilalı)",
     olcuBirimi: "m²",
     kategori: "Terrazo Kaplama",
     kaynakTip: "sistem" as const,
@@ -11220,7 +11220,7 @@ export const RESMI_POZ_ANALIZLERI = [
   {
     id: "sys-15x400x1015",
     pozNo: "15.400.1015",
-    analizAdi: "Şartları (Sınıf 3) Yüzey alanı >= 1800cm² ebatlarda ve kırılma dayanımı > 3 kN, honlu veya",
+    analizAdi: "Mermer agregalı terrazo karo ile iç mekan döşeme kaplaması yapılması (Kırılma Yükü Şartları (Sınıf 3) Yüzey alanı >= 1800cm² ebatlarda ve kırılma dayanımı > 3 kN, honlu veya cilalı)",
     olcuBirimi: "m²",
     kategori: "Terrazo Kaplama",
     kaynakTip: "sistem" as const,
@@ -11247,7 +11247,7 @@ export const RESMI_POZ_ANALIZLERI = [
   {
     id: "sys-15x400x1113",
     pozNo: "15.400.1113",
-    analizAdi: "Şartları (Sınıf 2) Yüzey alanı <= 1100cm² ebatlarda ve kırılma dayanımı > 2,5 kN, honlu",
+    analizAdi: "Granit agregalı terrazo karo ile iç mekan döşeme kaplaması yapılması (Kırılma Yükü Şartları (Sınıf 2) Yüzey alanı <= 1100cm² ebatlarda ve kırılma dayanımı > 2,5 kN, honlu veya cilalı)",
     olcuBirimi: "m²",
     kategori: "Terrazo Kaplama",
     kaynakTip: "sistem" as const,
@@ -11274,7 +11274,7 @@ export const RESMI_POZ_ANALIZLERI = [
   {
     id: "sys-15x400x1114",
     pozNo: "15.400.1114",
-    analizAdi: "Şartları (Sınıf 3) 1100 cm²< Yüzey alanı < 1800 cm² ebatlarda ve kırılma dayanımı > 3 kN,",
+    analizAdi: "Granit agregalı terrazo karo ile iç mekan döşeme kaplaması yapılması (Kırılma Yükü Şartları (Sınıf 3) 1100 cm²< Yüzey alanı < 1800 cm² ebatlarda ve kırılma dayanımı > 3 kN, honlu veya cilalı)",
     olcuBirimi: "m²",
     kategori: "Terrazo Kaplama",
     kaynakTip: "sistem" as const,
@@ -11301,7 +11301,7 @@ export const RESMI_POZ_ANALIZLERI = [
   {
     id: "sys-15x400x1115",
     pozNo: "15.400.1115",
-    analizAdi: "Şartları (Sınıf 3) Yüzey alanı >= 1800cm² ebatlarda ve kırılma dayanımı > 3 kN, honlu veya",
+    analizAdi: "Granit agregalı terrazo karo ile iç mekan döşeme kaplaması yapılması (Kırılma Yükü Şartları (Sınıf 3) Yüzey alanı >= 1800cm² ebatlarda ve kırılma dayanımı > 3 kN, honlu veya cilalı)",
     olcuBirimi: "m²",
     kategori: "Terrazo Kaplama",
     kaynakTip: "sistem" as const,
@@ -11328,7 +11328,7 @@ export const RESMI_POZ_ANALIZLERI = [
   {
     id: "sys-15x400x1213",
     pozNo: "15.400.1213",
-    analizAdi: "(Kırılma Yükü Şartları (Sınıf 2) Yüzey alanı <= 1100cm² ebatlarda ve kırılma dayanımı >",
+    analizAdi: "Kuvars-silis + mermer agregalı terrazo karo ile iç mekan döşeme kaplaması yapılması (Kırılma Yükü Şartları (Sınıf 2) Yüzey alanı <= 1100cm² ebatlarda ve kırılma dayanımı > 2,5 kN, honlu veya cilalı)",
     olcuBirimi: "m²",
     kategori: "Terrazo Kaplama",
     kaynakTip: "sistem" as const,
@@ -11355,7 +11355,7 @@ export const RESMI_POZ_ANALIZLERI = [
   {
     id: "sys-15x400x1214",
     pozNo: "15.400.1214",
-    analizAdi: "(Kırılma Yükü Şartları (Sınıf 3) 1100 cm²< Yüzey alanı < 1800 cm² ebatlarda ve kırılma",
+    analizAdi: "Kuvars-silis + mermer agregalı terrazo karo ile iç mekan döşeme kaplaması yapılması (Kırılma Yükü Şartları (Sınıf 3) 1100 cm²< Yüzey alanı < 1800 cm² ebatlarda ve kırılma dayanımı > 3 kN, honlu veya cilalı)",
     olcuBirimi: "m²",
     kategori: "Terrazo Kaplama",
     kaynakTip: "sistem" as const,
@@ -11382,7 +11382,7 @@ export const RESMI_POZ_ANALIZLERI = [
   {
     id: "sys-15x400x1215",
     pozNo: "15.400.1215",
-    analizAdi: "(Kırılma Yükü Şartları (Sınıf 3) Yüzey alanı >= 1800cm² ebatlarda ve kırılma dayanımı > 3",
+    analizAdi: "Kuvars-silis + mermer agregalı terrazo karo ile iç mekan döşeme kaplaması yapılması (Kırılma Yükü Şartları (Sınıf 3) Yüzey alanı >= 1800cm² ebatlarda ve kırılma dayanımı > 3 kN, honlu veya cilalı)",
     olcuBirimi: "m²",
     kategori: "Terrazo Kaplama",
     kaynakTip: "sistem" as const,
@@ -11409,7 +11409,7 @@ export const RESMI_POZ_ANALIZLERI = [
   {
     id: "sys-15x400x1313",
     pozNo: "15.400.1313",
-    analizAdi: "Şartları (Sınıf 2) Yüzey alanı <= 1100cm² ebatlarda ve kırılma dayanımı > 2,5 kN, honlu",
+    analizAdi: "Kuvars-silis agregalı terrazo karo ile iç mekan döşeme kaplaması yapılması (Kırılma Yükü Şartları (Sınıf 2) Yüzey alanı <= 1100cm² ebatlarda ve kırılma dayanımı > 2,5 kN, honlu veya cilalı)",
     olcuBirimi: "m²",
     kategori: "Terrazo Kaplama",
     kaynakTip: "sistem" as const,
@@ -11436,7 +11436,7 @@ export const RESMI_POZ_ANALIZLERI = [
   {
     id: "sys-15x400x1314",
     pozNo: "15.400.1314",
-    analizAdi: "Şartları (Sınıf 3) 1100 cm²< Yüzey alanı < 1800 cm² ebatlarda ve kırılma dayanımı > 3 kN,",
+    analizAdi: "Kuvars-silis agregalı terrazo karo ile iç mekan döşeme kaplaması yapılması (Kırılma Yükü Şartları (Sınıf 3) 1100 cm²< Yüzey alanı < 1800 cm² ebatlarda ve kırılma dayanımı > 3 kN, honlu veya cilalı)",
     olcuBirimi: "m²",
     kategori: "Terrazo Kaplama",
     kaynakTip: "sistem" as const,
@@ -11463,7 +11463,7 @@ export const RESMI_POZ_ANALIZLERI = [
   {
     id: "sys-15x400x1315",
     pozNo: "15.400.1315",
-    analizAdi: "Şartları (Sınıf 3) Yüzey alanı >= 1800cm² ebatlarda ve kırılma dayanımı > 3 kN, honlu veya",
+    analizAdi: "Kuvars-silis agregalı terrazo karo ile iç mekan döşeme kaplaması yapılması (Kırılma Yükü Şartları (Sınıf 3) Yüzey alanı >= 1800cm² ebatlarda ve kırılma dayanımı > 3 kN, honlu veya cilalı)",
     olcuBirimi: "m²",
     kategori: "Terrazo Kaplama",
     kaynakTip: "sistem" as const,
@@ -11490,7 +11490,7 @@ export const RESMI_POZ_ANALIZLERI = [
   {
     id: "sys-15x405x1011",
     pozNo: "15.405.1011",
-    analizAdi: "Şartları (Sınıf 1) Eğilme dayanımı minimum 2,8 Mpa, Aşınma direnç sınıfı (2-G), Yüzey",
+    analizAdi: "Karosiman terrazo karo ile dış mekan döşeme kaplaması yapılması (Kırılma Dayanımı Şartları (Sınıf 1) Eğilme dayanımı minimum 2,8 Mpa, Aşınma direnç sınıfı (2-G), Yüzey alanı <= 1600 cm² , yivli-yivsiz, her renkte)",
     olcuBirimi: "m²",
     kategori: "Taş Kaplama",
     kaynakTip: "sistem" as const,
@@ -11517,7 +11517,7 @@ export const RESMI_POZ_ANALIZLERI = [
   {
     id: "sys-15x405x1012",
     pozNo: "15.405.1012",
-    analizAdi: "Şartları (Sınıf 1) Eğilme dayanımı minimum 2,8 Mpa Aşınma direnç sınıfı (2-G), 1600 <",
+    analizAdi: "Karosiman terrazo karo ile dış mekan döşeme kaplaması yapılması (Kırılma Dayanımı Şartları (Sınıf 1) Eğilme dayanımı minimum 2,8 Mpa Aşınma direnç sınıfı (2-G), 1600 < Yüzey Alanı =< 3600 cm², yivli-yivsiz, her renkte)",
     olcuBirimi: "m²",
     kategori: "Taş Kaplama",
     kaynakTip: "sistem" as const,
@@ -11544,7 +11544,7 @@ export const RESMI_POZ_ANALIZLERI = [
   {
     id: "sys-15x405x1013",
     pozNo: "15.405.1013",
-    analizAdi: "Şartları (Sınıf 2) Eğilme dayanımı minimum 3,2 Mpa Aşınma direnç sınıfı (3-H), Yüzey alanı",
+    analizAdi: "Karosiman terrazo karo ile dış mekan döşeme kaplaması yapılması (Kırılma Dayanımı Şartları (Sınıf 2) Eğilme dayanımı minimum 3,2 Mpa Aşınma direnç sınıfı (3-H), Yüzey alanı <= 1600 cm², yivli-yivsiz, her renkte)",
     olcuBirimi: "m²",
     kategori: "Taş Kaplama",
     kaynakTip: "sistem" as const,
@@ -11571,7 +11571,7 @@ export const RESMI_POZ_ANALIZLERI = [
   {
     id: "sys-15x405x1014",
     pozNo: "15.405.1014",
-    analizAdi: "Şartları (Sınıf 2) Eğilme dayanımı minimum 3,2 Mpa Aşınma direnç sınıfı (3-H),1600 <",
+    analizAdi: "Karosiman terrazo karo ile dış mekan döşeme kaplaması yapılması (Kırılma Dayanımı Şartları (Sınıf 2) Eğilme dayanımı minimum 3,2 Mpa Aşınma direnç sınıfı (3-H),1600 < Yüzey Alanı =< 3600 cm², yivli-yivsiz, her renkte)",
     olcuBirimi: "m²",
     kategori: "Taş Kaplama",
     kaynakTip: "sistem" as const,
@@ -11598,7 +11598,7 @@ export const RESMI_POZ_ANALIZLERI = [
   {
     id: "sys-15x405x1015",
     pozNo: "15.405.1015",
-    analizAdi: "Şartları (Sınıf 3) Eğilme dayanımı minimum 4,0 Mpa Aşınma direnç sınıfı (4-I), Yüzey alanı",
+    analizAdi: "Karosiman terrazo karo ile dış mekan döşeme kaplaması yapılması (Kırılma Dayanımı Şartları (Sınıf 3) Eğilme dayanımı minimum 4,0 Mpa Aşınma direnç sınıfı (4-I), Yüzey alanı <= 1600 cm², yivli-yivsiz, her renkte)",
     olcuBirimi: "m²",
     kategori: "Taş Kaplama",
     kaynakTip: "sistem" as const,
@@ -11625,7 +11625,7 @@ export const RESMI_POZ_ANALIZLERI = [
   {
     id: "sys-15x405x1016",
     pozNo: "15.405.1016",
-    analizAdi: "Şartları (Sınıf 3) Eğilme dayanımı minimum 4,0 Mpa Aşınma direnç sınıfı (4-I), 1600 <",
+    analizAdi: "Karosiman terrazo karo ile dış mekan döşeme kaplaması yapılması (Kırılma Dayanımı Şartları (Sınıf 3) Eğilme dayanımı minimum 4,0 Mpa Aşınma direnç sınıfı (4-I), 1600 < Yüzey Alanı =< 3600 cm², yivli-yivsiz, her renkte)",
     olcuBirimi: "m²",
     kategori: "Taş Kaplama",
     kaynakTip: "sistem" as const,
@@ -11652,7 +11652,7 @@ export const RESMI_POZ_ANALIZLERI = [
   {
     id: "sys-15x405x1111",
     pozNo: "15.405.1111",
-    analizAdi: "Şartları (Sınıf 1) Eğilme dayanımı minimum 2,8 Mpa Aşınma direnç sınıfı (2-G), Yüzey alanı",
+    analizAdi: "Mermer agregalı terrazo karo ile dış mekan döşeme kaplaması yapılması (Kırılma Dayanımı Şartları (Sınıf 1) Eğilme dayanımı minimum 2,8 Mpa Aşınma direnç sınıfı (2-G), Yüzey alanı <= 1600 cm², her türlü yüzey işlemli)",
     olcuBirimi: "m²",
     kategori: "Taş Kaplama",
     kaynakTip: "sistem" as const,
@@ -11679,7 +11679,7 @@ export const RESMI_POZ_ANALIZLERI = [
   {
     id: "sys-15x405x1112",
     pozNo: "15.405.1112",
-    analizAdi: "Şartları (Sınıf 1) Eğilme dayanımı minimum 2,8 Mpa Aşınma direnç sınıfı (2-G), 1600 <",
+    analizAdi: "Mermer agregalı terrazo karo ile dış mekan döşeme kaplaması yapılması (Kırılma Dayanımı Şartları (Sınıf 1) Eğilme dayanımı minimum 2,8 Mpa Aşınma direnç sınıfı (2-G), 1600 < Yüzey Alanı =< 3600 cm², her türlü yüzey işlemli)",
     olcuBirimi: "m²",
     kategori: "Taş Kaplama",
     kaynakTip: "sistem" as const,
@@ -11706,7 +11706,7 @@ export const RESMI_POZ_ANALIZLERI = [
   {
     id: "sys-15x405x1113",
     pozNo: "15.405.1113",
-    analizAdi: "Şartları (Sınıf 2) Eğilme dayanımı minimum 3,2 Mpa Aşınma direnç sınıfı (3-H), Yüzey alanı",
+    analizAdi: "Mermer agregalı terrazo karo ile dış mekan döşeme kaplaması yapılması (Kırılma Dayanımı Şartları (Sınıf 2) Eğilme dayanımı minimum 3,2 Mpa Aşınma direnç sınıfı (3-H), Yüzey alanı <= 1600 cm², her türlü yüzey işlemli)",
     olcuBirimi: "m²",
     kategori: "Taş Kaplama",
     kaynakTip: "sistem" as const,
@@ -11733,7 +11733,7 @@ export const RESMI_POZ_ANALIZLERI = [
   {
     id: "sys-15x405x1114",
     pozNo: "15.405.1114",
-    analizAdi: "Şartları (Sınıf 2) Eğilme dayanımı minimum 3,2 Mpa Aşınma direnç sınıfı (3-H),1600 <",
+    analizAdi: "Mermer agregalı terrazo karo ile dış mekan döşeme kaplaması yapılması (Kırılma Dayanımı Şartları (Sınıf 2) Eğilme dayanımı minimum 3,2 Mpa Aşınma direnç sınıfı (3-H),1600 < Yüzey Alanı =< 3600 cm², her türlü yüzey işlemli)",
     olcuBirimi: "m²",
     kategori: "Taş Kaplama",
     kaynakTip: "sistem" as const,
@@ -11760,7 +11760,7 @@ export const RESMI_POZ_ANALIZLERI = [
   {
     id: "sys-15x405x1115",
     pozNo: "15.405.1115",
-    analizAdi: "Şartları (Sınıf 3) Eğilme dayanımı minimum 4,0 Mpa Aşınma direnç sınıfı (4-I), Yüzey alanı",
+    analizAdi: "Mermer agregalı terrazo karo ile dış mekan döşeme kaplaması yapılması (Kırılma Dayanımı Şartları (Sınıf 3) Eğilme dayanımı minimum 4,0 Mpa Aşınma direnç sınıfı (4-I), Yüzey alanı <= 1600 cm², her türlü yüzey işlemli)",
     olcuBirimi: "m²",
     kategori: "Taş Kaplama",
     kaynakTip: "sistem" as const,
@@ -11787,7 +11787,7 @@ export const RESMI_POZ_ANALIZLERI = [
   {
     id: "sys-15x405x1116",
     pozNo: "15.405.1116",
-    analizAdi: "Şartları (Sınıf 3) Eğilme dayanımı minimum 4,0 Mpa Aşınma direnç sınıfı (4-I), 1600 <",
+    analizAdi: "Mermer agregalı terrazo karo ile dış mekan döşeme kaplaması yapılması (Kırılma Dayanımı Şartları (Sınıf 3) Eğilme dayanımı minimum 4,0 Mpa Aşınma direnç sınıfı (4-I), 1600 < Yüzey Alanı =< 3600 cm², her türlü yüzey işlemli)",
     olcuBirimi: "m²",
     kategori: "Taş Kaplama",
     kaynakTip: "sistem" as const,
@@ -11814,7 +11814,7 @@ export const RESMI_POZ_ANALIZLERI = [
   {
     id: "sys-15x405x1211",
     pozNo: "15.405.1211",
-    analizAdi: "Şartları (Sınıf 1) Eğilme dayanımı minimum 2,8 Mpa Aşınma direnç sınıfı (2-G), Yüzey alanı",
+    analizAdi: "Granit agregalı terrazo karo ile dış mekan döşeme kaplaması yapılması (Kırılma Dayanımı Şartları (Sınıf 1) Eğilme dayanımı minimum 2,8 Mpa Aşınma direnç sınıfı (2-G), Yüzey alanı <= 1600 cm², her türlü yüzey işlemli)",
     olcuBirimi: "m²",
     kategori: "Taş Kaplama",
     kaynakTip: "sistem" as const,
@@ -11841,7 +11841,7 @@ export const RESMI_POZ_ANALIZLERI = [
   {
     id: "sys-15x405x1212",
     pozNo: "15.405.1212",
-    analizAdi: "Şartları (Sınıf 1) Eğilme dayanımı minimum 2,8 Mpa Aşınma direnç sınıfı (2-G), 1600 <",
+    analizAdi: "Granit agregalı terrazo karo ile dış mekan döşeme kaplaması yapılması (Kırılma Dayanımı Şartları (Sınıf 1) Eğilme dayanımı minimum 2,8 Mpa Aşınma direnç sınıfı (2-G), 1600 < Yüzey Alanı =< 3600 cm², her türlü yüzey işlemli)",
     olcuBirimi: "m²",
     kategori: "Taş Kaplama",
     kaynakTip: "sistem" as const,
@@ -11868,7 +11868,7 @@ export const RESMI_POZ_ANALIZLERI = [
   {
     id: "sys-15x405x1213",
     pozNo: "15.405.1213",
-    analizAdi: "Şartları (Sınıf 2) Eğilme dayanımı minimum 3,2 Mpa Aşınma direnç sınıfı (3-H), Yüzey alanı",
+    analizAdi: "Granit agregalı terrazo karo ile dış mekan döşeme kaplaması yapılması (Kırılma Dayanımı Şartları (Sınıf 2) Eğilme dayanımı minimum 3,2 Mpa Aşınma direnç sınıfı (3-H), Yüzey alanı <= 1600 cm², her türlü yüzey işlemli)",
     olcuBirimi: "m²",
     kategori: "Taş Kaplama",
     kaynakTip: "sistem" as const,
@@ -11895,7 +11895,7 @@ export const RESMI_POZ_ANALIZLERI = [
   {
     id: "sys-15x405x1214",
     pozNo: "15.405.1214",
-    analizAdi: "Şartları (Sınıf 2) Eğilme dayanımı minimum 3,2 Mpa Aşınma direnç sınıfı (3-H),1600 <",
+    analizAdi: "Granit agregalı terrazo karo ile dış mekan döşeme kaplaması yapılması (Kırılma Dayanımı Şartları (Sınıf 2) Eğilme dayanımı minimum 3,2 Mpa Aşınma direnç sınıfı (3-H),1600 < Yüzey Alanı =< 3600 cm², her türlü yüzey işlemli)",
     olcuBirimi: "m²",
     kategori: "Taş Kaplama",
     kaynakTip: "sistem" as const,
@@ -11922,7 +11922,7 @@ export const RESMI_POZ_ANALIZLERI = [
   {
     id: "sys-15x405x1215",
     pozNo: "15.405.1215",
-    analizAdi: "Şartları (Sınıf 3) Eğilme dayanımı minimum 4,0 Mpa Aşınma direnç sınıfı (4-I), Yüzey alanı",
+    analizAdi: "Granit agregalı terrazo karo ile dış mekan döşeme kaplaması yapılması (Kırılma Dayanımı Şartları (Sınıf 3) Eğilme dayanımı minimum 4,0 Mpa Aşınma direnç sınıfı (4-I), Yüzey alanı <= 1600 cm², her türlü yüzey işlemli)",
     olcuBirimi: "m²",
     kategori: "Taş Kaplama",
     kaynakTip: "sistem" as const,
@@ -11949,7 +11949,7 @@ export const RESMI_POZ_ANALIZLERI = [
   {
     id: "sys-15x405x1216",
     pozNo: "15.405.1216",
-    analizAdi: "Şartları (Sınıf 3) Eğilme dayanımı minimum 4,0 Mpa Aşınma direnç sınıfı (4-I), 1600 <",
+    analizAdi: "Granit agregalı terrazo karo ile dış mekan döşeme kaplaması yapılması (Kırılma Dayanımı Şartları (Sınıf 3) Eğilme dayanımı minimum 4,0 Mpa Aşınma direnç sınıfı (4-I), 1600 < Yüzey Alanı =< 3600 cm², her türlü yüzey işlemli)",
     olcuBirimi: "m²",
     kategori: "Taş Kaplama",
     kaynakTip: "sistem" as const,
@@ -11976,7 +11976,7 @@ export const RESMI_POZ_ANALIZLERI = [
   {
     id: "sys-15x405x1311",
     pozNo: "15.405.1311",
-    analizAdi: "Şartları (Sınıf 1) Eğilme dayanımı minimum 2,8 Mpa Aşınma direnç sınıfı (2-G), Yüzey alanı",
+    analizAdi: "Andezit agregalı terrazo karo ile dış mekan döşeme kaplaması yapılması (Kırılma Dayanımı Şartları (Sınıf 1) Eğilme dayanımı minimum 2,8 Mpa Aşınma direnç sınıfı (2-G), Yüzey alanı <= 1600 cm², her türlü yüzey işlemli)",
     olcuBirimi: "m²",
     kategori: "Taş Kaplama",
     kaynakTip: "sistem" as const,
@@ -12003,7 +12003,7 @@ export const RESMI_POZ_ANALIZLERI = [
   {
     id: "sys-15x405x1312",
     pozNo: "15.405.1312",
-    analizAdi: "Şartları (Sınıf 1) Eğilme dayanımı minimum 2,8 Mpa Aşınma direnç sınıfı (2-G), 1600 <",
+    analizAdi: "Andezit agregalı terrazo karo ile dış mekan döşeme kaplaması yapılması (Kırılma Dayanımı Şartları (Sınıf 1) Eğilme dayanımı minimum 2,8 Mpa Aşınma direnç sınıfı (2-G), 1600 < Yüzey Alanı =< 3600 cm², her türlü yüzey işlemli)",
     olcuBirimi: "m²",
     kategori: "Taş Kaplama",
     kaynakTip: "sistem" as const,
@@ -12030,7 +12030,7 @@ export const RESMI_POZ_ANALIZLERI = [
   {
     id: "sys-15x405x1313",
     pozNo: "15.405.1313",
-    analizAdi: "Şartları (Sınıf 2) Eğilme dayanımı minimum 3,2 Mpa Aşınma direnç sınıfı (3-H), Yüzey alanı",
+    analizAdi: "Andezit agregalı terrazo karo ile dış mekan döşeme kaplaması yapılması (Kırılma Dayanımı Şartları (Sınıf 2) Eğilme dayanımı minimum 3,2 Mpa Aşınma direnç sınıfı (3-H), Yüzey alanı <= 1600 cm², her türlü yüzey işlemli)",
     olcuBirimi: "m²",
     kategori: "Taş Kaplama",
     kaynakTip: "sistem" as const,
@@ -12057,7 +12057,7 @@ export const RESMI_POZ_ANALIZLERI = [
   {
     id: "sys-15x405x1314",
     pozNo: "15.405.1314",
-    analizAdi: "Şartları (Sınıf 2) Eğilme dayanımı minimum 3,2 Mpa Aşınma direnç sınıfı (3-H),1600 <",
+    analizAdi: "Andezit agregalı terrazo karo ile dış mekan döşeme kaplaması yapılması (Kırılma Dayanımı Şartları (Sınıf 2) Eğilme dayanımı minimum 3,2 Mpa Aşınma direnç sınıfı (3-H),1600 < Yüzey Alanı =< 3600 cm², her türlü yüzey işlemli)",
     olcuBirimi: "m²",
     kategori: "Taş Kaplama",
     kaynakTip: "sistem" as const,
@@ -12084,7 +12084,7 @@ export const RESMI_POZ_ANALIZLERI = [
   {
     id: "sys-15x405x1315",
     pozNo: "15.405.1315",
-    analizAdi: "Şartları (Sınıf 3) Eğilme dayanımı minimum 4,0 Mpa Aşınma direnç sınıfı (4-I), Yüzey alanı",
+    analizAdi: "Andezit agregalı terrazo karo ile dış mekan döşeme kaplaması yapılması (Kırılma Dayanımı Şartları (Sınıf 3) Eğilme dayanımı minimum 4,0 Mpa Aşınma direnç sınıfı (4-I), Yüzey alanı <= 1600 cm², her türlü yüzey işlemli)",
     olcuBirimi: "m²",
     kategori: "Taş Kaplama",
     kaynakTip: "sistem" as const,
@@ -12111,7 +12111,7 @@ export const RESMI_POZ_ANALIZLERI = [
   {
     id: "sys-15x405x1316",
     pozNo: "15.405.1316",
-    analizAdi: "Şartları (Sınıf 3) Eğilme dayanımı minimum 4,0 Mpa Aşınma direnç sınıfı (4-I), 1600 <",
+    analizAdi: "Andezit agregalı terrazo karo ile dış mekan döşeme kaplaması yapılması (Kırılma Dayanımı Şartları (Sınıf 3) Eğilme dayanımı minimum 4,0 Mpa Aşınma direnç sınıfı (4-I), 1600 < Yüzey Alanı =< 3600 cm², her türlü yüzey işlemli)",
     olcuBirimi: "m²",
     kategori: "Taş Kaplama",
     kaynakTip: "sistem" as const,
@@ -12138,7 +12138,7 @@ export const RESMI_POZ_ANALIZLERI = [
   {
     id: "sys-15x405x1411",
     pozNo: "15.405.1411",
-    analizAdi: "Şartları (Sınıf 1) Eğilme dayanımı minimum 2,8 Mpa Aşınma direnç sınıfı (2-G), Yüzey alanı",
+    analizAdi: "Bazalt agregalı terrazo karo ile dış mekan döşeme kaplaması yapılması (Kırılma Dayanımı Şartları (Sınıf 1) Eğilme dayanımı minimum 2,8 Mpa Aşınma direnç sınıfı (2-G), Yüzey alanı <= 1600 cm², her türlü yüzey işlemli)",
     olcuBirimi: "m²",
     kategori: "Taş Kaplama",
     kaynakTip: "sistem" as const,
@@ -12165,7 +12165,7 @@ export const RESMI_POZ_ANALIZLERI = [
   {
     id: "sys-15x405x1412",
     pozNo: "15.405.1412",
-    analizAdi: "Şartları (Sınıf 1) Eğilme dayanımı minimum 2,8 Mpa Aşınma direnç sınıfı (2-G), 1600 <",
+    analizAdi: "Bazalt agregalı terrazo karo ile dış mekan döşeme kaplaması yapılması (Kırılma Dayanımı Şartları (Sınıf 1) Eğilme dayanımı minimum 2,8 Mpa Aşınma direnç sınıfı (2-G), 1600 < Yüzey Alanı =< 3600 cm², her türlü yüzey işlemli)",
     olcuBirimi: "m²",
     kategori: "Taş Kaplama",
     kaynakTip: "sistem" as const,
@@ -12192,7 +12192,7 @@ export const RESMI_POZ_ANALIZLERI = [
   {
     id: "sys-15x405x1413",
     pozNo: "15.405.1413",
-    analizAdi: "Şartları (Sınıf 2) Eğilme dayanımı minimum 3,2 Mpa Aşınma direnç sınıfı (3-H), Yüzey alanı",
+    analizAdi: "Bazalt agregalı terrazo karo ile dış mekan döşeme kaplaması yapılması (Kırılma Dayanımı Şartları (Sınıf 2) Eğilme dayanımı minimum 3,2 Mpa Aşınma direnç sınıfı (3-H), Yüzey alanı <= 1600 cm², her türlü yüzey işlemli)",
     olcuBirimi: "m²",
     kategori: "Taş Kaplama",
     kaynakTip: "sistem" as const,
@@ -12219,7 +12219,7 @@ export const RESMI_POZ_ANALIZLERI = [
   {
     id: "sys-15x405x1414",
     pozNo: "15.405.1414",
-    analizAdi: "Şartları (Sınıf 2) Eğilme dayanımı minimum 3,2 Mpa Aşınma direnç sınıfı (3-H),1600 cm² <",
+    analizAdi: "Bazalt agregalı terrazo karo ile dış mekan döşeme kaplaması yapılması (Kırılma Dayanımı Şartları (Sınıf 2) Eğilme dayanımı minimum 3,2 Mpa Aşınma direnç sınıfı (3-H),1600 cm² < Yüzey Alanı =< 3600 cm², her türlü yüzey işlemli)",
     olcuBirimi: "m²",
     kategori: "Taş Kaplama",
     kaynakTip: "sistem" as const,
@@ -12246,7 +12246,7 @@ export const RESMI_POZ_ANALIZLERI = [
   {
     id: "sys-15x405x1415",
     pozNo: "15.405.1415",
-    analizAdi: "Şartları (Sınıf 3) Eğilme dayanımı minimum 4,0 Mpa Aşınma direnç sınıfı (4-I), Yüzey alanı",
+    analizAdi: "Bazalt agregalı terrazo karo ile dış mekan döşeme kaplaması yapılması (Kırılma Dayanımı Şartları (Sınıf 3) Eğilme dayanımı minimum 4,0 Mpa Aşınma direnç sınıfı (4-I), Yüzey alanı <= 1600 cm², her türlü yüzey işlemli)",
     olcuBirimi: "m²",
     kategori: "Taş Kaplama",
     kaynakTip: "sistem" as const,
@@ -12273,7 +12273,7 @@ export const RESMI_POZ_ANALIZLERI = [
   {
     id: "sys-15x405x1416",
     pozNo: "15.405.1416",
-    analizAdi: "Şartları (Sınıf 3) Eğilme dayanımı minimum 4,0 Mpa Aşınma direnç sınıfı (4-I), 1600 <",
+    analizAdi: "Bazalt agregalı terrazo karo ile dış mekan döşeme kaplaması yapılması (Kırılma Dayanımı Şartları (Sınıf 3) Eğilme dayanımı minimum 4,0 Mpa Aşınma direnç sınıfı (4-I), 1600 < Yüzey Alanı =< 3600 cm², her türlü yüzey işlemli)",
     olcuBirimi: "m²",
     kategori: "Taş Kaplama",
     kaynakTip: "sistem" as const,
@@ -12300,7 +12300,7 @@ export const RESMI_POZ_ANALIZLERI = [
   {
     id: "sys-15x405x1511",
     pozNo: "15.405.1511",
-    analizAdi: "Dayanımı Şartları (Sınıf 1) Eğilme dayanımı minimum 2,8 Mpa Aşınma direnç sınıfı (2-G),",
+    analizAdi: "Kuvars-silis agregalı terrazo karo ile dış mekan döşeme kaplaması yapılması (Kırılma Dayanımı Şartları (Sınıf 1) Eğilme dayanımı minimum 2,8 Mpa Aşınma direnç sınıfı (2-G), Yüzey alanı <= 1600 cm², her türlü yüzey işlemli)",
     olcuBirimi: "m²",
     kategori: "Taş Kaplama",
     kaynakTip: "sistem" as const,
@@ -12327,7 +12327,7 @@ export const RESMI_POZ_ANALIZLERI = [
   {
     id: "sys-15x405x1512",
     pozNo: "15.405.1512",
-    analizAdi: "Dayanımı Şartları (Sınıf 1) Eğilme dayanımı minimum 2,8 Mpa Aşınma direnç sınıfı (2-G),",
+    analizAdi: "Kuvars-silis agregalı terrazo karo ile dış mekan döşeme kaplaması yapılması (Kırılma Dayanımı Şartları (Sınıf 1) Eğilme dayanımı minimum 2,8 Mpa Aşınma direnç sınıfı (2-G), 1600 < Yüzey Alanı =< 3600 cm², her türlü yüzey işlemli)",
     olcuBirimi: "m²",
     kategori: "Taş Kaplama",
     kaynakTip: "sistem" as const,
@@ -12354,7 +12354,7 @@ export const RESMI_POZ_ANALIZLERI = [
   {
     id: "sys-15x405x1513",
     pozNo: "15.405.1513",
-    analizAdi: "Dayanımı Şartları (Sınıf 2) Eğilme dayanımı minimum 3,2 Mpa Aşınma direnç sınıfı (3-H),",
+    analizAdi: "Kuvars-silis agregalı terrazo karo ile dış mekan döşeme kaplaması yapılması (Kırılma Dayanımı Şartları (Sınıf 2) Eğilme dayanımı minimum 3,2 Mpa Aşınma direnç sınıfı (3-H), Yüzey alanı <= 1600 cm², her türlü yüzey işlemli)",
     olcuBirimi: "m²",
     kategori: "Taş Kaplama",
     kaynakTip: "sistem" as const,
@@ -12381,7 +12381,7 @@ export const RESMI_POZ_ANALIZLERI = [
   {
     id: "sys-15x405x1514",
     pozNo: "15.405.1514",
-    analizAdi: "Dayanımı Şartları (Sınıf 2) Eğilme dayanımı minimum 3,2 Mpa Aşınma direnç sınıfı",
+    analizAdi: "Kuvars-silis agregalı terrazo karo ile dış mekan döşeme kaplaması yapılması (Kırılma Dayanımı Şartları (Sınıf 2) Eğilme dayanımı minimum 3,2 Mpa Aşınma direnç sınıfı (3-H),1600 < Yüzey Alanı =< 3600 cm², her türlü yüzey işlemli)",
     olcuBirimi: "m²",
     kategori: "Taş Kaplama",
     kaynakTip: "sistem" as const,
@@ -12408,7 +12408,7 @@ export const RESMI_POZ_ANALIZLERI = [
   {
     id: "sys-15x405x1515",
     pozNo: "15.405.1515",
-    analizAdi: "Dayanımı Şartları (Sınıf 3) Eğilme dayanımı minimum 4,0 Mpa Aşınma direnç sınıfı (4-I),",
+    analizAdi: "Kuvars-silis agregalı terrazo karo ile dış mekan döşeme kaplaması yapılması (Kırılma Dayanımı Şartları (Sınıf 3) Eğilme dayanımı minimum 4,0 Mpa Aşınma direnç sınıfı (4-I), Yüzey alanı <= 1600 cm², her türlü yüzey işlemli)",
     olcuBirimi: "m²",
     kategori: "Taş Kaplama",
     kaynakTip: "sistem" as const,
@@ -12435,7 +12435,7 @@ export const RESMI_POZ_ANALIZLERI = [
   {
     id: "sys-15x405x1516",
     pozNo: "15.405.1516",
-    analizAdi: "Dayanımı Şartları (Sınıf 3) Eğilme dayanımı minimum 4,0 Mpa Aşınma direnç sınıfı (4-I),",
+    analizAdi: "Kuvars-silis agregalı terrazo karo ile dış mekan döşeme kaplaması yapılması (Kırılma Dayanımı Şartları (Sınıf 3) Eğilme dayanımı minimum 4,0 Mpa Aşınma direnç sınıfı (4-I), 1600 < Yüzey Alanı =< 3600 cm², her türlü yüzey işlemli)",
     olcuBirimi: "m²",
     kategori: "Taş Kaplama",
     kaynakTip: "sistem" as const,
@@ -12462,7 +12462,7 @@ export const RESMI_POZ_ANALIZLERI = [
   {
     id: "sys-15x405x1611",
     pozNo: "15.405.1611",
-    analizAdi: "Yükü Şartları (Sınıf 1) Eğilme dayanımı minimum 2,8 Mpa Aşınma direnç sınıfı (2-G),",
+    analizAdi: "Washbeton yüzey işlemli terrazo karo ile dış mekan döşeme kaplaması yapılması (Kırılma Yükü Şartları (Sınıf 1) Eğilme dayanımı minimum 2,8 Mpa Aşınma direnç sınıfı (2-G), Yüzey alanı <= 1600 cm²)",
     olcuBirimi: "m²",
     kategori: "Taş Kaplama",
     kaynakTip: "sistem" as const,
@@ -12489,7 +12489,7 @@ export const RESMI_POZ_ANALIZLERI = [
   {
     id: "sys-15x405x1612",
     pozNo: "15.405.1612",
-    analizAdi: "Yükü Sartları (Sınıf 1) Egilme dayanımı minimum 2,8 Mpa Asınma direnç sınıfı (2-G), 1600",
+    analizAdi: "Washbeton yüzey islemli terrazo karo ile dıs mekan döseme kaplaması yapılması (Kırılma Yükü Sartları (Sınıf 1) Egilme dayanımı minimum 2,8 Mpa Asınma direnç sınıfı (2-G), 1600 < Yüzey Alanı =< 3600 cm²)",
     olcuBirimi: "m²",
     kategori: "Taş Kaplama",
     kaynakTip: "sistem" as const,
@@ -12516,7 +12516,7 @@ export const RESMI_POZ_ANALIZLERI = [
   {
     id: "sys-15x405x1613",
     pozNo: "15.405.1613",
-    analizAdi: "Dayanımı Şartları (Sınıf 2) Eğilme dayanımı minimum 3,2 Mpa Aşınma direnç sınıfı (3-H),",
+    analizAdi: "Washbeton yüzey işlemli terrazo karo ile dış mekan döşeme kaplaması yapılması (Kırılma Dayanımı Şartları (Sınıf 2) Eğilme dayanımı minimum 3,2 Mpa Aşınma direnç sınıfı (3-H), Yüzey alanı <= 1600 cm²)",
     olcuBirimi: "m²",
     kategori: "Taş Kaplama",
     kaynakTip: "sistem" as const,
@@ -12543,7 +12543,7 @@ export const RESMI_POZ_ANALIZLERI = [
   {
     id: "sys-15x405x1614",
     pozNo: "15.405.1614",
-    analizAdi: "Dayanımı Şartları (Sınıf 2) Eğilme dayanımı minimum 3,2 Mpa Aşınma direnç sınıfı",
+    analizAdi: "Washbeton yüzey işlemli terrazo karo ile dış mekan döşeme kaplaması yapılması (Kırılma Dayanımı Şartları (Sınıf 2) Eğilme dayanımı minimum 3,2 Mpa Aşınma direnç sınıfı (3-H),1600 < Yüzey Alanı =< 3600 cm²)",
     olcuBirimi: "m²",
     kategori: "Taş Kaplama",
     kaynakTip: "sistem" as const,
@@ -12570,7 +12570,7 @@ export const RESMI_POZ_ANALIZLERI = [
   {
     id: "sys-15x405x1615",
     pozNo: "15.405.1615",
-    analizAdi: "Dayanımı Şartları (Sınıf 3) Eğilme dayanımı minimum 4,0 Mpa Aşınma direnç sınıfı (4-I),",
+    analizAdi: "Washbeton yüzey işlemli terrazo karo ile dış mekan döşeme kaplaması yapılması (Kırılma Dayanımı Şartları (Sınıf 3) Eğilme dayanımı minimum 4,0 Mpa Aşınma direnç sınıfı (4-I), Yüzey alanı <= 1600 cm²)",
     olcuBirimi: "m²",
     kategori: "Taş Kaplama",
     kaynakTip: "sistem" as const,
@@ -12597,7 +12597,7 @@ export const RESMI_POZ_ANALIZLERI = [
   {
     id: "sys-15x405x1616",
     pozNo: "15.405.1616",
-    analizAdi: "Dayanımı Şartları (Sınıf 3) Eğilme dayanımı minimum 4,0 Mpa Aşınma direnç sınıfı (4-I),",
+    analizAdi: "Washbeton yüzey işlemli terrazo karo ile dış mekan döşeme kaplaması yapılması (Kırılma Dayanımı Şartları (Sınıf 3) Eğilme dayanımı minimum 4,0 Mpa Aşınma direnç sınıfı (4-I), 1600 < Yüzey Alanı =< 3600 cm²)",
     olcuBirimi: "m²",
     kategori: "Taş Kaplama",
     kaynakTip: "sistem" as const,
@@ -12796,7 +12796,7 @@ export const RESMI_POZ_ANALIZLERI = [
   {
     id: "sys-15x440x1001",
     pozNo: "15.440.1001",
-    analizAdi: "duvar, tavan ve cephelerde kaplama üstü dilatasyon fugası yapılması (50 mm genislikte",
+    analizAdi: "120 mm genislikte, min. 1,3 mm et kalınlıgında eloksallı alüminyum kapak profilleri ile duvar, tavan ve cephelerde kaplama üstü dilatasyon fugası yapılması (50 mm genislikte dilatasyonlar için)",
     olcuBirimi: "m",
     kategori: "Dilatasyon ve Fuga",
     kaynakTip: "sistem" as const,
@@ -12821,7 +12821,7 @@ export const RESMI_POZ_ANALIZLERI = [
   {
     id: "sys-15x440x1002",
     pozNo: "15.440.1002",
-    analizAdi: "mm hareket kapasiteli, profil yüksekligi min. 13mm, kanat genisligi min.45 mm) duvar ve",
+    analizAdi: "Kaplama üstü dilatasyon profili ile (kauçuk fitilli, alüminyum et kalınlıgı min.1,5 mm, +/- 4 mm hareket kapasiteli, profil yüksekligi min. 13mm, kanat genisligi min.45 mm) duvar ve tavanlarda dilatasyon fugası yapılması (50 mm genislikte dilatasyonlar için)",
     olcuBirimi: "m",
     kategori: "Dilatasyon ve Fuga",
     kaynakTip: "sistem" as const,
@@ -12845,7 +12845,7 @@ export const RESMI_POZ_ANALIZLERI = [
   {
     id: "sys-15x440x1003",
     pozNo: "15.440.1003",
-    analizAdi: "zeminlerde kaplama üstü dilatasyon fugası yapılması (50 mm genislikte dilatasyonlar için)",
+    analizAdi: "120 mm genislikte, min. 2,2 mm et kalınlıgında eloksallı alüminyum kapak profilleri ile zeminlerde kaplama üstü dilatasyon fugası yapılması (50 mm genislikte dilatasyonlar için) (yaya yüküne dayanıklı)",
     olcuBirimi: "m",
     kategori: "Dilatasyon ve Fuga",
     kaynakTip: "sistem" as const,
@@ -12870,7 +12870,7 @@ export const RESMI_POZ_ANALIZLERI = [
   {
     id: "sys-15x440x1004",
     pozNo: "15.440.1004",
-    analizAdi: "hareket kapasiteli, profil yüksekligi min. 35 mm, kanat genisligi min. 45mm) zeminde",
+    analizAdi: "Kaplama altı dilatasyon profili ile (kauçuk fitilli, alüminyum et kalınlıgı min.2 mm, +/- 4 mm hareket kapasiteli, profil yüksekligi min. 35 mm, kanat genisligi min. 45mm) zeminde dilatasyon fugası yapılması (50 mm genislikte dilatasyonlar için) (yaya yüküne dayanıklı)",
     olcuBirimi: "m",
     kategori: "Dilatasyon ve Fuga",
     kaynakTip: "sistem" as const,
@@ -12894,7 +12894,7 @@ export const RESMI_POZ_ANALIZLERI = [
   {
     id: "sys-15x440x1005",
     pozNo: "15.440.1005",
-    analizAdi: "genisligi min. 45mm, fitilin yerlestirildigi mesnetler arası ilave elemanlarla güçlendirilmis)",
+    analizAdi: "Kaplama altı dilatasyon profili ile (kauçuk ve alüminyumdan mamul seritli fitilli, alüminyum et kalınlıgı min.2,5 mm, +/- 4 mm hareket kapasiteli, profil yüksekligi min. 40 mm, kanat genisligi min. 45mm, fitilin yerlestirildigi mesnetler arası ilave elemanlarla güçlendirilmis) zeminde dilatasyon fugası yapılması (50 mm genislikte dilatasyonlar için) (yaya yüküne dayanıklı)",
     olcuBirimi: "m",
     kategori: "Dilatasyon ve Fuga",
     kaynakTip: "sistem" as const,
@@ -12918,7 +12918,7 @@ export const RESMI_POZ_ANALIZLERI = [
   {
     id: "sys-15x440x1006",
     pozNo: "15.440.1006",
-    analizAdi: "mm hareket kapasiteli, profil yüksekligi min. 15 mm, kanat genisligi min. 45mm) zeminde",
+    analizAdi: "Kaplama üstü dilatasyon profili ile (kauçuk fitilli, alüminyum et kalınlıgı min.1,5 mm, +/- 4 mm hareket kapasiteli, profil yüksekligi min. 15 mm, kanat genisligi min. 45mm) zeminde dilatasyon fugası yapılması (50 mm genislikte dilatasyonlar için) (yaya yüküne dayanıklı)",
     olcuBirimi: "m",
     kategori: "Dilatasyon ve Fuga",
     kaynakTip: "sistem" as const,
@@ -12942,7 +12942,7 @@ export const RESMI_POZ_ANALIZLERI = [
   {
     id: "sys-15x440x1007",
     pozNo: "15.440.1007",
-    analizAdi: "kanat genisligi min. 45mm, fitilin yerlestirildigi mesnetler arası ilave elemanlarla",
+    analizAdi: "Kaplama üstü dilatasyon profili ile (kauçuk ve alüminyumdan mamul seritli fitilli, alüminyum et kalınlıgı min.2 mm, +/- 4 mm hareket kapasiteli, profil yüksekligi min. 20 mm, kanat genisligi min. 45mm, fitilin yerlestirildigi mesnetler arası ilave elemanlarla güçlendirilmis) zeminde dilatasyon fugası yapılması (50 mm genislikte dilatasyonlar için) (yaya yüküne dayanıklı)",
     olcuBirimi: "m",
     kategori: "Dilatasyon ve Fuga",
     kaynakTip: "sistem" as const,
@@ -13066,7 +13066,7 @@ export const RESMI_POZ_ANALIZLERI = [
   {
     id: "sys-15x451x1002",
     pozNo: "15.451.1002",
-    analizAdi: "Kaplama Profili İle Binaların Dış Yüzeylerinde (Cephe) Kaplama Yapılması (Yardımcı",
+    analizAdi: "Sert PVC'den Yapılmış (PVC - U) Dış Mekâna Uygun Her Renk, Yüzey ve Desende Kaplama Profili İle Binaların Dış Yüzeylerinde (Cephe) Kaplama Yapılması (Yardımcı Profiller Dâhil)",
     olcuBirimi: "Kg",
     kategori: "Cephe Kaplama",
     kaynakTip: "sistem" as const,
@@ -13089,8 +13089,8 @@ export const RESMI_POZ_ANALIZLERI = [
   {
     id: "sys-15x455x1002",
     pozNo: "15.455.1002",
-    analizAdi: "Metal takviyeli beyaz renkli plastik doğrama imalatı yapılması ve yerine konulması (Sert",
-    olcuBirimi: "",
+    analizAdi: "Metal takviyeli beyaz renkli plastik doğrama imalatı yapılması ve yerine konulması (Sert PVC doğrama profillerinden her çeşit kapı, pencere, kaplama ve benzeri imalat)",
+    olcuBirimi: "Kg",
     kategori: "Çeşitli Kaplama",
     kaynakTip: "sistem" as const,
     yukleniciKarOrani: 25,
@@ -13108,8 +13108,8 @@ export const RESMI_POZ_ANALIZLERI = [
   {
     id: "sys-15x455x1003",
     pozNo: "15.455.1003",
-    analizAdi: "Metal takviyeli her renk ve desende plastik doğrama imalatı yapılması ve yerine konulması",
-    olcuBirimi: "",
+    analizAdi: "Metal takviyeli her renk ve desende plastik doğrama imalatı yapılması ve yerine konulması (Sert PVC doğrama profillerinden her çeşit kapı, pencere, kaplama ve benzeri imalat)",
+    olcuBirimi: "Kg",
     kategori: "Çeşitli Kaplama",
     kaynakTip: "sistem" as const,
     yukleniciKarOrani: 25,
@@ -13127,7 +13127,7 @@ export const RESMI_POZ_ANALIZLERI = [
   {
     id: "sys-15x455x1004",
     pozNo: "15.455.1004",
-    analizAdi: "konulması (Sert PVC doğrama profillerinden her çeşit kapı, pencere, kaplama ve benzeri",
+    analizAdi: "Kendinden kompozit takviyeli beyaz renkli sert plastik doğrama imalatı yapılması ve yerine konulması (Sert PVC doğrama profillerinden her çeşit kapı, pencere, kaplama ve benzeri imalat)",
     olcuBirimi: "Kg",
     kategori: "Çeşitli Kaplama",
     kaynakTip: "sistem" as const,
@@ -13154,7 +13154,7 @@ export const RESMI_POZ_ANALIZLERI = [
   {
     id: "sys-15x455x1005",
     pozNo: "15.455.1005",
-    analizAdi: "ve yerine konulması (Sert PVC doğrama profillerinden her çeşit kapı, pencere, kaplama ve",
+    analizAdi: "Her renk ve desende kendinden kompozit takviyeli sert plastik doğrama imalatı yapılması ve yerine konulması (Sert PVC doğrama profillerinden her çeşit kapı, pencere, kaplama ve benzeri imalat)",
     olcuBirimi: "Kg",
     kategori: "Çeşitli Kaplama",
     kaynakTip: "sistem" as const,
@@ -14423,7 +14423,7 @@ export const RESMI_POZ_ANALIZLERI = [
   {
     id: "sys-15x530x1151",
     pozNo: "15.530.1151",
-    analizAdi: "oranı azaltılmış, kırılma dayanımı artırılmış alçı levhalar ile mevcut duvar üzeri, 60 cm aks",
+    analizAdi: "12,5 mm kalınlıkta, her iki yüzü cam elyaf şilte kaplı, yangına dayanımı artırılmış, su emme oranı azaltılmış, kırılma dayanımı artırılmış alçı levhalar ile mevcut duvar üzeri, 60 cm aks aralıklı T profil ile giydirme duvar yapılması",
     olcuBirimi: "m²",
     kategori: "Alçı Levha",
     kaynakTip: "sistem" as const,
@@ -14451,7 +14451,7 @@ export const RESMI_POZ_ANALIZLERI = [
   {
     id: "sys-15x530x1152",
     pozNo: "15.530.1152",
-    analizAdi: "oranı azaltılmış, kırılma dayanımı artırılmış alçı levhalar ile mevcut duvar üzeri, 60 cm aks",
+    analizAdi: "12,5 mm kalınlıkta, her iki yüzü cam elyaf şilte kaplı, yangına dayanımı artırılmış, su emme oranı azaltılmış, kırılma dayanımı artırılmış alçı levhalar ile mevcut duvar üzeri, 60 cm aks aralıklı DC profil ile giydirme duvar yapılması",
     olcuBirimi: "m²",
     kategori: "Alçı Levha",
     kaynakTip: "sistem" as const,
@@ -14479,7 +14479,7 @@ export const RESMI_POZ_ANALIZLERI = [
   {
     id: "sys-15x530x1254",
     pozNo: "15.530.1254",
-    analizAdi: "(her iki yüzünde tek kat 12,5 mm su emme oranı azaltılmış, yangına dayanımı artırılmış alçı",
+    analizAdi: "Alçı levhalar ile tek iskeletli bölme duvar yapılması (Duvar C 50 profil - 60 cm aks aralığı) (her iki yüzünde tek kat 12,5 mm su emme oranı azaltılmış, yangına dayanımı artırılmış alçı levha ile)",
     olcuBirimi: "m²",
     kategori: "Alçı Levha",
     kaynakTip: "sistem" as const,
@@ -14509,7 +14509,7 @@ export const RESMI_POZ_ANALIZLERI = [
   {
     id: "sys-15x530x1258",
     pozNo: "15.530.1258",
-    analizAdi: "(her iki yüzünde tek kat 12,5 mm su emme oranı azaltılmış, yangına dayanımı artırılmış alçı",
+    analizAdi: "Alçı levhalar ile tek iskeletli bölme duvar yapılması (Duvar C 50 profil - 40 cm aks aralığı) (her iki yüzünde tek kat 12,5 mm su emme oranı azaltılmış, yangına dayanımı artırılmış alçı levha ile)",
     olcuBirimi: "m²",
     kategori: "Alçı Levha",
     kaynakTip: "sistem" as const,
@@ -14539,7 +14539,7 @@ export const RESMI_POZ_ANALIZLERI = [
   {
     id: "sys-15x530x1262",
     pozNo: "15.530.1262",
-    analizAdi: "(her iki yüzünde tek kat 12,5 mm su emme oranı azaltılmış, yangına dayanımı artırılmış alçı",
+    analizAdi: "Alçı levhalar ile tek iskeletli bölme duvar yapılması (Duvar C 75 profil - 60 cm aks aralığı) (her iki yüzünde tek kat 12,5 mm su emme oranı azaltılmış, yangına dayanımı artırılmış alçı levha ile)",
     olcuBirimi: "m²",
     kategori: "Alçı Levha",
     kaynakTip: "sistem" as const,
@@ -14569,7 +14569,7 @@ export const RESMI_POZ_ANALIZLERI = [
   {
     id: "sys-15x530x1266",
     pozNo: "15.530.1266",
-    analizAdi: "(her iki yüzünde tek kat 12,5 mm su emme oranı azaltılmış, yangına dayanımı artırılmış alçı",
+    analizAdi: "Alçı levhalar ile tek iskeletli bölme duvar yapılması (Duvar C 75 profil - 40 cm aks aralığı) (her iki yüzünde tek kat 12,5 mm su emme oranı azaltılmış, yangına dayanımı artırılmış alçı levha ile)",
     olcuBirimi: "m²",
     kategori: "Alçı Levha",
     kaynakTip: "sistem" as const,
@@ -14599,7 +14599,7 @@ export const RESMI_POZ_ANALIZLERI = [
   {
     id: "sys-15x530x1270",
     pozNo: "15.530.1270",
-    analizAdi: "(her iki yüzünde tek kat 12,5 mm su emme oranı azaltılmış, yangına dayanımı artırılmış alçı",
+    analizAdi: "Alçı levhalar ile tek iskeletli bölme duvar yapılması (Duvar C 100 profil - 60 cm aks aralığı) (her iki yüzünde tek kat 12,5 mm su emme oranı azaltılmış, yangına dayanımı artırılmış alçı levha ile)",
     olcuBirimi: "m²",
     kategori: "Alçı Levha",
     kaynakTip: "sistem" as const,
@@ -14629,7 +14629,7 @@ export const RESMI_POZ_ANALIZLERI = [
   {
     id: "sys-15x530x1274",
     pozNo: "15.530.1274",
-    analizAdi: "(her iki yüzünde tek kat 12,5 mm su emme oranı azaltılmış, yangına dayanımı artırılmış alçı",
+    analizAdi: "Alçı levhalar ile tek iskeletli bölme duvar yapılması (Duvar C 100 profil - 40 cm aks aralığı) (her iki yüzünde tek kat 12,5 mm su emme oranı azaltılmış, yangına dayanımı artırılmış alçı levha ile)",
     olcuBirimi: "m²",
     kategori: "Alçı Levha",
     kaynakTip: "sistem" as const,
@@ -14659,7 +14659,7 @@ export const RESMI_POZ_ANALIZLERI = [
   {
     id: "sys-15x530x1304",
     pozNo: "15.530.1304",
-    analizAdi: "(her iki yüzünde tek kat 15 mm su emme oranı azaltılmış, yangına dayanımı artırılmış alçı",
+    analizAdi: "Alçı levhalar ile tek iskeletli bölme duvar yapılması (Duvar C 50 profil - 60 cm aks aralığı) (her iki yüzünde tek kat 15 mm su emme oranı azaltılmış, yangına dayanımı artırılmış alçı levha ile)",
     olcuBirimi: "m²",
     kategori: "Alçı Levha",
     kaynakTip: "sistem" as const,
@@ -14689,7 +14689,7 @@ export const RESMI_POZ_ANALIZLERI = [
   {
     id: "sys-15x530x1308",
     pozNo: "15.530.1308",
-    analizAdi: "(her iki yüzünde tek kat 15 mm su emme oranı azaltılmış, yangına dayanımı artırılmış alçı",
+    analizAdi: "Alçı levhalar ile tek iskeletli bölme duvar yapılması (Duvar C 50 profil - 40 cm aks aralığı) (her iki yüzünde tek kat 15 mm su emme oranı azaltılmış, yangına dayanımı artırılmış alçı levha ile)",
     olcuBirimi: "m²",
     kategori: "Alçı Levha",
     kaynakTip: "sistem" as const,
@@ -14719,7 +14719,7 @@ export const RESMI_POZ_ANALIZLERI = [
   {
     id: "sys-15x530x1312",
     pozNo: "15.530.1312",
-    analizAdi: "(her iki yüzünde tek kat 15 mm su emme oranı azaltılmış, yangına dayanımı artırılmış alçı",
+    analizAdi: "Alçı levhalar ile tek iskeletli bölme duvar yapılması (Duvar C 75 profil - 60 cm aks aralığı) (her iki yüzünde tek kat 15 mm su emme oranı azaltılmış, yangına dayanımı artırılmış alçı levha ile)",
     olcuBirimi: "m²",
     kategori: "Alçı Levha",
     kaynakTip: "sistem" as const,
@@ -14749,7 +14749,7 @@ export const RESMI_POZ_ANALIZLERI = [
   {
     id: "sys-15x530x1316",
     pozNo: "15.530.1316",
-    analizAdi: "(her iki yüzünde tek kat 15 mm su emme oranı azaltılmış, yangına dayanımı artırılmış alçı",
+    analizAdi: "Alçı levhalar ile tek iskeletli bölme duvar yapılması (Duvar C 75 profil - 40 cm aks aralığı) (her iki yüzünde tek kat 15 mm su emme oranı azaltılmış, yangına dayanımı artırılmış alçı levha ile)",
     olcuBirimi: "m²",
     kategori: "Alçı Levha",
     kaynakTip: "sistem" as const,
@@ -14779,7 +14779,7 @@ export const RESMI_POZ_ANALIZLERI = [
   {
     id: "sys-15x530x1320",
     pozNo: "15.530.1320",
-    analizAdi: "(her iki yüzünde tek kat 15 mm su emme oranı azaltılmış, yangına dayanımı artırılmış alçı",
+    analizAdi: "Alçı levhalar ile tek iskeletli bölme duvar yapılması (Duvar C 100 profil - 60 cm aks aralığı) (her iki yüzünde tek kat 15 mm su emme oranı azaltılmış, yangına dayanımı artırılmış alçı levha ile)",
     olcuBirimi: "m²",
     kategori: "Alçı Levha",
     kaynakTip: "sistem" as const,
@@ -14809,7 +14809,7 @@ export const RESMI_POZ_ANALIZLERI = [
   {
     id: "sys-15x530x1324",
     pozNo: "15.530.1324",
-    analizAdi: "(her iki yüzünde tek kat 15 mm su emme oranı azaltılmış, yangına dayanımı artırılmış alçı",
+    analizAdi: "Alçı levhalar ile tek iskeletli bölme duvar yapılması (Duvar C 100 profil - 40 cm aks aralığı) (her iki yüzünde tek kat 15 mm su emme oranı azaltılmış, yangına dayanımı artırılmış alçı levha ile)",
     olcuBirimi: "m²",
     kategori: "Alçı Levha",
     kaynakTip: "sistem" as const,
@@ -14839,7 +14839,7 @@ export const RESMI_POZ_ANALIZLERI = [
   {
     id: "sys-15x530x1354",
     pozNo: "15.530.1354",
-    analizAdi: "(her iki yüzünde çift kat 12,5 mm su emme oranı azaltılmış, yangına dayanımı artırılmış alçı",
+    analizAdi: "Alçı levhalar ile tek iskeletli bölme duvar yapılması (Duvar C 50 profil - 60 cm aks aralığı) (her iki yüzünde çift kat 12,5 mm su emme oranı azaltılmış, yangına dayanımı artırılmış alçı levha ile)",
     olcuBirimi: "m²",
     kategori: "Alçı Levha",
     kaynakTip: "sistem" as const,
@@ -14869,7 +14869,7 @@ export const RESMI_POZ_ANALIZLERI = [
   {
     id: "sys-15x530x1358",
     pozNo: "15.530.1358",
-    analizAdi: "(her iki yüzünde çift kat 12,5 mm su emme oranı azaltılmış, yangına dayanımı artırılmış alçı",
+    analizAdi: "Alçı levhalar ile tek iskeletli bölme duvar yapılması (Duvar C 50 profil - 40 cm aks aralığı) (her iki yüzünde çift kat 12,5 mm su emme oranı azaltılmış, yangına dayanımı artırılmış alçı levha ile)",
     olcuBirimi: "m²",
     kategori: "Alçı Levha",
     kaynakTip: "sistem" as const,
@@ -14899,7 +14899,7 @@ export const RESMI_POZ_ANALIZLERI = [
   {
     id: "sys-15x530x1362",
     pozNo: "15.530.1362",
-    analizAdi: "(her iki yüzünde çift kat 12,5 mm su emme oranı azaltılmış, yangına dayanımı artırılmış alçı",
+    analizAdi: "Alçı levhalar ile tek iskeletli bölme duvar yapılması (Duvar C 75 profil - 60 cm aks aralığı) (her iki yüzünde çift kat 12,5 mm su emme oranı azaltılmış, yangına dayanımı artırılmış alçı levha ile)",
     olcuBirimi: "m²",
     kategori: "Alçı Levha",
     kaynakTip: "sistem" as const,
@@ -14929,7 +14929,7 @@ export const RESMI_POZ_ANALIZLERI = [
   {
     id: "sys-15x530x1366",
     pozNo: "15.530.1366",
-    analizAdi: "(her iki yüzünde çift kat 12,5 mm su emme oranı azaltılmış, yangına dayanımı artırılmış alçı",
+    analizAdi: "Alçı levhalar ile tek iskeletli bölme duvar yapılması (Duvar C 75 profil - 40 cm aks aralığı) (her iki yüzünde çift kat 12,5 mm su emme oranı azaltılmış, yangına dayanımı artırılmış alçı levha ile)",
     olcuBirimi: "m²",
     kategori: "Alçı Levha",
     kaynakTip: "sistem" as const,
@@ -14959,7 +14959,7 @@ export const RESMI_POZ_ANALIZLERI = [
   {
     id: "sys-15x530x1370",
     pozNo: "15.530.1370",
-    analizAdi: "(her iki yüzünde çift kat 12,5 mm su emme oranı azaltılmış, yangına dayanımı artırılmış alçı",
+    analizAdi: "Alçı levhalar ile tek iskeletli bölme duvar yapılması (Duvar C 100 profil - 60 cm aks aralığı) (her iki yüzünde çift kat 12,5 mm su emme oranı azaltılmış, yangına dayanımı artırılmış alçı levha ile)",
     olcuBirimi: "m²",
     kategori: "Alçı Levha",
     kaynakTip: "sistem" as const,
@@ -14989,7 +14989,7 @@ export const RESMI_POZ_ANALIZLERI = [
   {
     id: "sys-15x530x1374",
     pozNo: "15.530.1374",
-    analizAdi: "(her iki yüzünde çift kat 12,5 mm su emme oranı azaltılmış, yangına dayanımı artırılmış alçı",
+    analizAdi: "Alçı levhalar ile tek iskeletli bölme duvar yapılması (Duvar C 100 profil - 40 cm aks aralığı) (her iki yüzünde çift kat 12,5 mm su emme oranı azaltılmış, yangına dayanımı artırılmış alçı levha ile)",
     olcuBirimi: "m²",
     kategori: "Alçı Levha",
     kaynakTip: "sistem" as const,
@@ -15019,7 +15019,7 @@ export const RESMI_POZ_ANALIZLERI = [
   {
     id: "sys-15x530x1404",
     pozNo: "15.530.1404",
-    analizAdi: "(her iki yüzünde çift kat 15 mm su emme oranı azaltılmış, yangına dayanımı artırılmış alçı",
+    analizAdi: "Alçı levhalar ile tek iskeletli bölme duvar yapılması (Duvar C 50 profil - 60 cm aks aralığı) (her iki yüzünde çift kat 15 mm su emme oranı azaltılmış, yangına dayanımı artırılmış alçı levha ile)",
     olcuBirimi: "m²",
     kategori: "Alçı Levha",
     kaynakTip: "sistem" as const,
@@ -15049,7 +15049,7 @@ export const RESMI_POZ_ANALIZLERI = [
   {
     id: "sys-15x530x1408",
     pozNo: "15.530.1408",
-    analizAdi: "(her iki yüzünde çift kat 15 mm su emme oranı azaltılmış, yangına dayanımı artırılmış alçı",
+    analizAdi: "Alçı levhalar ile tek iskeletli bölme duvar yapılması (Duvar C 50 profil - 40 cm aks aralığı) (her iki yüzünde çift kat 15 mm su emme oranı azaltılmış, yangına dayanımı artırılmış alçı levha ile)",
     olcuBirimi: "m²",
     kategori: "Alçı Levha",
     kaynakTip: "sistem" as const,
@@ -15079,7 +15079,7 @@ export const RESMI_POZ_ANALIZLERI = [
   {
     id: "sys-15x530x1412",
     pozNo: "15.530.1412",
-    analizAdi: "(her iki yüzünde çift kat 15 mm su emme oranı azaltılmış, yangına dayanımı artırılmış alçı",
+    analizAdi: "Alçı levhalar ile tek iskeletli bölme duvar yapılması (Duvar C 75 profil - 60 cm aks aralığı) (her iki yüzünde çift kat 15 mm su emme oranı azaltılmış, yangına dayanımı artırılmış alçı levha ile)",
     olcuBirimi: "m²",
     kategori: "Alçı Levha",
     kaynakTip: "sistem" as const,
@@ -15109,7 +15109,7 @@ export const RESMI_POZ_ANALIZLERI = [
   {
     id: "sys-15x530x1416",
     pozNo: "15.530.1416",
-    analizAdi: "(her iki yüzünde çift kat 15 mm su emme oranı azaltılmış, yangına dayanımı artırılmış alçı",
+    analizAdi: "Alçı levhalar ile tek iskeletli bölme duvar yapılması (Duvar C 75 profil - 40 cm aks aralığı) (her iki yüzünde çift kat 15 mm su emme oranı azaltılmış, yangına dayanımı artırılmış alçı levha ile)",
     olcuBirimi: "m²",
     kategori: "Alçı Levha",
     kaynakTip: "sistem" as const,
@@ -15139,7 +15139,7 @@ export const RESMI_POZ_ANALIZLERI = [
   {
     id: "sys-15x530x1420",
     pozNo: "15.530.1420",
-    analizAdi: "(her iki yüzünde çift kat 15 mm su emme oranı azaltılmış, yangına dayanımı artırılmış alçı",
+    analizAdi: "Alçı levhalar ile tek iskeletli bölme duvar yapılması (Duvar C 100 profil - 60 cm aks aralığı) (her iki yüzünde çift kat 15 mm su emme oranı azaltılmış, yangına dayanımı artırılmış alçı levha ile)",
     olcuBirimi: "m²",
     kategori: "Alçı Levha",
     kaynakTip: "sistem" as const,
@@ -15169,7 +15169,7 @@ export const RESMI_POZ_ANALIZLERI = [
   {
     id: "sys-15x530x1424",
     pozNo: "15.530.1424",
-    analizAdi: "(her iki yüzünde çift kat 15 mm su emme oranı azaltılmış, yangına dayanımı artırılmış alçı",
+    analizAdi: "Alçı levhalar ile tek iskeletli bölme duvar yapılması (Duvar C 100 profil - 40 cm aks aralığı) (her iki yüzünde çift kat 15 mm su emme oranı azaltılmış, yangına dayanımı artırılmış alçı levha ile)",
     olcuBirimi: "m²",
     kategori: "Alçı Levha",
     kaynakTip: "sistem" as const,
@@ -15199,7 +15199,7 @@ export const RESMI_POZ_ANALIZLERI = [
   {
     id: "sys-15x530x1454",
     pozNo: "15.530.1454",
-    analizAdi: "(her iki yüzünde üç kat 12,5 mm su emme oranı azaltılmış, yangına dayanımı artırılmış alçı",
+    analizAdi: "Alçı levhalar ile tek iskeletli bölme duvar yapılması (Duvar C 50 profil - 60 cm aks aralığı) (her iki yüzünde üç kat 12,5 mm su emme oranı azaltılmış, yangına dayanımı artırılmış alçı levha ile)",
     olcuBirimi: "m²",
     kategori: "Alçı Levha",
     kaynakTip: "sistem" as const,
@@ -15229,7 +15229,7 @@ export const RESMI_POZ_ANALIZLERI = [
   {
     id: "sys-15x530x1458",
     pozNo: "15.530.1458",
-    analizAdi: "(her iki yüzünde üç kat 12,5 mm su emme oranı azaltılmış, yangına dayanımı artırılmış alçı",
+    analizAdi: "Alçı levhalar ile tek iskeletli bölme duvar yapılması (Duvar C 75 profil - 60 cm aks aralığı) (her iki yüzünde üç kat 12,5 mm su emme oranı azaltılmış, yangına dayanımı artırılmış alçı levha ile)",
     olcuBirimi: "m²",
     kategori: "Alçı Levha",
     kaynakTip: "sistem" as const,
@@ -15259,7 +15259,7 @@ export const RESMI_POZ_ANALIZLERI = [
   {
     id: "sys-15x530x1462",
     pozNo: "15.530.1462",
-    analizAdi: "(her iki yüzünde üç kat 12,5 mm su emme oranı azaltılmış, yangına dayanımı artırılmış alçı",
+    analizAdi: "Alçı levhalar ile tek iskeletli bölme duvar yapılması (Duvar C 100 profil - 60 cm aks aralığı) (her iki yüzünde üç kat 12,5 mm su emme oranı azaltılmış, yangına dayanımı artırılmış alçı levha ile)",
     olcuBirimi: "m²",
     kategori: "Alçı Levha",
     kaynakTip: "sistem" as const,
@@ -15289,7 +15289,7 @@ export const RESMI_POZ_ANALIZLERI = [
   {
     id: "sys-15x530x1504",
     pozNo: "15.530.1504",
-    analizAdi: "(her iki yüzünde iki kat 12,5 mm su emme oranı azaltılmış, yangına dayanımı artırılmış alçı",
+    analizAdi: "Alçı levhalar ile çift iskeletli bölme duvar yapılması (Duvar C 50 profil - 60 cm aks aralığı) (her iki yüzünde iki kat 12,5 mm su emme oranı azaltılmış, yangına dayanımı artırılmış alçı levha ile)",
     olcuBirimi: "m²",
     kategori: "Alçı Levha",
     kaynakTip: "sistem" as const,
@@ -15319,7 +15319,7 @@ export const RESMI_POZ_ANALIZLERI = [
   {
     id: "sys-15x530x1508",
     pozNo: "15.530.1508",
-    analizAdi: "(her iki yüzünde iki kat 15 mm su emme oranı azaltılmış, yangına dayanımı artırılmış alçı",
+    analizAdi: "Alçı levhalar ile çift iskeletli bölme duvar yapılması (Duvar C 50 profil - 60 cm aks aralığı) (her iki yüzünde iki kat 15 mm su emme oranı azaltılmış, yangına dayanımı artırılmış alçı levha ile)",
     olcuBirimi: "m²",
     kategori: "Alçı Levha",
     kaynakTip: "sistem" as const,
@@ -15349,7 +15349,7 @@ export const RESMI_POZ_ANALIZLERI = [
   {
     id: "sys-15x530x1512",
     pozNo: "15.530.1512",
-    analizAdi: "(her iki yüzünde iki kat 12,5 mm su emme oranı azaltılmış, yangına dayanımı artırılmış alçı",
+    analizAdi: "Alçı levhalar ile çift iskeletli bölme duvar yapılması (Duvar C 75 profil - 60 cm aks aralığı) (her iki yüzünde iki kat 12,5 mm su emme oranı azaltılmış, yangına dayanımı artırılmış alçı levha ile)",
     olcuBirimi: "m²",
     kategori: "Alçı Levha",
     kaynakTip: "sistem" as const,
@@ -15379,7 +15379,7 @@ export const RESMI_POZ_ANALIZLERI = [
   {
     id: "sys-15x530x1551",
     pozNo: "15.530.1551",
-    analizAdi: "(Duvar C 50 profil - 60 cm aks aralığı) (her iki yüzünde iki kat 12,5 mm standart alçı levha",
+    analizAdi: "Alçı levhalar ile çift iskeletli (birbirine alçı levha şeritlerle bağlanmış) bölme duvar yapılması (Duvar C 50 profil - 60 cm aks aralığı) (her iki yüzünde iki kat 12,5 mm standart alçı levha ile)",
     olcuBirimi: "m²",
     kategori: "Alçı Levha",
     kaynakTip: "sistem" as const,
@@ -15409,7 +15409,7 @@ export const RESMI_POZ_ANALIZLERI = [
   {
     id: "sys-15x530x1552",
     pozNo: "15.530.1552",
-    analizAdi: "(Duvar C 50 profil - 60 cm aks aralığı) (her iki yüzünde iki kat 12,5 mm su emme oranı",
+    analizAdi: "Alçı levhalar ile çift iskeletli (birbirine alçı levha şeritlerle bağlanmış) bölme duvar yapılması (Duvar C 50 profil - 60 cm aks aralığı) (her iki yüzünde iki kat 12,5 mm su emme oranı azaltılmış alçı levha ile)",
     olcuBirimi: "m²",
     kategori: "Alçı Levha",
     kaynakTip: "sistem" as const,
@@ -15439,7 +15439,7 @@ export const RESMI_POZ_ANALIZLERI = [
   {
     id: "sys-15x530x1553",
     pozNo: "15.530.1553",
-    analizAdi: "(Duvar C 50 profil - 60 cm aks aralığı) (her iki yüzünde iki kat 12,5 mm yangına dayanımı",
+    analizAdi: "Alçı levhalar ile çift iskeletli (birbirine alçı levha şeritlerle bağlanmış) bölme duvar yapılması (Duvar C 50 profil - 60 cm aks aralığı) (her iki yüzünde iki kat 12,5 mm yangına dayanımı artırılmış alçı levha ile)",
     olcuBirimi: "m²",
     kategori: "Alçı Levha",
     kaynakTip: "sistem" as const,
@@ -15469,7 +15469,7 @@ export const RESMI_POZ_ANALIZLERI = [
   {
     id: "sys-15x530x1554",
     pozNo: "15.530.1554",
-    analizAdi: "(Duvar C 50 profil - 60 cm aks aralığı) (her iki yüzünde iki kat 12,5 mm su emme oranı",
+    analizAdi: "Alçı levhalar ile çift iskeletli (birbirine alçı levha şeritlerle bağlanmış) bölme duvar yapılması (Duvar C 50 profil - 60 cm aks aralığı) (her iki yüzünde iki kat 12,5 mm su emme oranı azaltılmış, yangına dayanımı artırılmış alçı levha ile)",
     olcuBirimi: "m²",
     kategori: "Alçı Levha",
     kaynakTip: "sistem" as const,
@@ -15499,7 +15499,7 @@ export const RESMI_POZ_ANALIZLERI = [
   {
     id: "sys-15x530x1555",
     pozNo: "15.530.1555",
-    analizAdi: "(Duvar C 50 profil - 60 cm aks aralığı) (her iki yüzünde iki kat 15 mm standart alçı levha ile)",
+    analizAdi: "Alçı levhalar ile çift iskeletli (birbirine alçı levha şeritlerle bağlanmış) bölme duvar yapılması (Duvar C 50 profil - 60 cm aks aralığı) (her iki yüzünde iki kat 15 mm standart alçı levha ile)",
     olcuBirimi: "m²",
     kategori: "Alçı Levha",
     kaynakTip: "sistem" as const,
@@ -15529,7 +15529,7 @@ export const RESMI_POZ_ANALIZLERI = [
   {
     id: "sys-15x530x1556",
     pozNo: "15.530.1556",
-    analizAdi: "(Duvar C 50 profil - 60 cm aks aralığı) (her iki yüzünde iki kat 15 mm su emme oranı",
+    analizAdi: "Alçı levhalar ile çift iskeletli (birbirine alçı levha şeritlerle bağlanmış) bölme duvar yapılması (Duvar C 50 profil - 60 cm aks aralığı) (her iki yüzünde iki kat 15 mm su emme oranı azaltılmış alçı levha ile)",
     olcuBirimi: "m²",
     kategori: "Alçı Levha",
     kaynakTip: "sistem" as const,
@@ -15559,7 +15559,7 @@ export const RESMI_POZ_ANALIZLERI = [
   {
     id: "sys-15x530x1557",
     pozNo: "15.530.1557",
-    analizAdi: "(Duvar C 50 profil - 60 cm aks aralığı) (her iki yüzünde iki kat 15 mm yangına dayanımı",
+    analizAdi: "Alçı levhalar ile çift iskeletli (birbirine alçı levha şeritlerle bağlanmış) bölme duvar yapılması (Duvar C 50 profil - 60 cm aks aralığı) (her iki yüzünde iki kat 15 mm yangına dayanımı artırılmış alçı levha ile)",
     olcuBirimi: "m²",
     kategori: "Alçı Levha",
     kaynakTip: "sistem" as const,
@@ -15589,7 +15589,7 @@ export const RESMI_POZ_ANALIZLERI = [
   {
     id: "sys-15x530x1558",
     pozNo: "15.530.1558",
-    analizAdi: "(Duvar C 50 profil - 60 cm aks aralığı) (her iki yüzünde iki kat 15 mm su emme oranı",
+    analizAdi: "Alçı levhalar ile çift iskeletli (birbirine alçı levha şeritlerle bağlanmış) bölme duvar yapılması (Duvar C 50 profil - 60 cm aks aralığı) (her iki yüzünde iki kat 15 mm su emme oranı azaltılmış, yangına dayanımı artırılmış alçı levha ile)",
     olcuBirimi: "m²",
     kategori: "Alçı Levha",
     kaynakTip: "sistem" as const,
@@ -15619,7 +15619,7 @@ export const RESMI_POZ_ANALIZLERI = [
   {
     id: "sys-15x530x1559",
     pozNo: "15.530.1559",
-    analizAdi: "(Duvar C 75 profil - 60 cm aks aralığı) (her iki yüzünde iki kat 12,5 mm standart alçı levha",
+    analizAdi: "Alçı levhalar ile çift iskeletli (birbirine alçı levha şeritlerle bağlanmış) bölme duvar yapılması (Duvar C 75 profil - 60 cm aks aralığı) (her iki yüzünde iki kat 12,5 mm standart alçı levha ile)",
     olcuBirimi: "m²",
     kategori: "Alçı Levha",
     kaynakTip: "sistem" as const,
@@ -15649,7 +15649,7 @@ export const RESMI_POZ_ANALIZLERI = [
   {
     id: "sys-15x530x1560",
     pozNo: "15.530.1560",
-    analizAdi: "(Duvar C 75 profil - 60 cm aks aralığı) (her iki yüzünde iki kat 12,5 mm su emme oranı",
+    analizAdi: "Alçı levhalar ile çift iskeletli (birbirine alçı levha şeritlerle bağlanmış) bölme duvar yapılması (Duvar C 75 profil - 60 cm aks aralığı) (her iki yüzünde iki kat 12,5 mm su emme oranı azaltılmış alçı levha ile)",
     olcuBirimi: "m²",
     kategori: "Alçı Levha",
     kaynakTip: "sistem" as const,
@@ -15679,7 +15679,7 @@ export const RESMI_POZ_ANALIZLERI = [
   {
     id: "sys-15x530x1561",
     pozNo: "15.530.1561",
-    analizAdi: "(Duvar C 75 profil - 60 cm aks aralığı) (her iki yüzünde iki kat 12,5 mm yangına dayanımı",
+    analizAdi: "Alçı levhalar ile çift iskeletli (birbirine alçı levha şeritlerle bağlanmış) bölme duvar yapılması (Duvar C 75 profil - 60 cm aks aralığı) (her iki yüzünde iki kat 12,5 mm yangına dayanımı artırılmış alçı levha ile)",
     olcuBirimi: "m²",
     kategori: "Alçı Levha",
     kaynakTip: "sistem" as const,
@@ -15709,7 +15709,7 @@ export const RESMI_POZ_ANALIZLERI = [
   {
     id: "sys-15x530x1562",
     pozNo: "15.530.1562",
-    analizAdi: "(Duvar C 75 profil - 60 cm aks aralığı) (her iki yüzünde iki kat 12,5 mm su emme oranı",
+    analizAdi: "Alçı levhalar ile çift iskeletli (birbirine alçı levha şeritlerle bağlanmış) bölme duvar yapılması (Duvar C 75 profil - 60 cm aks aralığı) (her iki yüzünde iki kat 12,5 mm su emme oranı azaltılmış, yangına dayanımı artırılmış alçı levha ile)",
     olcuBirimi: "m²",
     kategori: "Alçı Levha",
     kaynakTip: "sistem" as const,
@@ -15739,7 +15739,7 @@ export const RESMI_POZ_ANALIZLERI = [
   {
     id: "sys-15x530x1754",
     pozNo: "15.530.1754",
-    analizAdi: "aralığı) (12,5 mm çift kat su emme oranı azaltılmış, yangına dayanımı artırılmış alçı levha",
+    analizAdi: "Alçı levha ile tek iskeletli giydirme duvar yapılması (Tek Tavan C 60 profil - 60 cm aks aralığı) (12,5 mm çift kat su emme oranı azaltılmış, yangına dayanımı artırılmış alçı levha ile)",
     olcuBirimi: "m²",
     kategori: "Alçı Levha",
     kaynakTip: "sistem" as const,
@@ -15771,7 +15771,7 @@ export const RESMI_POZ_ANALIZLERI = [
   {
     id: "sys-15x530x1779",
     pozNo: "15.530.1779",
-    analizAdi: "aralığı) (12,5 mm tek kat su emme oranı azaltılmış, yangına dayanımı artırılmış alçı levha",
+    analizAdi: "Alçı levha ile tek iskeletli giydirme duvar yapılması (Tek Duvar C 50 profil - 60 cm aks aralığı) (12,5 mm tek kat su emme oranı azaltılmış, yangına dayanımı artırılmış alçı levha ile)",
     olcuBirimi: "m²",
     kategori: "Alçı Levha",
     kaynakTip: "sistem" as const,
@@ -15801,7 +15801,7 @@ export const RESMI_POZ_ANALIZLERI = [
   {
     id: "sys-15x530x1783",
     pozNo: "15.530.1783",
-    analizAdi: "aralığı) (12,5 mm tek kat su emme oranı azaltılmış, yangına dayanımı artırılmış alçı levha",
+    analizAdi: "Alçı levha ile tek iskeletli giydirme duvar yapılması (Tek Duvar C 50 profil - 40 cm aks aralığı) (12,5 mm tek kat su emme oranı azaltılmış, yangına dayanımı artırılmış alçı levha ile)",
     olcuBirimi: "m²",
     kategori: "Alçı Levha",
     kaynakTip: "sistem" as const,
@@ -15831,7 +15831,7 @@ export const RESMI_POZ_ANALIZLERI = [
   {
     id: "sys-15x530x1787",
     pozNo: "15.530.1787",
-    analizAdi: "aralığı) (12,5 mm tek kat su emme oranı azaltılmış, yangına dayanımı artırılmış alçı levha",
+    analizAdi: "Alçı levha ile tek iskeletli giydirme duvar yapılması (Tek Duvar C 75 profil - 60 cm aks aralığı) (12,5 mm tek kat su emme oranı azaltılmış, yangına dayanımı artırılmış alçı levha ile)",
     olcuBirimi: "m²",
     kategori: "Alçı Levha",
     kaynakTip: "sistem" as const,
@@ -15861,7 +15861,7 @@ export const RESMI_POZ_ANALIZLERI = [
   {
     id: "sys-15x530x1791",
     pozNo: "15.530.1791",
-    analizAdi: "aralığı) (12,5 mm tek kat su emme oranı azaltılmış, yangına dayanımı artırılmış alçı levha",
+    analizAdi: "Alçı levha ile tek iskeletli giydirme duvar yapılması (Tek Duvar C 75 profil - 40 cm aks aralığı) (12,5 mm tek kat su emme oranı azaltılmış, yangına dayanımı artırılmış alçı levha ile)",
     olcuBirimi: "m²",
     kategori: "Alçı Levha",
     kaynakTip: "sistem" as const,
@@ -15891,7 +15891,7 @@ export const RESMI_POZ_ANALIZLERI = [
   {
     id: "sys-15x530x1829",
     pozNo: "15.530.1829",
-    analizAdi: "aralığı) (12,5 mm çift kat su emme oranı azaltılmış, yangına dayanımı artırılmış alçı levha",
+    analizAdi: "Alçı levha ile tek iskeletli giydirme duvar yapılması (Tek Duvar C 50 profil - 60 cm aks aralığı) (12,5 mm çift kat su emme oranı azaltılmış, yangına dayanımı artırılmış alçı levha ile)",
     olcuBirimi: "m²",
     kategori: "Alçı Levha",
     kaynakTip: "sistem" as const,
@@ -15921,7 +15921,7 @@ export const RESMI_POZ_ANALIZLERI = [
   {
     id: "sys-15x530x1833",
     pozNo: "15.530.1833",
-    analizAdi: "aralığı) (12,5 mm çift kat su emme oranı azaltılmış, yangına dayanımı artırılmış alçı levha",
+    analizAdi: "Alçı levha ile tek iskeletli giydirme duvar yapılması (Tek Duvar C 50 profil - 40 cm aks aralığı) (12,5 mm çift kat su emme oranı azaltılmış, yangına dayanımı artırılmış alçı levha ile)",
     olcuBirimi: "m²",
     kategori: "Alçı Levha",
     kaynakTip: "sistem" as const,
@@ -15951,7 +15951,7 @@ export const RESMI_POZ_ANALIZLERI = [
   {
     id: "sys-15x530x1901",
     pozNo: "15.530.1901",
-    analizAdi: "900 mm, ana taşıyıcı profil mesafesi 1000 mm, tali taşıyıcı profil mesafesi 500 mm aks",
+    analizAdi: "Alçı levhalar ile çift iskeletli askı sistemli asma tavan yapılması (Agraf mesafesi aynı yönde 900 mm, ana taşıyıcı profil mesafesi 1000 mm, tali taşıyıcı profil mesafesi 500 mm aks aralıkları ile) (12,5 mm tek kat standart alçı levha ile)",
     olcuBirimi: "m²",
     kategori: "Alçı Levha",
     kaynakTip: "sistem" as const,
@@ -15986,7 +15986,7 @@ export const RESMI_POZ_ANALIZLERI = [
   {
     id: "sys-15x530x1902",
     pozNo: "15.530.1902",
-    analizAdi: "900 mm, ana taşıyıcı profil mesafesi 1000 mm, tali taşıyıcı profil mesafesi 500 mm aks",
+    analizAdi: "Alçı levhalar ile çift iskeletli askı sistemli asma tavan yapılması (Agraf mesafesi aynı yönde 900 mm, ana taşıyıcı profil mesafesi 1000 mm, tali taşıyıcı profil mesafesi 500 mm aks aralıkları ile) (12,5 mm tek kat su emme oranı azaltılmış alçı duvar levhası ile)",
     olcuBirimi: "m²",
     kategori: "Alçı Levha",
     kaynakTip: "sistem" as const,
@@ -16021,7 +16021,7 @@ export const RESMI_POZ_ANALIZLERI = [
   {
     id: "sys-15x530x1903",
     pozNo: "15.530.1903",
-    analizAdi: "900 mm, ana taşıyıcı profil mesafesi 1000 mm, tali taşıyıcı profil mesafesi 500 mm aks",
+    analizAdi: "Alçı levhalar ile çift iskeletli askı sistemli asma tavan yapılması (Agraf mesafesi aynı yönde 900 mm, ana taşıyıcı profil mesafesi 1000 mm, tali taşıyıcı profil mesafesi 500 mm aks aralıkları ile) (12,5 mm tek kat yangına dayanımı artırılmış alçı duvar levhası ile)",
     olcuBirimi: "m²",
     kategori: "Alçı Levha",
     kaynakTip: "sistem" as const,
@@ -16056,7 +16056,7 @@ export const RESMI_POZ_ANALIZLERI = [
   {
     id: "sys-15x530x1905",
     pozNo: "15.530.1905",
-    analizAdi: "yönde 900 mm, ana taşıyıcı profil mesafesi 1000 mm, tali taşıyıcı profil mesafesi 500 mm aks",
+    analizAdi: "Alçı levhalar ile çift iskeletli askı sistemli asma tavan yapılması (Askı çubuğu mesafesi aynı yönde 900 mm, ana taşıyıcı profil mesafesi 1000 mm, tali taşıyıcı profil mesafesi 500 mm aks aralıkları ile) (12,5 mm tek kat standart alçı levha ile)",
     olcuBirimi: "m²",
     kategori: "Alçı Levha",
     kaynakTip: "sistem" as const,
@@ -16091,7 +16091,7 @@ export const RESMI_POZ_ANALIZLERI = [
   {
     id: "sys-15x530x1906",
     pozNo: "15.530.1906",
-    analizAdi: "yönde 900 mm, ana taşıyıcı profil mesafesi 1000 mm, tali taşıyıcı profil mesafesi 500 mm aks",
+    analizAdi: "Alçı levhalar ile çift iskeletli askı sistemli asma tavan yapılması (Askı çubuğu mesafesi aynı yönde 900 mm, ana taşıyıcı profil mesafesi 1000 mm, tali taşıyıcı profil mesafesi 500 mm aks aralıkları ile) (12,5 mm tek kat su emme oranı azaltılmış alçı levha ile)",
     olcuBirimi: "m²",
     kategori: "Alçı Levha",
     kaynakTip: "sistem" as const,
@@ -16126,7 +16126,7 @@ export const RESMI_POZ_ANALIZLERI = [
   {
     id: "sys-15x530x1907",
     pozNo: "15.530.1907",
-    analizAdi: "yönde 900 mm, ana taşıyıcı profil mesafesi 1000 mm, tali taşıyıcı profil mesafesi 500 mm aks",
+    analizAdi: "Alçı levhalar ile çift iskeletli askı sistemli asma tavan yapılması (Askı çubuğu mesafesi aynı yönde 900 mm, ana taşıyıcı profil mesafesi 1000 mm, tali taşıyıcı profil mesafesi 500 mm aks aralıkları ile) (12,5 mm tek kat yangına dayanımı artırılmış alçı levha ile)",
     olcuBirimi: "m²",
     kategori: "Alçı Levha",
     kaynakTip: "sistem" as const,
@@ -16161,7 +16161,7 @@ export const RESMI_POZ_ANALIZLERI = [
   {
     id: "sys-15x530x1928",
     pozNo: "15.530.1928",
-    analizAdi: "yönde 750 mm, ana taşıyıcı profil mesafesi 800 mm, tali taşıyıcı profil mesafesi 500 mm aks",
+    analizAdi: "Alçı levhalar ile çift iskeletli askı sistemli asma tavan yapılması (Askı çubuğu mesafesi aynı yönde 750 mm, ana taşıyıcı profil mesafesi 800 mm, tali taşıyıcı profil mesafesi 500 mm aks aralıkları ile) (12,5 mm çift kat yangına dayanımı arttırılmış alçı levha ile)",
     olcuBirimi: "m²",
     kategori: "Alçı Levha",
     kaynakTip: "sistem" as const,
@@ -16196,7 +16196,7 @@ export const RESMI_POZ_ANALIZLERI = [
   {
     id: "sys-15x530x1932",
     pozNo: "15.530.1932",
-    analizAdi: "yönde 750 mm, ana taşıyıcı profil mesafesi 800 mm, tali taşıyıcı profil mesafesi 500 mm aks",
+    analizAdi: "Alçı levhalar ile çift iskeletli askı sistemli asma tavan yapılması (Askı çubuğu mesafesi aynı yönde 750 mm, ana taşıyıcı profil mesafesi 800 mm, tali taşıyıcı profil mesafesi 500 mm aks aralıkları ile)(12,5 mm çift kat yangına dayanımı artırılmış alçı levha ile)",
     olcuBirimi: "m²",
     kategori: "Alçı Levha",
     kaynakTip: "sistem" as const,
@@ -16231,7 +16231,7 @@ export const RESMI_POZ_ANALIZLERI = [
   {
     id: "sys-15x535x1001",
     pozNo: "15.535.1001",
-    analizAdi: "(polyester esaslı) deliksiz alüminyum plakadan (EN AW 3000 serisi) oturmalı sistem asma",
+    analizAdi: "60x60cm ebadında 0,70mm kalınlığında minimum 20 mikron elektrostatik toz boyalı (polyester esaslı) deliksiz alüminyum plakadan (EN AW 3000 serisi) oturmalı sistem asma tavan yapılması",
     olcuBirimi: "m²",
     kategori: "Metal Doğrama",
     kaynakTip: "sistem" as const,
@@ -16261,7 +16261,7 @@ export const RESMI_POZ_ANALIZLERI = [
   {
     id: "sys-15x535x1002",
     pozNo: "15.535.1002",
-    analizAdi: "boyalı(polyester esaslı) delikli alüminyum plakadan (EN AW 3000 serisi) oturmalı sistem",
+    analizAdi: "60x60cm ebadında 0,70mm kalınlığında minimum 20 mikron elektrostatik toz boyalı(polyester esaslı) delikli alüminyum plakadan (EN AW 3000 serisi) oturmalı sistem asma tavan yapılması",
     olcuBirimi: "m²",
     kategori: "Metal Doğrama",
     kaynakTip: "sistem" as const,
@@ -16291,7 +16291,7 @@ export const RESMI_POZ_ANALIZLERI = [
   {
     id: "sys-15x535x1003",
     pozNo: "15.535.1003",
-    analizAdi: "(polyester esaslı) arka yüzü akustik kumaş kaplı delikli alüminyum plakadan (EN AW 3000",
+    analizAdi: "60x60cm ebadında 0,70mm kalınlığında minimum 20 mikron elektrostatik toz boyalı (polyester esaslı) arka yüzü akustik kumaş kaplı delikli alüminyum plakadan (EN AW 3000 serisi) oturmalı sistem asma tavan yapılması",
     olcuBirimi: "m²",
     kategori: "Metal Doğrama",
     kaynakTip: "sistem" as const,
@@ -16321,7 +16321,7 @@ export const RESMI_POZ_ANALIZLERI = [
   {
     id: "sys-15x535x1004",
     pozNo: "15.535.1004",
-    analizAdi: "(polyester esaslı) deliksiz alüminyum plakadan (EN AW 3000 serisi) oturmalı sistem asma",
+    analizAdi: "30x30cm ebadında 0,50mm kalınlığında minimum 20 mikron elektrostatik toz boyalı (polyester esaslı) deliksiz alüminyum plakadan (EN AW 3000 serisi) oturmalı sistem asma tavan yapılması",
     olcuBirimi: "m²",
     kategori: "Metal Doğrama",
     kaynakTip: "sistem" as const,
@@ -16351,7 +16351,7 @@ export const RESMI_POZ_ANALIZLERI = [
   {
     id: "sys-15x535x1005",
     pozNo: "15.535.1005",
-    analizAdi: "(polyester esaslı) deliksiz alüminyum plakadan (EN AW 3000 SERISI) oturmalı sistem asma",
+    analizAdi: "30x30cm ebadında 0,70mm kalınlığında minimum 20 mikron elektrostatik toz boyalı (polyester esaslı) deliksiz alüminyum plakadan (EN AW 3000 SERISI) oturmalı sistem asma tavan yapılması",
     olcuBirimi: "m²",
     kategori: "Metal Doğrama",
     kaynakTip: "sistem" as const,
@@ -16381,7 +16381,7 @@ export const RESMI_POZ_ANALIZLERI = [
   {
     id: "sys-15x535x1006",
     pozNo: "15.535.1006",
-    analizAdi: "(polyester esaslı) delikli alüminyum plakadan (EN AW 3000 serisi) oturmalı sistem asma",
+    analizAdi: "30x30cm ebadında 0,50mm kalınlığında minimum 20 mikron elektrostatik toz boyalı (polyester esaslı) delikli alüminyum plakadan (EN AW 3000 serisi) oturmalı sistem asma tavan yapılması",
     olcuBirimi: "m²",
     kategori: "Metal Doğrama",
     kaynakTip: "sistem" as const,
@@ -16411,7 +16411,7 @@ export const RESMI_POZ_ANALIZLERI = [
   {
     id: "sys-15x535x1007",
     pozNo: "15.535.1007",
-    analizAdi: "(polyester esaslı) delikli alüminyum plakadan (EN AW 3000 serisi) oturmalı sistem asma",
+    analizAdi: "30x30cm ebadında 0,70mm kalınlığında minimum 20 mikron elektrostatik toz boyalı (polyester esaslı) delikli alüminyum plakadan (EN AW 3000 serisi) oturmalı sistem asma tavan yapılması",
     olcuBirimi: "m²",
     kategori: "Metal Doğrama",
     kaynakTip: "sistem" as const,
@@ -16441,7 +16441,7 @@ export const RESMI_POZ_ANALIZLERI = [
   {
     id: "sys-15x535x1008",
     pozNo: "15.535.1008",
-    analizAdi: "(polyester esaslı) arka yüzü akustik kumaş kaplı delikli alüminyum plakadan (EN AW 3000",
+    analizAdi: "30x30cm ebadında 0,50mm kalınlığında minimum 20 mikron elektrostatik toz boyalı (polyester esaslı) arka yüzü akustik kumaş kaplı delikli alüminyum plakadan (EN AW 3000 serisi) oturmalı sistem asma tavan yapılması",
     olcuBirimi: "m²",
     kategori: "Metal Doğrama",
     kaynakTip: "sistem" as const,
@@ -16471,7 +16471,7 @@ export const RESMI_POZ_ANALIZLERI = [
   {
     id: "sys-15x535x1009",
     pozNo: "15.535.1009",
-    analizAdi: "(polyester esaslı) arka yüzü akustik kumaş kaplı delikli alüminyum plakadan (EN AW 3000",
+    analizAdi: "30x30cm ebadında 0,70mm kalınlığında minimum 20 mikron elektrostatik toz boyalı (polyester esaslı) arka yüzü akustik kumaş kaplı delikli alüminyum plakadan (EN AW 3000 serisi) oturmalı sistem asma tavan yapılması",
     olcuBirimi: "m²",
     kategori: "Metal Doğrama",
     kaynakTip: "sistem" as const,
@@ -16501,7 +16501,7 @@ export const RESMI_POZ_ANALIZLERI = [
   {
     id: "sys-15x535x1010",
     pozNo: "15.535.1010",
-    analizAdi: "(polyester esaslı) deliksiz sıcak daldırma galvanize sac plakadan oturmalı sistem asma tavan",
+    analizAdi: "60x60cm ebadında 0,50mm kalınlığında minimum 20 mikron elektrostatik toz boyalı (polyester esaslı) deliksiz sıcak daldırma galvanize sac plakadan oturmalı sistem asma tavan yapılması",
     olcuBirimi: "m²",
     kategori: "Metal Doğrama",
     kaynakTip: "sistem" as const,
@@ -16531,7 +16531,7 @@ export const RESMI_POZ_ANALIZLERI = [
   {
     id: "sys-15x535x1011",
     pozNo: "15.535.1011",
-    analizAdi: "(polyester esaslı) delikli sıcak daldırma galvanize sac plakadan oturmalı sistem asma tavan",
+    analizAdi: "60x60cm ebadında 0,50mm kalınlığında minimum 20 mikron elektrostatik toz boyalı (polyester esaslı) delikli sıcak daldırma galvanize sac plakadan oturmalı sistem asma tavan yapılması",
     olcuBirimi: "m²",
     kategori: "Metal Doğrama",
     kaynakTip: "sistem" as const,
@@ -16561,7 +16561,7 @@ export const RESMI_POZ_ANALIZLERI = [
   {
     id: "sys-15x535x1012",
     pozNo: "15.535.1012",
-    analizAdi: "(polyester esaslı) arka yüzü akustik kumaş kaplı delikli sıcak daldrıma galvanize sac",
+    analizAdi: "60 x 60 cm ebadında 0,50 mm kalınlığında minimum 20 mikron elektrostatik toz boyalı (polyester esaslı) arka yüzü akustik kumaş kaplı delikli sıcak daldrıma galvanize sac plakadan oturmalı sistem asma tavan yapılması",
     olcuBirimi: "m²",
     kategori: "Metal Doğrama",
     kaynakTip: "sistem" as const,
@@ -16591,7 +16591,7 @@ export const RESMI_POZ_ANALIZLERI = [
   {
     id: "sys-15x535x1013",
     pozNo: "15.535.1013",
-    analizAdi: "(polyester esaslı) deliksiz alüminyum plakadan (EN AW 3000 serisi) sarkmalı sistem asma",
+    analizAdi: "60x60cm ebadında 0,70mm kalınlığında minimum 20 mikron elektrostatik toz boyalı (polyester esaslı) deliksiz alüminyum plakadan (EN AW 3000 serisi) sarkmalı sistem asma tavan yapılması",
     olcuBirimi: "m²",
     kategori: "Metal Doğrama",
     kaynakTip: "sistem" as const,
@@ -16621,7 +16621,7 @@ export const RESMI_POZ_ANALIZLERI = [
   {
     id: "sys-15x535x1014",
     pozNo: "15.535.1014",
-    analizAdi: "(polyester esaslı) delikli alüminyum plakadan (EN AW 3000 serisi) sarkmalı sistem asma",
+    analizAdi: "60x60cm ebadında 0,70mm kalınlığında minimum 20 mikron elektrostatik toz boyalı (polyester esaslı) delikli alüminyum plakadan (EN AW 3000 serisi) sarkmalı sistem asma tavan yapılması",
     olcuBirimi: "m²",
     kategori: "Metal Doğrama",
     kaynakTip: "sistem" as const,
@@ -16651,7 +16651,7 @@ export const RESMI_POZ_ANALIZLERI = [
   {
     id: "sys-15x535x1015",
     pozNo: "15.535.1015",
-    analizAdi: "(polyester esaslı) arka yüzü akustik kumaş kaplı delikli alüminyum plakadan (EN AW 3000",
+    analizAdi: "60x60cm ebadında 0,70mm kalınlığında minimum 20 mikron elektrostatik toz boyalı (polyester esaslı) arka yüzü akustik kumaş kaplı delikli alüminyum plakadan (EN AW 3000 serisi) sarkmalı sistem asma tavan yapılması",
     olcuBirimi: "m²",
     kategori: "Metal Doğrama",
     kaynakTip: "sistem" as const,
@@ -16681,7 +16681,7 @@ export const RESMI_POZ_ANALIZLERI = [
   {
     id: "sys-15x535x1016",
     pozNo: "15.535.1016",
-    analizAdi: "(polyester esaslı) deliksiz alüminyum plakadan (EN AW 3000 serisi)",
+    analizAdi: "30x30cm ebadında 0,50mm kalınlığında minimum 20 mikron elektrostatik toz boyalı (polyester esaslı) deliksiz alüminyum plakadan (EN AW 3000 serisi) sarkmalı sistem asma tavan yapılması",
     olcuBirimi: "m²",
     kategori: "Metal Doğrama",
     kaynakTip: "sistem" as const,
@@ -16711,7 +16711,7 @@ export const RESMI_POZ_ANALIZLERI = [
   {
     id: "sys-15x535x1017",
     pozNo: "15.535.1017",
-    analizAdi: "(polyester esaslı) deliksiz alüminyum plakadan (EN AW 3000 SERISI)",
+    analizAdi: "30x30cm ebadında 0,70mm kalınlığında minimum 20 mikron elektrostatik toz boyalı (polyester esaslı) deliksiz alüminyum plakadan (EN AW 3000 SERISI) sarkmalı sistem asma tavan yapılması",
     olcuBirimi: "m²",
     kategori: "Metal Doğrama",
     kaynakTip: "sistem" as const,
@@ -16741,7 +16741,7 @@ export const RESMI_POZ_ANALIZLERI = [
   {
     id: "sys-15x535x1018",
     pozNo: "15.535.1018",
-    analizAdi: "(polyester esaslı) delikli alüminyum plakadan (EN AW 3000 serisi) sarkmalı sistem asma",
+    analizAdi: "30x30cm ebadında 0,50mm kalınlığında minimum 20 mikron elektrostatik toz boyalı (polyester esaslı) delikli alüminyum plakadan (EN AW 3000 serisi) sarkmalı sistem asma tavan yapılması",
     olcuBirimi: "m²",
     kategori: "Metal Doğrama",
     kaynakTip: "sistem" as const,
@@ -16771,7 +16771,7 @@ export const RESMI_POZ_ANALIZLERI = [
   {
     id: "sys-15x535x1019",
     pozNo: "15.535.1019",
-    analizAdi: "(polyester esaslı) delikli alüminyum plakadan (EN AW 3000 serisi) sarkmalı sistem asma",
+    analizAdi: "30x30cm ebadında 0,70mm kalınlığında minimum 20 mikron elektrostatik toz boyalı (polyester esaslı) delikli alüminyum plakadan (EN AW 3000 serisi) sarkmalı sistem asma tavan yapılması",
     olcuBirimi: "m²",
     kategori: "Metal Doğrama",
     kaynakTip: "sistem" as const,
@@ -16801,7 +16801,7 @@ export const RESMI_POZ_ANALIZLERI = [
   {
     id: "sys-15x535x1020",
     pozNo: "15.535.1020",
-    analizAdi: "(polyester esaslı) arka yüzü akustik kumaş kaplı delikli alüminyum plakadan (EN AW 3000",
+    analizAdi: "30X30cm ebadında 0,50mm kalınlığında minimum 20 mikron elektrostatik toz boyalı (polyester esaslı) arka yüzü akustik kumaş kaplı delikli alüminyum plakadan (EN AW 3000 serisi) sarkmalı sistem asma tavan yapılması",
     olcuBirimi: "m²",
     kategori: "Metal Doğrama",
     kaynakTip: "sistem" as const,
@@ -16831,7 +16831,7 @@ export const RESMI_POZ_ANALIZLERI = [
   {
     id: "sys-15x535x1021",
     pozNo: "15.535.1021",
-    analizAdi: "(polyester esaslı) arka yüzü akustik kumaş kaplı delikli alüminyum plakadan (EN AW 3000",
+    analizAdi: "30x30cm ebadında 0,70mm kalınlığında minimum 20 mikron elektrostatik toz boyalı (polyester esaslı) arka yüzü akustik kumaş kaplı delikli alüminyum plakadan (EN AW 3000 serisi) sarkmalı sistem asma tavan yapılması",
     olcuBirimi: "m²",
     kategori: "Metal Doğrama",
     kaynakTip: "sistem" as const,
@@ -16861,7 +16861,7 @@ export const RESMI_POZ_ANALIZLERI = [
   {
     id: "sys-15x535x1022",
     pozNo: "15.535.1022",
-    analizAdi: "(polyester esaslı) deliksiz sıcak daldırma galvanize sac plakadan sarkmalı sistem asma tavan",
+    analizAdi: "60x60cm ebadında 0,50mm kalınlığında minimum 20 mikron elektrostatik toz boyalı (polyester esaslı) deliksiz sıcak daldırma galvanize sac plakadan sarkmalı sistem asma tavan yapılması",
     olcuBirimi: "m²",
     kategori: "Metal Doğrama",
     kaynakTip: "sistem" as const,
@@ -16891,7 +16891,7 @@ export const RESMI_POZ_ANALIZLERI = [
   {
     id: "sys-15x535x1023",
     pozNo: "15.535.1023",
-    analizAdi: "(polyester esaslı) delikli sıcak daldırma galvanize sac plakadan sarkmalı sistem asma tavan",
+    analizAdi: "60x60cm ebadında 0,50mm kalınlığında minimum 20 mikron elektrostatik toz boyalı (polyester esaslı) delikli sıcak daldırma galvanize sac plakadan sarkmalı sistem asma tavan yapılması",
     olcuBirimi: "m²",
     kategori: "Metal Doğrama",
     kaynakTip: "sistem" as const,
@@ -16921,7 +16921,7 @@ export const RESMI_POZ_ANALIZLERI = [
   {
     id: "sys-15x535x1024",
     pozNo: "15.535.1024",
-    analizAdi: "(polyester esaslı) arka yüzü akustik kumaş kaplı delikli sıcak daldırma galvanize sac",
+    analizAdi: "60x60cm ebadında 0,50mm kalınlığında minimum 20 mikron elektrostatik toz boyalı (polyester esaslı) arka yüzü akustik kumaş kaplı delikli sıcak daldırma galvanize sac plakadan sarkmalı sistem asma tavan yapılması",
     olcuBirimi: "m²",
     kategori: "Metal Doğrama",
     kaynakTip: "sistem" as const,
@@ -16951,7 +16951,7 @@ export const RESMI_POZ_ANALIZLERI = [
   {
     id: "sys-15x535x1025",
     pozNo: "15.535.1025",
-    analizAdi: "(polyester esaslı) deliksiz alümünyum plakadan (EN AW 3000 serisi) gizli taşıyıcılı sistem",
+    analizAdi: "60x60cm ebadında 0,70mm kalınlığında minimum 20 mikron elektrostatik toz boyalı (polyester esaslı) deliksiz alümünyum plakadan (EN AW 3000 serisi) gizli taşıyıcılı sistem asma tavan yapılması",
     olcuBirimi: "m²",
     kategori: "Metal Doğrama",
     kaynakTip: "sistem" as const,
@@ -16983,7 +16983,7 @@ export const RESMI_POZ_ANALIZLERI = [
   {
     id: "sys-15x535x1026",
     pozNo: "15.535.1026",
-    analizAdi: "(polyester esaslı) delikli alümünyum plakadan (EN AW 3000 serisi) gizli taşıyıcılı sistem",
+    analizAdi: "60x60cm ebadında 0,70mm kalınlığında minimum 20 mikron elektrostatik toz boyalı (polyester esaslı) delikli alümünyum plakadan (EN AW 3000 serisi) gizli taşıyıcılı sistem asma tavan yapılması",
     olcuBirimi: "m²",
     kategori: "Metal Doğrama",
     kaynakTip: "sistem" as const,
@@ -17015,7 +17015,7 @@ export const RESMI_POZ_ANALIZLERI = [
   {
     id: "sys-15x535x1027",
     pozNo: "15.535.1027",
-    analizAdi: "(polyester esaslı) arka yüzü akustik kumaş kaplı delikli alümünyum plakadan (EN AW 3000",
+    analizAdi: "60x60cm ebadında 0,70mm kalınlığında minimum 20 mikron elektrostatik toz boyalı (polyester esaslı) arka yüzü akustik kumaş kaplı delikli alümünyum plakadan (EN AW 3000 serisi) gizli taşıyıcılı sistem asma tavan yapılması",
     olcuBirimi: "m²",
     kategori: "Metal Doğrama",
     kaynakTip: "sistem" as const,
@@ -17047,7 +17047,7 @@ export const RESMI_POZ_ANALIZLERI = [
   {
     id: "sys-15x535x1028",
     pozNo: "15.535.1028",
-    analizAdi: "(polyester esaslı) deliksiz alümünyum plakadan (EN AW 3000 serisi) gizli taşıyıcılı sistem",
+    analizAdi: "30x30cm ebadında 0,50mm kalınlığında minimum 20 mikron elektrostatik toz boyalı (polyester esaslı) deliksiz alümünyum plakadan (EN AW 3000 serisi) gizli taşıyıcılı sistem asma tavan yapılması",
     olcuBirimi: "m²",
     kategori: "Metal Doğrama",
     kaynakTip: "sistem" as const,
@@ -17079,7 +17079,7 @@ export const RESMI_POZ_ANALIZLERI = [
   {
     id: "sys-15x535x1029",
     pozNo: "15.535.1029",
-    analizAdi: "(polyester esaslı) deliksiz alümünyum plakadan (EN AW 3000 serisi) gizli taşıyıcılı sistem",
+    analizAdi: "30x30cm ebadında 0,70mm kalınlığında minimum 20 mikron elektrostatik toz boyalı (polyester esaslı) deliksiz alümünyum plakadan (EN AW 3000 serisi) gizli taşıyıcılı sistem asma tavan yapılması",
     olcuBirimi: "m²",
     kategori: "Metal Doğrama",
     kaynakTip: "sistem" as const,
@@ -17111,7 +17111,7 @@ export const RESMI_POZ_ANALIZLERI = [
   {
     id: "sys-15x535x1030",
     pozNo: "15.535.1030",
-    analizAdi: "(polyester esaslı) delikli alümünyum plakadan (EN AW 3000 serisi) gizli taşıyıcılı sistem",
+    analizAdi: "30x30cm ebadında 0,50mm kalınlığında minimum 20 mikron elektrostatik toz boyalı (polyester esaslı) delikli alümünyum plakadan (EN AW 3000 serisi) gizli taşıyıcılı sistem asma tavan yapılması",
     olcuBirimi: "m²",
     kategori: "Metal Doğrama",
     kaynakTip: "sistem" as const,
@@ -17143,7 +17143,7 @@ export const RESMI_POZ_ANALIZLERI = [
   {
     id: "sys-15x535x1031",
     pozNo: "15.535.1031",
-    analizAdi: "(polyester esaslı) delikli alümünyum plakadan (EN AW 3000 serisi) gizli taşıyıcılı sistem",
+    analizAdi: "30x30cm ebadında 0,70mm kalınlığında minimum 20 mikron elektrostatik toz boyalı (polyester esaslı) delikli alümünyum plakadan (EN AW 3000 serisi) gizli taşıyıcılı sistem asma tavan yapılması",
     olcuBirimi: "m²",
     kategori: "Metal Doğrama",
     kaynakTip: "sistem" as const,
@@ -17175,7 +17175,7 @@ export const RESMI_POZ_ANALIZLERI = [
   {
     id: "sys-15x535x1032",
     pozNo: "15.535.1032",
-    analizAdi: "boyalı(polyester esaslı) arka yüzü akustik kumaş kaplı delikli alümünyum plakadan (EN",
+    analizAdi: "30x30cm ebadında 0,50mm kalınlığında minimum 20 mikron elektrostatik toz boyalı(polyester esaslı) arka yüzü akustik kumaş kaplı delikli alümünyum plakadan (EN AW 3000 serisi) gizli taşıyıcılı sistem asma tavan yapılması",
     olcuBirimi: "m²",
     kategori: "Metal Doğrama",
     kaynakTip: "sistem" as const,
@@ -17207,7 +17207,7 @@ export const RESMI_POZ_ANALIZLERI = [
   {
     id: "sys-15x535x1033",
     pozNo: "15.535.1033",
-    analizAdi: "boyalı(polyester esaslı) deliksiz sıcak daldırma galvanize sac plakadan gizli taşıyıcılı sistem",
+    analizAdi: "60x60cm ebadında 0,50mm kalınlığında minimum 20 mikron elektrostatik toz boyalı(polyester esaslı) deliksiz sıcak daldırma galvanize sac plakadan gizli taşıyıcılı sistem asma tavan yapılması",
     olcuBirimi: "m²",
     kategori: "Metal Doğrama",
     kaynakTip: "sistem" as const,
@@ -17239,7 +17239,7 @@ export const RESMI_POZ_ANALIZLERI = [
   {
     id: "sys-15x535x1034",
     pozNo: "15.535.1034",
-    analizAdi: "boyalı(polyester esaslı) delikli sıcak daldırma galvanize sac plakadan gizli taşıyıcılı sistem",
+    analizAdi: "60x60cm ebadında 0,50 mm kalınlığında minimum 20 mikron elektrostatik toz boyalı(polyester esaslı) delikli sıcak daldırma galvanize sac plakadan gizli taşıyıcılı sistem asma tavan yapılması",
     olcuBirimi: "m²",
     kategori: "Metal Doğrama",
     kaynakTip: "sistem" as const,
@@ -17271,7 +17271,7 @@ export const RESMI_POZ_ANALIZLERI = [
   {
     id: "sys-15x535x1035",
     pozNo: "15.535.1035",
-    analizAdi: "(polyester esaslı) arka yüzü akustik kumaş kaplı delikli sıcak daldırma galvaniz sac",
+    analizAdi: "60x60cm ebadında 0,50 mm kalınlığında minimum 20 mikron elektrostatik toz boyalı (polyester esaslı) arka yüzü akustik kumaş kaplı delikli sıcak daldırma galvaniz sac plakadan gizli taşıyıcılı sistem asma tavan yapılması",
     olcuBirimi: "m²",
     kategori: "Metal Doğrama",
     kaynakTip: "sistem" as const,
@@ -17880,7 +17880,7 @@ export const RESMI_POZ_ANALIZLERI = [
   {
     id: "sys-15x540x1532",
     pozNo: "15.540.1532",
-    analizAdi: "Antibakteriyel İç Cephe Boyası (Örtücülük Sınıf:2, YOD:Sınıf2, Parlaklık:G3) yapılması (iç",
+    analizAdi: "Yeni sıva yüzeylere macun ve astar uygulanarak iki kat Su bazlı Silikonlu Mat Antibakteriyel İç Cephe Boyası (Örtücülük Sınıf:2, YOD:Sınıf2, Parlaklık:G3) yapılması (iç cephe)",
     olcuBirimi: "m²",
     kategori: "Boya ve Vernik",
     kaynakTip: "sistem" as const,
@@ -17905,7 +17905,7 @@ export const RESMI_POZ_ANALIZLERI = [
   {
     id: "sys-15x540x1533",
     pozNo: "15.540.1533",
-    analizAdi: "Antibakteriyel İç Cephe Boyası (Örtücülük Sınıf:2, YOD:Sınıf1, Parlaklık:G2) yapılması (iç",
+    analizAdi: "Yeni sıva yüzeylere macun ve astar uygulanarak iki kat Su bazlı Silikonlu İpek Mat Antibakteriyel İç Cephe Boyası (Örtücülük Sınıf:2, YOD:Sınıf1, Parlaklık:G2) yapılması (iç cephe)",
     olcuBirimi: "m²",
     kategori: "Boya ve Vernik",
     kaynakTip: "sistem" as const,
@@ -17930,7 +17930,7 @@ export const RESMI_POZ_ANALIZLERI = [
   {
     id: "sys-15x540x1538",
     pozNo: "15.540.1538",
-    analizAdi: "Antibakteriyel İç Cephe Boyası (Örtücülük Sınıf:2, YOD:Sınıf2, Parlaklık:G3) yapılması (iç",
+    analizAdi: "Saten alçılı ve alçıpanel yüzeylere astar uygulanarak iki kat Su bazlı Silikonlu Mat Antibakteriyel İç Cephe Boyası (Örtücülük Sınıf:2, YOD:Sınıf2, Parlaklık:G3) yapılması (iç cephe)",
     olcuBirimi: "m²",
     kategori: "Boya ve Vernik",
     kaynakTip: "sistem" as const,
@@ -17953,7 +17953,7 @@ export const RESMI_POZ_ANALIZLERI = [
   {
     id: "sys-15x540x1539",
     pozNo: "15.540.1539",
-    analizAdi: "Antibakteriyel İç Cephe Boyası (Örtücülük Sınıf:2, YOD:Sınıf1, Parlaklık:G2) yapılması (iç",
+    analizAdi: "Saten alçılı ve alçıpanel yüzeylere astar uygulanarak iki katSu bazlı Silikonlu İpek Mat Antibakteriyel İç Cephe Boyası (Örtücülük Sınıf:2, YOD:Sınıf1, Parlaklık:G2) yapılması (iç cephe)",
     olcuBirimi: "m²",
     kategori: "Boya ve Vernik",
     kaynakTip: "sistem" as const,
@@ -18141,7 +18141,7 @@ export const RESMI_POZ_ANALIZLERI = [
   {
     id: "sys-15x555x1001",
     pozNo: "15.555.1001",
-    analizAdi: "daldırma galvaniz üzeri elektrostatik polyester toz boyalı panel teller ile çit yapılması (Direk",
+    analizAdi: "1,00 m yükseklikte, Ø 4,5 mm çapında 50 x 150 mm göz aralıklı min. 2 bükümlü sıcak daldırma galvaniz üzeri elektrostatik polyester toz boyalı panel teller ile çit yapılması (Direk aralığı 2,5 m olacak şekilde duvar üzeri uygulama)",
     olcuBirimi: "m",
     kategori: "Panel Tel Çit",
     kaynakTip: "sistem" as const,
@@ -18167,7 +18167,7 @@ export const RESMI_POZ_ANALIZLERI = [
   {
     id: "sys-15x555x1002",
     pozNo: "15.555.1002",
-    analizAdi: "daldırma galvaniz üzeri elektrostatik polyester toz boyalı panel teller ile çit yapılması (Direk",
+    analizAdi: "1,20 m yükseklikte Ø 4,5 mm çapında 50 x 150 mm göz aralıklı min. 2 bükümlü sıcak daldırma galvaniz üzeri elektrostatik polyester toz boyalı panel teller ile çit yapılması (Direk aralığı 2,5 m olacak şekilde duvar üzeri uygulama)",
     olcuBirimi: "m",
     kategori: "Panel Tel Çit",
     kaynakTip: "sistem" as const,
@@ -18193,7 +18193,7 @@ export const RESMI_POZ_ANALIZLERI = [
   {
     id: "sys-15x555x1003",
     pozNo: "15.555.1003",
-    analizAdi: "daldırma galvaniz üzeri elektrostatik polyester toz boyalı panel teller ile çit yapılması (Direk",
+    analizAdi: "1,50 m yükseklikte Ø 4,5 mm çapında 50 x 150 mm göz aralıklı min. 3 bükümlü sıcak daldırma galvaniz üzeri elektrostatik polyester toz boyalı panel teller ile çit yapılması (Direk aralığı 2,5 m olacak şekilde duvar üzeri uygulama)",
     olcuBirimi: "m",
     kategori: "Panel Tel Çit",
     kaynakTip: "sistem" as const,
@@ -18241,7 +18241,7 @@ export const RESMI_POZ_ANALIZLERI = [
   {
     id: "sys-15x570x1001",
     pozNo: "15.570.1001",
-    analizAdi: "2501-5000 kN arasında, Yatay deplasman kapasitesi ±201-300 mm olan çift sürtünme yüzeyli",
+    analizAdi: "Eşdeğer eğrilik yarıçapı 2000-4000 mm arasında, Maksimum düşey yük taşıma kapasitesi 2501-5000 kN arasında, Yatay deplasman kapasitesi ±201-300 mm olan çift sürtünme yüzeyli deprem yalıtım biriminin temini ve yerine konulması",
     olcuBirimi: "Adet",
     kategori: "Deprem İzolatörü",
     kaynakTip: "sistem" as const,
@@ -18268,7 +18268,7 @@ export const RESMI_POZ_ANALIZLERI = [
   {
     id: "sys-15x570x1002",
     pozNo: "15.570.1002",
-    analizAdi: "5001-7500 kN arasında, Yatay deplasman kapasitesi ±201-300 mm olan çift sürtünme yüzeyli",
+    analizAdi: "Eşdeğer eğrilik yarıçapı 2000-4000 mm arasında, Maksimum düşey yük taşıma kapasitesi 5001-7500 kN arasında, Yatay deplasman kapasitesi ±201-300 mm olan çift sürtünme yüzeyli deprem yalıtım biriminin temini ve yerine konulması",
     olcuBirimi: "Adet",
     kategori: "Deprem İzolatörü",
     kaynakTip: "sistem" as const,
@@ -18295,7 +18295,7 @@ export const RESMI_POZ_ANALIZLERI = [
   {
     id: "sys-15x570x1003",
     pozNo: "15.570.1003",
-    analizAdi: "7501-10000 kN arasında, Yatay deplasman kapasitesi ±201-300 mm olan çift sürtünme",
+    analizAdi: "Eşdeğer eğrilik yarıçapı 2000-4000 mm arasında, Maksimum düşey yük taşıma kapasitesi 7501-10000 kN arasında, Yatay deplasman kapasitesi ±201-300 mm olan çift sürtünme yüzeyli deprem yalıtım biriminin temini ve yerine konulması",
     olcuBirimi: "Adet",
     kategori: "Deprem İzolatörü",
     kaynakTip: "sistem" as const,
@@ -18322,7 +18322,7 @@ export const RESMI_POZ_ANALIZLERI = [
   {
     id: "sys-15x570x1004",
     pozNo: "15.570.1004",
-    analizAdi: "2501-5000 kN arasında, Yatay deplasman kapasitesi ±301-400 mm olan çift sürtünme yüzeyli",
+    analizAdi: "Eşdeğer eğrilik yarıçapı 4001-6000 mm arasında, Maksimum düşey yük taşıma kapasitesi 2501-5000 kN arasında, Yatay deplasman kapasitesi ±301-400 mm olan çift sürtünme yüzeyli deprem yalıtım biriminin temini ve yerine konulması",
     olcuBirimi: "Adet",
     kategori: "Deprem İzolatörü",
     kaynakTip: "sistem" as const,
@@ -18349,7 +18349,7 @@ export const RESMI_POZ_ANALIZLERI = [
   {
     id: "sys-15x570x1005",
     pozNo: "15.570.1005",
-    analizAdi: "2501-5000 kN arasında, Yatay deplasman Kapasitesi ±401-500 mm olan çift sürtünme",
+    analizAdi: "Eşdeğer eğrilik yarıçapı 4001-6000 mm arasında, Maksimum düşey yük taşıma kapasitesi 2501-5000 kN arasında, Yatay deplasman Kapasitesi ±401-500 mm olan çift sürtünme yüzeyli deprem yalıtım biriminin temini ve yerine konulması",
     olcuBirimi: "Adet",
     kategori: "Deprem İzolatörü",
     kaynakTip: "sistem" as const,
@@ -18376,7 +18376,7 @@ export const RESMI_POZ_ANALIZLERI = [
   {
     id: "sys-15x570x1006",
     pozNo: "15.570.1006",
-    analizAdi: "5001-7500 kN arasında, Yatay deplasman kapasitesi ±301-400 mm olan çift sürtünme yüzeyli",
+    analizAdi: "Eşdeğer eğrilik yarıçapı 4001-6000 mm arasında, Maksimum düşey yük taşıma kapasitesi 5001-7500 kN arasında, Yatay deplasman kapasitesi ±301-400 mm olan çift sürtünme yüzeyli deprem yalıtım biriminin temini ve yerine konulması",
     olcuBirimi: "Adet",
     kategori: "Deprem İzolatörü",
     kaynakTip: "sistem" as const,
@@ -18403,7 +18403,7 @@ export const RESMI_POZ_ANALIZLERI = [
   {
     id: "sys-15x570x1007",
     pozNo: "15.570.1007",
-    analizAdi: "5001-7500 kN arasında, Yatay deplasman kapasitesi ±401-500 mm olan çift sürtünme yüzeyli",
+    analizAdi: "Eşdeğer eğrilik yarıçapı 4001-6000 mm arasında, Maksimum düşey yük taşıma kapasitesi 5001-7500 kN arasında, Yatay deplasman kapasitesi ±401-500 mm olan çift sürtünme yüzeyli deprem yalıtım biriminin temini ve yerine konulması",
     olcuBirimi: "Adet",
     kategori: "Deprem İzolatörü",
     kaynakTip: "sistem" as const,
@@ -18430,7 +18430,7 @@ export const RESMI_POZ_ANALIZLERI = [
   {
     id: "sys-15x570x1008",
     pozNo: "15.570.1008",
-    analizAdi: "7501-10000 kN arasında, Yatay deplasman kapasitesi ±301-400 mm olan çift sürtünme",
+    analizAdi: "Eşdeğer eğrilik yarıçapı 4001-6000 mm arasında, Maksimum düşey yük taşıma kapasitesi 7501-10000 kN arasında, Yatay deplasman kapasitesi ±301-400 mm olan çift sürtünme yüzeyli deprem yalıtım biriminin temini ve yerine konulması",
     olcuBirimi: "Adet",
     kategori: "Deprem İzolatörü",
     kaynakTip: "sistem" as const,
@@ -18457,7 +18457,7 @@ export const RESMI_POZ_ANALIZLERI = [
   {
     id: "sys-15x570x1009",
     pozNo: "15.570.1009",
-    analizAdi: "7501-10000 kN arasında, Yatay deplasman kapasitesi ±401-500 mm olan çift sürtünme",
+    analizAdi: "Eşdeğer eğrilik yarıçapı 4001-6000 mm arasında, Maksimum düşey yük taşıma kapasitesi 7501-10000 kN arasında, Yatay deplasman kapasitesi ±401-500 mm olan çift sürtünme yüzeyli deprem yalıtım biriminin temini ve yerine konulması",
     olcuBirimi: "Adet",
     kategori: "Deprem İzolatörü",
     kaynakTip: "sistem" as const,
@@ -18484,7 +18484,7 @@ export const RESMI_POZ_ANALIZLERI = [
   {
     id: "sys-15x570x1010",
     pozNo: "15.570.1010",
-    analizAdi: "2501-5000 kN arasında, Yatay deplasman kapasitesi ±601-700 mm olan çift sürtünme yüzeyli",
+    analizAdi: "Eşdeğer eğrilik yarıçapı 6001-8000 mm arasında, Maksimum düşey yük taşıma kapasitesi 2501-5000 kN arasında, Yatay deplasman kapasitesi ±601-700 mm olan çift sürtünme yüzeyli deprem yalıtım biriminin temini ve yerine konulması",
     olcuBirimi: "Adet",
     kategori: "Deprem İzolatörü",
     kaynakTip: "sistem" as const,
@@ -18511,7 +18511,7 @@ export const RESMI_POZ_ANALIZLERI = [
   {
     id: "sys-15x570x1011",
     pozNo: "15.570.1011",
-    analizAdi: "2501-5000 kN arasında, Yatay deplasman kapasitesi ±701-800 mm olan çift sürtünme yüzeyli",
+    analizAdi: "Eşdeğer eğrilik yarıçapı 6001-8000 mm arasında, Maksimum düşey yük taşıma kapasitesi 2501-5000 kN arasında, Yatay deplasman kapasitesi ±701-800 mm olan çift sürtünme yüzeyli deprem yalıtım biriminin temini ve yerine konulması",
     olcuBirimi: "Adet",
     kategori: "Deprem İzolatörü",
     kaynakTip: "sistem" as const,
@@ -18538,7 +18538,7 @@ export const RESMI_POZ_ANALIZLERI = [
   {
     id: "sys-15x570x1012",
     pozNo: "15.570.1012",
-    analizAdi: "5001-7500 kN arasında, Yatay deplasman kapasitesi ±601-700 mm olan çift sürtünme yüzeyli",
+    analizAdi: "Eşdeğer eğrilik yarıçapı 6001-8000 mm arasında, Maksimum düşey yük taşıma kapasitesi 5001-7500 kN arasında, Yatay deplasman kapasitesi ±601-700 mm olan çift sürtünme yüzeyli deprem yalıtım biriminin temini ve yerine konulması",
     olcuBirimi: "Adet",
     kategori: "Deprem İzolatörü",
     kaynakTip: "sistem" as const,
@@ -18565,7 +18565,7 @@ export const RESMI_POZ_ANALIZLERI = [
   {
     id: "sys-15x570x1013",
     pozNo: "15.570.1013",
-    analizAdi: "5001-7500 kN arasında, Yatay deplasman kapasitesi ±701-800 mm olan çift sürtünme yüzeyli",
+    analizAdi: "Eşdeğer eğrilik yarıçapı 6001-8000 mm arasında, Maksimum düşey yük taşıma kapasitesi 5001-7500 kN arasında, Yatay deplasman kapasitesi ±701-800 mm olan çift sürtünme yüzeyli deprem yalıtım biriminin temini ve yerine konulması",
     olcuBirimi: "Adet",
     kategori: "Deprem İzolatörü",
     kaynakTip: "sistem" as const,
@@ -18592,7 +18592,7 @@ export const RESMI_POZ_ANALIZLERI = [
   {
     id: "sys-15x570x1014",
     pozNo: "15.570.1014",
-    analizAdi: "7501-10000 kN arasında, Yatay deplasman kapasitesi ±601-700 mm olan çift sürtünme",
+    analizAdi: "Eşdeğer eğrilik yarıçapı 6001-8000 mm arasında, Maksimum düşey yük taşıma kapasitesi 7501-10000 kN arasında, Yatay deplasman kapasitesi ±601-700 mm olan çift sürtünme yüzeyli deprem yalıtım biriminin temini ve yerine konulması",
     olcuBirimi: "Adet",
     kategori: "Deprem İzolatörü",
     kaynakTip: "sistem" as const,
@@ -18619,7 +18619,7 @@ export const RESMI_POZ_ANALIZLERI = [
   {
     id: "sys-15x570x1015",
     pozNo: "15.570.1015",
-    analizAdi: "7501-10000 kN arasında, Yatay deplasman kapasitesi ±701-800 mm olan çift sürtünme",
+    analizAdi: "Eşdeğer eğrilik yarıçapı 6001-8000 mm arasında, Maksimum düşey yük taşıma kapasitesi 7501-10000 kN arasında, Yatay deplasman kapasitesi ±701-800 mm olan çift sürtünme yüzeyli deprem yalıtım biriminin temini ve yerine konulması",
     olcuBirimi: "Adet",
     kategori: "Deprem İzolatörü",
     kaynakTip: "sistem" as const,
