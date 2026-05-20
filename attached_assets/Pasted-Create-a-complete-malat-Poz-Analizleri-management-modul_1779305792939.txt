@@ -1,0 +1,271 @@
+Create a complete “İmalat Poz Analizleri” management module inside the Settings > Construction section.
+
+IMPORTANT:
+Remove the existing “İnşaat Poz Tarifleri” menu completely.
+
+Replace it with a new expandable accordion menu called:
+“İmalat Poz Analizleri”
+
+Inside this module create 3 sub-sections:
+1. Poz Tarifi
+2. Yapım Şartları
+3. Ölçüsü
+
+====================================================
+MAIN STRUCTURE
+====================================================
+
+Build a professional construction analysis management system based on official Turkish construction “İmalat Analiz Tabloları”.
+
+The system must support:
+- Viewing analysis tables
+- Searching analyses
+- Editing all analysis data
+- Cloning analyses
+- Creating custom analysis variations
+- Saving user-defined analyses
+- Exporting to PDF/Excel
+- Printing
+- Responsive mobile + desktop layout
+
+====================================================
+LIST PAGE
+====================================================
+
+Inside the accordion create a searchable analysis list.
+
+At the top:
+- Sticky search bar
+- Placeholder:
+  “Poz No veya analiz adı ara...”
+
+Search must filter instantly by:
+- Poz No
+- Analizin Adı
+- Poz Tarifi content
+
+Search must be:
+- Real-time
+- Case insensitive
+
+====================================================
+LIST TABLE
+====================================================
+
+Create a professional table list with these columns:
+
+1. Satır No
+2. Poz No
+3. Analizin Adı
+
+Requirements:
+- Every row clickable
+- Hover effect
+- Pagination or lazy loading
+- Optimized for thousands of analyses
+- Clean official government tender style
+
+When clicking a row:
+Open the related “İmalat Analiz Tablosu” detail page or modal.
+
+====================================================
+PDF IMPORT SYSTEM
+====================================================
+
+Parse all uploaded PDF analysis pages and generate structured analysis tables automatically.
+
+Extract ALL fields exactly from PDFs:
+
+- Poz No
+- Analizin Adı
+- Ölçü Birimi
+- Malzeme Listesi
+- İşçilik Listesi
+- Miktar
+- Birim Fiyatı
+- Tutar
+- Malzeme + İşçilik Tutarı
+- Yüklenici Karı ve Genel Giderler
+- Nihai Birim Fiyat
+- Poz Tarifi
+- Yapım Şartları
+- Ölçüsü
+
+The generated tables must visually match official Turkish construction analysis documents.
+
+====================================================
+ANALYSIS DETAIL PAGE
+====================================================
+
+Design a professional editable “İmalat Analiz Tablosu”.
+
+Top fixed information area:
+- Poz No
+- Analizin Adı
+- Ölçü Birimi
+- Son Güncelleme Tarihi
+
+====================================================
+ANALYSIS TABLE STRUCTURE
+====================================================
+
+Create editable rows for:
+- Malzeme
+- İşçilik
+- Ekipman
+- Açıklamalar
+
+Columns:
+- Poz No
+- Tanım
+- Ölçü Birimi
+- Miktar
+- Birim Fiyatı
+- Tutar
+
+All cells must be editable.
+
+====================================================
+LIVE CALCULATIONS
+====================================================
+
+System must automatically calculate:
+
+Row Total:
+Miktar × Birim Fiyatı
+
+Subtotal:
+Malzeme + İşçilik Tutarı
+
+General Expenses:
+%25 yüklenici karı ve genel giderler
+
+Final Unit Price:
+Subtotal + %25
+
+All calculations must update instantly.
+
+Use Turkish currency formatting.
+
+====================================================
+USER ACTIONS
+====================================================
+
+Add action buttons:
+- Düzenle
+- Kopyala
+- Kaydet
+- Yazdır
+- PDF Aktar
+- Excel Aktar
+
+====================================================
+CLONE SYSTEM
+====================================================
+
+Users must be able to:
+- Duplicate existing analyses
+- Rename duplicated analyses
+- Create custom variants
+- Save as new analysis
+
+Example:
+Original:
+“Makina ile ortalama 2,5 cm kalınlıkta alçı esaslı şap yapılması”
+
+Copied version:
+“Makina ile ortalama 4 cm kalınlıkta alçı esaslı şap yapılması”
+
+====================================================
+DATABASE STRUCTURE
+====================================================
+
+Use dynamic JSON-based architecture.
+
+Each analysis must include:
+- Unique ID
+- Metadata
+- Analysis items array
+- Notes
+- Calculation fields
+- Timestamps
+
+Structure must support:
+- Easy future imports
+- Custom analyses
+- User archives
+- Fast searching
+
+====================================================
+UI / UX DESIGN
+====================================================
+
+Use a professional technical interface.
+
+Design style:
+- White background
+- Dark gray table borders
+- Official tender document aesthetic
+- Compact professional spacing
+- Modern enterprise UI
+- Mobile responsive
+
+Use:
+- Accordion layout
+- Sticky headers
+- Responsive tables
+- Scrollable table body if necessary
+
+====================================================
+PERFORMANCE
+====================================================
+
+Implement:
+- Lazy loading
+OR
+- Pagination
+
+Optimize rendering for very large analysis datasets.
+
+====================================================
+EXTRA FEATURES
+====================================================
+
+Add:
+- Auto-save draft system
+- Undo/redo support
+- Keyboard navigation
+- Table row duplication
+- Row deletion
+- Add new row
+- Column resize support
+
+====================================================
+EXPORTS
+====================================================
+
+PDF export must resemble official Çevre Şehircilik Bakanlığı analysis sheets.
+
+Excel export must preserve:
+- Tables
+- Totals
+- Formatting
+
+====================================================
+TECH STACK
+====================================================
+
+Recommended:
+- React
+- TypeScript
+- Tailwind
+- ShadCN UI
+- TanStack Table
+- Zustand or Context API
+- React Hook Form
+
+====================================================
+IMPORTANT
+====================================================
+
+The UI and functionality should feel like a professional quantity surveying / construction tender analysis software used by engineers and contractors in Turkey.

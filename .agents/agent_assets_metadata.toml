@@ -227,3 +227,9 @@ id = "OvK7L0uOt6Gx3hfyM5ul7"
 uri = "file://santijet-kaynak.tar.gz"
 type = "unspecified"
 title = "ŞantiJET Kaynak Kodları"
+
+[[outputs]]
+id = "bSUloC54_YuzRblGqVvKo"
+uri = "file://PROMPT_IMALAT_POZ_ANALIZLERI.md"
+type = "text"
+title = "İmalat Poz Analizleri — Geliştirme Promptu"
