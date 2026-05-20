@@ -8,7 +8,9 @@ import React, { useEffect, useMemo, useRef, useState } from "react";
 import {
   ActivityIndicator,
   Alert,
+  Modal,
   Platform,
+  Pressable,
   ScrollView,
   StyleSheet,
   Text,
@@ -69,6 +71,41 @@ const SECTIONS: Section[] = [
 const HIVIS_YELLOW = "#facc15";
 const HIVIS_BG = "#fef3c7";
 const HIVIS_BLACK = "#1c1917";
+
+// ---- Kart renk özelleştirme ----
+const TILE_COLORS_KEY = "santiye-tile-colors-v1";
+
+type TileColorMode = "accent" | "fill";
+interface TileColorConfig {
+  mode: TileColorMode;
+  color: string;
+}
+
+const SOFT_COLORS = [
+  // Sıcak
+  "#f87171", "#fb923c", "#fbbf24", "#a3e635", "#4ade80",
+  // Serin
+  "#34d399", "#22d3ee", "#38bdf8", "#60a5fa", "#818cf8",
+  // Pembe / Mor
+  "#a78bfa", "#c084fc", "#e879f9", "#f472b6", "#fb7185",
+  // Nötr / Toprak
+  "#94a3b8", "#78716c", "#6b7280", "#a8a29e", "#64748b",
+];
+
+function hexToRgb(hex: string) {
+  const r = parseInt(hex.slice(1, 3), 16);
+  const g = parseInt(hex.slice(3, 5), 16);
+  const b = parseInt(hex.slice(5, 7), 16);
+  return { r, g, b };
+}
+function fillBg(hex: string) {
+  const { r, g, b } = hexToRgb(hex);
+  return `rgba(${r},${g},${b},0.13)`;
+}
+function fillBorder(hex: string) {
+  const { r, g, b } = hexToRgb(hex);
+  return `rgba(${r},${g},${b},0.35)`;
+}
 
 function HazardStripe({ height = 8, segments = 28 }: { height?: number; segments?: number }) {
   return (
@@ -141,6 +178,58 @@ export default function HomeScreen() {
     if (!orderLoaded) return;
     AsyncStorage.setItem(ORDER_KEY, JSON.stringify(tileOrder)).catch(() => {});
   }, [tileOrder, orderLoaded]);
+
+  // ---- Kart renk özelleştirme ----
+  const [tileColors, setTileColors] = useState<Record<string, TileColorConfig>>({});
+  const [colorsLoaded, setColorsLoaded] = useState(false);
+
+  useEffect(() => {
+    AsyncStorage.getItem(TILE_COLORS_KEY)
+      .then((raw) => {
+        if (raw) {
+          try {
+            const obj = JSON.parse(raw);
+            if (obj && typeof obj === "object") setTileColors(obj);
+          } catch {
+            // ignore
+          }
+        }
+      })
+      .finally(() => setColorsLoaded(true));
+  }, []);
+
+  useEffect(() => {
+    if (!colorsLoaded) return;
+    AsyncStorage.setItem(TILE_COLORS_KEY, JSON.stringify(tileColors)).catch(() => {});
+  }, [tileColors, colorsLoaded]);
+
+  // ---- Renk seçici modal ----
+  const [cpKey, setCpKey] = useState<string | null>(null);
+  const [cpMode, setCpMode] = useState<TileColorMode>("accent");
+  const [cpColor, setCpColor] = useState<string>(SOFT_COLORS[0]);
+
+  function openColorPicker(key: string) {
+    const existing = tileColors[key];
+    setCpMode(existing?.mode ?? "accent");
+    setCpColor(existing?.color ?? SOFT_COLORS[0]);
+    setCpKey(key);
+  }
+
+  function applyColor() {
+    if (!cpKey) return;
+    setTileColors((prev) => ({ ...prev, [cpKey]: { mode: cpMode, color: cpColor } }));
+    setCpKey(null);
+  }
+
+  function resetColor() {
+    if (!cpKey) return;
+    setTileColors((prev) => {
+      const next = { ...prev };
+      delete next[cpKey];
+      return next;
+    });
+    setCpKey(null);
+  }
 
   const orderedSections = useMemo(() => {
     const allowed = SECTIONS.filter((s) => getPermission(s.key) !== "none");
@@ -506,20 +595,23 @@ export default function HomeScreen() {
                 </View>
               );
             }
+            const custom = tileColors[s.key];
+            const accentColor = custom ? custom.color : s.color;
+            const isFill = custom?.mode === "fill";
             return (
               <View
                 style={[
                   styles.tileInner,
                   {
-                    backgroundColor: colors.card,
-                    borderColor: colors.border,
+                    backgroundColor: isFill ? fillBg(custom!.color) : colors.card,
+                    borderColor: isFill ? fillBorder(custom!.color) : colors.border,
                   },
                 ]}
               >
-                <View style={[styles.tileAccent, { backgroundColor: s.color }]} />
+                <View style={[styles.tileAccent, { backgroundColor: accentColor }]} />
                 <View style={styles.tileHead}>
-                  <View style={[styles.tileIcon, { backgroundColor: s.bg }]}>
-                    <Feather name={s.icon as any} size={20} color={s.color} />
+                  <View style={[styles.tileIcon, { backgroundColor: isFill ? custom!.color + "22" : s.bg }]}>
+                    <Feather name={s.icon as any} size={20} color={accentColor} />
                   </View>
                   {perm === "view" ? (
                     <View style={styles.viewBadge}>
@@ -546,6 +638,7 @@ export default function HomeScreen() {
             );
           }}
           onTilePress={(s) => router.push(s.route as any)}
+          onDoubleTap={(s) => openColorPicker(s.key)}
         />
 
         <TouchableOpacity
@@ -751,6 +844,91 @@ export default function HomeScreen() {
           <Text style={[styles.cancelText, { color: colors.mutedForeground }]}>{t("common.close")}</Text>
         </TouchableOpacity>
       </BottomSheet>
+
+      {/* ---- Kart Renk Seçici Modal ---- */}
+      <Modal
+        visible={cpKey !== null}
+        transparent
+        animationType="fade"
+        onRequestClose={() => setCpKey(null)}
+      >
+        <Pressable style={styles.cpOverlay} onPress={() => setCpKey(null)}>
+          <Pressable style={[styles.cpSheet, { backgroundColor: colors.card }]} onPress={() => {}}>
+            <View style={styles.cpHeader}>
+              <View style={[styles.cpDot, { backgroundColor: cpColor }]} />
+              <Text style={[styles.cpTitle, { color: colors.foreground }]}>Kart Rengi</Text>
+              <TouchableOpacity onPress={() => setCpKey(null)} hitSlop={10}>
+                <Feather name="x" size={18} color={colors.mutedForeground} />
+              </TouchableOpacity>
+            </View>
+
+            <View style={styles.cpModeRow}>
+              <TouchableOpacity
+                style={[
+                  styles.cpModeBtn,
+                  { borderColor: cpMode === "accent" ? cpColor : colors.border },
+                  cpMode === "accent" && { backgroundColor: cpColor + "18" },
+                ]}
+                onPress={() => setCpMode("accent")}
+                activeOpacity={0.8}
+              >
+                <View style={[styles.cpModeAccentDemo, { backgroundColor: cpColor }]} />
+                <Text style={[styles.cpModeLbl, { color: cpMode === "accent" ? cpColor : colors.mutedForeground }]}>
+                  Sol Kenar
+                </Text>
+              </TouchableOpacity>
+              <TouchableOpacity
+                style={[
+                  styles.cpModeBtn,
+                  { borderColor: cpMode === "fill" ? cpColor : colors.border },
+                  cpMode === "fill" && { backgroundColor: cpColor + "18" },
+                ]}
+                onPress={() => setCpMode("fill")}
+                activeOpacity={0.8}
+              >
+                <View style={[styles.cpModeFillDemo, { backgroundColor: cpColor + "2a", borderColor: cpColor + "55" }]} />
+                <Text style={[styles.cpModeLbl, { color: cpMode === "fill" ? cpColor : colors.mutedForeground }]}>
+                  Dolgu
+                </Text>
+              </TouchableOpacity>
+            </View>
+
+            <View style={styles.cpPalette}>
+              {SOFT_COLORS.map((c) => (
+                <TouchableOpacity
+                  key={c}
+                  style={[
+                    styles.cpSwatch,
+                    { backgroundColor: c },
+                    cpColor === c && styles.cpSwatchActive,
+                  ]}
+                  onPress={() => setCpColor(c)}
+                  activeOpacity={0.8}
+                />
+              ))}
+            </View>
+
+            <View style={styles.cpActions}>
+              <TouchableOpacity
+                style={[styles.cpResetBtn, { borderColor: colors.border }]}
+                onPress={resetColor}
+                activeOpacity={0.8}
+              >
+                <Feather name="rotate-ccw" size={13} color={colors.mutedForeground} />
+                <Text style={[styles.cpResetTxt, { color: colors.mutedForeground }]}>Sıfırla</Text>
+              </TouchableOpacity>
+              <TouchableOpacity
+                style={[styles.cpApplyBtn, { backgroundColor: cpColor }]}
+                onPress={applyColor}
+                activeOpacity={0.8}
+              >
+                <Feather name="check" size={13} color="#fff" />
+                <Text style={styles.cpApplyTxt}>Uygula</Text>
+              </TouchableOpacity>
+            </View>
+          </Pressable>
+        </Pressable>
+      </Modal>
     </View>
   );
 }
@@ -775,6 +953,7 @@ interface DGProps<T extends DGSection> {
   onReorder: (newOrder: string[]) => void;
   renderTile: (s: T) => React.ReactNode;
   onTilePress: (s: T) => void;
+  onDoubleTap?: (s: T) => void;
   tileH?: number;
 }
 
@@ -790,6 +969,7 @@ function DraggableGrid<T extends DGSection>({
   onReorder,
   renderTile,
   onTilePress,
+  onDoubleTap,
   tileH = DG_TILE_H_DEFAULT,
 }: DGProps<T>) {
   const [containerW, setContainerW] = useState(0);
@@ -835,6 +1015,7 @@ function DraggableGrid<T extends DGSection>({
               draggingKey={draggingKey}
               onReorder={onReorder}
               onPress={() => onTilePress(s)}
+              onDoubleTap={onDoubleTap ? () => onDoubleTap(s) : undefined}
             >
               {renderTile(s)}
             </DraggableTile>
@@ -854,6 +1035,7 @@ interface DTProps {
   draggingKey: SharedValue<string | null>;
   onReorder: (newOrder: string[]) => void;
   onPress: () => void;
+  onDoubleTap?: () => void;
   children: React.ReactNode;
 }
 
@@ -867,6 +1049,7 @@ function DraggableTile({
   draggingKey,
   onReorder,
   onPress,
+  onDoubleTap,
   children,
 }: DTProps) {
   const tileHShared = useSharedValue(tileH);
@@ -879,6 +1062,27 @@ function DraggableTile({
   const z = useSharedValue(0);
   const shadow = useSharedValue(0);
   const initialized = useRef(false);
+
+  // Çift dokunma algılama (ref tabanlı, gecikme yok)
+  const lastTapRef = useRef(0);
+  const tapTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  function handleTap() {
+    const now = Date.now();
+    if (now - lastTapRef.current < 380) {
+      // Çift dokunma
+      if (tapTimerRef.current) clearTimeout(tapTimerRef.current);
+      lastTapRef.current = 0;
+      onDoubleTap?.();
+    } else {
+      // İlk dokunma — çift olup olmadığını bekle
+      lastTapRef.current = now;
+      if (tapTimerRef.current) clearTimeout(tapTimerRef.current);
+      tapTimerRef.current = setTimeout(() => {
+        onPress();
+      }, 380);
+    }
+  }
 
   // Slot pozisyonuna otomatik geçiş (drag yapılmadığında)
   useAnimatedReaction(
@@ -963,7 +1167,7 @@ function DraggableTile({
   const tap = Gesture.Tap()
     .maxDuration(280)
     .onEnd((_e, success) => {
-      if (success) runOnJS(onPress)();
+      if (success) runOnJS(handleTap)();
     });
 
   const composed = Gesture.Simultaneous(drag, tap);
@@ -1541,5 +1745,124 @@ const styles = StyleSheet.create({
     fontSize: 11,
     fontFamily: "Inter_400Regular",
     marginTop: 2,
+  },
+  // ---- Renk seçici modal ----
+  cpOverlay: {
+    flex: 1,
+    backgroundColor: "rgba(0,0,0,0.45)",
+    justifyContent: "center",
+    alignItems: "center",
+  },
+  cpSheet: {
+    width: 320,
+    borderRadius: 20,
+    padding: 20,
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 8 },
+    shadowOpacity: 0.18,
+    shadowRadius: 24,
+    elevation: 20,
+  },
+  cpHeader: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 10,
+    marginBottom: 18,
+  },
+  cpDot: {
+    width: 16,
+    height: 16,
+    borderRadius: 8,
+  },
+  cpTitle: {
+    flex: 1,
+    fontSize: 16,
+    fontFamily: "Inter_700Bold",
+  },
+  cpModeRow: {
+    flexDirection: "row",
+    gap: 10,
+    marginBottom: 20,
+  },
+  cpModeBtn: {
+    flex: 1,
+    borderRadius: 12,
+    borderWidth: 1.5,
+    paddingVertical: 10,
+    paddingHorizontal: 12,
+    alignItems: "center",
+    gap: 8,
+  },
+  cpModeAccentDemo: {
+    width: 28,
+    height: 28,
+    borderRadius: 6,
+    borderLeftWidth: 4,
+    borderLeftColor: "transparent",
+    position: "relative",
+  },
+  cpModeFillDemo: {
+    width: 28,
+    height: 28,
+    borderRadius: 6,
+    borderWidth: 1.5,
+  },
+  cpModeLbl: {
+    fontSize: 12,
+    fontFamily: "Inter_600SemiBold",
+  },
+  cpPalette: {
+    flexDirection: "row",
+    flexWrap: "wrap",
+    gap: 10,
+    justifyContent: "center",
+    marginBottom: 20,
+  },
+  cpSwatch: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+  },
+  cpSwatchActive: {
+    borderWidth: 3,
+    borderColor: "#fff",
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.25,
+    shadowRadius: 4,
+    elevation: 4,
+    transform: [{ scale: 1.15 }],
+  },
+  cpActions: {
+    flexDirection: "row",
+    gap: 10,
+  },
+  cpResetBtn: {
+    flex: 1,
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    gap: 6,
+    borderRadius: 12,
+    borderWidth: 1.5,
+    paddingVertical: 12,
+  },
+  cpResetTxt: {
+    fontSize: 13,
+    fontFamily: "Inter_600SemiBold",
+  },
+  cpApplyBtn: {
+    flex: 2,
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    gap: 6,
+    borderRadius: 12,
+    paddingVertical: 12,
+  },
+  cpApplyTxt: {
+    fontSize: 13,
+    fontFamily: "Inter_600SemiBold",
+    color: "#fff",
   },
 });
