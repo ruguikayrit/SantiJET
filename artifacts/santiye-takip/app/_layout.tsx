@@ -71,7 +71,6 @@ function RootLayoutNav() {
         <Stack.Screen name="butce" />
         <Stack.Screen name="hakedis" />
         <Stack.Screen name="ilerleme" />
-        <Stack.Screen name="finans" />
         <Stack.Screen name="rapor" />
         <Stack.Screen name="ayarlar" />
         <Stack.Screen name="temalar" />

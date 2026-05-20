@@ -63,7 +63,6 @@ const SECTIONS: Section[] = [
   { key: "butce",        label: "Bütçe",         icon: "dollar-sign", route: "/butce",        color: "#16213e", bg: "#e0e7ff", code: "BT-13", sub: "Kalem", count: (a) => a.budget.length },
   { key: "hakedis",      label: "Hakediş",       icon: "file-text",   route: "/hakedis",      color: "#be185d", bg: "#fce7f3", code: "HK-14", sub: "Dönem", count: (a) => a.hakedisler.length },
   { key: "ilerleme",     label: "İlerleme",      icon: "trending-up", route: "/ilerleme",     color: "#0d9488", bg: "#ccfbf1", code: "IL-15", sub: "Kayıt", count: (a) => a.surveys.length + a.productions.length },
-  { key: "finans",       label: "Finans",        icon: "credit-card", route: "/finans",       color: "#00C896", bg: "#d1fae5", code: "FN-16", sub: "Hareket", count: () => 0 },
   { key: "kullanicilar", label: "Kullanıcılar",  icon: "shield",      route: "/kullanicilar", color: "#7c3aed", bg: "#ede9fe", code: "KU-17", sub: "Kişi", count: (a) => a.appUsers.length },
 ];
 
