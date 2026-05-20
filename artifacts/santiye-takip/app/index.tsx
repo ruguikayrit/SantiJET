@@ -1063,27 +1063,6 @@ function DraggableTile({
   const shadow = useSharedValue(0);
   const initialized = useRef(false);
 
-  // Çift dokunma algılama (ref tabanlı, gecikme yok)
-  const lastTapRef = useRef(0);
-  const tapTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
-
-  function handleTap() {
-    const now = Date.now();
-    if (now - lastTapRef.current < 380) {
-      // Çift dokunma
-      if (tapTimerRef.current) clearTimeout(tapTimerRef.current);
-      lastTapRef.current = 0;
-      onDoubleTap?.();
-    } else {
-      // İlk dokunma — çift olup olmadığını bekle
-      lastTapRef.current = now;
-      if (tapTimerRef.current) clearTimeout(tapTimerRef.current);
-      tapTimerRef.current = setTimeout(() => {
-        onPress();
-      }, 380);
-    }
-  }
-
   // Slot pozisyonuna otomatik geçiş (drag yapılmadığında)
   useAnimatedReaction(
     () => ({
@@ -1167,10 +1146,25 @@ function DraggableTile({
   const tap = Gesture.Tap()
     .maxDuration(280)
     .onEnd((_e, success) => {
-      if (success) runOnJS(handleTap)();
+      if (success) runOnJS(onPress)();
     });
 
-  const composed = Gesture.Simultaneous(drag, tap);
+  // 800 ms hareketsiz uzun basma → renk seçici (sürükleme iptal edilir)
+  const colorLongPress = Gesture.LongPress()
+    .minDuration(800)
+    .maxDistance(12)
+    .onStart(() => {
+      "worklet";
+      if (draggingKey.value === itemKey) {
+        draggingKey.value = null;
+        scale.value = withSpring(1, { damping: 16, stiffness: 220 });
+        shadow.value = withSpring(0);
+        z.value = 0;
+      }
+      if (onDoubleTap) runOnJS(onDoubleTap)();
+    });
+
+  const composed = Gesture.Simultaneous(drag, tap, colorLongPress);
 
   const animStyle = useAnimatedStyle(() => ({
     position: "absolute",
