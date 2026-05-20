@@ -58,6 +58,13 @@ export default function AyarlarScreen() {
       route: "/imalat-pozlari",
     },
     {
+      key: "yybm",
+      icon: "home",
+      title: "Yapı Yaklaşık Birim Maliyetleri",
+      sub: "Yıllık tebliğler, yapı sınıfı fiyatları ve yıllar arası mukayese",
+      route: "/yybm",
+    },
+    {
       key: "meslekler",
       icon: "briefcase",
       title: "Meslekler",
