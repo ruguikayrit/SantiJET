@@ -53,8 +53,8 @@ export default function AyarlarScreen() {
     {
       key: "imalatPoz",
       icon: "book-open",
-      title: "İmalat Poz Tarifleri",
-      sub: "İnşaat imalat pozlarını ve tariflerini yönetin",
+      title: "İmalat Poz Analizleri",
+      sub: "Resmi analiz tabloları, fiyat hesaplamaları ve özel analizler",
       route: "/imalat-pozlari",
     },
     {

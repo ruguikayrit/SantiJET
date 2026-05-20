@@ -13,7 +13,12 @@ import {
   MATERIAL_CATEGORIES,
 } from "@/constants/materials";
 import { MATERIAL_UNITS, UnitOption } from "@/constants/units";
-import { DEFAULT_IMALAT_POZLARI, ImalatPoz } from "@/constants/imalatPozlari";
+import {
+  DEFAULT_IMALAT_POZLARI,
+  DEFAULT_POZ_ANALIZLERI,
+  ImalatPoz,
+  PozAnaliz,
+} from "@/constants/imalatPozlari";
 
 function mergeImalatPozlari(stored: unknown): ImalatPoz[] {
   if (!Array.isArray(stored) || stored.length === 0) {
@@ -26,6 +31,17 @@ function mergeImalatPozlari(stored: unknown): ImalatPoz[] {
     (p) => !existingCodes.has(p.code.toLowerCase())
   );
   return additions.length > 0 ? [...(stored as ImalatPoz[]), ...additions] : (stored as ImalatPoz[]);
+}
+
+function mergePozAnalizleri(stored: unknown): PozAnaliz[] {
+  if (!Array.isArray(stored) || stored.length === 0) {
+    return [...DEFAULT_POZ_ANALIZLERI];
+  }
+  const existingIds = new Set((stored as PozAnaliz[]).map((a) => a?.id || ""));
+  const additions = DEFAULT_POZ_ANALIZLERI.filter((a) => !existingIds.has(a.id));
+  return additions.length > 0
+    ? [...(stored as PozAnaliz[]), ...additions]
+    : (stored as PozAnaliz[]);
 }
 
 export interface Project {
@@ -558,6 +574,7 @@ interface AppState {
   materialList: ConstructionMaterial[];
   materialUnits: UnitOption[];
   imalatPozlari: ImalatPoz[];
+  pozAnalizleri: PozAnaliz[];
   professions: string[];
   tradeGroups: string[];
 }
@@ -669,6 +686,11 @@ interface AppContextType extends AppState {
   updateImalatPoz: (code: string, patch: Partial<ImalatPoz>) => void;
   deleteImalatPoz: (code: string) => void;
 
+  addPozAnaliz: (a: Omit<PozAnaliz, "id" | "olusturmaTarihi" | "guncellemeTarihi">) => string;
+  updatePozAnaliz: (id: string, patch: Partial<PozAnaliz>) => void;
+  deletePozAnaliz: (id: string) => void;
+  clonePozAnaliz: (id: string, yeniAd: string) => PozAnaliz;
+
   addMaterialUnit: (unit: UnitOption) => void;
   deleteMaterialUnit: (code: string) => void;
 
@@ -720,6 +742,7 @@ const INITIAL: AppState = {
   materialList: [...CONSTRUCTION_MATERIALS],
   materialUnits: [...MATERIAL_UNITS],
   imalatPozlari: [...DEFAULT_IMALAT_POZLARI],
+  pozAnalizleri: [...DEFAULT_POZ_ANALIZLERI],
   professions: [...DEFAULT_PROFESSIONS],
   tradeGroups: [...DEFAULT_TRADE_GROUPS],
 };
@@ -824,6 +847,7 @@ async function loadInitialState(): Promise<AppState> {
         });
       }
       state.imalatPozlari = mergeImalatPozlari(state.imalatPozlari);
+      state.pozAnalizleri = mergePozAnalizleri(state.pozAnalizleri);
       if (!Array.isArray(state.professions) || state.professions.length === 0) {
         state.professions = [...DEFAULT_PROFESSIONS];
       }
@@ -1589,6 +1613,42 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
         ...prev,
         imalatPozlari: prev.imalatPozlari.filter((p) => p.code !== code),
       })),
+
+    addPozAnaliz: (analiz) => {
+      const id = genId();
+      const now = new Date().toISOString();
+      const yeni: PozAnaliz = { ...analiz, id, olusturmaTarihi: now, guncellemeTarihi: now };
+      update((prev) => ({ ...prev, pozAnalizleri: [...prev.pozAnalizleri, yeni] }));
+      return id;
+    },
+    updatePozAnaliz: (id, patch) =>
+      update((prev) => ({
+        ...prev,
+        pozAnalizleri: prev.pozAnalizleri.map((a) =>
+          a.id === id ? { ...a, ...patch, guncellemeTarihi: new Date().toISOString() } : a
+        ),
+      })),
+    deletePozAnaliz: (id) =>
+      update((prev) => ({
+        ...prev,
+        pozAnalizleri: prev.pozAnalizleri.filter((a) => a.id !== id),
+      })),
+    clonePozAnaliz: (id, yeniAd) => {
+      const source = state.pozAnalizleri.find((a) => a.id === id);
+      if (!source) throw new Error("Analiz bulunamadı");
+      const now = new Date().toISOString();
+      const kopya: PozAnaliz = {
+        ...source,
+        id: genId(),
+        analizAdi: yeniAd,
+        kaynakTip: "kopya",
+        olusturmaTarihi: now,
+        guncellemeTarihi: now,
+        kalemler: source.kalemler.map((k) => ({ ...k, id: genId() })),
+      };
+      update((prev) => ({ ...prev, pozAnalizleri: [...prev.pozAnalizleri, kopya] }));
+      return kopya;
+    },
 
     deleteMaterialItem: (name) =>
       update((prev) => ({

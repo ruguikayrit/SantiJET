@@ -1,12 +1,12 @@
 import { Feather } from "@expo/vector-icons";
-import * as DocumentPicker from "expo-document-picker";
-import * as FileSystem from "expo-file-system";
-import { useRouter } from "expo-router";
+import * as FileSystem from "expo-file-system/legacy";
 import * as Sharing from "expo-sharing";
+import { useRouter } from "expo-router";
 import React, { useMemo, useState } from "react";
 import {
   Alert,
   FlatList,
+  Modal,
   Platform,
   ScrollView,
   StyleSheet,
@@ -17,445 +17,1128 @@ import {
 } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
-import BottomSheet from "@/components/BottomSheet";
-import FormInput from "@/components/FormInput";
-import PrimaryButton from "@/components/PrimaryButton";
 import { useApp } from "@/context/AppContext";
 import { useColors } from "@/hooks/useColors";
 import {
-  ImalatPoz,
+  AnalizKalemi,
   IMALAT_POZ_KATEGORILERI,
-  buildImalatPozCsv,
-  parseImalatPozCsv,
+  PozAnaliz,
+  hesaplaAnalizToplam,
 } from "@/constants/imalatPozlari";
 
-interface PF {
-  code: string;
-  category: string;
-  name: string;
-  unit: string;
-  description: string;
+// ─── Yardımcı Fonksiyonlar ─────────────────────────────────────
+
+function genKId(): string {
+  return "k" + Date.now().toString(36) + Math.random().toString(36).substr(2, 5);
 }
 
-const EMPTY: PF = { code: "", category: IMALAT_POZ_KATEGORILERI[0], name: "", unit: "", description: "" };
+function trFmt(n: number): string {
+  return n.toLocaleString("tr-TR", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+}
+
+function parseN(s: string): number {
+  const v = parseFloat(s.replace(",", "."));
+  return Number.isFinite(v) ? v : 0;
+}
+
+function tarihFmt(iso: string): string {
+  try {
+    return new Date(iso).toLocaleDateString("tr-TR");
+  } catch {
+    return iso;
+  }
+}
+
+type Colors = ReturnType<typeof useColors>;
+
+// ─── Ana Bileşen ───────────────────────────────────────────────
 
 export default function ImalatPozlariScreen() {
   const colors = useColors();
   const router = useRouter();
   const insets = useSafeAreaInsets();
   const topPad = Platform.OS === "web" ? 16 : insets.top;
-  const { imalatPozlari, addImalatPoz, updateImalatPoz, deleteImalatPoz, currentRole } = useApp();
+
+  const {
+    pozAnalizleri,
+    addPozAnaliz,
+    updatePozAnaliz,
+    deletePozAnaliz,
+    clonePozAnaliz,
+    currentRole,
+  } = useApp();
+
   const isAdmin = currentRole?.isAdmin === true;
 
   const [search, setSearch] = useState("");
   const [catFilter, setCatFilter] = useState<string | null>(null);
-  const [visible, setVisible] = useState(false);
-  const [editCode, setEditCode] = useState<string | null>(null);
-  const [form, setForm] = useState<PF>(EMPTY);
-  const [importVisible, setImportVisible] = useState(false);
-  const [importText, setImportText] = useState("");
-  const [busy, setBusy] = useState(false);
+  const [selectedId, setSelectedId] = useState<string | null>(null);
+  const [isEditing, setIsEditing] = useState(false);
+  const [editDraft, setEditDraft] = useState<PozAnaliz | null>(null);
+
+  const [cloneVisible, setCloneVisible] = useState(false);
+  const [cloneAd, setCloneAd] = useState("");
+
+  const [newVisible, setNewVisible] = useState(false);
+  const [newForm, setNewForm] = useState({
+    pozNo: "",
+    analizAdi: "",
+    olcuBirimi: "m²",
+    kategori: IMALAT_POZ_KATEGORILERI[0] as string,
+  });
+
+  const selected = useMemo(
+    () => pozAnalizleri.find((a) => a.id === selectedId) ?? null,
+    [pozAnalizleri, selectedId]
+  );
 
   const categories = useMemo(() => {
-    const set = new Set<string>(IMALAT_POZ_KATEGORILERI as readonly string[]);
-    imalatPozlari.forEach((p) => p.category && set.add(p.category));
-    return Array.from(set);
-  }, [imalatPozlari]);
+    const cats = new Set<string>(IMALAT_POZ_KATEGORILERI as readonly string[]);
+    pozAnalizleri.forEach((a) => a.kategori && cats.add(a.kategori));
+    return ["Tümü", ...Array.from(cats)];
+  }, [pozAnalizleri]);
 
-  const list = useMemo(() => {
+  const filtered = useMemo(() => {
     const q = search.trim().toLowerCase();
-    return imalatPozlari
-      .filter((p) => (catFilter ? p.category === catFilter : true))
-      .filter((p) =>
+    return pozAnalizleri
+      .filter((a) => (catFilter ? a.kategori === catFilter : true))
+      .filter((a) =>
         q
-          ? p.code.toLowerCase().includes(q) ||
-            p.name.toLowerCase().includes(q) ||
-            (p.description || "").toLowerCase().includes(q)
+          ? a.pozNo.toLowerCase().includes(q) ||
+            a.analizAdi.toLowerCase().includes(q) ||
+            (a.pozTarifi || "").toLowerCase().includes(q)
           : true
       )
-      .sort((a, b) => a.code.localeCompare(b.code, "tr"));
-  }, [imalatPozlari, catFilter, search]);
+      .sort((a, b) => a.pozNo.localeCompare(b.pozNo, "tr"));
+  }, [pozAnalizleri, catFilter, search]);
 
-  function open(p?: ImalatPoz) {
-    if (p) {
-      setEditCode(p.code);
-      setForm({
-        code: p.code,
-        category: p.category || IMALAT_POZ_KATEGORILERI[0],
-        name: p.name,
-        unit: p.unit,
-        description: p.description || "",
-      });
-    } else {
-      setEditCode(null);
-      setForm(EMPTY);
-    }
-    setVisible(true);
+  function openDetail(id: string) {
+    setSelectedId(id);
+    setIsEditing(false);
+    setEditDraft(null);
   }
 
-  function save() {
-    const code = form.code.trim();
-    const name = form.name.trim();
-    const unit = form.unit.trim();
-    if (!code || !name || !unit) {
-      Alert.alert("Eksik bilgi", "Poz kodu, adı ve birimi zorunlu.");
+  function goBack() {
+    if (isEditing) {
+      Alert.alert("Kaydedilmedi", "Değişiklikler kaydedilmedi. Çıkmak istiyor musunuz?", [
+        { text: "İptal", style: "cancel" },
+        {
+          text: "Çık",
+          onPress: () => {
+            setIsEditing(false);
+            setEditDraft(null);
+          },
+        },
+      ]);
       return;
     }
-    const data: ImalatPoz = {
-      code,
-      category: form.category.trim() || "Diğer",
-      name,
-      unit,
-      description: form.description.trim() || undefined,
-    };
-    if (editCode) {
-      updateImalatPoz(editCode, data);
-    } else {
-      if (imalatPozlari.some((p) => p.code.toLowerCase() === code.toLowerCase())) {
-        Alert.alert("Mevcut poz", "Bu poz kodu zaten kayıtlı.");
-        return;
-      }
-      addImalatPoz(data);
-    }
-    setVisible(false);
+    setSelectedId(null);
+    setEditDraft(null);
   }
 
-  function applyImport(text: string) {
-    const result = parseImalatPozCsv(text);
-    if (result.rows.length === 0) {
+  function startEdit() {
+    if (!selected) return;
+    setEditDraft(JSON.parse(JSON.stringify(selected)));
+    setIsEditing(true);
+  }
+
+  function saveEdit() {
+    if (!editDraft) return;
+    const totals = hesaplaAnalizToplam(editDraft);
+    updatePozAnaliz(editDraft.id, { ...editDraft, ...totals });
+    setIsEditing(false);
+    setEditDraft(null);
+  }
+
+  function cancelEdit() {
+    setIsEditing(false);
+    setEditDraft(null);
+  }
+
+  function updateDraftField(field: keyof PozAnaliz, value: any) {
+    setEditDraft((prev) => (prev ? { ...prev, [field]: value } : prev));
+  }
+
+  function updateKalemField(idx: number, field: keyof AnalizKalemi, raw: string) {
+    setEditDraft((prev) => {
+      if (!prev) return prev;
+      const kalemler = [...prev.kalemler];
+      const k: any = { ...kalemler[idx] };
+      if (field === "miktar" || field === "birimFiyati") {
+        k[field] = parseN(raw);
+        k.tutar =
+          (field === "miktar" ? parseN(raw) : k.miktar) *
+          (field === "birimFiyati" ? parseN(raw) : k.birimFiyati);
+        k.tutar = Math.round(k.tutar * 100) / 100;
+      } else {
+        k[field] = raw;
+      }
+      kalemler[idx] = k;
+      return { ...prev, kalemler };
+    });
+  }
+
+  function addKalem(tip: "malzeme" | "iscilik" | "ekipman") {
+    const yeni: AnalizKalemi = {
+      id: genKId(),
+      tip,
+      pozNo: "",
+      tanim: "",
+      olcuBirimi: "Sa",
+      miktar: 0,
+      birimFiyati: 0,
+      tutar: 0,
+    };
+    setEditDraft((prev) =>
+      prev ? { ...prev, kalemler: [...prev.kalemler, yeni] } : prev
+    );
+  }
+
+  function removeKalem(idx: number) {
+    setEditDraft((prev) => {
+      if (!prev) return prev;
+      return { ...prev, kalemler: prev.kalemler.filter((_, i) => i !== idx) };
+    });
+  }
+
+  function handleDelete() {
+    if (!selected) return;
+    if (selected.kaynakTip === "sistem") {
       Alert.alert(
-        "İçe aktarma başarısız",
-        result.errors.length > 0
-          ? result.errors.slice(0, 5).join("\n")
-          : "Hiç geçerli satır bulunamadı."
+        "Silinemez",
+        "Sistem kayıtları silinemez. Kopyalayarak özelleştirebilirsiniz."
       );
       return;
     }
-    let added = 0;
-    let updated = 0;
-    const existing = new Set(imalatPozlari.map((p) => p.code.toLowerCase()));
-    for (const r of result.rows) {
-      if (existing.has(r.code.toLowerCase())) {
-        updateImalatPoz(r.code, r);
-        updated++;
-      } else {
-        addImalatPoz(r);
-        added++;
-      }
-    }
-    setImportVisible(false);
-    setImportText("");
-    const lines = [
-      `${added} yeni poz eklendi.`,
-      `${updated} mevcut poz güncellendi.`,
-    ];
-    if (result.duplicates.length > 0)
-      lines.push(`${result.duplicates.length} satır içeride tekrar olduğu için atlandı.`);
-    if (result.errors.length > 0)
-      lines.push(`${result.errors.length} satır hatalı (kod/ad/birim eksik).`);
-    Alert.alert("İçe aktarıldı", lines.join("\n"));
-  }
-
-  async function pickCsvFile() {
-    try {
-      setBusy(true);
-      const res = await DocumentPicker.getDocumentAsync({
-        type: ["text/csv", "text/comma-separated-values", "application/vnd.ms-excel", "text/plain", "*/*"],
-        copyToCacheDirectory: true,
-      });
-      if (res.canceled || !res.assets?.[0]) return;
-      const asset = res.assets[0];
-      let text = "";
-      if (Platform.OS === "web" && (asset as any).file) {
-        text = await ((asset as any).file as File).text();
-      } else {
-        text = await (FileSystem as any).readAsStringAsync(asset.uri, { encoding: "utf8" });
-      }
-      applyImport(text);
-    } catch (e: any) {
-      Alert.alert("Hata", String(e?.message || e));
-    } finally {
-      setBusy(false);
-    }
-  }
-
-  async function exportCsv() {
-    try {
-      setBusy(true);
-      const csv = buildImalatPozCsv(imalatPozlari);
-      if (Platform.OS === "web") {
-        const blob = new Blob([csv], { type: "text/csv;charset=utf-8" });
-        const url = URL.createObjectURL(blob);
-        const a = document.createElement("a");
-        a.href = url;
-        a.download = "imalat-pozlari.csv";
-        document.body.appendChild(a);
-        a.click();
-        a.remove();
-        URL.revokeObjectURL(url);
-      } else {
-        const dir = (FileSystem as any).cacheDirectory ?? (FileSystem as any).documentDirectory;
-        const fileUri = `${dir}imalat-pozlari.csv`;
-        await (FileSystem as any).writeAsStringAsync(fileUri, csv, { encoding: "utf8" });
-        if (await Sharing.isAvailableAsync()) {
-          await Sharing.shareAsync(fileUri, { mimeType: "text/csv", dialogTitle: "İmalat Pozlarını Paylaş" });
-        } else {
-          Alert.alert("Kaydedildi", fileUri);
-        }
-      }
-    } catch (e: any) {
-      Alert.alert("Hata", String(e?.message || e));
-    } finally {
-      setBusy(false);
-    }
-  }
-
-  function openImportSheet() {
-    setImportText("");
-    setImportVisible(true);
-  }
-
-  function remove() {
-    if (!editCode) return;
-    Alert.alert("Sil", `${editCode} pozu silinsin mi?`, [
-      { text: "Vazgeç", style: "cancel" },
-      {
-        text: "Sil",
-        style: "destructive",
-        onPress: () => {
-          deleteImalatPoz(editCode);
-          setVisible(false);
+    Alert.alert(
+      "Analizi Sil",
+      `"${selected.analizAdi}" silinsin mi?`,
+      [
+        { text: "İptal", style: "cancel" },
+        {
+          text: "Sil",
+          style: "destructive",
+          onPress: () => {
+            deletePozAnaliz(selected.id);
+            setSelectedId(null);
+          },
         },
-      },
-    ]);
+      ]
+    );
   }
 
-  if (!isAdmin) {
+  function handleClone() {
+    if (!selected) return;
+    setCloneAd("Kopya — " + selected.analizAdi);
+    setCloneVisible(true);
+  }
+
+  function doClone() {
+    if (!selectedId || !cloneAd.trim()) return;
+    const kopya = clonePozAnaliz(selectedId, cloneAd.trim());
+    setCloneVisible(false);
+    setSelectedId(kopya.id);
+  }
+
+  async function handleExport() {
+    const analiz = isEditing && editDraft ? editDraft : selected;
+    if (!analiz) return;
+    const totals = hesaplaAnalizToplam(analiz);
+
+    let txt = `İMALAT POZ ANALİZİ\n${"=".repeat(60)}\n`;
+    txt += `Poz No      : ${analiz.pozNo}\n`;
+    txt += `Analiz Adı  : ${analiz.analizAdi}\n`;
+    txt += `Ölçü Birimi : ${analiz.olcuBirimi}\n\n`;
+
+    const tipSira: ("malzeme" | "iscilik" | "ekipman")[] = ["malzeme", "iscilik", "ekipman"];
+    const tipAd: Record<string, string> = { malzeme: "Malzeme", iscilik: "İşçilik", ekipman: "Ekipman" };
+
+    for (const tip of tipSira) {
+      const rows = analiz.kalemler.filter((k) => k.tip === tip);
+      if (!rows.length) continue;
+      txt += `${tipAd[tip]}\n${"-".repeat(60)}\n`;
+      rows.forEach((k) => {
+        txt += `  ${k.pozNo.padEnd(14)} ${k.tanim.substring(0, 30).padEnd(32)} ${k.olcuBirimi.padEnd(6)} ${trFmt(k.miktar).padStart(8)} ${trFmt(k.birimFiyati).padStart(10)} ${trFmt(k.tutar).padStart(12)}\n`;
+      });
+    }
+    txt += `${"=".repeat(60)}\n`;
+    txt += `Malzeme + İşçilik Tutarı         : ${trFmt(totals.malzemeIscilikToplami)} TL\n`;
+    txt += `%${analiz.yukleniciKarOrani} Yüklenici Karı              : ${trFmt(totals.yukleniciKarTutari)} TL\n`;
+    txt += `1 ${analiz.olcuBirimi} Fiyatı                  : ${trFmt(totals.birimFiyati)} TL\n`;
+    if (analiz.pozTarifi) txt += `\nPoz Tarifi:\n${analiz.pozTarifi}\n`;
+    if (analiz.olcusu) txt += `\nÖlçüsü:\n${analiz.olcusu}\n`;
+
+    try {
+      const uri = `${FileSystem.cacheDirectory}analiz_${analiz.pozNo.replace(/[./]/g, "_")}.txt`;
+      await FileSystem.writeAsStringAsync(uri, txt, { encoding: FileSystem.EncodingType.UTF8 });
+      if (await Sharing.isAvailableAsync()) {
+        await Sharing.shareAsync(uri, { mimeType: "text/plain", dialogTitle: "Analizi Dışa Aktar" });
+      } else {
+        Alert.alert("Dışa Aktarma", txt.substring(0, 600));
+      }
+    } catch {
+      Alert.alert("Dışa Aktarma", txt.substring(0, 600));
+    }
+  }
+
+  const displayAnaliz = isEditing && editDraft ? editDraft : selected;
+
+  // ── Detay görünümü ──
+  if (selectedId && displayAnaliz) {
+    const totals = hesaplaAnalizToplam(displayAnaliz);
+
     return (
-      <View style={[styles.root, { backgroundColor: colors.background, alignItems: "center", justifyContent: "center", padding: 24 }]}>
-        <Text style={{ color: colors.mutedForeground, textAlign: "center" }}>
-          Bu sayfa sadece yöneticiler içindir.
-        </Text>
-        <TouchableOpacity onPress={() => router.back()} style={{ marginTop: 16 }}>
-          <Text style={{ color: colors.primary, fontFamily: "Inter_600SemiBold" }}>Geri</Text>
-        </TouchableOpacity>
+      <View style={{ flex: 1, backgroundColor: colors.background }}>
+        {/* Header */}
+        <View
+          style={[
+            st.header,
+            { backgroundColor: colors.secondary, paddingTop: topPad + 12 },
+          ]}
+        >
+          <TouchableOpacity onPress={goBack} style={st.backBtn}>
+            <Feather name="arrow-left" size={22} color={colors.secondaryForeground} />
+          </TouchableOpacity>
+          <Text
+            style={[st.headerTitle, { color: colors.secondaryForeground }]}
+            numberOfLines={1}
+          >
+            Analiz Detayı
+          </Text>
+          {isAdmin && isEditing ? (
+            <View style={{ flexDirection: "row", gap: 8 }}>
+              <TouchableOpacity
+                onPress={cancelEdit}
+                style={[st.hBtn, { backgroundColor: colors.secondaryForeground + "22" }]}
+              >
+                <Text style={{ color: colors.secondaryForeground, fontSize: 13 }}>İptal</Text>
+              </TouchableOpacity>
+              <TouchableOpacity
+                onPress={saveEdit}
+                style={[st.hBtn, { backgroundColor: colors.primary }]}
+              >
+                <Text style={{ color: colors.primaryForeground, fontSize: 13, fontWeight: "700" }}>
+                  Kaydet
+                </Text>
+              </TouchableOpacity>
+            </View>
+          ) : (
+            <View style={{ width: 40 }} />
+          )}
+        </View>
+
+        <ScrollView
+          contentContainerStyle={{ paddingBottom: insets.bottom + 100 }}
+          keyboardShouldPersistTaps="handled"
+        >
+          {/* Üst bilgi kartı */}
+          <View
+            style={[
+              st.infoCard,
+              { backgroundColor: colors.card, borderColor: colors.border },
+            ]}
+          >
+            <View style={st.infoRow}>
+              <Text style={[st.infoLabel, { color: colors.mutedForeground }]}>Poz No</Text>
+              {isEditing ? (
+                <TextInput
+                  style={[st.infoInput, { color: colors.foreground, borderColor: colors.border }]}
+                  value={displayAnaliz.pozNo}
+                  onChangeText={(v) => updateDraftField("pozNo", v)}
+                />
+              ) : (
+                <Text style={[st.infoValue, { color: colors.primary }]}>
+                  {displayAnaliz.pozNo}
+                </Text>
+              )}
+            </View>
+            <View style={st.infoRow}>
+              <Text style={[st.infoLabel, { color: colors.mutedForeground }]}>Analiz Adı</Text>
+              {isEditing ? (
+                <TextInput
+                  style={[
+                    st.infoInput,
+                    { color: colors.foreground, borderColor: colors.border, flex: 1 },
+                  ]}
+                  value={displayAnaliz.analizAdi}
+                  onChangeText={(v) => updateDraftField("analizAdi", v)}
+                  multiline
+                />
+              ) : (
+                <Text style={[st.infoValue, { color: colors.foreground, flex: 1 }]}>
+                  {displayAnaliz.analizAdi}
+                </Text>
+              )}
+            </View>
+            <View style={st.infoRow}>
+              <Text style={[st.infoLabel, { color: colors.mutedForeground }]}>Ölçü Birimi</Text>
+              {isEditing ? (
+                <TextInput
+                  style={[st.infoInput, { color: colors.foreground, borderColor: colors.border, width: 80 }]}
+                  value={displayAnaliz.olcuBirimi}
+                  onChangeText={(v) => updateDraftField("olcuBirimi", v)}
+                />
+              ) : (
+                <Text style={[st.infoValue, { color: colors.foreground }]}>
+                  {displayAnaliz.olcuBirimi}
+                </Text>
+              )}
+            </View>
+            <View style={[st.infoRow, { borderBottomWidth: 0 }]}>
+              <Text style={[st.infoLabel, { color: colors.mutedForeground }]}>Son Güncelleme</Text>
+              <Text style={[st.infoValue, { color: colors.mutedForeground }]}>
+                {tarihFmt(displayAnaliz.guncellemeTarihi)}
+              </Text>
+            </View>
+          </View>
+
+          {/* Analiz Tablosu */}
+          <View style={{ marginHorizontal: 12, marginTop: 12 }}>
+            <ScrollView horizontal showsHorizontalScrollIndicator>
+              <View>
+                {/* Tablo başlığı */}
+                <View
+                  style={[
+                    st.tRow,
+                    { backgroundColor: colors.card, borderColor: colors.border },
+                  ]}
+                >
+                  {["Poz No", "Tanımı", "Ölçü\nBirimi", "Miktarı", "Birim Fiyatı\n(TL)", "Tutarı\n(TL)"].map(
+                    (h, i) => (
+                      <Text
+                        key={i}
+                        style={[
+                          st.th,
+                          { color: colors.foreground, borderColor: colors.border },
+                          colWidth(i),
+                        ]}
+                      >
+                        {h}
+                      </Text>
+                    )
+                  )}
+                  {isEditing && <View style={{ width: 32 }} />}
+                </View>
+
+                {/* Malzeme / İşçilik / Ekipman bölümleri */}
+                {(["malzeme", "iscilik", "ekipman"] as const).map((tip) => {
+                  const tipAd =
+                    tip === "malzeme" ? "Malzeme" : tip === "iscilik" ? "İşçilik" : "Ekipman";
+                  const rows = displayAnaliz.kalemler
+                    .map((k, i) => ({ k, i }))
+                    .filter(({ k }) => k.tip === tip);
+
+                  if (!rows.length && !isEditing) return null;
+
+                  return (
+                    <View key={tip}>
+                      {/* Grup başlığı */}
+                      <View
+                        style={[
+                          st.groupRow,
+                          { backgroundColor: colors.card + "CC", borderColor: colors.border },
+                        ]}
+                      >
+                        <Text
+                          style={[
+                            st.groupText,
+                            { color: colors.foreground, flex: 1 },
+                          ]}
+                        >
+                          {tipAd}
+                        </Text>
+                        {isEditing && (
+                          <TouchableOpacity onPress={() => addKalem(tip)} style={st.addRowBtn}>
+                            <Feather name="plus" size={14} color={colors.primary} />
+                            <Text style={{ color: colors.primary, fontSize: 12, marginLeft: 2 }}>
+                              Satır Ekle
+                            </Text>
+                          </TouchableOpacity>
+                        )}
+                      </View>
+
+                      {/* Kalem satırları */}
+                      {rows.map(({ k, i }) => (
+                        <View
+                          key={k.id}
+                          style={[
+                            st.tRow,
+                            { borderColor: colors.border, backgroundColor: colors.background },
+                          ]}
+                        >
+                          <KalemCell
+                            val={k.pozNo}
+                            width={COL[0]}
+                            editable={isEditing}
+                            onEdit={(v) => updateKalemField(i, "pozNo", v)}
+                            colors={colors}
+                            mono
+                          />
+                          <KalemCell
+                            val={k.tanim}
+                            width={COL[1]}
+                            editable={isEditing}
+                            onEdit={(v) => updateKalemField(i, "tanim", v)}
+                            colors={colors}
+                            multiline
+                          />
+                          <KalemCell
+                            val={k.olcuBirimi}
+                            width={COL[2]}
+                            editable={isEditing}
+                            onEdit={(v) => updateKalemField(i, "olcuBirimi", v)}
+                            colors={colors}
+                            center
+                          />
+                          <KalemCell
+                            val={isEditing ? String(k.miktar) : trFmt(k.miktar)}
+                            width={COL[3]}
+                            editable={isEditing}
+                            onEdit={(v) => updateKalemField(i, "miktar", v)}
+                            colors={colors}
+                            right
+                            numeric
+                          />
+                          <KalemCell
+                            val={isEditing ? String(k.birimFiyati) : trFmt(k.birimFiyati)}
+                            width={COL[4]}
+                            editable={isEditing}
+                            onEdit={(v) => updateKalemField(i, "birimFiyati", v)}
+                            colors={colors}
+                            right
+                            numeric
+                          />
+                          <View
+                            style={[
+                              st.td,
+                              { width: COL[5], borderColor: colors.border, justifyContent: "flex-end" },
+                            ]}
+                          >
+                            <Text
+                              style={[
+                                st.tdText,
+                                { color: colors.foreground, textAlign: "right" },
+                              ]}
+                            >
+                              {trFmt(k.tutar)}
+                            </Text>
+                          </View>
+                          {isEditing && (
+                            <TouchableOpacity
+                              onPress={() => removeKalem(i)}
+                              style={{ width: 32, alignItems: "center", justifyContent: "center" }}
+                            >
+                              <Feather name="trash-2" size={14} color="#e74c3c" />
+                            </TouchableOpacity>
+                          )}
+                        </View>
+                      ))}
+                    </View>
+                  );
+                })}
+
+                {/* Özet satırları */}
+                <SummaryRow
+                  label="Malzeme + İşçilik Tutarı"
+                  value={trFmt(totals.malzemeIscilikToplami) + " TL"}
+                  colors={colors}
+                  totalColWidth={COL[0] + COL[1] + COL[2] + COL[3] + COL[4]}
+                  valWidth={COL[5]}
+                  isEditing={isEditing}
+                />
+                <SummaryRow
+                  label={`%${displayAnaliz.yukleniciKarOrani} Yüklenici Karı ve Genel Giderler`}
+                  value={trFmt(totals.yukleniciKarTutari) + " TL"}
+                  colors={colors}
+                  totalColWidth={COL[0] + COL[1] + COL[2] + COL[3] + COL[4]}
+                  valWidth={COL[5]}
+                  isEditing={isEditing}
+                  editNode={
+                    isEditing ? (
+                      <View style={{ flexDirection: "row", alignItems: "center" }}>
+                        <Text style={{ color: colors.mutedForeground, fontSize: 12 }}>Kar %</Text>
+                        <TextInput
+                          style={[
+                            st.karInput,
+                            { color: colors.foreground, borderColor: colors.border },
+                          ]}
+                          value={String(displayAnaliz.yukleniciKarOrani)}
+                          onChangeText={(v) => updateDraftField("yukleniciKarOrani", parseN(v))}
+                          keyboardType="numeric"
+                        />
+                        <Text style={{ color: colors.mutedForeground, fontSize: 12 }}>
+                          = {trFmt(totals.yukleniciKarTutari)} TL
+                        </Text>
+                      </View>
+                    ) : undefined
+                  }
+                />
+                <SummaryRow
+                  label={`1 ${displayAnaliz.olcuBirimi} Fiyatı`}
+                  value={trFmt(totals.birimFiyati) + " TL"}
+                  colors={colors}
+                  totalColWidth={COL[0] + COL[1] + COL[2] + COL[3] + COL[4]}
+                  valWidth={COL[5]}
+                  bold
+                  isEditing={isEditing}
+                />
+              </View>
+            </ScrollView>
+          </View>
+
+          {/* Poz Tarifi, Yapım Şartları, Ölçüsü */}
+          <MetinBolumu
+            baslik="Poz Tarifi"
+            deger={displayAnaliz.pozTarifi}
+            editable={isEditing}
+            onChange={(v) => updateDraftField("pozTarifi", v)}
+            colors={colors}
+          />
+          <MetinBolumu
+            baslik="Yapım Şartları"
+            deger={displayAnaliz.yapimSartlari}
+            editable={isEditing}
+            onChange={(v) => updateDraftField("yapimSartlari", v)}
+            colors={colors}
+          />
+          <MetinBolumu
+            baslik="Ölçüsü"
+            deger={displayAnaliz.olcusu}
+            editable={isEditing}
+            onChange={(v) => updateDraftField("olcusu", v)}
+            colors={colors}
+          />
+        </ScrollView>
+
+        {/* Alt aksiyon şeridi */}
+        <View
+          style={[
+            st.bottomBar,
+            {
+              backgroundColor: colors.card,
+              borderColor: colors.border,
+              paddingBottom: insets.bottom + 8,
+            },
+          ]}
+        >
+          {isAdmin && !isEditing && (
+            <ActionBtn icon="edit-2" label="Düzenle" onPress={startEdit} colors={colors} />
+          )}
+          <ActionBtn icon="copy" label="Kopyala" onPress={handleClone} colors={colors} />
+          <ActionBtn icon="share" label="Dışa Aktar" onPress={handleExport} colors={colors} />
+          {isAdmin && !isEditing && (
+            <ActionBtn
+              icon="trash-2"
+              label="Sil"
+              onPress={handleDelete}
+              colors={colors}
+              danger
+              disabled={displayAnaliz.kaynakTip === "sistem"}
+            />
+          )}
+        </View>
+
+        {/* Kopyalama modalı */}
+        <CloneModal
+          visible={cloneVisible}
+          ad={cloneAd}
+          onChangeAd={setCloneAd}
+          onConfirm={doClone}
+          onCancel={() => setCloneVisible(false)}
+          colors={colors}
+        />
       </View>
     );
   }
 
+  // ── Liste görünümü ──
   return (
-    <View style={[styles.root, { backgroundColor: colors.background }]}>
-      <View style={[styles.header, { backgroundColor: colors.secondary, paddingTop: topPad + 12 }]}>
+    <View style={{ flex: 1, backgroundColor: colors.background }}>
+      {/* Header */}
+      <View
+        style={[st.header, { backgroundColor: colors.secondary, paddingTop: topPad + 12 }]}
+      >
         <TouchableOpacity
-          onPress={() => (router.canGoBack() ? router.back() : router.replace("/" as any))}
-          style={styles.backBtn}
+          onPress={() => {
+            if (router.canGoBack()) router.back();
+            else router.replace("/" as any);
+          }}
+          style={st.backBtn}
         >
           <Feather name="arrow-left" size={22} color={colors.secondaryForeground} />
         </TouchableOpacity>
-        <Text style={[styles.headerTitle, { color: colors.secondaryForeground }]}>
-          İmalat Poz Tarifleri
+        <Text style={[st.headerTitle, { color: colors.secondaryForeground }]}>
+          İmalat Poz Analizleri
         </Text>
-        <TouchableOpacity onPress={openImportSheet} style={styles.backBtn} disabled={busy}>
-          <Feather name="upload" size={20} color={colors.secondaryForeground} />
-        </TouchableOpacity>
-        <TouchableOpacity onPress={exportCsv} style={styles.backBtn} disabled={busy}>
-          <Feather name="download" size={20} color={colors.secondaryForeground} />
-        </TouchableOpacity>
-        <TouchableOpacity onPress={() => open()} style={styles.backBtn}>
-          <Feather name="plus" size={22} color={colors.secondaryForeground} />
-        </TouchableOpacity>
+        <View style={{ width: 40 }} />
       </View>
 
-      <View style={[styles.searchBar, { backgroundColor: colors.card, borderColor: colors.border }]}>
+      {/* Arama */}
+      <View
+        style={[
+          st.searchWrap,
+          { backgroundColor: colors.card, borderColor: colors.border },
+        ]}
+      >
         <Feather name="search" size={16} color={colors.mutedForeground} />
         <TextInput
+          style={[st.searchInput, { color: colors.foreground }]}
+          placeholder="Poz No veya analiz adı ara..."
+          placeholderTextColor={colors.mutedForeground}
           value={search}
           onChangeText={setSearch}
-          placeholder="Poz kodu, adı veya açıklama ara"
-          placeholderTextColor={colors.mutedForeground}
-          style={[styles.searchInput, { color: colors.foreground }]}
         />
+        {search.length > 0 && (
+          <TouchableOpacity onPress={() => setSearch("")}>
+            <Feather name="x" size={16} color={colors.mutedForeground} />
+          </TouchableOpacity>
+        )}
       </View>
 
+      {/* Kategori filtre şeridi */}
       <ScrollView
         horizontal
         showsHorizontalScrollIndicator={false}
-        contentContainerStyle={styles.catFilters}
-        style={styles.catFiltersWrap}
+        style={st.chipRow}
+        contentContainerStyle={{ paddingHorizontal: 12, gap: 8 }}
       >
-        <TouchableOpacity
-          onPress={() => setCatFilter(null)}
-          style={[styles.catChip, { backgroundColor: catFilter === null ? colors.primary : colors.muted }]}
-        >
-          <Text style={[styles.catChipText, { color: catFilter === null ? "#fff" : colors.foreground }]}>
-            Tümü ({imalatPozlari.length})
-          </Text>
-        </TouchableOpacity>
-        {categories.map((c) => {
-          const count = imalatPozlari.filter((p) => p.category === c).length;
-          if (count === 0) return null;
-          const active = catFilter === c;
+        {categories.map((cat) => {
+          const active = cat === "Tümü" ? catFilter === null : catFilter === cat;
           return (
             <TouchableOpacity
-              key={c}
-              onPress={() => setCatFilter(active ? null : c)}
-              style={[styles.catChip, { backgroundColor: active ? colors.primary : colors.muted }]}
+              key={cat}
+              style={[
+                st.chip,
+                {
+                  backgroundColor: active ? colors.primary : colors.card,
+                  borderColor: active ? colors.primary : colors.border,
+                },
+              ]}
+              onPress={() => setCatFilter(cat === "Tümü" ? null : cat)}
             >
               <Text
-                style={[styles.catChipText, { color: active ? "#fff" : colors.foreground }]}
-                numberOfLines={1}
+                style={[
+                  st.chipText,
+                  { color: active ? colors.primaryForeground : colors.foreground },
+                ]}
               >
-                {c} ({count})
+                {cat}
               </Text>
             </TouchableOpacity>
           );
         })}
       </ScrollView>
 
+      {/* Tablo başlığı */}
+      <View
+        style={[
+          st.listHeader,
+          { backgroundColor: colors.card, borderColor: colors.border },
+        ]}
+      >
+        <Text style={[st.listTh, { width: 36, color: colors.mutedForeground }]}>#</Text>
+        <Text style={[st.listTh, { width: 104, color: colors.mutedForeground }]}>Poz No</Text>
+        <Text style={[st.listTh, { flex: 1, color: colors.mutedForeground }]}>Analizin Adı</Text>
+        <Text style={[st.listTh, { width: 44, textAlign: "right", color: colors.mutedForeground }]}>
+          Birim
+        </Text>
+      </View>
+
+      {/* Liste */}
       <FlatList
-        data={list}
-        keyExtractor={(p) => p.code}
-        contentContainerStyle={{ padding: 16, paddingBottom: insets.bottom + 24, gap: 8 }}
-        ListEmptyComponent={
-          <Text style={{ color: colors.mutedForeground, textAlign: "center", marginTop: 24 }}>
-            Poz bulunamadı.
-          </Text>
-        }
-        renderItem={({ item }) => (
+        data={filtered}
+        keyExtractor={(item) => item.id}
+        initialNumToRender={20}
+        windowSize={10}
+        renderItem={({ item, index }) => (
           <TouchableOpacity
-            onPress={() => open(item)}
-            activeOpacity={0.85}
-            style={[styles.row, { backgroundColor: colors.card, borderColor: colors.border }]}
+            style={[
+              st.listRow,
+              {
+                borderColor: colors.border,
+                backgroundColor: index % 2 === 0 ? colors.background : colors.card + "66",
+              },
+            ]}
+            onPress={() => openDetail(item.id)}
+            activeOpacity={0.75}
           >
-            <View style={[styles.codeBox, { backgroundColor: colors.primary + "15" }]}>
-              <Text style={[styles.codeText, { color: colors.primary }]}>{item.code}</Text>
-            </View>
-            <View style={{ flex: 1 }}>
-              <Text style={[styles.rowTitle, { color: colors.foreground }]} numberOfLines={2}>
-                {item.name}
-              </Text>
-              <View style={styles.metaRow}>
-                <Text style={[styles.meta, { color: colors.mutedForeground }]}>{item.category}</Text>
-                <View style={[styles.unitBadge, { backgroundColor: colors.muted }]}>
-                  <Text style={[styles.unitText, { color: colors.foreground }]}>{item.unit}</Text>
-                </View>
-              </View>
-              {item.description ? (
-                <Text style={[styles.desc, { color: colors.mutedForeground }]}>
-                  {item.description}
-                </Text>
-              ) : null}
-            </View>
-            <Feather name="chevron-right" size={18} color={colors.mutedForeground} />
+            <Text style={[st.tdNo, { color: colors.mutedForeground }]}>{index + 1}</Text>
+            <Text style={[st.tdPoz, { color: colors.primary }]}>{item.pozNo}</Text>
+            <Text style={[st.tdAd, { color: colors.foreground }]} numberOfLines={2}>
+              {item.analizAdi}
+            </Text>
+            <Text style={[st.tdBirim, { color: colors.mutedForeground }]}>{item.olcuBirimi}</Text>
           </TouchableOpacity>
         )}
+        ListEmptyComponent={
+          <View style={{ alignItems: "center", paddingTop: 60 }}>
+            <Feather name="inbox" size={40} color={colors.mutedForeground} />
+            <Text style={{ color: colors.mutedForeground, marginTop: 12, fontSize: 14 }}>
+              Analiz bulunamadı
+            </Text>
+          </View>
+        }
       />
 
-      <BottomSheet
-        visible={visible}
-        onClose={() => setVisible(false)}
-        title={editCode ? "Pozu Düzenle" : "Yeni Poz"}
-      >
-        <FormInput
-          label="Poz Kodu"
-          value={form.code}
-          onChangeText={(v) => setForm({ ...form, code: v })}
-          placeholder="Örn: 15.001/3A"
-        />
-        <Text style={[styles.label, { color: colors.foreground }]}>Kategori</Text>
-        <ScrollView
-          horizontal
-          showsHorizontalScrollIndicator={false}
-          contentContainerStyle={{ gap: 6, paddingVertical: 4, paddingBottom: 10 }}
-          style={{ flexGrow: 0, flexShrink: 0 }}
+      {/* Admin: yeni analiz ekle FAB */}
+      {isAdmin && (
+        <TouchableOpacity
+          style={[
+            st.fab,
+            { backgroundColor: colors.primary, bottom: insets.bottom + 16 },
+          ]}
+          onPress={() => setNewVisible(true)}
         >
-          {categories.map((c) => {
-            const active = form.category === c;
-            return (
-              <TouchableOpacity
-                key={c}
-                onPress={() => setForm({ ...form, category: c })}
-                style={[styles.catChip, { backgroundColor: active ? colors.primary : colors.muted }]}
-              >
-                <Text
-                  style={[styles.catChipText, { color: active ? "#fff" : colors.foreground }]}
-                  numberOfLines={1}
-                >
-                  {c}
-                </Text>
-              </TouchableOpacity>
-            );
-          })}
-        </ScrollView>
-        <FormInput
-          label="Poz Adı"
-          value={form.name}
-          onChangeText={(v) => setForm({ ...form, name: v })}
-          placeholder="Örn: C25/30 hazır beton dökümü"
-        />
-        <FormInput
-          label="Birim"
-          value={form.unit}
-          onChangeText={(v) => setForm({ ...form, unit: v })}
-          placeholder="m², m³, ton, ad, m..."
-        />
-        <FormInput
-          label="Tarif / Açıklama"
-          value={form.description}
-          onChangeText={(v) => setForm({ ...form, description: v })}
-          placeholder="İsteğe bağlı uzun tarif (Enter ile satır eklenebilir)"
-          multiline
-          numberOfLines={6}
-          textAlignVertical="top"
-          style={{ minHeight: 120, paddingTop: 12 }}
-        />
-        <PrimaryButton label="Kaydet" onPress={save} style={{ marginTop: 8 }} />
-        {editCode ? (
-          <PrimaryButton label="Sil" variant="danger" onPress={remove} style={{ marginTop: 10 }} />
-        ) : null}
-      </BottomSheet>
+          <Feather name="plus" size={24} color={colors.primaryForeground} />
+        </TouchableOpacity>
+      )}
 
-      <BottomSheet
-        visible={importVisible}
-        onClose={() => setImportVisible(false)}
-        title="CSV / Excel İçe Aktar"
-      >
-        <Text style={[styles.helpText, { color: colors.mutedForeground }]}>
-          Format: kod;kategori;ad;birim;tarif{"\n"}
-          İlk satır başlık olabilir. Ayraç olarak ; , veya TAB desteklenir.{"\n"}
-          Tarif içinde \n yazarak satır kırılması ekleyebilirsiniz.{"\n"}
-          Mevcut kodlar güncellenir, yeni kodlar eklenir.
-        </Text>
-        <PrimaryButton
-          label={busy ? "Yükleniyor..." : "Dosya Seç (CSV)"}
-          onPress={pickCsvFile}
-          style={{ marginTop: 4 }}
-        />
-        <Text style={[styles.label, { color: colors.foreground, marginTop: 16 }]}>
-          veya CSV içeriğini yapıştırın
-        </Text>
-        <FormInput
-          label=""
-          value={importText}
-          onChangeText={setImportText}
-          placeholder={"kod;kategori;ad;birim;tarif\nY.99.001;Diğer;Örnek poz;m²;Açıklama"}
-          multiline
-          numberOfLines={8}
-          textAlignVertical="top"
-          style={{ minHeight: 160, paddingTop: 12, fontFamily: "Inter_400Regular" }}
-        />
-        <PrimaryButton
-          label="Yapıştırılanı İçe Aktar"
-          onPress={() => applyImport(importText)}
-          style={{ marginTop: 8 }}
-        />
-      </BottomSheet>
+      {/* Yeni analiz modalı */}
+      <NewAnalizModal
+        visible={newVisible}
+        form={newForm}
+        onChange={(f) => setNewForm((prev) => ({ ...prev, ...f }))}
+        onConfirm={() => {
+          if (!newForm.analizAdi.trim()) {
+            Alert.alert("Hata", "Analiz adı zorunlu");
+            return;
+          }
+          const id = addPozAnaliz({
+            pozNo: newForm.pozNo.trim() || "ÖZEL",
+            analizAdi: newForm.analizAdi.trim(),
+            olcuBirimi: newForm.olcuBirimi.trim() || "m²",
+            kategori: newForm.kategori,
+            kalemler: [],
+            pozTarifi: "",
+            yapimSartlari: "",
+            olcusu: "",
+            malzemeIscilikToplami: 0,
+            yukleniciKarOrani: 25,
+            yukleniciKarTutari: 0,
+            birimFiyati: 0,
+            kaynakTip: "kullanici",
+          });
+          setNewVisible(false);
+          setNewForm({
+            pozNo: "",
+            analizAdi: "",
+            olcuBirimi: "m²",
+            kategori: IMALAT_POZ_KATEGORILERI[0] as string,
+          });
+          openDetail(id);
+        }}
+        onCancel={() => setNewVisible(false)}
+        colors={colors}
+      />
     </View>
   );
 }
 
-const styles = StyleSheet.create({
-  root: { flex: 1 },
+// ─── Sütun Genişlikleri ────────────────────────────────────────
+
+const COL = [100, 200, 68, 72, 96, 96] as const;
+
+function colWidth(i: number): { width: number } {
+  return { width: COL[i] };
+}
+
+// ─── KalemCell ────────────────────────────────────────────────
+
+interface KalemCellProps {
+  val: string;
+  width: number;
+  editable: boolean;
+  onEdit: (v: string) => void;
+  colors: Colors;
+  mono?: boolean;
+  right?: boolean;
+  center?: boolean;
+  multiline?: boolean;
+  numeric?: boolean;
+}
+
+function KalemCell({ val, width, editable, onEdit, colors, mono, right, center, multiline, numeric }: KalemCellProps) {
+  const align = right ? "right" : center ? "center" : "left";
+  return (
+    <View style={[st.td, { width, borderColor: colors.border }]}>
+      {editable ? (
+        <TextInput
+          style={[
+            st.cellInput,
+            { color: colors.foreground, textAlign: align, fontFamily: mono ? "monospace" : undefined },
+          ]}
+          value={val}
+          onChangeText={onEdit}
+          multiline={multiline}
+          keyboardType={numeric ? "numeric" : "default"}
+        />
+      ) : (
+        <Text
+          style={[
+            st.tdText,
+            {
+              color: colors.foreground,
+              textAlign: align,
+              fontFamily: mono ? "monospace" : undefined,
+            },
+          ]}
+          numberOfLines={multiline ? 3 : 1}
+        >
+          {val}
+        </Text>
+      )}
+    </View>
+  );
+}
+
+// ─── SummaryRow ───────────────────────────────────────────────
+
+function SummaryRow({
+  label,
+  value,
+  colors,
+  totalColWidth,
+  valWidth,
+  bold,
+  isEditing,
+  editNode,
+}: {
+  label: string;
+  value: string;
+  colors: Colors;
+  totalColWidth: number;
+  valWidth: number;
+  bold?: boolean;
+  isEditing?: boolean;
+  editNode?: React.ReactNode;
+}) {
+  return (
+    <View
+      style={[
+        st.tRow,
+        { borderColor: colors.border, backgroundColor: colors.card + "99" },
+      ]}
+    >
+      <View style={{ width: totalColWidth, paddingHorizontal: 6, paddingVertical: 4 }}>
+        {isEditing && editNode ? (
+          editNode
+        ) : (
+          <Text
+            style={[
+              st.sumLabel,
+              { color: colors.foreground, fontWeight: bold ? "700" : "400" },
+            ]}
+          >
+            {label}
+          </Text>
+        )}
+      </View>
+      <View style={[st.td, { width: valWidth, borderColor: colors.border, justifyContent: "flex-end" }]}>
+        <Text
+          style={[
+            st.tdText,
+            { color: colors.foreground, textAlign: "right", fontWeight: bold ? "700" : "600" },
+          ]}
+        >
+          {value}
+        </Text>
+      </View>
+    </View>
+  );
+}
+
+// ─── MetinBolumu ──────────────────────────────────────────────
+
+function MetinBolumu({
+  baslik,
+  deger,
+  editable,
+  onChange,
+  colors,
+}: {
+  baslik: string;
+  deger: string;
+  editable: boolean;
+  onChange: (v: string) => void;
+  colors: Colors;
+}) {
+  if (!editable && !deger) return null;
+  return (
+    <View
+      style={[
+        st.metinCard,
+        { backgroundColor: colors.card, borderColor: colors.border },
+      ]}
+    >
+      <Text style={[st.metinBaslik, { color: colors.mutedForeground }]}>{baslik}</Text>
+      {editable ? (
+        <TextInput
+          style={[st.metinInput, { color: colors.foreground, borderColor: colors.border }]}
+          value={deger}
+          onChangeText={onChange}
+          multiline
+          placeholder={`${baslik} girin...`}
+          placeholderTextColor={colors.mutedForeground}
+        />
+      ) : (
+        <Text style={[st.metinText, { color: colors.foreground }]}>{deger}</Text>
+      )}
+    </View>
+  );
+}
+
+// ─── ActionBtn ────────────────────────────────────────────────
+
+function ActionBtn({
+  icon,
+  label,
+  onPress,
+  colors,
+  danger,
+  disabled,
+}: {
+  icon: React.ComponentProps<typeof Feather>["name"];
+  label: string;
+  onPress: () => void;
+  colors: Colors;
+  danger?: boolean;
+  disabled?: boolean;
+}) {
+  const col = disabled ? colors.mutedForeground : danger ? "#e74c3c" : colors.foreground;
+  return (
+    <TouchableOpacity
+      style={st.actionBtn}
+      onPress={onPress}
+      disabled={disabled}
+      activeOpacity={0.75}
+    >
+      <Feather name={icon} size={18} color={col} />
+      <Text style={[st.actionLabel, { color: col }]}>{label}</Text>
+    </TouchableOpacity>
+  );
+}
+
+// ─── CloneModal ───────────────────────────────────────────────
+
+function CloneModal({
+  visible,
+  ad,
+  onChangeAd,
+  onConfirm,
+  onCancel,
+  colors,
+}: {
+  visible: boolean;
+  ad: string;
+  onChangeAd: (v: string) => void;
+  onConfirm: () => void;
+  onCancel: () => void;
+  colors: Colors;
+}) {
+  return (
+    <Modal visible={visible} transparent animationType="fade">
+      <View style={st.modalOverlay}>
+        <View style={[st.modalCard, { backgroundColor: colors.card }]}>
+          <Text style={[st.modalTitle, { color: colors.foreground }]}>Analizi Kopyala</Text>
+          <Text style={[st.modalSub, { color: colors.mutedForeground }]}>
+            Kopyalanan analizin adını belirleyin:
+          </Text>
+          <TextInput
+            style={[
+              st.modalInput,
+              { color: colors.foreground, borderColor: colors.border, backgroundColor: colors.background },
+            ]}
+            value={ad}
+            onChangeText={onChangeAd}
+            multiline
+            autoFocus
+          />
+          <View style={st.modalBtns}>
+            <TouchableOpacity
+              style={[st.modalBtn, { backgroundColor: colors.border }]}
+              onPress={onCancel}
+            >
+              <Text style={{ color: colors.foreground }}>İptal</Text>
+            </TouchableOpacity>
+            <TouchableOpacity
+              style={[st.modalBtn, { backgroundColor: colors.primary }]}
+              onPress={onConfirm}
+            >
+              <Text style={{ color: colors.primaryForeground, fontWeight: "700" }}>Kopyala</Text>
+            </TouchableOpacity>
+          </View>
+        </View>
+      </View>
+    </Modal>
+  );
+}
+
+// ─── NewAnalizModal ───────────────────────────────────────────
+
+function NewAnalizModal({
+  visible,
+  form,
+  onChange,
+  onConfirm,
+  onCancel,
+  colors,
+}: {
+  visible: boolean;
+  form: { pozNo: string; analizAdi: string; olcuBirimi: string; kategori: string };
+  onChange: (f: Partial<typeof form>) => void;
+  onConfirm: () => void;
+  onCancel: () => void;
+  colors: Colors;
+}) {
+  return (
+    <Modal visible={visible} transparent animationType="slide">
+      <View style={st.modalOverlay}>
+        <View style={[st.modalCard, { backgroundColor: colors.card }]}>
+          <Text style={[st.modalTitle, { color: colors.foreground }]}>Yeni Analiz</Text>
+          {[
+            { label: "Poz No", key: "pozNo", placeholder: "ör. ÖZEL.001" },
+            { label: "Analiz Adı", key: "analizAdi", placeholder: "Analiz başlığı" },
+            { label: "Ölçü Birimi", key: "olcuBirimi", placeholder: "ör. m²" },
+          ].map(({ label, key, placeholder }) => (
+            <View key={key} style={{ marginBottom: 10 }}>
+              <Text style={[st.modalSub, { color: colors.mutedForeground, marginBottom: 4 }]}>
+                {label}
+              </Text>
+              <TextInput
+                style={[
+                  st.modalInput,
+                  { color: colors.foreground, borderColor: colors.border, backgroundColor: colors.background },
+                ]}
+                value={(form as any)[key]}
+                onChangeText={(v) => onChange({ [key]: v })}
+                placeholder={placeholder}
+                placeholderTextColor={colors.mutedForeground}
+              />
+            </View>
+          ))}
+          <View style={st.modalBtns}>
+            <TouchableOpacity
+              style={[st.modalBtn, { backgroundColor: colors.border }]}
+              onPress={onCancel}
+            >
+              <Text style={{ color: colors.foreground }}>İptal</Text>
+            </TouchableOpacity>
+            <TouchableOpacity
+              style={[st.modalBtn, { backgroundColor: colors.primary }]}
+              onPress={onConfirm}
+            >
+              <Text style={{ color: colors.primaryForeground, fontWeight: "700" }}>Oluştur</Text>
+            </TouchableOpacity>
+          </View>
+        </View>
+      </View>
+    </Modal>
+  );
+}
+
+// ─── StyleSheet ───────────────────────────────────────────────
+
+const st = StyleSheet.create({
   header: {
     flexDirection: "row",
     alignItems: "center",
@@ -463,78 +1146,231 @@ const styles = StyleSheet.create({
     paddingBottom: 14,
     gap: 8,
   },
-  backBtn: { width: 40, height: 40, borderRadius: 20, alignItems: "center", justifyContent: "center" },
+  backBtn: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    alignItems: "center",
+    justifyContent: "center",
+  },
   headerTitle: {
     flex: 1,
-    fontSize: 18,
+    fontSize: 17,
     fontWeight: "700",
     textAlign: "center",
     fontFamily: "Inter_700Bold",
   },
-  searchBar: {
+  hBtn: {
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    borderRadius: 8,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  searchWrap: {
     flexDirection: "row",
     alignItems: "center",
     gap: 8,
-    paddingHorizontal: 14,
-    height: 44,
+    margin: 12,
+    marginBottom: 8,
+    borderRadius: 10,
+    borderWidth: 1,
+    paddingHorizontal: 12,
+    paddingVertical: 8,
+  },
+  searchInput: {
+    flex: 1,
+    fontSize: 14,
+    fontFamily: "Inter_400Regular",
+    padding: 0,
+  },
+  chipRow: { maxHeight: 44, marginBottom: 4 },
+  chip: {
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    borderRadius: 20,
+    borderWidth: 1,
+    alignSelf: "flex-start",
+  },
+  chipText: { fontSize: 12, fontFamily: "Inter_500Medium" },
+  listHeader: {
+    flexDirection: "row",
+    paddingHorizontal: 12,
+    paddingVertical: 8,
+    borderBottomWidth: 1,
+    borderTopWidth: 1,
+  },
+  listTh: { fontSize: 11, fontFamily: "Inter_600SemiBold", textTransform: "uppercase" },
+  listRow: {
+    flexDirection: "row",
+    paddingHorizontal: 12,
+    paddingVertical: 10,
+    borderBottomWidth: StyleSheet.hairlineWidth,
+    alignItems: "center",
+  },
+  tdNo: { width: 36, fontSize: 12, fontFamily: "Inter_400Regular" },
+  tdPoz: { width: 104, fontSize: 12, fontFamily: "Inter_600SemiBold" },
+  tdAd: { flex: 1, fontSize: 13, fontFamily: "Inter_400Regular", lineHeight: 18 },
+  tdBirim: { width: 44, fontSize: 12, fontFamily: "Inter_400Regular", textAlign: "right" },
+  fab: {
+    position: "absolute",
+    right: 20,
+    width: 52,
+    height: 52,
+    borderRadius: 26,
+    alignItems: "center",
+    justifyContent: "center",
+    elevation: 4,
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.2,
+    shadowRadius: 4,
+  },
+  infoCard: {
     margin: 12,
     borderRadius: 10,
     borderWidth: 1,
+    overflow: "hidden",
   },
-  searchInput: { flex: 1, fontSize: 14, fontFamily: "Inter_400Regular" },
-  catFiltersWrap: { flexGrow: 0, flexShrink: 0, maxHeight: 52 },
-  catFilters: {
+  infoRow: {
+    flexDirection: "row",
+    alignItems: "flex-start",
     paddingHorizontal: 12,
-    paddingBottom: 10,
-    gap: 6,
-    flexDirection: "row",
-    alignItems: "center",
-  },
-  catChip: {
-    paddingHorizontal: 12,
-    height: 32,
-    justifyContent: "center",
-    borderRadius: 999,
-    maxWidth: 220,
-  },
-  catChipText: { fontSize: 12, fontFamily: "Inter_500Medium" },
-  row: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 12,
-    padding: 12,
-    borderRadius: 12,
-    borderWidth: 1,
-  },
-  codeBox: {
-    paddingHorizontal: 10,
-    paddingVertical: 6,
-    borderRadius: 8,
-    minWidth: 70,
-    alignItems: "center",
-  },
-  codeText: { fontSize: 11, fontFamily: "Inter_700Bold", letterSpacing: 0.3 },
-  rowTitle: { fontSize: 14, fontFamily: "Inter_600SemiBold" },
-  metaRow: {
-    flexDirection: "row",
-    alignItems: "center",
+    paddingVertical: 8,
+    borderBottomWidth: StyleSheet.hairlineWidth,
     gap: 8,
-    marginTop: 4,
   },
-  meta: { fontSize: 11, fontFamily: "Inter_400Regular", flex: 1 },
-  unitBadge: { paddingHorizontal: 8, paddingVertical: 2, borderRadius: 999 },
-  unitText: { fontSize: 11, fontFamily: "Inter_600SemiBold" },
-  desc: { fontSize: 11, fontFamily: "Inter_400Regular", marginTop: 4, lineHeight: 16 },
-  label: {
+  infoLabel: { width: 110, fontSize: 12, fontFamily: "Inter_600SemiBold", paddingTop: 2 },
+  infoValue: { fontSize: 13, fontFamily: "Inter_400Regular", flex: 1 },
+  infoInput: {
+    flex: 1,
     fontSize: 13,
-    fontFamily: "Inter_600SemiBold",
-    marginTop: 4,
-    marginBottom: 6,
+    fontFamily: "Inter_400Regular",
+    borderWidth: 1,
+    borderRadius: 6,
+    paddingHorizontal: 6,
+    paddingVertical: 3,
   },
-  helpText: {
+  tRow: {
+    flexDirection: "row",
+    borderBottomWidth: StyleSheet.hairlineWidth,
+  },
+  th: {
+    fontSize: 11,
+    fontFamily: "Inter_600SemiBold",
+    paddingHorizontal: 4,
+    paddingVertical: 6,
+    borderRightWidth: StyleSheet.hairlineWidth,
+    textAlign: "center",
+  },
+  td: {
+    paddingHorizontal: 4,
+    paddingVertical: 4,
+    borderRightWidth: StyleSheet.hairlineWidth,
+    justifyContent: "center",
+  },
+  tdText: { fontSize: 12, fontFamily: "Inter_400Regular" },
+  cellInput: {
     fontSize: 12,
     fontFamily: "Inter_400Regular",
-    lineHeight: 18,
-    marginBottom: 12,
+    padding: 2,
+    minHeight: 28,
+  },
+  groupRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    paddingHorizontal: 6,
+    paddingVertical: 4,
+    borderBottomWidth: StyleSheet.hairlineWidth,
+  },
+  groupText: {
+    fontSize: 12,
+    fontFamily: "Inter_700Bold",
+    fontStyle: "italic",
+  },
+  addRowBtn: {
+    flexDirection: "row",
+    alignItems: "center",
+    paddingHorizontal: 8,
+    paddingVertical: 3,
+    borderRadius: 6,
+  },
+  sumLabel: { fontSize: 12, fontFamily: "Inter_500Medium" },
+  karInput: {
+    width: 44,
+    fontSize: 12,
+    borderWidth: 1,
+    borderRadius: 4,
+    paddingHorizontal: 4,
+    marginHorizontal: 4,
+    textAlign: "center",
+  },
+  metinCard: {
+    marginHorizontal: 12,
+    marginTop: 10,
+    borderRadius: 10,
+    borderWidth: 1,
+    padding: 12,
+  },
+  metinBaslik: {
+    fontSize: 11,
+    fontFamily: "Inter_700Bold",
+    textTransform: "uppercase",
+    letterSpacing: 0.5,
+    marginBottom: 6,
+  },
+  metinText: { fontSize: 13, fontFamily: "Inter_400Regular", lineHeight: 20 },
+  metinInput: {
+    fontSize: 13,
+    fontFamily: "Inter_400Regular",
+    borderWidth: 1,
+    borderRadius: 6,
+    padding: 8,
+    minHeight: 80,
+    lineHeight: 20,
+  },
+  bottomBar: {
+    flexDirection: "row",
+    borderTopWidth: 1,
+    paddingTop: 8,
+    paddingHorizontal: 8,
+    justifyContent: "space-around",
+  },
+  actionBtn: { alignItems: "center", paddingHorizontal: 10, paddingVertical: 6, gap: 4 },
+  actionLabel: { fontSize: 11, fontFamily: "Inter_500Medium" },
+  modalOverlay: {
+    flex: 1,
+    backgroundColor: "rgba(0,0,0,0.5)",
+    justifyContent: "center",
+    alignItems: "center",
+    padding: 24,
+  },
+  modalCard: {
+    width: "100%",
+    borderRadius: 16,
+    padding: 20,
+  },
+  modalTitle: {
+    fontSize: 17,
+    fontFamily: "Inter_700Bold",
+    marginBottom: 6,
+  },
+  modalSub: { fontSize: 13, fontFamily: "Inter_400Regular", marginBottom: 10 },
+  modalInput: {
+    borderWidth: 1,
+    borderRadius: 8,
+    paddingHorizontal: 10,
+    paddingVertical: 8,
+    fontSize: 14,
+    fontFamily: "Inter_400Regular",
+    minHeight: 44,
+  },
+  modalBtns: { flexDirection: "row", gap: 10, marginTop: 16 },
+  modalBtn: {
+    flex: 1,
+    paddingVertical: 12,
+    borderRadius: 10,
+    alignItems: "center",
+    justifyContent: "center",
   },
 });
