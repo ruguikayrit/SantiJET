@@ -21,5 +21,6 @@ export const modules: ModuleMap = {
   "./components/mockups/santijet-tiles/Steel.tsx": () => import("../components/mockups/santijet-tiles/Steel.tsx"),
   "./components/mockups/santijet-tiles/Tugla.tsx": () => import("../components/mockups/santijet-tiles/Tugla.tsx"),
   "./components/mockups/santijet-tiles/Tutanak.tsx": () => import("../components/mockups/santijet-tiles/Tutanak.tsx"),
-  "./components/mockups/santijet-tiles/Vinc.tsx": () => import("../components/mockups/santijet-tiles/Vinc.tsx")
+  "./components/mockups/santijet-tiles/Vinc.tsx": () => import("../components/mockups/santijet-tiles/Vinc.tsx"),
+  "./components/mockups/splash-screen/SplashScreen.tsx": () => import("../components/mockups/splash-screen/SplashScreen.tsx")
 };
