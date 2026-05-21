@@ -189,28 +189,36 @@ export default function WorkspaceSetupScreen() {
       style={{ flex: 1 }}
       behavior={Platform.OS === "ios" ? "padding" : undefined}
     >
+      {/* ── Sabit üst bölüm: logo + başlık ── */}
+      <View
+        style={[
+          styles.heroFixed,
+          {
+            backgroundColor: colors.secondary,
+            paddingTop: Platform.OS === "web" ? 20 : insets.top + 16,
+          },
+        ]}
+      >
+        <View style={[styles.logo, { backgroundColor: "#e85d04" }]}>
+          <Feather name="layers" size={32} color="#fff" />
+        </View>
+        <Text style={[styles.title, { color: colors.foreground }]}>
+          ŞantiJET
+        </Text>
+        <Text style={[styles.subtitle, { color: colors.mutedForeground }]}>
+          Ekibinizle veri paylaşmak için bir çalışma alanı oluşturun veya
+          mevcut birine katılın.
+        </Text>
+      </View>
+
       <ScrollView
         style={[styles.root, { backgroundColor: colors.background }]}
         contentContainerStyle={{
-          paddingTop: insets.top + 24,
+          paddingTop: 24,
           paddingBottom: insets.bottom + 40,
         }}
         keyboardShouldPersistTaps="handled"
       >
-        {/* Hero */}
-        <View style={styles.hero}>
-          <View style={[styles.logo, { backgroundColor: "#e85d04" }]}>
-            <Feather name="layers" size={32} color="#fff" />
-          </View>
-          <Text style={[styles.title, { color: colors.foreground }]}>
-            ŞantiJET
-          </Text>
-          <Text style={[styles.subtitle, { color: colors.mutedForeground }]}>
-            Ekibinizle veri paylaşmak için bir çalışma alanı oluşturun veya
-            mevcut birine katılın.
-          </Text>
-        </View>
-
         {/* Success view after create */}
         {createdInfo && (
           <View style={[styles.card, { backgroundColor: colors.card, marginTop: 12 }]}>
@@ -452,10 +460,10 @@ export default function WorkspaceSetupScreen() {
 
 const styles = StyleSheet.create({
   root: { flex: 1 },
-  hero: {
+  heroFixed: {
     alignItems: "center",
     paddingHorizontal: 24,
-    marginBottom: 28,
+    paddingBottom: 24,
   },
   logo: {
     width: 72,
