@@ -1,79 +1,76 @@
 import React from "react";
-import { View, Text, StyleSheet, Platform } from "react-native";
-import Svg, { Path, Defs, LinearGradient, Stop } from "react-native-svg";
+import { View, Text, Image, StyleSheet } from "react-native";
 
 interface SantijetLogoProps {
-  /** Wordmark font büyüklüğü (px). Tüm ölçekler buna orantılanır. */
+  /** Wordmark font büyüklüğü (px). İkon ve alt başlık buna orantılanır. */
   fontSize?: number;
 }
 
 /**
- * ŞantiJET yatay logo lockup:
- *   [S-bolt ikonu] [ŞANTİ beyaz][JET mavi]
- *                  [OPERASYON YÖNETİMİ mavi]
+ * ŞantiJET yatay logo lockup — orijinal ikon görseli + wordmark metni.
  *
- * Renkler ve font stili orijinal logo görseline birebir uygun.
+ * Kaynak görselin (1:1 kare) oranları:
+ *   - S-bolt ikonu:             y  0% – 63%
+ *   - "ŞANTİJET" yazısı:        y 64% – 83%
+ *   - "OPERASYON YÖNETİMİ":     y 84% – 93%
+ *
+ * Overflow clip ile yalnızca ikon bölgesi gösterilir;
+ * metin satırları React Native Text ile sağ tarafa yerleştirilir.
  */
 export function SantijetLogo({ fontSize = 22 }: SantijetLogoProps) {
-  // İkon yüksekliği: wordmark'ın iki satırıyla eşleşsin
-  const iconH = fontSize * 2.6;
-  // S-bolt viewBox: 0 0 220 300 → aspect 0.733
-  const iconW = iconH * (220 / 300);
+  // İkon yüksekliği: iki metin satırının toplam yüksekliğine eşit
+  const iconH = Math.round(fontSize * 2.6);
+  // Kaynak görsel 1:1 kare → S-bolt %63'ünü kaplar → tam görsel yüksekliği:
+  const imgSize = Math.round(iconH / 0.63);
+  // Hafif üst boşluğu gidermek için görseli biraz yukarı kaydır
+  const topOffset = -Math.round(imgSize * 0.03);
 
   return (
     <View style={styles.row}>
-      {/* ── S-Bolt SVG ikonu ── */}
-      <Svg
-        width={iconW}
-        height={iconH}
-        viewBox="0 0 220 300"
-        style={{ marginRight: fontSize * 0.42 }}
+      {/* ── S-Bolt ikonu (orijinal görsel, üst bölgesi kırpılarak gösterilir) ── */}
+      <View
+        style={{
+          width: imgSize,
+          height: iconH,
+          overflow: "hidden",
+          marginRight: Math.round(fontSize * 0.45),
+        }}
       >
-        <Defs>
-          {/* Beyaz-gümüş gradient (üst kanat) */}
-          <LinearGradient id="sj_ug" x1="0.6" y1="0" x2="0.2" y2="1">
-            <Stop offset="0" stopColor="#FFFFFF" stopOpacity="1" />
-            <Stop offset="0.55" stopColor="#DCE8FF" stopOpacity="1" />
-            <Stop offset="1" stopColor="#B8CCEE" stopOpacity="1" />
-          </LinearGradient>
-          {/* Mavi gradient (alt kanat) */}
-          <LinearGradient id="sj_lg" x1="0.7" y1="0" x2="0.2" y2="1">
-            <Stop offset="0" stopColor="#3B8AFF" stopOpacity="1" />
-            <Stop offset="0.5" stopColor="#1460E8" stopOpacity="1" />
-            <Stop offset="1" stopColor="#003CC0" stopOpacity="1" />
-          </LinearGradient>
-        </Defs>
-
-        {/* Alt mavi kanat (önce çizilir — arkada kalır) */}
-        <Path
-          d="M 108,175 L 215,175 L 215,196 L 148,292 L 52,298 L 18,276 L 110,190 Z"
-          fill="url(#sj_lg)"
+        <Image
+          source={require("../assets/images/santijet-icon.png")}
+          style={{
+            width: imgSize,
+            height: imgSize,
+            position: "absolute",
+            top: topOffset,
+            left: 0,
+          }}
+          resizeMode="stretch"
         />
-        {/* Üst beyaz kanat (üstte çizilir) */}
-        <Path
-          d="M 148,4 L 215,4 L 215,22 L 110,188 L 5,188 L 5,170 L 88,18 Z"
-          fill="url(#sj_ug)"
-        />
-      </Svg>
+      </View>
 
       {/* ── Metin kolonu ── */}
       <View style={styles.textCol}>
-        {/* Wordmark */}
+        {/* Wordmark: ŞANTİ (beyaz) + JET (mavi) */}
         <Text
-          style={[styles.wordmark, { fontSize, lineHeight: fontSize * 1.1 }]}
+          style={[
+            styles.wordmark,
+            { fontSize, lineHeight: Math.round(fontSize * 1.12) },
+          ]}
           numberOfLines={1}
         >
           <Text style={styles.wWhite}>ŞANTİ</Text>
           <Text style={styles.wBlue}>JET</Text>
         </Text>
-        {/* Alt başlık */}
+
+        {/* Alt başlık: OPERASYON YÖNETİMİ */}
         <Text
           style={[
             styles.subtitle,
             {
-              fontSize: Math.max(fontSize * 0.38, 8),
-              letterSpacing: fontSize * 0.16,
-              marginTop: fontSize * 0.12,
+              fontSize: Math.max(Math.round(fontSize * 0.38), 8),
+              letterSpacing: Math.round(fontSize * 0.18),
+              marginTop: Math.round(fontSize * 0.1),
             },
           ]}
           numberOfLines={1}
@@ -96,7 +93,7 @@ const styles = StyleSheet.create({
   wordmark: {
     fontFamily: "Inter_700Bold",
     includeFontPadding: false,
-    letterSpacing: 0.8,
+    letterSpacing: 1,
   },
   wWhite: {
     color: "#FFFFFF",
@@ -105,7 +102,7 @@ const styles = StyleSheet.create({
     color: "#1460E8",
   },
   subtitle: {
-    fontFamily: Platform.OS === "ios" ? "Inter_300Light" : "Inter_400Regular",
+    fontFamily: "Inter_400Regular",
     color: "#4A88EE",
     includeFontPadding: false,
   },
