@@ -1,43 +1,43 @@
 import React from "react";
-import { View, Text, Image, StyleSheet } from "react-native";
+import { View, Image, StyleSheet } from "react-native";
 
 interface SantijetLogoProps {
-  /** Wordmark font büyüklüğü (px). İkon ve alt başlık buna orantılanır. */
-  fontSize?: number;
+  /** İkon yüksekliği (px). Wordmark buna orantılanır. */
+  iconHeight?: number;
 }
 
+const iconSource = require("../assets/images/santijet-icon.png");
+const wordmarkSource = require("../assets/images/santijet-wordmark.png");
+
 /**
- * ŞantiJET yatay logo lockup — orijinal ikon görseli + wordmark metni.
+ * ŞantiJET yatay logo lockup:
+ *   [S-bolt ikonu (orijinal görsel, kırpılmış)] [ŞANTİJET wordmark (orijinal görsel, şeffaf)]
  *
- * Kaynak görselin (1:1 kare) oranları:
- *   - S-bolt ikonu:             y  0% – 63%
- *   - "ŞANTİJET" yazısı:        y 64% – 83%
- *   - "OPERASYON YÖNETİMİ":     y 84% – 93%
- *
- * Overflow clip ile yalnızca ikon bölgesi gösterilir;
- * metin satırları React Native Text ile sağ tarafa yerleştirilir.
+ * İkon kaynağı: santijet-icon.png  (tam logo görseli, üst %63 kırpılır)
+ * Wordmark kaynağı: santijet-wordmark.png (sadece yazı, arka plan kaldırılmış)
  */
-export function SantijetLogo({ fontSize = 22 }: SantijetLogoProps) {
-  // İkon yüksekliği: iki metin satırının toplam yüksekliğine eşit
-  const iconH = Math.round(fontSize * 2.6);
-  // Kaynak görsel 1:1 kare → S-bolt %63'ünü kaplar → tam görsel yüksekliği:
-  const imgSize = Math.round(iconH / 0.63);
-  // Hafif üst boşluğu gidermek için görseli biraz yukarı kaydır
-  const topOffset = -Math.round(imgSize * 0.03);
+export function SantijetLogo({ iconHeight = 52 }: SantijetLogoProps) {
+  // S-bolt kaynak görsel 1:1 kare; S-bolt ikonun görüntü içindeki yükseklik payı ~%63
+  const imgSize = Math.round(iconHeight / 0.63);
+  const topOffset = -Math.round(imgSize * 0.04);
+
+  // Wordmark görsel oranı: kaynak yaklaşık 4.5:1 (genişlik:yükseklik)
+  const wordmarkH = Math.round(iconHeight * 0.6);
+  const wordmarkW = Math.round(wordmarkH * 4.5);
 
   return (
     <View style={styles.row}>
-      {/* ── S-Bolt ikonu (orijinal görsel, üst bölgesi kırpılarak gösterilir) ── */}
+      {/* S-Bolt ikonu — sadece üst bölge görünür */}
       <View
         style={{
           width: imgSize,
-          height: iconH,
+          height: iconHeight,
           overflow: "hidden",
-          marginRight: Math.round(fontSize * 0.4),
+          marginRight: Math.round(iconHeight * 0.18),
         }}
       >
         <Image
-          source={require("../assets/images/santijet-icon.png")}
+          source={iconSource}
           style={{
             width: imgSize,
             height: imgSize,
@@ -49,17 +49,12 @@ export function SantijetLogo({ fontSize = 22 }: SantijetLogoProps) {
         />
       </View>
 
-      {/* ── Wordmark: ŞANTİ (beyaz) + JET (mavi) ── */}
-      <Text
-        style={[
-          styles.wordmark,
-          { fontSize, lineHeight: Math.round(fontSize * 1.15) },
-        ]}
-        numberOfLines={1}
-      >
-        <Text style={styles.wWhite}>ŞANTİ</Text>
-        <Text style={styles.wBlue}>JET</Text>
-      </Text>
+      {/* ŞANTİJET wordmark — orijinal görsel, şeffaf arka plan */}
+      <Image
+        source={wordmarkSource}
+        style={{ width: wordmarkW, height: wordmarkH }}
+        resizeMode="contain"
+      />
     </View>
   );
 }
@@ -69,16 +64,5 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     alignItems: "center",
     alignSelf: "flex-start",
-  },
-  wordmark: {
-    fontFamily: "Inter_700Bold",
-    includeFontPadding: false,
-    letterSpacing: 2,
-  },
-  wWhite: {
-    color: "#FFFFFF",
-  },
-  wBlue: {
-    color: "#1052FF",
   },
 });
