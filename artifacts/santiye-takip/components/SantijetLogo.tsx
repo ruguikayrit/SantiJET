@@ -2,59 +2,82 @@ import React from "react";
 import { View, Image, StyleSheet } from "react-native";
 
 interface SantijetLogoProps {
-  /** İkon yüksekliği (px). Wordmark buna orantılanır. */
+  /** İkon bölgesi konteyner yüksekliği (px). Wordmark buna orantılanır. */
   iconHeight?: number;
 }
 
-const iconSource = require("../assets/images/santijet-icon.png");
-const wordmarkSource = require("../assets/images/santijet-wordmark.png");
+const logoSrc = require("../assets/images/santijet-icon.png");
 
 /**
- * ŞantiJET yatay logo lockup:
- *   [S-bolt ikonu (orijinal görsel, kırpılmış)] [ŞANTİJET wordmark (orijinal görsel, şeffaf)]
+ * ŞantiJET yatay logo lockup — tek kaynak görsel (santijet-icon.png),
+ * iki farklı dikey bölge kırpılarak yan yana gösterilir:
  *
- * İkon kaynağı: santijet-icon.png  (tam logo görseli, üst %63 kırpılır)
- * Wordmark kaynağı: santijet-wordmark.png (sadece yazı, arka plan kaldırılmış)
+ *  [S-bolt ikonu]  [ŞANTİJET wordmark]
+ *  y: 0% – 63%    y: 64% – 83%
+ *
+ * Kaynak görsel 1:1 kare.
+ * Wordmark bölgesi tam logo görselinden alındığı için Ş cedilla korunur.
  */
-export function SantijetLogo({ iconHeight = 52 }: SantijetLogoProps) {
-  // S-bolt kaynak görsel 1:1 kare; S-bolt ikonun görüntü içindeki yükseklik payı ~%63
-  const imgSize = Math.round(iconHeight / 0.63);
-  const topOffset = -Math.round(imgSize * 0.04);
+export function SantijetLogo({ iconHeight = 48 }: SantijetLogoProps) {
+  // ── S-bolt ikonu ──────────────────────────────────────────────────
+  // S-bolt görselin üst ~%63'ünü kaplar
+  const boltImgSize = Math.round(iconHeight / 0.63);
+  const boltTopOffset = -Math.round(boltImgSize * 0.04); // üst boşluk kırp
 
-  // Wordmark görsel oranı: kaynak yaklaşık 4.5:1 (genişlik:yükseklik)
-  const wordmarkH = Math.round(iconHeight * 0.6);
-  const wordmarkW = Math.round(wordmarkH * 4.5);
+  // ── ŞANTİJET wordmark ────────────────────────────────────────────
+  // Wordmark y: ~%64 – %83 → yükseklik payı ~%19
+  // Wordmark x: ~%8  – %92 → genişlik payı  ~%84
+  const wmH = Math.round(iconHeight * 0.7);            // gösterim yüksekliği
+  const wmImgSize = Math.round(wmH / 0.19);            // tam görsel boyutu
+  const wmTopOffset = -Math.round(wmImgSize * 0.64);   // wordmark başlangıcı
+  const wmLeftOffset = -Math.round(wmImgSize * 0.08);  // sol boşluk kırp
+  const wmContainerW = Math.round(wmImgSize * 0.84);   // görünür genişlik
 
   return (
     <View style={styles.row}>
-      {/* S-Bolt ikonu — sadece üst bölge görünür */}
+      {/* S-Bolt ikonu */}
       <View
         style={{
-          width: imgSize,
+          width: boltImgSize,
           height: iconHeight,
           overflow: "hidden",
-          marginRight: Math.round(iconHeight * 0.18),
         }}
       >
         <Image
-          source={iconSource}
+          source={logoSrc}
           style={{
-            width: imgSize,
-            height: imgSize,
+            width: boltImgSize,
+            height: boltImgSize,
             position: "absolute",
-            top: topOffset,
+            top: boltTopOffset,
             left: 0,
           }}
           resizeMode="stretch"
         />
       </View>
 
-      {/* ŞANTİJET wordmark — orijinal görsel, şeffaf arka plan */}
-      <Image
-        source={wordmarkSource}
-        style={{ width: wordmarkW, height: wordmarkH }}
-        resizeMode="contain"
-      />
+      {/* ŞANTİJET wordmark */}
+      <View
+        style={{
+          width: wmContainerW,
+          height: wmH,
+          overflow: "hidden",
+          alignSelf: "center",
+          marginLeft: 6,
+        }}
+      >
+        <Image
+          source={logoSrc}
+          style={{
+            width: wmImgSize,
+            height: wmImgSize,
+            position: "absolute",
+            top: wmTopOffset,
+            left: wmLeftOffset,
+          }}
+          resizeMode="stretch"
+        />
+      </View>
     </View>
   );
 }
@@ -64,5 +87,6 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     alignItems: "center",
     alignSelf: "flex-start",
+    marginLeft: 0,
   },
 });
