@@ -31,6 +31,7 @@ import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 import BottomSheet from "@/components/BottomSheet";
 import PrimaryButton from "@/components/PrimaryButton";
+import { SantijetLogo } from "@/components/SantijetLogo";
 import SmartSearch from "@/components/SmartSearch";
 import { PageKey, Permission, useApp } from "@/context/AppContext";
 import { useI18n } from "@/context/I18nContext";
@@ -383,7 +384,7 @@ export default function HomeScreen() {
         <View style={styles.heroRow}>
           <View style={{ flex: 1 }}>
             <Text style={styles.heroSub}>{t("home.welcome")}</Text>
-            <Text style={styles.heroTitle}>{t("app.title")}</Text>
+            <SantijetLogo iconHeight={30} />
             <Text style={styles.heroDesc}>
               {app.projects.length} {t("home.stats.activeProjects")} · {app.workers.length} {t("home.stats.workers")}
             </Text>
