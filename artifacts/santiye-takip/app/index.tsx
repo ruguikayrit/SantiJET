@@ -384,7 +384,7 @@ export default function HomeScreen() {
         <View style={styles.heroRow}>
           <View style={{ flex: 1 }}>
             <Text style={styles.heroSub}>{t("home.welcome")}</Text>
-            <SantijetLogo iconHeight={30} />
+            <SantijetLogo height={72} />
             <Text style={styles.heroDesc}>
               {app.projects.length} {t("home.stats.activeProjects")} · {app.workers.length} {t("home.stats.workers")}
             </Text>
