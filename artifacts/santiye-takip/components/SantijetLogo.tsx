@@ -33,7 +33,7 @@ export function SantijetLogo({ fontSize = 22 }: SantijetLogoProps) {
           width: imgSize,
           height: iconH,
           overflow: "hidden",
-          marginRight: Math.round(fontSize * 0.45),
+          marginRight: Math.round(fontSize * 0.4),
         }}
       >
         <Image
@@ -49,35 +49,17 @@ export function SantijetLogo({ fontSize = 22 }: SantijetLogoProps) {
         />
       </View>
 
-      {/* ── Metin kolonu ── */}
-      <View style={styles.textCol}>
-        {/* Wordmark: ŞANTİ (beyaz) + JET (mavi) */}
-        <Text
-          style={[
-            styles.wordmark,
-            { fontSize, lineHeight: Math.round(fontSize * 1.12) },
-          ]}
-          numberOfLines={1}
-        >
-          <Text style={styles.wWhite}>ŞANTİ</Text>
-          <Text style={styles.wBlue}>JET</Text>
-        </Text>
-
-        {/* Alt başlık: OPERASYON YÖNETİMİ */}
-        <Text
-          style={[
-            styles.subtitle,
-            {
-              fontSize: Math.max(Math.round(fontSize * 0.38), 8),
-              letterSpacing: Math.round(fontSize * 0.18),
-              marginTop: Math.round(fontSize * 0.1),
-            },
-          ]}
-          numberOfLines={1}
-        >
-          OPERASYON YÖNETİMİ
-        </Text>
-      </View>
+      {/* ── Wordmark: ŞANTİ (beyaz) + JET (mavi) ── */}
+      <Text
+        style={[
+          styles.wordmark,
+          { fontSize, lineHeight: Math.round(fontSize * 1.15) },
+        ]}
+        numberOfLines={1}
+      >
+        <Text style={styles.wWhite}>ŞANTİ</Text>
+        <Text style={styles.wBlue}>JET</Text>
+      </Text>
     </View>
   );
 }
@@ -86,24 +68,17 @@ const styles = StyleSheet.create({
   row: {
     flexDirection: "row",
     alignItems: "center",
-  },
-  textCol: {
-    justifyContent: "center",
+    alignSelf: "flex-start",
   },
   wordmark: {
     fontFamily: "Inter_700Bold",
     includeFontPadding: false,
-    letterSpacing: 1,
+    letterSpacing: 2,
   },
   wWhite: {
     color: "#FFFFFF",
   },
   wBlue: {
-    color: "#1460E8",
-  },
-  subtitle: {
-    fontFamily: "Inter_400Regular",
-    color: "#4A88EE",
-    includeFontPadding: false,
+    color: "#1052FF",
   },
 });
