@@ -1,0 +1,317 @@
+Create a PREMIUM dark-themed construction operations dashboard for “ŞANTİJET OPERASYON YÖNETİMİ”.
+
+IMPORTANT:
+Do NOT redesign the layout.
+Keep the exact clean minimal structure.
+Focus on refinement, spacing, premium quality, and professional enterprise feel.
+
+====================================================
+GENERAL STYLE
+====================================================
+
+Design style:
+- Premium SaaS dashboard
+- Construction-tech focused
+- Minimal and clean
+- Enterprise-level UI
+- Mobile-first responsive design
+- Inspired by Linear + Stripe + modern ERP systems
+
+Use:
+- Deep navy background
+- Matte dark surfaces
+- Soft neon borders
+- Minimal glow
+- Elegant shadows
+- Glassmorphism very subtle
+- Rounded corners
+- Spacious layout
+- Clean typography
+
+Avoid:
+- Overcrowded widgets
+- Heavy glow
+- Complex dashboard elements
+- Too much information
+- Busy interface
+
+====================================================
+TOP HEADER
+====================================================
+
+Top left:
+- Hamburger menu icon
+- ORIGINAL ŞANTİJET logo
+- Logo text:
+  “ŞANTİJET”
+- Subtitle:
+  “OPERASYON YÖNETİMİ”
+
+Top right:
+- Notification bell with small red badge
+- Circular user avatar with orange accent
+- User initial:
+  “U”
+
+Header should be:
+- Thin
+- Elegant
+- Minimal
+- Premium
+
+====================================================
+WELCOME CARD
+====================================================
+
+Create a clean welcome card below header.
+
+LEFT SIDE:
+- “Hoş geldin”
+- Large user name:
+  “UĞUR TİRYAKİ”
+- Role:
+  “Şantiye Şefi”
+
+BOTTOM LEFT:
+- Company icon
+- Company name:
+  “ABC İNŞAAT”
+
+CENTER:
+- Company code badge:
+  “YTFC2T377X”
+- Small copy icon
+
+RIGHT SIDE:
+- Weather widget:
+  “24°C”
+  “İstanbul / Açık”
+
+- Date widget:
+  “16 Mayıs 2025”
+  “Cuma”
+
+Card style:
+- Dark navy gradient
+- Very soft blue lighting
+- Thin border
+- Elegant shadow
+- Large rounded corners
+
+====================================================
+SEARCH BAR
+====================================================
+
+Below welcome card add a large rounded search bar.
+
+LEFT:
+- Search icon
+
+PLACEHOLDER:
+“Ara: işçi, proje, malzeme, hakediş...”
+
+RIGHT:
+- Filter/settings icon
+
+Style:
+- Dark matte glass effect
+- Thin border
+- Minimal glow
+- Comfortable height for field use
+
+====================================================
+MAIN MODULE GRID
+====================================================
+
+MOST IMPORTANT SECTION.
+
+Create a clean 3×5 module grid.
+
+Keep large spacing between cards.
+
+Cards must be:
+- Large
+- Easy to tap
+- Field-worker friendly
+- Minimal
+- Elegant
+
+Do NOT overcrowd cards.
+
+====================================================
+MODULE CARDS
+====================================================
+
+Each card contains:
+
+TOP LEFT:
+- Module number
+Example:
+01
+02
+03
+
+CENTER:
+- Large icon
+- Module title
+
+BOTTOM:
+- Small live info line
+
+RIGHT:
+- Small circular arrow button
+
+====================================================
+MODULE LIST
+====================================================
+
+01 — PROJE
+Info:
+“12 Aktif Proje”
+
+02 — GÜNLÜK RAPOR
+Info:
+“4 Bugün”
+
+03 — PUANTAJ
+Info:
+“28 Personel”
+
+04 — GÖREV
+Info:
+“5 Açık Görev”
+
+05 — İMALAT
+Info:
+“8 Devam Eden”
+
+06 — İLERLEME
+Info:
+“%72 Ortalama”
+
+07 — MALZEME
+Info:
+“3 Kritik Stok”
+
+08 — KANTAR
+Info:
+“18 Bugün Giriş”
+
+09 — KEŞİF
+Info:
+“6 Keşif”
+
+10 — İŞ PROGRAMI
+Info:
+“7 Aktif İş”
+
+11 — SATIN ALMA
+Info:
+“5 Açık Talep”
+
+12 — HAKEDİŞ
+Info:
+“3 Bekleyen”
+
+13 — BÜTÇE
+Info:
+“%58 Kullanım”
+
+14 — TAŞERON
+Info:
+“6 Taşeron”
+
+15 — KULLANICILAR
+Info:
+“24 Kullanıcı”
+
+====================================================
+CARD COLORS
+====================================================
+
+Use elegant category colors:
+
+Blue:
+- Proje
+- İmalat
+- Keşif
+
+Green:
+- Görev
+- Kantar
+- Bütçe
+
+Orange:
+- Günlük Rapor
+- İlerleme
+- İş Programı
+- Taşeron
+
+Purple:
+- Puantaj
+- Kullanıcılar
+
+Cyan:
+- Hakediş
+
+Pink/Red:
+- Satın Alma
+
+====================================================
+CARD DESIGN DETAILS
+====================================================
+
+Each card should have:
+- Very subtle gradient
+- Thin neon border
+- Minimal shadow
+- Soft hover effect
+- Tiny glass effect
+- Matte finish
+
+Typography:
+- Strong hierarchy
+- Clean spacing
+- Modern sans-serif
+
+Icons:
+- Outline style
+- Premium enterprise look
+- Lucide-style icons
+
+====================================================
+UX REQUIREMENTS
+====================================================
+
+Design for REAL CONSTRUCTION SITE USE.
+
+Must feel:
+- Fast
+- Practical
+- Clean
+- Easy to read under sunlight
+- Easy to tap with gloves
+- Low cognitive load
+
+Prioritize:
+- Readability
+- Simplicity
+- Fast navigation
+
+====================================================
+IMPORTANT
+====================================================
+
+This is NOT a finance dashboard.
+This is a FIELD OPERATIONS MANAGEMENT SYSTEM.
+
+Keep it:
+- Minimal
+- Professional
+- Premium
+- Spacious
+- Calm
+- Powerful
+
+The final result should feel like:
+“A premium construction operations platform built for real construction professionals.”

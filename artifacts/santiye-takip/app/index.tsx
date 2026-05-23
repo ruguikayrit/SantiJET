@@ -50,30 +50,58 @@ interface Section {
   count: (a: ReturnType<typeof useApp>) => number;
 }
 
+// Referans sırasına göre dizilmiş modüller
 const SECTIONS: Section[] = [
-  { key: "proje",        label: "Proje",        icon: "briefcase",   route: "/proje",        color: "#e85d04", bg: "#fef3e2", code: "PR-01", sub: "Aktif şantiye", count: (a) => a.projects.length },
-  { key: "dosyalar",     label: "Dosyalar",     icon: "folder",      route: "/dosyalar",     color: "#475569", bg: "#e2e8f0", code: "DS-02", sub: "Arşiv", count: (a) => a.archiveFiles.length },
-  { key: "kesif",        label: "Keşif",         icon: "search",      route: "/kesif",        color: "#0ea5e9", bg: "#e0f2fe", code: "KS-03", sub: "Bina", count: (a) => a.surveys.length },
-  { key: "is-programi",  label: "İş Programı",   icon: "calendar",    route: "/is-programi",  color: "#8b5cf6", bg: "#ede9fe", code: "IP-04", sub: "Görev", count: (a) => a.scheduleTasks.length },
-  { key: "puantaj",      label: "Puantaj",       icon: "users",       route: "/puantaj",      color: "#16a34a", bg: "#dcfce7", code: "PU-05", sub: "Personel", count: (a) => a.attendance.length },
-  { key: "gunluk-rapor", label: "Günlük Rapor",  icon: "file-text",   route: "/gunluk-rapor", color: "#0891b2", bg: "#cffafe", code: "GR-06", sub: "Rapor", count: (a) => a.dailyReports.length },
-  { key: "imalat",       label: "İmalat",        icon: "tool",        route: "/imalat",       color: "#d97706", bg: "#fef3c7", code: "IM-07", sub: "Aktif kayıt", count: (a) => a.productions.length },
-  { key: "gorev",        label: "Görev",         icon: "check-square",route: "/gorev",        color: "#dc2626", bg: "#fee2e2", code: "GV-08", sub: "Bekleyen", count: (a) => a.tasks.length },
-  { key: "malzeme",      label: "Malzeme",       icon: "package",     route: "/malzeme",      color: "#059669", bg: "#d1fae5", code: "MZ-09", sub: "Stok hareketi", count: (a) => a.materials.length },
-  { key: "taseron",      label: "Taşeron",       icon: "truck",       route: "/taseron",      color: "#7c3aed", bg: "#ede9fe", code: "TS-10", sub: "Firma", count: (a) => a.subcontractors.length },
-  { key: "satin-alma",   label: "Satın Alma",    icon: "shopping-cart", route: "/satin-alma", color: "#ea580c", bg: "#ffedd5", code: "SA-11", sub: "Bekleyen", count: (a) => a.purchases.length },
-  { key: "kantar",       label: "Kantar",        icon: "truck",       route: "/kantar",       color: "#0d9488", bg: "#ccfbf1", code: "KN-12", sub: "Tartım", count: (a) => a.weighbridges.length },
-  { key: "butce",        label: "Bütçe",         icon: "dollar-sign", route: "/butce",        color: "#16213e", bg: "#e0e7ff", code: "BT-13", sub: "Kalem", count: (a) => a.budget.length },
-  { key: "hakedis",      label: "Hakediş",       icon: "file-text",   route: "/hakedis",      color: "#be185d", bg: "#fce7f3", code: "HK-14", sub: "Dönem", count: (a) => a.hakedisler.length },
-  { key: "ilerleme",     label: "İlerleme",      icon: "trending-up", route: "/ilerleme",     color: "#0d9488", bg: "#ccfbf1", code: "IL-15", sub: "Kayıt", count: (a) => a.surveys.length + a.productions.length },
-  { key: "kullanicilar", label: "Kullanıcılar",  icon: "shield",      route: "/kullanicilar", color: "#7c3aed", bg: "#ede9fe", code: "KU-17", sub: "Kişi", count: (a) => a.appUsers.length },
+  { key: "proje",        label: "Proje",        icon: "briefcase",     route: "/proje",        color: "#e85d04", bg: "#fef3e2", code: "PR-01", sub: "Aktif Proje",   count: (a) => a.projects.length },
+  { key: "gunluk-rapor", label: "Günlük Rapor",  icon: "file-text",     route: "/gunluk-rapor", color: "#0891b2", bg: "#cffafe", code: "GR-02", sub: "Bugün",         count: (a) => a.dailyReports.length },
+  { key: "puantaj",      label: "Puantaj",       icon: "users",         route: "/puantaj",      color: "#16a34a", bg: "#dcfce7", code: "PU-03", sub: "Personel",      count: (a) => a.attendance.length },
+  { key: "gorev",        label: "Görev",         icon: "check-square",  route: "/gorev",        color: "#dc2626", bg: "#fee2e2", code: "GV-04", sub: "Açık Görev",    count: (a) => a.tasks.length },
+  { key: "imalat",       label: "İmalat",        icon: "tool",          route: "/imalat",       color: "#d97706", bg: "#fef3c7", code: "IM-05", sub: "Devam Eden",    count: (a) => a.productions.length },
+  { key: "ilerleme",     label: "İlerleme",      icon: "trending-up",   route: "/ilerleme",     color: "#0d9488", bg: "#ccfbf1", code: "IL-06", sub: "Kayıt",         count: (a) => a.surveys.length + a.productions.length },
+  { key: "malzeme",      label: "Malzeme",       icon: "package",       route: "/malzeme",      color: "#059669", bg: "#d1fae5", code: "MZ-07", sub: "Kritik Stok",   count: (a) => a.materials.length },
+  { key: "kantar",       label: "Kantar",        icon: "truck",         route: "/kantar",       color: "#0d9488", bg: "#ccfbf1", code: "KN-08", sub: "Bugün Giriş",   count: (a) => a.weighbridges.length },
+  { key: "kesif",        label: "Keşif",         icon: "search",        route: "/kesif",        color: "#0ea5e9", bg: "#e0f2fe", code: "KS-09", sub: "Keşif",         count: (a) => a.surveys.length },
+  { key: "is-programi",  label: "İş Programı",   icon: "calendar",      route: "/is-programi",  color: "#8b5cf6", bg: "#ede9fe", code: "IP-10", sub: "Aktif İş",      count: (a) => a.scheduleTasks.length },
+  { key: "satin-alma",   label: "Satın Alma",    icon: "shopping-cart", route: "/satin-alma",   color: "#ea580c", bg: "#ffedd5", code: "SA-11", sub: "Açık Talep",    count: (a) => a.purchases.length },
+  { key: "hakedis",      label: "Hakediş",       icon: "file-text",     route: "/hakedis",      color: "#be185d", bg: "#fce7f3", code: "HK-12", sub: "Bekleyen",      count: (a) => a.hakedisler.length },
+  { key: "butce",        label: "Bütçe",         icon: "dollar-sign",   route: "/butce",        color: "#16213e", bg: "#e0e7ff", code: "BT-13", sub: "Kalem",         count: (a) => a.budget.length },
+  { key: "taseron",      label: "Taşeron",       icon: "truck",         route: "/taseron",      color: "#7c3aed", bg: "#ede9fe", code: "TS-14", sub: "Taşeron",       count: (a) => a.subcontractors.length },
+  { key: "kullanicilar", label: "Kullanıcılar",  icon: "shield",        route: "/kullanicilar", color: "#7c3aed", bg: "#ede9fe", code: "KU-15", sub: "Kullanıcı",     count: (a) => a.appUsers.length },
+  { key: "dosyalar",     label: "Dosyalar",      icon: "folder",        route: "/dosyalar",     color: "#475569", bg: "#e2e8f0", code: "DS-16", sub: "Dosya",         count: (a) => a.archiveFiles.length },
 ];
+
+// Modül neon renkleri (referans ekranına göre)
+const SECTION_NEON: Record<string, string> = {
+  "proje":        "#3b82f6",
+  "gunluk-rapor": "#f97316",
+  "puantaj":      "#8b5cf6",
+  "gorev":        "#22c55e",
+  "imalat":       "#3b82f6",
+  "ilerleme":     "#f97316",
+  "malzeme":      "#f97316",
+  "kantar":       "#22c55e",
+  "kesif":        "#60a5fa",
+  "is-programi":  "#f97316",
+  "satin-alma":   "#ec4899",
+  "hakedis":      "#06b6d4",
+  "butce":        "#22c55e",
+  "taseron":      "#f97316",
+  "kullanicilar": "#8b5cf6",
+  "dosyalar":     "#64748b",
+};
+
+// Modül sıra numaraları
+const SECTION_NUM: Record<string, string> = {
+  "proje": "01", "gunluk-rapor": "02", "puantaj": "03", "gorev": "04",
+  "imalat": "05", "ilerleme": "06", "malzeme": "07", "kantar": "08",
+  "kesif": "09", "is-programi": "10", "satin-alma": "11", "hakedis": "12",
+  "butce": "13", "taseron": "14", "kullanicilar": "15", "dosyalar": "16",
+};
 
 const HIVIS_YELLOW = "#facc15";
 const HIVIS_BG = "#fef3c7";
 const HIVIS_BLACK = "#1c1917";
 
-// ---- Kart renk özelleştirme ----
 const TILE_COLORS_KEY = "santiye-tile-colors-v1";
 
 type TileColorMode = "accent" | "fill";
@@ -83,13 +111,9 @@ interface TileColorConfig {
 }
 
 const SOFT_COLORS = [
-  // Sıcak
   "#f87171", "#fb923c", "#fbbf24", "#a3e635", "#4ade80",
-  // Serin
   "#34d399", "#22d3ee", "#38bdf8", "#60a5fa", "#818cf8",
-  // Pembe / Mor
   "#a78bfa", "#c084fc", "#e879f9", "#f472b6", "#fb7185",
-  // Nötr / Toprak
   "#94a3b8", "#78716c", "#6b7280", "#a8a29e", "#64748b",
 ];
 
@@ -142,6 +166,11 @@ export default function HomeScreen() {
   const { currentRole, currentAppUser, logout, exportData, importData, workspaceInfo, syncStatus, pushToCloud, pullFromCloud } = app;
   const isAdmin = currentRole?.isAdmin === true;
 
+  // Tarih
+  const today = new Date();
+  const dateStr = today.toLocaleDateString("tr-TR", { day: "numeric", month: "long", year: "numeric" });
+  const dayStr = today.toLocaleDateString("tr-TR", { weekday: "long" });
+
   const [exportVisible, setExportVisible] = useState(false);
   const [exportText, setExportText] = useState("");
 
@@ -155,7 +184,6 @@ export default function HomeScreen() {
     return currentRole.permissions[key] ?? "none";
   }
 
-  // ---- Modül sıralama (cihaza özel) ----
   const ORDER_KEY = "santiye-tile-order-v1";
   const [tileOrder, setTileOrder] = useState<string[]>([]);
   const [orderLoaded, setOrderLoaded] = useState(false);
@@ -167,9 +195,7 @@ export default function HomeScreen() {
           try {
             const arr = JSON.parse(raw);
             if (Array.isArray(arr)) setTileOrder(arr.filter((x) => typeof x === "string"));
-          } catch {
-            // ignore
-          }
+          } catch { }
         }
       })
       .finally(() => setOrderLoaded(true));
@@ -180,7 +206,6 @@ export default function HomeScreen() {
     AsyncStorage.setItem(ORDER_KEY, JSON.stringify(tileOrder)).catch(() => {});
   }, [tileOrder, orderLoaded]);
 
-  // ---- Kart renk özelleştirme ----
   const [tileColors, setTileColors] = useState<Record<string, TileColorConfig>>({});
   const [colorsLoaded, setColorsLoaded] = useState(false);
 
@@ -191,9 +216,7 @@ export default function HomeScreen() {
           try {
             const obj = JSON.parse(raw);
             if (obj && typeof obj === "object") setTileColors(obj);
-          } catch {
-            // ignore
-          }
+          } catch { }
         }
       })
       .finally(() => setColorsLoaded(true));
@@ -204,7 +227,6 @@ export default function HomeScreen() {
     AsyncStorage.setItem(TILE_COLORS_KEY, JSON.stringify(tileColors)).catch(() => {});
   }, [tileColors, colorsLoaded]);
 
-  // ---- Renk seçici modal ----
   const [cpKey, setCpKey] = useState<string | null>(null);
   const [cpMode, setCpMode] = useState<TileColorMode>("accent");
   const [cpColor, setCpColor] = useState<string>(SOFT_COLORS[0]);
@@ -238,12 +260,8 @@ export default function HomeScreen() {
     const result: typeof allowed = [];
     for (const k of tileOrder) {
       const s = byKey.get(k);
-      if (s) {
-        result.push(s);
-        byKey.delete(k);
-      }
+      if (s) { result.push(s); byKey.delete(k); }
     }
-    // Listede olmayan (yeni eklenmiş) modüller sona eklenir
     for (const s of allowed) {
       if (byKey.has(s.key as string)) result.push(s);
     }
@@ -280,11 +298,7 @@ export default function HomeScreen() {
         await FileSystem.writeAsStringAsync(uri, json, { encoding: FileSystem.EncodingType.UTF8 });
         const canShare = await Sharing.isAvailableAsync();
         if (canShare) {
-          await Sharing.shareAsync(uri, {
-            mimeType: "application/json",
-            dialogTitle: "Dosyayı kaydet veya paylaş",
-            UTI: "public.json",
-          });
+          await Sharing.shareAsync(uri, { mimeType: "application/json", dialogTitle: "Dosyayı kaydet veya paylaş", UTI: "public.json" });
           setExportVisible(false);
         } else {
           Alert.alert("Hata", "Paylaşım bu cihazda desteklenmiyor.");
@@ -322,9 +336,7 @@ export default function HomeScreen() {
       });
       if (result.canceled) return;
       const asset = result.assets[0];
-      const content = await FileSystem.readAsStringAsync(asset.uri, {
-        encoding: FileSystem.EncodingType.UTF8,
-      });
+      const content = await FileSystem.readAsStringAsync(asset.uri, { encoding: FileSystem.EncodingType.UTF8 });
       setImportText(content);
       setImportFileName(asset.name);
       setImportMsg(null);
@@ -346,82 +358,104 @@ export default function HomeScreen() {
         setImportMsg({ type: "ok", text: `Başarılı: ${total} kayıt yüklendi. Yeniden giriş yapmanız gerekecek.` });
         setImportText("");
         setImportFileName(null);
-        setTimeout(() => {
-          setImportVisible(false);
-          setImportMsg(null);
-          logout();
-        }, 1500);
+        setTimeout(() => { setImportVisible(false); setImportMsg(null); logout(); }, 1500);
       } else {
         setImportMsg({ type: "err", text: result.error });
       }
     };
 
     if (Platform.OS === "web") {
-      const ok = window.confirm(
-        "Mevcut tüm veriler içe aktarılan dosyayla değiştirilecek. Devam edilsin mi?"
-      );
+      const ok = window.confirm("Mevcut tüm veriler içe aktarılan dosyayla değiştirilecek. Devam edilsin mi?");
       proceed(ok);
     } else {
-      Alert.alert(
-        "Verileri Değiştir",
-        "Mevcut tüm veriler içe aktarılan dosyayla değiştirilecek. Devam edilsin mi?",
-        [
-          { text: "İptal", style: "cancel" },
-          { text: "Devam Et", style: "destructive", onPress: () => proceed(true) },
-        ]
-      );
+      Alert.alert("Verileri Değiştir", "Mevcut tüm veriler içe aktarılan dosyayla değiştirilecek. Devam edilsin mi?", [
+        { text: "İptal", style: "cancel" },
+        { text: "Devam Et", style: "destructive", onPress: () => proceed(true) },
+      ]);
     }
   }
 
   return (
     <View style={[styles.root, { backgroundColor: colors.background }]}>
-      <View
-        style={[
-          styles.hero,
-          { backgroundColor: colors.secondary, paddingTop: topPad + 12 },
-        ]}
-      >
-        <View style={styles.heroRow}>
-          <View style={{ flex: 1 }}>
-            <Text style={styles.heroSub}>{t("home.welcome")}</Text>
-            <SantijetLogo iconHeight={52} />
-            <Text style={styles.heroDesc}>
-              {app.projects.length} {t("home.stats.activeProjects")} · {app.workers.length} {t("home.stats.workers")}
+
+      {/* ─────────────────────────────────────────────────────
+          HEADER
+      ───────────────────────────────────────────────────── */}
+      <View style={[styles.appHeader, { backgroundColor: colors.secondary, paddingTop: topPad + 8 }]}>
+        <TouchableOpacity
+          onPress={() => router.push("/ayarlar" as any)}
+          style={styles.headerMenuBtn}
+          hitSlop={10}
+        >
+          <Feather name="menu" size={22} color="#cbd5e1" />
+        </TouchableOpacity>
+
+        <View style={styles.headerLogoArea}>
+          <SantijetLogo iconHeight={34} />
+          <Text style={styles.headerSubtitle}>OPERASYON YÖNETİMİ</Text>
+        </View>
+
+        <View style={styles.headerRight}>
+          <View style={styles.headerBellWrap}>
+            <Feather name="bell" size={20} color="#94a3b8" />
+          </View>
+          <TouchableOpacity onPress={logout} activeOpacity={0.8} style={styles.headerAvatar}>
+            <Text style={styles.headerAvatarText}>
+              {currentAppUser ? currentAppUser.name.charAt(0).toUpperCase() : "U"}
             </Text>
+          </TouchableOpacity>
+        </View>
+      </View>
+
+      {/* ─────────────────────────────────────────────────────
+          SCROLL CONTENT
+      ───────────────────────────────────────────────────── */}
+      <ScrollView
+        contentContainerStyle={[styles.scroll, { paddingBottom: insets.bottom + 24 }]}
+        showsVerticalScrollIndicator={false}
+        keyboardShouldPersistTaps="handled"
+      >
+        {/* Welcome Card */}
+        <View style={[styles.welcomeCard, { backgroundColor: colors.secondary, borderColor: "rgba(255,255,255,0.07)" }]}>
+          <View style={styles.welcomeLeft}>
+            <Text style={styles.welcomeGreet}>{t("home.welcome")}</Text>
+            <Text style={[styles.welcomeName, { color: colors.secondaryForeground }]} numberOfLines={1}>
+              {(currentAppUser?.name ?? "").toUpperCase()}
+            </Text>
+            <Text style={[styles.welcomeRole, { color: "#94a3b8" }]} numberOfLines={1}>
+              {currentRole?.name ?? ""}
+            </Text>
+            {workspaceInfo ? (
+              <View style={styles.welcomeCompanyRow}>
+                <Feather name="layers" size={12} color="#e85d04" />
+                <Text style={[styles.welcomeCompanyName, { color: "#cbd5e1" }]} numberOfLines={1}>
+                  {workspaceInfo.id === "local" ? t("home.workspace.local") : workspaceInfo.company_name}
+                </Text>
+                {workspaceInfo.id !== "local" && (
+                  <View style={styles.codePill}>
+                    <Text style={styles.codePillText}>{workspaceInfo.invite_code}</Text>
+                  </View>
+                )}
+              </View>
+            ) : null}
           </View>
 
-          {currentAppUser ? (
-            <View style={styles.userBadge}>
-              <Text style={styles.userInitial}>
-                {currentAppUser.name.charAt(0).toUpperCase()}
-              </Text>
-              <Text style={styles.userName} numberOfLines={1}>
-                {currentAppUser.name}
-              </Text>
-              <Text style={styles.userRole} numberOfLines={1}>
-                {currentRole?.name}
-              </Text>
-              <TouchableOpacity
-                onPress={logout}
-                style={styles.logoutBtn}
-                hitSlop={8}
-              >
-                <Feather name="log-out" size={14} color="#94a3b8" />
-                <Text style={styles.logoutText}>{t("home.logout")}</Text>
-              </TouchableOpacity>
-            </View>
-          ) : null}
+          <View style={styles.welcomeDateBlock}>
+            <Feather name="calendar" size={16} color="#60a5fa" />
+            <Text style={[styles.welcomeDateMain, { color: colors.secondaryForeground }]}>
+              {dateStr}
+            </Text>
+            <Text style={styles.welcomeDateSub}>{dayStr}</Text>
+          </View>
         </View>
 
         {/* Workspace sync bar */}
         {workspaceInfo && (
-          <View style={styles.syncBar}>
+          <View style={[styles.syncBar, { borderTopColor: "rgba(255,255,255,0.06)" }]}>
             <View style={styles.syncLeft}>
               <Feather name="layers" size={12} color="#e85d04" />
               <Text style={styles.syncCode} numberOfLines={1}>
-                {workspaceInfo.id === "local"
-                  ? t("home.workspace.local")
-                  : workspaceInfo.company_name}
+                {workspaceInfo.id === "local" ? t("home.workspace.local") : workspaceInfo.company_name}
               </Text>
               {workspaceInfo.id !== "local" && (
                 <View style={styles.codePill}>
@@ -440,11 +474,7 @@ export default function HomeScreen() {
                   {syncStatus === "syncing" ? (
                     <ActivityIndicator size={13} color="#0ea5e9" />
                   ) : (
-                    <Feather
-                      name="download-cloud"
-                      size={14}
-                      color={syncStatus === "error" ? "#dc2626" : syncStatus === "success" ? "#16a34a" : "#0ea5e9"}
-                    />
+                    <Feather name="download-cloud" size={14} color={syncStatus === "error" ? "#dc2626" : syncStatus === "success" ? "#16a34a" : "#0ea5e9"} />
                   )}
                 </TouchableOpacity>
                 <TouchableOpacity
@@ -456,11 +486,7 @@ export default function HomeScreen() {
                   {syncStatus === "syncing" ? (
                     <ActivityIndicator size={13} color="#e85d04" />
                   ) : (
-                    <Feather
-                      name="upload-cloud"
-                      size={14}
-                      color={syncStatus === "error" ? "#dc2626" : syncStatus === "success" ? "#16a34a" : "#e85d04"}
-                    />
+                    <Feather name="upload-cloud" size={14} color={syncStatus === "error" ? "#dc2626" : syncStatus === "success" ? "#16a34a" : "#e85d04"} />
                   )}
                 </TouchableOpacity>
               </View>
@@ -481,29 +507,16 @@ export default function HomeScreen() {
         {workspaceInfo && workspaceInfo.id !== "local" && syncStatus === "conflict" && (
           <View style={styles.conflictBar}>
             <Feather name="alert-triangle" size={13} color="#fbbf24" />
-            <Text style={styles.conflictText} numberOfLines={2}>
-              {t("home.workspace.conflict")}
-            </Text>
+            <Text style={styles.conflictText} numberOfLines={2}>{t("home.workspace.conflict")}</Text>
           </View>
         )}
         {workspaceInfo && workspaceInfo.id !== "local" && syncStatus === "auth_error" && (
           <View style={styles.conflictBar}>
             <Feather name="lock" size={13} color="#fbbf24" />
-            <Text style={styles.conflictText} numberOfLines={2}>
-              {t("home.workspace.authError")}
-            </Text>
+            <Text style={styles.conflictText} numberOfLines={2}>{t("home.workspace.authError")}</Text>
           </View>
         )}
-      </View>
 
-      <ScrollView
-        contentContainerStyle={[
-          styles.scroll,
-          { paddingBottom: insets.bottom + 24 },
-        ]}
-        showsVerticalScrollIndicator={false}
-        keyboardShouldPersistTaps="handled"
-      >
         <SmartSearch topInset={insets.bottom} />
 
         {isHiVis ? (
@@ -526,41 +539,8 @@ export default function HomeScreen() {
           tileH={isHiVis ? DG_TILE_H_HIVIS : isSteel ? DG_TILE_H_STEEL : DG_TILE_H_DEFAULT}
           renderTile={(s) => {
             const perm = getPermission(s.key);
-            if (isSteel) {
-              const idx = visibleSections.indexOf(s) + 1;
-              return (
-                <View style={styles.steelTileWrap}>
-                  <View style={[styles.steelAccent, { backgroundColor: s.color }]} />
-                  <View style={styles.steelHead}>
-                    <View
-                      style={[
-                        styles.steelIcon,
-                        { backgroundColor: s.color + "22", borderColor: s.color + "55" },
-                      ]}
-                    >
-                      <Feather name={s.icon as any} size={18} color={s.color} />
-                    </View>
-                    <Text style={styles.steelNum}>#{String(idx).padStart(2, "0")}</Text>
-                  </View>
-                  <Text style={styles.steelLabel} numberOfLines={1}>
-                    {t(`menu.${s.key}`).toUpperCase()}
-                  </Text>
-                  <View style={styles.steelCountRow}>
-                    <Text style={styles.steelCount} numberOfLines={1}>
-                      {s.count(app)}
-                    </Text>
-                    <Text style={styles.steelSub} numberOfLines={1}>
-                      {perm === "view" ? t("home.tile.readonly") : t(`home.steel.sub.${s.key}`)}
-                    </Text>
-                  </View>
-                  <View style={styles.steelDivider} />
-                  <View style={styles.steelFootRow}>
-                    <Text style={styles.steelOpen}>{t("home.steel.open")}</Text>
-                    <Feather name="chevron-right" size={12} color="#64748b" />
-                  </View>
-                </View>
-              );
-            }
+
+            // ── Hi-Vis tema ──────────────────────────────────────
             if (isHiVis) {
               return (
                 <View style={styles.hiVisTileWrap}>
@@ -577,13 +557,9 @@ export default function HomeScreen() {
                         <View style={styles.hiVisIconBox}>
                           <Feather name={s.icon as any} size={20} color={HIVIS_YELLOW} />
                         </View>
-                        <Text style={styles.hiVisCount} numberOfLines={1}>
-                          {s.count(app)}
-                        </Text>
+                        <Text style={styles.hiVisCount} numberOfLines={1}>{s.count(app)}</Text>
                       </View>
-                      <Text style={styles.hiVisLabel} numberOfLines={2}>
-                        {t(`menu.${s.key}`)}
-                      </Text>
+                      <Text style={styles.hiVisLabel} numberOfLines={2}>{t(`menu.${s.key}`)}</Text>
                       {perm === "view" ? (
                         <View style={styles.hiVisViewBadge}>
                           <Feather name="eye" size={9} color={HIVIS_YELLOW} />
@@ -596,43 +572,81 @@ export default function HomeScreen() {
                 </View>
               );
             }
+
+            // ── Steel tema ───────────────────────────────────────
+            if (isSteel) {
+              const idx = visibleSections.indexOf(s) + 1;
+              return (
+                <View style={styles.steelTileWrap}>
+                  <View style={[styles.steelAccent, { backgroundColor: s.color }]} />
+                  <View style={styles.steelHead}>
+                    <View style={[styles.steelIcon, { backgroundColor: s.color + "22", borderColor: s.color + "55" }]}>
+                      <Feather name={s.icon as any} size={18} color={s.color} />
+                    </View>
+                    <Text style={styles.steelNum}>#{String(idx).padStart(2, "0")}</Text>
+                  </View>
+                  <Text style={styles.steelLabel} numberOfLines={1}>{t(`menu.${s.key}`).toUpperCase()}</Text>
+                  <View style={styles.steelCountRow}>
+                    <Text style={styles.steelCount} numberOfLines={1}>{s.count(app)}</Text>
+                    <Text style={styles.steelSub} numberOfLines={1}>
+                      {perm === "view" ? t("home.tile.readonly") : t(`home.steel.sub.${s.key}`)}
+                    </Text>
+                  </View>
+                  <View style={styles.steelDivider} />
+                  <View style={styles.steelFootRow}>
+                    <Text style={styles.steelOpen}>{t("home.steel.open")}</Text>
+                    <Feather name="chevron-right" size={12} color="#64748b" />
+                  </View>
+                </View>
+              );
+            }
+
+            // ── Varsayılan premium kart ──────────────────────────
             const custom = tileColors[s.key];
-            const accentColor = custom ? custom.color : s.color;
+            const neonColor = custom ? custom.color : (SECTION_NEON[s.key] ?? s.color);
             const isFill = custom?.mode === "fill";
+            const tileNum = SECTION_NUM[s.key] ?? "";
+
             return (
               <View
                 style={[
                   styles.tileInner,
                   {
-                    backgroundColor: isFill ? fillBg(custom!.color) : colors.card,
-                    borderColor: isFill ? fillBorder(custom!.color) : colors.border,
+                    backgroundColor: isFill ? fillBg(neonColor) : colors.card,
+                    borderColor: isFill ? fillBorder(neonColor) : (neonColor + "33"),
                   },
                 ]}
               >
-                <View style={[styles.tileAccent, { backgroundColor: accentColor }]} />
-                <View style={styles.tileHead}>
-                  <View style={[styles.tileIcon, { backgroundColor: isFill ? custom!.color + "22" : s.bg }]}>
-                    <Feather name={s.icon as any} size={20} color={accentColor} />
-                  </View>
+                {/* Kart üst satırı: numara + izin rozeti */}
+                <View style={styles.tileTopRow}>
+                  <Text style={styles.tileNum}>{tileNum}</Text>
                   {perm === "view" ? (
                     <View style={styles.viewBadge}>
-                      <Feather name="eye" size={9} color="#0ea5e9" />
-                      <Text style={styles.viewBadgeText}>{t("home.tile.readonly")}</Text>
+                      <Feather name="eye" size={8} color="#0ea5e9" />
                     </View>
                   ) : null}
                 </View>
-                <Text
-                  style={[styles.tileLabel, { color: colors.foreground }]}
-                  numberOfLines={2}
-                >
-                  {t(`menu.${s.key}`)}
+
+                {/* İkon */}
+                <View style={styles.tileIconWrap}>
+                  <View style={[styles.tileIconCircle, { backgroundColor: neonColor + "1e" }]}>
+                    <Feather name={s.icon as any} size={26} color={neonColor} />
+                  </View>
+                </View>
+
+                {/* Başlık */}
+                <Text style={[styles.tileLabel, { color: colors.cardForeground }]} numberOfLines={1}>
+                  {t(`menu.${s.key}`).toUpperCase()}
                 </Text>
+
+                {/* Alt bilgi satırı */}
                 <View style={styles.tileFootRow}>
-                  <Text style={[styles.tileCount, { color: colors.mutedForeground }]} numberOfLines={1}>
-                    {s.count(app)}
+                  <View style={[styles.tileDot, { backgroundColor: neonColor }]} />
+                  <Text style={[styles.tileInfo, { color: neonColor }]} numberOfLines={1}>
+                    {s.count(app)} {s.sub}
                   </Text>
-                  <View style={[styles.tileChev, { backgroundColor: colors.muted }]}>
-                    <Feather name="chevron-right" size={12} color={colors.mutedForeground} />
+                  <View style={[styles.tileChevCircle, { borderColor: neonColor + "55" }]}>
+                    <Feather name="chevron-right" size={9} color={neonColor} />
                   </View>
                 </View>
               </View>
@@ -642,6 +656,7 @@ export default function HomeScreen() {
           onDoubleTap={(s) => openColorPicker(s.key)}
         />
 
+        {/* Hızlı erişim butonları */}
         <TouchableOpacity
           style={[styles.raporBtn, { backgroundColor: colors.card, borderColor: colors.primary + "60", borderWidth: 1.5 }]}
           onPress={() => router.push("/asistan" as any)}
@@ -703,12 +718,8 @@ export default function HomeScreen() {
                 <View style={[styles.dataIcon, { backgroundColor: "#dcfce7" }]}>
                   <Feather name="download" size={20} color="#16a34a" />
                 </View>
-                <Text style={[styles.dataLabel, { color: colors.foreground }]}>
-                  {t("home.data.export")}
-                </Text>
-                <Text style={[styles.dataDesc, { color: colors.mutedForeground }]}>
-                  {t("home.data.export.sub")}
-                </Text>
+                <Text style={[styles.dataLabel, { color: colors.foreground }]}>{t("home.data.export")}</Text>
+                <Text style={[styles.dataDesc, { color: colors.mutedForeground }]}>{t("home.data.export.sub")}</Text>
               </TouchableOpacity>
 
               <TouchableOpacity
@@ -719,140 +730,78 @@ export default function HomeScreen() {
                 <View style={[styles.dataIcon, { backgroundColor: "#dbeafe" }]}>
                   <Feather name="upload" size={20} color="#2563eb" />
                 </View>
-                <Text style={[styles.dataLabel, { color: colors.foreground }]}>
-                  {t("home.data.import")}
-                </Text>
-                <Text style={[styles.dataDesc, { color: colors.mutedForeground }]}>
-                  {t("home.data.import.sub")}
-                </Text>
+                <Text style={[styles.dataLabel, { color: colors.foreground }]}>{t("home.data.import")}</Text>
+                <Text style={[styles.dataDesc, { color: colors.mutedForeground }]}>{t("home.data.import.sub")}</Text>
               </TouchableOpacity>
             </View>
           </>
         ) : null}
       </ScrollView>
 
-      <BottomSheet
-        visible={exportVisible}
-        onClose={() => setExportVisible(false)}
-        title={t("home.data.export")}
-      >
-        <Text style={[styles.sheetDesc, { color: colors.mutedForeground }]}>
-          {t("home.data.export.desc")}
-        </Text>
-        <PrimaryButton
-          label={Platform.OS === "web" ? t("home.data.download") : t("common.save")}
-          onPress={downloadJson}
-          style={{ marginTop: 12 }}
-        />
-        <PrimaryButton
-          label={t("common.cancel")}
-          variant="cancel"
-          onPress={() => setExportVisible(false)}
-          style={{ marginTop: 10 }}
-        />
+      {/* ── Export BottomSheet ── */}
+      <BottomSheet visible={exportVisible} onClose={() => setExportVisible(false)} title={t("home.data.export")}>
+        <Text style={[styles.sheetDesc, { color: colors.mutedForeground }]}>{t("home.data.export.desc")}</Text>
+        <PrimaryButton label={Platform.OS === "web" ? t("home.data.download") : t("common.save")} onPress={downloadJson} style={{ marginTop: 12 }} />
+        <PrimaryButton label={t("common.cancel")} variant="cancel" onPress={() => setExportVisible(false)} style={{ marginTop: 10 }} />
       </BottomSheet>
 
+      {/* ── Import BottomSheet ── */}
       <BottomSheet
         visible={importVisible}
         onClose={() => { setImportVisible(false); setImportText(""); setImportFileName(null); setImportMsg(null); }}
         title={t("home.data.import")}
       >
-        <Text style={[styles.sheetDesc, { color: colors.mutedForeground }]}>
-          {t("home.data.import.desc")}
-        </Text>
+        <Text style={[styles.sheetDesc, { color: colors.mutedForeground }]}>{t("home.data.import.desc")}</Text>
 
         {Platform.OS === "web" ? (
           <>
-            <PrimaryButton
-              label={t("home.data.pickFile")}
-              onPress={pickFile}
-              style={{ marginBottom: 12 }}
-            />
-            <Text style={[styles.label, { color: colors.foreground }]}>
-              {t("home.data.orPaste")}
-            </Text>
+            <PrimaryButton label={t("home.data.pickFile")} onPress={pickFile} style={{ marginBottom: 12 }} />
+            <Text style={[styles.label, { color: colors.foreground }]}>{t("home.data.orPaste")}</Text>
             <TextInput
               value={importText}
-              onChangeText={(t) => { setImportText(t); setImportFileName(null); setImportMsg(null); }}
+              onChangeText={(tx) => { setImportText(tx); setImportFileName(null); setImportMsg(null); }}
               multiline
               placeholder='{"version":3,"data":{...}}'
               placeholderTextColor={colors.mutedForeground}
-              style={[
-                styles.importInput,
-                { backgroundColor: colors.muted, color: colors.foreground, borderColor: colors.muted },
-              ]}
+              style={[styles.importInput, { backgroundColor: colors.muted, color: colors.foreground, borderColor: colors.muted }]}
             />
           </>
         ) : (
-          <>
-            <TouchableOpacity
-              style={[styles.filePickBtn, { backgroundColor: colors.muted, borderColor: importFileName ? "#16a34a" : colors.muted }]}
-              onPress={pickFileMobile}
-              activeOpacity={0.8}
-            >
-              <View style={[styles.filePickIcon, { backgroundColor: importFileName ? "#dcfce7" : "#dbeafe" }]}>
-                <Feather
-                  name={importFileName ? "check-circle" : "folder"}
-                  size={22}
-                  color={importFileName ? "#16a34a" : "#2563eb"}
-                />
-              </View>
-              <View style={{ flex: 1 }}>
-                <Text style={[styles.filePickLabel, { color: colors.foreground }]}>
-                  {importFileName ? importFileName : t("home.data.fileSelect")}
-                </Text>
-                <Text style={[styles.filePickSub, { color: colors.mutedForeground }]}>
-                  {importFileName ? t("home.data.fileSelected") : t("home.data.fileHelp")}
-                </Text>
-              </View>
-              <Feather name="chevron-right" size={18} color={colors.mutedForeground} />
-            </TouchableOpacity>
-          </>
+          <TouchableOpacity
+            style={[styles.filePickBtn, { backgroundColor: colors.muted, borderColor: importFileName ? "#16a34a" : colors.muted }]}
+            onPress={pickFileMobile}
+            activeOpacity={0.8}
+          >
+            <View style={[styles.filePickIcon, { backgroundColor: importFileName ? "#dcfce7" : "#dbeafe" }]}>
+              <Feather name={importFileName ? "check-circle" : "folder"} size={22} color={importFileName ? "#16a34a" : "#2563eb"} />
+            </View>
+            <View style={{ flex: 1 }}>
+              <Text style={[styles.filePickLabel, { color: colors.foreground }]}>
+                {importFileName ? importFileName : t("home.data.fileSelect")}
+              </Text>
+              <Text style={[styles.filePickSub, { color: colors.mutedForeground }]}>
+                {importFileName ? t("home.data.fileSelected") : t("home.data.fileHelp")}
+              </Text>
+            </View>
+            <Feather name="chevron-right" size={18} color={colors.mutedForeground} />
+          </TouchableOpacity>
         )}
 
         {importMsg ? (
-          <View
-            style={[
-              styles.msgBox,
-              { backgroundColor: importMsg.type === "ok" ? "#dcfce7" : "#fee2e2" },
-            ]}
-          >
-            <Feather
-              name={importMsg.type === "ok" ? "check-circle" : "alert-circle"}
-              size={14}
-              color={importMsg.type === "ok" ? "#16a34a" : "#dc2626"}
-            />
-            <Text
-              style={[
-                styles.msgText,
-                { color: importMsg.type === "ok" ? "#16a34a" : "#dc2626" },
-              ]}
-            >
-              {importMsg.text}
-            </Text>
+          <View style={[styles.msgBox, { backgroundColor: importMsg.type === "ok" ? "#dcfce7" : "#fee2e2" }]}>
+            <Feather name={importMsg.type === "ok" ? "check-circle" : "alert-circle"} size={14} color={importMsg.type === "ok" ? "#16a34a" : "#dc2626"} />
+            <Text style={[styles.msgText, { color: importMsg.type === "ok" ? "#16a34a" : "#dc2626" }]}>{importMsg.text}</Text>
           </View>
         ) : null}
 
-        <PrimaryButton
-          label={t("home.data.doImport")}
-          onPress={doImport}
-          style={{ marginTop: 12 }}
-        />
-        <TouchableOpacity
-          onPress={() => { setImportVisible(false); setImportText(""); setImportFileName(null); setImportMsg(null); }}
-          style={styles.cancelBtn}
-        >
+        <PrimaryButton label={t("home.data.doImport")} onPress={doImport} style={{ marginTop: 12 }} />
+        <TouchableOpacity onPress={() => { setImportVisible(false); setImportText(""); setImportFileName(null); setImportMsg(null); }} style={styles.cancelBtn}>
           <Text style={[styles.cancelText, { color: colors.mutedForeground }]}>{t("common.close")}</Text>
         </TouchableOpacity>
       </BottomSheet>
 
-      {/* ---- Kart Renk Seçici Modal ---- */}
-      <Modal
-        visible={cpKey !== null}
-        transparent
-        animationType="fade"
-        onRequestClose={() => setCpKey(null)}
-      >
+      {/* ── Kart Renk Seçici Modal ── */}
+      <Modal visible={cpKey !== null} transparent animationType="fade" onRequestClose={() => setCpKey(null)}>
         <Pressable style={styles.cpOverlay} onPress={() => setCpKey(null)}>
           <Pressable style={[styles.cpSheet, { backgroundColor: colors.card }]} onPress={() => {}}>
             <View style={styles.cpHeader}>
@@ -865,32 +814,20 @@ export default function HomeScreen() {
 
             <View style={styles.cpModeRow}>
               <TouchableOpacity
-                style={[
-                  styles.cpModeBtn,
-                  { borderColor: cpMode === "accent" ? cpColor : colors.border },
-                  cpMode === "accent" && { backgroundColor: cpColor + "18" },
-                ]}
+                style={[styles.cpModeBtn, { borderColor: cpMode === "accent" ? cpColor : colors.border }, cpMode === "accent" && { backgroundColor: cpColor + "18" }]}
                 onPress={() => setCpMode("accent")}
                 activeOpacity={0.8}
               >
                 <View style={[styles.cpModeAccentDemo, { backgroundColor: cpColor }]} />
-                <Text style={[styles.cpModeLbl, { color: cpMode === "accent" ? cpColor : colors.mutedForeground }]}>
-                  Sol Kenar
-                </Text>
+                <Text style={[styles.cpModeLbl, { color: cpMode === "accent" ? cpColor : colors.mutedForeground }]}>Sol Kenar</Text>
               </TouchableOpacity>
               <TouchableOpacity
-                style={[
-                  styles.cpModeBtn,
-                  { borderColor: cpMode === "fill" ? cpColor : colors.border },
-                  cpMode === "fill" && { backgroundColor: cpColor + "18" },
-                ]}
+                style={[styles.cpModeBtn, { borderColor: cpMode === "fill" ? cpColor : colors.border }, cpMode === "fill" && { backgroundColor: cpColor + "18" }]}
                 onPress={() => setCpMode("fill")}
                 activeOpacity={0.8}
               >
                 <View style={[styles.cpModeFillDemo, { backgroundColor: cpColor + "2a", borderColor: cpColor + "55" }]} />
-                <Text style={[styles.cpModeLbl, { color: cpMode === "fill" ? cpColor : colors.mutedForeground }]}>
-                  Dolgu
-                </Text>
+                <Text style={[styles.cpModeLbl, { color: cpMode === "fill" ? cpColor : colors.mutedForeground }]}>Dolgu</Text>
               </TouchableOpacity>
             </View>
 
@@ -898,11 +835,7 @@ export default function HomeScreen() {
               {SOFT_COLORS.map((c) => (
                 <TouchableOpacity
                   key={c}
-                  style={[
-                    styles.cpSwatch,
-                    { backgroundColor: c },
-                    cpColor === c && styles.cpSwatchActive,
-                  ]}
+                  style={[styles.cpSwatch, { backgroundColor: c }, cpColor === c && styles.cpSwatchActive]}
                   onPress={() => setCpColor(c)}
                   activeOpacity={0.8}
                 />
@@ -910,19 +843,11 @@ export default function HomeScreen() {
             </View>
 
             <View style={styles.cpActions}>
-              <TouchableOpacity
-                style={[styles.cpResetBtn, { borderColor: colors.border }]}
-                onPress={resetColor}
-                activeOpacity={0.8}
-              >
+              <TouchableOpacity style={[styles.cpResetBtn, { borderColor: colors.border }]} onPress={resetColor} activeOpacity={0.8}>
                 <Feather name="rotate-ccw" size={13} color={colors.mutedForeground} />
                 <Text style={[styles.cpResetTxt, { color: colors.mutedForeground }]}>Sıfırla</Text>
               </TouchableOpacity>
-              <TouchableOpacity
-                style={[styles.cpApplyBtn, { backgroundColor: cpColor }]}
-                onPress={applyColor}
-                activeOpacity={0.8}
-              >
+              <TouchableOpacity style={[styles.cpApplyBtn, { backgroundColor: cpColor }]} onPress={applyColor} activeOpacity={0.8}>
                 <Feather name="check" size={13} color="#fff" />
                 <Text style={styles.cpApplyTxt}>Uygula</Text>
               </TouchableOpacity>
@@ -935,12 +860,12 @@ export default function HomeScreen() {
 }
 
 // ============================================================================
-// DraggableGrid: Uzun bas + sürükle ile yeniden sıralanabilen 2 sütunlu grid
+// DraggableGrid
 // ============================================================================
 
-const DG_COLS = 2;
-const DG_GAP = 12;
-const DG_TILE_H_DEFAULT = 144;
+const DG_COLS = 3;
+const DG_GAP = 10;
+const DG_TILE_H_DEFAULT = 132;
 const DG_TILE_H_HIVIS = 188;
 const DG_TILE_H_STEEL = 160;
 
@@ -978,30 +903,24 @@ function DraggableGrid<T extends DGSection>({
   const totalRows = Math.ceil(sections.length / DG_COLS);
   const containerH = totalRows > 0 ? totalRows * tileH + (totalRows - 1) * DG_GAP : 0;
 
-  // key -> index (canlı sıralama, drag esnasında güncellenir)
   const positions = useSharedValue<Record<string, number>>(
     Object.fromEntries(sections.map((s, i) => [s.key, i]))
   );
   const draggingKey = useSharedValue<string | null>(null);
   const tileWShared = useSharedValue(tileW);
 
-  // sections değişince pozisyonları yeniden senkronize et
   useEffect(() => {
     const next: Record<string, number> = {};
-    sections.forEach((s, i) => {
-      next[s.key] = i;
-    });
+    sections.forEach((s, i) => { next[s.key] = i; });
     positions.value = next;
   }, [sections]);
 
-  useEffect(() => {
-    tileWShared.value = tileW;
-  }, [tileW]);
+  useEffect(() => { tileWShared.value = tileW; }, [tileW]);
 
   return (
     <View
       onLayout={(e) => setContainerW(e.nativeEvent.layout.width)}
-      style={{ width: "100%", height: containerH, marginBottom: 24 }}
+      style={{ width: "100%", height: containerH, marginBottom: 20 }}
     >
       {tileW > 0
         ? sections.map((s) => (
@@ -1041,22 +960,11 @@ interface DTProps {
 }
 
 function DraggableTile({
-  itemKey,
-  total,
-  tileW,
-  tileH,
-  tileWShared,
-  positions,
-  draggingKey,
-  onReorder,
-  onPress,
-  onDoubleTap,
-  children,
+  itemKey, total, tileW, tileH, tileWShared, positions, draggingKey,
+  onReorder, onPress, onDoubleTap, children,
 }: DTProps) {
   const tileHShared = useSharedValue(tileH);
-  useEffect(() => {
-    tileHShared.value = tileH;
-  }, [tileH]);
+  useEffect(() => { tileHShared.value = tileH; }, [tileH]);
   const tx = useSharedValue(0);
   const ty = useSharedValue(0);
   const scale = useSharedValue(1);
@@ -1064,7 +972,6 @@ function DraggableTile({
   const shadow = useSharedValue(0);
   const initialized = useRef(false);
 
-  // Slot pozisyonuna otomatik geçiş (drag yapılmadığında)
   useAnimatedReaction(
     () => ({
       idx: positions.value[itemKey],
@@ -1077,7 +984,6 @@ function DraggableTile({
       if (cur.isDragging) return;
       const { x, y } = slotPos(cur.idx, cur.w, cur.h);
       if (!prev || prev.w === 0) {
-        // ilk yerleşim — animasyonsuz
         tx.value = x;
         ty.value = y;
       } else {
@@ -1087,9 +993,7 @@ function DraggableTile({
     }
   );
 
-  useEffect(() => {
-    initialized.current = true;
-  }, []);
+  useEffect(() => { initialized.current = true; }, []);
 
   const startX = useSharedValue(0);
   const startY = useSharedValue(0);
@@ -1110,7 +1014,6 @@ function DraggableTile({
       if (w === 0) return;
       tx.value = startX.value + e.translationX;
       ty.value = startY.value + e.translationY;
-      // Parmağın hangi slot üzerinde olduğunu hesapla
       const cx = tx.value + w / 2;
       const cy = ty.value + h / 2;
       const col = Math.max(0, Math.min(DG_COLS - 1, Math.floor(cx / (w + DG_GAP))));
@@ -1118,15 +1021,12 @@ function DraggableTile({
       const newIdx = Math.max(0, Math.min(total - 1, row * DG_COLS + col));
       const myIdx = positions.value[itemKey];
       if (myIdx === undefined || newIdx === myIdx) return;
-      // Sırayı yeniden kur ve diğer karelere dağıt
       const entries = Object.entries(positions.value).sort((a, b) => a[1] - b[1]);
       const keys = entries.map(([k]) => k);
       keys.splice(myIdx, 1);
       keys.splice(newIdx, 0, itemKey);
       const next: Record<string, number> = {};
-      keys.forEach((k, i) => {
-        next[k] = i;
-      });
+      keys.forEach((k, i) => { next[k] = i; });
       positions.value = next;
       runOnJS(onReorder)(keys);
     })
@@ -1146,11 +1046,8 @@ function DraggableTile({
 
   const tap = Gesture.Tap()
     .maxDuration(280)
-    .onEnd((_e, success) => {
-      if (success) runOnJS(onPress)();
-    });
+    .onEnd((_e, success) => { if (success) runOnJS(onPress)(); });
 
-  // 800 ms hareketsiz uzun basma → renk seçici (sürükleme iptal edilir)
   const colorLongPress = Gesture.LongPress()
     .minDuration(800)
     .maxDistance(12)
@@ -1195,90 +1092,138 @@ function DraggableTile({
   );
 }
 
+// ============================================================================
+// Stiller
+// ============================================================================
+
 const styles = StyleSheet.create({
   root: { flex: 1 },
-  hero: {
-    paddingHorizontal: 20,
-    paddingBottom: 24,
-    borderBottomLeftRadius: 24,
-    borderBottomRightRadius: 24,
-  },
-  heroRow: {
+
+  // ── Header ──────────────────────────────────────────────────────
+  appHeader: {
     flexDirection: "row",
-    alignItems: "flex-start",
+    alignItems: "center",
+    paddingHorizontal: 16,
+    paddingBottom: 12,
     gap: 12,
   },
-  heroSub: {
-    color: "#cbd5e1",
-    fontSize: 14,
-    fontFamily: "Inter_400Regular",
-  },
-  heroTitle: {
-    color: "#fff",
-    fontSize: 24,
-    fontFamily: "Inter_700Bold",
-    marginTop: 2,
-  },
-  heroDesc: {
-    color: "#94a3b8",
-    fontSize: 12,
-    fontFamily: "Inter_400Regular",
-    marginTop: 4,
-  },
-  userBadge: {
+  headerMenuBtn: {
+    width: 36,
+    height: 36,
+    justifyContent: "center",
     alignItems: "center",
-    minWidth: 80,
   },
-  userInitial: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
-    backgroundColor: "#e85d0422",
-    color: "#e85d04",
-    fontSize: 18,
+  headerLogoArea: {
+    flex: 1,
+    alignItems: "center",
+    gap: 2,
+  },
+  headerSubtitle: {
+    color: "#4a6080",
+    fontSize: 8,
     fontFamily: "Inter_700Bold",
-    textAlign: "center",
-    lineHeight: 40,
-    overflow: "hidden",
+    letterSpacing: 2,
   },
-  userName: {
-    color: "#f1f5f9",
-    fontSize: 11,
-    fontFamily: "Inter_600SemiBold",
-    marginTop: 4,
-    maxWidth: 80,
-  },
-  userRole: {
-    color: "#94a3b8",
-    fontSize: 10,
-    fontFamily: "Inter_400Regular",
-    maxWidth: 80,
-  },
-  logoutBtn: {
+  headerRight: {
     flexDirection: "row",
     alignItems: "center",
+    gap: 10,
+  },
+  headerBellWrap: {
+    width: 36,
+    height: 36,
+    borderRadius: 18,
+    backgroundColor: "rgba(255,255,255,0.06)",
+    justifyContent: "center",
+    alignItems: "center",
+  },
+  headerAvatar: {
+    width: 36,
+    height: 36,
+    borderRadius: 18,
+    backgroundColor: "#ea580c",
+    justifyContent: "center",
+    alignItems: "center",
+  },
+  headerAvatarText: {
+    color: "#fff",
+    fontSize: 16,
+    fontFamily: "Inter_700Bold",
+  },
+
+  // ── Welcome Card ─────────────────────────────────────────────────
+  welcomeCard: {
+    flexDirection: "row",
+    alignItems: "flex-start",
+    borderRadius: 16,
+    padding: 16,
+    marginBottom: 12,
+    borderWidth: 1,
+    gap: 12,
+  },
+  welcomeLeft: { flex: 1 },
+  welcomeGreet: {
+    color: "#64748b",
+    fontSize: 13,
+    fontFamily: "Inter_400Regular",
+  },
+  welcomeName: {
+    fontSize: 20,
+    fontFamily: "Inter_700Bold",
+    letterSpacing: 0.5,
+    marginTop: 3,
+  },
+  welcomeRole: {
+    fontSize: 13,
+    fontFamily: "Inter_400Regular",
+    marginTop: 2,
+  },
+  welcomeCompanyRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 6,
+    marginTop: 10,
+    flexWrap: "wrap",
+  },
+  welcomeCompanyName: {
+    fontSize: 13,
+    fontFamily: "Inter_600SemiBold",
+  },
+  welcomeDateBlock: {
+    alignItems: "flex-end",
     gap: 3,
-    marginTop: 6,
+    paddingTop: 2,
   },
-  logoutText: {
-    color: "#94a3b8",
-    fontSize: 11,
-    fontFamily: "Inter_500Medium",
+  welcomeDateMain: {
+    fontSize: 12,
+    fontFamily: "Inter_600SemiBold",
+    marginTop: 4,
+    textAlign: "right",
   },
+  welcomeDateSub: {
+    fontSize: 12,
+    fontFamily: "Inter_400Regular",
+    color: "#64748b",
+  },
+
+  // ── Sync Bar ──────────────────────────────────────────────────────
   syncBar: {
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "space-between",
-    marginTop: 10,
-    paddingTop: 8,
-    borderTopWidth: 1,
-    borderTopColor: "rgba(255,255,255,0.08)",
+    marginBottom: 12,
+    paddingVertical: 8,
+    paddingHorizontal: 12,
+    borderRadius: 10,
+    backgroundColor: "rgba(255,255,255,0.03)",
+    borderWidth: 1,
+    borderColor: "rgba(255,255,255,0.06)",
   },
   conflictBar: {
     flexDirection: "row",
     alignItems: "center",
     gap: 8,
-    marginTop: 8,
+    marginBottom: 8,
     paddingHorizontal: 10,
     paddingVertical: 8,
     borderRadius: 8,
@@ -1292,572 +1237,188 @@ const styles = StyleSheet.create({
     fontFamily: "Inter_500Medium",
     flex: 1,
   },
-  syncLeft: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 6,
-    flex: 1,
-  },
-  syncCode: {
-    color: "#cbd5e1",
-    fontSize: 11,
-    fontFamily: "Inter_500Medium",
-    flex: 1,
-  },
+  syncLeft: { flexDirection: "row", alignItems: "center", gap: 6, flex: 1 },
+  syncCode: { color: "#cbd5e1", fontSize: 11, fontFamily: "Inter_500Medium", flex: 1 },
   codePill: {
     backgroundColor: "rgba(232,93,4,0.18)",
     borderRadius: 6,
     paddingHorizontal: 6,
     paddingVertical: 2,
   },
-  codePillText: {
-    color: "#e85d04",
-    fontSize: 10,
-    fontFamily: "Inter_700Bold",
-    letterSpacing: 1,
-  },
-  syncBtns: {
-    flexDirection: "row",
-    gap: 10,
-    marginLeft: 10,
-  },
+  codePillText: { color: "#e85d04", fontSize: 10, fontFamily: "Inter_700Bold", letterSpacing: 1 },
+  syncBtns: { flexDirection: "row", gap: 10, marginLeft: 10 },
   syncBtn: {
-    width: 28,
-    height: 28,
-    borderRadius: 8,
+    width: 28, height: 28, borderRadius: 8,
     backgroundColor: "rgba(255,255,255,0.07)",
-    justifyContent: "center",
-    alignItems: "center",
+    justifyContent: "center", alignItems: "center",
   },
   switchWsBtn: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 6,
-    marginLeft: 10,
-    backgroundColor: "rgba(232,93,4,0.15)",
-    borderColor: "#e85d04",
-    borderWidth: 1,
-    borderRadius: 8,
-    paddingHorizontal: 10,
-    paddingVertical: 6,
+    flexDirection: "row", alignItems: "center", gap: 6, marginLeft: 10,
+    backgroundColor: "rgba(232,93,4,0.15)", borderColor: "#e85d04",
+    borderWidth: 1, borderRadius: 8, paddingHorizontal: 10, paddingVertical: 6,
   },
-  switchWsText: {
-    color: "#e85d04",
-    fontSize: 11,
-    fontFamily: "Inter_600SemiBold",
-  },
-  scroll: { padding: 16 },
-  sectionLabel: {
-    fontSize: 16,
-    fontFamily: "Inter_700Bold",
-    marginBottom: 12,
-    marginLeft: 4,
-  },
+  switchWsText: { color: "#e85d04", fontSize: 11, fontFamily: "Inter_600SemiBold" },
+
+  // ── Scroll ────────────────────────────────────────────────────────
+  scroll: { padding: 12, paddingTop: 14 },
+  sectionLabel: { fontSize: 16, fontFamily: "Inter_700Bold", marginBottom: 12, marginLeft: 4 },
+
+  // ── Premium Tile (varsayılan 3-sütun) ─────────────────────────────
   tileInner: {
     flex: 1,
-    paddingTop: 14,
-    paddingBottom: 12,
-    paddingHorizontal: 14,
-    paddingLeft: 16,
-    borderRadius: 12,
-    borderWidth: StyleSheet.hairlineWidth,
-    gap: 10,
+    padding: 10,
+    borderRadius: 14,
+    borderWidth: 1,
     overflow: "hidden",
-    shadowColor: "#0B1E33",
+    justifyContent: "space-between",
+    shadowColor: "#000",
     shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.06,
+    shadowOpacity: 0.1,
     shadowRadius: 6,
-    elevation: 2,
-    justifyContent: "space-between",
+    elevation: 3,
   },
-  tileAccent: {
-    position: "absolute",
-    left: 0,
-    top: 0,
-    bottom: 0,
-    width: 4,
-  },
-  tileHead: {
+  tileTopRow: {
     flexDirection: "row",
-    alignItems: "flex-start",
+    alignItems: "center",
     justifyContent: "space-between",
-    gap: 6,
   },
-  tileIcon: {
-    width: 38,
-    height: 38,
-    borderRadius: 9,
+  tileNum: {
+    fontSize: 10,
+    fontFamily: "Inter_700Bold",
+    color: "#334155",
+    letterSpacing: 0.5,
+  },
+  tileIconWrap: {
+    flex: 1,
+    justifyContent: "center",
+    alignItems: "center",
+    paddingVertical: 4,
+  },
+  tileIconCircle: {
+    width: 50,
+    height: 50,
+    borderRadius: 25,
     justifyContent: "center",
     alignItems: "center",
   },
   tileLabel: {
-    fontSize: 14,
-    lineHeight: 18,
+    fontSize: 10,
     fontFamily: "Inter_700Bold",
-    letterSpacing: 0.1,
+    textAlign: "center",
+    letterSpacing: 0.4,
   },
   tileFootRow: {
     flexDirection: "row",
     alignItems: "center",
-    justifyContent: "space-between",
-    gap: 6,
+    gap: 4,
   },
-  tileChev: {
-    width: 22,
-    height: 22,
-    borderRadius: 11,
-    alignItems: "center",
-    justifyContent: "center",
+  tileDot: {
+    width: 5,
+    height: 5,
+    borderRadius: 3,
   },
-  tileCount: {
+  tileInfo: {
     flex: 1,
-    fontSize: 11,
+    fontSize: 9,
     fontFamily: "Inter_500Medium",
-    letterSpacing: 0.1,
+  },
+  tileChevCircle: {
+    width: 18,
+    height: 18,
+    borderRadius: 9,
+    borderWidth: 1,
+    justifyContent: "center",
+    alignItems: "center",
   },
   viewBadge: {
     flexDirection: "row",
     alignItems: "center",
-    gap: 3,
+    gap: 2,
     backgroundColor: "#e0f2fe",
-    paddingHorizontal: 6,
+    paddingHorizontal: 4,
     paddingVertical: 2,
     borderRadius: 4,
   },
-  viewBadgeText: {
-    fontSize: 9,
-    fontFamily: "Inter_600SemiBold",
-    color: "#0ea5e9",
-  },
-  hiVisBanner: {
-    marginBottom: 12,
-    gap: 6,
-  },
-  hiVisBannerRow: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 6,
-    paddingHorizontal: 4,
-  },
-  hiVisBannerText: {
-    fontSize: 10,
-    fontFamily: "Inter_700Bold",
-    color: HIVIS_BLACK,
-    letterSpacing: 2.5,
-  },
-  hiVisTileWrap: {
-    flex: 1,
-    position: "relative",
-  },
-  hiVisTileShadow: {
-    position: "absolute",
-    left: 4,
-    top: 4,
-    right: -4,
-    bottom: -4,
-    backgroundColor: HIVIS_BLACK,
-    borderRadius: 6,
-  },
-  hiVisTileInner: {
-    flex: 1,
-    backgroundColor: HIVIS_YELLOW,
-    borderColor: HIVIS_BLACK,
-    borderWidth: 2,
-    borderRadius: 6,
-    overflow: "hidden",
-  },
-  hiVisHeader: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 4,
-    backgroundColor: HIVIS_BLACK,
-    paddingHorizontal: 8,
-    paddingVertical: 4,
-  },
-  hiVisDikkat: {
-    fontSize: 9,
-    fontFamily: "Inter_700Bold",
-    color: HIVIS_YELLOW,
-    letterSpacing: 1.5,
-  },
-  hiVisCode: {
-    fontSize: 9,
-    fontFamily: "Inter_700Bold",
-    color: HIVIS_YELLOW,
-    letterSpacing: 0.5,
-  },
-  hiVisBody: {
-    padding: 12,
-    gap: 8,
-  },
-  hiVisHeadRow: {
-    flexDirection: "row",
-    alignItems: "flex-start",
-    justifyContent: "space-between",
-  },
-  hiVisIconBox: {
-    width: 38,
-    height: 38,
-    borderRadius: 6,
-    backgroundColor: HIVIS_BLACK,
-    alignItems: "center",
-    justifyContent: "center",
-  },
-  hiVisCount: {
-    fontSize: 26,
-    lineHeight: 28,
-    fontFamily: "Inter_700Bold",
-    color: HIVIS_BLACK,
-  },
-  hiVisLabel: {
-    fontSize: 13,
-    fontFamily: "Inter_700Bold",
-    color: HIVIS_BLACK,
-    letterSpacing: 0.8,
-  },
-  hiVisViewBadge: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 3,
-    alignSelf: "flex-start",
-    backgroundColor: HIVIS_BLACK,
-    paddingHorizontal: 6,
-    paddingVertical: 2,
-    borderRadius: 3,
-  },
-  hiVisViewText: {
-    fontSize: 9,
-    fontFamily: "Inter_600SemiBold",
-    color: HIVIS_YELLOW,
-  },
-  steelBanner: {
-    fontSize: 10,
-    fontFamily: "Inter_700Bold",
-    color: "#94a3b8",
-    letterSpacing: 2,
-    paddingHorizontal: 4,
-    marginBottom: 12,
-  },
-  steelTileWrap: {
-    flex: 1,
-    backgroundColor: "#1e293b",
-    borderColor: "rgba(51,65,85,0.6)",
-    borderWidth: 1,
-    borderRadius: 8,
-    overflow: "hidden",
-    paddingVertical: 12,
-    paddingRight: 12,
-    paddingLeft: 16,
-    position: "relative",
-  },
-  steelAccent: {
-    position: "absolute",
-    left: 0,
-    top: 0,
-    bottom: 0,
-    width: 4,
-  },
-  steelHead: {
-    flexDirection: "row",
-    alignItems: "flex-start",
-    justifyContent: "space-between",
-    marginBottom: 10,
-  },
-  steelIcon: {
-    width: 36,
-    height: 36,
-    borderRadius: 6,
-    borderWidth: 1,
-    alignItems: "center",
-    justifyContent: "center",
-  },
-  steelNum: {
-    fontSize: 9,
-    fontFamily: "Inter_700Bold",
-    color: "#64748b",
-    letterSpacing: 1,
-    marginTop: 2,
-  },
-  steelLabel: {
-    fontSize: 12,
-    fontFamily: "Inter_700Bold",
-    color: "#ffffff",
-    letterSpacing: 0.8,
-  },
-  steelCountRow: {
-    flexDirection: "row",
-    alignItems: "baseline",
-    gap: 6,
-    marginTop: 4,
-  },
-  steelCount: {
-    fontSize: 22,
-    fontFamily: "Inter_700Bold",
-    color: "#ffffff",
-  },
-  steelSub: {
-    fontSize: 10,
-    fontFamily: "Inter_500Medium",
-    color: "#94a3b8",
-    flexShrink: 1,
-  },
-  steelDivider: {
-    height: 1,
-    backgroundColor: "rgba(51,65,85,0.6)",
-    marginTop: 8,
-  },
-  steelFootRow: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "space-between",
-    marginTop: 6,
-  },
-  steelOpen: {
-    fontSize: 9,
-    fontFamily: "Inter_700Bold",
-    color: "#64748b",
-    letterSpacing: 2,
-  },
-  raporBtn: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 12,
-    padding: 14,
-    borderRadius: 14,
-    borderWidth: 1.5,
-    marginTop: 16,
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.05,
-    shadowRadius: 4,
-    elevation: 2,
-  },
+  viewBadgeText: { fontSize: 9, fontFamily: "Inter_600SemiBold", color: "#0ea5e9" },
+
+  // ── Hi-Vis Tile ───────────────────────────────────────────────────
+  hiVisBanner: { marginBottom: 12, gap: 6 },
+  hiVisBannerRow: { flexDirection: "row", alignItems: "center", gap: 6, paddingHorizontal: 4 },
+  hiVisBannerText: { fontSize: 10, fontFamily: "Inter_700Bold", color: HIVIS_BLACK, letterSpacing: 2.5 },
+  hiVisTileWrap: { flex: 1, position: "relative" },
+  hiVisTileShadow: { position: "absolute", left: 4, top: 4, right: -4, bottom: -4, backgroundColor: HIVIS_BLACK, borderRadius: 6 },
+  hiVisTileInner: { flex: 1, backgroundColor: HIVIS_YELLOW, borderColor: HIVIS_BLACK, borderWidth: 2, borderRadius: 6, overflow: "hidden" },
+  hiVisHeader: { flexDirection: "row", alignItems: "center", gap: 4, backgroundColor: HIVIS_BLACK, paddingHorizontal: 8, paddingVertical: 4 },
+  hiVisDikkat: { fontSize: 9, fontFamily: "Inter_700Bold", color: HIVIS_YELLOW, letterSpacing: 1.5 },
+  hiVisCode: { fontSize: 9, fontFamily: "Inter_700Bold", color: HIVIS_YELLOW, letterSpacing: 0.5 },
+  hiVisBody: { padding: 12, gap: 8 },
+  hiVisHeadRow: { flexDirection: "row", alignItems: "flex-start", justifyContent: "space-between" },
+  hiVisIconBox: { width: 38, height: 38, borderRadius: 6, backgroundColor: HIVIS_BLACK, alignItems: "center", justifyContent: "center" },
+  hiVisCount: { fontSize: 26, lineHeight: 28, fontFamily: "Inter_700Bold", color: HIVIS_BLACK },
+  hiVisLabel: { fontSize: 13, fontFamily: "Inter_700Bold", color: HIVIS_BLACK, letterSpacing: 0.8 },
+  hiVisViewBadge: { flexDirection: "row", alignItems: "center", gap: 3, alignSelf: "flex-start", backgroundColor: HIVIS_BLACK, paddingHorizontal: 6, paddingVertical: 2, borderRadius: 3 },
+  hiVisViewText: { fontSize: 9, fontFamily: "Inter_600SemiBold", color: HIVIS_YELLOW },
+
+  // ── Steel Tile ────────────────────────────────────────────────────
+  steelBanner: { fontSize: 10, fontFamily: "Inter_700Bold", color: "#94a3b8", letterSpacing: 2, paddingHorizontal: 4, marginBottom: 12 },
+  steelTileWrap: { flex: 1, backgroundColor: "#1e293b", borderColor: "rgba(51,65,85,0.6)", borderWidth: 1, borderRadius: 8, overflow: "hidden", paddingVertical: 12, paddingRight: 12, paddingLeft: 16, position: "relative" },
+  steelAccent: { position: "absolute", left: 0, top: 0, bottom: 0, width: 4 },
+  steelHead: { flexDirection: "row", alignItems: "flex-start", justifyContent: "space-between", marginBottom: 10 },
+  steelIcon: { width: 36, height: 36, borderRadius: 6, borderWidth: 1, alignItems: "center", justifyContent: "center" },
+  steelNum: { fontSize: 9, fontFamily: "Inter_700Bold", color: "#64748b", letterSpacing: 1, marginTop: 2 },
+  steelLabel: { fontSize: 12, fontFamily: "Inter_700Bold", color: "#ffffff", letterSpacing: 0.8 },
+  steelCountRow: { flexDirection: "row", alignItems: "baseline", gap: 6, marginTop: 4 },
+  steelCount: { fontSize: 22, fontFamily: "Inter_700Bold", color: "#ffffff" },
+  steelSub: { fontSize: 10, fontFamily: "Inter_500Medium", color: "#94a3b8", flexShrink: 1 },
+  steelDivider: { height: 1, backgroundColor: "rgba(51,65,85,0.6)", marginTop: 8 },
+  steelFootRow: { flexDirection: "row", alignItems: "center", justifyContent: "space-between", marginTop: 6 },
+  steelOpen: { fontSize: 9, fontFamily: "Inter_700Bold", color: "#64748b", letterSpacing: 2 },
+
+  // ── Hızlı Erişim Butonları ────────────────────────────────────────
+  raporBtn: { flexDirection: "row", alignItems: "center", gap: 12, padding: 14, borderRadius: 14, borderWidth: 1.5, marginTop: 12, shadowColor: "#000", shadowOffset: { width: 0, height: 1 }, shadowOpacity: 0.05, shadowRadius: 4, elevation: 2 },
   raporIcon: { width: 42, height: 42, borderRadius: 10, alignItems: "center", justifyContent: "center" },
   raporTitle: { fontSize: 15, fontFamily: "Inter_700Bold" },
   raporSub: { fontSize: 12, fontFamily: "Inter_400Regular", marginTop: 2 },
   aiPill: { paddingHorizontal: 8, paddingVertical: 3, borderRadius: 999 },
   aiPillText: { fontSize: 10, fontWeight: "800", letterSpacing: 0.5, fontFamily: "Inter_700Bold" },
-  dataRow: {
-    flexDirection: "row",
-    gap: 12,
-  },
-  dataBtn: {
-    flex: 1,
-    padding: 14,
-    borderRadius: 14,
-    borderWidth: 1,
-    gap: 8,
-  },
-  dataIcon: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
-    justifyContent: "center",
-    alignItems: "center",
-  },
-  dataLabel: {
-    fontSize: 14,
-    fontFamily: "Inter_600SemiBold",
-  },
-  dataDesc: {
-    fontSize: 11,
-    fontFamily: "Inter_400Regular",
-    lineHeight: 15,
-  },
-  sheetDesc: {
-    fontSize: 13,
-    fontFamily: "Inter_400Regular",
-    marginBottom: 12,
-    lineHeight: 18,
-  },
-  jsonBox: {
-    borderRadius: 8,
-    padding: 10,
-    marginBottom: 4,
-  },
-  jsonText: {
-    fontSize: 11,
-    fontFamily: Platform.OS === "ios" ? "Menlo" : "monospace",
-  },
-  label: {
-    fontSize: 13,
-    fontFamily: "Inter_600SemiBold",
-    marginBottom: 6,
-  },
-  importInput: {
-    minHeight: 120,
-    maxHeight: 180,
-    borderRadius: 8,
-    padding: 10,
-    fontSize: 12,
-    fontFamily: Platform.OS === "ios" ? "Menlo" : "monospace",
-    textAlignVertical: "top",
-    borderWidth: 1,
-  },
-  msgBox: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 8,
-    padding: 10,
-    borderRadius: 8,
-    marginTop: 10,
-  },
-  msgText: {
-    flex: 1,
-    fontSize: 12,
-    fontFamily: "Inter_500Medium",
-  },
-  cancelBtn: {
-    alignItems: "center",
-    paddingVertical: 12,
-    marginTop: 4,
-  },
-  cancelText: {
-    fontSize: 13,
-    fontFamily: "Inter_500Medium",
-  },
-  filePickBtn: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 12,
-    padding: 14,
-    borderRadius: 12,
-    borderWidth: 1.5,
-    marginBottom: 4,
-  },
-  filePickIcon: {
-    width: 44,
-    height: 44,
-    borderRadius: 22,
-    justifyContent: "center",
-    alignItems: "center",
-  },
-  filePickLabel: {
-    fontSize: 14,
-    fontFamily: "Inter_600SemiBold",
-  },
-  filePickSub: {
-    fontSize: 11,
-    fontFamily: "Inter_400Regular",
-    marginTop: 2,
-  },
-  // ---- Renk seçici modal ----
-  cpOverlay: {
-    flex: 1,
-    backgroundColor: "rgba(0,0,0,0.45)",
-    justifyContent: "center",
-    alignItems: "center",
-  },
-  cpSheet: {
-    width: 320,
-    borderRadius: 20,
-    padding: 20,
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: 8 },
-    shadowOpacity: 0.18,
-    shadowRadius: 24,
-    elevation: 20,
-  },
-  cpHeader: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 10,
-    marginBottom: 18,
-  },
-  cpDot: {
-    width: 16,
-    height: 16,
-    borderRadius: 8,
-  },
-  cpTitle: {
-    flex: 1,
-    fontSize: 16,
-    fontFamily: "Inter_700Bold",
-  },
-  cpModeRow: {
-    flexDirection: "row",
-    gap: 10,
-    marginBottom: 20,
-  },
-  cpModeBtn: {
-    flex: 1,
-    borderRadius: 12,
-    borderWidth: 1.5,
-    paddingVertical: 10,
-    paddingHorizontal: 12,
-    alignItems: "center",
-    gap: 8,
-  },
-  cpModeAccentDemo: {
-    width: 28,
-    height: 28,
-    borderRadius: 6,
-    borderLeftWidth: 4,
-    borderLeftColor: "transparent",
-    position: "relative",
-  },
-  cpModeFillDemo: {
-    width: 28,
-    height: 28,
-    borderRadius: 6,
-    borderWidth: 1.5,
-  },
-  cpModeLbl: {
-    fontSize: 12,
-    fontFamily: "Inter_600SemiBold",
-  },
-  cpPalette: {
-    flexDirection: "row",
-    flexWrap: "wrap",
-    gap: 10,
-    justifyContent: "center",
-    marginBottom: 20,
-  },
-  cpSwatch: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
-  },
-  cpSwatchActive: {
-    borderWidth: 3,
-    borderColor: "#fff",
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.25,
-    shadowRadius: 4,
-    elevation: 4,
-    transform: [{ scale: 1.15 }],
-  },
-  cpActions: {
-    flexDirection: "row",
-    gap: 10,
-  },
-  cpResetBtn: {
-    flex: 1,
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "center",
-    gap: 6,
-    borderRadius: 12,
-    borderWidth: 1.5,
-    paddingVertical: 12,
-  },
-  cpResetTxt: {
-    fontSize: 13,
-    fontFamily: "Inter_600SemiBold",
-  },
-  cpApplyBtn: {
-    flex: 2,
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "center",
-    gap: 6,
-    borderRadius: 12,
-    paddingVertical: 12,
-  },
-  cpApplyTxt: {
-    fontSize: 13,
-    fontFamily: "Inter_600SemiBold",
-    color: "#fff",
-  },
+
+  // ── Admin Veri ────────────────────────────────────────────────────
+  dataRow: { flexDirection: "row", gap: 12 },
+  dataBtn: { flex: 1, padding: 14, borderRadius: 14, borderWidth: 1, gap: 8 },
+  dataIcon: { width: 40, height: 40, borderRadius: 20, justifyContent: "center", alignItems: "center" },
+  dataLabel: { fontSize: 14, fontFamily: "Inter_600SemiBold" },
+  dataDesc: { fontSize: 11, fontFamily: "Inter_400Regular", lineHeight: 15 },
+
+  // ── BottomSheet ───────────────────────────────────────────────────
+  sheetDesc: { fontSize: 13, fontFamily: "Inter_400Regular", marginBottom: 12, lineHeight: 18 },
+  label: { fontSize: 13, fontFamily: "Inter_600SemiBold", marginBottom: 6 },
+  importInput: { minHeight: 120, maxHeight: 180, borderRadius: 8, padding: 10, fontSize: 12, fontFamily: Platform.OS === "ios" ? "Menlo" : "monospace", textAlignVertical: "top", borderWidth: 1 },
+  msgBox: { flexDirection: "row", alignItems: "center", gap: 8, padding: 10, borderRadius: 8, marginTop: 10 },
+  msgText: { flex: 1, fontSize: 12, fontFamily: "Inter_500Medium" },
+  cancelBtn: { alignItems: "center", paddingVertical: 12, marginTop: 4 },
+  cancelText: { fontSize: 13, fontFamily: "Inter_500Medium" },
+  filePickBtn: { flexDirection: "row", alignItems: "center", gap: 12, padding: 14, borderRadius: 12, borderWidth: 1.5, marginBottom: 4 },
+  filePickIcon: { width: 44, height: 44, borderRadius: 22, justifyContent: "center", alignItems: "center" },
+  filePickLabel: { fontSize: 14, fontFamily: "Inter_600SemiBold" },
+  filePickSub: { fontSize: 11, fontFamily: "Inter_400Regular", marginTop: 2 },
+
+  // ── Renk Seçici Modal ──────────────────────────────────────────────
+  cpOverlay: { flex: 1, backgroundColor: "rgba(0,0,0,0.45)", justifyContent: "center", alignItems: "center" },
+  cpSheet: { width: 320, borderRadius: 20, padding: 20, shadowColor: "#000", shadowOffset: { width: 0, height: 8 }, shadowOpacity: 0.18, shadowRadius: 24, elevation: 20 },
+  cpHeader: { flexDirection: "row", alignItems: "center", gap: 10, marginBottom: 18 },
+  cpDot: { width: 16, height: 16, borderRadius: 8 },
+  cpTitle: { flex: 1, fontSize: 16, fontFamily: "Inter_700Bold" },
+  cpModeRow: { flexDirection: "row", gap: 10, marginBottom: 20 },
+  cpModeBtn: { flex: 1, borderRadius: 12, borderWidth: 1.5, paddingVertical: 10, paddingHorizontal: 12, alignItems: "center", gap: 8 },
+  cpModeAccentDemo: { width: 28, height: 28, borderRadius: 6, borderLeftWidth: 4, borderLeftColor: "transparent", position: "relative" },
+  cpModeFillDemo: { width: 28, height: 28, borderRadius: 6, borderWidth: 1.5 },
+  cpModeLbl: { fontSize: 12, fontFamily: "Inter_600SemiBold" },
+  cpPalette: { flexDirection: "row", flexWrap: "wrap", gap: 10, justifyContent: "center", marginBottom: 20 },
+  cpSwatch: { width: 40, height: 40, borderRadius: 20 },
+  cpSwatchActive: { borderWidth: 3, borderColor: "#fff", shadowColor: "#000", shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.25, shadowRadius: 4, elevation: 4, transform: [{ scale: 1.15 }] },
+  cpActions: { flexDirection: "row", gap: 10 },
+  cpResetBtn: { flex: 1, flexDirection: "row", alignItems: "center", justifyContent: "center", gap: 6, borderRadius: 12, borderWidth: 1.5, paddingVertical: 12 },
+  cpResetTxt: { fontSize: 13, fontFamily: "Inter_600SemiBold" },
+  cpApplyBtn: { flex: 2, flexDirection: "row", alignItems: "center", justifyContent: "center", gap: 6, borderRadius: 12, paddingVertical: 12 },
+  cpApplyTxt: { fontSize: 13, fontFamily: "Inter_600SemiBold", color: "#fff" },
 });
