@@ -93,6 +93,8 @@ interface RF {
   pozCode: string;
   pozCategory: string;
   receivedBy: string;
+  kesifItemId: string;
+  kesifItemQty: number;
 }
 
 interface MovF {
@@ -131,6 +133,8 @@ const EMPTY_R: RF = {
   usageLocation: "",
   pozCode: "", pozCategory: "",
   receivedBy: "",
+  kesifItemId: "",
+  kesifItemQty: 0,
 };
 
 const EMPTY_MOV: MovF = {
@@ -579,6 +583,8 @@ export default function MalzemeScreen() {
         pozCode: r.pozCode || "",
         pozCategory: r.pozCategory || "",
         receivedBy: r.receivedBy || "",
+        kesifItemId: "",
+        kesifItemQty: 0,
       });
     } else {
       setREditId(null);
@@ -1312,7 +1318,7 @@ export default function MalzemeScreen() {
                 ) : (
                   <View style={[styles.materialPickerList, { borderColor: colors.border, marginBottom: 16 }]}>
                     {projItems.map((it, idx) => {
-                      const sel = rForm.name === it.description && rForm.unit === it.unit;
+                      const sel = rForm.kesifItemId === it.id;
                       return (
                         <TouchableOpacity
                           key={it.id}
@@ -1325,6 +1331,8 @@ export default function MalzemeScreen() {
                               category: it.pozCategory || prev.category,
                               pozCode: it.pozCode || prev.pozCode,
                               pozCategory: it.pozCategory || prev.pozCategory,
+                              kesifItemId: it.id,
+                              kesifItemQty: it.quantity,
                             }))
                           }
                           activeOpacity={0.8}
@@ -1444,12 +1452,17 @@ export default function MalzemeScreen() {
             if (!linkedAnaliz) return null;
             const malzemeKalemleri = linkedAnaliz.kalemler.filter((k) => k.tip === "malzeme");
             if (malzemeKalemleri.length === 0) return null;
-            const kesifItems = surveys
-              .filter((s) => s.projectId === rForm.projectId)
-              .flatMap((s) => s.items)
-              .filter((it) => it.pozCode === rForm.pozCode);
-            const totalMetraj = kesifItems.reduce((sum, it) => sum + it.quantity, 0);
+            // Seçilen keşif kalemi varsa onun metrajını kullan, yoksa pozCode'a göre topla
+            const totalMetraj = rForm.kesifItemId && rForm.kesifItemQty > 0
+              ? rForm.kesifItemQty
+              : surveys
+                  .filter((s) => s.projectId === rForm.projectId)
+                  .flatMap((s) => s.items)
+                  .filter((it) => it.pozCode === rForm.pozCode)
+                  .reduce((sum, it) => sum + it.quantity, 0);
             const fmt = (n: number) => (n % 1 === 0 ? String(n) : n.toFixed(1));
+            // Teslim eşleştirmesi için normalleştirme yardımcısı
+            const normName = (s: string) => s.trim().toLowerCase().replace(/\s+/g, " ");
             return (
               <View style={[styles.analizSummaryBox, { backgroundColor: colors.muted, borderColor: colors.border }]}>
                 <Text style={[styles.analizSummaryTitle, { color: colors.foreground }]}>
@@ -1468,14 +1481,27 @@ export default function MalzemeScreen() {
                 </View>
                 {malzemeKalemleri.map((k) => {
                   const analizMiktar = totalMetraj > 0 ? totalMetraj * k.miktar : k.miktar;
+                  const kalemNorm = normName(k.tanim);
                   const teslimEdilen = materials
                     .filter((m) => {
                       if (m.projectId !== rForm.projectId) return false;
-                      const nameMatch =
-                        m.name.trim().toLowerCase() === k.tanim.trim().toLowerCase();
+                      const nameMatch = normName(m.name) === kalemNorm;
+                      // 1) Hem pozCode hem isim eşleşiyorsa kesin eşleşme
                       if (rForm.pozCode && m.pozCode) {
                         return m.pozCode === rForm.pozCode && nameMatch;
                       }
+                      // 2) Malzeme bir talebe bağlıysa, talebin pozCode ve ismini kontrol et
+                      if (m.materialRequestId) {
+                        const req = materialRequests.find((r) => r.id === m.materialRequestId);
+                        if (req) {
+                          const reqNameMatch = normName(req.name) === kalemNorm;
+                          if (rForm.pozCode && req.pozCode) {
+                            return req.pozCode === rForm.pozCode && reqNameMatch;
+                          }
+                          return reqNameMatch;
+                        }
+                      }
+                      // 3) Fallback: sadece isim eşleşmesi
                       return nameMatch;
                     })
                     .reduce((sum, m) => sum + (m.irsaliyeQty ?? m.quantity ?? 0), 0);

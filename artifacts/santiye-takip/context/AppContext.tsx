@@ -1339,6 +1339,8 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
             unitPrice: 0,
             description: newReq.note || "Malzeme talebinden otomatik oluşturuldu",
             materialRequestId: id,
+            pozCode: newReq.pozCode,
+            pozCategory: newReq.pozCategory,
           };
           next.materials = [...next.materials, autoMat];
         }
