@@ -162,6 +162,8 @@ export default function MalzemeScreen() {
     weighbridges,
     purchases,
     addPurchase,
+    surveys,
+    pozAnalizleri,
   } = useApp();
 
   const perm = usePermission("malzeme");
@@ -204,6 +206,7 @@ export default function MalzemeScreen() {
   const [rVisible, setRVisible] = useState(false);
   const [rEditId, setREditId] = useState<string | null>(null);
   const [rForm, setRForm] = useState<RF>(EMPTY_R);
+  const [rMode, setRMode] = useState<"kesif" | "serbest">("serbest");
 
   const [movVisible, setMovVisible] = useState(false);
   const [movEditId, setMovEditId] = useState<string | null>(null);
@@ -554,6 +557,7 @@ export default function MalzemeScreen() {
   function openRequest(r?: MaterialRequest) {
     if (r) {
       setREditId(r.id);
+      setRMode("serbest");
       setRForm({
         projectId: r.projectId,
         name: r.name,
@@ -570,6 +574,7 @@ export default function MalzemeScreen() {
       });
     } else {
       setREditId(null);
+      setRMode("serbest");
       setRForm({
         ...EMPTY_R,
         projectId: filter || projects[0]?.id || "",
@@ -1243,6 +1248,97 @@ export default function MalzemeScreen() {
               </TouchableOpacity>
             ))}
           </View>
+
+          {/* Talep kaynağı seçimi (sadece yeni talep eklerken) */}
+          {!rEditId && (
+            <>
+              <Text style={[styles.label, { color: colors.foreground }]}>Talep Kaynağı</Text>
+              <View style={[styles.chips, { marginBottom: 16 }]}>
+                <TouchableOpacity
+                  onPress={() => setRMode("kesif")}
+                  style={[styles.chip, { backgroundColor: rMode === "kesif" ? colors.primary : colors.muted, flex: 1, alignItems: "center" }]}
+                >
+                  <Text style={[styles.chipText, { color: rMode === "kesif" ? "#fff" : colors.foreground }]}>
+                    Keşif Kaleminden
+                  </Text>
+                </TouchableOpacity>
+                <TouchableOpacity
+                  onPress={() => setRMode("serbest")}
+                  style={[styles.chip, { backgroundColor: rMode === "serbest" ? colors.primary : colors.muted, flex: 1, alignItems: "center" }]}
+                >
+                  <Text style={[styles.chipText, { color: rMode === "serbest" ? "#fff" : colors.foreground }]}>
+                    Keşif Dışı
+                  </Text>
+                </TouchableOpacity>
+              </View>
+            </>
+          )}
+
+          {/* Keşif modunda: kalem seçici */}
+          {!rEditId && rMode === "kesif" && (() => {
+            const projItems = surveys
+              .filter((s) => s.projectId === rForm.projectId)
+              .flatMap((s) =>
+                s.items.map((it) => ({ ...it, surveyTitle: s.title }))
+              );
+            return (
+              <>
+                <Text style={[styles.label, { color: colors.foreground }]}>Keşif Kalemi Seç</Text>
+                {projItems.length === 0 ? (
+                  <View style={[styles.emptyMaterialPicker, { backgroundColor: colors.muted }]}>
+                    <Feather name="search" size={20} color={colors.mutedForeground} />
+                    <Text style={[styles.emptyMaterialText, { color: colors.mutedForeground }]}>
+                      Bu proje için keşif kalemi bulunamadı.
+                    </Text>
+                  </View>
+                ) : (
+                  <View style={[styles.materialPickerList, { borderColor: colors.border, marginBottom: 16 }]}>
+                    {projItems.map((it, idx) => {
+                      const sel = rForm.name === it.description && rForm.unit === it.unit;
+                      return (
+                        <TouchableOpacity
+                          key={it.id}
+                          onPress={() =>
+                            setRForm((prev) => ({
+                              ...prev,
+                              name: it.description,
+                              unit: it.unit,
+                              quantity: String(it.quantity),
+                              category: it.pozCategory || prev.category,
+                              pozCode: it.pozCode || prev.pozCode,
+                              pozCategory: it.pozCategory || prev.pozCategory,
+                            }))
+                          }
+                          activeOpacity={0.8}
+                          style={[
+                            styles.materialPickerRow,
+                            {
+                              backgroundColor: sel ? colors.primary + "15" : "transparent",
+                              borderTopWidth: idx === 0 ? 0 : StyleSheet.hairlineWidth,
+                              borderTopColor: colors.border,
+                            },
+                          ]}
+                        >
+                          <View style={[styles.materialPickerDot, { backgroundColor: sel ? colors.primary : colors.muted }]}>
+                            {sel ? <Feather name="check" size={12} color="#fff" /> : null}
+                          </View>
+                          <View style={{ flex: 1 }}>
+                            <Text style={[styles.materialPickerName, { color: sel ? colors.primary : colors.foreground }]} numberOfLines={1}>
+                              {it.description}
+                            </Text>
+                            <Text style={[styles.materialPickerMeta, { color: colors.mutedForeground }]} numberOfLines={1}>
+                              {it.surveyTitle}{it.pozCode ? ` · ${it.pozCode}` : ""} · {it.quantity} {it.unit}
+                            </Text>
+                          </View>
+                        </TouchableOpacity>
+                      );
+                    })}
+                  </View>
+                )}
+              </>
+            );
+          })()}
+
           <CategoryPicker
             label="Kategori"
             value={rForm.category}
@@ -1323,6 +1419,81 @@ export default function MalzemeScreen() {
             onChange={(p) => setRForm({ ...rForm, pozCode: p.code, pozCategory: p.category })}
             placeholder="Hangi poz için talep edildi"
           />
+
+          {/* Poz seçilince analiz malzeme ihtiyacı özeti */}
+          {rForm.pozCode ? (() => {
+            const linkedAnaliz = pozAnalizleri.find((a) => a.pozNo === rForm.pozCode);
+            if (!linkedAnaliz) return null;
+            const malzemeKalemleri = linkedAnaliz.kalemler.filter((k) => k.tip === "malzeme");
+            if (malzemeKalemleri.length === 0) return null;
+            const kesifItems = surveys
+              .filter((s) => s.projectId === rForm.projectId)
+              .flatMap((s) => s.items)
+              .filter((it) => it.pozCode === rForm.pozCode);
+            const totalMetraj = kesifItems.reduce((sum, it) => sum + it.quantity, 0);
+            const fmt = (n: number) => (n % 1 === 0 ? String(n) : n.toFixed(1));
+            return (
+              <View style={[styles.analizSummaryBox, { backgroundColor: colors.muted, borderColor: colors.border }]}>
+                <Text style={[styles.analizSummaryTitle, { color: colors.foreground }]}>
+                  Analiz Malzeme İhtiyacı — {linkedAnaliz.analizAdi}
+                </Text>
+                {totalMetraj > 0 && (
+                  <Text style={[styles.analizSummaryMeta, { color: colors.mutedForeground }]}>
+                    Keşif metrajı: {totalMetraj} {linkedAnaliz.olcuBirimi}
+                  </Text>
+                )}
+                <View style={[styles.analizTableHeader, { borderBottomColor: colors.border }]}>
+                  <Text style={[styles.analizColHdr, { color: colors.mutedForeground, flex: 1 }]}>Malzeme</Text>
+                  <Text style={[styles.analizColHdr, { color: colors.mutedForeground, width: 74, textAlign: "right" }]}>Hesap</Text>
+                  <Text style={[styles.analizColHdr, { color: colors.mutedForeground, width: 72, textAlign: "right" }]}>Talep Ed.</Text>
+                  <Text style={[styles.analizColHdr, { color: colors.mutedForeground, width: 58, textAlign: "right" }]}>Kalan</Text>
+                </View>
+                {malzemeKalemleri.map((k) => {
+                  const analizMiktar = totalMetraj > 0 ? totalMetraj * k.miktar : k.miktar;
+                  const talepEdilen = materialRequests
+                    .filter(
+                      (r) =>
+                        r.projectId === rForm.projectId &&
+                        r.name.trim().toLowerCase() === k.tanim.trim().toLowerCase()
+                    )
+                    .reduce((sum, r) => sum + (r.quantity || 0), 0);
+                  const kalan = analizMiktar - talepEdilen;
+                  return (
+                    <TouchableOpacity
+                      key={k.id}
+                      activeOpacity={0.8}
+                      onPress={() =>
+                        setRForm((prev) => ({
+                          ...prev,
+                          name: k.tanim,
+                          unit: k.olcuBirimi,
+                          quantity: fmt(Math.max(0, kalan)),
+                        }))
+                      }
+                      style={[styles.analizRow, { borderTopColor: colors.border }]}
+                    >
+                      <Text style={[styles.analizMalzeme, { color: colors.foreground }]} numberOfLines={2}>
+                        {k.tanim}
+                      </Text>
+                      <Text style={[styles.analizNum, { color: colors.mutedForeground, width: 74 }]}>
+                        {fmt(analizMiktar)} {k.olcuBirimi}
+                      </Text>
+                      <Text style={[styles.analizNum, { color: colors.mutedForeground, width: 72 }]}>
+                        {fmt(talepEdilen)} {k.olcuBirimi}
+                      </Text>
+                      <Text style={[styles.analizNum, { color: kalan <= 0 ? "#22c55e" : colors.primary, width: 58 }]}>
+                        {kalan <= 0 ? "Tamam" : `${fmt(kalan)} ${k.olcuBirimi}`}
+                      </Text>
+                    </TouchableOpacity>
+                  );
+                })}
+                <Text style={[styles.analizHint, { color: colors.mutedForeground }]}>
+                  Satıra tıklayarak malzemeyi forma aktarabilirsiniz.
+                </Text>
+              </View>
+            );
+          })() : null}
+
           <FormInput
             label="Not / Açıklama"
             value={rForm.note}
@@ -1930,6 +2101,30 @@ export default function MalzemeScreen() {
 const styles = StyleSheet.create({
   selDot: { width: 22, height: 22, borderRadius: 11, borderWidth: 2, alignItems: "center", justifyContent: "center", marginRight: 8 },
   root: { flex: 1 },
+  analizSummaryBox: {
+    borderRadius: 10,
+    borderWidth: StyleSheet.hairlineWidth,
+    padding: 12,
+    marginBottom: 12,
+  },
+  analizSummaryTitle: { fontSize: 13, fontFamily: "Inter_700Bold", marginBottom: 4 },
+  analizSummaryMeta: { fontSize: 12, fontFamily: "Inter_400Regular", marginBottom: 8 },
+  analizTableHeader: {
+    flexDirection: "row",
+    paddingBottom: 6,
+    marginBottom: 4,
+    borderBottomWidth: StyleSheet.hairlineWidth,
+  },
+  analizColHdr: { fontSize: 10, fontFamily: "Inter_600SemiBold" },
+  analizRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    paddingVertical: 6,
+    borderTopWidth: StyleSheet.hairlineWidth,
+  },
+  analizMalzeme: { fontSize: 12, fontFamily: "Inter_500Medium", flex: 1, marginRight: 4 },
+  analizNum: { fontSize: 11, fontFamily: "Inter_700Bold", textAlign: "right" },
+  analizHint: { fontSize: 10, fontFamily: "Inter_400Regular", marginTop: 8, textAlign: "center" },
   tabBar: { borderBottomWidth: 1, maxHeight: 48 },
   tabBarContent: { paddingHorizontal: 4 },
   tabBtn: {

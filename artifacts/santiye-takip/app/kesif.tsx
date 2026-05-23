@@ -66,7 +66,7 @@ const EMPTY: FormState = {
 export default function KesifScreen() {
   const colors = useColors();
   const router = useRouter();
-  const { projects, surveys, addSurvey, updateSurvey, deleteSurvey } = useApp();
+  const { projects, surveys, addSurvey, updateSurvey, deleteSurvey, pozAnalizleri } = useApp();
 
   const perm = usePermission("kesif");
   const canEdit = perm === "edit";
@@ -77,6 +77,7 @@ export default function KesifScreen() {
   const [editId, setEditId] = useState<string | null>(null);
   const [editItemId, setEditItemId] = useState<string | null>(null);
   const [form, setForm] = useState<FormState>(EMPTY);
+  const [expandedSurveyId, setExpandedSurveyId] = useState<string | null>(null);
   const [importVisible, setImportVisible] = useState(false);
   const [importText, setImportText] = useState("");
   const [importBusy, setImportBusy] = useState(false);
@@ -429,33 +430,133 @@ export default function KesifScreen() {
           data={list}
           keyExtractor={(s) => s.id}
           contentContainerStyle={styles.list}
-          renderItem={({ item }) => (
-            <TouchableOpacity
-              style={[styles.card, { backgroundColor: colors.card }]}
-              activeOpacity={0.85}
-              onPress={() => open(item)}
-            >
-              <Text style={[styles.proj, { color: colors.primary }]}>
-                {projectName(item.projectId)}
-              </Text>
-              <Text style={[styles.title, { color: colors.foreground }]}>
-                {item.title}
-              </Text>
-              {item.date ? (
-                <View style={styles.row}>
-                  <Feather name="calendar" size={13} color={colors.mutedForeground} />
-                  <Text style={[styles.meta, { color: colors.mutedForeground }]}>
-                    {item.date}
-                  </Text>
-                </View>
-              ) : null}
-              <View style={styles.footer}>
-                <Text style={[styles.itemCount, { color: colors.mutedForeground }]}>
-                  {item.items.length} kalem
-                </Text>
+          renderItem={({ item: survey }) => {
+            const isExpanded = expandedSurveyId === survey.id;
+            return (
+              <View style={[styles.cardWrap, { backgroundColor: colors.card }]}>
+                <TouchableOpacity
+                  style={styles.cardHeader}
+                  activeOpacity={0.85}
+                  onPress={() => {
+                    if (isExpanded) {
+                      open(survey);
+                    } else {
+                      setExpandedSurveyId(survey.id);
+                    }
+                  }}
+                >
+                  <View style={{ flex: 1 }}>
+                    <Text style={[styles.proj, { color: colors.primary }]}>
+                      {projectName(survey.projectId)}
+                    </Text>
+                    <Text style={[styles.title, { color: colors.foreground }]}>
+                      {survey.title}
+                    </Text>
+                    {survey.date ? (
+                      <View style={styles.row}>
+                        <Feather name="calendar" size={13} color={colors.mutedForeground} />
+                        <Text style={[styles.meta, { color: colors.mutedForeground }]}>
+                          {survey.date}
+                        </Text>
+                      </View>
+                    ) : null}
+                    <View style={styles.footer}>
+                      <Text style={[styles.itemCount, { color: colors.mutedForeground }]}>
+                        {survey.items.length} kalem
+                      </Text>
+                      <Text style={[styles.expandHint, { color: colors.mutedForeground }]}>
+                        {isExpanded ? "tekrar tıkla → düzenle" : "tıkla → kalemleri gör"}
+                      </Text>
+                    </View>
+                  </View>
+                  <Feather
+                    name={isExpanded ? "chevron-up" : "chevron-down"}
+                    size={18}
+                    color={colors.mutedForeground}
+                    style={{ marginLeft: 8, alignSelf: "center" }}
+                  />
+                </TouchableOpacity>
+
+                {isExpanded ? (
+                  <View style={[styles.accordionBody, { borderTopColor: colors.border }]}>
+                    {survey.items.length === 0 ? (
+                      <Text style={[styles.emptyItems, { color: colors.mutedForeground }]}>
+                        Henüz kalem eklenmemiş.
+                      </Text>
+                    ) : (
+                      survey.items.map((it, idx) => {
+                        const analiz = it.pozCode
+                          ? pozAnalizleri.find((a) => a.pozNo === it.pozCode)
+                          : null;
+                        const malzemeKalemleri = analiz
+                          ? analiz.kalemler.filter((k) => k.tip === "malzeme")
+                          : [];
+                        return (
+                          <View
+                            key={it.id}
+                            style={[
+                              styles.accordionItem,
+                              {
+                                borderTopWidth: idx === 0 ? 0 : StyleSheet.hairlineWidth,
+                                borderTopColor: colors.border,
+                              },
+                            ]}
+                          >
+                            {it.pozCode ? (
+                              <Text style={[styles.accordionPoz, { color: colors.primary }]}>
+                                {it.pozCode}
+                              </Text>
+                            ) : null}
+                            <Text style={[styles.accordionDesc, { color: colors.foreground }]}>
+                              {it.description}
+                            </Text>
+                            <Text style={[styles.accordionQty, { color: colors.mutedForeground }]}>
+                              {it.quantity} {it.unit}
+                            </Text>
+                            {malzemeKalemleri.length > 0 ? (
+                              <View style={[styles.malzemeBox, { backgroundColor: colors.muted }]}>
+                                <Text style={[styles.malzemeBoxTitle, { color: colors.mutedForeground }]}>
+                                  Analiz Malzemeleri — {analiz!.analizAdi}
+                                </Text>
+                                <View style={[styles.malzemeBoxHeader, { borderBottomColor: colors.border }]}>
+                                  <Text style={[styles.malzemeColLabel, { color: colors.mutedForeground, flex: 1 }]}>Malzeme</Text>
+                                  <Text style={[styles.malzemeColLabel, { color: colors.mutedForeground, width: 90, textAlign: "right" }]}>
+                                    Hesap ({analiz!.olcuBirimi})
+                                  </Text>
+                                </View>
+                                {malzemeKalemleri.map((k) => {
+                                  const hesap = it.quantity * k.miktar;
+                                  return (
+                                    <View key={k.id} style={styles.malzemeRow}>
+                                      <Text style={[styles.malzemeName, { color: colors.foreground }]} numberOfLines={2}>
+                                        {k.tanim}
+                                      </Text>
+                                      <Text style={[styles.malzemeQtyText, { color: colors.primary }]}>
+                                        {hesap % 1 === 0 ? hesap : hesap.toFixed(2)} {k.olcuBirimi}
+                                      </Text>
+                                    </View>
+                                  );
+                                })}
+                              </View>
+                            ) : null}
+                          </View>
+                        );
+                      })
+                    )}
+                    <TouchableOpacity
+                      onPress={() => { open(survey); setExpandedSurveyId(null); }}
+                      style={[styles.accordionEditBtn, { borderTopColor: colors.border }]}
+                    >
+                      <Feather name="edit-2" size={14} color={colors.primary} />
+                      <Text style={[styles.accordionEditBtnText, { color: colors.primary }]}>
+                        Keşfi Düzenle
+                      </Text>
+                    </TouchableOpacity>
+                  </View>
+                ) : null}
               </View>
-            </TouchableOpacity>
-          )}
+            );
+          }}
         />
       )}
 
@@ -758,6 +859,48 @@ const styles = StyleSheet.create({
     shadowRadius: 4,
     elevation: 2,
   },
+  cardWrap: {
+    borderRadius: 12,
+    overflow: "hidden",
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.05,
+    shadowRadius: 4,
+    elevation: 2,
+  },
+  cardHeader: {
+    flexDirection: "row",
+    alignItems: "center",
+    padding: 14,
+  },
+  expandHint: { fontSize: 11, fontFamily: "Inter_400Regular" },
+  accordionBody: { borderTopWidth: StyleSheet.hairlineWidth },
+  accordionItem: { paddingHorizontal: 14, paddingVertical: 10 },
+  accordionPoz: { fontSize: 11, fontFamily: "Inter_700Bold", marginBottom: 2 },
+  accordionDesc: { fontSize: 13, fontFamily: "Inter_600SemiBold", marginBottom: 2 },
+  accordionQty: { fontSize: 12, fontFamily: "Inter_400Regular" },
+  emptyItems: { padding: 14, fontSize: 13, fontFamily: "Inter_400Regular", textAlign: "center" },
+  malzemeBox: { marginTop: 8, borderRadius: 8, padding: 10 },
+  malzemeBoxTitle: { fontSize: 11, fontFamily: "Inter_500Medium", marginBottom: 6 },
+  malzemeBoxHeader: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    paddingBottom: 4,
+    marginBottom: 4,
+    borderBottomWidth: StyleSheet.hairlineWidth,
+  },
+  malzemeColLabel: { fontSize: 10, fontFamily: "Inter_500Medium" },
+  malzemeRow: { flexDirection: "row", justifyContent: "space-between", alignItems: "center", marginBottom: 3 },
+  malzemeName: { fontSize: 12, fontFamily: "Inter_400Regular", flex: 1, marginRight: 8 },
+  malzemeQtyText: { fontSize: 12, fontFamily: "Inter_700Bold" },
+  accordionEditBtn: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 6,
+    padding: 12,
+    borderTopWidth: StyleSheet.hairlineWidth,
+  },
+  accordionEditBtnText: { fontSize: 13, fontFamily: "Inter_600SemiBold" },
   proj: { fontSize: 12, fontFamily: "Inter_600SemiBold", marginBottom: 4 },
   title: { fontSize: 16, fontFamily: "Inter_700Bold", marginBottom: 6 },
   row: { flexDirection: "row", alignItems: "center", gap: 6, marginTop: 4 },

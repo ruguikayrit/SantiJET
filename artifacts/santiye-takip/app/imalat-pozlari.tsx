@@ -621,12 +621,12 @@ export default function ImalatPozlariScreen() {
             },
           ]}
         >
-          {isAdmin && !isEditing && (
+          {!isEditing && (
             <ActionBtn icon="edit-2" label="Düzenle" onPress={startEdit} colors={colors} />
           )}
           <ActionBtn icon="copy" label="Kopyala" onPress={handleClone} colors={colors} />
           <ActionBtn icon="share" label="Dışa Aktar" onPress={handleExport} colors={colors} />
-          {isAdmin && !isEditing && (
+          {!isEditing && (
             <ActionBtn
               icon="trash-2"
               label="Sil"
