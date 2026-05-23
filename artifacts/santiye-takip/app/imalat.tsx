@@ -63,7 +63,7 @@ const EMPTY: F = {
 export default function ImalatScreen() {
   const colors = useColors();
   const router = useRouter();
-  const { projects, productions, addProduction, updateProduction, deleteProduction } = useApp();
+  const { projects, productions, addProduction, updateProduction, deleteProduction, surveys } = useApp();
   const perm = usePermission("imalat");
   const canEdit = perm === "edit";
   useEffect(() => { if (perm === "none") { if (router.canGoBack()) router.back(); else router.replace("/"); } }, [perm]);
@@ -77,6 +77,7 @@ export default function ImalatScreen() {
   const [searchPoz, setSearchPoz] = useState("");
   const [searchDate, setSearchDate] = useState("");
 
+  const [imMode, setImMode] = useState<"kesif" | "serbest">("serbest");
   const [selectMode, setSelectMode] = useState(false);
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
   function toggleSelect(id: string) {
@@ -396,19 +397,98 @@ export default function ImalatScreen() {
           ))}
         </View>
 
-        <PozPicker
-          label="Poz Tarifi"
-          value={form.pozCode}
-          onChange={(poz) =>
-            setForm({
-              ...form,
-              pozCode: poz.code,
-              name: poz.name,
-              unit: poz.unit,
-              category: poz.category,
-            })
-          }
-        />
+        <Text style={[styles.label, { color: colors.foreground }]}>Poz Kaynağı</Text>
+        <View style={[styles.chips, { marginBottom: 16 }]}>
+          <TouchableOpacity
+            onPress={() => setImMode("kesif")}
+            style={[styles.chip, { backgroundColor: imMode === "kesif" ? colors.primary : colors.muted, flex: 1, alignItems: "center" }]}
+          >
+            <Text style={[styles.chipText, { color: imMode === "kesif" ? "#fff" : colors.foreground }]}>
+              Keşif Kaleminden
+            </Text>
+          </TouchableOpacity>
+          <TouchableOpacity
+            onPress={() => setImMode("serbest")}
+            style={[styles.chip, { backgroundColor: imMode === "serbest" ? colors.primary : colors.muted, flex: 1, alignItems: "center" }]}
+          >
+            <Text style={[styles.chipText, { color: imMode === "serbest" ? "#fff" : colors.foreground }]}>
+              Keşif Dışı
+            </Text>
+          </TouchableOpacity>
+        </View>
+
+        {imMode === "kesif" ? (() => {
+          const projItems = surveys
+            .filter((s) => s.projectId === form.projectId)
+            .flatMap((s) => s.items.map((it) => ({ ...it, surveyTitle: s.title })));
+          return (
+            <>
+              <Text style={[styles.label, { color: colors.foreground }]}>Keşif Kalemi Seç</Text>
+              {projItems.length === 0 ? (
+                <View style={[styles.emptyPicker, { backgroundColor: colors.muted }]}>
+                  <Text style={[styles.emptyPickerText, { color: colors.mutedForeground }]}>
+                    Bu proje için keşif kalemi bulunamadı.
+                  </Text>
+                </View>
+              ) : (
+                <View style={[styles.pickerList, { borderColor: colors.border, marginBottom: 16 }]}>
+                  {projItems.map((it, idx) => {
+                    const sel = form.pozCode === (it.pozCode || "") && form.name === it.description;
+                    return (
+                      <TouchableOpacity
+                        key={it.id}
+                        onPress={() =>
+                          setForm((prev) => ({
+                            ...prev,
+                            name: it.description,
+                            unit: it.unit,
+                            pozCode: it.pozCode || "",
+                            category: it.pozCategory || prev.category,
+                          }))
+                        }
+                        activeOpacity={0.8}
+                        style={[
+                          styles.pickerRow,
+                          {
+                            backgroundColor: sel ? colors.primary + "15" : "transparent",
+                            borderTopWidth: idx === 0 ? 0 : StyleSheet.hairlineWidth,
+                            borderTopColor: colors.border,
+                          },
+                        ]}
+                      >
+                        <View style={[styles.pickerDot, { backgroundColor: sel ? colors.primary : colors.muted }]}>
+                          {sel ? <Feather name="check" size={12} color="#fff" /> : null}
+                        </View>
+                        <View style={{ flex: 1 }}>
+                          <Text style={[styles.pickerName, { color: sel ? colors.primary : colors.foreground }]} numberOfLines={2}>
+                            {it.description}
+                          </Text>
+                          <Text style={[styles.pickerMeta, { color: colors.mutedForeground }]} numberOfLines={1}>
+                            {it.surveyTitle}{it.pozCode ? ` · ${it.pozCode}` : ""} · {it.quantity} {it.unit}
+                          </Text>
+                        </View>
+                      </TouchableOpacity>
+                    );
+                  })}
+                </View>
+              )}
+            </>
+          );
+        })() : (
+          <PozPicker
+            label="Poz Tarifi"
+            value={form.pozCode}
+            onChange={(poz) =>
+              setForm({
+                ...form,
+                pozCode: poz.code,
+                name: poz.name,
+                unit: poz.unit,
+                category: poz.category,
+              })
+            }
+          />
+        )}
 
         <FormInput
           label="İmalat Adı"
@@ -553,6 +633,13 @@ const styles = StyleSheet.create({
   chips: { flexDirection: "row", flexWrap: "wrap", gap: 8, marginBottom: 14 },
   chip: { paddingHorizontal: 14, paddingVertical: 8, borderRadius: 999 },
   chipText: { fontSize: 13, fontFamily: "Inter_500Medium" },
+  emptyPicker: { borderRadius: 10, padding: 16, alignItems: "center", marginBottom: 16 },
+  emptyPickerText: { fontSize: 13, fontFamily: "Inter_400Regular" },
+  pickerList: { borderWidth: 1, borderRadius: 10, overflow: "hidden", marginBottom: 16 },
+  pickerRow: { flexDirection: "row", alignItems: "center", gap: 10, paddingHorizontal: 12, paddingVertical: 10 },
+  pickerDot: { width: 20, height: 20, borderRadius: 10, alignItems: "center", justifyContent: "center" },
+  pickerName: { fontSize: 13, fontFamily: "Inter_500Medium", marginBottom: 2 },
+  pickerMeta: { fontSize: 11, fontFamily: "Inter_400Regular" },
   row: { flexDirection: "row", gap: 8 },
   cardRow: { flexDirection: "row", alignItems: "center" },
   metrajPill: {

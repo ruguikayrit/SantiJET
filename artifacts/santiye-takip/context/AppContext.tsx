@@ -179,6 +179,7 @@ export interface Material {
   weighApproved?: boolean;
   materialRequestId?: string;
   irsaliyePhoto?: string;
+  irsaliyeQty?: number;
 }
 
 export interface Weighbridge {
@@ -224,6 +225,7 @@ export interface MaterialRequest {
     mudur?: boolean;
     satinAlma?: boolean;
   };
+  receivedBy?: string;
 }
 
 export interface MaterialMovement {

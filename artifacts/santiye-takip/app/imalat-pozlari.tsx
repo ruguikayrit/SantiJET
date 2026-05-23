@@ -69,6 +69,7 @@ export default function ImalatPozlariScreen() {
   } = useApp();
 
   const isAdmin = currentRole?.isAdmin === true;
+  const canManagePoz = ["proje-muduru", "santiye-sefi", "teknik-ofis-muhendisi"].includes(currentRole?.id || "");
 
   const [search, setSearch] = useState("");
   const [catFilter, setCatFilter] = useState<string | null>(null);
@@ -626,7 +627,7 @@ export default function ImalatPozlariScreen() {
           )}
           <ActionBtn icon="copy" label="Kopyala" onPress={handleClone} colors={colors} />
           <ActionBtn icon="share" label="Dışa Aktar" onPress={handleExport} colors={colors} />
-          {!isEditing && (
+          {!isEditing && canManagePoz && (
             <ActionBtn
               icon="trash-2"
               label="Sil"
@@ -780,8 +781,8 @@ export default function ImalatPozlariScreen() {
         }
       />
 
-      {/* Admin: yeni analiz ekle FAB */}
-      {isAdmin && (
+      {/* Yetkili roller: yeni analiz ekle FAB */}
+      {canManagePoz && (
         <TouchableOpacity
           style={[
             st.fab,

@@ -76,6 +76,7 @@ interface MF {
   pozCode: string;
   pozCategory: string;
   irsaliyePhoto: string;
+  irsaliyeQty: string;
 }
 
 interface RF {
@@ -91,6 +92,7 @@ interface RF {
   usageLocation: string;
   pozCode: string;
   pozCategory: string;
+  receivedBy: string;
 }
 
 interface MovF {
@@ -120,6 +122,7 @@ const EMPTY_M: MF = {
   weighApproved: false,
   pozCode: "", pozCategory: "",
   irsaliyePhoto: "",
+  irsaliyeQty: "",
 };
 
 const EMPTY_R: RF = {
@@ -127,6 +130,7 @@ const EMPTY_R: RF = {
   requestDate: "", requestedBy: "", status: "pending", note: "",
   usageLocation: "",
   pozCode: "", pozCategory: "",
+  receivedBy: "",
 };
 
 const EMPTY_MOV: MovF = {
@@ -207,6 +211,7 @@ export default function MalzemeScreen() {
   const [rEditId, setREditId] = useState<string | null>(null);
   const [rForm, setRForm] = useState<RF>(EMPTY_R);
   const [rMode, setRMode] = useState<"kesif" | "serbest">("serbest");
+  const [receivedByDrafts, setReceivedByDrafts] = useState<Record<string, string>>({});
 
   const [movVisible, setMovVisible] = useState(false);
   const [movEditId, setMovEditId] = useState<string | null>(null);
@@ -395,6 +400,7 @@ export default function MalzemeScreen() {
         pozCode: m.pozCode || "",
         pozCategory: m.pozCategory || "",
         irsaliyePhoto: m.irsaliyePhoto || "",
+        irsaliyeQty: m.irsaliyeQty != null ? String(m.irsaliyeQty) : "",
       });
     } else {
       setMEditId(null);
@@ -431,6 +437,7 @@ export default function MalzemeScreen() {
       pozCode: mForm.pozCode.trim() || undefined,
       pozCategory: mForm.pozCategory.trim() || undefined,
       irsaliyePhoto: mForm.irsaliyePhoto || undefined,
+      irsaliyeQty: parseFloat(mForm.irsaliyeQty) || undefined,
     };
     const commit = () => {
       if (mEditId) {
@@ -571,6 +578,7 @@ export default function MalzemeScreen() {
         usageLocation: r.usageLocation || "",
         pozCode: r.pozCode || "",
         pozCategory: r.pozCategory || "",
+        receivedBy: r.receivedBy || "",
       });
     } else {
       setREditId(null);
@@ -598,6 +606,7 @@ export default function MalzemeScreen() {
       usageLocation: rForm.usageLocation.trim() || undefined,
       pozCode: rForm.pozCode.trim() || undefined,
       pozCategory: rForm.pozCategory.trim() || undefined,
+      receivedBy: rForm.receivedBy.trim() || undefined,
     };
     if (rEditId) updateMaterialRequest(rEditId, data);
     else addMaterialRequest(data);
@@ -1062,6 +1071,13 @@ export default function MalzemeScreen() {
               />
             </View>
           </View>
+          <FormInput
+            label="İrsaliye Miktarı"
+            value={mForm.irsaliyeQty}
+            onChangeText={(v) => setMForm({ ...mForm, irsaliyeQty: v })}
+            keyboardType="numeric"
+            placeholder="İrsaliyedeki miktar (kantara girmeyenler için)"
+          />
           {canEdit ? <PrimaryButton label="Kaydet" onPress={saveMaterial} style={{ marginTop: 8 }} /> : null}
           {canEdit && mEditId ? (
             <PrimaryButton label="Sil" variant="danger" onPress={removeMaterial} style={{ marginTop: 10 }} />
@@ -1279,7 +1295,9 @@ export default function MalzemeScreen() {
             const projItems = surveys
               .filter((s) => s.projectId === rForm.projectId)
               .flatMap((s) =>
-                s.items.map((it) => ({ ...it, surveyTitle: s.title }))
+                s.items
+                  .filter((it) => it.itemType === "malzeme")
+                  .map((it) => ({ ...it, surveyTitle: s.title }))
               );
             return (
               <>
@@ -1760,6 +1778,44 @@ export default function MalzemeScreen() {
                     </Text>
                   </View>
                 </View>
+                {(() => {
+                  const linkedReq = item.materialRequestId
+                    ? materialRequests.find((r) => r.id === item.materialRequestId)
+                    : undefined;
+                  const kantarQty = weighbridges
+                    .filter((w) => w.materialId === item.id)
+                    .reduce((s, w) => s + (w.netWeight || 0), 0);
+                  const hasInfo = linkedReq || item.irsaliyeQty != null || kantarQty > 0;
+                  if (!hasInfo) return null;
+                  return (
+                    <View style={styles.miktarRow}>
+                      {linkedReq ? (
+                        <View style={styles.miktarBox}>
+                          <Text style={[styles.miktarLabel, { color: colors.mutedForeground }]}>Talep Edilen</Text>
+                          <Text style={[styles.miktarVal, { color: colors.foreground }]}>
+                            {linkedReq.quantity} {linkedReq.unit}
+                          </Text>
+                        </View>
+                      ) : null}
+                      {item.irsaliyeQty != null ? (
+                        <View style={styles.miktarBox}>
+                          <Text style={[styles.miktarLabel, { color: colors.mutedForeground }]}>İrsaliye</Text>
+                          <Text style={[styles.miktarVal, { color: "#0ea5e9" }]}>
+                            {item.irsaliyeQty} {item.unit}
+                          </Text>
+                        </View>
+                      ) : null}
+                      {kantarQty > 0 ? (
+                        <View style={styles.miktarBox}>
+                          <Text style={[styles.miktarLabel, { color: colors.mutedForeground }]}>Kantar</Text>
+                          <Text style={[styles.miktarVal, { color: "#9333ea" }]}>
+                            {kantarQty} {item.unit}
+                          </Text>
+                        </View>
+                      ) : null}
+                    </View>
+                  );
+                })()}
               </View>
               <View style={{ alignItems: "flex-end", gap: 6 }}>
                 <View style={[styles.gelenQtyPill, { backgroundColor: colors.muted }]}>
@@ -1964,6 +2020,12 @@ export default function MalzemeScreen() {
                     <Text style={[styles.qtyVal, { color: colors.foreground }]}>{item.requestDate}</Text>
                   </View>
                 ) : null}
+                {item.receivedBy ? (
+                  <View style={styles.reqBox}>
+                    <Text style={[styles.qtyLabel, { color: colors.mutedForeground }]}>Teslim Alan</Text>
+                    <Text style={[styles.qtyVal, { color: "#2563eb" }]}>{item.receivedBy}</Text>
+                  </View>
+                ) : null}
               </View>
 
               {item.usageLocation ? (
@@ -1990,55 +2052,69 @@ export default function MalzemeScreen() {
                 );
                 const delivered = item.status === "delivered";
                 const canDeliver = allChecked || item.status === "approved" || delivered;
+                const draftName = receivedByDrafts[item.id] ?? "";
                 return (
-                  <TouchableOpacity
-                    activeOpacity={canEdit && canDeliver ? 0.7 : 1}
-                    onPress={
-                      canEdit && canDeliver
-                        ? (e) => {
-                            e.stopPropagation?.();
-                            updateMaterialRequest(item.id, {
-                              status: delivered ? "approved" : "delivered",
-                            });
-                          }
-                        : undefined
-                    }
-                    style={[
-                      styles.deliveredRow,
-                      {
-                        borderTopColor: colors.border,
-                        opacity: canDeliver ? 1 : 0.4,
-                      },
-                    ]}
-                  >
-                    <View
-                      style={[
-                        styles.approvalBox,
-                        {
-                          borderColor: delivered ? "#2563eb" : colors.border,
-                          backgroundColor: delivered ? "#2563eb" : "transparent",
-                        },
-                      ]}
+                  <View style={[styles.deliveredRow, { borderTopColor: colors.border, opacity: canDeliver ? 1 : 0.4 }]}>
+                    <TouchableOpacity
+                      activeOpacity={canEdit && canDeliver ? 0.7 : 1}
+                      onPress={
+                        canEdit && canDeliver
+                          ? (e) => {
+                              e.stopPropagation?.();
+                              if (!delivered) {
+                                const name = draftName.trim();
+                                if (!name) {
+                                  Alert.alert("Uyarı", "Teslim alan adı girilmeden teslim alınamaz.");
+                                  return;
+                                }
+                                updateMaterialRequest(item.id, { status: "delivered", receivedBy: name });
+                                setReceivedByDrafts((prev) => { const n = { ...prev }; delete n[item.id]; return n; });
+                              } else {
+                                updateMaterialRequest(item.id, { status: "approved", receivedBy: undefined });
+                              }
+                            }
+                          : undefined
+                      }
+                      style={{ flexDirection: "row", alignItems: "center", gap: 8 }}
                     >
-                      {delivered ? <Feather name="check" size={12} color="#fff" /> : null}
-                    </View>
-                    <Text
-                      style={[
-                        styles.approvalLabel,
-                        {
-                          color: delivered ? "#2563eb" : colors.foreground,
-                          fontFamily: "Inter_600SemiBold",
-                        },
-                      ]}
-                    >
-                      Teslim Alındı
-                    </Text>
-                    {!canDeliver ? (
-                      <Text style={[styles.deliveredHint, { color: colors.mutedForeground }]}>
-                        (önce onay gerekli)
+                      <View
+                        style={[
+                          styles.approvalBox,
+                          {
+                            borderColor: delivered ? "#2563eb" : colors.border,
+                            backgroundColor: delivered ? "#2563eb" : "transparent",
+                          },
+                        ]}
+                      >
+                        {delivered ? <Feather name="check" size={12} color="#fff" /> : null}
+                      </View>
+                      <Text
+                        style={[
+                          styles.approvalLabel,
+                          {
+                            color: delivered ? "#2563eb" : colors.foreground,
+                            fontFamily: "Inter_600SemiBold",
+                          },
+                        ]}
+                      >
+                        Teslim Alındı
                       </Text>
+                      {!canDeliver ? (
+                        <Text style={[styles.deliveredHint, { color: colors.mutedForeground }]}>
+                          (önce onay gerekli)
+                        </Text>
+                      ) : null}
+                    </TouchableOpacity>
+                    {canDeliver && !delivered && canEdit ? (
+                      <TextInput
+                        value={draftName}
+                        onChangeText={(v) => setReceivedByDrafts((prev) => ({ ...prev, [item.id]: v }))}
+                        placeholder="Teslim Alan Ad Soyad"
+                        placeholderTextColor={colors.mutedForeground}
+                        style={[styles.receivedByInput, { color: colors.foreground, borderColor: colors.border, backgroundColor: colors.muted }]}
+                      />
                     ) : null}
-                  </TouchableOpacity>
+                  </View>
                 );
               })()}
 
@@ -2192,6 +2268,28 @@ const styles = StyleSheet.create({
     fontFamily: "Inter_400Regular",
     marginLeft: 4,
   },
+  receivedByInput: {
+    flex: 1,
+    fontSize: 12,
+    fontFamily: "Inter_400Regular",
+    borderWidth: 1,
+    borderRadius: 8,
+    paddingHorizontal: 10,
+    paddingVertical: 6,
+    marginLeft: 4,
+  },
+  miktarRow: {
+    flexDirection: "row",
+    gap: 12,
+    marginTop: 10,
+    paddingTop: 8,
+    borderTopWidth: StyleSheet.hairlineWidth,
+    borderTopColor: "#ffffff15",
+    flexWrap: "wrap",
+  },
+  miktarBox: { minWidth: 80 },
+  miktarLabel: { fontSize: 10, fontFamily: "Inter_500Medium", marginBottom: 2 },
+  miktarVal: { fontSize: 13, fontFamily: "Inter_700Bold" },
   titleRow: {
     flexDirection: "row",
     alignItems: "center",

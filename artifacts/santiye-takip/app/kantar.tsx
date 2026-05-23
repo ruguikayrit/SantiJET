@@ -452,7 +452,6 @@ export default function KantarScreen() {
                       </Text>
                       <Text
                         style={[styles.title, { color: colors.foreground }]}
-                        numberOfLines={1}
                       >
                         {item.materialName}
                       </Text>
