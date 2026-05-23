@@ -35,19 +35,31 @@ export default function PozPicker({
 }: Props) {
   const colors = useColors();
   const insets = useSafeAreaInsets();
-  const { imalatPozlari } = useApp();
+  const { pozAnalizleri } = useApp();
   const [open, setOpen] = useState(false);
   const [search, setSearch] = useState("");
   const [activeCat, setActiveCat] = useState<string | null>(null);
 
+  // pozAnalizleri → ImalatPoz formatına dönüştür
+  const items = useMemo<ImalatPoz[]>(
+    () =>
+      pozAnalizleri.map((a) => ({
+        code: a.pozNo,
+        category: a.kategori,
+        name: a.analizAdi,
+        unit: a.olcuBirimi,
+      })),
+    [pozAnalizleri]
+  );
+
   const selected = useMemo(
-    () => imalatPozlari.find((p) => p.code === value) || null,
-    [imalatPozlari, value]
+    () => items.find((p) => p.code === value) || null,
+    [items, value]
   );
 
   const matches = useMemo(() => {
     const q = search.trim().toLowerCase();
-    let list = imalatPozlari;
+    let list = items;
     if (activeCat) list = list.filter((m) => m.category === activeCat);
     if (q) {
       list = list.filter(
@@ -58,7 +70,7 @@ export default function PozPicker({
       );
     }
     return list;
-  }, [search, activeCat, imalatPozlari]);
+  }, [search, activeCat, items]);
 
   const rows = useMemo<Row[]>(() => {
     if (activeCat) {
@@ -82,8 +94,8 @@ export default function PozPicker({
   }, [matches, activeCat]);
 
   const categories = useMemo(
-    () => Array.from(new Set(imalatPozlari.map((p) => p.category))).sort(),
-    [imalatPozlari]
+    () => Array.from(new Set(items.map((p) => p.category))).sort(),
+    [items]
   );
 
   function pick(p: ImalatPoz) {

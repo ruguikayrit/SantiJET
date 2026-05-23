@@ -291,13 +291,18 @@ export default function MalzemeScreen() {
   }, [tab, projMaterials, projRequests, projKullanim, projGiden]);
 
   const materialNames = useMemo(() => {
+    // Kullanılan ve Giden tabları için filtre seçenekleri Gelen listesiyle senkronize olur
+    const sourceForNames =
+      tab === "kullanim" || tab === "giden"
+        ? projMaterials.map((m) => m.name)
+        : tabSource;
     const set = new Set<string>();
-    for (const n of tabSource) {
+    for (const n of sourceForNames) {
       const v = (n || "").trim();
       if (v) set.add(v);
     }
     return Array.from(set).sort((a, b) => a.localeCompare(b, "tr"));
-  }, [tabSource]);
+  }, [tab, tabSource, projMaterials]);
 
   useEffect(() => {
     if (materialFilter && !materialNames.includes(materialFilter)) {
@@ -1087,75 +1092,76 @@ export default function MalzemeScreen() {
             ))}
           </View>
 
-          {knownMaterialsForProject.length > 0 ? (
-            <>
-              <Text style={[styles.label, { color: colors.foreground }]}>Mevcut malzemelerden seç</Text>
-              <ScrollView horizontal showsHorizontalScrollIndicator={false} style={{ marginBottom: 14 }}>
-                {knownMaterialsForProject.map((m) => {
-                  const sel = movForm.name === m.name && movForm.unit === m.unit;
-                  return (
-                    <TouchableOpacity
-                      key={m.id}
-                      onPress={() => pickKnownMaterial(m)}
-                      style={[
-                        styles.knownChip,
-                        {
-                          backgroundColor: sel ? colors.primary : colors.muted,
-                        },
-                      ]}
-                    >
-                      <Feather name="package" size={12} color={sel ? "#fff" : colors.mutedForeground} />
-                      <Text
-                        style={[
-                          styles.chipText,
-                          { color: sel ? "#fff" : colors.foreground, marginLeft: 4 },
-                        ]}
-                      >
+          {/* Mevcut Malzemelerden Seç */}
+          <Text style={[styles.label, { color: colors.foreground }]}>Mevcut Malzemelerden Seç</Text>
+          {knownMaterialsForProject.length === 0 ? (
+            <View style={[styles.emptyMaterialPicker, { backgroundColor: colors.muted }]}>
+              <Feather name="package" size={22} color={colors.mutedForeground} />
+              <Text style={[styles.emptyMaterialText, { color: colors.mutedForeground }]}>
+                Bu projeye ait gelen malzeme kaydı yok.
+              </Text>
+              <Text style={[styles.emptyMaterialSub, { color: colors.mutedForeground }]}>
+                Önce "Gelen" sekmesinden malzeme ekleyin.
+              </Text>
+            </View>
+          ) : (
+            <View style={[styles.materialPickerList, { borderColor: colors.border }]}>
+              {knownMaterialsForProject.map((m, idx) => {
+                const sel = movForm.name === m.name && movForm.unit === m.unit;
+                return (
+                  <TouchableOpacity
+                    key={m.id}
+                    onPress={() => pickKnownMaterial(m)}
+                    activeOpacity={0.8}
+                    style={[
+                      styles.materialPickerRow,
+                      { backgroundColor: sel ? colors.primary + "15" : "transparent",
+                        borderTopWidth: idx === 0 ? 0 : StyleSheet.hairlineWidth,
+                        borderTopColor: colors.border },
+                    ]}
+                  >
+                    <View style={[styles.materialPickerDot, { backgroundColor: sel ? colors.primary : colors.muted }]}>
+                      {sel ? <Feather name="check" size={12} color="#fff" /> : null}
+                    </View>
+                    <View style={{ flex: 1 }}>
+                      <Text style={[styles.materialPickerName, { color: sel ? colors.primary : colors.foreground }]} numberOfLines={1}>
                         {m.name}
                       </Text>
-                    </TouchableOpacity>
-                  );
-                })}
-              </ScrollView>
-            </>
+                      <Text style={[styles.materialPickerMeta, { color: colors.mutedForeground }]} numberOfLines={1}>
+                        {m.category ? `${m.category} · ` : ""}{m.unit}
+                        {m.quantity ? `  ·  Stok: ${m.quantity} ${m.unit}` : ""}
+                      </Text>
+                    </View>
+                  </TouchableOpacity>
+                );
+              })}
+            </View>
+          )}
+
+          {/* Seçilen malzeme bilgisi — salt okunur */}
+          {movForm.name ? (
+            <View style={[styles.selectedMatInfo, { backgroundColor: colors.muted, borderColor: colors.border }]}>
+              <View style={styles.selectedMatRow}>
+                <Text style={[styles.selectedMatLabel, { color: colors.mutedForeground }]}>Kategori</Text>
+                <Text style={[styles.selectedMatValue, { color: colors.foreground }]}>{movForm.category || "—"}</Text>
+              </View>
+              <View style={[styles.selectedMatRow, { borderTopWidth: StyleSheet.hairlineWidth, borderTopColor: colors.border }]}>
+                <Text style={[styles.selectedMatLabel, { color: colors.mutedForeground }]}>Malzeme Adı</Text>
+                <Text style={[styles.selectedMatValue, { color: colors.foreground }]} numberOfLines={2}>{movForm.name}</Text>
+              </View>
+              <View style={[styles.selectedMatRow, { borderTopWidth: StyleSheet.hairlineWidth, borderTopColor: colors.border }]}>
+                <Text style={[styles.selectedMatLabel, { color: colors.mutedForeground }]}>Birim</Text>
+                <Text style={[styles.selectedMatValue, { color: colors.foreground }]}>{movForm.unit || "—"}</Text>
+              </View>
+            </View>
           ) : null}
 
-          <CategoryPicker
-            label="Kategori"
-            value={movForm.category}
-            onChange={(v) => setMovForm({ ...movForm, category: v })}
+          <FormInput
+            label="Miktar"
+            value={movForm.quantity}
+            onChangeText={(v) => setMovForm({ ...movForm, quantity: v })}
+            keyboardType="numeric"
           />
-          <MaterialPicker
-            label="Malzeme Adı"
-            value={movForm.name}
-            category={movForm.category}
-            onChange={(name, cat, defUnit) =>
-              setMovForm({
-                ...movForm,
-                name,
-                category: cat,
-                unit: defUnit || movForm.unit || "",
-              })
-            }
-            placeholder="Örn: Nervürlü Demir Ø12"
-          />
-          <View style={styles.twoCol}>
-            <View style={{ flex: 1 }}>
-              <UnitPicker
-                label="Birim"
-                value={movForm.unit}
-                onChange={(v) => setMovForm({ ...movForm, unit: v })}
-              />
-            </View>
-            <View style={{ flex: 1 }}>
-              <FormInput
-                label="Miktar"
-                value={movForm.quantity}
-                onChangeText={(v) => setMovForm({ ...movForm, quantity: v })}
-                keyboardType="numeric"
-              />
-            </View>
-          </View>
           {stoksuzKullanim ? (
             <View style={styles.warnBox}>
               <Feather name="alert-triangle" size={16} color="#b45309" />
@@ -2210,6 +2216,29 @@ const styles = StyleSheet.create({
     borderRadius: 999,
     marginRight: 8,
   },
+  emptyMaterialPicker: {
+    alignItems: "center", justifyContent: "center", gap: 6,
+    padding: 20, borderRadius: 10, marginBottom: 12,
+  },
+  emptyMaterialText: { fontSize: 13, fontFamily: "Inter_600SemiBold", textAlign: "center" },
+  emptyMaterialSub: { fontSize: 12, fontFamily: "Inter_400Regular", textAlign: "center" },
+  materialPickerList: {
+    borderWidth: StyleSheet.hairlineWidth, borderRadius: 10, overflow: "hidden", marginBottom: 12,
+  },
+  materialPickerRow: {
+    flexDirection: "row", alignItems: "center", gap: 10, paddingHorizontal: 12, paddingVertical: 11,
+  },
+  materialPickerDot: {
+    width: 22, height: 22, borderRadius: 11, alignItems: "center", justifyContent: "center",
+  },
+  materialPickerName: { fontSize: 14, fontFamily: "Inter_600SemiBold", marginBottom: 2 },
+  materialPickerMeta: { fontSize: 11, fontFamily: "Inter_400Regular" },
+  selectedMatInfo: {
+    borderWidth: StyleSheet.hairlineWidth, borderRadius: 10, overflow: "hidden", marginBottom: 12,
+  },
+  selectedMatRow: { flexDirection: "row", justifyContent: "space-between", alignItems: "center", paddingHorizontal: 12, paddingVertical: 10 },
+  selectedMatLabel: { fontSize: 12, fontFamily: "Inter_700Bold" },
+  selectedMatValue: { fontSize: 13, fontFamily: "Inter_500Medium", flex: 1, textAlign: "right", paddingLeft: 8 },
   twoCol: { flexDirection: "row", gap: 8 },
   filterBar: { paddingHorizontal: 12, paddingVertical: 10, gap: 8, borderBottomWidth: StyleSheet.hairlineWidth },
   filterRow: { flexDirection: "row", gap: 8, alignItems: "center" },
