@@ -81,8 +81,14 @@ export default function VeriYonetimScreen() {
     const input = document.createElement("input");
     input.type = "file";
     input.accept = "application/json,.json";
+    input.style.cssText = "position:fixed;top:-9999px;left:-9999px;opacity:0;pointer-events:none;";
+    document.body.appendChild(input);
+    const cleanup = () => {
+      if (document.body.contains(input)) document.body.removeChild(input);
+    };
     input.onchange = () => {
       const file = input.files?.[0];
+      cleanup();
       if (!file) return;
       const reader = new FileReader();
       reader.onload = () => {
@@ -90,8 +96,10 @@ export default function VeriYonetimScreen() {
         setImportFileName(file.name);
         setImportMsg(null);
       };
+      reader.onerror = () => Alert.alert("Hata", "Dosya okunamadı");
       reader.readAsText(file);
     };
+    input.addEventListener("cancel", cleanup);
     input.click();
   }
 

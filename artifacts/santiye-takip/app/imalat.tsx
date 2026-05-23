@@ -420,7 +420,11 @@ export default function ImalatScreen() {
         {imMode === "kesif" ? (() => {
           const projItems = surveys
             .filter((s) => s.projectId === form.projectId)
-            .flatMap((s) => s.items.map((it) => ({ ...it, surveyTitle: s.title })));
+            .flatMap((s) =>
+              s.items
+                .filter((it) => it.itemType === "iscilik")
+                .map((it) => ({ ...it, surveyTitle: s.title }))
+            );
           return (
             <>
               <Text style={[styles.label, { color: colors.foreground }]}>Keşif Kalemi Seç</Text>

@@ -1778,6 +1778,8 @@ export default function MalzemeScreen() {
                     </Text>
                   </View>
                 </View>
+              </View>
+              <View style={{ alignItems: "flex-end", gap: 6 }}>
                 {(() => {
                   const linkedReq = item.materialRequestId
                     ? materialRequests.find((r) => r.id === item.materialRequestId)
@@ -1785,43 +1787,38 @@ export default function MalzemeScreen() {
                   const kantarQty = weighbridges
                     .filter((w) => w.materialId === item.id)
                     .reduce((s, w) => s + (w.netWeight || 0), 0);
-                  const hasInfo = linkedReq || item.irsaliyeQty != null || kantarQty > 0;
-                  if (!hasInfo) return null;
+                  const hasQtyInfo = linkedReq || item.irsaliyeQty != null || kantarQty > 0;
+                  if (!hasQtyInfo) {
+                    return (
+                      <View style={[styles.gelenQtyPill, { backgroundColor: colors.muted }]}>
+                        <Text style={[styles.gelenQtyVal, { color: colors.foreground }]}>{item.quantity}</Text>
+                        <Text style={[styles.gelenQtyUnit, { color: colors.mutedForeground }]}>{item.unit}</Text>
+                      </View>
+                    );
+                  }
                   return (
-                    <View style={styles.miktarRow}>
+                    <View style={styles.miktarStack}>
                       {linkedReq ? (
-                        <View style={styles.miktarBox}>
-                          <Text style={[styles.miktarLabel, { color: colors.mutedForeground }]}>Talep Edilen</Text>
-                          <Text style={[styles.miktarVal, { color: colors.foreground }]}>
-                            {linkedReq.quantity} {linkedReq.unit}
-                          </Text>
+                        <View style={styles.miktarSatir}>
+                          <Text style={[styles.miktarSatirLabel, { color: colors.mutedForeground }]}>Talep edilen</Text>
+                          <Text style={[styles.miktarSatirVal, { color: colors.foreground }]}>{linkedReq.quantity} {linkedReq.unit}</Text>
                         </View>
                       ) : null}
                       {item.irsaliyeQty != null ? (
-                        <View style={styles.miktarBox}>
-                          <Text style={[styles.miktarLabel, { color: colors.mutedForeground }]}>İrsaliye</Text>
-                          <Text style={[styles.miktarVal, { color: "#0ea5e9" }]}>
-                            {item.irsaliyeQty} {item.unit}
-                          </Text>
+                        <View style={styles.miktarSatir}>
+                          <Text style={[styles.miktarSatirLabel, { color: colors.mutedForeground }]}>İrsaliye</Text>
+                          <Text style={[styles.miktarSatirVal, { color: "#0ea5e9" }]}>{item.irsaliyeQty} {item.unit}</Text>
                         </View>
                       ) : null}
                       {kantarQty > 0 ? (
-                        <View style={styles.miktarBox}>
-                          <Text style={[styles.miktarLabel, { color: colors.mutedForeground }]}>Kantar</Text>
-                          <Text style={[styles.miktarVal, { color: "#9333ea" }]}>
-                            {kantarQty} {item.unit}
-                          </Text>
+                        <View style={styles.miktarSatir}>
+                          <Text style={[styles.miktarSatirLabel, { color: colors.mutedForeground }]}>Kantar</Text>
+                          <Text style={[styles.miktarSatirVal, { color: "#9333ea" }]}>{kantarQty} {item.unit}</Text>
                         </View>
                       ) : null}
                     </View>
                   );
                 })()}
-              </View>
-              <View style={{ alignItems: "flex-end", gap: 6 }}>
-                <View style={[styles.gelenQtyPill, { backgroundColor: colors.muted }]}>
-                  <Text style={[styles.gelenQtyVal, { color: colors.foreground }]}>{item.quantity}</Text>
-                  <Text style={[styles.gelenQtyUnit, { color: colors.mutedForeground }]}>{item.unit}</Text>
-                </View>
                 {item.irsaliyePhoto ? (
                   <TouchableOpacity
                     onPress={(e) => { e.stopPropagation(); setPhotoViewerUri(item.irsaliyePhoto || null); }}
@@ -2290,6 +2287,27 @@ const styles = StyleSheet.create({
   miktarBox: { minWidth: 80 },
   miktarLabel: { fontSize: 10, fontFamily: "Inter_500Medium", marginBottom: 2 },
   miktarVal: { fontSize: 13, fontFamily: "Inter_700Bold" },
+  miktarStack: {
+    alignItems: "flex-end",
+    gap: 3,
+  },
+  miktarSatir: {
+    flexDirection: "row",
+    alignItems: "baseline",
+    gap: 6,
+    minWidth: 148,
+  },
+  miktarSatirLabel: {
+    fontSize: 10,
+    fontFamily: "Inter_500Medium",
+    flex: 1,
+  },
+  miktarSatirVal: {
+    fontSize: 12,
+    fontFamily: "Inter_700Bold",
+    textAlign: "right" as const,
+    minWidth: 60,
+  },
   titleRow: {
     flexDirection: "row",
     alignItems: "center",

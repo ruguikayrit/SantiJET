@@ -280,6 +280,8 @@ export interface Purchase {
   invoiceNo: string;       // fatura no
   notes: string;
   invoiceReceived: boolean; // Faturası geldi olarak işaretlendi mi
+  invoicePhoto?: string;    // Fatura görseli URI
+  paymentNote?: string;     // Ödeme notu (çek vadesi, taksit bilgisi vb.)
   // İlişkili malzeme talebi (otomatik oluşturulan kayıtlar için)
   materialRequestId?: string;
   // İlişkili Gelen Malzeme (talepsiz girilip Satın Alma'ya gönderilen kayıtlar için)
@@ -1698,6 +1700,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
           currentUserId: null,
         };
         setState(next);
+        AsyncStorage.setItem(STORAGE_KEY, JSON.stringify(next));
         const counts: Record<string, number> = {};
         (Object.keys(INITIAL) as (keyof AppState)[]).forEach((k) => {
           const val = (next as any)[k];

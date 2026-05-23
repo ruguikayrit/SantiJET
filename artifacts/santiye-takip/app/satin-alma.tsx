@@ -1,8 +1,11 @@
 import { Feather } from "@expo/vector-icons";
+import * as ImagePicker from "expo-image-picker";
 import { useRouter } from "expo-router";
 import React, { useEffect, useMemo, useState } from "react";
 import {
   FlatList,
+  Image,
+  Platform,
   ScrollView,
   StyleSheet,
   Text,
@@ -66,6 +69,8 @@ interface F {
   invoiceNo: string;
   notes: string;
   invoiceReceived: boolean;
+  invoicePhoto: string;
+  paymentNote: string;
 }
 
 const EMPTY: F = {
@@ -84,6 +89,8 @@ const EMPTY: F = {
   invoiceNo: "",
   notes: "",
   invoiceReceived: false,
+  invoicePhoto: "",
+  paymentNote: "",
 };
 
 function fmtTL(n: number) {
@@ -219,6 +226,8 @@ export default function SatinAlmaScreen() {
         invoiceNo: p.invoiceNo,
         notes: p.notes,
         invoiceReceived: !!p.invoiceReceived,
+        invoicePhoto: p.invoicePhoto || "",
+        paymentNote: p.paymentNote || "",
       });
     } else {
       setEditId(null);
@@ -249,6 +258,8 @@ export default function SatinAlmaScreen() {
       invoiceNo: form.invoiceNo.trim(),
       notes: form.notes.trim(),
       invoiceReceived: form.invoiceReceived,
+      invoicePhoto: form.invoicePhoto.trim() || undefined,
+      paymentNote: form.paymentNote.trim() || undefined,
     };
     if (editId) updatePurchase(editId, data);
     else addPurchase(data);
@@ -698,6 +709,45 @@ export default function SatinAlmaScreen() {
           </View>
         </TouchableOpacity>
 
+        {/* Fatura Görseli Ekle */}
+        <View style={[styles.invoicePhotoRow, { borderColor: colors.border }]}>
+          <TouchableOpacity
+            style={[styles.invoicePhotoBtn, { backgroundColor: colors.muted }]}
+            activeOpacity={0.8}
+            onPress={async () => {
+              if (Platform.OS !== "web") {
+                const perm = await ImagePicker.requestMediaLibraryPermissionsAsync();
+                if (!perm.granted) return;
+              }
+              const res = await ImagePicker.launchImageLibraryAsync({
+                mediaTypes: ImagePicker.MediaTypeOptions.Images,
+                quality: 0.7,
+                allowsEditing: false,
+              });
+              if (!res.canceled && res.assets[0]?.uri) {
+                setForm({ ...form, invoicePhoto: res.assets[0].uri });
+              }
+            }}
+          >
+            <Feather name="file-plus" size={16} color={form.invoicePhoto ? "#0891b2" : colors.mutedForeground} />
+            <Text style={[styles.invoicePhotoLabel, { color: form.invoicePhoto ? "#0891b2" : colors.mutedForeground }]}>
+              {form.invoicePhoto ? "Görsel Seçildi" : "Fatura Görseli Ekle"}
+            </Text>
+          </TouchableOpacity>
+          {form.invoicePhoto ? (
+            <View style={styles.invoicePhotoPreview}>
+              <Image source={{ uri: form.invoicePhoto }} style={styles.invoicePhotoThumb} resizeMode="cover" />
+              <TouchableOpacity
+                onPress={() => setForm({ ...form, invoicePhoto: "" })}
+                style={styles.invoicePhotoRemove}
+                activeOpacity={0.7}
+              >
+                <Feather name="x" size={12} color="#fff" />
+              </TouchableOpacity>
+            </View>
+          ) : null}
+        </View>
+
         <Text style={[styles.label, { color: colors.foreground }]}>Durum</Text>
         <View style={styles.chips}>
           {(Object.keys(STATUS_LABEL) as PurchaseStatus[]).map((s) => (
@@ -752,6 +802,23 @@ export default function SatinAlmaScreen() {
             </TouchableOpacity>
           ))}
         </View>
+
+        <FormInput
+          label="Ödeme Notu"
+          value={form.paymentNote}
+          onChangeText={(v) => setForm({ ...form, paymentNote: v })}
+          multiline
+          placeholder={
+            form.paymentMethod === "cek"
+              ? "Çek vadesi, çek no, banka..."
+              : form.paymentMethod === "kredi-karti"
+              ? "Taksit sayısı, kart bilgisi..."
+              : form.paymentMethod === "vadeli"
+              ? "Vade tarihi, koşullar..."
+              : "Ödemeye ilişkin not..."
+          }
+          style={{ height: 60, textAlignVertical: "top" }}
+        />
 
         {form.status === "paid" ? (
           <DatePickerInput
@@ -880,6 +947,43 @@ const styles = StyleSheet.create({
   },
   invoiceTitle: { fontSize: 14, fontFamily: "Inter_600SemiBold" },
   invoiceDesc: { fontSize: 11, fontFamily: "Inter_400Regular", marginTop: 2 },
+  invoicePhotoRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 10,
+    marginBottom: 14,
+    borderTopWidth: StyleSheet.hairlineWidth,
+    paddingTop: 12,
+  },
+  invoicePhotoBtn: {
+    flex: 1,
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 8,
+    paddingHorizontal: 14,
+    paddingVertical: 10,
+    borderRadius: 10,
+  },
+  invoicePhotoLabel: { fontSize: 13, fontFamily: "Inter_500Medium" },
+  invoicePhotoPreview: {
+    width: 52,
+    height: 52,
+    borderRadius: 8,
+    overflow: "hidden" as const,
+    position: "relative" as const,
+  },
+  invoicePhotoThumb: { width: 52, height: 52 },
+  invoicePhotoRemove: {
+    position: "absolute" as const,
+    top: 2,
+    right: 2,
+    width: 18,
+    height: 18,
+    borderRadius: 9,
+    backgroundColor: "#dc2626",
+    alignItems: "center",
+    justifyContent: "center",
+  },
   label: { fontSize: 14, fontFamily: "Inter_600SemiBold", marginBottom: 8, marginTop: 4 },
   chips: { flexDirection: "row", flexWrap: "wrap", gap: 8, marginBottom: 14 },
   chip: { paddingHorizontal: 14, paddingVertical: 8, borderRadius: 999 },
