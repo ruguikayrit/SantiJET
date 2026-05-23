@@ -1463,19 +1463,19 @@ export default function MalzemeScreen() {
                 <View style={[styles.analizTableHeader, { borderBottomColor: colors.border }]}>
                   <Text style={[styles.analizColHdr, { color: colors.mutedForeground, flex: 1 }]}>Malzeme</Text>
                   <Text style={[styles.analizColHdr, { color: colors.mutedForeground, width: 74, textAlign: "right" }]}>Hesap</Text>
-                  <Text style={[styles.analizColHdr, { color: colors.mutedForeground, width: 72, textAlign: "right" }]}>Talep Ed.</Text>
+                  <Text style={[styles.analizColHdr, { color: colors.mutedForeground, width: 72, textAlign: "right" }]}>Teslim</Text>
                   <Text style={[styles.analizColHdr, { color: colors.mutedForeground, width: 58, textAlign: "right" }]}>Kalan</Text>
                 </View>
                 {malzemeKalemleri.map((k) => {
                   const analizMiktar = totalMetraj > 0 ? totalMetraj * k.miktar : k.miktar;
-                  const talepEdilen = materialRequests
+                  const teslimEdilen = materials
                     .filter(
-                      (r) =>
-                        r.projectId === rForm.projectId &&
-                        r.name.trim().toLowerCase() === k.tanim.trim().toLowerCase()
+                      (m) =>
+                        m.projectId === rForm.projectId &&
+                        m.name.trim().toLowerCase() === k.tanim.trim().toLowerCase()
                     )
-                    .reduce((sum, r) => sum + (r.quantity || 0), 0);
-                  const kalan = analizMiktar - talepEdilen;
+                    .reduce((sum, m) => sum + (m.irsaliyeQty ?? m.quantity ?? 0), 0);
+                  const kalan = analizMiktar - teslimEdilen;
                   return (
                     <TouchableOpacity
                       key={k.id}
@@ -1497,7 +1497,7 @@ export default function MalzemeScreen() {
                         {fmt(analizMiktar)} {k.olcuBirimi}
                       </Text>
                       <Text style={[styles.analizNum, { color: colors.mutedForeground, width: 72 }]}>
-                        {fmt(talepEdilen)} {k.olcuBirimi}
+                        {fmt(teslimEdilen)} {k.olcuBirimi}
                       </Text>
                       <Text style={[styles.analizNum, { color: kalan <= 0 ? "#22c55e" : colors.primary, width: 58 }]}>
                         {kalan <= 0 ? "Tamam" : `${fmt(kalan)} ${k.olcuBirimi}`}
@@ -1718,7 +1718,15 @@ export default function MalzemeScreen() {
                     </Text>
                   </TouchableOpacity>
 
-                  <View
+                  <TouchableOpacity
+                    onPress={(e) => {
+                      e.stopPropagation();
+                      Alert.alert(
+                        "Kantar Modülü",
+                        "Tedarikçi kantar fişi bilgileri Kantar modülü üzerinden işlenir.",
+                        [{ text: "Tamam" }]
+                      );
+                    }}
                     style={[
                       styles.apprChip,
                       {
@@ -1726,6 +1734,7 @@ export default function MalzemeScreen() {
                         backgroundColor: supplierChecked ? "#0ea5e91a" : "transparent",
                       },
                     ]}
+                    activeOpacity={0.7}
                   >
                     <View
                       style={[
@@ -1746,9 +1755,17 @@ export default function MalzemeScreen() {
                     >
                       Tedarikçi Kantar Fişi
                     </Text>
-                  </View>
+                  </TouchableOpacity>
 
-                  <View
+                  <TouchableOpacity
+                    onPress={(e) => {
+                      e.stopPropagation();
+                      Alert.alert(
+                        "Kantar Modülü",
+                        "Şantiye kantar bilgileri Kantar modülü üzerinden işlenir.",
+                        [{ text: "Tamam" }]
+                      );
+                    }}
                     style={[
                       styles.apprChip,
                       {
@@ -1756,6 +1773,7 @@ export default function MalzemeScreen() {
                         backgroundColor: siteChecked ? "#9333ea1a" : "transparent",
                       },
                     ]}
+                    activeOpacity={0.7}
                   >
                     <View
                       style={[
@@ -1776,7 +1794,7 @@ export default function MalzemeScreen() {
                     >
                       Şantiye Kantar
                     </Text>
-                  </View>
+                  </TouchableOpacity>
                 </View>
               </View>
               <View style={{ alignItems: "flex-end", gap: 6 }}>
