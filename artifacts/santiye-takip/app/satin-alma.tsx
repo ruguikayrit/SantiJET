@@ -279,6 +279,18 @@ export default function SatinAlmaScreen() {
     markPurchasePaid(p.id, new Date().toISOString().slice(0, 10));
   }
 
+  const STATUS_ORDER: PurchaseStatus[] = ["pending", "approved", "paid", "cancelled"];
+  function quickCycleStatus(p: Purchase) {
+    const idx = STATUS_ORDER.indexOf(p.status);
+    const next = STATUS_ORDER[(idx + 1) % STATUS_ORDER.length];
+    const { id, ...rest } = p;
+    updatePurchase(id, {
+      ...rest,
+      status: next,
+      paidDate: next === "paid" ? (p.paidDate || new Date().toISOString().slice(0, 10)) : p.paidDate,
+    });
+  }
+
   function projectName(id: string) {
     return projects.find((p) => p.id === id)?.name || "—";
   }
@@ -539,16 +551,16 @@ export default function SatinAlmaScreen() {
                           </Text>
                         </TouchableOpacity>
                       ) : null}
-                      {canEdit && item.status !== "paid" && item.status !== "cancelled" ? (
+                      {canEdit ? (
                         <TouchableOpacity
                           onPress={(e) => {
                             e.stopPropagation();
-                            quickPay(item);
+                            quickCycleStatus(item);
                           }}
-                          style={[styles.payBtn, { backgroundColor: STATUS_COLOR.paid }]}
+                          style={[styles.payBtn, { backgroundColor: STATUS_COLOR[item.status] }]}
                         >
-                          <Feather name="check" size={11} color="#fff" />
-                          <Text style={styles.payBtnText}>Ödendi</Text>
+                          <Feather name="refresh-cw" size={10} color="#fff" />
+                          <Text style={styles.payBtnText}>{STATUS_LABEL[item.status]}</Text>
                         </TouchableOpacity>
                       ) : null}
                     </View>
@@ -748,37 +760,34 @@ export default function SatinAlmaScreen() {
           ) : null}
         </View>
 
-        <Text style={[styles.label, { color: colors.foreground }]}>Durum</Text>
-        <View style={styles.chips}>
-          {(Object.keys(STATUS_LABEL) as PurchaseStatus[]).map((s) => (
-            <TouchableOpacity
-              key={s}
-              onPress={() =>
-                setForm({
-                  ...form,
-                  status: s,
-                  paidDate:
-                    s === "paid" && !form.paidDate
-                      ? new Date().toISOString().slice(0, 10)
-                      : form.paidDate,
-                })
-              }
-              style={[
-                styles.chip,
-                { backgroundColor: form.status === s ? STATUS_COLOR[s] : colors.muted },
-              ]}
-            >
-              <Text
-                style={[
-                  styles.chipText,
-                  { color: form.status === s ? "#fff" : colors.foreground },
-                ]}
-              >
-                {STATUS_LABEL[s]}
-              </Text>
-            </TouchableOpacity>
-          ))}
-        </View>
+        <TouchableOpacity
+          onPress={() => {
+            const idx = STATUS_ORDER.indexOf(form.status);
+            const next = STATUS_ORDER[(idx + 1) % STATUS_ORDER.length];
+            setForm({
+              ...form,
+              status: next,
+              paidDate: next === "paid" && !form.paidDate ? new Date().toISOString().slice(0, 10) : form.paidDate,
+            });
+          }}
+          style={[
+            styles.statusCycleBtn,
+            {
+              backgroundColor: STATUS_COLOR[form.status] + "20",
+              borderColor: STATUS_COLOR[form.status],
+            },
+          ]}
+          activeOpacity={0.7}
+        >
+          <View style={[styles.statusDot, { backgroundColor: STATUS_COLOR[form.status] }]} />
+          <Text style={[styles.statusCycleLabel, { color: STATUS_COLOR[form.status] }]}>
+            {STATUS_LABEL[form.status]}
+          </Text>
+          <Text style={[styles.statusCycleHint, { color: colors.mutedForeground }]}>
+            {`→ ${STATUS_LABEL[STATUS_ORDER[(STATUS_ORDER.indexOf(form.status) + 1) % STATUS_ORDER.length]]}`}
+          </Text>
+          <Feather name="refresh-cw" size={13} color={STATUS_COLOR[form.status]} />
+        </TouchableOpacity>
 
         <Text style={[styles.label, { color: colors.foreground }]}>Ödeme Yöntemi</Text>
         <View style={styles.chips}>
@@ -947,6 +956,19 @@ const styles = StyleSheet.create({
   },
   invoiceTitle: { fontSize: 14, fontFamily: "Inter_600SemiBold" },
   invoiceDesc: { fontSize: 11, fontFamily: "Inter_400Regular", marginTop: 2 },
+  statusCycleBtn: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 8,
+    paddingHorizontal: 14,
+    paddingVertical: 12,
+    borderRadius: 10,
+    borderWidth: 1.5,
+    marginBottom: 14,
+  },
+  statusDot: { width: 8, height: 8, borderRadius: 4 },
+  statusCycleLabel: { fontSize: 14, fontFamily: "Inter_700Bold", flex: 1 },
+  statusCycleHint: { fontSize: 11, fontFamily: "Inter_400Regular" },
   invoicePhotoRow: {
     flexDirection: "row",
     alignItems: "center",

@@ -81,7 +81,7 @@ const tr: Dict = {
   "menu.ilerleme": "İlerleme",
   "menu.satin-alma": "Satın Alma",
   "menu.kantar": "Kantar",
-  "menu.kullanicilar": "Kullanıcılar",
+  "menu.kullanicilar": "Personel",
   "home.steel.banner": "STEEL & CONCRETE",
   "home.steel.open": "AÇ",
   "home.steel.sub.proje": "Aktif şantiye",

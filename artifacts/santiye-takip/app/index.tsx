@@ -63,7 +63,7 @@ const SECTIONS: Section[] = [
   { key: "hakedis",      label: "Hakediş",       icon: "file-text",     route: "/hakedis",      color: "#be185d", bg: "#fce7f3", code: "HK-12", sub: "Bekleyen",      count: (a) => a.hakedisler.length },
   { key: "butce",        label: "Yaklaşık Maliyet", icon: "dollar-sign", route: "/butce",        color: "#16213e", bg: "#e0e7ff", code: "YM-13", sub: "Kalem",         count: (a) => a.surveys.reduce((s, sv) => s + sv.items.length, 0) },
   { key: "taseron",      label: "Taşeron",       icon: "truck",         route: "/taseron",      color: "#7c3aed", bg: "#ede9fe", code: "TS-14", sub: "Taşeron",       count: (a) => a.subcontractors.length },
-  { key: "kullanicilar", label: "Kullanıcılar",  icon: "shield",        route: "/kullanicilar", color: "#7c3aed", bg: "#ede9fe", code: "KU-15", sub: "Kullanıcı",     count: (a) => a.appUsers.length },
+  { key: "kullanicilar", label: "Personel",       icon: "shield",        route: "/kullanicilar", color: "#7c3aed", bg: "#ede9fe", code: "KU-15", sub: "Personel",      count: (a) => a.appUsers.length },
   { key: "dosyalar",     label: "Dosyalar",      icon: "folder",        route: "/dosyalar",     color: "#475569", bg: "#e2e8f0", code: "DS-16", sub: "Dosya",         count: (a) => a.archiveFiles.length },
 ];
 
@@ -403,7 +403,7 @@ export default function HomeScreen() {
                     </View>
                     <Text style={styles.steelNum}>#{String(idx).padStart(2, "0")}</Text>
                   </View>
-                  <Text style={styles.steelLabel} numberOfLines={1}>{t(`menu.${s.key}`).toUpperCase()}</Text>
+                  <Text style={styles.steelLabel} numberOfLines={2}>{t(`menu.${s.key}`).toUpperCase()}</Text>
                   <View style={styles.steelCountRow}>
                     <Text style={styles.steelCount} numberOfLines={1}>{s.count(app)}</Text>
                     <Text style={styles.steelSub} numberOfLines={1}>
@@ -453,7 +453,7 @@ export default function HomeScreen() {
                 </View>
 
                 {/* Başlık */}
-                <Text style={[styles.tileLabel, { color: colors.cardForeground }]} numberOfLines={1}>
+                <Text style={[styles.tileLabel, { color: colors.cardForeground }]} numberOfLines={2}>
                   {t(`menu.${s.key}`).toUpperCase()}
                 </Text>
 
