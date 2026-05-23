@@ -20,9 +20,10 @@ interface Props {
   onClose: () => void;
   title: string;
   children: React.ReactNode;
+  scrollEnabled?: boolean;
 }
 
-export default function BottomSheet({ visible, onClose, title, children }: Props) {
+export default function BottomSheet({ visible, onClose, title, children, scrollEnabled = true }: Props) {
   const colors = useColors();
   const insets = useSafeAreaInsets();
   const anim = useRef(new Animated.Value(0)).current;
@@ -80,6 +81,7 @@ export default function BottomSheet({ visible, onClose, title, children }: Props
             keyboardShouldPersistTaps="handled"
             showsVerticalScrollIndicator={false}
             contentContainerStyle={styles.content}
+            scrollEnabled={scrollEnabled}
           >
             {children}
           </ScrollView>

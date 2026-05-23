@@ -85,8 +85,9 @@ export default function UnitPicker({
 
       <Modal
         visible={open}
-        animationType="fade"
+        animationType="slide"
         transparent
+        statusBarTranslucent
         onRequestClose={() => setOpen(false)}
       >
         <Pressable

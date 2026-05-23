@@ -61,7 +61,7 @@ const SECTIONS: Section[] = [
   { key: "is-programi",  label: "İş Programı",   icon: "calendar",      route: "/is-programi",  color: "#8b5cf6", bg: "#ede9fe", code: "IP-10", sub: "Aktif İş",      count: (a) => a.scheduleTasks.length },
   { key: "satin-alma",   label: "Satın Alma",    icon: "shopping-cart", route: "/satin-alma",   color: "#ea580c", bg: "#ffedd5", code: "SA-11", sub: "Açık Talep",    count: (a) => a.purchases.length },
   { key: "hakedis",      label: "Hakediş",       icon: "file-text",     route: "/hakedis",      color: "#be185d", bg: "#fce7f3", code: "HK-12", sub: "Bekleyen",      count: (a) => a.hakedisler.length },
-  { key: "butce",        label: "Yaklaşık Maliyet", icon: "dollar-sign", route: "/butce",        color: "#16213e", bg: "#e0e7ff", code: "YM-13", sub: "Kalem",         count: (a) => a.budget.length },
+  { key: "butce",        label: "Yaklaşık Maliyet", icon: "dollar-sign", route: "/butce",        color: "#16213e", bg: "#e0e7ff", code: "YM-13", sub: "Kalem",         count: (a) => a.surveys.reduce((s, sv) => s + sv.items.length, 0) },
   { key: "taseron",      label: "Taşeron",       icon: "truck",         route: "/taseron",      color: "#7c3aed", bg: "#ede9fe", code: "TS-14", sub: "Taşeron",       count: (a) => a.subcontractors.length },
   { key: "kullanicilar", label: "Kullanıcılar",  icon: "shield",        route: "/kullanicilar", color: "#7c3aed", bg: "#ede9fe", code: "KU-15", sub: "Kullanıcı",     count: (a) => a.appUsers.length },
   { key: "dosyalar",     label: "Dosyalar",      icon: "folder",        route: "/dosyalar",     color: "#475569", bg: "#e2e8f0", code: "DS-16", sub: "Dosya",         count: (a) => a.archiveFiles.length },
