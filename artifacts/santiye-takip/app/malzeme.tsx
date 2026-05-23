@@ -673,6 +673,31 @@ export default function MalzemeScreen() {
     return !exists;
   }, [movForm.type, movForm.name, movForm.projectId, materials]);
 
+  // Gelen malzeme toplam miktarı ve kullanım aşım kontrolü
+  const { totalGelen, toplamKullanilanBaska, asimVar } = useMemo(() => {
+    if (movForm.type !== "kullanim" || stoksuzKullanim) {
+      return { totalGelen: 0, toplamKullanilanBaska: 0, asimVar: false };
+    }
+    const normN = (s: string) => s.trim().toLowerCase();
+    const name = normN(movForm.name);
+    if (!name || !movForm.projectId) return { totalGelen: 0, toplamKullanilanBaska: 0, asimVar: false };
+    const totalGelen = materials
+      .filter((m) => m.projectId === movForm.projectId && normN(m.name) === name)
+      .reduce((s, m) => s + (m.irsaliyeQty ?? m.quantity ?? 0), 0);
+    const toplamKullanilanBaska = materialMovements
+      .filter(
+        (mv) =>
+          mv.type === "kullanim" &&
+          mv.projectId === movForm.projectId &&
+          normN(mv.name) === name &&
+          mv.id !== movEditId
+      )
+      .reduce((s, mv) => s + (mv.quantity || 0), 0);
+    const girilen = parseFloat(movForm.quantity) || 0;
+    const asimVar = totalGelen > 0 && toplamKullanilanBaska + girilen > totalGelen;
+    return { totalGelen, toplamKullanilanBaska, asimVar };
+  }, [movForm.type, movForm.name, movForm.projectId, movForm.quantity, movEditId, materials, materialMovements, stoksuzKullanim]);
+
   function pickKnownMaterial(m: Material) {
     setMovForm((prev) => ({
       ...prev,
@@ -709,6 +734,17 @@ export default function MalzemeScreen() {
       Alert.alert(
         "Stoksuz Malzeme Kullanımı",
         `"${data.name}" malzemesi "${projectName(data.projectId)}" projesinin Gelen Malzeme listesinde bulunmuyor. Stok takibi yapılamayacak.\n\nYine de kaydetmek istiyor musunuz?`,
+        [
+          { text: "Vazgeç", style: "cancel" },
+          { text: "Yine de Kaydet", style: "destructive", onPress: commit },
+        ]
+      );
+      return;
+    }
+    if (asimVar) {
+      Alert.alert(
+        "Hatalı Kullanım Miktarı",
+        `Gelen malzemeden fazla malzeme kullanıyorsunuz.\n\nToplam gelen: ${totalGelen} ${data.unit}\nDaha önce kullanılan: ${toplamKullanilanBaska} ${data.unit}\nŞu an girilen: ${data.quantity} ${data.unit}\n\nYine de kaydetmek istiyor musunuz?`,
         [
           { text: "Vazgeç", style: "cancel" },
           { text: "Yine de Kaydet", style: "destructive", onPress: commit },
@@ -1200,6 +1236,23 @@ export default function MalzemeScreen() {
                   (stok takibi yapılamaz).
                 </Text>
               </View>
+            </View>
+          ) : asimVar ? (
+            <View style={[styles.warnBox, { backgroundColor: "#fef2f2", borderColor: "#fca5a5" }]}>
+              <Feather name="alert-octagon" size={16} color="#dc2626" />
+              <View style={{ flex: 1 }}>
+                <Text style={[styles.warnTitle, { color: "#dc2626" }]}>Hatalı Kullanım Miktarı</Text>
+                <Text style={[styles.warnBody, { color: "#b91c1c" }]}>
+                  {`Gelen malzemeden fazla malzeme kullanıyorsunuz.\nToplam gelen: ${totalGelen} ${movForm.unit} · Daha önce kullanılan: ${toplamKullanilanBaska} ${movForm.unit}`}
+                </Text>
+              </View>
+            </View>
+          ) : totalGelen > 0 ? (
+            <View style={[styles.warnBox, { backgroundColor: "#f0fdf4", borderColor: "#86efac" }]}>
+              <Feather name="package" size={14} color="#16a34a" />
+              <Text style={{ fontSize: 12, fontFamily: "Inter_400Regular", color: "#15803d", flex: 1 }}>
+                {`Mevcut stok: ${totalGelen} ${movForm.unit}${toplamKullanilanBaska > 0 ? ` (${toplamKullanilanBaska} kullanıldı, kalan ${totalGelen - toplamKullanilanBaska})` : ""}`}
+              </Text>
             </View>
           ) : null}
           <DatePickerInput
