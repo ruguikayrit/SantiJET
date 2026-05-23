@@ -30,18 +30,21 @@ function AppGate({ children }: { children: React.ReactNode }) {
 
   useEffect(() => {
     if (!loaded) return;
-    const inLogin = firstSegment === "login";
+    const inOnboarding = firstSegment === "onboarding";
     const inWorkspace = firstSegment === "workspace-setup";
+    const inLogin = firstSegment === "login";
 
-    if (!workspaceInfo && !inWorkspace) {
-      router.replace("/workspace-setup" as any);
+    // No workspace yet OR logged out → onboarding is the entry point
+    if (!workspaceInfo && !inOnboarding && !inWorkspace) {
+      router.replace("/onboarding" as any);
       return;
     }
-    if (workspaceInfo && !currentUserId && !inLogin && !inWorkspace) {
-      router.replace("/login" as any);
+    if (workspaceInfo && !currentUserId && !inOnboarding && !inWorkspace && !inLogin) {
+      router.replace("/onboarding" as any);
       return;
     }
-    if (workspaceInfo && currentUserId && inLogin) {
+    // Already logged in → leave auth screens
+    if (workspaceInfo && currentUserId && (inLogin || inOnboarding)) {
       router.replace("/");
     }
   }, [loaded, currentUserId, workspaceInfo?.id, firstSegment]);
@@ -54,6 +57,7 @@ function RootLayoutNav() {
     <AppGate>
       <Stack screenOptions={{ headerShown: false }}>
         <Stack.Screen name="index" />
+        <Stack.Screen name="onboarding" />
         <Stack.Screen name="login" />
         <Stack.Screen name="workspace-setup" />
         <Stack.Screen name="kullanicilar" />
