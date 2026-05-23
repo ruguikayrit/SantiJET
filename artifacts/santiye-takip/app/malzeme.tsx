@@ -1469,11 +1469,15 @@ export default function MalzemeScreen() {
                 {malzemeKalemleri.map((k) => {
                   const analizMiktar = totalMetraj > 0 ? totalMetraj * k.miktar : k.miktar;
                   const teslimEdilen = materials
-                    .filter(
-                      (m) =>
-                        m.projectId === rForm.projectId &&
-                        m.name.trim().toLowerCase() === k.tanim.trim().toLowerCase()
-                    )
+                    .filter((m) => {
+                      if (m.projectId !== rForm.projectId) return false;
+                      const nameMatch =
+                        m.name.trim().toLowerCase() === k.tanim.trim().toLowerCase();
+                      if (rForm.pozCode && m.pozCode) {
+                        return m.pozCode === rForm.pozCode && nameMatch;
+                      }
+                      return nameMatch;
+                    })
                     .reduce((sum, m) => sum + (m.irsaliyeQty ?? m.quantity ?? 0), 0);
                   const kalan = analizMiktar - teslimEdilen;
                   return (
