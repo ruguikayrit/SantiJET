@@ -86,7 +86,8 @@ export default function IlerlemeScreen() {
       const desc = it.description.trim();
       if (!desc) continue;
       const key = desc.toLowerCase();
-      if (!materialNamesLower.has(key)) continue;
+      const isMalzeme = it.itemType === "malzeme" || (!it.itemType && materialNamesLower.has(key));
+      if (!isMalzeme) continue;
       const cur = map.get(key);
       if (cur) {
         cur.planned += it.quantity || 0;
@@ -117,7 +118,8 @@ export default function IlerlemeScreen() {
       const desc = it.description.trim();
       if (!desc) continue;
       const key = desc.toLowerCase();
-      if (materialNamesLower.has(key)) continue;
+      const isIscilik = it.itemType === "iscilik" || (!it.itemType && !materialNamesLower.has(key));
+      if (!isIscilik) continue;
       const cur = map.get(key);
       if (cur) {
         cur.planned += it.quantity || 0;

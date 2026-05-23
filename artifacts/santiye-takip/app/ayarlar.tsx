@@ -174,6 +174,20 @@ export default function AyarlarScreen() {
               {t("home.materialSettings")}
             </Text>
             {material.map((r, i) => renderRow(r, i === 0))}
+
+            <Text style={[styles.section, { color: colors.foreground, marginTop: 24 }]}>
+              {t("home.data.title")}
+            </Text>
+            {renderRow(
+              {
+                key: "veriYonetim",
+                icon: "database",
+                title: t("home.data.title"),
+                sub: "Veri dışa/içe aktarma, yedekleme",
+                route: "/veri-yonetim",
+              },
+              true
+            )}
           </>
         ) : null}
       </ScrollView>

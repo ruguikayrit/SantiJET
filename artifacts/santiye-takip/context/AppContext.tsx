@@ -67,6 +67,7 @@ export interface SurveyItem {
   plannedQty?: number;
   completedQty?: number;
   date?: string;
+  itemType?: "malzeme" | "iscilik";
 }
 
 export interface Survey {

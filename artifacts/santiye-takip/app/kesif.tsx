@@ -43,6 +43,7 @@ interface FormState {
   itemUnit: string;
   itemMetraj: string;
   itemDate: string;
+  itemType: "malzeme" | "iscilik";
 }
 
 const EMPTY: FormState = {
@@ -57,6 +58,7 @@ const EMPTY: FormState = {
   itemUnit: "",
   itemMetraj: "",
   itemDate: "",
+  itemType: "malzeme",
 };
 
 export default function KesifScreen() {
@@ -98,6 +100,7 @@ export default function KesifScreen() {
         itemUnit: "",
         itemMetraj: "",
         itemDate: "",
+        itemType: "malzeme",
       });
     } else {
       setEditId(null);
@@ -116,6 +119,7 @@ export default function KesifScreen() {
       itemUnit: it.unit,
       itemMetraj: String(it.quantity || ""),
       itemDate: it.date || "",
+      itemType: it.itemType || "malzeme",
     }));
   }
 
@@ -129,6 +133,7 @@ export default function KesifScreen() {
       itemUnit: "",
       itemMetraj: "",
       itemDate: "",
+      itemType: "malzeme",
     }));
   }
 
@@ -149,6 +154,7 @@ export default function KesifScreen() {
         pozCode: form.itemPozCode.trim() || undefined,
         pozCategory: form.itemPozCategory.trim() || undefined,
         date: form.itemDate.trim() || undefined,
+        itemType: form.itemType,
       };
       if (editItemId) {
         items = items.map((i) => (i.id === editItemId ? newItem : i));
@@ -441,12 +447,21 @@ export default function KesifScreen() {
                     ]}
                   >
                     <View style={{ flex: 1 }}>
-                      {it.pozCode ? (
-                        <Text style={[styles.itemCode, { color: colors.primary }]} numberOfLines={1}>
-                          {it.pozCode}
-                          {it.pozCategory ? ` · ${it.pozCategory}` : ""}
-                        </Text>
-                      ) : null}
+                      <View style={{ flexDirection: "row", alignItems: "center", gap: 6, marginBottom: 4 }}>
+                        <View style={[
+                          styles.typeBadge,
+                          { backgroundColor: (it.itemType || "malzeme") === "malzeme" ? "#05966922" : "#0ea5e922" }
+                        ]}>
+                          <Text style={[styles.typeBadgeText, { color: (it.itemType || "malzeme") === "malzeme" ? "#059669" : "#0ea5e9" }]}>
+                            {(it.itemType || "malzeme") === "malzeme" ? "Malzeme" : "İşçilik"}
+                          </Text>
+                        </View>
+                        {it.pozCode ? (
+                          <Text style={[styles.itemCode, { color: colors.primary }]} numberOfLines={1}>
+                            {it.pozCode}{it.pozCategory ? ` · ${it.pozCategory}` : ""}
+                          </Text>
+                        ) : null}
+                      </View>
                       <Text style={[styles.itemDesc, { color: colors.foreground }]} numberOfLines={2}>
                         {it.description}
                       </Text>
@@ -480,6 +495,37 @@ export default function KesifScreen() {
               <Text style={[styles.clearLink, { color: colors.primary }]}>Yeni Ekle</Text>
             </TouchableOpacity>
           ) : null}
+        </View>
+
+        <Text style={[styles.label, { color: colors.foreground, marginBottom: 8 }]}>Kalem Tipi</Text>
+        <View style={[styles.chips, { marginBottom: 14 }]}>
+          {(["malzeme", "iscilik"] as const).map((t) => {
+            const sel = form.itemType === t;
+            return (
+              <TouchableOpacity
+                key={t}
+                onPress={() => setForm({ ...form, itemType: t })}
+                style={[
+                  styles.chip,
+                  {
+                    backgroundColor: sel
+                      ? t === "malzeme" ? "#059669" : "#0ea5e9"
+                      : colors.muted,
+                    flexDirection: "row", alignItems: "center", gap: 6,
+                  },
+                ]}
+              >
+                <Feather
+                  name={t === "malzeme" ? "package" : "tool"}
+                  size={13}
+                  color={sel ? "#fff" : colors.foreground}
+                />
+                <Text style={[styles.chipText, { color: sel ? "#fff" : colors.foreground }]}>
+                  {t === "malzeme" ? "Malzeme" : "İşçilik"}
+                </Text>
+              </TouchableOpacity>
+            );
+          })}
         </View>
 
         <PozPicker
@@ -618,7 +664,9 @@ const styles = StyleSheet.create({
     borderWidth: StyleSheet.hairlineWidth,
     marginBottom: 6,
   },
-  itemCode: { fontSize: 11, fontFamily: "Inter_700Bold", marginBottom: 2 },
+  typeBadge: { paddingHorizontal: 7, paddingVertical: 2, borderRadius: 6 },
+  typeBadgeText: { fontSize: 10, fontFamily: "Inter_700Bold" },
+  itemCode: { fontSize: 11, fontFamily: "Inter_700Bold", marginBottom: 0 },
   itemDesc: { fontSize: 13, fontFamily: "Inter_600SemiBold", marginBottom: 2 },
   itemMeta: { fontSize: 11, fontFamily: "Inter_400Regular" },
   itemDel: { padding: 6 },

@@ -2,9 +2,8 @@ import React from "react";
 import { ActivityIndicator, StyleSheet, Text, TouchableOpacity, TouchableOpacityProps } from "react-native";
 import { useColors } from "@/hooks/useColors";
 
-// Sabit marka renkleri — tema değişse bile bu butonlar değişmez
-const SAVE_NAVY = "#16213e";
-const CANCEL_ORANGE = "#e85d04";
+const SAVE_GREEN = "#16a34a";
+const CANCEL_RED = "#dc2626";
 
 interface Props extends TouchableOpacityProps {
   label: string;
@@ -21,8 +20,8 @@ export default function PrimaryButton({ label, loading, variant = "primary", sty
       : variant === "secondary"
       ? colors.muted
       : variant === "cancel"
-      ? CANCEL_ORANGE
-      : SAVE_NAVY;
+      ? CANCEL_RED
+      : SAVE_GREEN;
 
   const fg =
     variant === "secondary" ? colors.foreground : "#ffffff";

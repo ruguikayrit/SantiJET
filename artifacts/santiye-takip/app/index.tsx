@@ -1,9 +1,6 @@
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { Feather } from "@expo/vector-icons";
-import * as DocumentPicker from "expo-document-picker";
-import * as FileSystem from "expo-file-system/legacy";
 import { useRouter } from "expo-router";
-import * as Sharing from "expo-sharing";
 import React, { useEffect, useMemo, useRef, useState } from "react";
 import {
   ActivityIndicator,
@@ -64,7 +61,7 @@ const SECTIONS: Section[] = [
   { key: "is-programi",  label: "İş Programı",   icon: "calendar",      route: "/is-programi",  color: "#8b5cf6", bg: "#ede9fe", code: "IP-10", sub: "Aktif İş",      count: (a) => a.scheduleTasks.length },
   { key: "satin-alma",   label: "Satın Alma",    icon: "shopping-cart", route: "/satin-alma",   color: "#ea580c", bg: "#ffedd5", code: "SA-11", sub: "Açık Talep",    count: (a) => a.purchases.length },
   { key: "hakedis",      label: "Hakediş",       icon: "file-text",     route: "/hakedis",      color: "#be185d", bg: "#fce7f3", code: "HK-12", sub: "Bekleyen",      count: (a) => a.hakedisler.length },
-  { key: "butce",        label: "Bütçe",         icon: "dollar-sign",   route: "/butce",        color: "#16213e", bg: "#e0e7ff", code: "BT-13", sub: "Kalem",         count: (a) => a.budget.length },
+  { key: "butce",        label: "Yaklaşık Maliyet", icon: "dollar-sign", route: "/butce",        color: "#16213e", bg: "#e0e7ff", code: "YM-13", sub: "Kalem",         count: (a) => a.budget.length },
   { key: "taseron",      label: "Taşeron",       icon: "truck",         route: "/taseron",      color: "#7c3aed", bg: "#ede9fe", code: "TS-14", sub: "Taşeron",       count: (a) => a.subcontractors.length },
   { key: "kullanicilar", label: "Kullanıcılar",  icon: "shield",        route: "/kullanicilar", color: "#7c3aed", bg: "#ede9fe", code: "KU-15", sub: "Kullanıcı",     count: (a) => a.appUsers.length },
   { key: "dosyalar",     label: "Dosyalar",      icon: "folder",        route: "/dosyalar",     color: "#475569", bg: "#e2e8f0", code: "DS-16", sub: "Dosya",         count: (a) => a.archiveFiles.length },
@@ -163,7 +160,7 @@ export default function HomeScreen() {
   const insets = useSafeAreaInsets();
   const topPad = Platform.OS === "web" ? 67 : insets.top;
 
-  const { currentRole, currentAppUser, logout, exportData, importData, workspaceInfo, syncStatus, pushToCloud, pullFromCloud, setWorkspace } = app;
+  const { currentRole, currentAppUser, logout, workspaceInfo, syncStatus, pushToCloud, pullFromCloud, setWorkspace } = app;
   const isAdmin = currentRole?.isAdmin === true;
 
   // Tarih
@@ -172,14 +169,6 @@ export default function HomeScreen() {
   const dayStr = today.toLocaleDateString("tr-TR", { weekday: "long" });
 
   const [profileVisible, setProfileVisible] = useState(false);
-
-  const [exportVisible, setExportVisible] = useState(false);
-  const [exportText, setExportText] = useState("");
-
-  const [importVisible, setImportVisible] = useState(false);
-  const [importText, setImportText] = useState("");
-  const [importFileName, setImportFileName] = useState<string | null>(null);
-  const [importMsg, setImportMsg] = useState<{ type: "ok" | "err"; text: string } | null>(null);
 
   function getPermission(key: PageKey): Permission {
     if (!currentRole) return "none";
@@ -271,111 +260,6 @@ export default function HomeScreen() {
   }, [tileOrder, currentRole]);
 
   const visibleSections = orderedSections;
-
-  function openExport() {
-    const json = exportData();
-    setExportText(json);
-    setExportVisible(true);
-  }
-
-  async function downloadJson() {
-    const json = exportText || exportData();
-    const stamp = new Date().toISOString().slice(0, 19).replace(/[:T]/g, "-");
-    const filename = `santiye-takip-${stamp}.json`;
-
-    if (Platform.OS === "web") {
-      const blob = new Blob([json], { type: "application/json" });
-      const url = URL.createObjectURL(blob);
-      const a = document.createElement("a");
-      a.href = url;
-      a.download = filename;
-      document.body.appendChild(a);
-      a.click();
-      document.body.removeChild(a);
-      setTimeout(() => URL.revokeObjectURL(url), 1000);
-      setExportVisible(false);
-    } else {
-      try {
-        const uri = (FileSystem.cacheDirectory ?? "") + filename;
-        await FileSystem.writeAsStringAsync(uri, json, { encoding: FileSystem.EncodingType.UTF8 });
-        const canShare = await Sharing.isAvailableAsync();
-        if (canShare) {
-          await Sharing.shareAsync(uri, { mimeType: "application/json", dialogTitle: "Dosyayı kaydet veya paylaş", UTI: "public.json" });
-          setExportVisible(false);
-        } else {
-          Alert.alert("Hata", "Paylaşım bu cihazda desteklenmiyor.");
-        }
-      } catch (e: any) {
-        Alert.alert("Hata", e?.message || "Dışa aktarma başarısız");
-      }
-    }
-  }
-
-  function pickFile() {
-    if (Platform.OS !== "web") return;
-    const input = document.createElement("input");
-    input.type = "file";
-    input.accept = "application/json,.json";
-    input.onchange = () => {
-      const file = input.files?.[0];
-      if (!file) return;
-      const reader = new FileReader();
-      reader.onload = () => {
-        setImportText(String(reader.result || ""));
-        setImportFileName(file.name);
-        setImportMsg(null);
-      };
-      reader.readAsText(file);
-    };
-    input.click();
-  }
-
-  async function pickFileMobile() {
-    try {
-      const result = await DocumentPicker.getDocumentAsync({
-        type: ["application/json", "text/plain", "*/*"],
-        copyToCacheDirectory: true,
-      });
-      if (result.canceled) return;
-      const asset = result.assets[0];
-      const content = await FileSystem.readAsStringAsync(asset.uri, { encoding: FileSystem.EncodingType.UTF8 });
-      setImportText(content);
-      setImportFileName(asset.name);
-      setImportMsg(null);
-    } catch (e: any) {
-      Alert.alert("Hata", e?.message || "Dosya okunamadı");
-    }
-  }
-
-  function doImport() {
-    if (!importText.trim()) {
-      setImportMsg({ type: "err", text: "Önce bir dosya seçin veya JSON yapıştırın" });
-      return;
-    }
-    const proceed = (confirmed: boolean) => {
-      if (!confirmed) return;
-      const result = importData(importText);
-      if (result.ok) {
-        const total = Object.values(result.counts).reduce((a, b) => a + b, 0);
-        setImportMsg({ type: "ok", text: `Başarılı: ${total} kayıt yüklendi. Yeniden giriş yapmanız gerekecek.` });
-        setImportText("");
-        setImportFileName(null);
-        setTimeout(() => { setImportVisible(false); setImportMsg(null); logout(); }, 1500);
-      } else {
-        setImportMsg({ type: "err", text: result.error });
-      }
-    };
-
-    if (Platform.OS === "web") {
-      const ok = window.confirm("Mevcut tüm veriler içe aktarılan dosyayla değiştirilecek. Devam edilsin mi?");
-      proceed(ok);
-    } else {
-      Alert.alert("Verileri Değiştir", "Mevcut tüm veriler içe aktarılan dosyayla değiştirilecek. Devam edilsin mi?", [
-        { text: "İptal", style: "cancel" },
-        { text: "Devam Et", style: "destructive", onPress: () => proceed(true) },
-      ]);
-    }
-  }
 
   return (
     <View style={[styles.root, { backgroundColor: colors.background }]}>
@@ -638,38 +522,6 @@ export default function HomeScreen() {
           <Feather name="chevron-right" size={18} color={colors.mutedForeground} />
         </TouchableOpacity>
 
-        {isAdmin ? (
-          <>
-            <Text style={[styles.sectionLabel, { color: colors.foreground, marginTop: 24 }]}>
-              {t("home.data.title")}
-            </Text>
-            <View style={styles.dataRow}>
-              <TouchableOpacity
-                style={[styles.dataBtn, { backgroundColor: colors.card, borderColor: colors.muted }]}
-                onPress={openExport}
-                activeOpacity={0.85}
-              >
-                <View style={[styles.dataIcon, { backgroundColor: "#dcfce7" }]}>
-                  <Feather name="download" size={20} color="#16a34a" />
-                </View>
-                <Text style={[styles.dataLabel, { color: colors.foreground }]}>{t("home.data.export")}</Text>
-                <Text style={[styles.dataDesc, { color: colors.mutedForeground }]}>{t("home.data.export.sub")}</Text>
-              </TouchableOpacity>
-
-              <TouchableOpacity
-                style={[styles.dataBtn, { backgroundColor: colors.card, borderColor: colors.muted }]}
-                onPress={() => { setImportText(""); setImportMsg(null); setImportVisible(true); }}
-                activeOpacity={0.85}
-              >
-                <View style={[styles.dataIcon, { backgroundColor: "#dbeafe" }]}>
-                  <Feather name="upload" size={20} color="#2563eb" />
-                </View>
-                <Text style={[styles.dataLabel, { color: colors.foreground }]}>{t("home.data.import")}</Text>
-                <Text style={[styles.dataDesc, { color: colors.mutedForeground }]}>{t("home.data.import.sub")}</Text>
-              </TouchableOpacity>
-            </View>
-          </>
-        ) : null}
       </ScrollView>
 
       {/* ── Profil Paneli ── */}
@@ -823,68 +675,6 @@ export default function HomeScreen() {
             </View>
           );
         })()}
-      </BottomSheet>
-
-      {/* ── Export BottomSheet ── */}
-      <BottomSheet visible={exportVisible} onClose={() => setExportVisible(false)} title={t("home.data.export")}>
-        <Text style={[styles.sheetDesc, { color: colors.mutedForeground }]}>{t("home.data.export.desc")}</Text>
-        <PrimaryButton label={Platform.OS === "web" ? t("home.data.download") : t("common.save")} onPress={downloadJson} style={{ marginTop: 12 }} />
-        <PrimaryButton label={t("common.cancel")} variant="cancel" onPress={() => setExportVisible(false)} style={{ marginTop: 10 }} />
-      </BottomSheet>
-
-      {/* ── Import BottomSheet ── */}
-      <BottomSheet
-        visible={importVisible}
-        onClose={() => { setImportVisible(false); setImportText(""); setImportFileName(null); setImportMsg(null); }}
-        title={t("home.data.import")}
-      >
-        <Text style={[styles.sheetDesc, { color: colors.mutedForeground }]}>{t("home.data.import.desc")}</Text>
-
-        {Platform.OS === "web" ? (
-          <>
-            <PrimaryButton label={t("home.data.pickFile")} onPress={pickFile} style={{ marginBottom: 12 }} />
-            <Text style={[styles.label, { color: colors.foreground }]}>{t("home.data.orPaste")}</Text>
-            <TextInput
-              value={importText}
-              onChangeText={(tx) => { setImportText(tx); setImportFileName(null); setImportMsg(null); }}
-              multiline
-              placeholder='{"version":3,"data":{...}}'
-              placeholderTextColor={colors.mutedForeground}
-              style={[styles.importInput, { backgroundColor: colors.muted, color: colors.foreground, borderColor: colors.muted }]}
-            />
-          </>
-        ) : (
-          <TouchableOpacity
-            style={[styles.filePickBtn, { backgroundColor: colors.muted, borderColor: importFileName ? "#16a34a" : colors.muted }]}
-            onPress={pickFileMobile}
-            activeOpacity={0.8}
-          >
-            <View style={[styles.filePickIcon, { backgroundColor: importFileName ? "#dcfce7" : "#dbeafe" }]}>
-              <Feather name={importFileName ? "check-circle" : "folder"} size={22} color={importFileName ? "#16a34a" : "#2563eb"} />
-            </View>
-            <View style={{ flex: 1 }}>
-              <Text style={[styles.filePickLabel, { color: colors.foreground }]}>
-                {importFileName ? importFileName : t("home.data.fileSelect")}
-              </Text>
-              <Text style={[styles.filePickSub, { color: colors.mutedForeground }]}>
-                {importFileName ? t("home.data.fileSelected") : t("home.data.fileHelp")}
-              </Text>
-            </View>
-            <Feather name="chevron-right" size={18} color={colors.mutedForeground} />
-          </TouchableOpacity>
-        )}
-
-        {importMsg ? (
-          <View style={[styles.msgBox, { backgroundColor: importMsg.type === "ok" ? "#dcfce7" : "#fee2e2" }]}>
-            <Feather name={importMsg.type === "ok" ? "check-circle" : "alert-circle"} size={14} color={importMsg.type === "ok" ? "#16a34a" : "#dc2626"} />
-            <Text style={[styles.msgText, { color: importMsg.type === "ok" ? "#16a34a" : "#dc2626" }]}>{importMsg.text}</Text>
-          </View>
-        ) : null}
-
-        <PrimaryButton label={t("home.data.doImport")} onPress={doImport} style={{ marginTop: 12 }} />
-        <TouchableOpacity onPress={() => { setImportVisible(false); setImportText(""); setImportFileName(null); setImportMsg(null); }} style={styles.cancelBtn}>
-          <Text style={[styles.cancelText, { color: colors.mutedForeground }]}>{t("common.close")}</Text>
-        </TouchableOpacity>
       </BottomSheet>
 
       {/* ── Kart Renk Seçici Modal ── */}

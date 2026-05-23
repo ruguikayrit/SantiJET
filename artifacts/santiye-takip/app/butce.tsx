@@ -119,7 +119,7 @@ export default function ButceScreen() {
   return (
     <View style={[styles.root, { backgroundColor: colors.background }]}>
       <Header
-        title="Bütçe"
+        title="Yaklaşık Maliyet"
         onBack={() => (router.canGoBack() ? router.back() : router.replace("/"))}
         rightAction={canEdit && projects.length > 0 ? { icon: "plus", onPress: () => open() } : undefined}
       />
@@ -129,7 +129,7 @@ export default function ButceScreen() {
         <EmptyState
           icon="briefcase"
           title="Önce proje ekleyin"
-          description="Bütçe takibi için en az bir projeniz olmalı"
+          description="Yaklaşık maliyet takibi için en az bir projeniz olmalı"
           actionLabel="Projelere Git"
           onAction={() => router.push("/proje" as any)}
         />
@@ -164,7 +164,7 @@ export default function ButceScreen() {
           {list.length === 0 ? (
             <EmptyState
               icon="dollar-sign"
-              title="Bütçe kaydı yok"
+              title="Kayıt yok"
               description="Yeni gelir veya gider eklemek için + düğmesine dokunun"
               actionLabel="Kayıt Ekle"
               onAction={() => open()}
@@ -232,7 +232,7 @@ export default function ButceScreen() {
       <BottomSheet
         visible={visible}
         onClose={() => setVisible(false)}
-        title={editId ? "Kaydı Düzenle" : "Yeni Bütçe Kaydı"}
+        title={editId ? "Kaydı Düzenle" : "Yeni Kayıt"}
       >
         <Text style={[styles.label, { color: colors.foreground }]}>Proje</Text>
         <View style={styles.chips}>

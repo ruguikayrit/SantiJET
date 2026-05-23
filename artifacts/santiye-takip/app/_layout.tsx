@@ -83,6 +83,7 @@ function RootLayoutNav() {
         <Stack.Screen name="malzeme-listesi" />
         <Stack.Screen name="malzeme-birimi" />
         <Stack.Screen name="asistan" />
+        <Stack.Screen name="veri-yonetim" />
       </Stack>
     </AppGate>
   );
