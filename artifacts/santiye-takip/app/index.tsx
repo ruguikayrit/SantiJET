@@ -784,6 +784,18 @@ export default function HomeScreen() {
                 <Feather name="chevron-right" size={16} color={colors.mutedForeground} />
               </TouchableOpacity>
 
+              {/* Şirket Koduna Bağlan — sadece yerel oturumdayken görünür */}
+              {(!workspaceInfo || workspaceInfo.id === "local") && (
+                <TouchableOpacity
+                  style={[styles.profileConnectBtn, { borderColor: "#e85d04" }]}
+                  activeOpacity={0.85}
+                  onPress={() => { setProfileVisible(false); router.push("/workspace-setup" as any); }}
+                >
+                  <Feather name="link" size={18} color="#e85d04" />
+                  <Text style={styles.profileConnectText}>Şirket Kodu ile Bağlan</Text>
+                </TouchableOpacity>
+              )}
+
               {/* Yerel Oturuma Geri Dön — sadece bulut çalışma alanındayken görünür */}
               {workspaceInfo && workspaceInfo.id !== "local" && (
                 <TouchableOpacity
@@ -1514,6 +1526,8 @@ const styles = StyleSheet.create({
   profileNavIcon: { width: 40, height: 40, borderRadius: 10, justifyContent: "center", alignItems: "center" },
   profileNavLabel: { fontSize: 14, fontFamily: "Inter_600SemiBold" },
   profileNavSub: { fontSize: 12, fontFamily: "Inter_400Regular", marginTop: 1 },
+  profileConnectBtn: { flexDirection: "row", alignItems: "center", justifyContent: "center", gap: 10, paddingVertical: 14, borderRadius: 12, borderWidth: 1.5, backgroundColor: "#fff7ed", marginTop: 4 },
+  profileConnectText: { fontSize: 15, fontFamily: "Inter_700Bold", color: "#e85d04" },
   profileLocalBtn: { flexDirection: "row", alignItems: "center", justifyContent: "center", gap: 10, paddingVertical: 14, borderRadius: 12, borderWidth: 1.5, backgroundColor: "#e0f2fe", marginTop: 4 },
   profileLocalText: { fontSize: 15, fontFamily: "Inter_700Bold", color: "#0ea5e9" },
   profileLogoutBtn: { flexDirection: "row", alignItems: "center", justifyContent: "center", gap: 10, paddingVertical: 14, borderRadius: 12, borderWidth: 1.5, backgroundColor: "#fee2e2", marginTop: 4 },
