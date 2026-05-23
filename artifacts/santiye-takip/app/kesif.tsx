@@ -3,11 +3,14 @@ import * as DocumentPicker from "expo-document-picker";
 import * as FileSystem from "expo-file-system";
 import { useRouter } from "expo-router";
 import * as Sharing from "expo-sharing";
-import React, { useEffect, useMemo, useState } from "react";
+import React, { useEffect, useMemo, useRef, useState } from "react";
 import {
   Alert,
   FlatList,
+  Modal,
+  PanResponder,
   Platform,
+  ScrollView,
   StyleSheet,
   Text,
   TouchableOpacity,
@@ -22,6 +25,7 @@ import Header from "@/components/Header";
 import PozPicker from "@/components/PozPicker";
 import PrimaryButton from "@/components/PrimaryButton";
 import { Survey, SurveyItem, useApp } from "@/context/AppContext";
+import { UnitOption } from "@/constants/units";
 import { useColors } from "@/hooks/useColors";
 import { usePermission } from "@/hooks/usePermission";
 import {
@@ -64,7 +68,7 @@ const EMPTY: FormState = {
 export default function KesifScreen() {
   const colors = useColors();
   const router = useRouter();
-  const { projects, surveys, addSurvey, updateSurvey, deleteSurvey } = useApp();
+  const { projects, surveys, addSurvey, updateSurvey, deleteSurvey, materialUnits } = useApp();
 
   const perm = usePermission("kesif");
   const canEdit = perm === "edit";
@@ -78,6 +82,11 @@ export default function KesifScreen() {
   const [importVisible, setImportVisible] = useState(false);
   const [importText, setImportText] = useState("");
   const [importBusy, setImportBusy] = useState(false);
+
+  const [unitPickerVisible, setUnitPickerVisible] = useState(false);
+  const [dragState, setDragState] = useState<{ fromIndex: number; toIndex: number } | null>(null);
+  const dragStateRef = useRef<{ fromIndex: number; toIndex: number } | null>(null);
+  const ITEM_ROW_H = 90;
 
   const list = useMemo(
     () => (filter ? surveys.filter((s) => s.projectId === filter) : surveys),
@@ -306,9 +315,77 @@ export default function KesifScreen() {
     updateSurvey(editId, { ...s, items: s.items.filter((i) => i.id !== itemId) });
   }
 
+  function copyItem(itemId: string) {
+    if (!editId) return;
+    const s = surveys.find((x) => x.id === editId);
+    if (!s) return;
+    const idx = s.items.findIndex((i) => i.id === itemId);
+    if (idx === -1) return;
+    const copy: SurveyItem = { ...s.items[idx], id: Date.now().toString() };
+    const newItems = [
+      ...s.items.slice(0, idx + 1),
+      copy,
+      ...s.items.slice(idx + 1),
+    ];
+    updateSurvey(editId, { ...s, items: newItems });
+  }
+
+  function reorderItems(fromIdx: number, toIdx: number) {
+    if (!editId || fromIdx === toIdx) return;
+    const s = surveys.find((x) => x.id === editId);
+    if (!s) return;
+    const items = [...s.items];
+    const [moved] = items.splice(fromIdx, 1);
+    items.splice(toIdx, 0, moved);
+    updateSurvey(editId, { ...s, items });
+  }
+
   const currentItems = editId
     ? surveys.find((x) => x.id === editId)?.items || []
     : [];
+
+  const displayItems = useMemo(() => {
+    if (!dragState) return currentItems;
+    const { fromIndex, toIndex } = dragState;
+    const arr = [...currentItems];
+    const [moved] = arr.splice(fromIndex, 1);
+    arr.splice(toIndex, 0, moved);
+    return arr;
+  }, [currentItems, dragState]);
+
+  function makeDragResponder(index: number) {
+    return PanResponder.create({
+      onStartShouldSetPanResponder: () => false,
+      onStartShouldSetPanResponderCapture: () => false,
+      onMoveShouldSetPanResponder: (_, g) => Math.abs(g.dy) > 4,
+      onMoveShouldSetPanResponderCapture: (_, g) => Math.abs(g.dy) > 4,
+      onPanResponderGrant: () => {
+        const ds = { fromIndex: index, toIndex: index };
+        dragStateRef.current = ds;
+        setDragState(ds);
+      },
+      onPanResponderMove: (_, g) => {
+        const from = dragStateRef.current?.fromIndex ?? index;
+        const toIndex = Math.max(0, Math.min(
+          currentItems.length - 1,
+          Math.round(from + g.dy / ITEM_ROW_H)
+        ));
+        const next = { fromIndex: from, toIndex };
+        dragStateRef.current = next;
+        setDragState(next);
+      },
+      onPanResponderRelease: () => {
+        const ds = dragStateRef.current;
+        if (ds) reorderItems(ds.fromIndex, ds.toIndex);
+        dragStateRef.current = null;
+        setDragState(null);
+      },
+      onPanResponderTerminate: () => {
+        dragStateRef.current = null;
+        setDragState(null);
+      },
+    });
+  }
 
   return (
     <View style={[styles.root, { backgroundColor: colors.background }]}>
@@ -427,26 +504,57 @@ export default function KesifScreen() {
 
         {editId && currentItems.length > 0 ? (
           <>
-            <Text style={[styles.label, { color: colors.foreground, marginTop: 8 }]}>
-              Kalemler ({currentItems.length})
-            </Text>
-            <View style={{ marginBottom: 14 }}>
-              {currentItems.map((it) => {
+            <View style={styles.itemHeaderRow}>
+              <Text style={[styles.label, { color: colors.foreground, marginTop: 8, marginBottom: 0 }]}>
+                Kalemler ({currentItems.length})
+              </Text>
+              {dragState ? (
+                <Text style={{ fontSize: 11, color: colors.mutedForeground, fontFamily: "Inter_400Regular" }}>
+                  ≡ sürükleyerek sırala
+                </Text>
+              ) : null}
+            </View>
+            <View style={{ marginBottom: 14, marginTop: 8 }}>
+              {displayItems.map((it, displayIdx) => {
                 const sel = editItemId === it.id;
+                const isDragging = dragState?.fromIndex !== undefined &&
+                  currentItems[dragState.fromIndex]?.id === it.id;
+                const isDropTarget = dragState !== null && displayIdx === dragState.toIndex && !isDragging;
+                const dragResponder = canEdit ? makeDragResponder(displayIdx) : null;
+
                 return (
-                  <TouchableOpacity
+                  <View
                     key={it.id}
-                    onPress={() => canEdit && loadItemForEdit(it)}
-                    activeOpacity={0.7}
                     style={[
                       styles.itemRow,
                       {
-                        backgroundColor: sel ? colors.primary + "18" : colors.muted,
-                        borderColor: sel ? colors.primary : colors.border,
+                        backgroundColor: isDragging
+                          ? colors.primary + "28"
+                          : sel ? colors.primary + "18" : colors.muted,
+                        borderColor: isDragging
+                          ? colors.primary
+                          : isDropTarget ? "#f59e0b"
+                          : sel ? colors.primary : colors.border,
+                        borderWidth: isDropTarget ? 2 : StyleSheet.hairlineWidth,
+                        opacity: isDragging ? 0.75 : 1,
                       },
                     ]}
                   >
-                    <View style={{ flex: 1 }}>
+                    {canEdit ? (
+                      <View
+                        {...(dragResponder?.panHandlers ?? {})}
+                        style={styles.dragHandle}
+                        hitSlop={{ top: 8, bottom: 8, left: 4, right: 4 }}
+                      >
+                        <Feather name="menu" size={18} color={colors.mutedForeground} />
+                      </View>
+                    ) : null}
+
+                    <TouchableOpacity
+                      onPress={() => canEdit && loadItemForEdit(it)}
+                      activeOpacity={0.7}
+                      style={{ flex: 1 }}
+                    >
                       <View style={{ flexDirection: "row", alignItems: "center", gap: 6, marginBottom: 4 }}>
                         <View style={[
                           styles.typeBadge,
@@ -469,17 +577,27 @@ export default function KesifScreen() {
                         {it.quantity} {it.unit}
                         {it.date ? ` · ${it.date}` : ""}
                       </Text>
-                    </View>
+                    </TouchableOpacity>
+
                     {canEdit ? (
-                      <TouchableOpacity
-                        onPress={() => deleteItem(it.id)}
-                        hitSlop={8}
-                        style={styles.itemDel}
-                      >
-                        <Feather name="trash-2" size={16} color="#ef4444" />
-                      </TouchableOpacity>
+                      <View style={{ flexDirection: "column", gap: 6, alignItems: "center" }}>
+                        <TouchableOpacity
+                          onPress={() => copyItem(it.id)}
+                          hitSlop={8}
+                          style={styles.itemDel}
+                        >
+                          <Feather name="copy" size={15} color={colors.primary} />
+                        </TouchableOpacity>
+                        <TouchableOpacity
+                          onPress={() => deleteItem(it.id)}
+                          hitSlop={8}
+                          style={styles.itemDel}
+                        >
+                          <Feather name="trash-2" size={15} color="#ef4444" />
+                        </TouchableOpacity>
+                      </View>
                     ) : null}
-                  </TouchableOpacity>
+                  </View>
                 );
               })}
             </View>
@@ -557,12 +675,30 @@ export default function KesifScreen() {
         />
         <View style={styles.row2}>
           <View style={{ flex: 1 }}>
-            <FormInput
-              label="Birim"
-              value={form.itemUnit}
-              onChangeText={(v) => setForm({ ...form, itemUnit: v })}
-              placeholder="m³, m², ad"
-            />
+            <Text style={[styles.label, { color: colors.foreground, marginBottom: 6 }]}>Birim</Text>
+            <TouchableOpacity
+              onPress={() => setUnitPickerVisible(true)}
+              style={[
+                styles.unitDropdown,
+                {
+                  backgroundColor: colors.muted,
+                  borderColor: colors.border,
+                },
+              ]}
+            >
+              <Text
+                style={{
+                  flex: 1,
+                  fontSize: 14,
+                  fontFamily: "Inter_400Regular",
+                  color: form.itemUnit ? colors.foreground : colors.mutedForeground,
+                }}
+                numberOfLines={1}
+              >
+                {form.itemUnit || "Seçin…"}
+              </Text>
+              <Feather name="chevron-down" size={16} color={colors.mutedForeground} />
+            </TouchableOpacity>
           </View>
           <View style={{ flex: 1 }}>
             <FormInput
@@ -585,6 +721,58 @@ export default function KesifScreen() {
         ) : null}
         {!canEdit ? <PrimaryButton label="Kapat" onPress={() => setVisible(false)} style={{ marginTop: 8 }} /> : null}
       </BottomSheet>
+
+      {/* Birim seçici */}
+      <Modal
+        visible={unitPickerVisible}
+        transparent
+        animationType="slide"
+        onRequestClose={() => setUnitPickerVisible(false)}
+      >
+        <View style={styles.unitModalOverlay}>
+          <TouchableOpacity
+            style={StyleSheet.absoluteFillObject}
+            onPress={() => setUnitPickerVisible(false)}
+          />
+          <View style={[styles.unitModalSheet, { backgroundColor: colors.card, borderColor: colors.border }]}>
+            <View style={[styles.unitModalHeader, { borderBottomColor: colors.border }]}>
+              <Text style={[styles.label, { color: colors.foreground, marginBottom: 0 }]}>Birim Seç</Text>
+              <TouchableOpacity onPress={() => setUnitPickerVisible(false)} hitSlop={8}>
+                <Feather name="x" size={20} color={colors.mutedForeground} />
+              </TouchableOpacity>
+            </View>
+            <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={{ padding: 14, gap: 6 }}>
+              {materialUnits.map((u: UnitOption) => {
+                const selected = form.itemUnit === u.code;
+                return (
+                  <TouchableOpacity
+                    key={u.code}
+                    onPress={() => {
+                      setForm({ ...form, itemUnit: u.code });
+                      setUnitPickerVisible(false);
+                    }}
+                    style={[
+                      styles.unitOption,
+                      {
+                        backgroundColor: selected ? colors.primary + "18" : colors.muted,
+                        borderColor: selected ? colors.primary : colors.border,
+                      },
+                    ]}
+                  >
+                    <Text style={[styles.unitOptionCode, { color: selected ? colors.primary : colors.foreground }]}>
+                      {u.code}
+                    </Text>
+                    <Text style={[styles.unitOptionLabel, { color: colors.mutedForeground }]}>
+                      {u.label !== u.code ? u.label.replace(`${u.code} — `, "").replace(`${u.code}`, "") : ""}
+                    </Text>
+                    {selected ? <Feather name="check" size={15} color={colors.primary} /> : null}
+                  </TouchableOpacity>
+                );
+              })}
+            </ScrollView>
+          </View>
+        </View>
+      </Modal>
 
       <BottomSheet
         visible={importVisible}
@@ -678,4 +866,51 @@ const styles = StyleSheet.create({
     marginTop: 8,
   },
   clearLink: { fontSize: 13, fontFamily: "Inter_600SemiBold" },
+  dragHandle: {
+    padding: 6,
+    justifyContent: "center",
+    alignItems: "center",
+    cursor: "grab" as any,
+  },
+  unitDropdown: {
+    flexDirection: "row",
+    alignItems: "center",
+    paddingHorizontal: 12,
+    paddingVertical: 11,
+    borderRadius: 8,
+    borderWidth: StyleSheet.hairlineWidth,
+    marginBottom: 14,
+    minHeight: 44,
+  },
+  unitModalOverlay: {
+    flex: 1,
+    justifyContent: "flex-end",
+    backgroundColor: "rgba(0,0,0,0.45)",
+  },
+  unitModalSheet: {
+    borderTopLeftRadius: 18,
+    borderTopRightRadius: 18,
+    borderWidth: StyleSheet.hairlineWidth,
+    maxHeight: "65%",
+    overflow: "hidden",
+  },
+  unitModalHeader: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+    paddingHorizontal: 16,
+    paddingVertical: 14,
+    borderBottomWidth: StyleSheet.hairlineWidth,
+  },
+  unitOption: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 10,
+    paddingHorizontal: 14,
+    paddingVertical: 11,
+    borderRadius: 8,
+    borderWidth: StyleSheet.hairlineWidth,
+  },
+  unitOptionCode: { fontSize: 14, fontFamily: "Inter_700Bold", minWidth: 52 },
+  unitOptionLabel: { flex: 1, fontSize: 13, fontFamily: "Inter_400Regular" },
 });
