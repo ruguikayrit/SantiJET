@@ -163,7 +163,7 @@ export default function HomeScreen() {
   const insets = useSafeAreaInsets();
   const topPad = Platform.OS === "web" ? 67 : insets.top;
 
-  const { currentRole, currentAppUser, logout, exportData, importData, workspaceInfo, syncStatus, pushToCloud, pullFromCloud } = app;
+  const { currentRole, currentAppUser, logout, exportData, importData, workspaceInfo, syncStatus, pushToCloud, pullFromCloud, setWorkspace } = app;
   const isAdmin = currentRole?.isAdmin === true;
 
   // Tarih
@@ -783,6 +783,21 @@ export default function HomeScreen() {
                 </View>
                 <Feather name="chevron-right" size={16} color={colors.mutedForeground} />
               </TouchableOpacity>
+
+              {/* Yerel Oturuma Geri Dön — sadece bulut çalışma alanındayken görünür */}
+              {workspaceInfo && workspaceInfo.id !== "local" && (
+                <TouchableOpacity
+                  style={[styles.profileLocalBtn, { borderColor: "#0ea5e9" }]}
+                  activeOpacity={0.85}
+                  onPress={() => {
+                    setProfileVisible(false);
+                    setWorkspace({ id: "local", company_name: "Yerel", invite_code: "", api_url: "" });
+                  }}
+                >
+                  <Feather name="home" size={18} color="#0ea5e9" />
+                  <Text style={styles.profileLocalText}>Yerel Oturuma Geri Dön</Text>
+                </TouchableOpacity>
+              )}
 
               {/* Oturumu Kapat */}
               <TouchableOpacity
@@ -1499,6 +1514,8 @@ const styles = StyleSheet.create({
   profileNavIcon: { width: 40, height: 40, borderRadius: 10, justifyContent: "center", alignItems: "center" },
   profileNavLabel: { fontSize: 14, fontFamily: "Inter_600SemiBold" },
   profileNavSub: { fontSize: 12, fontFamily: "Inter_400Regular", marginTop: 1 },
+  profileLocalBtn: { flexDirection: "row", alignItems: "center", justifyContent: "center", gap: 10, paddingVertical: 14, borderRadius: 12, borderWidth: 1.5, backgroundColor: "#e0f2fe", marginTop: 4 },
+  profileLocalText: { fontSize: 15, fontFamily: "Inter_700Bold", color: "#0ea5e9" },
   profileLogoutBtn: { flexDirection: "row", alignItems: "center", justifyContent: "center", gap: 10, paddingVertical: 14, borderRadius: 12, borderWidth: 1.5, backgroundColor: "#fee2e2", marginTop: 4 },
   profileLogoutText: { fontSize: 15, fontFamily: "Inter_700Bold", color: "#dc2626" },
 });
