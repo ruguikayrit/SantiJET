@@ -171,6 +171,8 @@ export default function HomeScreen() {
   const dateStr = today.toLocaleDateString("tr-TR", { day: "numeric", month: "long", year: "numeric" });
   const dayStr = today.toLocaleDateString("tr-TR", { weekday: "long" });
 
+  const [profileVisible, setProfileVisible] = useState(false);
+
   const [exportVisible, setExportVisible] = useState(false);
   const [exportText, setExportText] = useState("");
 
@@ -399,7 +401,7 @@ export default function HomeScreen() {
           <View style={styles.headerBellWrap}>
             <Feather name="bell" size={20} color="#94a3b8" />
           </View>
-          <TouchableOpacity onPress={logout} activeOpacity={0.8} style={styles.headerAvatar}>
+          <TouchableOpacity onPress={() => setProfileVisible(true)} activeOpacity={0.8} style={styles.headerAvatar}>
             <Text style={styles.headerAvatarText}>
               {currentAppUser ? currentAppUser.name.charAt(0).toUpperCase() : "U"}
             </Text>
@@ -669,6 +671,132 @@ export default function HomeScreen() {
           </>
         ) : null}
       </ScrollView>
+
+      {/* ── Profil Paneli ── */}
+      <BottomSheet
+        visible={profileVisible}
+        onClose={() => setProfileVisible(false)}
+        title="Hesabım"
+      >
+        {currentAppUser && (() => {
+          const roleColor = (() => {
+            const rMap: Record<string, string> = {
+              "isveren": "#7c3aed", "proje-muduru": "#e85d04",
+              "santiye-sefi": "#dc2626", "saha-muhendisi": "#16a34a",
+              "teknik-ofis-muhendisi": "#0ea5e9", "isg-birimi": "#f59e0b",
+              "taseron": "#64748b", "satin-alma-birimi": "#0891b2",
+              "muhasebe-birimi": "#059669", "ik-birimi": "#8b5cf6",
+              "diger-kullanicilar": "#94a3b8",
+            };
+            return rMap[currentAppUser.roleId] ?? "#6b7280";
+          })();
+
+          return (
+            <View style={styles.profileBody}>
+              {/* Avatar + isim */}
+              <View style={styles.profileHero}>
+                <View style={[styles.profileAvatar, { backgroundColor: roleColor }]}>
+                  <Text style={styles.profileAvatarText}>
+                    {currentAppUser.name.charAt(0).toUpperCase()}
+                  </Text>
+                </View>
+                <View style={{ flex: 1, gap: 4 }}>
+                  <Text style={[styles.profileName, { color: colors.foreground }]}>
+                    {currentAppUser.name}
+                  </Text>
+                  <View style={[styles.profileRolePill, { backgroundColor: roleColor + "22" }]}>
+                    <Text style={[styles.profileRolePillText, { color: roleColor }]}>
+                      {currentRole?.name ?? currentAppUser.roleId}
+                    </Text>
+                    {currentRole?.isAdmin && (
+                      <View style={styles.profileAdminDot}>
+                        <Feather name="shield" size={10} color={roleColor} />
+                      </View>
+                    )}
+                  </View>
+                </View>
+              </View>
+
+              {/* Bilgi satırları */}
+              <View style={[styles.profileInfoCard, { backgroundColor: colors.muted, borderColor: colors.border }]}>
+                {currentAppUser.profession ? (
+                  <View style={styles.profileRow}>
+                    <Feather name="briefcase" size={14} color={colors.mutedForeground} />
+                    <Text style={[styles.profileRowLabel, { color: colors.mutedForeground }]}>Meslek</Text>
+                    <Text style={[styles.profileRowVal, { color: colors.foreground }]} numberOfLines={1}>
+                      {currentAppUser.profession}
+                    </Text>
+                  </View>
+                ) : null}
+                {currentAppUser.team ? (
+                  <View style={styles.profileRow}>
+                    <Feather name="users" size={14} color={colors.mutedForeground} />
+                    <Text style={[styles.profileRowLabel, { color: colors.mutedForeground }]}>Grup</Text>
+                    <Text style={[styles.profileRowVal, { color: colors.foreground }]} numberOfLines={1}>
+                      {currentAppUser.team}
+                    </Text>
+                  </View>
+                ) : null}
+                {currentAppUser.company ? (
+                  <View style={styles.profileRow}>
+                    <Feather name="layers" size={14} color={colors.mutedForeground} />
+                    <Text style={[styles.profileRowLabel, { color: colors.mutedForeground }]}>Firma</Text>
+                    <Text style={[styles.profileRowVal, { color: colors.foreground }]} numberOfLines={1}>
+                      {currentAppUser.company}
+                    </Text>
+                  </View>
+                ) : null}
+                {currentAppUser.phone ? (
+                  <View style={styles.profileRow}>
+                    <Feather name="phone" size={14} color={colors.mutedForeground} />
+                    <Text style={[styles.profileRowLabel, { color: colors.mutedForeground }]}>Telefon</Text>
+                    <Text style={[styles.profileRowVal, { color: colors.foreground }]} numberOfLines={1}>
+                      {currentAppUser.phone}
+                    </Text>
+                  </View>
+                ) : null}
+                {currentAppUser.address ? (
+                  <View style={styles.profileRow}>
+                    <Feather name="map-pin" size={14} color={colors.mutedForeground} />
+                    <Text style={[styles.profileRowLabel, { color: colors.mutedForeground }]}>Adres</Text>
+                    <Text style={[styles.profileRowVal, { color: colors.foreground }]} numberOfLines={2}>
+                      {currentAppUser.address}
+                    </Text>
+                  </View>
+                ) : null}
+              </View>
+
+              {/* Kullanıcılar sayfasına git */}
+              <TouchableOpacity
+                style={[styles.profileNavBtn, { backgroundColor: colors.card, borderColor: colors.border }]}
+                activeOpacity={0.85}
+                onPress={() => { setProfileVisible(false); router.push("/kullanicilar" as any); }}
+              >
+                <View style={[styles.profileNavIcon, { backgroundColor: "#ede9fe" }]}>
+                  <Feather name="shield" size={18} color="#7c3aed" />
+                </View>
+                <View style={{ flex: 1 }}>
+                  <Text style={[styles.profileNavLabel, { color: colors.foreground }]}>Kullanıcı Yönetimi</Text>
+                  <Text style={[styles.profileNavSub, { color: colors.mutedForeground }]}>
+                    Tüm kullanıcıları ve rolleri görüntüle
+                  </Text>
+                </View>
+                <Feather name="chevron-right" size={16} color={colors.mutedForeground} />
+              </TouchableOpacity>
+
+              {/* Oturumu Kapat */}
+              <TouchableOpacity
+                style={[styles.profileLogoutBtn, { borderColor: "#dc2626" }]}
+                activeOpacity={0.85}
+                onPress={() => { setProfileVisible(false); logout(); }}
+              >
+                <Feather name="log-out" size={18} color="#dc2626" />
+                <Text style={styles.profileLogoutText}>Oturumu Kapat</Text>
+              </TouchableOpacity>
+            </View>
+          );
+        })()}
+      </BottomSheet>
 
       {/* ── Export BottomSheet ── */}
       <BottomSheet visible={exportVisible} onClose={() => setExportVisible(false)} title={t("home.data.export")}>
@@ -1353,4 +1481,24 @@ const styles = StyleSheet.create({
   cpResetTxt: { fontSize: 13, fontFamily: "Inter_600SemiBold" },
   cpApplyBtn: { flex: 2, flexDirection: "row", alignItems: "center", justifyContent: "center", gap: 6, borderRadius: 12, paddingVertical: 12 },
   cpApplyTxt: { fontSize: 13, fontFamily: "Inter_600SemiBold", color: "#fff" },
+
+  // ── Profil Paneli ─────────────────────────────────────────────────
+  profileBody: { gap: 12 },
+  profileHero: { flexDirection: "row", alignItems: "center", gap: 14, paddingBottom: 4 },
+  profileAvatar: { width: 56, height: 56, borderRadius: 28, justifyContent: "center", alignItems: "center" },
+  profileAvatarText: { color: "#fff", fontSize: 24, fontFamily: "Inter_700Bold" },
+  profileName: { fontSize: 18, fontFamily: "Inter_700Bold" },
+  profileRolePill: { flexDirection: "row", alignItems: "center", alignSelf: "flex-start", paddingHorizontal: 8, paddingVertical: 3, borderRadius: 8, gap: 4 },
+  profileRolePillText: { fontSize: 12, fontFamily: "Inter_600SemiBold" },
+  profileAdminDot: {},
+  profileInfoCard: { borderRadius: 12, borderWidth: 1, overflow: "hidden" },
+  profileRow: { flexDirection: "row", alignItems: "center", gap: 8, paddingHorizontal: 12, paddingVertical: 10, borderBottomWidth: StyleSheet.hairlineWidth, borderBottomColor: "rgba(0,0,0,0.06)" },
+  profileRowLabel: { fontSize: 12, fontFamily: "Inter_500Medium", width: 60 },
+  profileRowVal: { flex: 1, fontSize: 13, fontFamily: "Inter_600SemiBold" },
+  profileNavBtn: { flexDirection: "row", alignItems: "center", gap: 12, padding: 14, borderRadius: 12, borderWidth: 1 },
+  profileNavIcon: { width: 40, height: 40, borderRadius: 10, justifyContent: "center", alignItems: "center" },
+  profileNavLabel: { fontSize: 14, fontFamily: "Inter_600SemiBold" },
+  profileNavSub: { fontSize: 12, fontFamily: "Inter_400Regular", marginTop: 1 },
+  profileLogoutBtn: { flexDirection: "row", alignItems: "center", justifyContent: "center", gap: 10, paddingVertical: 14, borderRadius: 12, borderWidth: 1.5, backgroundColor: "#fee2e2", marginTop: 4 },
+  profileLogoutText: { fontSize: 15, fontFamily: "Inter_700Bold", color: "#dc2626" },
 });

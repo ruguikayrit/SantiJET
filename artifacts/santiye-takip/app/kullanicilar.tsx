@@ -61,6 +61,7 @@ export default function KullanicilarScreen() {
     appUsers,
     roles,
     currentRole,
+    currentAppUser,
     addAppUser,
     updateAppUser,
     deleteAppUser,
@@ -251,29 +252,50 @@ export default function KullanicilarScreen() {
           ) : (
             appUsers.map((u) => {
               const roleColor = getRoleColor(u.roleId);
+              const isActive = currentAppUser?.id === u.id;
               return (
                 <TouchableOpacity
                   key={u.id}
-                  style={[styles.card, { backgroundColor: colors.card }]}
+                  style={[
+                    styles.card,
+                    { backgroundColor: colors.card },
+                    isActive && { borderWidth: 1.5, borderColor: roleColor + "66" },
+                  ]}
                   activeOpacity={0.85}
                   onPress={() => canEdit && openUser(u)}
                 >
-                  <View
-                    style={[
-                      styles.avatar,
-                      { backgroundColor: roleColor + "22" },
-                    ]}
-                  >
-                    <Text style={[styles.avatarText, { color: roleColor }]}>
-                      {u.name.charAt(0).toUpperCase()}
-                    </Text>
+                  <View style={{ position: "relative" }}>
+                    <View
+                      style={[
+                        styles.avatar,
+                        { backgroundColor: roleColor + "22" },
+                      ]}
+                    >
+                      <Text style={[styles.avatarText, { color: roleColor }]}>
+                        {u.name.charAt(0).toUpperCase()}
+                      </Text>
+                    </View>
+                    {isActive && (
+                      <View style={[styles.activeDot, { backgroundColor: "#22c55e", borderColor: colors.card }]} />
+                    )}
                   </View>
                   <View style={{ flex: 1 }}>
-                    <Text
-                      style={[styles.cardTitle, { color: colors.foreground }]}
-                    >
-                      {u.name}
-                    </Text>
+                    <View style={styles.cardTitleRow}>
+                      <Text
+                        style={[styles.cardTitle, { color: colors.foreground }]}
+                        numberOfLines={1}
+                      >
+                        {u.name}
+                      </Text>
+                      {isActive && (
+                        <View style={[styles.activeSessionBadge, { backgroundColor: "#dcfce7" }]}>
+                          <View style={[styles.activeSessionDot, { backgroundColor: "#16a34a" }]} />
+                          <Text style={[styles.activeSessionText, { color: "#16a34a" }]}>
+                            Aktif Oturum
+                          </Text>
+                        </View>
+                      )}
+                    </View>
                     <View style={styles.cardMeta}>
                       <View
                         style={[
@@ -706,8 +728,19 @@ const styles = StyleSheet.create({
     alignItems: "center",
   },
   avatarText: { fontSize: 18, fontFamily: "Inter_700Bold" },
+  cardTitleRow: { flexDirection: "row", alignItems: "center", gap: 8, flexWrap: "wrap" },
   cardTitle: { fontSize: 15, fontFamily: "Inter_600SemiBold" },
   cardMeta: { flexDirection: "row", alignItems: "center", gap: 8, marginTop: 4 },
+  activeDot: {
+    position: "absolute", bottom: 1, right: 1,
+    width: 12, height: 12, borderRadius: 6, borderWidth: 2,
+  },
+  activeSessionBadge: {
+    flexDirection: "row", alignItems: "center", gap: 4,
+    paddingHorizontal: 7, paddingVertical: 2, borderRadius: 999,
+  },
+  activeSessionDot: { width: 6, height: 6, borderRadius: 3 },
+  activeSessionText: { fontSize: 10, fontFamily: "Inter_700Bold" },
   cardSub: { fontSize: 12, fontFamily: "Inter_400Regular", marginTop: 4 },
   rolePill: { paddingHorizontal: 8, paddingVertical: 3, borderRadius: 999 },
   rolePillText: { fontSize: 11, fontFamily: "Inter_600SemiBold" },
