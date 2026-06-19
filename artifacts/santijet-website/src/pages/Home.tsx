@@ -39,8 +39,8 @@ function Navbar() {
       <header className={`fixed top-0 left-0 right-0 z-50 transition-all duration-300 ${scrolled ? "bg-background/80 backdrop-blur-md border-b border-white/5" : "bg-transparent"}`}>
         <div className="container mx-auto px-4 h-20 flex items-center justify-between">
           <Link href="/" className="flex items-center gap-1">
-            <img src={`${BASE_URL}/brand/santijet-bolt-nav-nobg.png`} alt="ŞantiJET" className="h-9 w-auto object-contain" />
-            <img src={`${BASE_URL}/brand/santijet-wordmark-nobg.png`} alt="ŞantiJET" className="h-9 w-auto object-contain" />
+            <img src={`${BASE_URL}/brand/santijet-bolt-nav-nobg.png`} alt="ŞantiJET" className="h-[108px] w-auto object-contain" />
+            <img src={`${BASE_URL}/brand/santijet-wordmark-nobg.png`} alt="ŞantiJET" className="h-[108px] w-auto object-contain" />
           </Link>
           
           <nav className="hidden md:flex items-center gap-8">
