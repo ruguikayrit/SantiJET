@@ -464,7 +464,10 @@ function FaqAndFooter() {
         <div className="container mx-auto px-4">
           <div className="grid grid-cols-2 md:grid-cols-5 gap-8 mb-12">
             <div className="col-span-2">
-              <img src={`${BASE_URL}/brand/santijet-logo-full.png`} alt="ŞantiJET" className="h-8 mb-6" />
+              <div className="flex items-center gap-1 mb-6">
+                <img src={`${BASE_URL}/brand/santijet-bolt-nav-nobg.png`} alt="ŞantiJET" className="h-[86px] w-auto object-contain" />
+                <img src={`${BASE_URL}/brand/santijet-wordmark-nobg.png`} alt="ŞantiJET" className="h-[103px] w-auto object-contain" />
+              </div>
               <p className="text-sm text-muted-foreground max-w-xs">
                 İnşaat operasyonlarınızı dijitalleştirin, sahadan merkeze tam kontrol sağlayın.
               </p>
