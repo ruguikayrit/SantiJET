@@ -244,43 +244,6 @@ function Modules() {
     <section id="urunler" className="py-24 relative">
       <div className="container mx-auto px-4">
         
-        {/* Pro Platform Banner */}
-        <div className="mb-24 p-8 md:p-12 rounded-2xl bg-gradient-to-br from-primary/20 to-background border border-primary/20 relative overflow-hidden">
-          <div className="absolute top-0 right-0 w-64 h-64 bg-primary/20 blur-[80px] pointer-events-none" />
-          <div className="relative z-10 grid md:grid-cols-2 gap-8 items-center">
-            <div>
-              <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-primary/20 text-primary text-sm font-medium mb-4">
-                <Zap className="w-4 h-4" /> Master Platform
-              </div>
-              <h2 className="text-3xl md:text-4xl font-bold mb-4">ŞantiJET Pro</h2>
-              <p className="text-lg text-muted-foreground mb-6">Tüm ŞantiJET modüllerini tek platformda birleştiren profesyonel inşaat operasyon sistemi.</p>
-              <ul className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                {["Merkezi Dashboard", "Proje Yönetimi", "Kullanıcı Yönetimi", "Raporlama", "Veri Senkronizasyonu", "AI Destekli Analizler"].map((f, i) => (
-                  <li key={i} className="flex items-center gap-2 text-sm">
-                    <CheckCircle2 className="w-4 h-4 text-primary" /> {f}
-                  </li>
-                ))}
-              </ul>
-            </div>
-            <div className="relative">
-               <div className="aspect-video rounded-lg bg-black/50 border border-white/10 p-4 shadow-xl">
-                 <div className="flex gap-2 mb-4 border-b border-white/10 pb-4">
-                   <div className="w-10 h-10 rounded bg-white/5 flex items-center justify-center"><Server className="w-5 h-5 text-primary" /></div>
-                   <div>
-                     <div className="text-sm font-medium">Veri Senkronizasyonu</div>
-                     <div className="text-xs text-green-400">Aktif</div>
-                   </div>
-                 </div>
-                 <div className="space-y-2">
-                   <div className="h-2 bg-white/10 rounded w-full"></div>
-                   <div className="h-2 bg-white/10 rounded w-5/6"></div>
-                   <div className="h-2 bg-white/10 rounded w-4/6"></div>
-                 </div>
-               </div>
-            </div>
-          </div>
-        </div>
-
         {/* Modules Grid */}
         <div className="text-center mb-12">
           <h2 className="text-3xl md:text-4xl font-bold mb-4">İhtiyacınız Olan Modülü Seçin</h2>
