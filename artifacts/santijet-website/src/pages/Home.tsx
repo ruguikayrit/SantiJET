@@ -210,16 +210,16 @@ function Ecosystem() {
             initial={{ scale: 0.8, opacity: 0 }}
             whileInView={{ scale: 1, opacity: 1 }}
             viewport={{ once: true }}
-            className="absolute z-20 w-40 h-40 bg-background border border-primary/50 rounded-full flex flex-col items-center justify-center shadow-[0_0_60px_rgba(26,95,255,0.5)]"
+            className="absolute z-20 w-64 h-64 bg-background border border-primary/50 rounded-full flex flex-col items-center justify-center shadow-[0_0_80px_rgba(26,95,255,0.5)]"
           >
             <img
               src={`${BASE_URL}/brand/santijet-bolt.png`}
               alt="ŞantiJET"
-              className="w-16 h-16 object-contain"
+              className="w-[160px] h-[160px] object-contain"
             />
             <span
               style={{ fontFamily: "'Inter', sans-serif", letterSpacing: "0.18em" }}
-              className="mt-2 text-xs font-semibold text-primary/90 uppercase tracking-widest"
+              className="mt-1 text-2xl font-semibold text-primary/90 uppercase tracking-widest"
             >
               PRO
             </span>
