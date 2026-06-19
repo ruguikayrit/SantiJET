@@ -1,0 +1,304 @@
+Create a premium SaaS website for ŞantiJET.
+
+Language: Turkish
+
+Target audience:
+- Construction Engineers
+- Site Managers
+- Technical Office Engineers
+- Contractors
+- Construction Companies
+
+Style:
+- Autodesk Construction Cloud
+- Procore
+- Stripe
+- Linear
+- Enterprise Software
+
+Dark mode preferred.
+
+Modern, premium, professional.
+
+Responsive.
+
+SEO optimized.
+
+Fast loading.
+
+Use React + Next.js.
+
+Use TypeScript.
+
+Use Tailwind CSS.
+
+--------------------------------------------------
+
+BRAND CONCEPT
+
+ŞantiJET is a construction operations ecosystem.
+
+The ecosystem consists of:
+
+MASTER PRODUCT
+
+ŞantiJET Pro
+
+APPRENTICE PRODUCTS
+
+ŞantiJET Demir
+ŞantiJET Malzeme
+ŞantiJET Puantaj
+ŞantiJET Günlük Rapor
+ŞantiJET Birim Fiyat
+ŞantiJET Metraj
+ŞantiJET Hakediş
+
+The website must visually present ŞantiJET Pro as the master platform and all other products as specialized modules connected to it.
+
+--------------------------------------------------
+
+SECTION 1
+
+Hero Section
+
+Headline:
+
+Şantiyenizi Tek Platformdan Yönetin.
+
+Subheadline:
+
+Keşiften siparişe, malzemeden puantaja, günlük rapordan hakedişe kadar tüm süreçleri dijitalleştirin.
+
+CTA Buttons:
+
+ŞantiJET Pro'yu Keşfet
+
+Demo Talep Et
+
+Use a premium dashboard mockup.
+
+--------------------------------------------------
+
+SECTION 2
+
+Ecosystem Visualization
+
+Create a visual ecosystem diagram.
+
+Center:
+
+ŞantiJET Pro
+
+Connected Modules:
+
+ŞantiJET Demir
+
+ŞantiJET Malzeme
+
+ŞantiJET Puantaj
+
+ŞantiJET Günlük Rapor
+
+ŞantiJET Birim Fiyat
+
+ŞantiJET Metraj
+
+ŞantiJET Hakediş
+
+Visual style should feel like:
+
+Master platform + connected specialist applications.
+
+--------------------------------------------------
+
+SECTION 3
+
+Master Product
+
+ŞantiJET Pro
+
+Description:
+
+Tüm ŞantiJET modüllerini tek platformda birleştiren profesyonel inşaat operasyon sistemi.
+
+Features:
+
+- Merkezi Dashboard
+- Proje Yönetimi
+- Kullanıcı Yönetimi
+- Raporlama
+- Veri Senkronizasyonu
+- AI Destekli Analizler
+
+--------------------------------------------------
+
+SECTION 4
+
+Modules
+
+Create individual cards.
+
+ŞantiJET Demir
+
+Description:
+Demir keşfi, sipariş, teslimat, saha sayımı ve stok yönetimi.
+
+ŞantiJET Malzeme
+
+Description:
+Şantiye malzeme giriş çıkış ve stok takibi.
+
+ŞantiJET Puantaj
+
+Description:
+Personel ve ekip puantaj yönetimi.
+
+ŞantiJET Günlük Rapor
+
+Description:
+Günlük saha faaliyetleri ve ilerleme raporları.
+
+ŞantiJET Birim Fiyat
+
+Description:
+Birim fiyat analizleri ve maliyet kontrolü.
+
+ŞantiJET Metraj
+
+Description:
+Metraj hesaplama ve miktar yönetimi.
+
+ŞantiJET Hakediş
+
+Description:
+Hakediş hazırlama ve kontrol süreçleri.
+
+Each card should have:
+
+- Icon
+- Description
+- Features
+- Learn More button
+
+--------------------------------------------------
+
+SECTION 5
+
+How It Works
+
+Step 1
+
+Keşif
+
+↓
+
+Step 2
+
+Sipariş
+
+↓
+
+Step 3
+
+Teslimat
+
+↓
+
+Step 4
+
+Saha Takibi
+
+↓
+
+Step 5
+
+Raporlama
+
+↓
+
+Step 6
+
+Yönetim
+
+--------------------------------------------------
+
+SECTION 6
+
+Benefits
+
+Reduce paperwork.
+
+Improve visibility.
+
+Control costs.
+
+Increase productivity.
+
+Manage construction operations digitally.
+
+--------------------------------------------------
+
+SECTION 7
+
+Screenshots
+
+Create a premium screenshots section.
+
+Show:
+
+- Dashboard
+- Demir
+- Puantaj
+- Malzeme
+- Günlük Rapor
+
+Use realistic mobile app mockups.
+
+--------------------------------------------------
+
+SECTION 8
+
+Pricing
+
+ŞantiJET Pro
+
+ŞantiJET Modülleri
+
+Enterprise
+
+--------------------------------------------------
+
+SECTION 9
+
+FAQ
+
+Frequently Asked Questions.
+
+--------------------------------------------------
+
+SECTION 10
+
+Footer
+
+Company
+
+Products
+
+Support
+
+Contact
+
+Social Links
+
+--------------------------------------------------
+
+Design Goal:
+
+Visitors should immediately understand:
+
+ŞantiJET Pro is the master platform.
+
+All other ŞantiJET applications are specialized modules working together inside one ecosystem.
+
+The website should look like a professional construction technology company, not a startup template.

@@ -1,0 +1,31 @@
+kind = "web"
+previewPath = "/website/"
+title = "ŞantiJET Website"
+version = "1.0.0"
+id = "artifacts/santijet-website"
+router = "path"
+
+[[integratedSkills]]
+name = "react-vite"
+version = "1.0.0"
+
+[[services]]
+name = "web"
+paths = [ "/website/" ]
+localPort = 25949
+
+[services.development]
+run = "pnpm --filter @workspace/santijet-website run dev"
+
+[services.production]
+build = [ "pnpm", "--filter", "@workspace/santijet-website", "run", "build" ]
+publicDir = "artifacts/santijet-website/dist/public"
+serve = "static"
+
+[[services.production.rewrites]]
+from = "/*"
+to = "/index.html"
+
+[services.env]
+PORT = "25949"
+BASE_PATH = "/website/"
