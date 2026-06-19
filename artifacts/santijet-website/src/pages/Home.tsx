@@ -464,49 +464,6 @@ function Benefits() {
   );
 }
 
-// --- Screenshots ---
-function Screenshots() {
-  const screens = [
-    { title: "Dashboard", color: "bg-blue-500/10 border-blue-500/20" },
-    { title: "Demir Modülü", color: "bg-emerald-500/10 border-emerald-500/20" },
-    { title: "Puantaj", color: "bg-orange-500/10 border-orange-500/20" },
-    { title: "Günlük Rapor", color: "bg-purple-500/10 border-purple-500/20" }
-  ];
-
-  return (
-    <section className="py-24 bg-black/30 border-y border-white/5 overflow-hidden">
-      <div className="container mx-auto px-4 mb-12">
-        <h2 className="text-3xl md:text-4xl font-bold mb-4">Gelişmiş Arayüz Deneyimi</h2>
-        <p className="text-muted-foreground">Şantiyenin zorlu şartlarında bile hızlı ve hatasız kullanım için tasarlandı.</p>
-      </div>
-      
-      {/* Horizontal Scroll / Carousel Mock */}
-      <div className="flex gap-6 px-4 md:px-12 overflow-x-auto pb-12 snap-x">
-        {screens.map((screen, i) => (
-          <div key={i} className="min-w-[300px] md:min-w-[400px] snap-center">
-            {/* iPad/Tablet Mockup Frame */}
-            <div className="relative aspect-[4/3] rounded-xl border-4 border-white/10 bg-background overflow-hidden shadow-2xl">
-              <div className="absolute top-0 w-full h-8 bg-black border-b border-white/5 flex items-center justify-center">
-                <div className="w-1 h-1 rounded-full bg-white/20" />
-              </div>
-              <div className={`mt-8 p-4 h-full ${screen.color}`}>
-                <div className="font-medium text-sm mb-4 opacity-70">{screen.title} UI</div>
-                <div className="space-y-3">
-                  <div className="flex gap-3">
-                    <div className="h-16 flex-1 bg-white/5 rounded"></div>
-                    <div className="h-16 flex-1 bg-white/5 rounded"></div>
-                  </div>
-                  <div className="h-32 w-full bg-white/5 rounded"></div>
-                  <div className="h-8 w-3/4 bg-white/5 rounded"></div>
-                </div>
-              </div>
-            </div>
-          </div>
-        ))}
-      </div>
-    </section>
-  );
-}
 
 // --- Pricing ---
 function Pricing() {
@@ -660,7 +617,6 @@ export default function Home() {
         <Modules />
         <HowItWorks />
         <Benefits />
-        <Screenshots />
         <Pricing />
         <FaqAndFooter />
       </main>
