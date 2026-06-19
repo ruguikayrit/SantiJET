@@ -40,7 +40,7 @@ function Navbar() {
         <div className="container mx-auto px-4 h-20 flex items-center justify-between">
           <Link href="/" className="flex items-center gap-1">
             <img src={`${BASE_URL}/brand/santijet-bolt-nav-nobg.png`} alt="ŞantiJET" className="h-[86px] w-auto object-contain" />
-            <img src={`${BASE_URL}/brand/santijet-wordmark-nobg.png`} alt="ŞantiJET" className="h-[86px] w-auto object-contain" />
+            <img src={`${BASE_URL}/brand/santijet-wordmark-nobg.png`} alt="ŞantiJET" className="h-[103px] w-auto object-contain" />
           </Link>
           
           <nav className="hidden md:flex items-center gap-8">
