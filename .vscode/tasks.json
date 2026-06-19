@@ -1,0 +1,48 @@
+{
+  "version": "2.0.0",
+  "tasks": [
+    {
+      "label": "ŞantiJET: Neon HUD",
+      "type": "shell",
+      "command": "pnpm dev:neon",
+      "group": { "kind": "build", "isDefault": true },
+      "presentation": { "reveal": "always", "panel": "dedicated" },
+      "problemMatcher": []
+    },
+    {
+      "label": "ŞantiJET: Mobil (Expo Web)",
+      "type": "shell",
+      "command": "pnpm dev:mobile-web",
+      "presentation": { "reveal": "always", "panel": "dedicated" },
+      "problemMatcher": []
+    },
+    {
+      "label": "ŞantiJET: Mobil (Expo)",
+      "type": "shell",
+      "command": "pnpm dev:mobile",
+      "presentation": { "reveal": "always", "panel": "dedicated" },
+      "problemMatcher": []
+    },
+    {
+      "label": "ŞantiJET: API Sunucusu",
+      "type": "shell",
+      "command": "pnpm dev:api",
+      "presentation": { "reveal": "always", "panel": "dedicated" },
+      "problemMatcher": []
+    },
+    {
+      "label": "ŞantiJET: Web Sitesi",
+      "type": "shell",
+      "command": "pnpm dev:website",
+      "presentation": { "reveal": "always", "panel": "dedicated" },
+      "problemMatcher": []
+    },
+    {
+      "label": "ŞantiJET: Typecheck",
+      "type": "shell",
+      "command": "pnpm typecheck",
+      "group": "test",
+      "problemMatcher": ["$tsc"]
+    }
+  ]
+}
