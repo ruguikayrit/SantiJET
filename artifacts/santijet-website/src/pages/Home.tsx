@@ -210,7 +210,7 @@ function Ecosystem() {
             initial={{ scale: 0.8, opacity: 0 }}
             whileInView={{ scale: 1, opacity: 1 }}
             viewport={{ once: true }}
-            className="absolute z-20 w-40 h-40 bg-background border border-primary/50 rounded-full flex flex-col items-center justify-center shadow-[0_0_80px_rgba(26,95,255,0.5)]"
+            className="absolute z-20 w-[172px] h-[172px] bg-background border border-primary/50 rounded-full flex flex-col items-center justify-center shadow-[0_0_80px_rgba(26,95,255,0.5)]"
           >
             <img
               src={`${BASE_URL}/brand/santijet-bolt-nobg.png`}
