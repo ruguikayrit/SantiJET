@@ -108,66 +108,6 @@ function Hero() {
           </Button>
         </motion.div>
 
-        {/* Premium Dashboard Mockup */}
-        <motion.div 
-          initial={{ opacity: 0, y: 40 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.4, duration: 0.8 }}
-          className="mt-20 relative mx-auto max-w-5xl"
-        >
-          <div className="absolute inset-0 bg-gradient-to-t from-background via-transparent to-transparent z-10" />
-          <div className="rounded-xl border border-white/10 bg-black/50 backdrop-blur-sm overflow-hidden shadow-2xl">
-            <div className="h-12 border-b border-white/5 flex items-center px-4 gap-2">
-              <div className="flex gap-1.5">
-                <div className="w-3 h-3 rounded-full bg-red-500/80" />
-                <div className="w-3 h-3 rounded-full bg-yellow-500/80" />
-                <div className="w-3 h-3 rounded-full bg-green-500/80" />
-              </div>
-              <div className="mx-auto bg-white/5 rounded-md px-4 py-1 text-xs text-muted-foreground flex items-center gap-2">
-                <ShieldCheck className="w-3 h-3" /> santijet.com/pro
-              </div>
-            </div>
-            <div className="p-6 grid grid-cols-1 md:grid-cols-12 gap-6 opacity-90">
-              <div className="hidden md:block col-span-3 space-y-4">
-                <div className="flex items-center gap-2 mb-6">
-                  <div className="w-8 h-8 rounded bg-primary/20 flex items-center justify-center">
-                    <Building2 className="w-4 h-4 text-primary" />
-                  </div>
-                  <div className="text-sm font-medium">Merkez Şantiye</div>
-                </div>
-                <div className="space-y-1">
-                  {['Dashboard', 'Demir', 'Malzeme', 'Puantaj', 'Günlük Rapor'].map((item, i) => (
-                    <div key={i} className={`px-3 py-2 rounded-md text-sm ${i === 0 ? 'bg-primary/10 text-primary' : 'text-muted-foreground hover:bg-white/5'}`}>
-                      {item}
-                    </div>
-                  ))}
-                </div>
-              </div>
-              <div className="col-span-1 md:col-span-9 space-y-6">
-                <div className="flex items-center justify-between mb-4">
-                  <h3 className="text-lg font-semibold">Proje Özeti</h3>
-                  <div className="text-sm text-muted-foreground">Bugün, 24 Eki</div>
-                </div>
-                <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
-                  {[
-                    { label: "Bekleyen Siparişler", val: "14", color: "text-blue-400" },
-                    { label: "Saha Mevcudu", val: "128", color: "text-emerald-400" },
-                    { label: "Günlük İlerleme", val: "%4.2", color: "text-purple-400" }
-                  ].map((stat, i) => (
-                    <div key={i} className="p-4 bg-white/5 border border-white/5 rounded-lg">
-                      <div className="text-xs text-muted-foreground mb-2">{stat.label}</div>
-                      <div className={`text-2xl font-bold ${stat.color}`}>{stat.val}</div>
-                    </div>
-                  ))}
-                </div>
-                <div className="h-48 bg-white/5 border border-white/5 rounded-lg flex items-end p-4 gap-2">
-                  {/* Fake Chart */}
-                  {[40, 70, 45, 90, 65, 80, 100].map((h, i) => (
-                    <div key={i} className="flex-1 bg-primary/20 hover:bg-primary/40 transition-colors rounded-t-sm" style={{ height: `${h}%` }}></div>
-                  ))}
-                </div>
-              </div>
-            </div>
-          </div>
-        </motion.div>
       </div>
     </section>
   );
