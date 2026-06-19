@@ -213,7 +213,7 @@ function Ecosystem() {
             className="absolute z-20 w-40 h-40 bg-background border border-primary/50 rounded-full flex flex-col items-center justify-center shadow-[0_0_80px_rgba(26,95,255,0.5)] overflow-visible"
           >
             <img
-              src={`${BASE_URL}/brand/santijet-bolt.png`}
+              src={`${BASE_URL}/brand/santijet-bolt-nobg.png`}
               alt="ŞantiJET"
               className="w-[160px] h-[160px] object-contain"
             />
