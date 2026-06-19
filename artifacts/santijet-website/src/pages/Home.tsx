@@ -215,11 +215,11 @@ function Ecosystem() {
             <img
               src={`${BASE_URL}/brand/santijet-bolt-nobg.png`}
               alt="ŞantiJET"
-              className="w-24 h-24 object-contain"
+              className="w-36 h-36 object-contain"
             />
             <span
               style={{ fontFamily: "'Inter', sans-serif", letterSpacing: "0.18em" }}
-              className="mt-0.5 text-xl font-semibold text-primary/90 uppercase tracking-widest leading-none"
+              className="-mt-3 text-xl font-semibold text-primary/90 uppercase tracking-widest leading-none"
             >
               PRO
             </span>
