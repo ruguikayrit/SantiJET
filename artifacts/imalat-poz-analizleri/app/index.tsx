@@ -66,7 +66,6 @@ export default function HomeScreen() {
             <Text style={styles.welcomeRole}>
               Resmi analiz tabloları, fiyat hesaplamaları ve özel analizler
             </Text>
-            <Text style={styles.buildTag}>Sürüm 1.0.2 · edcafbe</Text>
           </View>
 
           <View style={styles.welcomeDateBlock}>
@@ -170,13 +169,6 @@ const styles = StyleSheet.create({
     marginTop: 6,
     color: "#94a3b8",
     lineHeight: 18,
-  },
-  buildTag: {
-    marginTop: 10,
-    fontSize: 10,
-    fontFamily: "Inter_600SemiBold",
-    color: "#64748b",
-    letterSpacing: 0.4,
   },
   welcomeDateBlock: {
     alignItems: "flex-end",
