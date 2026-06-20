@@ -16,8 +16,9 @@ import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 import { SantijetLogo } from "@/components/SantijetLogo";
 import { CreateAnalizFab } from "@/components/CreateAnalizFab";
+import { NewAnalizModulePickerModal } from "@/components/NewAnalizModulePickerModal";
 import { ModuleTile } from "@/components/ModuleTile";
-import { BFA_MODULES, resolveAnalizDiscipline } from "@/constants/bfaModules";
+import { BFA_MODULES, BfaDiscipline, resolveAnalizDiscipline } from "@/constants/bfaModules";
 import { matchesPozAnalizSearch } from "@/constants/pozAnalizleri";
 import { useBfaCatalog } from "@/hooks/useBfaCatalog";
 import { useColors } from "@/hooks/useColors";
@@ -61,6 +62,7 @@ export default function HomeScreen() {
 
   const { stats, all, loading } = useBfaCatalog();
   const [search, setSearch] = useState("");
+  const [newAnalizPickerVisible, setNewAnalizPickerVisible] = useState(false);
 
   const filtered = useMemo(() => {
     if (!search.trim()) return [];
@@ -78,9 +80,14 @@ export default function HomeScreen() {
   }
 
   function openNewAnaliz() {
+    setNewAnalizPickerVisible(true);
+  }
+
+  function startNewAnalizInModule(modul: BfaDiscipline) {
+    setNewAnalizPickerVisible(false);
     router.push({
       pathname: "/imalat-pozlari",
-      params: { modul: "insaat", new: "1" },
+      params: { modul, new: "1" },
     } as any);
   }
 
@@ -270,6 +277,12 @@ export default function HomeScreen() {
         <SourceDisclaimer color={colors.mutedForeground} bottomInset={insets.bottom} />
       </ScrollView>
       )}
+
+      <NewAnalizModulePickerModal
+        visible={newAnalizPickerVisible}
+        onClose={() => setNewAnalizPickerVisible(false)}
+        onSelect={startNewAnalizInModule}
+      />
     </View>
   );
 }
