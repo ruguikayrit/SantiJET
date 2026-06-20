@@ -52,7 +52,7 @@ export function SantijetLogo({
 }: SantijetLogoProps) {
   if (stacked) {
     const boltH = iconHeight;
-    const wmH = Math.round(iconHeight * 0.95);
+    const wmH = Math.round(iconHeight * 0.95 * 2);
     const wmW = Math.round(wmH * WM_FULL_ASPECT);
     const wordmarkOffset = Math.round(iconHeight * 0.08);
     const overlap = Math.round(boltH * 0.12);
