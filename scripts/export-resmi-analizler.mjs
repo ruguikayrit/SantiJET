@@ -18,9 +18,11 @@ const result = ts.transpileModule(source, {
 const mod = { exports: {} };
 // eslint-disable-next-line no-new-func
 new Function("exports", "module", "require", result.outputText)(mod.exports, mod, require);
-const data = mod.exports.RESMI_POZ_ANALIZLERI;
-if (!Array.isArray(data)) {
-  throw new Error("RESMI_POZ_ANALIZLERI export not found");
+const data = mod.exports.RESMI_POZ_ANALIZLERI.filter(
+  (a) => a != null && typeof a === "object" && typeof a.id === "string",
+);
+if (!Array.isArray(data) || data.length === 0) {
+  throw new Error("RESMI_POZ_ANALIZLERI export not found or empty");
 }
 fs.mkdirSync(path.dirname(outPath), { recursive: true });
 fs.writeFileSync(outPath, JSON.stringify(data));
