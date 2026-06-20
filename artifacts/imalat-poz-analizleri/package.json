@@ -5,8 +5,9 @@
   "main": "expo-router/entry",
   "scripts": {
     "postinstall": "node scripts/fix-expo-router-stub.js",
-    "dev": "node scripts/fix-expo-router-stub.js && EXPO_NO_DEPENDENCY_VALIDATION=1 pnpm exec expo start --localhost --port ${PORT:-24916} --clear",
-    "dev:tunnel": "node scripts/fix-expo-router-stub.js && EXPO_NO_DEPENDENCY_VALIDATION=1 pnpm exec expo start --tunnel --port ${PORT:-24916} --clear",
+    "dev": "node scripts/dev-gateway.mjs",
+    "dev:metro": "node scripts/fix-expo-router-stub.js && EXPO_NO_DEPENDENCY_VALIDATION=1 pnpm exec expo start --lan --port ${PORT:-24916}",
+    "dev:tunnel": "node scripts/fix-expo-router-stub.js && EXPO_NO_DEPENDENCY_VALIDATION=1 pnpm exec expo start --tunnel --port ${PORT:-24916}",
     "dev:web": "EXPO_NO_DEPENDENCY_VALIDATION=1 pnpm exec expo start --web --localhost --port ${PORT:-24916}",
     "typecheck": "tsc -p tsconfig.json --noEmit"
   },
