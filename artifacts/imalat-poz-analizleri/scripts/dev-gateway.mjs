@@ -108,6 +108,8 @@ function pollTunnel() {
   const tick = async () => {
     const t = await fetchNgrokTunnel();
     if (t) {
+      const prevUrl = links.expUrl;
+      const changed = Boolean(prevUrl && prevUrl !== t.expUrl);
       setLinks({
         mode: "tunnel",
         expUrl: t.expUrl,
@@ -115,11 +117,12 @@ function pollTunnel() {
         ready: true,
         message: "Tunnel hazır — telefon ve bilgisayar farklı ağda olabilir.",
       });
-      console.log(`[ipa-dev] Tunnel: ${t.expUrl}`);
-      console.log(`[ipa-dev] Web:    ${t.webUrl}`);
-      return;
+      if (changed || !prevUrl) {
+        console.log(`[ipa-dev] Tunnel: ${t.expUrl}`);
+        console.log(`[ipa-dev] Web:    ${t.webUrl}`);
+      }
     }
-    setTimeout(tick, 2000);
+    setTimeout(tick, 5000);
   };
   tick();
 }
@@ -234,7 +237,8 @@ function startLandingServer() {
 
 function startMetro(mode, host) {
   const stub = path.join(projectRoot, "scripts", "fix-expo-router-stub.js");
-  spawn("node", [stub], { cwd: projectRoot, stdio: "inherit", shell: false }).on("close", () => {
+
+  function launchMetro(attempt = 1) {
     const args = ["exec", "expo", "start", "--port", String(metroPort)];
     if (mode === "tunnel") args.push("--tunnel");
     else args.push("--lan");
@@ -246,7 +250,19 @@ function startMetro(mode, host) {
     };
 
     const child = spawn("pnpm", args, { cwd: projectRoot, stdio: "inherit", env, shell: false });
-    child.on("exit", (code) => process.exit(code ?? 0));
+    child.on("exit", (code) => {
+      if (code === 0 || code === null) {
+        process.exit(0);
+        return;
+      }
+      const waitMs = Math.min(attempt * 3000, 20000);
+      console.warn(`[ipa-dev] Metro kapandı (kod ${code}). ${waitMs / 1000}s sonra yeniden denenecek…`);
+      setTimeout(() => launchMetro(attempt + 1), waitMs);
+    });
+  }
+
+  spawn("node", [stub], { cwd: projectRoot, stdio: "inherit", shell: false }).on("close", () => {
+    launchMetro();
   });
 }
 
