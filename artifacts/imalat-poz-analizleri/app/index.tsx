@@ -219,7 +219,7 @@ export default function HomeScreen() {
           <View style={styles.tileBody}>
             <Text style={styles.tileNum}>01</Text>
             <Text style={[styles.tileLabel, { color: colors.cardForeground }]}>
-              BİRİM FİYAT ANALİZLERİ
+              İNŞAAT BİRİM FİYAT ANALİZLERİ
             </Text>
             <View style={styles.tileFootRow}>
               <View style={[styles.tileDot, { backgroundColor: TILE_COLOR }]} />
