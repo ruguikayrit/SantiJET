@@ -15,8 +15,8 @@ const WM_ASPECT = 1016 / 187;
 /** Orijinal splash wordmark genişliği 0.72; %20 küçültülmüş */
 const WORDMARK_WIDTH = Math.round(width * 0.72 * 0.8);
 const WORDMARK_HEIGHT = Math.round(WORDMARK_WIDTH / WM_ASPECT);
-/** SantijetLogo stacked oranı: bolt yüksekliği ≈ wordmark yüksekliği / 0.54 */
-const BOLT_HEIGHT = Math.round(WORDMARK_HEIGHT / 0.54);
+/** SantijetLogo stacked oranı: bolt yüksekliği ≈ wordmark yüksekliği / 0.54; splash x2.5 */
+const BOLT_HEIGHT = Math.round((WORDMARK_HEIGHT / 0.54) * 2.5);
 /** Orijinal boşluk 32px; x2 */
 const LOGO_WORDMARK_GAP = 64;
 
