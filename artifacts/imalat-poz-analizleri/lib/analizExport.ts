@@ -22,6 +22,20 @@ const REPORT_STYLES = `
   p { white-space: pre-wrap; line-height: 1.5; }
 `;
 
+const EXCEL_STYLES = `
+  body { font-family: Arial, sans-serif; font-size: 11px; color: #000; margin: 12px; }
+  table { width: 100%; border-collapse: collapse; }
+  th, td { border: 1px solid #000; padding: 4px 6px; vertical-align: middle; text-align: center; }
+  th { font-weight: bold; background: #fff; }
+  .group td { font-weight: bold; text-align: center; }
+  .desc { text-align: center; }
+  .poz { mso-number-format:"\\@"; text-align: center; }
+  .qty { mso-number-format:"\\#\\,\\#\\#0\\.0000"; text-align: center; }
+  .price { mso-number-format:"\\#\\,\\#\\#0\\.00"; text-align: center; }
+  .tl { mso-number-format:"\\#\\,\\#\\#0\\.00\\ \"TL\\\""; text-align: center; }
+  .summary-label { text-align: center; }
+`;
+
 function trFmt(n: number): string {
   return n.toLocaleString("tr-TR", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
 }
@@ -36,6 +50,49 @@ function escHtml(text: string): string {
     .replace(/</g, "&lt;")
     .replace(/>/g, "&gt;")
     .replace(/"/g, "&quot;");
+}
+
+/** Resmi poz numarası: XX.XXX.XXXX */
+function formatResmiPozNo(pozNo: string): string {
+  const trimmed = pozNo.trim();
+  if (/^\d{2}\.\d{3}\.\d{4}$/.test(trimmed)) return trimmed;
+
+  const digits = trimmed.replace(/\D/g, "");
+  if (digits.length === 9) {
+    return `${digits.slice(0, 2)}.${digits.slice(2, 5)}.${digits.slice(5, 9)}`;
+  }
+
+  return trimmed;
+}
+
+/** Excel poz no — metin formatında, nokta konumu korunur */
+function excelPozNoCell(pozNo: string): string {
+  const formatted = formatResmiPozNo(pozNo);
+  if (/^\d{2}\.\d{3}\.\d{4}$/.test(formatted)) {
+    return `<td class="poz" style="mso-number-format:'\\@';">="${formatted}"</td>`;
+  }
+  return `<td class="poz" style="mso-number-format:'\\@';">${escHtml(formatted)}</td>`;
+}
+
+function excelQtyCell(value: number): string {
+  const v = Number.isFinite(value) ? value : 0;
+  return `<td class="qty" x:num="${v}">${v}</td>`;
+}
+
+function excelPriceCell(value: number): string {
+  const v = Number.isFinite(value) ? value : 0;
+  return `<td class="price" x:num="${v}">${v}</td>`;
+}
+
+/** Tutar — miktar × birim fiyat formülü + TL para birimi */
+function excelTutarCell(row: number, fallback: number): string {
+  const v = Number.isFinite(fallback) ? fallback : 0;
+  return `<td class="tl" x:fmla="=D${row}*E${row}" x:num="${v}">=D${row}*E${row}</td>`;
+}
+
+function excelTlCell(value: number): string {
+  const v = Number.isFinite(value) ? value : 0;
+  return `<td class="tl" x:num="${v}">${v}</td>`;
 }
 
 function buildAnalizReportBody(analiz: PozAnaliz): string {
@@ -95,7 +152,84 @@ function buildAnalizReportBody(analiz: PozAnaliz): string {
   ${extraBlocks}`;
 }
 
-/** Excel — PDF ile aynı düzen, Office HTML (.xls) sarmalayıcı */
+function buildAnalizExcelBody(analiz: PozAnaliz): string {
+  const totals = hesaplaAnalizToplam(analiz);
+  const tipAd: Record<string, string> = {
+    malzeme: "Malzeme",
+    iscilik: "İşçilik",
+    ekipman: "Ekipman",
+  };
+
+  // Satır numaraları: 1 başlık, 2 meta, 3 boş, 4 tablo başlık, 5+ veri
+  let rowNum = 4;
+  let tableRows = "";
+
+  for (const tip of ["malzeme", "iscilik", "ekipman"] as const) {
+    const rows = analiz.kalemler.filter((k) => k.tip === tip);
+    if (!rows.length) continue;
+    rowNum += 1;
+    tableRows += `<tr class="group"><td colspan="6">${tipAd[tip]}</td></tr>`;
+    for (const k of rows) {
+      rowNum += 1;
+      tableRows += `<tr>
+        ${excelPozNoCell(k.pozNo)}
+        <td class="desc">${escHtml(k.tanim)}</td>
+        <td>${escHtml(k.olcuBirimi)}</td>
+        ${excelQtyCell(k.miktar)}
+        ${excelPriceCell(k.birimFiyati)}
+        ${excelTutarCell(rowNum, k.tutar)}
+      </tr>`;
+    }
+  }
+
+  rowNum += 1;
+  const extraBlocks = [
+    analiz.pozTarifi ? `<h3>Poz Tarifi</h3><p>${escHtml(analiz.pozTarifi)}</p>` : "",
+    analiz.yapimSartlari
+      ? `<h3>Yapım Şartları</h3><p>${escHtml(analiz.yapimSartlari)}</p>`
+      : "",
+    analiz.olcusu ? `<h3>Ölçüsü</h3><p>${escHtml(analiz.olcusu)}</p>` : "",
+  ].join("");
+
+  return `
+  <h1 style="text-align:center;">BİRİM FİYAT ANALİZİ</h1>
+  <table>
+    <tr>
+      <th>Poz No</th>
+      <th colspan="4">Analiz Adı</th>
+      <th>Ölçü Birimi</th>
+    </tr>
+    <tr>
+      ${excelPozNoCell(analiz.pozNo)}
+      <td class="desc" colspan="4">${escHtml(analiz.analizAdi)}</td>
+      <td>${escHtml(analiz.olcuBirimi)}</td>
+    </tr>
+    <tr>
+      <th>Poz No</th>
+      <th>Tanımı</th>
+      <th>Ölçü Birimi</th>
+      <th>Miktarı</th>
+      <th>Birim Fiyatı</th>
+      <th>Tutarı (TL)</th>
+    </tr>
+    ${tableRows}
+    <tr>
+      <td class="summary-label" colspan="5">Malzeme + İşçilik Tutarı</td>
+      ${excelTlCell(totals.malzemeIscilikToplami)}
+    </tr>
+    <tr>
+      <td class="summary-label" colspan="5">%${analiz.yukleniciKarOrani} Yüklenici Karı</td>
+      ${excelTlCell(totals.yukleniciKarTutari)}
+    </tr>
+    <tr>
+      <td class="summary-label" colspan="5">1 ${escHtml(analiz.olcuBirimi)} Fiyatı</td>
+      ${excelTlCell(totals.birimFiyati)}
+    </tr>
+  </table>
+  ${extraBlocks}`;
+}
+
+/** Excel — Office HTML (.xls), ortalı hücreler + TL formatı */
 export function buildAnalizExcelHtml(analiz: PozAnaliz): string {
   return `<!DOCTYPE html>
 <html xmlns:o="urn:schemas-microsoft-com:office:office"
@@ -103,7 +237,7 @@ export function buildAnalizExcelHtml(analiz: PozAnaliz): string {
       xmlns="http://www.w3.org/TR/REC-html40">
 <head>
   <meta charset="utf-8" />
-  <title>${escHtml(analiz.pozNo)} — BFA</title>
+  <title>${escHtml(formatResmiPozNo(analiz.pozNo))} — BFA</title>
   <!--[if gte mso 9]><xml>
     <x:ExcelWorkbook>
       <x:ExcelWorksheets><x:ExcelWorksheet>
@@ -112,9 +246,9 @@ export function buildAnalizExcelHtml(analiz: PozAnaliz): string {
       </x:ExcelWorksheet></x:ExcelWorksheets>
     </x:ExcelWorkbook>
   </xml><![endif]-->
-  <style>${REPORT_STYLES}</style>
+  <style>${EXCEL_STYLES}</style>
 </head>
-<body>${buildAnalizReportBody(analiz)}
+<body>${buildAnalizExcelBody(analiz)}
 </body>
 </html>`;
 }
