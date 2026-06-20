@@ -25,7 +25,9 @@ import {
   AnalizKalemi,
   IMALAT_POZ_KATEGORILERI,
   PozAnaliz,
+  buildPozKategoriFiltreleri,
   hesaplaAnalizToplam,
+  normalizeTrSearch,
 } from "@/constants/pozAnalizleri";
 
 // ─── Yardımcı Fonksiyonlar ─────────────────────────────────────
@@ -88,23 +90,36 @@ export default function ImalatPozlariScreen() {
     [pozAnalizleri, selectedId]
   );
 
-  const categories = useMemo(() => {
-    const cats = new Set<string>(IMALAT_POZ_KATEGORILERI as readonly string[]);
-    pozAnalizleri.forEach((a) => a.kategori && cats.add(a.kategori));
-    return ["Tümü", ...Array.from(cats)];
+  const categories = useMemo(
+    () => ["Tümü", ...buildPozKategoriFiltreleri(pozAnalizleri)],
+    [pozAnalizleri],
+  );
+
+  const kategoriSayilari = useMemo(() => {
+    const counts = new Map<string, number>();
+    for (const a of pozAnalizleri) {
+      const k = (a.kategori || "").trim();
+      if (!k) continue;
+      counts.set(k, (counts.get(k) ?? 0) + 1);
+    }
+    return counts;
   }, [pozAnalizleri]);
 
   const filtered = useMemo(() => {
-    const q = search.trim().toLowerCase();
+    const q = normalizeTrSearch(search);
     return pozAnalizleri
-      .filter((a) => (catFilter ? a.kategori === catFilter : true))
-      .filter((a) =>
-        q
-          ? a.pozNo.toLowerCase().includes(q) ||
-            a.analizAdi.toLowerCase().includes(q) ||
-            (a.pozTarifi || "").toLowerCase().includes(q)
-          : true
-      )
+      .filter((a) => {
+        if (!catFilter) return true;
+        return (a.kategori || "").trim() === catFilter;
+      })
+      .filter((a) => {
+        if (!q) return true;
+        return (
+          normalizeTrSearch(a.pozNo).includes(q) ||
+          normalizeTrSearch(a.analizAdi).includes(q) ||
+          normalizeTrSearch(a.pozTarifi || "").includes(q)
+        );
+      })
       .sort((a, b) => a.pozNo.localeCompare(b.pozNo, "tr"));
   }, [pozAnalizleri, catFilter, search]);
 
@@ -736,7 +751,9 @@ export default function ImalatPozlariScreen() {
                   { color: active ? colors.primaryForeground : colors.foreground },
                 ]}
               >
-                {cat}
+                {cat === "Tümü"
+                  ? `Tümü (${pozAnalizleri.length})`
+                  : `${cat} (${kategoriSayilari.get(cat) ?? 0})`}
               </Text>
             </TouchableOpacity>
           );
@@ -762,8 +779,10 @@ export default function ImalatPozlariScreen() {
       <FlatList
         data={filtered}
         keyExtractor={(item) => item.id}
+        extraData={`${catFilter ?? ""}|${search}|${filtered.length}`}
         initialNumToRender={20}
         windowSize={10}
+        keyboardShouldPersistTaps="handled"
         renderItem={({ item, index }) => (
           <TouchableOpacity
             style={[

@@ -124,28 +124,6 @@ export default function HomeScreen() {
             </View>
           </View>
         </TouchableOpacity>
-
-        <TouchableOpacity
-          style={[
-            styles.infoBtn,
-            { backgroundColor: colors.card, borderColor: colors.primary + "40" },
-          ]}
-          onPress={() => router.push("/imalat-pozlari" as any)}
-          activeOpacity={0.85}
-        >
-          <View style={[styles.infoIcon, { backgroundColor: colors.primary + "20" }]}>
-            <Feather name="book-open" size={20} color={colors.primary} />
-          </View>
-          <View style={{ flex: 1 }}>
-            <Text style={[styles.infoTitle, { color: colors.foreground }]}>
-              Analiz Kataloğu
-            </Text>
-            <Text style={[styles.infoSub, { color: colors.mutedForeground }]}>
-              Resmi tablolar, arama, düzenleme ve dışa aktarma
-            </Text>
-          </View>
-          <Feather name="chevron-right" size={18} color={colors.mutedForeground} />
-        </TouchableOpacity>
       </ScrollView>
     </View>
   );
@@ -294,30 +272,5 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     justifyContent: "center",
     alignItems: "center",
-  },
-  infoBtn: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 12,
-    padding: 14,
-    borderRadius: 14,
-    borderWidth: 1,
-    marginTop: 4,
-  },
-  infoIcon: {
-    width: 44,
-    height: 44,
-    borderRadius: 12,
-    alignItems: "center",
-    justifyContent: "center",
-  },
-  infoTitle: {
-    fontSize: 15,
-    fontFamily: "Inter_600SemiBold",
-  },
-  infoSub: {
-    fontSize: 12,
-    fontFamily: "Inter_400Regular",
-    marginTop: 2,
   },
 });
