@@ -77,16 +77,16 @@ export default function SplashScreenView({ onFinish }: Props) {
           useNativeDriver: true,
         }),
       ]),
-      Animated.delay(160),
+      Animated.delay(80),
       Animated.parallel([
         Animated.timing(wordmarkOpacity, {
           toValue: 1,
-          duration: 400,
+          duration: 200,
           useNativeDriver: true,
         }),
         Animated.timing(wordmarkTranslate, {
           toValue: 0,
-          duration: 400,
+          duration: 200,
           useNativeDriver: true,
         }),
       ]),
