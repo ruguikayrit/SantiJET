@@ -1,13 +1,10 @@
 import React, { useEffect, useRef } from "react";
 import { Animated, Dimensions, StyleSheet, View } from "react-native";
 
-const { height } = Dimensions.get("window");
+const { width, height } = Dimensions.get("window");
 
 const ICON = require("@/assets/images/santijet-icon.png");
-
-/** Önceki splash ikon boyutu 140px; x3 */
-const ICON_SIZE = 420;
-const GLOW_SIZE = 480;
+const WORDMARK = require("@/assets/images/santijet-wordmark.png");
 
 interface Props {
   onFinish: () => void;
@@ -17,6 +14,8 @@ export default function SplashScreenView({ onFinish }: Props) {
   const bgOpacity = useRef(new Animated.Value(1)).current;
   const iconOpacity = useRef(new Animated.Value(0)).current;
   const iconScale = useRef(new Animated.Value(0.82)).current;
+  const wordmarkOpacity = useRef(new Animated.Value(0)).current;
+  const wordmarkTranslate = useRef(new Animated.Value(16)).current;
   const glowOpacity = useRef(new Animated.Value(0)).current;
 
   useEffect(() => {
@@ -40,12 +39,27 @@ export default function SplashScreenView({ onFinish }: Props) {
           useNativeDriver: true,
         }),
       ]),
-      Animated.delay(1200),
-      Animated.timing(bgOpacity, {
-        toValue: 0,
-        duration: 340,
-        useNativeDriver: true,
-      }),
+      Animated.delay(160),
+      Animated.parallel([
+        Animated.timing(wordmarkOpacity, {
+          toValue: 1,
+          duration: 400,
+          useNativeDriver: true,
+        }),
+        Animated.timing(wordmarkTranslate, {
+          toValue: 0,
+          duration: 400,
+          useNativeDriver: true,
+        }),
+      ]),
+      Animated.delay(900),
+      Animated.parallel([
+        Animated.timing(bgOpacity, {
+          toValue: 0,
+          duration: 340,
+          useNativeDriver: true,
+        }),
+      ]),
     ]).start(() => {
       onFinish();
     });
@@ -53,9 +67,14 @@ export default function SplashScreenView({ onFinish }: Props) {
 
   return (
     <Animated.View style={[styles.container, { opacity: bgOpacity }]}>
-      <View style={[styles.center, { marginTop: -Math.round(height * 0.07) }]}>
+      <View style={styles.center}>
         <View style={styles.iconWrapper}>
-          <Animated.View style={[styles.glow, { opacity: glowOpacity }]} />
+          <Animated.View
+            style={[
+              styles.glow,
+              { opacity: glowOpacity },
+            ]}
+          />
           <Animated.Image
             source={ICON}
             style={[
@@ -65,6 +84,18 @@ export default function SplashScreenView({ onFinish }: Props) {
             resizeMode="contain"
           />
         </View>
+
+        <Animated.Image
+          source={WORDMARK}
+          style={[
+            styles.wordmark,
+            {
+              opacity: wordmarkOpacity,
+              transform: [{ translateY: wordmarkTranslate }],
+            },
+          ]}
+          resizeMode="contain"
+        />
       </View>
     </Animated.View>
   );
@@ -83,25 +114,30 @@ const styles = StyleSheet.create({
     justifyContent: "center",
   },
   iconWrapper: {
-    width: ICON_SIZE + 24,
-    height: ICON_SIZE + 24,
+    width: 148,
+    height: 148,
     alignItems: "center",
     justifyContent: "center",
+    marginBottom: 32,
   },
   glow: {
     position: "absolute",
-    width: GLOW_SIZE,
-    height: GLOW_SIZE,
-    borderRadius: GLOW_SIZE / 2,
+    width: 160,
+    height: 160,
+    borderRadius: 80,
     backgroundColor: "transparent",
     shadowColor: "#1a5fff",
     shadowOffset: { width: 0, height: 0 },
     shadowOpacity: 1,
-    shadowRadius: 72,
+    shadowRadius: 48,
     elevation: 0,
   },
   icon: {
-    width: ICON_SIZE,
-    height: ICON_SIZE,
+    width: 140,
+    height: 140,
+  },
+  wordmark: {
+    width: width * 0.72,
+    height: 72,
   },
 });
