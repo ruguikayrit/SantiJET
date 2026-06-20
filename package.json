@@ -10,6 +10,8 @@
     "dev:neon": "PORT=23301 BASE_PATH=/neon/ pnpm --filter @workspace/santijet-neon run dev",
     "dev:mobile": "PORT=24914 pnpm --filter @workspace/santiye-takip run dev",
     "dev:mobile:tunnel": "PORT=24914 pnpm --filter @workspace/santiye-takip run dev:tunnel",
+    "dev:imalat-poz": "PORT=24916 pnpm --filter @workspace/imalat-poz-analizleri run dev",
+    "dev:imalat-poz:tunnel": "PORT=24916 pnpm --filter @workspace/imalat-poz-analizleri run dev:tunnel",
     "dev:mobile-web": "PORT=24915 pnpm --filter @workspace/santiye-takip run dev:web",
     "dev:api": "PORT=8080 pnpm --filter @workspace/api-server run dev",
     "dev:website": "PORT=8082 pnpm --filter @workspace/santijet-website run dev",
