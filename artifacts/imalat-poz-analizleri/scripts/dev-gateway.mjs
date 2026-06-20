@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 /**
- * ŞantiJET İPA — geliştirme sunucusu
+ * ŞantiJET B.F.A. — geliştirme sunucusu
  *
  * Sabit yer imi: http://localhost:24917
  * - LAN modu: aynı Wi‑Fi (telefon + bilgisayar)
@@ -110,7 +110,7 @@ function landingHtml() {
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>ŞantiJET İPA — Bağlantı</title>
+  <title>ŞantiJET B.F.A. — Bağlantı</title>
   <style>
     * { box-sizing: border-box; }
     body {
@@ -144,7 +144,7 @@ function landingHtml() {
 </head>
 <body>
   <div class="card">
-    <h1>ŞantiJET İPA</h1>
+    <h1>ŞantiJET B.F.A.</h1>
     <p class="sub">Bu sayfayı yer imlerine ekleyin — adres değişmez, QR otomatik güncellenir.</p>
     <span class="badge" id="mode">…</span>
     <div class="qr-wrap">
@@ -202,7 +202,7 @@ function startLandingServer() {
   server.listen(landingPort, "0.0.0.0", () => {
     console.log("");
     console.log("══════════════════════════════════════════════════");
-    console.log("  ŞantiJET İPA");
+    console.log("  ŞantiJET B.F.A.");
     console.log("══════════════════════════════════════════════════");
     console.log(`  Yer imi (SABİT): http://localhost:${landingPort}`);
     console.log(`  Mod: ${links.mode.toUpperCase()}`);

@@ -260,7 +260,7 @@ export default function ImalatPozlariScreen() {
     if (!analiz) return;
     const totals = hesaplaAnalizToplam(analiz);
 
-    let txt = `İMALAT POZ ANALİZİ\n${"=".repeat(60)}\n`;
+    let txt = `BİRİM FİYAT ANALİZİ\n${"=".repeat(60)}\n`;
     txt += `Poz No      : ${analiz.pozNo}\n`;
     txt += `Analiz Adı  : ${analiz.analizAdi}\n`;
     txt += `Ölçü Birimi : ${analiz.olcuBirimi}\n\n`;
@@ -700,7 +700,7 @@ export default function ImalatPozlariScreen() {
         </TouchableOpacity>
         <View style={{ flex: 1, alignItems: "center" }}>
           <Text style={[st.headerTitle, { color: colors.secondaryForeground }]}>
-            İmalat Poz Analizleri
+            Birim Fiyat Analizleri
           </Text>
         </View>
         <View style={{ width: 40 }} />

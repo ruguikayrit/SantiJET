@@ -1,6 +1,6 @@
-# ŞantiJET İPA
+# ŞantiJET B.F.A.
 
-Bağımsız **İmalat Poz Analizleri** uygulaması. ŞantiJET ana uygulamasından (`artifacts/santiye-takip`) ayrıdır.
+Bağımsız **Birim Fiyat Analizleri** uygulaması. ŞantiJET ana uygulamasından (`artifacts/santiye-takip`) ayrıdır.
 
 ## Özellikler
 

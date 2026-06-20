@@ -44,7 +44,7 @@ export default function HomeScreen() {
       >
         <View style={styles.headerBrand}>
           <SantijetLogo iconHeight={76} centered stacked />
-          <Text style={styles.headerSubtitle}>İMALAT POZ ANALİZLERİ</Text>
+          <Text style={styles.headerSubtitle}>BİRİM FİYAT ANALİZLERİ</Text>
         </View>
       </View>
 
@@ -61,7 +61,7 @@ export default function HomeScreen() {
           <View style={styles.welcomeLeft}>
             <Text style={styles.welcomeGreet}>Hoş geldiniz</Text>
             <Text style={[styles.welcomeName, { color: colors.secondaryForeground }]}>
-              ŞANTİJET İPA
+              ŞANTİJET B.F.A.
             </Text>
             <Text style={styles.welcomeRole}>
               Resmi analiz tabloları, fiyat hesaplamaları ve özel analizler
@@ -96,7 +96,7 @@ export default function HomeScreen() {
           <View style={styles.tileBody}>
             <Text style={styles.tileNum}>01</Text>
             <Text style={[styles.tileLabel, { color: colors.cardForeground }]}>
-              İMALAT POZ ANALİZLERİ
+              BİRİM FİYAT ANALİZLERİ
             </Text>
             <View style={styles.tileFootRow}>
               <View style={[styles.tileDot, { backgroundColor: TILE_COLOR }]} />
