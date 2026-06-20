@@ -185,7 +185,7 @@ export default function HomeScreen() {
           </View>
 
           <View style={styles.welcomeDateBlock}>
-            <Feather name="calendar" size={16} color="#60a5fa" />
+            <Feather name="calendar" size={14} color="#60a5fa" />
             <Text style={[styles.welcomeDateMain, { color: colors.secondaryForeground }]}>
               {dateStr}
             </Text>
@@ -331,44 +331,44 @@ const styles = StyleSheet.create({
   welcomeCard: {
     flexDirection: "row",
     alignItems: "flex-start",
-    borderRadius: 16,
-    padding: 16,
-    marginBottom: 12,
+    borderRadius: 14,
+    paddingHorizontal: 14,
+    paddingVertical: 10,
+    marginBottom: 9,
     borderWidth: 1,
-    gap: 12,
+    gap: 8,
   },
   welcomeLeft: { flex: 1 },
   welcomeGreet: {
     color: "#64748b",
-    fontSize: 13,
+    fontSize: 12,
     fontFamily: "Inter_400Regular",
   },
   welcomeName: {
-    fontSize: 20,
+    fontSize: 18,
     fontFamily: "Inter_700Bold",
     letterSpacing: 0.5,
-    marginTop: 3,
+    marginTop: 2,
   },
   welcomeRole: {
-    fontSize: 13,
+    fontSize: 12,
     fontFamily: "Inter_400Regular",
-    marginTop: 6,
+    marginTop: 4,
     color: "#94a3b8",
-    lineHeight: 18,
+    lineHeight: 16,
   },
   welcomeDateBlock: {
     alignItems: "flex-end",
-    gap: 3,
-    paddingTop: 2,
+    gap: 2,
   },
   welcomeDateMain: {
-    fontSize: 12,
+    fontSize: 11,
     fontFamily: "Inter_600SemiBold",
-    marginTop: 4,
+    marginTop: 2,
     textAlign: "right",
   },
   welcomeDateSub: {
-    fontSize: 12,
+    fontSize: 11,
     fontFamily: "Inter_400Regular",
     color: "#64748b",
   },
