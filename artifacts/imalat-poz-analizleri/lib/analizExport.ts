@@ -6,13 +6,24 @@ import { PozAnaliz, hesaplaAnalizToplam } from "@/constants/pozAnalizleri";
 
 export type AnalizExportFormat = "pdf" | "excel";
 
+const REPORT_STYLES = `
+  body { font-family: Arial, sans-serif; font-size: 11px; color: #111; padding: 24px; }
+  h1 { font-size: 16px; margin: 0 0 4px; }
+  h2 { font-size: 13px; margin: 16px 0 8px; color: #444; }
+  h3 { font-size: 12px; margin: 14px 0 6px; }
+  .meta { margin-bottom: 16px; line-height: 1.6; }
+  table { width: 100%; border-collapse: collapse; margin-top: 8px; }
+  th, td { border: 1px solid #ccc; padding: 5px 6px; vertical-align: top; }
+  th { background: #16213e; color: #fff; font-size: 10px; }
+  .group { background: #f0f4f8; font-weight: bold; }
+  .num { text-align: right; white-space: nowrap; }
+  .summary { margin-top: 12px; line-height: 1.8; }
+  .summary strong { display: inline-block; min-width: 220px; }
+  p { white-space: pre-wrap; line-height: 1.5; }
+`;
+
 function trFmt(n: number): string {
   return n.toLocaleString("tr-TR", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
-}
-
-function excelNum(n: number): string {
-  const v = Math.round(n * 100) / 100;
-  return v.toFixed(2).replace(".", ",");
 }
 
 function safeFilename(pozNo: string): string {
@@ -27,89 +38,7 @@ function escHtml(text: string): string {
     .replace(/"/g, "&quot;");
 }
 
-function escCell(text: string): string {
-  return escHtml(text).replace(/\n/g, "<br/>");
-}
-
-/** Excel'in doğrudan açabildiği HTML tablo (.xls) */
-export function buildAnalizExcelHtml(analiz: PozAnaliz): string {
-  const totals = hesaplaAnalizToplam(analiz);
-  const tipAd: Record<string, string> = {
-    malzeme: "Malzeme",
-    iscilik: "İşçilik",
-    ekipman: "Ekipman",
-  };
-
-  let tableRows = "";
-  for (const tip of ["malzeme", "iscilik", "ekipman"] as const) {
-    const rows = analiz.kalemler.filter((k) => k.tip === tip);
-    if (!rows.length) continue;
-    tableRows += `<tr><td colspan="6" style="background:#e8eef5;font-weight:bold">${tipAd[tip]}</td></tr>`;
-    for (const k of rows) {
-      tableRows += `<tr>
-        <td>${escCell(k.pozNo)}</td>
-        <td>${escCell(k.tanim)}</td>
-        <td>${escCell(k.olcuBirimi)}</td>
-        <td style="text-align:right">${excelNum(k.miktar)}</td>
-        <td style="text-align:right">${excelNum(k.birimFiyati)}</td>
-        <td style="text-align:right">${excelNum(k.tutar)}</td>
-      </tr>`;
-    }
-  }
-
-  return `<!DOCTYPE html>
-<html xmlns:o="urn:schemas-microsoft-com:office:office"
-      xmlns:x="urn:schemas-microsoft-com:office:excel"
-      xmlns="http://www.w3.org/TR/REC-html40">
-<head>
-  <meta charset="utf-8" />
-  <!--[if gte mso 9]><xml>
-    <x:ExcelWorkbook>
-      <x:ExcelWorksheets><x:ExcelWorksheet>
-        <x:Name>BFA</x:Name>
-        <x:WorksheetOptions><x:DisplayGridlines/></x:WorksheetOptions>
-      </x:ExcelWorksheet></x:ExcelWorksheets>
-    </x:ExcelWorkbook>
-  </xml><![endif]-->
-  <style>
-    table { border-collapse: collapse; width: 100%; }
-    th, td { border: 1px solid #999; padding: 4px 6px; font-size: 11pt; vertical-align: top; }
-    th { background: #16213e; color: #fff; font-weight: bold; }
-    .meta td { border: none; padding: 2px 0; }
-    .summary td { border: none; font-weight: bold; }
-  </style>
-</head>
-<body>
-  <table>
-    <tr class="meta"><td colspan="6"><b>BİRİM FİYAT ANALİZİ</b></td></tr>
-    <tr class="meta"><td colspan="2">Poz No</td><td colspan="4">${escCell(analiz.pozNo)}</td></tr>
-    <tr class="meta"><td colspan="2">Analiz Adı</td><td colspan="4">${escCell(analiz.analizAdi)}</td></tr>
-    <tr class="meta"><td colspan="2">Ölçü Birimi</td><td colspan="4">${escCell(analiz.olcuBirimi)}</td></tr>
-    <tr><td colspan="6">&nbsp;</td></tr>
-    <tr>
-      <th>Poz No</th><th>Tanım</th><th>Ölçü Birimi</th>
-      <th>Miktar</th><th>Birim Fiyatı (TL)</th><th>Tutar (TL)</th>
-    </tr>
-    ${tableRows}
-    <tr><td colspan="6">&nbsp;</td></tr>
-    <tr class="summary">
-      <td colspan="5">Malzeme + İşçilik Tutarı</td>
-      <td style="text-align:right">${excelNum(totals.malzemeIscilikToplami)}</td>
-    </tr>
-    <tr class="summary">
-      <td colspan="5">%${analiz.yukleniciKarOrani} Yüklenici Karı</td>
-      <td style="text-align:right">${excelNum(totals.yukleniciKarTutari)}</td>
-    </tr>
-    <tr class="summary">
-      <td colspan="5">1 ${escCell(analiz.olcuBirimi)} Fiyatı</td>
-      <td style="text-align:right">${excelNum(totals.birimFiyati)}</td>
-    </tr>
-  </table>
-</body>
-</html>`;
-}
-
-export function buildAnalizHtml(analiz: PozAnaliz): string {
+function buildAnalizReportBody(analiz: PozAnaliz): string {
   const totals = hesaplaAnalizToplam(analiz);
   const tipAd: Record<string, string> = {
     malzeme: "Malzeme",
@@ -142,28 +71,7 @@ export function buildAnalizHtml(analiz: PozAnaliz): string {
     analiz.olcusu ? `<h3>Ölçüsü</h3><p>${escHtml(analiz.olcusu)}</p>` : "",
   ].join("");
 
-  return `<!DOCTYPE html>
-<html lang="tr">
-<head>
-  <meta charset="utf-8" />
-  <title>${escHtml(analiz.pozNo)} — BFA</title>
-  <style>
-    body { font-family: Arial, sans-serif; font-size: 11px; color: #111; padding: 24px; }
-    h1 { font-size: 16px; margin: 0 0 4px; }
-    h2 { font-size: 13px; margin: 16px 0 8px; color: #444; }
-    h3 { font-size: 12px; margin: 14px 0 6px; }
-    .meta { margin-bottom: 16px; line-height: 1.6; }
-    table { width: 100%; border-collapse: collapse; margin-top: 8px; }
-    th, td { border: 1px solid #ccc; padding: 5px 6px; vertical-align: top; }
-    th { background: #16213e; color: #fff; font-size: 10px; }
-    .group { background: #f0f4f8; font-weight: bold; }
-    .num { text-align: right; white-space: nowrap; }
-    .summary { margin-top: 12px; line-height: 1.8; }
-    .summary strong { display: inline-block; min-width: 220px; }
-    p { white-space: pre-wrap; line-height: 1.5; }
-  </style>
-</head>
-<body>
+  return `
   <h1>BİRİM FİYAT ANALİZİ</h1>
   <div class="meta">
     <div><strong>Poz No:</strong> ${escHtml(analiz.pozNo)}</div>
@@ -184,7 +92,42 @@ export function buildAnalizHtml(analiz: PozAnaliz): string {
     <div><strong>%${analiz.yukleniciKarOrani} Yüklenici Karı:</strong> ${trFmt(totals.yukleniciKarTutari)} TL</div>
     <div><strong>1 ${escHtml(analiz.olcuBirimi)} Fiyatı:</strong> ${trFmt(totals.birimFiyati)} TL</div>
   </div>
-  ${extraBlocks}
+  ${extraBlocks}`;
+}
+
+/** Excel — PDF ile aynı düzen, Office HTML (.xls) sarmalayıcı */
+export function buildAnalizExcelHtml(analiz: PozAnaliz): string {
+  return `<!DOCTYPE html>
+<html xmlns:o="urn:schemas-microsoft-com:office:office"
+      xmlns:x="urn:schemas-microsoft-com:office:excel"
+      xmlns="http://www.w3.org/TR/REC-html40">
+<head>
+  <meta charset="utf-8" />
+  <title>${escHtml(analiz.pozNo)} — BFA</title>
+  <!--[if gte mso 9]><xml>
+    <x:ExcelWorkbook>
+      <x:ExcelWorksheets><x:ExcelWorksheet>
+        <x:Name>BFA</x:Name>
+        <x:WorksheetOptions><x:DisplayGridlines/></x:WorksheetOptions>
+      </x:ExcelWorksheet></x:ExcelWorksheets>
+    </x:ExcelWorkbook>
+  </xml><![endif]-->
+  <style>${REPORT_STYLES}</style>
+</head>
+<body>${buildAnalizReportBody(analiz)}
+</body>
+</html>`;
+}
+
+export function buildAnalizHtml(analiz: PozAnaliz): string {
+  return `<!DOCTYPE html>
+<html lang="tr">
+<head>
+  <meta charset="utf-8" />
+  <title>${escHtml(analiz.pozNo)} — BFA</title>
+  <style>${REPORT_STYLES}</style>
+</head>
+<body>${buildAnalizReportBody(analiz)}
 </body>
 </html>`;
 }
@@ -227,7 +170,6 @@ async function shareExportFile(uri: string, dialogTitle: string, mimeType: strin
         : { title: dialogTitle, message: dialogTitle, url: uri },
     );
     if (result.action === Share.dismissedAction) return;
-    return;
   } catch (err) {
     if (isShareCancelled(err)) return;
     throw err;
