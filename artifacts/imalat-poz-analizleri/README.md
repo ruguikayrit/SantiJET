@@ -16,26 +16,25 @@ Bağımsız **İmalat Poz Analizleri** uygulaması. ŞantiJET ana uygulamasında
 pnpm dev:ipa
 ```
 
-### Sabit QR / sabit link (tunnel kullanmayın)
+### Telefon bağlantısı
 
-`pnpm dev:ipa` artık **tunnel değil LAN modu** kullanır. QR kodu kod değişince veya sunucu yeniden başlayınca **değişmez**.
+**Bulut / farklı ağ:** `pnpm dev:ipa` otomatik **tunnel** moduna geçer (Cursor Agent ortamında).
+
+**Yerel bilgisayar + aynı Wi‑Fi:** LAN modu için:
+```bash
+IPA_NETWORK_MODE=lan pnpm dev:ipa
+```
+
+### Sabit yer imi (QR burada)
 
 | Bağlantı | Adres |
 |----------|--------|
-| **Yer imi sayfası** (QR burada) | http://localhost:24917 |
-| Web | http://localhost:24916 |
-| Expo Go | `exp://<host>:24916` |
+| **Yer imi sayfası** | http://localhost:24917 |
+| Metro web | http://localhost:24916 |
 
-Host ilk çalıştırmada `.expo/ipa-dev-host` dosyasına kaydedilir.
+Bu sayfa adresi **hiç değişmez**. QR tunnel modunda sayfa açıkken otomatik güncellenir — yeni QR aramanıza gerek kalmaz.
 
-Farklı ağdan (telefon mobil veri) erişim için host'u **bir kez** sabitleyin:
-
-```bash
-export IPA_EXPO_HOST=your-stable-hostname.example.com
-pnpm dev:ipa
-```
-
-Tunnel (`dev:tunnel`) yalnızca geçici test içindir — her başlatmada yeni rastgele adres üretir.
+LAN modunda host `.expo/ipa-dev-host` dosyasına kaydedilir.
 
 Web-only:
 
