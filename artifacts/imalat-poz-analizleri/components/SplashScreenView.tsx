@@ -81,12 +81,12 @@ export default function SplashScreenView({ onFinish }: Props) {
       Animated.parallel([
         Animated.timing(wordmarkOpacity, {
           toValue: 1,
-          duration: 100,
+          duration: 50,
           useNativeDriver: true,
         }),
         Animated.timing(wordmarkTranslate, {
           toValue: 0,
-          duration: 100,
+          duration: 50,
           useNativeDriver: true,
         }),
       ]),
