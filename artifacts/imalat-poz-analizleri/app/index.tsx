@@ -85,44 +85,35 @@ export default function HomeScreen() {
         <TouchableOpacity
           activeOpacity={0.85}
           onPress={() => router.push("/imalat-pozlari" as any)}
-          style={styles.tileWrap}
+          style={[
+            styles.tileInner,
+            {
+              backgroundColor: colors.card,
+              borderColor: TILE_COLOR + "33",
+            },
+          ]}
         >
-          <View
-            style={[
-              styles.tileInner,
-              {
-                backgroundColor: colors.card,
-                borderColor: TILE_COLOR + "33",
-              },
-            ]}
-          >
-            <View style={styles.tileTopRow}>
-              <Text style={styles.tileNum}>01</Text>
-            </View>
-
-            <View style={styles.tileIconWrap}>
-              <View style={[styles.tileIconCircle, { backgroundColor: TILE_COLOR + "1e" }]}>
-                <Feather name="layers" size={26} color={TILE_COLOR} />
-              </View>
-            </View>
-
+          <View style={[styles.tileIconCircle, { backgroundColor: TILE_COLOR + "1e" }]}>
+            <Feather name="layers" size={26} color={TILE_COLOR} />
+          </View>
+          <View style={styles.tileBody}>
+            <Text style={styles.tileNum}>01</Text>
             <Text style={[styles.tileLabel, { color: colors.cardForeground }]}>
               İMALAT POZ ANALİZLERİ
             </Text>
-
             <View style={styles.tileFootRow}>
               <View style={[styles.tileDot, { backgroundColor: TILE_COLOR }]} />
               {loading ? (
-                <ActivityIndicator size="small" color={TILE_COLOR} style={{ flex: 1 }} />
+                <ActivityIndicator size="small" color={TILE_COLOR} />
               ) : (
                 <Text style={[styles.tileInfo, { color: TILE_COLOR }]} numberOfLines={1}>
                   {pozAnalizleri.length} Analiz
                 </Text>
               )}
-              <View style={[styles.tileChevCircle, { borderColor: TILE_COLOR + "55" }]}>
-                <Feather name="chevron-right" size={9} color={TILE_COLOR} />
-              </View>
             </View>
+          </View>
+          <View style={[styles.tileChevCircle, { borderColor: TILE_COLOR + "55" }]}>
+            <Feather name="chevron-right" size={14} color={TILE_COLOR} />
           </View>
         </TouchableOpacity>
       </ScrollView>
@@ -209,29 +200,24 @@ const styles = StyleSheet.create({
     marginBottom: 12,
     marginLeft: 4,
   },
-  tileWrap: {
-    width: "48%",
-    minWidth: 140,
-    aspectRatio: 0.92,
-    marginBottom: 12,
-  },
   tileInner: {
-    flex: 1,
-    padding: 10,
+    width: "100%",
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 14,
+    padding: 16,
     borderRadius: 14,
     borderWidth: 1,
-    overflow: "hidden",
-    justifyContent: "space-between",
+    marginBottom: 12,
     shadowColor: "#000",
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.1,
     shadowRadius: 6,
     elevation: 3,
   },
-  tileTopRow: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "space-between",
+  tileBody: {
+    flex: 1,
+    gap: 4,
   },
   tileNum: {
     fontSize: 10,
@@ -239,29 +225,23 @@ const styles = StyleSheet.create({
     color: "#334155",
     letterSpacing: 0.5,
   },
-  tileIconWrap: {
-    flex: 1,
-    justifyContent: "center",
-    alignItems: "center",
-    paddingVertical: 4,
-  },
   tileIconCircle: {
-    width: 50,
-    height: 50,
-    borderRadius: 25,
+    width: 52,
+    height: 52,
+    borderRadius: 26,
     justifyContent: "center",
     alignItems: "center",
   },
   tileLabel: {
-    fontSize: 10,
+    fontSize: 13,
     fontFamily: "Inter_700Bold",
-    textAlign: "center",
     letterSpacing: 0.4,
   },
   tileFootRow: {
     flexDirection: "row",
     alignItems: "center",
-    gap: 4,
+    gap: 6,
+    marginTop: 2,
   },
   tileDot: {
     width: 5,
@@ -269,14 +249,13 @@ const styles = StyleSheet.create({
     borderRadius: 3,
   },
   tileInfo: {
-    flex: 1,
-    fontSize: 9,
+    fontSize: 12,
     fontFamily: "Inter_500Medium",
   },
   tileChevCircle: {
-    width: 18,
-    height: 18,
-    borderRadius: 9,
+    width: 32,
+    height: 32,
+    borderRadius: 16,
     borderWidth: 1,
     justifyContent: "center",
     alignItems: "center",
