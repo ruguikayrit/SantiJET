@@ -1,14 +1,18 @@
 import React from "react";
 import { View, Image, StyleSheet } from "react-native";
 
+import { SANTIJET_BRAND } from "@/constants/santijetBrand";
+
 interface SantijetLogoProps {
+  /** Bolt ikon yüksekliği (px). Wordmark buna orantılanır. */
   iconHeight?: number;
   /** Header gibi ortalanmış bloklarda true */
   centered?: boolean;
-  /** S logosu wordmark tipografinin üstünde, ortalanmış */
-  stacked?: boolean;
+  /** horizontal: web sitesi navbar düzeni (varsayılan) */
+  layout?: "horizontal" | "stacked" | "wordmark";
 }
 
+const BOLT_NAV_SRC = require("../assets/images/santijet-bolt-nav-nobg.png");
 const ICON_SRC = require("../assets/images/santijet-icon.png");
 const WM_SRC = require("../assets/images/santijet-wordmark.png");
 
@@ -16,9 +20,8 @@ const BOLT_X_START = 0.24;
 const BOLT_X_END = 0.76;
 const BOLT_Y_START = 0.06;
 const BOLT_Y_END = 0.635;
-const WM_ASPECT = 1016 / 187;
 
-function BoltIcon({ iconHeight }: { iconHeight: number }) {
+function LegacyBoltIcon({ iconHeight }: { iconHeight: number }) {
   const boltImgH = Math.round(iconHeight / (BOLT_Y_END - BOLT_Y_START));
   const boltImgW = boltImgH;
   const boltLeft = Math.round(BOLT_X_START * boltImgW);
@@ -42,15 +45,28 @@ function BoltIcon({ iconHeight }: { iconHeight: number }) {
   );
 }
 
+function WordmarkImage({ height }: { height: number }) {
+  const width = Math.round(height * SANTIJET_BRAND.wordmarkAspect);
+  return <Image source={WM_SRC} style={{ width, height }} resizeMode="contain" />;
+}
+
 export function SantijetLogo({
   iconHeight = 48,
   centered = false,
-  stacked = false,
+  layout = "horizontal",
 }: SantijetLogoProps) {
-  if (stacked) {
+  if (layout === "wordmark") {
+    return (
+      <View style={[styles.row, centered && styles.centered]}>
+        <WordmarkImage height={iconHeight} />
+      </View>
+    );
+  }
+
+  if (layout === "stacked") {
     const boltH = iconHeight;
     const wmH = Math.round(iconHeight * 0.54);
-    const wmW = Math.round(wmH * WM_ASPECT);
+    const wmW = Math.round(wmH * SANTIJET_BRAND.wordmarkAspect);
     const wordmarkOffset = Math.round(iconHeight * 0.1);
     const overlap = Math.round(boltH * 0.12);
 
@@ -58,27 +74,31 @@ export function SantijetLogo({
       <View style={[styles.stackedWrap, centered && styles.centered]}>
         <View style={[styles.stackedInner, { width: wmW }]}>
           <View style={[styles.boltLayer, { marginBottom: -overlap }]}>
-            <BoltIcon iconHeight={boltH} />
+            <LegacyBoltIcon iconHeight={boltH} />
           </View>
-          <Image
-            source={WM_SRC}
-            style={{ width: wmW, height: wmH, marginTop: wordmarkOffset }}
-            resizeMode="contain"
-          />
+          <View style={{ marginTop: wordmarkOffset }}>
+            <WordmarkImage height={wmH} />
+          </View>
         </View>
       </View>
     );
   }
 
-  const wmH = Math.round(iconHeight * 0.62);
-  const wmW = Math.round(wmH * WM_ASPECT);
+  const boltH = iconHeight;
+  const boltW = boltH;
+  const wmH = Math.round(boltH * SANTIJET_BRAND.boltWordmarkHeightRatio);
+  const wmW = Math.round(wmH * SANTIJET_BRAND.wordmarkAspect);
 
   return (
     <View style={[styles.row, centered && styles.centered]}>
-      <BoltIcon iconHeight={iconHeight} />
+      <Image
+        source={BOLT_NAV_SRC}
+        style={{ width: boltW, height: boltH }}
+        resizeMode="contain"
+      />
       <Image
         source={WM_SRC}
-        style={{ width: wmW, height: wmH, marginLeft: 8 }}
+        style={{ width: wmW, height: wmH, marginLeft: 6 }}
         resizeMode="contain"
       />
     </View>

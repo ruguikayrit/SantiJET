@@ -15,6 +15,7 @@ import {
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 import { SantijetLogo } from "@/components/SantijetLogo";
+import { SantijetTagline } from "@/components/SantijetTagline";
 import { CreateAnalizFab } from "@/components/CreateAnalizFab";
 import { NewAnalizModulePickerModal } from "@/components/NewAnalizModulePickerModal";
 import { ModuleTile } from "@/components/ModuleTile";
@@ -115,8 +116,8 @@ export default function HomeScreen() {
         ]}
       >
         <View style={styles.headerBrand}>
-          <SantijetLogo iconHeight={76} centered stacked />
-          <Text style={styles.headerSubtitle}>BİRİM FİYAT ANALİZLERİ</Text>
+          <SantijetLogo iconHeight={58} centered layout="horizontal" />
+          <SantijetTagline style={styles.headerSubtitle}>BİRİM FİYAT ANALİZLERİ</SantijetTagline>
         </View>
       </View>
 
@@ -228,9 +229,10 @@ export default function HomeScreen() {
         >
           <View style={styles.welcomeMain}>
             <Text style={styles.welcomeGreet}>Hoş geldiniz</Text>
-            <Text style={[styles.welcomeName, { color: colors.secondaryForeground }]}>
-              ŞANTİJET B.F.A.
-            </Text>
+            <SantijetLogo iconHeight={34} layout="horizontal" />
+            <SantijetTagline size="sm" style={styles.welcomeTagline}>
+              BİRİM FİYAT ANALİZLERİ
+            </SantijetTagline>
             <Text
               style={styles.welcomeRole}
               numberOfLines={1}
@@ -303,12 +305,7 @@ const styles = StyleSheet.create({
     gap: 10,
   },
   headerSubtitle: {
-    color: "#4a6080",
-    fontSize: 18,
-    fontFamily: "Inter_700Bold",
-    letterSpacing: 5,
-    textAlign: "center",
-    marginTop: 2,
+    marginTop: 6,
   },
   scroll: { padding: 12, paddingTop: 14 },
   searchWrap: {
@@ -399,10 +396,11 @@ const styles = StyleSheet.create({
     fontSize: 12,
     fontFamily: "Inter_400Regular",
   },
-  welcomeName: {
-    fontSize: 18,
-    fontFamily: "Inter_700Bold",
-    letterSpacing: 0.5,
+  welcomeTagline: {
+    alignSelf: "flex-start",
+    textAlign: "left",
+    marginTop: 2,
+    marginBottom: 2,
   },
   welcomeRole: {
     fontSize: 11,

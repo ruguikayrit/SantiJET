@@ -1,9 +1,12 @@
 import React, { useEffect, useRef } from "react";
 import { Animated, Dimensions, StyleSheet, View } from "react-native";
 
-const { width, height } = Dimensions.get("window");
+import { SantijetTagline } from "@/components/SantijetTagline";
+import { SANTIJET_BRAND } from "@/constants/santijetBrand";
 
-const ICON = require("@/assets/images/santijet-icon.png");
+const { width } = Dimensions.get("window");
+
+const BOLT_NAV = require("@/assets/images/santijet-bolt-nav-nobg.png");
 const WORDMARK = require("@/assets/images/santijet-wordmark.png");
 
 interface Props {
@@ -12,22 +15,22 @@ interface Props {
 
 export default function SplashScreenView({ onFinish }: Props) {
   const bgOpacity = useRef(new Animated.Value(1)).current;
-  const iconOpacity = useRef(new Animated.Value(0)).current;
-  const iconScale = useRef(new Animated.Value(0.82)).current;
-  const wordmarkOpacity = useRef(new Animated.Value(0)).current;
-  const wordmarkTranslate = useRef(new Animated.Value(16)).current;
+  const logoOpacity = useRef(new Animated.Value(0)).current;
+  const logoScale = useRef(new Animated.Value(0.88)).current;
+  const taglineOpacity = useRef(new Animated.Value(0)).current;
+  const taglineTranslate = useRef(new Animated.Value(10)).current;
   const glowOpacity = useRef(new Animated.Value(0)).current;
 
   useEffect(() => {
     Animated.sequence([
       Animated.delay(80),
       Animated.parallel([
-        Animated.timing(iconOpacity, {
+        Animated.timing(logoOpacity, {
           toValue: 1,
           duration: 520,
           useNativeDriver: true,
         }),
-        Animated.spring(iconScale, {
+        Animated.spring(logoScale, {
           toValue: 1,
           friction: 7,
           tension: 60,
@@ -39,63 +42,66 @@ export default function SplashScreenView({ onFinish }: Props) {
           useNativeDriver: true,
         }),
       ]),
-      Animated.delay(160),
+      Animated.delay(120),
       Animated.parallel([
-        Animated.timing(wordmarkOpacity, {
+        Animated.timing(taglineOpacity, {
           toValue: 1,
           duration: 400,
           useNativeDriver: true,
         }),
-        Animated.timing(wordmarkTranslate, {
+        Animated.timing(taglineTranslate, {
           toValue: 0,
           duration: 400,
           useNativeDriver: true,
         }),
       ]),
       Animated.delay(900),
-      Animated.parallel([
-        Animated.timing(bgOpacity, {
-          toValue: 0,
-          duration: 340,
-          useNativeDriver: true,
-        }),
-      ]),
+      Animated.timing(bgOpacity, {
+        toValue: 0,
+        duration: 340,
+        useNativeDriver: true,
+      }),
     ]).start(() => {
       onFinish();
     });
   }, []);
 
+  const boltH = 72;
+  const boltW = boltH;
+  const wmH = Math.round(boltH * SANTIJET_BRAND.boltWordmarkHeightRatio);
+  const wmW = Math.round(wmH * SANTIJET_BRAND.wordmarkAspect);
+
   return (
     <Animated.View style={[styles.container, { opacity: bgOpacity }]}>
       <View style={styles.center}>
-        <View style={styles.iconWrapper}>
-          <Animated.View
-            style={[
-              styles.glow,
-              { opacity: glowOpacity },
-            ]}
-          />
+        <Animated.View
+          style={[
+            styles.logoRow,
+            { opacity: logoOpacity, transform: [{ scale: logoScale }] },
+          ]}
+        >
+          <Animated.View style={[styles.glow, { opacity: glowOpacity }]} />
           <Animated.Image
-            source={ICON}
-            style={[
-              styles.icon,
-              { opacity: iconOpacity, transform: [{ scale: iconScale }] },
-            ]}
+            source={BOLT_NAV}
+            style={{ width: boltW, height: boltH }}
             resizeMode="contain"
           />
-        </View>
+          <Animated.Image
+            source={WORDMARK}
+            style={{ width: wmW, height: wmH, marginLeft: 8 }}
+            resizeMode="contain"
+          />
+        </Animated.View>
 
-        <Animated.Image
-          source={WORDMARK}
-          style={[
-            styles.wordmark,
-            {
-              opacity: wordmarkOpacity,
-              transform: [{ translateY: wordmarkTranslate }],
-            },
-          ]}
-          resizeMode="contain"
-        />
+        <Animated.View
+          style={{
+            opacity: taglineOpacity,
+            transform: [{ translateY: taglineTranslate }],
+            marginTop: 18,
+          }}
+        >
+          <SantijetTagline>BİRİM FİYAT ANALİZLERİ</SantijetTagline>
+        </Animated.View>
       </View>
     </Animated.View>
   );
@@ -112,32 +118,23 @@ const styles = StyleSheet.create({
   center: {
     alignItems: "center",
     justifyContent: "center",
+    width: width * 0.92,
   },
-  iconWrapper: {
-    width: 148,
-    height: 148,
+  logoRow: {
+    flexDirection: "row",
     alignItems: "center",
     justifyContent: "center",
-    marginBottom: 32,
   },
   glow: {
     position: "absolute",
-    width: 160,
-    height: 160,
-    borderRadius: 80,
+    width: 180,
+    height: 180,
+    borderRadius: 90,
     backgroundColor: "transparent",
-    shadowColor: "#1a5fff",
+    shadowColor: SANTIJET_BRAND.accentBlue,
     shadowOffset: { width: 0, height: 0 },
     shadowOpacity: 1,
     shadowRadius: 48,
     elevation: 0,
-  },
-  icon: {
-    width: 140,
-    height: 140,
-  },
-  wordmark: {
-    width: width * 0.72,
-    height: 72,
   },
 });
