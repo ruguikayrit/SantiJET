@@ -39,10 +39,7 @@ export function ExportFormatModal({ visible, onClose, onSelect }: ExportFormatMo
                 styles.option,
                 { borderColor: f.color + "44", backgroundColor: f.color + "10" },
               ]}
-              onPress={() => {
-                onSelect(f.id);
-                onClose();
-              }}
+              onPress={() => onSelect(f.id)}
             >
               <View style={[styles.optionIcon, { backgroundColor: f.color + "22" }]}>
                 <Feather name={f.icon} size={18} color={f.color} />

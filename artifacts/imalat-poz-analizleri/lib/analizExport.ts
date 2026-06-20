@@ -1,6 +1,6 @@
 import * as FileSystem from "expo-file-system/legacy";
 import * as Sharing from "expo-sharing";
-import { Alert, Platform } from "react-native";
+import { Alert, InteractionManager, Platform, Share } from "react-native";
 
 import { PozAnaliz, hesaplaAnalizToplam } from "@/constants/pozAnalizleri";
 
@@ -199,25 +199,43 @@ async function downloadOnWeb(content: string, filename: string, mime: string): P
   URL.revokeObjectURL(url);
 }
 
-async function shareFile(
-  uri: string,
-  mimeType: string,
-  dialogTitle: string,
-  uti?: string,
-): Promise<void> {
-  if (!(await Sharing.isAvailableAsync())) {
-    Alert.alert("Dışa Aktarma", "Bu cihazda paylaşım desteklenmiyor.");
-    return;
+function isShareCancelled(err: unknown): boolean {
+  const msg = err instanceof Error ? err.message : String(err);
+  return /cancel|dismiss|abort|closed/i.test(msg);
+}
+
+async function shareExportFile(uri: string, dialogTitle: string, mimeType: string): Promise<void> {
+  if (Platform.OS === "web") return;
+
+  if (await Sharing.isAvailableAsync()) {
+    try {
+      await Sharing.shareAsync(uri, {
+        mimeType,
+        dialogTitle,
+        ...(Platform.OS === "ios" ? { UTI: "public.data" } : {}),
+      });
+      return;
+    } catch (err) {
+      if (isShareCancelled(err)) return;
+    }
   }
-  await Sharing.shareAsync(uri, {
-    mimeType,
-    dialogTitle,
-    ...(uti && Platform.OS === "ios" ? { UTI: uti } : {}),
-  });
+
+  try {
+    const result = await Share.share(
+      Platform.OS === "ios"
+        ? { url: uri, title: dialogTitle }
+        : { title: dialogTitle, message: dialogTitle, url: uri },
+    );
+    if (result.action === Share.dismissedAction) return;
+    return;
+  } catch (err) {
+    if (isShareCancelled(err)) return;
+    throw err;
+  }
 }
 
 async function writeExportFile(filename: string, content: string): Promise<string> {
-  const dir = FileSystem.cacheDirectory ?? FileSystem.documentDirectory;
+  const dir = FileSystem.documentDirectory ?? FileSystem.cacheDirectory;
   if (!dir) throw new Error("Dosya dizini bulunamadı");
   const uri = `${dir}${filename}`;
   await FileSystem.writeAsStringAsync(uri, content, {
@@ -226,6 +244,15 @@ async function writeExportFile(filename: string, content: string): Promise<strin
   const info = await FileSystem.getInfoAsync(uri);
   if (!info.exists) throw new Error("Dosya oluşturulamadı");
   return uri;
+}
+
+/** Modal kapandıktan sonra paylaşım sheet'inin görünmesi için kısa gecikme */
+export function waitForShareSheet(): Promise<void> {
+  return new Promise((resolve) => {
+    InteractionManager.runAfterInteractions(() => {
+      setTimeout(resolve, Platform.OS === "ios" ? 500 : 300);
+    });
+  });
 }
 
 export async function exportAnaliz(analiz: PozAnaliz, format: AnalizExportFormat): Promise<void> {
@@ -240,7 +267,7 @@ export async function exportAnaliz(analiz: PozAnaliz, format: AnalizExportFormat
         return;
       }
       const uri = await writeExportFile(filename, content);
-      await shareFile(uri, "application/vnd.ms-excel", "Excel Dışa Aktar", "com.microsoft.excel.xls");
+      await shareExportFile(uri, "Excel Dışa Aktar", "application/vnd.ms-excel");
       return;
     }
 
@@ -261,13 +288,14 @@ export async function exportAnaliz(analiz: PozAnaliz, format: AnalizExportFormat
     try {
       const Print = await import("expo-print");
       const { uri } = await Print.printToFileAsync({ html });
-      await shareFile(uri, "application/pdf", "PDF Dışa Aktar", "com.adobe.pdf");
+      await shareExportFile(uri, "PDF Dışa Aktar", "application/pdf");
     } catch {
       const filename = `analiz_${base}.html`;
       const uri = await writeExportFile(filename, html);
-      await shareFile(uri, "text/html", "HTML Dışa Aktar (PDF yerine)");
+      await shareExportFile(uri, "HTML Dışa Aktar (PDF yerine)", "text/html");
     }
-  } catch {
+  } catch (err) {
+    if (isShareCancelled(err)) return;
     Alert.alert("Hata", "Dışa aktarma başarısız. Lütfen tekrar deneyin.");
   }
 }

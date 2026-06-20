@@ -23,7 +23,7 @@ import { ExportFormatModal } from "@/components/ExportFormatModal";
 import { useBfaCatalog } from "@/hooks/useBfaCatalog";
 import { useColors } from "@/hooks/useColors";
 import { useRecentViews } from "@/hooks/useRecentViews";
-import { AnalizExportFormat, exportAnaliz } from "@/lib/analizExport";
+import { AnalizExportFormat, exportAnaliz, waitForShareSheet } from "@/lib/analizExport";
 import {
   BfaDiscipline,
   BfaModuleKey,
@@ -341,6 +341,8 @@ export default function ImalatPozlariScreen() {
   async function handleExportFormat(format: AnalizExportFormat) {
     const analiz = isEditing && editDraft ? editDraft : selected;
     if (!analiz) return;
+    setExportVisible(false);
+    await waitForShareSheet();
     await exportAnaliz(analiz, format);
   }
 
