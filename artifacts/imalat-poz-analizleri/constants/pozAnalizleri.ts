@@ -22,6 +22,25 @@ export const IMALAT_POZ_KATEGORILERI = [
   "Diğer",
 ] as const;
 
+/** Resmi katalogdaki ölçü birimleri — Yeni Analiz formu açılır listesi */
+export const OLCU_BIRIMLERI = [
+  "Ad",
+  "Adet",
+  "m²",
+  "m³",
+  "m",
+  "Ton",
+  "Kg",
+  "Sa",
+  "lt",
+  "Kwh",
+  "Kt",
+  "Tk",
+  "100 m²",
+  "1000 m²",
+  "1000 Ad",
+] as const;
+
 export interface AnalizKalemi {
   id: string;
   tip: "malzeme" | "iscilik" | "ekipman";

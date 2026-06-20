@@ -10,6 +10,7 @@ import React, {
 
 import { PozAnaliz } from "@/constants/pozAnalizleri";
 import { sanitizeUserPozAnalizleri } from "@/lib/pozAnalizCatalog";
+import { UserDataImportMode } from "@/lib/userDataBackup";
 
 const STORAGE_KEY = "santijet_ipa_poz_analizleri_v1";
 const FAVORITES_KEY = "santijet_ipa_favorites_v1";
@@ -35,6 +36,10 @@ interface AppContextValue {
   updatePozAnaliz: (id: string, patch: Partial<PozAnaliz>) => void;
   deletePozAnaliz: (id: string) => void;
   clonePozAnaliz: (id: string, yeniAd: string, sourceOverride?: PozAnaliz) => PozAnaliz;
+  importUserData: (
+    data: { pozAnalizleri: PozAnaliz[]; favoriteIds: string[] },
+    mode: UserDataImportMode,
+  ) => void;
 }
 
 const AppContext = createContext<AppContextValue | undefined>(undefined);
@@ -135,6 +140,22 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
           return [...prev, kopya];
         });
         return kopya;
+      },
+      importUserData: (data, mode) => {
+        if (mode === "replace") {
+          persist(() => data.pozAnalizleri);
+          persistFavorites(() => data.favoriteIds);
+          return;
+        }
+
+        persist((prev) => {
+          const byId = new Map(prev.map((a) => [a.id, a]));
+          for (const analiz of data.pozAnalizleri) {
+            byId.set(analiz.id, analiz);
+          }
+          return Array.from(byId.values());
+        });
+        persistFavorites((prev) => Array.from(new Set([...prev, ...data.favoriteIds])));
       },
     }),
     [loaded, persist, persistFavorites, pozAnalizleri, favoriteIds],

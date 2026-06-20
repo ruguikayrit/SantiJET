@@ -46,7 +46,7 @@ export function ModuleTile({
       ]}
     >
       <View style={[styles.tileIconCircle, { backgroundColor: color + "1e" }]}>
-        <Feather name={icon} size={26} color={color} />
+        <Feather name={icon} size={23} color={color} />
       </View>
       <View style={styles.tileBody}>
         <Text style={styles.tileNum}>{num}</Text>
@@ -65,7 +65,7 @@ export function ModuleTile({
         </View>
       </View>
       <View style={[styles.tileChevCircle, { borderColor: color + "55" }]}>
-        <Feather name="chevron-right" size={14} color={color} />
+        <Feather name="chevron-right" size={13} color={color} />
       </View>
     </TouchableOpacity>
   );
@@ -76,11 +76,11 @@ const styles = StyleSheet.create({
     width: "100%",
     flexDirection: "row",
     alignItems: "center",
-    gap: 14,
-    padding: 16,
-    borderRadius: 14,
+    gap: 13,
+    padding: 14,
+    borderRadius: 13,
     borderWidth: 1,
-    marginBottom: 12,
+    marginBottom: 11,
     shadowColor: "#000",
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.1,
@@ -89,31 +89,31 @@ const styles = StyleSheet.create({
   },
   tileBody: {
     flex: 1,
-    gap: 4,
+    gap: 3,
   },
   tileNum: {
-    fontSize: 10,
+    fontSize: 9,
     fontFamily: "Inter_700Bold",
     color: "#334155",
     letterSpacing: 0.5,
   },
   tileIconCircle: {
-    width: 52,
-    height: 52,
-    borderRadius: 26,
+    width: 47,
+    height: 47,
+    borderRadius: 24,
     justifyContent: "center",
     alignItems: "center",
   },
   tileLabel: {
-    fontSize: 13,
+    fontSize: 12,
     fontFamily: "Inter_700Bold",
     letterSpacing: 0.4,
   },
   tileFootRow: {
     flexDirection: "row",
     alignItems: "center",
-    gap: 6,
-    marginTop: 2,
+    gap: 5,
+    marginTop: 1,
   },
   tileDot: {
     width: 5,
@@ -121,13 +121,13 @@ const styles = StyleSheet.create({
     borderRadius: 3,
   },
   tileInfo: {
-    fontSize: 12,
+    fontSize: 11,
     fontFamily: "Inter_500Medium",
   },
   tileChevCircle: {
-    width: 32,
-    height: 32,
-    borderRadius: 16,
+    width: 29,
+    height: 29,
+    borderRadius: 15,
     borderWidth: 1,
     justifyContent: "center",
     alignItems: "center",

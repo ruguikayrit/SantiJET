@@ -15,8 +15,11 @@ import {
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 import { SantijetLogo } from "@/components/SantijetLogo";
+import { CreateAnalizFab } from "@/components/CreateAnalizFab";
+import { NewAnalizModulePickerModal } from "@/components/NewAnalizModulePickerModal";
+import { SettingsModal } from "@/components/SettingsModal";
 import { ModuleTile } from "@/components/ModuleTile";
-import { BFA_MODULES, resolveAnalizDiscipline } from "@/constants/bfaModules";
+import { BFA_MODULES, BfaDiscipline, resolveAnalizDiscipline } from "@/constants/bfaModules";
 import { matchesPozAnalizSearch } from "@/constants/pozAnalizleri";
 import { useBfaCatalog } from "@/hooks/useBfaCatalog";
 import { useColors } from "@/hooks/useColors";
@@ -32,6 +35,26 @@ function moduleRouteParams(
   return { ...(base ?? {}), q: searchQuery };
 }
 
+function SourceDisclaimer({
+  color,
+  bottomInset,
+}: {
+  color: string;
+  bottomInset: number;
+}) {
+  return (
+    <Text
+      style={[
+        styles.sourceDisclaimer,
+        { color, paddingBottom: bottomInset + 24, paddingTop: 20 },
+      ]}
+    >
+      Veriler kamu kurumlarının yayımladığı kaynaklardan derlenmiştir. Nihai doğrulama için
+      ilgili kurumların güncel resmi yayınları esas alınmalıdır.
+    </Text>
+  );
+}
+
 export default function HomeScreen() {
   const colors = useColors();
   const router = useRouter();
@@ -40,6 +63,8 @@ export default function HomeScreen() {
 
   const { stats, all, loading } = useBfaCatalog();
   const [search, setSearch] = useState("");
+  const [newAnalizPickerVisible, setNewAnalizPickerVisible] = useState(false);
+  const [settingsVisible, setSettingsVisible] = useState(false);
 
   const filtered = useMemo(() => {
     if (!search.trim()) return [];
@@ -54,6 +79,18 @@ export default function HomeScreen() {
     const analiz = all.find((a) => a.id === id);
     const modul = analiz ? resolveAnalizDiscipline(analiz) : "insaat";
     router.push({ pathname: "/imalat-pozlari", params: { id, modul } } as any);
+  }
+
+  function openNewAnaliz() {
+    setNewAnalizPickerVisible(true);
+  }
+
+  function startNewAnalizInModule(modul: BfaDiscipline) {
+    setNewAnalizPickerVisible(false);
+    router.push({
+      pathname: "/imalat-pozlari",
+      params: { modul, new: "1" },
+    } as any);
   }
 
   function openModule(mod: (typeof BFA_MODULES)[number]) {
@@ -79,6 +116,14 @@ export default function HomeScreen() {
           { backgroundColor: colors.secondary, paddingTop: topPad },
         ]}
       >
+        <TouchableOpacity
+          style={[styles.settingsBtn, { top: topPad + 4 }]}
+          onPress={() => setSettingsVisible(true)}
+          hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+          accessibilityLabel="Ayarlar"
+        >
+          <Feather name="settings" size={22} color="#94a3b8" />
+        </TouchableOpacity>
         <View style={styles.headerBrand}>
           <SantijetLogo iconHeight={76} centered stacked />
           <Text style={styles.headerSubtitle}>BİRİM FİYAT ANALİZLERİ</Text>
@@ -137,7 +182,6 @@ export default function HomeScreen() {
             extraData={`${search}|${filtered.length}`}
             style={{ flex: 1 }}
             keyboardShouldPersistTaps="handled"
-            contentContainerStyle={{ paddingBottom: insets.bottom + 24 }}
             renderItem={({ item, index }) => (
               <TouchableOpacity
                 style={[
@@ -174,11 +218,16 @@ export default function HomeScreen() {
                 </View>
               )
             }
+            ListFooterComponent={
+              filtered.length > 0 ? (
+                <SourceDisclaimer color={colors.mutedForeground} bottomInset={insets.bottom} />
+              ) : null
+            }
           />
         </>
       ) : (
       <ScrollView
-        contentContainerStyle={[styles.scroll, { paddingBottom: insets.bottom + 24 }]}
+        contentContainerStyle={styles.scroll}
         showsVerticalScrollIndicator={false}
       >
         <View
@@ -232,8 +281,20 @@ export default function HomeScreen() {
             />
           );
         })}
+
+        <CreateAnalizFab onPress={openNewAnaliz} />
+
+        <SourceDisclaimer color={colors.mutedForeground} bottomInset={insets.bottom} />
       </ScrollView>
       )}
+
+      <NewAnalizModulePickerModal
+        visible={newAnalizPickerVisible}
+        onClose={() => setNewAnalizPickerVisible(false)}
+        onSelect={startNewAnalizInModule}
+      />
+
+      <SettingsModal visible={settingsVisible} onClose={() => setSettingsVisible(false)} />
     </View>
   );
 }
@@ -246,6 +307,18 @@ const styles = StyleSheet.create({
     justifyContent: "center",
     paddingHorizontal: 16,
     paddingBottom: 12,
+    position: "relative",
+  },
+  settingsBtn: {
+    position: "absolute",
+    top: 0,
+    right: 12,
+    zIndex: 2,
+    width: 40,
+    height: 40,
+    alignItems: "center",
+    justifyContent: "center",
+    borderRadius: 20,
   },
   headerBrand: {
     alignItems: "center",
@@ -261,14 +334,14 @@ const styles = StyleSheet.create({
     textAlign: "center",
     marginTop: 2,
   },
-  scroll: { padding: 12, paddingTop: 14 },
+  scroll: { padding: 12, paddingTop: 7 },
   searchWrap: {
     flexDirection: "row",
     alignItems: "center",
     gap: 8,
     marginHorizontal: 12,
     marginTop: 12,
-    marginBottom: 8,
+    marginBottom: 4,
     borderRadius: 10,
     borderWidth: 1,
     paddingHorizontal: 12,
@@ -390,5 +463,12 @@ const styles = StyleSheet.create({
     fontFamily: "Inter_700Bold",
     marginBottom: 12,
     marginLeft: 4,
+  },
+  sourceDisclaimer: {
+    fontSize: 10,
+    fontFamily: "Inter_400Regular",
+    lineHeight: 14,
+    textAlign: "center",
+    paddingHorizontal: 16,
   },
 });

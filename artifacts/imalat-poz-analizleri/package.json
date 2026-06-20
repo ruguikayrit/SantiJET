@@ -41,6 +41,7 @@
     "typescript": "~5.9.2"
   },
   "dependencies": {
+    "expo-document-picker": "~14.0.8",
     "expo-file-system": "~19.0.22",
     "expo-sharing": "~14.0.8"
   }

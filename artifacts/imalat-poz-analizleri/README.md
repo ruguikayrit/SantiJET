@@ -6,16 +6,16 @@ Bağımsız **Birim Fiyat Analizleri** uygulaması. ŞantiJET ana uygulamasında
 
 | # | Modül | Veri dosyası |
 |---|--------|----------------|
-| 01 | İnşaat B.F.A. | `assets/data/resmi-poz-analizleri.json` |
-| 02 | Mekanik Tesisat B.F.A. | `assets/data/resmi-mekanik-analizleri.json` |
-| 03 | Elektrik Tesisat B.F.A. | `assets/data/resmi-elektrik-analizleri.json` |
+| 01 | İnşaat B.F.A. | `assets/data/resmi-poz-analizleri.json` (1.879 analiz) |
+| 02 | Mekanik Tesisat B.F.A. | `assets/data/resmi-mekanik-analizleri.json` (5.646 analiz — Cilt 1-3) |
+| 03 | Elektrik Tesisat B.F.A. | `assets/data/resmi-elektrik-analizleri.json` (5.911 analiz — Cilt 1-3) |
 | 04 | Favoriler | AsyncStorage (`santijet_ipa_favorites_v1`) |
 
-Mekanik ve elektrik katalogları PDF içe aktarımı için hazır; JSON doldurulunca modül 1 ile aynı listeleme/detay akışı çalışır.
+Elektrik katalog ÇŞB YFK 2026 Cilt 1-3 PDF'lerinden üretilmiştir (5.911 kayıt).
 
 ## Özellikler
 
-- 960+ resmi Çevre ve Şehircilik Bakanlığı imalat analiz tablosu (lazy JSON yükleme)
+- 1.879 resmi inşaat + 5.646 mekanik + 5.911 elektrik tesisat analizi (lazy JSON yükleme)
 - Arama, kategori filtresi, detay görünümü
 - Düzenleme, kopyalama, silme (sistem kayıtları korunur)
 - Kullanıcı analizleri AsyncStorage ile kalıcı
@@ -41,9 +41,14 @@ IPA_NETWORK_MODE=lan pnpm dev:ipa
 | Bağlantı | Adres |
 |----------|--------|
 | **Yer imi sayfası** | http://localhost:24917 |
+| **QR görseli (repo)** | `assets/images/expo-go-qr.png` |
 | Metro web | http://localhost:24916 |
 
-Bu sayfa adresi **hiç değişmez**. QR tunnel modunda sayfa açıkken otomatik güncellenir — yeni QR aramanıza gerek kalmaz.
+Yer imi sayfası adresi **hiç değişmez**. Tunnel modunda QR otomatik güncellenir; aynı PNG dosyası da `assets/images/expo-go-qr.png` ve `assets/expo-dev-url.txt` olarak kaydedilir.
+
+**Telefon (Expo Go):** Kamera veya Expo Go ile `assets/images/expo-go-qr.png` dosyasını tarayın. Güncel `exp://` adresi `assets/expo-dev-url.txt` içindedir.
+
+Tunnel yeniden başlarsa `pnpm dev:ipa` QR dosyasını otomatik yeniler.
 
 LAN modunda host `.expo/ipa-dev-host` dosyasına kaydedilir.
 
