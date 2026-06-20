@@ -44,7 +44,7 @@ flowchart LR
 
 | format_id | Kurum | Durum |
 |-----------|-------|-------|
-| `mekanik_bfa` | ÇŞB YFK — Mekanik Tesisat B.F.A. 2026 | ✅ 3.710 kayıt |
+| `mekanik_bfa` | ÇŞB YFK — Mekanik Tesisat B.F.A. 2026 (Cilt 1-3) | ✅ 5.646 kayıt |
 | `insaat_bfa` | ÇŞB YFK — İnşaat B.F.A. 2026 | 🔜 |
 
 ## Hızlı başlangıç

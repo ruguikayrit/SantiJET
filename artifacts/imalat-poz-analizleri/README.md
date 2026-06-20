@@ -7,7 +7,7 @@ Bağımsız **Birim Fiyat Analizleri** uygulaması. ŞantiJET ana uygulamasında
 | # | Modül | Veri dosyası |
 |---|--------|----------------|
 | 01 | İnşaat B.F.A. | `assets/data/resmi-poz-analizleri.json` (1.879 analiz) |
-| 02 | Mekanik Tesisat B.F.A. | `assets/data/resmi-mekanik-analizleri.json` (3.710 analiz) |
+| 02 | Mekanik Tesisat B.F.A. | `assets/data/resmi-mekanik-analizleri.json` (5.646 analiz — Cilt 1-3) |
 | 03 | Elektrik Tesisat B.F.A. | `assets/data/resmi-elektrik-analizleri.json` |
 | 04 | Favoriler | AsyncStorage (`santijet_ipa_favorites_v1`) |
 
@@ -15,7 +15,7 @@ Mekanik katalog ÇŞB YFK 2026 PDF'lerinden `services/pdf-import-engine` ile ür
 
 ## Özellikler
 
-- 1.879 resmi inşaat + 3.710 mekanik tesisat analizi (lazy JSON yükleme)
+- 1.879 resmi inşaat + 5.646 mekanik tesisat analizi (lazy JSON yükleme)
 - Arama, kategori filtresi, detay görünümü
 - Düzenleme, kopyalama, silme (sistem kayıtları korunur)
 - Kullanıcı analizleri AsyncStorage ile kalıcı
