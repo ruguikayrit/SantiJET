@@ -74,6 +74,34 @@ export function normalizeTrSearch(text: string): string {
   return text.trim().toLocaleLowerCase("tr");
 }
 
+/** Arama ifadesini kelime tokenlarına ayırır */
+export function tokenizeTrSearch(query: string): string[] {
+  return normalizeTrSearch(query).split(/\s+/).filter(Boolean);
+}
+
+/** Analiz kaydının aranabilir metin alanlarını birleştirir */
+export function buildPozAnalizHaystack(
+  analiz: Pick<PozAnaliz, "pozNo" | "analizAdi" | "pozTarifi" | "kategori" | "kalemler">,
+): string {
+  const kalemMetni = analiz.kalemler.map((k) => `${k.pozNo} ${k.tanim}`).join(" ");
+  return normalizeTrSearch(
+    [analiz.pozNo, analiz.analizAdi, analiz.pozTarifi, analiz.kategori, kalemMetni]
+      .filter(Boolean)
+      .join(" "),
+  );
+}
+
+/** Tüm kelime tokenları eşleşmeli (AND arama) */
+export function matchesPozAnalizSearch(
+  analiz: Pick<PozAnaliz, "pozNo" | "analizAdi" | "pozTarifi" | "kategori" | "kalemler">,
+  query: string,
+): boolean {
+  const tokens = tokenizeTrSearch(query);
+  if (!tokens.length) return true;
+  const haystack = buildPozAnalizHaystack(analiz);
+  return tokens.every((token) => haystack.includes(token));
+}
+
 /** Katalogdaki gerçek kategori listesi (filtre çipleri için) */
 export function buildPozKategoriFiltreleri(
   analizler: Pick<PozAnaliz, "kategori">[],

@@ -27,7 +27,7 @@ import {
   PozAnaliz,
   buildPozKategoriFiltreleri,
   hesaplaAnalizToplam,
-  normalizeTrSearch,
+  matchesPozAnalizSearch,
 } from "@/constants/pozAnalizleri";
 
 // ─── Yardımcı Fonksiyonlar ─────────────────────────────────────
@@ -108,20 +108,12 @@ export default function ImalatPozlariScreen() {
   }, [pozAnalizleri]);
 
   const filtered = useMemo(() => {
-    const q = normalizeTrSearch(search);
     return pozAnalizleri
       .filter((a) => {
         if (!catFilter) return true;
         return (a.kategori || "").trim() === catFilter;
       })
-      .filter((a) => {
-        if (!q) return true;
-        return (
-          normalizeTrSearch(a.pozNo).includes(q) ||
-          normalizeTrSearch(a.analizAdi).includes(q) ||
-          normalizeTrSearch(a.pozTarifi || "").includes(q)
-        );
-      })
+      .filter((a) => matchesPozAnalizSearch(a, search))
       .sort((a, b) => a.pozNo.localeCompare(b.pozNo, "tr"));
   }, [pozAnalizleri, catFilter, search]);
 
