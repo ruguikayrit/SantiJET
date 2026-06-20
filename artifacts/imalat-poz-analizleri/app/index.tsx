@@ -174,30 +174,30 @@ export default function HomeScreen() {
             { backgroundColor: colors.secondary, borderColor: "rgba(255,255,255,0.07)" },
           ]}
         >
-          <View style={styles.welcomeTopRow}>
+          <View style={styles.welcomeMain}>
             <Text style={styles.welcomeGreet}>Hoş geldiniz</Text>
-            <View style={styles.welcomeDateBlock}>
-              <Feather name="calendar" size={14} color="#60a5fa" style={styles.welcomeDateIcon} />
-              <View style={styles.welcomeDateTexts}>
-                <Text style={[styles.welcomeDateMain, { color: colors.secondaryForeground }]}>
-                  {dateStr}
-                </Text>
-                <Text style={styles.welcomeDateSub}>{dayStr}</Text>
-              </View>
-            </View>
+            <Text style={[styles.welcomeName, { color: colors.secondaryForeground }]}>
+              ŞANTİJET B.F.A.
+            </Text>
+            <Text
+              style={styles.welcomeRole}
+              numberOfLines={1}
+              adjustsFontSizeToFit
+              minimumFontScale={0.85}
+            >
+              Resmi analiz tabloları, fiyat hesaplamaları ve özel analizler
+            </Text>
           </View>
 
-          <Text style={[styles.welcomeName, { color: colors.secondaryForeground }]}>
-            ŞANTİJET B.F.A.
-          </Text>
-          <Text
-            style={styles.welcomeRole}
-            numberOfLines={1}
-            adjustsFontSizeToFit
-            minimumFontScale={0.85}
-          >
-            Resmi analiz tabloları, fiyat hesaplamaları ve özel analizler
-          </Text>
+          <View style={styles.welcomeDateBlock}>
+            <Feather name="calendar" size={14} color="#60a5fa" style={styles.welcomeDateIcon} />
+            <View style={styles.welcomeDateTexts}>
+              <Text style={[styles.welcomeDateMain, { color: colors.secondaryForeground }]}>
+                {dateStr}
+              </Text>
+              <Text style={styles.welcomeDateSub}>{dayStr}</Text>
+            </View>
+          </View>
         </View>
 
         <Text style={[styles.sectionLabel, { color: colors.foreground }]}>Modüller</Text>
@@ -336,35 +336,32 @@ const styles = StyleSheet.create({
     paddingBottom: 24,
   },
   welcomeCard: {
+    flexDirection: "row",
+    alignItems: "flex-start",
     borderRadius: 14,
     paddingHorizontal: 14,
     paddingVertical: 10,
     marginBottom: 9,
     borderWidth: 1,
-    gap: 2,
+    gap: 10,
   },
-  welcomeTopRow: {
-    flexDirection: "row",
-    alignItems: "flex-start",
-    justifyContent: "space-between",
-    gap: 8,
+  welcomeMain: {
+    flex: 1,
+    gap: 5,
   },
   welcomeGreet: {
     color: "#64748b",
     fontSize: 12,
     fontFamily: "Inter_400Regular",
-    flex: 1,
   },
   welcomeName: {
     fontSize: 18,
     fontFamily: "Inter_700Bold",
     letterSpacing: 0.5,
-    marginTop: 2,
   },
   welcomeRole: {
     fontSize: 11,
     fontFamily: "Inter_400Regular",
-    marginTop: 4,
     color: "#94a3b8",
     lineHeight: 14,
   },
@@ -373,6 +370,7 @@ const styles = StyleSheet.create({
     alignItems: "flex-start",
     gap: 6,
     flexShrink: 0,
+    paddingTop: 1,
   },
   welcomeDateIcon: {
     marginTop: 1,
