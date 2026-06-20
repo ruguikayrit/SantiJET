@@ -21,7 +21,7 @@ const BOLT_HEIGHT = Math.round((WORDMARK_HEIGHT / 0.54) * 2.5);
 const LOGO_WORDMARK_GAP = 64;
 
 /** Blur → net geçiş süresi */
-const WORDMARK_REVEAL_MS = 140;
+const WORDMARK_REVEAL_MS = 50;
 
 function SplashBolt({ boltHeight }: { boltHeight: number }) {
   const boltImgH = Math.round(boltHeight / (BOLT_Y_END - BOLT_Y_START));
