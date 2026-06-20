@@ -1,8 +1,6 @@
 import React, { useEffect, useRef } from "react";
 import { Animated, Dimensions, Image, StyleSheet, View } from "react-native";
 
-import { SplashEngineeringBackdrop } from "@/components/splash/SplashEngineeringBackdrop";
-
 const { width, height } = Dimensions.get("window");
 
 const ICON_SRC = require("@/assets/images/santijet-icon.png");
@@ -90,32 +88,8 @@ export default function SplashScreenView({ onFinish }: Props) {
 
   return (
     <Animated.View style={[styles.container, { opacity: bgOpacity }]}>
-      <SplashEngineeringBackdrop />
-
       <View style={[styles.center, { marginTop: -Math.round(height * 0.07) }]}>
         <View style={[styles.boltWrap, { marginBottom: LOGO_WORDMARK_GAP }]}>
-          <Animated.View
-            style={[
-              styles.radialLight,
-              {
-                width: Math.round(BOLT_HEIGHT * 1.65),
-                height: Math.round(BOLT_HEIGHT * 1.65),
-                borderRadius: Math.round(BOLT_HEIGHT * 0.825),
-                opacity: logoGlowOpacity,
-              },
-            ]}
-          />
-          <Animated.View
-            style={[
-              styles.ambientGlow,
-              {
-                width: Math.round(BOLT_HEIGHT * 1.28),
-                height: Math.round(BOLT_HEIGHT * 1.28),
-                borderRadius: Math.round(BOLT_HEIGHT * 0.64),
-                opacity: logoGlowOpacity,
-              },
-            ]}
-          />
           <Animated.View style={[styles.glow, { opacity: logoGlowOpacity }]} />
           <Animated.View
             style={{
@@ -150,19 +124,6 @@ const styles = StyleSheet.create({
     justifyContent: "center",
     minHeight: BOLT_HEIGHT,
   },
-  radialLight: {
-    position: "absolute",
-    backgroundColor: "rgba(26, 95, 255, 0.038)",
-  },
-  ambientGlow: {
-    position: "absolute",
-    backgroundColor: "rgba(26, 95, 255, 0.045)",
-    shadowColor: "#1a5fff",
-    shadowOffset: { width: 0, height: 0 },
-    shadowOpacity: 0.35,
-    shadowRadius: 44,
-    elevation: 0,
-  },
   glow: {
     position: "absolute",
     width: Math.round(BOLT_HEIGHT * 1.2),
@@ -171,8 +132,8 @@ const styles = StyleSheet.create({
     backgroundColor: "transparent",
     shadowColor: "#1a5fff",
     shadowOffset: { width: 0, height: 0 },
-    shadowOpacity: 0.85,
-    shadowRadius: 42,
+    shadowOpacity: 1,
+    shadowRadius: 40,
     elevation: 0,
   },
   wordmark: {
