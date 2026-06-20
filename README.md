@@ -7,6 +7,7 @@ Türkçe inşaat şantiye yönetim uygulaması. pnpm monorepo yapısında birden
 | Modül | Klasör | Açıklama |
 |-------|--------|----------|
 | Mobil uygulama | `artifacts/santiye-takip` | Expo / React Native — ana şantiye takip uygulaması |
+| İmalat Poz Analizleri | `artifacts/imalat-poz-analizleri` | Bağımsız Expo uygulaması — birim poz analizleri |
 | Neon HUD | `artifacts/santijet-neon` | Vite web dashboard — neon temalı yönetici paneli |
 | Web sitesi | `artifacts/santijet-website` | Tanıtım / SaaS landing page |
 | API sunucusu | `artifacts/api-server` | Express API (AI asistan, workspace yönetimi) |
@@ -51,6 +52,22 @@ pnpm dev:mobile:tunnel
 ```
 
 Expo Go ile QR kodu tarayın.
+
+### İmalat Poz Analizleri (bağımsız uygulama — Expo tunnel)
+
+```bash
+pnpm dev:imalat-poz:tunnel
+```
+
+QR sayfası: `artifacts/imalat-poz-analizleri/expo-qr.html` (port 24920)
+
+### İmalat Poz Analizleri (Expo web)
+
+```bash
+pnpm dev:imalat-poz:web
+```
+
+Tarayıcıda: http://localhost:24917
 
 ### Mobil uygulama (Expo — yerel ağ)
 
@@ -97,6 +114,7 @@ pnpm build
 ```
 ├── artifacts/          # Uygulama modülleri
 │   ├── santiye-takip/  # Expo mobil uygulama
+│   ├── imalat-poz-analizleri/  # Bağımsız poz analiz uygulaması
 │   ├── santijet-neon/  # Neon HUD web paneli
 │   ├── santijet-website/
 │   ├── api-server/

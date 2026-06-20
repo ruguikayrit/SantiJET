@@ -232,4 +232,16 @@ title = "ŞantiJET Kaynak Kodları"
 id = "bSUloC54_YuzRblGqVvKo"
 uri = "file://PROMPT_IMALAT_POZ_ANALIZLERI.md"
 type = "text"
-title = "İmalat Poz Analizleri — Geliştirme Promptu"
+title = "İmalat Poz Analizleri — Geliştirme Promptu (ŞantiJET modülü)"
+
+[[outputs]]
+id = "ImPozAppPrompt01"
+uri = "file://PROMPT_IMALAT_POZ_APP.md"
+type = "text"
+title = "İmalat Poz Analizleri — Bağımsız Uygulama Promptu"
+
+[[generated]]
+id = "ImPozAppIcon01"
+uri = "file://artifacts/imalat-poz-analizleri/assets/images/icon.png"
+type = "image"
+title = "imalat poz analizleri app icon"

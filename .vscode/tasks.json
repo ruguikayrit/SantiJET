@@ -45,6 +45,20 @@
       "problemMatcher": []
     },
     {
+      "label": "İmalat Poz: Expo Tunnel",
+      "type": "shell",
+      "command": "pnpm dev:imalat-poz:tunnel",
+      "presentation": { "reveal": "always", "panel": "dedicated" },
+      "problemMatcher": []
+    },
+    {
+      "label": "İmalat Poz: Expo Web",
+      "type": "shell",
+      "command": "pnpm dev:imalat-poz:web",
+      "presentation": { "reveal": "always", "panel": "dedicated" },
+      "problemMatcher": []
+    },
+    {
       "label": "ŞantiJET: Typecheck",
       "type": "shell",
       "command": "pnpm typecheck",
