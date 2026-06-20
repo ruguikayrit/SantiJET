@@ -11,6 +11,7 @@
 import { spawn } from "child_process";
 import fs from "fs";
 import http from "http";
+import net from "net";
 import os from "os";
 import path from "path";
 import { fileURLToPath } from "url";
@@ -212,6 +213,60 @@ function landingHtml() {
 </html>`;
 }
 
+function fetchExistingLinks() {
+  return new Promise((resolve) => {
+    const req = http.get(
+      `http://127.0.0.1:${landingPort}/api/links`,
+      { timeout: 1500 },
+      (res) => {
+        let body = "";
+        res.on("data", (chunk) => {
+          body += chunk;
+        });
+        res.on("end", () => {
+          try {
+            resolve(JSON.parse(body));
+          } catch {
+            resolve(null);
+          }
+        });
+      },
+    );
+    req.on("error", () => resolve(null));
+    req.on("timeout", () => {
+      req.destroy();
+      resolve(null);
+    });
+  });
+}
+
+function isPortOpen(port) {
+  return new Promise((resolve) => {
+    const socket = net.connect({ port, host: "127.0.0.1" });
+    socket.once("connect", () => {
+      socket.end();
+      resolve(true);
+    });
+    socket.once("error", () => resolve(false));
+    socket.setTimeout(1000, () => {
+      socket.destroy();
+      resolve(false);
+    });
+  });
+}
+
+function printBanner() {
+  console.log("");
+  console.log("══════════════════════════════════════════════════");
+  console.log("  ŞantiJET B.F.A.");
+  console.log("══════════════════════════════════════════════════");
+  console.log(`  Yer imi (SABİT): http://localhost:${landingPort}`);
+  console.log(`  Mod: ${links.mode.toUpperCase()}`);
+  if (links.expUrl) console.log(`  Expo Go: ${links.expUrl}`);
+  console.log("══════════════════════════════════════════════════");
+  console.log("");
+}
+
 function startLandingServer() {
   const server = http.createServer((req, res) => {
     if (req.url === "/api/links") {
@@ -222,24 +277,46 @@ function startLandingServer() {
     res.writeHead(200, { "content-type": "text/html; charset=utf-8", "cache-control": "no-store" });
     res.end(landingHtml());
   });
+
+  server.on("error", (err) => {
+    if (err.code === "EADDRINUSE") {
+      console.warn(`[ipa-dev] Yer imi portu (${landingPort}) kullanımda — mevcut sunucu korunuyor.`);
+      return;
+    }
+    console.error("[ipa-dev] Yer imi sunucusu hatası:", err.message);
+    process.exit(1);
+  });
+
   server.listen(landingPort, "0.0.0.0", () => {
-    console.log("");
-    console.log("══════════════════════════════════════════════════");
-    console.log("  ŞantiJET B.F.A.");
-    console.log("══════════════════════════════════════════════════");
-    console.log(`  Yer imi (SABİT): http://localhost:${landingPort}`);
-    console.log(`  Mod: ${links.mode.toUpperCase()}`);
-    console.log("══════════════════════════════════════════════════");
-    console.log("");
+    printBanner();
   });
   return server;
 }
 
-function startMetro(mode, host) {
+async function startMetro(mode, host) {
   const stub = path.join(projectRoot, "scripts", "fix-expo-router-stub.js");
+
+  if (await isPortOpen(metroPort)) {
+    const existing = await fetchExistingLinks();
+    console.warn(`[ipa-dev] Metro zaten çalışıyor (port ${metroPort}).`);
+    if (existing?.expUrl) {
+      setLinks({
+        mode: existing.mode || links.mode,
+        expUrl: existing.expUrl,
+        webUrl: existing.webUrl || links.webUrl,
+        ready: true,
+        message: "Mevcut geliştirme sunucusu kullanılıyor.",
+      });
+      console.log(`[ipa-dev] Expo Go: ${existing.expUrl}`);
+    }
+    printBanner();
+    if (mode === "tunnel") pollTunnel();
+    return;
+  }
 
   function launchMetro(attempt = 1) {
     const args = ["exec", "expo", "start", "--port", String(metroPort)];
+    if (attempt === 1) args.push("--clear");
     if (mode === "tunnel") args.push("--tunnel");
     else args.push("--lan");
 
@@ -268,28 +345,54 @@ function startMetro(mode, host) {
 
 const mode = resolveNetworkMode();
 
-if (mode === "tunnel") {
-  setLinks({
-    mode: "tunnel",
-    ready: false,
-    message: "Tunnel açılıyor… Telefon farklı ağda olsa da bağlanabilir.",
-  });
-  pollTunnel();
-} else {
-  const host = resolveLanHost();
-  const webUrl = `http://${host === "0.0.0.0" ? "localhost" : host}:${metroPort}`;
-  setLinks({
-    mode: "lan",
-    expUrl: `exp://${host}:${metroPort}`,
-    webUrl,
-    ready: true,
-    message: "LAN modu — telefon bilgisayarla aynı Wi‑Fi ağında olmalı.",
-  });
-  console.log(`[ipa-dev] LAN host: ${host}`);
+async function main() {
+  const forceRestart = process.env.IPA_DEV_FORCE === "1";
+  const existingLinks = await fetchExistingLinks();
+  const metroRunning = await isPortOpen(metroPort);
+
+  if (!forceRestart && existingLinks?.ready && metroRunning) {
+    setLinks({
+      mode: existingLinks.mode || mode,
+      expUrl: existingLinks.expUrl,
+      webUrl: existingLinks.webUrl,
+      ready: true,
+      message: "Geliştirme sunucusu zaten çalışıyor.",
+    });
+    console.log("[ipa-dev] Sunucu zaten aktif — yeniden başlatmak için IPA_DEV_FORCE=1 kullanın.");
+    console.log(`[ipa-dev] Yer imi: http://localhost:${landingPort}`);
+    if (existingLinks.expUrl) console.log(`[ipa-dev] Expo Go: ${existingLinks.expUrl}`);
+    if (mode === "tunnel") pollTunnel();
+    return;
+  }
+
+  if (mode === "tunnel") {
+    setLinks({
+      mode: "tunnel",
+      ready: false,
+      message: "Tunnel açılıyor… Telefon farklı ağda olsa da bağlanabilir.",
+    });
+    pollTunnel();
+  } else {
+    const host = resolveLanHost();
+    const webUrl = `http://${host === "0.0.0.0" ? "localhost" : host}:${metroPort}`;
+    setLinks({
+      mode: "lan",
+      expUrl: `exp://${host}:${metroPort}`,
+      webUrl,
+      ready: true,
+      message: "LAN modu — telefon bilgisayarla aynı Wi‑Fi ağında olmalı.",
+    });
+    console.log(`[ipa-dev] LAN host: ${host}`);
+  }
+
+  startLandingServer();
+  await startMetro(mode, mode === "lan" ? resolveLanHost() : "");
 }
 
-startLandingServer();
-startMetro(mode, mode === "lan" ? resolveLanHost() : "");
+main().catch((err) => {
+  console.error("[ipa-dev] Başlatma hatası:", err);
+  process.exit(1);
+});
 
 process.on("SIGINT", () => process.exit(0));
 process.on("SIGTERM", () => process.exit(0));
