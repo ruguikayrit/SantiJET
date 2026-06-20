@@ -87,7 +87,7 @@ pnpm build
 | `PORT` | Evet (dev) | Her modül kendi portunu kullanır |
 | `BASE_PATH` | Hayır | Vite uygulamaları için base path (örn. `/neon/`) |
 | `DATABASE_URL` | API için | PostgreSQL bağlantı dizesi |
-| `EXPO_PUBLIC_API_BASE` | Mobil için | API sunucusu adresi (YYBM PDF vb.) |
+| `EXPO_PUBLIC_API_BASE` | Hayır | API sunucusu (AI asistan vb.; YYBM PDF'leri uygulama içinde) |
 | `OPENAI_API_KEY` | API için | AI asistan özelliği |
 
 `.env.example` dosyasına bakın.

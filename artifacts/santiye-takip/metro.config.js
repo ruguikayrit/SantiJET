@@ -6,6 +6,8 @@ const projectRoot = __dirname;
 
 const config = getDefaultConfig(projectRoot);
 
+config.resolver.assetExts = [...config.resolver.assetExts, "pdf"];
+
 config.watchFolders = [workspaceRoot];
 
 config.resolver.nodeModulesPaths = [

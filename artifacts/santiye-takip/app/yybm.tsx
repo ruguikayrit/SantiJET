@@ -1,9 +1,7 @@
 import { Feather } from "@expo/vector-icons";
 import { useRouter } from "expo-router";
-import * as WebBrowser from "expo-web-browser";
 import React, { useState } from "react";
 import {
-  Alert,
   Platform,
   Pressable,
   ScrollView,
@@ -15,6 +13,7 @@ import {
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 import { useColors } from "@/hooks/useColors";
+import { openYybmPdf } from "@/lib/openYybmPdf";
 import {
   YYBM_DONEMLER,
   YYBM_DONEM_MAP,
@@ -43,24 +42,7 @@ export default function YYBMScreen() {
 
   async function pdfAc(donem: YybmDonem) {
     if (!donem.pdfMevcut) return;
-    const url = donem.pdfUrl;
-    try {
-      if (Platform.OS === "web") {
-        const fullUrl =
-          typeof window !== "undefined"
-            ? window.location.origin + url
-            : url;
-        window.open(fullUrl, "_blank");
-      } else {
-        const base =
-          typeof process !== "undefined" && process.env["EXPO_PUBLIC_API_BASE"]
-            ? process.env["EXPO_PUBLIC_API_BASE"].replace(/\/$/, "")
-            : "http://localhost:8080";
-        await WebBrowser.openBrowserAsync(base + url);
-      }
-    } catch {
-      Alert.alert("Hata", "PDF açılırken bir sorun oluştu.");
-    }
+    await openYybmPdf(donem.id);
   }
 
   function karsilastir() {
