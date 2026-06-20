@@ -1248,6 +1248,17 @@ function CloneModal({
 
 // ─── NewAnalizModal ───────────────────────────────────────────
 
+function getKeyboardBottomInset(
+  e: { endCoordinates: { height: number; screenY: number } },
+  windowHeight: number,
+): number {
+  const { height, screenY } = e.endCoordinates;
+  const fromTop = Math.max(0, windowHeight - screenY);
+  const inset = Math.max(height, fromTop);
+  // iOS Modal + home indicator: küçük tampon gerekir
+  return Platform.OS === "ios" ? inset + 12 : inset;
+}
+
 function NewAnalizModal({
   visible,
   form,
@@ -1265,11 +1276,12 @@ function NewAnalizModal({
 }) {
   const insets = useSafeAreaInsets();
   const { height: windowHeight } = useWindowDimensions();
-  const [keyboardHeight, setKeyboardHeight] = useState(0);
+  const [keyboardInset, setKeyboardInset] = useState(0);
+  const scrollRef = React.useRef<ScrollView>(null);
 
   useEffect(() => {
     if (!visible) {
-      setKeyboardHeight(0);
+      setKeyboardInset(0);
       return;
     }
 
@@ -1277,48 +1289,60 @@ function NewAnalizModal({
     const hideEvent = Platform.OS === "ios" ? "keyboardWillHide" : "keyboardDidHide";
 
     const showSub = Keyboard.addListener(showEvent, (e) => {
-      setKeyboardHeight(e.endCoordinates.height);
+      setKeyboardInset(getKeyboardBottomInset(e, windowHeight));
     });
     const hideSub = Keyboard.addListener(hideEvent, () => {
-      setKeyboardHeight(0);
+      setKeyboardInset(0);
     });
 
     return () => {
       showSub.remove();
       hideSub.remove();
     };
-  }, [visible]);
+  }, [visible, windowHeight]);
 
-  const sheetBottom = useMemo(() => {
-    if (keyboardHeight > 0) {
-      return keyboardHeight;
-    }
-    return Math.max(insets.bottom, 16);
-  }, [keyboardHeight, insets.bottom]);
+  const sheetBottom =
+    keyboardInset > 0 ? keyboardInset : Math.max(insets.bottom, 16);
 
-  const maxSheetHeight = useMemo(() => {
-    const topGap = insets.top + 24;
-    return Math.max(220, windowHeight - keyboardHeight - topGap - sheetBottom);
-  }, [windowHeight, keyboardHeight, insets.top, sheetBottom]);
+  const maxSheetHeight = Math.max(
+    240,
+    windowHeight - insets.top - sheetBottom - 20,
+  );
+
+  const scrollToEnd = () => {
+    requestAnimationFrame(() => {
+      scrollRef.current?.scrollToEnd({ animated: true });
+    });
+  };
 
   return (
-    <Modal visible={visible} transparent animationType="slide">
+    <Modal
+      visible={visible}
+      transparent
+      animationType="slide"
+      presentationStyle="overFullScreen"
+      onRequestClose={onCancel}
+    >
       <View style={st.modalOverlay}>
         <TouchableOpacity style={st.modalBackdrop} activeOpacity={1} onPress={onCancel} />
         <View
           style={[
             st.modalSheet,
+            st.modalSheetFloating,
             {
               backgroundColor: colors.card,
-              marginBottom: sheetBottom,
+              bottom: sheetBottom,
               maxHeight: maxSheetHeight,
             },
           ]}
         >
           <ScrollView
+            ref={scrollRef}
             keyboardShouldPersistTaps="handled"
+            keyboardDismissMode={Platform.OS === "ios" ? "interactive" : "on-drag"}
             showsVerticalScrollIndicator={false}
             bounces={false}
+            contentContainerStyle={st.modalSheetScroll}
           >
             <Text style={[st.modalTitle, { color: colors.foreground }]}>Yeni Analiz</Text>
             {[
@@ -1341,6 +1365,7 @@ function NewAnalizModal({
                   ]}
                   value={(form as any)[key]}
                   onChangeText={(v) => onChange({ [key]: v })}
+                  onFocus={scrollToEnd}
                   placeholder={placeholder}
                   placeholderTextColor={colors.mutedForeground}
                 />
@@ -1638,7 +1663,6 @@ const st = StyleSheet.create({
   actionLabel: { fontSize: 11, fontFamily: "Inter_500Medium" },
   modalOverlay: {
     flex: 1,
-    justifyContent: "flex-end",
   },
   modalBackdrop: {
     ...StyleSheet.absoluteFillObject,
@@ -1661,6 +1685,14 @@ const st = StyleSheet.create({
     shadowOpacity: 0.15,
     shadowRadius: 12,
     elevation: 8,
+  },
+  modalSheetFloating: {
+    position: "absolute",
+    left: 0,
+    right: 0,
+  },
+  modalSheetScroll: {
+    paddingBottom: 4,
   },
   modalScrollContent: {
     flexGrow: 1,
