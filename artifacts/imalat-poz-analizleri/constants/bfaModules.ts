@@ -35,7 +35,7 @@ export interface BfaModuleDef {
 export const BFA_MODULES: BfaModuleDef[] = [
   {
     num: "01",
-    label: "İNŞAAT BİRİM FİYAT ANALİZLERİ",
+    label: "İNŞAAT B.F.A.",
     screenTitle: "İnşaat B.F.A.",
     icon: "layers",
     color: "#d97706",
@@ -54,7 +54,6 @@ export const BFA_MODULES: BfaModuleDef[] = [
     modul: "mekanik",
     route: { pathname: "/imalat-pozlari", params: { modul: "mekanik" } },
     count: (stats) => stats.mekanik.length,
-    emptyHint: "PDF verisi yüklendiğinde mekanik tesisat analizleri burada listelenecek.",
   },
   {
     num: "03",
@@ -66,7 +65,6 @@ export const BFA_MODULES: BfaModuleDef[] = [
     modul: "elektrik",
     route: { pathname: "/imalat-pozlari", params: { modul: "elektrik" } },
     count: (stats) => stats.elektrik.length,
-    emptyHint: "PDF verisi yüklendiğinde elektrik tesisat analizleri burada listelenecek.",
   },
   {
     num: "04",
