@@ -1,8 +1,8 @@
 import { Feather } from "@expo/vector-icons";
 import * as FileSystem from "expo-file-system/legacy";
 import * as Sharing from "expo-sharing";
-import { useRouter } from "expo-router";
-import React, { useMemo, useState } from "react";
+import { useRouter, useLocalSearchParams } from "expo-router";
+import React, { useEffect, useMemo, useState } from "react";
 import {
   Alert,
   ActivityIndicator,
@@ -60,6 +60,7 @@ type Colors = ReturnType<typeof useColors>;
 export default function ImalatPozlariScreen() {
   const colors = useColors();
   const router = useRouter();
+  const params = useLocalSearchParams<{ id?: string; q?: string }>();
   const insets = useSafeAreaInsets();
   const topPad = Platform.OS === "web" ? 16 : insets.top;
 
@@ -68,7 +69,7 @@ export default function ImalatPozlariScreen() {
   const { pozAnalizleri, loading: catalogLoading, error: catalogError } =
     useMergedPozAnalizleri();
 
-  const [search, setSearch] = useState("");
+  const [search, setSearch] = useState(() => (params.q ? String(params.q) : ""));
   const [catFilter, setCatFilter] = useState<string | null>(null);
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [isEditing, setIsEditing] = useState(false);
@@ -132,6 +133,20 @@ export default function ImalatPozlariScreen() {
     setIsEditing(false);
     setEditDraft(null);
   }
+
+  useEffect(() => {
+    if (params.q) {
+      setSearch(String(params.q));
+    }
+  }, [params.q]);
+
+  useEffect(() => {
+    if (!params.id || catalogLoading) return;
+    const id = String(params.id);
+    if (pozAnalizleri.some((a) => a.id === id)) {
+      openDetail(id);
+    }
+  }, [params.id, catalogLoading, pozAnalizleri]);
 
   function goBack() {
     if (isEditing) {
