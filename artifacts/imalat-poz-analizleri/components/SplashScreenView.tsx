@@ -1,12 +1,13 @@
 import React, { useEffect, useRef } from "react";
 import { Animated, Dimensions, StyleSheet, View } from "react-native";
 
-import { SantijetLogo } from "@/components/SantijetLogo";
-
 const { height } = Dimensions.get("window");
 
-/** Önceki splash tam ikon 420px; %20 küçültülmüş bolt yüksekliği */
-const SPLASH_ICON_HEIGHT = Math.round(420 * 0.8);
+const ICON = require("@/assets/images/santijet-icon.png");
+
+/** Önceki splash ikon boyutu 140px; x3 */
+const ICON_SIZE = 420;
+const GLOW_SIZE = 480;
 
 interface Props {
   onFinish: () => void;
@@ -14,20 +15,20 @@ interface Props {
 
 export default function SplashScreenView({ onFinish }: Props) {
   const bgOpacity = useRef(new Animated.Value(1)).current;
-  const logoOpacity = useRef(new Animated.Value(0)).current;
-  const logoScale = useRef(new Animated.Value(0.82)).current;
+  const iconOpacity = useRef(new Animated.Value(0)).current;
+  const iconScale = useRef(new Animated.Value(0.82)).current;
   const glowOpacity = useRef(new Animated.Value(0)).current;
 
   useEffect(() => {
     Animated.sequence([
       Animated.delay(80),
       Animated.parallel([
-        Animated.timing(logoOpacity, {
+        Animated.timing(iconOpacity, {
           toValue: 1,
           duration: 520,
           useNativeDriver: true,
         }),
-        Animated.spring(logoScale, {
+        Animated.spring(iconScale, {
           toValue: 1,
           friction: 7,
           tension: 60,
@@ -53,21 +54,16 @@ export default function SplashScreenView({ onFinish }: Props) {
   return (
     <Animated.View style={[styles.container, { opacity: bgOpacity }]}>
       <View style={[styles.center, { marginTop: -Math.round(height * 0.07) }]}>
-        <View style={styles.logoWrap}>
+        <View style={styles.iconWrapper}>
           <Animated.View style={[styles.glow, { opacity: glowOpacity }]} />
-          <Animated.View
-            style={{
-              opacity: logoOpacity,
-              transform: [{ scale: logoScale }],
-            }}
-          >
-            <SantijetLogo
-              iconHeight={SPLASH_ICON_HEIGHT}
-              centered
-              stacked
-              wordmarkGapMultiplier={2}
-            />
-          </Animated.View>
+          <Animated.Image
+            source={ICON}
+            style={[
+              styles.icon,
+              { opacity: iconOpacity, transform: [{ scale: iconScale }] },
+            ]}
+            resizeMode="contain"
+          />
         </View>
       </View>
     </Animated.View>
@@ -86,22 +82,26 @@ const styles = StyleSheet.create({
     alignItems: "center",
     justifyContent: "center",
   },
-  logoWrap: {
+  iconWrapper: {
+    width: ICON_SIZE + 24,
+    height: ICON_SIZE + 24,
     alignItems: "center",
     justifyContent: "center",
-    minWidth: SPLASH_ICON_HEIGHT + 40,
-    minHeight: SPLASH_ICON_HEIGHT + 80,
   },
   glow: {
     position: "absolute",
-    width: Math.round(SPLASH_ICON_HEIGHT * 1.15),
-    height: Math.round(SPLASH_ICON_HEIGHT * 1.15),
-    borderRadius: Math.round(SPLASH_ICON_HEIGHT * 0.575),
+    width: GLOW_SIZE,
+    height: GLOW_SIZE,
+    borderRadius: GLOW_SIZE / 2,
     backgroundColor: "transparent",
     shadowColor: "#1a5fff",
     shadowOffset: { width: 0, height: 0 },
     shadowOpacity: 1,
-    shadowRadius: 56,
+    shadowRadius: 72,
     elevation: 0,
+  },
+  icon: {
+    width: ICON_SIZE,
+    height: ICON_SIZE,
   },
 });

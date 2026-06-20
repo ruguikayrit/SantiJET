@@ -7,8 +7,6 @@ interface SantijetLogoProps {
   centered?: boolean;
   /** S logosu wordmark tipografinin üstünde, ortalanmış */
   stacked?: boolean;
-  /** stacked modda logo–wordmark dikey boşluğu çarpanı (varsayılan 1) */
-  wordmarkGapMultiplier?: number;
 }
 
 const ICON_SRC = require("../assets/images/santijet-icon.png");
@@ -48,13 +46,12 @@ export function SantijetLogo({
   iconHeight = 48,
   centered = false,
   stacked = false,
-  wordmarkGapMultiplier = 1,
 }: SantijetLogoProps) {
   if (stacked) {
     const boltH = iconHeight;
     const wmH = Math.round(iconHeight * 0.54);
     const wmW = Math.round(wmH * WM_ASPECT);
-    const wordmarkOffset = Math.round(iconHeight * 0.2 * wordmarkGapMultiplier);
+    const wordmarkOffset = Math.round(iconHeight * 0.2);
     const overlap = Math.round(boltH * 0.12);
 
     return (
