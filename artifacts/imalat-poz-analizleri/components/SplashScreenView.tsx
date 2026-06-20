@@ -1,5 +1,5 @@
 import React, { useEffect, useRef } from "react";
-import { Animated, Dimensions, Image, Platform, StyleSheet, View } from "react-native";
+import { Animated, Dimensions, Image, StyleSheet, View } from "react-native";
 
 const { width, height } = Dimensions.get("window");
 
@@ -20,7 +20,6 @@ const BOLT_HEIGHT = Math.round((WORDMARK_HEIGHT / 0.54) * 2.5);
 /** Orijinal boşluk 32px; x2 */
 const LOGO_WORDMARK_GAP = 64;
 
-/** Blur → net geçiş süresi */
 const WORDMARK_REVEAL_MS = 50;
 
 function SplashBolt({ boltHeight }: { boltHeight: number }) {
@@ -56,9 +55,8 @@ export default function SplashScreenView({ onFinish }: Props) {
   const logoOpacity = useRef(new Animated.Value(0)).current;
   const logoScale = useRef(new Animated.Value(0.82)).current;
   const logoGlowOpacity = useRef(new Animated.Value(0)).current;
-  const wordmarkSharpOpacity = useRef(new Animated.Value(0)).current;
-  const wordmarkBlurOpacity = useRef(new Animated.Value(0.9)).current;
-  const wordmarkScale = useRef(new Animated.Value(1.045)).current;
+  const wordmarkOpacity = useRef(new Animated.Value(0)).current;
+  const wordmarkScale = useRef(new Animated.Value(0.95)).current;
 
   useEffect(() => {
     Animated.sequence([
@@ -83,13 +81,8 @@ export default function SplashScreenView({ onFinish }: Props) {
       ]),
       Animated.delay(40),
       Animated.parallel([
-        Animated.timing(wordmarkSharpOpacity, {
+        Animated.timing(wordmarkOpacity, {
           toValue: 1,
-          duration: WORDMARK_REVEAL_MS,
-          useNativeDriver: true,
-        }),
-        Animated.timing(wordmarkBlurOpacity, {
-          toValue: 0,
           duration: WORDMARK_REVEAL_MS,
           useNativeDriver: true,
         }),
@@ -110,16 +103,6 @@ export default function SplashScreenView({ onFinish }: Props) {
     });
   }, []);
 
-  const wordmarkMotion = {
-    opacity: wordmarkSharpOpacity,
-    transform: [{ scale: wordmarkScale }],
-  };
-
-  const wordmarkBlurMotion = {
-    opacity: wordmarkBlurOpacity,
-    transform: [{ scale: wordmarkScale }],
-  };
-
   return (
     <Animated.View style={[styles.container, { opacity: bgOpacity }]}>
       <View style={[styles.center, { marginTop: -Math.round(height * 0.07) }]}>
@@ -135,19 +118,17 @@ export default function SplashScreenView({ onFinish }: Props) {
           </Animated.View>
         </View>
 
-        <View style={styles.wordmarkWrap}>
-          <Animated.Image
-            source={WORDMARK}
-            blurRadius={Platform.OS === "ios" ? 10 : 0}
-            style={[styles.wordmark, styles.wordmarkLayer, wordmarkBlurMotion]}
-            resizeMode="contain"
-          />
-          <Animated.Image
-            source={WORDMARK}
-            style={[styles.wordmark, styles.wordmarkLayer, wordmarkMotion]}
-            resizeMode="contain"
-          />
-        </View>
+        <Animated.Image
+          source={WORDMARK}
+          style={[
+            styles.wordmark,
+            {
+              opacity: wordmarkOpacity,
+              transform: [{ scale: wordmarkScale }],
+            },
+          ]}
+          resizeMode="contain"
+        />
       </View>
     </Animated.View>
   );
@@ -182,17 +163,8 @@ const styles = StyleSheet.create({
     shadowRadius: 40,
     elevation: 0,
   },
-  wordmarkWrap: {
-    alignItems: "center",
-    justifyContent: "center",
-    width: WORDMARK_WIDTH,
-    height: WORDMARK_HEIGHT,
-  },
   wordmark: {
     width: WORDMARK_WIDTH,
     height: WORDMARK_HEIGHT,
-  },
-  wordmarkLayer: {
-    position: "absolute",
   },
 });
