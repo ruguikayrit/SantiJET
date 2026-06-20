@@ -35,7 +35,7 @@ export interface BfaModuleDef {
 export const BFA_MODULES: BfaModuleDef[] = [
   {
     num: "01",
-    label: "İNŞAAT BİRİM FİYAT ANALİZLERİ",
+    label: "İNŞAAT B.F.A.",
     screenTitle: "İnşaat B.F.A.",
     icon: "layers",
     color: "#d97706",
