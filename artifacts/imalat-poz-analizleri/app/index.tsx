@@ -174,23 +174,28 @@ export default function HomeScreen() {
             { backgroundColor: colors.secondary, borderColor: "rgba(255,255,255,0.07)" },
           ]}
         >
-          <View style={styles.welcomeLeft}>
+          <View style={styles.welcomeTopRow}>
             <Text style={styles.welcomeGreet}>Hoş geldiniz</Text>
-            <Text style={[styles.welcomeName, { color: colors.secondaryForeground }]}>
-              ŞANTİJET B.F.A.
-            </Text>
-            <Text style={styles.welcomeRole}>
-              Resmi analiz tabloları, fiyat hesaplamaları ve özel analizler
-            </Text>
+            <View style={styles.welcomeDateBlock}>
+              <Feather name="calendar" size={14} color="#60a5fa" />
+              <Text style={[styles.welcomeDateMain, { color: colors.secondaryForeground }]}>
+                {dateStr}
+              </Text>
+              <Text style={styles.welcomeDateSub}>{dayStr}</Text>
+            </View>
           </View>
 
-          <View style={styles.welcomeDateBlock}>
-            <Feather name="calendar" size={14} color="#60a5fa" />
-            <Text style={[styles.welcomeDateMain, { color: colors.secondaryForeground }]}>
-              {dateStr}
-            </Text>
-            <Text style={styles.welcomeDateSub}>{dayStr}</Text>
-          </View>
+          <Text style={[styles.welcomeName, { color: colors.secondaryForeground }]}>
+            ŞANTİJET B.F.A.
+          </Text>
+          <Text
+            style={styles.welcomeRole}
+            numberOfLines={1}
+            adjustsFontSizeToFit
+            minimumFontScale={0.85}
+          >
+            Resmi analiz tabloları, fiyat hesaplamaları ve özel analizler
+          </Text>
         </View>
 
         <Text style={[styles.sectionLabel, { color: colors.foreground }]}>Modüller</Text>
@@ -329,20 +334,24 @@ const styles = StyleSheet.create({
     paddingBottom: 24,
   },
   welcomeCard: {
-    flexDirection: "row",
-    alignItems: "flex-start",
     borderRadius: 14,
     paddingHorizontal: 14,
     paddingVertical: 10,
     marginBottom: 9,
     borderWidth: 1,
+    gap: 2,
+  },
+  welcomeTopRow: {
+    flexDirection: "row",
+    alignItems: "flex-start",
+    justifyContent: "space-between",
     gap: 8,
   },
-  welcomeLeft: { flex: 1 },
   welcomeGreet: {
     color: "#64748b",
     fontSize: 12,
     fontFamily: "Inter_400Regular",
+    flex: 1,
   },
   welcomeName: {
     fontSize: 18,
@@ -351,15 +360,16 @@ const styles = StyleSheet.create({
     marginTop: 2,
   },
   welcomeRole: {
-    fontSize: 12,
+    fontSize: 11,
     fontFamily: "Inter_400Regular",
     marginTop: 4,
     color: "#94a3b8",
-    lineHeight: 16,
+    lineHeight: 14,
   },
   welcomeDateBlock: {
     alignItems: "flex-end",
     gap: 2,
+    flexShrink: 0,
   },
   welcomeDateMain: {
     fontSize: 11,
