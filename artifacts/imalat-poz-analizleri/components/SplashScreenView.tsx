@@ -53,8 +53,9 @@ export default function SplashScreenView({ onFinish }: Props) {
   const logoOpacity = useRef(new Animated.Value(0)).current;
   const logoScale = useRef(new Animated.Value(0.82)).current;
   const wordmarkOpacity = useRef(new Animated.Value(0)).current;
-  const wordmarkTranslate = useRef(new Animated.Value(12)).current;
-  const glowOpacity = useRef(new Animated.Value(0)).current;
+  const wordmarkGlowOpacity = useRef(new Animated.Value(0)).current;
+  const wordmarkGlowScale = useRef(new Animated.Value(0.88)).current;
+  const logoGlowOpacity = useRef(new Animated.Value(0)).current;
 
   useEffect(() => {
     Animated.sequence([
@@ -71,7 +72,7 @@ export default function SplashScreenView({ onFinish }: Props) {
           tension: 60,
           useNativeDriver: true,
         }),
-        Animated.timing(glowOpacity, {
+        Animated.timing(logoGlowOpacity, {
           toValue: 1,
           duration: 680,
           useNativeDriver: true,
@@ -84,11 +85,32 @@ export default function SplashScreenView({ onFinish }: Props) {
           duration: 50,
           useNativeDriver: true,
         }),
-        Animated.timing(wordmarkTranslate, {
-          toValue: 0,
-          duration: 50,
-          useNativeDriver: true,
-        }),
+        Animated.sequence([
+          Animated.parallel([
+            Animated.timing(wordmarkGlowOpacity, {
+              toValue: 1,
+              duration: 70,
+              useNativeDriver: true,
+            }),
+            Animated.timing(wordmarkGlowScale, {
+              toValue: 1.06,
+              duration: 70,
+              useNativeDriver: true,
+            }),
+          ]),
+          Animated.parallel([
+            Animated.timing(wordmarkGlowOpacity, {
+              toValue: 0.28,
+              duration: 130,
+              useNativeDriver: true,
+            }),
+            Animated.timing(wordmarkGlowScale, {
+              toValue: 1,
+              duration: 130,
+              useNativeDriver: true,
+            }),
+          ]),
+        ]),
       ]),
       Animated.delay(900),
       Animated.timing(bgOpacity, {
@@ -105,7 +127,7 @@ export default function SplashScreenView({ onFinish }: Props) {
     <Animated.View style={[styles.container, { opacity: bgOpacity }]}>
       <View style={[styles.center, { marginTop: -Math.round(height * 0.07) }]}>
         <View style={[styles.boltWrap, { marginBottom: LOGO_WORDMARK_GAP }]}>
-          <Animated.View style={[styles.glow, { opacity: glowOpacity }]} />
+          <Animated.View style={[styles.glow, { opacity: logoGlowOpacity }]} />
           <Animated.View
             style={{
               opacity: logoOpacity,
@@ -116,17 +138,22 @@ export default function SplashScreenView({ onFinish }: Props) {
           </Animated.View>
         </View>
 
-        <Animated.Image
-          source={WORDMARK}
-          style={[
-            styles.wordmark,
-            {
-              opacity: wordmarkOpacity,
-              transform: [{ translateY: wordmarkTranslate }],
-            },
-          ]}
-          resizeMode="contain"
-        />
+        <View style={styles.wordmarkWrap}>
+          <Animated.View
+            style={[
+              styles.wordmarkGlow,
+              {
+                opacity: wordmarkGlowOpacity,
+                transform: [{ scale: wordmarkGlowScale }],
+              },
+            ]}
+          />
+          <Animated.Image
+            source={WORDMARK}
+            style={[styles.wordmark, { opacity: wordmarkOpacity }]}
+            resizeMode="contain"
+          />
+        </View>
       </View>
     </Animated.View>
   );
@@ -159,6 +186,24 @@ const styles = StyleSheet.create({
     shadowOffset: { width: 0, height: 0 },
     shadowOpacity: 1,
     shadowRadius: 40,
+    elevation: 0,
+  },
+  wordmarkWrap: {
+    alignItems: "center",
+    justifyContent: "center",
+    width: WORDMARK_WIDTH,
+    height: WORDMARK_HEIGHT,
+  },
+  wordmarkGlow: {
+    position: "absolute",
+    width: Math.round(WORDMARK_WIDTH * 1.08),
+    height: Math.round(WORDMARK_HEIGHT * 2.2),
+    borderRadius: Math.round(WORDMARK_HEIGHT * 0.6),
+    backgroundColor: "rgba(26, 95, 255, 0.12)",
+    shadowColor: "#1a5fff",
+    shadowOffset: { width: 0, height: 0 },
+    shadowOpacity: 1,
+    shadowRadius: 32,
     elevation: 0,
   },
   wordmark: {
