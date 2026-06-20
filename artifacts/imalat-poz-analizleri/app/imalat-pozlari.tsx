@@ -77,6 +77,8 @@ export default function ImalatPozlariScreen() {
   const [cloneVisible, setCloneVisible] = useState(false);
   const [cloneAd, setCloneAd] = useState("");
 
+  const [catPickerOpen, setCatPickerOpen] = useState(false);
+
   const [newVisible, setNewVisible] = useState(false);
   const [newForm, setNewForm] = useState({
     pozNo: "",
@@ -122,6 +124,16 @@ export default function ImalatPozlariScreen() {
       })
       .sort((a, b) => a.pozNo.localeCompare(b.pozNo, "tr"));
   }, [pozAnalizleri, catFilter, search]);
+
+  const catFilterLabel = useMemo(() => {
+    if (!catFilter) return `Tümü (${pozAnalizleri.length})`;
+    return `${catFilter} (${kategoriSayilari.get(catFilter) ?? 0})`;
+  }, [catFilter, pozAnalizleri.length, kategoriSayilari]);
+
+  function selectCategory(cat: string) {
+    setCatFilter(cat === "Tümü" ? null : cat);
+    setCatPickerOpen(false);
+  }
 
   function openDetail(id: string) {
     setSelectedId(id);
@@ -724,41 +736,31 @@ export default function ImalatPozlariScreen() {
         )}
       </View>
 
-      {/* Kategori filtre şeridi */}
-      <ScrollView
-        horizontal
-        showsHorizontalScrollIndicator={false}
-        style={st.chipRow}
-        contentContainerStyle={{ paddingHorizontal: 12, gap: 8 }}
-      >
-        {categories.map((cat) => {
-          const active = cat === "Tümü" ? catFilter === null : catFilter === cat;
-          return (
-            <TouchableOpacity
-              key={cat}
-              style={[
-                st.chip,
-                {
-                  backgroundColor: active ? colors.primary : colors.card,
-                  borderColor: active ? colors.primary : colors.border,
-                },
-              ]}
-              onPress={() => setCatFilter(cat === "Tümü" ? null : cat)}
-            >
-              <Text
-                style={[
-                  st.chipText,
-                  { color: active ? colors.primaryForeground : colors.foreground },
-                ]}
-              >
-                {cat === "Tümü"
-                  ? `Tümü (${pozAnalizleri.length})`
-                  : `${cat} (${kategoriSayilari.get(cat) ?? 0})`}
-              </Text>
-            </TouchableOpacity>
-          );
-        })}
-      </ScrollView>
+      {/* Kategori filtresi — açılır liste */}
+      <View style={st.filterRow}>
+        <Text style={[st.filterLabel, { color: colors.mutedForeground }]}>Kategori</Text>
+        <TouchableOpacity
+          style={[st.filterSelect, { backgroundColor: colors.card, borderColor: colors.border }]}
+          onPress={() => setCatPickerOpen(true)}
+          activeOpacity={0.85}
+        >
+          <Text style={[st.filterSelectText, { color: colors.foreground }]} numberOfLines={1}>
+            {catFilterLabel}
+          </Text>
+          <Feather name="chevron-down" size={18} color={colors.mutedForeground} />
+        </TouchableOpacity>
+      </View>
+
+      <KategoriPickerModal
+        visible={catPickerOpen}
+        categories={categories}
+        kategoriSayilari={kategoriSayilari}
+        totalCount={pozAnalizleri.length}
+        selected={catFilter}
+        onSelect={selectCategory}
+        onClose={() => setCatPickerOpen(false)}
+        colors={colors}
+      />
 
       {/* Tablo başlığı */}
       <View
@@ -1049,6 +1051,91 @@ function ActionBtn({
   );
 }
 
+// ─── KategoriPickerModal ──────────────────────────────────────
+
+function KategoriPickerModal({
+  visible,
+  categories,
+  kategoriSayilari,
+  totalCount,
+  selected,
+  onSelect,
+  onClose,
+  colors,
+}: {
+  visible: boolean;
+  categories: string[];
+  kategoriSayilari: Map<string, number>;
+  totalCount: number;
+  selected: string | null;
+  onSelect: (cat: string) => void;
+  onClose: () => void;
+  colors: Colors;
+}) {
+  return (
+    <Modal visible={visible} transparent animationType="slide" onRequestClose={onClose}>
+      <TouchableOpacity style={st.pickerOverlay} activeOpacity={1} onPress={onClose}>
+        <TouchableOpacity
+          activeOpacity={1}
+          style={[st.pickerSheet, { backgroundColor: colors.card }]}
+          onPress={() => {}}
+        >
+          <View style={[st.pickerHeader, { borderBottomColor: colors.border }]}>
+            <Text style={[st.pickerTitle, { color: colors.foreground }]}>Kategori Seç</Text>
+            <TouchableOpacity onPress={onClose} hitSlop={12}>
+              <Feather name="x" size={22} color={colors.mutedForeground} />
+            </TouchableOpacity>
+          </View>
+          <FlatList
+            data={categories}
+            keyExtractor={(item) => item}
+            keyboardShouldPersistTaps="handled"
+            style={{ maxHeight: 420 }}
+            renderItem={({ item }) => {
+              const active = item === "Tümü" ? selected === null : selected === item;
+              const count =
+                item === "Tümü" ? totalCount : (kategoriSayilari.get(item) ?? 0);
+              return (
+                <TouchableOpacity
+                  style={[
+                    st.pickerItem,
+                    {
+                      borderBottomColor: colors.border,
+                      backgroundColor: active ? colors.primary + "14" : "transparent",
+                    },
+                  ]}
+                  onPress={() => onSelect(item)}
+                  activeOpacity={0.75}
+                >
+                  <Text
+                    style={[
+                      st.pickerItemText,
+                      { color: active ? colors.primary : colors.foreground },
+                    ]}
+                    numberOfLines={2}
+                  >
+                    {item}
+                  </Text>
+                  <View style={st.pickerItemRight}>
+                    <Text style={[st.pickerCount, { color: colors.mutedForeground }]}>
+                      {count}
+                    </Text>
+                    {active ? (
+                      <Feather name="check" size={18} color={colors.primary} />
+                    ) : (
+                      <View style={{ width: 18 }} />
+                    )}
+                  </View>
+                </TouchableOpacity>
+              );
+            }}
+          />
+        </TouchableOpacity>
+      </TouchableOpacity>
+    </Modal>
+  );
+}
+
 // ─── CloneModal ───────────────────────────────────────────────
 
 function CloneModal({
@@ -1215,15 +1302,81 @@ const st = StyleSheet.create({
     fontFamily: "Inter_400Regular",
     padding: 0,
   },
-  chipRow: { maxHeight: 44, marginBottom: 4 },
-  chip: {
+  filterRow: {
     paddingHorizontal: 12,
-    paddingVertical: 6,
-    borderRadius: 20,
-    borderWidth: 1,
-    alignSelf: "flex-start",
+    marginBottom: 8,
+    gap: 6,
   },
-  chipText: { fontSize: 12, fontFamily: "Inter_500Medium" },
+  filterLabel: {
+    fontSize: 11,
+    fontFamily: "Inter_600SemiBold",
+    textTransform: "uppercase",
+    letterSpacing: 0.5,
+    marginLeft: 2,
+  },
+  filterSelect: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    gap: 8,
+    borderWidth: 1,
+    borderRadius: 10,
+    paddingHorizontal: 12,
+    paddingVertical: 11,
+  },
+  filterSelectText: {
+    flex: 1,
+    fontSize: 14,
+    fontFamily: "Inter_500Medium",
+  },
+  pickerOverlay: {
+    flex: 1,
+    backgroundColor: "rgba(0,0,0,0.45)",
+    justifyContent: "flex-end",
+  },
+  pickerSheet: {
+    borderTopLeftRadius: 16,
+    borderTopRightRadius: 16,
+    paddingBottom: 8,
+    maxHeight: "70%",
+  },
+  pickerHeader: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    paddingHorizontal: 16,
+    paddingVertical: 14,
+    borderBottomWidth: 1,
+  },
+  pickerTitle: {
+    fontSize: 16,
+    fontFamily: "Inter_700Bold",
+  },
+  pickerItem: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    paddingHorizontal: 16,
+    paddingVertical: 13,
+    borderBottomWidth: StyleSheet.hairlineWidth,
+    gap: 12,
+  },
+  pickerItemText: {
+    flex: 1,
+    fontSize: 14,
+    fontFamily: "Inter_500Medium",
+  },
+  pickerItemRight: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 10,
+  },
+  pickerCount: {
+    fontSize: 13,
+    fontFamily: "Inter_600SemiBold",
+    minWidth: 28,
+    textAlign: "right",
+  },
   listHeader: {
     flexDirection: "row",
     paddingHorizontal: 12,
