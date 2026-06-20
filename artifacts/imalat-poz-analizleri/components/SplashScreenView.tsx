@@ -101,17 +101,7 @@ export default function SplashScreenView({ onFinish }: Props) {
           </Animated.View>
         </View>
 
-        <Animated.Image
-          source={WORDMARK}
-          style={[
-            styles.wordmark,
-            {
-              opacity: wordmarkOpacity,
-              transform: [{ scale: wordmarkScale }],
-            },
-          ]}
-          resizeMode="contain"
-        />
+        <Image source={WORDMARK} style={styles.wordmark} resizeMode="contain" />
       </View>
     </Animated.View>
   );
