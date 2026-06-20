@@ -10,6 +10,13 @@
       "problemMatcher": []
     },
     {
+      "label": "ŞantiJET: Mobil (Expo Tunnel)",
+      "type": "shell",
+      "command": "pnpm dev:mobile:tunnel",
+      "presentation": { "reveal": "always", "panel": "dedicated" },
+      "problemMatcher": []
+    },
+    {
       "label": "ŞantiJET: Mobil (Expo Web)",
       "type": "shell",
       "command": "pnpm dev:mobile-web",

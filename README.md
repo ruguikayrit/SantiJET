@@ -44,13 +44,19 @@ pnpm dev:mobile-web
 
 Tarayıcıda: http://localhost:24915
 
-### Mobil uygulama (Expo — tam geliştirme sunucusu)
+### Mobil uygulama (Expo — telefon, tunnel)
+
+```bash
+pnpm dev:mobile:tunnel
+```
+
+Expo Go ile QR kodu tarayın.
+
+### Mobil uygulama (Expo — yerel ağ)
 
 ```bash
 pnpm dev:mobile
 ```
-
-Expo Go veya emülatör ile kullanılabilir.
 
 ### API sunucusu
 
@@ -81,6 +87,7 @@ pnpm build
 | `PORT` | Evet (dev) | Her modül kendi portunu kullanır |
 | `BASE_PATH` | Hayır | Vite uygulamaları için base path (örn. `/neon/`) |
 | `DATABASE_URL` | API için | PostgreSQL bağlantı dizesi |
+| `EXPO_PUBLIC_API_BASE` | Mobil için | API sunucusu adresi (YYBM PDF vb.) |
 | `OPENAI_API_KEY` | API için | AI asistan özelliği |
 
 `.env.example` dosyasına bakın.
@@ -101,7 +108,3 @@ pnpm build
 │   └── db/
 └── attached_assets/    # Logo ve görsel dosyalar
 ```
-
-## Replit'ten taşıma
-
-Bu proje Replit'ten Cursor'a taşınmıştır. Replit'e özgü ortam değişkenleri (`REPLIT_DEV_DOMAIN`, `REPL_ID`) artık gerekli değildir. Yerel geliştirme için `dev:local` script'leri kullanılır.

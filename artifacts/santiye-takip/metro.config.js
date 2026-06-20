@@ -14,14 +14,9 @@ config.resolver.nodeModulesPaths = [
   path.resolve(workspaceRoot, "node_modules/.pnpm/node_modules"),
 ];
 
-// Exclude internal Replit tool directories from Metro's file watcher.
-// These directories can be deleted/recreated at any time and their absence
-// causes an ENOENT crash in Metro's FallbackWatcher.
+// Exclude tool directories that may be deleted/recreated and crash Metro's watcher.
 const blockListRE = config.resolver.blockList;
-const extraBlockList = [
-  /[/\\]\.local[/\\]/,
-  /[/\\]\.replit[/\\]/,
-];
+const extraBlockList = [/[/\\]\.local[/\\]/];
 config.resolver.blockList = Array.isArray(blockListRE)
   ? [...blockListRE, ...extraBlockList]
   : blockListRE

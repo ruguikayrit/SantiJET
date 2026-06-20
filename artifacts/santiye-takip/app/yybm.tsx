@@ -54,8 +54,8 @@ export default function YYBMScreen() {
       } else {
         const base =
           typeof process !== "undefined" && process.env["EXPO_PUBLIC_API_BASE"]
-            ? process.env["EXPO_PUBLIC_API_BASE"]
-            : "https://689a4caa-af33-4c75-a1a6-b3449c5db588-00-xsp1uioahgyj.janeway.replit.dev";
+            ? process.env["EXPO_PUBLIC_API_BASE"].replace(/\/$/, "")
+            : "http://localhost:8080";
         await WebBrowser.openBrowserAsync(base + url);
       }
     } catch {
