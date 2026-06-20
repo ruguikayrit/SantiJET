@@ -43,9 +43,7 @@ export default function HomeScreen() {
         ]}
       >
         <View style={styles.headerBrand}>
-          <View style={styles.logoLayer}>
-            <SantijetLogo iconHeight={36} centered />
-          </View>
+          <SantijetLogo iconHeight={38} centered stacked />
           <Text style={styles.headerSubtitle}>İMALAT POZ ANALİZLERİ</Text>
         </View>
       </View>
@@ -134,10 +132,7 @@ const styles = StyleSheet.create({
     alignItems: "center",
     justifyContent: "center",
     width: "100%",
-  },
-  logoLayer: {
-    zIndex: 2,
-    marginBottom: -4,
+    gap: 4,
   },
   headerSubtitle: {
     color: "#4a6080",
@@ -145,8 +140,6 @@ const styles = StyleSheet.create({
     fontFamily: "Inter_700Bold",
     letterSpacing: 5,
     textAlign: "center",
-    zIndex: 1,
-    paddingTop: 2,
   },
   scroll: { padding: 12, paddingTop: 14 },
   welcomeCard: {
