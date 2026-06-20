@@ -138,9 +138,9 @@ const styles = StyleSheet.create({
   },
   headerSubtitle: {
     color: "#4a6080",
-    fontSize: 9,
+    fontSize: 18,
     fontFamily: "Inter_700Bold",
-    letterSpacing: 2.5,
+    letterSpacing: 5,
     textAlign: "center",
   },
   scroll: { padding: 12, paddingTop: 14 },
