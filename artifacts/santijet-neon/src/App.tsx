@@ -11,6 +11,7 @@ import Sevkiyat from "@/pages/sevkiyat";
 import SatinAlma from "@/pages/satin-alma";
 import Imalat from "@/pages/imalat";
 import Kantar from "@/pages/kantar";
+import { PasswordGate } from "@/components/PasswordGate";
 
 const queryClient = new QueryClient();
 
@@ -33,14 +34,16 @@ function Router() {
 
 function App() {
   return (
-    <QueryClientProvider client={queryClient}>
-      <TooltipProvider>
-        <WouterRouter base={import.meta.env.BASE_URL.replace(/\/$/, "")}>
-          <Router />
-        </WouterRouter>
-        <Toaster />
-      </TooltipProvider>
-    </QueryClientProvider>
+    <PasswordGate>
+      <QueryClientProvider client={queryClient}>
+        <TooltipProvider>
+          <WouterRouter base={import.meta.env.BASE_URL.replace(/\/$/, "")}>
+            <Router />
+          </WouterRouter>
+          <Toaster />
+        </TooltipProvider>
+      </QueryClientProvider>
+    </PasswordGate>
   );
 }
 
