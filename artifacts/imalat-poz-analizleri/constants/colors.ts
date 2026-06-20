@@ -74,34 +74,6 @@ const klasik: ThemeColors = {
   darkNavy: "#0f3460",
 };
 
-const lacivertPro: ThemeColors = {
-  text: "#0f1e3d",
-  tint: "#ff7a18",
-  background: "#ffffff",
-  foreground: "#0f1e3d",
-  card: "#ffffff",
-  cardForeground: "#0f1e3d",
-  primary: "#16213e",
-  primaryForeground: "#ffffff",
-  secondary: "#ff7a18",
-  secondaryForeground: "#ffffff",
-  muted: "#f1f4fb",
-  mutedForeground: "#5b6b8a",
-  accent: "#ffe9d3",
-  accentForeground: "#9a3a00",
-  destructive: "#dc2626",
-  destructiveForeground: "#ffffff",
-  success: "#16a34a",
-  successForeground: "#ffffff",
-  warning: "#d97706",
-  warningForeground: "#ffffff",
-  border: "#dde3f0",
-  input: "#dde3f0",
-  orange: "#ff7a18",
-  navy: "#16213e",
-  darkNavy: "#0a1430",
-};
-
 const turuncuEnerji: ThemeColors = {
   text: "#1a1a2e",
   tint: "#ff6a00",
@@ -242,34 +214,6 @@ const steel: ThemeColors = {
   darkNavy: "#020617",
 };
 
-const hivis: ThemeColors = {
-  text: "#1c1917",
-  tint: "#facc15",
-  background: "#fef3c7",
-  foreground: "#1c1917",
-  card: "#facc15",
-  cardForeground: "#1c1917",
-  primary: "#1c1917",
-  primaryForeground: "#facc15",
-  secondary: "#1c1917",
-  secondaryForeground: "#facc15",
-  muted: "#fde68a",
-  mutedForeground: "#57534e",
-  accent: "#facc15",
-  accentForeground: "#1c1917",
-  destructive: "#b91c1c",
-  destructiveForeground: "#ffffff",
-  success: "#15803d",
-  successForeground: "#ffffff",
-  warning: "#b45309",
-  warningForeground: "#ffffff",
-  border: "#1c1917",
-  input: "#fde68a",
-  orange: "#f59e0b",
-  navy: "#1c1917",
-  darkNavy: "#0c0a09",
-};
-
 export const THEMES: ThemeDefinition[] = [
   {
     id: "klasik",
@@ -278,14 +222,6 @@ export const THEMES: ThemeDefinition[] = [
     isDark: false,
     preview: { bg: "#f5f5f5", primary: "#e85d04", secondary: "#16213e" },
     colors: klasik,
-  },
-  {
-    id: "lacivert-pro",
-    name: "Lacivert Pro",
-    description: "Lacivert ağırlıklı kurumsal",
-    isDark: false,
-    preview: { bg: "#ffffff", primary: "#16213e", secondary: "#ff7a18" },
-    colors: lacivertPro,
   },
   {
     id: "turuncu-enerji",
@@ -318,14 +254,6 @@ export const THEMES: ThemeDefinition[] = [
     isDark: false,
     preview: { bg: "#fbf6ee", primary: "#d2691e", secondary: "#16213e" },
     colors: kremSicak,
-  },
-  {
-    id: "hivis",
-    name: "Hi-Vis İSG",
-    description: "Sarı/siyah iş güvenliği modu",
-    isDark: false,
-    preview: { bg: "#fef3c7", primary: "#1c1917", secondary: "#facc15" },
-    colors: hivis,
   },
   {
     id: "steel",
