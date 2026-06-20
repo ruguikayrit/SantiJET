@@ -13,6 +13,7 @@ import { SafeAreaProvider } from "react-native-safe-area-context";
 
 import { ErrorBoundary } from "@/components/ErrorBoundary";
 import SplashScreenView from "@/components/SplashScreenView";
+import WebFrame from "@/components/WebFrame";
 import { AppProvider } from "@/context/AppContext";
 import { ThemeProvider } from "@/context/ThemeContext";
 
@@ -48,10 +49,14 @@ export default function RootLayout() {
       <ThemeProvider>
         <ErrorBoundary>
           <GestureHandlerRootView style={{ flex: 1 }}>
-            <AppProvider>
-              <RootLayoutNav />
-            </AppProvider>
-            {showSplash && <SplashScreenView onFinish={() => setShowSplash(false)} />}
+            <WebFrame>
+              <AppProvider>
+                <RootLayoutNav />
+              </AppProvider>
+            </WebFrame>
+            {showSplash && (
+              <SplashScreenView onFinish={() => setShowSplash(false)} />
+            )}
           </GestureHandlerRootView>
         </ErrorBoundary>
       </ThemeProvider>
