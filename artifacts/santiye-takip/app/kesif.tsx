@@ -25,6 +25,7 @@ import PrimaryButton from "@/components/PrimaryButton";
 import { Survey, SurveyItem, useApp } from "@/context/AppContext";
 import UnitPicker from "@/components/UnitPicker";
 import { useColors } from "@/hooks/useColors";
+import { useMergedPozAnalizleri } from "@/hooks/useMergedPozAnalizleri";
 import { usePermission } from "@/hooks/usePermission";
 import {
   buildKesifCsv,
@@ -66,7 +67,8 @@ const EMPTY: FormState = {
 export default function KesifScreen() {
   const colors = useColors();
   const router = useRouter();
-  const { projects, surveys, addSurvey, updateSurvey, deleteSurvey, pozAnalizleri } = useApp();
+  const { projects, surveys, addSurvey, updateSurvey, deleteSurvey } = useApp();
+  const { pozAnalizleri } = useMergedPozAnalizleri();
 
   const perm = usePermission("kesif");
   const canEdit = perm === "edit";

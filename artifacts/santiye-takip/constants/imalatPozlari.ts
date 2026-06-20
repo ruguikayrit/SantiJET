@@ -1,5 +1,3 @@
-import { RESMI_POZ_ANALIZLERI } from "./resmiAnalizler";
-
 export interface ImalatPoz {
   code: string;
   category: string;
@@ -858,7 +856,8 @@ export function buildImalatPozCsv(items: ImalatPoz[]): string {
 }
 
 // ================================================================
-// İMALAT POZ ANALİZLERİ — Yeni Tip Tanımları
+// İMALAT POZ ANALİZLERİ — Tip Tanımları
+// Resmi veri: assets/data/resmi-poz-analizleri.json
 // ================================================================
 
 export interface AnalizKalemi {
@@ -907,6 +906,4 @@ export function hesaplaAnalizToplam(
     birimFiyati: Math.round((toplam + kar) * 100) / 100,
   };
 }
-
-export const DEFAULT_POZ_ANALIZLERI: PozAnaliz[] = RESMI_POZ_ANALIZLERI as unknown as PozAnaliz[];
 
