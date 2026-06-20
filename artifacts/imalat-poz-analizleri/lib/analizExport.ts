@@ -1,5 +1,4 @@
 import * as FileSystem from "expo-file-system/legacy";
-import * as Print from "expo-print";
 import * as Sharing from "expo-sharing";
 import { Alert, Platform } from "react-native";
 
@@ -238,8 +237,18 @@ export async function exportAnaliz(analiz: PozAnaliz, format: AnalizExportFormat
       return;
     }
 
-    const { uri } = await Print.printToFileAsync({ html });
-    await shareFile(uri, "application/pdf", "PDF Dışa Aktar");
+    try {
+      const Print = await import("expo-print");
+      const { uri } = await Print.printToFileAsync({ html });
+      await shareFile(uri, "application/pdf", "PDF Dışa Aktar");
+    } catch {
+      const filename = `analiz_${base}.html`;
+      const uri = `${FileSystem.cacheDirectory}${filename}`;
+      await FileSystem.writeAsStringAsync(uri, html, {
+        encoding: FileSystem.EncodingType.UTF8,
+      });
+      await shareFile(uri, "text/html", "HTML Dışa Aktar (PDF yerine)");
+    }
   } catch {
     Alert.alert("Hata", "Dışa aktarma başarısız. Lütfen tekrar deneyin.");
   }

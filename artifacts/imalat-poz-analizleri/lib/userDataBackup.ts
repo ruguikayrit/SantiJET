@@ -1,4 +1,3 @@
-import * as DocumentPicker from "expo-document-picker";
 import * as FileSystem from "expo-file-system/legacy";
 import * as Sharing from "expo-sharing";
 import { Alert, Platform } from "react-native";
@@ -118,6 +117,7 @@ async function readBackupFromUri(uri: string): Promise<UserDataBackup | null> {
 
 export async function pickUserDataBackup(): Promise<UserDataBackup | null> {
   try {
+    const DocumentPicker = await import("expo-document-picker");
     const result = await DocumentPicker.getDocumentAsync({
       type: "application/json",
       copyToCacheDirectory: true,
