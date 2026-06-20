@@ -7,7 +7,7 @@ import {
   Alert,
   ActivityIndicator,
   FlatList,
-  KeyboardAvoidingView,
+  Keyboard,
   Modal,
   Platform,
   ScrollView,
@@ -16,6 +16,7 @@ import {
   TextInput,
   TouchableOpacity,
   View,
+  useWindowDimensions,
 } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
@@ -1209,7 +1210,7 @@ function CloneModal({
 }) {
   return (
     <Modal visible={visible} transparent animationType="fade">
-      <View style={[st.modalOverlay, st.modalOverlayCentered]}>
+      <View style={[st.modalOverlay, st.modalOverlayCentered, { backgroundColor: "rgba(0,0,0,0.5)" }]}>
         <View style={[st.modalCard, { backgroundColor: colors.card }]}>
           <Text style={[st.modalTitle, { color: colors.foreground }]}>Analizi Kopyala</Text>
           <Text style={[st.modalSub, { color: colors.mutedForeground }]}>
@@ -1263,24 +1264,62 @@ function NewAnalizModal({
   colors: Colors;
 }) {
   const insets = useSafeAreaInsets();
+  const { height: windowHeight } = useWindowDimensions();
+  const [keyboardHeight, setKeyboardHeight] = useState(0);
+
+  useEffect(() => {
+    if (!visible) {
+      setKeyboardHeight(0);
+      return;
+    }
+
+    const showEvent = Platform.OS === "ios" ? "keyboardWillShow" : "keyboardDidShow";
+    const hideEvent = Platform.OS === "ios" ? "keyboardWillHide" : "keyboardDidHide";
+
+    const showSub = Keyboard.addListener(showEvent, (e) => {
+      setKeyboardHeight(e.endCoordinates.height);
+    });
+    const hideSub = Keyboard.addListener(hideEvent, () => {
+      setKeyboardHeight(0);
+    });
+
+    return () => {
+      showSub.remove();
+      hideSub.remove();
+    };
+  }, [visible]);
+
+  const sheetBottom = useMemo(() => {
+    if (keyboardHeight > 0) {
+      return keyboardHeight;
+    }
+    return Math.max(insets.bottom, 16);
+  }, [keyboardHeight, insets.bottom]);
+
+  const maxSheetHeight = useMemo(() => {
+    const topGap = insets.top + 24;
+    return Math.max(220, windowHeight - keyboardHeight - topGap - sheetBottom);
+  }, [windowHeight, keyboardHeight, insets.top, sheetBottom]);
 
   return (
     <Modal visible={visible} transparent animationType="slide">
-      <KeyboardAvoidingView
-        style={st.modalOverlay}
-        behavior={Platform.OS === "ios" ? "padding" : "height"}
-        keyboardVerticalOffset={Platform.OS === "ios" ? insets.top : 0}
-      >
-        <ScrollView
-          contentContainerStyle={[
-            st.modalScrollContent,
-            { paddingBottom: Math.max(insets.bottom, 16) + 16 },
+      <View style={st.modalOverlay}>
+        <TouchableOpacity style={st.modalBackdrop} activeOpacity={1} onPress={onCancel} />
+        <View
+          style={[
+            st.modalSheet,
+            {
+              backgroundColor: colors.card,
+              marginBottom: sheetBottom,
+              maxHeight: maxSheetHeight,
+            },
           ]}
-          keyboardShouldPersistTaps="handled"
-          showsVerticalScrollIndicator={false}
-          bounces={false}
         >
-          <View style={[st.modalCard, { backgroundColor: colors.card }]}>
+          <ScrollView
+            keyboardShouldPersistTaps="handled"
+            showsVerticalScrollIndicator={false}
+            bounces={false}
+          >
             <Text style={[st.modalTitle, { color: colors.foreground }]}>Yeni Analiz</Text>
             {[
               { label: "Poz No", key: "pozNo", placeholder: "ör. ÖZEL.001" },
@@ -1321,9 +1360,9 @@ function NewAnalizModal({
                 <Text style={{ color: colors.primaryForeground, fontWeight: "700" }}>Oluştur</Text>
               </TouchableOpacity>
             </View>
-          </View>
-        </ScrollView>
-      </KeyboardAvoidingView>
+          </ScrollView>
+        </View>
+      </View>
     </Modal>
   );
 }
@@ -1599,12 +1638,29 @@ const st = StyleSheet.create({
   actionLabel: { fontSize: 11, fontFamily: "Inter_500Medium" },
   modalOverlay: {
     flex: 1,
+    justifyContent: "flex-end",
+  },
+  modalBackdrop: {
+    ...StyleSheet.absoluteFillObject,
     backgroundColor: "rgba(0,0,0,0.5)",
   },
   modalOverlayCentered: {
     justifyContent: "center",
     alignItems: "center",
     padding: 24,
+  },
+  modalSheet: {
+    width: "100%",
+    borderTopLeftRadius: 18,
+    borderTopRightRadius: 18,
+    paddingHorizontal: 20,
+    paddingTop: 18,
+    paddingBottom: 20,
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: -4 },
+    shadowOpacity: 0.15,
+    shadowRadius: 12,
+    elevation: 8,
   },
   modalScrollContent: {
     flexGrow: 1,
