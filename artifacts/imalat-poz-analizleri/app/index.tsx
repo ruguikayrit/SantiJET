@@ -137,7 +137,7 @@ export default function HomeScreen() {
             extraData={`${search}|${filtered.length}`}
             style={{ flex: 1 }}
             keyboardShouldPersistTaps="handled"
-            contentContainerStyle={{ paddingBottom: insets.bottom + 24 }}
+            contentContainerStyle={{ paddingBottom: 8 }}
             renderItem={({ item, index }) => (
               <TouchableOpacity
                 style={[
@@ -178,7 +178,7 @@ export default function HomeScreen() {
         </>
       ) : (
       <ScrollView
-        contentContainerStyle={[styles.scroll, { paddingBottom: insets.bottom + 24 }]}
+        contentContainerStyle={[styles.scroll, { paddingBottom: 8 }]}
         showsVerticalScrollIndicator={false}
       >
         <View
@@ -234,6 +234,16 @@ export default function HomeScreen() {
         })}
       </ScrollView>
       )}
+
+      <Text
+        style={[
+          styles.sourceDisclaimer,
+          { color: colors.mutedForeground, paddingBottom: insets.bottom + 12 },
+        ]}
+      >
+        Veriler kamu kurumlarının yayımladığı kaynaklardan derlenmiştir. Nihai doğrulama için
+        ilgili kurumların güncel resmi yayınları esas alınmalıdır.
+      </Text>
     </View>
   );
 }
@@ -390,5 +400,13 @@ const styles = StyleSheet.create({
     fontFamily: "Inter_700Bold",
     marginBottom: 12,
     marginLeft: 4,
+  },
+  sourceDisclaimer: {
+    fontSize: 12,
+    fontFamily: "Inter_400Regular",
+    lineHeight: 16,
+    textAlign: "center",
+    paddingHorizontal: 16,
+    paddingTop: 8,
   },
 });
