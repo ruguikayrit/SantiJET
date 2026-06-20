@@ -32,6 +32,26 @@ function moduleRouteParams(
   return { ...(base ?? {}), q: searchQuery };
 }
 
+function SourceDisclaimer({
+  color,
+  bottomInset,
+}: {
+  color: string;
+  bottomInset: number;
+}) {
+  return (
+    <Text
+      style={[
+        styles.sourceDisclaimer,
+        { color, paddingBottom: bottomInset + 24, paddingTop: 20 },
+      ]}
+    >
+      Veriler kamu kurumlarının yayımladığı kaynaklardan derlenmiştir. Nihai doğrulama için
+      ilgili kurumların güncel resmi yayınları esas alınmalıdır.
+    </Text>
+  );
+}
+
 export default function HomeScreen() {
   const colors = useColors();
   const router = useRouter();
@@ -137,7 +157,6 @@ export default function HomeScreen() {
             extraData={`${search}|${filtered.length}`}
             style={{ flex: 1 }}
             keyboardShouldPersistTaps="handled"
-            contentContainerStyle={{ paddingBottom: 8 }}
             renderItem={({ item, index }) => (
               <TouchableOpacity
                 style={[
@@ -174,11 +193,16 @@ export default function HomeScreen() {
                 </View>
               )
             }
+            ListFooterComponent={
+              filtered.length > 0 ? (
+                <SourceDisclaimer color={colors.mutedForeground} bottomInset={insets.bottom} />
+              ) : null
+            }
           />
         </>
       ) : (
       <ScrollView
-        contentContainerStyle={[styles.scroll, { paddingBottom: 8 }]}
+        contentContainerStyle={styles.scroll}
         showsVerticalScrollIndicator={false}
       >
         <View
@@ -232,18 +256,10 @@ export default function HomeScreen() {
             />
           );
         })}
+
+        <SourceDisclaimer color={colors.mutedForeground} bottomInset={insets.bottom} />
       </ScrollView>
       )}
-
-      <Text
-        style={[
-          styles.sourceDisclaimer,
-          { color: colors.mutedForeground, paddingBottom: insets.bottom + 12 },
-        ]}
-      >
-        Veriler kamu kurumlarının yayımladığı kaynaklardan derlenmiştir. Nihai doğrulama için
-        ilgili kurumların güncel resmi yayınları esas alınmalıdır.
-      </Text>
     </View>
   );
 }
@@ -402,11 +418,10 @@ const styles = StyleSheet.create({
     marginLeft: 4,
   },
   sourceDisclaimer: {
-    fontSize: 12,
+    fontSize: 10,
     fontFamily: "Inter_400Regular",
-    lineHeight: 16,
+    lineHeight: 14,
     textAlign: "center",
     paddingHorizontal: 16,
-    paddingTop: 8,
   },
 });
