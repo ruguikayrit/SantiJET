@@ -60,17 +60,28 @@ type Colors = ReturnType<typeof useColors>;
 export default function ImalatPozlariScreen() {
   const colors = useColors();
   const router = useRouter();
-  const params = useLocalSearchParams<{ id?: string; q?: string }>();
+  const params = useLocalSearchParams<{ id?: string; q?: string; modul?: string; cat?: string }>();
   const insets = useSafeAreaInsets();
   const topPad = Platform.OS === "web" ? 16 : insets.top;
 
   const { addPozAnaliz, updatePozAnaliz, deletePozAnaliz, clonePozAnaliz } = useApp();
 
+  const modul = params.modul ? String(params.modul) : "insaat";
+
   const { pozAnalizleri, loading: catalogLoading, error: catalogError } =
     useMergedPozAnalizleri();
 
+  const modulAnalizleri = useMemo(() => {
+    if (modul === "ozel") {
+      return pozAnalizleri.filter((a) => a.kaynakTip !== "sistem");
+    }
+    return pozAnalizleri;
+  }, [pozAnalizleri, modul]);
+
   const [search, setSearch] = useState(() => (params.q ? String(params.q) : ""));
-  const [catFilter, setCatFilter] = useState<string | null>(null);
+  const [catFilter, setCatFilter] = useState<string | null>(() =>
+    params.cat ? String(params.cat) : null,
+  );
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [isEditing, setIsEditing] = useState(false);
   const [editDraft, setEditDraft] = useState<PozAnaliz | null>(null);
@@ -89,39 +100,45 @@ export default function ImalatPozlariScreen() {
   });
 
   const selected = useMemo(
-    () => pozAnalizleri.find((a) => a.id === selectedId) ?? null,
-    [pozAnalizleri, selectedId]
+    () => modulAnalizleri.find((a) => a.id === selectedId) ?? null,
+    [modulAnalizleri, selectedId],
   );
 
   const categories = useMemo(
-    () => ["Tümü", ...buildPozKategoriFiltreleri(pozAnalizleri)],
-    [pozAnalizleri],
+    () => ["Tümü", ...buildPozKategoriFiltreleri(modulAnalizleri)],
+    [modulAnalizleri],
   );
 
   const kategoriSayilari = useMemo(() => {
     const counts = new Map<string, number>();
-    for (const a of pozAnalizleri) {
+    for (const a of modulAnalizleri) {
       const k = (a.kategori || "").trim();
       if (!k) continue;
       counts.set(k, (counts.get(k) ?? 0) + 1);
     }
     return counts;
-  }, [pozAnalizleri]);
+  }, [modulAnalizleri]);
 
   const filtered = useMemo(() => {
-    return pozAnalizleri
+    return modulAnalizleri
       .filter((a) => {
         if (!catFilter) return true;
         return (a.kategori || "").trim() === catFilter;
       })
       .filter((a) => matchesPozAnalizSearch(a, search))
       .sort((a, b) => a.pozNo.localeCompare(b.pozNo, "tr"));
-  }, [pozAnalizleri, catFilter, search]);
+  }, [modulAnalizleri, catFilter, search]);
 
   const catFilterLabel = useMemo(() => {
-    if (!catFilter) return `Tümü (${pozAnalizleri.length})`;
+    if (!catFilter) return `Tümü (${modulAnalizleri.length})`;
     return `${catFilter} (${kategoriSayilari.get(catFilter) ?? 0})`;
-  }, [catFilter, pozAnalizleri.length, kategoriSayilari]);
+  }, [catFilter, modulAnalizleri.length, kategoriSayilari]);
+
+  const screenTitle = useMemo(() => {
+    if (modul === "ozel") return "Özel Birim Fiyat Analizleri";
+    if (catFilter) return catFilter;
+    return "Birim Fiyat Analizleri";
+  }, [modul, catFilter]);
 
   function selectCategory(cat: string) {
     setCatFilter(cat === "Tümü" ? null : cat);
@@ -141,12 +158,18 @@ export default function ImalatPozlariScreen() {
   }, [params.q]);
 
   useEffect(() => {
+    if (params.cat) {
+      setCatFilter(String(params.cat));
+    }
+  }, [params.cat]);
+
+  useEffect(() => {
     if (!params.id || catalogLoading) return;
     const id = String(params.id);
-    if (pozAnalizleri.some((a) => a.id === id)) {
+    if (modulAnalizleri.some((a) => a.id === id)) {
       openDetail(id);
     }
-  }, [params.id, catalogLoading, pozAnalizleri]);
+  }, [params.id, catalogLoading, modulAnalizleri]);
 
   function goBack() {
     if (isEditing) {
@@ -715,7 +738,7 @@ export default function ImalatPozlariScreen() {
         </TouchableOpacity>
         <View style={{ flex: 1, alignItems: "center" }}>
           <Text style={[st.headerTitle, { color: colors.secondaryForeground }]}>
-            Birim Fiyat Analizleri
+            {screenTitle}
           </Text>
         </View>
         <View style={{ width: 40 }} />
@@ -762,7 +785,7 @@ export default function ImalatPozlariScreen() {
         visible={catPickerOpen}
         categories={categories}
         kategoriSayilari={kategoriSayilari}
-        totalCount={pozAnalizleri.length}
+        totalCount={modulAnalizleri.length}
         selected={catFilter}
         onSelect={selectCategory}
         onClose={() => setCatPickerOpen(false)}

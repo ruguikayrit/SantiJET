@@ -24,6 +24,7 @@ function RootLayoutNav() {
     <Stack screenOptions={{ headerShown: false }}>
       <Stack.Screen name="index" />
       <Stack.Screen name="imalat-pozlari" />
+      <Stack.Screen name="analiz-katalogu" />
     </Stack>
   );
 }

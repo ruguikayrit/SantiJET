@@ -15,11 +15,22 @@ import {
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 import { SantijetLogo } from "@/components/SantijetLogo";
+import { ModuleTile } from "@/components/ModuleTile";
+import { BFA_MODULES } from "@/constants/bfaModules";
 import { matchesPozAnalizSearch } from "@/constants/pozAnalizleri";
 import { useMergedPozAnalizleri } from "@/hooks/useMergedPozAnalizleri";
 import { useColors } from "@/hooks/useColors";
 
 const TILE_COLOR = "#d97706";
+
+function moduleRouteParams(
+  mod: (typeof BFA_MODULES)[number],
+  searchQuery: string,
+): Record<string, string> | undefined {
+  const base = mod.route.params ? { ...mod.route.params } : undefined;
+  if (!searchQuery || mod.route.pathname !== "/imalat-pozlari") return base;
+  return { ...(base ?? {}), q: searchQuery };
+}
 
 export default function HomeScreen() {
   const colors = useColors();
@@ -43,10 +54,10 @@ export default function HomeScreen() {
     router.push({ pathname: "/imalat-pozlari", params: { id } } as any);
   }
 
-  function openAnalizListesi() {
+  function openModule(mod: (typeof BFA_MODULES)[number]) {
     router.push({
-      pathname: "/imalat-pozlari",
-      params: searching ? { q: search.trim() } : undefined,
+      pathname: mod.route.pathname,
+      params: moduleRouteParams(mod, searching ? search.trim() : ""),
     } as any);
   }
 
@@ -202,40 +213,23 @@ export default function HomeScreen() {
 
         <Text style={[styles.sectionLabel, { color: colors.foreground }]}>Modüller</Text>
 
-        <TouchableOpacity
-          activeOpacity={0.85}
-          onPress={openAnalizListesi}
-          style={[
-            styles.tileInner,
-            {
-              backgroundColor: colors.card,
-              borderColor: TILE_COLOR + "33",
-            },
-          ]}
-        >
-          <View style={[styles.tileIconCircle, { backgroundColor: TILE_COLOR + "1e" }]}>
-            <Feather name="layers" size={26} color={TILE_COLOR} />
-          </View>
-          <View style={styles.tileBody}>
-            <Text style={styles.tileNum}>01</Text>
-            <Text style={[styles.tileLabel, { color: colors.cardForeground }]}>
-              İNŞAAT BİRİM FİYAT ANALİZLERİ
-            </Text>
-            <View style={styles.tileFootRow}>
-              <View style={[styles.tileDot, { backgroundColor: TILE_COLOR }]} />
-              {loading ? (
-                <ActivityIndicator size="small" color={TILE_COLOR} />
-              ) : (
-                <Text style={[styles.tileInfo, { color: TILE_COLOR }]} numberOfLines={1}>
-                  {pozAnalizleri.length} Analiz
-                </Text>
-              )}
-            </View>
-          </View>
-          <View style={[styles.tileChevCircle, { borderColor: TILE_COLOR + "55" }]}>
-            <Feather name="chevron-right" size={14} color={TILE_COLOR} />
-          </View>
-        </TouchableOpacity>
+        {BFA_MODULES.map((mod) => {
+          const count = mod.count(pozAnalizleri);
+          return (
+            <ModuleTile
+              key={mod.num}
+              num={mod.num}
+              label={mod.label}
+              icon={mod.icon}
+              color={mod.color}
+              info={`${count} ${mod.infoSuffix}`}
+              loading={loading}
+              cardForeground={colors.cardForeground}
+              cardBackground={colors.card}
+              onPress={() => openModule(mod)}
+            />
+          );
+        })}
       </ScrollView>
       )}
     </View>
@@ -394,65 +388,5 @@ const styles = StyleSheet.create({
     fontFamily: "Inter_700Bold",
     marginBottom: 12,
     marginLeft: 4,
-  },
-  tileInner: {
-    width: "100%",
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 14,
-    padding: 16,
-    borderRadius: 14,
-    borderWidth: 1,
-    marginBottom: 12,
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 6,
-    elevation: 3,
-  },
-  tileBody: {
-    flex: 1,
-    gap: 4,
-  },
-  tileNum: {
-    fontSize: 10,
-    fontFamily: "Inter_700Bold",
-    color: "#334155",
-    letterSpacing: 0.5,
-  },
-  tileIconCircle: {
-    width: 52,
-    height: 52,
-    borderRadius: 26,
-    justifyContent: "center",
-    alignItems: "center",
-  },
-  tileLabel: {
-    fontSize: 13,
-    fontFamily: "Inter_700Bold",
-    letterSpacing: 0.4,
-  },
-  tileFootRow: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 6,
-    marginTop: 2,
-  },
-  tileDot: {
-    width: 5,
-    height: 5,
-    borderRadius: 3,
-  },
-  tileInfo: {
-    fontSize: 12,
-    fontFamily: "Inter_500Medium",
-  },
-  tileChevCircle: {
-    width: 32,
-    height: 32,
-    borderRadius: 16,
-    borderWidth: 1,
-    justifyContent: "center",
-    alignItems: "center",
   },
 });
