@@ -74,9 +74,61 @@ export function normalizeTrSearch(text: string): string {
   return text.trim().toLocaleLowerCase("tr");
 }
 
-/** Arama ifadesini kelime tokenlarına ayırır */
+const POZ_SEARCH_MEASURE_UNITS =
+  "cm|mm|m²|m³|m2|m3|kg|ton|adet|lt|gr";
+
+const POZ_SEARCH_WORD_CHAR = "a-z0-9ğüşıöç";
+
+function escapeRegExp(text: string): string {
+  return text.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+}
+
+/** "19cm" gibi bitişik ölçü yazımlarını "19 cm" biçimine çevirir */
+function expandPozSearchQuery(query: string): string {
+  return normalizeTrSearch(query).replace(
+    new RegExp(`(\\d+(?:[.,]\\d+)?)\\s*(${POZ_SEARCH_MEASURE_UNITS})\\b`, "gi"),
+    "$1 $2",
+  );
+}
+
+/** Arama ifadesini kelime tokenlarına ayırır; sayı+birim çiftlerini birleştirir */
 export function tokenizeTrSearch(query: string): string[] {
-  return normalizeTrSearch(query).split(/\s+/).filter(Boolean);
+  const parts = expandPozSearchQuery(query).split(/\s+/).filter(Boolean);
+  const unitRe = new RegExp(`^(${POZ_SEARCH_MEASURE_UNITS})$`, "i");
+  const tokens: string[] = [];
+
+  for (let i = 0; i < parts.length; i++) {
+    const part = parts[i];
+    const next = parts[i + 1];
+    if (/^\d+(?:[.,]\d+)?$/.test(part) && next && unitRe.test(next)) {
+      tokens.push(`${part} ${next}`);
+      i++;
+    } else {
+      tokens.push(part);
+    }
+  }
+  return tokens;
+}
+
+/** Kelime sınırında eşleşme; poz no içindeki 1901 gibi yanlış eşleşmeleri engeller */
+function tokenMatchesHaystack(token: string, haystack: string): boolean {
+  const measureMatch = token.match(
+    new RegExp(`^(\\d+(?:[.,]\\d+)?)\\s+(${POZ_SEARCH_MEASURE_UNITS})$`, "i"),
+  );
+  if (measureMatch) {
+    const [, num, unit] = measureMatch;
+    const re = new RegExp(
+      `(^|[^${POZ_SEARCH_WORD_CHAR}])${escapeRegExp(num)}\\s*${escapeRegExp(unit)}($|[^${POZ_SEARCH_WORD_CHAR}])`,
+      "i",
+    );
+    return re.test(haystack);
+  }
+
+  const re = new RegExp(
+    `(^|[^${POZ_SEARCH_WORD_CHAR}])${escapeRegExp(token)}($|[^${POZ_SEARCH_WORD_CHAR}])`,
+    "i",
+  );
+  return re.test(haystack);
 }
 
 /** Analiz kaydının aranabilir metin alanlarını birleştirir */
@@ -99,7 +151,7 @@ export function matchesPozAnalizSearch(
   const tokens = tokenizeTrSearch(query);
   if (!tokens.length) return true;
   const haystack = buildPozAnalizHaystack(analiz);
-  return tokens.every((token) => haystack.includes(token));
+  return tokens.every((token) => tokenMatchesHaystack(token, haystack));
 }
 
 /** Katalogdaki gerçek kategori listesi (filtre çipleri için) */
