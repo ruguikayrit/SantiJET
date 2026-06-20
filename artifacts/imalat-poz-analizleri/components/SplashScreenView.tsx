@@ -1,9 +1,6 @@
 import React, { useEffect, useRef } from "react";
 import { Animated, Dimensions, Image, StyleSheet, View } from "react-native";
 
-import { SplashBlueprintBackground } from "@/components/splash/SplashBlueprintBackground";
-import { SplashVignette } from "@/components/splash/SplashVignette";
-
 const { width, height } = Dimensions.get("window");
 
 const ICON_SRC = require("@/assets/images/santijet-icon.png");
@@ -20,10 +17,8 @@ const WORDMARK_WIDTH = Math.round(width * 0.72 * 0.8);
 const WORDMARK_HEIGHT = Math.round(WORDMARK_WIDTH / WM_ASPECT);
 /** SantijetLogo stacked oranı: bolt yüksekliği ≈ wordmark yüksekliği / 0.54; splash x2.5 */
 const BOLT_HEIGHT = Math.round((WORDMARK_HEIGHT / 0.54) * 2.5);
-/** Logo–wordmark aralığı ~%17 azaltıldı (64 → 53) */
-const LOGO_WORDMARK_GAP = Math.round(64 * 0.825);
-
-const BRAND_GLOW = "#1a5fff";
+/** Orijinal boşluk 32px; x2 */
+const LOGO_WORDMARK_GAP = 64;
 
 function SplashBolt({ boltHeight }: { boltHeight: number }) {
   const boltImgH = Math.round(boltHeight / (BOLT_Y_END - BOLT_Y_START));
@@ -91,49 +86,11 @@ export default function SplashScreenView({ onFinish }: Props) {
     });
   }, []);
 
-  const radialSize = Math.round(BOLT_HEIGHT * 1.75);
-  const ambientSize = Math.round(BOLT_HEIGHT * 1.35);
-
   return (
     <Animated.View style={[styles.container, { opacity: bgOpacity }]}>
-      <SplashBlueprintBackground />
-      <SplashVignette />
-
       <View style={[styles.center, { marginTop: -Math.round(height * 0.07) }]}>
         <View style={[styles.boltWrap, { marginBottom: LOGO_WORDMARK_GAP }]}>
-          <Animated.View
-            style={[
-              styles.radialLight,
-              {
-                width: radialSize,
-                height: radialSize,
-                borderRadius: radialSize / 2,
-                opacity: logoGlowOpacity,
-              },
-            ]}
-          />
-          <Animated.View
-            style={[
-              styles.ambientGlow,
-              {
-                width: ambientSize,
-                height: ambientSize,
-                borderRadius: ambientSize / 2,
-                opacity: logoGlowOpacity,
-              },
-            ]}
-          />
-          <Animated.View
-            style={[
-              styles.coreGlow,
-              {
-                width: Math.round(BOLT_HEIGHT * 1.2),
-                height: Math.round(BOLT_HEIGHT * 1.2),
-                borderRadius: Math.round(BOLT_HEIGHT * 0.6),
-                opacity: logoGlowOpacity,
-              },
-            ]}
-          />
+          <Animated.View style={[styles.glow, { opacity: logoGlowOpacity }]} />
           <Animated.View
             style={{
               opacity: logoOpacity,
@@ -144,7 +101,17 @@ export default function SplashScreenView({ onFinish }: Props) {
           </Animated.View>
         </View>
 
-        <Image source={WORDMARK} style={styles.wordmark} resizeMode="contain" />
+        <Animated.Image
+          source={WORDMARK}
+          style={[
+            styles.wordmark,
+            {
+              opacity: wordmarkOpacity,
+              transform: [{ scale: wordmarkScale }],
+            },
+          ]}
+          resizeMode="contain"
+        />
       </View>
     </Animated.View>
   );
@@ -167,26 +134,16 @@ const styles = StyleSheet.create({
     justifyContent: "center",
     minHeight: BOLT_HEIGHT,
   },
-  radialLight: {
+  glow: {
     position: "absolute",
-    backgroundColor: "rgba(26, 95, 255, 0.055)",
-  },
-  ambientGlow: {
-    position: "absolute",
-    backgroundColor: "rgba(26, 95, 255, 0.07)",
-    shadowColor: BRAND_GLOW,
-    shadowOffset: { width: 0, height: 0 },
-    shadowOpacity: 0.55,
-    shadowRadius: 56,
-    elevation: 0,
-  },
-  coreGlow: {
-    position: "absolute",
+    width: Math.round(BOLT_HEIGHT * 1.2),
+    height: Math.round(BOLT_HEIGHT * 1.2),
+    borderRadius: Math.round(BOLT_HEIGHT * 0.6),
     backgroundColor: "transparent",
-    shadowColor: BRAND_GLOW,
+    shadowColor: "#1a5fff",
     shadowOffset: { width: 0, height: 0 },
     shadowOpacity: 1,
-    shadowRadius: 50,
+    shadowRadius: 40,
     elevation: 0,
   },
   wordmark: {
