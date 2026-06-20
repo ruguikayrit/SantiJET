@@ -8,6 +8,7 @@ import {
   ActivityIndicator,
   FlatList,
   Keyboard,
+  KeyboardAvoidingView,
   Modal,
   Platform,
   ScrollView,
@@ -16,7 +17,6 @@ import {
   TextInput,
   TouchableOpacity,
   View,
-  useWindowDimensions,
 } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
@@ -1208,10 +1208,31 @@ function CloneModal({
   onCancel: () => void;
   colors: Colors;
 }) {
+  const insets = useSafeAreaInsets();
+
+  if (!visible) return null;
+
   return (
-    <Modal visible={visible} transparent animationType="fade">
-      <View style={[st.modalOverlay, st.modalOverlayCentered, { backgroundColor: "rgba(0,0,0,0.5)" }]}>
-        <View style={[st.modalCard, { backgroundColor: colors.card }]}>
+    <View style={st.modalHost}>
+      <TouchableOpacity
+        style={st.modalBackdrop}
+        activeOpacity={1}
+        onPress={() => {
+          Keyboard.dismiss();
+          onCancel();
+        }}
+      />
+      <KeyboardAvoidingView
+        style={st.modalKav}
+        behavior={Platform.OS === "ios" ? "padding" : "height"}
+        keyboardVerticalOffset={0}
+      >
+        <View
+          style={[
+            st.modalSheet,
+            { backgroundColor: colors.card, paddingBottom: Math.max(insets.bottom, 16) },
+          ]}
+        >
           <Text style={[st.modalTitle, { color: colors.foreground }]}>Analizi Kopyala</Text>
           <Text style={[st.modalSub, { color: colors.mutedForeground }]}>
             Kopyalanan analizin adını belirleyin:
@@ -1241,23 +1262,14 @@ function CloneModal({
             </TouchableOpacity>
           </View>
         </View>
-      </View>
-    </Modal>
+      </KeyboardAvoidingView>
+    </View>
   );
 }
 
 // ─── NewAnalizModal ───────────────────────────────────────────
-
-function getKeyboardBottomInset(
-  e: { endCoordinates: { height: number; screenY: number } },
-  windowHeight: number,
-): number {
-  const { height, screenY } = e.endCoordinates;
-  const fromTop = Math.max(0, windowHeight - screenY);
-  const inset = Math.max(height, fromTop);
-  // iOS Modal + home indicator: küçük tampon gerekir
-  return Platform.OS === "ios" ? inset + 12 : inset;
-}
+// iOS'ta RN Modal ayrı pencerede açıldığı için klavye kaçınması çalışmaz;
+// ekran içi overlay + KeyboardAvoidingView kullanıyoruz.
 
 function NewAnalizModal({
   visible,
@@ -1275,39 +1287,9 @@ function NewAnalizModal({
   colors: Colors;
 }) {
   const insets = useSafeAreaInsets();
-  const { height: windowHeight } = useWindowDimensions();
-  const [keyboardInset, setKeyboardInset] = useState(0);
   const scrollRef = React.useRef<ScrollView>(null);
 
-  useEffect(() => {
-    if (!visible) {
-      setKeyboardInset(0);
-      return;
-    }
-
-    const showEvent = Platform.OS === "ios" ? "keyboardWillShow" : "keyboardDidShow";
-    const hideEvent = Platform.OS === "ios" ? "keyboardWillHide" : "keyboardDidHide";
-
-    const showSub = Keyboard.addListener(showEvent, (e) => {
-      setKeyboardInset(getKeyboardBottomInset(e, windowHeight));
-    });
-    const hideSub = Keyboard.addListener(hideEvent, () => {
-      setKeyboardInset(0);
-    });
-
-    return () => {
-      showSub.remove();
-      hideSub.remove();
-    };
-  }, [visible, windowHeight]);
-
-  const sheetBottom =
-    keyboardInset > 0 ? keyboardInset : Math.max(insets.bottom, 16);
-
-  const maxSheetHeight = Math.max(
-    240,
-    windowHeight - insets.top - sheetBottom - 20,
-  );
+  if (!visible) return null;
 
   const scrollToEnd = () => {
     requestAnimationFrame(() => {
@@ -1316,24 +1298,24 @@ function NewAnalizModal({
   };
 
   return (
-    <Modal
-      visible={visible}
-      transparent
-      animationType="slide"
-      presentationStyle="overFullScreen"
-      onRequestClose={onCancel}
-    >
-      <View style={st.modalOverlay}>
-        <TouchableOpacity style={st.modalBackdrop} activeOpacity={1} onPress={onCancel} />
+    <View style={st.modalHost}>
+      <TouchableOpacity
+        style={st.modalBackdrop}
+        activeOpacity={1}
+        onPress={() => {
+          Keyboard.dismiss();
+          onCancel();
+        }}
+      />
+      <KeyboardAvoidingView
+        style={st.modalKav}
+        behavior={Platform.OS === "ios" ? "padding" : "height"}
+        keyboardVerticalOffset={0}
+      >
         <View
           style={[
             st.modalSheet,
-            st.modalSheetFloating,
-            {
-              backgroundColor: colors.card,
-              bottom: sheetBottom,
-              maxHeight: maxSheetHeight,
-            },
+            { backgroundColor: colors.card, paddingBottom: Math.max(insets.bottom, 16) },
           ]}
         >
           <ScrollView
@@ -1387,8 +1369,8 @@ function NewAnalizModal({
             </View>
           </ScrollView>
         </View>
-      </View>
-    </Modal>
+      </KeyboardAvoidingView>
+    </View>
   );
 }
 
@@ -1661,49 +1643,34 @@ const st = StyleSheet.create({
   },
   actionBtn: { alignItems: "center", paddingHorizontal: 10, paddingVertical: 6, gap: 4 },
   actionLabel: { fontSize: 11, fontFamily: "Inter_500Medium" },
-  modalOverlay: {
-    flex: 1,
+  modalHost: {
+    ...StyleSheet.absoluteFillObject,
+    zIndex: 1000,
+    elevation: 1000,
   },
   modalBackdrop: {
     ...StyleSheet.absoluteFillObject,
     backgroundColor: "rgba(0,0,0,0.5)",
   },
-  modalOverlayCentered: {
-    justifyContent: "center",
-    alignItems: "center",
-    padding: 24,
+  modalKav: {
+    flex: 1,
+    justifyContent: "flex-end",
   },
   modalSheet: {
     width: "100%",
+    maxHeight: "85%",
     borderTopLeftRadius: 18,
     borderTopRightRadius: 18,
     paddingHorizontal: 20,
     paddingTop: 18,
-    paddingBottom: 20,
     shadowColor: "#000",
     shadowOffset: { width: 0, height: -4 },
     shadowOpacity: 0.15,
     shadowRadius: 12,
     elevation: 8,
   },
-  modalSheetFloating: {
-    position: "absolute",
-    left: 0,
-    right: 0,
-  },
   modalSheetScroll: {
     paddingBottom: 4,
-  },
-  modalScrollContent: {
-    flexGrow: 1,
-    justifyContent: "center",
-    paddingHorizontal: 24,
-    paddingTop: 24,
-  },
-  modalCard: {
-    width: "100%",
-    borderRadius: 16,
-    padding: 20,
   },
   modalTitle: {
     fontSize: 17,
