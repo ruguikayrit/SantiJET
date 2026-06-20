@@ -1,0 +1,42 @@
+import { useEffect, useMemo, useState } from "react";
+
+import { PozAnaliz } from "@/constants/imalatPozlari";
+import { useApp } from "@/context/AppContext";
+import {
+  loadResmiPozAnalizleri,
+  mergePozAnalizCatalog,
+} from "@/lib/pozAnalizCatalog";
+
+export function useMergedPozAnalizleri() {
+  const { pozAnalizleri: userAnalizleri } = useApp();
+  const [resmiAnalizler, setResmiAnalizler] = useState<PozAnaliz[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    let cancelled = false;
+    loadResmiPozAnalizleri()
+      .then((data) => {
+        if (!cancelled) {
+          setResmiAnalizler(data);
+          setLoading(false);
+        }
+      })
+      .catch(() => {
+        if (!cancelled) {
+          setError("Resmi analiz verisi yüklenemedi.");
+          setLoading(false);
+        }
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
+  const pozAnalizleri = useMemo(
+    () => mergePozAnalizCatalog(resmiAnalizler, userAnalizleri),
+    [resmiAnalizler, userAnalizleri],
+  );
+
+  return { pozAnalizleri, loading, error, resmiLoaded: !loading && !error };
+}
