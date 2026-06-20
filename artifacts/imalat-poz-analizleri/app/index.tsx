@@ -177,11 +177,13 @@ export default function HomeScreen() {
           <View style={styles.welcomeTopRow}>
             <Text style={styles.welcomeGreet}>Hoş geldiniz</Text>
             <View style={styles.welcomeDateBlock}>
-              <Feather name="calendar" size={14} color="#60a5fa" />
-              <Text style={[styles.welcomeDateMain, { color: colors.secondaryForeground }]}>
-                {dateStr}
-              </Text>
-              <Text style={styles.welcomeDateSub}>{dayStr}</Text>
+              <Feather name="calendar" size={14} color="#60a5fa" style={styles.welcomeDateIcon} />
+              <View style={styles.welcomeDateTexts}>
+                <Text style={[styles.welcomeDateMain, { color: colors.secondaryForeground }]}>
+                  {dateStr}
+                </Text>
+                <Text style={styles.welcomeDateSub}>{dayStr}</Text>
+              </View>
             </View>
           </View>
 
@@ -367,14 +369,21 @@ const styles = StyleSheet.create({
     lineHeight: 14,
   },
   welcomeDateBlock: {
+    flexDirection: "row",
+    alignItems: "flex-start",
+    gap: 6,
+    flexShrink: 0,
+  },
+  welcomeDateIcon: {
+    marginTop: 1,
+  },
+  welcomeDateTexts: {
     alignItems: "flex-end",
     gap: 2,
-    flexShrink: 0,
   },
   welcomeDateMain: {
     fontSize: 11,
     fontFamily: "Inter_600SemiBold",
-    marginTop: 2,
     textAlign: "right",
   },
   welcomeDateSub: {
