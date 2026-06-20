@@ -47,12 +47,13 @@ export function SantijetLogo({
   centered = false,
   stacked = false,
 }: SantijetLogoProps) {
-  const wmH = Math.round(iconHeight * 0.62);
-  const wmW = Math.round(wmH * WM_ASPECT);
-  const boltH = Math.round(iconHeight * 0.92);
-  const overlap = Math.round(boltH * 0.38);
-
   if (stacked) {
+    const boltH = iconHeight;
+    const wmH = Math.round(iconHeight * 0.54);
+    const wmW = Math.round(wmH * WM_ASPECT);
+    const wordmarkOffset = Math.round(iconHeight * 0.1);
+    const overlap = Math.round(boltH * 0.12);
+
     return (
       <View style={[styles.stackedWrap, centered && styles.centered]}>
         <View style={[styles.stackedInner, { width: wmW }]}>
@@ -61,13 +62,16 @@ export function SantijetLogo({
           </View>
           <Image
             source={WM_SRC}
-            style={{ width: wmW, height: wmH }}
+            style={{ width: wmW, height: wmH, marginTop: wordmarkOffset }}
             resizeMode="contain"
           />
         </View>
       </View>
     );
   }
+
+  const wmH = Math.round(iconHeight * 0.62);
+  const wmW = Math.round(wmH * WM_ASPECT);
 
   return (
     <View style={[styles.row, centered && styles.centered]}>
