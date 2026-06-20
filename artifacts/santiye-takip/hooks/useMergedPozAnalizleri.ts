@@ -5,10 +5,15 @@ import { useApp } from "@/context/AppContext";
 import {
   loadResmiPozAnalizleri,
   mergePozAnalizCatalog,
+  sanitizeUserPozAnalizleri,
 } from "@/lib/pozAnalizCatalog";
 
 export function useMergedPozAnalizleri() {
-  const { pozAnalizleri: userAnalizleri } = useApp();
+  const { pozAnalizleri: rawUser } = useApp();
+  const userAnalizleri = useMemo(
+    () => sanitizeUserPozAnalizleri(rawUser ?? []),
+    [rawUser],
+  );
   const [resmiAnalizler, setResmiAnalizler] = useState<PozAnaliz[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
