@@ -17,6 +17,7 @@ import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { SantijetLogo } from "@/components/SantijetLogo";
 import { CreateAnalizFab } from "@/components/CreateAnalizFab";
 import { NewAnalizModulePickerModal } from "@/components/NewAnalizModulePickerModal";
+import { RecentViewsModal } from "@/components/RecentViewsModal";
 import { SettingsModal } from "@/components/SettingsModal";
 import { ModuleTile } from "@/components/ModuleTile";
 import { BFA_MODULES, BfaDiscipline, resolveAnalizDiscipline } from "@/constants/bfaModules";
@@ -26,6 +27,7 @@ import { useColors } from "@/hooks/useColors";
 import { useRecentViews } from "@/hooks/useRecentViews";
 
 const TILE_COLOR = "#d97706";
+const RECENT_COLOR = "#6366f1";
 
 function moduleRouteParams(
   mod: (typeof BFA_MODULES)[number],
@@ -67,6 +69,7 @@ export default function HomeScreen() {
   const [search, setSearch] = useState("");
   const [newAnalizPickerVisible, setNewAnalizPickerVisible] = useState(false);
   const [settingsVisible, setSettingsVisible] = useState(false);
+  const [recentVisible, setRecentVisible] = useState(false);
 
   const filtered = useMemo(() => {
     if (!search.trim()) return [];
@@ -88,8 +91,7 @@ export default function HomeScreen() {
     if (!recentLoaded) return [];
     return recentEntries
       .map((e) => all.find((a) => a.id === e.id))
-      .filter((a): a is NonNullable<typeof a> => a != null)
-      .slice(0, 10);
+      .filter((a): a is NonNullable<typeof a> => a != null);
   }, [recentEntries, recentLoaded, all]);
 
   function openNewAnaliz() {
@@ -273,32 +275,40 @@ export default function HomeScreen() {
           </View>
         </View>
 
-        {recentAnalizler.length > 0 && (
-          <>
-            <Text style={[styles.sectionLabel, { color: colors.foreground, marginTop: 4 }]}>
+        <TouchableOpacity
+          activeOpacity={0.85}
+          onPress={() => setRecentVisible(true)}
+          style={[
+            styles.recentBtn,
+            {
+              backgroundColor: colors.card,
+              borderColor: RECENT_COLOR + "33",
+            },
+          ]}
+        >
+          <View style={[styles.recentBtnIcon, { backgroundColor: RECENT_COLOR + "1e" }]}>
+            <Feather name="clock" size={23} color={RECENT_COLOR} />
+          </View>
+          <View style={styles.recentBtnBody}>
+            <Text style={styles.recentBtnNum}>HIZLI ERİŞİM</Text>
+            <Text style={[styles.recentBtnLabel, { color: colors.cardForeground }]}>
               Son Görüntülenenler
             </Text>
-            {recentAnalizler.map((item) => (
-              <TouchableOpacity
-                key={item.id}
-                style={[
-                  styles.recentRow,
-                  { backgroundColor: colors.card, borderColor: colors.border },
-                ]}
-                onPress={() => openAnaliz(item.id)}
-                activeOpacity={0.75}
-              >
-                <View style={styles.recentMain}>
-                  <Text style={[styles.recentPoz, { color: colors.primary }]}>{item.pozNo}</Text>
-                  <Text style={[styles.recentAd, { color: colors.foreground }]} numberOfLines={1}>
-                    {item.analizAdi}
-                  </Text>
-                </View>
-                <Feather name="chevron-right" size={16} color={colors.mutedForeground} />
-              </TouchableOpacity>
-            ))}
-          </>
-        )}
+            <View style={styles.recentBtnFoot}>
+              <View style={[styles.recentBtnDot, { backgroundColor: RECENT_COLOR }]} />
+              <Text style={[styles.recentBtnInfo, { color: RECENT_COLOR }]}>
+                {recentLoaded
+                  ? recentAnalizler.length > 0
+                    ? `${recentAnalizler.length} analiz`
+                    : "Henüz kayıt yok"
+                  : "Yükleniyor…"}
+              </Text>
+            </View>
+          </View>
+          <View style={[styles.recentBtnChev, { borderColor: RECENT_COLOR + "55" }]}>
+            <Feather name="chevron-right" size={13} color={RECENT_COLOR} />
+          </View>
+        </TouchableOpacity>
 
         <Text style={[styles.sectionLabel, { color: colors.foreground }]}>Modüller</Text>
 
@@ -333,6 +343,13 @@ export default function HomeScreen() {
       />
 
       <SettingsModal visible={settingsVisible} onClose={() => setSettingsVisible(false)} />
+
+      <RecentViewsModal
+        visible={recentVisible}
+        onClose={() => setRecentVisible(false)}
+        items={recentAnalizler}
+        onSelect={openAnaliz}
+      />
     </View>
   );
 }
@@ -502,27 +519,65 @@ const styles = StyleSheet.create({
     marginBottom: 12,
     marginLeft: 4,
   },
-  recentRow: {
+  recentBtn: {
+    width: "100%",
     flexDirection: "row",
     alignItems: "center",
-    borderRadius: 10,
+    gap: 13,
+    padding: 14,
+    borderRadius: 13,
     borderWidth: 1,
-    paddingHorizontal: 12,
-    paddingVertical: 10,
-    marginBottom: 8,
-    gap: 8,
+    marginBottom: 11,
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 6,
+    elevation: 3,
   },
-  recentMain: {
+  recentBtnIcon: {
+    width: 47,
+    height: 47,
+    borderRadius: 24,
+    justifyContent: "center",
+    alignItems: "center",
+  },
+  recentBtnBody: {
     flex: 1,
-    gap: 2,
+    gap: 3,
   },
-  recentPoz: {
+  recentBtnNum: {
+    fontSize: 9,
+    fontFamily: "Inter_700Bold",
+    color: "#334155",
+    letterSpacing: 0.5,
+  },
+  recentBtnLabel: {
     fontSize: 12,
     fontFamily: "Inter_700Bold",
+    letterSpacing: 0.4,
   },
-  recentAd: {
-    fontSize: 13,
-    fontFamily: "Inter_400Regular",
+  recentBtnFoot: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 5,
+    marginTop: 1,
+  },
+  recentBtnDot: {
+    width: 5,
+    height: 5,
+    borderRadius: 3,
+  },
+  recentBtnInfo: {
+    fontSize: 11,
+    fontFamily: "Inter_500Medium",
+  },
+  recentBtnChev: {
+    width: 29,
+    height: 29,
+    borderRadius: 15,
+    borderWidth: 1,
+    justifyContent: "center",
+    alignItems: "center",
   },
   sourceDisclaimer: {
     fontSize: 10,
