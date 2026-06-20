@@ -54,7 +54,6 @@ export const BFA_MODULES: BfaModuleDef[] = [
     modul: "mekanik",
     route: { pathname: "/imalat-pozlari", params: { modul: "mekanik" } },
     count: (stats) => stats.mekanik.length,
-    emptyHint: "PDF verisi yüklendiğinde mekanik tesisat analizleri burada listelenecek.",
   },
   {
     num: "03",
