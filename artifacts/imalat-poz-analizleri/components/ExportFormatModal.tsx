@@ -13,8 +13,7 @@ interface ExportFormatModalProps {
 
 const FORMATS: { id: AnalizExportFormat; label: string; hint: string; icon: keyof typeof Feather.glyphMap; color: string }[] = [
   { id: "pdf", label: "PDF", hint: "Resmi tablo düzeni, yazdırılabilir", icon: "file-text", color: "#dc2626" },
-  { id: "csv", label: "Excel (CSV)", hint: "Excel ve Numbers ile açılır", icon: "grid", color: "#059669" },
-  { id: "txt", label: "Metin (TXT)", hint: "Düz metin paylaşımı", icon: "align-left", color: "#2563eb" },
+  { id: "excel", label: "Excel", hint: "Excel ve Numbers ile açılır", icon: "grid", color: "#059669" },
 ];
 
 export function ExportFormatModal({ visible, onClose, onSelect }: ExportFormatModalProps) {

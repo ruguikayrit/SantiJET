@@ -4,83 +4,19 @@ import { Alert, Platform } from "react-native";
 
 import { PozAnaliz, hesaplaAnalizToplam } from "@/constants/pozAnalizleri";
 
-export type AnalizExportFormat = "txt" | "csv" | "pdf";
+export type AnalizExportFormat = "pdf" | "excel";
 
 function trFmt(n: number): string {
   return n.toLocaleString("tr-TR", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
 }
 
-function escCsv(value: string): string {
-  const v = value.replace(/"/g, '""');
-  return `"${v}"`;
+function excelNum(n: number): string {
+  const v = Math.round(n * 100) / 100;
+  return v.toFixed(2).replace(".", ",");
 }
 
 function safeFilename(pozNo: string): string {
   return pozNo.replace(/[^a-zA-Z0-9_-]+/g, "_").slice(0, 40) || "analiz";
-}
-
-export function buildAnalizText(analiz: PozAnaliz): string {
-  const totals = hesaplaAnalizToplam(analiz);
-  let txt = `BİRİM FİYAT ANALİZİ\n${"=".repeat(60)}\n`;
-  txt += `Poz No      : ${analiz.pozNo}\n`;
-  txt += `Analiz Adı  : ${analiz.analizAdi}\n`;
-  txt += `Ölçü Birimi : ${analiz.olcuBirimi}\n\n`;
-
-  const tipSira: ("malzeme" | "iscilik" | "ekipman")[] = ["malzeme", "iscilik", "ekipman"];
-  const tipAd: Record<string, string> = {
-    malzeme: "Malzeme",
-    iscilik: "İşçilik",
-    ekipman: "Ekipman",
-  };
-
-  for (const tip of tipSira) {
-    const rows = analiz.kalemler.filter((k) => k.tip === tip);
-    if (!rows.length) continue;
-    txt += `${tipAd[tip]}\n${"-".repeat(60)}\n`;
-    rows.forEach((k) => {
-      txt += `  ${k.pozNo.padEnd(14)} ${k.tanim.substring(0, 30).padEnd(32)} ${k.olcuBirimi.padEnd(6)} ${trFmt(k.miktar).padStart(8)} ${trFmt(k.birimFiyati).padStart(10)} ${trFmt(k.tutar).padStart(12)}\n`;
-    });
-  }
-  txt += `${"=".repeat(60)}\n`;
-  txt += `Malzeme + İşçilik Tutarı         : ${trFmt(totals.malzemeIscilikToplami)} TL\n`;
-  txt += `%${analiz.yukleniciKarOrani} Yüklenici Karı              : ${trFmt(totals.yukleniciKarTutari)} TL\n`;
-  txt += `1 ${analiz.olcuBirimi} Fiyatı                  : ${trFmt(totals.birimFiyati)} TL\n`;
-  if (analiz.pozTarifi) txt += `\nPoz Tarifi:\n${analiz.pozTarifi}\n`;
-  if (analiz.yapimSartlari) txt += `\nYapım Şartları:\n${analiz.yapimSartlari}\n`;
-  if (analiz.olcusu) txt += `\nÖlçüsü:\n${analiz.olcusu}\n`;
-  return txt;
-}
-
-export function buildAnalizCsv(analiz: PozAnaliz): string {
-  const totals = hesaplaAnalizToplam(analiz);
-  const lines: string[] = [
-    "Bölüm,Poz No,Tanım,Ölçü Birimi,Miktar,Birim Fiyatı (TL),Tutar (TL)",
-  ];
-
-  for (const k of analiz.kalemler) {
-    const bolum =
-      k.tip === "malzeme" ? "Malzeme" : k.tip === "iscilik" ? "İşçilik" : "Ekipman";
-    lines.push(
-      [
-        escCsv(bolum),
-        escCsv(k.pozNo),
-        escCsv(k.tanim),
-        escCsv(k.olcuBirimi),
-        trFmt(k.miktar),
-        trFmt(k.birimFiyati),
-        trFmt(k.tutar),
-      ].join(","),
-    );
-  }
-
-  lines.push("");
-  lines.push(`Poz No,${escCsv(analiz.pozNo)}`);
-  lines.push(`Analiz Adı,${escCsv(analiz.analizAdi)}`);
-  lines.push(`Ölçü Birimi,${escCsv(analiz.olcuBirimi)}`);
-  lines.push(`Malzeme + İşçilik,${trFmt(totals.malzemeIscilikToplami)}`);
-  lines.push(`Yüklenici Karı (%${analiz.yukleniciKarOrani}),${trFmt(totals.yukleniciKarTutari)}`);
-  lines.push(`1 ${analiz.olcuBirimi} Fiyatı,${trFmt(totals.birimFiyati)}`);
-  return "\uFEFF" + lines.join("\n");
 }
 
 function escHtml(text: string): string {
@@ -89,6 +25,88 @@ function escHtml(text: string): string {
     .replace(/</g, "&lt;")
     .replace(/>/g, "&gt;")
     .replace(/"/g, "&quot;");
+}
+
+function escCell(text: string): string {
+  return escHtml(text).replace(/\n/g, "<br/>");
+}
+
+/** Excel'in doğrudan açabildiği HTML tablo (.xls) */
+export function buildAnalizExcelHtml(analiz: PozAnaliz): string {
+  const totals = hesaplaAnalizToplam(analiz);
+  const tipAd: Record<string, string> = {
+    malzeme: "Malzeme",
+    iscilik: "İşçilik",
+    ekipman: "Ekipman",
+  };
+
+  let tableRows = "";
+  for (const tip of ["malzeme", "iscilik", "ekipman"] as const) {
+    const rows = analiz.kalemler.filter((k) => k.tip === tip);
+    if (!rows.length) continue;
+    tableRows += `<tr><td colspan="6" style="background:#e8eef5;font-weight:bold">${tipAd[tip]}</td></tr>`;
+    for (const k of rows) {
+      tableRows += `<tr>
+        <td>${escCell(k.pozNo)}</td>
+        <td>${escCell(k.tanim)}</td>
+        <td>${escCell(k.olcuBirimi)}</td>
+        <td style="text-align:right">${excelNum(k.miktar)}</td>
+        <td style="text-align:right">${excelNum(k.birimFiyati)}</td>
+        <td style="text-align:right">${excelNum(k.tutar)}</td>
+      </tr>`;
+    }
+  }
+
+  return `<!DOCTYPE html>
+<html xmlns:o="urn:schemas-microsoft-com:office:office"
+      xmlns:x="urn:schemas-microsoft-com:office:excel"
+      xmlns="http://www.w3.org/TR/REC-html40">
+<head>
+  <meta charset="utf-8" />
+  <!--[if gte mso 9]><xml>
+    <x:ExcelWorkbook>
+      <x:ExcelWorksheets><x:ExcelWorksheet>
+        <x:Name>BFA</x:Name>
+        <x:WorksheetOptions><x:DisplayGridlines/></x:WorksheetOptions>
+      </x:ExcelWorksheet></x:ExcelWorksheets>
+    </x:ExcelWorkbook>
+  </xml><![endif]-->
+  <style>
+    table { border-collapse: collapse; width: 100%; }
+    th, td { border: 1px solid #999; padding: 4px 6px; font-size: 11pt; vertical-align: top; }
+    th { background: #16213e; color: #fff; font-weight: bold; }
+    .meta td { border: none; padding: 2px 0; }
+    .summary td { border: none; font-weight: bold; }
+  </style>
+</head>
+<body>
+  <table>
+    <tr class="meta"><td colspan="6"><b>BİRİM FİYAT ANALİZİ</b></td></tr>
+    <tr class="meta"><td colspan="2">Poz No</td><td colspan="4">${escCell(analiz.pozNo)}</td></tr>
+    <tr class="meta"><td colspan="2">Analiz Adı</td><td colspan="4">${escCell(analiz.analizAdi)}</td></tr>
+    <tr class="meta"><td colspan="2">Ölçü Birimi</td><td colspan="4">${escCell(analiz.olcuBirimi)}</td></tr>
+    <tr><td colspan="6">&nbsp;</td></tr>
+    <tr>
+      <th>Poz No</th><th>Tanım</th><th>Ölçü Birimi</th>
+      <th>Miktar</th><th>Birim Fiyatı (TL)</th><th>Tutar (TL)</th>
+    </tr>
+    ${tableRows}
+    <tr><td colspan="6">&nbsp;</td></tr>
+    <tr class="summary">
+      <td colspan="5">Malzeme + İşçilik Tutarı</td>
+      <td style="text-align:right">${excelNum(totals.malzemeIscilikToplami)}</td>
+    </tr>
+    <tr class="summary">
+      <td colspan="5">%${analiz.yukleniciKarOrani} Yüklenici Karı</td>
+      <td style="text-align:right">${excelNum(totals.yukleniciKarTutari)}</td>
+    </tr>
+    <tr class="summary">
+      <td colspan="5">1 ${escCell(analiz.olcuBirimi)} Fiyatı</td>
+      <td style="text-align:right">${excelNum(totals.birimFiyati)}</td>
+    </tr>
+  </table>
+</body>
+</html>`;
 }
 
 export function buildAnalizHtml(analiz: PozAnaliz): string {
@@ -181,45 +199,48 @@ async function downloadOnWeb(content: string, filename: string, mime: string): P
   URL.revokeObjectURL(url);
 }
 
-async function shareFile(uri: string, mimeType: string, dialogTitle: string): Promise<void> {
-  if (await Sharing.isAvailableAsync()) {
-    await Sharing.shareAsync(uri, { mimeType, dialogTitle });
+async function shareFile(
+  uri: string,
+  mimeType: string,
+  dialogTitle: string,
+  uti?: string,
+): Promise<void> {
+  if (!(await Sharing.isAvailableAsync())) {
+    Alert.alert("Dışa Aktarma", "Bu cihazda paylaşım desteklenmiyor.");
     return;
   }
-  Alert.alert("Dışa Aktarma", "Bu cihazda paylaşım desteklenmiyor.");
+  await Sharing.shareAsync(uri, {
+    mimeType,
+    dialogTitle,
+    ...(uti && Platform.OS === "ios" ? { UTI: uti } : {}),
+  });
+}
+
+async function writeExportFile(filename: string, content: string): Promise<string> {
+  const dir = FileSystem.cacheDirectory ?? FileSystem.documentDirectory;
+  if (!dir) throw new Error("Dosya dizini bulunamadı");
+  const uri = `${dir}${filename}`;
+  await FileSystem.writeAsStringAsync(uri, content, {
+    encoding: FileSystem.EncodingType.UTF8,
+  });
+  const info = await FileSystem.getInfoAsync(uri);
+  if (!info.exists) throw new Error("Dosya oluşturulamadı");
+  return uri;
 }
 
 export async function exportAnaliz(analiz: PozAnaliz, format: AnalizExportFormat): Promise<void> {
   const base = safeFilename(analiz.pozNo);
 
   try {
-    if (format === "txt") {
-      const content = buildAnalizText(analiz);
-      const filename = `analiz_${base}.txt`;
+    if (format === "excel") {
+      const content = buildAnalizExcelHtml(analiz);
+      const filename = `analiz_${base}.xls`;
       if (Platform.OS === "web") {
-        await downloadOnWeb(content, filename, "text/plain;charset=utf-8");
+        await downloadOnWeb(content, filename, "application/vnd.ms-excel;charset=utf-8");
         return;
       }
-      const uri = `${FileSystem.cacheDirectory}${filename}`;
-      await FileSystem.writeAsStringAsync(uri, content, {
-        encoding: FileSystem.EncodingType.UTF8,
-      });
-      await shareFile(uri, "text/plain", "Analizi Dışa Aktar");
-      return;
-    }
-
-    if (format === "csv") {
-      const content = buildAnalizCsv(analiz);
-      const filename = `analiz_${base}.csv`;
-      if (Platform.OS === "web") {
-        await downloadOnWeb(content, filename, "text/csv;charset=utf-8");
-        return;
-      }
-      const uri = `${FileSystem.cacheDirectory}${filename}`;
-      await FileSystem.writeAsStringAsync(uri, content, {
-        encoding: FileSystem.EncodingType.UTF8,
-      });
-      await shareFile(uri, "text/csv", "Excel (CSV) Dışa Aktar");
+      const uri = await writeExportFile(filename, content);
+      await shareFile(uri, "application/vnd.ms-excel", "Excel Dışa Aktar", "com.microsoft.excel.xls");
       return;
     }
 
@@ -240,13 +261,10 @@ export async function exportAnaliz(analiz: PozAnaliz, format: AnalizExportFormat
     try {
       const Print = await import("expo-print");
       const { uri } = await Print.printToFileAsync({ html });
-      await shareFile(uri, "application/pdf", "PDF Dışa Aktar");
+      await shareFile(uri, "application/pdf", "PDF Dışa Aktar", "com.adobe.pdf");
     } catch {
       const filename = `analiz_${base}.html`;
-      const uri = `${FileSystem.cacheDirectory}${filename}`;
-      await FileSystem.writeAsStringAsync(uri, html, {
-        encoding: FileSystem.EncodingType.UTF8,
-      });
+      const uri = await writeExportFile(filename, html);
       await shareFile(uri, "text/html", "HTML Dışa Aktar (PDF yerine)");
     }
   } catch {
