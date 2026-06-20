@@ -1,8 +1,10 @@
+import * as DocumentPicker from "expo-document-picker";
 import * as FileSystem from "expo-file-system/legacy";
 import * as Sharing from "expo-sharing";
 import { Alert, Platform } from "react-native";
 
 import { PozAnaliz } from "@/constants/pozAnalizleri";
+import { sanitizeUserPozAnalizleri } from "@/lib/pozAnalizCatalog";
 
 export const BACKUP_VERSION = 1;
 
@@ -13,6 +15,13 @@ export interface UserDataBackup {
   pozAnalizleri: PozAnaliz[];
   favoriteIds: string[];
   themeId?: string;
+}
+
+export type UserDataImportMode = "merge" | "replace";
+
+function sanitizeFavoriteIds(stored: unknown): string[] {
+  if (!Array.isArray(stored)) return [];
+  return stored.filter((id): id is string => typeof id === "string" && id.length > 0);
 }
 
 export function buildUserDataBackup(
@@ -27,6 +36,25 @@ export function buildUserDataBackup(
     pozAnalizleri,
     favoriteIds,
     ...(themeId ? { themeId } : {}),
+  };
+}
+
+export function parseUserDataBackup(raw: unknown): UserDataBackup | null {
+  if (!raw || typeof raw !== "object") return null;
+  const obj = raw as Partial<UserDataBackup>;
+  if (obj.app !== "santijet-bfa") return null;
+  if (typeof obj.version !== "number" || obj.version < 1) return null;
+
+  const pozAnalizleri = sanitizeUserPozAnalizleri(obj.pozAnalizleri);
+  const favoriteIds = sanitizeFavoriteIds(obj.favoriteIds);
+
+  return {
+    version: BACKUP_VERSION,
+    app: "santijet-bfa",
+    exportedAt: typeof obj.exportedAt === "string" ? obj.exportedAt : new Date().toISOString(),
+    pozAnalizleri,
+    favoriteIds,
+    ...(typeof obj.themeId === "string" && obj.themeId.length > 0 ? { themeId: obj.themeId } : {}),
   };
 }
 
@@ -61,18 +89,77 @@ export async function shareUserDataBackup(backup: UserDataBackup): Promise<boole
     if (await Sharing.isAvailableAsync()) {
       await Sharing.shareAsync(uri, {
         mimeType: "application/json",
-        dialogTitle: "Verileri Kaydet",
+        dialogTitle: "Verileri Dışa Aktar",
       });
       return true;
     }
 
     Alert.alert(
-      "Yedekleme",
-      `${backup.pozAnalizleri.length} özel analiz ve ${backup.favoriteIds.length} favori kaydedildi. Bu cihazda paylaşım desteklenmiyor.`,
+      "Dışa Aktarma",
+      `${backup.pozAnalizleri.length} özel analiz ve ${backup.favoriteIds.length} favori hazırlandı. Bu cihazda paylaşım desteklenmiyor.`,
     );
     return false;
   } catch {
-    Alert.alert("Hata", "Veriler kaydedilemedi. Lütfen tekrar deneyin.");
+    Alert.alert("Hata", "Veriler dışa aktarılamadı. Lütfen tekrar deneyin.");
     return false;
   }
+}
+
+async function readBackupFromUri(uri: string): Promise<UserDataBackup | null> {
+  try {
+    const content = await FileSystem.readAsStringAsync(uri, {
+      encoding: FileSystem.EncodingType.UTF8,
+    });
+    return parseUserDataBackup(JSON.parse(content));
+  } catch {
+    return null;
+  }
+}
+
+export async function pickUserDataBackup(): Promise<UserDataBackup | null> {
+  try {
+    const result = await DocumentPicker.getDocumentAsync({
+      type: "application/json",
+      copyToCacheDirectory: true,
+      multiple: false,
+    });
+
+    if (result.canceled || !result.assets?.[0]?.uri) return null;
+
+    const backup = await readBackupFromUri(result.assets[0].uri);
+    if (!backup) {
+      Alert.alert("Geçersiz Dosya", "Seçilen dosya geçerli bir ŞantiJET yedek dosyası değil.");
+    }
+    return backup;
+  } catch {
+    Alert.alert("Hata", "Yedek dosyası okunamadı. Lütfen tekrar deneyin.");
+    return null;
+  }
+}
+
+export function confirmImportMode(
+  onSelect: (mode: UserDataImportMode) => void,
+  hasExistingData: boolean,
+): void {
+  if (!hasExistingData) {
+    onSelect("replace");
+    return;
+  }
+
+  Alert.alert(
+    "İçe Aktarma",
+    "Mevcut verilerinizle yedek dosyası nasıl birleştirilsin?",
+    [
+      {
+        text: "Birleştir",
+        onPress: () => onSelect("merge"),
+      },
+      {
+        text: "Değiştir",
+        style: "destructive",
+        onPress: () => onSelect("replace"),
+      },
+      { text: "İptal", style: "cancel" },
+    ],
+  );
 }

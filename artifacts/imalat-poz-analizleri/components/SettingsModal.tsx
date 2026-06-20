@@ -2,6 +2,7 @@ import { Feather } from "@expo/vector-icons";
 import React, { useState } from "react";
 import {
   ActivityIndicator,
+  Alert,
   Modal,
   Pressable,
   StyleSheet,
@@ -13,7 +14,13 @@ import {
 import { useApp } from "@/context/AppContext";
 import { useTheme } from "@/context/ThemeContext";
 import { useColors } from "@/hooks/useColors";
-import { buildUserDataBackup, shareUserDataBackup } from "@/lib/userDataBackup";
+import {
+  buildUserDataBackup,
+  confirmImportMode,
+  pickUserDataBackup,
+  shareUserDataBackup,
+  UserDataBackup,
+} from "@/lib/userDataBackup";
 
 interface SettingsModalProps {
   visible: boolean;
@@ -22,18 +29,47 @@ interface SettingsModalProps {
 
 export function SettingsModal({ visible, onClose }: SettingsModalProps) {
   const colors = useColors();
-  const { pozAnalizleri, favoriteIds } = useApp();
-  const { themeId } = useTheme();
-  const [saving, setSaving] = useState(false);
+  const { pozAnalizleri, favoriteIds, importUserData } = useApp();
+  const { themeId, setThemeId } = useTheme();
+  const [exporting, setExporting] = useState(false);
+  const [importing, setImporting] = useState(false);
 
-  async function handleSaveData() {
-    if (saving) return;
-    setSaving(true);
+  async function handleExport() {
+    if (exporting || importing) return;
+    setExporting(true);
     try {
       const backup = buildUserDataBackup(pozAnalizleri, favoriteIds, themeId);
       await shareUserDataBackup(backup);
     } finally {
-      setSaving(false);
+      setExporting(false);
+    }
+  }
+
+  function applyImport(backup: UserDataBackup, mode: "merge" | "replace") {
+    importUserData(
+      { pozAnalizleri: backup.pozAnalizleri, favoriteIds: backup.favoriteIds },
+      mode,
+    );
+    if (backup.themeId) {
+      setThemeId(backup.themeId);
+    }
+    Alert.alert(
+      "İçe Aktarma Tamamlandı",
+      `${backup.pozAnalizleri.length} analiz ve ${backup.favoriteIds.length} favori yüklendi.`,
+    );
+  }
+
+  async function handleImport() {
+    if (exporting || importing) return;
+    setImporting(true);
+    try {
+      const backup = await pickUserDataBackup();
+      if (!backup) return;
+
+      const hasExistingData = pozAnalizleri.length > 0 || favoriteIds.length > 0;
+      confirmImportMode((mode) => applyImport(backup, mode), hasExistingData);
+    } finally {
+      setImporting(false);
     }
   }
 
@@ -45,6 +81,9 @@ export function SettingsModal({ visible, onClose }: SettingsModalProps) {
           onPress={(e) => e.stopPropagation()}
         >
           <Text style={[styles.title, { color: colors.foreground }]}>Ayarlar</Text>
+          <Text style={[styles.sectionLabel, { color: colors.mutedForeground }]}>
+            Veri Yedekleme
+          </Text>
 
           <TouchableOpacity
             activeOpacity={0.85}
@@ -52,25 +91,48 @@ export function SettingsModal({ visible, onClose }: SettingsModalProps) {
               styles.actionRow,
               { borderColor: colors.primary + "44", backgroundColor: colors.primary + "10" },
             ]}
-            onPress={handleSaveData}
-            disabled={saving}
+            onPress={handleExport}
+            disabled={exporting || importing}
           >
             <View style={[styles.actionIcon, { backgroundColor: colors.primary + "22" }]}>
-              {saving ? (
+              {exporting ? (
                 <ActivityIndicator size="small" color={colors.primary} />
               ) : (
-                <Feather name="download" size={18} color={colors.primary} />
+                <Feather name="upload" size={18} color={colors.primary} />
               )}
             </View>
             <View style={styles.actionText}>
-              <Text style={[styles.actionLabel, { color: colors.foreground }]}>
-                Verileri Kaydet
-              </Text>
+              <Text style={[styles.actionLabel, { color: colors.foreground }]}>Dışa Aktar</Text>
               <Text style={[styles.actionHint, { color: colors.mutedForeground }]}>
-                {pozAnalizleri.length} özel analiz, {favoriteIds.length} favori — JSON yedek dosyası
+                {pozAnalizleri.length} özel analiz, {favoriteIds.length} favori — JSON dosyası
               </Text>
             </View>
             <Feather name="chevron-right" size={16} color={colors.primary} />
+          </TouchableOpacity>
+
+          <TouchableOpacity
+            activeOpacity={0.85}
+            style={[
+              styles.actionRow,
+              { borderColor: "#05966944", backgroundColor: "#05966910" },
+            ]}
+            onPress={handleImport}
+            disabled={exporting || importing}
+          >
+            <View style={[styles.actionIcon, { backgroundColor: "#05966922" }]}>
+              {importing ? (
+                <ActivityIndicator size="small" color="#059669" />
+              ) : (
+                <Feather name="download" size={18} color="#059669" />
+              )}
+            </View>
+            <View style={styles.actionText}>
+              <Text style={[styles.actionLabel, { color: colors.foreground }]}>İçe Aktar</Text>
+              <Text style={[styles.actionHint, { color: colors.mutedForeground }]}>
+                JSON yedek dosyasından analiz ve favorileri geri yükle
+              </Text>
+            </View>
+            <Feather name="chevron-right" size={16} color="#059669" />
           </TouchableOpacity>
 
           <TouchableOpacity
@@ -104,7 +166,13 @@ const styles = StyleSheet.create({
   title: {
     fontSize: 17,
     fontFamily: "Inter_700Bold",
-    marginBottom: 4,
+  },
+  sectionLabel: {
+    fontSize: 12,
+    fontFamily: "Inter_600SemiBold",
+    textTransform: "uppercase",
+    letterSpacing: 0.5,
+    marginBottom: 2,
   },
   actionRow: {
     flexDirection: "row",
