@@ -22,29 +22,8 @@ const REPORT_STYLES = `
   p { white-space: pre-wrap; line-height: 1.5; }
 `;
 
-const EXCEL_STYLES = `
-  body { font-family: Arial, sans-serif; font-size: 11px; color: #000; margin: 12px; }
-  .sheet { border: 2px solid #000; padding: 0; }
-  table { width: 100%; border-collapse: collapse; }
-  th, td { border: 1px solid #000; padding: 4px 6px; vertical-align: middle; }
-  th { font-weight: bold; text-align: center; background: #fff; }
-  .title-row td { border: none; padding: 8px 6px 4px; font-size: 13px; font-weight: bold; }
-  .title-row .date { text-align: right; font-weight: normal; font-size: 11px; }
-  .group td { font-weight: bold; text-align: left; }
-  .desc { text-align: left; }
-  .num { text-align: right; white-space: nowrap; mso-number-format:"\\#\\,\\#\\#0\\.00"; }
-  .summary-label { text-align: left; }
-  .summary-total { font-weight: bold; }
-  .footer td { border: 1px solid #000; padding: 8px 6px; text-align: left; line-height: 1.45; }
-  .poz { mso-number-format:"\\@"; text-align: center; }
-`;
-
 function trFmt(n: number): string {
   return n.toLocaleString("tr-TR", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
-}
-
-function trDate(d: Date = new Date()): string {
-  return d.toLocaleDateString("tr-TR", { day: "numeric", month: "2-digit", year: "numeric" });
 }
 
 function safeFilename(pozNo: string): string {
@@ -57,28 +36,6 @@ function escHtml(text: string): string {
     .replace(/</g, "&lt;")
     .replace(/>/g, "&gt;")
     .replace(/"/g, "&quot;");
-}
-
-/** Resmi poz numarası: XX.XXX.XXXX */
-export function formatResmiPozNo(pozNo: string): string {
-  const trimmed = pozNo.trim();
-  if (/^\d{2}\.\d{3}\.\d{4}$/.test(trimmed)) return trimmed;
-
-  const digits = trimmed.replace(/\D/g, "");
-  if (digits.length === 9) {
-    return `${digits.slice(0, 2)}.${digits.slice(2, 5)}.${digits.slice(5, 9)}`;
-  }
-
-  return trimmed;
-}
-
-/** Excel'in poz numarasını sayıya çevirmesini engeller */
-function excelPozNoCell(pozNo: string): string {
-  const formatted = formatResmiPozNo(pozNo);
-  if (/^\d{2}\.\d{3}\.\d{4}$/.test(formatted)) {
-    return `<td class="poz" style="mso-number-format:'\\@';">="${formatted}"</td>`;
-  }
-  return `<td class="poz" style="mso-number-format:'\\@';">${escHtml(formatted)}</td>`;
 }
 
 function buildAnalizReportBody(analiz: PozAnaliz): string {
@@ -138,85 +95,7 @@ function buildAnalizReportBody(analiz: PozAnaliz): string {
   ${extraBlocks}`;
 }
 
-function buildAnalizExcelBody(analiz: PozAnaliz): string {
-  const totals = hesaplaAnalizToplam(analiz);
-  const tipAd: Record<string, string> = {
-    malzeme: "Malzeme",
-    iscilik: "İşçilik",
-    ekipman: "Ekipman",
-  };
-
-  let tableRows = "";
-  for (const tip of ["malzeme", "iscilik", "ekipman"] as const) {
-    const rows = analiz.kalemler.filter((k) => k.tip === tip);
-    if (!rows.length) continue;
-    tableRows += `<tr class="group"><td colspan="6">${tipAd[tip]}</td></tr>`;
-    for (const k of rows) {
-      tableRows += `<tr>
-        ${excelPozNoCell(k.pozNo)}
-        <td class="desc">${escHtml(k.tanim)}</td>
-        <td>${escHtml(k.olcuBirimi)}</td>
-        <td class="num">${trFmt(k.miktar)}</td>
-        <td class="num">${trFmt(k.birimFiyati)}</td>
-        <td class="num">${trFmt(k.tutar)}</td>
-      </tr>`;
-    }
-  }
-
-  const footerParts = [
-    analiz.pozTarifi ? escHtml(analiz.pozTarifi) : "",
-    analiz.yapimSartlari ? escHtml(analiz.yapimSartlari) : "",
-    analiz.olcusu ? `<strong>Ölçü:</strong> ${escHtml(analiz.olcusu)}` : "",
-  ].filter(Boolean);
-
-  const footerHtml = footerParts.length
-    ? `<table class="footer"><tr><td>${footerParts.join("<br /><br />")}</td></tr></table>`
-    : "";
-
-  return `
-  <div class="sheet">
-    <table>
-      <tr class="title-row">
-        <td colspan="4">Genel Fiyat Analizi</td>
-        <td colspan="2" class="date">${trDate()}</td>
-      </tr>
-      <tr>
-        <th style="width:12%">Poz No</th>
-        <th colspan="4">Analizin Adı</th>
-        <th style="width:10%">Ölçü Birimi</th>
-      </tr>
-      <tr>
-        ${excelPozNoCell(analiz.pozNo)}
-        <td class="desc" colspan="4">${escHtml(analiz.analizAdi)}</td>
-        <td>${escHtml(analiz.olcuBirimi)}</td>
-      </tr>
-      <tr>
-        <th>Poz No</th>
-        <th>Tanımı</th>
-        <th>Ölçü Birimi</th>
-        <th>Miktarı</th>
-        <th>Birim Fiyatı</th>
-        <th>Tutarı (TL)</th>
-      </tr>
-      ${tableRows}
-      <tr>
-        <td class="summary-label" colspan="5">Malzeme + İşçilik Tutarı</td>
-        <td class="num">${trFmt(totals.malzemeIscilikToplami)}</td>
-      </tr>
-      <tr>
-        <td class="summary-label" colspan="5">${analiz.yukleniciKarOrani} % Yüklenici kârı ve genel giderler</td>
-        <td class="num">${trFmt(totals.yukleniciKarTutari)}</td>
-      </tr>
-      <tr>
-        <td class="summary-label summary-total" colspan="5">1 ${escHtml(analiz.olcuBirimi)} Fiyatı</td>
-        <td class="num summary-total">${trFmt(totals.birimFiyati)}</td>
-      </tr>
-    </table>
-    ${footerHtml}
-  </div>`;
-}
-
-/** Resmi "Genel Fiyat Analizi" düzeni — Office HTML (.xls) */
+/** Excel — PDF ile aynı düzen, Office HTML (.xls) sarmalayıcı */
 export function buildAnalizExcelHtml(analiz: PozAnaliz): string {
   return `<!DOCTYPE html>
 <html xmlns:o="urn:schemas-microsoft-com:office:office"
@@ -224,18 +103,18 @@ export function buildAnalizExcelHtml(analiz: PozAnaliz): string {
       xmlns="http://www.w3.org/TR/REC-html40">
 <head>
   <meta charset="utf-8" />
-  <title>${escHtml(formatResmiPozNo(analiz.pozNo))} — Genel Fiyat Analizi</title>
+  <title>${escHtml(analiz.pozNo)} — BFA</title>
   <!--[if gte mso 9]><xml>
     <x:ExcelWorkbook>
       <x:ExcelWorksheets><x:ExcelWorksheet>
-        <x:Name>Genel Fiyat Analizi</x:Name>
+        <x:Name>BFA</x:Name>
         <x:WorksheetOptions><x:DisplayGridlines/></x:WorksheetOptions>
       </x:ExcelWorksheet></x:ExcelWorksheets>
     </x:ExcelWorkbook>
   </xml><![endif]-->
-  <style>${EXCEL_STYLES}</style>
+  <style>${REPORT_STYLES}</style>
 </head>
-<body>${buildAnalizExcelBody(analiz)}
+<body>${buildAnalizReportBody(analiz)}
 </body>
 </html>`;
 }
