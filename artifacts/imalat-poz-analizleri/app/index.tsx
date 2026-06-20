@@ -3,6 +3,7 @@ import { useRouter } from "expo-router";
 import React from "react";
 import {
   ActivityIndicator,
+  Dimensions,
   Platform,
   ScrollView,
   StyleSheet,
@@ -17,6 +18,7 @@ import { useMergedPozAnalizleri } from "@/hooks/useMergedPozAnalizleri";
 import { useColors } from "@/hooks/useColors";
 
 const TILE_COLOR = "#d97706";
+const SCREEN_H = Dimensions.get("window").height;
 
 export default function HomeScreen() {
   const colors = useColors();
@@ -38,16 +40,14 @@ export default function HomeScreen() {
     <View style={[styles.root, { backgroundColor: colors.background }]}>
       <View
         style={[
-          styles.appHeader,
-          { backgroundColor: colors.secondary, paddingTop: topPad + 8 },
+          styles.hero,
+          { backgroundColor: colors.secondary, paddingTop: topPad },
         ]}
       >
-        <View style={styles.headerSpacer} />
-        <View style={styles.headerLogoArea}>
-          <SantijetLogo iconHeight={34} />
+        <View style={styles.headerBrand}>
+          <SantijetLogo iconHeight={40} centered />
           <Text style={styles.headerSubtitle}>İMALAT POZ ANALİZLERİ</Text>
         </View>
-        <View style={styles.headerSpacer} />
       </View>
 
       <ScrollView
@@ -123,24 +123,25 @@ export default function HomeScreen() {
 
 const styles = StyleSheet.create({
   root: { flex: 1 },
-  appHeader: {
-    flexDirection: "row",
+  hero: {
+    width: "100%",
+    minHeight: Math.min(SCREEN_H * 0.34, 280),
     alignItems: "center",
+    justifyContent: "center",
     paddingHorizontal: 16,
-    paddingBottom: 12,
-    gap: 12,
+    paddingBottom: 20,
   },
-  headerSpacer: { width: 36 },
-  headerLogoArea: {
-    flex: 1,
+  headerBrand: {
     alignItems: "center",
-    gap: 2,
+    justifyContent: "center",
+    gap: 6,
   },
   headerSubtitle: {
     color: "#4a6080",
-    fontSize: 8,
+    fontSize: 9,
     fontFamily: "Inter_700Bold",
-    letterSpacing: 2,
+    letterSpacing: 2.5,
+    textAlign: "center",
   },
   scroll: { padding: 12, paddingTop: 14 },
   welcomeCard: {

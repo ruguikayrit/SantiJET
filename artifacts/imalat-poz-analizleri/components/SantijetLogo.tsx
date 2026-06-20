@@ -3,6 +3,8 @@ import { View, Image, StyleSheet } from "react-native";
 
 interface SantijetLogoProps {
   iconHeight?: number;
+  /** Header gibi ortalanmış bloklarda true */
+  centered?: boolean;
 }
 
 const ICON_SRC = require("../assets/images/santijet-icon.png");
@@ -14,7 +16,7 @@ const BOLT_Y_START = 0.06;
 const BOLT_Y_END = 0.635;
 const WM_ASPECT = 1016 / 187;
 
-export function SantijetLogo({ iconHeight = 48 }: SantijetLogoProps) {
+export function SantijetLogo({ iconHeight = 48, centered = false }: SantijetLogoProps) {
   const boltImgH = Math.round(iconHeight / (BOLT_Y_END - BOLT_Y_START));
   const boltImgW = boltImgH;
   const boltLeft = Math.round(BOLT_X_START * boltImgW);
@@ -24,7 +26,7 @@ export function SantijetLogo({ iconHeight = 48 }: SantijetLogoProps) {
   const wmW = Math.round(wmH * WM_ASPECT);
 
   return (
-    <View style={styles.row}>
+    <View style={[styles.row, centered && styles.rowCentered]}>
       <View style={{ width: boltDispW, height: iconHeight, overflow: "hidden" }}>
         <Image
           source={ICON_SRC}
@@ -52,5 +54,8 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     alignItems: "center",
     alignSelf: "flex-start",
+  },
+  rowCentered: {
+    alignSelf: "center",
   },
 });
