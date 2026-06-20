@@ -68,7 +68,7 @@ type Colors = ReturnType<typeof useColors>;
 export default function ImalatPozlariScreen() {
   const colors = useColors();
   const router = useRouter();
-  const params = useLocalSearchParams<{ id?: string; q?: string; modul?: string; cat?: string }>();
+  const params = useLocalSearchParams<{ id?: string; q?: string; modul?: string; cat?: string; new?: string }>();
   const insets = useSafeAreaInsets();
   const topPad = Platform.OS === "web" ? 16 : insets.top;
 
@@ -101,7 +101,7 @@ export default function ImalatPozlariScreen() {
 
   const [catPickerOpen, setCatPickerOpen] = useState(false);
 
-  const [newVisible, setNewVisible] = useState(false);
+  const [newVisible, setNewVisible] = useState(() => String(params.new) === "1");
   const [newForm, setNewForm] = useState({
     pozNo: "",
     analizAdi: "",

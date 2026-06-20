@@ -15,6 +15,7 @@ import {
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 import { SantijetLogo } from "@/components/SantijetLogo";
+import { CreateAnalizFab } from "@/components/CreateAnalizFab";
 import { ModuleTile } from "@/components/ModuleTile";
 import { BFA_MODULES, resolveAnalizDiscipline } from "@/constants/bfaModules";
 import { matchesPozAnalizSearch } from "@/constants/pozAnalizleri";
@@ -74,6 +75,13 @@ export default function HomeScreen() {
     const analiz = all.find((a) => a.id === id);
     const modul = analiz ? resolveAnalizDiscipline(analiz) : "insaat";
     router.push({ pathname: "/imalat-pozlari", params: { id, modul } } as any);
+  }
+
+  function openNewAnaliz() {
+    router.push({
+      pathname: "/imalat-pozlari",
+      params: { modul: "insaat", new: "1" },
+    } as any);
   }
 
   function openModule(mod: (typeof BFA_MODULES)[number]) {
@@ -256,6 +264,8 @@ export default function HomeScreen() {
             />
           );
         })}
+
+        <CreateAnalizFab onPress={openNewAnaliz} />
 
         <SourceDisclaimer color={colors.mutedForeground} bottomInset={insets.bottom} />
       </ScrollView>
