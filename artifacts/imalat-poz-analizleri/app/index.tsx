@@ -78,7 +78,7 @@ export default function HomeScreen() {
           { backgroundColor: colors.card, borderColor: colors.border },
         ]}
       >
-        <Feather name="search" size={16} color={colors.mutedForeground} />
+        <Feather name="search" size={20} color={colors.mutedForeground} />
         <TextInput
           style={[styles.searchInput, { color: colors.foreground }]}
           placeholder="Poz No veya analiz adı ara..."
@@ -88,7 +88,7 @@ export default function HomeScreen() {
         />
         {search.length > 0 && (
           <TouchableOpacity onPress={() => setSearch("")}>
-            <Feather name="x" size={16} color={colors.mutedForeground} />
+            <Feather name="x" size={20} color={colors.mutedForeground} />
           </TouchableOpacity>
         )}
       </View>
@@ -269,11 +269,12 @@ const styles = StyleSheet.create({
     borderRadius: 10,
     borderWidth: 1,
     paddingHorizontal: 12,
-    paddingVertical: 8,
+    paddingVertical: 16,
+    minHeight: 56,
   },
   searchInput: {
     flex: 1,
-    fontSize: 14,
+    fontSize: 16,
     fontFamily: "Inter_400Regular",
     padding: 0,
   },
