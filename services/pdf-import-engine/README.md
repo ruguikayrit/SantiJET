@@ -45,7 +45,7 @@ flowchart LR
 | format_id | Kurum | Durum |
 |-----------|-------|-------|
 | `mekanik_bfa` | ÇŞB YFK — Mekanik Tesisat B.F.A. 2026 (Cilt 1-3) | ✅ 5.646 kayıt |
-| `insaat_bfa` | ÇŞB YFK — İnşaat B.F.A. 2026 | 🔜 |
+| `elektrik_bfa` | ÇŞB YFK — Elektrik Tesisat B.F.A. 2026 (Cilt 1) | ✅ 2.903 kayıt |
 
 ## Hızlı başlangıç
 
@@ -57,6 +57,14 @@ python scripts/parse_mekanik_bfa.py
 ```
 
 Çıktı: `artifacts/imalat-poz-analizleri/assets/data/resmi-mekanik-analizleri.json`
+
+### Elektrik BFA → JSON
+
+```bash
+python scripts/parse_elektrik_bfa.py
+```
+
+Çıktı: `artifacts/imalat-poz-analizleri/assets/data/resmi-elektrik-analizleri.json`
 
 ### Docker + PostgreSQL
 

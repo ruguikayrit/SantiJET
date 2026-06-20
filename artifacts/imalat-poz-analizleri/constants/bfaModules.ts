@@ -65,7 +65,6 @@ export const BFA_MODULES: BfaModuleDef[] = [
     modul: "elektrik",
     route: { pathname: "/imalat-pozlari", params: { modul: "elektrik" } },
     count: (stats) => stats.elektrik.length,
-    emptyHint: "PDF verisi yüklendiğinde elektrik tesisat analizleri burada listelenecek.",
   },
   {
     num: "04",
