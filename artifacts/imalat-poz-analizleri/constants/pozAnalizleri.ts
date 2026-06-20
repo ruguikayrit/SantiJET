@@ -50,6 +50,8 @@ export interface PozAnaliz {
   olusturmaTarihi: string;
   guncellemeTarihi: string;
   kaynakTip: "sistem" | "kullanici" | "kopya";
+  /** insaat | mekanik | elektrik — kullanıcı/kopya kayıtları için */
+  discipline?: "insaat" | "mekanik" | "elektrik";
   notlar?: string;
 }
 

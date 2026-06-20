@@ -16,9 +16,9 @@ import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 import { SantijetLogo } from "@/components/SantijetLogo";
 import { ModuleTile } from "@/components/ModuleTile";
-import { BFA_MODULES } from "@/constants/bfaModules";
+import { BFA_MODULES, resolveAnalizDiscipline } from "@/constants/bfaModules";
 import { matchesPozAnalizSearch } from "@/constants/pozAnalizleri";
-import { useMergedPozAnalizleri } from "@/hooks/useMergedPozAnalizleri";
+import { useBfaCatalog } from "@/hooks/useBfaCatalog";
 import { useColors } from "@/hooks/useColors";
 
 const TILE_COLOR = "#d97706";
@@ -38,20 +38,22 @@ export default function HomeScreen() {
   const insets = useSafeAreaInsets();
   const topPad = Platform.OS === "web" ? 67 : insets.top;
 
-  const { pozAnalizleri, loading } = useMergedPozAnalizleri();
+  const { stats, all, loading } = useBfaCatalog();
   const [search, setSearch] = useState("");
 
   const filtered = useMemo(() => {
     if (!search.trim()) return [];
-    return pozAnalizleri
+    return all
       .filter((a) => matchesPozAnalizSearch(a, search))
       .sort((a, b) => a.pozNo.localeCompare(b.pozNo, "tr"));
-  }, [pozAnalizleri, search]);
+  }, [all, search]);
 
   const searching = search.trim().length > 0;
 
   function openAnaliz(id: string) {
-    router.push({ pathname: "/imalat-pozlari", params: { id } } as any);
+    const analiz = all.find((a) => a.id === id);
+    const modul = analiz ? resolveAnalizDiscipline(analiz) : "insaat";
+    router.push({ pathname: "/imalat-pozlari", params: { id, modul } } as any);
   }
 
   function openModule(mod: (typeof BFA_MODULES)[number]) {
@@ -214,7 +216,7 @@ export default function HomeScreen() {
         <Text style={[styles.sectionLabel, { color: colors.foreground }]}>Modüller</Text>
 
         {BFA_MODULES.map((mod) => {
-          const count = mod.count(pozAnalizleri);
+          const count = mod.count(stats);
           return (
             <ModuleTile
               key={mod.num}

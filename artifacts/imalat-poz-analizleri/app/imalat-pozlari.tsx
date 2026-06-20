@@ -19,8 +19,16 @@ import {
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 import { useApp } from "@/context/AppContext";
-import { useMergedPozAnalizleri } from "@/hooks/useMergedPozAnalizleri";
+import { useBfaCatalog } from "@/hooks/useBfaCatalog";
 import { useColors } from "@/hooks/useColors";
+import {
+  BfaDiscipline,
+  BfaModuleKey,
+  getBfaModuleDef,
+  getBfaScreenTitle,
+  isBfaDiscipline,
+  isBfaModuleKey,
+} from "@/constants/bfaModules";
 import {
   AnalizKalemi,
   IMALAT_POZ_KATEGORILERI,
@@ -64,19 +72,21 @@ export default function ImalatPozlariScreen() {
   const insets = useSafeAreaInsets();
   const topPad = Platform.OS === "web" ? 16 : insets.top;
 
-  const { addPozAnaliz, updatePozAnaliz, deletePozAnaliz, clonePozAnaliz } = useApp();
+  const { addPozAnaliz, updatePozAnaliz, deletePozAnaliz, clonePozAnaliz, isFavorite, toggleFavorite } =
+    useApp();
 
-  const modul = params.modul ? String(params.modul) : "insaat";
+  const modulParam = params.modul ? String(params.modul) : "insaat";
+  const modul: BfaModuleKey = isBfaModuleKey(modulParam) ? modulParam : "insaat";
+  const moduleDef = getBfaModuleDef(modul);
+  const canCreateAnaliz = isBfaDiscipline(modul);
 
-  const { pozAnalizleri, loading: catalogLoading, error: catalogError } =
-    useMergedPozAnalizleri();
+  const { getModuleAnalizleri, loading: catalogLoading, error: catalogError } =
+    useBfaCatalog();
 
-  const modulAnalizleri = useMemo(() => {
-    if (modul === "ozel") {
-      return pozAnalizleri.filter((a) => a.kaynakTip !== "sistem");
-    }
-    return pozAnalizleri;
-  }, [pozAnalizleri, modul]);
+  const modulAnalizleri = useMemo(
+    () => getModuleAnalizleri(modul),
+    [getModuleAnalizleri, modul],
+  );
 
   const [search, setSearch] = useState(() => (params.q ? String(params.q) : ""));
   const [catFilter, setCatFilter] = useState<string | null>(() =>
@@ -134,11 +144,10 @@ export default function ImalatPozlariScreen() {
     return `${catFilter} (${kategoriSayilari.get(catFilter) ?? 0})`;
   }, [catFilter, modulAnalizleri.length, kategoriSayilari]);
 
-  const screenTitle = useMemo(() => {
-    if (modul === "ozel") return "Özel Birim Fiyat Analizleri";
-    if (catFilter) return catFilter;
-    return "Birim Fiyat Analizleri";
-  }, [modul, catFilter]);
+  const screenTitle = useMemo(
+    () => getBfaScreenTitle(modul, catFilter),
+    [modul, catFilter],
+  );
 
   function selectCategory(cat: string) {
     setCatFilter(cat === "Tümü" ? null : cat);
@@ -675,6 +684,14 @@ export default function ImalatPozlariScreen() {
           ]}
         >
           {!isEditing && (
+            <ActionBtn
+              icon="star"
+              label={isFavorite(displayAnaliz.id) ? "Favoriden Çıkar" : "Favorile"}
+              onPress={() => toggleFavorite(displayAnaliz.id)}
+              colors={colors}
+            />
+          )}
+          {!isEditing && (
             <ActionBtn icon="edit-2" label="Düzenle" onPress={startEdit} colors={colors} />
           )}
           <ActionBtn icon="copy" label="Kopyala" onPress={handleClone} colors={colors} />
@@ -838,14 +855,17 @@ export default function ImalatPozlariScreen() {
         ListEmptyComponent={
           <View style={{ alignItems: "center", paddingTop: 60 }}>
             <Feather name="inbox" size={40} color={colors.mutedForeground} />
-            <Text style={{ color: colors.mutedForeground, marginTop: 12, fontSize: 14 }}>
-              Analiz bulunamadı
+            <Text style={{ color: colors.mutedForeground, marginTop: 12, fontSize: 14, textAlign: "center", paddingHorizontal: 24 }}>
+              {modulAnalizleri.length === 0 && moduleDef.emptyHint
+                ? moduleDef.emptyHint
+                : "Analiz bulunamadı"}
             </Text>
           </View>
         }
       />
 
       {/* Yetkili roller: yeni analiz ekle FAB */}
+      {canCreateAnaliz && (
       <TouchableOpacity
         style={[
           st.fab,
@@ -855,8 +875,9 @@ export default function ImalatPozlariScreen() {
       >
         <Feather name="plus" size={24} color={colors.primaryForeground} />
       </TouchableOpacity>
+      )}
 
-      {/* Yeni analiz modalı */}
+      {canCreateAnaliz && (
       <NewAnalizModal
         visible={newVisible}
         form={newForm}
@@ -880,6 +901,7 @@ export default function ImalatPozlariScreen() {
             yukleniciKarTutari: 0,
             birimFiyati: 0,
             kaynakTip: "kullanici",
+            discipline: modul as BfaDiscipline,
           });
           setNewVisible(false);
           setNewForm({
@@ -893,6 +915,7 @@ export default function ImalatPozlariScreen() {
         onCancel={() => setNewVisible(false)}
         colors={colors}
       />
+      )}
     </View>
   );
 }

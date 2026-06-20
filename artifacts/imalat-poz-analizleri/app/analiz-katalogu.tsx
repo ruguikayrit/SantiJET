@@ -14,7 +14,7 @@ import {
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 import { buildPozKategoriFiltreleri, normalizeTrSearch } from "@/constants/pozAnalizleri";
-import { useMergedPozAnalizleri } from "@/hooks/useMergedPozAnalizleri";
+import { useBfaCatalog } from "@/hooks/useBfaCatalog";
 import { useColors } from "@/hooks/useColors";
 
 const TILE_COLOR = "#16a34a";
@@ -25,7 +25,8 @@ export default function AnalizKataloguScreen() {
   const insets = useSafeAreaInsets();
   const topPad = Platform.OS === "web" ? 16 : insets.top;
 
-  const { pozAnalizleri, loading, error } = useMergedPozAnalizleri();
+  const { getModuleAnalizleri, loading, error } = useBfaCatalog();
+  const pozAnalizleri = getModuleAnalizleri("insaat");
   const [search, setSearch] = useState("");
 
   const kategoriSayilari = useMemo(() => {

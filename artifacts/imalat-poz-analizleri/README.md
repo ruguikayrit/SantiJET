@@ -2,6 +2,17 @@
 
 Bağımsız **Birim Fiyat Analizleri** uygulaması. ŞantiJET ana uygulamasından (`artifacts/santiye-takip`) ayrıdır.
 
+## Modüller
+
+| # | Modül | Veri dosyası |
+|---|--------|----------------|
+| 01 | İnşaat B.F.A. | `assets/data/resmi-poz-analizleri.json` |
+| 02 | Mekanik Tesisat B.F.A. | `assets/data/resmi-mekanik-analizleri.json` |
+| 03 | Elektrik Tesisat B.F.A. | `assets/data/resmi-elektrik-analizleri.json` |
+| 04 | Favoriler | AsyncStorage (`santijet_ipa_favorites_v1`) |
+
+Mekanik ve elektrik katalogları PDF içe aktarımı için hazır; JSON doldurulunca modül 1 ile aynı listeleme/detay akışı çalışır.
+
 ## Özellikler
 
 - 960+ resmi Çevre ve Şehircilik Bakanlığı imalat analiz tablosu (lazy JSON yükleme)
