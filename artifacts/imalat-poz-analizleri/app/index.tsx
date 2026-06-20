@@ -3,7 +3,6 @@ import { useRouter } from "expo-router";
 import React from "react";
 import {
   ActivityIndicator,
-  Dimensions,
   Platform,
   ScrollView,
   StyleSheet,
@@ -18,7 +17,6 @@ import { useMergedPozAnalizleri } from "@/hooks/useMergedPozAnalizleri";
 import { useColors } from "@/hooks/useColors";
 
 const TILE_COLOR = "#d97706";
-const SCREEN_H = Dimensions.get("window").height;
 
 export default function HomeScreen() {
   const colors = useColors();
@@ -45,7 +43,9 @@ export default function HomeScreen() {
         ]}
       >
         <View style={styles.headerBrand}>
-          <SantijetLogo iconHeight={40} centered />
+          <View style={styles.logoLayer}>
+            <SantijetLogo iconHeight={36} centered />
+          </View>
           <Text style={styles.headerSubtitle}>İMALAT POZ ANALİZLERİ</Text>
         </View>
       </View>
@@ -125,16 +125,19 @@ const styles = StyleSheet.create({
   root: { flex: 1 },
   hero: {
     width: "100%",
-    minHeight: Math.min(SCREEN_H * 0.34, 280),
     alignItems: "center",
     justifyContent: "center",
     paddingHorizontal: 16,
-    paddingBottom: 20,
+    paddingBottom: 10,
   },
   headerBrand: {
     alignItems: "center",
     justifyContent: "center",
-    gap: 6,
+    width: "100%",
+  },
+  logoLayer: {
+    zIndex: 2,
+    marginBottom: -4,
   },
   headerSubtitle: {
     color: "#4a6080",
@@ -142,6 +145,8 @@ const styles = StyleSheet.create({
     fontFamily: "Inter_700Bold",
     letterSpacing: 5,
     textAlign: "center",
+    zIndex: 1,
+    paddingTop: 2,
   },
   scroll: { padding: 12, paddingTop: 14 },
   welcomeCard: {
