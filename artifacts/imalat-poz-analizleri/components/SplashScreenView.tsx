@@ -20,8 +20,6 @@ const BOLT_HEIGHT = Math.round((WORDMARK_HEIGHT / 0.54) * 2.5);
 /** Orijinal boşluk 32px; x2 */
 const LOGO_WORDMARK_GAP = 64;
 
-const WORDMARK_REVEAL_MS = 25;
-
 function SplashBolt({ boltHeight }: { boltHeight: number }) {
   const boltImgH = Math.round(boltHeight / (BOLT_Y_END - BOLT_Y_START));
   const boltImgW = boltImgH;
@@ -55,8 +53,6 @@ export default function SplashScreenView({ onFinish }: Props) {
   const logoOpacity = useRef(new Animated.Value(0)).current;
   const logoScale = useRef(new Animated.Value(0.82)).current;
   const logoGlowOpacity = useRef(new Animated.Value(0)).current;
-  const wordmarkOpacity = useRef(new Animated.Value(0)).current;
-  const wordmarkScale = useRef(new Animated.Value(0.95)).current;
 
   useEffect(() => {
     Animated.sequence([
@@ -76,19 +72,6 @@ export default function SplashScreenView({ onFinish }: Props) {
         Animated.timing(logoGlowOpacity, {
           toValue: 1,
           duration: 680,
-          useNativeDriver: true,
-        }),
-      ]),
-      Animated.delay(40),
-      Animated.parallel([
-        Animated.timing(wordmarkOpacity, {
-          toValue: 1,
-          duration: WORDMARK_REVEAL_MS,
-          useNativeDriver: true,
-        }),
-        Animated.timing(wordmarkScale, {
-          toValue: 1,
-          duration: WORDMARK_REVEAL_MS,
           useNativeDriver: true,
         }),
       ]),
