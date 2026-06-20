@@ -7,6 +7,7 @@ import {
   Alert,
   ActivityIndicator,
   FlatList,
+  KeyboardAvoidingView,
   Modal,
   Platform,
   ScrollView,
@@ -1208,7 +1209,7 @@ function CloneModal({
 }) {
   return (
     <Modal visible={visible} transparent animationType="fade">
-      <View style={st.modalOverlay}>
+      <View style={[st.modalOverlay, st.modalOverlayCentered]}>
         <View style={[st.modalCard, { backgroundColor: colors.card }]}>
           <Text style={[st.modalTitle, { color: colors.foreground }]}>Analizi Kopyala</Text>
           <Text style={[st.modalSub, { color: colors.mutedForeground }]}>
@@ -1261,48 +1262,68 @@ function NewAnalizModal({
   onCancel: () => void;
   colors: Colors;
 }) {
+  const insets = useSafeAreaInsets();
+
   return (
     <Modal visible={visible} transparent animationType="slide">
-      <View style={st.modalOverlay}>
-        <View style={[st.modalCard, { backgroundColor: colors.card }]}>
-          <Text style={[st.modalTitle, { color: colors.foreground }]}>Yeni Analiz</Text>
-          {[
-            { label: "Poz No", key: "pozNo", placeholder: "ör. ÖZEL.001" },
-            { label: "Analiz Adı", key: "analizAdi", placeholder: "Analiz başlığı" },
-            { label: "Ölçü Birimi", key: "olcuBirimi", placeholder: "ör. m²" },
-          ].map(({ label, key, placeholder }) => (
-            <View key={key} style={{ marginBottom: 10 }}>
-              <Text style={[st.modalSub, { color: colors.mutedForeground, marginBottom: 4 }]}>
-                {label}
-              </Text>
-              <TextInput
-                style={[
-                  st.modalInput,
-                  { color: colors.foreground, borderColor: colors.border, backgroundColor: colors.background },
-                ]}
-                value={(form as any)[key]}
-                onChangeText={(v) => onChange({ [key]: v })}
-                placeholder={placeholder}
-                placeholderTextColor={colors.mutedForeground}
-              />
+      <KeyboardAvoidingView
+        style={st.modalOverlay}
+        behavior={Platform.OS === "ios" ? "padding" : "height"}
+        keyboardVerticalOffset={Platform.OS === "ios" ? insets.top : 0}
+      >
+        <ScrollView
+          contentContainerStyle={[
+            st.modalScrollContent,
+            { paddingBottom: Math.max(insets.bottom, 16) + 16 },
+          ]}
+          keyboardShouldPersistTaps="handled"
+          showsVerticalScrollIndicator={false}
+          bounces={false}
+        >
+          <View style={[st.modalCard, { backgroundColor: colors.card }]}>
+            <Text style={[st.modalTitle, { color: colors.foreground }]}>Yeni Analiz</Text>
+            {[
+              { label: "Poz No", key: "pozNo", placeholder: "ör. ÖZEL.001" },
+              { label: "Analiz Adı", key: "analizAdi", placeholder: "Analiz başlığı" },
+              { label: "Ölçü Birimi", key: "olcuBirimi", placeholder: "ör. m²" },
+            ].map(({ label, key, placeholder }) => (
+              <View key={key} style={{ marginBottom: 10 }}>
+                <Text style={[st.modalSub, { color: colors.mutedForeground, marginBottom: 4 }]}>
+                  {label}
+                </Text>
+                <TextInput
+                  style={[
+                    st.modalInput,
+                    {
+                      color: colors.foreground,
+                      borderColor: colors.border,
+                      backgroundColor: colors.background,
+                    },
+                  ]}
+                  value={(form as any)[key]}
+                  onChangeText={(v) => onChange({ [key]: v })}
+                  placeholder={placeholder}
+                  placeholderTextColor={colors.mutedForeground}
+                />
+              </View>
+            ))}
+            <View style={st.modalBtns}>
+              <TouchableOpacity
+                style={[st.modalBtn, { backgroundColor: colors.border }]}
+                onPress={onCancel}
+              >
+                <Text style={{ color: colors.foreground }}>İptal</Text>
+              </TouchableOpacity>
+              <TouchableOpacity
+                style={[st.modalBtn, { backgroundColor: colors.primary }]}
+                onPress={onConfirm}
+              >
+                <Text style={{ color: colors.primaryForeground, fontWeight: "700" }}>Oluştur</Text>
+              </TouchableOpacity>
             </View>
-          ))}
-          <View style={st.modalBtns}>
-            <TouchableOpacity
-              style={[st.modalBtn, { backgroundColor: colors.border }]}
-              onPress={onCancel}
-            >
-              <Text style={{ color: colors.foreground }}>İptal</Text>
-            </TouchableOpacity>
-            <TouchableOpacity
-              style={[st.modalBtn, { backgroundColor: colors.primary }]}
-              onPress={onConfirm}
-            >
-              <Text style={{ color: colors.primaryForeground, fontWeight: "700" }}>Oluştur</Text>
-            </TouchableOpacity>
           </View>
-        </View>
-      </View>
+        </ScrollView>
+      </KeyboardAvoidingView>
     </Modal>
   );
 }
@@ -1579,9 +1600,17 @@ const st = StyleSheet.create({
   modalOverlay: {
     flex: 1,
     backgroundColor: "rgba(0,0,0,0.5)",
+  },
+  modalOverlayCentered: {
     justifyContent: "center",
     alignItems: "center",
     padding: 24,
+  },
+  modalScrollContent: {
+    flexGrow: 1,
+    justifyContent: "center",
+    paddingHorizontal: 24,
+    paddingTop: 24,
   },
   modalCard: {
     width: "100%",
