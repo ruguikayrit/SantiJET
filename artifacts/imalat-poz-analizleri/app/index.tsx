@@ -17,6 +17,7 @@ import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { SantijetLogo } from "@/components/SantijetLogo";
 import { CreateAnalizFab } from "@/components/CreateAnalizFab";
 import { NewAnalizModulePickerModal } from "@/components/NewAnalizModulePickerModal";
+import { SettingsModal } from "@/components/SettingsModal";
 import { ModuleTile } from "@/components/ModuleTile";
 import { BFA_MODULES, BfaDiscipline, resolveAnalizDiscipline } from "@/constants/bfaModules";
 import { matchesPozAnalizSearch } from "@/constants/pozAnalizleri";
@@ -63,6 +64,7 @@ export default function HomeScreen() {
   const { stats, all, loading } = useBfaCatalog();
   const [search, setSearch] = useState("");
   const [newAnalizPickerVisible, setNewAnalizPickerVisible] = useState(false);
+  const [settingsVisible, setSettingsVisible] = useState(false);
 
   const filtered = useMemo(() => {
     if (!search.trim()) return [];
@@ -114,6 +116,14 @@ export default function HomeScreen() {
           { backgroundColor: colors.secondary, paddingTop: topPad },
         ]}
       >
+        <TouchableOpacity
+          style={[styles.settingsBtn, { top: topPad + 4 }]}
+          onPress={() => setSettingsVisible(true)}
+          hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+          accessibilityLabel="Ayarlar"
+        >
+          <Feather name="settings" size={22} color="#94a3b8" />
+        </TouchableOpacity>
         <View style={styles.headerBrand}>
           <SantijetLogo iconHeight={76} centered stacked />
           <Text style={styles.headerSubtitle}>BİRİM FİYAT ANALİZLERİ</Text>
@@ -283,6 +293,8 @@ export default function HomeScreen() {
         onClose={() => setNewAnalizPickerVisible(false)}
         onSelect={startNewAnalizInModule}
       />
+
+      <SettingsModal visible={settingsVisible} onClose={() => setSettingsVisible(false)} />
     </View>
   );
 }
@@ -295,6 +307,18 @@ const styles = StyleSheet.create({
     justifyContent: "center",
     paddingHorizontal: 16,
     paddingBottom: 12,
+    position: "relative",
+  },
+  settingsBtn: {
+    position: "absolute",
+    top: 0,
+    right: 12,
+    zIndex: 2,
+    width: 40,
+    height: 40,
+    alignItems: "center",
+    justifyContent: "center",
+    borderRadius: 20,
   },
   headerBrand: {
     alignItems: "center",
