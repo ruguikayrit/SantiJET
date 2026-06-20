@@ -107,12 +107,14 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
       updatePozAnaliz: (id, patch) => {
         const now = new Date().toISOString();
         persist((prev) => {
-          const exists = prev.some((a) => a.id === id);
-          if (exists) {
+          const existing = prev.find((a) => a.id === id);
+          if (existing) {
+            if (existing.kaynakTip === "sistem") return prev;
             return prev.map((a) =>
               a.id === id ? { ...a, ...patch, guncellemeTarihi: now } : a,
             );
           }
+          if (patch.kaynakTip === "sistem") return prev;
           const yeni = { ...patch, id, guncellemeTarihi: now } as PozAnaliz;
           return [...prev, yeni];
         });

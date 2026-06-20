@@ -23,6 +23,7 @@ import { BFA_MODULES, BfaDiscipline, resolveAnalizDiscipline } from "@/constants
 import { matchesPozAnalizSearch } from "@/constants/pozAnalizleri";
 import { useBfaCatalog } from "@/hooks/useBfaCatalog";
 import { useColors } from "@/hooks/useColors";
+import { useRecentViews } from "@/hooks/useRecentViews";
 
 const TILE_COLOR = "#d97706";
 
@@ -62,6 +63,7 @@ export default function HomeScreen() {
   const topPad = Platform.OS === "web" ? 67 : insets.top;
 
   const { stats, all, loading } = useBfaCatalog();
+  const { entries: recentEntries, loaded: recentLoaded, recordView } = useRecentViews();
   const [search, setSearch] = useState("");
   const [newAnalizPickerVisible, setNewAnalizPickerVisible] = useState(false);
   const [settingsVisible, setSettingsVisible] = useState(false);
@@ -76,10 +78,19 @@ export default function HomeScreen() {
   const searching = search.trim().length > 0;
 
   function openAnaliz(id: string) {
+    void recordView(id);
     const analiz = all.find((a) => a.id === id);
     const modul = analiz ? resolveAnalizDiscipline(analiz) : "insaat";
     router.push({ pathname: "/imalat-pozlari", params: { id, modul } } as any);
   }
+
+  const recentAnalizler = useMemo(() => {
+    if (!recentLoaded) return [];
+    return recentEntries
+      .map((e) => all.find((a) => a.id === e.id))
+      .filter((a): a is NonNullable<typeof a> => a != null)
+      .slice(0, 10);
+  }, [recentEntries, recentLoaded, all]);
 
   function openNewAnaliz() {
     setNewAnalizPickerVisible(true);
@@ -261,6 +272,33 @@ export default function HomeScreen() {
             </View>
           </View>
         </View>
+
+        {recentAnalizler.length > 0 && (
+          <>
+            <Text style={[styles.sectionLabel, { color: colors.foreground, marginTop: 4 }]}>
+              Son Görüntülenenler
+            </Text>
+            {recentAnalizler.map((item) => (
+              <TouchableOpacity
+                key={item.id}
+                style={[
+                  styles.recentRow,
+                  { backgroundColor: colors.card, borderColor: colors.border },
+                ]}
+                onPress={() => openAnaliz(item.id)}
+                activeOpacity={0.75}
+              >
+                <View style={styles.recentMain}>
+                  <Text style={[styles.recentPoz, { color: colors.primary }]}>{item.pozNo}</Text>
+                  <Text style={[styles.recentAd, { color: colors.foreground }]} numberOfLines={1}>
+                    {item.analizAdi}
+                  </Text>
+                </View>
+                <Feather name="chevron-right" size={16} color={colors.mutedForeground} />
+              </TouchableOpacity>
+            ))}
+          </>
+        )}
 
         <Text style={[styles.sectionLabel, { color: colors.foreground }]}>Modüller</Text>
 
@@ -463,6 +501,28 @@ const styles = StyleSheet.create({
     fontFamily: "Inter_700Bold",
     marginBottom: 12,
     marginLeft: 4,
+  },
+  recentRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    borderRadius: 10,
+    borderWidth: 1,
+    paddingHorizontal: 12,
+    paddingVertical: 10,
+    marginBottom: 8,
+    gap: 8,
+  },
+  recentMain: {
+    flex: 1,
+    gap: 2,
+  },
+  recentPoz: {
+    fontSize: 12,
+    fontFamily: "Inter_700Bold",
+  },
+  recentAd: {
+    fontSize: 13,
+    fontFamily: "Inter_400Regular",
   },
   sourceDisclaimer: {
     fontSize: 10,

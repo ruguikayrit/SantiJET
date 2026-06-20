@@ -1,6 +1,4 @@
 import { Feather } from "@expo/vector-icons";
-import * as FileSystem from "expo-file-system/legacy";
-import * as Sharing from "expo-sharing";
 import { useRouter, useLocalSearchParams } from "expo-router";
 import React, { useEffect, useMemo, useState } from "react";
 import {
@@ -21,8 +19,11 @@ import {
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 import { useApp } from "@/context/AppContext";
+import { ExportFormatModal } from "@/components/ExportFormatModal";
 import { useBfaCatalog } from "@/hooks/useBfaCatalog";
 import { useColors } from "@/hooks/useColors";
+import { useRecentViews } from "@/hooks/useRecentViews";
+import { AnalizExportFormat, exportAnaliz } from "@/lib/analizExport";
 import {
   BfaDiscipline,
   BfaModuleKey,
@@ -64,6 +65,10 @@ function tarihFmt(iso: string): string {
   }
 }
 
+function isResmiAnaliz(analiz: PozAnaliz): boolean {
+  return analiz.kaynakTip === "sistem";
+}
+
 type Colors = ReturnType<typeof useColors>;
 
 // ─── Ana Bileşen ───────────────────────────────────────────────
@@ -77,6 +82,7 @@ export default function ImalatPozlariScreen() {
 
   const { addPozAnaliz, updatePozAnaliz, deletePozAnaliz, clonePozAnaliz, isFavorite, toggleFavorite } =
     useApp();
+  const { recordView } = useRecentViews();
 
   const modulParam = params.modul ? String(params.modul) : "insaat";
   const modul: BfaModuleKey = isBfaModuleKey(modulParam) ? modulParam : "insaat";
@@ -101,6 +107,8 @@ export default function ImalatPozlariScreen() {
 
   const [cloneVisible, setCloneVisible] = useState(false);
   const [cloneAd, setCloneAd] = useState("");
+  const [exportVisible, setExportVisible] = useState(false);
+  const [metrajMiktar, setMetrajMiktar] = useState("1");
 
   const [catPickerOpen, setCatPickerOpen] = useState(false);
 
@@ -161,7 +169,12 @@ export default function ImalatPozlariScreen() {
     setSelectedId(id);
     setIsEditing(false);
     setEditDraft(null);
+    void recordView(id);
   }
+
+  useEffect(() => {
+    setMetrajMiktar("1");
+  }, [selectedId]);
 
   useEffect(() => {
     if (params.q) {
@@ -203,7 +216,27 @@ export default function ImalatPozlariScreen() {
 
   function startEdit() {
     if (!selected) return;
+    if (isResmiAnaliz(selected)) {
+      Alert.alert(
+        "Resmi Analiz",
+        "Resmi analizler düzenlenemez. Kopyalayarak özelleştirebilirsiniz.",
+        [
+          { text: "İptal", style: "cancel" },
+          { text: "Kopyala ve Düzenle", onPress: handleCopyAndEdit },
+        ],
+      );
+      return;
+    }
     setEditDraft(JSON.parse(JSON.stringify(selected)));
+    setIsEditing(true);
+  }
+
+  function handleCopyAndEdit() {
+    if (!selected || !selectedId) return;
+    const kopya = clonePozAnaliz(selectedId, "Kopya — " + selected.analizAdi, selected);
+    setCloneVisible(false);
+    setSelectedId(kopya.id);
+    setEditDraft(JSON.parse(JSON.stringify(kopya)));
     setIsEditing(true);
   }
 
@@ -305,45 +338,10 @@ export default function ImalatPozlariScreen() {
     setSelectedId(kopya.id);
   }
 
-  async function handleExport() {
+  async function handleExportFormat(format: AnalizExportFormat) {
     const analiz = isEditing && editDraft ? editDraft : selected;
     if (!analiz) return;
-    const totals = hesaplaAnalizToplam(analiz);
-
-    let txt = `BİRİM FİYAT ANALİZİ\n${"=".repeat(60)}\n`;
-    txt += `Poz No      : ${analiz.pozNo}\n`;
-    txt += `Analiz Adı  : ${analiz.analizAdi}\n`;
-    txt += `Ölçü Birimi : ${analiz.olcuBirimi}\n\n`;
-
-    const tipSira: ("malzeme" | "iscilik" | "ekipman")[] = ["malzeme", "iscilik", "ekipman"];
-    const tipAd: Record<string, string> = { malzeme: "Malzeme", iscilik: "İşçilik", ekipman: "Ekipman" };
-
-    for (const tip of tipSira) {
-      const rows = analiz.kalemler.filter((k) => k.tip === tip);
-      if (!rows.length) continue;
-      txt += `${tipAd[tip]}\n${"-".repeat(60)}\n`;
-      rows.forEach((k) => {
-        txt += `  ${k.pozNo.padEnd(14)} ${k.tanim.substring(0, 30).padEnd(32)} ${k.olcuBirimi.padEnd(6)} ${trFmt(k.miktar).padStart(8)} ${trFmt(k.birimFiyati).padStart(10)} ${trFmt(k.tutar).padStart(12)}\n`;
-      });
-    }
-    txt += `${"=".repeat(60)}\n`;
-    txt += `Malzeme + İşçilik Tutarı         : ${trFmt(totals.malzemeIscilikToplami)} TL\n`;
-    txt += `%${analiz.yukleniciKarOrani} Yüklenici Karı              : ${trFmt(totals.yukleniciKarTutari)} TL\n`;
-    txt += `1 ${analiz.olcuBirimi} Fiyatı                  : ${trFmt(totals.birimFiyati)} TL\n`;
-    if (analiz.pozTarifi) txt += `\nPoz Tarifi:\n${analiz.pozTarifi}\n`;
-    if (analiz.olcusu) txt += `\nÖlçüsü:\n${analiz.olcusu}\n`;
-
-    try {
-      const uri = `${FileSystem.cacheDirectory}analiz_${analiz.pozNo.replace(/[./]/g, "_")}.txt`;
-      await FileSystem.writeAsStringAsync(uri, txt, { encoding: FileSystem.EncodingType.UTF8 });
-      if (await Sharing.isAvailableAsync()) {
-        await Sharing.shareAsync(uri, { mimeType: "text/plain", dialogTitle: "Analizi Dışa Aktar" });
-      } else {
-        Alert.alert("Dışa Aktarma", txt.substring(0, 600));
-      }
-    } catch {
-      Alert.alert("Dışa Aktarma", txt.substring(0, 600));
-    }
+    await exportAnaliz(analiz, format);
   }
 
   const displayAnaliz = isEditing && editDraft ? editDraft : selected;
@@ -351,6 +349,9 @@ export default function ImalatPozlariScreen() {
   // ── Detay görünümü ──
   if (selectedId && displayAnaliz) {
     const totals = hesaplaAnalizToplam(displayAnaliz);
+    const resmi = isResmiAnaliz(displayAnaliz);
+    const metrajQty = parseN(metrajMiktar);
+    const metrajToplam = Math.round(metrajQty * totals.birimFiyati * 100) / 100;
 
     return (
       <View style={{ flex: 1, backgroundColor: colors.background }}>
@@ -403,6 +404,12 @@ export default function ImalatPozlariScreen() {
               { backgroundColor: colors.card, borderColor: colors.border },
             ]}
           >
+            {resmi && (
+              <View style={[st.resmiBadge, { backgroundColor: "#2563eb18", borderColor: "#2563eb44" }]}>
+                <Feather name="shield" size={13} color="#2563eb" />
+                <Text style={st.resmiBadgeText}>Resmi Analiz — Salt Okunur</Text>
+              </View>
+            )}
             <View style={st.infoRow}>
               <Text style={[st.infoLabel, { color: colors.mutedForeground }]}>Poz No</Text>
               {isEditing ? (
@@ -456,6 +463,45 @@ export default function ImalatPozlariScreen() {
               </Text>
             </View>
           </View>
+
+          {!isEditing && (
+            <View
+              style={[
+                st.metrajCard,
+                { backgroundColor: colors.card, borderColor: colors.border },
+              ]}
+            >
+              <View style={st.metrajHeader}>
+                <Feather name="pie-chart" size={16} color={colors.primary} />
+                <Text style={[st.metrajTitle, { color: colors.foreground }]}>Metraj Hesaplama</Text>
+              </View>
+              <View style={st.metrajRow}>
+                <Text style={[st.metrajLabel, { color: colors.mutedForeground }]}>Miktar</Text>
+                <TextInput
+                  style={[
+                    st.metrajInput,
+                    { color: colors.foreground, borderColor: colors.border, backgroundColor: colors.background },
+                  ]}
+                  value={metrajMiktar}
+                  onChangeText={setMetrajMiktar}
+                  keyboardType="decimal-pad"
+                  placeholder="0"
+                  placeholderTextColor={colors.mutedForeground}
+                />
+                <Text style={[st.metrajUnit, { color: colors.foreground }]}>
+                  {displayAnaliz.olcuBirimi}
+                </Text>
+              </View>
+              <View style={st.metrajSummary}>
+                <Text style={[st.metrajLine, { color: colors.mutedForeground }]}>
+                  Birim fiyat: {trFmt(totals.birimFiyati)} TL / {displayAnaliz.olcuBirimi}
+                </Text>
+                <Text style={[st.metrajTotal, { color: colors.primary }]}>
+                  Toplam: {trFmt(metrajToplam)} TL
+                </Text>
+              </View>
+            </View>
+          )}
 
           {/* Analiz Tablosu */}
           <View style={{ marginHorizontal: 12, marginTop: 12 }}>
@@ -694,11 +740,25 @@ export default function ImalatPozlariScreen() {
               colors={colors}
             />
           )}
-          {!isEditing && (
+          {!isEditing && resmi ? (
+            <ActionBtn
+              icon="copy"
+              label="Kopyala ve Düzenle"
+              onPress={handleCopyAndEdit}
+              colors={colors}
+            />
+          ) : !isEditing ? (
             <ActionBtn icon="edit-2" label="Düzenle" onPress={startEdit} colors={colors} />
+          ) : null}
+          {!resmi && (
+            <ActionBtn icon="copy" label="Kopyala" onPress={handleClone} colors={colors} />
           )}
-          <ActionBtn icon="copy" label="Kopyala" onPress={handleClone} colors={colors} />
-          <ActionBtn icon="share" label="Dışa Aktar" onPress={handleExport} colors={colors} />
+          <ActionBtn
+            icon="share"
+            label="Dışa Aktar"
+            onPress={() => setExportVisible(true)}
+            colors={colors}
+          />
           {!isEditing && (
             <ActionBtn
               icon="trash-2"
@@ -706,10 +766,16 @@ export default function ImalatPozlariScreen() {
               onPress={handleDelete}
               colors={colors}
               danger
-              disabled={displayAnaliz.kaynakTip === "sistem"}
+              disabled={resmi}
             />
           )}
         </View>
+
+        <ExportFormatModal
+          visible={exportVisible}
+          onClose={() => setExportVisible(false)}
+          onSelect={handleExportFormat}
+        />
 
         {/* Kopyalama modalı */}
         <CloneModal
@@ -1655,6 +1721,76 @@ const st = StyleSheet.create({
     borderRadius: 10,
     borderWidth: 1,
     overflow: "hidden",
+  },
+  resmiBadge: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 6,
+    margin: 10,
+    marginBottom: 0,
+    paddingHorizontal: 10,
+    paddingVertical: 7,
+    borderRadius: 8,
+    borderWidth: 1,
+  },
+  resmiBadgeText: {
+    fontSize: 11,
+    fontFamily: "Inter_600SemiBold",
+    color: "#2563eb",
+  },
+  metrajCard: {
+    marginHorizontal: 12,
+    marginBottom: 4,
+    borderRadius: 10,
+    borderWidth: 1,
+    padding: 12,
+    gap: 10,
+  },
+  metrajHeader: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 8,
+  },
+  metrajTitle: {
+    fontSize: 14,
+    fontFamily: "Inter_700Bold",
+  },
+  metrajRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 8,
+  },
+  metrajLabel: {
+    fontSize: 12,
+    fontFamily: "Inter_600SemiBold",
+    width: 52,
+  },
+  metrajInput: {
+    flex: 1,
+    fontSize: 16,
+    fontFamily: "Inter_600SemiBold",
+    borderWidth: 1,
+    borderRadius: 8,
+    paddingHorizontal: 10,
+    paddingVertical: 8,
+    textAlign: "right",
+  },
+  metrajUnit: {
+    fontSize: 13,
+    fontFamily: "Inter_500Medium",
+    minWidth: 36,
+  },
+  metrajSummary: {
+    gap: 4,
+    paddingTop: 2,
+  },
+  metrajLine: {
+    fontSize: 12,
+    fontFamily: "Inter_400Regular",
+  },
+  metrajTotal: {
+    fontSize: 16,
+    fontFamily: "Inter_700Bold",
   },
   infoRow: {
     flexDirection: "row",
