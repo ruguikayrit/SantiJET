@@ -18,6 +18,8 @@ import { fileURLToPath } from "url";
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const projectRoot = path.resolve(__dirname, "..");
 const hostFile = path.join(projectRoot, ".expo", "ipa-dev-host");
+const qrImageFile = path.join(projectRoot, "assets", "images", "expo-go-qr.png");
+const qrUrlFile = path.join(projectRoot, "assets", "expo-dev-url.txt");
 const metroPort = Number(process.env.PORT || 24916);
 const landingPort = Number(process.env.IPA_LANDING_PORT || 24917);
 
@@ -65,6 +67,24 @@ function resolveLanHost() {
 
 function setLinks(partial) {
   links = { ...links, ...partial, updatedAt: new Date().toISOString() };
+  if (links.ready && links.expUrl) {
+    persistQrArtifacts(links.expUrl).catch((err) => {
+      console.warn("[ipa-dev] QR kaydedilemedi:", err?.message || err);
+    });
+  }
+}
+
+async function persistQrArtifacts(expUrl) {
+  fs.mkdirSync(path.dirname(qrImageFile), { recursive: true });
+  fs.writeFileSync(qrUrlFile, `${expUrl}\n`);
+  const qrApi =
+    "https://api.qrserver.com/v1/create-qr-code/?size=512x512&margin=10&data=" +
+    encodeURIComponent(expUrl);
+  const res = await fetch(qrApi);
+  if (!res.ok) throw new Error(`QR API ${res.status}`);
+  const buf = Buffer.from(await res.arrayBuffer());
+  fs.writeFileSync(qrImageFile, buf);
+  console.log(`[ipa-dev] QR güncellendi: ${qrImageFile}`);
 }
 
 async function fetchNgrokTunnel() {

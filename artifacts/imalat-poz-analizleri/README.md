@@ -41,9 +41,14 @@ IPA_NETWORK_MODE=lan pnpm dev:ipa
 | Bağlantı | Adres |
 |----------|--------|
 | **Yer imi sayfası** | http://localhost:24917 |
+| **QR görseli (repo)** | `assets/images/expo-go-qr.png` |
 | Metro web | http://localhost:24916 |
 
-Bu sayfa adresi **hiç değişmez**. QR tunnel modunda sayfa açıkken otomatik güncellenir — yeni QR aramanıza gerek kalmaz.
+Yer imi sayfası adresi **hiç değişmez**. Tunnel modunda QR otomatik güncellenir; aynı PNG dosyası da `assets/images/expo-go-qr.png` ve `assets/expo-dev-url.txt` olarak kaydedilir.
+
+**Telefon (Expo Go):** Kamera veya Expo Go ile `assets/images/expo-go-qr.png` dosyasını tarayın. Güncel `exp://` adresi `assets/expo-dev-url.txt` içindedir.
+
+Tunnel yeniden başlarsa `pnpm dev:ipa` QR dosyasını otomatik yeniler.
 
 LAN modunda host `.expo/ipa-dev-host` dosyasına kaydedilir.
 
