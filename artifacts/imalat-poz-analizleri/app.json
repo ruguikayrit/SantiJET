@@ -1,0 +1,31 @@
+{
+  "expo": {
+    "name": "ŞantiJET İPA",
+    "slug": "santijet-ipa",
+    "version": "1.0.0",
+    "orientation": "portrait",
+    "icon": "./assets/images/icon.png",
+    "scheme": "santijet-ipa",
+    "userInterfaceStyle": "automatic",
+    "newArchEnabled": true,
+    "splash": {
+      "image": "./assets/images/santijet-icon.png",
+      "resizeMode": "contain",
+      "backgroundColor": "#16213e"
+    },
+    "ios": {
+      "supportsTablet": true
+    },
+    "android": {},
+    "web": {
+      "favicon": "./assets/images/icon.png"
+    },
+    "plugins": [
+      "expo-router",
+      "expo-font"
+    ],
+    "experiments": {
+      "typedRoutes": true
+    }
+  }
+}
