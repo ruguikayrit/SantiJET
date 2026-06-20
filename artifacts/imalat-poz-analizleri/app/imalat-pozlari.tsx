@@ -34,6 +34,7 @@ import {
 import {
   AnalizKalemi,
   IMALAT_POZ_KATEGORILERI,
+  OLCU_BIRIMLERI,
   PozAnaliz,
   buildPozKategoriFiltreleri,
   hesaplaAnalizToplam,
@@ -892,7 +893,7 @@ export default function ImalatPozlariScreen() {
           const id = addPozAnaliz({
             pozNo: newForm.pozNo.trim() || "ÖZEL",
             analizAdi: newForm.analizAdi.trim(),
-            olcuBirimi: newForm.olcuBirimi.trim() || "m²",
+            olcuBirimi: newForm.olcuBirimi,
             kategori: newForm.kategori,
             kalemler: [],
             pozTarifi: "",
@@ -1191,6 +1192,77 @@ function KategoriPickerModal({
   );
 }
 
+// ─── OlcuBirimiPickerModal ────────────────────────────────────
+
+function OlcuBirimiPickerModal({
+  visible,
+  selected,
+  onSelect,
+  onClose,
+  colors,
+}: {
+  visible: boolean;
+  selected: string;
+  onSelect: (unit: string) => void;
+  onClose: () => void;
+  colors: Colors;
+}) {
+  return (
+    <Modal visible={visible} transparent animationType="slide" onRequestClose={onClose}>
+      <TouchableOpacity style={st.pickerOverlay} activeOpacity={1} onPress={onClose}>
+        <TouchableOpacity
+          activeOpacity={1}
+          style={[st.pickerSheet, { backgroundColor: colors.card }]}
+          onPress={() => {}}
+        >
+          <View style={[st.pickerHeader, { borderBottomColor: colors.border }]}>
+            <Text style={[st.pickerTitle, { color: colors.foreground }]}>Ölçü Birimi Seç</Text>
+            <TouchableOpacity onPress={onClose} hitSlop={12}>
+              <Feather name="x" size={22} color={colors.mutedForeground} />
+            </TouchableOpacity>
+          </View>
+          <FlatList
+            data={[...OLCU_BIRIMLERI]}
+            keyExtractor={(item) => item}
+            keyboardShouldPersistTaps="handled"
+            style={{ maxHeight: 420 }}
+            renderItem={({ item }) => {
+              const active = selected === item;
+              return (
+                <TouchableOpacity
+                  style={[
+                    st.pickerItem,
+                    {
+                      borderBottomColor: colors.border,
+                      backgroundColor: active ? colors.primary + "14" : "transparent",
+                    },
+                  ]}
+                  onPress={() => onSelect(item)}
+                  activeOpacity={0.75}
+                >
+                  <Text
+                    style={[
+                      st.pickerItemText,
+                      { color: active ? colors.primary : colors.foreground },
+                    ]}
+                  >
+                    {item}
+                  </Text>
+                  {active ? (
+                    <Feather name="check" size={18} color={colors.primary} />
+                  ) : (
+                    <View style={{ width: 18 }} />
+                  )}
+                </TouchableOpacity>
+              );
+            }}
+          />
+        </TouchableOpacity>
+      </TouchableOpacity>
+    </Modal>
+  );
+}
+
 // ─── CloneModal ───────────────────────────────────────────────
 
 function CloneModal({
@@ -1288,6 +1360,7 @@ function NewAnalizModal({
 }) {
   const insets = useSafeAreaInsets();
   const scrollRef = React.useRef<ScrollView>(null);
+  const [birimPickerOpen, setBirimPickerOpen] = useState(false);
 
   if (!visible) return null;
 
@@ -1327,32 +1400,68 @@ function NewAnalizModal({
             contentContainerStyle={st.modalSheetScroll}
           >
             <Text style={[st.modalTitle, { color: colors.foreground }]}>Yeni Analiz</Text>
-            {[
-              { label: "Poz No", key: "pozNo", placeholder: "ör. ÖZEL.001" },
-              { label: "Analiz Adı", key: "analizAdi", placeholder: "Analiz başlığı" },
-              { label: "Ölçü Birimi", key: "olcuBirimi", placeholder: "ör. m²" },
-            ].map(({ label, key, placeholder }) => (
-              <View key={key} style={{ marginBottom: 10 }}>
-                <Text style={[st.modalSub, { color: colors.mutedForeground, marginBottom: 4 }]}>
-                  {label}
+            <View style={{ marginBottom: 10 }}>
+              <Text style={[st.modalSub, { color: colors.mutedForeground, marginBottom: 4 }]}>
+                Poz No
+              </Text>
+              <TextInput
+                style={[
+                  st.modalInput,
+                  {
+                    color: colors.foreground,
+                    borderColor: colors.border,
+                    backgroundColor: colors.background,
+                  },
+                ]}
+                value={form.pozNo}
+                onChangeText={(v) => onChange({ pozNo: v })}
+                onFocus={scrollToEnd}
+                placeholder="ör. ÖZEL.001"
+                placeholderTextColor={colors.mutedForeground}
+              />
+            </View>
+            <View style={{ marginBottom: 10 }}>
+              <Text style={[st.modalSub, { color: colors.mutedForeground, marginBottom: 4 }]}>
+                Analiz Adı
+              </Text>
+              <TextInput
+                style={[
+                  st.modalInput,
+                  {
+                    color: colors.foreground,
+                    borderColor: colors.border,
+                    backgroundColor: colors.background,
+                  },
+                ]}
+                value={form.analizAdi}
+                onChangeText={(v) => onChange({ analizAdi: v })}
+                onFocus={scrollToEnd}
+                placeholder="Analiz başlığı"
+                placeholderTextColor={colors.mutedForeground}
+              />
+            </View>
+            <View style={{ marginBottom: 10 }}>
+              <Text style={[st.modalSub, { color: colors.mutedForeground, marginBottom: 4 }]}>
+                Ölçü Birimi
+              </Text>
+              <TouchableOpacity
+                style={[
+                  st.filterSelect,
+                  {
+                    backgroundColor: colors.background,
+                    borderColor: colors.border,
+                    minHeight: 44,
+                  },
+                ]}
+                onPress={() => setBirimPickerOpen(true)}
+                activeOpacity={0.85}
+              >
+                <Text style={[st.filterSelectText, { color: colors.foreground }]}>
+                  {form.olcuBirimi}
                 </Text>
-                <TextInput
-                  style={[
-                    st.modalInput,
-                    {
-                      color: colors.foreground,
-                      borderColor: colors.border,
-                      backgroundColor: colors.background,
-                    },
-                  ]}
-                  value={(form as any)[key]}
-                  onChangeText={(v) => onChange({ [key]: v })}
-                  onFocus={scrollToEnd}
-                  placeholder={placeholder}
-                  placeholderTextColor={colors.mutedForeground}
-                />
-              </View>
-            ))}
+                <Feather name="chevron-down" size={18} color={colors.mutedForeground} />
+              </TouchableOpacity>
+            </View>
             <View style={st.modalBtns}>
               <TouchableOpacity
                 style={[st.modalBtn, { backgroundColor: colors.border }]}
@@ -1370,6 +1479,16 @@ function NewAnalizModal({
           </ScrollView>
         </View>
       </KeyboardAvoidingView>
+      <OlcuBirimiPickerModal
+        visible={birimPickerOpen}
+        selected={form.olcuBirimi}
+        onSelect={(unit) => {
+          onChange({ olcuBirimi: unit });
+          setBirimPickerOpen(false);
+        }}
+        onClose={() => setBirimPickerOpen(false)}
+        colors={colors}
+      />
     </View>
   );
 }
