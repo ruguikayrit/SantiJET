@@ -20,7 +20,7 @@ import { NewAnalizModulePickerModal } from "@/components/NewAnalizModulePickerMo
 import { RecentViewsModal } from "@/components/RecentViewsModal";
 import { SettingsModal } from "@/components/SettingsModal";
 import { ModuleTile } from "@/components/ModuleTile";
-import { BFA_MODULES, BfaDiscipline, resolveAnalizDiscipline } from "@/constants/bfaModules";
+import { BFA_DISCIPLINES, BFA_MODULES, BfaDiscipline, resolveAnalizDiscipline } from "@/constants/bfaModules";
 import { matchesPozAnalizSearch } from "@/constants/pozAnalizleri";
 import { useKesif } from "@/context/KesifContext";
 import { useBfaCatalog } from "@/hooks/useBfaCatalog";
@@ -98,14 +98,20 @@ export default function HomeScreen() {
       .filter((a): a is NonNullable<typeof a> => a != null);
   }, [recentEntries, recentLoaded, all]);
 
-  const insaatKategoriSayisi = useMemo(() => {
-    const set = new Set<string>();
-    for (const a of stats.insaat) {
-      const k = a.kategori?.trim();
-      if (k) set.add(k);
-    }
-    return set.size;
-  }, [stats.insaat]);
+  const katalogOzet = useMemo(() => {
+    if (loading) return "Yükleniyor…";
+    const parts = BFA_DISCIPLINES.map((d) => {
+      const mod = BFA_MODULES.find((m) => m.modul === d);
+      const short = mod?.label.replace(" B.F.A.", "").replace(" TESİSAT", "") ?? d;
+      const catSet = new Set<string>();
+      for (const a of stats[d]) {
+        const k = a.kategori?.trim();
+        if (k) catSet.add(k);
+      }
+      return `${short} ${catSet.size}`;
+    });
+    return parts.join(" · ");
+  }, [loading, stats]);
 
   function openNewAnaliz() {
     setNewAnalizPickerVisible(true);
@@ -373,18 +379,14 @@ export default function HomeScreen() {
             <Feather name="book-open" size={23} color={KATALOG_COLOR} />
           </View>
           <View style={styles.recentBtnBody}>
-            <Text style={styles.recentBtnNum}>İNŞAAT B.F.A.</Text>
+            <Text style={styles.recentBtnNum}>B.F.A. KATALOG</Text>
             <Text style={[styles.recentBtnLabel, { color: colors.cardForeground }]}>
               Analiz Kataloğu
             </Text>
             <View style={styles.recentBtnFoot}>
               <View style={[styles.recentBtnDot, { backgroundColor: KATALOG_COLOR }]} />
-              <Text style={[styles.recentBtnInfo, { color: KATALOG_COLOR }]}>
-                {loading
-                  ? "Yükleniyor…"
-                  : insaatKategoriSayisi > 0
-                    ? `${insaatKategoriSayisi} kategori`
-                    : "Kategorilere göz at"}
+              <Text style={[styles.recentBtnInfo, { color: KATALOG_COLOR }]} numberOfLines={1}>
+                {katalogOzet}
               </Text>
             </View>
           </View>
