@@ -10,6 +10,16 @@ import {
 
 import type { BfaModuleIcon } from "@/constants/bfaModules";
 
+const ICON_LABEL_GAP = 3;
+
+function parseTileLabel(label: string): { title: string; bfa: string | null } {
+  const suffix = " B.F.A.";
+  if (label.endsWith(suffix)) {
+    return { title: label.slice(0, -suffix.length), bfa: "B.F.A." };
+  }
+  return { title: label, bfa: null };
+}
+
 interface ModuleTileProps {
   num: string;
   label: string;
@@ -33,6 +43,8 @@ export function ModuleTile({
   cardBackground,
   onPress,
 }: ModuleTileProps) {
+  const { title, bfa } = parseTileLabel(label);
+
   return (
     <TouchableOpacity
       activeOpacity={0.85}
@@ -49,15 +61,22 @@ export function ModuleTile({
         <Text style={styles.tileNum}>{num}</Text>
       </View>
 
-      <View style={styles.tileIconWrap}>
+      <View style={styles.tileCenter}>
         <View style={[styles.tileIconCircle, { backgroundColor: color + "1e" }]}>
           <Feather name={icon} size={26} color={color} />
         </View>
-      </View>
 
-      <Text style={[styles.tileLabel, { color: cardForeground }]} numberOfLines={2}>
-        {label.toUpperCase()}
-      </Text>
+        <View style={styles.tileLabelGroup}>
+          <Text style={[styles.tileLabel, { color: cardForeground }]} numberOfLines={2}>
+            {title.toUpperCase()}
+          </Text>
+          {bfa ? (
+            <Text style={[styles.tileLabelBfa, { color: cardForeground }]} numberOfLines={1}>
+              {bfa}
+            </Text>
+          ) : null}
+        </View>
+      </View>
 
       <View style={styles.tileFootRow}>
         <View style={[styles.tileDot, { backgroundColor: color }]} />
@@ -101,11 +120,16 @@ const styles = StyleSheet.create({
     color: "#334155",
     letterSpacing: 0.5,
   },
-  tileIconWrap: {
+  tileCenter: {
     flex: 1,
     justifyContent: "center",
     alignItems: "center",
-    paddingVertical: 4,
+    gap: ICON_LABEL_GAP,
+  },
+  tileLabelGroup: {
+    alignItems: "center",
+    gap: 1,
+    width: "100%",
   },
   tileIconCircle: {
     width: 50,
@@ -119,6 +143,13 @@ const styles = StyleSheet.create({
     fontFamily: "Inter_700Bold",
     textAlign: "center",
     letterSpacing: 0.4,
+  },
+  tileLabelBfa: {
+    fontSize: 9,
+    fontFamily: "Inter_700Bold",
+    textAlign: "center",
+    letterSpacing: 0.5,
+    marginTop: -1,
   },
   tileFootRow: {
     flexDirection: "row",
