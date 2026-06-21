@@ -12,7 +12,17 @@ import {
   View,
 } from "react-native";
 
+import { LegalDocumentModal } from "@/components/LegalDocumentModal";
 import { THEMES } from "@/constants/colors";
+import {
+  APP_DISPLAY_NAME,
+  DATA_SOURCE_LABEL,
+  DATA_UPDATE_LABEL,
+  getAppVersion,
+  LOCAL_DATA_NOTE,
+  PRIVACY_POLICY,
+  TERMS_OF_USE,
+} from "@/constants/appInfo";
 import { useApp } from "@/context/AppContext";
 import { useKesif } from "@/context/KesifContext";
 import { useTheme } from "@/context/ThemeContext";
@@ -37,6 +47,9 @@ export function SettingsModal({ visible, onClose }: SettingsModalProps) {
   const { themeId, setThemeId, theme } = useTheme();
   const [exporting, setExporting] = useState(false);
   const [importing, setImporting] = useState(false);
+  const [legalDoc, setLegalDoc] = useState<typeof PRIVACY_POLICY | typeof TERMS_OF_USE | null>(
+    null,
+  );
 
   async function handleExport() {
     if (exporting || importing) return;
@@ -187,6 +200,58 @@ export function SettingsModal({ visible, onClose }: SettingsModalProps) {
               </View>
               <Feather name="chevron-right" size={16} color="#059669" />
             </TouchableOpacity>
+
+            <Text style={[styles.sectionLabel, { color: colors.mutedForeground, marginTop: 8 }]}>
+              Uygulama
+            </Text>
+
+            <View style={[styles.aboutBox, { backgroundColor: colors.background, borderColor: colors.border }]}>
+              <Text style={[styles.aboutName, { color: colors.foreground }]}>{APP_DISPLAY_NAME}</Text>
+              <Text style={[styles.aboutMeta, { color: colors.mutedForeground }]}>
+                Sürüm {getAppVersion()}
+              </Text>
+              <Text style={[styles.aboutMeta, { color: colors.mutedForeground }]}>
+                Veri kaynağı: {DATA_SOURCE_LABEL}
+              </Text>
+              <Text style={[styles.aboutMeta, { color: colors.mutedForeground }]}>
+                Son veri güncellemesi: {DATA_UPDATE_LABEL}
+              </Text>
+              <Text style={[styles.aboutNote, { color: colors.mutedForeground }]}>{LOCAL_DATA_NOTE}</Text>
+            </View>
+
+            <TouchableOpacity
+              activeOpacity={0.85}
+              style={[styles.actionRow, { borderColor: colors.border, backgroundColor: colors.background }]}
+              onPress={() => setLegalDoc(PRIVACY_POLICY)}
+            >
+              <View style={[styles.actionIcon, { backgroundColor: colors.foreground + "12" }]}>
+                <Feather name="shield" size={18} color={colors.foreground} />
+              </View>
+              <View style={styles.actionText}>
+                <Text style={[styles.actionLabel, { color: colors.foreground }]}>Gizlilik Politikası</Text>
+                <Text style={[styles.actionHint, { color: colors.mutedForeground }]}>
+                  Veri saklama ve gizlilik bilgileri
+                </Text>
+              </View>
+              <Feather name="chevron-right" size={16} color={colors.mutedForeground} />
+            </TouchableOpacity>
+
+            <TouchableOpacity
+              activeOpacity={0.85}
+              style={[styles.actionRow, { borderColor: colors.border, backgroundColor: colors.background }]}
+              onPress={() => setLegalDoc(TERMS_OF_USE)}
+            >
+              <View style={[styles.actionIcon, { backgroundColor: colors.foreground + "12" }]}>
+                <Feather name="file-text" size={18} color={colors.foreground} />
+              </View>
+              <View style={styles.actionText}>
+                <Text style={[styles.actionLabel, { color: colors.foreground }]}>Kullanım Koşulları</Text>
+                <Text style={[styles.actionHint, { color: colors.mutedForeground }]}>
+                  Sorumluluk ve kullanım şartları
+                </Text>
+              </View>
+              <Feather name="chevron-right" size={16} color={colors.mutedForeground} />
+            </TouchableOpacity>
           </ScrollView>
 
           <TouchableOpacity
@@ -197,6 +262,12 @@ export function SettingsModal({ visible, onClose }: SettingsModalProps) {
           </TouchableOpacity>
         </Pressable>
       </Pressable>
+
+      <LegalDocumentModal
+        visible={legalDoc != null}
+        document={legalDoc}
+        onClose={() => setLegalDoc(null)}
+      />
     </Modal>
   );
 }
@@ -301,6 +372,28 @@ const styles = StyleSheet.create({
     fontSize: 11,
     fontFamily: "Inter_400Regular",
     lineHeight: 15,
+  },
+  aboutBox: {
+    borderWidth: 1,
+    borderRadius: 12,
+    padding: 12,
+    gap: 4,
+  },
+  aboutName: {
+    fontSize: 13,
+    fontFamily: "Inter_700Bold",
+    marginBottom: 2,
+  },
+  aboutMeta: {
+    fontSize: 11,
+    fontFamily: "Inter_400Regular",
+    lineHeight: 15,
+  },
+  aboutNote: {
+    fontSize: 11,
+    fontFamily: "Inter_400Regular",
+    lineHeight: 15,
+    marginTop: 4,
   },
   cancelBtn: {
     marginTop: 4,

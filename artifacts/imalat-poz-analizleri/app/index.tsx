@@ -14,6 +14,7 @@ import {
 } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
+import { AppFooter } from "@/components/AppFooter";
 import { SantijetLogo } from "@/components/SantijetLogo";
 import { CreateAnalizFab } from "@/components/CreateAnalizFab";
 import { NewAnalizModulePickerModal } from "@/components/NewAnalizModulePickerModal";
@@ -40,33 +41,6 @@ function moduleRouteParams(
   const base = mod.route.params ? { ...mod.route.params } : undefined;
   if (!searchQuery || mod.route.pathname !== "/imalat-pozlari") return base;
   return { ...(base ?? {}), q: searchQuery };
-}
-
-function SourceDisclaimer({
-  color,
-  bottomInset,
-}: {
-  color: string;
-  bottomInset: number;
-}) {
-  return (
-    <View
-      style={[
-        styles.sourceDisclaimerWrap,
-        { paddingBottom: bottomInset + 24, paddingTop: 20 },
-      ]}
-    >
-      <Text style={[styles.sourceDisclaimer, { color }]}>
-        Bu uygulama resmi kurumlarla bağlantılı değildir.
-      </Text>
-      <Text style={[styles.sourceDisclaimer, { color }]}>
-        Veriler kamu kurumlarının yayımladığı resmi kaynaklardan derlenmiştir.
-      </Text>
-      <Text style={[styles.sourceDisclaimer, { color }]}>
-        Nihai doğrulama için ilgili kurumların güncel yayınları esas alınmalıdır.
-      </Text>
-    </View>
-  );
 }
 
 export default function HomeScreen() {
@@ -266,7 +240,11 @@ export default function HomeScreen() {
             }
             ListFooterComponent={
               filtered.length > 0 ? (
-                <SourceDisclaimer color={colors.mutedForeground} bottomInset={insets.bottom} />
+                <AppFooter
+                  color={colors.mutedForeground}
+                  linkColor={colors.primary}
+                  bottomInset={insets.bottom}
+                />
               ) : null
             }
           />
@@ -398,7 +376,11 @@ export default function HomeScreen() {
 
         <CreateAnalizFab onPress={openNewAnaliz} />
 
-        <SourceDisclaimer color={colors.mutedForeground} bottomInset={insets.bottom} />
+        <AppFooter
+          color={colors.mutedForeground}
+          linkColor={colors.primary}
+          bottomInset={insets.bottom}
+        />
       </ScrollView>
       )}
 
@@ -613,15 +595,5 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     justifyContent: "center",
     alignItems: "center",
-  },
-  sourceDisclaimerWrap: {
-    paddingHorizontal: 16,
-    gap: 4,
-  },
-  sourceDisclaimer: {
-    fontSize: 10,
-    fontFamily: "Inter_400Regular",
-    lineHeight: 14,
-    textAlign: "center",
   },
 });
