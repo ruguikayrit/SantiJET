@@ -22,12 +22,14 @@ import { SettingsModal } from "@/components/SettingsModal";
 import { ModuleTile } from "@/components/ModuleTile";
 import { BFA_MODULES, BfaDiscipline, resolveAnalizDiscipline } from "@/constants/bfaModules";
 import { matchesPozAnalizSearch } from "@/constants/pozAnalizleri";
+import { useKesif } from "@/context/KesifContext";
 import { useBfaCatalog } from "@/hooks/useBfaCatalog";
 import { useColors } from "@/hooks/useColors";
 import { useRecentViews } from "@/hooks/useRecentViews";
 
 const TILE_COLOR = "#d97706";
 const RECENT_COLOR = "#6366f1";
+const KESIF_COLOR = "#7c3aed";
 
 function moduleRouteParams(
   mod: (typeof BFA_MODULES)[number],
@@ -65,6 +67,7 @@ export default function HomeScreen() {
   const topPad = Platform.OS === "web" ? 67 : insets.top;
 
   const { stats, all, loading } = useBfaCatalog();
+  const { projects: kesifProjects, loaded: kesifLoaded } = useKesif();
   const { entries: recentEntries, loaded: recentLoaded, recordView } = useRecentViews();
   const [search, setSearch] = useState("");
   const [newAnalizPickerVisible, setNewAnalizPickerVisible] = useState(false);
@@ -307,6 +310,41 @@ export default function HomeScreen() {
           </View>
           <View style={[styles.recentBtnChev, { borderColor: RECENT_COLOR + "55" }]}>
             <Feather name="chevron-right" size={13} color={RECENT_COLOR} />
+          </View>
+        </TouchableOpacity>
+
+        <TouchableOpacity
+          activeOpacity={0.85}
+          onPress={() => router.push("/kesif" as any)}
+          style={[
+            styles.recentBtn,
+            {
+              backgroundColor: colors.card,
+              borderColor: KESIF_COLOR + "33",
+            },
+          ]}
+        >
+          <View style={[styles.recentBtnIcon, { backgroundColor: KESIF_COLOR + "1e" }]}>
+            <Feather name="clipboard" size={23} color={KESIF_COLOR} />
+          </View>
+          <View style={styles.recentBtnBody}>
+            <Text style={styles.recentBtnNum}>METRAJ / KEŞİF</Text>
+            <Text style={[styles.recentBtnLabel, { color: colors.cardForeground }]}>
+              Keşif Projeleri
+            </Text>
+            <View style={styles.recentBtnFoot}>
+              <View style={[styles.recentBtnDot, { backgroundColor: KESIF_COLOR }]} />
+              <Text style={[styles.recentBtnInfo, { color: KESIF_COLOR }]}>
+                {kesifLoaded
+                  ? kesifProjects.length > 0
+                    ? `${kesifProjects.length} proje`
+                    : "Yeni keşif oluştur"
+                  : "Yükleniyor…"}
+              </Text>
+            </View>
+          </View>
+          <View style={[styles.recentBtnChev, { borderColor: KESIF_COLOR + "55" }]}>
+            <Feather name="chevron-right" size={13} color={KESIF_COLOR} />
           </View>
         </TouchableOpacity>
 

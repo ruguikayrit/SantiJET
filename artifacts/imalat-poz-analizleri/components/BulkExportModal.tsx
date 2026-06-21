@@ -14,6 +14,7 @@ interface BulkExportModalProps {
   subtitle?: string;
   pdfHint?: string;
   excelHint?: string;
+  orientationHint?: string;
 }
 
 const ORIENTATIONS: {
@@ -35,6 +36,7 @@ export function BulkExportModal({
   subtitle,
   pdfHint = "ZIP içinde PDF dosyaları",
   excelHint = "ZIP içinde .xls dosyaları",
+  orientationHint,
 }: BulkExportModalProps) {
   const colors = useColors();
   const [step, setStep] = useState<"format" | "pdf-orientation">("format");
@@ -109,7 +111,7 @@ export function BulkExportModal({
 
               <Text style={[styles.title, { color: colors.foreground }]}>PDF Kağıt Yönü</Text>
               <Text style={[styles.subtitle, { color: colors.mutedForeground }]}>
-                {count} analiz için yön seçin
+                {orientationHint ?? `${count} analiz için yön seçin`}
               </Text>
 
               {ORIENTATIONS.map((o) => (

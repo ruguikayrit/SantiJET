@@ -15,6 +15,7 @@ import { ErrorBoundary } from "@/components/ErrorBoundary";
 import SplashScreenView from "@/components/SplashScreenView";
 import WebFrame from "@/components/WebFrame";
 import { AppProvider } from "@/context/AppContext";
+import { KesifProvider } from "@/context/KesifContext";
 import { ThemeProvider } from "@/context/ThemeContext";
 
 SplashScreen.preventAutoHideAsync();
@@ -26,6 +27,7 @@ function RootLayoutNav() {
       <Stack.Screen name="imalat-pozlari" />
       <Stack.Screen name="analiz-katalogu" />
       <Stack.Screen name="analiz-karsilastir" />
+      <Stack.Screen name="kesif" />
     </Stack>
   );
 }
@@ -54,7 +56,9 @@ export default function RootLayout() {
           <GestureHandlerRootView style={{ flex: 1 }}>
             <WebFrame>
               <AppProvider>
-                <RootLayoutNav />
+                <KesifProvider>
+                  <RootLayoutNav />
+                </KesifProvider>
               </AppProvider>
             </WebFrame>
             {showSplash && (
