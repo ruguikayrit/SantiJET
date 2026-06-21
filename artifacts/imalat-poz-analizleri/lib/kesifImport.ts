@@ -62,6 +62,8 @@ const HEADER_ALIASES: Record<string, keyof KesifImportRow | "sira" | "projeAdi" 
   qty: "miktar",
   "birim fiyat": "birimFiyati",
   "birim fiyat (tl)": "birimFiyati",
+  "birim fiyati (tl)": "birimFiyati",
+  "birim fiyatı (tl)": "birimFiyati",
   "birim fiyati": "birimFiyati",
   "birim fiyatı": "birimFiyati",
   "unit price": "birimFiyati",
@@ -76,7 +78,110 @@ const HEADER_ALIASES: Record<string, keyof KesifImportRow | "sira" | "projeAdi" 
   "proje açıklama": "aciklama",
 };
 
-const SKIP_ROW_MARKERS = ["genel toplam", "toplam", "metraj / keşif", "metraj / kesif", "henüz poz"];
+const SKIP_ROW_MARKERS = [
+  "genel toplam",
+  "toplam",
+  "metraj / keşif",
+  "metraj / kesif",
+  "metraj / keşif cetveli",
+  "metraj / kesif cetveli",
+  "henüz poz",
+];
+
+const METADATA_ROW_PREFIXES = ["proje:", "proje ", "tarih:", "tarih ", "poz say", "açıklama:", "aciklama:"];
+
+function cellText(value: unknown): string {
+  if (value === null || value === undefined) return "";
+  return String(value).trim();
+}
+
+function buildHeaderMap(row: unknown[]): Array<keyof KesifImportRow | "sira" | "projeAdi" | "aciklama" | null> {
+  return row.map((cell) => normalizeHeader(cell));
+}
+
+function scoreHeaderMap(
+  headerMap: Array<keyof KesifImportRow | "sira" | "projeAdi" | "aciklama" | null>,
+): number {
+  const keys = new Set(headerMap.filter(Boolean));
+  let score = keys.size;
+  if (keys.has("pozNo")) score += 3;
+  if (keys.has("miktar")) score += 2;
+  if (keys.has("analizAdi")) score += 2;
+  if (keys.has("olcuBirimi")) score += 1;
+  if (keys.has("birimFiyati")) score += 1;
+  return score;
+}
+
+function findHeaderRowIndex(matrix: unknown[][]): number {
+  const scanLimit = Math.min(matrix.length, 30);
+  let bestIdx = -1;
+  let bestScore = 0;
+
+  for (let i = 0; i < scanLimit; i += 1) {
+    const headerMap = buildHeaderMap(matrix[i] ?? []);
+    const keys = new Set(headerMap.filter(Boolean));
+    if (!keys.has("pozNo")) continue;
+    if (!keys.has("miktar") && !keys.has("analizAdi")) continue;
+
+    const score = scoreHeaderMap(headerMap);
+    if (score > bestScore) {
+      bestScore = score;
+      bestIdx = i;
+    }
+  }
+
+  return bestIdx;
+}
+
+function extractMetadataBeforeHeader(
+  matrix: unknown[][],
+  headerIdx: number,
+): { projectName?: string; projectAciklama?: string } {
+  let projectName: string | undefined;
+  let projectAciklama: string | undefined;
+
+  for (let i = 0; i < headerIdx; i += 1) {
+    const line = matrix[i]?.map((c) => cellText(c)) ?? [];
+    const joined = line.join(" ").trim();
+    if (!joined) continue;
+
+    const first = line[0] ?? "";
+    const lower = normalizeTrSearch(first);
+
+    if (lower.startsWith("proje:") || lower.startsWith("proje ")) {
+      const fromCell = first.replace(/^proje\s*:\s*/i, "").trim();
+      projectName = fromCell || line.slice(1).find(Boolean) || projectName;
+    }
+
+    if ((lower.startsWith("açıklama:") || lower.startsWith("aciklama:")) && !projectAciklama) {
+      projectAciklama = first.replace(/^açıklama\s*:\s*/i, "").replace(/^aciklama\s*:\s*/i, "").trim();
+    }
+  }
+
+  return { projectName, projectAciklama };
+}
+
+function isMetadataRow(values: string[]): boolean {
+  const first = normalizeTrSearch(values[0] ?? "");
+  if (!first) return false;
+  return METADATA_ROW_PREFIXES.some((prefix) => first.startsWith(normalizeTrSearch(prefix)));
+}
+
+function isLikelyHeaderDataRow(pozNo: string, analizAdi: string): boolean {
+  const p = normalizeTrSearch(pozNo);
+  const a = normalizeTrSearch(analizAdi);
+  return (
+    p === "poz no" ||
+    p === "poz" ||
+    p === "#" ||
+    a === "tanim" ||
+    a === "tanım" ||
+    a === "miktar" ||
+    a === "birim" ||
+    p === "miktar" ||
+    p === "birim"
+  );
+}
 
 const KATEGORI_KEYWORDS: { kategori: (typeof IMALAT_POZ_KATEGORILERI)[number]; words: string[] }[] = [
   { kategori: "Hafriyat ve Toprak", words: ["hafriyat", "kazı", "kazi", "toprak", "dolgu", "sergi"] },
@@ -166,6 +271,7 @@ function parseNumber(value: unknown): number {
 function shouldSkipRow(values: string[]): boolean {
   const joined = values.join(" ").trim();
   if (!joined) return true;
+  if (isMetadataRow(values)) return true;
   const lower = normalizeTrSearch(joined);
   return SKIP_ROW_MARKERS.some((m) => lower.includes(m));
 }
@@ -177,34 +283,49 @@ function mapMatrixToRows(matrix: unknown[][], sourceLabel: string): KesifImportP
     return { rows, errors: ["Dosyada veri bulunamadı."], sourceLabel };
   }
 
-  let headerMap: Array<keyof KesifImportRow | "sira" | "projeAdi" | "aciklama" | null> = [];
-  let startIdx = 0;
+  const headerIdx = findHeaderRowIndex(matrix);
+  let headerMap: Array<keyof KesifImportRow | "sira" | "projeAdi" | "aciklama" | null>;
+  let startIdx: number;
 
-  const firstRow = matrix[0]?.map((c) => String(c ?? "")) ?? [];
-  const normalizedHeaders = firstRow.map((cell) => normalizeHeader(cell));
-  if (normalizedHeaders.some((h) => h && h !== "sira")) {
-    headerMap = normalizedHeaders;
-    startIdx = 1;
+  if (headerIdx >= 0) {
+    headerMap = buildHeaderMap(matrix[headerIdx] ?? []);
+    startIdx = headerIdx + 1;
   } else {
-    headerMap = ["sira", "pozNo", "analizAdi", "olcuBirimi", "miktar", "birimFiyati", null];
+    const firstRow = matrix[0]?.map((c) => cellText(c)) ?? [];
+    const normalizedHeaders = firstRow.map((cell) => normalizeHeader(cell));
+    if (normalizedHeaders.some((h) => h && h !== "sira")) {
+      headerMap = normalizedHeaders;
+      startIdx = 1;
+    } else {
+      // ŞantiJET keşif dışa aktarımı: #, Poz No, Tanım, Birim, Miktar, Birim Fiyat, Tutar
+      headerMap = ["sira", "pozNo", "analizAdi", "olcuBirimi", "miktar", "birimFiyati", "sira"];
+      startIdx = 0;
+    }
   }
 
-  let projectName: string | undefined;
-  let projectAciklama: string | undefined;
+  const metaFromSheet =
+    headerIdx >= 0 ? extractMetadataBeforeHeader(matrix, headerIdx) : { projectName: undefined, projectAciklama: undefined };
+  let projectName = metaFromSheet.projectName;
+  let projectAciklama = metaFromSheet.projectAciklama;
 
   for (let i = startIdx; i < matrix.length; i += 1) {
-    const line = matrix[i]?.map((c) => String(c ?? "").trim()) ?? [];
+    const rawLine = matrix[i] ?? [];
+    const line = rawLine.map((c) => cellText(c));
     if (shouldSkipRow(line)) continue;
 
     const get = (key: keyof KesifImportRow | "projeAdi" | "aciklama") => {
       const idx = headerMap.indexOf(key);
-      return idx >= 0 ? (line[idx] ?? "").trim() : "";
+      if (idx < 0) return "";
+      return cellText(rawLine[idx]);
     };
 
     const pozNo = get("pozNo");
     const analizAdi = get("analizAdi");
+    if (isLikelyHeaderDataRow(pozNo, analizAdi)) continue;
+
     const olcuBirimi = get("olcuBirimi") || "Ad";
-    const miktar = parseNumber(get("miktar"));
+    const miktarRaw = headerMap.includes("miktar") ? rawLine[headerMap.indexOf("miktar")] : get("miktar");
+    const miktar = parseNumber(miktarRaw);
     const birimFiyatiRaw = get("birimFiyati");
     const birimFiyati = birimFiyatiRaw ? parseNumber(birimFiyatiRaw) : undefined;
     const projeAdi = get("projeAdi");
