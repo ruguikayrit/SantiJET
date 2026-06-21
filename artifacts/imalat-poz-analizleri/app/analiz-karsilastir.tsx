@@ -14,7 +14,7 @@ import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 import { BulkExportModal } from "@/components/BulkExportModal";
 import { buildAnalizCompare, trFmtCompare } from "@/lib/analizCompare";
-import { AnalizExportFormat, PdfPaperOrientation, waitForShareSheet } from "@/lib/analizExport";
+import { AnalizExportFormat, waitForShareSheet } from "@/lib/analizExport";
 import { exportCompare, buildCompareExcelHtml, buildCompareHtml } from "@/lib/compareExport";
 import { useBfaCatalog } from "@/hooks/useBfaCatalog";
 import { useColors } from "@/hooks/useColors";
@@ -49,10 +49,10 @@ export default function AnalizKarsilastirScreen() {
     return buildAnalizCompare(analizler);
   }, [analizler]);
 
-  async function handleExportCompare(format: AnalizExportFormat, pdfOrientation?: PdfPaperOrientation) {
+  async function handleExportCompare(format: AnalizExportFormat) {
     setExportVisible(false);
     await waitForShareSheet();
-    await exportCompare(analizler, format, { pdfOrientation });
+    await exportCompare(analizler, format);
   }
 
   if (loading) {
@@ -104,16 +104,15 @@ export default function AnalizKarsilastirScreen() {
         count={analizler.length}
         title="Karşılaştırmayı Dışa Aktar"
         subtitle="Tek birleşik karşılaştırma raporu"
-        orientationHint="Karşılaştırma raporu için kağıt yönü"
         previewCaption={`${analizler.length} analiz karşılaştırması`}
         webPdfVariant="compare"
         onClose={() => setExportVisible(false)}
         onExport={handleExportCompare}
-        getPreviewHtml={(format, orientation) => {
+        getPreviewHtml={(format) => {
           if (!compare) return "";
           return format === "excel"
             ? buildCompareExcelHtml(compare)
-            : buildCompareHtml(compare, orientation);
+            : buildCompareHtml(compare);
         }}
       />
 

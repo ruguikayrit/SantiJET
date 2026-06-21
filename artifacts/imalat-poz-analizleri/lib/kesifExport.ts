@@ -3,7 +3,7 @@ import * as Sharing from "expo-sharing";
 import { Alert, Platform, Share } from "react-native";
 
 import { KesifProject, hesaplaKesifToplam, trFmtKesif } from "@/constants/kesif";
-import { AnalizExportFormat, PdfPaperOrientation } from "@/lib/analizExport";
+import { AnalizExportFormat, PDF_PAPER_ORIENTATION, PdfPaperOrientation } from "@/lib/analizExport";
 
 const KESIF_STYLES = `
   body { font-family: Arial, sans-serif; font-size: 11px; color: #111; margin: 0; }
@@ -117,9 +117,9 @@ export function buildKesifExcelHtml(project: KesifProject): string {
 
 export function buildKesifHtml(
   project: KesifProject,
-  orientation: PdfPaperOrientation = "landscape",
+  _orientation: PdfPaperOrientation = PDF_PAPER_ORIENTATION,
 ): string {
-  const pageSize = orientation === "landscape" ? "A4 landscape" : "A4 portrait";
+  const pageSize = "A4 portrait";
   return `<!DOCTYPE html>
 <html lang="tr">
 <head>
@@ -208,7 +208,7 @@ export async function exportKesif(
   options: { pdfOrientation?: PdfPaperOrientation } = {},
 ): Promise<void> {
   const base = safeFilename(project.ad);
-  const pdfOrientation = options.pdfOrientation ?? "landscape";
+  const pdfOrientation = PDF_PAPER_ORIENTATION;
 
   try {
     if (format === "excel") {

@@ -11,6 +11,7 @@ import {
 import {
   AnalizExportFormat,
   AnalizExportOptions,
+  PDF_PAPER_ORIENTATION,
   PdfPaperOrientation,
 } from "@/lib/analizExport";
 
@@ -199,14 +200,15 @@ export function buildCompareExcelHtml(compare: AnalizCompareResult): string {
 
 export function buildCompareHtml(
   compare: AnalizCompareResult,
-  orientation: PdfPaperOrientation = "landscape",
+  _orientation: PdfPaperOrientation = PDF_PAPER_ORIENTATION,
 ): string {
+  const resolvedOrientation = PDF_PAPER_ORIENTATION;
   return `<!DOCTYPE html>
 <html lang="tr">
 <head>
   <meta charset="utf-8" />
   <title>Analiz Karşılaştırma</title>
-  <style>${buildCompareStyles(orientation, compare.analizler.length)}</style>
+  <style>${buildCompareStyles(resolvedOrientation, compare.analizler.length)}</style>
 </head>
 <body><div class="pdf-content">${buildCompareBody(compare, "pdf")}</div>
 </body>
@@ -290,7 +292,7 @@ export async function exportCompare(
 
   const compare = buildAnalizCompare(analizler);
   const base = safeCompareFilename(compare);
-  const pdfOrientation = options.pdfOrientation ?? "landscape";
+  const pdfOrientation = PDF_PAPER_ORIENTATION;
 
   try {
     if (format === "excel") {

@@ -24,7 +24,7 @@ import { PozAnaliz } from "@/constants/pozAnalizleri";
 import { useKesif } from "@/context/KesifContext";
 import { useBfaCatalog } from "@/hooks/useBfaCatalog";
 import { useColors } from "@/hooks/useColors";
-import { AnalizExportFormat, PdfPaperOrientation, waitForShareSheet } from "@/lib/analizExport";
+import { AnalizExportFormat, waitForShareSheet } from "@/lib/analizExport";
 import { exportKesif } from "@/lib/kesifExport";
 
 const KESIF_COLOR = "#7c3aed";
@@ -180,10 +180,10 @@ export default function KesifDetailScreen() {
     ]);
   }
 
-  async function handleExport(format: AnalizExportFormat, pdfOrientation?: PdfPaperOrientation) {
+  async function handleExport(format: AnalizExportFormat) {
     setExportVisible(false);
     await waitForShareSheet();
-    await exportKesif(kesif, format, { pdfOrientation });
+    await exportKesif(kesif, format);
   }
 
   return (

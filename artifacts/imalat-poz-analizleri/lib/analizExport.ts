@@ -9,8 +9,15 @@ import { PozAnaliz, hesaplaAnalizToplam } from "@/constants/pozAnalizleri";
 export type AnalizExportFormat = "pdf" | "excel";
 export type PdfPaperOrientation = "landscape" | "portrait";
 
+/** Tüm PDF dışa aktarmalar dikey A4 kullanır */
+export const PDF_PAPER_ORIENTATION: PdfPaperOrientation = "portrait";
+
 export interface AnalizExportOptions {
   pdfOrientation?: PdfPaperOrientation;
+}
+
+function resolvePdfOrientation(_orientation?: PdfPaperOrientation): PdfPaperOrientation {
+  return PDF_PAPER_ORIENTATION;
 }
 
 const TIP_LABEL: Record<"malzeme" | "iscilik" | "ekipman", string> = {
@@ -286,7 +293,7 @@ function reportOrientationStyles(orientation: PdfPaperOrientation): string {
   return "";
 }
 
-function buildPdfExportStyles(orientation: PdfPaperOrientation = "landscape"): string {
+function buildPdfExportStyles(orientation: PdfPaperOrientation = PDF_PAPER_ORIENTATION): string {
   const pageSize = orientation === "landscape" ? "A4 landscape" : "A4 portrait";
   const contentWidth = orientation === "landscape" ? "297mm" : "210mm";
   return `
@@ -729,14 +736,15 @@ export function buildAnalizExcelHtml(analiz: PozAnaliz): string {
 
 export function buildAnalizHtml(
   analiz: PozAnaliz,
-  orientation: PdfPaperOrientation = "landscape",
+  orientation: PdfPaperOrientation = PDF_PAPER_ORIENTATION,
 ): string {
+  const resolvedOrientation = resolvePdfOrientation(orientation);
   return `<!DOCTYPE html>
 <html lang="tr">
 <head>
   <meta charset="utf-8" />
   <title>${escHtml(formatResmiPozNo(analiz.pozNo))} — ŞantiJET Analiz Raporu</title>
-  <style>${buildPdfExportStyles(orientation)}</style>
+  <style>${buildPdfExportStyles(resolvedOrientation)}</style>
 </head>
 <body><div class="pdf-content">${buildSantijetReportBody(analiz, "pdf")}</div>
 </body>
@@ -846,8 +854,9 @@ async function buildPdfBytes(
   analiz: PozAnaliz,
   pdfOrientation: PdfPaperOrientation,
 ): Promise<Uint8Array | null> {
-  const html = buildAnalizHtml(analiz, pdfOrientation);
-  const { width, height } = pdfPageSize(pdfOrientation);
+  const orientation = resolvePdfOrientation(pdfOrientation);
+  const html = buildAnalizHtml(analiz, orientation);
+  const { width, height } = pdfPageSize(orientation);
   try {
     const Print = await import("expo-print");
     const { uri } = await Print.printToFileAsync({
@@ -883,7 +892,7 @@ export async function exportAnaliz(
   options: AnalizExportOptions = {},
 ): Promise<void> {
   const base = safeFilename(analiz.pozNo);
-  const pdfOrientation = options.pdfOrientation ?? "landscape";
+  const pdfOrientation = resolvePdfOrientation(options.pdfOrientation);
 
   try {
     if (format === "excel") {
@@ -948,7 +957,7 @@ export async function exportBulkAnalizler(
 ): Promise<void> {
   if (!analizler.length) return;
 
-  const pdfOrientation = options.pdfOrientation ?? "landscape";
+  const pdfOrientation = resolvePdfOrientation(options.pdfOrientation);
   const zipEntries: Record<string, Uint8Array> = {};
   let htmlFallbackCount = 0;
 

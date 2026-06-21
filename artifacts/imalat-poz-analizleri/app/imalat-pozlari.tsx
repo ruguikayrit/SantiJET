@@ -24,7 +24,7 @@ import { ExportFormatModal } from "@/components/ExportFormatModal";
 import { useBfaCatalog } from "@/hooks/useBfaCatalog";
 import { useColors } from "@/hooks/useColors";
 import { useRecentViews } from "@/hooks/useRecentViews";
-import { AnalizExportFormat, exportAnaliz, exportBulkAnalizler, PdfPaperOrientation, waitForShareSheet, buildAnalizExcelHtml, buildAnalizHtml } from "@/lib/analizExport";
+import { AnalizExportFormat, exportAnaliz, exportBulkAnalizler, waitForShareSheet, buildAnalizExcelHtml, buildAnalizHtml, PDF_PAPER_ORIENTATION } from "@/lib/analizExport";
 import {
   BfaDiscipline,
   BfaModuleKey,
@@ -342,12 +342,12 @@ export default function ImalatPozlariScreen() {
     setSelectedId(kopya.id);
   }
 
-  async function handleExportFormat(format: AnalizExportFormat, pdfOrientation?: PdfPaperOrientation) {
+  async function handleExportFormat(format: AnalizExportFormat) {
     const analiz = isEditing && editDraft ? editDraft : selected;
     if (!analiz) return;
     setExportVisible(false);
     await waitForShareSheet();
-    await exportAnaliz(analiz, format, { pdfOrientation });
+    await exportAnaliz(analiz, format);
   }
 
   const selectedAnalizler = useMemo(
@@ -382,13 +382,13 @@ export default function ImalatPozlariScreen() {
     } as any);
   }
 
-  async function handleBulkExportFormat(format: AnalizExportFormat, pdfOrientation?: PdfPaperOrientation) {
+  async function handleBulkExportFormat(format: AnalizExportFormat) {
     if (!selectedAnalizler.length) return;
     setBulkExportVisible(false);
     setSelectMode(false);
     setSelectedIds(new Set());
     await waitForShareSheet();
-    await exportBulkAnalizler(selectedAnalizler, format, { pdfOrientation });
+    await exportBulkAnalizler(selectedAnalizler, format);
   }
 
   const displayAnaliz = isEditing && editDraft ? editDraft : selected;
@@ -1064,12 +1064,12 @@ export default function ImalatPozlariScreen() {
         subtitle={`${selectedIds.size} analiz ZIP olarak indirilecek`}
         previewCaption="ZIP önizlemesi (ilk analiz)"
         webPdfVariant="bulk"
-        getPreviewHtml={(format, orientation) => {
+        getPreviewHtml={(format) => {
           const first = selectedAnalizler[0];
           if (!first) return "";
           return format === "excel"
             ? buildAnalizExcelHtml(first)
-            : buildAnalizHtml(first, orientation);
+            : buildAnalizHtml(first, PDF_PAPER_ORIENTATION);
         }}
       />
 
