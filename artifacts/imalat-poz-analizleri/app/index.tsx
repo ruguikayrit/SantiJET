@@ -80,7 +80,7 @@ export default function HomeScreen() {
         ]}
       >
         <View style={styles.headerBrand}>
-          <SantijetLogo iconHeight={76} centered stacked />
+          <SantijetLogo iconHeight={61} centered stacked />
           <Text style={styles.headerSubtitle}>BİRİM FİYAT ANALİZLERİ</Text>
         </View>
       </View>
@@ -245,19 +245,19 @@ const styles = StyleSheet.create({
     alignItems: "center",
     justifyContent: "center",
     paddingHorizontal: 16,
-    paddingBottom: 12,
+    paddingBottom: 10,
   },
   headerBrand: {
     alignItems: "center",
     justifyContent: "center",
     width: "100%",
-    gap: 10,
+    gap: 8,
   },
   headerSubtitle: {
     color: "#4a6080",
-    fontSize: 18,
+    fontSize: 14,
     fontFamily: "Inter_700Bold",
-    letterSpacing: 5,
+    letterSpacing: 4,
     textAlign: "center",
     marginTop: 2,
   },
