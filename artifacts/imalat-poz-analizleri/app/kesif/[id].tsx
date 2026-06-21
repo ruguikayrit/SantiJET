@@ -156,8 +156,10 @@ export default function KesifDetailScreen() {
         <Text style={[styles.th, styles.colSira, { color: colors.mutedForeground }]}>#</Text>
         <Text style={[styles.th, styles.colPoz, { color: colors.mutedForeground }]}>Poz</Text>
         <View style={styles.numCluster}>
-          <Text style={[styles.th, styles.colMiktar, { color: colors.mutedForeground }]}>Miktar</Text>
-          <Text style={[styles.th, styles.colBirim, { color: colors.mutedForeground }]}>Br.</Text>
+          <View style={styles.numLeadGroup}>
+            <Text style={[styles.th, styles.colMiktar, { color: colors.mutedForeground }]}>Miktar</Text>
+            <Text style={[styles.th, styles.colBirim, { color: colors.mutedForeground }]}>Br.</Text>
+          </View>
           <Text style={[styles.th, styles.colTutar, { color: colors.mutedForeground }]}>Tutar</Text>
         </View>
         <View style={{ width: COL.del }} />
@@ -215,22 +217,28 @@ export default function KesifDetailScreen() {
             </View>
 
             <View style={styles.numCluster}>
-              <View style={styles.colMiktar}>
-                <TextInput
-                  style={[
-                    styles.qtyInput,
-                    { color: colors.foreground, borderColor: colors.border, backgroundColor: colors.card },
-                  ]}
-                  value={String(item.miktar)}
-                  onChangeText={(v) => updateSatirMiktar(projectId, item.id, parseQty(v))}
-                  keyboardType="decimal-pad"
-                  selectTextOnFocus
-                />
-              </View>
+              <View style={styles.numLeadGroup}>
+                <View style={styles.colMiktar}>
+                  <TextInput
+                    style={[
+                      styles.qtyInput,
+                      {
+                        color: colors.foreground,
+                        borderColor: colors.border,
+                        backgroundColor: colors.card,
+                      },
+                    ]}
+                    value={String(item.miktar)}
+                    onChangeText={(v) => updateSatirMiktar(projectId, item.id, parseQty(v))}
+                    keyboardType="decimal-pad"
+                    selectTextOnFocus
+                  />
+                </View>
 
-              <Text style={[styles.tdBirim, { color: colors.foreground }]} numberOfLines={2}>
-                {item.olcuBirimi}
-              </Text>
+                <Text style={[styles.tdBirim, { color: colors.foreground }]} numberOfLines={2}>
+                  {item.olcuBirimi}
+                </Text>
+              </View>
 
               <Text style={[styles.tdTutar, { color: colors.foreground }]} numberOfLines={1}>
                 {trFmtKesif(item.tutar)}
