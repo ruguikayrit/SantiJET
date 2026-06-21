@@ -95,7 +95,7 @@ export const DATA_SOURCES = {
     },
     {
       heading: "İnşaat",
-      body: "ÇŞB YFK Cilt 1-2 PDF kamuya açık kaynaklardan derlenmiştir.",
+      body: `${DATA_SOURCE_LABEL} Cilt 1-2 PDF kamuya açık kaynaklardan derlenmiştir.`,
     },
     {
       heading: "Mekanik Tesisat",
