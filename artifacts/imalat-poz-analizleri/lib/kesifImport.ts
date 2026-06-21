@@ -28,6 +28,28 @@ export interface KesifImportMatchResult {
   unmatched: KesifImportRow[];
 }
 
+export type KesifImportValidationStatus = "matched" | "poz_typo" | "both_missing";
+
+export interface ValidatedImportRow {
+  row: KesifImportRow;
+  status: KesifImportValidationStatus;
+  analiz?: PozAnaliz;
+  suggestedAnaliz?: PozAnaliz;
+  pozNoInCatalog: boolean;
+  tanimInCatalog: boolean;
+}
+
+export interface KesifImportValidationResult {
+  matched: ValidatedImportRow[];
+  pozTypo: ValidatedImportRow[];
+  bothMissing: ValidatedImportRow[];
+}
+
+export interface KesifImportResolvedRow {
+  row: KesifImportRow;
+  analiz: PozAnaliz;
+}
+
 const HEADER_ALIASES: Record<string, keyof KesifImportRow | "sira" | "projeAdi" | "aciklama"> = {
   "#": "sira",
   sira: "sira",
@@ -484,6 +506,128 @@ export function matchImportRows(rows: KesifImportRow[], catalog: PozAnaliz[]): K
   }
 
   return { matched, unmatched };
+}
+
+export function normalizeImportTanim(tanim: string): string {
+  return normalizeTrSearch(tanim).replace(/\s+/g, " ").trim();
+}
+
+function buildCatalogTanimIndex(catalog: PozAnaliz[]): Map<string, PozAnaliz[]> {
+  const byTanim = new Map<string, PozAnaliz[]>();
+  for (const analiz of catalog) {
+    const key = normalizeImportTanim(analiz.analizAdi);
+    if (!key) continue;
+    const bucket = byTanim.get(key) ?? [];
+    bucket.push(analiz);
+    byTanim.set(key, bucket);
+  }
+  return byTanim;
+}
+
+export function findCatalogByTanim(tanim: string, catalog: PozAnaliz[]): PozAnaliz[] {
+  const key = normalizeImportTanim(tanim);
+  if (!key) return [];
+
+  const byTanim = buildCatalogTanimIndex(catalog);
+  const exact = byTanim.get(key) ?? [];
+  if (exact.length) return exact;
+
+  if (key.length < 40) return [];
+
+  const prefixMatches = catalog.filter((analiz) => {
+    const catalogKey = normalizeImportTanim(analiz.analizAdi);
+    return catalogKey.startsWith(key) || key.startsWith(catalogKey);
+  });
+
+  return prefixMatches;
+}
+
+function isPozNoInCatalog(pozNo: string, byPoz: Map<string, PozAnaliz>): boolean {
+  return byPoz.has(normalizeImportPozNo(pozNo));
+}
+
+function pickBestTanimMatch(row: KesifImportRow, candidates: PozAnaliz[]): PozAnaliz {
+  if (candidates.length === 1) return candidates[0];
+
+  const inferred = inferDisciplineFromPoz(row.pozNo);
+  const sameDiscipline = candidates.filter((a) => (a.discipline ?? "insaat") === inferred);
+  if (sameDiscipline.length === 1) return sameDiscipline[0];
+  if (sameDiscipline.length > 1) return sameDiscipline[0];
+
+  return candidates[0];
+}
+
+export function validateImportRows(
+  rows: KesifImportRow[],
+  catalog: PozAnaliz[],
+): KesifImportValidationResult {
+  const byPoz = new Map<string, PozAnaliz>();
+  for (const analiz of catalog) {
+    byPoz.set(normalizeImportPozNo(analiz.pozNo), analiz);
+  }
+
+  const matched: ValidatedImportRow[] = [];
+  const pozTypo: ValidatedImportRow[] = [];
+  const bothMissing: ValidatedImportRow[] = [];
+
+  for (const row of rows) {
+    const pozNoInCatalog = isPozNoInCatalog(row.pozNo, byPoz);
+    const tanimMatches = findCatalogByTanim(row.analizAdi, catalog);
+    const tanimInCatalog = tanimMatches.length > 0;
+
+    if (pozNoInCatalog) {
+      matched.push({
+        row,
+        status: "matched",
+        analiz: byPoz.get(normalizeImportPozNo(row.pozNo)),
+        pozNoInCatalog: true,
+        tanimInCatalog,
+      });
+      continue;
+    }
+
+    if (tanimInCatalog) {
+      pozTypo.push({
+        row,
+        status: "poz_typo",
+        suggestedAnaliz: pickBestTanimMatch(row, tanimMatches),
+        pozNoInCatalog: false,
+        tanimInCatalog: true,
+      });
+      continue;
+    }
+
+    bothMissing.push({
+      row,
+      status: "both_missing",
+      pozNoInCatalog: false,
+      tanimInCatalog: false,
+    });
+  }
+
+  return { matched, pozTypo, bothMissing };
+}
+
+export function resolveTypoImportRows(pozTypo: ValidatedImportRow[]): KesifImportResolvedRow[] {
+  return pozTypo
+    .filter((item) => item.suggestedAnaliz)
+    .map((item) => ({
+      row: { ...item.row, pozNo: item.suggestedAnaliz!.pozNo },
+      analiz: item.suggestedAnaliz!,
+    }));
+}
+
+export function validationToResolved(validation: KesifImportValidationResult): KesifImportResolvedRow[] {
+  const fromMatched = validation.matched
+    .filter((item) => item.analiz)
+    .map((item) => ({ row: item.row, analiz: item.analiz! }));
+  return fromMatched;
+}
+
+export function truncateImportText(text: string, max = 72): string {
+  const trimmed = text.trim();
+  if (trimmed.length <= max) return trimmed;
+  return `${trimmed.slice(0, max - 1)}…`;
 }
 
 export function buildCatalogAnalizFromImportRow(row: KesifImportRow): Omit<
