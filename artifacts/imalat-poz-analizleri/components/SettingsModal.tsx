@@ -13,11 +13,11 @@ import {
 } from "react-native";
 
 import { LegalDocumentModal } from "@/components/LegalDocumentModal";
+import { SourceModal } from "@/components/SourceModal";
 import { THEMES } from "@/constants/colors";
 import {
   APP_DISPLAY_NAME,
   DATA_SOURCE_LABEL,
-  DATA_SOURCES,
   DATA_UPDATE_LABEL,
   getAppVersion,
   LOCAL_DATA_NOTE,
@@ -50,6 +50,7 @@ export function SettingsModal({ visible, onClose }: SettingsModalProps) {
   const [exporting, setExporting] = useState(false);
   const [importing, setImporting] = useState(false);
   const [legalDoc, setLegalDoc] = useState<LegalDocument | null>(null);
+  const [sourceVisible, setSourceVisible] = useState(false);
 
   async function handleExport() {
     if (exporting || importing) return;
@@ -256,7 +257,7 @@ export function SettingsModal({ visible, onClose }: SettingsModalProps) {
             <TouchableOpacity
               activeOpacity={0.85}
               style={[styles.actionRow, { borderColor: colors.border, backgroundColor: colors.background }]}
-              onPress={() => setLegalDoc(DATA_SOURCES)}
+              onPress={() => setSourceVisible(true)}
             >
               <View style={[styles.actionIcon, { backgroundColor: colors.foreground + "12" }]}>
                 <Feather name="book-open" size={18} color={colors.foreground} />
@@ -285,6 +286,8 @@ export function SettingsModal({ visible, onClose }: SettingsModalProps) {
         document={legalDoc}
         onClose={() => setLegalDoc(null)}
       />
+
+      <SourceModal visible={sourceVisible} onClose={() => setSourceVisible(false)} />
     </Modal>
   );
 }

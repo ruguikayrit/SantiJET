@@ -2,8 +2,8 @@ import React, { useState } from "react";
 import { StyleSheet, Text, TouchableOpacity, View } from "react-native";
 
 import { LegalDocumentModal } from "@/components/LegalDocumentModal";
+import { SourceModal } from "@/components/SourceModal";
 import {
-  DATA_SOURCES,
   DISCLAIMER_LINES,
   getAppVersion,
   PRIVACY_POLICY,
@@ -17,18 +17,27 @@ interface AppFooterProps {
   bottomInset: number;
 }
 
-const FOOTER_LINKS: {
-  label: string;
-  document: LegalDocument;
-  align: "left" | "center" | "right";
-}[] = [
-  { label: "GİZLİLİK POLİTİKASI", document: PRIVACY_POLICY, align: "left" },
-  { label: "KAYNAK", document: DATA_SOURCES, align: "center" },
-  { label: "KULLANIM KOŞULLARI", document: TERMS_OF_USE, align: "right" },
+type FooterLink =
+  | { label: string; kind: "legal"; document: LegalDocument; align: "left" | "center" | "right" }
+  | { label: string; kind: "source"; align: "left" | "center" | "right" };
+
+const FOOTER_LINKS: FooterLink[] = [
+  { label: "GİZLİLİK POLİTİKASI", kind: "legal", document: PRIVACY_POLICY, align: "left" },
+  { label: "KAYNAK", kind: "source", align: "center" },
+  { label: "KULLANIM KOŞULLARI", kind: "legal", document: TERMS_OF_USE, align: "right" },
 ];
 
 export function AppFooter({ color, linkColor, bottomInset }: AppFooterProps) {
   const [legalDoc, setLegalDoc] = useState<LegalDocument | null>(null);
+  const [sourceVisible, setSourceVisible] = useState(false);
+
+  function openLink(item: FooterLink) {
+    if (item.kind === "source") {
+      setSourceVisible(true);
+      return;
+    }
+    setLegalDoc(item.document);
+  }
 
   return (
     <>
@@ -56,7 +65,7 @@ export function AppFooter({ color, linkColor, bottomInset }: AppFooterProps) {
                   item.align === "center" && styles.linkSlotCenter,
                   item.align === "right" && styles.linkSlotRight,
                 ]}
-                onPress={() => setLegalDoc(item.document)}
+                onPress={() => openLink(item)}
               >
                 <Text
                   style={[
@@ -85,6 +94,8 @@ export function AppFooter({ color, linkColor, bottomInset }: AppFooterProps) {
         document={legalDoc}
         onClose={() => setLegalDoc(null)}
       />
+
+      <SourceModal visible={sourceVisible} onClose={() => setSourceVisible(false)} />
     </>
   );
 }

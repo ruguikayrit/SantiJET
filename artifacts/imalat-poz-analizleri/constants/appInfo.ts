@@ -88,40 +88,4 @@ export const TERMS_OF_USE = {
   ],
 } as const;
 
-export const DATA_SOURCES = {
-  title: "Kaynak",
-  updatedAt: "21 Haziran 2026",
-  sections: [
-    {
-      heading: "Resmi Referans Kaynakları",
-      body:
-        "Bu uygulamada kullanılan katalog verileri aşağıdaki resmi yayınlar referans alınarak hazırlanmıştır.",
-    },
-    {
-      heading: "İnşaat",
-      body: "ÇŞİDB YFK İnşaat Birim Fiyat ve Analiz Yayınları",
-    },
-    {
-      heading: "Mekanik Tesisat",
-      body: "ÇŞİDB YFK Mekanik Tesisat Birim Fiyat ve Analiz Yayınları",
-    },
-    {
-      heading: "Elektrik Tesisat",
-      body: "ÇŞİDB YFK Elektrik Tesisat Birim Fiyat ve Analiz Yayınları",
-    },
-    {
-      heading: "Güncellik",
-      body: `Uygulama içi katalog son güncelleme: ${DATA_UPDATE_LABEL}.`,
-    },
-    {
-      heading: "Önemli Uyarı",
-      body:
-        "Bu uygulama resmi yayınların yerine geçmez. Nihai doğrulama için ilgili kurumların güncel yayınları esas alınmalıdır.",
-    },
-  ],
-} as const;
-
-export type LegalDocument =
-  | typeof PRIVACY_POLICY
-  | typeof TERMS_OF_USE
-  | typeof DATA_SOURCES;
+export type LegalDocument = typeof PRIVACY_POLICY | typeof TERMS_OF_USE;
