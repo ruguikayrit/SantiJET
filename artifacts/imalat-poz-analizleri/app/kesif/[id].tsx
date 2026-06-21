@@ -252,7 +252,7 @@ export default function KesifDetailScreen() {
               style={[styles.delBtn, styles.delCol]}
               hitSlop={8}
             >
-              <Feather name="x" size={16} color={colors.mutedForeground} />
+              <Feather name="x" size={COL.del} color={colors.mutedForeground} />
             </TouchableOpacity>
           </View>
         )}
