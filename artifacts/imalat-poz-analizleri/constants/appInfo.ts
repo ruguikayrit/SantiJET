@@ -95,15 +95,15 @@ export const DATA_SOURCES = {
     },
     {
       heading: "İnşaat",
-      body: "Resmi inşaat birim fiyat analizleri — kamu kaynaklı katalog verisi.",
+      body: "ÇŞB YFK Cilt 1-2 PDF kamuya açık kaynaklardan derlenmiştir.",
     },
     {
       heading: "Mekanik Tesisat",
-      body: `${DATA_SOURCE_LABEL} Cilt 1-3 PDF kaynaklarından derlenmiştir.`,
+      body: `${DATA_SOURCE_LABEL} Cilt 1-3 PDF kamuya açık kaynaklardan derlenmiştir.`,
     },
     {
       heading: "Elektrik Tesisat",
-      body: `${DATA_SOURCE_LABEL} Cilt 1-3 PDF kaynaklarından derlenmiştir.`,
+      body: `${DATA_SOURCE_LABEL} Cilt 1-3 PDF kamuya açık kaynaklardan derlenmiştir.`,
     },
     {
       heading: "Güncellik",
