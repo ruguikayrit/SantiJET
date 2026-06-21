@@ -17,11 +17,13 @@ import { THEMES } from "@/constants/colors";
 import {
   APP_DISPLAY_NAME,
   DATA_SOURCE_LABEL,
+  DATA_SOURCES,
   DATA_UPDATE_LABEL,
   getAppVersion,
   LOCAL_DATA_NOTE,
   PRIVACY_POLICY,
   TERMS_OF_USE,
+  type LegalDocument,
 } from "@/constants/appInfo";
 import { useApp } from "@/context/AppContext";
 import { useKesif } from "@/context/KesifContext";
@@ -47,9 +49,7 @@ export function SettingsModal({ visible, onClose }: SettingsModalProps) {
   const { themeId, setThemeId, theme } = useTheme();
   const [exporting, setExporting] = useState(false);
   const [importing, setImporting] = useState(false);
-  const [legalDoc, setLegalDoc] = useState<typeof PRIVACY_POLICY | typeof TERMS_OF_USE | null>(
-    null,
-  );
+  const [legalDoc, setLegalDoc] = useState<LegalDocument | null>(null);
 
   async function handleExport() {
     if (exporting || importing) return;
@@ -248,6 +248,23 @@ export function SettingsModal({ visible, onClose }: SettingsModalProps) {
                 <Text style={[styles.actionLabel, { color: colors.foreground }]}>Kullanım Koşulları</Text>
                 <Text style={[styles.actionHint, { color: colors.mutedForeground }]}>
                   Sorumluluk ve kullanım şartları
+                </Text>
+              </View>
+              <Feather name="chevron-right" size={16} color={colors.mutedForeground} />
+            </TouchableOpacity>
+
+            <TouchableOpacity
+              activeOpacity={0.85}
+              style={[styles.actionRow, { borderColor: colors.border, backgroundColor: colors.background }]}
+              onPress={() => setLegalDoc(DATA_SOURCES)}
+            >
+              <View style={[styles.actionIcon, { backgroundColor: colors.foreground + "12" }]}>
+                <Feather name="book-open" size={18} color={colors.foreground} />
+              </View>
+              <View style={styles.actionText}>
+                <Text style={[styles.actionLabel, { color: colors.foreground }]}>Kaynak</Text>
+                <Text style={[styles.actionHint, { color: colors.mutedForeground }]}>
+                  Veri kaynağı ve katalog bilgileri
                 </Text>
               </View>
               <Feather name="chevron-right" size={16} color={colors.mutedForeground} />

@@ -3,11 +3,12 @@ import { StyleSheet, Text, TouchableOpacity, View } from "react-native";
 
 import { LegalDocumentModal } from "@/components/LegalDocumentModal";
 import {
-  DATA_SOURCE_LABEL,
+  DATA_SOURCES,
   DISCLAIMER_LINES,
   getAppVersion,
   PRIVACY_POLICY,
   TERMS_OF_USE,
+  type LegalDocument,
 } from "@/constants/appInfo";
 
 interface AppFooterProps {
@@ -16,10 +17,14 @@ interface AppFooterProps {
   bottomInset: number;
 }
 
+const FOOTER_LINKS: { label: string; document: LegalDocument }[] = [
+  { label: "GİZLİLİK POLİTİKASI", document: PRIVACY_POLICY },
+  { label: "KULLANIM KOŞULLARI", document: TERMS_OF_USE },
+  { label: "KAYNAK", document: DATA_SOURCES },
+];
+
 export function AppFooter({ color, linkColor, bottomInset }: AppFooterProps) {
-  const [legalDoc, setLegalDoc] = useState<typeof PRIVACY_POLICY | typeof TERMS_OF_USE | null>(
-    null,
-  );
+  const [legalDoc, setLegalDoc] = useState<LegalDocument | null>(null);
 
   return (
     <>
@@ -36,18 +41,17 @@ export function AppFooter({ color, linkColor, bottomInset }: AppFooterProps) {
         ))}
 
         <View style={styles.linkRow}>
-          <TouchableOpacity activeOpacity={0.75} onPress={() => setLegalDoc(PRIVACY_POLICY)}>
-            <Text style={[styles.link, { color: linkColor }]}>Gizlilik Politikası</Text>
-          </TouchableOpacity>
-          <Text style={[styles.sep, { color }]}>·</Text>
-          <TouchableOpacity activeOpacity={0.75} onPress={() => setLegalDoc(TERMS_OF_USE)}>
-            <Text style={[styles.link, { color: linkColor }]}>Kullanım Koşulları</Text>
-          </TouchableOpacity>
+          {FOOTER_LINKS.map((item, index) => (
+            <View key={item.label} style={styles.linkItem}>
+              {index > 0 ? <Text style={[styles.sep, { color }]}> - </Text> : null}
+              <TouchableOpacity activeOpacity={0.75} onPress={() => setLegalDoc(item.document)}>
+                <Text style={[styles.link, { color: linkColor }]}>{item.label}</Text>
+              </TouchableOpacity>
+            </View>
+          ))}
         </View>
 
-        <Text style={[styles.meta, { color }]}>
-          Veri: {DATA_SOURCE_LABEL} · v{getAppVersion()}
-        </Text>
+        <Text style={[styles.version, { color }]}>v{getAppVersion()}</Text>
       </View>
 
       <LegalDocumentModal
@@ -76,24 +80,29 @@ const styles = StyleSheet.create({
     alignItems: "center",
     justifyContent: "center",
     flexWrap: "wrap",
-    gap: 8,
     marginTop: 8,
   },
+  linkItem: {
+    flexDirection: "row",
+    alignItems: "center",
+  },
   link: {
-    fontSize: 10,
+    fontSize: 9,
     fontFamily: "Inter_600SemiBold",
+    letterSpacing: 0.3,
     textDecorationLine: "underline",
   },
   sep: {
-    fontSize: 10,
+    fontSize: 9,
     fontFamily: "Inter_400Regular",
     opacity: 0.7,
   },
-  meta: {
+  version: {
     fontSize: 9,
     fontFamily: "Inter_400Regular",
     textAlign: "center",
     opacity: 0.85,
-    marginTop: 4,
+    marginTop: 6,
+    letterSpacing: 0.2,
   },
 });

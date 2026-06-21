@@ -82,4 +82,42 @@ export const TERMS_OF_USE = {
   ],
 } as const;
 
-export type LegalDocument = typeof PRIVACY_POLICY | typeof TERMS_OF_USE;
+export const DATA_SOURCE_FULL_NAME =
+  "Çevre, Şehircilik ve İklim Değişikliği Bakanlığı Yüksek Fen Kurulu";
+
+export const DATA_SOURCES = {
+  title: "Kaynak",
+  updatedAt: "21 Haziran 2026",
+  sections: [
+    {
+      heading: "ÇŞB YFK",
+      body: `${DATA_SOURCE_FULL_NAME} (ÇŞB YFK) tarafından yayımlanan resmi birim fiyat analizi kitapları referans alınmıştır.`,
+    },
+    {
+      heading: "İnşaat",
+      body: "Resmi inşaat birim fiyat analizleri — kamu kaynaklı katalog verisi.",
+    },
+    {
+      heading: "Mekanik Tesisat",
+      body: `${DATA_SOURCE_LABEL} Cilt 1-3 PDF kaynaklarından derlenmiştir.`,
+    },
+    {
+      heading: "Elektrik Tesisat",
+      body: `${DATA_SOURCE_LABEL} Cilt 1-3 PDF kaynaklarından derlenmiştir.`,
+    },
+    {
+      heading: "Güncellik",
+      body: `Uygulama içi katalog son güncelleme: ${DATA_UPDATE_LABEL}. Nihai doğrulama için ilgili kurumların güncel yayınları esas alınmalıdır.`,
+    },
+    {
+      heading: "Not",
+      body:
+        "Bu uygulama resmi kurumlarla bağlantılı değildir; yalnızca kamuya açık kaynaklardan derlenen referans veriler sunar.",
+    },
+  ],
+} as const;
+
+export type LegalDocument =
+  | typeof PRIVACY_POLICY
+  | typeof TERMS_OF_USE
+  | typeof DATA_SOURCES;
