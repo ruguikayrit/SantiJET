@@ -80,6 +80,23 @@ export default function KesifDetailScreen() {
   }
 
   function handleAddSatir(analiz: PozAnaliz, miktar: number) {
+    const duplicate = kesif.satirlar.find(
+      (s) => s.analizId === analiz.id || s.pozNo === analiz.pozNo,
+    );
+    if (duplicate) {
+      Alert.alert(
+        "Poz Zaten Mevcut",
+        `${analiz.pozNo} bu keşifte zaten var. Yine de ayrı bir satır olarak eklemek istiyor musunuz?`,
+        [
+          { text: "İptal", style: "cancel" },
+          {
+            text: "Yine de Ekle",
+            onPress: () => addSatir(projectId, analiz, miktar),
+          },
+        ],
+      );
+      return;
+    }
     addSatir(projectId, analiz, miktar);
   }
 

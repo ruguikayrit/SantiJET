@@ -13,6 +13,7 @@ import { SafeAreaProvider } from "react-native-safe-area-context";
 
 import { ErrorBoundary } from "@/components/ErrorBoundary";
 import SplashScreenView from "@/components/SplashScreenView";
+import { StorageReadyGate } from "@/components/StorageReadyGate";
 import WebFrame from "@/components/WebFrame";
 import { AppProvider } from "@/context/AppContext";
 import { KesifProvider } from "@/context/KesifContext";
@@ -57,7 +58,9 @@ export default function RootLayout() {
             <WebFrame>
               <AppProvider>
                 <KesifProvider>
-                  <RootLayoutNav />
+                  <StorageReadyGate>
+                    <RootLayoutNav />
+                  </StorageReadyGate>
                 </KesifProvider>
               </AppProvider>
             </WebFrame>

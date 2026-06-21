@@ -5,6 +5,7 @@ import React, {
   useContext,
   useEffect,
   useMemo,
+  useRef,
   useState,
 } from "react";
 
@@ -39,10 +40,13 @@ const KesifContext = createContext<KesifContextValue | undefined>(undefined);
 export function KesifProvider({ children }: { children: React.ReactNode }) {
   const [projects, setProjects] = useState<KesifProject[]>([]);
   const [loaded, setLoaded] = useState(false);
+  const loadedRef = useRef(false);
 
   useEffect(() => {
+    let active = true;
     AsyncStorage.getItem(STORAGE_KEY)
       .then((raw) => {
+        if (!active) return;
         if (raw) {
           try {
             setProjects(sanitizeKesifProjects(JSON.parse(raw)));
@@ -51,10 +55,19 @@ export function KesifProvider({ children }: { children: React.ReactNode }) {
           }
         }
       })
-      .finally(() => setLoaded(true));
+      .finally(() => {
+        if (active) {
+          loadedRef.current = true;
+          setLoaded(true);
+        }
+      });
+    return () => {
+      active = false;
+    };
   }, []);
 
   const persist = useCallback((updater: (prev: KesifProject[]) => KesifProject[]) => {
+    if (!loadedRef.current) return;
     setProjects((prev) => {
       const next = updater(prev);
       AsyncStorage.setItem(STORAGE_KEY, JSON.stringify(next)).catch(() => {});
@@ -68,6 +81,7 @@ export function KesifProvider({ children }: { children: React.ReactNode }) {
       projects,
       getProject: (id) => projects.find((p) => p.id === id),
       createProject: (ad, aciklama = "") => {
+        if (!loadedRef.current) return "";
         const id = genKesifId("kp");
         const now = new Date().toISOString();
         const project: KesifProject = {
@@ -82,6 +96,7 @@ export function KesifProvider({ children }: { children: React.ReactNode }) {
         return id;
       },
       updateProject: (id, patch) => {
+        if (!loadedRef.current) return;
         const now = new Date().toISOString();
         persist((prev) =>
           prev.map((p) =>
@@ -98,9 +113,11 @@ export function KesifProvider({ children }: { children: React.ReactNode }) {
         );
       },
       deleteProject: (id) => {
+        if (!loadedRef.current) return;
         persist((prev) => prev.filter((p) => p.id !== id));
       },
       addSatir: (projectId, analiz, miktar) => {
+        if (!loadedRef.current) return;
         const satir = buildKesifSatiri(analiz, miktar);
         const now = new Date().toISOString();
         persist((prev) =>
@@ -112,6 +129,7 @@ export function KesifProvider({ children }: { children: React.ReactNode }) {
         );
       },
       updateSatirMiktar: (projectId, satirId, miktar) => {
+        if (!loadedRef.current) return;
         const qty = Number.isFinite(miktar) ? miktar : 0;
         const now = new Date().toISOString();
         persist((prev) =>
@@ -134,6 +152,7 @@ export function KesifProvider({ children }: { children: React.ReactNode }) {
         );
       },
       removeSatir: (projectId, satirId) => {
+        if (!loadedRef.current) return;
         const now = new Date().toISOString();
         persist((prev) =>
           prev.map((p) =>
@@ -148,6 +167,7 @@ export function KesifProvider({ children }: { children: React.ReactNode }) {
         );
       },
       clearAllSatirlar: (projectId) => {
+        if (!loadedRef.current) return;
         const now = new Date().toISOString();
         persist((prev) =>
           prev.map((p) =>
@@ -156,6 +176,7 @@ export function KesifProvider({ children }: { children: React.ReactNode }) {
         );
       },
       importProjects: (incoming, mode) => {
+        if (!loadedRef.current) return;
         const now = new Date().toISOString();
         persist((prev) => {
           if (mode === "replace") {

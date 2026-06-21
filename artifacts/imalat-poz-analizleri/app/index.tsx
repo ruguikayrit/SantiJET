@@ -30,6 +30,7 @@ import { useRecentViews } from "@/hooks/useRecentViews";
 const TILE_COLOR = "#d97706";
 const RECENT_COLOR = "#6366f1";
 const KESIF_COLOR = "#7c3aed";
+const KATALOG_COLOR = "#16a34a";
 
 function moduleRouteParams(
   mod: (typeof BFA_MODULES)[number],
@@ -96,6 +97,15 @@ export default function HomeScreen() {
       .map((e) => all.find((a) => a.id === e.id))
       .filter((a): a is NonNullable<typeof a> => a != null);
   }, [recentEntries, recentLoaded, all]);
+
+  const insaatKategoriSayisi = useMemo(() => {
+    const set = new Set<string>();
+    for (const a of stats.insaat) {
+      const k = a.kategori?.trim();
+      if (k) set.add(k);
+    }
+    return set.size;
+  }, [stats.insaat]);
 
   function openNewAnaliz() {
     setNewAnalizPickerVisible(true);
@@ -345,6 +355,41 @@ export default function HomeScreen() {
           </View>
           <View style={[styles.recentBtnChev, { borderColor: KESIF_COLOR + "55" }]}>
             <Feather name="chevron-right" size={13} color={KESIF_COLOR} />
+          </View>
+        </TouchableOpacity>
+
+        <TouchableOpacity
+          activeOpacity={0.85}
+          onPress={() => router.push("/analiz-katalogu" as any)}
+          style={[
+            styles.recentBtn,
+            {
+              backgroundColor: colors.card,
+              borderColor: KATALOG_COLOR + "33",
+            },
+          ]}
+        >
+          <View style={[styles.recentBtnIcon, { backgroundColor: KATALOG_COLOR + "1e" }]}>
+            <Feather name="book-open" size={23} color={KATALOG_COLOR} />
+          </View>
+          <View style={styles.recentBtnBody}>
+            <Text style={styles.recentBtnNum}>İNŞAAT B.F.A.</Text>
+            <Text style={[styles.recentBtnLabel, { color: colors.cardForeground }]}>
+              Analiz Kataloğu
+            </Text>
+            <View style={styles.recentBtnFoot}>
+              <View style={[styles.recentBtnDot, { backgroundColor: KATALOG_COLOR }]} />
+              <Text style={[styles.recentBtnInfo, { color: KATALOG_COLOR }]}>
+                {loading
+                  ? "Yükleniyor…"
+                  : insaatKategoriSayisi > 0
+                    ? `${insaatKategoriSayisi} kategori`
+                    : "Kategorilere göz at"}
+              </Text>
+            </View>
+          </View>
+          <View style={[styles.recentBtnChev, { borderColor: KATALOG_COLOR + "55" }]}>
+            <Feather name="chevron-right" size={13} color={KATALOG_COLOR} />
           </View>
         </TouchableOpacity>
 
