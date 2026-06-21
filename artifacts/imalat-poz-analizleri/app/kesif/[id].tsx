@@ -34,9 +34,8 @@ const COL = {
   birim: 44,
   tutar: 112,
   del: 28,
+  numGap: 6,
 } as const;
-
-const NUM_GROUP_W = COL.miktar + COL.birim + COL.tutar + 16;
 
 export default function KesifDetailScreen() {
   const colors = useColors();
@@ -156,7 +155,7 @@ export default function KesifDetailScreen() {
       >
         <Text style={[styles.th, styles.colSira, { color: colors.mutedForeground }]}>#</Text>
         <Text style={[styles.th, styles.colPoz, { color: colors.mutedForeground }]}>Poz</Text>
-        <View style={styles.numHeaderGroup}>
+        <View style={styles.numCluster}>
           <Text style={[styles.th, styles.colMiktar, { color: colors.mutedForeground }]}>Miktar</Text>
           <Text style={[styles.th, styles.colBirim, { color: colors.mutedForeground }]}>Br.</Text>
           <Text style={[styles.th, styles.colTutar, { color: colors.mutedForeground }]}>Tutar</Text>
@@ -215,7 +214,7 @@ export default function KesifDetailScreen() {
               </TouchableOpacity>
             </View>
 
-            <View style={styles.numRowGroup}>
+            <View style={styles.numCluster}>
               <View style={styles.colMiktar}>
                 <TextInput
                   style={[
@@ -353,17 +352,11 @@ const styles = StyleSheet.create({
   th: { fontSize: 10, fontFamily: "Inter_600SemiBold", textTransform: "uppercase" },
   colSira: { width: COL.sira, textAlign: "center" },
   colPoz: { flex: 1, minWidth: 0 },
-  numHeaderGroup: {
-    width: NUM_GROUP_W,
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "space-between",
-  },
-  numRowGroup: {
-    width: NUM_GROUP_W,
+  numCluster: {
     flexDirection: "row",
     alignItems: "flex-start",
-    justifyContent: "space-between",
+    gap: COL.numGap,
+    flexShrink: 0,
   },
   colMiktar: { width: COL.miktar, textAlign: "right" },
   colBirim: { width: COL.birim, textAlign: "center" },
