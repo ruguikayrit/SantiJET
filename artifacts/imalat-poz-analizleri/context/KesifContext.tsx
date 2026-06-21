@@ -33,6 +33,7 @@ interface KesifContextValue {
   removeSatir: (projectId: string, satirId: string) => void;
   removeSatirlar: (projectId: string, satirIds: string[]) => void;
   clearAllSatirlar: (projectId: string) => void;
+  importSatirlar: (projectId: string, items: { analiz: PozAnaliz; miktar: number }[]) => void;
   importProjects: (projects: KesifProject[], mode: UserDataImportMode) => void;
 }
 
@@ -190,6 +191,47 @@ export function KesifProvider({ children }: { children: React.ReactNode }) {
           prev.map((p) =>
             p.id === projectId ? { ...p, satirlar: [], guncellemeTarihi: now } : p,
           ),
+        );
+      },
+      importSatirlar: (projectId, items) => {
+        if (!loadedRef.current || !items.length) return;
+        const now = new Date().toISOString();
+        persist((prev) =>
+          prev.map((p) => {
+            if (p.id !== projectId) return p;
+
+            const merged = new Map<string, { analiz: PozAnaliz; miktar: number }>();
+            for (const item of items) {
+              const qty = Number.isFinite(item.miktar) ? item.miktar : 0;
+              const current = merged.get(item.analiz.id);
+              if (current) current.miktar += qty;
+              else merged.set(item.analiz.id, { analiz: item.analiz, miktar: qty });
+            }
+
+            const satirMap = new Map(p.satirlar.map((s) => [s.analizId, s]));
+            const nextSatirlar = p.satirlar.map((s) => {
+              const incoming = merged.get(s.analizId);
+              if (!incoming) return s;
+              const birimFiyati = buildKesifSatiri(incoming.analiz, 1).birimFiyati;
+              const miktar = s.miktar + incoming.miktar;
+              return {
+                ...s,
+                pozNo: incoming.analiz.pozNo,
+                analizAdi: incoming.analiz.analizAdi,
+                olcuBirimi: incoming.analiz.olcuBirimi,
+                birimFiyati,
+                miktar,
+                tutar: hesaplaSatirTutar(miktar, birimFiyati),
+              };
+            });
+
+            for (const { analiz, miktar } of merged.values()) {
+              if (satirMap.has(analiz.id)) continue;
+              nextSatirlar.push(buildKesifSatiri(analiz, miktar));
+            }
+
+            return { ...p, satirlar: nextSatirlar, guncellemeTarihi: now };
+          }),
         );
       },
       importProjects: (incoming, mode) => {

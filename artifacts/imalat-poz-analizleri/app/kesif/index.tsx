@@ -15,6 +15,7 @@ import {
 } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
+import { KesifImportModal } from "@/components/KesifImportModal";
 import { hesaplaKesifToplam, trFmtKesif } from "@/constants/kesif";
 import { useKesif } from "@/context/KesifContext";
 import { useColors } from "@/hooks/useColors";
@@ -29,6 +30,7 @@ export default function KesifListScreen() {
   const { projects, loaded, createProject, deleteProject } = useKesif();
 
   const [newVisible, setNewVisible] = useState(false);
+  const [importVisible, setImportVisible] = useState(false);
   const [newAd, setNewAd] = useState("");
   const [newAciklama, setNewAciklama] = useState("");
 
@@ -69,7 +71,13 @@ export default function KesifListScreen() {
             Metraj cetveli ve proje toplamı
           </Text>
         </View>
-        <View style={{ width: 40 }} />
+        <TouchableOpacity
+          onPress={() => setImportVisible(true)}
+          style={styles.backBtn}
+          accessibilityLabel="Keşif içe aktar"
+        >
+          <Feather name="upload" size={20} color={colors.secondaryForeground} />
+        </TouchableOpacity>
       </View>
 
       <FlatList
@@ -81,8 +89,16 @@ export default function KesifListScreen() {
             <Feather name="clipboard" size={44} color={colors.mutedForeground} />
             <Text style={[styles.emptyTitle, { color: colors.foreground }]}>Henüz keşif yok</Text>
             <Text style={[styles.emptySub, { color: colors.mutedForeground }]}>
-              Yeni keşif oluşturup katalogdan poz ekleyin. Miktar × birim fiyat otomatik hesaplanır.
+              Excel dosyasından içe aktarabilir veya yeni keşif oluşturup katalogdan poz ekleyebilirsiniz.
             </Text>
+            <TouchableOpacity
+              style={[styles.emptyImportBtn, { borderColor: KESIF_COLOR, backgroundColor: KESIF_COLOR + "12" }]}
+              onPress={() => setImportVisible(true)}
+              activeOpacity={0.85}
+            >
+              <Feather name="upload" size={16} color={KESIF_COLOR} />
+              <Text style={[styles.emptyImportBtnText, { color: KESIF_COLOR }]}>Excel&apos;den İçe Aktar</Text>
+            </TouchableOpacity>
           </View>
         }
         renderItem={({ item }) => {
@@ -165,6 +181,15 @@ export default function KesifListScreen() {
         </KeyboardAvoidingView>
       </Modal>
 
+      <KesifImportModal
+        visible={importVisible}
+        onClose={() => setImportVisible(false)}
+        onImported={(projectId) => {
+          setImportVisible(false);
+          openProject(projectId);
+        }}
+      />
+
       {!loaded && (
         <View style={styles.loadingOverlay}>
           <Text style={{ color: colors.mutedForeground }}>Yükleniyor…</Text>
@@ -228,6 +253,17 @@ const styles = StyleSheet.create({
   },
   emptyTitle: { fontSize: 17, fontFamily: "Inter_700Bold" },
   emptySub: { fontSize: 13, fontFamily: "Inter_400Regular", textAlign: "center", lineHeight: 20 },
+  emptyImportBtn: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 8,
+    marginTop: 8,
+    paddingHorizontal: 16,
+    paddingVertical: 10,
+    borderRadius: 10,
+    borderWidth: 1,
+  },
+  emptyImportBtnText: { fontSize: 14, fontFamily: "Inter_600SemiBold" },
   fab: {
     position: "absolute",
     right: 20,
