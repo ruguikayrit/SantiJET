@@ -10,18 +10,11 @@ interface BulkExportModalProps {
   count: number;
   onClose: () => void;
   onSelect: (format: AnalizExportFormat, pdfOrientation?: PdfPaperOrientation) => void;
+  title?: string;
+  subtitle?: string;
+  pdfHint?: string;
+  excelHint?: string;
 }
-
-const FORMATS: {
-  id: AnalizExportFormat;
-  label: string;
-  hint: string;
-  icon: keyof typeof Feather.glyphMap;
-  color: string;
-}[] = [
-  { id: "pdf", label: "PDF", hint: "ZIP içinde PDF dosyaları", icon: "file-text", color: "#dc2626" },
-  { id: "excel", label: "Excel", hint: "ZIP içinde .xls dosyaları", icon: "grid", color: "#059669" },
-];
 
 const ORIENTATIONS: {
   id: PdfPaperOrientation;
@@ -33,9 +26,23 @@ const ORIENTATIONS: {
   { id: "portrait", label: "Dikey (A4)", hint: "Standart dikey kağıt", icon: "smartphone" },
 ];
 
-export function BulkExportModal({ visible, count, onClose, onSelect }: BulkExportModalProps) {
+export function BulkExportModal({
+  visible,
+  count,
+  onClose,
+  onSelect,
+  title = "Toplu Dışa Aktar",
+  subtitle,
+  pdfHint = "ZIP içinde PDF dosyaları",
+  excelHint = "ZIP içinde .xls dosyaları",
+}: BulkExportModalProps) {
   const colors = useColors();
   const [step, setStep] = useState<"format" | "pdf-orientation">("format");
+
+  const formats = [
+    { id: "pdf" as const, label: "PDF", hint: pdfHint, icon: "file-text" as const, color: "#dc2626" },
+    { id: "excel" as const, label: "Excel", hint: excelHint, icon: "grid" as const, color: "#059669" },
+  ];
 
   useEffect(() => {
     if (!visible) setStep("format");
@@ -67,12 +74,12 @@ export function BulkExportModal({ visible, count, onClose, onSelect }: BulkExpor
         >
           {step === "format" ? (
             <>
-              <Text style={[styles.title, { color: colors.foreground }]}>Toplu Dışa Aktar</Text>
+              <Text style={[styles.title, { color: colors.foreground }]}>{title}</Text>
               <Text style={[styles.subtitle, { color: colors.mutedForeground }]}>
-                {count} analiz ZIP olarak indirilecek
+                {subtitle ?? `${count} analiz ZIP olarak indirilecek`}
               </Text>
 
-              {FORMATS.map((f) => (
+              {formats.map((f) => (
                 <TouchableOpacity
                   key={f.id}
                   activeOpacity={0.85}

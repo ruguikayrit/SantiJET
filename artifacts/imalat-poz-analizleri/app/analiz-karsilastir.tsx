@@ -1,6 +1,6 @@
 import { Feather } from "@expo/vector-icons";
 import { useLocalSearchParams, useRouter } from "expo-router";
-import React, { useMemo } from "react";
+import React, { useMemo, useState } from "react";
 import {
   ActivityIndicator,
   Platform,
@@ -12,7 +12,10 @@ import {
 } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
+import { BulkExportModal } from "@/components/BulkExportModal";
 import { buildAnalizCompare, trFmtCompare } from "@/lib/analizCompare";
+import { AnalizExportFormat, PdfPaperOrientation, waitForShareSheet } from "@/lib/analizExport";
+import { exportCompare } from "@/lib/compareExport";
 import { useBfaCatalog } from "@/hooks/useBfaCatalog";
 import { useColors } from "@/hooks/useColors";
 
@@ -28,6 +31,7 @@ export default function AnalizKarsilastirScreen() {
   const insets = useSafeAreaInsets();
   const topPad = Platform.OS === "web" ? 16 : insets.top;
   const params = useLocalSearchParams<{ ids?: string }>();
+  const [exportVisible, setExportVisible] = useState(false);
 
   const { all, loading, error } = useBfaCatalog();
 
@@ -44,6 +48,12 @@ export default function AnalizKarsilastirScreen() {
     if (analizler.length < 2) return null;
     return buildAnalizCompare(analizler);
   }, [analizler]);
+
+  async function handleExportCompare(format: AnalizExportFormat, pdfOrientation?: PdfPaperOrientation) {
+    setExportVisible(false);
+    await waitForShareSheet();
+    await exportCompare(analizler, format, { pdfOrientation });
+  }
 
   if (loading) {
     return (
@@ -82,7 +92,23 @@ export default function AnalizKarsilastirScreen() {
 
   return (
     <View style={{ flex: 1, backgroundColor: colors.background }}>
-      <Header colors={colors} topPad={topPad} onBack={() => router.back()} />
+      <Header
+        colors={colors}
+        topPad={topPad}
+        onBack={() => router.back()}
+        onExport={() => setExportVisible(true)}
+      />
+
+      <BulkExportModal
+        visible={exportVisible}
+        count={analizler.length}
+        title="Karşılaştırmayı Dışa Aktar"
+        subtitle={`${analizler.length} analizin karşılaştırma raporu`}
+        pdfHint="Yazdırılabilir karşılaştırma tablosu"
+        excelHint="Excel ve Numbers ile açılır"
+        onClose={() => setExportVisible(false)}
+        onSelect={handleExportCompare}
+      />
 
       <ScrollView
         horizontal
@@ -241,10 +267,12 @@ function Header({
   colors,
   topPad,
   onBack,
+  onExport,
 }: {
   colors: ReturnType<typeof useColors>;
   topPad: number;
   onBack: () => void;
+  onExport?: () => void;
 }) {
   return (
     <View
@@ -259,7 +287,13 @@ function Header({
       <Text style={[styles.headerTitle, { color: colors.secondaryForeground }]}>
         Analiz Karşılaştırma
       </Text>
-      <View style={{ width: 40 }} />
+      {onExport ? (
+        <TouchableOpacity onPress={onExport} style={styles.backBtn}>
+          <Feather name="download" size={20} color={colors.secondaryForeground} />
+        </TouchableOpacity>
+      ) : (
+        <View style={{ width: 40 }} />
+      )}
     </View>
   );
 }
