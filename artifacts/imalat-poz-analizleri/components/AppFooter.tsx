@@ -17,6 +17,16 @@ interface AppFooterProps {
   bottomInset: number;
 }
 
+const FOOTER_LINKS: {
+  label: string;
+  document: LegalDocument;
+  align: "left" | "center" | "right";
+}[] = [
+  { label: "GİZLİLİK POLİTİKASI", document: PRIVACY_POLICY, align: "left" },
+  { label: "KAYNAK", document: DATA_SOURCES, align: "center" },
+  { label: "KULLANIM KOŞULLARI", document: TERMS_OF_USE, align: "right" },
+];
+
 export function AppFooter({ color, linkColor, bottomInset }: AppFooterProps) {
   const [legalDoc, setLegalDoc] = useState<LegalDocument | null>(null);
 
@@ -34,29 +44,39 @@ export function AppFooter({ color, linkColor, bottomInset }: AppFooterProps) {
           </Text>
         ))}
 
-        <View style={styles.linkRow}>
-          <View style={styles.linkLeftSlot}>
-            <TouchableOpacity activeOpacity={0.75} onPress={() => setLegalDoc(PRIVACY_POLICY)}>
-              <Text style={[styles.link, styles.linkLeft, { color: linkColor }]}>
-                GİZLİLİK POLİTİKASI
-              </Text>
-            </TouchableOpacity>
+        <View style={styles.linkBlock}>
+          <View style={styles.linkRow}>
+            {FOOTER_LINKS.map((item) => (
+              <TouchableOpacity
+                key={item.label}
+                activeOpacity={0.75}
+                style={[
+                  styles.linkSlot,
+                  item.align === "left" && styles.linkSlotLeft,
+                  item.align === "center" && styles.linkSlotCenter,
+                  item.align === "right" && styles.linkSlotRight,
+                ]}
+                onPress={() => setLegalDoc(item.document)}
+              >
+                <Text
+                  style={[
+                    styles.link,
+                    item.align === "left" && styles.linkLeft,
+                    item.align === "center" && styles.linkCenter,
+                    item.align === "right" && styles.linkRight,
+                    { color: linkColor },
+                  ]}
+                  numberOfLines={1}
+                  adjustsFontSizeToFit
+                  minimumFontScale={0.65}
+                >
+                  {item.label}
+                </Text>
+              </TouchableOpacity>
+            ))}
           </View>
 
-          <View style={styles.linkCenterSlot}>
-            <TouchableOpacity activeOpacity={0.75} onPress={() => setLegalDoc(DATA_SOURCES)}>
-              <Text style={[styles.link, styles.linkCenter, { color: linkColor }]}>KAYNAK</Text>
-            </TouchableOpacity>
-            <Text style={[styles.version, { color }]}>v{getAppVersion()}</Text>
-          </View>
-
-          <View style={styles.linkRightSlot}>
-            <TouchableOpacity activeOpacity={0.75} onPress={() => setLegalDoc(TERMS_OF_USE)}>
-              <Text style={[styles.link, styles.linkRight, { color: linkColor }]}>
-                KULLANIM KOŞULLARI
-              </Text>
-            </TouchableOpacity>
-          </View>
+          <Text style={[styles.version, { color }]}>v{getAppVersion()}</Text>
         </View>
       </View>
 
@@ -71,7 +91,7 @@ export function AppFooter({ color, linkColor, bottomInset }: AppFooterProps) {
 
 const styles = StyleSheet.create({
   wrap: {
-    paddingHorizontal: 16,
+    paddingHorizontal: 12,
     gap: 4,
     alignItems: "center",
     width: "100%",
@@ -82,29 +102,36 @@ const styles = StyleSheet.create({
     lineHeight: 14,
     textAlign: "center",
   },
+  linkBlock: {
+    width: "100%",
+    marginTop: 8,
+    gap: 4,
+    alignItems: "center",
+  },
   linkRow: {
     flexDirection: "row",
     alignItems: "center",
     width: "100%",
-    marginTop: 8,
+    flexWrap: "nowrap",
   },
-  linkLeftSlot: {
+  linkSlot: {
     flex: 1,
+    minWidth: 0,
+    paddingHorizontal: 2,
+  },
+  linkSlotLeft: {
     alignItems: "flex-start",
   },
-  linkCenterSlot: {
-    flex: 1,
+  linkSlotCenter: {
     alignItems: "center",
-    gap: 4,
   },
-  linkRightSlot: {
-    flex: 1,
+  linkSlotRight: {
     alignItems: "flex-end",
   },
   link: {
-    fontSize: 9,
+    fontSize: 8,
     fontFamily: "Inter_600SemiBold",
-    letterSpacing: 0.3,
+    letterSpacing: 0.2,
     textDecorationLine: "underline",
   },
   linkLeft: {
