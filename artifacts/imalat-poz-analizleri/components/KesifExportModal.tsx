@@ -11,6 +11,7 @@ import {
 } from "react-native";
 
 import { ExportPreviewPane } from "@/components/ExportPreviewPane";
+import { WebPdfExportNotice } from "@/components/WebPdfExportNotice";
 import { KesifProject } from "@/constants/kesif";
 import { AnalizExportFormat, PdfPaperOrientation } from "@/lib/analizExport";
 import { buildKesifExcelHtml, buildKesifHtml } from "@/lib/kesifExport";
@@ -126,6 +127,7 @@ export function KesifExportModal({ visible, project, onClose, onExport }: KesifE
           </View>
 
           <View style={styles.previewBody}>
+            <WebPdfExportNotice variant="kesif" format={selectedFormat} />
             {previewHtml ? (
               <ExportPreviewPane html={previewHtml} formatLabel={formatLabel} />
             ) : (

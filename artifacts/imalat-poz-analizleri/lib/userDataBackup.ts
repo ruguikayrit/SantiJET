@@ -3,17 +3,19 @@ import * as Sharing from "expo-sharing";
 import { Alert, Platform } from "react-native";
 
 import { PozAnaliz } from "@/constants/pozAnalizleri";
+import { KesifProject, sanitizeKesifProjects } from "@/constants/kesif";
 import { sanitizeUserPozAnalizleri } from "@/lib/pozAnalizCatalog";
 
-export const BACKUP_VERSION = 1;
+export const BACKUP_VERSION = 2;
 
 export interface UserDataBackup {
-  version: typeof BACKUP_VERSION;
+  version: number;
   app: "santijet-bfa";
   exportedAt: string;
   pozAnalizleri: PozAnaliz[];
   favoriteIds: string[];
   themeId?: string;
+  kesifProjects?: KesifProject[];
 }
 
 export type UserDataImportMode = "merge" | "replace";
@@ -27,6 +29,7 @@ export function buildUserDataBackup(
   pozAnalizleri: PozAnaliz[],
   favoriteIds: string[],
   themeId?: string,
+  kesifProjects: KesifProject[] = [],
 ): UserDataBackup {
   return {
     version: BACKUP_VERSION,
@@ -34,6 +37,7 @@ export function buildUserDataBackup(
     exportedAt: new Date().toISOString(),
     pozAnalizleri,
     favoriteIds,
+    kesifProjects,
     ...(themeId ? { themeId } : {}),
   };
 }
@@ -46,13 +50,15 @@ export function parseUserDataBackup(raw: unknown): UserDataBackup | null {
 
   const pozAnalizleri = sanitizeUserPozAnalizleri(obj.pozAnalizleri);
   const favoriteIds = sanitizeFavoriteIds(obj.favoriteIds);
+  const kesifProjects = sanitizeKesifProjects(obj.kesifProjects ?? []);
 
   return {
-    version: BACKUP_VERSION,
+    version: typeof obj.version === "number" ? obj.version : BACKUP_VERSION,
     app: "santijet-bfa",
     exportedAt: typeof obj.exportedAt === "string" ? obj.exportedAt : new Date().toISOString(),
     pozAnalizleri,
     favoriteIds,
+    kesifProjects,
     ...(typeof obj.themeId === "string" && obj.themeId.length > 0 ? { themeId: obj.themeId } : {}),
   };
 }
@@ -95,7 +101,7 @@ export async function shareUserDataBackup(backup: UserDataBackup): Promise<boole
 
     Alert.alert(
       "Dışa Aktarma",
-      `${backup.pozAnalizleri.length} özel analiz ve ${backup.favoriteIds.length} favori hazırlandı. Bu cihazda paylaşım desteklenmiyor.`,
+      `${backup.pozAnalizleri.length} özel analiz, ${backup.favoriteIds.length} favori, ${backup.kesifProjects?.length ?? 0} keşif hazırlandı. Bu cihazda paylaşım desteklenmiyor.`,
     );
     return false;
   } catch {

@@ -24,7 +24,7 @@ import { ExportFormatModal } from "@/components/ExportFormatModal";
 import { useBfaCatalog } from "@/hooks/useBfaCatalog";
 import { useColors } from "@/hooks/useColors";
 import { useRecentViews } from "@/hooks/useRecentViews";
-import { AnalizExportFormat, exportAnaliz, exportBulkAnalizler, PdfPaperOrientation, waitForShareSheet } from "@/lib/analizExport";
+import { AnalizExportFormat, exportAnaliz, exportBulkAnalizler, PdfPaperOrientation, waitForShareSheet, buildAnalizExcelHtml, buildAnalizHtml } from "@/lib/analizExport";
 import {
   BfaDiscipline,
   BfaModuleKey,
@@ -1060,7 +1060,17 @@ export default function ImalatPozlariScreen() {
         visible={bulkExportVisible}
         count={selectedIds.size}
         onClose={() => setBulkExportVisible(false)}
-        onSelect={handleBulkExportFormat}
+        onExport={handleBulkExportFormat}
+        subtitle={`${selectedIds.size} analiz ZIP olarak indirilecek`}
+        previewCaption="ZIP önizlemesi (ilk analiz)"
+        webPdfVariant="bulk"
+        getPreviewHtml={(format, orientation) => {
+          const first = selectedAnalizler[0];
+          if (!first) return "";
+          return format === "excel"
+            ? buildAnalizExcelHtml(first)
+            : buildAnalizHtml(first, orientation);
+        }}
       />
 
       {/* Yetkili roller: yeni analiz ekle FAB */}

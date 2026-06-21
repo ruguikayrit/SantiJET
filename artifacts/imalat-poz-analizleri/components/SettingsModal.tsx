@@ -14,6 +14,7 @@ import {
 
 import { THEMES } from "@/constants/colors";
 import { useApp } from "@/context/AppContext";
+import { useKesif } from "@/context/KesifContext";
 import { useTheme } from "@/context/ThemeContext";
 import { useColors } from "@/hooks/useColors";
 import {
@@ -32,6 +33,7 @@ interface SettingsModalProps {
 export function SettingsModal({ visible, onClose }: SettingsModalProps) {
   const colors = useColors();
   const { pozAnalizleri, favoriteIds, importUserData } = useApp();
+  const { projects: kesifProjects, importProjects } = useKesif();
   const { themeId, setThemeId, theme } = useTheme();
   const [exporting, setExporting] = useState(false);
   const [importing, setImporting] = useState(false);
@@ -40,7 +42,7 @@ export function SettingsModal({ visible, onClose }: SettingsModalProps) {
     if (exporting || importing) return;
     setExporting(true);
     try {
-      const backup = buildUserDataBackup(pozAnalizleri, favoriteIds, themeId);
+      const backup = buildUserDataBackup(pozAnalizleri, favoriteIds, themeId, kesifProjects);
       await shareUserDataBackup(backup);
     } finally {
       setExporting(false);
@@ -52,12 +54,13 @@ export function SettingsModal({ visible, onClose }: SettingsModalProps) {
       { pozAnalizleri: backup.pozAnalizleri, favoriteIds: backup.favoriteIds },
       mode,
     );
+    importProjects(backup.kesifProjects ?? [], mode);
     if (backup.themeId) {
       setThemeId(backup.themeId);
     }
     Alert.alert(
       "İçe Aktarma Tamamlandı",
-      `${backup.pozAnalizleri.length} analiz ve ${backup.favoriteIds.length} favori yüklendi.`,
+      `${backup.pozAnalizleri.length} analiz, ${backup.favoriteIds.length} favori, ${backup.kesifProjects?.length ?? 0} keşif yüklendi.`,
     );
   }
 
@@ -68,7 +71,8 @@ export function SettingsModal({ visible, onClose }: SettingsModalProps) {
       const backup = await pickUserDataBackup();
       if (!backup) return;
 
-      const hasExistingData = pozAnalizleri.length > 0 || favoriteIds.length > 0;
+      const hasExistingData =
+        pozAnalizleri.length > 0 || favoriteIds.length > 0 || kesifProjects.length > 0;
       confirmImportMode((mode) => applyImport(backup, mode), hasExistingData);
     } finally {
       setImporting(false);
@@ -153,7 +157,7 @@ export function SettingsModal({ visible, onClose }: SettingsModalProps) {
               <View style={styles.actionText}>
                 <Text style={[styles.actionLabel, { color: colors.foreground }]}>Dışa Aktar</Text>
                 <Text style={[styles.actionHint, { color: colors.mutedForeground }]}>
-                  {pozAnalizleri.length} özel analiz, {favoriteIds.length} favori — JSON
+                  {pozAnalizleri.length} özel analiz, {favoriteIds.length} favori, {kesifProjects.length} keşif — JSON
                 </Text>
               </View>
               <Feather name="chevron-right" size={16} color={colors.primary} />

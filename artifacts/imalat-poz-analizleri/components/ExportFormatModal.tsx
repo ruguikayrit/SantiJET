@@ -11,6 +11,7 @@ import {
 } from "react-native";
 
 import { ExportPreviewPane } from "@/components/ExportPreviewPane";
+import { WebPdfExportNotice } from "@/components/WebPdfExportNotice";
 import { PozAnaliz } from "@/constants/pozAnalizleri";
 import {
   AnalizExportFormat,
@@ -128,6 +129,7 @@ export function ExportFormatModal({ visible, onClose, analiz, onExport }: Export
           </View>
 
           <View style={styles.previewBody}>
+            <WebPdfExportNotice variant="single" format={selectedFormat} />
             {previewHtml ? (
               <ExportPreviewPane html={previewHtml} formatLabel={formatLabel} />
             ) : (

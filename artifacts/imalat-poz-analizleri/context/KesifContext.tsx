@@ -16,6 +16,7 @@ import {
   sanitizeKesifProjects,
 } from "@/constants/kesif";
 import { PozAnaliz } from "@/constants/pozAnalizleri";
+import { UserDataImportMode } from "@/lib/userDataBackup";
 
 const STORAGE_KEY = "santijet_ipa_kesif_v1";
 
@@ -30,6 +31,7 @@ interface KesifContextValue {
   updateSatirMiktar: (projectId: string, satirId: string, miktar: number) => void;
   removeSatir: (projectId: string, satirId: string) => void;
   clearAllSatirlar: (projectId: string) => void;
+  importProjects: (projects: KesifProject[], mode: UserDataImportMode) => void;
 }
 
 const KesifContext = createContext<KesifContextValue | undefined>(undefined);
@@ -152,6 +154,19 @@ export function KesifProvider({ children }: { children: React.ReactNode }) {
             p.id === projectId ? { ...p, satirlar: [], guncellemeTarihi: now } : p,
           ),
         );
+      },
+      importProjects: (incoming, mode) => {
+        const now = new Date().toISOString();
+        persist((prev) => {
+          if (mode === "replace") {
+            return incoming.map((p) => ({ ...p, guncellemeTarihi: p.guncellemeTarihi || now }));
+          }
+          const byId = new Map(prev.map((p) => [p.id, p]));
+          for (const project of incoming) {
+            byId.set(project.id, { ...project, guncellemeTarihi: project.guncellemeTarihi || now });
+          }
+          return Array.from(byId.values());
+        });
       },
     }),
     [loaded, persist, projects],

@@ -48,7 +48,7 @@ export default function KesifDetailScreen() {
   const params = useLocalSearchParams<{ id?: string }>();
   const projectId = params.id ? String(params.id) : "";
 
-  const { getProject, addSatir, updateSatirMiktar, removeSatir, clearAllSatirlar } = useKesif();
+  const { getProject, addSatir, updateSatirMiktar, removeSatir, clearAllSatirlar, deleteProject } = useKesif();
   const { all } = useBfaCatalog();
 
   const project = getProject(projectId);
@@ -94,16 +94,30 @@ export default function KesifDetailScreen() {
     }
     Alert.alert(
       "Tüm Pozları Sil",
-      `Keşifteki ${kesif.satirlar.length} poz kaldırılsın mı?`,
+      `Keşifteki ${kesif.satirlar.length} poz kaldırılsın mı? Keşif projesi silinmez.`,
       [
         { text: "İptal", style: "cancel" },
         {
-          text: "Sil",
+          text: "Pozları Sil",
           style: "destructive",
           onPress: () => clearAllSatirlar(projectId),
         },
       ],
     );
+  }
+
+  function handleDeleteProject() {
+    Alert.alert("Keşifi Sil", `"${kesif.ad}" projesi tamamen silinsin mi?`, [
+      { text: "İptal", style: "cancel" },
+      {
+        text: "Keşifi Sil",
+        style: "destructive",
+        onPress: () => {
+          deleteProject(projectId);
+          router.back();
+        },
+      },
+    ]);
   }
 
   async function handleExport(format: AnalizExportFormat, pdfOrientation?: PdfPaperOrientation) {
@@ -152,8 +166,21 @@ export default function KesifDetailScreen() {
           <Text style={[styles.summaryMeta, { color: colors.mutedForeground }]}>
             {project.satirlar.length} poz
           </Text>
-          <TouchableOpacity onPress={handleClearAllPoz} hitSlop={8}>
-            <Feather name="trash-2" size={16} color="#e74c3c" />
+          <TouchableOpacity
+            onPress={handleClearAllPoz}
+            style={[styles.summaryAction, { borderColor: colors.border, backgroundColor: colors.background }]}
+            activeOpacity={0.85}
+          >
+            <Feather name="minus-circle" size={14} color="#d97706" />
+            <Text style={styles.summaryActionText}>Tüm Pozları Sil</Text>
+          </TouchableOpacity>
+          <TouchableOpacity
+            onPress={handleDeleteProject}
+            style={[styles.summaryAction, styles.summaryActionDanger, { borderColor: "#e74c3c44" }]}
+            activeOpacity={0.85}
+          >
+            <Feather name="trash-2" size={14} color="#e74c3c" />
+            <Text style={[styles.summaryActionText, { color: "#e74c3c" }]}>Keşifi Sil</Text>
           </TouchableOpacity>
         </View>
       </View>
@@ -434,6 +461,23 @@ const styles = StyleSheet.create({
   summaryTotal: { fontSize: 22, fontFamily: "Inter_700Bold", marginTop: 2 },
   summaryRight: { alignItems: "flex-end", gap: 8 },
   summaryMeta: { fontSize: 12, fontFamily: "Inter_500Medium" },
+  summaryAction: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 6,
+    paddingHorizontal: 10,
+    paddingVertical: 6,
+    borderRadius: 8,
+    borderWidth: 1,
+  },
+  summaryActionDanger: {
+    backgroundColor: "#e74c3c10",
+  },
+  summaryActionText: {
+    fontSize: 11,
+    fontFamily: "Inter_600SemiBold",
+    color: "#d97706",
+  },
   tableHeader: {
     flexDirection: "row",
     alignItems: "center",

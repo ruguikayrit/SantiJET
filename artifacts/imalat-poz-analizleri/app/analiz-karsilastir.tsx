@@ -15,7 +15,7 @@ import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { BulkExportModal } from "@/components/BulkExportModal";
 import { buildAnalizCompare, trFmtCompare } from "@/lib/analizCompare";
 import { AnalizExportFormat, PdfPaperOrientation, waitForShareSheet } from "@/lib/analizExport";
-import { exportCompare } from "@/lib/compareExport";
+import { exportCompare, buildCompareExcelHtml, buildCompareHtml } from "@/lib/compareExport";
 import { useBfaCatalog } from "@/hooks/useBfaCatalog";
 import { useColors } from "@/hooks/useColors";
 
@@ -103,9 +103,18 @@ export default function AnalizKarsilastirScreen() {
         visible={exportVisible}
         count={analizler.length}
         title="Karşılaştırmayı Dışa Aktar"
-        subtitle={`${analizler.length} analizin karşılaştırma raporu`}
+        subtitle="Tek birleşik karşılaştırma raporu"
+        orientationHint="Karşılaştırma raporu için kağıt yönü"
+        previewCaption={`${analizler.length} analiz karşılaştırması`}
+        webPdfVariant="compare"
         onClose={() => setExportVisible(false)}
-        onSelect={handleExportCompare}
+        onExport={handleExportCompare}
+        getPreviewHtml={(format, orientation) => {
+          if (!compare) return "";
+          return format === "excel"
+            ? buildCompareExcelHtml(compare)
+            : buildCompareHtml(compare, orientation);
+        }}
       />
 
       <ScrollView
