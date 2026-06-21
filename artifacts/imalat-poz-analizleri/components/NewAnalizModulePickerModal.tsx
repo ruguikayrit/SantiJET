@@ -13,6 +13,7 @@ import {
   BFA_MODULES,
   BfaDiscipline,
   isBfaDiscipline,
+  stripModuleLabelSuffix,
 } from "@/constants/bfaModules";
 import { useColors } from "@/hooks/useColors";
 
@@ -23,6 +24,7 @@ interface NewAnalizModulePickerModalProps {
 }
 
 const CREATE_MODULES = BFA_MODULES.filter((m) => isBfaDiscipline(m.modul));
+const OPTION_HEIGHT = 52;
 
 export function NewAnalizModulePickerModal({
   visible,
@@ -56,12 +58,14 @@ export function NewAnalizModulePickerModal({
               <View style={[styles.optionIcon, { backgroundColor: mod.color + "22" }]}>
                 <Feather name={mod.icon} size={18} color={mod.color} />
               </View>
-              <View style={styles.optionText}>
-                <Text style={[styles.optionLabel, { color: colors.foreground }]}>{mod.label}</Text>
-                <Text style={[styles.optionHint, { color: colors.mutedForeground }]}>
-                  {mod.screenTitle}
-                </Text>
-              </View>
+              <Text
+                style={[styles.optionLabel, { color: colors.foreground }]}
+                numberOfLines={2}
+                adjustsFontSizeToFit
+                minimumFontScale={0.85}
+              >
+                {stripModuleLabelSuffix(mod.label)}
+              </Text>
               <Feather name="chevron-right" size={16} color={mod.color} />
             </TouchableOpacity>
           ))}
@@ -107,7 +111,7 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     alignItems: "center",
     gap: 12,
-    paddingVertical: 12,
+    height: OPTION_HEIGHT,
     paddingHorizontal: 12,
     borderRadius: 12,
     borderWidth: 1,
@@ -118,19 +122,13 @@ const styles = StyleSheet.create({
     borderRadius: 18,
     alignItems: "center",
     justifyContent: "center",
-  },
-  optionText: {
-    flex: 1,
-    gap: 2,
+    flexShrink: 0,
   },
   optionLabel: {
+    flex: 1,
     fontSize: 13,
     fontFamily: "Inter_700Bold",
     letterSpacing: 0.3,
-  },
-  optionHint: {
-    fontSize: 11,
-    fontFamily: "Inter_400Regular",
   },
   cancelBtn: {
     marginTop: 4,
