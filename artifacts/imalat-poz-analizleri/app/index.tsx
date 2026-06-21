@@ -160,6 +160,12 @@ export default function HomeScreen() {
         <View style={styles.headerBrand}>
           <SantijetLogo iconHeight={61} centered stacked />
           <Text style={styles.headerSubtitle}>BİRİM FİYAT ANALİZLERİ</Text>
+          <View style={styles.headerDateRow}>
+            <Feather name="calendar" size={12} color="#60a5fa" />
+            <Text style={styles.headerDateMain}>{dateStr}</Text>
+            <Text style={styles.headerDateSep}>·</Text>
+            <Text style={styles.headerDateSub}>{dayStr}</Text>
+          </View>
         </View>
       </View>
 
@@ -263,43 +269,6 @@ export default function HomeScreen() {
         contentContainerStyle={styles.scroll}
         showsVerticalScrollIndicator={false}
       >
-        <View
-          style={[
-            styles.welcomeCard,
-            { backgroundColor: colors.secondary, borderColor: "rgba(255,255,255,0.07)" },
-          ]}
-        >
-          <View style={styles.welcomeMain}>
-            <Text style={styles.welcomeGreet}>Hoş geldiniz</Text>
-            <Text
-              style={[styles.welcomeName, { color: colors.secondaryForeground }]}
-              numberOfLines={2}
-              adjustsFontSizeToFit
-              minimumFontScale={0.75}
-            >
-              ŞANTİJET BİRİM FİYAT ANALİZLERİ
-            </Text>
-            <Text
-              style={styles.welcomeRole}
-              numberOfLines={1}
-              adjustsFontSizeToFit
-              minimumFontScale={0.85}
-            >
-              Resmi analiz tabloları, fiyat hesaplamaları ve özel analizler
-            </Text>
-          </View>
-
-          <View style={styles.welcomeDateBlock}>
-            <Feather name="calendar" size={14} color="#60a5fa" style={styles.welcomeDateIcon} />
-            <View style={styles.welcomeDateTexts}>
-              <Text style={[styles.welcomeDateMain, { color: colors.secondaryForeground }]}>
-                {dateStr}
-              </Text>
-              <Text style={styles.welcomeDateSub}>{dayStr}</Text>
-            </View>
-          </View>
-        </View>
-
         <TouchableOpacity
           activeOpacity={0.85}
           onPress={() => setRecentVisible(true)}
@@ -456,7 +425,7 @@ const styles = StyleSheet.create({
     alignItems: "center",
     justifyContent: "center",
     paddingHorizontal: 16,
-    paddingBottom: 12,
+    paddingBottom: 14,
     position: "relative",
   },
   settingsBtn: {
@@ -484,7 +453,33 @@ const styles = StyleSheet.create({
     textAlign: "center",
     marginTop: 2,
   },
-  scroll: { padding: 12, paddingTop: 7 },
+  headerDateRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    flexWrap: "wrap",
+    gap: 6,
+    marginTop: 2,
+    paddingHorizontal: 8,
+  },
+  headerDateMain: {
+    color: "#cbd5e1",
+    fontSize: 11,
+    fontFamily: "Inter_600SemiBold",
+    textAlign: "center",
+  },
+  headerDateSep: {
+    color: "#64748b",
+    fontSize: 11,
+    fontFamily: "Inter_400Regular",
+  },
+  headerDateSub: {
+    color: "#94a3b8",
+    fontSize: 11,
+    fontFamily: "Inter_400Regular",
+    textAlign: "center",
+  },
+  scroll: { padding: 12, paddingTop: 10 },
   searchWrap: {
     flexDirection: "row",
     alignItems: "center",
@@ -553,60 +548,6 @@ const styles = StyleSheet.create({
     alignItems: "center",
     paddingTop: 60,
     paddingBottom: 24,
-  },
-  welcomeCard: {
-    flexDirection: "row",
-    alignItems: "flex-start",
-    borderRadius: 14,
-    paddingHorizontal: 14,
-    paddingVertical: 10,
-    marginBottom: 9,
-    borderWidth: 1,
-    gap: 10,
-  },
-  welcomeMain: {
-    flex: 1,
-    gap: 5,
-  },
-  welcomeGreet: {
-    color: "#64748b",
-    fontSize: 12,
-    fontFamily: "Inter_400Regular",
-  },
-  welcomeName: {
-    fontSize: 18,
-    fontFamily: "Inter_700Bold",
-    letterSpacing: 0.5,
-  },
-  welcomeRole: {
-    fontSize: 11,
-    fontFamily: "Inter_400Regular",
-    color: "#94a3b8",
-    lineHeight: 14,
-  },
-  welcomeDateBlock: {
-    flexDirection: "row",
-    alignItems: "flex-start",
-    gap: 6,
-    flexShrink: 0,
-    paddingTop: 1,
-  },
-  welcomeDateIcon: {
-    marginTop: 1,
-  },
-  welcomeDateTexts: {
-    alignItems: "flex-end",
-    gap: 2,
-  },
-  welcomeDateMain: {
-    fontSize: 11,
-    fontFamily: "Inter_600SemiBold",
-    textAlign: "right",
-  },
-  welcomeDateSub: {
-    fontSize: 11,
-    fontFamily: "Inter_400Regular",
-    color: "#64748b",
   },
   sectionLabel: {
     fontSize: 16,
