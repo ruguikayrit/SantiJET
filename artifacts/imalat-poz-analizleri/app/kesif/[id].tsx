@@ -4,7 +4,10 @@ import React, { useMemo, useState } from "react";
 import {
   Alert,
   FlatList,
+  Modal,
   Platform,
+  Pressable,
+  ScrollView,
   StyleSheet,
   Text,
   TextInput,
@@ -27,7 +30,8 @@ const KESIF_COLOR = "#7c3aed";
 
 const COL = {
   sira: 36,
-  miktar: 78,
+  miktar: 72,
+  birim: 44,
   tutar: 118,
   del: 28,
 } as const;
@@ -46,6 +50,7 @@ export default function KesifDetailScreen() {
   const project = getProject(projectId);
   const [pickerVisible, setPickerVisible] = useState(false);
   const [exportVisible, setExportVisible] = useState(false);
+  const [tanimModal, setTanimModal] = useState<{ pozNo: string; analizAdi: string } | null>(null);
 
   const toplam = useMemo(
     () => (project ? hesaplaKesifToplam(project.satirlar) : 0),
@@ -148,10 +153,9 @@ export default function KesifDetailScreen() {
         style={[styles.tableHeader, { backgroundColor: colors.card, borderColor: colors.border }]}
       >
         <Text style={[styles.th, styles.colSira, { color: colors.mutedForeground }]}>Sıra</Text>
-        <Text style={[styles.th, styles.colPozTanim, { color: colors.mutedForeground }]}>
-          Poz / Tanım
-        </Text>
+        <Text style={[styles.th, styles.colPoz, { color: colors.mutedForeground }]}>Poz</Text>
         <Text style={[styles.th, styles.colMiktar, { color: colors.mutedForeground }]}>Miktar</Text>
+        <Text style={[styles.th, styles.colBirim, { color: colors.mutedForeground }]}>Br.</Text>
         <Text style={[styles.th, styles.colTutar, { color: colors.mutedForeground }]}>Tutar</Text>
         <View style={{ width: COL.del }} />
       </View>
@@ -180,22 +184,32 @@ export default function KesifDetailScreen() {
           >
             <Text style={[styles.tdSira, { color: colors.mutedForeground }]}>{index + 1}</Text>
 
-            <TouchableOpacity
-              style={styles.colPozTanim}
-              activeOpacity={0.75}
-              onPress={() => {
-                const analiz = resolveAnaliz(item.analizId);
-                if (analiz) {
-                  router.push({
-                    pathname: "/imalat-pozlari",
-                    params: { id: analiz.id, modul: analiz.discipline ?? "insaat" },
-                  } as any);
+            <View style={styles.colPoz}>
+              <TouchableOpacity
+                activeOpacity={0.75}
+                onPress={() => {
+                  const analiz = resolveAnaliz(item.analizId);
+                  if (analiz) {
+                    router.push({
+                      pathname: "/imalat-pozlari",
+                      params: { id: analiz.id, modul: analiz.discipline ?? "insaat" },
+                    } as any);
+                  }
+                }}
+              >
+                <Text style={[styles.tdPoz, { color: colors.primary }]}>{item.pozNo}</Text>
+              </TouchableOpacity>
+              <TouchableOpacity
+                style={[styles.tanimBtn, { borderColor: colors.border, backgroundColor: colors.card }]}
+                onPress={() =>
+                  setTanimModal({ pozNo: item.pozNo, analizAdi: item.analizAdi })
                 }
-              }}
-            >
-              <Text style={[styles.tdPoz, { color: colors.primary }]}>{item.pozNo}</Text>
-              <Text style={[styles.tdAd, { color: colors.foreground }]}>{item.analizAdi}</Text>
-            </TouchableOpacity>
+                activeOpacity={0.8}
+              >
+                <Feather name="file-text" size={11} color={colors.primary} />
+                <Text style={[styles.tanimBtnText, { color: colors.primary }]}>Tanım</Text>
+              </TouchableOpacity>
+            </View>
 
             <View style={styles.colMiktar}>
               <TextInput
@@ -208,10 +222,11 @@ export default function KesifDetailScreen() {
                 keyboardType="decimal-pad"
                 selectTextOnFocus
               />
-              <Text style={[styles.tdUnit, { color: colors.mutedForeground }]} numberOfLines={1}>
-                {item.olcuBirimi}
-              </Text>
             </View>
+
+            <Text style={[styles.tdBirim, { color: colors.foreground }]} numberOfLines={2}>
+              {item.olcuBirimi}
+            </Text>
 
             <Text style={[styles.tdTutar, { color: colors.foreground }]} numberOfLines={1}>
               {trFmtKesif(item.tutar)}
@@ -252,6 +267,33 @@ export default function KesifDetailScreen() {
         onClose={() => setExportVisible(false)}
         onSelect={handleExport}
       />
+
+      <Modal
+        visible={tanimModal !== null}
+        transparent
+        animationType="fade"
+        onRequestClose={() => setTanimModal(null)}
+      >
+        <Pressable style={styles.tanimOverlay} onPress={() => setTanimModal(null)}>
+          <Pressable
+            style={[styles.tanimCard, { backgroundColor: colors.card, borderColor: colors.border }]}
+            onPress={(e) => e.stopPropagation()}
+          >
+            <View style={styles.tanimHeader}>
+              <Text style={[styles.tanimPoz, { color: colors.primary }]}>{tanimModal?.pozNo}</Text>
+              <TouchableOpacity onPress={() => setTanimModal(null)} hitSlop={12}>
+                <Feather name="x" size={20} color={colors.mutedForeground} />
+              </TouchableOpacity>
+            </View>
+            <Text style={[styles.tanimLabel, { color: colors.mutedForeground }]}>Tanım</Text>
+            <ScrollView style={styles.tanimScroll} nestedScrollEnabled>
+              <Text style={[styles.tanimBody, { color: colors.foreground }]}>
+                {tanimModal?.analizAdi}
+              </Text>
+            </ScrollView>
+          </Pressable>
+        </Pressable>
+      </Modal>
     </View>
   );
 }
@@ -304,8 +346,9 @@ const styles = StyleSheet.create({
   },
   th: { fontSize: 10, fontFamily: "Inter_600SemiBold", textTransform: "uppercase" },
   colSira: { width: COL.sira, textAlign: "center" },
-  colPozTanim: { flex: 1, minWidth: 0, textAlign: "left" },
+  colPoz: { flex: 1, minWidth: 0 },
   colMiktar: { width: COL.miktar, alignItems: "flex-end" },
+  colBirim: { width: COL.birim, textAlign: "center" },
   colTutar: { width: COL.tutar, textAlign: "right" },
   row: {
     flexDirection: "row",
@@ -323,17 +366,28 @@ const styles = StyleSheet.create({
     paddingTop: 2,
   },
   tdPoz: { fontSize: 11, fontFamily: "Inter_700Bold", lineHeight: 15 },
-  tdAd: {
-    fontSize: 12,
-    fontFamily: "Inter_400Regular",
-    lineHeight: 17,
-    marginTop: 3,
+  tanimBtn: {
+    flexDirection: "row",
+    alignItems: "center",
+    alignSelf: "flex-start",
+    gap: 4,
+    marginTop: 5,
+    paddingHorizontal: 8,
+    paddingVertical: 4,
+    borderRadius: 6,
+    borderWidth: 1,
   },
-  tdUnit: {
+  tanimBtnText: {
     fontSize: 10,
-    fontFamily: "Inter_400Regular",
-    marginTop: 3,
-    textAlign: "right",
+    fontFamily: "Inter_600SemiBold",
+  },
+  tdBirim: {
+    width: COL.birim,
+    fontSize: 10,
+    fontFamily: "Inter_500Medium",
+    textAlign: "center",
+    paddingTop: 6,
+    lineHeight: 13,
   },
   qtyInput: {
     width: "100%",
@@ -369,5 +423,37 @@ const styles = StyleSheet.create({
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.2,
     shadowRadius: 4,
+  },
+  tanimOverlay: {
+    flex: 1,
+    backgroundColor: "rgba(15, 23, 42, 0.45)",
+    justifyContent: "center",
+    padding: 24,
+  },
+  tanimCard: {
+    maxHeight: "70%",
+    borderRadius: 14,
+    borderWidth: 1,
+    padding: 16,
+    gap: 8,
+  },
+  tanimHeader: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    gap: 12,
+  },
+  tanimPoz: { fontSize: 14, fontFamily: "Inter_700Bold", flex: 1 },
+  tanimLabel: {
+    fontSize: 10,
+    fontFamily: "Inter_600SemiBold",
+    textTransform: "uppercase",
+    letterSpacing: 0.4,
+  },
+  tanimScroll: { maxHeight: 280 },
+  tanimBody: {
+    fontSize: 14,
+    fontFamily: "Inter_400Regular",
+    lineHeight: 22,
   },
 });
