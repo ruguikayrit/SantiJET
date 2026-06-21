@@ -44,16 +44,16 @@ export function AppFooter({ color, linkColor, bottomInset }: AppFooterProps) {
           </View>
 
           <View style={styles.linkCenterSlot}>
-            <TouchableOpacity activeOpacity={0.75} onPress={() => setLegalDoc(TERMS_OF_USE)}>
-              <Text style={[styles.link, styles.linkCenter, { color: linkColor }]}>
-                KULLANIM KOŞULLARI
-              </Text>
+            <TouchableOpacity activeOpacity={0.75} onPress={() => setLegalDoc(DATA_SOURCES)}>
+              <Text style={[styles.link, styles.linkCenter, { color: linkColor }]}>KAYNAK</Text>
             </TouchableOpacity>
           </View>
 
           <View style={styles.linkRightSlot}>
-            <TouchableOpacity activeOpacity={0.75} onPress={() => setLegalDoc(DATA_SOURCES)}>
-              <Text style={[styles.link, styles.linkRight, { color: linkColor }]}>KAYNAK</Text>
+            <TouchableOpacity activeOpacity={0.75} onPress={() => setLegalDoc(TERMS_OF_USE)}>
+              <Text style={[styles.link, styles.linkRight, { color: linkColor }]}>
+                KULLANIM KOŞULLARI
+              </Text>
             </TouchableOpacity>
           </View>
         </View>
