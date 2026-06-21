@@ -12,8 +12,8 @@ export const SUPPORT_EMAIL = "destek@santijet.com";
 
 export const DISCLAIMER_LINES = [
   `${APP_LEGAL_NAME} resmi kurumlarla bağlantılı değildir.`,
-  "Katalog verileri kamu kurumlarının yayımladığı resmi kaynaklar referans alınarak hazırlanmıştır.",
-  "Nihai doğrulama için ilgili kurumların güncel yayınları esas alınmalıdır.",
+  "Katalog verileri resmi kamu kaynakları referans alınarak hazırlanmıştır.",
+  "Nihai doğrulama için güncel resmi yayınlar esas alınmalıdır.",
 ] as const;
 
 export const LOCAL_DATA_NOTE =

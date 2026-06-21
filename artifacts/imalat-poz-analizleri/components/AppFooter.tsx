@@ -47,6 +47,7 @@ export function AppFooter({ color, linkColor, bottomInset }: AppFooterProps) {
             <TouchableOpacity activeOpacity={0.75} onPress={() => setLegalDoc(DATA_SOURCES)}>
               <Text style={[styles.link, styles.linkCenter, { color: linkColor }]}>KAYNAK</Text>
             </TouchableOpacity>
+            <Text style={[styles.version, { color }]}>v{getAppVersion()}</Text>
           </View>
 
           <View style={styles.linkRightSlot}>
@@ -57,8 +58,6 @@ export function AppFooter({ color, linkColor, bottomInset }: AppFooterProps) {
             </TouchableOpacity>
           </View>
         </View>
-
-        <Text style={[styles.version, { color }]}>v{getAppVersion()}</Text>
       </View>
 
       <LegalDocumentModal
@@ -96,6 +95,7 @@ const styles = StyleSheet.create({
   linkCenterSlot: {
     flex: 1,
     alignItems: "center",
+    gap: 4,
   },
   linkRightSlot: {
     flex: 1,
@@ -117,11 +117,10 @@ const styles = StyleSheet.create({
     textAlign: "right",
   },
   version: {
-    fontSize: 9,
+    fontSize: 8,
     fontFamily: "Inter_400Regular",
     textAlign: "center",
     opacity: 0.85,
-    marginTop: 6,
     letterSpacing: 0.2,
   },
 });
