@@ -49,3 +49,9 @@ Thumbs.db
 .local/
 expo-qr.png
 expo-qr.html
+
+# YFK PDF scraper outputs
+scripts/yfk_pdfs/
+scripts/yfk_sartnameler.zip
+yfk_pdfs/
+yfk_sartnameler.zip
