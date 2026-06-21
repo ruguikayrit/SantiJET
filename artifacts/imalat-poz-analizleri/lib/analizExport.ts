@@ -50,7 +50,35 @@ const BFA_TABLE_STYLES = `
   .olcu { height: 16px; font-weight: bold; }
 `;
 
-function bfaColumnStyles(orientation: PdfPaperOrientation): string {
+const PDF_PAGE_MARGIN_MM = 10;
+
+function bfaColumnStyles(
+  orientation: PdfPaperOrientation,
+  target: "excel" | "pdf" = "excel",
+): string {
+  if (target === "pdf") {
+    if (orientation === "portrait") {
+      return `
+  col.poz-col { width: 18%; }
+  col.desc-col { width: 32%; }
+  col.unit-col { width: 10%; }
+  col.qty-col { width: 12%; }
+  col.price-col { width: 14%; }
+  col.total-col { width: 14%; }
+  body { font-size: 9px; }
+  th, td { padding: 2px 3px; font-size: 9px; }
+  .title { font-size: 13px; }`;
+    }
+
+    return `
+  col.poz-col { width: 16%; }
+  col.desc-col { width: 36%; }
+  col.unit-col { width: 10%; }
+  col.qty-col { width: 12%; }
+  col.price-col { width: 13%; }
+  col.total-col { width: 13%; }`;
+  }
+
   if (orientation === "portrait") {
     return `
   col.spacer-col { width: 12px; }
@@ -75,15 +103,23 @@ function bfaColumnStyles(orientation: PdfPaperOrientation): string {
   col.total-col { width: 195px; }`;
 }
 
-function buildExportStyles(orientation: PdfPaperOrientation = "landscape"): string {
+function buildPdfExportStyles(orientation: PdfPaperOrientation = "landscape"): string {
   const pageSize = orientation === "landscape" ? "A4 landscape" : "A4 portrait";
+  const margin = `${PDF_PAGE_MARGIN_MM}mm`;
   return `
-  @page { size: ${pageSize}; margin: 8mm; }
+  @page {
+    size: ${pageSize};
+    margin-top: 8mm;
+    margin-bottom: 8mm;
+    margin-left: ${margin};
+    margin-right: ${margin};
+  }
   ${BFA_TABLE_STYLES}
-  ${bfaColumnStyles(orientation)}`;
+  ${bfaColumnStyles(orientation, "pdf")}
+  .pdf-content { margin: 0 auto; width: 100%; box-sizing: border-box; }`;
 }
 
-const EXCEL_STYLES = buildExportStyles("landscape");
+const EXCEL_STYLES = `${BFA_TABLE_STYLES}${bfaColumnStyles("landscape", "excel")}`;
 
 function trFmt(n: number): string {
   return n.toLocaleString("tr-TR", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
@@ -214,6 +250,22 @@ function buildAnalizReportBody(analiz: PozAnaliz): string {
   ${extraBlocks}`;
 }
 
+function bfaSpacerCell(target: "excel" | "pdf"): string {
+  return target === "excel" ? `<td class="spacer"></td>` : "";
+}
+
+function bfaColgroup(target: "excel" | "pdf"): string {
+  const spacerCol = target === "excel" ? `<col class="spacer-col" />\n      ` : "";
+  return `<colgroup>
+      ${spacerCol}<col class="poz-col" />
+      <col class="desc-col" />
+      <col class="unit-col" />
+      <col class="qty-col" />
+      <col class="price-col" />
+      <col class="total-col" />
+    </colgroup>`;
+}
+
 function buildBfaFormatBody(analiz: PozAnaliz, target: "excel" | "pdf"): string {
   const totals = hesaplaAnalizToplam(analiz);
   const tipAd: Record<string, string> = {
@@ -221,6 +273,7 @@ function buildBfaFormatBody(analiz: PozAnaliz, target: "excel" | "pdf"): string 
     iscilik: "İşçilik",
     ekipman: "Ekipman",
   };
+  const spacer = bfaSpacerCell(target);
 
   let rowNumber = 5;
   let tableRows = "";
@@ -229,12 +282,12 @@ function buildBfaFormatBody(analiz: PozAnaliz, target: "excel" | "pdf"): string 
     if (!rows.length) continue;
 
     rowNumber += 1;
-    tableRows += `<tr class="head-row"><td class="spacer"></td><td colspan="6" class="group">${tipAd[tip]}</td></tr>`;
+    tableRows += `<tr class="head-row">${spacer}<td colspan="6" class="group">${tipAd[tip]}</td></tr>`;
 
     for (const k of rows) {
       rowNumber += 1;
       tableRows += `<tr class="data-row">
-        <td class="spacer"></td>
+        ${spacer}
         ${excelPozNoCell(k.pozNo)}
         <td class="text">${escHtml(k.tanim)}</td>
         <td class="text">${escHtml(k.olcuBirimi)}</td>
@@ -247,49 +300,41 @@ function buildBfaFormatBody(analiz: PozAnaliz, target: "excel" | "pdf"): string 
 
   const extraRows = [
     analiz.pozTarifi
-      ? `<tr><td class="spacer"></td><td colspan="6" class="note tarif">${escHtml(analiz.pozTarifi)}</td></tr>`
+      ? `<tr>${spacer}<td colspan="6" class="note tarif">${escHtml(analiz.pozTarifi)}</td></tr>`
       : "",
     analiz.yapimSartlari
-      ? `<tr><td class="spacer"></td><td colspan="6" class="note tarif">${escHtml(analiz.yapimSartlari)}</td></tr>`
+      ? `<tr>${spacer}<td colspan="6" class="note tarif">${escHtml(analiz.yapimSartlari)}</td></tr>`
       : "",
     analiz.olcusu
-      ? `<tr><td class="spacer"></td><td colspan="6" class="note olcu">Ölçü: ${escHtml(analiz.olcusu)}</td></tr>`
+      ? `<tr>${spacer}<td colspan="6" class="note olcu">Ölçü: ${escHtml(analiz.olcusu)}</td></tr>`
       : "",
   ].join("");
 
   return `
   <table>
-    <colgroup>
-      <col class="spacer-col" />
-      <col class="poz-col" />
-      <col class="desc-col" />
-      <col class="unit-col" />
-      <col class="qty-col" />
-      <col class="price-col" />
-      <col class="total-col" />
-    </colgroup>
+    ${bfaColgroup(target)}
     <tr class="blank-row">
-      <td class="spacer"></td>
+      ${spacer}
       <td colspan="6"></td>
     </tr>
     <tr>
-      <td class="spacer"></td>
+      ${spacer}
       <td colspan="6" class="title">BİRİM FİYAT ANALİZİ</td>
     </tr>
     <tr class="head-row">
-      <td class="spacer"></td>
+      ${spacer}
       <th>Poz No</th>
       <th colspan="4">Analiz Adı</th>
       <th>Ölçü Birimi</th>
     </tr>
     <tr class="meta-row">
-      <td class="spacer"></td>
+      ${spacer}
       ${excelPozNoCell(analiz.pozNo)}
       <td colspan="4" class="text">${escHtml(analiz.analizAdi)}</td>
       <td class="text">${escHtml(analiz.olcuBirimi)}</td>
     </tr>
     <tr class="head-row">
-      <td class="spacer"></td>
+      ${spacer}
       <th>Poz No</th>
       <th>Tanım</th>
       <th>Birim</th>
@@ -299,17 +344,17 @@ function buildBfaFormatBody(analiz: PozAnaliz, target: "excel" | "pdf"): string 
     </tr>
     ${tableRows}
     <tr>
-      <td class="spacer"></td>
+      ${spacer}
       <td colspan="5" class="text summary-label">Malzeme + İşçilik Tutarı</td>
       ${target === "excel" ? excelTlCell(totals.malzemeIscilikToplami) : pdfTlCell(totals.malzemeIscilikToplami)}
     </tr>
     <tr>
-      <td class="spacer"></td>
+      ${spacer}
       <td colspan="5" class="text summary-label">%${analiz.yukleniciKarOrani} Yüklenici Karı</td>
       ${target === "excel" ? excelTlCell(totals.yukleniciKarTutari) : pdfTlCell(totals.yukleniciKarTutari)}
     </tr>
     <tr>
-      <td class="spacer"></td>
+      ${spacer}
       <td colspan="5" class="text summary-label">1 ${escHtml(analiz.olcuBirimi)} Fiyatı</td>
       ${target === "excel" ? excelTlCell(totals.birimFiyati) : pdfTlCell(totals.birimFiyati)}
     </tr>
@@ -350,9 +395,9 @@ export function buildAnalizHtml(
 <head>
   <meta charset="utf-8" />
   <title>${escHtml(formatResmiPozNo(analiz.pozNo))} — BFA</title>
-  <style>${buildExportStyles(orientation)}</style>
+  <style>${buildPdfExportStyles(orientation)}</style>
 </head>
-<body>${buildBfaFormatBody(analiz, "pdf")}
+<body><div class="pdf-content">${buildBfaFormatBody(analiz, "pdf")}</div>
 </body>
 </html>`;
 }
@@ -362,6 +407,16 @@ function pdfPageSize(orientation: PdfPaperOrientation): { width: number; height:
   return orientation === "landscape"
     ? { width: 842, height: 595 }
     : { width: 595, height: 842 };
+}
+
+function pdfPageMarginsPt(): { top: number; right: number; bottom: number; left: number } {
+  const mmToPt = (mm: number) => (mm * 72) / 25.4;
+  return {
+    top: mmToPt(8),
+    bottom: mmToPt(8),
+    left: mmToPt(PDF_PAGE_MARGIN_MM),
+    right: mmToPt(PDF_PAGE_MARGIN_MM),
+  };
 }
 
 async function downloadOnWeb(content: string, filename: string, mime: string): Promise<void> {
@@ -467,7 +522,12 @@ export async function exportAnaliz(
 
     try {
       const Print = await import("expo-print");
-      const { uri } = await Print.printToFileAsync({ html, width, height });
+      const { uri } = await Print.printToFileAsync({
+        html,
+        width,
+        height,
+        margins: pdfPageMarginsPt(),
+      });
       await shareExportFile(uri, "PDF Dışa Aktar", "application/pdf");
     } catch {
       const filename = `analiz_${base}.html`;
