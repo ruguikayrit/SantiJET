@@ -75,6 +75,9 @@ export function SourceModal({ visible, onClose }: SourceModalProps) {
                   <Text style={[styles.sourceTitle, { color: colors.foreground }]}>
                     {item.title}
                   </Text>
+                  <Text style={[styles.sourceSubtitle, { color: colors.mutedForeground }]}>
+                    {item.subtitle}
+                  </Text>
                   <Text style={[styles.sourceAction, { color: colors.primary }]}>
                     → Resmi Kaynağı Aç
                   </Text>
@@ -205,6 +208,11 @@ const styles = StyleSheet.create({
     fontSize: 13,
     fontFamily: "Inter_700Bold",
     letterSpacing: 0.2,
+  },
+  sourceSubtitle: {
+    fontSize: 11,
+    fontFamily: "Inter_500Medium",
+    lineHeight: 15,
   },
   sourceAction: {
     fontSize: 11,

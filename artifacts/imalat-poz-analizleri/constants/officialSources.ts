@@ -13,9 +13,12 @@ export const SOURCE_DISTRIBUTION_NOTICE =
 export const SOURCE_VERIFICATION_TEXT =
   "Analiz, poz ve birim fiyat bilgilerinin nihai doğrulaması için ilgili kurumların güncel resmi yayınları esas alınmalıdır.";
 
+export const OFFICIAL_SOURCE_EDITION = "ÇŞİDB YFK 2026 Yayınları";
+
 export interface OfficialSourceLink {
   id: "insaat" | "mekanik" | "elektrik";
   title: string;
+  subtitle: string;
   url: string;
 }
 
@@ -23,16 +26,19 @@ export const OFFICIAL_SOURCE_LINKS: OfficialSourceLink[] = [
   {
     id: "insaat",
     title: "İnşaat Birim Fiyat ve Analizleri",
+    subtitle: OFFICIAL_SOURCE_EDITION,
     url: OFFICIAL_SOURCE_PORTAL_URL,
   },
   {
     id: "mekanik",
     title: "Mekanik Tesisat Birim Fiyat ve Analizleri",
+    subtitle: OFFICIAL_SOURCE_EDITION,
     url: OFFICIAL_SOURCE_PORTAL_URL,
   },
   {
     id: "elektrik",
     title: "Elektrik Tesisat Birim Fiyat ve Analizleri",
+    subtitle: OFFICIAL_SOURCE_EDITION,
     url: OFFICIAL_SOURCE_PORTAL_URL,
   },
 ];
