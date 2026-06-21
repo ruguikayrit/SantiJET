@@ -288,10 +288,9 @@ export default function HomeScreen() {
           ]}
         >
           <View style={[styles.recentBtnIcon, { backgroundColor: RECENT_COLOR + "1e" }]}>
-            <Feather name="clock" size={23} color={RECENT_COLOR} />
+            <Feather name="clock" size={21} color={RECENT_COLOR} />
           </View>
           <View style={styles.recentBtnBody}>
-            <Text style={styles.recentBtnNum}>HIZLI ERİŞİM</Text>
             <Text style={[styles.recentBtnLabel, { color: colors.cardForeground }]}>
               Son Görüntülenenler
             </Text>
@@ -323,10 +322,9 @@ export default function HomeScreen() {
           ]}
         >
           <View style={[styles.recentBtnIcon, { backgroundColor: KESIF_COLOR + "1e" }]}>
-            <Feather name="clipboard" size={23} color={KESIF_COLOR} />
+            <Feather name="clipboard" size={21} color={KESIF_COLOR} />
           </View>
           <View style={styles.recentBtnBody}>
-            <Text style={styles.recentBtnNum}>METRAJ / KEŞİF</Text>
             <Text style={[styles.recentBtnLabel, { color: colors.cardForeground }]}>
               Keşif Projeleri
             </Text>
@@ -358,12 +356,9 @@ export default function HomeScreen() {
           ]}
         >
           <View style={[styles.recentBtnIcon, { backgroundColor: KATALOG_COLOR + "1e" }]}>
-            <Feather name="book-open" size={23} color={KATALOG_COLOR} />
+            <Feather name="book-open" size={21} color={KATALOG_COLOR} />
           </View>
           <View style={styles.recentBtnBody}>
-            <Text style={styles.recentBtnNum} numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.8}>
-              BİRİM FİYAT ANALİZLERİ KATALOG
-            </Text>
             <Text style={[styles.recentBtnLabel, { color: colors.cardForeground }]}>
               Analiz Kataloğu
             </Text>
@@ -566,11 +561,13 @@ const styles = StyleSheet.create({
     width: "100%",
     flexDirection: "row",
     alignItems: "center",
-    gap: 13,
-    padding: 14,
+    gap: 11,
+    paddingHorizontal: 12,
+    paddingVertical: 11,
     borderRadius: 13,
     borderWidth: 1,
-    marginBottom: 11,
+    marginBottom: 9,
+    minHeight: 64,
     shadowColor: "#000",
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.1,
@@ -578,32 +575,26 @@ const styles = StyleSheet.create({
     elevation: 3,
   },
   recentBtnIcon: {
-    width: 47,
-    height: 47,
-    borderRadius: 24,
+    width: 42,
+    height: 42,
+    borderRadius: 21,
     justifyContent: "center",
     alignItems: "center",
   },
   recentBtnBody: {
     flex: 1,
-    gap: 3,
-  },
-  recentBtnNum: {
-    fontSize: 9,
-    fontFamily: "Inter_700Bold",
-    color: "#334155",
-    letterSpacing: 0.5,
+    gap: 4,
+    justifyContent: "center",
   },
   recentBtnLabel: {
-    fontSize: 12,
+    fontSize: 13,
     fontFamily: "Inter_700Bold",
-    letterSpacing: 0.4,
+    letterSpacing: 0.3,
   },
   recentBtnFoot: {
     flexDirection: "row",
     alignItems: "center",
     gap: 5,
-    marginTop: 1,
   },
   recentBtnDot: {
     width: 5,
@@ -615,9 +606,9 @@ const styles = StyleSheet.create({
     fontFamily: "Inter_500Medium",
   },
   recentBtnChev: {
-    width: 29,
-    height: 29,
-    borderRadius: 15,
+    width: 26,
+    height: 26,
+    borderRadius: 13,
     borderWidth: 1,
     justifyContent: "center",
     alignItems: "center",
