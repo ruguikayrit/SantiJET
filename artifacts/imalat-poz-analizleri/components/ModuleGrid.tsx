@@ -2,7 +2,7 @@ import React, { useState } from "react";
 import { StyleSheet, View } from "react-native";
 
 const GAP = 10;
-export const MODULE_TILE_H = 132;
+export const MODULE_TILE_H = 145;
 
 interface ModuleGridProps {
   children: React.ReactNode;
