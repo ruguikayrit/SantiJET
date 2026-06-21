@@ -33,7 +33,7 @@ const COL = {
   miktar: 64,
   birim: 44,
   tutar: 112,
-  del: 23,
+  del: 13,
   numGap: 6,
 } as const;
 
