@@ -173,33 +173,15 @@ export default function KesifDetailScreen() {
       </View>
 
       <View style={[styles.summary, { backgroundColor: colors.card, borderColor: colors.border }]}>
-        <View>
+        <View style={{ flex: 1 }}>
           <Text style={[styles.summaryLabel, { color: colors.mutedForeground }]}>Genel Toplam</Text>
           <Text style={[styles.summaryTotal, { color: KESIF_COLOR }]}>
             {trFmtKesif(toplam)} TL
           </Text>
         </View>
-        <View style={styles.summaryRight}>
-          <Text style={[styles.summaryMeta, { color: colors.mutedForeground }]}>
-            {project.satirlar.length} poz
-          </Text>
-          <TouchableOpacity
-            onPress={handleClearAllPoz}
-            style={[styles.summaryAction, { borderColor: colors.border, backgroundColor: colors.background }]}
-            activeOpacity={0.85}
-          >
-            <Feather name="minus-circle" size={14} color="#d97706" />
-            <Text style={styles.summaryActionText}>Tüm Pozları Sil</Text>
-          </TouchableOpacity>
-          <TouchableOpacity
-            onPress={handleDeleteProject}
-            style={[styles.summaryAction, styles.summaryActionDanger, { borderColor: "#e74c3c44" }]}
-            activeOpacity={0.85}
-          >
-            <Feather name="trash-2" size={14} color="#e74c3c" />
-            <Text style={[styles.summaryActionText, { color: "#e74c3c" }]}>Keşifi Sil</Text>
-          </TouchableOpacity>
-        </View>
+        <Text style={[styles.summaryMeta, { color: colors.mutedForeground }]}>
+          {project.satirlar.length} poz
+        </Text>
       </View>
 
       <View
@@ -219,7 +201,49 @@ export default function KesifDetailScreen() {
       <FlatList
         data={project.satirlar}
         keyExtractor={(item) => item.id}
-        contentContainerStyle={{ paddingBottom: insets.bottom + 88 }}
+        contentContainerStyle={{ paddingBottom: insets.bottom + 88, flexGrow: 1 }}
+        ListFooterComponent={
+          <View
+            style={[
+              styles.dangerZone,
+              { backgroundColor: colors.card, borderColor: colors.border },
+            ]}
+          >
+            <Text style={[styles.dangerZoneTitle, { color: colors.mutedForeground }]}>
+              Proje İşlemleri
+            </Text>
+            <TouchableOpacity
+              onPress={handleClearAllPoz}
+              style={[styles.dangerRow, { borderColor: colors.border }]}
+              activeOpacity={0.85}
+            >
+              <Feather name="minus-circle" size={18} color="#d97706" />
+              <View style={styles.dangerRowText}>
+                <Text style={[styles.dangerRowLabel, { color: colors.foreground }]}>
+                  Tüm Pozları Sil
+                </Text>
+                <Text style={[styles.dangerRowHint, { color: colors.mutedForeground }]}>
+                  Satırlar temizlenir, proje kalır
+                </Text>
+              </View>
+              <Feather name="chevron-right" size={16} color={colors.mutedForeground} />
+            </TouchableOpacity>
+            <TouchableOpacity
+              onPress={handleDeleteProject}
+              style={[styles.dangerRow, styles.dangerRowLast, { borderColor: "#e74c3c33" }]}
+              activeOpacity={0.85}
+            >
+              <Feather name="trash-2" size={18} color="#e74c3c" />
+              <View style={styles.dangerRowText}>
+                <Text style={[styles.dangerRowLabel, { color: "#e74c3c" }]}>Keşifi Sil</Text>
+                <Text style={[styles.dangerRowHint, { color: colors.mutedForeground }]}>
+                  Proje ve tüm pozlar kalıcı olarak silinir
+                </Text>
+              </View>
+              <Feather name="chevron-right" size={16} color="#e74c3c88" />
+            </TouchableOpacity>
+          </View>
+        }
         ListEmptyComponent={
           <View style={styles.emptyList}>
             <Feather name="plus-circle" size={36} color={colors.mutedForeground} />
@@ -476,24 +500,47 @@ const styles = StyleSheet.create({
   },
   summaryLabel: { fontSize: 11, fontFamily: "Inter_600SemiBold", textTransform: "uppercase" },
   summaryTotal: { fontSize: 22, fontFamily: "Inter_700Bold", marginTop: 2 },
-  summaryRight: { alignItems: "flex-end", gap: 8 },
-  summaryMeta: { fontSize: 12, fontFamily: "Inter_500Medium" },
-  summaryAction: {
+  summaryMeta: { fontSize: 12, fontFamily: "Inter_500Medium", alignSelf: "flex-end" },
+  dangerZone: {
+    marginHorizontal: 12,
+    marginTop: 20,
+    marginBottom: 8,
+    borderRadius: 12,
+    borderWidth: 1,
+    overflow: "hidden",
+  },
+  dangerZoneTitle: {
+    fontSize: 10,
+    fontFamily: "Inter_600SemiBold",
+    textTransform: "uppercase",
+    letterSpacing: 0.4,
+    paddingHorizontal: 14,
+    paddingTop: 12,
+    paddingBottom: 6,
+  },
+  dangerRow: {
     flexDirection: "row",
     alignItems: "center",
-    gap: 6,
-    paddingHorizontal: 10,
-    paddingVertical: 6,
-    borderRadius: 8,
-    borderWidth: 1,
+    gap: 12,
+    paddingHorizontal: 14,
+    paddingVertical: 12,
+    borderTopWidth: StyleSheet.hairlineWidth,
   },
-  summaryActionDanger: {
-    backgroundColor: "#e74c3c10",
+  dangerRowLast: {
+    backgroundColor: "#e74c3c08",
   },
-  summaryActionText: {
-    fontSize: 11,
+  dangerRowText: {
+    flex: 1,
+    gap: 2,
+  },
+  dangerRowLabel: {
+    fontSize: 14,
     fontFamily: "Inter_600SemiBold",
-    color: "#d97706",
+  },
+  dangerRowHint: {
+    fontSize: 11,
+    fontFamily: "Inter_400Regular",
+    lineHeight: 15,
   },
   tableHeader: {
     flexDirection: "row",
