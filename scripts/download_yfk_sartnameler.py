@@ -1,9 +1,10 @@
 #!/usr/bin/env python3
 """
 YFK ÇŞB şartnameler sayfasındaki PDF dosyalarını indirir ve ZIP olarak paketler.
+Resmi Gazete HTML sayfalarını WeasyPrint ile PDF'e dönüştürür.
 
 Bağımlılıklar:
-    pip install requests beautifulsoup4 lxml
+    pip install requests beautifulsoup4 lxml weasyprint
 
 Kullanım:
     python download_yfk_sartnameler.py
@@ -58,10 +59,34 @@ REQUEST_TIMEOUT = 30
 VERIFY_TIMEOUT = 12
 MAX_RETRIES = 4
 VERIFY_RETRIES = 2
+HTML_FETCH_RETRIES = 2
 RETRY_BACKOFF = 1.5
 CRAWL_WORKERS = 8
 DOWNLOAD_WORKERS = 6
+CONVERT_WORKERS = 3
 CHUNK_SIZE = 256 * 1024
+CONVERT_RESMI_GAZETE_HTML = True
+
+PDF_PRINT_CSS = """
+@page { size: A4; margin: 14mm 12mm; }
+body {
+  font-family: "DejaVu Sans", sans-serif;
+  font-size: 10pt;
+  line-height: 1.45;
+  color: #111;
+}
+h1, h2, h3 { page-break-after: avoid; }
+table { width: 100%; border-collapse: collapse; margin: 8px 0; }
+td, th { border: 1px solid #666; padding: 4px 6px; vertical-align: top; }
+p { margin: 6px 0; }
+.source-url {
+  font-size: 8pt;
+  color: #555;
+  border-bottom: 1px solid #ccc;
+  margin-bottom: 12px;
+  padding-bottom: 6px;
+}
+"""
 
 logger = logging.getLogger("yfk_pdf_scraper")
 
@@ -70,6 +95,12 @@ logger = logging.getLogger("yfk_pdf_scraper")
 class PdfTarget:
     url: str
     source: str
+
+
+@dataclass(frozen=True)
+class HtmlConvertTarget:
+    url: str
+    filename: str
 
 
 class ProgressTracker:
@@ -130,6 +161,17 @@ def is_pdf_url(url: str) -> bool:
     return path.endswith(".pdf")
 
 
+def is_resmigazete_html(url: str) -> bool:
+    if normalize_host(urlparse(url).netloc) != "resmigazete.gov.tr":
+        return False
+    return urlparse(url).path.lower().endswith((".htm", ".html"))
+
+
+def html_url_to_pdf_filename(url: str) -> str:
+    stem = Path(urlparse(url).path).stem or "resmigazete"
+    return sanitize_filename(f"{stem}.pdf")
+
+
 def is_crawl_candidate(url: str) -> bool:
     if not is_allowed_url(url):
         return False
@@ -158,6 +200,15 @@ def sanitize_filename(name: str) -> str:
     if not cleaned.lower().endswith(".pdf"):
         cleaned += ".pdf"
     return cleaned
+
+
+def esc_html(text: str) -> str:
+    return (
+        text.replace("&", "&amp;")
+        .replace("<", "&lt;")
+        .replace(">", "&gt;")
+        .replace('"', "&quot;")
+    )
 
 
 def build_session() -> requests.Session:
@@ -391,13 +442,23 @@ def verify_pdf_url(session: requests.Session, url: str) -> bool:
         return False
 
 
-def resolve_pdf_targets(session: requests.Session, seed_pdfs: set[str], seed_crawl: set[str]) -> list[PdfTarget]:
+def resolve_pdf_targets(
+    session: requests.Session,
+    seed_pdfs: set[str],
+    seed_crawl: set[str],
+    *,
+    convert_resmigazete_html: bool = CONVERT_RESMI_GAZETE_HTML,
+) -> list[PdfTarget]:
+    crawl_queue = {
+        url
+        for url in seed_crawl
+        if not (convert_resmigazete_html and is_resmigazete_html(url))
+    }
     pdf_urls: set[str] = set(seed_pdfs)
-    crawl_queue: set[str] = set(seed_crawl)
     visited_pages: set[str] = set()
     verified_pdfs: set[str] = set()
 
-    for page_url in seed_crawl:
+    for page_url in crawl_queue:
         pdf_urls.update(pdf_candidates_from_page_url(page_url))
 
     while crawl_queue:
@@ -473,6 +534,167 @@ def unique_destination_path(directory: Path, filename: str) -> Path:
         index += 1
 
 
+def fetch_html_page(session: requests.Session, url: str) -> tuple[str, str] | None:
+    try:
+        response = request_with_retries(
+            session,
+            "GET",
+            url,
+            max_retries=HTML_FETCH_RETRIES,
+        )
+    except FileNotFoundError:
+        logger.warning("HTML sayfa bulunamadı: %s", url)
+        return None
+    except requests.RequestException as exc:
+        logger.warning("HTML sayfa alınamadı: %s -> %s", url, exc)
+        return None
+
+    content_type = response.headers.get("Content-Type", "").lower()
+    if "text/html" not in content_type and "application/xhtml" not in content_type:
+        response.close()
+        logger.warning("HTML olmayan içerik atlandı: %s (%s)", url, content_type)
+        return None
+
+    html = response.text
+    final_url = normalize_url(response.url)
+    response.close()
+    return html, final_url
+
+
+def extract_resmigazete_body(html: str) -> tuple[str, str]:
+    soup = BeautifulSoup(html, "lxml")
+
+    for tag in soup.find_all(["script", "style", "noscript", "iframe", "meta", "link"]):
+        tag.decompose()
+
+    title = soup.title.get_text(" ", strip=True) if soup.title else "Resmî Gazete"
+
+    content = None
+    for selector in ("div.html-content", "#PageContent", "div#page-content", "body"):
+        node = soup.select_one(selector)
+        if node and len(node.get_text(" ", strip=True)) >= 80:
+            content = node
+            break
+
+    if content is None:
+        content = soup.body or soup
+
+    for tag in content.find_all(["nav", "header", "footer", "form"]):
+        tag.decompose()
+
+    for node in content.find_all(string=re.compile(r"Resmî Gazete'nin kurumsal mobil uygulaması", re.I)):
+        parent = node.parent
+        if parent is not None:
+            parent.decompose()
+
+    inner_html = content.decode_contents() if hasattr(content, "decode_contents") else str(content)
+    return title, inner_html
+
+
+def build_printable_html(title: str, body_html: str, source_url: str) -> str:
+    safe_title = esc_html(title)
+    safe_url = esc_html(source_url)
+    return f"""<!DOCTYPE html>
+<html lang="tr">
+<head>
+  <meta charset="utf-8" />
+  <title>{safe_title}</title>
+</head>
+<body>
+  <div class="source-url">Kaynak: {safe_url}</div>
+  <h1>{safe_title}</h1>
+  {body_html}
+</body>
+</html>"""
+
+
+def convert_html_to_pdf_file(html_document: str, base_url: str, destination: Path) -> None:
+    from weasyprint import CSS, HTML
+
+    HTML(string=html_document, base_url=base_url).write_pdf(
+        target=str(destination),
+        stylesheets=[CSS(string=PDF_PRINT_CSS)],
+    )
+
+
+def html_convert_targets(seed_crawl: set[str], output_dir: Path) -> list[HtmlConvertTarget]:
+    targets: list[HtmlConvertTarget] = []
+    seen_names: set[str] = set()
+
+    for url in sorted(seed_crawl):
+        if not is_resmigazete_html(url):
+            continue
+
+        filename = html_url_to_pdf_filename(url)
+        if filename in seen_names:
+            continue
+        if (output_dir / filename).exists():
+            continue
+
+        seen_names.add(filename)
+        targets.append(HtmlConvertTarget(url=url, filename=filename))
+
+    return targets
+
+
+def convert_html_page(
+    session: requests.Session,
+    target: HtmlConvertTarget,
+    output_dir: Path,
+) -> Path | None:
+    fetched = fetch_html_page(session, target.url)
+    if fetched is None:
+        return None
+
+    raw_html, final_url = fetched
+    try:
+        title, body_html = extract_resmigazete_body(raw_html)
+        printable = build_printable_html(title, body_html, final_url)
+        destination = unique_destination_path(output_dir, target.filename)
+        convert_html_to_pdf_file(printable, final_url, destination)
+
+        with destination.open("rb") as handle:
+            if handle.read(4) != b"%PDF":
+                destination.unlink(missing_ok=True)
+                logger.error("HTML'den üretilen dosya geçerli PDF değil: %s", target.url)
+                return None
+
+        logger.info("HTML→PDF: %s -> %s", target.url, destination.name)
+        return destination
+    except Exception as exc:  # noqa: BLE001
+        logger.error("HTML→PDF dönüşüm hatası %s -> %s", target.url, exc)
+        return None
+
+
+def convert_all_html_pages(
+    session: requests.Session,
+    targets: Iterable[HtmlConvertTarget],
+    output_dir: Path,
+) -> list[Path]:
+    target_list = list(targets)
+    if not target_list:
+        return []
+
+    converted: list[Path] = []
+    progress = ProgressTracker(len(target_list), "HTML→PDF dönüşüm")
+    with ThreadPoolExecutor(max_workers=CONVERT_WORKERS) as executor:
+        futures = {
+            executor.submit(convert_html_page, session, target, output_dir): target
+            for target in target_list
+        }
+        for future in as_completed(futures):
+            target = futures[future]
+            try:
+                path = future.result()
+                if path is not None:
+                    converted.append(path)
+            except Exception as exc:  # noqa: BLE001
+                logger.error("Dönüşüm hatası %s -> %s", target.url, exc)
+            progress.advance()
+    progress.finish()
+    return converted
+
+
 def download_pdf(session: requests.Session, target: PdfTarget, output_dir: Path) -> Path | None:
     try:
         response = request_with_retries(session, "GET", target.url, stream=True)
@@ -543,6 +765,13 @@ def main() -> int:
     zip_path = Path.cwd() / ZIP_NAME
     output_dir.mkdir(parents=True, exist_ok=True)
 
+    if CONVERT_RESMI_GAZETE_HTML:
+        try:
+            import weasyprint  # noqa: F401
+        except ImportError:
+            logger.error("WeasyPrint bulunamadı. Kurulum: pip install weasyprint")
+            return 4
+
     logger.info("Başlangıç sayfası alınıyor: %s", START_URL)
     try:
         response = request_with_retries(session, "GET", START_URL)
@@ -555,30 +784,42 @@ def main() -> int:
     response.close()
 
     seed_pdfs, seed_crawl = extract_sartname_links(html, final_url)
+    resmigazete_pages = sorted(url for url in seed_crawl if is_resmigazete_html(url))
     logger.info(
-        "Ana sayfada %s doğrudan PDF, %s taranacak alt bağlantı bulundu",
+        "Ana sayfada %s doğrudan PDF, %s taranacak alt bağlantı, %s Resmi Gazete HTML sayfası",
         len(seed_pdfs),
         len(seed_crawl),
+        len(resmigazete_pages),
     )
 
     targets = resolve_pdf_targets(session, seed_pdfs, seed_crawl)
-    logger.info("Toplam %s benzersiz PDF indirilecek", len(targets))
+    logger.info("Toplam %s doğrudan PDF indirilecek", len(targets))
 
-    if not targets:
-        logger.warning("İndirilecek PDF bulunamadı.")
-        return 2
+    downloaded_native: list[Path] = []
+    if targets:
+        downloaded_native = download_all_pdfs(session, targets, output_dir)
 
-    downloaded = download_all_pdfs(session, targets, output_dir)
-    if not downloaded:
-        logger.error("Hiç PDF indirilemedi.")
+    html_targets: list[HtmlConvertTarget] = []
+    converted_html: list[Path] = []
+    if CONVERT_RESMI_GAZETE_HTML:
+        html_targets = html_convert_targets(seed_crawl, output_dir)
+        logger.info("HTML→PDF dönüştürülecek %s Resmi Gazete sayfası", len(html_targets))
+        if html_targets:
+            converted_html = convert_all_html_pages(session, html_targets, output_dir)
+
+    all_downloaded = downloaded_native + converted_html
+    if not all_downloaded:
+        logger.error("Hiç PDF oluşturulamadı veya indirilemedi.")
         return 3
 
     create_zip(output_dir, zip_path)
 
     print("\nÖzet")
-    print(f"  PDF klasörü : {output_dir.resolve()}")
-    print(f"  ZIP dosyası : {zip_path.resolve()}")
-    print(f"  İndirilen   : {len(downloaded)} / {len(targets)}")
+    print(f"  PDF klasörü      : {output_dir.resolve()}")
+    print(f"  ZIP dosyası      : {zip_path.resolve()}")
+    print(f"  Doğrudan PDF      : {len(downloaded_native)}")
+    print(f"  HTML'den üretilen : {len(converted_html)}")
+    print(f"  Toplam            : {len(all_downloaded)}")
     return 0
 
 
