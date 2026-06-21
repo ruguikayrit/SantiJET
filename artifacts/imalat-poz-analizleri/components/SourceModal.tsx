@@ -90,12 +90,7 @@ export function SourceModal({ visible, onClose }: SourceModalProps) {
               Uygulama içi katalog son güncelleme: {DATA_UPDATE_LABEL}.
             </Text>
 
-            <View
-              style={[
-                styles.verifyCard,
-                { borderColor: colors.primary + "44", backgroundColor: colors.primary + "10" },
-              ]}
-            >
+            <View style={[styles.verifyCard, { backgroundColor: colors.success + "18" }]}>
               <Text style={[styles.verifyTitle, { color: colors.foreground }]}>Veri Doğrulama</Text>
               <Text style={[styles.body, { color: colors.mutedForeground }]}>
                 {SOURCE_VERIFICATION_TEXT}
@@ -227,7 +222,6 @@ const styles = StyleSheet.create({
     gap: 8,
     padding: 12,
     borderRadius: 12,
-    borderWidth: 1,
   },
   verifyTitle: {
     fontSize: 13,
