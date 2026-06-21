@@ -35,6 +35,7 @@ const COL = {
   tutar: 112,
   del: 3,
   numGap: 6,
+  tutarShift: 15,
 } as const;
 
 export default function KesifDetailScreen() {
@@ -365,6 +366,7 @@ const styles = StyleSheet.create({
     alignItems: "flex-start",
     gap: COL.numGap,
     flexShrink: 0,
+    paddingRight: COL.tutarShift,
   },
   numLeadGroup: {
     flexDirection: "row",
@@ -374,7 +376,7 @@ const styles = StyleSheet.create({
   },
   colMiktar: { width: COL.miktar, textAlign: "right" },
   colBirim: { width: COL.birim, textAlign: "center" },
-  colTutar: { width: COL.tutar, textAlign: "right" },
+  colTutar: { width: COL.tutar, textAlign: "right", marginLeft: -COL.tutarShift },
   row: {
     flexDirection: "row",
     alignItems: "flex-start",
@@ -431,6 +433,7 @@ const styles = StyleSheet.create({
     textAlign: "right",
     paddingTop: 6,
     letterSpacing: -0.2,
+    marginLeft: -COL.tutarShift,
   },
   delBtn: { width: COL.del, alignItems: "center", paddingTop: 4 },
   emptyList: { alignItems: "center", paddingTop: 60, gap: 10, paddingHorizontal: 24 },
