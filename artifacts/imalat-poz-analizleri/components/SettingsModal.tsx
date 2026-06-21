@@ -96,17 +96,17 @@ export function SettingsModal({ visible, onClose }: SettingsModalProps) {
   return (
     <Modal visible={visible} transparent animationType="fade" onRequestClose={onClose}>
       <Pressable style={styles.overlay} onPress={onClose}>
-        <Pressable
+        <View
           style={[styles.card, { backgroundColor: colors.card, borderColor: colors.border }]}
-          onPress={(e) => e.stopPropagation()}
         >
           <Text style={[styles.title, { color: colors.foreground }]}>Ayarlar</Text>
 
           <ScrollView
             style={styles.scroll}
             contentContainerStyle={styles.scrollContent}
-            showsVerticalScrollIndicator={false}
-            bounces={false}
+            showsVerticalScrollIndicator
+            keyboardShouldPersistTaps="handled"
+            nestedScrollEnabled
           >
             <Text style={[styles.sectionLabel, { color: colors.mutedForeground }]}>Tema</Text>
             <Text style={[styles.sectionHint, { color: colors.mutedForeground }]}>
@@ -278,7 +278,7 @@ export function SettingsModal({ visible, onClose }: SettingsModalProps) {
           >
             <Text style={{ color: colors.foreground, fontFamily: "Inter_500Medium" }}>Kapat</Text>
           </TouchableOpacity>
-        </Pressable>
+        </View>
       </Pressable>
 
       <LegalDocumentModal
@@ -304,21 +304,26 @@ const styles = StyleSheet.create({
     width: "100%",
     maxWidth: 400,
     maxHeight: "88%",
+    flexShrink: 1,
     borderRadius: 16,
     borderWidth: 1,
     padding: 18,
     gap: 10,
+    overflow: "hidden",
   },
   title: {
     fontSize: 17,
     fontFamily: "Inter_700Bold",
+    flexShrink: 0,
   },
   scroll: {
-    flexGrow: 0,
+    flexGrow: 1,
+    flexShrink: 1,
+    minHeight: 0,
   },
   scrollContent: {
     gap: 10,
-    paddingBottom: 4,
+    paddingBottom: 8,
   },
   sectionLabel: {
     fontSize: 12,
@@ -420,5 +425,6 @@ const styles = StyleSheet.create({
     paddingVertical: 12,
     borderRadius: 10,
     alignItems: "center",
+    flexShrink: 0,
   },
 });
