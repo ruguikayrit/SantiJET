@@ -17,7 +17,7 @@ import {
 import { Swipeable } from "react-native-gesture-handler";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
-import { BulkExportModal } from "@/components/BulkExportModal";
+import { KesifExportModal } from "@/components/KesifExportModal";
 import { KesifPozPickerModal } from "@/components/KesifPozPickerModal";
 import { hesaplaKesifToplam, KesifSatiri, trFmtKesif } from "@/constants/kesif";
 import { PozAnaliz } from "@/constants/pozAnalizleri";
@@ -210,16 +210,11 @@ export default function KesifDetailScreen() {
         onSelect={handleAddSatir}
       />
 
-      <BulkExportModal
+      <KesifExportModal
         visible={exportVisible}
-        count={project.satirlar.length}
-        title="Keşifi Dışa Aktar"
-        subtitle="Metraj cetveli PDF veya Excel olarak"
-        pdfHint="Yazdırılabilir keşif cetveli"
-        excelHint="Excel ve Numbers ile açılır"
-        orientationHint="Keşif cetveli için kağıt yönü"
+        project={kesif}
         onClose={() => setExportVisible(false)}
-        onSelect={handleExport}
+        onExport={handleExport}
       />
 
       <Modal
