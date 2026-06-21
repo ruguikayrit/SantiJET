@@ -1,9 +1,104 @@
 {
-  "generated_at": "2026-06-21 01:58 UTC",
+  "generated_at": "2026-06-21 02:09 UTC",
   "zip": "yfk_sartnameler.zip",
-  "zip_bytes": 392070,
-  "pdf_count": 2,
+  "zip_bytes": 815811,
+  "pdf_count": 21,
   "files": [
+    {
+      "name": "20070630M1-1.pdf",
+      "url": "20070630M1-1.pdf",
+      "bytes": 20339
+    },
+    {
+      "name": "20070630M1.pdf",
+      "url": "20070630M1.pdf",
+      "bytes": 16839
+    },
+    {
+      "name": "20180530-7.pdf",
+      "url": "20180530-7.pdf",
+      "bytes": 22804
+    },
+    {
+      "name": "20180818-1.pdf",
+      "url": "20180818-1.pdf",
+      "bytes": 22861
+    },
+    {
+      "name": "20181129-7.pdf",
+      "url": "20181129-7.pdf",
+      "bytes": 22958
+    },
+    {
+      "name": "20190131-3.pdf",
+      "url": "20190131-3.pdf",
+      "bytes": 31398
+    },
+    {
+      "name": "20190306-5.pdf",
+      "url": "20190306-5.pdf",
+      "bytes": 22375
+    },
+    {
+      "name": "20191201-4.pdf",
+      "url": "20191201-4.pdf",
+      "bytes": 22928
+    },
+    {
+      "name": "20200119-5.pdf",
+      "url": "20200119-5.pdf",
+      "bytes": 21139
+    },
+    {
+      "name": "20200312-10.pdf",
+      "url": "20200312-10.pdf",
+      "bytes": 24723
+    },
+    {
+      "name": "20200612-2.pdf",
+      "url": "20200612-2.pdf",
+      "bytes": 34274
+    },
+    {
+      "name": "20201125M1-1.pdf",
+      "url": "20201125M1-1.pdf",
+      "bytes": 23519
+    },
+    {
+      "name": "20201223-5.pdf",
+      "url": "20201223-5.pdf",
+      "bytes": 24416
+    },
+    {
+      "name": "20210911-2.pdf",
+      "url": "20210911-2.pdf",
+      "bytes": 23728
+    },
+    {
+      "name": "20211216-6.pdf",
+      "url": "20211216-6.pdf",
+      "bytes": 24944
+    },
+    {
+      "name": "20220615-4.pdf",
+      "url": "20220615-4.pdf",
+      "bytes": 20218
+    },
+    {
+      "name": "20240805M1-1.pdf",
+      "url": "20240805M1-1.pdf",
+      "bytes": 20929
+    },
+    {
+      "name": "20240818-2.pdf",
+      "url": "20240818-2.pdf",
+      "bytes": 20622
+    },
+    {
+      "name": "20251202-4.pdf",
+      "url": "20251202-4.pdf",
+      "bytes": 19470
+    },
     {
       "name": "gorev-4725-sayili-kanun-metni-20201104125832.pdf",
       "url": "gorev-4725-sayili-kanun-metni-20201104125832.pdf",

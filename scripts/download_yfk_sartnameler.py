@@ -534,31 +534,63 @@ def unique_destination_path(directory: Path, filename: str) -> Path:
         index += 1
 
 
+def wayback_fallback_urls(url: str) -> list[str]:
+    match = re.search(r"/eskiler/(\d{4})/", urlparse(url).path)
+    years: list[str] = []
+    if match:
+        year = int(match.group(1))
+        years.extend(str(y) for y in range(year, min(year + 3, 2026)))
+    years.extend(["2024", "2023", ""])
+    seen: set[str] = set()
+    candidates: list[str] = []
+    for year in years:
+        prefix = f"https://web.archive.org/web/{year}/" if year else "https://web.archive.org/web/"
+        candidate = f"{prefix}{url}"
+        if candidate not in seen:
+            seen.add(candidate)
+            candidates.append(candidate)
+    return candidates
+
+
 def fetch_html_page(session: requests.Session, url: str) -> tuple[str, str] | None:
-    try:
-        response = request_with_retries(
-            session,
-            "GET",
-            url,
-            max_retries=HTML_FETCH_RETRIES,
-        )
-    except FileNotFoundError:
-        logger.warning("HTML sayfa bulunamadı: %s", url)
-        return None
-    except requests.RequestException as exc:
-        logger.warning("HTML sayfa alınamadı: %s -> %s", url, exc)
-        return None
+    sources = [url, *wayback_fallback_urls(url)]
+    last_error: str | None = None
 
-    content_type = response.headers.get("Content-Type", "").lower()
-    if "text/html" not in content_type and "application/xhtml" not in content_type:
+    for source in sources:
+        try:
+            response = request_with_retries(
+                session,
+                "GET",
+                source,
+                max_retries=HTML_FETCH_RETRIES,
+            )
+        except FileNotFoundError:
+            last_error = f"404: {source}"
+            continue
+        except requests.RequestException as exc:
+            last_error = str(exc)
+            continue
+
+        content_type = response.headers.get("Content-Type", "").lower()
+        if "text/html" not in content_type and "application/xhtml" not in content_type:
+            response.close()
+            last_error = f"HTML değil: {source}"
+            continue
+
+        html = response.text
+        final_url = normalize_url(url)
         response.close()
-        logger.warning("HTML olmayan içerik atlandı: %s (%s)", url, content_type)
-        return None
 
-    html = response.text
-    final_url = normalize_url(response.url)
-    response.close()
-    return html, final_url
+        if len(re.sub(r"\s+", "", html)) < 200:
+            last_error = f"Çok kısa içerik: {source}"
+            continue
+
+        if source != url:
+            logger.info("Wayback yedek kaynak kullanıldı: %s", source)
+        return html, final_url
+
+    logger.warning("HTML sayfa alınamadı: %s -> %s", url, last_error)
+    return None
 
 
 def extract_resmigazete_body(html: str) -> tuple[str, str]:
