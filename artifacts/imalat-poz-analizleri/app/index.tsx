@@ -21,7 +21,7 @@ import { RecentViewsModal } from "@/components/RecentViewsModal";
 import { SettingsModal } from "@/components/SettingsModal";
 import { ModuleGrid } from "@/components/ModuleGrid";
 import { ModuleTile } from "@/components/ModuleTile";
-import { BFA_DISCIPLINES, BFA_MODULES, BfaDiscipline, resolveAnalizDiscipline } from "@/constants/bfaModules";
+import { BFA_DISCIPLINES, BFA_MODULES, BfaDiscipline, resolveAnalizDiscipline, stripModuleLabelSuffix } from "@/constants/bfaModules";
 import { matchesPozAnalizSearch } from "@/constants/pozAnalizleri";
 import { useKesif } from "@/context/KesifContext";
 import { useBfaCatalog } from "@/hooks/useBfaCatalog";
@@ -103,7 +103,7 @@ export default function HomeScreen() {
     if (loading) return "Yükleniyor…";
     const parts = BFA_DISCIPLINES.map((d) => {
       const mod = BFA_MODULES.find((m) => m.modul === d);
-      const short = mod?.label.replace(" B.F.A.", "").replace(" TESİSAT", "") ?? d;
+      const short = stripModuleLabelSuffix(mod?.label ?? d).replace(" TESİSAT", "");
       const catSet = new Set<string>();
       for (const a of stats[d]) {
         const k = a.kategori?.trim();
@@ -271,8 +271,13 @@ export default function HomeScreen() {
         >
           <View style={styles.welcomeMain}>
             <Text style={styles.welcomeGreet}>Hoş geldiniz</Text>
-            <Text style={[styles.welcomeName, { color: colors.secondaryForeground }]}>
-              ŞANTİJET B.F.A.
+            <Text
+              style={[styles.welcomeName, { color: colors.secondaryForeground }]}
+              numberOfLines={2}
+              adjustsFontSizeToFit
+              minimumFontScale={0.75}
+            >
+              ŞANTİJET BİRİM FİYAT ANALİZLERİ
             </Text>
             <Text
               style={styles.welcomeRole}
@@ -380,7 +385,9 @@ export default function HomeScreen() {
             <Feather name="book-open" size={23} color={KATALOG_COLOR} />
           </View>
           <View style={styles.recentBtnBody}>
-            <Text style={styles.recentBtnNum}>B.F.A. KATALOG</Text>
+            <Text style={styles.recentBtnNum} numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.8}>
+              BİRİM FİYAT ANALİZLERİ KATALOG
+            </Text>
             <Text style={[styles.recentBtnLabel, { color: colors.cardForeground }]}>
               Analiz Kataloğu
             </Text>

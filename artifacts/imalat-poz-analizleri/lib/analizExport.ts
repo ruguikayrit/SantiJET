@@ -371,11 +371,11 @@ export function buildAnalizExcelHtml(analiz: PozAnaliz): string {
       xmlns="http://www.w3.org/TR/REC-html40">
 <head>
   <meta charset="utf-8" />
-  <title>${escHtml(formatResmiPozNo(analiz.pozNo))} — BFA</title>
+  <title>${escHtml(formatResmiPozNo(analiz.pozNo))} — Birim Fiyat Analizi</title>
   <!--[if gte mso 9]><xml>
     <x:ExcelWorkbook>
       <x:ExcelWorksheets><x:ExcelWorksheet>
-        <x:Name>BFA</x:Name>
+        <x:Name>Birim Fiyat Analizi</x:Name>
         <x:WorksheetOptions><x:DisplayGridlines/></x:WorksheetOptions>
       </x:ExcelWorksheet></x:ExcelWorksheets>
     </x:ExcelWorkbook>
@@ -395,7 +395,7 @@ export function buildAnalizHtml(
 <html lang="tr">
 <head>
   <meta charset="utf-8" />
-  <title>${escHtml(formatResmiPozNo(analiz.pozNo))} — BFA</title>
+  <title>${escHtml(formatResmiPozNo(analiz.pozNo))} — Birim Fiyat Analizi</title>
   <style>${buildPdfExportStyles(orientation)}</style>
 </head>
 <body><div class="pdf-content">${buildBfaFormatBody(analiz, "pdf")}</div>

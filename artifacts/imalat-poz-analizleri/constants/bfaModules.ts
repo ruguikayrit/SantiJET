@@ -11,6 +11,29 @@ export type BfaModuleIcon = ComponentProps<typeof Feather>["name"];
 
 export const BFA_DISCIPLINES: BfaDiscipline[] = ["insaat", "mekanik", "elektrik"];
 
+export const MODULE_LABEL_SUFFIX = " BİRİM FİYAT ANALİZLERİ";
+export const MODULE_SUBTITLE_LABEL = "BİRİM FİYAT ANALİZLERİ";
+
+export function stripModuleLabelSuffix(label: string): string {
+  if (label.endsWith(MODULE_LABEL_SUFFIX)) {
+    return label.slice(0, -MODULE_LABEL_SUFFIX.length);
+  }
+  return label;
+}
+
+export function parseModuleTileLabel(label: string): {
+  title: string;
+  subtitle: string | null;
+} {
+  if (label.endsWith(MODULE_LABEL_SUFFIX)) {
+    return {
+      title: label.slice(0, -MODULE_LABEL_SUFFIX.length),
+      subtitle: MODULE_SUBTITLE_LABEL,
+    };
+  }
+  return { title: label, subtitle: null };
+}
+
 export interface BfaCatalogStats {
   insaat: PozAnaliz[];
   mekanik: PozAnaliz[];
@@ -35,8 +58,8 @@ export interface BfaModuleDef {
 export const BFA_MODULES: BfaModuleDef[] = [
   {
     num: "01",
-    label: "İNŞAAT B.F.A.",
-    screenTitle: "İnşaat B.F.A.",
+    label: "İNŞAAT BİRİM FİYAT ANALİZLERİ",
+    screenTitle: "İnşaat Birim Fiyat Analizleri",
     icon: "layers",
     color: "#d97706",
     infoSuffix: "Analiz",
@@ -46,8 +69,8 @@ export const BFA_MODULES: BfaModuleDef[] = [
   },
   {
     num: "02",
-    label: "MEKANİK TESİSAT B.F.A.",
-    screenTitle: "Mekanik Tesisat B.F.A.",
+    label: "MEKANİK TESİSAT BİRİM FİYAT ANALİZLERİ",
+    screenTitle: "Mekanik Tesisat Birim Fiyat Analizleri",
     icon: "settings",
     color: "#0891b2",
     infoSuffix: "Analiz",
@@ -57,8 +80,8 @@ export const BFA_MODULES: BfaModuleDef[] = [
   },
   {
     num: "03",
-    label: "ELEKTRİK TESİSAT B.F.A.",
-    screenTitle: "Elektrik Tesisat B.F.A.",
+    label: "ELEKTRİK TESİSAT BİRİM FİYAT ANALİZLERİ",
+    screenTitle: "Elektrik Tesisat Birim Fiyat Analizleri",
     icon: "zap",
     color: "#16a34a",
     infoSuffix: "Analiz",

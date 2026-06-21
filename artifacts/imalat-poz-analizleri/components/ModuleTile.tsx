@@ -8,17 +8,9 @@ import {
   View,
 } from "react-native";
 
-import type { BfaModuleIcon } from "@/constants/bfaModules";
+import { parseModuleTileLabel, type BfaModuleIcon } from "@/constants/bfaModules";
 
 const ICON_LABEL_GAP = 3;
-
-function parseTileLabel(label: string): { title: string; bfa: string | null } {
-  const suffix = " B.F.A.";
-  if (label.endsWith(suffix)) {
-    return { title: label.slice(0, -suffix.length), bfa: "B.F.A." };
-  }
-  return { title: label, bfa: null };
-}
 
 interface ModuleTileProps {
   num: string;
@@ -43,7 +35,7 @@ export function ModuleTile({
   cardBackground,
   onPress,
 }: ModuleTileProps) {
-  const { title, bfa } = parseTileLabel(label);
+  const { title, subtitle } = parseModuleTileLabel(label);
 
   return (
     <TouchableOpacity
@@ -70,9 +62,14 @@ export function ModuleTile({
           <Text style={[styles.tileLabel, { color: cardForeground }]} numberOfLines={2}>
             {title.toUpperCase()}
           </Text>
-          {bfa ? (
-            <Text style={[styles.tileLabelBfa, { color: cardForeground }]} numberOfLines={1}>
-              {bfa}
+          {subtitle ? (
+            <Text
+              style={[styles.tileSubtitle, { color: cardForeground }]}
+              numberOfLines={2}
+              adjustsFontSizeToFit
+              minimumFontScale={0.7}
+            >
+              {subtitle}
             </Text>
           ) : null}
         </View>
@@ -144,11 +141,12 @@ const styles = StyleSheet.create({
     textAlign: "center",
     letterSpacing: 0.4,
   },
-  tileLabelBfa: {
-    fontSize: 9,
+  tileSubtitle: {
+    fontSize: 7,
     fontFamily: "Inter_700Bold",
     textAlign: "center",
-    letterSpacing: 0.5,
+    letterSpacing: 0.2,
+    lineHeight: 9,
     marginTop: -1,
   },
   tileFootRow: {
