@@ -50,15 +50,22 @@ function SourceDisclaimer({
   bottomInset: number;
 }) {
   return (
-    <Text
+    <View
       style={[
-        styles.sourceDisclaimer,
-        { color, paddingBottom: bottomInset + 24, paddingTop: 20 },
+        styles.sourceDisclaimerWrap,
+        { paddingBottom: bottomInset + 24, paddingTop: 20 },
       ]}
     >
-      Veriler kamu kurumlarının yayımladığı kaynaklardan derlenmiştir. Nihai doğrulama için
-      ilgili kurumların güncel resmi yayınları esas alınmalıdır.
-    </Text>
+      <Text style={[styles.sourceDisclaimer, { color }]}>
+        Bu uygulama resmi kurumlarla bağlantılı değildir.
+      </Text>
+      <Text style={[styles.sourceDisclaimer, { color }]}>
+        Veriler kamu kurumlarının yayımladığı resmi kaynaklardan derlenmiştir.
+      </Text>
+      <Text style={[styles.sourceDisclaimer, { color }]}>
+        Nihai doğrulama için ilgili kurumların güncel yayınları esas alınmalıdır.
+      </Text>
+    </View>
   );
 }
 
@@ -615,11 +622,14 @@ const styles = StyleSheet.create({
     justifyContent: "center",
     alignItems: "center",
   },
+  sourceDisclaimerWrap: {
+    paddingHorizontal: 16,
+    gap: 6,
+  },
   sourceDisclaimer: {
     fontSize: 10,
     fontFamily: "Inter_400Regular",
     lineHeight: 14,
     textAlign: "center",
-    paddingHorizontal: 16,
   },
 });
