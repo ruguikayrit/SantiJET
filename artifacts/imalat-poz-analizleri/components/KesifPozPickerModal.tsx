@@ -1,15 +1,17 @@
 import { Feather } from "@expo/vector-icons";
-import React, { useMemo, useState } from "react";
+import React, { useEffect, useMemo, useState } from "react";
 import {
   ActivityIndicator,
   FlatList,
   Modal,
+  Platform,
   StyleSheet,
   Text,
   TextInput,
   TouchableOpacity,
   View,
 } from "react-native";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 import { PozAnaliz, matchesPozAnalizSearch } from "@/constants/pozAnalizleri";
 import { useBfaCatalog } from "@/hooks/useBfaCatalog";
@@ -23,10 +25,20 @@ interface KesifPozPickerModalProps {
 
 export function KesifPozPickerModal({ visible, onClose, onSelect }: KesifPozPickerModalProps) {
   const colors = useColors();
+  const insets = useSafeAreaInsets();
+  const topPad = Platform.OS === "web" ? 16 : insets.top;
   const { all, loading } = useBfaCatalog();
   const [search, setSearch] = useState("");
   const [selected, setSelected] = useState<PozAnaliz | null>(null);
   const [miktar, setMiktar] = useState("1");
+
+  useEffect(() => {
+    if (!visible) {
+      setSearch("");
+      setSelected(null);
+      setMiktar("1");
+    }
+  }, [visible]);
 
   const filtered = useMemo(() => {
     if (!search.trim()) return all.slice(0, 50);
@@ -55,16 +67,34 @@ export function KesifPozPickerModal({ visible, onClose, onSelect }: KesifPozPick
   }
 
   return (
-    <Modal visible={visible} animationType="slide" onRequestClose={handleClose}>
+    <Modal
+      visible={visible}
+      animationType="slide"
+      onRequestClose={handleClose}
+      presentationStyle="pageSheet"
+    >
       <View style={[styles.host, { backgroundColor: colors.background }]}>
-        <View style={[styles.header, { backgroundColor: colors.secondary, borderBottomColor: colors.border }]}>
-          <TouchableOpacity onPress={handleClose} style={styles.iconBtn}>
+        <View
+          style={[
+            styles.header,
+            {
+              backgroundColor: colors.secondary,
+              borderBottomColor: colors.border,
+              paddingTop: topPad + 8,
+            },
+          ]}
+        >
+          <TouchableOpacity onPress={handleClose} style={styles.iconBtn} accessibilityLabel="Kapat">
             <Feather name="x" size={22} color={colors.secondaryForeground} />
           </TouchableOpacity>
           <Text style={[styles.headerTitle, { color: colors.secondaryForeground }]}>
             {selected ? "Miktar Gir" : "Poz Seç"}
           </Text>
-          <View style={{ width: 40 }} />
+          <TouchableOpacity onPress={handleClose} style={styles.cancelHeaderBtn}>
+            <Text style={[styles.cancelHeaderText, { color: colors.secondaryForeground }]}>
+              İptal
+            </Text>
+          </TouchableOpacity>
         </View>
 
         {selected ? (
@@ -94,6 +124,12 @@ export function KesifPozPickerModal({ visible, onClose, onSelect }: KesifPozPick
                 <Text style={{ color: colors.foreground, fontFamily: "Inter_500Medium" }}>Geri</Text>
               </TouchableOpacity>
               <TouchableOpacity
+                style={[styles.btn, { backgroundColor: colors.border }]}
+                onPress={handleClose}
+              >
+                <Text style={{ color: colors.foreground, fontFamily: "Inter_500Medium" }}>İptal</Text>
+              </TouchableOpacity>
+              <TouchableOpacity
                 style={[styles.btn, { backgroundColor: colors.primary, flex: 1.2 }]}
                 onPress={handleConfirm}
               >
@@ -102,7 +138,7 @@ export function KesifPozPickerModal({ visible, onClose, onSelect }: KesifPozPick
             </View>
           </View>
         ) : (
-          <>
+          <View style={styles.listPane}>
             <View
               style={[
                 styles.searchWrap,
@@ -129,9 +165,11 @@ export function KesifPozPickerModal({ visible, onClose, onSelect }: KesifPozPick
               <ActivityIndicator style={{ marginTop: 40 }} color={colors.primary} />
             ) : (
               <FlatList
+                style={styles.list}
                 data={filtered}
                 keyExtractor={(item) => item.id}
                 keyboardShouldPersistTaps="handled"
+                contentContainerStyle={{ paddingBottom: 12 }}
                 renderItem={({ item }) => (
                   <TouchableOpacity
                     style={[styles.row, { borderColor: colors.border, backgroundColor: colors.card }]}
@@ -154,7 +192,27 @@ export function KesifPozPickerModal({ visible, onClose, onSelect }: KesifPozPick
                 }
               />
             )}
-          </>
+
+            <View
+              style={[
+                styles.footer,
+                {
+                  borderTopColor: colors.border,
+                  backgroundColor: colors.card,
+                  paddingBottom: Math.max(insets.bottom, 12),
+                },
+              ]}
+            >
+              <TouchableOpacity
+                style={[styles.footerBtn, { backgroundColor: colors.border }]}
+                onPress={handleClose}
+              >
+                <Text style={{ color: colors.foreground, fontFamily: "Inter_600SemiBold" }}>
+                  Seçim yapmadan çık
+                </Text>
+              </TouchableOpacity>
+            </View>
+          </View>
         )}
       </View>
     </Modal>
@@ -163,6 +221,8 @@ export function KesifPozPickerModal({ visible, onClose, onSelect }: KesifPozPick
 
 const styles = StyleSheet.create({
   host: { flex: 1 },
+  listPane: { flex: 1 },
+  list: { flex: 1 },
   header: {
     flexDirection: "row",
     alignItems: "center",
@@ -175,6 +235,17 @@ const styles = StyleSheet.create({
     height: 40,
     alignItems: "center",
     justifyContent: "center",
+  },
+  cancelHeaderBtn: {
+    minWidth: 52,
+    height: 40,
+    alignItems: "flex-end",
+    justifyContent: "center",
+    paddingRight: 4,
+  },
+  cancelHeaderText: {
+    fontSize: 14,
+    fontFamily: "Inter_600SemiBold",
   },
   headerTitle: {
     flex: 1,
@@ -233,6 +304,16 @@ const styles = StyleSheet.create({
   btn: {
     flex: 1,
     paddingVertical: 13,
+    borderRadius: 10,
+    alignItems: "center",
+  },
+  footer: {
+    borderTopWidth: 1,
+    paddingHorizontal: 12,
+    paddingTop: 12,
+  },
+  footerBtn: {
+    paddingVertical: 14,
     borderRadius: 10,
     alignItems: "center",
   },
