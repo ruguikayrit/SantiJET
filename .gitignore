@@ -55,3 +55,5 @@ scripts/yfk_pdfs/
 scripts/yfk_sartnameler.zip
 yfk_pdfs/
 yfk_sartnameler.zip
+!scripts/downloads/
+!scripts/downloads/**
