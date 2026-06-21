@@ -19,11 +19,12 @@ import {
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 import { useApp } from "@/context/AppContext";
+import { BulkExportModal } from "@/components/BulkExportModal";
 import { ExportFormatModal } from "@/components/ExportFormatModal";
 import { useBfaCatalog } from "@/hooks/useBfaCatalog";
 import { useColors } from "@/hooks/useColors";
 import { useRecentViews } from "@/hooks/useRecentViews";
-import { AnalizExportFormat, exportAnaliz, PdfPaperOrientation, waitForShareSheet } from "@/lib/analizExport";
+import { AnalizExportFormat, exportAnaliz, exportBulkAnalizler, PdfPaperOrientation, waitForShareSheet } from "@/lib/analizExport";
 import {
   BfaDiscipline,
   BfaModuleKey,
@@ -108,6 +109,9 @@ export default function ImalatPozlariScreen() {
   const [cloneVisible, setCloneVisible] = useState(false);
   const [cloneAd, setCloneAd] = useState("");
   const [exportVisible, setExportVisible] = useState(false);
+  const [bulkExportVisible, setBulkExportVisible] = useState(false);
+  const [selectMode, setSelectMode] = useState(false);
+  const [selectedIds, setSelectedIds] = useState<Set<string>>(() => new Set());
   const [metrajMiktar, setMetrajMiktar] = useState("1");
 
   const [catPickerOpen, setCatPickerOpen] = useState(false);
@@ -344,6 +348,47 @@ export default function ImalatPozlariScreen() {
     setExportVisible(false);
     await waitForShareSheet();
     await exportAnaliz(analiz, format, { pdfOrientation });
+  }
+
+  const selectedAnalizler = useMemo(
+    () => modulAnalizleri.filter((a) => selectedIds.has(a.id)),
+    [modulAnalizleri, selectedIds],
+  );
+
+  function toggleSelectMode() {
+    setSelectMode((prev) => {
+      if (prev) setSelectedIds(new Set());
+      return !prev;
+    });
+  }
+
+  function toggleSelected(id: string) {
+    setSelectedIds((prev) => {
+      const next = new Set(prev);
+      if (next.has(id)) next.delete(id);
+      else next.add(id);
+      return next;
+    });
+  }
+
+  function handleCompareSelected() {
+    if (selectedIds.size < 2) {
+      Alert.alert("Karşılaştırma", "En az 2 analiz seçin.");
+      return;
+    }
+    router.push({
+      pathname: "/analiz-karsilastir",
+      params: { ids: [...selectedIds].join(",") },
+    } as any);
+  }
+
+  async function handleBulkExportFormat(format: AnalizExportFormat, pdfOrientation?: PdfPaperOrientation) {
+    if (!selectedAnalizler.length) return;
+    setBulkExportVisible(false);
+    setSelectMode(false);
+    setSelectedIds(new Set());
+    await waitForShareSheet();
+    await exportBulkAnalizler(selectedAnalizler, format, { pdfOrientation });
   }
 
   const displayAnaliz = isEditing && editDraft ? editDraft : selected;
@@ -776,7 +821,8 @@ export default function ImalatPozlariScreen() {
         <ExportFormatModal
           visible={exportVisible}
           onClose={() => setExportVisible(false)}
-          onSelect={handleExportFormat}
+          analiz={displayAnaliz}
+          onExport={handleExportFormat}
         />
 
         {/* Kopyalama modalı */}
@@ -829,8 +875,26 @@ export default function ImalatPozlariScreen() {
             {screenTitle}
           </Text>
         </View>
-        <View style={{ width: 40 }} />
+        <TouchableOpacity onPress={toggleSelectMode} style={st.backBtn}>
+          <Feather
+            name={selectMode ? "x" : "check-square"}
+            size={20}
+            color={colors.secondaryForeground}
+          />
+        </TouchableOpacity>
       </View>
+
+      {/* Seçim modu bilgi şeridi */}
+      {selectMode && (
+        <View style={[st.selectBar, { backgroundColor: colors.primary + "14", borderColor: colors.primary + "33" }]}>
+          <Text style={[st.selectBarText, { color: colors.primary }]}>
+            {selectedIds.size} analiz seçildi
+          </Text>
+          <TouchableOpacity onPress={toggleSelectMode}>
+            <Text style={[st.selectBarAction, { color: colors.mutedForeground }]}>İptal</Text>
+          </TouchableOpacity>
+        </View>
+      )}
 
       {/* Arama */}
       <View
@@ -887,6 +951,7 @@ export default function ImalatPozlariScreen() {
           { backgroundColor: colors.card, borderColor: colors.border },
         ]}
       >
+        {selectMode && <Text style={[st.listTh, { width: 32, color: colors.mutedForeground }]}> </Text>}
         <Text style={[st.listTh, { width: 36, color: colors.mutedForeground }]}>#</Text>
         <Text style={[st.listTh, { width: 104, color: colors.mutedForeground }]}>Poz No</Text>
         <Text style={[st.listTh, { flex: 1, color: colors.mutedForeground }]}>Analizin Adı</Text>
@@ -899,30 +964,56 @@ export default function ImalatPozlariScreen() {
       <FlatList
         data={filtered}
         keyExtractor={(item) => item.id}
-        extraData={`${catFilter ?? ""}|${search}|${filtered.length}`}
+        extraData={`${catFilter ?? ""}|${search}|${filtered.length}|${selectMode}|${selectedIds.size}`}
         initialNumToRender={20}
         windowSize={10}
         keyboardShouldPersistTaps="handled"
-        renderItem={({ item, index }) => (
-          <TouchableOpacity
-            style={[
-              st.listRow,
-              {
-                borderColor: colors.border,
-                backgroundColor: index % 2 === 0 ? colors.background : colors.card + "66",
-              },
-            ]}
-            onPress={() => openDetail(item.id)}
-            activeOpacity={0.75}
-          >
-            <Text style={[st.tdNo, { color: colors.mutedForeground }]}>{index + 1}</Text>
-            <Text style={[st.tdPoz, { color: colors.primary }]}>{item.pozNo}</Text>
-            <Text style={[st.tdAd, { color: colors.foreground }]} numberOfLines={2}>
-              {item.analizAdi}
-            </Text>
-            <Text style={[st.tdBirim, { color: colors.mutedForeground }]}>{item.olcuBirimi}</Text>
-          </TouchableOpacity>
-        )}
+        contentContainerStyle={{ paddingBottom: selectMode ? insets.bottom + 80 : 0 }}
+        renderItem={({ item, index }) => {
+          const checked = selectedIds.has(item.id);
+          return (
+            <TouchableOpacity
+              style={[
+                st.listRow,
+                {
+                  borderColor: colors.border,
+                  backgroundColor: checked
+                    ? colors.primary + "12"
+                    : index % 2 === 0
+                      ? colors.background
+                      : colors.card + "66",
+                },
+              ]}
+              onPress={() => {
+                if (selectMode) toggleSelected(item.id);
+                else openDetail(item.id);
+              }}
+              onLongPress={() => {
+                if (!selectMode) {
+                  setSelectMode(true);
+                  setSelectedIds(new Set([item.id]));
+                }
+              }}
+              activeOpacity={0.75}
+            >
+              {selectMode && (
+                <View style={st.checkCell}>
+                  <Feather
+                    name={checked ? "check-square" : "square"}
+                    size={18}
+                    color={checked ? colors.primary : colors.mutedForeground}
+                  />
+                </View>
+              )}
+              <Text style={[st.tdNo, { color: colors.mutedForeground }]}>{index + 1}</Text>
+              <Text style={[st.tdPoz, { color: colors.primary }]}>{item.pozNo}</Text>
+              <Text style={[st.tdAd, { color: colors.foreground }]} numberOfLines={2}>
+                {item.analizAdi}
+              </Text>
+              <Text style={[st.tdBirim, { color: colors.mutedForeground }]}>{item.olcuBirimi}</Text>
+            </TouchableOpacity>
+          );
+        }}
         ListEmptyComponent={
           <View style={{ alignItems: "center", paddingTop: 60 }}>
             <Feather name="inbox" size={40} color={colors.mutedForeground} />
@@ -935,8 +1026,45 @@ export default function ImalatPozlariScreen() {
         }
       />
 
+      {selectMode && (
+        <View
+          style={[
+            st.bulkBar,
+            {
+              backgroundColor: colors.card,
+              borderColor: colors.border,
+              paddingBottom: insets.bottom + 8,
+            },
+          ]}
+        >
+          <TouchableOpacity
+            style={[st.bulkBtn, { opacity: selectedIds.size >= 2 ? 1 : 0.45 }]}
+            onPress={handleCompareSelected}
+            disabled={selectedIds.size < 2}
+          >
+            <Feather name="layers" size={18} color={colors.foreground} />
+            <Text style={[st.bulkBtnLabel, { color: colors.foreground }]}>Karşılaştır</Text>
+          </TouchableOpacity>
+          <TouchableOpacity
+            style={[st.bulkBtn, { opacity: selectedIds.size >= 1 ? 1 : 0.45 }]}
+            onPress={() => setBulkExportVisible(true)}
+            disabled={selectedIds.size < 1}
+          >
+            <Feather name="download" size={18} color={colors.primary} />
+            <Text style={[st.bulkBtnLabel, { color: colors.primary }]}>Dışa Aktar</Text>
+          </TouchableOpacity>
+        </View>
+      )}
+
+      <BulkExportModal
+        visible={bulkExportVisible}
+        count={selectedIds.size}
+        onClose={() => setBulkExportVisible(false)}
+        onSelect={handleBulkExportFormat}
+      />
+
       {/* Yetkili roller: yeni analiz ekle FAB */}
-      {canCreateAnaliz && (
+      {canCreateAnaliz && !selectMode && (
       <TouchableOpacity
         style={[
           st.fab,
@@ -1636,6 +1764,52 @@ const st = StyleSheet.create({
     flex: 1,
     fontSize: 14,
     fontFamily: "Inter_500Medium",
+  },
+  selectBar: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    marginHorizontal: 12,
+    marginBottom: 8,
+    paddingHorizontal: 12,
+    paddingVertical: 8,
+    borderRadius: 10,
+    borderWidth: 1,
+  },
+  selectBarText: {
+    fontSize: 13,
+    fontFamily: "Inter_600SemiBold",
+  },
+  selectBarAction: {
+    fontSize: 13,
+    fontFamily: "Inter_500Medium",
+  },
+  checkCell: {
+    width: 32,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  bulkBar: {
+    position: "absolute",
+    left: 0,
+    right: 0,
+    bottom: 0,
+    flexDirection: "row",
+    borderTopWidth: 1,
+    paddingTop: 10,
+    paddingHorizontal: 16,
+    gap: 12,
+    justifyContent: "space-around",
+  },
+  bulkBtn: {
+    flex: 1,
+    alignItems: "center",
+    gap: 4,
+    paddingVertical: 6,
+  },
+  bulkBtnLabel: {
+    fontSize: 11,
+    fontFamily: "Inter_600SemiBold",
   },
   pickerOverlay: {
     flex: 1,

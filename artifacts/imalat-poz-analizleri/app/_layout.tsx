@@ -25,6 +25,7 @@ function RootLayoutNav() {
       <Stack.Screen name="index" />
       <Stack.Screen name="imalat-pozlari" />
       <Stack.Screen name="analiz-katalogu" />
+      <Stack.Screen name="analiz-karsilastir" />
     </Stack>
   );
 }

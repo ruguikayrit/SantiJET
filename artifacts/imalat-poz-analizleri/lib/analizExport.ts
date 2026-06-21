@@ -1,5 +1,6 @@
 import * as FileSystem from "expo-file-system/legacy";
 import * as Sharing from "expo-sharing";
+import { zipSync } from "fflate";
 import { Alert, InteractionManager, Platform, Share } from "react-native";
 
 import { PozAnaliz, hesaplaAnalizToplam } from "@/constants/pozAnalizleri";
@@ -475,6 +476,64 @@ async function writeExportFile(filename: string, content: string): Promise<strin
   return uri;
 }
 
+function uint8ToBase64(bytes: Uint8Array): string {
+  let binary = "";
+  const chunk = 0x8000;
+  for (let i = 0; i < bytes.length; i += chunk) {
+    binary += String.fromCharCode(...bytes.subarray(i, i + chunk));
+  }
+  return btoa(binary);
+}
+
+async function writeExportBinaryFile(filename: string, bytes: Uint8Array): Promise<string> {
+  const dir = FileSystem.documentDirectory ?? FileSystem.cacheDirectory;
+  if (!dir) throw new Error("Dosya dizini bulunamadı");
+  const uri = `${dir}${filename}`;
+  await FileSystem.writeAsStringAsync(uri, uint8ToBase64(bytes), {
+    encoding: FileSystem.EncodingType.Base64,
+  });
+  const info = await FileSystem.getInfoAsync(uri);
+  if (!info.exists) throw new Error("Dosya oluşturulamadı");
+  return uri;
+}
+
+async function downloadBinaryOnWeb(bytes: Uint8Array, filename: string, mime: string): Promise<void> {
+  const copy = new Uint8Array(bytes);
+  const blob = new Blob([copy], { type: mime });
+  const url = URL.createObjectURL(blob);
+  const anchor = document.createElement("a");
+  anchor.href = url;
+  anchor.download = filename;
+  anchor.click();
+  URL.revokeObjectURL(url);
+}
+
+async function buildPdfBytes(
+  analiz: PozAnaliz,
+  pdfOrientation: PdfPaperOrientation,
+): Promise<Uint8Array | null> {
+  const html = buildAnalizHtml(analiz, pdfOrientation);
+  const { width, height } = pdfPageSize(pdfOrientation);
+  try {
+    const Print = await import("expo-print");
+    const { uri } = await Print.printToFileAsync({
+      html,
+      width,
+      height,
+      margins: pdfPageMarginsPt(),
+    });
+    const base64 = await FileSystem.readAsStringAsync(uri, {
+      encoding: FileSystem.EncodingType.Base64,
+    });
+    const raw = atob(base64);
+    const bytes = new Uint8Array(raw.length);
+    for (let i = 0; i < raw.length; i += 1) bytes[i] = raw.charCodeAt(i);
+    return bytes;
+  } catch {
+    return null;
+  }
+}
+
 /** Modal kapandıktan sonra paylaşım sheet'inin görünmesi için kısa gecikme */
 export function waitForShareSheet(): Promise<void> {
   return new Promise((resolve) => {
@@ -537,5 +596,62 @@ export async function exportAnaliz(
   } catch (err) {
     if (isShareCancelled(err)) return;
     Alert.alert("Hata", "Dışa aktarma başarısız. Lütfen tekrar deneyin.");
+  }
+}
+
+export async function exportBulkAnalizler(
+  analizler: PozAnaliz[],
+  format: AnalizExportFormat,
+  options: AnalizExportOptions = {},
+): Promise<void> {
+  if (!analizler.length) return;
+
+  const pdfOrientation = options.pdfOrientation ?? "landscape";
+  const zipEntries: Record<string, Uint8Array> = {};
+  let htmlFallbackCount = 0;
+
+  try {
+    for (const analiz of analizler) {
+      const base = safeFilename(analiz.pozNo);
+      if (format === "excel") {
+        const content = buildAnalizExcelHtml(analiz);
+        zipEntries[`analiz_${base}.xls`] = new TextEncoder().encode(content);
+        continue;
+      }
+
+      if (Platform.OS === "web") {
+        const html = buildAnalizHtml(analiz, pdfOrientation);
+        zipEntries[`analiz_${base}.html`] = new TextEncoder().encode(html);
+        continue;
+      }
+
+      const pdfBytes = await buildPdfBytes(analiz, pdfOrientation);
+      if (pdfBytes) {
+        zipEntries[`analiz_${base}.pdf`] = pdfBytes;
+      } else {
+        const html = buildAnalizHtml(analiz, pdfOrientation);
+        zipEntries[`analiz_${base}.html`] = new TextEncoder().encode(html);
+        htmlFallbackCount += 1;
+      }
+    }
+
+    const zipBytes = zipSync(zipEntries);
+    const stamp = new Date().toISOString().slice(0, 10);
+    const zipName = `analizler_${stamp}_${analizler.length}.zip`;
+
+    if (Platform.OS === "web") {
+      await downloadBinaryOnWeb(zipBytes, zipName, "application/zip");
+      return;
+    }
+
+    const uri = await writeExportBinaryFile(zipName, zipBytes);
+    const title =
+      htmlFallbackCount > 0
+        ? `Toplu Dışa Aktar (${htmlFallbackCount} HTML yedek)`
+        : "Toplu Dışa Aktar";
+    await shareExportFile(uri, title, "application/zip");
+  } catch (err) {
+    if (isShareCancelled(err)) return;
+    Alert.alert("Hata", "Toplu dışa aktarma başarısız. Lütfen tekrar deneyin.");
   }
 }

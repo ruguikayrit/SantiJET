@@ -1,14 +1,31 @@
 import { Feather } from "@expo/vector-icons";
-import React, { useEffect, useState } from "react";
-import { Modal, Pressable, StyleSheet, Text, TouchableOpacity, View } from "react-native";
+import React, { useEffect, useMemo, useState } from "react";
+import {
+  ActivityIndicator,
+  Modal,
+  Pressable,
+  ScrollView,
+  StyleSheet,
+  Text,
+  TouchableOpacity,
+  View,
+} from "react-native";
 
-import { AnalizExportFormat, PdfPaperOrientation } from "@/lib/analizExport";
+import { ExportPreviewPane } from "@/components/ExportPreviewPane";
+import { PozAnaliz } from "@/constants/pozAnalizleri";
+import {
+  AnalizExportFormat,
+  buildAnalizExcelHtml,
+  buildAnalizHtml,
+  PdfPaperOrientation,
+} from "@/lib/analizExport";
 import { useColors } from "@/hooks/useColors";
 
 interface ExportFormatModalProps {
   visible: boolean;
   onClose: () => void;
-  onSelect: (format: AnalizExportFormat, pdfOrientation?: PdfPaperOrientation) => void;
+  analiz: PozAnaliz | null;
+  onExport: (format: AnalizExportFormat, pdfOrientation?: PdfPaperOrientation) => void;
 }
 
 const FORMATS: {
@@ -32,13 +49,27 @@ const ORIENTATIONS: {
   { id: "portrait", label: "Dikey (A4)", hint: "Standart dikey kağıt", icon: "smartphone" },
 ];
 
-export function ExportFormatModal({ visible, onClose, onSelect }: ExportFormatModalProps) {
+export function ExportFormatModal({ visible, onClose, analiz, onExport }: ExportFormatModalProps) {
   const colors = useColors();
-  const [step, setStep] = useState<"format" | "pdf-orientation">("format");
+  const [step, setStep] = useState<"format" | "pdf-orientation" | "preview">("format");
+  const [selectedFormat, setSelectedFormat] = useState<AnalizExportFormat>("pdf");
+  const [selectedOrientation, setSelectedOrientation] = useState<PdfPaperOrientation>("landscape");
 
   useEffect(() => {
-    if (!visible) setStep("format");
+    if (!visible) {
+      setStep("format");
+      setSelectedFormat("pdf");
+      setSelectedOrientation("landscape");
+    }
   }, [visible]);
+
+  const previewHtml = useMemo(() => {
+    if (!analiz || step !== "preview") return "";
+    if (selectedFormat === "excel") return buildAnalizExcelHtml(analiz);
+    return buildAnalizHtml(analiz, selectedOrientation);
+  }, [analiz, step, selectedFormat, selectedOrientation]);
+
+  const formatLabel = selectedFormat === "pdf" ? "PDF" : "Excel";
 
   function handleClose() {
     setStep("format");
@@ -46,95 +77,160 @@ export function ExportFormatModal({ visible, onClose, onSelect }: ExportFormatMo
   }
 
   function handleFormatSelect(format: AnalizExportFormat) {
+    setSelectedFormat(format);
     if (format === "pdf") {
       setStep("pdf-orientation");
       return;
     }
-    onSelect(format);
+    setStep("preview");
   }
 
   function handleOrientationSelect(orientation: PdfPaperOrientation) {
-    onSelect("pdf", orientation);
+    setSelectedOrientation(orientation);
+    setStep("preview");
   }
 
+  function handleExport() {
+    onExport(selectedFormat, selectedFormat === "pdf" ? selectedOrientation : undefined);
+  }
+
+  function handleBackFromPreview() {
+    setStep(selectedFormat === "pdf" ? "pdf-orientation" : "format");
+  }
+
+  const isPreview = step === "preview";
+
   return (
-    <Modal visible={visible} transparent animationType="fade" onRequestClose={handleClose}>
-      <Pressable style={styles.overlay} onPress={handleClose}>
-        <Pressable
-          style={[styles.card, { backgroundColor: colors.card, borderColor: colors.border }]}
-          onPress={(e) => e.stopPropagation()}
-        >
-          {step === "format" ? (
-            <>
-              <Text style={[styles.title, { color: colors.foreground }]}>Dışa Aktar</Text>
-              <Text style={[styles.subtitle, { color: colors.mutedForeground }]}>
-                Dosya formatını seçin
+    <Modal
+      visible={visible}
+      transparent={!isPreview}
+      animationType={isPreview ? "slide" : "fade"}
+      onRequestClose={handleClose}
+    >
+      {isPreview ? (
+        <View style={[styles.previewHost, { backgroundColor: colors.background }]}>
+          <View style={[styles.previewHeader, { borderBottomColor: colors.border, backgroundColor: colors.card }]}>
+            <TouchableOpacity onPress={handleBackFromPreview} style={styles.previewBack}>
+              <Feather name="arrow-left" size={20} color={colors.primary} />
+            </TouchableOpacity>
+            <View style={{ flex: 1 }}>
+              <Text style={[styles.previewTitle, { color: colors.foreground }]}>Önizleme</Text>
+              <Text style={[styles.previewSub, { color: colors.mutedForeground }]}>
+                {formatLabel}
+                {selectedFormat === "pdf"
+                  ? selectedOrientation === "landscape"
+                    ? " · Yatay A4"
+                    : " · Dikey A4"
+                  : ""}
               </Text>
+            </View>
+            <TouchableOpacity onPress={handleClose} hitSlop={12}>
+              <Feather name="x" size={22} color={colors.mutedForeground} />
+            </TouchableOpacity>
+          </View>
 
-              {FORMATS.map((f) => (
-                <TouchableOpacity
-                  key={f.id}
-                  activeOpacity={0.85}
-                  style={[
-                    styles.option,
-                    { borderColor: f.color + "44", backgroundColor: f.color + "10" },
-                  ]}
-                  onPress={() => handleFormatSelect(f.id)}
-                >
-                  <View style={[styles.optionIcon, { backgroundColor: f.color + "22" }]}>
-                    <Feather name={f.icon} size={18} color={f.color} />
-                  </View>
-                  <View style={styles.optionText}>
-                    <Text style={[styles.optionLabel, { color: colors.foreground }]}>{f.label}</Text>
-                    <Text style={[styles.optionHint, { color: colors.mutedForeground }]}>{f.hint}</Text>
-                  </View>
-                  <Feather name="chevron-right" size={16} color={f.color} />
-                </TouchableOpacity>
-              ))}
-            </>
-          ) : (
-            <>
-              <TouchableOpacity style={styles.backLink} onPress={() => setStep("format")}>
-                <Feather name="arrow-left" size={16} color={colors.primary} />
-                <Text style={[styles.backText, { color: colors.primary }]}>Format seçimi</Text>
-              </TouchableOpacity>
+          <View style={styles.previewBody}>
+            {previewHtml ? (
+              <ExportPreviewPane html={previewHtml} formatLabel={formatLabel} />
+            ) : (
+              <ActivityIndicator size="large" color={colors.primary} />
+            )}
+          </View>
 
-              <Text style={[styles.title, { color: colors.foreground }]}>PDF Kağıt Yönü</Text>
-              <Text style={[styles.subtitle, { color: colors.mutedForeground }]}>
-                Yatay veya dikey A4 seçin
-              </Text>
-
-              {ORIENTATIONS.map((o) => (
-                <TouchableOpacity
-                  key={o.id}
-                  activeOpacity={0.85}
-                  style={[
-                    styles.option,
-                    { borderColor: colors.primary + "44", backgroundColor: colors.primary + "10" },
-                  ]}
-                  onPress={() => handleOrientationSelect(o.id)}
-                >
-                  <View style={[styles.optionIcon, { backgroundColor: colors.primary + "22" }]}>
-                    <Feather name={o.icon} size={18} color={colors.primary} />
-                  </View>
-                  <View style={styles.optionText}>
-                    <Text style={[styles.optionLabel, { color: colors.foreground }]}>{o.label}</Text>
-                    <Text style={[styles.optionHint, { color: colors.mutedForeground }]}>{o.hint}</Text>
-                  </View>
-                  <Feather name="chevron-right" size={16} color={colors.primary} />
-                </TouchableOpacity>
-              ))}
-            </>
-          )}
-
-          <TouchableOpacity
-            style={[styles.cancelBtn, { backgroundColor: colors.border }]}
-            onPress={handleClose}
+          <View style={[styles.previewFooter, { borderTopColor: colors.border, backgroundColor: colors.card }]}>
+            <TouchableOpacity
+              style={[styles.footerBtn, { backgroundColor: colors.border }]}
+              onPress={handleBackFromPreview}
+            >
+              <Text style={{ color: colors.foreground, fontFamily: "Inter_500Medium" }}>Geri</Text>
+            </TouchableOpacity>
+            <TouchableOpacity
+              style={[styles.footerBtn, { backgroundColor: colors.primary, flex: 1.4 }]}
+              onPress={handleExport}
+            >
+              <Feather name="download" size={16} color={colors.primaryForeground} />
+              <Text style={{ color: colors.primaryForeground, fontFamily: "Inter_700Bold" }}>Dışa Aktar</Text>
+            </TouchableOpacity>
+          </View>
+        </View>
+      ) : (
+        <Pressable style={styles.overlay} onPress={handleClose}>
+          <Pressable
+            style={[styles.card, { backgroundColor: colors.card, borderColor: colors.border }]}
+            onPress={(e) => e.stopPropagation()}
           >
-            <Text style={{ color: colors.foreground, fontFamily: "Inter_500Medium" }}>İptal</Text>
-          </TouchableOpacity>
+            {step === "format" ? (
+              <>
+                <Text style={[styles.title, { color: colors.foreground }]}>Dışa Aktar</Text>
+                <Text style={[styles.subtitle, { color: colors.mutedForeground }]}>
+                  Dosya formatını seçin, ardından önizleyin
+                </Text>
+
+                {FORMATS.map((f) => (
+                  <TouchableOpacity
+                    key={f.id}
+                    activeOpacity={0.85}
+                    style={[
+                      styles.option,
+                      { borderColor: f.color + "44", backgroundColor: f.color + "10" },
+                    ]}
+                    onPress={() => handleFormatSelect(f.id)}
+                  >
+                    <View style={[styles.optionIcon, { backgroundColor: f.color + "22" }]}>
+                      <Feather name={f.icon} size={18} color={f.color} />
+                    </View>
+                    <View style={styles.optionText}>
+                      <Text style={[styles.optionLabel, { color: colors.foreground }]}>{f.label}</Text>
+                      <Text style={[styles.optionHint, { color: colors.mutedForeground }]}>{f.hint}</Text>
+                    </View>
+                    <Feather name="chevron-right" size={16} color={f.color} />
+                  </TouchableOpacity>
+                ))}
+              </>
+            ) : (
+              <>
+                <TouchableOpacity style={styles.backLink} onPress={() => setStep("format")}>
+                  <Feather name="arrow-left" size={16} color={colors.primary} />
+                  <Text style={[styles.backText, { color: colors.primary }]}>Format seçimi</Text>
+                </TouchableOpacity>
+
+                <Text style={[styles.title, { color: colors.foreground }]}>PDF Kağıt Yönü</Text>
+                <Text style={[styles.subtitle, { color: colors.mutedForeground }]}>
+                  Yatay veya dikey A4 seçin
+                </Text>
+
+                {ORIENTATIONS.map((o) => (
+                  <TouchableOpacity
+                    key={o.id}
+                    activeOpacity={0.85}
+                    style={[
+                      styles.option,
+                      { borderColor: colors.primary + "44", backgroundColor: colors.primary + "10" },
+                    ]}
+                    onPress={() => handleOrientationSelect(o.id)}
+                  >
+                    <View style={[styles.optionIcon, { backgroundColor: colors.primary + "22" }]}>
+                      <Feather name={o.icon} size={18} color={colors.primary} />
+                    </View>
+                    <View style={styles.optionText}>
+                      <Text style={[styles.optionLabel, { color: colors.foreground }]}>{o.label}</Text>
+                      <Text style={[styles.optionHint, { color: colors.mutedForeground }]}>{o.hint}</Text>
+                    </View>
+                    <Feather name="chevron-right" size={16} color={colors.primary} />
+                  </TouchableOpacity>
+                ))}
+              </>
+            )}
+
+            <TouchableOpacity
+              style={[styles.cancelBtn, { backgroundColor: colors.border }]}
+              onPress={handleClose}
+            >
+              <Text style={{ color: colors.foreground, fontFamily: "Inter_500Medium" }}>İptal</Text>
+            </TouchableOpacity>
+          </Pressable>
         </Pressable>
-      </Pressable>
+      )}
     </Modal>
   );
 }
@@ -207,5 +303,50 @@ const styles = StyleSheet.create({
     paddingVertical: 12,
     borderRadius: 10,
     alignItems: "center",
+  },
+  previewHost: {
+    flex: 1,
+  },
+  previewHeader: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 10,
+    paddingHorizontal: 14,
+    paddingVertical: 12,
+    borderBottomWidth: 1,
+  },
+  previewBack: {
+    width: 36,
+    height: 36,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  previewTitle: {
+    fontSize: 16,
+    fontFamily: "Inter_700Bold",
+  },
+  previewSub: {
+    fontSize: 12,
+    fontFamily: "Inter_400Regular",
+    marginTop: 2,
+  },
+  previewBody: {
+    flex: 1,
+    padding: 12,
+  },
+  previewFooter: {
+    flexDirection: "row",
+    gap: 10,
+    padding: 12,
+    borderTopWidth: 1,
+  },
+  footerBtn: {
+    flex: 1,
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    gap: 8,
+    paddingVertical: 13,
+    borderRadius: 10,
   },
 });
