@@ -56,7 +56,7 @@ export function ModuleTile({
       </View>
 
       <Text style={[styles.tileLabel, { color: cardForeground }]} numberOfLines={2}>
-        {label}
+        {label.toUpperCase()}
       </Text>
 
       <View style={styles.tileFootRow}>

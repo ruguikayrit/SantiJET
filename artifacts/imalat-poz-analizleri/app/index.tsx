@@ -398,7 +398,7 @@ export default function HomeScreen() {
 
         <Text style={[styles.sectionLabel, { color: colors.foreground }]}>Modüller</Text>
 
-        <ModuleGrid>
+        <ModuleGrid cols={2}>
           {BFA_MODULES.map((mod) => {
             const count = mod.count(stats);
             return (
