@@ -36,6 +36,7 @@ const COL = {
   del: 3,
   numGap: 6,
   tutarShift: 15,
+  delShift: 15,
 } as const;
 
 export default function KesifDetailScreen() {
@@ -163,7 +164,7 @@ export default function KesifDetailScreen() {
           </View>
           <Text style={[styles.th, styles.colTutar, { color: colors.mutedForeground }]}>Tutar</Text>
         </View>
-        <View style={{ width: COL.del }} />
+        <View style={styles.delCol} />
       </View>
 
       <FlatList
@@ -248,7 +249,7 @@ export default function KesifDetailScreen() {
 
             <TouchableOpacity
               onPress={() => handleDeleteSatir(item.id)}
-              style={styles.delBtn}
+              style={[styles.delBtn, styles.delCol]}
               hitSlop={8}
             >
               <Feather name="x" size={16} color={colors.mutedForeground} />
@@ -435,7 +436,8 @@ const styles = StyleSheet.create({
     letterSpacing: -0.2,
     marginLeft: -COL.tutarShift,
   },
-  delBtn: { width: COL.del, alignItems: "center", paddingTop: 4 },
+  delCol: { width: COL.del, marginLeft: -COL.delShift },
+  delBtn: { alignItems: "center", paddingTop: 4 },
   emptyList: { alignItems: "center", paddingTop: 60, gap: 10, paddingHorizontal: 24 },
   emptyText: { fontSize: 13, fontFamily: "Inter_400Regular", textAlign: "center" },
   fab: {
