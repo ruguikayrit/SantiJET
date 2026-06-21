@@ -616,7 +616,7 @@ const styles = StyleSheet.create({
   },
   sourceDisclaimerWrap: {
     paddingHorizontal: 16,
-    gap: 6,
+    gap: 4,
   },
   sourceDisclaimer: {
     fontSize: 10,
