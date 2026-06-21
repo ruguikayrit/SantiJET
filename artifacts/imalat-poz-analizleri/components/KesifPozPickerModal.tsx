@@ -232,16 +232,9 @@ const styles = StyleSheet.create({
     alignItems: "center",
     justifyContent: "center",
   },
-  cancelHeaderBtn: {
-    minWidth: 52,
+  headerSide: {
+    width: 40,
     height: 40,
-    alignItems: "flex-end",
-    justifyContent: "center",
-    paddingRight: 4,
-  },
-  cancelHeaderText: {
-    fontSize: 14,
-    fontFamily: "Inter_600SemiBold",
   },
   headerTitle: {
     flex: 1,
