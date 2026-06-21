@@ -17,12 +17,6 @@ interface AppFooterProps {
   bottomInset: number;
 }
 
-const FOOTER_LINKS: { label: string; document: LegalDocument }[] = [
-  { label: "GİZLİLİK POLİTİKASI", document: PRIVACY_POLICY },
-  { label: "KULLANIM KOŞULLARI", document: TERMS_OF_USE },
-  { label: "KAYNAK", document: DATA_SOURCES },
-];
-
 export function AppFooter({ color, linkColor, bottomInset }: AppFooterProps) {
   const [legalDoc, setLegalDoc] = useState<LegalDocument | null>(null);
 
@@ -41,14 +35,27 @@ export function AppFooter({ color, linkColor, bottomInset }: AppFooterProps) {
         ))}
 
         <View style={styles.linkRow}>
-          {FOOTER_LINKS.map((item, index) => (
-            <View key={item.label} style={styles.linkItem}>
-              {index > 0 ? <Text style={[styles.sep, { color }]}> - </Text> : null}
-              <TouchableOpacity activeOpacity={0.75} onPress={() => setLegalDoc(item.document)}>
-                <Text style={[styles.link, { color: linkColor }]}>{item.label}</Text>
-              </TouchableOpacity>
-            </View>
-          ))}
+          <View style={styles.linkLeftSlot}>
+            <TouchableOpacity activeOpacity={0.75} onPress={() => setLegalDoc(PRIVACY_POLICY)}>
+              <Text style={[styles.link, styles.linkLeft, { color: linkColor }]}>
+                GİZLİLİK POLİTİKASI
+              </Text>
+            </TouchableOpacity>
+          </View>
+
+          <View style={styles.linkCenterSlot}>
+            <TouchableOpacity activeOpacity={0.75} onPress={() => setLegalDoc(TERMS_OF_USE)}>
+              <Text style={[styles.link, styles.linkCenter, { color: linkColor }]}>
+                KULLANIM KOŞULLARI
+              </Text>
+            </TouchableOpacity>
+          </View>
+
+          <View style={styles.linkRightSlot}>
+            <TouchableOpacity activeOpacity={0.75} onPress={() => setLegalDoc(DATA_SOURCES)}>
+              <Text style={[styles.link, styles.linkRight, { color: linkColor }]}>KAYNAK</Text>
+            </TouchableOpacity>
+          </View>
         </View>
 
         <Text style={[styles.version, { color }]}>v{getAppVersion()}</Text>
@@ -68,6 +75,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: 16,
     gap: 4,
     alignItems: "center",
+    width: "100%",
   },
   disclaimer: {
     fontSize: 10,
@@ -78,13 +86,20 @@ const styles = StyleSheet.create({
   linkRow: {
     flexDirection: "row",
     alignItems: "center",
-    justifyContent: "center",
-    flexWrap: "wrap",
+    width: "100%",
     marginTop: 8,
   },
-  linkItem: {
-    flexDirection: "row",
+  linkLeftSlot: {
+    flex: 1,
+    alignItems: "flex-start",
+  },
+  linkCenterSlot: {
+    flex: 1,
     alignItems: "center",
+  },
+  linkRightSlot: {
+    flex: 1,
+    alignItems: "flex-end",
   },
   link: {
     fontSize: 9,
@@ -92,10 +107,14 @@ const styles = StyleSheet.create({
     letterSpacing: 0.3,
     textDecorationLine: "underline",
   },
-  sep: {
-    fontSize: 9,
-    fontFamily: "Inter_400Regular",
-    opacity: 0.7,
+  linkLeft: {
+    textAlign: "left",
+  },
+  linkCenter: {
+    textAlign: "center",
+  },
+  linkRight: {
+    textAlign: "right",
   },
   version: {
     fontSize: 9,
