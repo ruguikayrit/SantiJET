@@ -3,6 +3,7 @@ import * as Sharing from "expo-sharing";
 import { zipSync } from "fflate";
 import { Alert, InteractionManager, Platform, Share } from "react-native";
 
+import { APP_LEGAL_NAME } from "@/constants/appInfo";
 import { PozAnaliz, hesaplaAnalizToplam } from "@/constants/pozAnalizleri";
 
 export type AnalizExportFormat = "pdf" | "excel";
@@ -12,96 +13,221 @@ export interface AnalizExportOptions {
   pdfOrientation?: PdfPaperOrientation;
 }
 
-const REPORT_STYLES = `
-  body { font-family: Arial, sans-serif; font-size: 11px; color: #111; padding: 24px; }
-  h1 { font-size: 16px; margin: 0 0 4px; }
-  h2 { font-size: 13px; margin: 16px 0 8px; color: #444; }
-  h3 { font-size: 12px; margin: 14px 0 6px; }
-  .meta { margin-bottom: 16px; line-height: 1.6; }
-  table { width: 100%; border-collapse: collapse; margin-top: 8px; }
-  th, td { border: 1px solid #ccc; padding: 5px 6px; vertical-align: top; }
-  th { background: #16213e; color: #fff; font-size: 10px; }
-  .group { background: #f0f4f8; font-weight: bold; }
-  .num { text-align: right; white-space: nowrap; }
-  .summary { margin-top: 12px; line-height: 1.8; }
-  .summary strong { display: inline-block; min-width: 220px; }
-  p { white-space: pre-wrap; line-height: 1.5; }
-`;
+const TIP_LABEL: Record<"malzeme" | "iscilik" | "ekipman", string> = {
+  malzeme: "Malzeme Kalemleri",
+  iscilik: "İşçilik Kalemleri",
+  ekipman: "Ekipman Kalemleri",
+};
 
-const BFA_TABLE_STYLES = `
-  body { font-family: Arial, sans-serif; font-size: 11px; color: #111; margin: 0; }
-  table { border-collapse: collapse; table-layout: fixed; width: 100%; }
-  th, td { border: 1px solid #000; padding: 3px 5px; vertical-align: middle; text-align: center; }
-  th { background: #fff; color: #111; font-size: 11px; font-weight: bold; }
-  .spacer { border: none; background: #fff; }
-  .blank-row td { height: 12px; border: none; }
-  .title { height: 30px; font-size: 16px; font-weight: bold; background: #fff; color: #111; }
-  .meta-row td { height: 34px; }
-  .head-row th, .group { height: 16px; }
-  .data-row td { height: 15px; }
-  .group { background: #f0f4f8; font-weight: bold; }
-  .poz { mso-number-format:"\\@"; }
+const TIP_ACCENT: Record<"malzeme" | "iscilik" | "ekipman", string> = {
+  malzeme: "#e85d04",
+  iscilik: "#16213e",
+  ekipman: "#0f766e",
+};
+
+const SANTIJET_REPORT_STYLES = `
+  body {
+    font-family: "Segoe UI", Arial, sans-serif;
+    font-size: 11px;
+    color: #1e293b;
+    margin: 0;
+    line-height: 1.45;
+  }
+  .report { max-width: 100%; }
+  .report-header {
+    background: linear-gradient(135deg, #16213e 0%, #0f3460 100%);
+    color: #fff;
+    border-radius: 10px;
+    padding: 16px 18px;
+    margin-bottom: 14px;
+  }
+  .report-brand {
+    font-size: 10px;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    opacity: 0.82;
+    margin-bottom: 4px;
+  }
+  .report-title {
+    font-size: 18px;
+    font-weight: 700;
+    margin: 0 0 6px;
+  }
+  .report-date {
+    font-size: 10px;
+    opacity: 0.88;
+  }
+  .info-grid {
+    display: table;
+    width: 100%;
+    border-collapse: separate;
+    border-spacing: 0;
+    margin-bottom: 16px;
+    border: 1px solid #dbe3ef;
+    border-radius: 10px;
+    overflow: hidden;
+    background: #f8fafc;
+  }
+  .info-row { display: table-row; }
+  .info-cell {
+    display: table-cell;
+    width: 50%;
+    padding: 10px 12px;
+    vertical-align: top;
+    border-bottom: 1px solid #e2e8f0;
+  }
+  .info-row:last-child .info-cell { border-bottom: none; }
+  .info-cell:nth-child(odd) { border-right: 1px solid #e2e8f0; }
+  .info-label {
+    display: block;
+    font-size: 9px;
+    font-weight: 700;
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+    color: #64748b;
+    margin-bottom: 3px;
+  }
+  .info-value {
+    font-size: 12px;
+    font-weight: 600;
+    color: #0f172a;
+  }
+  .kalem-section { margin-bottom: 14px; }
+  .section-title {
+    font-size: 12px;
+    font-weight: 700;
+    color: #0f172a;
+    margin: 0 0 6px;
+    padding-left: 10px;
+    border-left: 4px solid #e85d04;
+  }
+  .section-title.iscilik { border-left-color: #16213e; }
+  .section-title.ekipman { border-left-color: #0f766e; }
+  .section-badge {
+    display: inline-block;
+    margin-left: 6px;
+    padding: 1px 7px;
+    border-radius: 999px;
+    background: #e2e8f0;
+    color: #475569;
+    font-size: 9px;
+    font-weight: 600;
+  }
+  .data-table {
+    width: 100%;
+    border-collapse: collapse;
+    table-layout: fixed;
+    margin-bottom: 2px;
+  }
+  .data-table th {
+    background: #16213e;
+    color: #fff;
+    font-size: 9px;
+    font-weight: 700;
+    letter-spacing: 0.03em;
+    text-transform: uppercase;
+    padding: 7px 6px;
+    border: none;
+    text-align: left;
+  }
+  .data-table th.num { text-align: right; }
+  .data-table th.center { text-align: center; }
+  .data-table td {
+    padding: 6px;
+    border-bottom: 1px solid #e2e8f0;
+    vertical-align: top;
+    font-size: 10px;
+  }
+  .data-table tr:nth-child(even) td { background: #f8fafc; }
+  .data-table tr:last-child td { border-bottom: none; }
+  .desc { text-align: left; white-space: normal; word-wrap: break-word; }
+  .center { text-align: center; }
+  .num { text-align: right; white-space: nowrap; }
+  .idx { color: #64748b; font-weight: 600; }
+  .poz { mso-number-format:"\\@"; font-weight: 600; color: #1d4ed8; }
   .qty { mso-number-format:"0.0000"; }
   .price { mso-number-format:"\\"₺\\"#,##0.00"; }
   .tl { mso-number-format:"\\"₺\\"#,##0.00"; }
   .text { mso-number-format:"\\@"; }
-  .summary-label { font-weight: bold; }
-  .note { text-align: center; white-space: normal; line-height: 1.4; }
-  .tarif { height: 57px; }
-  .olcu { height: 16px; font-weight: bold; }
+  .cost-summary {
+    margin: 18px 0 14px;
+    border: 1px solid #cbd5e1;
+    border-radius: 10px;
+    overflow: hidden;
+    background: #fff;
+  }
+  .cost-summary-title {
+    background: #f1f5f9;
+    padding: 8px 12px;
+    font-size: 11px;
+    font-weight: 700;
+    color: #0f172a;
+    border-bottom: 1px solid #e2e8f0;
+  }
+  .cost-table {
+    width: 100%;
+    border-collapse: collapse;
+  }
+  .cost-table td {
+    padding: 8px 12px;
+    border-bottom: 1px solid #eef2f7;
+    font-size: 11px;
+  }
+  .cost-table tr:last-child td { border-bottom: none; }
+  .cost-label { color: #334155; }
+  .cost-value { text-align: right; font-weight: 600; color: #0f172a; }
+  .cost-total td {
+    background: #16213e;
+    color: #fff;
+    font-size: 12px;
+    font-weight: 700;
+    padding: 10px 12px;
+  }
+  .cost-total .cost-value { color: #fff; }
+  .notes-section { margin-top: 16px; }
+  .notes-heading {
+    font-size: 11px;
+    font-weight: 700;
+    color: #16213e;
+    margin: 0 0 4px;
+    padding-bottom: 4px;
+    border-bottom: 2px solid #e85d04;
+    display: inline-block;
+  }
+  .notes-block { margin-bottom: 12px; }
+  .notes-body {
+    margin: 6px 0 0;
+    padding: 10px 12px;
+    background: #f8fafc;
+    border-left: 3px solid #cbd5e1;
+    border-radius: 0 8px 8px 0;
+    white-space: pre-wrap;
+    font-size: 10px;
+    color: #334155;
+    line-height: 1.55;
+  }
+  .report-footer {
+    margin-top: 18px;
+    padding-top: 10px;
+    border-top: 1px solid #e2e8f0;
+    font-size: 9px;
+    color: #94a3b8;
+    text-align: center;
+    line-height: 1.5;
+  }
 `;
 
 const PDF_PAGE_MARGIN_MM = 10;
 
-function bfaColumnStyles(
-  orientation: PdfPaperOrientation,
-  target: "excel" | "pdf" = "excel",
-): string {
-  if (target === "pdf") {
-    if (orientation === "portrait") {
-      return `
-  col.poz-col { width: 18%; }
-  col.desc-col { width: 32%; }
-  col.unit-col { width: 10%; }
-  col.qty-col { width: 12%; }
-  col.price-col { width: 14%; }
-  col.total-col { width: 14%; }
-  body { font-size: 9px; }
-  th, td { padding: 2px 3px; font-size: 9px; }
-  .title { font-size: 13px; }`;
-    }
-
-    return `
-  col.poz-col { width: 16%; }
-  col.desc-col { width: 36%; }
-  col.unit-col { width: 10%; }
-  col.qty-col { width: 12%; }
-  col.price-col { width: 13%; }
-  col.total-col { width: 13%; }`;
-  }
-
+function reportOrientationStyles(orientation: PdfPaperOrientation): string {
   if (orientation === "portrait") {
     return `
-  col.spacer-col { width: 12px; }
-  col.poz-col { width: 72px; }
-  col.desc-col { width: 150px; }
-  col.unit-col { width: 44px; }
-  col.qty-col { width: 52px; }
-  col.price-col { width: 58px; }
-  col.total-col { width: 62px; }
   body { font-size: 9px; }
-  th, td { padding: 2px 3px; font-size: 9px; }
-  .title { font-size: 13px; }`;
+  .report-title { font-size: 15px; }
+  .data-table th, .data-table td { font-size: 8px; padding: 5px 4px; }
+  .info-value { font-size: 10px; }`;
   }
-
-  return `
-  col.spacer-col { width: 22px; }
-  col.poz-col { width: 230px; }
-  col.desc-col { width: 430px; }
-  col.unit-col { width: 140px; }
-  col.qty-col { width: 155px; }
-  col.price-col { width: 165px; }
-  col.total-col { width: 195px; }`;
+  return "";
 }
 
 function buildPdfExportStyles(orientation: PdfPaperOrientation = "landscape"): string {
@@ -115,12 +241,12 @@ function buildPdfExportStyles(orientation: PdfPaperOrientation = "landscape"): s
     margin-left: ${margin};
     margin-right: ${margin};
   }
-  ${BFA_TABLE_STYLES}
-  ${bfaColumnStyles(orientation, "pdf")}
+  ${SANTIJET_REPORT_STYLES}
+  ${reportOrientationStyles(orientation)}
   .pdf-content { margin: 0 auto; width: 100%; box-sizing: border-box; }`;
 }
 
-const EXCEL_STYLES = `${BFA_TABLE_STYLES}${bfaColumnStyles("landscape", "excel")}`;
+const EXCEL_STYLES = SANTIJET_REPORT_STYLES;
 
 function trFmt(n: number): string {
   return n.toLocaleString("tr-TR", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
@@ -177,193 +303,188 @@ function excelTlCell(value: number): string {
   return `<td class="tl" x:num="${numericValue}">${numericValue}</td>`;
 }
 
-function excelFormulaTlCell(rowNumber: number, fallback: number): string {
-  const numericValue = Number.isFinite(fallback) ? fallback : 0;
-  return `<td class="tl" x:fmla="=E${rowNumber}*F${rowNumber}" x:num="${numericValue}">${numericValue}</td>`;
+function excelCurrencyValue(value: number): string {
+  const numericValue = Number.isFinite(value) ? value : 0;
+  return `<span class="tl" x:num="${numericValue}">${numericValue}</span>`;
 }
 
 function pdfNumberCell(value: number, className: "qty" | "price"): string {
-  return `<td class="${className}">${className === "qty" ? trQty(value) : trCurrency(value)}</td>`;
+  return `<td class="${className} num">${className === "qty" ? trQty(value) : trCurrency(value)}</td>`;
 }
 
 function pdfTlCell(value: number): string {
-  return `<td class="tl">${trCurrency(value)}</td>`;
+  return `<td class="tl num">${trCurrency(value)}</td>`;
 }
 
-function pdfFormulaTlCell(value: number): string {
-  return `<td class="tl">${trCurrency(value)}</td>`;
-}
-
-function buildAnalizReportBody(analiz: PozAnaliz): string {
-  const totals = hesaplaAnalizToplam(analiz);
-  const tipAd: Record<string, string> = {
-    malzeme: "Malzeme",
-    iscilik: "İşçilik",
-    ekipman: "Ekipman",
-  };
+function buildKalemSection(
+  analiz: PozAnaliz,
+  tip: "malzeme" | "iscilik" | "ekipman",
+  target: "excel" | "pdf",
+): string {
+  const rows = analiz.kalemler.filter((k) => k.tip === tip);
+  if (!rows.length) return "";
 
   let tableRows = "";
-  for (const tip of ["malzeme", "iscilik", "ekipman"] as const) {
-    const rows = analiz.kalemler.filter((k) => k.tip === tip);
-    if (!rows.length) continue;
-    tableRows += `<tr><td colspan="6" class="group">${tipAd[tip]}</td></tr>`;
-    for (const k of rows) {
-      tableRows += `<tr>
-        <td>${escHtml(k.pozNo)}</td>
-        <td>${escHtml(k.tanim)}</td>
-        <td>${escHtml(k.olcuBirimi)}</td>
-        <td class="num">${trFmt(k.miktar)}</td>
-        <td class="num">${trFmt(k.birimFiyati)}</td>
-        <td class="num">${trFmt(k.tutar)}</td>
-      </tr>`;
-    }
-  }
+  rows.forEach((k, index) => {
+    tableRows += `<tr>
+      <td class="center idx">${index + 1}</td>
+      ${excelPozNoCell(k.pozNo)}
+      <td class="desc text">${escHtml(k.tanim)}</td>
+      <td class="center text">${escHtml(k.olcuBirimi)}</td>
+      ${target === "excel" ? excelNumberCell(k.miktar, "qty") : pdfNumberCell(k.miktar, "qty")}
+      ${target === "excel" ? excelNumberCell(k.birimFiyati, "price") : pdfNumberCell(k.birimFiyati, "price")}
+      ${target === "excel" ? excelTlCell(k.tutar) : pdfTlCell(k.tutar)}
+    </tr>`;
+  });
 
-  const extraBlocks = [
-    analiz.pozTarifi ? `<h3>Poz Tarifi</h3><p>${escHtml(analiz.pozTarifi)}</p>` : "",
-    analiz.yapimSartlari
-      ? `<h3>Yapım Şartları</h3><p>${escHtml(analiz.yapimSartlari)}</p>`
-      : "",
-    analiz.olcusu ? `<h3>Ölçüsü</h3><p>${escHtml(analiz.olcusu)}</p>` : "",
-  ].join("");
+  const badge = `${rows.length} kalem`;
+  const tipClass = tip === "malzeme" ? "" : tip;
 
   return `
-  <h1>BİRİM FİYAT ANALİZİ</h1>
-  <div class="meta">
-    <div><strong>Poz No:</strong> ${escHtml(analiz.pozNo)}</div>
-    <div><strong>Analiz Adı:</strong> ${escHtml(analiz.analizAdi)}</div>
-    <div><strong>Ölçü Birimi:</strong> ${escHtml(analiz.olcuBirimi)}</div>
-  </div>
-  <h2>Analiz Tablosu</h2>
-  <table>
-    <thead>
+  <section class="kalem-section">
+    <div class="section-title ${tipClass}" style="border-left-color:${TIP_ACCENT[tip]}">
+      ${TIP_LABEL[tip]}<span class="section-badge">${badge}</span>
+    </div>
+    <table class="data-table">
+      <colgroup>
+        <col style="width:4%" />
+        <col style="width:12%" />
+        <col style="width:34%" />
+        <col style="width:8%" />
+        <col style="width:12%" />
+        <col style="width:15%" />
+        <col style="width:15%" />
+      </colgroup>
+      <thead>
+        <tr>
+          <th class="center">#</th>
+          <th>Poz No</th>
+          <th>Açıklama</th>
+          <th class="center">Birim</th>
+          <th class="num">Miktar</th>
+          <th class="num">Birim Fiyat</th>
+          <th class="num">Tutar</th>
+        </tr>
+      </thead>
+      <tbody>${tableRows}</tbody>
+    </table>
+  </section>`;
+}
+
+function buildCostSummary(
+  analiz: PozAnaliz,
+  totals: ReturnType<typeof hesaplaAnalizToplam>,
+  target: "excel" | "pdf",
+): string {
+  const valueCell = (value: number) =>
+    target === "excel" ? excelCurrencyValue(value) : trCurrency(value);
+
+  return `
+  <div class="cost-summary">
+    <div class="cost-summary-title">Maliyet Özeti</div>
+    <table class="cost-table">
       <tr>
-        <th>Poz No</th><th>Tanım</th><th>Birim</th><th>Miktar</th><th>B.Fiyat</th><th>Tutar</th>
+        <td class="cost-label">Ara Toplam (Malzeme + İşçilik)</td>
+        <td class="cost-value">${valueCell(totals.malzemeIscilikToplami)}</td>
       </tr>
-    </thead>
-    <tbody>${tableRows}</tbody>
-  </table>
-  <div class="summary">
-    <div><strong>Malzeme + İşçilik Tutarı:</strong> ${trFmt(totals.malzemeIscilikToplami)} TL</div>
-    <div><strong>%${analiz.yukleniciKarOrani} Yüklenici Karı:</strong> ${trFmt(totals.yukleniciKarTutari)} TL</div>
-    <div><strong>1 ${escHtml(analiz.olcuBirimi)} Fiyatı:</strong> ${trFmt(totals.birimFiyati)} TL</div>
-  </div>
-  ${extraBlocks}`;
+      <tr>
+        <td class="cost-label">Yüklenici Karı (%${analiz.yukleniciKarOrani})</td>
+        <td class="cost-value">${valueCell(totals.yukleniciKarTutari)}</td>
+      </tr>
+      <tr class="cost-total">
+        <td class="cost-label">Birim Fiyat (1 ${escHtml(analiz.olcuBirimi)})</td>
+        <td class="cost-value">${valueCell(totals.birimFiyati)}</td>
+      </tr>
+    </table>
+  </div>`;
 }
 
-function bfaSpacerCell(target: "excel" | "pdf"): string {
-  return target === "excel" ? `<td class="spacer"></td>` : "";
+function buildNotesSection(analiz: PozAnaliz): string {
+  const blocks = [
+    analiz.pozTarifi ? { title: "Poz Tarifi", body: analiz.pozTarifi } : null,
+    analiz.yapimSartlari ? { title: "Yapım Şartları", body: analiz.yapimSartlari } : null,
+    analiz.olcusu ? { title: "Ölçü Bilgisi", body: analiz.olcusu } : null,
+    analiz.notlar ? { title: "Notlar", body: analiz.notlar } : null,
+  ].filter(Boolean) as { title: string; body: string }[];
+
+  if (!blocks.length) return "";
+
+  const items = blocks
+    .map(
+      (b) => `
+    <div class="notes-block">
+      <div class="notes-heading">${escHtml(b.title)}</div>
+      <div class="notes-body">${escHtml(b.body)}</div>
+    </div>`,
+    )
+    .join("");
+
+  return `<section class="notes-section">${items}</section>`;
 }
 
-function bfaColgroup(target: "excel" | "pdf"): string {
-  const spacerCol = target === "excel" ? `<col class="spacer-col" />\n      ` : "";
-  return `<colgroup>
-      ${spacerCol}<col class="poz-col" />
-      <col class="desc-col" />
-      <col class="unit-col" />
-      <col class="qty-col" />
-      <col class="price-col" />
-      <col class="total-col" />
-    </colgroup>`;
-}
-
-function buildBfaFormatBody(analiz: PozAnaliz, target: "excel" | "pdf"): string {
+function buildSantijetReportBody(analiz: PozAnaliz, target: "excel" | "pdf"): string {
   const totals = hesaplaAnalizToplam(analiz);
-  const tipAd: Record<string, string> = {
-    malzeme: "Malzeme",
-    iscilik: "İşçilik",
-    ekipman: "Ekipman",
-  };
-  const spacer = bfaSpacerCell(target);
+  const exportDate = new Date().toLocaleDateString("tr-TR", {
+    day: "numeric",
+    month: "long",
+    year: "numeric",
+  });
 
-  let rowNumber = 5;
-  let tableRows = "";
-  for (const tip of ["malzeme", "iscilik", "ekipman"] as const) {
-    const rows = analiz.kalemler.filter((k) => k.tip === tip);
-    if (!rows.length) continue;
+  const sections = (["malzeme", "iscilik", "ekipman"] as const)
+    .map((tip) => buildKalemSection(analiz, tip, target))
+    .join("");
 
-    rowNumber += 1;
-    tableRows += `<tr class="head-row">${spacer}<td colspan="6" class="group">${tipAd[tip]}</td></tr>`;
-
-    for (const k of rows) {
-      rowNumber += 1;
-      tableRows += `<tr class="data-row">
-        ${spacer}
-        ${excelPozNoCell(k.pozNo)}
-        <td class="text">${escHtml(k.tanim)}</td>
-        <td class="text">${escHtml(k.olcuBirimi)}</td>
-        ${target === "excel" ? excelNumberCell(k.miktar, "qty") : pdfNumberCell(k.miktar, "qty")}
-        ${target === "excel" ? excelNumberCell(k.birimFiyati, "price") : pdfNumberCell(k.birimFiyati, "price")}
-        ${target === "excel" ? excelFormulaTlCell(rowNumber, k.tutar) : pdfFormulaTlCell(k.tutar)}
-      </tr>`;
-    }
-  }
-
-  const extraRows = [
-    analiz.pozTarifi
-      ? `<tr>${spacer}<td colspan="6" class="note tarif">${escHtml(analiz.pozTarifi)}</td></tr>`
-      : "",
-    analiz.yapimSartlari
-      ? `<tr>${spacer}<td colspan="6" class="note tarif">${escHtml(analiz.yapimSartlari)}</td></tr>`
-      : "",
-    analiz.olcusu
-      ? `<tr>${spacer}<td colspan="6" class="note olcu">Ölçü: ${escHtml(analiz.olcusu)}</td></tr>`
-      : "",
-  ].join("");
+  const costSummary = buildCostSummary(analiz, totals, target);
+  const notes = buildNotesSection(analiz);
 
   return `
-  <table>
-    ${bfaColgroup(target)}
-    <tr class="blank-row">
-      ${spacer}
-      <td colspan="6"></td>
-    </tr>
-    <tr>
-      ${spacer}
-      <td colspan="6" class="title">BİRİM FİYAT ANALİZİ</td>
-    </tr>
-    <tr class="head-row">
-      ${spacer}
-      <th>Poz No</th>
-      <th colspan="4">Analiz Adı</th>
-      <th>Ölçü Birimi</th>
-    </tr>
-    <tr class="meta-row">
-      ${spacer}
-      ${excelPozNoCell(analiz.pozNo)}
-      <td colspan="4" class="text">${escHtml(analiz.analizAdi)}</td>
-      <td class="text">${escHtml(analiz.olcuBirimi)}</td>
-    </tr>
-    <tr class="head-row">
-      ${spacer}
-      <th>Poz No</th>
-      <th>Tanım</th>
-      <th>Birim</th>
-      <th>Miktar</th>
-      <th>B.Fiyat</th>
-      <th>Tutar</th>
-    </tr>
-    ${tableRows}
-    <tr>
-      ${spacer}
-      <td colspan="5" class="text summary-label">Malzeme + İşçilik Tutarı</td>
-      ${target === "excel" ? excelTlCell(totals.malzemeIscilikToplami) : pdfTlCell(totals.malzemeIscilikToplami)}
-    </tr>
-    <tr>
-      ${spacer}
-      <td colspan="5" class="text summary-label">%${analiz.yukleniciKarOrani} Yüklenici Karı</td>
-      ${target === "excel" ? excelTlCell(totals.yukleniciKarTutari) : pdfTlCell(totals.yukleniciKarTutari)}
-    </tr>
-    <tr>
-      ${spacer}
-      <td colspan="5" class="text summary-label">1 ${escHtml(analiz.olcuBirimi)} Fiyatı</td>
-      ${target === "excel" ? excelTlCell(totals.birimFiyati) : pdfTlCell(totals.birimFiyati)}
-    </tr>
-    ${extraRows}
-  </table>`;
+  <div class="report">
+    <header class="report-header">
+      <div class="report-brand">${escHtml(APP_LEGAL_NAME)}</div>
+      <h1 class="report-title">Analiz Raporu</h1>
+      <div class="report-date">Oluşturulma: ${exportDate}</div>
+    </header>
+
+    <div class="info-grid">
+      <div class="info-row">
+        <div class="info-cell">
+          <span class="info-label">Poz Numarası</span>
+          <span class="info-value">${escHtml(formatResmiPozNo(analiz.pozNo))}</span>
+        </div>
+        <div class="info-cell">
+          <span class="info-label">Ölçü Birimi</span>
+          <span class="info-value">${escHtml(analiz.olcuBirimi)}</span>
+        </div>
+      </div>
+      <div class="info-row">
+        <div class="info-cell" style="width:100%;display:table-cell;border-right:none">
+          <span class="info-label">Analiz Adı</span>
+          <span class="info-value">${escHtml(analiz.analizAdi)}</span>
+        </div>
+      </div>
+      <div class="info-row">
+        <div class="info-cell">
+          <span class="info-label">Kalem Sayısı</span>
+          <span class="info-value">${analiz.kalemler.length}</span>
+        </div>
+        <div class="info-cell">
+          <span class="info-label">Yüklenici Kar Oranı</span>
+          <span class="info-value">%${analiz.yukleniciKarOrani}</span>
+        </div>
+      </div>
+    </div>
+
+    ${sections}
+    ${costSummary}
+    ${notes}
+
+    <footer class="report-footer">
+      ${escHtml(APP_LEGAL_NAME)} — Bu rapor resmi kurum yayını değildir; yalnızca bilgilendirme amaçlıdır.
+    </footer>
+  </div>`;
 }
 
-/** Excel — hücreleri ayrı, ortalı ve Office formüllü (.xls) şablon */
+/** Excel — ŞantiJET rapor formatı (.xls) */
 export function buildAnalizExcelHtml(analiz: PozAnaliz): string {
   return `<!DOCTYPE html>
 <html xmlns:o="urn:schemas-microsoft-com:office:office"
@@ -371,18 +492,18 @@ export function buildAnalizExcelHtml(analiz: PozAnaliz): string {
       xmlns="http://www.w3.org/TR/REC-html40">
 <head>
   <meta charset="utf-8" />
-  <title>${escHtml(formatResmiPozNo(analiz.pozNo))} — Birim Fiyat Analizi</title>
+  <title>${escHtml(formatResmiPozNo(analiz.pozNo))} — ŞantiJET Analiz Raporu</title>
   <!--[if gte mso 9]><xml>
     <x:ExcelWorkbook>
       <x:ExcelWorksheets><x:ExcelWorksheet>
-        <x:Name>Birim Fiyat Analizi</x:Name>
+        <x:Name>Analiz Raporu</x:Name>
         <x:WorksheetOptions><x:DisplayGridlines/></x:WorksheetOptions>
       </x:ExcelWorksheet></x:ExcelWorksheets>
     </x:ExcelWorkbook>
   </xml><![endif]-->
   <style>${EXCEL_STYLES}</style>
 </head>
-<body>${buildBfaFormatBody(analiz, "excel")}
+<body>${buildSantijetReportBody(analiz, "excel")}
 </body>
 </html>`;
 }
@@ -395,10 +516,10 @@ export function buildAnalizHtml(
 <html lang="tr">
 <head>
   <meta charset="utf-8" />
-  <title>${escHtml(formatResmiPozNo(analiz.pozNo))} — Birim Fiyat Analizi</title>
+  <title>${escHtml(formatResmiPozNo(analiz.pozNo))} — ŞantiJET Analiz Raporu</title>
   <style>${buildPdfExportStyles(orientation)}</style>
 </head>
-<body><div class="pdf-content">${buildBfaFormatBody(analiz, "pdf")}</div>
+<body><div class="pdf-content">${buildSantijetReportBody(analiz, "pdf")}</div>
 </body>
 </html>`;
 }
