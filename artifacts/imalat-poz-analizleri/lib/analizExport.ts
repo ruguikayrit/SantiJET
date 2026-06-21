@@ -5,6 +5,11 @@ import { Alert, InteractionManager, Platform, Share } from "react-native";
 import { PozAnaliz, hesaplaAnalizToplam } from "@/constants/pozAnalizleri";
 
 export type AnalizExportFormat = "pdf" | "excel";
+export type PdfPaperOrientation = "landscape" | "portrait";
+
+export interface AnalizExportOptions {
+  pdfOrientation?: PdfPaperOrientation;
+}
 
 const REPORT_STYLES = `
   body { font-family: Arial, sans-serif; font-size: 11px; color: #111; padding: 24px; }
@@ -22,17 +27,9 @@ const REPORT_STYLES = `
   p { white-space: pre-wrap; line-height: 1.5; }
 `;
 
-const EXCEL_STYLES = `
-  @page { size: A4 landscape; margin: 8mm; }
+const BFA_TABLE_STYLES = `
   body { font-family: Arial, sans-serif; font-size: 11px; color: #111; margin: 0; }
-  table { border-collapse: collapse; table-layout: fixed; }
-  col.spacer-col { width: 22px; }
-  col.poz-col { width: 230px; }
-  col.desc-col { width: 430px; }
-  col.unit-col { width: 140px; }
-  col.qty-col { width: 155px; }
-  col.price-col { width: 165px; }
-  col.total-col { width: 195px; }
+  table { border-collapse: collapse; table-layout: fixed; width: 100%; }
   th, td { border: 1px solid #000; padding: 3px 5px; vertical-align: middle; text-align: center; }
   th { background: #fff; color: #111; font-size: 11px; font-weight: bold; }
   .spacer { border: none; background: #fff; }
@@ -52,6 +49,41 @@ const EXCEL_STYLES = `
   .tarif { height: 57px; }
   .olcu { height: 16px; font-weight: bold; }
 `;
+
+function bfaColumnStyles(orientation: PdfPaperOrientation): string {
+  if (orientation === "portrait") {
+    return `
+  col.spacer-col { width: 12px; }
+  col.poz-col { width: 72px; }
+  col.desc-col { width: 150px; }
+  col.unit-col { width: 44px; }
+  col.qty-col { width: 52px; }
+  col.price-col { width: 58px; }
+  col.total-col { width: 62px; }
+  body { font-size: 9px; }
+  th, td { padding: 2px 3px; font-size: 9px; }
+  .title { font-size: 13px; }`;
+  }
+
+  return `
+  col.spacer-col { width: 22px; }
+  col.poz-col { width: 230px; }
+  col.desc-col { width: 430px; }
+  col.unit-col { width: 140px; }
+  col.qty-col { width: 155px; }
+  col.price-col { width: 165px; }
+  col.total-col { width: 195px; }`;
+}
+
+function buildExportStyles(orientation: PdfPaperOrientation = "landscape"): string {
+  const pageSize = orientation === "landscape" ? "A4 landscape" : "A4 portrait";
+  return `
+  @page { size: ${pageSize}; margin: 8mm; }
+  ${BFA_TABLE_STYLES}
+  ${bfaColumnStyles(orientation)}`;
+}
+
+const EXCEL_STYLES = buildExportStyles("landscape");
 
 function trFmt(n: number): string {
   return n.toLocaleString("tr-TR", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
@@ -309,17 +341,27 @@ export function buildAnalizExcelHtml(analiz: PozAnaliz): string {
 </html>`;
 }
 
-export function buildAnalizHtml(analiz: PozAnaliz): string {
+export function buildAnalizHtml(
+  analiz: PozAnaliz,
+  orientation: PdfPaperOrientation = "landscape",
+): string {
   return `<!DOCTYPE html>
 <html lang="tr">
 <head>
   <meta charset="utf-8" />
   <title>${escHtml(formatResmiPozNo(analiz.pozNo))} — BFA</title>
-  <style>${EXCEL_STYLES}</style>
+  <style>${buildExportStyles(orientation)}</style>
 </head>
 <body>${buildBfaFormatBody(analiz, "pdf")}
 </body>
 </html>`;
+}
+
+function pdfPageSize(orientation: PdfPaperOrientation): { width: number; height: number } {
+  // A4 @ 72 dpi (pt)
+  return orientation === "landscape"
+    ? { width: 842, height: 595 }
+    : { width: 595, height: 842 };
 }
 
 async function downloadOnWeb(content: string, filename: string, mime: string): Promise<void> {
@@ -387,8 +429,13 @@ export function waitForShareSheet(): Promise<void> {
   });
 }
 
-export async function exportAnaliz(analiz: PozAnaliz, format: AnalizExportFormat): Promise<void> {
+export async function exportAnaliz(
+  analiz: PozAnaliz,
+  format: AnalizExportFormat,
+  options: AnalizExportOptions = {},
+): Promise<void> {
   const base = safeFilename(analiz.pozNo);
+  const pdfOrientation = options.pdfOrientation ?? "landscape";
 
   try {
     if (format === "excel") {
@@ -403,7 +450,8 @@ export async function exportAnaliz(analiz: PozAnaliz, format: AnalizExportFormat
       return;
     }
 
-    const html = buildAnalizHtml(analiz);
+    const html = buildAnalizHtml(analiz, pdfOrientation);
+    const { width, height } = pdfPageSize(pdfOrientation);
     if (Platform.OS === "web") {
       const printWindow = window.open("", "_blank");
       if (printWindow) {
@@ -419,7 +467,7 @@ export async function exportAnaliz(analiz: PozAnaliz, format: AnalizExportFormat
 
     try {
       const Print = await import("expo-print");
-      const { uri } = await Print.printToFileAsync({ html });
+      const { uri } = await Print.printToFileAsync({ html, width, height });
       await shareExportFile(uri, "PDF Dışa Aktar", "application/pdf");
     } catch {
       const filename = `analiz_${base}.html`;
