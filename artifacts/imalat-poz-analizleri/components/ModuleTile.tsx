@@ -11,6 +11,7 @@ import {
 import { parseModuleTileLabel, type BfaModuleIcon } from "@/constants/bfaModules";
 
 const ICON_LABEL_GAP = 3;
+const TITLE_SUBTITLE_GAP = 1.5;
 
 interface ModuleTileProps {
   num: string;
@@ -125,7 +126,7 @@ const styles = StyleSheet.create({
   },
   tileLabelGroup: {
     alignItems: "center",
-    gap: 1,
+    gap: TITLE_SUBTITLE_GAP,
     width: "100%",
   },
   tileIconCircle: {
@@ -147,7 +148,6 @@ const styles = StyleSheet.create({
     textAlign: "center",
     letterSpacing: 0.2,
     lineHeight: 9,
-    marginTop: -1,
   },
   tileFootRow: {
     flexDirection: "row",
