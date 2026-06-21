@@ -12,8 +12,6 @@ interface BulkExportModalProps {
   onSelect: (format: AnalizExportFormat, pdfOrientation?: PdfPaperOrientation) => void;
   title?: string;
   subtitle?: string;
-  pdfHint?: string;
-  excelHint?: string;
   orientationHint?: string;
 }
 
@@ -34,16 +32,14 @@ export function BulkExportModal({
   onSelect,
   title = "Toplu Dışa Aktar",
   subtitle,
-  pdfHint = "ZIP içinde PDF dosyaları",
-  excelHint = "ZIP içinde .xls dosyaları",
   orientationHint,
 }: BulkExportModalProps) {
   const colors = useColors();
   const [step, setStep] = useState<"format" | "pdf-orientation">("format");
 
   const formats = [
-    { id: "pdf" as const, label: "PDF", hint: pdfHint, icon: "file-text" as const, color: "#dc2626" },
-    { id: "excel" as const, label: "Excel", hint: excelHint, icon: "grid" as const, color: "#059669" },
+    { id: "pdf" as const, label: "PDF", icon: "file-text" as const, color: "#dc2626" },
+    { id: "excel" as const, label: "Excel", icon: "grid" as const, color: "#059669" },
   ];
 
   useEffect(() => {
@@ -86,19 +82,16 @@ export function BulkExportModal({
                   key={f.id}
                   activeOpacity={0.85}
                   style={[
-                    styles.option,
+                    styles.formatOption,
                     { borderColor: f.color + "44", backgroundColor: f.color + "10" },
                   ]}
                   onPress={() => handleFormatSelect(f.id)}
                 >
-                  <View style={[styles.optionIcon, { backgroundColor: f.color + "22" }]}>
-                    <Feather name={f.icon} size={18} color={f.color} />
+                  <View style={[styles.formatIcon, { backgroundColor: f.color + "22" }]}>
+                    <Feather name={f.icon} size={24} color={f.color} />
                   </View>
-                  <View style={styles.optionText}>
-                    <Text style={[styles.optionLabel, { color: colors.foreground }]}>{f.label}</Text>
-                    <Text style={[styles.optionHint, { color: colors.mutedForeground }]}>{f.hint}</Text>
-                  </View>
-                  <Feather name="chevron-right" size={16} color={f.color} />
+                  <Text style={[styles.formatLabel, { color: colors.foreground }]}>{f.label}</Text>
+                  <Feather name="chevron-right" size={20} color={f.color} />
                 </TouchableOpacity>
               ))}
             </>
@@ -183,6 +176,27 @@ const styles = StyleSheet.create({
   backText: {
     fontSize: 13,
     fontFamily: "Inter_500Medium",
+  },
+  formatOption: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 14,
+    paddingVertical: 18,
+    paddingHorizontal: 16,
+    borderRadius: 14,
+    borderWidth: 1,
+  },
+  formatIcon: {
+    width: 48,
+    height: 48,
+    borderRadius: 24,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  formatLabel: {
+    flex: 1,
+    fontSize: 17,
+    fontFamily: "Inter_700Bold",
   },
   option: {
     flexDirection: "row",

@@ -104,8 +104,6 @@ export default function AnalizKarsilastirScreen() {
         count={analizler.length}
         title="Karşılaştırmayı Dışa Aktar"
         subtitle={`${analizler.length} analizin karşılaştırma raporu`}
-        pdfHint="Yazdırılabilir karşılaştırma tablosu"
-        excelHint="Excel ve Numbers ile açılır"
         onClose={() => setExportVisible(false)}
         onSelect={handleExportCompare}
       />

@@ -4,7 +4,6 @@ import {
   ActivityIndicator,
   Modal,
   Pressable,
-  ScrollView,
   StyleSheet,
   Text,
   TouchableOpacity,
@@ -31,12 +30,11 @@ interface ExportFormatModalProps {
 const FORMATS: {
   id: AnalizExportFormat;
   label: string;
-  hint: string;
   icon: keyof typeof Feather.glyphMap;
   color: string;
 }[] = [
-  { id: "pdf", label: "PDF", hint: "Resmi tablo düzeni, yazdırılabilir", icon: "file-text", color: "#dc2626" },
-  { id: "excel", label: "Excel", hint: "Excel ve Numbers ile açılır", icon: "grid", color: "#059669" },
+  { id: "pdf", label: "PDF", icon: "file-text", color: "#dc2626" },
+  { id: "excel", label: "Excel", icon: "grid", color: "#059669" },
 ];
 
 const ORIENTATIONS: {
@@ -171,19 +169,16 @@ export function ExportFormatModal({ visible, onClose, analiz, onExport }: Export
                     key={f.id}
                     activeOpacity={0.85}
                     style={[
-                      styles.option,
+                      styles.formatOption,
                       { borderColor: f.color + "44", backgroundColor: f.color + "10" },
                     ]}
                     onPress={() => handleFormatSelect(f.id)}
                   >
-                    <View style={[styles.optionIcon, { backgroundColor: f.color + "22" }]}>
-                      <Feather name={f.icon} size={18} color={f.color} />
+                    <View style={[styles.formatIcon, { backgroundColor: f.color + "22" }]}>
+                      <Feather name={f.icon} size={24} color={f.color} />
                     </View>
-                    <View style={styles.optionText}>
-                      <Text style={[styles.optionLabel, { color: colors.foreground }]}>{f.label}</Text>
-                      <Text style={[styles.optionHint, { color: colors.mutedForeground }]}>{f.hint}</Text>
-                    </View>
-                    <Feather name="chevron-right" size={16} color={f.color} />
+                    <Text style={[styles.formatLabel, { color: colors.foreground }]}>{f.label}</Text>
+                    <Feather name="chevron-right" size={20} color={f.color} />
                   </TouchableOpacity>
                 ))}
               </>
@@ -269,6 +264,27 @@ const styles = StyleSheet.create({
   backText: {
     fontSize: 13,
     fontFamily: "Inter_500Medium",
+  },
+  formatOption: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 14,
+    paddingVertical: 18,
+    paddingHorizontal: 16,
+    borderRadius: 14,
+    borderWidth: 1,
+  },
+  formatIcon: {
+    width: 48,
+    height: 48,
+    borderRadius: 24,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  formatLabel: {
+    flex: 1,
+    fontSize: 17,
+    fontFamily: "Inter_700Bold",
   },
   option: {
     flexDirection: "row",
