@@ -25,6 +25,13 @@ import { exportKesif } from "@/lib/kesifExport";
 
 const KESIF_COLOR = "#7c3aed";
 
+const COL = {
+  sira: 36,
+  miktar: 78,
+  tutar: 118,
+  del: 28,
+} as const;
+
 export default function KesifDetailScreen() {
   const colors = useColors();
   const router = useRouter();
@@ -140,16 +147,13 @@ export default function KesifDetailScreen() {
       <View
         style={[styles.tableHeader, { backgroundColor: colors.card, borderColor: colors.border }]}
       >
-        <Text style={[styles.th, { width: 28, color: colors.mutedForeground }]}>#</Text>
-        <Text style={[styles.th, { width: 88, color: colors.mutedForeground }]}>Poz</Text>
-        <Text style={[styles.th, { flex: 1, color: colors.mutedForeground }]}>Tanım</Text>
-        <Text style={[styles.th, { width: 64, color: colors.mutedForeground, textAlign: "right" }]}>
-          Miktar
+        <Text style={[styles.th, styles.colSira, { color: colors.mutedForeground }]}>Sıra</Text>
+        <Text style={[styles.th, styles.colPozTanim, { color: colors.mutedForeground }]}>
+          Poz / Tanım
         </Text>
-        <Text style={[styles.th, { width: 72, color: colors.mutedForeground, textAlign: "right" }]}>
-          Tutar
-        </Text>
-        <View style={{ width: 28 }} />
+        <Text style={[styles.th, styles.colMiktar, { color: colors.mutedForeground }]}>Miktar</Text>
+        <Text style={[styles.th, styles.colTutar, { color: colors.mutedForeground }]}>Tutar</Text>
+        <View style={{ width: COL.del }} />
       </View>
 
       <FlatList
@@ -174,9 +178,11 @@ export default function KesifDetailScreen() {
               },
             ]}
           >
-            <Text style={[styles.td, { width: 28, color: colors.mutedForeground }]}>{index + 1}</Text>
+            <Text style={[styles.tdSira, { color: colors.mutedForeground }]}>{index + 1}</Text>
+
             <TouchableOpacity
-              style={{ width: 88 }}
+              style={styles.colPozTanim}
+              activeOpacity={0.75}
               onPress={() => {
                 const analiz = resolveAnaliz(item.analizId);
                 if (analiz) {
@@ -188,28 +194,29 @@ export default function KesifDetailScreen() {
               }}
             >
               <Text style={[styles.tdPoz, { color: colors.primary }]}>{item.pozNo}</Text>
+              <Text style={[styles.tdAd, { color: colors.foreground }]}>{item.analizAdi}</Text>
             </TouchableOpacity>
-            <View style={{ flex: 1, paddingRight: 4 }}>
-              <Text style={[styles.tdAd, { color: colors.foreground }]} numberOfLines={2}>
-                {item.analizAdi}
-              </Text>
-              <Text style={[styles.tdUnit, { color: colors.mutedForeground }]}>
-                {trFmtKesif(item.birimFiyati)} TL / {item.olcuBirimi}
+
+            <View style={styles.colMiktar}>
+              <TextInput
+                style={[
+                  styles.qtyInput,
+                  { color: colors.foreground, borderColor: colors.border, backgroundColor: colors.card },
+                ]}
+                value={String(item.miktar)}
+                onChangeText={(v) => updateSatirMiktar(projectId, item.id, parseQty(v))}
+                keyboardType="decimal-pad"
+                selectTextOnFocus
+              />
+              <Text style={[styles.tdUnit, { color: colors.mutedForeground }]} numberOfLines={1}>
+                {item.olcuBirimi}
               </Text>
             </View>
-            <TextInput
-              style={[
-                styles.qtyInput,
-                { color: colors.foreground, borderColor: colors.border, backgroundColor: colors.card },
-              ]}
-              value={String(item.miktar)}
-              onChangeText={(v) => updateSatirMiktar(projectId, item.id, parseQty(v))}
-              keyboardType="decimal-pad"
-              selectTextOnFocus
-            />
-            <Text style={[styles.tdTutar, { width: 72, color: colors.foreground }]}>
+
+            <Text style={[styles.tdTutar, { color: colors.foreground }]} numberOfLines={1}>
               {trFmtKesif(item.tutar)}
             </Text>
+
             <TouchableOpacity
               onPress={() => handleDeleteSatir(item.id)}
               style={styles.delBtn}
@@ -296,34 +303,57 @@ const styles = StyleSheet.create({
     gap: 4,
   },
   th: { fontSize: 10, fontFamily: "Inter_600SemiBold", textTransform: "uppercase" },
+  colSira: { width: COL.sira, textAlign: "center" },
+  colPozTanim: { flex: 1, minWidth: 0, textAlign: "left" },
+  colMiktar: { width: COL.miktar, alignItems: "flex-end" },
+  colTutar: { width: COL.tutar, textAlign: "right" },
   row: {
     flexDirection: "row",
-    alignItems: "center",
+    alignItems: "flex-start",
     paddingHorizontal: 12,
     paddingVertical: 10,
     borderBottomWidth: StyleSheet.hairlineWidth,
-    gap: 4,
+    gap: 6,
   },
-  td: { fontSize: 11, fontFamily: "Inter_400Regular" },
-  tdPoz: { fontSize: 11, fontFamily: "Inter_700Bold" },
-  tdAd: { fontSize: 12, fontFamily: "Inter_400Regular", lineHeight: 16 },
-  tdUnit: { fontSize: 10, fontFamily: "Inter_400Regular", marginTop: 2 },
+  tdSira: {
+    width: COL.sira,
+    fontSize: 11,
+    fontFamily: "Inter_500Medium",
+    textAlign: "center",
+    paddingTop: 2,
+  },
+  tdPoz: { fontSize: 11, fontFamily: "Inter_700Bold", lineHeight: 15 },
+  tdAd: {
+    fontSize: 12,
+    fontFamily: "Inter_400Regular",
+    lineHeight: 17,
+    marginTop: 3,
+  },
+  tdUnit: {
+    fontSize: 10,
+    fontFamily: "Inter_400Regular",
+    marginTop: 3,
+    textAlign: "right",
+  },
   qtyInput: {
-    width: 64,
+    width: "100%",
     fontSize: 12,
     fontFamily: "Inter_600SemiBold",
     borderWidth: 1,
     borderRadius: 6,
     paddingHorizontal: 6,
-    paddingVertical: 4,
+    paddingVertical: 5,
     textAlign: "right",
   },
   tdTutar: {
-    fontSize: 12,
+    width: COL.tutar,
+    fontSize: 11,
     fontFamily: "Inter_700Bold",
     textAlign: "right",
+    paddingTop: 6,
+    letterSpacing: -0.2,
   },
-  delBtn: { width: 28, alignItems: "center" },
+  delBtn: { width: COL.del, alignItems: "center", paddingTop: 4 },
   emptyList: { alignItems: "center", paddingTop: 60, gap: 10, paddingHorizontal: 24 },
   emptyText: { fontSize: 13, fontFamily: "Inter_400Regular", textAlign: "center" },
   fab: {
