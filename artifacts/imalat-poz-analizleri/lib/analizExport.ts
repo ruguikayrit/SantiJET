@@ -23,6 +23,7 @@ const REPORT_STYLES = `
 `;
 
 const EXCEL_STYLES = `
+  @page { size: A4 landscape; margin: 8mm; }
   body { font-family: Arial, sans-serif; font-size: 11px; color: #111; margin: 0; }
   table { border-collapse: collapse; table-layout: fixed; }
   col.spacer-col { width: 22px; }
@@ -54,6 +55,14 @@ const EXCEL_STYLES = `
 
 function trFmt(n: number): string {
   return n.toLocaleString("tr-TR", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+}
+
+function trQty(n: number): string {
+  return n.toLocaleString("tr-TR", { minimumFractionDigits: 4, maximumFractionDigits: 4 });
+}
+
+function trCurrency(n: number): string {
+  return `₺${trFmt(n)}`;
 }
 
 function safeFilename(pozNo: string): string {
@@ -102,6 +111,18 @@ function excelTlCell(value: number): string {
 function excelFormulaTlCell(rowNumber: number, fallback: number): string {
   const numericValue = Number.isFinite(fallback) ? fallback : 0;
   return `<td class="tl" x:fmla="=E${rowNumber}*F${rowNumber}" x:num="${numericValue}">${numericValue}</td>`;
+}
+
+function pdfNumberCell(value: number, className: "qty" | "price"): string {
+  return `<td class="${className}">${className === "qty" ? trQty(value) : trCurrency(value)}</td>`;
+}
+
+function pdfTlCell(value: number): string {
+  return `<td class="tl">${trCurrency(value)}</td>`;
+}
+
+function pdfFormulaTlCell(value: number): string {
+  return `<td class="tl">${trCurrency(value)}</td>`;
 }
 
 function buildAnalizReportBody(analiz: PozAnaliz): string {
@@ -161,7 +182,7 @@ function buildAnalizReportBody(analiz: PozAnaliz): string {
   ${extraBlocks}`;
 }
 
-function buildAnalizExcelBody(analiz: PozAnaliz): string {
+function buildBfaFormatBody(analiz: PozAnaliz, target: "excel" | "pdf"): string {
   const totals = hesaplaAnalizToplam(analiz);
   const tipAd: Record<string, string> = {
     malzeme: "Malzeme",
@@ -185,9 +206,9 @@ function buildAnalizExcelBody(analiz: PozAnaliz): string {
         ${excelPozNoCell(k.pozNo)}
         <td class="text">${escHtml(k.tanim)}</td>
         <td class="text">${escHtml(k.olcuBirimi)}</td>
-        ${excelNumberCell(k.miktar, "qty")}
-        ${excelNumberCell(k.birimFiyati, "price")}
-        ${excelFormulaTlCell(rowNumber, k.tutar)}
+        ${target === "excel" ? excelNumberCell(k.miktar, "qty") : pdfNumberCell(k.miktar, "qty")}
+        ${target === "excel" ? excelNumberCell(k.birimFiyati, "price") : pdfNumberCell(k.birimFiyati, "price")}
+        ${target === "excel" ? excelFormulaTlCell(rowNumber, k.tutar) : pdfFormulaTlCell(k.tutar)}
       </tr>`;
     }
   }
@@ -248,17 +269,17 @@ function buildAnalizExcelBody(analiz: PozAnaliz): string {
     <tr>
       <td class="spacer"></td>
       <td colspan="5" class="text summary-label">Malzeme + İşçilik Tutarı</td>
-      ${excelTlCell(totals.malzemeIscilikToplami)}
+      ${target === "excel" ? excelTlCell(totals.malzemeIscilikToplami) : pdfTlCell(totals.malzemeIscilikToplami)}
     </tr>
     <tr>
       <td class="spacer"></td>
       <td colspan="5" class="text summary-label">%${analiz.yukleniciKarOrani} Yüklenici Karı</td>
-      ${excelTlCell(totals.yukleniciKarTutari)}
+      ${target === "excel" ? excelTlCell(totals.yukleniciKarTutari) : pdfTlCell(totals.yukleniciKarTutari)}
     </tr>
     <tr>
       <td class="spacer"></td>
       <td colspan="5" class="text summary-label">1 ${escHtml(analiz.olcuBirimi)} Fiyatı</td>
-      ${excelTlCell(totals.birimFiyati)}
+      ${target === "excel" ? excelTlCell(totals.birimFiyati) : pdfTlCell(totals.birimFiyati)}
     </tr>
     ${extraRows}
   </table>`;
@@ -283,7 +304,7 @@ export function buildAnalizExcelHtml(analiz: PozAnaliz): string {
   </xml><![endif]-->
   <style>${EXCEL_STYLES}</style>
 </head>
-<body>${buildAnalizExcelBody(analiz)}
+<body>${buildBfaFormatBody(analiz, "excel")}
 </body>
 </html>`;
 }
@@ -293,10 +314,10 @@ export function buildAnalizHtml(analiz: PozAnaliz): string {
 <html lang="tr">
 <head>
   <meta charset="utf-8" />
-  <title>${escHtml(analiz.pozNo)} — BFA</title>
-  <style>${REPORT_STYLES}</style>
+  <title>${escHtml(formatResmiPozNo(analiz.pozNo))} — BFA</title>
+  <style>${EXCEL_STYLES}</style>
 </head>
-<body>${buildAnalizReportBody(analiz)}
+<body>${buildBfaFormatBody(analiz, "pdf")}
 </body>
 </html>`;
 }
