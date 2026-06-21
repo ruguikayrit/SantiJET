@@ -23,18 +23,33 @@ const REPORT_STYLES = `
 `;
 
 const EXCEL_STYLES = `
-  body { font-family: Arial, sans-serif; font-size: 11px; color: #111; margin: 12px; }
-  table { width: 100%; border-collapse: collapse; }
-  th, td { border: 1px solid #000; padding: 5px 6px; vertical-align: middle; text-align: center; }
-  th { background: #16213e; color: #fff; font-size: 10px; font-weight: bold; }
-  .title { font-size: 16px; font-weight: bold; background: #fff; color: #111; }
+  body { font-family: Arial, sans-serif; font-size: 11px; color: #111; margin: 0; }
+  table { border-collapse: collapse; table-layout: fixed; }
+  col.spacer-col { width: 22px; }
+  col.poz-col { width: 230px; }
+  col.desc-col { width: 430px; }
+  col.unit-col { width: 140px; }
+  col.qty-col { width: 155px; }
+  col.price-col { width: 165px; }
+  col.total-col { width: 195px; }
+  th, td { border: 1px solid #000; padding: 3px 5px; vertical-align: middle; text-align: center; }
+  th { background: #fff; color: #111; font-size: 11px; font-weight: bold; }
+  .spacer { border: none; background: #fff; }
+  .blank-row td { height: 12px; border: none; }
+  .title { height: 30px; font-size: 16px; font-weight: bold; background: #fff; color: #111; }
+  .meta-row td { height: 34px; }
+  .head-row th, .group { height: 16px; }
+  .data-row td { height: 15px; }
   .group { background: #f0f4f8; font-weight: bold; }
   .poz { mso-number-format:"\\@"; }
   .qty { mso-number-format:"0.0000"; }
-  .price { mso-number-format:"#,##0.00"; }
-  .tl { mso-number-format:"#,##0.00 \\"TL\\""; }
+  .price { mso-number-format:"\\"₺\\"#,##0.00"; }
+  .tl { mso-number-format:"\\"₺\\"#,##0.00"; }
   .text { mso-number-format:"\\@"; }
+  .summary-label { font-weight: bold; }
   .note { text-align: center; white-space: normal; line-height: 1.4; }
+  .tarif { height: 57px; }
+  .olcu { height: 16px; font-weight: bold; }
 `;
 
 function trFmt(n: number): string {
@@ -86,7 +101,7 @@ function excelTlCell(value: number): string {
 
 function excelFormulaTlCell(rowNumber: number, fallback: number): string {
   const numericValue = Number.isFinite(fallback) ? fallback : 0;
-  return `<td class="tl" x:fmla="=D${rowNumber}*E${rowNumber}" x:num="${numericValue}">${numericValue}</td>`;
+  return `<td class="tl" x:fmla="=E${rowNumber}*F${rowNumber}" x:num="${numericValue}">${numericValue}</td>`;
 }
 
 function buildAnalizReportBody(analiz: PozAnaliz): string {
@@ -154,18 +169,19 @@ function buildAnalizExcelBody(analiz: PozAnaliz): string {
     ekipman: "Ekipman",
   };
 
-  let rowNumber = 4;
+  let rowNumber = 5;
   let tableRows = "";
   for (const tip of ["malzeme", "iscilik", "ekipman"] as const) {
     const rows = analiz.kalemler.filter((k) => k.tip === tip);
     if (!rows.length) continue;
 
     rowNumber += 1;
-    tableRows += `<tr><td colspan="6" class="group">${tipAd[tip]}</td></tr>`;
+    tableRows += `<tr class="head-row"><td class="spacer"></td><td colspan="6" class="group">${tipAd[tip]}</td></tr>`;
 
     for (const k of rows) {
       rowNumber += 1;
-      tableRows += `<tr>
+      tableRows += `<tr class="data-row">
+        <td class="spacer"></td>
         ${excelPozNoCell(k.pozNo)}
         <td class="text">${escHtml(k.tanim)}</td>
         <td class="text">${escHtml(k.olcuBirimi)}</td>
@@ -177,31 +193,50 @@ function buildAnalizExcelBody(analiz: PozAnaliz): string {
   }
 
   const extraRows = [
-    analiz.pozTarifi ? `<tr><td colspan="6" class="note">${escHtml(analiz.pozTarifi)}</td></tr>` : "",
+    analiz.pozTarifi
+      ? `<tr><td class="spacer"></td><td colspan="6" class="note tarif">${escHtml(analiz.pozTarifi)}</td></tr>`
+      : "",
     analiz.yapimSartlari
-      ? `<tr><td colspan="6" class="note">${escHtml(analiz.yapimSartlari)}</td></tr>`
+      ? `<tr><td class="spacer"></td><td colspan="6" class="note tarif">${escHtml(analiz.yapimSartlari)}</td></tr>`
       : "",
     analiz.olcusu
-      ? `<tr><td colspan="6" class="note"><strong>Ölçü:</strong> ${escHtml(analiz.olcusu)}</td></tr>`
+      ? `<tr><td class="spacer"></td><td colspan="6" class="note olcu">Ölçü: ${escHtml(analiz.olcusu)}</td></tr>`
       : "",
   ].join("");
 
   return `
   <table>
-    <tr>
-      <td colspan="6" class="title">BİRİM FİYAT ANALİZİ</td>
+    <colgroup>
+      <col class="spacer-col" />
+      <col class="poz-col" />
+      <col class="desc-col" />
+      <col class="unit-col" />
+      <col class="qty-col" />
+      <col class="price-col" />
+      <col class="total-col" />
+    </colgroup>
+    <tr class="blank-row">
+      <td class="spacer"></td>
+      <td colspan="6"></td>
     </tr>
     <tr>
+      <td class="spacer"></td>
+      <td colspan="6" class="title">BİRİM FİYAT ANALİZİ</td>
+    </tr>
+    <tr class="head-row">
+      <td class="spacer"></td>
       <th>Poz No</th>
       <th colspan="4">Analiz Adı</th>
       <th>Ölçü Birimi</th>
     </tr>
-    <tr>
+    <tr class="meta-row">
+      <td class="spacer"></td>
       ${excelPozNoCell(analiz.pozNo)}
       <td colspan="4" class="text">${escHtml(analiz.analizAdi)}</td>
       <td class="text">${escHtml(analiz.olcuBirimi)}</td>
     </tr>
-    <tr>
+    <tr class="head-row">
+      <td class="spacer"></td>
       <th>Poz No</th>
       <th>Tanım</th>
       <th>Birim</th>
@@ -211,15 +246,18 @@ function buildAnalizExcelBody(analiz: PozAnaliz): string {
     </tr>
     ${tableRows}
     <tr>
-      <td colspan="5" class="text"><strong>Malzeme + İşçilik Tutarı</strong></td>
+      <td class="spacer"></td>
+      <td colspan="5" class="text summary-label">Malzeme + İşçilik Tutarı</td>
       ${excelTlCell(totals.malzemeIscilikToplami)}
     </tr>
     <tr>
-      <td colspan="5" class="text"><strong>%${analiz.yukleniciKarOrani} Yüklenici Karı</strong></td>
+      <td class="spacer"></td>
+      <td colspan="5" class="text summary-label">%${analiz.yukleniciKarOrani} Yüklenici Karı</td>
       ${excelTlCell(totals.yukleniciKarTutari)}
     </tr>
     <tr>
-      <td colspan="5" class="text"><strong>1 ${escHtml(analiz.olcuBirimi)} Fiyatı</strong></td>
+      <td class="spacer"></td>
+      <td colspan="5" class="text summary-label">1 ${escHtml(analiz.olcuBirimi)} Fiyatı</td>
       ${excelTlCell(totals.birimFiyati)}
     </tr>
     ${extraRows}
