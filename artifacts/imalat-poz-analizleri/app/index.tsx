@@ -19,6 +19,7 @@ import { CreateAnalizFab } from "@/components/CreateAnalizFab";
 import { NewAnalizModulePickerModal } from "@/components/NewAnalizModulePickerModal";
 import { RecentViewsModal } from "@/components/RecentViewsModal";
 import { SettingsModal } from "@/components/SettingsModal";
+import { ModuleGrid } from "@/components/ModuleGrid";
 import { ModuleTile } from "@/components/ModuleTile";
 import { BFA_DISCIPLINES, BFA_MODULES, BfaDiscipline, resolveAnalizDiscipline } from "@/constants/bfaModules";
 import { matchesPozAnalizSearch } from "@/constants/pozAnalizleri";
@@ -397,23 +398,25 @@ export default function HomeScreen() {
 
         <Text style={[styles.sectionLabel, { color: colors.foreground }]}>Modüller</Text>
 
-        {BFA_MODULES.map((mod) => {
-          const count = mod.count(stats);
-          return (
-            <ModuleTile
-              key={mod.num}
-              num={mod.num}
-              label={mod.label}
-              icon={mod.icon}
-              color={mod.color}
-              info={`${count} ${mod.infoSuffix}`}
-              loading={loading}
-              cardForeground={colors.cardForeground}
-              cardBackground={colors.card}
-              onPress={() => openModule(mod)}
-            />
-          );
-        })}
+        <ModuleGrid>
+          {BFA_MODULES.map((mod) => {
+            const count = mod.count(stats);
+            return (
+              <ModuleTile
+                key={mod.num}
+                num={mod.num}
+                label={mod.label}
+                icon={mod.icon}
+                color={mod.color}
+                info={`${count} ${mod.infoSuffix}`}
+                loading={loading}
+                cardForeground={colors.cardForeground}
+                cardBackground={colors.card}
+                onPress={() => openModule(mod)}
+              />
+            );
+          })}
+        </ModuleGrid>
 
         <CreateAnalizFab onPress={openNewAnaliz} />
 
