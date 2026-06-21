@@ -5,7 +5,6 @@ import {
   ActivityIndicator,
   FlatList,
   Platform,
-  ScrollView,
   StyleSheet,
   Text,
   TextInput,
@@ -24,6 +23,12 @@ import { useBfaCatalog } from "@/hooks/useBfaCatalog";
 import { useColors } from "@/hooks/useColors";
 
 const KATALOG_MODULES = BFA_MODULES.filter((m) => m.modul !== "favoriler");
+
+const FILTER_LABELS: Record<BfaDiscipline, string> = {
+  insaat: "İNŞAAT",
+  mekanik: "MEKANİK",
+  elektrik: "ELEKTRİK",
+};
 
 export default function AnalizKataloguScreen() {
   const colors = useColors();
@@ -95,19 +100,16 @@ export default function AnalizKataloguScreen() {
         <View style={{ width: 40 }} />
       </View>
 
-      <ScrollView
-        horizontal
-        showsHorizontalScrollIndicator={false}
-        contentContainerStyle={styles.modulFilterRow}
-      >
+      <View style={styles.modulFilterRow}>
         {KATALOG_MODULES.map((mod) => {
-          const active = selectedModul === mod.modul;
-          const count = stats[mod.modul as BfaDiscipline].length;
+          const discipline = mod.modul as BfaDiscipline;
+          const active = selectedModul === discipline;
+          const count = stats[discipline].length;
           return (
             <TouchableOpacity
               key={mod.modul}
               activeOpacity={0.85}
-              onPress={() => selectModul(mod.modul as BfaDiscipline)}
+              onPress={() => selectModul(discipline)}
               style={[
                 styles.modulChip,
                 {
@@ -118,7 +120,7 @@ export default function AnalizKataloguScreen() {
             >
               <Feather
                 name={mod.icon}
-                size={14}
+                size={15}
                 color={active ? mod.color : colors.mutedForeground}
               />
               <Text
@@ -126,21 +128,25 @@ export default function AnalizKataloguScreen() {
                   styles.modulChipLabel,
                   { color: active ? mod.color : colors.foreground },
                 ]}
+                numberOfLines={1}
+                adjustsFontSizeToFit
+                minimumFontScale={0.75}
               >
-                {mod.label.replace(" B.F.A.", "").replace(" TESİSAT", "")}
+                {FILTER_LABELS[discipline]}
               </Text>
               <Text
                 style={[
                   styles.modulChipCount,
                   { color: active ? mod.color : colors.mutedForeground },
                 ]}
+                numberOfLines={1}
               >
                 {loading ? "…" : count}
               </Text>
             </TouchableOpacity>
           );
         })}
-      </ScrollView>
+      </View>
 
       <View
         style={[styles.searchWrap, { backgroundColor: colors.card, borderColor: colors.border }]}
@@ -251,27 +257,35 @@ const styles = StyleSheet.create({
     textAlign: "center",
   },
   modulFilterRow: {
+    flexDirection: "row",
     paddingHorizontal: 12,
     paddingTop: 12,
     paddingBottom: 4,
-    gap: 8,
+    gap: 6,
   },
   modulChip: {
-    flexDirection: "row",
+    flex: 1,
+    minWidth: 0,
+    flexDirection: "column",
     alignItems: "center",
-    gap: 6,
-    paddingHorizontal: 12,
-    paddingVertical: 10,
+    justifyContent: "center",
+    gap: 3,
+    paddingHorizontal: 4,
+    paddingVertical: 8,
     borderRadius: 10,
     borderWidth: 1,
   },
   modulChipLabel: {
-    fontSize: 12,
+    width: "100%",
+    fontSize: 10,
     fontFamily: "Inter_700Bold",
+    textAlign: "center",
+    letterSpacing: 0.2,
   },
   modulChipCount: {
-    fontSize: 11,
+    fontSize: 10,
     fontFamily: "Inter_600SemiBold",
+    textAlign: "center",
   },
   searchWrap: {
     flexDirection: "row",
