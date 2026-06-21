@@ -33,7 +33,7 @@ const COL = {
   miktar: 64,
   birim: 44,
   tutar: 112,
-  del: 13,
+  del: 3,
   numGap: 6,
 } as const;
 
@@ -370,7 +370,7 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     alignItems: "flex-start",
     gap: COL.numGap,
-    marginLeft: 3,
+    marginLeft: 13,
   },
   colMiktar: { width: COL.miktar, textAlign: "right" },
   colBirim: { width: COL.birim, textAlign: "center" },
