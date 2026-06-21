@@ -13,6 +13,8 @@
     "dev:mobile-web": "PORT=24915 pnpm --filter @workspace/santiye-takip run dev:web",
     "dev:api": "PORT=8080 pnpm --filter @workspace/api-server run dev",
     "dev:website": "PORT=8082 pnpm --filter @workspace/santijet-website run dev",
+    "dev:ipa": "PORT=24916 pnpm --filter @workspace/imalat-poz-analizleri run dev",
+    "dev:ipa:web": "PORT=24916 pnpm --filter @workspace/imalat-poz-analizleri run dev:web",
     "dev:mockup": "PORT=8081 BASE_PATH=/__mockup pnpm --filter @workspace/mockup-sandbox run dev"
   },
   "private": true,
