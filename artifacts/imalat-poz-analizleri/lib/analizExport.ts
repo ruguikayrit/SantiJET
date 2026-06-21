@@ -25,6 +25,49 @@ const TIP_ACCENT: Record<"malzeme" | "iscilik" | "ekipman", string> = {
   ekipman: "#0f766e",
 };
 
+/** PDF/print motorlarında renk ve dolgu kaybını önlemek için satır içi stiller */
+const PDF_CELL = {
+  headerBrand:
+    "background-color:#16213e;color:#ffffff;padding:8px 12px;border:none;font-size:10px;letter-spacing:0.08em;text-transform:uppercase;",
+  headerTitle:
+    "background-color:#16213e;color:#ffffff;padding:2px 12px 6px;border:none;font-size:18px;font-weight:700;",
+  headerDateLabel:
+    "background-color:#16213e;color:#ffffff;padding:8px 12px;border:none;font-size:9px;font-weight:700;width:120px;text-transform:uppercase;",
+  headerDateValue:
+    "background-color:#16213e;color:#ffffff;padding:8px 12px;border:none;font-size:10px;",
+  infoLabel:
+    "padding:10px 12px;background-color:#f1f5f9;color:#64748b;font-size:9px;font-weight:700;border:1px solid #e2e8f0;text-transform:uppercase;width:22%;",
+  infoValue:
+    "padding:10px 12px;font-size:12px;font-weight:600;color:#0f172a;border:1px solid #e2e8f0;background-color:#ffffff;",
+  th: "background-color:#16213e;color:#ffffff;padding:7px 6px;font-size:9px;font-weight:700;border:none;text-transform:uppercase;",
+  td: "padding:6px;border-bottom:1px solid #e2e8f0;font-size:10px;vertical-align:top;background-color:#ffffff;",
+  tdAlt: "padding:6px;border-bottom:1px solid #e2e8f0;font-size:10px;vertical-align:top;background-color:#f8fafc;",
+  poz: "padding:6px;border-bottom:1px solid #e2e8f0;font-size:10px;vertical-align:top;font-weight:600;color:#1d4ed8;",
+  sectionTitle: (accent: string) =>
+    `padding:4px 0 4px 10px;border:none;border-left:4px solid ${accent};font-size:12px;font-weight:700;color:#0f172a;background-color:#ffffff;`,
+  sectionBadge:
+    "padding:4px 0;border:none;text-align:right;font-size:9px;font-weight:600;color:#475569;background-color:#ffffff;",
+  costTitle:
+    "padding:8px 12px;background-color:#f1f5f9;font-weight:700;border:1px solid #cbd5e1;border-bottom:1px solid #e2e8f0;",
+  costLabel:
+    "padding:8px 12px;color:#334155;border:1px solid #cbd5e1;border-top:none;background-color:#ffffff;",
+  costValue:
+    "padding:8px 12px;text-align:right;font-weight:600;color:#0f172a;border:1px solid #cbd5e1;border-top:none;background-color:#ffffff;",
+  costTotal:
+    "padding:10px 12px;background-color:#16213e;color:#ffffff;font-weight:700;border:1px solid #16213e;",
+  notesHeading:
+    "padding:0 0 4px;border:none;border-bottom:2px solid #e85d04;font-size:11px;font-weight:700;color:#16213e;background-color:#ffffff;",
+  notesBody:
+    "padding:10px 12px 0;border:none;font-size:10px;color:#334155;line-height:1.55;white-space:pre-wrap;background-color:#f8fafc;",
+} as const;
+
+const PDF_PRINT_COLOR_FIX = `
+  html, body, table, tr, td, th {
+    -webkit-print-color-adjust: exact !important;
+    print-color-adjust: exact !important;
+  }
+`;
+
 const SANTIJET_REPORT_STYLES = `
   body {
     font-family: "Segoe UI", Arial, sans-serif;
@@ -232,8 +275,6 @@ const SANTIJET_REPORT_STYLES = `
   }
 `;
 
-const PDF_PAGE_MARGIN_MM = 10;
-
 function reportOrientationStyles(orientation: PdfPaperOrientation): string {
   if (orientation === "portrait") {
     return `
@@ -247,18 +288,30 @@ function reportOrientationStyles(orientation: PdfPaperOrientation): string {
 
 function buildPdfExportStyles(orientation: PdfPaperOrientation = "landscape"): string {
   const pageSize = orientation === "landscape" ? "A4 landscape" : "A4 portrait";
-  const margin = `${PDF_PAGE_MARGIN_MM}mm`;
+  const contentWidth = orientation === "landscape" ? "297mm" : "210mm";
   return `
   @page {
     size: ${pageSize};
-    margin-top: 8mm;
-    margin-bottom: 8mm;
-    margin-left: ${margin};
-    margin-right: ${margin};
+    margin: 0;
   }
+  ${PDF_PRINT_COLOR_FIX}
   ${SANTIJET_REPORT_STYLES}
   ${reportOrientationStyles(orientation)}
-  .pdf-content { margin: 0 auto; width: 100%; box-sizing: border-box; }`;
+  .pdf-content {
+    margin: 0 auto;
+    width: 100%;
+    max-width: ${contentWidth};
+    box-sizing: border-box;
+    padding: 8mm 10mm;
+    background-color: #ffffff;
+  }
+  @media print {
+    ${PDF_PRINT_COLOR_FIX}
+    .pdf-content {
+      max-width: none;
+      padding: 8mm 10mm;
+    }
+  }`;
 }
 
 const EXCEL_STYLES = SANTIJET_REPORT_STYLES;
@@ -330,12 +383,32 @@ function excelTlCell(value: number): string {
   return `<td class="tl" x:num="${numericValue}">${numericValue}</td>`;
 }
 
-function pdfNumberCell(value: number, className: "qty" | "price"): string {
-  return `<td class="${className} num">${className === "qty" ? trQty(value) : trCurrency(value)}</td>`;
+function pdfPozNoCell(pozNo: string, zebra: "td" | "tdAlt" = "td"): string {
+  const base = PDF_CELL[zebra];
+  return `<td style="${base}font-weight:600;color:#1d4ed8;">${escHtml(formatResmiPozNo(pozNo))}</td>`;
 }
 
-function pdfTlCell(value: number): string {
-  return `<td class="tl num">${trCurrency(value)}</td>`;
+function pdfDataCell(
+  content: string,
+  zebra: "td" | "tdAlt",
+  extra = "",
+  className = "",
+): string {
+  return `<td class="${className}" style="${PDF_CELL[zebra]}${extra}">${content}</td>`;
+}
+
+function pdfNumberCell(value: number, className: "qty" | "price", zebra: "td" | "tdAlt"): string {
+  const align = "text-align:right;white-space:nowrap;";
+  return pdfDataCell(
+    className === "qty" ? trQty(value) : trCurrency(value),
+    zebra,
+    align,
+    className,
+  );
+}
+
+function pdfTlCell(value: number, zebra: "td" | "tdAlt"): string {
+  return pdfDataCell(trCurrency(value), zebra, "text-align:right;white-space:nowrap;", "tl");
 }
 
 function buildKalemSection(
@@ -348,39 +421,51 @@ function buildKalemSection(
 
   let tableRows = "";
   rows.forEach((k, index) => {
+    const zebra: "td" | "tdAlt" = index % 2 === 1 ? "tdAlt" : "td";
+    if (target === "excel") {
+      tableRows += `<tr>
+        <td class="center idx">${index + 1}</td>
+        ${excelPozNoCell(k.pozNo)}
+        <td class="desc text">${escHtml(k.tanim)}</td>
+        <td class="center text">${escHtml(k.olcuBirimi)}</td>
+        ${excelNumberCell(k.miktar, "qty")}
+        ${excelNumberCell(k.birimFiyati, "price")}
+        ${excelTlCell(k.tutar)}
+      </tr>`;
+      return;
+    }
+
     tableRows += `<tr>
-      <td class="center idx">${index + 1}</td>
-      ${excelPozNoCell(k.pozNo)}
-      <td class="desc text">${escHtml(k.tanim)}</td>
-      <td class="center text">${escHtml(k.olcuBirimi)}</td>
-      ${target === "excel" ? excelNumberCell(k.miktar, "qty") : pdfNumberCell(k.miktar, "qty")}
-      ${target === "excel" ? excelNumberCell(k.birimFiyati, "price") : pdfNumberCell(k.birimFiyati, "price")}
-      ${target === "excel" ? excelTlCell(k.tutar) : pdfTlCell(k.tutar)}
+      ${pdfDataCell(String(index + 1), zebra, "text-align:center;color:#64748b;font-weight:600;", "idx")}
+      ${pdfPozNoCell(k.pozNo, zebra)}
+      ${pdfDataCell(escHtml(k.tanim), zebra, "text-align:left;white-space:normal;word-wrap:break-word;", "desc")}
+      ${pdfDataCell(escHtml(k.olcuBirimi), zebra, "text-align:center;", "text")}
+      ${pdfNumberCell(k.miktar, "qty", zebra)}
+      ${pdfNumberCell(k.birimFiyati, "price", zebra)}
+      ${pdfTlCell(k.tutar, zebra)}
     </tr>`;
   });
 
   const badge = `${rows.length} kalem`;
   const tipClass = tip === "malzeme" ? "" : tip;
-
-  return `
-  <section class="kalem-section">
-    <table class="section-head">
+  const sectionHead =
+    target === "excel"
+      ? `<table class="section-head">
       <tr>
         <td class="section-title ${tipClass}" style="border-left-color:${TIP_ACCENT[tip]}">${TIP_LABEL[tip]}</td>
         <td class="section-badge">${badge}</td>
       </tr>
-    </table>
-    <table class="data-table">
-      <colgroup>
-        <col style="width:4%" />
-        <col style="width:12%" />
-        <col style="width:34%" />
-        <col style="width:8%" />
-        <col style="width:12%" />
-        <col style="width:15%" />
-        <col style="width:15%" />
-      </colgroup>
-      <thead>
+    </table>`
+      : `<table class="section-head" cellpadding="0" cellspacing="0" style="width:100%;border-collapse:collapse;margin-bottom:6px;">
+      <tr>
+        <td class="section-title ${tipClass}" style="${PDF_CELL.sectionTitle(TIP_ACCENT[tip])}">${TIP_LABEL[tip]}</td>
+        <td class="section-badge" style="${PDF_CELL.sectionBadge}">${badge}</td>
+      </tr>
+    </table>`;
+
+  const tableHead =
+    target === "excel"
+      ? `<thead>
         <tr>
           <th class="center">#</th>
           <th>Poz No</th>
@@ -390,7 +475,33 @@ function buildKalemSection(
           <th class="num">Birim Fiyat</th>
           <th class="num">Tutar</th>
         </tr>
-      </thead>
+      </thead>`
+      : `<thead>
+        <tr>
+          <th style="${PDF_CELL.th}text-align:center;">#</th>
+          <th style="${PDF_CELL.th}">Poz No</th>
+          <th style="${PDF_CELL.th}">Açıklama</th>
+          <th style="${PDF_CELL.th}text-align:center;">Birim</th>
+          <th style="${PDF_CELL.th}text-align:right;">Miktar</th>
+          <th style="${PDF_CELL.th}text-align:right;">Birim Fiyat</th>
+          <th style="${PDF_CELL.th}text-align:right;">Tutar</th>
+        </tr>
+      </thead>`;
+
+  return `
+  <section class="kalem-section">
+    ${sectionHead}
+    <table class="data-table" cellpadding="0" cellspacing="0"${target === "pdf" ? ' style="width:100%;border-collapse:collapse;table-layout:fixed;margin-bottom:2px;"' : ""}>
+      <colgroup>
+        <col style="width:4%" />
+        <col style="width:12%" />
+        <col style="width:34%" />
+        <col style="width:8%" />
+        <col style="width:12%" />
+        <col style="width:15%" />
+        <col style="width:15%" />
+      </colgroup>
+      ${tableHead}
       <tbody>${tableRows}</tbody>
     </table>
   </section>`;
@@ -406,10 +517,9 @@ function buildCostSummary(
   totals: ReturnType<typeof hesaplaAnalizToplam>,
   target: "excel" | "pdf",
 ): string {
-  const valueCell = (value: number) =>
-    target === "excel" ? excelCostValueCell(value) : `<td class="cost-value">${trCurrency(value)}</td>`;
-
-  return `
+  if (target === "excel") {
+    const valueCell = (value: number) => excelCostValueCell(value);
+    return `
   <table class="cost-summary">
     <tr>
       <td colspan="2" class="cost-summary-title">Maliyet Özeti</td>
@@ -427,9 +537,29 @@ function buildCostSummary(
       ${valueCell(totals.birimFiyati)}
     </tr>
   </table>`;
+  }
+
+  return `
+  <table class="cost-summary" cellpadding="0" cellspacing="0" style="width:100%;border-collapse:collapse;margin:18px 0 14px;">
+    <tr>
+      <td colspan="2" style="${PDF_CELL.costTitle}">Maliyet Özeti</td>
+    </tr>
+    <tr>
+      <td style="${PDF_CELL.costLabel}">Ara Toplam (Malzeme + İşçilik)</td>
+      <td style="${PDF_CELL.costValue}">${trCurrency(totals.malzemeIscilikToplami)}</td>
+    </tr>
+    <tr>
+      <td style="${PDF_CELL.costLabel}">Yüklenici Karı (%${analiz.yukleniciKarOrani})</td>
+      <td style="${PDF_CELL.costValue}">${trCurrency(totals.yukleniciKarTutari)}</td>
+    </tr>
+    <tr>
+      <td style="${PDF_CELL.costTotal}">Birim Fiyat (1 ${escHtml(analiz.olcuBirimi)})</td>
+      <td style="${PDF_CELL.costTotal}text-align:right;">${trCurrency(totals.birimFiyati)}</td>
+    </tr>
+  </table>`;
 }
 
-function buildNotesSection(analiz: PozAnaliz): string {
+function buildNotesSection(analiz: PozAnaliz, target: "excel" | "pdf"): string {
   const blocks = [
     analiz.pozTarifi ? { title: "Poz Tarifi", body: analiz.pozTarifi } : null,
     analiz.yapimSartlari ? { title: "Yapım Şartları", body: analiz.yapimSartlari } : null,
@@ -440,20 +570,28 @@ function buildNotesSection(analiz: PozAnaliz): string {
   if (!blocks.length) return "";
 
   const items = blocks
-    .map(
-      (b) => `
+    .map((b) => {
+      if (target === "excel") {
+        return `
     <table class="notes-block">
       <tr><td class="notes-heading">${escHtml(b.title)}</td></tr>
       <tr><td class="notes-body">${escHtml(b.body)}</td></tr>
-    </table>`,
-    )
+    </table>`;
+      }
+      return `
+    <table class="notes-block" cellpadding="0" cellspacing="0" style="width:100%;border-collapse:collapse;margin-bottom:12px;">
+      <tr><td style="${PDF_CELL.notesHeading}">${escHtml(b.title)}</td></tr>
+      <tr><td style="${PDF_CELL.notesBody}">${escHtml(b.body)}</td></tr>
+    </table>`;
+    })
     .join("");
 
   return `<section class="notes-section">${items}</section>`;
 }
 
-function buildReportHeader(exportDate: string): string {
-  return `
+function buildReportHeader(exportDate: string, target: "excel" | "pdf"): string {
+  if (target === "excel") {
+    return `
   <table class="report-header">
     <tr>
       <td colspan="2" class="report-brand">${escHtml(APP_LEGAL_NAME)}</td>
@@ -466,28 +604,32 @@ function buildReportHeader(exportDate: string): string {
       <td class="report-date">${exportDate}</td>
     </tr>
   </table>`;
+  }
+
+  return `
+  <table class="report-header" cellpadding="0" cellspacing="0" style="width:100%;border-collapse:collapse;margin-bottom:14px;">
+    <tr>
+      <td colspan="2" style="${PDF_CELL.headerBrand}">${escHtml(APP_LEGAL_NAME)}</td>
+    </tr>
+    <tr>
+      <td colspan="2" style="${PDF_CELL.headerTitle}">Analiz Raporu</td>
+    </tr>
+    <tr>
+      <td style="${PDF_CELL.headerDateLabel}">Oluşturulma</td>
+      <td style="${PDF_CELL.headerDateValue}">${exportDate}</td>
+    </tr>
+  </table>`;
 }
 
 function buildInfoGrid(analiz: PozAnaliz, target: "excel" | "pdf"): string {
-  const pozValue =
-    target === "excel"
-      ? excelInfoPozCell(analiz.pozNo)
-      : `<td class="info-value">${escHtml(formatResmiPozNo(analiz.pozNo))}</td>`;
-  const unitValue =
-    target === "excel"
-      ? excelTextCell(analiz.olcuBirimi)
-      : `<td class="info-value">${escHtml(analiz.olcuBirimi)}</td>`;
-  const nameValue =
-    target === "excel"
-      ? `<td class="info-value text" colspan="3" style="mso-number-format:'\\@';">${escHtml(analiz.analizAdi)}</td>`
-      : `<td class="info-value" colspan="3">${escHtml(analiz.analizAdi)}</td>`;
-  const countValue = `<td class="info-value">${analiz.kalemler.length}</td>`;
-  const karValue =
-    target === "excel"
-      ? excelTextCell(`%${analiz.yukleniciKarOrani}`)
-      : `<td class="info-value">%${analiz.yukleniciKarOrani}</td>`;
+  if (target === "excel") {
+    const pozValue = excelInfoPozCell(analiz.pozNo);
+    const unitValue = excelTextCell(analiz.olcuBirimi);
+    const nameValue = `<td class="info-value text" colspan="3" style="mso-number-format:'\\@';">${escHtml(analiz.analizAdi)}</td>`;
+    const countValue = `<td class="info-value">${analiz.kalemler.length}</td>`;
+    const karValue = excelTextCell(`%${analiz.yukleniciKarOrani}`);
 
-  return `
+    return `
   <table class="info-grid">
     <tr>
       <td class="info-label">Poz Numarası</td>
@@ -506,6 +648,27 @@ function buildInfoGrid(analiz: PozAnaliz, target: "excel" | "pdf"): string {
       ${karValue}
     </tr>
   </table>`;
+  }
+
+  return `
+  <table class="info-grid" cellpadding="0" cellspacing="0" style="width:100%;border-collapse:collapse;margin-bottom:16px;border:1px solid #dbe3ef;">
+    <tr>
+      <td style="${PDF_CELL.infoLabel}">Poz Numarası</td>
+      <td style="${PDF_CELL.infoValue}">${escHtml(formatResmiPozNo(analiz.pozNo))}</td>
+      <td style="${PDF_CELL.infoLabel}">Ölçü Birimi</td>
+      <td style="${PDF_CELL.infoValue}">${escHtml(analiz.olcuBirimi)}</td>
+    </tr>
+    <tr>
+      <td style="${PDF_CELL.infoLabel}">Analiz Adı</td>
+      <td style="${PDF_CELL.infoValue}" colspan="3">${escHtml(analiz.analizAdi)}</td>
+    </tr>
+    <tr>
+      <td style="${PDF_CELL.infoLabel}">Kalem Sayısı</td>
+      <td style="${PDF_CELL.infoValue}">${analiz.kalemler.length}</td>
+      <td style="${PDF_CELL.infoLabel}">Yüklenici Kar Oranı</td>
+      <td style="${PDF_CELL.infoValue}">%${analiz.yukleniciKarOrani}</td>
+    </tr>
+  </table>`;
 }
 
 function buildSantijetReportBody(analiz: PozAnaliz, target: "excel" | "pdf"): string {
@@ -521,11 +684,11 @@ function buildSantijetReportBody(analiz: PozAnaliz, target: "excel" | "pdf"): st
     .join("");
 
   const costSummary = buildCostSummary(analiz, totals, target);
-  const notes = buildNotesSection(analiz);
+  const notes = buildNotesSection(analiz, target);
 
   return `
   <div class="report">
-    ${buildReportHeader(exportDate)}
+    ${buildReportHeader(exportDate, target)}
     ${buildInfoGrid(analiz, target)}
 
     ${sections}
@@ -588,13 +751,7 @@ function pdfPageSize(orientation: PdfPaperOrientation): { width: number; height:
 }
 
 function pdfPageMarginsPt(): { top: number; right: number; bottom: number; left: number } {
-  const mmToPt = (mm: number) => (mm * 72) / 25.4;
-  return {
-    top: mmToPt(8),
-    bottom: mmToPt(8),
-    left: mmToPt(PDF_PAGE_MARGIN_MM),
-    right: mmToPt(PDF_PAGE_MARGIN_MM),
-  };
+  return { top: 0, bottom: 0, left: 0, right: 0 };
 }
 
 async function downloadOnWeb(content: string, filename: string, mime: string): Promise<void> {
@@ -746,10 +903,18 @@ export async function exportAnaliz(
     if (Platform.OS === "web") {
       const printWindow = window.open("", "_blank");
       if (printWindow) {
+        printWindow.document.open();
         printWindow.document.write(html);
         printWindow.document.close();
-        printWindow.focus();
-        printWindow.print();
+        const triggerPrint = () => {
+          printWindow.focus();
+          printWindow.print();
+        };
+        if (printWindow.document.readyState === "complete") {
+          setTimeout(triggerPrint, 250);
+        } else {
+          printWindow.onload = () => setTimeout(triggerPrint, 250);
+        }
       } else {
         await downloadOnWeb(html, `analiz_${base}.html`, "text/html;charset=utf-8");
       }
