@@ -1,6 +1,6 @@
 import { Feather } from "@expo/vector-icons";
 import { useLocalSearchParams, useRouter } from "expo-router";
-import React, { useMemo, useState } from "react";
+import React, { useMemo, useRef, useState } from "react";
 import {
   Alert,
   FlatList,
@@ -14,11 +14,12 @@ import {
   TouchableOpacity,
   View,
 } from "react-native";
+import { Swipeable } from "react-native-gesture-handler";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 import { BulkExportModal } from "@/components/BulkExportModal";
 import { KesifPozPickerModal } from "@/components/KesifPozPickerModal";
-import { hesaplaKesifToplam, trFmtKesif } from "@/constants/kesif";
+import { hesaplaKesifToplam, KesifSatiri, trFmtKesif } from "@/constants/kesif";
 import { PozAnaliz } from "@/constants/pozAnalizleri";
 import { useKesif } from "@/context/KesifContext";
 import { useBfaCatalog } from "@/hooks/useBfaCatalog";
@@ -33,11 +34,11 @@ const COL = {
   miktar: 64,
   birim: 44,
   tutar: 112,
-  del: 3,
   numGap: 6,
   tutarShift: 15,
-  delShift: 15,
 } as const;
+
+const SWIPE_DELETE_WIDTH = 72;
 
 export default function KesifDetailScreen() {
   const colors = useColors();
@@ -47,7 +48,7 @@ export default function KesifDetailScreen() {
   const params = useLocalSearchParams<{ id?: string }>();
   const projectId = params.id ? String(params.id) : "";
 
-  const { getProject, addSatir, updateSatirMiktar, removeSatir, deleteProject } = useKesif();
+  const { getProject, addSatir, updateSatirMiktar, removeSatir, clearAllSatirlar } = useKesif();
   const { all } = useBfaCatalog();
 
   const project = getProject(projectId);
@@ -86,18 +87,23 @@ export default function KesifDetailScreen() {
     removeSatir(projectId, satirId);
   }
 
-  function handleDeleteProject() {
-    Alert.alert("Keşifi Sil", `"${kesif.ad}" silinsin mi?`, [
-      { text: "İptal", style: "cancel" },
-      {
-        text: "Sil",
-        style: "destructive",
-        onPress: () => {
-          deleteProject(projectId);
-          router.back();
+  function handleClearAllPoz() {
+    if (kesif.satirlar.length === 0) {
+      Alert.alert("Boş Keşif", "Silinecek poz bulunmuyor.");
+      return;
+    }
+    Alert.alert(
+      "Tüm Pozları Sil",
+      `Keşifteki ${kesif.satirlar.length} poz kaldırılsın mı?`,
+      [
+        { text: "İptal", style: "cancel" },
+        {
+          text: "Sil",
+          style: "destructive",
+          onPress: () => clearAllSatirlar(projectId),
         },
-      },
-    ]);
+      ],
+    );
   }
 
   async function handleExport(format: AnalizExportFormat, pdfOrientation?: PdfPaperOrientation) {
@@ -146,7 +152,7 @@ export default function KesifDetailScreen() {
           <Text style={[styles.summaryMeta, { color: colors.mutedForeground }]}>
             {project.satirlar.length} poz
           </Text>
-          <TouchableOpacity onPress={handleDeleteProject} hitSlop={8}>
+          <TouchableOpacity onPress={handleClearAllPoz} hitSlop={8}>
             <Feather name="trash-2" size={16} color="#e74c3c" />
           </TouchableOpacity>
         </View>
@@ -164,7 +170,6 @@ export default function KesifDetailScreen() {
           </View>
           <Text style={[styles.th, styles.colTutar, { color: colors.mutedForeground }]}>Tutar</Text>
         </View>
-        <View style={styles.delCol} />
       </View>
 
       <FlatList
@@ -180,81 +185,15 @@ export default function KesifDetailScreen() {
           </View>
         }
         renderItem={({ item, index }) => (
-          <View
-            style={[
-              styles.row,
-              {
-                borderColor: colors.border,
-                backgroundColor: index % 2 === 0 ? colors.background : colors.card + "66",
-              },
-            ]}
-          >
-            <Text style={[styles.tdSira, { color: colors.mutedForeground }]}>{index + 1}</Text>
-
-            <View style={styles.colPoz}>
-              <TouchableOpacity
-                activeOpacity={0.75}
-                onPress={() => {
-                  const analiz = resolveAnaliz(item.analizId);
-                  if (analiz) {
-                    router.push({
-                      pathname: "/imalat-pozlari",
-                      params: { id: analiz.id, modul: analiz.discipline ?? "insaat" },
-                    } as any);
-                  }
-                }}
-              >
-                <Text style={[styles.tdPoz, { color: colors.primary }]}>{item.pozNo}</Text>
-              </TouchableOpacity>
-              <TouchableOpacity
-                style={[styles.tanimBtn, { borderColor: colors.border, backgroundColor: colors.card }]}
-                onPress={() =>
-                  setTanimModal({ pozNo: item.pozNo, analizAdi: item.analizAdi })
-                }
-                activeOpacity={0.8}
-              >
-                <Feather name="file-text" size={11} color={colors.primary} />
-                <Text style={[styles.tanimBtnText, { color: colors.primary }]}>Tanım</Text>
-              </TouchableOpacity>
-            </View>
-
-            <View style={styles.numCluster}>
-              <View style={styles.numLeadGroup}>
-                <View style={styles.colMiktar}>
-                  <TextInput
-                    style={[
-                      styles.qtyInput,
-                      {
-                        color: colors.foreground,
-                        borderColor: colors.border,
-                        backgroundColor: colors.card,
-                      },
-                    ]}
-                    value={String(item.miktar)}
-                    onChangeText={(v) => updateSatirMiktar(projectId, item.id, parseQty(v))}
-                    keyboardType="decimal-pad"
-                    selectTextOnFocus
-                  />
-                </View>
-
-                <Text style={[styles.tdBirim, { color: colors.foreground }]} numberOfLines={2}>
-                  {item.olcuBirimi}
-                </Text>
-              </View>
-
-              <Text style={[styles.tdTutar, { color: colors.foreground }]} numberOfLines={1}>
-                {trFmtKesif(item.tutar)}
-              </Text>
-            </View>
-
-            <TouchableOpacity
-              onPress={() => handleDeleteSatir(item.id)}
-              style={[styles.delBtn, styles.delCol]}
-              hitSlop={8}
-            >
-              <Feather name="x" size={COL.del} color={colors.mutedForeground} />
-            </TouchableOpacity>
-          </View>
+          <KesifSatirRow
+            item={item}
+            index={index}
+            colors={colors}
+            resolveAnaliz={resolveAnaliz}
+            onUpdateMiktar={(miktar) => updateSatirMiktar(projectId, item.id, miktar)}
+            onDelete={() => handleDeleteSatir(item.id)}
+            onShowTanim={() => setTanimModal({ pozNo: item.pozNo, analizAdi: item.analizAdi })}
+          />
         )}
       />
 
@@ -316,6 +255,156 @@ export default function KesifDetailScreen() {
 function parseQty(s: string): number {
   const v = parseFloat(s.replace(",", "."));
   return Number.isFinite(v) ? v : 0;
+}
+
+type KesifSatirRowProps = {
+  item: KesifSatiri;
+  index: number;
+  colors: ReturnType<typeof useColors>;
+  resolveAnaliz: (analizId: string) => PozAnaliz | undefined;
+  onUpdateMiktar: (miktar: number) => void;
+  onDelete: () => void;
+  onShowTanim: () => void;
+};
+
+function KesifSatirRow({
+  item,
+  index,
+  colors,
+  resolveAnaliz,
+  onUpdateMiktar,
+  onDelete,
+  onShowTanim,
+}: KesifSatirRowProps) {
+  const router = useRouter();
+  const swipeRef = useRef<Swipeable>(null);
+  const confirmingRef = useRef(false);
+
+  function requestDelete() {
+    if (confirmingRef.current) return;
+    confirmingRef.current = true;
+    Alert.alert(
+      "Poz Sil",
+      `${item.pozNo} keşiften kaldırılsın mı?`,
+      [
+        {
+          text: "İptal",
+          style: "cancel",
+          onPress: () => {
+            confirmingRef.current = false;
+            swipeRef.current?.close();
+          },
+        },
+        {
+          text: "Sil",
+          style: "destructive",
+          onPress: () => {
+            confirmingRef.current = false;
+            onDelete();
+          },
+        },
+      ],
+      {
+        cancelable: true,
+        onDismiss: () => {
+          confirmingRef.current = false;
+          swipeRef.current?.close();
+        },
+      },
+    );
+  }
+
+  function renderRightActions() {
+    return (
+      <TouchableOpacity
+        style={styles.swipeDelete}
+        activeOpacity={0.85}
+        onPress={requestDelete}
+      >
+        <Feather name="trash-2" size={18} color="#fff" />
+        <Text style={styles.swipeDeleteText}>Sil</Text>
+      </TouchableOpacity>
+    );
+  }
+
+  return (
+    <Swipeable
+      ref={swipeRef}
+      renderRightActions={renderRightActions}
+      onSwipeableOpen={requestDelete}
+      overshootRight={false}
+      friction={2}
+      rightThreshold={40}
+      enabled={Platform.OS !== "web"}
+    >
+      <View
+        style={[
+          styles.row,
+          {
+            borderColor: colors.border,
+            backgroundColor: index % 2 === 0 ? colors.background : colors.card + "66",
+          },
+        ]}
+      >
+        <Text style={[styles.tdSira, { color: colors.mutedForeground }]}>{index + 1}</Text>
+
+        <View style={styles.colPoz}>
+          <TouchableOpacity
+            activeOpacity={0.75}
+            onPress={() => {
+              const analiz = resolveAnaliz(item.analizId);
+              if (analiz) {
+                router.push({
+                  pathname: "/imalat-pozlari",
+                  params: { id: analiz.id, modul: analiz.discipline ?? "insaat" },
+                } as any);
+              }
+            }}
+            {...(Platform.OS === "web" ? { onLongPress: requestDelete } : {})}
+          >
+            <Text style={[styles.tdPoz, { color: colors.primary }]}>{item.pozNo}</Text>
+          </TouchableOpacity>
+          <TouchableOpacity
+            style={[styles.tanimBtn, { borderColor: colors.border, backgroundColor: colors.card }]}
+            onPress={onShowTanim}
+            activeOpacity={0.8}
+          >
+            <Feather name="file-text" size={11} color={colors.primary} />
+            <Text style={[styles.tanimBtnText, { color: colors.primary }]}>Tanım</Text>
+          </TouchableOpacity>
+        </View>
+
+        <View style={styles.numCluster}>
+          <View style={styles.numLeadGroup}>
+            <View style={styles.colMiktar}>
+              <TextInput
+                style={[
+                  styles.qtyInput,
+                  {
+                    color: colors.foreground,
+                    borderColor: colors.border,
+                    backgroundColor: colors.card,
+                  },
+                ]}
+                value={String(item.miktar)}
+                onChangeText={(v) => onUpdateMiktar(parseQty(v))}
+                keyboardType="decimal-pad"
+                selectTextOnFocus
+              />
+            </View>
+
+            <Text style={[styles.tdBirim, { color: colors.foreground }]} numberOfLines={2}>
+              {item.olcuBirimi}
+            </Text>
+          </View>
+
+          <Text style={[styles.tdTutar, { color: colors.foreground }]} numberOfLines={1}>
+            {trFmtKesif(item.tutar)}
+          </Text>
+        </View>
+      </View>
+    </Swipeable>
+  );
 }
 
 const styles = StyleSheet.create({
@@ -436,8 +525,18 @@ const styles = StyleSheet.create({
     letterSpacing: -0.2,
     marginLeft: -COL.tutarShift,
   },
-  delCol: { width: COL.del, marginLeft: -COL.delShift },
-  delBtn: { alignItems: "center", paddingTop: 4 },
+  swipeDelete: {
+    width: SWIPE_DELETE_WIDTH,
+    backgroundColor: "#e74c3c",
+    alignItems: "center",
+    justifyContent: "center",
+    gap: 4,
+  },
+  swipeDeleteText: {
+    color: "#fff",
+    fontSize: 11,
+    fontFamily: "Inter_600SemiBold",
+  },
   emptyList: { alignItems: "center", paddingTop: 60, gap: 10, paddingHorizontal: 24 },
   emptyText: { fontSize: 13, fontFamily: "Inter_400Regular", textAlign: "center" },
   fab: {

@@ -29,6 +29,7 @@ interface KesifContextValue {
   addSatir: (projectId: string, analiz: PozAnaliz, miktar: number) => void;
   updateSatirMiktar: (projectId: string, satirId: string, miktar: number) => void;
   removeSatir: (projectId: string, satirId: string) => void;
+  clearAllSatirlar: (projectId: string) => void;
 }
 
 const KesifContext = createContext<KesifContextValue | undefined>(undefined);
@@ -141,6 +142,14 @@ export function KesifProvider({ children }: { children: React.ReactNode }) {
                   guncellemeTarihi: now,
                 }
               : p,
+          ),
+        );
+      },
+      clearAllSatirlar: (projectId) => {
+        const now = new Date().toISOString();
+        persist((prev) =>
+          prev.map((p) =>
+            p.id === projectId ? { ...p, satirlar: [], guncellemeTarihi: now } : p,
           ),
         );
       },
