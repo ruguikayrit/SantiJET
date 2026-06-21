@@ -36,9 +36,11 @@ interface KesifImportModalProps {
   visible: boolean;
   onClose: () => void;
   onImported: (projectId: string) => void;
+  /** Verilirse yeni proje oluşturmak yerine mevcut keşife aktarılır. */
+  projectId?: string;
 }
 
-export function KesifImportModal({ visible, onClose, onImported }: KesifImportModalProps) {
+export function KesifImportModal({ visible, onClose, onImported, projectId }: KesifImportModalProps) {
   const colors = useColors();
   const { addPozAnaliz } = useApp();
   const { createProject, importSatirlar } = useKesif();
@@ -103,20 +105,22 @@ export function KesifImportModal({ visible, onClose, onImported }: KesifImportMo
     }
 
     const skipped = unmatched.length;
-    const projectId = createProject(ad, projectAciklama ?? "");
-    if (!projectId) {
-      Alert.alert("Hata", "Keşif projesi oluşturulamadı.");
+    const targetProjectId =
+      projectId ||
+      createProject(ad, projectAciklama ?? "");
+    if (!targetProjectId) {
+      Alert.alert("Hata", projectId ? "Keşif bulunamadı." : "Keşif projesi oluşturulamadı.");
       return;
     }
 
     importSatirlar(
-      projectId,
+      targetProjectId,
       matched.map(({ row, analiz }) => ({ analiz, miktar: row.miktar })),
     );
 
     resetState();
     onClose();
-    onImported(projectId);
+    onImported(targetProjectId);
 
     const lines = [`${matched.length} poz keşife eklendi.`];
     if (addUnmatchedToCatalog && skipped === 0 && unmatched.length === 0) {
@@ -150,6 +154,11 @@ export function KesifImportModal({ visible, onClose, onImported }: KesifImportMo
     projectAciklama: string | undefined,
     addUnmatchedToCatalog: boolean,
   ) {
+    if (projectId) {
+      void finalizeImport(rows, fileName, addUnmatchedToCatalog, projectAciklama, "");
+      return;
+    }
+
     const hasProjectColumn = rows.some((r) => r.projeAdi?.trim());
     const suggested = defaultImportProjectName(fileName, {
       rows,
@@ -241,7 +250,9 @@ export function KesifImportModal({ visible, onClose, onImported }: KesifImportMo
         >
           <Text style={[styles.title, { color: colors.foreground }]}>Keşif İçe Aktar</Text>
           <Text style={[styles.subtitle, { color: colors.mutedForeground }]}>
-            Excel (.xlsx, .xls) ve CSV dosyalarından metraj satırlarını yeni bir keşif projesine aktarın.
+            {projectId
+              ? "Excel (.xlsx, .xls) ve CSV dosyalarından pozları bu keşife aktarın."
+              : "Excel (.xlsx, .xls) ve CSV dosyalarından metraj satırlarını yeni bir keşif projesine aktarın."}
           </Text>
 
           <View style={[styles.infoBox, { backgroundColor: KESIF_COLOR + "10", borderColor: KESIF_COLOR + "33" }]}>
