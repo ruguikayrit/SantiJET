@@ -84,16 +84,12 @@ export function KesifPozPickerModal({ visible, onClose, onSelect }: KesifPozPick
             },
           ]}
         >
-          <TouchableOpacity onPress={handleClose} style={styles.iconBtn} accessibilityLabel="Kapat">
-            <Feather name="x" size={22} color={colors.secondaryForeground} />
-          </TouchableOpacity>
+          <View style={styles.headerSide} />
           <Text style={[styles.headerTitle, { color: colors.secondaryForeground }]}>
             {selected ? "Miktar Gir" : "Poz Seç"}
           </Text>
-          <TouchableOpacity onPress={handleClose} style={styles.cancelHeaderBtn}>
-            <Text style={[styles.cancelHeaderText, { color: colors.secondaryForeground }]}>
-              İptal
-            </Text>
+          <TouchableOpacity onPress={handleClose} style={styles.iconBtn} accessibilityLabel="Kapat">
+            <Feather name="x" size={22} color={colors.secondaryForeground} />
           </TouchableOpacity>
         </View>
 
