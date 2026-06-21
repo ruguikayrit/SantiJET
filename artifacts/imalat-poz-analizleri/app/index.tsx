@@ -554,8 +554,9 @@ const styles = StyleSheet.create({
   sectionLabel: {
     fontSize: 16,
     fontFamily: "Inter_700Bold",
+    marginTop: 9,
     marginBottom: 12,
-    marginLeft: 4,
+    textAlign: "center",
   },
   recentBtn: {
     width: "100%",
