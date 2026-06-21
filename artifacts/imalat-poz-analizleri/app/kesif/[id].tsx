@@ -29,12 +29,14 @@ import { exportKesif } from "@/lib/kesifExport";
 const KESIF_COLOR = "#7c3aed";
 
 const COL = {
-  sira: 36,
-  miktar: 72,
+  sira: 28,
+  miktar: 64,
   birim: 44,
-  tutar: 118,
+  tutar: 112,
   del: 28,
 } as const;
+
+const NUM_GROUP_W = COL.miktar + COL.birim + COL.tutar + 16;
 
 export default function KesifDetailScreen() {
   const colors = useColors();
@@ -152,11 +154,13 @@ export default function KesifDetailScreen() {
       <View
         style={[styles.tableHeader, { backgroundColor: colors.card, borderColor: colors.border }]}
       >
-        <Text style={[styles.th, styles.colSira, { color: colors.mutedForeground }]}>Sıra</Text>
+        <Text style={[styles.th, styles.colSira, { color: colors.mutedForeground }]}>#</Text>
         <Text style={[styles.th, styles.colPoz, { color: colors.mutedForeground }]}>Poz</Text>
-        <Text style={[styles.th, styles.colMiktar, { color: colors.mutedForeground }]}>Miktar</Text>
-        <Text style={[styles.th, styles.colBirim, { color: colors.mutedForeground }]}>Br.</Text>
-        <Text style={[styles.th, styles.colTutar, { color: colors.mutedForeground }]}>Tutar</Text>
+        <View style={styles.numHeaderGroup}>
+          <Text style={[styles.th, styles.colMiktar, { color: colors.mutedForeground }]}>Miktar</Text>
+          <Text style={[styles.th, styles.colBirim, { color: colors.mutedForeground }]}>Br.</Text>
+          <Text style={[styles.th, styles.colTutar, { color: colors.mutedForeground }]}>Tutar</Text>
+        </View>
         <View style={{ width: COL.del }} />
       </View>
 
@@ -211,26 +215,28 @@ export default function KesifDetailScreen() {
               </TouchableOpacity>
             </View>
 
-            <View style={styles.colMiktar}>
-              <TextInput
-                style={[
-                  styles.qtyInput,
-                  { color: colors.foreground, borderColor: colors.border, backgroundColor: colors.card },
-                ]}
-                value={String(item.miktar)}
-                onChangeText={(v) => updateSatirMiktar(projectId, item.id, parseQty(v))}
-                keyboardType="decimal-pad"
-                selectTextOnFocus
-              />
+            <View style={styles.numRowGroup}>
+              <View style={styles.colMiktar}>
+                <TextInput
+                  style={[
+                    styles.qtyInput,
+                    { color: colors.foreground, borderColor: colors.border, backgroundColor: colors.card },
+                  ]}
+                  value={String(item.miktar)}
+                  onChangeText={(v) => updateSatirMiktar(projectId, item.id, parseQty(v))}
+                  keyboardType="decimal-pad"
+                  selectTextOnFocus
+                />
+              </View>
+
+              <Text style={[styles.tdBirim, { color: colors.foreground }]} numberOfLines={2}>
+                {item.olcuBirimi}
+              </Text>
+
+              <Text style={[styles.tdTutar, { color: colors.foreground }]} numberOfLines={1}>
+                {trFmtKesif(item.tutar)}
+              </Text>
             </View>
-
-            <Text style={[styles.tdBirim, { color: colors.foreground }]} numberOfLines={2}>
-              {item.olcuBirimi}
-            </Text>
-
-            <Text style={[styles.tdTutar, { color: colors.foreground }]} numberOfLines={1}>
-              {trFmtKesif(item.tutar)}
-            </Text>
 
             <TouchableOpacity
               onPress={() => handleDeleteSatir(item.id)}
@@ -342,12 +348,24 @@ const styles = StyleSheet.create({
     paddingVertical: 8,
     borderTopWidth: 1,
     borderBottomWidth: 1,
-    gap: 4,
+    gap: 8,
   },
   th: { fontSize: 10, fontFamily: "Inter_600SemiBold", textTransform: "uppercase" },
   colSira: { width: COL.sira, textAlign: "center" },
   colPoz: { flex: 1, minWidth: 0 },
-  colMiktar: { width: COL.miktar, alignItems: "flex-end" },
+  numHeaderGroup: {
+    width: NUM_GROUP_W,
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+  },
+  numRowGroup: {
+    width: NUM_GROUP_W,
+    flexDirection: "row",
+    alignItems: "flex-start",
+    justifyContent: "space-between",
+  },
+  colMiktar: { width: COL.miktar, textAlign: "right" },
   colBirim: { width: COL.birim, textAlign: "center" },
   colTutar: { width: COL.tutar, textAlign: "right" },
   row: {
@@ -356,7 +374,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: 12,
     paddingVertical: 10,
     borderBottomWidth: StyleSheet.hairlineWidth,
-    gap: 6,
+    gap: 8,
   },
   tdSira: {
     width: COL.sira,
