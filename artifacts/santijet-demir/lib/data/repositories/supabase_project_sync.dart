@@ -83,6 +83,7 @@ class SupabaseProjectSync {
     final createdAt = DateTime.now().toUtc();
 
     try {
+      await _ensureProfile(owner);
       await _client.from('projects').insert({
         'id': projectId,
         'code': finalCode,
@@ -139,6 +140,7 @@ class SupabaseProjectSync {
     required String code,
   }) async {
     try {
+      await _ensureProfile(user);
       final projectId = await _client.rpc(
         'join_project_by_code',
         params: {'p_code': code.trim().toUpperCase()},
@@ -240,6 +242,21 @@ class SupabaseProjectSync {
       return 'Proje oluşturma izni yok. Supabase RLS ayarlarını kontrol edin.';
     }
     return e.message;
+  }
+
+  Future<void> _ensureProfile(UserAccount user) async {
+    final existing = await _client
+        .from('profiles')
+        .select('id')
+        .eq('id', user.id)
+        .maybeSingle();
+    if (existing != null) return;
+
+    await _client.from('profiles').insert({
+      'id': user.id,
+      'email': user.email,
+      'display_name': user.displayName,
+    });
   }
 }
 

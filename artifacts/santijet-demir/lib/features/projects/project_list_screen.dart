@@ -34,6 +34,11 @@ class _ProjectListScreenState extends ConsumerState<ProjectListScreen> {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(content: Text(e.message)),
         );
+      } catch (e) {
+        if (!mounted) return;
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Projeler yüklenemedi: $e')),
+        );
       }
     });
   }
@@ -121,6 +126,7 @@ class _ProjectListScreenState extends ConsumerState<ProjectListScreen> {
   }
 
   Future<void> _createProject(BuildContext context) async {
+    final messenger = ScaffoldMessenger.of(context);
     final nameCtrl = TextEditingController();
     final locationCtrl = TextEditingController(text: 'İstanbul');
 
@@ -170,23 +176,28 @@ class _ProjectListScreenState extends ConsumerState<ProjectListScreen> {
           );
       if (!context.mounted) return;
       Navigator.pop(context);
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Proje oluşturuldu — Kod: ${project.code}')),
+      messenger.showSnackBar(
+        SnackBar(content: Text('Proje kartı oluşturuldu — Kod: ${project.code}')),
       );
       await ref.read(projectsControllerProvider).switchProject(project.id);
-      if (!context.mounted) return;
-      await ref.read(projectsControllerProvider).refreshFromCloud();
-      if (context.mounted) context.go(AppRoutes.dashboard);
+      try {
+        await ref
+            .read(projectsControllerProvider)
+            .refreshFromCloud()
+            .timeout(const Duration(seconds: 10));
+      } catch (_) {
+        // Kart yerelde hazır; bulut senkronu sonraki açılışta tekrar denenir.
+      }
     } on ProjectException catch (e) {
       if (!context.mounted) return;
       Navigator.pop(context);
-      ScaffoldMessenger.of(context).showSnackBar(
+      messenger.showSnackBar(
         SnackBar(content: Text(e.message)),
       );
     } catch (e) {
       if (!context.mounted) return;
       Navigator.pop(context);
-      ScaffoldMessenger.of(context).showSnackBar(
+      messenger.showSnackBar(
         SnackBar(content: Text('Proje oluşturulamadı: $e')),
       );
     }

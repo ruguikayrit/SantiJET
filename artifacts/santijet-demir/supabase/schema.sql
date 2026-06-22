@@ -58,6 +58,15 @@ create trigger on_auth_user_created
   after insert on auth.users
   for each row execute function public.handle_new_user();
 
+-- Daha önce oluşturulmuş ve trigger çalışmamış kullanıcıları tamamla.
+insert into public.profiles (id, email, display_name)
+select
+  id,
+  coalesce(email, ''),
+  coalesce(raw_user_meta_data->>'display_name', '')
+from auth.users
+on conflict (id) do nothing;
+
 -- Proje kodu ile katılma
 create or replace function public.join_project_by_code(p_code text)
 returns uuid
@@ -109,7 +118,8 @@ create policy "profiles_insert_own" on profiles
 
 drop policy if exists "profiles_update_own" on profiles;
 create policy "profiles_update_own" on profiles
-  for update using (auth.uid() = id);
+  for update using (auth.uid() = id)
+  with check (auth.uid() = id);
 
 drop policy if exists "projects_select_member" on projects;
 create policy "projects_select_member" on projects
@@ -149,11 +159,27 @@ create policy "members_select_project_peers" on project_members
 
 drop policy if exists "members_insert_self" on project_members;
 create policy "members_insert_self" on project_members
-  for insert with check (auth.uid() = user_id);
+  for insert with check (
+    auth.uid() = user_id
+    and role = 'owner'
+    and can_edit = true
+    and exists (
+      select 1 from projects p
+      where p.id = project_members.project_id
+        and p.owner_id = auth.uid()
+    )
+  );
 
 drop policy if exists "members_update_owner" on project_members;
 create policy "members_update_owner" on project_members
   for update using (
+    exists (
+      select 1 from projects p
+      where p.id = project_members.project_id
+        and p.owner_id = auth.uid()
+    )
+  )
+  with check (
     exists (
       select 1 from projects p
       where p.id = project_members.project_id

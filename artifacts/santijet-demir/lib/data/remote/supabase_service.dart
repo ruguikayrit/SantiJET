@@ -6,6 +6,7 @@ import 'package:santijet_demir/core/config/supabase_config.dart';
 
 abstract final class SupabaseService {
   static bool _initialized = false;
+  static Future<bool>? _initFuture;
   static String? _initError;
 
   static bool get isConfigured => SupabaseConfig.isConfigured;
@@ -23,7 +24,14 @@ abstract final class SupabaseService {
 
   static Future<bool> initialize() async {
     if (!isConfigured || _initialized) return _initialized;
+    final existing = _initFuture;
+    if (existing != null) return existing;
 
+    _initFuture = _initializeOnce();
+    return _initFuture!;
+  }
+
+  static Future<bool> _initializeOnce() async {
     try {
       await Supabase.initialize(
         url: SupabaseConfig.normalizedUrl,
@@ -42,6 +50,8 @@ abstract final class SupabaseService {
         debugPrint('Supabase initialize failed: $e\n$stack');
       }
       return false;
+    } finally {
+      _initFuture = null;
     }
   }
 

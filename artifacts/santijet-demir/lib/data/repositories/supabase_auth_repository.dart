@@ -16,13 +16,19 @@ class SupabaseAuthRepository {
     final session = _client.auth.currentSession;
     if (session == null) return;
 
+    await _ensureProfile(session.user);
+
     final profile = await _client
         .from('profiles')
         .select('current_session_id, email')
         .eq('id', session.user.id)
         .maybeSingle();
 
-    final sessionId = profile?['current_session_id'] as String? ?? '';
+    var sessionId = profile?['current_session_id'] as String? ?? '';
+    if (sessionId.isEmpty) {
+      sessionId = _newSessionId();
+      await _updateSessionId(session.user.id, sessionId);
+    }
     final email = profile?['email'] as String? ?? session.user.email ?? '';
 
     await _saveActiveSession(
@@ -78,6 +84,7 @@ class SupabaseAuthRepository {
       }
 
       await _waitForProfile(user.id);
+      await _ensureProfile(user);
       await _updateSessionId(user.id, sessionId);
       await _saveActiveSession(
         userId: user.id,
@@ -248,6 +255,11 @@ class SupabaseAuthRepository {
     } on PostgrestException {
       // Tetikleyici eşzamanlı oluşturmuş olabilir.
     }
+  }
+
+  String _newSessionId() {
+    final value = DateTime.now().microsecondsSinceEpoch.toRadixString(16);
+    return 'sb$value';
   }
 
   Future<void> _saveActiveSession({
