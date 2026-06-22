@@ -1,5 +1,10 @@
 abstract final class AppRoutes {
   static const splash = '/';
+  static const login = '/login';
+  static const register = '/register';
+  static const projects = '/projects';
+  static const joinProject = '/projects/join';
+  static String projectMembers(String id) => '/projects/$id/members';
   static const dashboard = '/dashboard';
   static const orders = '/orders';
   static const newOrder = '/orders/new';

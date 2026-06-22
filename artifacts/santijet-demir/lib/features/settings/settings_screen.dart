@@ -9,6 +9,8 @@ import 'package:santijet_demir/core/theme/app_typography.dart';
 import 'package:santijet_demir/core/widgets/empty_states.dart';
 import 'package:santijet_demir/domain/entities/app_settings.dart';
 import 'package:santijet_demir/features/auth/providers/app_lock_provider.dart';
+import 'package:santijet_demir/features/auth/providers/auth_provider.dart';
+import 'package:santijet_demir/features/projects/providers/project_provider.dart';
 import 'package:santijet_demir/features/settings/providers/settings_provider.dart';
 
 class SettingsScreen extends ConsumerWidget {
@@ -18,6 +20,8 @@ class SettingsScreen extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final settings = ref.watch(appSettingsProvider);
     final lock = ref.watch(appLockProvider);
+    final auth = ref.watch(authProvider);
+    final project = ref.watch(activeProjectProvider);
 
     return Scaffold(
       backgroundColor: AppColors.canvas,
@@ -25,8 +29,18 @@ class SettingsScreen extends ConsumerWidget {
       body: ListView(
         padding: const EdgeInsets.all(AppSpacing.md),
         children: [
-          _ProfileHeader(settings: settings),
+          _ProfileHeader(
+            settings: settings,
+            displayName: auth.user?.displayName ?? 'Kullanıcı',
+            projectName: project?.name ?? 'Proje seçilmedi',
+          ),
           const SizedBox(height: 16),
+          _SettingsTile(
+            icon: Icons.folder_copy,
+            title: 'Projelerim',
+            subtitle: project?.name ?? 'Proje seç veya oluştur',
+            onTap: () => context.push(AppRoutes.projects),
+          ),
           _SettingsTile(
             icon: Icons.business,
             title: 'Firma Bilgileri',
@@ -36,7 +50,7 @@ class SettingsScreen extends ConsumerWidget {
           _SettingsTile(
             icon: Icons.apartment,
             title: 'Proje Bilgileri',
-            subtitle: settings.projectName,
+            subtitle: project?.name ?? 'Aktif proje yok',
             onTap: () => context.push(AppRoutes.projectSettings),
           ),
           _SettingsTile(
@@ -343,9 +357,15 @@ class SettingsScreen extends ConsumerWidget {
 }
 
 class _ProfileHeader extends StatelessWidget {
-  const _ProfileHeader({required this.settings});
+  const _ProfileHeader({
+    required this.settings,
+    required this.displayName,
+    required this.projectName,
+  });
 
   final AppSettings settings;
+  final String displayName;
+  final String projectName;
 
   @override
   Widget build(BuildContext context) {
@@ -361,16 +381,16 @@ class _ProfileHeader extends StatelessWidget {
           CircleAvatar(
             radius: 28,
             backgroundColor: AppColors.warning.withValues(alpha: 0.3),
-            child: Text('U', style: AppTypography.headlineMedium),
+            child: Text(displayName.isNotEmpty ? displayName[0].toUpperCase() : 'U', style: AppTypography.headlineMedium),
           ),
           const SizedBox(width: 14),
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text('UĞUR TİRYAKİ', style: AppTypography.titleLarge),
+                Text(displayName.toUpperCase(), style: AppTypography.titleLarge),
                 Text('Şantiye Şefi', style: AppTypography.bodySmall),
-                Text(settings.projectName, style: AppTypography.labelMedium),
+                Text(projectName, style: AppTypography.labelMedium),
               ],
             ),
           ),

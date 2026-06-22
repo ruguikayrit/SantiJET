@@ -23,6 +23,12 @@ import 'package:santijet_demir/features/settings/notification_settings_screen.da
 import 'package:santijet_demir/features/settings/project_settings_screen.dart';
 import 'package:santijet_demir/features/settings/settings_screen.dart';
 import 'package:santijet_demir/features/shell/main_shell.dart';
+import 'package:santijet_demir/features/auth/login_screen.dart';
+import 'package:santijet_demir/features/auth/providers/auth_provider.dart';
+import 'package:santijet_demir/features/auth/register_screen.dart';
+import 'package:santijet_demir/features/projects/join_project_screen.dart';
+import 'package:santijet_demir/features/projects/project_list_screen.dart';
+import 'package:santijet_demir/features/projects/project_members_screen.dart';
 import 'package:santijet_demir/features/splash/splash_screen.dart';
 import 'package:santijet_demir/features/survey/survey_detail_screen.dart';
 import 'package:santijet_demir/features/survey/survey_list_screen.dart';
@@ -33,6 +39,30 @@ final routerProvider = Provider<GoRouter>((ref) {
   return GoRouter(
     navigatorKey: _rootNavigatorKey,
     initialLocation: AppRoutes.splash,
+    redirect: (context, state) {
+      final auth = ref.read(authProvider);
+      final location = state.matchedLocation;
+      final publicRoutes = {
+        AppRoutes.splash,
+        AppRoutes.login,
+        AppRoutes.register,
+      };
+
+      if (auth.user != null && !auth.isSessionValid) {
+        return null;
+      }
+
+      if (!auth.isAuthenticated && !publicRoutes.contains(location)) {
+        return AppRoutes.login;
+      }
+
+      if (auth.isAuthenticated &&
+          (location == AppRoutes.login || location == AppRoutes.register)) {
+        return AppRoutes.projects;
+      }
+
+      return null;
+    },
     routes: [
       GoRoute(
         path: AppRoutes.splash,
@@ -40,6 +70,46 @@ final routerProvider = Provider<GoRouter>((ref) {
           key: state.pageKey,
           child: const SplashScreen(),
         ),
+      ),
+      GoRoute(
+        path: AppRoutes.login,
+        pageBuilder: (context, state) => fadePage(
+          key: state.pageKey,
+          child: const LoginScreen(),
+        ),
+      ),
+      GoRoute(
+        path: AppRoutes.register,
+        pageBuilder: (context, state) => fadePage(
+          key: state.pageKey,
+          child: const RegisterScreen(),
+        ),
+      ),
+      GoRoute(
+        path: AppRoutes.projects,
+        pageBuilder: (context, state) => fadePage(
+          key: state.pageKey,
+          child: const ProjectListScreen(),
+        ),
+        routes: [
+          GoRoute(
+            path: 'join',
+            pageBuilder: (context, state) => fadeSlidePage(
+              key: state.pageKey,
+              child: const JoinProjectScreen(),
+            ),
+          ),
+          GoRoute(
+            path: ':id/members',
+            pageBuilder: (context, state) {
+              final id = state.pathParameters['id']!;
+              return fadeSlidePage(
+                key: state.pageKey,
+                child: ProjectMembersScreen(projectId: id),
+              );
+            },
+          ),
+        ],
       ),
       GoRoute(
         path: AppRoutes.newOrder,

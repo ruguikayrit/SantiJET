@@ -7,6 +7,7 @@ import 'package:santijet_demir/core/theme/app_radii.dart';
 import 'package:santijet_demir/core/theme/app_spacing.dart';
 import 'package:santijet_demir/core/theme/app_typography.dart';
 import 'package:santijet_demir/core/widgets/app_components.dart';
+import 'package:santijet_demir/features/projects/widgets/project_switcher.dart';
 import 'package:santijet_demir/core/widgets/santijet_header.dart';
 import 'package:santijet_demir/features/incoming_rebar/providers/incoming_rebar_provider.dart';
 import 'package:santijet_demir/features/incoming_rebar/widgets/delivery_card.dart';
@@ -33,7 +34,7 @@ class IncomingRebarScreen extends ConsumerWidget {
             SliverToBoxAdapter(
               child: Padding(
                 padding: const EdgeInsets.symmetric(horizontal: AppSpacing.md),
-                child: _ProjectSelector(),
+                child: ProjectSwitcher(),
               ),
             ),
             SliverPadding(
@@ -137,30 +138,6 @@ class IncomingRebarScreen extends ConsumerWidget {
       floatingActionButton: AppFab(
         label: 'Yeni Teslimat',
         onPressed: () => context.push(AppRoutes.newDelivery),
-      ),
-    );
-  }
-}
-
-class _ProjectSelector extends StatelessWidget {
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
-      decoration: BoxDecoration(
-        color: AppColors.surfaceElevated,
-        borderRadius: AppRadii.md,
-        border: Border.all(color: AppColors.border),
-      ),
-      child: Row(
-        children: [
-          const Icon(Icons.business, size: 18, color: AppColors.electricBlueLight),
-          const SizedBox(width: 10),
-          Expanded(
-            child: Text('ABC İnşaat — Blok A', style: AppTypography.titleMedium),
-          ),
-          const Icon(Icons.expand_more, color: AppColors.textMuted),
-        ],
       ),
     );
   }

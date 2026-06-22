@@ -3,7 +3,12 @@ import 'package:santijet_demir/data/mock/mock_orders.dart';
 import 'package:santijet_demir/domain/entities/order.dart';
 import 'package:santijet_demir/domain/enums/app_enums.dart';
 
-final ordersProvider = Provider<List<OrderItem>>((ref) => getMockOrders());
+import 'package:santijet_demir/features/projects/providers/project_provider.dart';
+
+final ordersProvider = Provider<List<OrderItem>>((ref) {
+  ref.watch(activeProjectIdProvider);
+  return getMockOrders();
+});
 
 final orderFilterProvider = StateProvider<int>((ref) => 0);
 
