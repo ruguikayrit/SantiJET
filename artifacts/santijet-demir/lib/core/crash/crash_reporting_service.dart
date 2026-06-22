@@ -37,6 +37,8 @@ class CrashReportingService {
   }
 
   Future<void> _tryInitializeFirebase() async {
+    if (kIsWeb) return;
+
     try {
       await Firebase.initializeApp(
         options: DefaultFirebaseOptions.currentPlatform,

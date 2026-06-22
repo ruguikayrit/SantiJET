@@ -32,7 +32,11 @@
   <link rel="icon" type="image/png" href="favicon.png"/>
 
   <title>ŞantiJET DEMİR</title>
-  <link rel="manifest" href="manifest.json?v=13">
+  <link rel="manifest" href="manifest.json?v=14">
+
+  <!-- Supabase → passkeys_web eklentisi için zorunlu (yoksa uygulama başlamaz) -->
+  <script src="passkeys_bundle.js"></script>
+
   <style>
     html {
       height: 100%;
@@ -59,16 +63,15 @@
     }
   </style>
   <script>
-    // ŞantiJET DEMİR — iOS PWA viewport düzeltmeleri (v7)
+    // ŞantiJET DEMİR — iOS PWA viewport düzeltmeleri
     (function () {
-      var APP_VERSION = '13';
+      var APP_VERSION = '14';
       var isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent) ||
         (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
       var isStandalone = window.navigator.standalone === true ||
         (window.matchMedia && window.matchMedia('(display-mode: standalone)').matches);
 
       function viewportHeight() {
-        // PWA standalone: görünür alan — siyah boşluk / kayma önlenir.
         if (isStandalone && window.visualViewport && window.visualViewport.height > 0) {
           return window.visualViewport.height;
         }
@@ -82,7 +85,6 @@
         return window.innerWidth;
       }
 
-      // Flutter iOS'ta clientHeight kullanır.
       if (isIOS) {
         try {
           Object.defineProperty(document.documentElement, 'clientHeight', {
@@ -95,7 +97,6 @@
           });
         } catch (e) { /* ignore */ }
 
-        // Viewport boyutu değişince Flutter'a bildir.
         function notifyResize() {
           window.dispatchEvent(new Event('resize'));
         }
@@ -105,7 +106,6 @@
         }
       }
 
-      // Flutter viewport meta etiketini değiştirebilir — viewport-fit=cover koru.
       function ensureViewportFit() {
         var vp = document.querySelector('meta[name="viewport"]');
         if (vp && vp.content.indexOf('viewport-fit=cover') === -1) {
@@ -120,7 +120,6 @@
         });
       }
 
-      // iOS PWA: klavye sonrası viewport kaymasını sıfırla.
       if (isIOS && isStandalone) {
         var resetScroll = function () {
           window.scrollTo(0, 0);
@@ -135,7 +134,6 @@
         document.addEventListener('focusout', resetScroll);
       }
 
-      // iOS PWA standalone: sistem jestlerinin tap'leri yutmasını engelle.
       function attachTouchGuard() {
         var target = document.querySelector('flutter-view') || document.body;
         if (!target || target.__santijetTouchGuard) return;
@@ -144,7 +142,6 @@
       }
       if (isIOS && isStandalone) {
         document.addEventListener('DOMContentLoaded', attachTouchGuard);
-        // flutter-view geç yüklenebilir.
         var touchObserver = new MutationObserver(function () {
           attachTouchGuard();
         });
@@ -153,24 +150,41 @@
         setTimeout(attachTouchGuard, 2000);
       }
 
-      // Service worker GitHub Pages alt yolunda sorun çıkarabiliyor — her zaman kaldır.
-      if ('serviceWorker' in navigator) {
-        navigator.serviceWorker.getRegistrations().then(function (regs) {
-          regs.forEach(function (reg) { reg.unregister(); });
-        });
+      function hideLoadingOverlay() {
+        var el = document.getElementById('santijet-loading');
+        if (el) el.remove();
       }
-      if ('caches' in window) {
-        caches.keys().then(function (keys) {
-          keys.forEach(function (key) { caches.delete(key); });
+
+      function watchFlutterMount() {
+        var flutterObserver = new MutationObserver(function () {
+          if (document.querySelector('flutter-view')) {
+            hideLoadingOverlay();
+            flutterObserver.disconnect();
+          }
         });
+        flutterObserver.observe(document.documentElement, { childList: true, subtree: true });
+      }
+      if (document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded', watchFlutterMount);
+      } else {
+        watchFlutterMount();
       }
 
       var STORED_VERSION = localStorage.getItem('santijet_app_version');
       if (STORED_VERSION !== APP_VERSION) {
         localStorage.setItem('santijet_app_version', APP_VERSION);
+        if ('serviceWorker' in navigator) {
+          navigator.serviceWorker.getRegistrations().then(function (regs) {
+            regs.forEach(function (reg) { reg.unregister(); });
+          });
+        }
+        if ('caches' in window) {
+          caches.keys().then(function (keys) {
+            keys.forEach(function (key) { caches.delete(key); });
+          });
+        }
       }
 
-      // Flutter 30 sn içinde başlamazsa kullanıcıya ipucu göster.
       setTimeout(function () {
         var el = document.getElementById('santijet-loading');
         if (el && el.parentNode) {
@@ -186,6 +200,6 @@
   <div id="santijet-loading" style="display:flex;align-items:center;justify-content:center;height:100vh;height:-webkit-fill-available;background:#05070A;color:#6B7280;font-family:system-ui,-apple-system,sans-serif;font-size:14px;">
     ŞantiJET yükleniyor…
   </div>
-  <script src="flutter_bootstrap.js?v=13" async></script>
+  <script src="flutter_bootstrap.js?v=14" async></script>
 </body>
 </html>
