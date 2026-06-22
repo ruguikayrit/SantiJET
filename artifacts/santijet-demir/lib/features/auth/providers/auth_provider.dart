@@ -2,6 +2,7 @@ import 'dart:math';
 
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:hive/hive.dart';
+import 'package:santijet_demir/core/config/supabase_config.dart';
 import 'package:santijet_demir/data/remote/supabase_service.dart';
 import 'package:santijet_demir/data/repositories/auth_repository.dart';
 import 'package:santijet_demir/data/repositories/supabase_auth_repository.dart';
@@ -74,6 +75,12 @@ class AuthNotifier extends StateNotifier<AuthState> {
       _ref.read(supabaseAuthRepositoryProvider);
 
   Future<void> restoreSession() async {
+    if (SupabaseConfig.isConfigured) {
+      await SupabaseService.waitUntilReady(
+        timeout: const Duration(seconds: 8),
+      );
+    }
+
     if (_usesSupabase) {
       await _supabaseAuth.restoreSession();
       final session = _supabaseAuth.getActiveSession();
@@ -121,6 +128,17 @@ class AuthNotifier extends StateNotifier<AuthState> {
     }
 
     try {
+      if (SupabaseConfig.isConfigured) {
+        final ready = await SupabaseService.waitUntilReady();
+        if (!ready) {
+          state = state.copyWith(
+            error: 'Bulut bağlantısı kurulamadı. Sayfayı yenileyip tekrar deneyin.',
+            isInitialized: true,
+          );
+          return false;
+        }
+      }
+
       final sessionId = _newSessionId();
       final UserAccount user;
 
@@ -152,6 +170,12 @@ class AuthNotifier extends StateNotifier<AuthState> {
     } on AppAuthException catch (e) {
       state = state.copyWith(error: e.message, isInitialized: true);
       return false;
+    } catch (e) {
+      state = state.copyWith(
+        error: 'Kayıt başarısız: $e',
+        isInitialized: true,
+      );
+      return false;
     }
   }
 
@@ -160,6 +184,17 @@ class AuthNotifier extends StateNotifier<AuthState> {
     required String password,
   }) async {
     try {
+      if (SupabaseConfig.isConfigured) {
+        final ready = await SupabaseService.waitUntilReady();
+        if (!ready) {
+          state = state.copyWith(
+            error: 'Bulut bağlantısı kurulamadı. Sayfayı yenileyip tekrar deneyin.',
+            isInitialized: true,
+          );
+          return false;
+        }
+      }
+
       final sessionId = _newSessionId();
       final UserAccount user;
 
@@ -187,6 +222,12 @@ class AuthNotifier extends StateNotifier<AuthState> {
       return true;
     } on AppAuthException catch (e) {
       state = state.copyWith(error: e.message, isInitialized: true);
+      return false;
+    } catch (e) {
+      state = state.copyWith(
+        error: 'Giriş başarısız: $e',
+        isInitialized: true,
+      );
       return false;
     }
   }

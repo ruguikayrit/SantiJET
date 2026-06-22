@@ -209,10 +209,14 @@ class SupabaseAuthRepository {
   }
 
   Future<void> _updateSessionId(String userId, String sessionId) async {
-    await _client
-        .from('profiles')
-        .update({'current_session_id': sessionId})
-        .eq('id', userId);
+    try {
+      await _client
+          .from('profiles')
+          .update({'current_session_id': sessionId})
+          .eq('id', userId);
+    } on PostgrestException {
+      // Oturum kaydı güncellenemese bile giriş tamamlansın.
+    }
   }
 
   Future<void> _waitForProfile(String userId) async {
@@ -279,6 +283,10 @@ class SupabaseAuthRepository {
     }
     if (lower.contains('invalid login credentials')) {
       return 'E-posta veya şifre hatalı';
+    }
+    if (lower.contains('email not confirmed') ||
+        lower.contains('not confirmed')) {
+      return 'E-posta adresinizi doğrulamanız gerekiyor';
     }
     if (lower.contains('already registered') || lower.contains('already exists')) {
       return 'Bu e-posta zaten kayıtlı';

@@ -44,4 +44,21 @@ abstract final class SupabaseService {
       return false;
     }
   }
+
+  /// Web'de arka plan init bitene kadar giriş bekler.
+  static Future<bool> waitUntilReady({
+    Duration timeout = const Duration(seconds: 15),
+  }) async {
+    if (!isConfigured) return false;
+    if (_initialized) return true;
+
+    final deadline = DateTime.now().add(timeout);
+    while (DateTime.now().isBefore(deadline)) {
+      if (_initialized) return true;
+      await initialize();
+      if (_initialized) return true;
+      await Future<void>.delayed(const Duration(milliseconds: 250));
+    }
+    return _initialized;
+  }
 }
