@@ -10,6 +10,8 @@ import 'package:santijet_demir/core/theme/app_typography.dart';
 import 'package:santijet_demir/core/widgets/app_bottom_nav_bar.dart';
 import 'package:santijet_demir/core/widgets/app_components.dart';
 import 'package:santijet_demir/core/widgets/santijet_header.dart';
+import 'package:santijet_demir/core/widgets/project_permission_gate.dart';
+import 'package:santijet_demir/features/projects/widgets/project_switcher.dart';
 
 class MainShell extends StatelessWidget {
   const MainShell({super.key, required this.navigationShell});
@@ -42,6 +44,13 @@ class DashboardScreen extends ConsumerWidget {
         child: CustomScrollView(
           slivers: [
             const SliverToBoxAdapter(child: SantijetHeader()),
+            const SliverToBoxAdapter(
+              child: Padding(
+                padding: EdgeInsets.fromLTRB(AppSpacing.md, 0, AppSpacing.md, 8),
+                child: ProjectSwitcher(),
+              ),
+            ),
+            const SliverToBoxAdapter(child: ReadOnlyBanner()),
             const SliverToBoxAdapter(child: GreetingSection()),
             SliverPadding(
               padding: const EdgeInsets.all(AppSpacing.md),

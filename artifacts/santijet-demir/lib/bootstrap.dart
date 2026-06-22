@@ -8,6 +8,8 @@ Future<void> bootstrap() async {
   WidgetsFlutterBinding.ensureInitialized();
   await Hive.initFlutter();
   await Hive.openBox('settings');
+  await Hive.openBox('accounts');
+  await Hive.openBox('projects');
 
   await CrashReportingService.instance.initialize();
 

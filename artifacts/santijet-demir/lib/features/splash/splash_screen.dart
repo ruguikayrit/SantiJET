@@ -1,6 +1,7 @@
 import 'dart:async';
 
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:santijet_demir/core/animations/app_animations.dart';
 import 'package:santijet_demir/core/routing/app_routes.dart';
@@ -8,16 +9,18 @@ import 'package:santijet_demir/core/theme/app_colors.dart';
 import 'package:santijet_demir/core/theme/app_shadows.dart';
 import 'package:santijet_demir/core/theme/app_spacing.dart';
 import 'package:santijet_demir/core/theme/app_typography.dart';
+import 'package:santijet_demir/features/auth/providers/auth_provider.dart';
+import 'package:santijet_demir/features/projects/providers/project_provider.dart';
 
 /// Figma Make v16 — Splash ekranı spesifikasyonları.
-class SplashScreen extends StatefulWidget {
+class SplashScreen extends ConsumerStatefulWidget {
   const SplashScreen({super.key});
 
   @override
-  State<SplashScreen> createState() => _SplashScreenState();
+  ConsumerState<SplashScreen> createState() => _SplashScreenState();
 }
 
-class _SplashScreenState extends State<SplashScreen>
+class _SplashScreenState extends ConsumerState<SplashScreen>
     with SingleTickerProviderStateMixin {
   late final AnimationController _loadingController;
 
@@ -30,7 +33,19 @@ class _SplashScreenState extends State<SplashScreen>
     )..repeat();
 
     Timer(const Duration(milliseconds: 2800), () {
-      if (mounted) context.go(AppRoutes.dashboard);
+      if (!mounted) return;
+      final auth = ref.read(authProvider);
+      if (!auth.isAuthenticated) {
+        context.go(AppRoutes.login);
+        return;
+      }
+
+      final activeProjectId = ref.read(activeProjectIdProvider);
+      if (activeProjectId != null) {
+        context.go(AppRoutes.dashboard);
+      } else {
+        context.go(AppRoutes.projects);
+      }
     });
   }
 
@@ -46,13 +61,11 @@ class _SplashScreenState extends State<SplashScreen>
       backgroundColor: AppColors.canvas,
       body: Stack(
         children: [
-          // Blueprint grid arka plan
           Positioned.fill(
             child: CustomPaint(
               painter: _BlueprintGridPainter(),
             ),
           ),
-          // Rebar overlay
           Positioned.fill(
             child: Opacity(
               opacity: 0.04,
@@ -61,7 +74,6 @@ class _SplashScreenState extends State<SplashScreen>
               ),
             ),
           ),
-          // Logo glow
           Positioned(
             top: AppSpacing.splashContentTop - 80,
             left: 0,
@@ -85,12 +97,10 @@ class _SplashScreenState extends State<SplashScreen>
               ),
             ),
           ),
-          // İçerik
           SafeArea(
             child: Column(
               children: [
                 SizedBox(height: AppSpacing.splashContentTop - MediaQuery.of(context).padding.top),
-                // S Logo — 284px (Figma)
                 FadeIn(
                   delay: const Duration(milliseconds: 200),
                   child: Image.asset(
@@ -132,7 +142,6 @@ class _SplashScreenState extends State<SplashScreen>
                   ),
                 ),
                 const Spacer(),
-                // Loading bar — 130px × 4px
                 AnimatedBuilder(
                   animation: _loadingController,
                   builder: (context, child) {
