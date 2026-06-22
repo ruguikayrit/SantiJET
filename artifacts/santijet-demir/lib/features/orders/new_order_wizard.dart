@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import 'package:santijet_demir/core/format/app_format.dart';
 import 'package:santijet_demir/core/theme/app_colors.dart';
 import 'package:santijet_demir/core/theme/app_radii.dart';
 import 'package:santijet_demir/core/theme/app_spacing.dart';
@@ -528,7 +529,7 @@ class _Step4SupplierSelection extends ConsumerWidget {
                         children: [
                           _SupplierMetric(
                             label: 'Birim Fiyat',
-                            value: '₺${supplier.pricePerTon.toStringAsFixed(0)}/t',
+                            value: '${AppFormat.currency(supplier.pricePerTon)}/t',
                           ),
                           const SizedBox(width: 24),
                           _SupplierMetric(
@@ -539,7 +540,7 @@ class _Step4SupplierSelection extends ConsumerWidget {
                       ),
                       const SizedBox(height: 10),
                       Text(
-                        'Tahmini: ₺${(supplier.pricePerTon * draft.totalTonnage).toStringAsFixed(0)}',
+                        'Tahmini: ${AppFormat.currency(supplier.pricePerTon * draft.totalTonnage)}',
                         style: AppTypography.bodyMedium.copyWith(
                           color: AppColors.electricBlueLight,
                         ),
@@ -591,7 +592,7 @@ class _Step5Summary extends StatelessWidget {
               const Divider(height: 24, color: AppColors.border),
               _SummaryRow(
                 'Tahmini Tutar',
-                '₺${totalCost.toStringAsFixed(0)}',
+                AppFormat.currency(totalCost),
                 highlight: true,
               ),
             ],
