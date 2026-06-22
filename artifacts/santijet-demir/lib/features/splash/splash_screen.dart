@@ -10,7 +10,7 @@ import 'package:santijet_demir/core/theme/app_typography.dart';
 import 'package:santijet_demir/features/auth/providers/auth_provider.dart';
 import 'package:santijet_demir/features/projects/providers/project_provider.dart';
 
-/// Figma Make v16 — Splash ekranı spesifikasyonları.
+/// ŞantiJET BFA açılış ekranı referansı: ortalanmış S ikon + wordmark (şeffaf).
 class SplashScreen extends ConsumerStatefulWidget {
   const SplashScreen({super.key});
 
@@ -20,6 +20,8 @@ class SplashScreen extends ConsumerStatefulWidget {
 
 class _SplashScreenState extends ConsumerState<SplashScreen>
     with SingleTickerProviderStateMixin {
+  static const _wordmarkAspect = 1016 / 187;
+
   late final AnimationController _loadingController;
 
   @override
@@ -86,6 +88,9 @@ class _SplashScreenState extends ConsumerState<SplashScreen>
 
   @override
   Widget build(BuildContext context) {
+    final wordmarkWidth = MediaQuery.sizeOf(context).width * 0.72;
+    final wordmarkHeight = wordmarkWidth / _wordmarkAspect;
+
     return Scaffold(
       backgroundColor: AppColors.canvas,
       body: Stack(
@@ -103,74 +108,64 @@ class _SplashScreenState extends ConsumerState<SplashScreen>
               ),
             ),
           ),
-          Positioned(
-            top: AppSpacing.splashContentTop - 80,
-            left: 0,
-            right: 0,
-            child: Center(
-              child: Container(
-                width: 300,
-                height: 270,
-                decoration: BoxDecoration(
-                  shape: BoxShape.circle,
-                  gradient: RadialGradient(
-                    colors: [
-                      AppColors.electricBlue.withValues(alpha: 0.10),
-                      AppColors.electricBlue.withValues(alpha: 0.04),
-                      AppColors.electricBlue.withValues(alpha: 0.01),
-                      Colors.transparent,
-                    ],
-                    stops: const [0.0, 0.35, 0.65, 1.0],
-                  ),
-                ),
-              ),
-            ),
-          ),
           SafeArea(
             child: Column(
               children: [
-                SizedBox(height: AppSpacing.splashContentTop - MediaQuery.of(context).padding.top),
-                FadeIn(
-                  delay: const Duration(milliseconds: 200),
-                  child: Image.asset(
-                    'assets/images/s_logo.png',
-                    width: 142,
-                    height: 142,
-                    fit: BoxFit.contain,
-                  ),
-                ),
-                const SizedBox(height: AppSpacing.splashLogoToWordmark),
-                FadeIn(
-                  delay: const Duration(milliseconds: 400),
-                  child: ClipRect(
-                    child: Align(
-                      alignment: Alignment.topCenter,
-                      heightFactor: 0.55,
-                      child: Image.asset(
-                        'assets/images/wordmark.png',
-                        width: 234,
-                        fit: BoxFit.fitWidth,
+                Expanded(
+                  child: Center(
+                    child: Padding(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: AppSpacing.lg,
+                      ),
+                      child: Column(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          FadeIn(
+                            delay: const Duration(milliseconds: 200),
+                            child: SizedBox(
+                              width: 148,
+                              height: 148,
+                              child: Center(
+                                child: Image.asset(
+                                  'assets/images/s_logo.png',
+                                  width: 140,
+                                  height: 140,
+                                  fit: BoxFit.contain,
+                                ),
+                              ),
+                            ),
+                          ),
+                          const SizedBox(height: 32),
+                          FadeIn(
+                            delay: const Duration(milliseconds: 400),
+                            child: Image.asset(
+                              'assets/images/wordmark.png',
+                              width: wordmarkWidth,
+                              height: wordmarkHeight,
+                              fit: BoxFit.contain,
+                            ),
+                          ),
+                          const SizedBox(height: AppSpacing.splashWordmarkToDemir),
+                          FadeIn(
+                            delay: const Duration(milliseconds: 600),
+                            child: Text('DEMİR', style: AppTypography.displayLarge),
+                          ),
+                          const SizedBox(height: AppSpacing.splashDemirToTagline),
+                          FadeIn(
+                            delay: const Duration(milliseconds: 750),
+                            child: Text(
+                              'ÇELİK TAKİP SİSTEMİ',
+                              style: AppTypography.labelSmall.copyWith(
+                                color: AppColors.textPrimary.withValues(alpha: 0.30),
+                                letterSpacing: 4.2,
+                              ),
+                            ),
+                          ),
+                        ],
                       ),
                     ),
                   ),
                 ),
-                const SizedBox(height: AppSpacing.splashWordmarkToDemir),
-                FadeIn(
-                  delay: const Duration(milliseconds: 600),
-                  child: Text('DEMİR', style: AppTypography.displayLarge),
-                ),
-                const SizedBox(height: AppSpacing.splashDemirToTagline),
-                FadeIn(
-                  delay: const Duration(milliseconds: 750),
-                  child: Text(
-                    'ÇELİK TAKİP SİSTEMİ',
-                    style: AppTypography.labelSmall.copyWith(
-                      color: AppColors.textPrimary.withValues(alpha: 0.30),
-                      letterSpacing: 4.2,
-                    ),
-                  ),
-                ),
-                const Spacer(),
                 AnimatedBuilder(
                   animation: _loadingController,
                   builder: (context, child) {
@@ -201,7 +196,7 @@ class _SplashScreenState extends ConsumerState<SplashScreen>
                     );
                   },
                 ),
-                SizedBox(height: AppSpacing.splashBottomSafe),
+                const SizedBox(height: AppSpacing.splashBottomSafe),
               ],
             ),
           ),
