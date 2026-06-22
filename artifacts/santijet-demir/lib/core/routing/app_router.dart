@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:santijet_demir/core/routing/app_routes.dart';
+import 'package:santijet_demir/features/analysis/analysis_screen.dart';
+import 'package:santijet_demir/features/analysis/performance_analysis_screen.dart';
 import 'package:santijet_demir/features/field_count/count_detail_screen.dart';
 import 'package:santijet_demir/features/field_count/field_count_screen.dart';
 import 'package:santijet_demir/features/field_count/new_count_screen.dart';
@@ -13,6 +15,8 @@ import 'package:santijet_demir/features/incoming_rebar/new_delivery_screen.dart'
 import 'package:santijet_demir/features/incoming_rebar/supplier_performance_screen.dart';
 import 'package:santijet_demir/features/orders/new_order_wizard.dart';
 import 'package:santijet_demir/features/orders/orders_screen.dart';
+import 'package:santijet_demir/features/reports/report_detail_screen.dart';
+import 'package:santijet_demir/features/reports/reports_screen.dart';
 import 'package:santijet_demir/features/shell/main_shell.dart';
 import 'package:santijet_demir/features/splash/splash_screen.dart';
 import 'package:santijet_demir/features/survey/survey_detail_screen.dart';
@@ -87,6 +91,24 @@ final routerProvider = Provider<GoRouter>((ref) {
         builder: (context, state) {
           final id = state.pathParameters['id']!;
           return CountDetailScreen(countId: id);
+        },
+      ),
+      GoRoute(
+        path: AppRoutes.performanceAnalysis,
+        parentNavigatorKey: _rootNavigatorKey,
+        builder: (context, state) => const PerformanceAnalysisScreen(),
+      ),
+      GoRoute(
+        path: AppRoutes.reports,
+        parentNavigatorKey: _rootNavigatorKey,
+        builder: (context, state) => const ReportsScreen(),
+      ),
+      GoRoute(
+        path: '/reports/:id',
+        parentNavigatorKey: _rootNavigatorKey,
+        builder: (context, state) {
+          final id = state.pathParameters['id']!;
+          return ReportDetailScreen(reportId: id);
         },
       ),
       StatefulShellRoute.indexedStack(

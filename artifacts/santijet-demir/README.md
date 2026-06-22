@@ -67,7 +67,7 @@ Tasarım: [Design System for ŞantiJET](https://www.figma.com/make/TXkpKrhhRK39W
 | 1 | ✅ | Proje kurulumu, tema, splash, dashboard, alt nav |
 | 2 | ✅ | Siparişler modülü + Keşif modülü |
 | 3 | ✅ | Gelen Demir + Saha Sayım |
-| 4 | ⏳ | Analiz + Raporlar |
+| 4 | ✅ | Analiz + Raporlar |
 | 5 | ⏳ | Ayarlar + PDF/Excel export |
 | 6 | ⏳ | Cila, Crashlytics, QA |
 

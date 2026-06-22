@@ -84,6 +84,7 @@ class DashboardScreen extends ConsumerWidget {
                   _QuickAccessRow(
                     onSurveyTap: () => context.push(AppRoutes.survey),
                     onOrdersTap: () => context.go(AppRoutes.orders),
+                    onReportsTap: () => context.push(AppRoutes.reports),
                   ),
                   const SizedBox(height: AppSpacing.lg),
                   Text('Kritik Uyarılar', style: AppTypography.headlineMedium),
@@ -185,10 +186,12 @@ class _QuickAccessRow extends StatelessWidget {
   const _QuickAccessRow({
     required this.onSurveyTap,
     required this.onOrdersTap,
+    required this.onReportsTap,
   });
 
   final VoidCallback onSurveyTap;
   final VoidCallback onOrdersTap;
+  final VoidCallback onReportsTap;
 
   @override
   Widget build(BuildContext context) {
@@ -203,7 +206,7 @@ class _QuickAccessRow extends StatelessWidget {
             onTap: onSurveyTap,
           ),
         ),
-        const SizedBox(width: 12),
+        const SizedBox(width: 8),
         Expanded(
           child: _QuickAccessCard(
             icon: Icons.receipt_long,
@@ -211,6 +214,16 @@ class _QuickAccessRow extends StatelessWidget {
             subtitle: '7 aktif',
             color: AppColors.info,
             onTap: onOrdersTap,
+          ),
+        ),
+        const SizedBox(width: 8),
+        Expanded(
+          child: _QuickAccessCard(
+            icon: Icons.description,
+            label: 'Raporlar',
+            subtitle: '10 kategori',
+            color: AppColors.partial,
+            onTap: onReportsTap,
           ),
         ),
       ],
@@ -258,19 +271,6 @@ class _QuickAccessCard extends StatelessWidget {
           ),
         ),
       ),
-    );
-  }
-}
-
-class AnalysisScreen extends StatelessWidget {
-  const AnalysisScreen({super.key});
-
-  @override
-  Widget build(BuildContext context) {
-    return const PlaceholderTabScreen(
-      title: 'Analiz',
-      message: 'Sağlık halkası, AI içgörüleri\nve performans analizi',
-      icon: Icons.analytics_outlined,
     );
   }
 }

@@ -13,6 +13,9 @@ abstract final class AppRoutes {
   static const newCount = '/field-count/new';
   static String countDetail(String id) => '/field-count/$id';
   static const analysis = '/analysis';
+  static const performanceAnalysis = '/analysis/performance';
+  static const reports = '/reports';
+  static String reportDetail(String id) => '/reports/$id';
   static const survey = '/survey';
   static String surveyDetail(String id) => '/survey/$id';
 }
