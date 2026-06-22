@@ -21,6 +21,8 @@ kurallarını tanımlar.
 - PIN, cihazda hash olarak saklanır; düz metin depolanmaz.
 - 5 hatalı denemeden sonra 30 saniye geçici kilit uygulanır.
 - Sayfa yenilendiğinde veya uygulama kilitlendiğinde PIN tekrar istenir.
+- **Aynı telefonda** bir kez doğru PIN girildikten sonra cihaz "güvenilir" sayılır;
+  uygulama yeniden açılsa bile PIN sorulmaz (Ayarlar → **Uygulamayı Kilitle** ile sıfırlanır).
 
 > **Önemli:** Web/PWA uygulamalarında istemci tarafı PIN, rastgele ziyaretçilere
 > karşı **pratik bir engeldir**; kaynak kodu inceleyen bir geliştiriciye karşı

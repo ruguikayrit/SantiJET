@@ -190,7 +190,7 @@ class SettingsScreen extends ConsumerWidget {
               Text('Uygulama Kilidi', style: AppTypography.headlineMedium),
               const SizedBox(height: 8),
               Text(
-                'PIN 4–8 haneli olmalıdır. Sayfa yenilendiğinde tekrar sorulur.',
+                'PIN 4–8 haneli olmalıdır. Bu telefonda bir kez girildikten sonra tekrar sorulmaz.',
                 style: AppTypography.bodySmall,
               ),
               const SizedBox(height: 16),
