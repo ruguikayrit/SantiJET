@@ -1,16 +1,22 @@
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:santijet_demir/bootstrap.dart';
+import 'package:santijet_demir/core/crash/crash_reporting_service.dart';
+import 'dart:async';
 
 Future<void> main() async {
-  try {
-    await bootstrap();
-  } catch (error, stack) {
-    if (kDebugMode) {
-      debugPrint('Bootstrap failed: $error\n$stack');
+  runZonedGuarded(() async {
+    try {
+      await bootstrap();
+    } catch (error, stack) {
+      if (kDebugMode) {
+        debugPrint('Bootstrap failed: $error\n$stack');
+      }
+      runApp(BootstrapErrorApp(error: error.toString()));
     }
-    runApp(BootstrapErrorApp(error: error.toString()));
-  }
+  }, (error, stack) {
+    CrashReportingService.instance.recordError(error, stack, fatal: true);
+  });
 }
 
 class BootstrapErrorApp extends StatelessWidget {
