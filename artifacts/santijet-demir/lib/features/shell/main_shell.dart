@@ -262,32 +262,6 @@ class _QuickAccessCard extends StatelessWidget {
   }
 }
 
-class IncomingRebarScreen extends StatelessWidget {
-  const IncomingRebarScreen({super.key});
-
-  @override
-  Widget build(BuildContext context) {
-    return const PlaceholderTabScreen(
-      title: 'Gelen Demir',
-      message: 'Teslimat dashboard, liste,\ndetay ve yeni teslimat formu',
-      icon: Icons.local_shipping_outlined,
-    );
-  }
-}
-
-class FieldCountScreen extends StatelessWidget {
-  const FieldCountScreen({super.key});
-
-  @override
-  Widget build(BuildContext context) {
-    return const PlaceholderTabScreen(
-      title: 'Saha Sayım',
-      message: 'Mutabakat tablosu, yeni sayım\nve sayım detayı',
-      icon: Icons.inventory_2_outlined,
-    );
-  }
-}
-
 class AnalysisScreen extends StatelessWidget {
   const AnalysisScreen({super.key});
 

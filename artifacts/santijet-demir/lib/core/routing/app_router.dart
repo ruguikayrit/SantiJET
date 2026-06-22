@@ -2,6 +2,15 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:santijet_demir/core/routing/app_routes.dart';
+import 'package:santijet_demir/features/field_count/count_detail_screen.dart';
+import 'package:santijet_demir/features/field_count/field_count_screen.dart';
+import 'package:santijet_demir/features/field_count/new_count_screen.dart';
+import 'package:santijet_demir/features/field_count/reconciliation_screen.dart';
+import 'package:santijet_demir/features/incoming_rebar/delivery_detail_screen.dart';
+import 'package:santijet_demir/features/incoming_rebar/delivery_list_screen.dart';
+import 'package:santijet_demir/features/incoming_rebar/incoming_rebar_screen.dart';
+import 'package:santijet_demir/features/incoming_rebar/new_delivery_screen.dart';
+import 'package:santijet_demir/features/incoming_rebar/supplier_performance_screen.dart';
 import 'package:santijet_demir/features/orders/new_order_wizard.dart';
 import 'package:santijet_demir/features/orders/orders_screen.dart';
 import 'package:santijet_demir/features/shell/main_shell.dart';
@@ -38,6 +47,47 @@ final routerProvider = Provider<GoRouter>((ref) {
             },
           ),
         ],
+      ),
+      GoRoute(
+        path: AppRoutes.deliveryList,
+        parentNavigatorKey: _rootNavigatorKey,
+        builder: (context, state) => const DeliveryListScreen(),
+      ),
+      GoRoute(
+        path: AppRoutes.newDelivery,
+        parentNavigatorKey: _rootNavigatorKey,
+        builder: (context, state) => const NewDeliveryScreen(),
+      ),
+      GoRoute(
+        path: AppRoutes.supplierPerformance,
+        parentNavigatorKey: _rootNavigatorKey,
+        builder: (context, state) => const SupplierPerformanceScreen(),
+      ),
+      GoRoute(
+        path: '/incoming-rebar/:id',
+        parentNavigatorKey: _rootNavigatorKey,
+        builder: (context, state) {
+          final id = state.pathParameters['id']!;
+          return DeliveryDetailScreen(deliveryId: id);
+        },
+      ),
+      GoRoute(
+        path: AppRoutes.reconciliation,
+        parentNavigatorKey: _rootNavigatorKey,
+        builder: (context, state) => const ReconciliationScreen(),
+      ),
+      GoRoute(
+        path: AppRoutes.newCount,
+        parentNavigatorKey: _rootNavigatorKey,
+        builder: (context, state) => const NewCountScreen(),
+      ),
+      GoRoute(
+        path: '/field-count/:id',
+        parentNavigatorKey: _rootNavigatorKey,
+        builder: (context, state) {
+          final id = state.pathParameters['id']!;
+          return CountDetailScreen(countId: id);
+        },
       ),
       StatefulShellRoute.indexedStack(
         builder: (context, state, navigationShell) {
