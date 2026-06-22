@@ -29,58 +29,50 @@ class AppBottomNavBar extends ConsumerWidget {
     Icons.analytics,
   ];
 
-  static double _homeIndicatorInset(BuildContext context) {
-    final viewPadding = MediaQuery.viewPaddingOf(context);
-    if (viewPadding.bottom >= 20) return viewPadding.bottom;
-    if (ResponsiveLayout.isTablet(context)) return 8;
-    return 34;
-  }
-
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final showLabels = ResponsiveLayout.isTablet(context);
     final barHeight = showLabels ? 56.0 : 52.0;
-    final homeIndicatorInset = _homeIndicatorInset(context);
 
     final bar = Material(
       color: AppColors.surface,
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          DecoratedBox(
-            decoration: const BoxDecoration(
-              border: Border(top: BorderSide(color: AppColors.border)),
-            ),
-            child: SizedBox(
-              height: barHeight,
-              width: double.infinity,
-              child: Row(
-                children: [
-                  for (var i = 0; i < BottomNavTab.values.length; i++)
-                    Expanded(
-                      child: _NavItem(
-                        icon: _icons[i],
-                        activeIcon: _activeIcons[i],
-                        label: BottomNavTab.values[i].navLabel,
-                        semanticsLabel: BottomNavTab.values[i].label,
-                        selected: navigationShell.currentIndex == i,
-                        showLabel: showLabels,
-                        onTap: () => navigationShell.goBranch(
-                          i,
-                          initialLocation: i == navigationShell.currentIndex,
-                        ),
+      child: SafeArea(
+        top: false,
+        left: false,
+        right: false,
+        // clientHeight düzeltmesi sonrası viewPadding doğru gelir — ekstra 34px ekleme.
+        minimum: EdgeInsets.zero,
+        child: DecoratedBox(
+          decoration: const BoxDecoration(
+            border: Border(top: BorderSide(color: AppColors.border)),
+          ),
+          child: SizedBox(
+            height: barHeight,
+            width: double.infinity,
+            child: Row(
+              children: [
+                for (var i = 0; i < BottomNavTab.values.length; i++)
+                  Expanded(
+                    child: _NavItem(
+                      icon: _icons[i],
+                      activeIcon: _activeIcons[i],
+                      label: BottomNavTab.values[i].navLabel,
+                      semanticsLabel: BottomNavTab.values[i].label,
+                      selected: navigationShell.currentIndex == i,
+                      showLabel: showLabels,
+                      onTap: () => navigationShell.goBranch(
+                        i,
+                        initialLocation: i == navigationShell.currentIndex,
                       ),
                     ),
-                ],
-              ),
+                  ),
+              ],
             ),
           ),
-          SizedBox(height: homeIndicatorInset),
-        ],
+        ),
       ),
     );
 
-    // iOS PWA standalone: HTML katmanı üzerinden dokunma iletimi.
     if (kIsWeb) {
       return PointerInterceptor(child: bar);
     }
@@ -159,7 +151,6 @@ class _NavItem extends StatelessWidget {
     );
 
     if (kIsWeb) {
-      // iOS PWA'da GestureDetector bazen ateşlenmez; pointer fallback.
       child = Listener(
         behavior: HitTestBehavior.opaque,
         onPointerUp: (_) => onTap(),
