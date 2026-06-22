@@ -1,6 +1,8 @@
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import 'package:pointer_interceptor/pointer_interceptor.dart';
 import 'package:santijet_demir/core/responsive/responsive_layout.dart';
 import 'package:santijet_demir/core/theme/app_colors.dart';
 import 'package:santijet_demir/core/theme/app_typography.dart';
@@ -40,7 +42,7 @@ class AppBottomNavBar extends ConsumerWidget {
     final barHeight = showLabels ? 56.0 : 52.0;
     final homeIndicatorInset = _homeIndicatorInset(context);
 
-    return Material(
+    final bar = Material(
       color: AppColors.surface,
       child: Column(
         mainAxisSize: MainAxisSize.min,
@@ -73,11 +75,16 @@ class AppBottomNavBar extends ConsumerWidget {
               ),
             ),
           ),
-          // Home indicator alanı — dokunma hedefi değil, yalnızca görsel boşluk.
           SizedBox(height: homeIndicatorInset),
         ],
       ),
     );
+
+    // iOS PWA standalone: HTML katmanı üzerinden dokunma iletimi.
+    if (kIsWeb) {
+      return PointerInterceptor(child: bar);
+    }
+    return bar;
   }
 }
 
@@ -105,59 +112,72 @@ class _NavItem extends StatelessWidget {
     final color =
         selected ? AppColors.electricBlueLight : AppColors.textMuted;
 
+    Widget child = ColoredBox(
+      color: Colors.transparent,
+      child: Center(
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            AnimatedContainer(
+              duration: const Duration(milliseconds: 200),
+              padding: EdgeInsets.symmetric(
+                horizontal: showLabel ? 8 : 12,
+                vertical: showLabel ? 4 : 6,
+              ),
+              decoration: BoxDecoration(
+                color: selected
+                    ? AppColors.electricBlue.withValues(alpha: 0.15)
+                    : Colors.transparent,
+                borderRadius: BorderRadius.circular(14),
+              ),
+              child: Icon(
+                selected ? activeIcon : icon,
+                size: showLabel ? 20 : 24,
+                color: color,
+              ),
+            ),
+            if (showLabel) ...[
+              const SizedBox(height: 2),
+              FittedBox(
+                fit: BoxFit.scaleDown,
+                child: Text(
+                  label,
+                  maxLines: 1,
+                  textAlign: TextAlign.center,
+                  style: AppTypography.tabLabel.copyWith(
+                    color: color,
+                    fontSize: 9,
+                    height: 1.0,
+                  ),
+                ),
+              ),
+            ],
+          ],
+        ),
+      ),
+    );
+
+    if (kIsWeb) {
+      // iOS PWA'da GestureDetector bazen ateşlenmez; pointer fallback.
+      child = Listener(
+        behavior: HitTestBehavior.opaque,
+        onPointerUp: (_) => onTap(),
+        child: child,
+      );
+    } else {
+      child = GestureDetector(
+        behavior: HitTestBehavior.opaque,
+        onTap: onTap,
+        child: child,
+      );
+    }
+
     return Semantics(
       label: semanticsLabel,
       selected: selected,
       button: true,
-      child: GestureDetector(
-        behavior: HitTestBehavior.opaque,
-        onTap: onTap,
-        child: ColoredBox(
-          color: Colors.transparent,
-          child: Center(
-            child: Column(
-              mainAxisAlignment: MainAxisAlignment.center,
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                AnimatedContainer(
-                  duration: const Duration(milliseconds: 200),
-                  padding: EdgeInsets.symmetric(
-                    horizontal: showLabel ? 8 : 12,
-                    vertical: showLabel ? 4 : 6,
-                  ),
-                  decoration: BoxDecoration(
-                    color: selected
-                        ? AppColors.electricBlue.withValues(alpha: 0.15)
-                        : Colors.transparent,
-                    borderRadius: BorderRadius.circular(14),
-                  ),
-                  child: Icon(
-                    selected ? activeIcon : icon,
-                    size: showLabel ? 20 : 24,
-                    color: color,
-                  ),
-                ),
-                if (showLabel) ...[
-                  const SizedBox(height: 2),
-                  FittedBox(
-                    fit: BoxFit.scaleDown,
-                    child: Text(
-                      label,
-                      maxLines: 1,
-                      textAlign: TextAlign.center,
-                      style: AppTypography.tabLabel.copyWith(
-                        color: color,
-                        fontSize: 9,
-                        height: 1.0,
-                      ),
-                    ),
-                  ),
-                ],
-              ],
-            ),
-          ),
-        ),
-      ),
+      child: child,
     );
   }
 }
