@@ -23,6 +23,7 @@ import 'package:santijet_demir/features/settings/notification_settings_screen.da
 import 'package:santijet_demir/features/settings/project_settings_screen.dart';
 import 'package:santijet_demir/features/settings/settings_screen.dart';
 import 'package:santijet_demir/features/shell/main_shell.dart';
+import 'package:santijet_demir/features/auth/forgot_password_screen.dart';
 import 'package:santijet_demir/features/auth/login_screen.dart';
 import 'package:santijet_demir/features/auth/providers/auth_provider.dart';
 import 'package:santijet_demir/features/auth/register_screen.dart';
@@ -45,6 +46,7 @@ final routerProvider = Provider<GoRouter>((ref) {
       final publicRoutes = {
         AppRoutes.splash,
         AppRoutes.login,
+        AppRoutes.forgotPassword,
         AppRoutes.register,
       };
 
@@ -81,6 +83,18 @@ final routerProvider = Provider<GoRouter>((ref) {
           key: state.pageKey,
           child: const LoginScreen(),
         ),
+        routes: [
+          GoRoute(
+            path: 'forgot-password',
+            pageBuilder: (context, state) {
+              final email = state.uri.queryParameters['email'];
+              return fadePage(
+                key: state.pageKey,
+                child: ForgotPasswordScreen(initialEmail: email),
+              );
+            },
+          ),
+        ],
       ),
       GoRoute(
         path: AppRoutes.register,

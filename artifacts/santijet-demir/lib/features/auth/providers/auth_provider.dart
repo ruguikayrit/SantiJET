@@ -191,6 +191,30 @@ class AuthNotifier extends StateNotifier<AuthState> {
     }
   }
 
+  Future<bool> requestPasswordReset({required String email}) async {
+    final normalized = email.trim();
+    if (normalized.isEmpty) {
+      state = state.copyWith(error: 'E-posta adresi girin');
+      return false;
+    }
+
+    if (!_usesSupabase) {
+      state = state.copyWith(
+        error: 'Şifre sıfırlama yalnızca bulut hesaplarında kullanılabilir',
+      );
+      return false;
+    }
+
+    try {
+      await _supabaseAuth.requestPasswordReset(email: normalized);
+      state = state.copyWith(clearError: true);
+      return true;
+    } on AppAuthException catch (e) {
+      state = state.copyWith(error: e.message);
+      return false;
+    }
+  }
+
   Future<void> logout() async {
     if (_usesSupabase) {
       await _supabaseAuth.logout();

@@ -159,6 +159,32 @@ class SupabaseAuthRepository {
     await _box.delete(_activeSessionKey);
   }
 
+  Future<void> requestPasswordReset({required String email}) async {
+    try {
+      await _client.auth.resetPasswordForEmail(
+        email.trim().toLowerCase(),
+        redirectTo: _passwordResetRedirectUrl,
+      );
+    } on AuthApiException catch (e) {
+      throw AppAuthException(_mapAuthError(e.message));
+    } catch (e) {
+      final msg = e.toString();
+      if (msg.toLowerCase().contains('invalid path specified')) {
+        throw AppAuthException(_mapAuthError('Invalid path specified in request URL'));
+      }
+      throw AppAuthException('Şifre sıfırlama başarısız: $e');
+    }
+  }
+
+  /// Web: mevcut uygulama adresi; Supabase Redirect URLs'e eklenmeli.
+  static String get _passwordResetRedirectUrl {
+    final uri = Uri.base;
+    if (uri.hasScheme && uri.host.isNotEmpty) {
+      return uri.replace(queryParameters: {}, fragment: '').toString();
+    }
+    return 'https://ruguikayrit.github.io/SantiJET/';
+  }
+
   ActiveSession? getActiveSession() {
     final raw = _box.get(_activeSessionKey);
     if (raw is! Map) return null;
