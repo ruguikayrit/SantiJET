@@ -121,6 +121,7 @@ class SupabaseAuthRepository {
         throw AppAuthException('Giriş başarısız');
       }
 
+      await _ensureProfile(user);
       await _updateSessionId(user.id, sessionId);
       await _saveActiveSession(
         userId: user.id,
@@ -223,6 +224,25 @@ class SupabaseAuthRepository {
           .maybeSingle();
       if (profile != null) return;
       await Future<void>.delayed(const Duration(milliseconds: 400));
+    }
+  }
+
+  Future<void> _ensureProfile(User user) async {
+    final existing = await _client
+        .from('profiles')
+        .select('id')
+        .eq('id', user.id)
+        .maybeSingle();
+    if (existing != null) return;
+
+    try {
+      await _client.from('profiles').insert({
+        'id': user.id,
+        'email': user.email ?? '',
+        'display_name': user.userMetadata?['display_name'] as String? ?? '',
+      });
+    } on PostgrestException {
+      // Tetikleyici eşzamanlı oluşturmuş olabilir.
     }
   }
 

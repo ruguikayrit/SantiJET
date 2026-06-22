@@ -219,6 +219,20 @@ class ProjectRepository {
     await _saveCodes(codes);
   }
 
+  /// Buluttan gelen kayıtları yerel önbelleğe ekler/günceller; mevcut
+  /// projeleri silmez (kısmi RLS yanıtında veri kaybını önler).
+  Future<void> mergeFromCloud(
+    List<Project> projects,
+    List<ProjectMember> members,
+  ) async {
+    for (final project in projects) {
+      await upsertProject(project);
+    }
+    for (final member in members) {
+      await upsertMember(member);
+    }
+  }
+
   Future<void> upsertProject(Project project) async {
     final projects = getAllProjects();
     final index = projects.indexWhere((p) => p.id == project.id);

@@ -1,3 +1,5 @@
+import 'dart:math';
+
 import 'package:santijet_demir/core/utils/project_code_generator.dart';
 import 'package:santijet_demir/data/remote/supabase_service.dart';
 import 'package:santijet_demir/data/repositories/project_repository.dart';
@@ -15,24 +17,47 @@ class SupabaseProjectSync {
   SupabaseClient get _client => SupabaseService.client;
 
   Future<void> pullUserProjects(String userId) async {
-    final rows = await _client
+    final memberRows = await _client
         .from('project_members')
-        .select('*, projects(*)')
+        .select()
         .eq('user_id', userId);
+
+    if (memberRows.isEmpty) {
+      return;
+    }
+
+    final projectIds = memberRows
+        .map((row) => row['project_id'] as String)
+        .toSet()
+        .toList();
+
+    final projectRows = await _client
+        .from('projects')
+        .select()
+        .inFilter('id', projectIds);
+
+    final projectsById = <String, Project>{
+      for (final row in projectRows)
+        row['id'] as String: _projectFromJson(row),
+    };
 
     final projects = <Project>[];
     final members = <ProjectMember>[];
 
-    for (final row in rows) {
-      final projectJson = row['projects'] as Map<String, dynamic>?;
-      if (projectJson == null) continue;
+    for (final row in memberRows) {
+      final projectId = row['project_id'] as String;
+      final project = projectsById[projectId];
+      if (project == null) continue;
 
-      final project = _projectFromJson(projectJson);
       projects.add(project);
-      members.add(_memberFromJson(row, project.id));
+      members.add(_memberFromJson(row, projectId));
     }
 
-    await _local.replaceAll(projects, members);
+    if (projects.isEmpty) {
+      return;
+    }
+
+    await _local.mergeFromCloud(projects, members);
   }
 
   Future<Project> createProject({
@@ -44,35 +69,54 @@ class SupabaseProjectSync {
     double progress = 0,
     String? code,
   }) async {
+    final trimmedName = name.trim();
+    if (trimmedName.isEmpty) {
+      throw ProjectException('Proje adı boş olamaz');
+    }
+
     var finalCode = code?.trim().toUpperCase();
     if (finalCode == null || finalCode.isEmpty) {
       finalCode = ProjectCodeGenerator.generate();
     }
 
-    final inserted = await _client
-        .from('projects')
-        .insert({
-          'code': finalCode,
-          'name': name.trim(),
-          'location': location.trim(),
-          'owner_id': owner.id,
-          'start_date': startDate?.toIso8601String().split('T').first,
-          'end_date': endDate?.toIso8601String().split('T').first,
-          'progress': progress,
-        })
-        .select()
-        .single();
+    final projectId = _newUuidV4();
+    final createdAt = DateTime.now().toUtc();
 
-    final project = _projectFromJson(inserted);
+    try {
+      await _client.from('projects').insert({
+        'id': projectId,
+        'code': finalCode,
+        'name': trimmedName,
+        'location': location.trim(),
+        'owner_id': owner.id,
+        'start_date': startDate?.toIso8601String().split('T').first,
+        'end_date': endDate?.toIso8601String().split('T').first,
+        'progress': progress,
+      });
 
-    await _client.from('project_members').insert({
-      'project_id': project.id,
-      'user_id': owner.id,
-      'email': owner.email,
-      'display_name': owner.displayName,
-      'role': ProjectRole.owner.name,
-      'can_edit': true,
-    });
+      await _client.from('project_members').insert({
+        'project_id': projectId,
+        'user_id': owner.id,
+        'email': owner.email,
+        'display_name': owner.displayName,
+        'role': ProjectRole.owner.name,
+        'can_edit': true,
+      });
+    } on PostgrestException catch (e) {
+      throw ProjectException(_mapProjectError(e));
+    }
+
+    final project = Project(
+      id: projectId,
+      code: finalCode,
+      name: trimmedName,
+      location: location.trim(),
+      ownerId: owner.id,
+      createdAt: createdAt,
+      startDate: startDate,
+      endDate: endDate,
+      progress: progress,
+    );
 
     await _local.upsertProject(project);
     await _local.upsertMember(
@@ -83,7 +127,7 @@ class SupabaseProjectSync {
         displayName: owner.displayName,
         role: ProjectRole.owner,
         canEdit: true,
-        joinedAt: DateTime.now(),
+        joinedAt: createdAt,
       ),
     );
     await _local.setActiveProjectId(project.id);
@@ -180,4 +224,31 @@ class SupabaseProjectSync {
       joinedAt: DateTime.parse(json['joined_at'] as String),
     );
   }
+
+  String _mapProjectError(PostgrestException e) {
+    final message = e.message.toLowerCase();
+    if (message.contains('invalid path specified')) {
+      return 'Supabase bağlantı ayarı hatalı. Yöneticiye bildirin.';
+    }
+    if (message.contains('duplicate key') || message.contains('unique')) {
+      return 'Bu proje kodu zaten kullanılıyor';
+    }
+    if (message.contains('foreign key') || message.contains('profiles')) {
+      return 'Hesap profili henüz hazır değil. Çıkış yapıp tekrar giriş deneyin.';
+    }
+    if (message.contains('row-level security') || message.contains('policy')) {
+      return 'Proje oluşturma izni yok. Supabase RLS ayarlarını kontrol edin.';
+    }
+    return e.message;
+  }
+}
+
+String _newUuidV4() {
+  final random = Random.secure();
+  final bytes = List<int>.generate(16, (_) => random.nextInt(256));
+  bytes[6] = (bytes[6] & 0x0f) | 0x40;
+  bytes[8] = (bytes[8] & 0x3f) | 0x80;
+  final hex = bytes.map((b) => b.toRadixString(16).padLeft(2, '0')).join();
+  return '${hex.substring(0, 8)}-${hex.substring(8, 12)}-'
+      '${hex.substring(12, 16)}-${hex.substring(16, 20)}-${hex.substring(20)}';
 }

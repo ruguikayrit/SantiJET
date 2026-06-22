@@ -115,29 +115,43 @@ class ProjectsController {
     double progress = 0,
     String? code,
   }) async {
-    final user = _auth.user!;
+    final user = _auth.user;
+    if (user == null) {
+      throw ProjectException('Oturum bulunamadı. Tekrar giriş yapın.');
+    }
+
+    if (name.trim().isEmpty) {
+      throw ProjectException('Proje adı boş olamaz');
+    }
+
     final Project project;
 
-    if (_sync != null) {
-      project = await _sync!.createProject(
-        owner: user,
-        name: name,
-        location: location,
-        startDate: startDate,
-        endDate: endDate,
-        progress: progress,
-        code: code,
-      );
-    } else {
-      project = await _repo.createProject(
-        owner: user,
-        name: name,
-        location: location,
-        startDate: startDate,
-        endDate: endDate,
-        progress: progress,
-        code: code,
-      );
+    try {
+      if (_sync != null) {
+        project = await _sync!.createProject(
+          owner: user,
+          name: name,
+          location: location,
+          startDate: startDate,
+          endDate: endDate,
+          progress: progress,
+          code: code,
+        );
+      } else {
+        project = await _repo.createProject(
+          owner: user,
+          name: name,
+          location: location,
+          startDate: startDate,
+          endDate: endDate,
+          progress: progress,
+          code: code,
+        );
+      }
+    } on ProjectException {
+      rethrow;
+    } catch (e) {
+      throw ProjectException('Proje oluşturulamadı: $e');
     }
 
     _ref.read(activeProjectIdProvider.notifier).state = project.id;
