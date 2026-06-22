@@ -2,15 +2,21 @@ import 'dart:math';
 
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:hive/hive.dart';
+import 'package:santijet_demir/data/remote/supabase_service.dart';
 import 'package:santijet_demir/data/repositories/auth_repository.dart';
+import 'package:santijet_demir/data/repositories/supabase_auth_repository.dart';
 import 'package:santijet_demir/domain/entities/user_account.dart';
 
 final accountsBoxProvider = Provider<Box>((ref) {
   return Hive.box('accounts');
 });
 
-final authRepositoryProvider = Provider<AuthRepository>((ref) {
+final localAuthRepositoryProvider = Provider<AuthRepository>((ref) {
   return AuthRepository(ref.watch(accountsBoxProvider));
+});
+
+final supabaseAuthRepositoryProvider = Provider<SupabaseAuthRepository>((ref) {
+  return SupabaseAuthRepository(ref.watch(accountsBoxProvider));
 });
 
 class AuthState {
@@ -18,12 +24,16 @@ class AuthState {
     this.user,
     this.sessionId,
     this.isSessionValid = false,
+    this.isInitialized = false,
+    this.usesSupabase = false,
     this.error,
   });
 
   final UserAccount? user;
   final String? sessionId;
   final bool isSessionValid;
+  final bool isInitialized;
+  final bool usesSupabase;
   final String? error;
 
   bool get isAuthenticated => user != null && isSessionValid;
@@ -32,6 +42,8 @@ class AuthState {
     UserAccount? user,
     String? sessionId,
     bool? isSessionValid,
+    bool? isInitialized,
+    bool? usesSupabase,
     String? error,
     bool clearError = false,
   }) {
@@ -39,32 +51,62 @@ class AuthState {
       user: user ?? this.user,
       sessionId: sessionId ?? this.sessionId,
       isSessionValid: isSessionValid ?? this.isSessionValid,
+      isInitialized: isInitialized ?? this.isInitialized,
+      usesSupabase: usesSupabase ?? this.usesSupabase,
       error: clearError ? null : (error ?? this.error),
     );
   }
 }
 
 final authProvider = StateNotifierProvider<AuthNotifier, AuthState>((ref) {
-  return AuthNotifier(ref.watch(authRepositoryProvider));
+  return AuthNotifier(ref);
 });
 
 class AuthNotifier extends StateNotifier<AuthState> {
-  AuthNotifier(this._repository) : super(const AuthState()) {
-    _restoreSession();
-  }
+  AuthNotifier(this._ref) : super(const AuthState());
 
-  final AuthRepository _repository;
+  final Ref _ref;
 
-  void _restoreSession() {
-    final session = _repository.getActiveSession();
-    if (session == null) return;
+  bool get _usesSupabase => SupabaseService.isReady;
 
-    final valid = _repository.isSessionValid(session);
-    final user = _repository.findById(session.userId);
+  AuthRepository get _localAuth => _ref.read(localAuthRepositoryProvider);
+  SupabaseAuthRepository get _supabaseAuth =>
+      _ref.read(supabaseAuthRepositoryProvider);
+
+  Future<void> restoreSession() async {
+    if (_usesSupabase) {
+      await _supabaseAuth.restoreSession();
+      final session = _supabaseAuth.getActiveSession();
+      if (session == null) {
+        state = AuthState(isInitialized: true, usesSupabase: true);
+        return;
+      }
+
+      final valid = await _supabaseAuth.isSessionValid(session);
+      final user = await _supabaseAuth.fetchCurrentUser();
+      state = AuthState(
+        user: user,
+        sessionId: session.sessionId,
+        isSessionValid: valid,
+        isInitialized: true,
+        usesSupabase: true,
+      );
+      return;
+    }
+
+    final session = _localAuth.getActiveSession();
+    if (session == null) {
+      state = const AuthState(isInitialized: true);
+      return;
+    }
+
+    final valid = _localAuth.isSessionValid(session);
+    final user = _localAuth.findById(session.userId);
     state = AuthState(
       user: user,
       sessionId: session.sessionId,
       isSessionValid: valid,
+      isInitialized: true,
     );
   }
 
@@ -77,23 +119,38 @@ class AuthNotifier extends StateNotifier<AuthState> {
       state = state.copyWith(error: 'Şifre en az 6 karakter olmalı');
       return false;
     }
+
     try {
       final sessionId = _newSessionId();
-      final user = await _repository.register(
-        id: _newUserId(),
-        email: email,
-        displayName: displayName,
-        password: password,
-        sessionId: sessionId,
-      );
+      final UserAccount user;
+
+      if (_usesSupabase) {
+        user = await _supabaseAuth.register(
+          email: email,
+          displayName: displayName,
+          password: password,
+          sessionId: sessionId,
+        );
+      } else {
+        user = await _localAuth.register(
+          id: _newUserId(),
+          email: email,
+          displayName: displayName,
+          password: password,
+          sessionId: sessionId,
+        );
+      }
+
       state = AuthState(
         user: user,
         sessionId: sessionId,
         isSessionValid: true,
+        isInitialized: true,
+        usesSupabase: _usesSupabase,
       );
       return true;
-    } on AuthException catch (e) {
-      state = state.copyWith(error: e.message);
+    } on AppAuthException catch (e) {
+      state = state.copyWith(error: e.message, isInitialized: true);
       return false;
     }
   }
@@ -104,26 +161,43 @@ class AuthNotifier extends StateNotifier<AuthState> {
   }) async {
     try {
       final sessionId = _newSessionId();
-      final user = await _repository.login(
-        email: email,
-        password: password,
-        sessionId: sessionId,
-      );
+      final UserAccount user;
+
+      if (_usesSupabase) {
+        user = await _supabaseAuth.login(
+          email: email,
+          password: password,
+          sessionId: sessionId,
+        );
+      } else {
+        user = await _localAuth.login(
+          email: email,
+          password: password,
+          sessionId: sessionId,
+        );
+      }
+
       state = AuthState(
         user: user,
         sessionId: sessionId,
         isSessionValid: true,
+        isInitialized: true,
+        usesSupabase: _usesSupabase,
       );
       return true;
-    } on AuthException catch (e) {
-      state = state.copyWith(error: e.message);
+    } on AppAuthException catch (e) {
+      state = state.copyWith(error: e.message, isInitialized: true);
       return false;
     }
   }
 
   Future<void> logout() async {
-    await _repository.logout();
-    state = const AuthState();
+    if (_usesSupabase) {
+      await _supabaseAuth.logout();
+    } else {
+      await _localAuth.logout();
+    }
+    state = AuthState(isInitialized: true, usesSupabase: _usesSupabase);
   }
 
   String _newSessionId() {

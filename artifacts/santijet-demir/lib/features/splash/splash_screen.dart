@@ -1,5 +1,3 @@
-import 'dart:async';
-
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
@@ -32,21 +30,34 @@ class _SplashScreenState extends ConsumerState<SplashScreen>
       duration: const Duration(milliseconds: 1800),
     )..repeat();
 
-    Timer(const Duration(milliseconds: 2800), () {
-      if (!mounted) return;
-      final auth = ref.read(authProvider);
-      if (!auth.isAuthenticated) {
-        context.go(AppRoutes.login);
-        return;
-      }
+    _bootstrap();
+  }
 
-      final activeProjectId = ref.read(activeProjectIdProvider);
-      if (activeProjectId != null) {
-        context.go(AppRoutes.dashboard);
-      } else {
-        context.go(AppRoutes.projects);
-      }
-    });
+  Future<void> _bootstrap() async {
+    await ref.read(authProvider.notifier).restoreSession();
+
+    if (!mounted) return;
+    final auth = ref.read(authProvider);
+
+    if (auth.isAuthenticated && auth.usesSupabase) {
+      await ref.read(projectsControllerProvider).refreshFromCloud();
+      await ref.read(projectsControllerProvider).ensureMigratedFromLegacy();
+    }
+
+    await Future<void>.delayed(const Duration(milliseconds: 1200));
+    if (!mounted) return;
+
+    if (!auth.isAuthenticated) {
+      context.go(AppRoutes.login);
+      return;
+    }
+
+    final activeProjectId = ref.read(activeProjectIdProvider);
+    if (activeProjectId != null) {
+      context.go(AppRoutes.dashboard);
+    } else {
+      context.go(AppRoutes.projects);
+    }
   }
 
   @override

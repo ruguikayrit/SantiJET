@@ -7,9 +7,9 @@ import 'package:santijet_demir/core/theme/app_colors.dart';
 import 'package:santijet_demir/core/theme/app_radii.dart';
 import 'package:santijet_demir/core/theme/app_spacing.dart';
 import 'package:santijet_demir/core/theme/app_typography.dart';
+import 'package:santijet_demir/features/auth/providers/auth_provider.dart';
 import 'package:santijet_demir/data/repositories/project_repository.dart';
 import 'package:santijet_demir/domain/entities/project.dart';
-import 'package:santijet_demir/features/auth/providers/auth_provider.dart';
 import 'package:santijet_demir/features/projects/providers/project_provider.dart';
 
 class ProjectListScreen extends ConsumerStatefulWidget {
@@ -25,6 +25,9 @@ class _ProjectListScreenState extends ConsumerState<ProjectListScreen> {
     super.initState();
     WidgetsBinding.instance.addPostFrameCallback((_) async {
       await ref.read(projectsControllerProvider).ensureMigratedFromLegacy();
+      if (ref.read(authProvider).usesSupabase) {
+        await ref.read(projectsControllerProvider).refreshFromCloud();
+      }
     });
   }
 
@@ -58,7 +61,9 @@ class _ProjectListScreenState extends ConsumerState<ProjectListScreen> {
           ),
           const SizedBox(height: 4),
           Text(
-            'Her projenin verileri birbirinden ayrıdır. Proje kodu ile ekip arkadaşlarınızı davet edin.',
+            auth.usesSupabase
+                ? 'Bulut senkronizasyonu aktif. Proje kodu tüm cihazlarda geçerlidir.'
+                : 'Her projenin verileri birbirinden ayrıdır. Proje kodu ile ekip arkadaşlarınızı davet edin.',
             style: AppTypography.bodySmall,
           ),
           const SizedBox(height: 20),

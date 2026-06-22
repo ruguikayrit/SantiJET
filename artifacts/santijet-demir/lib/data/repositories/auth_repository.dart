@@ -43,7 +43,7 @@ class AuthRepository {
   }) async {
     final normalizedEmail = email.trim().toLowerCase();
     if (findByEmail(normalizedEmail) != null) {
-      throw AuthException('Bu e-posta zaten kayıtlı');
+      throw AppAuthException('Bu e-posta zaten kayıtlı');
     }
 
     final account = UserAccount(
@@ -71,7 +71,7 @@ class AuthRepository {
   }) async {
     final account = findByEmail(email);
     if (account == null || !PinHasher.verify(password, account.passwordHash)) {
-      throw AuthException('E-posta veya şifre hatalı');
+      throw AppAuthException('E-posta veya şifre hatalı');
     }
 
     final updated = account.copyWith(currentSessionId: sessionId);
@@ -157,8 +157,8 @@ class ActiveSession {
   }
 }
 
-class AuthException implements Exception {
-  AuthException(this.message);
+class AppAuthException implements Exception {
+  AppAuthException(this.message);
   final String message;
 
   @override
