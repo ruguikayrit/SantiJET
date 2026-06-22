@@ -26,8 +26,8 @@ abstract final class SupabaseService {
 
     try {
       await Supabase.initialize(
-        url: SupabaseConfig.url.trim(),
-        publishableKey: SupabaseConfig.anonKey.trim(),
+        url: SupabaseConfig.normalizedUrl,
+        publishableKey: SupabaseConfig.normalizedAnonKey,
         authOptions: const FlutterAuthClientOptions(
           authFlowType: AuthFlowType.pkce,
         ),

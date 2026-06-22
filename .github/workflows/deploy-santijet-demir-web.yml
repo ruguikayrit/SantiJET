@@ -44,7 +44,18 @@ jobs:
           flutter pub get
           DART_DEFINES=""
           if [ -n "$SUPABASE_URL" ] && [ -n "$SUPABASE_ANON_KEY" ]; then
-            DART_DEFINES="--dart-define=SUPABASE_URL=${SUPABASE_URL} --dart-define=SUPABASE_ANON_KEY=${SUPABASE_ANON_KEY}"
+            CLEAN_URL="${SUPABASE_URL%/}"
+            CLEAN_URL="${CLEAN_URL%/rest/v1}"
+            CLEAN_URL="${CLEAN_URL%/auth/v1}"
+            CLEAN_URL="${CLEAN_URL%/storage/v1}"
+            CLEAN_URL="${CLEAN_URL%/functions/v1}"
+            if [ "$CLEAN_URL" != "$SUPABASE_URL" ]; then
+              echo "::warning::SUPABASE_URL was normalized from '$SUPABASE_URL' to '$CLEAN_URL'"
+            fi
+            if ! echo "$CLEAN_URL" | grep -qE '^https://[a-z0-9-]+\.supabase\.co$'; then
+              echo "::warning::SUPABASE_URL should look like https://YOUR_PROJECT.supabase.co (no /rest/v1 suffix)"
+            fi
+            DART_DEFINES="--dart-define=SUPABASE_URL=${CLEAN_URL} --dart-define=SUPABASE_ANON_KEY=${SUPABASE_ANON_KEY}"
           fi
           flutter build web --release --base-href "/${{ github.event.repository.name }}/" --pwa-strategy=none $DART_DEFINES
           # pwa-strategy=none sonrası bile SW kaydı kalabiliyor — devre dışı bırak.

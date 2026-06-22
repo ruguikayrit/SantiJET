@@ -97,6 +97,10 @@ class SupabaseAuthRepository {
     } on AuthApiException catch (e) {
       throw AppAuthException(_mapAuthError(e.message));
     } catch (e) {
+      final msg = e.toString();
+      if (msg.toLowerCase().contains('invalid path specified')) {
+        throw AppAuthException(_mapAuthError('Invalid path specified in request URL'));
+      }
       throw AppAuthException('Kayıt başarısız: $e');
     }
   }
@@ -142,6 +146,10 @@ class SupabaseAuthRepository {
     } on AuthApiException catch (e) {
       throw AppAuthException(_mapAuthError(e.message));
     } catch (e) {
+      final msg = e.toString();
+      if (msg.toLowerCase().contains('invalid path specified')) {
+        throw AppAuthException(_mapAuthError('Invalid path specified in request URL'));
+      }
       throw AppAuthException('Giriş başarısız: $e');
     }
   }
@@ -219,6 +227,10 @@ class SupabaseAuthRepository {
 
   String _mapAuthError(String message) {
     final lower = message.toLowerCase();
+    if (lower.contains('invalid path specified')) {
+      return 'Supabase URL ayarı hatalı. GitHub Secrets\'taki SUPABASE_URL '
+          'değeri https://PROJE_ID.supabase.co olmalı (/rest/v1 eklemeyin).';
+    }
     if (lower.contains('invalid login credentials')) {
       return 'E-posta veya şifre hatalı';
     }
