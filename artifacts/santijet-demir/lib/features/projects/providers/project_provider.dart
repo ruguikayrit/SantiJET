@@ -72,9 +72,14 @@ class ProjectsController {
   final Ref _ref;
 
   ProjectRepository get _repo => _ref.read(projectRepositoryProvider);
-  SupabaseProjectSync? get _sync =>
-      SupabaseService.isReady ? _ref.read(supabaseProjectSyncProvider) : null;
   AuthState get _auth => _ref.read(authProvider);
+
+  Future<SupabaseProjectSync?> _cloudSync() async {
+    if (!SupabaseService.isConfigured) return null;
+    await SupabaseService.waitUntilReady(timeout: const Duration(seconds: 10));
+    if (!SupabaseService.isReady) return null;
+    return _ref.read(supabaseProjectSyncProvider);
+  }
 
   Future<void> ensureMigratedFromLegacy() async {
     final user = _auth.user;
@@ -86,11 +91,18 @@ class ProjectsController {
       return;
     }
 
-    if (_sync != null) {
-      await _sync!.pullUserProjects(user.id);
+    final sync = await _cloudSync();
+    if (SupabaseService.isConfigured && sync == null) {
+      _ref.read(activeProjectIdProvider.notifier).state =
+          _repo.getActiveProjectId();
+      _ref.invalidate(userProjectsProvider);
+      return;
+    }
+
+    if (sync != null) {
+      await sync.pullUserProjects(user.id);
       if (_repo.getAllProjects().isNotEmpty) {
-        _ref.read(activeProjectIdProvider.notifier).state =
-            _repo.getActiveProjectId();
+        await _selectUsableActiveProject(user.id);
         _ref.invalidate(userProjectsProvider);
         return;
       }
@@ -127,8 +139,15 @@ class ProjectsController {
     final Project project;
 
     try {
-      if (_sync != null) {
-        project = await _sync!.createProject(
+      final sync = await _cloudSync();
+      if (SupabaseService.isConfigured && sync == null) {
+        throw ProjectException(
+          'Bulut bağlantısı kurulamadı. İnternet/Supabase ayarını kontrol edip tekrar deneyin.',
+        );
+      }
+
+      if (sync != null) {
+        project = await sync.createProject(
           owner: user,
           name: name,
           location: location,
@@ -156,15 +175,23 @@ class ProjectsController {
 
     _ref.read(activeProjectIdProvider.notifier).state = project.id;
     _ref.invalidate(userProjectsProvider);
+    _ref.invalidate(projectMembersProvider(project.id));
     return project;
   }
 
   Future<Project> joinByCode(String code) async {
     final user = _auth.user!;
     final Project project;
+    final sync = await _cloudSync();
 
-    if (_sync != null) {
-      project = await _sync!.joinByCode(user: user, code: code);
+    if (SupabaseService.isConfigured && sync == null) {
+      throw ProjectException(
+        'Bulut bağlantısı kurulamadı. İnternet/Supabase ayarını kontrol edip tekrar deneyin.',
+      );
+    }
+
+    if (sync != null) {
+      project = await sync.joinByCode(user: user, code: code);
     } else {
       project = await _repo.joinByCode(user: user, code: code);
     }
@@ -181,8 +208,15 @@ class ProjectsController {
   }
 
   Future<void> updateProject(Project project) async {
-    if (_sync != null) {
-      await _sync!.updateProject(project);
+    final sync = await _cloudSync();
+    if (SupabaseService.isConfigured && sync == null) {
+      throw ProjectException(
+        'Bulut bağlantısı kurulamadı. Proje güncellenemedi.',
+      );
+    }
+
+    if (sync != null) {
+      await sync.updateProject(project);
     } else {
       await _repo.updateProject(project);
     }
@@ -195,8 +229,15 @@ class ProjectsController {
     required String memberUserId,
     required bool canEdit,
   }) async {
-    if (_sync != null) {
-      await _sync!.updateMemberPermissions(
+    final sync = await _cloudSync();
+    if (SupabaseService.isConfigured && sync == null) {
+      throw ProjectException(
+        'Bulut bağlantısı kurulamadı. Ekip yetkisi güncellenemedi.',
+      );
+    }
+
+    if (sync != null) {
+      await sync.updateMemberPermissions(
         projectId: projectId,
         memberUserId: memberUserId,
         canEdit: canEdit,
@@ -216,11 +257,25 @@ class ProjectsController {
 
   Future<void> refreshFromCloud() async {
     final userId = _auth.user?.id;
-    if (userId == null || _sync == null) return;
-    await _sync!.pullUserProjects(userId);
+    if (userId == null) return;
+    final sync = await _cloudSync();
+    if (sync == null) return;
+    await sync.pullUserProjects(userId);
     _ref.invalidate(userProjectsProvider);
     _ref.invalidate(activeProjectProvider);
-    _ref.read(activeProjectIdProvider.notifier).state =
-        _repo.getActiveProjectId();
+    await _selectUsableActiveProject(userId);
+  }
+
+  Future<void> _selectUsableActiveProject(String userId) async {
+    final projects = _repo.getProjectsForUser(userId);
+    final activeId = _repo.getActiveProjectId();
+    final hasActive = activeId != null && projects.any((p) => p.id == activeId);
+    final nextActiveId = hasActive
+        ? activeId
+        : (projects.isNotEmpty ? projects.first.id : null);
+    _ref.read(activeProjectIdProvider.notifier).state = nextActiveId;
+    if (nextActiveId != activeId) {
+      await _repo.setActiveProjectId(nextActiveId);
+    }
   }
 }
