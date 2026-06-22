@@ -581,9 +581,12 @@ class _Step5Summary extends StatelessWidget {
             border: Border.all(color: AppColors.border),
           ),
           child: Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
-              _SummaryRow('İmalatlar', draft.selectedImalats.keys.join(', ')),
-              const SizedBox(height: 8),
+              _ImalatSummarySection(
+                imalats: draft.selectedImalats.keys.toList(),
+              ),
+              const SizedBox(height: 12),
               _SummaryRow('Oran', '%${draft.ratio}'),
               const SizedBox(height: 8),
               _SummaryRow('Toplam Tonaj', '${draft.totalTonnage.toStringAsFixed(1)}t'),
@@ -619,6 +622,45 @@ class _Step5Summary extends StatelessWidget {
   }
 }
 
+class _ImalatSummarySection extends StatelessWidget {
+  const _ImalatSummarySection({required this.imalats});
+
+  final List<String> imalats;
+
+  @override
+  Widget build(BuildContext context) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text('İmalatlar', style: AppTypography.bodyMedium),
+        const SizedBox(height: 8),
+        Wrap(
+          spacing: 6,
+          runSpacing: 6,
+          children: imalats.map((name) {
+            return Container(
+              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+              decoration: BoxDecoration(
+                color: AppColors.electricBlue.withValues(alpha: 0.1),
+                borderRadius: BorderRadius.circular(8),
+                border: Border.all(
+                  color: AppColors.electricBlue.withValues(alpha: 0.25),
+                ),
+              ),
+              child: Text(
+                name,
+                style: AppTypography.labelMedium.copyWith(
+                  color: AppColors.electricBlueLight,
+                ),
+              ),
+            );
+          }).toList(),
+        ),
+      ],
+    );
+  }
+}
+
 class _SummaryRow extends StatelessWidget {
   const _SummaryRow(this.label, this.value, {this.highlight = false});
 
@@ -628,18 +670,26 @@ class _SummaryRow extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final valueStyle = highlight
+        ? AppTypography.kpiValue.copyWith(
+            fontSize: 22,
+            color: AppColors.electricBlueLight,
+          )
+        : AppTypography.titleMedium;
+
     return Row(
-      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+      crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text(label, style: AppTypography.bodyMedium),
-        Text(
-          value,
-          style: highlight
-              ? AppTypography.kpiValue.copyWith(
-                  fontSize: 22,
-                  color: AppColors.electricBlueLight,
-                )
-              : AppTypography.titleMedium,
+        SizedBox(
+          width: 108,
+          child: Text(label, style: AppTypography.bodyMedium),
+        ),
+        Expanded(
+          child: Text(
+            value,
+            textAlign: TextAlign.end,
+            style: valueStyle,
+          ),
         ),
       ],
     );
