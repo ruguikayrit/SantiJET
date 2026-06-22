@@ -18,6 +18,7 @@ import { Swipeable } from "react-native-gesture-handler";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 import { KesifExportModal } from "@/components/KesifExportModal";
+import { KesifImportModal } from "@/components/KesifImportModal";
 import { KesifPozPickerModal } from "@/components/KesifPozPickerModal";
 import { hesaplaKesifToplam, KesifSatiri, trFmtKesif } from "@/constants/kesif";
 import { PozAnaliz } from "@/constants/pozAnalizleri";
@@ -53,6 +54,7 @@ export default function KesifDetailScreen() {
 
   const project = getProject(projectId);
   const [pickerVisible, setPickerVisible] = useState(false);
+  const [importVisible, setImportVisible] = useState(false);
   const [exportVisible, setExportVisible] = useState(false);
   const [tanimModal, setTanimModal] = useState<{ pozNo: string; analizAdi: string } | null>(null);
   const [selectMode, setSelectMode] = useState(false);
@@ -321,8 +323,16 @@ export default function KesifDetailScreen() {
           <View style={styles.emptyList}>
             <Feather name="plus-circle" size={36} color={colors.mutedForeground} />
             <Text style={[styles.emptyText, { color: colors.mutedForeground }]}>
-              Katalogdan poz ekleyerek keşfe başlayın
+              Katalogdan poz ekleyin veya Excel dosyasından içe aktarın
             </Text>
+            <TouchableOpacity
+              style={[styles.emptyImportBtn, { borderColor: KESIF_COLOR, backgroundColor: KESIF_COLOR + "12" }]}
+              onPress={() => setImportVisible(true)}
+              activeOpacity={0.85}
+            >
+              <Feather name="upload" size={16} color={KESIF_COLOR} />
+              <Text style={[styles.emptyImportBtnText, { color: KESIF_COLOR }]}>Keşif İçe Aktar</Text>
+            </TouchableOpacity>
           </View>
         }
         renderItem={({ item, index }) => (
@@ -377,6 +387,17 @@ export default function KesifDetailScreen() {
         visible={pickerVisible}
         onClose={() => setPickerVisible(false)}
         onSelect={handleAddSatir}
+        onImportPress={() => {
+          setPickerVisible(false);
+          setImportVisible(true);
+        }}
+      />
+
+      <KesifImportModal
+        visible={importVisible}
+        projectId={projectId}
+        onClose={() => setImportVisible(false)}
+        onImported={() => setImportVisible(false)}
       />
 
       <KesifExportModal
@@ -835,6 +856,17 @@ const styles = StyleSheet.create({
   },
   emptyList: { alignItems: "center", paddingTop: 60, gap: 10, paddingHorizontal: 24 },
   emptyText: { fontSize: 13, fontFamily: "Inter_400Regular", textAlign: "center" },
+  emptyImportBtn: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 8,
+    marginTop: 8,
+    paddingHorizontal: 16,
+    paddingVertical: 10,
+    borderRadius: 10,
+    borderWidth: 1,
+  },
+  emptyImportBtnText: { fontSize: 14, fontFamily: "Inter_600SemiBold" },
   fab: {
     position: "absolute",
     right: 20,

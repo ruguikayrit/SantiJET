@@ -21,9 +21,10 @@ interface KesifPozPickerModalProps {
   visible: boolean;
   onClose: () => void;
   onSelect: (analiz: PozAnaliz, miktar: number) => void;
+  onImportPress?: () => void;
 }
 
-export function KesifPozPickerModal({ visible, onClose, onSelect }: KesifPozPickerModalProps) {
+export function KesifPozPickerModal({ visible, onClose, onSelect, onImportPress }: KesifPozPickerModalProps) {
   const colors = useColors();
   const insets = useSafeAreaInsets();
   const topPad = Platform.OS === "web" ? 16 : insets.top;
@@ -199,6 +200,18 @@ export function KesifPozPickerModal({ visible, onClose, onSelect }: KesifPozPick
                 },
               ]}
             >
+              {onImportPress ? (
+                <TouchableOpacity
+                  style={[styles.footerBtn, styles.importBtn, { borderColor: colors.primary + "44", backgroundColor: colors.primary + "10" }]}
+                  onPress={onImportPress}
+                  activeOpacity={0.85}
+                >
+                  <Feather name="upload" size={16} color={colors.primary} />
+                  <Text style={{ color: colors.primary, fontFamily: "Inter_600SemiBold" }}>
+                    Keşif İçe Aktar
+                  </Text>
+                </TouchableOpacity>
+              ) : null}
               <TouchableOpacity
                 style={[styles.footerBtn, { backgroundColor: colors.border }]}
                 onPress={handleClose}
@@ -300,10 +313,17 @@ const styles = StyleSheet.create({
     borderTopWidth: 1,
     paddingHorizontal: 12,
     paddingTop: 12,
+    gap: 8,
   },
   footerBtn: {
     paddingVertical: 14,
     borderRadius: 10,
     alignItems: "center",
+  },
+  importBtn: {
+    flexDirection: "row",
+    justifyContent: "center",
+    gap: 8,
+    borderWidth: 1,
   },
 });
