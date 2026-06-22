@@ -30,7 +30,7 @@ abstract final class AppTheme {
         titleTextStyle: AppTypography.headlineMedium.copyWith(color: const Color(0xFF0F172A)),
         systemOverlayStyle: SystemUiOverlayStyle.dark,
       ),
-      cardTheme: CardTheme(
+      cardTheme: CardThemeData(
         color: Colors.white,
         elevation: 0,
         shape: RoundedRectangleBorder(
@@ -116,7 +116,7 @@ abstract final class AppTheme {
         titleTextStyle: AppTypography.headlineMedium,
         systemOverlayStyle: SystemUiOverlayStyle.light,
       ),
-      cardTheme: CardTheme(
+      cardTheme: CardThemeData(
         color: AppColors.surfaceElevated,
         elevation: 0,
         shape: RoundedRectangleBorder(
