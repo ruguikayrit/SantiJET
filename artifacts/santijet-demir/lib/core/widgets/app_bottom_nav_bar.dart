@@ -83,13 +83,6 @@ class PlaceholderTabScreen extends StatelessWidget {
                       style: AppTypography.bodyMedium,
                       textAlign: TextAlign.center,
                     ),
-                    const SizedBox(height: 8),
-                    Text(
-                      'Faz 3\'te implement edilecek',
-                      style: AppTypography.labelMedium.copyWith(
-                        color: AppColors.electricBlueLight,
-                      ),
-                    ),
                   ],
                 ),
               ),

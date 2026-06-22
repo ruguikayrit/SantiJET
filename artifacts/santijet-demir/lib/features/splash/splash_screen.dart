@@ -2,6 +2,7 @@ import 'dart:async';
 
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
+import 'package:santijet_demir/core/animations/app_animations.dart';
 import 'package:santijet_demir/core/routing/app_routes.dart';
 import 'package:santijet_demir/core/theme/app_colors.dart';
 import 'package:santijet_demir/core/theme/app_shadows.dart';
@@ -90,35 +91,44 @@ class _SplashScreenState extends State<SplashScreen>
               children: [
                 SizedBox(height: AppSpacing.splashContentTop - MediaQuery.of(context).padding.top),
                 // S Logo — 284px (Figma)
-                Image.asset(
-                  'assets/images/s_logo.png',
-                  width: 142,
-                  height: 142,
-                  fit: BoxFit.contain,
+                FadeIn(
+                  delay: const Duration(milliseconds: 200),
+                  child: Image.asset(
+                    'assets/images/s_logo.png',
+                    width: 142,
+                    height: 142,
+                    fit: BoxFit.contain,
+                  ),
                 ),
                 const SizedBox(height: AppSpacing.splashLogoToWordmark),
-                // ŞANTİJET wordmark — 234px genişlik, OPERASYON kırpılmış
-                ClipRect(
-                  child: Align(
-                    alignment: Alignment.topCenter,
-                    heightFactor: 0.55,
-                    child: Image.asset(
-                      'assets/images/wordmark.png',
-                      width: 234,
-                      fit: BoxFit.fitWidth,
+                FadeIn(
+                  delay: const Duration(milliseconds: 400),
+                  child: ClipRect(
+                    child: Align(
+                      alignment: Alignment.topCenter,
+                      heightFactor: 0.55,
+                      child: Image.asset(
+                        'assets/images/wordmark.png',
+                        width: 234,
+                        fit: BoxFit.fitWidth,
+                      ),
                     ),
                   ),
                 ),
                 const SizedBox(height: AppSpacing.splashWordmarkToDemir),
-                // DEMİR — Rajdhani 700, 40px, Electric Blue
-                Text('DEMİR', style: AppTypography.displayLarge),
+                FadeIn(
+                  delay: const Duration(milliseconds: 600),
+                  child: Text('DEMİR', style: AppTypography.displayLarge),
+                ),
                 const SizedBox(height: AppSpacing.splashDemirToTagline),
-                // ÇELİK TAKİP SİSTEMİ — Inter 12px
-                Text(
-                  'ÇELİK TAKİP SİSTEMİ',
-                  style: AppTypography.labelSmall.copyWith(
-                    color: AppColors.textPrimary.withValues(alpha: 0.30),
-                    letterSpacing: 4.2,
+                FadeIn(
+                  delay: const Duration(milliseconds: 750),
+                  child: Text(
+                    'ÇELİK TAKİP SİSTEMİ',
+                    style: AppTypography.labelSmall.copyWith(
+                      color: AppColors.textPrimary.withValues(alpha: 0.30),
+                      letterSpacing: 4.2,
+                    ),
                   ),
                 ),
                 const Spacer(),

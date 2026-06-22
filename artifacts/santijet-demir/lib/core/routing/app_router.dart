@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:santijet_demir/core/routing/app_routes.dart';
+import 'package:santijet_demir/core/routing/page_transitions.dart';
 import 'package:santijet_demir/features/analysis/analysis_screen.dart';
 import 'package:santijet_demir/features/analysis/performance_analysis_screen.dart';
 import 'package:santijet_demir/features/field_count/count_detail_screen.dart';
@@ -35,23 +36,35 @@ final routerProvider = Provider<GoRouter>((ref) {
     routes: [
       GoRoute(
         path: AppRoutes.splash,
-        builder: (context, state) => const SplashScreen(),
+        pageBuilder: (context, state) => fadePage(
+          key: state.pageKey,
+          child: const SplashScreen(),
+        ),
       ),
       GoRoute(
         path: AppRoutes.newOrder,
         parentNavigatorKey: _rootNavigatorKey,
-        builder: (context, state) => const NewOrderWizardScreen(),
+        pageBuilder: (context, state) => fadeSlidePage(
+          key: state.pageKey,
+          child: const NewOrderWizardScreen(),
+        ),
       ),
       GoRoute(
         path: AppRoutes.survey,
         parentNavigatorKey: _rootNavigatorKey,
-        builder: (context, state) => const SurveyListScreen(),
+        pageBuilder: (context, state) => fadeSlidePage(
+          key: state.pageKey,
+          child: const SurveyListScreen(),
+        ),
         routes: [
           GoRoute(
             path: ':id',
-            builder: (context, state) {
+            pageBuilder: (context, state) {
               final id = state.pathParameters['id']!;
-              return SurveyDetailScreen(imalatId: id);
+              return fadeSlidePage(
+                key: state.pageKey,
+                child: SurveyDetailScreen(imalatId: id),
+              );
             },
           ),
         ],
@@ -59,86 +72,134 @@ final routerProvider = Provider<GoRouter>((ref) {
       GoRoute(
         path: AppRoutes.deliveryList,
         parentNavigatorKey: _rootNavigatorKey,
-        builder: (context, state) => const DeliveryListScreen(),
+        pageBuilder: (context, state) => fadeSlidePage(
+          key: state.pageKey,
+          child: const DeliveryListScreen(),
+        ),
       ),
       GoRoute(
         path: AppRoutes.newDelivery,
         parentNavigatorKey: _rootNavigatorKey,
-        builder: (context, state) => const NewDeliveryScreen(),
+        pageBuilder: (context, state) => fadeSlidePage(
+          key: state.pageKey,
+          child: const NewDeliveryScreen(),
+        ),
       ),
       GoRoute(
         path: AppRoutes.supplierPerformance,
         parentNavigatorKey: _rootNavigatorKey,
-        builder: (context, state) => const SupplierPerformanceScreen(),
+        pageBuilder: (context, state) => fadeSlidePage(
+          key: state.pageKey,
+          child: const SupplierPerformanceScreen(),
+        ),
       ),
       GoRoute(
         path: '/incoming-rebar/:id',
         parentNavigatorKey: _rootNavigatorKey,
-        builder: (context, state) {
+        pageBuilder: (context, state) {
           final id = state.pathParameters['id']!;
-          return DeliveryDetailScreen(deliveryId: id);
+          return fadeSlidePage(
+            key: state.pageKey,
+            child: DeliveryDetailScreen(deliveryId: id),
+          );
         },
       ),
       GoRoute(
         path: AppRoutes.reconciliation,
         parentNavigatorKey: _rootNavigatorKey,
-        builder: (context, state) => const ReconciliationScreen(),
+        pageBuilder: (context, state) => fadeSlidePage(
+          key: state.pageKey,
+          child: const ReconciliationScreen(),
+        ),
       ),
       GoRoute(
         path: AppRoutes.newCount,
         parentNavigatorKey: _rootNavigatorKey,
-        builder: (context, state) => const NewCountScreen(),
+        pageBuilder: (context, state) => fadeSlidePage(
+          key: state.pageKey,
+          child: const NewCountScreen(),
+        ),
       ),
       GoRoute(
         path: '/field-count/:id',
         parentNavigatorKey: _rootNavigatorKey,
-        builder: (context, state) {
+        pageBuilder: (context, state) {
           final id = state.pathParameters['id']!;
-          return CountDetailScreen(countId: id);
+          return fadeSlidePage(
+            key: state.pageKey,
+            child: CountDetailScreen(countId: id),
+          );
         },
       ),
       GoRoute(
         path: AppRoutes.performanceAnalysis,
         parentNavigatorKey: _rootNavigatorKey,
-        builder: (context, state) => const PerformanceAnalysisScreen(),
+        pageBuilder: (context, state) => fadeSlidePage(
+          key: state.pageKey,
+          child: const PerformanceAnalysisScreen(),
+        ),
       ),
       GoRoute(
         path: AppRoutes.reports,
         parentNavigatorKey: _rootNavigatorKey,
-        builder: (context, state) => const ReportsScreen(),
+        pageBuilder: (context, state) => fadeSlidePage(
+          key: state.pageKey,
+          child: const ReportsScreen(),
+        ),
       ),
       GoRoute(
         path: '/reports/:id',
         parentNavigatorKey: _rootNavigatorKey,
-        builder: (context, state) {
+        pageBuilder: (context, state) {
           final id = state.pathParameters['id']!;
-          return ReportDetailScreen(reportId: id);
+          return fadeSlidePage(
+            key: state.pageKey,
+            child: ReportDetailScreen(reportId: id),
+          );
         },
       ),
       GoRoute(
         path: AppRoutes.settings,
         parentNavigatorKey: _rootNavigatorKey,
-        builder: (context, state) => const SettingsScreen(),
+        pageBuilder: (context, state) => fadeSlidePage(
+          key: state.pageKey,
+          child: const SettingsScreen(),
+        ),
         routes: [
           GoRoute(
             path: 'company',
-            builder: (context, state) => const CompanySettingsScreen(),
+            pageBuilder: (context, state) => fadeSlidePage(
+              key: state.pageKey,
+              child: const CompanySettingsScreen(),
+            ),
           ),
           GoRoute(
             path: 'project',
-            builder: (context, state) => const ProjectSettingsScreen(),
+            pageBuilder: (context, state) => fadeSlidePage(
+              key: state.pageKey,
+              child: const ProjectSettingsScreen(),
+            ),
           ),
           GoRoute(
             path: 'notifications',
-            builder: (context, state) => const NotificationSettingsScreen(),
+            pageBuilder: (context, state) => fadeSlidePage(
+              key: state.pageKey,
+              child: const NotificationSettingsScreen(),
+            ),
           ),
           GoRoute(
             path: 'about',
-            builder: (context, state) => const AboutScreen(),
+            pageBuilder: (context, state) => fadeSlidePage(
+              key: state.pageKey,
+              child: const AboutScreen(),
+            ),
           ),
           GoRoute(
             path: 'empty-states',
-            builder: (context, state) => const EmptyStatesPreviewScreen(),
+            pageBuilder: (context, state) => fadeSlidePage(
+              key: state.pageKey,
+              child: const EmptyStatesPreviewScreen(),
+            ),
           ),
         ],
       ),
