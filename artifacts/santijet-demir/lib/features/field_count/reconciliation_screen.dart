@@ -62,7 +62,7 @@ class ReconciliationScreen extends ConsumerWidget {
                     DataColumn(label: Text('SİP.')),
                     DataColumn(label: Text('TESLİM')),
                     DataColumn(label: Text('KUL.')),
-                    DataColumn(label: Text('BEKL.')),
+                    DataColumn(label: Text('PLAN.')),
                     DataColumn(label: Text('SAYIM')),
                     DataColumn(label: Text('SAPMA')),
                   ],
@@ -148,7 +148,7 @@ class ReconciliationScreen extends ConsumerWidget {
     'Sipariş',
     'Teslim',
     'Kullanılan',
-    'Beklenen',
+    'Planlanan',
     'Sayım',
     'Sapma',
   ];
