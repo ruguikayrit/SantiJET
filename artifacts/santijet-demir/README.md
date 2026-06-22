@@ -100,6 +100,26 @@ Detaylı test matrisi: [docs/QA_MATRIX.md](docs/QA_MATRIX.md)
 
 Crashlytics kurulumu: [docs/FIREBASE_SETUP.md](docs/FIREBASE_SETUP.md)
 
+## iPhone (Mac yok)
+
+Mac olmadan iPhone'da kullanım: [docs/IPHONE_MACSIZ.md](docs/IPHONE_MACSIZ.md)
+
+GitHub Pages (Safari + Ana Ekrana Ekle):
+
+```
+https://ruguikayrit.github.io/santijet/
+```
+
+Yerel ağ (aynı Wi‑Fi):
+
+```bash
+./scripts/serve_web_ios.sh
+```
+
+## iPhone / iOS (Mac varsa)
+
+Native iOS kurulum: [docs/IOS_KURULUM.md](docs/IOS_KURULUM.md)
+
 ## Release Checklist
 
 - [ ] `flutterfire configure` ile gerçek Firebase projesi bağla

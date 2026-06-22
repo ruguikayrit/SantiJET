@@ -1,11 +1,11 @@
 {
-    "name": "santijet_demir",
-    "short_name": "santijet_demir",
+    "name": "ŞantiJET DEMİR",
+    "short_name": "DEMİR",
     "start_url": ".",
     "display": "standalone",
-    "background_color": "#0175C2",
-    "theme_color": "#0175C2",
-    "description": "A new Flutter project.",
+    "background_color": "#05070A",
+    "theme_color": "#0055FF",
+    "description": "Çelik Takip Sistemi — keşif, sipariş, teslimat, saha sayımı",
     "orientation": "portrait-primary",
     "prefer_related_applications": false,
     "icons": [
