@@ -8,6 +8,7 @@ import 'package:santijet_demir/core/theme/app_spacing.dart';
 import 'package:santijet_demir/core/theme/app_typography.dart';
 import 'package:santijet_demir/core/widgets/empty_states.dart';
 import 'package:santijet_demir/domain/entities/app_settings.dart';
+import 'package:santijet_demir/features/auth/providers/app_lock_provider.dart';
 import 'package:santijet_demir/features/settings/providers/settings_provider.dart';
 
 class SettingsScreen extends ConsumerWidget {
@@ -42,6 +43,12 @@ class SettingsScreen extends ConsumerWidget {
             title: 'Bildirim Ayarları',
             subtitle: 'Stok, sipariş, teslimat, analiz',
             onTap: () => context.push(AppRoutes.notificationSettings),
+          ),
+          _SettingsTile(
+            icon: Icons.lock_outline,
+            title: 'Uygulama Kilidi',
+            subtitle: 'PIN değiştir veya kilitle',
+            onTap: () => _showAppLockSheet(context, ref),
           ),
           _SettingsTile(
             icon: Icons.dark_mode,
@@ -157,6 +164,105 @@ class SettingsScreen extends ConsumerWidget {
         ],
       ),
     );
+  }
+
+  void _showAppLockSheet(BuildContext context, WidgetRef ref) {
+    final currentController = TextEditingController();
+    final newController = TextEditingController();
+    final confirmController = TextEditingController();
+
+    showModalBottomSheet<void>(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: AppColors.surfaceElevated,
+      builder: (ctx) {
+        return Padding(
+          padding: EdgeInsets.fromLTRB(
+            16,
+            16,
+            16,
+            16 + MediaQuery.viewPaddingOf(ctx).bottom,
+          ),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              Text('Uygulama Kilidi', style: AppTypography.headlineMedium),
+              const SizedBox(height: 8),
+              Text(
+                'PIN 4–6 haneli olmalıdır. Sayfa yenilendiğinde tekrar sorulur.',
+                style: AppTypography.bodySmall,
+              ),
+              const SizedBox(height: 16),
+              TextField(
+                controller: currentController,
+                keyboardType: TextInputType.number,
+                obscureText: true,
+                decoration: const InputDecoration(labelText: 'Mevcut PIN'),
+              ),
+              const SizedBox(height: 8),
+              TextField(
+                controller: newController,
+                keyboardType: TextInputType.number,
+                obscureText: true,
+                decoration: const InputDecoration(labelText: 'Yeni PIN'),
+              ),
+              const SizedBox(height: 8),
+              TextField(
+                controller: confirmController,
+                keyboardType: TextInputType.number,
+                obscureText: true,
+                decoration: const InputDecoration(labelText: 'Yeni PIN (tekrar)'),
+              ),
+              const SizedBox(height: 16),
+              FilledButton(
+                onPressed: () async {
+                  final current = currentController.text.trim();
+                  final newPin = newController.text.trim();
+                  final confirm = confirmController.text.trim();
+
+                  if (newPin != confirm) {
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      const SnackBar(content: Text('Yeni PIN eşleşmiyor')),
+                    );
+                    return;
+                  }
+
+                  final ok = await ref.read(appLockProvider.notifier).changePin(
+                        currentPin: current,
+                        newPin: newPin,
+                      );
+                  if (!context.mounted) return;
+                  if (ok) {
+                    Navigator.pop(ctx);
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      const SnackBar(content: Text('PIN güncellendi')),
+                    );
+                  } else {
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      const SnackBar(content: Text('PIN değiştirilemedi')),
+                    );
+                  }
+                },
+                child: const Text('PIN Değiştir'),
+              ),
+              const SizedBox(height: 8),
+              OutlinedButton(
+                onPressed: () {
+                  ref.read(appLockProvider.notifier).lock();
+                  Navigator.pop(ctx);
+                },
+                child: const Text('Uygulamayı Kilitle'),
+              ),
+            ],
+          ),
+        );
+      },
+    ).whenComplete(() {
+      currentController.dispose();
+      newController.dispose();
+      confirmController.dispose();
+    });
   }
 }
 
