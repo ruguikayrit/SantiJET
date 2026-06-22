@@ -12,7 +12,10 @@ Depo GitHub Pages'e deploy edildikten sonra iPhone Safari'den açılır.
 
 1. GitHub repo → **Settings** → **Pages**
 2. **Build and deployment** → Source: **GitHub Actions**
-3. `main` branch'e merge edin (veya Actions'tan workflow'u manuel çalıştırın)
+3. **Pull request'ı `main` branch'e merge edin** (deploy yalnızca `main`'den çalışır)
+4. **Actions** → **Deploy ŞantiJET DEMİR Web** → yeşil tik bekleyin
+
+> **Not:** Feature branch'ler (`cursor/...`) `github-pages` ortamına deploy edemez. Önce `main`'e merge gerekir.
 
 ### iPhone'da açma
 

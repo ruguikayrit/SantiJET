@@ -4,7 +4,6 @@ on:
   push:
     branches:
       - main
-      - cursor/santijet-demir-flutter-3e9f
     paths:
       - 'artifacts/santijet-demir/**'
       - '.github/workflows/deploy-santijet-demir-web.yml'
