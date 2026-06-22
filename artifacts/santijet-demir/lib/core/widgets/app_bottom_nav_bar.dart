@@ -8,8 +8,8 @@ import 'package:santijet_demir/core/theme/app_colors.dart';
 import 'package:santijet_demir/core/theme/app_typography.dart';
 import 'package:santijet_demir/domain/enums/app_enums.dart';
 
-/// Alt navigasyon — telefonlarda ekranın en altına yaslanır, home indicator
-/// alanı nav arka planı içinde kalır (siyah boşluk oluşmaz).
+/// Alt navigasyon — ekranın fiziksel altına yaslanır; home indicator nav
+/// arka planı içinde kalır, ekstra siyah boşluk oluşturmaz.
 class AppBottomNavBar extends ConsumerWidget {
   const AppBottomNavBar({super.key, required this.navigationShell});
 
@@ -31,19 +31,12 @@ class AppBottomNavBar extends ConsumerWidget {
     Icons.analytics,
   ];
 
-  /// Sistem safe-area değeri — sabit px yok, tüm modellerde doğru gelir.
-  static double _systemBottomInset(BuildContext context) {
-    final media = MediaQuery.of(context);
-    if (media.viewPadding.bottom > 0) return media.viewPadding.bottom;
-    if (media.padding.bottom > 0) return media.padding.bottom;
-    return 0;
-  }
-
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final showLabels = ResponsiveLayout.isTablet(context);
     final iconBarHeight = showLabels ? 56.0 : 52.0;
-    final bottomInset = _systemBottomInset(context);
+    // viewPadding — padding değil; çift inset önlenir.
+    final bottomInset = MediaQuery.viewPaddingOf(context).bottom;
 
     final bar = ColoredBox(
       color: AppColors.surface,
@@ -78,8 +71,7 @@ class AppBottomNavBar extends ConsumerWidget {
               ),
             ),
           ),
-          // Home indicator / gesture bar — nav rengiyle ekran altına kadar uzanır.
-          SizedBox(height: bottomInset),
+          if (bottomInset > 0) SizedBox(height: bottomInset),
         ],
       ),
     );

@@ -22,7 +22,11 @@ class MainShell extends StatelessWidget {
       backgroundColor: AppColors.canvas,
       resizeToAvoidBottomInset: false,
       body: ResponsiveLayout(child: navigationShell),
-      bottomNavigationBar: AppBottomNavBar(navigationShell: navigationShell),
+      bottomNavigationBar: MediaQuery.removePadding(
+        context: context,
+        removeBottom: true,
+        child: AppBottomNavBar(navigationShell: navigationShell),
+      ),
     );
   }
 }
