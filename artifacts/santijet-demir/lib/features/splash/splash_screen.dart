@@ -34,20 +34,38 @@ class _SplashScreenState extends ConsumerState<SplashScreen>
   }
 
   Future<void> _bootstrap() async {
-    await ref.read(authProvider.notifier).restoreSession();
+    try {
+      await ref
+          .read(authProvider.notifier)
+          .restoreSession()
+          .timeout(const Duration(seconds: 8));
+    } catch (_) {
+      // Ağ/Supabase yanıt vermezse yerel modda devam et.
+    }
 
     if (!mounted) return;
     final auth = ref.read(authProvider);
 
     if (auth.isAuthenticated && auth.usesSupabase) {
-      await ref.read(projectsControllerProvider).refreshFromCloud();
-      await ref.read(projectsControllerProvider).ensureMigratedFromLegacy();
+      try {
+        await ref
+            .read(projectsControllerProvider)
+            .refreshFromCloud()
+            .timeout(const Duration(seconds: 10));
+        await ref
+            .read(projectsControllerProvider)
+            .ensureMigratedFromLegacy()
+            .timeout(const Duration(seconds: 5));
+      } catch (_) {
+        // Bulut senkronu başarısız — yerel veri ile devam.
+      }
     }
 
-    await Future<void>.delayed(const Duration(milliseconds: 1200));
+    await Future<void>.delayed(const Duration(milliseconds: 800));
     if (!mounted) return;
 
-    if (!auth.isAuthenticated) {
+    final latestAuth = ref.read(authProvider);
+    if (!latestAuth.isAuthenticated) {
       context.go(AppRoutes.login);
       return;
     }

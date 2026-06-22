@@ -1,25 +1,45 @@
+import 'package:flutter/foundation.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:santijet_demir/core/config/supabase_config.dart';
 
 abstract final class SupabaseService {
   static bool _initialized = false;
+  static String? _initError;
 
   static bool get isConfigured => SupabaseConfig.isConfigured;
 
   static bool get isReady => _initialized && isConfigured;
 
-  static SupabaseClient get client => Supabase.instance.client;
+  static String? get initError => _initError;
 
-  static Future<void> initialize() async {
-    if (!isConfigured || _initialized) return;
+  static SupabaseClient get client {
+    if (!_initialized) {
+      throw StateError('Supabase is not initialized');
+    }
+    return Supabase.instance.client;
+  }
 
-    await Supabase.initialize(
-      url: SupabaseConfig.url,
-      publishableKey: SupabaseConfig.anonKey,
-      authOptions: const FlutterAuthClientOptions(
-        authFlowType: AuthFlowType.pkce,
-      ),
-    );
-    _initialized = true;
+  static Future<bool> initialize() async {
+    if (!isConfigured || _initialized) return _initialized;
+
+    try {
+      await Supabase.initialize(
+        url: SupabaseConfig.url.trim(),
+        publishableKey: SupabaseConfig.anonKey.trim(),
+        authOptions: const FlutterAuthClientOptions(
+          authFlowType: AuthFlowType.pkce,
+        ),
+      );
+      _initialized = true;
+      _initError = null;
+      return true;
+    } catch (e, stack) {
+      _initialized = false;
+      _initError = e.toString();
+      if (kDebugMode) {
+        debugPrint('Supabase initialize failed: $e\n$stack');
+      }
+      return false;
+    }
   }
 }
