@@ -13,11 +13,22 @@ import {
 } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
+import {
+  BfaDiscipline,
+  BFA_MODULES,
+  getBfaModuleDef,
+} from "@/constants/bfaModules";
 import { buildPozKategoriFiltreleri, normalizeTrSearch } from "@/constants/pozAnalizleri";
 import { useBfaCatalog } from "@/hooks/useBfaCatalog";
 import { useColors } from "@/hooks/useColors";
 
-const TILE_COLOR = "#16a34a";
+const KATALOG_MODULES = BFA_MODULES.filter((m) => m.modul !== "favoriler");
+
+const FILTER_LABELS: Record<BfaDiscipline, string> = {
+  insaat: "İNŞAAT",
+  mekanik: "MEKANİK",
+  elektrik: "ELEKTRİK",
+};
 
 export default function AnalizKataloguScreen() {
   const colors = useColors();
@@ -25,9 +36,12 @@ export default function AnalizKataloguScreen() {
   const insets = useSafeAreaInsets();
   const topPad = Platform.OS === "web" ? 16 : insets.top;
 
-  const { getModuleAnalizleri, loading, error } = useBfaCatalog();
-  const pozAnalizleri = getModuleAnalizleri("insaat");
+  const { getModuleAnalizleri, stats, loading, error } = useBfaCatalog();
+  const [selectedModul, setSelectedModul] = useState<BfaDiscipline>("insaat");
   const [search, setSearch] = useState("");
+
+  const activeModule = getBfaModuleDef(selectedModul);
+  const pozAnalizleri = getModuleAnalizleri(selectedModul);
 
   const kategoriSayilari = useMemo(() => {
     const counts = new Map<string, number>();
@@ -49,8 +63,13 @@ export default function AnalizKataloguScreen() {
   function openCategory(cat: string) {
     router.push({
       pathname: "/imalat-pozlari",
-      params: { modul: "insaat", cat },
+      params: { modul: selectedModul, cat },
     } as any);
+  }
+
+  function selectModul(modul: BfaDiscipline) {
+    setSelectedModul(modul);
+    setSearch("");
   }
 
   if (error) {
@@ -74,8 +93,59 @@ export default function AnalizKataloguScreen() {
           <Text style={[styles.headerTitle, { color: colors.secondaryForeground }]}>
             Analiz Kataloğu
           </Text>
+          <Text style={[styles.headerSub, { color: colors.secondaryForeground + "aa" }]}>
+            {activeModule.screenTitle}
+          </Text>
         </View>
         <View style={{ width: 40 }} />
+      </View>
+
+      <View style={styles.modulFilterRow}>
+        {KATALOG_MODULES.map((mod) => {
+          const discipline = mod.modul as BfaDiscipline;
+          const active = selectedModul === discipline;
+          const count = stats[discipline].length;
+          return (
+            <TouchableOpacity
+              key={mod.modul}
+              activeOpacity={0.85}
+              onPress={() => selectModul(discipline)}
+              style={[
+                styles.modulChip,
+                {
+                  borderColor: active ? mod.color : colors.border,
+                  backgroundColor: active ? mod.color + "18" : colors.card,
+                },
+              ]}
+            >
+              <Feather
+                name={mod.icon}
+                size={15}
+                color={active ? mod.color : colors.mutedForeground}
+              />
+              <Text
+                style={[
+                  styles.modulChipLabel,
+                  { color: active ? mod.color : colors.foreground },
+                ]}
+                numberOfLines={1}
+                adjustsFontSizeToFit
+                minimumFontScale={0.75}
+              >
+                {FILTER_LABELS[discipline]}
+              </Text>
+              <Text
+                style={[
+                  styles.modulChipCount,
+                  { color: active ? mod.color : colors.mutedForeground },
+                ]}
+                numberOfLines={1}
+              >
+                {loading ? "…" : count}
+              </Text>
+            </TouchableOpacity>
+          );
+        })}
       </View>
 
       <View
@@ -110,12 +180,12 @@ export default function AnalizKataloguScreen() {
 
       {loading ? (
         <View style={styles.center}>
-          <ActivityIndicator size="small" color={TILE_COLOR} />
+          <ActivityIndicator size="small" color={activeModule.color} />
         </View>
       ) : (
         <FlatList
           data={categories}
-          keyExtractor={(item) => item}
+          keyExtractor={(item) => `${selectedModul}:${item}`}
           keyboardShouldPersistTaps="handled"
           contentContainerStyle={{ paddingBottom: insets.bottom + 24 }}
           renderItem={({ item, index }) => (
@@ -134,7 +204,7 @@ export default function AnalizKataloguScreen() {
               <Text style={[styles.tdAd, { color: colors.foreground }]} numberOfLines={2}>
                 {item}
               </Text>
-              <Text style={[styles.tdCount, { color: TILE_COLOR }]}>
+              <Text style={[styles.tdCount, { color: activeModule.color }]}>
                 {kategoriSayilari.get(item) ?? 0}
               </Text>
             </TouchableOpacity>
@@ -178,6 +248,43 @@ const styles = StyleSheet.create({
   headerTitle: {
     fontSize: 17,
     fontFamily: "Inter_700Bold",
+    textAlign: "center",
+  },
+  headerSub: {
+    fontSize: 11,
+    fontFamily: "Inter_400Regular",
+    marginTop: 2,
+    textAlign: "center",
+  },
+  modulFilterRow: {
+    flexDirection: "row",
+    paddingHorizontal: 12,
+    paddingTop: 12,
+    paddingBottom: 4,
+    gap: 6,
+  },
+  modulChip: {
+    flex: 1,
+    minWidth: 0,
+    flexDirection: "column",
+    alignItems: "center",
+    justifyContent: "center",
+    gap: 3,
+    paddingHorizontal: 4,
+    paddingVertical: 8,
+    borderRadius: 10,
+    borderWidth: 1,
+  },
+  modulChipLabel: {
+    width: "100%",
+    fontSize: 10,
+    fontFamily: "Inter_700Bold",
+    textAlign: "center",
+    letterSpacing: 0.2,
+  },
+  modulChipCount: {
+    fontSize: 10,
+    fontFamily: "Inter_600SemiBold",
     textAlign: "center",
   },
   searchWrap: {

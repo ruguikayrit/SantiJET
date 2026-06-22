@@ -8,7 +8,10 @@ import {
   View,
 } from "react-native";
 
-import type { BfaModuleIcon } from "@/constants/bfaModules";
+import { parseModuleTileLabel, type BfaModuleIcon } from "@/constants/bfaModules";
+
+const ICON_LABEL_GAP = 3;
+const TITLE_SUBTITLE_GAP = 1.5;
 
 interface ModuleTileProps {
   num: string;
@@ -33,6 +36,8 @@ export function ModuleTile({
   cardBackground,
   onPress,
 }: ModuleTileProps) {
+  const { title, subtitle } = parseModuleTileLabel(label);
+
   return (
     <TouchableOpacity
       activeOpacity={0.85}
@@ -45,27 +50,44 @@ export function ModuleTile({
         },
       ]}
     >
-      <View style={[styles.tileIconCircle, { backgroundColor: color + "1e" }]}>
-        <Feather name={icon} size={26} color={color} />
-      </View>
-      <View style={styles.tileBody}>
+      <View style={styles.tileTopRow}>
         <Text style={styles.tileNum}>{num}</Text>
-        <Text style={[styles.tileLabel, { color: cardForeground }]} numberOfLines={2}>
-          {label}
-        </Text>
-        <View style={styles.tileFootRow}>
-          <View style={[styles.tileDot, { backgroundColor: color }]} />
-          {loading ? (
-            <ActivityIndicator size="small" color={color} />
-          ) : (
-            <Text style={[styles.tileInfo, { color }]} numberOfLines={1}>
-              {info}
+      </View>
+
+      <View style={styles.tileCenter}>
+        <View style={[styles.tileIconCircle, { backgroundColor: color + "1e" }]}>
+          <Feather name={icon} size={26} color={color} />
+        </View>
+
+        <View style={styles.tileLabelGroup}>
+          <Text style={[styles.tileLabel, { color: cardForeground }]} numberOfLines={2}>
+            {title.toUpperCase()}
+          </Text>
+          {subtitle ? (
+            <Text
+              style={[styles.tileSubtitle, { color: cardForeground }]}
+              numberOfLines={2}
+              adjustsFontSizeToFit
+              minimumFontScale={0.7}
+            >
+              {subtitle}
             </Text>
-          )}
+          ) : null}
         </View>
       </View>
-      <View style={[styles.tileChevCircle, { borderColor: color + "55" }]}>
-        <Feather name="chevron-right" size={14} color={color} />
+
+      <View style={styles.tileFootRow}>
+        <View style={[styles.tileDot, { backgroundColor: color }]} />
+        {loading ? (
+          <ActivityIndicator size="small" color={color} style={styles.tileInfoLoader} />
+        ) : (
+          <Text style={[styles.tileInfo, { color }]} numberOfLines={1}>
+            {info}
+          </Text>
+        )}
+        <View style={[styles.tileChevCircle, { borderColor: color + "55" }]}>
+          <Feather name="chevron-right" size={9} color={color} />
+        </View>
       </View>
     </TouchableOpacity>
   );
@@ -73,23 +95,22 @@ export function ModuleTile({
 
 const styles = StyleSheet.create({
   tileInner: {
-    width: "100%",
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 14,
-    padding: 16,
+    flex: 1,
+    padding: 10,
     borderRadius: 14,
     borderWidth: 1,
-    marginBottom: 12,
+    overflow: "hidden",
+    justifyContent: "space-between",
     shadowColor: "#000",
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.1,
     shadowRadius: 6,
     elevation: 3,
   },
-  tileBody: {
-    flex: 1,
-    gap: 4,
+  tileTopRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
   },
   tileNum: {
     fontSize: 10,
@@ -97,23 +118,41 @@ const styles = StyleSheet.create({
     color: "#334155",
     letterSpacing: 0.5,
   },
+  tileCenter: {
+    flex: 1,
+    justifyContent: "center",
+    alignItems: "center",
+    gap: ICON_LABEL_GAP,
+  },
+  tileLabelGroup: {
+    alignItems: "center",
+    gap: TITLE_SUBTITLE_GAP,
+    width: "100%",
+  },
   tileIconCircle: {
-    width: 52,
-    height: 52,
-    borderRadius: 26,
+    width: 50,
+    height: 50,
+    borderRadius: 25,
     justifyContent: "center",
     alignItems: "center",
   },
   tileLabel: {
-    fontSize: 13,
+    fontSize: 10,
     fontFamily: "Inter_700Bold",
+    textAlign: "center",
     letterSpacing: 0.4,
+  },
+  tileSubtitle: {
+    fontSize: 7,
+    fontFamily: "Inter_700Bold",
+    textAlign: "center",
+    letterSpacing: 0.2,
+    lineHeight: 9,
   },
   tileFootRow: {
     flexDirection: "row",
     alignItems: "center",
-    gap: 6,
-    marginTop: 2,
+    gap: 4,
   },
   tileDot: {
     width: 5,
@@ -121,13 +160,18 @@ const styles = StyleSheet.create({
     borderRadius: 3,
   },
   tileInfo: {
-    fontSize: 12,
+    flex: 1,
+    fontSize: 9,
     fontFamily: "Inter_500Medium",
   },
+  tileInfoLoader: {
+    flex: 1,
+    alignSelf: "flex-start",
+  },
   tileChevCircle: {
-    width: 32,
-    height: 32,
-    borderRadius: 16,
+    width: 18,
+    height: 18,
+    borderRadius: 9,
     borderWidth: 1,
     justifyContent: "center",
     alignItems: "center",

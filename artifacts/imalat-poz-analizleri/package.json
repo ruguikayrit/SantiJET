@@ -41,7 +41,11 @@
     "typescript": "~5.9.2"
   },
   "dependencies": {
+    "expo-document-picker": "~14.0.8",
     "expo-file-system": "~19.0.22",
-    "expo-sharing": "~14.0.8"
+    "expo-print": "~15.0.8",
+    "expo-sharing": "~14.0.8",
+    "fflate": "^0.8.3",
+    "react-native-webview": "^13.16.1"
   }
 }

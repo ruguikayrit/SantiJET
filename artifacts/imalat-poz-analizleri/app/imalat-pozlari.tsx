@@ -1,12 +1,12 @@
 import { Feather } from "@expo/vector-icons";
-import * as FileSystem from "expo-file-system/legacy";
-import * as Sharing from "expo-sharing";
 import { useRouter, useLocalSearchParams } from "expo-router";
 import React, { useEffect, useMemo, useState } from "react";
 import {
   Alert,
   ActivityIndicator,
   FlatList,
+  Keyboard,
+  KeyboardAvoidingView,
   Modal,
   Platform,
   ScrollView,
@@ -19,8 +19,12 @@ import {
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 import { useApp } from "@/context/AppContext";
+import { BulkExportModal } from "@/components/BulkExportModal";
+import { ExportFormatModal } from "@/components/ExportFormatModal";
 import { useBfaCatalog } from "@/hooks/useBfaCatalog";
 import { useColors } from "@/hooks/useColors";
+import { useRecentViews } from "@/hooks/useRecentViews";
+import { AnalizExportFormat, exportAnaliz, exportBulkAnalizler, waitForShareSheet, buildAnalizExcelHtml, buildAnalizHtml, PDF_PAPER_ORIENTATION } from "@/lib/analizExport";
 import {
   BfaDiscipline,
   BfaModuleKey,
@@ -32,6 +36,7 @@ import {
 import {
   AnalizKalemi,
   IMALAT_POZ_KATEGORILERI,
+  OLCU_BIRIMLERI,
   PozAnaliz,
   buildPozKategoriFiltreleri,
   hesaplaAnalizToplam,
@@ -61,6 +66,10 @@ function tarihFmt(iso: string): string {
   }
 }
 
+function isResmiAnaliz(analiz: PozAnaliz): boolean {
+  return analiz.kaynakTip === "sistem";
+}
+
 type Colors = ReturnType<typeof useColors>;
 
 // ─── Ana Bileşen ───────────────────────────────────────────────
@@ -68,12 +77,13 @@ type Colors = ReturnType<typeof useColors>;
 export default function ImalatPozlariScreen() {
   const colors = useColors();
   const router = useRouter();
-  const params = useLocalSearchParams<{ id?: string; q?: string; modul?: string; cat?: string }>();
+  const params = useLocalSearchParams<{ id?: string; q?: string; modul?: string; cat?: string; new?: string }>();
   const insets = useSafeAreaInsets();
   const topPad = Platform.OS === "web" ? 16 : insets.top;
 
   const { addPozAnaliz, updatePozAnaliz, deletePozAnaliz, clonePozAnaliz, isFavorite, toggleFavorite } =
     useApp();
+  const { recordView } = useRecentViews();
 
   const modulParam = params.modul ? String(params.modul) : "insaat";
   const modul: BfaModuleKey = isBfaModuleKey(modulParam) ? modulParam : "insaat";
@@ -98,10 +108,15 @@ export default function ImalatPozlariScreen() {
 
   const [cloneVisible, setCloneVisible] = useState(false);
   const [cloneAd, setCloneAd] = useState("");
+  const [exportVisible, setExportVisible] = useState(false);
+  const [bulkExportVisible, setBulkExportVisible] = useState(false);
+  const [selectMode, setSelectMode] = useState(false);
+  const [selectedIds, setSelectedIds] = useState<Set<string>>(() => new Set());
+  const [metrajMiktar, setMetrajMiktar] = useState("1");
 
   const [catPickerOpen, setCatPickerOpen] = useState(false);
 
-  const [newVisible, setNewVisible] = useState(false);
+  const [newVisible, setNewVisible] = useState(() => String(params.new) === "1");
   const [newForm, setNewForm] = useState({
     pozNo: "",
     analizAdi: "",
@@ -158,7 +173,12 @@ export default function ImalatPozlariScreen() {
     setSelectedId(id);
     setIsEditing(false);
     setEditDraft(null);
+    void recordView(id);
   }
+
+  useEffect(() => {
+    setMetrajMiktar("1");
+  }, [selectedId]);
 
   useEffect(() => {
     if (params.q) {
@@ -200,7 +220,27 @@ export default function ImalatPozlariScreen() {
 
   function startEdit() {
     if (!selected) return;
+    if (isResmiAnaliz(selected)) {
+      Alert.alert(
+        "Resmi Analiz",
+        "Resmi analizler düzenlenemez. Kopyalayarak özelleştirebilirsiniz.",
+        [
+          { text: "İptal", style: "cancel" },
+          { text: "Kopyala ve Düzenle", onPress: handleCopyAndEdit },
+        ],
+      );
+      return;
+    }
     setEditDraft(JSON.parse(JSON.stringify(selected)));
+    setIsEditing(true);
+  }
+
+  function handleCopyAndEdit() {
+    if (!selected || !selectedId) return;
+    const kopya = clonePozAnaliz(selectedId, "Kopya — " + selected.analizAdi, selected);
+    setCloneVisible(false);
+    setSelectedId(kopya.id);
+    setEditDraft(JSON.parse(JSON.stringify(kopya)));
     setIsEditing(true);
   }
 
@@ -302,45 +342,53 @@ export default function ImalatPozlariScreen() {
     setSelectedId(kopya.id);
   }
 
-  async function handleExport() {
+  async function handleExportFormat(format: AnalizExportFormat) {
     const analiz = isEditing && editDraft ? editDraft : selected;
     if (!analiz) return;
-    const totals = hesaplaAnalizToplam(analiz);
+    setExportVisible(false);
+    await waitForShareSheet();
+    await exportAnaliz(analiz, format);
+  }
 
-    let txt = `BİRİM FİYAT ANALİZİ\n${"=".repeat(60)}\n`;
-    txt += `Poz No      : ${analiz.pozNo}\n`;
-    txt += `Analiz Adı  : ${analiz.analizAdi}\n`;
-    txt += `Ölçü Birimi : ${analiz.olcuBirimi}\n\n`;
+  const selectedAnalizler = useMemo(
+    () => modulAnalizleri.filter((a) => selectedIds.has(a.id)),
+    [modulAnalizleri, selectedIds],
+  );
 
-    const tipSira: ("malzeme" | "iscilik" | "ekipman")[] = ["malzeme", "iscilik", "ekipman"];
-    const tipAd: Record<string, string> = { malzeme: "Malzeme", iscilik: "İşçilik", ekipman: "Ekipman" };
+  function toggleSelectMode() {
+    setSelectMode((prev) => {
+      if (prev) setSelectedIds(new Set());
+      return !prev;
+    });
+  }
 
-    for (const tip of tipSira) {
-      const rows = analiz.kalemler.filter((k) => k.tip === tip);
-      if (!rows.length) continue;
-      txt += `${tipAd[tip]}\n${"-".repeat(60)}\n`;
-      rows.forEach((k) => {
-        txt += `  ${k.pozNo.padEnd(14)} ${k.tanim.substring(0, 30).padEnd(32)} ${k.olcuBirimi.padEnd(6)} ${trFmt(k.miktar).padStart(8)} ${trFmt(k.birimFiyati).padStart(10)} ${trFmt(k.tutar).padStart(12)}\n`;
-      });
+  function toggleSelected(id: string) {
+    setSelectedIds((prev) => {
+      const next = new Set(prev);
+      if (next.has(id)) next.delete(id);
+      else next.add(id);
+      return next;
+    });
+  }
+
+  function handleCompareSelected() {
+    if (selectedIds.size < 2) {
+      Alert.alert("Karşılaştırma", "En az 2 analiz seçin.");
+      return;
     }
-    txt += `${"=".repeat(60)}\n`;
-    txt += `Malzeme + İşçilik Tutarı         : ${trFmt(totals.malzemeIscilikToplami)} TL\n`;
-    txt += `%${analiz.yukleniciKarOrani} Yüklenici Karı              : ${trFmt(totals.yukleniciKarTutari)} TL\n`;
-    txt += `1 ${analiz.olcuBirimi} Fiyatı                  : ${trFmt(totals.birimFiyati)} TL\n`;
-    if (analiz.pozTarifi) txt += `\nPoz Tarifi:\n${analiz.pozTarifi}\n`;
-    if (analiz.olcusu) txt += `\nÖlçüsü:\n${analiz.olcusu}\n`;
+    router.push({
+      pathname: "/analiz-karsilastir",
+      params: { ids: [...selectedIds].join(",") },
+    } as any);
+  }
 
-    try {
-      const uri = `${FileSystem.cacheDirectory}analiz_${analiz.pozNo.replace(/[./]/g, "_")}.txt`;
-      await FileSystem.writeAsStringAsync(uri, txt, { encoding: FileSystem.EncodingType.UTF8 });
-      if (await Sharing.isAvailableAsync()) {
-        await Sharing.shareAsync(uri, { mimeType: "text/plain", dialogTitle: "Analizi Dışa Aktar" });
-      } else {
-        Alert.alert("Dışa Aktarma", txt.substring(0, 600));
-      }
-    } catch {
-      Alert.alert("Dışa Aktarma", txt.substring(0, 600));
-    }
+  async function handleBulkExportFormat(format: AnalizExportFormat) {
+    if (!selectedAnalizler.length) return;
+    setBulkExportVisible(false);
+    setSelectMode(false);
+    setSelectedIds(new Set());
+    await waitForShareSheet();
+    await exportBulkAnalizler(selectedAnalizler, format);
   }
 
   const displayAnaliz = isEditing && editDraft ? editDraft : selected;
@@ -348,6 +396,9 @@ export default function ImalatPozlariScreen() {
   // ── Detay görünümü ──
   if (selectedId && displayAnaliz) {
     const totals = hesaplaAnalizToplam(displayAnaliz);
+    const resmi = isResmiAnaliz(displayAnaliz);
+    const metrajQty = parseN(metrajMiktar);
+    const metrajToplam = Math.round(metrajQty * totals.birimFiyati * 100) / 100;
 
     return (
       <View style={{ flex: 1, backgroundColor: colors.background }}>
@@ -400,6 +451,12 @@ export default function ImalatPozlariScreen() {
               { backgroundColor: colors.card, borderColor: colors.border },
             ]}
           >
+            {resmi && (
+              <View style={[st.resmiBadge, { backgroundColor: "#2563eb18", borderColor: "#2563eb44" }]}>
+                <Feather name="shield" size={13} color="#2563eb" />
+                <Text style={st.resmiBadgeText}>Resmi Analiz — Salt Okunur</Text>
+              </View>
+            )}
             <View style={st.infoRow}>
               <Text style={[st.infoLabel, { color: colors.mutedForeground }]}>Poz No</Text>
               {isEditing ? (
@@ -453,6 +510,45 @@ export default function ImalatPozlariScreen() {
               </Text>
             </View>
           </View>
+
+          {!isEditing && (
+            <View
+              style={[
+                st.metrajCard,
+                { backgroundColor: colors.card, borderColor: colors.border },
+              ]}
+            >
+              <View style={st.metrajHeader}>
+                <Feather name="pie-chart" size={16} color={colors.primary} />
+                <Text style={[st.metrajTitle, { color: colors.foreground }]}>Metraj Hesaplama</Text>
+              </View>
+              <View style={st.metrajRow}>
+                <Text style={[st.metrajLabel, { color: colors.mutedForeground }]}>Miktar</Text>
+                <TextInput
+                  style={[
+                    st.metrajInput,
+                    { color: colors.foreground, borderColor: colors.border, backgroundColor: colors.background },
+                  ]}
+                  value={metrajMiktar}
+                  onChangeText={setMetrajMiktar}
+                  keyboardType="decimal-pad"
+                  placeholder="0"
+                  placeholderTextColor={colors.mutedForeground}
+                />
+                <Text style={[st.metrajUnit, { color: colors.foreground }]}>
+                  {displayAnaliz.olcuBirimi}
+                </Text>
+              </View>
+              <View style={st.metrajSummary}>
+                <Text style={[st.metrajLine, { color: colors.mutedForeground }]}>
+                  Birim fiyat: {trFmt(totals.birimFiyati)} TL / {displayAnaliz.olcuBirimi}
+                </Text>
+                <Text style={[st.metrajTotal, { color: colors.primary }]}>
+                  Toplam: {trFmt(metrajToplam)} TL
+                </Text>
+              </View>
+            </View>
+          )}
 
           {/* Analiz Tablosu */}
           <View style={{ marginHorizontal: 12, marginTop: 12 }}>
@@ -691,11 +787,25 @@ export default function ImalatPozlariScreen() {
               colors={colors}
             />
           )}
-          {!isEditing && (
+          {!isEditing && resmi ? (
+            <ActionBtn
+              icon="copy"
+              label="Kopyala ve Düzenle"
+              onPress={handleCopyAndEdit}
+              colors={colors}
+            />
+          ) : !isEditing ? (
             <ActionBtn icon="edit-2" label="Düzenle" onPress={startEdit} colors={colors} />
+          ) : null}
+          {!resmi && (
+            <ActionBtn icon="copy" label="Kopyala" onPress={handleClone} colors={colors} />
           )}
-          <ActionBtn icon="copy" label="Kopyala" onPress={handleClone} colors={colors} />
-          <ActionBtn icon="share" label="Dışa Aktar" onPress={handleExport} colors={colors} />
+          <ActionBtn
+            icon="share"
+            label="Dışa Aktar"
+            onPress={() => setExportVisible(true)}
+            colors={colors}
+          />
           {!isEditing && (
             <ActionBtn
               icon="trash-2"
@@ -703,10 +813,17 @@ export default function ImalatPozlariScreen() {
               onPress={handleDelete}
               colors={colors}
               danger
-              disabled={displayAnaliz.kaynakTip === "sistem"}
+              disabled={resmi}
             />
           )}
         </View>
+
+        <ExportFormatModal
+          visible={exportVisible}
+          onClose={() => setExportVisible(false)}
+          analiz={displayAnaliz}
+          onExport={handleExportFormat}
+        />
 
         {/* Kopyalama modalı */}
         <CloneModal
@@ -758,8 +875,26 @@ export default function ImalatPozlariScreen() {
             {screenTitle}
           </Text>
         </View>
-        <View style={{ width: 40 }} />
+        <TouchableOpacity onPress={toggleSelectMode} style={st.backBtn}>
+          <Feather
+            name={selectMode ? "x" : "check-square"}
+            size={20}
+            color={colors.secondaryForeground}
+          />
+        </TouchableOpacity>
       </View>
+
+      {/* Seçim modu bilgi şeridi */}
+      {selectMode && (
+        <View style={[st.selectBar, { backgroundColor: colors.primary + "14", borderColor: colors.primary + "33" }]}>
+          <Text style={[st.selectBarText, { color: colors.primary }]}>
+            {selectedIds.size} analiz seçildi
+          </Text>
+          <TouchableOpacity onPress={toggleSelectMode}>
+            <Text style={[st.selectBarAction, { color: colors.mutedForeground }]}>İptal</Text>
+          </TouchableOpacity>
+        </View>
+      )}
 
       {/* Arama */}
       <View
@@ -816,6 +951,7 @@ export default function ImalatPozlariScreen() {
           { backgroundColor: colors.card, borderColor: colors.border },
         ]}
       >
+        {selectMode && <Text style={[st.listTh, { width: 32, color: colors.mutedForeground }]}> </Text>}
         <Text style={[st.listTh, { width: 36, color: colors.mutedForeground }]}>#</Text>
         <Text style={[st.listTh, { width: 104, color: colors.mutedForeground }]}>Poz No</Text>
         <Text style={[st.listTh, { flex: 1, color: colors.mutedForeground }]}>Analizin Adı</Text>
@@ -828,30 +964,56 @@ export default function ImalatPozlariScreen() {
       <FlatList
         data={filtered}
         keyExtractor={(item) => item.id}
-        extraData={`${catFilter ?? ""}|${search}|${filtered.length}`}
+        extraData={`${catFilter ?? ""}|${search}|${filtered.length}|${selectMode}|${selectedIds.size}`}
         initialNumToRender={20}
         windowSize={10}
         keyboardShouldPersistTaps="handled"
-        renderItem={({ item, index }) => (
-          <TouchableOpacity
-            style={[
-              st.listRow,
-              {
-                borderColor: colors.border,
-                backgroundColor: index % 2 === 0 ? colors.background : colors.card + "66",
-              },
-            ]}
-            onPress={() => openDetail(item.id)}
-            activeOpacity={0.75}
-          >
-            <Text style={[st.tdNo, { color: colors.mutedForeground }]}>{index + 1}</Text>
-            <Text style={[st.tdPoz, { color: colors.primary }]}>{item.pozNo}</Text>
-            <Text style={[st.tdAd, { color: colors.foreground }]} numberOfLines={2}>
-              {item.analizAdi}
-            </Text>
-            <Text style={[st.tdBirim, { color: colors.mutedForeground }]}>{item.olcuBirimi}</Text>
-          </TouchableOpacity>
-        )}
+        contentContainerStyle={{ paddingBottom: selectMode ? insets.bottom + 80 : 0 }}
+        renderItem={({ item, index }) => {
+          const checked = selectedIds.has(item.id);
+          return (
+            <TouchableOpacity
+              style={[
+                st.listRow,
+                {
+                  borderColor: colors.border,
+                  backgroundColor: checked
+                    ? colors.primary + "12"
+                    : index % 2 === 0
+                      ? colors.background
+                      : colors.card + "66",
+                },
+              ]}
+              onPress={() => {
+                if (selectMode) toggleSelected(item.id);
+                else openDetail(item.id);
+              }}
+              onLongPress={() => {
+                if (!selectMode) {
+                  setSelectMode(true);
+                  setSelectedIds(new Set([item.id]));
+                }
+              }}
+              activeOpacity={0.75}
+            >
+              {selectMode && (
+                <View style={st.checkCell}>
+                  <Feather
+                    name={checked ? "check-square" : "square"}
+                    size={18}
+                    color={checked ? colors.primary : colors.mutedForeground}
+                  />
+                </View>
+              )}
+              <Text style={[st.tdNo, { color: colors.mutedForeground }]}>{index + 1}</Text>
+              <Text style={[st.tdPoz, { color: colors.primary }]}>{item.pozNo}</Text>
+              <Text style={[st.tdAd, { color: colors.foreground }]} numberOfLines={2}>
+                {item.analizAdi}
+              </Text>
+              <Text style={[st.tdBirim, { color: colors.mutedForeground }]}>{item.olcuBirimi}</Text>
+            </TouchableOpacity>
+          );
+        }}
         ListEmptyComponent={
           <View style={{ alignItems: "center", paddingTop: 60 }}>
             <Feather name="inbox" size={40} color={colors.mutedForeground} />
@@ -864,8 +1026,55 @@ export default function ImalatPozlariScreen() {
         }
       />
 
+      {selectMode && (
+        <View
+          style={[
+            st.bulkBar,
+            {
+              backgroundColor: colors.card,
+              borderColor: colors.border,
+              paddingBottom: insets.bottom + 8,
+            },
+          ]}
+        >
+          <TouchableOpacity
+            style={[st.bulkBtn, { opacity: selectedIds.size >= 2 ? 1 : 0.45 }]}
+            onPress={handleCompareSelected}
+            disabled={selectedIds.size < 2}
+          >
+            <Feather name="layers" size={18} color={colors.foreground} />
+            <Text style={[st.bulkBtnLabel, { color: colors.foreground }]}>Karşılaştır</Text>
+          </TouchableOpacity>
+          <TouchableOpacity
+            style={[st.bulkBtn, { opacity: selectedIds.size >= 1 ? 1 : 0.45 }]}
+            onPress={() => setBulkExportVisible(true)}
+            disabled={selectedIds.size < 1}
+          >
+            <Feather name="download" size={18} color={colors.primary} />
+            <Text style={[st.bulkBtnLabel, { color: colors.primary }]}>Dışa Aktar</Text>
+          </TouchableOpacity>
+        </View>
+      )}
+
+      <BulkExportModal
+        visible={bulkExportVisible}
+        count={selectedIds.size}
+        onClose={() => setBulkExportVisible(false)}
+        onExport={handleBulkExportFormat}
+        subtitle={`${selectedIds.size} analiz ZIP olarak indirilecek`}
+        previewCaption="ZIP önizlemesi (ilk analiz)"
+        webPdfVariant="bulk"
+        getPreviewHtml={(format) => {
+          const first = selectedAnalizler[0];
+          if (!first) return "";
+          return format === "excel"
+            ? buildAnalizExcelHtml(first)
+            : buildAnalizHtml(first, PDF_PAPER_ORIENTATION);
+        }}
+      />
+
       {/* Yetkili roller: yeni analiz ekle FAB */}
-      {canCreateAnaliz && (
+      {canCreateAnaliz && !selectMode && (
       <TouchableOpacity
         style={[
           st.fab,
@@ -890,7 +1099,7 @@ export default function ImalatPozlariScreen() {
           const id = addPozAnaliz({
             pozNo: newForm.pozNo.trim() || "ÖZEL",
             analizAdi: newForm.analizAdi.trim(),
-            olcuBirimi: newForm.olcuBirimi.trim() || "m²",
+            olcuBirimi: newForm.olcuBirimi,
             kategori: newForm.kategori,
             kalemler: [],
             pozTarifi: "",
@@ -1189,6 +1398,77 @@ function KategoriPickerModal({
   );
 }
 
+// ─── OlcuBirimiPickerModal ────────────────────────────────────
+
+function OlcuBirimiPickerModal({
+  visible,
+  selected,
+  onSelect,
+  onClose,
+  colors,
+}: {
+  visible: boolean;
+  selected: string;
+  onSelect: (unit: string) => void;
+  onClose: () => void;
+  colors: Colors;
+}) {
+  return (
+    <Modal visible={visible} transparent animationType="slide" onRequestClose={onClose}>
+      <TouchableOpacity style={st.pickerOverlay} activeOpacity={1} onPress={onClose}>
+        <TouchableOpacity
+          activeOpacity={1}
+          style={[st.pickerSheet, { backgroundColor: colors.card }]}
+          onPress={() => {}}
+        >
+          <View style={[st.pickerHeader, { borderBottomColor: colors.border }]}>
+            <Text style={[st.pickerTitle, { color: colors.foreground }]}>Ölçü Birimi Seç</Text>
+            <TouchableOpacity onPress={onClose} hitSlop={12}>
+              <Feather name="x" size={22} color={colors.mutedForeground} />
+            </TouchableOpacity>
+          </View>
+          <FlatList
+            data={[...OLCU_BIRIMLERI]}
+            keyExtractor={(item) => item}
+            keyboardShouldPersistTaps="handled"
+            style={{ maxHeight: 420 }}
+            renderItem={({ item }) => {
+              const active = selected === item;
+              return (
+                <TouchableOpacity
+                  style={[
+                    st.pickerItem,
+                    {
+                      borderBottomColor: colors.border,
+                      backgroundColor: active ? colors.primary + "14" : "transparent",
+                    },
+                  ]}
+                  onPress={() => onSelect(item)}
+                  activeOpacity={0.75}
+                >
+                  <Text
+                    style={[
+                      st.pickerItemText,
+                      { color: active ? colors.primary : colors.foreground },
+                    ]}
+                  >
+                    {item}
+                  </Text>
+                  {active ? (
+                    <Feather name="check" size={18} color={colors.primary} />
+                  ) : (
+                    <View style={{ width: 18 }} />
+                  )}
+                </TouchableOpacity>
+              );
+            }}
+          />
+        </TouchableOpacity>
+      </TouchableOpacity>
+    </Modal>
+  );
+}
+
 // ─── CloneModal ───────────────────────────────────────────────
 
 function CloneModal({
@@ -1206,10 +1486,31 @@ function CloneModal({
   onCancel: () => void;
   colors: Colors;
 }) {
+  const insets = useSafeAreaInsets();
+
+  if (!visible) return null;
+
   return (
-    <Modal visible={visible} transparent animationType="fade">
-      <View style={st.modalOverlay}>
-        <View style={[st.modalCard, { backgroundColor: colors.card }]}>
+    <View style={st.modalHost}>
+      <TouchableOpacity
+        style={st.modalBackdrop}
+        activeOpacity={1}
+        onPress={() => {
+          Keyboard.dismiss();
+          onCancel();
+        }}
+      />
+      <KeyboardAvoidingView
+        style={st.modalKav}
+        behavior={Platform.OS === "ios" ? "padding" : "height"}
+        keyboardVerticalOffset={0}
+      >
+        <View
+          style={[
+            st.modalSheet,
+            { backgroundColor: colors.card, paddingBottom: Math.max(insets.bottom, 16) },
+          ]}
+        >
           <Text style={[st.modalTitle, { color: colors.foreground }]}>Analizi Kopyala</Text>
           <Text style={[st.modalSub, { color: colors.mutedForeground }]}>
             Kopyalanan analizin adını belirleyin:
@@ -1239,12 +1540,14 @@ function CloneModal({
             </TouchableOpacity>
           </View>
         </View>
-      </View>
-    </Modal>
+      </KeyboardAvoidingView>
+    </View>
   );
 }
 
 // ─── NewAnalizModal ───────────────────────────────────────────
+// iOS'ta RN Modal ayrı pencerede açıldığı için klavye kaçınması çalışmaz;
+// ekran içi overlay + KeyboardAvoidingView kullanıyoruz.
 
 function NewAnalizModal({
   visible,
@@ -1261,49 +1564,138 @@ function NewAnalizModal({
   onCancel: () => void;
   colors: Colors;
 }) {
+  const insets = useSafeAreaInsets();
+  const scrollRef = React.useRef<ScrollView>(null);
+  const [birimPickerOpen, setBirimPickerOpen] = useState(false);
+
+  if (!visible) return null;
+
+  const scrollToEnd = () => {
+    requestAnimationFrame(() => {
+      scrollRef.current?.scrollToEnd({ animated: true });
+    });
+  };
+
   return (
-    <Modal visible={visible} transparent animationType="slide">
-      <View style={st.modalOverlay}>
-        <View style={[st.modalCard, { backgroundColor: colors.card }]}>
-          <Text style={[st.modalTitle, { color: colors.foreground }]}>Yeni Analiz</Text>
-          {[
-            { label: "Poz No", key: "pozNo", placeholder: "ör. ÖZEL.001" },
-            { label: "Analiz Adı", key: "analizAdi", placeholder: "Analiz başlığı" },
-            { label: "Ölçü Birimi", key: "olcuBirimi", placeholder: "ör. m²" },
-          ].map(({ label, key, placeholder }) => (
-            <View key={key} style={{ marginBottom: 10 }}>
+    <View style={st.modalHost}>
+      <TouchableOpacity
+        style={st.modalBackdrop}
+        activeOpacity={1}
+        onPress={() => {
+          Keyboard.dismiss();
+          onCancel();
+        }}
+      />
+      <KeyboardAvoidingView
+        style={st.modalKav}
+        behavior={Platform.OS === "ios" ? "padding" : "height"}
+        keyboardVerticalOffset={0}
+      >
+        <View
+          style={[
+            st.modalSheet,
+            { backgroundColor: colors.card, paddingBottom: Math.max(insets.bottom, 16) },
+          ]}
+        >
+          <ScrollView
+            ref={scrollRef}
+            keyboardShouldPersistTaps="handled"
+            keyboardDismissMode={Platform.OS === "ios" ? "interactive" : "on-drag"}
+            showsVerticalScrollIndicator={false}
+            bounces={false}
+            contentContainerStyle={st.modalSheetScroll}
+          >
+            <Text style={[st.modalTitle, { color: colors.foreground }]}>Yeni Analiz</Text>
+            <View style={{ marginBottom: 10 }}>
               <Text style={[st.modalSub, { color: colors.mutedForeground, marginBottom: 4 }]}>
-                {label}
+                Poz No
               </Text>
               <TextInput
                 style={[
                   st.modalInput,
-                  { color: colors.foreground, borderColor: colors.border, backgroundColor: colors.background },
+                  {
+                    color: colors.foreground,
+                    borderColor: colors.border,
+                    backgroundColor: colors.background,
+                  },
                 ]}
-                value={(form as any)[key]}
-                onChangeText={(v) => onChange({ [key]: v })}
-                placeholder={placeholder}
+                value={form.pozNo}
+                onChangeText={(v) => onChange({ pozNo: v })}
+                onFocus={scrollToEnd}
+                placeholder="ör. ÖZEL.001"
                 placeholderTextColor={colors.mutedForeground}
               />
             </View>
-          ))}
-          <View style={st.modalBtns}>
-            <TouchableOpacity
-              style={[st.modalBtn, { backgroundColor: colors.border }]}
-              onPress={onCancel}
-            >
-              <Text style={{ color: colors.foreground }}>İptal</Text>
-            </TouchableOpacity>
-            <TouchableOpacity
-              style={[st.modalBtn, { backgroundColor: colors.primary }]}
-              onPress={onConfirm}
-            >
-              <Text style={{ color: colors.primaryForeground, fontWeight: "700" }}>Oluştur</Text>
-            </TouchableOpacity>
-          </View>
+            <View style={{ marginBottom: 10 }}>
+              <Text style={[st.modalSub, { color: colors.mutedForeground, marginBottom: 4 }]}>
+                Analiz Adı
+              </Text>
+              <TextInput
+                style={[
+                  st.modalInput,
+                  {
+                    color: colors.foreground,
+                    borderColor: colors.border,
+                    backgroundColor: colors.background,
+                  },
+                ]}
+                value={form.analizAdi}
+                onChangeText={(v) => onChange({ analizAdi: v })}
+                onFocus={scrollToEnd}
+                placeholder="Analiz başlığı"
+                placeholderTextColor={colors.mutedForeground}
+              />
+            </View>
+            <View style={{ marginBottom: 10 }}>
+              <Text style={[st.modalSub, { color: colors.mutedForeground, marginBottom: 4 }]}>
+                Ölçü Birimi
+              </Text>
+              <TouchableOpacity
+                style={[
+                  st.filterSelect,
+                  {
+                    backgroundColor: colors.background,
+                    borderColor: colors.border,
+                    minHeight: 44,
+                  },
+                ]}
+                onPress={() => setBirimPickerOpen(true)}
+                activeOpacity={0.85}
+              >
+                <Text style={[st.filterSelectText, { color: colors.foreground }]}>
+                  {form.olcuBirimi}
+                </Text>
+                <Feather name="chevron-down" size={18} color={colors.mutedForeground} />
+              </TouchableOpacity>
+            </View>
+            <View style={st.modalBtns}>
+              <TouchableOpacity
+                style={[st.modalBtn, { backgroundColor: colors.border }]}
+                onPress={onCancel}
+              >
+                <Text style={{ color: colors.foreground }}>İptal</Text>
+              </TouchableOpacity>
+              <TouchableOpacity
+                style={[st.modalBtn, { backgroundColor: colors.primary }]}
+                onPress={onConfirm}
+              >
+                <Text style={{ color: colors.primaryForeground, fontWeight: "700" }}>Oluştur</Text>
+              </TouchableOpacity>
+            </View>
+          </ScrollView>
         </View>
-      </View>
-    </Modal>
+      </KeyboardAvoidingView>
+      <OlcuBirimiPickerModal
+        visible={birimPickerOpen}
+        selected={form.olcuBirimi}
+        onSelect={(unit) => {
+          onChange({ olcuBirimi: unit });
+          setBirimPickerOpen(false);
+        }}
+        onClose={() => setBirimPickerOpen(false)}
+        colors={colors}
+      />
+    </View>
   );
 }
 
@@ -1382,6 +1774,52 @@ const st = StyleSheet.create({
     flex: 1,
     fontSize: 14,
     fontFamily: "Inter_500Medium",
+  },
+  selectBar: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    marginHorizontal: 12,
+    marginBottom: 8,
+    paddingHorizontal: 12,
+    paddingVertical: 8,
+    borderRadius: 10,
+    borderWidth: 1,
+  },
+  selectBarText: {
+    fontSize: 13,
+    fontFamily: "Inter_600SemiBold",
+  },
+  selectBarAction: {
+    fontSize: 13,
+    fontFamily: "Inter_500Medium",
+  },
+  checkCell: {
+    width: 32,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  bulkBar: {
+    position: "absolute",
+    left: 0,
+    right: 0,
+    bottom: 0,
+    flexDirection: "row",
+    borderTopWidth: 1,
+    paddingTop: 10,
+    paddingHorizontal: 16,
+    gap: 12,
+    justifyContent: "space-around",
+  },
+  bulkBtn: {
+    flex: 1,
+    alignItems: "center",
+    gap: 4,
+    paddingVertical: 6,
+  },
+  bulkBtnLabel: {
+    fontSize: 11,
+    fontFamily: "Inter_600SemiBold",
   },
   pickerOverlay: {
     flex: 1,
@@ -1469,6 +1907,76 @@ const st = StyleSheet.create({
     borderRadius: 10,
     borderWidth: 1,
     overflow: "hidden",
+  },
+  resmiBadge: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 6,
+    margin: 10,
+    marginBottom: 0,
+    paddingHorizontal: 10,
+    paddingVertical: 7,
+    borderRadius: 8,
+    borderWidth: 1,
+  },
+  resmiBadgeText: {
+    fontSize: 11,
+    fontFamily: "Inter_600SemiBold",
+    color: "#2563eb",
+  },
+  metrajCard: {
+    marginHorizontal: 12,
+    marginBottom: 4,
+    borderRadius: 10,
+    borderWidth: 1,
+    padding: 12,
+    gap: 10,
+  },
+  metrajHeader: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 8,
+  },
+  metrajTitle: {
+    fontSize: 14,
+    fontFamily: "Inter_700Bold",
+  },
+  metrajRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 8,
+  },
+  metrajLabel: {
+    fontSize: 12,
+    fontFamily: "Inter_600SemiBold",
+    width: 52,
+  },
+  metrajInput: {
+    flex: 1,
+    fontSize: 16,
+    fontFamily: "Inter_600SemiBold",
+    borderWidth: 1,
+    borderRadius: 8,
+    paddingHorizontal: 10,
+    paddingVertical: 8,
+    textAlign: "right",
+  },
+  metrajUnit: {
+    fontSize: 13,
+    fontFamily: "Inter_500Medium",
+    minWidth: 36,
+  },
+  metrajSummary: {
+    gap: 4,
+    paddingTop: 2,
+  },
+  metrajLine: {
+    fontSize: 12,
+    fontFamily: "Inter_400Regular",
+  },
+  metrajTotal: {
+    fontSize: 16,
+    fontFamily: "Inter_700Bold",
   },
   infoRow: {
     flexDirection: "row",
@@ -1576,17 +2084,34 @@ const st = StyleSheet.create({
   },
   actionBtn: { alignItems: "center", paddingHorizontal: 10, paddingVertical: 6, gap: 4 },
   actionLabel: { fontSize: 11, fontFamily: "Inter_500Medium" },
-  modalOverlay: {
-    flex: 1,
-    backgroundColor: "rgba(0,0,0,0.5)",
-    justifyContent: "center",
-    alignItems: "center",
-    padding: 24,
+  modalHost: {
+    ...StyleSheet.absoluteFillObject,
+    zIndex: 1000,
+    elevation: 1000,
   },
-  modalCard: {
+  modalBackdrop: {
+    ...StyleSheet.absoluteFillObject,
+    backgroundColor: "rgba(0,0,0,0.5)",
+  },
+  modalKav: {
+    flex: 1,
+    justifyContent: "flex-end",
+  },
+  modalSheet: {
     width: "100%",
-    borderRadius: 16,
-    padding: 20,
+    maxHeight: "85%",
+    borderTopLeftRadius: 18,
+    borderTopRightRadius: 18,
+    paddingHorizontal: 20,
+    paddingTop: 18,
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: -4 },
+    shadowOpacity: 0.15,
+    shadowRadius: 12,
+    elevation: 8,
+  },
+  modalSheetScroll: {
+    paddingBottom: 4,
   },
   modalTitle: {
     fontSize: 17,

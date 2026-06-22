@@ -36,6 +36,10 @@ export function ThemeProvider({ children }: { children: React.ReactNode }) {
       .then((stored) => {
         if (stored && THEMES.some((t) => t.id === stored)) {
           setThemeIdState(stored);
+          return;
+        }
+        if (stored) {
+          AsyncStorage.setItem(STORAGE_KEY, DEFAULT_THEME_ID).catch(() => {});
         }
       })
       .finally(() => setLoaded(true));

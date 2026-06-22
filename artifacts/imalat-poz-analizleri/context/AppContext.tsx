@@ -5,11 +5,13 @@ import React, {
   useContext,
   useEffect,
   useMemo,
+  useRef,
   useState,
 } from "react";
 
 import { PozAnaliz } from "@/constants/pozAnalizleri";
 import { sanitizeUserPozAnalizleri } from "@/lib/pozAnalizCatalog";
+import { UserDataImportMode } from "@/lib/userDataBackup";
 
 const STORAGE_KEY = "santijet_ipa_poz_analizleri_v1";
 const FAVORITES_KEY = "santijet_ipa_favorites_v1";
@@ -35,6 +37,10 @@ interface AppContextValue {
   updatePozAnaliz: (id: string, patch: Partial<PozAnaliz>) => void;
   deletePozAnaliz: (id: string) => void;
   clonePozAnaliz: (id: string, yeniAd: string, sourceOverride?: PozAnaliz) => PozAnaliz;
+  importUserData: (
+    data: { pozAnalizleri: PozAnaliz[]; favoriteIds: string[] },
+    mode: UserDataImportMode,
+  ) => void;
 }
 
 const AppContext = createContext<AppContextValue | undefined>(undefined);
@@ -43,10 +49,13 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
   const [pozAnalizleri, setPozAnalizleri] = useState<PozAnaliz[]>([]);
   const [favoriteIds, setFavoriteIds] = useState<string[]>([]);
   const [loaded, setLoaded] = useState(false);
+  const loadedRef = useRef(false);
 
   useEffect(() => {
+    let active = true;
     Promise.all([AsyncStorage.getItem(STORAGE_KEY), AsyncStorage.getItem(FAVORITES_KEY)])
       .then(([rawAnalizler, rawFavorites]) => {
+        if (!active) return;
         if (rawAnalizler) {
           try {
             setPozAnalizleri(sanitizeUserPozAnalizleri(JSON.parse(rawAnalizler)));
@@ -62,10 +71,19 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
           }
         }
       })
-      .finally(() => setLoaded(true));
+      .finally(() => {
+        if (active) {
+          loadedRef.current = true;
+          setLoaded(true);
+        }
+      });
+    return () => {
+      active = false;
+    };
   }, []);
 
   const persist = useCallback((updater: (prev: PozAnaliz[]) => PozAnaliz[]) => {
+    if (!loadedRef.current) return;
     setPozAnalizleri((prev) => {
       const next = updater(prev);
       AsyncStorage.setItem(STORAGE_KEY, JSON.stringify(next)).catch(() => {});
@@ -74,6 +92,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
   }, []);
 
   const persistFavorites = useCallback((updater: (prev: string[]) => string[]) => {
+    if (!loadedRef.current) return;
     setFavoriteIds((prev) => {
       const next = updater(prev);
       AsyncStorage.setItem(FAVORITES_KEY, JSON.stringify(next)).catch(() => {});
@@ -88,11 +107,13 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
       favoriteIds,
       isFavorite: (id: string) => favoriteIds.includes(id),
       toggleFavorite: (id: string) => {
+        if (!loadedRef.current) return;
         persistFavorites((prev) =>
           prev.includes(id) ? prev.filter((x) => x !== id) : [...prev, id],
         );
       },
       addPozAnaliz: (analiz) => {
+        if (!loadedRef.current) return "";
         const id = genId();
         const now = new Date().toISOString();
         const yeni: PozAnaliz = { ...analiz, id, olusturmaTarihi: now, guncellemeTarihi: now };
@@ -100,23 +121,28 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
         return id;
       },
       updatePozAnaliz: (id, patch) => {
+        if (!loadedRef.current) return;
         const now = new Date().toISOString();
         persist((prev) => {
-          const exists = prev.some((a) => a.id === id);
-          if (exists) {
+          const existing = prev.find((a) => a.id === id);
+          if (existing) {
+            if (existing.kaynakTip === "sistem") return prev;
             return prev.map((a) =>
               a.id === id ? { ...a, ...patch, guncellemeTarihi: now } : a,
             );
           }
+          if (patch.kaynakTip === "sistem") return prev;
           const yeni = { ...patch, id, guncellemeTarihi: now } as PozAnaliz;
           return [...prev, yeni];
         });
       },
       deletePozAnaliz: (id) => {
+        if (!loadedRef.current) return;
         persist((prev) => prev.filter((a) => a.id !== id));
         persistFavorites((prev) => prev.filter((x) => x !== id));
       },
       clonePozAnaliz: (id, yeniAd, sourceOverride) => {
+        if (!loadedRef.current) throw new Error("Veriler henüz yüklenmedi");
         let kopya!: PozAnaliz;
         persist((prev) => {
           const source = sourceOverride ?? prev.find((a) => a.id === id);
@@ -135,6 +161,23 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
           return [...prev, kopya];
         });
         return kopya;
+      },
+      importUserData: (data, mode) => {
+        if (!loadedRef.current) return;
+        if (mode === "replace") {
+          persist(() => data.pozAnalizleri);
+          persistFavorites(() => data.favoriteIds);
+          return;
+        }
+
+        persist((prev) => {
+          const byId = new Map(prev.map((a) => [a.id, a]));
+          for (const analiz of data.pozAnalizleri) {
+            byId.set(analiz.id, analiz);
+          }
+          return Array.from(byId.values());
+        });
+        persistFavorites((prev) => Array.from(new Set([...prev, ...data.favoriteIds])));
       },
     }),
     [loaded, persist, persistFavorites, pozAnalizleri, favoriteIds],

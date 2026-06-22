@@ -13,8 +13,10 @@ import { SafeAreaProvider } from "react-native-safe-area-context";
 
 import { ErrorBoundary } from "@/components/ErrorBoundary";
 import SplashScreenView from "@/components/SplashScreenView";
+import { StorageReadyGate } from "@/components/StorageReadyGate";
 import WebFrame from "@/components/WebFrame";
 import { AppProvider } from "@/context/AppContext";
+import { KesifProvider } from "@/context/KesifContext";
 import { ThemeProvider } from "@/context/ThemeContext";
 
 SplashScreen.preventAutoHideAsync();
@@ -25,6 +27,8 @@ function RootLayoutNav() {
       <Stack.Screen name="index" />
       <Stack.Screen name="imalat-pozlari" />
       <Stack.Screen name="analiz-katalogu" />
+      <Stack.Screen name="analiz-karsilastir" />
+      <Stack.Screen name="kesif" />
     </Stack>
   );
 }
@@ -53,7 +57,11 @@ export default function RootLayout() {
           <GestureHandlerRootView style={{ flex: 1 }}>
             <WebFrame>
               <AppProvider>
-                <RootLayoutNav />
+                <KesifProvider>
+                  <StorageReadyGate>
+                    <RootLayoutNav />
+                  </StorageReadyGate>
+                </KesifProvider>
               </AppProvider>
             </WebFrame>
             {showSplash && (

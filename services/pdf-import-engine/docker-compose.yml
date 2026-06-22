@@ -1,0 +1,27 @@
+version: "3.9"
+
+services:
+  postgres:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_USER: santijet
+      POSTGRES_PASSWORD: santijet
+      POSTGRES_DB: santijet_pdf
+    ports:
+      - "5432:5432"
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+      - ./db/migrations:/docker-entrypoint-initdb.d:ro
+
+  import-engine:
+    build: .
+    environment:
+      DATABASE_URL: postgresql://santijet:santijet@postgres:5432/santijet_pdf
+    ports:
+      - "8090:8090"
+    depends_on:
+      - postgres
+    command: uvicorn admin.app:app --host 0.0.0.0 --port 8090
+
+volumes:
+  pgdata:

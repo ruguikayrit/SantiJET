@@ -8,9 +8,10 @@
  *
  * QR bu sayfada otomatik güncellenir; yer imi adresi değişmez.
  */
-import { spawn } from "child_process";
+import { spawn, execSync } from "child_process";
 import fs from "fs";
 import http from "http";
+import net from "net";
 import os from "os";
 import path from "path";
 import { fileURLToPath } from "url";
@@ -18,11 +19,14 @@ import { fileURLToPath } from "url";
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const projectRoot = path.resolve(__dirname, "..");
 const hostFile = path.join(projectRoot, ".expo", "ipa-dev-host");
+const linksFile = path.join(projectRoot, ".expo", "ipa-dev-links.json");
+const qrImageFile = path.join(projectRoot, "assets", "images", "expo-go-qr.png");
+const qrUrlFile = path.join(projectRoot, "assets", "expo-dev-url.txt");
 const metroPort = Number(process.env.PORT || 24916);
 const landingPort = Number(process.env.IPA_LANDING_PORT || 24917);
 
 /** @type {{ mode: string; expUrl: string; webUrl: string; ready: boolean; message: string; updatedAt: string }} */
-let links = {
+let links = loadLinksFromDisk() || {
   mode: "lan",
   expUrl: "",
   webUrl: "",
@@ -31,10 +35,23 @@ let links = {
   updatedAt: new Date().toISOString(),
 };
 
+function loadLinksFromDisk() {
+  try {
+    return JSON.parse(fs.readFileSync(linksFile, "utf8"));
+  } catch {
+    return null;
+  }
+}
+
+function saveLinksToDisk() {
+  fs.mkdirSync(path.dirname(linksFile), { recursive: true });
+  fs.writeFileSync(linksFile, JSON.stringify(links, null, 2));
+}
+
 function detectLanIp() {
   for (const ifaces of Object.values(os.networkInterfaces())) {
-    for (const net of ifaces || []) {
-      if (net.family === "IPv4" && !net.internal) return net.address;
+    for (const iface of ifaces || []) {
+      if (iface.family === "IPv4" && !iface.internal) return iface.address;
     }
   }
   return "localhost";
@@ -65,6 +82,25 @@ function resolveLanHost() {
 
 function setLinks(partial) {
   links = { ...links, ...partial, updatedAt: new Date().toISOString() };
+  saveLinksToDisk();
+  if (links.ready && links.expUrl) {
+    persistQrArtifacts(links.expUrl).catch((err) => {
+      console.warn("[ipa-dev] QR kaydedilemedi:", err?.message || err);
+    });
+  }
+}
+
+async function persistQrArtifacts(expUrl) {
+  fs.mkdirSync(path.dirname(qrImageFile), { recursive: true });
+  fs.writeFileSync(qrUrlFile, `${expUrl}\n`);
+  const qrApi =
+    "https://api.qrserver.com/v1/create-qr-code/?size=512x512&margin=10&data=" +
+    encodeURIComponent(expUrl);
+  const res = await fetch(qrApi);
+  if (!res.ok) throw new Error(`QR API ${res.status}`);
+  const buf = Buffer.from(await res.arrayBuffer());
+  fs.writeFileSync(qrImageFile, buf);
+  console.log(`[ipa-dev] QR güncellendi: ${qrImageFile}`);
 }
 
 async function fetchNgrokTunnel() {
@@ -85,9 +121,14 @@ async function fetchNgrokTunnel() {
 }
 
 function pollTunnel() {
+  let tunnelMisses = 0;
+
   const tick = async () => {
     const t = await fetchNgrokTunnel();
     if (t) {
+      tunnelMisses = 0;
+      const prevUrl = links.expUrl;
+      const changed = Boolean(prevUrl && prevUrl !== t.expUrl);
       setLinks({
         mode: "tunnel",
         expUrl: t.expUrl,
@@ -95,11 +136,23 @@ function pollTunnel() {
         ready: true,
         message: "Tunnel hazır — telefon ve bilgisayar farklı ağda olabilir.",
       });
-      console.log(`[ipa-dev] Tunnel: ${t.expUrl}`);
-      console.log(`[ipa-dev] Web:    ${t.webUrl}`);
-      return;
+      if (changed || !prevUrl) {
+        console.log(`[ipa-dev] Tunnel: ${t.expUrl}`);
+        console.log(`[ipa-dev] Web:    ${t.webUrl}`);
+      }
+    } else {
+      tunnelMisses += 1;
+      if (tunnelMisses >= 3) {
+        setLinks({
+          ready: false,
+          message: "Tunnel bağlantısı kopuk — sunucu yeniden başlatılıyor…",
+        });
+        console.warn("[ipa-dev] Tunnel yanıt vermiyor, Metro yeniden başlatılacak…");
+        await restartMetroProcess();
+        tunnelMisses = 0;
+      }
     }
-    setTimeout(tick, 2000);
+    setTimeout(tick, 5000);
   };
   tick();
 }
@@ -176,6 +229,8 @@ function landingHtml() {
           web.textContent = d.webUrl;
           web.href = d.webUrl;
         } else {
+          document.getElementById('wait').hidden = false;
+          document.getElementById('qr').hidden = true;
           document.getElementById('exp').textContent = d.message || 'Hazırlanıyor…';
         }
       } catch (e) {
@@ -189,71 +244,252 @@ function landingHtml() {
 </html>`;
 }
 
+function fetchExistingLinks() {
+  return new Promise((resolve) => {
+    const req = http.get(
+      `http://127.0.0.1:${landingPort}/api/links`,
+      { timeout: 1500 },
+      (res) => {
+        let body = "";
+        res.on("data", (chunk) => {
+          body += chunk;
+        });
+        res.on("end", () => {
+          try {
+            resolve(JSON.parse(body));
+          } catch {
+            resolve(loadLinksFromDisk());
+          }
+        });
+      },
+    );
+    req.on("error", () => resolve(loadLinksFromDisk()));
+    req.on("timeout", () => {
+      req.destroy();
+      resolve(loadLinksFromDisk());
+    });
+  });
+}
+
+function isPortOpen(port) {
+  return new Promise((resolve) => {
+    const socket = net.connect({ port, host: "127.0.0.1" });
+    socket.once("connect", () => {
+      socket.end();
+      resolve(true);
+    });
+    socket.once("error", () => resolve(false));
+    socket.setTimeout(1000, () => {
+      socket.destroy();
+      resolve(false);
+    });
+  });
+}
+
+async function isMetroHealthy() {
+  try {
+    const res = await fetch(`http://127.0.0.1:${metroPort}/`, {
+      signal: AbortSignal.timeout(4000),
+      headers: { "expo-platform": "ios" },
+    });
+    if (!res.ok) return false;
+    const text = await res.text();
+    return text.includes("launchAsset") || text.includes("expo-router");
+  } catch {
+    return false;
+  }
+}
+
+async function isTunnelHealthy(webUrl) {
+  if (!webUrl) return false;
+  try {
+    const res = await fetch(webUrl, { signal: AbortSignal.timeout(8000) });
+    return res.ok;
+  } catch {
+    return false;
+  }
+}
+
+function killPort(port) {
+  try {
+    const pids = execSync(`lsof -t -i :${port} 2>/dev/null || true`, { encoding: "utf8" })
+      .trim()
+      .split("\n")
+      .filter(Boolean);
+    for (const pid of pids) {
+      try {
+        process.kill(Number(pid), "SIGTERM");
+      } catch {
+        /* ignore */
+      }
+    }
+  } catch {
+    /* ignore */
+  }
+}
+
+function printBanner() {
+  console.log("");
+  console.log("══════════════════════════════════════════════════");
+  console.log("  ŞantiJET B.F.A.");
+  console.log("══════════════════════════════════════════════════");
+  console.log(`  Yer imi (SABİT): http://localhost:${landingPort}`);
+  console.log(`  Mod: ${links.mode.toUpperCase()}`);
+  if (links.expUrl) console.log(`  Expo Go: ${links.expUrl}`);
+  console.log("══════════════════════════════════════════════════");
+  console.log("");
+}
+
 function startLandingServer() {
   const server = http.createServer((req, res) => {
+    const current = loadLinksFromDisk() || links;
     if (req.url === "/api/links") {
       res.writeHead(200, { "content-type": "application/json; charset=utf-8", "cache-control": "no-store" });
-      res.end(JSON.stringify(links));
+      res.end(JSON.stringify(current));
       return;
     }
     res.writeHead(200, { "content-type": "text/html; charset=utf-8", "cache-control": "no-store" });
     res.end(landingHtml());
   });
+
+  server.on("error", (err) => {
+    if (err.code === "EADDRINUSE") {
+      console.warn(`[ipa-dev] Yer imi portu (${landingPort}) kullanımda — mevcut sunucu korunuyor.`);
+      return;
+    }
+    console.error("[ipa-dev] Yer imi sunucusu hatası:", err.message);
+    process.exit(1);
+  });
+
   server.listen(landingPort, "0.0.0.0", () => {
-    console.log("");
-    console.log("══════════════════════════════════════════════════");
-    console.log("  ŞantiJET B.F.A.");
-    console.log("══════════════════════════════════════════════════");
-    console.log(`  Yer imi (SABİT): http://localhost:${landingPort}`);
-    console.log(`  Mod: ${links.mode.toUpperCase()}`);
-    console.log("══════════════════════════════════════════════════");
-    console.log("");
+    printBanner();
   });
   return server;
 }
 
-function startMetro(mode, host) {
+/** @type {import('child_process').ChildProcess | null} */
+let metroChild = null;
+let metroRestartTimer = null;
+let metroLaunchAttempt = 0;
+
+function launchMetro(mode, host) {
   const stub = path.join(projectRoot, "scripts", "fix-expo-router-stub.js");
+  metroLaunchAttempt += 1;
+  const attempt = metroLaunchAttempt;
+
+  const args = ["exec", "expo", "start", "--port", String(metroPort)];
+  if (attempt === 1) args.push("--clear");
+  if (mode === "tunnel") args.push("--tunnel");
+  else args.push("--lan");
+
+  const env = {
+    ...process.env,
+    EXPO_NO_DEPENDENCY_VALIDATION: "1",
+    ...(mode === "lan" ? { REACT_NATIVE_PACKAGER_HOSTNAME: host } : {}),
+  };
+
   spawn("node", [stub], { cwd: projectRoot, stdio: "inherit", shell: false }).on("close", () => {
-    const args = ["exec", "expo", "start", "--port", String(metroPort)];
-    if (mode === "tunnel") args.push("--tunnel");
-    else args.push("--lan");
-
-    const env = {
-      ...process.env,
-      EXPO_NO_DEPENDENCY_VALIDATION: "1",
-      ...(mode === "lan" ? { REACT_NATIVE_PACKAGER_HOSTNAME: host } : {}),
-    };
-
-    const child = spawn("pnpm", args, { cwd: projectRoot, stdio: "inherit", env, shell: false });
-    child.on("exit", (code) => process.exit(code ?? 0));
+    metroChild = spawn("pnpm", args, { cwd: projectRoot, stdio: "inherit", env, shell: false });
+    metroChild.on("exit", (code) => {
+      metroChild = null;
+      if (code === 0 || code === null) return;
+      const waitMs = Math.min(attempt * 3000, 20000);
+      console.warn(`[ipa-dev] Metro kapandı (kod ${code}). ${waitMs / 1000}s sonra yeniden denenecek…`);
+      metroRestartTimer = setTimeout(() => launchMetro(mode, host), waitMs);
+    });
   });
+}
+
+async function restartMetroProcess() {
+  if (metroRestartTimer) {
+    clearTimeout(metroRestartTimer);
+    metroRestartTimer = null;
+  }
+  if (metroChild) {
+    metroChild.kill("SIGTERM");
+    metroChild = null;
+  }
+  killPort(metroPort);
+  await new Promise((r) => setTimeout(r, 1500));
+  launchMetro(resolveNetworkMode(), resolveNetworkMode() === "lan" ? resolveLanHost() : "");
+}
+
+async function startMetro(mode, host) {
+  if (await isPortOpen(metroPort)) {
+    if (await isMetroHealthy()) {
+      console.warn(`[ipa-dev] Metro zaten çalışıyor (port ${metroPort}).`);
+      printBanner();
+      if (mode === "tunnel") pollTunnel();
+      return;
+    }
+    console.warn("[ipa-dev] Metro yanıt vermiyor — yeniden başlatılıyor…");
+    killPort(metroPort);
+    await new Promise((r) => setTimeout(r, 1500));
+  }
+
+  launchMetro(mode, host);
+  if (mode === "tunnel") pollTunnel();
 }
 
 const mode = resolveNetworkMode();
 
-if (mode === "tunnel") {
-  setLinks({
-    mode: "tunnel",
-    ready: false,
-    message: "Tunnel açılıyor… Telefon farklı ağda olsa da bağlanabilir.",
-  });
-  pollTunnel();
-} else {
-  const host = resolveLanHost();
-  const webUrl = `http://${host === "0.0.0.0" ? "localhost" : host}:${metroPort}`;
-  setLinks({
-    mode: "lan",
-    expUrl: `exp://${host}:${metroPort}`,
-    webUrl,
-    ready: true,
-    message: "LAN modu — telefon bilgisayarla aynı Wi‑Fi ağında olmalı.",
-  });
-  console.log(`[ipa-dev] LAN host: ${host}`);
+async function main() {
+  const forceRestart = process.env.IPA_DEV_FORCE === "1";
+
+  if (forceRestart) {
+    console.log("[ipa-dev] Zorunlu yeniden başlatma…");
+    killPort(metroPort);
+    killPort(landingPort);
+    await new Promise((r) => setTimeout(r, 2000));
+  }
+
+  const existingLinks = await fetchExistingLinks();
+  const metroRunning = await isPortOpen(metroPort);
+  const metroHealthy = metroRunning && (await isMetroHealthy());
+  const tunnelHealthy =
+    mode !== "tunnel" || (await isTunnelHealthy(existingLinks?.webUrl || links.webUrl));
+
+  if (!forceRestart && metroHealthy && tunnelHealthy && existingLinks?.expUrl) {
+    setLinks({
+      mode: existingLinks.mode || mode,
+      expUrl: existingLinks.expUrl,
+      webUrl: existingLinks.webUrl,
+      ready: true,
+      message: "Geliştirme sunucusu zaten çalışıyor.",
+    });
+    console.log("[ipa-dev] Sunucu sağlıklı — yeniden başlatmak için IPA_DEV_FORCE=1 kullanın.");
+    console.log(`[ipa-dev] Yer imi: http://localhost:${landingPort}`);
+    console.log(`[ipa-dev] Expo Go: ${existingLinks.expUrl}`);
+    process.exit(0);
+  }
+
+  if (mode === "tunnel") {
+    setLinks({
+      mode: "tunnel",
+      ready: false,
+      message: "Tunnel açılıyor… Telefon farklı ağda olsa da bağlanabilir.",
+    });
+  } else {
+    const host = resolveLanHost();
+    const webUrl = `http://${host === "0.0.0.0" ? "localhost" : host}:${metroPort}`;
+    setLinks({
+      mode: "lan",
+      expUrl: `exp://${host}:${metroPort}`,
+      webUrl,
+      ready: true,
+      message: "LAN modu — telefon bilgisayarla aynı Wi‑Fi ağında olmalı.",
+    });
+    console.log(`[ipa-dev] LAN host: ${host}`);
+  }
+
+  startLandingServer();
+  await startMetro(mode, mode === "lan" ? resolveLanHost() : "");
 }
 
-startLandingServer();
-startMetro(mode, mode === "lan" ? resolveLanHost() : "");
+main().catch((err) => {
+  console.error("[ipa-dev] Başlatma hatası:", err);
+  process.exit(1);
+});
 
 process.on("SIGINT", () => process.exit(0));
 process.on("SIGTERM", () => process.exit(0));

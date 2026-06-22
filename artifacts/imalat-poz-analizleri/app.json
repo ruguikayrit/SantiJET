@@ -1,6 +1,6 @@
 {
   "expo": {
-    "name": "ŞantiJET B.F.A.",
+    "name": "ŞantiJET Birim Fiyat Analizleri",
     "slug": "santijet-ipa",
     "version": "1.0.2",
     "orientation": "portrait",
@@ -11,7 +11,7 @@
     "splash": {
       "image": "./assets/images/icon.png",
       "resizeMode": "contain",
-      "backgroundColor": "#16213e"
+      "backgroundColor": "#04060d"
     },
     "ios": {
       "supportsTablet": true
