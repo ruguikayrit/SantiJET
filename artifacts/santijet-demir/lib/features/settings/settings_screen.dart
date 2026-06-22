@@ -17,6 +17,7 @@ class SettingsScreen extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final settings = ref.watch(appSettingsProvider);
+    final lock = ref.watch(appLockProvider);
 
     return Scaffold(
       backgroundColor: AppColors.canvas,
@@ -44,11 +45,10 @@ class SettingsScreen extends ConsumerWidget {
             subtitle: 'Stok, sipariş, teslimat, analiz',
             onTap: () => context.push(AppRoutes.notificationSettings),
           ),
-          _SettingsTile(
-            icon: Icons.lock_outline,
-            title: 'Uygulama Kilidi',
-            subtitle: 'PIN değiştir veya kilitle',
-            onTap: () => _showAppLockSheet(context, ref),
+          _AppLockSettingsTile(
+            isEnabled: lock.isEnabled,
+            onToggle: (enabled) => _toggleAppLock(context, ref, enabled),
+            onOpenDetails: () => _showAppLockSheet(context, ref),
           ),
           _SettingsTile(
             icon: Icons.dark_mode,
@@ -166,7 +166,79 @@ class SettingsScreen extends ConsumerWidget {
     );
   }
 
+  void _toggleAppLock(BuildContext context, WidgetRef ref, bool enabled) async {
+    if (enabled) {
+      final ok = await ref.read(appLockProvider.notifier).setEnabled(true);
+      if (!context.mounted) return;
+      if (ok) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('PIN kilidi açıldı')),
+        );
+      }
+      return;
+    }
+
+    final pinController = TextEditingController();
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: const Text('PIN Kilidini Kapat'),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            Text(
+              'Kilidi kapatmak için mevcut PIN\'inizi girin.',
+              style: AppTypography.bodySmall,
+            ),
+            const SizedBox(height: 12),
+            TextField(
+              controller: pinController,
+              keyboardType: TextInputType.number,
+              obscureText: true,
+              autofocus: true,
+              decoration: const InputDecoration(labelText: 'Mevcut PIN'),
+            ),
+          ],
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(ctx, false),
+            child: const Text('İptal'),
+          ),
+          FilledButton(
+            onPressed: () => Navigator.pop(ctx, true),
+            child: const Text('Kapat'),
+          ),
+        ],
+      ),
+    );
+
+    if (confirmed != true || !context.mounted) {
+      pinController.dispose();
+      return;
+    }
+
+    final ok = await ref.read(appLockProvider.notifier).setEnabled(
+          false,
+          currentPin: pinController.text.trim(),
+        );
+    pinController.dispose();
+
+    if (!context.mounted) return;
+    if (ok) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('PIN kilidi kapatıldı')),
+      );
+    } else {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('PIN hatalı, kilitleme kapatılamadı')),
+      );
+    }
+  }
+
   void _showAppLockSheet(BuildContext context, WidgetRef ref) {
+    final isEnabled = ref.read(appLockProvider).isEnabled;
     final currentController = TextEditingController();
     final newController = TextEditingController();
     final confirmController = TextEditingController();
@@ -190,70 +262,74 @@ class SettingsScreen extends ConsumerWidget {
               Text('Uygulama Kilidi', style: AppTypography.headlineMedium),
               const SizedBox(height: 8),
               Text(
-                'PIN 4–8 haneli olmalıdır. Bu telefonda bir kez girildikten sonra tekrar sorulmaz.',
+                isEnabled
+                    ? 'PIN 4–8 haneli olmalıdır. Bu telefonda bir kez girildikten sonra tekrar sorulmaz.'
+                    : 'PIN kilidi kapalı. Açmak için Ayarlar\'daki anahtarı kullanın.',
                 style: AppTypography.bodySmall,
               ),
-              const SizedBox(height: 16),
-              TextField(
-                controller: currentController,
-                keyboardType: TextInputType.number,
-                obscureText: true,
-                decoration: const InputDecoration(labelText: 'Mevcut PIN'),
-              ),
-              const SizedBox(height: 8),
-              TextField(
-                controller: newController,
-                keyboardType: TextInputType.number,
-                obscureText: true,
-                decoration: const InputDecoration(labelText: 'Yeni PIN'),
-              ),
-              const SizedBox(height: 8),
-              TextField(
-                controller: confirmController,
-                keyboardType: TextInputType.number,
-                obscureText: true,
-                decoration: const InputDecoration(labelText: 'Yeni PIN (tekrar)'),
-              ),
-              const SizedBox(height: 16),
-              FilledButton(
-                onPressed: () async {
-                  final current = currentController.text.trim();
-                  final newPin = newController.text.trim();
-                  final confirm = confirmController.text.trim();
+              if (isEnabled) ...[
+                const SizedBox(height: 16),
+                TextField(
+                  controller: currentController,
+                  keyboardType: TextInputType.number,
+                  obscureText: true,
+                  decoration: const InputDecoration(labelText: 'Mevcut PIN'),
+                ),
+                const SizedBox(height: 8),
+                TextField(
+                  controller: newController,
+                  keyboardType: TextInputType.number,
+                  obscureText: true,
+                  decoration: const InputDecoration(labelText: 'Yeni PIN'),
+                ),
+                const SizedBox(height: 8),
+                TextField(
+                  controller: confirmController,
+                  keyboardType: TextInputType.number,
+                  obscureText: true,
+                  decoration: const InputDecoration(labelText: 'Yeni PIN (tekrar)'),
+                ),
+                const SizedBox(height: 16),
+                FilledButton(
+                  onPressed: () async {
+                    final current = currentController.text.trim();
+                    final newPin = newController.text.trim();
+                    final confirm = confirmController.text.trim();
 
-                  if (newPin != confirm) {
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      const SnackBar(content: Text('Yeni PIN eşleşmiyor')),
-                    );
-                    return;
-                  }
-
-                  final ok = await ref.read(appLockProvider.notifier).changePin(
-                        currentPin: current,
-                        newPin: newPin,
+                    if (newPin != confirm) {
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        const SnackBar(content: Text('Yeni PIN eşleşmiyor')),
                       );
-                  if (!context.mounted) return;
-                  if (ok) {
+                      return;
+                    }
+
+                    final ok = await ref.read(appLockProvider.notifier).changePin(
+                          currentPin: current,
+                          newPin: newPin,
+                        );
+                    if (!context.mounted) return;
+                    if (ok) {
+                      Navigator.pop(ctx);
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        const SnackBar(content: Text('PIN güncellendi')),
+                      );
+                    } else {
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        const SnackBar(content: Text('PIN değiştirilemedi')),
+                      );
+                    }
+                  },
+                  child: const Text('PIN Değiştir'),
+                ),
+                const SizedBox(height: 8),
+                OutlinedButton(
+                  onPressed: () {
+                    ref.read(appLockProvider.notifier).lock();
                     Navigator.pop(ctx);
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      const SnackBar(content: Text('PIN güncellendi')),
-                    );
-                  } else {
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      const SnackBar(content: Text('PIN değiştirilemedi')),
-                    );
-                  }
-                },
-                child: const Text('PIN Değiştir'),
-              ),
-              const SizedBox(height: 8),
-              OutlinedButton(
-                onPressed: () {
-                  ref.read(appLockProvider.notifier).lock();
-                  Navigator.pop(ctx);
-                },
-                child: const Text('Uygulamayı Kilitle'),
-              ),
+                  },
+                  child: const Text('Uygulamayı Kilitle'),
+                ),
+              ],
             ],
           ),
         );
@@ -297,6 +373,70 @@ class _ProfileHeader extends StatelessWidget {
                 Text(settings.projectName, style: AppTypography.labelMedium),
               ],
             ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _AppLockSettingsTile extends StatelessWidget {
+  const _AppLockSettingsTile({
+    required this.isEnabled,
+    required this.onToggle,
+    required this.onOpenDetails,
+  });
+
+  final bool isEnabled;
+  final ValueChanged<bool> onToggle;
+  final VoidCallback onOpenDetails;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      margin: const EdgeInsets.only(bottom: 8),
+      padding: const EdgeInsets.fromLTRB(14, 8, 8, 8),
+      decoration: BoxDecoration(
+        color: AppColors.surfaceElevated,
+        borderRadius: AppRadii.md,
+        border: Border.all(color: AppColors.border),
+      ),
+      child: Row(
+        children: [
+          Expanded(
+            child: Material(
+              color: Colors.transparent,
+              child: InkWell(
+                onTap: onOpenDetails,
+                borderRadius: AppRadii.md,
+                child: Padding(
+                  padding: const EdgeInsets.symmetric(vertical: 6),
+                  child: Row(
+                    children: [
+                      Icon(Icons.lock_outline, color: AppColors.electricBlueLight, size: 22),
+                      const SizedBox(width: 14),
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text('Uygulama Kilidi', style: AppTypography.titleMedium),
+                            Text(
+                              isEnabled ? 'Açık — PIN değiştir veya kilitle' : 'Kapalı',
+                              style: AppTypography.bodySmall,
+                            ),
+                          ],
+                        ),
+                      ),
+                      const Icon(Icons.chevron_right, color: AppColors.textMuted),
+                    ],
+                  ),
+                ),
+              ),
+            ),
+          ),
+          Switch(
+            value: isEnabled,
+            onChanged: onToggle,
           ),
         ],
       ),

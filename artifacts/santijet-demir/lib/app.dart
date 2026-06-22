@@ -16,7 +16,7 @@ class SantijetDemirApp extends ConsumerWidget {
     final lock = ref.watch(appLockProvider);
     final themeMode = _themeModeFromSettings(settings.themeMode);
 
-    if (!lock.isUnlocked) {
+    if (lock.isEnabled && !lock.isUnlocked) {
       return MaterialApp(
         title: 'ŞantiJET DEMİR',
         debugShowCheckedModeBanner: false,
