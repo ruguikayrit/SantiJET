@@ -261,6 +261,23 @@ class ProjectRepository {
     await _saveMembers(members);
   }
 
+  Future<void> updateUserDisplayName({
+    required String userId,
+    required String displayName,
+  }) async {
+    final members = _allMembers();
+    var changed = false;
+    for (var i = 0; i < members.length; i++) {
+      if (members[i].userId == userId) {
+        members[i] = members[i].copyWith(displayName: displayName);
+        changed = true;
+      }
+    }
+    if (changed) {
+      await _saveMembers(members);
+    }
+  }
+
   List<ProjectMember> _allMembers() {
     final raw = _box.get(_membersKey);
     if (raw is! List) return [];

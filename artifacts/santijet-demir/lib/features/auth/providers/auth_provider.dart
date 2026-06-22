@@ -7,6 +7,8 @@ import 'package:santijet_demir/data/remote/supabase_service.dart';
 import 'package:santijet_demir/data/repositories/auth_repository.dart';
 import 'package:santijet_demir/data/repositories/supabase_auth_repository.dart';
 import 'package:santijet_demir/domain/entities/user_account.dart';
+import 'package:santijet_demir/features/projects/providers/project_provider.dart';
+import 'package:santijet_demir/features/settings/providers/settings_provider.dart';
 
 final accountsBoxProvider = Provider<Box>((ref) {
   return Hive.box('accounts');
@@ -263,6 +265,58 @@ class AuthNotifier extends StateNotifier<AuthState> {
       await _localAuth.logout();
     }
     state = AuthState(isInitialized: true, usesSupabase: _usesSupabase);
+  }
+
+  Future<bool> updateProfile({
+    required String displayName,
+    required String profession,
+  }) async {
+    final trimmedName = displayName.trim();
+    if (trimmedName.isEmpty) {
+      state = state.copyWith(error: 'Ad soyad boş olamaz');
+      return false;
+    }
+
+    try {
+      await _ref.read(appSettingsProvider.notifier).updateProfile(
+            profileName: trimmedName,
+            profileProfession: profession.trim(),
+          );
+
+      final user = state.user;
+      if (user != null) {
+        if (_usesSupabase) {
+          await _supabaseAuth.updateDisplayName(
+            userId: user.id,
+            displayName: trimmedName,
+          );
+        } else {
+          await _localAuth.updateDisplayName(
+            userId: user.id,
+            displayName: trimmedName,
+          );
+        }
+
+        state = state.copyWith(
+          user: user.copyWith(displayName: trimmedName),
+          clearError: true,
+        );
+
+        await _ref.read(projectRepositoryProvider).updateUserDisplayName(
+              userId: user.id,
+              displayName: trimmedName,
+            );
+        _ref.invalidate(userProjectsProvider);
+      }
+
+      return true;
+    } on AppAuthException catch (e) {
+      state = state.copyWith(error: e.message);
+      return false;
+    } catch (e) {
+      state = state.copyWith(error: 'Profil güncellenemedi: $e');
+      return false;
+    }
   }
 
   String _newSessionId() {

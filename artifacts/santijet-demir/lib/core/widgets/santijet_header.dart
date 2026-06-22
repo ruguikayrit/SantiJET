@@ -1,9 +1,11 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:santijet_demir/core/routing/app_routes.dart';
 import 'package:santijet_demir/core/theme/app_colors.dart';
 import 'package:santijet_demir/core/theme/app_spacing.dart';
 import 'package:santijet_demir/core/theme/app_typography.dart';
+import 'package:santijet_demir/features/settings/providers/profile_provider.dart';
 
 class SantijetHeader extends StatelessWidget {
   const SantijetHeader({
@@ -12,12 +14,14 @@ class SantijetHeader extends StatelessWidget {
     this.showNotification = true,
     this.showAvatar = true,
     this.onNotificationTap,
+    this.avatarInitial,
   });
 
   final String? subtitle;
   final bool showNotification;
   final bool showAvatar;
   final VoidCallback? onNotificationTap;
+  final String? avatarInitial;
 
   @override
   Widget build(BuildContext context) {
@@ -55,7 +59,8 @@ class SantijetHeader extends StatelessWidget {
               clipBehavior: Clip.none,
               children: [
                 IconButton(
-                  onPressed: onNotificationTap,
+                  onPressed:
+                      onNotificationTap ?? () => context.push(AppRoutes.notificationSettings),
                   icon: const Icon(Icons.notifications_outlined, color: AppColors.textSecondary),
                 ),
                 Positioned(
@@ -79,7 +84,7 @@ class SantijetHeader extends StatelessWidget {
                 radius: 18,
                 backgroundColor: AppColors.warning.withValues(alpha: 0.3),
                 child: Text(
-                  'U',
+                  avatarInitial ?? 'U',
                   style: AppTypography.titleMedium.copyWith(color: AppColors.warning),
                 ),
               ),
@@ -90,23 +95,34 @@ class SantijetHeader extends StatelessWidget {
   }
 }
 
-class GreetingSection extends StatelessWidget {
+class GreetingSection extends ConsumerWidget {
   const GreetingSection({super.key});
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
+    final displayName = ref.watch(profileDisplayNameProvider);
+    final profession = ref.watch(profileProfessionProvider);
+
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: AppSpacing.md),
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
-          Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text('Hoş geldin', style: AppTypography.bodySmall),
-              Text('UĞUR TİRYAKİ', style: AppTypography.headlineLarge),
-              Text('Şantiye Şefi', style: AppTypography.bodyMedium),
-            ],
+          Expanded(
+            child: GestureDetector(
+              onTap: () => context.push(AppRoutes.settings),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text('Hoş geldin', style: AppTypography.bodySmall),
+                  Text(
+                    displayName.toUpperCase(),
+                    style: AppTypography.headlineLarge,
+                  ),
+                  Text(profession, style: AppTypography.bodyMedium),
+                ],
+              ),
+            ),
           ),
           Container(
             padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
@@ -119,12 +135,24 @@ class GreetingSection extends StatelessWidget {
               crossAxisAlignment: CrossAxisAlignment.end,
               children: [
                 Text('Bugün', style: AppTypography.labelMedium),
-                Text('16 May 2025', style: AppTypography.titleMedium),
+                Text(
+                  _formatToday(),
+                  style: AppTypography.titleMedium,
+                ),
               ],
             ),
           ),
         ],
       ),
     );
+  }
+
+  String _formatToday() {
+    final now = DateTime.now();
+    const months = [
+      'Oca', 'Şub', 'Mar', 'Nis', 'May', 'Haz',
+      'Tem', 'Ağu', 'Eyl', 'Eki', 'Kas', 'Ara',
+    ];
+    return '${now.day} ${months[now.month - 1]} ${now.year}';
   }
 }
