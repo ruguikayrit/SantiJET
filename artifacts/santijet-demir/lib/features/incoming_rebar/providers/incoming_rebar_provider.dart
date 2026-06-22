@@ -29,7 +29,11 @@ final newDeliveryDraftProvider =
 );
 
 class NewDeliveryDraftNotifier extends StateNotifier<NewDeliveryDraft> {
-  NewDeliveryDraftNotifier() : super(NewDeliveryDraft(date: DateTime.now()));
+  NewDeliveryDraftNotifier()
+      : super(NewDeliveryDraft(
+          date: DateTime.now(),
+          diameterEntries: {16: 28, 20: 20, 22: 0},
+        ));
 
   void setSupplier(String supplier) {
     state = state.copyWith(supplier: supplier);
@@ -54,6 +58,9 @@ class NewDeliveryDraftNotifier extends StateNotifier<NewDeliveryDraft> {
   }
 
   void reset() {
-    state = NewDeliveryDraft(date: DateTime.now());
+    state = NewDeliveryDraft(
+      date: DateTime.now(),
+      diameterEntries: {16: 28, 20: 20, 22: 0},
+    );
   }
 }

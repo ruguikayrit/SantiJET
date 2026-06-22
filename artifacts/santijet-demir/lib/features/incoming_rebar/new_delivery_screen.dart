@@ -36,13 +36,6 @@ class _NewDeliveryScreenState extends ConsumerState<NewDeliveryScreen> {
     super.dispose();
   }
 
-  double get _totalDelivered {
-    return _diameterControllers.values.fold(
-      0.0,
-      (sum, c) => sum + (double.tryParse(c.text) ?? 0),
-    );
-  }
-
   double get _totalOrdered {
     final diameters = matchedOrderInfo['diameters'] as Map<int, double>;
     return diameters.values.fold(0.0, (s, v) => s + v);
@@ -54,8 +47,9 @@ class _NewDeliveryScreenState extends ConsumerState<NewDeliveryScreen> {
     final notifier = ref.read(newDeliveryDraftProvider.notifier);
     const suppliers = ['Çolakoğlu', 'Kardemir', 'İsdemir', 'Erdemir'];
     final selectedSupplier = draft.supplier ?? 'Çolakoğlu';
-    final diff = _totalDelivered - _totalOrdered;
-    final fulfillment = _totalOrdered > 0 ? _totalDelivered / _totalOrdered * 100 : 0;
+    final totalDelivered = draft.totalDelivered;
+    final diff = totalDelivered - _totalOrdered;
+    final fulfillment = _totalOrdered > 0 ? totalDelivered / _totalOrdered * 100 : 0;
     final isPartial = fulfillment > 0 && fulfillment < 99;
 
     return Scaffold(
@@ -137,7 +131,12 @@ class _NewDeliveryScreenState extends ConsumerState<NewDeliveryScreen> {
           const SizedBox(height: 20),
           Text('Çap Girişi', style: AppTypography.headlineMedium),
           const SizedBox(height: 12),
-          _CapEntryTable(controllers: _diameterControllers),
+          _CapEntryTable(
+            controllers: _diameterControllers,
+            onDeliveryChanged: (diameter, value) {
+              notifier.setDiameterEntry(diameter, double.tryParse(value) ?? 0);
+            },
+          ),
           const SizedBox(height: 20),
           Container(
             padding: const EdgeInsets.all(16),
@@ -149,7 +148,7 @@ class _NewDeliveryScreenState extends ConsumerState<NewDeliveryScreen> {
             child: Column(
               children: [
                 _SummaryRow('Toplam Sipariş', '${_totalOrdered.toStringAsFixed(1)}t'),
-                _SummaryRow('Toplam Teslim', '${_totalDelivered.toStringAsFixed(1)}t'),
+                _SummaryRow('Toplam Teslim', '${totalDelivered.toStringAsFixed(1)}t'),
                 _SummaryRow(
                   'Fark',
                   '${diff >= 0 ? '+' : ''}${diff.toStringAsFixed(1)}t',
@@ -184,9 +183,13 @@ class _NewDeliveryScreenState extends ConsumerState<NewDeliveryScreen> {
 }
 
 class _CapEntryTable extends StatelessWidget {
-  const _CapEntryTable({required this.controllers});
+  const _CapEntryTable({
+    required this.controllers,
+    required this.onDeliveryChanged,
+  });
 
   final Map<int, TextEditingController> controllers;
+  final void Function(int diameter, String value) onDeliveryChanged;
 
   @override
   Widget build(BuildContext context) {
@@ -233,6 +236,7 @@ class _CapEntryTable extends StatelessWidget {
                       controller: e.value,
                       keyboardType: TextInputType.number,
                       style: AppTypography.titleMedium,
+                      onChanged: (value) => onDeliveryChanged(e.key, value),
                       decoration: const InputDecoration(
                         isDense: true,
                         contentPadding: EdgeInsets.symmetric(horizontal: 8, vertical: 8),
