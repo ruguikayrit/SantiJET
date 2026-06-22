@@ -32,16 +32,18 @@
   <link rel="icon" type="image/png" href="favicon.png"/>
 
   <title>ŞantiJET DEMİR</title>
-  <link rel="manifest" href="manifest.json?v=5">
+  <link rel="manifest" href="manifest.json?v=6">
   <style>
     html {
       height: 100%;
       height: -webkit-fill-available;
+      height: 100dvh;
       touch-action: manipulation;
     }
     body {
       height: 100%;
       height: -webkit-fill-available;
+      height: 100dvh;
       margin: 0;
       padding: 0;
       background-color: #05070A;
@@ -52,13 +54,17 @@
       user-select: none;
     }
     flutter-view, flt-glass-pane {
+      display: block;
+      width: 100%;
+      height: 100%;
+      height: 100dvh;
       touch-action: manipulation;
     }
   </style>
   <script>
     // ŞantiJET DEMİR — iOS PWA standalone düzeltmeleri (v3)
     (function () {
-      var APP_VERSION = '5';
+      var APP_VERSION = '6';
       var isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent) ||
         (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
       var isStandalone = window.navigator.standalone === true ||
@@ -138,6 +144,6 @@
   </script>
 </head>
 <body>
-  <script src="flutter_bootstrap.js?v=5" async></script>
+  <script src="flutter_bootstrap.js?v=6" async></script>
 </body>
 </html>

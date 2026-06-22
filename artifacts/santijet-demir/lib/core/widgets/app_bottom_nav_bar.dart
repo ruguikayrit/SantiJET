@@ -8,6 +8,8 @@ import 'package:santijet_demir/core/theme/app_colors.dart';
 import 'package:santijet_demir/core/theme/app_typography.dart';
 import 'package:santijet_demir/domain/enums/app_enums.dart';
 
+/// Alt navigasyon — telefonlarda ekranın en altına yaslanır, home indicator
+/// alanı nav arka planı içinde kalır (siyah boşluk oluşmaz).
 class AppBottomNavBar extends ConsumerWidget {
   const AppBottomNavBar({super.key, required this.navigationShell});
 
@@ -29,51 +31,56 @@ class AppBottomNavBar extends ConsumerWidget {
     Icons.analytics,
   ];
 
-  static double _bottomInset(BuildContext context) {
-    final viewPadding = MediaQuery.viewPaddingOf(context).bottom;
-    if (viewPadding > 0) return viewPadding * 0.5;
-    if (ResponsiveLayout.isTablet(context)) return 4;
-    return 17;
+  /// Sistem safe-area değeri — sabit px yok, tüm modellerde doğru gelir.
+  static double _systemBottomInset(BuildContext context) {
+    final media = MediaQuery.of(context);
+    if (media.viewPadding.bottom > 0) return media.viewPadding.bottom;
+    if (media.padding.bottom > 0) return media.padding.bottom;
+    return 0;
   }
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final showLabels = ResponsiveLayout.isTablet(context);
-    final barHeight = showLabels ? 56.0 : 52.0;
-    final bottomInset = _bottomInset(context);
+    final iconBarHeight = showLabels ? 56.0 : 52.0;
+    final bottomInset = _systemBottomInset(context);
 
-    final bar = Material(
+    final bar = ColoredBox(
       color: AppColors.surface,
-      child: Padding(
-        padding: EdgeInsets.only(bottom: bottomInset),
-        child: DecoratedBox(
-          decoration: const BoxDecoration(
-            border: Border(top: BorderSide(color: AppColors.border)),
-          ),
-          child: SizedBox(
-            height: barHeight,
-            width: double.infinity,
-            child: Row(
-              children: [
-                for (var i = 0; i < BottomNavTab.values.length; i++)
-                  Expanded(
-                    child: _NavItem(
-                      icon: _icons[i],
-                      activeIcon: _activeIcons[i],
-                      label: BottomNavTab.values[i].navLabel,
-                      semanticsLabel: BottomNavTab.values[i].label,
-                      selected: navigationShell.currentIndex == i,
-                      showLabel: showLabels,
-                      onTap: () => navigationShell.goBranch(
-                        i,
-                        initialLocation: i == navigationShell.currentIndex,
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          DecoratedBox(
+            decoration: const BoxDecoration(
+              border: Border(top: BorderSide(color: AppColors.border)),
+            ),
+            child: SizedBox(
+              height: iconBarHeight,
+              width: double.infinity,
+              child: Row(
+                children: [
+                  for (var i = 0; i < BottomNavTab.values.length; i++)
+                    Expanded(
+                      child: _NavItem(
+                        icon: _icons[i],
+                        activeIcon: _activeIcons[i],
+                        label: BottomNavTab.values[i].navLabel,
+                        semanticsLabel: BottomNavTab.values[i].label,
+                        selected: navigationShell.currentIndex == i,
+                        showLabel: showLabels,
+                        onTap: () => navigationShell.goBranch(
+                          i,
+                          initialLocation: i == navigationShell.currentIndex,
+                        ),
                       ),
                     ),
-                  ),
-              ],
+                ],
+              ),
             ),
           ),
-        ),
+          // Home indicator / gesture bar — nav rengiyle ekran altına kadar uzanır.
+          SizedBox(height: bottomInset),
+        ],
       ),
     );
 
@@ -108,8 +115,7 @@ class _NavItem extends StatelessWidget {
     final color =
         selected ? AppColors.electricBlueLight : AppColors.textMuted;
 
-    Widget child = ColoredBox(
-      color: Colors.transparent,
+    Widget child = SizedBox.expand(
       child: Center(
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,

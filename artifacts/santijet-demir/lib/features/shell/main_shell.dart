@@ -20,6 +20,7 @@ class MainShell extends StatelessWidget {
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: AppColors.canvas,
+      resizeToAvoidBottomInset: false,
       body: ResponsiveLayout(child: navigationShell),
       bottomNavigationBar: AppBottomNavBar(navigationShell: navigationShell),
     );
