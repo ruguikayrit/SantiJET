@@ -84,6 +84,22 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
               decoration: const InputDecoration(labelText: 'Şifre'),
               onSubmitted: (_) => _submit(),
             ),
+            if (SupabaseConfig.isConfigured)
+              Align(
+                alignment: Alignment.centerRight,
+                child: TextButton(
+                  onPressed: _loading
+                      ? null
+                      : () {
+                          final trimmed = _emailCtrl.text.trim();
+                          final path = trimmed.isEmpty
+                              ? AppRoutes.forgotPassword
+                              : '${AppRoutes.forgotPassword}?email=${Uri.encodeComponent(trimmed)}';
+                          context.push(path);
+                        },
+                  child: const Text('Şifremi unuttum'),
+                ),
+              ),
             const SizedBox(height: 24),
             FilledButton(
               onPressed: _loading ? null : _submit,
