@@ -116,6 +116,10 @@ create policy "projects_select_member" on projects
     )
   );
 
+drop policy if exists "projects_select_owner" on projects;
+create policy "projects_select_owner" on projects
+  for select using (auth.uid() = owner_id);
+
 drop policy if exists "projects_insert_owner" on projects;
 create policy "projects_insert_owner" on projects
   for insert with check (auth.uid() = owner_id);
@@ -125,11 +129,17 @@ create policy "projects_update_owner" on projects
   for update using (auth.uid() = owner_id);
 
 drop policy if exists "members_select_same_project" on project_members;
-create policy "members_select_same_project" on project_members
+drop policy if exists "members_select_own" on project_members;
+create policy "members_select_own" on project_members
+  for select using (auth.uid() = user_id);
+
+drop policy if exists "members_select_project_peers" on project_members;
+create policy "members_select_project_peers" on project_members
   for select using (
     exists (
-      select 1 from project_members pm
-      where pm.project_id = project_members.project_id and pm.user_id = auth.uid()
+      select 1 from project_members me
+      where me.project_id = project_members.project_id
+        and me.user_id = auth.uid()
     )
   );
 

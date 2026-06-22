@@ -24,9 +24,16 @@ class _ProjectListScreenState extends ConsumerState<ProjectListScreen> {
   void initState() {
     super.initState();
     WidgetsBinding.instance.addPostFrameCallback((_) async {
-      await ref.read(projectsControllerProvider).ensureMigratedFromLegacy();
-      if (ref.read(authProvider).usesSupabase) {
-        await ref.read(projectsControllerProvider).refreshFromCloud();
+      try {
+        await ref.read(projectsControllerProvider).ensureMigratedFromLegacy();
+        if (ref.read(authProvider).usesSupabase) {
+          await ref.read(projectsControllerProvider).refreshFromCloud();
+        }
+      } on ProjectException catch (e) {
+        if (!mounted) return;
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text(e.message)),
+        );
       }
     });
   }
@@ -126,6 +133,7 @@ class _ProjectListScreenState extends ConsumerState<ProjectListScreen> {
           children: [
             TextField(
               controller: nameCtrl,
+              autofocus: true,
               decoration: const InputDecoration(labelText: 'Proje Adı'),
             ),
             const SizedBox(height: 8),
@@ -142,35 +150,43 @@ class _ProjectListScreenState extends ConsumerState<ProjectListScreen> {
       ),
     );
 
-    if (created != true) {
-      nameCtrl.dispose();
-      locationCtrl.dispose();
-      return;
-    }
-    if (!mounted) {
-      nameCtrl.dispose();
-      locationCtrl.dispose();
-      return;
-    }
+    final name = nameCtrl.text;
+    final location = locationCtrl.text;
+    nameCtrl.dispose();
+    locationCtrl.dispose();
 
-    final messenger = ScaffoldMessenger.of(context);
+    if (created != true || !context.mounted) return;
+
+    showDialog<void>(
+      context: context,
+      barrierDismissible: false,
+      builder: (_) => const Center(child: CircularProgressIndicator()),
+    );
 
     try {
       final project = await ref.read(projectsControllerProvider).createProject(
-            name: nameCtrl.text,
-            location: locationCtrl.text,
+            name: name,
+            location: location,
           );
-      nameCtrl.dispose();
-      locationCtrl.dispose();
-      if (!mounted) return;
-      messenger.showSnackBar(
+      if (!context.mounted) return;
+      Navigator.pop(context);
+      ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text('Proje oluşturuldu — Kod: ${project.code}')),
       );
+      await ref.read(projectsControllerProvider).switchProject(project.id);
+      if (context.mounted) context.go(AppRoutes.dashboard);
     } on ProjectException catch (e) {
-      nameCtrl.dispose();
-      locationCtrl.dispose();
-      if (!mounted) return;
-      messenger.showSnackBar(SnackBar(content: Text(e.message)));
+      if (!context.mounted) return;
+      Navigator.pop(context);
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(e.message)),
+      );
+    } catch (e) {
+      if (!context.mounted) return;
+      Navigator.pop(context);
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Proje oluşturulamadı: $e')),
+      );
     }
   }
 }
