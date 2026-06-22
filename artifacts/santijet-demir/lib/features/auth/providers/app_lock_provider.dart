@@ -6,6 +6,7 @@ import 'package:santijet_demir/features/settings/providers/settings_provider.dar
 const _pinHashKey = 'app_lock_pin_hash';
 const _pinVersionKey = 'app_lock_pin_version';
 const _trustedDeviceKey = 'app_lock_trusted_device';
+const _enabledKey = 'app_lock_enabled';
 const _currentPinVersion = 2;
 /// Varsayılan PIN: 22.06.26 → 220626
 const defaultAppPin = '220626';
@@ -19,11 +20,13 @@ final appLockProvider =
 
 class AppLockState {
   const AppLockState({
+    required this.isEnabled,
     required this.isUnlocked,
     this.failedAttempts = 0,
     this.lockedUntil,
   });
 
+  final bool isEnabled;
   final bool isUnlocked;
   final int failedAttempts;
   final DateTime? lockedUntil;
@@ -40,12 +43,14 @@ class AppLockState {
   }
 
   AppLockState copyWith({
+    bool? isEnabled,
     bool? isUnlocked,
     int? failedAttempts,
     DateTime? lockedUntil,
     bool clearLockedUntil = false,
   }) {
     return AppLockState(
+      isEnabled: isEnabled ?? this.isEnabled,
       isUnlocked: isUnlocked ?? this.isUnlocked,
       failedAttempts: failedAttempts ?? this.failedAttempts,
       lockedUntil: clearLockedUntil ? null : (lockedUntil ?? this.lockedUntil),
@@ -55,13 +60,20 @@ class AppLockState {
 
 class AppLockNotifier extends StateNotifier<AppLockState> {
   AppLockNotifier(this._box)
-      : super(AppLockState(isUnlocked: _isTrustedDevice(_box))) {
+      : super(AppLockState(
+          isEnabled: _isEnabled(_box),
+          isUnlocked: !_isEnabled(_box) || _isTrustedDevice(_box),
+        )) {
     _ensureDefaultPin();
   }
 
   final Box _box;
   static const maxAttempts = 5;
   static const _lockDuration = Duration(seconds: 30);
+
+  static bool _isEnabled(Box box) {
+    return box.get(_enabledKey, defaultValue: true) as bool;
+  }
 
   static bool _isTrustedDevice(Box box) {
     return box.get(_trustedDeviceKey, defaultValue: false) as bool;
@@ -108,8 +120,36 @@ class AppLockNotifier extends StateNotifier<AppLockState> {
   }
 
   void lock() {
+    if (!state.isEnabled) return;
     _setTrustedDevice(false);
     state = state.copyWith(isUnlocked: false, failedAttempts: 0);
+  }
+
+  Future<bool> setEnabled(bool enabled, {String? currentPin}) async {
+    if (enabled) {
+      await _box.put(_enabledKey, true);
+      await _setTrustedDevice(true);
+      state = state.copyWith(
+        isEnabled: true,
+        isUnlocked: true,
+        failedAttempts: 0,
+        clearLockedUntil: true,
+      );
+      return true;
+    }
+
+    final pin = currentPin?.trim() ?? '';
+    if (pin.isEmpty || !PinHasher.verify(pin, _storedHash)) return false;
+
+    await _box.put(_enabledKey, false);
+    await _setTrustedDevice(true);
+    state = state.copyWith(
+      isEnabled: false,
+      isUnlocked: true,
+      failedAttempts: 0,
+      clearLockedUntil: true,
+    );
+    return true;
   }
 
   bool get isDefaultPin => PinHasher.verify(defaultAppPin, _storedHash);
