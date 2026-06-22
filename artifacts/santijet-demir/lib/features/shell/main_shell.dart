@@ -12,6 +12,7 @@ import 'package:santijet_demir/core/widgets/app_components.dart';
 import 'package:santijet_demir/core/widgets/santijet_header.dart';
 import 'package:santijet_demir/core/widgets/project_permission_gate.dart';
 import 'package:santijet_demir/features/projects/widgets/project_switcher.dart';
+import 'package:santijet_demir/features/settings/providers/profile_provider.dart';
 
 class MainShell extends StatelessWidget {
   const MainShell({super.key, required this.navigationShell});
@@ -38,12 +39,16 @@ class DashboardScreen extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
+    final avatarInitial = ref.watch(profileInitialProvider);
+
     return Scaffold(
       backgroundColor: AppColors.canvas,
       body: SafeArea(
         child: CustomScrollView(
           slivers: [
-            const SliverToBoxAdapter(child: SantijetHeader()),
+            SliverToBoxAdapter(
+              child: SantijetHeader(avatarInitial: avatarInitial),
+            ),
             const SliverToBoxAdapter(
               child: Padding(
                 padding: EdgeInsets.fromLTRB(AppSpacing.md, 0, AppSpacing.md, 8),
@@ -179,11 +184,6 @@ class DashboardScreen extends ConsumerWidget {
             ),
           ],
         ),
-      ),
-      floatingActionButton: AppFab(
-        label: 'Yeni İşlem',
-        onPressed: () => context.push(AppRoutes.newOrder),
-        extended: false,
       ),
     );
   }

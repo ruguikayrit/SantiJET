@@ -102,4 +102,25 @@ class AppSettingsNotifier extends StateNotifier<AppSettings> {
     state = AppSettings.fromJson(json);
     await _persist();
   }
+
+  Future<void> updateProfile({
+    required String profileName,
+    required String profileProfession,
+  }) async {
+    state = state.copyWith(
+      profileName: profileName.trim(),
+      profileProfession: profileProfession.trim(),
+    );
+    await _persist();
+  }
+
+  Future<void> clearAllLocalData() async {
+    await Hive.box('projects').clear();
+    await _box.clear();
+    state = AppSettings(
+      projectStartDate: DateTime.now(),
+      projectEndDate: DateTime(DateTime.now().year, 12, 31),
+    );
+    await _persist();
+  }
 }

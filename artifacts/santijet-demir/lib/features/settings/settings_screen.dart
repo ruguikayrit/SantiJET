@@ -7,10 +7,10 @@ import 'package:santijet_demir/core/theme/app_radii.dart';
 import 'package:santijet_demir/core/theme/app_spacing.dart';
 import 'package:santijet_demir/core/theme/app_typography.dart';
 import 'package:santijet_demir/core/widgets/empty_states.dart';
-import 'package:santijet_demir/domain/entities/app_settings.dart';
 import 'package:santijet_demir/features/auth/providers/app_lock_provider.dart';
 import 'package:santijet_demir/features/auth/providers/auth_provider.dart';
 import 'package:santijet_demir/features/projects/providers/project_provider.dart';
+import 'package:santijet_demir/features/settings/providers/profile_provider.dart';
 import 'package:santijet_demir/features/settings/providers/settings_provider.dart';
 
 class SettingsScreen extends ConsumerWidget {
@@ -20,8 +20,10 @@ class SettingsScreen extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final settings = ref.watch(appSettingsProvider);
     final lock = ref.watch(appLockProvider);
-    final auth = ref.watch(authProvider);
     final project = ref.watch(activeProjectProvider);
+    final displayName = ref.watch(profileDisplayNameProvider);
+    final profession = ref.watch(profileProfessionProvider);
+    final initial = ref.watch(profileInitialProvider);
 
     return Scaffold(
       backgroundColor: AppColors.canvas,
@@ -30,9 +32,16 @@ class SettingsScreen extends ConsumerWidget {
         padding: const EdgeInsets.all(AppSpacing.md),
         children: [
           _ProfileHeader(
-            settings: settings,
-            displayName: auth.user?.displayName ?? 'Kullanıcı',
+            displayName: displayName,
+            profession: profession,
+            initial: initial,
             projectName: project?.name ?? 'Proje seçilmedi',
+            onEdit: () => _showProfileEditor(
+              context,
+              ref,
+              displayName: displayName,
+              profession: profession,
+            ),
           ),
           const SizedBox(height: 16),
           _SettingsTile(
@@ -94,9 +103,127 @@ class SettingsScreen extends ConsumerWidget {
             subtitle: 'ŞantiJET DEMİR v1.0.0',
             onTap: () => context.push(AppRoutes.about),
           ),
+          const SizedBox(height: 8),
+          _SettingsTile(
+            icon: Icons.delete_forever,
+            title: 'Tüm Verileri Sil',
+            subtitle: 'Projeler, yerel kayıtlar ve oturum silinir',
+            onTap: () => _confirmDeleteAllData(context, ref),
+            destructive: true,
+          ),
         ],
       ),
     );
+  }
+
+  void _showProfileEditor(
+    BuildContext context,
+    WidgetRef ref, {
+    required String displayName,
+    required String profession,
+  }) {
+    final nameCtrl = TextEditingController(text: displayName);
+    final professionCtrl = TextEditingController(text: profession);
+
+    showModalBottomSheet<void>(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: AppColors.surfaceElevated,
+      builder: (ctx) {
+        return Padding(
+          padding: EdgeInsets.fromLTRB(
+            16,
+            16,
+            16,
+            16 + MediaQuery.viewInsetsOf(ctx).bottom,
+          ),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              Text('Profil Bilgileri', style: AppTypography.headlineMedium),
+              const SizedBox(height: 16),
+              TextField(
+                controller: nameCtrl,
+                textCapitalization: TextCapitalization.words,
+                decoration: const InputDecoration(labelText: 'Ad Soyad'),
+              ),
+              const SizedBox(height: 12),
+              TextField(
+                controller: professionCtrl,
+                textCapitalization: TextCapitalization.words,
+                decoration: const InputDecoration(labelText: 'Meslek / Görev'),
+              ),
+              const SizedBox(height: 20),
+              FilledButton(
+                onPressed: () async {
+                  final ok = await ref.read(authProvider.notifier).updateProfile(
+                        displayName: nameCtrl.text,
+                        profession: professionCtrl.text,
+                      );
+                  if (!context.mounted) return;
+                  if (ok) {
+                    Navigator.pop(ctx);
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      const SnackBar(content: Text('Profil güncellendi')),
+                    );
+                  } else {
+                    final error = ref.read(authProvider).error;
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      SnackBar(content: Text(error ?? 'Profil güncellenemedi')),
+                    );
+                  }
+                },
+                child: const Text('Kaydet'),
+              ),
+            ],
+          ),
+        );
+      },
+    ).whenComplete(() {
+      nameCtrl.dispose();
+      professionCtrl.dispose();
+    });
+  }
+
+  Future<void> _confirmDeleteAllData(BuildContext context, WidgetRef ref) async {
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: const Text('Tüm Verileri Sil'),
+        content: const Text(
+          'Tüm projeler, yerel kayıtlar ve oturum bilgisi silinecek. '
+          'Bu işlem geri alınamaz. Devam etmek istiyor musunuz?',
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(ctx, false),
+            child: const Text('İptal'),
+          ),
+          FilledButton(
+            style: FilledButton.styleFrom(
+              backgroundColor: AppColors.critical,
+            ),
+            onPressed: () => Navigator.pop(ctx, true),
+            child: const Text('Evet, Sil'),
+          ),
+        ],
+      ),
+    );
+
+    if (confirmed != true || !context.mounted) return;
+
+    await ref.read(appSettingsProvider.notifier).clearAllLocalData();
+    await ref.read(authProvider.notifier).logout();
+    ref.invalidate(userProjectsProvider);
+    ref.invalidate(activeProjectProvider);
+    ref.invalidate(activeProjectIdProvider);
+
+    if (!context.mounted) return;
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(content: Text('Tüm veriler silindi')),
+    );
+    context.go(AppRoutes.login);
   }
 
   String _themeLabel(String mode) => switch (mode) {
@@ -358,43 +485,55 @@ class SettingsScreen extends ConsumerWidget {
 
 class _ProfileHeader extends StatelessWidget {
   const _ProfileHeader({
-    required this.settings,
     required this.displayName,
+    required this.profession,
+    required this.initial,
     required this.projectName,
+    required this.onEdit,
   });
 
-  final AppSettings settings;
   final String displayName;
+  final String profession;
+  final String initial;
   final String projectName;
+  final VoidCallback onEdit;
 
   @override
   Widget build(BuildContext context) {
-    return Container(
-      padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        color: AppColors.surfaceElevated,
+    return Material(
+      color: Colors.transparent,
+      child: InkWell(
+        onTap: onEdit,
         borderRadius: AppRadii.md,
-        border: Border.all(color: AppColors.border),
-      ),
-      child: Row(
-        children: [
-          CircleAvatar(
-            radius: 28,
-            backgroundColor: AppColors.warning.withValues(alpha: 0.3),
-            child: Text(displayName.isNotEmpty ? displayName[0].toUpperCase() : 'U', style: AppTypography.headlineMedium),
+        child: Container(
+          padding: const EdgeInsets.all(16),
+          decoration: BoxDecoration(
+            color: AppColors.surfaceElevated,
+            borderRadius: AppRadii.md,
+            border: Border.all(color: AppColors.border),
           ),
-          const SizedBox(width: 14),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(displayName.toUpperCase(), style: AppTypography.titleLarge),
-                Text('Şantiye Şefi', style: AppTypography.bodySmall),
-                Text(projectName, style: AppTypography.labelMedium),
-              ],
-            ),
+          child: Row(
+            children: [
+              CircleAvatar(
+                radius: 28,
+                backgroundColor: AppColors.warning.withValues(alpha: 0.3),
+                child: Text(initial, style: AppTypography.headlineMedium),
+              ),
+              const SizedBox(width: 14),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(displayName.toUpperCase(), style: AppTypography.titleLarge),
+                    Text(profession, style: AppTypography.bodySmall),
+                    Text(projectName, style: AppTypography.labelMedium),
+                  ],
+                ),
+              ),
+              const Icon(Icons.edit_outlined, color: AppColors.textMuted, size: 20),
+            ],
           ),
-        ],
+        ),
       ),
     );
   }
@@ -470,12 +609,14 @@ class _SettingsTile extends StatelessWidget {
     required this.title,
     required this.subtitle,
     required this.onTap,
+    this.destructive = false,
   });
 
   final IconData icon;
   final String title;
   final String subtitle;
   final VoidCallback onTap;
+  final bool destructive;
 
   @override
   Widget build(BuildContext context) {
@@ -494,7 +635,11 @@ class _SettingsTile extends StatelessWidget {
           ),
           child: Row(
             children: [
-              Icon(icon, color: AppColors.electricBlueLight, size: 22),
+              Icon(
+                icon,
+                color: destructive ? AppColors.critical : AppColors.electricBlueLight,
+                size: 22,
+              ),
               const SizedBox(width: 14),
               Expanded(
                 child: Column(

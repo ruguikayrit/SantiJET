@@ -167,6 +167,19 @@ class SupabaseAuthRepository {
     await _box.delete(_activeSessionKey);
   }
 
+  Future<void> updateDisplayName({
+    required String userId,
+    required String displayName,
+  }) async {
+    await _client.from('profiles').update({
+      'display_name': displayName,
+    }).eq('id', userId);
+
+    await _client.auth.updateUser(
+      UserAttributes(data: {'display_name': displayName}),
+    );
+  }
+
   Future<void> requestPasswordReset({required String email}) async {
     try {
       await _client.auth.resetPasswordForEmail(

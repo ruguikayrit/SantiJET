@@ -20,6 +20,8 @@ class AppSettings {
     this.notifyReports = false,
     this.notifyAnalysis = true,
     this.notifyCritical = true,
+    this.profileName = '',
+    this.profileProfession = 'Şantiye Şefi',
   });
 
   final String themeMode;
@@ -42,6 +44,8 @@ class AppSettings {
   final bool notifyReports;
   final bool notifyAnalysis;
   final bool notifyCritical;
+  final String profileName;
+  final String profileProfession;
 
   AppSettings copyWith({
     String? themeMode,
@@ -64,6 +68,8 @@ class AppSettings {
     bool? notifyReports,
     bool? notifyAnalysis,
     bool? notifyCritical,
+    String? profileName,
+    String? profileProfession,
   }) {
     return AppSettings(
       themeMode: themeMode ?? this.themeMode,
@@ -86,6 +92,8 @@ class AppSettings {
       notifyReports: notifyReports ?? this.notifyReports,
       notifyAnalysis: notifyAnalysis ?? this.notifyAnalysis,
       notifyCritical: notifyCritical ?? this.notifyCritical,
+      profileName: profileName ?? this.profileName,
+      profileProfession: profileProfession ?? this.profileProfession,
     );
   }
 
@@ -110,6 +118,8 @@ class AppSettings {
         'notifyReports': notifyReports,
         'notifyAnalysis': notifyAnalysis,
         'notifyCritical': notifyCritical,
+        'profileName': profileName,
+        'profileProfession': profileProfession,
       };
 
   factory AppSettings.fromJson(Map<dynamic, dynamic> json) {
@@ -138,6 +148,8 @@ class AppSettings {
       notifyReports: json['notifyReports'] as bool? ?? false,
       notifyAnalysis: json['notifyAnalysis'] as bool? ?? true,
       notifyCritical: json['notifyCritical'] as bool? ?? true,
+      profileName: json['profileName'] as String? ?? '',
+      profileProfession: json['profileProfession'] as String? ?? 'Şantiye Şefi',
     );
   }
 }

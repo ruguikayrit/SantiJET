@@ -88,6 +88,17 @@ class AuthRepository {
     await _box.delete(_activeSessionKey);
   }
 
+  Future<void> updateDisplayName({
+    required String userId,
+    required String displayName,
+  }) async {
+    final account = findById(userId);
+    if (account == null) {
+      throw AppAuthException('Kullanıcı bulunamadı');
+    }
+    await _upsertAccount(account.copyWith(displayName: displayName.trim()));
+  }
+
   ActiveSession? getActiveSession() {
     final raw = _box.get(_activeSessionKey);
     if (raw is! Map) return null;
