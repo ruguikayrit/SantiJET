@@ -174,6 +174,8 @@ class _ProjectListScreenState extends ConsumerState<ProjectListScreen> {
         SnackBar(content: Text('Proje oluşturuldu — Kod: ${project.code}')),
       );
       await ref.read(projectsControllerProvider).switchProject(project.id);
+      if (!context.mounted) return;
+      await ref.read(projectsControllerProvider).refreshFromCloud();
       if (context.mounted) context.go(AppRoutes.dashboard);
     } on ProjectException catch (e) {
       if (!context.mounted) return;

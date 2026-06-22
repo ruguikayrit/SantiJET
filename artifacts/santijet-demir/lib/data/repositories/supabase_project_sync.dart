@@ -17,24 +17,47 @@ class SupabaseProjectSync {
   SupabaseClient get _client => SupabaseService.client;
 
   Future<void> pullUserProjects(String userId) async {
-    final rows = await _client
+    final memberRows = await _client
         .from('project_members')
-        .select('*, projects(*)')
+        .select()
         .eq('user_id', userId);
+
+    if (memberRows.isEmpty) {
+      return;
+    }
+
+    final projectIds = memberRows
+        .map((row) => row['project_id'] as String)
+        .toSet()
+        .toList();
+
+    final projectRows = await _client
+        .from('projects')
+        .select()
+        .inFilter('id', projectIds);
+
+    final projectsById = <String, Project>{
+      for (final row in projectRows)
+        row['id'] as String: _projectFromJson(row),
+    };
 
     final projects = <Project>[];
     final members = <ProjectMember>[];
 
-    for (final row in rows) {
-      final projectJson = row['projects'] as Map<String, dynamic>?;
-      if (projectJson == null) continue;
+    for (final row in memberRows) {
+      final projectId = row['project_id'] as String;
+      final project = projectsById[projectId];
+      if (project == null) continue;
 
-      final project = _projectFromJson(projectJson);
       projects.add(project);
-      members.add(_memberFromJson(row, project.id));
+      members.add(_memberFromJson(row, projectId));
     }
 
-    await _local.replaceAll(projects, members);
+    if (projects.isEmpty) {
+      return;
+    }
+
+    await _local.mergeFromCloud(projects, members);
   }
 
   Future<Project> createProject({
