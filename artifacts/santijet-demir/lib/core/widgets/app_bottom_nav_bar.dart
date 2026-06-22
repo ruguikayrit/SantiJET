@@ -27,8 +27,7 @@ class AppBottomNavBar extends ConsumerWidget {
     Icons.analytics,
   ];
 
-  /// iOS Safari PWA çoğu zaman viewPadding=0 döndürür; home indicator payı.
-  static double _iosHomeIndicatorInset(BuildContext context) {
+  static double _homeIndicatorInset(BuildContext context) {
     final viewPadding = MediaQuery.viewPaddingOf(context);
     if (viewPadding.bottom >= 20) return viewPadding.bottom;
     if (ResponsiveLayout.isTablet(context)) return 8;
@@ -37,48 +36,46 @@ class AppBottomNavBar extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
+    final showLabels = ResponsiveLayout.isTablet(context);
+    final barHeight = showLabels ? 56.0 : 52.0;
+    final homeIndicatorInset = _homeIndicatorInset(context);
+
     return Material(
       color: AppColors.surface,
-      child: SafeArea(
-        top: false,
-        minimum: EdgeInsets.only(bottom: _iosHomeIndicatorInset(context)),
-        child: DecoratedBox(
-          decoration: const BoxDecoration(
-            border: Border(top: BorderSide(color: AppColors.border)),
-          ),
-          child: Builder(
-            builder: (context) {
-              // Telefonda yalnızca ikon — 5 sekme dar ekranda taşmayı önler.
-              final showLabels = ResponsiveLayout.isTablet(context);
-              final barHeight = showLabels ? 50.0 : 44.0;
-
-              return SizedBox(
-                height: barHeight,
-                width: double.infinity,
-                child: Row(
-                  children: [
-                    for (var i = 0; i < BottomNavTab.values.length; i++)
-                      Expanded(
-                        child: _NavItem(
-                          icon: _icons[i],
-                          activeIcon: _activeIcons[i],
-                          label: BottomNavTab.values[i].navLabel,
-                          semanticsLabel: BottomNavTab.values[i].label,
-                          selected: navigationShell.currentIndex == i,
-                          showLabel: showLabels,
-                          onTap: () => navigationShell.goBranch(
-                            i,
-                            initialLocation:
-                                i == navigationShell.currentIndex,
-                          ),
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          DecoratedBox(
+            decoration: const BoxDecoration(
+              border: Border(top: BorderSide(color: AppColors.border)),
+            ),
+            child: SizedBox(
+              height: barHeight,
+              width: double.infinity,
+              child: Row(
+                children: [
+                  for (var i = 0; i < BottomNavTab.values.length; i++)
+                    Expanded(
+                      child: _NavItem(
+                        icon: _icons[i],
+                        activeIcon: _activeIcons[i],
+                        label: BottomNavTab.values[i].navLabel,
+                        semanticsLabel: BottomNavTab.values[i].label,
+                        selected: navigationShell.currentIndex == i,
+                        showLabel: showLabels,
+                        onTap: () => navigationShell.goBranch(
+                          i,
+                          initialLocation: i == navigationShell.currentIndex,
                         ),
                       ),
-                  ],
-                ),
-              );
-            },
+                    ),
+                ],
+              ),
+            ),
           ),
-        ),
+          // Home indicator alanı — dokunma hedefi değil, yalnızca görsel boşluk.
+          SizedBox(height: homeIndicatorInset),
+        ],
       ),
     );
   }
@@ -108,67 +105,59 @@ class _NavItem extends StatelessWidget {
     final color =
         selected ? AppColors.electricBlueLight : AppColors.textMuted;
 
-    final content = Material(
-      color: Colors.transparent,
-      child: InkWell(
-        onTap: onTap,
-        child: Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 2),
-          child: Column(
-            mainAxisAlignment: MainAxisAlignment.center,
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              AnimatedContainer(
-                duration: const Duration(milliseconds: 200),
-                padding: EdgeInsets.symmetric(
-                  horizontal: showLabel ? 8 : 10,
-                  vertical: showLabel ? 2 : 4,
-                ),
-                decoration: BoxDecoration(
-                  color: selected
-                      ? AppColors.electricBlue.withValues(alpha: 0.15)
-                      : Colors.transparent,
-                  borderRadius: BorderRadius.circular(14),
-                ),
-                child: Icon(
-                  selected ? activeIcon : icon,
-                  size: showLabel ? 20 : 22,
-                  color: color,
-                ),
-              ),
-              if (showLabel) ...[
-                const SizedBox(height: 2),
-                FittedBox(
-                  fit: BoxFit.scaleDown,
-                  child: Text(
-                    label,
-                    maxLines: 1,
-                    textAlign: TextAlign.center,
-                    style: AppTypography.tabLabel.copyWith(
-                      color: color,
-                      fontSize: 9,
-                      height: 1.0,
-                    ),
-                  ),
-                ),
-              ],
-            ],
-          ),
-        ),
-      ),
-    );
-
     return Semantics(
       label: semanticsLabel,
       selected: selected,
       button: true,
-      child: showLabel
-          ? content
-          : Tooltip(
-              message: semanticsLabel,
-              preferBelow: false,
-              child: content,
+      child: GestureDetector(
+        behavior: HitTestBehavior.opaque,
+        onTap: onTap,
+        child: ColoredBox(
+          color: Colors.transparent,
+          child: Center(
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                AnimatedContainer(
+                  duration: const Duration(milliseconds: 200),
+                  padding: EdgeInsets.symmetric(
+                    horizontal: showLabel ? 8 : 12,
+                    vertical: showLabel ? 4 : 6,
+                  ),
+                  decoration: BoxDecoration(
+                    color: selected
+                        ? AppColors.electricBlue.withValues(alpha: 0.15)
+                        : Colors.transparent,
+                    borderRadius: BorderRadius.circular(14),
+                  ),
+                  child: Icon(
+                    selected ? activeIcon : icon,
+                    size: showLabel ? 20 : 24,
+                    color: color,
+                  ),
+                ),
+                if (showLabel) ...[
+                  const SizedBox(height: 2),
+                  FittedBox(
+                    fit: BoxFit.scaleDown,
+                    child: Text(
+                      label,
+                      maxLines: 1,
+                      textAlign: TextAlign.center,
+                      style: AppTypography.tabLabel.copyWith(
+                        color: color,
+                        fontSize: 9,
+                        height: 1.0,
+                      ),
+                    ),
+                  ),
+                ],
+              ],
             ),
+          ),
+        ),
+      ),
     );
   }
 }
