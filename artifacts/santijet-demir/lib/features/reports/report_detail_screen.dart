@@ -5,8 +5,10 @@ import 'package:santijet_demir/core/theme/app_colors.dart';
 import 'package:santijet_demir/core/theme/app_radii.dart';
 import 'package:santijet_demir/core/theme/app_spacing.dart';
 import 'package:santijet_demir/core/theme/app_typography.dart';
+import 'package:santijet_demir/data/services/export_service.dart';
 import 'package:santijet_demir/domain/entities/report.dart';
 import 'package:santijet_demir/features/reports/providers/reports_provider.dart';
+import 'package:santijet_demir/features/settings/providers/settings_provider.dart';
 
 class ReportDetailScreen extends ConsumerWidget {
   const ReportDetailScreen({super.key, required this.reportId});
@@ -27,10 +29,93 @@ class ReportDetailScreen extends ConsumerWidget {
     return null;
   }
 
+  List<String> _headers() => const ['Alan', 'Değer'];
+
+  List<List<String>> _buildRows({
+    required String title,
+    required String format,
+    required String size,
+    required DateTime date,
+    required String generatedBy,
+    required String projectName,
+  }) {
+    return [
+      ['Rapor', title],
+      ['Format', format],
+      ['Boyut', size],
+      ['Tarih', DateFormat('d MMM yyyy, HH:mm').format(date)],
+      ['Oluşturan', generatedBy],
+      ['Proje', projectName],
+      ['Durum', 'Hazır'],
+    ];
+  }
+
+  Future<void> _exportReport(
+    BuildContext context, {
+    required String title,
+    required String format,
+    required List<List<String>> rows,
+    required bool asPdf,
+  }) async {
+    try {
+      if (asPdf) {
+        await exportService.sharePdf(
+          title: title,
+          headers: _headers(),
+          rows: rows,
+        );
+      } else {
+        await exportService.shareExcel(
+          title: title,
+          headers: _headers(),
+          rows: rows,
+        );
+      }
+      if (context.mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('${asPdf ? 'PDF' : 'Excel'} dışa aktarıldı'),
+            backgroundColor: AppColors.success,
+          ),
+        );
+      }
+    } catch (e) {
+      if (context.mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Dışa aktarma hatası: $e'),
+            backgroundColor: AppColors.critical,
+          ),
+        );
+      }
+    }
+  }
+
+  Future<void> _previewPdf(
+    BuildContext context, {
+    required String title,
+    required List<List<String>> rows,
+  }) async {
+    try {
+      await exportService.previewPdf(
+        title: title,
+        headers: _headers(),
+        rows: rows,
+      );
+    } catch (e) {
+      if (context.mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Önizleme hatası: $e')),
+        );
+      }
+    }
+  }
+
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final categories = ref.watch(reportCategoriesProvider);
     final reports = ref.watch(reportsProvider);
+    final settings = ref.watch(appSettingsProvider);
 
     final category = _findCategory(categories);
     final report = _findReport(reports);
@@ -40,6 +125,16 @@ class ReportDetailScreen extends ConsumerWidget {
     final date = report?.date ?? DateTime.now();
     final size = report?.size ?? '—';
     final generatedBy = report?.generatedBy ?? 'Sistem';
+    final isPdf = format.toUpperCase() == 'PDF';
+
+    final rows = _buildRows(
+      title: title,
+      format: format,
+      size: size,
+      date: date,
+      generatedBy: generatedBy,
+      projectName: settings.projectName,
+    );
 
     return Scaffold(
       backgroundColor: AppColors.canvas,
@@ -60,7 +155,7 @@ class ReportDetailScreen extends ConsumerWidget {
                 _MetaRow('Boyut', size),
                 _MetaRow('Tarih', DateFormat('d MMM yyyy, HH:mm').format(date)),
                 _MetaRow('Oluşturan', generatedBy),
-                _MetaRow('Proje', 'ABC İnşaat — Blok A'),
+                _MetaRow('Proje', settings.projectName),
               ],
             ),
           ),
@@ -79,14 +174,14 @@ class ReportDetailScreen extends ConsumerWidget {
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
                   Icon(
-                    format == 'PDF' ? Icons.picture_as_pdf : Icons.table_chart,
+                    isPdf ? Icons.picture_as_pdf : Icons.table_chart,
                     size: 48,
                     color: AppColors.textMuted,
                   ),
                   const SizedBox(height: 8),
                   Text('Rapor önizlemesi', style: AppTypography.bodyMedium),
                   Text(
-                    'Gerçek PDF/Excel export Faz 5\'te eklenecek',
+                    '$format formatında dışa aktarılabilir',
                     style: AppTypography.bodySmall,
                   ),
                 ],
@@ -103,33 +198,46 @@ class ReportDetailScreen extends ConsumerWidget {
               _ActionButton(
                 icon: Icons.download,
                 label: 'İndir',
-                onPressed: () => _showSnack(context, 'Rapor indiriliyor...'),
+                onPressed: () => _exportReport(
+                  context,
+                  title: title,
+                  format: format,
+                  rows: rows,
+                  asPdf: isPdf,
+                ),
               ),
               _ActionButton(
                 icon: Icons.upload,
                 label: 'Dışa Aktar',
-                onPressed: () => _showSnack(context, 'Dışa aktarma hazırlanıyor...'),
+                onPressed: () => _exportReport(
+                  context,
+                  title: title,
+                  format: format,
+                  rows: rows,
+                  asPdf: isPdf,
+                ),
               ),
               _ActionButton(
                 icon: Icons.share,
                 label: 'Paylaş',
-                onPressed: () => _showSnack(context, 'Paylaşım menüsü açılıyor...'),
+                onPressed: () => _exportReport(
+                  context,
+                  title: title,
+                  format: format,
+                  rows: rows,
+                  asPdf: isPdf,
+                ),
               ),
-              _ActionButton(
-                icon: Icons.visibility,
-                label: 'Görüntüle',
-                onPressed: () => _showSnack(context, 'Tam ekran önizleme'),
-              ),
+              if (isPdf)
+                _ActionButton(
+                  icon: Icons.visibility,
+                  label: 'Görüntüle',
+                  onPressed: () => _previewPdf(context, title: title, rows: rows),
+                ),
             ],
           ),
         ],
       ),
-    );
-  }
-
-  void _showSnack(BuildContext context, String message) {
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(content: Text(message), backgroundColor: AppColors.electricBlue),
     );
   }
 }

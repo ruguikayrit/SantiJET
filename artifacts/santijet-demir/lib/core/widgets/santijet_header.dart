@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import 'package:go_router/go_router.dart';
+import 'package:santijet_demir/core/routing/app_routes.dart';
 import 'package:santijet_demir/core/theme/app_colors.dart';
 import 'package:santijet_demir/core/theme/app_spacing.dart';
 import 'package:santijet_demir/core/theme/app_typography.dart';
@@ -71,12 +73,15 @@ class SantijetHeader extends StatelessWidget {
               ],
             ),
           if (showAvatar)
-            CircleAvatar(
-              radius: 18,
-              backgroundColor: AppColors.warning.withValues(alpha: 0.3),
-              child: Text(
-                'U',
-                style: AppTypography.titleMedium.copyWith(color: AppColors.warning),
+            GestureDetector(
+              onTap: () => context.push(AppRoutes.settings),
+              child: CircleAvatar(
+                radius: 18,
+                backgroundColor: AppColors.warning.withValues(alpha: 0.3),
+                child: Text(
+                  'U',
+                  style: AppTypography.titleMedium.copyWith(color: AppColors.warning),
+                ),
               ),
             ),
         ],

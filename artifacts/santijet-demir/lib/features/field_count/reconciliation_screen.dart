@@ -5,6 +5,7 @@ import 'package:santijet_demir/core/theme/app_radii.dart';
 import 'package:santijet_demir/core/theme/app_spacing.dart';
 import 'package:santijet_demir/core/theme/app_typography.dart';
 import 'package:santijet_demir/core/widgets/app_components.dart';
+import 'package:santijet_demir/data/services/export_service.dart';
 import 'package:santijet_demir/data/mock/mock_field_counts.dart';
 import 'package:santijet_demir/domain/entities/field_count.dart';
 import 'package:santijet_demir/features/field_count/providers/field_count_provider.dart';
@@ -22,7 +23,21 @@ class ReconciliationScreen extends ConsumerWidget {
 
     return Scaffold(
       backgroundColor: AppColors.canvas,
-      appBar: AppBar(title: const Text('Mutabakat Tablosu')),
+      appBar: AppBar(
+        title: const Text('Mutabakat Tablosu'),
+        actions: [
+          IconButton(
+            tooltip: 'Excel Aktar',
+            icon: const Icon(Icons.table_chart_outlined),
+            onPressed: () => _exportExcel(context, allRows),
+          ),
+          IconButton(
+            tooltip: 'PDF Görüntüle',
+            icon: const Icon(Icons.picture_as_pdf_outlined),
+            onPressed: () => _previewPdf(context, allRows),
+          ),
+        ],
+      ),
       body: Column(
         children: [
           Padding(
@@ -125,6 +140,77 @@ class ReconciliationScreen extends ConsumerWidget {
         DataCell(SapmaTag(value: totals['variance']!)),
       ],
     );
+  }
+
+  static const _exportHeaders = [
+    'Çap',
+    'Keşif',
+    'Sipariş',
+    'Teslim',
+    'Kullanılan',
+    'Beklenen',
+    'Sayım',
+    'Sapma',
+  ];
+
+  List<List<String>> _buildExportRows(List<ReconciliationRow> rows) {
+    return rows
+        .map(
+          (row) => [
+            'Ø${row.diameter}',
+            '${row.survey.toStringAsFixed(0)}t',
+            '${row.ordered.toStringAsFixed(0)}t',
+            '${row.delivered.toStringAsFixed(0)}t',
+            '${row.used.toStringAsFixed(0)}t',
+            '${row.expected.toStringAsFixed(0)}t',
+            '${row.counted.toStringAsFixed(0)}t',
+            '${row.variance.toStringAsFixed(1)}t',
+          ],
+        )
+        .toList();
+  }
+
+  Future<void> _exportExcel(
+    BuildContext context,
+    List<ReconciliationRow> rows,
+  ) async {
+    try {
+      await exportService.shareExcel(
+        title: 'Mutabakat Tablosu',
+        headers: _exportHeaders,
+        rows: _buildExportRows(rows),
+      );
+      if (context.mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Mutabakat Excel olarak dışa aktarıldı')),
+        );
+      }
+    } catch (e) {
+      if (context.mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Dışa aktarma hatası: $e')),
+        );
+      }
+    }
+  }
+
+  Future<void> _previewPdf(
+    BuildContext context,
+    List<ReconciliationRow> rows,
+  ) async {
+    try {
+      await exportService.previewPdf(
+        title: 'Mutabakat Tablosu',
+        headers: _exportHeaders,
+        rows: _buildExportRows(rows),
+      );
+    } catch (e) {
+      if (context.mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('PDF önizleme hatası: $e')),
+        );
+      }
+    }
   }
 
   Map<String, double> _computeTotals(List<ReconciliationRow> rows) {

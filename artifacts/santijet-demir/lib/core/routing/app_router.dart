@@ -17,6 +17,10 @@ import 'package:santijet_demir/features/orders/new_order_wizard.dart';
 import 'package:santijet_demir/features/orders/orders_screen.dart';
 import 'package:santijet_demir/features/reports/report_detail_screen.dart';
 import 'package:santijet_demir/features/reports/reports_screen.dart';
+import 'package:santijet_demir/features/settings/company_settings_screen.dart';
+import 'package:santijet_demir/features/settings/notification_settings_screen.dart';
+import 'package:santijet_demir/features/settings/project_settings_screen.dart';
+import 'package:santijet_demir/features/settings/settings_screen.dart';
 import 'package:santijet_demir/features/shell/main_shell.dart';
 import 'package:santijet_demir/features/splash/splash_screen.dart';
 import 'package:santijet_demir/features/survey/survey_detail_screen.dart';
@@ -110,6 +114,33 @@ final routerProvider = Provider<GoRouter>((ref) {
           final id = state.pathParameters['id']!;
           return ReportDetailScreen(reportId: id);
         },
+      ),
+      GoRoute(
+        path: AppRoutes.settings,
+        parentNavigatorKey: _rootNavigatorKey,
+        builder: (context, state) => const SettingsScreen(),
+        routes: [
+          GoRoute(
+            path: 'company',
+            builder: (context, state) => const CompanySettingsScreen(),
+          ),
+          GoRoute(
+            path: 'project',
+            builder: (context, state) => const ProjectSettingsScreen(),
+          ),
+          GoRoute(
+            path: 'notifications',
+            builder: (context, state) => const NotificationSettingsScreen(),
+          ),
+          GoRoute(
+            path: 'about',
+            builder: (context, state) => const AboutScreen(),
+          ),
+          GoRoute(
+            path: 'empty-states',
+            builder: (context, state) => const EmptyStatesPreviewScreen(),
+          ),
+        ],
       ),
       StatefulShellRoute.indexedStack(
         builder: (context, state, navigationShell) {

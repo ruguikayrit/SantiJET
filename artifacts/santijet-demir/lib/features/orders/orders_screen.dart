@@ -4,6 +4,7 @@ import 'package:go_router/go_router.dart';
 import 'package:santijet_demir/core/routing/app_routes.dart';
 import 'package:santijet_demir/core/theme/app_colors.dart';
 import 'package:santijet_demir/core/theme/app_spacing.dart';
+import 'package:santijet_demir/core/widgets/empty_states.dart';
 import 'package:santijet_demir/core/widgets/app_components.dart';
 import 'package:santijet_demir/core/widgets/santijet_header.dart';
 import 'package:santijet_demir/features/orders/providers/orders_provider.dart';
@@ -64,10 +65,8 @@ class _OrdersScreenState extends ConsumerState<OrdersScreen> {
             const SizedBox(height: 12),
             Expanded(
               child: filtered.isEmpty
-                  ? EmptyStateWidget(
-                      title: 'Sipariş bulunamadı',
-                      message: 'Filtreleri değiştirin veya yeni sipariş oluşturun.',
-                      icon: Icons.receipt_long_outlined,
+                  ? ModuleEmptyState(
+                      type: EmptyStateType.noSearchResult,
                       actionLabel: 'Yeni Sipariş',
                       onAction: () => context.push(AppRoutes.newOrder),
                     )

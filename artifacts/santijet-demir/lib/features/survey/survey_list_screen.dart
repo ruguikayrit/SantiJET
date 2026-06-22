@@ -6,6 +6,7 @@ import 'package:santijet_demir/core/theme/app_colors.dart';
 import 'package:santijet_demir/core/theme/app_radii.dart';
 import 'package:santijet_demir/core/theme/app_spacing.dart';
 import 'package:santijet_demir/core/theme/app_typography.dart';
+import 'package:santijet_demir/data/services/export_service.dart';
 import 'package:santijet_demir/domain/entities/survey.dart';
 import 'package:santijet_demir/features/survey/providers/survey_provider.dart';
 
@@ -57,7 +58,7 @@ class SurveyListScreen extends ConsumerWidget {
             ),
           ),
           const SizedBox(height: 16),
-          _BottomActions(),
+          _BottomActions(project: project),
         ],
       ),
     );
@@ -269,14 +270,83 @@ class SurveyImalatCard extends StatelessWidget {
 }
 
 class _BottomActions extends StatelessWidget {
+  const _BottomActions({required this.project});
+
+  final SurveyProject project;
+
+  List<String> get _headers => const ['İmalat', 'Çap', 'Miktar (ton)', 'Oran (%)'];
+
+  List<List<String>> _buildRows() {
+    final rows = <List<String>>[];
+    for (final imalat in project.imalats) {
+      for (final line in imalat.diameterLines) {
+        final ratio = imalat.planned > 0
+            ? (line.planned / imalat.planned * 100).toStringAsFixed(0)
+            : '0';
+        rows.add([
+          imalat.name,
+          'Ø${line.diameter}',
+          line.planned.toStringAsFixed(0),
+          ratio,
+        ]);
+      }
+    }
+    return rows;
+  }
+
+  Future<void> _exportExcel(BuildContext context) async {
+    try {
+      await exportService.shareExcel(
+        title: 'Keşif Raporu',
+        headers: _headers,
+        rows: _buildRows(),
+      );
+      if (context.mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Keşif Excel olarak dışa aktarıldı')),
+        );
+      }
+    } catch (e) {
+      if (context.mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Dışa aktarma hatası: $e')),
+        );
+      }
+    }
+  }
+
+  Future<void> _previewPdf(BuildContext context) async {
+    try {
+      await exportService.previewPdf(
+        title: 'Keşif Raporu — ${project.projectName}',
+        headers: _headers,
+        rows: _buildRows(),
+      );
+    } catch (e) {
+      if (context.mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('PDF önizleme hatası: $e')),
+        );
+      }
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     return Wrap(
       spacing: 8,
       runSpacing: 8,
       children: [
-        _ActionChip(icon: Icons.table_chart, label: 'Excel Aktar'),
-        _ActionChip(icon: Icons.picture_as_pdf, label: 'PDF Görüntüle'),
+        _ActionChip(
+          icon: Icons.table_chart,
+          label: 'Excel Aktar',
+          onPressed: () => _exportExcel(context),
+        ),
+        _ActionChip(
+          icon: Icons.picture_as_pdf,
+          label: 'PDF Görüntüle',
+          onPressed: () => _previewPdf(context),
+        ),
         _ActionChip(icon: Icons.edit, label: 'Keşif Güncelle'),
       ],
     );
@@ -284,10 +354,15 @@ class _BottomActions extends StatelessWidget {
 }
 
 class _ActionChip extends StatelessWidget {
-  const _ActionChip({required this.icon, required this.label});
+  const _ActionChip({
+    required this.icon,
+    required this.label,
+    this.onPressed,
+  });
 
   final IconData icon;
   final String label;
+  final VoidCallback? onPressed;
 
   @override
   Widget build(BuildContext context) {
@@ -296,7 +371,7 @@ class _ActionChip extends StatelessWidget {
       label: Text(label, style: AppTypography.labelMedium),
       backgroundColor: AppColors.surfaceElevated,
       side: const BorderSide(color: AppColors.border),
-      onPressed: () {},
+      onPressed: onPressed,
     );
   }
 }
