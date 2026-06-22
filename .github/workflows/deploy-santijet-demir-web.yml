@@ -47,6 +47,8 @@ jobs:
             DART_DEFINES="--dart-define=SUPABASE_URL=${SUPABASE_URL} --dart-define=SUPABASE_ANON_KEY=${SUPABASE_ANON_KEY}"
           fi
           flutter build web --release --base-href "/${{ github.event.repository.name }}/" --pwa-strategy=none $DART_DEFINES
+          # pwa-strategy=none sonrası bile SW kaydı kalabiliyor — devre dışı bırak.
+          perl -i -0pe 's/_flutter\.loader\.load\(\{\s*serviceWorkerSettings:\s*\{[^}]+\}\s*\}\);/_flutter.loader.load({});/s' build/web/flutter_bootstrap.js
 
       - name: Upload Pages artifact
         uses: actions/upload-pages-artifact@v3
