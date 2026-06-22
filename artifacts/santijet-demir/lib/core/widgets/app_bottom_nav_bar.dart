@@ -29,19 +29,23 @@ class AppBottomNavBar extends ConsumerWidget {
     Icons.analytics,
   ];
 
+  static double _bottomInset(BuildContext context) {
+    final viewPadding = MediaQuery.viewPaddingOf(context).bottom;
+    if (viewPadding > 0) return viewPadding * 0.5;
+    if (ResponsiveLayout.isTablet(context)) return 4;
+    return 17;
+  }
+
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final showLabels = ResponsiveLayout.isTablet(context);
     final barHeight = showLabels ? 56.0 : 52.0;
+    final bottomInset = _bottomInset(context);
 
     final bar = Material(
       color: AppColors.surface,
-      child: SafeArea(
-        top: false,
-        left: false,
-        right: false,
-        // clientHeight düzeltmesi sonrası viewPadding doğru gelir — ekstra 34px ekleme.
-        minimum: EdgeInsets.zero,
+      child: Padding(
+        padding: EdgeInsets.only(bottom: bottomInset),
         child: DecoratedBox(
           decoration: const BoxDecoration(
             border: Border(top: BorderSide(color: AppColors.border)),
