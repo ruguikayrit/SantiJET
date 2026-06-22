@@ -16,7 +16,7 @@ kurallarını tanımlar.
 ## Uygulama kilidi (PIN)
 
 - Uygulama açılışında **4 haneli PIN** istenir.
-- **Varsayılan PIN:** `1234` — ilk girişten sonra **Ayarlar → Uygulama Kilidi**
+- **Varsayılan PIN:** `220626` (22.06.26) — ilk girişten sonra **Ayarlar → Uygulama Kilidi**
   bölümünden mutlaka değiştirin.
 - PIN, cihazda hash olarak saklanır; düz metin depolanmaz.
 - 5 hatalı denemeden sonra 30 saniye geçici kilit uygulanır.

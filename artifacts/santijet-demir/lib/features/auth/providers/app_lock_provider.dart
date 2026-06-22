@@ -4,7 +4,11 @@ import 'package:santijet_demir/core/security/pin_hasher.dart';
 import 'package:santijet_demir/features/settings/providers/settings_provider.dart';
 
 const _pinHashKey = 'app_lock_pin_hash';
-const defaultAppPin = '1234';
+const _pinVersionKey = 'app_lock_pin_version';
+const _currentPinVersion = 2;
+/// Varsayılan PIN: 22.06.26 → 220626
+const defaultAppPin = '220626';
+const defaultPinLength = 6;
 
 final appLockProvider =
     StateNotifierProvider<AppLockNotifier, AppLockState>((ref) {
@@ -58,8 +62,10 @@ class AppLockNotifier extends StateNotifier<AppLockState> {
   static const _lockDuration = Duration(seconds: 30);
 
   void _ensureDefaultPin() {
-    if (!_box.containsKey(_pinHashKey)) {
+    final version = _box.get(_pinVersionKey, defaultValue: 0) as int;
+    if (!_box.containsKey(_pinHashKey) || version < _currentPinVersion) {
       _box.put(_pinHashKey, PinHasher.hash(defaultAppPin));
+      _box.put(_pinVersionKey, _currentPinVersion);
     }
   }
 
@@ -100,7 +106,7 @@ class AppLockNotifier extends StateNotifier<AppLockState> {
     required String currentPin,
     required String newPin,
   }) async {
-    if (newPin.length < 4 || newPin.length > 6) return false;
+    if (newPin.length < 4 || newPin.length > 8) return false;
     if (!PinHasher.verify(currentPin, _storedHash)) return false;
 
     await _box.put(_pinHashKey, PinHasher.hash(newPin));

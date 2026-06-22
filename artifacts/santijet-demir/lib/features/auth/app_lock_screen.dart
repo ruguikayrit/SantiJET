@@ -14,7 +14,7 @@ class AppLockScreen extends ConsumerStatefulWidget {
 }
 
 class _AppLockScreenState extends ConsumerState<AppLockScreen> {
-  static const _pinLength = 4;
+  static final _pinLength = defaultPinLength;
   String _input = '';
   bool _showError = false;
 
@@ -121,7 +121,7 @@ class _AppLockScreenState extends ConsumerState<AppLockScreen> {
                 )
               else if (ref.read(appLockProvider.notifier).isDefaultPin)
                 Text(
-                  'İlk giriş varsayılan PIN: $defaultAppPin — Ayarlardan değiştirin',
+                  'Varsayılan PIN ayarlı — Ayarlardan değiştirebilirsiniz',
                   style: AppTypography.bodySmall.copyWith(color: AppColors.textMuted),
                   textAlign: TextAlign.center,
                 )
