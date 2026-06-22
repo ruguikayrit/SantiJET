@@ -5,7 +5,9 @@ import 'package:santijet_demir/core/routing/app_routes.dart';
 import 'package:santijet_demir/core/theme/app_colors.dart';
 import 'package:santijet_demir/core/theme/app_spacing.dart';
 import 'package:santijet_demir/core/theme/app_typography.dart';
+import 'package:santijet_demir/core/config/supabase_config.dart';
 import 'package:santijet_demir/features/auth/providers/auth_provider.dart';
+import 'package:santijet_demir/features/projects/providers/project_provider.dart';
 
 class LoginScreen extends ConsumerStatefulWidget {
   const LoginScreen({super.key});
@@ -35,7 +37,10 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
     if (!mounted) return;
     setState(() => _loading = false);
     if (ok) {
-      context.go(AppRoutes.projects);
+      if (ref.read(authProvider).usesSupabase) {
+        await ref.read(projectsControllerProvider).refreshFromCloud();
+      }
+      if (context.mounted) context.go(AppRoutes.projects);
     } else {
       final error = ref.read(authProvider).error;
       ScaffoldMessenger.of(context).showSnackBar(
@@ -60,7 +65,9 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
             Text('Giriş Yap', style: AppTypography.headlineLarge, textAlign: TextAlign.center),
             const SizedBox(height: 8),
             Text(
-              'Tek üyelik — aynı anda yalnızca bir oturum açık olabilir.',
+              SupabaseConfig.isConfigured
+                  ? 'Bulut hesabı — tek oturum, proje kodu tüm cihazlarda geçerli.'
+                  : 'Tek üyelik — aynı anda yalnızca bir oturum açık olabilir.',
               style: AppTypography.bodySmall,
               textAlign: TextAlign.center,
             ),

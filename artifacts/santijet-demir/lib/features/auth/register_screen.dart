@@ -6,6 +6,7 @@ import 'package:santijet_demir/core/theme/app_colors.dart';
 import 'package:santijet_demir/core/theme/app_spacing.dart';
 import 'package:santijet_demir/core/theme/app_typography.dart';
 import 'package:santijet_demir/features/auth/providers/auth_provider.dart';
+import 'package:santijet_demir/features/projects/providers/project_provider.dart';
 
 class RegisterScreen extends ConsumerStatefulWidget {
   const RegisterScreen({super.key});
@@ -38,7 +39,10 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
     if (!mounted) return;
     setState(() => _loading = false);
     if (ok) {
-      context.go(AppRoutes.projects);
+      if (ref.read(authProvider).usesSupabase) {
+        await ref.read(projectsControllerProvider).refreshFromCloud();
+      }
+      if (context.mounted) context.go(AppRoutes.projects);
     } else {
       final error = ref.read(authProvider).error;
       ScaffoldMessenger.of(context).showSnackBar(

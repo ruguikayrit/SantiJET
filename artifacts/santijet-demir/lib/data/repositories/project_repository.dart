@@ -207,6 +207,46 @@ class ProjectRepository {
     await _saveMembers(members);
   }
 
+  Future<void> replaceAll(
+    List<Project> projects,
+    List<ProjectMember> members,
+  ) async {
+    await _saveProjects(projects);
+    await _saveMembers(members);
+    final codes = <String, String>{
+      for (final project in projects) project.code: project.id,
+    };
+    await _saveCodes(codes);
+  }
+
+  Future<void> upsertProject(Project project) async {
+    final projects = getAllProjects();
+    final index = projects.indexWhere((p) => p.id == project.id);
+    if (index >= 0) {
+      projects[index] = project;
+    } else {
+      projects.add(project);
+    }
+    await _saveProjects(projects);
+
+    final codes = _loadCodes();
+    codes[project.code] = project.id;
+    await _saveCodes(codes);
+  }
+
+  Future<void> upsertMember(ProjectMember member) async {
+    final members = _allMembers();
+    final index = members.indexWhere(
+      (m) => m.projectId == member.projectId && m.userId == member.userId,
+    );
+    if (index >= 0) {
+      members[index] = member;
+    } else {
+      members.add(member);
+    }
+    await _saveMembers(members);
+  }
+
   List<ProjectMember> _allMembers() {
     final raw = _box.get(_membersKey);
     if (raw is! List) return [];

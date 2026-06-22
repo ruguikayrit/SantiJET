@@ -48,6 +48,10 @@ final routerProvider = Provider<GoRouter>((ref) {
         AppRoutes.register,
       };
 
+      if (!auth.isInitialized && location != AppRoutes.splash) {
+        return AppRoutes.splash;
+      }
+
       if (auth.user != null && !auth.isSessionValid) {
         return null;
       }
