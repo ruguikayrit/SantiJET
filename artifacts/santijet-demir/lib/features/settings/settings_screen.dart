@@ -1,0 +1,301 @@
+import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
+import 'package:santijet_demir/core/routing/app_routes.dart';
+import 'package:santijet_demir/core/theme/app_colors.dart';
+import 'package:santijet_demir/core/theme/app_radii.dart';
+import 'package:santijet_demir/core/theme/app_spacing.dart';
+import 'package:santijet_demir/core/theme/app_typography.dart';
+import 'package:santijet_demir/core/widgets/empty_states.dart';
+import 'package:santijet_demir/domain/entities/app_settings.dart';
+import 'package:santijet_demir/features/settings/providers/settings_provider.dart';
+
+class SettingsScreen extends ConsumerWidget {
+  const SettingsScreen({super.key});
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final settings = ref.watch(appSettingsProvider);
+
+    return Scaffold(
+      backgroundColor: AppColors.canvas,
+      appBar: AppBar(title: const Text('Ayarlar')),
+      body: ListView(
+        padding: const EdgeInsets.all(AppSpacing.md),
+        children: [
+          _ProfileHeader(settings: settings),
+          const SizedBox(height: 16),
+          _SettingsTile(
+            icon: Icons.business,
+            title: 'Firma Bilgileri',
+            subtitle: settings.companyName,
+            onTap: () => context.push(AppRoutes.companySettings),
+          ),
+          _SettingsTile(
+            icon: Icons.apartment,
+            title: 'Proje Bilgileri',
+            subtitle: settings.projectName,
+            onTap: () => context.push(AppRoutes.projectSettings),
+          ),
+          _SettingsTile(
+            icon: Icons.notifications,
+            title: 'Bildirim Ayarları',
+            subtitle: 'Stok, sipariş, teslimat, analiz',
+            onTap: () => context.push(AppRoutes.notificationSettings),
+          ),
+          _SettingsTile(
+            icon: Icons.dark_mode,
+            title: 'Tema',
+            subtitle: _themeLabel(settings.themeMode),
+            onTap: () => _showThemePicker(context, ref),
+          ),
+          _SettingsTile(
+            icon: Icons.scale,
+            title: 'Birim Tercihi',
+            subtitle: settings.weightUnit == 'kg' ? 'Kilogram (kg)' : 'Ton',
+            onTap: () => _showUnitPicker(context, ref),
+          ),
+          _SettingsTile(
+            icon: Icons.backup,
+            title: 'Yedekleme & Geri Yükleme',
+            subtitle: 'Ayarları dışa/içe aktar',
+            onTap: () => _showBackupDialog(context, ref),
+          ),
+          _SettingsTile(
+            icon: Icons.layers,
+            title: 'Boş Durum Önizleme',
+            subtitle: 'Figma empty state component\'leri',
+            onTap: () => context.push(AppRoutes.emptyStates),
+          ),
+          _SettingsTile(
+            icon: Icons.info_outline,
+            title: 'Hakkında',
+            subtitle: 'ŞantiJET DEMİR v1.0.0',
+            onTap: () => context.push(AppRoutes.about),
+          ),
+        ],
+      ),
+    );
+  }
+
+  String _themeLabel(String mode) => switch (mode) {
+        'light' => 'Açık',
+        'dark' => 'Koyu',
+        _ => 'Sistem',
+      };
+
+  void _showThemePicker(BuildContext context, WidgetRef ref) {
+    showModalBottomSheet<void>(
+      context: context,
+      backgroundColor: AppColors.surfaceElevated,
+      builder: (ctx) => Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          ListTile(
+            title: const Text('Açık'),
+            onTap: () {
+              ref.read(appSettingsProvider.notifier).setThemeMode('light');
+              Navigator.pop(ctx);
+            },
+          ),
+          ListTile(
+            title: const Text('Koyu'),
+            onTap: () {
+              ref.read(appSettingsProvider.notifier).setThemeMode('dark');
+              Navigator.pop(ctx);
+            },
+          ),
+          ListTile(
+            title: const Text('Sistem'),
+            onTap: () {
+              ref.read(appSettingsProvider.notifier).setThemeMode('system');
+              Navigator.pop(ctx);
+            },
+          ),
+        ],
+      ),
+    );
+  }
+
+  void _showUnitPicker(BuildContext context, WidgetRef ref) {
+    showModalBottomSheet<void>(
+      context: context,
+      backgroundColor: AppColors.surfaceElevated,
+      builder: (ctx) => Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          ListTile(
+            title: const Text('Kilogram (kg)'),
+            onTap: () {
+              ref.read(appSettingsProvider.notifier).setWeightUnit('kg');
+              Navigator.pop(ctx);
+            },
+          ),
+          ListTile(
+            title: const Text('Ton'),
+            onTap: () {
+              ref.read(appSettingsProvider.notifier).setWeightUnit('ton');
+              Navigator.pop(ctx);
+            },
+          ),
+        ],
+      ),
+    );
+  }
+
+  void _showBackupDialog(BuildContext context, WidgetRef ref) {
+    showDialog<void>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: const Text('Yedekleme'),
+        content: const Text(
+          'Ayarlarınız yerel olarak Hive\'da saklanır. '
+          'Tam yedekleme/geri yükleme bir sonraki sürümde dosya seçici ile eklenecek.',
+        ),
+        actions: [
+          TextButton(onPressed: () => Navigator.pop(ctx), child: const Text('Tamam')),
+        ],
+      ),
+    );
+  }
+}
+
+class _ProfileHeader extends StatelessWidget {
+  const _ProfileHeader({required this.settings});
+
+  final AppSettings settings;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: AppColors.surfaceElevated,
+        borderRadius: AppRadii.md,
+        border: Border.all(color: AppColors.border),
+      ),
+      child: Row(
+        children: [
+          CircleAvatar(
+            radius: 28,
+            backgroundColor: AppColors.warning.withValues(alpha: 0.3),
+            child: Text('U', style: AppTypography.headlineMedium),
+          ),
+          const SizedBox(width: 14),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text('UĞUR TİRYAKİ', style: AppTypography.titleLarge),
+                Text('Şantiye Şefi', style: AppTypography.bodySmall),
+                Text(settings.projectName, style: AppTypography.labelMedium),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _SettingsTile extends StatelessWidget {
+  const _SettingsTile({
+    required this.icon,
+    required this.title,
+    required this.subtitle,
+    required this.onTap,
+  });
+
+  final IconData icon;
+  final String title;
+  final String subtitle;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    return Material(
+      color: Colors.transparent,
+      child: InkWell(
+        onTap: onTap,
+        borderRadius: AppRadii.md,
+        child: Container(
+          margin: const EdgeInsets.only(bottom: 8),
+          padding: const EdgeInsets.all(14),
+          decoration: BoxDecoration(
+            color: AppColors.surfaceElevated,
+            borderRadius: AppRadii.md,
+            border: Border.all(color: AppColors.border),
+          ),
+          child: Row(
+            children: [
+              Icon(icon, color: AppColors.electricBlueLight, size: 22),
+              const SizedBox(width: 14),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(title, style: AppTypography.titleMedium),
+                    Text(subtitle, style: AppTypography.bodySmall),
+                  ],
+                ),
+              ),
+              const Icon(Icons.chevron_right, color: AppColors.textMuted),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class EmptyStatesPreviewScreen extends StatelessWidget {
+  const EmptyStatesPreviewScreen({super.key});
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      backgroundColor: AppColors.canvas,
+      appBar: AppBar(title: const Text('Boş Durumlar')),
+      body: ListView(
+        children: EmptyStateType.values.map((type) {
+          return SizedBox(
+            height: 220,
+            child: ModuleEmptyState(type: type),
+          );
+        }).toList(),
+      ),
+    );
+  }
+}
+
+class AboutScreen extends StatelessWidget {
+  const AboutScreen({super.key});
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      backgroundColor: AppColors.canvas,
+      appBar: AppBar(title: const Text('Hakkında')),
+      body: Padding(
+        padding: const EdgeInsets.all(AppSpacing.md),
+        child: Column(
+          children: [
+            Image.asset('assets/images/s_logo.png', width: 80, height: 80),
+            const SizedBox(height: 16),
+            Text('ŞantiJET DEMİR', style: AppTypography.headlineLarge),
+            Text('ÇELİK TAKİP SİSTEMİ', style: AppTypography.labelSmall),
+            const SizedBox(height: 8),
+            Text('Versiyon 1.0.0', style: AppTypography.bodyMedium),
+            const SizedBox(height: 24),
+            Text(
+              'Demir keşfi, sipariş, teslimat, saha sayımı ve analiz '
+              'için profesyonel çelik takip uygulaması.',
+              style: AppTypography.bodyMedium,
+              textAlign: TextAlign.center,
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
