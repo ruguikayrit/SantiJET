@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import 'package:santijet_demir/core/routing/app_routes.dart';
 import 'package:santijet_demir/core/theme/app_colors.dart';
 import 'package:santijet_demir/core/theme/app_spacing.dart';
 import 'package:santijet_demir/core/theme/app_typography.dart';
@@ -39,7 +40,6 @@ class DashboardScreen extends ConsumerWidget {
               padding: const EdgeInsets.all(AppSpacing.md),
               sliver: SliverList(
                 delegate: SliverChildListDelegate([
-                  // KPI Grid 2x2
                   GridView.count(
                     crossAxisCount: 2,
                     shrinkWrap: true,
@@ -81,6 +81,11 @@ class DashboardScreen extends ConsumerWidget {
                     ],
                   ),
                   const SizedBox(height: AppSpacing.lg),
+                  _QuickAccessRow(
+                    onSurveyTap: () => context.push(AppRoutes.survey),
+                    onOrdersTap: () => context.go(AppRoutes.orders),
+                  ),
+                  const SizedBox(height: AppSpacing.lg),
                   Text('Kritik Uyarılar', style: AppTypography.headlineMedium),
                   const SizedBox(height: AppSpacing.sm),
                   const AlertCard(
@@ -103,7 +108,14 @@ class DashboardScreen extends ConsumerWidget {
                   const SizedBox(height: AppSpacing.lg),
                   Text('Süreç Durumu', style: AppTypography.headlineMedium),
                   const SizedBox(height: AppSpacing.sm),
-                  const ProgressCard(label: 'Keşif', percentage: 87, color: AppColors.electricBlueLight),
+                  GestureDetector(
+                    onTap: () => context.push(AppRoutes.survey),
+                    child: const ProgressCard(
+                      label: 'Keşif',
+                      percentage: 87,
+                      color: AppColors.electricBlueLight,
+                    ),
+                  ),
                   const SizedBox(height: 8),
                   const ProgressCard(label: 'Sipariş', percentage: 73, color: AppColors.info),
                   const SizedBox(height: 8),
@@ -123,7 +135,7 @@ class DashboardScreen extends ConsumerWidget {
       ),
       floatingActionButton: AppFab(
         label: 'Yeni İşlem',
-        onPressed: () {},
+        onPressed: () => context.push(AppRoutes.newOrder),
         extended: false,
       ),
     );
@@ -169,15 +181,83 @@ class DashboardScreen extends ConsumerWidget {
   }
 }
 
-class OrdersScreen extends StatelessWidget {
-  const OrdersScreen({super.key});
+class _QuickAccessRow extends StatelessWidget {
+  const _QuickAccessRow({
+    required this.onSurveyTap,
+    required this.onOrdersTap,
+  });
+
+  final VoidCallback onSurveyTap;
+  final VoidCallback onOrdersTap;
 
   @override
   Widget build(BuildContext context) {
-    return const PlaceholderTabScreen(
-      title: 'Siparişler',
-      message: 'Sipariş listesi ve 5 adımlı\nYeni Sipariş wizard\'ı',
-      icon: Icons.receipt_long_outlined,
+    return Row(
+      children: [
+        Expanded(
+          child: _QuickAccessCard(
+            icon: Icons.search,
+            label: 'Keşif',
+            subtitle: '5 imalat',
+            color: AppColors.electricBlueLight,
+            onTap: onSurveyTap,
+          ),
+        ),
+        const SizedBox(width: 12),
+        Expanded(
+          child: _QuickAccessCard(
+            icon: Icons.receipt_long,
+            label: 'Siparişler',
+            subtitle: '7 aktif',
+            color: AppColors.info,
+            onTap: onOrdersTap,
+          ),
+        ),
+      ],
+    );
+  }
+}
+
+class _QuickAccessCard extends StatelessWidget {
+  const _QuickAccessCard({
+    required this.icon,
+    required this.label,
+    required this.subtitle,
+    required this.color,
+    required this.onTap,
+  });
+
+  final IconData icon;
+  final String label;
+  final String subtitle;
+  final Color color;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    return Material(
+      color: Colors.transparent,
+      child: InkWell(
+        onTap: onTap,
+        borderRadius: BorderRadius.circular(12),
+        child: Container(
+          padding: const EdgeInsets.all(14),
+          decoration: BoxDecoration(
+            color: AppColors.surfaceElevated,
+            borderRadius: BorderRadius.circular(12),
+            border: Border.all(color: AppColors.border),
+          ),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Icon(icon, color: color, size: 24),
+              const SizedBox(height: 10),
+              Text(label, style: AppTypography.titleMedium),
+              Text(subtitle, style: AppTypography.bodySmall),
+            ],
+          ),
+        ),
+      ),
     );
   }
 }
