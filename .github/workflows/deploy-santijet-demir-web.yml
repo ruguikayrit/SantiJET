@@ -46,7 +46,7 @@ jobs:
           if [ -n "$SUPABASE_URL" ] && [ -n "$SUPABASE_ANON_KEY" ]; then
             DART_DEFINES="--dart-define=SUPABASE_URL=${SUPABASE_URL} --dart-define=SUPABASE_ANON_KEY=${SUPABASE_ANON_KEY}"
           fi
-          flutter build web --release --base-href "/${{ github.event.repository.name }}/" $DART_DEFINES
+          flutter build web --release --base-href "/${{ github.event.repository.name }}/" --pwa-strategy=none $DART_DEFINES
 
       - name: Upload Pages artifact
         uses: actions/upload-pages-artifact@v3

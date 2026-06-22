@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/foundation.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:santijet_demir/core/config/supabase_config.dart';
@@ -29,7 +31,7 @@ abstract final class SupabaseService {
         authOptions: const FlutterAuthClientOptions(
           authFlowType: AuthFlowType.pkce,
         ),
-      );
+      ).timeout(const Duration(seconds: 5));
       _initialized = true;
       _initError = null;
       return true;

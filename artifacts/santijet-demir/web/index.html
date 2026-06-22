@@ -32,7 +32,7 @@
   <link rel="icon" type="image/png" href="favicon.png"/>
 
   <title>ŞantiJET DEMİR</title>
-  <link rel="manifest" href="manifest.json?v=12">
+  <link rel="manifest" href="manifest.json?v=13">
   <style>
     html {
       height: 100%;
@@ -61,7 +61,7 @@
   <script>
     // ŞantiJET DEMİR — iOS PWA viewport düzeltmeleri (v7)
     (function () {
-      var APP_VERSION = '12';
+      var APP_VERSION = '13';
       var isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent) ||
         (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
       var isStandalone = window.navigator.standalone === true ||
@@ -153,25 +153,30 @@
         setTimeout(attachTouchGuard, 2000);
       }
 
-      // PWA önbelleğini güncelle — sürüm değişince eski service worker'ı kaldır.
-      var STORED_VERSION = localStorage.getItem('santijet_app_version');
-      if (STORED_VERSION !== APP_VERSION) {
-        if ('serviceWorker' in navigator) {
-          navigator.serviceWorker.getRegistrations().then(function (regs) {
-            regs.forEach(function (reg) { reg.unregister(); });
-          });
-        }
-        if ('caches' in window) {
-          caches.keys().then(function (keys) {
-            keys.forEach(function (key) { caches.delete(key); });
-          });
-        }
-        localStorage.setItem('santijet_app_version', APP_VERSION);
-      } else if ('serviceWorker' in navigator) {
+      // Service worker GitHub Pages alt yolunda sorun çıkarabiliyor — her zaman kaldır.
+      if ('serviceWorker' in navigator) {
         navigator.serviceWorker.getRegistrations().then(function (regs) {
-          regs.forEach(function (reg) { reg.update(); });
+          regs.forEach(function (reg) { reg.unregister(); });
         });
       }
+      if ('caches' in window) {
+        caches.keys().then(function (keys) {
+          keys.forEach(function (key) { caches.delete(key); });
+        });
+      }
+
+      var STORED_VERSION = localStorage.getItem('santijet_app_version');
+      if (STORED_VERSION !== APP_VERSION) {
+        localStorage.setItem('santijet_app_version', APP_VERSION);
+      }
+
+      // Flutter 30 sn içinde başlamazsa kullanıcıya ipucu göster.
+      setTimeout(function () {
+        var el = document.getElementById('santijet-loading');
+        if (el && el.parentNode) {
+          el.innerHTML = 'Yükleme uzun sürüyor…<br><span style="font-size:12px;margin-top:8px;display:block;">Sayfayı yenileyin (Ctrl+F5) veya önbelleği temizleyin.</span>';
+        }
+      }, 30000);
 
       window.__SANTIJET_APP_VERSION__ = APP_VERSION;
     })();
@@ -181,6 +186,6 @@
   <div id="santijet-loading" style="display:flex;align-items:center;justify-content:center;height:100vh;height:-webkit-fill-available;background:#05070A;color:#6B7280;font-family:system-ui,-apple-system,sans-serif;font-size:14px;">
     ŞantiJET yükleniyor…
   </div>
-  <script src="flutter_bootstrap.js?v=12" async></script>
+  <script src="flutter_bootstrap.js?v=13" async></script>
 </body>
 </html>
