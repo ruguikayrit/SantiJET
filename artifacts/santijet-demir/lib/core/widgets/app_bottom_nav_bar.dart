@@ -28,21 +28,101 @@ class AppBottomNavBar extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    return NavigationBar(
-      selectedIndex: navigationShell.currentIndex,
-      onDestinationSelected: navigationShell.goBranch,
-      backgroundColor: AppColors.surface,
-      indicatorColor: AppColors.electricBlue.withValues(alpha: 0.15),
-      height: 68,
-      labelBehavior: NavigationDestinationLabelBehavior.alwaysShow,
-      destinations: [
-        for (var i = 0; i < BottomNavTab.values.length; i++)
-          NavigationDestination(
-            icon: Icon(_icons[i], color: AppColors.textMuted),
-            selectedIcon: Icon(_activeIcons[i], color: AppColors.electricBlueLight),
-            label: BottomNavTab.values[i].label,
+    return SafeArea(
+      top: false,
+      child: Material(
+        color: AppColors.surface,
+        child: DecoratedBox(
+          decoration: const BoxDecoration(
+            border: Border(top: BorderSide(color: AppColors.border)),
           ),
-      ],
+          child: SizedBox(
+            height: 68,
+            width: double.infinity,
+            child: Row(
+              children: [
+                for (var i = 0; i < BottomNavTab.values.length; i++)
+                  Expanded(
+                    child: _NavItem(
+                      icon: _icons[i],
+                      activeIcon: _activeIcons[i],
+                      label: BottomNavTab.values[i].label,
+                      selected: navigationShell.currentIndex == i,
+                      onTap: () => navigationShell.goBranch(
+                        i,
+                        initialLocation: i == navigationShell.currentIndex,
+                      ),
+                    ),
+                  ),
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class _NavItem extends StatelessWidget {
+  const _NavItem({
+    required this.icon,
+    required this.activeIcon,
+    required this.label,
+    required this.selected,
+    required this.onTap,
+  });
+
+  final IconData icon;
+  final IconData activeIcon;
+  final String label;
+  final bool selected;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    final color = selected ? AppColors.electricBlueLight : AppColors.textMuted;
+
+    return Material(
+      color: Colors.transparent,
+      child: InkWell(
+        onTap: onTap,
+        child: Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 2, vertical: 6),
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              AnimatedContainer(
+                duration: const Duration(milliseconds: 200),
+                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                decoration: BoxDecoration(
+                  color: selected
+                      ? AppColors.electricBlue.withValues(alpha: 0.15)
+                      : Colors.transparent,
+                  borderRadius: BorderRadius.circular(16),
+                ),
+                child: Icon(
+                  selected ? activeIcon : icon,
+                  size: 22,
+                  color: color,
+                ),
+              ),
+              const SizedBox(height: 2),
+              SizedBox(
+                width: double.infinity,
+                child: FittedBox(
+                  fit: BoxFit.scaleDown,
+                  child: Text(
+                    label,
+                    maxLines: 1,
+                    textAlign: TextAlign.center,
+                    style: AppTypography.tabLabel.copyWith(color: color),
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
     );
   }
 }
