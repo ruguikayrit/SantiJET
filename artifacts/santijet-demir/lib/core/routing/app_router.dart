@@ -36,10 +36,26 @@ import 'package:santijet_demir/features/survey/survey_list_screen.dart';
 
 final _rootNavigatorKey = GlobalKey<NavigatorState>();
 
+class _RouterRefreshNotifier extends ChangeNotifier {
+  _RouterRefreshNotifier(this._ref) {
+    _ref.listen<AuthState>(authProvider, (_, __) => notifyListeners());
+  }
+
+  final Ref _ref;
+}
+
+final _routerRefreshProvider = Provider<_RouterRefreshNotifier>((ref) {
+  final notifier = _RouterRefreshNotifier(ref);
+  ref.onDispose(notifier.dispose);
+  return notifier;
+});
+
 final routerProvider = Provider<GoRouter>((ref) {
+  final refresh = ref.watch(_routerRefreshProvider);
   return GoRouter(
     navigatorKey: _rootNavigatorKey,
     initialLocation: AppRoutes.splash,
+    refreshListenable: refresh,
     redirect: (context, state) {
       final auth = ref.read(authProvider);
       final location = state.matchedLocation;

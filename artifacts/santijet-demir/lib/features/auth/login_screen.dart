@@ -29,23 +29,44 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
   }
 
   Future<void> _submit() async {
+    final messenger = ScaffoldMessenger.of(context);
+    final router = GoRouter.of(context);
     setState(() => _loading = true);
-    final ok = await ref.read(authProvider.notifier).login(
-          email: _emailCtrl.text,
-          password: _passwordCtrl.text,
+    try {
+      final ok = await ref.read(authProvider.notifier).login(
+            email: _emailCtrl.text,
+            password: _passwordCtrl.text,
+          );
+      if (!context.mounted) return;
+
+      if (!ok) {
+        final error = ref.read(authProvider).error;
+        messenger.showSnackBar(
+          SnackBar(content: Text(error ?? 'Giriş başarısız')),
         );
-    if (!mounted) return;
-    setState(() => _loading = false);
-    if (ok) {
-      if (ref.read(authProvider).usesSupabase) {
-        await ref.read(projectsControllerProvider).refreshFromCloud();
+        return;
       }
-      if (context.mounted) context.go(AppRoutes.projects);
-    } else {
-      final error = ref.read(authProvider).error;
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(error ?? 'Giriş başarısız')),
-      );
+
+      if (ref.read(authProvider).usesSupabase) {
+        try {
+          await ref
+              .read(projectsControllerProvider)
+              .refreshFromCloud()
+              .timeout(const Duration(seconds: 15));
+        } catch (_) {
+          messenger.showSnackBar(
+            const SnackBar(
+              content: Text(
+                'Giriş başarılı. Proje senkronu tamamlanamadı; Projelerim ekranından devam edebilirsiniz.',
+              ),
+            ),
+          );
+        }
+      }
+
+      router.go(AppRoutes.projects);
+    } finally {
+      if (context.mounted) setState(() => _loading = false);
     }
   }
 
