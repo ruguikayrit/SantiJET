@@ -5,6 +5,7 @@ import { useRouter } from "expo-router";
 import React, { useMemo, useState } from "react";
 import {
   Alert,
+  ActivityIndicator,
   FlatList,
   Modal,
   Platform,
@@ -18,6 +19,7 @@ import {
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 import { useApp } from "@/context/AppContext";
+import { useMergedPozAnalizleri } from "@/hooks/useMergedPozAnalizleri";
 import { useColors } from "@/hooks/useColors";
 import {
   AnalizKalemi,
@@ -60,13 +62,15 @@ export default function ImalatPozlariScreen() {
   const topPad = Platform.OS === "web" ? 16 : insets.top;
 
   const {
-    pozAnalizleri,
     addPozAnaliz,
     updatePozAnaliz,
     deletePozAnaliz,
     clonePozAnaliz,
     currentRole,
   } = useApp();
+
+  const { pozAnalizleri, loading: catalogLoading, error: catalogError } =
+    useMergedPozAnalizleri();
 
   const isAdmin = currentRole?.isAdmin === true;
   const canManagePoz = ["proje-muduru", "santiye-sefi", "teknik-ofis-muhendisi"].includes(currentRole?.id || "");
@@ -236,7 +240,7 @@ export default function ImalatPozlariScreen() {
 
   function doClone() {
     if (!selectedId || !cloneAd.trim()) return;
-    const kopya = clonePozAnaliz(selectedId, cloneAd.trim());
+    const kopya = clonePozAnaliz(selectedId, cloneAd.trim(), selected ?? undefined);
     setCloneVisible(false);
     setSelectedId(kopya.id);
   }
@@ -653,6 +657,37 @@ export default function ImalatPozlariScreen() {
   }
 
   // ── Liste görünümü ──
+  if (catalogLoading) {
+    return (
+      <View style={{ flex: 1, backgroundColor: colors.background, justifyContent: "center", alignItems: "center" }}>
+        <ActivityIndicator size="large" color={colors.primary} />
+        <Text style={{ color: colors.mutedForeground, marginTop: 16, fontSize: 14 }}>
+          Analiz tabloları yükleniyor…
+        </Text>
+      </View>
+    );
+  }
+
+  if (catalogError) {
+    return (
+      <View style={{ flex: 1, backgroundColor: colors.background, justifyContent: "center", alignItems: "center", padding: 24 }}>
+        <Feather name="alert-circle" size={40} color={colors.destructive} />
+        <Text style={{ color: colors.foreground, marginTop: 16, fontSize: 16, textAlign: "center" }}>
+          {catalogError}
+        </Text>
+        <TouchableOpacity
+          onPress={() => {
+            if (router.canGoBack()) router.back();
+            else router.replace("/" as any);
+          }}
+          style={{ marginTop: 20, paddingHorizontal: 20, paddingVertical: 10, backgroundColor: colors.primary, borderRadius: 8 }}
+        >
+          <Text style={{ color: colors.primaryForeground, fontFamily: "Inter_600SemiBold" }}>Geri Dön</Text>
+        </TouchableOpacity>
+      </View>
+    );
+  }
+
   return (
     <View style={{ flex: 1, backgroundColor: colors.background }}>
       {/* Header */}

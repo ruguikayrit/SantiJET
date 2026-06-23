@@ -1,0 +1,16 @@
+{
+  "name": "imalat-poz-analizleri",
+  "install": "pnpm install",
+  "terminals": [
+    {
+      "name": "imalat-poz-tunnel",
+      "command": "pnpm dev:imalat-poz:tunnel",
+      "description": "İmalat Poz Analizleri — Expo tunnel (telefon)"
+    },
+    {
+      "name": "imalat-poz-qr",
+      "command": "cd artifacts/imalat-poz-analizleri && python3 -m http.server 24920 --bind 0.0.0.0",
+      "description": "QR sayfası — http://localhost:24920/expo-qr.html"
+    }
+  ]
+}

@@ -36,6 +36,7 @@ import {
   useApp,
 } from "@/context/AppContext";
 import { useColors } from "@/hooks/useColors";
+import { useMergedPozAnalizleri } from "@/hooks/useMergedPozAnalizleri";
 import { usePermission } from "@/hooks/usePermission";
 
 type Tab = "gelen" | "kullanim" | "giden" | "talep";
@@ -171,8 +172,8 @@ export default function MalzemeScreen() {
     purchases,
     addPurchase,
     surveys,
-    pozAnalizleri,
   } = useApp();
+  const { pozAnalizleri } = useMergedPozAnalizleri();
 
   const perm = usePermission("malzeme");
   const canEdit = perm === "edit";
