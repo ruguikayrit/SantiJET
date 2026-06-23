@@ -13,8 +13,8 @@ React Native sürümünden (`artifacts/imalat-poz-analizleri/`) **bağımsız** 
 - **flutter_riverpod ^2.6.1** — düz sağlayıcılar (codegen kullanılmaz, Demir gibi)
 - **go_router ^14.6.2** — yönlendirme
 - **equatable** — elle yazılmış değişmez varlık sınıfları (freezed kullanılmaz)
-- **hive / hive_flutter** — yerel kalıcılık (ileriki fazlar)
-- **google_fonts** — Rajdhani + Inter tipografi
+- **hive / hive_flutter** — yerel kalıcılık (favoriler, son görüntülenenler)
+- **Inter + Rajdhani** — paketlenmiş fontlar (offline; `assets/fonts/`)
 - **intl** — biçimlendirme
 - **Material 3**
 
@@ -40,8 +40,9 @@ lib/
 │   ├── entities/             # PozAnaliz, AnalizKalemi (equatable + copyWith + JSON)
 │   └── enums/                # KaynakTip, AnalizDiscipline, AnalizKalemTip
 ├── data/
-│   ├── repositories/         # (ileride) katalog, kullanıcı verisi, keşif, yedek
-│   └── datasources/          # (ileride) asset JSON / Hive
+│   ├── datasources/          # catalog_local_datasource (assets JSON → PozAnaliz)
+│   ├── providers/            # catalog (FutureProvider), favorites + recent (Hive)
+│   └── repositories/         # (ileride) kullanıcı verisi, keşif, yedek
 └── features/
     ├── shell/                # MainShell — kalıcı alt navigasyon kabuğu
     ├── home/                 # ana sayfa (Faz 6)
@@ -87,7 +88,8 @@ biçimlendirme: `core/utils/app_format.dart` (TR para/sayı).
 | **3** | **Design System (SJ bileşenleri)** | ✅ Tamamlandı |
 | **4** | **Reusable Components (BFA)** | ✅ Tamamlandı |
 | **5** | **Navigasyon (bottom nav + geçişler)** | ✅ Tamamlandı |
-| 6–13 | Ekranlar & özellikler | ⏳ |
+| **6** | **Ana Sayfa + Veri Katmanı** | ✅ Tamamlandı |
+| 7–13 | Ekranlar & özellikler | ⏳ |
 | 14 | Performans | ⏳ |
 
 ## Geliştirme

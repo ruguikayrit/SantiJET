@@ -1,117 +1,136 @@
 import 'package:flutter/material.dart';
-import 'package:google_fonts/google_fonts.dart';
 
 import 'app_colors.dart';
 
 /// ŞantiJET tipografi ölçeği — Rajdhani (başlık/KPI) + Inter (gövde/etiket).
 ///
-/// ŞantiJET Demir referans projesinden birebir alınmıştır.
+/// ŞantiJET Demir referansıyla aynı aileler ve ölçek. Fontlar uygulamada
+/// paketlenmiştir (offline); Demir'den farkı yalnızca yükleme yöntemidir
+/// (runtime fetch yerine bundled asset).
 abstract final class AppTypography {
-  static TextStyle get displayLarge => GoogleFonts.rajdhani(
-        fontSize: 40,
-        fontWeight: FontWeight.w700,
-        color: AppColors.electricBlue,
-        height: 1.1,
-      );
+  static const _inter = 'Inter';
+  static const _rajdhani = 'Rajdhani';
 
-  static TextStyle get displayMedium => GoogleFonts.rajdhani(
-        fontSize: 32,
-        fontWeight: FontWeight.w700,
-        color: AppColors.textPrimary,
-        height: 1.15,
-      );
+  static const TextStyle displayLarge = TextStyle(
+    fontFamily: _rajdhani,
+    fontSize: 40,
+    fontWeight: FontWeight.w700,
+    color: AppColors.electricBlue,
+    height: 1.1,
+  );
 
-  static TextStyle get displaySmall => GoogleFonts.rajdhani(
-        fontSize: 24,
-        fontWeight: FontWeight.w600,
-        color: AppColors.textPrimary,
-        height: 1.2,
-      );
+  static const TextStyle displayMedium = TextStyle(
+    fontFamily: _rajdhani,
+    fontSize: 32,
+    fontWeight: FontWeight.w700,
+    color: AppColors.textPrimary,
+    height: 1.15,
+  );
 
-  static TextStyle get headlineLarge => GoogleFonts.inter(
-        fontSize: 22,
-        fontWeight: FontWeight.w700,
-        color: AppColors.textPrimary,
-        height: 1.25,
-      );
+  static const TextStyle displaySmall = TextStyle(
+    fontFamily: _rajdhani,
+    fontSize: 24,
+    fontWeight: FontWeight.w600,
+    color: AppColors.textPrimary,
+    height: 1.2,
+  );
 
-  static TextStyle get headlineMedium => GoogleFonts.inter(
-        fontSize: 18,
-        fontWeight: FontWeight.w600,
-        color: AppColors.textPrimary,
-        height: 1.3,
-      );
+  static const TextStyle headlineLarge = TextStyle(
+    fontFamily: _inter,
+    fontSize: 22,
+    fontWeight: FontWeight.w700,
+    color: AppColors.textPrimary,
+    height: 1.25,
+  );
 
-  static TextStyle get titleLarge => GoogleFonts.inter(
-        fontSize: 16,
-        fontWeight: FontWeight.w600,
-        color: AppColors.textPrimary,
-        height: 1.35,
-      );
+  static const TextStyle headlineMedium = TextStyle(
+    fontFamily: _inter,
+    fontSize: 18,
+    fontWeight: FontWeight.w600,
+    color: AppColors.textPrimary,
+    height: 1.3,
+  );
 
-  static TextStyle get titleMedium => GoogleFonts.inter(
-        fontSize: 14,
-        fontWeight: FontWeight.w600,
-        color: AppColors.textPrimary,
-        height: 1.4,
-      );
+  static const TextStyle titleLarge = TextStyle(
+    fontFamily: _inter,
+    fontSize: 16,
+    fontWeight: FontWeight.w600,
+    color: AppColors.textPrimary,
+    height: 1.35,
+  );
 
-  static TextStyle get bodyLarge => GoogleFonts.inter(
-        fontSize: 16,
-        fontWeight: FontWeight.w400,
-        color: AppColors.textSecondary,
-        height: 1.5,
-      );
+  static const TextStyle titleMedium = TextStyle(
+    fontFamily: _inter,
+    fontSize: 14,
+    fontWeight: FontWeight.w600,
+    color: AppColors.textPrimary,
+    height: 1.4,
+  );
 
-  static TextStyle get bodyMedium => GoogleFonts.inter(
-        fontSize: 14,
-        fontWeight: FontWeight.w400,
-        color: AppColors.textSecondary,
-        height: 1.45,
-      );
+  static const TextStyle bodyLarge = TextStyle(
+    fontFamily: _inter,
+    fontSize: 16,
+    fontWeight: FontWeight.w400,
+    color: AppColors.textSecondary,
+    height: 1.5,
+  );
 
-  static TextStyle get bodySmall => GoogleFonts.inter(
-        fontSize: 12,
-        fontWeight: FontWeight.w400,
-        color: AppColors.textMuted,
-        height: 1.4,
-      );
+  static const TextStyle bodyMedium = TextStyle(
+    fontFamily: _inter,
+    fontSize: 14,
+    fontWeight: FontWeight.w400,
+    color: AppColors.textSecondary,
+    height: 1.45,
+  );
 
-  static TextStyle get labelLarge => GoogleFonts.inter(
-        fontSize: 14,
-        fontWeight: FontWeight.w500,
-        color: AppColors.textSecondary,
-        height: 1.2,
-        letterSpacing: 0.02,
-      );
+  static const TextStyle bodySmall = TextStyle(
+    fontFamily: _inter,
+    fontSize: 12,
+    fontWeight: FontWeight.w400,
+    color: AppColors.textMuted,
+    height: 1.4,
+  );
 
-  static TextStyle get labelMedium => GoogleFonts.inter(
-        fontSize: 12,
-        fontWeight: FontWeight.w500,
-        color: AppColors.textMuted,
-        height: 1.2,
-        letterSpacing: 0.04,
-      );
+  static const TextStyle labelLarge = TextStyle(
+    fontFamily: _inter,
+    fontSize: 14,
+    fontWeight: FontWeight.w500,
+    color: AppColors.textSecondary,
+    height: 1.2,
+    letterSpacing: 0.02,
+  );
 
-  static TextStyle get labelSmall => GoogleFonts.inter(
-        fontSize: 11,
-        fontWeight: FontWeight.w400,
-        color: AppColors.textMuted,
-        height: 1.2,
-        letterSpacing: 0.28,
-      );
+  static const TextStyle labelMedium = TextStyle(
+    fontFamily: _inter,
+    fontSize: 12,
+    fontWeight: FontWeight.w500,
+    color: AppColors.textMuted,
+    height: 1.2,
+    letterSpacing: 0.04,
+  );
 
-  static TextStyle get kpiValue => GoogleFonts.rajdhani(
-        fontSize: 28,
-        fontWeight: FontWeight.w700,
-        color: AppColors.textPrimary,
-        height: 1.0,
-      );
+  static const TextStyle labelSmall = TextStyle(
+    fontFamily: _inter,
+    fontSize: 11,
+    fontWeight: FontWeight.w400,
+    color: AppColors.textMuted,
+    height: 1.2,
+    letterSpacing: 0.28,
+  );
 
-  static TextStyle get tabLabel => GoogleFonts.inter(
-        fontSize: 10,
-        fontWeight: FontWeight.w600,
-        height: 1.1,
-        letterSpacing: 0.04,
-      );
+  static const TextStyle kpiValue = TextStyle(
+    fontFamily: _rajdhani,
+    fontSize: 28,
+    fontWeight: FontWeight.w700,
+    color: AppColors.textPrimary,
+    height: 1.0,
+  );
+
+  static const TextStyle tabLabel = TextStyle(
+    fontFamily: _inter,
+    fontSize: 10,
+    fontWeight: FontWeight.w600,
+    height: 1.1,
+    letterSpacing: 0.04,
+  );
 }
