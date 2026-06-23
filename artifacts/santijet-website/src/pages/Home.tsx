@@ -253,26 +253,118 @@ function Ecosystem() {
               transition={{ duration: 0.6 }}
               className="flex items-center justify-center"
             >
-              <div
-                className="relative w-[200px] h-[200px] rounded-full flex flex-col items-center justify-center"
-                style={{
-                  background: "radial-gradient(ellipse at 40% 35%, #0d1325 0%, #04060d 70%)",
-                  border: "2px solid rgba(26,95,255,0.55)",
-                  boxShadow: "0 0 0 8px rgba(26,95,255,0.04), 0 0 50px rgba(26,95,255,0.45), 0 0 110px rgba(26,95,255,0.18)",
-                }}
-              >
-                <div className="absolute inset-[10px] rounded-full border border-primary/15" />
-                <div className="absolute inset-[22px] rounded-full border border-primary/08" />
-                <img
-                  src={`${BASE_URL}/brand/santijet-bolt-nobg.png`}
-                  alt="ŞantiJET"
-                  className="w-[90px] h-[90px] object-contain"
-                />
-                <span className="text-primary font-bold tracking-[0.22em] text-sm -mt-1">PRO</span>
-                <div className="text-center mt-2 px-3">
-                  <div className="text-[8.5px] text-white/35 leading-relaxed">ŞantiJET OS - Merkezi Veri Katmanı</div>
-                  <div className="text-[8.5px] text-white/35">Tek Gerçek Kaynak</div>
+              {/* Outer glow halo */}
+              <div className="relative" style={{ width: 240, height: 240 }}>
+                {/* SVG rings + glow nodes */}
+                <svg
+                  viewBox="0 0 240 240"
+                  width="240"
+                  height="240"
+                  className="absolute inset-0 z-20 pointer-events-none"
+                  style={{ overflow: "visible" }}
+                >
+                  <defs>
+                    {/* Glow filter for the main ring */}
+                    <filter id="ring-glow" x="-40%" y="-40%" width="180%" height="180%">
+                      <feGaussianBlur stdDeviation="4" result="blur1" />
+                      <feGaussianBlur stdDeviation="10" result="blur2" />
+                      <feMerge>
+                        <feMergeNode in="blur2" />
+                        <feMergeNode in="blur1" />
+                        <feMergeNode in="SourceGraphic" />
+                      </feMerge>
+                    </filter>
+                    {/* Glow filter for node dots */}
+                    <filter id="dot-glow" x="-200%" y="-200%" width="500%" height="500%">
+                      <feGaussianBlur stdDeviation="4" result="blur1" />
+                      <feGaussianBlur stdDeviation="9" result="blur2" />
+                      <feMerge>
+                        <feMergeNode in="blur2" />
+                        <feMergeNode in="blur1" />
+                        <feMergeNode in="SourceGraphic" />
+                      </feMerge>
+                    </filter>
+                    {/* Gradient for main ring */}
+                    <linearGradient id="ring-grad" x1="0" y1="0" x2="0" y2="1">
+                      <stop offset="0%" stopColor="#ffffff" stopOpacity="0.95" />
+                      <stop offset="40%" stopColor="#8ab4f8" stopOpacity="0.75" />
+                      <stop offset="100%" stopColor="#4a90e2" stopOpacity="0.55" />
+                    </linearGradient>
+                  </defs>
+
+                  {/* Outermost faint dashed ring */}
+                  <circle
+                    cx="120" cy="120" r="115"
+                    fill="none"
+                    stroke="rgba(160,190,255,0.18)"
+                    strokeWidth="1"
+                    strokeDasharray="3 6"
+                  />
+
+                  {/* Main glowing ring */}
+                  <circle
+                    cx="120" cy="120" r="106"
+                    fill="none"
+                    stroke="url(#ring-grad)"
+                    strokeWidth="2.5"
+                    filter="url(#ring-glow)"
+                  />
+
+                  {/* Inner dashed ring */}
+                  <circle
+                    cx="120" cy="120" r="90"
+                    fill="none"
+                    stroke="rgba(140,180,255,0.22)"
+                    strokeWidth="1"
+                    strokeDasharray="2 5"
+                  />
+
+                  {/* 4 connection node dots — top, right, bottom, left */}
+                  {[
+                    [120,  14],  /* top    */
+                    [226, 120],  /* right  */
+                    [120, 226],  /* bottom */
+                    [ 14, 120],  /* left   */
+                  ].map(([cx, cy], i) => (
+                    <g key={i}>
+                      {/* Outer glow halo of dot */}
+                      <circle cx={cx} cy={cy} r="6" fill="rgba(180,210,255,0.25)" filter="url(#dot-glow)" />
+                      {/* Bright core dot */}
+                      <circle cx={cx} cy={cy} r="3.5" fill="#e8f0ff" filter="url(#dot-glow)" />
+                    </g>
+                  ))}
+                </svg>
+
+                {/* Dark circle interior */}
+                <div
+                  className="absolute z-10 rounded-full flex flex-col items-center justify-center"
+                  style={{
+                    inset: "14px",
+                    background: "radial-gradient(ellipse at 45% 35%, #0f1522 0%, #060810 60%, #030508 100%)",
+                    boxShadow: "inset 0 0 40px rgba(0,0,0,0.8)",
+                  }}
+                >
+                  <img
+                    src={`${BASE_URL}/brand/santijet-bolt-nobg.png`}
+                    alt="ŞantiJET"
+                    className="object-contain -mb-1"
+                    style={{ width: 96, height: 96 }}
+                  />
+                  <span
+                    className="font-bold tracking-[0.25em] text-base"
+                    style={{ color: "#4a90e2", textShadow: "0 0 14px rgba(74,144,226,0.7)" }}
+                  >
+                    PRO
+                  </span>
                 </div>
+
+                {/* Ambient outer glow behind circle */}
+                <div
+                  className="absolute inset-0 rounded-full pointer-events-none z-0"
+                  style={{
+                    boxShadow: "0 0 60px 10px rgba(74,144,226,0.22), 0 0 120px 20px rgba(74,144,226,0.1)",
+                  }}
+                />
               </div>
             </motion.div>
 
