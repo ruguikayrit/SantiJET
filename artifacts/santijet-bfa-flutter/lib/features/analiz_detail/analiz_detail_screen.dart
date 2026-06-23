@@ -15,6 +15,7 @@ import '../../core/widgets/metraj_input.dart';
 import '../../data/providers/catalog_provider.dart';
 import '../../data/providers/favorites_provider.dart';
 import '../../data/providers/user_analiz_provider.dart';
+import '../../data/services/analiz_pdf_export_service.dart';
 import '../../domain/calc/analiz_hesap.dart';
 import '../../domain/entities/poz_analiz.dart';
 import '../../domain/enums/app_enums.dart';
@@ -65,6 +66,23 @@ class _Detail extends ConsumerWidget {
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(content: Text('$label — sonraki fazda etkinleşecek.')),
     );
+  }
+
+  Future<void> _exportPdf(BuildContext context) async {
+    final messenger = ScaffoldMessenger.of(context);
+    messenger.showSnackBar(
+      const SnackBar(content: Text('PDF hazırlanıyor...')),
+    );
+    try {
+      await analizPdfExportService.share(analiz);
+      messenger.showSnackBar(
+        const SnackBar(content: Text('PDF paylaşım için hazırlandı.')),
+      );
+    } catch (e) {
+      messenger.showSnackBar(
+        SnackBar(content: Text('PDF oluşturulamadı: $e')),
+      );
+    }
   }
 
   void _clone(BuildContext context, WidgetRef ref) {
@@ -248,7 +266,7 @@ class _Detail extends ConsumerWidget {
             label: 'PDF',
             icon: Icons.picture_as_pdf_outlined,
             variant: SJButtonVariant.secondary,
-            onPressed: () => _soon(context, 'PDF dışa aktarma'),
+            onPressed: () => _exportPdf(context),
           ),
         ),
         const SizedBox(width: AppSpacing.sm),

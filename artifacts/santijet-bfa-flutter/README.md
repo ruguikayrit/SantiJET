@@ -91,6 +91,17 @@ biçimlendirme: `core/utils/app_format.dart` (TR para/sayı).
   Poz ekleme modalı ve keşif Excel importu sonraki iterasyonlarda bu provider
   üzerine bağlanacaktır.
 
+## PDF Export (Faz 10)
+
+- `data/services/analiz_pdf_export_service.dart` — Flutter `pdf` + `printing`
+  altyapısıyla A4 dikey analiz raporu üretir.
+- Rapor yapısı RN `analizExport.ts` ile uyumludur: ŞantiJET başlığı, bilgi
+  grid'i, poz tarifi, malzeme/işçilik/ekipman kalem tabloları, maliyet özeti,
+  yapım şartları ve notlar.
+- Türkçe karakter ve offline güvenilirlik için paketlenmiş Inter/Rajdhani
+  fontları PDF içine gömülür.
+- Analiz detay ekranındaki **PDF** butonu gerçek paylaşıma bağlandı.
+
 ## Migration Durumu
 
 | Faz | Konu | Durum |
@@ -104,7 +115,8 @@ biçimlendirme: `core/utils/app_format.dart` (TR para/sayı).
 | **7** | **Analiz Listeleri** | ✅ Tamamlandı |
 | **8** | **Analiz Detay Sayfası** | ✅ Tamamlandı |
 | **9** | **Özel Analizler + Keşif (kalıcılık)** | ✅ Tamamlandı |
-| 10–13 | Ekranlar & özellikler | ⏳ |
+| **10** | **PDF Export** | ✅ Tamamlandı |
+| 11–13 | Ekranlar & özellikler | ⏳ |
 | 14 | Performans | ⏳ |
 
 ## Geliştirme
