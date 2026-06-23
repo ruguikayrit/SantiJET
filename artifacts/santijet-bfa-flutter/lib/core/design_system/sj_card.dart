@@ -37,19 +37,21 @@ class SJCard extends StatelessWidget {
       padding: padding,
       child: accentColor == null
           ? child
-          : Row(
-              crossAxisAlignment: CrossAxisAlignment.stretch,
-              children: [
-                Container(
-                  width: 4,
-                  decoration: BoxDecoration(
-                    color: accentColor,
-                    borderRadius: AppRadii.xs,
+          : IntrinsicHeight(
+              child: Row(
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: [
+                  Container(
+                    width: 4,
+                    decoration: BoxDecoration(
+                      color: accentColor,
+                      borderRadius: AppRadii.xs,
+                    ),
                   ),
-                ),
-                const SizedBox(width: AppSpacing.sm),
-                Expanded(child: child),
-              ],
+                  const SizedBox(width: AppSpacing.sm),
+                  Expanded(child: child),
+                ],
+              ),
             ),
     );
 
