@@ -3,6 +3,10 @@ import 'package:flutter/material.dart';
 import '../../core/design_system/design_system.dart';
 import '../../core/theme/app_colors.dart';
 import '../../core/theme/app_spacing.dart';
+import '../../core/widgets/app_widgets.dart';
+import '../../domain/entities/analiz_kalemi.dart';
+import '../../domain/entities/poz_analiz.dart';
+import '../../domain/enums/app_enums.dart';
 
 /// ŞantiJET Design System galerisi — bileşenleri görsel olarak doğrulamak için.
 ///
@@ -11,6 +15,39 @@ import '../../core/theme/app_spacing.dart';
 class DesignGalleryScreen extends StatelessWidget {
   const DesignGalleryScreen({super.key});
 
+  static final _ornekAnaliz = PozAnaliz(
+    id: 'demo',
+    pozNo: '15.225.1009',
+    analizAdi: '19 cm kalınlığında teçhizatsız gazbeton duvar yapılması',
+    olcuBirimi: 'm²',
+    kategori: 'Duvar',
+    discipline: AnalizDiscipline.insaat,
+    yukleniciKarOrani: 25,
+    birimFiyati: 1061.58,
+    kalemler: const [
+      AnalizKalemi(
+        id: 'k1',
+        tip: AnalizKalemTip.malzeme,
+        pozNo: '10.013.1001',
+        tanim: 'Gazbeton duvar bloğu',
+        olcuBirimi: 'm³',
+        miktar: 0.19,
+        birimFiyati: 2850,
+        tutar: 541.5,
+      ),
+      AnalizKalemi(
+        id: 'k2',
+        tip: AnalizKalemTip.iscilik,
+        pozNo: '10.100.1001',
+        tanim: 'Duvarcı ustası + yardımcı işçi',
+        olcuBirimi: 'sa',
+        miktar: 0.8,
+        birimFiyati: 360,
+        tutar: 288,
+      ),
+    ],
+  );
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -18,6 +55,59 @@ class DesignGalleryScreen extends StatelessWidget {
       body: ListView(
         padding: const EdgeInsets.all(AppSpacing.md),
         children: [
+          _section('ModuleTile (Faz 4)'),
+          ModuleTile(
+            title: 'İnşaat B.F.A.',
+            subtitle: 'Birim Fiyat Analizleri',
+            icon: Icons.layers,
+            accentColor: AppColors.moduleInsaat,
+            count: 1879,
+            onTap: () {},
+          ),
+          const SizedBox(height: AppSpacing.xs),
+          ModuleTile(
+            title: 'Elektrik Tesisat B.F.A.',
+            subtitle: 'Birim Fiyat Analizleri',
+            icon: Icons.bolt,
+            accentColor: AppColors.moduleElektrik,
+            count: 5911,
+            onTap: () {},
+          ),
+          _section('AnalizListItem (Faz 4)'),
+          AnalizListItem(
+            analiz: _ornekAnaliz,
+            isFavorite: true,
+            onTap: () {},
+            onToggleFavorite: () {},
+          ),
+          _section('DisciplineBadge + FavoriteButton (Faz 4)'),
+          Row(
+            children: [
+              const DisciplineBadge(discipline: AnalizDiscipline.insaat),
+              const SizedBox(width: 8),
+              const DisciplineBadge(discipline: AnalizDiscipline.mekanik),
+              const SizedBox(width: 8),
+              const DisciplineBadge(discipline: AnalizDiscipline.elektrik),
+              const Spacer(),
+              FavoriteButton(isFavorite: true, onToggle: () {}),
+            ],
+          ),
+          _section('CostSummaryCard (Faz 4)'),
+          CostSummaryCard(analiz: _ornekAnaliz),
+          _section('KalemRow (Faz 4)'),
+          SJCard(
+            child: Column(
+              children: [
+                for (final k in _ornekAnaliz.kalemler) KalemRow(kalem: k),
+              ],
+            ),
+          ),
+          _section('MetrajInput (Faz 4)'),
+          MetrajInput(
+            birimFiyati: _ornekAnaliz.birimFiyati,
+            olcuBirimi: _ornekAnaliz.olcuBirimi,
+            initialMiktar: 100,
+          ),
           _section('SJStatCard'),
           Row(
             children: [

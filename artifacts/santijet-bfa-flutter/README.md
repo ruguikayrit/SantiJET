@@ -70,6 +70,12 @@ Demir desenlerine dayanır; yapısal renkler `Theme`'den, marka/durum renkleri
 `AppColors`'tan gelir (açık + koyu temada doğru görünüm). Görsel doğrulama:
 `/tasarim-sistemi` galeri ekranı.
 
+**BFA'ya özel bileşenler (`core/widgets/`)** — tek import: `app_widgets.dart`:
+`ModuleTile`, `AnalizListItem`, `KalemRow`, `CostSummaryCard`, `MetrajInput`,
+`DisciplineBadge`, `FavoriteButton`. SJ bileşenleri üzerine kuruludur.
+İş mantığı: `domain/calc/analiz_hesap.dart` (RN `hesaplaAnalizToplam`),
+biçimlendirme: `core/utils/app_format.dart` (TR para/sayı).
+
 ## Migration Durumu
 
 | Faz | Konu | Durum |
@@ -77,7 +83,7 @@ Demir desenlerine dayanır; yapısal renkler `Theme`'den, marka/durum renkleri
 | **1** | **Proje Mimarisi** | ✅ Tamamlandı |
 | **2** | **Tema Sistemi (Demir hizalama)** | ✅ Tamamlandı |
 | **3** | **Design System (SJ bileşenleri)** | ✅ Tamamlandı |
-| 4 | Reusable Components | ⏳ |
+| **4** | **Reusable Components (BFA)** | ✅ Tamamlandı |
 | 5 | Navigasyon (bottom nav + geçişler) | ⏳ (iskelet hazır) |
 | 6–13 | Ekranlar & özellikler | ⏳ |
 | 14 | Performans | ⏳ |
