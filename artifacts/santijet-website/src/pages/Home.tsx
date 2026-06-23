@@ -115,72 +115,182 @@ function Hero() {
 }
 
 // --- Ecosystem ---
-function Ecosystem() {
-  const nodes = [
-    { name: "Demir", icon: <Layers />, color: "border-blue-500", pos: "top-[10%] left-[20%]" },
-    { name: "Malzeme", icon: <Building2 />, color: "border-emerald-500", pos: "top-[10%] right-[20%]" },
-    { name: "Puantaj", icon: <Users />, color: "border-orange-500", pos: "top-[40%] right-[10%]" },
-    { name: "Günlük Rapor", icon: <FileText />, color: "border-purple-500", pos: "bottom-[10%] right-[25%]" },
-    { name: "Birim Fiyat", icon: <Calculator />, color: "border-pink-500", pos: "bottom-[10%] left-[25%]" },
-    { name: "Metraj", icon: <BarChart3 />, color: "border-yellow-500", pos: "top-[40%] left-[10%]" },
-    { name: "Hakediş", icon: <FileText />, color: "border-cyan-500", pos: "top-[75%] left-[15%]" },
-  ];
+type EcoModule = {
+  name: string;
+  desc: string;
+  color: string;
+  Icon: React.ElementType;
+  delay?: number;
+};
 
+function EcoCard({ name, desc, color, Icon, delay = 0, side = "left" }: EcoModule & { side?: "left" | "right" | "bottom" }) {
   return (
-    <section id="ekosistem" className="py-24 bg-black/30 border-y border-white/5 relative overflow-hidden">
-      <div className="container mx-auto px-4 text-center">
-        <h2 className="text-3xl md:text-4xl font-bold mb-4">ŞantiJET Ekosistemi</h2>
-        <p className="text-muted-foreground mb-16 max-w-2xl mx-auto">Tüm modüller birbiriyle entegre çalışır. Veri silolarını yıkın, tek gerçeğe odaklanın.</p>
-        
-        <div className="relative w-full max-w-4xl mx-auto h-[500px] flex items-center justify-center">
-          {/* Connecting Lines SVG */}
-          <svg className="absolute inset-0 w-full h-full opacity-20 pointer-events-none">
-            <circle cx="50%" cy="50%" r="35%" fill="none" stroke="currentColor" strokeWidth="1" strokeDasharray="4 4" className="text-primary animate-[spin_60s_linear_infinite]" />
-            <circle cx="50%" cy="50%" r="20%" fill="none" stroke="currentColor" strokeWidth="1" strokeDasharray="4 4" className="text-primary animate-[spin_40s_linear_infinite_reverse]" />
-            {/* Draw lines from center to nodes */}
-            <line x1="50%" y1="50%" x2="20%" y2="10%" stroke="currentColor" strokeWidth="1" className="text-primary" />
-            <line x1="50%" y1="50%" x2="80%" y2="10%" stroke="currentColor" strokeWidth="1" className="text-primary" />
-            <line x1="50%" y1="50%" x2="90%" y2="40%" stroke="currentColor" strokeWidth="1" className="text-primary" />
-            <line x1="50%" y1="50%" x2="75%" y2="90%" stroke="currentColor" strokeWidth="1" className="text-primary" />
-            <line x1="50%" y1="50%" x2="25%" y2="90%" stroke="currentColor" strokeWidth="1" className="text-primary" />
-            <line x1="50%" y1="50%" x2="10%" y2="40%" stroke="currentColor" strokeWidth="1" className="text-primary" />
-            <line x1="50%" y1="50%" x2="15%" y2="75%" stroke="currentColor" strokeWidth="1" className="text-primary" />
+    <motion.div
+      initial={{ opacity: 0, x: side === "left" ? -28 : side === "right" ? 28 : 0, y: side === "bottom" ? 24 : 0 }}
+      whileInView={{ opacity: 1, x: 0, y: 0 }}
+      viewport={{ once: true }}
+      transition={{ duration: 0.5, delay }}
+      className="flex items-center gap-3 rounded-xl p-4 w-full"
+      style={{
+        background: "linear-gradient(135deg, #0b0e18 0%, #090c14 100%)",
+        border: "1px solid rgba(255,255,255,0.08)",
+        borderLeftColor: side === "left" ? color : "rgba(255,255,255,0.08)",
+        borderLeftWidth: side === "left" ? 2 : 1,
+        borderRightColor: side === "right" ? color : "rgba(255,255,255,0.08)",
+        borderRightWidth: side === "right" ? 2 : 1,
+        borderTopColor: side === "bottom" ? color : "rgba(255,255,255,0.08)",
+        borderTopWidth: side === "bottom" ? 2 : 1,
+        boxShadow: `0 4px 32px ${color}12, 0 1px 0 rgba(255,255,255,0.04) inset`,
+      }}
+    >
+      <div className="flex-1 min-w-0">
+        <div className="font-bold text-white text-sm leading-tight mb-1">{name}</div>
+        <span
+          className="inline-block text-[10px] px-2 py-[2px] rounded-full font-semibold mb-2 tracking-wide"
+          style={{ background: color + "22", color, border: `1px solid ${color}45` }}
+        >
+          Entegre
+        </span>
+        <div className="text-[11px] text-white/45 leading-snug">{desc}</div>
+      </div>
+      <div
+        className="flex-shrink-0 w-[52px] h-[52px] rounded-xl flex items-center justify-center"
+        style={{ background: color + "16", border: `1px solid ${color}35` }}
+      >
+        <Icon className="w-6 h-6" style={{ color }} />
+      </div>
+    </motion.div>
+  );
+}
+
+function Ecosystem() {
+  return (
+    <section id="ekosistem" className="py-28 relative overflow-hidden" style={{ background: "linear-gradient(180deg, #020407 0%, #04060d 50%, #020407 100%)" }}>
+
+      {/* Isometric blueprint background */}
+      <div className="absolute inset-0 flex items-center justify-center pointer-events-none select-none">
+        <svg className="w-[680px] h-[560px] opacity-[0.13]" viewBox="0 0 680 560" fill="none" xmlns="http://www.w3.org/2000/svg">
+          <defs>
+            <radialGradient id="iso-fade" cx="50%" cy="50%" r="50%">
+              <stop offset="20%" stopColor="#1a5fff" stopOpacity="1" />
+              <stop offset="100%" stopColor="#1a5fff" stopOpacity="0" />
+            </radialGradient>
+            <mask id="iso-mask">
+              <rect width="680" height="560" fill="url(#iso-fade)" />
+            </mask>
+          </defs>
+          <g mask="url(#iso-mask)">
+            {Array.from({ length: 18 }).map((_, i) => (
+              <line key={`h${i}`} x1="40" y1={40 + i * 28} x2="640" y2={40 + i * 28} stroke="#1a5fff" strokeWidth="0.6" />
+            ))}
+            {Array.from({ length: 22 }).map((_, i) => (
+              <line key={`dr${i}`} x1={-300 + i * 56} y1="0" x2={40 + i * 56} y2="560" stroke="#1a5fff" strokeWidth="0.6" />
+            ))}
+            {Array.from({ length: 22 }).map((_, i) => (
+              <line key={`dl${i}`} x1={980 - i * 56} y1="0" x2={640 - i * 56} y2="560" stroke="#1a5fff" strokeWidth="0.6" />
+            ))}
+          </g>
+        </svg>
+      </div>
+
+      {/* Radial ambient glow */}
+      <div className="absolute inset-0 pointer-events-none" style={{ background: "radial-gradient(ellipse 640px 520px at 50% 58%, rgba(26,95,255,0.07) 0%, transparent 70%)" }} />
+
+      <div className="container mx-auto px-4">
+        {/* Header */}
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          whileInView={{ opacity: 1, y: 0 }}
+          viewport={{ once: true }}
+          className="text-center mb-14"
+        >
+          <h2 className="text-4xl md:text-5xl font-bold mb-3">ŞantiJET Ekosistemi</h2>
+          <p className="text-muted-foreground text-lg">İnşaat projeleri için entegre dijital işletim sistemi.</p>
+        </motion.div>
+
+        {/* Diagram */}
+        <div className="relative max-w-[900px] mx-auto">
+
+          {/* SVG connecting lines — drawn behind everything */}
+          <svg className="absolute inset-0 w-full h-full pointer-events-none z-0" style={{ top: 0, left: 0 }} viewBox="0 0 900 520" preserveAspectRatio="none">
+            <defs>
+              <filter id="line-glow">
+                <feGaussianBlur stdDeviation="2" result="blur" />
+                <feMerge><feMergeNode in="blur" /><feMergeNode in="SourceGraphic" /></feMerge>
+              </filter>
+            </defs>
+            {/* Left cards → center  (card centers approx at x=140, center at x=450) */}
+            <line x1="278" y1="72"  x2="342" y2="220" stroke="#1a5fff" strokeWidth="1" strokeOpacity="0.35" filter="url(#line-glow)" />
+            <line x1="278" y1="200" x2="342" y2="240" stroke="#1a5fff" strokeWidth="1" strokeOpacity="0.35" filter="url(#line-glow)" />
+            <line x1="278" y1="328" x2="342" y2="260" stroke="#1a5fff" strokeWidth="1" strokeOpacity="0.35" filter="url(#line-glow)" />
+            {/* Right cards ← center */}
+            <line x1="558" y1="220" x2="622" y2="72"  stroke="#1a5fff" strokeWidth="1" strokeOpacity="0.35" filter="url(#line-glow)" />
+            <line x1="558" y1="240" x2="622" y2="200" stroke="#1a5fff" strokeWidth="1" strokeOpacity="0.35" filter="url(#line-glow)" />
+            <line x1="558" y1="260" x2="622" y2="328" stroke="#1a5fff" strokeWidth="1" strokeOpacity="0.35" filter="url(#line-glow)" />
+            {/* BFA ↑ center */}
+            <line x1="450" y1="320" x2="450" y2="430" stroke="#1a5fff" strokeWidth="1" strokeOpacity="0.35" filter="url(#line-glow)" />
+            {/* Dots at card endpoints */}
+            {[["278","72"],["278","200"],["278","328"],["622","72"],["622","200"],["622","328"],["450","430"]].map(([cx,cy],i) => (
+              <circle key={i} cx={cx} cy={cy} r="4" fill="#1a5fff" fillOpacity="0.6" />
+            ))}
           </svg>
 
-          {/* Center Node */}
-          <motion.div 
-            initial={{ scale: 0.8, opacity: 0 }}
-            whileInView={{ scale: 1, opacity: 1 }}
-            viewport={{ once: true }}
-            className="absolute z-20 w-[180px] h-[180px] bg-background border border-primary/50 rounded-full flex flex-col items-center justify-center shadow-[0_0_80px_rgba(26,95,255,0.5)]"
-          >
-            <img
-              src={`${BASE_URL}/brand/santijet-bolt-nobg.png`}
-              alt="ŞantiJET"
-              className="w-36 h-36 object-contain"
-            />
-            <span
-              style={{ fontFamily: "'Inter', sans-serif", letterSpacing: "0.18em" }}
-              className="-mt-3 text-xl font-semibold text-primary/90 uppercase tracking-widest leading-none"
-            >
-              PRO
-            </span>
-          </motion.div>
+          {/* 3-column grid */}
+          <div className="relative z-10 grid items-center gap-5" style={{ gridTemplateColumns: "1fr 220px 1fr" }}>
 
-          {/* Orbiting Nodes */}
-          {nodes.map((node, i) => (
+            {/* Left column */}
+            <div className="flex flex-col gap-4">
+              <EcoCard name="ŞantiJET Demir"   desc="Demir keşfi, sipariş ve teslimat yönetimi" color="#22c55e" Icon={Layers}   delay={0.15} side="left" />
+              <EcoCard name="ŞantiJET Metraj"  desc="Metraj ve keşif hesapları"                 color="#eab308" Icon={BarChart3} delay={0.25} side="left" />
+              <EcoCard name="ŞantiJET Hakediş" desc="Hakediş ve ödeme süreçleri"                color="#f59e0b" Icon={FileText}  delay={0.35} side="left" />
+            </div>
+
+            {/* Center — Pro circle */}
             <motion.div
-              key={i}
-              initial={{ opacity: 0, scale: 0.5 }}
+              initial={{ opacity: 0, scale: 0.75 }}
               whileInView={{ opacity: 1, scale: 1 }}
               viewport={{ once: true }}
-              transition={{ delay: i * 0.1 }}
-              className={`absolute ${node.pos} z-10 w-24 h-24 bg-background border-2 ${node.color} rounded-full flex flex-col items-center justify-center shadow-lg`}
+              transition={{ duration: 0.6 }}
+              className="flex items-center justify-center"
             >
-              <div className="text-white mb-1 opacity-80">{node.icon}</div>
-              <span className="text-[10px] font-medium text-center leading-tight px-2">{node.name}</span>
+              <div
+                className="relative w-[200px] h-[200px] rounded-full flex flex-col items-center justify-center"
+                style={{
+                  background: "radial-gradient(ellipse at 40% 35%, #0d1325 0%, #04060d 70%)",
+                  border: "2px solid rgba(26,95,255,0.55)",
+                  boxShadow: "0 0 0 8px rgba(26,95,255,0.04), 0 0 50px rgba(26,95,255,0.45), 0 0 110px rgba(26,95,255,0.18)",
+                }}
+              >
+                <div className="absolute inset-[10px] rounded-full border border-primary/15" />
+                <div className="absolute inset-[22px] rounded-full border border-primary/08" />
+                <img
+                  src={`${BASE_URL}/brand/santijet-bolt-nobg.png`}
+                  alt="ŞantiJET"
+                  className="w-[90px] h-[90px] object-contain"
+                />
+                <span className="text-primary font-bold tracking-[0.22em] text-sm -mt-1">PRO</span>
+                <div className="text-center mt-2 px-3">
+                  <div className="text-[8.5px] text-white/35 leading-relaxed">ŞantiJET OS - Merkezi Veri Katmanı</div>
+                  <div className="text-[8.5px] text-white/35">Tek Gerçek Kaynak</div>
+                </div>
+              </div>
             </motion.div>
-          ))}
+
+            {/* Right column */}
+            <div className="flex flex-col gap-4">
+              <EcoCard name="ŞantiJET Malzeme"       desc="Stok ve depo yönetimi"              color="#06b6d4" Icon={Building2} delay={0.15} side="right" />
+              <EcoCard name="ŞantiJET Puantaj"        desc="Personel ve vardiya yönetimi"       color="#f97316" Icon={Users}     delay={0.25} side="right" />
+              <EcoCard name="ŞantiJET Günlük Rapor"   desc="Saha ilerleme ve günlük kayıtlar"  color="#a855f7" Icon={FileText}  delay={0.35} side="right" />
+            </div>
+          </div>
+
+          {/* BFA — bottom center */}
+          <div className="flex justify-center mt-5 relative z-10">
+            <div className="w-[260px]">
+              <EcoCard name="ŞantiJET BFA" desc="Birim fiyat analizleri ve maliyet hesapları" color="#ec4899" Icon={Calculator} delay={0.45} side="bottom" />
+            </div>
+          </div>
+
         </div>
       </div>
     </section>
