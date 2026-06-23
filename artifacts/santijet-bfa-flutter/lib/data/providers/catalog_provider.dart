@@ -40,6 +40,23 @@ class CatalogData {
 
   List<PozAnaliz> forDiscipline(AnalizDiscipline d) =>
       byDiscipline[d] ?? const [];
+
+  /// Verilen analiz listesindeki kategorileri sıklığa göre sıralı döndürür
+  /// (React Native `buildPozKategoriFiltreleri` ile aynı).
+  static List<String> kategoriler(List<PozAnaliz> list) {
+    final counts = <String, int>{};
+    for (final a in list) {
+      final k = a.kategori.trim();
+      if (k.isEmpty) continue;
+      counts[k] = (counts[k] ?? 0) + 1;
+    }
+    final entries = counts.entries.toList()
+      ..sort((a, b) {
+        final byCount = b.value.compareTo(a.value);
+        return byCount != 0 ? byCount : a.key.compareTo(b.key);
+      });
+    return entries.map((e) => e.key).toList();
+  }
 }
 
 final catalogDataSourceProvider = Provider<CatalogLocalDataSource>(

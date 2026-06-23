@@ -89,7 +89,8 @@ biçimlendirme: `core/utils/app_format.dart` (TR para/sayı).
 | **4** | **Reusable Components (BFA)** | ✅ Tamamlandı |
 | **5** | **Navigasyon (bottom nav + geçişler)** | ✅ Tamamlandı |
 | **6** | **Ana Sayfa + Veri Katmanı** | ✅ Tamamlandı |
-| 7–13 | Ekranlar & özellikler | ⏳ |
+| **7** | **Analiz Listeleri** | ✅ Tamamlandı |
+| 8–13 | Ekranlar & özellikler | ⏳ |
 | 14 | Performans | ⏳ |
 
 ## Geliştirme
