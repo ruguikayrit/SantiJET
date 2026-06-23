@@ -31,7 +31,8 @@ lib/
 ├── core/
 │   ├── theme/                # app_colors, app_typography, app_spacing,
 │   │                         #   app_radii, app_shadows, app_theme, theme_mode_provider
-│   ├── routing/              # app_router (routerProvider), app_routes
+│   ├── animations/           # app_animations (süre/eğri + StaggeredFadeIn)
+│   ├── routing/              # app_router (StatefulShellRoute), app_routes, page_transitions
 │   ├── constants/            # app_info
 │   ├── utils/                # (ileride) tr_search, formatters, id_gen
 │   └── widgets/              # paylaşılan widget'lar
@@ -42,6 +43,7 @@ lib/
 │   ├── repositories/         # (ileride) katalog, kullanıcı verisi, keşif, yedek
 │   └── datasources/          # (ileride) asset JSON / Hive
 └── features/
+    ├── shell/                # MainShell — kalıcı alt navigasyon kabuğu
     ├── home/                 # ana sayfa (Faz 6)
     ├── analiz_list/          # analiz listesi (Faz 7)
     ├── analiz_detail/        # analiz detayı (Faz 8)
@@ -84,7 +86,7 @@ biçimlendirme: `core/utils/app_format.dart` (TR para/sayı).
 | **2** | **Tema Sistemi (Demir hizalama)** | ✅ Tamamlandı |
 | **3** | **Design System (SJ bileşenleri)** | ✅ Tamamlandı |
 | **4** | **Reusable Components (BFA)** | ✅ Tamamlandı |
-| 5 | Navigasyon (bottom nav + geçişler) | ⏳ (iskelet hazır) |
+| **5** | **Navigasyon (bottom nav + geçişler)** | ✅ Tamamlandı |
 | 6–13 | Ekranlar & özellikler | ⏳ |
 | 14 | Performans | ⏳ |
 

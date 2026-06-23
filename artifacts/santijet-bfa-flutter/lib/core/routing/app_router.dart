@@ -1,3 +1,4 @@
+import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
@@ -9,56 +10,108 @@ import '../../features/karsilastir/karsilastir_screen.dart';
 import '../../features/kesif/kesif_detail_screen.dart';
 import '../../features/kesif/kesif_list_screen.dart';
 import '../../features/settings/settings_screen.dart';
+import '../../features/shell/main_shell.dart';
 import 'app_routes.dart';
+import 'page_transitions.dart';
 
-/// Uygulama yönlendiricisi — Demir konvansiyonuyla düz Provider (codegen yok).
-///
-/// Faz 5'te bottom navigation için `StatefulShellRoute` ve geçiş animasyonları
-/// (Demir `page_transitions.dart` deseni) eklenecektir.
+final _rootNavigatorKey = GlobalKey<NavigatorState>();
+
+/// Uygulama yönlendiricisi — Demir konvansiyonuyla `StatefulShellRoute` +
+/// kalıcı alt navigasyon. Sekmeler: Ana Sayfa, Katalog, Keşif, Ayarlar.
+/// Detay/ikincil ekranlar kök navigatörde tam ekran açılır (alt çubuğu kapatır).
 final routerProvider = Provider<GoRouter>((ref) {
   return GoRouter(
+    navigatorKey: _rootNavigatorKey,
     initialLocation: AppRoutes.home,
     routes: [
-      GoRoute(
-        path: AppRoutes.home,
-        builder: (context, state) => const HomeScreen(),
-      ),
-      GoRoute(
-        path: AppRoutes.pozlar,
-        builder: (context, state) => AnalizListScreen(
-          modul: state.uri.queryParameters['modul'],
-          query: state.uri.queryParameters['q'],
-        ),
-        routes: [
-          GoRoute(
-            path: ':id',
-            builder: (context, state) =>
-                AnalizDetailScreen(analizId: state.pathParameters['id']!),
+      StatefulShellRoute.indexedStack(
+        builder: (context, state, navigationShell) =>
+            MainShell(navigationShell: navigationShell),
+        branches: [
+          StatefulShellBranch(
+            routes: [
+              GoRoute(
+                path: AppRoutes.home,
+                pageBuilder: (context, state) =>
+                    fadePage(key: state.pageKey, child: const HomeScreen()),
+              ),
+            ],
+          ),
+          StatefulShellBranch(
+            routes: [
+              GoRoute(
+                path: AppRoutes.katalog,
+                pageBuilder: (context, state) => fadePage(
+                  key: state.pageKey,
+                  child: const AnalizListScreen(),
+                ),
+              ),
+            ],
+          ),
+          StatefulShellBranch(
+            routes: [
+              GoRoute(
+                path: AppRoutes.kesif,
+                pageBuilder: (context, state) =>
+                    fadePage(key: state.pageKey, child: const KesifListScreen()),
+              ),
+            ],
+          ),
+          StatefulShellBranch(
+            routes: [
+              GoRoute(
+                path: AppRoutes.ayarlar,
+                pageBuilder: (context, state) =>
+                    fadePage(key: state.pageKey, child: const SettingsScreen()),
+              ),
+            ],
           ),
         ],
+      ),
+
+      // ─── Kök (tam ekran) rotalar ───────────────────────────────────
+      GoRoute(
+        path: AppRoutes.pozlar,
+        parentNavigatorKey: _rootNavigatorKey,
+        pageBuilder: (context, state) => fadeSlidePage(
+          key: state.pageKey,
+          child: AnalizListScreen(
+            modul: state.uri.queryParameters['modul'],
+            query: state.uri.queryParameters['q'],
+          ),
+        ),
+      ),
+      GoRoute(
+        path: AppRoutes.pozDetayPattern,
+        parentNavigatorKey: _rootNavigatorKey,
+        pageBuilder: (context, state) => fadeSlidePage(
+          key: state.pageKey,
+          child: AnalizDetailScreen(analizId: state.pathParameters['id']!),
+        ),
+      ),
+      GoRoute(
+        path: AppRoutes.kesifDetayPattern,
+        parentNavigatorKey: _rootNavigatorKey,
+        pageBuilder: (context, state) => fadeSlidePage(
+          key: state.pageKey,
+          child: KesifDetailScreen(projectId: state.pathParameters['id']!),
+        ),
       ),
       GoRoute(
         path: AppRoutes.karsilastir,
-        builder: (context, state) => const KarsilastirScreen(),
-      ),
-      GoRoute(
-        path: AppRoutes.kesif,
-        builder: (context, state) => const KesifListScreen(),
-        routes: [
-          GoRoute(
-            path: ':id',
-            builder: (context, state) =>
-                KesifDetailScreen(projectId: state.pathParameters['id']!),
-          ),
-        ],
-      ),
-      GoRoute(
-        path: AppRoutes.ayarlar,
-        builder: (context, state) => const SettingsScreen(),
+        parentNavigatorKey: _rootNavigatorKey,
+        pageBuilder: (context, state) => fadeSlidePage(
+          key: state.pageKey,
+          child: const KarsilastirScreen(),
+        ),
       ),
       GoRoute(
         path: AppRoutes.tasarimSistemi,
-        builder: (context, state) => const DesignGalleryScreen(),
+        parentNavigatorKey: _rootNavigatorKey,
+        pageBuilder: (context, state) => fadeSlidePage(
+          key: state.pageKey,
+          child: const DesignGalleryScreen(),
+        ),
       ),
     ],
   );
