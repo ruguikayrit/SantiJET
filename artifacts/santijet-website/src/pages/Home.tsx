@@ -116,18 +116,20 @@ function Hero() {
 
 // --- Ecosystem ---
 
-const LEFT_MODULES = [
-  { name: "ŞANTİJET DEMİR",  desc: "Demir keşfi, sipariş ve teslimat yönetimi",    color: "#00d68f", iconKey: "demir"   },
-  { name: "ŞANTİJET BETON",  desc: "Beton sipariş, döküm ve kalite yönetimi",       color: "#00d4ff", iconKey: "beton"   },
-  { name: "ŞANTİJET ÇELİK", desc: "Çelik proje, imalat ve montaj yönetimi",        color: "#4a9eff", iconKey: "celik"   },
-  { name: "ŞANTİJET SAHA",   desc: "Saha raporları, ilerleme ve günlük kayıtlar",   color: "#b06eff", iconKey: "saha"    },
+// All 7 modules in circular clockwise order starting from top (12 o'clock).
+const ECO_MODULES = [
+  { name: "ŞANTİJET İŞ PROGRAMI",       desc: "İş planlama, programlama ve takip yönetimi", color: "#ffd060", iconKey: "program" }, // 0 top
+  { name: "ŞANTİJET TEKNİK",            desc: "Teknik doküman, çizim ve detay yönetimi",    color: "#ff8c40", iconKey: "teknik"  }, // 1 upper-right
+  { name: "ŞANTİJET BFA · BF · KEŞİF", desc: "Birim fiyat, analiz ve keşif yönetimi",      color: "#ff4488", iconKey: "bfa"     }, // 2 right
+  { name: "ŞANTİJET DEMİR",             desc: "Demir keşfi, sipariş ve teslimat yönetimi",  color: "#00d68f", iconKey: "demir"   }, // 3 lower-right
+  { name: "ŞANTİJET BETON",             desc: "Beton sipariş, döküm ve kalite yönetimi",    color: "#00d4ff", iconKey: "beton"   }, // 4 lower-left
+  { name: "ŞANTİJET ÇELİK",            desc: "Çelik proje, imalat ve montaj yönetimi",     color: "#4a9eff", iconKey: "celik"   }, // 5 left
+  { name: "ŞANTİJET SAHA",              desc: "Saha raporları, ilerleme ve günlük kayıtlar",color: "#b06eff", iconKey: "saha"    }, // 6 upper-left
 ];
 
-const RIGHT_MODULES = [
-  { name: "ŞANTİJET TEKNİK",             desc: "Teknik doküman, çizim ve detay yönetimi",    color: "#ff8c40", iconKey: "teknik"  },
-  { name: "ŞANTİJET İŞ PROGRAMI",        desc: "İş planlama, programlama ve takip yönetimi", color: "#ffd060", iconKey: "program" },
-  { name: "ŞANTİJET BFA · BF · KEŞİF",  desc: "Birim fiyat, analiz ve keşif yönetimi",      color: "#ff4488", iconKey: "bfa"     },
-];
+// Keep aliases for backward compatibility with mobile layout
+const LEFT_MODULES = ECO_MODULES.slice(3, 7);
+const RIGHT_MODULES = ECO_MODULES.slice(0, 3);
 
 function NeonIcon({ iconKey, color }: { iconKey: string; color: string }) {
   const s = { stroke: color, strokeWidth: 1.8, fill: "none", strokeLinecap: "round" as const, strokeLinejoin: "round" as const };
@@ -232,34 +234,37 @@ function NeonIcon({ iconKey, color }: { iconKey: string; color: string }) {
   }
 }
 
-function EcoCard({ name, desc, color, iconKey, delay = 0, side = "left" }: { name: string; desc: string; color: string; iconKey: string; delay?: number; side?: "left" | "right" }) {
+function EcoCard({ name, desc, color, iconKey, delay = 0, initX = 0, initY = 0 }: {
+  name: string; desc: string; color: string; iconKey: string;
+  delay?: number; initX?: number; initY?: number;
+}) {
   return (
     <motion.div
-      initial={{ opacity: 0, x: side === "left" ? -30 : 30 }}
-      whileInView={{ opacity: 1, x: 0 }}
+      initial={{ opacity: 0, x: initX, y: initY }}
+      whileInView={{ opacity: 1, x: 0, y: 0 }}
       viewport={{ once: true }}
       transition={{ duration: 0.5, delay }}
-      whileHover={{ scale: 1.03, y: -3, transition: { duration: 0.18 } }}
+      whileHover={{ scale: 1.04, transition: { duration: 0.18 } }}
       className="flex items-stretch rounded-xl overflow-hidden cursor-default select-none"
       style={{
         background: "linear-gradient(135deg, #0b0e1e 0%, #07091a 100%)",
         border: `1px solid ${color}38`,
         boxShadow: `0 0 18px ${color}15, inset 0 0 0 1px ${color}10`,
-        minHeight: 108,
+        minHeight: 96,
       }}
     >
-      <div className="flex-1 p-3.5 flex flex-col justify-center min-w-0">
-        <div className="font-bold text-white text-[11.5px] leading-tight tracking-wide mb-2">{name}</div>
+      <div className="flex-1 p-3 flex flex-col justify-center min-w-0">
+        <div className="font-bold text-white text-[10.5px] leading-tight tracking-wide mb-1.5">{name}</div>
         <span
-          className="inline-block self-start text-[9px] px-2 py-[2px] rounded-full font-bold tracking-widest mb-2.5"
+          className="inline-block self-start text-[8.5px] px-2 py-[2px] rounded-full font-bold tracking-widest mb-2"
           style={{ background: color + "22", color, border: `1px solid ${color}45` }}
         >
           Entegre
         </span>
-        <div className="text-[10px] text-white/40 leading-snug">{desc}</div>
+        <div className="text-[9.5px] text-white/40 leading-snug">{desc}</div>
       </div>
       <div
-        className="flex-shrink-0 w-[70px] flex items-center justify-center m-2 rounded-lg"
+        className="flex-shrink-0 w-[58px] flex items-center justify-center m-1.5 rounded-lg"
         style={{ background: color + "10", border: `1px solid ${color}38` }}
       >
         <NeonIcon iconKey={iconKey} color={color} />
@@ -269,27 +274,55 @@ function EcoCard({ name, desc, color, iconKey, delay = 0, side = "left" }: { nam
 }
 
 function Ecosystem() {
-  // Connecting line coords: outer SVG viewBox 0 0 960 600
-  // Hub center (480,300), ring radius 136
-  // Left card right-edge x≈270, right card left-edge x≈690
-  const lines = [
-    { ex: 381, ey: 206, tx: 270, ty: 100 }, // L1 Demir
-    { ex: 350, ey: 259, tx: 270, ty: 233 }, // L2 Beton
-    { ex: 350, ey: 341, tx: 270, ty: 367 }, // L3 Çelik
-    { ex: 381, ey: 394, tx: 270, ty: 500 }, // L4 Saha
-    { ex: 595, ey: 228, tx: 690, ty: 168 }, // R1 Teknik
-    { ex: 608, ey: 254, tx: 694, ty: 300 }, // R2 İş Programı
-    { ex: 595, ey: 372, tx: 690, ty: 432 }, // R3 BFA
-  ];
-  // Hub dot positions in hub SVG (viewBox 0 0 300 300, center 150,150, r=136)
+  // ── Circular layout geometry ────────────────────────────────────────────
+  // Container: 960 × 660 px.  Hub center: (480, 330).
+  // 7 modules equally spaced: step = 360/7 ≈ 51.43°, starting at -90° (top).
+  // R = 265 px  (card-center radius from hub center)
+  // Card size: 200 × 100 px  (half: 100 w, 50 h)
+  // Hub SVG: viewBox 0 0 300 300, center (150,150), ring radius 136
+  // Hub div top-left in eco-SVG coords: (330, 180)
+  //
+  //  i  angle   card-center   hub-ring(eco)  card-edge(eco)
+  //  0  -90°   (480,  65)    (480, 194)     (480, 115)   ← top
+  //  1  -38.6° (687, 165)    (586, 245)     (587, 165)   ← upper-right
+  //  2   12.9° (738, 389)    (613, 360)     (638, 389)   ← right
+  //  3   64.3° (595, 569)    (539, 453)     (595, 519)   ← lower-right
+  //  4  115.7° (365, 569)    (421, 453)     (365, 519)   ← lower-left
+  //  5  167.1° (222, 389)    (347, 360)     (322, 389)   ← left
+  //  6  218.6° (273, 165)    (374, 245)     (373, 165)   ← upper-left
+  // ────────────────────────────────────────────────────────────────────────
+
+  // Hub ring dot positions inside hub SVG (viewBox 0 0 300 300)
   const hubDots = [
-    { x:  51, y:  56 }, // L1
-    { x:  20, y: 109 }, // L2
-    { x:  20, y: 191 }, // L3
-    { x:  51, y: 244 }, // L4
-    { x: 265, y:  78 }, // R1
-    { x: 278, y: 104 }, // R2
-    { x: 265, y: 222 }, // R3
+    { x: 150, y:  14 }, // 0 top
+    { x: 256, y:  65 }, // 1 upper-right
+    { x: 283, y: 180 }, // 2 right
+    { x: 209, y: 273 }, // 3 lower-right
+    { x:  91, y: 273 }, // 4 lower-left
+    { x:  17, y: 180 }, // 5 left
+    { x:  44, y:  65 }, // 6 upper-left
+  ];
+
+  // SVG connecting lines: hub-ring → card-edge (all radial, no near-horizontal routing)
+  const lines = [
+    { ex: 480, ey: 194, tx: 480, ty: 115 }, // 0 İş Programı  (top)
+    { ex: 586, ey: 245, tx: 587, ty: 165 }, // 1 Teknik        (upper-right)
+    { ex: 613, ey: 360, tx: 638, ty: 389 }, // 2 BFA           (right)
+    { ex: 539, ey: 453, tx: 595, ty: 519 }, // 3 Demir         (lower-right)
+    { ex: 421, ey: 453, tx: 365, ty: 519 }, // 4 Beton         (lower-left)
+    { ex: 347, ey: 360, tx: 322, ty: 389 }, // 5 Çelik         (left)
+    { ex: 374, ey: 245, tx: 373, ty: 165 }, // 6 Saha          (upper-left)
+  ];
+
+  // Card absolute positions (center) and animation offsets in the 960×660 container
+  const cardLayout = [
+    { cx: 480, cy:  65, initX:   0, initY: -30 }, // 0 top
+    { cx: 687, cy: 165, initX:  23, initY: -19 }, // 1 upper-right
+    { cx: 738, cy: 389, initX:  30, initY:   6 }, // 2 right
+    { cx: 595, cy: 569, initX:  13, initY:  27 }, // 3 lower-right
+    { cx: 365, cy: 569, initX: -13, initY:  27 }, // 4 lower-left
+    { cx: 222, cy: 389, initX: -30, initY:   6 }, // 5 left
+    { cx: 273, cy: 165, initX: -23, initY: -19 }, // 6 upper-left
   ];
 
   return (
@@ -331,14 +364,14 @@ function Ecosystem() {
           <p className="text-white/50 text-base md:text-lg">İnşaat projeleri için entegre dijital işletim sistemi.</p>
         </motion.div>
 
-        {/* ── Desktop diagram ── */}
-        <div className="relative max-w-[960px] mx-auto hidden md:block" style={{ height: 600 }}>
+        {/* ── Desktop diagram: 7 cards equally distributed 360° around hub ── */}
+        <div className="relative max-w-[960px] mx-auto hidden md:block" style={{ height: 660 }}>
 
-          {/* SVG connecting lines (rendered behind cards + hub) */}
+          {/* SVG connecting lines — all radial from hub ring to card edge, no arc tricks needed */}
           <svg
             className="absolute inset-0 pointer-events-none"
             style={{ width: "100%", height: "100%", zIndex: 1 }}
-            viewBox="0 0 960 600"
+            viewBox="0 0 960 660"
             preserveAspectRatio="xMidYMid meet"
           >
             <defs>
@@ -356,45 +389,31 @@ function Ecosystem() {
                 <feMerge><feMergeNode in="b" /><feMergeNode in="SourceGraphic" /></feMerge>
               </filter>
             </defs>
-            {lines.map((l, i) => {
-              if (i === 5) return null; // R2 rendered in separate z=30 SVG below
-              return (
-                <g key={i}>
-                  <line
-                    x1={l.ex} y1={l.ey} x2={l.tx} y2={l.ty}
-                    stroke="#1a8fff" strokeWidth="1.4" strokeOpacity="0.8"
-                    filter="url(#eco-line-glow)"
-                  />
-                  <circle cx={l.tx} cy={l.ty} r="4" fill="#70c8ff" fillOpacity="0.9" filter="url(#eco-dot-glow)" />
-                </g>
-              );
-            })}
-          </svg>
-
-          {/* R2 İş Programı — z=30 SVG with its own inline filter (eco-line-glow ref fails cross-SVG).
-              Arc peaks at y=120, well above hub div (top y=150). */}
-          <svg
-            className="absolute inset-0 pointer-events-none"
-            style={{ width: "100%", height: "100%", zIndex: 30 }}
-            viewBox="0 0 960 600"
-            preserveAspectRatio="xMidYMid meet"
-          >
-            <path d="M 608 254 C 648 120 758 120 694 300" fill="none"
-              stroke="#90d8ff" strokeWidth="1.4" strokeOpacity="0.9"
-              style={{ filter: "drop-shadow(0 0 6px #1a8fff) drop-shadow(0 0 12px #1a4fff)" }} />
-            <circle cx={694} cy={300} r="4" fill="#70c8ff" fillOpacity="0.9"
-              style={{ filter: "drop-shadow(0 0 5px #1a8fff) drop-shadow(0 0 10px #1a4fff)" }} />
-          </svg>
-
-          {/* Left column: 4 cards, vertically centered */}
-          <div
-            className="absolute flex flex-col gap-[14px]"
-            style={{ width: 266, left: 0, top: "50%", transform: "translateY(-50%)", zIndex: 10 }}
-          >
-            {LEFT_MODULES.map((m, i) => (
-              <EcoCard key={m.name} {...m} delay={i * 0.1} side="left" />
+            {lines.map((l, i) => (
+              <g key={i}>
+                <line
+                  x1={l.ex} y1={l.ey} x2={l.tx} y2={l.ty}
+                  stroke="#1a8fff" strokeWidth="1.4" strokeOpacity="0.8"
+                  filter="url(#eco-line-glow)"
+                />
+                <circle cx={l.tx} cy={l.ty} r="4" fill="#70c8ff" fillOpacity="0.9" filter="url(#eco-dot-glow)" />
+              </g>
             ))}
-          </div>
+          </svg>
+
+          {/* 7 cards — each absolutely centered at its calculated (cx, cy) position */}
+          {ECO_MODULES.map((m, i) => {
+            const { cx, cy, initX, initY } = cardLayout[i];
+            return (
+              <div
+                key={m.name}
+                className="absolute"
+                style={{ width: 200, left: cx - 100, top: cy - 50, zIndex: 10 }}
+              >
+                <EcoCard {...m} delay={i * 0.08} initX={initX} initY={initY} />
+              </div>
+            );
+          })}
 
           {/* Center Hub */}
           <div
@@ -415,7 +434,7 @@ function Ecosystem() {
                 style={{ boxShadow: "0 0 90px 24px rgba(26,95,255,0.30), 0 0 200px 50px rgba(26,95,255,0.12)" }}
               />
 
-              {/* Hub SVG: concentric rings + 7 pulsing connection dots */}
+              {/* Hub SVG: concentric rings + 7 pulsing connection dots at equal angles */}
               <svg
                 viewBox="0 0 300 300"
                 width="300"
@@ -444,22 +463,14 @@ function Ecosystem() {
                   </radialGradient>
                 </defs>
 
-                {/* Outermost faint dashed ring */}
                 <circle cx="150" cy="150" r="147" fill="none" stroke="rgba(70,130,255,0.14)" strokeWidth="1" strokeDasharray="5 10" />
-                {/* Faint solid ring */}
                 <circle cx="150" cy="150" r="141" fill="none" stroke="rgba(60,120,255,0.18)" strokeWidth="0.8" />
-                {/* Main glowing neon ring */}
                 <circle cx="150" cy="150" r="136" fill="none" stroke="#1a8fff" strokeWidth="2.4" strokeOpacity="0.92" filter="url(#hub-ring-glow)" />
-                {/* Bright sheen ring */}
                 <circle cx="150" cy="150" r="136" fill="none" stroke="rgba(200,230,255,0.48)" strokeWidth="1.4" />
-                {/* Inner secondary ring */}
                 <circle cx="150" cy="150" r="122" fill="none" stroke="rgba(26,100,255,0.28)" strokeWidth="1" />
-                {/* Inner decorative dashed ring */}
                 <circle cx="150" cy="150" r="108" fill="none" stroke="rgba(26,80,220,0.20)" strokeWidth="0.7" strokeDasharray="3 8" />
-                {/* Dark interior fill */}
                 <circle cx="150" cy="150" r="107" fill="url(#hub-inner)" />
 
-                {/* 7 pulsing connection dots on the main ring */}
                 {hubDots.map((dot, i) => (
                   <g key={i}>
                     <motion.circle
@@ -475,10 +486,7 @@ function Ecosystem() {
               </svg>
 
               {/* Logo + PRO text */}
-              <div
-                className="absolute inset-0 flex flex-col items-center justify-center"
-                style={{ paddingBottom: 4 }}
-              >
+              <div className="absolute inset-0 flex flex-col items-center justify-center" style={{ paddingBottom: 4 }}>
                 <img
                   src={`${BASE_URL}/brand/santijet-bolt-nobg.png`}
                   alt="ŞantiJET"
@@ -493,16 +501,6 @@ function Ecosystem() {
                 </span>
               </div>
             </motion.div>
-          </div>
-
-          {/* Right column: 3 cards, vertically centered */}
-          <div
-            className="absolute flex flex-col gap-[14px]"
-            style={{ width: 266, right: 0, top: "50%", transform: "translateY(-50%)", zIndex: 10 }}
-          >
-            {RIGHT_MODULES.map((m, i) => (
-              <EcoCard key={m.name} {...m} delay={0.1 + i * 0.1} side="right" />
-            ))}
           </div>
 
         </div>{/* end desktop diagram */}
