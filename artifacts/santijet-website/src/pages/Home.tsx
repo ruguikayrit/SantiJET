@@ -278,7 +278,7 @@ function Ecosystem() {
     { ex: 350, ey: 341, tx: 270, ty: 367 }, // L3 Çelik
     { ex: 381, ey: 394, tx: 270, ty: 500 }, // L4 Saha
     { ex: 595, ey: 228, tx: 690, ty: 168 }, // R1 Teknik
-    { ex: 616, ey: 300, tx: 690, ty: 300 }, // R2 İş Programı
+    { ex: 616, ey: 300, tx: 694, ty: 300 }, // R2 İş Programı
     { ex: 595, ey: 372, tx: 690, ty: 432 }, // R3 BFA
   ];
   // Hub dot positions in hub SVG (viewBox 0 0 300 300, center 150,150, r=136)
