@@ -448,10 +448,10 @@ function Ecosystem() {
                   src={`${BASE_URL}/brand/santijet-bolt-nobg.png`}
                   alt="ŞantiJET"
                   className="object-contain"
-                  style={{ width: 190, height: 190, marginBottom: -8 }}
+                  style={{ width: 190, height: 190, marginBottom: -20 }}
                 />
                 <span
-                  className="font-bold tracking-[0.28em] text-[15px]"
+                  className="font-bold tracking-[0.28em] text-[22px]"
                   style={{ color: "#4a90e2", textShadow: "0 0 20px rgba(74,144,226,0.9)" }}
                 >
                   PRO
