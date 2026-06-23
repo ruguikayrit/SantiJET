@@ -112,6 +112,16 @@ biçimlendirme: `core/utils/app_format.dart` (TR para/sayı).
 - Excel içeriği: ŞantiJET başlığı, poz bilgileri, kalem tablosu, maliyet özeti,
   poz tarifi, yapım şartları ve notlar.
 
+## Ayarlar (Faz 12)
+
+- Tema modu (`system` / `light` / `dark`) Hive `settings` kutusunda kalıcıdır.
+- Ayarlar ekranı gerçek yerel verileri gösterir: özel analiz, favori, son
+  görüntülenen, keşif sayıları.
+- JSON yedek dışa/içe aktarma eklendi (`BackupService`):
+  `userAnalizleri`, `favoriteIds`, `recentIds`, `kesifProjects`, `themeMode`.
+- İçe aktarmada birleştir/değiştir akışı ile provider'lara uygulanır.
+- Hukuki sayfa bağlantıları Faz 13 için placeholder olarak ayarlarda görünür.
+
 ## Migration Durumu
 
 | Faz | Konu | Durum |
@@ -127,7 +137,8 @@ biçimlendirme: `core/utils/app_format.dart` (TR para/sayı).
 | **9** | **Özel Analizler + Keşif (kalıcılık)** | ✅ Tamamlandı |
 | **10** | **PDF Export** | ✅ Tamamlandı |
 | **11** | **Excel Export** | ✅ Tamamlandı |
-| 12–13 | Ekranlar & özellikler | ⏳ |
+| **12** | **Ayarlar** | ✅ Tamamlandı |
+| 13 | Hukuki Sayfalar | ⏳ |
 | 14 | Performans | ⏳ |
 
 ## Geliştirme

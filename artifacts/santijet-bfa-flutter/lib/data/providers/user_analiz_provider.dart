@@ -65,6 +65,23 @@ class UserAnalizNotifier extends StateNotifier<List<PozAnaliz>> {
     _persist();
   }
 
+  void replaceAll(List<PozAnaliz> items) {
+    state = items
+        .where((a) => a.id.isNotEmpty && a.kaynakTip != KaynakTip.sistem)
+        .toList();
+    _persist();
+  }
+
+  void merge(List<PozAnaliz> items) {
+    final byId = {for (final a in state) a.id: a};
+    for (final a in items) {
+      if (a.id.isEmpty || a.kaynakTip == KaynakTip.sistem) continue;
+      byId[a.id] = a;
+    }
+    state = byId.values.toList();
+    _persist();
+  }
+
   PozAnaliz clone(PozAnaliz source, {String? yeniAd}) {
     final now = DateTime.now().toIso8601String();
     final copy = source.copyWith(

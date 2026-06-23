@@ -26,6 +26,16 @@ class FavoritesNotifier extends StateNotifier<Set<String>> {
     state = next;
     _persist();
   }
+
+  void replaceAll(Iterable<String> ids) {
+    state = ids.where((id) => id.isNotEmpty).toSet();
+    _persist();
+  }
+
+  void merge(Iterable<String> ids) {
+    state = {...state, ...ids.where((id) => id.isNotEmpty)};
+    _persist();
+  }
 }
 
 /// Hive `favorites` kutusu — bootstrap'ta açılır ve override edilir.

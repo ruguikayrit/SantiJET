@@ -56,6 +56,23 @@ class KesifNotifier extends StateNotifier<List<KesifProject>> {
     _persist();
   }
 
+  void replaceAll(List<KesifProject> projects) {
+    state = [...projects]
+      ..sort((a, b) => b.guncellemeTarihi.compareTo(a.guncellemeTarihi));
+    _persist();
+  }
+
+  void merge(List<KesifProject> projects) {
+    final byId = {for (final p in state) p.id: p};
+    for (final p in projects) {
+      if (p.id.isEmpty) continue;
+      byId[p.id] = p;
+    }
+    state = byId.values.toList()
+      ..sort((a, b) => b.guncellemeTarihi.compareTo(a.guncellemeTarihi));
+    _persist();
+  }
+
   void addSatir(String projectId, PozAnaliz analiz, double miktar) {
     final now = DateTime.now().toIso8601String();
     state = [

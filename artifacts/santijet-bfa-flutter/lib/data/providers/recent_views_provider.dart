@@ -28,6 +28,24 @@ class RecentViewsNotifier extends StateNotifier<List<String>> {
     state = const [];
     _box.delete(_key);
   }
+
+  void replaceAll(Iterable<String> ids) {
+    state = ids.where((id) => id.isNotEmpty).take(_max).toList();
+    _box.put(_key, state);
+  }
+
+  void merge(Iterable<String> ids) {
+    final next = [
+      ...ids.where((id) => id.isNotEmpty),
+      ...state,
+    ];
+    final seen = <String>{};
+    state = [
+      for (final id in next)
+        if (seen.add(id)) id,
+    ].take(_max).toList();
+    _box.put(_key, state);
+  }
 }
 
 /// Hive `recent` kutusu — bootstrap'ta açılır ve override edilir.

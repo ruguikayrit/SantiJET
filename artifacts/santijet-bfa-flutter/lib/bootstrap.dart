@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:hive_flutter/hive_flutter.dart';
 
 import 'app.dart';
+import 'core/theme/theme_mode_provider.dart';
 import 'data/providers/favorites_provider.dart';
 import 'data/providers/kesif_provider.dart';
 import 'data/providers/recent_views_provider.dart';
@@ -28,6 +29,7 @@ Future<void> bootstrap() async {
       overrides: [
         favoritesBoxProvider.overrideWithValue(boxes[0]),
         recentBoxProvider.overrideWithValue(boxes[1]),
+        settingsBoxProvider.overrideWithValue(boxes[2]),
         userAnalizBoxProvider.overrideWithValue(boxes[3]),
         kesifBoxProvider.overrideWithValue(boxes[4]),
       ],
