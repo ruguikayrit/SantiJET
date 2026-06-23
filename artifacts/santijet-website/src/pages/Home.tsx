@@ -278,7 +278,7 @@ function Ecosystem() {
     { ex: 350, ey: 341, tx: 270, ty: 367 }, // L3 Çelik
     { ex: 381, ey: 394, tx: 270, ty: 500 }, // L4 Saha
     { ex: 595, ey: 228, tx: 690, ty: 168 }, // R1 Teknik
-    { ex: 616, ey: 300, tx: 694, ty: 300 }, // R2 İş Programı
+    { ex: 608, ey: 254, tx: 694, ty: 300 }, // R2 İş Programı
     { ex: 595, ey: 372, tx: 690, ty: 432 }, // R3 BFA
   ];
   // Hub dot positions in hub SVG (viewBox 0 0 300 300, center 150,150, r=136)
@@ -288,7 +288,7 @@ function Ecosystem() {
     { x:  20, y: 191 }, // L3
     { x:  51, y: 244 }, // L4
     { x: 265, y:  78 }, // R1
-    { x: 286, y: 150 }, // R2
+    { x: 278, y: 104 }, // R2
     { x: 265, y: 222 }, // R3
   ];
 
@@ -356,16 +356,34 @@ function Ecosystem() {
                 <feMerge><feMergeNode in="b" /><feMergeNode in="SourceGraphic" /></feMerge>
               </filter>
             </defs>
-            {lines.map((l, i) => (
-              <g key={i}>
-                <line
-                  x1={l.ex} y1={l.ey} x2={l.tx} y2={l.ty}
-                  stroke="#1a8fff" strokeWidth="1.4" strokeOpacity="0.8"
-                  filter="url(#eco-line-glow)"
-                />
-                <circle cx={l.tx} cy={l.ty} r="4" fill="#70c8ff" fillOpacity="0.9" filter="url(#eco-dot-glow)" />
-              </g>
-            ))}
+            {lines.map((l, i) => {
+              if (i === 5) return null; // R2 rendered in separate z=30 SVG below
+              return (
+                <g key={i}>
+                  <line
+                    x1={l.ex} y1={l.ey} x2={l.tx} y2={l.ty}
+                    stroke="#1a8fff" strokeWidth="1.4" strokeOpacity="0.8"
+                    filter="url(#eco-line-glow)"
+                  />
+                  <circle cx={l.tx} cy={l.ty} r="4" fill="#70c8ff" fillOpacity="0.9" filter="url(#eco-dot-glow)" />
+                </g>
+              );
+            })}
+          </svg>
+
+          {/* R2 İş Programı — z=30 SVG with its own inline filter (eco-line-glow ref fails cross-SVG).
+              Arc peaks at y=120, well above hub div (top y=150). */}
+          <svg
+            className="absolute inset-0 pointer-events-none"
+            style={{ width: "100%", height: "100%", zIndex: 30 }}
+            viewBox="0 0 960 600"
+            preserveAspectRatio="xMidYMid meet"
+          >
+            <path d="M 608 254 C 648 120 758 120 694 300" fill="none"
+              stroke="#90d8ff" strokeWidth="1.4" strokeOpacity="0.9"
+              style={{ filter: "drop-shadow(0 0 6px #1a8fff) drop-shadow(0 0 12px #1a4fff)" }} />
+            <circle cx={694} cy={300} r="4" fill="#70c8ff" fillOpacity="0.9"
+              style={{ filter: "drop-shadow(0 0 5px #1a8fff) drop-shadow(0 0 10px #1a4fff)" }} />
           </svg>
 
           {/* Left column: 4 cards, vertically centered */}
