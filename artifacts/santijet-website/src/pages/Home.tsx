@@ -174,9 +174,26 @@ function NeonIcon({ iconKey, color }: { iconKey: string; color: string }) {
     );
     case "saha": return (
       <svg width="38" height="38" viewBox="0 0 38 38">
-        <circle cx="19" cy="12" r="7" {...s} />
-        <path d="M5 34 c0-9 4.5-13 14-13 s14 4 14 13" {...s} />
-        <line x1="9" y1="7" x2="29" y2="7" stroke={color} strokeWidth="3.5" strokeLinecap="round" />
+        {/* Kule gövdesi (dikey kule) */}
+        <rect x="10" y="10" width="4" height="24" rx="0.8" {...s} />
+        {/* Zemin tabanı */}
+        <line x1="5" y1="34" x2="19" y2="34" {...s} strokeWidth={2} />
+        {/* Yatay kol (boom) */}
+        <line x1="12" y1="10" x2="34" y2="10" {...s} strokeWidth={2} />
+        {/* Kısa karşı ağırlık kolu */}
+        <line x1="12" y1="10" x2="4" y2="10" {...s} strokeWidth={2} />
+        {/* Kule tepe üçgeni */}
+        <line x1="12" y1="4" x2="8" y2="10" {...s} />
+        <line x1="12" y1="4" x2="16" y2="10" {...s} />
+        {/* Yatay kol kabloları */}
+        <line x1="12" y1="4" x2="34" y2="10" {...s} strokeOpacity={0.5} />
+        <line x1="12" y1="4" x2="4" y2="10" {...s} strokeOpacity={0.5} />
+        {/* Kanca halatı */}
+        <line x1="26" y1="10" x2="26" y2="22" {...s} />
+        {/* Kanca */}
+        <path d="M23 22 q0 4 3 4 q3 0 3-3" {...s} strokeWidth={1.8} />
+        {/* Karşı ağırlık bloğu */}
+        <rect x="2" y="8.5" width="4" height="3" rx="0.5" {...s} />
       </svg>
     );
     case "teknik": return (
