@@ -1,0 +1,189 @@
+ŞantiJET web sitesi için ürün tanıtım mockup'ları oluştur.
+
+AMAÇ:
+
+Web sitesine gelen ziyaretçi ilk 10 saniyede ŞantiJET'in bir uygulama değil, bir uygulama ailesi olduğunu anlamalıdır.
+
+ŞantiJET Pro ana platformdur.
+
+ŞantiJET Demir, BFA, Çelik, Beton, Malzeme ve Saha ise uzmanlaşmış alt uygulamalardır.
+
+━━━━━━━━━━━━━━━━━━━━━━
+
+MOCKUP STRATEJİSİ
+
+Gerçek ekran görüntüsü kullanma.
+
+Placeholder kullanma.
+
+Stock mockup kullanma.
+
+Her uygulama için premium ürün tanıtım sahnesi oluştur.
+
+Modern SaaS landing page kalitesinde olmalı.
+
+Referans:
+
+* Stripe
+* Linear
+* Notion
+* Procore
+* Autodesk Construction Cloud
+
+━━━━━━━━━━━━━━━━━━━━━━
+
+1. ŞANTİJET DEMİR
+
+Ana tema:
+
+Demir keşfi, sipariş, teslimat ve saha sayımı.
+
+Mockup içeriği:
+
+* Demir dashboard
+* Sipariş yönetimi
+* Gelen demir ekranı
+* Saha sayımı ekranı
+
+Vurgu:
+
+"Demiri kontrol et. Maliyeti kontrol et."
+
+━━━━━━━━━━━━━━━━━━━━━━
+
+2. ŞANTİJET BFA
+
+Ana tema:
+
+Birim fiyat analizleri.
+
+Mockup içeriği:
+
+* Analiz arama ekranı
+* Analiz detay ekranı
+* PDF export
+* Excel export
+
+Vurgu:
+
+"Binlerce analize saniyeler içinde ulaş."
+
+━━━━━━━━━━━━━━━━━━━━━━
+
+3. ŞANTİJET ÇELİK
+
+Ana tema:
+
+Çelik konstrüksiyon yönetimi.
+
+Mockup içeriği:
+
+* Profil kütüphanesi
+* HEA / HEB / IPE katalogları
+* Çelik metrajları
+* İmalat takibi
+
+Vurgu:
+
+"Çelik projelerini dijitalleştir."
+
+━━━━━━━━━━━━━━━━━━━━━━
+
+4. ŞANTİJET BETON
+
+Ana tema:
+
+Beton operasyonları.
+
+Mockup içeriği:
+
+* Beton döküm kayıtları
+* Beton siparişleri
+* Beton hacim hesapları
+* Kür takip sistemi
+
+Vurgu:
+
+"Beton süreçlerini tek ekranda yönet."
+
+━━━━━━━━━━━━━━━━━━━━━━
+
+5. ŞANTİJET MALZEME
+
+Ana tema:
+
+Malzeme ve stok yönetimi.
+
+Mockup içeriği:
+
+* Stok ekranı
+* Depo hareketleri
+* Giriş çıkış kayıtları
+* Kritik stok uyarıları
+
+Vurgu:
+
+"Malzeme kayıplarını azalt."
+
+━━━━━━━━━━━━━━━━━━━━━━
+
+6. ŞANTİJET SAHA
+
+Ana tema:
+
+Saha raporlama.
+
+Mockup içeriği:
+
+* Günlük raporlar
+* Fotoğraf kayıtları
+* Konum bilgileri
+* İlerleme takibi
+
+Vurgu:
+
+"Şantiyeyi cebinden yönet."
+
+━━━━━━━━━━━━━━━━━━━━━━
+
+ŞANTİJET PRO
+
+En üst seviye ürün.
+
+Ana ekran:
+
+Ortada ŞantiJET Pro.
+
+Etrafında:
+
+* Demir
+* BFA
+* Çelik
+* Beton
+* Malzeme
+* Saha
+
+modülleri bağlı şekilde gösterilsin.
+
+Kullanıcı ilk bakışta:
+
+"Bu uygulamalar birlikte çalışıyor."
+
+algısını almalıdır.
+
+━━━━━━━━━━━━━━━━━━━━━━
+
+TASARIM KURALLARI
+
+* Dark mode
+* Premium SaaS görünümü
+* İnşaat teknolojisi hissi
+* Modern kart yapıları
+* Cam efekti kullanılabilir
+* Kurumsal tipografi
+* Mavi vurgu renkleri
+* Yüksek kaliteli cihaz mockup'ları
+
+Amaç:
+
+ŞantiJET'i Türkiye'nin profesyonel inşaat teknolojisi ekosistemi olarak konumlandırmak.

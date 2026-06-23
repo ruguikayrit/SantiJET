@@ -2,7 +2,8 @@ import { motion } from "framer-motion";
 import { Link } from "wouter";
 import { 
   Building2, HardHat, FileText, Layers, TrendingUp, Calculator, ShieldCheck, 
-  ChevronRight, Play, CheckCircle2, ArrowRight, Menu, X, Check, Zap, Server, Users, BarChart3, Database
+  ChevronRight, Play, CheckCircle2, ArrowRight, Menu, X, Check, Zap, Server, Users, BarChart3, Database,
+  Search, Settings, ArrowUpRight, ArrowDownRight, MoreHorizontal, Camera, Activity, LayoutDashboard, Bell, Box, Droplets, MapPin
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useState, useEffect } from "react";
@@ -186,100 +187,492 @@ function Ecosystem() {
   );
 }
 
-// --- Pro Platform & Modules ---
-function Modules() {
-  const modules = [
+// --- Product Showcase ---
+function ProductShowcase() {
+  const products = [
     {
       id: "demir",
-      title: "ŞantiJET Demir",
-      desc: "Demir keşfi, sipariş, teslimat, saha sayımı ve stok yönetimi.",
-      features: ["Keşif & Metraj", "Sipariş Takibi", "Saha Sayımı"],
-      icon: <Layers className="w-6 h-6 text-blue-400" />
+      title: "ŞANTİJET DEMİR",
+      subject: "Demir keşfi, sipariş, teslimat, saha sayımı",
+      slogan: "Demiri kontrol et. Maliyeti kontrol et.",
+      color: "#1a5fff",
+      icon: <Layers className="w-6 h-6" style={{ color: "#1a5fff" }} />,
+      mockup: (
+        <div className="w-full h-full bg-[#0a0a0a] rounded-xl border border-white/10 overflow-hidden flex flex-col font-sans">
+          <div className="h-10 border-b border-white/10 flex items-center px-4 gap-4 bg-[#111]">
+            <div className="flex gap-1.5">
+              <div className="w-3 h-3 rounded-full bg-red-500/80" />
+              <div className="w-3 h-3 rounded-full bg-yellow-500/80" />
+              <div className="w-3 h-3 rounded-full bg-green-500/80" />
+            </div>
+            <div className="text-xs text-muted-foreground flex-1 text-center font-medium">santijet.com/demir/stok</div>
+          </div>
+          <div className="flex flex-1 overflow-hidden">
+            <div className="w-48 border-r border-white/10 p-4 flex flex-col gap-2 bg-[#0d0d0d]">
+              <div className="text-xs font-semibold text-white/50 mb-2">MENÜ</div>
+              {["Keşif Özeti", "Siparişler", "Teslimatlar", "Saha Sayımı"].map((item, i) => (
+                <div key={i} className={`text-sm px-3 py-2 rounded-md ${i === 2 ? "bg-[#1a5fff]/20 text-[#1a5fff] font-medium" : "text-white/70 hover:bg-white/5"}`}>
+                  {item}
+                </div>
+              ))}
+            </div>
+            <div className="flex-1 p-6 bg-[#0a0a0a]">
+              <div className="flex justify-between items-center mb-6">
+                <h4 className="font-semibold">Son Teslimatlar</h4>
+                <Button size="sm" className="bg-[#1a5fff] text-white hover:bg-[#1a5fff]/90 h-8">Yeni İrsaliye</Button>
+              </div>
+              <div className="grid grid-cols-3 gap-4 mb-6">
+                {[
+                  { label: "Toplam Gelen", val: "1,240 Ton", color: "text-white" },
+                  { label: "Saha Stok", val: "320 Ton", color: "text-[#1a5fff]" },
+                  { label: "Kritik Çap", val: "Ø14 (12 Ton)", color: "text-red-400" },
+                ].map((stat, i) => (
+                  <div key={i} className="bg-white/5 p-4 rounded-lg border border-white/5">
+                    <div className="text-xs text-white/50 mb-1">{stat.label}</div>
+                    <div className={`text-lg font-bold ${stat.color}`}>{stat.val}</div>
+                  </div>
+                ))}
+              </div>
+              <div className="border border-white/10 rounded-lg overflow-hidden">
+                <div className="bg-white/5 px-4 py-2 text-xs font-medium text-white/50 grid grid-cols-4">
+                  <div>İRSALİYE NO</div>
+                  <div>TARİH</div>
+                  <div>MİKTAR</div>
+                  <div>DURUM</div>
+                </div>
+                {[
+                  { no: "IRS-2024-089", date: "Bugün, 09:30", amount: "24.5 Ton", status: "Sayım Bekliyor", sColor: "text-yellow-400" },
+                  { no: "IRS-2024-088", date: "Dün, 14:15", amount: "18.0 Ton", status: "Onaylandı", sColor: "text-emerald-400" },
+                  { no: "IRS-2024-087", date: "12 Eki, 10:00", amount: "32.4 Ton", status: "Onaylandı", sColor: "text-emerald-400" },
+                ].map((row, i) => (
+                  <div key={i} className="px-4 py-3 text-sm border-t border-white/5 grid grid-cols-4 items-center">
+                    <div className="font-medium text-white/90">{row.no}</div>
+                    <div className="text-white/60">{row.date}</div>
+                    <div className="text-white/90">{row.amount}</div>
+                    <div className={row.sColor}>{row.status}</div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          </div>
+        </div>
+      )
+    },
+    {
+      id: "bfa",
+      title: "ŞANTİJET BFA",
+      subject: "Birim fiyat analizleri — binlerce analiz, anında erişim",
+      slogan: "Binlerce analize saniyeler içinde ulaş.",
+      color: "#7c3aed",
+      icon: <Calculator className="w-6 h-6" style={{ color: "#7c3aed" }} />,
+      mockup: (
+        <div className="w-full h-full bg-[#0a0a0a] rounded-xl border border-white/10 overflow-hidden flex flex-col font-sans">
+          <div className="h-12 border-b border-white/10 flex items-center px-4 bg-[#111]">
+            <div className="w-full max-w-md mx-auto relative">
+              <Search className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-white/40" />
+              <input type="text" value="C30 Beton" readOnly className="w-full bg-white/5 border border-white/10 rounded-md py-1.5 pl-9 pr-4 text-sm text-white/90 outline-none" />
+            </div>
+          </div>
+          <div className="flex-1 p-6 flex flex-col">
+            <div className="flex justify-between items-end mb-6">
+              <div>
+                <div className="text-xs text-[#7c3aed] font-semibold mb-1">POZ: 15.150.1006</div>
+                <h4 className="font-semibold text-lg">C30/37 Hazır Beton Dökülmesi</h4>
+              </div>
+              <div className="flex gap-2">
+                <Button size="sm" variant="outline" className="h-8 border-white/10 bg-white/5">PDF İndir</Button>
+                <Button size="sm" className="h-8 bg-[#7c3aed] hover:bg-[#7c3aed]/90 text-white">Analizi Kopyala</Button>
+              </div>
+            </div>
+            
+            <div className="bg-white/5 border border-white/10 rounded-lg flex-1 overflow-hidden flex flex-col">
+              <div className="grid grid-cols-12 gap-4 px-4 py-2 border-b border-white/10 text-xs font-medium text-white/50 bg-black/50">
+                <div className="col-span-5">TANIM</div>
+                <div className="col-span-2 text-right">MİKTAR</div>
+                <div className="col-span-2 text-right">B.FİYAT</div>
+                <div className="col-span-3 text-right">TUTAR</div>
+              </div>
+              <div className="p-2 space-y-1">
+                {[
+                  { t: "C30/37 Hazır Beton", m: "1.05", u: "m³", f: "2,450.00", to: "2,572.50" },
+                  { t: "Beton Pompası", m: "1.00", u: "m³", f: "180.00", to: "180.00" },
+                  { t: "Beton İşçiliği", m: "1.20", u: "saat", f: "450.00", to: "540.00" },
+                  { t: "Kür Bakımı", m: "1.00", u: "m²", f: "25.00", to: "25.00" }
+                ].map((row, i) => (
+                  <div key={i} className="grid grid-cols-12 gap-4 px-2 py-2 rounded hover:bg-white/5 text-sm items-center">
+                    <div className="col-span-5 text-white/90">{row.t}</div>
+                    <div className="col-span-2 text-right text-white/70">{row.m} {row.u}</div>
+                    <div className="col-span-2 text-right text-white/70">₺{row.f}</div>
+                    <div className="col-span-3 text-right font-medium">₺{row.to}</div>
+                  </div>
+                ))}
+              </div>
+              <div className="mt-auto border-t border-white/10 p-4 bg-[#7c3aed]/10 flex justify-between items-center">
+                <div className="text-sm font-medium text-[#7c3aed]">Toplam Birim Maliyet (m³)</div>
+                <div className="text-xl font-bold text-white">₺3,317.50</div>
+              </div>
+            </div>
+          </div>
+        </div>
+      )
+    },
+    {
+      id: "celik",
+      title: "ŞANTİJET ÇELİK",
+      subject: "Çelik konstrüksiyon, metraj, imalat takibi",
+      slogan: "Çelik projelerini dijitalleştir.",
+      color: "#94a3b8",
+      icon: <Layers className="w-6 h-6" style={{ color: "#94a3b8" }} />,
+      mockup: (
+        <div className="w-full h-full bg-[#0a0a0a] rounded-xl border border-white/10 overflow-hidden flex font-sans">
+          <div className="w-16 border-r border-white/10 bg-[#0d0d0d] flex flex-col items-center py-4 gap-6">
+             <div className="w-8 h-8 rounded bg-[#94a3b8]/20 flex items-center justify-center text-[#94a3b8]"><Layers size={18} /></div>
+             <div className="w-8 h-8 rounded hover:bg-white/5 flex items-center justify-center text-white/40"><Database size={18} /></div>
+             <div className="w-8 h-8 rounded hover:bg-white/5 flex items-center justify-center text-white/40"><Activity size={18} /></div>
+          </div>
+          <div className="flex-1 p-6 flex flex-col">
+            <h4 className="font-semibold mb-4">Profil Metraj Listesi</h4>
+            <div className="grid grid-cols-2 gap-4 mb-4">
+              <div className="bg-gradient-to-br from-[#94a3b8]/20 to-transparent p-4 rounded-xl border border-[#94a3b8]/30">
+                <div className="text-xs text-[#94a3b8] mb-1">Toplam Tonaj</div>
+                <div className="text-2xl font-bold">142.5 <span className="text-sm text-white/50 font-normal">Ton</span></div>
+              </div>
+              <div className="bg-white/5 p-4 rounded-xl border border-white/5">
+                <div className="text-xs text-white/50 mb-1">İmalatı Tamamlanan</div>
+                <div className="text-2xl font-bold text-white">86.2 <span className="text-sm text-white/50 font-normal">Ton (60%)</span></div>
+              </div>
+            </div>
+            
+            <div className="border border-white/10 rounded-lg bg-[#111] flex-1">
+               <div className="grid grid-cols-4 px-4 py-2 border-b border-white/10 text-xs text-white/40 font-semibold">
+                 <div>PROFİL</div>
+                 <div>UZUNLUK (m)</div>
+                 <div>ADET</div>
+                 <div>AĞIRLIK (kg)</div>
+               </div>
+               {[
+                 { p: "HEA 200", l: "6.00", a: "24", w: "6,084" },
+                 { p: "IPE 300", l: "12.00", a: "18", w: "9,115" },
+                 { p: "HEB 400", l: "4.50", a: "12", w: "8,370" },
+                 { p: "L 80x80x8", l: "6.00", a: "40", w: "2,318" }
+               ].map((r, i) => (
+                 <div key={i} className="grid grid-cols-4 px-4 py-3 border-b border-white/5 text-sm hover:bg-white/5">
+                   <div className="font-medium text-[#94a3b8]">{r.p}</div>
+                   <div className="text-white/80">{r.l}</div>
+                   <div className="text-white/80">{r.a}</div>
+                   <div className="text-white/80">{r.w}</div>
+                 </div>
+               ))}
+            </div>
+          </div>
+        </div>
+      )
+    },
+    {
+      id: "beton",
+      title: "ŞANTİJET BETON",
+      subject: "Beton döküm kayıtları, siparişler, kür takip",
+      slogan: "Beton süreçlerini tek ekranda yönet.",
+      color: "#64748b",
+      icon: <Box className="w-6 h-6" style={{ color: "#64748b" }} />,
+      mockup: (
+        <div className="w-full h-full bg-[#0a0a0a] rounded-xl border border-white/10 overflow-hidden flex flex-col font-sans">
+          <div className="h-14 border-b border-white/10 px-6 flex justify-between items-center bg-[#0d0d0d]">
+             <div className="font-semibold text-lg flex items-center gap-2">
+               <div className="w-2 h-2 rounded-full bg-[#64748b] animate-pulse" />
+               Canlı Beton Dökümü
+             </div>
+             <div className="text-sm text-white/50">Blok A - 4. Kat Tabliyesi</div>
+          </div>
+          <div className="p-6 flex-1 flex gap-6">
+            <div className="flex-1 flex flex-col gap-4">
+              <div className="bg-white/5 border border-white/10 rounded-xl p-5 flex items-center justify-between">
+                <div>
+                  <div className="text-xs text-white/50 mb-1">Dökülen Hacim / Toplam</div>
+                  <div className="text-3xl font-bold text-white">124 <span className="text-lg text-white/40">/ 280 m³</span></div>
+                </div>
+                <div className="w-16 h-16 rounded-full border-4 border-white/10 border-t-[#64748b] border-r-[#64748b] flex items-center justify-center">
+                  <span className="text-sm font-bold">44%</span>
+                </div>
+              </div>
+              
+              <div className="border border-white/10 rounded-xl flex-1 p-4 bg-[#111]">
+                 <div className="text-sm font-medium text-white/70 mb-4">Gelen Mikserler</div>
+                 <div className="space-y-3">
+                   {[
+                     { t: "14:30", p: "34 ABC 123", m: "8 m³", s: "Dökülüyor", c: "text-yellow-400" },
+                     { t: "14:00", p: "34 DEF 456", m: "8 m³", s: "Tamamlandı", c: "text-emerald-400" },
+                     { t: "13:30", p: "34 GHI 789", m: "8 m³", s: "Tamamlandı", c: "text-emerald-400" },
+                   ].map((m, i) => (
+                     <div key={i} className="flex justify-between items-center p-3 rounded bg-white/5 border border-white/5">
+                        <div className="flex items-center gap-3">
+                          <div className="text-xs text-white/40">{m.t}</div>
+                          <div className="font-medium text-sm border border-white/10 px-2 py-0.5 rounded bg-black">{m.p}</div>
+                        </div>
+                        <div className="flex items-center gap-4">
+                          <div className="text-sm font-medium">{m.m}</div>
+                          <div className={`text-xs ${m.c}`}>{m.s}</div>
+                        </div>
+                     </div>
+                   ))}
+                 </div>
+              </div>
+            </div>
+            <div className="w-48 flex flex-col gap-4">
+               <div className="bg-[#64748b]/10 border border-[#64748b]/30 rounded-xl p-4">
+                 <div className="text-xs text-[#64748b] font-semibold mb-2">HAVA DURUMU</div>
+                 <div className="text-2xl font-bold mb-1">18°C</div>
+                 <div className="text-xs text-white/60">Nem: %45<br/>Rüzgar: 12 km/s</div>
+               </div>
+               <Button className="w-full bg-[#64748b] hover:bg-[#64748b]/90 text-white shadow-lg">Mikser Ekle</Button>
+               <Button variant="outline" className="w-full border-white/10 text-white/70">Slump Testi Gir</Button>
+            </div>
+          </div>
+        </div>
+      )
     },
     {
       id: "malzeme",
-      title: "ŞantiJET Malzeme",
-      desc: "Şantiye malzeme giriş çıkış ve stok takibi.",
-      features: ["Malzeme Girişi", "Stok Kontrolü", "İrsaliye Yönetimi"],
-      icon: <Building2 className="w-6 h-6 text-emerald-400" />
+      title: "ŞANTİJET MALZEME",
+      subject: "Stok yönetimi, depo hareketleri, kritik stok",
+      slogan: "Malzeme kayıplarını azalt.",
+      color: "#059669",
+      icon: <Database className="w-6 h-6" style={{ color: "#059669" }} />,
+      mockup: (
+        <div className="w-full h-full bg-[#0a0a0a] rounded-xl border border-white/10 overflow-hidden flex flex-col font-sans">
+          <div className="p-5 border-b border-white/10 flex justify-between items-center">
+            <h4 className="font-semibold">Depo Stok Durumu</h4>
+            <div className="flex gap-2">
+               <div className="px-3 py-1 rounded bg-[#059669]/20 text-[#059669] text-xs font-medium border border-[#059669]/30">Ana Depo</div>
+               <div className="px-3 py-1 rounded bg-white/5 text-white/50 text-xs font-medium border border-white/10">Saha 1</div>
+            </div>
+          </div>
+          <div className="p-5 flex-1">
+             <div className="flex gap-4 mb-6">
+                <div className="flex-1 bg-gradient-to-br from-red-500/10 to-transparent border border-red-500/20 p-4 rounded-lg">
+                   <div className="text-red-400 text-xs font-medium mb-1">Kritik Stok Uyarısı</div>
+                   <div className="text-xl font-bold text-white">4 Kalem</div>
+                </div>
+                <div className="flex-1 bg-white/5 border border-white/10 p-4 rounded-lg">
+                   <div className="text-white/50 text-xs font-medium mb-1">Toplam Malzeme Değeri</div>
+                   <div className="text-xl font-bold text-[#059669]">₺4.2M</div>
+                </div>
+             </div>
+             
+             <div className="space-y-3">
+               {[
+                 { n: "Çimento (Torba)", s: "120 Adet", status: "Kritik", w: "w-[15%]", c: "bg-red-500" },
+                 { n: "Seramik Yapıştırıcı", s: "450 Torba", status: "Yeterli", w: "w-[60%]", c: "bg-[#059669]" },
+                 { n: "İzolasyon Membranı", s: "85 Rulo", status: "Azalıyor", w: "w-[30%]", c: "bg-yellow-500" },
+                 { n: "Alçıpan Plaka", s: "1,200 Adet", status: "İyi", w: "w-[85%]", c: "bg-[#059669]" },
+               ].map((item, i) => (
+                 <div key={i} className="p-3 bg-white/5 border border-white/5 rounded-lg">
+                   <div className="flex justify-between text-sm mb-2">
+                     <span className="font-medium text-white/90">{item.n}</span>
+                     <span className="text-white/60">{item.s}</span>
+                   </div>
+                   <div className="h-1.5 w-full bg-black rounded-full overflow-hidden">
+                     <div className={`h-full ${item.c} ${item.w} rounded-full`}></div>
+                   </div>
+                 </div>
+               ))}
+             </div>
+          </div>
+        </div>
+      )
     },
     {
-      id: "puantaj",
-      title: "ŞantiJET Puantaj",
-      desc: "Personel ve ekip puantaj yönetimi.",
-      features: ["Günlük Puantaj", "Ekip Yönetimi", "Mesai Takibi"],
-      icon: <Users className="w-6 h-6 text-orange-400" />
-    },
-    {
-      id: "gunluk-rapor",
-      title: "ŞantiJET Günlük Rapor",
-      desc: "Günlük saha faaliyetleri ve ilerleme raporları.",
-      features: ["Fotoğraflı Rapor", "Ekip Özeti", "İlerleme Takibi"],
-      icon: <FileText className="w-6 h-6 text-purple-400" />
-    },
-    {
-      id: "birim-fiyat",
-      title: "ŞantiJET Birim Fiyat",
-      desc: "Birim fiyat analizleri ve maliyet kontrolü.",
-      features: ["Analiz Kitaplığı", "Maliyet Simülasyonu", "Karşılaştırmalı Analiz"],
-      icon: <Calculator className="w-6 h-6 text-pink-400" />
-    },
-    {
-      id: "metraj",
-      title: "ŞantiJET Metraj",
-      desc: "Metraj hesaplama ve miktar yönetimi.",
-      features: ["Otomatik Hesaplama", "Poz Yönetimi", "Hakediş Entegrasyonu"],
-      icon: <BarChart3 className="w-6 h-6 text-yellow-400" />
-    },
-    {
-      id: "hakedis",
-      title: "ŞantiJET Hakediş",
-      desc: "Hakediş hazırlama ve kontrol süreçleri.",
-      features: ["Otomatik Hazırlama", "İdare Kontrolü", "Revizyon Takibi"],
-      icon: <FileText className="w-6 h-6 text-cyan-400" />
+      id: "saha",
+      title: "ŞANTİJET SAHA",
+      subject: "Günlük raporlar, fotoğraf kayıtları, ilerleme",
+      slogan: "Şantiyeyi cebinden yönet.",
+      color: "#ea580c",
+      icon: <MapPin className="w-6 h-6" style={{ color: "#ea580c" }} />,
+      mockup: (
+        <div className="w-full h-full bg-black rounded-xl border-4 border-[#1a1a1a] shadow-2xl overflow-hidden flex flex-col font-sans relative mx-auto max-w-[320px]">
+          {/* Mobile frame header */}
+          <div className="h-6 w-full flex justify-center pt-2 pb-1">
+            <div className="w-16 h-1.5 bg-[#222] rounded-full"></div>
+          </div>
+          <div className="px-4 py-3 flex justify-between items-center border-b border-white/10">
+            <div className="font-semibold">Günlük Rapor</div>
+            <div className="text-xs bg-[#ea580c]/20 text-[#ea580c] px-2 py-1 rounded">24 Eki</div>
+          </div>
+          <div className="p-4 flex-1 overflow-y-auto space-y-4">
+             <div>
+               <div className="text-xs text-white/50 mb-2">HAVA DURUMU</div>
+               <div className="flex gap-2">
+                 <div className="flex-1 bg-white/5 rounded p-2 text-center border border-white/5 text-sm">Güneşli</div>
+                 <div className="flex-1 bg-white/5 rounded p-2 text-center border border-white/5 text-sm">22°C</div>
+               </div>
+             </div>
+             <div>
+               <div className="text-xs text-white/50 mb-2">PERSONEL (124 Kişi)</div>
+               <div className="bg-[#111] rounded-lg border border-white/10 p-3 space-y-2 text-sm">
+                 <div className="flex justify-between"><span>Kalıpçı</span> <span className="font-medium">32</span></div>
+                 <div className="flex justify-between"><span>Demirci</span> <span className="font-medium">28</span></div>
+                 <div className="flex justify-between"><span>Betoncu</span> <span className="font-medium">14</span></div>
+                 <div className="flex justify-between text-[#ea580c]"><span>Diğerleri</span> <span>50</span></div>
+               </div>
+             </div>
+             <div>
+               <div className="text-xs text-white/50 mb-2">FOTOĞRAFLAR</div>
+               <div className="grid grid-cols-2 gap-2">
+                 <div className="aspect-square bg-white/10 rounded flex items-center justify-center text-white/30 border border-white/5 relative overflow-hidden">
+                   <div className="absolute inset-0 bg-gradient-to-t from-black/50 to-transparent"></div>
+                   <Camera size={20} />
+                 </div>
+                 <div className="aspect-square bg-[#ea580c]/10 border border-[#ea580c]/30 rounded flex items-center justify-center text-[#ea580c]">
+                   + Ekle
+                 </div>
+               </div>
+             </div>
+          </div>
+          <div className="p-4 border-t border-white/10">
+            <Button className="w-full bg-[#ea580c] text-white hover:bg-[#ea580c]/90">Raporu Gönder</Button>
+          </div>
+        </div>
+      )
     }
   ];
 
   return (
-    <section id="urunler" className="py-24 relative">
+    <section id="urunler" className="py-32 relative bg-black">
+      {/* Container */}
       <div className="container mx-auto px-4">
-        
-        {/* Modules Grid */}
-        <div className="text-center mb-12">
-          <h2 className="text-3xl md:text-4xl font-bold mb-4">İhtiyacınız Olan Modülü Seçin</h2>
-          <p className="text-muted-foreground max-w-2xl mx-auto">İster tek modül ile başlayın, ister tüm süreçleri dijitalleştirin.</p>
+        <div className="text-center mb-24">
+           <motion.h2 
+             initial={{ opacity: 0, y: 20 }}
+             whileInView={{ opacity: 1, y: 0 }}
+             viewport={{ once: true }}
+             className="text-4xl md:text-6xl font-bold mb-6 tracking-tight"
+           >
+             İhtiyacınız Olan<br/><span className="text-transparent bg-clip-text bg-gradient-to-r from-primary to-blue-300">Her Şey Burada.</span>
+           </motion.h2>
+           <motion.p 
+             initial={{ opacity: 0, y: 20 }}
+             whileInView={{ opacity: 1, y: 0 }}
+             viewport={{ once: true }}
+             transition={{ delay: 0.1 }}
+             className="text-xl text-muted-foreground max-w-3xl mx-auto"
+           >
+             Şantiyenizi uçtan uca yönetmeniz için tasarlandı. Sadece bir uygulama değil, eksiksiz bir teknoloji ekosistemi.
+           </motion.p>
         </div>
 
-        <div className="grid md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
-          {modules.map((mod, i) => (
-            <motion.div 
-              key={mod.id}
-              initial={{ opacity: 0, y: 20 }}
-              whileInView={{ opacity: 1, y: 0 }}
-              viewport={{ once: true }}
-              transition={{ delay: i * 0.05 }}
-              className="group bg-black/40 border border-white/5 hover:border-primary/50 rounded-xl p-6 transition-all hover:shadow-[0_0_30px_rgba(26,95,255,0.15)] flex flex-col"
-            >
-              <div className="w-12 h-12 rounded-lg bg-white/5 flex items-center justify-center mb-4 group-hover:scale-110 transition-transform">
-                {mod.icon}
+        <div className="space-y-32">
+          {products.map((product, idx) => {
+            const isEven = idx % 2 === 0;
+            return (
+              <div key={product.id} className={`flex flex-col ${isEven ? 'lg:flex-row' : 'lg:flex-row-reverse'} gap-12 lg:gap-24 items-center`}>
+                
+                {/* Text Content */}
+                <motion.div 
+                  initial={{ opacity: 0, x: isEven ? -40 : 40 }}
+                  whileInView={{ opacity: 1, x: 0 }}
+                  viewport={{ once: true, margin: "-100px" }}
+                  transition={{ duration: 0.7, ease: "easeOut" }}
+                  className="w-full lg:w-5/12 space-y-6"
+                >
+                  <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-white/5 border border-white/10" style={{ color: product.color }}>
+                    {product.icon}
+                    <span className="text-xs font-bold tracking-wider">{product.title}</span>
+                  </div>
+                  
+                  <h3 className="text-3xl md:text-4xl font-bold leading-tight">
+                    {product.slogan}
+                  </h3>
+                  
+                  <p className="text-lg text-muted-foreground">
+                    {product.subject}. Geleneksel Excel tablolarını ve WhatsApp gruplarını geride bırakın.
+                  </p>
+                  
+                  <Button variant="link" className="p-0 h-auto text-white hover:text-white group" style={{ color: product.color }}>
+                    <span className="mr-2 text-base font-semibold text-white">İncele</span> 
+                    <ArrowRight className="w-5 h-5 transition-transform group-hover:translate-x-1" />
+                  </Button>
+                </motion.div>
+
+                {/* Mockup Showcase */}
+                <motion.div 
+                  initial={{ opacity: 0, scale: 0.95 }}
+                  whileInView={{ opacity: 1, scale: 1 }}
+                  viewport={{ once: true, margin: "-100px" }}
+                  transition={{ duration: 0.7, ease: "easeOut", delay: 0.2 }}
+                  className="w-full lg:w-7/12 relative aspect-[4/3] md:aspect-[16/10]"
+                >
+                  {/* Glow effect */}
+                  <div 
+                    className="absolute inset-0 blur-[100px] opacity-20 pointer-events-none rounded-full"
+                    style={{ backgroundColor: product.color }}
+                  />
+                  
+                  <div className="relative w-full h-full rounded-2xl p-2 bg-white/5 border border-white/10 backdrop-blur-sm shadow-2xl">
+                    {product.mockup}
+                  </div>
+                </motion.div>
+
               </div>
-              <h3 className="text-xl font-bold mb-2">{mod.title}</h3>
-              <p className="text-sm text-muted-foreground mb-6 flex-grow">{mod.desc}</p>
-              
-              <ul className="space-y-2 mb-6">
-                {mod.features.map((f, idx) => (
-                  <li key={idx} className="flex items-center gap-2 text-sm text-white/80">
-                    <Check className="w-4 h-4 text-primary/70" /> {f}
-                  </li>
-                ))}
-              </ul>
-
-              <Button variant="ghost" className="w-full justify-between hover:bg-primary hover:text-white border border-white/10">
-                İncele <ArrowRight className="w-4 h-4" />
-              </Button>
-            </motion.div>
-          ))}
+            );
+          })}
         </div>
+
+        {/* PRO SECTION (Centerpiece) */}
+        <motion.div 
+           initial={{ opacity: 0, y: 40 }}
+           whileInView={{ opacity: 1, y: 0 }}
+           viewport={{ once: true }}
+           transition={{ duration: 0.8 }}
+           className="mt-40 relative rounded-3xl overflow-hidden border border-white/10 bg-black text-center px-4 py-24 md:py-32"
+        >
+           <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_center,_var(--tw-gradient-stops))] from-primary/20 via-black to-black pointer-events-none" />
+           <div className="absolute top-0 left-1/2 -translate-x-1/2 w-3/4 h-px bg-gradient-to-r from-transparent via-primary to-transparent" />
+           
+           <div className="relative z-10 max-w-4xl mx-auto flex flex-col items-center">
+             <div className="w-24 h-24 rounded-2xl bg-gradient-to-br from-primary/40 to-primary/10 border border-primary/50 flex items-center justify-center shadow-[0_0_50px_rgba(26,95,255,0.4)] mb-8">
+               <img src={`${import.meta.env.BASE_URL.replace(/\/$/, "")}/brand/santijet-bolt-nobg.png`} alt="Pro" className="w-16 h-16 object-contain" />
+             </div>
+             
+             <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-primary/10 border border-primary/30 text-primary mb-6">
+                <span className="text-sm font-bold tracking-widest uppercase">ŞANTİJET PRO</span>
+             </div>
+             
+             <h2 className="text-4xl md:text-6xl font-bold mb-6">
+               Tüm Şantiye Operasyonlarınız<br/>Tek Çatı Altında.
+             </h2>
+             
+             <p className="text-xl text-muted-foreground mb-10 max-w-2xl">
+               Farklı uygulamalar, dağınık veriler ve manuel raporlama döngüsüne son verin. Tüm modüllerin birbiriyle konuştuğu merkezi işletim sistemine geçin.
+             </p>
+             
+             <div className="flex flex-col sm:flex-row gap-4">
+               <Button size="lg" className="h-14 px-8 text-base bg-white text-black hover:bg-white/90 font-semibold">
+                 Pro Ekosistemini Keşfet
+               </Button>
+               <Button size="lg" variant="outline" className="h-14 px-8 text-base border-white/20 text-white hover:bg-white/5">
+                 Satış Ekibiyle Görüş
+               </Button>
+             </div>
+           </div>
+           
+           {/* Abstract floating UI elements for PRO */}
+           <div className="hidden md:block absolute top-1/4 left-10 w-48 h-32 bg-white/5 border border-white/10 rounded-xl backdrop-blur-md transform -rotate-6 p-4">
+             <div className="w-1/2 h-2 bg-white/20 rounded mb-4" />
+             <div className="w-3/4 h-2 bg-white/10 rounded mb-2" />
+             <div className="w-full h-2 bg-white/10 rounded" />
+           </div>
+           <div className="hidden md:block absolute bottom-1/4 right-10 w-56 h-40 bg-white/5 border border-white/10 rounded-xl backdrop-blur-md transform rotate-3 p-4">
+             <div className="flex justify-between items-center mb-4">
+               <div className="w-8 h-8 rounded-full bg-primary/30" />
+               <div className="w-16 h-4 bg-white/10 rounded" />
+             </div>
+             <div className="space-y-2">
+               <div className="w-full h-2 bg-white/10 rounded" />
+               <div className="w-4/5 h-2 bg-white/10 rounded" />
+             </div>
+           </div>
+        </motion.div>
+
       </div>
     </section>
   );
@@ -521,7 +914,7 @@ export default function Home() {
       <main>
         <Hero />
         <Ecosystem />
-        <Modules />
+        <ProductShowcase />
         <HowItWorks />
         <Benefits />
         <Pricing />
