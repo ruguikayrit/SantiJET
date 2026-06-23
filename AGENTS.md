@@ -55,7 +55,26 @@ typings). These are committed code issues unrelated to environment setup; the
 api-server still builds and runs because its build uses esbuild, not tsc. Other
 packages typecheck cleanly.
 
-### Out of scope for the JS workspace
+### Flutter (santijet-bfa-flutter, santijet-demir)
 
-`artifacts/santijet-demir` is a Flutter app (not part of the pnpm workspace) and
-requires the Flutter SDK; it is not set up by the JS dev environment.
+A Flutter SDK is baked into the base image at `$HOME/flutter` (Flutter 3.44.3
+stable / Dart 3.12.2). `$HOME/flutter/bin` is added to `PATH` via `~/.bashrc`, so
+interactive shells get `flutter` automatically; non-interactive contexts (and the
+startup update script) must reference `$HOME/flutter/bin/flutter` explicitly.
+
+Web (`flutter build web` / `-d chrome`) and Linux desktop (`flutter build linux`)
+toolchains are precached and verified green via `flutter doctor`. Android shows ✗
+(no Android SDK) — expected/out of scope. The Linux desktop apt deps are
+`ninja-build libgtk-3-dev mesa-utils clang cmake pkg-config`. Note: clang 18
+auto-selects the GCC 14 toolchain, so `libstdc++-14-dev` (plus `g++`) must be
+present or C++ linking fails with `cannot find -lstdc++`; these are installed in
+the base image.
+
+Flutter projects:
+- `artifacts/santijet-bfa-flutter` — ŞantiJET BFA (Birim Fiyat Analizleri). Run
+  `flutter pub get` then `flutter run -d chrome` / `flutter build web` /
+  `flutter build linux`. Generated `*.g.dart` / `*.freezed.dart` files are
+  committed; if you change annotated models, regenerate with
+  `dart run build_runner build`. This artifact is NOT part of the pnpm workspace.
+- `artifacts/santijet-demir` — separate Flutter app (also outside the pnpm
+  workspace); see its `README.md`.
