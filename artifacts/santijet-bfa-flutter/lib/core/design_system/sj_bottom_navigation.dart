@@ -85,9 +85,8 @@ class _NavItemView extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    final color = selected
-        ? AppColors.electricBlue
-        : theme.colorScheme.onSurfaceVariant;
+    final color =
+        selected ? AppColors.electricBlue : theme.colorScheme.onSurfaceVariant;
 
     return InkWell(
       onTap: onTap,

@@ -8,11 +8,7 @@ abstract final class TrSearch {
 
   /// TR küçük harfe çevirir ( İ/I dönüşümleri dahil) ve kırpılır.
   static String normalize(String text) {
-    return text
-        .trim()
-        .replaceAll('İ', 'i')
-        .replaceAll('I', 'ı')
-        .toLowerCase();
+    return text.trim().replaceAll('İ', 'i').replaceAll('I', 'ı').toLowerCase();
   }
 
   static String _escape(String text) {
@@ -33,7 +29,10 @@ abstract final class TrSearch {
 
   /// Sorguyu kelime token'larına ayırır; sayı+birim çiftlerini birleştirir.
   static List<String> tokenize(String query) {
-    final parts = _expand(query).split(RegExp(r'\s+')).where((s) => s.isNotEmpty).toList();
+    final parts = _expand(query)
+        .split(RegExp(r'\s+'))
+        .where((s) => s.isNotEmpty)
+        .toList();
     final unitRe = RegExp('^($_measureUnits)\$', caseSensitive: false);
     final tokens = <String>[];
 

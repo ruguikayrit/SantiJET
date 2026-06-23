@@ -79,6 +79,18 @@ Demir desenlerine dayanır; yapısal renkler `Theme`'den, marka/durum renkleri
 İş mantığı: `domain/calc/analiz_hesap.dart` (RN `hesaplaAnalizToplam`),
 biçimlendirme: `core/utils/app_format.dart` (TR para/sayı).
 
+## Yerel kullanıcı verisi (Faz 9)
+
+- **Özel analizler:** `userAnalizProvider` (Hive `user_analizleri`) — ekle,
+  güncelle, sil, sistem kaydını kopyaya çevirme. `catalogProvider`, resmi
+  katalogla kullanıcı/kopya analizlerini birleştirir.
+- **Keşif:** `KesifProject` / `KesifSatiri` modelleri + `kesifProvider`
+  (Hive `kesif_projects`) — proje oluştur/sil, satır ekle, miktar güncelle,
+  satır sil, toplam hesaplama.
+- **Ekranlar:** Keşif listesi ve detay ekranı gerçek Hive verisine bağlıdır.
+  Poz ekleme modalı ve keşif Excel importu sonraki iterasyonlarda bu provider
+  üzerine bağlanacaktır.
+
 ## Migration Durumu
 
 | Faz | Konu | Durum |
@@ -91,7 +103,8 @@ biçimlendirme: `core/utils/app_format.dart` (TR para/sayı).
 | **6** | **Ana Sayfa + Veri Katmanı** | ✅ Tamamlandı |
 | **7** | **Analiz Listeleri** | ✅ Tamamlandı |
 | **8** | **Analiz Detay Sayfası** | ✅ Tamamlandı |
-| 9–13 | Ekranlar & özellikler | ⏳ |
+| **9** | **Özel Analizler + Keşif (kalıcılık)** | ✅ Tamamlandı |
+| 10–13 | Ekranlar & özellikler | ⏳ |
 | 14 | Performans | ⏳ |
 
 ## Geliştirme

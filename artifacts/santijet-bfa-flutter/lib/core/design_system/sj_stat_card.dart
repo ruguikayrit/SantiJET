@@ -67,14 +67,16 @@ class SJStatCard extends StatelessWidget {
                 Icon(
                   trendUp == true ? Icons.trending_up : Icons.trending_down,
                   size: 14,
-                  color: trendUp == true ? AppColors.success : AppColors.critical,
+                  color:
+                      trendUp == true ? AppColors.success : AppColors.critical,
                 ),
                 const SizedBox(width: 4),
                 Text(
                   trend!,
                   style: theme.textTheme.labelMedium?.copyWith(
-                    color:
-                        trendUp == true ? AppColors.success : AppColors.critical,
+                    color: trendUp == true
+                        ? AppColors.success
+                        : AppColors.critical,
                   ),
                 ),
               ],

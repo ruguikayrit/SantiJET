@@ -33,7 +33,6 @@ final favoritesBoxProvider = Provider<Box>(
   (ref) => throw UnimplementedError('favoritesBoxProvider override edilmeli'),
 );
 
-final favoritesProvider =
-    StateNotifierProvider<FavoritesNotifier, Set<String>>(
+final favoritesProvider = StateNotifierProvider<FavoritesNotifier, Set<String>>(
   (ref) => FavoritesNotifier(ref.watch(favoritesBoxProvider)),
 );

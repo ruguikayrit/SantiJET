@@ -21,8 +21,7 @@ abstract final class AnalizHesap {
   static double _round2(double value) => (value * 100).round() / 100;
 
   static AnalizHesapSonucu hesapla(PozAnaliz analiz) {
-    final toplam =
-        analiz.kalemler.fold<double>(0, (sum, k) => sum + k.tutar);
+    final toplam = analiz.kalemler.fold<double>(0, (sum, k) => sum + k.tutar);
     final kar = _round2(toplam * (analiz.yukleniciKarOrani / 100));
     return AnalizHesapSonucu(
       malzemeIscilikToplami: _round2(toplam),

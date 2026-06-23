@@ -269,8 +269,8 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                     color: AppColors.electricBlueLight),
                 const SizedBox(width: AppSpacing.sm),
                 Expanded(
-                  child: Text('Design System',
-                      style: theme.textTheme.titleMedium),
+                  child:
+                      Text('Design System', style: theme.textTheme.titleMedium),
                 ),
                 Icon(Icons.chevron_right,
                     color: theme.colorScheme.onSurfaceVariant),

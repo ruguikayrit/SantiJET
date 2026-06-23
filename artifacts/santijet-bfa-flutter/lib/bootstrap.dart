@@ -4,7 +4,9 @@ import 'package:hive_flutter/hive_flutter.dart';
 
 import 'app.dart';
 import 'data/providers/favorites_provider.dart';
+import 'data/providers/kesif_provider.dart';
 import 'data/providers/recent_views_provider.dart';
+import 'data/providers/user_analiz_provider.dart';
 
 /// Uygulama başlatma — Demir `bootstrap()` deseniyle hizalı.
 ///
@@ -17,6 +19,8 @@ Future<void> bootstrap() async {
     Hive.openBox('favorites'),
     Hive.openBox('recent'),
     Hive.openBox('settings'),
+    Hive.openBox('user_analizleri'),
+    Hive.openBox('kesif_projects'),
   ]);
 
   runApp(
@@ -24,6 +28,8 @@ Future<void> bootstrap() async {
       overrides: [
         favoritesBoxProvider.overrideWithValue(boxes[0]),
         recentBoxProvider.overrideWithValue(boxes[1]),
+        userAnalizBoxProvider.overrideWithValue(boxes[3]),
+        kesifBoxProvider.overrideWithValue(boxes[4]),
       ],
       child: const SantijetBfaApp(),
     ),

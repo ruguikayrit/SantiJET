@@ -55,7 +55,8 @@ class SJSearchBar extends StatelessWidget {
             onPressed: onFilterTap,
             icon: const Icon(Icons.tune),
             style: IconButton.styleFrom(
-              backgroundColor: theme.cardTheme.color ?? theme.colorScheme.surface,
+              backgroundColor:
+                  theme.cardTheme.color ?? theme.colorScheme.surface,
               shape: RoundedRectangleBorder(borderRadius: AppRadii.md),
             ),
           ),

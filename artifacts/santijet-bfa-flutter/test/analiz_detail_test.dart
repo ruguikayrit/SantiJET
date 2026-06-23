@@ -48,7 +48,9 @@ Future<List<Override>> _overrides() async {
     recentBoxProvider.overrideWithValue(rec),
     catalogProvider.overrideWith(
       (ref) => Future.value(
-        CatalogData(byDiscipline: {AnalizDiscipline.insaat: const [_analiz]}),
+        CatalogData(byDiscipline: {
+          AnalizDiscipline.insaat: const [_analiz]
+        }),
       ),
     ),
   ];

@@ -89,7 +89,8 @@ void main() {
   });
 
   testWidgets('arama sonuçları filtreler', (tester) async {
-    await _pump(tester, const AnalizListScreen(modul: 'insaat', query: 'gazbeton'));
+    await _pump(
+        tester, const AnalizListScreen(modul: 'insaat', query: 'gazbeton'));
     expect(find.text('Gazbeton duvar yapılması'), findsOneWidget);
     expect(find.text('Kum çakıl taşıma'), findsNothing);
   });

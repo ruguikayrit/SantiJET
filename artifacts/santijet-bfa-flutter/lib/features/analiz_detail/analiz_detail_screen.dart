@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
 
 import '../../core/design_system/sj_card.dart';
 import '../../core/design_system/sj_button.dart';
@@ -13,6 +14,7 @@ import '../../core/widgets/kalem_row.dart';
 import '../../core/widgets/metraj_input.dart';
 import '../../data/providers/catalog_provider.dart';
 import '../../data/providers/favorites_provider.dart';
+import '../../data/providers/user_analiz_provider.dart';
 import '../../domain/calc/analiz_hesap.dart';
 import '../../domain/entities/poz_analiz.dart';
 import '../../domain/enums/app_enums.dart';
@@ -65,6 +67,14 @@ class _Detail extends ConsumerWidget {
     );
   }
 
+  void _clone(BuildContext context, WidgetRef ref) {
+    final copy = ref.read(userAnalizProvider.notifier).clone(analiz);
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(content: Text('${copy.pozNo} kopyalandı.')),
+    );
+    context.pushReplacement('/pozlar/${copy.id}');
+  }
+
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final theme = Theme.of(context);
@@ -87,11 +97,13 @@ class _Detail extends ConsumerWidget {
                   ref.read(favoritesProvider.notifier).toggle(analiz.id),
             ),
             PopupMenuButton<String>(
-              onSelected: (v) => _soon(context, switch (v) {
-                'copy' => 'Kopyala',
-                'edit' => 'Düzenle',
-                _ => 'İşlem',
-              }),
+              onSelected: (v) {
+                if (v == 'copy') {
+                  _clone(context, ref);
+                  return;
+                }
+                _soon(context, 'Düzenle');
+              },
               itemBuilder: (context) => const [
                 PopupMenuItem(value: 'copy', child: Text('Kopyala')),
                 PopupMenuItem(value: 'edit', child: Text('Düzenle')),

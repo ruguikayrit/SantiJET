@@ -32,8 +32,8 @@ abstract final class AppTheme {
         foregroundColor: const Color(0xFF0F172A),
         elevation: 0,
         centerTitle: false,
-        titleTextStyle:
-            AppTypography.headlineMedium.copyWith(color: const Color(0xFF0F172A)),
+        titleTextStyle: AppTypography.headlineMedium
+            .copyWith(color: const Color(0xFF0F172A)),
         systemOverlayStyle: SystemUiOverlayStyle.dark,
       ),
       cardTheme: CardThemeData(
@@ -84,12 +84,12 @@ abstract final class AppTheme {
       textTheme: TextTheme(
         displayLarge:
             AppTypography.displayLarge.copyWith(color: const Color(0xFF0F172A)),
-        displayMedium:
-            AppTypography.displayMedium.copyWith(color: const Color(0xFF0F172A)),
+        displayMedium: AppTypography.displayMedium
+            .copyWith(color: const Color(0xFF0F172A)),
         displaySmall:
             AppTypography.displaySmall.copyWith(color: const Color(0xFF0F172A)),
-        headlineLarge:
-            AppTypography.headlineLarge.copyWith(color: const Color(0xFF0F172A)),
+        headlineLarge: AppTypography.headlineLarge
+            .copyWith(color: const Color(0xFF0F172A)),
         headlineMedium: AppTypography.headlineMedium
             .copyWith(color: const Color(0xFF0F172A)),
         titleLarge:

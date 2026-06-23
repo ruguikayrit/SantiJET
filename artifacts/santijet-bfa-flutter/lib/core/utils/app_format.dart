@@ -23,7 +23,8 @@ abstract final class AppFormat {
   }
 
   /// Para birimi: 1.061,58 ₺
-  static String currency(num value, {String symbol = '₺', int fractionDigits = 2}) {
+  static String currency(num value,
+      {String symbol = '₺', int fractionDigits = 2}) {
     return '${decimal(value, fractionDigits: fractionDigits)} $symbol';
   }
 

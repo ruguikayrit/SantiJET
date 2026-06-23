@@ -29,9 +29,8 @@ class SJCard extends StatelessWidget {
     final theme = Theme.of(context);
     final cardTheme = theme.cardTheme;
     final surface = cardTheme.color ?? theme.colorScheme.surface;
-    final borderColor = selected
-        ? theme.colorScheme.primary
-        : theme.dividerColor;
+    final borderColor =
+        selected ? theme.colorScheme.primary : theme.dividerColor;
 
     final content = Padding(
       padding: padding,

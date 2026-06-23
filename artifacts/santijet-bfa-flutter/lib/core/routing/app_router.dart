@@ -52,8 +52,8 @@ final routerProvider = Provider<GoRouter>((ref) {
             routes: [
               GoRoute(
                 path: AppRoutes.kesif,
-                pageBuilder: (context, state) =>
-                    fadePage(key: state.pageKey, child: const KesifListScreen()),
+                pageBuilder: (context, state) => fadePage(
+                    key: state.pageKey, child: const KesifListScreen()),
               ),
             ],
           ),

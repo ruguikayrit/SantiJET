@@ -4,6 +4,7 @@ import '../../core/utils/tr_search.dart';
 import '../../domain/entities/poz_analiz.dart';
 import '../../domain/enums/app_enums.dart';
 import '../datasources/catalog_local_datasource.dart';
+import 'user_analiz_provider.dart';
 
 /// Yüklenmiş resmi katalog verisi (disipline göre + düz liste + id indeksi).
 class CatalogData {
@@ -64,8 +65,27 @@ final catalogDataSourceProvider = Provider<CatalogLocalDataSource>(
 );
 
 /// Resmi katalog (13.436 kayıt) — assets'ten bir kez yüklenir.
-final catalogProvider = FutureProvider<CatalogData>((ref) async {
+final officialCatalogProvider = FutureProvider<CatalogData>((ref) async {
   final ds = ref.watch(catalogDataSourceProvider);
   final byDiscipline = await ds.loadAll();
   return CatalogData(byDiscipline: byDiscipline);
+});
+
+/// Resmi katalog + kullanıcı/kopya analizleri.
+///
+/// Kullanıcı analizleri değiştiğinde bu provider yeniden hesaplanır; resmi
+/// katalog FutureProvider cache'inden gelir, tekrar dosya okunmaz.
+final catalogProvider = FutureProvider<CatalogData>((ref) async {
+  final official = await ref.watch(officialCatalogProvider.future);
+  final userAnalizleri = ref.watch(userAnalizProvider);
+  if (userAnalizleri.isEmpty) return official;
+
+  final merged = {
+    for (final d in AnalizDiscipline.values) d: [...official.forDiscipline(d)],
+  };
+  for (final analiz in userAnalizleri) {
+    final discipline = analiz.discipline ?? AnalizDiscipline.insaat;
+    merged[discipline] = [...?merged[discipline], analiz];
+  }
+  return CatalogData(byDiscipline: merged);
 });
