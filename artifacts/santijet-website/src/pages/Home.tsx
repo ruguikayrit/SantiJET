@@ -115,275 +115,377 @@ function Hero() {
 }
 
 // --- Ecosystem ---
-type EcoModule = {
-  name: string;
-  desc: string;
-  color: string;
-  Icon: React.ElementType;
-  delay?: number;
-};
 
-function EcoCard({ name, desc, color, Icon, delay = 0, side = "left" }: EcoModule & { side?: "left" | "right" | "bottom" }) {
+const LEFT_MODULES = [
+  { name: "ŞANTİJET DEMİR",  desc: "Demir keşfi, sipariş ve teslimat yönetimi",    color: "#00d68f", iconKey: "demir"   },
+  { name: "ŞANTİJET BETON",  desc: "Beton sipariş, döküm ve kalite yönetimi",       color: "#00d4ff", iconKey: "beton"   },
+  { name: "ŞANTİJET ÇELİK", desc: "Çelik proje, imalat ve montaj yönetimi",        color: "#4a9eff", iconKey: "celik"   },
+  { name: "ŞANTİJET SAHA",   desc: "Saha raporları, ilerleme ve günlük kayıtlar",   color: "#b06eff", iconKey: "saha"    },
+];
+
+const RIGHT_MODULES = [
+  { name: "ŞANTİJET TEKNİK",             desc: "Teknik doküman, çizim ve detay yönetimi",    color: "#ff8c40", iconKey: "teknik"  },
+  { name: "ŞANTİJET İŞ PROGRAMI",        desc: "İş planlama, programlama ve takip yönetimi", color: "#ffd060", iconKey: "program" },
+  { name: "ŞANTİJET BFA · BF · KEŞİF",  desc: "Birim fiyat, analiz ve keşif yönetimi",      color: "#ff4488", iconKey: "bfa"     },
+];
+
+function NeonIcon({ iconKey, color }: { iconKey: string; color: string }) {
+  const s = { stroke: color, strokeWidth: 1.8, fill: "none", strokeLinecap: "round" as const, strokeLinejoin: "round" as const };
+  switch (iconKey) {
+    case "demir": return (
+      <svg width="38" height="38" viewBox="0 0 38 38">
+        {[7, 13, 19, 25, 31].map((y) => <line key={y} x1="4" y1={y} x2="34" y2={y} {...s} />)}
+        {[7, 13, 19, 25, 31].map((y) => [7, 13, 19, 25, 31].map((x) =>
+          <circle key={`${x}-${y}`} cx={x} cy={y} r="1.6" fill={color} stroke="none" />
+        ))}
+      </svg>
+    );
+    case "beton": return (
+      <svg width="38" height="38" viewBox="0 0 38 38">
+        <ellipse cx="11" cy="17" rx="9" ry="10" {...s} />
+        <line x1="20" y1="17" x2="34" y2="17" {...s} />
+        <line x1="20" y1="8" x2="34" y2="8" {...s} />
+        <line x1="34" y1="8" x2="34" y2="28" {...s} />
+        <circle cx="8" cy="29" r="3" {...s} />
+        <circle cx="28" cy="29" r="3" {...s} />
+        <line x1="11" y1="29" x2="25" y2="29" {...s} />
+      </svg>
+    );
+    case "celik": return (
+      <svg width="38" height="38" viewBox="0 0 38 38">
+        <rect x="3" y="4" width="32" height="6" rx="1" {...s} />
+        <rect x="3" y="28" width="32" height="6" rx="1" {...s} />
+        <rect x="16" y="10" width="6" height="18" {...s} />
+      </svg>
+    );
+    case "saha": return (
+      <svg width="38" height="38" viewBox="0 0 38 38">
+        <circle cx="19" cy="12" r="7" {...s} />
+        <path d="M5 34 c0-9 4.5-13 14-13 s14 4 14 13" {...s} />
+        <line x1="9" y1="7" x2="29" y2="7" stroke={color} strokeWidth="3.5" strokeLinecap="round" />
+      </svg>
+    );
+    case "teknik": return (
+      <svg width="38" height="38" viewBox="0 0 38 38">
+        <rect x="4" y="4" width="22" height="30" rx="2" {...s} />
+        <line x1="8" y1="12" x2="22" y2="12" {...s} />
+        <line x1="8" y1="18" x2="22" y2="18" {...s} />
+        <line x1="8" y1="24" x2="16" y2="24" {...s} />
+        <line x1="30" y1="4" x2="30" y2="34" {...s} />
+        <line x1="28" y1="4" x2="32" y2="4" {...s} />
+        <line x1="28" y1="34" x2="32" y2="34" {...s} />
+      </svg>
+    );
+    case "program": return (
+      <svg width="38" height="38" viewBox="0 0 38 38">
+        <rect x="3" y="7" width="28" height="24" rx="2" {...s} />
+        <line x1="3" y1="15" x2="31" y2="15" {...s} />
+        <line x1="11" y1="3" x2="11" y2="11" {...s} />
+        <line x1="23" y1="3" x2="23" y2="11" {...s} />
+        <circle cx="30" cy="30" r="7" fill="#050816" stroke={color} strokeWidth="1.8" />
+        <line x1="30" y1="26" x2="30" y2="30" stroke={color} strokeWidth="1.5" strokeLinecap="round" />
+        <line x1="30" y1="30" x2="34" y2="30" stroke={color} strokeWidth="1.5" strokeLinecap="round" />
+      </svg>
+    );
+    case "bfa": return (
+      <svg width="38" height="38" viewBox="0 0 38 38">
+        <rect x="5" y="3" width="28" height="32" rx="3" {...s} />
+        <rect x="9" y="7" width="20" height="7" rx="1" {...s} />
+        {[17, 23, 29].map((y) => [9, 17, 25].map((x) =>
+          <rect key={`${x}-${y}`} x={x} y={y} width="5.5" height="4" rx="0.5" {...s} strokeWidth={1.3} />
+        ))}
+        <text x="19" y="21.5" textAnchor="middle" fontSize="4" fill={color} fontFamily="monospace">₺</text>
+      </svg>
+    );
+    default: return null;
+  }
+}
+
+function EcoCard({ name, desc, color, iconKey, delay = 0, side = "left" }: { name: string; desc: string; color: string; iconKey: string; delay?: number; side?: "left" | "right" }) {
   return (
     <motion.div
-      initial={{ opacity: 0, x: side === "left" ? -28 : side === "right" ? 28 : 0, y: side === "bottom" ? 24 : 0 }}
-      whileInView={{ opacity: 1, x: 0, y: 0 }}
+      initial={{ opacity: 0, x: side === "left" ? -30 : 30 }}
+      whileInView={{ opacity: 1, x: 0 }}
       viewport={{ once: true }}
       transition={{ duration: 0.5, delay }}
-      className="flex items-center gap-3 rounded-xl p-4 w-full"
+      whileHover={{ scale: 1.03, y: -3, transition: { duration: 0.18 } }}
+      className="flex items-stretch rounded-xl overflow-hidden cursor-default select-none"
       style={{
-        background: "linear-gradient(135deg, #0b0e18 0%, #090c14 100%)",
-        border: "1px solid rgba(255,255,255,0.08)",
-        borderLeftColor: side === "left" ? color : "rgba(255,255,255,0.08)",
-        borderLeftWidth: side === "left" ? 2 : 1,
-        borderRightColor: side === "right" ? color : "rgba(255,255,255,0.08)",
-        borderRightWidth: side === "right" ? 2 : 1,
-        borderTopColor: side === "bottom" ? color : "rgba(255,255,255,0.08)",
-        borderTopWidth: side === "bottom" ? 2 : 1,
-        boxShadow: `0 4px 32px ${color}12, 0 1px 0 rgba(255,255,255,0.04) inset`,
+        background: "linear-gradient(135deg, #0b0e1e 0%, #07091a 100%)",
+        border: `1px solid ${color}38`,
+        boxShadow: `0 0 18px ${color}15, inset 0 0 0 1px ${color}10`,
+        minHeight: 108,
       }}
     >
-      <div className="flex-1 min-w-0">
-        <div className="font-bold text-white text-sm leading-tight mb-1">{name}</div>
+      <div className="flex-1 p-3.5 flex flex-col justify-center min-w-0">
+        <div className="font-bold text-white text-[11.5px] leading-tight tracking-wide mb-2">{name}</div>
         <span
-          className="inline-block text-[10px] px-2 py-[2px] rounded-full font-semibold mb-2 tracking-wide"
+          className="inline-block self-start text-[9px] px-2 py-[2px] rounded-full font-bold tracking-widest mb-2.5"
           style={{ background: color + "22", color, border: `1px solid ${color}45` }}
         >
           Entegre
         </span>
-        <div className="text-[11px] text-white/45 leading-snug">{desc}</div>
+        <div className="text-[10px] text-white/40 leading-snug">{desc}</div>
       </div>
       <div
-        className="flex-shrink-0 w-[52px] h-[52px] rounded-xl flex items-center justify-center"
-        style={{ background: color + "16", border: `1px solid ${color}35` }}
+        className="flex-shrink-0 w-[70px] flex items-center justify-center m-2 rounded-lg"
+        style={{ background: color + "10", border: `1px solid ${color}38` }}
       >
-        <Icon className="w-6 h-6" style={{ color }} />
+        <NeonIcon iconKey={iconKey} color={color} />
       </div>
     </motion.div>
   );
 }
 
 function Ecosystem() {
+  // Connecting line coords: outer SVG viewBox 0 0 960 600
+  // Hub center (480,300), ring radius 136
+  // Left card right-edge x≈270, right card left-edge x≈690
+  const lines = [
+    { ex: 381, ey: 206, tx: 270, ty: 100 }, // L1 Demir
+    { ex: 350, ey: 259, tx: 270, ty: 233 }, // L2 Beton
+    { ex: 350, ey: 341, tx: 270, ty: 367 }, // L3 Çelik
+    { ex: 381, ey: 394, tx: 270, ty: 500 }, // L4 Saha
+    { ex: 595, ey: 228, tx: 690, ty: 168 }, // R1 Teknik
+    { ex: 616, ey: 300, tx: 690, ty: 300 }, // R2 İş Programı
+    { ex: 595, ey: 372, tx: 690, ty: 432 }, // R3 BFA
+  ];
+  // Hub dot positions in hub SVG (viewBox 0 0 300 300, center 150,150, r=136)
+  const hubDots = [
+    { x:  51, y:  56 }, // L1
+    { x:  20, y: 109 }, // L2
+    { x:  20, y: 191 }, // L3
+    { x:  51, y: 244 }, // L4
+    { x: 265, y:  78 }, // R1
+    { x: 286, y: 150 }, // R2
+    { x: 265, y: 222 }, // R3
+  ];
+
   return (
-    <section id="ekosistem" className="py-28 relative overflow-hidden" style={{ background: "linear-gradient(180deg, #020407 0%, #04060d 50%, #020407 100%)" }}>
+    <section
+      id="ekosistem"
+      className="py-20 relative overflow-hidden"
+      style={{ background: "linear-gradient(180deg, #050816 0%, #071021 50%, #050816 100%)" }}
+    >
 
-      {/* Isometric blueprint background */}
-      <div className="absolute inset-0 flex items-center justify-center pointer-events-none select-none">
-        <svg className="w-[680px] h-[560px] opacity-[0.13]" viewBox="0 0 680 560" fill="none" xmlns="http://www.w3.org/2000/svg">
-          <defs>
-            <radialGradient id="iso-fade" cx="50%" cy="50%" r="50%">
-              <stop offset="20%" stopColor="#1a5fff" stopOpacity="1" />
-              <stop offset="100%" stopColor="#1a5fff" stopOpacity="0" />
-            </radialGradient>
-            <mask id="iso-mask">
-              <rect width="680" height="560" fill="url(#iso-fade)" />
-            </mask>
-          </defs>
-          <g mask="url(#iso-mask)">
-            {Array.from({ length: 18 }).map((_, i) => (
-              <line key={`h${i}`} x1="40" y1={40 + i * 28} x2="640" y2={40 + i * 28} stroke="#1a5fff" strokeWidth="0.6" />
-            ))}
-            {Array.from({ length: 22 }).map((_, i) => (
-              <line key={`dr${i}`} x1={-300 + i * 56} y1="0" x2={40 + i * 56} y2="560" stroke="#1a5fff" strokeWidth="0.6" />
-            ))}
-            {Array.from({ length: 22 }).map((_, i) => (
-              <line key={`dl${i}`} x1={980 - i * 56} y1="0" x2={640 - i * 56} y2="560" stroke="#1a5fff" strokeWidth="0.6" />
-            ))}
-          </g>
-        </svg>
-      </div>
 
-      {/* Radial ambient glow */}
-      <div className="absolute inset-0 pointer-events-none" style={{ background: "radial-gradient(ellipse 640px 520px at 50% 58%, rgba(26,95,255,0.07) 0%, transparent 70%)" }} />
+      {/* Tech grid background */}
+      <div
+        className="absolute inset-0 pointer-events-none"
+        style={{
+          backgroundImage: "linear-gradient(rgba(26,95,255,0.055) 1px, transparent 1px), linear-gradient(90deg, rgba(26,95,255,0.055) 1px, transparent 1px)",
+          backgroundSize: "60px 60px",
+        }}
+      />
+      {/* Ambient center glow */}
+      <div
+        className="absolute inset-0 pointer-events-none"
+        style={{ background: "radial-gradient(ellipse 900px 700px at 50% 52%, rgba(26,95,255,0.10) 0%, transparent 65%)" }}
+      />
 
       <div className="container mx-auto px-4">
         {/* Header */}
         <motion.div
-          initial={{ opacity: 0, y: 20 }}
+          initial={{ opacity: 0, y: 18 }}
           whileInView={{ opacity: 1, y: 0 }}
           viewport={{ once: true }}
-          className="text-center mb-14"
+          className="text-center mb-12"
         >
-          <h2 className="text-4xl md:text-5xl font-bold mb-3">ŞantiJET Ekosistemi</h2>
-          <p className="text-muted-foreground text-lg">İnşaat projeleri için entegre dijital işletim sistemi.</p>
+          <h2 className="text-4xl md:text-5xl lg:text-6xl font-extrabold mb-3 leading-tight">
+            <span className="text-white">ŞantiJET </span>
+            <span style={{ background: "linear-gradient(90deg, #4a9eff 0%, #00d4ff 100%)", WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent" }}>
+              Ekosistemi
+            </span>
+          </h2>
+          <p className="text-white/50 text-base md:text-lg">İnşaat projeleri için entegre dijital işletim sistemi.</p>
         </motion.div>
 
-        {/* Diagram */}
-        <div className="relative max-w-[900px] mx-auto">
+        {/* ── Desktop diagram ── */}
+        <div className="relative max-w-[960px] mx-auto hidden md:block" style={{ height: 600 }}>
 
-          {/* SVG connecting lines — drawn behind everything */}
-          <svg className="absolute inset-0 w-full h-full pointer-events-none z-0" style={{ top: 0, left: 0 }} viewBox="0 0 900 520" preserveAspectRatio="none">
+          {/* SVG connecting lines (rendered behind cards + hub) */}
+          <svg
+            className="absolute inset-0 pointer-events-none"
+            style={{ width: "100%", height: "100%", zIndex: 1 }}
+            viewBox="0 0 960 600"
+            preserveAspectRatio="xMidYMid meet"
+          >
             <defs>
-              <filter id="line-glow">
-                <feGaussianBlur stdDeviation="2" result="blur" />
-                <feMerge><feMergeNode in="blur" /><feMergeNode in="SourceGraphic" /></feMerge>
+              <filter id="eco-line-glow" x="-120%" y="-120%" width="340%" height="340%">
+                <feGaussianBlur stdDeviation="3.5" result="b1" />
+                <feGaussianBlur stdDeviation="9" result="b2" />
+                <feMerge>
+                  <feMergeNode in="b2" />
+                  <feMergeNode in="b1" />
+                  <feMergeNode in="SourceGraphic" />
+                </feMerge>
+              </filter>
+              <filter id="eco-dot-glow" x="-500%" y="-500%" width="1100%" height="1100%">
+                <feGaussianBlur stdDeviation="5" result="b" />
+                <feMerge><feMergeNode in="b" /><feMergeNode in="SourceGraphic" /></feMerge>
               </filter>
             </defs>
-            {/* Left cards → center  (card centers approx at x=140, center at x=450) */}
-            <line x1="278" y1="72"  x2="342" y2="220" stroke="#1a5fff" strokeWidth="1" strokeOpacity="0.35" filter="url(#line-glow)" />
-            <line x1="278" y1="200" x2="342" y2="240" stroke="#1a5fff" strokeWidth="1" strokeOpacity="0.35" filter="url(#line-glow)" />
-            <line x1="278" y1="328" x2="342" y2="260" stroke="#1a5fff" strokeWidth="1" strokeOpacity="0.35" filter="url(#line-glow)" />
-            {/* Right cards ← center */}
-            <line x1="558" y1="220" x2="622" y2="72"  stroke="#1a5fff" strokeWidth="1" strokeOpacity="0.35" filter="url(#line-glow)" />
-            <line x1="558" y1="240" x2="622" y2="200" stroke="#1a5fff" strokeWidth="1" strokeOpacity="0.35" filter="url(#line-glow)" />
-            <line x1="558" y1="260" x2="622" y2="328" stroke="#1a5fff" strokeWidth="1" strokeOpacity="0.35" filter="url(#line-glow)" />
-            {/* BFA ↑ center */}
-            <line x1="450" y1="320" x2="450" y2="430" stroke="#1a5fff" strokeWidth="1" strokeOpacity="0.35" filter="url(#line-glow)" />
-            {/* Dots at card endpoints */}
-            {[["278","72"],["278","200"],["278","328"],["622","72"],["622","200"],["622","328"],["450","430"]].map(([cx,cy],i) => (
-              <circle key={i} cx={cx} cy={cy} r="4" fill="#1a5fff" fillOpacity="0.6" />
+            {lines.map((l, i) => (
+              <g key={i}>
+                <line
+                  x1={l.ex} y1={l.ey} x2={l.tx} y2={l.ty}
+                  stroke="#1a8fff" strokeWidth="1.4" strokeOpacity="0.8"
+                  filter="url(#eco-line-glow)"
+                />
+                <circle cx={l.tx} cy={l.ty} r="4" fill="#70c8ff" fillOpacity="0.9" filter="url(#eco-dot-glow)" />
+              </g>
             ))}
           </svg>
 
-          {/* 3-column grid */}
-          <div className="relative z-10 grid items-center gap-5" style={{ gridTemplateColumns: "1fr 220px 1fr" }}>
+          {/* Left column: 4 cards, vertically centered */}
+          <div
+            className="absolute flex flex-col gap-[14px]"
+            style={{ width: 266, left: 0, top: "50%", transform: "translateY(-50%)", zIndex: 10 }}
+          >
+            {LEFT_MODULES.map((m, i) => (
+              <EcoCard key={m.name} {...m} delay={i * 0.1} side="left" />
+            ))}
+          </div>
 
-            {/* Left column */}
-            <div className="flex flex-col gap-4">
-              <EcoCard name="ŞantiJET Demir"   desc="Demir keşfi, sipariş ve teslimat yönetimi" color="#22c55e" Icon={Layers}   delay={0.15} side="left" />
-              <EcoCard name="ŞantiJET Metraj"  desc="Metraj ve keşif hesapları"                 color="#eab308" Icon={BarChart3} delay={0.25} side="left" />
-              <EcoCard name="ŞantiJET Hakediş" desc="Hakediş ve ödeme süreçleri"                color="#f59e0b" Icon={FileText}  delay={0.35} side="left" />
-            </div>
-
-            {/* Center — Pro circle */}
+          {/* Center Hub */}
+          <div
+            className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2"
+            style={{ zIndex: 20 }}
+          >
             <motion.div
-              initial={{ opacity: 0, scale: 0.75 }}
+              initial={{ opacity: 0, scale: 0.72 }}
               whileInView={{ opacity: 1, scale: 1 }}
               viewport={{ once: true }}
-              transition={{ duration: 0.6 }}
-              className="flex items-center justify-center"
+              transition={{ duration: 0.7 }}
+              className="relative"
+              style={{ width: 300, height: 300 }}
             >
-              {/* Outer glow halo */}
-              <div className="relative" style={{ width: 240, height: 240 }}>
-                {/* SVG rings + glow nodes */}
-                <svg
-                  viewBox="0 0 240 240"
-                  width="240"
-                  height="240"
-                  className="absolute inset-0 z-20 pointer-events-none"
-                  style={{ overflow: "visible" }}
-                >
-                  <defs>
-                    {/* Glow filter for the main ring */}
-                    <filter id="ring-glow" x="-40%" y="-40%" width="180%" height="180%">
-                      <feGaussianBlur stdDeviation="4" result="blur1" />
-                      <feGaussianBlur stdDeviation="10" result="blur2" />
-                      <feMerge>
-                        <feMergeNode in="blur2" />
-                        <feMergeNode in="blur1" />
-                        <feMergeNode in="SourceGraphic" />
-                      </feMerge>
-                    </filter>
-                    {/* Glow filter for node dots */}
-                    <filter id="dot-glow" x="-200%" y="-200%" width="500%" height="500%">
-                      <feGaussianBlur stdDeviation="4" result="blur1" />
-                      <feGaussianBlur stdDeviation="9" result="blur2" />
-                      <feMerge>
-                        <feMergeNode in="blur2" />
-                        <feMergeNode in="blur1" />
-                        <feMergeNode in="SourceGraphic" />
-                      </feMerge>
-                    </filter>
-                    {/* Gradient for main ring */}
-                    <linearGradient id="ring-grad" x1="0" y1="0" x2="0" y2="1">
-                      <stop offset="0%" stopColor="#ffffff" stopOpacity="0.95" />
-                      <stop offset="40%" stopColor="#8ab4f8" stopOpacity="0.75" />
-                      <stop offset="100%" stopColor="#4a90e2" stopOpacity="0.55" />
-                    </linearGradient>
-                  </defs>
+              {/* Ambient outer glow */}
+              <div
+                className="absolute inset-0 rounded-full pointer-events-none"
+                style={{ boxShadow: "0 0 90px 24px rgba(26,95,255,0.30), 0 0 200px 50px rgba(26,95,255,0.12)" }}
+              />
 
-                  {/* Outermost faint dashed ring */}
-                  <circle
-                    cx="120" cy="120" r="115"
-                    fill="none"
-                    stroke="rgba(160,190,255,0.18)"
-                    strokeWidth="1"
-                    strokeDasharray="3 6"
-                  />
+              {/* Hub SVG: concentric rings + 7 pulsing connection dots */}
+              <svg
+                viewBox="0 0 300 300"
+                width="300"
+                height="300"
+                className="absolute inset-0"
+                style={{ overflow: "visible" }}
+              >
+                <defs>
+                  <filter id="hub-ring-glow" x="-70%" y="-70%" width="240%" height="240%">
+                    <feGaussianBlur stdDeviation="5" result="b1" />
+                    <feGaussianBlur stdDeviation="16" result="b2" />
+                    <feMerge>
+                      <feMergeNode in="b2" />
+                      <feMergeNode in="b1" />
+                      <feMergeNode in="SourceGraphic" />
+                    </feMerge>
+                  </filter>
+                  <filter id="hub-dot-glow" x="-700%" y="-700%" width="1500%" height="1500%">
+                    <feGaussianBlur stdDeviation="7" result="b" />
+                    <feMerge><feMergeNode in="b" /><feMergeNode in="SourceGraphic" /></feMerge>
+                  </filter>
+                  <radialGradient id="hub-inner" cx="44%" cy="38%" r="62%">
+                    <stop offset="0%" stopColor="#0c1630" />
+                    <stop offset="55%" stopColor="#06091c" />
+                    <stop offset="100%" stopColor="#020408" />
+                  </radialGradient>
+                </defs>
 
-                  {/* Main glowing ring */}
-                  <circle
-                    cx="120" cy="120" r="106"
-                    fill="none"
-                    stroke="url(#ring-grad)"
-                    strokeWidth="2.5"
-                    filter="url(#ring-glow)"
-                  />
+                {/* Outermost faint dashed ring */}
+                <circle cx="150" cy="150" r="147" fill="none" stroke="rgba(70,130,255,0.14)" strokeWidth="1" strokeDasharray="5 10" />
+                {/* Faint solid ring */}
+                <circle cx="150" cy="150" r="141" fill="none" stroke="rgba(60,120,255,0.18)" strokeWidth="0.8" />
+                {/* Main glowing neon ring */}
+                <circle cx="150" cy="150" r="136" fill="none" stroke="#1a8fff" strokeWidth="2.4" strokeOpacity="0.92" filter="url(#hub-ring-glow)" />
+                {/* Bright sheen ring */}
+                <circle cx="150" cy="150" r="136" fill="none" stroke="rgba(200,230,255,0.48)" strokeWidth="1.4" />
+                {/* Inner secondary ring */}
+                <circle cx="150" cy="150" r="122" fill="none" stroke="rgba(26,100,255,0.28)" strokeWidth="1" />
+                {/* Inner decorative dashed ring */}
+                <circle cx="150" cy="150" r="108" fill="none" stroke="rgba(26,80,220,0.20)" strokeWidth="0.7" strokeDasharray="3 8" />
+                {/* Dark interior fill */}
+                <circle cx="150" cy="150" r="107" fill="url(#hub-inner)" />
 
-                  {/* Inner dashed ring */}
-                  <circle
-                    cx="120" cy="120" r="90"
-                    fill="none"
-                    stroke="rgba(140,180,255,0.22)"
-                    strokeWidth="1"
-                    strokeDasharray="2 5"
-                  />
+                {/* 7 pulsing connection dots on the main ring */}
+                {hubDots.map((dot, i) => (
+                  <g key={i}>
+                    <motion.circle
+                      cx={dot.x} cy={dot.y} r={7}
+                      fill="rgba(70,170,255,0.30)"
+                      animate={{ opacity: [0.2, 0.85, 0.2] }}
+                      transition={{ duration: 2.4, delay: i * 0.35, repeat: Infinity, ease: "easeInOut" }}
+                      filter="url(#hub-dot-glow)"
+                    />
+                    <circle cx={dot.x} cy={dot.y} r="3.8" fill="#90d8ff" fillOpacity="0.95" />
+                  </g>
+                ))}
+              </svg>
 
-                  {/* 4 connection node dots — top, right, bottom, left */}
-                  {[
-                    [120,  14],  /* top    */
-                    [226, 120],  /* right  */
-                    [120, 226],  /* bottom */
-                    [ 14, 120],  /* left   */
-                  ].map(([cx, cy], i) => (
-                    <g key={i}>
-                      {/* Outer glow halo of dot */}
-                      <circle cx={cx} cy={cy} r="6" fill="rgba(180,210,255,0.25)" filter="url(#dot-glow)" />
-                      {/* Bright core dot */}
-                      <circle cx={cx} cy={cy} r="3.5" fill="#e8f0ff" filter="url(#dot-glow)" />
-                    </g>
-                  ))}
-                </svg>
-
-                {/* Dark circle interior */}
-                <div
-                  className="absolute z-10 rounded-full flex flex-col items-center justify-center"
-                  style={{
-                    inset: "14px",
-                    background: "radial-gradient(ellipse at 45% 35%, #0f1522 0%, #060810 60%, #030508 100%)",
-                    boxShadow: "inset 0 0 40px rgba(0,0,0,0.8)",
-                  }}
-                >
-                  <img
-                    src={`${BASE_URL}/brand/santijet-bolt-nobg.png`}
-                    alt="ŞantiJET"
-                    className="object-contain -mb-1"
-                    style={{ width: 96, height: 96 }}
-                  />
-                  <span
-                    className="font-bold tracking-[0.25em] text-base"
-                    style={{ color: "#4a90e2", textShadow: "0 0 14px rgba(74,144,226,0.7)" }}
-                  >
-                    PRO
-                  </span>
-                </div>
-
-                {/* Ambient outer glow behind circle */}
-                <div
-                  className="absolute inset-0 rounded-full pointer-events-none z-0"
-                  style={{
-                    boxShadow: "0 0 60px 10px rgba(74,144,226,0.22), 0 0 120px 20px rgba(74,144,226,0.1)",
-                  }}
+              {/* Logo + PRO text */}
+              <div
+                className="absolute inset-0 flex flex-col items-center justify-center"
+                style={{ paddingBottom: 4 }}
+              >
+                <img
+                  src={`${BASE_URL}/brand/santijet-bolt-nobg.png`}
+                  alt="ŞantiJET"
+                  className="object-contain"
+                  style={{ width: 114, height: 114 }}
                 />
+                <span
+                  className="font-bold tracking-[0.28em] text-[15px] mt-1"
+                  style={{ color: "#4a90e2", textShadow: "0 0 20px rgba(74,144,226,0.9)" }}
+                >
+                  PRO
+                </span>
               </div>
             </motion.div>
-
-            {/* Right column */}
-            <div className="flex flex-col gap-4">
-              <EcoCard name="ŞantiJET Malzeme"       desc="Stok ve depo yönetimi"              color="#06b6d4" Icon={Building2} delay={0.15} side="right" />
-              <EcoCard name="ŞantiJET Puantaj"        desc="Personel ve vardiya yönetimi"       color="#f97316" Icon={Users}     delay={0.25} side="right" />
-              <EcoCard name="ŞantiJET Günlük Rapor"   desc="Saha ilerleme ve günlük kayıtlar"  color="#a855f7" Icon={FileText}  delay={0.35} side="right" />
-            </div>
           </div>
 
-          {/* BFA — bottom center */}
-          <div className="flex justify-center mt-5 relative z-10">
-            <div className="w-[260px]">
-              <EcoCard name="ŞantiJET BFA" desc="Birim fiyat analizleri ve maliyet hesapları" color="#ec4899" Icon={Calculator} delay={0.45} side="bottom" />
-            </div>
+          {/* Right column: 3 cards, vertically centered */}
+          <div
+            className="absolute flex flex-col gap-[14px]"
+            style={{ width: 266, right: 0, top: "50%", transform: "translateY(-50%)", zIndex: 10 }}
+          >
+            {RIGHT_MODULES.map((m, i) => (
+              <EcoCard key={m.name} {...m} delay={0.1 + i * 0.1} side="right" />
+            ))}
           </div>
 
+        </div>{/* end desktop diagram */}
+
+        {/* ── Mobile layout ── */}
+        <div className="md:hidden flex flex-col items-center gap-4 px-2">
+          <div className="relative my-4" style={{ width: 200, height: 200 }}>
+            <div
+              className="absolute inset-0 rounded-full"
+              style={{ boxShadow: "0 0 60px 14px rgba(26,95,255,0.28)" }}
+            />
+            <svg viewBox="0 0 200 200" width="200" height="200" className="absolute inset-0">
+              <circle cx="100" cy="100" r="92" fill="none" stroke="#1a8fff" strokeWidth="2" strokeOpacity="0.85" />
+              <circle cx="100" cy="100" r="92" fill="none" stroke="rgba(180,220,255,0.35)" strokeWidth="1.2" />
+              <circle cx="100" cy="100" r="82" fill="#060a1a" />
+            </svg>
+            <div className="absolute inset-0 flex flex-col items-center justify-center">
+              <img
+                src={`${BASE_URL}/brand/santijet-bolt-nobg.png`}
+                alt="ŞantiJET"
+                className="w-20 h-20 object-contain"
+              />
+              <span className="font-bold tracking-widest text-sm" style={{ color: "#4a90e2" }}>PRO</span>
+            </div>
+          </div>
+          {[...LEFT_MODULES, ...RIGHT_MODULES].map((m) => (
+            <div key={m.name} className="w-full max-w-sm">
+              <EcoCard {...m} delay={0} side="left" />
+            </div>
+          ))}
         </div>
+
       </div>
     </section>
   );

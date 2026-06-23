@@ -1,0 +1,265 @@
+Aşağıdaki referans görseli birebir esas al. Bu bölüm ŞantiJET web sitesinin ana “Ekosistem” bölümü olacak.
+
+KRİTİK KURAL:
+- Tasarımı yeniden yorumlama.
+- Modernleştirme yapma.
+- Yerleşimi değiştirme.
+- Kart sayılarını değiştirme.
+- Renkleri değiştirme.
+- Yazıları değiştirme.
+- Yeni efekt ekleme.
+- Farklı ikon kullanma.
+- Görseldeki kompozisyonu bozma.
+
+AMAÇ:
+Referans görselde görünen tasarımı mümkün olduğunca %100 piksel hassasiyetinde HTML + CSS + React olarak yeniden oluştur.
+
+--------------------------------------------------
+GENEL TASARIM
+--------------------------------------------------
+
+Arka plan:
+- Çok koyu lacivert (#050816 - #071021)
+- Hafif grid yapısı
+- Blueprint / teknik çizim hissi veren düşük opaklıklı wireframe çizgileri
+- Arka planda mimari plan görünümü
+- Neon teknoloji hissi
+
+Üst bölüm:
+
+Başlık:
+ŞantiJET Ekosistemi
+
+Alt Başlık:
+İnşaat projeleri için entegre dijital işletim sistemi.
+
+Başlık ortalı olacak.
+
+--------------------------------------------------
+MERKEZ HUB
+--------------------------------------------------
+
+Sayfanın tam merkezinde büyük dairesel HUB bulunacak.
+
+Merkez HUB:
+
+- Siyah iç daire
+- Dışında çok katmanlı neon mavi halkalar
+- Glow efekti
+- Enerji çekirdeği görünümü
+
+ORTADAKİ S LOGOSU:
+- Görseldeki ile aynı konum
+- Aynı oran
+- Aynı büyüklük
+
+PRO YAZISI:
+- Logonun altında
+- Aynı konum
+- Aynı font ağırlığı
+- Aynı mavi ton
+
+Merkez HUB kesinlikle değiştirilmeyecek.
+
+--------------------------------------------------
+BAĞLANTI ÇİZGİLERİ
+--------------------------------------------------
+
+Merkezden kartlara çıkan:
+
+- Neon mavi çizgiler
+- Glow efektli
+- İnce
+- Görseldeki açıları birebir koru
+
+Bağlantı noktalarında:
+- Küçük mavi ışık noktaları
+- Glow efektli
+
+--------------------------------------------------
+SOL KARTLAR
+--------------------------------------------------
+
+1)
+ŞANTİJET DEMİR
+
+Badge:
+Entegre
+
+Açıklama:
+Demir keşfi, sipariş ve teslimat yönetimi
+
+Renk:
+Yeşil
+
+İkon:
+Demir donatı
+
+--------------------------------------------------
+
+2)
+ŞANTİJET BETON
+
+Badge:
+Entegre
+
+Açıklama:
+Beton sipariş, döküm ve kalite yönetimi
+
+Renk:
+Turkuaz
+
+İkon:
+Beton mikseri
+
+--------------------------------------------------
+
+3)
+ŞANTİJET ÇELİK
+
+Badge:
+Entegre
+
+Açıklama:
+Çelik proje, imalat ve montaj yönetimi
+
+Renk:
+Mavi
+
+İkon:
+I profil çelik
+
+--------------------------------------------------
+
+4)
+ŞANTİJET SAHA
+
+Badge:
+Entegre
+
+Açıklama:
+Saha raporları, ilerleme ve günlük kayıtlar
+
+Renk:
+Mor
+
+İkon:
+Şantiye mühendisi
+
+--------------------------------------------------
+SAĞ KARTLAR
+--------------------------------------------------
+
+1)
+ŞANTİJET TEKNİK
+
+Badge:
+Entegre
+
+Açıklama:
+Teknik doküman, çizim ve detay yönetimi
+
+Renk:
+Turuncu
+
+İkon:
+Teknik çizim
+
+--------------------------------------------------
+
+2)
+ŞANTİJET İŞ PROGRAMI
+
+Badge:
+Entegre
+
+Açıklama:
+İş planlama, programlama ve takip yönetimi
+
+Renk:
+Sarı
+
+İkon:
+Takvim
+
+--------------------------------------------------
+
+3)
+ŞANTİJET BFA - BF - KEŞİF
+
+Badge:
+Entegre
+
+Açıklama:
+Birim fiyat, analiz ve keşif yönetimi
+
+Renk:
+Pembe/Kırmızı
+
+İkon:
+Hesap makinesi
+
+--------------------------------------------------
+
+--------------------------------------------------
+KART TASARIMI
+--------------------------------------------------
+
+Tüm kartlar:
+
+- Cam efekti (glassmorphism)
+- Koyu yüzey
+- Hafif blur
+- Yuvarlatılmış köşeler
+- İnce parlak kenar çizgileri
+- Neon renk vurguları
+- Hover animasyonu
+
+Hover:
+- Hafif büyüme
+- Glow artışı
+- Kart yukarı kalksın
+
+--------------------------------------------------
+ANİMASYONLAR
+--------------------------------------------------
+
+- Merkez halkalarda çok hafif pulse
+- Bağlantı noktalarında hafif yanıp sönme
+- Kart hover animasyonu
+- Sayfa açılırken fade-in
+
+Abartılı animasyon kullanma.
+
+--------------------------------------------------
+RESPONSIVE
+--------------------------------------------------
+
+Desktop:
+Referans görseldeki yerleşim korunacak.
+
+Tablet:
+Kartlar merkezin etrafında ölçeklenmeli.
+
+Mobil:
+Merkez PRO üstte,
+kartlar alt alta sıralanmalı.
+
+--------------------------------------------------
+TEKNİK
+--------------------------------------------------
+
+- React
+- TypeScript
+- TailwindCSS
+- Responsive
+- Component yapısı
+- Temiz kod
+- Tek dosya değil modüler yapı
+
+EN ÖNEMLİ KURAL:
+
+Bu tasarım yeni bir tasarım değildir.
+Bu görev referans görseldeki tasarımın web ortamında mümkün olduğunca birebir yeniden oluşturulmasıdır.
+
+Görseldeki kompozisyonu, boşlukları, kart konumlarını, renk dağılımını ve merkez PRO yapısını koru.
