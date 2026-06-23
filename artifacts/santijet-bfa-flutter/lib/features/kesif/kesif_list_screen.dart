@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 
-import '../../../core/widgets/phase_placeholder.dart';
+import '../../core/widgets/phase_placeholder.dart';
 
 /// Keşif listesi — React Native `kesif/index` karşılığı.
 class KesifListScreen extends StatelessWidget {

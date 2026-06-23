@@ -1,9 +1,10 @@
 import 'package:flutter/material.dart';
 
-/// Faz 1 iskelet ekran yer tutucusu.
+import '../theme/app_spacing.dart';
+
+/// Faz iskeleti ekran yer tutucusu (design token'larıyla).
 ///
-/// Bu widget yalnızca mimari iskeletin derlenip çalıştığını doğrulamak için
-/// kullanılır. İlgili fazlarda gerçek ekran içerikleriyle değiştirilecektir.
+/// İlgili fazlarda gerçek ekran içerikleriyle değiştirilecektir.
 class PhasePlaceholder extends StatelessWidget {
   const PhasePlaceholder({
     required this.title,
@@ -23,7 +24,7 @@ class PhasePlaceholder extends StatelessWidget {
       appBar: AppBar(title: Text(title)),
       body: Center(
         child: Padding(
-          padding: const EdgeInsets.all(24),
+          padding: const EdgeInsets.all(AppSpacing.xl),
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
@@ -32,18 +33,16 @@ class PhasePlaceholder extends StatelessWidget {
                 size: 48,
                 color: theme.colorScheme.primary,
               ),
-              const SizedBox(height: 16),
+              const SizedBox(height: AppSpacing.md),
               Text(
                 title,
                 style: theme.textTheme.titleLarge,
                 textAlign: TextAlign.center,
               ),
-              const SizedBox(height: 8),
+              const SizedBox(height: AppSpacing.xs),
               Text(
                 subtitle ?? '$phase aşamasında uygulanacak.',
-                style: theme.textTheme.bodyMedium?.copyWith(
-                  color: theme.colorScheme.onSurfaceVariant,
-                ),
+                style: theme.textTheme.bodyMedium,
                 textAlign: TextAlign.center,
               ),
             ],

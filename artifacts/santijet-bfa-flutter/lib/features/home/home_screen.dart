@@ -2,12 +2,13 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
-import '../../../core/constants/app_info.dart';
-import '../../../core/router/routes.dart';
+import '../../core/constants/app_info.dart';
+import '../../core/routing/app_routes.dart';
+import '../../core/theme/app_spacing.dart';
 
 /// Ana sayfa — Faz 6'da ŞantiJET Demir seviyesine yükseltilecektir
 /// (marka alanı, güçlü arama, son görüntülenenler, favoriler, modül kartları).
-/// Faz 1'de yalnızca yönlendirme iskeleti doğrulanır.
+/// Faz 2'de tema + yönlendirme iskeleti doğrulanır.
 class HomeScreen extends ConsumerWidget {
   const HomeScreen({super.key});
 
@@ -26,24 +27,19 @@ class HomeScreen extends ConsumerWidget {
     return Scaffold(
       appBar: AppBar(title: const Text(AppInfo.legalName)),
       body: ListView(
-        padding: const EdgeInsets.all(16),
+        padding: const EdgeInsets.all(AppSpacing.md),
         children: [
+          Text(AppInfo.displayName, style: theme.textTheme.headlineLarge),
+          const SizedBox(height: AppSpacing.xxs),
           Text(
-            AppInfo.displayName,
-            style: theme.textTheme.headlineSmall,
+            'Faz 2 — Tema sistemi (ŞantiJET Demir tasarım dili)',
+            style: theme.textTheme.bodySmall,
           ),
-          const SizedBox(height: 4),
-          Text(
-            'Faz 1 — Proje mimarisi iskeleti',
-            style: theme.textTheme.bodySmall?.copyWith(
-              color: theme.colorScheme.onSurfaceVariant,
-            ),
-          ),
-          const SizedBox(height: 16),
+          const SizedBox(height: AppSpacing.md),
           for (final (label, route) in links)
             Card(
               child: ListTile(
-                title: Text(label),
+                title: Text(label, style: theme.textTheme.titleMedium),
                 trailing: const Icon(Icons.chevron_right),
                 onTap: () => context.go(route),
               ),

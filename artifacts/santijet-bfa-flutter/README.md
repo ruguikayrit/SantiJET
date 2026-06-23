@@ -7,31 +7,40 @@ React Native sürümünden (`artifacts/imalat-poz-analizleri/`) **bağımsız** 
 > React Native projesi salt-okunur referans ve arşiv olarak korunur. Bu proje
 > tamamen ayrı bir uygulamadır.
 
-## Teknoloji
+## Teknoloji (ŞantiJET Demir referansıyla hizalı)
 
 - **Flutter 3.44.3 / Dart 3.12.2**
-- **Riverpod** (riverpod_generator ile codegen)
-- **go_router** — yönlendirme
-- **freezed + json_serializable** — immutable veri modelleri
-- **google_fonts** (Inter) — tipografi
+- **flutter_riverpod ^2.6.1** — düz sağlayıcılar (codegen kullanılmaz, Demir gibi)
+- **go_router ^14.6.2** — yönlendirme
+- **equatable** — elle yazılmış değişmez varlık sınıfları (freezed kullanılmaz)
+- **hive / hive_flutter** — yerel kalıcılık (ileriki fazlar)
+- **google_fonts** — Rajdhani + Inter tipografi
+- **intl** — biçimlendirme
 - **Material 3**
 
-## Mimari (feature-first)
+> Stack ve tasarım token'ları, `artifacts/santijet-demir` referans projesinden
+> **birebir** hizalanmıştır.
+
+## Mimari (Demir konvansiyonu)
 
 ```
 lib/
-├── main.dart                 # ProviderScope kökü
-├── app/app.dart              # MaterialApp.router + tema/router bağlama
+├── main.dart                 # bootstrap() çağrısı
+├── bootstrap.dart            # WidgetsFlutterBinding + runApp(ProviderScope)
+├── app.dart                  # SantijetBfaApp (MaterialApp.router)
 ├── core/
-│   ├── theme/                # SJColors, SJTypography, SJTheme, theme_provider
-│   ├── router/               # app_router (go_router), routes
-│   ├── constants/            # app_info, BfaDiscipline
+│   ├── theme/                # app_colors, app_typography, app_spacing,
+│   │                         #   app_radii, app_shadows, app_theme, theme_mode_provider
+│   ├── routing/              # app_router (routerProvider), app_routes
+│   ├── constants/            # app_info
 │   ├── utils/                # (ileride) tr_search, formatters, id_gen
-│   └── widgets/              # paylaşılan iskelet widget'ları
+│   └── widgets/              # paylaşılan widget'lar
+├── domain/
+│   ├── entities/             # PozAnaliz, AnalizKalemi (equatable + copyWith + JSON)
+│   └── enums/                # KaynakTip, AnalizDiscipline, AnalizKalemTip
 ├── data/
-│   ├── models/               # PozAnaliz, AnalizKalemi (freezed)
 │   ├── repositories/         # (ileride) katalog, kullanıcı verisi, keşif, yedek
-│   └── datasources/          # (ileride) asset JSON / yerel DB
+│   └── datasources/          # (ileride) asset JSON / Hive
 └── features/
     ├── home/                 # ana sayfa (Faz 6)
     ├── analiz_list/          # analiz listesi (Faz 7)
@@ -44,42 +53,40 @@ lib/
     └── legal/                # hukuki sayfalar (Faz 13)
 ```
 
+## Tasarım Sistemi (Demir'den birebir)
+
+- **Renkler:** `AppColors` — canvas `#05070A`, electric blue `#0055FF`, koyu yüzeyler,
+  durum renkleri + BFA modül vurguları (inşaat/mekanik/elektrik/keşif).
+- **Tipografi:** `AppTypography` — Rajdhani (başlık/KPI) + Inter (gövde/etiket), 9 adımlı ölçek.
+- **Boşluk/Yarıçap/Gölge:** `AppSpacing` (8pt), `AppRadii` (xs–full), `AppShadows` (5 seviye + glow).
+- **Tema:** `AppTheme.light` / `AppTheme.dark` (Material 3).
+
 ## Migration Durumu
 
 | Faz | Konu | Durum |
 |-----|------|-------|
 | **1** | **Proje Mimarisi** | ✅ Tamamlandı |
-| 2 | Tema Sistemi | ⏳ ŞantiJET Demir'e hizalanacak |
-| 3 | Design System | ⏳ |
+| **2** | **Tema Sistemi (Demir hizalama)** | ✅ Tamamlandı |
+| 3 | Design System (SJ bileşenleri) | ⏳ |
 | 4 | Reusable Components | ⏳ |
-| 5 | Navigasyon | ⏳ (iskelet hazır) |
+| 5 | Navigasyon (bottom nav + geçişler) | ⏳ (iskelet hazır) |
 | 6–13 | Ekranlar & özellikler | ⏳ |
 | 14 | Performans | ⏳ |
 
 ## Geliştirme
 
 ```bash
-# Bağımlılıklar
 flutter pub get
-
-# Kod üretimi (freezed / json / riverpod)
-dart run build_runner build
-
-# Sürekli üretim (geliştirme sırasında)
-dart run build_runner watch
-
-# Analiz & test
 flutter analyze
 flutter test
-
-# Çalıştırma
-flutter run            # cihaz/emülatör
-flutter run -d chrome  # web
+flutter run -d chrome   # web
 ```
+
+> Kod üretimi (build_runner) **kullanılmaz** — Demir gibi düz Riverpod sağlayıcıları
+> ve elle yazılmış varlık sınıfları tercih edilir.
 
 ## Notlar
 
 - Resmi katalog JSON'ları Faz 7'de `assets/data/` altına kopyalanacaktır
   (~13.436 kayıt / ~19 MB). Bkz. `assets/data/README.md`.
-- ŞantiJET Demir Flutter referans projesi erişime açıldığında tema ve design
-  system token'ları (Faz 2–4) Demir ile birebir hizalanacaktır.
+- Referans proje: `artifacts/santijet-demir` (salt-okunur).

@@ -1,20 +1,9 @@
+# ŞantiJET BFA — Demir referans projesiyle aynı lint yapılandırması.
 include: package:flutter_lints/flutter.yaml
 
 analyzer:
   exclude:
-    - "**/*.g.dart"
-    - "**/*.freezed.dart"
     - "build/**"
-  errors:
-    invalid_annotation_target: ignore
 
 linter:
   rules:
-    prefer_const_constructors: true
-    prefer_const_declarations: true
-    prefer_final_locals: true
-    always_declare_return_types: true
-    avoid_print: true
-    require_trailing_commas: true
-    sort_child_properties_last: true
-    use_key_in_widget_constructors: true

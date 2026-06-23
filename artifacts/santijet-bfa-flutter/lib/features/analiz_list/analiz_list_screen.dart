@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 
-import '../../../core/widgets/phase_placeholder.dart';
+import '../../core/widgets/phase_placeholder.dart';
 
 /// Analiz listesi — Faz 7'de uygulanacaktır
 /// (13.436 kayıt için indeksli/sayfalı liste, arama, kategori filtresi, favoriler).
