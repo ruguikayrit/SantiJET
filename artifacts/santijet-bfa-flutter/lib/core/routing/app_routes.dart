@@ -10,4 +10,5 @@ abstract final class AppRoutes {
   static const kesif = '/kesif';
   static String kesifDetay(String id) => '/kesif/$id';
   static const ayarlar = '/ayarlar';
+  static const tasarimSistemi = '/tasarim-sistemi';
 }

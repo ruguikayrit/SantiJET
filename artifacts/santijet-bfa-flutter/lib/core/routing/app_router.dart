@@ -3,6 +3,7 @@ import 'package:go_router/go_router.dart';
 
 import '../../features/analiz_detail/analiz_detail_screen.dart';
 import '../../features/analiz_list/analiz_list_screen.dart';
+import '../../features/design_gallery/design_gallery_screen.dart';
 import '../../features/home/home_screen.dart';
 import '../../features/karsilastir/karsilastir_screen.dart';
 import '../../features/kesif/kesif_detail_screen.dart';
@@ -54,6 +55,10 @@ final routerProvider = Provider<GoRouter>((ref) {
       GoRoute(
         path: AppRoutes.ayarlar,
         builder: (context, state) => const SettingsScreen(),
+      ),
+      GoRoute(
+        path: AppRoutes.tasarimSistemi,
+        builder: (context, state) => const DesignGalleryScreen(),
       ),
     ],
   );

@@ -55,11 +55,20 @@ lib/
 
 ## Tasarım Sistemi (Demir'den birebir)
 
+**Token'lar (`core/theme/`):**
 - **Renkler:** `AppColors` — canvas `#05070A`, electric blue `#0055FF`, koyu yüzeyler,
   durum renkleri + BFA modül vurguları (inşaat/mekanik/elektrik/keşif).
 - **Tipografi:** `AppTypography` — Rajdhani (başlık/KPI) + Inter (gövde/etiket), 9 adımlı ölçek.
 - **Boşluk/Yarıçap/Gölge:** `AppSpacing` (8pt), `AppRadii` (xs–full), `AppShadows` (5 seviye + glow).
 - **Tema:** `AppTheme.light` / `AppTheme.dark` (Material 3).
+
+**Bileşen kütüphanesi (`core/design_system/`)** — tek import: `design_system.dart`:
+`SJCard`, `SJButton` (primary/secondary/ghost/destructive + loading), `SJInput`,
+`SJSearchBar`, `SJModal` (sheet + confirm), `SJBottomNavigation`, `SJStatCard`,
+`SJListItem`, `SJEmptyState`, `SJStatusBadge`, `SJFilterChips`.
+Demir desenlerine dayanır; yapısal renkler `Theme`'den, marka/durum renkleri
+`AppColors`'tan gelir (açık + koyu temada doğru görünüm). Görsel doğrulama:
+`/tasarim-sistemi` galeri ekranı.
 
 ## Migration Durumu
 
@@ -67,7 +76,7 @@ lib/
 |-----|------|-------|
 | **1** | **Proje Mimarisi** | ✅ Tamamlandı |
 | **2** | **Tema Sistemi (Demir hizalama)** | ✅ Tamamlandı |
-| 3 | Design System (SJ bileşenleri) | ⏳ |
+| **3** | **Design System (SJ bileşenleri)** | ✅ Tamamlandı |
 | 4 | Reusable Components | ⏳ |
 | 5 | Navigasyon (bottom nav + geçişler) | ⏳ (iskelet hazır) |
 | 6–13 | Ekranlar & özellikler | ⏳ |

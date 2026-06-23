@@ -22,6 +22,7 @@ class HomeScreen extends ConsumerWidget {
       ('Keşif', AppRoutes.kesif),
       ('Karşılaştır', AppRoutes.karsilastir),
       ('Ayarlar', AppRoutes.ayarlar),
+      ('Design System (Faz 3)', AppRoutes.tasarimSistemi),
     ];
 
     return Scaffold(
@@ -32,7 +33,7 @@ class HomeScreen extends ConsumerWidget {
           Text(AppInfo.displayName, style: theme.textTheme.headlineLarge),
           const SizedBox(height: AppSpacing.xxs),
           Text(
-            'Faz 2 — Tema sistemi (ŞantiJET Demir tasarım dili)',
+            'Faz 3 — Design System (ŞantiJET Demir tasarım dili)',
             style: theme.textTheme.bodySmall,
           ),
           const SizedBox(height: AppSpacing.md),
