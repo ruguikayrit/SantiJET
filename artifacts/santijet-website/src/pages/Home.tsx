@@ -142,13 +142,27 @@ function NeonIcon({ iconKey, color }: { iconKey: string; color: string }) {
     );
     case "beton": return (
       <svg width="38" height="38" viewBox="0 0 38 38">
-        <ellipse cx="11" cy="17" rx="9" ry="10" {...s} />
-        <line x1="20" y1="17" x2="34" y2="17" {...s} />
-        <line x1="20" y1="8" x2="34" y2="8" {...s} />
-        <line x1="34" y1="8" x2="34" y2="28" {...s} />
-        <circle cx="8" cy="29" r="3" {...s} />
-        <circle cx="28" cy="29" r="3" {...s} />
-        <line x1="11" y1="29" x2="25" y2="29" {...s} />
+        {/* Drum (rotating bowl) */}
+        <ellipse cx="13" cy="14" rx="10" ry="11" {...s} />
+        {/* Spiral inside drum */}
+        <path d="M8 10 q5-4 10 4" {...s} strokeWidth={1.4} />
+        <path d="M6 16 q5-4 10 4" {...s} strokeWidth={1.4} />
+        {/* Truck cab */}
+        <rect x="23" y="15" width="12" height="10" rx="1.5" {...s} />
+        {/* Cab window */}
+        <rect x="25" y="17" width="5" height="4" rx="0.8" {...s} strokeWidth={1.2} />
+        {/* Chassis / frame */}
+        <line x1="23" y1="25" x2="4" y2="25" {...s} />
+        {/* Chute (discharge) */}
+        <line x1="20" y1="21" x2="27" y2="25" {...s} strokeWidth={1.5} />
+        {/* Rear wheel */}
+        <circle cx="8" cy="29" r="3.5" {...s} />
+        <circle cx="8" cy="29" r="1.2" fill={color} stroke="none" />
+        {/* Front wheel */}
+        <circle cx="29" cy="29" r="3.5" {...s} />
+        <circle cx="29" cy="29" r="1.2" fill={color} stroke="none" />
+        {/* Axle line */}
+        <line x1="11.5" y1="29" x2="25.5" y2="29" {...s} strokeOpacity={0.4} />
       </svg>
     );
     case "celik": return (
@@ -434,10 +448,10 @@ function Ecosystem() {
                   src={`${BASE_URL}/brand/santijet-bolt-nobg.png`}
                   alt="ŞantiJET"
                   className="object-contain"
-                  style={{ width: 114, height: 114 }}
+                  style={{ width: 190, height: 190, marginBottom: -8 }}
                 />
                 <span
-                  className="font-bold tracking-[0.28em] text-[15px] mt-1"
+                  className="font-bold tracking-[0.28em] text-[15px]"
                   style={{ color: "#4a90e2", textShadow: "0 0 20px rgba(74,144,226,0.9)" }}
                 >
                   PRO
