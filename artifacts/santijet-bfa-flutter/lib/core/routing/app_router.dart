@@ -9,6 +9,8 @@ import '../../features/home/home_screen.dart';
 import '../../features/karsilastir/karsilastir_screen.dart';
 import '../../features/kesif/kesif_detail_screen.dart';
 import '../../features/kesif/kesif_list_screen.dart';
+import '../../features/legal/legal_document_screen.dart';
+import '../../features/legal/sources_screen.dart';
 import '../../features/settings/settings_screen.dart';
 import '../../features/shell/main_shell.dart';
 import 'app_routes.dart';
@@ -111,6 +113,22 @@ final routerProvider = Provider<GoRouter>((ref) {
         pageBuilder: (context, state) => fadeSlidePage(
           key: state.pageKey,
           child: const DesignGalleryScreen(),
+        ),
+      ),
+      GoRoute(
+        path: AppRoutes.legalDocumentPattern,
+        parentNavigatorKey: _rootNavigatorKey,
+        pageBuilder: (context, state) => fadeSlidePage(
+          key: state.pageKey,
+          child: LegalDocumentScreen(documentId: state.pathParameters['id']!),
+        ),
+      ),
+      GoRoute(
+        path: AppRoutes.sources,
+        parentNavigatorKey: _rootNavigatorKey,
+        pageBuilder: (context, state) => fadeSlidePage(
+          key: state.pageKey,
+          child: const SourcesScreen(),
         ),
       ),
     ],

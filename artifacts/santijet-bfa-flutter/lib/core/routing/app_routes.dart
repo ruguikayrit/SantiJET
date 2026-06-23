@@ -17,4 +17,7 @@ abstract final class AppRoutes {
   static String kesifDetay(String id) => '/kesif-detay/$id';
   static const karsilastir = '/karsilastir';
   static const tasarimSistemi = '/tasarim-sistemi';
+  static const legalDocumentPattern = '/hukuki/:id';
+  static String legalDocument(String id) => '/hukuki/$id';
+  static const sources = '/kaynaklar';
 }

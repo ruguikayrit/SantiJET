@@ -120,7 +120,15 @@ biçimlendirme: `core/utils/app_format.dart` (TR para/sayı).
 - JSON yedek dışa/içe aktarma eklendi (`BackupService`):
   `userAnalizleri`, `favoriteIds`, `recentIds`, `kesifProjects`, `themeMode`.
 - İçe aktarmada birleştir/değiştir akışı ile provider'lara uygulanır.
-- Hukuki sayfa bağlantıları Faz 13 için placeholder olarak ayarlarda görünür.
+- Hukuki sayfa bağlantıları gerçek ekranlara bağlanmıştır.
+
+## Hukuki Sayfalar (Faz 13)
+
+- Gizlilik Politikası ve Kullanım Koşulları gerçek route/screen olarak eklendi.
+- Kaynaklar ekranı, resmi YFK bağlantılarını listeler.
+- Resmi kaynak açmadan önce onay modalı gösterilir; `url_launcher` ile sistem
+  tarayıcısında açılır.
+- Ayarlar ekranındaki hukuki bağlantılar gerçek ekranlara bağlandı.
 
 ## Migration Durumu
 
@@ -138,7 +146,7 @@ biçimlendirme: `core/utils/app_format.dart` (TR para/sayı).
 | **10** | **PDF Export** | ✅ Tamamlandı |
 | **11** | **Excel Export** | ✅ Tamamlandı |
 | **12** | **Ayarlar** | ✅ Tamamlandı |
-| 13 | Hukuki Sayfalar | ⏳ |
+| **13** | **Hukuki Sayfalar** | ✅ Tamamlandı |
 | 14 | Performans | ⏳ |
 
 ## Geliştirme

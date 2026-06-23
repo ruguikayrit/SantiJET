@@ -1,8 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
 
 import '../../core/constants/app_info.dart';
 import '../../core/design_system/design_system.dart';
+import '../../core/routing/app_routes.dart';
 import '../../core/theme/app_colors.dart';
 import '../../core/theme/app_spacing.dart';
 import '../../core/theme/theme_mode_provider.dart';
@@ -112,18 +114,26 @@ class SettingsScreen extends ConsumerWidget {
             const SizedBox(height: AppSpacing.xs),
             SJListItem(
               title: 'Gizlilik Politikası',
-              subtitle: 'Faz 13 hukuki sayfalarında açılacak',
+              subtitle: 'Yerel veri ve gizlilik ilkeleri',
               leadingIcon: Icons.privacy_tip_outlined,
               accentColor: AppColors.info,
-              onTap: () => _soon(context),
+              onTap: () => context.push(AppRoutes.legalDocument('privacy')),
             ),
             const SizedBox(height: AppSpacing.xs),
             SJListItem(
               title: 'Kullanım Koşulları',
-              subtitle: 'Faz 13 hukuki sayfalarında açılacak',
+              subtitle: 'Kullanım kapsamı ve sorumluluk reddi',
               leadingIcon: Icons.gavel_outlined,
               accentColor: AppColors.warning,
-              onTap: () => _soon(context),
+              onTap: () => context.push(AppRoutes.legalDocument('terms')),
+            ),
+            const SizedBox(height: AppSpacing.xs),
+            SJListItem(
+              title: 'Kaynaklar',
+              subtitle: 'ÇŞİDB YFK 2026 Yayınları',
+              leadingIcon: Icons.open_in_browser,
+              accentColor: AppColors.electricBlueLight,
+              onTap: () => context.push(AppRoutes.sources),
             ),
           ],
         ),
@@ -191,12 +201,6 @@ class SettingsScreen extends ConsumerWidget {
         );
       }
     }
-  }
-
-  void _soon(BuildContext context) {
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(content: Text('Faz 13 kapsamında açılacak.')),
-    );
   }
 }
 
