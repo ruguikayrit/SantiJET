@@ -11,6 +11,7 @@ import '../../core/theme/app_spacing.dart';
 import '../../core/utils/app_format.dart';
 import '../../core/widgets/analiz_list_item.dart';
 import '../../core/widgets/module_tile.dart';
+import '../../core/widgets/santijet_logo.dart';
 import '../../data/providers/catalog_provider.dart';
 import '../../data/providers/favorites_provider.dart';
 import '../../data/providers/recent_views_provider.dart';
@@ -105,23 +106,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
       ),
       child: Row(
         children: [
-          Container(
-            width: 44,
-            height: 44,
-            decoration: BoxDecoration(
-              color: AppColors.electricBlue,
-              borderRadius: BorderRadius.circular(10),
-            ),
-            alignment: Alignment.center,
-            child: const Text(
-              'Ş',
-              style: TextStyle(
-                color: Colors.white,
-                fontSize: 24,
-                fontWeight: FontWeight.w700,
-              ),
-            ),
-          ),
+          const SantijetLogo(iconHeight: 44),
           const SizedBox(width: AppSpacing.sm),
           Expanded(
             child: Column(

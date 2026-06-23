@@ -39,6 +39,7 @@ flutter:
   # Resmi katalog JSON dosyaları (13.436 kayıt).
   assets:
     - assets/data/
+    - assets/images/
 
   # Fontlar paketlenir (offline) — ŞantiJET Demir tipografisiyle aynı aileler.
   # Inter değişken font: Flutter, fontWeight'i wght eksenine uygular.
