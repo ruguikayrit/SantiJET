@@ -89,6 +89,15 @@ abstract final class TrSearch {
     final tokens = tokenize(query);
     if (tokens.isEmpty) return true;
     final haystack = buildHaystack(a);
+    return matchesHaystack(haystack, tokens);
+  }
+
+  /// Önceden hesaplanmış [haystack] üzerinde token eşleşmesi.
+  ///
+  /// Büyük katalog aramalarında `buildHaystack` maliyetini her tuş vuruşunda
+  /// tekrar ödememek için kullanılır.
+  static bool matchesHaystack(String haystack, List<String> tokens) {
+    if (tokens.isEmpty) return true;
     return tokens.every((t) => _tokenMatches(t, haystack));
   }
 }

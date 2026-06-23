@@ -8,20 +8,30 @@ import 'user_analiz_provider.dart';
 
 /// Yüklenmiş resmi katalog verisi (disipline göre + düz liste + id indeksi).
 class CatalogData {
-  CatalogData({required this.byDiscipline})
-      : all = [
+  CatalogData({required Map<AnalizDiscipline, List<PozAnaliz>> byDiscipline})
+      : byDiscipline = {
+          for (final d in AnalizDiscipline.values)
+            d: _sortByPoz(byDiscipline[d] ?? const []),
+        },
+        all = _sortByPoz([
           ...?byDiscipline[AnalizDiscipline.insaat],
           ...?byDiscipline[AnalizDiscipline.mekanik],
           ...?byDiscipline[AnalizDiscipline.elektrik],
-        ],
-        byId = {
-          for (final list in byDiscipline.values)
-            for (final a in list) a.id: a,
-        };
+        ]) {
+    byId = {for (final a in all) a.id: a};
+    _haystackById = {for (final a in all) a.id: TrSearch.buildHaystack(a)};
+    categoriesByDiscipline = {
+      for (final d in AnalizDiscipline.values) d: kategoriler(forDiscipline(d)),
+    };
+    allCategories = kategoriler(all);
+  }
 
   final Map<AnalizDiscipline, List<PozAnaliz>> byDiscipline;
   final List<PozAnaliz> all;
-  final Map<String, PozAnaliz> byId;
+  late final Map<String, PozAnaliz> byId;
+  late final Map<String, String> _haystackById;
+  late final Map<AnalizDiscipline, List<String>> categoriesByDiscipline;
+  late final List<String> allCategories;
 
   int countFor(AnalizDiscipline d) => byDiscipline[d]?.length ?? 0;
 
@@ -29,18 +39,37 @@ class CatalogData {
 
   /// TR arama (AND). Sonuç poz numarasına göre sıralanır, [limit] ile sınırlanır.
   List<PozAnaliz> search(String query, {int? limit}) {
+    return searchIn(all, query, limit: limit);
+  }
+
+  /// Verilen [source] liste içinde önceden hesaplanmış haystack ile arar.
+  ///
+  /// [source] zaten poz numarasına göre sıralıysa sonuç da sıralı kalır; tekrar
+  /// sort yapılmaz.
+  List<PozAnaliz> searchIn(
+    List<PozAnaliz> source,
+    String query, {
+    int? limit,
+  }) {
     final q = query.trim();
     if (q.isEmpty) return const [];
-    final results = all.where((a) => TrSearch.matches(a, q)).toList()
-      ..sort((a, b) => a.pozNo.compareTo(b.pozNo));
-    if (limit != null && results.length > limit) {
-      return results.sublist(0, limit);
+    final tokens = TrSearch.tokenize(q);
+    final results = <PozAnaliz>[];
+    for (final a in source) {
+      final haystack = _haystackById[a.id] ?? TrSearch.buildHaystack(a);
+      if (TrSearch.matchesHaystack(haystack, tokens)) {
+        results.add(a);
+        if (limit != null && results.length >= limit) break;
+      }
     }
     return results;
   }
 
   List<PozAnaliz> forDiscipline(AnalizDiscipline d) =>
       byDiscipline[d] ?? const [];
+
+  List<String> categoriesForDiscipline(AnalizDiscipline d) =>
+      categoriesByDiscipline[d] ?? const [];
 
   /// Verilen analiz listesindeki kategorileri sıklığa göre sıralı döndürür
   /// (React Native `buildPozKategoriFiltreleri` ile aynı).
@@ -57,6 +86,10 @@ class CatalogData {
         return byCount != 0 ? byCount : a.key.compareTo(b.key);
       });
     return entries.map((e) => e.key).toList();
+  }
+
+  static List<PozAnaliz> _sortByPoz(List<PozAnaliz> list) {
+    return [...list]..sort((a, b) => a.pozNo.compareTo(b.pozNo));
   }
 }
 

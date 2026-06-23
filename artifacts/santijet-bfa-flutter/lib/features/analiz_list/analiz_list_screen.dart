@@ -8,7 +8,6 @@ import '../../core/design_system/sj_search_bar.dart';
 import '../../core/routing/app_routes.dart';
 import '../../core/theme/app_spacing.dart';
 import '../../core/utils/app_format.dart';
-import '../../core/utils/tr_search.dart';
 import '../../core/widgets/analiz_list_item.dart';
 import '../../data/providers/catalog_provider.dart';
 import '../../data/providers/favorites_provider.dart';
@@ -99,7 +98,12 @@ class _AnalizListScreenState extends ConsumerState<AnalizListScreen> {
 
   Widget _body(ThemeData theme, CatalogData catalog, Set<String> favorites) {
     final base = _baseList(catalog, favorites);
-    final categories = CatalogData.kategoriler(base);
+    final categories = switch (widget.modul) {
+      'insaat' => catalog.categoriesForDiscipline(AnalizDiscipline.insaat),
+      'mekanik' => catalog.categoriesForDiscipline(AnalizDiscipline.mekanik),
+      'elektrik' => catalog.categoriesForDiscipline(AnalizDiscipline.elektrik),
+      _ => CatalogData.kategoriler(base),
+    };
 
     // Kategori filtresi
     var filtered = _selectedCategory == null
@@ -109,9 +113,8 @@ class _AnalizListScreenState extends ConsumerState<AnalizListScreen> {
     // Arama filtresi
     final q = _query.trim();
     if (q.isNotEmpty) {
-      filtered = filtered.where((a) => TrSearch.matches(a, q)).toList();
+      filtered = catalog.searchIn(filtered, q);
     }
-    filtered = [...filtered]..sort((a, b) => a.pozNo.compareTo(b.pozNo));
 
     final chipLabels = ['Tümü', ...categories];
     final selectedIndex = _selectedCategory == null
@@ -171,6 +174,13 @@ class _AnalizListScreenState extends ConsumerState<AnalizListScreen> {
           child: filtered.isEmpty
               ? _emptyState()
               : ListView.separated(
+                  // Flutter 3.44'te yeni scrollCacheExtent tipi henüz public
+                  // export edilmediği için uyumluluk amacıyla eski alanı
+                  // kullanıyoruz.
+                  // ignore: deprecated_member_use
+                  cacheExtent: 900,
+                  keyboardDismissBehavior:
+                      ScrollViewKeyboardDismissBehavior.onDrag,
                   padding: const EdgeInsets.fromLTRB(
                     AppSpacing.md,
                     AppSpacing.xs,

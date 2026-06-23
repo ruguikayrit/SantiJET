@@ -130,6 +130,17 @@ biçimlendirme: `core/utils/app_format.dart` (TR para/sayı).
   tarayıcısında açılır.
 - Ayarlar ekranındaki hukuki bağlantılar gerçek ekranlara bağlandı.
 
+## Performans (Faz 14)
+
+- `CatalogData`, analiz listelerini poz numarasına göre tek sefer sıralar.
+- Arama haystack'leri katalog yüklenirken önceden hesaplanır; her tuş vuruşunda
+  13K kaydın metni tekrar birleştirilmez.
+- `CatalogData.searchIn()` limit destekler ve sıralı kaynak listede tekrar sort
+  yapmaz.
+- Disiplin kategori listeleri cache'lenir.
+- Analiz listesinde scroll cache + klavye-dismiss davranışı eklendi.
+- Performans davranışları için `catalog_performance_test.dart` eklendi.
+
 ## Migration Durumu
 
 | Faz | Konu | Durum |
@@ -147,7 +158,7 @@ biçimlendirme: `core/utils/app_format.dart` (TR para/sayı).
 | **11** | **Excel Export** | ✅ Tamamlandı |
 | **12** | **Ayarlar** | ✅ Tamamlandı |
 | **13** | **Hukuki Sayfalar** | ✅ Tamamlandı |
-| 14 | Performans | ⏳ |
+| **14** | **Performans Optimizasyonu** | ✅ Tamamlandı |
 
 ## Geliştirme
 
