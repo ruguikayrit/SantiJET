@@ -15,6 +15,7 @@ import '../../core/widgets/metraj_input.dart';
 import '../../data/providers/catalog_provider.dart';
 import '../../data/providers/favorites_provider.dart';
 import '../../data/providers/user_analiz_provider.dart';
+import '../../data/services/analiz_excel_export_service.dart';
 import '../../data/services/analiz_pdf_export_service.dart';
 import '../../domain/calc/analiz_hesap.dart';
 import '../../domain/entities/poz_analiz.dart';
@@ -81,6 +82,23 @@ class _Detail extends ConsumerWidget {
     } catch (e) {
       messenger.showSnackBar(
         SnackBar(content: Text('PDF oluşturulamadı: $e')),
+      );
+    }
+  }
+
+  Future<void> _exportExcel(BuildContext context) async {
+    final messenger = ScaffoldMessenger.of(context);
+    messenger.showSnackBar(
+      const SnackBar(content: Text('Excel hazırlanıyor...')),
+    );
+    try {
+      await analizExcelExportService.share(analiz);
+      messenger.showSnackBar(
+        const SnackBar(content: Text('Excel paylaşım için hazırlandı.')),
+      );
+    } catch (e) {
+      messenger.showSnackBar(
+        SnackBar(content: Text('Excel oluşturulamadı: $e')),
       );
     }
   }
@@ -275,7 +293,7 @@ class _Detail extends ConsumerWidget {
             label: 'Excel',
             icon: Icons.table_chart_outlined,
             variant: SJButtonVariant.secondary,
-            onPressed: () => _soon(context, 'Excel dışa aktarma'),
+            onPressed: () => _exportExcel(context),
           ),
         ),
       ],

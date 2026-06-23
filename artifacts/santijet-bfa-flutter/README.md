@@ -102,6 +102,16 @@ biçimlendirme: `core/utils/app_format.dart` (TR para/sayı).
   fontları PDF içine gömülür.
 - Analiz detay ekranındaki **PDF** butonu gerçek paylaşıma bağlandı.
 
+## Excel Export (Faz 11)
+
+- `data/services/analiz_excel_export_service.dart` — standart OpenXML `.xlsx`
+  üretir (ZIP + XML).
+- `excel` paketi güncel `pdf` paketiyle `xml` sürüm çakışması yarattığı için
+  deprecated/uyumsuz paket kullanılmadı; `.xlsx` doğrudan üretildi.
+- Analiz detay ekranındaki **Excel** butonu gerçek `.xlsx` paylaşımına bağlandı.
+- Excel içeriği: ŞantiJET başlığı, poz bilgileri, kalem tablosu, maliyet özeti,
+  poz tarifi, yapım şartları ve notlar.
+
 ## Migration Durumu
 
 | Faz | Konu | Durum |
@@ -116,7 +126,8 @@ biçimlendirme: `core/utils/app_format.dart` (TR para/sayı).
 | **8** | **Analiz Detay Sayfası** | ✅ Tamamlandı |
 | **9** | **Özel Analizler + Keşif (kalıcılık)** | ✅ Tamamlandı |
 | **10** | **PDF Export** | ✅ Tamamlandı |
-| 11–13 | Ekranlar & özellikler | ⏳ |
+| **11** | **Excel Export** | ✅ Tamamlandı |
+| 12–13 | Ekranlar & özellikler | ⏳ |
 | 14 | Performans | ⏳ |
 
 ## Geliştirme
