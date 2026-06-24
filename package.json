@@ -15,7 +15,8 @@
     "dev:website": "PORT=8082 pnpm --filter @workspace/santijet-website run dev",
     "dev:ipa": "PORT=24916 pnpm --filter @workspace/imalat-poz-analizleri run dev",
     "dev:ipa:web": "PORT=24916 pnpm --filter @workspace/imalat-poz-analizleri run dev:web",
-    "dev:mockup": "PORT=8081 BASE_PATH=/__mockup pnpm --filter @workspace/mockup-sandbox run dev"
+    "dev:mockup": "PORT=8081 BASE_PATH=/__mockup pnpm --filter @workspace/mockup-sandbox run dev",
+    "dev:bfa-flutter": "node artifacts/santijet-bfa-flutter/scripts/dev-gateway.mjs"
   },
   "private": true,
   "devDependencies": {
