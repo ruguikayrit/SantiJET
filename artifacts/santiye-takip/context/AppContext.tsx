@@ -18,7 +18,7 @@ import {
   ImalatPoz,
   PozAnaliz,
 } from "@/constants/imalatPozlari";
-import { sanitizeUserPozAnalizleri } from "@/lib/pozAnalizCatalog";
+import { isValidPozAnaliz, sanitizeUserPozAnalizleri, toPersistedUserAnaliz } from "@/lib/pozAnalizCatalog";
 
 function mergeImalatPozlari(stored: unknown): ImalatPoz[] {
   if (!Array.isArray(stored) || stored.length === 0) {
@@ -34,7 +34,15 @@ function mergeImalatPozlari(stored: unknown): ImalatPoz[] {
 }
 
 function mergePozAnalizleri(stored: unknown): PozAnaliz[] {
-  return sanitizeUserPozAnalizleri(stored);
+  if (!Array.isArray(stored)) return [];
+  const items = (stored as unknown[]).filter(isValidPozAnaliz);
+  const sistemCount = items.filter((a) => a.kaynakTip === "sistem").length;
+  // Eski sürüm: yüzlerce resmi kayıt AsyncStorage'da — yalnızca kullanıcı/kopya tut
+  if (sistemCount > 100) {
+    return sanitizeUserPozAnalizleri(stored);
+  }
+  // Az sayıda sistem kaydı: kaydedilememiş düzenlemeleri kopya override'a çevir
+  return items.map((a) => (a.kaynakTip === "sistem" ? toPersistedUserAnaliz(a) : a));
 }
 
 export interface Project {
@@ -1633,11 +1641,13 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
           return {
             ...prev,
             pozAnalizleri: prev.pozAnalizleri.map((a) =>
-              a.id === id ? { ...a, ...patch, guncellemeTarihi: now } : a
+              a.id === id
+                ? toPersistedUserAnaliz({ ...a, ...patch, guncellemeTarihi: now } as PozAnaliz)
+                : a
             ),
           };
         }
-        const yeni = { ...patch, id, guncellemeTarihi: now } as PozAnaliz;
+        const yeni = toPersistedUserAnaliz({ ...patch, id, guncellemeTarihi: now } as PozAnaliz);
         return { ...prev, pozAnalizleri: [...prev.pozAnalizleri, yeni] };
       }),
     deletePozAnaliz: (id) =>

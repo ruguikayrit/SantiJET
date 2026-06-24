@@ -4,12 +4,14 @@ import { createRequire } from "module";
 
 const require = createRequire(import.meta.url);
 const ts = require("typescript");
+
 const srcPath = path.resolve(
   "artifacts/santiye-takip/constants/resmiAnalizler.ts",
 );
-const outPath = path.resolve(
-  "artifacts/santiye-takip/assets/data/resmi-poz-analizleri.json",
-);
+const outPaths = [
+  path.resolve("artifacts/santiye-takip/assets/data/resmi-poz-analizleri.json"),
+  path.resolve("artifacts/imalat-poz-analizleri/assets/data/resmi-poz-analizleri.json"),
+];
 
 const source = fs.readFileSync(srcPath, "utf8");
 const result = ts.transpileModule(source, {
@@ -24,6 +26,10 @@ const data = mod.exports.RESMI_POZ_ANALIZLERI.filter(
 if (!Array.isArray(data) || data.length === 0) {
   throw new Error("RESMI_POZ_ANALIZLERI export not found or empty");
 }
-fs.mkdirSync(path.dirname(outPath), { recursive: true });
-fs.writeFileSync(outPath, JSON.stringify(data));
-console.log(`Exported ${data.length} analyses (${fs.statSync(outPath).size} bytes)`);
+
+const payload = JSON.stringify(data);
+for (const outPath of outPaths) {
+  fs.mkdirSync(path.dirname(outPath), { recursive: true });
+  fs.writeFileSync(outPath, payload);
+  console.log(`Exported ${data.length} analyses -> ${outPath} (${fs.statSync(outPath).size} bytes)`);
+}

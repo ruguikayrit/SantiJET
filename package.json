@@ -7,6 +7,7 @@
     "build": "pnpm run typecheck && pnpm -r --if-present run build",
     "typecheck:libs": "tsc --build",
     "typecheck": "pnpm run typecheck:libs && pnpm -r --filter \"./artifacts/**\" --filter \"./scripts\" --if-present run typecheck",
+    "export:resmi-analizler": "node scripts/export-resmi-analizler.mjs",
     "dev:neon": "PORT=23301 BASE_PATH=/neon/ pnpm --filter @workspace/santijet-neon run dev",
     "dev:mobile": "PORT=24914 pnpm --filter @workspace/santiye-takip run dev",
     "dev:mobile-web": "PORT=24915 pnpm --filter @workspace/santiye-takip run dev:web",

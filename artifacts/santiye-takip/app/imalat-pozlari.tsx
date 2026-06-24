@@ -27,6 +27,7 @@ import {
   PozAnaliz,
   hesaplaAnalizToplam,
 } from "@/constants/imalatPozlari";
+import { toPersistedUserAnaliz } from "@/lib/pozAnalizCatalog";
 
 // ─── Yardımcı Fonksiyonlar ─────────────────────────────────────
 
@@ -69,7 +70,7 @@ export default function ImalatPozlariScreen() {
     currentRole,
   } = useApp();
 
-  const { pozAnalizleri, loading: catalogLoading, error: catalogError } =
+  const { pozAnalizleri, loading: catalogLoading, error: catalogError, reload: reloadCatalog } =
     useMergedPozAnalizleri();
 
   const isAdmin = currentRole?.isAdmin === true;
@@ -150,7 +151,8 @@ export default function ImalatPozlariScreen() {
   function saveEdit() {
     if (!editDraft) return;
     const totals = hesaplaAnalizToplam(editDraft);
-    updatePozAnaliz(editDraft.id, { ...editDraft, ...totals });
+    const persisted = toPersistedUserAnaliz({ ...editDraft, ...totals });
+    updatePozAnaliz(persisted.id, persisted);
     setIsEditing(false);
     setEditDraft(null);
   }
@@ -676,13 +678,10 @@ export default function ImalatPozlariScreen() {
           {catalogError}
         </Text>
         <TouchableOpacity
-          onPress={() => {
-            if (router.canGoBack()) router.back();
-            else router.replace("/" as any);
-          }}
+          onPress={reloadCatalog}
           style={{ marginTop: 20, paddingHorizontal: 20, paddingVertical: 10, backgroundColor: colors.primary, borderRadius: 8 }}
         >
-          <Text style={{ color: colors.primaryForeground, fontFamily: "Inter_600SemiBold" }}>Geri Dön</Text>
+          <Text style={{ color: colors.primaryForeground, fontFamily: "Inter_600SemiBold" }}>Yeniden Yükle</Text>
         </TouchableOpacity>
       </View>
     );

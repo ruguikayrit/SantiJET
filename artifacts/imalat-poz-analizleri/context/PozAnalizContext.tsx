@@ -9,7 +9,7 @@ import React, {
 } from "react";
 
 import { PozAnaliz } from "@/constants/pozAnalizTypes";
-import { sanitizeUserPozAnalizleri } from "@/lib/pozAnalizCatalog";
+import { sanitizeUserPozAnalizleri, toPersistedUserAnaliz } from "@/lib/pozAnalizCatalog";
 
 const STORAGE_KEY = "imalat_poz_analizleri_v1";
 
@@ -79,12 +79,14 @@ export function PozAnalizProvider({ children }: { children: React.ReactNode }) {
         if (exists) {
           persist(
             pozAnalizleri.map((a) =>
-              a.id === id ? ({ ...a, ...patch, guncellemeTarihi: now } as PozAnaliz) : a
+              a.id === id
+                ? toPersistedUserAnaliz({ ...a, ...patch, guncellemeTarihi: now } as PozAnaliz)
+                : a
             )
           );
           return;
         }
-        const yeni = { ...patch, id, guncellemeTarihi: now } as PozAnaliz;
+        const yeni = toPersistedUserAnaliz({ ...patch, id, guncellemeTarihi: now } as PozAnaliz);
         persist([...pozAnalizleri, yeni]);
       },
       deletePozAnaliz: (id) => {

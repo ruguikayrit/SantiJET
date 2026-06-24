@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 
 import { PozAnaliz } from "@/constants/imalatPozlari";
 import { useApp } from "@/context/AppContext";
@@ -17,10 +17,17 @@ export function useMergedPozAnalizleri() {
   const [resmiAnalizler, setResmiAnalizler] = useState<PozAnaliz[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [reloadKey, setReloadKey] = useState(0);
+
+  const reload = useCallback(() => {
+    setLoading(true);
+    setError(null);
+    setReloadKey((k) => k + 1);
+  }, []);
 
   useEffect(() => {
     let cancelled = false;
-    loadResmiPozAnalizleri()
+    loadResmiPozAnalizleri(reloadKey > 0)
       .then((data) => {
         if (!cancelled) {
           setResmiAnalizler(data);
@@ -36,12 +43,12 @@ export function useMergedPozAnalizleri() {
     return () => {
       cancelled = true;
     };
-  }, []);
+  }, [reloadKey]);
 
   const pozAnalizleri = useMemo(
     () => mergePozAnalizCatalog(resmiAnalizler, userAnalizleri),
     [resmiAnalizler, userAnalizleri],
   );
 
-  return { pozAnalizleri, loading, error, resmiLoaded: !loading && !error };
+  return { pozAnalizleri, loading, error, resmiLoaded: !loading && !error, reload };
 }
