@@ -1,0 +1,89 @@
+name: Deploy ŞantiJET GitHub Pages (DEMİR + BFA)
+
+on:
+  push:
+    branches:
+      - main
+    paths:
+      - 'artifacts/santijet-demir/**'
+      - 'artifacts/santijet-bfa-flutter/**'
+      - '.github/workflows/deploy-github-pages.yml'
+  workflow_dispatch:
+    inputs:
+      bfa_ref:
+        description: 'BFA kaynak branch veya commit'
+        required: false
+        default: 'cursor/bfa-faz8-9-tamamlama-aca6'
+
+concurrency:
+  group: pages-santijet
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+jobs:
+  build-and-deploy:
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - name: Checkout main
+        uses: actions/checkout@v4
+
+      - name: Setup Flutter
+        uses: subosito/flutter-action@v2
+        with:
+          channel: stable
+          flutter-version: '3.27.4'
+          cache: true
+
+      - name: Fetch BFA source
+        run: |
+          BFA_REF="${{ github.event.inputs.bfa_ref || 'cursor/bfa-faz8-9-tamamlama-aca6' }}"
+          git fetch origin "$BFA_REF"
+          git checkout FETCH_HEAD -- artifacts/santijet-bfa-flutter
+
+      - name: Build DEMİR web
+        working-directory: artifacts/santijet-demir
+        env:
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+          SUPABASE_ANON_KEY: ${{ secrets.SUPABASE_ANON_KEY }}
+        run: |
+          flutter pub get
+          DART_DEFINES=""
+          if [ -n "$SUPABASE_URL" ] && [ -n "$SUPABASE_ANON_KEY" ]; then
+            CLEAN_URL="${SUPABASE_URL%/}"
+            CLEAN_URL="${CLEAN_URL%/rest/v1}"
+            CLEAN_URL="${CLEAN_URL%/auth/v1}"
+            CLEAN_URL="${CLEAN_URL%/storage/v1}"
+            CLEAN_URL="${CLEAN_URL%/functions/v1}"
+            DART_DEFINES="--dart-define=SUPABASE_URL=${CLEAN_URL} --dart-define=SUPABASE_ANON_KEY=${SUPABASE_ANON_KEY}"
+          fi
+          flutter build web --release --base-href "/${{ github.event.repository.name }}/" --pwa-strategy=none $DART_DEFINES
+          perl -i -0pe 's/_flutter\.loader\.load\(\{\s*serviceWorkerSettings:\s*\{[^}]+\}\s*\}\);/_flutter.loader.load({});/s' build/web/flutter_bootstrap.js
+
+      - name: Build BFA web
+        working-directory: artifacts/santijet-bfa-flutter
+        run: |
+          flutter pub get
+          flutter build web --release --base-href "/${{ github.event.repository.name }}/bfa/" --pwa-strategy=none
+          perl -i -0pe 's/_flutter\.loader\.load\(\{\s*serviceWorkerSettings:\s*\{[^}]+\}\s*\}\);/_flutter.loader.load({});/s' build/web/flutter_bootstrap.js
+
+      - name: Assemble site
+        run: |
+          mkdir -p site/bfa
+          cp -r artifacts/santijet-demir/build/web/. site/
+          cp -r artifacts/santijet-bfa-flutter/build/web/. site/bfa/
+
+      - name: Upload Pages artifact
+        uses: actions/upload-pages-artifact@v3
+        with:
+          path: site
+
+      - name: Deploy to GitHub Pages
+        id: deployment
+        uses: actions/deploy-pages@v4
