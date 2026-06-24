@@ -23640,7 +23640,6 @@ export const RESMI_POZ_ANALIZLERI = [
       { id: "k6", tip: "iscilik" as const, pozNo: "10.100.1059", tanim: "Yağcı", olcuBirimi: "Sa", miktar: 1.35, birimFiyati: 230.0, tutar: 310.5 },
     ],
   },
-,
   {
       id: "sys-15x100x1002",
       pozNo: "15.100.1002",

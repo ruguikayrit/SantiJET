@@ -86,6 +86,11 @@ function RootLayoutNav() {
         <Stack.Screen name="malzeme-birimi" />
         <Stack.Screen name="asistan" />
         <Stack.Screen name="veri-yonetim" />
+        <Stack.Screen name="imalat-pozlari" />
+        <Stack.Screen name="yybm" />
+        <Stack.Screen name="meslekler" />
+        <Stack.Screen name="meslek-grubu" />
+        <Stack.Screen name="dosyalar" />
       </Stack>
     </AppGate>
   );

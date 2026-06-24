@@ -1,7 +1,6 @@
 import { Feather } from "@expo/vector-icons";
 import * as FileSystem from "expo-file-system/legacy";
 import * as Sharing from "expo-sharing";
-import { useRouter } from "expo-router";
 import React, { useMemo, useState } from "react";
 import {
   Alert,
@@ -18,7 +17,7 @@ import {
 } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
-import { useApp } from "@/context/AppContext";
+import { usePozAnaliz } from "@/context/PozAnalizContext";
 import { useMergedPozAnalizleri } from "@/hooks/useMergedPozAnalizleri";
 import { useColors } from "@/hooks/useColors";
 import {
@@ -26,7 +25,7 @@ import {
   IMALAT_POZ_KATEGORILERI,
   PozAnaliz,
   hesaplaAnalizToplam,
-} from "@/constants/imalatPozlari";
+} from "@/constants/pozAnalizTypes";
 import { toPersistedUserAnaliz } from "@/lib/pozAnalizCatalog";
 
 // ─── Yardımcı Fonksiyonlar ─────────────────────────────────────
@@ -58,7 +57,6 @@ type Colors = ReturnType<typeof useColors>;
 
 export default function ImalatPozlariScreen() {
   const colors = useColors();
-  const router = useRouter();
   const insets = useSafeAreaInsets();
   const topPad = Platform.OS === "web" ? 16 : insets.top;
 
@@ -68,7 +66,7 @@ export default function ImalatPozlariScreen() {
     deletePozAnaliz,
     clonePozAnaliz,
     currentRole,
-  } = useApp();
+  } = usePozAnaliz();
 
   const { pozAnalizleri, loading: catalogLoading, error: catalogError, reload: reloadCatalog } =
     useMergedPozAnalizleri();
@@ -681,7 +679,7 @@ export default function ImalatPozlariScreen() {
           onPress={reloadCatalog}
           style={{ marginTop: 20, paddingHorizontal: 20, paddingVertical: 10, backgroundColor: colors.primary, borderRadius: 8 }}
         >
-          <Text style={{ color: colors.primaryForeground, fontFamily: "Inter_600SemiBold" }}>Yeniden Yükle</Text>
+          <Text style={{ color: colors.primaryForeground, fontWeight: "700" }}>Yeniden Yükle</Text>
         </TouchableOpacity>
       </View>
     );
@@ -693,19 +691,9 @@ export default function ImalatPozlariScreen() {
       <View
         style={[st.header, { backgroundColor: colors.secondary, paddingTop: topPad + 12 }]}
       >
-        <TouchableOpacity
-          onPress={() => {
-            if (router.canGoBack()) router.back();
-            else router.replace("/" as any);
-          }}
-          style={st.backBtn}
-        >
-          <Feather name="arrow-left" size={22} color={colors.secondaryForeground} />
-        </TouchableOpacity>
-        <Text style={[st.headerTitle, { color: colors.secondaryForeground }]}>
+        <Text style={[st.headerTitle, { color: colors.secondaryForeground, flex: 1, textAlign: "center" }]}>
           İmalat Poz Analizleri
         </Text>
-        <View style={{ width: 40 }} />
       </View>
 
       {/* Arama */}

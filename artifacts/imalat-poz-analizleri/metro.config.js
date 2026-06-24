@@ -6,8 +6,6 @@ const projectRoot = __dirname;
 
 const config = getDefaultConfig(projectRoot);
 
-config.resolver.assetExts = [...config.resolver.assetExts, "pdf"];
-
 config.watchFolders = [workspaceRoot];
 
 config.resolver.nodeModulesPaths = [
@@ -16,14 +14,8 @@ config.resolver.nodeModulesPaths = [
   path.resolve(workspaceRoot, "node_modules/.pnpm/node_modules"),
 ];
 
-// Exclude internal Replit tool directories from Metro's file watcher.
-// These directories can be deleted/recreated at any time and their absence
-// causes an ENOENT crash in Metro's FallbackWatcher.
 const blockListRE = config.resolver.blockList;
-const extraBlockList = [
-  /[/\\]\.local[/\\]/,
-  /[/\\]\.replit[/\\]/,
-];
+const extraBlockList = [/[/\\]\.local[/\\]/];
 config.resolver.blockList = Array.isArray(blockListRE)
   ? [...blockListRE, ...extraBlockList]
   : blockListRE

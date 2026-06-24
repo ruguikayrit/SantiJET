@@ -1,0 +1,11 @@
+---
+description: İmalat Poz Analizleri bağımsız Expo uygulaması
+globs: artifacts/imalat-poz-analizleri/**
+alwaysApply: false
+---
+
+- Paket: `@workspace/imalat-poz-analizleri`
+- Geliştirme: `pnpm dev:imalat-poz` veya `pnpm dev:imalat-poz:tunnel` (repo kökü)
+- ŞantiJET (`artifacts/santiye-takip`) ile karıştırma; bu bağımsız uygulamadır
+- Context: `PozAnalizContext`, tipler: `constants/pozAnalizTypes.ts`
+- Resmi veri JSON'dan lazy yüklenir; `AppContext` yok
