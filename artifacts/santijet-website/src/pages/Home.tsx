@@ -6,7 +6,7 @@ import {
   Search, Settings, ArrowUpRight, ArrowDownRight, MoreHorizontal, Camera, Activity, LayoutDashboard, Bell, Box, Droplets, MapPin
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { Accordion, AccordionItem, AccordionTrigger, AccordionContent } from "@/components/ui/accordion";
 
 const BASE_URL = import.meta.env.BASE_URL.replace(/\/$/, "");
@@ -286,6 +286,18 @@ function EcoCard({
 
 function Ecosystem() {
   const [activeCard, setActiveCard] = useState<number | null>(null);
+  const wrapRef = useRef<HTMLDivElement>(null);
+  const [scale, setScale] = useState(1);
+
+  useEffect(() => {
+    const el = wrapRef.current;
+    if (!el) return;
+    const obs = new ResizeObserver(([entry]) => {
+      setScale(Math.min(1, entry.contentRect.width / 960));
+    });
+    obs.observe(el);
+    return () => obs.disconnect();
+  }, []);
 
   // ── Circular geometry: 960×720 container, hub center (480, 360), R=265 ──
   // 7 modules at step=360/7≈51.43°, starting -90° (top), clockwise.
@@ -377,7 +389,22 @@ function Ecosystem() {
         </motion.div>
 
         {/* ── Desktop diagram ── */}
-        <div className="relative max-w-[960px] mx-auto hidden md:block" style={{ height: 720 }}>
+        {/* wrapRef measures available width; inner content is kept at 960×720 and scaled. */}
+        <div
+          ref={wrapRef}
+          className="relative max-w-[960px] mx-auto hidden md:block overflow-hidden"
+          style={{ height: Math.round(720 * scale) }}
+        >
+          {/* Scale wrapper — keeps all SVG + card coordinates in 960×720 space */}
+          <div style={{
+            position: "absolute",
+            top: 0,
+            left: "50%",
+            width: 960,
+            height: 720,
+            transform: `translateX(-50%) scale(${scale})`,
+            transformOrigin: "top center",
+          }}>
 
           {/* Full-scene SVG: connection lines + animated data-flow particles */}
           <svg
@@ -581,6 +608,7 @@ function Ecosystem() {
             </motion.div>
           </div>
 
+          </div>{/* end scale wrapper */}
         </div>{/* end desktop diagram */}
 
         {/* ── Mobile layout ── */}
