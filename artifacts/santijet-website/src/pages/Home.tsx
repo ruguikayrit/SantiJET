@@ -234,38 +234,49 @@ function NeonIcon({ iconKey, color }: { iconKey: string; color: string }) {
   }
 }
 
-function EcoCard({ name, desc, color, iconKey, delay = 0, initX = 0, initY = 0 }: {
+function EcoCard({
+  name, desc, color, iconKey, delay = 0, initX = 0, initY = 0,
+  isActive = false, onHoverStart, onHoverEnd,
+}: {
   name: string; desc: string; color: string; iconKey: string;
   delay?: number; initX?: number; initY?: number;
+  isActive?: boolean; onHoverStart?: () => void; onHoverEnd?: () => void;
 }) {
   return (
     <motion.div
       initial={{ opacity: 0, x: initX, y: initY }}
       whileInView={{ opacity: 1, x: 0, y: 0 }}
       viewport={{ once: true }}
-      transition={{ duration: 0.5, delay }}
-      whileHover={{ scale: 1.04, transition: { duration: 0.18 } }}
-      className="flex items-stretch rounded-xl overflow-hidden cursor-default select-none"
+      transition={{ duration: 0.55, delay }}
+      whileHover={{ y: -6, scale: 1.02, transition: { duration: 0.3 } }}
+      onHoverStart={onHoverStart}
+      onHoverEnd={onHoverEnd}
+      className="flex items-stretch rounded-2xl overflow-hidden cursor-default select-none h-full"
       style={{
-        background: "linear-gradient(135deg, #0b0e1e 0%, #07091a 100%)",
-        border: `1px solid ${color}38`,
-        boxShadow: `0 0 18px ${color}15, inset 0 0 0 1px ${color}10`,
-        minHeight: 96,
+        background: "linear-gradient(145deg, #080d20 0%, #050918 100%)",
+        border: `1.5px solid ${isActive ? color + "90" : color + "50"}`,
+        boxShadow: isActive
+          ? `0 0 32px ${color}40, 0 0 8px ${color}25, inset 0 0 20px ${color}08`
+          : `0 0 20px ${color}20, 0 0 4px ${color}12, inset 0 0 12px ${color}06`,
+        transition: "box-shadow 0.3s ease, border-color 0.3s ease",
       }}
     >
-      <div className="flex-1 p-3 flex flex-col justify-center min-w-0">
-        <div className="font-bold text-white text-[10.5px] leading-tight tracking-wide mb-1.5">{name}</div>
+      <div className="flex-1 p-4 flex flex-col justify-center min-w-0">
+        <div className="font-bold text-white text-[11px] leading-tight tracking-wide mb-2">{name}</div>
         <span
-          className="inline-block self-start text-[8.5px] px-2 py-[2px] rounded-full font-bold tracking-widest mb-2"
-          style={{ background: color + "22", color, border: `1px solid ${color}45` }}
+          className="inline-block self-start text-[9px] px-2.5 py-[3px] rounded-full font-bold tracking-widest mb-2.5"
+          style={{ background: color + "28", color, border: `1px solid ${color}55` }}
         >
           Entegre
         </span>
-        <div className="text-[9.5px] text-white/40 leading-snug">{desc}</div>
+        <div className="text-[10px] text-white/45 leading-snug">{desc}</div>
       </div>
       <div
-        className="flex-shrink-0 w-[58px] flex items-center justify-center m-1.5 rounded-lg"
-        style={{ background: color + "10", border: `1px solid ${color}38` }}
+        className="flex-shrink-0 w-[72px] flex items-center justify-center m-2 rounded-xl"
+        style={{
+          background: `linear-gradient(135deg, ${color}18 0%, ${color}08 100%)`,
+          border: `1px solid ${color}45`,
+        }}
       >
         <NeonIcon iconKey={iconKey} color={color} />
       </div>
@@ -274,77 +285,78 @@ function EcoCard({ name, desc, color, iconKey, delay = 0, initX = 0, initY = 0 }
 }
 
 function Ecosystem() {
-  // ── Circular layout geometry ────────────────────────────────────────────
-  // Container: 960 × 660 px.  Hub center: (480, 330).
-  // 7 modules equally spaced: step = 360/7 ≈ 51.43°, starting at -90° (top).
-  // R = 265 px  (card-center radius from hub center)
-  // Card size: 200 × 100 px  (half: 100 w, 50 h)
-  // Hub SVG: viewBox 0 0 300 300, center (150,150), ring radius 136
-  // Hub div top-left in eco-SVG coords: (330, 180)
+  const [activeCard, setActiveCard] = useState<number | null>(null);
+
+  // ── Circular geometry: 960×720 container, hub center (480, 360), R=265 ──
+  // 7 modules at step=360/7≈51.43°, starting -90° (top), clockwise.
+  // Card size: 210×140 px (half: 105w, 70h)
+  // Hub SVG: viewBox 0 0 300 300, center (150,150), ring r=136
+  // Hub div top-left in eco-SVG: (330, 210)
   //
-  //  i  angle   card-center   hub-ring(eco)  card-edge(eco)
-  //  0  -90°   (480,  65)    (480, 194)     (480, 115)   ← top
-  //  1  -38.6° (687, 165)    (586, 245)     (587, 165)   ← upper-right
-  //  2   12.9° (738, 389)    (613, 360)     (638, 389)   ← right
-  //  3   64.3° (595, 569)    (539, 453)     (595, 519)   ← lower-right
-  //  4  115.7° (365, 569)    (421, 453)     (365, 519)   ← lower-left
-  //  5  167.1° (222, 389)    (347, 360)     (322, 389)   ← left
-  //  6  218.6° (273, 165)    (374, 245)     (373, 165)   ← upper-left
-  // ────────────────────────────────────────────────────────────────────────
+  //  i  angle   card-center    hub-ring-eco   card-edge-eco
+  //  0  -90°   (480,  95)     (480, 224)     (480, 165)  top
+  //  1  -38.6° (687, 195)     (586, 275)     (582, 195)  upper-right
+  //  2   12.9° (738, 419)     (613, 390)     (633, 419)  right
+  //  3   64.3° (595, 599)     (539, 483)     (595, 529)  lower-right
+  //  4  115.7° (365, 599)     (421, 483)     (365, 529)  lower-left
+  //  5  167.1° (222, 419)     (347, 390)     (327, 419)  left
+  //  6  218.6° (273, 195)     (374, 275)     (378, 195)  upper-left
+  // ─────────────────────────────────────────────────────────────────────────
 
-  // Hub ring dot positions inside hub SVG (viewBox 0 0 300 300)
   const hubDots = [
-    { x: 150, y:  14 }, // 0 top
-    { x: 256, y:  65 }, // 1 upper-right
-    { x: 283, y: 180 }, // 2 right
-    { x: 209, y: 273 }, // 3 lower-right
-    { x:  91, y: 273 }, // 4 lower-left
-    { x:  17, y: 180 }, // 5 left
-    { x:  44, y:  65 }, // 6 upper-left
+    { x: 150, y:  14 },
+    { x: 256, y:  65 },
+    { x: 283, y: 180 },
+    { x: 209, y: 273 },
+    { x:  91, y: 273 },
+    { x:  17, y: 180 },
+    { x:  44, y:  65 },
   ];
 
-  // SVG connecting lines: hub-ring → card-edge (all radial, no near-horizontal routing)
+  // All lines: hub-ring point (ex,ey) → card-edge point (tx,ty)
   const lines = [
-    { ex: 480, ey: 194, tx: 480, ty: 115 }, // 0 İş Programı  (top)
-    { ex: 586, ey: 245, tx: 587, ty: 165 }, // 1 Teknik        (upper-right)
-    { ex: 613, ey: 360, tx: 638, ty: 389 }, // 2 BFA           (right)
-    { ex: 539, ey: 453, tx: 595, ty: 519 }, // 3 Demir         (lower-right)
-    { ex: 421, ey: 453, tx: 365, ty: 519 }, // 4 Beton         (lower-left)
-    { ex: 347, ey: 360, tx: 322, ty: 389 }, // 5 Çelik         (left)
-    { ex: 374, ey: 245, tx: 373, ty: 165 }, // 6 Saha          (upper-left)
+    { ex: 480, ey: 224, tx: 480, ty: 165 }, // 0 İş Programı
+    { ex: 586, ey: 275, tx: 582, ty: 195 }, // 1 Teknik
+    { ex: 613, ey: 390, tx: 633, ty: 419 }, // 2 BFA
+    { ex: 539, ey: 483, tx: 595, ty: 529 }, // 3 Demir
+    { ex: 421, ey: 483, tx: 365, ty: 529 }, // 4 Beton
+    { ex: 347, ey: 390, tx: 327, ty: 419 }, // 5 Çelik
+    { ex: 374, ey: 275, tx: 378, ty: 195 }, // 6 Saha
   ];
 
-  // Card absolute positions (center) and animation offsets in the 960×660 container
   const cardLayout = [
-    { cx: 480, cy:  65, initX:   0, initY: -30 }, // 0 top
-    { cx: 687, cy: 165, initX:  23, initY: -19 }, // 1 upper-right
-    { cx: 738, cy: 389, initX:  30, initY:   6 }, // 2 right
-    { cx: 595, cy: 569, initX:  13, initY:  27 }, // 3 lower-right
-    { cx: 365, cy: 569, initX: -13, initY:  27 }, // 4 lower-left
-    { cx: 222, cy: 389, initX: -30, initY:   6 }, // 5 left
-    { cx: 273, cy: 165, initX: -23, initY: -19 }, // 6 upper-left
+    { cx: 480, cy:  95, initX:   0, initY: -30 },
+    { cx: 687, cy: 195, initX:  23, initY: -19 },
+    { cx: 738, cy: 419, initX:  30, initY:   6 },
+    { cx: 595, cy: 599, initX:  13, initY:  27 },
+    { cx: 365, cy: 599, initX: -13, initY:  27 },
+    { cx: 222, cy: 419, initX: -30, initY:   6 },
+    { cx: 273, cy: 195, initX: -23, initY: -19 },
   ];
 
   return (
     <section
       id="ekosistem"
       className="py-20 relative overflow-hidden"
-      style={{ background: "linear-gradient(180deg, #050816 0%, #071021 50%, #050816 100%)" }}
+      style={{ background: "linear-gradient(180deg, #020817 0%, #041124 50%, #020817 100%)" }}
     >
-
-
-      {/* Tech grid background */}
+      {/* Blueprint grid */}
       <div
         className="absolute inset-0 pointer-events-none"
         style={{
-          backgroundImage: "linear-gradient(rgba(26,95,255,0.055) 1px, transparent 1px), linear-gradient(90deg, rgba(26,95,255,0.055) 1px, transparent 1px)",
-          backgroundSize: "60px 60px",
+          backgroundImage:
+            "linear-gradient(rgba(26,95,255,0.06) 1px, transparent 1px)," +
+            "linear-gradient(90deg, rgba(26,95,255,0.06) 1px, transparent 1px)",
+          backgroundSize: "48px 48px",
         }}
       />
-      {/* Ambient center glow */}
+      {/* Ambient radial glow centered on hub area */}
       <div
-        className="absolute inset-0 pointer-events-none"
-        style={{ background: "radial-gradient(ellipse 900px 700px at 50% 52%, rgba(26,95,255,0.10) 0%, transparent 65%)" }}
+        className="absolute pointer-events-none"
+        style={{
+          inset: 0,
+          background: "radial-gradient(ellipse 860px 680px at 50% 54%, rgba(26,95,255,0.13) 0%, transparent 68%)",
+        }}
       />
 
       <div className="container mx-auto px-4">
@@ -353,7 +365,7 @@ function Ecosystem() {
           initial={{ opacity: 0, y: 18 }}
           whileInView={{ opacity: 1, y: 0 }}
           viewport={{ once: true }}
-          className="text-center mb-12"
+          className="text-center mb-10"
         >
           <h2 className="text-4xl md:text-5xl lg:text-6xl font-extrabold mb-3 leading-tight">
             <span className="text-white">ŞantiJET </span>
@@ -364,142 +376,208 @@ function Ecosystem() {
           <p className="text-white/50 text-base md:text-lg">İnşaat projeleri için entegre dijital işletim sistemi.</p>
         </motion.div>
 
-        {/* ── Desktop diagram: 7 cards equally distributed 360° around hub ── */}
-        <div className="relative max-w-[960px] mx-auto hidden md:block" style={{ height: 660 }}>
+        {/* ── Desktop diagram ── */}
+        <div className="relative max-w-[960px] mx-auto hidden md:block" style={{ height: 720 }}>
 
-          {/* SVG connecting lines — all radial from hub ring to card edge, no arc tricks needed */}
+          {/* Full-scene SVG: connection lines + animated data-flow particles */}
           <svg
             className="absolute inset-0 pointer-events-none"
             style={{ width: "100%", height: "100%", zIndex: 1 }}
-            viewBox="0 0 960 660"
+            viewBox="0 0 960 720"
             preserveAspectRatio="xMidYMid meet"
           >
             <defs>
-              <filter id="eco-line-glow" x="-120%" y="-120%" width="340%" height="340%">
-                <feGaussianBlur stdDeviation="3.5" result="b1" />
-                <feGaussianBlur stdDeviation="9" result="b2" />
+              <filter id="eco-line-glow" x="-150%" y="-150%" width="400%" height="400%">
+                <feGaussianBlur stdDeviation="4" result="b1" />
+                <feGaussianBlur stdDeviation="11" result="b2" />
                 <feMerge>
                   <feMergeNode in="b2" />
                   <feMergeNode in="b1" />
                   <feMergeNode in="SourceGraphic" />
                 </feMerge>
               </filter>
+              <filter id="eco-particle-glow" x="-800%" y="-800%" width="1700%" height="1700%">
+                <feGaussianBlur stdDeviation="3.5" result="b" />
+                <feMerge><feMergeNode in="b" /><feMergeNode in="SourceGraphic" /></feMerge>
+              </filter>
               <filter id="eco-dot-glow" x="-500%" y="-500%" width="1100%" height="1100%">
                 <feGaussianBlur stdDeviation="5" result="b" />
                 <feMerge><feMergeNode in="b" /><feMergeNode in="SourceGraphic" /></feMerge>
               </filter>
             </defs>
-            {lines.map((l, i) => (
-              <g key={i}>
-                <line
-                  x1={l.ex} y1={l.ey} x2={l.tx} y2={l.ty}
-                  stroke="#1a8fff" strokeWidth="1.4" strokeOpacity="0.8"
-                  filter="url(#eco-line-glow)"
-                />
-                <circle cx={l.tx} cy={l.ty} r="4" fill="#70c8ff" fillOpacity="0.9" filter="url(#eco-dot-glow)" />
-              </g>
-            ))}
+
+            {lines.map((l, i) => {
+              const isActive = activeCard === i;
+              const col = ECO_MODULES[i].color;
+              // Path data for animateMotion (hub→card and card→hub)
+              const fwdPath = `M ${l.ex},${l.ey} L ${l.tx},${l.ty}`;
+              const revPath = `M ${l.tx},${l.ty} L ${l.ex},${l.ey}`;
+              const dur = 3.5 + i * 0.18;
+              const durRev = 4.2 + i * 0.22;
+              return (
+                <g key={i}>
+                  {/* Static glowing line */}
+                  <line
+                    x1={l.ex} y1={l.ey} x2={l.tx} y2={l.ty}
+                    stroke={isActive ? col : "#1a8fff"}
+                    strokeWidth={isActive ? "2.2" : "1.5"}
+                    strokeOpacity={isActive ? "0.95" : "0.7"}
+                    filter="url(#eco-line-glow)"
+                    style={{ transition: "stroke 0.3s, stroke-width 0.3s, stroke-opacity 0.3s" }}
+                  />
+
+                  {/* Particles: hub → card (module color) */}
+                  {[0, 0.34, 0.67].map((offset, j) => (
+                    <circle key={`fwd-${j}`} r="3" fill={col} filter="url(#eco-particle-glow)" opacity="0.9">
+                      <animateMotion path={fwdPath} dur={`${dur}s`} begin={`${-offset * dur}s`} repeatCount="indefinite" calcMode="linear" />
+                    </circle>
+                  ))}
+
+                  {/* Particles: card → hub (blue) */}
+                  {[0.17, 0.50].map((offset, j) => (
+                    <circle key={`rev-${j}`} r="2" fill="#60b8ff" filter="url(#eco-particle-glow)" opacity="0.65">
+                      <animateMotion path={revPath} dur={`${durRev}s`} begin={`${-offset * durRev}s`} repeatCount="indefinite" calcMode="linear" />
+                    </circle>
+                  ))}
+
+                  {/* Card-edge endpoint dot */}
+                  <circle cx={l.tx} cy={l.ty} r="4.5" fill={col} fillOpacity={isActive ? "1" : "0.85"} filter="url(#eco-dot-glow)" />
+                </g>
+              );
+            })}
           </svg>
 
-          {/* 7 cards — each absolutely centered at its calculated (cx, cy) position */}
+          {/* 7 cards — positioned by center point */}
           {ECO_MODULES.map((m, i) => {
             const { cx, cy, initX, initY } = cardLayout[i];
             return (
               <div
                 key={m.name}
                 className="absolute"
-                style={{ width: 200, left: cx - 100, top: cy - 50, zIndex: 10 }}
+                style={{ width: 210, height: 140, left: cx - 105, top: cy - 70, zIndex: 10 }}
               >
-                <EcoCard {...m} delay={i * 0.08} initX={initX} initY={initY} />
+                <EcoCard
+                  {...m}
+                  delay={i * 0.09}
+                  initX={initX}
+                  initY={initY}
+                  isActive={activeCard === i}
+                  onHoverStart={() => setActiveCard(i)}
+                  onHoverEnd={() => setActiveCard(null)}
+                />
               </div>
             );
           })}
 
           {/* Center Hub */}
           <div
-            className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2"
-            style={{ zIndex: 20 }}
+            className="absolute left-1/2 -translate-x-1/2"
+            style={{ top: 360, transform: "translate(-50%, -50%)", zIndex: 20 }}
           >
             <motion.div
               initial={{ opacity: 0, scale: 0.72 }}
               whileInView={{ opacity: 1, scale: 1 }}
               viewport={{ once: true }}
               transition={{ duration: 0.7 }}
-              className="relative"
-              style={{ width: 300, height: 300 }}
+              style={{ width: 300, height: 300, position: "relative" }}
             >
-              {/* Ambient outer glow */}
-              <div
-                className="absolute inset-0 rounded-full pointer-events-none"
-                style={{ boxShadow: "0 0 90px 24px rgba(26,95,255,0.30), 0 0 200px 50px rgba(26,95,255,0.12)" }}
-              />
-
-              {/* Hub SVG: concentric rings + 7 pulsing connection dots at equal angles */}
-              <svg
-                viewBox="0 0 300 300"
-                width="300"
-                height="300"
-                className="absolute inset-0"
-                style={{ overflow: "visible" }}
+              {/* Breathing scale wrapper */}
+              <motion.div
+                animate={{ scale: [1, 1.03, 1] }}
+                transition={{ duration: 4, repeat: Infinity, ease: "easeInOut" }}
+                style={{ width: 300, height: 300, position: "relative" }}
               >
-                <defs>
-                  <filter id="hub-ring-glow" x="-70%" y="-70%" width="240%" height="240%">
-                    <feGaussianBlur stdDeviation="5" result="b1" />
-                    <feGaussianBlur stdDeviation="16" result="b2" />
-                    <feMerge>
-                      <feMergeNode in="b2" />
-                      <feMergeNode in="b1" />
-                      <feMergeNode in="SourceGraphic" />
-                    </feMerge>
-                  </filter>
-                  <filter id="hub-dot-glow" x="-700%" y="-700%" width="1500%" height="1500%">
-                    <feGaussianBlur stdDeviation="7" result="b" />
-                    <feMerge><feMergeNode in="b" /><feMergeNode in="SourceGraphic" /></feMerge>
-                  </filter>
-                  <radialGradient id="hub-inner" cx="44%" cy="38%" r="62%">
-                    <stop offset="0%" stopColor="#0c1630" />
-                    <stop offset="55%" stopColor="#06091c" />
-                    <stop offset="100%" stopColor="#020408" />
-                  </radialGradient>
-                </defs>
-
-                <circle cx="150" cy="150" r="147" fill="none" stroke="rgba(70,130,255,0.14)" strokeWidth="1" strokeDasharray="5 10" />
-                <circle cx="150" cy="150" r="141" fill="none" stroke="rgba(60,120,255,0.18)" strokeWidth="0.8" />
-                <circle cx="150" cy="150" r="136" fill="none" stroke="#1a8fff" strokeWidth="2.4" strokeOpacity="0.92" filter="url(#hub-ring-glow)" />
-                <circle cx="150" cy="150" r="136" fill="none" stroke="rgba(200,230,255,0.48)" strokeWidth="1.4" />
-                <circle cx="150" cy="150" r="122" fill="none" stroke="rgba(26,100,255,0.28)" strokeWidth="1" />
-                <circle cx="150" cy="150" r="108" fill="none" stroke="rgba(26,80,220,0.20)" strokeWidth="0.7" strokeDasharray="3 8" />
-                <circle cx="150" cy="150" r="107" fill="url(#hub-inner)" />
-
-                {hubDots.map((dot, i) => (
-                  <g key={i}>
-                    <motion.circle
-                      cx={dot.x} cy={dot.y} r={7}
-                      fill="rgba(70,170,255,0.30)"
-                      animate={{ opacity: [0.2, 0.85, 0.2] }}
-                      transition={{ duration: 2.4, delay: i * 0.35, repeat: Infinity, ease: "easeInOut" }}
-                      filter="url(#hub-dot-glow)"
-                    />
-                    <circle cx={dot.x} cy={dot.y} r="3.8" fill="#90d8ff" fillOpacity="0.95" />
-                  </g>
-                ))}
-              </svg>
-
-              {/* Logo + PRO text */}
-              <div className="absolute inset-0 flex flex-col items-center justify-center" style={{ paddingBottom: 4 }}>
-                <img
-                  src={`${BASE_URL}/brand/santijet-bolt-nobg.png`}
-                  alt="ŞantiJET"
-                  className="object-contain"
-                  style={{ width: 190, height: 190, marginBottom: -20 }}
+                {/* Pulsing outer glow */}
+                <motion.div
+                  className="absolute inset-0 rounded-full pointer-events-none"
+                  animate={{
+                    boxShadow: [
+                      "0 0 60px 18px rgba(26,95,255,0.22), 0 0 140px 40px rgba(26,95,255,0.09)",
+                      "0 0 90px 28px rgba(26,95,255,0.36), 0 0 200px 60px rgba(26,95,255,0.14)",
+                      "0 0 60px 18px rgba(26,95,255,0.22), 0 0 140px 40px rgba(26,95,255,0.09)",
+                    ],
+                  }}
+                  transition={{ duration: 3, repeat: Infinity, ease: "easeInOut" }}
                 />
-                <span
-                  className="font-bold tracking-[0.28em] text-[22px]"
-                  style={{ color: "#4a90e2", textShadow: "0 0 20px rgba(74,144,226,0.9)" }}
-                >
-                  PRO
-                </span>
-              </div>
+
+                {/* Hub SVG: rings + pulsing dots */}
+                <svg viewBox="0 0 300 300" width="300" height="300" className="absolute inset-0" style={{ overflow: "visible" }}>
+                  <defs>
+                    <filter id="hub-ring-glow" x="-70%" y="-70%" width="240%" height="240%">
+                      <feGaussianBlur stdDeviation="5" result="b1" />
+                      <feGaussianBlur stdDeviation="18" result="b2" />
+                      <feMerge>
+                        <feMergeNode in="b2" />
+                        <feMergeNode in="b1" />
+                        <feMergeNode in="SourceGraphic" />
+                      </feMerge>
+                    </filter>
+                    <filter id="hub-dot-glow" x="-700%" y="-700%" width="1500%" height="1500%">
+                      <feGaussianBlur stdDeviation="7" result="b" />
+                      <feMerge><feMergeNode in="b" /><feMergeNode in="SourceGraphic" /></feMerge>
+                    </filter>
+                    <radialGradient id="hub-inner" cx="44%" cy="38%" r="62%">
+                      <stop offset="0%" stopColor="#0c1630" />
+                      <stop offset="55%" stopColor="#05091a" />
+                      <stop offset="100%" stopColor="#020408" />
+                    </radialGradient>
+                  </defs>
+
+                  {/* Outer decorative rings */}
+                  <circle cx="150" cy="150" r="147" fill="none" stroke="rgba(70,130,255,0.14)" strokeWidth="1" strokeDasharray="5 10" />
+                  <circle cx="150" cy="150" r="141" fill="none" stroke="rgba(60,120,255,0.20)" strokeWidth="0.8" />
+
+                  {/* Main neon ring — animated opacity */}
+                  <motion.circle
+                    cx="150" cy="150" r="136" fill="none" stroke="#1a8fff" strokeWidth="2.6"
+                    animate={{ strokeOpacity: [0.75, 1.0, 0.75] }}
+                    transition={{ duration: 2.5, repeat: Infinity, ease: "easeInOut" }}
+                    filter="url(#hub-ring-glow)"
+                  />
+                  <circle cx="150" cy="150" r="136" fill="none" stroke="rgba(210,235,255,0.52)" strokeWidth="1.4" />
+
+                  {/* Inner rings */}
+                  <circle cx="150" cy="150" r="122" fill="none" stroke="rgba(26,100,255,0.30)" strokeWidth="1" />
+                  <circle cx="150" cy="150" r="108" fill="none" stroke="rgba(26,80,220,0.22)" strokeWidth="0.7" strokeDasharray="3 8" />
+                  <circle cx="150" cy="150" r="107" fill="url(#hub-inner)" />
+
+                  {/* 7 connection dots at equal angles */}
+                  {hubDots.map((dot, i) => (
+                    <g key={i}>
+                      <motion.circle
+                        cx={dot.x} cy={dot.y} r={activeCard === i ? 9 : 7}
+                        fill={activeCard === i ? ECO_MODULES[i].color + "55" : "rgba(70,170,255,0.28)"}
+                        animate={{ opacity: [0.2, 0.9, 0.2] }}
+                        transition={{ duration: 2.4, delay: i * 0.35, repeat: Infinity, ease: "easeInOut" }}
+                        filter="url(#hub-dot-glow)"
+                        style={{ transition: "r 0.3s, fill 0.3s" }}
+                      />
+                      <circle
+                        cx={dot.x} cy={dot.y} r="3.8"
+                        fill={activeCard === i ? ECO_MODULES[i].color : "#90d8ff"}
+                        fillOpacity="0.95"
+                        style={{ transition: "fill 0.3s" }}
+                      />
+                    </g>
+                  ))}
+                </svg>
+
+                {/* Logo + PRO */}
+                <div className="absolute inset-0 flex flex-col items-center justify-center" style={{ paddingBottom: 4 }}>
+                  <img
+                    src={`${BASE_URL}/brand/santijet-bolt-nobg.png`}
+                    alt="ŞantiJET"
+                    className="object-contain"
+                    style={{ width: 190, height: 190, marginBottom: -20 }}
+                  />
+                  <span
+                    className="font-bold tracking-[0.28em] text-[22px]"
+                    style={{ color: "#4a90e2", textShadow: "0 0 22px rgba(74,144,226,0.95)" }}
+                  >
+                    PRO
+                  </span>
+                </div>
+              </motion.div>
             </motion.div>
           </div>
 
@@ -508,27 +586,24 @@ function Ecosystem() {
         {/* ── Mobile layout ── */}
         <div className="md:hidden flex flex-col items-center gap-4 px-2">
           <div className="relative my-4" style={{ width: 200, height: 200 }}>
-            <div
-              className="absolute inset-0 rounded-full"
-              style={{ boxShadow: "0 0 60px 14px rgba(26,95,255,0.28)" }}
+            <motion.div
+              className="absolute inset-0 rounded-full pointer-events-none"
+              animate={{ boxShadow: ["0 0 50px 12px rgba(26,95,255,0.24)", "0 0 70px 20px rgba(26,95,255,0.38)", "0 0 50px 12px rgba(26,95,255,0.24)"] }}
+              transition={{ duration: 3, repeat: Infinity, ease: "easeInOut" }}
             />
             <svg viewBox="0 0 200 200" width="200" height="200" className="absolute inset-0">
-              <circle cx="100" cy="100" r="92" fill="none" stroke="#1a8fff" strokeWidth="2" strokeOpacity="0.85" />
+              <circle cx="100" cy="100" r="92" fill="none" stroke="#1a8fff" strokeWidth="2" strokeOpacity="0.88" />
               <circle cx="100" cy="100" r="92" fill="none" stroke="rgba(180,220,255,0.35)" strokeWidth="1.2" />
               <circle cx="100" cy="100" r="82" fill="#060a1a" />
             </svg>
             <div className="absolute inset-0 flex flex-col items-center justify-center">
-              <img
-                src={`${BASE_URL}/brand/santijet-bolt-nobg.png`}
-                alt="ŞantiJET"
-                className="w-20 h-20 object-contain"
-              />
+              <img src={`${BASE_URL}/brand/santijet-bolt-nobg.png`} alt="ŞantiJET" className="w-20 h-20 object-contain" />
               <span className="font-bold tracking-widest text-sm" style={{ color: "#4a90e2" }}>PRO</span>
             </div>
           </div>
-          {[...LEFT_MODULES, ...RIGHT_MODULES].map((m) => (
+          {ECO_MODULES.map((m) => (
             <div key={m.name} className="w-full max-w-sm">
-              <EcoCard {...m} delay={0} side="left" />
+              <EcoCard {...m} delay={0} />
             </div>
           ))}
         </div>

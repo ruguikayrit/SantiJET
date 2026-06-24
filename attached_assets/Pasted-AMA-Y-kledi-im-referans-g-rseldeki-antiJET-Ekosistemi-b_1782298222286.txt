@@ -1,0 +1,212 @@
+AMAÇ
+
+Yüklediğim referans görseldeki “ŞantiJET Ekosistemi” bölümünü web sitesinde birebir üret.
+
+Bu bir yeniden tasarım çalışması değildir.
+
+Görseldeki kompozisyon, renkler, kart yerleşimleri, ikonlar, glow efektleri, daire yapısı ve genel estetik korunacaktır.
+
+Sadece web ortamına uygun motion (animasyon) ve etkileşim eklenecektir.
+
+KRİTİK KURAL
+
+* Görseldeki tasarımı değiştirme.
+* Kartları yeniden konumlandırma.
+* Yeni kart ekleme.
+* Renk değiştirme.
+* Yazı fontunu değiştirme.
+* Layout’u modernleştirmeye çalışma.
+* UI/UX iyileştirmesi yapma.
+
+Amaç görseli web ortamında canlı hale getirmektir.
+
+KULLANILACAK TEKNOLOJİ
+
+* React
+* TypeScript
+* Tailwind CSS
+* Framer Motion
+* SVG Animasyonları
+* Responsive yapı
+
+Animasyonlar GPU dostu olmalı.
+
+60 FPS hedeflenmeli.
+
+GENEL SAHNE
+
+Arka plan:
+
+* Koyu lacivert (#020817)
+* Hafif grid pattern
+* Blueprint hissi
+* Çok hafif parallax
+
+Arka plandaki blueprint çizimleri:
+
+* %10 opacity
+* Yavaş hareket eden glow efekti
+
+MERKEZ PRO DAİRESİ
+
+Ortadaki PRO dairesi görseldeki ile birebir aynı kalacak.
+
+Animasyonlar:
+
+1. Sürekli nefes alma efekti
+
+scale:
+1.00 → 1.03 → 1.00
+
+süre:
+4 saniye
+
+sonsuz tekrar
+
+2. Dış mavi halka
+
+opacity:
+0.7 → 1.0 → 0.7
+
+süre:
+2.5 saniye
+
+sonsuz tekrar
+
+3. Glow yoğunluğu
+
+box-shadow değeri sürekli değişsin
+
+çok agresif olmasın
+
+premium görünmeli
+
+VERİ AKIŞI ANİMASYONU
+
+Kartlar ile merkez arasındaki mavi bağlantılar korunacak.
+
+Bu çizgiler üzerinde sürekli veri akışı olacak.
+
+SVG path kullan.
+
+Path boyunca:
+
+* mavi ışık noktaları
+* enerji parçacıkları
+* veri paketleri
+
+hareket etsin.
+
+Yön:
+
+Kart → Merkez
+Merkez → Kart
+
+sürekli çift yönlü akış.
+
+Hız:
+
+3-5 saniye arası.
+
+Kesintisiz döngü.
+
+MAVİ IŞIK HATTI
+
+Merkez dairenin etrafındaki mavi ışık halkası:
+
+yanıp sönmesin.
+
+Daha premium bir efekt kullan.
+
+Glow seviyesi yavaşça değişsin.
+
+Örnek:
+
+0.8 → 1 → 0.8
+
+Süre:
+
+3 saniye
+
+sonsuz.
+
+KART ANİMASYONLARI
+
+Tüm kartlar mevcut konumlarında kalacak.
+
+Hover:
+
+translateY(-6px)
+
+scale(1.02)
+
+transition:
+300ms
+
+Kart glow’u %20 artsın.
+
+Kart border ışığı biraz güçlensin.
+
+KARTLAR
+
+ŞANTİJET SAHA
+
+ŞANTİJET ÇELİK
+
+ŞANTİJET BETON
+
+ŞANTİJET DEMİR
+
+ŞANTİJET TEKNİK
+
+ŞANTİJET İŞ PROGRAMI
+
+ŞANTİJET BFA - BF - KEŞİF
+
+İsimleri ve açıklamaları aynen koru.
+
+ETKİLEŞİM
+
+Kart üzerine gelince:
+
+* bağlantı hattı daha parlak olsun
+* merkez halka o karta doğru tepki versin
+* veri akışı hızı %30 artsın
+
+Hover bitince normale dönsün.
+
+RESPONSIVE
+
+Desktop:
+
+Referans görsel birebir.
+
+Tablet:
+
+Kartlar biraz dışa açılabilir.
+
+Mobile:
+
+Merkez üstte.
+
+Kartlar altında 2 kolonlu grid.
+
+Ancak masaüstü görünüm bozulmamalı.
+
+KALİTE HEDEFİ
+
+Sonuç;
+
+Tesla UI,
+Apple Vision Pro,
+Figma Enterprise,
+Palantir Dashboard
+
+kalitesinde görünmeli.
+
+Kurumsal,
+premium,
+yüksek teknoloji hissi vermeli.
+
+Referans görsel tasarımına %100 sadık kal.
+Sadece canlılık ve hareket ekle.
