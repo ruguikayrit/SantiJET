@@ -102,10 +102,18 @@ final routerProvider = Provider<GoRouter>((ref) {
       GoRoute(
         path: AppRoutes.karsilastir,
         parentNavigatorKey: _rootNavigatorKey,
-        pageBuilder: (context, state) => fadeSlidePage(
-          key: state.pageKey,
-          child: const KarsilastirScreen(),
-        ),
+        pageBuilder: (context, state) {
+          final ids = state.uri.queryParameters['ids']
+                  ?.split(',')
+                  .map((s) => s.trim())
+                  .where((s) => s.isNotEmpty)
+                  .toList() ??
+              const [];
+          return fadeSlidePage(
+            key: state.pageKey,
+            child: KarsilastirScreen(initialIds: ids),
+          );
+        },
       ),
       GoRoute(
         path: AppRoutes.tasarimSistemi,

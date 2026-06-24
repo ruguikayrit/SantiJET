@@ -88,8 +88,8 @@ biçimlendirme: `core/utils/app_format.dart` (TR para/sayı).
   (Hive `kesif_projects`) — proje oluştur/sil, satır ekle, miktar güncelle,
   satır sil, toplam hesaplama.
 - **Ekranlar:** Keşif listesi ve detay ekranı gerçek Hive verisine bağlıdır.
-  Poz ekleme modalı ve keşif Excel importu sonraki iterasyonlarda bu provider
-  üzerine bağlanacaktır.
+  Poz ekleme modalı katalog aramasına bağlıdır; Excel/CSV içe aktarma
+  akıllı poz/tanım doğrulaması ile desteklenir.
 
 ## PDF Export (Faz 10)
 

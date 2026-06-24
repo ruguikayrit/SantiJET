@@ -126,6 +126,29 @@ class KesifNotifier extends StateNotifier<List<KesifProject>> {
     ];
     _persist();
   }
+
+  void importSatirlar(
+    String projectId,
+    List<({PozAnaliz analiz, double miktar})> items,
+  ) {
+    if (items.isEmpty) return;
+    final now = DateTime.now().toIso8601String();
+    state = [
+      for (final p in state)
+        if (p.id == projectId)
+          p.copyWith(
+            satirlar: [
+              ...p.satirlar,
+              for (final item in items)
+                buildKesifSatiri(item.analiz, item.miktar),
+            ],
+            guncellemeTarihi: now,
+          )
+        else
+          p,
+    ];
+    _persist();
+  }
 }
 
 /// Hive `kesif_projects` kutusu — bootstrap'ta açılır ve override edilir.

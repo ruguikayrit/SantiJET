@@ -8,6 +8,7 @@ import '../../core/theme/app_colors.dart';
 import '../../core/theme/app_spacing.dart';
 import '../../core/utils/app_format.dart';
 import '../../data/providers/kesif_provider.dart';
+import 'kesif_import_flow.dart';
 
 /// Keşif listesi — React Native `kesif/index` karşılığı.
 class KesifListScreen extends ConsumerWidget {
@@ -19,7 +20,20 @@ class KesifListScreen extends ConsumerWidget {
     final theme = Theme.of(context);
 
     return Scaffold(
-      appBar: AppBar(title: const Text('Keşif')),
+      appBar: AppBar(
+        title: const Text('Keşif'),
+        actions: [
+          IconButton(
+            tooltip: 'Excel İçe Aktar',
+            icon: const Icon(Icons.upload_file_outlined),
+            onPressed: () => KesifImportFlow.run(
+              context,
+              ref,
+              onImported: (id) => context.push(AppRoutes.kesifDetay(id)),
+            ),
+          ),
+        ],
+      ),
       floatingActionButton: FloatingActionButton(
         onPressed: () => _create(context, ref),
         child: const Icon(Icons.add),

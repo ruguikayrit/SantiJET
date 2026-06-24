@@ -7,6 +7,8 @@ import '../../core/theme/app_spacing.dart';
 import '../../core/utils/app_format.dart';
 import '../../data/providers/kesif_provider.dart';
 import '../../domain/entities/kesif.dart';
+import 'kesif_import_flow.dart';
+import 'kesif_poz_picker_sheet.dart';
 
 /// Keşif detayı — React Native `kesif/[id]` karşılığı.
 class KesifDetailScreen extends ConsumerWidget {
@@ -33,7 +35,33 @@ class KesifDetailScreen extends ConsumerWidget {
 
     final theme = Theme.of(context);
     return Scaffold(
-      appBar: AppBar(title: Text(kesif.ad)),
+      appBar: AppBar(
+        title: Text(kesif.ad),
+        actions: [
+          IconButton(
+            tooltip: 'Excel İçe Aktar',
+            icon: const Icon(Icons.upload_file_outlined),
+            onPressed: () => KesifImportFlow.run(
+              context,
+              ref,
+              projectId: projectId,
+            ),
+          ),
+        ],
+      ),
+      floatingActionButton: FloatingActionButton.extended(
+        onPressed: () async {
+          final picked = await KesifPozPickerSheet.show(context);
+          if (picked == null) return;
+          ref.read(kesifProvider.notifier).addSatir(
+                projectId,
+                picked.analiz,
+                picked.miktar,
+              );
+        },
+        icon: const Icon(Icons.add),
+        label: const Text('Poz Ekle'),
+      ),
       body: SafeArea(
         top: false,
         child: CustomScrollView(
@@ -50,13 +78,23 @@ class KesifDetailScreen extends ConsumerWidget {
                   ),
                   const SizedBox(height: AppSpacing.md),
                   if (kesif.satirlar.isEmpty)
-                    const SizedBox(
+                    SizedBox(
                       height: 340,
                       child: SJEmptyState(
                         title: 'Henüz poz yok',
                         message:
-                            'Faz 9 kapsamındaki poz ekleme modalı bir sonraki iterasyonda kataloğa bağlanacak.',
+                            'Poz Ekle ile katalogdan seçin veya Excel içe aktarın.',
                         icon: Icons.add_circle_outline,
+                        actionLabel: 'Poz Ekle',
+                        onAction: () async {
+                          final picked = await KesifPozPickerSheet.show(context);
+                          if (picked == null) return;
+                          ref.read(kesifProvider.notifier).addSatir(
+                                projectId,
+                                picked.analiz,
+                                picked.miktar,
+                              );
+                        },
                       ),
                     )
                   else ...[
@@ -67,7 +105,7 @@ class KesifDetailScreen extends ConsumerWidget {
                       const SizedBox(height: AppSpacing.xs),
                     ],
                   ],
-                  const SizedBox(height: AppSpacing.xl),
+                  const SizedBox(height: AppSpacing.xl * 2),
                 ],
               ),
             ),
@@ -78,18 +116,46 @@ class KesifDetailScreen extends ConsumerWidget {
   }
 }
 
-class _SatirCard extends ConsumerWidget {
+class _SatirCard extends ConsumerStatefulWidget {
   const _SatirCard({required this.projectId, required this.satir});
 
   final String projectId;
   final KesifSatiri satir;
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
-    final theme = Theme.of(context);
-    final qtyController = TextEditingController(
-      text: AppFormat.decimal(satir.miktar, fractionDigits: 2),
+  ConsumerState<_SatirCard> createState() => _SatirCardState();
+}
+
+class _SatirCardState extends ConsumerState<_SatirCard> {
+  late final TextEditingController _qtyController;
+
+  @override
+  void initState() {
+    super.initState();
+    _qtyController = TextEditingController(
+      text: AppFormat.decimal(widget.satir.miktar, fractionDigits: 2),
     );
+  }
+
+  @override
+  void didUpdateWidget(covariant _SatirCard oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (oldWidget.satir.miktar != widget.satir.miktar) {
+      _qtyController.text =
+          AppFormat.decimal(widget.satir.miktar, fractionDigits: 2);
+    }
+  }
+
+  @override
+  void dispose() {
+    _qtyController.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final satir = widget.satir;
 
     return SJCard(
       child: Row(
@@ -99,13 +165,17 @@ class _SatirCard extends ConsumerWidget {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text(satir.pozNo,
-                    style: theme.textTheme.labelMedium
-                        ?.copyWith(color: AppColors.moduleKesif)),
-                Text(satir.analizAdi,
-                    style: theme.textTheme.titleMedium,
-                    maxLines: 2,
-                    overflow: TextOverflow.ellipsis),
+                Text(
+                  satir.pozNo,
+                  style: theme.textTheme.labelMedium
+                      ?.copyWith(color: AppColors.moduleKesif),
+                ),
+                Text(
+                  satir.analizAdi,
+                  style: theme.textTheme.titleMedium,
+                  maxLines: 2,
+                  overflow: TextOverflow.ellipsis,
+                ),
                 const SizedBox(height: 4),
                 Text(
                   '${AppFormat.currency(satir.birimFiyati)} / ${satir.olcuBirimi}',
@@ -117,7 +187,7 @@ class _SatirCard extends ConsumerWidget {
           SizedBox(
             width: 92,
             child: TextField(
-              controller: qtyController,
+              controller: _qtyController,
               keyboardType:
                   const TextInputType.numberWithOptions(decimal: true),
               textAlign: TextAlign.right,
@@ -125,9 +195,11 @@ class _SatirCard extends ConsumerWidget {
                 final value = double.tryParse(
                         raw.replaceAll('.', '').replaceAll(',', '.')) ??
                     0;
-                ref
-                    .read(kesifProvider.notifier)
-                    .updateMiktar(projectId, satir.id, value);
+                ref.read(kesifProvider.notifier).updateMiktar(
+                      widget.projectId,
+                      satir.id,
+                      value,
+                    );
               },
               decoration: InputDecoration(
                 suffixText: satir.olcuBirimi,
@@ -148,7 +220,7 @@ class _SatirCard extends ConsumerWidget {
             tooltip: 'Sil',
             onPressed: () => ref
                 .read(kesifProvider.notifier)
-                .removeSatir(projectId, satir.id),
+                .removeSatir(widget.projectId, satir.id),
             icon: Icon(Icons.close, color: theme.colorScheme.error),
           ),
         ],
