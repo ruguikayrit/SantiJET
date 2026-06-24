@@ -34,18 +34,19 @@ jobs:
       - name: Checkout main
         uses: actions/checkout@v4
 
-      - name: Setup Flutter
-        uses: subosito/flutter-action@v2
-        with:
-          channel: stable
-          flutter-version: '3.44.3'
-          cache: true
-
       - name: Fetch BFA source
         run: |
           BFA_REF="${{ github.event.inputs.bfa_ref || 'cursor/bfa-faz8-9-tamamlama-aca6' }}"
           git fetch origin "$BFA_REF"
           git checkout FETCH_HEAD -- artifacts/santijet-bfa-flutter
+
+      - name: Setup Flutter (DEMİR)
+        uses: subosito/flutter-action@v2
+        with:
+          channel: stable
+          flutter-version: '3.27.4'
+          cache: true
+          cache-key: flutter-demir-3.27.4
 
       - name: Build DEMİR web
         working-directory: artifacts/santijet-demir
@@ -65,6 +66,16 @@ jobs:
           fi
           flutter build web --release --base-href "/${{ github.event.repository.name }}/" --pwa-strategy=none $DART_DEFINES
           perl -i -0pe 's/_flutter\.loader\.load\(\{\s*serviceWorkerSettings:\s*\{[^}]+\}\s*\}\);/_flutter.loader.load({});/s' build/web/flutter_bootstrap.js
+          mkdir -p ../../site
+          cp -r build/web/. ../../site/
+
+      - name: Setup Flutter (BFA)
+        uses: subosito/flutter-action@v2
+        with:
+          channel: stable
+          flutter-version: '3.44.3'
+          cache: true
+          cache-key: flutter-bfa-3.44.3
 
       - name: Build BFA web
         working-directory: artifacts/santijet-bfa-flutter
@@ -72,12 +83,8 @@ jobs:
           flutter pub get
           flutter build web --release --base-href "/${{ github.event.repository.name }}/bfa/" --pwa-strategy=none
           perl -i -0pe 's/_flutter\.loader\.load\(\{\s*serviceWorkerSettings:\s*\{[^}]+\}\s*\}\);/_flutter.loader.load({});/s' build/web/flutter_bootstrap.js
-
-      - name: Assemble site
-        run: |
-          mkdir -p site/bfa
-          cp -r artifacts/santijet-demir/build/web/. site/
-          cp -r artifacts/santijet-bfa-flutter/build/web/. site/bfa/
+          mkdir -p ../../site/bfa
+          cp -r build/web/. ../../site/bfa/
 
       - name: Upload Pages artifact
         uses: actions/upload-pages-artifact@v3
