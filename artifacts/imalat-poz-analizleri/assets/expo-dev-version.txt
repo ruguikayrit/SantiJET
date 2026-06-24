@@ -1,0 +1,1 @@
+322675f 2026-06-21 21:16:18 +0000 Keşif içe aktarmada akıllı poz/tanım doğrulaması ekle
