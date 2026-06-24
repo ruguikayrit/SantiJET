@@ -6,7 +6,16 @@
     "preinstall": "sh -c 'rm -f package-lock.json yarn.lock; case \"$npm_config_user_agent\" in pnpm/*) ;; *) echo \"Use pnpm instead\" >&2; exit 1 ;; esac'",
     "build": "pnpm run typecheck && pnpm -r --if-present run build",
     "typecheck:libs": "tsc --build",
-    "typecheck": "pnpm run typecheck:libs && pnpm -r --filter \"./artifacts/**\" --filter \"./scripts\" --if-present run typecheck"
+    "typecheck": "pnpm run typecheck:libs && pnpm -r --filter \"./artifacts/**\" --filter \"./scripts\" --if-present run typecheck",
+    "dev:neon": "PORT=23301 BASE_PATH=/neon/ pnpm --filter @workspace/santijet-neon run dev",
+    "dev:mobile": "PORT=24914 pnpm --filter @workspace/santiye-takip run dev",
+    "dev:mobile:tunnel": "PORT=24914 pnpm --filter @workspace/santiye-takip run dev:tunnel",
+    "dev:mobile-web": "PORT=24915 pnpm --filter @workspace/santiye-takip run dev:web",
+    "dev:api": "PORT=8080 pnpm --filter @workspace/api-server run dev",
+    "dev:website": "PORT=8082 pnpm --filter @workspace/santijet-website run dev",
+    "dev:ipa": "PORT=24916 pnpm --filter @workspace/imalat-poz-analizleri run dev",
+    "dev:ipa:web": "PORT=24916 pnpm --filter @workspace/imalat-poz-analizleri run dev:web",
+    "dev:mockup": "PORT=8081 BASE_PATH=/__mockup pnpm --filter @workspace/mockup-sandbox run dev"
   },
   "private": true,
   "devDependencies": {

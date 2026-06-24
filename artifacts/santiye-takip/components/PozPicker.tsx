@@ -13,7 +13,7 @@ import {
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 import { ImalatPoz } from "@/constants/imalatPozlari";
-import { useApp } from "@/context/AppContext";
+import { useMergedPozAnalizleri } from "@/hooks/useMergedPozAnalizleri";
 import { useColors } from "@/hooks/useColors";
 
 interface Props {
@@ -35,7 +35,7 @@ export default function PozPicker({
 }: Props) {
   const colors = useColors();
   const insets = useSafeAreaInsets();
-  const { pozAnalizleri } = useApp();
+  const { pozAnalizleri, loading } = useMergedPozAnalizleri();
   const [open, setOpen] = useState(false);
   const [search, setSearch] = useState("");
   const [activeCat, setActiveCat] = useState<string | null>(null);
@@ -314,7 +314,7 @@ export default function PozPicker({
               ListEmptyComponent={
                 <View style={styles.empty}>
                   <Text style={{ color: colors.mutedForeground, marginBottom: 12 }}>
-                    Poz bulunamadı
+                    {loading ? "Poz listesi yükleniyor…" : "Poz bulunamadı"}
                   </Text>
                   <TouchableOpacity
                     onPress={addManual}
