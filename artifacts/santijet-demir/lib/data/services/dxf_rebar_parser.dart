@@ -1,3 +1,4 @@
+import 'package:santijet_demir/data/services/dwg_segment_extractor.dart';
 import 'package:santijet_demir/data/services/dxf_ascii_parser.dart';
 import 'package:santijet_demir/data/services/rebar_weight_calculator.dart';
 import 'package:santijet_demir/domain/entities/rebar_metraj.dart';
@@ -7,15 +8,38 @@ class DxfRebarParser {
 
   final RebarMetrajSettings settings;
 
-  static const dwgUnsupportedMessage =
-      'DWG dosyaları doğrudan okunamaz. AutoCAD/BricsCAD ile DXF olarak '
-      'kaydedin veya yakında eklenecek sunucu dönüşümünü kullanın.';
+  static bool isDwgBytes(List<int> bytes) {
+    if (bytes.length < 4) return false;
+    final header = String.fromCharCodes(bytes.take(4));
+    return header == 'AC10' || header.startsWith('AC1');
+  }
+
+  Future<RebarMetrajResult> parseDwgBytes({
+    required String fileName,
+    required List<int> bytes,
+  }) async {
+    final segments = await DwgSegmentExtractor.extract(bytes);
+    return _buildResultFromSegments(
+      fileName: fileName,
+      sourceFormat: 'DWG',
+      segments: segments,
+      emptyWarning:
+          'DWG dosyasında demir çizgisi bulunamadı. Katman adlarını '
+          'kontrol edin.',
+    );
+  }
 
   RebarMetrajResult parseBytes({
     required String fileName,
     required List<int> bytes,
     String sourceFormat = 'DXF',
   }) {
+    if (isDwgBytes(bytes)) {
+      throw FormatException(
+        'DWG algılandı. Lütfen dosyayı .dwg uzantısıyla yükleyin.',
+      );
+    }
+
     if (DxfAsciiParser.isBinaryDxf(bytes)) {
       throw FormatException(DxfAsciiParser.binaryDxfMessage);
     }
@@ -33,16 +57,30 @@ class DxfRebarParser {
     required String content,
     String sourceFormat = 'DXF',
   }) {
+    final segments = DxfAsciiParser.parseAllSegments(content);
+    return _buildResultFromSegments(
+      fileName: fileName,
+      sourceFormat: sourceFormat,
+      segments: segments,
+      emptyWarning:
+          'DXF dosyasında LINE veya POLYLINE bulunamadı. Çizimde demir '
+          'elemanlarının çizgi/polyline olarak yer aldığından emin olun.',
+    );
+  }
+
+  RebarMetrajResult _buildResultFromSegments({
+    required String fileName,
+    required String sourceFormat,
+    required List<DxfSegment> segments,
+    required String emptyWarning,
+  }) {
+
     final warnings = <String>[];
     final grouped = <String, _LayerAccumulator>{};
     var skipped = 0;
 
-    final segments = DxfAsciiParser.parseAllSegments(content);
     if (segments.isEmpty) {
-      warnings.add(
-        'DXF dosyasında LINE veya POLYLINE bulunamadı. Çizimde demir '
-        'elemanlarının çizgi/polyline olarak yer aldığından emin olun.',
-      );
+      warnings.add(emptyWarning);
     }
 
     for (final segment in segments) {

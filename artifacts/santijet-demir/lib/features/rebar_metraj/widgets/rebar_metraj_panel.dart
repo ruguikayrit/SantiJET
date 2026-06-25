@@ -65,12 +65,6 @@ class RebarMetrajPanel extends ConsumerWidget {
     final fileName = file.name;
     final extension = fileName.split('.').last.toLowerCase();
 
-    if (extension == 'dwg') {
-      ref.read(rebarMetrajErrorProvider.notifier).state =
-          DxfRebarParser.dwgUnsupportedMessage;
-      return;
-    }
-
     final bytes = file.bytes;
     if (bytes == null) {
       ref.read(rebarMetrajErrorProvider.notifier).state =
@@ -81,17 +75,18 @@ class RebarMetrajPanel extends ConsumerWidget {
     ref.read(rebarMetrajLoadingProvider.notifier).state = true;
     try {
       final parser = ref.read(dxfRebarParserProvider);
-      final result = parser.parseBytes(
-        fileName: fileName,
-        bytes: bytes,
-      );
+      final isDwg =
+          extension == 'dwg' || DxfRebarParser.isDwgBytes(bytes);
+      final result = isDwg
+          ? await parser.parseDwgBytes(fileName: fileName, bytes: bytes)
+          : parser.parseBytes(fileName: fileName, bytes: bytes);
       ref.read(rebarMetrajResultProvider.notifier).state = result;
     } on FormatException catch (e) {
       ref.read(rebarMetrajErrorProvider.notifier).state = e.message;
     } catch (e) {
       ref.read(rebarMetrajErrorProvider.notifier).state =
-          'DXF dosyası işlenemedi. Dosyayı AutoCAD\'de ASCII DXF olarak '
-          'kaydedip tekrar deneyin.';
+          'CAD dosyası işlenemedi. DWG için sayfayı yenileyin; DXF için '
+          'ASCII formatında kaydedilmiş olduğundan emin olun.';
     } finally {
       ref.read(rebarMetrajLoadingProvider.notifier).state = false;
     }
@@ -122,7 +117,7 @@ class _InfoBanner extends StatelessWidget {
           ),
           const SizedBox(height: 8),
           Text(
-            '1. AutoCAD/BricsCAD projesini ASCII DXF olarak kaydedin\n'
+            '1. AutoCAD/BricsCAD projesini DWG veya ASCII DXF olarak yükleyin\n'
             '2. DONAT / ARMATUR / DEMIR katmanlarındaki çizgiler taranır\n'
             '3. Katman adından çap (Ø12, FI16 vb.) otomatik okunur\n'
             '4. Uzunluk × ağırlık formülü ile tonaj hesaplanır',
@@ -130,8 +125,8 @@ class _InfoBanner extends StatelessWidget {
           ),
           const SizedBox(height: 8),
           Text(
-            'Binary DXF ve DWG desteklenmez. Kayıt: Dosya → Farklı Kaydet → DXF (ASCII).',
-            style: AppTypography.labelMedium.copyWith(color: AppColors.warning),
+            'DWG web tarayıcıda doğrudan okunur. DXF için ASCII formatı önerilir.',
+            style: AppTypography.labelMedium.copyWith(color: AppColors.success),
           ),
         ],
       ),
@@ -164,7 +159,7 @@ class _UploadCard extends StatelessWidget {
           Text('CAD Dosyası Yükle', style: AppTypography.headlineMedium),
           const SizedBox(height: 6),
           Text(
-            'DXF (önerilen) · DWG (yakında)',
+            'DWG · DXF (ASCII)',
             style: AppTypography.bodySmall,
             textAlign: TextAlign.center,
           ),
