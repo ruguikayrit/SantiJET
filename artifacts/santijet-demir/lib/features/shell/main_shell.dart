@@ -111,7 +111,6 @@ class DashboardScreen extends ConsumerWidget {
                       onSurveyTap: () => context.push(AppRoutes.survey),
                       onOrdersTap: () => context.go(AppRoutes.orders),
                       onReportsTap: () => context.push(AppRoutes.reports),
-                      onRebarMetrajTap: () => context.push(AppRoutes.rebarMetraj),
                     ),
                   ),
                   const SizedBox(height: AppSpacing.lg),
@@ -234,64 +233,44 @@ class _QuickAccessRow extends StatelessWidget {
     required this.onSurveyTap,
     required this.onOrdersTap,
     required this.onReportsTap,
-    required this.onRebarMetrajTap,
   });
 
   final VoidCallback onSurveyTap;
   final VoidCallback onOrdersTap;
   final VoidCallback onReportsTap;
-  final VoidCallback onRebarMetrajTap;
 
   @override
   Widget build(BuildContext context) {
-    return Column(
+    return Row(
       children: [
-        Row(
-          children: [
-            Expanded(
-              child: _QuickAccessCard(
-                icon: Icons.search,
-                label: 'Keşif',
-                subtitle: '5 imalat',
-                color: AppColors.electricBlueLight,
-                onTap: onSurveyTap,
-              ),
-            ),
-            const SizedBox(width: 8),
-            Expanded(
-              child: _QuickAccessCard(
-                icon: Icons.receipt_long,
-                label: 'Siparişler',
-                subtitle: '7 aktif',
-                color: AppColors.info,
-                onTap: onOrdersTap,
-              ),
-            ),
-          ],
+        Expanded(
+          child: _QuickAccessCard(
+            icon: Icons.search,
+            label: 'Keşif',
+            subtitle: '5 imalat',
+            color: AppColors.electricBlueLight,
+            onTap: onSurveyTap,
+          ),
         ),
-        const SizedBox(height: 8),
-        Row(
-          children: [
-            Expanded(
-              child: _QuickAccessCard(
-                icon: Icons.architecture,
-                label: 'Demir Metraj',
-                subtitle: 'DXF / CAD',
-                color: AppColors.success,
-                onTap: onRebarMetrajTap,
-              ),
-            ),
-            const SizedBox(width: 8),
-            Expanded(
-              child: _QuickAccessCard(
-                icon: Icons.description,
-                label: 'Raporlar',
-                subtitle: '10 kategori',
-                color: AppColors.partial,
-                onTap: onReportsTap,
-              ),
-            ),
-          ],
+        const SizedBox(width: 8),
+        Expanded(
+          child: _QuickAccessCard(
+            icon: Icons.receipt_long,
+            label: 'Siparişler',
+            subtitle: '7 aktif',
+            color: AppColors.info,
+            onTap: onOrdersTap,
+          ),
+        ),
+        const SizedBox(width: 8),
+        Expanded(
+          child: _QuickAccessCard(
+            icon: Icons.description,
+            label: 'Raporlar',
+            subtitle: '10 kategori',
+            color: AppColors.partial,
+            onTap: onReportsTap,
+          ),
         ),
       ],
     );

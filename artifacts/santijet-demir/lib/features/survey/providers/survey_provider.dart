@@ -9,3 +9,5 @@ final surveyProjectProvider = Provider<SurveyProject>((ref) {
 final expandedImalatProvider = StateProvider<String?>((ref) => null);
 
 final selectedImalatProvider = StateProvider<SurveyImalat?>((ref) => null);
+
+final surveyTabIndexProvider = StateProvider<int>((ref) => 0);
