@@ -80,16 +80,18 @@ class RebarMetrajPanel extends ConsumerWidget {
 
     ref.read(rebarMetrajLoadingProvider.notifier).state = true;
     try {
-      final content = String.fromCharCodes(bytes);
       final parser = ref.read(dxfRebarParserProvider);
-      final result = parser.parse(
+      final result = parser.parseBytes(
         fileName: fileName,
-        content: content,
+        bytes: bytes,
       );
       ref.read(rebarMetrajResultProvider.notifier).state = result;
+    } on FormatException catch (e) {
+      ref.read(rebarMetrajErrorProvider.notifier).state = e.message;
     } catch (e) {
       ref.read(rebarMetrajErrorProvider.notifier).state =
-          'DXF dosyası işlenemedi: $e';
+          'DXF dosyası işlenemedi. Dosyayı AutoCAD\'de ASCII DXF olarak '
+          'kaydedip tekrar deneyin.';
     } finally {
       ref.read(rebarMetrajLoadingProvider.notifier).state = false;
     }
@@ -120,7 +122,7 @@ class _InfoBanner extends StatelessWidget {
           ),
           const SizedBox(height: 8),
           Text(
-            '1. AutoCAD/BricsCAD projesini DXF olarak kaydedin\n'
+            '1. AutoCAD/BricsCAD projesini ASCII DXF olarak kaydedin\n'
             '2. DONAT / ARMATUR / DEMIR katmanlarındaki çizgiler taranır\n'
             '3. Katman adından çap (Ø12, FI16 vb.) otomatik okunur\n'
             '4. Uzunluk × ağırlık formülü ile tonaj hesaplanır',
@@ -128,7 +130,7 @@ class _InfoBanner extends StatelessWidget {
           ),
           const SizedBox(height: 8),
           Text(
-            'DWG desteği için sunucu tarafı dönüşüm (Faz 2) planlanıyor.',
+            'Binary DXF ve DWG desteklenmez. Kayıt: Dosya → Farklı Kaydet → DXF (ASCII).',
             style: AppTypography.labelMedium.copyWith(color: AppColors.warning),
           ),
         ],
