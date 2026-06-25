@@ -24,6 +24,7 @@ import 'package:santijet_demir/features/settings/project_settings_screen.dart';
 import 'package:santijet_demir/features/settings/settings_screen.dart';
 import 'package:santijet_demir/features/shell/main_shell.dart';
 import 'package:santijet_demir/features/splash/splash_screen.dart';
+import 'package:santijet_demir/features/rebar_metraj/rebar_metraj_screen.dart';
 import 'package:santijet_demir/features/survey/survey_detail_screen.dart';
 import 'package:santijet_demir/features/survey/survey_list_screen.dart';
 
@@ -68,6 +69,14 @@ final routerProvider = Provider<GoRouter>((ref) {
             },
           ),
         ],
+      ),
+      GoRoute(
+        path: AppRoutes.rebarMetraj,
+        parentNavigatorKey: _rootNavigatorKey,
+        pageBuilder: (context, state) => fadeSlidePage(
+          key: state.pageKey,
+          child: const RebarMetrajScreen(),
+        ),
       ),
       GoRoute(
         path: AppRoutes.deliveryList,

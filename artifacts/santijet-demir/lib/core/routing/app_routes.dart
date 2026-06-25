@@ -18,6 +18,7 @@ abstract final class AppRoutes {
   static String reportDetail(String id) => '/reports/$id';
   static const survey = '/survey';
   static String surveyDetail(String id) => '/survey/$id';
+  static const rebarMetraj = '/rebar-metraj';
   static const settings = '/settings';
   static const companySettings = '/settings/company';
   static const projectSettings = '/settings/project';

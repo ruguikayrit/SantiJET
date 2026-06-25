@@ -34,6 +34,11 @@ class SurveyListScreen extends ConsumerWidget {
             icon: const Icon(Icons.add, size: 18),
             label: const Text('Yeni İmalat'),
           ),
+          TextButton.icon(
+            onPressed: () => context.push(AppRoutes.rebarMetraj),
+            icon: const Icon(Icons.architecture, size: 18),
+            label: const Text('Demir Metraj'),
+          ),
         ],
       ),
       body: ListView(
