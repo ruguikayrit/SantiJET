@@ -1,6 +1,4 @@
-import 'dart:math';
-
-import 'package:dxf/dxf.dart';
+import 'package:santijet_demir/data/services/dxf_ascii_parser.dart';
 import 'package:santijet_demir/data/services/rebar_weight_calculator.dart';
 import 'package:santijet_demir/domain/entities/rebar_metraj.dart';
 
@@ -13,6 +11,23 @@ class DxfRebarParser {
       'DWG dosyaları doğrudan okunamaz. AutoCAD/BricsCAD ile DXF olarak '
       'kaydedin veya yakında eklenecek sunucu dönüşümünü kullanın.';
 
+  RebarMetrajResult parseBytes({
+    required String fileName,
+    required List<int> bytes,
+    String sourceFormat = 'DXF',
+  }) {
+    if (DxfAsciiParser.isBinaryDxf(bytes)) {
+      throw FormatException(DxfAsciiParser.binaryDxfMessage);
+    }
+
+    final content = DxfAsciiParser.decodeContent(bytes);
+    return parse(
+      fileName: fileName,
+      content: content,
+      sourceFormat: sourceFormat,
+    );
+  }
+
   RebarMetrajResult parse({
     required String fileName,
     required String content,
@@ -22,26 +37,35 @@ class DxfRebarParser {
     final grouped = <String, _LayerAccumulator>{};
     var skipped = 0;
 
-    final dxf = DXF.fromString(content);
-    for (final entity in dxf.entities) {
-      final layerName = entity.layerName;
-      if (!_isRebarLayer(layerName)) {
+    final segments = DxfAsciiParser.parseAllSegments(content);
+    if (segments.isEmpty) {
+      warnings.add(
+        'DXF dosyasında LINE veya POLYLINE bulunamadı. Çizimde demir '
+        'elemanlarının çizgi/polyline olarak yer aldığından emin olun.',
+      );
+    }
+
+    for (final segment in segments) {
+      if (!_isRebarLayer(segment.layerName)) {
         skipped++;
         continue;
       }
 
-      final length = _entityLength(entity);
-      if (length <= 0) {
+      if (segment.length <= 0) {
         skipped++;
         continue;
       }
 
-      final scaledLength = length * settings.unitScale;
-      final diameter = _resolveDiameter(layerName) ?? settings.defaultDiameter;
-      final key = '${layerName.toUpperCase()}|$diameter';
+      final scaledLength = segment.length * settings.unitScale;
+      final diameter =
+          _resolveDiameter(segment.layerName) ?? settings.defaultDiameter;
+      final key = '${segment.layerName.toUpperCase()}|$diameter';
       grouped.putIfAbsent(
         key,
-        () => _LayerAccumulator(layerName: layerName, diameter: diameter),
+        () => _LayerAccumulator(
+          layerName: segment.layerName,
+          diameter: diameter,
+        ),
       );
       grouped[key]!.addBar(scaledLength);
     }
@@ -103,7 +127,8 @@ class DxfRebarParser {
     );
     if (suffixMatch != null) {
       final value = int.tryParse(suffixMatch.group(1)!);
-      if (value != null && RebarWeightCalculator.standardDiameters.contains(value)) {
+      if (value != null &&
+          RebarWeightCalculator.standardDiameters.contains(value)) {
         return value;
       }
     }
@@ -111,58 +136,13 @@ class DxfRebarParser {
     final embedded = RegExp(r'(\d{2})').allMatches(normalized);
     for (final match in embedded) {
       final value = int.tryParse(match.group(1)!);
-      if (value != null && RebarWeightCalculator.standardDiameters.contains(value)) {
+      if (value != null &&
+          RebarWeightCalculator.standardDiameters.contains(value)) {
         return value;
       }
     }
 
     return null;
-  }
-
-  double _entityLength(AcDbEntity entity) {
-    if (entity is AcDbLine) {
-      return _distance(entity.x, entity.y, entity.z, entity.x1, entity.y1, entity.z1);
-    }
-
-    if (entity is AcDbPolyline) {
-      final vertices = entity.vertices;
-      if (vertices.length < 2) return 0;
-
-      var total = 0.0;
-      for (var i = 1; i < vertices.length; i++) {
-        total += _distance(
-          vertices[i - 1][0],
-          vertices[i - 1][1],
-          vertices[i - 1].length > 2 ? vertices[i - 1][2] : 0,
-          vertices[i][0],
-          vertices[i][1],
-          vertices[i].length > 2 ? vertices[i][2] : 0,
-        );
-      }
-
-      if (entity.isClosed && vertices.length > 2) {
-        final first = vertices.first;
-        final last = vertices.last;
-        total += _distance(
-          last[0],
-          last[1],
-          last.length > 2 ? last[2] : 0,
-          first[0],
-          first[1],
-          first.length > 2 ? first[2] : 0,
-        );
-      }
-      return total;
-    }
-
-    return 0;
-  }
-
-  double _distance(double x1, double y1, double z1, double x2, double y2, double z2) {
-    final dx = x2 - x1;
-    final dy = y2 - y1;
-    final dz = z2 - z1;
-    return sqrt(dx * dx + dy * dy + dz * dz);
   }
 
   String _normalize(String value) {
