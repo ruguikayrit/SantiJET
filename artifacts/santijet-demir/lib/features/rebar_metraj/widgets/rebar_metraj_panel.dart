@@ -10,8 +10,8 @@ import 'package:santijet_demir/data/services/dxf_rebar_parser.dart';
 import 'package:santijet_demir/domain/entities/rebar_metraj.dart';
 import 'package:santijet_demir/features/rebar_metraj/providers/rebar_metraj_provider.dart';
 
-class RebarMetrajScreen extends ConsumerWidget {
-  const RebarMetrajScreen({super.key});
+class RebarMetrajPanel extends ConsumerWidget {
+  const RebarMetrajPanel({super.key});
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -19,49 +19,34 @@ class RebarMetrajScreen extends ConsumerWidget {
     final loading = ref.watch(rebarMetrajLoadingProvider);
     final error = ref.watch(rebarMetrajErrorProvider);
 
-    return Scaffold(
-      backgroundColor: AppColors.canvas,
-      appBar: AppBar(
-        title: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text('Demir Metraj', style: AppTypography.titleLarge),
-            Text(
-              'CAD çiziminden otomatik metraj',
-              style: AppTypography.labelMedium,
-            ),
-          ],
+    return ListView(
+      padding: const EdgeInsets.all(AppSpacing.md),
+      children: [
+        const _InfoBanner(),
+        const SizedBox(height: 16),
+        _UploadCard(
+          loading: loading,
+          onPickFile: () => _pickAndParse(context, ref),
         ),
-      ),
-      body: ListView(
-        padding: const EdgeInsets.all(AppSpacing.md),
-        children: [
-          const _InfoBanner(),
-          const SizedBox(height: 16),
-          _UploadCard(
-            loading: loading,
-            onPickFile: () => _pickAndParse(context, ref),
-          ),
-          if (error != null) ...[
-            const SizedBox(height: 12),
-            _ErrorBanner(message: error),
-          ],
-          if (result != null) ...[
-            const SizedBox(height: 20),
-            _ResultSummary(result: result),
-            const SizedBox(height: 16),
-            Text('Çap Bazlı Metraj', style: AppTypography.headlineMedium),
-            const SizedBox(height: 12),
-            ...result.lines.map((line) => _MetrajLineCard(line: line)),
-            if (result.warnings.isNotEmpty) ...[
-              const SizedBox(height: 16),
-              _WarningsCard(warnings: result.warnings),
-            ],
-            const SizedBox(height: 16),
-            _MetaCard(result: result),
-          ],
+        if (error != null) ...[
+          const SizedBox(height: 12),
+          _ErrorBanner(message: error),
         ],
-      ),
+        if (result != null) ...[
+          const SizedBox(height: 20),
+          _ResultSummary(result: result),
+          const SizedBox(height: 16),
+          Text('Çap Bazlı Metraj', style: AppTypography.headlineMedium),
+          const SizedBox(height: 12),
+          ...result.lines.map((line) => _MetrajLineCard(line: line)),
+          if (result.warnings.isNotEmpty) ...[
+            const SizedBox(height: 16),
+            _WarningsCard(warnings: result.warnings),
+          ],
+          const SizedBox(height: 16),
+          _MetaCard(result: result),
+        ],
+      ],
     );
   }
 
@@ -130,7 +115,7 @@ class _InfoBanner extends StatelessWidget {
             children: [
               Icon(Icons.architecture, color: AppColors.electricBlueLight, size: 20),
               const SizedBox(width: 8),
-              Text('Nasıl çalışır?', style: AppTypography.titleMedium),
+              Text('CAD\'den otomatik metraj', style: AppTypography.titleMedium),
             ],
           ),
           const SizedBox(height: 8),

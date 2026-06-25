@@ -8,13 +8,39 @@ import 'package:santijet_demir/core/theme/app_spacing.dart';
 import 'package:santijet_demir/core/theme/app_typography.dart';
 import 'package:santijet_demir/data/services/export_service.dart';
 import 'package:santijet_demir/domain/entities/survey.dart';
+import 'package:santijet_demir/features/rebar_metraj/widgets/rebar_metraj_panel.dart';
 import 'package:santijet_demir/features/survey/providers/survey_provider.dart';
 
-class SurveyListScreen extends ConsumerWidget {
+class SurveyListScreen extends ConsumerStatefulWidget {
   const SurveyListScreen({super.key});
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
+  ConsumerState<SurveyListScreen> createState() => _SurveyListScreenState();
+}
+
+class _SurveyListScreenState extends ConsumerState<SurveyListScreen>
+    with SingleTickerProviderStateMixin {
+  late final TabController _tabController;
+
+  @override
+  void initState() {
+    super.initState();
+    _tabController = TabController(length: 2, vsync: this);
+    _tabController.addListener(() {
+      if (!_tabController.indexIsChanging) {
+        ref.read(surveyTabIndexProvider.notifier).state = _tabController.index;
+      }
+    });
+  }
+
+  @override
+  void dispose() {
+    _tabController.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
     final project = ref.watch(surveyProjectProvider);
     final expandedId = ref.watch(expandedImalatProvider);
 
@@ -34,36 +60,44 @@ class SurveyListScreen extends ConsumerWidget {
             icon: const Icon(Icons.add, size: 18),
             label: const Text('Yeni İmalat'),
           ),
-          TextButton.icon(
-            onPressed: () => context.push(AppRoutes.rebarMetraj),
-            icon: const Icon(Icons.architecture, size: 18),
-            label: const Text('Demir Metraj'),
-          ),
         ],
+        bottom: TabBar(
+          controller: _tabController,
+          tabs: const [
+            Tab(text: 'İmalat Listesi'),
+            Tab(text: 'Demir Metraj'),
+          ],
+        ),
       ),
-      body: ListView(
-        padding: const EdgeInsets.all(AppSpacing.md),
+      body: TabBarView(
+        controller: _tabController,
         children: [
-          _ProjectMetaRow(project: project),
-          const SizedBox(height: 16),
-          Text('İmalat Listesi', style: AppTypography.headlineMedium),
-          const SizedBox(height: 12),
-          ...project.imalats.map(
-            (imalat) => SurveyImalatCard(
-              imalat: imalat,
-              expanded: expandedId == imalat.id,
-              onToggle: () {
-                ref.read(expandedImalatProvider.notifier).state =
-                    expandedId == imalat.id ? null : imalat.id;
-              },
-              onDetail: () {
-                ref.read(selectedImalatProvider.notifier).state = imalat;
-                context.push('${AppRoutes.survey}/${imalat.id}');
-              },
-            ),
+          ListView(
+            padding: const EdgeInsets.all(AppSpacing.md),
+            children: [
+              _ProjectMetaRow(project: project),
+              const SizedBox(height: 16),
+              Text('İmalat Listesi', style: AppTypography.headlineMedium),
+              const SizedBox(height: 12),
+              ...project.imalats.map(
+                (imalat) => SurveyImalatCard(
+                  imalat: imalat,
+                  expanded: expandedId == imalat.id,
+                  onToggle: () {
+                    ref.read(expandedImalatProvider.notifier).state =
+                        expandedId == imalat.id ? null : imalat.id;
+                  },
+                  onDetail: () {
+                    ref.read(selectedImalatProvider.notifier).state = imalat;
+                    context.push('${AppRoutes.survey}/${imalat.id}');
+                  },
+                ),
+              ),
+              const SizedBox(height: 16),
+              _BottomActions(project: project),
+            ],
           ),
-          const SizedBox(height: 16),
-          _BottomActions(project: project),
+          const RebarMetrajPanel(),
         ],
       ),
     );
