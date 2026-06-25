@@ -48,6 +48,14 @@ jobs:
           cache: true
           cache-key: flutter-demir-3.27.4
 
+      - name: Setup Node (DEMİR DWG)
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Install LibreDWG web assets
+        run: bash artifacts/santijet-demir/scripts/setup-libredwg-web.sh
+
       - name: Build DEMİR web
         working-directory: artifacts/santijet-demir
         env:

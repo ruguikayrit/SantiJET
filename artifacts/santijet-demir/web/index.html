@@ -32,7 +32,7 @@
   <link rel="icon" type="image/png" href="favicon.png"/>
 
   <title>ŞantiJET DEMİR</title>
-  <link rel="manifest" href="manifest.json?v=14">
+  <link rel="manifest" href="manifest.json?v=15">
 
   <!-- Supabase → passkeys_web eklentisi için zorunlu (yoksa uygulama başlamaz) -->
   <script src="passkeys_bundle.js"></script>
@@ -65,7 +65,7 @@
   <script>
     // ŞantiJET DEMİR — iOS PWA viewport düzeltmeleri
     (function () {
-      var APP_VERSION = '14';
+      var APP_VERSION = '15';
       var isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent) ||
         (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
       var isStandalone = window.navigator.standalone === true ||
@@ -200,6 +200,7 @@
   <div id="santijet-loading" style="display:flex;align-items:center;justify-content:center;height:100vh;height:-webkit-fill-available;background:#05070A;color:#6B7280;font-family:system-ui,-apple-system,sans-serif;font-size:14px;">
     ŞantiJET yükleniyor…
   </div>
-  <script src="flutter_bootstrap.js?v=14" async></script>
+  <script type="module" src="dwg/dwg_bridge.js"></script>
+  <script src="flutter_bootstrap.js?v=15" async></script>
 </body>
 </html>
