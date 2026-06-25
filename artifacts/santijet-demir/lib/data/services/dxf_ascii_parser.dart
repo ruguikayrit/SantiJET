@@ -1,6 +1,5 @@
 import 'dart:convert';
 import 'dart:math';
-import 'dart:typed_data';
 
 class DxfSegment {
   const DxfSegment({
@@ -31,10 +30,18 @@ class DxfAsciiParser {
 
   static String decodeContent(List<int> bytes) {
     if (bytes.length >= 2 && bytes[0] == 0xFF && bytes[1] == 0xFE) {
-      return utf16.decode(bytes.sublist(2), endian: Endian.little);
+      final codeUnits = <int>[];
+      for (var i = 2; i + 1 < bytes.length; i += 2) {
+        codeUnits.add(bytes[i] | (bytes[i + 1] << 8));
+      }
+      return String.fromCharCodes(codeUnits);
     }
     if (bytes.length >= 2 && bytes[0] == 0xFE && bytes[1] == 0xFF) {
-      return utf16.decode(bytes.sublist(2), endian: Endian.big);
+      final codeUnits = <int>[];
+      for (var i = 2; i + 1 < bytes.length; i += 2) {
+        codeUnits.add((bytes[i] << 8) | bytes[i + 1]);
+      }
+      return String.fromCharCodes(codeUnits);
     }
     return latin1.decode(bytes, allowInvalid: true);
   }
