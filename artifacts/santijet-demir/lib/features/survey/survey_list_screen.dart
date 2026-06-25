@@ -25,12 +25,27 @@ class _SurveyListScreenState extends ConsumerState<SurveyListScreen>
   @override
   void initState() {
     super.initState();
-    _tabController = TabController(length: 2, vsync: this);
+    final initialTab = ref.read(surveyTabIndexProvider);
+    _tabController = TabController(
+      length: 2,
+      vsync: this,
+      initialIndex: initialTab.clamp(0, 1),
+    );
     _tabController.addListener(() {
       if (!_tabController.indexIsChanging) {
         ref.read(surveyTabIndexProvider.notifier).state = _tabController.index;
       }
     });
+  }
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    final tab = GoRouterState.of(context).uri.queryParameters['tab'];
+    if (tab == 'metraj' && _tabController.index != 1) {
+      _tabController.index = 1;
+      ref.read(surveyTabIndexProvider.notifier).state = 1;
+    }
   }
 
   @override
@@ -63,6 +78,9 @@ class _SurveyListScreenState extends ConsumerState<SurveyListScreen>
         ],
         bottom: TabBar(
           controller: _tabController,
+          labelColor: AppColors.electricBlueLight,
+          unselectedLabelColor: AppColors.textMuted,
+          indicatorColor: AppColors.electricBlueLight,
           tabs: const [
             Tab(text: 'İmalat Listesi'),
             Tab(text: 'Demir Metraj'),
