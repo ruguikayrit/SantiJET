@@ -23,6 +23,7 @@ class RebarMetrajRepository {
   Future<SavedRebarMetraj> saveResult({
     required String projectId,
     required RebarMetrajResult result,
+    required String title,
     String? surveyImalatId,
     String? surveyImalatName,
   }) async {
@@ -30,6 +31,7 @@ class RebarMetrajRepository {
     final saved = SavedRebarMetraj(
       id: DateTime.now().millisecondsSinceEpoch.toString(),
       savedAt: DateTime.now(),
+      title: title.trim(),
       result: result,
       surveyImalatId: surveyImalatId,
       surveyImalatName: surveyImalatName,

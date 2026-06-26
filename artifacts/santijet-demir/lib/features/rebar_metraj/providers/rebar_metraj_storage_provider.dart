@@ -35,13 +35,17 @@ class SavedRebarMetrajNotifier extends StateNotifier<List<SavedRebarMetraj>> {
     state = _repo.readSaved(projectId);
   }
 
-  Future<SavedRebarMetraj?> saveCurrentResult(RebarMetrajResult result) async {
+  Future<SavedRebarMetraj?> saveCurrentResult(
+    RebarMetrajResult result, {
+    required String title,
+  }) async {
     final projectId = _ref.read(activeProjectIdProvider);
     if (projectId == null) return null;
 
     final saved = await _repo.saveResult(
       projectId: projectId,
       result: result,
+      title: title,
     );
     state = [saved, ...state.where((record) => record.id != saved.id)];
     return saved;
