@@ -24,6 +24,21 @@ void main() {
       expect(entry?.quantity, 12);
       expect(entry?.diameter, 22);
     });
+
+    test('AutoCAD %%c çap kodu', () {
+      final entry = parser.parseOne('üst.1670%%c22/15 l=1200');
+      expect(entry?.diameter, 22);
+      expect(entry?.lengthM, closeTo(1.2, 0.001));
+      expect(entry?.quantity, 12);
+    });
+
+    test('MTEXT biçim kodlu metin', () {
+      final entry = parser.parseOne(
+        '{\\fArial|b0|i0;c162;üst.1670Ø22/15 l=1200}',
+      );
+      expect(entry?.diameter, 22);
+      expect(entry?.quantity, 12);
+    });
   });
 
   group('RebarTextParser — adet + çap + boy zorunlu', () {

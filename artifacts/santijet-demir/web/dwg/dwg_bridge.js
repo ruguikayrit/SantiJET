@@ -2,11 +2,46 @@ window.__SANTIJET_DWG_MODULE__ = 'loading';
 
 function cleanMText(raw) {
   if (!raw) return '';
-  return String(raw)
+  var text = String(raw)
     .replace(/\\P/gi, '\n')
-    .replace(/\\[A-Za-z0-9.;]+/g, '')
+    .replace(/\\[Uu]\+([0-9A-Fa-f]{4,8})/g, (_, hex) => {
+      try {
+        return String.fromCodePoint(parseInt(hex, 16));
+      } catch (e) {
+        return '';
+      }
+    })
+    .replace(/\\[A-Za-z0-9.;]+/g, '');
+
+  if (text.includes(';')) {
+    text = text.split(';').pop();
+  }
+
+  return text
+    .replace(/%%[Cc]/g, 'Ø')
     .replace(/[{}]/g, '')
+    .replace(/^\|[\w|]+/, '')
     .trim();
+}
+
+function readEntityText(entity) {
+  if (!entity) return '';
+
+  if (entity.type === 'TEXT') {
+    return String(entity.text ?? '').trim();
+  }
+
+  if (entity.type === 'MTEXT') {
+    return cleanMText(entity.text);
+  }
+
+  if (entity.type === 'ATTRIB') {
+    const payload = entity.text;
+    if (typeof payload === 'string') return payload.trim();
+    if (payload && typeof payload.text === 'string') return payload.text.trim();
+  }
+
+  return '';
 }
 
 (async () => {
@@ -30,21 +65,23 @@ function cleanMText(raw) {
         const texts = [];
 
         for (const entity of db.entities ?? []) {
-          if (entity.type === 'TEXT') {
-            const text = String(entity.text ?? '').trim();
-            if (text) texts.push({ entityType: 'TEXT', text });
+          const entityType = entity.type;
+          if (entityType !== 'TEXT' && entityType !== 'MTEXT' && entityType !== 'ATTRIB') {
             continue;
           }
 
-          if (entity.type === 'MTEXT') {
-            const text = cleanMText(entity.text);
-            if (text) {
-              for (const line of text.split('\n')) {
-                const trimmed = line.trim();
-                if (trimmed) texts.push({ entityType: 'MTEXT', text: trimmed });
-              }
+          const rawText = readEntityText(entity);
+          if (!rawText) continue;
+
+          if (entityType === 'MTEXT') {
+            for (const line of rawText.split('\n')) {
+              const trimmed = line.trim();
+              if (trimmed) texts.push({ entityType: 'MTEXT', text: trimmed });
             }
+            continue;
           }
+
+          texts.push({ entityType, text: rawText });
         }
 
         return texts;
