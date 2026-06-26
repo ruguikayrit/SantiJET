@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
 import 'package:intl/intl.dart';
+import 'package:santijet_demir/core/routing/app_routes.dart';
 import 'package:santijet_demir/core/theme/app_colors.dart';
 import 'package:santijet_demir/core/theme/app_radii.dart';
 import 'package:santijet_demir/core/theme/app_typography.dart';
@@ -28,40 +30,53 @@ class MetrajResultActions extends ConsumerWidget {
           record.result.totalTonnage == result.totalTonnage,
     );
 
-    if (projectId == null) {
-      return _InfoBox(
-        message: 'Metraj sonucunu kaydetmek için önce bir proje seçin.',
-        color: AppColors.warning,
-      );
-    }
-
-    if (!canEdit) {
-      return _InfoBox(
-        message: 'Bu projede kaydetme ve keşife gönderme yetkiniz yok.',
-        color: AppColors.textMuted,
-      );
-    }
+    final canAct = projectId != null && canEdit;
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
-        Wrap(
-          spacing: 8,
-          runSpacing: 8,
-          children: [
-            FilledButton.icon(
-              onPressed: isSaved ? null : () => _saveResult(context, ref),
-              icon: Icon(isSaved ? Icons.check_circle : Icons.save),
-              label: Text(isSaved ? 'Kaydedildi' : 'Sonucu Kaydet'),
+        if (projectId == null)
+          Padding(
+            padding: const EdgeInsets.only(bottom: 8),
+            child: Text(
+              'Kaydetmek için bir proje seçin.',
+              style: AppTypography.bodySmall.copyWith(color: AppColors.warning),
             ),
-            OutlinedButton.icon(
-              onPressed: () => _sendToSurvey(context, ref),
-              icon: const Icon(Icons.send),
-              label: const Text('Keşife Gönder'),
+          )
+        else if (!canEdit)
+          Padding(
+            padding: const EdgeInsets.only(bottom: 8),
+            child: Text(
+              'Bu projede yalnızca görüntüleme yetkiniz var.',
+              style: AppTypography.bodySmall.copyWith(color: AppColors.textMuted),
+            ),
+          ),
+        Row(
+          children: [
+            Expanded(
+              child: FilledButton.icon(
+                onPressed: !canAct
+                    ? () => _handleBlockedAction(context, ref)
+                    : isSaved
+                        ? null
+                        : () => _saveResult(context, ref),
+                icon: Icon(isSaved ? Icons.check_circle : Icons.save),
+                label: Text(isSaved ? 'Kaydedildi' : 'Sonucu Kaydet'),
+              ),
+            ),
+            const SizedBox(width: 8),
+            Expanded(
+              child: OutlinedButton.icon(
+                onPressed: !canAct
+                    ? () => _handleBlockedAction(context, ref)
+                    : () => _sendToSurvey(context, ref),
+                icon: const Icon(Icons.send),
+                label: const Text('Keşife Gönder'),
+              ),
             ),
           ],
         ),
-        if (isSaved)
+        if (isSaved && canAct)
           Padding(
             padding: const EdgeInsets.only(top: 8),
             child: Text(
@@ -70,6 +85,20 @@ class MetrajResultActions extends ConsumerWidget {
             ),
           ),
       ],
+    );
+  }
+
+  void _handleBlockedAction(BuildContext context, WidgetRef ref) {
+    final projectId = ref.read(activeProjectIdProvider);
+    if (projectId == null) {
+      context.push(AppRoutes.projects);
+      return;
+    }
+
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(
+        content: Text('Bu projede kaydetme yetkiniz yok.'),
+      ),
     );
   }
 
@@ -133,26 +162,6 @@ class MetrajResultActions extends ConsumerWidget {
           },
         ),
       ),
-    );
-  }
-}
-
-class _InfoBox extends StatelessWidget {
-  const _InfoBox({required this.message, required this.color});
-
-  final String message;
-  final Color color;
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      padding: const EdgeInsets.all(12),
-      decoration: BoxDecoration(
-        color: color.withValues(alpha: 0.08),
-        borderRadius: AppRadii.md,
-        border: Border.all(color: color.withValues(alpha: 0.25)),
-      ),
-      child: Text(message, style: AppTypography.bodySmall),
     );
   }
 }

@@ -8,72 +8,128 @@ import 'package:santijet_demir/core/theme/app_spacing.dart';
 import 'package:santijet_demir/core/theme/app_typography.dart';
 import 'package:santijet_demir/data/services/dxf_rebar_parser.dart';
 import 'package:santijet_demir/domain/entities/rebar_metraj.dart';
+import 'package:santijet_demir/features/projects/providers/project_provider.dart';
 import 'package:santijet_demir/features/rebar_metraj/providers/rebar_metraj_provider.dart';
 import 'package:santijet_demir/features/rebar_metraj/widgets/metraj_survey_actions.dart';
 
-class RebarMetrajPanel extends ConsumerWidget {
+class RebarMetrajPanel extends ConsumerStatefulWidget {
   const RebarMetrajPanel({super.key});
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
+  ConsumerState<RebarMetrajPanel> createState() => _RebarMetrajPanelState();
+}
+
+class _RebarMetrajPanelState extends ConsumerState<RebarMetrajPanel> {
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addPostFrameCallback((_) => _ensureActiveProject());
+  }
+
+  Future<void> _ensureActiveProject() async {
+    if (ref.read(activeProjectIdProvider) != null) return;
+
+    final projects = ref.read(userProjectsProvider);
+    if (projects.isEmpty) {
+      try {
+        await ref.read(projectsControllerProvider).ensureMigratedFromLegacy();
+      } catch (_) {
+        // Yerel proje oluşturulamazsa kullanıcı proje listesine yönlendirilir.
+      }
+    }
+
+    final activeId = ref.read(activeProjectIdProvider);
+    if (activeId != null) return;
+
+    final nextProjects = ref.read(userProjectsProvider);
+    if (nextProjects.isNotEmpty) {
+      await ref.read(projectsControllerProvider).switchProject(nextProjects.first.id);
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
     final result = ref.watch(rebarMetrajResultProvider);
     final loading = ref.watch(rebarMetrajLoadingProvider);
     final error = ref.watch(rebarMetrajErrorProvider);
-
     final bottomInset = MediaQuery.paddingOf(context).bottom;
 
-    return ListView(
-      padding: EdgeInsets.fromLTRB(
-        AppSpacing.md,
-        AppSpacing.md,
-        AppSpacing.md,
-        AppSpacing.md + bottomInset,
-      ),
+    return Column(
       children: [
-        const _InfoBanner(),
-        const SizedBox(height: 16),
-        _UploadCard(
-          loading: loading,
-          onPickFile: () => _pickAndParse(context, ref),
-        ),
-        const SavedMetrajHistorySection(),
-        const SizedBox(height: 8),
-        if (error != null) ...[
-          const SizedBox(height: 12),
-          _ErrorBanner(message: error),
-        ],
-        if (result != null) ...[
-          const SizedBox(height: 20),
-          _ResultSummary(result: result),
-          const SizedBox(height: 6),
-          Text(
-            '${result.fileName} · ${result.sourceFormat}',
-            style: AppTypography.bodySmall,
+        Expanded(
+          child: ListView(
+            padding: EdgeInsets.fromLTRB(
+              AppSpacing.md,
+              AppSpacing.md,
+              AppSpacing.md,
+              AppSpacing.md,
+            ),
+            children: [
+              const _InfoBanner(),
+              const SizedBox(height: 16),
+              _UploadCard(
+                loading: loading,
+                onPickFile: () => _pickAndParse(context, ref),
+              ),
+              const SavedMetrajHistorySection(),
+              const SizedBox(height: 8),
+              if (error != null) ...[
+                const SizedBox(height: 12),
+                _ErrorBanner(message: error),
+              ],
+              if (result != null) ...[
+                const SizedBox(height: 20),
+                _ResultSummary(result: result),
+                const SizedBox(height: 6),
+                Text(
+                  '${result.fileName} · ${result.sourceFormat}',
+                  style: AppTypography.bodySmall,
+                ),
+                const SizedBox(height: 16),
+                Text('Çap Bazlı Metraj', style: AppTypography.headlineMedium),
+                const SizedBox(height: 12),
+                ...result.lines.map((line) => _MetrajLineCard(line: line)),
+                if (result.textDetails.isNotEmpty) ...[
+                  const SizedBox(height: 20),
+                  _TextDetailSection(details: result.textDetails),
+                ],
+                if (result.warnings.isNotEmpty) ...[
+                  const SizedBox(height: 16),
+                  _WarningsCard(warnings: result.warnings),
+                ],
+                if (result.skippedEntityCount > 0) ...[
+                  const SizedBox(height: 12),
+                  _SkippedHint(count: result.skippedEntityCount),
+                ],
+                const SizedBox(height: 12),
+              ],
+            ],
           ),
-          const SizedBox(height: 12),
-          MetrajResultActions(result: result),
-          const SizedBox(height: 16),
-          Text('Çap Bazlı Metraj', style: AppTypography.headlineMedium),
-          const SizedBox(height: 12),
-          ...result.lines.map((line) => _MetrajLineCard(line: line)),
-          if (result.textDetails.isNotEmpty) ...[
-            const SizedBox(height: 20),
-            _TextDetailSection(details: result.textDetails),
-          ],
-          if (result.warnings.isNotEmpty) ...[
-            const SizedBox(height: 16),
-            _WarningsCard(warnings: result.warnings),
-          ],
-          if (result.skippedEntityCount > 0) ...[
-            const SizedBox(height: 12),
-            _SkippedHint(count: result.skippedEntityCount),
-          ],
-        ],
+        ),
+        if (result != null)
+          Material(
+            elevation: 12,
+            color: AppColors.surfaceElevated,
+            child: SafeArea(
+              top: false,
+              child: Padding(
+                padding: EdgeInsets.fromLTRB(
+                  AppSpacing.md,
+                  12,
+                  AppSpacing.md,
+                  12 + bottomInset,
+                ),
+                child: MetrajResultActions(result: result),
+              ),
+            ),
+          ),
       ],
     );
   }
 
   Future<void> _pickAndParse(BuildContext context, WidgetRef ref) async {
+    await _ensureActiveProject();
+
     ref.read(rebarMetrajErrorProvider.notifier).state = null;
 
     final picked = await FilePicker.platform.pickFiles(
@@ -145,7 +201,7 @@ class _InfoBanner extends StatelessWidget {
             '2. üst.334Ø22/15 l=120 → 334 ad × 12 m (aralık hesaba katılmaz)\n'
             '3. 15000Ø16 l=200 → 15000 ad × 2 m\n'
             '4. Tonaj = adet × boy × birim ağırlık (kg/m)\n'
-            '5. Sonucu kaydedin veya isteğe bağlı Keşife gönderin',
+            '5. Alttaki Sonucu Kaydet / Keşife Gönder butonlarını kullanın',
             style: AppTypography.bodySmall,
           ),
           const SizedBox(height: 8),
