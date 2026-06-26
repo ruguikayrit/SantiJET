@@ -125,9 +125,9 @@ class DxfRebarParser {
           .join('\n• ');
 
       warnings.add(
-        'Dosyada ${entities.length} TEXT/MTEXT okundu ancak demir etiketi '
-        'tanınmadı. AutoCAD %%c çap kodu ve üst./alt. formatı desteklenir.\n'
-        'Örnek okunan metinler:\n• $samples',
+        'Demir etiketi bulunamadı. Örnek formatlar:\n'
+        'üst.334Ø22/15 l=120 (334 ad × 12 m)\n'
+        '15000Ø16 l=200 (15000 ad × 2 m)',
       );
     }
 

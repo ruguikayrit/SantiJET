@@ -1,5 +1,3 @@
-import 'dart:math';
-
 import 'package:santijet_demir/data/services/cad_text_preprocessor.dart';
 import 'package:santijet_demir/data/services/rebar_weight_calculator.dart';
 
@@ -22,30 +20,31 @@ class RebarTextEntry {
 class RebarTextParser {
   const RebarTextParser();
 
-  /// üst.1670Ø22/15 l=1200  ·  alt.12Ø22/15 l=640
-  static final _locationSpacingLength = RegExp(
+  /// üst.334Ø22/15 l=120  → 334 adet, Ø22, l=120 → 12 m (/15 sadece bilgi)
+  static final _locationLabel = RegExp(
     r'(?:UST|ALT)\.(\d+)(?:FI|F[Iİ]|Ø|O|D)(\d{2})/(\d+)\s*L\s*=\s*([\d.,]+)',
     caseSensitive: false,
   );
 
-  /// 1670Ø22/15 l=1200  (üst/alt öneki olmadan)
-  static final _spacingLength = RegExp(
+  /// 334Ø22/15 l=120 (üst/alt öneki olmadan)
+  static final _spacingLabel = RegExp(
     r'(?:^|[^\d])(\d+)(?:FI|F[Iİ]|Ø|O|D)(\d{2})/(\d+)\s*L\s*=\s*([\d.,]+)',
     caseSensitive: false,
   );
 
-  static final _spacingDistributionLabel = RegExp(
+  static final _spacingLabelShape = RegExp(
     r'\d+(?:FI|F[Iİ]|Ø|O|D)\d{2}/\d+\s*L\s*=',
+    caseSensitive: false,
+  );
+
+  /// 15000Ø16 l=200 → 15000 adet, l=200 → 2 m
+  static final _quantityPrefix = RegExp(
+    r'(\d+)\s*(?:FI|F[Iİ]|Ø|O|D)\s*(\d{2})\s*L\s*=\s*([\d.,]+)',
     caseSensitive: false,
   );
 
   static final _quantityX = RegExp(
     r'(\d+)\s*[xX×]\s*(?:FI|F[Iİ]|Ø|O|D)?\s*(\d{2})\s*[/\-xX×]\s*([\d.,]+)',
-    caseSensitive: false,
-  );
-
-  static final _quantityPrefix = RegExp(
-    r'(\d+)\s*(?:FI|F[Iİ]|Ø|O|D)\s*(\d{2})\s*L\s*=\s*([\d.,]+)',
     caseSensitive: false,
   );
 
@@ -59,10 +58,6 @@ class RebarTextParser {
     caseSensitive: false,
   );
 
-  /// 100'den küçük sayı doğrudan adet; büyükse dağıtım uzunluğu (mm) kabul edilir.
-  static const explicitQuantityThreshold = 100;
-
-  /// Adet + çap + boy birlikte geçen metinleri döndürür.
   List<RebarTextEntry> parseAll(Iterable<String> texts) {
     final entries = <RebarTextEntry>[];
     for (final raw in texts) {
@@ -79,8 +74,8 @@ class RebarTextParser {
     final normalized = _normalize(cleaned);
     if (!_looksLikeRebarLabel(normalized)) return null;
 
-    return _matchSpacingLength(_locationSpacingLength, normalized, cleaned) ??
-        _matchSpacingLength(_spacingLength, normalized, cleaned) ??
+    return _matchLocationLabel(_locationLabel, normalized, cleaned) ??
+        _matchLocationLabel(_spacingLabel, normalized, cleaned) ??
         _matchQuantity(_quantityX, normalized, cleaned) ??
         _matchQuantity(_quantityPrefix, normalized, cleaned) ??
         _matchQuantity(_quantityAdet, normalized, cleaned) ??
@@ -88,12 +83,12 @@ class RebarTextParser {
   }
 
   bool _looksLikeRebarLabel(String normalized) {
-    if (_spacingDistributionLabel.hasMatch(normalized)) {
+    if (_spacingLabelShape.hasMatch(normalized)) {
       return true;
     }
 
     final hasDiameter = RegExp(
-      r'(?:FI|F[Iİ]|Ø|O|D)\s*\d{2}|\d{2}\s*((?:FI|F[Iİ]|Ø|O|D))',
+      r'(?:FI|F[Iİ]|Ø|O|D)\s*\d{2}|\d{2}\s*(?:FI|F[Iİ]|Ø|O|D)',
       caseSensitive: false,
     ).hasMatch(normalized);
     final hasQuantity = RegExp(
@@ -108,7 +103,9 @@ class RebarTextParser {
     return hasDiameter && hasQuantity && hasLength;
   }
 
-  RebarTextEntry? _matchSpacingLength(
+  /// üst./alt. veya NØcap/aralık l=boy formatı.
+  /// İlk sayı = adet, /aralık sadece bilgi, l= → metre.
+  RebarTextEntry? _matchLocationLabel(
     RegExp pattern,
     String normalized,
     String displayText,
@@ -116,25 +113,20 @@ class RebarTextParser {
     final match = pattern.firstMatch(normalized);
     if (match == null) return null;
 
-    final firstNumber = int.tryParse(match.group(1)!);
+    final quantity = int.tryParse(match.group(1)!);
     final diameter = int.tryParse(match.group(2)!);
-    final spacingCm = int.tryParse(match.group(3)!);
-    final lengthMm = double.tryParse(match.group(4)!.replaceAll(',', '.'));
+    final lengthRaw = double.tryParse(match.group(4)!.replaceAll(',', '.'));
 
-    if (firstNumber == null ||
-        spacingCm == null ||
-        spacingCm <= 0 ||
-        lengthMm == null ||
-        lengthMm <= 0 ||
+    if (quantity == null ||
+        quantity <= 0 ||
+        lengthRaw == null ||
+        lengthRaw <= 0 ||
         !_isValidDiameter(diameter)) {
       return null;
     }
 
-    final quantity = _resolveDistributionQuantity(firstNumber, spacingCm);
-    if (quantity <= 0) return null;
-
-    // üst./alt. formatında l= değeri mm cinsindendir (l=1200 → 1,20 m).
-    final lengthM = lengthMm / 1000.0;
+    final lengthM = _parseLocationLength(lengthRaw);
+    if (lengthM <= 0) return null;
 
     return RebarTextEntry(
       sourceText: displayText,
@@ -144,12 +136,13 @@ class RebarTextParser {
     );
   }
 
+  /// 15000Ø16 l=200 gibi doğrudan adet + l= formatı.
   RebarTextEntry? _matchQuantity(
     RegExp pattern,
     String normalized,
     String displayText,
   ) {
-    if (_spacingDistributionLabel.hasMatch(normalized)) {
+    if (_spacingLabelShape.hasMatch(normalized)) {
       return null;
     }
 
@@ -158,7 +151,7 @@ class RebarTextParser {
 
     final quantity = int.tryParse(match.group(1)!);
     final diameter = int.tryParse(match.group(2)!);
-    final length = _parseLength(match.group(3)!);
+    final length = _parseSimpleLength(match.group(3)!);
 
     if (quantity == null ||
         quantity <= 0 ||
@@ -176,34 +169,25 @@ class RebarTextParser {
     );
   }
 
-  /// [distributionOrCountMm]: üst./alt. sonrası sayı.
-  /// <100 → doğrudan adet (alt.12), >=100 → dağıtım uzunluğu mm (üst.1670).
-  int _resolveDistributionQuantity(int distributionOrCountMm, int spacingCm) {
-    if (distributionOrCountMm < explicitQuantityThreshold) {
-      return distributionOrCountMm;
-    }
+  /// üst./alt. l= değeri: l=120 → 12 m, l=1200 → 12 m.
+  double _parseLocationLength(double value) {
+    if (value >= 1000) return value / 100;
+    if (value >= 100) return value / 10;
+    return value;
+  }
 
-    final spacingMm = spacingCm * 10.0;
-    return max(1, (distributionOrCountMm / spacingMm).ceil());
+  /// 15000Ø16 l=200 → l=200 cm = 2 m.
+  double? _parseSimpleLength(String raw) {
+    final value = double.tryParse(raw.replaceAll(',', '.'));
+    if (value == null || value <= 0) return null;
+    if (value >= 100) return value / 100;
+    if (value >= 20) return value / 100;
+    return value;
   }
 
   bool _isValidDiameter(int? diameter) {
     return diameter != null &&
         RebarWeightCalculator.standardDiameters.contains(diameter);
-  }
-
-  double? _parseLength(String raw) {
-    final value = double.tryParse(raw.replaceAll(',', '.'));
-    if (value == null || value <= 0) return null;
-    return _lengthToMeters(value);
-  }
-
-  /// Türkiye'de yaygın birimler: mm (3500), cm (350), m (3.50).
-  double _lengthToMeters(double value) {
-    if (value >= 1000) return value / 1000;
-    if (value >= 100) return value / 100;
-    if (value >= 20) return value / 100;
-    return value;
   }
 
   String _normalize(String value) {
