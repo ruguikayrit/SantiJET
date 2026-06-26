@@ -12,6 +12,14 @@ void main() {
       expect(entry?.quantity, 12);
     });
 
+    test('üst.334Ø22/15 l=1200 → 3 adet × 1,20 m', () {
+      final entry = parser.parseOne('üst.334Ø22/15 l=1200');
+      expect(entry?.diameter, 22);
+      expect(entry?.quantity, 3);
+      expect(entry?.lengthM, closeTo(1.2, 0.001));
+      expect(entry!.quantity * entry.lengthM, closeTo(3.6, 0.001));
+    });
+
     test('alt.1670Ø22/15 l=640', () {
       final entry = parser.parseOne('alt.1670Ø22/15 l=640');
       expect(entry?.diameter, 22);
