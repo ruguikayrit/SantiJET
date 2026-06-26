@@ -1,5 +1,6 @@
 import 'dart:math';
 
+import 'package:santijet_demir/data/services/cad_text_preprocessor.dart';
 import 'package:santijet_demir/data/services/rebar_weight_calculator.dart';
 
 /// CAD metin etiketinden okunan tek demir satırı (adet + çap + boy).
@@ -67,18 +68,18 @@ class RebarTextParser {
   }
 
   RebarTextEntry? parseOne(String raw) {
-    final text = raw.trim();
-    if (text.isEmpty) return null;
+    final cleaned = preprocessCadText(raw);
+    if (cleaned.isEmpty) return null;
 
-    final normalized = _normalize(text);
+    final normalized = _normalize(cleaned);
     if (!_looksLikeRebarLabel(normalized)) return null;
 
-    return _matchSpacingLength(_locationSpacingLength, normalized, text) ??
-        _matchSpacingLength(_spacingLength, normalized, text) ??
-        _matchQuantity(_quantityX, normalized, text) ??
-        _matchQuantity(_quantityPrefix, normalized, text) ??
-        _matchQuantity(_quantityAdet, normalized, text) ??
-        _matchQuantity(_quantityAdetReverse, normalized, text);
+    return _matchSpacingLength(_locationSpacingLength, normalized, cleaned) ??
+        _matchSpacingLength(_spacingLength, normalized, cleaned) ??
+        _matchQuantity(_quantityX, normalized, cleaned) ??
+        _matchQuantity(_quantityPrefix, normalized, cleaned) ??
+        _matchQuantity(_quantityAdet, normalized, cleaned) ??
+        _matchQuantity(_quantityAdetReverse, normalized, cleaned);
   }
 
   bool _looksLikeRebarLabel(String normalized) {
@@ -94,11 +95,11 @@ class RebarTextParser {
       caseSensitive: false,
     ).hasMatch(normalized);
     final hasQuantity = RegExp(
-      r'(?:^|\s)\d+\s*(?:[xX×]|ADET|ADT|AD\.?|\s*(?:FI|F[Iİ]|Ø|O|D))',
+      r'(?:^|[^\d])\d+\s*(?:[xX×]|ADET|ADT|AD\.?|(?:FI|F[Iİ]|Ø|O|D))',
       caseSensitive: false,
     ).hasMatch(normalized);
     final hasLength = RegExp(
-      r'L\s*=\s*[\d.,]+|[/\-xX×\sL=]+[\d.,]+',
+      r'L\s*=\s*[\d.,]+',
       caseSensitive: false,
     ).hasMatch(normalized);
 
@@ -108,7 +109,7 @@ class RebarTextParser {
   RebarTextEntry? _matchSpacingLength(
     RegExp pattern,
     String normalized,
-    String originalText,
+    String displayText,
   ) {
     final match = pattern.firstMatch(normalized);
     if (match == null) return null;
@@ -131,7 +132,7 @@ class RebarTextParser {
     if (quantity <= 0) return null;
 
     return RebarTextEntry(
-      sourceText: originalText,
+      sourceText: displayText,
       diameter: diameter!,
       lengthM: length,
       quantity: quantity,
@@ -141,7 +142,7 @@ class RebarTextParser {
   RebarTextEntry? _matchQuantity(
     RegExp pattern,
     String normalized,
-    String originalText,
+    String displayText,
   ) {
     final match = pattern.firstMatch(normalized);
     if (match == null) return null;
@@ -159,7 +160,7 @@ class RebarTextParser {
     }
 
     return RebarTextEntry(
-      sourceText: originalText,
+      sourceText: displayText,
       diameter: diameter!,
       lengthM: length,
       quantity: quantity,

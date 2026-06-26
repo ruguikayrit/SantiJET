@@ -115,9 +115,19 @@ class DxfRebarParser {
     }
 
     if (entities.isNotEmpty && grouped.isEmpty) {
+      final samples = entities
+          .take(5)
+          .map((entity) {
+            final text = entity.text.trim();
+            if (text.length <= 64) return text;
+            return '${text.substring(0, 64)}…';
+          })
+          .join('\n• ');
+
       warnings.add(
-        'Demir etiketi bulunamadı. Metinlerde adet, çap (FI/Ø) ve boy '
-        'birlikte olmalı. Örnek: üst.1670Ø22/15 l=1200, 5xØ16/450',
+        'Dosyada ${entities.length} TEXT/MTEXT okundu ancak demir etiketi '
+        'tanınmadı. AutoCAD %%c çap kodu ve üst./alt. formatı desteklenir.\n'
+        'Örnek okunan metinler:\n• $samples',
       );
     }
 
