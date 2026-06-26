@@ -1,12 +1,17 @@
-import 'package:santijet_demir/data/services/dwg_segment_extractor.dart';
+import 'package:santijet_demir/data/services/dwg_text_extractor.dart';
 import 'package:santijet_demir/data/services/dxf_ascii_parser.dart';
+import 'package:santijet_demir/data/services/rebar_text_parser.dart';
 import 'package:santijet_demir/data/services/rebar_weight_calculator.dart';
 import 'package:santijet_demir/domain/entities/rebar_metraj.dart';
 
 class DxfRebarParser {
-  const DxfRebarParser({this.settings = const RebarMetrajSettings()});
+  const DxfRebarParser({
+    this.settings = const RebarMetrajSettings(),
+    this.textParser = const RebarTextParser(),
+  });
 
   final RebarMetrajSettings settings;
+  final RebarTextParser textParser;
 
   static bool isDwgBytes(List<int> bytes) {
     if (bytes.length < 4) return false;
@@ -18,14 +23,11 @@ class DxfRebarParser {
     required String fileName,
     required List<int> bytes,
   }) async {
-    final segments = await DwgSegmentExtractor.extract(bytes);
-    return _buildResultFromSegments(
+    final texts = await DwgTextExtractor.extract(bytes);
+    return _buildResultFromTexts(
       fileName: fileName,
       sourceFormat: 'DWG',
-      segments: segments,
-      emptyWarning:
-          'DWG dosyasında demir çizgisi bulunamadı. Katman adlarını '
-          'kontrol edin.',
+      texts: texts,
     );
   }
 
@@ -57,83 +59,65 @@ class DxfRebarParser {
     required String content,
     String sourceFormat = 'DXF',
   }) {
-    final segments = DxfAsciiParser.parseAllSegments(content);
-    return _buildResultFromSegments(
+    final texts = DxfAsciiParser.parseAllTexts(content);
+    return _buildResultFromTexts(
       fileName: fileName,
       sourceFormat: sourceFormat,
-      segments: segments,
-      emptyWarning:
-          'DXF dosyasında LINE veya POLYLINE bulunamadı. Çizimde demir '
-          'elemanlarının çizgi/polyline olarak yer aldığından emin olun.',
+      texts: texts,
     );
   }
 
-  RebarMetrajResult _buildResultFromSegments({
+  RebarMetrajResult _buildResultFromTexts({
     required String fileName,
     required String sourceFormat,
-    required List<DxfSegment> segments,
-    required String emptyWarning,
+    required List<String> texts,
   }) {
-
     final warnings = <String>[];
-    final grouped = <String, _LayerAccumulator>{};
+    final grouped = <int, _DiameterAccumulator>{};
     var skipped = 0;
 
-    if (segments.isEmpty) {
-      warnings.add(emptyWarning);
-    }
-
-    for (final segment in segments) {
-      if (!_isRebarLayer(segment.layerName)) {
-        skipped++;
-        continue;
-      }
-
-      if (segment.length <= 0) {
-        skipped++;
-        continue;
-      }
-
-      final scaledLength = segment.length * settings.unitScale;
-      final diameter =
-          _resolveDiameter(segment.layerName) ?? settings.defaultDiameter;
-      final key = '${segment.layerName.toUpperCase()}|$diameter';
-      grouped.putIfAbsent(
-        key,
-        () => _LayerAccumulator(
-          layerName: segment.layerName,
-          diameter: diameter,
-        ),
-      );
-      grouped[key]!.addBar(scaledLength);
-    }
-
-    if (grouped.isEmpty) {
+    if (texts.isEmpty) {
       warnings.add(
-        'Demir katmanında çizgi/polyline bulunamadı. Katman adları '
-        'DONAT, ARMATUR, DEMIR gibi anahtar kelimeler içermeli.',
+        'CAD dosyasında TEXT/MTEXT bulunamadı. Demir etiketlerinin '
+        'metin olarak çizimde yer aldığından emin olun.',
       );
     }
 
-    final lines = grouped.values
+    final entries = textParser.parseAll(texts);
+    skipped = texts.length - entries.length;
+
+    if (texts.isNotEmpty && entries.isEmpty) {
+      warnings.add(
+        'Metin bulundu ancak çap ve boy birlikte okunamadı. '
+        'Örnek format: Ø12/350, 12Ø350, 5xØ16/450',
+      );
+    }
+
+    for (final entry in entries) {
+      final scaledLength = entry.lengthM * settings.unitScale;
+      grouped.putIfAbsent(entry.diameter, () => _DiameterAccumulator());
+      grouped[entry.diameter]!.addBars(
+        lengthM: scaledLength,
+        count: entry.quantity,
+        label: entry.sourceText,
+      );
+    }
+
+    final lines = grouped.entries
         .map(
           (entry) => RebarMetrajLine(
-            diameter: entry.diameter,
-            totalLengthM: entry.totalLengthM,
+            diameter: entry.key,
+            totalLengthM: entry.value.totalLengthM,
             weightKg: RebarWeightCalculator.weightKg(
-              diameterMm: entry.diameter,
-              lengthM: entry.totalLengthM,
+              diameterMm: entry.key,
+              lengthM: entry.value.totalLengthM,
             ),
-            barCount: entry.barCount,
-            layerName: entry.layerName,
+            barCount: entry.value.barCount,
+            layerName: entry.value.sampleLabel,
           ),
         )
         .toList()
-      ..sort((a, b) {
-        final byDiameter = a.diameter.compareTo(b.diameter);
-        if (byDiameter != 0) return byDiameter;
-        return a.layerName.compareTo(b.layerName);
-      });
+      ..sort((a, b) => a.diameter.compareTo(b.diameter));
 
     return RebarMetrajResult(
       fileName: fileName,
@@ -144,70 +128,22 @@ class DxfRebarParser {
       warnings: warnings,
     );
   }
-
-  bool _isRebarLayer(String layerName) {
-    final normalized = _normalize(layerName);
-    return settings.layerKeywords.any(normalized.contains);
-  }
-
-  int? _resolveDiameter(String layerName) {
-    final normalized = _normalize(layerName);
-
-    final fiMatch = RegExp(r'(?:FI|F[Iİ]|Ø|O|D)[\s_-]*(\d{2})').firstMatch(
-      normalized,
-    );
-    if (fiMatch != null) {
-      return int.tryParse(fiMatch.group(1)!);
-    }
-
-    final suffixMatch = RegExp(r'(?:^|[_\-\s])(\d{2})(?:MM|MM\.|$)').firstMatch(
-      normalized,
-    );
-    if (suffixMatch != null) {
-      final value = int.tryParse(suffixMatch.group(1)!);
-      if (value != null &&
-          RebarWeightCalculator.standardDiameters.contains(value)) {
-        return value;
-      }
-    }
-
-    final embedded = RegExp(r'(\d{2})').allMatches(normalized);
-    for (final match in embedded) {
-      final value = int.tryParse(match.group(1)!);
-      if (value != null &&
-          RebarWeightCalculator.standardDiameters.contains(value)) {
-        return value;
-      }
-    }
-
-    return null;
-  }
-
-  String _normalize(String value) {
-    return value
-        .toUpperCase()
-        .replaceAll('İ', 'I')
-        .replaceAll('Ş', 'S')
-        .replaceAll('Ğ', 'G')
-        .replaceAll('Ü', 'U')
-        .replaceAll('Ö', 'O')
-        .replaceAll('Ç', 'C');
-  }
 }
 
-class _LayerAccumulator {
-  _LayerAccumulator({
-    required this.layerName,
-    required this.diameter,
-  });
-
-  final String layerName;
-  final int diameter;
+class _DiameterAccumulator {
   double totalLengthM = 0;
   int barCount = 0;
+  String sampleLabel = '';
 
-  void addBar(double lengthM) {
-    totalLengthM += lengthM;
-    barCount++;
+  void addBars({
+    required double lengthM,
+    required int count,
+    required String label,
+  }) {
+    totalLengthM += lengthM * count;
+    barCount += count;
+    if (sampleLabel.isEmpty) {
+      sampleLabel = label.length > 48 ? '${label.substring(0, 48)}…' : label;
+    }
   }
 }

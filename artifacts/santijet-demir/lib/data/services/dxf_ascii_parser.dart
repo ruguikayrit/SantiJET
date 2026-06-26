@@ -149,6 +149,74 @@ class DxfAsciiParser {
     return segments;
   }
 
+  /// ENTITIES bölümündeki TEXT ve MTEXT içeriklerini döndürür.
+  static List<String> parseAllTexts(String content) {
+    final pairs = readPairs(content);
+    if (pairs.isEmpty) {
+      throw FormatException(invalidDxfMessage);
+    }
+
+    final texts = <String>[];
+    var inEntities = false;
+    var index = 0;
+
+    while (index < pairs.length) {
+      final code = pairs[index].$1;
+      final value = pairs[index].$2;
+
+      if (code == 0 && value == 'SECTION') {
+        if (index + 1 < pairs.length && pairs[index + 1].$1 == 2) {
+          inEntities = pairs[index + 1].$2.toUpperCase() == 'ENTITIES';
+        }
+        index++;
+        continue;
+      }
+
+      if (code == 0 && value == 'ENDSEC') {
+        inEntities = false;
+        index++;
+        continue;
+      }
+
+      if (!inEntities || code != 0) {
+        index++;
+        continue;
+      }
+
+      final entityType = value.toUpperCase();
+      if (entityType != 'TEXT' && entityType != 'MTEXT') {
+        index++;
+        continue;
+      }
+
+      final entityStart = index;
+      index++;
+
+      while (index < pairs.length) {
+        if (pairs[index].$1 == 0) break;
+        index++;
+      }
+
+      final text = _textFromEntity(pairs.sublist(entityStart, index));
+      if (text != null && text.trim().isNotEmpty) {
+        texts.add(text.trim());
+      }
+    }
+
+    return texts;
+  }
+
+  static String? _textFromEntity(List<(int, String)> pairs) {
+    final parts = <String>[];
+    for (final pair in pairs) {
+      if (pair.$1 == 1 || pair.$1 == 3) {
+        parts.add(pair.$2);
+      }
+    }
+    if (parts.isEmpty) return null;
+    return parts.join('');
+  }
+
   static List<(int, String)> readPairs(String content) {
     final normalized = content.replaceAll('\r\n', '\n').replaceAll('\r', '\n');
     final lines = normalized.split('\n');

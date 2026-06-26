@@ -86,7 +86,8 @@ class RebarMetrajPanel extends ConsumerWidget {
     } catch (e) {
       ref.read(rebarMetrajErrorProvider.notifier).state =
           'CAD dosyası işlenemedi. DWG için sayfayı yenileyin; DXF için '
-          'ASCII formatında kaydedilmiş olduğundan emin olun.';
+          'ASCII formatında kaydedilmiş olduğundan emin olun. Metin etiketlerinin '
+          'çap ve boy içerdiğini kontrol edin (ör. Ø12/350).';
     } finally {
       ref.read(rebarMetrajLoadingProvider.notifier).state = false;
     }
@@ -118,9 +119,9 @@ class _InfoBanner extends StatelessWidget {
           const SizedBox(height: 8),
           Text(
             '1. AutoCAD/BricsCAD projesini DWG veya ASCII DXF olarak yükleyin\n'
-            '2. DONAT / ARMATUR / DEMIR katmanlarındaki çizgiler taranır\n'
-            '3. Katman adından çap (Ø12, FI16 vb.) otomatik okunur\n'
-            '4. Uzunluk × ağırlık formülü ile tonaj hesaplanır',
+            '2. Çizimdeki TEXT/MTEXT etiketleri taranır (katman adı dikkate alınmaz)\n'
+            '3. Aynı metinde çap ve boy birlikte varsa metraja dahil edilir\n'
+            '4. Örnek: Ø12/350, 12Ø350, 5xØ16/450 → tonaj hesaplanır',
             style: AppTypography.bodySmall,
           ),
           const SizedBox(height: 8),
@@ -336,11 +337,18 @@ class _MetrajLineCard extends StatelessWidget {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text(line.layerName, style: AppTypography.titleMedium),
+                Text('Ø${line.diameter} demir', style: AppTypography.titleMedium),
                 Text(
                   '${line.barCount} çubuk · ${formatter.format(line.totalLengthM)} m',
                   style: AppTypography.bodySmall,
                 ),
+                if (line.layerName.isNotEmpty)
+                  Text(
+                    line.layerName,
+                    style: AppTypography.labelMedium,
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                  ),
               ],
             ),
           ),

@@ -3,19 +3,14 @@ from __future__ import annotations
 import tempfile
 from pathlib import Path
 
-from dxf_segments import parse_all_segments
+from dxf_segments import parse_all_texts
 
 
-def extract_segments_from_dxf(content: str) -> list[dict[str, object]]:
-    segments = parse_all_segments(content)
-    return [
-        {"layerName": segment.layer_name, "length": segment.length}
-        for segment in segments
-        if segment.length > 0
-    ]
+def extract_texts_from_dxf(content: str) -> list[str]:
+    return parse_all_texts(content)
 
 
-def extract_segments_from_dwg_bytes(data: bytes) -> list[dict[str, object]]:
+def extract_texts_from_dwg_bytes(data: bytes) -> list[str]:
     with tempfile.TemporaryDirectory() as tmp_dir:
         tmp = Path(tmp_dir)
         input_path = tmp / "upload.dwg"
@@ -43,4 +38,4 @@ def extract_segments_from_dwg_bytes(data: bytes) -> list[dict[str, object]]:
             raise ValueError(stderr or "DWG dosyası DXF'e dönüştürülemedi.")
 
         content = output_path.read_text(encoding="latin-1", errors="ignore")
-        return extract_segments_from_dxf(content)
+        return extract_texts_from_dxf(content)
