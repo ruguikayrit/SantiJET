@@ -1,5 +1,39 @@
 import 'package:equatable/equatable.dart';
 
+class RebarMetrajTextDetail extends Equatable {
+  const RebarMetrajTextDetail({
+    required this.entityType,
+    required this.sourceText,
+    required this.included,
+    this.diameter,
+    this.lengthM,
+    this.quantity = 0,
+    this.weightKg = 0,
+    this.skipReason,
+  });
+
+  final String entityType;
+  final String sourceText;
+  final bool included;
+  final int? diameter;
+  final double? lengthM;
+  final int quantity;
+  final double weightKg;
+  final String? skipReason;
+
+  @override
+  List<Object?> get props => [
+        entityType,
+        sourceText,
+        included,
+        diameter,
+        lengthM,
+        quantity,
+        weightKg,
+        skipReason,
+      ];
+}
+
 class RebarMetrajLine extends Equatable {
   const RebarMetrajLine({
     required this.diameter,
@@ -28,6 +62,7 @@ class RebarMetrajResult extends Equatable {
     required this.sourceFormat,
     required this.parsedAt,
     required this.lines,
+    required this.textDetails,
     required this.skippedEntityCount,
     required this.warnings,
   });
@@ -36,6 +71,7 @@ class RebarMetrajResult extends Equatable {
   final String sourceFormat;
   final DateTime parsedAt;
   final List<RebarMetrajLine> lines;
+  final List<RebarMetrajTextDetail> textDetails;
   final int skippedEntityCount;
   final List<String> warnings;
 
@@ -49,12 +85,16 @@ class RebarMetrajResult extends Equatable {
 
   int get totalBarCount => lines.fold(0, (sum, line) => sum + line.barCount);
 
+  int get includedTextCount =>
+      textDetails.where((detail) => detail.included).length;
+
   @override
   List<Object?> get props => [
         fileName,
         sourceFormat,
         parsedAt,
         lines,
+        textDetails,
         skippedEntityCount,
         warnings,
       ];

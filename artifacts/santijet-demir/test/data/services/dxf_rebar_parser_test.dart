@@ -85,6 +85,11 @@ void main() {
       expect(result.lines.last.diameter, 16);
       expect(result.lines.last.totalLengthM, closeTo(22.5, 0.001));
       expect(result.skippedEntityCount, 1);
+      expect(result.textDetails.length, 3);
+      expect(result.includedTextCount, 2);
+      expect(result.textDetails.first.included, isTrue);
+      expect(result.textDetails.first.sourceText, 'Ø12/350');
+      expect(result.textDetails.last.included, isFalse);
     });
 
     test('throws readable error for binary DXF bytes', () {

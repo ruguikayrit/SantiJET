@@ -32,7 +32,7 @@ function cleanMText(raw) {
         for (const entity of db.entities ?? []) {
           if (entity.type === 'TEXT') {
             const text = String(entity.text ?? '').trim();
-            if (text) texts.push(text);
+            if (text) texts.push({ entityType: 'TEXT', text });
             continue;
           }
 
@@ -41,7 +41,7 @@ function cleanMText(raw) {
             if (text) {
               for (const line of text.split('\n')) {
                 const trimmed = line.trim();
-                if (trimmed) texts.push(trimmed);
+                if (trimmed) texts.push({ entityType: 'MTEXT', text: trimmed });
               }
             }
           }
