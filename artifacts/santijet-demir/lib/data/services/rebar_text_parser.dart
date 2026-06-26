@@ -1,3 +1,5 @@
+import 'dart:math';
+
 import 'package:santijet_demir/data/services/rebar_weight_calculator.dart';
 
 /// CAD metin etiketinden okunan tek demir satırı (adet + çap + boy).
@@ -19,6 +21,18 @@ class RebarTextEntry {
 class RebarTextParser {
   const RebarTextParser();
 
+  /// üst.1670Ø22/15 l=1200  ·  alt.12Ø22/15 l=640
+  static final _locationSpacingLength = RegExp(
+    r'(?:UST|ALT)\.(\d+)(?:FI|F[Iİ]|Ø|O|D)(\d{2})/(\d+)\s*L\s*=\s*([\d.,]+)',
+    caseSensitive: false,
+  );
+
+  /// 1670Ø22/15 l=1200  (üst/alt öneki olmadan)
+  static final _spacingLength = RegExp(
+    r'(?:^|[^\d])(\d+)(?:FI|F[Iİ]|Ø|O|D)(\d{2})/(\d+)\s*L\s*=\s*([\d.,]+)',
+    caseSensitive: false,
+  );
+
   static final _quantityX = RegExp(
     r'(\d+)\s*[xX×]\s*(?:FI|F[Iİ]|Ø|O|D)?\s*(\d{2})\s*[/\-xX×]\s*([\d.,]+)',
     caseSensitive: false,
@@ -39,6 +53,9 @@ class RebarTextParser {
     caseSensitive: false,
   );
 
+  /// 100'den küçük sayı doğrudan adet; büyükse dağıtım uzunluğu (mm) kabul edilir.
+  static const explicitQuantityThreshold = 100;
+
   /// Adet + çap + boy birlikte geçen metinleri döndürür.
   List<RebarTextEntry> parseAll(Iterable<String> texts) {
     final entries = <RebarTextEntry>[];
@@ -56,13 +73,22 @@ class RebarTextParser {
     final normalized = _normalize(text);
     if (!_looksLikeRebarLabel(normalized)) return null;
 
-    return _matchQuantity(_quantityX, normalized, text) ??
+    return _matchSpacingLength(_locationSpacingLength, normalized, text) ??
+        _matchSpacingLength(_spacingLength, normalized, text) ??
+        _matchQuantity(_quantityX, normalized, text) ??
         _matchQuantity(_quantityPrefix, normalized, text) ??
         _matchQuantity(_quantityAdet, normalized, text) ??
         _matchQuantity(_quantityAdetReverse, normalized, text);
   }
 
   bool _looksLikeRebarLabel(String normalized) {
+    if (RegExp(
+      r'\d+(?:FI|F[Iİ]|Ø|O|D)\d{2}/\d+\s*L\s*=',
+      caseSensitive: false,
+    ).hasMatch(normalized)) {
+      return true;
+    }
+
     final hasDiameter = RegExp(
       r'(?:FI|F[Iİ]|Ø|O|D)\s*\d{2}|\d{2}\s*(?:FI|F[Iİ]|Ø|O|D)',
       caseSensitive: false,
@@ -72,11 +98,44 @@ class RebarTextParser {
       caseSensitive: false,
     ).hasMatch(normalized);
     final hasLength = RegExp(
-      r'[/\-xX×\sL=]+[\d.,]+|[\d.,]+\s*(?:MM|CM|M)?(?:\s|$)',
+      r'L\s*=\s*[\d.,]+|[/\-xX×\sL=]+[\d.,]+',
       caseSensitive: false,
     ).hasMatch(normalized);
 
     return hasDiameter && hasQuantity && hasLength;
+  }
+
+  RebarTextEntry? _matchSpacingLength(
+    RegExp pattern,
+    String normalized,
+    String originalText,
+  ) {
+    final match = pattern.firstMatch(normalized);
+    if (match == null) return null;
+
+    final firstNumber = int.tryParse(match.group(1)!);
+    final diameter = int.tryParse(match.group(2)!);
+    final spacingCm = int.tryParse(match.group(3)!);
+    final length = _parseLength(match.group(4)!);
+
+    if (firstNumber == null ||
+        spacingCm == null ||
+        spacingCm <= 0 ||
+        !_isValidDiameter(diameter) ||
+        length == null ||
+        length <= 0) {
+      return null;
+    }
+
+    final quantity = _resolveQuantity(firstNumber, spacingCm);
+    if (quantity <= 0) return null;
+
+    return RebarTextEntry(
+      sourceText: originalText,
+      diameter: diameter!,
+      lengthM: length,
+      quantity: quantity,
+    );
   }
 
   RebarTextEntry? _matchQuantity(
@@ -105,6 +164,14 @@ class RebarTextParser {
       lengthM: length,
       quantity: quantity,
     );
+  }
+
+  /// Küçük sayı → adet; büyük sayı → dağıtım uzunluğu (mm), aralıktan adet hesabı.
+  int _resolveQuantity(int firstNumber, int spacingCm) {
+    if (firstNumber < explicitQuantityThreshold) return firstNumber;
+
+    final spacingMm = spacingCm * 10.0;
+    return max(1, (firstNumber / spacingMm).round() + 1);
   }
 
   bool _isValidDiameter(int? diameter) {
