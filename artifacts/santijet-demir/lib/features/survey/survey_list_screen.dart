@@ -56,6 +56,16 @@ class _SurveyListScreenState extends ConsumerState<SurveyListScreen>
 
   @override
   Widget build(BuildContext context) {
+    ref.listen(surveyTabIndexProvider, (previous, next) {
+      if (_tabController.index != next) {
+        WidgetsBinding.instance.addPostFrameCallback((_) {
+          if (mounted && _tabController.index != next) {
+            _tabController.animateTo(next.clamp(0, 1));
+          }
+        });
+      }
+    });
+
     final project = ref.watch(surveyProjectProvider);
     final expandedId = ref.watch(expandedImalatProvider);
 

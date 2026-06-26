@@ -9,6 +9,7 @@ import 'package:santijet_demir/core/theme/app_typography.dart';
 import 'package:santijet_demir/data/services/dxf_rebar_parser.dart';
 import 'package:santijet_demir/domain/entities/rebar_metraj.dart';
 import 'package:santijet_demir/features/rebar_metraj/providers/rebar_metraj_provider.dart';
+import 'package:santijet_demir/features/rebar_metraj/widgets/metraj_survey_actions.dart';
 
 class RebarMetrajPanel extends ConsumerWidget {
   const RebarMetrajPanel({super.key});
@@ -28,6 +29,8 @@ class RebarMetrajPanel extends ConsumerWidget {
           loading: loading,
           onPickFile: () => _pickAndParse(context, ref),
         ),
+        const SavedMetrajHistorySection(),
+        const SizedBox(height: 8),
         if (error != null) ...[
           const SizedBox(height: 12),
           _ErrorBanner(message: error),
@@ -35,6 +38,8 @@ class RebarMetrajPanel extends ConsumerWidget {
         if (result != null) ...[
           const SizedBox(height: 20),
           _ResultSummary(result: result),
+          const SizedBox(height: 12),
+          MetrajResultActions(result: result),
           const SizedBox(height: 16),
           Text('Çap Bazlı Metraj', style: AppTypography.headlineMedium),
           const SizedBox(height: 12),
@@ -125,7 +130,8 @@ class _InfoBanner extends StatelessWidget {
             '1. AutoCAD/BricsCAD projesini DWG veya ASCII DXF olarak yükleyin\n'
             '2. üst.334Ø22/15 l=120 → 334 ad × 12 m (aralık hesaba katılmaz)\n'
             '3. 15000Ø16 l=200 → 15000 ad × 2 m\n'
-            '4. Tonaj = adet × boy × birim ağırlık (kg/m)',
+            '4. Tonaj = adet × boy × birim ağırlık (kg/m)\n'
+            '5. Sonucu kaydedin veya isteğe bağlı Keşife gönderin',
             style: AppTypography.bodySmall,
           ),
           const SizedBox(height: 8),

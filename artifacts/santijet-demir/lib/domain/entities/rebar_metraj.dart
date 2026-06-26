@@ -32,6 +32,30 @@ class RebarMetrajTextDetail extends Equatable {
         weightKg,
         skipReason,
       ];
+
+  Map<String, dynamic> toJson() => {
+        'entityType': entityType,
+        'sourceText': sourceText,
+        'included': included,
+        'diameter': diameter,
+        'lengthM': lengthM,
+        'quantity': quantity,
+        'weightKg': weightKg,
+        'skipReason': skipReason,
+      };
+
+  factory RebarMetrajTextDetail.fromJson(Map<dynamic, dynamic> json) {
+    return RebarMetrajTextDetail(
+      entityType: json['entityType'] as String,
+      sourceText: json['sourceText'] as String,
+      included: json['included'] as bool? ?? false,
+      diameter: (json['diameter'] as num?)?.toInt(),
+      lengthM: (json['lengthM'] as num?)?.toDouble(),
+      quantity: (json['quantity'] as num?)?.toInt() ?? 0,
+      weightKg: (json['weightKg'] as num?)?.toDouble() ?? 0,
+      skipReason: json['skipReason'] as String?,
+    );
+  }
 }
 
 class RebarMetrajLine extends Equatable {
@@ -54,6 +78,24 @@ class RebarMetrajLine extends Equatable {
   @override
   List<Object?> get props =>
       [diameter, totalLengthM, weightKg, barCount, layerName];
+
+  Map<String, dynamic> toJson() => {
+        'diameter': diameter,
+        'totalLengthM': totalLengthM,
+        'weightKg': weightKg,
+        'barCount': barCount,
+        'layerName': layerName,
+      };
+
+  factory RebarMetrajLine.fromJson(Map<dynamic, dynamic> json) {
+    return RebarMetrajLine(
+      diameter: (json['diameter'] as num).toInt(),
+      totalLengthM: (json['totalLengthM'] as num).toDouble(),
+      weightKg: (json['weightKg'] as num).toDouble(),
+      barCount: (json['barCount'] as num).toInt(),
+      layerName: json['layerName'] as String? ?? '',
+    );
+  }
 }
 
 class RebarMetrajResult extends Equatable {
@@ -98,6 +140,88 @@ class RebarMetrajResult extends Equatable {
         skippedEntityCount,
         warnings,
       ];
+
+  Map<String, dynamic> toJson() => {
+        'fileName': fileName,
+        'sourceFormat': sourceFormat,
+        'parsedAt': parsedAt.toIso8601String(),
+        'lines': lines.map((line) => line.toJson()).toList(),
+        'textDetails': textDetails.map((detail) => detail.toJson()).toList(),
+        'skippedEntityCount': skippedEntityCount,
+        'warnings': warnings,
+      };
+
+  factory RebarMetrajResult.fromJson(Map<dynamic, dynamic> json) {
+    return RebarMetrajResult(
+      fileName: json['fileName'] as String,
+      sourceFormat: json['sourceFormat'] as String,
+      parsedAt: DateTime.parse(json['parsedAt'] as String),
+      lines: (json['lines'] as List<dynamic>? ?? const [])
+          .map((line) => RebarMetrajLine.fromJson(line as Map<dynamic, dynamic>))
+          .toList(),
+      textDetails: (json['textDetails'] as List<dynamic>? ?? const [])
+          .map(
+            (detail) =>
+                RebarMetrajTextDetail.fromJson(detail as Map<dynamic, dynamic>),
+          )
+          .toList(),
+      skippedEntityCount: (json['skippedEntityCount'] as num?)?.toInt() ?? 0,
+      warnings: (json['warnings'] as List<dynamic>? ?? const [])
+          .map((warning) => warning.toString())
+          .toList(),
+    );
+  }
+}
+
+/// Proje bazında kaydedilmiş demir metraj sonucu.
+class SavedRebarMetraj {
+  const SavedRebarMetraj({
+    required this.id,
+    required this.savedAt,
+    required this.result,
+    this.surveyImalatId,
+    this.surveyImalatName,
+  });
+
+  final String id;
+  final DateTime savedAt;
+  final RebarMetrajResult result;
+  final String? surveyImalatId;
+  final String? surveyImalatName;
+
+  Map<String, dynamic> toJson() => {
+        'id': id,
+        'savedAt': savedAt.toIso8601String(),
+        'result': result.toJson(),
+        'surveyImalatId': surveyImalatId,
+        'surveyImalatName': surveyImalatName,
+      };
+
+  factory SavedRebarMetraj.fromJson(Map<dynamic, dynamic> json) {
+    return SavedRebarMetraj(
+      id: json['id'] as String,
+      savedAt: DateTime.parse(json['savedAt'] as String),
+      result: RebarMetrajResult.fromJson(json['result'] as Map<dynamic, dynamic>),
+      surveyImalatId: json['surveyImalatId'] as String?,
+      surveyImalatName: json['surveyImalatName'] as String?,
+    );
+  }
+
+  SavedRebarMetraj copyWith({
+    String? id,
+    DateTime? savedAt,
+    RebarMetrajResult? result,
+    String? surveyImalatId,
+    String? surveyImalatName,
+  }) {
+    return SavedRebarMetraj(
+      id: id ?? this.id,
+      savedAt: savedAt ?? this.savedAt,
+      result: result ?? this.result,
+      surveyImalatId: surveyImalatId ?? this.surveyImalatId,
+      surveyImalatName: surveyImalatName ?? this.surveyImalatName,
+    );
+  }
 }
 
 class RebarLayerRule extends Equatable {
