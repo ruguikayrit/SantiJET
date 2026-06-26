@@ -80,9 +80,12 @@ class RebarSurveyMapper {
     double? progressPercent,
   }) {
     final planned = diameterLines.fold(0.0, (sum, line) => sum + line.planned);
-    final pending = (ordered - delivered).clamp(0, double.infinity);
+    final pending =
+        (ordered - delivered).clamp(0.0, double.infinity).toDouble();
     final progress = progressPercent ??
-        (planned > 0 ? (delivered / planned * 100).clamp(0, 100) : 0);
+        (planned > 0
+            ? (delivered / planned * 100).clamp(0.0, 100.0).toDouble()
+            : 0.0);
 
     return SurveyImalat(
       id: id,
