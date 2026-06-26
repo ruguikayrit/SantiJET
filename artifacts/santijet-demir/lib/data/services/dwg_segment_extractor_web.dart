@@ -5,10 +5,14 @@ import 'package:santijet_demir/data/services/dxf_ascii_parser.dart';
 import 'package:web/web.dart' as web;
 
 Future<List<DxfSegment>> extractDwgSegmentsWeb(List<int> bytes) async {
-  final fn = js_util.getProperty(web.window, 'santijetExtractDwgSegments');
+  final fn = await _waitForDwgBridge();
   if (fn == null) {
-    throw const FormatException(
-      'DWG modülü yüklenemedi. Sayfayı yenileyin (Ctrl+Shift+R).',
+    final status = js_util.getProperty(web.window, '__SANTIJET_DWG_MODULE__');
+    final statusText = status?.toString() ?? 'unknown';
+    throw FormatException(
+      statusText == 'error'
+          ? 'DWG modülü başlatılamadı. Sayfayı yenileyin (Ctrl+Shift+R).'
+          : 'DWG modülü henüz yüklenmedi. Birkaç saniye bekleyip tekrar deneyin.',
     );
   }
 
@@ -34,4 +38,20 @@ Future<List<DxfSegment>> extractDwgSegmentsWeb(List<int> bytes) async {
       )
       .where((segment) => segment.length > 0)
       .toList(growable: false);
+}
+
+Future<Object?> _waitForDwgBridge({
+  Duration timeout = const Duration(seconds: 15),
+}) async {
+  final deadline = DateTime.now().add(timeout);
+  while (DateTime.now().isBefore(deadline)) {
+    final fn = js_util.getProperty(web.window, 'santijetExtractDwgSegments');
+    if (fn != null) return fn;
+
+    final status = js_util.getProperty(web.window, '__SANTIJET_DWG_MODULE__');
+    if (status?.toString() == 'error') return null;
+
+    await Future<void>.delayed(const Duration(milliseconds: 100));
+  }
+  return null;
 }
