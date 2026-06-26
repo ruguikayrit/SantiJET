@@ -55,7 +55,15 @@ final activeProjectMembershipProvider = Provider<ProjectMember?>((ref) {
 
 final canEditActiveProjectProvider = Provider<bool>((ref) {
   final membership = ref.watch(activeProjectMembershipProvider);
-  return membership?.canEdit ?? false;
+  if (membership?.canEdit == true) return true;
+
+  final project = ref.watch(activeProjectProvider);
+  final userId = ref.watch(authProvider.select((auth) => auth.user?.id));
+  if (project != null && userId != null && project.ownerId == userId) {
+    return true;
+  }
+
+  return false;
 });
 
 final projectMembersProvider =
