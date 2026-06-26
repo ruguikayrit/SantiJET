@@ -117,7 +117,7 @@ class DxfRebarParser {
     if (entities.isNotEmpty && grouped.isEmpty) {
       warnings.add(
         'Demir etiketi bulunamadı. Metinlerde adet, çap (FI/Ø) ve boy '
-        'birlikte olmalı. Örnek: 5xØ16/450, 5Ø12/350, 5 ADET FI12/350',
+        'birlikte olmalı. Örnek: üst.1670Ø22/15 l=1200, 5xØ16/450',
       );
     }
 

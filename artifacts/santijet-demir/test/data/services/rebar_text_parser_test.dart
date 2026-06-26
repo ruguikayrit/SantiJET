@@ -4,6 +4,28 @@ import 'package:santijet_demir/data/services/rebar_text_parser.dart';
 void main() {
   const parser = RebarTextParser();
 
+  group('RebarTextParser — üst/alt dağıtım formatı', () {
+    test('üst.1670Ø22/15 l=1200', () {
+      final entry = parser.parseOne('üst.1670Ø22/15 l=1200');
+      expect(entry?.diameter, 22);
+      expect(entry?.lengthM, closeTo(1.2, 0.001));
+      expect(entry?.quantity, 12);
+    });
+
+    test('alt.1670Ø22/15 l=640', () {
+      final entry = parser.parseOne('alt.1670Ø22/15 l=640');
+      expect(entry?.diameter, 22);
+      expect(entry?.lengthM, closeTo(0.64, 0.001));
+      expect(entry?.quantity, 12);
+    });
+
+    test('12Ø22/15 l=1200 — küçük sayı doğrudan adet', () {
+      final entry = parser.parseOne('12Ø22/15 l=1200');
+      expect(entry?.quantity, 12);
+      expect(entry?.diameter, 22);
+    });
+  });
+
   group('RebarTextParser — adet + çap + boy zorunlu', () {
     test('5xØ16/450', () {
       final entry = parser.parseOne('5xØ16/450');

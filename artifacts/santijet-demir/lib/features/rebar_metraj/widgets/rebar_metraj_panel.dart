@@ -91,7 +91,7 @@ class RebarMetrajPanel extends ConsumerWidget {
       ref.read(rebarMetrajErrorProvider.notifier).state =
           'CAD dosyası işlenemedi. DWG için sayfayı yenileyin; DXF için '
           'ASCII formatında kaydedilmiş olduğundan emin olun. Etiketlerde adet, '
-          'çap (FI/Ø) ve boy birlikte olmalı (ör. 5xØ16/450).';
+          'çap (FI/Ø) ve boy birlikte olmalı (ör. üst.1670Ø22/15 l=1200).';
     } finally {
       ref.read(rebarMetrajLoadingProvider.notifier).state = false;
     }
@@ -125,7 +125,7 @@ class _InfoBanner extends StatelessWidget {
             '1. AutoCAD/BricsCAD projesini DWG veya ASCII DXF olarak yükleyin\n'
             '2. Sadece adet + çap (FI/Ø) + boy içeren TEXT/MTEXT etiketleri okunur\n'
             '3. Diğer metinler (not, başlık vb.) dikkate alınmaz\n'
-            '4. Örnek: 5xØ16/450, 5Ø12/350, 5 ADET FI12/350',
+            '4. Örnek: üst.1670Ø22/15 l=1200, 5xØ16/450, 5 ADET FI12/350',
             style: AppTypography.bodySmall,
           ),
           const SizedBox(height: 8),
