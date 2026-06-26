@@ -104,8 +104,8 @@ class _SurveyListScreenState extends ConsumerState<SurveyListScreen>
           indicatorColor: AppColors.electricBlueLight,
           tabs: const [
             Tab(text: 'İmalat Listesi'),
-            Tab(text: 'Demir Metraj'),
-            Tab(text: 'Metraj'),
+            Tab(text: 'Otomatik Metraj'),
+            Tab(text: 'Ön İmalat'),
           ],
         ),
       ),

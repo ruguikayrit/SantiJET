@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
+import 'package:santijet_demir/core/routing/app_routes.dart';
 import 'package:santijet_demir/core/theme/app_colors.dart';
 import 'package:santijet_demir/core/theme/app_radii.dart';
 import 'package:santijet_demir/core/theme/app_spacing.dart';
@@ -7,9 +9,10 @@ import 'package:santijet_demir/core/theme/app_typography.dart';
 import 'package:santijet_demir/domain/entities/rebar_metraj.dart';
 import 'package:santijet_demir/features/projects/providers/project_provider.dart';
 import 'package:santijet_demir/features/rebar_metraj/providers/rebar_metraj_storage_provider.dart';
+import 'package:santijet_demir/features/rebar_metraj/widgets/metraj_survey_actions.dart';
 import 'package:santijet_demir/features/survey/providers/survey_provider.dart';
 
-/// Kaydedilmiş CAD metraj sonuçları — yalnızca analiz tonaj verileri.
+/// Ön imalat listesi — CAD analiz kayıtları burada tutulur, imalata gönderilir.
 class SavedMetrajListTab extends ConsumerWidget {
   const SavedMetrajListTab({super.key});
 
@@ -17,9 +20,13 @@ class SavedMetrajListTab extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final records = ref.watch(savedRebarMetrajProvider);
     final projectId = ref.watch(activeProjectIdProvider);
+    final canEdit = ref.watch(canEditActiveProjectProvider);
     final expandedId = ref.watch(expandedMetrajRecordProvider);
+    final selectedIds = ref.watch(selectedMetrajRecordIdsProvider);
     final totalTonnage =
         records.fold<double>(0, (sum, r) => sum + r.result.totalTonnage);
+    final selectedRecords =
+        records.where((record) => selectedIds.contains(record.id)).toList();
 
     return Material(
       color: AppColors.canvas,
@@ -29,40 +36,104 @@ class SavedMetrajListTab extends ConsumerWidget {
           _MetrajSummaryRow(
             recordCount: records.length,
             totalTonnage: totalTonnage,
+            selectedCount: selectedIds.length,
           ),
           const SizedBox(height: 16),
-          Text('Metraj Listesi', style: AppTypography.headlineMedium),
+          Text('Ön İmalat Listesi', style: AppTypography.headlineMedium),
           const SizedBox(height: 12),
           if (projectId == null)
             const _InfoCard(
               icon: Icons.folder_off_outlined,
               title: 'Proje seçilmedi',
-              subtitle: 'Metraj kayıtları proje bazında saklanır.',
+              subtitle: 'Ön imalat kayıtları proje bazında saklanır.',
             )
           else if (records.isEmpty)
             _InfoCard(
               icon: Icons.save_outlined,
-              title: 'Henüz metraj kaydı yok',
+              title: 'Henüz ön imalat kaydı yok',
               subtitle:
-                  'Demir Metraj sekmesinde CAD yükleyip "Sonucu Kaydet" ile buraya ekleyin.',
-              actionLabel: 'Demir Metraj\'a git',
+                  'Otomatik Metraj sekmesinde CAD yükleyip "Metraj Kaydet" ile buraya ekleyin.',
+              actionLabel: 'Otomatik Metraj\'a git',
               onAction: () =>
                   ref.read(surveyTabIndexProvider.notifier).state = 1,
             )
-          else
+          else ...[
+            if (canEdit)
+              Wrap(
+                spacing: 8,
+                runSpacing: 8,
+                children: [
+                  ActionChip(
+                    avatar: const Icon(Icons.select_all,
+                        size: 16, color: AppColors.electricBlueLight),
+                    label: Text(
+                      selectedIds.length == records.length
+                          ? 'Seçimi kaldır'
+                          : 'Tümünü seç',
+                      style: AppTypography.labelMedium,
+                    ),
+                    backgroundColor: AppColors.surfaceElevated,
+                    side: const BorderSide(color: AppColors.border),
+                    onPressed: () {
+                      ref.read(selectedMetrajRecordIdsProvider.notifier).state =
+                          selectedIds.length == records.length
+                              ? {}
+                              : records.map((r) => r.id).toSet();
+                    },
+                  ),
+                  if (selectedIds.isNotEmpty)
+                    ActionChip(
+                      avatar: const Icon(Icons.send,
+                          size: 16, color: AppColors.electricBlueLight),
+                      label: Text(
+                        'Seçilenleri İmalata Gönder (${selectedIds.length})',
+                        style: AppTypography.labelMedium,
+                      ),
+                      backgroundColor: AppColors.surfaceElevated,
+                      side: const BorderSide(color: AppColors.border),
+                      onPressed: () => sendSelectedMetrajRecordsToSurvey(
+                        context,
+                        ref,
+                        selectedRecords,
+                      ),
+                    ),
+                ],
+              ),
+            if (canEdit) const SizedBox(height: 12),
             ...records.map(
               (record) => Padding(
                 padding: const EdgeInsets.only(bottom: 10),
                 child: MetrajRecordCard(
                   record: record,
                   expanded: expandedId == record.id,
+                  selected: selectedIds.contains(record.id),
+                  canEdit: canEdit,
                   onToggle: () {
                     ref.read(expandedMetrajRecordProvider.notifier).state =
                         expandedId == record.id ? null : record.id;
                   },
+                  onSelectChanged: canEdit
+                      ? (selected) {
+                          final next = Set<String>.from(selectedIds);
+                          if (selected) {
+                            next.add(record.id);
+                          } else {
+                            next.remove(record.id);
+                          }
+                          ref
+                              .read(selectedMetrajRecordIdsProvider.notifier)
+                              .state = next;
+                        }
+                      : null,
+                  onOpenDetail: () =>
+                      context.push(AppRoutes.savedMetrajDetail(record.id)),
+                  onSendToImalat: canEdit
+                      ? () => sendMetrajRecordToSurvey(context, ref, record)
+                      : null,
                 ),
               ),
             ),
+          ],
           if (records.isNotEmpty) ...[
             const SizedBox(height: 6),
             Wrap(
@@ -70,22 +141,16 @@ class SavedMetrajListTab extends ConsumerWidget {
               runSpacing: 8,
               children: [
                 ActionChip(
-                  avatar: const Icon(
-                    Icons.list_alt,
-                    size: 16,
-                    color: AppColors.electricBlueLight,
-                  ),
+                  avatar: const Icon(Icons.list_alt,
+                      size: 16, color: AppColors.electricBlueLight),
                   label: Text('${records.length} kayıt',
                       style: AppTypography.labelMedium),
                   backgroundColor: AppColors.surfaceElevated,
                   side: const BorderSide(color: AppColors.border),
                 ),
                 ActionChip(
-                  avatar: const Icon(
-                    Icons.add,
-                    size: 16,
-                    color: AppColors.electricBlueLight,
-                  ),
+                  avatar: const Icon(Icons.add,
+                      size: 16, color: AppColors.electricBlueLight),
                   label: Text('Yeni Metraj', style: AppTypography.labelMedium),
                   backgroundColor: AppColors.surfaceElevated,
                   side: const BorderSide(color: AppColors.border),
@@ -105,10 +170,12 @@ class _MetrajSummaryRow extends StatelessWidget {
   const _MetrajSummaryRow({
     required this.recordCount,
     required this.totalTonnage,
+    required this.selectedCount,
   });
 
   final int recordCount;
   final double totalTonnage;
+  final int selectedCount;
 
   @override
   Widget build(BuildContext context) {
@@ -121,14 +188,14 @@ class _MetrajSummaryRow extends StatelessWidget {
       ),
       child: Row(
         children: [
-          _MetaItem(label: 'Kayıt', value: '$recordCount metraj'),
+          _MetaItem(label: 'Kayıt', value: '$recordCount ön imalat'),
           _MetaItem(
             label: 'Toplam',
             value: recordCount > 0 ? _formatTonnage(totalTonnage) : '-',
           ),
           _MetaItem(
-            label: 'Veri',
-            value: 'Analiz sonucu',
+            label: 'Seçili',
+            value: selectedCount > 0 ? '$selectedCount kayıt' : '-',
           ),
         ],
       ),
@@ -209,12 +276,22 @@ class MetrajRecordCard extends StatelessWidget {
     super.key,
     required this.record,
     required this.expanded,
+    required this.selected,
+    required this.canEdit,
     required this.onToggle,
+    this.onSelectChanged,
+    this.onOpenDetail,
+    this.onSendToImalat,
   });
 
   final SavedRebarMetraj record;
   final bool expanded;
+  final bool selected;
+  final bool canEdit;
   final VoidCallback onToggle;
+  final ValueChanged<bool>? onSelectChanged;
+  final VoidCallback? onOpenDetail;
+  final VoidCallback? onSendToImalat;
 
   @override
   Widget build(BuildContext context) {
@@ -225,7 +302,9 @@ class MetrajRecordCard extends StatelessWidget {
       decoration: BoxDecoration(
         color: AppColors.surfaceElevated,
         borderRadius: AppRadii.md,
-        border: Border.all(color: AppColors.border),
+        border: Border.all(
+          color: selected ? AppColors.electricBlueLight : AppColors.border,
+        ),
       ),
       child: Column(
         children: [
@@ -236,46 +315,72 @@ class MetrajRecordCard extends StatelessWidget {
               borderRadius: AppRadii.md,
               child: Padding(
                 padding: const EdgeInsets.all(14),
-                child: Column(
+                child: Row(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Row(
-                      children: [
-                        Expanded(
-                          child: Text(
-                            record.displayTitle,
-                            style: AppTypography.titleLarge,
-                            maxLines: 1,
-                            overflow: TextOverflow.ellipsis,
+                    if (onSelectChanged != null) ...[
+                      Checkbox(
+                        value: selected,
+                        onChanged: (value) => onSelectChanged!(value ?? false),
+                      ),
+                      const SizedBox(width: 4),
+                    ],
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Row(
+                            children: [
+                              Expanded(
+                                child: Text(
+                                  record.displayTitle,
+                                  style: AppTypography.titleLarge,
+                                  maxLines: 1,
+                                  overflow: TextOverflow.ellipsis,
+                                ),
+                              ),
+                              Icon(
+                                expanded
+                                    ? Icons.expand_less
+                                    : Icons.expand_more,
+                                color: AppColors.textMuted,
+                              ),
+                            ],
                           ),
-                        ),
-                        Icon(
-                          expanded ? Icons.expand_less : Icons.expand_more,
-                          color: AppColors.textMuted,
-                        ),
-                      ],
-                    ),
-                    const SizedBox(height: 6),
-                    Text(_formatDate(record.savedAt),
-                        style: AppTypography.labelMedium),
-                    const SizedBox(height: 8),
-                    Row(
-                      children: [
-                        Text(
-                          _formatTonnage(result.totalTonnage),
-                          style: AppTypography.kpiValue.copyWith(fontSize: 22),
-                        ),
-                        const SizedBox(width: 12),
-                        Text(
-                          '${result.totalBarCount} çubuk',
-                          style: AppTypography.bodySmall,
-                        ),
-                        const SizedBox(width: 12),
-                        Text(
-                          result.sourceFormat.toUpperCase(),
-                          style: AppTypography.labelMedium,
-                        ),
-                      ],
+                          const SizedBox(height: 6),
+                          Text(_formatDate(record.savedAt),
+                              style: AppTypography.labelMedium),
+                          const SizedBox(height: 8),
+                          Row(
+                            children: [
+                              Text(
+                                _formatTonnage(result.totalTonnage),
+                                style: AppTypography.kpiValue
+                                    .copyWith(fontSize: 22),
+                              ),
+                              const SizedBox(width: 12),
+                              Text(
+                                '${result.totalBarCount} çubuk',
+                                style: AppTypography.bodySmall,
+                              ),
+                              const SizedBox(width: 12),
+                              Text(
+                                result.sourceFormat.toUpperCase(),
+                                style: AppTypography.labelMedium,
+                              ),
+                            ],
+                          ),
+                          if (record.surveyImalatName != null) ...[
+                            const SizedBox(height: 8),
+                            Text(
+                              'İmalata aktarıldı: ${record.surveyImalatName}',
+                              style: AppTypography.labelMedium.copyWith(
+                                color: AppColors.success,
+                              ),
+                            ),
+                          ],
+                        ],
+                      ),
                     ),
                   ],
                 ),
@@ -334,6 +439,26 @@ class MetrajRecordCard extends StatelessWidget {
                         ),
                       );
                     }),
+                  const SizedBox(height: 12),
+                  if (onOpenDetail != null)
+                    SizedBox(
+                      width: double.infinity,
+                      child: OutlinedButton(
+                        onPressed: onOpenDetail,
+                        child: const Text('Detayı İncele →'),
+                      ),
+                    ),
+                  if (onSendToImalat != null) ...[
+                    const SizedBox(height: 8),
+                    SizedBox(
+                      width: double.infinity,
+                      child: FilledButton.icon(
+                        onPressed: onSendToImalat,
+                        icon: const Icon(Icons.send),
+                        label: const Text('İmalata Gönder'),
+                      ),
+                    ),
+                  ],
                 ],
               ),
             ),

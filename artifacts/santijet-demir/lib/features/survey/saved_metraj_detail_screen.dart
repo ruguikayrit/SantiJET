@@ -7,7 +7,9 @@ import 'package:santijet_demir/core/theme/app_spacing.dart';
 import 'package:santijet_demir/core/theme/app_typography.dart';
 import 'package:santijet_demir/core/widgets/app_components.dart';
 import 'package:santijet_demir/domain/entities/rebar_metraj.dart';
+import 'package:santijet_demir/features/projects/providers/project_provider.dart';
 import 'package:santijet_demir/features/rebar_metraj/providers/rebar_metraj_storage_provider.dart';
+import 'package:santijet_demir/features/rebar_metraj/widgets/metraj_survey_actions.dart';
 import 'package:santijet_demir/features/survey/providers/survey_provider.dart';
 
 class SavedMetrajDetailScreen extends ConsumerWidget {
@@ -30,7 +32,7 @@ class SavedMetrajDetailScreen extends ConsumerWidget {
     if (record == null) {
       return Scaffold(
         backgroundColor: AppColors.canvas,
-        appBar: AppBar(title: const Text('Metraj')),
+        appBar: AppBar(title: const Text('Ön İmalat')),
         body: const Center(child: Text('Kayıt bulunamadı')),
       );
     }
@@ -39,13 +41,15 @@ class SavedMetrajDetailScreen extends ConsumerWidget {
     final dateFormat = DateFormat('dd.MM.yyyy HH:mm', 'tr_TR');
     final numberFormat = NumberFormat('#,##0.00', 'tr_TR');
 
+    final canEdit = ref.watch(canEditActiveProjectProvider);
+
     return Scaffold(
       backgroundColor: AppColors.canvas,
       appBar: AppBar(
         title: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Text('Metraj', style: AppTypography.titleLarge),
+            Text('Ön İmalat', style: AppTypography.titleLarge),
             Text(record.displayTitle, style: AppTypography.labelMedium),
           ],
         ),
@@ -132,7 +136,8 @@ class SavedMetrajDetailScreen extends ConsumerWidget {
             decoration: BoxDecoration(
               color: AppColors.electricBlue.withValues(alpha: 0.08),
               borderRadius: AppRadii.md,
-              border: Border.all(color: AppColors.electricBlue.withValues(alpha: 0.3)),
+              border: Border.all(
+                  color: AppColors.electricBlue.withValues(alpha: 0.3)),
             ),
             child: Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -154,19 +159,33 @@ class SavedMetrajDetailScreen extends ConsumerWidget {
               decoration: BoxDecoration(
                 color: AppColors.success.withValues(alpha: 0.08),
                 borderRadius: AppRadii.md,
-                border: Border.all(color: AppColors.success.withValues(alpha: 0.3)),
+                border:
+                    Border.all(color: AppColors.success.withValues(alpha: 0.3)),
               ),
               child: Row(
                 children: [
-                  const Icon(Icons.check_circle, color: AppColors.success, size: 18),
+                  const Icon(Icons.check_circle,
+                      color: AppColors.success, size: 18),
                   const SizedBox(width: 8),
                   Expanded(
                     child: Text(
-                      'Keşife aktarıldı: ${record.surveyImalatName}',
+                      'İmalata aktarıldı: ${record.surveyImalatName}',
                       style: AppTypography.bodySmall,
                     ),
                   ),
                 ],
+              ),
+            ),
+          ],
+          if (canEdit) ...[
+            const SizedBox(height: 16),
+            SizedBox(
+              width: double.infinity,
+              child: FilledButton.icon(
+                onPressed: () =>
+                    sendMetrajRecordToSurvey(context, ref, record!),
+                icon: const Icon(Icons.send),
+                label: const Text('İmalata Gönder'),
               ),
             ),
           ],
@@ -224,8 +243,10 @@ class _MetrajDiameterTable extends StatelessWidget {
                   Row(
                     children: [
                       _DataCell('Ø${line.diameter}', flex: 2, color: color),
-                      _DataCell('${numberFormat.format(line.tonnage)} t', flex: 2),
-                      _DataCell('${numberFormat.format(line.totalLengthM)} m', flex: 2),
+                      _DataCell('${numberFormat.format(line.tonnage)} t',
+                          flex: 2),
+                      _DataCell('${numberFormat.format(line.totalLengthM)} m',
+                          flex: 2),
                       _DataCell('${line.barCount}', flex: 2),
                     ],
                   ),
