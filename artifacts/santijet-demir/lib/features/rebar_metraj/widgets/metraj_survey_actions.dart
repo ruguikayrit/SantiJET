@@ -8,7 +8,6 @@ import 'package:santijet_demir/core/theme/app_typography.dart';
 import 'package:santijet_demir/domain/entities/rebar_metraj.dart';
 import 'package:santijet_demir/domain/entities/survey.dart';
 import 'package:santijet_demir/features/projects/providers/project_provider.dart';
-import 'package:santijet_demir/features/rebar_metraj/providers/rebar_metraj_provider.dart';
 import 'package:santijet_demir/features/rebar_metraj/providers/rebar_metraj_storage_provider.dart';
 import 'package:santijet_demir/features/survey/providers/survey_provider.dart';
 
