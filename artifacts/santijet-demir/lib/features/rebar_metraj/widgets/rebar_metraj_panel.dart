@@ -54,75 +54,52 @@ class _RebarMetrajPanelState extends ConsumerState<RebarMetrajPanel> {
     final error = ref.watch(rebarMetrajErrorProvider);
     final bottomInset = MediaQuery.paddingOf(context).bottom;
 
-    return Column(
+    return ListView(
+      padding: EdgeInsets.fromLTRB(
+        AppSpacing.md,
+        AppSpacing.md,
+        AppSpacing.md,
+        AppSpacing.md + bottomInset,
+      ),
       children: [
-        Expanded(
-          child: ListView(
-            padding: EdgeInsets.fromLTRB(
-              AppSpacing.md,
-              AppSpacing.md,
-              AppSpacing.md,
-              AppSpacing.md,
-            ),
-            children: [
-              const _InfoBanner(),
-              const SizedBox(height: 16),
-              _UploadCard(
-                loading: loading,
-                onPickFile: () => _pickAndParse(context, ref),
-              ),
-              const SavedMetrajHistorySection(),
-              const SizedBox(height: 8),
-              if (error != null) ...[
-                const SizedBox(height: 12),
-                _ErrorBanner(message: error),
-              ],
-              if (result != null) ...[
-                const SizedBox(height: 20),
-                _ResultSummary(result: result),
-                const SizedBox(height: 6),
-                Text(
-                  '${result.fileName} · ${result.sourceFormat}',
-                  style: AppTypography.bodySmall,
-                ),
-                const SizedBox(height: 16),
-                Text('Çap Bazlı Metraj', style: AppTypography.headlineMedium),
-                const SizedBox(height: 12),
-                ...result.lines.map((line) => _MetrajLineCard(line: line)),
-                if (result.textDetails.isNotEmpty) ...[
-                  const SizedBox(height: 20),
-                  _TextDetailSection(details: result.textDetails),
-                ],
-                if (result.warnings.isNotEmpty) ...[
-                  const SizedBox(height: 16),
-                  _WarningsCard(warnings: result.warnings),
-                ],
-                if (result.skippedEntityCount > 0) ...[
-                  const SizedBox(height: 12),
-                  _SkippedHint(count: result.skippedEntityCount),
-                ],
-                const SizedBox(height: 12),
-              ],
-            ],
-          ),
+        const _InfoBanner(),
+        const SizedBox(height: 16),
+        _UploadCard(
+          loading: loading,
+          onPickFile: () => _pickAndParse(context, ref),
         ),
-        if (result != null)
-          Material(
-            elevation: 12,
-            color: AppColors.surfaceElevated,
-            child: SafeArea(
-              top: false,
-              child: Padding(
-                padding: EdgeInsets.fromLTRB(
-                  AppSpacing.md,
-                  12,
-                  AppSpacing.md,
-                  12 + bottomInset,
-                ),
-                child: MetrajResultActions(result: result),
-              ),
-            ),
+        const SavedMetrajHistorySection(),
+        const SizedBox(height: 8),
+        if (error != null) ...[
+          const SizedBox(height: 12),
+          _ErrorBanner(message: error),
+        ],
+        if (result != null) ...[
+          const SizedBox(height: 20),
+          _ResultSummary(result: result),
+          const SizedBox(height: 6),
+          Text(
+            '${result.fileName} · ${result.sourceFormat}',
+            style: AppTypography.bodySmall,
           ),
+          const SizedBox(height: 16),
+          Text('Çap Bazlı Metraj', style: AppTypography.headlineMedium),
+          const SizedBox(height: 12),
+          ...result.lines.map((line) => _MetrajLineCard(line: line)),
+          if (result.textDetails.isNotEmpty) ...[
+            const SizedBox(height: 20),
+            _TextDetailSection(details: result.textDetails),
+          ],
+          if (result.warnings.isNotEmpty) ...[
+            const SizedBox(height: 16),
+            _WarningsCard(warnings: result.warnings),
+          ],
+          if (result.skippedEntityCount > 0) ...[
+            const SizedBox(height: 12),
+            _SkippedHint(count: result.skippedEntityCount),
+          ],
+          const SizedBox(height: 100),
+        ],
       ],
     );
   }
