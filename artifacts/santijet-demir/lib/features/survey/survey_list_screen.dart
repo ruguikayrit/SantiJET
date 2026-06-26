@@ -6,8 +6,10 @@ import 'package:santijet_demir/core/theme/app_colors.dart';
 import 'package:santijet_demir/core/theme/app_radii.dart';
 import 'package:santijet_demir/core/theme/app_spacing.dart';
 import 'package:santijet_demir/core/theme/app_typography.dart';
+import 'package:santijet_demir/core/widgets/swipe_to_delete_row.dart';
 import 'package:santijet_demir/data/services/export_service.dart';
 import 'package:santijet_demir/domain/entities/survey.dart';
+import 'package:santijet_demir/features/projects/providers/project_provider.dart';
 import 'package:santijet_demir/features/rebar_metraj/widgets/rebar_metraj_panel.dart';
 import 'package:santijet_demir/features/survey/providers/survey_provider.dart';
 import 'package:santijet_demir/features/survey/saved_metraj_list_tab.dart';
@@ -76,6 +78,7 @@ class _SurveyListScreenState extends ConsumerState<SurveyListScreen>
     final project = ref.watch(surveyProjectProvider);
     final expandedId = ref.watch(expandedImalatProvider);
     final tabIndex = ref.watch(surveyTabIndexProvider);
+    final canEdit = ref.watch(canEditActiveProjectProvider);
     final screenBg = AppColors.canvas;
 
     return Scaffold(
@@ -124,17 +127,33 @@ class _SurveyListScreenState extends ConsumerState<SurveyListScreen>
                 Text('İmalat Listesi', style: AppTypography.headlineMedium),
                 const SizedBox(height: 12),
                 ...project.imalats.map(
-                  (imalat) => SurveyImalatCard(
-                    imalat: imalat,
-                    expanded: expandedId == imalat.id,
-                    onToggle: () {
-                      ref.read(expandedImalatProvider.notifier).state =
-                          expandedId == imalat.id ? null : imalat.id;
+                  (imalat) => SwipeToDeleteRow(
+                    itemKey: ValueKey('imalat-${imalat.id}'),
+                    enabled: canEdit,
+                    title: 'İmalatı Sil',
+                    message:
+                        '"${imalat.name}" imalatını silmek istediğinize emin misiniz?',
+                    onDelete: () async {
+                      await ref
+                          .read(surveyProjectProvider.notifier)
+                          .deleteImalat(imalat.id);
+                      if (expandedId == imalat.id) {
+                        ref.read(expandedImalatProvider.notifier).state = null;
+                      }
                     },
-                    onDetail: () {
-                      ref.read(selectedImalatProvider.notifier).state = imalat;
-                      context.push('${AppRoutes.survey}/${imalat.id}');
-                    },
+                    child: SurveyImalatCard(
+                      imalat: imalat,
+                      expanded: expandedId == imalat.id,
+                      onToggle: () {
+                        ref.read(expandedImalatProvider.notifier).state =
+                            expandedId == imalat.id ? null : imalat.id;
+                      },
+                      onDetail: () {
+                        ref.read(selectedImalatProvider.notifier).state =
+                            imalat;
+                        context.push('${AppRoutes.survey}/${imalat.id}');
+                      },
+                    ),
                   ),
                 ),
                 const SizedBox(height: 16),

@@ -122,6 +122,13 @@ class SurveyProjectNotifier extends StateNotifier<SurveyProject> {
     await _persist();
     return imalat;
   }
+
+  Future<void> deleteImalat(String imalatId) async {
+    state = state.copyWith(
+      imalats: state.imalats.where((item) => item.id != imalatId).toList(),
+    );
+    await _persist();
+  }
 }
 
 final expandedImalatProvider = StateProvider<String?>((ref) => null);

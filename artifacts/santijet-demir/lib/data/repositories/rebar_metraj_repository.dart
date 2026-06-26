@@ -73,4 +73,16 @@ class RebarMetrajRepository {
       'records': updated.map((record) => record.toJson()).toList(),
     });
   }
+
+  Future<void> deleteRecord({
+    required String projectId,
+    required String recordId,
+  }) async {
+    final records =
+        readSaved(projectId).where((record) => record.id != recordId).toList();
+
+    await _projectDataRepository.writeDomain(projectId, _domain, {
+      'records': records.map((record) => record.toJson()).toList(),
+    });
+  }
 }

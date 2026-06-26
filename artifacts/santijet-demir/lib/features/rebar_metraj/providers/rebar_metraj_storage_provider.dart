@@ -76,4 +76,12 @@ class SavedRebarMetrajNotifier extends StateNotifier<List<SavedRebarMetraj>> {
           record.result.totalTonnage == result.totalTonnage,
     );
   }
+
+  Future<void> deleteRecord(String recordId) async {
+    final projectId = _ref.read(activeProjectIdProvider);
+    if (projectId == null) return;
+
+    await _repo.deleteRecord(projectId: projectId, recordId: recordId);
+    state = state.where((record) => record.id != recordId).toList();
+  }
 }

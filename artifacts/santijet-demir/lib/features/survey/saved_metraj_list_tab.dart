@@ -6,6 +6,7 @@ import 'package:santijet_demir/core/theme/app_colors.dart';
 import 'package:santijet_demir/core/theme/app_radii.dart';
 import 'package:santijet_demir/core/theme/app_spacing.dart';
 import 'package:santijet_demir/core/theme/app_typography.dart';
+import 'package:santijet_demir/core/widgets/swipe_to_delete_row.dart';
 import 'package:santijet_demir/domain/entities/rebar_metraj.dart';
 import 'package:santijet_demir/features/projects/providers/project_provider.dart';
 import 'package:santijet_demir/features/rebar_metraj/providers/rebar_metraj_storage_provider.dart';
@@ -101,35 +102,57 @@ class SavedMetrajListTab extends ConsumerWidget {
               ),
             if (canEdit) const SizedBox(height: 12),
             ...records.map(
-              (record) => Padding(
-                padding: const EdgeInsets.only(bottom: 10),
-                child: MetrajRecordCard(
-                  record: record,
-                  expanded: expandedId == record.id,
-                  selected: selectedIds.contains(record.id),
-                  canEdit: canEdit,
-                  onToggle: () {
+              (record) => SwipeToDeleteRow(
+                itemKey: ValueKey('saved-metraj-${record.id}'),
+                enabled: canEdit,
+                title: 'Kaydı Sil',
+                message:
+                    '"${record.displayTitle}" kaydını silmek istediğinize emin misiniz?',
+                onDelete: () async {
+                  await ref
+                      .read(savedRebarMetrajProvider.notifier)
+                      .deleteRecord(record.id);
+                  if (selectedIds.contains(record.id)) {
+                    final next = Set<String>.from(selectedIds)
+                      ..remove(record.id);
+                    ref.read(selectedMetrajRecordIdsProvider.notifier).state =
+                        next;
+                  }
+                  if (expandedId == record.id) {
                     ref.read(expandedMetrajRecordProvider.notifier).state =
-                        expandedId == record.id ? null : record.id;
-                  },
-                  onSelectChanged: canEdit
-                      ? (selected) {
-                          final next = Set<String>.from(selectedIds);
-                          if (selected) {
-                            next.add(record.id);
-                          } else {
-                            next.remove(record.id);
+                        null;
+                  }
+                },
+                child: Padding(
+                  padding: const EdgeInsets.only(bottom: 10),
+                  child: MetrajRecordCard(
+                    record: record,
+                    expanded: expandedId == record.id,
+                    selected: selectedIds.contains(record.id),
+                    canEdit: canEdit,
+                    onToggle: () {
+                      ref.read(expandedMetrajRecordProvider.notifier).state =
+                          expandedId == record.id ? null : record.id;
+                    },
+                    onSelectChanged: canEdit
+                        ? (selected) {
+                            final next = Set<String>.from(selectedIds);
+                            if (selected) {
+                              next.add(record.id);
+                            } else {
+                              next.remove(record.id);
+                            }
+                            ref
+                                .read(selectedMetrajRecordIdsProvider.notifier)
+                                .state = next;
                           }
-                          ref
-                              .read(selectedMetrajRecordIdsProvider.notifier)
-                              .state = next;
-                        }
-                      : null,
-                  onOpenDetail: () =>
-                      context.push(AppRoutes.savedMetrajDetail(record.id)),
-                  onSendToImalat: canEdit
-                      ? () => sendMetrajRecordToSurvey(context, ref, record)
-                      : null,
+                        : null,
+                    onOpenDetail: () =>
+                        context.push(AppRoutes.savedMetrajDetail(record.id)),
+                    onSendToImalat: canEdit
+                        ? () => sendMetrajRecordToSurvey(context, ref, record)
+                        : null,
+                  ),
                 ),
               ),
             ),
