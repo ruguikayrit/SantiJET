@@ -17,4 +17,7 @@ cp package/dist/libredwg-web.js "$TARGET/libredwg-web.js"
 cp package/wasm/libredwg-web.js "$TARGET/wasm/"
 cp package/wasm/libredwg-web.wasm "$TARGET/wasm/"
 
+# dist/libredwg-web.js imports ../wasm/ (package layout). We deploy under web/dwg/.
+sed -i 's|from "../wasm/|from "./wasm/|g' "$TARGET/libredwg-web.js"
+
 echo "LibreDWG web assets installed under $TARGET"

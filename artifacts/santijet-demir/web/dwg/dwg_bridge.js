@@ -1,6 +1,4 @@
-import { Dwg_File_Type, LibreDwg } from './libredwg-web.js';
-
-let libredwgPromise;
+window.__SANTIJET_DWG_MODULE__ = 'loading';
 
 function distance(a, b) {
   const dx = (b.x ?? 0) - (a.x ?? 0);
@@ -26,54 +24,59 @@ function polylineLength(entity) {
   return total;
 }
 
-async function getLibreDwg() {
-  if (!libredwgPromise) {
-    const wasmUrl = new URL('./wasm/', import.meta.url).href;
-    libredwgPromise = LibreDwg.create(wasmUrl);
-  }
-  return libredwgPromise;
-}
-
-window.santijetExtractDwgSegments = async (bytesArray) => {
-  const libredwg = await getLibreDwg();
-  const bytes = bytesArray instanceof Uint8Array
-    ? bytesArray
-    : new Uint8Array(bytesArray);
-
-  const dwg = libredwg.dwg_read_data(bytes, Dwg_File_Type.DWG);
-  if (!dwg) {
-    throw new Error('DWG dosyası okunamadı. Dosya bozuk veya desteklenmeyen sürüm olabilir.');
-  }
-
+(async () => {
   try {
-    const db = libredwg.convert(dwg);
-    const segments = [];
+    const { Dwg_File_Type, LibreDwg } = await import('./libredwg-web.js');
+    const wasmUrl = new URL('./wasm/', import.meta.url).href;
+    const libredwg = await LibreDwg.create(wasmUrl);
 
-    for (const entity of db.entities ?? []) {
-      const layerName = entity.layer ?? '0';
+    window.santijetExtractDwgSegments = async (bytesArray) => {
+      const bytes = bytesArray instanceof Uint8Array
+        ? bytesArray
+        : new Uint8Array(bytesArray);
 
-      if (entity.type === 'LINE') {
-        segments.push({
-          layerName,
-          length: distance(entity.startPoint, entity.endPoint),
-        });
-        continue;
+      const dwg = libredwg.dwg_read_data(bytes, Dwg_File_Type.DWG);
+      if (!dwg) {
+        throw new Error('DWG dosyası okunamadı. Dosya bozuk veya desteklenmeyen sürüm olabilir.');
       }
 
-      if (
-        entity.type === 'LWPOLYLINE' ||
-        entity.type === 'POLYLINE2D' ||
-        entity.type === 'POLYLINE3D'
-      ) {
-        const length = polylineLength(entity);
-        if (length > 0) {
-          segments.push({ layerName, length });
+      try {
+        const db = libredwg.convert(dwg);
+        const segments = [];
+
+        for (const entity of db.entities ?? []) {
+          const layerName = entity.layer ?? '0';
+
+          if (entity.type === 'LINE') {
+            segments.push({
+              layerName,
+              length: distance(entity.startPoint, entity.endPoint),
+            });
+            continue;
+          }
+
+          if (
+            entity.type === 'LWPOLYLINE' ||
+            entity.type === 'POLYLINE2D' ||
+            entity.type === 'POLYLINE3D'
+          ) {
+            const length = polylineLength(entity);
+            if (length > 0) {
+              segments.push({ layerName, length });
+            }
+          }
         }
-      }
-    }
 
-    return segments;
-  } finally {
-    libredwg.dwg_free(dwg);
+        return segments;
+      } finally {
+        libredwg.dwg_free(dwg);
+      }
+    };
+
+    window.__SANTIJET_DWG_MODULE__ = 'ready';
+  } catch (error) {
+    console.error('ŞantiJET DWG modülü yüklenemedi:', error);
+    window.__SANTIJET_DWG_MODULE__ = 'error';
+    window.__SANTIJET_DWG_MODULE_ERROR__ = String(error);
   }
-};
+})();
