@@ -10,6 +10,26 @@ import 'package:santijet_demir/features/projects/providers/project_provider.dart
 import 'package:santijet_demir/features/rebar_metraj/providers/rebar_metraj_storage_provider.dart';
 import 'package:santijet_demir/features/survey/providers/survey_provider.dart';
 
+Future<void> saveMetrajResultToPreProduction(
+  BuildContext context,
+  WidgetRef ref,
+  RebarMetrajResult result,
+) async {
+  final title = await showSaveMetrajNameDialog(context, result);
+  if (title == null || !context.mounted) return;
+
+  final saved = await ref
+      .read(savedRebarMetrajProvider.notifier)
+      .saveCurrentResult(result, title: title);
+  if (!context.mounted || saved == null) return;
+
+  ref.read(surveyTabIndexProvider.notifier).state = 2;
+
+  ScaffoldMessenger.of(context).showSnackBar(
+    SnackBar(content: Text('"$title" Ön İmalat listesine kaydedildi.')),
+  );
+}
+
 /// Otomatik metraj sonucu — yalnızca ön imalat listesine kaydet.
 class MetrajResultActions extends ConsumerWidget {
   const MetrajResultActions({super.key, required this.result});
@@ -63,19 +83,7 @@ class MetrajResultActions extends ConsumerWidget {
   }
 
   Future<void> _saveResult(BuildContext context, WidgetRef ref) async {
-    final title = await showSaveMetrajNameDialog(context, result);
-    if (title == null || !context.mounted) return;
-
-    final saved = await ref
-        .read(savedRebarMetrajProvider.notifier)
-        .saveCurrentResult(result, title: title);
-    if (!context.mounted || saved == null) return;
-
-    ref.read(surveyTabIndexProvider.notifier).state = 2;
-
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(content: Text('"$title" Ön İmalat listesine kaydedildi.')),
-    );
+    await saveMetrajResultToPreProduction(context, ref, result);
   }
 }
 
