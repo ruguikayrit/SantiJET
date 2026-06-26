@@ -8,8 +8,6 @@ import 'package:santijet_demir/core/theme/app_spacing.dart';
 import 'package:santijet_demir/core/theme/app_typography.dart';
 import 'package:santijet_demir/data/services/export_service.dart';
 import 'package:santijet_demir/domain/entities/survey.dart';
-import 'package:santijet_demir/features/rebar_metraj/providers/rebar_metraj_provider.dart';
-import 'package:santijet_demir/features/rebar_metraj/widgets/metraj_survey_actions.dart';
 import 'package:santijet_demir/features/rebar_metraj/widgets/rebar_metraj_panel.dart';
 import 'package:santijet_demir/features/survey/providers/survey_provider.dart';
 import 'package:santijet_demir/features/survey/saved_metraj_list_tab.dart';
@@ -78,7 +76,6 @@ class _SurveyListScreenState extends ConsumerState<SurveyListScreen>
     final project = ref.watch(surveyProjectProvider);
     final expandedId = ref.watch(expandedImalatProvider);
     final tabIndex = ref.watch(surveyTabIndexProvider);
-    final metrajResult = ref.watch(rebarMetrajResultProvider);
     final screenBg = AppColors.canvas;
 
     return Scaffold(
@@ -152,24 +149,6 @@ class _SurveyListScreenState extends ConsumerState<SurveyListScreen>
           ],
         ),
       ),
-      bottomNavigationBar: tabIndex == 1 && metrajResult != null
-          ? Material(
-              elevation: 16,
-              color: AppColors.surfaceElevated,
-              child: SafeArea(
-                top: false,
-                child: Padding(
-                  padding: const EdgeInsets.fromLTRB(
-                    AppSpacing.md,
-                    12,
-                    AppSpacing.md,
-                    12,
-                  ),
-                  child: MetrajResultActions(result: metrajResult),
-                ),
-              ),
-            )
-          : null,
     );
   }
 }

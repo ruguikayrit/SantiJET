@@ -20,10 +20,18 @@ class RebarMetrajPanel extends ConsumerStatefulWidget {
 }
 
 class _RebarMetrajPanelState extends ConsumerState<RebarMetrajPanel> {
+  final _scrollController = ScrollController();
+
   @override
   void initState() {
     super.initState();
     WidgetsBinding.instance.addPostFrameCallback((_) => _ensureActiveProject());
+  }
+
+  @override
+  void dispose() {
+    _scrollController.dispose();
+    super.dispose();
   }
 
   Future<void> _ensureActiveProject() async {
@@ -49,70 +57,70 @@ class _RebarMetrajPanelState extends ConsumerState<RebarMetrajPanel> {
 
   @override
   Widget build(BuildContext context) {
+    ref.listen(rebarMetrajResultProvider, (previous, next) {
+      if (next != null && previous != next) {
+        WidgetsBinding.instance.addPostFrameCallback((_) {
+          if (_scrollController.hasClients) {
+            _scrollController.jumpTo(0);
+          }
+        });
+      }
+    });
+
     final result = ref.watch(rebarMetrajResultProvider);
     final loading = ref.watch(rebarMetrajLoadingProvider);
     final error = ref.watch(rebarMetrajErrorProvider);
     final bottomInset = MediaQuery.paddingOf(context).bottom;
-    final bottomBarHeight = result != null ? 88.0 : 0.0;
 
     return Material(
       color: AppColors.canvas,
-      child: CustomScrollView(
+      child: ListView(
+        controller: _scrollController,
         physics: const ClampingScrollPhysics(),
-        slivers: [
-          SliverPadding(
-            padding: EdgeInsets.fromLTRB(
-              AppSpacing.md,
-              AppSpacing.md,
-              AppSpacing.md,
-              AppSpacing.md + bottomInset + bottomBarHeight,
-            ),
-            sliver: SliverList(
-              delegate: SliverChildListDelegate([
-                const _InfoBanner(),
-                const SizedBox(height: 16),
-                _UploadCard(
-                  loading: loading,
-                  onPickFile: () => _pickAndParse(context, ref),
-                ),
-                if (error != null) ...[
-                  const SizedBox(height: 12),
-                  _ErrorBanner(message: error),
-                ],
-                if (result != null) ...[
-                  const SizedBox(height: 20),
-                  _ResultSummary(result: result),
-                  const SizedBox(height: 6),
-                  Text(
-                    '${result.fileName} · ${result.sourceFormat}',
-                    style: AppTypography.bodySmall,
-                  ),
-                  const SizedBox(height: 12),
-                  MetrajResultActions(result: result),
-                  const SizedBox(height: 16),
-                  Text('Çap Bazlı Metraj', style: AppTypography.headlineMedium),
-                  const SizedBox(height: 12),
-                  ...result.lines.map((line) => _MetrajLineCard(line: line)),
-                  if (result.textDetails.isNotEmpty) ...[
-                    const SizedBox(height: 20),
-                    _TextDetailSection(details: result.textDetails),
-                  ],
-                  if (result.warnings.isNotEmpty) ...[
-                    const SizedBox(height: 16),
-                    _WarningsCard(warnings: result.warnings),
-                  ],
-                  if (result.skippedEntityCount > 0) ...[
-                    const SizedBox(height: 12),
-                    _SkippedHint(count: result.skippedEntityCount),
-                  ],
-                ],
-              ]),
-            ),
+        padding: EdgeInsets.fromLTRB(
+          AppSpacing.md,
+          AppSpacing.md,
+          AppSpacing.md,
+          AppSpacing.md + bottomInset,
+        ),
+        children: [
+          const _InfoBanner(),
+          const SizedBox(height: 16),
+          _UploadCard(
+            loading: loading,
+            onPickFile: () => _pickAndParse(context, ref),
           ),
-          const SliverFillRemaining(
-            hasScrollBody: false,
-            child: ColoredBox(color: AppColors.canvas),
-          ),
+          if (error != null) ...[
+            const SizedBox(height: 12),
+            _ErrorBanner(message: error),
+          ],
+          if (result != null) ...[
+            const SizedBox(height: 20),
+            _ResultSummary(result: result),
+            const SizedBox(height: 6),
+            Text(
+              '${result.fileName} · ${result.sourceFormat}',
+              style: AppTypography.bodySmall,
+            ),
+            const SizedBox(height: 16),
+            Text('Çap Bazlı Metraj', style: AppTypography.headlineMedium),
+            const SizedBox(height: 12),
+            ...result.lines.map((line) => _MetrajLineCard(line: line)),
+            if (result.textDetails.isNotEmpty) ...[
+              const SizedBox(height: 20),
+              _TextDetailSection(details: result.textDetails),
+            ],
+            if (result.warnings.isNotEmpty) ...[
+              const SizedBox(height: 16),
+              _WarningsCard(warnings: result.warnings),
+            ],
+            if (result.skippedEntityCount > 0) ...[
+              const SizedBox(height: 12),
+              _SkippedHint(count: result.skippedEntityCount),
+            ],
+            const SizedBox(height: 20),
+            MetrajResultActions(result: result),
+          ],
         ],
       ),
     );
@@ -192,7 +200,7 @@ class _InfoBanner extends StatelessWidget {
             '2. üst.334Ø22/15 l=120 → 334 ad × 12 m (aralık hesaba katılmaz)\n'
             '3. 15000Ø16 l=200 → 15000 ad × 2 m\n'
             '4. Tonaj = adet × boy × birim ağırlık (kg/m)\n'
-            '5. Sonucu Kaydet → Metraj sekmesinde kayıt oluşur\n'
+            '5. Analiz sonuçlarını kaydırın; altta Sonucu Kaydet / Keşife Gönder\n'
             '6. Keşife Gönder → imalat listesine aktarır',
             style: AppTypography.bodySmall,
           ),
