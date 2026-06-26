@@ -14,10 +14,17 @@ class RebarMetrajRepository {
     final records = raw['records'];
     if (records is! List) return [];
 
-    return records
-        .map((record) => SavedRebarMetraj.fromJson(record as Map<dynamic, dynamic>))
-        .toList()
-      ..sort((a, b) => b.savedAt.compareTo(a.savedAt));
+    final parsed = <SavedRebarMetraj>[];
+    for (final record in records) {
+      if (record is! Map) continue;
+      try {
+        parsed.add(SavedRebarMetraj.fromJson(record));
+      } catch (_) {
+        // Eski/eksik kayıt tek başına tüm Metraj sekmesini bozmasın.
+      }
+    }
+
+    return parsed..sort((a, b) => b.savedAt.compareTo(a.savedAt));
   }
 
   Future<SavedRebarMetraj> saveResult({
