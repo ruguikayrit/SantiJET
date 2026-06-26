@@ -3,7 +3,6 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:santijet_demir/core/routing/app_routes.dart';
 import 'package:santijet_demir/core/theme/app_colors.dart';
-import 'package:santijet_demir/core/theme/app_radii.dart';
 import 'package:santijet_demir/core/theme/app_typography.dart';
 import 'package:santijet_demir/domain/entities/rebar_metraj.dart';
 import 'package:santijet_demir/domain/entities/survey.dart';
@@ -88,15 +87,23 @@ class MetrajResultActions extends ConsumerWidget {
   }
 
   void _openSavedRecord(BuildContext context, WidgetRef ref) {
-    final matches = ref.read(savedRebarMetrajProvider).where(
-          (item) =>
-              item.result.fileName == result.fileName &&
-              item.result.parsedAt == result.parsedAt,
-        );
-    if (matches.isEmpty) return;
-    final record = matches.first;
     ref.read(surveyTabIndexProvider.notifier).state = 2;
-    context.push(AppRoutes.savedMetrajDetail(record.id));
+  }
+
+  Future<void> _saveResult(BuildContext context, WidgetRef ref) async {
+    final title = await showSaveMetrajNameDialog(context, result);
+    if (title == null || !context.mounted) return;
+
+    final saved = await ref
+        .read(savedRebarMetrajProvider.notifier)
+        .saveCurrentResult(result, title: title);
+    if (!context.mounted || saved == null) return;
+
+    ref.read(surveyTabIndexProvider.notifier).state = 2;
+
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(content: Text('"$title" Metraj sekmesine kaydedildi.')),
+    );
   }
 
   void _handleBlockedAction(
@@ -118,20 +125,6 @@ class MetrajResultActions extends ConsumerWidget {
               : 'Proje seçilmedi.',
         ),
       ),
-    );
-  }
-
-  Future<void> _saveResult(BuildContext context, WidgetRef ref) async {
-    final saved = await ref
-        .read(savedRebarMetrajProvider.notifier)
-        .saveCurrentResult(result);
-    if (!context.mounted || saved == null) return;
-
-    ref.read(surveyTabIndexProvider.notifier).state = 2;
-    context.push(AppRoutes.savedMetrajDetail(saved.id));
-
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(content: Text('Metraj kaydı oluşturuldu.')),
     );
   }
 
@@ -162,7 +155,13 @@ class MetrajResultActions extends ConsumerWidget {
                   record.result.fileName == result.fileName &&
                   record.result.parsedAt == result.parsedAt,
             )
-        : await savedNotifier.saveCurrentResult(result);
+        : await savedNotifier.saveCurrentResult(
+            result,
+            title: result.fileName.replaceAll(
+              RegExp(r'\.(dwg|dxf)$', caseSensitive: false),
+              '',
+            ),
+          );
 
     if (savedRecord != null) {
       await savedNotifier.markSentToSurvey(
@@ -380,5 +379,92 @@ Future<SendMetrajToSurveyRequest?> showSendMetrajToSurveyDialog(
   return showDialog<SendMetrajToSurveyRequest>(
     context: context,
     builder: (context) => SendMetrajToSurveyDialog(result: result),
+  );
+}
+
+class SaveMetrajNameDialog extends StatefulWidget {
+  const SaveMetrajNameDialog({super.key, required this.result});
+
+  final RebarMetrajResult result;
+
+  @override
+  State<SaveMetrajNameDialog> createState() => _SaveMetrajNameDialogState();
+}
+
+class _SaveMetrajNameDialogState extends State<SaveMetrajNameDialog> {
+  late final TextEditingController _nameController;
+
+  @override
+  void initState() {
+    super.initState();
+    _nameController = TextEditingController(
+      text: widget.result.fileName.replaceAll(
+        RegExp(r'\.(dwg|dxf)$', caseSensitive: false),
+        '',
+      ),
+    );
+  }
+
+  @override
+  void dispose() {
+    _nameController.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return AlertDialog(
+      backgroundColor: AppColors.surfaceElevated,
+      title: const Text('Metraj Kaydet'),
+      content: Column(
+        mainAxisSize: MainAxisSize.min,
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            '${widget.result.totalTonnage.toStringAsFixed(2)} t · '
+            '${widget.result.totalBarCount} çubuk',
+            style: AppTypography.bodySmall,
+          ),
+          const SizedBox(height: 16),
+          TextField(
+            controller: _nameController,
+            autofocus: true,
+            textCapitalization: TextCapitalization.sentences,
+            decoration: const InputDecoration(
+              labelText: 'Kayıt adı',
+              hintText: 'Örn. Blok A zemin demiri',
+              border: OutlineInputBorder(),
+            ),
+            onSubmitted: (_) => _submit(context),
+          ),
+        ],
+      ),
+      actions: [
+        TextButton(
+          onPressed: () => Navigator.of(context).pop(null),
+          child: const Text('İptal'),
+        ),
+        FilledButton(
+          onPressed: () => _submit(context),
+          child: const Text('Kaydet'),
+        ),
+      ],
+    );
+  }
+
+  void _submit(BuildContext context) {
+    final name = _nameController.text.trim();
+    if (name.isEmpty) return;
+    Navigator.of(context).pop(name);
+  }
+}
+
+Future<String?> showSaveMetrajNameDialog(
+  BuildContext context,
+  RebarMetrajResult result,
+) {
+  return showDialog<String>(
+    context: context,
+    builder: (context) => SaveMetrajNameDialog(result: result),
   );
 }

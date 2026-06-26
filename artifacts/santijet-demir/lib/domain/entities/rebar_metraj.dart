@@ -179,6 +179,7 @@ class SavedRebarMetraj {
     required this.id,
     required this.savedAt,
     required this.result,
+    this.title,
     this.surveyImalatId,
     this.surveyImalatName,
   });
@@ -186,13 +187,24 @@ class SavedRebarMetraj {
   final String id;
   final DateTime savedAt;
   final RebarMetrajResult result;
+  final String? title;
   final String? surveyImalatId;
   final String? surveyImalatName;
+
+  String get displayTitle {
+    final custom = title?.trim();
+    if (custom != null && custom.isNotEmpty) return custom;
+    return result.fileName.replaceAll(
+      RegExp(r'\.(dwg|dxf)$', caseSensitive: false),
+      '',
+    );
+  }
 
   Map<String, dynamic> toJson() => {
         'id': id,
         'savedAt': savedAt.toIso8601String(),
         'result': result.toJson(),
+        if (title != null) 'title': title,
         'surveyImalatId': surveyImalatId,
         'surveyImalatName': surveyImalatName,
       };
@@ -202,6 +214,7 @@ class SavedRebarMetraj {
       id: json['id'] as String,
       savedAt: DateTime.parse(json['savedAt'] as String),
       result: RebarMetrajResult.fromJson(json['result'] as Map<dynamic, dynamic>),
+      title: json['title'] as String?,
       surveyImalatId: json['surveyImalatId'] as String?,
       surveyImalatName: json['surveyImalatName'] as String?,
     );
@@ -211,6 +224,7 @@ class SavedRebarMetraj {
     String? id,
     DateTime? savedAt,
     RebarMetrajResult? result,
+    String? title,
     String? surveyImalatId,
     String? surveyImalatName,
   }) {
@@ -218,6 +232,7 @@ class SavedRebarMetraj {
       id: id ?? this.id,
       savedAt: savedAt ?? this.savedAt,
       result: result ?? this.result,
+      title: title ?? this.title,
       surveyImalatId: surveyImalatId ?? this.surveyImalatId,
       surveyImalatName: surveyImalatName ?? this.surveyImalatName,
     );

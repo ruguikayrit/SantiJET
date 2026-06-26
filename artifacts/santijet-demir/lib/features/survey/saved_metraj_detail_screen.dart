@@ -8,7 +8,6 @@ import 'package:santijet_demir/core/theme/app_typography.dart';
 import 'package:santijet_demir/core/widgets/app_components.dart';
 import 'package:santijet_demir/domain/entities/rebar_metraj.dart';
 import 'package:santijet_demir/features/rebar_metraj/providers/rebar_metraj_storage_provider.dart';
-import 'package:santijet_demir/features/survey/saved_metraj_list_tab.dart';
 import 'package:santijet_demir/features/survey/providers/survey_provider.dart';
 
 class SavedMetrajDetailScreen extends ConsumerWidget {

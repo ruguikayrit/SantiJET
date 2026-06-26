@@ -13,32 +13,48 @@ import 'package:santijet_demir/features/rebar_metraj/providers/rebar_metraj_stor
 import 'package:santijet_demir/features/survey/providers/survey_provider.dart';
 
 /// Kaydedilmiş CAD metraj kayıtları — keşif kart formatında.
-class SavedMetrajListTab extends ConsumerWidget {
+class SavedMetrajListTab extends ConsumerStatefulWidget {
   const SavedMetrajListTab({super.key});
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
+  ConsumerState<SavedMetrajListTab> createState() => _SavedMetrajListTabState();
+}
+
+class _SavedMetrajListTabState extends ConsumerState<SavedMetrajListTab>
+    with AutomaticKeepAliveClientMixin {
+  @override
+  bool get wantKeepAlive => true;
+
+  @override
+  Widget build(BuildContext context) {
+    super.build(context);
     final records = ref.watch(savedRebarMetrajProvider);
     final project = ref.watch(surveyProjectProvider);
     final projectId = ref.watch(activeProjectIdProvider);
     final dateFormat = DateFormat('dd.MM.yyyy HH:mm', 'tr_TR');
 
     if (projectId == null) {
-      return _EmptyState(
-        icon: Icons.folder_off_outlined,
-        title: 'Proje seçilmedi',
-        subtitle: 'Metraj kayıtları proje bazında saklanır.',
+      return Material(
+        color: AppColors.canvas,
+        child: _EmptyState(
+          icon: Icons.folder_off_outlined,
+          title: 'Proje seçilmedi',
+          subtitle: 'Metraj kayıtları proje bazında saklanır.',
+        ),
       );
     }
 
     if (records.isEmpty) {
-      return _EmptyState(
-        icon: Icons.save_outlined,
-        title: 'Henüz metraj kaydı yok',
-        subtitle:
-            'Demir Metraj sekmesinde CAD yükleyip "Sonucu Kaydet" ile buraya ekleyin.',
-        actionLabel: 'Demir Metraj\'a git',
-        onAction: () => ref.read(surveyTabIndexProvider.notifier).state = 1,
+      return Material(
+        color: AppColors.canvas,
+        child: _EmptyState(
+          icon: Icons.save_outlined,
+          title: 'Henüz metraj kaydı yok',
+          subtitle:
+              'Demir Metraj sekmesinde CAD yükleyip "Sonucu Kaydet" ile buraya ekleyin.',
+          actionLabel: 'Demir Metraj\'a git',
+          onAction: () => ref.read(surveyTabIndexProvider.notifier).state = 1,
+        ),
       );
     }
 
@@ -228,15 +244,6 @@ class _EmptyState extends StatelessWidget {
           ],
         ),
       ),
-    );
-  }
-}
-
-extension SavedMetrajTitle on SavedRebarMetraj {
-  String get displayTitle {
-    return result.fileName.replaceAll(
-      RegExp(r'\.(dwg|dxf)$', caseSensitive: false),
-      '',
     );
   }
 }
