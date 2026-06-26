@@ -130,7 +130,7 @@ class _RebarMetrajPanelState extends ConsumerState<RebarMetrajPanel>
                     _SkippedHint(count: result.skippedEntityCount),
                   ],
                   const SizedBox(height: 24),
-                  Text('Kayıt İşlemleri', style: AppTypography.headlineMedium),
+                  Text('Kayıt', style: AppTypography.headlineMedium),
                   const SizedBox(height: 12),
                   MetrajResultActions(result: result),
                   const SizedBox(height: 8),
@@ -217,8 +217,8 @@ class _InfoBanner extends StatelessWidget {
             '2. üst.334Ø22/15 l=120 → 334 ad × 12 m (aralık hesaba katılmaz)\n'
             '3. 15000Ø16 l=200 → 15000 ad × 2 m\n'
             '4. Tonaj = adet × boy × birim ağırlık (kg/m)\n'
-            '5. Analiz sonuçlarını kaydırın; altta Sonucu Kaydet / Keşife Gönder\n'
-            '6. Keşife Gönder → imalat listesine aktarır',
+            '5. Analiz sonuçlarını kaydırın; altta Metraj Kaydet\n'
+            '6. Ön İmalat sekmesinden detay inceleyip imalata gönderin',
             style: AppTypography.bodySmall,
           ),
           const SizedBox(height: 8),

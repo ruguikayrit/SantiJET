@@ -10,6 +10,7 @@ import 'package:santijet_demir/features/projects/providers/project_provider.dart
 import 'package:santijet_demir/features/rebar_metraj/providers/rebar_metraj_storage_provider.dart';
 import 'package:santijet_demir/features/survey/providers/survey_provider.dart';
 
+/// Otomatik metraj sonucu — yalnızca ön imalat listesine kaydet.
 class MetrajResultActions extends ConsumerWidget {
   const MetrajResultActions({super.key, required this.result});
 
@@ -18,7 +19,6 @@ class MetrajResultActions extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final projectId = ref.watch(activeProjectIdProvider);
-    final canEdit = ref.watch(canEditActiveProjectProvider);
     final savedRecords = ref.watch(savedRebarMetrajProvider);
     final isSaved = savedRecords.any(
       (record) =>
@@ -26,9 +26,6 @@ class MetrajResultActions extends ConsumerWidget {
           record.result.parsedAt == result.parsedAt &&
           record.result.totalTonnage == result.totalTonnage,
     );
-
-    final canSave = projectId != null;
-    final canSend = projectId != null && canEdit;
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -40,54 +37,29 @@ class MetrajResultActions extends ConsumerWidget {
               'Kaydetmek için bir proje seçin.',
               style: AppTypography.bodySmall.copyWith(color: AppColors.warning),
             ),
-          )
-        else if (!canEdit)
-          Padding(
-            padding: const EdgeInsets.only(bottom: 8),
-            child: Text(
-              'Keşife göndermek için düzenleme yetkisi gerekir.',
-              style: AppTypography.bodySmall.copyWith(color: AppColors.textMuted),
-            ),
           ),
-        Row(
-          children: [
-            Expanded(
-              child: FilledButton.icon(
-                onPressed: !canSave
-                    ? () => _handleBlockedAction(context, ref)
-                    : isSaved
-                        ? () => _openSavedRecord(context, ref)
-                        : () => _saveResult(context, ref),
-                icon: Icon(isSaved ? Icons.check_circle : Icons.save),
-                label: Text(isSaved ? 'Kaydedildi' : 'Sonucu Kaydet'),
-              ),
-            ),
-            const SizedBox(width: 8),
-            Expanded(
-              child: OutlinedButton.icon(
-                onPressed: !canSend
-                    ? () => _handleBlockedAction(context, ref, forSurvey: true)
-                    : () => _sendToSurvey(context, ref),
-                icon: const Icon(Icons.send),
-                label: const Text('Keşife Gönder'),
-              ),
-            ),
-          ],
+        SizedBox(
+          width: double.infinity,
+          child: FilledButton.icon(
+            onPressed: projectId == null
+                ? () => context.push(AppRoutes.projects)
+                : isSaved
+                    ? () => ref.read(surveyTabIndexProvider.notifier).state = 2
+                    : () => _saveResult(context, ref),
+            icon: Icon(isSaved ? Icons.check_circle : Icons.save),
+            label: Text(isSaved ? 'Ön İmalat\'ta Gör' : 'Metraj Kaydet'),
+          ),
         ),
-        if (isSaved && canSave)
+        if (isSaved && projectId != null)
           Padding(
             padding: const EdgeInsets.only(top: 8),
             child: Text(
-              'Metraj kaydı "Metraj" sekmesinde.',
+              'Kayıt Ön İmalat listesinde. İmalata göndermek için oradan devam edin.',
               style: AppTypography.bodySmall.copyWith(color: AppColors.success),
             ),
           ),
       ],
     );
-  }
-
-  void _openSavedRecord(BuildContext context, WidgetRef ref) {
-    ref.read(surveyTabIndexProvider.notifier).state = 2;
   }
 
   Future<void> _saveResult(BuildContext context, WidgetRef ref) async {
@@ -102,88 +74,319 @@ class MetrajResultActions extends ConsumerWidget {
     ref.read(surveyTabIndexProvider.notifier).state = 2;
 
     ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(content: Text('"$title" Metraj sekmesine kaydedildi.')),
+      SnackBar(content: Text('"$title" Ön İmalat listesine kaydedildi.')),
     );
   }
+}
 
-  void _handleBlockedAction(
-    BuildContext context,
-    WidgetRef ref, {
-    bool forSurvey = false,
-  }) {
-    final projectId = ref.read(activeProjectIdProvider);
-    if (projectId == null) {
-      context.push(AppRoutes.projects);
-      return;
-    }
-
+Future<void> sendMetrajRecordToSurvey(
+  BuildContext context,
+  WidgetRef ref,
+  SavedRebarMetraj record,
+) async {
+  final canEdit = ref.read(canEditActiveProjectProvider);
+  if (!canEdit) {
     ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text(
-          forSurvey
-              ? 'Bu projede keşife gönderme yetkiniz yok.'
-              : 'Proje seçilmedi.',
-        ),
-      ),
+      const SnackBar(
+          content: Text('İmalata göndermek için düzenleme yetkisi gerekir.')),
+    );
+    return;
+  }
+
+  await _sendResultToSurvey(
+    context,
+    ref,
+    result: record.result,
+    defaultImalatName: record.displayTitle,
+    sourceRecord: record,
+  );
+}
+
+Future<void> sendSelectedMetrajRecordsToSurvey(
+  BuildContext context,
+  WidgetRef ref,
+  List<SavedRebarMetraj> records,
+) async {
+  if (records.isEmpty) return;
+
+  final canEdit = ref.read(canEditActiveProjectProvider);
+  if (!canEdit) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(
+          content: Text('İmalata göndermek için düzenleme yetkisi gerekir.')),
+    );
+    return;
+  }
+
+  if (records.length == 1) {
+    await sendMetrajRecordToSurvey(context, ref, records.first);
+    return;
+  }
+
+  final mode = await showBulkSendMetrajDialog(context, records);
+  if (mode == null || !context.mounted) return;
+
+  switch (mode.mode) {
+    case BulkSendMode.separate:
+      var sent = 0;
+      for (final record in records) {
+        if (!context.mounted) return;
+        final request = await showSendMetrajToSurveyDialog(
+          context,
+          record.result,
+          defaultImalatName: record.displayTitle,
+        );
+        if (request == null) continue;
+        await _applySendRequest(context, ref, record.result, request, record);
+        sent++;
+      }
+      if (!context.mounted) return;
+      if (sent > 0) {
+        ref.read(selectedMetrajRecordIdsProvider.notifier).state = {};
+        ref.read(surveyTabIndexProvider.notifier).state = 0;
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('$sent kayıt imalat listesine gönderildi.')),
+        );
+      }
+    case BulkSendMode.merged:
+      final merged = _mergeMetrajResults(records, mode.mergedName!);
+      await _sendResultToSurvey(
+        context,
+        ref,
+        result: merged,
+        defaultImalatName: mode.mergedName!,
+        sourceRecords: records,
+      );
+  }
+}
+
+Future<void> _sendResultToSurvey(
+  BuildContext context,
+  WidgetRef ref, {
+  required RebarMetrajResult result,
+  required String defaultImalatName,
+  SavedRebarMetraj? sourceRecord,
+  List<SavedRebarMetraj>? sourceRecords,
+}) async {
+  final request = await showSendMetrajToSurveyDialog(
+    context,
+    result,
+    defaultImalatName: defaultImalatName,
+  );
+  if (request == null || !context.mounted) return;
+
+  await _applySendRequest(
+    context,
+    ref,
+    result,
+    request,
+    sourceRecord,
+    sourceRecords: sourceRecords,
+  );
+}
+
+Future<void> _applySendRequest(
+  BuildContext context,
+  WidgetRef ref,
+  RebarMetrajResult result,
+  SendMetrajToSurveyRequest request,
+  SavedRebarMetraj? sourceRecord, {
+  List<SavedRebarMetraj>? sourceRecords,
+}) async {
+  final surveyNotifier = ref.read(surveyProjectProvider.notifier);
+  late final SurveyImalat imalat;
+
+  if (request.isNewImalat) {
+    imalat = await surveyNotifier.createImalatFromMetraj(
+      result: result,
+      name: request.imalatName,
+    );
+  } else {
+    imalat = await surveyNotifier.sendMetrajToImalat(
+      result: result,
+      imalatId: request.imalatId,
+      replaceExisting: request.replaceExisting,
     );
   }
 
-  Future<void> _sendToSurvey(BuildContext context, WidgetRef ref) async {
-    final request = await showSendMetrajToSurveyDialog(context, result);
-    if (request == null || !context.mounted) return;
+  final savedNotifier = ref.read(savedRebarMetrajProvider.notifier);
+  final recordsToMark = sourceRecords ??
+      (sourceRecord != null ? [sourceRecord] : <SavedRebarMetraj>[]);
 
-    final surveyNotifier = ref.read(surveyProjectProvider.notifier);
-    late final SurveyImalat imalat;
+  for (final record in recordsToMark) {
+    await savedNotifier.markSentToSurvey(
+      recordId: record.id,
+      imalatId: imalat.id,
+      imalatName: imalat.name,
+    );
+  }
 
-    if (request.isNewImalat) {
-      imalat = await surveyNotifier.createImalatFromMetraj(
-        result: result,
-        name: request.imalatName,
-      );
-    } else {
-      imalat = await surveyNotifier.sendMetrajToImalat(
-        result: result,
-        imalatId: request.imalatId,
-        replaceExisting: request.replaceExisting,
-      );
+  ref.read(selectedMetrajRecordIdsProvider.notifier).state = {};
+  ref.read(surveyTabIndexProvider.notifier).state = 0;
+
+  if (!context.mounted) return;
+  ScaffoldMessenger.of(context).showSnackBar(
+    SnackBar(
+      content: Text('Metraj "${imalat.name}" imalat listesine aktarıldı.'),
+      action: SnackBarAction(
+        label: 'İmalat',
+        onPressed: () => ref.read(surveyTabIndexProvider.notifier).state = 0,
+      ),
+    ),
+  );
+}
+
+RebarMetrajResult _mergeMetrajResults(
+  List<SavedRebarMetraj> records,
+  String mergedName,
+) {
+  final mergedLines = <int, RebarMetrajLine>{};
+  for (final record in records) {
+    for (final line in record.result.lines) {
+      final existing = mergedLines[line.diameter];
+      if (existing == null) {
+        mergedLines[line.diameter] = line;
+      } else {
+        mergedLines[line.diameter] = RebarMetrajLine(
+          diameter: line.diameter,
+          totalLengthM: existing.totalLengthM + line.totalLengthM,
+          weightKg: existing.weightKg + line.weightKg,
+          barCount: existing.barCount + line.barCount,
+          layerName: existing.layerName.isNotEmpty
+              ? existing.layerName
+              : line.layerName,
+        );
+      }
     }
+  }
 
-    final savedNotifier = ref.read(savedRebarMetrajProvider.notifier);
-    var savedRecord = savedNotifier.isResultSaved(result)
-        ? ref.read(savedRebarMetrajProvider).firstWhere(
-              (record) =>
-                  record.result.fileName == result.fileName &&
-                  record.result.parsedAt == result.parsedAt,
-            )
-        : await savedNotifier.saveCurrentResult(
-            result,
-            title: result.fileName.replaceAll(
-              RegExp(r'\.(dwg|dxf)$', caseSensitive: false),
-              '',
+  final lines = mergedLines.values.toList()
+    ..sort((a, b) => a.diameter.compareTo(b.diameter));
+
+  return RebarMetrajResult(
+    fileName: mergedName,
+    sourceFormat: 'BIRLESIK',
+    parsedAt: DateTime.now(),
+    lines: lines,
+    textDetails: const [],
+    skippedEntityCount: 0,
+    warnings: const [],
+  );
+}
+
+enum BulkSendMode { separate, merged }
+
+class BulkSendResult {
+  const BulkSendResult.separate()
+      : mode = BulkSendMode.separate,
+        mergedName = null;
+  const BulkSendResult.merged(this.mergedName) : mode = BulkSendMode.merged;
+
+  final BulkSendMode mode;
+  final String? mergedName;
+}
+
+Future<BulkSendResult?> showBulkSendMetrajDialog(
+  BuildContext context,
+  List<SavedRebarMetraj> records,
+) {
+  return showDialog<BulkSendResult>(
+    context: context,
+    builder: (context) => _BulkSendMetrajDialog(records: records),
+  );
+}
+
+class _BulkSendMetrajDialog extends StatefulWidget {
+  const _BulkSendMetrajDialog({required this.records});
+
+  final List<SavedRebarMetraj> records;
+
+  @override
+  State<_BulkSendMetrajDialog> createState() => _BulkSendMetrajDialogState();
+}
+
+class _BulkSendMetrajDialogState extends State<_BulkSendMetrajDialog> {
+  var _merged = false;
+  late final TextEditingController _nameController;
+
+  @override
+  void initState() {
+    super.initState();
+    _nameController = TextEditingController(text: 'Birleşik Metraj');
+  }
+
+  @override
+  void dispose() {
+    _nameController.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final totalTonnage = widget.records.fold<double>(
+      0,
+      (sum, record) => sum + record.result.totalTonnage,
+    );
+
+    return AlertDialog(
+      backgroundColor: AppColors.surfaceElevated,
+      title: const Text('Toplu İmalata Gönder'),
+      content: Column(
+        mainAxisSize: MainAxisSize.min,
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            '${widget.records.length} kayıt · ${totalTonnage.toStringAsFixed(2)} t',
+            style: AppTypography.bodySmall,
+          ),
+          const SizedBox(height: 16),
+          RadioListTile<bool>(
+            contentPadding: EdgeInsets.zero,
+            title: const Text('Her kayıt ayrı imalat'),
+            subtitle:
+                const Text('Her ön imalat kaydı kendi adıyla imalat olur'),
+            value: false,
+            groupValue: _merged,
+            onChanged: (value) => setState(() => _merged = value!),
+          ),
+          RadioListTile<bool>(
+            contentPadding: EdgeInsets.zero,
+            title: const Text('Tek imalatta birleştir'),
+            subtitle: const Text('Seçili kayıtların tonajları toplanır'),
+            value: true,
+            groupValue: _merged,
+            onChanged: (value) => setState(() => _merged = value!),
+          ),
+          if (_merged) ...[
+            const SizedBox(height: 8),
+            TextField(
+              controller: _nameController,
+              decoration: const InputDecoration(
+                labelText: 'Birleşik imalat adı',
+                border: OutlineInputBorder(),
+              ),
             ),
-          );
-
-    if (savedRecord != null) {
-      await savedNotifier.markSentToSurvey(
-        recordId: savedRecord.id,
-        imalatId: imalat.id,
-        imalatName: imalat.name,
-      );
-    }
-
-    ref.read(surveyTabIndexProvider.notifier).state = 0;
-
-    if (!context.mounted) return;
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text('Metraj "${imalat.name}" imalatına aktarıldı.'),
-        action: SnackBarAction(
-          label: 'Keşif',
-          onPressed: () {
-            ref.read(surveyTabIndexProvider.notifier).state = 0;
-          },
-        ),
+          ],
+        ],
       ),
+      actions: [
+        TextButton(
+          onPressed: () => Navigator.of(context).pop(null),
+          child: const Text('İptal'),
+        ),
+        FilledButton(
+          onPressed: () {
+            if (_merged) {
+              final name = _nameController.text.trim();
+              if (name.isEmpty) return;
+              Navigator.of(context).pop(BulkSendResult.merged(name));
+              return;
+            }
+            Navigator.of(context).pop(const BulkSendResult.separate());
+          },
+          child: const Text('Devam'),
+        ),
+      ],
     );
   }
 }
@@ -194,9 +397,11 @@ class SendMetrajToSurveyDialog extends ConsumerStatefulWidget {
   const SendMetrajToSurveyDialog({
     super.key,
     required this.result,
+    required this.defaultImalatName,
   });
 
   final RebarMetrajResult result;
+  final String defaultImalatName;
 
   @override
   ConsumerState<SendMetrajToSurveyDialog> createState() =>
@@ -213,9 +418,7 @@ class _SendMetrajToSurveyDialogState
   @override
   void initState() {
     super.initState();
-    final defaultName = widget.result.fileName
-        .replaceAll(RegExp(r'\.(dwg|dxf)$', caseSensitive: false), '');
-    _nameController = TextEditingController(text: defaultName);
+    _nameController = TextEditingController(text: widget.defaultImalatName);
   }
 
   @override
@@ -234,7 +437,7 @@ class _SendMetrajToSurveyDialogState
     }
 
     return AlertDialog(
-      title: const Text('Keşife Gönder'),
+      title: const Text('İmalata Gönder'),
       content: SingleChildScrollView(
         child: Column(
           mainAxisSize: MainAxisSize.min,
@@ -269,7 +472,8 @@ class _SendMetrajToSurveyDialogState
                         ),
                       )
                       .toList(),
-                  onChanged: (value) => setState(() => _selectedImalatId = value),
+                  onChanged: (value) =>
+                      setState(() => _selectedImalatId = value),
                 ),
                 const SizedBox(height: 8),
                 SwitchListTile(
@@ -282,7 +486,8 @@ class _SendMetrajToSurveyDialogState
                     style: AppTypography.bodySmall,
                   ),
                   value: _replaceExisting,
-                  onChanged: (value) => setState(() => _replaceExisting = value),
+                  onChanged: (value) =>
+                      setState(() => _replaceExisting = value),
                 ),
               ],
               RadioListTile<_SendMode>(
@@ -311,7 +516,7 @@ class _SendMetrajToSurveyDialogState
         ),
         FilledButton(
           onPressed: () => _submit(context, imalats),
-          child: const Text('Keşife Gönder'),
+          child: const Text('İmalata Gönder'),
         ),
       ],
     );
@@ -374,11 +579,15 @@ class SendMetrajToSurveyRequest {
 
 Future<SendMetrajToSurveyRequest?> showSendMetrajToSurveyDialog(
   BuildContext context,
-  RebarMetrajResult result,
-) {
+  RebarMetrajResult result, {
+  required String defaultImalatName,
+}) {
   return showDialog<SendMetrajToSurveyRequest>(
     context: context,
-    builder: (context) => SendMetrajToSurveyDialog(result: result),
+    builder: (context) => SendMetrajToSurveyDialog(
+      result: result,
+      defaultImalatName: defaultImalatName,
+    ),
   );
 }
 

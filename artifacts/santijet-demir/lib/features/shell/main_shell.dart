@@ -275,7 +275,7 @@ class _QuickAccessRow extends StatelessWidget {
             Expanded(
               child: _QuickAccessCard(
                 icon: Icons.architecture,
-                label: 'Demir Metraj',
+                label: 'Otomatik Metraj',
                 subtitle: 'DWG · DXF',
                 color: AppColors.success,
                 onTap: onMetrajTap,

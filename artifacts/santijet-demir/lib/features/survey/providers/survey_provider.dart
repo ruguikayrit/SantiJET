@@ -128,6 +128,9 @@ final expandedImalatProvider = StateProvider<String?>((ref) => null);
 
 final expandedMetrajRecordProvider = StateProvider<String?>((ref) => null);
 
+final selectedMetrajRecordIdsProvider =
+    StateProvider<Set<String>>((ref) => {});
+
 final selectedImalatProvider = StateProvider<SurveyImalat?>((ref) => null);
 
 final surveyTabIndexProvider = StateProvider<int>((ref) => 0);
