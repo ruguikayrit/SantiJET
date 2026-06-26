@@ -1,12 +1,12 @@
 import 'package:santijet_demir/data/services/rebar_weight_calculator.dart';
 
-/// CAD metin etiketinden okunan tek demir satırı (çap + boy).
+/// CAD metin etiketinden okunan tek demir satırı (adet + çap + boy).
 class RebarTextEntry {
   const RebarTextEntry({
     required this.sourceText,
     required this.diameter,
     required this.lengthM,
-    this.quantity = 1,
+    required this.quantity,
   });
 
   final String sourceText;
@@ -15,36 +15,31 @@ class RebarTextEntry {
   final int quantity;
 }
 
-/// TEXT / MTEXT içeriğinden çap ve boy bilgisini çıkarır.
+/// TEXT / MTEXT içeriğinden adet, çap (FI/Ø) ve boy birlikte geçenleri okur.
 class RebarTextParser {
   const RebarTextParser();
 
-  static final _quantityDiameterLength = RegExp(
+  static final _quantityX = RegExp(
     r'(\d+)\s*[xX×]\s*(?:FI|F[Iİ]|Ø|O|D)?\s*(\d{2})\s*[/\-xX×]\s*([\d.,]+)',
     caseSensitive: false,
   );
 
-  static final _quantityPrefixDiameter = RegExp(
+  static final _quantityPrefix = RegExp(
     r'(\d+)\s*(?:FI|F[Iİ]|Ø|O|D)\s*(\d{2})\s*[/\-xX×\sL=]+([\d.,]+)',
     caseSensitive: false,
   );
 
-  static final _symbolDiameterLength = RegExp(
-    r'(?:FI|F[Iİ]|Ø|O|D)\s*(\d{2})\s*[/\-xX×\sL=]*([\d.,]+)',
+  static final _quantityAdet = RegExp(
+    r'(\d+)\s*(?:ADET|ADT|AD)\.?\s*(?:FI|F[Iİ]|Ø|O|D)\s*(\d{2})\s*[/\-xX×\sL=]+([\d.,]+)',
     caseSensitive: false,
   );
 
-  static final _diameterSymbolLength = RegExp(
-    r'(\d{2})\s*(?:FI|F[Iİ]|Ø|O|D)\s*[/\-xX×\sL=]*([\d.,]+)',
+  static final _quantityAdetReverse = RegExp(
+    r'(\d+)\s*(?:ADET|ADT|AD)\.?\s*(\d{2})\s*(?:FI|F[Iİ]|Ø|O|D)\s*[/\-xX×\sL=]+([\d.,]+)',
     caseSensitive: false,
   );
 
-  static final _slashPair = RegExp(
-    r'(?:^|[^\d])(\d{2})\s*/\s*([\d.,]+)(?:[^\d]|$)',
-    caseSensitive: false,
-  );
-
-  /// Tüm metinleri tarar; çap ve boy birlikte geçenleri döndürür.
+  /// Adet + çap + boy birlikte geçen metinleri döndürür.
   List<RebarTextEntry> parseAll(Iterable<String> texts) {
     final entries = <RebarTextEntry>[];
     for (final raw in texts) {
@@ -59,56 +54,57 @@ class RebarTextParser {
     if (text.isEmpty) return null;
 
     final normalized = _normalize(text);
+    if (!_looksLikeRebarLabel(normalized)) return null;
 
-    RebarTextEntry? matchQuantity(
-      RegExp pattern,
-      List<int> groupIndexes,
-    ) {
-      final match = pattern.firstMatch(normalized);
-      if (match == null) return null;
+    return _matchQuantity(_quantityX, normalized, text) ??
+        _matchQuantity(_quantityPrefix, normalized, text) ??
+        _matchQuantity(_quantityAdet, normalized, text) ??
+        _matchQuantity(_quantityAdetReverse, normalized, text);
+  }
 
-      final quantity = int.tryParse(match.group(groupIndexes[0])!) ?? 1;
-      final diameter = int.tryParse(match.group(groupIndexes[1])!);
-      final length = _parseLength(match.group(groupIndexes[2])!);
-      if (!_isValidDiameter(diameter) || length == null || length <= 0) {
-        return null;
-      }
+  bool _looksLikeRebarLabel(String normalized) {
+    final hasDiameter = RegExp(
+      r'(?:FI|F[Iİ]|Ø|O|D)\s*\d{2}|\d{2}\s*(?:FI|F[Iİ]|Ø|O|D)',
+      caseSensitive: false,
+    ).hasMatch(normalized);
+    final hasQuantity = RegExp(
+      r'(?:^|\s)\d+\s*(?:[xX×]|ADET|ADT|AD\.?|\s*(?:FI|F[Iİ]|Ø|O|D))',
+      caseSensitive: false,
+    ).hasMatch(normalized);
+    final hasLength = RegExp(
+      r'[/\-xX×\sL=]+[\d.,]+|[\d.,]+\s*(?:MM|CM|M)?(?:\s|$)',
+      caseSensitive: false,
+    ).hasMatch(normalized);
 
-      return RebarTextEntry(
-        sourceText: text,
-        diameter: diameter!,
-        lengthM: length,
-        quantity: quantity > 0 ? quantity : 1,
-      );
+    return hasDiameter && hasQuantity && hasLength;
+  }
+
+  RebarTextEntry? _matchQuantity(
+    RegExp pattern,
+    String normalized,
+    String originalText,
+  ) {
+    final match = pattern.firstMatch(normalized);
+    if (match == null) return null;
+
+    final quantity = int.tryParse(match.group(1)!);
+    final diameter = int.tryParse(match.group(2)!);
+    final length = _parseLength(match.group(3)!);
+
+    if (quantity == null ||
+        quantity <= 0 ||
+        !_isValidDiameter(diameter) ||
+        length == null ||
+        length <= 0) {
+      return null;
     }
 
-    RebarTextEntry? matchPair(
-      RegExp pattern,
-      List<int> groupIndexes, {
-      int quantity = 1,
-    }) {
-      final match = pattern.firstMatch(normalized);
-      if (match == null) return null;
-
-      final diameter = int.tryParse(match.group(groupIndexes[0])!);
-      final length = _parseLength(match.group(groupIndexes[1])!);
-      if (!_isValidDiameter(diameter) || length == null || length <= 0) {
-        return null;
-      }
-
-      return RebarTextEntry(
-        sourceText: text,
-        diameter: diameter!,
-        lengthM: length,
-        quantity: quantity,
-      );
-    }
-
-    return matchQuantity(_quantityDiameterLength, [1, 2, 3]) ??
-        matchQuantity(_quantityPrefixDiameter, [1, 2, 3]) ??
-        matchPair(_diameterSymbolLength, [1, 2]) ??
-        matchPair(_symbolDiameterLength, [1, 2]) ??
-        matchPair(_slashPair, [1, 2]);
+    return RebarTextEntry(
+      sourceText: originalText,
+      diameter: diameter!,
+      lengthM: length,
+      quantity: quantity,
+    );
   }
 
   bool _isValidDiameter(int? diameter) {

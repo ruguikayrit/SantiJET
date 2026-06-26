@@ -76,7 +76,6 @@ class DxfRebarParser {
     final warnings = <String>[];
     final grouped = <int, _DiameterAccumulator>{};
     final textDetails = <RebarMetrajTextDetail>[];
-    var skipped = 0;
 
     if (entities.isEmpty) {
       warnings.add(
@@ -87,18 +86,7 @@ class DxfRebarParser {
 
     for (final entity in entities) {
       final parsed = textParser.parseOne(entity.text);
-      if (parsed == null) {
-        skipped++;
-        textDetails.add(
-          RebarMetrajTextDetail(
-            entityType: entity.entityType,
-            sourceText: entity.text,
-            included: false,
-            skipReason: 'Çap ve boy birlikte okunamadı',
-          ),
-        );
-        continue;
-      }
+      if (parsed == null) continue;
 
       final scaledLength = parsed.lengthM * settings.unitScale;
       final weightKg = RebarWeightCalculator.weightKg(
@@ -128,8 +116,8 @@ class DxfRebarParser {
 
     if (entities.isNotEmpty && grouped.isEmpty) {
       warnings.add(
-        'Metin bulundu ancak çap ve boy birlikte okunamadı. '
-        'Örnek format: Ø12/350, 12Ø350, 5xØ16/450',
+        'Demir etiketi bulunamadı. Metinlerde adet, çap (FI/Ø) ve boy '
+        'birlikte olmalı. Örnek: 5xØ16/450, 5Ø12/350, 5 ADET FI12/350',
       );
     }
 
@@ -155,7 +143,7 @@ class DxfRebarParser {
       parsedAt: DateTime.now(),
       lines: lines,
       textDetails: textDetails,
-      skippedEntityCount: skipped,
+      skippedEntityCount: entities.length - textDetails.length,
       warnings: warnings,
     );
   }
