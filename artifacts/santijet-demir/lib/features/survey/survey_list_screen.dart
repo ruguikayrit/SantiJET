@@ -80,6 +80,7 @@ class _SurveyListScreenState extends ConsumerState<SurveyListScreen>
 
     return Scaffold(
       backgroundColor: screenBg,
+      resizeToAvoidBottomInset: false,
       appBar: AppBar(
         backgroundColor: screenBg,
         title: Column(
