@@ -90,8 +90,8 @@ class RebarMetrajPanel extends ConsumerWidget {
     } catch (e) {
       ref.read(rebarMetrajErrorProvider.notifier).state =
           'CAD dosyası işlenemedi. DWG için sayfayı yenileyin; DXF için '
-          'ASCII formatında kaydedilmiş olduğundan emin olun. Metin etiketlerinin '
-          'çap ve boy içerdiğini kontrol edin (ör. Ø12/350).';
+          'ASCII formatında kaydedilmiş olduğundan emin olun. Etiketlerde adet, '
+          'çap (FI/Ø) ve boy birlikte olmalı (ör. 5xØ16/450).';
     } finally {
       ref.read(rebarMetrajLoadingProvider.notifier).state = false;
     }
@@ -123,9 +123,9 @@ class _InfoBanner extends StatelessWidget {
           const SizedBox(height: 8),
           Text(
             '1. AutoCAD/BricsCAD projesini DWG veya ASCII DXF olarak yükleyin\n'
-            '2. Çizimdeki TEXT/MTEXT etiketleri taranır (katman adı dikkate alınmaz)\n'
-            '3. Aynı metinde çap ve boy birlikte varsa metraja dahil edilir\n'
-            '4. Örnek: Ø12/350, 12Ø350, 5xØ16/450 → tonaj hesaplanır',
+            '2. Sadece adet + çap (FI/Ø) + boy içeren TEXT/MTEXT etiketleri okunur\n'
+            '3. Diğer metinler (not, başlık vb.) dikkate alınmaz\n'
+            '4. Örnek: 5xØ16/450, 5Ø12/350, 5 ADET FI12/350',
             style: AppTypography.bodySmall,
           ),
           const SizedBox(height: 8),
@@ -383,15 +383,14 @@ class _TextDetailSection extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final formatter = NumberFormat('#,##0.00', 'tr_TR');
-    final included = details.where((detail) => detail.included).length;
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text('Okunan TEXT / MTEXT Etiketleri', style: AppTypography.headlineMedium),
+        Text('Tanınan Demir Etiketleri', style: AppTypography.headlineMedium),
         const SizedBox(height: 4),
         Text(
-          '${details.length} etiket · $included metraja dahil',
+          '${details.length} etiket (adet + çap + boy)',
           style: AppTypography.bodySmall,
         ),
         const SizedBox(height: 12),
@@ -414,19 +413,13 @@ class _TextDetailCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final borderColor = detail.included
-        ? AppColors.success.withValues(alpha: 0.35)
-        : AppColors.border;
-    final statusColor =
-        detail.included ? AppColors.success : AppColors.textMuted;
-
     return Container(
       margin: const EdgeInsets.only(bottom: 8),
       padding: const EdgeInsets.all(12),
       decoration: BoxDecoration(
         color: AppColors.surfaceElevated,
         borderRadius: AppRadii.md,
-        border: Border.all(color: borderColor),
+        border: Border.all(color: AppColors.success.withValues(alpha: 0.35)),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -446,14 +439,6 @@ class _TextDetailCard extends StatelessWidget {
                   ),
                 ),
               ),
-              const SizedBox(width: 8),
-              Expanded(
-                child: Text(
-                  detail.included ? 'Metraja dahil' : 'Atlandı',
-                  style: AppTypography.labelMedium.copyWith(color: statusColor),
-                  textAlign: TextAlign.end,
-                ),
-              ),
             ],
           ),
           const SizedBox(height: 8),
@@ -462,19 +447,13 @@ class _TextDetailCard extends StatelessWidget {
             style: AppTypography.titleMedium,
           ),
           const SizedBox(height: 8),
-          if (detail.included) ...[
-            Text(
-              'Ø${detail.diameter} · '
-              '${formatter.format(detail.lengthM)} m · '
-              '${detail.quantity} ad · '
-              '${formatter.format(detail.weightKg)} kg',
-              style: AppTypography.bodySmall,
-            ),
-          ] else if (detail.skipReason != null)
-            Text(
-              detail.skipReason!,
-              style: AppTypography.bodySmall.copyWith(color: AppColors.textMuted),
-            ),
+          Text(
+            '${detail.quantity} ad · '
+            'Ø${detail.diameter} · '
+            '${formatter.format(detail.lengthM)} m · '
+            '${formatter.format(detail.weightKg)} kg',
+            style: AppTypography.bodySmall,
+          ),
         ],
       ),
     );
@@ -537,15 +516,11 @@ class _MetaCard extends StatelessWidget {
           _MetaRow(label: 'Format', value: result.sourceFormat),
           _MetaRow(label: 'Tarih', value: dateFormat.format(result.parsedAt)),
           _MetaRow(
-            label: 'TEXT/MTEXT',
+            label: 'Tanınan etiket',
             value: '${result.textDetails.length}',
           ),
           _MetaRow(
-            label: 'Metraja dahil',
-            value: '${result.includedTextCount}',
-          ),
-          _MetaRow(
-            label: 'Atlanan öğe',
+            label: 'Atlanan metin',
             value: '${result.skippedEntityCount}',
           ),
         ],

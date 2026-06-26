@@ -51,45 +51,37 @@ void main() {
   group('RebarTextParser', () {
     const parser = RebarTextParser();
 
-    test('parses Ø12/350', () {
-      final entry = parser.parseOne('Ø12/350');
-      expect(entry?.diameter, 12);
-      expect(entry?.lengthM, closeTo(3.5, 0.001));
-      expect(entry?.quantity, 1);
+    test('adetsiz Ø12/350 reddedilir', () {
+      expect(parser.parseOne('Ø12/350'), isNull);
     });
 
-    test('parses quantity prefix 5xØ16/450', () {
+    test('5xØ16/450 kabul edilir', () {
       final entry = parser.parseOne('5xØ16/450');
       expect(entry?.diameter, 16);
       expect(entry?.lengthM, closeTo(4.5, 0.001));
       expect(entry?.quantity, 5);
     });
 
-    test('ignores text without diameter and length', () {
+    test('proje adı reddedilir', () {
       expect(parser.parseOne('PROJE ADI'), isNull);
     });
   });
 
   group('DxfRebarParser', () {
-    test('extracts rebar from text labels and ignores unrelated text', () {
+    test('sadece adet+çap+boy içeren etiketleri metraja alır', () {
       final parser = DxfRebarParser();
       final result = parser.parse(
         fileName: 'test.dxf',
         content: sampleRebarDxf,
       );
 
-      expect(result.lines.length, 2);
-      expect(result.totalBarCount, 6);
-      expect(result.lines.first.diameter, 12);
-      expect(result.lines.first.totalLengthM, closeTo(3.5, 0.001));
-      expect(result.lines.last.diameter, 16);
-      expect(result.lines.last.totalLengthM, closeTo(22.5, 0.001));
-      expect(result.skippedEntityCount, 1);
-      expect(result.textDetails.length, 3);
-      expect(result.includedTextCount, 2);
-      expect(result.textDetails.first.included, isTrue);
-      expect(result.textDetails.first.sourceText, 'Ø12/350');
-      expect(result.textDetails.last.included, isFalse);
+      expect(result.lines.length, 1);
+      expect(result.lines.single.diameter, 16);
+      expect(result.lines.single.totalLengthM, closeTo(22.5, 0.001));
+      expect(result.totalBarCount, 5);
+      expect(result.textDetails.length, 1);
+      expect(result.textDetails.single.sourceText, '5xØ16/450');
+      expect(result.skippedEntityCount, 2);
     });
 
     test('throws readable error for binary DXF bytes', () {
