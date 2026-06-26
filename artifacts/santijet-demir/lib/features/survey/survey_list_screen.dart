@@ -8,8 +8,6 @@ import 'package:santijet_demir/core/theme/app_spacing.dart';
 import 'package:santijet_demir/core/theme/app_typography.dart';
 import 'package:santijet_demir/data/services/export_service.dart';
 import 'package:santijet_demir/domain/entities/survey.dart';
-import 'package:santijet_demir/features/rebar_metraj/providers/rebar_metraj_provider.dart';
-import 'package:santijet_demir/features/rebar_metraj/widgets/metraj_survey_actions.dart';
 import 'package:santijet_demir/features/rebar_metraj/widgets/rebar_metraj_panel.dart';
 import 'package:santijet_demir/features/survey/providers/survey_provider.dart';
 import 'package:santijet_demir/features/survey/saved_metraj_list_tab.dart';
@@ -78,11 +76,11 @@ class _SurveyListScreenState extends ConsumerState<SurveyListScreen>
     final project = ref.watch(surveyProjectProvider);
     final expandedId = ref.watch(expandedImalatProvider);
     final tabIndex = ref.watch(surveyTabIndexProvider);
-    final metrajResult = ref.watch(rebarMetrajResultProvider);
     final screenBg = AppColors.canvas;
 
     return Scaffold(
       backgroundColor: screenBg,
+      resizeToAvoidBottomInset: false,
       appBar: AppBar(
         backgroundColor: screenBg,
         title: Column(
@@ -113,66 +111,45 @@ class _SurveyListScreenState extends ConsumerState<SurveyListScreen>
       ),
       body: ColoredBox(
         color: screenBg,
-        child: TabBarView(
-          controller: _tabController,
+        child: IndexedStack(
+          index: tabIndex.clamp(0, _tabCount - 1),
           children: [
-            ColoredBox(
+            Material(
               color: screenBg,
               child: ListView(
-                padding: const EdgeInsets.all(AppSpacing.md),
-                children: [
-                  _ProjectMetaRow(project: project),
-                  const SizedBox(height: 16),
-                  Text('İmalat Listesi', style: AppTypography.headlineMedium),
-                  const SizedBox(height: 12),
-                  ...project.imalats.map(
-                    (imalat) => SurveyImalatCard(
-                      imalat: imalat,
-                      expanded: expandedId == imalat.id,
-                      onToggle: () {
-                        ref.read(expandedImalatProvider.notifier).state =
-                            expandedId == imalat.id ? null : imalat.id;
-                      },
-                      onDetail: () {
-                        ref.read(selectedImalatProvider.notifier).state = imalat;
-                        context.push('${AppRoutes.survey}/${imalat.id}');
-                      },
-                    ),
+              padding: const EdgeInsets.all(AppSpacing.md),
+              children: [
+                _ProjectMetaRow(project: project),
+                const SizedBox(height: 16),
+                Text('İmalat Listesi', style: AppTypography.headlineMedium),
+                const SizedBox(height: 12),
+                ...project.imalats.map(
+                  (imalat) => SurveyImalatCard(
+                    imalat: imalat,
+                    expanded: expandedId == imalat.id,
+                    onToggle: () {
+                      ref.read(expandedImalatProvider.notifier).state =
+                          expandedId == imalat.id ? null : imalat.id;
+                    },
+                    onDetail: () {
+                      ref.read(selectedImalatProvider.notifier).state = imalat;
+                      context.push('${AppRoutes.survey}/${imalat.id}');
+                    },
                   ),
-                  const SizedBox(height: 16),
-                  _BottomActions(project: project),
-                ],
+                ),
+                const SizedBox(height: 16),
+                _BottomActions(project: project),
+              ],
               ),
             ),
-            const ColoredBox(
-              color: AppColors.canvas,
-              child: RebarMetrajPanel(),
-            ),
-            const ColoredBox(
-              color: AppColors.canvas,
-              child: SavedMetrajListTab(),
+            const RebarMetrajPanel(),
+            Material(
+              color: screenBg,
+              child: const SavedMetrajListTab(),
             ),
           ],
         ),
       ),
-      bottomNavigationBar: tabIndex == 1 && metrajResult != null
-          ? Material(
-              elevation: 16,
-              color: AppColors.surfaceElevated,
-              child: SafeArea(
-                top: false,
-                child: Padding(
-                  padding: const EdgeInsets.fromLTRB(
-                    AppSpacing.md,
-                    12,
-                    AppSpacing.md,
-                    12,
-                  ),
-                  child: MetrajResultActions(result: metrajResult),
-                ),
-              ),
-            )
-          : null,
     );
   }
 }

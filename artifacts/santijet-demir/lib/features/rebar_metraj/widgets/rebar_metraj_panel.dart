@@ -10,6 +10,7 @@ import 'package:santijet_demir/data/services/dxf_rebar_parser.dart';
 import 'package:santijet_demir/domain/entities/rebar_metraj.dart';
 import 'package:santijet_demir/features/projects/providers/project_provider.dart';
 import 'package:santijet_demir/features/rebar_metraj/providers/rebar_metraj_provider.dart';
+import 'package:santijet_demir/features/rebar_metraj/widgets/metraj_survey_actions.dart';
 
 class RebarMetrajPanel extends ConsumerStatefulWidget {
   const RebarMetrajPanel({super.key});
@@ -18,11 +19,23 @@ class RebarMetrajPanel extends ConsumerStatefulWidget {
   ConsumerState<RebarMetrajPanel> createState() => _RebarMetrajPanelState();
 }
 
-class _RebarMetrajPanelState extends ConsumerState<RebarMetrajPanel> {
+class _RebarMetrajPanelState extends ConsumerState<RebarMetrajPanel>
+    with AutomaticKeepAliveClientMixin {
+  final _scrollController = ScrollController();
+
+  @override
+  bool get wantKeepAlive => true;
+
   @override
   void initState() {
     super.initState();
     WidgetsBinding.instance.addPostFrameCallback((_) => _ensureActiveProject());
+  }
+
+  @override
+  void dispose() {
+    _scrollController.dispose();
+    super.dispose();
   }
 
   Future<void> _ensureActiveProject() async {
@@ -48,56 +61,85 @@ class _RebarMetrajPanelState extends ConsumerState<RebarMetrajPanel> {
 
   @override
   Widget build(BuildContext context) {
+    super.build(context);
+
+    ref.listen(rebarMetrajResultProvider, (previous, next) {
+      if (next != null && previous != next && !ref.read(rebarMetrajLoadingProvider)) {
+        WidgetsBinding.instance.addPostFrameCallback((_) {
+          if (_scrollController.hasClients) {
+            _scrollController.jumpTo(0);
+          }
+        });
+      }
+    });
+
     final result = ref.watch(rebarMetrajResultProvider);
     final loading = ref.watch(rebarMetrajLoadingProvider);
     final error = ref.watch(rebarMetrajErrorProvider);
     final bottomInset = MediaQuery.paddingOf(context).bottom;
+    final showResults = result != null && !loading;
 
-    return ListView(
-      padding: EdgeInsets.fromLTRB(
-        AppSpacing.md,
-        AppSpacing.md,
-        AppSpacing.md,
-        AppSpacing.md + bottomInset,
-      ),
-      children: [
-        const _InfoBanner(),
-        const SizedBox(height: 16),
-        _UploadCard(
-          loading: loading,
-          onPickFile: () => _pickAndParse(context, ref),
-        ),
-        if (error != null) ...[
-          const SizedBox(height: 12),
-          _ErrorBanner(message: error),
-        ],
-        if (result != null) ...[
-          const SizedBox(height: 20),
-          _ResultSummary(result: result),
-          const SizedBox(height: 6),
-          Text(
-            '${result.fileName} · ${result.sourceFormat}',
-            style: AppTypography.bodySmall,
+    return Material(
+      color: AppColors.canvas,
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          Expanded(
+            child: ListView(
+              controller: _scrollController,
+              physics: const ClampingScrollPhysics(),
+              padding: EdgeInsets.fromLTRB(
+                AppSpacing.md,
+                AppSpacing.md,
+                AppSpacing.md,
+                AppSpacing.md + bottomInset,
+              ),
+              children: [
+                const _InfoBanner(),
+                const SizedBox(height: 16),
+                _UploadCard(
+                  loading: loading,
+                  onPickFile: () => _pickAndParse(context, ref),
+                ),
+                if (error != null) ...[
+                  const SizedBox(height: 12),
+                  _ErrorBanner(message: error),
+                ],
+                if (showResults) ...[
+                  const SizedBox(height: 20),
+                  _ResultSummary(result: result),
+                  const SizedBox(height: 6),
+                  Text(
+                    '${result.fileName} · ${result.sourceFormat}',
+                    style: AppTypography.bodySmall,
+                  ),
+                  const SizedBox(height: 16),
+                  Text('Çap Bazlı Metraj', style: AppTypography.headlineMedium),
+                  const SizedBox(height: 12),
+                  ...result.lines.map((line) => _MetrajLineCard(line: line)),
+                  if (result.textDetails.isNotEmpty) ...[
+                    const SizedBox(height: 20),
+                    _TextDetailSection(details: result.textDetails),
+                  ],
+                  if (result.warnings.isNotEmpty) ...[
+                    const SizedBox(height: 16),
+                    _WarningsCard(warnings: result.warnings),
+                  ],
+                  if (result.skippedEntityCount > 0) ...[
+                    const SizedBox(height: 12),
+                    _SkippedHint(count: result.skippedEntityCount),
+                  ],
+                  const SizedBox(height: 24),
+                  Text('Kayıt İşlemleri', style: AppTypography.headlineMedium),
+                  const SizedBox(height: 12),
+                  MetrajResultActions(result: result),
+                  const SizedBox(height: 8),
+                ],
+              ],
+            ),
           ),
-          const SizedBox(height: 16),
-          Text('Çap Bazlı Metraj', style: AppTypography.headlineMedium),
-          const SizedBox(height: 12),
-          ...result.lines.map((line) => _MetrajLineCard(line: line)),
-          if (result.textDetails.isNotEmpty) ...[
-            const SizedBox(height: 20),
-            _TextDetailSection(details: result.textDetails),
-          ],
-          if (result.warnings.isNotEmpty) ...[
-            const SizedBox(height: 16),
-            _WarningsCard(warnings: result.warnings),
-          ],
-          if (result.skippedEntityCount > 0) ...[
-            const SizedBox(height: 12),
-            _SkippedHint(count: result.skippedEntityCount),
-          ],
-          const SizedBox(height: 88),
         ],
-      ],
+      ),
     );
   }
 
@@ -175,7 +217,7 @@ class _InfoBanner extends StatelessWidget {
             '2. üst.334Ø22/15 l=120 → 334 ad × 12 m (aralık hesaba katılmaz)\n'
             '3. 15000Ø16 l=200 → 15000 ad × 2 m\n'
             '4. Tonaj = adet × boy × birim ağırlık (kg/m)\n'
-            '5. Sonucu Kaydet → Metraj sekmesinde kayıt oluşur\n'
+            '5. Analiz sonuçlarını kaydırın; altta Sonucu Kaydet / Keşife Gönder\n'
             '6. Keşife Gönder → imalat listesine aktarır',
             style: AppTypography.bodySmall,
           ),
