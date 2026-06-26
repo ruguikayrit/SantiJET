@@ -10,7 +10,6 @@ import 'package:santijet_demir/data/services/dxf_rebar_parser.dart';
 import 'package:santijet_demir/domain/entities/rebar_metraj.dart';
 import 'package:santijet_demir/features/projects/providers/project_provider.dart';
 import 'package:santijet_demir/features/rebar_metraj/providers/rebar_metraj_provider.dart';
-import 'package:santijet_demir/features/rebar_metraj/widgets/metraj_survey_actions.dart';
 
 class RebarMetrajPanel extends ConsumerStatefulWidget {
   const RebarMetrajPanel({super.key});
@@ -68,8 +67,6 @@ class _RebarMetrajPanelState extends ConsumerState<RebarMetrajPanel> {
           loading: loading,
           onPickFile: () => _pickAndParse(context, ref),
         ),
-        const SavedMetrajHistorySection(),
-        const SizedBox(height: 8),
         if (error != null) ...[
           const SizedBox(height: 12),
           _ErrorBanner(message: error),
@@ -98,7 +95,7 @@ class _RebarMetrajPanelState extends ConsumerState<RebarMetrajPanel> {
             const SizedBox(height: 12),
             _SkippedHint(count: result.skippedEntityCount),
           ],
-          const SizedBox(height: 100),
+          const SizedBox(height: 88),
         ],
       ],
     );
@@ -178,7 +175,8 @@ class _InfoBanner extends StatelessWidget {
             '2. üst.334Ø22/15 l=120 → 334 ad × 12 m (aralık hesaba katılmaz)\n'
             '3. 15000Ø16 l=200 → 15000 ad × 2 m\n'
             '4. Tonaj = adet × boy × birim ağırlık (kg/m)\n'
-            '5. Alttaki Sonucu Kaydet / Keşife Gönder butonlarını kullanın',
+            '5. Sonucu Kaydet → Metraj sekmesinde kayıt oluşur\n'
+            '6. Keşife Gönder → imalat listesine aktarır',
             style: AppTypography.bodySmall,
           ),
           const SizedBox(height: 8),

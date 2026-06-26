@@ -31,6 +31,7 @@ import 'package:santijet_demir/features/projects/join_project_screen.dart';
 import 'package:santijet_demir/features/projects/project_list_screen.dart';
 import 'package:santijet_demir/features/projects/project_members_screen.dart';
 import 'package:santijet_demir/features/splash/splash_screen.dart';
+import 'package:santijet_demir/features/survey/saved_metraj_detail_screen.dart';
 import 'package:santijet_demir/features/survey/survey_detail_screen.dart';
 import 'package:santijet_demir/features/survey/survey_list_screen.dart';
 
@@ -161,6 +162,16 @@ final routerProvider = Provider<GoRouter>((ref) {
           child: const SurveyListScreen(),
         ),
         routes: [
+          GoRoute(
+            path: 'metraj/:recordId',
+            pageBuilder: (context, state) {
+              final recordId = state.pathParameters['recordId']!;
+              return fadeSlidePage(
+                key: state.pageKey,
+                child: SavedMetrajDetailScreen(recordId: recordId),
+              );
+            },
+          ),
           GoRoute(
             path: ':id',
             pageBuilder: (context, state) {

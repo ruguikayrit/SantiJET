@@ -12,6 +12,7 @@ import 'package:santijet_demir/features/rebar_metraj/providers/rebar_metraj_prov
 import 'package:santijet_demir/features/rebar_metraj/widgets/metraj_survey_actions.dart';
 import 'package:santijet_demir/features/rebar_metraj/widgets/rebar_metraj_panel.dart';
 import 'package:santijet_demir/features/survey/providers/survey_provider.dart';
+import 'package:santijet_demir/features/survey/saved_metraj_list_tab.dart';
 
 class SurveyListScreen extends ConsumerStatefulWidget {
   const SurveyListScreen({super.key});
@@ -22,6 +23,7 @@ class SurveyListScreen extends ConsumerStatefulWidget {
 
 class _SurveyListScreenState extends ConsumerState<SurveyListScreen>
     with SingleTickerProviderStateMixin {
+  static const _tabCount = 3;
   late final TabController _tabController;
 
   @override
@@ -29,9 +31,9 @@ class _SurveyListScreenState extends ConsumerState<SurveyListScreen>
     super.initState();
     final initialTab = ref.read(surveyTabIndexProvider);
     _tabController = TabController(
-      length: 2,
+      length: _tabCount,
       vsync: this,
-      initialIndex: initialTab.clamp(0, 1),
+      initialIndex: initialTab.clamp(0, _tabCount - 1),
     );
     _tabController.addListener(() {
       if (!_tabController.indexIsChanging) {
@@ -44,9 +46,14 @@ class _SurveyListScreenState extends ConsumerState<SurveyListScreen>
   void didChangeDependencies() {
     super.didChangeDependencies();
     final tab = GoRouterState.of(context).uri.queryParameters['tab'];
-    if (tab == 'metraj' && _tabController.index != 1) {
-      _tabController.index = 1;
-      ref.read(surveyTabIndexProvider.notifier).state = 1;
+    final targetIndex = switch (tab) {
+      'cad' || 'metraj' => 1,
+      'records' || 'kayit' => 2,
+      _ => null,
+    };
+    if (targetIndex != null && _tabController.index != targetIndex) {
+      _tabController.index = targetIndex;
+      ref.read(surveyTabIndexProvider.notifier).state = targetIndex;
     }
   }
 
@@ -62,7 +69,7 @@ class _SurveyListScreenState extends ConsumerState<SurveyListScreen>
       if (_tabController.index != next) {
         WidgetsBinding.instance.addPostFrameCallback((_) {
           if (mounted && _tabController.index != next) {
-            _tabController.animateTo(next.clamp(0, 1));
+            _tabController.animateTo(next.clamp(0, _tabCount - 1));
           }
         });
       }
@@ -72,10 +79,12 @@ class _SurveyListScreenState extends ConsumerState<SurveyListScreen>
     final expandedId = ref.watch(expandedImalatProvider);
     final tabIndex = ref.watch(surveyTabIndexProvider);
     final metrajResult = ref.watch(rebarMetrajResultProvider);
+    final screenBg = AppColors.canvas;
 
     return Scaffold(
-      backgroundColor: AppColors.canvas,
+      backgroundColor: screenBg,
       appBar: AppBar(
+        backgroundColor: screenBg,
         title: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
@@ -98,39 +107,53 @@ class _SurveyListScreenState extends ConsumerState<SurveyListScreen>
           tabs: const [
             Tab(text: 'İmalat Listesi'),
             Tab(text: 'Demir Metraj'),
+            Tab(text: 'Metraj'),
           ],
         ),
       ),
-      body: TabBarView(
-        controller: _tabController,
-        children: [
-          ListView(
-            padding: const EdgeInsets.all(AppSpacing.md),
-            children: [
-              _ProjectMetaRow(project: project),
-              const SizedBox(height: 16),
-              Text('İmalat Listesi', style: AppTypography.headlineMedium),
-              const SizedBox(height: 12),
-              ...project.imalats.map(
-                (imalat) => SurveyImalatCard(
-                  imalat: imalat,
-                  expanded: expandedId == imalat.id,
-                  onToggle: () {
-                    ref.read(expandedImalatProvider.notifier).state =
-                        expandedId == imalat.id ? null : imalat.id;
-                  },
-                  onDetail: () {
-                    ref.read(selectedImalatProvider.notifier).state = imalat;
-                    context.push('${AppRoutes.survey}/${imalat.id}');
-                  },
-                ),
+      body: ColoredBox(
+        color: screenBg,
+        child: TabBarView(
+          controller: _tabController,
+          children: [
+            ColoredBox(
+              color: screenBg,
+              child: ListView(
+                padding: const EdgeInsets.all(AppSpacing.md),
+                children: [
+                  _ProjectMetaRow(project: project),
+                  const SizedBox(height: 16),
+                  Text('İmalat Listesi', style: AppTypography.headlineMedium),
+                  const SizedBox(height: 12),
+                  ...project.imalats.map(
+                    (imalat) => SurveyImalatCard(
+                      imalat: imalat,
+                      expanded: expandedId == imalat.id,
+                      onToggle: () {
+                        ref.read(expandedImalatProvider.notifier).state =
+                            expandedId == imalat.id ? null : imalat.id;
+                      },
+                      onDetail: () {
+                        ref.read(selectedImalatProvider.notifier).state = imalat;
+                        context.push('${AppRoutes.survey}/${imalat.id}');
+                      },
+                    ),
+                  ),
+                  const SizedBox(height: 16),
+                  _BottomActions(project: project),
+                ],
               ),
-              const SizedBox(height: 16),
-              _BottomActions(project: project),
-            ],
-          ),
-          const RebarMetrajPanel(),
-        ],
+            ),
+            const ColoredBox(
+              color: AppColors.canvas,
+              child: RebarMetrajPanel(),
+            ),
+            const ColoredBox(
+              color: AppColors.canvas,
+              child: SavedMetrajListTab(),
+            ),
+          ],
+        ),
       ),
       bottomNavigationBar: tabIndex == 1 && metrajResult != null
           ? Material(

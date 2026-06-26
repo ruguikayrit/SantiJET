@@ -23,8 +23,10 @@ abstract final class AppRoutes {
   static const reports = '/reports';
   static String reportDetail(String id) => '/reports/$id';
   static const survey = '/survey';
-  static const surveyMetraj = '/survey?tab=metraj';
+  static const surveyMetraj = '/survey?tab=cad';
+  static const surveyMetrajRecords = '/survey?tab=records';
   static String surveyDetail(String id) => '/survey/$id';
+  static String savedMetrajDetail(String id) => '/survey/metraj/$id';
   static const settings = '/settings';
   static const companySettings = '/settings/company';
   static const projectSettings = '/settings/project';
