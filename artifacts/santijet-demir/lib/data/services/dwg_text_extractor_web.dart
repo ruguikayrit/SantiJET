@@ -1,9 +1,10 @@
 import 'dart:convert';
 import 'dart:js_util' as js_util;
 
+import 'package:santijet_demir/data/services/cad_text_entity.dart';
 import 'package:web/web.dart' as web;
 
-Future<List<String>> extractDwgTextsWeb(List<int> bytes) async {
+Future<List<CadTextEntity>> extractDwgTextsWeb(List<int> bytes) async {
   final fn = await _waitForDwgBridge();
   if (fn == null) {
     final status = js_util.getProperty(web.window, '__SANTIJET_DWG_MODULE__');
@@ -29,8 +30,20 @@ Future<List<String>> extractDwgTextsWeb(List<int> bytes) async {
   final decoded = jsonDecode(jsonText) as List<dynamic>;
 
   return decoded
-      .map((item) => item.toString().trim())
-      .where((text) => text.isNotEmpty)
+      .map((item) {
+        if (item is Map<String, dynamic>) {
+          final text = (item['text'] ?? '').toString().trim();
+          if (text.isEmpty) return null;
+          return CadTextEntity(
+            entityType: (item['entityType'] ?? 'TEXT').toString(),
+            text: text,
+          );
+        }
+        final text = item.toString().trim();
+        if (text.isEmpty) return null;
+        return CadTextEntity(entityType: 'TEXT', text: text);
+      })
+      .whereType<CadTextEntity>()
       .toList(growable: false);
 }
 

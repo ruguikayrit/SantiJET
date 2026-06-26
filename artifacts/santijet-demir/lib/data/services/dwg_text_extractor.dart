@@ -3,12 +3,12 @@ import 'dart:convert';
 import 'package:flutter/foundation.dart';
 import 'package:http/http.dart' as http;
 import 'package:santijet_demir/core/config/dwg_converter_config.dart';
-import 'package:santijet_demir/data/services/dxf_ascii_parser.dart';
+import 'package:santijet_demir/data/services/cad_text_entity.dart';
 
 import 'dwg_text_extractor_web.dart' if (dart.library.io) 'dwg_text_extractor_io.dart';
 
 abstract final class DwgTextExtractor {
-  static Future<List<String>> extract(List<int> bytes) async {
+  static Future<List<CadTextEntity>> extract(List<int> bytes) async {
     if (kIsWeb) {
       return extractDwgTextsWeb(bytes);
     }
@@ -16,7 +16,7 @@ abstract final class DwgTextExtractor {
   }
 }
 
-Future<List<String>> extractDwgTextsNative(List<int> bytes) async {
+Future<List<CadTextEntity>> extractDwgTextsNative(List<int> bytes) async {
   if (DwgConverterConfig.isConfigured) {
     return _extractViaHttp(bytes);
   }
@@ -27,7 +27,7 @@ Future<List<String>> extractDwgTextsNative(List<int> bytes) async {
   );
 }
 
-Future<List<String>> _extractViaHttp(List<int> bytes) async {
+Future<List<CadTextEntity>> _extractViaHttp(List<int> bytes) async {
   final uri = Uri.parse('${DwgConverterConfig.url}/convert');
   final request = http.MultipartRequest('POST', uri)
     ..files.add(
@@ -51,7 +51,19 @@ Future<List<String>> _extractViaHttp(List<int> bytes) async {
   final rawTexts = decoded['texts'] as List<dynamic>? ?? const [];
 
   return rawTexts
-      .map((item) => item.toString().trim())
-      .where((text) => text.isNotEmpty)
+      .map((item) {
+        if (item is Map<String, dynamic>) {
+          final text = (item['text'] ?? '').toString().trim();
+          if (text.isEmpty) return null;
+          return CadTextEntity(
+            entityType: (item['entityType'] ?? 'TEXT').toString(),
+            text: text,
+          );
+        }
+        final text = item.toString().trim();
+        if (text.isEmpty) return null;
+        return CadTextEntity(entityType: 'TEXT', text: text);
+      })
+      .whereType<CadTextEntity>()
       .toList(growable: false);
 }

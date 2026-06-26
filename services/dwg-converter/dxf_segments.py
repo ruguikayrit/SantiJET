@@ -49,9 +49,9 @@ def parse_all_segments(content: str) -> list[DxfSegment]:
     return [segment for segment in segments if segment.length > 0]
 
 
-def parse_all_texts(content: str) -> list[str]:
+def parse_all_texts(content: str) -> list[dict[str, str]]:
     pairs = _read_pairs(content)
-    texts: list[str] = []
+    texts: list[dict[str, str]] = []
     in_entities = False
     index = 0
 

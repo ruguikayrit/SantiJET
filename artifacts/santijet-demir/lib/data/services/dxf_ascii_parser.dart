@@ -1,6 +1,8 @@
 import 'dart:convert';
 import 'dart:math';
 
+import 'package:santijet_demir/data/services/cad_text_entity.dart';
+
 class DxfSegment {
   const DxfSegment({
     required this.layerName,
@@ -151,12 +153,17 @@ class DxfAsciiParser {
 
   /// ENTITIES bölümündeki TEXT ve MTEXT içeriklerini döndürür.
   static List<String> parseAllTexts(String content) {
+    return parseAllTextEntities(content).map((entity) => entity.text).toList();
+  }
+
+  /// ENTITIES bölümündeki TEXT ve MTEXT kayıtlarını tür bilgisiyle döndürür.
+  static List<CadTextEntity> parseAllTextEntities(String content) {
     final pairs = readPairs(content);
     if (pairs.isEmpty) {
       throw FormatException(invalidDxfMessage);
     }
 
-    final texts = <String>[];
+    final entities = <CadTextEntity>[];
     var inEntities = false;
     var index = 0;
 
@@ -199,11 +206,12 @@ class DxfAsciiParser {
 
       final text = _textFromEntity(pairs.sublist(entityStart, index));
       if (text != null && text.trim().isNotEmpty) {
-        texts.add(text.trim());
+        final trimmed = text.trim();
+        entities.add(CadTextEntity(entityType: entityType, text: trimmed));
       }
     }
 
-    return texts;
+    return entities;
   }
 
   static String? _textFromEntity(List<(int, String)> pairs) {

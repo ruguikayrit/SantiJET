@@ -1,3 +1,4 @@
+import 'package:santijet_demir/data/services/cad_text_entity.dart';
 import 'package:santijet_demir/data/services/dwg_text_extractor.dart';
 import 'package:santijet_demir/data/services/dxf_ascii_parser.dart';
 import 'package:santijet_demir/data/services/rebar_text_parser.dart';
@@ -23,11 +24,11 @@ class DxfRebarParser {
     required String fileName,
     required List<int> bytes,
   }) async {
-    final texts = await DwgTextExtractor.extract(bytes);
-    return _buildResultFromTexts(
+    final entities = await DwgTextExtractor.extract(bytes);
+    return _buildResultFromEntities(
       fileName: fileName,
       sourceFormat: 'DWG',
-      texts: texts,
+      entities: entities,
     );
   }
 
@@ -59,47 +60,76 @@ class DxfRebarParser {
     required String content,
     String sourceFormat = 'DXF',
   }) {
-    final texts = DxfAsciiParser.parseAllTexts(content);
-    return _buildResultFromTexts(
+    final entities = DxfAsciiParser.parseAllTextEntities(content);
+    return _buildResultFromEntities(
       fileName: fileName,
       sourceFormat: sourceFormat,
-      texts: texts,
+      entities: entities,
     );
   }
 
-  RebarMetrajResult _buildResultFromTexts({
+  RebarMetrajResult _buildResultFromEntities({
     required String fileName,
     required String sourceFormat,
-    required List<String> texts,
+    required List<CadTextEntity> entities,
   }) {
     final warnings = <String>[];
     final grouped = <int, _DiameterAccumulator>{};
+    final textDetails = <RebarMetrajTextDetail>[];
     var skipped = 0;
 
-    if (texts.isEmpty) {
+    if (entities.isEmpty) {
       warnings.add(
         'CAD dosyasında TEXT/MTEXT bulunamadı. Demir etiketlerinin '
         'metin olarak çizimde yer aldığından emin olun.',
       );
     }
 
-    final entries = textParser.parseAll(texts);
-    skipped = texts.length - entries.length;
+    for (final entity in entities) {
+      final parsed = textParser.parseOne(entity.text);
+      if (parsed == null) {
+        skipped++;
+        textDetails.add(
+          RebarMetrajTextDetail(
+            entityType: entity.entityType,
+            sourceText: entity.text,
+            included: false,
+            skipReason: 'Çap ve boy birlikte okunamadı',
+          ),
+        );
+        continue;
+      }
 
-    if (texts.isNotEmpty && entries.isEmpty) {
-      warnings.add(
-        'Metin bulundu ancak çap ve boy birlikte okunamadı. '
-        'Örnek format: Ø12/350, 12Ø350, 5xØ16/450',
+      final scaledLength = parsed.lengthM * settings.unitScale;
+      final weightKg = RebarWeightCalculator.weightKg(
+        diameterMm: parsed.diameter,
+        lengthM: scaledLength,
+      );
+
+      textDetails.add(
+        RebarMetrajTextDetail(
+          entityType: entity.entityType,
+          sourceText: entity.text,
+          included: true,
+          diameter: parsed.diameter,
+          lengthM: scaledLength,
+          quantity: parsed.quantity,
+          weightKg: weightKg * parsed.quantity,
+        ),
+      );
+
+      grouped.putIfAbsent(parsed.diameter, () => _DiameterAccumulator());
+      grouped[parsed.diameter]!.addBars(
+        lengthM: scaledLength,
+        count: parsed.quantity,
+        label: parsed.sourceText,
       );
     }
 
-    for (final entry in entries) {
-      final scaledLength = entry.lengthM * settings.unitScale;
-      grouped.putIfAbsent(entry.diameter, () => _DiameterAccumulator());
-      grouped[entry.diameter]!.addBars(
-        lengthM: scaledLength,
-        count: entry.quantity,
-        label: entry.sourceText,
+    if (entities.isNotEmpty && grouped.isEmpty) {
+      warnings.add(
+        'Metin bulundu ancak çap ve boy birlikte okunamadı. '
+        'Örnek format: Ø12/350, 12Ø350, 5xØ16/450',
       );
     }
 
@@ -124,6 +154,7 @@ class DxfRebarParser {
       sourceFormat: sourceFormat,
       parsedAt: DateTime.now(),
       lines: lines,
+      textDetails: textDetails,
       skippedEntityCount: skipped,
       warnings: warnings,
     );

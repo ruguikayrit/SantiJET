@@ -39,6 +39,10 @@ class RebarMetrajPanel extends ConsumerWidget {
           Text('Çap Bazlı Metraj', style: AppTypography.headlineMedium),
           const SizedBox(height: 12),
           ...result.lines.map((line) => _MetrajLineCard(line: line)),
+          if (result.textDetails.isNotEmpty) ...[
+            const SizedBox(height: 20),
+            _TextDetailSection(details: result.textDetails),
+          ],
           if (result.warnings.isNotEmpty) ...[
             const SizedBox(height: 16),
             _WarningsCard(warnings: result.warnings),
@@ -371,6 +375,112 @@ class _MetrajLineCard extends StatelessWidget {
   }
 }
 
+class _TextDetailSection extends StatelessWidget {
+  const _TextDetailSection({required this.details});
+
+  final List<RebarMetrajTextDetail> details;
+
+  @override
+  Widget build(BuildContext context) {
+    final formatter = NumberFormat('#,##0.00', 'tr_TR');
+    final included = details.where((detail) => detail.included).length;
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text('Okunan TEXT / MTEXT Etiketleri', style: AppTypography.headlineMedium),
+        const SizedBox(height: 4),
+        Text(
+          '${details.length} etiket · $included metraja dahil',
+          style: AppTypography.bodySmall,
+        ),
+        const SizedBox(height: 12),
+        ...details.map(
+          (detail) => _TextDetailCard(detail: detail, formatter: formatter),
+        ),
+      ],
+    );
+  }
+}
+
+class _TextDetailCard extends StatelessWidget {
+  const _TextDetailCard({
+    required this.detail,
+    required this.formatter,
+  });
+
+  final RebarMetrajTextDetail detail;
+  final NumberFormat formatter;
+
+  @override
+  Widget build(BuildContext context) {
+    final borderColor = detail.included
+        ? AppColors.success.withValues(alpha: 0.35)
+        : AppColors.border;
+    final statusColor =
+        detail.included ? AppColors.success : AppColors.textMuted;
+
+    return Container(
+      margin: const EdgeInsets.only(bottom: 8),
+      padding: const EdgeInsets.all(12),
+      decoration: BoxDecoration(
+        color: AppColors.surfaceElevated,
+        borderRadius: AppRadii.md,
+        border: Border.all(color: borderColor),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                decoration: BoxDecoration(
+                  color: AppColors.electricBlue.withValues(alpha: 0.12),
+                  borderRadius: BorderRadius.circular(6),
+                ),
+                child: Text(
+                  detail.entityType,
+                  style: AppTypography.labelMedium.copyWith(
+                    color: AppColors.electricBlueLight,
+                  ),
+                ),
+              ),
+              const SizedBox(width: 8),
+              Expanded(
+                child: Text(
+                  detail.included ? 'Metraja dahil' : 'Atlandı',
+                  style: AppTypography.labelMedium.copyWith(color: statusColor),
+                  textAlign: TextAlign.end,
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 8),
+          Text(
+            detail.sourceText,
+            style: AppTypography.titleMedium,
+          ),
+          const SizedBox(height: 8),
+          if (detail.included) ...[
+            Text(
+              'Ø${detail.diameter} · '
+              '${formatter.format(detail.lengthM)} m · '
+              '${detail.quantity} ad · '
+              '${formatter.format(detail.weightKg)} kg',
+              style: AppTypography.bodySmall,
+            ),
+          ] else if (detail.skipReason != null)
+            Text(
+              detail.skipReason!,
+              style: AppTypography.bodySmall.copyWith(color: AppColors.textMuted),
+            ),
+        ],
+      ),
+    );
+  }
+}
+
 class _WarningsCard extends StatelessWidget {
   const _WarningsCard({required this.warnings});
 
@@ -426,6 +536,14 @@ class _MetaCard extends StatelessWidget {
           _MetaRow(label: 'Dosya', value: result.fileName),
           _MetaRow(label: 'Format', value: result.sourceFormat),
           _MetaRow(label: 'Tarih', value: dateFormat.format(result.parsedAt)),
+          _MetaRow(
+            label: 'TEXT/MTEXT',
+            value: '${result.textDetails.length}',
+          ),
+          _MetaRow(
+            label: 'Metraja dahil',
+            value: '${result.includedTextCount}',
+          ),
           _MetaRow(
             label: 'Atlanan öğe',
             value: '${result.skippedEntityCount}',
