@@ -1,27 +1,12 @@
 window.__SANTIJET_DWG_MODULE__ = 'loading';
 
-function distance(a, b) {
-  const dx = (b.x ?? 0) - (a.x ?? 0);
-  const dy = (b.y ?? 0) - (a.y ?? 0);
-  const dz = (b.z ?? 0) - (a.z ?? 0);
-  return Math.sqrt(dx * dx + dy * dy + dz * dz);
-}
-
-function polylineLength(entity) {
-  const vertices = entity.vertices ?? [];
-  if (vertices.length < 2) return 0;
-
-  let total = 0;
-  for (let i = 1; i < vertices.length; i++) {
-    total += distance(vertices[i - 1], vertices[i]);
-  }
-
-  const flag = entity.flag ?? 0;
-  const closed = (flag & 1) === 1;
-  if (closed && vertices.length > 2) {
-    total += distance(vertices[vertices.length - 1], vertices[0]);
-  }
-  return total;
+function cleanMText(raw) {
+  if (!raw) return '';
+  return String(raw)
+    .replace(/\\P/gi, '\n')
+    .replace(/\\[A-Za-z0-9.;]+/g, '')
+    .replace(/[{}]/g, '')
+    .trim();
 }
 
 (async () => {
@@ -30,7 +15,7 @@ function polylineLength(entity) {
     const wasmUrl = new URL('./wasm/', import.meta.url).href;
     const libredwg = await LibreDwg.create(wasmUrl);
 
-    window.santijetExtractDwgSegments = async (bytesArray) => {
+    window.santijetExtractDwgTexts = async (bytesArray) => {
       const bytes = bytesArray instanceof Uint8Array
         ? bytesArray
         : new Uint8Array(bytesArray);
@@ -42,32 +27,27 @@ function polylineLength(entity) {
 
       try {
         const db = libredwg.convert(dwg);
-        const segments = [];
+        const texts = [];
 
         for (const entity of db.entities ?? []) {
-          const layerName = entity.layer ?? '0';
-
-          if (entity.type === 'LINE') {
-            segments.push({
-              layerName,
-              length: distance(entity.startPoint, entity.endPoint),
-            });
+          if (entity.type === 'TEXT') {
+            const text = String(entity.text ?? '').trim();
+            if (text) texts.push(text);
             continue;
           }
 
-          if (
-            entity.type === 'LWPOLYLINE' ||
-            entity.type === 'POLYLINE2D' ||
-            entity.type === 'POLYLINE3D'
-          ) {
-            const length = polylineLength(entity);
-            if (length > 0) {
-              segments.push({ layerName, length });
+          if (entity.type === 'MTEXT') {
+            const text = cleanMText(entity.text);
+            if (text) {
+              for (const line of text.split('\n')) {
+                const trimmed = line.trim();
+                if (trimmed) texts.push(trimmed);
+              }
             }
           }
         }
 
-        return segments;
+        return texts;
       } finally {
         libredwg.dwg_free(dwg);
       }

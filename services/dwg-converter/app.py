@@ -4,7 +4,7 @@ import uvicorn
 from fastapi import FastAPI, File, HTTPException, UploadFile
 from fastapi.middleware.cors import CORSMiddleware
 
-from dwg_service import extract_segments_from_dwg_bytes
+from dwg_service import extract_texts_from_dwg_bytes
 
 app = FastAPI(title="ŞantiJET DWG Converter")
 app.add_middleware(
@@ -27,11 +27,11 @@ async def convert(file: UploadFile = File(...)) -> dict[str, object]:
         raise HTTPException(status_code=400, detail="Boş dosya gönderildi.")
 
     try:
-        segments = extract_segments_from_dwg_bytes(data)
+        texts = extract_texts_from_dwg_bytes(data)
     except ValueError as error:
         raise HTTPException(status_code=422, detail=str(error)) from error
 
-    return {"segments": segments}
+    return {"texts": texts}
 
 
 if __name__ == "__main__":

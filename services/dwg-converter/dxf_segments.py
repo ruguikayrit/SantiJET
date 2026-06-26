@@ -49,6 +49,57 @@ def parse_all_segments(content: str) -> list[DxfSegment]:
     return [segment for segment in segments if segment.length > 0]
 
 
+def parse_all_texts(content: str) -> list[str]:
+    pairs = _read_pairs(content)
+    texts: list[str] = []
+    in_entities = False
+    index = 0
+
+    while index < len(pairs):
+        code, value = pairs[index]
+
+        if code == 0 and value == "SECTION":
+            if index + 1 < len(pairs) and pairs[index + 1][0] == 2:
+                in_entities = pairs[index + 1][1].upper() == "ENTITIES"
+            index += 1
+            continue
+
+        if code == 0 and value == "ENDSEC":
+            in_entities = False
+            index += 1
+            continue
+
+        if not in_entities or code != 0:
+            index += 1
+            continue
+
+        entity_type = value.upper()
+        if entity_type not in {"TEXT", "MTEXT"}:
+            index += 1
+            continue
+
+        start = index
+        index += 1
+        while index < len(pairs) and pairs[index][0] != 0:
+            index += 1
+
+        text = _text_from_entity(pairs[start:index])
+        if text:
+            texts.append(text)
+
+    return texts
+
+
+def _text_from_entity(pairs: list[tuple[int, str]]) -> str | None:
+    parts: list[str] = []
+    for code, value in pairs:
+        if code in {1, 3}:
+            parts.append(value)
+    if not parts:
+        return None
+    return "".join(parts).strip() or None
+
+
 def _read_pairs(content: str) -> list[tuple[int, str]]:
     normalized = content.replace("\r\n", "\n").replace("\r", "\n")
     lines = normalized.split("\n")

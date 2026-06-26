@@ -1,10 +1,9 @@
 import 'dart:convert';
 import 'dart:js_util' as js_util;
 
-import 'package:santijet_demir/data/services/dxf_ascii_parser.dart';
 import 'package:web/web.dart' as web;
 
-Future<List<DxfSegment>> extractDwgSegmentsWeb(List<int> bytes) async {
+Future<List<String>> extractDwgTextsWeb(List<int> bytes) async {
   final fn = await _waitForDwgBridge();
   if (fn == null) {
     final status = js_util.getProperty(web.window, '__SANTIJET_DWG_MODULE__');
@@ -30,13 +29,8 @@ Future<List<DxfSegment>> extractDwgSegmentsWeb(List<int> bytes) async {
   final decoded = jsonDecode(jsonText) as List<dynamic>;
 
   return decoded
-      .map(
-        (item) => DxfSegment(
-          layerName: (item as Map<String, dynamic>)['layerName'] as String? ?? '0',
-          length: (item['length'] as num?)?.toDouble() ?? 0,
-        ),
-      )
-      .where((segment) => segment.length > 0)
+      .map((item) => item.toString().trim())
+      .where((text) => text.isNotEmpty)
       .toList(growable: false);
 }
 
@@ -45,7 +39,7 @@ Future<Object?> _waitForDwgBridge({
 }) async {
   final deadline = DateTime.now().add(timeout);
   while (DateTime.now().isBefore(deadline)) {
-    final fn = js_util.getProperty(web.window, 'santijetExtractDwgSegments');
+    final fn = js_util.getProperty(web.window, 'santijetExtractDwgTexts');
     if (fn != null) return fn;
 
     final status = js_util.getProperty(web.window, '__SANTIJET_DWG_MODULE__');

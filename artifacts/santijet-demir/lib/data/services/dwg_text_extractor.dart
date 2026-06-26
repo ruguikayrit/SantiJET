@@ -5,18 +5,18 @@ import 'package:http/http.dart' as http;
 import 'package:santijet_demir/core/config/dwg_converter_config.dart';
 import 'package:santijet_demir/data/services/dxf_ascii_parser.dart';
 
-import 'dwg_segment_extractor_web.dart' if (dart.library.io) 'dwg_segment_extractor_io.dart';
+import 'dwg_text_extractor_web.dart' if (dart.library.io) 'dwg_text_extractor_io.dart';
 
-abstract final class DwgSegmentExtractor {
-  static Future<List<DxfSegment>> extract(List<int> bytes) async {
+abstract final class DwgTextExtractor {
+  static Future<List<String>> extract(List<int> bytes) async {
     if (kIsWeb) {
-      return extractDwgSegmentsWeb(bytes);
+      return extractDwgTextsWeb(bytes);
     }
-    return extractDwgSegmentsNative(bytes);
+    return extractDwgTextsNative(bytes);
   }
 }
 
-Future<List<DxfSegment>> extractDwgSegmentsNative(List<int> bytes) async {
+Future<List<String>> extractDwgTextsNative(List<int> bytes) async {
   if (DwgConverterConfig.isConfigured) {
     return _extractViaHttp(bytes);
   }
@@ -27,7 +27,7 @@ Future<List<DxfSegment>> extractDwgSegmentsNative(List<int> bytes) async {
   );
 }
 
-Future<List<DxfSegment>> _extractViaHttp(List<int> bytes) async {
+Future<List<String>> _extractViaHttp(List<int> bytes) async {
   final uri = Uri.parse('${DwgConverterConfig.url}/convert');
   final request = http.MultipartRequest('POST', uri)
     ..files.add(
@@ -48,15 +48,10 @@ Future<List<DxfSegment>> _extractViaHttp(List<int> bytes) async {
   }
 
   final decoded = jsonDecode(body) as Map<String, dynamic>;
-  final rawSegments = decoded['segments'] as List<dynamic>? ?? const [];
+  final rawTexts = decoded['texts'] as List<dynamic>? ?? const [];
 
-  return rawSegments
-      .map(
-        (item) => DxfSegment(
-          layerName: (item as Map<String, dynamic>)['layerName'] as String? ?? '0',
-          length: (item['length'] as num?)?.toDouble() ?? 0,
-        ),
-      )
-      .where((segment) => segment.length > 0)
+  return rawTexts
+      .map((item) => item.toString().trim())
+      .where((text) => text.isNotEmpty)
       .toList(growable: false);
 }
