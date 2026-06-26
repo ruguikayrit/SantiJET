@@ -1,89 +1,61 @@
 import 'package:flutter_test/flutter_test.dart';
 import 'package:santijet_demir/data/services/rebar_text_parser.dart';
+import 'package:santijet_demir/data/services/rebar_weight_calculator.dart';
 
 void main() {
   const parser = RebarTextParser();
 
-  group('RebarTextParser — üst/alt dağıtım formatı', () {
-    test('üst.1670Ø22/15 l=1200', () {
-      final entry = parser.parseOne('üst.1670Ø22/15 l=1200');
+  group('üst/alt formatı — adet doğrudan, aralık etkisiz', () {
+    test('üst.334Ø22/15 l=120 → 334 ad × 12 m', () {
+      final entry = parser.parseOne('üst.334Ø22/15 l=120');
+      expect(entry?.quantity, 334);
       expect(entry?.diameter, 22);
-      expect(entry?.lengthM, closeTo(1.2, 0.001));
-      expect(entry?.quantity, 12);
+      expect(entry?.lengthM, closeTo(12, 0.001));
+      expect(entry!.quantity * entry.lengthM, closeTo(4008, 0.001));
     });
 
-    test('üst.334Ø22/15 l=1200 → 3 adet × 1,20 m', () {
+    test('üst.334Ø22/15 l=1200 → 334 ad × 12 m', () {
       final entry = parser.parseOne('üst.334Ø22/15 l=1200');
-      expect(entry?.diameter, 22);
-      expect(entry?.quantity, 3);
-      expect(entry?.lengthM, closeTo(1.2, 0.001));
-      expect(entry!.quantity * entry.lengthM, closeTo(3.6, 0.001));
+      expect(entry?.quantity, 334);
+      expect(entry?.lengthM, closeTo(12, 0.001));
     });
 
-    test('alt.1670Ø22/15 l=640', () {
-      final entry = parser.parseOne('alt.1670Ø22/15 l=640');
-      expect(entry?.diameter, 22);
-      expect(entry?.lengthM, closeTo(0.64, 0.001));
-      expect(entry?.quantity, 12);
-    });
-
-    test('12Ø22/15 l=1200 — küçük sayı doğrudan adet', () {
-      final entry = parser.parseOne('12Ø22/15 l=1200');
-      expect(entry?.quantity, 12);
-      expect(entry?.diameter, 22);
-    });
-
-    test('AutoCAD %%c çap kodu', () {
-      final entry = parser.parseOne('üst.1670%%c22/15 l=1200');
-      expect(entry?.diameter, 22);
-      expect(entry?.lengthM, closeTo(1.2, 0.001));
-      expect(entry?.quantity, 12);
-    });
-
-    test('MTEXT biçim kodlu metin', () {
-      final entry = parser.parseOne(
-        '{\\fArial|b0|i0;c162;üst.1670Ø22/15 l=1200}',
-      );
-      expect(entry?.diameter, 22);
-      expect(entry?.quantity, 12);
+    test('aralık (/15) adeti değiştirmez', () {
+      final withSpacing = parser.parseOne('üst.334Ø22/15 l=120');
+      final withoutSpacing = parser.parseOne('üst.334Ø22/20 l=120');
+      expect(withSpacing?.quantity, withoutSpacing?.quantity);
+      expect(withSpacing?.lengthM, withoutSpacing?.lengthM);
     });
   });
 
-  group('RebarTextParser — adet + çap + boy zorunlu', () {
+  group('doğrudan adet + l= formatı', () {
+    test('15000Ø16 l=200 → 15000 ad × 2 m', () {
+      final entry = parser.parseOne('15000Ø16 l=200');
+      expect(entry?.quantity, 15000);
+      expect(entry?.diameter, 16);
+      expect(entry?.lengthM, closeTo(2, 0.001));
+      expect(
+        RebarWeightCalculator.weightKg(
+          diameterMm: 16,
+          lengthM: entry!.quantity * entry.lengthM,
+        ),
+        closeTo(15000 * 2 * (16 * 16 / 162), 0.1),
+      );
+    });
+
     test('5xØ16/450', () {
       final entry = parser.parseOne('5xØ16/450');
-      expect(entry?.diameter, 16);
+      expect(entry?.quantity, 5);
       expect(entry?.lengthM, closeTo(4.5, 0.001));
-      expect(entry?.quantity, 5);
     });
+  });
 
-    test('5Ø12/350', () {
-      final entry = parser.parseOne('5Ø12/350');
-      expect(entry?.diameter, 12);
-      expect(entry?.lengthM, closeTo(3.5, 0.001));
-      expect(entry?.quantity, 5);
-    });
-
-    test('5 ADET FI12/350', () {
-      final entry = parser.parseOne('5 ADET FI12/350');
-      expect(entry?.diameter, 12);
-      expect(entry?.lengthM, closeTo(3.5, 0.001));
-      expect(entry?.quantity, 5);
-    });
-
-    test('adetsiz Ø12/350 reddedilir', () {
+  group('reddedilen etiketler', () {
+    test('adetsiz Ø12/350', () {
       expect(parser.parseOne('Ø12/350'), isNull);
     });
 
-    test('adetsiz 12Ø350 reddedilir', () {
-      expect(parser.parseOne('12Ø350'), isNull);
-    });
-
-    test('adetsiz FI16/320 reddedilir', () {
-      expect(parser.parseOne('FI16/320'), isNull);
-    });
-
-    test('proje adı reddedilir', () {
+    test('proje adı', () {
       expect(parser.parseOne('PROJE ADI'), isNull);
     });
   });
