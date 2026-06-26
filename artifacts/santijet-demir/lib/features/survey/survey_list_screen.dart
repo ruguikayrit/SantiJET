@@ -143,10 +143,7 @@ class _SurveyListScreenState extends ConsumerState<SurveyListScreen>
               ),
             ),
             const RebarMetrajPanel(),
-            Material(
-              color: screenBg,
-              child: const SavedMetrajListTab(),
-            ),
+            const SavedMetrajListTab(),
           ],
         ),
       ),
