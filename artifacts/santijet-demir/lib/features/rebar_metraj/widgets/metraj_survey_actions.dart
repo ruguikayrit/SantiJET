@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
-import 'package:intl/intl.dart';
 import 'package:santijet_demir/core/routing/app_routes.dart';
 import 'package:santijet_demir/core/theme/app_colors.dart';
 import 'package:santijet_demir/core/theme/app_radii.dart';
@@ -30,7 +29,8 @@ class MetrajResultActions extends ConsumerWidget {
           record.result.totalTonnage == result.totalTonnage,
     );
 
-    final canAct = projectId != null && canEdit;
+    final canSave = projectId != null;
+    final canSend = projectId != null && canEdit;
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -47,7 +47,7 @@ class MetrajResultActions extends ConsumerWidget {
           Padding(
             padding: const EdgeInsets.only(bottom: 8),
             child: Text(
-              'Bu projede yalnızca görüntüleme yetkiniz var.',
+              'Keşife göndermek için düzenleme yetkisi gerekir.',
               style: AppTypography.bodySmall.copyWith(color: AppColors.textMuted),
             ),
           ),
@@ -55,10 +55,10 @@ class MetrajResultActions extends ConsumerWidget {
           children: [
             Expanded(
               child: FilledButton.icon(
-                onPressed: !canAct
+                onPressed: !canSave
                     ? () => _handleBlockedAction(context, ref)
                     : isSaved
-                        ? null
+                        ? () => _openSavedRecord(context, ref)
                         : () => _saveResult(context, ref),
                 icon: Icon(isSaved ? Icons.check_circle : Icons.save),
                 label: Text(isSaved ? 'Kaydedildi' : 'Sonucu Kaydet'),
@@ -67,8 +67,8 @@ class MetrajResultActions extends ConsumerWidget {
             const SizedBox(width: 8),
             Expanded(
               child: OutlinedButton.icon(
-                onPressed: !canAct
-                    ? () => _handleBlockedAction(context, ref)
+                onPressed: !canSend
+                    ? () => _handleBlockedAction(context, ref, forSurvey: true)
                     : () => _sendToSurvey(context, ref),
                 icon: const Icon(Icons.send),
                 label: const Text('Keşife Gönder'),
@@ -76,11 +76,11 @@ class MetrajResultActions extends ConsumerWidget {
             ),
           ],
         ),
-        if (isSaved && canAct)
+        if (isSaved && canSave)
           Padding(
             padding: const EdgeInsets.only(top: 8),
             child: Text(
-              'Metraj sonucu projeye kaydedildi.',
+              'Metraj kaydı "Metraj" sekmesinde.',
               style: AppTypography.bodySmall.copyWith(color: AppColors.success),
             ),
           ),
@@ -88,7 +88,23 @@ class MetrajResultActions extends ConsumerWidget {
     );
   }
 
-  void _handleBlockedAction(BuildContext context, WidgetRef ref) {
+  void _openSavedRecord(BuildContext context, WidgetRef ref) {
+    final matches = ref.read(savedRebarMetrajProvider).where(
+          (item) =>
+              item.result.fileName == result.fileName &&
+              item.result.parsedAt == result.parsedAt,
+        );
+    if (matches.isEmpty) return;
+    final record = matches.first;
+    ref.read(surveyTabIndexProvider.notifier).state = 2;
+    context.push(AppRoutes.savedMetrajDetail(record.id));
+  }
+
+  void _handleBlockedAction(
+    BuildContext context,
+    WidgetRef ref, {
+    bool forSurvey = false,
+  }) {
     final projectId = ref.read(activeProjectIdProvider);
     if (projectId == null) {
       context.push(AppRoutes.projects);
@@ -96,8 +112,12 @@ class MetrajResultActions extends ConsumerWidget {
     }
 
     ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(
-        content: Text('Bu projede kaydetme yetkiniz yok.'),
+      SnackBar(
+        content: Text(
+          forSurvey
+              ? 'Bu projede keşife gönderme yetkiniz yok.'
+              : 'Proje seçilmedi.',
+        ),
       ),
     );
   }
@@ -107,8 +127,12 @@ class MetrajResultActions extends ConsumerWidget {
         .read(savedRebarMetrajProvider.notifier)
         .saveCurrentResult(result);
     if (!context.mounted || saved == null) return;
+
+    ref.read(surveyTabIndexProvider.notifier).state = 2;
+    context.push(AppRoutes.savedMetrajDetail(saved.id));
+
     ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(content: Text('Metraj sonucu kaydedildi.')),
+      const SnackBar(content: Text('Metraj kaydı oluşturuldu.')),
     );
   }
 
@@ -358,72 +382,4 @@ Future<SendMetrajToSurveyRequest?> showSendMetrajToSurveyDialog(
     context: context,
     builder: (context) => SendMetrajToSurveyDialog(result: result),
   );
-}
-
-class SavedMetrajHistorySection extends ConsumerWidget {
-  const SavedMetrajHistorySection({super.key});
-
-  @override
-  Widget build(BuildContext context, WidgetRef ref) {
-    final savedRecords = ref.watch(savedRebarMetrajProvider);
-    if (savedRecords.isEmpty) return const SizedBox.shrink();
-
-    final dateFormat = DateFormat('dd.MM.yyyy HH:mm', 'tr_TR');
-
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Text('Kayıtlı Metrajlar', style: AppTypography.headlineMedium),
-        const SizedBox(height: 8),
-        ...savedRecords.take(5).map(
-              (record) => Container(
-                margin: const EdgeInsets.only(bottom: 8),
-                padding: const EdgeInsets.all(12),
-                decoration: BoxDecoration(
-                  color: AppColors.surfaceElevated,
-                  borderRadius: AppRadii.md,
-                  border: Border.all(color: AppColors.border),
-                ),
-                child: Row(
-                  children: [
-                    Expanded(
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text(
-                            record.result.fileName,
-                            style: AppTypography.titleMedium,
-                            maxLines: 1,
-                            overflow: TextOverflow.ellipsis,
-                          ),
-                          Text(
-                            '${record.result.totalTonnage.toStringAsFixed(2)} t · '
-                            '${dateFormat.format(record.savedAt)}',
-                            style: AppTypography.bodySmall,
-                          ),
-                          if (record.surveyImalatName != null)
-                            Text(
-                              'Keşif: ${record.surveyImalatName}',
-                              style: AppTypography.labelMedium.copyWith(
-                                color: AppColors.success,
-                              ),
-                            ),
-                        ],
-                      ),
-                    ),
-                    IconButton(
-                      tooltip: 'Sonucu yükle',
-                      onPressed: () {
-                        ref.read(rebarMetrajResultProvider.notifier).state =
-                            record.result;
-                      },
-                      icon: const Icon(Icons.restore),
-                    ),
-                  ],
-                ),
-              ),
-            ),
-      ],
-    );
-  }
 }
