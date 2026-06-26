@@ -20,8 +20,15 @@ class RebarMetrajPanel extends ConsumerWidget {
     final loading = ref.watch(rebarMetrajLoadingProvider);
     final error = ref.watch(rebarMetrajErrorProvider);
 
+    final bottomInset = MediaQuery.paddingOf(context).bottom;
+
     return ListView(
-      padding: const EdgeInsets.all(AppSpacing.md),
+      padding: EdgeInsets.fromLTRB(
+        AppSpacing.md,
+        AppSpacing.md,
+        AppSpacing.md,
+        AppSpacing.md + bottomInset,
+      ),
       children: [
         const _InfoBanner(),
         const SizedBox(height: 16),
@@ -38,6 +45,11 @@ class RebarMetrajPanel extends ConsumerWidget {
         if (result != null) ...[
           const SizedBox(height: 20),
           _ResultSummary(result: result),
+          const SizedBox(height: 6),
+          Text(
+            '${result.fileName} · ${result.sourceFormat}',
+            style: AppTypography.bodySmall,
+          ),
           const SizedBox(height: 12),
           MetrajResultActions(result: result),
           const SizedBox(height: 16),
@@ -52,8 +64,10 @@ class RebarMetrajPanel extends ConsumerWidget {
             const SizedBox(height: 16),
             _WarningsCard(warnings: result.warnings),
           ],
-          const SizedBox(height: 16),
-          _MetaCard(result: result),
+          if (result.skippedEntityCount > 0) ...[
+            const SizedBox(height: 12),
+            _SkippedHint(count: result.skippedEntityCount),
+          ],
         ],
       ],
     );
@@ -381,14 +395,25 @@ class _MetrajLineCard extends StatelessWidget {
   }
 }
 
-class _TextDetailSection extends StatelessWidget {
+class _TextDetailSection extends StatefulWidget {
   const _TextDetailSection({required this.details});
 
   final List<RebarMetrajTextDetail> details;
 
   @override
+  State<_TextDetailSection> createState() => _TextDetailSectionState();
+}
+
+class _TextDetailSectionState extends State<_TextDetailSection> {
+  static const _pageSize = 15;
+  var _visibleCount = _pageSize;
+
+  @override
   Widget build(BuildContext context) {
     final formatter = NumberFormat('#,##0.00', 'tr_TR');
+    final details = widget.details;
+    final visible = details.take(_visibleCount).toList();
+    final hasMore = details.length > _visibleCount;
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -400,9 +425,33 @@ class _TextDetailSection extends StatelessWidget {
           style: AppTypography.bodySmall,
         ),
         const SizedBox(height: 12),
-        ...details.map(
+        ...visible.map(
           (detail) => _TextDetailCard(detail: detail, formatter: formatter),
         ),
+        if (hasMore)
+          Align(
+            alignment: Alignment.centerLeft,
+            child: TextButton.icon(
+              onPressed: () {
+                setState(() {
+                  _visibleCount = (_visibleCount + _pageSize).clamp(0, details.length);
+                });
+              },
+              icon: const Icon(Icons.expand_more),
+              label: Text(
+                'Daha fazla göster (${details.length - _visibleCount} kaldı)',
+              ),
+            ),
+          )
+        else if (details.length > _pageSize)
+          Align(
+            alignment: Alignment.centerLeft,
+            child: TextButton.icon(
+              onPressed: () => setState(() => _visibleCount = _pageSize),
+              icon: const Icon(Icons.expand_less),
+              label: const Text('Listeyi daralt'),
+            ),
+          ),
       ],
     );
   }
@@ -497,60 +546,16 @@ class _WarningsCard extends StatelessWidget {
   }
 }
 
-class _MetaCard extends StatelessWidget {
-  const _MetaCard({required this.result});
+class _SkippedHint extends StatelessWidget {
+  const _SkippedHint({required this.count});
 
-  final RebarMetrajResult result;
-
-  @override
-  Widget build(BuildContext context) {
-    final dateFormat = DateFormat('dd.MM.yyyy HH:mm', 'tr_TR');
-
-    return Container(
-      padding: const EdgeInsets.all(14),
-      decoration: BoxDecoration(
-        color: AppColors.surface,
-        borderRadius: AppRadii.md,
-        border: Border.all(color: AppColors.border),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Text('Dosya Bilgisi', style: AppTypography.titleMedium),
-          const SizedBox(height: 8),
-          _MetaRow(label: 'Dosya', value: result.fileName),
-          _MetaRow(label: 'Format', value: result.sourceFormat),
-          _MetaRow(label: 'Tarih', value: dateFormat.format(result.parsedAt)),
-          _MetaRow(
-            label: 'Tanınan etiket',
-            value: '${result.textDetails.length}',
-          ),
-          _MetaRow(
-            label: 'Atlanan metin',
-            value: '${result.skippedEntityCount}',
-          ),
-        ],
-      ),
-    );
-  }
-}
-
-class _MetaRow extends StatelessWidget {
-  const _MetaRow({required this.label, required this.value});
-
-  final String label;
-  final String value;
+  final int count;
 
   @override
   Widget build(BuildContext context) {
-    return Padding(
-      padding: const EdgeInsets.only(bottom: 4),
-      child: Row(
-        children: [
-          SizedBox(width: 110, child: Text(label, style: AppTypography.bodySmall)),
-          Expanded(child: Text(value, style: AppTypography.titleMedium)),
-        ],
-      ),
+    return Text(
+      '$count CAD metni demir etiketi olarak tanınmadı (adet + çap + boy yok).',
+      style: AppTypography.bodySmall.copyWith(color: AppColors.textMuted),
     );
   }
 }
