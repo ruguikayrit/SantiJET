@@ -10,6 +10,7 @@ import 'package:santijet_demir/data/services/dxf_rebar_parser.dart';
 import 'package:santijet_demir/domain/entities/rebar_metraj.dart';
 import 'package:santijet_demir/features/projects/providers/project_provider.dart';
 import 'package:santijet_demir/features/rebar_metraj/providers/rebar_metraj_provider.dart';
+import 'package:santijet_demir/features/rebar_metraj/widgets/metraj_survey_actions.dart';
 
 class RebarMetrajPanel extends ConsumerStatefulWidget {
   const RebarMetrajPanel({super.key});
@@ -52,52 +53,68 @@ class _RebarMetrajPanelState extends ConsumerState<RebarMetrajPanel> {
     final loading = ref.watch(rebarMetrajLoadingProvider);
     final error = ref.watch(rebarMetrajErrorProvider);
     final bottomInset = MediaQuery.paddingOf(context).bottom;
+    final bottomBarHeight = result != null ? 88.0 : 0.0;
 
-    return ListView(
-      padding: EdgeInsets.fromLTRB(
-        AppSpacing.md,
-        AppSpacing.md,
-        AppSpacing.md,
-        AppSpacing.md + bottomInset,
-      ),
-      children: [
-        const _InfoBanner(),
-        const SizedBox(height: 16),
-        _UploadCard(
-          loading: loading,
-          onPickFile: () => _pickAndParse(context, ref),
-        ),
-        if (error != null) ...[
-          const SizedBox(height: 12),
-          _ErrorBanner(message: error),
-        ],
-        if (result != null) ...[
-          const SizedBox(height: 20),
-          _ResultSummary(result: result),
-          const SizedBox(height: 6),
-          Text(
-            '${result.fileName} · ${result.sourceFormat}',
-            style: AppTypography.bodySmall,
+    return Material(
+      color: AppColors.canvas,
+      child: CustomScrollView(
+        physics: const ClampingScrollPhysics(),
+        slivers: [
+          SliverPadding(
+            padding: EdgeInsets.fromLTRB(
+              AppSpacing.md,
+              AppSpacing.md,
+              AppSpacing.md,
+              AppSpacing.md + bottomInset + bottomBarHeight,
+            ),
+            sliver: SliverList(
+              delegate: SliverChildListDelegate([
+                const _InfoBanner(),
+                const SizedBox(height: 16),
+                _UploadCard(
+                  loading: loading,
+                  onPickFile: () => _pickAndParse(context, ref),
+                ),
+                if (error != null) ...[
+                  const SizedBox(height: 12),
+                  _ErrorBanner(message: error),
+                ],
+                if (result != null) ...[
+                  const SizedBox(height: 20),
+                  _ResultSummary(result: result),
+                  const SizedBox(height: 6),
+                  Text(
+                    '${result.fileName} · ${result.sourceFormat}',
+                    style: AppTypography.bodySmall,
+                  ),
+                  const SizedBox(height: 12),
+                  MetrajResultActions(result: result),
+                  const SizedBox(height: 16),
+                  Text('Çap Bazlı Metraj', style: AppTypography.headlineMedium),
+                  const SizedBox(height: 12),
+                  ...result.lines.map((line) => _MetrajLineCard(line: line)),
+                  if (result.textDetails.isNotEmpty) ...[
+                    const SizedBox(height: 20),
+                    _TextDetailSection(details: result.textDetails),
+                  ],
+                  if (result.warnings.isNotEmpty) ...[
+                    const SizedBox(height: 16),
+                    _WarningsCard(warnings: result.warnings),
+                  ],
+                  if (result.skippedEntityCount > 0) ...[
+                    const SizedBox(height: 12),
+                    _SkippedHint(count: result.skippedEntityCount),
+                  ],
+                ],
+              ]),
+            ),
           ),
-          const SizedBox(height: 16),
-          Text('Çap Bazlı Metraj', style: AppTypography.headlineMedium),
-          const SizedBox(height: 12),
-          ...result.lines.map((line) => _MetrajLineCard(line: line)),
-          if (result.textDetails.isNotEmpty) ...[
-            const SizedBox(height: 20),
-            _TextDetailSection(details: result.textDetails),
-          ],
-          if (result.warnings.isNotEmpty) ...[
-            const SizedBox(height: 16),
-            _WarningsCard(warnings: result.warnings),
-          ],
-          if (result.skippedEntityCount > 0) ...[
-            const SizedBox(height: 12),
-            _SkippedHint(count: result.skippedEntityCount),
-          ],
-          const SizedBox(height: 88),
+          const SliverFillRemaining(
+            hasScrollBody: false,
+            child: ColoredBox(color: AppColors.canvas),
+          ),
         ],
-      ],
+      ),
     );
   }
 

@@ -113,44 +113,41 @@ class _SurveyListScreenState extends ConsumerState<SurveyListScreen>
       ),
       body: ColoredBox(
         color: screenBg,
-        child: TabBarView(
-          controller: _tabController,
+        child: IndexedStack(
+          index: tabIndex.clamp(0, _tabCount - 1),
           children: [
-            ColoredBox(
+            Material(
               color: screenBg,
               child: ListView(
-                padding: const EdgeInsets.all(AppSpacing.md),
-                children: [
-                  _ProjectMetaRow(project: project),
-                  const SizedBox(height: 16),
-                  Text('İmalat Listesi', style: AppTypography.headlineMedium),
-                  const SizedBox(height: 12),
-                  ...project.imalats.map(
-                    (imalat) => SurveyImalatCard(
-                      imalat: imalat,
-                      expanded: expandedId == imalat.id,
-                      onToggle: () {
-                        ref.read(expandedImalatProvider.notifier).state =
-                            expandedId == imalat.id ? null : imalat.id;
-                      },
-                      onDetail: () {
-                        ref.read(selectedImalatProvider.notifier).state = imalat;
-                        context.push('${AppRoutes.survey}/${imalat.id}');
-                      },
-                    ),
+              padding: const EdgeInsets.all(AppSpacing.md),
+              children: [
+                _ProjectMetaRow(project: project),
+                const SizedBox(height: 16),
+                Text('İmalat Listesi', style: AppTypography.headlineMedium),
+                const SizedBox(height: 12),
+                ...project.imalats.map(
+                  (imalat) => SurveyImalatCard(
+                    imalat: imalat,
+                    expanded: expandedId == imalat.id,
+                    onToggle: () {
+                      ref.read(expandedImalatProvider.notifier).state =
+                          expandedId == imalat.id ? null : imalat.id;
+                    },
+                    onDetail: () {
+                      ref.read(selectedImalatProvider.notifier).state = imalat;
+                      context.push('${AppRoutes.survey}/${imalat.id}');
+                    },
                   ),
-                  const SizedBox(height: 16),
-                  _BottomActions(project: project),
-                ],
+                ),
+                const SizedBox(height: 16),
+                _BottomActions(project: project),
+              ],
               ),
             ),
-            const ColoredBox(
-              color: AppColors.canvas,
-              child: RebarMetrajPanel(),
-            ),
-            const ColoredBox(
-              color: AppColors.canvas,
-              child: SavedMetrajListTab(),
+            const RebarMetrajPanel(),
+            Material(
+              color: screenBg,
+              child: const SavedMetrajListTab(),
             ),
           ],
         ),
