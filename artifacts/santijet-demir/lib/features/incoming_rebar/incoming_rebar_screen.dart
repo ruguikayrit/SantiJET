@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import 'package:santijet_demir/core/format/app_format.dart';
 import 'package:santijet_demir/core/routing/app_routes.dart';
 import 'package:santijet_demir/core/theme/app_colors.dart';
 import 'package:santijet_demir/core/theme/app_radii.dart';
@@ -18,6 +19,7 @@ class IncomingRebarScreen extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final deliveries = ref.watch(deliveriesProvider);
+    final summary = ref.watch(incomingRebarDashboardSummaryProvider);
     final recent = deliveries.take(5).toList();
 
     return Scaffold(
@@ -48,35 +50,35 @@ class IncomingRebarScreen extends ConsumerWidget {
                     mainAxisSpacing: 12,
                     crossAxisSpacing: 12,
                     childAspectRatio: 1.5,
-                    children: const [
+                    children: [
                       KpiCard(
                         label: 'Toplam Sipariş',
-                        value: '3.010',
+                        value: AppFormat.tonnage(summary.totalOrdered),
                         unit: 't',
                         accentColor: AppColors.electricBlueLight,
                       ),
                       KpiCard(
                         label: 'Teslim Alınan',
-                        value: '2.890',
+                        value: AppFormat.tonnage(summary.totalDelivered),
                         unit: 't',
                         accentColor: AppColors.success,
                       ),
                       KpiCard(
                         label: 'Bekleyen',
-                        value: '120',
+                        value: AppFormat.tonnage(summary.pending),
                         unit: 't',
                         accentColor: AppColors.warning,
                       ),
                       KpiCard(
                         label: 'Eksik',
-                        value: '24',
+                        value: AppFormat.tonnage(summary.missing),
                         unit: 't',
                         accentColor: AppColors.critical,
                       ),
                     ],
                   ),
                   const SizedBox(height: 16),
-                  _FulfillmentBar(percent: 96.0),
+                  _FulfillmentBar(percent: summary.fulfillmentPercent),
                   const SizedBox(height: 16),
                   Text('Kritik Uyarılar', style: AppTypography.headlineMedium),
                   const SizedBox(height: 8),

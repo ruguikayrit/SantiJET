@@ -12,6 +12,7 @@ import 'package:santijet_demir/core/widgets/app_bottom_nav_bar.dart';
 import 'package:santijet_demir/core/widgets/app_components.dart';
 import 'package:santijet_demir/core/widgets/santijet_header.dart';
 import 'package:santijet_demir/core/widgets/project_permission_gate.dart';
+import 'package:santijet_demir/features/incoming_rebar/providers/incoming_rebar_provider.dart';
 import 'package:santijet_demir/features/projects/widgets/project_switcher.dart';
 import 'package:santijet_demir/features/settings/providers/profile_provider.dart';
 import 'package:santijet_demir/features/survey/providers/survey_provider.dart';
@@ -43,6 +44,7 @@ class DashboardScreen extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final avatarInitial = ref.watch(profileInitialProvider);
     final surveySummary = ref.watch(surveyDashboardSummaryProvider);
+    final incomingSummary = ref.watch(incomingRebarDashboardSummaryProvider);
     final surveyTonnageLabel = AppFormat.tonnage(surveySummary.totalTonnage);
     final surveyImalatLabel = surveySummary.imalatCount == 0
         ? 'Henüz imalat yok'
@@ -84,25 +86,21 @@ class DashboardScreen extends ConsumerWidget {
                           unit: 't',
                           accentColor: AppColors.electricBlueLight,
                         ),
-                        const KpiCard(
+                        KpiCard(
                           label: 'Toplam Sipariş',
-                          value: '2.890',
+                          value: AppFormat.tonnage(incomingSummary.totalOrdered),
                           unit: 't',
-                          trend: '+8%',
-                          trendUp: true,
                           accentColor: AppColors.info,
                         ),
                         KpiCard(
                           label: 'Sahaya Gelen',
-                          value: '2.770',
+                          value: AppFormat.tonnage(incomingSummary.totalDelivered),
                           unit: 't',
-                          trend: '-3%',
-                          trendUp: false,
                           accentColor: AppColors.success,
                         ),
                         KpiCard(
                           label: 'Beklenen Stok',
-                          value: '412',
+                          value: AppFormat.tonnage(incomingSummary.pending),
                           unit: 't',
                           accentColor: AppColors.warning,
                         ),
