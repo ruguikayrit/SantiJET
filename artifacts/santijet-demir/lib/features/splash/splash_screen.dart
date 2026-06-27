@@ -89,7 +89,7 @@ class _SplashScreenState extends ConsumerState<SplashScreen>
   @override
   Widget build(BuildContext context) {
     final screenWidth = MediaQuery.sizeOf(context).width;
-    final boltSize = (screenWidth * 0.38).clamp(140.0, 220.0);
+    final boltSize = (screenWidth * 0.76).clamp(280.0, 440.0);
     final wordmarkWidth = (screenWidth * 0.78).clamp(260.0, 360.0);
     final wordmarkHeight = wordmarkWidth / _wordmarkAspect;
 
