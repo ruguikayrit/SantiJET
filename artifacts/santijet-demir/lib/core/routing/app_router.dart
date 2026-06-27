@@ -309,13 +309,6 @@ final routerProvider = Provider<GoRouter>((ref) {
               child: const AboutScreen(),
             ),
           ),
-          GoRoute(
-            path: 'empty-states',
-            pageBuilder: (context, state) => fadeSlidePage(
-              key: state.pageKey,
-              child: const EmptyStatesPreviewScreen(),
-            ),
-          ),
         ],
       ),
       StatefulShellRoute.indexedStack(

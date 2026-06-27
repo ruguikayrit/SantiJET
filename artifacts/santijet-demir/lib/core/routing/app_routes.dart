@@ -32,5 +32,4 @@ abstract final class AppRoutes {
   static const projectSettings = '/settings/project';
   static const notificationSettings = '/settings/notifications';
   static const about = '/settings/about';
-  static const emptyStates = '/settings/empty-states';
 }

@@ -6,7 +6,6 @@ import 'package:santijet_demir/core/theme/app_colors.dart';
 import 'package:santijet_demir/core/theme/app_radii.dart';
 import 'package:santijet_demir/core/theme/app_spacing.dart';
 import 'package:santijet_demir/core/theme/app_typography.dart';
-import 'package:santijet_demir/core/widgets/empty_states.dart';
 import 'package:santijet_demir/features/auth/providers/app_lock_provider.dart';
 import 'package:santijet_demir/features/auth/providers/auth_provider.dart';
 import 'package:santijet_demir/features/projects/providers/project_provider.dart';
@@ -90,12 +89,6 @@ class SettingsScreen extends ConsumerWidget {
             title: 'Yedekleme & Geri Yükleme',
             subtitle: 'Ayarları dışa/içe aktar',
             onTap: () => _showBackupDialog(context, ref),
-          ),
-          _SettingsTile(
-            icon: Icons.layers,
-            title: 'Boş Durum Önizleme',
-            subtitle: 'Figma empty state component\'leri',
-            onTap: () => context.push(AppRoutes.emptyStates),
           ),
           _SettingsTile(
             icon: Icons.info_outline,
@@ -729,26 +722,6 @@ class _SettingsTile extends StatelessWidget {
             ],
           ),
         ),
-      ),
-    );
-  }
-}
-
-class EmptyStatesPreviewScreen extends StatelessWidget {
-  const EmptyStatesPreviewScreen({super.key});
-
-  @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      backgroundColor: AppColors.canvas,
-      appBar: AppBar(title: const Text('Boş Durumlar')),
-      body: ListView(
-        children: EmptyStateType.values.map((type) {
-          return SizedBox(
-            height: 220,
-            child: ModuleEmptyState(type: type),
-          );
-        }).toList(),
       ),
     );
   }
