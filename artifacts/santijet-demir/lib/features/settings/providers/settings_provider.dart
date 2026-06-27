@@ -25,10 +25,7 @@ class AppSettingsNotifier extends StateNotifier<AppSettings> {
     if (raw is Map) {
       return AppSettings.fromJson(raw);
     }
-    return AppSettings(
-      projectStartDate: DateTime(2025, 1, 1),
-      projectEndDate: DateTime(2025, 12, 31),
-    );
+    return AppSettings();
   }
 
   Future<void> _persist() async {
@@ -117,10 +114,7 @@ class AppSettingsNotifier extends StateNotifier<AppSettings> {
   Future<void> clearAllLocalData() async {
     await Hive.box('projects').clear();
     await _box.clear();
-    state = AppSettings(
-      projectStartDate: DateTime.now(),
-      projectEndDate: DateTime(DateTime.now().year, 12, 31),
-    );
+    state = AppSettings();
     await _persist();
   }
 }

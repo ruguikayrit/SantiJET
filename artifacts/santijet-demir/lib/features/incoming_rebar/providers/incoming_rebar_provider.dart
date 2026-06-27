@@ -86,7 +86,7 @@ class NewDeliveryDraftNotifier extends StateNotifier<NewDeliveryDraft> {
   NewDeliveryDraftNotifier()
       : super(NewDeliveryDraft(
           date: DateTime.now(),
-          diameterEntries: {16: 28, 20: 20, 22: 0},
+          diameterEntries: const {},
         ));
 
   void setSupplier(String supplier) {
@@ -114,7 +114,7 @@ class NewDeliveryDraftNotifier extends StateNotifier<NewDeliveryDraft> {
   void reset() {
     state = NewDeliveryDraft(
       date: DateTime.now(),
-      diameterEntries: {16: 28, 20: 20, 22: 0},
+      diameterEntries: const {},
     );
   }
 }

@@ -2,12 +2,14 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:intl/intl.dart';
+import 'package:santijet_demir/core/format/app_format.dart';
 import 'package:santijet_demir/core/routing/app_routes.dart';
 import 'package:santijet_demir/core/theme/app_colors.dart';
 import 'package:santijet_demir/core/theme/app_radii.dart';
 import 'package:santijet_demir/core/theme/app_spacing.dart';
 import 'package:santijet_demir/core/theme/app_typography.dart';
 import 'package:santijet_demir/core/widgets/app_components.dart';
+import 'package:santijet_demir/core/widgets/empty_states.dart';
 import 'package:santijet_demir/core/widgets/santijet_header.dart';
 import 'package:santijet_demir/domain/entities/field_count.dart';
 import 'package:santijet_demir/features/field_count/providers/field_count_provider.dart';
@@ -18,6 +20,12 @@ class FieldCountScreen extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final counts = ref.watch(fieldCountsProvider);
+    final reconciliationRows = ref.watch(reconciliationRowsProvider);
+
+    final expectedStock = counts.fold<double>(0, (sum, c) => sum + c.expected);
+    final actualCount = counts.fold<double>(0, (sum, c) => sum + c.actual);
+    final totalVariance = counts.fold<double>(0, (sum, c) => sum + c.variance);
+    final criticalCount = counts.where((c) => c.status == 'critical').length;
 
     return Scaffold(
       backgroundColor: AppColors.canvas,
@@ -38,28 +46,28 @@ class FieldCountScreen extends ConsumerWidget {
                     mainAxisSpacing: 12,
                     crossAxisSpacing: 12,
                     childAspectRatio: 1.5,
-                    children: const [
+                    children: [
                       KpiCard(
                         label: 'Beklenen Stok',
-                        value: '412',
+                        value: AppFormat.tonnage(expectedStock),
                         unit: 't',
                         accentColor: AppColors.electricBlueLight,
                       ),
                       KpiCard(
                         label: 'Gerçek Sayım',
-                        value: '398',
+                        value: AppFormat.tonnage(actualCount),
                         unit: 't',
                         accentColor: AppColors.info,
                       ),
                       KpiCard(
                         label: 'Toplam Sapma',
-                        value: '-14',
+                        value: AppFormat.tonnage(totalVariance),
                         unit: 't',
                         accentColor: AppColors.warning,
                       ),
                       KpiCard(
                         label: 'Kritik Çap',
-                        value: '3',
+                        value: AppFormat.integer(criticalCount),
                         unit: '',
                         accentColor: AppColors.critical,
                       ),
@@ -67,47 +75,47 @@ class FieldCountScreen extends ConsumerWidget {
                   ),
                   const SizedBox(height: 16),
                   _ReconciliationShortcut(
+                    rowCount: reconciliationRows.length,
                     onTap: () => context.push(AppRoutes.reconciliation),
                   ),
                   const SizedBox(height: 16),
                   Text('Kritik Uyarılar', style: AppTypography.headlineMedium),
                   const SizedBox(height: 8),
-                  const AlertCard(
-                    title: 'Ø16 Sapma Kritik',
-                    message: 'Beklenen 242t — Sayım 228t (-14t)',
-                    severityColor: AppColors.critical,
-                  ),
-                  const SizedBox(height: 8),
-                  const AlertCard(
-                    title: 'Perde Bölgesi Uyarı',
-                    message: 'Sapma %6.8 — inceleme gerekli',
-                    severityColor: AppColors.warning,
-                  ),
-                  const SizedBox(height: 8),
-                  const AlertCard(
-                    title: 'Sayım Bekliyor',
-                    message: 'Kiriş bölgesi sayımı tamamlanmadı',
-                    severityColor: Color(0xFFFBBF24),
-                  ),
+                  const ModuleEmptyState(type: EmptyStateType.noAlert),
                   const SizedBox(height: 16),
                   Text('Sayım Durumu', style: AppTypography.headlineMedium),
                   const SizedBox(height: 8),
                   Row(
                     children: [
-                      _StatusChip(label: 'Tamamlanan', count: 3, color: AppColors.success),
+                      _StatusChip(
+                        label: 'Tamamlanan',
+                        count: counts.where((c) => c.status == 'completed').length,
+                        color: AppColors.success,
+                      ),
                       const SizedBox(width: 8),
-                      _StatusChip(label: 'Bekleyen', count: 1, color: AppColors.warning),
+                      _StatusChip(
+                        label: 'Bekleyen',
+                        count: counts.where((c) => c.status == 'pending').length,
+                        color: AppColors.warning,
+                      ),
                       const SizedBox(width: 8),
-                      _StatusChip(label: 'Kritik', count: 1, color: AppColors.critical),
+                      _StatusChip(
+                        label: 'Kritik',
+                        count: criticalCount,
+                        color: AppColors.critical,
+                      ),
                     ],
                   ),
                   const SizedBox(height: 16),
                   Text('Son Sayımlar', style: AppTypography.headlineMedium),
                   const SizedBox(height: 8),
-                  ...counts.map((c) => _CountTimelineTile(
-                        record: c,
-                        onTap: () => context.push(AppRoutes.countDetail(c.id)),
-                      )),
+                  if (counts.isEmpty)
+                    const ModuleEmptyState(type: EmptyStateType.noCount)
+                  else
+                    ...counts.map((c) => _CountTimelineTile(
+                          record: c,
+                          onTap: () => context.push(AppRoutes.countDetail(c.id)),
+                        )),
                   const SizedBox(height: 80),
                 ]),
               ),
@@ -124,12 +132,20 @@ class FieldCountScreen extends ConsumerWidget {
 }
 
 class _ReconciliationShortcut extends StatelessWidget {
-  const _ReconciliationShortcut({required this.onTap});
+  const _ReconciliationShortcut({
+    required this.rowCount,
+    required this.onTap,
+  });
 
+  final int rowCount;
   final VoidCallback onTap;
 
   @override
   Widget build(BuildContext context) {
+    final subtitle = rowCount == 0
+        ? 'Henüz mutabakat verisi yok'
+        : '$rowCount çap · Keşif → Sayım karşılaştırma';
+
     return Material(
       color: Colors.transparent,
       child: InkWell(
@@ -151,7 +167,7 @@ class _ReconciliationShortcut extends StatelessWidget {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text('Mutabakat Tablosu', style: AppTypography.titleMedium),
-                    Text('8 çap · Keşif → Sayım karşılaştırma', style: AppTypography.bodySmall),
+                    Text(subtitle, style: AppTypography.bodySmall),
                   ],
                 ),
               ),

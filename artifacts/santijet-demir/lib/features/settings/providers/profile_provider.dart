@@ -13,7 +13,7 @@ final profileDisplayNameProvider = Provider<String>((ref) {
 final profileProfessionProvider = Provider<String>((ref) {
   final settings = ref.watch(appSettingsProvider);
   final profession = settings.profileProfession.trim();
-  return profession.isNotEmpty ? profession : 'Şantiye Şefi';
+  return profession.isNotEmpty ? profession : '';
 });
 
 final profileInitialProvider = Provider<String>((ref) {

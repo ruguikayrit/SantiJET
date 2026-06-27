@@ -11,8 +11,10 @@ import 'package:santijet_demir/core/theme/app_typography.dart';
 import 'package:santijet_demir/core/widgets/app_bottom_nav_bar.dart';
 import 'package:santijet_demir/core/widgets/app_components.dart';
 import 'package:santijet_demir/core/widgets/santijet_header.dart';
+import 'package:santijet_demir/core/widgets/empty_states.dart';
 import 'package:santijet_demir/core/widgets/project_permission_gate.dart';
 import 'package:santijet_demir/features/incoming_rebar/providers/incoming_rebar_provider.dart';
+import 'package:santijet_demir/features/orders/providers/orders_provider.dart';
 import 'package:santijet_demir/features/projects/widgets/project_switcher.dart';
 import 'package:santijet_demir/features/settings/providers/profile_provider.dart';
 import 'package:santijet_demir/features/survey/providers/survey_provider.dart';
@@ -45,10 +47,14 @@ class DashboardScreen extends ConsumerWidget {
     final avatarInitial = ref.watch(profileInitialProvider);
     final surveySummary = ref.watch(surveyDashboardSummaryProvider);
     final incomingSummary = ref.watch(incomingRebarDashboardSummaryProvider);
+    final orders = ref.watch(ordersProvider);
     final surveyTonnageLabel = AppFormat.tonnage(surveySummary.totalTonnage);
     final surveyImalatLabel = surveySummary.imalatCount == 0
         ? 'Henüz imalat yok'
         : '${surveySummary.imalatCount} imalat';
+    final ordersSubtitle = orders.isEmpty
+        ? 'Henüz sipariş yok'
+        : '${orders.length} kayıt';
 
     return Scaffold(
       backgroundColor: AppColors.canvas,
@@ -112,6 +118,7 @@ class DashboardScreen extends ConsumerWidget {
                     index: 1,
                     child: _QuickAccessRow(
                       surveySubtitle: surveyImalatLabel,
+                      ordersSubtitle: ordersSubtitle,
                       onSurveyTap: () => context.push(AppRoutes.survey),
                       onMetrajTap: () => context.push(AppRoutes.surveyMetraj),
                       onOrdersTap: () => context.go(AppRoutes.orders),
@@ -126,23 +133,7 @@ class DashboardScreen extends ConsumerWidget {
                       children: [
                         Text('Kritik Uyarılar', style: AppTypography.headlineMedium),
                         const SizedBox(height: AppSpacing.sm),
-                        const AlertCard(
-                          title: 'Ø16 Stok Kritik',
-                          message: 'Beklenen stok 45t altına düştü',
-                          severityColor: AppColors.critical,
-                        ),
-                        const SizedBox(height: 8),
-                        const AlertCard(
-                          title: 'Kısmi Teslimat',
-                          message: 'SIP-2025-0042 — 12t eksik teslim',
-                          severityColor: AppColors.warning,
-                        ),
-                        const SizedBox(height: 8),
-                        const AlertCard(
-                          title: 'Sayım Sapması',
-                          message: 'Perde bölgesi -8.5t sapma tespit edildi',
-                          severityColor: Color(0xFFFBBF24),
-                        ),
+                        const ModuleEmptyState(type: EmptyStateType.noAlert),
                       ],
                     ),
                   ),
@@ -154,20 +145,13 @@ class DashboardScreen extends ConsumerWidget {
                       children: [
                         Text('Süreç Durumu', style: AppTypography.headlineMedium),
                         const SizedBox(height: AppSpacing.sm),
-                        GestureDetector(
-                          onTap: () => context.push(AppRoutes.survey),
-                          child: const ProgressCard(
-                            label: 'Keşif',
-                            percentage: 87,
-                            color: AppColors.electricBlueLight,
-                          ),
-                        ),
+                        const ProgressCard(label: 'Keşif', percentage: 0, color: AppColors.electricBlueLight),
                         const SizedBox(height: 8),
-                        const ProgressCard(label: 'Sipariş', percentage: 73, color: AppColors.info),
+                        const ProgressCard(label: 'Sipariş', percentage: 0, color: AppColors.info),
                         const SizedBox(height: 8),
-                        const ProgressCard(label: 'Teslimat', percentage: 61, color: AppColors.success),
+                        const ProgressCard(label: 'Teslimat', percentage: 0, color: AppColors.success),
                         const SizedBox(height: 8),
-                        const ProgressCard(label: 'Saha Sayım', percentage: 45, color: AppColors.warning),
+                        const ProgressCard(label: 'Saha Sayım', percentage: 0, color: AppColors.warning),
                       ],
                     ),
                   ),
@@ -179,7 +163,10 @@ class DashboardScreen extends ConsumerWidget {
                       children: [
                         Text('Son Aktiviteler', style: AppTypography.headlineMedium),
                         const SizedBox(height: AppSpacing.sm),
-                        ..._buildTimeline(),
+                        Text(
+                          'Henüz aktivite kaydı yok',
+                          style: AppTypography.bodyMedium.copyWith(color: AppColors.textMuted),
+                        ),
                       ],
                     ),
                   ),
@@ -192,50 +179,12 @@ class DashboardScreen extends ConsumerWidget {
       ),
     );
   }
-
-  static List<Widget> _buildTimeline() {
-    const activities = [
-      ('Teslimat alındı', 'Çolakoğlu — 48t Ø16/Ø20', Icons.local_shipping, AppColors.success),
-      ('Sipariş onaylandı', 'SIP-2025-0048 — 120t', Icons.receipt_long, AppColors.info),
-      ('Keşif güncellendi', 'Radye Temel rev.3', Icons.edit_note, AppColors.electricBlueLight),
-      ('Sayım tamamlandı', 'Kolon bölgesi — sapma -2.1t', Icons.inventory_2, AppColors.warning),
-      ('Analiz raporu', 'Haftalık performans %96', Icons.analytics, AppColors.partial),
-    ];
-
-    return activities.map((a) {
-      return Padding(
-        padding: const EdgeInsets.only(bottom: 10),
-        child: Row(
-          children: [
-            Container(
-              width: 36,
-              height: 36,
-              decoration: BoxDecoration(
-                color: a.$4.withValues(alpha: 0.15),
-                borderRadius: BorderRadius.circular(10),
-              ),
-              child: Icon(a.$3, size: 18, color: a.$4),
-            ),
-            const SizedBox(width: 12),
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(a.$1, style: AppTypography.titleMedium),
-                  Text(a.$2, style: AppTypography.bodySmall),
-                ],
-              ),
-            ),
-          ],
-        ),
-      );
-    }).toList();
-  }
 }
 
 class _QuickAccessRow extends StatelessWidget {
   const _QuickAccessRow({
     required this.surveySubtitle,
+    required this.ordersSubtitle,
     required this.onSurveyTap,
     required this.onMetrajTap,
     required this.onOrdersTap,
@@ -243,6 +192,7 @@ class _QuickAccessRow extends StatelessWidget {
   });
 
   final String surveySubtitle;
+  final String ordersSubtitle;
   final VoidCallback onSurveyTap;
   final VoidCallback onMetrajTap;
   final VoidCallback onOrdersTap;
@@ -268,7 +218,7 @@ class _QuickAccessRow extends StatelessWidget {
               child: _QuickAccessCard(
                 icon: Icons.receipt_long,
                 label: 'Siparişler',
-                subtitle: '7 aktif',
+                subtitle: ordersSubtitle,
                 color: AppColors.info,
                 onTap: onOrdersTap,
               ),
@@ -292,7 +242,7 @@ class _QuickAccessRow extends StatelessWidget {
               child: _QuickAccessCard(
                 icon: Icons.description,
                 label: 'Raporlar',
-                subtitle: '10 kategori',
+                subtitle: 'Henüz rapor yok',
                 color: AppColors.partial,
                 onTap: onReportsTap,
               ),
