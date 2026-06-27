@@ -5,7 +5,6 @@ import 'package:santijet_demir/core/theme/app_colors.dart';
 import 'package:santijet_demir/core/theme/app_radii.dart';
 import 'package:santijet_demir/core/theme/app_spacing.dart';
 import 'package:santijet_demir/core/theme/app_typography.dart';
-import 'package:santijet_demir/data/mock/mock_deliveries.dart';
 import 'package:santijet_demir/features/incoming_rebar/providers/incoming_rebar_provider.dart';
 
 class NewDeliveryScreen extends ConsumerStatefulWidget {
@@ -16,13 +15,14 @@ class NewDeliveryScreen extends ConsumerStatefulWidget {
 }
 
 class _NewDeliveryScreenState extends ConsumerState<NewDeliveryScreen> {
-  final _orderController = TextEditingController(text: 'SIP-2025-0048');
+  final _orderController = TextEditingController();
   final _irsaliyeController = TextEditingController();
   final _plateController = TextEditingController();
   final _diameterControllers = {
-    16: TextEditingController(text: '28'),
-    20: TextEditingController(text: '20'),
-    22: TextEditingController(text: '0'),
+    12: TextEditingController(),
+    16: TextEditingController(),
+    20: TextEditingController(),
+    22: TextEditingController(),
   };
 
   @override
@@ -36,17 +36,14 @@ class _NewDeliveryScreenState extends ConsumerState<NewDeliveryScreen> {
     super.dispose();
   }
 
-  double get _totalOrdered {
-    final diameters = matchedOrderInfo['diameters'] as Map<int, double>;
-    return diameters.values.fold(0.0, (s, v) => s + v);
-  }
+  double get _totalOrdered => 0;
 
   @override
   Widget build(BuildContext context) {
     final draft = ref.watch(newDeliveryDraftProvider);
     final notifier = ref.read(newDeliveryDraftProvider.notifier);
     const suppliers = ['Çolakoğlu', 'Kardemir', 'İsdemir', 'Erdemir'];
-    final selectedSupplier = draft.supplier ?? 'Çolakoğlu';
+    final selectedSupplier = draft.supplier;
     final totalDelivered = draft.totalDelivered;
     final diff = totalDelivered - _totalOrdered;
     final fulfillment = _totalOrdered > 0 ? totalDelivered / _totalOrdered * 100 : 0;
@@ -109,9 +106,9 @@ class _NewDeliveryScreenState extends ConsumerState<NewDeliveryScreen> {
           const SizedBox(height: 8),
           TextField(
             controller: _orderController,
-            decoration: InputDecoration(
-              suffixIcon: const Icon(Icons.check_circle, color: AppColors.success),
-              helperText: 'Eşleşen sipariş: ${matchedOrderInfo['totalOrdered']}t — ${matchedOrderInfo['supplier']}',
+            decoration: const InputDecoration(
+              hintText: 'SIP-2025-XXXX',
+              helperText: 'Kayıtlı sipariş numarasını girin',
             ),
           ),
           const SizedBox(height: 16),
@@ -193,8 +190,6 @@ class _CapEntryTable extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final ordered = matchedOrderInfo['diameters'] as Map<int, double>;
-
     return Container(
       decoration: BoxDecoration(
         color: AppColors.surfaceElevated,
@@ -227,7 +222,7 @@ class _CapEntryTable extends StatelessWidget {
                   ),
                   Expanded(
                     child: Text(
-                      '${ordered[e.key]?.toStringAsFixed(0) ?? '-'}t',
+                      '-',
                       style: AppTypography.bodyMedium,
                     ),
                   ),
@@ -241,6 +236,7 @@ class _CapEntryTable extends StatelessWidget {
                         isDense: true,
                         contentPadding: EdgeInsets.symmetric(horizontal: 8, vertical: 8),
                         suffixText: 't',
+                        hintText: '0',
                       ),
                     ),
                   ),

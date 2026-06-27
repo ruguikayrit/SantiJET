@@ -6,9 +6,11 @@ import 'package:santijet_demir/core/theme/app_colors.dart';
 import 'package:santijet_demir/core/theme/app_radii.dart';
 import 'package:santijet_demir/core/theme/app_spacing.dart';
 import 'package:santijet_demir/core/theme/app_typography.dart';
+import 'package:santijet_demir/core/widgets/empty_states.dart';
 import 'package:santijet_demir/data/mock/mock_orders.dart';
 import 'package:santijet_demir/domain/entities/order.dart';
 import 'package:santijet_demir/features/orders/providers/orders_provider.dart';
+import 'package:santijet_demir/features/survey/providers/survey_provider.dart';
 
 class NewOrderWizardScreen extends ConsumerStatefulWidget {
   const NewOrderWizardScreen({super.key});
@@ -184,6 +186,8 @@ class _Step1ImalatSelection extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final notifier = ref.read(newOrderDraftProvider.notifier);
+    final survey = ref.watch(surveyProjectProvider);
+    final options = survey.imalats.map((i) => (i.name, i.totalTonnage)).toList();
     final total = draft.selectedImalats.values.fold(0.0, (s, v) => s + v);
 
     return ListView(
@@ -196,7 +200,10 @@ class _Step1ImalatSelection extends ConsumerWidget {
           style: AppTypography.bodySmall,
         ),
         const SizedBox(height: 16),
-        ...imalatOptions.map((option) {
+        if (options.isEmpty)
+          const ModuleEmptyState(type: EmptyStateType.noSurvey)
+        else
+          ...options.map((option) {
           final selected = draft.selectedImalats.containsKey(option.$1);
           return Padding(
             padding: const EdgeInsets.only(bottom: 8),
@@ -243,28 +250,30 @@ class _Step1ImalatSelection extends ConsumerWidget {
             ),
           );
         }),
-        const SizedBox(height: 16),
-        Container(
-          width: double.infinity,
-          padding: const EdgeInsets.all(16),
-          decoration: BoxDecoration(
-            color: AppColors.surfaceHighlight,
-            borderRadius: AppRadii.md,
-            border: Border.all(color: AppColors.border),
-          ),
-          child: Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              Text('Toplam Seçilen', style: AppTypography.titleMedium),
-              Text(
-                '${total.toStringAsFixed(0)}t',
-                style: AppTypography.kpiValue.copyWith(
-                  color: AppColors.electricBlueLight,
+        if (options.isNotEmpty) ...[
+          const SizedBox(height: 16),
+          Container(
+            width: double.infinity,
+            padding: const EdgeInsets.all(16),
+            decoration: BoxDecoration(
+              color: AppColors.surfaceHighlight,
+              borderRadius: AppRadii.md,
+              border: Border.all(color: AppColors.border),
+            ),
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                Text('Toplam Seçilen', style: AppTypography.titleMedium),
+                Text(
+                  '${total.toStringAsFixed(0)}t',
+                  style: AppTypography.kpiValue.copyWith(
+                    color: AppColors.electricBlueLight,
+                  ),
                 ),
-              ),
-            ],
+              ],
+            ),
           ),
-        ),
+        ],
       ],
     );
   }
@@ -484,7 +493,17 @@ class _Step4SupplierSelection extends ConsumerWidget {
       children: [
         Text('Tedarikçi seçin', style: AppTypography.headlineMedium),
         const SizedBox(height: 16),
-        ...supplierOptions.map((supplier) {
+        if (supplierOptions.isEmpty)
+          Padding(
+            padding: const EdgeInsets.symmetric(vertical: 24),
+            child: Text(
+              'Henüz tanımlı tedarikçi yok.',
+              style: AppTypography.bodyMedium.copyWith(color: AppColors.textMuted),
+              textAlign: TextAlign.center,
+            ),
+          )
+        else
+          ...supplierOptions.map((supplier) {
           final selected = draft.selectedSupplier?.name == supplier.name;
           return Padding(
             padding: const EdgeInsets.only(bottom: 10),

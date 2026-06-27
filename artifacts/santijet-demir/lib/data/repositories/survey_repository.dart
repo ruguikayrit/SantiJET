@@ -1,4 +1,3 @@
-import 'package:santijet_demir/data/mock/mock_surveys.dart';
 import 'package:santijet_demir/data/repositories/project_data_repository.dart';
 import 'package:santijet_demir/domain/entities/survey.dart';
 
@@ -19,12 +18,11 @@ class SurveyRepository {
   }
 
   SurveyProject defaultProject({required String projectName}) {
-    final mock = getMockSurveyProject();
     return SurveyProject(
-      projectName: projectName.isEmpty ? mock.projectName : projectName,
+      projectName: projectName,
       date: DateTime.now(),
-      revision: mock.revision,
-      imalats: mock.imalats,
+      revision: 'Rev.1',
+      imalats: [],
     );
   }
 }

@@ -8,6 +8,7 @@ import 'package:santijet_demir/core/theme/app_radii.dart';
 import 'package:santijet_demir/core/theme/app_spacing.dart';
 import 'package:santijet_demir/core/theme/app_typography.dart';
 import 'package:santijet_demir/core/widgets/app_components.dart';
+import 'package:santijet_demir/core/widgets/empty_states.dart';
 import 'package:santijet_demir/features/projects/widgets/project_switcher.dart';
 import 'package:santijet_demir/core/widgets/santijet_header.dart';
 import 'package:santijet_demir/features/incoming_rebar/providers/incoming_rebar_provider.dart';
@@ -82,35 +83,23 @@ class IncomingRebarScreen extends ConsumerWidget {
                   const SizedBox(height: 16),
                   Text('Kritik Uyarılar', style: AppTypography.headlineMedium),
                   const SizedBox(height: 8),
-                  const AlertCard(
-                    title: 'Eksik Teslimat',
-                    message: 'SIP-2025-0042 — 12t eksik (Ø16/Ø22)',
-                    severityColor: AppColors.critical,
-                  ),
-                  const SizedBox(height: 8),
-                  const AlertCard(
-                    title: 'Kısmi Teslimat',
-                    message: 'SIP-2025-0047 — %85 karşılama',
-                    severityColor: AppColors.warning,
-                  ),
-                  const SizedBox(height: 8),
-                  const AlertCard(
-                    title: 'Fazla Teslimat',
-                    message: 'SIP-2025-0040 — +3t fazla (Ø12)',
-                    severityColor: Color(0xFFFBBF24),
-                  ),
+                  const ModuleEmptyState(type: EmptyStateType.noAlert),
                   const SizedBox(height: 16),
                   Row(
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
                       Text('Son Teslimatlar', style: AppTypography.headlineMedium),
-                      TextButton(
-                        onPressed: () => context.push(AppRoutes.deliveryList),
-                        child: const Text('Tümünü Gör →'),
-                      ),
+                      if (recent.isNotEmpty)
+                        TextButton(
+                          onPressed: () => context.push(AppRoutes.deliveryList),
+                          child: const Text('Tümünü Gör →'),
+                        ),
                     ],
                   ),
-                  Container(
+                  if (recent.isEmpty)
+                    const ModuleEmptyState(type: EmptyStateType.noDelivery)
+                  else
+                    Container(
                     padding: const EdgeInsets.symmetric(horizontal: 14),
                     decoration: BoxDecoration(
                       color: AppColors.surfaceElevated,
@@ -128,6 +117,7 @@ class IncomingRebarScreen extends ConsumerWidget {
                   ),
                   const SizedBox(height: 16),
                   _SupplierShortcut(
+                    supplierCount: ref.watch(supplierPerformanceProvider).length,
                     onTap: () => context.push(AppRoutes.supplierPerformance),
                   ),
                   const SizedBox(height: 80),
@@ -192,8 +182,12 @@ class _FulfillmentBar extends StatelessWidget {
 }
 
 class _SupplierShortcut extends StatelessWidget {
-  const _SupplierShortcut({required this.onTap});
+  const _SupplierShortcut({
+    required this.supplierCount,
+    required this.onTap,
+  });
 
+  final int supplierCount;
   final VoidCallback onTap;
 
   @override
@@ -227,7 +221,12 @@ class _SupplierShortcut extends StatelessWidget {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text('Tedarikçi Performansı', style: AppTypography.titleMedium),
-                    Text('4 firma karşılaştırması', style: AppTypography.bodySmall),
+                    Text(
+                      supplierCount == 0
+                          ? 'Henüz tedarikçi verisi yok'
+                          : '$supplierCount firma karşılaştırması',
+                      style: AppTypography.bodySmall,
+                    ),
                   ],
                 ),
               ),

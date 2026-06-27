@@ -3,17 +3,17 @@ class AppSettings {
     this.themeMode = 'system',
     this.weightUnit = 'kg',
     this.language = 'tr',
-    this.companyName = 'ABC İnşaat A.Ş.',
-    this.taxNo = '1234567890',
-    this.address = 'İstanbul, Türkiye',
-    this.contactEmail = 'info@abcinsaat.com',
-    this.contactPhone = '+90 212 000 00 00',
-    this.projectName = 'ABC İnşaat — Blok A',
-    this.projectCode = 'YTFC2T377X',
-    this.projectLocation = 'İstanbul',
+    this.companyName = '',
+    this.taxNo = '',
+    this.address = '',
+    this.contactEmail = '',
+    this.contactPhone = '',
+    this.projectName = '',
+    this.projectCode = '',
+    this.projectLocation = '',
     this.projectStartDate,
     this.projectEndDate,
-    this.projectProgress = 72,
+    this.projectProgress = 0,
     this.notifyStock = true,
     this.notifyOrders = true,
     this.notifyDeliveries = true,
@@ -21,7 +21,7 @@ class AppSettings {
     this.notifyAnalysis = true,
     this.notifyCritical = true,
     this.profileName = '',
-    this.profileProfession = 'Şantiye Şefi',
+    this.profileProfession = '',
   });
 
   final String themeMode;
@@ -149,7 +149,7 @@ class AppSettings {
       notifyAnalysis: json['notifyAnalysis'] as bool? ?? true,
       notifyCritical: json['notifyCritical'] as bool? ?? true,
       profileName: json['profileName'] as String? ?? '',
-      profileProfession: json['profileProfession'] as String? ?? 'Şantiye Şefi',
+      profileProfession: json['profileProfession'] as String? ?? '',
     );
   }
 }
