@@ -2,6 +2,8 @@ import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
+import 'package:go_router/go_router.dart';
+import 'package:santijet_demir/core/routing/app_routes.dart';
 import 'package:santijet_demir/core/theme/app_colors.dart';
 import 'package:santijet_demir/core/theme/app_radii.dart';
 import 'package:santijet_demir/core/theme/app_spacing.dart';
@@ -10,7 +12,9 @@ import 'package:santijet_demir/data/services/dxf_rebar_parser.dart';
 import 'package:santijet_demir/domain/entities/rebar_metraj.dart';
 import 'package:santijet_demir/features/projects/providers/project_provider.dart';
 import 'package:santijet_demir/features/rebar_metraj/providers/rebar_metraj_provider.dart';
+import 'package:santijet_demir/features/rebar_metraj/providers/rebar_metraj_storage_provider.dart';
 import 'package:santijet_demir/features/rebar_metraj/widgets/metraj_survey_actions.dart';
+import 'package:santijet_demir/features/survey/providers/survey_provider.dart';
 
 class RebarMetrajPanel extends ConsumerStatefulWidget {
   const RebarMetrajPanel({super.key});
@@ -107,7 +111,7 @@ class _RebarMetrajPanelState extends ConsumerState<RebarMetrajPanel>
                 ],
                 if (showResults) ...[
                   const SizedBox(height: 20),
-                  _ResultSummary(result: result),
+                  _ResultSummaryBar(result: result),
                   const SizedBox(height: 6),
                   Text(
                     '${result.fileName} · ${result.sourceFormat}',
@@ -129,11 +133,6 @@ class _RebarMetrajPanelState extends ConsumerState<RebarMetrajPanel>
                     const SizedBox(height: 12),
                     _SkippedHint(count: result.skippedEntityCount),
                   ],
-                  const SizedBox(height: 24),
-                  Text('Kayıt', style: AppTypography.headlineMedium),
-                  const SizedBox(height: 12),
-                  MetrajResultActions(result: result),
-                  const SizedBox(height: 8),
                 ],
               ],
             ),
@@ -217,7 +216,7 @@ class _InfoBanner extends StatelessWidget {
             '2. üst.334Ø22/15 l=120 → 334 ad × 12 m (aralık hesaba katılmaz)\n'
             '3. 15000Ø16 l=200 → 15000 ad × 2 m\n'
             '4. Tonaj = adet × boy × birim ağırlık (kg/m)\n'
-            '5. Analiz sonuçlarını kaydırın; altta Metraj Kaydet\n'
+            '5. Analiz sonuçlarını kaydırın; üstte Ön İmalata Gönder\n'
             '6. Ön İmalat sekmesinden detay inceleyip imalata gönderin',
             style: AppTypography.bodySmall,
           ),
@@ -308,86 +307,65 @@ class _ErrorBanner extends StatelessWidget {
   }
 }
 
-class _ResultSummary extends StatelessWidget {
-  const _ResultSummary({required this.result});
+class _ResultSummaryBar extends ConsumerWidget {
+  const _ResultSummaryBar({required this.result});
 
   final RebarMetrajResult result;
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
     final formatter = NumberFormat('#,##0.00', 'tr_TR');
-
-    return Row(
-      children: [
-        Expanded(
-          child: _SummaryTile(
-            label: 'Toplam Tonaj',
-            value: formatter.format(result.totalTonnage),
-            unit: 't',
-            color: AppColors.electricBlueLight,
-          ),
-        ),
-        const SizedBox(width: 8),
-        Expanded(
-          child: _SummaryTile(
-            label: 'Toplam Uzunluk',
-            value: formatter.format(result.totalLengthM),
-            unit: 'm',
-            color: AppColors.success,
-          ),
-        ),
-        const SizedBox(width: 8),
-        Expanded(
-          child: _SummaryTile(
-            label: 'Çubuk Sayısı',
-            value: '${result.totalBarCount}',
-            unit: 'ad',
-            color: AppColors.info,
-          ),
-        ),
-      ],
+    final projectId = ref.watch(activeProjectIdProvider);
+    final savedRecords = ref.watch(savedRebarMetrajProvider);
+    final isSaved = savedRecords.any(
+      (record) =>
+          record.result.fileName == result.fileName &&
+          record.result.parsedAt == result.parsedAt &&
+          record.result.totalTonnage == result.totalTonnage,
     );
-  }
-}
 
-class _SummaryTile extends StatelessWidget {
-  const _SummaryTile({
-    required this.label,
-    required this.value,
-    required this.unit,
-    required this.color,
-  });
-
-  final String label;
-  final String value;
-  final String unit;
-  final Color color;
-
-  @override
-  Widget build(BuildContext context) {
     return Container(
-      padding: const EdgeInsets.all(12),
+      padding: const EdgeInsets.all(14),
       decoration: BoxDecoration(
         color: AppColors.surfaceElevated,
         borderRadius: AppRadii.md,
         border: Border.all(color: AppColors.border),
       ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.center,
         children: [
-          Text(label, style: AppTypography.labelMedium),
-          const SizedBox(height: 6),
-          RichText(
-            text: TextSpan(
-              style: AppTypography.headlineMedium.copyWith(color: color),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                TextSpan(text: value),
-                TextSpan(
-                  text: ' $unit',
-                  style: AppTypography.labelMedium.copyWith(color: AppColors.textMuted),
+                Text('Toplam Tonaj', style: AppTypography.labelMedium),
+                const SizedBox(height: 6),
+                RichText(
+                  text: TextSpan(
+                    style: AppTypography.headlineMedium
+                        .copyWith(color: AppColors.electricBlueLight),
+                    children: [
+                      TextSpan(text: formatter.format(result.totalTonnage)),
+                      TextSpan(
+                        text: ' t',
+                        style: AppTypography.labelMedium
+                            .copyWith(color: AppColors.textMuted),
+                      ),
+                    ],
+                  ),
                 ),
               ],
             ),
+          ),
+          const SizedBox(width: 12),
+          FilledButton.icon(
+            onPressed: projectId == null
+                ? () => context.push(AppRoutes.projects)
+                : isSaved
+                    ? () => ref.read(surveyTabIndexProvider.notifier).state = 2
+                    : () => saveMetrajResultToPreProduction(context, ref, result),
+            icon: Icon(isSaved ? Icons.check_circle : Icons.send_outlined),
+            label: Text(isSaved ? 'Ön İmalat\'ta Gör' : 'Ön İmalata Gönder'),
           ),
         ],
       ),
@@ -478,15 +456,17 @@ class _TextDetailSection extends StatefulWidget {
 }
 
 class _TextDetailSectionState extends State<_TextDetailSection> {
-  static const _pageSize = 15;
-  var _visibleCount = _pageSize;
+  static const _initialCount = 3;
+  var _expanded = false;
 
   @override
   Widget build(BuildContext context) {
     final formatter = NumberFormat('#,##0.00', 'tr_TR');
     final details = widget.details;
-    final visible = details.take(_visibleCount).toList();
-    final hasMore = details.length > _visibleCount;
+    final visible = _expanded
+        ? details
+        : details.take(_initialCount).toList();
+    final hasMore = !_expanded && details.length > _initialCount;
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -505,22 +485,16 @@ class _TextDetailSectionState extends State<_TextDetailSection> {
           Align(
             alignment: Alignment.centerLeft,
             child: TextButton.icon(
-              onPressed: () {
-                setState(() {
-                  _visibleCount = (_visibleCount + _pageSize).clamp(0, details.length);
-                });
-              },
+              onPressed: () => setState(() => _expanded = true),
               icon: const Icon(Icons.expand_more),
-              label: Text(
-                'Daha fazla göster (${details.length - _visibleCount} kaldı)',
-              ),
+              label: Text('Daha fazla göster (${details.length - _initialCount})'),
             ),
           )
-        else if (details.length > _pageSize)
+        else if (_expanded && details.length > _initialCount)
           Align(
             alignment: Alignment.centerLeft,
             child: TextButton.icon(
-              onPressed: () => setState(() => _visibleCount = _pageSize),
+              onPressed: () => setState(() => _expanded = false),
               icon: const Icon(Icons.expand_less),
               label: const Text('Listeyi daralt'),
             ),
