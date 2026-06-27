@@ -7,6 +7,60 @@ final deliveriesProvider = Provider<List<DeliveryItem>>((ref) {
   return getMockDeliveries();
 });
 
+class IncomingRebarDashboardSummary {
+  const IncomingRebarDashboardSummary({
+    required this.totalOrdered,
+    required this.totalDelivered,
+    required this.pending,
+    required this.missing,
+    required this.fulfillmentPercent,
+  });
+
+  final double totalOrdered;
+  final double totalDelivered;
+  final double pending;
+  final double missing;
+  final double fulfillmentPercent;
+}
+
+IncomingRebarDashboardSummary computeIncomingRebarSummary(
+  List<DeliveryItem> deliveries,
+) {
+  var totalOrdered = 0.0;
+  var totalDelivered = 0.0;
+  var missing = 0.0;
+
+  for (final delivery in deliveries) {
+    for (final line in delivery.diameterLines) {
+      totalOrdered += line.ordered;
+      totalDelivered += line.delivered;
+      if (line.delivered < line.ordered) {
+        missing += line.ordered - line.delivered;
+      }
+    }
+  }
+
+  final pending = totalOrdered - totalDelivered;
+  final fulfillmentPercent = totalOrdered > 0
+      ? (totalDelivered / totalOrdered * 100)
+      : 0.0;
+
+  return IncomingRebarDashboardSummary(
+    totalOrdered: totalOrdered,
+    totalDelivered: totalDelivered,
+    pending: pending,
+    missing: missing,
+    fulfillmentPercent: fulfillmentPercent,
+  );
+}
+
+/// Gelen Demir KPI — teslimat listesinden hesaplanır; ana sayfa bu provider'ı okur.
+final incomingRebarDashboardSummaryProvider =
+    Provider<IncomingRebarDashboardSummary>((ref) {
+  final deliveries = ref.watch(deliveriesProvider);
+  return computeIncomingRebarSummary(deliveries);
+});
+
 final deliveryFilterProvider = StateProvider<int>((ref) => 0);
 
 final filteredDeliveriesProvider = Provider<List<DeliveryItem>>((ref) {
