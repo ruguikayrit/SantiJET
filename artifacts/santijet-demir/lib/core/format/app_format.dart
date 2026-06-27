@@ -18,4 +18,13 @@ abstract final class AppFormat {
   static String currency(num value, {String symbol = '₺'}) {
     return '$symbol${integer(value)}';
   }
+
+  /// Tonaj gösterimi — büyük değerlerde binlik nokta (3.156), küçükte ondalık.
+  static String tonnage(num value) {
+    if (value == 0) return '0';
+    final abs = value.abs();
+    if (abs >= 100) return integer(value.round());
+    if (abs >= 10) return value.toStringAsFixed(1);
+    return value.toStringAsFixed(2);
+  }
 }

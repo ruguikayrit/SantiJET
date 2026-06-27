@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:santijet_demir/core/animations/app_animations.dart';
+import 'package:santijet_demir/core/format/app_format.dart';
 import 'package:santijet_demir/core/routing/app_routes.dart';
 import 'package:santijet_demir/core/responsive/responsive_layout.dart';
 import 'package:santijet_demir/core/theme/app_colors.dart';
@@ -13,6 +14,7 @@ import 'package:santijet_demir/core/widgets/santijet_header.dart';
 import 'package:santijet_demir/core/widgets/project_permission_gate.dart';
 import 'package:santijet_demir/features/projects/widgets/project_switcher.dart';
 import 'package:santijet_demir/features/settings/providers/profile_provider.dart';
+import 'package:santijet_demir/features/survey/providers/survey_provider.dart';
 
 class MainShell extends StatelessWidget {
   const MainShell({super.key, required this.navigationShell});
@@ -40,6 +42,11 @@ class DashboardScreen extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final avatarInitial = ref.watch(profileInitialProvider);
+    final surveySummary = ref.watch(surveyDashboardSummaryProvider);
+    final surveyTonnageLabel = AppFormat.tonnage(surveySummary.totalTonnage);
+    final surveyImalatLabel = surveySummary.imalatCount == 0
+        ? 'Henüz imalat yok'
+        : '${surveySummary.imalatCount} imalat';
 
     return Scaffold(
       backgroundColor: AppColors.canvas,
@@ -70,16 +77,14 @@ class DashboardScreen extends ConsumerWidget {
                       mainAxisSpacing: 12,
                       crossAxisSpacing: 12,
                       childAspectRatio: 1.5,
-                      children: const [
+                      children: [
                         KpiCard(
                           label: 'Toplam Keşif',
-                          value: '3.156',
+                          value: surveyTonnageLabel,
                           unit: 't',
-                          trend: '+12%',
-                          trendUp: true,
                           accentColor: AppColors.electricBlueLight,
                         ),
-                        KpiCard(
+                        const KpiCard(
                           label: 'Toplam Sipariş',
                           value: '2.890',
                           unit: 't',
@@ -108,6 +113,7 @@ class DashboardScreen extends ConsumerWidget {
                   StaggeredFadeIn(
                     index: 1,
                     child: _QuickAccessRow(
+                      surveySubtitle: surveyImalatLabel,
                       onSurveyTap: () => context.push(AppRoutes.survey),
                       onMetrajTap: () => context.push(AppRoutes.surveyMetraj),
                       onOrdersTap: () => context.go(AppRoutes.orders),
@@ -231,12 +237,14 @@ class DashboardScreen extends ConsumerWidget {
 
 class _QuickAccessRow extends StatelessWidget {
   const _QuickAccessRow({
+    required this.surveySubtitle,
     required this.onSurveyTap,
     required this.onMetrajTap,
     required this.onOrdersTap,
     required this.onReportsTap,
   });
 
+  final String surveySubtitle;
   final VoidCallback onSurveyTap;
   final VoidCallback onMetrajTap;
   final VoidCallback onOrdersTap;
@@ -252,7 +260,7 @@ class _QuickAccessRow extends StatelessWidget {
               child: _QuickAccessCard(
                 icon: Icons.search,
                 label: 'Keşif',
-                subtitle: '5 imalat',
+                subtitle: surveySubtitle,
                 color: AppColors.electricBlueLight,
                 onTap: onSurveyTap,
               ),

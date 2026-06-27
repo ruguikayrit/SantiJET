@@ -141,3 +141,22 @@ final selectedMetrajRecordIdsProvider =
 final selectedImalatProvider = StateProvider<SurveyImalat?>((ref) => null);
 
 final surveyTabIndexProvider = StateProvider<int>((ref) => 0);
+
+class SurveyDashboardSummary {
+  const SurveyDashboardSummary({
+    required this.totalTonnage,
+    required this.imalatCount,
+  });
+
+  final double totalTonnage;
+  final int imalatCount;
+}
+
+/// Ana sayfa keşif KPI — imalat listesi ile senkron.
+final surveyDashboardSummaryProvider = Provider<SurveyDashboardSummary>((ref) {
+  final project = ref.watch(surveyProjectProvider);
+  return SurveyDashboardSummary(
+    totalTonnage: project.totalPlanned,
+    imalatCount: project.imalats.length,
+  );
+});
