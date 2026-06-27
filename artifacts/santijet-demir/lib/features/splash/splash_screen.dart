@@ -10,7 +10,7 @@ import 'package:santijet_demir/core/theme/app_typography.dart';
 import 'package:santijet_demir/features/auth/providers/auth_provider.dart';
 import 'package:santijet_demir/features/projects/providers/project_provider.dart';
 
-/// ŞantiJET BFA açılış ekranı referansı: ortalanmış S ikon + wordmark (şeffaf).
+/// ŞantiJET DEMİR açılış ekranı — büyük S ikon + SANTİJET / DEMİR tipografi.
 class SplashScreen extends ConsumerStatefulWidget {
   const SplashScreen({super.key});
 
@@ -20,8 +20,6 @@ class SplashScreen extends ConsumerStatefulWidget {
 
 class _SplashScreenState extends ConsumerState<SplashScreen>
     with SingleTickerProviderStateMixin {
-  static const _wordmarkAspect = 1016 / 187;
-
   late final AnimationController _loadingController;
 
   @override
@@ -88,8 +86,8 @@ class _SplashScreenState extends ConsumerState<SplashScreen>
 
   @override
   Widget build(BuildContext context) {
-    final wordmarkWidth = MediaQuery.sizeOf(context).width * 0.72;
-    final wordmarkHeight = wordmarkWidth / _wordmarkAspect;
+    final screenWidth = MediaQuery.sizeOf(context).width;
+    final logoSize = (screenWidth * 0.52).clamp(180.0, 260.0);
 
     return Scaffold(
       backgroundColor: AppColors.canvas,
@@ -122,44 +120,17 @@ class _SplashScreenState extends ConsumerState<SplashScreen>
                         children: [
                           FadeIn(
                             delay: const Duration(milliseconds: 200),
-                            child: SizedBox(
-                              width: 148,
-                              height: 148,
-                              child: Center(
-                                child: Image.asset(
-                                  'assets/images/s_logo.png',
-                                  width: 140,
-                                  height: 140,
-                                  fit: BoxFit.contain,
-                                ),
-                              ),
-                            ),
-                          ),
-                          const SizedBox(height: 32),
-                          FadeIn(
-                            delay: const Duration(milliseconds: 400),
                             child: Image.asset(
-                              'assets/images/wordmark.png',
-                              width: wordmarkWidth,
-                              height: wordmarkHeight,
+                              'assets/images/s_logo.png',
+                              width: logoSize,
+                              height: logoSize,
                               fit: BoxFit.contain,
                             ),
                           ),
-                          const SizedBox(height: AppSpacing.splashWordmarkToDemir),
+                          const SizedBox(height: 48),
                           FadeIn(
-                            delay: const Duration(milliseconds: 600),
-                            child: Text('DEMİR', style: AppTypography.displayLarge),
-                          ),
-                          const SizedBox(height: AppSpacing.splashDemirToTagline),
-                          FadeIn(
-                            delay: const Duration(milliseconds: 750),
-                            child: Text(
-                              'ÇELİK TAKİP SİSTEMİ',
-                              style: AppTypography.labelSmall.copyWith(
-                                color: AppColors.textPrimary.withValues(alpha: 0.30),
-                                letterSpacing: 4.2,
-                              ),
-                            ),
+                            delay: const Duration(milliseconds: 450),
+                            child: const _SplashTitle(),
                           ),
                         ],
                       ),
@@ -202,6 +173,48 @@ class _SplashScreenState extends ConsumerState<SplashScreen>
           ),
         ],
       ),
+    );
+  }
+}
+
+class _SplashTitle extends StatelessWidget {
+  const _SplashTitle();
+
+  @override
+  Widget build(BuildContext context) {
+    return Column(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        Row(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.baseline,
+          textBaseline: TextBaseline.alphabetic,
+          children: [
+            Text(
+              'Şanti',
+              style: AppTypography.displayMedium.copyWith(
+                color: AppColors.textPrimary,
+                letterSpacing: 3.2,
+              ),
+            ),
+            Text(
+              'JET',
+              style: AppTypography.displayMedium.copyWith(
+                color: AppColors.electricBlueLight,
+                letterSpacing: 3.2,
+                shadows: const [
+                  Shadow(
+                    color: AppColors.electricBlueGlow,
+                    blurRadius: 18,
+                  ),
+                ],
+              ),
+            ),
+          ],
+        ),
+        const SizedBox(height: AppSpacing.splashWordmarkToDemir),
+        Text('DEMİR', style: AppTypography.displayLarge),
+      ],
     );
   }
 }
