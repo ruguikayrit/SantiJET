@@ -21,6 +21,9 @@ class SplashScreen extends ConsumerStatefulWidget {
 class _SplashScreenState extends ConsumerState<SplashScreen>
     with SingleTickerProviderStateMixin {
   static const _wordmarkAspect = 1774 / 514;
+  static const _boltWordmarkGap = 28.0;
+  static const _boltWordmarkGapReduced = _boltWordmarkGap * 0.3;
+  static const _wordmarkAnchorCompensation = _boltWordmarkGap * 0.35;
 
   late final AnimationController _loadingController;
 
@@ -122,6 +125,7 @@ class _SplashScreenState extends ConsumerState<SplashScreen>
                       child: Column(
                         mainAxisSize: MainAxisSize.min,
                         children: [
+                          const SizedBox(height: _wordmarkAnchorCompensation),
                           FadeIn(
                             delay: const Duration(milliseconds: 150),
                             child: Image.asset(
@@ -132,7 +136,7 @@ class _SplashScreenState extends ConsumerState<SplashScreen>
                               filterQuality: FilterQuality.high,
                             ),
                           ),
-                          const SizedBox(height: 28),
+                          const SizedBox(height: _boltWordmarkGapReduced),
                           FadeIn(
                             delay: const Duration(milliseconds: 350),
                             child: Image.asset(
