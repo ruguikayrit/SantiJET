@@ -29,14 +29,12 @@ class SantijetHeader extends StatelessWidget {
       padding: const EdgeInsets.fromLTRB(AppSpacing.md, AppSpacing.sm, AppSpacing.md, AppSpacing.sm),
       child: Row(
         children: [
-          ClipRRect(
-            borderRadius: BorderRadius.circular(8),
-            child: Image.asset(
-              'assets/images/s_logo.png',
-              width: 36,
-              height: 36,
-              fit: BoxFit.cover,
-            ),
+          Image.asset(
+            'assets/images/splash_bolt.png',
+            width: 36,
+            height: 36,
+            fit: BoxFit.contain,
+            filterQuality: FilterQuality.high,
           ),
           const SizedBox(width: 10),
           Expanded(
@@ -44,9 +42,10 @@ class SantijetHeader extends StatelessWidget {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
-                  'ŞantiJET DEMİR',
+                  'DEMİR',
                   style: AppTypography.titleMedium.copyWith(
-                    letterSpacing: 0.5,
+                    letterSpacing: 1.2,
+                    fontWeight: FontWeight.w700,
                   ),
                 ),
                 if (subtitle != null)
