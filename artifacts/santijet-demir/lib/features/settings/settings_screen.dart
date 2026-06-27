@@ -307,13 +307,87 @@ class SettingsScreen extends ConsumerWidget {
     );
   }
 
+  Future<String?> _showCreatePinDialog(BuildContext context) async {
+    final newController = TextEditingController();
+    final confirmController = TextEditingController();
+
+    final result = await showDialog<String>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: const Text('PIN Oluştur'),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            Text(
+              'Uygulama girişi için 4–8 haneli bir PIN belirleyin.',
+              style: AppTypography.bodySmall,
+            ),
+            const SizedBox(height: 12),
+            TextField(
+              controller: newController,
+              keyboardType: TextInputType.number,
+              obscureText: true,
+              autofocus: true,
+              decoration: const InputDecoration(labelText: 'Yeni PIN'),
+            ),
+            const SizedBox(height: 8),
+            TextField(
+              controller: confirmController,
+              keyboardType: TextInputType.number,
+              obscureText: true,
+              decoration: const InputDecoration(labelText: 'Yeni PIN (tekrar)'),
+            ),
+          ],
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(ctx),
+            child: const Text('İptal'),
+          ),
+          FilledButton(
+            onPressed: () {
+              final newPin = newController.text.trim();
+              final confirm = confirmController.text.trim();
+              if (!AppLockNotifier.isValidPin(newPin)) {
+                ScaffoldMessenger.of(ctx).showSnackBar(
+                  const SnackBar(content: Text('PIN 4–8 haneli olmalıdır')),
+                );
+                return;
+              }
+              if (newPin != confirm) {
+                ScaffoldMessenger.of(ctx).showSnackBar(
+                  const SnackBar(content: Text('PIN eşleşmiyor')),
+                );
+                return;
+              }
+              Navigator.pop(ctx, newPin);
+            },
+            child: const Text('Kaydet'),
+          ),
+        ],
+      ),
+    );
+
+    newController.dispose();
+    confirmController.dispose();
+    return result;
+  }
+
   void _toggleAppLock(BuildContext context, WidgetRef ref, bool enabled) async {
     if (enabled) {
-      final ok = await ref.read(appLockProvider.notifier).setEnabled(true);
+      final newPin = await _showCreatePinDialog(context);
+      if (newPin == null || !context.mounted) return;
+
+      final ok = await ref.read(appLockProvider.notifier).enableWithPin(newPin);
       if (!context.mounted) return;
       if (ok) {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('PIN kilidi açıldı')),
+          const SnackBar(content: Text('PIN kilidi etkinleştirildi')),
+        );
+      } else {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('PIN 4–8 haneli olmalıdır')),
         );
       }
       return;
@@ -360,8 +434,7 @@ class SettingsScreen extends ConsumerWidget {
       return;
     }
 
-    final ok = await ref.read(appLockProvider.notifier).setEnabled(
-          false,
+    final ok = await ref.read(appLockProvider.notifier).disable(
           currentPin: pinController.text.trim(),
         );
     pinController.dispose();
@@ -405,7 +478,7 @@ class SettingsScreen extends ConsumerWidget {
               Text(
                 isEnabled
                     ? 'PIN 4–8 haneli olmalıdır. Bu telefonda bir kez girildikten sonra tekrar sorulmaz.'
-                    : 'PIN kilidi kapalı. Açmak için Ayarlar\'daki anahtarı kullanın.',
+                    : 'Şifresiz giriş aktif. PIN oluşturmak için anahtarı açın.',
                 style: AppTypography.bodySmall,
               ),
               if (isEnabled) ...[
@@ -580,7 +653,9 @@ class _AppLockSettingsTile extends StatelessWidget {
                           children: [
                             Text('Uygulama Kilidi', style: AppTypography.titleMedium),
                             Text(
-                              isEnabled ? 'Açık — PIN değiştir veya kilitle' : 'Kapalı',
+                              isEnabled
+                                  ? 'Açık — PIN değiştir veya kilitle'
+                                  : 'Kapalı — şifresiz giriş',
                               style: AppTypography.bodySmall,
                             ),
                           ],

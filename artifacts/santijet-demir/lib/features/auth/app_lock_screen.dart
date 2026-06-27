@@ -14,29 +14,18 @@ class AppLockScreen extends ConsumerStatefulWidget {
 }
 
 class _AppLockScreenState extends ConsumerState<AppLockScreen> {
-  static final _pinLength = defaultPinLength;
   String _input = '';
   bool _showError = false;
 
   void _onDigit(String digit) {
     final lock = ref.read(appLockProvider);
     if (lock.isTemporarilyLocked) return;
-    if (_input.length >= _pinLength) return;
+    if (_input.length >= maxPinLength) return;
 
     setState(() {
       _showError = false;
       _input += digit;
     });
-
-    if (_input.length == _pinLength) {
-      final ok = ref.read(appLockProvider.notifier).verifyPin(_input);
-      if (!ok) {
-        setState(() {
-          _showError = true;
-          _input = '';
-        });
-      }
-    }
   }
 
   void _onBackspace() {
@@ -45,6 +34,18 @@ class _AppLockScreenState extends ConsumerState<AppLockScreen> {
       _showError = false;
       _input = _input.substring(0, _input.length - 1);
     });
+  }
+
+  void _submitPin() {
+    if (_input.length < minPinLength) return;
+
+    final ok = ref.read(appLockProvider.notifier).verifyPin(_input);
+    if (!ok) {
+      setState(() {
+        _showError = true;
+        _input = '';
+      });
+    }
   }
 
   @override
@@ -91,12 +92,12 @@ class _AppLockScreenState extends ConsumerState<AppLockScreen> {
                 ),
                 child: Row(
                   mainAxisAlignment: MainAxisAlignment.center,
-                  children: List.generate(_pinLength, (i) {
+                  children: List.generate(maxPinLength, (i) {
                     final filled = i < _input.length;
                     return Container(
-                      margin: const EdgeInsets.symmetric(horizontal: 10),
-                      width: 14,
-                      height: 14,
+                      margin: const EdgeInsets.symmetric(horizontal: 6),
+                      width: 12,
+                      height: 12,
                       decoration: BoxDecoration(
                         shape: BoxShape.circle,
                         color: filled
@@ -119,19 +120,19 @@ class _AppLockScreenState extends ConsumerState<AppLockScreen> {
                   'Hatalı PIN (${lock.failedAttempts}/${AppLockNotifier.maxAttempts})',
                   style: AppTypography.bodySmall.copyWith(color: AppColors.critical),
                 )
-              else if (ref.read(appLockProvider.notifier).isDefaultPin)
+              else
                 Text(
-                  'Varsayılan PIN ayarlı — Ayarlardan değiştirebilirsiniz',
+                  '$minPinLength–$maxPinLength haneli PIN',
                   style: AppTypography.bodySmall.copyWith(color: AppColors.textMuted),
                   textAlign: TextAlign.center,
-                )
-              else
-                const SizedBox.shrink(),
+                ),
               const Spacer(),
               _PinPad(
                 enabled: !lock.isTemporarilyLocked,
+                canSubmit: _input.length >= minPinLength,
                 onDigit: _onDigit,
                 onBackspace: _onBackspace,
+                onSubmit: _submitPin,
               ),
               const SizedBox(height: 16),
             ],
@@ -145,13 +146,17 @@ class _AppLockScreenState extends ConsumerState<AppLockScreen> {
 class _PinPad extends StatelessWidget {
   const _PinPad({
     required this.enabled,
+    required this.canSubmit,
     required this.onDigit,
     required this.onBackspace,
+    required this.onSubmit,
   });
 
   final bool enabled;
+  final bool canSubmit;
   final ValueChanged<String> onDigit;
   final VoidCallback onBackspace;
+  final VoidCallback onSubmit;
 
   @override
   Widget build(BuildContext context) {
@@ -159,7 +164,7 @@ class _PinPad extends StatelessWidget {
       ['1', '2', '3'],
       ['4', '5', '6'],
       ['7', '8', '9'],
-      ['', '0', '⌫'],
+      ['✓', '0', '⌫'],
     ];
 
     return Column(
@@ -169,19 +174,31 @@ class _PinPad extends StatelessWidget {
           child: Row(
             mainAxisAlignment: MainAxisAlignment.center,
             children: row.map((key) {
-              if (key.isEmpty) {
-                return const SizedBox(width: 88, height: 56);
-              }
+              final isSubmit = key == '✓';
               final isBack = key == '⌫';
+              final isAction = isSubmit || isBack;
+              final actionEnabled =
+                  enabled && (isBack || (isSubmit && canSubmit));
+
               return Padding(
                 padding: const EdgeInsets.symmetric(horizontal: 8),
                 child: Material(
-                  color: AppColors.surfaceElevated,
+                  color: isSubmit && canSubmit
+                      ? AppColors.electricBlue.withValues(alpha: 0.18)
+                      : AppColors.surfaceElevated,
                   borderRadius: AppRadii.md,
                   child: InkWell(
-                    onTap: enabled
-                        ? () => isBack ? onBackspace() : onDigit(key)
-                        : null,
+                    onTap: actionEnabled
+                        ? () {
+                            if (isBack) {
+                              onBackspace();
+                            } else if (isSubmit) {
+                              onSubmit();
+                            } else {
+                              onDigit(key);
+                            }
+                          }
+                        : (!isAction && enabled ? () => onDigit(key) : null),
                     borderRadius: AppRadii.md,
                     child: SizedBox(
                       width: 72,
@@ -190,7 +207,7 @@ class _PinPad extends StatelessWidget {
                         child: Text(
                           key,
                           style: AppTypography.headlineMedium.copyWith(
-                            color: enabled
+                            color: actionEnabled || (!isAction && enabled)
                                 ? AppColors.textPrimary
                                 : AppColors.textMuted,
                           ),
