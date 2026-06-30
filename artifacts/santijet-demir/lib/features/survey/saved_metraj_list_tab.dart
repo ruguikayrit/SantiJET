@@ -10,6 +10,7 @@ import 'package:santijet_demir/core/widgets/swipe_to_delete_row.dart';
 import 'package:santijet_demir/domain/entities/rebar_metraj.dart';
 import 'package:santijet_demir/features/projects/providers/project_provider.dart';
 import 'package:santijet_demir/features/rebar_metraj/providers/rebar_metraj_storage_provider.dart';
+import 'package:santijet_demir/features/rebar_metraj/widgets/metraj_cutting_actions.dart';
 import 'package:santijet_demir/features/rebar_metraj/widgets/metraj_survey_actions.dart';
 import 'package:santijet_demir/features/survey/providers/survey_provider.dart';
 
@@ -98,6 +99,22 @@ class SavedMetrajListTab extends ConsumerWidget {
                         selectedRecords,
                       ),
                     ),
+                  if (selectedIds.isNotEmpty)
+                    ActionChip(
+                      avatar: const Icon(Icons.content_cut,
+                          size: 16, color: AppColors.warning),
+                      label: Text(
+                        'Kesme-Bükme (${selectedIds.length})',
+                        style: AppTypography.labelMedium,
+                      ),
+                      backgroundColor: AppColors.surfaceElevated,
+                      side: const BorderSide(color: AppColors.border),
+                      onPressed: () => sendSelectedMetrajRecordsToCuttingBending(
+                        context,
+                        ref,
+                        selectedRecords,
+                      ),
+                    ),
                 ],
               ),
             if (canEdit) const SizedBox(height: 12),
@@ -151,6 +168,10 @@ class SavedMetrajListTab extends ConsumerWidget {
                         context.push(AppRoutes.savedMetrajDetail(record.id)),
                     onSendToImalat: canEdit
                         ? () => sendMetrajRecordToSurvey(context, ref, record)
+                        : null,
+                    onSendToCuttingBending: canEdit
+                        ? () =>
+                            sendMetrajRecordToCuttingBending(context, ref, record)
                         : null,
                   ),
                 ),
@@ -305,6 +326,7 @@ class MetrajRecordCard extends StatelessWidget {
     this.onSelectChanged,
     this.onOpenDetail,
     this.onSendToImalat,
+    this.onSendToCuttingBending,
   });
 
   final SavedRebarMetraj record;
@@ -315,6 +337,7 @@ class MetrajRecordCard extends StatelessWidget {
   final ValueChanged<bool>? onSelectChanged;
   final VoidCallback? onOpenDetail;
   final VoidCallback? onSendToImalat;
+  final VoidCallback? onSendToCuttingBending;
 
   @override
   Widget build(BuildContext context) {
@@ -479,6 +502,17 @@ class MetrajRecordCard extends StatelessWidget {
                         onPressed: onSendToImalat,
                         icon: const Icon(Icons.send),
                         label: const Text('İmalata Gönder'),
+                      ),
+                    ),
+                  ],
+                  if (onSendToCuttingBending != null) ...[
+                    const SizedBox(height: 8),
+                    SizedBox(
+                      width: double.infinity,
+                      child: OutlinedButton.icon(
+                        onPressed: onSendToCuttingBending,
+                        icon: const Icon(Icons.content_cut),
+                        label: const Text('Kesme-Bükme\'ye Gönder'),
                       ),
                     ),
                   ],

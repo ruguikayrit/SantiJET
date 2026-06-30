@@ -42,6 +42,11 @@ class SurveyProjectNotifier extends StateNotifier<SurveyProject> {
         );
   }
 
+  void reloadForProject(String? projectId) {
+    _loadedProjectId = null;
+    loadForProject(projectId);
+  }
+
   void loadForProject(String? projectId) {
     if (projectId == null) {
       _loadedProjectId = null;
@@ -98,6 +103,33 @@ class SurveyProjectNotifier extends StateNotifier<SurveyProject> {
     return updated;
   }
 
+  Future<SurveyImalat> createImalat({required String name}) async {
+    final trimmed = name.trim();
+    if (trimmed.isEmpty) {
+      throw ArgumentError.value(name, 'name', 'İmalat adı boş olamaz');
+    }
+
+    final baseId = RebarSurveyMapper.slugifyImalatId(trimmed);
+    var id = baseId;
+    var suffix = 1;
+    while (state.imalats.any((imalat) => imalat.id == id)) {
+      id = '$baseId-$suffix';
+      suffix++;
+    }
+
+    final imalat = RebarSurveyMapper.createImalatFromMetraj(
+      id: id,
+      name: trimmed,
+      lines: const [],
+    );
+
+    state = state.copyWith(
+      imalats: [...state.imalats, imalat],
+    );
+    await _persist();
+    return imalat;
+  }
+
   Future<SurveyImalat> createImalatFromMetraj({
     required RebarMetrajResult result,
     required String name,
@@ -121,6 +153,197 @@ class SurveyProjectNotifier extends StateNotifier<SurveyProject> {
     );
     await _persist();
     return imalat;
+  }
+
+  Future<void> updateImalatPlanned({
+    required String imalatId,
+    required Map<int, double> plannedByDiameter,
+  }) async {
+    final index = state.imalats.indexWhere((item) => item.id == imalatId);
+    if (index < 0) return;
+
+    final imalat = state.imalats[index];
+    final existing = {
+      for (final line in imalat.diameterLines) line.diameter: line,
+    };
+
+    final lines = plannedByDiameter.entries
+        .where((entry) => entry.value > 0)
+        .map(
+          (entry) => DiameterLine(
+            diameter: entry.key,
+            planned: entry.value,
+            ordered: existing[entry.key]?.ordered ?? 0,
+            delivered: existing[entry.key]?.delivered ?? 0,
+            progressPercent: existing[entry.key]?.progressPercent ?? 0,
+          ),
+        )
+        .toList()
+      ..sort((a, b) => a.diameter.compareTo(b.diameter));
+
+    final updated = RebarSurveyMapper.rebuildImalat(
+      imalat: imalat,
+      diameterLines: lines,
+    );
+
+    final imalats = List<SurveyImalat>.from(state.imalats);
+    imalats[index] = updated;
+    state = state.copyWith(imalats: imalats);
+    await _persist();
+  }
+
+  Future<void> addOrderedTonnages(Map<String, double> tonnages) async {
+    if (tonnages.isEmpty) return;
+
+    final updatedImalats = state.imalats.map((imalat) {
+      final add = tonnages[imalat.name] ?? 0;
+      if (add <= 0) return imalat;
+
+      if (imalat.diameterLines.isEmpty) {
+        return imalat.copyWith(
+          ordered: imalat.ordered + add,
+          totalTonnage: imalat.planned,
+        );
+      }
+
+      final updatedLines = imalat.diameterLines.map((line) {
+        if (imalat.planned <= 0) return line;
+        final share = line.planned / imalat.planned;
+        return line.copyWith(ordered: line.ordered + add * share);
+      }).toList();
+
+      return RebarSurveyMapper.rebuildImalat(
+        imalat: imalat,
+        diameterLines: updatedLines,
+      );
+    }).toList();
+
+    state = state.copyWith(imalats: updatedImalats);
+    await _persist();
+  }
+
+  Future<void> subtractOrderedTonnages(Map<String, double> tonnages) async {
+    if (tonnages.isEmpty) return;
+
+    final updatedImalats = state.imalats.map((imalat) {
+      final remove = tonnages[imalat.name] ?? 0;
+      if (remove <= 0) return imalat;
+
+      if (imalat.diameterLines.isEmpty) {
+        return imalat.copyWith(
+          ordered: (imalat.ordered - remove).clamp(0.0, double.infinity),
+          totalTonnage: imalat.planned,
+        );
+      }
+
+      final updatedLines = imalat.diameterLines.map((line) {
+        if (imalat.planned <= 0) return line;
+        final share = line.planned / imalat.planned;
+        return line.copyWith(
+          ordered: (line.ordered - remove * share).clamp(0.0, double.infinity),
+        );
+      }).toList();
+
+      return RebarSurveyMapper.rebuildImalat(
+        imalat: imalat,
+        diameterLines: updatedLines,
+      );
+    }).toList();
+
+    state = state.copyWith(imalats: updatedImalats);
+    await _persist();
+  }
+
+  Future<void> addDeliveredTonnages(Map<String, double> tonnages) async {
+    if (tonnages.isEmpty) return;
+
+    final updatedImalats = state.imalats.map((imalat) {
+      final add = tonnages[imalat.name] ?? 0;
+      if (add <= 0) return imalat;
+
+      if (imalat.diameterLines.isEmpty) {
+        return imalat.copyWith(
+          delivered: imalat.delivered + add,
+          totalTonnage: imalat.planned,
+        );
+      }
+
+      final updatedLines = imalat.diameterLines.map((line) {
+        if (imalat.planned <= 0) return line;
+        final share = line.planned / imalat.planned;
+        return line.copyWith(delivered: line.delivered + add * share);
+      }).toList();
+
+      return RebarSurveyMapper.rebuildImalat(
+        imalat: imalat,
+        diameterLines: updatedLines,
+      );
+    }).toList();
+
+    state = state.copyWith(imalats: updatedImalats);
+    await _persist();
+  }
+
+  Future<void> updateDiameterLineProgress({
+    required String imalatId,
+    required int diameter,
+    required double progressPercent,
+  }) async {
+    final index = state.imalats.indexWhere((item) => item.id == imalatId);
+    if (index < 0) return;
+
+    final imalat = state.imalats[index];
+    final clamped = progressPercent.clamp(0.0, 100.0);
+    final updatedLines = imalat.diameterLines
+        .map(
+          (line) => line.diameter == diameter
+              ? line.copyWith(progressPercent: clamped)
+              : line,
+        )
+        .toList();
+
+    final weightedProgress = imalat.planned > 0
+        ? updatedLines.fold(
+              0.0,
+              (sum, line) => sum + line.planned * line.progressPercent,
+            ) /
+            imalat.planned
+        : 0.0;
+
+    final imalats = List<SurveyImalat>.from(state.imalats);
+    imalats[index] = imalat.copyWith(
+      diameterLines: updatedLines,
+      progressPercent: weightedProgress,
+    );
+
+    state = state.copyWith(imalats: imalats);
+    await _persist();
+  }
+
+  Future<void> updateImalatProgress({
+    required String imalatId,
+    required double progressPercent,
+  }) async {
+    final index = state.imalats.indexWhere((item) => item.id == imalatId);
+    if (index < 0) return;
+
+    final imalat = state.imalats[index];
+    final clamped = progressPercent.clamp(0.0, 100.0);
+
+    if (imalat.diameterLines.isNotEmpty) {
+      await updateDiameterLineProgress(
+        imalatId: imalatId,
+        diameter: imalat.diameterLines.first.diameter,
+        progressPercent: clamped,
+      );
+      return;
+    }
+
+    final imalats = List<SurveyImalat>.from(state.imalats);
+    imalats[index] = imalat.copyWith(progressPercent: clamped);
+
+    state = state.copyWith(imalats: imalats);
+    await _persist();
   }
 
   Future<void> deleteImalat(String imalatId) async {

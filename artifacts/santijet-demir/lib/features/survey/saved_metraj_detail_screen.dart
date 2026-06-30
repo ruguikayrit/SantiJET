@@ -9,6 +9,7 @@ import 'package:santijet_demir/core/widgets/app_components.dart';
 import 'package:santijet_demir/domain/entities/rebar_metraj.dart';
 import 'package:santijet_demir/features/projects/providers/project_provider.dart';
 import 'package:santijet_demir/features/rebar_metraj/providers/rebar_metraj_storage_provider.dart';
+import 'package:santijet_demir/features/rebar_metraj/widgets/metraj_cutting_actions.dart';
 import 'package:santijet_demir/features/rebar_metraj/widgets/metraj_survey_actions.dart';
 import 'package:santijet_demir/features/survey/providers/survey_provider.dart';
 
@@ -186,6 +187,16 @@ class SavedMetrajDetailScreen extends ConsumerWidget {
                     sendMetrajRecordToSurvey(context, ref, record!),
                 icon: const Icon(Icons.send),
                 label: const Text('İmalata Gönder'),
+              ),
+            ),
+            const SizedBox(height: 8),
+            SizedBox(
+              width: double.infinity,
+              child: OutlinedButton.icon(
+                onPressed: () =>
+                    sendMetrajRecordToCuttingBending(context, ref, record!),
+                icon: const Icon(Icons.content_cut),
+                label: const Text('Kesme-Bükme\'ye Gönder'),
               ),
             ),
           ],

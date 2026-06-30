@@ -4,6 +4,7 @@ class DiameterLine {
     required this.planned,
     required this.ordered,
     required this.delivered,
+    this.progressPercent = 0,
   });
 
   final int diameter;
@@ -11,20 +12,26 @@ class DiameterLine {
   final double ordered;
   final double delivered;
 
+  /// Gerçek saha ilerleme oranı — imalat + çap bazında.
+  final double progressPercent;
+
   double get pending => (ordered - delivered).clamp(0, double.infinity);
   double get ratio => planned > 0 ? ordered / planned * 100 : 0;
+  double get expectedUsage => planned * progressPercent / 100;
 
   DiameterLine copyWith({
     int? diameter,
     double? planned,
     double? ordered,
     double? delivered,
+    double? progressPercent,
   }) {
     return DiameterLine(
       diameter: diameter ?? this.diameter,
       planned: planned ?? this.planned,
       ordered: ordered ?? this.ordered,
       delivered: delivered ?? this.delivered,
+      progressPercent: progressPercent ?? this.progressPercent,
     );
   }
 
@@ -33,6 +40,7 @@ class DiameterLine {
         'planned': planned,
         'ordered': ordered,
         'delivered': delivered,
+        'progressPercent': progressPercent,
       };
 
   factory DiameterLine.fromJson(Map<dynamic, dynamic> json) {
@@ -41,6 +49,7 @@ class DiameterLine {
       planned: (json['planned'] as num).toDouble(),
       ordered: (json['ordered'] as num).toDouble(),
       delivered: (json['delivered'] as num).toDouble(),
+      progressPercent: (json['progressPercent'] as num?)?.toDouble() ?? 0,
     );
   }
 }

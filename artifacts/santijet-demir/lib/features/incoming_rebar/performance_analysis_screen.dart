@@ -5,7 +5,7 @@ import 'package:santijet_demir/core/theme/app_radii.dart';
 import 'package:santijet_demir/core/theme/app_spacing.dart';
 import 'package:santijet_demir/core/theme/app_typography.dart';
 import 'package:santijet_demir/core/widgets/health_ring.dart';
-import 'package:santijet_demir/features/analysis/providers/analysis_provider.dart';
+import 'package:santijet_demir/features/incoming_rebar/providers/performance_analysis_provider.dart';
 
 class PerformanceAnalysisScreen extends ConsumerWidget {
   const PerformanceAnalysisScreen({super.key});

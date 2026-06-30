@@ -11,12 +11,13 @@ import 'package:santijet_demir/core/theme/app_typography.dart';
 import 'package:santijet_demir/core/widgets/app_bottom_nav_bar.dart';
 import 'package:santijet_demir/core/widgets/app_components.dart';
 import 'package:santijet_demir/core/widgets/santijet_header.dart';
-import 'package:santijet_demir/core/widgets/empty_states.dart';
 import 'package:santijet_demir/core/widgets/project_permission_gate.dart';
-import 'package:santijet_demir/features/incoming_rebar/providers/incoming_rebar_provider.dart';
-import 'package:santijet_demir/features/orders/providers/orders_provider.dart';
 import 'package:santijet_demir/features/projects/widgets/project_switcher.dart';
 import 'package:santijet_demir/features/settings/providers/profile_provider.dart';
+import 'package:santijet_demir/features/shell/dashboard_feed_provider.dart';
+import 'package:santijet_demir/features/shell/dashboard_summary_provider.dart';
+import 'package:santijet_demir/features/shell/widgets/dashboard_feed_section.dart';
+import 'package:santijet_demir/features/shell/widgets/project_progress_section.dart';
 import 'package:santijet_demir/features/survey/providers/survey_provider.dart';
 
 class MainShell extends StatelessWidget {
@@ -46,15 +47,13 @@ class DashboardScreen extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final avatarInitial = ref.watch(profileInitialProvider);
     final surveySummary = ref.watch(surveyDashboardSummaryProvider);
-    final incomingSummary = ref.watch(incomingRebarDashboardSummaryProvider);
-    final orders = ref.watch(ordersProvider);
-    final surveyTonnageLabel = AppFormat.tonnage(surveySummary.totalTonnage);
+    final dashboard = ref.watch(dashboardKpiProvider);
+    final alerts = ref.watch(dashboardCriticalAlertsProvider);
+    final activities = ref.watch(dashboardRecentActivitiesProvider);
+    final surveyTonnageLabel = AppFormat.tonnage(dashboard.totalSurvey);
     final surveyImalatLabel = surveySummary.imalatCount == 0
         ? 'Henüz imalat yok'
         : '${surveySummary.imalatCount} imalat';
-    final ordersSubtitle = orders.isEmpty
-        ? 'Henüz sipariş yok'
-        : '${orders.length} kayıt';
 
     return Scaffold(
       backgroundColor: AppColors.canvas,
@@ -62,7 +61,10 @@ class DashboardScreen extends ConsumerWidget {
         child: CustomScrollView(
           slivers: [
             SliverToBoxAdapter(
-              child: SantijetHeader(avatarInitial: avatarInitial),
+              child: SantijetHeader(
+                avatarInitial: avatarInitial,
+                showWordmark: true,
+              ),
             ),
             const SliverToBoxAdapter(
               child: Padding(
@@ -79,36 +81,54 @@ class DashboardScreen extends ConsumerWidget {
                   StaggeredFadeIn(
                     index: 0,
                     child: GridView.count(
-                      crossAxisCount: ResponsiveLayout.isTablet(context) ? 4 : 2,
+                      crossAxisCount: ResponsiveLayout.isTablet(context) ? 3 : 3,
                       shrinkWrap: true,
                       physics: const NeverScrollableScrollPhysics(),
                       mainAxisSpacing: 12,
                       crossAxisSpacing: 12,
-                      childAspectRatio: 1.5,
+                      childAspectRatio: 1.25,
                       children: [
                         KpiCard(
                           label: 'Toplam Keşif',
                           value: surveyTonnageLabel,
                           unit: 't',
+                          percent: dashboard.percentLabel(dashboard.totalSurvey),
                           accentColor: AppColors.electricBlueLight,
                         ),
                         KpiCard(
                           label: 'Toplam Sipariş',
-                          value: AppFormat.tonnage(incomingSummary.totalOrdered),
+                          value: AppFormat.tonnage(dashboard.totalOrdered),
                           unit: 't',
+                          percent: dashboard.percentLabel(dashboard.totalOrdered),
                           accentColor: AppColors.info,
                         ),
                         KpiCard(
                           label: 'Sahaya Gelen',
-                          value: AppFormat.tonnage(incomingSummary.totalDelivered),
+                          value: AppFormat.tonnage(dashboard.totalDelivered),
                           unit: 't',
+                          percent: dashboard.percentLabel(dashboard.totalDelivered),
                           accentColor: AppColors.success,
                         ),
                         KpiCard(
-                          label: 'Beklenen Stok',
-                          value: AppFormat.tonnage(incomingSummary.pending),
+                          label: 'Kalan Sipariş',
+                          value: AppFormat.tonnage(dashboard.remainingOrder),
                           unit: 't',
+                          percent: dashboard.percentLabel(dashboard.remainingOrder),
+                          accentColor: AppColors.critical,
+                        ),
+                        KpiCard(
+                          label: 'Onayda',
+                          value: AppFormat.tonnage(dashboard.pendingApproval),
+                          unit: 't',
+                          percent: dashboard.percentLabel(dashboard.pendingApproval),
                           accentColor: AppColors.warning,
+                        ),
+                        KpiCard(
+                          label: 'Yolda',
+                          value: AppFormat.tonnage(dashboard.inTransit),
+                          unit: 't',
+                          percent: dashboard.percentLabel(dashboard.inTransit),
+                          accentColor: AppColors.partial,
                         ),
                       ],
                     ),
@@ -118,57 +138,24 @@ class DashboardScreen extends ConsumerWidget {
                     index: 1,
                     child: _QuickAccessRow(
                       surveySubtitle: surveyImalatLabel,
-                      ordersSubtitle: ordersSubtitle,
                       onSurveyTap: () => context.push(AppRoutes.survey),
-                      onMetrajTap: () => context.push(AppRoutes.surveyMetraj),
-                      onOrdersTap: () => context.go(AppRoutes.orders),
                       onReportsTap: () => context.push(AppRoutes.reports),
                     ),
                   ),
                   const SizedBox(height: AppSpacing.lg),
                   StaggeredFadeIn(
                     index: 2,
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text('Kritik Uyarılar', style: AppTypography.headlineMedium),
-                        const SizedBox(height: AppSpacing.sm),
-                        const ModuleEmptyState(type: EmptyStateType.noAlert),
-                      ],
-                    ),
+                    child: const ProjectProgressSection(),
                   ),
                   const SizedBox(height: AppSpacing.lg),
                   StaggeredFadeIn(
                     index: 3,
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text('Süreç Durumu', style: AppTypography.headlineMedium),
-                        const SizedBox(height: AppSpacing.sm),
-                        const ProgressCard(label: 'Keşif', percentage: 0, color: AppColors.electricBlueLight),
-                        const SizedBox(height: 8),
-                        const ProgressCard(label: 'Sipariş', percentage: 0, color: AppColors.info),
-                        const SizedBox(height: 8),
-                        const ProgressCard(label: 'Teslimat', percentage: 0, color: AppColors.success),
-                        const SizedBox(height: 8),
-                        const ProgressCard(label: 'Saha Sayım', percentage: 0, color: AppColors.warning),
-                      ],
-                    ),
+                    child: DashboardAlertsSection(alerts: alerts),
                   ),
                   const SizedBox(height: AppSpacing.lg),
                   StaggeredFadeIn(
                     index: 4,
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text('Son Aktiviteler', style: AppTypography.headlineMedium),
-                        const SizedBox(height: AppSpacing.sm),
-                        Text(
-                          'Henüz aktivite kaydı yok',
-                          style: AppTypography.bodyMedium.copyWith(color: AppColors.textMuted),
-                        ),
-                      ],
-                    ),
+                    child: DashboardActivitiesSection(activities: activities),
                   ),
                   const SizedBox(height: 80),
                 ]),
@@ -184,70 +171,36 @@ class DashboardScreen extends ConsumerWidget {
 class _QuickAccessRow extends StatelessWidget {
   const _QuickAccessRow({
     required this.surveySubtitle,
-    required this.ordersSubtitle,
     required this.onSurveyTap,
-    required this.onMetrajTap,
-    required this.onOrdersTap,
     required this.onReportsTap,
   });
 
   final String surveySubtitle;
-  final String ordersSubtitle;
   final VoidCallback onSurveyTap;
-  final VoidCallback onMetrajTap;
-  final VoidCallback onOrdersTap;
   final VoidCallback onReportsTap;
 
   @override
   Widget build(BuildContext context) {
-    return Column(
+    return Row(
       children: [
-        Row(
-          children: [
-            Expanded(
-              child: _QuickAccessCard(
-                icon: Icons.search,
-                label: 'Keşif',
-                subtitle: surveySubtitle,
-                color: AppColors.electricBlueLight,
-                onTap: onSurveyTap,
-              ),
-            ),
-            const SizedBox(width: 8),
-            Expanded(
-              child: _QuickAccessCard(
-                icon: Icons.receipt_long,
-                label: 'Siparişler',
-                subtitle: ordersSubtitle,
-                color: AppColors.info,
-                onTap: onOrdersTap,
-              ),
-            ),
-          ],
+        Expanded(
+          child: _QuickAccessCard(
+            icon: Icons.search,
+            label: 'Keşif',
+            subtitle: surveySubtitle,
+            color: AppColors.electricBlueLight,
+            onTap: onSurveyTap,
+          ),
         ),
-        const SizedBox(height: 8),
-        Row(
-          children: [
-            Expanded(
-              child: _QuickAccessCard(
-                icon: Icons.architecture,
-                label: 'Otomatik Metraj',
-                subtitle: 'DWG · DXF',
-                color: AppColors.success,
-                onTap: onMetrajTap,
-              ),
-            ),
-            const SizedBox(width: 8),
-            Expanded(
-              child: _QuickAccessCard(
-                icon: Icons.description,
-                label: 'Raporlar',
-                subtitle: 'Henüz rapor yok',
-                color: AppColors.partial,
-                onTap: onReportsTap,
-              ),
-            ),
-          ],
+        const SizedBox(width: 8),
+        Expanded(
+          child: _QuickAccessCard(
+            icon: Icons.description,
+            label: 'Raporlar',
+            subtitle: 'Henüz rapor yok',
+            color: AppColors.partial,
+            onTap: onReportsTap,
+          ),
         ),
       ],
     );

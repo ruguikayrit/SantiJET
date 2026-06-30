@@ -9,10 +9,13 @@ import 'package:santijet_demir/core/theme/app_typography.dart';
 import 'package:santijet_demir/core/widgets/swipe_to_delete_row.dart';
 import 'package:santijet_demir/data/services/export_service.dart';
 import 'package:santijet_demir/domain/entities/survey.dart';
+import 'package:santijet_demir/data/services/project_backup_service.dart';
 import 'package:santijet_demir/features/projects/providers/project_provider.dart';
+import 'package:santijet_demir/features/settings/providers/backup_provider.dart';
 import 'package:santijet_demir/features/rebar_metraj/widgets/rebar_metraj_panel.dart';
 import 'package:santijet_demir/features/survey/providers/survey_provider.dart';
 import 'package:santijet_demir/features/survey/saved_metraj_list_tab.dart';
+import 'package:santijet_demir/features/survey/widgets/imalat_diameter_editor.dart';
 
 class SurveyListScreen extends ConsumerStatefulWidget {
   const SurveyListScreen({super.key});
@@ -25,10 +28,12 @@ class _SurveyListScreenState extends ConsumerState<SurveyListScreen>
     with SingleTickerProviderStateMixin {
   static const _tabCount = 3;
   late final TabController _tabController;
+  late final ScrollController _imalatListScrollController;
 
   @override
   void initState() {
     super.initState();
+    _imalatListScrollController = ScrollController();
     final initialTab = ref.read(surveyTabIndexProvider);
     _tabController = TabController(
       length: _tabCount,
@@ -60,7 +65,78 @@ class _SurveyListScreenState extends ConsumerState<SurveyListScreen>
   @override
   void dispose() {
     _tabController.dispose();
+    _imalatListScrollController.dispose();
     super.dispose();
+  }
+
+  void _scrollToImalatListEnd() {
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted || !_imalatListScrollController.hasClients) return;
+      _imalatListScrollController.animateTo(
+        _imalatListScrollController.position.maxScrollExtent,
+        duration: const Duration(milliseconds: 300),
+        curve: Curves.easeOut,
+      );
+    });
+  }
+
+  Future<void> _showCreateImalatDialog() async {
+    final nameController = TextEditingController();
+    final name = await showDialog<String>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        backgroundColor: AppColors.surfaceElevated,
+        title: Text('Yeni İmalat', style: AppTypography.titleLarge),
+        content: TextField(
+          controller: nameController,
+          autofocus: true,
+          textCapitalization: TextCapitalization.words,
+          decoration: const InputDecoration(
+            labelText: 'İmalat adı',
+            hintText: 'Örn: Temel, Perde, Döşeme',
+          ),
+          onSubmitted: (value) {
+            if (value.trim().isNotEmpty) {
+              Navigator.pop(ctx, value.trim());
+            }
+          },
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(ctx),
+            child: const Text('İptal'),
+          ),
+          FilledButton(
+            onPressed: () {
+              final trimmed = nameController.text.trim();
+              if (trimmed.isEmpty) return;
+              Navigator.pop(ctx, trimmed);
+            },
+            child: const Text('Oluştur'),
+          ),
+        ],
+      ),
+    );
+
+    nameController.dispose();
+    if (!mounted || name == null) return;
+
+    final imalat = await ref
+        .read(surveyProjectProvider.notifier)
+        .createImalat(name: name);
+
+    if (!mounted) return;
+
+    ref.read(expandedImalatProvider.notifier).state = imalat.id;
+    ref.read(surveyTabIndexProvider.notifier).state = 0;
+    _scrollToImalatListEnd();
+
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text('"${imalat.name}" imalatı oluşturuldu'),
+        backgroundColor: AppColors.success,
+      ),
+    );
   }
 
   @override
@@ -95,7 +171,7 @@ class _SurveyListScreenState extends ConsumerState<SurveyListScreen>
         ),
         actions: [
           TextButton.icon(
-            onPressed: () {},
+            onPressed: canEdit ? _showCreateImalatDialog : null,
             icon: const Icon(Icons.add, size: 18),
             label: const Text('Yeni İmalat'),
           ),
@@ -120,6 +196,7 @@ class _SurveyListScreenState extends ConsumerState<SurveyListScreen>
             Material(
               color: screenBg,
               child: ListView(
+              controller: _imalatListScrollController,
               padding: const EdgeInsets.all(AppSpacing.md),
               children: [
                 _ProjectMetaRow(project: project),
@@ -144,9 +221,12 @@ class _SurveyListScreenState extends ConsumerState<SurveyListScreen>
                     child: SurveyImalatCard(
                       imalat: imalat,
                       expanded: expandedId == imalat.id,
+                      canEdit: canEdit,
                       onToggle: () {
+                        final currentExpanded =
+                            ref.read(expandedImalatProvider);
                         ref.read(expandedImalatProvider.notifier).state =
-                            expandedId == imalat.id ? null : imalat.id;
+                            currentExpanded == imalat.id ? null : imalat.id;
                       },
                       onDetail: () {
                         ref.read(selectedImalatProvider.notifier).state =
@@ -224,12 +304,14 @@ class SurveyImalatCard extends StatelessWidget {
     super.key,
     required this.imalat,
     required this.expanded,
+    required this.canEdit,
     required this.onToggle,
     required this.onDetail,
   });
 
   final SurveyImalat imalat;
   final bool expanded;
+  final bool canEdit;
   final VoidCallback onToggle;
   final VoidCallback onDetail;
 
@@ -282,7 +364,9 @@ class SurveyImalatCard extends StatelessWidget {
                     ),
                     const SizedBox(height: 8),
                     Text(
-                      imalat.diameters.map((d) => 'Ø$d').join(' · '),
+                      imalat.diameterLines.isEmpty
+                          ? 'Çap/miktar girilmedi'
+                          : imalat.diameters.map((d) => 'Ø$d').join(' · '),
                       style: AppTypography.bodySmall,
                     ),
                     const SizedBox(height: 10),
@@ -305,58 +389,13 @@ class SurveyImalatCard extends StatelessWidget {
             Padding(
               padding: const EdgeInsets.all(14),
               child: Column(
+                crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: [
-                  Row(
-                    children: const [
-                      Expanded(child: Text('ÇAP', style: TextStyle(fontSize: 12, fontWeight: FontWeight.w700, color: AppColors.textMuted))),
-                      Expanded(child: Text('MİKTAR (ton)', style: TextStyle(fontSize: 12, fontWeight: FontWeight.w700, color: AppColors.textMuted))),
-                      Expanded(child: Text('ORAN', style: TextStyle(fontSize: 12, fontWeight: FontWeight.w700, color: AppColors.textMuted))),
-                    ],
+                  ImalatDiameterEditor(
+                    imalat: imalat,
+                    canEdit: canEdit,
                   ),
-                  const SizedBox(height: 8),
-                  ...imalat.diameterLines.map((line) {
-                    final color = AppColors.diameterColor(line.diameter);
-                    final ratio = line.planned / imalat.planned * 100;
-                    return Padding(
-                      padding: const EdgeInsets.only(bottom: 8),
-                      child: Row(
-                        children: [
-                          Expanded(
-                            child: Text('Ø${line.diameter}', style: AppTypography.titleMedium.copyWith(color: color)),
-                          ),
-                          Expanded(
-                            child: Text(
-                              line.planned.toStringAsFixed(0),
-                              style: AppTypography.bodyMedium.copyWith(fontSize: 12),
-                            ),
-                          ),
-                          Expanded(
-                            child: Row(
-                              children: [
-                                Expanded(
-                                  child: ClipRRect(
-                                    borderRadius: AppRadii.full,
-                                    child: LinearProgressIndicator(
-                                      value: ratio / 100,
-                                      minHeight: 4,
-                                      backgroundColor: AppColors.border,
-                                      color: color,
-                                    ),
-                                  ),
-                                ),
-                                const SizedBox(width: 6),
-                                Text(
-                                  '${ratio.toStringAsFixed(0)}%',
-                                  style: AppTypography.labelMedium,
-                                ),
-                              ],
-                            ),
-                          ),
-                        ],
-                      ),
-                    );
-                  }),
-                  const SizedBox(height: 8),
+                  const SizedBox(height: 12),
                   SizedBox(
                     width: double.infinity,
                     child: OutlinedButton(
@@ -374,7 +413,7 @@ class SurveyImalatCard extends StatelessWidget {
   }
 }
 
-class _BottomActions extends StatelessWidget {
+class _BottomActions extends ConsumerWidget {
   const _BottomActions({required this.project});
 
   final SurveyProject project;
@@ -420,6 +459,86 @@ class _BottomActions extends StatelessWidget {
     }
   }
 
+  Future<void> _exportSurveyJson(BuildContext context, WidgetRef ref) async {
+    try {
+      await ref.read(projectBackupControllerProvider).exportSurvey();
+      if (context.mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Keşif verisi JSON olarak dışa aktarıldı')),
+        );
+      }
+    } on BackupParseException catch (e) {
+      if (context.mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text(e.message)),
+        );
+      }
+    } catch (e) {
+      if (context.mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Dışa aktarma hatası: $e')),
+        );
+      }
+    }
+  }
+
+  Future<void> _importSurveyJson(BuildContext context, WidgetRef ref) async {
+    final canEdit = ref.read(canEditActiveProjectProvider);
+    if (!canEdit) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('İçe aktarmak için düzenleme yetkisi gerekir')),
+      );
+      return;
+    }
+
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        backgroundColor: AppColors.surfaceElevated,
+        title: const Text('Keşif Verisini İçe Aktar'),
+        content: const Text(
+          'Seçilen keşif yedeği aktif projeye yazılır. Mevcut imalat listesi '
+          've çap/miktar verileri değiştirilir. Devam edilsin mi?',
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(ctx, false),
+            child: const Text('İptal'),
+          ),
+          FilledButton(
+            onPressed: () => Navigator.pop(ctx, true),
+            child: const Text('İçe Aktar'),
+          ),
+        ],
+      ),
+    );
+
+    if (confirmed != true || !context.mounted) return;
+
+    try {
+      final summary = await ref.read(projectBackupControllerProvider).importBackup(
+            expectedScope: BackupScope.survey,
+          );
+      if (!context.mounted || summary.cancelled) return;
+
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Keşif verisi içe aktarıldı')),
+      );
+    } on BackupParseException catch (e) {
+      if (context.mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text(e.message)),
+        );
+      }
+    } catch (e) {
+      if (context.mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('İçe aktarma hatası: $e')),
+        );
+      }
+    }
+  }
+
   Future<void> _previewPdf(BuildContext context) async {
     try {
       await exportService.previewPdf(
@@ -437,14 +556,26 @@ class _BottomActions extends StatelessWidget {
   }
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
+    final canEdit = ref.watch(canEditActiveProjectProvider);
+
     return Wrap(
       spacing: 8,
       runSpacing: 8,
       children: [
         _ActionChip(
+          icon: Icons.upload,
+          label: 'Dışa Aktar',
+          onPressed: () => _exportSurveyJson(context, ref),
+        ),
+        _ActionChip(
+          icon: Icons.download,
+          label: 'İçe Aktar',
+          onPressed: canEdit ? () => _importSurveyJson(context, ref) : null,
+        ),
+        _ActionChip(
           icon: Icons.table_chart,
-          label: 'Excel Aktar',
+          label: 'Excel Dışa Aktar',
           onPressed: () => _exportExcel(context),
         ),
         _ActionChip(
@@ -452,7 +583,6 @@ class _BottomActions extends StatelessWidget {
           label: 'PDF Görüntüle',
           onPressed: () => _previewPdf(context),
         ),
-        _ActionChip(icon: Icons.edit, label: 'Keşif Güncelle'),
       ],
     );
   }

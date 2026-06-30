@@ -13,6 +13,7 @@ import 'package:santijet_demir/domain/entities/rebar_metraj.dart';
 import 'package:santijet_demir/features/projects/providers/project_provider.dart';
 import 'package:santijet_demir/features/rebar_metraj/providers/rebar_metraj_provider.dart';
 import 'package:santijet_demir/features/rebar_metraj/providers/rebar_metraj_storage_provider.dart';
+import 'package:santijet_demir/features/rebar_metraj/widgets/metraj_cutting_actions.dart';
 import 'package:santijet_demir/features/rebar_metraj/widgets/metraj_survey_actions.dart';
 import 'package:santijet_demir/features/survey/providers/survey_provider.dart';
 
@@ -331,42 +332,56 @@ class _ResultSummaryBar extends ConsumerWidget {
         borderRadius: AppRadii.md,
         border: Border.all(color: AppColors.border),
       ),
-      child: Row(
-        crossAxisAlignment: CrossAxisAlignment.center,
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text('Toplam Tonaj', style: AppTypography.labelMedium),
-                const SizedBox(height: 6),
-                RichText(
-                  text: TextSpan(
-                    style: AppTypography.headlineMedium
-                        .copyWith(color: AppColors.electricBlueLight),
-                    children: [
-                      TextSpan(text: formatter.format(result.totalTonnage)),
-                      TextSpan(
-                        text: ' t',
-                        style: AppTypography.labelMedium
-                            .copyWith(color: AppColors.textMuted),
+          Row(
+            crossAxisAlignment: CrossAxisAlignment.center,
+            children: [
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text('Toplam Tonaj', style: AppTypography.labelMedium),
+                    const SizedBox(height: 6),
+                    RichText(
+                      text: TextSpan(
+                        style: AppTypography.headlineMedium
+                            .copyWith(color: AppColors.electricBlueLight),
+                        children: [
+                          TextSpan(text: formatter.format(result.totalTonnage)),
+                          TextSpan(
+                            text: ' t',
+                            style: AppTypography.labelMedium
+                                .copyWith(color: AppColors.textMuted),
+                          ),
+                        ],
                       ),
-                    ],
-                  ),
+                    ),
+                  ],
                 ),
-              ],
+              ),
+              const SizedBox(width: 12),
+              FilledButton.icon(
+                onPressed: projectId == null
+                    ? () => context.push(AppRoutes.projects)
+                    : isSaved
+                        ? () => ref.read(surveyTabIndexProvider.notifier).state = 2
+                        : () => saveMetrajResultToPreProduction(context, ref, result),
+                icon: Icon(isSaved ? Icons.check_circle : Icons.send_outlined),
+                label: Text(isSaved ? 'Ön İmalat\'ta Gör' : 'Ön İmalata Gönder'),
+              ),
+            ],
+          ),
+          if (projectId != null) ...[
+            const SizedBox(height: 8),
+            OutlinedButton.icon(
+              onPressed: () =>
+                  sendMetrajResultToCuttingBending(context, ref, result),
+              icon: const Icon(Icons.content_cut),
+              label: const Text('Kesme-Bükme\'ye Gönder'),
             ),
-          ),
-          const SizedBox(width: 12),
-          FilledButton.icon(
-            onPressed: projectId == null
-                ? () => context.push(AppRoutes.projects)
-                : isSaved
-                    ? () => ref.read(surveyTabIndexProvider.notifier).state = 2
-                    : () => saveMetrajResultToPreProduction(context, ref, result),
-            icon: Icon(isSaved ? Icons.check_circle : Icons.send_outlined),
-            label: Text(isSaved ? 'Ön İmalat\'ta Gör' : 'Ön İmalata Gönder'),
-          ),
+          ],
         ],
       ),
     );

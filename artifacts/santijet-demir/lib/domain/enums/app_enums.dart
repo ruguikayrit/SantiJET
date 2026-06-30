@@ -3,7 +3,7 @@ enum BottomNavTab {
   orders('Siparişler', 'Sipariş', '/orders'),
   incomingRebar('Gelen Demir', 'Gelen', '/incoming-rebar'),
   fieldCount('Saha Sayım', 'Sayım', '/field-count'),
-  analysis('Analiz', 'Analiz', '/analysis');
+  analysis('Kesme - Bükme', 'Kesme - Bükme', '/analysis');
 
   const BottomNavTab(this.label, this.navLabel, this.path);
 
@@ -16,16 +16,34 @@ enum BottomNavTab {
 }
 
 enum OrderStatus {
-  draft('Taslak', 0xFF64748B),
   pendingApproval('Onay Bek.', 0xFFF59E0B),
   submitted('Verildi', 0xFF3B82F6),
   inTransit('Yolda', 0xFF0EA5E9),
-  completed('Tamamlandı', 0xFF10B981);
+  completed('Tamamlandı', 0xFF10B981),
+  cancelled('İptal', 0xFFEF4444);
 
   const OrderStatus(this.label, this.colorValue);
 
   final String label;
   final int colorValue;
+
+  OrderStatus? get nextStatus => switch (this) {
+        pendingApproval => submitted,
+        submitted => inTransit,
+        inTransit => completed,
+        completed => null,
+        cancelled => null,
+      };
+
+  String get actionLabel => switch (this) {
+        pendingApproval => '',
+        submitted => 'Yola Çıkar',
+        inTransit => 'Teslim Al',
+        completed => '',
+        cancelled => '',
+      };
+
+  bool get canCancel => this == submitted;
 }
 
 enum DeliveryStatus {

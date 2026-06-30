@@ -66,39 +66,53 @@ class ModuleEmptyState extends StatelessWidget {
     required this.type,
     this.actionLabel,
     this.onAction,
+    this.inline = false,
   });
 
   final EmptyStateType type;
   final String? actionLabel;
   final VoidCallback? onAction;
 
+  /// ListView / SliverList içinde kullanım — [Center] olmadan.
+  final bool inline;
+
   @override
   Widget build(BuildContext context) {
+    final content = Column(
+      mainAxisSize: MainAxisSize.min,
+      mainAxisAlignment: MainAxisAlignment.center,
+      children: [
+        Container(
+          width: 80,
+          height: 80,
+          decoration: BoxDecoration(
+            color: AppColors.electricBlue.withValues(alpha: 0.08),
+            shape: BoxShape.circle,
+          ),
+          child: Icon(type.icon, size: 40, color: AppColors.textMuted),
+        ),
+        const SizedBox(height: 20),
+        Text(type.title, style: AppTypography.headlineMedium, textAlign: TextAlign.center),
+        const SizedBox(height: 8),
+        Text(type.message, style: AppTypography.bodyMedium, textAlign: TextAlign.center),
+        if (actionLabel != null && onAction != null) ...[
+          const SizedBox(height: 24),
+          FilledButton(onPressed: onAction, child: Text(actionLabel!)),
+        ],
+      ],
+    );
+
+    if (inline) {
+      return Padding(
+        padding: const EdgeInsets.symmetric(vertical: 24, horizontal: 16),
+        child: content,
+      );
+    }
+
     return Center(
       child: Padding(
         padding: const EdgeInsets.all(32),
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Container(
-              width: 80,
-              height: 80,
-              decoration: BoxDecoration(
-                color: AppColors.electricBlue.withValues(alpha: 0.08),
-                shape: BoxShape.circle,
-              ),
-              child: Icon(type.icon, size: 40, color: AppColors.textMuted),
-            ),
-            const SizedBox(height: 20),
-            Text(type.title, style: AppTypography.headlineMedium, textAlign: TextAlign.center),
-            const SizedBox(height: 8),
-            Text(type.message, style: AppTypography.bodyMedium, textAlign: TextAlign.center),
-            if (actionLabel != null && onAction != null) ...[
-              const SizedBox(height: 24),
-              FilledButton(onPressed: onAction, child: Text(actionLabel!)),
-            ],
-          ],
-        ),
+        child: content,
       ),
     );
   }

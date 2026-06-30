@@ -29,70 +29,72 @@ class DeliveryCard extends StatelessWidget {
             borderRadius: AppRadii.md,
             border: Border.all(color: AppColors.border),
           ),
-          child: Row(
-            crossAxisAlignment: CrossAxisAlignment.stretch,
-            children: [
-              Container(
-                width: 4,
-                decoration: BoxDecoration(
-                  color: statusColor,
-                  borderRadius: const BorderRadius.only(
-                    topLeft: Radius.circular(12),
-                    bottomLeft: Radius.circular(12),
+          child: IntrinsicHeight(
+            child: Row(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                Container(
+                  width: 4,
+                  decoration: BoxDecoration(
+                    color: statusColor,
+                    borderRadius: const BorderRadius.only(
+                      topLeft: Radius.circular(12),
+                      bottomLeft: Radius.circular(12),
+                    ),
                   ),
                 ),
-              ),
-              Expanded(
-                child: Padding(
-                  padding: const EdgeInsets.all(14),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Row(
-                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                        children: [
-                          Text(delivery.supplier, style: AppTypography.titleMedium),
-                          StatusBadge(label: delivery.status.label, color: statusColor),
-                        ],
-                      ),
-                      const SizedBox(height: 4),
-                      Text(dateStr, style: AppTypography.bodySmall),
-                      const SizedBox(height: 8),
-                      Row(
-                        children: [
-                          Expanded(
-                            child: Text(
-                              delivery.orderNo,
-                              style: AppTypography.bodyMedium.copyWith(
-                                color: AppColors.textPrimary,
+                Expanded(
+                  child: Padding(
+                    padding: const EdgeInsets.all(14),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Row(
+                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                          children: [
+                            Text(delivery.supplier, style: AppTypography.titleMedium),
+                            StatusBadge(label: delivery.status.label, color: statusColor),
+                          ],
+                        ),
+                        const SizedBox(height: 4),
+                        Text(dateStr, style: AppTypography.bodySmall),
+                        const SizedBox(height: 8),
+                        Row(
+                          children: [
+                            Expanded(
+                              child: Text(
+                                delivery.orderNo,
+                                style: AppTypography.bodyMedium.copyWith(
+                                  color: AppColors.textPrimary,
+                                ),
                               ),
                             ),
-                          ),
-                          Text(
-                            delivery.irsaliyeNo,
-                            style: AppTypography.labelMedium,
-                          ),
-                        ],
-                      ),
-                      const SizedBox(height: 10),
-                      Row(
-                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                        children: [
-                          Text(
-                            '${delivery.tonnage.toStringAsFixed(0)}t',
-                            style: AppTypography.kpiValue.copyWith(fontSize: 22),
-                          ),
-                          Text(
-                            '%${delivery.fulfillmentPercent.toStringAsFixed(0)} karşılama',
-                            style: AppTypography.labelMedium.copyWith(color: statusColor),
-                          ),
-                        ],
-                      ),
-                    ],
+                            Text(
+                              delivery.irsaliyeNo,
+                              style: AppTypography.labelMedium,
+                            ),
+                          ],
+                        ),
+                        const SizedBox(height: 10),
+                        Row(
+                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                          children: [
+                            Text(
+                              '${delivery.tonnage.toStringAsFixed(0)}t',
+                              style: AppTypography.kpiValue.copyWith(fontSize: 22),
+                            ),
+                            Text(
+                              '%${delivery.fulfillmentPercent.toStringAsFixed(0)} karşılama',
+                              style: AppTypography.labelMedium.copyWith(color: statusColor),
+                            ),
+                          ],
+                        ),
+                      ],
+                    ),
                   ),
                 ),
-              ),
-            ],
+              ],
+            ),
           ),
         ),
       ),

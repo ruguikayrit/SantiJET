@@ -4,6 +4,7 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:hive_flutter/hive_flutter.dart';
+import 'package:intl/date_symbol_data_local.dart';
 import 'package:santijet_demir/app.dart';
 import 'package:santijet_demir/core/crash/crash_reporting_service.dart';
 import 'package:santijet_demir/data/remote/supabase_service.dart';
@@ -12,6 +13,7 @@ const _dataSchemaVersion = 2;
 
 Future<void> bootstrap() async {
   WidgetsFlutterBinding.ensureInitialized();
+  await initializeDateFormatting('tr_TR');
   await Hive.initFlutter();
   await Future.wait([
     Hive.openBox('settings'),

@@ -23,7 +23,16 @@ class _OrdersScreenState extends ConsumerState<OrdersScreen> {
   @override
   Widget build(BuildContext context) {
     final orders = ref.watch(filteredOrdersProvider);
-    final filterIndex = ref.watch(orderFilterProvider);
+    final rawFilterIndex = ref.watch(orderFilterProvider);
+    final filterIndex =
+        rawFilterIndex.clamp(0, orderFilterLabels.length - 1);
+    if (rawFilterIndex != filterIndex) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (!mounted) return;
+        ref.read(orderFilterProvider.notifier).state = filterIndex;
+      });
+    }
+    final allOrders = ref.watch(ordersProvider);
 
     final filtered = _searchQuery.isEmpty
         ? orders
@@ -37,6 +46,10 @@ class _OrdersScreenState extends ConsumerState<OrdersScreen> {
                   ),
             )
             .toList();
+
+    final emptyType = allOrders.isEmpty
+        ? EmptyStateType.noOrders
+        : EmptyStateType.noSearchResult;
 
     return Scaffold(
       backgroundColor: AppColors.canvas,
@@ -66,7 +79,7 @@ class _OrdersScreenState extends ConsumerState<OrdersScreen> {
             Expanded(
               child: filtered.isEmpty
                   ? ModuleEmptyState(
-                      type: EmptyStateType.noSearchResult,
+                      type: emptyType,
                       actionLabel: 'Yeni Sipariş',
                       onAction: () => context.push(AppRoutes.newOrder),
                     )

@@ -11,13 +11,17 @@ class SantijetHeader extends StatelessWidget {
   const SantijetHeader({
     super.key,
     this.subtitle,
+    this.showWordmark = false,
     this.showNotification = true,
     this.showAvatar = true,
     this.onNotificationTap,
     this.avatarInitial,
   });
 
+  static const _titleGroupLift = 6.0;
+
   final String? subtitle;
+  final bool showWordmark;
   final bool showNotification;
   final bool showAvatar;
   final VoidCallback? onNotificationTap;
@@ -28,30 +32,55 @@ class SantijetHeader extends StatelessWidget {
     return Padding(
       padding: const EdgeInsets.fromLTRB(AppSpacing.md, AppSpacing.sm, AppSpacing.md, AppSpacing.sm),
       child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Image.asset(
-            'assets/images/splash_bolt.png',
-            width: 36,
-            height: 36,
-            fit: BoxFit.contain,
-            filterQuality: FilterQuality.high,
-          ),
-          const SizedBox(width: 10),
           Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  'DEMİR',
-                  style: AppTypography.titleMedium.copyWith(
-                    letterSpacing: 1.2,
-                    fontWeight: FontWeight.w700,
+            child: showWordmark
+                ? Row(
+                    crossAxisAlignment: CrossAxisAlignment.end,
+                    children: [
+                      Image.asset(
+                        'assets/images/splash_bolt.png',
+                        width: 36,
+                        height: 36,
+                        fit: BoxFit.contain,
+                        filterQuality: FilterQuality.high,
+                      ),
+                      const SizedBox(width: 10),
+                      Flexible(child: _BrandTitleRow(shiftUpByFontHeight: true)),
+                    ],
+                  )
+                : Row(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Image.asset(
+                        'assets/images/splash_bolt.png',
+                        width: 36,
+                        height: 36,
+                        fit: BoxFit.contain,
+                        filterQuality: FilterQuality.high,
+                      ),
+                      const SizedBox(width: 10),
+                      Expanded(
+                        child: Transform.translate(
+                          offset: subtitle != null
+                              ? const Offset(0, _titleGroupLift)
+                              : Offset.zero,
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              Text('DEMİR', style: _demirTitleStyle),
+                              if (subtitle != null) ...[
+                                const SizedBox(height: 4),
+                                Text(subtitle!, style: AppTypography.labelMedium),
+                              ],
+                            ],
+                          ),
+                        ),
+                      ),
+                    ],
                   ),
-                ),
-                if (subtitle != null)
-                  Text(subtitle!, style: AppTypography.labelMedium),
-              ],
-            ),
           ),
           if (showNotification)
             Stack(
@@ -90,6 +119,63 @@ class SantijetHeader extends StatelessWidget {
             ),
         ],
       ),
+    );
+  }
+}
+
+TextStyle get _demirTitleStyle => AppTypography.titleMedium.copyWith(
+      letterSpacing: 1.2,
+      fontWeight: FontWeight.w700,
+      height: 1.0,
+    );
+
+class _BrandTitleRow extends StatelessWidget {
+  const _BrandTitleRow({this.shiftUpByFontHeight = false});
+
+  final bool shiftUpByFontHeight;
+
+  /// PNG wordmark içinde harfler dikeyde ~%55 alan kaplar; geri kalan boşluktur.
+  static const _wordmarkLetterFillRatio = 0.55;
+
+  @override
+  Widget build(BuildContext context) {
+    final textPainter = TextPainter(
+      text: TextSpan(text: 'DEMİR', style: _demirTitleStyle),
+      textDirection: Directionality.of(context),
+      maxLines: 1,
+    )..layout();
+
+    final lineMetric = textPainter.computeLineMetrics().first;
+    final demirCapHeight = lineMetric.ascent;
+    final wordmarkHeight = demirCapHeight / _wordmarkLetterFillRatio * 2;
+    final fontHeight = textPainter.height;
+
+    final row = Row(
+      crossAxisAlignment: CrossAxisAlignment.end,
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        ColorFiltered(
+          colorFilter: ColorFilter.mode(
+            AppColors.canvas,
+            BlendMode.lighten,
+          ),
+          child: Image.asset(
+            'assets/images/splash_wordmark.png',
+            height: wordmarkHeight,
+            fit: BoxFit.fitHeight,
+            filterQuality: FilterQuality.high,
+          ),
+        ),
+        const SizedBox(width: 8),
+        Text('DEMİR', style: _demirTitleStyle),
+      ],
+    );
+
+    if (!shiftUpByFontHeight) return row;
+
+    return Transform.translate(
+      offset: Offset(-12, -fontHeight + 2),
+      child: row,
     );
   }
 }

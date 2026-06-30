@@ -10,7 +10,9 @@ import 'package:santijet_demir/features/auth/providers/app_lock_provider.dart';
 import 'package:santijet_demir/features/auth/providers/auth_provider.dart';
 import 'package:santijet_demir/features/projects/providers/project_provider.dart';
 import 'package:santijet_demir/features/settings/providers/profile_provider.dart';
+import 'package:santijet_demir/features/settings/providers/backup_provider.dart';
 import 'package:santijet_demir/features/settings/providers/settings_provider.dart';
+import 'package:santijet_demir/data/services/project_backup_service.dart';
 
 class SettingsScreen extends ConsumerWidget {
   const SettingsScreen({super.key});
@@ -87,7 +89,7 @@ class SettingsScreen extends ConsumerWidget {
           _SettingsTile(
             icon: Icons.backup,
             title: 'Yedekleme & Geri Yükleme',
-            subtitle: 'Ayarları dışa/içe aktar',
+            subtitle: 'Proje verilerini JSON olarak dışa/içe aktar',
             onTap: () => _showBackupDialog(context, ref),
           ),
           _SettingsTile(
@@ -285,19 +287,123 @@ class SettingsScreen extends ConsumerWidget {
   }
 
   void _showBackupDialog(BuildContext context, WidgetRef ref) {
-    showDialog<void>(
+    showModalBottomSheet<void>(
+      context: context,
+      backgroundColor: AppColors.surfaceElevated,
+      builder: (ctx) => SafeArea(
+        child: Padding(
+          padding: const EdgeInsets.all(AppSpacing.md),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              Text('Yedekleme & Geri Yükleme', style: AppTypography.headlineMedium),
+              const SizedBox(height: 8),
+              Text(
+                'Aktif projenin keşif, sipariş, teslimat, sayım ve metraj '
+                'verilerini JSON dosyası olarak dışa/içe aktarın.',
+                style: AppTypography.bodySmall,
+              ),
+              const SizedBox(height: 16),
+              FilledButton.icon(
+                onPressed: () async {
+                  Navigator.pop(ctx);
+                  await _exportProjectBackup(context, ref);
+                },
+                icon: const Icon(Icons.upload),
+                label: const Text('Proje Verilerini Dışa Aktar'),
+              ),
+              const SizedBox(height: 8),
+              OutlinedButton.icon(
+                onPressed: () async {
+                  Navigator.pop(ctx);
+                  await _importProjectBackup(context, ref);
+                },
+                icon: const Icon(Icons.download),
+                label: const Text('Proje Verilerini İçe Aktar'),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  Future<void> _exportProjectBackup(BuildContext context, WidgetRef ref) async {
+    try {
+      await ref.read(projectBackupControllerProvider).exportProject();
+      if (context.mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Proje yedeği dışa aktarıldı')),
+        );
+      }
+    } on BackupParseException catch (e) {
+      if (context.mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text(e.message)),
+        );
+      }
+    } catch (e) {
+      if (context.mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Dışa aktarma hatası: $e')),
+        );
+      }
+    }
+  }
+
+  Future<void> _importProjectBackup(BuildContext context, WidgetRef ref) async {
+    final confirmed = await showDialog<bool>(
       context: context,
       builder: (ctx) => AlertDialog(
-        title: const Text('Yedekleme'),
+        backgroundColor: AppColors.surfaceElevated,
+        title: const Text('Proje Verilerini İçe Aktar'),
         content: const Text(
-          'Ayarlarınız yerel olarak Hive\'da saklanır. '
-          'Tam yedekleme/geri yükleme bir sonraki sürümde dosya seçici ile eklenecek.',
+          'Seçilen yedek dosyası aktif projeye yazılır. Mevcut sipariş, '
+          'teslimat, sayım ve keşif verileri üzerine yazılır. Devam edilsin mi?',
         ),
         actions: [
-          TextButton(onPressed: () => Navigator.pop(ctx), child: const Text('Tamam')),
+          TextButton(
+            onPressed: () => Navigator.pop(ctx, false),
+            child: const Text('İptal'),
+          ),
+          FilledButton(
+            onPressed: () => Navigator.pop(ctx, true),
+            child: const Text('İçe Aktar'),
+          ),
         ],
       ),
     );
+
+    if (confirmed != true || !context.mounted) return;
+
+    try {
+      final summary = await ref.read(projectBackupControllerProvider).importBackup(
+            expectedScope: BackupScope.project,
+          );
+      if (!context.mounted || summary.cancelled) return;
+
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(
+            '${summary.domainCount} veri alanı içe aktarıldı'
+            '${summary.projectName != null ? ' (${summary.projectName})' : ''}',
+          ),
+        ),
+      );
+    } on BackupParseException catch (e) {
+      if (context.mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text(e.message)),
+        );
+      }
+    } catch (e) {
+      if (context.mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('İçe aktarma hatası: $e')),
+        );
+      }
+    }
   }
 
   Future<String?> _showCreatePinDialog(BuildContext context) async {

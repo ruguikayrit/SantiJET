@@ -17,7 +17,19 @@ class DeliveryDetailScreen extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final deliveries = ref.watch(deliveriesProvider);
-    final delivery = deliveries.firstWhere((d) => d.id == deliveryId);
+    final delivery = deliveries.cast<DeliveryItem?>().firstWhere(
+          (item) => item?.id == deliveryId,
+          orElse: () => null,
+        );
+
+    if (delivery == null) {
+      return Scaffold(
+        backgroundColor: AppColors.canvas,
+        appBar: AppBar(title: const Text('Teslimat')),
+        body: const Center(child: Text('Teslimat bulunamadı')),
+      );
+    }
+
     final statusColor = Color(delivery.status.colorValue);
 
     return Scaffold(
@@ -46,6 +58,10 @@ class DeliveryDetailScreen extends ConsumerWidget {
           ),
           const SizedBox(height: 8),
           Text('İrsaliye: ${delivery.irsaliyeNo}', style: AppTypography.bodyMedium),
+          if (delivery.plateNo.isNotEmpty) ...[
+            const SizedBox(height: 4),
+            Text('Plaka: ${delivery.plateNo}', style: AppTypography.bodyMedium),
+          ],
           const SizedBox(height: 16),
           GridView.count(
             crossAxisCount: 2,

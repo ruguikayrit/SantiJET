@@ -9,10 +9,15 @@ Future<List<CadTextEntity>> extractDwgTextsWeb(List<int> bytes) async {
   if (fn == null) {
     final status = js_util.getProperty(web.window, '__SANTIJET_DWG_MODULE__');
     final statusText = status?.toString() ?? 'unknown';
-    throw FormatException(
-      statusText == 'error'
-          ? 'DWG modülü başlatılamadı. Sayfayı yenileyin (Ctrl+Shift+R).'
-          : 'DWG modülü henüz yüklenmedi. Birkaç saniye bekleyip tekrar deneyin.',
+    if (statusText == 'error') {
+      throw const FormatException(
+        'DWG modülü başlatılamadı. LibreDWG dosyaları eksik olabilir. '
+        'Proje kökünde scripts/setup-libredwg-web.ps1 çalıştırın, '
+        'flutter run\'ı yeniden başlatın ve sayfayı Ctrl+Shift+R ile yenileyin.',
+      );
+    }
+    throw const FormatException(
+      'DWG modülü henüz yüklenmedi. Birkaç saniye bekleyip tekrar deneyin.',
     );
   }
 

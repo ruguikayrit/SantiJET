@@ -64,6 +64,7 @@ class RebarSurveyMapper {
         planned: planned,
         ordered: current?.ordered ?? 0,
         delivered: current?.delivered ?? 0,
+        progressPercent: current?.progressPercent ?? 0,
       );
     }
 
@@ -98,6 +99,17 @@ class RebarSurveyMapper {
       ordered: ordered,
       delivered: delivered,
       pending: pending,
+    );
+  }
+
+  static SurveyImalat rebuildImalat({
+    required SurveyImalat imalat,
+    required List<DiameterLine> diameterLines,
+  }) {
+    return _buildImalat(
+      id: imalat.id,
+      name: imalat.name,
+      diameterLines: diameterLines,
     );
   }
 

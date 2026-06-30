@@ -7,6 +7,7 @@ import 'package:santijet_demir/core/theme/app_spacing.dart';
 import 'package:santijet_demir/core/theme/app_typography.dart';
 import 'package:santijet_demir/core/widgets/app_components.dart';
 import 'package:santijet_demir/data/mock/mock_field_counts.dart';
+import 'package:santijet_demir/domain/entities/field_count.dart';
 import 'package:santijet_demir/features/field_count/providers/field_count_provider.dart';
 
 class CountDetailScreen extends ConsumerStatefulWidget {
@@ -24,7 +25,18 @@ class _CountDetailScreenState extends ConsumerState<CountDetailScreen> {
   @override
   Widget build(BuildContext context) {
     final counts = ref.watch(fieldCountsProvider);
-    final record = counts.firstWhere((c) => c.id == widget.countId);
+    final record = counts.cast<FieldCountRecord?>().firstWhere(
+          (item) => item?.id == widget.countId,
+          orElse: () => null,
+        );
+
+    if (record == null) {
+      return Scaffold(
+        backgroundColor: AppColors.canvas,
+        appBar: AppBar(title: const Text('Sayım Detayı')),
+        body: const Center(child: Text('Sayım kaydı bulunamadı')),
+      );
+    }
 
     return Scaffold(
       backgroundColor: AppColors.canvas,
@@ -33,13 +45,24 @@ class _CountDetailScreenState extends ConsumerState<CountDetailScreen> {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Text(record.title, style: AppTypography.titleLarge),
-            Text(record.region, style: AppTypography.labelMedium),
+            Text(
+              DateFormat('d MMM yyyy · HH:mm').format(record.date),
+              style: AppTypography.labelMedium,
+            ),
           ],
         ),
       ),
       body: ListView(
         padding: const EdgeInsets.all(AppSpacing.md),
         children: [
+          if (record.personnel.isNotEmpty)
+            Padding(
+              padding: const EdgeInsets.only(bottom: 12),
+              child: Text(
+                'Personel: ${record.personnel}',
+                style: AppTypography.bodyMedium,
+              ),
+            ),
           GridView.count(
             crossAxisCount: 2,
             shrinkWrap: true,
@@ -50,15 +73,21 @@ class _CountDetailScreenState extends ConsumerState<CountDetailScreen> {
             children: [
               KpiCard(
                 label: 'Beklenen',
-                value: record.expected.toStringAsFixed(0),
+                value: record.totalExpectedStock.toStringAsFixed(0),
                 unit: 't',
                 accentColor: AppColors.electricBlueLight,
               ),
               KpiCard(
-                label: 'Gerçek',
+                label: 'Sayım',
                 value: record.actual.toStringAsFixed(1),
                 unit: 't',
                 accentColor: AppColors.info,
+              ),
+              KpiCard(
+                label: 'Kullanılan',
+                value: record.totalUsed.toStringAsFixed(1),
+                unit: 't',
+                accentColor: AppColors.warning,
               ),
               KpiCard(
                 label: 'Sapma',
@@ -68,13 +97,23 @@ class _CountDetailScreenState extends ConsumerState<CountDetailScreen> {
                     ? AppColors.critical
                     : AppColors.warning,
               ),
-              KpiCard(
-                label: 'Sapma %',
-                value: record.variancePercent.toStringAsFixed(1),
-                unit: '%',
-                accentColor: AppColors.partial,
-              ),
             ],
+          ),
+          const SizedBox(height: 20),
+          Text('Çap Detayı', style: AppTypography.headlineMedium),
+          const SizedBox(height: 8),
+          Container(
+            decoration: BoxDecoration(
+              color: AppColors.surfaceElevated,
+              borderRadius: AppRadii.md,
+              border: Border.all(color: AppColors.border),
+            ),
+            child: Column(
+              children: [
+                _LineTableHeader(),
+                ...record.lines.map(_LineTableRow.new),
+              ],
+            ),
           ),
           const SizedBox(height: 20),
           Text('Sapma Nedeni', style: AppTypography.headlineMedium),
@@ -84,9 +123,9 @@ class _CountDetailScreenState extends ConsumerState<CountDetailScreen> {
             return CheckboxListTile(
               title: Text(cause, style: AppTypography.bodyMedium),
               value: selected,
-              onChanged: (v) {
+              onChanged: (value) {
                 setState(() {
-                  if (v == true) {
+                  if (value == true) {
                     _selectedCauses.add(cause);
                   } else {
                     _selectedCauses.remove(cause);
@@ -101,62 +140,66 @@ class _CountDetailScreenState extends ConsumerState<CountDetailScreen> {
               ),
             );
           }),
-          const SizedBox(height: 20),
-          Text('Fotoğraflar', style: AppTypography.headlineMedium),
-          const SizedBox(height: 8),
-          Row(
-            children: List.generate(3, (i) {
-              return Expanded(
-                child: Container(
-                  height: 80,
-                  margin: EdgeInsets.only(right: i < 2 ? 8 : 0),
-                  decoration: BoxDecoration(
-                    color: AppColors.surfaceElevated,
-                    borderRadius: AppRadii.md,
-                    border: Border.all(color: AppColors.border),
-                  ),
-                  child: Icon(Icons.image_outlined, color: AppColors.textMuted),
-                ),
-              );
-            }),
-          ),
-          const SizedBox(height: 20),
-          Text('Aktivite Logu', style: AppTypography.headlineMedium),
-          const SizedBox(height: 8),
-          _LogEntry(
-            time: DateFormat('HH:mm').format(record.date),
-            text: 'Sayım başlatıldı — ${record.personnel}',
-          ),
-          _LogEntry(
-            time: DateFormat('HH:mm').format(record.date.add(const Duration(hours: 1))),
-            text: 'Veri girişi tamamlandı',
-          ),
-          _LogEntry(
-            time: DateFormat('HH:mm').format(record.date.add(const Duration(hours: 2))),
-            text: 'Sayım onaylandı — sapma: ${record.variance.toStringAsFixed(1)}t',
-          ),
         ],
       ),
     );
   }
 }
 
-class _LogEntry extends StatelessWidget {
-  const _LogEntry({required this.time, required this.text});
+class _LineTableHeader extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+      decoration: const BoxDecoration(
+        border: Border(bottom: BorderSide(color: AppColors.border)),
+      ),
+      child: Row(
+        children: [
+          for (final label in ['ÇAP', 'TESLİM', 'BEKLENEN', 'SAYIM', 'KULLANILAN'])
+            Expanded(
+              child: Text(
+                label,
+                style: AppTypography.labelMedium.copyWith(fontWeight: FontWeight.w700),
+              ),
+            ),
+        ],
+      ),
+    );
+  }
+}
 
-  final String time;
-  final String text;
+class _LineTableRow extends StatelessWidget {
+  const _LineTableRow(this.line);
+
+  final FieldCountLineRecord line;
 
   @override
   Widget build(BuildContext context) {
     return Padding(
-      padding: const EdgeInsets.only(bottom: 10),
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
       child: Row(
-        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text(time, style: AppTypography.labelMedium.copyWith(color: AppColors.electricBlueLight)),
-          const SizedBox(width: 12),
-          Expanded(child: Text(text, style: AppTypography.bodyMedium)),
+          Expanded(
+            child: Text(
+              'Ø${line.diameter}',
+              style: AppTypography.titleMedium.copyWith(
+                color: AppColors.diameterColor(line.diameter),
+              ),
+            ),
+          ),
+          Expanded(
+            child: Text('${line.delivered.toStringAsFixed(1)}t'),
+          ),
+          Expanded(
+            child: Text('${line.plannedUsage.toStringAsFixed(1)}t'),
+          ),
+          Expanded(
+            child: Text('${line.actual.toStringAsFixed(1)}t'),
+          ),
+          Expanded(
+            child: Text('${line.actualUsed.toStringAsFixed(1)}t'),
+          ),
         ],
       ),
     );

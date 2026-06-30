@@ -81,66 +81,149 @@ class KpiCard extends StatelessWidget {
     required this.label,
     required this.value,
     required this.unit,
+    this.percent,
     this.trend,
     this.trendUp,
     this.accentColor = AppColors.electricBlueLight,
+    this.onTap,
+    this.dense = false,
+    this.compactHeight = false,
   });
 
   final String label;
   final String value;
   final String unit;
+  final String? percent;
   final String? trend;
   final bool? trendUp;
   final Color accentColor;
+  final VoidCallback? onTap;
+  final bool dense;
+  final bool compactHeight;
+
+  Widget _buildLabel() {
+    final parts = label.trim().split(RegExp(r'\s+'));
+    if (parts.length == 2) {
+      return Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Text(parts[0], style: AppTypography.labelMedium),
+          Text(parts[1], style: AppTypography.labelMedium),
+        ],
+      );
+    }
+    return Text(label, style: AppTypography.labelMedium);
+  }
 
   @override
   Widget build(BuildContext context) {
-    return Container(
-      padding: const EdgeInsets.all(16),
+    final padding = compactHeight ? 8.0 : (dense ? 10.0 : 16.0);
+    final valueStyle = dense
+        ? AppTypography.kpiValue.copyWith(color: accentColor, fontSize: 20)
+        : AppTypography.kpiValue.copyWith(color: accentColor);
+
+    final content = Container(
+      padding: EdgeInsets.all(padding),
       decoration: BoxDecoration(
         color: AppColors.surfaceElevated,
         borderRadius: AppRadii.md,
         border: Border.all(color: AppColors.border),
       ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Text(label, style: AppTypography.labelMedium),
-          const SizedBox(height: 8),
-          Row(
-            crossAxisAlignment: CrossAxisAlignment.end,
-            children: [
-              Text(
-                value,
-                style: AppTypography.kpiValue.copyWith(color: accentColor),
-              ),
-              const SizedBox(width: 4),
-              Padding(
-                padding: const EdgeInsets.only(bottom: 4),
-                child: Text(unit, style: AppTypography.labelMedium),
-              ),
-            ],
-          ),
-          if (trend != null) ...[
-            const SizedBox(height: 8),
-            Row(
+      child: compactHeight
+          ? Row(
               children: [
-                Icon(
-                  trendUp == true ? Icons.trending_up : Icons.trending_down,
-                  size: 14,
-                  color: trendUp == true ? AppColors.success : AppColors.critical,
-                ),
-                const SizedBox(width: 4),
-                Text(
-                  trend!,
-                  style: AppTypography.labelMedium.copyWith(
-                    color: trendUp == true ? AppColors.success : AppColors.critical,
-                  ),
+                Expanded(child: _buildLabel()),
+                Row(
+                  crossAxisAlignment: CrossAxisAlignment.end,
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Text(value, style: valueStyle),
+                    const SizedBox(width: 2),
+                    Padding(
+                      padding: const EdgeInsets.only(bottom: 2),
+                      child: Text(unit, style: AppTypography.labelSmall),
+                    ),
+                    if (onTap != null) ...[
+                      const SizedBox(width: 4),
+                      Icon(Icons.chevron_right, size: 16, color: AppColors.textMuted),
+                    ],
+                  ],
                 ),
               ],
+            )
+          : Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                Row(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Expanded(child: _buildLabel()),
+                    if (onTap != null && !dense)
+                      Icon(Icons.chevron_right, size: 16, color: AppColors.textMuted),
+                  ],
+                ),
+                Row(
+                  crossAxisAlignment: CrossAxisAlignment.end,
+                  children: [
+                    Flexible(
+                      child: Text(
+                        value,
+                        style: valueStyle,
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                    ),
+                    const SizedBox(width: 2),
+                    Padding(
+                      padding: EdgeInsets.only(bottom: dense ? 2 : 4),
+                      child: Text(
+                        unit,
+                        style: dense
+                            ? AppTypography.labelSmall
+                            : AppTypography.labelMedium,
+                      ),
+                    ),
+                  ],
+                ),
+                if (percent != null) ...[
+                  const SizedBox(height: 4),
+                  Text(
+                    percent!,
+                    style: AppTypography.bodySmall.copyWith(color: accentColor),
+                  ),
+                ],
+                if (trend != null) ...[
+                  const SizedBox(height: 8),
+                  Row(
+                    children: [
+                      Icon(
+                        trendUp == true ? Icons.trending_up : Icons.trending_down,
+                        size: 14,
+                        color: trendUp == true ? AppColors.success : AppColors.critical,
+                      ),
+                      const SizedBox(width: 4),
+                      Text(
+                        trend!,
+                        style: AppTypography.labelMedium.copyWith(
+                          color: trendUp == true ? AppColors.success : AppColors.critical,
+                        ),
+                      ),
+                    ],
+                  ),
+                ],
+              ],
             ),
-          ],
-        ],
+    );
+
+    if (onTap == null) return content;
+
+    return Material(
+      color: Colors.transparent,
+      child: InkWell(
+        onTap: onTap,
+        borderRadius: AppRadii.md,
+        child: content,
       ),
     );
   }

@@ -21,11 +21,9 @@ class FieldCountScreen extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final counts = ref.watch(fieldCountsProvider);
     final reconciliationRows = ref.watch(reconciliationRowsProvider);
+    final summary = ref.watch(fieldCountDashboardSummaryProvider);
 
-    final expectedStock = counts.fold<double>(0, (sum, c) => sum + c.expected);
-    final actualCount = counts.fold<double>(0, (sum, c) => sum + c.actual);
-    final totalVariance = counts.fold<double>(0, (sum, c) => sum + c.variance);
-    final criticalCount = counts.where((c) => c.status == 'critical').length;
+    final recent = counts.take(3).toList();
 
     return Scaffold(
       backgroundColor: AppColors.canvas,
@@ -37,82 +35,119 @@ class FieldCountScreen extends ConsumerWidget {
             ),
             SliverPadding(
               padding: const EdgeInsets.all(AppSpacing.md),
+              sliver: SliverToBoxAdapter(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text('Özet', style: AppTypography.headlineMedium),
+                    const SizedBox(height: 12),
+                    _SummaryKpiRow(cards: [
+                      _SummaryKpiSpec(
+                        label: 'Keşif',
+                        value: AppFormat.tonnage(summary.survey),
+                        accentColor: AppColors.electricBlueLight,
+                        onTap: () => context.push(AppRoutes.survey),
+                      ),
+                      _SummaryKpiSpec(
+                        label: 'Sipariş',
+                        value: AppFormat.tonnage(summary.ordered),
+                        accentColor: AppColors.info,
+                        onTap: () => context.go(AppRoutes.orders),
+                      ),
+                      _SummaryKpiSpec(
+                        label: 'Teslim',
+                        value: AppFormat.tonnage(summary.delivered),
+                        accentColor: AppColors.success,
+                        onTap: () => context.go(AppRoutes.incomingRebar),
+                      ),
+                    ]),
+                    const SizedBox(height: 12),
+                    _SummaryKpiRow(
+                      dense: true,
+                      spacing: 8,
+                      cards: [
+                        _SummaryKpiSpec(
+                          label: 'Planlanan Kullanım',
+                          value: AppFormat.tonnage(summary.plannedUsage),
+                          accentColor: AppColors.partial,
+                          onTap: () => context.go(AppRoutes.dashboard),
+                        ),
+                        _SummaryKpiSpec(
+                          label: 'Gerçek Kullanım',
+                          value: AppFormat.tonnage(summary.actualUsage),
+                          accentColor: AppColors.warning,
+                          onTap: () => context.push(AppRoutes.reconciliation),
+                        ),
+                        _SummaryKpiSpec(
+                          label: 'Planlanan Stok',
+                          value: AppFormat.tonnage(summary.plannedStock),
+                          accentColor: AppColors.electricBlueLight,
+                          onTap: () => context.push(AppRoutes.reconciliation),
+                        ),
+                        _SummaryKpiSpec(
+                          label: 'Gerçek Stok',
+                          value: AppFormat.tonnage(summary.fieldCount),
+                          accentColor: AppColors.info,
+                          onTap: () => context.push(AppRoutes.countRecords),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 12),
+                    _SummaryKpiRow(
+                      aspectRatio: 9.2,
+                      cards: [
+                        _SummaryKpiSpec(
+                          label: 'Fire',
+                          value: AppFormat.tonnage(summary.fire),
+                          accentColor: summary.fire < 0
+                              ? AppColors.critical
+                              : summary.fire > 8
+                                  ? AppColors.critical
+                                  : summary.fire > 0
+                                      ? AppColors.warning
+                                      : AppColors.success,
+                          onTap: () => context.push(AppRoutes.reconciliation),
+                        ),
+                      ],
+                    ),
+                  ],
+                ),
+              ),
+            ),
+            SliverPadding(
+              padding: const EdgeInsets.fromLTRB(AppSpacing.md, 0, AppSpacing.md, AppSpacing.md),
               sliver: SliverList(
                 delegate: SliverChildListDelegate([
-                  GridView.count(
-                    crossAxisCount: 2,
-                    shrinkWrap: true,
-                    physics: const NeverScrollableScrollPhysics(),
-                    mainAxisSpacing: 12,
-                    crossAxisSpacing: 12,
-                    childAspectRatio: 1.5,
-                    children: [
-                      KpiCard(
-                        label: 'Beklenen Stok',
-                        value: AppFormat.tonnage(expectedStock),
-                        unit: 't',
-                        accentColor: AppColors.electricBlueLight,
-                      ),
-                      KpiCard(
-                        label: 'Gerçek Sayım',
-                        value: AppFormat.tonnage(actualCount),
-                        unit: 't',
-                        accentColor: AppColors.info,
-                      ),
-                      KpiCard(
-                        label: 'Toplam Sapma',
-                        value: AppFormat.tonnage(totalVariance),
-                        unit: 't',
-                        accentColor: AppColors.warning,
-                      ),
-                      KpiCard(
-                        label: 'Kritik Çap',
-                        value: AppFormat.integer(criticalCount),
-                        unit: '',
-                        accentColor: AppColors.critical,
-                      ),
-                    ],
-                  ),
-                  const SizedBox(height: 16),
                   _ReconciliationShortcut(
                     rowCount: reconciliationRows.length,
                     onTap: () => context.push(AppRoutes.reconciliation),
                   ),
+                  const SizedBox(height: 12),
+                  _CountRecordsShortcut(
+                    recordCount: counts.length,
+                    onTap: () => context.push(AppRoutes.countRecords),
+                  ),
                   const SizedBox(height: 16),
                   Text('Kritik Uyarılar', style: AppTypography.headlineMedium),
                   const SizedBox(height: 8),
-                  const ModuleEmptyState(type: EmptyStateType.noAlert),
+                  const ModuleEmptyState(type: EmptyStateType.noAlert, inline: true),
                   const SizedBox(height: 16),
-                  Text('Sayım Durumu', style: AppTypography.headlineMedium),
-                  const SizedBox(height: 8),
                   Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
-                      _StatusChip(
-                        label: 'Tamamlanan',
-                        count: counts.where((c) => c.status == 'completed').length,
-                        color: AppColors.success,
-                      ),
-                      const SizedBox(width: 8),
-                      _StatusChip(
-                        label: 'Bekleyen',
-                        count: counts.where((c) => c.status == 'pending').length,
-                        color: AppColors.warning,
-                      ),
-                      const SizedBox(width: 8),
-                      _StatusChip(
-                        label: 'Kritik',
-                        count: criticalCount,
-                        color: AppColors.critical,
-                      ),
+                      Text('Son Sayımlar', style: AppTypography.headlineMedium),
+                      if (counts.isNotEmpty)
+                        TextButton(
+                          onPressed: () => context.push(AppRoutes.countRecords),
+                          child: const Text('Tümünü Gör →'),
+                        ),
                     ],
                   ),
-                  const SizedBox(height: 16),
-                  Text('Son Sayımlar', style: AppTypography.headlineMedium),
                   const SizedBox(height: 8),
-                  if (counts.isEmpty)
-                    const ModuleEmptyState(type: EmptyStateType.noCount)
+                  if (recent.isEmpty)
+                    const ModuleEmptyState(type: EmptyStateType.noCount, inline: true)
                   else
-                    ...counts.map((c) => _CountTimelineTile(
+                    ...recent.map((c) => _CountTimelineTile(
                           record: c,
                           onTap: () => context.push(AppRoutes.countDetail(c.id)),
                         )),
@@ -131,6 +166,108 @@ class FieldCountScreen extends ConsumerWidget {
   }
 }
 
+class _SummaryKpiSpec {
+  const _SummaryKpiSpec({
+    required this.label,
+    required this.value,
+    required this.accentColor,
+    required this.onTap,
+  });
+
+  final String label;
+  final String value;
+  final Color accentColor;
+  final VoidCallback onTap;
+}
+
+class _SummaryKpiRow extends StatelessWidget {
+  const _SummaryKpiRow({
+    required this.cards,
+    this.aspectRatio = 1.15,
+    this.dense = false,
+    this.spacing = 12,
+  });
+
+  final List<_SummaryKpiSpec> cards;
+  final double aspectRatio;
+  final bool dense;
+  final double spacing;
+
+  @override
+  Widget build(BuildContext context) {
+    return Row(
+      children: [
+        for (var i = 0; i < cards.length; i++) ...[
+          if (i > 0) SizedBox(width: spacing),
+          Expanded(
+            child: AspectRatio(
+              aspectRatio: aspectRatio,
+              child: KpiCard(
+                label: cards[i].label,
+                value: cards[i].value,
+                unit: 't',
+                accentColor: cards[i].accentColor,
+                onTap: cards[i].onTap,
+                dense: dense,
+                compactHeight: aspectRatio >= 2,
+              ),
+            ),
+          ),
+        ],
+      ],
+    );
+  }
+}
+
+class _CountRecordsShortcut extends StatelessWidget {
+  const _CountRecordsShortcut({
+    required this.recordCount,
+    required this.onTap,
+  });
+
+  final int recordCount;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    final subtitle = recordCount == 0
+        ? 'Henüz sayım kaydı yok'
+        : '$recordCount kayıt · Tamamlanan sayımlar';
+
+    return Material(
+      color: Colors.transparent,
+      child: InkWell(
+        onTap: onTap,
+        borderRadius: AppRadii.md,
+        child: Container(
+          padding: const EdgeInsets.all(16),
+          decoration: BoxDecoration(
+            color: AppColors.info.withValues(alpha: 0.08),
+            borderRadius: AppRadii.md,
+            border: Border.all(color: AppColors.info.withValues(alpha: 0.3)),
+          ),
+          child: Row(
+            children: [
+              const Icon(Icons.inventory_2_outlined, color: AppColors.info),
+              const SizedBox(width: 12),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text('Sayım Kayıtları', style: AppTypography.titleMedium),
+                    Text(subtitle, style: AppTypography.bodySmall),
+                  ],
+                ),
+              ),
+              const Icon(Icons.arrow_forward, color: AppColors.textMuted),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}
+
 class _ReconciliationShortcut extends StatelessWidget {
   const _ReconciliationShortcut({
     required this.rowCount,
@@ -143,8 +280,8 @@ class _ReconciliationShortcut extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final subtitle = rowCount == 0
-        ? 'Henüz mutabakat verisi yok'
-        : '$rowCount çap · Keşif → Sayım karşılaştırma';
+        ? 'Henüz mukayese verisi yok'
+        : '$rowCount çap · Keşif → teslim → sayım karşılaştırma';
 
     return Material(
       color: Colors.transparent,
@@ -166,7 +303,7 @@ class _ReconciliationShortcut extends StatelessWidget {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Text('Mutabakat Tablosu', style: AppTypography.titleMedium),
+                    Text('Mukayese Tablosu', style: AppTypography.titleMedium),
                     Text(subtitle, style: AppTypography.bodySmall),
                   ],
                 ),
@@ -174,34 +311,6 @@ class _ReconciliationShortcut extends StatelessWidget {
               const Icon(Icons.arrow_forward, color: AppColors.textMuted),
             ],
           ),
-        ),
-      ),
-    );
-  }
-}
-
-class _StatusChip extends StatelessWidget {
-  const _StatusChip({required this.label, required this.count, required this.color});
-
-  final String label;
-  final int count;
-  final Color color;
-
-  @override
-  Widget build(BuildContext context) {
-    return Expanded(
-      child: Container(
-        padding: const EdgeInsets.symmetric(vertical: 12),
-        decoration: BoxDecoration(
-          color: color.withValues(alpha: 0.1),
-          borderRadius: AppRadii.md,
-          border: Border.all(color: color.withValues(alpha: 0.3)),
-        ),
-        child: Column(
-          children: [
-            Text('$count', style: AppTypography.kpiValue.copyWith(fontSize: 22, color: color)),
-            Text(label, style: AppTypography.labelMedium, textAlign: TextAlign.center),
-          ],
         ),
       ),
     );

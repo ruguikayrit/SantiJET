@@ -4,8 +4,9 @@ import 'package:go_router/go_router.dart';
 import 'package:santijet_demir/core/routing/app_routes.dart';
 import 'package:santijet_demir/core/routing/page_transitions.dart';
 import 'package:santijet_demir/features/analysis/analysis_screen.dart';
-import 'package:santijet_demir/features/analysis/performance_analysis_screen.dart';
+import 'package:santijet_demir/features/incoming_rebar/performance_analysis_screen.dart';
 import 'package:santijet_demir/features/field_count/count_detail_screen.dart';
+import 'package:santijet_demir/features/field_count/count_records_screen.dart';
 import 'package:santijet_demir/features/field_count/field_count_screen.dart';
 import 'package:santijet_demir/features/field_count/new_count_screen.dart';
 import 'package:santijet_demir/features/field_count/reconciliation_screen.dart';
@@ -13,6 +14,7 @@ import 'package:santijet_demir/features/incoming_rebar/delivery_detail_screen.da
 import 'package:santijet_demir/features/incoming_rebar/delivery_list_screen.dart';
 import 'package:santijet_demir/features/incoming_rebar/incoming_rebar_screen.dart';
 import 'package:santijet_demir/features/incoming_rebar/new_delivery_screen.dart';
+import 'package:santijet_demir/features/incoming_rebar/select_in_transit_order_screen.dart';
 import 'package:santijet_demir/features/incoming_rebar/supplier_performance_screen.dart';
 import 'package:santijet_demir/features/orders/new_order_wizard.dart';
 import 'package:santijet_demir/features/orders/orders_screen.dart';
@@ -193,12 +195,23 @@ final routerProvider = Provider<GoRouter>((ref) {
         ),
       ),
       GoRoute(
-        path: AppRoutes.newDelivery,
+        path: AppRoutes.selectInTransitOrder,
         parentNavigatorKey: _rootNavigatorKey,
         pageBuilder: (context, state) => fadeSlidePage(
           key: state.pageKey,
-          child: const NewDeliveryScreen(),
+          child: const SelectInTransitOrderScreen(),
         ),
+      ),
+      GoRoute(
+        path: AppRoutes.newDelivery,
+        parentNavigatorKey: _rootNavigatorKey,
+        pageBuilder: (context, state) {
+          final orderId = state.uri.queryParameters['orderId'];
+          return fadeSlidePage(
+            key: state.pageKey,
+            child: NewDeliveryScreen(orderId: orderId),
+          );
+        },
       ),
       GoRoute(
         path: AppRoutes.supplierPerformance,
@@ -206,6 +219,14 @@ final routerProvider = Provider<GoRouter>((ref) {
         pageBuilder: (context, state) => fadeSlidePage(
           key: state.pageKey,
           child: const SupplierPerformanceScreen(),
+        ),
+      ),
+      GoRoute(
+        path: AppRoutes.performanceAnalysis,
+        parentNavigatorKey: _rootNavigatorKey,
+        pageBuilder: (context, state) => fadeSlidePage(
+          key: state.pageKey,
+          child: const PerformanceAnalysisScreen(),
         ),
       ),
       GoRoute(
@@ -228,6 +249,14 @@ final routerProvider = Provider<GoRouter>((ref) {
         ),
       ),
       GoRoute(
+        path: AppRoutes.countRecords,
+        parentNavigatorKey: _rootNavigatorKey,
+        pageBuilder: (context, state) => fadeSlidePage(
+          key: state.pageKey,
+          child: const CountRecordsScreen(),
+        ),
+      ),
+      GoRoute(
         path: AppRoutes.newCount,
         parentNavigatorKey: _rootNavigatorKey,
         pageBuilder: (context, state) => fadeSlidePage(
@@ -236,7 +265,7 @@ final routerProvider = Provider<GoRouter>((ref) {
         ),
       ),
       GoRoute(
-        path: '/field-count/:id',
+        path: '/field-count/detail/:id',
         parentNavigatorKey: _rootNavigatorKey,
         pageBuilder: (context, state) {
           final id = state.pathParameters['id']!;
@@ -245,14 +274,6 @@ final routerProvider = Provider<GoRouter>((ref) {
             child: CountDetailScreen(countId: id),
           );
         },
-      ),
-      GoRoute(
-        path: AppRoutes.performanceAnalysis,
-        parentNavigatorKey: _rootNavigatorKey,
-        pageBuilder: (context, state) => fadeSlidePage(
-          key: state.pageKey,
-          child: const PerformanceAnalysisScreen(),
-        ),
       ),
       GoRoute(
         path: AppRoutes.reports,

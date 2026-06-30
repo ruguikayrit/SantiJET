@@ -5,9 +5,11 @@ import 'package:santijet_demir/core/theme/app_radii.dart';
 import 'package:santijet_demir/core/theme/app_spacing.dart';
 import 'package:santijet_demir/core/theme/app_typography.dart';
 import 'package:santijet_demir/core/widgets/app_components.dart';
+import 'package:santijet_demir/core/widgets/empty_states.dart';
 import 'package:santijet_demir/data/services/export_service.dart';
 import 'package:santijet_demir/data/mock/mock_field_counts.dart';
 import 'package:santijet_demir/domain/entities/field_count.dart';
+import 'package:santijet_demir/features/field_count/field_count_calculator.dart';
 import 'package:santijet_demir/features/field_count/providers/field_count_provider.dart';
 
 class ReconciliationScreen extends ConsumerWidget {
@@ -19,22 +21,27 @@ class ReconciliationScreen extends ConsumerWidget {
     final filterIndex = ref.watch(reconciliationFilterProvider);
     final allRows = ref.watch(reconciliationRowsProvider);
 
-    final totals = _computeTotals(allRows);
+    final displayRows = rows;
+    final totals = computeReconciliationTotals(displayRows);
 
     return Scaffold(
       backgroundColor: AppColors.canvas,
       appBar: AppBar(
-        title: const Text('Mutabakat Tablosu'),
+        title: const Text('Mukayese Tablosu'),
         actions: [
           IconButton(
-            tooltip: 'Excel Aktar',
+            tooltip: 'Excel Dışa Aktar',
             icon: const Icon(Icons.table_chart_outlined),
-            onPressed: () => _exportExcel(context, allRows),
+            onPressed: allRows.isEmpty
+                ? null
+                : () => _exportExcel(context, allRows),
           ),
           IconButton(
             tooltip: 'PDF Görüntüle',
             icon: const Icon(Icons.picture_as_pdf_outlined),
-            onPressed: () => _previewPdf(context, allRows),
+            onPressed: allRows.isEmpty
+                ? null
+                : () => _previewPdf(context, allRows),
           ),
         ],
       ),
@@ -49,31 +56,45 @@ class ReconciliationScreen extends ConsumerWidget {
                   ref.read(reconciliationFilterProvider.notifier).state = i,
             ),
           ),
-          Expanded(
-            child: SingleChildScrollView(
-              scrollDirection: Axis.horizontal,
+          if (allRows.isEmpty)
+            const Expanded(
+              child: ModuleEmptyState(type: EmptyStateType.noSurvey),
+            )
+          else if (displayRows.isEmpty)
+            const Expanded(
+              child: ModuleEmptyState(type: EmptyStateType.noSearchResult),
+            )
+          else
+            Expanded(
               child: SingleChildScrollView(
-                child: DataTable(
-                  headingRowColor: WidgetStateProperty.all(AppColors.surfaceHighlight),
-                  dataRowMinHeight: 52,
-                  columns: const [
-                    DataColumn(label: Text('ÇAP')),
-                    DataColumn(label: Text('KEŞİF')),
-                    DataColumn(label: Text('SİP.')),
-                    DataColumn(label: Text('TESLİM')),
-                    DataColumn(label: Text('KUL.')),
-                    DataColumn(label: Text('PLAN.')),
-                    DataColumn(label: Text('SAYIM')),
-                    DataColumn(label: Text('SAPMA')),
-                  ],
-                  rows: [
-                    ...rows.map((row) => _buildRow(row)),
-                    _buildTotalRow(totals),
-                  ],
+                scrollDirection: Axis.horizontal,
+                child: SingleChildScrollView(
+                  child: DataTable(
+                    headingRowColor:
+                        WidgetStateProperty.all(AppColors.surfaceHighlight),
+                    dataRowMinHeight: 48,
+                    dataRowMaxHeight: 64,
+                    columnSpacing: 20,
+                    horizontalMargin: 16,
+                    columns: const [
+                      DataColumn(label: Text('ÇAP')),
+                      DataColumn(label: Text('KEŞİF')),
+                      DataColumn(label: Text('SİP.')),
+                      DataColumn(label: Text('TESLİM')),
+                      DataColumn(label: Text('PLANLANAN KULLANIM')),
+                      DataColumn(label: Text('PLANLANAN STOK')),
+                      DataColumn(label: Text('SAYIM')),
+                      DataColumn(label: Text('GERÇEK KULLANIM')),
+                      DataColumn(label: Text('FİRE')),
+                    ],
+                    rows: [
+                      ...displayRows.map(_buildRow),
+                      _buildTotalRow(totals),
+                    ],
+                  ),
                 ),
               ),
             ),
-          ),
         ],
       ),
     );
@@ -113,31 +134,40 @@ class ReconciliationScreen extends ConsumerWidget {
             ],
           ),
         ),
-        DataCell(Text('${row.survey.toStringAsFixed(0)}t')),
-        DataCell(Text('${row.ordered.toStringAsFixed(0)}t')),
-        DataCell(Text('${row.delivered.toStringAsFixed(0)}t')),
-        DataCell(Text('${row.used.toStringAsFixed(0)}t')),
-        DataCell(Text('${row.expected.toStringAsFixed(0)}t')),
-        DataCell(Text('${row.counted.toStringAsFixed(0)}t')),
-        DataCell(SapmaTag(value: row.variance)),
+        DataCell(Text('${row.survey.toStringAsFixed(1)}t')),
+        DataCell(Text('${row.ordered.toStringAsFixed(1)}t')),
+        DataCell(Text('${row.delivered.toStringAsFixed(1)}t')),
+        DataCell(Text('${row.plannedUsage.toStringAsFixed(1)}t')),
+        DataCell(Text('${row.expectedStock.toStringAsFixed(1)}t')),
+        DataCell(Text('${row.counted.toStringAsFixed(1)}t')),
+        DataCell(Text('${row.used.toStringAsFixed(1)}t')),
+        DataCell(SapmaTag(value: row.fire)),
       ],
     );
   }
 
-  DataRow _buildTotalRow(Map<String, double> totals) {
+  DataRow _buildTotalRow(ReconciliationTotals totals) {
     return DataRow(
       color: WidgetStateProperty.all(
         AppColors.electricBlue.withValues(alpha: 0.08),
       ),
       cells: [
         DataCell(Text('TOPLAM', style: AppTypography.titleMedium)),
-        DataCell(Text('${totals['survey']!.toStringAsFixed(0)}t', style: AppTypography.titleMedium)),
-        DataCell(Text('${totals['ordered']!.toStringAsFixed(0)}t', style: AppTypography.titleMedium)),
-        DataCell(Text('${totals['delivered']!.toStringAsFixed(0)}t', style: AppTypography.titleMedium)),
-        DataCell(Text('${totals['used']!.toStringAsFixed(0)}t', style: AppTypography.titleMedium)),
-        DataCell(Text('${totals['expected']!.toStringAsFixed(0)}t', style: AppTypography.titleMedium)),
-        DataCell(Text('${totals['counted']!.toStringAsFixed(0)}t', style: AppTypography.titleMedium)),
-        DataCell(SapmaTag(value: totals['variance']!)),
+        DataCell(Text('${totals.survey.toStringAsFixed(1)}t',
+            style: AppTypography.titleMedium)),
+        DataCell(Text('${totals.ordered.toStringAsFixed(1)}t',
+            style: AppTypography.titleMedium)),
+        DataCell(Text('${totals.delivered.toStringAsFixed(1)}t',
+            style: AppTypography.titleMedium)),
+        DataCell(Text('${totals.plannedUsage.toStringAsFixed(1)}t',
+            style: AppTypography.titleMedium)),
+        DataCell(Text('${totals.plannedStock.toStringAsFixed(1)}t',
+            style: AppTypography.titleMedium)),
+        DataCell(Text('${totals.fieldCount.toStringAsFixed(1)}t',
+            style: AppTypography.titleMedium)),
+        DataCell(Text('${totals.actualUsage.toStringAsFixed(1)}t',
+            style: AppTypography.titleMedium)),
+        DataCell(SapmaTag(value: totals.fire)),
       ],
     );
   }
@@ -147,10 +177,11 @@ class ReconciliationScreen extends ConsumerWidget {
     'Keşif',
     'Sipariş',
     'Teslim',
-    'Kullanılan',
-    'Planlanan',
+    'Planlanan Kullanım',
+    'Planlanan Stok',
     'Sayım',
-    'Sapma',
+    'Gerçek Kullanım',
+    'Fire',
   ];
 
   List<List<String>> _buildExportRows(List<ReconciliationRow> rows) {
@@ -158,13 +189,14 @@ class ReconciliationScreen extends ConsumerWidget {
         .map(
           (row) => [
             'Ø${row.diameter}',
-            '${row.survey.toStringAsFixed(0)}t',
-            '${row.ordered.toStringAsFixed(0)}t',
-            '${row.delivered.toStringAsFixed(0)}t',
-            '${row.used.toStringAsFixed(0)}t',
-            '${row.expected.toStringAsFixed(0)}t',
-            '${row.counted.toStringAsFixed(0)}t',
-            '${row.variance.toStringAsFixed(1)}t',
+            '${row.survey.toStringAsFixed(1)}t',
+            '${row.ordered.toStringAsFixed(1)}t',
+            '${row.delivered.toStringAsFixed(1)}t',
+            '${row.plannedUsage.toStringAsFixed(1)}t',
+            '${row.expectedStock.toStringAsFixed(1)}t',
+            '${row.counted.toStringAsFixed(1)}t',
+            '${row.used.toStringAsFixed(1)}t',
+            '${row.fire.toStringAsFixed(1)}t',
           ],
         )
         .toList();
@@ -176,13 +208,15 @@ class ReconciliationScreen extends ConsumerWidget {
   ) async {
     try {
       await exportService.shareExcel(
-        title: 'Mutabakat Tablosu',
+        title: 'Mukayese Tablosu',
         headers: _exportHeaders,
         rows: _buildExportRows(rows),
       );
       if (context.mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Mutabakat Excel olarak dışa aktarıldı')),
+          const SnackBar(
+            content: Text('Mukayese tablosu Excel olarak dışa aktarıldı'),
+          ),
         );
       }
     } catch (e) {
@@ -200,7 +234,7 @@ class ReconciliationScreen extends ConsumerWidget {
   ) async {
     try {
       await exportService.previewPdf(
-        title: 'Mutabakat Tablosu',
+        title: 'Mukayese Tablosu',
         headers: _exportHeaders,
         rows: _buildExportRows(rows),
       );
@@ -211,17 +245,5 @@ class ReconciliationScreen extends ConsumerWidget {
         );
       }
     }
-  }
-
-  Map<String, double> _computeTotals(List<ReconciliationRow> rows) {
-    return {
-      'survey': rows.fold(0.0, (s, r) => s + r.survey),
-      'ordered': rows.fold(0.0, (s, r) => s + r.ordered),
-      'delivered': rows.fold(0.0, (s, r) => s + r.delivered),
-      'used': rows.fold(0.0, (s, r) => s + r.used),
-      'expected': rows.fold(0.0, (s, r) => s + r.expected),
-      'counted': rows.fold(0.0, (s, r) => s + r.counted),
-      'variance': rows.fold(0.0, (s, r) => s + r.variance),
-    };
   }
 }

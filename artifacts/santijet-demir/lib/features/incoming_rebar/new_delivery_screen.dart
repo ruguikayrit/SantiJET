@@ -5,48 +5,87 @@ import 'package:santijet_demir/core/theme/app_colors.dart';
 import 'package:santijet_demir/core/theme/app_radii.dart';
 import 'package:santijet_demir/core/theme/app_spacing.dart';
 import 'package:santijet_demir/core/theme/app_typography.dart';
+import 'package:santijet_demir/domain/entities/delivery.dart';
 import 'package:santijet_demir/features/incoming_rebar/providers/incoming_rebar_provider.dart';
 
 class NewDeliveryScreen extends ConsumerStatefulWidget {
-  const NewDeliveryScreen({super.key});
+  const NewDeliveryScreen({super.key, this.orderId});
+
+  final String? orderId;
 
   @override
   ConsumerState<NewDeliveryScreen> createState() => _NewDeliveryScreenState();
 }
 
 class _NewDeliveryScreenState extends ConsumerState<NewDeliveryScreen> {
-  final _orderController = TextEditingController();
   final _irsaliyeController = TextEditingController();
   final _plateController = TextEditingController();
-  final _diameterControllers = {
-    12: TextEditingController(),
-    16: TextEditingController(),
-    20: TextEditingController(),
-    22: TextEditingController(),
-  };
+  final _diameterControllers = <int, TextEditingController>{};
+  bool _initialized = false;
 
   @override
   void dispose() {
-    _orderController.dispose();
     _irsaliyeController.dispose();
     _plateController.dispose();
-    for (final c in _diameterControllers.values) {
-      c.dispose();
+    for (final controller in _diameterControllers.values) {
+      controller.dispose();
     }
     super.dispose();
   }
 
-  double get _totalOrdered => 0;
+  void _syncControllers(NewDeliveryDraft draft) {
+    for (final entry in draft.orderedDiameters.entries) {
+      _diameterControllers.putIfAbsent(
+        entry.key,
+        () => TextEditingController(
+          text: (draft.diameterEntries[entry.key] ?? 0) == 0
+              ? ''
+              : (draft.diameterEntries[entry.key] ?? 0).toStringAsFixed(1),
+        ),
+      );
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
     final draft = ref.watch(newDeliveryDraftProvider);
     final notifier = ref.read(newDeliveryDraftProvider.notifier);
-    const suppliers = ['Çolakoğlu', 'Kardemir', 'İsdemir', 'Erdemir'];
-    final selectedSupplier = draft.supplier;
+
+    if (!_initialized && widget.orderId != null) {
+      _initialized = true;
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        final draftNotifier = ref.read(newDeliveryDraftProvider.notifier);
+        draftNotifier.reset();
+        draftNotifier.loadFromOrder(widget.orderId!);
+      });
+    }
+
+    if (draft.orderId != null && _diameterControllers.isEmpty) {
+      _syncControllers(draft);
+    }
+
+    if (draft.orderId == null) {
+      return Scaffold(
+        backgroundColor: AppColors.canvas,
+        appBar: AppBar(title: const Text('Yeni Teslimat')),
+        body: Center(
+          child: Padding(
+            padding: const EdgeInsets.all(AppSpacing.lg),
+            child: Text(
+              'Teslimat kaydı için önce yoldaki bir sevkiyat seçilmelidir.',
+              style: AppTypography.bodyMedium,
+              textAlign: TextAlign.center,
+            ),
+          ),
+        ),
+      );
+    }
+
+    final totalOrdered = draft.totalOrdered;
     final totalDelivered = draft.totalDelivered;
-    final diff = totalDelivered - _totalOrdered;
-    final fulfillment = _totalOrdered > 0 ? totalDelivered / _totalOrdered * 100 : 0;
+    final diff = totalDelivered - totalOrdered;
+    final fulfillment =
+        totalOrdered > 0 ? totalDelivered / totalOrdered * 100 : 0;
     final isPartial = fulfillment > 0 && fulfillment < 99;
 
     return Scaffold(
@@ -55,9 +94,32 @@ class _NewDeliveryScreenState extends ConsumerState<NewDeliveryScreen> {
       body: ListView(
         padding: const EdgeInsets.all(AppSpacing.md),
         children: [
-          if (isPartial)
+          Container(
+            padding: const EdgeInsets.all(14),
+            decoration: BoxDecoration(
+              color: AppColors.surfaceElevated,
+              borderRadius: AppRadii.md,
+              border: Border.all(color: AppColors.border),
+            ),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text('Bağlı Sipariş', style: AppTypography.labelMedium),
+                const SizedBox(height: 6),
+                Text(draft.orderNo, style: AppTypography.titleLarge),
+                const SizedBox(height: 4),
+                Text(
+                  draft.supplier ?? '',
+                  style: AppTypography.bodyMedium.copyWith(
+                    color: AppColors.electricBlueLight,
+                  ),
+                ),
+              ],
+            ),
+          ),
+          if (isPartial) ...[
+            const SizedBox(height: 16),
             Container(
-              margin: const EdgeInsets.only(bottom: 16),
               padding: const EdgeInsets.all(12),
               decoration: BoxDecoration(
                 color: AppColors.warning.withValues(alpha: 0.12),
@@ -77,46 +139,17 @@ class _NewDeliveryScreenState extends ConsumerState<NewDeliveryScreen> {
                 ],
               ),
             ),
-          Text('Firma', style: AppTypography.titleMedium),
-          const SizedBox(height: 8),
-          ...suppliers.map((s) {
-            final selected = selectedSupplier == s;
-            return Padding(
-              padding: const EdgeInsets.only(bottom: 6),
-              child: RadioListTile<String>(
-                title: Text(s, style: AppTypography.titleMedium),
-                value: s,
-                groupValue: selectedSupplier,
-                onChanged: (v) => notifier.setSupplier(v!),
-                activeColor: AppColors.electricBlue,
-                tileColor: selected
-                    ? AppColors.electricBlue.withValues(alpha: 0.08)
-                    : AppColors.surfaceElevated,
-                shape: RoundedRectangleBorder(
-                  borderRadius: AppRadii.md,
-                  side: BorderSide(
-                    color: selected ? AppColors.electricBlue : AppColors.border,
-                  ),
-                ),
-              ),
-            );
-          }),
-          const SizedBox(height: 16),
-          Text('Sipariş No', style: AppTypography.titleMedium),
-          const SizedBox(height: 8),
-          TextField(
-            controller: _orderController,
-            decoration: const InputDecoration(
-              hintText: 'SIP-2025-XXXX',
-              helperText: 'Kayıtlı sipariş numarasını girin',
-            ),
-          ),
+          ],
           const SizedBox(height: 16),
           Text('İrsaliye No', style: AppTypography.titleMedium),
           const SizedBox(height: 8),
           TextField(
             controller: _irsaliyeController,
-            decoration: const InputDecoration(hintText: 'IR-2025-XXXX'),
+            decoration: const InputDecoration(
+              hintText: 'IR-2025-XXXX',
+              helperText: 'İrsaliyedeki numarayı girin',
+            ),
+            onChanged: notifier.setIrsaliyeNo,
           ),
           const SizedBox(height: 16),
           Text('Plaka No', style: AppTypography.titleMedium),
@@ -124,11 +157,18 @@ class _NewDeliveryScreenState extends ConsumerState<NewDeliveryScreen> {
           TextField(
             controller: _plateController,
             decoration: const InputDecoration(hintText: '34 ABC 123'),
+            onChanged: notifier.setPlateNo,
           ),
           const SizedBox(height: 20),
-          Text('Çap Girişi', style: AppTypography.headlineMedium),
+          Text('İrsaliye Çap Girişi', style: AppTypography.headlineMedium),
+          const SizedBox(height: 4),
+          Text(
+            'Sipariş miktarları referans olarak gösterilir; irsaliyedeki teslim miktarlarını girin.',
+            style: AppTypography.bodySmall,
+          ),
           const SizedBox(height: 12),
           _CapEntryTable(
+            orderedDiameters: draft.orderedDiameters,
             controllers: _diameterControllers,
             onDeliveryChanged: (diameter, value) {
               notifier.setDiameterEntry(diameter, double.tryParse(value) ?? 0);
@@ -144,7 +184,7 @@ class _NewDeliveryScreenState extends ConsumerState<NewDeliveryScreen> {
             ),
             child: Column(
               children: [
-                _SummaryRow('Toplam Sipariş', '${_totalOrdered.toStringAsFixed(1)}t'),
+                _SummaryRow('Toplam Sipariş', '${totalOrdered.toStringAsFixed(1)}t'),
                 _SummaryRow('Toplam Teslim', '${totalDelivered.toStringAsFixed(1)}t'),
                 _SummaryRow(
                   'Fark',
@@ -161,35 +201,63 @@ class _NewDeliveryScreenState extends ConsumerState<NewDeliveryScreen> {
           ),
           const SizedBox(height: 24),
           FilledButton(
-            onPressed: () {
-              notifier.reset();
-              ScaffoldMessenger.of(context).showSnackBar(
-                const SnackBar(
-                  content: Text('Teslimat kaydedildi'),
-                  backgroundColor: AppColors.success,
-                ),
-              );
-              context.pop();
-            },
+            onPressed: () => _saveDelivery(context),
             child: const Text('Teslimatı Kaydet'),
           ),
         ],
       ),
     );
   }
+
+  Future<void> _saveDelivery(BuildContext context) async {
+    final draft = ref.read(newDeliveryDraftProvider);
+    final result =
+        await ref.read(deliveriesProvider.notifier).saveDelivery(draft);
+    if (!context.mounted) return;
+
+    final message = switch (result) {
+      DeliverySaveResult.success =>
+        '${draft.orderNo} teslimatı kaydedildi',
+      DeliverySaveResult.missingOrder => 'Sevkiyat seçilmedi',
+      DeliverySaveResult.invalidOrderStatus =>
+        'Sipariş yolda değil, teslimat kaydedilemez',
+      DeliverySaveResult.missingIrsaliye => 'İrsaliye numarası zorunludur',
+      DeliverySaveResult.missingDeliveredAmount =>
+        'En az bir çap için teslim miktarı girin',
+      DeliverySaveResult.orderNotFound => 'Sipariş bulunamadı',
+    };
+
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(message),
+        backgroundColor: result == DeliverySaveResult.success
+            ? AppColors.success
+            : AppColors.critical,
+      ),
+    );
+
+    if (result == DeliverySaveResult.success) {
+      ref.read(newDeliveryDraftProvider.notifier).reset();
+      context.go('/incoming-rebar');
+    }
+  }
 }
 
 class _CapEntryTable extends StatelessWidget {
   const _CapEntryTable({
+    required this.orderedDiameters,
     required this.controllers,
     required this.onDeliveryChanged,
   });
 
+  final Map<int, double> orderedDiameters;
   final Map<int, TextEditingController> controllers;
   final void Function(int diameter, String value) onDeliveryChanged;
 
   @override
   Widget build(BuildContext context) {
+    final diameters = orderedDiameters.keys.toList()..sort();
+
     return Container(
       decoration: BoxDecoration(
         color: AppColors.surfaceElevated,
@@ -205,33 +273,52 @@ class _CapEntryTable extends StatelessWidget {
             ),
             child: Row(
               children: [
-                Expanded(child: Text('ÇAP', style: AppTypography.labelMedium.copyWith(fontWeight: FontWeight.w700))),
-                Expanded(child: Text('SİPARİŞ', style: AppTypography.labelMedium.copyWith(fontWeight: FontWeight.w700))),
-                Expanded(child: Text('TESLİM', style: AppTypography.labelMedium.copyWith(fontWeight: FontWeight.w700))),
+                Expanded(
+                  child: Text(
+                    'ÇAP',
+                    style: AppTypography.labelMedium.copyWith(fontWeight: FontWeight.w700),
+                  ),
+                ),
+                Expanded(
+                  child: Text(
+                    'SİPARİŞ',
+                    style: AppTypography.labelMedium.copyWith(fontWeight: FontWeight.w700),
+                  ),
+                ),
+                Expanded(
+                  child: Text(
+                    'TESLİM',
+                    style: AppTypography.labelMedium.copyWith(fontWeight: FontWeight.w700),
+                  ),
+                ),
               ],
             ),
           ),
-          ...controllers.entries.map((e) {
-            final color = AppColors.diameterColor(e.key);
+          ...diameters.map((diameter) {
+            final color = AppColors.diameterColor(diameter);
+            final controller = controllers[diameter] ?? TextEditingController();
             return Padding(
               padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
               child: Row(
                 children: [
                   Expanded(
-                    child: Text('Ø${e.key}', style: AppTypography.titleMedium.copyWith(color: color)),
+                    child: Text(
+                      'Ø$diameter',
+                      style: AppTypography.titleMedium.copyWith(color: color),
+                    ),
                   ),
                   Expanded(
                     child: Text(
-                      '-',
+                      '${(orderedDiameters[diameter] ?? 0).toStringAsFixed(1)}t',
                       style: AppTypography.bodyMedium,
                     ),
                   ),
                   Expanded(
                     child: TextField(
-                      controller: e.value,
+                      controller: controller,
                       keyboardType: TextInputType.number,
                       style: AppTypography.titleMedium,
-                      onChanged: (value) => onDeliveryChanged(e.key, value),
+                      onChanged: (value) => onDeliveryChanged(diameter, value),
                       decoration: const InputDecoration(
                         isDense: true,
                         contentPadding: EdgeInsets.symmetric(horizontal: 8, vertical: 8),

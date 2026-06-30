@@ -9,9 +9,9 @@ import 'package:santijet_demir/core/theme/app_spacing.dart';
 import 'package:santijet_demir/core/theme/app_typography.dart';
 import 'package:santijet_demir/core/widgets/app_components.dart';
 import 'package:santijet_demir/core/widgets/empty_states.dart';
-import 'package:santijet_demir/features/projects/widgets/project_switcher.dart';
 import 'package:santijet_demir/core/widgets/santijet_header.dart';
 import 'package:santijet_demir/features/incoming_rebar/providers/incoming_rebar_provider.dart';
+import 'package:santijet_demir/features/incoming_rebar/widgets/delivered_diameter_table.dart';
 import 'package:santijet_demir/features/incoming_rebar/widgets/delivery_card.dart';
 
 class IncomingRebarScreen extends ConsumerWidget {
@@ -21,6 +21,7 @@ class IncomingRebarScreen extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final deliveries = ref.watch(deliveriesProvider);
     final summary = ref.watch(incomingRebarDashboardSummaryProvider);
+    final diameterRows = ref.watch(deliveredDiameterRowsProvider);
     final recent = deliveries.take(5).toList();
 
     return Scaffold(
@@ -34,52 +35,100 @@ class IncomingRebarScreen extends ConsumerWidget {
                 showNotification: false,
               ),
             ),
-            SliverToBoxAdapter(
-              child: Padding(
-                padding: const EdgeInsets.symmetric(horizontal: AppSpacing.md),
-                child: ProjectSwitcher(),
-              ),
-            ),
             SliverPadding(
               padding: const EdgeInsets.all(AppSpacing.md),
               sliver: SliverList(
                 delegate: SliverChildListDelegate([
-                  GridView.count(
-                    crossAxisCount: 2,
-                    shrinkWrap: true,
-                    physics: const NeverScrollableScrollPhysics(),
-                    mainAxisSpacing: 12,
-                    crossAxisSpacing: 12,
-                    childAspectRatio: 1.5,
+                  Column(
                     children: [
-                      KpiCard(
-                        label: 'Toplam Sipariş',
-                        value: AppFormat.tonnage(summary.totalOrdered),
-                        unit: 't',
-                        accentColor: AppColors.electricBlueLight,
+                      Row(
+                        children: [
+                          Expanded(
+                            child: AspectRatio(
+                              aspectRatio: 1.15,
+                              child: KpiCard(
+                                label: 'Toplam Sipariş',
+                                value: AppFormat.tonnage(summary.totalOrdered),
+                                unit: 't',
+                                accentColor: AppColors.electricBlueLight,
+                              ),
+                            ),
+                          ),
+                          const SizedBox(width: 12),
+                          Expanded(
+                            child: AspectRatio(
+                              aspectRatio: 1.15,
+                              child: KpiCard(
+                                label: 'Teslim Alınan',
+                                value: AppFormat.tonnage(summary.totalDelivered),
+                                unit: 't',
+                                accentColor: AppColors.success,
+                              ),
+                            ),
+                          ),
+                          const SizedBox(width: 12),
+                          Expanded(
+                            child: AspectRatio(
+                              aspectRatio: 1.15,
+                              child: KpiCard(
+                                label: 'Teslim Oranı',
+                                value: summary.fulfillmentPercent
+                                    .round()
+                                    .clamp(0, 100)
+                                    .toString(),
+                                unit: '%',
+                                accentColor: AppColors.success,
+                              ),
+                            ),
+                          ),
+                        ],
                       ),
-                      KpiCard(
-                        label: 'Teslim Alınan',
-                        value: AppFormat.tonnage(summary.totalDelivered),
-                        unit: 't',
-                        accentColor: AppColors.success,
-                      ),
-                      KpiCard(
-                        label: 'Bekleyen',
-                        value: AppFormat.tonnage(summary.pending),
-                        unit: 't',
-                        accentColor: AppColors.warning,
-                      ),
-                      KpiCard(
-                        label: 'Eksik',
-                        value: AppFormat.tonnage(summary.missing),
-                        unit: 't',
-                        accentColor: AppColors.critical,
+                      const SizedBox(height: 12),
+                      Row(
+                        children: [
+                          Expanded(
+                            child: AspectRatio(
+                              aspectRatio: 1.15,
+                              child: KpiCard(
+                                label: 'Kalan Sipariş',
+                                value: AppFormat.tonnage(summary.remainingOrder),
+                                unit: 't',
+                                accentColor: AppColors.warning,
+                              ),
+                            ),
+                          ),
+                          const SizedBox(width: 12),
+                          Expanded(
+                            child: AspectRatio(
+                              aspectRatio: 1.15,
+                              child: KpiCard(
+                                label: 'Eksik',
+                                value: AppFormat.tonnage(summary.missing),
+                                unit: 't',
+                                accentColor: AppColors.critical,
+                              ),
+                            ),
+                          ),
+                          const SizedBox(width: 12),
+                          Expanded(
+                            child: AspectRatio(
+                              aspectRatio: 1.15,
+                              child: KpiCard(
+                                label: 'Fazla',
+                                value: AppFormat.tonnage(summary.excess),
+                                unit: 't',
+                                accentColor: AppColors.partial,
+                              ),
+                            ),
+                          ),
+                        ],
                       ),
                     ],
                   ),
                   const SizedBox(height: 16),
-                  _FulfillmentBar(percent: summary.fulfillmentPercent),
+                  Text('Sahaya Gelen Demir', style: AppTypography.headlineMedium),
+                  const SizedBox(height: 8),
+                  DeliveredDiameterTable(rows: diameterRows),
                   const SizedBox(height: 16),
                   Text('Kritik Uyarılar', style: AppTypography.headlineMedium),
                   const SizedBox(height: 8),
@@ -116,6 +165,13 @@ class IncomingRebarScreen extends ConsumerWidget {
                     ),
                   ),
                   const SizedBox(height: 16),
+                  _NavCard(
+                    icon: Icons.bar_chart,
+                    title: 'Performans Analizi',
+                    subtitle: 'Sapma grafikleri · tedarikçi karşılaştırma',
+                    onTap: () => context.push(AppRoutes.performanceAnalysis),
+                  ),
+                  const SizedBox(height: 10),
                   _SupplierShortcut(
                     supplierCount: ref.watch(supplierPerformanceProvider).length,
                     onTap: () => context.push(AppRoutes.supplierPerformance),
@@ -129,53 +185,56 @@ class IncomingRebarScreen extends ConsumerWidget {
       ),
       floatingActionButton: AppFab(
         label: 'Yeni Teslimat',
-        onPressed: () => context.push(AppRoutes.newDelivery),
+        onPressed: () => context.push(AppRoutes.selectInTransitOrder),
       ),
     );
   }
 }
 
-class _FulfillmentBar extends StatelessWidget {
-  const _FulfillmentBar({required this.percent});
+class _NavCard extends StatelessWidget {
+  const _NavCard({
+    required this.icon,
+    required this.title,
+    required this.subtitle,
+    required this.onTap,
+  });
 
-  final double percent;
+  final IconData icon;
+  final String title;
+  final String subtitle;
+  final VoidCallback onTap;
 
   @override
   Widget build(BuildContext context) {
-    return Container(
-      padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        color: AppColors.surfaceElevated,
+    return Material(
+      color: Colors.transparent,
+      child: InkWell(
+        onTap: onTap,
         borderRadius: AppRadii.md,
-        border: Border.all(color: AppColors.border),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+        child: Container(
+          padding: const EdgeInsets.all(16),
+          decoration: BoxDecoration(
+            color: AppColors.surfaceElevated,
+            borderRadius: AppRadii.md,
+            border: Border.all(color: AppColors.border),
+          ),
+          child: Row(
             children: [
-              Text('Karşılama Oranı', style: AppTypography.titleMedium),
-              Text(
-                '%${percent.toStringAsFixed(1)}',
-                style: AppTypography.kpiValue.copyWith(
-                  fontSize: 22,
-                  color: AppColors.success,
+              Icon(icon, color: AppColors.electricBlueLight),
+              const SizedBox(width: 12),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(title, style: AppTypography.titleMedium),
+                    Text(subtitle, style: AppTypography.bodySmall),
+                  ],
                 ),
               ),
+              const Icon(Icons.chevron_right, color: AppColors.textMuted),
             ],
           ),
-          const SizedBox(height: 10),
-          ClipRRect(
-            borderRadius: AppRadii.full,
-            child: LinearProgressIndicator(
-              value: percent / 100,
-              minHeight: 8,
-              backgroundColor: AppColors.border,
-              color: AppColors.success,
-            ),
-          ),
-        ],
+        ),
       ),
     );
   }
