@@ -8,19 +8,21 @@ class RebarTextEntry {
     required this.diameter,
     required this.lengthM,
     required this.quantity,
+    this.spacingCm,
   });
 
   final String sourceText;
   final int diameter;
   final double lengthM;
   final int quantity;
+  final double? spacingCm;
 }
 
 /// TEXT / MTEXT içeriğinden adet, çap (FI/Ø) ve boy birlikte geçenleri okur.
 class RebarTextParser {
   const RebarTextParser();
 
-  /// üst.334Ø22/15 l=120  → 334 adet, Ø22, l=120 → 12 m (/15 sadece bilgi)
+  /// üst.334Ø22/15 l=1200  → 334 adet, Ø22, l=1200 cm → 12 m (/15 sadece bilgi)
   static final _locationLabel = RegExp(
     r'(?:UST|ALT)\.(\d+)(?:FI|F[Iİ]|Ø|O|D)(\d{2})/(\d+)\s*L\s*=\s*([\d.,]+)',
     caseSensitive: false,
@@ -115,6 +117,7 @@ class RebarTextParser {
 
     final quantity = int.tryParse(match.group(1)!);
     final diameter = int.tryParse(match.group(2)!);
+    final spacing = int.tryParse(match.group(3)!);
     final lengthRaw = double.tryParse(match.group(4)!.replaceAll(',', '.'));
 
     if (quantity == null ||
@@ -133,6 +136,7 @@ class RebarTextParser {
       diameter: diameter!,
       lengthM: lengthM,
       quantity: quantity,
+      spacingCm: spacing?.toDouble(),
     );
   }
 
@@ -169,11 +173,9 @@ class RebarTextParser {
     );
   }
 
-  /// üst./alt. l= değeri: l=120 → 12 m, l=1200 → 12 m.
+  /// üst./alt. l= değeri santimetre: l=1200 → 12 m, l=695 → 6,95 m.
   double _parseLocationLength(double value) {
-    if (value >= 1000) return value / 100;
-    if (value >= 100) return value / 10;
-    return value;
+    return value / 100;
   }
 
   /// 15000Ø16 l=200 → l=200 cm = 2 m.

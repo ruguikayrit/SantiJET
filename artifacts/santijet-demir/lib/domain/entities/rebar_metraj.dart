@@ -9,6 +9,7 @@ class RebarMetrajTextDetail extends Equatable {
     this.lengthM,
     this.quantity = 0,
     this.weightKg = 0,
+    this.spacingCm,
     this.skipReason,
   });
 
@@ -19,6 +20,7 @@ class RebarMetrajTextDetail extends Equatable {
   final double? lengthM;
   final int quantity;
   final double weightKg;
+  final double? spacingCm;
   final String? skipReason;
 
   @override
@@ -30,6 +32,7 @@ class RebarMetrajTextDetail extends Equatable {
         lengthM,
         quantity,
         weightKg,
+        spacingCm,
         skipReason,
       ];
 
@@ -41,6 +44,7 @@ class RebarMetrajTextDetail extends Equatable {
         'lengthM': lengthM,
         'quantity': quantity,
         'weightKg': weightKg,
+        if (spacingCm != null) 'spacingCm': spacingCm,
         'skipReason': skipReason,
       };
 
@@ -53,6 +57,7 @@ class RebarMetrajTextDetail extends Equatable {
       lengthM: (json['lengthM'] as num?)?.toDouble(),
       quantity: (json['quantity'] as num?)?.toInt() ?? 0,
       weightKg: (json['weightKg'] as num?)?.toDouble() ?? 0,
+      spacingCm: (json['spacingCm'] as num?)?.toDouble(),
       skipReason: json['skipReason'] as String?,
     );
   }

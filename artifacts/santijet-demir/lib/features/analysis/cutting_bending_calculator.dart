@@ -1,8 +1,11 @@
 import 'package:santijet_demir/domain/entities/cutting_bending.dart';
 import 'package:santijet_demir/domain/entities/rebar_metraj.dart';
+import 'package:santijet_demir/domain/tahvil/tahvil_rules.dart';
+/// Boy eşleştirme — aynı çapta yakın boy toleransı (metre).
+const lengthMatchToleranceM = 0.30;
 
-/// Yakın boy toleransı (metre) — aynı çapta eşleştirme ve tahvil için.
-const cuttingBendingLengthToleranceM = 0.10;
+/// Tahvil gruplama — farklı çapta yakın boy toleransı (metre).
+const tahvilLengthToleranceM = 0.10;
 
 List<RebarPieceLine> extractPieceLinesFromMetrajDetails(
   Iterable<RebarMetrajTextDetail> details,
@@ -24,13 +27,27 @@ List<RebarPieceLine> extractPieceLinesFromMetrajDetails(
         lengthM: lengthM,
         quantity: detail.quantity,
         sourceText: detail.sourceText,
+        spacingCm: detail.spacingCm,
       );
     } else {
+      final totalQty = existing.quantity + detail.quantity;
+      double? mergedSpacing;
+      if (detail.spacingCm != null && detail.spacingCm! > 0) {
+        final baseSpacing = existing.spacingCm ?? detail.spacingCm!;
+        mergedSpacing = existing.quantity == 0
+            ? detail.spacingCm
+            : (baseSpacing * existing.quantity +
+                    detail.spacingCm! * detail.quantity) /
+                totalQty;
+      } else {
+        mergedSpacing = existing.spacingCm;
+      }
       grouped[key] = RebarPieceLine(
         diameter: diameter,
         lengthM: lengthM,
-        quantity: existing.quantity + detail.quantity,
+        quantity: totalQty,
         sourceText: existing.sourceText ?? detail.sourceText,
+        spacingCm: mergedSpacing,
       );
     }
   }
@@ -46,7 +63,7 @@ List<RebarPieceLine> extractPieceLinesFromMetrajDetails(
 
 List<LengthMatchGroup> computeLengthMatchGroups(
   List<RebarPieceLine> pieces, {
-  double toleranceM = cuttingBendingLengthToleranceM,
+  double toleranceM = lengthMatchToleranceM,
 }) {
   final byDiameter = <int, List<RebarPieceLine>>{};
   for (final piece in pieces) {
@@ -104,7 +121,7 @@ LengthMatchGroup _buildLengthMatchGroup(List<RebarPieceLine> cluster, int index)
 
 List<TahvilSuggestion> computeTahvilGroups(
   List<RebarPieceLine> pieces, {
-  double toleranceM = cuttingBendingLengthToleranceM,
+  double toleranceM = tahvilLengthToleranceM,
 }) {
   if (pieces.length < 2) return const [];
 
@@ -135,11 +152,15 @@ List<TahvilSuggestion> computeTahvilGroups(
   for (final lengthCluster in clusters) {
     final diameters = lengthCluster.map((p) => p.diameter).toSet();
     if (diameters.length < 2) continue;
+    if (!shouldIncludeTahvilCluster(lengthCluster)) continue;
 
     final lengths = lengthCluster.map((p) => p.lengthM).toList();
     final minLength = lengths.reduce((a, b) => a < b ? a : b);
     final maxLength = lengths.reduce((a, b) => a > b ? a : b);
     final avgLength = lengths.fold(0.0, (sum, value) => sum + value) / lengths.length;
+
+    final equivalents = computeTahvilEquivalents(lengthCluster);
+    if (equivalents.isEmpty) continue;
 
     suggestions.add(
       TahvilSuggestion(
@@ -148,6 +169,7 @@ List<TahvilSuggestion> computeTahvilGroups(
         minLengthM: minLength,
         maxLengthM: maxLength,
         members: List.unmodifiable(lengthCluster),
+        equivalents: equivalents,
       ),
     );
     tahvilIndex++;
@@ -160,17 +182,23 @@ CuttingBendingBatch buildCuttingBendingBatch({
   required String title,
   required List<String> sourceMetrajRecordIds,
   required Iterable<RebarMetrajTextDetail> textDetails,
-  double toleranceM = cuttingBendingLengthToleranceM,
+  double lengthMatchTolerance = lengthMatchToleranceM,
+  double tahvilTolerance = tahvilLengthToleranceM,
 }) {
   final pieceLines = extractPieceLinesFromMetrajDetails(textDetails);
+  final labels = textDetails.toList();
   return CuttingBendingBatch(
     id: 'kb-${DateTime.now().millisecondsSinceEpoch}',
     title: title,
     createdAt: DateTime.now(),
     sourceMetrajRecordIds: sourceMetrajRecordIds,
+    labelDetails: labels,
     pieceLines: pieceLines,
-    lengthMatches: computeLengthMatchGroups(pieceLines, toleranceM: toleranceM),
-    tahvilGroups: computeTahvilGroups(pieceLines, toleranceM: toleranceM),
+    lengthMatches: computeLengthMatchGroups(
+      pieceLines,
+      toleranceM: lengthMatchTolerance,
+    ),
+    tahvilGroups: computeTahvilGroups(pieceLines, toleranceM: tahvilTolerance),
   );
 }
 
@@ -178,13 +206,69 @@ CuttingBendingBatch buildCuttingBendingBatchFromResults({
   required String title,
   required List<String> sourceMetrajRecordIds,
   required Iterable<RebarMetrajResult> results,
-  double toleranceM = cuttingBendingLengthToleranceM,
+  double lengthMatchTolerance = lengthMatchToleranceM,
+  double tahvilTolerance = tahvilLengthToleranceM,
 }) {
-  final details = results.expand((result) => result.textDetails);
+  final details = <RebarMetrajTextDetail>[];
+  for (final result in results) {
+    details.addAll(result.textDetails);
+  }
   return buildCuttingBendingBatch(
     title: title,
     sourceMetrajRecordIds: sourceMetrajRecordIds,
     textDetails: details,
-    toleranceM: toleranceM,
+    lengthMatchTolerance: lengthMatchTolerance,
+    tahvilTolerance: tahvilTolerance,
   );
+}
+
+/// Eski batch kayıtlarında boş kalan etiket listesini ön imalat kaynaklarından doldurur.
+CuttingBendingBatch hydrateCuttingBendingBatchLabels(
+  CuttingBendingBatch batch,
+  Iterable<SavedRebarMetraj> metrajRecords,
+) {
+  if (batch.labelDetails.isNotEmpty) return batch;
+  if (batch.sourceMetrajRecordIds.isEmpty) return batch;
+
+  final byId = {for (final record in metrajRecords) record.id: record};
+  final details = <RebarMetrajTextDetail>[];
+  for (final id in batch.sourceMetrajRecordIds) {
+    final record = byId[id];
+    if (record != null) {
+      details.addAll(record.result.textDetails);
+    }
+  }
+  if (details.isEmpty) return batch;
+  return batch.copyWith(labelDetails: details);
+}
+
+/// Etiket listesi değişince parça, boy eşleştirme ve tahvil gruplarını yeniden hesaplar.
+CuttingBendingBatch rebuildCuttingBendingBatch(
+  CuttingBendingBatch batch, {
+  required List<RebarMetrajTextDetail> labelDetails,
+  double lengthMatchTolerance = lengthMatchToleranceM,
+  double tahvilTolerance = tahvilLengthToleranceM,
+}) {
+  final pieceLines = extractPieceLinesFromMetrajDetails(
+    labelDetails.where((detail) => detail.included),
+  );
+  return batch.copyWith(
+    labelDetails: labelDetails,
+    pieceLines: pieceLines,
+    lengthMatches: computeLengthMatchGroups(
+      pieceLines,
+      toleranceM: lengthMatchTolerance,
+    ),
+    tahvilGroups: computeTahvilGroups(pieceLines, toleranceM: tahvilTolerance),
+  );
+}
+
+bool isSameRebarMetrajTextDetail(
+  RebarMetrajTextDetail a,
+  RebarMetrajTextDetail b,
+) {
+  return a.sourceText == b.sourceText &&
+      a.entityType == b.entityType &&
+      a.diameter == b.diameter &&
+      a.lengthM == b.lengthM;
 }

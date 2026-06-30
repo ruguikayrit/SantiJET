@@ -6,23 +6,35 @@ void main() {
   const parser = RebarTextParser();
 
   group('üst/alt formatı — adet doğrudan, aralık etkisiz', () {
-    test('üst.334Ø22/15 l=120 → 334 ad × 12 m', () {
-      final entry = parser.parseOne('üst.334Ø22/15 l=120');
+    test('üst.334Ø22/15 l=1200 → 334 ad × 12 m', () {
+      final entry = parser.parseOne('üst.334Ø22/15 l=1200');
       expect(entry?.quantity, 334);
       expect(entry?.diameter, 22);
       expect(entry?.lengthM, closeTo(12, 0.001));
       expect(entry!.quantity * entry.lengthM, closeTo(4008, 0.001));
     });
 
-    test('üst.334Ø22/15 l=1200 → 334 ad × 12 m', () {
-      final entry = parser.parseOne('üst.334Ø22/15 l=1200');
+    test('üst.334Ø22/15 l=695 → 334 ad × 6,95 m', () {
+      final entry = parser.parseOne('üst.334Ø22/15 l=695');
       expect(entry?.quantity, 334);
-      expect(entry?.lengthM, closeTo(12, 0.001));
+      expect(entry?.lengthM, closeTo(6.95, 0.001));
+    });
+
+    test('üst.180Ø22/15 l=805 → 180 ad × 8,05 m', () {
+      final entry = parser.parseOne('üst.180Ø22/15 l=805');
+      expect(entry?.quantity, 180);
+      expect(entry?.lengthM, closeTo(8.05, 0.001));
+    });
+
+    test('üst.334Ø22/15 l=120 → 334 ad × 1,2 m (120 cm)', () {
+      final entry = parser.parseOne('üst.334Ø22/15 l=120');
+      expect(entry?.quantity, 334);
+      expect(entry?.lengthM, closeTo(1.2, 0.001));
     });
 
     test('aralık (/15) adeti değiştirmez', () {
-      final withSpacing = parser.parseOne('üst.334Ø22/15 l=120');
-      final withoutSpacing = parser.parseOne('üst.334Ø22/20 l=120');
+      final withSpacing = parser.parseOne('üst.334Ø22/15 l=1200');
+      final withoutSpacing = parser.parseOne('üst.334Ø22/20 l=1200');
       expect(withSpacing?.quantity, withoutSpacing?.quantity);
       expect(withSpacing?.lengthM, withoutSpacing?.lengthM);
     });

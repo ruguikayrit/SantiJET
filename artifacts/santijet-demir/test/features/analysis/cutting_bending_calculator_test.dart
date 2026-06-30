@@ -60,6 +60,93 @@ void main() {
       expect(tahvil, hasLength(1));
       expect(tahvil.first.members, hasLength(2));
       expect(tahvil.first.diameters, {16, 20});
+      expect(tahvil.first.equivalents, isNotEmpty);
+      expect(
+        tahvil.first.equivalents.every(
+          (eq) => (eq.fromDiameter - eq.toDiameter).abs() <= 4,
+        ),
+        isTrue,
+      );
+    });
+
+    test('does not suggest tahvil when diameter difference exceeds 4 mm', () {
+      const pieces = [
+        RebarPieceLine(diameter: 12, lengthM: 2.60, quantity: 2),
+        RebarPieceLine(diameter: 28, lengthM: 2.70, quantity: 24),
+      ];
+
+      final tahvil = computeTahvilGroups(pieces, toleranceM: 0.20);
+
+      expect(tahvil, isEmpty);
+    });
+
+    test('computes tahvil quantity from cross-section area ratio', () {
+      expect(
+        TahvilEquivalent.computeEquivalentQuantity(
+          fromDiameter: 16,
+          fromQuantity: 1978,
+          toDiameter: 12,
+        ),
+        3516,
+      );
+      expect(
+        TahvilEquivalent.computeEquivalentQuantity(
+          fromDiameter: 12,
+          fromQuantity: 52,
+          toDiameter: 16,
+        ),
+        29,
+      );
+    });
+
+    test('rebuildCuttingBendingBatch recalculates after label removal', () {
+      const details = [
+        RebarMetrajTextDetail(
+          entityType: 'TEXT',
+          sourceText: 'a',
+          included: true,
+          diameter: 16,
+          lengthM: 2.0,
+          quantity: 10,
+        ),
+        RebarMetrajTextDetail(
+          entityType: 'TEXT',
+          sourceText: 'b',
+          included: true,
+          diameter: 20,
+          lengthM: 2.05,
+          quantity: 6,
+        ),
+      ];
+      final batch = buildCuttingBendingBatch(
+        title: 'Test',
+        sourceMetrajRecordIds: const [],
+        textDetails: details,
+      );
+
+      final rebuilt = rebuildCuttingBendingBatch(
+        batch,
+        labelDetails: [details.first],
+      );
+
+      expect(rebuilt.labelDetails, hasLength(1));
+      expect(rebuilt.pieceLines, hasLength(1));
+      expect(rebuilt.tahvilGroups, isEmpty);
+    });
+
+    test('CuttingBendingBatch.fromJson tolerates missing labelDetails', () {
+      final batch = CuttingBendingBatch.fromJson({
+        'id': 'kb-1',
+        'title': 'Test',
+        'createdAt': DateTime.now().toIso8601String(),
+        'sourceMetrajRecordIds': ['rec-1'],
+        'labelDetails': null,
+        'pieceLines': [],
+        'lengthMatches': [],
+        'tahvilGroups': [],
+      });
+
+      expect(batch.labelDetails, isEmpty);
     });
   });
 }

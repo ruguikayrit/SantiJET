@@ -103,6 +103,7 @@ class DxfRebarParser {
           lengthM: scaledLength,
           quantity: parsed.quantity,
           weightKg: weightKg * parsed.quantity,
+          spacingCm: parsed.spacingCm,
         ),
       );
 
@@ -126,7 +127,7 @@ class DxfRebarParser {
 
       warnings.add(
         'Demir etiketi bulunamadı. Örnek formatlar:\n'
-        'üst.334Ø22/15 l=120 (334 ad × 12 m)\n'
+        'üst.334Ø22/15 l=1200 (334 ad × 12 m)\n'
         '15000Ø16 l=200 (15000 ad × 2 m)',
       );
     }

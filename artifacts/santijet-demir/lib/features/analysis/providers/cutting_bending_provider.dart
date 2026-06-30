@@ -1,7 +1,10 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:santijet_demir/data/repositories/cutting_bending_repository.dart';
 import 'package:santijet_demir/domain/entities/cutting_bending.dart';
+import 'package:santijet_demir/domain/entities/rebar_metraj.dart';
+import 'package:santijet_demir/features/analysis/cutting_bending_calculator.dart';
 import 'package:santijet_demir/features/projects/providers/project_provider.dart';
+import 'package:santijet_demir/features/rebar_metraj/providers/rebar_metraj_storage_provider.dart';
 
 final cuttingBendingRepositoryProvider = Provider<CuttingBendingRepository>((ref) {
   return CuttingBendingRepository(ref.watch(projectDataRepositoryProvider));
@@ -62,7 +65,11 @@ class CuttingBendingNotifier extends StateNotifier<CuttingBendingState> {
       state = const CuttingBendingState();
       return;
     }
-    final batches = _repo.readBatches(projectId);
+    final metrajRecords = _ref.read(savedRebarMetrajProvider);
+    final batches = _repo
+        .readBatches(projectId)
+        .map((batch) => hydrateCuttingBendingBatchLabels(batch, metrajRecords))
+        .toList();
     state = CuttingBendingState(
       batches: batches,
       activeBatchId: _repo.readActiveBatchId(projectId) ?? batches.firstOrNull?.id,
@@ -73,7 +80,11 @@ class CuttingBendingNotifier extends StateNotifier<CuttingBendingState> {
     final projectId = _loadedProjectId;
     if (projectId == null) return null;
 
-    final saved = await _repo.addBatch(projectId: projectId, batch: batch);
+    final hydrated = hydrateCuttingBendingBatchLabels(
+      batch,
+      _ref.read(savedRebarMetrajProvider),
+    );
+    final saved = await _repo.addBatch(projectId: projectId, batch: hydrated);
     state = CuttingBendingState(
       batches: [saved, ...state.batches.where((b) => b.id != saved.id)],
       activeBatchId: saved.id,
@@ -89,10 +100,24 @@ class CuttingBendingNotifier extends StateNotifier<CuttingBendingState> {
     state = state.copyWith(activeBatchId: batchId);
   }
 
-  Future<void> approveLengthMatch(String groupId, {required bool approved}) async {
+  Future<void> approveLengthMatch(
+    String groupId, {
+    required bool approved,
+    double? selectedLengthM,
+  }) async {
     await _updateBatch((batch) {
       final updated = batch.lengthMatches
-          .map((group) => group.id == groupId ? group.copyWith(approved: approved) : group)
+          .map((group) {
+            if (group.id != groupId) return group;
+            if (!approved) {
+              return group.copyWith(approved: false, clearSelectedLength: true);
+            }
+            if (selectedLengthM == null) return group;
+            return group.copyWith(
+              approved: true,
+              selectedLengthM: selectedLengthM,
+            );
+          })
           .toList();
       return batch.copyWith(lengthMatches: updated);
     });
@@ -104,6 +129,31 @@ class CuttingBendingNotifier extends StateNotifier<CuttingBendingState> {
           .map((group) => group.id == groupId ? group.copyWith(approved: approved) : group)
           .toList();
       return batch.copyWith(tahvilGroups: updated);
+    });
+  }
+
+  Future<void> deleteBatch(String batchId) async {
+    final projectId = _loadedProjectId;
+    if (projectId == null) return;
+
+    await _repo.deleteBatch(projectId: projectId, batchId: batchId);
+    final remaining = state.batches.where((batch) => batch.id != batchId).toList();
+    final nextActiveId = state.activeBatchId == batchId
+        ? (remaining.isNotEmpty ? remaining.first.id : null)
+        : state.activeBatchId;
+
+    state = CuttingBendingState(
+      batches: remaining,
+      activeBatchId: nextActiveId,
+    );
+  }
+
+  Future<void> removeLabelDetail(RebarMetrajTextDetail detail) async {
+    await _updateBatch((batch) {
+      final updatedLabels = batch.labelDetails
+          .where((item) => !isSameRebarMetrajTextDetail(item, detail))
+          .toList();
+      return rebuildCuttingBendingBatch(batch, labelDetails: updatedLabels);
     });
   }
 

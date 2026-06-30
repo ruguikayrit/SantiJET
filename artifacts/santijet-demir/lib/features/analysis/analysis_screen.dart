@@ -11,8 +11,11 @@ import 'package:santijet_demir/core/theme/app_typography.dart';
 import 'package:santijet_demir/core/widgets/empty_states.dart';
 import 'package:santijet_demir/core/widgets/santijet_header.dart';
 import 'package:santijet_demir/domain/entities/cutting_bending.dart';
+import 'package:santijet_demir/domain/entities/rebar_metraj.dart';
+import 'package:santijet_demir/domain/tahvil/tahvil_rules.dart';
 import 'package:santijet_demir/features/analysis/cutting_bending_calculator.dart';
 import 'package:santijet_demir/features/analysis/providers/cutting_bending_provider.dart';
+import 'package:santijet_demir/features/rebar_metraj/widgets/rebar_label_details_section.dart';
 
 class AnalysisScreen extends ConsumerWidget {
   const AnalysisScreen({super.key});
@@ -74,6 +77,7 @@ class AnalysisScreen extends ConsumerWidget {
                     batches: state.batches,
                     onSelectBatch: (id) =>
                         ref.read(cuttingBendingBatchesProvider.notifier).setActiveBatch(id),
+                    onDeleteBatch: () => _confirmDeleteBatch(context, ref, batch),
                   ),
                 ),
               ),
@@ -81,6 +85,12 @@ class AnalysisScreen extends ConsumerWidget {
                 padding: const EdgeInsets.fromLTRB(AppSpacing.md, 0, AppSpacing.md, 80),
                 sliver: SliverList(
                   delegate: SliverChildListDelegate([
+                    RebarLabelDetailsSection(
+                      details: batch.labelDetails,
+                      onDeleteDetail: (detail) =>
+                          _confirmDeleteLabel(context, ref, detail),
+                    ),
+                    const SizedBox(height: 20),
                     Text('Parça Listesi', style: AppTypography.headlineMedium),
                     const SizedBox(height: 4),
                     Text(
@@ -93,7 +103,8 @@ class AnalysisScreen extends ConsumerWidget {
                     Text('Boy Eşleştirme', style: AppTypography.headlineMedium),
                     const SizedBox(height: 4),
                     Text(
-                      'Aynı çapta birbirine yakın boylar (±${(cuttingBendingLengthToleranceM * 100).toStringAsFixed(0)} cm)',
+                      'Aynı çapta birbirine yakın boylar (±${(lengthMatchToleranceM * 100).toStringAsFixed(0)} cm) — '
+                      'onaylamadan önce eşleştirilecek boyu seçin',
                       style: AppTypography.bodySmall,
                     ),
                     const SizedBox(height: 8),
@@ -103,16 +114,21 @@ class AnalysisScreen extends ConsumerWidget {
                       ...batch.lengthMatches.map(
                         (group) => _LengthMatchCard(
                           group: group,
-                          onApprove: (approved) => ref
+                          onApprove: (approved, selectedLengthM) => ref
                               .read(cuttingBendingBatchesProvider.notifier)
-                              .approveLengthMatch(group.id, approved: approved),
+                              .approveLengthMatch(
+                                group.id,
+                                approved: approved,
+                                selectedLengthM: selectedLengthM,
+                              ),
                         ),
                       ),
                     const SizedBox(height: 20),
                     Text('Tahvil Önerileri', style: AppTypography.headlineMedium),
                     const SizedBox(height: 4),
                     Text(
-                      'Farklı çapta, birbirine yakın veya eşit boydaki demirler',
+                      'πr² kesit alanı, ±${tahvilMaxDiameterDiffMm} mm çap, '
+                      '≤${tahvilMaxSpacingCm.toStringAsFixed(0)} cm aralık kurallarına göre',
                       style: AppTypography.bodySmall,
                     ),
                     const SizedBox(height: 8),
@@ -136,6 +152,62 @@ class AnalysisScreen extends ConsumerWidget {
       ),
     );
   }
+
+  Future<void> _confirmDeleteBatch(
+    BuildContext context,
+    WidgetRef ref,
+    CuttingBendingBatch batch,
+  ) async {
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Listeyi sil'),
+        content: Text(
+          '"${batch.title}" kesme-bükme listesini silmek istediğinize emin misiniz?',
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context, false),
+            child: const Text('İptal'),
+          ),
+          FilledButton(
+            onPressed: () => Navigator.pop(context, true),
+            child: const Text('Sil'),
+          ),
+        ],
+      ),
+    );
+    if (confirmed != true || !context.mounted) return;
+    await ref.read(cuttingBendingBatchesProvider.notifier).deleteBatch(batch.id);
+  }
+
+  Future<void> _confirmDeleteLabel(
+    BuildContext context,
+    WidgetRef ref,
+    RebarMetrajTextDetail detail,
+  ) async {
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Etiketi sil'),
+        content: const Text(
+          'Bu etiketi listeden kaldırmak parça listesini ve tahvil önerilerini yeniden hesaplar.',
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context, false),
+            child: const Text('İptal'),
+          ),
+          FilledButton(
+            onPressed: () => Navigator.pop(context, true),
+            child: const Text('Sil'),
+          ),
+        ],
+      ),
+    );
+    if (confirmed != true || !context.mounted) return;
+    await ref.read(cuttingBendingBatchesProvider.notifier).removeLabelDetail(detail);
+  }
 }
 
 class _BatchHeader extends StatelessWidget {
@@ -143,11 +215,13 @@ class _BatchHeader extends StatelessWidget {
     required this.batch,
     required this.batches,
     required this.onSelectBatch,
+    required this.onDeleteBatch,
   });
 
   final CuttingBendingBatch batch;
   final List<CuttingBendingBatch> batches;
   final ValueChanged<String> onSelectBatch;
+  final VoidCallback onDeleteBatch;
 
   @override
   Widget build(BuildContext context) {
@@ -193,10 +267,23 @@ class _BatchHeader extends StatelessWidget {
             ),
           ],
           const SizedBox(height: 8),
-          OutlinedButton.icon(
-            onPressed: () => context.push(AppRoutes.surveyMetrajRecords),
-            icon: const Icon(Icons.upload_file, size: 18),
-            label: const Text('Keşif / Ön İmalat\'tan Gönder'),
+          Row(
+            children: [
+              Expanded(
+                child: OutlinedButton.icon(
+                  onPressed: () => context.push(AppRoutes.surveyMetraj),
+                  icon: const Icon(Icons.upload_file, size: 18),
+                  label: const Text('Keşif / Otomatik Metrajdan Veri Al'),
+                ),
+              ),
+              const SizedBox(width: 8),
+              IconButton.outlined(
+                onPressed: onDeleteBatch,
+                icon: const Icon(Icons.delete_outline),
+                color: AppColors.critical,
+                tooltip: 'Listeyi sil',
+              ),
+            ],
           ),
         ],
       ),
@@ -236,29 +323,64 @@ class _PieceListTable extends StatelessWidget {
   }
 }
 
-class _LengthMatchCard extends StatelessWidget {
+class _LengthMatchCard extends StatefulWidget {
   const _LengthMatchCard({
     required this.group,
     required this.onApprove,
   });
 
   final LengthMatchGroup group;
-  final ValueChanged<bool> onApprove;
+  final void Function(bool approved, double? selectedLengthM) onApprove;
+
+  @override
+  State<_LengthMatchCard> createState() => _LengthMatchCardState();
+}
+
+class _LengthMatchCardState extends State<_LengthMatchCard> {
+  double? _selectedLengthM;
+
+  @override
+  void initState() {
+    super.initState();
+    _selectedLengthM = _initialSelection(widget.group);
+  }
+
+  @override
+  void didUpdateWidget(covariant _LengthMatchCard oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (oldWidget.group.id != widget.group.id ||
+        oldWidget.group.approved != widget.group.approved) {
+      _selectedLengthM = _initialSelection(widget.group);
+    }
+  }
+
+  double? _initialSelection(LengthMatchGroup group) {
+    if (group.selectedLengthM != null) return group.selectedLengthM;
+    if (group.members.isEmpty) return null;
+    return group.members
+        .reduce((a, b) => a.quantity >= b.quantity ? a : b)
+        .lengthM;
+  }
+
+  bool _sameLength(double a, double b) => (a - b).abs() < 1e-6;
 
   @override
   Widget build(BuildContext context) {
+    final group = widget.group;
     final color = AppColors.diameterColor(group.diameter);
+    final approved = group.approved;
+    final matchedLength = approved ? group.selectedLengthM : _selectedLengthM;
 
     return Container(
       margin: const EdgeInsets.only(bottom: 8),
       padding: const EdgeInsets.all(14),
       decoration: BoxDecoration(
-        color: group.approved
+        color: approved
             ? AppColors.success.withValues(alpha: 0.06)
             : AppColors.surfaceElevated,
         borderRadius: AppRadii.md,
         border: Border.all(
-          color: group.approved
+          color: approved
               ? AppColors.success.withValues(alpha: 0.4)
               : AppColors.border,
         ),
@@ -275,28 +397,89 @@ class _LengthMatchCard extends StatelessWidget {
               const SizedBox(width: 8),
               Expanded(
                 child: Text(
-                  '${group.minLengthM.toStringAsFixed(2)}–${group.maxLengthM.toStringAsFixed(2)} m · '
-                  '${group.totalQuantity} adet',
+                  approved && matchedLength != null
+                      ? 'Eşleşen boy: ${matchedLength.toStringAsFixed(2)} m · '
+                          '${group.totalQuantity} adet'
+                      : '${group.minLengthM.toStringAsFixed(2)}–${group.maxLengthM.toStringAsFixed(2)} m · '
+                          '${group.totalQuantity} adet',
                   style: AppTypography.bodySmall,
                 ),
               ),
               FilterChip(
-                label: Text(group.approved ? 'Onaylı' : 'Onayla'),
-                selected: group.approved,
-                onSelected: (selected) => onApprove(selected),
+                label: Text(approved ? 'Onaylı' : 'Onayla'),
+                selected: approved,
+                onSelected: (selected) {
+                  if (selected && _selectedLengthM == null) return;
+                  widget.onApprove(selected, selected ? _selectedLengthM : null);
+                },
                 selectedColor: AppColors.success.withValues(alpha: 0.2),
               ),
             ],
           ),
+          if (!approved) ...[
+            const SizedBox(height: 6),
+            Text(
+              'Eşleştirilecek boyu seçin',
+              style: AppTypography.labelMedium.copyWith(color: AppColors.textMuted),
+            ),
+          ],
           const SizedBox(height: 8),
           ...group.members.map(
-            (member) => Padding(
-              padding: const EdgeInsets.only(bottom: 2),
-              child: Text(
-                '· ${member.lengthM.toStringAsFixed(2)} m × ${member.quantity} adet',
-                style: AppTypography.bodySmall,
-              ),
-            ),
+            (member) {
+              final isSelected = matchedLength != null &&
+                  _sameLength(member.lengthM, matchedLength);
+              return Padding(
+                padding: const EdgeInsets.only(bottom: 4),
+                child: approved
+                    ? Row(
+                        children: [
+                          Icon(
+                            isSelected ? Icons.check_circle : Icons.circle_outlined,
+                            size: 16,
+                            color: isSelected
+                                ? AppColors.success
+                                : AppColors.textMuted,
+                          ),
+                          const SizedBox(width: 8),
+                          Text(
+                            '${member.lengthM.toStringAsFixed(2)} m × ${member.quantity} adet',
+                            style: AppTypography.bodySmall.copyWith(
+                              color: isSelected ? AppColors.success : null,
+                              fontWeight:
+                                  isSelected ? FontWeight.w600 : FontWeight.normal,
+                            ),
+                          ),
+                        ],
+                      )
+                    : InkWell(
+                        onTap: () => setState(() {
+                          _selectedLengthM = member.lengthM;
+                        }),
+                        borderRadius: AppRadii.sm,
+                        child: Padding(
+                          padding: const EdgeInsets.symmetric(vertical: 2),
+                          child: Row(
+                            children: [
+                              Radio<double>(
+                                value: member.lengthM,
+                                groupValue: _selectedLengthM,
+                                onChanged: (value) => setState(() {
+                                  _selectedLengthM = value;
+                                }),
+                                visualDensity: VisualDensity.compact,
+                                materialTapTargetSize:
+                                    MaterialTapTargetSize.shrinkWrap,
+                              ),
+                              Text(
+                                '${member.lengthM.toStringAsFixed(2)} m × ${member.quantity} adet',
+                                style: AppTypography.bodySmall,
+                              ),
+                            ],
+                          ),
+                        ),
+                      ),
+              );
+            },
           ),
         ],
       ),
@@ -361,6 +544,58 @@ class _TahvilCard extends StatelessWidget {
               ),
             ),
           ),
+          if (group.equivalents.isNotEmpty) ...[
+            const SizedBox(height: 10),
+            Text('Tahvil hesabı (πr² · d² × adet)', style: AppTypography.labelMedium),
+            const SizedBox(height: 4),
+            ...group.equivalents.map(
+              (eq) => Padding(
+                padding: const EdgeInsets.only(bottom: 4),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Row(
+                      children: [
+                        Expanded(
+                          child: Text(
+                            'Ø${eq.fromDiameter} ${AppFormat.integer(eq.fromQuantity)} ad → '
+                            'Ø${eq.toDiameter} tahvil: ${AppFormat.integer(eq.equivalentQuantity)} ad',
+                            style: AppTypography.bodySmall.copyWith(
+                              color: AppColors.diameterColor(eq.toDiameter),
+                            ),
+                          ),
+                        ),
+                        if (eq.isRecommended)
+                          Container(
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 8,
+                              vertical: 2,
+                            ),
+                            decoration: BoxDecoration(
+                              color: AppColors.success.withValues(alpha: 0.15),
+                              borderRadius: BorderRadius.circular(999),
+                            ),
+                            child: Text(
+                              'Önerilen',
+                              style: AppTypography.labelMedium.copyWith(
+                                color: AppColors.success,
+                              ),
+                            ),
+                          ),
+                      ],
+                    ),
+                    if (eq.resultingSpacingCm != null)
+                      Text(
+                        'Tahvil aralığı: ${eq.resultingSpacingCm!.toStringAsFixed(1)} cm',
+                        style: AppTypography.bodySmall.copyWith(
+                          color: AppColors.textMuted,
+                        ),
+                      ),
+                  ],
+                ),
+              ),
+            ),
+          ],
         ],
       ),
     );

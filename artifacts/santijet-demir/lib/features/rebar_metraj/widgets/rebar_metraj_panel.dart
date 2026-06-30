@@ -15,6 +15,7 @@ import 'package:santijet_demir/features/rebar_metraj/providers/rebar_metraj_prov
 import 'package:santijet_demir/features/rebar_metraj/providers/rebar_metraj_storage_provider.dart';
 import 'package:santijet_demir/features/rebar_metraj/widgets/metraj_cutting_actions.dart';
 import 'package:santijet_demir/features/rebar_metraj/widgets/metraj_survey_actions.dart';
+import 'package:santijet_demir/features/rebar_metraj/widgets/rebar_label_details_section.dart';
 import 'package:santijet_demir/features/survey/providers/survey_provider.dart';
 
 class RebarMetrajPanel extends ConsumerStatefulWidget {
@@ -104,7 +105,9 @@ class _RebarMetrajPanelState extends ConsumerState<RebarMetrajPanel>
                 const SizedBox(height: 16),
                 _UploadCard(
                   loading: loading,
+                  canClear: result != null,
                   onPickFile: () => _pickAndParse(context, ref),
+                  onClear: () => _clearMetraj(ref),
                 ),
                 if (error != null) ...[
                   const SizedBox(height: 12),
@@ -124,7 +127,7 @@ class _RebarMetrajPanelState extends ConsumerState<RebarMetrajPanel>
                   ...result.lines.map((line) => _MetrajLineCard(line: line)),
                   if (result.textDetails.isNotEmpty) ...[
                     const SizedBox(height: 20),
-                    _TextDetailSection(details: result.textDetails),
+                    RebarLabelDetailsSection(details: result.textDetails),
                   ],
                   if (result.warnings.isNotEmpty) ...[
                     const SizedBox(height: 16),
@@ -182,10 +185,16 @@ class _RebarMetrajPanelState extends ConsumerState<RebarMetrajPanel>
       ref.read(rebarMetrajErrorProvider.notifier).state =
           'CAD dosyası işlenemedi. DWG için sayfayı yenileyin; DXF için '
           'ASCII formatında kaydedilmiş olduğundan emin olun. Etiketlerde adet, '
-          'çap (FI/Ø) ve l= boy birlikte olmalı (ör. üst.334Ø22/15 l=120).';
+          'çap (FI/Ø) ve l= boy birlikte olmalı (ör. üst.334Ø22/15 l=1200).';
     } finally {
       ref.read(rebarMetrajLoadingProvider.notifier).state = false;
     }
+  }
+
+  void _clearMetraj(WidgetRef ref) {
+    ref.read(rebarMetrajResultProvider.notifier).state = null;
+    ref.read(rebarMetrajErrorProvider.notifier).state = null;
+    ref.read(rebarMetrajLoadingProvider.notifier).state = false;
   }
 }
 
@@ -214,7 +223,7 @@ class _InfoBanner extends StatelessWidget {
           const SizedBox(height: 8),
           Text(
             '1. AutoCAD/BricsCAD projesini DWG veya ASCII DXF olarak yükleyin\n'
-            '2. üst.334Ø22/15 l=120 → 334 ad × 12 m (aralık hesaba katılmaz)\n'
+            '2. üst.334Ø22/15 l=1200 → 334 ad × 12 m (aralık hesaba katılmaz)\n'
             '3. 15000Ø16 l=200 → 15000 ad × 2 m\n'
             '4. Tonaj = adet × boy × birim ağırlık (kg/m)\n'
             '5. Analiz sonuçlarını kaydırın; üstte Ön İmalata Gönder\n'
@@ -235,11 +244,15 @@ class _InfoBanner extends StatelessWidget {
 class _UploadCard extends StatelessWidget {
   const _UploadCard({
     required this.loading,
+    required this.canClear,
     required this.onPickFile,
+    required this.onClear,
   });
 
   final bool loading;
+  final bool canClear;
   final VoidCallback onPickFile;
+  final VoidCallback onClear;
 
   @override
   Widget build(BuildContext context) {
@@ -262,16 +275,32 @@ class _UploadCard extends StatelessWidget {
             textAlign: TextAlign.center,
           ),
           const SizedBox(height: 16),
-          FilledButton.icon(
-            onPressed: loading ? null : onPickFile,
-            icon: loading
-                ? const SizedBox(
-                    width: 18,
-                    height: 18,
-                    child: CircularProgressIndicator(strokeWidth: 2),
-                  )
-                : const Icon(Icons.folder_open),
-            label: Text(loading ? 'İşleniyor...' : 'Dosya Seç'),
+          Row(
+            children: [
+              Expanded(
+                child: FilledButton.icon(
+                  onPressed: loading ? null : onPickFile,
+                  icon: loading
+                      ? const SizedBox(
+                          width: 18,
+                          height: 18,
+                          child: CircularProgressIndicator(strokeWidth: 2),
+                        )
+                      : const Icon(Icons.folder_open),
+                  label: Text(loading ? 'İşleniyor...' : 'Dosya Seç'),
+                ),
+              ),
+              if (canClear) ...[
+                const SizedBox(width: 8),
+                Expanded(
+                  child: OutlinedButton.icon(
+                    onPressed: loading ? null : onClear,
+                    icon: const Icon(Icons.clear_all),
+                    label: const Text('Metrajı Temizle'),
+                  ),
+                ),
+              ],
+            ],
           ),
         ],
       ),
@@ -454,122 +483,6 @@ class _MetrajLineCard extends StatelessWidget {
                 style: AppTypography.bodySmall,
               ),
             ],
-          ),
-        ],
-      ),
-    );
-  }
-}
-
-class _TextDetailSection extends StatefulWidget {
-  const _TextDetailSection({required this.details});
-
-  final List<RebarMetrajTextDetail> details;
-
-  @override
-  State<_TextDetailSection> createState() => _TextDetailSectionState();
-}
-
-class _TextDetailSectionState extends State<_TextDetailSection> {
-  static const _initialCount = 3;
-  var _expanded = false;
-
-  @override
-  Widget build(BuildContext context) {
-    final formatter = NumberFormat('#,##0.00', 'tr_TR');
-    final details = widget.details;
-    final visible = _expanded
-        ? details
-        : details.take(_initialCount).toList();
-    final hasMore = !_expanded && details.length > _initialCount;
-
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Text('Tanınan Demir Etiketleri', style: AppTypography.headlineMedium),
-        const SizedBox(height: 4),
-        Text(
-          '${details.length} etiket (adet + çap + boy)',
-          style: AppTypography.bodySmall,
-        ),
-        const SizedBox(height: 12),
-        ...visible.map(
-          (detail) => _TextDetailCard(detail: detail, formatter: formatter),
-        ),
-        if (hasMore)
-          Align(
-            alignment: Alignment.centerLeft,
-            child: TextButton.icon(
-              onPressed: () => setState(() => _expanded = true),
-              icon: const Icon(Icons.expand_more),
-              label: Text('Daha fazla göster (${details.length - _initialCount})'),
-            ),
-          )
-        else if (_expanded && details.length > _initialCount)
-          Align(
-            alignment: Alignment.centerLeft,
-            child: TextButton.icon(
-              onPressed: () => setState(() => _expanded = false),
-              icon: const Icon(Icons.expand_less),
-              label: const Text('Listeyi daralt'),
-            ),
-          ),
-      ],
-    );
-  }
-}
-
-class _TextDetailCard extends StatelessWidget {
-  const _TextDetailCard({
-    required this.detail,
-    required this.formatter,
-  });
-
-  final RebarMetrajTextDetail detail;
-  final NumberFormat formatter;
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      margin: const EdgeInsets.only(bottom: 8),
-      padding: const EdgeInsets.all(12),
-      decoration: BoxDecoration(
-        color: AppColors.surfaceElevated,
-        borderRadius: AppRadii.md,
-        border: Border.all(color: AppColors.success.withValues(alpha: 0.35)),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
-            children: [
-              Container(
-                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                decoration: BoxDecoration(
-                  color: AppColors.electricBlue.withValues(alpha: 0.12),
-                  borderRadius: BorderRadius.circular(6),
-                ),
-                child: Text(
-                  detail.entityType,
-                  style: AppTypography.labelMedium.copyWith(
-                    color: AppColors.electricBlueLight,
-                  ),
-                ),
-              ),
-            ],
-          ),
-          const SizedBox(height: 8),
-          Text(
-            detail.sourceText,
-            style: AppTypography.titleMedium,
-          ),
-          const SizedBox(height: 8),
-          Text(
-            '${detail.quantity} ad · '
-            'Ø${detail.diameter} · '
-            '${formatter.format(detail.lengthM)} m · '
-            '${formatter.format(detail.weightKg)} kg',
-            style: AppTypography.bodySmall,
           ),
         ],
       ),
