@@ -11,10 +11,12 @@ class RebarLabelDetailsSection extends StatefulWidget {
     super.key,
     this.details = const [],
     this.onDeleteDetail,
+    this.hideHeader = false,
   });
 
   final List<RebarMetrajTextDetail> details;
   final void Function(RebarMetrajTextDetail detail)? onDeleteDetail;
+  final bool hideHeader;
 
   @override
   State<RebarLabelDetailsSection> createState() => _RebarLabelDetailsSectionState();
@@ -36,13 +38,15 @@ class _RebarLabelDetailsSectionState extends State<RebarLabelDetailsSection> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text('Analiz Edilen Demir Etiketleri', style: AppTypography.headlineMedium),
-        const SizedBox(height: 4),
-        Text(
-          '${details.length} etiket (adet + çap + boy)',
-          style: AppTypography.bodySmall,
-        ),
-        const SizedBox(height: 12),
+        if (!widget.hideHeader) ...[
+          Text('Analiz Edilen Demir Etiketleri', style: AppTypography.headlineMedium),
+          const SizedBox(height: 4),
+          Text(
+            '${details.length} etiket (adet + çap + boy)',
+            style: AppTypography.bodySmall,
+          ),
+          const SizedBox(height: 12),
+        ],
         ...visible.map(
           (detail) => RebarLabelDetailCard(
             detail: detail,

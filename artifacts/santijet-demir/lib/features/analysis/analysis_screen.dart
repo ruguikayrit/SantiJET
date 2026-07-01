@@ -15,10 +15,15 @@ import 'package:santijet_demir/domain/entities/rebar_metraj.dart';
 import 'package:santijet_demir/domain/tahvil/tahvil_rules.dart';
 import 'package:santijet_demir/features/analysis/cutting_bending_calculator.dart';
 import 'package:santijet_demir/features/analysis/providers/cutting_bending_provider.dart';
+import 'package:santijet_demir/features/analysis/widgets/collapsible_analysis_section.dart';
+import 'package:santijet_demir/features/analysis/widgets/stock_cut_section.dart';
+import 'package:santijet_demir/features/analysis/widgets/tahvil_calculator_section.dart';
 import 'package:santijet_demir/features/rebar_metraj/widgets/rebar_label_details_section.dart';
 
 class AnalysisScreen extends ConsumerWidget {
   const AnalysisScreen({super.key});
+
+  static const _innerCardGap = AppSpacing.xs;
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -33,36 +38,41 @@ class AnalysisScreen extends ConsumerWidget {
             const SliverToBoxAdapter(
               child: SantijetHeader(subtitle: 'KESME - BÜKME', showNotification: false),
             ),
-            if (batch == null)
-              SliverFillRemaining(
-                hasScrollBody: false,
-                child: Center(
-                  child: Padding(
-                    padding: const EdgeInsets.all(32),
-                    child: Column(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        const Icon(Icons.content_cut, size: 48, color: AppColors.textMuted),
-                        const SizedBox(height: 16),
-                        Text('Liste boş', style: AppTypography.headlineMedium),
-                        const SizedBox(height: 8),
-                        Text(
-                          'Keşif → Ön İmalat veya Otomatik Metraj\'dan\n'
-                          '"Kesme-Bükme\'ye Gönder" ile parça listesi oluşturun.',
-                          style: AppTypography.bodyMedium.copyWith(color: AppColors.textMuted),
-                          textAlign: TextAlign.center,
-                        ),
-                        const SizedBox(height: 16),
-                        FilledButton.icon(
-                          onPressed: () => context.push(AppRoutes.surveyMetrajRecords),
-                          icon: const Icon(Icons.upload_file),
-                          label: const Text('Keşif / Ön İmalat'),
-                        ),
-                      ],
-                    ),
+            SliverPadding(
+              padding: const EdgeInsets.fromLTRB(AppSpacing.md, 0, AppSpacing.md, 0),
+              sliver: SliverToBoxAdapter(
+                child: _TahvilCalculatorCollapsibleSection(),
+              ),
+            ),
+            if (batch == null) ...[
+              SliverToBoxAdapter(
+                child: Padding(
+                  padding: const EdgeInsets.all(32),
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      const Icon(Icons.content_cut, size: 48, color: AppColors.textMuted),
+                      const SizedBox(height: 16),
+                      Text('Liste boş', style: AppTypography.headlineMedium),
+                      const SizedBox(height: 8),
+                      Text(
+                        'Keşif → Ön İmalat veya Otomatik Metraj\'dan\n'
+                        '"Kesme-Bükme\'ye Gönder" ile parça listesi oluşturun.',
+                        style: AppTypography.bodyMedium.copyWith(color: AppColors.textMuted),
+                        textAlign: TextAlign.center,
+                      ),
+                      const SizedBox(height: 16),
+                      FilledButton.icon(
+                        onPressed: () => context.push(AppRoutes.surveyMetraj),
+                        icon: const Icon(Icons.upload_file),
+                        label: const Text('Keşif / Otomatik Metraj'),
+                      ),
+                    ],
                   ),
                 ),
-              )
+              ),
+              const SliverPadding(padding: EdgeInsets.only(bottom: 80)),
+            ]
             else ...[
               SliverToBoxAdapter(
                 child: Padding(
@@ -85,64 +95,99 @@ class AnalysisScreen extends ConsumerWidget {
                 padding: const EdgeInsets.fromLTRB(AppSpacing.md, 0, AppSpacing.md, 80),
                 sliver: SliverList(
                   delegate: SliverChildListDelegate([
-                    RebarLabelDetailsSection(
-                      details: batch.labelDetails,
-                      onDeleteDetail: (detail) =>
-                          _confirmDeleteLabel(context, ref, detail),
+                    if (batch.labelDetails.isNotEmpty)
+                      CollapsibleAnalysisSection(
+                        sectionId: AnalysisSectionIds.labels,
+                        title: 'Analiz Edilen Demir Etiketleri',
+                        subtitle:
+                            '${batch.labelDetails.length} etiket (adet + çap + boy)',
+                        child: RebarLabelDetailsSection(
+                          details: batch.labelDetails,
+                          hideHeader: true,
+                          onDeleteDetail: (detail) =>
+                              _confirmDeleteLabel(context, ref, detail),
+                        ),
+                      ),
+                    CollapsibleAnalysisSection(
+                      sectionId: AnalysisSectionIds.pieceList,
+                      title: 'Parça Listesi',
+                      subtitle: 'Çap + boy bazında gruplanmış adetler',
+                      child: _PieceListTable(pieces: batch.pieceLines),
                     ),
-                    const SizedBox(height: 20),
-                    Text('Parça Listesi', style: AppTypography.headlineMedium),
-                    const SizedBox(height: 4),
-                    Text(
-                      'Çap + boy bazında gruplanmış adetler',
-                      style: AppTypography.bodySmall,
-                    ),
-                    const SizedBox(height: 8),
-                    _PieceListTable(pieces: batch.pieceLines),
-                    const SizedBox(height: 20),
-                    Text('Boy Eşleştirme', style: AppTypography.headlineMedium),
-                    const SizedBox(height: 4),
-                    Text(
-                      'Aynı çapta birbirine yakın boylar (±${(lengthMatchToleranceM * 100).toStringAsFixed(0)} cm) — '
-                      'onaylamadan önce eşleştirilecek boyu seçin',
-                      style: AppTypography.bodySmall,
-                    ),
-                    const SizedBox(height: 8),
-                    if (batch.lengthMatches.isEmpty)
-                      const ModuleEmptyState(type: EmptyStateType.noSearchResult, inline: true)
-                    else
-                      ...batch.lengthMatches.map(
-                        (group) => _LengthMatchCard(
-                          group: group,
-                          onApprove: (approved, selectedLengthM) => ref
-                              .read(cuttingBendingBatchesProvider.notifier)
-                              .approveLengthMatch(
-                                group.id,
-                                approved: approved,
-                                selectedLengthM: selectedLengthM,
+                    CollapsibleAnalysisSection(
+                      sectionId: AnalysisSectionIds.lengthMatch,
+                      title: 'Boy Eşleştirme',
+                      subtitle:
+                          'Aynı çapta birbirine yakın boyları toleransa göre gruplar — '
+                          'onaylamadan önce eşleştirilecek boyu seçin',
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.stretch,
+                        children: [
+                          _LengthMatchToleranceField(
+                            toleranceCm: batch.lengthMatchToleranceCm,
+                            onApply: (toleranceCm) => ref
+                                .read(cuttingBendingBatchesProvider.notifier)
+                                .setLengthMatchTolerance(toleranceCm),
+                          ),
+                          const SizedBox(height: 8),
+                          if (batch.lengthMatches.isEmpty)
+                            const ModuleEmptyState(
+                              type: EmptyStateType.noSearchResult,
+                              inline: true,
+                            )
+                          else
+                            ...batch.lengthMatches.map(
+                              (group) => _LengthMatchCard(
+                                group: group,
+                                onApprove: (approved, selectedLengthM) => ref
+                                    .read(cuttingBendingBatchesProvider.notifier)
+                                    .approveLengthMatch(
+                                      group.id,
+                                      approved: approved,
+                                      selectedLengthM: selectedLengthM,
+                                    ),
                               ),
-                        ),
+                            ),
+                        ],
                       ),
-                    const SizedBox(height: 20),
-                    Text('Tahvil Önerileri', style: AppTypography.headlineMedium),
-                    const SizedBox(height: 4),
-                    Text(
-                      'πr² kesit alanı, ±${tahvilMaxDiameterDiffMm} mm çap, '
-                      '≤${tahvilMaxSpacingCm.toStringAsFixed(0)} cm aralık kurallarına göre',
-                      style: AppTypography.bodySmall,
                     ),
-                    const SizedBox(height: 8),
-                    if (batch.tahvilGroups.isEmpty)
-                      const ModuleEmptyState(type: EmptyStateType.noSearchResult, inline: true)
-                    else
-                      ...batch.tahvilGroups.map(
-                        (group) => _TahvilCard(
-                          group: group,
-                          onApprove: (approved) => ref
-                              .read(cuttingBendingBatchesProvider.notifier)
-                              .approveTahvil(group.id, approved: approved),
-                        ),
-                      ),
+                    CollapsibleAnalysisSection(
+                      sectionId: AnalysisSectionIds.stockCutList,
+                      title: '12m Kesim Listesi',
+                      subtitle:
+                          'Parça listesinden aynı çapta boyları ${CuttingBendingBatch.defaultStockBarLengthM.toStringAsFixed(0)} m '
+                          'stok boya eşleştirir — minimum fire planı',
+                      child: batch.pieceLines.isEmpty
+                          ? const ModuleEmptyState(
+                              type: EmptyStateType.noSearchResult,
+                              inline: true,
+                            )
+                          : StockCutSection(plans: batch.stockCutPlans),
+                    ),
+                    CollapsibleAnalysisSection(
+                      sectionId: AnalysisSectionIds.tahvilSuggestions,
+                      title: 'Tahvil Önerileri',
+                      subtitle:
+                          'πr² kesit alanı, ±${tahvilMaxDiameterDiffMm} mm çap, '
+                          '≤${tahvilMaxSpacingCm.toStringAsFixed(0)} cm aralık kurallarına göre',
+                      child: batch.tahvilGroups.isEmpty
+                          ? const ModuleEmptyState(
+                              type: EmptyStateType.noSearchResult,
+                              inline: true,
+                            )
+                          : Column(
+                              children: batch.tahvilGroups
+                                  .map(
+                                    (group) => _TahvilCard(
+                                      group: group,
+                                      onApprove: (approved) => ref
+                                          .read(cuttingBendingBatchesProvider.notifier)
+                                          .approveTahvil(group.id, approved: approved),
+                                    ),
+                                  )
+                                  .toList(),
+                            ),
+                    ),
                   ]),
                 ),
               ),
@@ -207,6 +252,21 @@ class AnalysisScreen extends ConsumerWidget {
     );
     if (confirmed != true || !context.mounted) return;
     await ref.read(cuttingBendingBatchesProvider.notifier).removeLabelDetail(detail);
+  }
+}
+
+class _TahvilCalculatorCollapsibleSection extends StatelessWidget {
+  const _TahvilCalculatorCollapsibleSection();
+
+  @override
+  Widget build(BuildContext context) {
+    return CollapsibleAnalysisSection(
+      sectionId: AnalysisSectionIds.tahvilCalculator,
+      title: 'Otomatik Tahvil Hesabı',
+      subtitle:
+          'Çap, adet ve aralık girin; tüm seçenekler hesaplanır, elenenler gerekçeleriyle gösterilir.',
+      child: const TahvilCalculatorSection(hideHeader: true),
+    );
   }
 }
 
@@ -298,27 +358,105 @@ class _PieceListTable extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Container(
-      decoration: BoxDecoration(
-        color: AppColors.surfaceElevated,
-        borderRadius: AppRadii.md,
-        border: Border.all(color: AppColors.border),
-      ),
-      child: Column(
-        children: [
-          const _TableHeader(cells: ['ÇAP', 'BOY (m)', 'ADET']),
-          ...pieces.map(
-            (piece) => _TableRow(
-              cells: [
-                'Ø${piece.diameter}',
-                piece.lengthM.toStringAsFixed(2),
-                AppFormat.integer(piece.quantity),
-              ],
-              accentColor: AppColors.diameterColor(piece.diameter),
-            ),
+    if (pieces.isEmpty) {
+      return const ModuleEmptyState(type: EmptyStateType.noSearchResult, inline: true);
+    }
+
+    return Column(
+      children: [
+        const _TableHeader(cells: ['ÇAP', 'BOY (m)', 'ADET']),
+        ...pieces.map(
+          (piece) => _TableRow(
+            cells: [
+              'Ø${piece.diameter}',
+              piece.lengthM.toStringAsFixed(2),
+              AppFormat.integer(piece.quantity),
+            ],
+            accentColor: AppColors.diameterColor(piece.diameter),
           ),
-        ],
-      ),
+        ),
+      ],
+    );
+  }
+}
+
+class _LengthMatchToleranceField extends StatefulWidget {
+  const _LengthMatchToleranceField({
+    required this.toleranceCm,
+    required this.onApply,
+  });
+
+  final double toleranceCm;
+  final ValueChanged<double> onApply;
+
+  @override
+  State<_LengthMatchToleranceField> createState() =>
+      _LengthMatchToleranceFieldState();
+}
+
+class _LengthMatchToleranceFieldState extends State<_LengthMatchToleranceField> {
+  late final TextEditingController _controller;
+
+  @override
+  void initState() {
+    super.initState();
+    _controller = TextEditingController(text: _format(widget.toleranceCm));
+  }
+
+  @override
+  void didUpdateWidget(covariant _LengthMatchToleranceField oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (oldWidget.toleranceCm != widget.toleranceCm) {
+      final current = double.tryParse(
+        _controller.text.trim().replaceAll(',', '.'),
+      );
+      if (current == null || (current - widget.toleranceCm).abs() > 1e-9) {
+        _controller.text = _format(widget.toleranceCm);
+      }
+    }
+  }
+
+  @override
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
+  }
+
+  String _format(double value) {
+    return value % 1 == 0 ? value.toStringAsFixed(0) : value.toStringAsFixed(1);
+  }
+
+  void _apply() {
+    final parsed = double.tryParse(
+      _controller.text.trim().replaceAll(',', '.'),
+    );
+    if (parsed == null || parsed <= 0) return;
+    widget.onApply(parsed);
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Row(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Expanded(
+          child: TextField(
+            controller: _controller,
+            keyboardType: const TextInputType.numberWithOptions(decimal: true),
+            decoration: const InputDecoration(
+              labelText: 'Yakın boy toleransı (cm)',
+              hintText: 'Örn: 30',
+              isDense: true,
+            ),
+            onSubmitted: (_) => _apply(),
+          ),
+        ),
+        const SizedBox(width: 8),
+        FilledButton(
+          onPressed: _apply,
+          child: const Text('Uygula'),
+        ),
+      ],
     );
   }
 }
@@ -362,28 +500,55 @@ class _LengthMatchCardState extends State<_LengthMatchCard> {
         .lengthM;
   }
 
-  bool _sameLength(double a, double b) => (a - b).abs() < 1e-6;
-
   @override
   Widget build(BuildContext context) {
     final group = widget.group;
     final color = AppColors.diameterColor(group.diameter);
-    final approved = group.approved;
-    final matchedLength = approved ? group.selectedLengthM : _selectedLengthM;
+
+    if (group.approved && group.selectedLengthM != null) {
+      final matchedLength = group.selectedLengthM!;
+      return Container(
+        margin: const EdgeInsets.only(bottom: AnalysisScreen._innerCardGap),
+        padding: const EdgeInsets.all(14),
+        decoration: BoxDecoration(
+          color: AppColors.success.withValues(alpha: 0.06),
+          borderRadius: AppRadii.md,
+          border: Border.all(color: AppColors.success.withValues(alpha: 0.4)),
+        ),
+        child: Row(
+          children: [
+            Text(
+              'Ø${group.diameter}',
+              style: AppTypography.titleMedium.copyWith(color: color),
+            ),
+            const SizedBox(width: 8),
+            Expanded(
+              child: Text(
+                '${matchedLength.toStringAsFixed(2)} m × '
+                '${AppFormat.integer(group.totalQuantity)} adet',
+                style: AppTypography.bodyMedium,
+              ),
+            ),
+            FilterChip(
+              label: const Text('Onaylı'),
+              selected: true,
+              onSelected: (selected) {
+                if (!selected) widget.onApprove(false, null);
+              },
+              selectedColor: AppColors.success.withValues(alpha: 0.2),
+            ),
+          ],
+        ),
+      );
+    }
 
     return Container(
-      margin: const EdgeInsets.only(bottom: 8),
+      margin: const EdgeInsets.only(bottom: AnalysisScreen._innerCardGap),
       padding: const EdgeInsets.all(14),
       decoration: BoxDecoration(
-        color: approved
-            ? AppColors.success.withValues(alpha: 0.06)
-            : AppColors.surfaceElevated,
+        color: AppColors.surfaceElevated,
         borderRadius: AppRadii.md,
-        border: Border.all(
-          color: approved
-              ? AppColors.success.withValues(alpha: 0.4)
-              : AppColors.border,
-        ),
+        border: Border.all(color: AppColors.border),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -397,89 +562,55 @@ class _LengthMatchCardState extends State<_LengthMatchCard> {
               const SizedBox(width: 8),
               Expanded(
                 child: Text(
-                  approved && matchedLength != null
-                      ? 'Eşleşen boy: ${matchedLength.toStringAsFixed(2)} m · '
-                          '${group.totalQuantity} adet'
-                      : '${group.minLengthM.toStringAsFixed(2)}–${group.maxLengthM.toStringAsFixed(2)} m · '
-                          '${group.totalQuantity} adet',
+                  '${group.minLengthM.toStringAsFixed(2)}–${group.maxLengthM.toStringAsFixed(2)} m · '
+                  '${group.totalQuantity} adet',
                   style: AppTypography.bodySmall,
                 ),
               ),
               FilterChip(
-                label: Text(approved ? 'Onaylı' : 'Onayla'),
-                selected: approved,
+                label: const Text('Onayla'),
+                selected: false,
                 onSelected: (selected) {
-                  if (selected && _selectedLengthM == null) return;
-                  widget.onApprove(selected, selected ? _selectedLengthM : null);
+                  if (!selected || _selectedLengthM == null) return;
+                  widget.onApprove(true, _selectedLengthM);
                 },
                 selectedColor: AppColors.success.withValues(alpha: 0.2),
               ),
             ],
           ),
-          if (!approved) ...[
-            const SizedBox(height: 6),
-            Text(
-              'Eşleştirilecek boyu seçin',
-              style: AppTypography.labelMedium.copyWith(color: AppColors.textMuted),
-            ),
-          ],
+          const SizedBox(height: 6),
+          Text(
+            'Eşleştirilecek boyu seçin',
+            style: AppTypography.labelMedium.copyWith(color: AppColors.textMuted),
+          ),
           const SizedBox(height: 8),
           ...group.members.map(
-            (member) {
-              final isSelected = matchedLength != null &&
-                  _sameLength(member.lengthM, matchedLength);
-              return Padding(
-                padding: const EdgeInsets.only(bottom: 4),
-                child: approved
-                    ? Row(
-                        children: [
-                          Icon(
-                            isSelected ? Icons.check_circle : Icons.circle_outlined,
-                            size: 16,
-                            color: isSelected
-                                ? AppColors.success
-                                : AppColors.textMuted,
-                          ),
-                          const SizedBox(width: 8),
-                          Text(
-                            '${member.lengthM.toStringAsFixed(2)} m × ${member.quantity} adet',
-                            style: AppTypography.bodySmall.copyWith(
-                              color: isSelected ? AppColors.success : null,
-                              fontWeight:
-                                  isSelected ? FontWeight.w600 : FontWeight.normal,
-                            ),
-                          ),
-                        ],
-                      )
-                    : InkWell(
-                        onTap: () => setState(() {
-                          _selectedLengthM = member.lengthM;
-                        }),
-                        borderRadius: AppRadii.sm,
-                        child: Padding(
-                          padding: const EdgeInsets.symmetric(vertical: 2),
-                          child: Row(
-                            children: [
-                              Radio<double>(
-                                value: member.lengthM,
-                                groupValue: _selectedLengthM,
-                                onChanged: (value) => setState(() {
-                                  _selectedLengthM = value;
-                                }),
-                                visualDensity: VisualDensity.compact,
-                                materialTapTargetSize:
-                                    MaterialTapTargetSize.shrinkWrap,
-                              ),
-                              Text(
-                                '${member.lengthM.toStringAsFixed(2)} m × ${member.quantity} adet',
-                                style: AppTypography.bodySmall,
-                              ),
-                            ],
-                          ),
-                        ),
-                      ),
-              );
-            },
+            (member) => InkWell(
+              onTap: () => setState(() {
+                _selectedLengthM = member.lengthM;
+              }),
+              borderRadius: AppRadii.sm,
+              child: Padding(
+                padding: const EdgeInsets.symmetric(vertical: 2),
+                child: Row(
+                  children: [
+                    Radio<double>(
+                      value: member.lengthM,
+                      groupValue: _selectedLengthM,
+                      onChanged: (value) => setState(() {
+                        _selectedLengthM = value;
+                      }),
+                      visualDensity: VisualDensity.compact,
+                      materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                    ),
+                    Text(
+                      '${member.lengthM.toStringAsFixed(2)} m × ${member.quantity} adet',
+                      style: AppTypography.bodySmall,
+                    ),
+                  ],
+                ),
+              ),
+            ),
           ),
         ],
       ),
@@ -499,7 +630,7 @@ class _TahvilCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Container(
-      margin: const EdgeInsets.only(bottom: 8),
+      margin: const EdgeInsets.only(bottom: AnalysisScreen._innerCardGap),
       padding: const EdgeInsets.all(14),
       decoration: BoxDecoration(
         color: group.approved

@@ -262,6 +262,105 @@ class TahvilSuggestion {
   }
 }
 
+class StockBarCutMember {
+  const StockBarCutMember({
+    required this.lengthM,
+    required this.count,
+  });
+
+  final double lengthM;
+  final int count;
+
+  Map<String, dynamic> toJson() => {
+        'lengthM': lengthM,
+        'count': count,
+      };
+
+  factory StockBarCutMember.fromJson(Map<dynamic, dynamic> json) {
+    return StockBarCutMember(
+      lengthM: (json['lengthM'] as num?)?.toDouble() ?? 0,
+      count: (json['count'] as num?)?.toInt() ?? 0,
+    );
+  }
+}
+
+class StockBarCut {
+  const StockBarCut({
+    required this.barIndex,
+    required this.diameter,
+    required this.members,
+    required this.usedLengthM,
+    required this.wasteLengthM,
+  });
+
+  final int barIndex;
+  final int diameter;
+  final List<StockBarCutMember> members;
+  final double usedLengthM;
+  final double wasteLengthM;
+
+  Map<String, dynamic> toJson() => {
+        'barIndex': barIndex,
+        'diameter': diameter,
+        'members': members.map((m) => m.toJson()).toList(),
+        'usedLengthM': usedLengthM,
+        'wasteLengthM': wasteLengthM,
+      };
+
+  factory StockBarCut.fromJson(Map<dynamic, dynamic> json) {
+    final rawMembers = json['members'] as List<dynamic>? ?? const [];
+    return StockBarCut(
+      barIndex: (json['barIndex'] as num?)?.toInt() ?? 0,
+      diameter: (json['diameter'] as num?)?.toInt() ?? 0,
+      members: rawMembers
+          .whereType<Map>()
+          .map(StockBarCutMember.fromJson)
+          .toList(),
+      usedLengthM: (json['usedLengthM'] as num?)?.toDouble() ?? 0,
+      wasteLengthM: (json['wasteLengthM'] as num?)?.toDouble() ?? 0,
+    );
+  }
+}
+
+class StockCutPlan {
+  const StockCutPlan({
+    required this.diameter,
+    required this.bars,
+    required this.totalBars,
+    required this.totalWasteM,
+    required this.totalUsedM,
+    required this.wastePercent,
+  });
+
+  final int diameter;
+  final List<StockBarCut> bars;
+  final int totalBars;
+  final double totalWasteM;
+  final double totalUsedM;
+  final double wastePercent;
+
+  Map<String, dynamic> toJson() => {
+        'diameter': diameter,
+        'bars': bars.map((b) => b.toJson()).toList(),
+        'totalBars': totalBars,
+        'totalWasteM': totalWasteM,
+        'totalUsedM': totalUsedM,
+        'wastePercent': wastePercent,
+      };
+
+  factory StockCutPlan.fromJson(Map<dynamic, dynamic> json) {
+    final rawBars = json['bars'] as List<dynamic>? ?? const [];
+    return StockCutPlan(
+      diameter: (json['diameter'] as num?)?.toInt() ?? 0,
+      bars: rawBars.whereType<Map>().map(StockBarCut.fromJson).toList(),
+      totalBars: (json['totalBars'] as num?)?.toInt() ?? 0,
+      totalWasteM: (json['totalWasteM'] as num?)?.toDouble() ?? 0,
+      totalUsedM: (json['totalUsedM'] as num?)?.toDouble() ?? 0,
+      wastePercent: (json['wastePercent'] as num?)?.toDouble() ?? 0,
+    );
+  }
+}
+
 class CuttingBendingBatch {
   const CuttingBendingBatch({
     required this.id,
@@ -272,7 +371,12 @@ class CuttingBendingBatch {
     required this.pieceLines,
     required this.lengthMatches,
     required this.tahvilGroups,
+    required this.stockCutPlans,
+    this.lengthMatchToleranceCm = defaultLengthMatchToleranceCm,
   });
+
+  static const defaultLengthMatchToleranceCm = 30.0;
+  static const defaultStockBarLengthM = 12.0;
 
   final String id;
   final String title;
@@ -282,12 +386,18 @@ class CuttingBendingBatch {
   final List<RebarPieceLine> pieceLines;
   final List<LengthMatchGroup> lengthMatches;
   final List<TahvilSuggestion> tahvilGroups;
+  final List<StockCutPlan> stockCutPlans;
+  final double lengthMatchToleranceCm;
+
+  double get lengthMatchToleranceM => lengthMatchToleranceCm / 100;
 
   CuttingBendingBatch copyWith({
     List<RebarMetrajTextDetail>? labelDetails,
     List<RebarPieceLine>? pieceLines,
     List<LengthMatchGroup>? lengthMatches,
     List<TahvilSuggestion>? tahvilGroups,
+    List<StockCutPlan>? stockCutPlans,
+    double? lengthMatchToleranceCm,
   }) {
     return CuttingBendingBatch(
       id: id,
@@ -298,6 +408,9 @@ class CuttingBendingBatch {
       pieceLines: pieceLines ?? this.pieceLines,
       lengthMatches: lengthMatches ?? this.lengthMatches,
       tahvilGroups: tahvilGroups ?? this.tahvilGroups,
+      stockCutPlans: stockCutPlans ?? this.stockCutPlans,
+      lengthMatchToleranceCm:
+          lengthMatchToleranceCm ?? this.lengthMatchToleranceCm,
     );
   }
 
@@ -310,6 +423,8 @@ class CuttingBendingBatch {
         'pieceLines': pieceLines.map((p) => p.toJson()).toList(),
         'lengthMatches': lengthMatches.map((g) => g.toJson()).toList(),
         'tahvilGroups': tahvilGroups.map((g) => g.toJson()).toList(),
+        'stockCutPlans': stockCutPlans.map((p) => p.toJson()).toList(),
+        'lengthMatchToleranceCm': lengthMatchToleranceCm,
       };
 
   factory CuttingBendingBatch.fromJson(Map<dynamic, dynamic> json) {
@@ -336,6 +451,10 @@ class CuttingBendingBatch {
       pieceLines: parseList('pieceLines', RebarPieceLine.fromJson),
       lengthMatches: parseList('lengthMatches', LengthMatchGroup.fromJson),
       tahvilGroups: parseList('tahvilGroups', TahvilSuggestion.fromJson),
+      stockCutPlans: parseList('stockCutPlans', StockCutPlan.fromJson),
+      lengthMatchToleranceCm:
+          (json['lengthMatchToleranceCm'] as num?)?.toDouble() ??
+              CuttingBendingBatch.defaultLengthMatchToleranceCm,
     );
   }
 }

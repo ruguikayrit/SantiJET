@@ -21,6 +21,20 @@ final cuttingBendingBatchesProvider =
   return notifier;
 });
 
+/// Kesme-Bükme katlanabilir bölüm kimlikleri.
+abstract final class AnalysisSectionIds {
+  static const labels = 'analysis-labels';
+  static const pieceList = 'analysis-piece-list';
+  static const lengthMatch = 'analysis-length-match';
+  static const stockCutList = 'analysis-stock-cut-list';
+  static const tahvilSuggestions = 'analysis-tahvil-suggestions';
+  static const tahvilCalculator = 'analysis-tahvil-calculator';
+}
+
+/// Bölüm açık/kapalı durumu — yeniden çizimlerde korunur, varsayılan kapalı.
+final analysisSectionExpandedProvider =
+    StateProvider.family<bool, String>((ref, sectionId) => false);
+
 class CuttingBendingState {
   const CuttingBendingState({
     this.batches = const [],
@@ -69,6 +83,7 @@ class CuttingBendingNotifier extends StateNotifier<CuttingBendingState> {
     final batches = _repo
         .readBatches(projectId)
         .map((batch) => hydrateCuttingBendingBatchLabels(batch, metrajRecords))
+        .map(hydrateStockCutPlans)
         .toList();
     state = CuttingBendingState(
       batches: batches,
@@ -98,6 +113,21 @@ class CuttingBendingNotifier extends StateNotifier<CuttingBendingState> {
 
     await _repo.setActiveBatch(projectId: projectId, batchId: batchId);
     state = state.copyWith(activeBatchId: batchId);
+  }
+
+  Future<void> setLengthMatchTolerance(double toleranceCm) async {
+    if (toleranceCm <= 0) return;
+
+    await _updateBatch((batch) {
+      final toleranceM = toleranceCm / 100;
+      return batch.copyWith(
+        lengthMatchToleranceCm: toleranceCm,
+        lengthMatches: computeLengthMatchGroups(
+          batch.pieceLines,
+          toleranceM: toleranceM,
+        ),
+      );
+    });
   }
 
   Future<void> approveLengthMatch(

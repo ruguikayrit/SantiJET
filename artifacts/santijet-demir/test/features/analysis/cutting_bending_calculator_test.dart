@@ -48,6 +48,24 @@ void main() {
       expect(groups.first.members, hasLength(2));
     });
 
+    test('length match uses min-max span not chained neighbor distance', () {
+      const pieces = [
+        RebarPieceLine(diameter: 12, lengthM: 4.75, quantity: 12),
+        RebarPieceLine(diameter: 12, lengthM: 4.95, quantity: 6),
+        RebarPieceLine(diameter: 12, lengthM: 5.05, quantity: 12),
+      ];
+
+      final groups20 = computeLengthMatchGroups(pieces, toleranceM: 0.20);
+      expect(groups20, hasLength(1));
+      expect(groups20.first.maxLengthM - groups20.first.minLengthM, closeTo(0.20, 1e-9));
+      expect(groups20.first.members, hasLength(2));
+
+      final groups30 = computeLengthMatchGroups(pieces, toleranceM: 0.30);
+      expect(groups30, hasLength(1));
+      expect(groups30.first.maxLengthM - groups30.first.minLengthM, closeTo(0.30, 1e-9));
+      expect(groups30.first.members, hasLength(3));
+    });
+
     test('suggests tahvil for different diameters with near lengths', () {
       const pieces = [
         RebarPieceLine(diameter: 16, lengthM: 2.00, quantity: 10),
@@ -99,6 +117,85 @@ void main() {
       );
     });
 
+    test('plans 12m stock cuts with minimum waste for same diameter', () {
+      const pieces = [
+        RebarPieceLine(diameter: 12, lengthM: 6.50, quantity: 5),
+        RebarPieceLine(diameter: 12, lengthM: 5.50, quantity: 5),
+        RebarPieceLine(diameter: 12, lengthM: 5.00, quantity: 2),
+      ];
+
+      final plans = computeStockCutPlans(pieces);
+
+      expect(plans, hasLength(1));
+      final plan = plans.first;
+      expect(plan.diameter, 12);
+      expect(plan.totalBars, 6);
+
+      final zeroWasteBars =
+          plan.bars.where((bar) => bar.wasteLengthM <= 0.001).length;
+      expect(zeroWasteBars, 5);
+
+      final pairedBar = plan.bars.firstWhere(
+        (bar) => bar.members.any((m) => m.lengthM == 6.5),
+      );
+      expect(pairedBar.members, hasLength(2));
+      expect(pairedBar.usedLengthM, closeTo(12.0, 0.001));
+      expect(pairedBar.wasteLengthM, closeTo(0.0, 0.001));
+
+      final remainderBar = plan.bars.firstWhere(
+        (bar) => bar.members.every((m) => m.lengthM == 5.0),
+      );
+      expect(remainderBar.members.fold(0, (sum, m) => sum + m.count), 2);
+      expect(remainderBar.usedLengthM, closeTo(10.0, 0.001));
+      expect(remainderBar.wasteLengthM, closeTo(2.0, 0.001));
+    });
+
+    test('groups stock cuts separately per diameter', () {
+      const pieces = [
+        RebarPieceLine(diameter: 12, lengthM: 6.00, quantity: 2),
+        RebarPieceLine(diameter: 16, lengthM: 6.00, quantity: 2),
+      ];
+
+      final plans = computeStockCutPlans(pieces);
+
+      expect(plans, hasLength(2));
+      expect(plans.map((plan) => plan.diameter).toSet(), {12, 16});
+      for (final plan in plans) {
+        expect(plan.totalBars, 1);
+        expect(plan.bars.first.usedLengthM, closeTo(12.0, 0.001));
+      }
+    });
+
+    test('buildCuttingBendingBatch includes stock cut plans', () {
+      const details = [
+        RebarMetrajTextDetail(
+          entityType: 'TEXT',
+          sourceText: 'a',
+          included: true,
+          diameter: 12,
+          lengthM: 6.5,
+          quantity: 2,
+        ),
+        RebarMetrajTextDetail(
+          entityType: 'TEXT',
+          sourceText: 'b',
+          included: true,
+          diameter: 12,
+          lengthM: 5.5,
+          quantity: 2,
+        ),
+      ];
+
+      final batch = buildCuttingBendingBatch(
+        title: 'Test',
+        sourceMetrajRecordIds: const [],
+        textDetails: details,
+      );
+
+      expect(batch.stockCutPlans, isNotEmpty);
+      expect(batch.stockCutPlans.first.totalBars, 2);
+    });
+
     test('rebuildCuttingBendingBatch recalculates after label removal', () {
       const details = [
         RebarMetrajTextDetail(
@@ -144,6 +241,7 @@ void main() {
         'pieceLines': [],
         'lengthMatches': [],
         'tahvilGroups': [],
+        'stockCutPlans': [],
       });
 
       expect(batch.labelDetails, isEmpty);

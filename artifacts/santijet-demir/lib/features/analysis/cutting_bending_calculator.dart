@@ -7,6 +7,264 @@ const lengthMatchToleranceM = 0.30;
 /// Tahvil gruplama — farklı çapta yakın boy toleransı (metre).
 const tahvilLengthToleranceM = 0.10;
 
+/// Standart stok boy (metre).
+const stockBarLengthM = 12.0;
+
+int _lengthToMm(double lengthM) => (lengthM * 1000).round();
+
+double _mmToLengthM(int lengthMm) => lengthMm / 1000.0;
+
+typedef _LengthInventory = Map<int, int>;
+
+int _inventoryTotalCount(_LengthInventory inventory) {
+  return inventory.values.fold(0, (sum, count) => sum + count);
+}
+
+_LengthInventory _buildDiameterInventory(
+  List<RebarPieceLine> pieces,
+  int diameter,
+) {
+  final inventory = <int, int>{};
+  for (final piece in pieces) {
+    if (piece.diameter != diameter) continue;
+    final key = _lengthToMm(piece.lengthM);
+    inventory[key] = (inventory[key] ?? 0) + piece.quantity;
+  }
+  return inventory;
+}
+
+int _sumFillMm(List<int> fill) => fill.fold(0, (sum, value) => sum + value);
+
+List<StockBarCutMember> _membersFromFill(List<int> fill) {
+  final counts = <int, int>{};
+  for (final lengthMm in fill) {
+    counts[lengthMm] = (counts[lengthMm] ?? 0) + 1;
+  }
+  final members = counts.entries
+      .map(
+        (entry) => StockBarCutMember(
+          lengthM: _mmToLengthM(entry.key),
+          count: entry.value,
+        ),
+      )
+      .toList()
+    ..sort((a, b) => b.lengthM.compareTo(a.lengthM));
+  return members;
+}
+
+void _consumeFill(_LengthInventory inventory, List<int> fill) {
+  for (final lengthMm in fill) {
+    final remaining = (inventory[lengthMm] ?? 0) - 1;
+    if (remaining <= 0) {
+      inventory.remove(lengthMm);
+    } else {
+      inventory[lengthMm] = remaining;
+    }
+  }
+}
+
+List<int>? _findBestPair(_LengthInventory inventory, int stockMm) {
+  final lengths = inventory.entries
+      .where((entry) => entry.value > 0)
+      .map((entry) => entry.key)
+      .toList()
+    ..sort();
+
+  List<int>? best;
+  var bestWaste = stockMm + 1;
+  var bestUsed = -1;
+
+  for (var i = 0; i < lengths.length; i++) {
+    for (var j = i; j < lengths.length; j++) {
+      final first = lengths[i];
+      final second = lengths[j];
+      if (i == j && inventory[first]! < 2) continue;
+
+      final used = first + second;
+      if (used > stockMm) continue;
+
+      final waste = stockMm - used;
+      if (waste < bestWaste || (waste == bestWaste && used > bestUsed)) {
+        bestWaste = waste;
+        bestUsed = used;
+        best = [first, second];
+      }
+    }
+  }
+
+  return best;
+}
+
+List<int>? _findBestTriplet(_LengthInventory inventory, int stockMm) {
+  final lengths = inventory.entries
+      .where((entry) => entry.value > 0)
+      .map((entry) => entry.key)
+      .toList()
+    ..sort();
+
+  List<int>? best;
+  var bestWaste = stockMm + 1;
+  var bestUsed = -1;
+
+  for (var i = 0; i < lengths.length; i++) {
+    for (var j = i; j < lengths.length; j++) {
+      for (var k = j; k < lengths.length; k++) {
+        final first = lengths[i];
+        final second = lengths[j];
+        final third = lengths[k];
+
+        final required = <int, int>{};
+        for (final lengthMm in [first, second, third]) {
+          required[lengthMm] = (required[lengthMm] ?? 0) + 1;
+        }
+        if (required.entries.any((e) => (inventory[e.key] ?? 0) < e.value)) {
+          continue;
+        }
+
+        final used = first + second + third;
+        if (used > stockMm) continue;
+
+        final waste = stockMm - used;
+        if (waste < bestWaste || (waste == bestWaste && used > bestUsed)) {
+          bestWaste = waste;
+          bestUsed = used;
+          best = [first, second, third];
+        }
+      }
+    }
+  }
+
+  return best;
+}
+
+List<int> _greedyMultiFill(_LengthInventory inventory, int stockMm) {
+  final lengths = inventory.entries
+      .where((entry) => entry.value > 0)
+      .map((entry) => entry.key)
+      .toList()
+    ..sort((a, b) => b.compareTo(a));
+
+  if (lengths.isEmpty) return const [];
+
+  final fill = <int>[];
+  var remaining = stockMm;
+  var progress = true;
+
+  while (progress) {
+    progress = false;
+    for (final lengthMm in lengths) {
+      while ((inventory[lengthMm] ?? 0) > 0 && lengthMm <= remaining) {
+        fill.add(lengthMm);
+        remaining -= lengthMm;
+        progress = true;
+      }
+    }
+  }
+
+  if (fill.isEmpty) {
+    fill.add(lengths.first);
+  }
+
+  return fill;
+}
+
+List<int> _findBestBarFill(_LengthInventory inventory, int stockMm) {
+  final candidates = <List<int>>[];
+
+  final pair = _findBestPair(inventory, stockMm);
+  if (pair != null) candidates.add(pair);
+
+  final triplet = _findBestTriplet(inventory, stockMm);
+  if (triplet != null) candidates.add(triplet);
+
+  candidates.add(_greedyMultiFill(inventory, stockMm));
+
+  candidates.sort((a, b) {
+    final wasteA = stockMm - _sumFillMm(a);
+    final wasteB = stockMm - _sumFillMm(b);
+    final wasteCompare = wasteA.compareTo(wasteB);
+    if (wasteCompare != 0) return wasteCompare;
+    return _sumFillMm(b).compareTo(_sumFillMm(a));
+  });
+
+  return candidates.first;
+}
+
+List<StockBarCut> _packDiameterInventory({
+  required int diameter,
+  required _LengthInventory inventory,
+  required double stockLengthM,
+}) {
+  final stockMm = _lengthToMm(stockLengthM);
+  final bars = <StockBarCut>[];
+  var barIndex = 1;
+
+  while (_inventoryTotalCount(inventory) > 0) {
+    final fill = _findBestBarFill(inventory, stockMm);
+    _consumeFill(inventory, fill);
+
+    final usedMm = _sumFillMm(fill);
+    bars.add(
+      StockBarCut(
+        barIndex: barIndex++,
+        diameter: diameter,
+        members: _membersFromFill(fill),
+        usedLengthM: _mmToLengthM(usedMm),
+        wasteLengthM: _mmToLengthM(stockMm - usedMm),
+      ),
+    );
+  }
+
+  return bars;
+}
+
+/// Aynı çaptaki parçaları 12 m stok boydan minimum fire ile kesim planına dönüştürür.
+List<StockCutPlan> computeStockCutPlans(
+  List<RebarPieceLine> pieces, {
+  double stockLengthM = stockBarLengthM,
+}) {
+  if (pieces.isEmpty) return const [];
+
+  final diameters = pieces.map((piece) => piece.diameter).toSet().toList()
+    ..sort();
+
+  final plans = <StockCutPlan>[];
+
+  for (final diameter in diameters) {
+    final inventory = _buildDiameterInventory(pieces, diameter);
+    if (_inventoryTotalCount(inventory) == 0) continue;
+
+    final bars = _packDiameterInventory(
+      diameter: diameter,
+      inventory: inventory,
+      stockLengthM: stockLengthM,
+    );
+
+    final totalBars = bars.length;
+    final totalWasteM =
+        bars.fold(0.0, (sum, bar) => sum + bar.wasteLengthM);
+    final totalUsedM =
+        bars.fold(0.0, (sum, bar) => sum + bar.usedLengthM);
+    final stockTotalM = totalBars * stockLengthM;
+    final wastePercent = stockTotalM <= 0
+        ? 0.0
+        : (totalWasteM / stockTotalM) * 100.0;
+
+    plans.add(
+      StockCutPlan(
+        diameter: diameter,
+        bars: bars,
+        totalBars: totalBars,
+        totalWasteM: totalWasteM,
+        totalUsedM: totalUsedM,
+        wastePercent: wastePercent,
+      ),
+    );
+  }
+
+  return plans;
+}
+
 List<RebarPieceLine> extractPieceLinesFromMetrajDetails(
   Iterable<RebarMetrajTextDetail> details,
 ) {
@@ -61,6 +319,34 @@ List<RebarPieceLine> extractPieceLinesFromMetrajDetails(
   return lines;
 }
 
+/// Sıralı parçaları boy aralığı toleransına göre gruplar.
+/// Tolerans = gruptaki en kısa ile en uzun boy arasındaki fark (max − min).
+List<List<RebarPieceLine>> clusterPiecesByLengthSpan(
+  List<RebarPieceLine> sortedPieces, {
+  required double toleranceM,
+}) {
+  if (sortedPieces.isEmpty) return const [];
+
+  final clusters = <List<RebarPieceLine>>[];
+  var cluster = <RebarPieceLine>[];
+
+  for (final piece in sortedPieces) {
+    if (cluster.isEmpty) {
+      cluster = [piece];
+      continue;
+    }
+    final clusterMin = cluster.first.lengthM;
+    if (piece.lengthM - clusterMin <= toleranceM + 1e-9) {
+      cluster.add(piece);
+    } else {
+      clusters.add(cluster);
+      cluster = [piece];
+    }
+  }
+  if (cluster.isNotEmpty) clusters.add(cluster);
+  return clusters;
+}
+
 List<LengthMatchGroup> computeLengthMatchGroups(
   List<RebarPieceLine> pieces, {
   double toleranceM = lengthMatchToleranceM,
@@ -77,24 +363,10 @@ List<LengthMatchGroup> computeLengthMatchGroups(
     final sorted = List<RebarPieceLine>.from(entry.value)
       ..sort((a, b) => a.lengthM.compareTo(b.lengthM));
 
-    var cluster = <RebarPieceLine>[];
-    for (final piece in sorted) {
-      if (cluster.isEmpty) {
-        cluster = [piece];
-        continue;
+    for (final cluster in clusterPiecesByLengthSpan(sorted, toleranceM: toleranceM)) {
+      if (cluster.length > 1) {
+        groups.add(_buildLengthMatchGroup(cluster, groupIndex++));
       }
-      final clusterMax = cluster.map((p) => p.lengthM).reduce((a, b) => a > b ? a : b);
-      if (piece.lengthM - clusterMax <= toleranceM + 1e-9) {
-        cluster.add(piece);
-      } else {
-        if (cluster.length > 1) {
-          groups.add(_buildLengthMatchGroup(cluster, groupIndex++));
-        }
-        cluster = [piece];
-      }
-    }
-    if (cluster.length > 1) {
-      groups.add(_buildLengthMatchGroup(cluster, groupIndex++));
     }
   }
 
@@ -128,23 +400,7 @@ List<TahvilSuggestion> computeTahvilGroups(
   final sorted = List<RebarPieceLine>.from(pieces)
     ..sort((a, b) => a.lengthM.compareTo(b.lengthM));
 
-  final clusters = <List<RebarPieceLine>>[];
-  var cluster = <RebarPieceLine>[];
-
-  for (final piece in sorted) {
-    if (cluster.isEmpty) {
-      cluster = [piece];
-      continue;
-    }
-    final clusterMax = cluster.map((p) => p.lengthM).reduce((a, b) => a > b ? a : b);
-    if (piece.lengthM - clusterMax <= toleranceM + 1e-9) {
-      cluster.add(piece);
-    } else {
-      clusters.add(cluster);
-      cluster = [piece];
-    }
-  }
-  if (cluster.isNotEmpty) clusters.add(cluster);
+  final clusters = clusterPiecesByLengthSpan(sorted, toleranceM: toleranceM);
 
   final suggestions = <TahvilSuggestion>[];
   var tahvilIndex = 0;
@@ -199,6 +455,8 @@ CuttingBendingBatch buildCuttingBendingBatch({
       toleranceM: lengthMatchTolerance,
     ),
     tahvilGroups: computeTahvilGroups(pieceLines, toleranceM: tahvilTolerance),
+    stockCutPlans: computeStockCutPlans(pieceLines),
+    lengthMatchToleranceCm: lengthMatchTolerance * 100,
   );
 }
 
@@ -246,9 +504,10 @@ CuttingBendingBatch hydrateCuttingBendingBatchLabels(
 CuttingBendingBatch rebuildCuttingBendingBatch(
   CuttingBendingBatch batch, {
   required List<RebarMetrajTextDetail> labelDetails,
-  double lengthMatchTolerance = lengthMatchToleranceM,
+  double? lengthMatchTolerance,
   double tahvilTolerance = tahvilLengthToleranceM,
 }) {
+  final toleranceM = lengthMatchTolerance ?? batch.lengthMatchToleranceM;
   final pieceLines = extractPieceLinesFromMetrajDetails(
     labelDetails.where((detail) => detail.included),
   );
@@ -257,10 +516,18 @@ CuttingBendingBatch rebuildCuttingBendingBatch(
     pieceLines: pieceLines,
     lengthMatches: computeLengthMatchGroups(
       pieceLines,
-      toleranceM: lengthMatchTolerance,
+      toleranceM: toleranceM,
     ),
     tahvilGroups: computeTahvilGroups(pieceLines, toleranceM: tahvilTolerance),
+    stockCutPlans: computeStockCutPlans(pieceLines),
+    lengthMatchToleranceCm: toleranceM * 100,
   );
+}
+
+/// Eski kayıtlarda eksik kesim planını parça listesinden üretir.
+CuttingBendingBatch hydrateStockCutPlans(CuttingBendingBatch batch) {
+  if (batch.stockCutPlans.isNotEmpty || batch.pieceLines.isEmpty) return batch;
+  return batch.copyWith(stockCutPlans: computeStockCutPlans(batch.pieceLines));
 }
 
 bool isSameRebarMetrajTextDetail(
