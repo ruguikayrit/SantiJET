@@ -69,7 +69,7 @@ final dashboardCriticalAlertsProvider = Provider<List<DashboardAlert>>((ref) {
       DashboardAlert(
         title: 'Ø${row.diameter} yüksek fire',
         message:
-            'Gerçek − planlanan kullanım: ${AppFormat.tonnage(row.fire.abs())}t',
+            'Planlanan − gerçek kullanım: ${AppFormat.tonnage(row.fire.abs())}t',
         severity: AlertSeverity.critical,
         route: AppRoutes.reconciliation,
       ),
@@ -93,7 +93,7 @@ final dashboardCriticalAlertsProvider = Provider<List<DashboardAlert>>((ref) {
       DashboardAlert(
         title: 'Ø${row.diameter} fire uyarısı',
         message:
-            'Gerçek − planlanan kullanım: ${AppFormat.tonnage(row.fire)}t',
+            'Planlanan − gerçek kullanım: ${AppFormat.tonnage(row.fire)}t',
         severity: AlertSeverity.warning,
         route: AppRoutes.reconciliation,
       ),

@@ -88,6 +88,7 @@ class KpiCard extends StatelessWidget {
     this.onTap,
     this.dense = false,
     this.compactHeight = false,
+    this.centerContent = false,
   });
 
   final String label;
@@ -100,6 +101,7 @@ class KpiCard extends StatelessWidget {
   final VoidCallback? onTap;
   final bool dense;
   final bool compactHeight;
+  final bool centerContent;
 
   Widget _buildLabel() {
     final parts = label.trim().split(RegExp(r'\s+'));
@@ -123,6 +125,30 @@ class KpiCard extends StatelessWidget {
         ? AppTypography.kpiValue.copyWith(color: accentColor, fontSize: 20)
         : AppTypography.kpiValue.copyWith(color: accentColor);
 
+    final compactBody = compactHeight
+        ? Row(
+            children: [
+              Expanded(child: _buildLabel()),
+              Row(
+                crossAxisAlignment: CrossAxisAlignment.end,
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Text(value, style: valueStyle),
+                  const SizedBox(width: 2),
+                  Padding(
+                    padding: const EdgeInsets.only(bottom: 2),
+                    child: Text(unit, style: AppTypography.labelSmall),
+                  ),
+                  if (onTap != null) ...[
+                    const SizedBox(width: 4),
+                    Icon(Icons.chevron_right, size: 16, color: AppColors.textMuted),
+                  ],
+                ],
+              ),
+            ],
+          )
+        : null;
+
     final content = Container(
       padding: EdgeInsets.all(padding),
       decoration: BoxDecoration(
@@ -131,27 +157,11 @@ class KpiCard extends StatelessWidget {
         border: Border.all(color: AppColors.border),
       ),
       child: compactHeight
-          ? Row(
-              children: [
-                Expanded(child: _buildLabel()),
-                Row(
-                  crossAxisAlignment: CrossAxisAlignment.end,
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    Text(value, style: valueStyle),
-                    const SizedBox(width: 2),
-                    Padding(
-                      padding: const EdgeInsets.only(bottom: 2),
-                      child: Text(unit, style: AppTypography.labelSmall),
-                    ),
-                    if (onTap != null) ...[
-                      const SizedBox(width: 4),
-                      Icon(Icons.chevron_right, size: 16, color: AppColors.textMuted),
-                    ],
-                  ],
-                ),
-              ],
-            )
+          ? (centerContent
+              ? SizedBox.expand(
+                  child: Center(child: compactBody),
+                )
+              : compactBody!)
           : Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -216,14 +226,20 @@ class KpiCard extends StatelessWidget {
             ),
     );
 
-    if (onTap == null) return content;
+    if (onTap == null) {
+      return centerContent && compactHeight
+          ? SizedBox.expand(child: content)
+          : content;
+    }
 
     return Material(
       color: Colors.transparent,
       child: InkWell(
         onTap: onTap,
         borderRadius: AppRadii.md,
-        child: content,
+        child: centerContent && compactHeight
+            ? SizedBox.expand(child: content)
+            : content,
       ),
     );
   }

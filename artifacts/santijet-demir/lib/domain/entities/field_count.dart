@@ -27,17 +27,20 @@ class ReconciliationRow {
   /// Gerçek — kullanılan demir (teslim − sayım).
   final double used;
 
-  /// Fire = gerçek kullanım − planlanan kullanım.
-  /// Doğru veride pozitif çıkması beklenir (fire / hurda).
-  double get fire => used - plannedUsage;
+  /// Fire = planlanan kullanım − gerçek kullanım.
+  /// Negatif değer planın üzerinde kullanım (yüksek fire) anlamına gelir.
+  double get fire => plannedUsage - used;
+
+  /// Fire oranı — planlanan kullanıma göre (%).
+  double get firePercent =>
+      plannedUsage > 0 ? (fire / plannedUsage) * 100 : 0;
 
   String get status {
-    if (fire < 0) {
-      final abs = fire.abs();
-      if (abs <= 2) return 'warning';
+    if (fire > 0) {
+      if (fire <= 2) return 'warning';
       return 'critical';
     }
-    if (fire <= 8) return 'normal';
+    if (fire >= -8) return 'normal';
     return 'critical';
   }
 }

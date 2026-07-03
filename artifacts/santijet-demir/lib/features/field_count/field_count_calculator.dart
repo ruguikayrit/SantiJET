@@ -230,6 +230,10 @@ class ReconciliationTotals {
   final double fieldCount;
   final double actualUsage;
   final double fire;
+
+  /// Toplam fire oranı — planlanan kullanıma göre (%).
+  double get firePercent =>
+      plannedUsage > 0 ? (fire / plannedUsage) * 100 : 0;
 }
 
 ReconciliationTotals computeReconciliationTotals(List<ReconciliationRow> rows) {

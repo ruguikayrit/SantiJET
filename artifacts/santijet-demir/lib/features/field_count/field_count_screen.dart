@@ -94,16 +94,17 @@ class FieldCountScreen extends ConsumerWidget {
                     ),
                     const SizedBox(height: 12),
                     _SummaryKpiRow(
-                      aspectRatio: 9.2,
+                      aspectRatio: 9.2 / 1.2,
+                      centerContent: true,
                       cards: [
                         _SummaryKpiSpec(
                           label: 'Fire',
                           value: AppFormat.tonnage(summary.fire),
-                          accentColor: summary.fire < 0
+                          accentColor: summary.fire > 0
                               ? AppColors.critical
-                              : summary.fire > 8
+                              : summary.fire < -8
                                   ? AppColors.critical
-                                  : summary.fire > 0
+                                  : summary.fire < 0
                                       ? AppColors.warning
                                       : AppColors.success,
                           onTap: () => context.push(AppRoutes.reconciliation),
@@ -186,12 +187,14 @@ class _SummaryKpiRow extends StatelessWidget {
     this.aspectRatio = 1.15,
     this.dense = false,
     this.spacing = 12,
+    this.centerContent = false,
   });
 
   final List<_SummaryKpiSpec> cards;
   final double aspectRatio;
   final bool dense;
   final double spacing;
+  final bool centerContent;
 
   @override
   Widget build(BuildContext context) {
@@ -210,6 +213,7 @@ class _SummaryKpiRow extends StatelessWidget {
                 onTap: cards[i].onTap,
                 dense: dense,
                 compactHeight: aspectRatio >= 2,
+                centerContent: centerContent,
               ),
             ),
           ),

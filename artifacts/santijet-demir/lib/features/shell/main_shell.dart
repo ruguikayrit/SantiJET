@@ -86,7 +86,7 @@ class DashboardScreen extends ConsumerWidget {
                       physics: const NeverScrollableScrollPhysics(),
                       mainAxisSpacing: 12,
                       crossAxisSpacing: 12,
-                      childAspectRatio: 1.25,
+                      childAspectRatio: 1.25 / 1.2,
                       children: [
                         KpiCard(
                           label: 'Toplam Keşif',
