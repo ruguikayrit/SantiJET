@@ -21,14 +21,18 @@ final cuttingBendingBatchesProvider =
   return notifier;
 });
 
-/// Kesme-Bükme katlanabilir bölüm kimlikleri.
+/// Hesap ve Analiz katlanabilir bölüm kimlikleri.
 abstract final class AnalysisSectionIds {
   static const labels = 'analysis-labels';
   static const pieceList = 'analysis-piece-list';
   static const lengthMatch = 'analysis-length-match';
+  static const revisedPieceList = 'analysis-revised-piece-list';
   static const stockCutList = 'analysis-stock-cut-list';
   static const tahvilSuggestions = 'analysis-tahvil-suggestions';
   static const tahvilCalculator = 'analysis-tahvil-calculator';
+
+  static String stockCutDiameter(String batchId, int diameter) =>
+      'analysis-stock-cut-$batchId-d$diameter';
 }
 
 /// Bölüm açık/kapalı durumu — yeniden çizimlerde korunur, varsayılan kapalı.
@@ -120,11 +124,13 @@ class CuttingBendingNotifier extends StateNotifier<CuttingBendingState> {
 
     await _updateBatch((batch) {
       final toleranceM = toleranceCm / 100;
-      return batch.copyWith(
-        lengthMatchToleranceCm: toleranceCm,
-        lengthMatches: computeLengthMatchGroups(
-          batch.pieceLines,
-          toleranceM: toleranceM,
+      return syncBatchLengthMatchDerivatives(
+        batch.copyWith(
+          lengthMatchToleranceCm: toleranceCm,
+          lengthMatches: computeLengthMatchGroups(
+            batch.pieceLines,
+            toleranceM: toleranceM,
+          ),
         ),
       );
     });
@@ -149,7 +155,9 @@ class CuttingBendingNotifier extends StateNotifier<CuttingBendingState> {
             );
           })
           .toList();
-      return batch.copyWith(lengthMatches: updated);
+      return syncBatchLengthMatchDerivatives(
+        batch.copyWith(lengthMatches: updated),
+      );
     });
   }
 

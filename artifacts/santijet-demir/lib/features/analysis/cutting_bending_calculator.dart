@@ -1,3 +1,4 @@
+import 'package:santijet_demir/data/services/rebar_weight_calculator.dart';
 import 'package:santijet_demir/domain/entities/cutting_bending.dart';
 import 'package:santijet_demir/domain/entities/rebar_metraj.dart';
 import 'package:santijet_demir/domain/tahvil/tahvil_rules.dart';
@@ -255,9 +256,22 @@ List<StockCutPlan> computeStockCutPlans(
         diameter: diameter,
         bars: bars,
         totalBars: totalBars,
+        totalStockM: stockTotalM,
         totalWasteM: totalWasteM,
         totalUsedM: totalUsedM,
         wastePercent: wastePercent,
+        totalStockTonnage: RebarWeightCalculator.tonnage(
+          diameterMm: diameter,
+          lengthM: stockTotalM,
+        ),
+        totalUsedTonnage: RebarWeightCalculator.tonnage(
+          diameterMm: diameter,
+          lengthM: totalUsedM,
+        ),
+        totalWasteTonnage: RebarWeightCalculator.tonnage(
+          diameterMm: diameter,
+          lengthM: totalWasteM,
+        ),
       ),
     );
   }
@@ -391,6 +405,79 @@ LengthMatchGroup _buildLengthMatchGroup(List<RebarPieceLine> cluster, int index)
   );
 }
 
+String pieceLineKey(RebarPieceLine piece) =>
+    '${piece.diameter}|${piece.lengthM.toStringAsFixed(4)}';
+
+/// Boy eşleştirme onaylarına göre revize parça listesi üretir.
+List<RebarPieceLine> applyLengthMatchesToPieceLines(
+  List<RebarPieceLine> pieceLines,
+  List<LengthMatchGroup> lengthMatches,
+) {
+  if (lengthMatches.isEmpty) {
+    return List<RebarPieceLine>.from(pieceLines);
+  }
+
+  final keysInGroups = <String>{};
+  for (final group in lengthMatches) {
+    for (final member in group.members) {
+      keysInGroups.add(pieceLineKey(member));
+    }
+  }
+
+  final revised = <RebarPieceLine>[];
+
+  for (final group in lengthMatches) {
+    if (group.approved && group.selectedLengthM != null) {
+      revised.add(
+        RebarPieceLine(
+          diameter: group.diameter,
+          lengthM: group.selectedLengthM!,
+          quantity: group.totalQuantity,
+        ),
+      );
+    } else {
+      revised.addAll(group.members);
+    }
+  }
+
+  for (final piece in pieceLines) {
+    if (!keysInGroups.contains(pieceLineKey(piece))) {
+      revised.add(piece);
+    }
+  }
+
+  revised.sort((a, b) {
+    final byDiameter = a.diameter.compareTo(b.diameter);
+    if (byDiameter != 0) return byDiameter;
+    return a.lengthM.compareTo(b.lengthM);
+  });
+
+  return revised;
+}
+
+bool isLengthMatchingComplete(List<LengthMatchGroup> lengthMatches) {
+  if (lengthMatches.isEmpty) return true;
+  return lengthMatches.every(
+    (group) => group.approved && group.selectedLengthM != null,
+  );
+}
+
+/// Boy eşleştirme sonrası revize parça listesi ve kesim planını günceller.
+CuttingBendingBatch syncBatchLengthMatchDerivatives(CuttingBendingBatch batch) {
+  final revised = applyLengthMatchesToPieceLines(
+    batch.pieceLines,
+    batch.lengthMatches,
+  );
+  final stockCutPlans = isLengthMatchingComplete(batch.lengthMatches)
+      ? computeStockCutPlans(revised)
+      : const <StockCutPlan>[];
+
+  return batch.copyWith(
+    revisedPieceLines: revised,
+    stockCutPlans: stockCutPlans,
+  );
+}
+
 List<TahvilSuggestion> computeTahvilGroups(
   List<RebarPieceLine> pieces, {
   double toleranceM = tahvilLengthToleranceM,
@@ -443,20 +530,23 @@ CuttingBendingBatch buildCuttingBendingBatch({
 }) {
   final pieceLines = extractPieceLinesFromMetrajDetails(textDetails);
   final labels = textDetails.toList();
-  return CuttingBendingBatch(
-    id: 'kb-${DateTime.now().millisecondsSinceEpoch}',
-    title: title,
-    createdAt: DateTime.now(),
-    sourceMetrajRecordIds: sourceMetrajRecordIds,
-    labelDetails: labels,
-    pieceLines: pieceLines,
-    lengthMatches: computeLengthMatchGroups(
-      pieceLines,
-      toleranceM: lengthMatchTolerance,
+  return syncBatchLengthMatchDerivatives(
+    CuttingBendingBatch(
+      id: 'kb-${DateTime.now().millisecondsSinceEpoch}',
+      title: title,
+      createdAt: DateTime.now(),
+      sourceMetrajRecordIds: sourceMetrajRecordIds,
+      labelDetails: labels,
+      pieceLines: pieceLines,
+      revisedPieceLines: const [],
+      lengthMatches: computeLengthMatchGroups(
+        pieceLines,
+        toleranceM: lengthMatchTolerance,
+      ),
+      tahvilGroups: computeTahvilGroups(pieceLines, toleranceM: tahvilTolerance),
+      stockCutPlans: const [],
+      lengthMatchToleranceCm: lengthMatchTolerance * 100,
     ),
-    tahvilGroups: computeTahvilGroups(pieceLines, toleranceM: tahvilTolerance),
-    stockCutPlans: computeStockCutPlans(pieceLines),
-    lengthMatchToleranceCm: lengthMatchTolerance * 100,
   );
 }
 
@@ -511,23 +601,23 @@ CuttingBendingBatch rebuildCuttingBendingBatch(
   final pieceLines = extractPieceLinesFromMetrajDetails(
     labelDetails.where((detail) => detail.included),
   );
-  return batch.copyWith(
-    labelDetails: labelDetails,
-    pieceLines: pieceLines,
-    lengthMatches: computeLengthMatchGroups(
-      pieceLines,
-      toleranceM: toleranceM,
+  return syncBatchLengthMatchDerivatives(
+    batch.copyWith(
+      labelDetails: labelDetails,
+      pieceLines: pieceLines,
+      lengthMatches: computeLengthMatchGroups(
+        pieceLines,
+        toleranceM: toleranceM,
+      ),
+      tahvilGroups: computeTahvilGroups(pieceLines, toleranceM: tahvilTolerance),
+      lengthMatchToleranceCm: toleranceM * 100,
     ),
-    tahvilGroups: computeTahvilGroups(pieceLines, toleranceM: tahvilTolerance),
-    stockCutPlans: computeStockCutPlans(pieceLines),
-    lengthMatchToleranceCm: toleranceM * 100,
   );
 }
 
-/// Eski kayıtlarda eksik kesim planını parça listesinden üretir.
+/// Eski kayıtlarda revize parça listesi ve kesim planını boy eşleştirmesine göre üretir.
 CuttingBendingBatch hydrateStockCutPlans(CuttingBendingBatch batch) {
-  if (batch.stockCutPlans.isNotEmpty || batch.pieceLines.isEmpty) return batch;
-  return batch.copyWith(stockCutPlans: computeStockCutPlans(batch.pieceLines));
+  return syncBatchLengthMatchDerivatives(batch);
 }
 
 bool isSameRebarMetrajTextDetail(

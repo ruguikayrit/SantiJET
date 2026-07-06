@@ -187,6 +187,7 @@ class SavedRebarMetraj {
     this.title,
     this.surveyImalatId,
     this.surveyImalatName,
+    this.analysisApprovedAt,
   });
 
   final String id;
@@ -195,6 +196,9 @@ class SavedRebarMetraj {
   final String? title;
   final String? surveyImalatId;
   final String? surveyImalatName;
+  final DateTime? analysisApprovedAt;
+
+  bool get isApprovedForAnalysis => analysisApprovedAt != null;
 
   String get displayTitle {
     final custom = title?.trim();
@@ -212,6 +216,8 @@ class SavedRebarMetraj {
         if (title != null) 'title': title,
         'surveyImalatId': surveyImalatId,
         'surveyImalatName': surveyImalatName,
+        if (analysisApprovedAt != null)
+          'analysisApprovedAt': analysisApprovedAt!.toIso8601String(),
       };
 
   factory SavedRebarMetraj.fromJson(Map<dynamic, dynamic> json) {
@@ -222,6 +228,9 @@ class SavedRebarMetraj {
       title: json['title'] as String?,
       surveyImalatId: json['surveyImalatId'] as String?,
       surveyImalatName: json['surveyImalatName'] as String?,
+      analysisApprovedAt: json['analysisApprovedAt'] != null
+          ? DateTime.parse(json['analysisApprovedAt'] as String)
+          : null,
     );
   }
 
@@ -232,6 +241,7 @@ class SavedRebarMetraj {
     String? title,
     String? surveyImalatId,
     String? surveyImalatName,
+    DateTime? analysisApprovedAt,
   }) {
     return SavedRebarMetraj(
       id: id ?? this.id,
@@ -240,6 +250,7 @@ class SavedRebarMetraj {
       title: title ?? this.title,
       surveyImalatId: surveyImalatId ?? this.surveyImalatId,
       surveyImalatName: surveyImalatName ?? this.surveyImalatName,
+      analysisApprovedAt: analysisApprovedAt ?? this.analysisApprovedAt,
     );
   }
 }

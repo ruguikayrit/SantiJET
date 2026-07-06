@@ -74,6 +74,25 @@ class RebarMetrajRepository {
     });
   }
 
+  Future<void> markAnalysisApproved({
+    required String projectId,
+    required String recordId,
+    required DateTime approvedAt,
+  }) async {
+    final records = readSaved(projectId);
+    final updated = records
+        .map(
+          (record) => record.id == recordId
+              ? record.copyWith(analysisApprovedAt: approvedAt)
+              : record,
+        )
+        .toList();
+
+    await _projectDataRepository.writeDomain(projectId, _domain, {
+      'records': updated.map((record) => record.toJson()).toList(),
+    });
+  }
+
   Future<void> deleteRecord({
     required String projectId,
     required String recordId,

@@ -178,6 +178,32 @@ class SavedMetrajDetailScreen extends ConsumerWidget {
               ),
             ),
           ],
+          if (record.isApprovedForAnalysis) ...[
+            const SizedBox(height: 12),
+            Container(
+              padding: const EdgeInsets.all(12),
+              decoration: BoxDecoration(
+                color: AppColors.electricBlue.withValues(alpha: 0.08),
+                borderRadius: AppRadii.md,
+                border: Border.all(
+                  color: AppColors.electricBlue.withValues(alpha: 0.3),
+                ),
+              ),
+              child: Row(
+                children: [
+                  const Icon(Icons.verified,
+                      color: AppColors.electricBlueLight, size: 18),
+                  const SizedBox(width: 8),
+                  Expanded(
+                    child: Text(
+                      'Hesap ve Analiz için onaylandı',
+                      style: AppTypography.bodySmall,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ],
           if (canEdit) ...[
             const SizedBox(height: 16),
             SizedBox(
@@ -189,16 +215,30 @@ class SavedMetrajDetailScreen extends ConsumerWidget {
                 label: const Text('İmalata Gönder'),
               ),
             ),
-            const SizedBox(height: 8),
-            SizedBox(
-              width: double.infinity,
-              child: OutlinedButton.icon(
-                onPressed: () =>
-                    sendMetrajRecordToCuttingBending(context, ref, record!),
-                icon: const Icon(Icons.content_cut),
-                label: const Text('Kesme-Bükme\'ye Gönder'),
+            if (!record.isApprovedForAnalysis) ...[
+              const SizedBox(height: 8),
+              SizedBox(
+                width: double.infinity,
+                child: OutlinedButton.icon(
+                  onPressed: () =>
+                      approveMetrajRecordForAnalysis(context, ref, record!),
+                  icon: const Icon(Icons.verified_outlined),
+                  label: const Text('Analize Onay Ver'),
+                ),
               ),
-            ),
+            ],
+            if (record.isApprovedForAnalysis) ...[
+              const SizedBox(height: 8),
+              SizedBox(
+                width: double.infinity,
+                child: FilledButton.icon(
+                  onPressed: () =>
+                      sendMetrajRecordToAnalysis(context, ref, record!),
+                  icon: const Icon(Icons.analytics_outlined),
+                  label: const Text('Hesap ve Analiz\'e Gönder'),
+                ),
+              ),
+            ],
           ],
         ],
       ),

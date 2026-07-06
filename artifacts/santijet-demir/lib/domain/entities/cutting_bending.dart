@@ -1,3 +1,4 @@
+import 'package:santijet_demir/data/services/rebar_weight_calculator.dart';
 import 'package:santijet_demir/domain/entities/rebar_metraj.dart';
 import 'package:santijet_demir/domain/tahvil/tahvil_rules.dart';
 
@@ -327,36 +328,71 @@ class StockCutPlan {
     required this.diameter,
     required this.bars,
     required this.totalBars,
+    required this.totalStockM,
     required this.totalWasteM,
     required this.totalUsedM,
     required this.wastePercent,
+    required this.totalStockTonnage,
+    required this.totalUsedTonnage,
+    required this.totalWasteTonnage,
   });
 
   final int diameter;
   final List<StockBarCut> bars;
   final int totalBars;
+  final double totalStockM;
   final double totalWasteM;
   final double totalUsedM;
   final double wastePercent;
+  final double totalStockTonnage;
+  final double totalUsedTonnage;
+  final double totalWasteTonnage;
 
   Map<String, dynamic> toJson() => {
         'diameter': diameter,
         'bars': bars.map((b) => b.toJson()).toList(),
         'totalBars': totalBars,
+        'totalStockM': totalStockM,
         'totalWasteM': totalWasteM,
         'totalUsedM': totalUsedM,
         'wastePercent': wastePercent,
+        'totalStockTonnage': totalStockTonnage,
+        'totalUsedTonnage': totalUsedTonnage,
+        'totalWasteTonnage': totalWasteTonnage,
       };
 
   factory StockCutPlan.fromJson(Map<dynamic, dynamic> json) {
     final rawBars = json['bars'] as List<dynamic>? ?? const [];
+    final diameter = (json['diameter'] as num?)?.toInt() ?? 0;
+    final totalStockM = (json['totalStockM'] as num?)?.toDouble() ??
+        ((json['totalUsedM'] as num?)?.toDouble() ?? 0) +
+            ((json['totalWasteM'] as num?)?.toDouble() ?? 0);
+    final totalUsedM = (json['totalUsedM'] as num?)?.toDouble() ?? 0;
+    final totalWasteM = (json['totalWasteM'] as num?)?.toDouble() ?? 0;
+
     return StockCutPlan(
-      diameter: (json['diameter'] as num?)?.toInt() ?? 0,
+      diameter: diameter,
       bars: rawBars.whereType<Map>().map(StockBarCut.fromJson).toList(),
       totalBars: (json['totalBars'] as num?)?.toInt() ?? 0,
-      totalWasteM: (json['totalWasteM'] as num?)?.toDouble() ?? 0,
-      totalUsedM: (json['totalUsedM'] as num?)?.toDouble() ?? 0,
+      totalStockM: totalStockM,
+      totalWasteM: totalWasteM,
+      totalUsedM: totalUsedM,
       wastePercent: (json['wastePercent'] as num?)?.toDouble() ?? 0,
+      totalStockTonnage: (json['totalStockTonnage'] as num?)?.toDouble() ??
+          RebarWeightCalculator.tonnage(
+            diameterMm: diameter,
+            lengthM: totalStockM,
+          ),
+      totalUsedTonnage: (json['totalUsedTonnage'] as num?)?.toDouble() ??
+          RebarWeightCalculator.tonnage(
+            diameterMm: diameter,
+            lengthM: totalUsedM,
+          ),
+      totalWasteTonnage: (json['totalWasteTonnage'] as num?)?.toDouble() ??
+          RebarWeightCalculator.tonnage(
+            diameterMm: diameter,
+            lengthM: totalWasteM,
+          ),
     );
   }
 }
@@ -369,6 +405,7 @@ class CuttingBendingBatch {
     required this.sourceMetrajRecordIds,
     required this.labelDetails,
     required this.pieceLines,
+    required this.revisedPieceLines,
     required this.lengthMatches,
     required this.tahvilGroups,
     required this.stockCutPlans,
@@ -384,6 +421,7 @@ class CuttingBendingBatch {
   final List<String> sourceMetrajRecordIds;
   final List<RebarMetrajTextDetail> labelDetails;
   final List<RebarPieceLine> pieceLines;
+  final List<RebarPieceLine> revisedPieceLines;
   final List<LengthMatchGroup> lengthMatches;
   final List<TahvilSuggestion> tahvilGroups;
   final List<StockCutPlan> stockCutPlans;
@@ -394,6 +432,7 @@ class CuttingBendingBatch {
   CuttingBendingBatch copyWith({
     List<RebarMetrajTextDetail>? labelDetails,
     List<RebarPieceLine>? pieceLines,
+    List<RebarPieceLine>? revisedPieceLines,
     List<LengthMatchGroup>? lengthMatches,
     List<TahvilSuggestion>? tahvilGroups,
     List<StockCutPlan>? stockCutPlans,
@@ -406,6 +445,7 @@ class CuttingBendingBatch {
       sourceMetrajRecordIds: sourceMetrajRecordIds,
       labelDetails: labelDetails ?? this.labelDetails,
       pieceLines: pieceLines ?? this.pieceLines,
+      revisedPieceLines: revisedPieceLines ?? this.revisedPieceLines,
       lengthMatches: lengthMatches ?? this.lengthMatches,
       tahvilGroups: tahvilGroups ?? this.tahvilGroups,
       stockCutPlans: stockCutPlans ?? this.stockCutPlans,
@@ -421,6 +461,7 @@ class CuttingBendingBatch {
         'sourceMetrajRecordIds': sourceMetrajRecordIds,
         'labelDetails': labelDetails.map((d) => d.toJson()).toList(),
         'pieceLines': pieceLines.map((p) => p.toJson()).toList(),
+        'revisedPieceLines': revisedPieceLines.map((p) => p.toJson()).toList(),
         'lengthMatches': lengthMatches.map((g) => g.toJson()).toList(),
         'tahvilGroups': tahvilGroups.map((g) => g.toJson()).toList(),
         'stockCutPlans': stockCutPlans.map((p) => p.toJson()).toList(),
@@ -449,6 +490,7 @@ class CuttingBendingBatch {
       labelDetails:
           parseList('labelDetails', RebarMetrajTextDetail.fromJson),
       pieceLines: parseList('pieceLines', RebarPieceLine.fromJson),
+      revisedPieceLines: parseList('revisedPieceLines', RebarPieceLine.fromJson),
       lengthMatches: parseList('lengthMatches', LengthMatchGroup.fromJson),
       tahvilGroups: parseList('tahvilGroups', TahvilSuggestion.fromJson),
       stockCutPlans: parseList('stockCutPlans', StockCutPlan.fromJson),

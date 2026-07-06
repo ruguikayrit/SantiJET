@@ -1,9 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:go_router/go_router.dart';
 import 'package:intl/intl.dart';
 import 'package:santijet_demir/core/format/app_format.dart';
-import 'package:santijet_demir/core/routing/app_routes.dart';
 import 'package:santijet_demir/core/theme/app_colors.dart';
 import 'package:santijet_demir/core/theme/app_radii.dart';
 import 'package:santijet_demir/core/theme/app_spacing.dart';
@@ -18,6 +16,7 @@ import 'package:santijet_demir/features/analysis/providers/cutting_bending_provi
 import 'package:santijet_demir/features/analysis/widgets/collapsible_analysis_section.dart';
 import 'package:santijet_demir/features/analysis/widgets/stock_cut_section.dart';
 import 'package:santijet_demir/features/analysis/widgets/tahvil_calculator_section.dart';
+import 'package:santijet_demir/features/rebar_metraj/widgets/metraj_cutting_actions.dart';
 import 'package:santijet_demir/features/rebar_metraj/widgets/rebar_label_details_section.dart';
 
 class AnalysisScreen extends ConsumerWidget {
@@ -36,7 +35,7 @@ class AnalysisScreen extends ConsumerWidget {
         child: CustomScrollView(
           slivers: [
             const SliverToBoxAdapter(
-              child: SantijetHeader(subtitle: 'KESME - BÜKME', showNotification: false),
+              child: SantijetHeader(subtitle: 'HESAP VE ANALİZ', showNotification: false),
             ),
             SliverPadding(
               padding: const EdgeInsets.fromLTRB(AppSpacing.md, 0, AppSpacing.md, 0),
@@ -56,16 +55,17 @@ class AnalysisScreen extends ConsumerWidget {
                       Text('Liste boş', style: AppTypography.headlineMedium),
                       const SizedBox(height: 8),
                       Text(
-                        'Keşif → Ön İmalat veya Otomatik Metraj\'dan\n'
-                        '"Kesme-Bükme\'ye Gönder" ile parça listesi oluşturun.',
+                        'Otomatik Metraj sonuçları Ön İmalat\'a kaydedilir.\n'
+                        'Onay verilen kayıtları buraya "Ön İmalattan Veri Al" ile aktarın.',
                         style: AppTypography.bodyMedium.copyWith(color: AppColors.textMuted),
                         textAlign: TextAlign.center,
                       ),
                       const SizedBox(height: 16),
                       FilledButton.icon(
-                        onPressed: () => context.push(AppRoutes.surveyMetraj),
-                        icon: const Icon(Icons.upload_file),
-                        label: const Text('Keşif / Otomatik Metraj'),
+                        onPressed: () =>
+                            showPreProductionAnalysisImportSheet(context, ref),
+                        icon: const Icon(Icons.inventory_2_outlined),
+                        label: const Text('Ön İmalattan Veri Al'),
                       ),
                     ],
                   ),
@@ -88,6 +88,8 @@ class AnalysisScreen extends ConsumerWidget {
                     onSelectBatch: (id) =>
                         ref.read(cuttingBendingBatchesProvider.notifier).setActiveBatch(id),
                     onDeleteBatch: () => _confirmDeleteBatch(context, ref, batch),
+                    onImportFromPreProduction: () =>
+                        showPreProductionAnalysisImportSheet(context, ref),
                   ),
                 ),
               ),
@@ -152,17 +154,43 @@ class AnalysisScreen extends ConsumerWidget {
                       ),
                     ),
                     CollapsibleAnalysisSection(
-                      sectionId: AnalysisSectionIds.stockCutList,
-                      title: '12m Kesim Listesi',
+                      sectionId: AnalysisSectionIds.revisedPieceList,
+                      title: 'Revize Parça Listesi',
                       subtitle:
-                          'Parça listesinden aynı çapta boyları ${CuttingBendingBatch.defaultStockBarLengthM.toStringAsFixed(0)} m '
-                          'stok boya eşleştirir — minimum fire planı',
-                      child: batch.pieceLines.isEmpty
+                          'Boy eşleştirme onaylarına göre güncellenmiş çap + boy adetleri',
+                      child: batch.revisedPieceLines.isEmpty
                           ? const ModuleEmptyState(
                               type: EmptyStateType.noSearchResult,
                               inline: true,
                             )
-                          : StockCutSection(plans: batch.stockCutPlans),
+                          : _PieceListTable(pieces: batch.revisedPieceLines),
+                    ),
+                    CollapsibleAnalysisSection(
+                      sectionId: AnalysisSectionIds.stockCutList,
+                      title: 'Çap Bazlı Kesim Analizi',
+                      subtitle:
+                          'Revize parça listesinden ${CuttingBendingBatch.defaultStockBarLengthM.toStringAsFixed(0)} m '
+                          'stok boya minimum fire planı — boy eşleştirme tamamlandığında güncellenir',
+                      child: !isLengthMatchingComplete(batch.lengthMatches)
+                          ? Padding(
+                              padding: const EdgeInsets.symmetric(vertical: 24),
+                              child: Text(
+                                'Kesim analizi için tüm boy eşleştirme gruplarını onaylayın.',
+                                style: AppTypography.bodyMedium.copyWith(
+                                  color: AppColors.textMuted,
+                                ),
+                                textAlign: TextAlign.center,
+                              ),
+                            )
+                          : batch.stockCutPlans.isEmpty
+                              ? const ModuleEmptyState(
+                                  type: EmptyStateType.noSearchResult,
+                                  inline: true,
+                                )
+                              : StockCutSection(
+                                  batchId: batch.id,
+                                  plans: batch.stockCutPlans,
+                                ),
                     ),
                     CollapsibleAnalysisSection(
                       sectionId: AnalysisSectionIds.tahvilSuggestions,
@@ -208,7 +236,7 @@ class AnalysisScreen extends ConsumerWidget {
       builder: (context) => AlertDialog(
         title: const Text('Listeyi sil'),
         content: Text(
-          '"${batch.title}" kesme-bükme listesini silmek istediğinize emin misiniz?',
+          '"${batch.title}" analiz listesini silmek istediğinize emin misiniz?',
         ),
         actions: [
           TextButton(
@@ -276,12 +304,14 @@ class _BatchHeader extends StatelessWidget {
     required this.batches,
     required this.onSelectBatch,
     required this.onDeleteBatch,
+    required this.onImportFromPreProduction,
   });
 
   final CuttingBendingBatch batch;
   final List<CuttingBendingBatch> batches;
   final ValueChanged<String> onSelectBatch;
   final VoidCallback onDeleteBatch;
+  final VoidCallback onImportFromPreProduction;
 
   @override
   Widget build(BuildContext context) {
@@ -435,9 +465,9 @@ class _BatchHeader extends StatelessWidget {
                   Text('Veri kaynağı', style: AppTypography.labelMedium),
                   const SizedBox(height: 10),
                   OutlinedButton.icon(
-                    onPressed: () => context.push(AppRoutes.surveyMetraj),
-                    icon: const Icon(Icons.upload_file_outlined, size: 18),
-                    label: const Text('Keşif / Otomatik Metrajdan Veri Al'),
+                    onPressed: onImportFromPreProduction,
+                    icon: const Icon(Icons.inventory_2_outlined, size: 18),
+                    label: const Text('Ön İmalattan Veri Al'),
                     style: OutlinedButton.styleFrom(
                       minimumSize: const Size.fromHeight(44),
                       padding: const EdgeInsets.symmetric(horizontal: 16),

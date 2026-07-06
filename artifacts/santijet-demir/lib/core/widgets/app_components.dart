@@ -129,21 +129,33 @@ class KpiCard extends StatelessWidget {
         ? Row(
             children: [
               Expanded(child: _buildLabel()),
-              Row(
-                crossAxisAlignment: CrossAxisAlignment.end,
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  Text(value, style: valueStyle),
-                  const SizedBox(width: 2),
-                  Padding(
-                    padding: const EdgeInsets.only(bottom: 2),
-                    child: Text(unit, style: AppTypography.labelSmall),
-                  ),
-                  if (onTap != null) ...[
-                    const SizedBox(width: 4),
-                    Icon(Icons.chevron_right, size: 16, color: AppColors.textMuted),
+              Flexible(
+                child: Row(
+                  crossAxisAlignment: CrossAxisAlignment.end,
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Flexible(
+                      child: Text(
+                        value,
+                        style: valueStyle,
+                        overflow: TextOverflow.ellipsis,
+                        maxLines: 1,
+                        textAlign: TextAlign.end,
+                      ),
+                    ),
+                    if (unit.isNotEmpty) ...[
+                      const SizedBox(width: 2),
+                      Padding(
+                        padding: const EdgeInsets.only(bottom: 2),
+                        child: Text(unit, style: AppTypography.labelSmall),
+                      ),
+                    ],
+                    if (onTap != null) ...[
+                      const SizedBox(width: 4),
+                      Icon(Icons.chevron_right, size: 16, color: AppColors.textMuted),
+                    ],
                   ],
-                ],
+                ),
               ),
             ],
           )

@@ -1,16 +1,43 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:santijet_demir/core/format/app_format.dart';
 import 'package:santijet_demir/core/theme/app_colors.dart';
 import 'package:santijet_demir/core/theme/app_radii.dart';
 import 'package:santijet_demir/core/theme/app_typography.dart';
 import 'package:santijet_demir/domain/entities/cutting_bending.dart';
+import 'package:santijet_demir/features/analysis/providers/cutting_bending_provider.dart';
+
+String _formatLengthM(double lengthM) {
+  if (lengthM >= 100) return AppFormat.integer(lengthM.round());
+  return lengthM.toStringAsFixed(2).replaceAll('.', ',');
+}
+
+String _formatFireM(double lengthM) =>
+    lengthM.toStringAsFixed(2).replaceAll('.', ',');
+
+String _formatFirePercent(double percent) {
+  final rounded = (percent * 10).round() / 10;
+  if ((rounded - rounded.roundToDouble()).abs() < 0.05) {
+    return rounded.round().toString();
+  }
+  return rounded.toStringAsFixed(1);
+}
+
+Color _fireAccentColor(double wastePercent) {
+  if (wastePercent <= 1.5) return AppColors.success;
+  if (wastePercent <= 4) return AppColors.warning;
+  return AppColors.critical;
+}
 
 class StockCutSection extends StatelessWidget {
   const StockCutSection({
     super.key,
+    required this.batchId,
     required this.plans,
     this.stockLengthM = CuttingBendingBatch.defaultStockBarLengthM,
   });
 
+  final String batchId;
   final List<StockCutPlan> plans;
   final double stockLengthM;
 
@@ -33,8 +60,12 @@ class StockCutSection extends StatelessWidget {
         const SizedBox(height: 8),
         ...plans.map(
           (plan) => Padding(
-            padding: const EdgeInsets.only(bottom: 12),
-            child: _DiameterCutPlanCard(plan: plan, stockLengthM: stockLengthM),
+            padding: const EdgeInsets.only(bottom: 8),
+            child: _CollapsibleDiameterCutPlanCard(
+              batchId: batchId,
+              plan: plan,
+              stockLengthM: stockLengthM,
+            ),
           ),
         ),
       ],
@@ -42,49 +73,300 @@ class StockCutSection extends StatelessWidget {
   }
 }
 
-class _DiameterCutPlanCard extends StatelessWidget {
-  const _DiameterCutPlanCard({
+class _CollapsibleDiameterCutPlanCard extends ConsumerWidget {
+  const _CollapsibleDiameterCutPlanCard({
+    required this.batchId,
     required this.plan,
     required this.stockLengthM,
   });
 
+  final String batchId;
   final StockCutPlan plan;
   final double stockLengthM;
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
+    final sectionId = AnalysisSectionIds.stockCutDiameter(batchId, plan.diameter);
+    final expanded = ref.watch(analysisSectionExpandedProvider(sectionId));
     final diameterColor = AppColors.diameterColor(plan.diameter);
+    final fireColor = _fireAccentColor(plan.wastePercent);
+    final firePercentLabel = '%${_formatFirePercent(plan.wastePercent)}';
 
     return Container(
-      padding: const EdgeInsets.all(14),
       decoration: BoxDecoration(
         color: AppColors.surfaceElevated,
         borderRadius: AppRadii.md,
         border: Border.all(color: AppColors.border),
       ),
+      clipBehavior: Clip.antiAlias,
       child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
+        crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
-          Text(
-            'Ø${plan.diameter}',
-            style: AppTypography.titleMedium.copyWith(color: diameterColor),
-          ),
-          const SizedBox(height: 4),
-          Text(
-            '${plan.totalBars} çubuk · fire ${plan.totalWasteM.toStringAsFixed(2)} m '
-            '(%${plan.wastePercent.toStringAsFixed(1)})',
-            style: AppTypography.bodySmall.copyWith(color: AppColors.textMuted),
-          ),
-          const SizedBox(height: 10),
-          ...plan.bars.map(
-            (bar) => Padding(
-              padding: const EdgeInsets.only(bottom: 8),
-              child: _StockBarCutRow(
-                bar: bar,
-                stockLengthM: stockLengthM,
-                diameterColor: diameterColor,
+          Material(
+            color: Colors.transparent,
+            child: InkWell(
+              onTap: () {
+                ref
+                    .read(analysisSectionExpandedProvider(sectionId).notifier)
+                    .state = !expanded;
+              },
+              child: Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
+                child: Row(
+                  children: [
+                    Container(
+                      width: 40,
+                      height: 40,
+                      alignment: Alignment.center,
+                      decoration: BoxDecoration(
+                        color: diameterColor.withValues(alpha: 0.12),
+                        borderRadius: BorderRadius.circular(10),
+                        border: Border.all(
+                          color: diameterColor.withValues(alpha: 0.28),
+                        ),
+                      ),
+                      child: Text(
+                        'Ø${plan.diameter}',
+                        style: AppTypography.titleMedium.copyWith(
+                          color: diameterColor,
+                        ),
+                      ),
+                    ),
+                    const SizedBox(width: 12),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            'Ø${plan.diameter} Kesim Özeti',
+                            style: AppTypography.titleMedium,
+                          ),
+                          if (!expanded) ...[
+                            const SizedBox(height: 4),
+                            Text(
+                              '${AppFormat.integer(plan.totalBars)} ad · '
+                              '${AppFormat.tonnage(plan.totalUsedTonnage)} t · '
+                              'fire $firePercentLabel',
+                              style: AppTypography.bodySmall.copyWith(
+                                color: AppColors.textMuted,
+                              ),
+                            ),
+                          ],
+                        ],
+                      ),
+                    ),
+                    Icon(
+                      expanded ? Icons.expand_less : Icons.expand_more,
+                      size: 22,
+                      color: AppColors.textMuted,
+                    ),
+                  ],
+                ),
               ),
             ),
+          ),
+          if (expanded) ...[
+            const Divider(height: 1, color: AppColors.border),
+            Padding(
+              padding: const EdgeInsets.fromLTRB(14, 14, 14, 14),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: [
+                  _CutPlanSummaryGrid(
+                    plan: plan,
+                    diameterColor: diameterColor,
+                    fireColor: fireColor,
+                  ),
+                  const SizedBox(height: 14),
+                  const Divider(height: 1, color: AppColors.border),
+                  const SizedBox(height: 12),
+                  Text('Kesim Planı', style: AppTypography.labelMedium),
+                  const SizedBox(height: 10),
+                  ...plan.bars.map(
+                    (bar) => Padding(
+                      padding: const EdgeInsets.only(bottom: 8),
+                      child: _StockBarCutRow(
+                        bar: bar,
+                        stockLengthM: stockLengthM,
+                        diameterColor: diameterColor,
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ],
+        ],
+      ),
+    );
+  }
+}
+
+class _CutPlanSummaryGrid extends StatelessWidget {
+  const _CutPlanSummaryGrid({
+    required this.plan,
+    required this.diameterColor,
+    required this.fireColor,
+  });
+
+  final StockCutPlan plan;
+  final Color diameterColor;
+  final Color fireColor;
+
+  @override
+  Widget build(BuildContext context) {
+    final firePercentLabel = '%${_formatFirePercent(plan.wastePercent)}';
+    final cards = [
+      _CutSummaryCard(
+        label: 'Toplam Çubuk',
+        value: AppFormat.integer(plan.totalBars),
+        unit: 'ad',
+        accentColor: diameterColor,
+      ),
+      _CutSummaryCard(
+        label: 'Kullanılan Metraj',
+        value: _formatLengthM(plan.totalUsedM),
+        unit: 'mt',
+        accentColor: AppColors.electricBlueLight,
+      ),
+      _CutSummaryCard(
+        label: 'Fire Metraj',
+        value: _formatFireM(plan.totalWasteM),
+        unit: 'm',
+        subValue: firePercentLabel,
+        accentColor: fireColor,
+      ),
+      _CutSummaryCard(
+        label: 'Kesilen Tonaj',
+        value: AppFormat.tonnage(plan.totalStockTonnage),
+        unit: 't',
+        accentColor: AppColors.electricBlueLight,
+      ),
+      _CutSummaryCard(
+        label: 'Kullanılan Tonaj',
+        value: AppFormat.tonnage(plan.totalUsedTonnage),
+        unit: 't',
+        accentColor: AppColors.success,
+      ),
+      _CutSummaryCard(
+        label: 'Fire Tonaj',
+        value: AppFormat.tonnage(plan.totalWasteTonnage),
+        unit: 't',
+        subValue: firePercentLabel,
+        accentColor: fireColor,
+      ),
+    ];
+
+    return Column(
+      children: [
+        IntrinsicHeight(
+          child: Row(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              for (var i = 0; i < 3; i++)
+                Expanded(
+                  child: Padding(
+                    padding: EdgeInsets.only(right: i < 2 ? 6 : 0),
+                    child: cards[i],
+                  ),
+                ),
+            ],
+          ),
+        ),
+        const SizedBox(height: 6),
+        IntrinsicHeight(
+          child: Row(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              for (var i = 3; i < 6; i++)
+                Expanded(
+                  child: Padding(
+                    padding: EdgeInsets.only(right: i < 5 ? 6 : 0),
+                    child: cards[i],
+                  ),
+                ),
+            ],
+          ),
+        ),
+      ],
+    );
+  }
+}
+
+class _CutSummaryCard extends StatelessWidget {
+  const _CutSummaryCard({
+    required this.label,
+    required this.value,
+    required this.accentColor,
+    this.unit,
+    this.subValue,
+  });
+
+  final String label;
+  final String value;
+  final String? unit;
+  final String? subValue;
+  final Color accentColor;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 10),
+      decoration: BoxDecoration(
+        color: AppColors.canvas,
+        borderRadius: AppRadii.sm,
+        border: Border.all(color: AppColors.border),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Text(
+            label,
+            style: AppTypography.labelSmall.copyWith(
+              color: AppColors.textMuted,
+              height: 1.25,
+            ),
+          ),
+          const SizedBox(height: 8),
+          Wrap(
+            crossAxisAlignment: WrapCrossAlignment.end,
+            spacing: 3,
+            runSpacing: 2,
+            children: [
+              Text(
+                value,
+                style: AppTypography.labelLarge.copyWith(
+                  color: accentColor,
+                  fontWeight: FontWeight.w700,
+                  height: 1.1,
+                ),
+              ),
+              if (unit != null && unit!.isNotEmpty)
+                Text(
+                  unit!,
+                  style: AppTypography.labelSmall.copyWith(
+                    color: AppColors.textMuted,
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+              if (subValue != null) ...[
+                Text(
+                  '/',
+                  style: AppTypography.labelSmall.copyWith(
+                    color: AppColors.textMuted,
+                  ),
+                ),
+                Text(
+                  subValue!,
+                  style: AppTypography.labelMedium.copyWith(
+                    color: accentColor,
+                    fontWeight: FontWeight.w600,
+                    height: 1.1,
+                  ),
+                ),
+              ],
+            ],
           ),
         ],
       ),

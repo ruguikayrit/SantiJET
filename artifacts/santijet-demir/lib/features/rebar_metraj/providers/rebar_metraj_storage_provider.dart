@@ -68,6 +68,18 @@ class SavedRebarMetrajNotifier extends StateNotifier<List<SavedRebarMetraj>> {
     loadForProject(projectId);
   }
 
+  Future<void> approveForAnalysis(String recordId) async {
+    final projectId = _ref.read(activeProjectIdProvider);
+    if (projectId == null) return;
+
+    await _repo.markAnalysisApproved(
+      projectId: projectId,
+      recordId: recordId,
+      approvedAt: DateTime.now(),
+    );
+    loadForProject(projectId);
+  }
+
   bool isResultSaved(RebarMetrajResult result) {
     return state.any(
       (record) =>

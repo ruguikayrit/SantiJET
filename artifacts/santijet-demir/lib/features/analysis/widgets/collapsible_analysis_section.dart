@@ -6,7 +6,7 @@ import 'package:santijet_demir/core/theme/app_spacing.dart';
 import 'package:santijet_demir/core/theme/app_typography.dart';
 import 'package:santijet_demir/features/analysis/providers/cutting_bending_provider.dart';
 
-/// Kesme-Bükme sayfasında katlanabilir bölüm kartı.
+/// Hesap ve Analiz sayfasında katlanabilir bölüm kartı.
 /// Açık/kapalı durum [analysisSectionExpandedProvider] ile saklanır.
 class CollapsibleAnalysisSection extends ConsumerWidget {
   const CollapsibleAnalysisSection({

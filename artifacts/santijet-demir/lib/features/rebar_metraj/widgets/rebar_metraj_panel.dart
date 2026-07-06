@@ -14,7 +14,6 @@ import 'package:santijet_demir/domain/entities/rebar_metraj.dart';
 import 'package:santijet_demir/features/projects/providers/project_provider.dart';
 import 'package:santijet_demir/features/rebar_metraj/providers/rebar_metraj_provider.dart';
 import 'package:santijet_demir/features/rebar_metraj/providers/rebar_metraj_storage_provider.dart';
-import 'package:santijet_demir/features/rebar_metraj/widgets/metraj_cutting_actions.dart';
 import 'package:santijet_demir/features/rebar_metraj/widgets/metraj_survey_actions.dart';
 import 'package:santijet_demir/features/rebar_metraj/widgets/rebar_label_details_section.dart';
 import 'package:santijet_demir/features/survey/providers/survey_provider.dart';
@@ -228,7 +227,7 @@ class _InfoBanner extends StatelessWidget {
             '3. 15000Ø16 l=200 → 15000 ad × 2 m\n'
             '4. Tonaj = adet × boy × birim ağırlık (kg/m)\n'
             '5. Analiz sonuçlarını kaydırın; üstte Ön İmalata Gönder\n'
-            '6. Ön İmalat sekmesinden detay inceleyip imalata gönderin',
+            '6. Ön İmalat sekmesinde onay verip Hesap ve Analiz\'e aktarın',
             style: AppTypography.bodySmall,
           ),
           const SizedBox(height: 8),
@@ -510,23 +509,6 @@ class _ResultSummaryBar extends ConsumerWidget {
                       padding: const EdgeInsets.symmetric(horizontal: 16),
                     ),
                   ),
-                  if (projectId != null) ...[
-                    const SizedBox(height: 8),
-                    OutlinedButton.icon(
-                      onPressed: () =>
-                          sendMetrajResultToCuttingBending(context, ref, result),
-                      icon: const Icon(Icons.content_cut_outlined, size: 18),
-                      label: const Text('Kesme-Bükme\'ye Gönder'),
-                      style: OutlinedButton.styleFrom(
-                        minimumSize: const Size.fromHeight(44),
-                        padding: const EdgeInsets.symmetric(horizontal: 16),
-                        foregroundColor: AppColors.electricBlueLight,
-                        side: BorderSide(
-                          color: AppColors.electricBlue.withValues(alpha: 0.45),
-                        ),
-                      ),
-                    ),
-                  ],
                 ],
               ),
             ),

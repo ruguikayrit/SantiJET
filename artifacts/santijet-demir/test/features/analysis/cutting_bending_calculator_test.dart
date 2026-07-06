@@ -1,4 +1,5 @@
 import 'package:flutter_test/flutter_test.dart';
+import 'package:santijet_demir/data/services/rebar_weight_calculator.dart';
 import 'package:santijet_demir/domain/entities/cutting_bending.dart';
 import 'package:santijet_demir/domain/entities/rebar_metraj.dart';
 import 'package:santijet_demir/features/analysis/cutting_bending_calculator.dart';
@@ -148,6 +149,38 @@ void main() {
       expect(remainderBar.members.fold(0, (sum, m) => sum + m.count), 2);
       expect(remainderBar.usedLengthM, closeTo(10.0, 0.001));
       expect(remainderBar.wasteLengthM, closeTo(2.0, 0.001));
+
+      expect(plan.totalStockM, closeTo(plan.totalBars * stockBarLengthM, 0.001));
+      expect(
+        plan.totalStockTonnage,
+        closeTo(
+          RebarWeightCalculator.tonnage(
+            diameterMm: 12,
+            lengthM: plan.totalStockM,
+          ),
+          0.0001,
+        ),
+      );
+      expect(
+        plan.totalUsedTonnage,
+        closeTo(
+          RebarWeightCalculator.tonnage(
+            diameterMm: 12,
+            lengthM: plan.totalUsedM,
+          ),
+          0.0001,
+        ),
+      );
+      expect(
+        plan.totalWasteTonnage,
+        closeTo(
+          RebarWeightCalculator.tonnage(
+            diameterMm: 12,
+            lengthM: plan.totalWasteM,
+          ),
+          0.0001,
+        ),
+      );
     });
 
     test('groups stock cuts separately per diameter', () {
@@ -194,6 +227,64 @@ void main() {
 
       expect(batch.stockCutPlans, isNotEmpty);
       expect(batch.stockCutPlans.first.totalBars, 2);
+    });
+
+    test('applyLengthMatchesToPieceLines merges approved length match groups', () {
+      const pieces = [
+        RebarPieceLine(diameter: 16, lengthM: 2.00, quantity: 10),
+        RebarPieceLine(diameter: 16, lengthM: 2.05, quantity: 8),
+        RebarPieceLine(diameter: 16, lengthM: 3.50, quantity: 4),
+      ];
+      final groups = computeLengthMatchGroups(pieces, toleranceM: 0.10);
+      final approved = groups.first.copyWith(
+        approved: true,
+        selectedLengthM: 2.00,
+      );
+
+      final revised = applyLengthMatchesToPieceLines(pieces, [approved]);
+
+      expect(revised, hasLength(2));
+      expect(revised.first.diameter, 16);
+      expect(revised.first.lengthM, 2.00);
+      expect(revised.first.quantity, 18);
+      expect(revised.last.lengthM, 3.50);
+    });
+
+    test('stock cut plans wait for completed length matching', () {
+      const pieces = [
+        RebarPieceLine(diameter: 12, lengthM: 6.50, quantity: 5),
+        RebarPieceLine(diameter: 12, lengthM: 6.55, quantity: 5),
+      ];
+      final groups = computeLengthMatchGroups(pieces, toleranceM: 0.10);
+      var batch = syncBatchLengthMatchDerivatives(
+        CuttingBendingBatch(
+          id: 'kb-test',
+          title: 'Test',
+          createdAt: DateTime.now(),
+          sourceMetrajRecordIds: const [],
+          labelDetails: const [],
+          pieceLines: pieces,
+          revisedPieceLines: const [],
+          lengthMatches: groups,
+          tahvilGroups: const [],
+          stockCutPlans: const [],
+        ),
+      );
+
+      expect(batch.stockCutPlans, isEmpty);
+      expect(batch.revisedPieceLines, hasLength(2));
+
+      batch = syncBatchLengthMatchDerivatives(
+        batch.copyWith(
+          lengthMatches: [
+            groups.first.copyWith(approved: true, selectedLengthM: 6.50),
+          ],
+        ),
+      );
+
+      expect(batch.revisedPieceLines, hasLength(1));
+      expect(batch.revisedPieceLines.first.quantity, 10);
+      expect(batch.stockCutPlans, isNotEmpty);
     });
 
     test('rebuildCuttingBendingBatch recalculates after label removal', () {

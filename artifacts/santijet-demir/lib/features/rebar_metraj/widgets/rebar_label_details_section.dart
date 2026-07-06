@@ -5,7 +5,7 @@ import 'package:santijet_demir/core/theme/app_radii.dart';
 import 'package:santijet_demir/core/theme/app_typography.dart';
 import 'package:santijet_demir/domain/entities/rebar_metraj.dart';
 
-/// Keşif Otomatik Metraj ve Kesme-Bükme sayfalarında ortak etiket listesi.
+/// Keşif Otomatik Metraj ve Hesap ve Analiz sayfalarında ortak etiket listesi.
 class RebarLabelDetailsSection extends StatefulWidget {
   const RebarLabelDetailsSection({
     super.key,
