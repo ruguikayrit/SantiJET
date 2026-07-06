@@ -233,18 +233,59 @@ class _TahvilResultCard extends StatelessWidget {
               ),
             ),
           const SizedBox(height: 4),
-          Text(
-            'Kesit alanı sapması: %${result.areaDeviationPercent.toStringAsFixed(2)}',
-            style: AppTypography.bodySmall.copyWith(
-              color: isOptimal
-                  ? AppColors.success
-                  : isRejected
-                      ? AppColors.textMuted
-                      : AppColors.textMuted,
-            ),
+          _CrossSectionComparison(
+            source: source,
+            result: result,
           ),
         ],
       ),
+    );
+  }
+}
+
+class _CrossSectionComparison extends StatelessWidget {
+  const _CrossSectionComparison({
+    required this.source,
+    required this.result,
+  });
+
+  final TahvilManualInputRow source;
+  final TahvilManualResult result;
+
+  @override
+  Widget build(BuildContext context) {
+    final comparison = formatCrossSectionComparison(
+      fromDiameter: source.diameter!,
+      fromQuantity: source.quantity!,
+      toDiameter: result.toDiameter,
+      toQuantity: result.equivalentQuantity,
+    );
+    final areaAllowed =
+        isCrossSectionDeviationAllowed(result.areaDeviationPercent);
+    final accentColor = areaAllowed ? AppColors.success : AppColors.critical;
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text('Kesit mukayesesi', style: AppTypography.labelMedium),
+        const SizedBox(height: 4),
+        Text(
+          comparison,
+          style: AppTypography.bodyMedium.copyWith(
+            color: accentColor,
+            fontWeight: FontWeight.w600,
+          ),
+        ),
+        const SizedBox(height: 2),
+        Text(
+          areaAllowed
+              ? 'Sapma %${result.areaDeviationPercent.toStringAsFixed(2)} '
+                  '(≤%${(tahvilMaxAreaDeviationRatio * 100).toStringAsFixed(0)} — uygun)'
+              : 'Sapma %${result.areaDeviationPercent.toStringAsFixed(2)} '
+                  '(>%${(tahvilMaxAreaDeviationRatio * 100).toStringAsFixed(0)} — uygun değil)',
+          style: AppTypography.bodySmall.copyWith(color: accentColor),
+        ),
+      ],
     );
   }
 }

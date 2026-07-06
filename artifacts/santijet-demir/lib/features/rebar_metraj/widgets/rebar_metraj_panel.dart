@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
 import 'package:go_router/go_router.dart';
+import 'package:santijet_demir/core/format/app_format.dart';
 import 'package:santijet_demir/core/routing/app_routes.dart';
 import 'package:santijet_demir/core/theme/app_colors.dart';
 import 'package:santijet_demir/core/theme/app_radii.dart';
@@ -344,7 +345,6 @@ class _ResultSummaryBar extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final formatter = NumberFormat('#,##0.00', 'tr_TR');
     final projectId = ref.watch(activeProjectIdProvider);
     final savedRecords = ref.watch(savedRebarMetrajProvider);
     final isSaved = savedRecords.any(
@@ -353,65 +353,185 @@ class _ResultSummaryBar extends ConsumerWidget {
           record.result.parsedAt == result.parsedAt &&
           record.result.totalTonnage == result.totalTonnage,
     );
+    final tonnageLabel = AppFormat.tonnage(result.totalTonnage);
 
     return Container(
-      padding: const EdgeInsets.all(14),
       decoration: BoxDecoration(
         color: AppColors.surfaceElevated,
         borderRadius: AppRadii.md,
-        border: Border.all(color: AppColors.border),
+        border: Border.all(color: AppColors.borderSubtle),
+        boxShadow: const [
+          BoxShadow(
+            color: AppColors.electricBlueGlow,
+            blurRadius: 20,
+            offset: Offset(0, 6),
+          ),
+        ],
       ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.stretch,
-        children: [
-          Row(
-            crossAxisAlignment: CrossAxisAlignment.center,
-            children: [
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text('Toplam Tonaj', style: AppTypography.labelMedium),
-                    const SizedBox(height: 6),
-                    RichText(
-                      text: TextSpan(
-                        style: AppTypography.headlineMedium
-                            .copyWith(color: AppColors.electricBlueLight),
-                        children: [
-                          TextSpan(text: formatter.format(result.totalTonnage)),
-                          TextSpan(
-                            text: ' t',
-                            style: AppTypography.labelMedium
-                                .copyWith(color: AppColors.textMuted),
-                          ),
-                        ],
-                      ),
-                    ),
+      child: ClipRRect(
+        borderRadius: AppRadii.md,
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            Container(
+              height: 3,
+              decoration: BoxDecoration(
+                gradient: LinearGradient(
+                  colors: [
+                    AppColors.electricBlue.withValues(alpha: 0.9),
+                    AppColors.electricBlueLight.withValues(alpha: 0.45),
                   ],
                 ),
               ),
-              const SizedBox(width: 12),
-              FilledButton.icon(
-                onPressed: projectId == null
-                    ? () => context.push(AppRoutes.projects)
-                    : isSaved
-                        ? () => ref.read(surveyTabIndexProvider.notifier).state = 2
-                        : () => saveMetrajResultToPreProduction(context, ref, result),
-                icon: Icon(isSaved ? Icons.check_circle : Icons.send_outlined),
-                label: Text(isSaved ? 'Ön İmalat\'ta Gör' : 'Ön İmalata Gönder'),
+            ),
+            Padding(
+              padding: const EdgeInsets.fromLTRB(16, 16, 16, 14),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: [
+                  Row(
+                    crossAxisAlignment: CrossAxisAlignment.center,
+                    children: [
+                      Container(
+                        width: 48,
+                        height: 48,
+                        alignment: Alignment.center,
+                        decoration: BoxDecoration(
+                          gradient: LinearGradient(
+                            begin: Alignment.topLeft,
+                            end: Alignment.bottomRight,
+                            colors: [
+                              AppColors.electricBlue.withValues(alpha: 0.22),
+                              AppColors.electricBlue.withValues(alpha: 0.06),
+                            ],
+                          ),
+                          borderRadius: BorderRadius.circular(12),
+                          border: Border.all(
+                            color: AppColors.electricBlue.withValues(alpha: 0.28),
+                          ),
+                        ),
+                        child: const Icon(
+                          Icons.analytics_outlined,
+                          color: AppColors.electricBlueLight,
+                          size: 22,
+                        ),
+                      ),
+                      const SizedBox(width: 14),
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              'Toplam Tonaj',
+                              style: AppTypography.labelMedium.copyWith(
+                                color: AppColors.textMuted,
+                              ),
+                            ),
+                            const SizedBox(height: 4),
+                            Row(
+                              crossAxisAlignment: CrossAxisAlignment.baseline,
+                              textBaseline: TextBaseline.alphabetic,
+                              children: [
+                                Text(
+                                  tonnageLabel,
+                                  style: AppTypography.displaySmall.copyWith(
+                                    color: AppColors.electricBlueLight,
+                                    fontSize: 28,
+                                    height: 1,
+                                  ),
+                                ),
+                                Text(
+                                  ' t',
+                                  style: AppTypography.labelLarge.copyWith(
+                                    color: AppColors.textMuted,
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ],
+                        ),
+                      ),
+                      if (isSaved)
+                        Container(
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 10,
+                            vertical: 4,
+                          ),
+                          decoration: BoxDecoration(
+                            color: AppColors.success.withValues(alpha: 0.12),
+                            borderRadius: AppRadii.full,
+                            border: Border.all(
+                              color: AppColors.success.withValues(alpha: 0.35),
+                            ),
+                          ),
+                          child: Text(
+                            'Kayıtlı',
+                            style: AppTypography.labelMedium.copyWith(
+                              color: AppColors.success,
+                            ),
+                          ),
+                        ),
+                    ],
+                  ),
+                  const SizedBox(height: 16),
+                  const Divider(height: 1, color: AppColors.border),
+                  const SizedBox(height: 14),
+                  Text('Aktarım', style: AppTypography.labelMedium),
+                  const SizedBox(height: 10),
+                  FilledButton.icon(
+                    onPressed: projectId == null
+                        ? () => context.push(AppRoutes.projects)
+                        : isSaved
+                            ? () =>
+                                ref.read(surveyTabIndexProvider.notifier).state =
+                                    2
+                            : () => saveMetrajResultToPreProduction(
+                                  context,
+                                  ref,
+                                  result,
+                                ),
+                    icon: Icon(
+                      projectId == null
+                          ? Icons.folder_open_outlined
+                          : isSaved
+                              ? Icons.check_circle_outline
+                              : Icons.send_outlined,
+                      size: 18,
+                    ),
+                    label: Text(
+                      projectId == null
+                          ? 'Proje Seç'
+                          : isSaved
+                              ? 'Ön İmalat\'ta Gör'
+                              : 'Ön İmalata Gönder',
+                    ),
+                    style: FilledButton.styleFrom(
+                      minimumSize: const Size.fromHeight(44),
+                      padding: const EdgeInsets.symmetric(horizontal: 16),
+                    ),
+                  ),
+                  if (projectId != null) ...[
+                    const SizedBox(height: 8),
+                    OutlinedButton.icon(
+                      onPressed: () =>
+                          sendMetrajResultToCuttingBending(context, ref, result),
+                      icon: const Icon(Icons.content_cut_outlined, size: 18),
+                      label: const Text('Kesme-Bükme\'ye Gönder'),
+                      style: OutlinedButton.styleFrom(
+                        minimumSize: const Size.fromHeight(44),
+                        padding: const EdgeInsets.symmetric(horizontal: 16),
+                        foregroundColor: AppColors.electricBlueLight,
+                        side: BorderSide(
+                          color: AppColors.electricBlue.withValues(alpha: 0.45),
+                        ),
+                      ),
+                    ),
+                  ],
+                ],
               ),
-            ],
-          ),
-          if (projectId != null) ...[
-            const SizedBox(height: 8),
-            OutlinedButton.icon(
-              onPressed: () =>
-                  sendMetrajResultToCuttingBending(context, ref, result),
-              icon: const Icon(Icons.content_cut),
-              label: const Text('Kesme-Bükme\'ye Gönder'),
             ),
           ],
-        ],
+        ),
       ),
     );
   }

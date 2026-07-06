@@ -289,61 +289,202 @@ class _BatchHeader extends StatelessWidget {
     final totalPieces = batch.pieceLines.fold(0, (sum, p) => sum + p.quantity);
 
     return Container(
-      padding: const EdgeInsets.all(14),
       decoration: BoxDecoration(
         color: AppColors.surfaceElevated,
         borderRadius: AppRadii.md,
-        border: Border.all(color: AppColors.border),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Text(batch.title, style: AppTypography.titleMedium),
-          const SizedBox(height: 4),
-          Text(
-            '${dateFormat.format(batch.createdAt)} · $totalPieces adet · '
-            '${batch.pieceLines.length} satır',
-            style: AppTypography.bodySmall,
+        border: Border.all(color: AppColors.borderSubtle),
+        boxShadow: const [
+          BoxShadow(
+            color: AppColors.electricBlueGlow,
+            blurRadius: 20,
+            offset: Offset(0, 6),
           ),
-          if (batches.length > 1) ...[
-            const SizedBox(height: 10),
-            DropdownButtonFormField<String>(
-              value: batch.id,
-              decoration: const InputDecoration(
-                labelText: 'Liste',
-                isDense: true,
-              ),
-              items: batches
-                  .map(
-                    (item) => DropdownMenuItem(
-                      value: item.id,
-                      child: Text(item.title, overflow: TextOverflow.ellipsis),
-                    ),
-                  )
-                  .toList(),
-              onChanged: (value) {
-                if (value != null) onSelectBatch(value);
-              },
-            ),
-          ],
-          const SizedBox(height: 8),
-          Row(
-            children: [
-              Expanded(
-                child: OutlinedButton.icon(
-                  onPressed: () => context.push(AppRoutes.surveyMetraj),
-                  icon: const Icon(Icons.upload_file, size: 18),
-                  label: const Text('Keşif / Otomatik Metrajdan Veri Al'),
+        ],
+      ),
+      child: ClipRRect(
+        borderRadius: AppRadii.md,
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            Container(
+              height: 3,
+              decoration: BoxDecoration(
+                gradient: LinearGradient(
+                  colors: [
+                    AppColors.partial.withValues(alpha: 0.9),
+                    AppColors.electricBlueLight.withValues(alpha: 0.45),
+                  ],
                 ),
               ),
-              const SizedBox(width: 8),
-              IconButton.outlined(
-                onPressed: onDeleteBatch,
-                icon: const Icon(Icons.delete_outline),
-                color: AppColors.critical,
-                tooltip: 'Listeyi sil',
+            ),
+            Padding(
+              padding: const EdgeInsets.fromLTRB(16, 16, 16, 14),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: [
+                  Row(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Container(
+                        width: 48,
+                        height: 48,
+                        alignment: Alignment.center,
+                        decoration: BoxDecoration(
+                          gradient: LinearGradient(
+                            begin: Alignment.topLeft,
+                            end: Alignment.bottomRight,
+                            colors: [
+                              AppColors.partial.withValues(alpha: 0.22),
+                              AppColors.partial.withValues(alpha: 0.06),
+                            ],
+                          ),
+                          borderRadius: BorderRadius.circular(12),
+                          border: Border.all(
+                            color: AppColors.partial.withValues(alpha: 0.28),
+                          ),
+                        ),
+                        child: const Icon(
+                          Icons.content_cut,
+                          color: AppColors.partial,
+                          size: 22,
+                        ),
+                      ),
+                      const SizedBox(width: 14),
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              batch.title,
+                              style: AppTypography.titleMedium,
+                              maxLines: 2,
+                              overflow: TextOverflow.ellipsis,
+                            ),
+                            const SizedBox(height: 6),
+                            Wrap(
+                              spacing: 6,
+                              runSpacing: 6,
+                              children: [
+                                _MetaChip(
+                                  icon: Icons.schedule,
+                                  label: dateFormat.format(batch.createdAt),
+                                ),
+                                _MetaChip(
+                                  icon: Icons.format_list_numbered,
+                                  label: '${AppFormat.integer(totalPieces)} adet',
+                                ),
+                                _MetaChip(
+                                  icon: Icons.table_rows_outlined,
+                                  label: '${batch.pieceLines.length} satır',
+                                ),
+                              ],
+                            ),
+                          ],
+                        ),
+                      ),
+                      const SizedBox(width: 8),
+                      IconButton(
+                        onPressed: onDeleteBatch,
+                        tooltip: 'Listeyi sil',
+                        style: IconButton.styleFrom(
+                          minimumSize: const Size(40, 40),
+                          backgroundColor:
+                              AppColors.critical.withValues(alpha: 0.08),
+                          foregroundColor: AppColors.critical,
+                          side: BorderSide(
+                            color: AppColors.critical.withValues(alpha: 0.28),
+                          ),
+                        ),
+                        icon: const Icon(Icons.delete_outline, size: 20),
+                      ),
+                    ],
+                  ),
+                  if (batches.length > 1) ...[
+                    const SizedBox(height: 14),
+                    DropdownButtonFormField<String>(
+                      value: batch.id,
+                      decoration: InputDecoration(
+                        labelText: 'Liste',
+                        isDense: true,
+                        filled: true,
+                        fillColor: AppColors.canvas,
+                        border: OutlineInputBorder(
+                          borderRadius: AppRadii.sm,
+                          borderSide: const BorderSide(color: AppColors.border),
+                        ),
+                      ),
+                      items: batches
+                          .map(
+                            (item) => DropdownMenuItem(
+                              value: item.id,
+                              child: Text(
+                                item.title,
+                                overflow: TextOverflow.ellipsis,
+                              ),
+                            ),
+                          )
+                          .toList(),
+                      onChanged: (value) {
+                        if (value != null) onSelectBatch(value);
+                      },
+                    ),
+                  ],
+                  const SizedBox(height: 16),
+                  const Divider(height: 1, color: AppColors.border),
+                  const SizedBox(height: 14),
+                  Text('Veri kaynağı', style: AppTypography.labelMedium),
+                  const SizedBox(height: 10),
+                  OutlinedButton.icon(
+                    onPressed: () => context.push(AppRoutes.surveyMetraj),
+                    icon: const Icon(Icons.upload_file_outlined, size: 18),
+                    label: const Text('Keşif / Otomatik Metrajdan Veri Al'),
+                    style: OutlinedButton.styleFrom(
+                      minimumSize: const Size.fromHeight(44),
+                      padding: const EdgeInsets.symmetric(horizontal: 16),
+                      foregroundColor: AppColors.electricBlueLight,
+                      side: BorderSide(
+                        color: AppColors.electricBlue.withValues(alpha: 0.45),
+                      ),
+                    ),
+                  ),
+                ],
               ),
-            ],
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class _MetaChip extends StatelessWidget {
+  const _MetaChip({
+    required this.icon,
+    required this.label,
+  });
+
+  final IconData icon;
+  final String label;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+      decoration: BoxDecoration(
+        color: AppColors.canvas,
+        borderRadius: AppRadii.full,
+        border: Border.all(color: AppColors.border),
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Icon(icon, size: 12, color: AppColors.textMuted),
+          const SizedBox(width: 4),
+          Text(
+            label,
+            style: AppTypography.bodySmall.copyWith(
+              color: AppColors.textSecondary,
+            ),
           ),
         ],
       ),

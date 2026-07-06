@@ -48,6 +48,37 @@ double computeAreaDeviationRatio({
   return (fromArea - toArea).abs() / fromArea;
 }
 
+/// Tahvil öncesi/sonrası toplam kesit alanı (d² × adet birimi).
+double totalCrossSectionAreaUnits(int diameter, int quantity) =>
+    crossSectionAreaUnits(diameter) * quantity;
+
+/// Kesit alanı sapması kurala uygun mu?
+bool isCrossSectionDeviationAllowed(double areaDeviationPercent) =>
+    areaDeviationPercent / 100 <= tahvilMaxAreaDeviationRatio + 1e-9;
+
+/// Tahvil öncesi ve sonrası kesit alanı karşılaştırma işareti.
+String crossSectionComparisonSymbol(double fromArea, double toArea) {
+  if (fromArea > toArea) return '>';
+  if (fromArea < toArea) return '<';
+  return '=';
+}
+
+/// Kart gösterimi için kesit mukayese metni: `256 mm² × 100 ad < 144 mm² × 178 ad`
+String formatCrossSectionComparison({
+  required int fromDiameter,
+  required int fromQuantity,
+  required int toDiameter,
+  required int toQuantity,
+}) {
+  final fromUnits = crossSectionAreaUnits(fromDiameter).round();
+  final toUnits = crossSectionAreaUnits(toDiameter).round();
+  final fromArea = totalCrossSectionAreaUnits(fromDiameter, fromQuantity);
+  final toArea = totalCrossSectionAreaUnits(toDiameter, toQuantity);
+  final symbol = crossSectionComparisonSymbol(fromArea, toArea);
+  return '$fromUnits mm² × $fromQuantity ad '
+      '$symbol $toUnits mm² × $toQuantity ad';
+}
+
 /// Tahvil sonrası tahmini donatı aralığı (cm).
 double? computeResultingSpacingCm({
   required int fromQuantity,

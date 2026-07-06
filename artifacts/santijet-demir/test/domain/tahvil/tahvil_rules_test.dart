@@ -77,5 +77,29 @@ void main() {
         expect((item.fromDiameter - item.toDiameter).abs(), lessThanOrEqualTo(4));
       }
     });
+
+    test('formats cross-section comparison with greater/less symbol', () {
+      final text = formatCrossSectionComparison(
+        fromDiameter: 16,
+        fromQuantity: 1978,
+        toDiameter: 12,
+        toQuantity: 3516,
+      );
+
+      expect(text, contains('256 mm² × 1978 ad'));
+      expect(text, contains('144 mm² × 3516 ad'));
+      expect(text, anyOf(contains('>'), contains('<'), contains('=')));
+      expect(
+        isCrossSectionDeviationAllowed(
+          computeAreaDeviationRatio(
+            fromDiameter: 16,
+            fromQuantity: 1978,
+            toDiameter: 12,
+            equivalentQuantity: 3516,
+          ) * 100,
+        ),
+        isTrue,
+      );
+    });
   });
 }
