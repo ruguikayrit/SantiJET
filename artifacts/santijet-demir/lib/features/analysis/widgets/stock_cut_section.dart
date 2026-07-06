@@ -54,7 +54,7 @@ class StockCutSection extends StatelessWidget {
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
         Text(
-          '${stockLengthM.toStringAsFixed(0)} m tam boydan minimum fire ile eşleştirme',
+          '${stockLengthM.toStringAsFixed(0)} m stok boy · planlı minimum fire kesim',
           style: AppTypography.bodySmall.copyWith(color: AppColors.textMuted),
         ),
         const SizedBox(height: 8),
@@ -182,15 +182,10 @@ class _CollapsibleDiameterCutPlanCard extends ConsumerWidget {
                   const SizedBox(height: 12),
                   Text('Kesim Planı', style: AppTypography.labelMedium),
                   const SizedBox(height: 10),
-                  ...plan.bars.map(
-                    (bar) => Padding(
-                      padding: const EdgeInsets.only(bottom: 8),
-                      child: _StockBarCutRow(
-                        bar: bar,
-                        stockLengthM: stockLengthM,
-                        diameterColor: diameterColor,
-                      ),
-                    ),
+                  _PaginatedStockBarCutList(
+                    bars: plan.bars,
+                    stockLengthM: stockLengthM,
+                    diameterColor: diameterColor,
                   ),
                 ],
               ),
@@ -370,6 +365,101 @@ class _CutSummaryCard extends StatelessWidget {
           ),
         ],
       ),
+    );
+  }
+}
+
+class _PaginatedStockBarCutList extends StatefulWidget {
+  const _PaginatedStockBarCutList({
+    required this.bars,
+    required this.stockLengthM,
+    required this.diameterColor,
+  });
+
+  static const pageSize = 10;
+
+  final List<StockBarCut> bars;
+  final double stockLengthM;
+  final Color diameterColor;
+
+  @override
+  State<_PaginatedStockBarCutList> createState() =>
+      _PaginatedStockBarCutListState();
+}
+
+class _PaginatedStockBarCutListState extends State<_PaginatedStockBarCutList> {
+  static const _pageSize = _PaginatedStockBarCutList.pageSize;
+
+  int _visibleCount = _pageSize;
+
+  @override
+  void didUpdateWidget(covariant _PaginatedStockBarCutList oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (oldWidget.bars.length != widget.bars.length ||
+        oldWidget.bars != widget.bars) {
+      _visibleCount = _pageSize;
+    }
+  }
+
+  void _showMore() {
+    setState(() {
+      _visibleCount = (_visibleCount + _pageSize).clamp(0, widget.bars.length);
+    });
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final bars = widget.bars;
+    if (bars.isEmpty) {
+      return Text(
+        'Kesim planı boş.',
+        style: AppTypography.bodySmall.copyWith(color: AppColors.textMuted),
+      );
+    }
+
+    final visibleBars = bars.take(_visibleCount).toList();
+    final remaining = bars.length - _visibleCount;
+    final nextBatch = remaining > _pageSize ? _pageSize : remaining;
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        ...visibleBars.map(
+          (bar) => Padding(
+            padding: const EdgeInsets.only(bottom: 8),
+            child: _StockBarCutRow(
+              bar: bar,
+              stockLengthM: widget.stockLengthM,
+              diameterColor: widget.diameterColor,
+            ),
+          ),
+        ),
+        if (remaining > 0) ...[
+          const SizedBox(height: 4),
+          OutlinedButton(
+            onPressed: _showMore,
+            style: OutlinedButton.styleFrom(
+              minimumSize: const Size.fromHeight(40),
+              foregroundColor: AppColors.electricBlueLight,
+              side: BorderSide(
+                color: AppColors.electricBlue.withValues(alpha: 0.45),
+              ),
+            ),
+            child: Text(
+              nextBatch == _pageSize
+                  ? '10 satır daha göster ($remaining kaldı)'
+                  : '$nextBatch satır daha göster',
+            ),
+          ),
+        ] else if (bars.length > _pageSize) ...[
+          const SizedBox(height: 4),
+          Text(
+            '${bars.length} çubuk listelendi',
+            style: AppTypography.labelSmall.copyWith(color: AppColors.textMuted),
+            textAlign: TextAlign.center,
+          ),
+        ],
+      ],
     );
   }
 }

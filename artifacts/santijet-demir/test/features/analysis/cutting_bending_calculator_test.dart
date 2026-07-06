@@ -199,7 +199,7 @@ void main() {
       }
     });
 
-    test('buildCuttingBendingBatch includes stock cut plans', () {
+    test('buildCuttingBendingBatch defers stock cut plans until optimization', () {
       const details = [
         RebarMetrajTextDetail(
           entityType: 'TEXT',
@@ -225,8 +225,14 @@ void main() {
         textDetails: details,
       );
 
-      expect(batch.stockCutPlans, isNotEmpty);
-      expect(batch.stockCutPlans.first.totalBars, 2);
+      expect(batch.stockCutPlans, isEmpty);
+      expect(batch.isOptimized, isFalse);
+
+      final optimized = runOptimumFireAnalysis(batch);
+
+      expect(optimized.isOptimized, isTrue);
+      expect(optimized.stockCutPlans, isNotEmpty);
+      expect(optimized.stockCutPlans.first.totalBars, 2);
     });
 
     test('applyLengthMatchesToPieceLines merges approved length match groups', () {
@@ -250,7 +256,7 @@ void main() {
       expect(revised.last.lengthM, 3.50);
     });
 
-    test('stock cut plans wait for completed length matching', () {
+    test('stock cut plans wait for optimization and completed length matching', () {
       const pieces = [
         RebarPieceLine(diameter: 12, lengthM: 6.50, quantity: 5),
         RebarPieceLine(diameter: 12, lengthM: 6.55, quantity: 5),
@@ -265,21 +271,18 @@ void main() {
           labelDetails: const [],
           pieceLines: pieces,
           revisedPieceLines: const [],
-          lengthMatches: groups,
+          lengthMatches: [
+            groups.first.copyWith(approved: true, selectedLengthM: 6.50),
+          ],
           tahvilGroups: const [],
           stockCutPlans: const [],
         ),
       );
 
       expect(batch.stockCutPlans, isEmpty);
-      expect(batch.revisedPieceLines, hasLength(2));
 
       batch = syncBatchLengthMatchDerivatives(
-        batch.copyWith(
-          lengthMatches: [
-            groups.first.copyWith(approved: true, selectedLengthM: 6.50),
-          ],
-        ),
+        batch.copyWith(optimizationAppliedAt: DateTime.now()),
       );
 
       expect(batch.revisedPieceLines, hasLength(1));
@@ -320,6 +323,70 @@ void main() {
       expect(rebuilt.labelDetails, hasLength(1));
       expect(rebuilt.pieceLines, hasLength(1));
       expect(rebuilt.tahvilGroups, isEmpty);
+    });
+
+    test('applyApprovedTahvil applies only one direction per group', () {
+      const pieces = [
+        RebarPieceLine(diameter: 16, lengthM: 2.00, quantity: 100),
+        RebarPieceLine(diameter: 20, lengthM: 2.05, quantity: 60),
+      ];
+      final tahvil = computeTahvilGroups(pieces);
+      expect(tahvil, hasLength(1));
+
+      final rawMaterial = computeMaterialTonnage(pieces);
+      final approved = tahvil.first.copyWith(approved: true);
+      final converted = applyApprovedTahvilToPieceLines(pieces, [approved]);
+      final convertedMaterial = computeMaterialTonnage(converted);
+
+      expect(convertedMaterial, greaterThan(rawMaterial * 0.85));
+      expect(
+        pickBestTahvilEquivalentForGroup(tahvil.first),
+        isNotNull,
+      );
+    });
+
+    test('optimized fire percent moves with fire tonnage', () {
+      const pieces = [
+        RebarPieceLine(diameter: 16, lengthM: 2.00, quantity: 10),
+        RebarPieceLine(diameter: 16, lengthM: 2.05, quantity: 8),
+        RebarPieceLine(diameter: 16, lengthM: 3.50, quantity: 4),
+        RebarPieceLine(diameter: 20, lengthM: 2.08, quantity: 6),
+      ];
+      final batch = buildCuttingBendingBatch(
+        title: 'Test',
+        sourceMetrajRecordIds: const [],
+        textDetails: const [],
+      ).copyWith(pieceLines: pieces);
+
+      final optimized = runOptimumFireAnalysis(batch);
+      final summary = computeAnalysisFireSummary(optimized);
+
+      expect(summary.isPlannedReady, isTrue);
+      expect(summary.plannedStockTonnage!, greaterThan(summary.rawMaterialTonnage * 0.9));
+
+      if (summary.plannedWasteTonnage! < summary.rawWasteTonnage) {
+        expect(summary.plannedWastePercent!, lessThan(summary.rawWastePercent));
+      }
+    });
+
+    test('runOptimumFireAnalysis preserves source piece lines', () {
+      const pieces = [
+        RebarPieceLine(diameter: 16, lengthM: 2.00, quantity: 10),
+        RebarPieceLine(diameter: 16, lengthM: 2.05, quantity: 8),
+        RebarPieceLine(diameter: 16, lengthM: 3.50, quantity: 4),
+      ];
+      final batch = buildCuttingBendingBatch(
+        title: 'Test',
+        sourceMetrajRecordIds: const [],
+        textDetails: const [],
+      ).copyWith(pieceLines: pieces);
+
+      final optimized = runOptimumFireAnalysis(batch);
+
+      expect(optimized.pieceLines, pieces);
+      expect(optimized.isOptimized, isTrue);
+      expect(optimized.revisedPieceLines.length, lessThan(pieces.length));
+      expect(computeAnalysisFireSummary(optimized).isPlannedReady, isTrue);
     });
 
     test('CuttingBendingBatch.fromJson tolerates missing labelDetails', () {

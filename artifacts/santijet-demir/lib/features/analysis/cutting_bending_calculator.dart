@@ -462,19 +462,325 @@ bool isLengthMatchingComplete(List<LengthMatchGroup> lengthMatches) {
   );
 }
 
+List<RebarPieceLine> _mergePieceLines(List<RebarPieceLine> pieces) {
+  final grouped = <String, RebarPieceLine>{};
+  for (final piece in pieces) {
+    final key = pieceLineKey(piece);
+    final existing = grouped[key];
+    if (existing == null) {
+      grouped[key] = piece;
+    } else {
+      grouped[key] = RebarPieceLine(
+        diameter: piece.diameter,
+        lengthM: piece.lengthM,
+        quantity: existing.quantity + piece.quantity,
+        sourceText: existing.sourceText ?? piece.sourceText,
+        spacingCm: existing.spacingCm ?? piece.spacingCm,
+      );
+    }
+  }
+
+  return grouped.values.toList()
+    ..sort((a, b) {
+      final byDiameter = a.diameter.compareTo(b.diameter);
+      if (byDiameter != 0) return byDiameter;
+      return a.lengthM.compareTo(b.lengthM);
+    });
+}
+
+/// Parça listesinin toplam demir tonajı (stok değil, ihtiyaç metrajı).
+double computeMaterialTonnage(List<RebarPieceLine> pieces) {
+  var total = 0.0;
+  for (final piece in pieces) {
+    total += RebarWeightCalculator.tonnage(
+      diameterMm: piece.diameter,
+      lengthM: piece.lengthM * piece.quantity,
+    );
+  }
+  return total;
+}
+
+/// Onaylı tahvil gruplarını parça listesine uygular; kaynak liste korunur.
+List<RebarPieceLine> applyApprovedTahvilToPieceLines(
+  List<RebarPieceLine> pieceLines,
+  List<TahvilSuggestion> tahvilGroups,
+) {
+  var result = List<RebarPieceLine>.from(pieceLines);
+
+  for (final group in tahvilGroups.where((group) => group.approved)) {
+    final equivalent = pickBestTahvilEquivalentForGroup(group);
+    if (equivalent == null) continue;
+
+    final memberKeys = group.members
+        .where((member) => member.diameter == equivalent.fromDiameter)
+        .map(pieceLineKey)
+        .toSet();
+    if (memberKeys.isEmpty) continue;
+
+    final updated = <RebarPieceLine>[];
+    for (final piece in result) {
+      if (memberKeys.contains(pieceLineKey(piece))) continue;
+      updated.add(piece);
+    }
+
+    updated.add(
+      RebarPieceLine(
+        diameter: equivalent.toDiameter,
+        lengthM: group.representativeLengthM,
+        quantity: equivalent.equivalentQuantity,
+      ),
+    );
+    result = updated;
+  }
+
+  return _mergePieceLines(result);
+}
+
+/// Grup başına tek tahvil yönü seçer (çift yönlü uygulama parça kaybına yol açar).
+TahvilEquivalent? pickBestTahvilEquivalentForGroup(TahvilSuggestion group) {
+  final candidates =
+      group.equivalents.where((equivalent) => equivalent.isRecommended).toList();
+  if (candidates.isEmpty) return null;
+  if (candidates.length == 1) return candidates.first;
+
+  candidates.sort((a, b) {
+    final deviation =
+        a.areaDeviationPercent.compareTo(b.areaDeviationPercent);
+    if (deviation != 0) return deviation;
+    return b.fromQuantity.compareTo(a.fromQuantity);
+  });
+  return candidates.first;
+}
+
+List<RebarPieceLine> _workingPieceLines(CuttingBendingBatch batch) {
+  if (!batch.isOptimized) return batch.pieceLines;
+  return applyApprovedTahvilToPieceLines(batch.pieceLines, batch.tahvilGroups);
+}
+
+/// Bir boy eşleştirme grubu için simüle fireyi minimize eden boyu seçer.
+double pickOptimalLengthForGroup(
+  LengthMatchGroup group,
+  List<RebarPieceLine> pieceLines,
+  List<LengthMatchGroup> allGroups,
+) {
+  final candidates = group.members.map((member) => member.lengthM).toSet().toList()
+    ..sort();
+
+  var bestLength = candidates.first;
+  var bestWaste = double.infinity;
+
+  for (final candidate in candidates) {
+    final trialGroups = allGroups
+        .map(
+          (item) => item.id == group.id
+              ? item.copyWith(approved: true, selectedLengthM: candidate)
+              : item,
+        )
+        .toList();
+    final trialPieces = applyLengthMatchesToPieceLines(pieceLines, trialGroups);
+    final plans = computeStockCutPlans(trialPieces);
+    var waste = 0.0;
+    for (final plan in plans) {
+      if (plan.diameter == group.diameter) {
+        waste += plan.totalWasteTonnage;
+      }
+    }
+    if (waste < bestWaste) {
+      bestWaste = waste;
+      bestLength = candidate;
+    }
+  }
+
+  return bestLength;
+}
+
 /// Boy eşleştirme sonrası revize parça listesi ve kesim planını günceller.
 CuttingBendingBatch syncBatchLengthMatchDerivatives(CuttingBendingBatch batch) {
+  final workingPieces = _workingPieceLines(batch);
   final revised = applyLengthMatchesToPieceLines(
-    batch.pieceLines,
+    workingPieces,
     batch.lengthMatches,
   );
-  final stockCutPlans = isLengthMatchingComplete(batch.lengthMatches)
+  final stockCutPlans = batch.isOptimized &&
+          isLengthMatchingComplete(batch.lengthMatches)
       ? computeStockCutPlans(revised)
       : const <StockCutPlan>[];
 
   return batch.copyWith(
     revisedPieceLines: revised,
     stockCutPlans: stockCutPlans,
+  );
+}
+
+class AnalysisFireSummary {
+  const AnalysisFireSummary({
+    required this.rawMaterialTonnage,
+    required this.rawStockTonnage,
+    required this.rawWasteTonnage,
+    required this.rawWastePercent,
+    this.plannedStockTonnage,
+    this.plannedWasteTonnage,
+    this.plannedWastePercent,
+  });
+
+  final double rawMaterialTonnage;
+  final double rawStockTonnage;
+  final double rawWasteTonnage;
+  final double rawWastePercent;
+  final double? plannedStockTonnage;
+  final double? plannedWasteTonnage;
+  final double? plannedWastePercent;
+
+  bool get isPlannedReady => plannedWasteTonnage != null;
+
+  double get savedWasteTonnage => isPlannedReady
+      ? (rawWasteTonnage - plannedWasteTonnage!).clamp(0, double.infinity)
+      : 0;
+
+  double get savedWastePercent => isPlannedReady
+      ? (rawWastePercent - plannedWastePercent!).clamp(0, double.infinity)
+      : 0;
+}
+
+class AnalysisComparison {
+  const AnalysisComparison({
+    required this.rawLineCount,
+    required this.rawPieceCount,
+    required this.rawMaterialTonnage,
+    required this.rawFireTonnage,
+    required this.rawFirePercent,
+    required this.revisedLineCount,
+    required this.revisedPieceCount,
+    required this.revisedMaterialTonnage,
+    required this.plannedFireTonnage,
+    required this.plannedFirePercent,
+    required this.lengthMatchGroupsApplied,
+    required this.tahvilGroupsApplied,
+  });
+
+  final int rawLineCount;
+  final int rawPieceCount;
+  final double rawMaterialTonnage;
+  final double rawFireTonnage;
+  final double rawFirePercent;
+  final int revisedLineCount;
+  final int revisedPieceCount;
+  final double revisedMaterialTonnage;
+  final double plannedFireTonnage;
+  final double plannedFirePercent;
+  final int lengthMatchGroupsApplied;
+  final int tahvilGroupsApplied;
+
+  int get savedLines => (rawLineCount - revisedLineCount).clamp(0, rawLineCount);
+
+  double get savedFireTonnage =>
+      (rawFireTonnage - plannedFireTonnage).clamp(0, double.infinity);
+
+  double get savedFirePercent =>
+      (rawFirePercent - plannedFirePercent).clamp(-100, 100);
+}
+
+({double stockTonnage, double wasteTonnage, double wastePercent})
+    _aggregateStockCutFireMetrics(List<StockCutPlan> plans) {
+  var stockT = 0.0;
+  var wasteT = 0.0;
+  for (final plan in plans) {
+    stockT += plan.totalStockTonnage;
+    wasteT += plan.totalWasteTonnage;
+  }
+  final percent = stockT > 0 ? (wasteT / stockT) * 100 : 0.0;
+  return (stockTonnage: stockT, wasteTonnage: wasteT, wastePercent: percent);
+}
+
+AnalysisFireSummary computeAnalysisFireSummary(CuttingBendingBatch batch) {
+  final rawMaterialT = computeMaterialTonnage(batch.pieceLines);
+  final rawMetrics = _aggregateStockCutFireMetrics(
+    computeStockCutPlans(batch.pieceLines),
+  );
+
+  if (!batch.isOptimized) {
+    return AnalysisFireSummary(
+      rawMaterialTonnage: rawMaterialT,
+      rawStockTonnage: rawMetrics.stockTonnage,
+      rawWasteTonnage: rawMetrics.wasteTonnage,
+      rawWastePercent: rawMetrics.wastePercent,
+    );
+  }
+
+  final plannedMetrics = _aggregateStockCutFireMetrics(batch.stockCutPlans);
+
+  return AnalysisFireSummary(
+    rawMaterialTonnage: rawMaterialT,
+    rawStockTonnage: rawMetrics.stockTonnage,
+    rawWasteTonnage: rawMetrics.wasteTonnage,
+    rawWastePercent: rawMetrics.wastePercent,
+    plannedStockTonnage: plannedMetrics.stockTonnage,
+    plannedWasteTonnage: plannedMetrics.wasteTonnage,
+    plannedWastePercent: plannedMetrics.wastePercent,
+  );
+}
+
+AnalysisComparison computeAnalysisComparison(CuttingBendingBatch batch) {
+  final summary = computeAnalysisFireSummary(batch);
+  final rawPieceCount =
+      batch.pieceLines.fold(0, (sum, piece) => sum + piece.quantity);
+  final revisedPieceCount = batch.revisedPieceLines.fold(
+    0,
+    (sum, piece) => sum + piece.quantity,
+  );
+
+  return AnalysisComparison(
+    rawLineCount: batch.pieceLines.length,
+    rawPieceCount: rawPieceCount,
+    rawMaterialTonnage: summary.rawMaterialTonnage,
+    rawFireTonnage: summary.rawWasteTonnage,
+    rawFirePercent: summary.rawWastePercent,
+    revisedLineCount: batch.revisedPieceLines.length,
+    revisedPieceCount: revisedPieceCount,
+    revisedMaterialTonnage: computeMaterialTonnage(batch.revisedPieceLines),
+    plannedFireTonnage: summary.plannedWasteTonnage ?? 0,
+    plannedFirePercent: summary.plannedWastePercent ?? 0,
+    lengthMatchGroupsApplied:
+        batch.lengthMatches.where((group) => group.approved).length,
+    tahvilGroupsApplied: batch.tahvilGroups.where((group) => group.approved).length,
+  );
+}
+
+/// Tahvil → boy eşleştirme → planlı kesim hattını otomatik çalıştırır.
+CuttingBendingBatch runOptimumFireAnalysis(CuttingBendingBatch batch) {
+  final autoTahvil = batch.tahvilGroups
+      .map(
+        (group) => pickBestTahvilEquivalentForGroup(group) != null
+            ? group.copyWith(approved: true)
+            : group,
+      )
+      .toList();
+
+  final workingPieces =
+      applyApprovedTahvilToPieceLines(batch.pieceLines, autoTahvil);
+  final lengthMatches = computeLengthMatchGroups(
+    workingPieces,
+    toleranceM: batch.lengthMatchToleranceM,
+  );
+
+  final optimizedMatches = <LengthMatchGroup>[];
+  for (final group in lengthMatches) {
+    final optimalLength = pickOptimalLengthForGroup(
+      group,
+      workingPieces,
+      lengthMatches,
+    );
+    optimizedMatches.add(
+      group.copyWith(approved: true, selectedLengthM: optimalLength),
+    );
+  }
+
+  return syncBatchLengthMatchDerivatives(
+    batch.copyWith(
+      tahvilGroups: autoTahvil,
+      lengthMatches: optimizedMatches,
+      optimizationAppliedAt: DateTime.now(),
+    ),
   );
 }
 
@@ -611,6 +917,7 @@ CuttingBendingBatch rebuildCuttingBendingBatch(
       ),
       tahvilGroups: computeTahvilGroups(pieceLines, toleranceM: tahvilTolerance),
       lengthMatchToleranceCm: toleranceM * 100,
+      clearOptimizationAppliedAt: true,
     ),
   );
 }

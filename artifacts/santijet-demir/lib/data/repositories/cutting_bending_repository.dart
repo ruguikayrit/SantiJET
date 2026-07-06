@@ -78,13 +78,27 @@ class CuttingBendingRepository {
     required String projectId,
     required String batchId,
   }) async {
-    final existing = readBatches(projectId).where((b) => b.id != batchId).toList();
+    await deleteBatches(projectId: projectId, batchIds: {batchId});
+  }
+
+  Future<void> deleteBatches({
+    required String projectId,
+    required Set<String> batchIds,
+  }) async {
+    if (batchIds.isEmpty) return;
+
+    final existing =
+        readBatches(projectId).where((batch) => !batchIds.contains(batch.id)).toList();
     final activeId = readActiveBatchId(projectId);
-    final nextActiveId =
-        activeId == batchId ? existing.firstOrNull?.id : activeId;
+    String? nextActiveId = activeId;
+    if (activeId != null && batchIds.contains(activeId)) {
+      nextActiveId = existing.firstOrNull?.id;
+    } else if (activeId != null && !existing.any((batch) => batch.id == activeId)) {
+      nextActiveId = existing.firstOrNull?.id;
+    }
 
     await _projectDataRepository.writeDomain(projectId, _domain, {
-      'batches': existing.map((b) => b.toJson()).toList(),
+      'batches': existing.map((batch) => batch.toJson()).toList(),
       if (nextActiveId != null) 'activeBatchId': nextActiveId,
     });
   }

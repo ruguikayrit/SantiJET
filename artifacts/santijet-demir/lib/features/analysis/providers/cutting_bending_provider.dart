@@ -2,7 +2,8 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:santijet_demir/data/repositories/cutting_bending_repository.dart';
 import 'package:santijet_demir/domain/entities/cutting_bending.dart';
 import 'package:santijet_demir/domain/entities/rebar_metraj.dart';
-import 'package:santijet_demir/features/analysis/cutting_bending_calculator.dart';
+import 'package:santijet_demir/features/analysis/cutting_bending_calculator.dart'
+    as analysis_calc;
 import 'package:santijet_demir/features/projects/providers/project_provider.dart';
 import 'package:santijet_demir/features/rebar_metraj/providers/rebar_metraj_storage_provider.dart';
 
@@ -23,13 +24,18 @@ final cuttingBendingBatchesProvider =
 
 /// Hesap ve Analiz katlanabilir bölüm kimlikleri.
 abstract final class AnalysisSectionIds {
+  static const dataSource = 'analysis-data-source';
+  static const optimizationPipeline = 'analysis-optimization-pipeline';
+  static const plannedCutting = 'analysis-planned-cutting';
+  static const tahvilCalculator = 'analysis-tahvil-calculator';
+
+  // Geriye dönük — eski oturum durumları için.
   static const labels = 'analysis-labels';
   static const pieceList = 'analysis-piece-list';
   static const lengthMatch = 'analysis-length-match';
   static const revisedPieceList = 'analysis-revised-piece-list';
   static const stockCutList = 'analysis-stock-cut-list';
   static const tahvilSuggestions = 'analysis-tahvil-suggestions';
-  static const tahvilCalculator = 'analysis-tahvil-calculator';
 
   static String stockCutDiameter(String batchId, int diameter) =>
       'analysis-stock-cut-$batchId-d$diameter';
@@ -38,6 +44,9 @@ abstract final class AnalysisSectionIds {
 /// Bölüm açık/kapalı durumu — yeniden çizimlerde korunur, varsayılan kapalı.
 final analysisSectionExpandedProvider =
     StateProvider.family<bool, String>((ref, sectionId) => false);
+
+/// Hesap ve Analiz — çoklu silme için seçili DWG analiz listeleri.
+final selectedAnalysisBatchIdsProvider = StateProvider<Set<String>>((ref) => {});
 
 class CuttingBendingState {
   const CuttingBendingState({
@@ -79,6 +88,7 @@ class CuttingBendingNotifier extends StateNotifier<CuttingBendingState> {
 
   void loadForProject(String? projectId) {
     _loadedProjectId = projectId;
+    _ref.read(selectedAnalysisBatchIdsProvider.notifier).state = {};
     if (projectId == null) {
       state = const CuttingBendingState();
       return;
@@ -86,8 +96,8 @@ class CuttingBendingNotifier extends StateNotifier<CuttingBendingState> {
     final metrajRecords = _ref.read(savedRebarMetrajProvider);
     final batches = _repo
         .readBatches(projectId)
-        .map((batch) => hydrateCuttingBendingBatchLabels(batch, metrajRecords))
-        .map(hydrateStockCutPlans)
+        .map((batch) => analysis_calc.hydrateCuttingBendingBatchLabels(batch, metrajRecords))
+        .map(analysis_calc.hydrateStockCutPlans)
         .toList();
     state = CuttingBendingState(
       batches: batches,
@@ -99,7 +109,7 @@ class CuttingBendingNotifier extends StateNotifier<CuttingBendingState> {
     final projectId = _loadedProjectId;
     if (projectId == null) return null;
 
-    final hydrated = hydrateCuttingBendingBatchLabels(
+    final hydrated = analysis_calc.hydrateCuttingBendingBatchLabels(
       batch,
       _ref.read(savedRebarMetrajProvider),
     );
@@ -124,13 +134,14 @@ class CuttingBendingNotifier extends StateNotifier<CuttingBendingState> {
 
     await _updateBatch((batch) {
       final toleranceM = toleranceCm / 100;
-      return syncBatchLengthMatchDerivatives(
+      return analysis_calc.syncBatchLengthMatchDerivatives(
         batch.copyWith(
           lengthMatchToleranceCm: toleranceCm,
-          lengthMatches: computeLengthMatchGroups(
+          lengthMatches: analysis_calc.computeLengthMatchGroups(
             batch.pieceLines,
             toleranceM: toleranceM,
           ),
+          clearOptimizationAppliedAt: true,
         ),
       );
     });
@@ -155,8 +166,11 @@ class CuttingBendingNotifier extends StateNotifier<CuttingBendingState> {
             );
           })
           .toList();
-      return syncBatchLengthMatchDerivatives(
-        batch.copyWith(lengthMatches: updated),
+      return analysis_calc.syncBatchLengthMatchDerivatives(
+        batch.copyWith(
+          lengthMatches: updated,
+          clearOptimizationAppliedAt: true,
+        ),
       );
     });
   }
@@ -166,20 +180,40 @@ class CuttingBendingNotifier extends StateNotifier<CuttingBendingState> {
       final updated = batch.tahvilGroups
           .map((group) => group.id == groupId ? group.copyWith(approved: approved) : group)
           .toList();
-      return batch.copyWith(tahvilGroups: updated);
+      return analysis_calc.syncBatchLengthMatchDerivatives(
+        batch.copyWith(
+          tahvilGroups: updated,
+          clearOptimizationAppliedAt: true,
+        ),
+      );
     });
   }
 
+  Future<void> runOptimumFireAnalysis() async {
+    await _updateBatch(analysis_calc.runOptimumFireAnalysis);
+  }
+
   Future<void> deleteBatch(String batchId) async {
+    await deleteBatches({batchId});
+  }
+
+  Future<void> deleteBatches(Set<String> batchIds) async {
+    if (batchIds.isEmpty) return;
+
     final projectId = _loadedProjectId;
     if (projectId == null) return;
 
-    await _repo.deleteBatch(projectId: projectId, batchId: batchId);
-    final remaining = state.batches.where((batch) => batch.id != batchId).toList();
-    final nextActiveId = state.activeBatchId == batchId
-        ? (remaining.isNotEmpty ? remaining.first.id : null)
-        : state.activeBatchId;
+    await _repo.deleteBatches(projectId: projectId, batchIds: batchIds);
+    final remaining =
+        state.batches.where((batch) => !batchIds.contains(batch.id)).toList();
+    final nextActiveId = state.activeBatchId != null &&
+            batchIds.contains(state.activeBatchId!)
+        ? remaining.firstOrNull?.id
+        : (remaining.any((batch) => batch.id == state.activeBatchId)
+            ? state.activeBatchId
+            : remaining.firstOrNull?.id);
 
+    _ref.read(selectedAnalysisBatchIdsProvider.notifier).state = {};
     state = CuttingBendingState(
       batches: remaining,
       activeBatchId: nextActiveId,
@@ -189,9 +223,9 @@ class CuttingBendingNotifier extends StateNotifier<CuttingBendingState> {
   Future<void> removeLabelDetail(RebarMetrajTextDetail detail) async {
     await _updateBatch((batch) {
       final updatedLabels = batch.labelDetails
-          .where((item) => !isSameRebarMetrajTextDetail(item, detail))
+          .where((item) => !analysis_calc.isSameRebarMetrajTextDetail(item, detail))
           .toList();
-      return rebuildCuttingBendingBatch(batch, labelDetails: updatedLabels);
+      return analysis_calc.rebuildCuttingBendingBatch(batch, labelDetails: updatedLabels);
     });
   }
 

@@ -10,9 +10,10 @@ import 'package:santijet_demir/core/widgets/empty_states.dart';
 import 'package:santijet_demir/core/widgets/santijet_header.dart';
 import 'package:santijet_demir/domain/entities/cutting_bending.dart';
 import 'package:santijet_demir/domain/entities/rebar_metraj.dart';
-import 'package:santijet_demir/domain/tahvil/tahvil_rules.dart';
 import 'package:santijet_demir/features/analysis/cutting_bending_calculator.dart';
 import 'package:santijet_demir/features/analysis/providers/cutting_bending_provider.dart';
+import 'package:santijet_demir/features/analysis/widgets/analysis_batch_list_panel.dart';
+import 'package:santijet_demir/features/analysis/widgets/analysis_fire_summary.dart';
 import 'package:santijet_demir/features/analysis/widgets/collapsible_analysis_section.dart';
 import 'package:santijet_demir/features/analysis/widgets/stock_cut_section.dart';
 import 'package:santijet_demir/features/analysis/widgets/tahvil_calculator_section.dart';
@@ -40,7 +41,16 @@ class AnalysisScreen extends ConsumerWidget {
             SliverPadding(
               padding: const EdgeInsets.fromLTRB(AppSpacing.md, 0, AppSpacing.md, 0),
               sliver: SliverToBoxAdapter(
-                child: _TahvilCalculatorCollapsibleSection(),
+                child: Padding(
+                  padding: const EdgeInsets.only(bottom: AppSpacing.sm),
+                  child: Text(
+                    'Amaç: demir firesi azaltmak ve planlı kesim üretmek',
+                    style: AppTypography.bodySmall.copyWith(
+                      color: AppColors.textMuted,
+                    ),
+                    textAlign: TextAlign.center,
+                  ),
+                ),
               ),
             ),
             if (batch == null) ...[
@@ -50,13 +60,13 @@ class AnalysisScreen extends ConsumerWidget {
                   child: Column(
                     mainAxisSize: MainAxisSize.min,
                     children: [
-                      const Icon(Icons.content_cut, size: 48, color: AppColors.textMuted),
+                      const Icon(Icons.analytics_outlined, size: 48, color: AppColors.textMuted),
                       const SizedBox(height: 16),
-                      Text('Liste boş', style: AppTypography.headlineMedium),
+                      Text('Analiz listesi boş', style: AppTypography.headlineMedium),
                       const SizedBox(height: 8),
                       Text(
-                        'Otomatik Metraj sonuçları Ön İmalat\'a kaydedilir.\n'
-                        'Onay verilen kayıtları buraya "Ön İmalattan Veri Al" ile aktarın.',
+                        'Ön imalattan onaylı metraj alın; boy eşleştirme ve '
+                        'kesim planı ile fireyi düşürün.',
                         style: AppTypography.bodyMedium.copyWith(color: AppColors.textMuted),
                         textAlign: TextAlign.center,
                       ),
@@ -80,51 +90,119 @@ class AnalysisScreen extends ConsumerWidget {
                     AppSpacing.md,
                     0,
                     AppSpacing.md,
+                    AppSpacing.sm,
+                  ),
+                  child: AnalysisBatchListPanel(
+                    batches: state.batches,
+                    activeBatchId: state.activeBatchId,
+                    onSelectBatch: (id) => ref
+                        .read(cuttingBendingBatchesProvider.notifier)
+                        .setActiveBatch(id),
+                    onDeleteSelected: (ids) =>
+                        _confirmDeleteBatches(context, ref, ids),
+                  ),
+                ),
+              ),
+              SliverToBoxAdapter(
+                child: Padding(
+                  padding: const EdgeInsets.fromLTRB(
+                    AppSpacing.md,
+                    0,
+                    AppSpacing.md,
                     AppSpacing.md,
                   ),
                   child: _BatchHeader(
                     batch: batch,
-                    batches: state.batches,
-                    onSelectBatch: (id) =>
-                        ref.read(cuttingBendingBatchesProvider.notifier).setActiveBatch(id),
-                    onDeleteBatch: () => _confirmDeleteBatch(context, ref, batch),
                     onImportFromPreProduction: () =>
                         showPreProductionAnalysisImportSheet(context, ref),
                   ),
+                ),
+              ),
+              SliverToBoxAdapter(
+                child: Padding(
+                  padding: const EdgeInsets.fromLTRB(
+                    AppSpacing.md,
+                    0,
+                    AppSpacing.md,
+                    AppSpacing.sm,
+                  ),
+                  child: AnalysisFireSummaryPanel(batch: batch),
                 ),
               ),
               SliverPadding(
                 padding: const EdgeInsets.fromLTRB(AppSpacing.md, 0, AppSpacing.md, 80),
                 sliver: SliverList(
                   delegate: SliverChildListDelegate([
-                    if (batch.labelDetails.isNotEmpty)
-                      CollapsibleAnalysisSection(
-                        sectionId: AnalysisSectionIds.labels,
-                        title: 'Analiz Edilen Demir Etiketleri',
-                        subtitle:
-                            '${batch.labelDetails.length} etiket (adet + çap + boy)',
-                        child: RebarLabelDetailsSection(
-                          details: batch.labelDetails,
-                          hideHeader: true,
-                          onDeleteDetail: (detail) =>
-                              _confirmDeleteLabel(context, ref, detail),
-                        ),
-                      ),
                     CollapsibleAnalysisSection(
-                      sectionId: AnalysisSectionIds.pieceList,
-                      title: 'Parça Listesi',
-                      subtitle: 'Çap + boy bazında gruplanmış adetler',
-                      child: _PieceListTable(pieces: batch.pieceLines),
-                    ),
-                    CollapsibleAnalysisSection(
-                      sectionId: AnalysisSectionIds.lengthMatch,
-                      title: 'Boy Eşleştirme',
-                      subtitle:
-                          'Aynı çapta birbirine yakın boyları toleransa göre gruplar — '
-                          'onaylamadan önce eşleştirilecek boyu seçin',
+                      sectionId: AnalysisSectionIds.dataSource,
+                      title: '1 · Kaynak Veri',
+                      subtitle: 'Metraj etiketleri ve ham parça listesi',
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.stretch,
                         children: [
+                          if (batch.labelDetails.isNotEmpty) ...[
+                            Text('Etiketler', style: AppTypography.labelMedium),
+                            const SizedBox(height: 8),
+                            RebarLabelDetailsSection(
+                              details: batch.labelDetails,
+                              hideHeader: true,
+                              onDeleteDetail: (detail) =>
+                                  _confirmDeleteLabel(context, ref, detail),
+                            ),
+                            const SizedBox(height: 16),
+                          ],
+                          Text('Ham parça listesi', style: AppTypography.labelMedium),
+                          const SizedBox(height: 8),
+                          _PieceListTable(pieces: batch.pieceLines),
+                        ],
+                      ),
+                    ),
+                    CollapsibleAnalysisSection(
+                      sectionId: AnalysisSectionIds.optimizationPipeline,
+                      title: '2 · Fire Azaltma',
+                      subtitle:
+                          'Boy eşleştirme → tahvil → revize parça listesi',
+                      child: !batch.isOptimized
+                          ? Padding(
+                              padding: const EdgeInsets.symmetric(vertical: 24),
+                              child: Column(
+                                children: [
+                                  const Icon(
+                                    Icons.auto_fix_high_outlined,
+                                    size: 40,
+                                    color: AppColors.textMuted,
+                                  ),
+                                  const SizedBox(height: 12),
+                                  Text(
+                                    'Fire azaltma adımları henüz çalıştırılmadı.',
+                                    style: AppTypography.bodyMedium.copyWith(
+                                      color: AppColors.textMuted,
+                                    ),
+                                    textAlign: TextAlign.center,
+                                  ),
+                                  const SizedBox(height: 6),
+                                  Text(
+                                    'Üstteki Optimum Fire Analizi butonuna basın; '
+                                    'sistem boy eşleştirme, tahvil ve revize listeyi '
+                                    'otomatik oluşturur.',
+                                    style: AppTypography.bodySmall.copyWith(
+                                      color: AppColors.textMuted,
+                                    ),
+                                    textAlign: TextAlign.center,
+                                  ),
+                                ],
+                              ),
+                            )
+                          : Column(
+                        crossAxisAlignment: CrossAxisAlignment.stretch,
+                        children: [
+                          AnalysisStepHeader(
+                            step: 1,
+                            title: 'Boy Eşleştirme',
+                            subtitle:
+                                'Yakın boyları birleştirerek çeşit azaltın',
+                            complete: isLengthMatchingComplete(batch.lengthMatches),
+                          ),
                           _LengthMatchToleranceField(
                             toleranceCm: batch.lengthMatchToleranceCm,
                             onApply: (toleranceCm) => ref
@@ -150,32 +228,66 @@ class AnalysisScreen extends ConsumerWidget {
                                     ),
                               ),
                             ),
+                          const SizedBox(height: 20),
+                          const Divider(height: 1, color: AppColors.border),
+                          const SizedBox(height: 16),
+                          AnalysisStepHeader(
+                            step: 2,
+                            title: 'Tahvil Önerileri',
+                            subtitle:
+                                'Farklı çaplarda yakın boylar — opsiyonel fire azaltma',
+                            complete: batch.tahvilGroups.any((g) => g.approved),
+                          ),
+                          if (batch.tahvilGroups.isEmpty)
+                            Padding(
+                              padding: const EdgeInsets.symmetric(vertical: 8),
+                              child: Text(
+                                'Bu liste için tahvil önerisi yok.',
+                                style: AppTypography.bodySmall.copyWith(
+                                  color: AppColors.textMuted,
+                                ),
+                              ),
+                            )
+                          else
+                            ...batch.tahvilGroups.map(
+                              (group) => _TahvilCard(
+                                group: group,
+                                onApprove: (approved) => ref
+                                    .read(cuttingBendingBatchesProvider.notifier)
+                                    .approveTahvil(group.id, approved: approved),
+                              ),
+                            ),
+                          const SizedBox(height: 20),
+                          const Divider(height: 1, color: AppColors.border),
+                          const SizedBox(height: 16),
+                          AnalysisStepHeader(
+                            step: 3,
+                            title: 'Revize Parça Listesi',
+                            subtitle:
+                                'Boy eşleştirme onaylarına göre güncellenmiş liste',
+                            complete: isLengthMatchingComplete(batch.lengthMatches),
+                          ),
+                          batch.revisedPieceLines.isEmpty
+                              ? const ModuleEmptyState(
+                                  type: EmptyStateType.noSearchResult,
+                                  inline: true,
+                                )
+                              : _PieceListTable(pieces: batch.revisedPieceLines),
                         ],
                       ),
                     ),
                     CollapsibleAnalysisSection(
-                      sectionId: AnalysisSectionIds.revisedPieceList,
-                      title: 'Revize Parça Listesi',
+                      sectionId: AnalysisSectionIds.plannedCutting,
+                      title: '3 · Planlı Kesim',
                       subtitle:
-                          'Boy eşleştirme onaylarına göre güncellenmiş çap + boy adetleri',
-                      child: batch.revisedPieceLines.isEmpty
-                          ? const ModuleEmptyState(
-                              type: EmptyStateType.noSearchResult,
-                              inline: true,
-                            )
-                          : _PieceListTable(pieces: batch.revisedPieceLines),
-                    ),
-                    CollapsibleAnalysisSection(
-                      sectionId: AnalysisSectionIds.stockCutList,
-                      title: 'Çap Bazlı Kesim Analizi',
-                      subtitle:
-                          'Revize parça listesinden ${CuttingBendingBatch.defaultStockBarLengthM.toStringAsFixed(0)} m '
-                          'stok boya minimum fire planı — boy eşleştirme tamamlandığında güncellenir',
-                      child: !isLengthMatchingComplete(batch.lengthMatches)
+                          'Revize listeden ${CuttingBendingBatch.defaultStockBarLengthM.toStringAsFixed(0)} m '
+                          'stok minimum fire kesim planı',
+                      child: !batch.isOptimized
                           ? Padding(
                               padding: const EdgeInsets.symmetric(vertical: 24),
                               child: Text(
-                                'Kesim analizi için tüm boy eşleştirme gruplarını onaylayın.',
+                                'Planlı kesim, optimum fire analizi '
+                                'tamamlandıktan sonra burada görünür.',
                                 style: AppTypography.bodyMedium.copyWith(
                                   color: AppColors.textMuted,
                                 ),
@@ -193,28 +305,11 @@ class AnalysisScreen extends ConsumerWidget {
                                 ),
                     ),
                     CollapsibleAnalysisSection(
-                      sectionId: AnalysisSectionIds.tahvilSuggestions,
-                      title: 'Tahvil Önerileri',
+                      sectionId: AnalysisSectionIds.tahvilCalculator,
+                      title: 'Araç · Tahvil Hesaplayıcı',
                       subtitle:
-                          'πr² kesit alanı, ±${tahvilMaxDiameterDiffMm} mm çap, '
-                          '≤${tahvilMaxSpacingCm.toStringAsFixed(0)} cm aralık kurallarına göre',
-                      child: batch.tahvilGroups.isEmpty
-                          ? const ModuleEmptyState(
-                              type: EmptyStateType.noSearchResult,
-                              inline: true,
-                            )
-                          : Column(
-                              children: batch.tahvilGroups
-                                  .map(
-                                    (group) => _TahvilCard(
-                                      group: group,
-                                      onApprove: (approved) => ref
-                                          .read(cuttingBendingBatchesProvider.notifier)
-                                          .approveTahvil(group.id, approved: approved),
-                                    ),
-                                  )
-                                  .toList(),
-                            ),
+                          'Manuel tahvil denemesi — πr² kesit kuralları',
+                      child: const TahvilCalculatorSection(hideHeader: true),
                     ),
                   ]),
                 ),
@@ -226,17 +321,32 @@ class AnalysisScreen extends ConsumerWidget {
     );
   }
 
-  Future<void> _confirmDeleteBatch(
+  Future<void> _confirmDeleteBatches(
     BuildContext context,
     WidgetRef ref,
-    CuttingBendingBatch batch,
+    Set<String> batchIds,
   ) async {
+    if (batchIds.isEmpty) return;
+
+    final state = ref.read(cuttingBendingBatchesProvider);
+    final titles = state.batches
+        .where((batch) => batchIds.contains(batch.id))
+        .map((batch) => batch.title)
+        .toList();
+    final preview = titles.take(3).join('\n• ');
+    final extra = titles.length > 3 ? '\n… ve ${titles.length - 3} dosya daha' : '';
+
     final confirmed = await showDialog<bool>(
       context: context,
       builder: (context) => AlertDialog(
-        title: const Text('Listeyi sil'),
+        title: Text(
+          batchIds.length == 1 ? 'Listeyi sil' : '${batchIds.length} listeyi sil',
+        ),
         content: Text(
-          '"${batch.title}" analiz listesini silmek istediğinize emin misiniz?',
+          batchIds.length == 1
+              ? '"${titles.first}" analiz listesini silmek istediğinize emin misiniz?'
+              : 'Seçili ${batchIds.length} analiz listesini silmek istediğinize '
+                  'emin misiniz?\n\n• $preview$extra',
         ),
         actions: [
           TextButton(
@@ -245,13 +355,30 @@ class AnalysisScreen extends ConsumerWidget {
           ),
           FilledButton(
             onPressed: () => Navigator.pop(context, true),
+            style: FilledButton.styleFrom(
+              backgroundColor: AppColors.critical,
+            ),
             child: const Text('Sil'),
           ),
         ],
       ),
     );
     if (confirmed != true || !context.mounted) return;
-    await ref.read(cuttingBendingBatchesProvider.notifier).deleteBatch(batch.id);
+
+    await ref
+        .read(cuttingBendingBatchesProvider.notifier)
+        .deleteBatches(batchIds);
+
+    if (!context.mounted) return;
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(
+          batchIds.length == 1
+              ? 'Analiz listesi silindi.'
+              : '${batchIds.length} analiz listesi silindi.',
+        ),
+      ),
+    );
   }
 
   Future<void> _confirmDeleteLabel(
@@ -283,34 +410,13 @@ class AnalysisScreen extends ConsumerWidget {
   }
 }
 
-class _TahvilCalculatorCollapsibleSection extends StatelessWidget {
-  const _TahvilCalculatorCollapsibleSection();
-
-  @override
-  Widget build(BuildContext context) {
-    return CollapsibleAnalysisSection(
-      sectionId: AnalysisSectionIds.tahvilCalculator,
-      title: 'Otomatik Tahvil Hesabı',
-      subtitle:
-          'Çap, adet ve aralık girin; tüm seçenekler hesaplanır, elenenler gerekçeleriyle gösterilir.',
-      child: const TahvilCalculatorSection(hideHeader: true),
-    );
-  }
-}
-
 class _BatchHeader extends StatelessWidget {
   const _BatchHeader({
     required this.batch,
-    required this.batches,
-    required this.onSelectBatch,
-    required this.onDeleteBatch,
     required this.onImportFromPreProduction,
   });
 
   final CuttingBendingBatch batch;
-  final List<CuttingBendingBatch> batches;
-  final ValueChanged<String> onSelectBatch;
-  final VoidCallback onDeleteBatch;
   final VoidCallback onImportFromPreProduction;
 
   @override
@@ -374,8 +480,8 @@ class _BatchHeader extends StatelessWidget {
                           ),
                         ),
                         child: const Icon(
-                          Icons.content_cut,
-                          color: AppColors.partial,
+                          Icons.analytics_outlined,
+                          color: AppColors.electricBlueLight,
                           size: 22,
                         ),
                       ),
@@ -412,53 +518,8 @@ class _BatchHeader extends StatelessWidget {
                           ],
                         ),
                       ),
-                      const SizedBox(width: 8),
-                      IconButton(
-                        onPressed: onDeleteBatch,
-                        tooltip: 'Listeyi sil',
-                        style: IconButton.styleFrom(
-                          minimumSize: const Size(40, 40),
-                          backgroundColor:
-                              AppColors.critical.withValues(alpha: 0.08),
-                          foregroundColor: AppColors.critical,
-                          side: BorderSide(
-                            color: AppColors.critical.withValues(alpha: 0.28),
-                          ),
-                        ),
-                        icon: const Icon(Icons.delete_outline, size: 20),
-                      ),
                     ],
                   ),
-                  if (batches.length > 1) ...[
-                    const SizedBox(height: 14),
-                    DropdownButtonFormField<String>(
-                      value: batch.id,
-                      decoration: InputDecoration(
-                        labelText: 'Liste',
-                        isDense: true,
-                        filled: true,
-                        fillColor: AppColors.canvas,
-                        border: OutlineInputBorder(
-                          borderRadius: AppRadii.sm,
-                          borderSide: const BorderSide(color: AppColors.border),
-                        ),
-                      ),
-                      items: batches
-                          .map(
-                            (item) => DropdownMenuItem(
-                              value: item.id,
-                              child: Text(
-                                item.title,
-                                overflow: TextOverflow.ellipsis,
-                              ),
-                            ),
-                          )
-                          .toList(),
-                      onChanged: (value) {
-                        if (value != null) onSelectBatch(value);
-                      },
-                    ),
-                  ],
                   const SizedBox(height: 16),
                   const Divider(height: 1, color: AppColors.border),
                   const SizedBox(height: 14),

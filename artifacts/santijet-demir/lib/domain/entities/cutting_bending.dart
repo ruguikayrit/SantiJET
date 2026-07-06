@@ -410,6 +410,7 @@ class CuttingBendingBatch {
     required this.tahvilGroups,
     required this.stockCutPlans,
     this.lengthMatchToleranceCm = defaultLengthMatchToleranceCm,
+    this.optimizationAppliedAt,
   });
 
   static const defaultLengthMatchToleranceCm = 30.0;
@@ -426,6 +427,9 @@ class CuttingBendingBatch {
   final List<TahvilSuggestion> tahvilGroups;
   final List<StockCutPlan> stockCutPlans;
   final double lengthMatchToleranceCm;
+  final DateTime? optimizationAppliedAt;
+
+  bool get isOptimized => optimizationAppliedAt != null;
 
   double get lengthMatchToleranceM => lengthMatchToleranceCm / 100;
 
@@ -437,6 +441,8 @@ class CuttingBendingBatch {
     List<TahvilSuggestion>? tahvilGroups,
     List<StockCutPlan>? stockCutPlans,
     double? lengthMatchToleranceCm,
+    DateTime? optimizationAppliedAt,
+    bool clearOptimizationAppliedAt = false,
   }) {
     return CuttingBendingBatch(
       id: id,
@@ -451,6 +457,9 @@ class CuttingBendingBatch {
       stockCutPlans: stockCutPlans ?? this.stockCutPlans,
       lengthMatchToleranceCm:
           lengthMatchToleranceCm ?? this.lengthMatchToleranceCm,
+      optimizationAppliedAt: clearOptimizationAppliedAt
+          ? null
+          : (optimizationAppliedAt ?? this.optimizationAppliedAt),
     );
   }
 
@@ -466,6 +475,8 @@ class CuttingBendingBatch {
         'tahvilGroups': tahvilGroups.map((g) => g.toJson()).toList(),
         'stockCutPlans': stockCutPlans.map((p) => p.toJson()).toList(),
         'lengthMatchToleranceCm': lengthMatchToleranceCm,
+        if (optimizationAppliedAt != null)
+          'optimizationAppliedAt': optimizationAppliedAt!.toIso8601String(),
       };
 
   factory CuttingBendingBatch.fromJson(Map<dynamic, dynamic> json) {
@@ -497,6 +508,9 @@ class CuttingBendingBatch {
       lengthMatchToleranceCm:
           (json['lengthMatchToleranceCm'] as num?)?.toDouble() ??
               CuttingBendingBatch.defaultLengthMatchToleranceCm,
+      optimizationAppliedAt: json['optimizationAppliedAt'] != null
+          ? DateTime.tryParse(json['optimizationAppliedAt'] as String)
+          : null,
     );
   }
 }
