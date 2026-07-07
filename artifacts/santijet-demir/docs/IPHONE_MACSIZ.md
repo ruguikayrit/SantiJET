@@ -22,10 +22,10 @@ Depo GitHub Pages'e deploy edildikten sonra iPhone Safari'den açılır.
 1. Safari'de şu adresi açın (repo adına göre):
 
 ```
-https://ruguikayrit.github.io/santijet/
+https://ruguikayrit.github.io/SantiJET/
 ```
 
-> Repo adı `SantiJET` ise: `https://ruguikayrit.github.io/SantiJET/`
+> Doğru adres büyük/küçük harfe duyarlıdır: `SantiJET` (küçük `santijet` 404 verir).
 
 2. **Paylaş** (kare + ok) → **Ana Ekrana Ekle**
 3. Ana ekrandaki **ŞantiJET DEMİR** ikonuna dokunun — uygulama gibi tam ekran açılır

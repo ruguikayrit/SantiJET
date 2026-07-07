@@ -107,7 +107,7 @@ Mac olmadan iPhone'da kullanım: [docs/IPHONE_MACSIZ.md](docs/IPHONE_MACSIZ.md)
 GitHub Pages (Safari + Ana Ekrana Ekle):
 
 ```
-https://ruguikayrit.github.io/santijet/
+https://ruguikayrit.github.io/SantiJET/
 ```
 
 Yerel ağ (aynı Wi‑Fi):
