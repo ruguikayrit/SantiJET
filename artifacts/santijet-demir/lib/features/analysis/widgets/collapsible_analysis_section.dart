@@ -15,6 +15,7 @@ class CollapsibleAnalysisSection extends ConsumerWidget {
     required this.title,
     this.subtitle,
     required this.child,
+    this.headerAccentColor,
   });
 
   static const sectionGap = AppSpacing.sm;
@@ -23,10 +24,12 @@ class CollapsibleAnalysisSection extends ConsumerWidget {
   final String title;
   final String? subtitle;
   final Widget child;
+  final Color? headerAccentColor;
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final expanded = ref.watch(analysisSectionExpandedProvider(sectionId));
+    final accent = headerAccentColor;
 
     return Padding(
       padding: const EdgeInsets.only(bottom: sectionGap),
@@ -34,14 +37,30 @@ class CollapsibleAnalysisSection extends ConsumerWidget {
         decoration: BoxDecoration(
           color: AppColors.surfaceElevated,
           borderRadius: AppRadii.md,
-          border: Border.all(color: AppColors.border),
+          border: Border.all(
+            color: accent != null
+                ? accent.withValues(alpha: 0.35)
+                : AppColors.border,
+          ),
         ),
         clipBehavior: Clip.antiAlias,
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
+            if (accent != null)
+              Container(
+                height: 3,
+                decoration: BoxDecoration(
+                  gradient: LinearGradient(
+                    colors: [
+                      accent.withValues(alpha: 0.9),
+                      accent.withValues(alpha: 0.4),
+                    ],
+                  ),
+                ),
+              ),
             Material(
-              color: Colors.transparent,
+              color: accent?.withValues(alpha: 0.08) ?? Colors.transparent,
               child: InkWell(
                 onTap: () {
                   ref
@@ -56,11 +75,36 @@ class CollapsibleAnalysisSection extends ConsumerWidget {
                   child: Row(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
+                      if (accent != null) ...[
+                        Container(
+                          width: 36,
+                          height: 36,
+                          alignment: Alignment.center,
+                          decoration: BoxDecoration(
+                            color: accent.withValues(alpha: 0.14),
+                            borderRadius: BorderRadius.circular(10),
+                            border: Border.all(
+                              color: accent.withValues(alpha: 0.3),
+                            ),
+                          ),
+                          child: Icon(
+                            Icons.calculate_outlined,
+                            size: 18,
+                            color: accent,
+                          ),
+                        ),
+                        const SizedBox(width: AppSpacing.xs),
+                      ],
                       Expanded(
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
-                            Text(title, style: AppTypography.titleMedium),
+                            Text(
+                              title,
+                              style: AppTypography.titleMedium.copyWith(
+                                color: accent,
+                              ),
+                            ),
                             if (subtitle != null) ...[
                               const SizedBox(height: AppSpacing.xxs),
                               Text(
@@ -77,7 +121,7 @@ class CollapsibleAnalysisSection extends ConsumerWidget {
                       Icon(
                         expanded ? Icons.expand_less : Icons.expand_more,
                         size: 22,
-                        color: AppColors.textMuted,
+                        color: accent ?? AppColors.textMuted,
                       ),
                     ],
                   ),

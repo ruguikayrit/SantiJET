@@ -2,11 +2,12 @@ import 'package:santijet_demir/data/services/rebar_weight_calculator.dart';
 import 'package:santijet_demir/domain/entities/cutting_bending.dart';
 import 'package:santijet_demir/domain/entities/rebar_metraj.dart';
 import 'package:santijet_demir/domain/tahvil/tahvil_rules.dart';
-/// Boy eşleştirme — aynı çapta yakın boy toleransı (metre).
-const lengthMatchToleranceM = 0.30;
+/// Boy eşleştirme — kaynak demir boyunun en fazla bu oranı kadar tolerans.
+const lengthMatchTolerancePercent = 0.05;
 
-/// Tahvil gruplama — farklı çapta yakın boy toleransı (metre).
-const tahvilLengthToleranceM = 0.10;
+/// Kaynak boy (m) için boy eşleştirme / tahvil toleransı (m).
+double lengthMatchToleranceMForLength(double lengthM) =>
+    lengthM * lengthMatchTolerancePercent;
 
 /// Standart stok boy (metre).
 const stockBarLengthM = 12.0;
@@ -334,10 +335,12 @@ List<RebarPieceLine> extractPieceLinesFromMetrajDetails(
 }
 
 /// Sıralı parçaları boy aralığı toleransına göre gruplar.
-/// Tolerans = gruptaki en kısa ile en uzun boy arasındaki fark (max − min).
+/// Boy eşleştirmede tolerans = en kısa boy × [tolerancePercent].
+/// Tahvil gruplamada aynı kural uygulanır.
 List<List<RebarPieceLine>> clusterPiecesByLengthSpan(
   List<RebarPieceLine> sortedPieces, {
-  required double toleranceM,
+  double tolerancePercent = lengthMatchTolerancePercent,
+  double? fixedToleranceM,
 }) {
   if (sortedPieces.isEmpty) return const [];
 
@@ -350,6 +353,7 @@ List<List<RebarPieceLine>> clusterPiecesByLengthSpan(
       continue;
     }
     final clusterMin = cluster.first.lengthM;
+    final toleranceM = fixedToleranceM ?? clusterMin * tolerancePercent;
     if (piece.lengthM - clusterMin <= toleranceM + 1e-9) {
       cluster.add(piece);
     } else {
@@ -363,7 +367,7 @@ List<List<RebarPieceLine>> clusterPiecesByLengthSpan(
 
 List<LengthMatchGroup> computeLengthMatchGroups(
   List<RebarPieceLine> pieces, {
-  double toleranceM = lengthMatchToleranceM,
+  double tolerancePercent = lengthMatchTolerancePercent,
 }) {
   final byDiameter = <int, List<RebarPieceLine>>{};
   for (final piece in pieces) {
@@ -377,7 +381,10 @@ List<LengthMatchGroup> computeLengthMatchGroups(
     final sorted = List<RebarPieceLine>.from(entry.value)
       ..sort((a, b) => a.lengthM.compareTo(b.lengthM));
 
-    for (final cluster in clusterPiecesByLengthSpan(sorted, toleranceM: toleranceM)) {
+    for (final cluster in clusterPiecesByLengthSpan(
+      sorted,
+      tolerancePercent: tolerancePercent,
+    )) {
       if (cluster.length > 1) {
         groups.add(_buildLengthMatchGroup(cluster, groupIndex++));
       }
@@ -460,6 +467,37 @@ bool isLengthMatchingComplete(List<LengthMatchGroup> lengthMatches) {
   return lengthMatches.every(
     (group) => group.approved && group.selectedLengthM != null,
   );
+}
+
+/// Onaylı boy eşleştirmelerinde önce → sonra boy değişimlerini listeler.
+List<LengthMatchChange> computeLengthMatchChanges(
+  List<LengthMatchGroup> lengthMatches,
+) {
+  final changes = <LengthMatchChange>[];
+
+  for (final group in lengthMatches) {
+    if (!group.approved || group.selectedLengthM == null) continue;
+    final afterLength = group.selectedLengthM!;
+    for (final member in group.members) {
+      if ((member.lengthM - afterLength).abs() <= 1e-9) continue;
+      changes.add(
+        LengthMatchChange(
+          diameter: member.diameter,
+          beforeLengthM: member.lengthM,
+          afterLengthM: afterLength,
+          quantity: member.quantity,
+        ),
+      );
+    }
+  }
+
+  changes.sort((a, b) {
+    final byDiameter = a.diameter.compareTo(b.diameter);
+    if (byDiameter != 0) return byDiameter;
+    return a.beforeLengthM.compareTo(b.beforeLengthM);
+  });
+
+  return changes;
 }
 
 List<RebarPieceLine> _mergePieceLines(List<RebarPieceLine> pieces) {
@@ -612,6 +650,61 @@ CuttingBendingBatch syncBatchLengthMatchDerivatives(CuttingBendingBatch batch) {
   );
 }
 
+OptimizationSnapshot createOptimizationSnapshot(CuttingBendingBatch batch) {
+  assert(batch.isOptimized && batch.optimizationStrategy != null);
+  return OptimizationSnapshot(
+    strategy: batch.optimizationStrategy!,
+    savedAt: DateTime.now(),
+    optimizationAppliedAt: batch.optimizationAppliedAt!,
+    revisedPieceLines: List<RebarPieceLine>.from(batch.revisedPieceLines),
+    lengthMatches: List<LengthMatchGroup>.from(batch.lengthMatches),
+    tahvilGroups: List<TahvilSuggestion>.from(batch.tahvilGroups),
+    stockCutPlans: List<StockCutPlan>.from(batch.stockCutPlans),
+    lengthMatchTolerancePercent: batch.lengthMatchTolerancePercent,
+  );
+}
+
+CuttingBendingBatch applyOptimizationSnapshot(
+  CuttingBendingBatch batch,
+  OptimizationSnapshot snapshot,
+) {
+  return syncBatchLengthMatchDerivatives(
+    batch.copyWith(
+      revisedPieceLines: snapshot.revisedPieceLines,
+      lengthMatches: snapshot.lengthMatches,
+      tahvilGroups: snapshot.tahvilGroups,
+      stockCutPlans: snapshot.stockCutPlans,
+      lengthMatchTolerancePercent: snapshot.lengthMatchTolerancePercent,
+      optimizationStrategy: snapshot.strategy,
+      optimizationAppliedAt: snapshot.optimizationAppliedAt,
+    ),
+  );
+}
+
+CuttingBendingBatch saveOptimizationSnapshot(CuttingBendingBatch batch) {
+  if (!batch.isOptimized || batch.optimizationStrategy == null) return batch;
+
+  final snapshot = createOptimizationSnapshot(batch);
+  final updated = Map<FireReductionStrategy, OptimizationSnapshot>.from(
+    batch.savedOptimizations,
+  );
+  updated[batch.optimizationStrategy!] = snapshot;
+
+  return batch.copyWith(savedOptimizations: updated);
+}
+
+CuttingBendingBatch clearActiveOptimization(CuttingBendingBatch batch) {
+  return syncBatchLengthMatchDerivatives(
+    batch.copyWith(
+      clearOptimizationAppliedAt: true,
+      clearOptimizationStrategy: true,
+      lengthMatches: const [],
+      stockCutPlans: const [],
+      tahvilGroups: computeTahvilGroups(batch.pieceLines),
+    ),
+  );
+}
+
 class AnalysisFireSummary {
   const AnalysisFireSummary({
     required this.rawMaterialTonnage,
@@ -680,6 +773,161 @@ class AnalysisComparison {
       (rawFirePercent - plannedFirePercent).clamp(-100, 100);
 }
 
+class StrategyFireComparison {
+  const StrategyFireComparison({
+    required this.strategy,
+    required this.isAvailable,
+    this.plannedFireTonnage,
+    this.plannedFirePercent,
+    this.savedFireTonnage,
+    this.savedFirePercent,
+    this.isActive = false,
+    this.isSaved = false,
+  });
+
+  final FireReductionStrategy strategy;
+  final bool isAvailable;
+  final double? plannedFireTonnage;
+  final double? plannedFirePercent;
+  final double? savedFireTonnage;
+  final double? savedFirePercent;
+  final bool isActive;
+  final bool isSaved;
+}
+
+List<StrategyFireComparison> computeStrategyFireComparisons(
+  CuttingBendingBatch batch,
+) {
+  return FireReductionStrategy.values.map((strategy) {
+    final saved = batch.savedOptimizations[strategy];
+    final isActive =
+        batch.isOptimized && batch.optimizationStrategy == strategy;
+    final isSaved = saved != null;
+
+    CuttingBendingBatch? evalBatch;
+    if (isSaved) {
+      evalBatch = applyOptimizationSnapshot(batch, saved);
+    } else if (isActive) {
+      evalBatch = batch;
+    } else {
+      return StrategyFireComparison(strategy: strategy, isAvailable: false);
+    }
+
+    final summary = computeAnalysisFireSummary(evalBatch);
+    if (!summary.isPlannedReady) {
+      return StrategyFireComparison(
+        strategy: strategy,
+        isAvailable: false,
+        isActive: isActive,
+        isSaved: isSaved,
+      );
+    }
+
+    return StrategyFireComparison(
+      strategy: strategy,
+      isAvailable: true,
+      plannedFireTonnage: summary.plannedWasteTonnage,
+      plannedFirePercent: summary.plannedWastePercent,
+      savedFireTonnage: summary.savedWasteTonnage,
+      savedFirePercent: summary.savedWastePercent,
+      isActive: isActive,
+      isSaved: isSaved,
+    );
+  }).toList();
+}
+
+class FireDiameterBreakdown {
+  const FireDiameterBreakdown({
+    required this.diameter,
+    required this.stockTonnage,
+    required this.usedTonnage,
+    required this.wasteTonnage,
+    required this.wastePercent,
+    required this.totalBars,
+  });
+
+  final int diameter;
+  final double stockTonnage;
+  final double usedTonnage;
+  final double wasteTonnage;
+  final double wastePercent;
+  final int totalBars;
+}
+
+class MaterialDiameterSummary {
+  const MaterialDiameterSummary({
+    required this.diameter,
+    required this.tonnage,
+    required this.pieceCount,
+    required this.lineCount,
+  });
+
+  final int diameter;
+  final double tonnage;
+  final int pieceCount;
+  final int lineCount;
+}
+
+List<MaterialDiameterSummary> computeMaterialSummaryByDiameter(
+  List<RebarPieceLine> pieces,
+) {
+  final byDiameter = <int, ({double tonnage, int pieces, int lines})>{};
+  for (final piece in pieces) {
+    final tonnage = RebarWeightCalculator.tonnage(
+      diameterMm: piece.diameter,
+      lengthM: piece.lengthM * piece.quantity,
+    );
+    final current = byDiameter[piece.diameter];
+    byDiameter[piece.diameter] = (
+      tonnage: (current?.tonnage ?? 0) + tonnage,
+      pieces: (current?.pieces ?? 0) + piece.quantity,
+      lines: (current?.lines ?? 0) + 1,
+    );
+  }
+
+  return byDiameter.entries
+      .map(
+        (entry) => MaterialDiameterSummary(
+          diameter: entry.key,
+          tonnage: entry.value.tonnage,
+          pieceCount: entry.value.pieces,
+          lineCount: entry.value.lines,
+        ),
+      )
+      .toList()
+    ..sort((a, b) => a.diameter.compareTo(b.diameter));
+}
+
+List<FireDiameterBreakdown> computeFireBreakdownByDiameter(
+  List<StockCutPlan> plans,
+) {
+  return plans
+      .map(
+        (plan) => FireDiameterBreakdown(
+          diameter: plan.diameter,
+          stockTonnage: plan.totalStockTonnage,
+          usedTonnage: plan.totalUsedTonnage,
+          wasteTonnage: plan.totalWasteTonnage,
+          wastePercent: plan.wastePercent,
+          totalBars: plan.totalBars,
+        ),
+      )
+      .toList()
+    ..sort((a, b) => a.diameter.compareTo(b.diameter));
+}
+
+List<FireDiameterBreakdown> computeRawFireBreakdown(CuttingBendingBatch batch) {
+  return computeFireBreakdownByDiameter(
+    computeStockCutPlans(batch.pieceLines),
+  );
+}
+
+List<FireDiameterBreakdown> computePlannedFireBreakdown(
+  CuttingBendingBatch batch,
+) {
+  return computeFireBreakdownByDiameter(batch.stockCutPlans);
+}
+
 ({double stockTonnage, double wasteTonnage, double wastePercent})
     _aggregateStockCutFireMetrics(List<StockCutPlan> plans) {
   var stockT = 0.0;
@@ -746,54 +994,105 @@ AnalysisComparison computeAnalysisComparison(CuttingBendingBatch batch) {
   );
 }
 
-/// Tahvil → boy eşleştirme → planlı kesim hattını otomatik çalıştırır.
-CuttingBendingBatch runOptimumFireAnalysis(CuttingBendingBatch batch) {
-  final autoTahvil = batch.tahvilGroups
-      .map(
-        (group) => pickBestTahvilEquivalentForGroup(group) != null
-            ? group.copyWith(approved: true)
-            : group,
-      )
-      .toList();
-
-  final workingPieces =
-      applyApprovedTahvilToPieceLines(batch.pieceLines, autoTahvil);
-  final lengthMatches = computeLengthMatchGroups(
-    workingPieces,
-    toleranceM: batch.lengthMatchToleranceM,
-  );
-
-  final optimizedMatches = <LengthMatchGroup>[];
-  for (final group in lengthMatches) {
-    final optimalLength = pickOptimalLengthForGroup(
-      group,
-      workingPieces,
-      lengthMatches,
-    );
-    optimizedMatches.add(
-      group.copyWith(approved: true, selectedLengthM: optimalLength),
-    );
+/// Seçilen stratejiye göre fire azaltma hattını otomatik çalıştırır.
+Future<CuttingBendingBatch> runOptimumFireAnalysis(
+  CuttingBendingBatch batch, {
+  required FireReductionStrategy strategy,
+  Future<void> Function(int percent, String stepLabel)? onProgress,
+}) async {
+  Future<void> report(int percent, String stepLabel) async {
+    await onProgress?.call(percent, stepLabel);
   }
 
-  return syncBatchLengthMatchDerivatives(
+  final applyTahvil = strategy.appliesTahvil;
+  final applyLengthMatch = strategy.appliesLengthMatch;
+
+  List<TahvilSuggestion> tahvilState = batch.tahvilGroups;
+
+  if (applyTahvil) {
+    await report(8, 'Tahvil önerileri değerlendiriliyor...');
+    tahvilState = batch.tahvilGroups
+        .map(
+          (group) => pickBestTahvilEquivalentForGroup(group) != null
+              ? group.copyWith(approved: true)
+              : group,
+        )
+        .toList();
+
+    await report(22, 'Tahvil kurallarına göre uygulanıyor...');
+  } else {
+    tahvilState = batch.tahvilGroups
+        .map((group) => group.copyWith(approved: false))
+        .toList();
+    await report(15, 'Tahvil atlanıyor...');
+  }
+
+  final workingPieces = applyTahvil
+      ? applyApprovedTahvilToPieceLines(batch.pieceLines, tahvilState)
+      : List<RebarPieceLine>.from(batch.pieceLines);
+
+  final optimizedMatches = <LengthMatchGroup>[];
+
+  if (applyLengthMatch) {
+    await report(36, 'Boy eşleştirme grupları oluşturuluyor (%5 tolerans)...');
+
+    final lengthMatches = computeLengthMatchGroups(workingPieces);
+
+    final groupCount = lengthMatches.length;
+
+    for (var i = 0; i < groupCount; i++) {
+      final group = lengthMatches[i];
+      final percent = 36 + (((i + 1) / groupCount) * 40).round();
+      await report(
+        percent,
+        'Optimum boy seçiliyor (${i + 1}/$groupCount)...',
+      );
+      final optimalLength = pickOptimalLengthForGroup(
+        group,
+        workingPieces,
+        lengthMatches,
+      );
+      optimizedMatches.add(
+        group.copyWith(approved: true, selectedLengthM: optimalLength),
+      );
+    }
+
+    if (groupCount == 0) {
+      await report(76, 'Boy eşleştirme gerekmiyor...');
+    }
+  } else {
+    await report(60, 'Boy eşleştirme atlanıyor...');
+  }
+
+  await report(88, 'Planlı kesim planı oluşturuluyor...');
+
+  final result = syncBatchLengthMatchDerivatives(
     batch.copyWith(
-      tahvilGroups: autoTahvil,
+      tahvilGroups: tahvilState,
       lengthMatches: optimizedMatches,
+      lengthMatchTolerancePercent: CuttingBendingBatch.defaultLengthMatchTolerancePercent,
+      optimizationStrategy: strategy,
       optimizationAppliedAt: DateTime.now(),
     ),
   );
+
+  await report(100, 'Analiz tamamlandı');
+  return result;
 }
 
 List<TahvilSuggestion> computeTahvilGroups(
   List<RebarPieceLine> pieces, {
-  double toleranceM = tahvilLengthToleranceM,
+  double tolerancePercent = lengthMatchTolerancePercent,
 }) {
   if (pieces.length < 2) return const [];
 
   final sorted = List<RebarPieceLine>.from(pieces)
     ..sort((a, b) => a.lengthM.compareTo(b.lengthM));
 
-  final clusters = clusterPiecesByLengthSpan(sorted, toleranceM: toleranceM);
+  final clusters = clusterPiecesByLengthSpan(
+    sorted,
+    tolerancePercent: tolerancePercent,
+  );
 
   final suggestions = <TahvilSuggestion>[];
   var tahvilIndex = 0;
@@ -831,8 +1130,7 @@ CuttingBendingBatch buildCuttingBendingBatch({
   required String title,
   required List<String> sourceMetrajRecordIds,
   required Iterable<RebarMetrajTextDetail> textDetails,
-  double lengthMatchTolerance = lengthMatchToleranceM,
-  double tahvilTolerance = tahvilLengthToleranceM,
+  double lengthMatchTolerancePercent = CuttingBendingBatch.defaultLengthMatchTolerancePercent,
 }) {
   final pieceLines = extractPieceLinesFromMetrajDetails(textDetails);
   final labels = textDetails.toList();
@@ -847,11 +1145,14 @@ CuttingBendingBatch buildCuttingBendingBatch({
       revisedPieceLines: const [],
       lengthMatches: computeLengthMatchGroups(
         pieceLines,
-        toleranceM: lengthMatchTolerance,
+        tolerancePercent: lengthMatchTolerancePercent,
       ),
-      tahvilGroups: computeTahvilGroups(pieceLines, toleranceM: tahvilTolerance),
+      tahvilGroups: computeTahvilGroups(
+        pieceLines,
+        tolerancePercent: lengthMatchTolerancePercent,
+      ),
       stockCutPlans: const [],
-      lengthMatchToleranceCm: lengthMatchTolerance * 100,
+      lengthMatchTolerancePercent: lengthMatchTolerancePercent,
     ),
   );
 }
@@ -860,8 +1161,7 @@ CuttingBendingBatch buildCuttingBendingBatchFromResults({
   required String title,
   required List<String> sourceMetrajRecordIds,
   required Iterable<RebarMetrajResult> results,
-  double lengthMatchTolerance = lengthMatchToleranceM,
-  double tahvilTolerance = tahvilLengthToleranceM,
+  double lengthMatchTolerancePercent = CuttingBendingBatch.defaultLengthMatchTolerancePercent,
 }) {
   final details = <RebarMetrajTextDetail>[];
   for (final result in results) {
@@ -871,8 +1171,7 @@ CuttingBendingBatch buildCuttingBendingBatchFromResults({
     title: title,
     sourceMetrajRecordIds: sourceMetrajRecordIds,
     textDetails: details,
-    lengthMatchTolerance: lengthMatchTolerance,
-    tahvilTolerance: tahvilTolerance,
+    lengthMatchTolerancePercent: lengthMatchTolerancePercent,
   );
 }
 
@@ -900,10 +1199,10 @@ CuttingBendingBatch hydrateCuttingBendingBatchLabels(
 CuttingBendingBatch rebuildCuttingBendingBatch(
   CuttingBendingBatch batch, {
   required List<RebarMetrajTextDetail> labelDetails,
-  double? lengthMatchTolerance,
-  double tahvilTolerance = tahvilLengthToleranceM,
+  double? lengthMatchTolerancePercent,
 }) {
-  final toleranceM = lengthMatchTolerance ?? batch.lengthMatchToleranceM;
+  final tolerancePercent =
+      lengthMatchTolerancePercent ?? batch.lengthMatchTolerancePercent;
   final pieceLines = extractPieceLinesFromMetrajDetails(
     labelDetails.where((detail) => detail.included),
   );
@@ -913,11 +1212,15 @@ CuttingBendingBatch rebuildCuttingBendingBatch(
       pieceLines: pieceLines,
       lengthMatches: computeLengthMatchGroups(
         pieceLines,
-        toleranceM: toleranceM,
+        tolerancePercent: tolerancePercent,
       ),
-      tahvilGroups: computeTahvilGroups(pieceLines, toleranceM: tahvilTolerance),
-      lengthMatchToleranceCm: toleranceM * 100,
+      tahvilGroups: computeTahvilGroups(
+        pieceLines,
+        tolerancePercent: tolerancePercent,
+      ),
+      lengthMatchTolerancePercent: tolerancePercent,
       clearOptimizationAppliedAt: true,
+      clearOptimizationStrategy: true,
     ),
   );
 }

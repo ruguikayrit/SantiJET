@@ -15,12 +15,14 @@ class AnalysisBatchListPanel extends ConsumerWidget {
     required this.activeBatchId,
     required this.onSelectBatch,
     required this.onDeleteSelected,
+    required this.onImportFromPreProduction,
   });
 
   final List<CuttingBendingBatch> batches;
   final String? activeBatchId;
   final ValueChanged<String> onSelectBatch;
   final Future<void> Function(Set<String> batchIds) onDeleteSelected;
+  final VoidCallback onImportFromPreProduction;
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -40,12 +42,28 @@ class AnalysisBatchListPanel extends ConsumerWidget {
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
           Padding(
-            padding: const EdgeInsets.fromLTRB(14, 14, 14, 10),
+            padding: const EdgeInsets.fromLTRB(14, 14, 14, 12),
+            child: OutlinedButton.icon(
+              onPressed: onImportFromPreProduction,
+              icon: const Icon(Icons.inventory_2_outlined, size: 18),
+              label: const Text('Ön İmalattan Veri Al'),
+              style: OutlinedButton.styleFrom(
+                minimumSize: const Size.fromHeight(44),
+                padding: const EdgeInsets.symmetric(horizontal: 16),
+                foregroundColor: AppColors.electricBlueLight,
+                side: BorderSide(
+                  color: AppColors.electricBlue.withValues(alpha: 0.45),
+                ),
+              ),
+            ),
+          ),
+          Padding(
+            padding: const EdgeInsets.fromLTRB(14, 0, 14, 10),
             child: Row(
               children: [
                 Expanded(
                   child: Text(
-                    'DWG analiz listeleri',
+                    'DWG analiz listesi',
                     style: AppTypography.titleMedium,
                   ),
                 ),

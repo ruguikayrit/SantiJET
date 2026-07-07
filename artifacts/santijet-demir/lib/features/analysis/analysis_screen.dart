@@ -9,12 +9,12 @@ import 'package:santijet_demir/core/theme/app_typography.dart';
 import 'package:santijet_demir/core/widgets/empty_states.dart';
 import 'package:santijet_demir/core/widgets/santijet_header.dart';
 import 'package:santijet_demir/domain/entities/cutting_bending.dart';
-import 'package:santijet_demir/domain/entities/rebar_metraj.dart';
-import 'package:santijet_demir/features/analysis/cutting_bending_calculator.dart';
 import 'package:santijet_demir/features/analysis/providers/cutting_bending_provider.dart';
 import 'package:santijet_demir/features/analysis/widgets/analysis_batch_list_panel.dart';
+import 'package:santijet_demir/features/analysis/widgets/analysis_comparison_section.dart';
 import 'package:santijet_demir/features/analysis/widgets/analysis_fire_summary.dart';
 import 'package:santijet_demir/features/analysis/widgets/collapsible_analysis_section.dart';
+import 'package:santijet_demir/features/analysis/widgets/analysis_optimization_results.dart';
 import 'package:santijet_demir/features/analysis/widgets/stock_cut_section.dart';
 import 'package:santijet_demir/features/analysis/widgets/tahvil_calculator_section.dart';
 import 'package:santijet_demir/features/rebar_metraj/widgets/metraj_cutting_actions.dart';
@@ -100,6 +100,8 @@ class AnalysisScreen extends ConsumerWidget {
                         .setActiveBatch(id),
                     onDeleteSelected: (ids) =>
                         _confirmDeleteBatches(context, ref, ids),
+                    onImportFromPreProduction: () =>
+                        showPreProductionAnalysisImportSheet(context, ref),
                   ),
                 ),
               ),
@@ -111,11 +113,7 @@ class AnalysisScreen extends ConsumerWidget {
                     AppSpacing.md,
                     AppSpacing.md,
                   ),
-                  child: _BatchHeader(
-                    batch: batch,
-                    onImportFromPreProduction: () =>
-                        showPreProductionAnalysisImportSheet(context, ref),
-                  ),
+                  child: _BatchHeader(batch: batch),
                 ),
               ),
               SliverToBoxAdapter(
@@ -134,6 +132,12 @@ class AnalysisScreen extends ConsumerWidget {
                 sliver: SliverList(
                   delegate: SliverChildListDelegate([
                     CollapsibleAnalysisSection(
+                      sectionId: AnalysisSectionIds.comparison,
+                      title: 'Mukayese',
+                      subtitle: 'Kaynak, revize ve strateji sonuçlarını karşılaştırın',
+                      child: AnalysisComparisonSection(batch: batch),
+                    ),
+                    CollapsibleAnalysisSection(
                       sectionId: AnalysisSectionIds.dataSource,
                       title: '1 · Kaynak Veri',
                       subtitle: 'Metraj etiketleri ve ham parça listesi',
@@ -146,8 +150,6 @@ class AnalysisScreen extends ConsumerWidget {
                             RebarLabelDetailsSection(
                               details: batch.labelDetails,
                               hideHeader: true,
-                              onDeleteDetail: (detail) =>
-                                  _confirmDeleteLabel(context, ref, detail),
                             ),
                             const SizedBox(height: 16),
                           ],
@@ -160,8 +162,7 @@ class AnalysisScreen extends ConsumerWidget {
                     CollapsibleAnalysisSection(
                       sectionId: AnalysisSectionIds.optimizationPipeline,
                       title: '2 · Fire Azaltma',
-                      subtitle:
-                          'Boy eşleştirme → tahvil → revize parça listesi',
+                      subtitle: 'Otomatik fire azaltma sonuçları',
                       child: !batch.isOptimized
                           ? Padding(
                               padding: const EdgeInsets.symmetric(vertical: 24),
@@ -174,7 +175,7 @@ class AnalysisScreen extends ConsumerWidget {
                                   ),
                                   const SizedBox(height: 12),
                                   Text(
-                                    'Fire azaltma adımları henüz çalıştırılmadı.',
+                                    'Fire azaltma analizi henüz çalıştırılmadı.',
                                     style: AppTypography.bodyMedium.copyWith(
                                       color: AppColors.textMuted,
                                     ),
@@ -182,9 +183,8 @@ class AnalysisScreen extends ConsumerWidget {
                                   ),
                                   const SizedBox(height: 6),
                                   Text(
-                                    'Üstteki Optimum Fire Analizi butonuna basın; '
-                                    'sistem boy eşleştirme, tahvil ve revize listeyi '
-                                    'otomatik oluşturur.',
+                                    'Fire Özeti bölümünden strateji seçip '
+                                    '"Fire Analizini Başlat" butonuna basın.',
                                     style: AppTypography.bodySmall.copyWith(
                                       color: AppColors.textMuted,
                                     ),
@@ -193,88 +193,7 @@ class AnalysisScreen extends ConsumerWidget {
                                 ],
                               ),
                             )
-                          : Column(
-                        crossAxisAlignment: CrossAxisAlignment.stretch,
-                        children: [
-                          AnalysisStepHeader(
-                            step: 1,
-                            title: 'Boy Eşleştirme',
-                            subtitle:
-                                'Yakın boyları birleştirerek çeşit azaltın',
-                            complete: isLengthMatchingComplete(batch.lengthMatches),
-                          ),
-                          _LengthMatchToleranceField(
-                            toleranceCm: batch.lengthMatchToleranceCm,
-                            onApply: (toleranceCm) => ref
-                                .read(cuttingBendingBatchesProvider.notifier)
-                                .setLengthMatchTolerance(toleranceCm),
-                          ),
-                          const SizedBox(height: 8),
-                          if (batch.lengthMatches.isEmpty)
-                            const ModuleEmptyState(
-                              type: EmptyStateType.noSearchResult,
-                              inline: true,
-                            )
-                          else
-                            ...batch.lengthMatches.map(
-                              (group) => _LengthMatchCard(
-                                group: group,
-                                onApprove: (approved, selectedLengthM) => ref
-                                    .read(cuttingBendingBatchesProvider.notifier)
-                                    .approveLengthMatch(
-                                      group.id,
-                                      approved: approved,
-                                      selectedLengthM: selectedLengthM,
-                                    ),
-                              ),
-                            ),
-                          const SizedBox(height: 20),
-                          const Divider(height: 1, color: AppColors.border),
-                          const SizedBox(height: 16),
-                          AnalysisStepHeader(
-                            step: 2,
-                            title: 'Tahvil Önerileri',
-                            subtitle:
-                                'Farklı çaplarda yakın boylar — opsiyonel fire azaltma',
-                            complete: batch.tahvilGroups.any((g) => g.approved),
-                          ),
-                          if (batch.tahvilGroups.isEmpty)
-                            Padding(
-                              padding: const EdgeInsets.symmetric(vertical: 8),
-                              child: Text(
-                                'Bu liste için tahvil önerisi yok.',
-                                style: AppTypography.bodySmall.copyWith(
-                                  color: AppColors.textMuted,
-                                ),
-                              ),
-                            )
-                          else
-                            ...batch.tahvilGroups.map(
-                              (group) => _TahvilCard(
-                                group: group,
-                                onApprove: (approved) => ref
-                                    .read(cuttingBendingBatchesProvider.notifier)
-                                    .approveTahvil(group.id, approved: approved),
-                              ),
-                            ),
-                          const SizedBox(height: 20),
-                          const Divider(height: 1, color: AppColors.border),
-                          const SizedBox(height: 16),
-                          AnalysisStepHeader(
-                            step: 3,
-                            title: 'Revize Parça Listesi',
-                            subtitle:
-                                'Boy eşleştirme onaylarına göre güncellenmiş liste',
-                            complete: isLengthMatchingComplete(batch.lengthMatches),
-                          ),
-                          batch.revisedPieceLines.isEmpty
-                              ? const ModuleEmptyState(
-                                  type: EmptyStateType.noSearchResult,
-                                  inline: true,
-                                )
-                              : _PieceListTable(pieces: batch.revisedPieceLines),
-                        ],
-                      ),
+                          : AnalysisOptimizationResultsSection(batch: batch),
                     ),
                     CollapsibleAnalysisSection(
                       sectionId: AnalysisSectionIds.plannedCutting,
@@ -308,7 +227,8 @@ class AnalysisScreen extends ConsumerWidget {
                       sectionId: AnalysisSectionIds.tahvilCalculator,
                       title: 'Araç · Tahvil Hesaplayıcı',
                       subtitle:
-                          'Manuel tahvil denemesi — πr² kesit kuralları',
+                          'Manuel tahvil denemesi — analiz dışı referans aracı',
+                      headerAccentColor: AppColors.diameter28,
                       child: const TahvilCalculatorSection(hideHeader: true),
                     ),
                   ]),
@@ -380,44 +300,12 @@ class AnalysisScreen extends ConsumerWidget {
       ),
     );
   }
-
-  Future<void> _confirmDeleteLabel(
-    BuildContext context,
-    WidgetRef ref,
-    RebarMetrajTextDetail detail,
-  ) async {
-    final confirmed = await showDialog<bool>(
-      context: context,
-      builder: (context) => AlertDialog(
-        title: const Text('Etiketi sil'),
-        content: const Text(
-          'Bu etiketi listeden kaldırmak parça listesini ve tahvil önerilerini yeniden hesaplar.',
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context, false),
-            child: const Text('İptal'),
-          ),
-          FilledButton(
-            onPressed: () => Navigator.pop(context, true),
-            child: const Text('Sil'),
-          ),
-        ],
-      ),
-    );
-    if (confirmed != true || !context.mounted) return;
-    await ref.read(cuttingBendingBatchesProvider.notifier).removeLabelDetail(detail);
-  }
 }
 
 class _BatchHeader extends StatelessWidget {
-  const _BatchHeader({
-    required this.batch,
-    required this.onImportFromPreProduction,
-  });
+  const _BatchHeader({required this.batch});
 
   final CuttingBendingBatch batch;
-  final VoidCallback onImportFromPreProduction;
 
   @override
   Widget build(BuildContext context) {
@@ -520,24 +408,6 @@ class _BatchHeader extends StatelessWidget {
                       ),
                     ],
                   ),
-                  const SizedBox(height: 16),
-                  const Divider(height: 1, color: AppColors.border),
-                  const SizedBox(height: 14),
-                  Text('Veri kaynağı', style: AppTypography.labelMedium),
-                  const SizedBox(height: 10),
-                  OutlinedButton.icon(
-                    onPressed: onImportFromPreProduction,
-                    icon: const Icon(Icons.inventory_2_outlined, size: 18),
-                    label: const Text('Ön İmalattan Veri Al'),
-                    style: OutlinedButton.styleFrom(
-                      minimumSize: const Size.fromHeight(44),
-                      padding: const EdgeInsets.symmetric(horizontal: 16),
-                      foregroundColor: AppColors.electricBlueLight,
-                      side: BorderSide(
-                        color: AppColors.electricBlue.withValues(alpha: 0.45),
-                      ),
-                    ),
-                  ),
                 ],
               ),
             ),
@@ -608,359 +478,6 @@ class _PieceListTable extends StatelessWidget {
           ),
         ),
       ],
-    );
-  }
-}
-
-class _LengthMatchToleranceField extends StatefulWidget {
-  const _LengthMatchToleranceField({
-    required this.toleranceCm,
-    required this.onApply,
-  });
-
-  final double toleranceCm;
-  final ValueChanged<double> onApply;
-
-  @override
-  State<_LengthMatchToleranceField> createState() =>
-      _LengthMatchToleranceFieldState();
-}
-
-class _LengthMatchToleranceFieldState extends State<_LengthMatchToleranceField> {
-  late final TextEditingController _controller;
-
-  @override
-  void initState() {
-    super.initState();
-    _controller = TextEditingController(text: _format(widget.toleranceCm));
-  }
-
-  @override
-  void didUpdateWidget(covariant _LengthMatchToleranceField oldWidget) {
-    super.didUpdateWidget(oldWidget);
-    if (oldWidget.toleranceCm != widget.toleranceCm) {
-      final current = double.tryParse(
-        _controller.text.trim().replaceAll(',', '.'),
-      );
-      if (current == null || (current - widget.toleranceCm).abs() > 1e-9) {
-        _controller.text = _format(widget.toleranceCm);
-      }
-    }
-  }
-
-  @override
-  void dispose() {
-    _controller.dispose();
-    super.dispose();
-  }
-
-  String _format(double value) {
-    return value % 1 == 0 ? value.toStringAsFixed(0) : value.toStringAsFixed(1);
-  }
-
-  void _apply() {
-    final parsed = double.tryParse(
-      _controller.text.trim().replaceAll(',', '.'),
-    );
-    if (parsed == null || parsed <= 0) return;
-    widget.onApply(parsed);
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    return Row(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Expanded(
-          child: TextField(
-            controller: _controller,
-            keyboardType: const TextInputType.numberWithOptions(decimal: true),
-            decoration: const InputDecoration(
-              labelText: 'Yakın boy toleransı (cm)',
-              hintText: 'Örn: 30',
-              isDense: true,
-            ),
-            onSubmitted: (_) => _apply(),
-          ),
-        ),
-        const SizedBox(width: 8),
-        FilledButton(
-          onPressed: _apply,
-          child: const Text('Uygula'),
-        ),
-      ],
-    );
-  }
-}
-
-class _LengthMatchCard extends StatefulWidget {
-  const _LengthMatchCard({
-    required this.group,
-    required this.onApprove,
-  });
-
-  final LengthMatchGroup group;
-  final void Function(bool approved, double? selectedLengthM) onApprove;
-
-  @override
-  State<_LengthMatchCard> createState() => _LengthMatchCardState();
-}
-
-class _LengthMatchCardState extends State<_LengthMatchCard> {
-  double? _selectedLengthM;
-
-  @override
-  void initState() {
-    super.initState();
-    _selectedLengthM = _initialSelection(widget.group);
-  }
-
-  @override
-  void didUpdateWidget(covariant _LengthMatchCard oldWidget) {
-    super.didUpdateWidget(oldWidget);
-    if (oldWidget.group.id != widget.group.id ||
-        oldWidget.group.approved != widget.group.approved) {
-      _selectedLengthM = _initialSelection(widget.group);
-    }
-  }
-
-  double? _initialSelection(LengthMatchGroup group) {
-    if (group.selectedLengthM != null) return group.selectedLengthM;
-    if (group.members.isEmpty) return null;
-    return group.members
-        .reduce((a, b) => a.quantity >= b.quantity ? a : b)
-        .lengthM;
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    final group = widget.group;
-    final color = AppColors.diameterColor(group.diameter);
-
-    if (group.approved && group.selectedLengthM != null) {
-      final matchedLength = group.selectedLengthM!;
-      return Container(
-        margin: const EdgeInsets.only(bottom: AnalysisScreen._innerCardGap),
-        padding: const EdgeInsets.all(14),
-        decoration: BoxDecoration(
-          color: AppColors.success.withValues(alpha: 0.06),
-          borderRadius: AppRadii.md,
-          border: Border.all(color: AppColors.success.withValues(alpha: 0.4)),
-        ),
-        child: Row(
-          children: [
-            Text(
-              'Ø${group.diameter}',
-              style: AppTypography.titleMedium.copyWith(color: color),
-            ),
-            const SizedBox(width: 8),
-            Expanded(
-              child: Text(
-                '${matchedLength.toStringAsFixed(2)} m × '
-                '${AppFormat.integer(group.totalQuantity)} adet',
-                style: AppTypography.bodyMedium,
-              ),
-            ),
-            FilterChip(
-              label: const Text('Onaylı'),
-              selected: true,
-              onSelected: (selected) {
-                if (!selected) widget.onApprove(false, null);
-              },
-              selectedColor: AppColors.success.withValues(alpha: 0.2),
-            ),
-          ],
-        ),
-      );
-    }
-
-    return Container(
-      margin: const EdgeInsets.only(bottom: AnalysisScreen._innerCardGap),
-      padding: const EdgeInsets.all(14),
-      decoration: BoxDecoration(
-        color: AppColors.surfaceElevated,
-        borderRadius: AppRadii.md,
-        border: Border.all(color: AppColors.border),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
-            children: [
-              Text(
-                'Ø${group.diameter}',
-                style: AppTypography.titleMedium.copyWith(color: color),
-              ),
-              const SizedBox(width: 8),
-              Expanded(
-                child: Text(
-                  '${group.minLengthM.toStringAsFixed(2)}–${group.maxLengthM.toStringAsFixed(2)} m · '
-                  '${group.totalQuantity} adet',
-                  style: AppTypography.bodySmall,
-                ),
-              ),
-              FilterChip(
-                label: const Text('Onayla'),
-                selected: false,
-                onSelected: (selected) {
-                  if (!selected || _selectedLengthM == null) return;
-                  widget.onApprove(true, _selectedLengthM);
-                },
-                selectedColor: AppColors.success.withValues(alpha: 0.2),
-              ),
-            ],
-          ),
-          const SizedBox(height: 6),
-          Text(
-            'Eşleştirilecek boyu seçin',
-            style: AppTypography.labelMedium.copyWith(color: AppColors.textMuted),
-          ),
-          const SizedBox(height: 8),
-          ...group.members.map(
-            (member) => InkWell(
-              onTap: () => setState(() {
-                _selectedLengthM = member.lengthM;
-              }),
-              borderRadius: AppRadii.sm,
-              child: Padding(
-                padding: const EdgeInsets.symmetric(vertical: 2),
-                child: Row(
-                  children: [
-                    Radio<double>(
-                      value: member.lengthM,
-                      groupValue: _selectedLengthM,
-                      onChanged: (value) => setState(() {
-                        _selectedLengthM = value;
-                      }),
-                      visualDensity: VisualDensity.compact,
-                      materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
-                    ),
-                    Text(
-                      '${member.lengthM.toStringAsFixed(2)} m × ${member.quantity} adet',
-                      style: AppTypography.bodySmall,
-                    ),
-                  ],
-                ),
-              ),
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-}
-
-class _TahvilCard extends StatelessWidget {
-  const _TahvilCard({
-    required this.group,
-    required this.onApprove,
-  });
-
-  final TahvilSuggestion group;
-  final ValueChanged<bool> onApprove;
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      margin: const EdgeInsets.only(bottom: AnalysisScreen._innerCardGap),
-      padding: const EdgeInsets.all(14),
-      decoration: BoxDecoration(
-        color: group.approved
-            ? AppColors.warning.withValues(alpha: 0.08)
-            : AppColors.surfaceElevated,
-        borderRadius: AppRadii.md,
-        border: Border.all(
-          color: group.approved
-              ? AppColors.warning.withValues(alpha: 0.4)
-              : AppColors.border,
-        ),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
-            children: [
-              Expanded(
-                child: Text(
-                  'Boy ${group.minLengthM.toStringAsFixed(2)}–${group.maxLengthM.toStringAsFixed(2)} m · '
-                  'Ø${group.diameters.join(', Ø')}',
-                  style: AppTypography.titleMedium,
-                ),
-              ),
-              FilterChip(
-                label: Text(group.approved ? 'Onaylı' : 'Tahvil Onayla'),
-                selected: group.approved,
-                onSelected: (selected) => onApprove(selected),
-                selectedColor: AppColors.warning.withValues(alpha: 0.2),
-              ),
-            ],
-          ),
-          const SizedBox(height: 8),
-          ...group.members.map(
-            (member) => Padding(
-              padding: const EdgeInsets.only(bottom: 2),
-              child: Text(
-                '· Ø${member.diameter} ${member.lengthM.toStringAsFixed(2)} m × ${member.quantity} adet',
-                style: AppTypography.bodySmall.copyWith(
-                  color: AppColors.diameterColor(member.diameter),
-                ),
-              ),
-            ),
-          ),
-          if (group.equivalents.isNotEmpty) ...[
-            const SizedBox(height: 10),
-            Text('Tahvil hesabı (πr² · d² × adet)', style: AppTypography.labelMedium),
-            const SizedBox(height: 4),
-            ...group.equivalents.map(
-              (eq) => Padding(
-                padding: const EdgeInsets.only(bottom: 4),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Row(
-                      children: [
-                        Expanded(
-                          child: Text(
-                            'Ø${eq.fromDiameter} ${AppFormat.integer(eq.fromQuantity)} ad → '
-                            'Ø${eq.toDiameter} tahvil: ${AppFormat.integer(eq.equivalentQuantity)} ad',
-                            style: AppTypography.bodySmall.copyWith(
-                              color: AppColors.diameterColor(eq.toDiameter),
-                            ),
-                          ),
-                        ),
-                        if (eq.isRecommended)
-                          Container(
-                            padding: const EdgeInsets.symmetric(
-                              horizontal: 8,
-                              vertical: 2,
-                            ),
-                            decoration: BoxDecoration(
-                              color: AppColors.success.withValues(alpha: 0.15),
-                              borderRadius: BorderRadius.circular(999),
-                            ),
-                            child: Text(
-                              'Önerilen',
-                              style: AppTypography.labelMedium.copyWith(
-                                color: AppColors.success,
-                              ),
-                            ),
-                          ),
-                      ],
-                    ),
-                    if (eq.resultingSpacingCm != null)
-                      Text(
-                        'Tahvil aralığı: ${eq.resultingSpacingCm!.toStringAsFixed(1)} cm',
-                        style: AppTypography.bodySmall.copyWith(
-                          color: AppColors.textMuted,
-                        ),
-                      ),
-                  ],
-                ),
-              ),
-            ),
-          ],
-        ],
-      ),
     );
   }
 }

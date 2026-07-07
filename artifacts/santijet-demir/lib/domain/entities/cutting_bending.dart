@@ -2,6 +2,60 @@ import 'package:santijet_demir/data/services/rebar_weight_calculator.dart';
 import 'package:santijet_demir/domain/entities/rebar_metraj.dart';
 import 'package:santijet_demir/domain/tahvil/tahvil_rules.dart';
 
+/// Fire azaltma analiz stratejisi.
+enum FireReductionStrategy {
+  tahvilOnly,
+  lengthMatchOnly,
+  both;
+
+  String get label => switch (this) {
+        FireReductionStrategy.tahvilOnly => 'Sadece tahvil',
+        FireReductionStrategy.lengthMatchOnly => 'Sadece boy eşleştirme',
+        FireReductionStrategy.both => 'Tahvil + boy eşleştirme',
+      };
+
+  String get description => switch (this) {
+        FireReductionStrategy.tahvilOnly =>
+          'Farklı çaplarda yakın boylar — kaynak boyunun max %5 toleransı',
+        FireReductionStrategy.lengthMatchOnly =>
+          'Aynı çapta yakın boylar — kaynak boyunun max %5 toleransı',
+        FireReductionStrategy.both =>
+          'Tahvil + boy eşleştirme — kaynak boyunun max %5 toleransı',
+      };
+
+  bool get appliesTahvil =>
+      this == FireReductionStrategy.tahvilOnly ||
+      this == FireReductionStrategy.both;
+
+  bool get appliesLengthMatch =>
+      this == FireReductionStrategy.lengthMatchOnly ||
+      this == FireReductionStrategy.both;
+
+  static FireReductionStrategy? fromJson(String? value) {
+    if (value == null) return null;
+    for (final item in FireReductionStrategy.values) {
+      if (item.name == value) return item;
+    }
+    return null;
+  }
+}
+
+class LengthMatchChange {
+  const LengthMatchChange({
+    required this.diameter,
+    required this.beforeLengthM,
+    required this.afterLengthM,
+    required this.quantity,
+  });
+
+  final int diameter;
+  final double beforeLengthM;
+  final double afterLengthM;
+  final int quantity;
+
+  double get deltaM => afterLengthM - beforeLengthM;
+}
+
 class RebarPieceLine {
   const RebarPieceLine({
     required this.diameter,
@@ -397,6 +451,70 @@ class StockCutPlan {
   }
 }
 
+/// Kayıtlı fire analizi sonucu — strateji başına bir anlık görüntü.
+class OptimizationSnapshot {
+  const OptimizationSnapshot({
+    required this.strategy,
+    required this.savedAt,
+    required this.optimizationAppliedAt,
+    required this.revisedPieceLines,
+    required this.lengthMatches,
+    required this.tahvilGroups,
+    required this.stockCutPlans,
+    required this.lengthMatchTolerancePercent,
+  });
+
+  final FireReductionStrategy strategy;
+  final DateTime savedAt;
+  final DateTime optimizationAppliedAt;
+  final List<RebarPieceLine> revisedPieceLines;
+  final List<LengthMatchGroup> lengthMatches;
+  final List<TahvilSuggestion> tahvilGroups;
+  final List<StockCutPlan> stockCutPlans;
+  final double lengthMatchTolerancePercent;
+
+  Map<String, dynamic> toJson() => {
+        'strategy': strategy.name,
+        'savedAt': savedAt.toIso8601String(),
+        'optimizationAppliedAt': optimizationAppliedAt.toIso8601String(),
+        'revisedPieceLines':
+            revisedPieceLines.map((piece) => piece.toJson()).toList(),
+        'lengthMatches': lengthMatches.map((group) => group.toJson()).toList(),
+        'tahvilGroups': tahvilGroups.map((group) => group.toJson()).toList(),
+        'stockCutPlans': stockCutPlans.map((plan) => plan.toJson()).toList(),
+        'lengthMatchTolerancePercent': lengthMatchTolerancePercent,
+      };
+
+  factory OptimizationSnapshot.fromJson(Map<dynamic, dynamic> json) {
+    List<T> parseList<T>(
+      String key,
+      T Function(Map<dynamic, dynamic>) fromJson,
+    ) {
+      final raw = json[key];
+      if (raw == null || raw is! List) return [];
+      return raw.whereType<Map>().map(fromJson).toList();
+    }
+
+    return OptimizationSnapshot(
+      strategy: FireReductionStrategy.fromJson(json['strategy'] as String?) ??
+          FireReductionStrategy.both,
+      savedAt: DateTime.tryParse(json['savedAt'] as String? ?? '') ??
+          DateTime.now(),
+      optimizationAppliedAt:
+          DateTime.tryParse(json['optimizationAppliedAt'] as String? ?? '') ??
+              DateTime.now(),
+      revisedPieceLines:
+          parseList('revisedPieceLines', RebarPieceLine.fromJson),
+      lengthMatches: parseList('lengthMatches', LengthMatchGroup.fromJson),
+      tahvilGroups: parseList('tahvilGroups', TahvilSuggestion.fromJson),
+      stockCutPlans: parseList('stockCutPlans', StockCutPlan.fromJson),
+      lengthMatchTolerancePercent: CuttingBendingBatch.parseLengthMatchTolerancePercent(
+        json,
+      ),
+    );
+  }
+}
+
 class CuttingBendingBatch {
   const CuttingBendingBatch({
     required this.id,
@@ -409,12 +527,28 @@ class CuttingBendingBatch {
     required this.lengthMatches,
     required this.tahvilGroups,
     required this.stockCutPlans,
-    this.lengthMatchToleranceCm = defaultLengthMatchToleranceCm,
+    this.lengthMatchTolerancePercent = defaultLengthMatchTolerancePercent,
     this.optimizationAppliedAt,
+    this.optimizationStrategy,
+    this.savedOptimizations = const {},
   });
 
-  static const defaultLengthMatchToleranceCm = 30.0;
+  /// Kaynak demir boyunun en fazla bu oranı boy eşleştirmeye alınır (%5).
+  static const defaultLengthMatchTolerancePercent = 0.05;
   static const defaultStockBarLengthM = 12.0;
+
+  /// Örnek: 1,00 m → 5 cm, 4,00 m → 20 cm.
+  static double toleranceCmForLengthM(double lengthM) =>
+      lengthM * 100 * defaultLengthMatchTolerancePercent;
+
+  static String get lengthMatchToleranceDescription =>
+      'kaynak boyunun max %${(defaultLengthMatchTolerancePercent * 100).toStringAsFixed(0)}\'i';
+
+  static double parseLengthMatchTolerancePercent(Map<dynamic, dynamic> json) {
+    final percent = json['lengthMatchTolerancePercent'];
+    if (percent is num) return percent.toDouble();
+    return defaultLengthMatchTolerancePercent;
+  }
 
   final String id;
   final String title;
@@ -426,12 +560,31 @@ class CuttingBendingBatch {
   final List<LengthMatchGroup> lengthMatches;
   final List<TahvilSuggestion> tahvilGroups;
   final List<StockCutPlan> stockCutPlans;
-  final double lengthMatchToleranceCm;
+  final double lengthMatchTolerancePercent;
   final DateTime? optimizationAppliedAt;
+  final FireReductionStrategy? optimizationStrategy;
+  final Map<FireReductionStrategy, OptimizationSnapshot> savedOptimizations;
 
   bool get isOptimized => optimizationAppliedAt != null;
 
-  double get lengthMatchToleranceM => lengthMatchToleranceCm / 100;
+  bool get hasAnySavedOptimization => savedOptimizations.isNotEmpty;
+
+  bool hasSavedOptimization(FireReductionStrategy strategy) =>
+      savedOptimizations.containsKey(strategy);
+
+  bool get isCurrentOptimizationSaved {
+    final strategy = optimizationStrategy;
+    if (strategy == null || !isOptimized) return false;
+    final saved = savedOptimizations[strategy];
+    if (saved == null) return false;
+    return saved.optimizationAppliedAt == optimizationAppliedAt;
+  }
+
+  OptimizationSnapshot? savedOptimizationFor(FireReductionStrategy strategy) =>
+      savedOptimizations[strategy];
+
+  double lengthMatchToleranceMForLength(double lengthM) =>
+      lengthM * lengthMatchTolerancePercent;
 
   CuttingBendingBatch copyWith({
     List<RebarMetrajTextDetail>? labelDetails,
@@ -440,9 +593,12 @@ class CuttingBendingBatch {
     List<LengthMatchGroup>? lengthMatches,
     List<TahvilSuggestion>? tahvilGroups,
     List<StockCutPlan>? stockCutPlans,
-    double? lengthMatchToleranceCm,
+    double? lengthMatchTolerancePercent,
     DateTime? optimizationAppliedAt,
+    FireReductionStrategy? optimizationStrategy,
+    Map<FireReductionStrategy, OptimizationSnapshot>? savedOptimizations,
     bool clearOptimizationAppliedAt = false,
+    bool clearOptimizationStrategy = false,
   }) {
     return CuttingBendingBatch(
       id: id,
@@ -455,11 +611,15 @@ class CuttingBendingBatch {
       lengthMatches: lengthMatches ?? this.lengthMatches,
       tahvilGroups: tahvilGroups ?? this.tahvilGroups,
       stockCutPlans: stockCutPlans ?? this.stockCutPlans,
-      lengthMatchToleranceCm:
-          lengthMatchToleranceCm ?? this.lengthMatchToleranceCm,
+      lengthMatchTolerancePercent:
+          lengthMatchTolerancePercent ?? this.lengthMatchTolerancePercent,
       optimizationAppliedAt: clearOptimizationAppliedAt
           ? null
           : (optimizationAppliedAt ?? this.optimizationAppliedAt),
+      optimizationStrategy: clearOptimizationStrategy
+          ? null
+          : (optimizationStrategy ?? this.optimizationStrategy),
+      savedOptimizations: savedOptimizations ?? this.savedOptimizations,
     );
   }
 
@@ -474,9 +634,16 @@ class CuttingBendingBatch {
         'lengthMatches': lengthMatches.map((g) => g.toJson()).toList(),
         'tahvilGroups': tahvilGroups.map((g) => g.toJson()).toList(),
         'stockCutPlans': stockCutPlans.map((p) => p.toJson()).toList(),
-        'lengthMatchToleranceCm': lengthMatchToleranceCm,
+        'lengthMatchTolerancePercent': lengthMatchTolerancePercent,
         if (optimizationAppliedAt != null)
           'optimizationAppliedAt': optimizationAppliedAt!.toIso8601String(),
+        if (optimizationStrategy != null)
+          'optimizationStrategy': optimizationStrategy!.name,
+        if (savedOptimizations.isNotEmpty)
+          'savedOptimizations': {
+            for (final entry in savedOptimizations.entries)
+              entry.key.name: entry.value.toJson(),
+          },
       };
 
   factory CuttingBendingBatch.fromJson(Map<dynamic, dynamic> json) {
@@ -505,12 +672,27 @@ class CuttingBendingBatch {
       lengthMatches: parseList('lengthMatches', LengthMatchGroup.fromJson),
       tahvilGroups: parseList('tahvilGroups', TahvilSuggestion.fromJson),
       stockCutPlans: parseList('stockCutPlans', StockCutPlan.fromJson),
-      lengthMatchToleranceCm:
-          (json['lengthMatchToleranceCm'] as num?)?.toDouble() ??
-              CuttingBendingBatch.defaultLengthMatchToleranceCm,
+      lengthMatchTolerancePercent: parseLengthMatchTolerancePercent(json),
       optimizationAppliedAt: json['optimizationAppliedAt'] != null
           ? DateTime.tryParse(json['optimizationAppliedAt'] as String)
           : null,
+      optimizationStrategy: FireReductionStrategy.fromJson(
+        json['optimizationStrategy'] as String?,
+      ),
+      savedOptimizations: _parseSavedOptimizations(json['savedOptimizations']),
     );
+  }
+
+  static Map<FireReductionStrategy, OptimizationSnapshot>
+      _parseSavedOptimizations(Object? raw) {
+    if (raw is! Map) return const {};
+    final result = <FireReductionStrategy, OptimizationSnapshot>{};
+    for (final entry in raw.entries) {
+      final strategy = FireReductionStrategy.fromJson(entry.key.toString());
+      if (strategy == null || entry.value is! Map) continue;
+      result[strategy] =
+          OptimizationSnapshot.fromJson(entry.value as Map<dynamic, dynamic>);
+    }
+    return result;
   }
 }

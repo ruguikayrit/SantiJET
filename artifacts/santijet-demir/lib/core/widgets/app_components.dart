@@ -210,9 +210,33 @@ class KpiCard extends StatelessWidget {
                 ),
                 if (percent != null) ...[
                   const SizedBox(height: 4),
-                  Text(
-                    percent!,
-                    style: AppTypography.bodySmall.copyWith(color: accentColor),
+                  Row(
+                    children: [
+                      Expanded(
+                        child: Text(
+                          percent!,
+                          style: AppTypography.bodySmall.copyWith(
+                            color: accentColor,
+                          ),
+                        ),
+                      ),
+                      if (onTap != null)
+                        Icon(
+                          Icons.unfold_more,
+                          size: 14,
+                          color: AppColors.textMuted,
+                        ),
+                    ],
+                  ),
+                ] else if (onTap != null) ...[
+                  const SizedBox(height: 4),
+                  Align(
+                    alignment: Alignment.centerRight,
+                    child: Icon(
+                      Icons.unfold_more,
+                      size: 14,
+                      color: AppColors.textMuted,
+                    ),
                   ),
                 ],
                 if (trend != null) ...[

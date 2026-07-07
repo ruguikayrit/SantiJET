@@ -41,7 +41,7 @@ void main() {
         RebarPieceLine(diameter: 16, lengthM: 3.50, quantity: 4),
       ];
 
-      final groups = computeLengthMatchGroups(pieces, toleranceM: 0.10);
+      final groups = computeLengthMatchGroups(pieces);
 
       expect(groups, hasLength(1));
       expect(groups.first.diameter, 16);
@@ -49,22 +49,59 @@ void main() {
       expect(groups.first.members, hasLength(2));
     });
 
-    test('length match uses min-max span not chained neighbor distance', () {
+    test('length match tolerance scales with shortest bar length', () {
       const pieces = [
         RebarPieceLine(diameter: 12, lengthM: 4.75, quantity: 12),
         RebarPieceLine(diameter: 12, lengthM: 4.95, quantity: 6),
         RebarPieceLine(diameter: 12, lengthM: 5.05, quantity: 12),
       ];
 
-      final groups20 = computeLengthMatchGroups(pieces, toleranceM: 0.20);
-      expect(groups20, hasLength(1));
-      expect(groups20.first.maxLengthM - groups20.first.minLengthM, closeTo(0.20, 1e-9));
-      expect(groups20.first.members, hasLength(2));
+      final groups5 = computeLengthMatchGroups(pieces);
+      expect(groups5, hasLength(1));
+      expect(groups5.first.maxLengthM - groups5.first.minLengthM, closeTo(0.20, 1e-9));
+      expect(groups5.first.members, hasLength(2));
 
-      final groups30 = computeLengthMatchGroups(pieces, toleranceM: 0.30);
-      expect(groups30, hasLength(1));
-      expect(groups30.first.maxLengthM - groups30.first.minLengthM, closeTo(0.30, 1e-9));
-      expect(groups30.first.members, hasLength(3));
+      final groups7 = computeLengthMatchGroups(pieces, tolerancePercent: 0.07);
+      expect(groups7, hasLength(1));
+      expect(groups7.first.maxLengthM - groups7.first.minLengthM, closeTo(0.30, 1e-9));
+      expect(groups7.first.members, hasLength(3));
+    });
+
+    test('length match percent follows source bar length', () {
+      const pieces100 = [
+        RebarPieceLine(diameter: 16, lengthM: 1.00, quantity: 10),
+        RebarPieceLine(diameter: 16, lengthM: 1.05, quantity: 8),
+      ];
+      const pieces400 = [
+        RebarPieceLine(diameter: 16, lengthM: 4.00, quantity: 10),
+        RebarPieceLine(diameter: 16, lengthM: 4.20, quantity: 8),
+      ];
+
+      final group100 = computeLengthMatchGroups(pieces100);
+      final group400 = computeLengthMatchGroups(pieces400);
+
+      expect(group100, hasLength(1));
+      expect(group400, hasLength(1));
+      expect(group100.first.maxLengthM - group100.first.minLengthM, closeTo(0.05, 1e-9));
+      expect(group400.first.maxLengthM - group400.first.minLengthM, closeTo(0.20, 1e-9));
+    });
+
+    test('tahvil grouping uses percent tolerance from source bar length', () {
+      const pieces = [
+        RebarPieceLine(diameter: 16, lengthM: 1.00, quantity: 10),
+        RebarPieceLine(diameter: 20, lengthM: 1.04, quantity: 6),
+      ];
+
+      final tahvil5 = computeTahvilGroups(pieces);
+      expect(tahvil5, hasLength(1));
+
+      const piecesTooFar = [
+        RebarPieceLine(diameter: 16, lengthM: 1.00, quantity: 10),
+        RebarPieceLine(diameter: 20, lengthM: 1.07, quantity: 6),
+      ];
+
+      final tahvilNone = computeTahvilGroups(piecesTooFar);
+      expect(tahvilNone, isEmpty);
     });
 
     test('suggests tahvil for different diameters with near lengths', () {
@@ -74,7 +111,7 @@ void main() {
         RebarPieceLine(diameter: 12, lengthM: 5.00, quantity: 3),
       ];
 
-      final tahvil = computeTahvilGroups(pieces, toleranceM: 0.10);
+      final tahvil = computeTahvilGroups(pieces);
 
       expect(tahvil, hasLength(1));
       expect(tahvil.first.members, hasLength(2));
@@ -94,7 +131,7 @@ void main() {
         RebarPieceLine(diameter: 28, lengthM: 2.70, quantity: 24),
       ];
 
-      final tahvil = computeTahvilGroups(pieces, toleranceM: 0.20);
+      final tahvil = computeTahvilGroups(pieces, tolerancePercent: 0.20);
 
       expect(tahvil, isEmpty);
     });
@@ -199,7 +236,7 @@ void main() {
       }
     });
 
-    test('buildCuttingBendingBatch defers stock cut plans until optimization', () {
+    test('buildCuttingBendingBatch defers stock cut plans until optimization', () async {
       const details = [
         RebarMetrajTextDetail(
           entityType: 'TEXT',
@@ -228,7 +265,10 @@ void main() {
       expect(batch.stockCutPlans, isEmpty);
       expect(batch.isOptimized, isFalse);
 
-      final optimized = runOptimumFireAnalysis(batch);
+      final optimized = await runOptimumFireAnalysis(
+        batch,
+        strategy: FireReductionStrategy.both,
+      );
 
       expect(optimized.isOptimized, isTrue);
       expect(optimized.stockCutPlans, isNotEmpty);
@@ -241,7 +281,7 @@ void main() {
         RebarPieceLine(diameter: 16, lengthM: 2.05, quantity: 8),
         RebarPieceLine(diameter: 16, lengthM: 3.50, quantity: 4),
       ];
-      final groups = computeLengthMatchGroups(pieces, toleranceM: 0.10);
+      final groups = computeLengthMatchGroups(pieces);
       final approved = groups.first.copyWith(
         approved: true,
         selectedLengthM: 2.00,
@@ -261,7 +301,7 @@ void main() {
         RebarPieceLine(diameter: 12, lengthM: 6.50, quantity: 5),
         RebarPieceLine(diameter: 12, lengthM: 6.55, quantity: 5),
       ];
-      final groups = computeLengthMatchGroups(pieces, toleranceM: 0.10);
+      final groups = computeLengthMatchGroups(pieces);
       var batch = syncBatchLengthMatchDerivatives(
         CuttingBendingBatch(
           id: 'kb-test',
@@ -345,7 +385,7 @@ void main() {
       );
     });
 
-    test('optimized fire percent moves with fire tonnage', () {
+    test('optimized fire percent moves with fire tonnage', () async {
       const pieces = [
         RebarPieceLine(diameter: 16, lengthM: 2.00, quantity: 10),
         RebarPieceLine(diameter: 16, lengthM: 2.05, quantity: 8),
@@ -358,7 +398,10 @@ void main() {
         textDetails: const [],
       ).copyWith(pieceLines: pieces);
 
-      final optimized = runOptimumFireAnalysis(batch);
+      final optimized = await runOptimumFireAnalysis(
+        batch,
+        strategy: FireReductionStrategy.both,
+      );
       final summary = computeAnalysisFireSummary(optimized);
 
       expect(summary.isPlannedReady, isTrue);
@@ -369,7 +412,7 @@ void main() {
       }
     });
 
-    test('runOptimumFireAnalysis preserves source piece lines', () {
+    test('runOptimumFireAnalysis preserves source piece lines', () async {
       const pieces = [
         RebarPieceLine(diameter: 16, lengthM: 2.00, quantity: 10),
         RebarPieceLine(diameter: 16, lengthM: 2.05, quantity: 8),
@@ -381,12 +424,34 @@ void main() {
         textDetails: const [],
       ).copyWith(pieceLines: pieces);
 
-      final optimized = runOptimumFireAnalysis(batch);
+      final optimized = await runOptimumFireAnalysis(
+        batch,
+        strategy: FireReductionStrategy.both,
+      );
 
       expect(optimized.pieceLines, pieces);
       expect(optimized.isOptimized, isTrue);
       expect(optimized.revisedPieceLines.length, lessThan(pieces.length));
       expect(computeAnalysisFireSummary(optimized).isPlannedReady, isTrue);
+    });
+
+    test('computeLengthMatchChanges lists before and after lengths', () {
+      const pieces = [
+        RebarPieceLine(diameter: 16, lengthM: 2.00, quantity: 10),
+        RebarPieceLine(diameter: 16, lengthM: 2.05, quantity: 8),
+      ];
+      final groups = computeLengthMatchGroups(pieces);
+      final approved = groups.first.copyWith(
+        approved: true,
+        selectedLengthM: 2.05,
+      );
+
+      final changes = computeLengthMatchChanges([approved]);
+
+      expect(changes, hasLength(1));
+      expect(changes.first.beforeLengthM, 2.00);
+      expect(changes.first.afterLengthM, 2.05);
+      expect(changes.first.quantity, 10);
     });
 
     test('CuttingBendingBatch.fromJson tolerates missing labelDetails', () {
@@ -403,6 +468,114 @@ void main() {
       });
 
       expect(batch.labelDetails, isEmpty);
+    });
+
+    test('saveOptimizationSnapshot stores result per strategy', () async {
+      const pieces = [
+        RebarPieceLine(diameter: 16, lengthM: 2.00, quantity: 10),
+        RebarPieceLine(diameter: 16, lengthM: 2.05, quantity: 8),
+      ];
+      var batch = buildCuttingBendingBatch(
+        title: 'Test',
+        sourceMetrajRecordIds: const ['rec-1'],
+        textDetails: const [],
+      ).copyWith(pieceLines: pieces);
+
+      batch = await runOptimumFireAnalysis(
+        batch,
+        strategy: FireReductionStrategy.lengthMatchOnly,
+      );
+
+      final saved = saveOptimizationSnapshot(batch);
+
+      expect(saved.hasSavedOptimization(FireReductionStrategy.lengthMatchOnly), isTrue);
+      expect(saved.isCurrentOptimizationSaved, isTrue);
+      expect(saved.savedOptimizations, hasLength(1));
+    });
+
+    test('applyOptimizationSnapshot restores saved analysis', () async {
+      const pieces = [
+        RebarPieceLine(diameter: 16, lengthM: 2.00, quantity: 10),
+        RebarPieceLine(diameter: 16, lengthM: 2.05, quantity: 8),
+      ];
+      var batch = buildCuttingBendingBatch(
+        title: 'Test',
+        sourceMetrajRecordIds: const ['rec-1'],
+        textDetails: const [],
+      ).copyWith(pieceLines: pieces);
+
+      batch = await runOptimumFireAnalysis(
+        batch,
+        strategy: FireReductionStrategy.both,
+      );
+      final withSave = saveOptimizationSnapshot(batch);
+      final cleared = clearActiveOptimization(withSave);
+
+      expect(cleared.isOptimized, isFalse);
+
+      final restored = applyOptimizationSnapshot(
+        cleared,
+        withSave.savedOptimizations[FireReductionStrategy.both]!,
+      );
+
+      expect(restored.isOptimized, isTrue);
+      expect(restored.optimizationStrategy, FireReductionStrategy.both);
+      expect(restored.revisedPieceLines.length, batch.revisedPieceLines.length);
+      expect(restored.stockCutPlans, isNotEmpty);
+      expect(
+        computeAnalysisFireSummary(restored).plannedWasteTonnage,
+        computeAnalysisFireSummary(batch).plannedWasteTonnage,
+      );
+    });
+
+    test('OptimizationSnapshot round-trips through batch json', () async {
+      const pieces = [
+        RebarPieceLine(diameter: 16, lengthM: 2.00, quantity: 10),
+        RebarPieceLine(diameter: 16, lengthM: 2.05, quantity: 8),
+      ];
+      var batch = buildCuttingBendingBatch(
+        title: 'Test',
+        sourceMetrajRecordIds: const ['rec-1'],
+        textDetails: const [],
+      ).copyWith(pieceLines: pieces);
+
+      batch = await runOptimumFireAnalysis(
+        batch,
+        strategy: FireReductionStrategy.tahvilOnly,
+      );
+      batch = saveOptimizationSnapshot(batch);
+
+      final decoded = CuttingBendingBatch.fromJson(batch.toJson());
+
+      expect(decoded.savedOptimizations, hasLength(1));
+      expect(decoded.hasSavedOptimization(FireReductionStrategy.tahvilOnly), isTrue);
+    });
+
+    test('computeStrategyFireComparisons lists saved and active strategies', () async {
+      const pieces = [
+        RebarPieceLine(diameter: 16, lengthM: 2.00, quantity: 10),
+        RebarPieceLine(diameter: 16, lengthM: 2.05, quantity: 8),
+      ];
+      var batch = buildCuttingBendingBatch(
+        title: 'Test',
+        sourceMetrajRecordIds: const ['rec-1'],
+        textDetails: const [],
+      ).copyWith(pieceLines: pieces);
+
+      batch = await runOptimumFireAnalysis(
+        batch,
+        strategy: FireReductionStrategy.both,
+      );
+      batch = saveOptimizationSnapshot(batch);
+
+      final rows = computeStrategyFireComparisons(batch);
+
+      expect(rows, hasLength(3));
+      expect(rows.where((row) => row.isAvailable), hasLength(1));
+      expect(
+        rows.firstWhere((row) => row.strategy == FireReductionStrategy.both).isSaved,
+        isTrue,
+      );
     });
   });
 }

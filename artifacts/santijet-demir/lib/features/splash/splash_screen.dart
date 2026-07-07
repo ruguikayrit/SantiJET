@@ -122,48 +122,51 @@ class _SplashScreenState extends ConsumerState<SplashScreen>
                       padding: const EdgeInsets.symmetric(
                         horizontal: AppSpacing.lg,
                       ),
-                      child: Column(
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          const SizedBox(height: _wordmarkAnchorCompensation),
-                          FadeIn(
-                            delay: const Duration(milliseconds: 150),
-                            child: Image.asset(
-                              'assets/images/splash_bolt.png',
-                              width: boltSize,
-                              height: boltSize,
-                              fit: BoxFit.contain,
-                              filterQuality: FilterQuality.high,
-                            ),
-                          ),
-                          const SizedBox(height: _boltWordmarkGapReduced),
-                          FadeIn(
-                            delay: const Duration(milliseconds: 350),
-                            child: Image.asset(
-                              'assets/images/splash_wordmark.png',
-                              width: wordmarkWidth,
-                              height: wordmarkHeight,
-                              fit: BoxFit.contain,
-                              filterQuality: FilterQuality.high,
-                            ),
-                          ),
-                          const SizedBox(height: AppSpacing.splashWordmarkToDemir),
-                          FadeIn(
-                            delay: const Duration(milliseconds: 550),
-                            child: Text(
-                              'DEMİR',
-                              style: AppTypography.displayLarge.copyWith(
-                                letterSpacing: 6,
-                                shadows: const [
-                                  Shadow(
-                                    color: AppColors.electricBlueGlow,
-                                    blurRadius: 24,
-                                  ),
-                                ],
+                      child: FittedBox(
+                        fit: BoxFit.scaleDown,
+                        child: Column(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            const SizedBox(height: _wordmarkAnchorCompensation),
+                            FadeIn(
+                              delay: const Duration(milliseconds: 150),
+                              child: Image.asset(
+                                'assets/images/splash_bolt.png',
+                                width: boltSize,
+                                height: boltSize,
+                                fit: BoxFit.contain,
+                                filterQuality: FilterQuality.high,
                               ),
                             ),
-                          ),
-                        ],
+                            const SizedBox(height: _boltWordmarkGapReduced),
+                            FadeIn(
+                              delay: const Duration(milliseconds: 350),
+                              child: Image.asset(
+                                'assets/images/splash_wordmark.png',
+                                width: wordmarkWidth,
+                                height: wordmarkHeight,
+                                fit: BoxFit.contain,
+                                filterQuality: FilterQuality.high,
+                              ),
+                            ),
+                            const SizedBox(height: AppSpacing.splashWordmarkToDemir),
+                            FadeIn(
+                              delay: const Duration(milliseconds: 550),
+                              child: Text(
+                                'DEMİR',
+                                style: AppTypography.displayLarge.copyWith(
+                                  letterSpacing: 6,
+                                  shadows: const [
+                                    Shadow(
+                                      color: AppColors.electricBlueGlow,
+                                      blurRadius: 24,
+                                    ),
+                                  ],
+                                ),
+                              ),
+                            ),
+                          ],
+                        ),
                       ),
                     ),
                   ),
