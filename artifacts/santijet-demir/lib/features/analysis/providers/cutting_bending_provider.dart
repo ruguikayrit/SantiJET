@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:santijet_demir/data/repositories/cutting_bending_repository.dart';
 import 'package:santijet_demir/domain/entities/cutting_bending.dart';
@@ -85,6 +86,8 @@ final optimumFireAnalysisProgressProvider =
     StateProvider<OptimumFireAnalysisProgress>(
   (ref) => OptimumFireAnalysisProgress.idle,
 );
+
+final optimumFireAnalysisErrorProvider = StateProvider<String?>((ref) => null);
 
 class CuttingBendingState {
   const CuttingBendingState({
@@ -243,6 +246,7 @@ class CuttingBendingNotifier extends StateNotifier<CuttingBendingState> {
       percent: 0,
       stepLabel: 'Analiz başlatılıyor...',
     );
+    _ref.read(optimumFireAnalysisErrorProvider.notifier).state = null;
 
     try {
       final updated = await analysis_calc.runOptimumFireAnalysis(
@@ -255,11 +259,24 @@ class CuttingBendingNotifier extends StateNotifier<CuttingBendingState> {
             percent: percent,
             stepLabel: stepLabel,
           );
-          await Future<void>.delayed(const Duration(milliseconds: 120));
+          if (kIsWeb) {
+            await Future<void>.delayed(const Duration(milliseconds: 16));
+          } else {
+            await Future<void>.delayed(const Duration(milliseconds: 8));
+          }
         },
       );
 
+      await Future<void>.delayed(
+        kIsWeb ? const Duration(milliseconds: 32) : Duration.zero,
+      );
+
       await _repo.updateBatch(projectId: projectId, batch: updated);
+
+      await Future<void>.delayed(
+        kIsWeb ? const Duration(milliseconds: 32) : Duration.zero,
+      );
+
       state = CuttingBendingState(
         batches: state.batches
             .map((batch) => batch.id == updated.id ? updated : batch)
@@ -282,9 +299,13 @@ class CuttingBendingNotifier extends StateNotifier<CuttingBendingState> {
       if (current.batchId == batchId && current.isCompleted) {
         progressNotifier.state = OptimumFireAnalysisProgress.idle;
       }
-    } catch (_) {
+    } catch (e) {
       progressNotifier.state = OptimumFireAnalysisProgress.idle;
-      rethrow;
+      _ref.read(optimumFireAnalysisErrorProvider.notifier).state =
+          'Analiz tamamlanamadı. Veri çok büyük olabilir; tekrar deneyin.';
+      if (kDebugMode) {
+        debugPrint('runOptimumFireAnalysis failed: $e');
+      }
     }
   }
 

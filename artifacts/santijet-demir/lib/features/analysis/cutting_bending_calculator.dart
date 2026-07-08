@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart';
 import 'package:santijet_demir/data/services/rebar_weight_calculator.dart';
 import 'package:santijet_demir/domain/entities/cutting_bending.dart';
 import 'package:santijet_demir/domain/entities/rebar_metraj.dart';
@@ -11,6 +12,15 @@ double lengthMatchToleranceMForLength(double lengthM) =>
 
 /// Standart stok boy (metre).
 const stockBarLengthM = 12.0;
+
+/// Safari / mobil web'de uzun senkron işlemlerde sekme çökmesini önlemek için.
+const _maxTripletSearchLengths = 24;
+
+Future<void> _yieldToEventLoop() async {
+  await Future<void>.delayed(
+    kIsWeb ? const Duration(milliseconds: 16) : Duration.zero,
+  );
+}
 
 int _lengthToMm(double lengthM) => (lengthM * 1000).round();
 
@@ -65,12 +75,27 @@ void _consumeFill(_LengthInventory inventory, List<int> fill) {
   }
 }
 
-List<int>? _findBestPair(_LengthInventory inventory, int stockMm) {
-  final lengths = inventory.entries
+List<int> _activeLengthKeys(_LengthInventory inventory) {
+  return inventory.entries
       .where((entry) => entry.value > 0)
       .map((entry) => entry.key)
-      .toList()
-    ..sort();
+      .toList();
+}
+
+List<int> _searchableLengths(_LengthInventory inventory) {
+  final entries = inventory.entries.where((entry) => entry.value > 0).toList()
+    ..sort((a, b) {
+      final byCount = b.value.compareTo(a.value);
+      if (byCount != 0) return byCount;
+      return a.key.compareTo(b.key);
+    });
+  final keys = entries.map((entry) => entry.key).toList();
+  if (keys.length <= _maxTripletSearchLengths) return keys;
+  return keys.sublist(0, _maxTripletSearchLengths);
+}
+
+List<int>? _findBestPair(_LengthInventory inventory, int stockMm) {
+  final lengths = _searchableLengths(inventory)..sort();
 
   List<int>? best;
   var bestWaste = stockMm + 1;
@@ -98,11 +123,8 @@ List<int>? _findBestPair(_LengthInventory inventory, int stockMm) {
 }
 
 List<int>? _findBestTriplet(_LengthInventory inventory, int stockMm) {
-  final lengths = inventory.entries
-      .where((entry) => entry.value > 0)
-      .map((entry) => entry.key)
-      .toList()
-    ..sort();
+  final lengths = _searchableLengths(inventory)..sort();
+  if (lengths.length < 3) return null;
 
   List<int>? best;
   var bestWaste = stockMm + 1;
@@ -140,10 +162,7 @@ List<int>? _findBestTriplet(_LengthInventory inventory, int stockMm) {
 }
 
 List<int> _greedyMultiFill(_LengthInventory inventory, int stockMm) {
-  final lengths = inventory.entries
-      .where((entry) => entry.value > 0)
-      .map((entry) => entry.key)
-      .toList()
+  final lengths = _activeLengthKeys(inventory)
     ..sort((a, b) => b.compareTo(a));
 
   if (lengths.isEmpty) return const [];
@@ -596,18 +615,21 @@ List<RebarPieceLine> _workingPieceLines(CuttingBendingBatch batch) {
 }
 
 /// Bir boy eşleştirme grubu için simüle fireyi minimize eden boyu seçer.
-double pickOptimalLengthForGroup(
+Future<double> pickOptimalLengthForGroup(
   LengthMatchGroup group,
   List<RebarPieceLine> pieceLines,
   List<LengthMatchGroup> allGroups,
-) {
+) async {
   final candidates = group.members.map((member) => member.lengthM).toSet().toList()
     ..sort();
 
   var bestLength = candidates.first;
   var bestWaste = double.infinity;
 
-  for (final candidate in candidates) {
+  for (var i = 0; i < candidates.length; i++) {
+    final candidate = candidates[i];
+    if (i > 0) await _yieldToEventLoop();
+
     final trialGroups = allGroups
         .map(
           (item) => item.id == group.id
@@ -1011,6 +1033,7 @@ Future<CuttingBendingBatch> runOptimumFireAnalysis(
 
   if (applyTahvil) {
     await report(8, 'Tahvil önerileri değerlendiriliyor...');
+    await _yieldToEventLoop();
     tahvilState = batch.tahvilGroups
         .map(
           (group) => pickBestTahvilEquivalentForGroup(group) != null
@@ -1020,6 +1043,7 @@ Future<CuttingBendingBatch> runOptimumFireAnalysis(
         .toList();
 
     await report(22, 'Tahvil kurallarına göre uygulanıyor...');
+    await _yieldToEventLoop();
   } else {
     tahvilState = batch.tahvilGroups
         .map((group) => group.copyWith(approved: false))
@@ -1035,6 +1059,7 @@ Future<CuttingBendingBatch> runOptimumFireAnalysis(
 
   if (applyLengthMatch) {
     await report(36, 'Boy eşleştirme grupları oluşturuluyor (%5 tolerans)...');
+    await _yieldToEventLoop();
 
     final lengthMatches = computeLengthMatchGroups(workingPieces);
 
@@ -1047,7 +1072,7 @@ Future<CuttingBendingBatch> runOptimumFireAnalysis(
         percent,
         'Optimum boy seçiliyor (${i + 1}/$groupCount)...',
       );
-      final optimalLength = pickOptimalLengthForGroup(
+      final optimalLength = await pickOptimalLengthForGroup(
         group,
         workingPieces,
         lengthMatches,
@@ -1055,6 +1080,7 @@ Future<CuttingBendingBatch> runOptimumFireAnalysis(
       optimizedMatches.add(
         group.copyWith(approved: true, selectedLengthM: optimalLength),
       );
+      await _yieldToEventLoop();
     }
 
     if (groupCount == 0) {
@@ -1065,6 +1091,7 @@ Future<CuttingBendingBatch> runOptimumFireAnalysis(
   }
 
   await report(88, 'Planlı kesim planı oluşturuluyor...');
+  await _yieldToEventLoop();
 
   final result = syncBatchLengthMatchDerivatives(
     batch.copyWith(
@@ -1076,6 +1103,7 @@ Future<CuttingBendingBatch> runOptimumFireAnalysis(
     ),
   );
 
+  await _yieldToEventLoop();
   await report(100, 'Analiz tamamlandı');
   return result;
 }

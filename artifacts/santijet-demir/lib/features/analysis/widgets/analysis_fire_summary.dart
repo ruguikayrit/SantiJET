@@ -49,6 +49,7 @@ class _AnalysisFireSummaryPanelState
         batch.tahvilGroups.where((group) => group.approved).length;
     final tahvilTotal = batch.tahvilGroups.length;
     final progress = ref.watch(optimumFireAnalysisProgressProvider);
+    final analysisError = ref.watch(optimumFireAnalysisErrorProvider);
     final progressForBatch = progress.appliesTo(batch.id);
     final isRunning = progress.isRunning && progressForBatch;
     final isCompleted = progress.isCompleted && progressForBatch;
@@ -248,6 +249,9 @@ class _AnalysisFireSummaryPanelState
                       percent: progress.percent,
                       stepLabel: progress.stepLabel,
                     ),
+                  ] else if (analysisError != null) ...[
+                    const SizedBox(height: 14),
+                    _AnalysisErrorBanner(message: analysisError),
                   ] else if (!isRunning) ...[
                     const SizedBox(height: 14),
                     _FireReductionStrategyPanel(
@@ -731,6 +735,54 @@ class _OptimumFireAnalysisProgressPanel extends StatelessWidget {
               minHeight: 8,
               backgroundColor: AppColors.border,
               color: AppColors.success,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _AnalysisErrorBanner extends StatelessWidget {
+  const _AnalysisErrorBanner({required this.message});
+
+  final String message;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+      decoration: BoxDecoration(
+        color: AppColors.warning.withValues(alpha: 0.1),
+        borderRadius: AppRadii.sm,
+        border: Border.all(
+          color: AppColors.warning.withValues(alpha: 0.4),
+        ),
+      ),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Container(
+            width: 36,
+            height: 36,
+            alignment: Alignment.center,
+            decoration: BoxDecoration(
+              color: AppColors.warning.withValues(alpha: 0.16),
+              shape: BoxShape.circle,
+            ),
+            child: const Icon(
+              Icons.error_outline,
+              color: AppColors.warning,
+              size: 20,
+            ),
+          ),
+          const SizedBox(width: 12),
+          Expanded(
+            child: Text(
+              message,
+              style: AppTypography.bodySmall.copyWith(
+                color: AppColors.textPrimary,
+              ),
             ),
           ),
         ],
