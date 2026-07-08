@@ -78,7 +78,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
         child: ListView(
           padding: const EdgeInsets.all(AppSpacing.lg),
           children: [
-            const SizedBox(height: 32),
+            const SizedBox(height: 51),
             Center(
               child: Image.asset(
                 'assets/images/splash_bolt.png',
@@ -88,7 +88,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                 filterQuality: FilterQuality.high,
               ),
             ),
-            const SizedBox(height: 24),
+            const SizedBox(height: 5),
             Text('Giriş Yap', style: AppTypography.headlineLarge, textAlign: TextAlign.center),
             const SizedBox(height: 32),
             TextField(
