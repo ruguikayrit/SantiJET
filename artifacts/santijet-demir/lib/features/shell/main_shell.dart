@@ -4,6 +4,7 @@ import 'package:go_router/go_router.dart';
 import 'package:santijet_demir/core/animations/app_animations.dart';
 import 'package:santijet_demir/core/format/app_format.dart';
 import 'package:santijet_demir/core/routing/app_routes.dart';
+import 'package:santijet_demir/core/responsive/app_safe_area.dart';
 import 'package:santijet_demir/core/responsive/responsive_layout.dart';
 import 'package:santijet_demir/core/theme/app_colors.dart';
 import 'package:santijet_demir/core/theme/app_spacing.dart';
@@ -30,12 +31,13 @@ class MainShell extends StatelessWidget {
     return Scaffold(
       backgroundColor: AppColors.canvas,
       resizeToAvoidBottomInset: false,
-      body: ResponsiveLayout(child: navigationShell),
-      bottomNavigationBar: MediaQuery.removePadding(
-        context: context,
-        removeBottom: true,
-        child: AppBottomNavBar(navigationShell: navigationShell),
+      body: ResponsiveLayout(
+        child: AppSafeArea(
+          bottom: false,
+          child: navigationShell,
+        ),
       ),
+      bottomNavigationBar: AppBottomNavBar(navigationShell: navigationShell),
     );
   }
 }
@@ -57,8 +59,7 @@ class DashboardScreen extends ConsumerWidget {
 
     return Scaffold(
       backgroundColor: AppColors.canvas,
-      body: SafeArea(
-        child: CustomScrollView(
+      body: CustomScrollView(
           slivers: [
             SliverToBoxAdapter(
               child: SantijetHeader(
@@ -157,13 +158,12 @@ class DashboardScreen extends ConsumerWidget {
                     index: 4,
                     child: DashboardActivitiesSection(activities: activities),
                   ),
-                  const SizedBox(height: 80),
+                  SizedBox(height: 96 + AppSafeAreaInsets.bottomOf(context)),
                 ]),
               ),
             ),
           ],
         ),
-      ),
     );
   }
 }

@@ -27,8 +27,7 @@ class FieldCountScreen extends ConsumerWidget {
 
     return Scaffold(
       backgroundColor: AppColors.canvas,
-      body: SafeArea(
-        child: CustomScrollView(
+      body: CustomScrollView(
           slivers: [
             const SliverToBoxAdapter(
               child: SantijetHeader(subtitle: 'SAHA SAYIM', showNotification: false),
@@ -158,7 +157,6 @@ class FieldCountScreen extends ConsumerWidget {
             ),
           ],
         ),
-      ),
       floatingActionButton: AppFab(
         label: 'Yeni Sayım',
         onPressed: () => context.push(AppRoutes.newCount),

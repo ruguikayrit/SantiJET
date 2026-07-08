@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:pointer_interceptor/pointer_interceptor.dart';
+import 'package:santijet_demir/core/responsive/app_safe_area.dart';
 import 'package:santijet_demir/core/responsive/responsive_layout.dart';
 import 'package:santijet_demir/core/theme/app_colors.dart';
 import 'package:santijet_demir/core/theme/app_typography.dart';
@@ -35,8 +36,7 @@ class AppBottomNavBar extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final showLabels = ResponsiveLayout.isTablet(context);
     final iconBarHeight = showLabels ? 56.0 : 52.0;
-    // viewPadding — padding değil; çift inset önlenir.
-    final bottomInset = MediaQuery.viewPaddingOf(context).bottom;
+    final bottomInset = AppSafeAreaInsets.bottomOf(context);
 
     final bar = ColoredBox(
       color: AppColors.surface,

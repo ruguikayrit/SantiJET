@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
@@ -173,8 +174,12 @@ class _BrandTitleRow extends StatelessWidget {
 
     if (!shiftUpByFontHeight) return row;
 
+    final lift = defaultTargetPlatform == TargetPlatform.iOS && kIsWeb
+        ? fontHeight * 0.15
+        : fontHeight - 2;
+
     return Transform.translate(
-      offset: Offset(-12, -fontHeight + 2),
+      offset: Offset(-12, -lift),
       child: row,
     );
   }

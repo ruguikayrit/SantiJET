@@ -32,8 +32,7 @@ class AnalysisScreen extends ConsumerWidget {
 
     return Scaffold(
       backgroundColor: AppColors.canvas,
-      body: SafeArea(
-        child: CustomScrollView(
+      body: CustomScrollView(
           slivers: [
             const SliverToBoxAdapter(
               child: SantijetHeader(subtitle: 'HESAP VE ANALİZ', showNotification: false),
@@ -237,7 +236,6 @@ class AnalysisScreen extends ConsumerWidget {
             ],
           ],
         ),
-      ),
     );
   }
 

@@ -26,8 +26,7 @@ class IncomingRebarScreen extends ConsumerWidget {
 
     return Scaffold(
       backgroundColor: AppColors.canvas,
-      body: SafeArea(
-        child: CustomScrollView(
+      body: CustomScrollView(
           slivers: [
             SliverToBoxAdapter(
               child: SantijetHeader(
@@ -182,7 +181,6 @@ class IncomingRebarScreen extends ConsumerWidget {
             ),
           ],
         ),
-      ),
       floatingActionButton: AppFab(
         label: 'Yeni Teslimat',
         onPressed: () => context.push(AppRoutes.selectInTransitOrder),

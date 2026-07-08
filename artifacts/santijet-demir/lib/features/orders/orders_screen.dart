@@ -53,8 +53,7 @@ class _OrdersScreenState extends ConsumerState<OrdersScreen> {
 
     return Scaffold(
       backgroundColor: AppColors.canvas,
-      body: SafeArea(
-        child: Column(
+      body: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             const SantijetHeader(subtitle: 'SİPARİŞLER'),
@@ -93,7 +92,6 @@ class _OrdersScreenState extends ConsumerState<OrdersScreen> {
             ),
           ],
         ),
-      ),
       floatingActionButton: AppFab(
         label: 'Yeni Sipariş',
         onPressed: () => context.push(AppRoutes.newOrder),
