@@ -1,11 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import 'package:santijet_demir/core/config/supabase_config.dart';
 import 'package:santijet_demir/core/routing/app_routes.dart';
 import 'package:santijet_demir/core/theme/app_colors.dart';
 import 'package:santijet_demir/core/theme/app_spacing.dart';
 import 'package:santijet_demir/core/theme/app_typography.dart';
-import 'package:santijet_demir/core/config/supabase_config.dart';
 import 'package:santijet_demir/features/auth/providers/auth_provider.dart';
 import 'package:santijet_demir/features/projects/providers/project_provider.dart';
 
@@ -80,18 +80,16 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
           children: [
             const SizedBox(height: 32),
             Center(
-              child: Image.asset('assets/images/s_logo.png', width: 72, height: 72),
+              child: Image.asset(
+                'assets/images/splash_bolt.png',
+                width: 88,
+                height: 88,
+                fit: BoxFit.contain,
+                filterQuality: FilterQuality.high,
+              ),
             ),
-            const SizedBox(height: 16),
+            const SizedBox(height: 24),
             Text('Giriş Yap', style: AppTypography.headlineLarge, textAlign: TextAlign.center),
-            const SizedBox(height: 8),
-            Text(
-              SupabaseConfig.isConfigured
-                  ? 'Bulut hesabı — tek oturum, proje kodu tüm cihazlarda geçerli.'
-                  : 'Tek üyelik — aynı anda yalnızca bir oturum açık olabilir.',
-              style: AppTypography.bodySmall,
-              textAlign: TextAlign.center,
-            ),
             const SizedBox(height: 32),
             TextField(
               controller: _emailCtrl,
