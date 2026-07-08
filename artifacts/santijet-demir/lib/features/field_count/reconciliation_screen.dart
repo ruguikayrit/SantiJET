@@ -1,7 +1,6 @@
-import 'package:flutter/foundation.dart';
-import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
+import 'package:flutter/material.dart';import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:santijet_demir/core/responsive/responsive_layout.dart';
 import 'package:santijet_demir/core/theme/app_colors.dart';
 import 'package:santijet_demir/core/theme/app_radii.dart';
 import 'package:santijet_demir/core/theme/app_spacing.dart';
@@ -51,7 +50,7 @@ class _ReconciliationScreenState extends ConsumerState<ReconciliationScreen> {
     final filterIndex = ref.watch(reconciliationFilterProvider);
     final allRows = ref.watch(reconciliationRowsProvider);
     final isLandscape = MediaQuery.orientationOf(context) == Orientation.landscape;
-    final showRotateHint = !isLandscape && !kIsWeb;
+    final showRotateHint = ResponsiveLayout.isPhonePortrait(context);
 
     final displayRows = rows;
     final totals = computeReconciliationTotals(displayRows);

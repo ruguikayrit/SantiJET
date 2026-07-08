@@ -204,34 +204,31 @@ class _NavCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Material(
-      color: Colors.transparent,
-      child: InkWell(
-        onTap: onTap,
-        borderRadius: AppRadii.md,
-        child: Container(
-          padding: const EdgeInsets.all(16),
-          decoration: BoxDecoration(
-            color: AppColors.surfaceElevated,
-            borderRadius: AppRadii.md,
-            border: Border.all(color: AppColors.border),
-          ),
-          child: Row(
-            children: [
-              Icon(icon, color: AppColors.electricBlueLight),
-              const SizedBox(width: 12),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(title, style: AppTypography.titleMedium),
-                    Text(subtitle, style: AppTypography.bodySmall),
-                  ],
-                ),
+    return AppTappable(
+      onTap: onTap,
+      borderRadius: AppRadii.md,
+      child: Container(
+        padding: const EdgeInsets.all(16),
+        decoration: BoxDecoration(
+          color: AppColors.surfaceElevated,
+          borderRadius: AppRadii.md,
+          border: Border.all(color: AppColors.border),
+        ),
+        child: Row(
+          children: [
+            Icon(icon, color: AppColors.electricBlueLight),
+            const SizedBox(width: 12),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(title, style: AppTypography.titleMedium),
+                  Text(subtitle, style: AppTypography.bodySmall),
+                ],
               ),
-              const Icon(Icons.chevron_right, color: AppColors.textMuted),
-            ],
-          ),
+            ),
+            const Icon(Icons.chevron_right, color: AppColors.textMuted),
+          ],
         ),
       ),
     );
@@ -249,47 +246,44 @@ class _SupplierShortcut extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Material(
-      color: Colors.transparent,
-      child: InkWell(
-        onTap: onTap,
-        borderRadius: AppRadii.md,
-        child: Container(
-          padding: const EdgeInsets.all(16),
-          decoration: BoxDecoration(
-            color: AppColors.surfaceElevated,
-            borderRadius: AppRadii.md,
-            border: Border.all(color: AppColors.border),
-          ),
-          child: Row(
-            children: [
-              Container(
-                width: 40,
-                height: 40,
-                decoration: BoxDecoration(
-                  color: AppColors.electricBlue.withValues(alpha: 0.15),
-                  borderRadius: AppRadii.sm,
-                ),
-                child: const Icon(Icons.bar_chart, color: AppColors.electricBlueLight),
+    return AppTappable(
+      onTap: onTap,
+      borderRadius: AppRadii.md,
+      child: Container(
+        padding: const EdgeInsets.all(16),
+        decoration: BoxDecoration(
+          color: AppColors.surfaceElevated,
+          borderRadius: AppRadii.md,
+          border: Border.all(color: AppColors.border),
+        ),
+        child: Row(
+          children: [
+            Container(
+              width: 40,
+              height: 40,
+              decoration: BoxDecoration(
+                color: AppColors.electricBlue.withValues(alpha: 0.15),
+                borderRadius: AppRadii.sm,
               ),
-              const SizedBox(width: 12),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text('Tedarikçi Performansı', style: AppTypography.titleMedium),
-                    Text(
-                      supplierCount == 0
-                          ? 'Henüz tedarikçi verisi yok'
-                          : '$supplierCount firma karşılaştırması',
-                      style: AppTypography.bodySmall,
-                    ),
-                  ],
-                ),
+              child: const Icon(Icons.bar_chart, color: AppColors.electricBlueLight),
+            ),
+            const SizedBox(width: 12),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text('Tedarikçi Performansı', style: AppTypography.titleMedium),
+                  Text(
+                    supplierCount == 0
+                        ? 'Henüz tedarikçi verisi yok'
+                        : '$supplierCount firma karşılaştırması',
+                    style: AppTypography.bodySmall,
+                  ),
+                ],
               ),
-              const Icon(Icons.arrow_forward, color: AppColors.textMuted),
-            ],
-          ),
+            ),
+            const Icon(Icons.arrow_forward, color: AppColors.textMuted),
+          ],
         ),
       ),
     );

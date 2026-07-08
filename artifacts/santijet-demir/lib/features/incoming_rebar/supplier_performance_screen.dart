@@ -4,6 +4,7 @@ import 'package:santijet_demir/core/theme/app_colors.dart';
 import 'package:santijet_demir/core/theme/app_radii.dart';
 import 'package:santijet_demir/core/theme/app_spacing.dart';
 import 'package:santijet_demir/core/theme/app_typography.dart';
+import 'package:santijet_demir/core/widgets/empty_states.dart';
 import 'package:santijet_demir/domain/entities/delivery.dart';
 import 'package:santijet_demir/features/incoming_rebar/providers/incoming_rebar_provider.dart';
 
@@ -13,6 +14,15 @@ class SupplierPerformanceScreen extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final suppliers = ref.watch(supplierPerformanceProvider);
+
+    if (suppliers.isEmpty) {
+      return Scaffold(
+        backgroundColor: AppColors.canvas,
+        appBar: AppBar(title: const Text('Tedarikçi Performansı')),
+        body: const ModuleEmptyState(type: EmptyStateType.noAnalysis),
+      );
+    }
+
     final sorted = [...suppliers]..sort((a, b) => b.performancePercent.compareTo(a.performancePercent));
 
     final totalOrdered = suppliers.fold(0.0, (s, v) => s + v.totalOrdered);

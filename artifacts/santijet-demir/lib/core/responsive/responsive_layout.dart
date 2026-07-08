@@ -21,6 +21,16 @@ class ResponsiveLayout extends StatelessWidget {
     return MediaQuery.sizeOf(context).shortestSide >= 840;
   }
 
+  /// Telefon portre — mukayese tablosu gibi geniş içerikler için.
+  static bool isPhonePortrait(BuildContext context) {
+    return MediaQuery.orientationOf(context) == Orientation.portrait &&
+        MediaQuery.sizeOf(context).width < 600;
+  }
+
+  static bool isNarrowWidth(BuildContext context, [double maxWidth = 420]) {
+    return MediaQuery.sizeOf(context).width < maxWidth;
+  }
+
   @override
   Widget build(BuildContext context) {
     final width = MediaQuery.sizeOf(context).width;

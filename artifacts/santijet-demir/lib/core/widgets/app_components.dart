@@ -1,4 +1,6 @@
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
+import 'package:santijet_demir/core/responsive/responsive_layout.dart';
 import 'package:santijet_demir/core/theme/app_colors.dart';
 import 'package:santijet_demir/core/theme/app_radii.dart';
 import 'package:santijet_demir/core/theme/app_typography.dart';
@@ -446,6 +448,23 @@ class FilterChips extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final useWrap = ResponsiveLayout.isNarrowWidth(context);
+
+    if (useWrap) {
+      return Wrap(
+        spacing: 8,
+        runSpacing: 8,
+        children: [
+          for (var index = 0; index < labels.length; index++)
+            _FilterChipItem(
+              label: labels[index],
+              selected: index == selectedIndex,
+              onSelected: () => onSelected(index),
+            ),
+        ],
+      );
+    }
+
     return SizedBox(
       height: 36,
       child: ListView.separated(
@@ -454,24 +473,45 @@ class FilterChips extends StatelessWidget {
         separatorBuilder: (_, __) => const SizedBox(width: 8),
         itemBuilder: (context, index) {
           final selected = index == selectedIndex;
-          return FilterChip(
-            label: Text(labels[index]),
+          return _FilterChipItem(
+            label: labels[index],
             selected: selected,
-            onSelected: (_) => onSelected(index),
-            labelStyle: AppTypography.labelMedium.copyWith(
-              color: selected ? AppColors.textPrimary : AppColors.textMuted,
-              fontWeight: selected ? FontWeight.w600 : FontWeight.w500,
-            ),
-            backgroundColor: AppColors.surfaceElevated,
-            selectedColor: AppColors.electricBlue.withValues(alpha: 0.2),
-            side: BorderSide(
-              color: selected ? AppColors.electricBlue : AppColors.border,
-            ),
-            showCheckmark: false,
-            padding: const EdgeInsets.symmetric(horizontal: 4),
+            onSelected: () => onSelected(index),
           );
         },
       ),
+    );
+  }
+}
+
+class _FilterChipItem extends StatelessWidget {
+  const _FilterChipItem({
+    required this.label,
+    required this.selected,
+    required this.onSelected,
+  });
+
+  final String label;
+  final bool selected;
+  final VoidCallback onSelected;
+
+  @override
+  Widget build(BuildContext context) {
+    return FilterChip(
+      label: Text(label),
+      selected: selected,
+      onSelected: (_) => onSelected(),
+      labelStyle: AppTypography.labelMedium.copyWith(
+        color: selected ? AppColors.textPrimary : AppColors.textMuted,
+        fontWeight: selected ? FontWeight.w600 : FontWeight.w500,
+      ),
+      backgroundColor: AppColors.surfaceElevated,
+      selectedColor: AppColors.electricBlue.withValues(alpha: 0.2),
+      side: BorderSide(
+        color: selected ? AppColors.electricBlue : AppColors.border,
+      ),
+      showCheckmark: false,
+      padding: const EdgeInsets.symmetric(horizontal: 4),
     );
   }
 }
@@ -511,6 +551,39 @@ class EmptyStateWidget extends StatelessWidget {
             ],
           ],
         ),
+      ),
+    );
+  }
+}
+
+class AppTappable extends StatelessWidget {
+  const AppTappable({
+    super.key,
+    required this.onTap,
+    required this.child,
+    this.borderRadius,
+  });
+
+  final VoidCallback onTap;
+  final Widget child;
+  final BorderRadius? borderRadius;
+
+  @override
+  Widget build(BuildContext context) {
+    if (kIsWeb) {
+      return Listener(
+        behavior: HitTestBehavior.opaque,
+        onPointerUp: (_) => onTap(),
+        child: child,
+      );
+    }
+
+    return Material(
+      color: Colors.transparent,
+      child: InkWell(
+        onTap: onTap,
+        borderRadius: borderRadius,
+        child: child,
       ),
     );
   }

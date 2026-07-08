@@ -422,15 +422,14 @@ class _FireReductionStrategyPanel extends ConsumerWidget {
           'Fire azaltma stratejisi seçin',
           style: AppTypography.labelMedium,
         ),
-        const SizedBox(height: 4),
-        Text(
-          batch.hasAnySavedOptimization
-              ? 'Kayıtlı stratejiye dokunarak sonucu yükleyin — '
-                  'tekrar analiz etmenize gerek kalmaz.'
-              : 'Veri girişi yok — sistem otomatik hesaplar. '
-                  'Boy eşleştirme: ${CuttingBendingBatch.lengthMatchToleranceDescription}.',
-          style: AppTypography.bodySmall.copyWith(color: AppColors.textMuted),
-        ),
+        if (batch.hasAnySavedOptimization) ...[
+          const SizedBox(height: 4),
+          Text(
+            'Kayıtlı stratejiye dokunarak sonucu yükleyin — '
+            'tekrar analiz etmenize gerek kalmaz.',
+            style: AppTypography.bodySmall.copyWith(color: AppColors.textMuted),
+          ),
+        ],
         const SizedBox(height: 10),
         ...FireReductionStrategy.values.map(
           (strategy) => Padding(

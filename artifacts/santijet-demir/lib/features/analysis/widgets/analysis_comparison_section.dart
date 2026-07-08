@@ -355,6 +355,17 @@ class _HamRevizePieceComparisonTable extends StatelessWidget {
 
   final List<PieceListComparisonRow> rows;
 
+  static const _capWidth = 48.0;
+  static const _adetWidth = 56.0;
+
+  static Map<int, TableColumnWidth> get _columnWidths => const {
+        0: FixedColumnWidth(_capWidth),
+        1: FlexColumnWidth(1.15),
+        2: FlexColumnWidth(1.15),
+        3: FlexColumnWidth(0.85),
+        4: FixedColumnWidth(_adetWidth),
+      };
+
   @override
   Widget build(BuildContext context) {
     if (rows.isEmpty) {
@@ -368,148 +379,96 @@ class _HamRevizePieceComparisonTable extends StatelessWidget {
       ),
       child: ClipRRect(
         borderRadius: AppRadii.sm,
-        child: SingleChildScrollView(
-          scrollDirection: Axis.horizontal,
-          child: ConstrainedBox(
-            constraints: BoxConstraints(
-              minWidth: MediaQuery.sizeOf(context).width - 56,
-            ),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.stretch,
-              children: [
-                const _HamRevizeComparisonTableHeader(),
-                ...rows.map(
-                  (row) => _HamRevizeComparisonTableRow(row: row),
-                ),
-              ],
-            ),
+        child: Table(
+          columnWidths: _columnWidths,
+          defaultVerticalAlignment: TableCellVerticalAlignment.middle,
+          border: const TableBorder(
+            horizontalInside: BorderSide(color: AppColors.border, width: 0.5),
           ),
+          children: [
+            _headerRow(),
+            ...rows.map(_dataRow),
+          ],
         ),
       ),
     );
   }
-}
 
-class _HamRevizeComparisonTableHeader extends StatelessWidget {
-  const _HamRevizeComparisonTableHeader();
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 10),
-      decoration: const BoxDecoration(
-        color: AppColors.surfaceHighlight,
-        border: Border(bottom: BorderSide(color: AppColors.border)),
-      ),
-      child: Row(
-        children: [
-          SizedBox(
-            width: 44,
-            child: Text('ÇAP', style: AppTypography.labelSmall),
-          ),
-          Expanded(
-            flex: 3,
-            child: Text('ÖNCE', style: AppTypography.labelSmall),
-          ),
-          Expanded(
-            flex: 3,
-            child: Text('SONRA', style: AppTypography.labelSmall),
-          ),
-          SizedBox(
-            width: 56,
-            child: Text(
-              'Δ cm',
-              style: AppTypography.labelSmall,
-              textAlign: TextAlign.end,
-            ),
-          ),
-          SizedBox(
-            width: 44,
-            child: Text(
-              'ADET',
-              style: AppTypography.labelSmall,
-              textAlign: TextAlign.end,
-            ),
-          ),
-        ],
-      ),
+  TableRow _headerRow() {
+    return TableRow(
+      decoration: const BoxDecoration(color: AppColors.surfaceHighlight),
+      children: [
+        _headerCell('ÇAP', align: TextAlign.start),
+        _headerCell('ÖNCE', padding: const EdgeInsets.fromLTRB(8, 10, 16, 10)),
+        _headerCell('SONRA', padding: const EdgeInsets.fromLTRB(16, 10, 8, 10)),
+        _headerCell('Δ cm', align: TextAlign.end),
+        _headerCell('ADET', align: TextAlign.end, padding: const EdgeInsets.fromLTRB(8, 10, 12, 10)),
+      ],
     );
   }
-}
 
-class _HamRevizeComparisonTableRow extends StatelessWidget {
-  const _HamRevizeComparisonTableRow({required this.row});
-
-  final PieceListComparisonRow row;
-
-  @override
-  Widget build(BuildContext context) {
+  TableRow _dataRow(PieceListComparisonRow row) {
     final accent = row.isChanged ? AppColors.warning : AppColors.success;
     final deltaText = _formatDeltaCm(row.deltaCm);
 
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 10),
+    return TableRow(
       decoration: BoxDecoration(
         color: accent.withValues(alpha: 0.06),
         border: Border(
-          bottom: BorderSide(color: AppColors.border.withValues(alpha: 0.7)),
           left: BorderSide(color: accent, width: 3),
         ),
       ),
-      child: Row(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          SizedBox(
-            width: 44,
-            child: Text(
-              'Ø${row.beforeDiameter}',
-              style: AppTypography.labelMedium.copyWith(
-                color: AppColors.diameterColor(row.beforeDiameter),
-                fontWeight: FontWeight.w700,
-              ),
+      children: [
+        Padding(
+          padding: const EdgeInsets.fromLTRB(10, 10, 4, 10),
+          child: Text(
+            'Ø${row.beforeDiameter}',
+            style: AppTypography.labelMedium.copyWith(
+              color: AppColors.diameterColor(row.beforeDiameter),
+              fontWeight: FontWeight.w700,
             ),
           ),
-          Expanded(
-            flex: 3,
-            child: _LengthCell(
-              lengthM: row.beforeLengthM,
-              emphasize: false,
-            ),
+        ),
+        Padding(
+          padding: const EdgeInsets.fromLTRB(8, 10, 16, 10),
+          child: _LengthCell(
+            lengthM: row.beforeLengthM,
+            emphasize: false,
           ),
-          Expanded(
-            flex: 3,
-            child: _LengthCell(
-              diameter: row.afterDiameter,
-              lengthM: row.afterLengthM,
-              emphasize: row.isChanged,
-              accent: accent,
-              showDiameter: row.beforeDiameter != row.afterDiameter,
-            ),
+        ),
+        Padding(
+          padding: const EdgeInsets.fromLTRB(16, 10, 8, 10),
+          child: _LengthCell(
+            diameter: row.afterDiameter,
+            lengthM: row.afterLengthM,
+            emphasize: row.isChanged,
+            accent: accent,
+            showDiameter: row.beforeDiameter != row.afterDiameter,
           ),
-          SizedBox(
-            width: 56,
-            child: Text(
-              deltaText,
-              style: AppTypography.labelMedium.copyWith(
-                color: accent,
-                fontWeight: FontWeight.w700,
-              ),
-              textAlign: TextAlign.end,
+        ),
+        Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 10),
+          child: Text(
+            deltaText,
+            style: AppTypography.labelMedium.copyWith(
+              color: accent,
+              fontWeight: FontWeight.w700,
             ),
+            textAlign: TextAlign.end,
           ),
-          SizedBox(
-            width: 44,
-            child: Text(
-              AppFormat.integer(row.quantity),
-              style: AppTypography.bodySmall.copyWith(
-                color: row.isChanged ? accent : AppColors.textPrimary,
-                fontWeight: row.isChanged ? FontWeight.w600 : null,
-              ),
-              textAlign: TextAlign.end,
+        ),
+        Padding(
+          padding: const EdgeInsets.fromLTRB(8, 10, 12, 10),
+          child: Text(
+            AppFormat.integer(row.quantity),
+            style: AppTypography.bodySmall.copyWith(
+              color: row.isChanged ? accent : AppColors.textPrimary,
+              fontWeight: row.isChanged ? FontWeight.w600 : null,
             ),
+            textAlign: TextAlign.end,
           ),
-        ],
-      ),
+        ),
+      ],
     );
   }
 
@@ -517,6 +476,21 @@ class _HamRevizeComparisonTableRow extends StatelessWidget {
     if (deltaCm.abs() < 0.05) return '0';
     final prefix = deltaCm > 0 ? '+' : '';
     return '$prefix${deltaCm.toStringAsFixed(1)}';
+  }
+
+  Widget _headerCell(
+    String label, {
+    TextAlign align = TextAlign.start,
+    EdgeInsets padding = const EdgeInsets.symmetric(horizontal: 10, vertical: 10),
+  }) {
+    return Padding(
+      padding: padding,
+      child: Text(
+        label,
+        style: AppTypography.labelSmall,
+        textAlign: align,
+      ),
+    );
   }
 }
 
