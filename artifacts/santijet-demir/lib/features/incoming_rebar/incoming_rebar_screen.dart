@@ -163,18 +163,6 @@ class IncomingRebarScreen extends ConsumerWidget {
                       }).toList(),
                     ),
                   ),
-                  const SizedBox(height: 16),
-                  _NavCard(
-                    icon: Icons.bar_chart,
-                    title: 'Performans Analizi',
-                    subtitle: 'Sapma grafikleri · tedarikçi karşılaştırma',
-                    onTap: () => context.push(AppRoutes.performanceAnalysis),
-                  ),
-                  const SizedBox(height: 10),
-                  _SupplierShortcut(
-                    supplierCount: ref.watch(supplierPerformanceProvider).length,
-                    onTap: () => context.push(AppRoutes.supplierPerformance),
-                  ),
                   const SizedBox(height: 80),
                 ]),
               ),
@@ -184,107 +172,6 @@ class IncomingRebarScreen extends ConsumerWidget {
       floatingActionButton: AppFab(
         label: 'Yeni Teslimat',
         onPressed: () => context.push(AppRoutes.selectInTransitOrder),
-      ),
-    );
-  }
-}
-
-class _NavCard extends StatelessWidget {
-  const _NavCard({
-    required this.icon,
-    required this.title,
-    required this.subtitle,
-    required this.onTap,
-  });
-
-  final IconData icon;
-  final String title;
-  final String subtitle;
-  final VoidCallback onTap;
-
-  @override
-  Widget build(BuildContext context) {
-    return AppTappable(
-      onTap: onTap,
-      borderRadius: AppRadii.md,
-      child: Container(
-        padding: const EdgeInsets.all(16),
-        decoration: BoxDecoration(
-          color: AppColors.surfaceElevated,
-          borderRadius: AppRadii.md,
-          border: Border.all(color: AppColors.border),
-        ),
-        child: Row(
-          children: [
-            Icon(icon, color: AppColors.electricBlueLight),
-            const SizedBox(width: 12),
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(title, style: AppTypography.titleMedium),
-                  Text(subtitle, style: AppTypography.bodySmall),
-                ],
-              ),
-            ),
-            const Icon(Icons.chevron_right, color: AppColors.textMuted),
-          ],
-        ),
-      ),
-    );
-  }
-}
-
-class _SupplierShortcut extends StatelessWidget {
-  const _SupplierShortcut({
-    required this.supplierCount,
-    required this.onTap,
-  });
-
-  final int supplierCount;
-  final VoidCallback onTap;
-
-  @override
-  Widget build(BuildContext context) {
-    return AppTappable(
-      onTap: onTap,
-      borderRadius: AppRadii.md,
-      child: Container(
-        padding: const EdgeInsets.all(16),
-        decoration: BoxDecoration(
-          color: AppColors.surfaceElevated,
-          borderRadius: AppRadii.md,
-          border: Border.all(color: AppColors.border),
-        ),
-        child: Row(
-          children: [
-            Container(
-              width: 40,
-              height: 40,
-              decoration: BoxDecoration(
-                color: AppColors.electricBlue.withValues(alpha: 0.15),
-                borderRadius: AppRadii.sm,
-              ),
-              child: const Icon(Icons.bar_chart, color: AppColors.electricBlueLight),
-            ),
-            const SizedBox(width: 12),
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text('Tedarikçi Performansı', style: AppTypography.titleMedium),
-                  Text(
-                    supplierCount == 0
-                        ? 'Henüz tedarikçi verisi yok'
-                        : '$supplierCount firma karşılaştırması',
-                    style: AppTypography.bodySmall,
-                  ),
-                ],
-              ),
-            ),
-            const Icon(Icons.arrow_forward, color: AppColors.textMuted),
-          ],
-        ),
       ),
     );
   }
