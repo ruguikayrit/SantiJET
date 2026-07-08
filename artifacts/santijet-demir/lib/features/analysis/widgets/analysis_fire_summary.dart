@@ -895,19 +895,20 @@ class _MatteGreenGradientButton extends StatelessWidget {
         borderRadius: AppRadii.sm,
         splashColor: Colors.white.withValues(alpha: 0.08),
         highlightColor: Colors.white.withValues(alpha: 0.04),
-        child: Ink(
+        child: ConstrainedBox(
           constraints: const BoxConstraints(minHeight: 46),
-          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
-          decoration: BoxDecoration(
-            borderRadius: AppRadii.sm,
-            gradient: enabled ? _enabledGradient : _disabledGradient,
-            border: Border.all(
-              color: enabled
-                  ? const Color(0xFF0F6B52).withValues(alpha: 0.55)
-                  : AppColors.border,
+          child: Ink(
+            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+            decoration: BoxDecoration(
+              borderRadius: AppRadii.sm,
+              gradient: enabled ? _enabledGradient : _disabledGradient,
+              border: Border.all(
+                color: enabled
+                    ? const Color(0xFF0F6B52).withValues(alpha: 0.55)
+                    : AppColors.border,
+              ),
             ),
-          ),
-          child: Row(
+            child: Row(
             mainAxisAlignment: MainAxisAlignment.center,
             mainAxisSize: MainAxisSize.min,
             children: [
@@ -935,6 +936,7 @@ class _MatteGreenGradientButton extends StatelessWidget {
                 ),
               ),
             ],
+            ),
           ),
         ),
       ),
