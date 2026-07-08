@@ -11,10 +11,12 @@ class ReconciliationTable extends StatelessWidget {
     super.key,
     required this.rows,
     required this.totals,
+    this.landscape = false,
   });
 
   final List<ReconciliationRow> rows;
   final ReconciliationTotals totals;
+  final bool landscape;
 
   static const _headerStyle = TextStyle(
     fontSize: 10,
@@ -37,6 +39,9 @@ class ReconciliationTable extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final screenWidth = MediaQuery.sizeOf(context).width;
+    final minTableWidth = landscape ? screenWidth - 32 : screenWidth - 32;
+
     return Container(
       decoration: BoxDecoration(
         color: AppColors.surfaceElevated,
@@ -48,21 +53,31 @@ class ReconciliationTable extends StatelessWidget {
         child: SingleChildScrollView(
           scrollDirection: Axis.horizontal,
           child: ConstrainedBox(
-            constraints: BoxConstraints(
-              minWidth: MediaQuery.sizeOf(context).width - 32,
-            ),
+            constraints: BoxConstraints(minWidth: minTableWidth),
             child: Table(
-              columnWidths: const {
-                0: FixedColumnWidth(40),
-                1: FixedColumnWidth(46),
-                2: FixedColumnWidth(42),
-                3: FixedColumnWidth(46),
-                4: FixedColumnWidth(48),
-                5: FixedColumnWidth(48),
-                6: FixedColumnWidth(44),
-                7: FixedColumnWidth(48),
-                8: FixedColumnWidth(76),
-              },
+              columnWidths: landscape
+                  ? const {
+                      0: FixedColumnWidth(48),
+                      1: FixedColumnWidth(56),
+                      2: FixedColumnWidth(52),
+                      3: FixedColumnWidth(56),
+                      4: FixedColumnWidth(60),
+                      5: FixedColumnWidth(60),
+                      6: FixedColumnWidth(52),
+                      7: FixedColumnWidth(60),
+                      8: FixedColumnWidth(88),
+                    }
+                  : const {
+                      0: FixedColumnWidth(40),
+                      1: FixedColumnWidth(46),
+                      2: FixedColumnWidth(42),
+                      3: FixedColumnWidth(46),
+                      4: FixedColumnWidth(48),
+                      5: FixedColumnWidth(48),
+                      6: FixedColumnWidth(44),
+                      7: FixedColumnWidth(48),
+                      8: FixedColumnWidth(76),
+                    },
               defaultVerticalAlignment: TableCellVerticalAlignment.middle,
               border: const TableBorder(
                 horizontalInside: BorderSide(color: AppColors.border, width: 0.5),

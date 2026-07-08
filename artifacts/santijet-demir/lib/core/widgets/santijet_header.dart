@@ -37,19 +37,9 @@ class SantijetHeader extends StatelessWidget {
         children: [
           Expanded(
             child: showWordmark
-                ? Row(
-                    crossAxisAlignment: CrossAxisAlignment.end,
-                    children: [
-                      Image.asset(
-                        'assets/images/splash_bolt.png',
-                        width: 36,
-                        height: 36,
-                        fit: BoxFit.contain,
-                        filterQuality: FilterQuality.high,
-                      ),
-                      const SizedBox(width: 10),
-                      Flexible(child: _BrandTitleRow(shiftUpByFontHeight: true)),
-                    ],
+                ? Align(
+                    alignment: Alignment.centerLeft,
+                    child: _BrandTitleRow(shiftUpByFontHeight: true),
                   )
                 : Row(
                     crossAxisAlignment: CrossAxisAlignment.start,
@@ -179,7 +169,7 @@ class _BrandTitleRow extends StatelessWidget {
         : fontHeight - 2;
 
     return Transform.translate(
-      offset: Offset(-12, -lift),
+      offset: Offset(0, -lift),
       child: row,
     );
   }

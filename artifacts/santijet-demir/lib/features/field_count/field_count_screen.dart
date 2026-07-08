@@ -69,25 +69,21 @@ class FieldCountScreen extends ConsumerWidget {
                           label: 'Planlanan Kullanım',
                           value: AppFormat.tonnage(summary.plannedUsage),
                           accentColor: AppColors.partial,
-                          onTap: () => context.go(AppRoutes.dashboard),
                         ),
                         _SummaryKpiSpec(
                           label: 'Gerçek Kullanım',
                           value: AppFormat.tonnage(summary.actualUsage),
                           accentColor: AppColors.warning,
-                          onTap: () => context.push(AppRoutes.reconciliation),
                         ),
                         _SummaryKpiSpec(
                           label: 'Planlanan Stok',
                           value: AppFormat.tonnage(summary.plannedStock),
                           accentColor: AppColors.electricBlueLight,
-                          onTap: () => context.push(AppRoutes.reconciliation),
                         ),
                         _SummaryKpiSpec(
                           label: 'Gerçek Stok',
                           value: AppFormat.tonnage(summary.fieldCount),
                           accentColor: AppColors.info,
-                          onTap: () => context.push(AppRoutes.countRecords),
                         ),
                       ],
                     ),
@@ -170,13 +166,13 @@ class _SummaryKpiSpec {
     required this.label,
     required this.value,
     required this.accentColor,
-    required this.onTap,
+    this.onTap,
   });
 
   final String label;
   final String value;
   final Color accentColor;
-  final VoidCallback onTap;
+  final VoidCallback? onTap;
 }
 
 class _SummaryKpiRow extends StatelessWidget {

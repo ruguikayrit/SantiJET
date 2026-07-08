@@ -1,7 +1,11 @@
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:santijet_demir/core/theme/app_colors.dart';
+import 'package:santijet_demir/core/theme/app_radii.dart';
 import 'package:santijet_demir/core/theme/app_spacing.dart';
+import 'package:santijet_demir/core/theme/app_typography.dart';
 import 'package:santijet_demir/core/widgets/app_components.dart';
 import 'package:santijet_demir/core/widgets/empty_states.dart';
 import 'package:santijet_demir/data/services/export_service.dart';
@@ -11,14 +15,43 @@ import 'package:santijet_demir/features/field_count/field_count_calculator.dart'
 import 'package:santijet_demir/features/field_count/providers/field_count_provider.dart';
 import 'package:santijet_demir/features/field_count/widgets/reconciliation_table.dart';
 
-class ReconciliationScreen extends ConsumerWidget {
+class ReconciliationScreen extends ConsumerStatefulWidget {
   const ReconciliationScreen({super.key});
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
+  ConsumerState<ReconciliationScreen> createState() =>
+      _ReconciliationScreenState();
+}
+
+class _ReconciliationScreenState extends ConsumerState<ReconciliationScreen> {
+  @override
+  void initState() {
+    super.initState();
+    SystemChrome.setPreferredOrientations([
+      DeviceOrientation.landscapeLeft,
+      DeviceOrientation.landscapeRight,
+      DeviceOrientation.portraitUp,
+    ]);
+  }
+
+  @override
+  void dispose() {
+    SystemChrome.setPreferredOrientations([
+      DeviceOrientation.portraitUp,
+      DeviceOrientation.portraitDown,
+      DeviceOrientation.landscapeLeft,
+      DeviceOrientation.landscapeRight,
+    ]);
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
     final rows = ref.watch(filteredReconciliationProvider);
     final filterIndex = ref.watch(reconciliationFilterProvider);
     final allRows = ref.watch(reconciliationRowsProvider);
+    final isLandscape = MediaQuery.orientationOf(context) == Orientation.landscape;
+    final showRotateHint = !isLandscape && !kIsWeb;
 
     final displayRows = rows;
     final totals = computeReconciliationTotals(displayRows);
@@ -68,6 +101,8 @@ class ReconciliationScreen extends ConsumerWidget {
             const Expanded(
               child: ModuleEmptyState(type: EmptyStateType.noSearchResult),
             )
+          else if (showRotateHint)
+            const Expanded(child: _LandscapeTableHint())
           else
             Expanded(
               child: SingleChildScrollView(
@@ -80,6 +115,7 @@ class ReconciliationScreen extends ConsumerWidget {
                 child: ReconciliationTable(
                   rows: displayRows,
                   totals: totals,
+                  landscape: isLandscape,
                 ),
               ),
             ),
@@ -165,5 +201,52 @@ class ReconciliationScreen extends ConsumerWidget {
         );
       }
     }
+  }
+}
+
+class _LandscapeTableHint extends StatelessWidget {
+  const _LandscapeTableHint();
+
+  @override
+  Widget build(BuildContext context) {
+    return Center(
+      child: Padding(
+        padding: const EdgeInsets.all(AppSpacing.lg),
+        child: Container(
+          width: double.infinity,
+          constraints: const BoxConstraints(maxWidth: 360),
+          padding: const EdgeInsets.all(AppSpacing.lg),
+          decoration: BoxDecoration(
+            color: AppColors.surfaceElevated,
+            borderRadius: AppRadii.md,
+            border: Border.all(color: AppColors.border),
+          ),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Icon(
+                Icons.screen_rotation_outlined,
+                size: 56,
+                color: AppColors.electricBlueLight.withValues(alpha: 0.9),
+              ),
+              const SizedBox(height: 16),
+              Text(
+                'Tablo yatay görünümde açılır',
+                style: AppTypography.titleMedium,
+                textAlign: TextAlign.center,
+              ),
+              const SizedBox(height: 8),
+              Text(
+                'Mukayese tablosunu incelemek için telefonu yatay konuma getirin.',
+                style: AppTypography.bodyMedium.copyWith(
+                  color: AppColors.textMuted,
+                ),
+                textAlign: TextAlign.center,
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
   }
 }
