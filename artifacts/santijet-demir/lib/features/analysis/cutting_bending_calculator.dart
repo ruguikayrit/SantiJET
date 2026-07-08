@@ -519,6 +519,70 @@ List<LengthMatchChange> computeLengthMatchChanges(
   return changes;
 }
 
+RebarPieceLine _resolveRevisedStateForRawPiece(
+  RebarPieceLine raw,
+  CuttingBendingBatch batch,
+) {
+  var diameter = raw.diameter;
+  var length = raw.lengthM;
+
+  for (final group in batch.tahvilGroups.where((group) => group.approved)) {
+    final equivalent = pickBestTahvilEquivalentForGroup(group);
+    if (equivalent == null) continue;
+    if (raw.diameter != equivalent.fromDiameter) continue;
+    final matched = group.members.any(
+      (member) => pieceLineKey(member) == pieceLineKey(raw),
+    );
+    if (!matched) continue;
+    diameter = equivalent.toDiameter;
+    length = group.representativeLengthM;
+    break;
+  }
+
+  for (final group in batch.lengthMatches.where(
+    (group) => group.approved && group.selectedLengthM != null,
+  )) {
+    if (group.diameter != diameter) continue;
+    for (final member in group.members) {
+      if ((member.lengthM - length).abs() > 1e-9) continue;
+      length = group.selectedLengthM!;
+      break;
+    }
+  }
+
+  return RebarPieceLine(
+    diameter: diameter,
+    lengthM: length,
+    quantity: raw.quantity,
+  );
+}
+
+/// Ham parça listesinden revize sonuca satır satır önce/sonra karşılaştırması.
+List<PieceListComparisonRow> computePieceListComparisonRows(
+  CuttingBendingBatch batch,
+) {
+  final rows = batch.pieceLines.map((raw) {
+    final after = _resolveRevisedStateForRawPiece(raw, batch);
+    return PieceListComparisonRow(
+      beforeDiameter: raw.diameter,
+      afterDiameter: after.diameter,
+      beforeLengthM: raw.lengthM,
+      afterLengthM: after.lengthM,
+      quantity: raw.quantity,
+    );
+  }).toList();
+
+  rows.sort((a, b) {
+    final byDiameter = a.beforeDiameter.compareTo(b.beforeDiameter);
+    if (byDiameter != 0) return byDiameter;
+    final byBefore = a.beforeLengthM.compareTo(b.beforeLengthM);
+    if (byBefore != 0) return byBefore;
+    return a.quantity.compareTo(b.quantity);
+  });
+
+  return rows;
+}
+
 List<RebarPieceLine> _mergePieceLines(List<RebarPieceLine> pieces) {
   final grouped = <String, RebarPieceLine>{};
   for (final piece in pieces) {

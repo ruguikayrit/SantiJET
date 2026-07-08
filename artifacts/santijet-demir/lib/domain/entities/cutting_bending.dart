@@ -56,6 +56,29 @@ class LengthMatchChange {
   double get deltaM => afterLengthM - beforeLengthM;
 }
 
+/// Ham parça satırının revize sonrası karşılaştırma satırı.
+class PieceListComparisonRow {
+  const PieceListComparisonRow({
+    required this.beforeDiameter,
+    required this.afterDiameter,
+    required this.beforeLengthM,
+    required this.afterLengthM,
+    required this.quantity,
+  });
+
+  final int beforeDiameter;
+  final int afterDiameter;
+  final double beforeLengthM;
+  final double afterLengthM;
+  final int quantity;
+
+  bool get isChanged =>
+      beforeDiameter != afterDiameter ||
+      (beforeLengthM - afterLengthM).abs() > 1e-9;
+
+  double get deltaCm => (afterLengthM - beforeLengthM) * 100;
+}
+
 class RebarPieceLine {
   const RebarPieceLine({
     required this.diameter,

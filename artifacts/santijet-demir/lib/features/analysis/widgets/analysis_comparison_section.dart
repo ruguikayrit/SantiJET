@@ -313,10 +313,9 @@ class _PieceListComparisonPanel extends StatelessWidget {
       );
     }
 
-    final unchangedKeys = _unchangedPieceKeys(
-      batch.pieceLines,
-      batch.revisedPieceLines,
-    );
+    final rows = computePieceListComparisonRows(batch);
+    final unchangedCount = rows.where((row) => !row.isChanged).length;
+    final changedCount = rows.length - unchangedCount;
 
     return Container(
       padding: const EdgeInsets.all(12),
@@ -340,57 +339,97 @@ class _PieceListComparisonPanel extends StatelessWidget {
           ),
           const SizedBox(height: 8),
           _PieceCompareLegend(
-            unchangedCount: unchangedKeys.length,
-            changedRawCount:
-                batch.pieceLines.where((p) => !_isUnchangedPiece(p, unchangedKeys)).length,
-            changedRevisedCount: batch.revisedPieceLines
-                .where((p) => !_isUnchangedPiece(p, unchangedKeys))
-                .length,
+            unchangedCount: unchangedCount,
+            changedCount: changedCount,
           ),
           const SizedBox(height: 12),
-          LayoutBuilder(
-            builder: (context, constraints) {
-              final sideBySide = constraints.maxWidth >= 520;
-              if (sideBySide) {
-                return Row(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Expanded(
-                      child: _PieceListBlock(
-                        title: 'Ham parça listesi',
-                        pieces: batch.pieceLines,
-                        unchangedKeys: unchangedKeys,
-                      ),
-                    ),
-                    const SizedBox(width: 12),
-                    Expanded(
-                      child: _PieceListBlock(
-                        title: 'Revize parça listesi',
-                        pieces: batch.revisedPieceLines,
-                        unchangedKeys: unchangedKeys,
-                      ),
-                    ),
-                  ],
-                );
-              }
+          _HamRevizePieceComparisonTable(rows: rows),
+        ],
+      ),
+    );
+  }
+}
 
-              return Column(
-                crossAxisAlignment: CrossAxisAlignment.stretch,
-                children: [
-                  _PieceListBlock(
-                    title: 'Ham parça listesi',
-                    pieces: batch.pieceLines,
-                    unchangedKeys: unchangedKeys,
-                  ),
-                  const SizedBox(height: 16),
-                  _PieceListBlock(
-                    title: 'Revize parça listesi',
-                    pieces: batch.revisedPieceLines,
-                    unchangedKeys: unchangedKeys,
-                  ),
-                ],
-              );
-            },
+class _HamRevizePieceComparisonTable extends StatelessWidget {
+  const _HamRevizePieceComparisonTable({required this.rows});
+
+  final List<PieceListComparisonRow> rows;
+
+  @override
+  Widget build(BuildContext context) {
+    if (rows.isEmpty) {
+      return const ModuleEmptyState(type: EmptyStateType.noSearchResult, inline: true);
+    }
+
+    return DecoratedBox(
+      decoration: BoxDecoration(
+        borderRadius: AppRadii.sm,
+        border: Border.all(color: AppColors.border),
+      ),
+      child: ClipRRect(
+        borderRadius: AppRadii.sm,
+        child: SingleChildScrollView(
+          scrollDirection: Axis.horizontal,
+          child: ConstrainedBox(
+            constraints: BoxConstraints(
+              minWidth: MediaQuery.sizeOf(context).width - 56,
+            ),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                const _HamRevizeComparisonTableHeader(),
+                ...rows.map(
+                  (row) => _HamRevizeComparisonTableRow(row: row),
+                ),
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class _HamRevizeComparisonTableHeader extends StatelessWidget {
+  const _HamRevizeComparisonTableHeader();
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 10),
+      decoration: const BoxDecoration(
+        color: AppColors.surfaceHighlight,
+        border: Border(bottom: BorderSide(color: AppColors.border)),
+      ),
+      child: Row(
+        children: [
+          SizedBox(
+            width: 44,
+            child: Text('ÇAP', style: AppTypography.labelSmall),
+          ),
+          Expanded(
+            flex: 3,
+            child: Text('ÖNCE', style: AppTypography.labelSmall),
+          ),
+          Expanded(
+            flex: 3,
+            child: Text('SONRA', style: AppTypography.labelSmall),
+          ),
+          SizedBox(
+            width: 56,
+            child: Text(
+              'Δ cm',
+              style: AppTypography.labelSmall,
+              textAlign: TextAlign.end,
+            ),
+          ),
+          SizedBox(
+            width: 44,
+            child: Text(
+              'ADET',
+              style: AppTypography.labelSmall,
+              textAlign: TextAlign.end,
+            ),
           ),
         ],
       ),
@@ -398,31 +437,139 @@ class _PieceListComparisonPanel extends StatelessWidget {
   }
 }
 
-String _pieceCompareKey(RebarPieceLine piece) =>
-    '${piece.diameter}|${piece.lengthM.toStringAsFixed(4)}|${piece.quantity}';
+class _HamRevizeComparisonTableRow extends StatelessWidget {
+  const _HamRevizeComparisonTableRow({required this.row});
 
-Set<String> _unchangedPieceKeys(
-  List<RebarPieceLine> raw,
-  List<RebarPieceLine> revised,
-) {
-  final rawKeys = raw.map(_pieceCompareKey).toSet();
-  final revisedKeys = revised.map(_pieceCompareKey).toSet();
-  return rawKeys.intersection(revisedKeys);
+  final PieceListComparisonRow row;
+
+  @override
+  Widget build(BuildContext context) {
+    final accent = row.isChanged ? AppColors.warning : AppColors.success;
+    final deltaText = _formatDeltaCm(row.deltaCm);
+
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 10),
+      decoration: BoxDecoration(
+        color: accent.withValues(alpha: 0.06),
+        border: Border(
+          bottom: BorderSide(color: AppColors.border.withValues(alpha: 0.7)),
+          left: BorderSide(color: accent, width: 3),
+        ),
+      ),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          SizedBox(
+            width: 44,
+            child: Text(
+              'Ø${row.beforeDiameter}',
+              style: AppTypography.labelMedium.copyWith(
+                color: AppColors.diameterColor(row.beforeDiameter),
+                fontWeight: FontWeight.w700,
+              ),
+            ),
+          ),
+          Expanded(
+            flex: 3,
+            child: _LengthCell(
+              lengthM: row.beforeLengthM,
+              emphasize: false,
+            ),
+          ),
+          Expanded(
+            flex: 3,
+            child: _LengthCell(
+              diameter: row.afterDiameter,
+              lengthM: row.afterLengthM,
+              emphasize: row.isChanged,
+              accent: accent,
+              showDiameter: row.beforeDiameter != row.afterDiameter,
+            ),
+          ),
+          SizedBox(
+            width: 56,
+            child: Text(
+              deltaText,
+              style: AppTypography.labelMedium.copyWith(
+                color: accent,
+                fontWeight: FontWeight.w700,
+              ),
+              textAlign: TextAlign.end,
+            ),
+          ),
+          SizedBox(
+            width: 44,
+            child: Text(
+              AppFormat.integer(row.quantity),
+              style: AppTypography.bodySmall.copyWith(
+                color: row.isChanged ? accent : AppColors.textPrimary,
+                fontWeight: row.isChanged ? FontWeight.w600 : null,
+              ),
+              textAlign: TextAlign.end,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  static String _formatDeltaCm(double deltaCm) {
+    if (deltaCm.abs() < 0.05) return '0';
+    final prefix = deltaCm > 0 ? '+' : '';
+    return '$prefix${deltaCm.toStringAsFixed(1)}';
+  }
 }
 
-bool _isUnchangedPiece(RebarPieceLine piece, Set<String> unchangedKeys) =>
-    unchangedKeys.contains(_pieceCompareKey(piece));
+class _LengthCell extends StatelessWidget {
+  const _LengthCell({
+    required this.lengthM,
+    required this.emphasize,
+    this.diameter,
+    this.accent,
+    this.showDiameter = false,
+  });
+
+  final int? diameter;
+  final double lengthM;
+  final bool emphasize;
+  final Color? accent;
+  final bool showDiameter;
+
+  @override
+  Widget build(BuildContext context) {
+    final lengthText = '${lengthM.toStringAsFixed(2)} m';
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        if (showDiameter && diameter != null)
+          Text(
+            'Ø$diameter',
+            style: AppTypography.labelSmall.copyWith(
+              color: AppColors.diameterColor(diameter!),
+              fontWeight: FontWeight.w600,
+            ),
+          ),
+        Text(
+          lengthText,
+          style: AppTypography.bodySmall.copyWith(
+            color: emphasize ? accent : AppColors.textPrimary,
+            fontWeight: emphasize ? FontWeight.w700 : FontWeight.w500,
+          ),
+        ),
+      ],
+    );
+  }
+}
 
 class _PieceCompareLegend extends StatelessWidget {
   const _PieceCompareLegend({
     required this.unchangedCount,
-    required this.changedRawCount,
-    required this.changedRevisedCount,
+    required this.changedCount,
   });
 
   final int unchangedCount;
-  final int changedRawCount;
-  final int changedRevisedCount;
+  final int changedCount;
 
   @override
   Widget build(BuildContext context) {
@@ -435,8 +582,8 @@ class _PieceCompareLegend extends StatelessWidget {
           label: 'Değişmeyen ($unchangedCount)',
         ),
         _LegendItem(
-          color: AppColors.diameter28,
-          label: 'Değişen (ham $changedRawCount · revize $changedRevisedCount)',
+          color: AppColors.warning,
+          label: 'Değişen ($changedCount)',
         ),
       ],
     );
@@ -464,47 +611,6 @@ class _LegendItem extends StatelessWidget {
           label,
           style: AppTypography.labelSmall.copyWith(color: AppColors.textMuted),
         ),
-      ],
-    );
-  }
-}
-
-class _PieceListBlock extends StatelessWidget {
-  const _PieceListBlock({
-    required this.title,
-    required this.pieces,
-    required this.unchangedKeys,
-  });
-
-  final String title;
-  final List<RebarPieceLine> pieces;
-  final Set<String> unchangedKeys;
-
-  @override
-  Widget build(BuildContext context) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.stretch,
-      children: [
-        Text(title, style: AppTypography.labelMedium),
-        const SizedBox(height: 8),
-        if (pieces.isEmpty)
-          const ModuleEmptyState(type: EmptyStateType.noSearchResult, inline: true)
-        else ...[
-          const _PieceTableHeader(cells: ['ÇAP', 'BOY (m)', 'ADET']),
-          ...pieces.map(
-            (piece) {
-              final unchanged = _isUnchangedPiece(piece, unchangedKeys);
-              return _PieceTableRow(
-                cells: [
-                  'Ø${piece.diameter}',
-                  piece.lengthM.toStringAsFixed(2),
-                  AppFormat.integer(piece.quantity),
-                ],
-                textColor: unchanged ? AppColors.success : AppColors.diameter28,
-              );
-            },
-          ),
-        ],
       ],
     );
   }
@@ -797,72 +903,6 @@ class _ChangeChip extends StatelessWidget {
             label,
             style: AppTypography.labelSmall.copyWith(color: AppColors.success),
           ),
-        ],
-      ),
-    );
-  }
-}
-
-class _PieceTableHeader extends StatelessWidget {
-  const _PieceTableHeader({required this.cells});
-
-  final List<String> cells;
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 8),
-      decoration: const BoxDecoration(
-        border: Border(bottom: BorderSide(color: AppColors.border)),
-      ),
-      child: Row(
-        children: [
-          for (var i = 0; i < cells.length; i++)
-            Expanded(
-              child: Text(
-                cells[i],
-                style: AppTypography.labelSmall,
-                textAlign: i == cells.length - 1 ? TextAlign.end : TextAlign.start,
-              ),
-            ),
-        ],
-      ),
-    );
-  }
-}
-
-class _PieceTableRow extends StatelessWidget {
-  const _PieceTableRow({
-    required this.cells,
-    this.accentColor,
-    this.textColor,
-  });
-
-  final List<String> cells;
-  final Color? accentColor;
-  final Color? textColor;
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 8),
-      decoration: const BoxDecoration(
-        border: Border(bottom: BorderSide(color: AppColors.border)),
-      ),
-      child: Row(
-        children: [
-          for (var i = 0; i < cells.length; i++)
-            Expanded(
-              child: Text(
-                cells[i],
-                style: (i == 0 ? AppTypography.labelMedium : AppTypography.bodySmall)
-                    .copyWith(
-                  color: textColor ?? (i == 0 ? accentColor : null),
-                  fontWeight: textColor != null ? FontWeight.w600 : null,
-                ),
-                textAlign: i == cells.length - 1 ? TextAlign.end : TextAlign.start,
-              ),
-            ),
         ],
       ),
     );

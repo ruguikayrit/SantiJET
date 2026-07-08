@@ -435,6 +435,43 @@ void main() {
       expect(computeAnalysisFireSummary(optimized).isPlannedReady, isTrue);
     });
 
+    test('computePieceListComparisonRows marks unchanged and changed rows', () {
+      const pieces = [
+        RebarPieceLine(diameter: 16, lengthM: 2.00, quantity: 10),
+        RebarPieceLine(diameter: 16, lengthM: 2.05, quantity: 8),
+        RebarPieceLine(diameter: 12, lengthM: 4.50, quantity: 6),
+      ];
+      final groups = computeLengthMatchGroups(pieces);
+      final approvedGroup = groups.first.copyWith(
+        approved: true,
+        selectedLengthM: 2.05,
+      );
+      final batch = CuttingBendingBatch(
+        id: 'kb-test',
+        title: 'Test',
+        createdAt: DateTime(2026),
+        sourceMetrajRecordIds: const ['rec-1'],
+        labelDetails: const [],
+        pieceLines: pieces,
+        revisedPieceLines:
+            applyLengthMatchesToPieceLines(pieces, [approvedGroup]),
+        lengthMatches: [approvedGroup],
+        tahvilGroups: const [],
+        stockCutPlans: const [],
+        optimizationAppliedAt: DateTime(2026),
+        optimizationStrategy: FireReductionStrategy.lengthMatchOnly,
+      );
+
+      final rows = computePieceListComparisonRows(batch);
+
+      expect(rows, hasLength(3));
+      expect(rows.where((row) => row.isChanged), hasLength(1));
+      expect(rows.where((row) => !row.isChanged), hasLength(2));
+      final changed = rows.firstWhere((row) => row.beforeLengthM == 2.00);
+      expect(changed.afterLengthM, 2.05);
+      expect(changed.deltaCm, closeTo(5.0, 1e-9));
+    });
+
     test('computeLengthMatchChanges lists before and after lengths', () {
       const pieces = [
         RebarPieceLine(diameter: 16, lengthM: 2.00, quantity: 10),
