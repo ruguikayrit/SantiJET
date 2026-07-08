@@ -16,11 +16,10 @@ abstract final class SupabaseService {
 
   static String? get initError => _initError;
 
-  static const reachabilityUserMessage =
-      'Supabase sunucusuna ulaşılamıyor. GitHub Secrets\'taki SUPABASE_URL '
-      'değerini Supabase Dashboard → Project Settings → API adresiyle '
-      'karşılaştırın (https://PROJE_ID.supabase.co). '
-      'Proje silinmiş, duraklatılmış veya URL yanlış olabilir.';
+  static const invalidAnonKeyMessage =
+      'Supabase API anahtarı geçersiz. GitHub Secrets\'taki SUPABASE_ANON_KEY '
+      'değerini Dashboard → Project Settings → API bölümündeki '
+      'anon public key ile güncelleyin, ardından deploy edin.';
 
   static SupabaseClient get client {
     if (!_initialized) {
@@ -86,17 +85,33 @@ abstract final class SupabaseService {
     if (!isConfigured) return null;
 
     final healthUrl = Uri.parse('${SupabaseConfig.normalizedUrl}/auth/v1/health');
+    final headers = {
+      'apikey': SupabaseConfig.normalizedAnonKey,
+      'Authorization': 'Bearer ${SupabaseConfig.normalizedAnonKey}',
+    };
     try {
-      final response = await http.get(healthUrl).timeout(timeout);
-      if (response.statusCode >= 200 && response.statusCode < 300) {
-        return null;
+      final response =
+          await http.get(healthUrl, headers: headers).timeout(timeout);
+      if (response.statusCode == 401 || response.statusCode == 403) {
+        return invalidAnonKeyMessage;
       }
-      return 'Supabase yanıt vermiyor (HTTP ${response.statusCode}). '
-          'Proje duraklatılmış veya URL hatalı olabilir.';
+      if (response.statusCode >= 500) {
+        return 'Supabase geçici olarak yanıt vermiyor (HTTP ${response.statusCode}). '
+            'Birkaç dakika sonra tekrar deneyin.';
+      }
+      return null;
+    } on http.ClientException catch (e) {
+      return _reachabilityErrorMessage(e);
     } catch (e) {
       return _reachabilityErrorMessage(e);
     }
   }
+
+  static const reachabilityUserMessage =
+      'Supabase sunucusuna ulaşılamıyor. GitHub Secrets\'taki SUPABASE_URL '
+      'değerini Supabase Dashboard → Project Settings → API adresiyle '
+      'karşılaştırın (https://PROJE_ID.supabase.co). '
+      'Proje silinmiş, duraklatılmış veya URL yanlış olabilir.';
 
   static String _reachabilityErrorMessage(Object error) {
     final msg = error.toString().toLowerCase();
