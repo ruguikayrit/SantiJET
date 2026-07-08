@@ -77,46 +77,59 @@ class AuthNotifier extends StateNotifier<AuthState> {
       _ref.read(supabaseAuthRepositoryProvider);
 
   Future<void> restoreSession() async {
-    if (SupabaseConfig.isConfigured) {
-      await SupabaseService.waitUntilReady(
-        timeout: const Duration(seconds: 8),
-      );
-    }
+    try {
+      if (SupabaseConfig.isConfigured) {
+        await SupabaseService.waitUntilReady(
+          timeout: const Duration(seconds: 8),
+        );
+      }
 
-    if (_usesSupabase) {
-      await _supabaseAuth.restoreSession();
-      final session = _supabaseAuth.getActiveSession();
-      if (session == null) {
-        state = AuthState(isInitialized: true, usesSupabase: true);
+      if (_usesSupabase) {
+        await _supabaseAuth.restoreSession();
+        final session = _supabaseAuth.getActiveSession();
+        if (session == null) {
+          state = AuthState(isInitialized: true, usesSupabase: true);
+          return;
+        }
+
+        final valid = await _supabaseAuth.isSessionValid(session);
+        final user = await _supabaseAuth.fetchCurrentUser();
+        state = AuthState(
+          user: user,
+          sessionId: session.sessionId,
+          isSessionValid: valid,
+          isInitialized: true,
+          usesSupabase: true,
+        );
         return;
       }
 
-      final valid = await _supabaseAuth.isSessionValid(session);
-      final user = await _supabaseAuth.fetchCurrentUser();
+      final session = _localAuth.getActiveSession();
+      if (session == null) {
+        state = const AuthState(isInitialized: true);
+        return;
+      }
+
+      final valid = _localAuth.isSessionValid(session);
+      final user = _localAuth.findById(session.userId);
       state = AuthState(
         user: user,
         sessionId: session.sessionId,
         isSessionValid: valid,
         isInitialized: true,
-        usesSupabase: true,
       );
-      return;
+    } catch (_) {
+      state = AuthState(
+        isInitialized: true,
+        usesSupabase: _usesSupabase,
+      );
     }
+  }
 
-    final session = _localAuth.getActiveSession();
-    if (session == null) {
-      state = const AuthState(isInitialized: true);
-      return;
+  void markBootstrapComplete() {
+    if (!state.isInitialized) {
+      state = state.copyWith(isInitialized: true);
     }
-
-    final valid = _localAuth.isSessionValid(session);
-    final user = _localAuth.findById(session.userId);
-    state = AuthState(
-      user: user,
-      sessionId: session.sessionId,
-      isSessionValid: valid,
-      isInitialized: true,
-    );
   }
 
   Future<bool> register({

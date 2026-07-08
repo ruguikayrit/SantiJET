@@ -45,7 +45,7 @@ class _SplashScreenState extends ConsumerState<SplashScreen>
           .restoreSession()
           .timeout(const Duration(seconds: 8));
     } catch (_) {
-      // Ağ/Supabase yanıt vermezse yerel modda devam et.
+      ref.read(authProvider.notifier).markBootstrapComplete();
     }
 
     if (!mounted) return;

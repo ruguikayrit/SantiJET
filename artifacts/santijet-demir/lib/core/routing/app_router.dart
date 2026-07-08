@@ -69,12 +69,14 @@ final routerProvider = Provider<GoRouter>((ref) {
         AppRoutes.register,
       };
 
-      if (!auth.isInitialized && location != AppRoutes.splash) {
+      if (!auth.isInitialized) {
+        if (publicRoutes.contains(location)) return null;
         return AppRoutes.splash;
       }
 
       if (auth.user != null && !auth.isSessionValid) {
-        return null;
+        if (publicRoutes.contains(location)) return null;
+        return AppRoutes.login;
       }
 
       if (!auth.isAuthenticated && !publicRoutes.contains(location)) {
