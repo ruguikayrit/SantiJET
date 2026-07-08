@@ -38,6 +38,18 @@ class AnalysisScreen extends ConsumerWidget {
               child: SantijetHeader(subtitle: 'HESAP VE ANALİZ', showNotification: false),
             ),
             SliverPadding(
+              padding: const EdgeInsets.fromLTRB(AppSpacing.md, 0, AppSpacing.md, AppSpacing.sm),
+              sliver: SliverToBoxAdapter(
+                child: CollapsibleAnalysisSection(
+                  sectionId: AnalysisSectionIds.tahvilCalculator,
+                  title: 'Araç · Tahvil Hesaplayıcı',
+                  subtitle: 'Manuel tahvil denemesi — analizden bağımsız referans aracı',
+                  headerAccentColor: AppColors.diameter28,
+                  child: const TahvilCalculatorSection(hideHeader: true),
+                ),
+              ),
+            ),
+            SliverPadding(
               padding: const EdgeInsets.fromLTRB(AppSpacing.md, 0, AppSpacing.md, 0),
               sliver: SliverToBoxAdapter(
                 child: Padding(
@@ -221,14 +233,6 @@ class AnalysisScreen extends ConsumerWidget {
                                   batchId: batch.id,
                                   plans: batch.stockCutPlans,
                                 ),
-                    ),
-                    CollapsibleAnalysisSection(
-                      sectionId: AnalysisSectionIds.tahvilCalculator,
-                      title: 'Araç · Tahvil Hesaplayıcı',
-                      subtitle:
-                          'Manuel tahvil denemesi — analiz dışı referans aracı',
-                      headerAccentColor: AppColors.diameter28,
-                      child: const TahvilCalculatorSection(hideHeader: true),
                     ),
                   ]),
                 ),

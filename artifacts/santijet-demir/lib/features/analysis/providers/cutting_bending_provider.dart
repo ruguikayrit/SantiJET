@@ -48,7 +48,10 @@ abstract final class AnalysisSectionIds {
 
 /// Bölüm açık/kapalı durumu — yeniden çizimlerde korunur, varsayılan kapalı.
 final analysisSectionExpandedProvider =
-    StateProvider.family<bool, String>((ref, sectionId) => false);
+    StateProvider.family<bool, String>((ref, sectionId) {
+  if (sectionId == AnalysisSectionIds.tahvilCalculator) return true;
+  return false;
+});
 
 /// Hesap ve Analiz — çoklu silme için seçili DWG analiz listeleri.
 final selectedAnalysisBatchIdsProvider = StateProvider<Set<String>>((ref) => {});
