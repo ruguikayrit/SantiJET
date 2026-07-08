@@ -38,41 +38,38 @@ class AppBottomNavBar extends ConsumerWidget {
     final iconBarHeight = showLabels ? 56.0 : 52.0;
     final bottomInset = AppSafeAreaInsets.bottomOf(context);
 
-    final bar = ColoredBox(
+    final bar = Material(
       color: AppColors.surface,
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          DecoratedBox(
-            decoration: const BoxDecoration(
-              border: Border(top: BorderSide(color: AppColors.border)),
-            ),
-            child: SizedBox(
-              height: iconBarHeight,
-              width: double.infinity,
-              child: Row(
-                children: [
-                  for (var i = 0; i < BottomNavTab.values.length; i++)
-                    Expanded(
-                      child: _NavItem(
-                        icon: _icons[i],
-                        activeIcon: _activeIcons[i],
-                        label: BottomNavTab.values[i].navLabel,
-                        semanticsLabel: BottomNavTab.values[i].label,
-                        selected: navigationShell.currentIndex == i,
-                        showLabel: showLabels,
-                        onTap: () => navigationShell.goBranch(
-                          i,
-                          initialLocation: i == navigationShell.currentIndex,
-                        ),
+      child: Padding(
+        padding: EdgeInsets.only(bottom: bottomInset),
+        child: DecoratedBox(
+          decoration: const BoxDecoration(
+            border: Border(top: BorderSide(color: AppColors.border)),
+          ),
+          child: SizedBox(
+            height: iconBarHeight,
+            width: double.infinity,
+            child: Row(
+              children: [
+                for (var i = 0; i < BottomNavTab.values.length; i++)
+                  Expanded(
+                    child: _NavItem(
+                      icon: _icons[i],
+                      activeIcon: _activeIcons[i],
+                      label: BottomNavTab.values[i].navLabel,
+                      semanticsLabel: BottomNavTab.values[i].label,
+                      selected: navigationShell.currentIndex == i,
+                      showLabel: showLabels,
+                      onTap: () => navigationShell.goBranch(
+                        i,
+                        initialLocation: i == navigationShell.currentIndex,
                       ),
                     ),
-                ],
-              ),
+                  ),
+              ],
             ),
           ),
-          if (bottomInset > 0) SizedBox(height: bottomInset),
-        ],
+        ),
       ),
     );
 

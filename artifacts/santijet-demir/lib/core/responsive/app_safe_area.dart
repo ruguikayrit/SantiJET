@@ -2,6 +2,9 @@ import 'dart:math' as math;
 
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
+import 'package:santijet_demir/core/responsive/app_safe_area_inset_web.dart'
+    if (dart.library.io) 'package:santijet_demir/core/responsive/app_safe_area_inset_io.dart'
+    as inset_reader;
 
 /// iOS Safari PWA'da MediaQuery safe area çoğu zaman 0 gelir; minimum inset uygular.
 abstract final class AppSafeAreaInsets {
@@ -25,6 +28,10 @@ abstract final class AppSafeAreaInsets {
     var right = math.max(view.right, pad.right);
 
     if (_isIosWeb(context)) {
+      final injectedBottom = inset_reader.readWebSafeAreaBottomInset();
+      if (injectedBottom != null) {
+        bottom = math.max(bottom, injectedBottom);
+      }
       if (top < 20) top = _iosWebMinTop;
       if (bottom < 20) bottom = _iosWebMinBottom;
     }
