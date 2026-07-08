@@ -1,6 +1,7 @@
 import 'dart:async';
 
 import 'package:flutter/foundation.dart';
+import 'package:http/http.dart' as http;
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:santijet_demir/core/config/supabase_config.dart';
 
@@ -14,6 +15,12 @@ abstract final class SupabaseService {
   static bool get isReady => _initialized && isConfigured;
 
   static String? get initError => _initError;
+
+  static const reachabilityUserMessage =
+      'Supabase sunucusuna ulaşılamıyor. GitHub Secrets\'taki SUPABASE_URL '
+      'değerini Supabase Dashboard → Project Settings → API adresiyle '
+      'karşılaştırın (https://PROJE_ID.supabase.co). '
+      'Proje silinmiş, duraklatılmış veya URL yanlış olabilir.';
 
   static SupabaseClient get client {
     if (!_initialized) {
@@ -70,5 +77,40 @@ abstract final class SupabaseService {
       await Future<void>.delayed(const Duration(milliseconds: 250));
     }
     return _initialized;
+  }
+
+  /// Auth/REST isteği öncesi bulut erişimini doğrular. Başarılıysa `null` döner.
+  static Future<String?> verifyReachable({
+    Duration timeout = const Duration(seconds: 8),
+  }) async {
+    if (!isConfigured) return null;
+
+    final healthUrl = Uri.parse('${SupabaseConfig.normalizedUrl}/auth/v1/health');
+    try {
+      final response = await http.get(healthUrl).timeout(timeout);
+      if (response.statusCode >= 200 && response.statusCode < 300) {
+        return null;
+      }
+      return 'Supabase yanıt vermiyor (HTTP ${response.statusCode}). '
+          'Proje duraklatılmış veya URL hatalı olabilir.';
+    } catch (e) {
+      return _reachabilityErrorMessage(e);
+    }
+  }
+
+  static String _reachabilityErrorMessage(Object error) {
+    final msg = error.toString().toLowerCase();
+    if (msg.contains('failed host lookup') ||
+        msg.contains('load failed') ||
+        msg.contains('name not resolved') ||
+        msg.contains('dns ad') ||
+        msg.contains('socketexception')) {
+      return reachabilityUserMessage;
+    }
+    if (msg.contains('timed out') || msg.contains('timeout')) {
+      return 'Supabase yanıt vermiyor (zaman aşımı). İnternet bağlantınızı '
+          'kontrol edin; proje duraklatılmış olabilir.';
+    }
+    return 'Bulut bağlantısı kurulamadı. Sayfayı yenileyip tekrar deneyin.';
   }
 }

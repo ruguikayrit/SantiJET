@@ -132,26 +132,40 @@ class AuthNotifier extends StateNotifier<AuthState> {
     }
   }
 
+  bool _isValidEmail(String email) {
+    final trimmed = email.trim();
+    return RegExp(r'^[^\s@]+@[^\s@]+\.[^\s@]+$').hasMatch(trimmed);
+  }
+
+  Future<String?> _ensureCloudReachable() async {
+    if (!SupabaseConfig.isConfigured) return null;
+    final ready = await SupabaseService.waitUntilReady();
+    if (!ready) {
+      return 'Bulut bağlantısı kurulamadı. Sayfayı yenileyip tekrar deneyin.';
+    }
+    if (!_usesSupabase) return null;
+    return SupabaseService.verifyReachable();
+  }
+
   Future<bool> register({
     required String email,
     required String displayName,
     required String password,
   }) async {
+    if (!_isValidEmail(email)) {
+      state = state.copyWith(error: 'Geçerli bir e-posta adresi girin');
+      return false;
+    }
     if (password.trim().length < 6) {
       state = state.copyWith(error: 'Şifre en az 6 karakter olmalı');
       return false;
     }
 
     try {
-      if (SupabaseConfig.isConfigured) {
-        final ready = await SupabaseService.waitUntilReady();
-        if (!ready) {
-          state = state.copyWith(
-            error: 'Bulut bağlantısı kurulamadı. Sayfayı yenileyip tekrar deneyin.',
-            isInitialized: true,
-          );
-          return false;
-        }
+      final reachError = await _ensureCloudReachable();
+      if (reachError != null) {
+        state = state.copyWith(error: reachError, isInitialized: true);
+        return false;
       }
 
       final sessionId = _newSessionId();
@@ -198,16 +212,16 @@ class AuthNotifier extends StateNotifier<AuthState> {
     required String email,
     required String password,
   }) async {
+    if (!_isValidEmail(email)) {
+      state = state.copyWith(error: 'Geçerli bir e-posta adresi girin');
+      return false;
+    }
+
     try {
-      if (SupabaseConfig.isConfigured) {
-        final ready = await SupabaseService.waitUntilReady();
-        if (!ready) {
-          state = state.copyWith(
-            error: 'Bulut bağlantısı kurulamadı. Sayfayı yenileyip tekrar deneyin.',
-            isInitialized: true,
-          );
-          return false;
-        }
+      final reachError = await _ensureCloudReachable();
+      if (reachError != null) {
+        state = state.copyWith(error: reachError, isInitialized: true);
+        return false;
       }
 
       final sessionId = _newSessionId();
