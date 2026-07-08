@@ -444,53 +444,52 @@ class _FireReductionStrategyPanel extends ConsumerWidget {
           ),
         ),
         const SizedBox(height: 6),
-        Row(
-          children: [
-            Expanded(
+        Center(
+          child: ConstrainedBox(
+            constraints: const BoxConstraints(maxWidth: 280),
+            child: SizedBox(
+              width: double.infinity,
               child: _MatteGreenGradientButton(
-                onPressed: enabled ? onStart : null,
-                icon: Icons.auto_fix_high_outlined,
-                label: batch.isOptimized &&
-                        batch.optimizationStrategy == selected
-                    ? 'Analizi Yeniden Çalıştır'
-                    : 'Fire Analizini Başlat',
+              onPressed: enabled ? onStart : null,
+              icon: Icons.auto_fix_high_outlined,
+              label: batch.isOptimized && batch.optimizationStrategy == selected
+                  ? 'Analizi Yeniden\nÇalıştır'
+                  : 'Fire Analizini Başlat',
               ),
             ),
-            if (canSave) ...[
-              const SizedBox(width: 8),
-              Expanded(
-                child: OutlinedButton.icon(
-                  onPressed: isSaved ? null : onSave,
-                  icon: Icon(
-                    isSaved ? Icons.check_circle_outline : Icons.save_outlined,
-                    size: 18,
-                  ),
-                  label: Text(
-                    isSaved
-                        ? 'Kaydedildi'
-                        : batch.hasSavedOptimization(selected)
-                            ? 'Kaydı Güncelle'
-                            : 'Analizi Kaydet',
-                  ),
-                  style: OutlinedButton.styleFrom(
-                    foregroundColor: isSaved
-                        ? AppColors.success
-                        : AppColors.electricBlueLight,
-                    side: BorderSide(
-                      color: isSaved
-                          ? AppColors.success.withValues(alpha: 0.45)
-                          : AppColors.electricBlueLight.withValues(alpha: 0.45),
-                    ),
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 12,
-                      vertical: 14,
-                    ),
-                  ),
-                ),
-              ),
-            ],
-          ],
+          ),
         ),
+        if (canSave) ...[
+          const SizedBox(height: 8),
+          OutlinedButton.icon(
+            onPressed: isSaved ? null : onSave,
+            icon: Icon(
+              isSaved ? Icons.check_circle_outline : Icons.save_outlined,
+              size: 18,
+            ),
+            label: Text(
+              isSaved
+                  ? 'Kaydedildi'
+                  : batch.hasSavedOptimization(selected)
+                      ? 'Kaydı Güncelle'
+                      : 'Analizi Kaydet',
+            ),
+            style: OutlinedButton.styleFrom(
+              foregroundColor: isSaved
+                  ? AppColors.success
+                  : AppColors.electricBlueLight,
+              side: BorderSide(
+                color: isSaved
+                    ? AppColors.success.withValues(alpha: 0.45)
+                    : AppColors.electricBlueLight.withValues(alpha: 0.45),
+              ),
+              padding: const EdgeInsets.symmetric(
+                horizontal: 12,
+                vertical: 14,
+              ),
+            ),
+          ),
+        ],
       ],
     );
   }
@@ -845,7 +844,8 @@ class _MatteGreenGradientButton extends StatelessWidget {
         splashColor: Colors.white.withValues(alpha: 0.08),
         highlightColor: Colors.white.withValues(alpha: 0.04),
         child: Ink(
-          height: 46,
+          constraints: const BoxConstraints(minHeight: 46),
+          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
           decoration: BoxDecoration(
             borderRadius: AppRadii.sm,
             gradient: enabled ? _enabledGradient : _disabledGradient,
@@ -857,6 +857,7 @@ class _MatteGreenGradientButton extends StatelessWidget {
           ),
           child: Row(
             mainAxisAlignment: MainAxisAlignment.center,
+            mainAxisSize: MainAxisSize.min,
             children: [
               Icon(
                 icon,
@@ -866,14 +867,19 @@ class _MatteGreenGradientButton extends StatelessWidget {
                     : AppColors.textDisabled,
               ),
               const SizedBox(width: 8),
-              Text(
-                label,
-                style: AppTypography.labelMedium.copyWith(
-                  color: enabled
-                      ? const Color(0xFFE8F5F0)
-                      : AppColors.textDisabled,
-                  fontWeight: FontWeight.w600,
-                  letterSpacing: 0.2,
+              Flexible(
+                child: Text(
+                  label,
+                  textAlign: TextAlign.center,
+                  maxLines: 2,
+                  style: AppTypography.labelMedium.copyWith(
+                    color: enabled
+                        ? const Color(0xFFE8F5F0)
+                        : AppColors.textDisabled,
+                    fontWeight: FontWeight.w600,
+                    letterSpacing: 0.2,
+                    height: 1.15,
+                  ),
                 ),
               ),
             ],

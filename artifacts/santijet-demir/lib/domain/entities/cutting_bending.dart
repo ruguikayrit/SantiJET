@@ -16,11 +16,11 @@ enum FireReductionStrategy {
 
   String get description => switch (this) {
         FireReductionStrategy.tahvilOnly =>
-          'Farklı çaplarda yakın boylar — kaynak boyunun max %5 toleransı',
+          'Farklı çaplarda yakın boylar — proje boyunun max %5 toleransı',
         FireReductionStrategy.lengthMatchOnly =>
-          'Aynı çapta yakın boylar — kaynak boyunun max %5 toleransı',
+          'Aynı çapta yakın boylar — proje boyunun max %5 toleransı',
         FireReductionStrategy.both =>
-          'Tahvil + boy eşleştirme — kaynak boyunun max %5 toleransı',
+          'Tahvil + boy eşleştirme — proje boyunun max %5 toleransı',
       };
 
   bool get appliesTahvil =>
@@ -542,7 +542,7 @@ class CuttingBendingBatch {
       lengthM * 100 * defaultLengthMatchTolerancePercent;
 
   static String get lengthMatchToleranceDescription =>
-      'kaynak boyunun max %${(defaultLengthMatchTolerancePercent * 100).toStringAsFixed(0)}\'i';
+      'proje boyunun max %${(defaultLengthMatchTolerancePercent * 100).toStringAsFixed(0)}\'i';
 
   static double parseLengthMatchTolerancePercent(Map<dynamic, dynamic> json) {
     final percent = json['lengthMatchTolerancePercent'];
