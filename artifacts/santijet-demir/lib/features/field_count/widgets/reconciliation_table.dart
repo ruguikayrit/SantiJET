@@ -76,170 +76,70 @@ class ReconciliationTable extends StatelessWidget {
 
 
 
-  static const _landscapeFlex = <double>[
-
-    0.88,
-
-    1.05,
-
-    0.98,
-
-    1.05,
-
-    1.12,
-
-    1.12,
-
-    0.98,
-
-    1.12,
-
-    1.30,
-
-  ];
-
-
+  static const _columnCount = 9;
 
   @override
-
   Widget build(BuildContext context) {
-
     final table = Table(
-
-      columnWidths: landscape ? _landscapeColumnWidths() : _portraitColumnWidths(),
-
+      columnWidths:
+          landscape ? _landscapeColumnWidths() : _portraitColumnWidths(),
       defaultVerticalAlignment: TableCellVerticalAlignment.middle,
-
       border: const TableBorder(
-
         horizontalInside: BorderSide(color: AppColors.border, width: 0.5),
-
       ),
-
       children: [
-
         _headerRow(),
-
         ...rows.map(_dataRow),
-
         _totalRow(),
-
       ],
-
     );
-
-
 
     return Container(
-
       width: double.infinity,
-
       decoration: BoxDecoration(
-
         color: AppColors.surfaceElevated,
-
         borderRadius: AppRadii.md,
-
         border: Border.all(color: AppColors.border),
-
       ),
-
       child: ClipRRect(
-
         borderRadius: AppRadii.md,
-
         child: landscape
-
             ? table
-
             : SingleChildScrollView(
-
                 scrollDirection: Axis.horizontal,
-
                 child: table,
-
               ),
-
       ),
-
     );
-
   }
-
-
 
   Map<int, TableColumnWidth> _landscapeColumnWidths() {
-
     return {
-
-      for (var i = 0; i < _landscapeFlex.length; i++)
-
-        i: FlexColumnWidth(_landscapeFlex[i]),
-
+      for (var i = 0; i < _columnCount; i++) i: const FlexColumnWidth(1),
     };
-
   }
-
-
 
   Map<int, TableColumnWidth> _portraitColumnWidths() {
-
-    return const {
-
-      0: FixedColumnWidth(38),
-
-      1: FixedColumnWidth(44),
-
-      2: FixedColumnWidth(40),
-
-      3: FixedColumnWidth(44),
-
-      4: FixedColumnWidth(46),
-
-      5: FixedColumnWidth(46),
-
-      6: FixedColumnWidth(42),
-
-      7: FixedColumnWidth(46),
-
-      8: FixedColumnWidth(72),
-
+    return {
+      for (var i = 0; i < _columnCount; i++) i: const FixedColumnWidth(56),
     };
-
   }
 
-
-
   TableRow _headerRow() {
-
     return TableRow(
-
       decoration: const BoxDecoration(color: AppColors.surfaceHighlight),
-
       children: [
-
-        _headerCell('ÇAP', align: TextAlign.start),
-
-        _headerCell('KEŞİF'),
-
-        _headerCell('SİP'),
-
-        _headerCell('TESL'),
-
-        _headerCell('PLAN', line2: 'KUL.'),
-
-        _headerCell('PLAN', line2: 'STK'),
-
-        _headerCell('SAY'),
-
-        _headerCell('GER.', line2: 'KUL.'),
-
-        _headerCell('FİRE', line2: '%'),
-
+        _headerCell('Çap', align: TextAlign.start),
+        _headerCell('Keşif'),
+        _headerCell('Sipariş'),
+        _headerCell('Teslim', line2: 'alınan'),
+        _headerCell('Planlanan', line2: 'kullanım'),
+        _headerCell('Gerçek', line2: 'kullanım'),
+        _headerCell('Planlanan', line2: 'stok'),
+        _headerCell('Gerçek', line2: 'stok (sayım)'),
+        _headerCell('Fire', line2: '%'),
       ],
-
     );
-
   }
 
 
@@ -278,11 +178,11 @@ class ReconciliationTable extends StatelessWidget {
 
         _valueCell(row.plannedUsage),
 
+        _valueCell(row.used),
+
         _valueCell(row.expectedStock),
 
         _valueCell(row.counted),
-
-        _valueCell(row.used),
 
         _fireCell(
 
@@ -314,7 +214,7 @@ class ReconciliationTable extends StatelessWidget {
 
       children: [
 
-        _textCell('TPL', style: _totalStyle, align: TextAlign.start),
+        _totalLabelCell(),
 
         _textCell(_formatTonnage(totals.survey), style: _totalStyle),
 
@@ -324,11 +224,11 @@ class ReconciliationTable extends StatelessWidget {
 
         _textCell(_formatTonnage(totals.plannedUsage), style: _totalStyle),
 
+        _textCell(_formatTonnage(totals.actualUsage), style: _totalStyle),
+
         _textCell(_formatTonnage(totals.plannedStock), style: _totalStyle),
 
         _textCell(_formatTonnage(totals.fieldCount), style: _totalStyle),
-
-        _textCell(_formatTonnage(totals.actualUsage), style: _totalStyle),
 
         _fireCell(
 
@@ -351,65 +251,59 @@ class ReconciliationTable extends StatelessWidget {
 
 
   Widget _headerCell(
-
     String line1, {
-
     String? line2,
-
-    TextAlign align = TextAlign.end,
-
+    TextAlign align = TextAlign.center,
   }) {
-
     return Padding(
-
-      padding: const EdgeInsets.symmetric(horizontal: 3, vertical: 6),
-
+      padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 6),
       child: Column(
-
-        crossAxisAlignment: align == TextAlign.start
-
-            ? CrossAxisAlignment.start
-
-            : CrossAxisAlignment.end,
-
+        crossAxisAlignment: switch (align) {
+          TextAlign.start => CrossAxisAlignment.start,
+          TextAlign.end => CrossAxisAlignment.end,
+          _ => CrossAxisAlignment.center,
+        },
         children: [
-
           Text(
-
             line1,
-
             style: AppTypography.labelMedium.merge(_headerStyle),
-
             textAlign: align,
-
             maxLines: 1,
-
             overflow: TextOverflow.ellipsis,
-
           ),
-
           if (line2 != null)
-
             Text(
-
               line2,
-
               style: AppTypography.labelMedium.merge(_headerStyle),
-
               textAlign: align,
-
               maxLines: 1,
-
               overflow: TextOverflow.ellipsis,
-
             ),
-
         ],
-
       ),
-
     );
+  }
 
+  Widget _totalLabelCell() {
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 5),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Text(
+            'Son',
+            style: AppTypography.bodySmall.merge(_totalStyle),
+            textAlign: TextAlign.start,
+          ),
+          Text(
+            'Toplamlar',
+            style: AppTypography.bodySmall.merge(_totalStyle),
+            textAlign: TextAlign.start,
+          ),
+        ],
+      ),
+    );
   }
 
 
@@ -475,18 +369,12 @@ class ReconciliationTable extends StatelessWidget {
 
 
   Widget _textCell(
-
     String text, {
-
     TextStyle style = _cellStyle,
-
-    TextAlign align = TextAlign.end,
-
+    TextAlign align = TextAlign.center,
   }) {
-
     return Padding(
-
-      padding: const EdgeInsets.symmetric(horizontal: 3, vertical: 5),
+      padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 5),
 
       child: Text(
 
@@ -537,11 +425,8 @@ class ReconciliationTable extends StatelessWidget {
       padding: const EdgeInsets.symmetric(horizontal: 2, vertical: 3),
 
       child: Column(
-
-        crossAxisAlignment: CrossAxisAlignment.end,
-
+        crossAxisAlignment: CrossAxisAlignment.center,
         mainAxisSize: MainAxisSize.min,
-
         children: [
 
           _CompactSapmaTag(value: fire),

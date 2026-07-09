@@ -28,7 +28,11 @@ class AnalysisScreen extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final state = ref.watch(cuttingBendingBatchesProvider);
-    final batch = state.activeBatch;
+    final analysisScope = ref.watch(selectedAnalysisBatchIdsProvider);
+    final batch = ref.watch(mergedAnalysisBatchProvider);
+    final scopedBatches = state.batches
+        .where((item) => analysisScope.contains(item.id))
+        .toList();
 
     return Scaffold(
       backgroundColor: AppColors.canvas,
@@ -64,7 +68,7 @@ class AnalysisScreen extends ConsumerWidget {
                 ),
               ),
             ),
-            if (batch == null) ...[
+            if (state.batches.isEmpty) ...[
               SliverToBoxAdapter(
                 child: Padding(
                   padding: const EdgeInsets.all(32),
@@ -109,10 +113,10 @@ class AnalysisScreen extends ConsumerWidget {
                   ),
                   child: AnalysisBatchListPanel(
                     batches: state.batches,
-                    activeBatchId: state.activeBatchId,
-                    onSelectBatch: (id) => ref
+                    analysisScopeIds: analysisScope,
+                    onScopeChanged: (scope) => ref
                         .read(cuttingBendingBatchesProvider.notifier)
-                        .setActiveBatch(id),
+                        .setAnalysisScope(scope),
                     onDeleteSelected: (ids) =>
                         _confirmDeleteBatches(context, ref, ids),
                     onImportFromPreProduction: () =>
@@ -120,127 +124,176 @@ class AnalysisScreen extends ConsumerWidget {
                   ),
                 ),
               ),
-              SliverToBoxAdapter(
-                child: Padding(
-                  padding: const EdgeInsets.fromLTRB(
-                    AppSpacing.md,
-                    0,
-                    AppSpacing.md,
-                    AppSpacing.md,
-                  ),
-                  child: _BatchHeader(batch: batch),
-                ),
-              ),
-              SliverToBoxAdapter(
-                child: Padding(
-                  padding: const EdgeInsets.fromLTRB(
-                    AppSpacing.md,
-                    0,
-                    AppSpacing.md,
-                    AppSpacing.sm,
-                  ),
-                  child: AnalysisFireSummaryPanel(batch: batch),
-                ),
-              ),
-              SliverPadding(
-                padding: const EdgeInsets.fromLTRB(AppSpacing.md, 0, AppSpacing.md, 80),
-                sliver: SliverList(
-                  delegate: SliverChildListDelegate([
-                    CollapsibleAnalysisSection(
-                      sectionId: AnalysisSectionIds.comparison,
-                      title: 'Mukayese',
-                      subtitle: 'Kaynak, revize ve strateji sonuçlarını karşılaştırın',
-                      child: AnalysisComparisonSection(batch: batch),
+              if (batch == null) ...[
+                SliverToBoxAdapter(
+                  child: Padding(
+                    padding: const EdgeInsets.fromLTRB(
+                      AppSpacing.md,
+                      0,
+                      AppSpacing.md,
+                      AppSpacing.md,
                     ),
-                    CollapsibleAnalysisSection(
-                      sectionId: AnalysisSectionIds.dataSource,
-                      title: '1 · Kaynak Veri',
-                      subtitle: 'Metraj etiketleri ve ham parça listesi',
+                    child: Container(
+                      padding: const EdgeInsets.all(20),
+                      decoration: BoxDecoration(
+                        color: AppColors.surfaceElevated,
+                        borderRadius: AppRadii.md,
+                        border: Border.all(color: AppColors.borderSubtle),
+                      ),
                       child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.stretch,
                         children: [
-                          if (batch.labelDetails.isNotEmpty) ...[
-                            Text('Etiketler', style: AppTypography.labelMedium),
-                            const SizedBox(height: 8),
-                            RebarLabelDetailsSection(
-                              details: batch.labelDetails,
-                              hideHeader: true,
+                          const Icon(
+                            Icons.check_box_outline_blank,
+                            size: 40,
+                            color: AppColors.textMuted,
+                          ),
+                          const SizedBox(height: 12),
+                          Text(
+                            'Analiz için dosya seçin',
+                            style: AppTypography.titleMedium,
+                          ),
+                          const SizedBox(height: 6),
+                          Text(
+                            'Yukarıdaki listeden analize almak istediğiniz '
+                            'DWG dosyalarını işaretleyin. Tüm dosyaları birlikte '
+                            'seçmek minimum fire için en doğru yöntemdir.',
+                            style: AppTypography.bodySmall.copyWith(
+                              color: AppColors.textMuted,
                             ),
-                            const SizedBox(height: 16),
-                          ],
-                          Text('Ham parça listesi', style: AppTypography.labelMedium),
-                          const SizedBox(height: 8),
-                          _PieceListTable(pieces: batch.pieceLines),
+                            textAlign: TextAlign.center,
+                          ),
                         ],
                       ),
                     ),
-                    CollapsibleAnalysisSection(
-                      sectionId: AnalysisSectionIds.optimizationPipeline,
-                      title: '2 · Fire Azaltma',
-                      subtitle: 'Otomatik fire azaltma sonuçları',
-                      child: !batch.isOptimized
-                          ? Padding(
-                              padding: const EdgeInsets.symmetric(vertical: 24),
-                              child: Column(
-                                children: [
-                                  const Icon(
-                                    Icons.auto_fix_high_outlined,
-                                    size: 40,
+                  ),
+                ),
+                const SliverPadding(padding: EdgeInsets.only(bottom: 80)),
+              ] else ...[
+                SliverToBoxAdapter(
+                  child: Padding(
+                    padding: const EdgeInsets.fromLTRB(
+                      AppSpacing.md,
+                      0,
+                      AppSpacing.md,
+                      AppSpacing.md,
+                    ),
+                    child: _BatchHeader(
+                      batch: batch,
+                      sourceBatches: scopedBatches,
+                    ),
+                  ),
+                ),
+                SliverToBoxAdapter(
+                  child: Padding(
+                    padding: const EdgeInsets.fromLTRB(
+                      AppSpacing.md,
+                      0,
+                      AppSpacing.md,
+                      AppSpacing.sm,
+                    ),
+                    child: AnalysisFireSummaryPanel(batch: batch),
+                  ),
+                ),
+                SliverPadding(
+                  padding: const EdgeInsets.fromLTRB(AppSpacing.md, 0, AppSpacing.md, 80),
+                  sliver: SliverList(
+                    delegate: SliverChildListDelegate([
+                      CollapsibleAnalysisSection(
+                        sectionId: AnalysisSectionIds.comparison,
+                        title: 'Mukayese',
+                        subtitle: 'Kaynak, revize ve strateji sonuçlarını karşılaştırın',
+                        child: AnalysisComparisonSection(batch: batch),
+                      ),
+                      CollapsibleAnalysisSection(
+                        sectionId: AnalysisSectionIds.dataSource,
+                        title: '1 · Kaynak Veri',
+                        subtitle: 'Metraj etiketleri ve ham parça listesi',
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.stretch,
+                          children: [
+                            if (batch.labelDetails.isNotEmpty) ...[
+                              Text('Etiketler', style: AppTypography.labelMedium),
+                              const SizedBox(height: 8),
+                              RebarLabelDetailsSection(
+                                details: batch.labelDetails,
+                                hideHeader: true,
+                              ),
+                              const SizedBox(height: 16),
+                            ],
+                            Text('Ham parça listesi', style: AppTypography.labelMedium),
+                            const SizedBox(height: 8),
+                            _PieceListTable(pieces: batch.pieceLines),
+                          ],
+                        ),
+                      ),
+                      CollapsibleAnalysisSection(
+                        sectionId: AnalysisSectionIds.optimizationPipeline,
+                        title: '2 · Fire Azaltma',
+                        subtitle: 'Otomatik fire azaltma sonuçları',
+                        child: !batch.isOptimized
+                            ? Padding(
+                                padding: const EdgeInsets.symmetric(vertical: 24),
+                                child: Column(
+                                  children: [
+                                    const Icon(
+                                      Icons.auto_fix_high_outlined,
+                                      size: 40,
+                                      color: AppColors.textMuted,
+                                    ),
+                                    const SizedBox(height: 12),
+                                    Text(
+                                      'Fire azaltma analizi henüz çalıştırılmadı.',
+                                      style: AppTypography.bodyMedium.copyWith(
+                                        color: AppColors.textMuted,
+                                      ),
+                                      textAlign: TextAlign.center,
+                                    ),
+                                    const SizedBox(height: 6),
+                                    Text(
+                                      'Fire Özeti bölümünden strateji seçip '
+                                      '"Fire Analizini Başlat" butonuna basın.',
+                                      style: AppTypography.bodySmall.copyWith(
+                                        color: AppColors.textMuted,
+                                      ),
+                                      textAlign: TextAlign.center,
+                                    ),
+                                  ],
+                                ),
+                              )
+                            : AnalysisOptimizationResultsSection(batch: batch),
+                      ),
+                      CollapsibleAnalysisSection(
+                        sectionId: AnalysisSectionIds.plannedCutting,
+                        title: '3 · Planlı Kesim',
+                        subtitle:
+                            'Revize listeden ${CuttingBendingBatch.defaultStockBarLengthM.toStringAsFixed(0)} m '
+                            'stok minimum fire kesim planı',
+                        child: !batch.isOptimized
+                            ? Padding(
+                                padding: const EdgeInsets.symmetric(vertical: 24),
+                                child: Text(
+                                  'Planlı kesim, optimum fire analizi '
+                                  'tamamlandıktan sonra burada görünür.',
+                                  style: AppTypography.bodyMedium.copyWith(
                                     color: AppColors.textMuted,
                                   ),
-                                  const SizedBox(height: 12),
-                                  Text(
-                                    'Fire azaltma analizi henüz çalıştırılmadı.',
-                                    style: AppTypography.bodyMedium.copyWith(
-                                      color: AppColors.textMuted,
-                                    ),
-                                    textAlign: TextAlign.center,
-                                  ),
-                                  const SizedBox(height: 6),
-                                  Text(
-                                    'Fire Özeti bölümünden strateji seçip '
-                                    '"Fire Analizini Başlat" butonuna basın.',
-                                    style: AppTypography.bodySmall.copyWith(
-                                      color: AppColors.textMuted,
-                                    ),
-                                    textAlign: TextAlign.center,
-                                  ),
-                                ],
-                              ),
-                            )
-                          : AnalysisOptimizationResultsSection(batch: batch),
-                    ),
-                    CollapsibleAnalysisSection(
-                      sectionId: AnalysisSectionIds.plannedCutting,
-                      title: '3 · Planlı Kesim',
-                      subtitle:
-                          'Revize listeden ${CuttingBendingBatch.defaultStockBarLengthM.toStringAsFixed(0)} m '
-                          'stok minimum fire kesim planı',
-                      child: !batch.isOptimized
-                          ? Padding(
-                              padding: const EdgeInsets.symmetric(vertical: 24),
-                              child: Text(
-                                'Planlı kesim, optimum fire analizi '
-                                'tamamlandıktan sonra burada görünür.',
-                                style: AppTypography.bodyMedium.copyWith(
-                                  color: AppColors.textMuted,
+                                  textAlign: TextAlign.center,
                                 ),
-                                textAlign: TextAlign.center,
-                              ),
-                            )
-                          : batch.stockCutPlans.isEmpty
-                              ? const ModuleEmptyState(
-                                  type: EmptyStateType.noSearchResult,
-                                  inline: true,
-                                )
-                              : StockCutSection(
-                                  batchId: batch.id,
-                                  plans: batch.stockCutPlans,
-                                ),
-                    ),
-                  ]),
+                              )
+                            : batch.stockCutPlans.isEmpty
+                                ? const ModuleEmptyState(
+                                    type: EmptyStateType.noSearchResult,
+                                    inline: true,
+                                  )
+                                : StockCutSection(
+                                    batchId: batch.id,
+                                    plans: batch.stockCutPlans,
+                                  ),
+                      ),
+                    ]),
+                  ),
                 ),
-              ),
+              ],
             ],
           ],
         ),
@@ -309,9 +362,13 @@ class AnalysisScreen extends ConsumerWidget {
 }
 
 class _BatchHeader extends StatelessWidget {
-  const _BatchHeader({required this.batch});
+  const _BatchHeader({
+    required this.batch,
+    required this.sourceBatches,
+  });
 
   final CuttingBendingBatch batch;
+  final List<CuttingBendingBatch> sourceBatches;
 
   @override
   Widget build(BuildContext context) {
@@ -390,11 +447,27 @@ class _BatchHeader extends StatelessWidget {
                               maxLines: 2,
                               overflow: TextOverflow.ellipsis,
                             ),
+                            if (sourceBatches.length > 1) ...[
+                              const SizedBox(height: 4),
+                              Text(
+                                sourceBatches.map((item) => item.title).join(' · '),
+                                style: AppTypography.bodySmall.copyWith(
+                                  color: AppColors.textMuted,
+                                ),
+                                maxLines: 3,
+                                overflow: TextOverflow.ellipsis,
+                              ),
+                            ],
                             const SizedBox(height: 6),
                             Wrap(
                               spacing: 6,
                               runSpacing: 6,
                               children: [
+                                if (sourceBatches.length > 1)
+                                  _MetaChip(
+                                    icon: Icons.layers_outlined,
+                                    label: '${sourceBatches.length} dosya',
+                                  ),
                                 _MetaChip(
                                   icon: Icons.schedule,
                                   label: dateFormat.format(batch.createdAt),

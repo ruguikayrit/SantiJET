@@ -1331,3 +1331,83 @@ bool isSameRebarMetrajTextDetail(
       a.diameter == b.diameter &&
       a.lengthM == b.lengthM;
 }
+
+/// Çoklu seçim kapsamı için kararlı oturum anahtarı.
+String analysisScopeKey(Set<String> batchIds) {
+  final sorted = batchIds.toList()..sort();
+  return sorted.join('|');
+}
+
+/// Birleşik analiz oturumu için sentetik batch kimliği.
+String mergedAnalysisBatchId(Iterable<String> batchIds) {
+  return 'merged:${analysisScopeKey(batchIds.toSet())}';
+}
+
+/// Seçili DWG analiz listelerini tek ham veri setinde birleştirir.
+CuttingBendingBatch mergeCuttingBendingBatchesForAnalysis(
+  List<CuttingBendingBatch> batches,
+) {
+  if (batches.isEmpty) {
+    throw ArgumentError.value(batches, 'batches', 'cannot be empty');
+  }
+
+  if (batches.length == 1) {
+    final batch = batches.first;
+    return syncBatchLengthMatchDerivatives(
+      batch.copyWith(
+        revisedPieceLines: const [],
+        stockCutPlans: const [],
+        savedOptimizations: const {},
+        clearOptimizationAppliedAt: true,
+        clearOptimizationStrategy: true,
+      ),
+    );
+  }
+
+  final allLabels = <RebarMetrajTextDetail>[];
+  final allSourceIds = <String>[];
+  final allPieces = <RebarPieceLine>[];
+  var earliestCreated = batches.first.createdAt;
+
+  for (final batch in batches) {
+    for (final detail in batch.labelDetails) {
+      if (!allLabels.any((item) => isSameRebarMetrajTextDetail(item, detail))) {
+        allLabels.add(detail);
+      }
+    }
+    allSourceIds.addAll(batch.sourceMetrajRecordIds);
+    allPieces.addAll(batch.pieceLines);
+    if (batch.createdAt.isBefore(earliestCreated)) {
+      earliestCreated = batch.createdAt;
+    }
+  }
+
+  final mergedPieces = _mergePieceLines(allPieces);
+  final tolerance = batches
+      .map((batch) => batch.lengthMatchTolerancePercent)
+      .reduce((a, b) => a > b ? a : b);
+  final batchIds = batches.map((batch) => batch.id);
+  final title = '${batches.length} dosya birleşik analiz';
+
+  return syncBatchLengthMatchDerivatives(
+    CuttingBendingBatch(
+      id: mergedAnalysisBatchId(batchIds),
+      title: title,
+      createdAt: earliestCreated,
+      sourceMetrajRecordIds: allSourceIds.toSet().toList(),
+      labelDetails: allLabels,
+      pieceLines: mergedPieces,
+      revisedPieceLines: const [],
+      lengthMatches: computeLengthMatchGroups(
+        mergedPieces,
+        tolerancePercent: tolerance,
+      ),
+      tahvilGroups: computeTahvilGroups(
+        mergedPieces,
+        tolerancePercent: tolerance,
+      ),
+      stockCutPlans: const [],
+      lengthMatchTolerancePercent: tolerance,
+    ),
+  );
+}

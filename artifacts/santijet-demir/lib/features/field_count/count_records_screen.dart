@@ -147,7 +147,7 @@ class _CountRecordCard extends StatelessWidget {
                         Row(
                           children: [
                             _MetricChip(
-                              label: 'Beklenen',
+                              label: 'Planlanan kullanım',
                               value: '${AppFormat.tonnage(record.expected)}t',
                             ),
                             const SizedBox(width: 8),

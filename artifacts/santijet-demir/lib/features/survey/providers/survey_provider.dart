@@ -284,6 +284,37 @@ class SurveyProjectNotifier extends StateNotifier<SurveyProject> {
     await _persist();
   }
 
+  Future<void> updateProgressForImalats({
+    required Set<String> imalatIds,
+    required double progressPercent,
+  }) async {
+    if (imalatIds.isEmpty) return;
+
+    final clamped = progressPercent.clamp(0.0, 100.0);
+    final imalats = List<SurveyImalat>.from(state.imalats);
+
+    for (var i = 0; i < imalats.length; i++) {
+      final imalat = imalats[i];
+      if (!imalatIds.contains(imalat.id)) continue;
+
+      if (imalat.diameterLines.isEmpty) {
+        imalats[i] = imalat.copyWith(progressPercent: clamped);
+        continue;
+      }
+
+      final updatedLines = imalat.diameterLines
+          .map((line) => line.copyWith(progressPercent: clamped))
+          .toList();
+      imalats[i] = imalat.copyWith(
+        diameterLines: updatedLines,
+        progressPercent: clamped,
+      );
+    }
+
+    state = state.copyWith(imalats: imalats);
+    await _persist();
+  }
+
   Future<void> updateDiameterLineProgress({
     required String imalatId,
     required int diameter,
@@ -324,26 +355,10 @@ class SurveyProjectNotifier extends StateNotifier<SurveyProject> {
     required String imalatId,
     required double progressPercent,
   }) async {
-    final index = state.imalats.indexWhere((item) => item.id == imalatId);
-    if (index < 0) return;
-
-    final imalat = state.imalats[index];
-    final clamped = progressPercent.clamp(0.0, 100.0);
-
-    if (imalat.diameterLines.isNotEmpty) {
-      await updateDiameterLineProgress(
-        imalatId: imalatId,
-        diameter: imalat.diameterLines.first.diameter,
-        progressPercent: clamped,
-      );
-      return;
-    }
-
-    final imalats = List<SurveyImalat>.from(state.imalats);
-    imalats[index] = imalat.copyWith(progressPercent: clamped);
-
-    state = state.copyWith(imalats: imalats);
-    await _persist();
+    await updateProgressForImalats(
+      imalatIds: {imalatId},
+      progressPercent: progressPercent,
+    );
   }
 
   Future<void> deleteImalat(String imalatId) async {

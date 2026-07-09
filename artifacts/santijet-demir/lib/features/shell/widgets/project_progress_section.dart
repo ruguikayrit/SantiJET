@@ -18,8 +18,19 @@ class ProjectProgressSection extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
+    ref.listen(activeProjectIdProvider, (previous, next) {
+      if (previous != next) {
+        ref.read(selectedProgressImalatIdsProvider.notifier).state = {};
+      }
+    });
+
     final summary = ref.watch(projectProgressSummaryProvider);
     final canEdit = ref.watch(canEditActiveProjectProvider);
+    final selectedImalatIds = ref.watch(selectedProgressImalatIdsProvider);
+    final groupedRows = _groupProgressRows(summary.rows);
+    final allImalatIds = groupedRows
+        .map((group) => group.first.imalatId)
+        .toSet();
 
     if (summary.rows.isEmpty) {
       return Column(
@@ -28,7 +39,7 @@ class ProjectProgressSection extends ConsumerWidget {
           Text('Proje İlerleme Durumu', style: AppTypography.headlineMedium),
           const SizedBox(height: 8),
           Text(
-            'Beklenen miktar = keşif tonajı × ilerleme oranı',
+            'Planlanan kullanım = keşif tonajı × ilerleme oranı',
             style: AppTypography.bodySmall,
           ),
           const SizedBox(height: 12),
@@ -39,13 +50,25 @@ class ProjectProgressSection extends ConsumerWidget {
 
     final overallPercent = summary.overallProgressPercent.round();
 
+    void setSelectedImalats(Set<String> next) {
+      ref.read(selectedProgressImalatIdsProvider.notifier).state = next;
+    }
+
+    Future<void> applyBulkProgress(double progressPercent) async {
+      final targetIds = selectedImalatIds.isEmpty ? allImalatIds : selectedImalatIds;
+      await ref.read(surveyProjectProvider.notifier).updateProgressForImalats(
+            imalatIds: targetIds,
+            progressPercent: progressPercent,
+          );
+    }
+
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Text('Proje İlerleme Durumu', style: AppTypography.headlineMedium),
         const SizedBox(height: 4),
         Text(
-          'Proje ilerleme = beklenen toplam / keşif miktarı',
+          'Proje ilerleme = planlanan kullanım toplamı / keşif miktarı',
           style: AppTypography.bodySmall,
         ),
         const SizedBox(height: 12),
@@ -54,6 +77,16 @@ class ProjectProgressSection extends ConsumerWidget {
           totalPlanned: summary.totalPlanned,
           totalExpected: summary.totalExpected,
         ),
+        if (canEdit) ...[
+          const SizedBox(height: 12),
+          _BulkProgressEntryPanel(
+            selectedImalatIds: selectedImalatIds,
+            allImalatIds: allImalatIds,
+            groupedRows: groupedRows,
+            onSelectionChanged: setSelectedImalats,
+            onApply: applyBulkProgress,
+          ),
+        ],
         const SizedBox(height: 12),
         Container(
           decoration: BoxDecoration(
@@ -61,14 +94,27 @@ class ProjectProgressSection extends ConsumerWidget {
             borderRadius: AppRadii.md,
             border: Border.all(color: AppColors.border),
           ),
+          clipBehavior: Clip.antiAlias,
           child: Column(
             children: [
               const _ProgressTableHeader(),
-              ...summary.rows.map(
-                (row) => _ProgressTableRow(
-                  row: row,
+              ...groupedRows.indexed.map(
+                (entry) => _ProgressImalatGroup(
+                  rows: entry.$2,
+                  isFirst: entry.$1 == 0,
                   canEdit: canEdit,
-                  onProgressChanged: (value) {
+                  selected: selectedImalatIds.contains(entry.$2.first.imalatId),
+                  onSelectionChanged: (selected) {
+                    final imalatId = entry.$2.first.imalatId;
+                    final next = Set<String>.from(selectedImalatIds);
+                    if (selected) {
+                      next.add(imalatId);
+                    } else {
+                      next.remove(imalatId);
+                    }
+                    setSelectedImalats(next);
+                  },
+                  onProgressChanged: (row, value) {
                     final notifier = ref.read(surveyProjectProvider.notifier);
                     if (row.diameter == null) {
                       notifier.updateImalatProgress(
@@ -89,6 +135,361 @@ class ProjectProgressSection extends ConsumerWidget {
           ),
         ),
       ],
+    );
+  }
+}
+
+List<List<ProjectProgressRow>> _groupProgressRows(List<ProjectProgressRow> rows) {
+  final groups = <String, List<ProjectProgressRow>>{};
+  final order = <String>[];
+
+  for (final row in rows) {
+    if (!groups.containsKey(row.imalatId)) {
+      order.add(row.imalatId);
+      groups[row.imalatId] = [];
+    }
+    groups[row.imalatId]!.add(row);
+  }
+
+  return order.map((id) => groups[id]!).toList();
+}
+
+class _ProgressImalatGroup extends StatelessWidget {
+  const _ProgressImalatGroup({
+    required this.rows,
+    required this.isFirst,
+    required this.canEdit,
+    required this.selected,
+    required this.onSelectionChanged,
+    required this.onProgressChanged,
+  });
+
+  final List<ProjectProgressRow> rows;
+  final bool isFirst;
+  final bool canEdit;
+  final bool selected;
+  final ValueChanged<bool> onSelectionChanged;
+  final void Function(ProjectProgressRow row, double value) onProgressChanged;
+
+  @override
+  Widget build(BuildContext context) {
+    if (rows.isEmpty) return const SizedBox.shrink();
+
+    final imalatName = rows.first.imalatName;
+    final totalPlanned =
+        rows.fold(0.0, (sum, row) => sum + row.plannedTonnage);
+    final totalExpected =
+        rows.fold(0.0, (sum, row) => sum + row.expectedTonnage);
+    final overallPercent = totalPlanned > 0
+        ? (totalExpected / totalPlanned * 100).round().clamp(0, 100)
+        : 0;
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        Container(
+          padding: const EdgeInsets.fromLTRB(14, 12, 14, 10),
+          decoration: BoxDecoration(
+            color: AppColors.electricBlue.withValues(alpha: 0.06),
+            border: Border(
+              top: isFirst
+                  ? BorderSide.none
+                  : BorderSide(color: AppColors.border.withValues(alpha: 0.8)),
+              bottom: const BorderSide(color: AppColors.border),
+            ),
+          ),
+          child: Row(
+            children: [
+              if (canEdit) ...[
+                Checkbox(
+                  value: selected,
+                  onChanged: (value) => onSelectionChanged(value == true),
+                  visualDensity: VisualDensity.compact,
+                  materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                ),
+                const SizedBox(width: 4),
+              ],
+              Container(
+                width: 3,
+                height: 28,
+                decoration: BoxDecoration(
+                  color: AppColors.electricBlueLight,
+                  borderRadius: AppRadii.full,
+                ),
+              ),
+              const SizedBox(width: 10),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      imalatName,
+                      style: AppTypography.titleMedium.copyWith(
+                        fontWeight: FontWeight.w700,
+                        letterSpacing: 0.4,
+                      ),
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                    const SizedBox(height: 2),
+                    Text(
+                      '${rows.length} çap · Keşif ${AppFormat.tonnage(totalPlanned)}t · '
+                      'Planlanan kullanım ${AppFormat.tonnage(totalExpected)}t',
+                      style: AppTypography.bodySmall.copyWith(
+                        color: AppColors.textMuted,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                decoration: BoxDecoration(
+                  color: AppColors.electricBlue.withValues(alpha: 0.12),
+                  borderRadius: AppRadii.full,
+                  border: Border.all(
+                    color: AppColors.electricBlue.withValues(alpha: 0.25),
+                  ),
+                ),
+                child: Text(
+                  '$overallPercent%',
+                  style: AppTypography.labelMedium.copyWith(
+                    color: AppColors.electricBlueLight,
+                    fontWeight: FontWeight.w700,
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ),
+        ...rows.map(
+          (row) => _ProgressTableRow(
+            row: row,
+            canEdit: canEdit,
+            onProgressChanged: (value) => onProgressChanged(row, value),
+          ),
+        ),
+      ],
+    );
+  }
+}
+
+class _BulkProgressEntryPanel extends StatefulWidget {
+  const _BulkProgressEntryPanel({
+    required this.selectedImalatIds,
+    required this.allImalatIds,
+    required this.groupedRows,
+    required this.onSelectionChanged,
+    required this.onApply,
+  });
+
+  final Set<String> selectedImalatIds;
+  final Set<String> allImalatIds;
+  final List<List<ProjectProgressRow>> groupedRows;
+  final ValueChanged<Set<String>> onSelectionChanged;
+  final Future<void> Function(double progressPercent) onApply;
+
+  @override
+  State<_BulkProgressEntryPanel> createState() => _BulkProgressEntryPanelState();
+}
+
+class _BulkProgressEntryPanelState extends State<_BulkProgressEntryPanel> {
+  late final TextEditingController _controller;
+  bool _isApplying = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _controller = TextEditingController();
+  }
+
+  @override
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
+  }
+
+  bool get _allSelected =>
+      widget.allImalatIds.isNotEmpty &&
+      widget.selectedImalatIds.length == widget.allImalatIds.length;
+
+  int get _targetRowCount {
+    if (widget.selectedImalatIds.isEmpty) {
+      return widget.groupedRows.fold(0, (sum, group) => sum + group.length);
+    }
+    return widget.groupedRows
+        .where((group) => widget.selectedImalatIds.contains(group.first.imalatId))
+        .fold(0, (sum, group) => sum + group.length);
+  }
+
+  String get _targetLabel {
+    if (widget.selectedImalatIds.isEmpty) {
+      return 'Tüm imalatlar (${widget.allImalatIds.length})';
+    }
+    if (widget.selectedImalatIds.length == 1) {
+      final group = widget.groupedRows.firstWhere(
+        (rows) => widget.selectedImalatIds.contains(rows.first.imalatId),
+      );
+      return group.first.imalatName;
+    }
+    return '${widget.selectedImalatIds.length} imalat';
+  }
+
+  Future<void> _apply() async {
+    final parsed = int.tryParse(_controller.text.trim());
+    if (parsed == null) return;
+
+    setState(() => _isApplying = true);
+    try {
+      await widget.onApply(parsed.clamp(0, 100).toDouble());
+      if (!mounted) return;
+      _controller.text = '${parsed.clamp(0, 100)}';
+    } finally {
+      if (mounted) setState(() => _isApplying = false);
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final hasSelection = widget.selectedImalatIds.isNotEmpty;
+
+    return Container(
+      padding: const EdgeInsets.all(14),
+      decoration: BoxDecoration(
+        color: AppColors.surfaceElevated,
+        borderRadius: AppRadii.md,
+        border: Border.all(color: AppColors.border),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          Text('Toplu ilerleme girişi', style: AppTypography.labelMedium),
+          const SizedBox(height: 4),
+          Text(
+            hasSelection
+                ? 'Seçili imalat gruplarına tek değer uygulanır. '
+                    'Satır satır düzenlemek için çap alanlarını kullanın.'
+                : 'İmalat seçmeden uygularsanız tüm çaplara yazılır. '
+                    'Grup seçmek için imalat başlığındaki kutuyu işaretleyin.',
+            style: AppTypography.bodySmall.copyWith(color: AppColors.textMuted),
+          ),
+          const SizedBox(height: 10),
+          Wrap(
+            spacing: 8,
+            runSpacing: 8,
+            children: [
+              ActionChip(
+                avatar: Icon(
+                  _allSelected ? Icons.deselect : Icons.select_all,
+                  size: 16,
+                  color: AppColors.electricBlueLight,
+                ),
+                label: Text(
+                  _allSelected ? 'Seçimi kaldır' : 'Tümünü seç',
+                  style: AppTypography.labelMedium,
+                ),
+                backgroundColor: AppColors.canvas,
+                side: const BorderSide(color: AppColors.border),
+                onPressed: () {
+                  widget.onSelectionChanged(
+                    _allSelected ? {} : Set<String>.from(widget.allImalatIds),
+                  );
+                },
+              ),
+              if (hasSelection)
+                ActionChip(
+                  label: Text(
+                    '${widget.selectedImalatIds.length} seçili',
+                    style: AppTypography.labelMedium.copyWith(
+                      color: AppColors.electricBlueLight,
+                    ),
+                  ),
+                  backgroundColor: AppColors.electricBlue.withValues(alpha: 0.1),
+                  side: BorderSide(
+                    color: AppColors.electricBlue.withValues(alpha: 0.35),
+                  ),
+                  onPressed: () => widget.onSelectionChanged({}),
+                ),
+            ],
+          ),
+          const SizedBox(height: 12),
+          Container(
+            padding: const EdgeInsets.all(12),
+            decoration: BoxDecoration(
+              color: AppColors.canvas,
+              borderRadius: AppRadii.sm,
+              border: Border.all(
+                color: AppColors.electricBlue.withValues(alpha: 0.25),
+              ),
+            ),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                Text(
+                  'Hedef: $_targetLabel · $_targetRowCount çap satırı',
+                  style: AppTypography.bodySmall.copyWith(
+                    color: AppColors.textSecondary,
+                  ),
+                ),
+                const SizedBox(height: 10),
+                Row(
+                  children: [
+                    Expanded(
+                      child: TextField(
+                        controller: _controller,
+                        keyboardType: TextInputType.number,
+                        textAlign: TextAlign.center,
+                        inputFormatters: [
+                          FilteringTextInputFormatter.digitsOnly,
+                          LengthLimitingTextInputFormatter(3),
+                        ],
+                        style: AppTypography.titleMedium.copyWith(
+                          fontWeight: FontWeight.w700,
+                          color: AppColors.electricBlueLight,
+                        ),
+                        decoration: InputDecoration(
+                          isDense: true,
+                          hintText: '0',
+                          suffixText: '%',
+                          contentPadding: const EdgeInsets.symmetric(
+                            horizontal: 12,
+                            vertical: 12,
+                          ),
+                          border: OutlineInputBorder(
+                            borderRadius: AppRadii.sm,
+                            borderSide: const BorderSide(color: AppColors.border),
+                          ),
+                          enabledBorder: OutlineInputBorder(
+                            borderRadius: AppRadii.sm,
+                            borderSide: const BorderSide(color: AppColors.border),
+                          ),
+                        ),
+                        onSubmitted: (_) => _apply(),
+                      ),
+                    ),
+                    const SizedBox(width: 10),
+                    FilledButton(
+                      onPressed: _isApplying ? null : _apply,
+                      style: FilledButton.styleFrom(
+                        minimumSize: const Size(96, 48),
+                        backgroundColor: AppColors.electricBlueLight,
+                        foregroundColor: AppColors.canvas,
+                      ),
+                      child: _isApplying
+                          ? const SizedBox(
+                              width: 18,
+                              height: 18,
+                              child: CircularProgressIndicator(strokeWidth: 2),
+                            )
+                          : const Text('Uygula'),
+                    ),
+                  ],
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
     );
   }
 }
@@ -138,7 +539,8 @@ class _OverallProgressCard extends StatelessWidget {
           ),
           const SizedBox(height: 10),
           Text(
-            'Beklenen ${AppFormat.tonnage(totalExpected)}t / Keşif ${AppFormat.tonnage(totalPlanned)}t',
+            'Planlanan kullanım ${AppFormat.tonnage(totalExpected)}t / '
+            'Keşif ${AppFormat.tonnage(totalPlanned)}t',
             style: AppTypography.bodySmall,
           ),
         ],
@@ -159,11 +561,10 @@ class _ProgressTableHeader extends StatelessWidget {
       ),
       child: Row(
         children: [
-          Expanded(child: _headerCell('İMALAT')),
-          Expanded(child: _headerCell('ÇAP')),
-          Expanded(child: _headerCell('KEŞİF')),
-          Expanded(child: _headerCell('İLERLEME')),
-          Expanded(child: _headerCell('BEKLENEN')),
+          Expanded(flex: 2, child: _headerCell('ÇAP')),
+          Expanded(flex: 3, child: _headerCell('KEŞİF')),
+          Expanded(flex: 3, child: _headerCell('İLERLEME')),
+          Expanded(flex: 3, child: _headerCell('PLAN.\nKULL.')),
         ],
       ),
     );
@@ -174,6 +575,7 @@ class _ProgressTableHeader extends StatelessWidget {
       label,
       style: _headerStyle,
       textAlign: TextAlign.center,
+      maxLines: 2,
     );
   }
 
@@ -294,9 +696,13 @@ class _ProgressTableRowState extends State<_ProgressTableRow> {
         row.diameter == null ? '—' : 'Ø${row.diameter}';
 
     return Container(
-      padding: const EdgeInsets.fromLTRB(14, 10, 14, 12),
-      decoration: const BoxDecoration(
-        border: Border(bottom: BorderSide(color: AppColors.border)),
+      padding: const EdgeInsets.fromLTRB(14, 8, 14, 12),
+      decoration: BoxDecoration(
+        border: Border(
+          bottom: BorderSide(
+            color: AppColors.border.withValues(alpha: 0.65),
+          ),
+        ),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -305,22 +711,20 @@ class _ProgressTableRowState extends State<_ProgressTableRow> {
             crossAxisAlignment: CrossAxisAlignment.center,
             children: [
               Expanded(
-                child: Text(
-                  row.imalatName,
-                  style: AppTypography.titleMedium,
-                  textAlign: TextAlign.center,
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                ),
-              ),
-              Expanded(
+                flex: 2,
                 child: Text(
                   capLabel,
-                  style: AppTypography.bodyMedium,
+                  style: AppTypography.bodyMedium.copyWith(
+                    fontWeight: FontWeight.w600,
+                    color: row.diameter == null
+                        ? AppColors.textMuted
+                        : AppColors.diameterColor(row.diameter!),
+                  ),
                   textAlign: TextAlign.center,
                 ),
               ),
               Expanded(
+                flex: 3,
                 child: Text(
                   '${AppFormat.tonnage(row.plannedTonnage)}t',
                   style: AppTypography.bodyMedium,
@@ -328,9 +732,11 @@ class _ProgressTableRowState extends State<_ProgressTableRow> {
                 ),
               ),
               Expanded(
+                flex: 3,
                 child: Center(child: _buildProgressCell(percent)),
               ),
               Expanded(
+                flex: 3,
                 child: Text(
                   '${AppFormat.tonnage(_displayExpected)}t',
                   style: AppTypography.bodyMedium.copyWith(
@@ -342,10 +748,13 @@ class _ProgressTableRowState extends State<_ProgressTableRow> {
             ],
           ),
           const SizedBox(height: 8),
-          _PercentBar(
-            percent: percent.toDouble(),
-            color: AppColors.electricBlueLight,
-            height: 6,
+          Padding(
+            padding: const EdgeInsets.only(left: 4, right: 4),
+            child: _PercentBar(
+              percent: percent.toDouble(),
+              color: AppColors.electricBlueLight,
+              height: 6,
+            ),
           ),
         ],
       ),

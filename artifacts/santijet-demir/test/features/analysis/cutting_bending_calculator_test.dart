@@ -614,5 +614,54 @@ void main() {
         isTrue,
       );
     });
+
+    test('mergeCuttingBendingBatchesForAnalysis combines piece lines across files', () {
+      final batchA = buildCuttingBendingBatch(
+        title: 'TEMEL',
+        sourceMetrajRecordIds: const ['a'],
+        textDetails: const [
+          RebarMetrajTextDetail(
+            entityType: 'TEXT',
+            sourceText: 'a1',
+            included: true,
+            diameter: 16,
+            lengthM: 2.0,
+            quantity: 10,
+          ),
+        ],
+      );
+      final batchB = buildCuttingBendingBatch(
+        title: 'PERDE',
+        sourceMetrajRecordIds: const ['b'],
+        textDetails: const [
+          RebarMetrajTextDetail(
+            entityType: 'TEXT',
+            sourceText: 'b1',
+            included: true,
+            diameter: 16,
+            lengthM: 2.0,
+            quantity: 5,
+          ),
+          RebarMetrajTextDetail(
+            entityType: 'TEXT',
+            sourceText: 'b2',
+            included: true,
+            diameter: 12,
+            lengthM: 3.0,
+            quantity: 4,
+          ),
+        ],
+      );
+
+      final merged = mergeCuttingBendingBatchesForAnalysis([batchA, batchB]);
+
+      expect(merged.title, '2 dosya birleşik analiz');
+      expect(merged.pieceLines, hasLength(2));
+      expect(
+        merged.pieceLines.firstWhere((piece) => piece.diameter == 16).quantity,
+        15,
+      );
+      expect(merged.sourceMetrajRecordIds, containsAll(['a', 'b']));
+    });
   });
 }

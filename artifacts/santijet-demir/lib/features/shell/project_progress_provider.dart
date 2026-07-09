@@ -100,3 +100,6 @@ final projectProgressSummaryProvider = Provider<ProjectProgressSummary>((ref) {
     totalExpected: totalExpected,
   );
 });
+
+/// Toplu ilerleme girişi için seçili imalat grupları.
+final selectedProgressImalatIdsProvider = StateProvider<Set<String>>((ref) => {});

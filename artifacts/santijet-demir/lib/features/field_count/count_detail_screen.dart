@@ -72,7 +72,7 @@ class _CountDetailScreenState extends ConsumerState<CountDetailScreen> {
             childAspectRatio: 1.6,
             children: [
               KpiCard(
-                label: 'Beklenen',
+                label: 'Planlanan kullanım',
                 value: record.totalExpectedStock.toStringAsFixed(0),
                 unit: 't',
                 accentColor: AppColors.electricBlueLight,

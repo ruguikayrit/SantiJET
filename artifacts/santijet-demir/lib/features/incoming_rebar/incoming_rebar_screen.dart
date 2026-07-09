@@ -4,7 +4,6 @@ import 'package:go_router/go_router.dart';
 import 'package:santijet_demir/core/format/app_format.dart';
 import 'package:santijet_demir/core/routing/app_routes.dart';
 import 'package:santijet_demir/core/theme/app_colors.dart';
-import 'package:santijet_demir/core/theme/app_radii.dart';
 import 'package:santijet_demir/core/theme/app_spacing.dart';
 import 'package:santijet_demir/core/theme/app_typography.dart';
 import 'package:santijet_demir/core/widgets/app_components.dart';
@@ -22,7 +21,6 @@ class IncomingRebarScreen extends ConsumerWidget {
     final deliveries = ref.watch(deliveriesProvider);
     final summary = ref.watch(incomingRebarDashboardSummaryProvider);
     final diameterRows = ref.watch(deliveredDiameterRowsProvider);
-    final recent = deliveries.take(5).toList();
 
     return Scaffold(
       backgroundColor: AppColors.canvas,
@@ -133,36 +131,18 @@ class IncomingRebarScreen extends ConsumerWidget {
                   const SizedBox(height: 8),
                   const ModuleEmptyState(type: EmptyStateType.noAlert),
                   const SizedBox(height: 16),
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    children: [
-                      Text('Son Teslimatlar', style: AppTypography.headlineMedium),
-                      if (recent.isNotEmpty)
-                        TextButton(
-                          onPressed: () => context.push(AppRoutes.deliveryList),
-                          child: const Text('Tümünü Gör →'),
-                        ),
-                    ],
-                  ),
-                  if (recent.isEmpty)
+                  Text('Teslimat kayıtları', style: AppTypography.headlineMedium),
+                  const SizedBox(height: 8),
+                  if (deliveries.isEmpty)
                     const ModuleEmptyState(type: EmptyStateType.noDelivery)
                   else
-                    Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 14),
-                    decoration: BoxDecoration(
-                      color: AppColors.surfaceElevated,
-                      borderRadius: AppRadii.md,
-                      border: Border.all(color: AppColors.border),
+                    ...deliveries.map(
+                      (delivery) => DeliveryCard(
+                        delivery: delivery,
+                        onTap: () =>
+                            context.push(AppRoutes.deliveryDetail(delivery.id)),
+                      ),
                     ),
-                    child: Column(
-                      children: recent.map((d) {
-                        return CompactDeliveryTile(
-                          delivery: d,
-                          onTap: () => context.push(AppRoutes.deliveryDetail(d.id)),
-                        );
-                      }).toList(),
-                    ),
-                  ),
                   const SizedBox(height: 80),
                 ]),
               ),

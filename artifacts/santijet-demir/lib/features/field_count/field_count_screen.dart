@@ -1,9 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
-import 'package:intl/intl.dart';
-import 'package:santijet_demir/core/format/app_format.dart';
-import 'package:santijet_demir/core/routing/app_routes.dart';
+import 'package:santijet_demir/core/format/app_format.dart';import 'package:santijet_demir/core/routing/app_routes.dart';
 import 'package:santijet_demir/core/theme/app_colors.dart';
 import 'package:santijet_demir/core/theme/app_radii.dart';
 import 'package:santijet_demir/core/theme/app_spacing.dart';
@@ -11,9 +9,7 @@ import 'package:santijet_demir/core/theme/app_typography.dart';
 import 'package:santijet_demir/core/widgets/app_components.dart';
 import 'package:santijet_demir/core/widgets/empty_states.dart';
 import 'package:santijet_demir/core/widgets/santijet_header.dart';
-import 'package:santijet_demir/domain/entities/field_count.dart';
 import 'package:santijet_demir/features/field_count/providers/field_count_provider.dart';
-
 class FieldCountScreen extends ConsumerWidget {
   const FieldCountScreen({super.key});
 
@@ -23,10 +19,7 @@ class FieldCountScreen extends ConsumerWidget {
     final reconciliationRows = ref.watch(reconciliationRowsProvider);
     final summary = ref.watch(fieldCountDashboardSummaryProvider);
 
-    final recent = counts.take(3).toList();
-
-    return Scaffold(
-      backgroundColor: AppColors.canvas,
+    return Scaffold(      backgroundColor: AppColors.canvas,
       body: CustomScrollView(
           slivers: [
             const SliverToBoxAdapter(
@@ -114,28 +107,7 @@ class FieldCountScreen extends ConsumerWidget {
                   Text('Kritik Uyarılar', style: AppTypography.headlineMedium),
                   const SizedBox(height: 8),
                   const ModuleEmptyState(type: EmptyStateType.noAlert, inline: true),
-                  const SizedBox(height: 16),
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    children: [
-                      Text('Son Sayımlar', style: AppTypography.headlineMedium),
-                      if (counts.isNotEmpty)
-                        TextButton(
-                          onPressed: () => context.push(AppRoutes.countRecords),
-                          child: const Text('Tümünü Gör →'),
-                        ),
-                    ],
-                  ),
-                  const SizedBox(height: 8),
-                  if (recent.isEmpty)
-                    const ModuleEmptyState(type: EmptyStateType.noCount, inline: true)
-                  else
-                    ...recent.map((c) => _CountTimelineTile(
-                          record: c,
-                          onTap: () => context.push(AppRoutes.countDetail(c.id)),
-                        )),
-                  const SizedBox(height: 80),
-                ]),
+                  const SizedBox(height: 80),                ]),
               ),
             ),
           ],
@@ -338,62 +310,6 @@ class _ReconciliationShortcut extends StatelessWidget {
                 ),
               ),
               const Icon(Icons.arrow_forward, color: AppColors.textMuted),
-            ],
-          ),
-        ),
-      ),
-    );
-  }
-}
-
-class _CountTimelineTile extends StatelessWidget {
-  const _CountTimelineTile({required this.record, this.onTap});
-
-  final FieldCountRecord record;
-  final VoidCallback? onTap;
-
-  Color get _statusColor => switch (record.status) {
-        'completed' => AppColors.success,
-        'critical' => AppColors.critical,
-        'warning' => AppColors.warning,
-        _ => AppColors.textMuted,
-      };
-
-  @override
-  Widget build(BuildContext context) {
-    return Material(
-      color: Colors.transparent,
-      child: InkWell(
-        onTap: onTap,
-        child: Padding(
-          padding: const EdgeInsets.symmetric(vertical: 10),
-          child: Row(
-            children: [
-              Container(
-                width: 36,
-                height: 36,
-                decoration: BoxDecoration(
-                  color: _statusColor.withValues(alpha: 0.15),
-                  borderRadius: BorderRadius.circular(10),
-                ),
-                child: Icon(Icons.inventory_2, size: 18, color: _statusColor),
-              ),
-              const SizedBox(width: 12),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(record.title, style: AppTypography.titleMedium),
-                    Text(
-                      '${record.region} · ${DateFormat('d MMM').format(record.date)}',
-                      style: AppTypography.bodySmall,
-                    ),
-                  ],
-                ),
-              ),
-              SapmaTag(value: record.variance),
-              const SizedBox(width: 4),
-              Icon(Icons.chevron_right, color: AppColors.textMuted, size: 18),
             ],
           ),
         ),

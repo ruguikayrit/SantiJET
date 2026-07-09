@@ -163,7 +163,7 @@ class _NewCountScreenState extends ConsumerState<NewCountScreen> {
           Text('Sayım Girişi', style: AppTypography.headlineMedium),
           const SizedBox(height: 4),
           Text(
-            'Beklenen = ana sayfadaki çap bazında plan kullanım; yalnızca sayım girin.',
+            'Planlanan kullanım = ana sayfadaki çap bazında plan; yalnızca sayım girin.',
             style: AppTypography.bodySmall,
           ),
           const SizedBox(height: 12),

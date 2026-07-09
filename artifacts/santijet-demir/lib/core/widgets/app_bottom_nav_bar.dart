@@ -9,8 +9,7 @@ import 'package:santijet_demir/core/theme/app_colors.dart';
 import 'package:santijet_demir/core/theme/app_typography.dart';
 import 'package:santijet_demir/domain/enums/app_enums.dart';
 
-/// Alt navigasyon — ekranın fiziksel altına yaslanır; home indicator nav
-/// arka planı içinde kalır, ekstra siyah boşluk oluşturmaz.
+/// Alt navigasyon — arka plan ekranın dibine kadar uzanır, ikonlar altta hizalanır.
 class AppBottomNavBar extends ConsumerWidget {
   const AppBottomNavBar({super.key, required this.navigationShell});
 
@@ -32,47 +31,56 @@ class AppBottomNavBar extends ConsumerWidget {
     Icons.analytics,
   ];
 
+  static double totalHeightOf(BuildContext context) {
+    final showLabels = ResponsiveLayout.isTablet(context);
+    final iconBarHeight = showLabels ? 56.0 : 48.0;
+    final bottomInset = AppSafeAreaInsets.bottomNavInsetOf(context);
+    final bottomPadding = bottomInset > 0 ? bottomInset : 8.0;
+    return 4 + iconBarHeight + bottomPadding;
+  }
+
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final showLabels = ResponsiveLayout.isTablet(context);
-    final iconBarHeight = showLabels ? 56.0 : 52.0;
+    final iconBarHeight = showLabels ? 56.0 : 48.0;
     final bottomInset = AppSafeAreaInsets.bottomNavInsetOf(context);
+    final bottomPadding = bottomInset > 0 ? bottomInset : 8.0;
 
     final bar = Material(
       color: AppColors.surface,
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          DecoratedBox(
-            decoration: const BoxDecoration(
-              border: Border(top: BorderSide(color: AppColors.border)),
-            ),
-            child: SizedBox(
-              height: iconBarHeight,
-              width: double.infinity,
-              child: Row(
-                children: [
-                  for (var i = 0; i < BottomNavTab.values.length; i++)
-                    Expanded(
-                      child: _NavItem(
-                        icon: _icons[i],
-                        activeIcon: _activeIcons[i],
-                        label: BottomNavTab.values[i].navLabel,
-                        semanticsLabel: BottomNavTab.values[i].label,
-                        selected: navigationShell.currentIndex == i,
-                        showLabel: showLabels,
-                        onTap: () => navigationShell.goBranch(
-                          i,
-                          initialLocation: i == navigationShell.currentIndex,
-                        ),
+      child: DecoratedBox(
+        decoration: const BoxDecoration(
+          border: Border(top: BorderSide(color: AppColors.border)),
+        ),
+        child: Padding(
+          padding: EdgeInsets.only(
+            top: 4,
+            bottom: bottomPadding,
+          ),
+          child: SizedBox(
+            height: iconBarHeight,
+            width: double.infinity,
+            child: Row(
+              children: [
+                for (var i = 0; i < BottomNavTab.values.length; i++)
+                  Expanded(
+                    child: _NavItem(
+                      icon: _icons[i],
+                      activeIcon: _activeIcons[i],
+                      label: BottomNavTab.values[i].navLabel,
+                      semanticsLabel: BottomNavTab.values[i].label,
+                      selected: navigationShell.currentIndex == i,
+                      showLabel: showLabels,
+                      onTap: () => navigationShell.goBranch(
+                        i,
+                        initialLocation: i == navigationShell.currentIndex,
                       ),
                     ),
-                ],
-              ),
+                  ),
+              ],
             ),
           ),
-          SizedBox(height: bottomInset),
-        ],
+        ),
       ),
     );
 
@@ -108,47 +116,45 @@ class _NavItem extends StatelessWidget {
         selected ? AppColors.electricBlueLight : AppColors.textMuted;
 
     Widget child = SizedBox.expand(
-      child: Center(
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            AnimatedContainer(
-              duration: const Duration(milliseconds: 200),
-              padding: EdgeInsets.symmetric(
-                horizontal: showLabel ? 8 : 12,
-                vertical: showLabel ? 4 : 6,
-              ),
-              decoration: BoxDecoration(
-                color: selected
-                    ? AppColors.electricBlue.withValues(alpha: 0.15)
-                    : Colors.transparent,
-                borderRadius: BorderRadius.circular(14),
-              ),
-              child: Icon(
-                selected ? activeIcon : icon,
-                size: showLabel ? 20 : 24,
-                color: color,
-              ),
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.end,
+        mainAxisSize: MainAxisSize.max,
+        children: [
+          AnimatedContainer(
+            duration: const Duration(milliseconds: 200),
+            padding: EdgeInsets.symmetric(
+              horizontal: showLabel ? 8 : 12,
+              vertical: showLabel ? 4 : 2,
             ),
-            if (showLabel) ...[
-              const SizedBox(height: 2),
-              FittedBox(
-                fit: BoxFit.scaleDown,
-                child: Text(
-                  label,
-                  maxLines: 1,
-                  textAlign: TextAlign.center,
-                  style: AppTypography.tabLabel.copyWith(
-                    color: color,
-                    fontSize: 9,
-                    height: 1.0,
-                  ),
+            decoration: BoxDecoration(
+              color: selected
+                  ? AppColors.electricBlue.withValues(alpha: 0.15)
+                  : Colors.transparent,
+              borderRadius: BorderRadius.circular(14),
+            ),
+            child: Icon(
+              selected ? activeIcon : icon,
+              size: showLabel ? 20 : 24,
+              color: color,
+            ),
+          ),
+          if (showLabel) ...[
+            const SizedBox(height: 2),
+            FittedBox(
+              fit: BoxFit.scaleDown,
+              child: Text(
+                label,
+                maxLines: 1,
+                textAlign: TextAlign.center,
+                style: AppTypography.tabLabel.copyWith(
+                  color: color,
+                  fontSize: 9,
+                  height: 1.0,
                 ),
               ),
-            ],
+            ),
           ],
-        ),
+        ],
       ),
     );
 

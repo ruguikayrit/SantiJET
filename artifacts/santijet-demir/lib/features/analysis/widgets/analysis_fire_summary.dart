@@ -447,20 +447,12 @@ class _FireReductionStrategyPanel extends ConsumerWidget {
           ),
         ),
         const SizedBox(height: 6),
-        Center(
-          child: ConstrainedBox(
-            constraints: const BoxConstraints(maxWidth: 280),
-            child: SizedBox(
-              width: double.infinity,
-              child: _MatteGreenGradientButton(
-              onPressed: enabled ? onStart : null,
-              icon: Icons.auto_fix_high_outlined,
-              label: batch.isOptimized && batch.optimizationStrategy == selected
-                  ? 'Analizi Yeniden\nÇalıştır'
-                  : 'Fire Analizini Başlat',
-              ),
-            ),
-          ),
+        _MatteGreenGradientButton(
+          onPressed: enabled ? onStart : null,
+          icon: Icons.auto_fix_high_outlined,
+          label: batch.isOptimized && batch.optimizationStrategy == selected
+              ? 'Analizi Yeniden Çalıştır'
+              : 'Fire Analizini Başlat',
         ),
         if (canSave) ...[
           const SizedBox(height: 8),
@@ -866,9 +858,9 @@ class _MatteGreenGradientButton extends StatelessWidget {
     begin: Alignment.topLeft,
     end: Alignment.bottomRight,
     colors: [
-      Color(0xFF0A5C45),
-      Color(0xFF0F7358),
-      Color(0xFF116B52),
+      Color(0xFF0B6B50),
+      Color(0xFF0F8566),
+      Color(0xFF0A7258),
     ],
   );
 
@@ -888,54 +880,66 @@ class _MatteGreenGradientButton extends StatelessWidget {
 
     return Material(
       color: Colors.transparent,
-      borderRadius: AppRadii.sm,
+      borderRadius: AppRadii.md,
+      elevation: enabled ? 2 : 0,
+      shadowColor: enabled
+          ? AppColors.success.withValues(alpha: 0.35)
+          : Colors.transparent,
       child: InkWell(
         onTap: onPressed,
-        borderRadius: AppRadii.sm,
-        splashColor: Colors.white.withValues(alpha: 0.08),
-        highlightColor: Colors.white.withValues(alpha: 0.04),
-        child: ConstrainedBox(
-          constraints: const BoxConstraints(minHeight: 46),
-          child: Ink(
-            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
-            decoration: BoxDecoration(
-              borderRadius: AppRadii.sm,
-              gradient: enabled ? _enabledGradient : _disabledGradient,
-              border: Border.all(
-                color: enabled
-                    ? const Color(0xFF0F6B52).withValues(alpha: 0.55)
-                    : AppColors.border,
-              ),
+        borderRadius: AppRadii.md,
+        splashColor: Colors.white.withValues(alpha: 0.1),
+        highlightColor: Colors.white.withValues(alpha: 0.05),
+        child: Ink(
+          width: double.infinity,
+          height: 52,
+          decoration: BoxDecoration(
+            borderRadius: AppRadii.md,
+            gradient: enabled ? _enabledGradient : _disabledGradient,
+            border: Border.all(
+              color: enabled
+                  ? const Color(0xFF14A07A).withValues(alpha: 0.55)
+                  : AppColors.border,
+              width: enabled ? 1.25 : 1,
             ),
-            child: Row(
+            boxShadow: enabled
+                ? [
+                    BoxShadow(
+                      color: AppColors.success.withValues(alpha: 0.22),
+                      blurRadius: 16,
+                      offset: const Offset(0, 4),
+                    ),
+                  ]
+                : null,
+          ),
+          child: Row(
             mainAxisAlignment: MainAxisAlignment.center,
-            mainAxisSize: MainAxisSize.min,
             children: [
               Icon(
                 icon,
-                size: 20,
+                size: 22,
                 color: enabled
-                    ? const Color(0xFFD1FAE5)
+                    ? const Color(0xFFE8FFF5)
                     : AppColors.textDisabled,
               ),
-              const SizedBox(width: 8),
+              const SizedBox(width: 10),
               Flexible(
                 child: Text(
                   label,
                   textAlign: TextAlign.center,
-                  maxLines: 2,
-                  style: AppTypography.labelMedium.copyWith(
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: AppTypography.titleMedium.copyWith(
                     color: enabled
-                        ? const Color(0xFFE8F5F0)
+                        ? Colors.white
                         : AppColors.textDisabled,
-                    fontWeight: FontWeight.w600,
-                    letterSpacing: 0.2,
-                    height: 1.15,
+                    fontWeight: FontWeight.w700,
+                    letterSpacing: 0.15,
+                    height: 1.1,
                   ),
                 ),
               ),
             ],
-            ),
           ),
         ),
       ),

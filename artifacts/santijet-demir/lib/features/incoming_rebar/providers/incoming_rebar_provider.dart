@@ -268,7 +268,12 @@ class DeliveriesNotifier extends StateNotifier<List<DeliveryItem>> {
     state = [delivery, ...state];
     await _persist();
 
-    await _ref.read(ordersProvider.notifier).completeDelivery(order.id);
+    final deliveredForOrder = state
+        .where((item) => item.orderId == order.id)
+        .fold(0.0, (sum, item) => sum + item.tonnage);
+    if (deliveredForOrder >= order.tonnage - 0.05) {
+      await _ref.read(ordersProvider.notifier).completeDelivery(order.id);
+    }
 
     if (order.imalatTonnages.isNotEmpty && totalOrdered > 0) {
       final ratio = totalDelivered / totalOrdered;

@@ -12,24 +12,24 @@ class AnalysisBatchListPanel extends ConsumerWidget {
   const AnalysisBatchListPanel({
     super.key,
     required this.batches,
-    required this.activeBatchId,
-    required this.onSelectBatch,
+    required this.analysisScopeIds,
+    required this.onScopeChanged,
     required this.onDeleteSelected,
     required this.onImportFromPreProduction,
   });
 
   final List<CuttingBendingBatch> batches;
-  final String? activeBatchId;
-  final ValueChanged<String> onSelectBatch;
+  final Set<String> analysisScopeIds;
+  final ValueChanged<Set<String>> onScopeChanged;
   final Future<void> Function(Set<String> batchIds) onDeleteSelected;
   final VoidCallback onImportFromPreProduction;
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final selectedIds = ref.watch(selectedAnalysisBatchIdsProvider);
     final dateFormat = DateFormat('dd.MM.yyyy HH:mm', 'tr_TR');
     final allSelected =
-        batches.isNotEmpty && selectedIds.length == batches.length;
+        batches.isNotEmpty && analysisScopeIds.length == batches.length;
+    final scopeCount = analysisScopeIds.length;
 
     return Container(
       decoration: BoxDecoration(
@@ -58,7 +58,7 @@ class AnalysisBatchListPanel extends ConsumerWidget {
             ),
           ),
           Padding(
-            padding: const EdgeInsets.fromLTRB(14, 0, 14, 10),
+            padding: const EdgeInsets.fromLTRB(14, 0, 14, 6),
             child: Row(
               children: [
                 Expanded(
@@ -74,6 +74,19 @@ class AnalysisBatchListPanel extends ConsumerWidget {
                   ),
                 ),
               ],
+            ),
+          ),
+          Padding(
+            padding: const EdgeInsets.fromLTRB(14, 0, 14, 10),
+            child: Text(
+              scopeCount == batches.length
+                  ? 'Tüm dosyalar analizde — minimum fire için en doğru seçim.'
+                  : scopeCount == 0
+                      ? 'Analize almak için en az bir dosya seçin.'
+                      : '$scopeCount dosya analizde — tüm dosyaları seçerek fireyi daha da düşürebilirsiniz.',
+              style: AppTypography.bodySmall.copyWith(
+                color: AppColors.textMuted,
+              ),
             ),
           ),
           Padding(
@@ -95,11 +108,12 @@ class AnalysisBatchListPanel extends ConsumerWidget {
                   backgroundColor: AppColors.canvas,
                   side: const BorderSide(color: AppColors.border),
                   onPressed: () {
-                    ref.read(selectedAnalysisBatchIdsProvider.notifier).state =
-                        allSelected ? {} : batches.map((batch) => batch.id).toSet();
+                    onScopeChanged(
+                      allSelected ? {} : batches.map((batch) => batch.id).toSet(),
+                    );
                   },
                 ),
-                if (selectedIds.isNotEmpty)
+                if (analysisScopeIds.isNotEmpty)
                   ActionChip(
                     avatar: const Icon(
                       Icons.delete_outline,
@@ -107,7 +121,7 @@ class AnalysisBatchListPanel extends ConsumerWidget {
                       color: AppColors.critical,
                     ),
                     label: Text(
-                      'Seçilenleri sil (${selectedIds.length})',
+                      'Seçilenleri sil (${analysisScopeIds.length})',
                       style: AppTypography.labelMedium.copyWith(
                         color: AppColors.critical,
                       ),
@@ -116,7 +130,7 @@ class AnalysisBatchListPanel extends ConsumerWidget {
                     side: BorderSide(
                       color: AppColors.critical.withValues(alpha: 0.35),
                     ),
-                    onPressed: () => onDeleteSelected(selectedIds),
+                    onPressed: () => onDeleteSelected(analysisScopeIds),
                   ),
               ],
             ),
@@ -124,13 +138,12 @@ class AnalysisBatchListPanel extends ConsumerWidget {
           const Divider(height: 1, color: AppColors.border),
           ...batches.map(
             (batch) {
-              final isActive = batch.id == activeBatchId;
-              final isSelected = selectedIds.contains(batch.id);
+              final inScope = analysisScopeIds.contains(batch.id);
               final totalPieces =
                   batch.pieceLines.fold(0, (sum, piece) => sum + piece.quantity);
 
               return Material(
-                color: isActive
+                color: inScope
                     ? AppColors.electricBlue.withValues(alpha: 0.06)
                     : Colors.transparent,
                 child: Padding(
@@ -138,24 +151,30 @@ class AnalysisBatchListPanel extends ConsumerWidget {
                   child: Row(
                     children: [
                       Checkbox(
-                        value: isSelected,
+                        value: inScope,
                         onChanged: (selected) {
-                          final next = Set<String>.from(selectedIds);
+                          final next = Set<String>.from(analysisScopeIds);
                           if (selected == true) {
                             next.add(batch.id);
                           } else {
                             next.remove(batch.id);
                           }
-                          ref
-                              .read(selectedAnalysisBatchIdsProvider.notifier)
-                              .state = next;
+                          onScopeChanged(next);
                         },
                         visualDensity: VisualDensity.compact,
                         materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
                       ),
                       Expanded(
                         child: InkWell(
-                          onTap: () => onSelectBatch(batch.id),
+                          onTap: () {
+                            final next = Set<String>.from(analysisScopeIds);
+                            if (inScope) {
+                              next.remove(batch.id);
+                            } else {
+                              next.add(batch.id);
+                            }
+                            onScopeChanged(next);
+                          },
                           borderRadius: AppRadii.sm,
                           child: Padding(
                             padding: const EdgeInsets.symmetric(vertical: 4),
@@ -169,7 +188,7 @@ class AnalysisBatchListPanel extends ConsumerWidget {
                                     color: AppColors.partial.withValues(alpha: 0.12),
                                     borderRadius: BorderRadius.circular(8),
                                     border: Border.all(
-                                      color: isActive
+                                      color: inScope
                                           ? AppColors.electricBlue
                                               .withValues(alpha: 0.45)
                                           : AppColors.border,
@@ -178,7 +197,7 @@ class AnalysisBatchListPanel extends ConsumerWidget {
                                   child: Icon(
                                     Icons.description_outlined,
                                     size: 18,
-                                    color: isActive
+                                    color: inScope
                                         ? AppColors.electricBlueLight
                                         : AppColors.textMuted,
                                   ),
@@ -194,7 +213,7 @@ class AnalysisBatchListPanel extends ConsumerWidget {
                                             child: Text(
                                               batch.title,
                                               style: AppTypography.bodyMedium.copyWith(
-                                                fontWeight: isActive
+                                                fontWeight: inScope
                                                     ? FontWeight.w600
                                                     : FontWeight.w500,
                                               ),
@@ -202,7 +221,7 @@ class AnalysisBatchListPanel extends ConsumerWidget {
                                               overflow: TextOverflow.ellipsis,
                                             ),
                                           ),
-                                          if (isActive) ...[
+                                          if (inScope) ...[
                                             const SizedBox(width: 6),
                                             Container(
                                               padding: const EdgeInsets.symmetric(
@@ -215,7 +234,7 @@ class AnalysisBatchListPanel extends ConsumerWidget {
                                                 borderRadius: AppRadii.full,
                                               ),
                                               child: Text(
-                                                'Aktif',
+                                                allSelected ? 'Analizde' : 'Seçili',
                                                 style: AppTypography.labelSmall.copyWith(
                                                   color: AppColors.electricBlueLight,
                                                 ),

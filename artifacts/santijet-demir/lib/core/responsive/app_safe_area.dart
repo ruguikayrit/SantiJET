@@ -59,8 +59,18 @@ abstract final class AppSafeAreaInsets {
   ///
   /// iOS PWA'da safe-area değeri 0 geldiğinde burada minimum 34 px zorlamak
   /// nav bar'ı görsel olarak yukarı iter ve altında siyah boşluk bırakır.
-  static double bottomNavInsetOf(BuildContext context) =>
-      _readBottomInset(context, standaloneMinimum: false);
+  static double bottomNavInsetOf(BuildContext context) {
+    var bottom = _readBottomInset(context, standaloneMinimum: false);
+
+    if (_isIosWeb(context) && inset_reader.readIosStandalonePwa()) {
+      final injected = inset_reader.readWebSafeAreaBottomInset();
+      if (injected != null && injected > 0) {
+        bottom = math.max(bottom, injected);
+      }
+    }
+
+    return bottom;
+  }
 }
 
 class AppSafeArea extends StatelessWidget {

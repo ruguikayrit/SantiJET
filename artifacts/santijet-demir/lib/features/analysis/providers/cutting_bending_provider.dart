@@ -20,6 +20,7 @@ final cuttingBendingBatchesProvider =
     if (previous != null) {
       Future.microtask(() {
         ref.read(selectedAnalysisBatchIdsProvider.notifier).state = {};
+        ref.read(mergedAnalysisSessionProvider.notifier).state = null;
       });
       notifier.loadForProject(next);
     }
@@ -54,8 +55,41 @@ final analysisSectionExpandedProvider =
   return false;
 });
 
-/// Hesap ve Analiz — çoklu silme için seçili DWG analiz listeleri.
+/// Hesap ve Analiz — analize alınacak DWG dosyaları (varsayılan: tümü).
 final selectedAnalysisBatchIdsProvider = StateProvider<Set<String>>((ref) => {});
+
+class MergedAnalysisSession {
+  const MergedAnalysisSession({
+    required this.scopeKey,
+    required this.batch,
+  });
+
+  final String scopeKey;
+  final CuttingBendingBatch batch;
+}
+
+/// Birleşik analiz oturumu — seçim değişince sıfırlanır, diske yazılmaz.
+final mergedAnalysisSessionProvider =
+    StateProvider<MergedAnalysisSession?>((ref) => null);
+
+/// Seçili dosyaların birleştirilmiş analiz görünümü.
+final mergedAnalysisBatchProvider = Provider<CuttingBendingBatch?>((ref) {
+  final state = ref.watch(cuttingBendingBatchesProvider);
+  final scope = ref.watch(selectedAnalysisBatchIdsProvider);
+  if (scope.isEmpty) return null;
+
+  final selected =
+      state.batches.where((batch) => scope.contains(batch.id)).toList();
+  if (selected.isEmpty) return null;
+
+  final scopeKey = analysis_calc.analysisScopeKey(scope);
+  final session = ref.watch(mergedAnalysisSessionProvider);
+  if (session != null && session.scopeKey == scopeKey) {
+    return session.batch;
+  }
+
+  return analysis_calc.mergeCuttingBendingBatchesForAnalysis(selected);
+});
 
 class OptimumFireAnalysisProgress {
   const OptimumFireAnalysisProgress({
@@ -143,6 +177,64 @@ class CuttingBendingNotifier extends StateNotifier<CuttingBendingState> {
       batches: batches,
       activeBatchId: _repo.readActiveBatchId(projectId) ?? batches.firstOrNull?.id,
     );
+    _syncAnalysisScope();
+  }
+
+  void setAnalysisScope(Set<String> scope) {
+    final previousKey =
+        analysis_calc.analysisScopeKey(_ref.read(selectedAnalysisBatchIdsProvider));
+    _ref.read(selectedAnalysisBatchIdsProvider.notifier).state = scope;
+    final nextKey = analysis_calc.analysisScopeKey(scope);
+    if (nextKey != previousKey) {
+      _ref.read(mergedAnalysisSessionProvider.notifier).state = null;
+      _ref.read(optimumFireAnalysisProgressProvider.notifier).state =
+          OptimumFireAnalysisProgress.idle;
+      _ref.read(optimumFireAnalysisErrorProvider.notifier).state = null;
+    }
+  }
+
+  void _syncAnalysisScope() {
+    Future.microtask(() {
+      final batches = state.batches;
+      final scopeNotifier = _ref.read(selectedAnalysisBatchIdsProvider.notifier);
+      final current = _ref.read(selectedAnalysisBatchIdsProvider);
+      final allIds = batches.map((batch) => batch.id).toSet();
+
+      if (batches.isEmpty) {
+        scopeNotifier.state = {};
+        _ref.read(mergedAnalysisSessionProvider.notifier).state = null;
+        return;
+      }
+
+      if (current.isEmpty) {
+        scopeNotifier.state = allIds;
+        return;
+      }
+
+      final pruned = current.intersection(allIds);
+      final added = allIds.difference(current);
+      final next = {...pruned, ...added};
+      if (next != current) {
+        setAnalysisScope(next);
+      }
+    });
+  }
+
+  CuttingBendingBatch? _mergedBatchForScope() {
+    final scope = _ref.read(selectedAnalysisBatchIdsProvider);
+    if (scope.isEmpty) return null;
+
+    final selected =
+        state.batches.where((batch) => scope.contains(batch.id)).toList();
+    if (selected.isEmpty) return null;
+
+    final scopeKey = analysis_calc.analysisScopeKey(scope);
+    final session = _ref.read(mergedAnalysisSessionProvider);
+    if (session != null && session.scopeKey == scopeKey) {
+      return session.batch;
+    }
+
+    return analysis_calc.mergeCuttingBendingBatchesForAnalysis(selected);
   }
 
   Future<CuttingBendingBatch?> addBatch(CuttingBendingBatch batch) async {
@@ -158,6 +250,7 @@ class CuttingBendingNotifier extends StateNotifier<CuttingBendingState> {
       batches: [saved, ...state.batches.where((b) => b.id != saved.id)],
       activeBatchId: saved.id,
     );
+    _syncAnalysisScope();
     return saved;
   }
 
@@ -231,14 +324,17 @@ class CuttingBendingNotifier extends StateNotifier<CuttingBendingState> {
 
   Future<void> runOptimumFireAnalysis() async {
     final projectId = _loadedProjectId;
-    final active = state.activeBatch;
-    if (projectId == null || active == null || active.pieceLines.isEmpty) {
+    final merged = _mergedBatchForScope();
+    if (projectId == null || merged == null || merged.pieceLines.isEmpty) {
       return;
     }
 
     final progressNotifier =
         _ref.read(optimumFireAnalysisProgressProvider.notifier);
-    final batchId = active.id;
+    final batchId = merged.id;
+    final scopeKey = analysis_calc.analysisScopeKey(
+      _ref.read(selectedAnalysisBatchIdsProvider),
+    );
 
     progressNotifier.state = OptimumFireAnalysisProgress(
       batchId: batchId,
@@ -250,7 +346,7 @@ class CuttingBendingNotifier extends StateNotifier<CuttingBendingState> {
 
     try {
       final updated = await analysis_calc.runOptimumFireAnalysis(
-        active,
+        merged,
         strategy: _ref.read(selectedFireReductionStrategyProvider),
         onProgress: (percent, stepLabel) async {
           progressNotifier.state = OptimumFireAnalysisProgress(
@@ -271,17 +367,11 @@ class CuttingBendingNotifier extends StateNotifier<CuttingBendingState> {
         kIsWeb ? const Duration(milliseconds: 32) : Duration.zero,
       );
 
-      await _repo.updateBatch(projectId: projectId, batch: updated);
+      _ref.read(mergedAnalysisSessionProvider.notifier).state =
+          MergedAnalysisSession(scopeKey: scopeKey, batch: updated);
 
       await Future<void>.delayed(
         kIsWeb ? const Duration(milliseconds: 32) : Duration.zero,
-      );
-
-      state = CuttingBendingState(
-        batches: state.batches
-            .map((batch) => batch.id == updated.id ? updated : batch)
-            .toList(),
-        activeBatchId: state.activeBatchId,
       );
 
       progressNotifier.state = OptimumFireAnalysisProgress(
@@ -292,7 +382,8 @@ class CuttingBendingNotifier extends StateNotifier<CuttingBendingState> {
       );
 
       _ref.read(selectedFireReductionStrategyProvider.notifier).state =
-          updated.optimizationStrategy ?? _ref.read(selectedFireReductionStrategyProvider);
+          updated.optimizationStrategy ??
+              _ref.read(selectedFireReductionStrategyProvider);
 
       await Future<void>.delayed(const Duration(seconds: 4));
       final current = _ref.read(optimumFireAnalysisProgressProvider);
@@ -310,36 +401,50 @@ class CuttingBendingNotifier extends StateNotifier<CuttingBendingState> {
   }
 
   Future<void> saveAnalysisResult() async {
-    final active = state.activeBatch;
-    if (active == null || !active.isOptimized || active.optimizationStrategy == null) {
+    final scopeKey = analysis_calc.analysisScopeKey(
+      _ref.read(selectedAnalysisBatchIdsProvider),
+    );
+    final session = _ref.read(mergedAnalysisSessionProvider);
+    if (session == null ||
+        session.scopeKey != scopeKey ||
+        !session.batch.isOptimized ||
+        session.batch.optimizationStrategy == null) {
       return;
     }
 
-    await _updateBatch(analysis_calc.saveOptimizationSnapshot);
+    final saved = analysis_calc.saveOptimizationSnapshot(session.batch);
+    _ref.read(mergedAnalysisSessionProvider.notifier).state =
+        MergedAnalysisSession(scopeKey: scopeKey, batch: saved);
   }
 
   Future<void> selectAnalysisStrategy(FireReductionStrategy strategy) async {
     _ref.read(selectedFireReductionStrategyProvider.notifier).state = strategy;
 
-    final active = state.activeBatch;
-    if (active == null) return;
+    final merged = _mergedBatchForScope();
+    if (merged == null) return;
 
-    if (active.optimizationStrategy == strategy && active.isOptimized) {
+    if (merged.optimizationStrategy == strategy && merged.isOptimized) {
       return;
     }
 
-    if (active.hasSavedOptimization(strategy)) {
-      await _updateBatch(
-        (batch) => analysis_calc.applyOptimizationSnapshot(
-          batch,
-          batch.savedOptimizations[strategy]!,
-        ),
+    final scopeKey = analysis_calc.analysisScopeKey(
+      _ref.read(selectedAnalysisBatchIdsProvider),
+    );
+
+    if (merged.hasSavedOptimization(strategy)) {
+      final applied = analysis_calc.applyOptimizationSnapshot(
+        merged,
+        merged.savedOptimizations[strategy]!,
       );
+      _ref.read(mergedAnalysisSessionProvider.notifier).state =
+          MergedAnalysisSession(scopeKey: scopeKey, batch: applied);
       return;
     }
 
-    if (active.isOptimized || active.optimizationStrategy != null) {
-      await _updateBatch(analysis_calc.clearActiveOptimization);
+    if (merged.isOptimized || merged.optimizationStrategy != null) {
+      final cleared = analysis_calc.clearActiveOptimization(merged);
+      _ref.read(mergedAnalysisSessionProvider.notifier).state =
+          MergedAnalysisSession(scopeKey: scopeKey, batch: cleared);
     }
   }
 
@@ -364,10 +469,12 @@ class CuttingBendingNotifier extends StateNotifier<CuttingBendingState> {
             : remaining.firstOrNull?.id);
 
     _ref.read(selectedAnalysisBatchIdsProvider.notifier).state = {};
+    _ref.read(mergedAnalysisSessionProvider.notifier).state = null;
     state = CuttingBendingState(
       batches: remaining,
       activeBatchId: nextActiveId,
     );
+    _syncAnalysisScope();
   }
 
   Future<void> removeLabelDetail(RebarMetrajTextDetail detail) async {
