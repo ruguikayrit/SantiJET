@@ -32,7 +32,7 @@
   <link rel="icon" type="image/png" href="favicon.png"/>
 
   <title>ŞantiJET DEMİR</title>
-  <link rel="manifest" href="manifest.json?v=29">
+  <link rel="manifest" href="manifest.json?v=68">
 
   <!-- Supabase → passkeys_web eklentisi için zorunlu (yoksa uygulama başlamaz) -->
   <script src="passkeys_bundle.js"></script>
@@ -80,20 +80,93 @@
     }
   </style>
   <script>
-    // ŞantiJET DEMİR — iOS PWA viewport düzeltmeleri
+    // ŞantiJET DEMİR — iOS PWA viewport + yükleme ekranı
     (function () {
-      var APP_VERSION = '67';
+      var APP_VERSION = '68';
       var isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent) ||
         (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
       var isStandalone = window.navigator.standalone === true ||
         (window.matchMedia && window.matchMedia('(display-mode: standalone)').matches);
 
-      var STORED_VERSION = localStorage.getItem('santijet_app_version');
+      function hideLoadingOverlay() {
+        var el = document.getElementById('santijet-loading');
+        if (el) el.remove();
+      }
+
+      function isFlutterMounted() {
+        try {
+          if (document.querySelector('flutter-view')) return true;
+          if (document.querySelector('flt-glass-pane')) return true;
+          if (document.querySelector('flt-scene-host')) return true;
+          var flutterView = document.querySelector('flutter-view');
+          if (flutterView && flutterView.shadowRoot) {
+            if (flutterView.shadowRoot.querySelector('canvas')) return true;
+            if (flutterView.shadowRoot.querySelector('flt-glass-pane')) return true;
+          }
+          return !!document.querySelector('canvas');
+        } catch (e) {
+          return false;
+        }
+      }
+
+      function watchFlutterMount() {
+        if (isFlutterMounted()) {
+          hideLoadingOverlay();
+          return;
+        }
+
+        var flutterObserver = new MutationObserver(function () {
+          if (isFlutterMounted()) {
+            hideLoadingOverlay();
+            flutterObserver.disconnect();
+          }
+        });
+        flutterObserver.observe(document.documentElement, {
+          childList: true,
+          subtree: true,
+        });
+
+        var attempts = 0;
+        var poll = window.setInterval(function () {
+          attempts += 1;
+          if (isFlutterMounted()) {
+            hideLoadingOverlay();
+            window.clearInterval(poll);
+            flutterObserver.disconnect();
+          } else if (attempts >= 120) {
+            window.clearInterval(poll);
+          }
+        }, 500);
+      }
+
+      window.addEventListener('flutter-first-frame', hideLoadingOverlay, { once: true });
+
+      if (document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded', watchFlutterMount);
+      } else {
+        watchFlutterMount();
+      }
+
+      setTimeout(function () {
+        var el = document.getElementById('santijet-loading');
+        if (el && el.parentNode) {
+          el.innerHTML =
+            'Yükleme uzun sürüyor…<br>' +
+            '<span style="font-size:12px;margin-top:8px;display:block;">' +
+            'Ana ekrandaki kısayolu silip Safari\'den tekrar Ana Ekrana Ekleyin veya sayfayı yenileyin.' +
+            '</span>' +
+            '<button type="button" onclick="location.reload()" ' +
+            'style="margin-top:16px;padding:10px 18px;border:none;border-radius:8px;' +
+            'background:#2563EB;color:#fff;font-size:14px;">Yenile</button>';
+        }
+      }, 20000);
+
+      var storedVersion = localStorage.getItem('santijet_app_version');
       var reloadKey = 'santijet_reloaded_v' + APP_VERSION;
-      if (STORED_VERSION !== APP_VERSION && STORED_VERSION !== null &&
-          !sessionStorage.getItem(reloadKey)) {
-        sessionStorage.setItem(reloadKey, '1');
+      if (storedVersion !== APP_VERSION && storedVersion !== null &&
+          !localStorage.getItem(reloadKey)) {
         localStorage.setItem('santijet_app_version', APP_VERSION);
+        localStorage.setItem(reloadKey, '1');
         var clearCaches = Promise.resolve();
         if ('caches' in window) {
           clearCaches = caches.keys().then(function (keys) {
@@ -103,15 +176,15 @@
         clearCaches.then(function () {
           if ('serviceWorker' in navigator) {
             return navigator.serviceWorker.getRegistrations().then(function (regs) {
-              regs.forEach(function (reg) { reg.unregister(); });
+              return Promise.all(regs.map(function (reg) { return reg.unregister(); }));
             });
           }
         }).finally(function () {
           location.reload();
         });
-        return;
+      } else {
+        localStorage.setItem('santijet_app_version', APP_VERSION);
       }
-      localStorage.setItem('santijet_app_version', APP_VERSION);
 
       function updateSafeAreaInsets() {
         if (!document.body) return;
@@ -179,73 +252,16 @@
         var touchObserver = new MutationObserver(function () {
           attachTouchGuard();
         });
-        touchObserver.observe(document.body, { childList: true, subtree: true });
+        if (document.body) {
+          touchObserver.observe(document.body, { childList: true, subtree: true });
+        } else {
+          document.addEventListener('DOMContentLoaded', function () {
+            touchObserver.observe(document.body, { childList: true, subtree: true });
+          });
+        }
         setTimeout(attachTouchGuard, 500);
         setTimeout(attachTouchGuard, 2000);
       }
-
-      function hideLoadingOverlay() {
-        var el = document.getElementById('santijet-loading');
-        if (el) el.remove();
-      }
-
-      function isFlutterMounted() {
-        return !!(
-          document.querySelector('flutter-view') ||
-          document.querySelector('flt-glass-pane') ||
-          document.querySelector('flt-scene-host') ||
-          document.querySelector('canvas')
-        );
-      }
-
-      function watchFlutterMount() {
-        if (isFlutterMounted()) {
-          hideLoadingOverlay();
-          return;
-        }
-
-        var flutterObserver = new MutationObserver(function () {
-          if (isFlutterMounted()) {
-            hideLoadingOverlay();
-            flutterObserver.disconnect();
-          }
-        });
-        flutterObserver.observe(document.documentElement, {
-          childList: true,
-          subtree: true,
-        });
-
-        var attempts = 0;
-        var poll = window.setInterval(function () {
-          attempts += 1;
-          if (isFlutterMounted()) {
-            hideLoadingOverlay();
-            window.clearInterval(poll);
-            flutterObserver.disconnect();
-          } else if (attempts >= 120) {
-            window.clearInterval(poll);
-          }
-        }, 500);
-      }
-      if (document.readyState === 'loading') {
-        document.addEventListener('DOMContentLoaded', watchFlutterMount);
-      } else {
-        watchFlutterMount();
-      }
-
-      setTimeout(function () {
-        var el = document.getElementById('santijet-loading');
-        if (el && el.parentNode) {
-          el.innerHTML =
-            'Yükleme uzun sürüyor…<br>' +
-            '<span style="font-size:12px;margin-top:8px;display:block;">' +
-            'Safari\'de site verisini silip uygulamayı yeniden ekleyin veya sayfayı yenileyin.' +
-            '</span>' +
-            '<button type="button" onclick="location.reload()" ' +
-            'style="margin-top:16px;padding:10px 18px;border:none;border-radius:8px;' +
-            'background:#2563EB;color:#fff;font-size:14px;">Yenile</button>';
-        }
-      }, 20000);
 
       window.__SANTIJET_APP_VERSION__ = APP_VERSION;
     })();
@@ -254,6 +270,14 @@
 <body>
   <div id="santijet-loading">ŞantiJET yükleniyor…</div>
   <script type="module" src="dwg/dwg_bridge.js"></script>
-  <script src="flutter_bootstrap.js?v=64" async></script>
+  <script>
+    (function () {
+      var version = window.__SANTIJET_APP_VERSION__ || Date.now();
+      var boot = document.createElement('script');
+      boot.src = 'flutter_bootstrap.js?v=' + version;
+      boot.async = true;
+      document.body.appendChild(boot);
+    })();
+  </script>
 </body>
 </html>
