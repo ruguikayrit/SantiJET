@@ -156,6 +156,12 @@ class _SurveyListScreenState extends ConsumerState<SurveyListScreen>
     final tabIndex = ref.watch(surveyTabIndexProvider);
     final canEdit = ref.watch(canEditActiveProjectProvider);
     final screenBg = AppColors.canvas;
+    final screenWidth = MediaQuery.sizeOf(context).width;
+    final compactTabs = screenWidth < 420;
+    final tabLabelStyle = AppTypography.labelMedium.copyWith(
+      fontSize: compactTabs ? 12 : 13,
+      height: 1.2,
+    );
 
     return Scaffold(
       backgroundColor: screenBg,
@@ -170,21 +176,36 @@ class _SurveyListScreenState extends ConsumerState<SurveyListScreen>
           ],
         ),
         actions: [
-          TextButton.icon(
-            onPressed: canEdit ? _showCreateImalatDialog : null,
-            icon: const Icon(Icons.add, size: 18),
-            label: const Text('Yeni İmalat'),
-          ),
+          if (compactTabs)
+            IconButton(
+              onPressed: canEdit ? _showCreateImalatDialog : null,
+              icon: const Icon(Icons.add),
+              tooltip: 'Yeni İmalat',
+            )
+          else
+            TextButton.icon(
+              onPressed: canEdit ? _showCreateImalatDialog : null,
+              icon: const Icon(Icons.add, size: 18),
+              label: const Text('Yeni İmalat'),
+            ),
         ],
         bottom: TabBar(
           controller: _tabController,
+          isScrollable: true,
+          tabAlignment: TabAlignment.start,
+          padding: const EdgeInsets.symmetric(horizontal: 4),
+          labelPadding: const EdgeInsets.symmetric(horizontal: 8),
+          indicatorPadding: const EdgeInsets.symmetric(horizontal: 2),
+          labelStyle: tabLabelStyle.copyWith(fontWeight: FontWeight.w600),
+          unselectedLabelStyle: tabLabelStyle,
           labelColor: AppColors.electricBlueLight,
           unselectedLabelColor: AppColors.textMuted,
           indicatorColor: AppColors.electricBlueLight,
-          tabs: const [
-            Tab(text: 'İmalat Listesi'),
-            Tab(text: 'Otomatik Metraj'),
-            Tab(text: 'Ön İmalat'),
+          dividerColor: AppColors.border,
+          tabs: [
+            Tab(text: compactTabs ? 'İmalat' : 'İmalat Listesi'),
+            const Tab(text: 'Otomatik Metraj'),
+            const Tab(text: 'Ön İmalat'),
           ],
         ),
       ),
