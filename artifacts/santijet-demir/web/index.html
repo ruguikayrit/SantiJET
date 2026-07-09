@@ -32,10 +32,10 @@
   <link rel="icon" type="image/png" href="favicon.png"/>
 
   <title>ŞantiJET DEMİR</title>
-  <link rel="manifest" href="manifest.json?v=76">
+  <link rel="manifest" href="manifest.json?v=78">
 
   <!-- Supabase → passkeys_web eklentisi için zorunlu (yoksa uygulama başlamaz) -->
-  <script src="passkeys_bundle.js"></script>
+  <script src="passkeys_bundle.js?v=78"></script>
 
   <style>
     html {
@@ -82,11 +82,69 @@
   <script>
     // ŞantiJET DEMİR — iOS PWA viewport + yükleme ekranı
     (function () {
-      var APP_VERSION = '77';
+      var APP_VERSION = '78';
       var isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent) ||
         (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
       var isStandalone = window.navigator.standalone === true ||
         (window.matchMedia && window.matchMedia('(display-mode: standalone)').matches);
+
+      function clearAppCaches() {
+        var tasks = [Promise.resolve()];
+        if ('caches' in window) {
+          tasks.push(
+            caches.keys().then(function (keys) {
+              return Promise.all(keys.map(function (key) { return caches.delete(key); }));
+            })
+          );
+        }
+        if ('serviceWorker' in navigator) {
+          tasks.push(
+            navigator.serviceWorker.getRegistrations().then(function (regs) {
+              return Promise.all(regs.map(function (reg) { return reg.unregister(); }));
+            })
+          );
+        }
+        return Promise.all(tasks);
+      }
+
+      window.santijetHardReload = function () {
+        clearAppCaches().finally(function () {
+          try {
+            var prefix = 'santijet_reloaded_v';
+            for (var i = localStorage.length - 1; i >= 0; i -= 1) {
+              var key = localStorage.key(i);
+              if (key && key.indexOf(prefix) === 0) localStorage.removeItem(key);
+            }
+            localStorage.setItem('santijet_app_version', APP_VERSION);
+          } catch (e) {}
+          location.reload();
+        });
+      };
+
+      window.__SANTIJET_START_FLUTTER__ = function () {
+        var version = window.__SANTIJET_APP_VERSION__ || APP_VERSION;
+        if (window._flutter && _flutter.buildConfig && _flutter.buildConfig.builds) {
+          _flutter.buildConfig.builds.forEach(function (build) {
+            if (!build.mainJsPath) return;
+            var base = build.mainJsPath.split('?')[0];
+            build.mainJsPath = base + '?v=' + version;
+          });
+        }
+        _flutter.loader.load({});
+      };
+
+      function showSlowLoadHelp() {
+        var el = document.getElementById('santijet-loading');
+        if (!el || !el.parentNode || isFlutterMounted()) return;
+        el.innerHTML =
+          'Yükleme uzun sürüyor…<br>' +
+          '<span style="font-size:12px;margin-top:8px;display:block;line-height:1.45;">' +
+          'Önbellek temizleyip yeniden deneyin. Sorun sürerse kısayolu silip Safari\'den tekrar Ana Ekrana Ekleyin.' +
+          '</span>' +
+          '<button type="button" onclick="window.santijetHardReload()" ' +
+          'style="margin-top:16px;padding:10px 18px;border:none;border-radius:8px;' +
+          'background:#2563EB;color:#fff;font-size:14px;">Önbelleği Temizle</button>';
+      }
 
       function hideLoadingOverlay() {
         var el = document.getElementById('santijet-loading');
@@ -147,39 +205,15 @@
         watchFlutterMount();
       }
 
-      setTimeout(function () {
-        var el = document.getElementById('santijet-loading');
-        if (el && el.parentNode) {
-          el.innerHTML =
-            'Yükleme uzun sürüyor…<br>' +
-            '<span style="font-size:12px;margin-top:8px;display:block;">' +
-            'Ana ekrandaki kısayolu silip Safari\'den tekrar Ana Ekrana Ekleyin veya sayfayı yenileyin.' +
-            '</span>' +
-            '<button type="button" onclick="location.reload()" ' +
-            'style="margin-top:16px;padding:10px 18px;border:none;border-radius:8px;' +
-            'background:#2563EB;color:#fff;font-size:14px;">Yenile</button>';
-        }
-      }, 20000);
+      setTimeout(showSlowLoadHelp, 20000);
 
       var storedVersion = localStorage.getItem('santijet_app_version');
-      var reloadKey = 'santijet_reloaded_v' + APP_VERSION;
+      var sessionReloadKey = 'santijet_version_reload_' + APP_VERSION;
       if (storedVersion !== APP_VERSION && storedVersion !== null &&
-          !localStorage.getItem(reloadKey)) {
+          !sessionStorage.getItem(sessionReloadKey)) {
         localStorage.setItem('santijet_app_version', APP_VERSION);
-        localStorage.setItem(reloadKey, '1');
-        var clearCaches = Promise.resolve();
-        if ('caches' in window) {
-          clearCaches = caches.keys().then(function (keys) {
-            return Promise.all(keys.map(function (key) { return caches.delete(key); }));
-          });
-        }
-        clearCaches.then(function () {
-          if ('serviceWorker' in navigator) {
-            return navigator.serviceWorker.getRegistrations().then(function (regs) {
-              return Promise.all(regs.map(function (reg) { return reg.unregister(); }));
-            });
-          }
-        }).finally(function () {
+        sessionStorage.setItem(sessionReloadKey, '1');
+        clearAppCaches().finally(function () {
           location.reload();
         });
       } else {
@@ -269,7 +303,7 @@
 </head>
 <body>
   <div id="santijet-loading">ŞantiJET yükleniyor…</div>
-  <script type="module" src="dwg/dwg_bridge.js"></script>
+  <script type="module" src="dwg/dwg_bridge.js?v=78"></script>
   <script>
     (function () {
       var version = window.__SANTIJET_APP_VERSION__ || Date.now();

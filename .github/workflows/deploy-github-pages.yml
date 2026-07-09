@@ -73,7 +73,8 @@ jobs:
             DART_DEFINES="--dart-define=SUPABASE_URL=${CLEAN_URL} --dart-define=SUPABASE_ANON_KEY=${SUPABASE_ANON_KEY}"
           fi
           flutter build web --release --base-href "/${{ github.event.repository.name }}/" --pwa-strategy=none $DART_DEFINES
-          perl -i -0pe 's/_flutter\.loader\.load\(\{\s*serviceWorkerSettings:\s*\{[^}]+\}\s*\}\);/_flutter.loader.load({});/s' build/web/flutter_bootstrap.js
+          perl -i -0pe 's/_flutter\.loader\.load\(\{\s*serviceWorkerSettings:\s*\{[^}]+\}\s*\}\);/window.__SANTIJET_START_FLUTTER__&&window.__SANTIJET_START_FLUTTER__();/s' build/web/flutter_bootstrap.js
+          perl -i -pe 's/_flutter\.loader\.load\(\{\}\);/window.__SANTIJET_START_FLUTTER__&&window.__SANTIJET_START_FLUTTER__();/g' build/web/flutter_bootstrap.js
           mkdir -p ../../site
           cp -r build/web/. ../../site/
 
@@ -90,7 +91,8 @@ jobs:
         run: |
           flutter pub get
           flutter build web --release --base-href "/${{ github.event.repository.name }}/bfa/" --pwa-strategy=none
-          perl -i -0pe 's/_flutter\.loader\.load\(\{\s*serviceWorkerSettings:\s*\{[^}]+\}\s*\}\);/_flutter.loader.load({});/s' build/web/flutter_bootstrap.js
+          perl -i -0pe 's/_flutter\.loader\.load\(\{\s*serviceWorkerSettings:\s*\{[^}]+\}\s*\}\);/window.__SANTIJET_START_FLUTTER__&&window.__SANTIJET_START_FLUTTER__();/s' build/web/flutter_bootstrap.js
+          perl -i -pe 's/_flutter\.loader\.load\(\{\}\);/window.__SANTIJET_START_FLUTTER__&&window.__SANTIJET_START_FLUTTER__();/g' build/web/flutter_bootstrap.js
           mkdir -p ../../site/bfa
           cp -r build/web/. ../../site/bfa/
 
