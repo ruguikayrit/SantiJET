@@ -297,6 +297,7 @@ class AuthNotifier extends StateNotifier<AuthState> {
   Future<bool> updateProfile({
     required String displayName,
     required String profession,
+    required String role,
   }) async {
     final trimmedName = displayName.trim();
     if (trimmedName.isEmpty) {
@@ -308,6 +309,7 @@ class AuthNotifier extends StateNotifier<AuthState> {
       await _ref.read(appSettingsProvider.notifier).updateProfile(
             profileName: trimmedName,
             profileProfession: profession.trim(),
+            profileRole: role.trim(),
           );
 
       final user = state.user;

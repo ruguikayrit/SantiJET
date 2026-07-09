@@ -50,9 +50,9 @@ class AnalysisBatchListPanel extends ConsumerWidget {
               style: OutlinedButton.styleFrom(
                 minimumSize: const Size.fromHeight(44),
                 padding: const EdgeInsets.symmetric(horizontal: 16),
-                foregroundColor: AppColors.electricBlueLight,
+                foregroundColor: AppColors.success,
                 side: BorderSide(
-                  color: AppColors.electricBlue.withValues(alpha: 0.45),
+                  color: AppColors.success.withValues(alpha: 0.55),
                 ),
               ),
             ),

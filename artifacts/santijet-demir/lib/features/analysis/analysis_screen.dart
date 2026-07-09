@@ -85,6 +85,10 @@ class AnalysisScreen extends ConsumerWidget {
                       FilledButton.icon(
                         onPressed: () =>
                             showPreProductionAnalysisImportSheet(context, ref),
+                        style: FilledButton.styleFrom(
+                          backgroundColor: AppColors.success,
+                          foregroundColor: Colors.white,
+                        ),
                         icon: const Icon(Icons.inventory_2_outlined),
                         label: const Text('Ön İmalattan Veri Al'),
                       ),

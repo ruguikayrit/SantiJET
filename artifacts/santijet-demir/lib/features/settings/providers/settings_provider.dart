@@ -103,10 +103,12 @@ class AppSettingsNotifier extends StateNotifier<AppSettings> {
   Future<void> updateProfile({
     required String profileName,
     required String profileProfession,
+    required String profileRole,
   }) async {
     state = state.copyWith(
       profileName: profileName.trim(),
       profileProfession: profileProfession.trim(),
+      profileRole: profileRole.trim(),
     );
     await _persist();
   }

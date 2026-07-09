@@ -159,11 +159,11 @@ class _ProgressTableHeader extends StatelessWidget {
       ),
       child: Row(
         children: [
-          Expanded(flex: 3, child: _headerCell('İMALAT')),
-          Expanded(flex: 2, child: _headerCell('ÇAP')),
-          Expanded(flex: 2, child: _headerCell('KEŞİF')),
-          Expanded(flex: 2, child: _headerCell('İLERLEME')),
-          Expanded(flex: 2, child: _headerCell('BEKLENEN')),
+          Expanded(child: _headerCell('İMALAT')),
+          Expanded(child: _headerCell('ÇAP')),
+          Expanded(child: _headerCell('KEŞİF')),
+          Expanded(child: _headerCell('İLERLEME')),
+          Expanded(child: _headerCell('BEKLENEN')),
         ],
       ),
     );
@@ -305,15 +305,15 @@ class _ProgressTableRowState extends State<_ProgressTableRow> {
             crossAxisAlignment: CrossAxisAlignment.center,
             children: [
               Expanded(
-                flex: 3,
                 child: Text(
                   row.imalatName,
                   style: AppTypography.titleMedium,
                   textAlign: TextAlign.center,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
                 ),
               ),
               Expanded(
-                flex: 2,
                 child: Text(
                   capLabel,
                   style: AppTypography.bodyMedium,
@@ -321,7 +321,6 @@ class _ProgressTableRowState extends State<_ProgressTableRow> {
                 ),
               ),
               Expanded(
-                flex: 2,
                 child: Text(
                   '${AppFormat.tonnage(row.plannedTonnage)}t',
                   style: AppTypography.bodyMedium,
@@ -329,11 +328,9 @@ class _ProgressTableRowState extends State<_ProgressTableRow> {
                 ),
               ),
               Expanded(
-                flex: 2,
                 child: Center(child: _buildProgressCell(percent)),
               ),
               Expanded(
-                flex: 2,
                 child: Text(
                   '${AppFormat.tonnage(_displayExpected)}t',
                   style: AppTypography.bodyMedium.copyWith(

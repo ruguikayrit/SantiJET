@@ -22,6 +22,7 @@ class AppSettings {
     this.notifyCritical = true,
     this.profileName = '',
     this.profileProfession = '',
+    this.profileRole = '',
   });
 
   final String themeMode;
@@ -46,6 +47,7 @@ class AppSettings {
   final bool notifyCritical;
   final String profileName;
   final String profileProfession;
+  final String profileRole;
 
   AppSettings copyWith({
     String? themeMode,
@@ -70,6 +72,7 @@ class AppSettings {
     bool? notifyCritical,
     String? profileName,
     String? profileProfession,
+    String? profileRole,
   }) {
     return AppSettings(
       themeMode: themeMode ?? this.themeMode,
@@ -94,6 +97,7 @@ class AppSettings {
       notifyCritical: notifyCritical ?? this.notifyCritical,
       profileName: profileName ?? this.profileName,
       profileProfession: profileProfession ?? this.profileProfession,
+      profileRole: profileRole ?? this.profileRole,
     );
   }
 
@@ -120,6 +124,7 @@ class AppSettings {
         'notifyCritical': notifyCritical,
         'profileName': profileName,
         'profileProfession': profileProfession,
+        'profileRole': profileRole,
       };
 
   factory AppSettings.fromJson(Map<dynamic, dynamic> json) {
@@ -150,6 +155,7 @@ class AppSettings {
       notifyCritical: json['notifyCritical'] as bool? ?? true,
       profileName: json['profileName'] as String? ?? '',
       profileProfession: json['profileProfession'] as String? ?? '',
+      profileRole: json['profileRole'] as String? ?? '',
     );
   }
 }

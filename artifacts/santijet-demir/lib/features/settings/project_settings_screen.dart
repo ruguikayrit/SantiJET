@@ -2,8 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:santijet_demir/core/routing/app_routes.dart';
-import 'package:santijet_demir/core/theme/app_colors.dart';
-import 'package:santijet_demir/core/theme/app_radii.dart';
 import 'package:santijet_demir/core/theme/app_spacing.dart';
 import 'package:santijet_demir/core/theme/app_typography.dart';
 import 'package:santijet_demir/domain/entities/project.dart';
@@ -20,12 +18,10 @@ class ProjectSettingsScreen extends ConsumerStatefulWidget {
 class _ProjectSettingsScreenState extends ConsumerState<ProjectSettingsScreen> {
   TextEditingController? _nameCtrl;
   TextEditingController? _locationCtrl;
-  double? _progress;
 
   void _ensureControllers(Project project) {
     _nameCtrl ??= TextEditingController(text: project.name);
     _locationCtrl ??= TextEditingController(text: project.location);
-    _progress ??= project.progress;
   }
 
   @override
@@ -53,7 +49,6 @@ class _ProjectSettingsScreenState extends ConsumerState<ProjectSettingsScreen> {
     }
 
     _ensureControllers(project);
-    final progress = _progress!;
 
     return Scaffold(
       appBar: AppBar(title: const Text('Proje Bilgileri')),
@@ -81,33 +76,6 @@ class _ProjectSettingsScreenState extends ConsumerState<ProjectSettingsScreen> {
             decoration: const InputDecoration(labelText: 'Konum'),
           ),
           const SizedBox(height: 20),
-          Text('Proje İlerlemesi', style: AppTypography.titleMedium),
-          const SizedBox(height: 8),
-          Row(
-            children: [
-              Expanded(
-                child: Slider(
-                  value: progress,
-                  min: 0,
-                  max: 100,
-                  divisions: 20,
-                  label: '${progress.toStringAsFixed(0)}%',
-                  onChanged: canEdit ? (v) => setState(() => _progress = v) : null,
-                ),
-              ),
-              Text('${progress.toStringAsFixed(0)}%', style: AppTypography.titleMedium),
-            ],
-          ),
-          ClipRRect(
-            borderRadius: AppRadii.full,
-            child: LinearProgressIndicator(
-              value: progress / 100,
-              minHeight: 8,
-              backgroundColor: AppColors.border,
-              color: AppColors.success,
-            ),
-          ),
-          const SizedBox(height: 12),
           if (project.startDate != null)
             Text(
               'Başlangıç: ${project.startDate!.day}.${project.startDate!.month}.${project.startDate!.year}',
@@ -132,7 +100,6 @@ class _ProjectSettingsScreenState extends ConsumerState<ProjectSettingsScreen> {
                       project.copyWith(
                         name: _nameCtrl!.text,
                         location: _locationCtrl!.text,
-                        progress: _progress,
                       ),
                     );
                 if (context.mounted) {

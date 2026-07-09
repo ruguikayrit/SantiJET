@@ -193,7 +193,7 @@ class _SurveyListScreenState extends ConsumerState<SurveyListScreen>
           controller: _tabController,
           labelStyle: tabLabelStyle,
           labels: const ['İmalat', 'Otomatik Metraj', 'Ön İmalat'],
-          flexes: const [1, 2.5, 1],
+          flexes: const [1, 2, 1],
         ),
       ),
       body: ColoredBox(

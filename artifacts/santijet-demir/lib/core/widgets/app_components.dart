@@ -440,14 +440,25 @@ class FilterChips extends StatelessWidget {
     required this.labels,
     required this.selectedIndex,
     required this.onSelected,
+    this.gridColumns,
   });
 
   final List<String> labels;
   final int selectedIndex;
   final ValueChanged<int> onSelected;
+  final int? gridColumns;
 
   @override
   Widget build(BuildContext context) {
+    if (gridColumns != null && gridColumns! > 1) {
+      return _FilterChipGrid(
+        labels: labels,
+        selectedIndex: selectedIndex,
+        onSelected: onSelected,
+        columns: gridColumns!,
+      );
+    }
+
     final useWrap = ResponsiveLayout.isNarrowWidth(context);
 
     if (useWrap) {
@@ -484,21 +495,78 @@ class FilterChips extends StatelessWidget {
   }
 }
 
+class _FilterChipGrid extends StatelessWidget {
+  const _FilterChipGrid({
+    required this.labels,
+    required this.selectedIndex,
+    required this.onSelected,
+    required this.columns,
+  });
+
+  final List<String> labels;
+  final int selectedIndex;
+  final ValueChanged<int> onSelected;
+  final int columns;
+
+  @override
+  Widget build(BuildContext context) {
+    final rowCount = (labels.length / columns).ceil();
+
+    return Column(
+      children: [
+        for (var row = 0; row < rowCount; row++) ...[
+          if (row > 0) const SizedBox(height: 8),
+          Row(
+            children: [
+              for (var col = 0; col < columns; col++) ...[
+                if (col > 0) const SizedBox(width: 8),
+                Expanded(
+                  child: _gridCell(row * columns + col),
+                ),
+              ],
+            ],
+          ),
+        ],
+      ],
+    );
+  }
+
+  Widget _gridCell(int index) {
+    if (index >= labels.length) {
+      return const SizedBox.shrink();
+    }
+
+    return _FilterChipItem(
+      label: labels[index],
+      selected: index == selectedIndex,
+      onSelected: () => onSelected(index),
+      expand: true,
+    );
+  }
+}
+
 class _FilterChipItem extends StatelessWidget {
   const _FilterChipItem({
     required this.label,
     required this.selected,
     required this.onSelected,
+    this.expand = false,
   });
 
   final String label;
   final bool selected;
   final VoidCallback onSelected;
+  final bool expand;
 
   @override
   Widget build(BuildContext context) {
-    return FilterChip(
-      label: Text(label),
+    final chip = FilterChip(
+      label: Text(
+        label,
+        textAlign: TextAlign.center,
+        maxLines: 1,
+        overflow: TextOverflow.ellipsis,
+      ),
       selected: selected,
       onSelected: (_) => onSelected(),
       labelStyle: AppTypography.labelMedium.copyWith(
@@ -512,6 +580,13 @@ class _FilterChipItem extends StatelessWidget {
       ),
       showCheckmark: false,
       padding: const EdgeInsets.symmetric(horizontal: 4),
+    );
+
+    if (!expand) return chip;
+
+    return SizedBox(
+      width: double.infinity,
+      child: chip,
     );
   }
 }

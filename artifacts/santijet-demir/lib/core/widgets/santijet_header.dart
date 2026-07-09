@@ -182,6 +182,7 @@ class GreetingSection extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final displayName = ref.watch(profileDisplayNameProvider);
     final profession = ref.watch(profileProfessionProvider);
+    final role = ref.watch(profileRoleProvider);
 
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: AppSpacing.md),
@@ -199,7 +200,10 @@ class GreetingSection extends ConsumerWidget {
                     displayName.toUpperCase(),
                     style: AppTypography.headlineLarge,
                   ),
-                  Text(profession, style: AppTypography.bodyMedium),
+                  if (profession.isNotEmpty)
+                    Text(profession, style: AppTypography.bodyMedium),
+                  if (role.isNotEmpty)
+                    Text(role, style: AppTypography.bodySmall),
                 ],
               ),
             ),

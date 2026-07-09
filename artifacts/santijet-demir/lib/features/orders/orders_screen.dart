@@ -70,6 +70,7 @@ class _OrdersScreenState extends ConsumerState<OrdersScreen> {
               child: FilterChips(
                 labels: orderFilterLabels,
                 selectedIndex: filterIndex,
+                gridColumns: 2,
                 onSelected: (i) =>
                     ref.read(orderFilterProvider.notifier).state = i,
               ),

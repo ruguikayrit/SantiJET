@@ -12,8 +12,12 @@ final profileDisplayNameProvider = Provider<String>((ref) {
 
 final profileProfessionProvider = Provider<String>((ref) {
   final settings = ref.watch(appSettingsProvider);
-  final profession = settings.profileProfession.trim();
-  return profession.isNotEmpty ? profession : '';
+  return settings.profileProfession.trim();
+});
+
+final profileRoleProvider = Provider<String>((ref) {
+  final settings = ref.watch(appSettingsProvider);
+  return settings.profileRole.trim();
 });
 
 final profileInitialProvider = Provider<String>((ref) {

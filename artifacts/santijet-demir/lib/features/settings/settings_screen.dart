@@ -24,6 +24,7 @@ class SettingsScreen extends ConsumerWidget {
     final project = ref.watch(activeProjectProvider);
     final displayName = ref.watch(profileDisplayNameProvider);
     final profession = ref.watch(profileProfessionProvider);
+    final role = ref.watch(profileRoleProvider);
     final initial = ref.watch(profileInitialProvider);
 
     return Scaffold(
@@ -35,6 +36,7 @@ class SettingsScreen extends ConsumerWidget {
           _ProfileHeader(
             displayName: displayName,
             profession: profession,
+            role: role,
             initial: initial,
             projectName: project?.name ?? 'Proje seçilmedi',
             onEdit: () => _showProfileEditor(
@@ -42,6 +44,7 @@ class SettingsScreen extends ConsumerWidget {
               ref,
               displayName: displayName,
               profession: profession,
+              role: role,
             ),
           ),
           const SizedBox(height: 16),
@@ -116,9 +119,11 @@ class SettingsScreen extends ConsumerWidget {
     WidgetRef ref, {
     required String displayName,
     required String profession,
+    required String role,
   }) {
     final nameCtrl = TextEditingController(text: displayName);
     final professionCtrl = TextEditingController(text: profession);
+    final roleCtrl = TextEditingController(text: role);
 
     showModalBottomSheet<void>(
       context: context,
@@ -146,8 +151,20 @@ class SettingsScreen extends ConsumerWidget {
               const SizedBox(height: 12),
               TextField(
                 controller: professionCtrl,
-                textCapitalization: TextCapitalization.words,
-                decoration: const InputDecoration(labelText: 'Meslek / Görev'),
+                textCapitalization: TextCapitalization.sentences,
+                decoration: const InputDecoration(
+                  labelText: 'Meslek',
+                  hintText: 'Örn: İnşaat mühendisi',
+                ),
+              ),
+              const SizedBox(height: 12),
+              TextField(
+                controller: roleCtrl,
+                textCapitalization: TextCapitalization.sentences,
+                decoration: const InputDecoration(
+                  labelText: 'Görev',
+                  hintText: 'Örn: Şantiye şefi, Saha mühendisi, Proje müdürü',
+                ),
               ),
               const SizedBox(height: 20),
               FilledButton(
@@ -155,6 +172,7 @@ class SettingsScreen extends ConsumerWidget {
                   final ok = await ref.read(authProvider.notifier).updateProfile(
                         displayName: nameCtrl.text,
                         profession: professionCtrl.text,
+                        role: roleCtrl.text,
                       );
                   if (!context.mounted) return;
                   if (ok) {
@@ -178,6 +196,7 @@ class SettingsScreen extends ConsumerWidget {
     ).whenComplete(() {
       nameCtrl.dispose();
       professionCtrl.dispose();
+      roleCtrl.dispose();
     });
   }
 
@@ -659,6 +678,7 @@ class _ProfileHeader extends StatelessWidget {
   const _ProfileHeader({
     required this.displayName,
     required this.profession,
+    required this.role,
     required this.initial,
     required this.projectName,
     required this.onEdit,
@@ -666,6 +686,7 @@ class _ProfileHeader extends StatelessWidget {
 
   final String displayName;
   final String profession;
+  final String role;
   final String initial;
   final String projectName;
   final VoidCallback onEdit;
@@ -697,7 +718,10 @@ class _ProfileHeader extends StatelessWidget {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(displayName.toUpperCase(), style: AppTypography.titleLarge),
-                    Text(profession, style: AppTypography.bodySmall),
+                    if (profession.isNotEmpty)
+                      Text(profession, style: AppTypography.bodySmall),
+                    if (role.isNotEmpty)
+                      Text(role, style: AppTypography.bodySmall),
                     Text(projectName, style: AppTypography.labelMedium),
                   ],
                 ),
@@ -845,16 +869,22 @@ class AboutScreen extends StatelessWidget {
         padding: const EdgeInsets.all(AppSpacing.md),
         child: Column(
           children: [
-            Image.asset('assets/images/s_logo.png', width: 80, height: 80),
+            Image.asset(
+              'assets/images/splash_bolt.png',
+              width: 80,
+              height: 80,
+              fit: BoxFit.contain,
+              filterQuality: FilterQuality.high,
+            ),
             const SizedBox(height: 16),
             Text('ŞantiJET DEMİR', style: AppTypography.headlineLarge),
-            Text('ÇELİK TAKİP SİSTEMİ', style: AppTypography.labelSmall),
             const SizedBox(height: 8),
             Text('Versiyon 1.0.0', style: AppTypography.bodyMedium),
             const SizedBox(height: 24),
             Text(
-              'Demir keşfi, sipariş, teslimat, saha sayımı ve analiz '
-              'için profesyonel çelik takip uygulaması.',
+              'Demir keşfi, sipariş, teslimat, stok takibi, fire analizi '
+              've optimum kesim analizi yapan profesyonel ve özgün '
+              'nervürlü demir takip uygulaması.',
               style: AppTypography.bodyMedium,
               textAlign: TextAlign.center,
             ),

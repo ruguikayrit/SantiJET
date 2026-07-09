@@ -88,23 +88,10 @@ class FieldCountScreen extends ConsumerWidget {
                       ],
                     ),
                     const SizedBox(height: 12),
-                    _SummaryKpiRow(
-                      aspectRatio: 9.2 / 1.2,
-                      centerContent: true,
-                      cards: [
-                        _SummaryKpiSpec(
-                          label: 'Fire',
-                          value: AppFormat.tonnage(summary.fire),
-                          accentColor: summary.fire > 0
-                              ? AppColors.critical
-                              : summary.fire < -8
-                                  ? AppColors.critical
-                                  : summary.fire < 0
-                                      ? AppColors.warning
-                                      : AppColors.success,
-                          onTap: () => context.push(AppRoutes.reconciliation),
-                        ),
-                      ],
+                    _FireSummaryCard(
+                      fire: summary.fire,
+                      plannedUsage: summary.plannedUsage,
+                      onTap: () => context.push(AppRoutes.reconciliation),
                     ),
                   ],
                 ),
@@ -175,20 +162,65 @@ class _SummaryKpiSpec {
   final VoidCallback? onTap;
 }
 
+class _FireSummaryCard extends StatelessWidget {
+  const _FireSummaryCard({
+    required this.fire,
+    required this.plannedUsage,
+    required this.onTap,
+  });
+
+  final double fire;
+  final double plannedUsage;
+  final VoidCallback onTap;
+
+  Color get _accentColor => fire > 0
+      ? AppColors.critical
+      : fire < -8
+          ? AppColors.critical
+          : fire < 0
+              ? AppColors.warning
+              : AppColors.success;
+
+  @override
+  Widget build(BuildContext context) {
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        const spacing = 12.0;
+        final topCardWidth = (constraints.maxWidth - 2 * spacing) / 3;
+        final cardHeight = topCardWidth / 1.15;
+        final firePercent =
+            plannedUsage > 0 ? (fire / plannedUsage) * 100 : null;
+
+        return SizedBox(
+          height: cardHeight,
+          child: KpiCard(
+            label: 'Fire',
+            value: AppFormat.tonnage(fire),
+            unit: 't',
+            accentColor: _accentColor,
+            percent: firePercent != null
+                ? '${firePercent.toStringAsFixed(1)}% planlanan kullanıma göre'
+                : null,
+            onTap: onTap,
+          ),
+        );
+      },
+    );
+  }
+}
+
 class _SummaryKpiRow extends StatelessWidget {
   const _SummaryKpiRow({
     required this.cards,
     this.aspectRatio = 1.15,
     this.dense = false,
     this.spacing = 12,
-    this.centerContent = false,
   });
 
   final List<_SummaryKpiSpec> cards;
   final double aspectRatio;
   final bool dense;
   final double spacing;
-  final bool centerContent;
 
   @override
   Widget build(BuildContext context) {
@@ -207,7 +239,6 @@ class _SummaryKpiRow extends StatelessWidget {
                 onTap: cards[i].onTap,
                 dense: dense,
                 compactHeight: aspectRatio >= 2,
-                centerContent: centerContent,
               ),
             ),
           ),

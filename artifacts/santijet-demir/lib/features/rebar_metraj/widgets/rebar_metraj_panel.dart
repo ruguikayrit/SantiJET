@@ -153,7 +153,7 @@ class _RebarMetrajPanelState extends ConsumerState<RebarMetrajPanel>
 
     final picked = await FilePicker.platform.pickFiles(
       type: FileType.custom,
-      allowedExtensions: const ['dxf', 'dwg'],
+      allowedExtensions: const ['dwg'],
       withData: true,
     );
 
@@ -170,22 +170,28 @@ class _RebarMetrajPanelState extends ConsumerState<RebarMetrajPanel>
       return;
     }
 
+    if (extension != 'dwg') {
+      ref.read(rebarMetrajErrorProvider.notifier).state =
+          'Yalnızca DWG dosyaları desteklenir.';
+      return;
+    }
+
     ref.read(rebarMetrajLoadingProvider.notifier).state = true;
     try {
+      if (!DxfRebarParser.isDwgBytes(bytes)) {
+        throw const FormatException('Geçerli bir DWG dosyası seçin.');
+      }
       final parser = ref.read(dxfRebarParserProvider);
-      final isDwg =
-          extension == 'dwg' || DxfRebarParser.isDwgBytes(bytes);
-      final result = isDwg
-          ? await parser.parseDwgBytes(fileName: fileName, bytes: bytes)
-          : parser.parseBytes(fileName: fileName, bytes: bytes);
+      final result =
+          await parser.parseDwgBytes(fileName: fileName, bytes: bytes);
       ref.read(rebarMetrajResultProvider.notifier).state = result;
     } on FormatException catch (e) {
       ref.read(rebarMetrajErrorProvider.notifier).state = e.message;
     } catch (e) {
       ref.read(rebarMetrajErrorProvider.notifier).state =
-          'CAD dosyası işlenemedi. DWG için sayfayı yenileyin; DXF için '
-          'ASCII formatında kaydedilmiş olduğundan emin olun. Etiketlerde adet, '
-          'çap (FI/Ø) ve l= boy birlikte olmalı (ör. üst.334Ø22/15 l=1200).';
+          'DWG dosyası işlenemedi. Sayfayı yenileyip tekrar deneyin. '
+          'Etiketlerde adet, çap (FI/Ø) ve l= boy birlikte olmalı '
+          '(ör. üst.334Ø22/15 l=1200).';
     } finally {
       ref.read(rebarMetrajLoadingProvider.notifier).state = false;
     }
@@ -222,7 +228,7 @@ class _InfoBanner extends StatelessWidget {
           ),
           const SizedBox(height: 8),
           Text(
-            '1. AutoCAD/BricsCAD projesini DWG veya ASCII DXF olarak yükleyin\n'
+            '1. AutoCAD/BricsCAD projesini DWG olarak yükleyin\n'
             '2. üst.334Ø22/15 l=1200 → 334 ad × 12 m (aralık hesaba katılmaz)\n'
             '3. 15000Ø16 l=200 → 15000 ad × 2 m\n'
             '4. Tonaj = adet × boy × birim ağırlık (kg/m)\n'
@@ -232,7 +238,7 @@ class _InfoBanner extends StatelessWidget {
           ),
           const SizedBox(height: 8),
           Text(
-            'DWG web tarayıcıda doğrudan okunur. DXF için ASCII formatı önerilir.',
+            'DWG dosyaları web tarayıcıda doğrudan okunur.',
             style: AppTypography.labelMedium.copyWith(color: AppColors.success),
           ),
         ],
@@ -270,7 +276,7 @@ class _UploadCard extends StatelessWidget {
           Text('CAD Dosyası Yükle', style: AppTypography.headlineMedium),
           const SizedBox(height: 6),
           Text(
-            'DWG · DXF (ASCII)',
+            'DWG',
             style: AppTypography.bodySmall,
             textAlign: TextAlign.center,
           ),
