@@ -11,3 +11,13 @@ double? readWebSafeAreaBottomInset() {
   }
   return null;
 }
+
+bool readIosStandalonePwa() {
+  try {
+    final standalone = js_util.getProperty(web.window.navigator, 'standalone');
+    if (standalone == true) return true;
+    return web.window.matchMedia('(display-mode: standalone)').matches;
+  } catch (_) {
+    return false;
+  }
+}

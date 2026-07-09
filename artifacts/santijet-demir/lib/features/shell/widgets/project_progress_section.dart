@@ -122,7 +122,7 @@ class _OverallProgressCard extends StatelessWidget {
             children: [
               Text('Proje İlerleme Oranı', style: AppTypography.titleMedium),
               Text(
-                '%$percent',
+                '$percent%',
                 style: AppTypography.kpiValue.copyWith(
                   fontSize: 28,
                   color: AppColors.electricBlueLight,
@@ -159,13 +159,21 @@ class _ProgressTableHeader extends StatelessWidget {
       ),
       child: Row(
         children: [
-          Expanded(flex: 3, child: Text('İMALAT', style: _headerStyle)),
-          Expanded(flex: 2, child: Text('ÇAP', style: _headerStyle)),
-          Expanded(flex: 2, child: Text('KEŞİF', style: _headerStyle)),
-          Expanded(flex: 2, child: Text('İLERLEME', style: _headerStyle)),
-          Expanded(flex: 2, child: Text('BEKLENEN', style: _headerStyle)),
+          Expanded(flex: 3, child: _headerCell('İMALAT')),
+          Expanded(flex: 2, child: _headerCell('ÇAP')),
+          Expanded(flex: 2, child: _headerCell('KEŞİF')),
+          Expanded(flex: 2, child: _headerCell('İLERLEME')),
+          Expanded(flex: 2, child: _headerCell('BEKLENEN')),
         ],
       ),
+    );
+  }
+
+  Widget _headerCell(String label) {
+    return Text(
+      label,
+      style: _headerStyle,
+      textAlign: TextAlign.center,
     );
   }
 
@@ -291,71 +299,38 @@ class _ProgressTableRowState extends State<_ProgressTableRow> {
         border: Border(bottom: BorderSide(color: AppColors.border)),
       ),
       child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
+        crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
           Row(
+            crossAxisAlignment: CrossAxisAlignment.center,
             children: [
               Expanded(
                 flex: 3,
-                child: Text(row.imalatName, style: AppTypography.titleMedium),
+                child: Text(
+                  row.imalatName,
+                  style: AppTypography.titleMedium,
+                  textAlign: TextAlign.center,
+                ),
               ),
               Expanded(
                 flex: 2,
-                child: Text(capLabel, style: AppTypography.bodyMedium),
+                child: Text(
+                  capLabel,
+                  style: AppTypography.bodyMedium,
+                  textAlign: TextAlign.center,
+                ),
               ),
               Expanded(
                 flex: 2,
                 child: Text(
                   '${AppFormat.tonnage(row.plannedTonnage)}t',
                   style: AppTypography.bodyMedium,
+                  textAlign: TextAlign.center,
                 ),
               ),
               Expanded(
                 flex: 2,
-                child: widget.canEdit
-                    ? TextField(
-                        controller: _controller,
-                        keyboardType: TextInputType.number,
-                        inputFormatters: [
-                          FilteringTextInputFormatter.digitsOnly,
-                          LengthLimitingTextInputFormatter(3),
-                        ],
-                        style: AppTypography.bodyMedium.copyWith(
-                          fontWeight: FontWeight.w600,
-                          color: AppColors.electricBlueLight,
-                        ),
-                        decoration: InputDecoration(
-                          isDense: true,
-                          contentPadding: const EdgeInsets.symmetric(
-                            horizontal: 8,
-                            vertical: 6,
-                          ),
-                          hintText: '0',
-                          suffixText: '%',
-                          suffixStyle: AppTypography.bodySmall,
-                          border: OutlineInputBorder(
-                            borderRadius: AppRadii.sm,
-                            borderSide:
-                                const BorderSide(color: AppColors.border),
-                          ),
-                          enabledBorder: OutlineInputBorder(
-                            borderRadius: AppRadii.sm,
-                            borderSide:
-                                const BorderSide(color: AppColors.border),
-                          ),
-                        ),
-                        onTap: () => _isEditing = true,
-                        onSubmitted: (_) => _commitProgress(),
-                        onEditingComplete: _commitProgress,
-                        onChanged: _onTextChanged,
-                      )
-                    : Text(
-                        '%$percent',
-                        style: AppTypography.bodyMedium.copyWith(
-                          fontWeight: FontWeight.w600,
-                          color: AppColors.electricBlueLight,
-                        ),
-                      ),
+                child: Center(child: _buildProgressCell(percent)),
               ),
               Expanded(
                 flex: 2,
@@ -364,6 +339,7 @@ class _ProgressTableRowState extends State<_ProgressTableRow> {
                   style: AppTypography.bodyMedium.copyWith(
                     fontWeight: FontWeight.w600,
                   ),
+                  textAlign: TextAlign.center,
                 ),
               ),
             ],
@@ -376,6 +352,70 @@ class _ProgressTableRowState extends State<_ProgressTableRow> {
           ),
         ],
       ),
+    );
+  }
+
+  Widget _buildProgressCell(int percent) {
+    if (!widget.canEdit) {
+      return Text(
+        '$percent%',
+        style: AppTypography.bodyMedium.copyWith(
+          fontWeight: FontWeight.w600,
+          color: AppColors.electricBlueLight,
+        ),
+        textAlign: TextAlign.center,
+      );
+    }
+
+    return Row(
+      mainAxisSize: MainAxisSize.min,
+      mainAxisAlignment: MainAxisAlignment.center,
+      children: [
+        SizedBox(
+          width: 38,
+          height: 32,
+          child: TextField(
+            controller: _controller,
+            keyboardType: TextInputType.number,
+            textAlign: TextAlign.center,
+            inputFormatters: [
+              FilteringTextInputFormatter.digitsOnly,
+              LengthLimitingTextInputFormatter(3),
+            ],
+            style: AppTypography.bodyMedium.copyWith(
+              fontWeight: FontWeight.w600,
+              color: AppColors.electricBlueLight,
+            ),
+            decoration: InputDecoration(
+              isDense: true,
+              contentPadding: const EdgeInsets.symmetric(
+                horizontal: 4,
+                vertical: 6,
+              ),
+              hintText: '0',
+              border: OutlineInputBorder(
+                borderRadius: AppRadii.sm,
+                borderSide: const BorderSide(color: AppColors.border),
+              ),
+              enabledBorder: OutlineInputBorder(
+                borderRadius: AppRadii.sm,
+                borderSide: const BorderSide(color: AppColors.border),
+              ),
+            ),
+            onTap: () => _isEditing = true,
+            onSubmitted: (_) => _commitProgress(),
+            onEditingComplete: _commitProgress,
+            onChanged: _onTextChanged,
+          ),
+        ),
+        Text(
+          '%',
+          style: AppTypography.bodyMedium.copyWith(
+            fontWeight: FontWeight.w600,
+            color: AppColors.electricBlueLight,
+          ),
+        ),
+      ],
     );
   }
 }

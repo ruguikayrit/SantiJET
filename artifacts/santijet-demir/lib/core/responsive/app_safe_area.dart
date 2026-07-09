@@ -17,23 +17,35 @@ abstract final class AppSafeAreaInsets {
         defaultTargetPlatform == TargetPlatform.iOS;
   }
 
+  static double _readBottomInset(BuildContext context, {required bool standaloneMinimum}) {
+    final media = MediaQuery.of(context);
+    var bottom = math.max(media.viewPadding.bottom, media.padding.bottom);
+
+    if (!_isIosWeb(context)) return bottom;
+
+    if (standaloneMinimum && inset_reader.readIosStandalonePwa()) {
+      final injectedBottom = inset_reader.readWebSafeAreaBottomInset();
+      if (injectedBottom != null && injectedBottom > 0) {
+        bottom = math.max(bottom, injectedBottom);
+      }
+      if (bottom < 20) bottom = _iosWebMinBottom;
+    }
+
+    return bottom;
+  }
+
   static EdgeInsets effective(BuildContext context) {
     final media = MediaQuery.of(context);
     final view = media.viewPadding;
     final pad = media.padding;
 
     var top = math.max(view.top, pad.top);
-    var bottom = math.max(view.bottom, pad.bottom);
+    var bottom = _readBottomInset(context, standaloneMinimum: true);
     var left = math.max(view.left, pad.left);
     var right = math.max(view.right, pad.right);
 
     if (_isIosWeb(context)) {
-      final injectedBottom = inset_reader.readWebSafeAreaBottomInset();
-      if (injectedBottom != null) {
-        bottom = math.max(bottom, injectedBottom);
-      }
       if (top < 20) top = _iosWebMinTop;
-      if (bottom < 20) bottom = _iosWebMinBottom;
     }
 
     return EdgeInsets.fromLTRB(left, top, right, bottom);
@@ -42,6 +54,10 @@ abstract final class AppSafeAreaInsets {
   static double topOf(BuildContext context) => effective(context).top;
 
   static double bottomOf(BuildContext context) => effective(context).bottom;
+
+  /// Alt nav bar — yalnızca gerçek home indicator alanı; Safari sekmesinde zorlamalı boşluk yok.
+  static double bottomNavInsetOf(BuildContext context) =>
+      _readBottomInset(context, standaloneMinimum: true);
 }
 
 class AppSafeArea extends StatelessWidget {

@@ -280,23 +280,46 @@ class _UploadCard extends StatelessWidget {
               Expanded(
                 child: FilledButton.icon(
                   onPressed: loading ? null : onPickFile,
+                  style: FilledButton.styleFrom(
+                    minimumSize: const Size(0, 44),
+                    padding: const EdgeInsets.symmetric(horizontal: 10),
+                    shape: RoundedRectangleBorder(borderRadius: AppRadii.sm),
+                  ),
                   icon: loading
                       ? const SizedBox(
                           width: 18,
                           height: 18,
                           child: CircularProgressIndicator(strokeWidth: 2),
                         )
-                      : const Icon(Icons.folder_open),
+                      : const Icon(Icons.folder_open, size: 18),
                   label: Text(loading ? 'İşleniyor...' : 'Dosya Seç'),
                 ),
               ),
               if (canClear) ...[
                 const SizedBox(width: 8),
                 Expanded(
-                  child: OutlinedButton.icon(
+                  child: FilledButton.icon(
                     onPressed: loading ? null : onClear,
-                    icon: const Icon(Icons.clear_all),
-                    label: const Text('Metrajı Temizle'),
+                    style: FilledButton.styleFrom(
+                      backgroundColor: AppColors.diameter28,
+                      foregroundColor: Colors.white,
+                      disabledBackgroundColor:
+                          AppColors.diameter28.withValues(alpha: 0.38),
+                      disabledForegroundColor:
+                          Colors.white.withValues(alpha: 0.72),
+                      elevation: 0,
+                      minimumSize: const Size(0, 44),
+                      padding: const EdgeInsets.symmetric(horizontal: 10),
+                      shape: RoundedRectangleBorder(borderRadius: AppRadii.sm),
+                    ),
+                    icon: const Icon(Icons.delete_sweep_rounded, size: 18),
+                    label: Text(
+                      'Metrajı Temizle',
+                      style: AppTypography.labelMedium.copyWith(
+                        color: Colors.white,
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
                   ),
                 ),
               ],

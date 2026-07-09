@@ -37,7 +37,11 @@ class MainShell extends StatelessWidget {
           child: navigationShell,
         ),
       ),
-      bottomNavigationBar: AppBottomNavBar(navigationShell: navigationShell),
+      bottomNavigationBar: MediaQuery.removePadding(
+        context: context,
+        removeBottom: true,
+        child: AppBottomNavBar(navigationShell: navigationShell),
+      ),
     );
   }
 }
@@ -158,7 +162,7 @@ class DashboardScreen extends ConsumerWidget {
                     index: 4,
                     child: DashboardActivitiesSection(activities: activities),
                   ),
-                  SizedBox(height: 96 + AppSafeAreaInsets.bottomOf(context)),
+                  SizedBox(height: 96 + AppSafeAreaInsets.bottomNavInsetOf(context)),
                 ]),
               ),
             ),
