@@ -121,28 +121,13 @@ class SavedMetrajListTab extends ConsumerWidget {
                           ScaffoldMessenger.of(context).showSnackBar(
                             SnackBar(
                               content: Text(
-                                '${selectedRecords.length} kayıt analiz için onaylandı.',
+                                '${selectedRecords.length} kayıt analiz için onaylandı. '
+                                'Hesap ve Analiz sayfasından yükleyebilirsiniz.',
                               ),
                             ),
                           );
                         }
                       },
-                    ),
-                  if (selectedIds.isNotEmpty)
-                    ActionChip(
-                      avatar: const Icon(Icons.analytics_outlined,
-                          size: 16, color: AppColors.electricBlueLight),
-                      label: Text(
-                        'Hesap ve Analiz (${selectedIds.length})',
-                        style: AppTypography.labelMedium,
-                      ),
-                      backgroundColor: AppColors.surfaceElevated,
-                      side: const BorderSide(color: AppColors.border),
-                      onPressed: () => sendSelectedMetrajRecordsToAnalysis(
-                        context,
-                        ref,
-                        selectedRecords,
-                      ),
                     ),
                 ],
               ),
@@ -200,9 +185,6 @@ class SavedMetrajListTab extends ConsumerWidget {
                         : null,
                     onApproveForAnalysis: canEdit && !record.isApprovedForAnalysis
                         ? () => approveMetrajRecordForAnalysis(context, ref, record)
-                        : null,
-                    onSendToAnalysis: canEdit && record.isApprovedForAnalysis
-                        ? () => sendMetrajRecordToAnalysis(context, ref, record)
                         : null,
                   ),
                 ),
@@ -358,7 +340,6 @@ class MetrajRecordCard extends StatelessWidget {
     this.onOpenDetail,
     this.onSendToImalat,
     this.onApproveForAnalysis,
-    this.onSendToAnalysis,
   });
 
   final SavedRebarMetraj record;
@@ -370,7 +351,6 @@ class MetrajRecordCard extends StatelessWidget {
   final VoidCallback? onOpenDetail;
   final VoidCallback? onSendToImalat;
   final VoidCallback? onApproveForAnalysis;
-  final VoidCallback? onSendToAnalysis;
 
   @override
   Widget build(BuildContext context) {
@@ -461,7 +441,7 @@ class MetrajRecordCard extends StatelessWidget {
                           if (record.isApprovedForAnalysis) ...[
                             const SizedBox(height: 8),
                             Text(
-                              'Analiz onayı verildi',
+                              'Analiz onayı verildi · Hesap ve Analiz sayfasından yüklenebilir',
                               style: AppTypography.labelMedium.copyWith(
                                 color: AppColors.electricBlueLight,
                               ),
@@ -555,17 +535,6 @@ class MetrajRecordCard extends StatelessWidget {
                         onPressed: onApproveForAnalysis,
                         icon: const Icon(Icons.verified_outlined),
                         label: const Text('Analize Onay Ver'),
-                      ),
-                    ),
-                  ],
-                  if (onSendToAnalysis != null) ...[
-                    const SizedBox(height: 8),
-                    SizedBox(
-                      width: double.infinity,
-                      child: FilledButton.icon(
-                        onPressed: onSendToAnalysis,
-                        icon: const Icon(Icons.analytics_outlined),
-                        label: const Text('Hesap ve Analiz\'e Gönder'),
                       ),
                     ),
                   ],

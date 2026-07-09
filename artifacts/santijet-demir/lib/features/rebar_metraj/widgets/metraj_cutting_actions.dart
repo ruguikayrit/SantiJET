@@ -28,70 +28,11 @@ Future<void> approveMetrajRecordForAnalysis(
   if (!context.mounted) return;
   ScaffoldMessenger.of(context).showSnackBar(
     SnackBar(
-      content: Text('"${record.displayTitle}" Hesap ve Analiz için onaylandı.'),
-    ),
-  );
-}
-
-Future<void> sendMetrajRecordToAnalysis(
-  BuildContext context,
-  WidgetRef ref,
-  SavedRebarMetraj record,
-) async {
-  if (!record.isApprovedForAnalysis) {
-    if (context.mounted) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Önce ön imalat kaydına analiz onayı verin.'),
-        ),
-      );
-    }
-    return;
-  }
-
-  await _importMetrajRecordsToAnalysis(
-    context,
-    ref,
-    [record],
-    navigateToAnalysis: true,
-  );
-}
-
-Future<void> sendSelectedMetrajRecordsToAnalysis(
-  BuildContext context,
-  WidgetRef ref,
-  List<SavedRebarMetraj> records,
-) async {
-  if (records.isEmpty) return;
-
-  final approved =
-      records.where((record) => record.isApprovedForAnalysis).toList();
-  if (approved.isEmpty) {
-    if (context.mounted) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Seçili kayıtlarda analiz onayı bulunamadı.'),
-        ),
-      );
-    }
-    return;
-  }
-
-  if (approved.length < records.length && context.mounted) {
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text(
-          '${records.length - approved.length} kayıt onaysız olduğu için atlandı.',
-        ),
+      content: Text(
+        '"${record.displayTitle}" analiz için onaylandı. '
+        'Hesap ve Analiz sayfasından yükleyebilirsiniz.',
       ),
-    );
-  }
-
-  await _importMetrajRecordsToAnalysis(
-    context,
-    ref,
-    approved,
-    navigateToAnalysis: true,
+    ),
   );
 }
 
@@ -139,9 +80,8 @@ Future<void> showPreProductionAnalysisImportSheet(
 Future<void> _importMetrajRecordsToAnalysis(
   BuildContext context,
   WidgetRef ref,
-  List<SavedRebarMetraj> records, {
-  bool navigateToAnalysis = false,
-}) async {
+  List<SavedRebarMetraj> records,
+) async {
   if (records.isEmpty) return;
 
   if (ref.read(activeProjectIdProvider) == null) {
@@ -191,9 +131,6 @@ Future<void> _importMetrajRecordsToAnalysis(
   ScaffoldMessenger.of(context).showSnackBar(
     SnackBar(content: Text('"$title" Hesap ve Analiz listesine aktarıldı.')),
   );
-  if (navigateToAnalysis) {
-    context.go(AppRoutes.analysis);
-  }
 }
 
 class _PreProductionImportSheet extends StatefulWidget {

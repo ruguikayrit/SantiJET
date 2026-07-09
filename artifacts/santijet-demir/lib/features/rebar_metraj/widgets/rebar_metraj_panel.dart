@@ -227,7 +227,7 @@ class _InfoBanner extends StatelessWidget {
             '3. 15000Ø16 l=200 → 15000 ad × 2 m\n'
             '4. Tonaj = adet × boy × birim ağırlık (kg/m)\n'
             '5. Analiz sonuçlarını kaydırın; üstte Ön İmalata Gönder\n'
-            '6. Ön İmalat sekmesinde onay verip Hesap ve Analiz\'e aktarın',
+            '6. Ön İmalat sekmesinde analiz onayı verin; Hesap ve Analiz sayfasından yükleyin',
             style: AppTypography.bodySmall,
           ),
           const SizedBox(height: 8),

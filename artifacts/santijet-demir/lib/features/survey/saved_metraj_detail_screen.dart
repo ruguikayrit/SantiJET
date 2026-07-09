@@ -196,7 +196,7 @@ class SavedMetrajDetailScreen extends ConsumerWidget {
                   const SizedBox(width: 8),
                   Expanded(
                     child: Text(
-                      'Hesap ve Analiz için onaylandı',
+                      'Analiz için onaylandı — Hesap ve Analiz sayfasından yükleyin',
                       style: AppTypography.bodySmall,
                     ),
                   ),
@@ -224,18 +224,6 @@ class SavedMetrajDetailScreen extends ConsumerWidget {
                       approveMetrajRecordForAnalysis(context, ref, record!),
                   icon: const Icon(Icons.verified_outlined),
                   label: const Text('Analize Onay Ver'),
-                ),
-              ),
-            ],
-            if (record.isApprovedForAnalysis) ...[
-              const SizedBox(height: 8),
-              SizedBox(
-                width: double.infinity,
-                child: FilledButton.icon(
-                  onPressed: () =>
-                      sendMetrajRecordToAnalysis(context, ref, record!),
-                  icon: const Icon(Icons.analytics_outlined),
-                  label: const Text('Hesap ve Analiz\'e Gönder'),
                 ),
               ),
             ],
