@@ -439,12 +439,14 @@ class FilterChips extends StatelessWidget {
     super.key,
     required this.labels,
     required this.selectedIndex,
-    required this.onSelected,
+    required     this.onSelected,
+    this.horizontalPadding = AppSpacing.md,
   });
 
   final List<String> labels;
   final int selectedIndex;
   final ValueChanged<int> onSelected;
+  final double horizontalPadding;
 
   @override
   Widget build(BuildContext context) {
@@ -453,7 +455,7 @@ class FilterChips extends StatelessWidget {
       child: ListView.separated(
         scrollDirection: Axis.horizontal,
         clipBehavior: Clip.none,
-        padding: const EdgeInsets.symmetric(horizontal: AppSpacing.md),
+        padding: EdgeInsets.symmetric(horizontal: horizontalPadding),
         itemCount: labels.length,
         separatorBuilder: (_, __) => const SizedBox(width: 8),
         itemBuilder: (context, index) {

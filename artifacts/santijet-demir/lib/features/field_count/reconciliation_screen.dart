@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:flutter/services.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:santijet_demir/core/responsive/responsive_layout.dart';
 import 'package:santijet_demir/core/theme/app_colors.dart';
 import 'package:santijet_demir/core/theme/app_radii.dart';
@@ -27,7 +28,8 @@ class _ReconciliationScreenState extends ConsumerState<ReconciliationScreen> {
   static const _landscapeTableInset =
       kToolbarHeight + NavigationToolbar.kMiddleSpacing;
 
-  @override  void initState() {
+  @override
+  void initState() {
     super.initState();
     SystemChrome.setPreferredOrientations([
       DeviceOrientation.landscapeLeft,
@@ -57,6 +59,8 @@ class _ReconciliationScreenState extends ConsumerState<ReconciliationScreen> {
 
     final displayRows = rows;
     final totals = computeReconciliationTotals(displayRows);
+    final horizontalInset =
+        isLandscape ? _landscapeTableInset : AppSpacing.md;
 
     return Scaffold(
       backgroundColor: AppColors.canvas,
@@ -82,15 +86,16 @@ class _ReconciliationScreenState extends ConsumerState<ReconciliationScreen> {
       body: Column(
         children: [
           Padding(
-            padding: const EdgeInsets.fromLTRB(
+            padding: EdgeInsets.fromLTRB(
+              horizontalInset,
               AppSpacing.md,
-              AppSpacing.md,
-              AppSpacing.md,
+              horizontalInset,
               AppSpacing.sm,
             ),
             child: FilterChips(
               labels: reconciliationFilterLabels,
               selectedIndex: filterIndex,
+              horizontalPadding: 0,
               onSelected: (i) =>
                   ref.read(reconciliationFilterProvider.notifier).state = i,
             ),
@@ -109,9 +114,9 @@ class _ReconciliationScreenState extends ConsumerState<ReconciliationScreen> {
             Expanded(
               child: SingleChildScrollView(
                 padding: EdgeInsets.fromLTRB(
-                  isLandscape ? _landscapeTableInset : AppSpacing.md,
+                  horizontalInset,
                   0,
-                  isLandscape ? _landscapeTableInset : AppSpacing.md,
+                  horizontalInset,
                   AppSpacing.md,
                 ),
                 child: ReconciliationTable(
