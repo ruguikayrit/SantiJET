@@ -74,14 +74,57 @@ Future<void> showPreProductionAnalysisImportSheet(
   );
 
   if (selected == null || selected.isEmpty || !context.mounted) return;
-  await _importMetrajRecordsToAnalysis(context, ref, selected);
+
+  var merge = false;
+  if (selected.length > 1) {
+    final mergeChoice = await _askMergePreProductionRecords(
+      context,
+      selected.length,
+    );
+    if (!context.mounted || mergeChoice == null) return;
+    merge = mergeChoice;
+  }
+
+  await _importMetrajRecordsToAnalysis(
+    context,
+    ref,
+    selected,
+    merge: merge,
+  );
+}
+
+Future<bool?> _askMergePreProductionRecords(
+  BuildContext context,
+  int recordCount,
+) {
+  return showDialog<bool>(
+    context: context,
+    builder: (context) => AlertDialog(
+      title: const Text('Kayıtları birleştirilsin mi?'),
+      content: Text(
+        'Seçilen $recordCount kayıt tek analiz dosyasında birleştirilebilir '
+        'veya her biri ayrı dosya olarak eklenebilir.',
+      ),
+      actions: [
+        TextButton(
+          onPressed: () => Navigator.pop(context, false),
+          child: const Text('Ayrı ekle'),
+        ),
+        FilledButton(
+          onPressed: () => Navigator.pop(context, true),
+          child: const Text('Birleştir'),
+        ),
+      ],
+    ),
+  );
 }
 
 Future<void> _importMetrajRecordsToAnalysis(
   BuildContext context,
   WidgetRef ref,
-  List<SavedRebarMetraj> records,
-) async {
+  List<SavedRebarMetraj> records, {
+  bool merge = true,
+}) async {
   if (records.isEmpty) return;
 
   if (ref.read(activeProjectIdProvider) == null) {
@@ -101,6 +144,42 @@ Future<void> _importMetrajRecordsToAnalysis(
         ),
       );
     }
+    return;
+  }
+
+  if (records.length > 1 && !merge) {
+    var addedCount = 0;
+    var skippedCount = 0;
+    for (final record in records) {
+      final batch = buildCuttingBendingBatchFromResults(
+        title: record.displayTitle,
+        sourceMetrajRecordIds: [record.id],
+        results: [record.result],
+      );
+      if (batch.pieceLines.isEmpty) {
+        skippedCount++;
+        continue;
+      }
+      await ref.read(cuttingBendingBatchesProvider.notifier).addBatch(batch);
+      addedCount++;
+    }
+
+    if (!context.mounted) return;
+    if (addedCount == 0) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Gönderilecek parça verisi bulunamadı (CAD etiketleri).'),
+        ),
+      );
+      return;
+    }
+
+    final message = skippedCount > 0
+        ? '$addedCount kayıt ayrı ayrı aktarıldı ($skippedCount kayıt atlandı).'
+        : '$addedCount kayıt ayrı ayrı Hesap ve Analiz listesine aktarıldı.';
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(content: Text(message)),
+    );
     return;
   }
 
@@ -260,7 +339,9 @@ class _PreProductionImportSheetState extends State<_PreProductionImportSheet> {
               child: Text(
                 _selectedIds.isEmpty
                     ? 'Kayıt seçin'
-                    : '${_selectedIds.length} kaydı aktar',
+                    : _selectedIds.length == 1
+                        ? '1 kaydı aktar'
+                        : '${_selectedIds.length} kayıt — devam',
               ),
             ),
           ],
