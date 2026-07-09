@@ -55,9 +55,12 @@ abstract final class AppSafeAreaInsets {
 
   static double bottomOf(BuildContext context) => effective(context).bottom;
 
-  /// Alt nav bar — yalnızca gerçek home indicator alanı; Safari sekmesinde zorlamalı boşluk yok.
+  /// Alt nav bar — yalnızca sistemin bildirdiği gerçek home indicator alanı.
+  ///
+  /// iOS PWA'da safe-area değeri 0 geldiğinde burada minimum 34 px zorlamak
+  /// nav bar'ı görsel olarak yukarı iter ve altında siyah boşluk bırakır.
   static double bottomNavInsetOf(BuildContext context) =>
-      _readBottomInset(context, standaloneMinimum: true);
+      _readBottomInset(context, standaloneMinimum: false);
 }
 
 class AppSafeArea extends StatelessWidget {
