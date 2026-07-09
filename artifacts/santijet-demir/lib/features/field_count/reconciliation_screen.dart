@@ -1,5 +1,5 @@
-import 'package:flutter/material.dart';import 'package:flutter/services.dart';
-import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:santijet_demir/core/responsive/responsive_layout.dart';
 import 'package:santijet_demir/core/theme/app_colors.dart';
 import 'package:santijet_demir/core/theme/app_radii.dart';
@@ -23,8 +23,11 @@ class ReconciliationScreen extends ConsumerStatefulWidget {
 }
 
 class _ReconciliationScreenState extends ConsumerState<ReconciliationScreen> {
-  @override
-  void initState() {
+  /// AppBar geri düğmesi + başlık boşluğu — "Mukayese Tablosu" M harfi hizası.
+  static const _landscapeTableInset =
+      kToolbarHeight + NavigationToolbar.kMiddleSpacing;
+
+  @override  void initState() {
     super.initState();
     SystemChrome.setPreferredOrientations([
       DeviceOrientation.landscapeLeft,
@@ -105,10 +108,10 @@ class _ReconciliationScreenState extends ConsumerState<ReconciliationScreen> {
           else
             Expanded(
               child: SingleChildScrollView(
-                padding: const EdgeInsets.fromLTRB(
-                  AppSpacing.md,
+                padding: EdgeInsets.fromLTRB(
+                  isLandscape ? _landscapeTableInset : AppSpacing.md,
                   0,
-                  AppSpacing.md,
+                  isLandscape ? _landscapeTableInset : AppSpacing.md,
                   AppSpacing.md,
                 ),
                 child: ReconciliationTable(
@@ -117,8 +120,7 @@ class _ReconciliationScreenState extends ConsumerState<ReconciliationScreen> {
                   landscape: isLandscape,
                 ),
               ),
-            ),
-        ],
+            ),        ],
       ),
     );
   }

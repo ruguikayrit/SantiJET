@@ -9,6 +9,18 @@ import 'package:printing/printing.dart';
 import 'package:share_plus/share_plus.dart';
 
 class ExportService {
+  pw.Font? _regularFont;
+  pw.Font? _boldFont;
+
+  Future<pw.ThemeData> _pdfTheme() async {
+    _regularFont ??= await PdfGoogleFonts.notoSansRegular();
+    _boldFont ??= await PdfGoogleFonts.notoSansBold();
+    return pw.ThemeData.withFont(
+      base: _regularFont!,
+      bold: _boldFont!,
+    );
+  }
+
   Future<void> sharePdf({
     required String title,
     required List<List<String>> rows,
@@ -52,7 +64,8 @@ class ExportService {
     required List<String> headers,
     required List<List<String>> rows,
   }) async {
-    final doc = pw.Document();
+    final theme = await _pdfTheme();
+    final doc = pw.Document(theme: theme);
     final now = DateTime.now();
 
     doc.addPage(
@@ -65,10 +78,14 @@ class ExportService {
             style: pw.TextStyle(fontSize: 10, color: PdfColors.grey700),
           ),
           pw.SizedBox(height: 4),
-          pw.Text(title, style: pw.TextStyle(fontSize: 20, fontWeight: pw.FontWeight.bold)),
+          pw.Text(
+            title,
+            style: pw.TextStyle(fontSize: 20, fontWeight: pw.FontWeight.bold),
+          ),
           pw.SizedBox(height: 4),
           pw.Text(
-            'Oluşturulma: ${now.day}.${now.month}.${now.year} ${now.hour}:${now.minute.toString().padLeft(2, '0')}',
+            'Oluşturulma: ${now.day}.${now.month}.${now.year} '
+            '${now.hour}:${now.minute.toString().padLeft(2, '0')}',
             style: const pw.TextStyle(fontSize: 10, color: PdfColors.grey600),
           ),
           pw.SizedBox(height: 20),

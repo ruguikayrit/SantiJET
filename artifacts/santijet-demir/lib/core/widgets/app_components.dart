@@ -1,8 +1,8 @@
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
-import 'package:santijet_demir/core/responsive/responsive_layout.dart';
 import 'package:santijet_demir/core/theme/app_colors.dart';
 import 'package:santijet_demir/core/theme/app_radii.dart';
+import 'package:santijet_demir/core/theme/app_spacing.dart';
 import 'package:santijet_demir/core/theme/app_typography.dart';
 
 class StatusBadge extends StatelessWidget {
@@ -440,107 +440,30 @@ class FilterChips extends StatelessWidget {
     required this.labels,
     required this.selectedIndex,
     required this.onSelected,
-    this.gridColumns,
   });
 
   final List<String> labels;
   final int selectedIndex;
   final ValueChanged<int> onSelected;
-  final int? gridColumns;
 
   @override
   Widget build(BuildContext context) {
-    if (gridColumns != null && gridColumns! > 1) {
-      return _FilterChipGrid(
-        labels: labels,
-        selectedIndex: selectedIndex,
-        onSelected: onSelected,
-        columns: gridColumns!,
-      );
-    }
-
-    final useWrap = ResponsiveLayout.isNarrowWidth(context);
-
-    if (useWrap) {
-      return Wrap(
-        spacing: 8,
-        runSpacing: 8,
-        children: [
-          for (var index = 0; index < labels.length; index++)
-            _FilterChipItem(
-              label: labels[index],
-              selected: index == selectedIndex,
-              onSelected: () => onSelected(index),
-            ),
-        ],
-      );
-    }
-
     return SizedBox(
-      height: 36,
+      height: 40,
       child: ListView.separated(
         scrollDirection: Axis.horizontal,
+        clipBehavior: Clip.none,
+        padding: const EdgeInsets.symmetric(horizontal: AppSpacing.md),
         itemCount: labels.length,
         separatorBuilder: (_, __) => const SizedBox(width: 8),
         itemBuilder: (context, index) {
-          final selected = index == selectedIndex;
           return _FilterChipItem(
             label: labels[index],
-            selected: selected,
+            selected: index == selectedIndex,
             onSelected: () => onSelected(index),
           );
         },
       ),
-    );
-  }
-}
-
-class _FilterChipGrid extends StatelessWidget {
-  const _FilterChipGrid({
-    required this.labels,
-    required this.selectedIndex,
-    required this.onSelected,
-    required this.columns,
-  });
-
-  final List<String> labels;
-  final int selectedIndex;
-  final ValueChanged<int> onSelected;
-  final int columns;
-
-  @override
-  Widget build(BuildContext context) {
-    final rowCount = (labels.length / columns).ceil();
-
-    return Column(
-      children: [
-        for (var row = 0; row < rowCount; row++) ...[
-          if (row > 0) const SizedBox(height: 8),
-          Row(
-            children: [
-              for (var col = 0; col < columns; col++) ...[
-                if (col > 0) const SizedBox(width: 8),
-                Expanded(
-                  child: _gridCell(row * columns + col),
-                ),
-              ],
-            ],
-          ),
-        ],
-      ],
-    );
-  }
-
-  Widget _gridCell(int index) {
-    if (index >= labels.length) {
-      return const SizedBox.shrink();
-    }
-
-    return _FilterChipItem(
-      label: labels[index],
-      selected: index == selectedIndex,
-      onSelected: () => onSelected(index),
-      expand: true,
     );
   }
 }
@@ -550,20 +473,17 @@ class _FilterChipItem extends StatelessWidget {
     required this.label,
     required this.selected,
     required this.onSelected,
-    this.expand = false,
   });
 
   final String label;
   final bool selected;
   final VoidCallback onSelected;
-  final bool expand;
 
   @override
   Widget build(BuildContext context) {
-    final chip = FilterChip(
+    return FilterChip(
       label: Text(
         label,
-        textAlign: TextAlign.center,
         maxLines: 1,
         overflow: TextOverflow.ellipsis,
       ),
@@ -574,19 +494,14 @@ class _FilterChipItem extends StatelessWidget {
         fontWeight: selected ? FontWeight.w600 : FontWeight.w500,
       ),
       backgroundColor: AppColors.surfaceElevated,
-      selectedColor: AppColors.electricBlue.withValues(alpha: 0.2),
+      selectedColor: AppColors.electricBlue.withValues(alpha: 0.22),
       side: BorderSide(
         color: selected ? AppColors.electricBlue : AppColors.border,
       ),
       showCheckmark: false,
-      padding: const EdgeInsets.symmetric(horizontal: 4),
-    );
-
-    if (!expand) return chip;
-
-    return SizedBox(
-      width: double.infinity,
-      child: chip,
+      padding: const EdgeInsets.symmetric(horizontal: 12),
+      materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
+      visualDensity: VisualDensity.compact,
     );
   }
 }

@@ -871,12 +871,12 @@ class AboutScreen extends StatelessWidget {
           children: [
             Image.asset(
               'assets/images/splash_bolt.png',
-              width: 80,
-              height: 80,
+              width: 120,
+              height: 120,
               fit: BoxFit.contain,
               filterQuality: FilterQuality.high,
             ),
-            const SizedBox(height: 16),
+            const SizedBox(height: 4),
             Text('ŞantiJET DEMİR', style: AppTypography.headlineLarge),
             const SizedBox(height: 8),
             Text('Versiyon 1.0.0', style: AppTypography.bodyMedium),

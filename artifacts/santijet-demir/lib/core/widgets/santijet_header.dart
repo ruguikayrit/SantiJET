@@ -2,6 +2,7 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import 'package:intl/intl.dart';
 import 'package:santijet_demir/core/routing/app_routes.dart';
 import 'package:santijet_demir/core/theme/app_colors.dart';
 import 'package:santijet_demir/core/theme/app_spacing.dart';
@@ -223,6 +224,10 @@ class GreetingSection extends ConsumerWidget {
                   _formatToday(),
                   style: AppTypography.titleMedium,
                 ),
+                Text(
+                  _formatWeekday(),
+                  style: AppTypography.bodySmall,
+                ),
               ],
             ),
           ),
@@ -232,11 +237,10 @@ class GreetingSection extends ConsumerWidget {
   }
 
   String _formatToday() {
-    final now = DateTime.now();
-    const months = [
-      'Oca', 'Şub', 'Mar', 'Nis', 'May', 'Haz',
-      'Tem', 'Ağu', 'Eyl', 'Eki', 'Kas', 'Ara',
-    ];
-    return '${now.day} ${months[now.month - 1]} ${now.year}';
+    return DateFormat('d MMMM yyyy', 'tr_TR').format(DateTime.now());
+  }
+
+  String _formatWeekday() {
+    return DateFormat('EEEE', 'tr_TR').format(DateTime.now());
   }
 }

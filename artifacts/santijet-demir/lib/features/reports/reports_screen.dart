@@ -10,9 +10,33 @@ import 'package:santijet_demir/core/theme/app_typography.dart';
 import 'package:santijet_demir/core/widgets/app_components.dart';
 import 'package:santijet_demir/domain/entities/report.dart';
 import 'package:santijet_demir/features/reports/providers/reports_provider.dart';
+import 'package:santijet_demir/features/reports/report_dialogs.dart';
+import 'package:santijet_demir/features/reports/report_service.dart';
 
 class ReportsScreen extends ConsumerWidget {
   const ReportsScreen({super.key});
+
+  void _openReport(
+    BuildContext context,
+    WidgetRef ref,
+    ReportCategory category,
+  ) {
+    final service = ref.read(reportServiceProvider);
+    if (service.isPdfReport(category.id)) {
+      final contextData = ref.read(reportContextProvider);
+      final validation = service.validate(category.id, contextData);
+      if (!validation.isValid) {
+        showReportMissingDataDialog(
+          context,
+          reportTitle: category.title,
+          missingRequirements: validation.missingRequirements,
+        );
+        return;
+      }
+    }
+
+    context.push(AppRoutes.reportDetail(category.id));
+  }
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -41,7 +65,7 @@ class ReportsScreen extends ConsumerWidget {
               final cat = categories[index];
               return _CategoryCard(
                 category: cat,
-                onTap: () => context.push(AppRoutes.reportDetail(cat.id)),
+                onTap: () => _openReport(context, ref, cat),
               );
             },
           ),
@@ -102,7 +126,12 @@ class _CategoryCard extends StatelessWidget {
               Icon(_icon, color: color, size: 24),
               const Spacer(),
               Text(category.title, style: AppTypography.titleMedium),
-              Text(category.subtitle, style: AppTypography.bodySmall, maxLines: 1, overflow: TextOverflow.ellipsis),
+              Text(
+                category.subtitle,
+                style: AppTypography.bodySmall,
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+              ),
               const SizedBox(height: 4),
               StatusBadge(label: category.format, color: color),
             ],

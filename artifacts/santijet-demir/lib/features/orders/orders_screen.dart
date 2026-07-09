@@ -65,15 +65,11 @@ class _OrdersScreenState extends ConsumerState<OrdersScreen> {
               ),
             ),
             const SizedBox(height: 12),
-            Padding(
-              padding: const EdgeInsets.symmetric(horizontal: AppSpacing.md),
-              child: FilterChips(
-                labels: orderFilterLabels,
-                selectedIndex: filterIndex,
-                gridColumns: 2,
-                onSelected: (i) =>
-                    ref.read(orderFilterProvider.notifier).state = i,
-              ),
+            FilterChips(
+              labels: orderFilterLabels,
+              selectedIndex: filterIndex,
+              onSelected: (i) =>
+                  ref.read(orderFilterProvider.notifier).state = i,
             ),
             const SizedBox(height: 12),
             Expanded(
