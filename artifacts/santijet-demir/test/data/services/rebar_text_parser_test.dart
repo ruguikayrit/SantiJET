@@ -81,6 +81,16 @@ void main() {
       expect(entry?.role, RebarLabelRole.longitudinal);
     });
 
+    test('üst.180Ø22/15 l=805 → üst montaj', () {
+      final entry = parser.parseOne('üst.180Ø22/15 l=805');
+      expect(entry?.role, RebarLabelRole.topAssembly);
+    });
+
+    test('alt.180Ø22/15 l=805 → alt donatı', () {
+      final entry = parser.parseOne('alt.180Ø22/15 l=805');
+      expect(entry?.role, RebarLabelRole.bottomLongitudinal);
+    });
+
     test('etr*18Ø12/10 L=510 etriye', () {
       final entry = parser.parseOne('etr*18Ø12/10 L=510');
       expect(entry?.quantity, 18);

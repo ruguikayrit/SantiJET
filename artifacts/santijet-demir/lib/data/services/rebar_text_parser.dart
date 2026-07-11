@@ -20,20 +20,35 @@ class RebarTextEntry {
   final RebarLabelRole role;
 }
 
-/// Metraj cetvelinde demir türü.
+/// Metraj cetvelinde demir türü (Excel cetveli terminolojisi).
 enum RebarLabelRole {
   longitudinal,
+  bottomLongitudinal,
+  topAssembly,
   stirrup,
   crosstie,
   mesh,
   other;
 
   String get label => switch (this) {
-        RebarLabelRole.longitudinal => 'Boy demiri',
+        RebarLabelRole.longitudinal => 'Boy donatı',
+        RebarLabelRole.bottomLongitudinal => 'Alt donatı',
+        RebarLabelRole.topAssembly => 'Üst montaj',
         RebarLabelRole.stirrup => 'Etriye',
         RebarLabelRole.crosstie => 'Çiroz',
         RebarLabelRole.mesh => 'Hasır / örgü',
         RebarLabelRole.other => 'Demir',
+      };
+
+  /// Excel cetvelindeki kısa başlık.
+  String get shortLabel => switch (this) {
+        RebarLabelRole.longitudinal => 'BOY',
+        RebarLabelRole.bottomLongitudinal => 'ALT',
+        RebarLabelRole.topAssembly => 'ÜST',
+        RebarLabelRole.stirrup => 'ETR',
+        RebarLabelRole.crosstie => 'ÇRZ',
+        RebarLabelRole.mesh => 'ÖRGÜ',
+        RebarLabelRole.other => 'DMR',
       };
 }
 
@@ -43,7 +58,7 @@ class RebarTextParser {
 
   /// üst.334Ø22/15 l=1200  → 334 adet, Ø22, l=1200 cm → 12 m (/15 sadece bilgi)
   static final _locationLabel = RegExp(
-    r'(?:UST|ALT)\.(\d+)(?:FI|F[Iİ]|Ø|O|D)(\d{2})/(\d+)\s*L\s*=\s*([\d.,]+)',
+    r'(UST|ALT)\.(\d+)(?:FI|F[Iİ]|Ø|O|D)(\d{2})/(\d+)\s*L\s*=\s*([\d.,]+)',
     caseSensitive: false,
   );
 
@@ -223,10 +238,22 @@ class RebarTextParser {
     final match = pattern.firstMatch(normalized);
     if (match == null) return null;
 
-    final quantity = int.tryParse(match.group(1)!);
-    final diameter = int.tryParse(match.group(2)!);
-    final spacing = int.tryParse(match.group(3)!);
-    final lengthRaw = double.tryParse(match.group(4)!.replaceAll(',', '.'));
+    RebarLabelRole role = RebarLabelRole.longitudinal;
+    int groupOffset = 0;
+
+    if (pattern == _locationLabel) {
+      final location = match.group(1)!;
+      role = location == 'UST'
+          ? RebarLabelRole.topAssembly
+          : RebarLabelRole.bottomLongitudinal;
+      groupOffset = 1;
+    }
+
+    final quantity = int.tryParse(match.group(1 + groupOffset)!);
+    final diameter = int.tryParse(match.group(2 + groupOffset)!);
+    final spacing = int.tryParse(match.group(3 + groupOffset)!);
+    final lengthRaw =
+        double.tryParse(match.group(4 + groupOffset)!.replaceAll(',', '.'));
 
     if (quantity == null ||
         quantity <= 0 ||
@@ -245,6 +272,7 @@ class RebarTextParser {
       lengthM: lengthM,
       quantity: quantity,
       spacingCm: spacing?.toDouble(),
+      role: role,
     );
   }
 

@@ -108,6 +108,14 @@ class DashboardScreen extends ConsumerWidget {
                 delegate: SliverChildListDelegate([
                   StaggeredFadeIn(
                     index: 0,
+                    child: _SurveyQuickAccessBar(
+                      subtitle: surveyImalatLabel,
+                      onTap: () => context.push(AppRoutes.survey),
+                    ),
+                  ),
+                  const SizedBox(height: 12),
+                  StaggeredFadeIn(
+                    index: 1,
                     child: GridView.count(
                       crossAxisCount: ResponsiveLayout.isTablet(context) ? 3 : 3,
                       shrinkWrap: true,
@@ -163,15 +171,6 @@ class DashboardScreen extends ConsumerWidget {
                   ),
                   const SizedBox(height: AppSpacing.lg),
                   StaggeredFadeIn(
-                    index: 1,
-                    child: _QuickAccessRow(
-                      surveySubtitle: surveyImalatLabel,
-                      onSurveyTap: () => context.push(AppRoutes.survey),
-                      onReportsTap: () => context.push(AppRoutes.reports),
-                    ),
-                  ),
-                  const SizedBox(height: AppSpacing.lg),
-                  StaggeredFadeIn(
                     index: 2,
                     child: const ProjectProgressSection(),
                   ),
@@ -195,58 +194,13 @@ class DashboardScreen extends ConsumerWidget {
   }
 }
 
-class _QuickAccessRow extends StatelessWidget {
-  const _QuickAccessRow({
-    required this.surveySubtitle,
-    required this.onSurveyTap,
-    required this.onReportsTap,
-  });
-
-  final String surveySubtitle;
-  final VoidCallback onSurveyTap;
-  final VoidCallback onReportsTap;
-
-  @override
-  Widget build(BuildContext context) {
-    return Row(
-      children: [
-        Expanded(
-          child: _QuickAccessCard(
-            icon: Icons.search,
-            label: 'Keşif',
-            subtitle: surveySubtitle,
-            color: AppColors.electricBlueLight,
-            onTap: onSurveyTap,
-          ),
-        ),
-        const SizedBox(width: 8),
-        Expanded(
-          child: _QuickAccessCard(
-            icon: Icons.description,
-            label: 'Raporlar',
-            subtitle: 'Henüz rapor yok',
-            color: AppColors.partial,
-            onTap: onReportsTap,
-          ),
-        ),
-      ],
-    );
-  }
-}
-
-class _QuickAccessCard extends StatelessWidget {
-  const _QuickAccessCard({
-    required this.icon,
-    required this.label,
+class _SurveyQuickAccessBar extends StatelessWidget {
+  const _SurveyQuickAccessBar({
     required this.subtitle,
-    required this.color,
     required this.onTap,
   });
 
-  final IconData icon;
-  final String label;
   final String subtitle;
-  final Color color;
   final VoidCallback onTap;
 
   @override
@@ -254,19 +208,25 @@ class _QuickAccessCard extends StatelessWidget {
     return TapScale(
       onTap: onTap,
       child: Container(
-        padding: const EdgeInsets.all(14),
+        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
         decoration: BoxDecoration(
           color: AppColors.surfaceElevated,
           borderRadius: BorderRadius.circular(12),
           border: Border.all(color: AppColors.border),
         ),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
+        child: Row(
           children: [
-            Icon(icon, color: color, size: 24),
-            const SizedBox(height: 10),
-            Text(label, style: AppTypography.titleMedium),
-            Text(subtitle, style: AppTypography.bodySmall),
+            Icon(Icons.search, color: AppColors.electricBlueLight, size: 22),
+            const SizedBox(width: 10),
+            Expanded(
+              child: Text(
+                'Keşif · $subtitle',
+                style: AppTypography.titleMedium,
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+              ),
+            ),
+            const Icon(Icons.chevron_right, color: AppColors.textMuted, size: 20),
           ],
         ),
       ),

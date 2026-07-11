@@ -4,6 +4,7 @@ import 'package:santijet_demir/core/theme/app_colors.dart';
 import 'package:santijet_demir/core/theme/app_radii.dart';
 import 'package:santijet_demir/core/theme/app_typography.dart';
 import 'package:santijet_demir/data/services/element_header_parser.dart';
+import 'package:santijet_demir/data/services/metraj_cetvel_summary.dart';
 import 'package:santijet_demir/domain/entities/rebar_metraj.dart';
 
 class MetrajCetvelEmptyHint extends StatelessWidget {
@@ -31,15 +32,14 @@ class MetrajCetvelEmptyHint extends StatelessWidget {
           Text(
             labelCount > 0
                 ? '$labelCount demir etiketi okundu ancak eleman başlıkları '
-                    '(S1[100/160] 182 ADET, P1[40/240] 36 ADET) ile '
+                    '(S1[100/160] 182 ADET, K1[30/50] 12 ADET) ile '
                     'eşleştirilemedi.'
                 : 'Çizimde eleman başlığı veya demir etiketi bulunamadı.',
             style: AppTypography.bodySmall,
           ),
           const SizedBox(height: 8),
           Text(
-            'DWG\'de her perde/kolon detayının üstünde S/P/K/D başlığı ve '
-            'benzer adet bilgisi olmalı. Dosyayı yeniden analiz edip tekrar kaydedin.',
+            'Her detay bloğunda eleman kodu, ebat ve benzer adet satırı olmalı.',
             style: AppTypography.bodySmall.copyWith(color: AppColors.textMuted),
           ),
         ],
@@ -62,24 +62,32 @@ class MetrajCetvelSection extends StatelessWidget {
   Widget build(BuildContext context) {
     if (cetvel.isEmpty) return const SizedBox.shrink();
 
+    final summary = summarizeCetvel(cetvel);
     final grouped = _groupByType(cetvel);
     final numberFormat = NumberFormat('#,##0.00', 'tr_TR');
     final lengthFormat = NumberFormat('#,##0.##', 'tr_TR');
 
     return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
+      crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
         if (!hideHeader) ...[
-          Text('Metraj Cetveli', style: AppTypography.headlineMedium),
+          Text('Demir Metraj Cetveli', style: AppTypography.headlineMedium),
           const SizedBox(height: 4),
           Text(
-            '${cetvel.length} eleman · benzer katsayısı ile toplam hesap',
+            '${summary.elementCount} eleman · ${summary.rowCount} satır · '
+            'benzer katsayısı uygulandı',
             style: AppTypography.bodySmall,
           ),
           const SizedBox(height: 12),
         ],
+        _GrandSummaryCard(
+          summary: summary,
+          numberFormat: numberFormat,
+          lengthFormat: lengthFormat,
+        ),
+        const SizedBox(height: 16),
         ...grouped.entries.map(
-          (entry) => _TypeGroup(
+          (entry) => _TypeGroupSection(
             type: entry.key,
             entries: entry.value,
             numberFormat: numberFormat,
@@ -102,8 +110,124 @@ class MetrajCetvelSection extends StatelessWidget {
   }
 }
 
-class _TypeGroup extends StatelessWidget {
-  const _TypeGroup({
+class _GrandSummaryCard extends StatelessWidget {
+  const _GrandSummaryCard({
+    required this.summary,
+    required this.numberFormat,
+    required this.lengthFormat,
+  });
+
+  final MetrajCetvelSummary summary;
+  final NumberFormat numberFormat;
+  final NumberFormat lengthFormat;
+
+  @override
+  Widget build(BuildContext context) {
+    final diameters = summary.tonnageByDiameter.keys.toList()..sort();
+
+    return Container(
+      padding: const EdgeInsets.all(14),
+      decoration: BoxDecoration(
+        color: AppColors.surfaceElevated,
+        borderRadius: AppRadii.md,
+        border: Border.all(color: AppColors.border),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          Row(
+            children: [
+              Expanded(
+                child: _SummaryMetric(
+                  label: 'Toplam',
+                  value: '${numberFormat.format(summary.totalTonnage)} t',
+                  accent: AppColors.electricBlueLight,
+                ),
+              ),
+              Expanded(
+                child: _SummaryMetric(
+                  label: 'İnce (Ø8–12)',
+                  value: '${numberFormat.format(summary.thinTonnage)} t',
+                  accent: AppColors.info,
+                ),
+              ),
+              Expanded(
+                child: _SummaryMetric(
+                  label: 'Kalın (Ø≥14)',
+                  value: '${numberFormat.format(summary.thickTonnage)} t',
+                  accent: AppColors.success,
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 10),
+          Text(
+            'Toplam boy: ${lengthFormat.format(summary.totalLengthM)} m',
+            style: AppTypography.bodySmall.copyWith(color: AppColors.textMuted),
+          ),
+          if (diameters.isNotEmpty) ...[
+            const SizedBox(height: 10),
+            Wrap(
+              spacing: 6,
+              runSpacing: 6,
+              children: diameters.map((diameter) {
+                final tonnage = summary.tonnageByDiameter[diameter] ?? 0;
+                return Container(
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                  decoration: BoxDecoration(
+                    color: AppColors.canvas,
+                    borderRadius: AppRadii.full,
+                    border: Border.all(color: AppColors.border),
+                  ),
+                  child: Text(
+                    'Ø$diameter · ${numberFormat.format(tonnage)} t',
+                    style: AppTypography.labelMedium.copyWith(
+                      color: AppColors.diameterColor(diameter),
+                    ),
+                  ),
+                );
+              }).toList(),
+            ),
+          ],
+        ],
+      ),
+    );
+  }
+}
+
+class _SummaryMetric extends StatelessWidget {
+  const _SummaryMetric({
+    required this.label,
+    required this.value,
+    required this.accent,
+  });
+
+  final String label;
+  final String value;
+  final Color accent;
+
+  @override
+  Widget build(BuildContext context) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          label,
+          style: AppTypography.labelMedium.copyWith(color: AppColors.textMuted),
+        ),
+        const SizedBox(height: 2),
+        Text(
+          value,
+          style: AppTypography.titleMedium.copyWith(color: accent),
+        ),
+      ],
+    );
+  }
+}
+
+class _TypeGroupSection extends StatelessWidget {
+  const _TypeGroupSection({
     required this.type,
     required this.entries,
     required this.numberFormat,
@@ -121,16 +245,16 @@ class _TypeGroup extends StatelessWidget {
         entries.fold(0.0, (sum, entry) => sum + entry.totalTonnage);
 
     return Padding(
-      padding: const EdgeInsets.only(bottom: 16),
+      padding: const EdgeInsets.only(bottom: 20),
       child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
+        crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
           Row(
             children: [
               Text(type.label, style: AppTypography.titleMedium),
               const Spacer(),
               Text(
-                '${numberFormat.format(typeTonnage)} t',
+                '${entries.length} eleman · ${numberFormat.format(typeTonnage)} t',
                 style: AppTypography.labelMedium.copyWith(
                   color: AppColors.electricBlueLight,
                 ),
@@ -139,7 +263,7 @@ class _TypeGroup extends StatelessWidget {
           ),
           const SizedBox(height: 8),
           ...entries.map(
-            (entry) => _ElementCard(
+            (entry) => _ElementCetvelCard(
               entry: entry,
               numberFormat: numberFormat,
               lengthFormat: lengthFormat,
@@ -151,8 +275,8 @@ class _TypeGroup extends StatelessWidget {
   }
 }
 
-class _ElementCard extends StatefulWidget {
-  const _ElementCard({
+class _ElementCetvelCard extends StatelessWidget {
+  const _ElementCetvelCard({
     required this.entry,
     required this.numberFormat,
     required this.lengthFormat,
@@ -163,183 +287,212 @@ class _ElementCard extends StatefulWidget {
   final NumberFormat lengthFormat;
 
   @override
-  State<_ElementCard> createState() => _ElementCardState();
-}
-
-class _ElementCardState extends State<_ElementCard> {
-  var _expanded = true;
-
-  @override
   Widget build(BuildContext context) {
-    final entry = widget.entry;
-    final numberFormat = widget.numberFormat;
-    final lengthFormat = widget.lengthFormat;
-
     return Container(
-      margin: const EdgeInsets.only(bottom: 8),
+      margin: const EdgeInsets.only(bottom: 10),
       decoration: BoxDecoration(
         color: AppColors.surfaceElevated,
         borderRadius: AppRadii.md,
         border: Border.all(color: AppColors.border),
       ),
+      clipBehavior: Clip.antiAlias,
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
-          InkWell(
-            onTap: () => setState(() => _expanded = !_expanded),
-            borderRadius: AppRadii.md,
-            child: Padding(
-              padding: const EdgeInsets.all(14),
-              child: Row(
-                children: [
-                  Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(entry.title, style: AppTypography.titleMedium),
-                        const SizedBox(height: 4),
-                        Text(
-                          'Benzer × ${entry.benzerCount} adet · '
-                          '1 adet ${numberFormat.format(entry.unitTonnage)} t → '
-                          'toplam ${numberFormat.format(entry.totalTonnage)} t',
-                          style: AppTypography.bodySmall,
-                        ),
-                      ],
-                    ),
+          Container(
+            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+            color: AppColors.electricBlue.withValues(alpha: 0.06),
+            child: Row(
+              children: [
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(entry.title, style: AppTypography.titleMedium),
+                      Text(
+                        'Benzer × ${entry.benzerCount} · '
+                        '1 ad ${numberFormat.format(entry.unitTonnage)} t',
+                        style: AppTypography.bodySmall,
+                      ),
+                    ],
                   ),
-                  Icon(
-                    _expanded ? Icons.expand_less : Icons.expand_more,
-                    color: AppColors.textMuted,
+                ),
+                Text(
+                  '${numberFormat.format(entry.totalTonnage)} t',
+                  style: AppTypography.titleMedium.copyWith(
+                    color: AppColors.success,
                   ),
-                ],
-              ),
+                ),
+              ],
             ),
           ),
-          if (_expanded) ...[
-            const Divider(height: 1, color: AppColors.border),
-            Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-              child: _CetvelTable(
-                rows: entry.rows,
-                numberFormat: numberFormat,
-                lengthFormat: lengthFormat,
-                benzerCount: entry.benzerCount,
+          const _CetvelTableHeader(),
+          ...entry.rows.asMap().entries.map(
+                (indexed) => _CetvelDataRow(
+                  index: indexed.key + 1,
+                  row: indexed.value,
+                  numberFormat: numberFormat,
+                  lengthFormat: lengthFormat,
+                  striped: indexed.key.isOdd,
+                ),
               ),
+          Container(
+            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+            decoration: const BoxDecoration(
+              border: Border(top: BorderSide(color: AppColors.border)),
+              color: AppColors.canvas,
             ),
-          ],
+            child: Row(
+              children: [
+                Expanded(
+                  child: Text(
+                    'Eleman toplamı',
+                    style: AppTypography.labelMedium,
+                  ),
+                ),
+                Text(
+                  '${entry.totalBarCount} ad · '
+                  '${lengthFormat.format(entry.totalLengthM)} m',
+                  style: AppTypography.bodySmall,
+                ),
+                const SizedBox(width: 12),
+                Text(
+                  '${numberFormat.format(entry.totalTonnage)} t',
+                  style: AppTypography.labelMedium.copyWith(
+                    color: AppColors.electricBlueLight,
+                  ),
+                ),
+              ],
+            ),
+          ),
         ],
       ),
     );
   }
 }
 
-class _CetvelTable extends StatelessWidget {
-  const _CetvelTable({
-    required this.rows,
+class _CetvelTableHeader extends StatelessWidget {
+  const _CetvelTableHeader();
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+      decoration: const BoxDecoration(
+        border: Border(bottom: BorderSide(color: AppColors.border)),
+      ),
+      child: const Row(
+        children: [
+          _Col('#', 24, bold: true),
+          _Col('Demir', 72, bold: true, flex: 2),
+          _Col('Ø', 28, bold: true),
+          _Col('Adet', 36, bold: true, align: TextAlign.end),
+          _Col('Boy', 40, bold: true, align: TextAlign.end),
+          _Col('Top.', 36, bold: true, align: TextAlign.end),
+          _Col('kg', 48, bold: true, align: TextAlign.end),
+        ],
+      ),
+    );
+  }
+}
+
+class _CetvelDataRow extends StatelessWidget {
+  const _CetvelDataRow({
+    required this.index,
+    required this.row,
     required this.numberFormat,
     required this.lengthFormat,
-    required this.benzerCount,
+    required this.striped,
   });
 
-  final List<MetrajCetvelRow> rows;
+  final int index;
+  final MetrajCetvelRow row;
   final NumberFormat numberFormat;
   final NumberFormat lengthFormat;
-  final int benzerCount;
+  final bool striped;
 
   @override
   Widget build(BuildContext context) {
-    return SingleChildScrollView(
-      scrollDirection: Axis.horizontal,
-      child: ConstrainedBox(
-        constraints: const BoxConstraints(minWidth: 520),
-        child: Column(
-          children: [
-            const Padding(
-              padding: EdgeInsets.symmetric(horizontal: 8, vertical: 8),
-              child: Row(
-                children: [
-                  _HeaderCell('Tür', width: 88),
-                  _HeaderCell('Çap', width: 44),
-                  _HeaderCell('Boy (m)', width: 64),
-                  _HeaderCell('1 adet', width: 52),
-                  _HeaderCell('× Benzer', width: 64),
-                  _HeaderCell('Toplam ad', width: 72),
-                  _HeaderCell('Tonaj', width: 72),
-                ],
-              ),
-            ),
-            ...rows.map(
-              (row) => Container(
-                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 8),
-                decoration: const BoxDecoration(
-                  border: Border(top: BorderSide(color: AppColors.border)),
-                ),
-                child: Row(
-                  children: [
-                    _DataCell(row.role.label, width: 88),
-                    _DataCell(
-                      'Ø${row.diameter}',
-                      width: 44,
-                      color: AppColors.diameterColor(row.diameter),
-                    ),
-                    _DataCell(
-                      lengthFormat.format(row.lengthM),
-                      width: 64,
-                    ),
-                    _DataCell('${row.unitQuantity}', width: 52),
-                    _DataCell('×$benzerCount', width: 64),
-                    _DataCell('${row.totalQuantity}', width: 72),
-                    _DataCell(
-                      '${numberFormat.format(row.totalTonnage)} t',
-                      width: 72,
-                      color: AppColors.success,
-                    ),
-                  ],
-                ),
-              ),
-            ),
-          ],
-        ),
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 7),
+      color: striped
+          ? AppColors.canvas.withValues(alpha: 0.45)
+          : Colors.transparent,
+      decoration: const BoxDecoration(
+        border: Border(bottom: BorderSide(color: AppColors.borderSubtle)),
+      ),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          _Col('$index', 24),
+          _Col(row.role.label, 72, flex: 2),
+          _Col(
+            '${row.diameter}',
+            28,
+            color: AppColors.diameterColor(row.diameter),
+            bold: true,
+          ),
+          _Col('${row.unitQuantity}', 36, align: TextAlign.end),
+          _Col(lengthFormat.format(row.lengthM), 40, align: TextAlign.end),
+          _Col('${row.totalQuantity}', 36, align: TextAlign.end),
+          _Col(
+            numberFormat.format(row.totalWeightKg),
+            48,
+            align: TextAlign.end,
+            color: AppColors.textSecondary,
+          ),
+        ],
       ),
     );
   }
 }
 
-class _HeaderCell extends StatelessWidget {
-  const _HeaderCell(this.text, {required this.width});
+class _Col extends StatelessWidget {
+  const _Col(
+    this.text,
+    this.width, {
+    this.flex,
+    this.bold = false,
+    this.align = TextAlign.start,
+    this.color,
+  });
 
   final String text;
   final double width;
-
-  @override
-  Widget build(BuildContext context) {
-    return SizedBox(
-      width: width,
-      child: Text(
-        text,
-        style: AppTypography.labelMedium.copyWith(fontWeight: FontWeight.w700),
-      ),
-    );
-  }
-}
-
-class _DataCell extends StatelessWidget {
-  const _DataCell(this.text, {required this.width, this.color});
-
-  final String text;
-  final double width;
+  final int? flex;
+  final bool bold;
+  final TextAlign align;
   final Color? color;
 
   @override
   Widget build(BuildContext context) {
+    final style = (bold ? AppTypography.labelMedium : AppTypography.bodySmall)
+        .copyWith(
+      fontWeight: bold ? FontWeight.w700 : FontWeight.w400,
+      color: color ?? AppColors.textSecondary,
+    );
+
+    if (flex != null) {
+      return Expanded(
+        flex: flex!,
+        child: Text(
+          text,
+          style: style,
+          textAlign: align,
+          maxLines: 2,
+          overflow: TextOverflow.ellipsis,
+        ),
+      );
+    }
+
     return SizedBox(
       width: width,
       child: Text(
         text,
-        style: AppTypography.bodySmall.copyWith(
-          color: color ?? AppColors.textSecondary,
-          fontWeight: color != null ? FontWeight.w600 : FontWeight.w400,
-        ),
+        style: style,
+        textAlign: align,
+        maxLines: 2,
+        overflow: TextOverflow.ellipsis,
       ),
     );
   }

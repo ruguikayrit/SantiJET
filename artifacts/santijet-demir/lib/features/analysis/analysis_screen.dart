@@ -1,7 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
 import 'package:intl/intl.dart';
+import 'package:santijet_demir/core/animations/app_animations.dart';
 import 'package:santijet_demir/core/format/app_format.dart';
+import 'package:santijet_demir/core/routing/app_routes.dart';
 import 'package:santijet_demir/core/theme/app_colors.dart';
 import 'package:santijet_demir/core/theme/app_radii.dart';
 import 'package:santijet_demir/core/theme/app_spacing.dart';
@@ -25,8 +28,6 @@ import 'package:santijet_demir/features/rebar_metraj/widgets/rebar_label_details
 
 class AnalysisScreen extends ConsumerWidget {
   const AnalysisScreen({super.key});
-
-  static const _innerCardGap = AppSpacing.xs;
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -129,6 +130,24 @@ class AnalysisScreen extends ConsumerWidget {
               ),
               const SliverToBoxAdapter(child: _AnalysisSelectedBatchArea()),
             ],
+            SliverToBoxAdapter(
+              child: Padding(
+                padding: const EdgeInsets.fromLTRB(
+                  AppSpacing.md,
+                  AppSpacing.lg,
+                  AppSpacing.md,
+                  0,
+                ),
+                child: _ReportsQuickAccessBar(
+                  onTap: () => context.push(AppRoutes.reports),
+                ),
+              ),
+            ),
+            SliverPadding(
+              padding: EdgeInsets.only(
+                bottom: AppBottomNavBar.totalHeightOf(context) + 16,
+              ),
+            ),
           ],
         ),
     );
@@ -275,11 +294,11 @@ class _AnalysisSelectedBatchArea extends ConsumerWidget {
           child: AnalysisFireSummaryPanel(batch: batch),
         ),
         Padding(
-          padding: EdgeInsets.fromLTRB(
+          padding: const EdgeInsets.fromLTRB(
             AppSpacing.md,
             0,
             AppSpacing.md,
-            AppBottomNavBar.totalHeightOf(context) + 16,
+            AppSpacing.sm,
           ),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -331,6 +350,42 @@ class _AnalysisSelectedBatchArea extends ConsumerWidget {
           ),
         ),
       ],
+    );
+  }
+}
+
+class _ReportsQuickAccessBar extends StatelessWidget {
+  const _ReportsQuickAccessBar({required this.onTap});
+
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    return TapScale(
+      onTap: onTap,
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+        decoration: BoxDecoration(
+          color: AppColors.surfaceElevated,
+          borderRadius: AppRadii.md,
+          border: Border.all(color: AppColors.border),
+        ),
+        child: Row(
+          children: [
+            Icon(Icons.description, color: AppColors.partial, size: 22),
+            const SizedBox(width: 10),
+            Expanded(
+              child: Text(
+                'Raporlar · Henüz rapor yok',
+                style: AppTypography.titleMedium,
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+              ),
+            ),
+            const Icon(Icons.chevron_right, color: AppColors.textMuted, size: 20),
+          ],
+        ),
+      ),
     );
   }
 }

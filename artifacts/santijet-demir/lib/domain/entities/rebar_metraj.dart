@@ -129,6 +129,8 @@ class MetrajCetvelRow extends Equatable {
   double get unitTonnage => unitWeightKg / 1000;
   double get totalTonnage => totalWeightKg / 1000;
 
+  double get totalLengthM => lengthM * totalQuantity;
+
   @override
   List<Object?> get props => [
         role,
@@ -204,6 +206,9 @@ class MetrajCetvelEntry extends Equatable {
 
   int get totalBarCount =>
       rows.fold(0, (sum, row) => sum + row.totalQuantity);
+
+  double get totalLengthM =>
+      rows.fold(0.0, (sum, row) => sum + row.totalLengthM);
 
   @override
   List<Object?> get props => [
