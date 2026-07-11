@@ -13,6 +13,7 @@ import 'package:santijet_demir/core/widgets/app_bottom_nav_bar.dart';
 import 'package:santijet_demir/core/widgets/app_components.dart';
 import 'package:santijet_demir/core/widgets/santijet_header.dart';
 import 'package:santijet_demir/core/widgets/project_permission_gate.dart';
+import 'package:santijet_demir/features/analysis/widgets/analysis_running_lock_overlay.dart';
 import 'package:santijet_demir/features/projects/widgets/project_switcher.dart';
 import 'package:santijet_demir/features/settings/providers/profile_provider.dart';
 import 'package:santijet_demir/features/shell/dashboard_feed_provider.dart';
@@ -28,22 +29,28 @@ class MainShell extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      backgroundColor: AppColors.canvas,
-      resizeToAvoidBottomInset: false,
-      body: ResponsiveLayout(
-        child: AppSafeArea(
-          bottom: false,
-          child: navigationShell,
+    return Stack(
+      fit: StackFit.expand,
+      children: [
+        Scaffold(
+          backgroundColor: AppColors.canvas,
+          resizeToAvoidBottomInset: false,
+          body: ResponsiveLayout(
+            child: AppSafeArea(
+              bottom: false,
+              child: navigationShell,
+            ),
+          ),
+          bottomNavigationBar: MediaQuery(
+            data: MediaQuery.of(context).copyWith(
+              padding: MediaQuery.of(context).padding.copyWith(bottom: 0),
+              viewPadding: MediaQuery.of(context).viewPadding.copyWith(bottom: 0),
+            ),
+            child: AppBottomNavBar(navigationShell: navigationShell),
+          ),
         ),
-      ),
-      bottomNavigationBar: MediaQuery(
-        data: MediaQuery.of(context).copyWith(
-          padding: MediaQuery.of(context).padding.copyWith(bottom: 0),
-          viewPadding: MediaQuery.of(context).viewPadding.copyWith(bottom: 0),
-        ),
-        child: AppBottomNavBar(navigationShell: navigationShell),
-      ),
+        const AnalysisRunningLockOverlay(),
+      ],
     );
   }
 }
