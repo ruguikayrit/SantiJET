@@ -35,9 +35,11 @@ class MainShell extends StatelessWidget {
         Scaffold(
           backgroundColor: AppColors.canvas,
           resizeToAvoidBottomInset: false,
-          body: MediaQuery.removePadding(
-            context: context,
-            removeBottom: true,
+          body: MediaQuery(
+            data: MediaQuery.of(context).copyWith(
+              padding: MediaQuery.of(context).padding.copyWith(bottom: 0),
+              viewPadding: MediaQuery.of(context).viewPadding.copyWith(bottom: 0),
+            ),
             child: Stack(
               fit: StackFit.expand,
               children: [

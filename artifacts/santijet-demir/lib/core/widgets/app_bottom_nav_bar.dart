@@ -9,11 +9,14 @@ import 'package:santijet_demir/core/theme/app_colors.dart';
 import 'package:santijet_demir/core/theme/app_typography.dart';
 import 'package:santijet_demir/domain/enums/app_enums.dart';
 
-/// Alt navigasyon — arka plan ekranın dibine kadar uzanır, ikonlar altta hizalanır.
+/// Alt navigasyon — arka plan ekranın dibine kadar uzanır, ikonlar home indicator üstünde.
 class AppBottomNavBar extends ConsumerWidget {
   const AppBottomNavBar({super.key, required this.navigationShell});
 
   final StatefulNavigationShell navigationShell;
+
+  static const _iconBarHeight = 52.0;
+  static const _iconBarHeightTablet = 56.0;
 
   static const _icons = [
     Icons.dashboard_outlined,
@@ -31,53 +34,62 @@ class AppBottomNavBar extends ConsumerWidget {
     Icons.analytics,
   ];
 
+  static double _bottomInsetOf(BuildContext context) {
+    return AppSafeAreaInsets.bottomNavInsetOf(context);
+  }
+
   static double totalHeightOf(BuildContext context) {
     final showLabels = ResponsiveLayout.isTablet(context);
-    final iconBarHeight = showLabels ? 56.0 : 48.0;
-    final bottomInset = AppSafeAreaInsets.bottomNavInsetOf(context);
-    return 4 + iconBarHeight + (bottomInset > 0 ? bottomInset : 8.0);
+    final iconBarHeight = showLabels ? _iconBarHeightTablet : _iconBarHeight;
+    final bottomInset = _bottomInsetOf(context);
+    return iconBarHeight + bottomInset;
   }
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final showLabels = ResponsiveLayout.isTablet(context);
-    final iconBarHeight = showLabels ? 56.0 : 48.0;
-    final bottomInset = AppSafeAreaInsets.bottomNavInsetOf(context);
-    final bottomPadding = bottomInset > 0 ? bottomInset : 8.0;
+    final iconBarHeight = showLabels ? _iconBarHeightTablet : _iconBarHeight;
+    final bottomInset = _bottomInsetOf(context);
 
-    final bar = ColoredBox(
-      color: AppColors.surface,
-      child: DecoratedBox(
-        decoration: const BoxDecoration(
-          border: Border(top: BorderSide(color: AppColors.border)),
-        ),
-        child: Padding(
-          padding: EdgeInsets.only(
-            top: 4,
-            bottom: bottomPadding,
+    final bar = DecoratedBox(
+      decoration: BoxDecoration(
+        color: AppColors.surface,
+        border: Border(
+          top: BorderSide(
+            color: AppColors.border.withValues(alpha: 0.85),
           ),
-          child: SizedBox(
-            height: iconBarHeight,
-            width: double.infinity,
-            child: Row(
-              children: [
-                for (var i = 0; i < BottomNavTab.values.length; i++)
-                  Expanded(
-                    child: _NavItem(
-                      icon: _icons[i],
-                      activeIcon: _activeIcons[i],
-                      label: BottomNavTab.values[i].navLabel,
-                      semanticsLabel: BottomNavTab.values[i].label,
-                      selected: navigationShell.currentIndex == i,
-                      showLabel: showLabels,
-                      onTap: () => navigationShell.goBranch(
-                        i,
-                        initialLocation: i == navigationShell.currentIndex,
-                      ),
+        ),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withValues(alpha: 0.35),
+            blurRadius: 12,
+            offset: const Offset(0, -4),
+          ),
+        ],
+      ),
+      child: Padding(
+        padding: EdgeInsets.only(bottom: bottomInset),
+        child: SizedBox(
+          height: iconBarHeight,
+          width: double.infinity,
+          child: Row(
+            children: [
+              for (var i = 0; i < BottomNavTab.values.length; i++)
+                Expanded(
+                  child: _NavItem(
+                    icon: _icons[i],
+                    activeIcon: _activeIcons[i],
+                    label: BottomNavTab.values[i].navLabel,
+                    semanticsLabel: BottomNavTab.values[i].label,
+                    selected: navigationShell.currentIndex == i,
+                    showLabel: showLabels,
+                    onTap: () => navigationShell.goBranch(
+                      i,
+                      initialLocation: i == navigationShell.currentIndex,
                     ),
                   ),
-              ],
-            ),
+                ),
+            ],
           ),
         ),
       ),
@@ -111,30 +123,34 @@ class _NavItem extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final color =
-        selected ? AppColors.electricBlueLight : AppColors.textMuted;
+    final activeColor = AppColors.electricBlueLight;
+    final inactiveColor = AppColors.textMuted.withValues(alpha: 0.85);
 
     Widget child = SizedBox.expand(
       child: Column(
-        mainAxisAlignment: MainAxisAlignment.end,
-        mainAxisSize: MainAxisSize.max,
+        mainAxisAlignment: MainAxisAlignment.center,
         children: [
           AnimatedContainer(
-            duration: const Duration(milliseconds: 200),
-            padding: EdgeInsets.symmetric(
-              horizontal: showLabel ? 8 : 12,
-              vertical: showLabel ? 4 : 2,
-            ),
+            duration: const Duration(milliseconds: 220),
+            curve: Curves.easeOutCubic,
+            width: selected ? 44 : 40,
+            height: selected ? 32 : 28,
+            alignment: Alignment.center,
             decoration: BoxDecoration(
               color: selected
-                  ? AppColors.electricBlue.withValues(alpha: 0.15)
+                  ? AppColors.electricBlue.withValues(alpha: 0.18)
                   : Colors.transparent,
-              borderRadius: BorderRadius.circular(14),
+              borderRadius: BorderRadius.circular(16),
+              border: selected
+                  ? Border.all(
+                      color: AppColors.electricBlueLight.withValues(alpha: 0.35),
+                    )
+                  : null,
             ),
             child: Icon(
               selected ? activeIcon : icon,
-              size: showLabel ? 20 : 24,
-              color: color,
+              size: showLabel ? 20 : 22,
+              color: selected ? activeColor : inactiveColor,
             ),
           ),
           if (showLabel) ...[
@@ -146,9 +162,10 @@ class _NavItem extends StatelessWidget {
                 maxLines: 1,
                 textAlign: TextAlign.center,
                 style: AppTypography.tabLabel.copyWith(
-                  color: color,
+                  color: selected ? activeColor : inactiveColor,
                   fontSize: 9,
                   height: 1.0,
+                  decoration: TextDecoration.none,
                 ),
               ),
             ),
