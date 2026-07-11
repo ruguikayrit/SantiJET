@@ -1,10 +1,13 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:santijet_demir/core/format/app_format.dart';
 import 'package:santijet_demir/core/theme/app_colors.dart';
 import 'package:santijet_demir/core/theme/app_radii.dart';
 import 'package:santijet_demir/core/theme/app_typography.dart';
 import 'package:santijet_demir/domain/entities/cutting_bending.dart';
 import 'package:santijet_demir/features/analysis/cutting_bending_calculator.dart';
+import 'package:santijet_demir/features/analysis/providers/cutting_bending_provider.dart';
+import 'package:santijet_demir/features/analysis/widgets/paginated_list_section.dart';
 
 enum FireSummaryDetailKind {
   rawMaterial,
@@ -63,14 +66,14 @@ class FireSummaryDetailPanel extends StatelessWidget {
   }
 }
 
-class _RawMaterialDetail extends StatelessWidget {
+class _RawMaterialDetail extends ConsumerWidget {
   const _RawMaterialDetail({required this.batch});
 
   final CuttingBendingBatch batch;
 
   @override
-  Widget build(BuildContext context) {
-    final byDiameter = computeMaterialSummaryByDiameter(batch.pieceLines);
+  Widget build(BuildContext context, WidgetRef ref) {
+    final byDiameter = ref.watch(analysisMaterialSummaryProvider);
     final totalPieces =
         batch.pieceLines.fold(0, (sum, piece) => sum + piece.quantity);
 
@@ -102,8 +105,10 @@ class _RawMaterialDetail extends StatelessWidget {
         const SizedBox(height: 10),
         Text('Parça detayı', style: AppTypography.labelMedium),
         const SizedBox(height: 6),
-        ...batch.pieceLines.map(
-          (piece) => Padding(
+        PaginatedListSection<RebarPieceLine>(
+          items: batch.pieceLines,
+          pageSize: 30,
+          itemBuilder: (context, piece, index) => Padding(
             padding: const EdgeInsets.only(bottom: 4),
             child: Text(
               'Ø${piece.diameter} · ${piece.lengthM.toStringAsFixed(2)} m × '
@@ -119,7 +124,7 @@ class _RawMaterialDetail extends StatelessWidget {
   }
 }
 
-class _RawFireDetail extends StatelessWidget {
+class _RawFireDetail extends ConsumerWidget {
   const _RawFireDetail({
     required this.batch,
     required this.summary,
@@ -129,8 +134,8 @@ class _RawFireDetail extends StatelessWidget {
   final AnalysisFireSummary summary;
 
   @override
-  Widget build(BuildContext context) {
-    final breakdown = computeRawFireBreakdown(batch);
+  Widget build(BuildContext context, WidgetRef ref) {
+    final breakdown = ref.watch(analysisRawFireBreakdownProvider);
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -179,7 +184,7 @@ class _RawFireDetail extends StatelessWidget {
   }
 }
 
-class _PlannedFireDetail extends StatelessWidget {
+class _PlannedFireDetail extends ConsumerWidget {
   const _PlannedFireDetail({
     required this.batch,
     required this.summary,
@@ -189,7 +194,7 @@ class _PlannedFireDetail extends StatelessWidget {
   final AnalysisFireSummary summary;
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
     if (!summary.isPlannedReady) {
       return Text(
         'Plan fire, analiz tamamlandıktan sonra görünür.',
@@ -197,7 +202,7 @@ class _PlannedFireDetail extends StatelessWidget {
       );
     }
 
-    final breakdown = computePlannedFireBreakdown(batch);
+    final breakdown = ref.watch(analysisPlannedFireBreakdownProvider);
     final strategy = batch.optimizationStrategy?.label ?? '—';
 
     return Column(

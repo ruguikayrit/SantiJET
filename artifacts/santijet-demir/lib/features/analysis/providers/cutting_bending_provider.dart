@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:santijet_demir/data/repositories/cutting_bending_repository.dart';
 import 'package:santijet_demir/domain/entities/cutting_bending.dart';
 import 'package:santijet_demir/domain/entities/rebar_metraj.dart';
+import 'package:santijet_demir/features/analysis/analysis_compute_cache.dart';
 import 'package:santijet_demir/features/analysis/cutting_bending_calculator.dart'
     as analysis_calc;
 import 'package:santijet_demir/features/projects/providers/project_provider.dart';
@@ -19,6 +20,7 @@ final cuttingBendingBatchesProvider =
     if (previous == next) return;
     if (previous != null) {
       Future.microtask(() {
+        AnalysisComputeCache.clear();
         ref.read(selectedAnalysisBatchIdsProvider.notifier).state = {};
         ref.read(mergedAnalysisSessionProvider.notifier).state = null;
       });
@@ -100,6 +102,54 @@ final analysisComparisonProvider = Provider<analysis_calc.AnalysisComparison?>((
   final batch = ref.watch(mergedAnalysisBatchProvider);
   if (batch == null || !batch.isOptimized) return null;
   return analysis_calc.computeAnalysisComparison(batch);
+});
+
+/// Strateji fire karşılaştırması — build içinde tekrar hesaplanmaz.
+final analysisStrategyComparisonProvider =
+    Provider<List<analysis_calc.StrategyFireComparison>>((ref) {
+  final batch = ref.watch(mergedAnalysisBatchProvider);
+  if (batch == null) return const [];
+  return analysis_calc.computeStrategyFireComparisons(batch);
+});
+
+/// Ham ↔ revize parça karşılaştırma satırları.
+final analysisPieceListComparisonProvider =
+    Provider<List<analysis_calc.PieceListComparisonRow>>((ref) {
+  final batch = ref.watch(mergedAnalysisBatchProvider);
+  if (batch == null || !batch.isOptimized) return const [];
+  return analysis_calc.computePieceListComparisonRows(batch);
+});
+
+/// Boy eşleştirme değişiklikleri.
+final analysisLengthMatchChangesProvider =
+    Provider<List<analysis_calc.LengthMatchChange>>((ref) {
+  final batch = ref.watch(mergedAnalysisBatchProvider);
+  if (batch == null) return const [];
+  return analysis_calc.computeLengthMatchChanges(batch.lengthMatches);
+});
+
+/// Malzeme özeti (çap bazında).
+final analysisMaterialSummaryProvider =
+    Provider<List<analysis_calc.MaterialDiameterSummary>>((ref) {
+  final batch = ref.watch(mergedAnalysisBatchProvider);
+  if (batch == null) return const [];
+  return analysis_calc.computeMaterialSummaryByDiameter(batch.pieceLines);
+});
+
+/// Ham fire çap kırılımı.
+final analysisRawFireBreakdownProvider =
+    Provider<List<analysis_calc.FireDiameterBreakdown>>((ref) {
+  final batch = ref.watch(mergedAnalysisBatchProvider);
+  if (batch == null) return const [];
+  return analysis_calc.computeRawFireBreakdown(batch);
+});
+
+/// Plan fire çap kırılımı.
+final analysisPlannedFireBreakdownProvider =
+    Provider<List<analysis_calc.FireDiameterBreakdown>>((ref) {
+  final batch = ref.watch(mergedAnalysisBatchProvider);
+  if (batch == null || !batch.isOptimized) return const [];
+  return analysis_calc.computePlannedFireBreakdown(batch);
 });
 
 class OptimumFireAnalysisProgress {
@@ -350,12 +400,11 @@ class CuttingBendingNotifier extends StateNotifier<CuttingBendingState> {
         strategy: _ref.read(selectedFireReductionStrategyProvider),
         onProgress: (percent, stepLabel) async {
           final now = DateTime.now();
-          if (kIsWeb &&
-              percent < 100 &&
+          if (percent < 100 &&
               lastUiUpdate != null &&
               now.difference(lastUiUpdate!) <
-                  const Duration(milliseconds: 300) &&
-              (percent - lastReportedPercent).abs() < 5) {
+                  const Duration(milliseconds: 250) &&
+              (percent - lastReportedPercent).abs() < 3) {
             return;
           }
           lastUiUpdate = now;
@@ -368,8 +417,6 @@ class CuttingBendingNotifier extends StateNotifier<CuttingBendingState> {
           );
           if (kIsWeb) {
             await Future<void>.delayed(const Duration(milliseconds: 16));
-          } else {
-            await Future<void>.delayed(const Duration(milliseconds: 8));
           }
         },
       );

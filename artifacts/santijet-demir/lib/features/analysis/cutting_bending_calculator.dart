@@ -3,6 +3,7 @@ import 'package:santijet_demir/data/services/rebar_weight_calculator.dart';
 import 'package:santijet_demir/domain/entities/cutting_bending.dart';
 import 'package:santijet_demir/domain/entities/rebar_metraj.dart';
 import 'package:santijet_demir/domain/tahvil/tahvil_rules.dart';
+import 'package:santijet_demir/features/analysis/analysis_compute_cache.dart';
 /// Boy eşleştirme — kaynak demir boyunun en fazla bu oranı kadar tolerans.
 const lengthMatchTolerancePercent = 0.05;
 
@@ -241,6 +242,29 @@ List<StockBarCut> _packDiameterInventory({
 
 /// Aynı çaptaki parçaları 12 m stok boydan minimum fire ile kesim planına dönüştürür.
 List<StockCutPlan> computeStockCutPlans(
+  List<RebarPieceLine> pieces, {
+  double stockLengthM = stockBarLengthM,
+  bool useCache = true,
+}) {
+  if (pieces.isEmpty) return const [];
+
+  if (useCache && stockLengthM == stockBarLengthM) {
+    final cacheKey = AnalysisComputeCache.keyForPieces(pieces);
+    if (AnalysisComputeCache.hasStockCutPlans(cacheKey)) {
+      return AnalysisComputeCache.readStockCutPlans(cacheKey);
+    }
+    final plans = _computeStockCutPlansUncached(
+      pieces,
+      stockLengthM: stockLengthM,
+    );
+    AnalysisComputeCache.storeStockCutPlans(cacheKey, plans);
+    return plans;
+  }
+
+  return _computeStockCutPlansUncached(pieces, stockLengthM: stockLengthM);
+}
+
+List<StockCutPlan> _computeStockCutPlansUncached(
   List<RebarPieceLine> pieces, {
   double stockLengthM = stockBarLengthM,
 }) {
@@ -899,6 +923,10 @@ class StrategyFireComparison {
 List<StrategyFireComparison> computeStrategyFireComparisons(
   CuttingBendingBatch batch,
 ) {
+  final rawMetrics = _aggregateStockCutFireMetrics(
+    computeStockCutPlans(batch.pieceLines),
+  );
+
   return FireReductionStrategy.values.map((strategy) {
     final saved = batch.savedOptimizations[strategy];
     final isActive =
@@ -914,8 +942,7 @@ List<StrategyFireComparison> computeStrategyFireComparisons(
       return StrategyFireComparison(strategy: strategy, isAvailable: false);
     }
 
-    final summary = computeAnalysisFireSummary(evalBatch);
-    if (!summary.isPlannedReady) {
+    if (evalBatch.stockCutPlans.isEmpty) {
       return StrategyFireComparison(
         strategy: strategy,
         isAvailable: false,
@@ -924,13 +951,24 @@ List<StrategyFireComparison> computeStrategyFireComparisons(
       );
     }
 
+    final plannedMetrics =
+        _aggregateStockCutFireMetrics(evalBatch.stockCutPlans);
+    final savedWasteTonnage =
+        (rawMetrics.wasteTonnage - plannedMetrics.wasteTonnage)
+            .clamp(0.0, double.infinity)
+            .toDouble();
+    final savedWastePercent =
+        (rawMetrics.wastePercent - plannedMetrics.wastePercent)
+            .clamp(0.0, double.infinity)
+            .toDouble();
+
     return StrategyFireComparison(
       strategy: strategy,
       isAvailable: true,
-      plannedFireTonnage: summary.plannedWasteTonnage,
-      plannedFirePercent: summary.plannedWastePercent,
-      savedFireTonnage: summary.savedWasteTonnage,
-      savedFirePercent: summary.savedWastePercent,
+      plannedFireTonnage: plannedMetrics.wasteTonnage,
+      plannedFirePercent: plannedMetrics.wastePercent,
+      savedFireTonnage: savedWasteTonnage,
+      savedFirePercent: savedWastePercent,
       isActive: isActive,
       isSaved: isSaved,
     );

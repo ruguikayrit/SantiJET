@@ -1,21 +1,24 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:santijet_demir/core/format/app_format.dart';
 import 'package:santijet_demir/core/theme/app_colors.dart';
 import 'package:santijet_demir/core/theme/app_radii.dart';
 import 'package:santijet_demir/core/theme/app_typography.dart';
 import 'package:santijet_demir/domain/entities/cutting_bending.dart';
 import 'package:santijet_demir/features/analysis/cutting_bending_calculator.dart';
+import 'package:santijet_demir/features/analysis/providers/cutting_bending_provider.dart';
 import 'package:santijet_demir/features/analysis/widgets/analysis_fire_summary.dart';
+import 'package:santijet_demir/features/analysis/widgets/paginated_list_section.dart';
 
-class AnalysisOptimizationResultsSection extends StatelessWidget {
+class AnalysisOptimizationResultsSection extends ConsumerWidget {
   const AnalysisOptimizationResultsSection({super.key, required this.batch});
 
   final CuttingBendingBatch batch;
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
     final strategy = batch.optimizationStrategy;
-    final lengthChanges = computeLengthMatchChanges(batch.lengthMatches);
+    final lengthChanges = ref.watch(analysisLengthMatchChangesProvider);
     final approvedTahvil =
         batch.tahvilGroups.where((group) => group.approved).toList();
 
@@ -78,9 +81,11 @@ class AnalysisOptimizationResultsSection extends StatelessWidget {
               style: AppTypography.labelMedium,
             ),
             const SizedBox(height: 8),
-            const _LengthMatchChangesTableHeader(),
-            ...lengthChanges.map(
-              (change) => _LengthMatchChangeRow(change: change),
+            PaginatedListSection<LengthMatchChange>(
+              items: lengthChanges,
+              header: const _LengthMatchChangesTableHeader(),
+              itemBuilder: (context, change, index) =>
+                  _LengthMatchChangeRow(change: change),
             ),
           ],
           const SizedBox(height: 20),
@@ -282,61 +287,58 @@ class _ReadOnlyPieceListTable extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Column(
-      children: [
-        Container(
-          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
-          decoration: const BoxDecoration(
-            border: Border(bottom: BorderSide(color: AppColors.border)),
-          ),
-          child: Row(
-            children: [
-              Expanded(child: Text('ÇAP', style: AppTypography.labelMedium)),
-              Expanded(child: Text('BOY (m)', style: AppTypography.labelMedium)),
-              Expanded(
-                child: Text(
-                  'ADET',
-                  style: AppTypography.labelMedium,
-                  textAlign: TextAlign.end,
+    return PaginatedListSection<RebarPieceLine>(
+      items: pieces,
+      header: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+        decoration: const BoxDecoration(
+          border: Border(bottom: BorderSide(color: AppColors.border)),
+        ),
+        child: Row(
+          children: [
+            Expanded(child: Text('ÇAP', style: AppTypography.labelMedium)),
+            Expanded(child: Text('BOY (m)', style: AppTypography.labelMedium)),
+            Expanded(
+              child: Text(
+                'ADET',
+                style: AppTypography.labelMedium,
+                textAlign: TextAlign.end,
+              ),
+            ),
+          ],
+        ),
+      ),
+      itemBuilder: (context, piece, index) => Container(
+        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+        decoration: const BoxDecoration(
+          border: Border(bottom: BorderSide(color: AppColors.border)),
+        ),
+        child: Row(
+          children: [
+            Expanded(
+              child: Text(
+                'Ø${piece.diameter}',
+                style: AppTypography.titleMedium.copyWith(
+                  color: AppColors.diameterColor(piece.diameter),
                 ),
               ),
-            ],
-          ),
-        ),
-        ...pieces.map(
-          (piece) => Container(
-            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
-            decoration: const BoxDecoration(
-              border: Border(bottom: BorderSide(color: AppColors.border)),
             ),
-            child: Row(
-              children: [
-                Expanded(
-                  child: Text(
-                    'Ø${piece.diameter}',
-                    style: AppTypography.titleMedium.copyWith(
-                      color: AppColors.diameterColor(piece.diameter),
-                    ),
-                  ),
-                ),
-                Expanded(
-                  child: Text(
-                    piece.lengthM.toStringAsFixed(2),
-                    style: AppTypography.bodyMedium,
-                  ),
-                ),
-                Expanded(
-                  child: Text(
-                    AppFormat.integer(piece.quantity),
-                    style: AppTypography.bodyMedium,
-                    textAlign: TextAlign.end,
-                  ),
-                ),
-              ],
+            Expanded(
+              child: Text(
+                piece.lengthM.toStringAsFixed(2),
+                style: AppTypography.bodyMedium,
+              ),
             ),
-          ),
+            Expanded(
+              child: Text(
+                AppFormat.integer(piece.quantity),
+                style: AppTypography.bodyMedium,
+                textAlign: TextAlign.end,
+              ),
+            ),
+          ],
         ),
-      ],
+      ),
     );
   }
 }

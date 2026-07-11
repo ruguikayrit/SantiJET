@@ -14,16 +14,18 @@ class CollapsibleAnalysisSection extends ConsumerWidget {
     required this.sectionId,
     required this.title,
     this.subtitle,
-    required this.child,
+    this.child,
+    this.childBuilder,
     this.headerAccentColor,
-  });
+  }) : assert(child != null || childBuilder != null);
 
   static const sectionGap = AppSpacing.sm;
 
   final String sectionId;
   final String title;
   final String? subtitle;
-  final Widget child;
+  final Widget? child;
+  final Widget Function()? childBuilder;
   final Color? headerAccentColor;
 
   @override
@@ -132,7 +134,7 @@ class CollapsibleAnalysisSection extends ConsumerWidget {
               const Divider(height: 1, color: AppColors.border),
               Padding(
                 padding: const EdgeInsets.all(AppSpacing.sm),
-                child: child,
+                child: childBuilder != null ? childBuilder!() : child!,
               ),
             ],
           ],
