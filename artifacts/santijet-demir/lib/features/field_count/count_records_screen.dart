@@ -68,6 +68,7 @@ class _CountRecordsScreenState extends ConsumerState<CountRecordsScreen> {
       ),
       floatingActionButton: AppFab(
         label: 'Yeni Sayım',
+        aboveBottomNav: false,
         onPressed: () => context.push(AppRoutes.newCount),
       ),
     );

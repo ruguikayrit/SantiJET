@@ -4,6 +4,7 @@ import 'package:santijet_demir/core/theme/app_colors.dart';
 import 'package:santijet_demir/core/theme/app_radii.dart';
 import 'package:santijet_demir/core/theme/app_spacing.dart';
 import 'package:santijet_demir/core/theme/app_typography.dart';
+import 'package:santijet_demir/core/widgets/app_bottom_nav_bar.dart';
 
 class StatusBadge extends StatelessWidget {
   const StatusBadge({
@@ -587,24 +588,37 @@ class AppFab extends StatelessWidget {
     required this.label,
     required this.onPressed,
     this.extended = true,
+    this.aboveBottomNav = true,
   });
 
   final String label;
   final VoidCallback onPressed;
   final bool extended;
 
+  /// Alt sekmeli gezinme çubuğunun üstünde konumlandır (MainShell sekmeleri).
+  final bool aboveBottomNav;
+
   @override
   Widget build(BuildContext context) {
+    final Widget fab;
     if (extended) {
-      return FloatingActionButton.extended(
+      fab = FloatingActionButton.extended(
         onPressed: onPressed,
         icon: const Icon(Icons.add),
         label: Text(label),
       );
+    } else {
+      fab = FloatingActionButton(
+        onPressed: onPressed,
+        child: const Icon(Icons.add),
+      );
     }
-    return FloatingActionButton(
-      onPressed: onPressed,
-      child: const Icon(Icons.add),
+
+    if (!aboveBottomNav) return fab;
+
+    return Padding(
+      padding: EdgeInsets.only(bottom: AppBottomNavBar.totalHeightOf(context)),
+      child: fab,
     );
   }
 }

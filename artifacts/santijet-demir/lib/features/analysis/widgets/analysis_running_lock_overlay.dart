@@ -205,7 +205,7 @@ class _CompletedPanel extends StatelessWidget {
         ),
         const SizedBox(height: 28),
         Text(
-          'Sonuçlar hazır !',
+          'Analiz Tamamlandı !',
           style: AnalysisRunningLockOverlay._plainText(
             AppTypography.headlineMedium.copyWith(
               color: AppColors.success,
@@ -215,6 +215,17 @@ class _CompletedPanel extends StatelessWidget {
           textAlign: TextAlign.center,
         ),
         const SizedBox(height: 10),
+        Text(
+          'Sonuçlar hazır !',
+          style: AnalysisRunningLockOverlay._plainText(
+            AppTypography.bodyMedium.copyWith(
+              color: AppColors.textMuted,
+              height: 1.45,
+            ),
+          ),
+          textAlign: TextAlign.center,
+        ),
+        const SizedBox(height: 6),
         Text(
           'Uygulama kullanımına devam edebilirsiniz.',
           style: AnalysisRunningLockOverlay._plainText(
