@@ -14,6 +14,7 @@ import 'package:santijet_demir/domain/entities/rebar_metraj.dart';
 import 'package:santijet_demir/features/projects/providers/project_provider.dart';
 import 'package:santijet_demir/features/rebar_metraj/providers/rebar_metraj_provider.dart';
 import 'package:santijet_demir/features/rebar_metraj/providers/rebar_metraj_storage_provider.dart';
+import 'package:santijet_demir/features/rebar_metraj/widgets/metraj_cetvel_section.dart';
 import 'package:santijet_demir/features/rebar_metraj/widgets/metraj_survey_actions.dart';
 import 'package:santijet_demir/features/rebar_metraj/widgets/rebar_label_details_section.dart';
 import 'package:santijet_demir/features/survey/providers/survey_provider.dart';
@@ -121,7 +122,10 @@ class _RebarMetrajPanelState extends ConsumerState<RebarMetrajPanel>
                     '${result.fileName} · ${result.sourceFormat}',
                     style: AppTypography.bodySmall,
                   ),
-                  const SizedBox(height: 16),
+                  if (result.cetvel.isNotEmpty) ...[
+                    MetrajCetvelSection(cetvel: result.cetvel),
+                    const SizedBox(height: 20),
+                  ],
                   Text('Çap Bazlı Metraj', style: AppTypography.headlineMedium),
                   const SizedBox(height: 12),
                   ...result.lines.map((line) => _MetrajLineCard(line: line)),
@@ -229,9 +233,9 @@ class _InfoBanner extends StatelessWidget {
           const SizedBox(height: 8),
           Text(
             '1. AutoCAD/BricsCAD projesini DWG olarak yükleyin\n'
-            '2. üst.334Ø22/15 l=1200 → 334 ad × 12 m (aralık hesaba katılmaz)\n'
-            '3. 15000Ø16 l=200 → 15000 ad × 2 m\n'
-            '4. Tonaj = adet × boy × birim ağırlık (kg/m)\n'
+            '2. Kolon/perde/kiriş/döşeme başlıkları: S1[100/160] 182 ADET\n'
+            '3. Her eleman altında etriye, çiroz, boy demiri metrajı toplanır\n'
+            '4. 1 adet eleman metrajı × benzer katsayısı = proje toplamı\n'
             '5. Analiz sonuçlarını kaydırın; üstte Ön İmalata Gönder\n'
             '6. Ön İmalat sekmesinde analiz onayı verin; Hesap ve Analiz sayfasından yükleyin',
             style: AppTypography.bodySmall,

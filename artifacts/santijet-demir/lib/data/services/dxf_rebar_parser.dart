@@ -1,6 +1,7 @@
 import 'package:santijet_demir/data/services/cad_text_entity.dart';
 import 'package:santijet_demir/data/services/dwg_text_extractor.dart';
 import 'package:santijet_demir/data/services/dxf_ascii_parser.dart';
+import 'package:santijet_demir/data/services/metraj_cetvel_builder.dart';
 import 'package:santijet_demir/data/services/rebar_text_parser.dart';
 import 'package:santijet_demir/data/services/rebar_weight_calculator.dart';
 import 'package:santijet_demir/domain/entities/rebar_metraj.dart';
@@ -75,7 +76,6 @@ class DxfRebarParser {
   }) {
     final warnings = <String>[];
     final grouped = <int, _DiameterAccumulator>{};
-    final textDetails = <RebarMetrajTextDetail>[];
 
     if (entities.isEmpty) {
       warnings.add(
@@ -84,51 +84,40 @@ class DxfRebarParser {
       );
     }
 
-    for (final entity in entities) {
-      final parsed = textParser.parseOne(entity.text);
-      if (parsed == null) continue;
+    final buildResult = MetrajCetvelBuilder(
+      textParser: textParser,
+      unitScale: settings.unitScale,
+    ).build(entities);
 
-      final scaledLength = parsed.lengthM * settings.unitScale;
-      final weightKg = RebarWeightCalculator.weightKg(
-        diameterMm: parsed.diameter,
-        lengthM: scaledLength,
-      );
+    final textDetails = buildResult.textDetails;
+    final cetvel = buildResult.cetvel;
 
-      textDetails.add(
-        RebarMetrajTextDetail(
-          entityType: entity.entityType,
-          sourceText: entity.text,
-          included: true,
-          diameter: parsed.diameter,
-          lengthM: scaledLength,
-          quantity: parsed.quantity,
-          weightKg: weightKg * parsed.quantity,
-          spacingCm: parsed.spacingCm,
-        ),
-      );
+    for (final detail in textDetails) {
+      if (!detail.included || detail.diameter == null || detail.lengthM == null) {
+        continue;
+      }
 
-      grouped.putIfAbsent(parsed.diameter, () => _DiameterAccumulator());
-      grouped[parsed.diameter]!.addBars(
-        lengthM: scaledLength,
-        count: parsed.quantity,
-        label: parsed.sourceText,
+      grouped.putIfAbsent(detail.diameter!, () => _DiameterAccumulator());
+      grouped[detail.diameter!]!.addBars(
+        lengthM: detail.lengthM!,
+        count: detail.quantity,
+        label: detail.sourceText,
       );
     }
 
     if (entities.isNotEmpty && grouped.isEmpty) {
-      final samples = entities
-          .take(5)
-          .map((entity) {
-            final text = entity.text.trim();
-            if (text.length <= 64) return text;
-            return '${text.substring(0, 64)}…';
-          })
-          .join('\n• ');
-
       warnings.add(
         'Demir etiketi bulunamadı. Örnek formatlar:\n'
-        'üst.334Ø22/15 l=1200 (334 ad × 12 m)\n'
-        '15000Ø16 l=200 (15000 ad × 2 m)',
+        'S1[100/160] 182 ADET\n'
+        '42Ø28 L=280 · etr*18Ø12/10 L=510\n'
+        'üst.334Ø22/15 l=1200 (334 ad × 12 m)',
+      );
+    }
+
+    if (buildResult.unassignedCount > 0) {
+      warnings.add(
+        '${buildResult.unassignedCount} demir etiketi eleman başlığı (S/P/K/D) '
+        'altında gruplanamadı; benzer katsayısı uygulanmadı.',
       );
     }
 
@@ -156,6 +145,7 @@ class DxfRebarParser {
       textDetails: textDetails,
       skippedEntityCount: entities.length - textDetails.length,
       warnings: warnings,
+      cetvel: cetvel,
     );
   }
 }

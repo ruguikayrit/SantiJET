@@ -9,6 +9,7 @@ class RebarTextEntry {
     required this.lengthM,
     required this.quantity,
     this.spacingCm,
+    this.role = RebarLabelRole.other,
   });
 
   final String sourceText;
@@ -16,6 +17,24 @@ class RebarTextEntry {
   final double lengthM;
   final int quantity;
   final double? spacingCm;
+  final RebarLabelRole role;
+}
+
+/// Metraj cetvelinde demir türü.
+enum RebarLabelRole {
+  longitudinal,
+  stirrup,
+  crosstie,
+  mesh,
+  other;
+
+  String get label => switch (this) {
+        RebarLabelRole.longitudinal => 'Boy demiri',
+        RebarLabelRole.stirrup => 'Etriye',
+        RebarLabelRole.crosstie => 'Çiroz',
+        RebarLabelRole.mesh => 'Hasır / örgü',
+        RebarLabelRole.other => 'Demir',
+      };
 }
 
 /// TEXT / MTEXT içeriğinden adet, çap (FI/Ø) ve boy birlikte geçenleri okur.
@@ -60,6 +79,24 @@ class RebarTextParser {
     caseSensitive: false,
   );
 
+  /// etr*18Ø12/10 L=510
+  static final _stirrupLabel = RegExp(
+    r'ETR\*(\d+)(?:FI|F[Iİ]|Ø|O|D)(\d{2})(?:/\d+)?\s*L\s*=\s*([\d.,]+)',
+    caseSensitive: false,
+  );
+
+  /// Çiroz*12Ø12 L=170
+  static final _crosstieLabel = RegExp(
+    r'(?:CIROZ|ÇIROZ)\*(\d+)(?:FI|F[Iİ]|Ø|O|D)(\d{2})\s*L\s*=\s*([\d.,]+)',
+    caseSensitive: false,
+  );
+
+  /// 42Ø28 L=280
+  static final _qtyDiameterLength = RegExp(
+    r'^(\d+)(?:FI|F[Iİ]|Ø|O|D)(\d{2})\s*L\s*=\s*([\d.,]+)$',
+    caseSensitive: false,
+  );
+
   List<RebarTextEntry> parseAll(Iterable<String> texts) {
     final entries = <RebarTextEntry>[];
     for (final raw in texts) {
@@ -76,7 +113,10 @@ class RebarTextParser {
     final normalized = _normalize(cleaned);
     if (!_looksLikeRebarLabel(normalized)) return null;
 
-    return _matchLocationLabel(_locationLabel, normalized, cleaned) ??
+    return _matchStirrupOrCrosstie(_stirrupLabel, normalized, cleaned, RebarLabelRole.stirrup) ??
+        _matchStirrupOrCrosstie(_crosstieLabel, normalized, cleaned, RebarLabelRole.crosstie) ??
+        _matchQtyDiameterLength(normalized, cleaned) ??
+        _matchLocationLabel(_locationLabel, normalized, cleaned) ??
         _matchLocationLabel(_spacingLabel, normalized, cleaned) ??
         _matchQuantity(_quantityX, normalized, cleaned) ??
         _matchQuantity(_quantityPrefix, normalized, cleaned) ??
@@ -84,8 +124,76 @@ class RebarTextParser {
         _matchQuantity(_quantityAdetReverse, normalized, cleaned);
   }
 
+  RebarTextEntry? _matchStirrupOrCrosstie(
+    RegExp pattern,
+    String normalized,
+    String displayText,
+    RebarLabelRole role,
+  ) {
+    final match = pattern.firstMatch(normalized);
+    if (match == null) return null;
+
+    final quantity = int.tryParse(match.group(1)!);
+    final diameter = int.tryParse(match.group(2)!);
+    final length = _parseSimpleLength(match.group(3)!);
+
+    if (quantity == null ||
+        quantity <= 0 ||
+        !_isValidDiameter(diameter) ||
+        length == null ||
+        length <= 0) {
+      return null;
+    }
+
+    return RebarTextEntry(
+      sourceText: displayText,
+      diameter: diameter!,
+      lengthM: length,
+      quantity: quantity,
+      role: role,
+    );
+  }
+
+  RebarTextEntry? _matchQtyDiameterLength(String normalized, String displayText) {
+    final match = _qtyDiameterLength.firstMatch(normalized);
+    if (match == null) return null;
+
+    final quantity = int.tryParse(match.group(1)!);
+    final diameter = int.tryParse(match.group(2)!);
+    final length = _parseSimpleLength(match.group(3)!);
+
+    if (quantity == null ||
+        quantity <= 0 ||
+        !_isValidDiameter(diameter) ||
+        length == null ||
+        length <= 0) {
+      return null;
+    }
+
+    return RebarTextEntry(
+      sourceText: displayText,
+      diameter: diameter!,
+      lengthM: length,
+      quantity: quantity,
+      role: RebarLabelRole.longitudinal,
+    );
+  }
+
   bool _looksLikeRebarLabel(String normalized) {
     if (_spacingLabelShape.hasMatch(normalized)) {
+      return true;
+    }
+
+    if (RegExp(
+      r'\d+\s*[xX×]\s*(?:FI|F[Iİ]|Ø|O|D)?\s*\d{2}\s*[/\-xX×]',
+      caseSensitive: false,
+    ).hasMatch(normalized)) {
+      return true;
+    }
+
+    if (_stirrupLabel.hasMatch(normalized) ||
+        _crosstieLabel.hasMatch(normalized) ||
+        _qtyDiameterLength.hasMatch(normalized)) {
       return true;
     }
 

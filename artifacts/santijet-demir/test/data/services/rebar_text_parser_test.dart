@@ -71,4 +71,28 @@ void main() {
       expect(parser.parseOne('PROJE ADI'), isNull);
     });
   });
+
+  group('kolon/perde etiketleri', () {
+    test('42Ø28 L=280 boy demiri', () {
+      final entry = parser.parseOne('42Ø28 L=280');
+      expect(entry?.quantity, 42);
+      expect(entry?.diameter, 28);
+      expect(entry?.lengthM, closeTo(2.8, 0.001));
+      expect(entry?.role, RebarLabelRole.longitudinal);
+    });
+
+    test('etr*18Ø12/10 L=510 etriye', () {
+      final entry = parser.parseOne('etr*18Ø12/10 L=510');
+      expect(entry?.quantity, 18);
+      expect(entry?.diameter, 12);
+      expect(entry?.lengthM, closeTo(5.1, 0.001));
+      expect(entry?.role, RebarLabelRole.stirrup);
+    });
+
+    test('Çiroz*12Ø12 L=170', () {
+      final entry = parser.parseOne('Çiroz*12Ø12 L=170');
+      expect(entry?.quantity, 12);
+      expect(entry?.role, RebarLabelRole.crosstie);
+    });
+  });
 }

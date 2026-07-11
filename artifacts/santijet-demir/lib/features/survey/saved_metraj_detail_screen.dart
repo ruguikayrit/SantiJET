@@ -9,6 +9,7 @@ import 'package:santijet_demir/core/widgets/app_components.dart';
 import 'package:santijet_demir/domain/entities/rebar_metraj.dart';
 import 'package:santijet_demir/features/projects/providers/project_provider.dart';
 import 'package:santijet_demir/features/rebar_metraj/providers/rebar_metraj_storage_provider.dart';
+import 'package:santijet_demir/features/rebar_metraj/widgets/metraj_cetvel_section.dart';
 import 'package:santijet_demir/features/rebar_metraj/widgets/metraj_cutting_actions.dart';
 import 'package:santijet_demir/features/rebar_metraj/widgets/metraj_survey_actions.dart';
 import 'package:santijet_demir/features/survey/providers/survey_provider.dart';
@@ -127,7 +128,10 @@ class SavedMetrajDetailScreen extends ConsumerWidget {
               ),
             ],
           ),
-          const SizedBox(height: 20),
+          if (result.cetvel.isNotEmpty) ...[
+            MetrajCetvelSection(cetvel: result.cetvel),
+            const SizedBox(height: 20),
+          ],
           Text('Çap Detay Tablosu', style: AppTypography.headlineMedium),
           const SizedBox(height: 12),
           _MetrajDiameterTable(result: result, numberFormat: numberFormat),

@@ -1,4 +1,5 @@
 import 'package:equatable/equatable.dart';
+import 'package:santijet_demir/data/services/rebar_text_parser.dart';
 
 class RebarMetrajTextDetail extends Equatable {
   const RebarMetrajTextDetail({
@@ -11,6 +12,12 @@ class RebarMetrajTextDetail extends Equatable {
     this.weightKg = 0,
     this.spacingCm,
     this.skipReason,
+    this.elementCode,
+    this.elementTypeCode,
+    this.dimensionText,
+    this.benzerCount = 1,
+    this.unitQuantity = 0,
+    this.rebarRole = RebarLabelRole.other,
   });
 
   final String entityType;
@@ -18,10 +25,17 @@ class RebarMetrajTextDetail extends Equatable {
   final bool included;
   final int? diameter;
   final double? lengthM;
+  /// Toplam adet (birim adet × benzer).
   final int quantity;
   final double weightKg;
   final double? spacingCm;
   final String? skipReason;
+  final String? elementCode;
+  final String? elementTypeCode;
+  final String? dimensionText;
+  final int benzerCount;
+  final int unitQuantity;
+  final RebarLabelRole rebarRole;
 
   @override
   List<Object?> get props => [
@@ -34,6 +48,12 @@ class RebarMetrajTextDetail extends Equatable {
         weightKg,
         spacingCm,
         skipReason,
+        elementCode,
+        elementTypeCode,
+        dimensionText,
+        benzerCount,
+        unitQuantity,
+        rebarRole,
       ];
 
   Map<String, dynamic> toJson() => {
@@ -46,6 +66,12 @@ class RebarMetrajTextDetail extends Equatable {
         'weightKg': weightKg,
         if (spacingCm != null) 'spacingCm': spacingCm,
         'skipReason': skipReason,
+        if (elementCode != null) 'elementCode': elementCode,
+        if (elementTypeCode != null) 'elementTypeCode': elementTypeCode,
+        if (dimensionText != null) 'dimensionText': dimensionText,
+        'benzerCount': benzerCount,
+        'unitQuantity': unitQuantity,
+        'rebarRole': rebarRole.name,
       };
 
   factory RebarMetrajTextDetail.fromJson(Map<dynamic, dynamic> json) {
@@ -59,6 +85,158 @@ class RebarMetrajTextDetail extends Equatable {
       weightKg: (json['weightKg'] as num?)?.toDouble() ?? 0,
       spacingCm: (json['spacingCm'] as num?)?.toDouble(),
       skipReason: json['skipReason'] as String?,
+      elementCode: json['elementCode'] as String?,
+      elementTypeCode: json['elementTypeCode'] as String?,
+      dimensionText: json['dimensionText'] as String?,
+      benzerCount: (json['benzerCount'] as num?)?.toInt() ?? 1,
+      unitQuantity: (json['unitQuantity'] as num?)?.toInt() ??
+          (json['quantity'] as num?)?.toInt() ??
+          0,
+      rebarRole: _rebarRoleFromJson(json['rebarRole'] as String?),
+    );
+  }
+}
+
+RebarLabelRole _rebarRoleFromJson(String? value) {
+  if (value == null) return RebarLabelRole.other;
+  for (final role in RebarLabelRole.values) {
+    if (role.name == value) return role;
+  }
+  return RebarLabelRole.other;
+}
+
+class MetrajCetvelRow extends Equatable {
+  const MetrajCetvelRow({
+    required this.role,
+    required this.diameter,
+    required this.lengthM,
+    required this.unitQuantity,
+    required this.totalQuantity,
+    required this.unitWeightKg,
+    required this.totalWeightKg,
+    required this.sourceText,
+  });
+
+  final RebarLabelRole role;
+  final int diameter;
+  final double lengthM;
+  final int unitQuantity;
+  final int totalQuantity;
+  final double unitWeightKg;
+  final double totalWeightKg;
+  final String sourceText;
+
+  double get unitTonnage => unitWeightKg / 1000;
+  double get totalTonnage => totalWeightKg / 1000;
+
+  @override
+  List<Object?> get props => [
+        role,
+        diameter,
+        lengthM,
+        unitQuantity,
+        totalQuantity,
+        unitWeightKg,
+        totalWeightKg,
+        sourceText,
+      ];
+
+  Map<String, dynamic> toJson() => {
+        'role': role.name,
+        'diameter': diameter,
+        'lengthM': lengthM,
+        'unitQuantity': unitQuantity,
+        'totalQuantity': totalQuantity,
+        'unitWeightKg': unitWeightKg,
+        'totalWeightKg': totalWeightKg,
+        'sourceText': sourceText,
+      };
+
+  factory MetrajCetvelRow.fromJson(Map<dynamic, dynamic> json) {
+    return MetrajCetvelRow(
+      role: _rebarRoleFromJson(json['role'] as String?),
+      diameter: (json['diameter'] as num).toInt(),
+      lengthM: (json['lengthM'] as num).toDouble(),
+      unitQuantity: (json['unitQuantity'] as num).toInt(),
+      totalQuantity: (json['totalQuantity'] as num).toInt(),
+      unitWeightKg: (json['unitWeightKg'] as num).toDouble(),
+      totalWeightKg: (json['totalWeightKg'] as num).toDouble(),
+      sourceText: json['sourceText'] as String? ?? '',
+    );
+  }
+}
+
+class MetrajCetvelEntry extends Equatable {
+  const MetrajCetvelEntry({
+    required this.elementCode,
+    required this.elementTypeCode,
+    required this.elementTypeLabel,
+    required this.dimensionText,
+    required this.benzerCount,
+    required this.sourceText,
+    required this.rows,
+  });
+
+  final String elementCode;
+  final String elementTypeCode;
+  final String elementTypeLabel;
+  final String? dimensionText;
+  final int benzerCount;
+  final String sourceText;
+  final List<MetrajCetvelRow> rows;
+
+  String get title {
+    final dims = dimensionText?.trim();
+    if (dims != null && dims.isNotEmpty) {
+      return '$elementCode - $dims';
+    }
+    return elementCode;
+  }
+
+  double get unitTonnage =>
+      rows.fold(0.0, (sum, row) => sum + row.unitTonnage);
+
+  double get totalTonnage =>
+      rows.fold(0.0, (sum, row) => sum + row.totalTonnage);
+
+  int get unitBarCount =>
+      rows.fold(0, (sum, row) => sum + row.unitQuantity);
+
+  int get totalBarCount =>
+      rows.fold(0, (sum, row) => sum + row.totalQuantity);
+
+  @override
+  List<Object?> get props => [
+        elementCode,
+        elementTypeCode,
+        elementTypeLabel,
+        dimensionText,
+        benzerCount,
+        sourceText,
+        rows,
+      ];
+
+  Map<String, dynamic> toJson() => {
+        'elementCode': elementCode,
+        'elementTypeCode': elementTypeCode,
+        'elementTypeLabel': elementTypeLabel,
+        'dimensionText': dimensionText,
+        'benzerCount': benzerCount,
+        'sourceText': sourceText,
+        'rows': rows.map((row) => row.toJson()).toList(),
+      };
+
+  factory MetrajCetvelEntry.fromJson(Map<dynamic, dynamic> json) {
+    return MetrajCetvelEntry(
+      elementCode: json['elementCode'] as String? ?? '',
+      elementTypeCode: json['elementTypeCode'] as String? ?? '',
+      elementTypeLabel: json['elementTypeLabel'] as String? ?? '',
+      dimensionText: json['dimensionText'] as String?,
+      benzerCount: (json['benzerCount'] as num?)?.toInt() ?? 1,
+      sourceText: json['sourceText'] as String? ?? '',
+      rows: (json['rows'] as List<dynamic>? ?? const [])
+          .map((row) => MetrajCetvelRow.fromJson(row as Map<dynamic, dynamic>))
+          .toList(),
     );
   }
 }
@@ -112,6 +290,7 @@ class RebarMetrajResult extends Equatable {
     required this.textDetails,
     required this.skippedEntityCount,
     required this.warnings,
+    this.cetvel = const [],
   });
 
   final String fileName;
@@ -121,6 +300,7 @@ class RebarMetrajResult extends Equatable {
   final List<RebarMetrajTextDetail> textDetails;
   final int skippedEntityCount;
   final List<String> warnings;
+  final List<MetrajCetvelEntry> cetvel;
 
   double get totalLengthM =>
       lines.fold(0, (sum, line) => sum + line.totalLengthM);
@@ -144,6 +324,7 @@ class RebarMetrajResult extends Equatable {
         textDetails,
         skippedEntityCount,
         warnings,
+        cetvel,
       ];
 
   Map<String, dynamic> toJson() => {
@@ -154,6 +335,7 @@ class RebarMetrajResult extends Equatable {
         'textDetails': textDetails.map((detail) => detail.toJson()).toList(),
         'skippedEntityCount': skippedEntityCount,
         'warnings': warnings,
+        'cetvel': cetvel.map((entry) => entry.toJson()).toList(),
       };
 
   factory RebarMetrajResult.fromJson(Map<dynamic, dynamic> json) {
@@ -173,6 +355,11 @@ class RebarMetrajResult extends Equatable {
       skippedEntityCount: (json['skippedEntityCount'] as num?)?.toInt() ?? 0,
       warnings: (json['warnings'] as List<dynamic>? ?? const [])
           .map((warning) => warning.toString())
+          .toList(),
+      cetvel: (json['cetvel'] as List<dynamic>? ?? const [])
+          .map(
+            (entry) => MetrajCetvelEntry.fromJson(entry as Map<dynamic, dynamic>),
+          )
           .toList(),
     );
   }

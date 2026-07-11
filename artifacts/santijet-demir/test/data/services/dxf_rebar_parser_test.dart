@@ -3,6 +3,35 @@ import 'package:santijet_demir/data/services/dxf_ascii_parser.dart';
 import 'package:santijet_demir/data/services/dxf_rebar_parser.dart';
 import 'package:santijet_demir/data/services/rebar_text_parser.dart';
 
+const sampleColumnCetvelDxf = '''
+0
+SECTION
+2
+ENTITIES
+0
+TEXT
+8
+KOLON
+1
+S1[100/160] 182 ADET
+0
+TEXT
+8
+KOLON
+1
+42Ø28 L=280
+0
+TEXT
+8
+KOLON
+1
+etr*18Ø12/10 L=510
+0
+ENDSEC
+0
+EOF
+''';
+
 const sampleRebarDxf = '''
 0
 SECTION
@@ -92,6 +121,24 @@ void main() {
         ),
         throwsA(isA<FormatException>()),
       );
+    });
+
+    test('metraj cetveli benzer katsayısı ile hesaplanır', () {
+      final parser = DxfRebarParser();
+      final result = parser.parse(
+        fileName: 'kolon.dxf',
+        content: sampleColumnCetvelDxf,
+      );
+
+      expect(result.cetvel.length, 1);
+      expect(result.cetvel.single.benzerCount, 182);
+      expect(result.cetvel.single.rows.length, 2);
+
+      final longitudinal = result.textDetails.firstWhere(
+        (d) => d.rebarRole == RebarLabelRole.longitudinal,
+      );
+      expect(longitudinal.quantity, 42 * 182);
+      expect(result.totalBarCount, (42 + 18) * 182);
     });
   });
 }
