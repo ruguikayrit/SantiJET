@@ -55,14 +55,12 @@ abstract final class AppSafeAreaInsets {
 
   static double bottomOf(BuildContext context) => effective(context).bottom;
 
-  /// Alt nav bar — yalnızca sistemin bildirdiği gerçek home indicator alanı.
-  ///
-  /// iOS PWA'da safe-area değeri 0 geldiğinde burada minimum 34 px zorlamak
-  /// nav bar'ı görsel olarak yukarı iter ve altında siyah boşluk bırakır.
+  /// Alt nav bar — home indicator alanı (View padding + iOS PWA JS probe).
   static double bottomNavInsetOf(BuildContext context) {
-    var bottom = _readBottomInset(context, standaloneMinimum: false);
+    final view = View.of(context);
+    var bottom = view.padding.bottom / view.devicePixelRatio;
 
-    if (_isIosWeb(context) && inset_reader.readIosStandalonePwa()) {
+    if (kIsWeb && _isIosWeb(context) && inset_reader.readIosStandalonePwa()) {
       final injected = inset_reader.readWebSafeAreaBottomInset();
       if (injected != null && injected > 0) {
         bottom = math.max(bottom, injected);

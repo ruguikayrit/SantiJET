@@ -15,8 +15,8 @@ class AppBottomNavBar extends ConsumerWidget {
 
   final StatefulNavigationShell navigationShell;
 
-  static const _iconBarHeight = 52.0;
-  static const _iconBarHeightTablet = 56.0;
+  static const _iconBarHeight = 44.0;
+  static const _iconBarHeightTablet = 48.0;
 
   static const _icons = [
     Icons.dashboard_outlined,
@@ -62,36 +62,39 @@ class AppBottomNavBar extends ConsumerWidget {
         boxShadow: [
           BoxShadow(
             color: Colors.black.withValues(alpha: 0.35),
-            blurRadius: 12,
-            offset: const Offset(0, -4),
+            blurRadius: 8,
+            offset: const Offset(0, -2),
           ),
         ],
       ),
-      child: Padding(
-        padding: EdgeInsets.only(bottom: bottomInset),
-        child: SizedBox(
-          height: iconBarHeight,
-          width: double.infinity,
-          child: Row(
-            children: [
-              for (var i = 0; i < BottomNavTab.values.length; i++)
-                Expanded(
-                  child: _NavItem(
-                    icon: _icons[i],
-                    activeIcon: _activeIcons[i],
-                    label: BottomNavTab.values[i].navLabel,
-                    semanticsLabel: BottomNavTab.values[i].label,
-                    selected: navigationShell.currentIndex == i,
-                    showLabel: showLabels,
-                    onTap: () => navigationShell.goBranch(
-                      i,
-                      initialLocation: i == navigationShell.currentIndex,
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          SizedBox(
+            height: iconBarHeight,
+            width: double.infinity,
+            child: Row(
+              children: [
+                for (var i = 0; i < BottomNavTab.values.length; i++)
+                  Expanded(
+                    child: _NavItem(
+                      icon: _icons[i],
+                      activeIcon: _activeIcons[i],
+                      label: BottomNavTab.values[i].navLabel,
+                      semanticsLabel: BottomNavTab.values[i].label,
+                      selected: navigationShell.currentIndex == i,
+                      showLabel: showLabels,
+                      onTap: () => navigationShell.goBranch(
+                        i,
+                        initialLocation: i == navigationShell.currentIndex,
+                      ),
                     ),
                   ),
-                ),
-            ],
+              ],
+            ),
           ),
-        ),
+          if (bottomInset > 0) SizedBox(height: bottomInset),
+        ],
       ),
     );
 
@@ -133,14 +136,14 @@ class _NavItem extends StatelessWidget {
           AnimatedContainer(
             duration: const Duration(milliseconds: 220),
             curve: Curves.easeOutCubic,
-            width: selected ? 44 : 40,
-            height: selected ? 32 : 28,
+            width: selected ? 40 : 36,
+            height: selected ? 28 : 24,
             alignment: Alignment.center,
             decoration: BoxDecoration(
               color: selected
                   ? AppColors.electricBlue.withValues(alpha: 0.18)
                   : Colors.transparent,
-              borderRadius: BorderRadius.circular(16),
+              borderRadius: BorderRadius.circular(14),
               border: selected
                   ? Border.all(
                       color: AppColors.electricBlueLight.withValues(alpha: 0.35),
@@ -149,7 +152,7 @@ class _NavItem extends StatelessWidget {
             ),
             child: Icon(
               selected ? activeIcon : icon,
-              size: showLabel ? 20 : 22,
+              size: showLabel ? 18 : 20,
               color: selected ? activeColor : inactiveColor,
             ),
           ),

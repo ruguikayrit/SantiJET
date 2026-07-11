@@ -35,15 +35,17 @@ class MainShell extends StatelessWidget {
         Scaffold(
           backgroundColor: AppColors.canvas,
           resizeToAvoidBottomInset: false,
-          body: MediaQuery(
-            data: MediaQuery.of(context).copyWith(
-              padding: MediaQuery.of(context).padding.copyWith(bottom: 0),
-              viewPadding: MediaQuery.of(context).viewPadding.copyWith(bottom: 0),
-            ),
-            child: Stack(
-              fit: StackFit.expand,
-              children: [
-                Positioned.fill(
+          extendBody: true,
+          body: Stack(
+            fit: StackFit.expand,
+            children: [
+              Positioned.fill(
+                child: MediaQuery(
+                  data: MediaQuery.of(context).copyWith(
+                    padding: MediaQuery.of(context).padding.copyWith(bottom: 0),
+                    viewPadding:
+                        MediaQuery.of(context).viewPadding.copyWith(bottom: 0),
+                  ),
                   child: ResponsiveLayout(
                     child: AppSafeArea(
                       bottom: false,
@@ -51,14 +53,14 @@ class MainShell extends StatelessWidget {
                     ),
                   ),
                 ),
-                Positioned(
-                  left: 0,
-                  right: 0,
-                  bottom: 0,
-                  child: AppBottomNavBar(navigationShell: navigationShell),
-                ),
-              ],
-            ),
+              ),
+              Positioned(
+                left: 0,
+                right: 0,
+                bottom: 0,
+                child: AppBottomNavBar(navigationShell: navigationShell),
+              ),
+            ],
           ),
         ),
         const AnalysisRunningLockOverlay(),
