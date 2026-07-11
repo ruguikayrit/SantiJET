@@ -299,6 +299,27 @@ List<StockCutPlan> computeStockCutPlans(
   return plans;
 }
 
+/// Tek çap için fire tonajı — optimum boy seçiminde tüm çapları hesaplamaz.
+double computeStockCutWasteForDiameter(
+  List<RebarPieceLine> pieces,
+  int diameter, {
+  double stockLengthM = stockBarLengthM,
+}) {
+  final inventory = _buildDiameterInventory(pieces, diameter);
+  if (_inventoryTotalCount(inventory) == 0) return 0;
+
+  final bars = _packDiameterInventory(
+    diameter: diameter,
+    inventory: inventory,
+    stockLengthM: stockLengthM,
+  );
+  final totalWasteM = bars.fold(0.0, (sum, bar) => sum + bar.wasteLengthM);
+  return RebarWeightCalculator.tonnage(
+    diameterMm: diameter,
+    lengthM: totalWasteM,
+  );
+}
+
 List<RebarPieceLine> extractPieceLinesFromMetrajDetails(
   Iterable<RebarMetrajTextDetail> details,
 ) {
@@ -692,7 +713,7 @@ Future<double> pickOptimalLengthForGroup(
 
   for (var i = 0; i < candidates.length; i++) {
     final candidate = candidates[i];
-    if (i > 0) await _yieldToEventLoop();
+    await _yieldToEventLoop();
 
     final trialGroups = allGroups
         .map(
@@ -702,13 +723,7 @@ Future<double> pickOptimalLengthForGroup(
         )
         .toList();
     final trialPieces = applyLengthMatchesToPieceLines(pieceLines, trialGroups);
-    final plans = computeStockCutPlans(trialPieces);
-    var waste = 0.0;
-    for (final plan in plans) {
-      if (plan.diameter == group.diameter) {
-        waste += plan.totalWasteTonnage;
-      }
-    }
+    final waste = computeStockCutWasteForDiameter(trialPieces, group.diameter);
     if (waste < bestWaste) {
       bestWaste = waste;
       bestLength = candidate;
@@ -1365,13 +1380,16 @@ CuttingBendingBatch mergeCuttingBendingBatchesForAnalysis(
   }
 
   final allLabels = <RebarMetrajTextDetail>[];
+  final seenLabelKeys = <String>{};
   final allSourceIds = <String>[];
   final allPieces = <RebarPieceLine>[];
   var earliestCreated = batches.first.createdAt;
 
   for (final batch in batches) {
     for (final detail in batch.labelDetails) {
-      if (!allLabels.any((item) => isSameRebarMetrajTextDetail(item, detail))) {
+      final key =
+          '${detail.sourceText}|${detail.entityType}|${detail.diameter}|${detail.lengthM}';
+      if (seenLabelKeys.add(key)) {
         allLabels.add(detail);
       }
     }

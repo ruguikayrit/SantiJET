@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
@@ -21,7 +23,71 @@ class CountDetailScreen extends ConsumerStatefulWidget {
 
 class _CountDetailScreenState extends ConsumerState<CountDetailScreen> {
   final _selectedCauses = <String>{};
+  late final TextEditingController _otherNoteController;
+  Timer? _persistTimer;
+  bool _initialized = false;
 
+  static const _persistDelay = Duration(milliseconds: 400);
+
+  @override
+  void initState() {
+    super.initState();
+    _otherNoteController = TextEditingController();
+  }
+
+  @override
+  void dispose() {
+    _persistTimer?.cancel();
+    _otherNoteController.dispose();
+    super.dispose();
+  }
+
+  @override
+  void didUpdateWidget(covariant CountDetailScreen oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (oldWidget.countId != widget.countId) {
+      _initialized = false;
+    }
+  }
+
+  void _syncFromRecord(FieldCountRecord record) {
+    _selectedCauses
+      ..clear()
+      ..addAll(record.varianceCauses);
+    if (_otherNoteController.text != record.varianceOtherNote) {
+      _otherNoteController.text = record.varianceOtherNote;
+    }
+    _initialized = true;
+  }
+
+  void _schedulePersist() {
+    _persistTimer?.cancel();
+    _persistTimer = Timer(_persistDelay, _persistVarianceCauses);
+  }
+
+  Future<void> _persistVarianceCauses() async {
+    await ref.read(fieldCountsProvider.notifier).updateVarianceCauses(
+          countId: widget.countId,
+          causes: _selectedCauses.toList(),
+          otherNote: _otherNoteController.text,
+        );
+  }
+
+  void _toggleCause(String cause, bool? selected) {
+    setState(() {
+      if (selected == true) {
+        _selectedCauses.add(cause);
+      } else {
+        _selectedCauses.remove(cause);
+        if (cause == varianceCauseOther) {
+          _otherNoteController.clear();
+        }
+      }
+    });
+    _schedulePersist();
+  }
+
+  bool get _showOtherNoteField => _selectedCauses.contains(varianceCauseOther);
   @override
   Widget build(BuildContext context) {
     final counts = ref.watch(fieldCountsProvider);
@@ -36,6 +102,10 @@ class _CountDetailScreenState extends ConsumerState<CountDetailScreen> {
         appBar: AppBar(title: const Text('Sayım Detayı')),
         body: const Center(child: Text('Sayım kaydı bulunamadı')),
       );
+    }
+
+    if (!_initialized) {
+      _syncFromRecord(record);
     }
 
     return Scaffold(
@@ -120,26 +190,53 @@ class _CountDetailScreenState extends ConsumerState<CountDetailScreen> {
           const SizedBox(height: 8),
           ...varianceCauses.map((cause) {
             final selected = _selectedCauses.contains(cause);
-            return CheckboxListTile(
-              title: Text(cause, style: AppTypography.bodyMedium),
-              value: selected,
-              onChanged: (value) {
-                setState(() {
-                  if (value == true) {
-                    _selectedCauses.add(cause);
-                  } else {
-                    _selectedCauses.remove(cause);
-                  }
-                });
-              },
-              activeColor: AppColors.electricBlue,
-              tileColor: AppColors.surfaceElevated,
-              shape: RoundedRectangleBorder(
-                borderRadius: AppRadii.sm,
-                side: const BorderSide(color: AppColors.border),
+            return Padding(
+              padding: const EdgeInsets.only(bottom: 8),
+              child: CheckboxListTile(
+                title: Text(cause, style: AppTypography.bodyMedium),
+                value: selected,
+                onChanged: (value) => _toggleCause(cause, value),
+                activeColor: AppColors.electricBlue,
+                tileColor: AppColors.surfaceElevated,
+                shape: RoundedRectangleBorder(
+                  borderRadius: AppRadii.sm,
+                  side: const BorderSide(color: AppColors.border),
+                ),
               ),
             );
           }),
+          if (_showOtherNoteField) ...[
+            const SizedBox(height: 4),
+            TextField(
+              controller: _otherNoteController,
+              maxLines: 3,
+              minLines: 2,
+              style: AppTypography.bodyMedium,
+              decoration: InputDecoration(
+                labelText: 'Diğer — açıklama girin',
+                hintText: 'Sapma nedenini kısaca yazın…',
+                alignLabelWithHint: true,
+                filled: true,
+                fillColor: AppColors.surfaceElevated,
+                border: OutlineInputBorder(
+                  borderRadius: AppRadii.sm,
+                  borderSide: const BorderSide(color: AppColors.border),
+                ),
+                enabledBorder: OutlineInputBorder(
+                  borderRadius: AppRadii.sm,
+                  borderSide: const BorderSide(color: AppColors.border),
+                ),
+                focusedBorder: OutlineInputBorder(
+                  borderRadius: AppRadii.sm,
+                  borderSide: BorderSide(
+                    color: AppColors.electricBlueLight.withValues(alpha: 0.65),
+                  ),
+                ),
+              ),
+              onChanged: (_) => _schedulePersist(),
+              onEditingComplete: _persistVarianceCauses,
+            ),
+          ],
         ],
       ),
     );

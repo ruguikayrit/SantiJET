@@ -88,8 +88,42 @@ void main() {
         used: 60,
       );
 
-      expect(row.fire, -10);
-      expect(row.firePercent, -20);
+      expect(row.fire, 10);
+      expect(row.firePercent, 20);
+    });
+
+    test('positive fire when actual usage exceeds planned', () {
+      const row = ReconciliationRow(
+        diameter: 16,
+        survey: 200,
+        ordered: 120,
+        delivered: 120,
+        plannedUsage: 100,
+        expectedStock: 20,
+        counted: 10,
+        used: 105,
+      );
+
+      expect(row.fire, 5);
+      expect(row.firePercent, 5);
+      expect(row.status, 'critical');
+    });
+
+    test('negative fire means survey overestimate not waste', () {
+      const row = ReconciliationRow(
+        diameter: 10,
+        survey: 100,
+        ordered: 80,
+        delivered: 80,
+        plannedUsage: 100,
+        expectedStock: 0,
+        counted: 25,
+        used: 55,
+      );
+
+      expect(row.fire, closeTo(-45, 0.001));
+      expect(row.surveyOverestimate, closeTo(45, 0.001));
+      expect(row.status, 'normal');
     });
 
     test('returns zero percent when planned usage is zero', () {

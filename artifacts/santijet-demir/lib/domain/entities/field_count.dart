@@ -27,20 +27,20 @@ class ReconciliationRow {
   /// Gerçek — kullanılan demir (teslim − sayım).
   final double used;
 
-  /// Fire = planlanan kullanım − gerçek kullanım.
-  /// Negatif değer planın üzerinde kullanım (yüksek fire) anlamına gelir.
-  double get fire => plannedUsage - used;
+  /// Fire = gerçek kullanım − planlanan kullanım.
+  /// Pozitif değer sahadaki fire (plan üstü kullanım); negatif keşif fazlası anlamına gelir.
+  double get fire => used - plannedUsage;
 
   /// Fire oranı — planlanan kullanıma göre (%).
   double get firePercent =>
       plannedUsage > 0 ? (fire / plannedUsage) * 100 : 0;
 
+  /// Keşif hatası — planlanandan az kullanım (keşif fazla hesaplanmış olabilir).
+  double get surveyOverestimate => plannedUsage - used;
+
   String get status {
-    if (fire > 0) {
-      if (fire <= 2) return 'warning';
-      return 'critical';
-    }
-    if (fire >= -8) return 'normal';
+    if (fire <= 0) return 'normal';
+    if (fire <= 2) return 'warning';
     return 'critical';
   }
 }
@@ -56,6 +56,8 @@ class FieldCountRecord {
     required this.actual,
     required this.status,
     this.lines = const [],
+    this.varianceCauses = const [],
+    this.varianceOtherNote = '',
   });
 
   final String id;
@@ -67,6 +69,8 @@ class FieldCountRecord {
   final double actual;
   final String status;
   final List<FieldCountLineRecord> lines;
+  final List<String> varianceCauses;
+  final String varianceOtherNote;
 
   double get totalExpectedStock => lines.isEmpty
       ? expected
@@ -81,6 +85,25 @@ class FieldCountRecord {
   double get totalUsed =>
       lines.fold(0.0, (sum, line) => sum + line.actualUsed);
 
+  FieldCountRecord copyWith({
+    List<String>? varianceCauses,
+    String? varianceOtherNote,
+  }) {
+    return FieldCountRecord(
+      id: id,
+      title: title,
+      date: date,
+      personnel: personnel,
+      region: region,
+      expected: expected,
+      actual: actual,
+      status: status,
+      lines: lines,
+      varianceCauses: varianceCauses ?? this.varianceCauses,
+      varianceOtherNote: varianceOtherNote ?? this.varianceOtherNote,
+    );
+  }
+
   Map<String, dynamic> toJson() => {
         'id': id,
         'title': title,
@@ -91,6 +114,8 @@ class FieldCountRecord {
         'actual': actual,
         'status': status,
         'lines': lines.map((line) => line.toJson()).toList(),
+        'varianceCauses': varianceCauses,
+        if (varianceOtherNote.isNotEmpty) 'varianceOtherNote': varianceOtherNote,
       };
 
   factory FieldCountRecord.fromJson(Map<dynamic, dynamic> json) {
@@ -108,6 +133,10 @@ class FieldCountRecord {
           .whereType<Map>()
           .map(FieldCountLineRecord.fromJson)
           .toList(),
+      varianceCauses: (json['varianceCauses'] as List<dynamic>? ?? const [])
+          .whereType<String>()
+          .toList(),
+      varianceOtherNote: json['varianceOtherNote'] as String? ?? '',
     );
   }
 }

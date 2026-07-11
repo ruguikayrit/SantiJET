@@ -254,34 +254,30 @@ class _CutPlanSummaryGrid extends StatelessWidget {
 
     return Column(
       children: [
-        IntrinsicHeight(
-          child: Row(
-            crossAxisAlignment: CrossAxisAlignment.stretch,
-            children: [
-              for (var i = 0; i < 3; i++)
-                Expanded(
-                  child: Padding(
-                    padding: EdgeInsets.only(right: i < 2 ? 6 : 0),
-                    child: cards[i],
-                  ),
+        Row(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            for (var i = 0; i < 3; i++)
+              Expanded(
+                child: Padding(
+                  padding: EdgeInsets.only(right: i < 2 ? 8 : 0),
+                  child: cards[i],
                 ),
-            ],
-          ),
+              ),
+          ],
         ),
-        const SizedBox(height: 6),
-        IntrinsicHeight(
-          child: Row(
-            crossAxisAlignment: CrossAxisAlignment.stretch,
-            children: [
-              for (var i = 3; i < 6; i++)
-                Expanded(
-                  child: Padding(
-                    padding: EdgeInsets.only(right: i < 5 ? 6 : 0),
-                    child: cards[i],
-                  ),
+        const SizedBox(height: 8),
+        Row(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            for (var i = 3; i < 6; i++)
+              Expanded(
+                child: Padding(
+                  padding: EdgeInsets.only(right: i < 5 ? 8 : 0),
+                  child: cards[i],
                 ),
-            ],
-          ),
+              ),
+          ],
         ),
       ],
     );
@@ -303,10 +299,13 @@ class _CutSummaryCard extends StatelessWidget {
   final String? subValue;
   final Color accentColor;
 
+  static const _cardHeight = 86.0;
+
   @override
   Widget build(BuildContext context) {
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 10),
+      height: _cardHeight,
+      padding: const EdgeInsets.fromLTRB(8, 9, 8, 8),
       decoration: BoxDecoration(
         color: AppColors.canvas,
         borderRadius: AppRadii.sm,
@@ -314,56 +313,112 @@ class _CutSummaryCard extends StatelessWidget {
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
-        mainAxisSize: MainAxisSize.min,
         children: [
-          Text(
-            label,
-            style: AppTypography.labelSmall.copyWith(
-              color: AppColors.textMuted,
-              height: 1.25,
+          SizedBox(
+            height: 26,
+            child: _SummaryLabel(label: label),
+          ),
+          const Spacer(),
+          LayoutBuilder(
+            builder: (context, constraints) {
+              return FittedBox(
+                fit: BoxFit.scaleDown,
+                alignment: Alignment.centerLeft,
+                child: ConstrainedBox(
+                  constraints: BoxConstraints(maxWidth: constraints.maxWidth),
+                  child: Row(
+                    crossAxisAlignment: CrossAxisAlignment.baseline,
+                    textBaseline: TextBaseline.alphabetic,
+                    children: [
+                      Text(
+                        value,
+                        style: AppTypography.titleMedium.copyWith(
+                          color: accentColor,
+                          fontWeight: FontWeight.w700,
+                          height: 1,
+                        ),
+                      ),
+                      if (unit != null && unit!.isNotEmpty) ...[
+                        const SizedBox(width: 3),
+                        Text(
+                          unit!,
+                          style: AppTypography.labelSmall.copyWith(
+                            color: AppColors.textMuted,
+                            fontWeight: FontWeight.w600,
+                            height: 1,
+                          ),
+                        ),
+                      ],
+                    ],
+                  ),
+                ),
+              );
+            },
+          ),
+          SizedBox(
+            height: 15,
+            child: Align(
+              alignment: Alignment.centerLeft,
+              child: subValue == null
+                  ? const SizedBox.shrink()
+                  : Text(
+                      subValue!,
+                      style: AppTypography.labelSmall.copyWith(
+                        color: accentColor.withValues(alpha: 0.9),
+                        fontWeight: FontWeight.w600,
+                        height: 1,
+                      ),
+                    ),
             ),
           ),
-          const SizedBox(height: 8),
-          Wrap(
-            crossAxisAlignment: WrapCrossAlignment.end,
-            spacing: 3,
-            runSpacing: 2,
-            children: [
-              Text(
-                value,
-                style: AppTypography.labelLarge.copyWith(
-                  color: accentColor,
-                  fontWeight: FontWeight.w700,
-                  height: 1.1,
-                ),
-              ),
-              if (unit != null && unit!.isNotEmpty)
-                Text(
-                  unit!,
-                  style: AppTypography.labelSmall.copyWith(
-                    color: AppColors.textMuted,
-                    fontWeight: FontWeight.w600,
-                  ),
-                ),
-              if (subValue != null) ...[
-                Text(
-                  '/',
-                  style: AppTypography.labelSmall.copyWith(
-                    color: AppColors.textMuted,
-                  ),
-                ),
-                Text(
-                  subValue!,
-                  style: AppTypography.labelMedium.copyWith(
-                    color: accentColor,
-                    fontWeight: FontWeight.w600,
-                    height: 1.1,
-                  ),
-                ),
-              ],
-            ],
+        ],
+      ),
+    );
+  }
+}
+
+class _SummaryLabel extends StatelessWidget {
+  const _SummaryLabel({required this.label});
+
+  final String label;
+
+  @override
+  Widget build(BuildContext context) {
+    final parts = label.trim().split(RegExp(r'\s+'));
+    if (parts.length == 2) {
+      return Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        mainAxisAlignment: MainAxisAlignment.start,
+        children: [
+          Text(
+            parts[0],
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
+            style: AppTypography.labelSmall.copyWith(
+              color: AppColors.textMuted,
+              height: 1.15,
+            ),
+          ),
+          Text(
+            parts[1],
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
+            style: AppTypography.labelSmall.copyWith(
+              color: AppColors.textMuted,
+              height: 1.15,
+            ),
           ),
         ],
+      );
+    }
+
+    return Text(
+      label,
+      maxLines: 2,
+      overflow: TextOverflow.ellipsis,
+      style: AppTypography.labelSmall.copyWith(
+        color: AppColors.textMuted,
+        height: 1.15,
       ),
     );
   }

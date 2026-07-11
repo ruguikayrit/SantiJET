@@ -14,7 +14,8 @@ const reconciliationFilterLabels = [
 const varianceCauses = [
   'Fire / Hurda',
   'Sayım Hatası',
-  'Teslimat Eksikliği',
   'Keşif Revizyonu',
   'Diğer',
 ];
+
+const varianceCauseOther = 'Diğer';

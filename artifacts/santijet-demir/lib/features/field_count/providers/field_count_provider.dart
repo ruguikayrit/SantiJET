@@ -81,6 +81,24 @@ class FieldCountsNotifier extends StateNotifier<List<FieldCountRecord>> {
     await _persist();
     return record;
   }
+
+  Future<void> updateVarianceCauses({
+    required String countId,
+    required List<String> causes,
+    required String otherNote,
+  }) async {
+    state = state
+        .map(
+          (record) => record.id == countId
+              ? record.copyWith(
+                  varianceCauses: causes,
+                  varianceOtherNote: otherNote.trim(),
+                )
+              : record,
+        )
+        .toList();
+    await _persist();
+  }
 }
 
 final reconciliationFilterProvider = StateProvider<int>((ref) => 0);

@@ -26,7 +26,7 @@ final orderFilterProvider = StateProvider<int>((ref) => 0);
 
 const orderFilterLabels = [
   'Tümü',
-  'Onay Bek.',
+  'Onay Bekleyen',
   'Verildi',
   'Yolda',
   'Tamamlandı',

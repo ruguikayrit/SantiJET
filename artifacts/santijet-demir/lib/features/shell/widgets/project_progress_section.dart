@@ -233,7 +233,12 @@ class _ProgressImalatGroup extends StatelessWidget {
                     ),
                     const SizedBox(height: 2),
                     Text(
-                      '${rows.length} çap · Keşif ${AppFormat.tonnage(totalPlanned)}t · '
+                      '${rows.length} çap · Keşif ${AppFormat.tonnage(totalPlanned)}t',
+                      style: AppTypography.bodySmall.copyWith(
+                        color: AppColors.textMuted,
+                      ),
+                    ),
+                    Text(
                       'Planlanan kullanım ${AppFormat.tonnage(totalExpected)}t',
                       style: AppTypography.bodySmall.copyWith(
                         color: AppColors.textMuted,
@@ -434,7 +439,8 @@ class _BulkProgressEntryPanelState extends State<_BulkProgressEntryPanel> {
                 const SizedBox(height: 10),
                 Row(
                   children: [
-                    Expanded(
+                    SizedBox(
+                      width: 92,
                       child: TextField(
                         controller: _controller,
                         keyboardType: TextInputType.number,
@@ -452,7 +458,7 @@ class _BulkProgressEntryPanelState extends State<_BulkProgressEntryPanel> {
                           hintText: '0',
                           suffixText: '%',
                           contentPadding: const EdgeInsets.symmetric(
-                            horizontal: 12,
+                            horizontal: 8,
                             vertical: 12,
                           ),
                           border: OutlineInputBorder(
@@ -468,20 +474,22 @@ class _BulkProgressEntryPanelState extends State<_BulkProgressEntryPanel> {
                       ),
                     ),
                     const SizedBox(width: 10),
-                    FilledButton(
-                      onPressed: _isApplying ? null : _apply,
-                      style: FilledButton.styleFrom(
-                        minimumSize: const Size(96, 48),
-                        backgroundColor: AppColors.electricBlueLight,
-                        foregroundColor: AppColors.canvas,
+                    Expanded(
+                      child: FilledButton(
+                        onPressed: _isApplying ? null : _apply,
+                        style: FilledButton.styleFrom(
+                          minimumSize: const Size.fromHeight(48),
+                          backgroundColor: AppColors.electricBlueLight,
+                          foregroundColor: AppColors.canvas,
+                        ),
+                        child: _isApplying
+                            ? const SizedBox(
+                                width: 18,
+                                height: 18,
+                                child: CircularProgressIndicator(strokeWidth: 2),
+                              )
+                            : const Text('Uygula'),
                       ),
-                      child: _isApplying
-                          ? const SizedBox(
-                              width: 18,
-                              height: 18,
-                              child: CircularProgressIndicator(strokeWidth: 2),
-                            )
-                          : const Text('Uygula'),
                     ),
                   ],
                 ),

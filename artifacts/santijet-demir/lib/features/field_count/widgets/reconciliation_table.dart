@@ -487,27 +487,17 @@ class _CompactSapmaTag extends StatelessWidget {
 
   Widget build(BuildContext context) {
 
-    final isPositive = value > 0;
-
+    final isFire = value > 0;
     final isZero = value == 0;
-
     final color = isZero
-
         ? AppColors.success
-
-        : isPositive
-
-            ? AppColors.info
-
-            : value.abs() > 10
-
-                ? AppColors.critical
-
-                : AppColors.warning;
+        : isFire
+            ? (value > 10 ? AppColors.critical : AppColors.warning)
+            : AppColors.info;
 
 
 
-    final prefix = isZero ? '' : isPositive ? '+' : '';
+    final prefix = isZero ? '' : isFire ? '+' : '';
 
     final text = isZero ? '✓' : '$prefix${AppFormat.tonnage(value)}t';
 

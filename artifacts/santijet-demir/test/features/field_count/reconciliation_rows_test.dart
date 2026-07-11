@@ -53,10 +53,10 @@ void main() {
       expect(rows[0].expectedStock, 114);
       expect(rows[0].counted, 100);
       expect(rows[0].used, 20);
-      expect(rows[0].fire, closeTo(-14, 0.001));
+      expect(rows[0].fire, closeTo(14, 0.001));
       expect(
         rows[0].fire,
-        closeTo(rows[0].plannedUsage - rows[0].used, 0.001),
+        closeTo(rows[0].used - rows[0].plannedUsage, 0.001),
       );
       expect(rows[1].diameter, 20);
       expect(rows[1].delivered, 0);
@@ -98,7 +98,7 @@ void main() {
       expect(totals.plannedStock, 114);
       expect(totals.fieldCount, 100);
       expect(totals.actualUsage, 20);
-      expect(totals.fire, closeTo(6, 0.001));
+      expect(totals.fire, closeTo(-6, 0.001));
     });
   });
 }

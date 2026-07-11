@@ -440,11 +440,22 @@ class MetrajRecordCard extends StatelessWidget {
                           ],
                           if (record.isApprovedForAnalysis) ...[
                             const SizedBox(height: 8),
-                            Text(
-                              'Analiz onayı verildi · Hesap ve Analiz sayfasından yüklenebilir',
-                              style: AppTypography.labelMedium.copyWith(
-                                color: AppColors.electricBlueLight,
-                              ),
+                            Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Text(
+                                  'Analiz onayı verildi',
+                                  style: AppTypography.labelMedium.copyWith(
+                                    color: AppColors.electricBlueLight,
+                                  ),
+                                ),
+                                Text(
+                                  '· Hesap ve Analiz sayfasından yüklenebilir',
+                                  style: AppTypography.labelMedium.copyWith(
+                                    color: AppColors.electricBlueLight,
+                                  ),
+                                ),
+                              ],
                             ),
                           ],
                         ],

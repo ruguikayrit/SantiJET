@@ -59,35 +59,39 @@ class AnalysisBatchListPanel extends ConsumerWidget {
           ),
           Padding(
             padding: const EdgeInsets.fromLTRB(14, 0, 14, 6),
-            child: Row(
-              children: [
-                Expanded(
-                  child: Text(
-                    'DWG analiz listesi',
-                    style: AppTypography.titleMedium,
-                  ),
-                ),
-                Text(
-                  '${batches.length} dosya',
-                  style: AppTypography.labelMedium.copyWith(
-                    color: AppColors.textMuted,
-                  ),
-                ),
-              ],
+            child: Text(
+              'DWG analiz listesi',
+              style: AppTypography.titleMedium,
             ),
           ),
           Padding(
             padding: const EdgeInsets.fromLTRB(14, 0, 14, 10),
-            child: Text(
-              scopeCount == batches.length
-                  ? 'Tüm dosyalar analizde — minimum fire için en doğru seçim.'
-                  : scopeCount == 0
-                      ? 'Analize almak için en az bir dosya seçin.'
-                      : '$scopeCount dosya analizde — tüm dosyaları seçerek fireyi daha da düşürebilirsiniz.',
-              style: AppTypography.bodySmall.copyWith(
-                color: AppColors.textMuted,
-              ),
-            ),
+            child: scopeCount == batches.length
+                ? Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        'Tüm dosyalar ($scopeCount dosya) analizde',
+                        style: AppTypography.bodySmall.copyWith(
+                          color: AppColors.textMuted,
+                        ),
+                      ),
+                      Text(
+                        '• Minimum fire için en doğru seçim.',
+                        style: AppTypography.bodySmall.copyWith(
+                          color: AppColors.textMuted,
+                        ),
+                      ),
+                    ],
+                  )
+                : Text(
+                    scopeCount == 0
+                        ? 'Analize almak için en az bir dosya seçin.'
+                        : '$scopeCount dosya analizde — tüm dosyaları seçerek fireyi daha da düşürebilirsiniz.',
+                    style: AppTypography.bodySmall.copyWith(
+                      color: AppColors.textMuted,
+                    ),
+                  ),
           ),
           Padding(
             padding: const EdgeInsets.fromLTRB(14, 0, 14, 12),

@@ -41,9 +41,14 @@ class _AnalysisFireSummaryPanelState
   @override
   Widget build(BuildContext context) {
     final batch = widget.batch;
-    final summary = computeAnalysisFireSummary(batch);
-    final comparison =
-        batch.isOptimized ? computeAnalysisComparison(batch) : null;
+    final summary = ref.watch(analysisFireSummaryProvider) ??
+        const AnalysisFireSummary(
+          rawMaterialTonnage: 0,
+          rawStockTonnage: 0,
+          rawWasteTonnage: 0,
+          rawWastePercent: 0,
+        );
+    final comparison = ref.watch(analysisComparisonProvider);
     final lengthMatchDone = isLengthMatchingComplete(batch.lengthMatches);
     final tahvilApproved =
         batch.tahvilGroups.where((group) => group.approved).length;
@@ -112,15 +117,9 @@ class _AnalysisFireSummaryPanelState
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
-                            Text('Fire Özeti', style: AppTypography.titleMedium),
-                            const SizedBox(height: 2),
                             Text(
-                              batch.isOptimized
-                                  ? 'Ham kaynak veri ile optimize sonuç karşılaştırması'
-                                  : 'Ön imalat ham verisi — optimize analiz bekleniyor',
-                              style: AppTypography.bodySmall.copyWith(
-                                color: AppColors.textMuted,
-                              ),
+                              'FİRE ÖZETİ',
+                              style: AppTypography.titleMedium,
                             ),
                           ],
                         ),
@@ -634,6 +633,12 @@ class _StrategyOptionTile extends StatelessWidget {
                         color: AppColors.textMuted,
                       ),
                     ),
+                    Text(
+                      strategy.toleranceDescription,
+                      style: AppTypography.bodySmall.copyWith(
+                        color: AppColors.textMuted,
+                      ),
+                    ),
                   ],
                 ),
               ),
@@ -935,6 +940,7 @@ class _MatteGreenGradientButton extends StatelessWidget {
                         : AppColors.textDisabled,
                     fontWeight: FontWeight.w700,
                     letterSpacing: 0.15,
+                    fontSize: (AppTypography.titleMedium.fontSize ?? 14) * 1.5,
                     height: 1.1,
                   ),
                 ),

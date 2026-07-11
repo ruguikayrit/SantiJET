@@ -145,13 +145,11 @@ class _FireSummaryCard extends StatelessWidget {
   final double plannedUsage;
   final VoidCallback onTap;
 
-  Color get _accentColor => fire > 0
+  Color get _accentColor => fire > 2
       ? AppColors.critical
-      : fire < -8
-          ? AppColors.critical
-          : fire < 0
-              ? AppColors.warning
-              : AppColors.success;
+      : fire > 0
+          ? AppColors.warning
+          : AppColors.success;
 
   @override
   Widget build(BuildContext context) {

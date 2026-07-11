@@ -50,10 +50,7 @@ abstract final class AnalysisSectionIds {
 
 /// Bölüm açık/kapalı durumu — yeniden çizimlerde korunur, varsayılan kapalı.
 final analysisSectionExpandedProvider =
-    StateProvider.family<bool, String>((ref, sectionId) {
-  if (sectionId == AnalysisSectionIds.tahvilCalculator) return true;
-  return false;
-});
+    StateProvider.family<bool, String>((ref, sectionId) => false);
 
 /// Hesap ve Analiz — analize alınacak DWG dosyaları (varsayılan: tümü).
 final selectedAnalysisBatchIdsProvider = StateProvider<Set<String>>((ref) => {});
@@ -89,6 +86,20 @@ final mergedAnalysisBatchProvider = Provider<CuttingBendingBatch?>((ref) {
   }
 
   return analysis_calc.mergeCuttingBendingBatchesForAnalysis(selected);
+});
+
+/// Fire özeti — build içinde tekrar hesaplanmaz (analiz sırasında sekme çökmesini önler).
+final analysisFireSummaryProvider = Provider<analysis_calc.AnalysisFireSummary?>((ref) {
+  final batch = ref.watch(mergedAnalysisBatchProvider);
+  if (batch == null) return null;
+  return analysis_calc.computeAnalysisFireSummary(batch);
+});
+
+/// Karşılaştırma özeti — optimize batch için memoize.
+final analysisComparisonProvider = Provider<analysis_calc.AnalysisComparison?>((ref) {
+  final batch = ref.watch(mergedAnalysisBatchProvider);
+  if (batch == null || !batch.isOptimized) return null;
+  return analysis_calc.computeAnalysisComparison(batch);
 });
 
 class OptimumFireAnalysisProgress {
@@ -221,20 +232,7 @@ class CuttingBendingNotifier extends StateNotifier<CuttingBendingState> {
   }
 
   CuttingBendingBatch? _mergedBatchForScope() {
-    final scope = _ref.read(selectedAnalysisBatchIdsProvider);
-    if (scope.isEmpty) return null;
-
-    final selected =
-        state.batches.where((batch) => scope.contains(batch.id)).toList();
-    if (selected.isEmpty) return null;
-
-    final scopeKey = analysis_calc.analysisScopeKey(scope);
-    final session = _ref.read(mergedAnalysisSessionProvider);
-    if (session != null && session.scopeKey == scopeKey) {
-      return session.batch;
-    }
-
-    return analysis_calc.mergeCuttingBendingBatchesForAnalysis(selected);
+    return _ref.read(mergedAnalysisBatchProvider);
   }
 
   Future<CuttingBendingBatch?> addBatch(CuttingBendingBatch batch) async {
@@ -345,10 +343,23 @@ class CuttingBendingNotifier extends StateNotifier<CuttingBendingState> {
     _ref.read(optimumFireAnalysisErrorProvider.notifier).state = null;
 
     try {
+      DateTime? lastUiUpdate;
+      var lastReportedPercent = -1;
       final updated = await analysis_calc.runOptimumFireAnalysis(
         merged,
         strategy: _ref.read(selectedFireReductionStrategyProvider),
         onProgress: (percent, stepLabel) async {
+          final now = DateTime.now();
+          if (kIsWeb &&
+              percent < 100 &&
+              lastUiUpdate != null &&
+              now.difference(lastUiUpdate!) <
+                  const Duration(milliseconds: 300) &&
+              (percent - lastReportedPercent).abs() < 5) {
+            return;
+          }
+          lastUiUpdate = now;
+          lastReportedPercent = percent;
           progressNotifier.state = OptimumFireAnalysisProgress(
             batchId: batchId,
             isRunning: true,

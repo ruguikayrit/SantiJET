@@ -15,13 +15,12 @@ enum FireReductionStrategy {
       };
 
   String get description => switch (this) {
-        FireReductionStrategy.tahvilOnly =>
-          'Farklı çaplarda yakın boylar — proje boyunun max %5 toleransı',
-        FireReductionStrategy.lengthMatchOnly =>
-          'Aynı çapta yakın boylar — proje boyunun max %5 toleransı',
-        FireReductionStrategy.both =>
-          'Tahvil + boy eşleştirme — proje boyunun max %5 toleransı',
+        FireReductionStrategy.tahvilOnly => 'Farklı çaplarda yakın boylar',
+        FireReductionStrategy.lengthMatchOnly => 'Aynı çapta yakın boylar',
+        FireReductionStrategy.both => 'Tahvil + boy eşleştirme',
       };
+
+  String get toleranceDescription => 'Proje boyunun max %5 toleransı';
 
   bool get appliesTahvil =>
       this == FireReductionStrategy.tahvilOnly ||
