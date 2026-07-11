@@ -6,6 +6,7 @@ import 'package:santijet_demir/core/theme/app_colors.dart';
 import 'package:santijet_demir/core/theme/app_radii.dart';
 import 'package:santijet_demir/core/theme/app_spacing.dart';
 import 'package:santijet_demir/core/theme/app_typography.dart';
+import 'package:santijet_demir/core/widgets/app_bottom_nav_bar.dart';
 import 'package:santijet_demir/core/widgets/empty_states.dart';
 import 'package:santijet_demir/core/widgets/santijet_header.dart';
 import 'package:santijet_demir/domain/entities/cutting_bending.dart';
@@ -15,6 +16,7 @@ import 'package:santijet_demir/features/analysis/widgets/analysis_comparison_sec
 import 'package:santijet_demir/features/analysis/widgets/analysis_fire_summary.dart';
 import 'package:santijet_demir/features/analysis/widgets/collapsible_analysis_section.dart';
 import 'package:santijet_demir/features/analysis/widgets/analysis_optimization_results.dart';
+import 'package:santijet_demir/features/analysis/widgets/analysis_report_actions.dart';
 import 'package:santijet_demir/features/analysis/widgets/stock_cut_section.dart';
 import 'package:santijet_demir/features/analysis/widgets/tahvil_calculator_section.dart';
 import 'package:santijet_demir/features/rebar_metraj/widgets/metraj_cutting_actions.dart';
@@ -195,7 +197,12 @@ class AnalysisScreen extends ConsumerWidget {
                   ),
                 ),
                 SliverPadding(
-                  padding: const EdgeInsets.fromLTRB(AppSpacing.md, 0, AppSpacing.md, 80),
+                  padding: EdgeInsets.fromLTRB(
+                    AppSpacing.md,
+                    0,
+                    AppSpacing.md,
+                    AppBottomNavBar.totalHeightOf(context) + 16,
+                  ),
                   sliver: SliverList(
                     delegate: SliverChildListDelegate([
                       CollapsibleAnalysisSection(
@@ -289,6 +296,11 @@ class AnalysisScreen extends ConsumerWidget {
                                     batchId: batch.id,
                                     plans: batch.stockCutPlans,
                                   ),
+                      ),
+                      const SizedBox(height: 16),
+                      AnalysisReportActions(
+                        batch: batch,
+                        sourceBatches: scopedBatches,
                       ),
                     ]),
                   ),
