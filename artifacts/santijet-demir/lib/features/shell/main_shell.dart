@@ -41,13 +41,7 @@ class MainShell extends StatelessWidget {
               child: navigationShell,
             ),
           ),
-          bottomNavigationBar: MediaQuery(
-            data: MediaQuery.of(context).copyWith(
-              padding: MediaQuery.of(context).padding.copyWith(bottom: 0),
-              viewPadding: MediaQuery.of(context).viewPadding.copyWith(bottom: 0),
-            ),
-            child: AppBottomNavBar(navigationShell: navigationShell),
-          ),
+          bottomNavigationBar: AppBottomNavBar(navigationShell: navigationShell),
         ),
         const AnalysisRunningLockOverlay(),
       ],

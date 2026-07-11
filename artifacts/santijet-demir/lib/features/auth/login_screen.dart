@@ -75,8 +75,15 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
     return Scaffold(
       backgroundColor: AppColors.canvas,
       body: SafeArea(
+        bottom: false,
+        minimum: EdgeInsets.zero,
         child: ListView(
-          padding: const EdgeInsets.all(AppSpacing.lg),
+          padding: EdgeInsets.fromLTRB(
+            AppSpacing.lg,
+            AppSpacing.lg,
+            AppSpacing.lg,
+            AppSpacing.lg + MediaQuery.viewPaddingOf(context).bottom,
+          ),
           children: [
             const SizedBox(height: 51),
             Center(

@@ -35,8 +35,7 @@ class AppBottomNavBar extends ConsumerWidget {
     final showLabels = ResponsiveLayout.isTablet(context);
     final iconBarHeight = showLabels ? 56.0 : 48.0;
     final bottomInset = AppSafeAreaInsets.bottomNavInsetOf(context);
-    final bottomPadding = bottomInset > 0 ? bottomInset : 8.0;
-    return 4 + iconBarHeight + bottomPadding;
+    return 4 + iconBarHeight + (bottomInset > 0 ? bottomInset : 8.0);
   }
 
   @override
@@ -46,7 +45,7 @@ class AppBottomNavBar extends ConsumerWidget {
     final bottomInset = AppSafeAreaInsets.bottomNavInsetOf(context);
     final bottomPadding = bottomInset > 0 ? bottomInset : 8.0;
 
-    final bar = Material(
+    final bar = ColoredBox(
       color: AppColors.surface,
       child: DecoratedBox(
         decoration: const BoxDecoration(

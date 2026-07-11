@@ -114,6 +114,8 @@ class _SplashScreenState extends ConsumerState<SplashScreen>
             ),
           ),
           SafeArea(
+            bottom: false,
+            minimum: EdgeInsets.zero,
             child: Column(
               children: [
                 Expanded(
@@ -201,7 +203,9 @@ class _SplashScreenState extends ConsumerState<SplashScreen>
                     );
                   },
                 ),
-                const SizedBox(height: AppSpacing.splashBottomSafe),
+                SizedBox(
+                  height: MediaQuery.viewPaddingOf(context).bottom + AppSpacing.lg,
+                ),
               ],
             ),
           ),
