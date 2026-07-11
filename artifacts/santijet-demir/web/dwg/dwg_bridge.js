@@ -44,6 +44,45 @@ function readEntityText(entity) {
   return '';
 }
 
+function readEntityPosition(entity) {
+  if (!entity) return null;
+
+  if (entity.type === 'TEXT') {
+    const pt = entity.startPoint;
+    if (pt && (pt.x != null || pt.y != null)) {
+      return { x: Number(pt.x) || 0, y: Number(pt.y) || 0 };
+    }
+  }
+
+  if (entity.type === 'MTEXT') {
+    const pt = entity.insertionPoint;
+    if (pt && (pt.x != null || pt.y != null)) {
+      return { x: Number(pt.x) || 0, y: Number(pt.y) || 0 };
+    }
+  }
+
+  if (entity.type === 'ATTRIB') {
+    const pt = entity.text?.startPoint ?? entity.alignmentPoint;
+    if (pt && (pt.x != null || pt.y != null)) {
+      return { x: Number(pt.x) || 0, y: Number(pt.y) || 0 };
+    }
+  }
+
+  return null;
+}
+
+function pushTextEntry(texts, entityType, text, entity) {
+  const position = readEntityPosition(entity);
+  const layer = entity?.layer ? String(entity.layer) : undefined;
+  const entry = { entityType, text };
+  if (position) {
+    entry.x = position.x;
+    entry.y = position.y;
+  }
+  if (layer) entry.layer = layer;
+  texts.push(entry);
+}
+
 (async () => {
   try {
     const { Dwg_File_Type, LibreDwg } = await import('./libredwg-web.js');
@@ -76,12 +115,12 @@ function readEntityText(entity) {
           if (entityType === 'MTEXT') {
             for (const line of rawText.split('\n')) {
               const trimmed = line.trim();
-              if (trimmed) texts.push({ entityType: 'MTEXT', text: trimmed });
+              if (trimmed) pushTextEntry(texts, 'MTEXT', trimmed, entity);
             }
             continue;
           }
 
-          texts.push({ entityType, text: rawText });
+          pushTextEntry(texts, entityType, rawText, entity);
         }
 
         return texts;

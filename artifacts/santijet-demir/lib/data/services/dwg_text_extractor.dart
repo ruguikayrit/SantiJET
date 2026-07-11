@@ -58,6 +58,9 @@ Future<List<CadTextEntity>> _extractViaHttp(List<int> bytes) async {
           return CadTextEntity(
             entityType: (item['entityType'] ?? 'TEXT').toString(),
             text: text,
+            x: (item['x'] as num?)?.toDouble(),
+            y: (item['y'] as num?)?.toDouble(),
+            layer: item['layer'] as String?,
           );
         }
         final text = item.toString().trim();

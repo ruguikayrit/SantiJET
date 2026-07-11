@@ -66,13 +66,25 @@ class ElementHeaderParser {
 
   /// S1[100/160] 182 ADET
   static final _combined = RegExp(
-    r'^([SPKD])(\d+)\s*(?:\[([^\]]+)\])?\s+(\d+)\s*(?:ADET|ADT|AD)\.?\s*$',
+    r'^([SPKD])\s*(\d+)\s*(?:[\[(]([^\])]+)[\])])?\s*(\d+)\s*(?:ADET|ADT|AD)\.?\s*$',
     caseSensitive: false,
   );
 
   /// S1[100/160]
   static final _codeOnly = RegExp(
-    r'^([SPKD])(\d+)\s*(?:\[([^\]]+)\])?\s*$',
+    r'^([SPKD])\s*(\d+)\s*(?:[\[(]([^\])]+)[\])])?\s*$',
+    caseSensitive: false,
+  );
+
+  /// Satır içinde: P1[40/240] 36 ADET
+  static final _embedded = RegExp(
+    r'([SPKD])\s*(\d+)\s*(?:[\[(]([^\])]+)[\])])?\s*(\d+)\s*(?:ADET|ADT|AD)\.?\b',
+    caseSensitive: false,
+  );
+
+  /// Satır içinde: P1[40/240]
+  static final _embeddedCodeOnly = RegExp(
+    r'([SPKD])\s*(\d+)\s*(?:[\[(]([^\])]+)[\])])\b',
     caseSensitive: false,
   );
 
@@ -99,6 +111,24 @@ class ElementHeaderParser {
     if (codeOnly != null) {
       return _fromMatch(
         codeOnly,
+        sourceText: raw.trim(),
+        benzer: 1,
+      );
+    }
+
+    final embedded = _embedded.firstMatch(normalized);
+    if (embedded != null) {
+      return _fromMatch(
+        embedded,
+        sourceText: raw.trim(),
+        benzer: int.parse(embedded.group(4)!),
+      );
+    }
+
+    final embeddedCode = _embeddedCodeOnly.firstMatch(normalized);
+    if (embeddedCode != null) {
+      return _fromMatch(
+        embeddedCode,
         sourceText: raw.trim(),
         benzer: 1,
       );

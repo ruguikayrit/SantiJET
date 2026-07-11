@@ -6,6 +6,48 @@ import 'package:santijet_demir/core/theme/app_typography.dart';
 import 'package:santijet_demir/data/services/element_header_parser.dart';
 import 'package:santijet_demir/domain/entities/rebar_metraj.dart';
 
+class MetrajCetvelEmptyHint extends StatelessWidget {
+  const MetrajCetvelEmptyHint({
+    super.key,
+    this.labelCount = 0,
+  });
+
+  final int labelCount;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.all(14),
+      decoration: BoxDecoration(
+        color: AppColors.warning.withValues(alpha: 0.08),
+        borderRadius: AppRadii.md,
+        border: Border.all(color: AppColors.warning.withValues(alpha: 0.25)),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text('Metraj cetveli oluşmadı', style: AppTypography.titleMedium),
+          const SizedBox(height: 8),
+          Text(
+            labelCount > 0
+                ? '$labelCount demir etiketi okundu ancak eleman başlıkları '
+                    '(S1[100/160] 182 ADET, P1[40/240] 36 ADET) ile '
+                    'eşleştirilemedi.'
+                : 'Çizimde eleman başlığı veya demir etiketi bulunamadı.',
+            style: AppTypography.bodySmall,
+          ),
+          const SizedBox(height: 8),
+          Text(
+            'DWG\'de her perde/kolon detayının üstünde S/P/K/D başlığı ve '
+            'benzer adet bilgisi olmalı. Dosyayı yeniden analiz edip tekrar kaydedin.',
+            style: AppTypography.bodySmall.copyWith(color: AppColors.textMuted),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
 class MetrajCetvelSection extends StatelessWidget {
   const MetrajCetvelSection({
     super.key,

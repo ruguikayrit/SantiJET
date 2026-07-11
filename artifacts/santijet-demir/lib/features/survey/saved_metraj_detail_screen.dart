@@ -131,6 +131,9 @@ class SavedMetrajDetailScreen extends ConsumerWidget {
           if (result.cetvel.isNotEmpty) ...[
             MetrajCetvelSection(cetvel: result.cetvel),
             const SizedBox(height: 20),
+          ] else if (result.textDetails.isNotEmpty) ...[
+            MetrajCetvelEmptyHint(labelCount: result.textDetails.length),
+            const SizedBox(height: 20),
           ],
           Text('Çap Detay Tablosu', style: AppTypography.headlineMedium),
           const SizedBox(height: 12),

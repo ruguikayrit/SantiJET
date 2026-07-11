@@ -122,5 +122,43 @@ void main() {
       expect(result.cetvel[1].elementCode, 'P1');
       expect(result.cetvel[1].benzerCount, 3);
     });
+
+    test('konum bilgisi ile yan yana detaylar gruplanır', () {
+      final entities = [
+        const CadTextEntity(
+          entityType: 'TEXT',
+          text: 'P1[40/240] 36 ADET',
+          x: 100,
+          y: 500,
+        ),
+        const CadTextEntity(
+          entityType: 'TEXT',
+          text: 'P2[40/200] 12 ADET',
+          x: 400,
+          y: 500,
+        ),
+        const CadTextEntity(
+          entityType: 'TEXT',
+          text: '34Ø16 L=325',
+          x: 110,
+          y: 450,
+        ),
+        const CadTextEntity(
+          entityType: 'TEXT',
+          text: '34Ø16 L=185',
+          x: 410,
+          y: 450,
+        ),
+      ];
+
+      final result = builder.build(entities);
+
+      expect(result.cetvel.length, 2);
+      expect(result.cetvel[0].elementCode, 'P1');
+      expect(result.cetvel[0].rows.single.unitQuantity, 34);
+      expect(result.cetvel[0].rows.single.totalQuantity, 34 * 36);
+      expect(result.cetvel[1].elementCode, 'P2');
+      expect(result.cetvel[1].rows.single.totalQuantity, 34 * 12);
+    });
   });
 }
