@@ -35,13 +35,29 @@ class MainShell extends StatelessWidget {
         Scaffold(
           backgroundColor: AppColors.canvas,
           resizeToAvoidBottomInset: false,
-          body: ResponsiveLayout(
-            child: AppSafeArea(
-              bottom: false,
-              child: navigationShell,
+          body: MediaQuery.removePadding(
+            context: context,
+            removeBottom: true,
+            child: Stack(
+              fit: StackFit.expand,
+              children: [
+                Positioned.fill(
+                  child: ResponsiveLayout(
+                    child: AppSafeArea(
+                      bottom: false,
+                      child: navigationShell,
+                    ),
+                  ),
+                ),
+                Positioned(
+                  left: 0,
+                  right: 0,
+                  bottom: 0,
+                  child: AppBottomNavBar(navigationShell: navigationShell),
+                ),
+              ],
             ),
           ),
-          bottomNavigationBar: AppBottomNavBar(navigationShell: navigationShell),
         ),
         const AnalysisRunningLockOverlay(),
       ],

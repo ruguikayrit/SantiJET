@@ -9,6 +9,9 @@ import 'package:santijet_demir/features/analysis/providers/cutting_bending_provi
 class AnalysisRunningLockOverlay extends ConsumerWidget {
   const AnalysisRunningLockOverlay({super.key});
 
+  static const _progressRingSize = 220.0;
+  static const _progressStrokeWidth = 12.0;
+
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final progress = ref.watch(optimumFireAnalysisProgressProvider);
@@ -24,8 +27,8 @@ class AnalysisRunningLockOverlay extends ConsumerWidget {
     return Positioned.fill(
       child: PopScope(
         canPop: false,
-        child: Material(
-          color: AppColors.canvas.withValues(alpha: 0.94),
+        child: ColoredBox(
+          color: AppColors.canvas,
           child: SafeArea(
             child: GestureDetector(
               behavior: HitTestBehavior.opaque,
@@ -87,22 +90,23 @@ class AnalysisRunningLockOverlay extends ConsumerWidget {
                           ),
                         ] else ...[
                           SizedBox(
-                            width: 88,
-                            height: 88,
+                            width: _progressRingSize,
+                            height: _progressRingSize,
                             child: Stack(
                               alignment: Alignment.center,
                               children: [
                                 CircularProgressIndicator(
                                   value: progressValue,
-                                  strokeWidth: 5,
+                                  strokeWidth: _progressStrokeWidth,
                                   backgroundColor: AppColors.border,
                                   color: AppColors.success,
                                 ),
                                 Text(
                                   '$clampedPercent%',
-                                  style: AppTypography.titleMedium.copyWith(
+                                  style: AppTypography.headlineMedium.copyWith(
                                     color: AppColors.success,
                                     fontWeight: FontWeight.w700,
+                                    fontSize: 28,
                                   ),
                                 ),
                               ],
