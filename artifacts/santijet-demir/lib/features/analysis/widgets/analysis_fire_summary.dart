@@ -119,7 +119,11 @@ class _AnalysisFireSummaryPanelState
                           children: [
                             Text(
                               'FİRE ÖZETİ',
-                              style: AppTypography.titleMedium,
+                              style: AppTypography.titleMedium.copyWith(
+                                fontSize:
+                                    (AppTypography.titleMedium.fontSize ?? 14) *
+                                        1.5,
+                              ),
                             ),
                           ],
                         ),
