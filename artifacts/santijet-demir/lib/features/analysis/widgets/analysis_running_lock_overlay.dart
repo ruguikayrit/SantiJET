@@ -133,7 +133,7 @@ class _RunningPanel extends StatelessWidget {
         ),
         const SizedBox(height: 6),
         Text(
-          'Lütfen bekleyin — işlem tamamlanana kadar uygulama kilitlidir.',
+          'Lütfen bekleyin',
           style: AnalysisRunningLockOverlay._plainText(
             AppTypography.bodySmall.copyWith(
               color: AppColors.textMuted,
@@ -159,9 +159,7 @@ class _RunningPanel extends StatelessWidget {
           borderColor: AppColors.warning.withValues(alpha: 0.28),
           title:
               'Fire analizi tamamlanana kadar uygulama kullanımı geçici olarak durdurulmuştur.',
-          body:
-              'Sayfa değiştirmeyin, sekmeyi kapatmayın ve uygulamayı zorlamayın. '
-              'Analiz bittiğinde ekran otomatik olarak açılacaktır.',
+          body: 'Analiz bittiğinde ekran otomatik olarak açılacaktır.',
         ),
         if (stepLabel.isNotEmpty) ...[
           const SizedBox(height: 20),
@@ -207,7 +205,7 @@ class _CompletedPanel extends StatelessWidget {
         ),
         const SizedBox(height: 28),
         Text(
-          'Analiz tamamlandı',
+          'Sonuçlar hazır !',
           style: AnalysisRunningLockOverlay._plainText(
             AppTypography.headlineMedium.copyWith(
               color: AppColors.success,
@@ -218,7 +216,7 @@ class _CompletedPanel extends StatelessWidget {
         ),
         const SizedBox(height: 10),
         Text(
-          'Sonuçlar hazır — uygulama kullanımına devam edebilirsiniz.',
+          'Uygulama kullanımına devam edebilirsiniz.',
           style: AnalysisRunningLockOverlay._plainText(
             AppTypography.bodyMedium.copyWith(
               color: AppColors.textMuted,
