@@ -5,11 +5,11 @@ import 'package:santijet_demir/core/theme/app_colors.dart';
 import 'package:santijet_demir/core/theme/app_radii.dart';
 import 'package:santijet_demir/core/theme/app_spacing.dart';
 import 'package:santijet_demir/core/theme/app_typography.dart';
-import 'package:santijet_demir/core/widgets/app_components.dart';
 import 'package:santijet_demir/domain/entities/rebar_metraj.dart';
 import 'package:santijet_demir/features/projects/providers/project_provider.dart';
 import 'package:santijet_demir/features/rebar_metraj/providers/rebar_metraj_storage_provider.dart';
 import 'package:santijet_demir/features/rebar_metraj/widgets/metraj_cetvel_section.dart';
+import 'package:santijet_demir/features/rebar_metraj/widgets/metraj_tonnage_summary_cards.dart';
 import 'package:santijet_demir/features/rebar_metraj/widgets/metraj_cutting_actions.dart';
 import 'package:santijet_demir/features/rebar_metraj/widgets/metraj_survey_actions.dart';
 import 'package:santijet_demir/features/survey/providers/survey_provider.dart';
@@ -94,40 +94,7 @@ class SavedMetrajDetailScreen extends ConsumerWidget {
             ),
           ),
           const SizedBox(height: 16),
-          GridView.count(
-            crossAxisCount: 2,
-            shrinkWrap: true,
-            physics: const NeverScrollableScrollPhysics(),
-            mainAxisSpacing: 12,
-            crossAxisSpacing: 12,
-            childAspectRatio: 1.6,
-            children: [
-              KpiCard(
-                label: 'Toplam Tonaj',
-                value: numberFormat.format(result.totalTonnage),
-                unit: 't',
-                accentColor: AppColors.electricBlueLight,
-              ),
-              KpiCard(
-                label: 'Toplam Uzunluk',
-                value: numberFormat.format(result.totalLengthM),
-                unit: 'm',
-                accentColor: AppColors.success,
-              ),
-              KpiCard(
-                label: 'Çubuk Sayısı',
-                value: '${result.totalBarCount}',
-                unit: 'ad',
-                accentColor: AppColors.info,
-              ),
-              KpiCard(
-                label: 'Etiket Sayısı',
-                value: '${result.textDetails.length}',
-                unit: 'ad',
-                accentColor: AppColors.warning,
-              ),
-            ],
-          ),
+          MetrajTonnageSummaryCards(lines: result.lines),
           if (result.lines.isNotEmpty || result.cetvel.isNotEmpty) ...[
             MetrajCetvelSection(
               lines: result.lines,
