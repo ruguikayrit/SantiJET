@@ -3,7 +3,7 @@ enum BottomNavTab {
   orders('Siparişler', 'Sipariş', '/orders'),
   incomingRebar('Gelen Demir', 'Gelen', '/incoming-rebar'),
   fieldCount('Saha Sayım', 'Sayım', '/field-count'),
-  analysis('Hesap ve Analiz', 'Hesap ve Analiz', '/analysis');
+  analysis('Hesap / Analiz / Rapor', 'Hesap / Analiz / Rapor', '/analysis');
 
   const BottomNavTab(this.label, this.navLabel, this.path);
 

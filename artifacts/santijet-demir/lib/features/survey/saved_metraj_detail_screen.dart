@@ -128,8 +128,12 @@ class SavedMetrajDetailScreen extends ConsumerWidget {
               ),
             ],
           ),
-          if (result.cetvel.isNotEmpty) ...[
-            MetrajCetvelSection(cetvel: result.cetvel),
+          if (result.lines.isNotEmpty || result.cetvel.isNotEmpty) ...[
+            MetrajCetvelSection(
+              lines: result.lines,
+              cetvel: result.cetvel,
+              labelCount: result.textDetails.length,
+            ),
             const SizedBox(height: 20),
           ] else if (result.textDetails.isNotEmpty) ...[
             MetrajCetvelEmptyHint(labelCount: result.textDetails.length),

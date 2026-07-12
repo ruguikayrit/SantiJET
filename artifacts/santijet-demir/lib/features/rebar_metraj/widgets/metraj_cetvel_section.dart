@@ -51,49 +51,74 @@ class MetrajCetvelEmptyHint extends StatelessWidget {
 class MetrajCetvelSection extends StatelessWidget {
   const MetrajCetvelSection({
     super.key,
+    required this.lines,
     required this.cetvel,
+    this.labelCount = 0,
     this.hideHeader = false,
   });
 
+  final List<RebarMetrajLine> lines;
   final List<MetrajCetvelEntry> cetvel;
+  final int labelCount;
   final bool hideHeader;
 
   @override
   Widget build(BuildContext context) {
-    if (cetvel.isEmpty) return const SizedBox.shrink();
+    if (lines.isEmpty && cetvel.isEmpty) return const SizedBox.shrink();
 
-    final summary = summarizeCetvel(cetvel);
+    final icmali = summarizeLines(lines);
+    final typeRows = cetvel.isNotEmpty ? summarizeCetvelByType(cetvel) : const <MetrajIcmaliTypeRow>[];
+    final cetvelSummary = cetvel.isNotEmpty ? summarizeCetvel(cetvel) : null;
     final grouped = _groupByType(cetvel);
     final numberFormat = NumberFormat('#,##0.00', 'tr_TR');
     final lengthFormat = NumberFormat('#,##0.##', 'tr_TR');
+    final intFormat = NumberFormat('#,##0', 'tr_TR');
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
-        if (!hideHeader) ...[
-          Text('Demir Metraj Cetveli', style: AppTypography.headlineMedium),
+        if (!hideHeader && lines.isNotEmpty) ...[
+          Text('Metraj İcmali', style: AppTypography.headlineMedium),
           const SizedBox(height: 4),
           Text(
-            '${summary.elementCount} eleman · ${summary.rowCount} satır · '
-            'benzer katsayısı uygulandı',
-            style: AppTypography.bodySmall,
+            'Tüm okunan demir etiketlerine göre çap bazlı özet',
+            style: AppTypography.bodySmall.copyWith(color: AppColors.textMuted),
           ),
           const SizedBox(height: 12),
         ],
-        _GrandSummaryCard(
-          summary: summary,
-          numberFormat: numberFormat,
-          lengthFormat: lengthFormat,
-        ),
-        const SizedBox(height: 16),
-        ...grouped.entries.map(
-          (entry) => _TypeGroupSection(
-            type: entry.key,
-            entries: entry.value,
+        if (lines.isNotEmpty)
+          _MetrajIcmaliSection(
+            summary: icmali,
+            typeRows: typeRows,
             numberFormat: numberFormat,
             lengthFormat: lengthFormat,
+            intFormat: intFormat,
           ),
-        ),
+        if (cetvel.isNotEmpty) ...[
+          const SizedBox(height: 24),
+          Text('Metraj Cetveli', style: AppTypography.headlineMedium),
+          const SizedBox(height: 4),
+          Text(
+            '${cetvelSummary!.elementCount} eleman · ${cetvelSummary.rowCount} satır · '
+            'benzer katsayısı uygulandı · '
+            '${numberFormat.format(cetvelSummary.totalTonnage)} t',
+            style: AppTypography.bodySmall.copyWith(color: AppColors.textMuted),
+          ),
+          const SizedBox(height: 12),
+          ...grouped.entries.map(
+            (entry) => _TypeGroupSection(
+              type: entry.key,
+              entries: entry.value,
+              numberFormat: numberFormat,
+              lengthFormat: lengthFormat,
+            ),
+          ),
+        ] else if (lines.isNotEmpty) ...[
+          const SizedBox(height: 20),
+          Text('Metraj Cetveli', style: AppTypography.headlineMedium),
+          const SizedBox(height: 8),
+          MetrajCetvelEmptyHint(labelCount: labelCount),
+        ],
       ],
     );
   }
@@ -110,86 +135,352 @@ class MetrajCetvelSection extends StatelessWidget {
   }
 }
 
-class _GrandSummaryCard extends StatelessWidget {
-  const _GrandSummaryCard({
+class _MetrajIcmaliSection extends StatelessWidget {
+  const _MetrajIcmaliSection({
     required this.summary,
+    required this.typeRows,
     required this.numberFormat,
     required this.lengthFormat,
+    required this.intFormat,
   });
 
-  final MetrajCetvelSummary summary;
+  final MetrajIcmaliSummary summary;
+  final List<MetrajIcmaliTypeRow> typeRows;
   final NumberFormat numberFormat;
   final NumberFormat lengthFormat;
+  final NumberFormat intFormat;
 
   @override
   Widget build(BuildContext context) {
-    final diameters = summary.tonnageByDiameter.keys.toList()..sort();
-
     return Container(
-      padding: const EdgeInsets.all(14),
       decoration: BoxDecoration(
         color: AppColors.surfaceElevated,
         borderRadius: AppRadii.md,
         border: Border.all(color: AppColors.border),
       ),
+      clipBehavior: Clip.antiAlias,
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
-          Row(
-            children: [
-              Expanded(
-                child: _SummaryMetric(
-                  label: 'Toplam',
-                  value: '${numberFormat.format(summary.totalTonnage)} t',
-                  accent: AppColors.electricBlueLight,
-                ),
-              ),
-              Expanded(
-                child: _SummaryMetric(
-                  label: 'İnce (Ø8–12)',
-                  value: '${numberFormat.format(summary.thinTonnage)} t',
-                  accent: AppColors.info,
-                ),
-              ),
-              Expanded(
-                child: _SummaryMetric(
-                  label: 'Kalın (Ø≥14)',
-                  value: '${numberFormat.format(summary.thickTonnage)} t',
-                  accent: AppColors.success,
-                ),
-              ),
-            ],
-          ),
-          const SizedBox(height: 10),
-          Text(
-            'Toplam boy: ${lengthFormat.format(summary.totalLengthM)} m',
-            style: AppTypography.bodySmall.copyWith(color: AppColors.textMuted),
-          ),
-          if (diameters.isNotEmpty) ...[
-            const SizedBox(height: 10),
-            Wrap(
-              spacing: 6,
-              runSpacing: 6,
-              children: diameters.map((diameter) {
-                final tonnage = summary.tonnageByDiameter[diameter] ?? 0;
-                return Container(
-                  padding:
-                      const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                  decoration: BoxDecoration(
-                    color: AppColors.canvas,
-                    borderRadius: AppRadii.full,
-                    border: Border.all(color: AppColors.border),
+          Padding(
+            padding: const EdgeInsets.fromLTRB(14, 14, 14, 10),
+            child: Row(
+              children: [
+                Expanded(
+                  child: _SummaryMetric(
+                    label: 'Toplam',
+                    value: '${numberFormat.format(summary.totalTonnage)} t',
+                    accent: AppColors.electricBlueLight,
                   ),
-                  child: Text(
-                    'Ø$diameter · ${numberFormat.format(tonnage)} t',
-                    style: AppTypography.labelMedium.copyWith(
-                      color: AppColors.diameterColor(diameter),
-                    ),
+                ),
+                Expanded(
+                  child: _SummaryMetric(
+                    label: 'İnce (Ø8–12)',
+                    value: '${numberFormat.format(summary.thinTonnage)} t',
+                    accent: AppColors.info,
                   ),
-                );
-              }).toList(),
+                ),
+                Expanded(
+                  child: _SummaryMetric(
+                    label: 'Kalın (Ø≥14)',
+                    value: '${numberFormat.format(summary.thickTonnage)} t',
+                    accent: AppColors.success,
+                  ),
+                ),
+              ],
+            ),
+          ),
+          Padding(
+            padding: const EdgeInsets.fromLTRB(14, 0, 14, 12),
+            child: Text(
+              'Toplam boy: ${lengthFormat.format(summary.totalLengthM)} m · '
+              '${intFormat.format(summary.totalBarCount)} çubuk',
+              style: AppTypography.bodySmall.copyWith(color: AppColors.textMuted),
+            ),
+          ),
+          const _IcmalTableHeader(
+            cells: ['Çap', 'Boy (m)', 'Adet', 'kg', 't'],
+          ),
+          ...summary.lines.map(
+            (line) => _IcmalDataRow(
+              diameter: line.diameter,
+              lengthM: line.totalLengthM,
+              barCount: line.barCount,
+              weightKg: line.weightKg,
+              tonnage: line.tonnage,
+              numberFormat: numberFormat,
+              lengthFormat: lengthFormat,
+              intFormat: intFormat,
+            ),
+          ),
+          _IcmalTotalRow(
+            label: 'TOPLAM',
+            lengthM: summary.totalLengthM,
+            barCount: summary.totalBarCount,
+            weightKg: summary.totalTonnage * 1000,
+            tonnage: summary.totalTonnage,
+            numberFormat: numberFormat,
+            lengthFormat: lengthFormat,
+            intFormat: intFormat,
+          ),
+          if (typeRows.isNotEmpty) ...[
+            const Divider(height: 1, color: AppColors.border),
+            Padding(
+              padding: const EdgeInsets.fromLTRB(14, 12, 14, 8),
+              child: Text(
+                'Eleman tipi özeti (cetvel)',
+                style: AppTypography.labelMedium.copyWith(
+                  color: AppColors.textMuted,
+                ),
+              ),
+            ),
+            const _IcmalTableHeader(
+              cells: ['Eleman', 'Adet', 'Çubuk', 't'],
+            ),
+            ...typeRows.map(
+              (row) => _IcmalTypeRow(
+                row: row,
+                numberFormat: numberFormat,
+                intFormat: intFormat,
+              ),
             ),
           ],
+        ],
+      ),
+    );
+  }
+}
+
+class _IcmalTableHeader extends StatelessWidget {
+  const _IcmalTableHeader({required this.cells});
+
+  final List<String> cells;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+      decoration: const BoxDecoration(
+        color: AppColors.canvas,
+        border: Border(
+          top: BorderSide(color: AppColors.border),
+          bottom: BorderSide(color: AppColors.border),
+        ),
+      ),
+      child: Row(
+        children: [
+          for (var i = 0; i < cells.length; i++)
+            Expanded(
+              flex: i == 0 ? 2 : 3,
+              child: Text(
+                cells[i],
+                style: AppTypography.labelMedium,
+                textAlign: i == 0 ? TextAlign.start : TextAlign.end,
+              ),
+            ),
+        ],
+      ),
+    );
+  }
+}
+
+class _IcmalDataRow extends StatelessWidget {
+  const _IcmalDataRow({
+    required this.diameter,
+    required this.lengthM,
+    required this.barCount,
+    required this.weightKg,
+    required this.tonnage,
+    required this.numberFormat,
+    required this.lengthFormat,
+    required this.intFormat,
+  });
+
+  final int diameter;
+  final double lengthM;
+  final int barCount;
+  final double weightKg;
+  final double tonnage;
+  final NumberFormat numberFormat;
+  final NumberFormat lengthFormat;
+  final NumberFormat intFormat;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+      decoration: const BoxDecoration(
+        border: Border(bottom: BorderSide(color: AppColors.borderSubtle)),
+      ),
+      child: Row(
+        children: [
+          Expanded(
+            flex: 2,
+            child: Text(
+              'Ø$diameter',
+              style: AppTypography.titleMedium.copyWith(
+                color: AppColors.diameterColor(diameter),
+              ),
+            ),
+          ),
+          Expanded(
+            flex: 3,
+            child: Text(
+              lengthFormat.format(lengthM),
+              style: AppTypography.bodySmall,
+              textAlign: TextAlign.end,
+            ),
+          ),
+          Expanded(
+            flex: 3,
+            child: Text(
+              intFormat.format(barCount),
+              style: AppTypography.bodySmall,
+              textAlign: TextAlign.end,
+            ),
+          ),
+          Expanded(
+            flex: 3,
+            child: Text(
+              numberFormat.format(weightKg),
+              style: AppTypography.bodySmall,
+              textAlign: TextAlign.end,
+            ),
+          ),
+          Expanded(
+            flex: 3,
+            child: Text(
+              numberFormat.format(tonnage),
+              style: AppTypography.bodySmall.copyWith(color: AppColors.textSecondary),
+              textAlign: TextAlign.end,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _IcmalTotalRow extends StatelessWidget {
+  const _IcmalTotalRow({
+    required this.label,
+    required this.lengthM,
+    required this.barCount,
+    required this.weightKg,
+    required this.tonnage,
+    required this.numberFormat,
+    required this.lengthFormat,
+    required this.intFormat,
+  });
+
+  final String label;
+  final double lengthM;
+  final int barCount;
+  final double weightKg;
+  final double tonnage;
+  final NumberFormat numberFormat;
+  final NumberFormat lengthFormat;
+  final NumberFormat intFormat;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+      color: AppColors.electricBlue.withValues(alpha: 0.06),
+      child: Row(
+        children: [
+          Expanded(
+            flex: 2,
+            child: Text(label, style: AppTypography.labelMedium),
+          ),
+          Expanded(
+            flex: 3,
+            child: Text(
+              lengthFormat.format(lengthM),
+              style: AppTypography.labelMedium,
+              textAlign: TextAlign.end,
+            ),
+          ),
+          Expanded(
+            flex: 3,
+            child: Text(
+              intFormat.format(barCount),
+              style: AppTypography.labelMedium,
+              textAlign: TextAlign.end,
+            ),
+          ),
+          Expanded(
+            flex: 3,
+            child: Text(
+              numberFormat.format(weightKg),
+              style: AppTypography.labelMedium,
+              textAlign: TextAlign.end,
+            ),
+          ),
+          Expanded(
+            flex: 3,
+            child: Text(
+              numberFormat.format(tonnage),
+              style: AppTypography.titleMedium.copyWith(
+                color: AppColors.electricBlueLight,
+              ),
+              textAlign: TextAlign.end,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _IcmalTypeRow extends StatelessWidget {
+  const _IcmalTypeRow({
+    required this.row,
+    required this.numberFormat,
+    required this.intFormat,
+  });
+
+  final MetrajIcmaliTypeRow row;
+  final NumberFormat numberFormat;
+  final NumberFormat intFormat;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+      decoration: const BoxDecoration(
+        border: Border(bottom: BorderSide(color: AppColors.borderSubtle)),
+      ),
+      child: Row(
+        children: [
+          Expanded(
+            flex: 2,
+            child: Text(row.typeLabel, style: AppTypography.bodySmall),
+          ),
+          Expanded(
+            flex: 3,
+            child: Text(
+              '${row.elementCount}',
+              style: AppTypography.bodySmall,
+              textAlign: TextAlign.end,
+            ),
+          ),
+          Expanded(
+            flex: 3,
+            child: Text(
+              intFormat.format(row.barCount),
+              style: AppTypography.bodySmall,
+              textAlign: TextAlign.end,
+            ),
+          ),
+          Expanded(
+            flex: 3,
+            child: Text(
+              numberFormat.format(row.tonnage),
+              style: AppTypography.bodySmall.copyWith(color: AppColors.textSecondary),
+              textAlign: TextAlign.end,
+            ),
+          ),
         ],
       ),
     );

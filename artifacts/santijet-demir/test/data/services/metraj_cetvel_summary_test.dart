@@ -46,5 +46,30 @@ void main() {
       expect(summary.tonnageByDiameter[12], closeTo(0.02, 0.001));
       expect(summary.tonnageByDiameter[28], closeTo(0.2, 0.001));
     });
+
+    test('summarizeLines çap bazlı icmal üretir', () {
+      final summary = summarizeLines([
+        RebarMetrajLine(
+          diameter: 12,
+          totalLengthM: 1000,
+          weightKg: 888,
+          barCount: 50,
+          layerName: 'etr',
+        ),
+        RebarMetrajLine(
+          diameter: 28,
+          totalLengthM: 500,
+          weightKg: 2466,
+          barCount: 42,
+          layerName: 'boy',
+        ),
+      ]);
+
+      expect(summary.totalTonnage, closeTo(3.354, 0.001));
+      expect(summary.thinTonnage, closeTo(0.888, 0.001));
+      expect(summary.thickTonnage, closeTo(2.466, 0.001));
+      expect(summary.totalBarCount, 92);
+      expect(summary.lines.length, 2);
+    });
   });
 }

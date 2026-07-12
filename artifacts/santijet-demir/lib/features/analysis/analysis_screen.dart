@@ -39,7 +39,20 @@ class AnalysisScreen extends ConsumerWidget {
       body: CustomScrollView(
           slivers: [
             const SliverToBoxAdapter(
-              child: SantijetHeader(subtitle: 'HESAP VE ANALİZ', showNotification: false),
+              child: SantijetHeader(subtitle: 'HESAP / ANALİZ / RAPOR', showNotification: false),
+            ),
+            SliverToBoxAdapter(
+              child: Padding(
+                padding: const EdgeInsets.fromLTRB(
+                  AppSpacing.md,
+                  AppSpacing.sm,
+                  AppSpacing.md,
+                  AppSpacing.sm,
+                ),
+                child: _ReportsQuickAccessBar(
+                  onTap: () => context.push(AppRoutes.reports),
+                ),
+              ),
             ),
             SliverPadding(
               padding: const EdgeInsets.fromLTRB(AppSpacing.md, 0, AppSpacing.md, AppSpacing.sm),
@@ -130,19 +143,6 @@ class AnalysisScreen extends ConsumerWidget {
               ),
               const SliverToBoxAdapter(child: _AnalysisSelectedBatchArea()),
             ],
-            SliverToBoxAdapter(
-              child: Padding(
-                padding: const EdgeInsets.fromLTRB(
-                  AppSpacing.md,
-                  AppSpacing.lg,
-                  AppSpacing.md,
-                  0,
-                ),
-                child: _ReportsQuickAccessBar(
-                  onTap: () => context.push(AppRoutes.reports),
-                ),
-              ),
-            ),
             SliverPadding(
               padding: EdgeInsets.only(
                 bottom: AppBottomNavBar.totalHeightOf(context) + 16,
