@@ -114,7 +114,7 @@ final analysisStrategyComparisonProvider =
 
 /// Ham ↔ revize parça karşılaştırma satırları.
 final analysisPieceListComparisonProvider =
-    Provider<List<analysis_calc.PieceListComparisonRow>>((ref) {
+    Provider<List<PieceListComparisonRow>>((ref) {
   final batch = ref.watch(mergedAnalysisBatchProvider);
   if (batch == null || !batch.isOptimized) return const [];
   return analysis_calc.computePieceListComparisonRows(batch);
@@ -122,7 +122,7 @@ final analysisPieceListComparisonProvider =
 
 /// Boy eşleştirme değişiklikleri.
 final analysisLengthMatchChangesProvider =
-    Provider<List<analysis_calc.LengthMatchChange>>((ref) {
+    Provider<List<LengthMatchChange>>((ref) {
   final batch = ref.watch(mergedAnalysisBatchProvider);
   if (batch == null) return const [];
   return analysis_calc.computeLengthMatchChanges(batch.lengthMatches);

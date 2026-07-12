@@ -161,7 +161,7 @@ class ExportService {
       ]);
     }
 
-    widgets.add(const pw.SizedBox(height: 8));
+    widgets.add(pw.SizedBox(height: 8));
 
     if (section.keyValues.isNotEmpty) {
       widgets.add(
@@ -224,7 +224,7 @@ class ExportService {
       );
     }
 
-    widgets.add(const pw.SizedBox(height: 20));
+    widgets.add(pw.SizedBox(height: 20));
     return widgets;
   }
 
