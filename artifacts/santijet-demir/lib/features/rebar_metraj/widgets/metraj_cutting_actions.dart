@@ -63,14 +63,11 @@ Future<void> showPreProductionAnalysisImportSheet(
     return;
   }
 
-  final selected = await showModalBottomSheet<List<SavedRebarMetraj>>(
-    context: context,
-    isScrollControlled: true,
-    backgroundColor: AppColors.surfaceElevated,
-    shape: const RoundedRectangleBorder(
-      borderRadius: BorderRadius.vertical(top: Radius.circular(16)),
+  final selected = await Navigator.of(context).push<List<SavedRebarMetraj>>(
+    MaterialPageRoute(
+      fullscreenDialog: true,
+      builder: (context) => _PreProductionImportPage(records: approved),
     ),
-    builder: (context) => _PreProductionImportSheet(records: approved),
   );
 
   if (selected == null || selected.isEmpty || !context.mounted) return;
@@ -212,51 +209,58 @@ Future<void> _importMetrajRecordsToAnalysis(
   );
 }
 
-class _PreProductionImportSheet extends StatefulWidget {
-  const _PreProductionImportSheet({required this.records});
+class _PreProductionImportPage extends StatefulWidget {
+  const _PreProductionImportPage({required this.records});
 
   final List<SavedRebarMetraj> records;
 
   @override
-  State<_PreProductionImportSheet> createState() =>
-      _PreProductionImportSheetState();
+  State<_PreProductionImportPage> createState() =>
+      _PreProductionImportPageState();
 }
 
-class _PreProductionImportSheetState extends State<_PreProductionImportSheet> {
+class _PreProductionImportPageState extends State<_PreProductionImportPage> {
   final _selectedIds = <String>{};
+
+  void _confirmSelection() {
+    final selected = widget.records
+        .where((record) => _selectedIds.contains(record.id))
+        .toList();
+    Navigator.pop(context, selected);
+  }
 
   @override
   Widget build(BuildContext context) {
-    final bottomInset = MediaQuery.viewInsetsOf(context).bottom;
+    final hasSelection = _selectedIds.isNotEmpty;
 
-    return SafeArea(
-      child: Padding(
-        padding: EdgeInsets.fromLTRB(16, 12, 16, 16 + bottomInset),
+    return Scaffold(
+      backgroundColor: AppColors.canvas,
+      body: SafeArea(
         child: Column(
-          mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
-            Center(
-              child: Container(
-                width: 40,
-                height: 4,
-                decoration: BoxDecoration(
-                  color: AppColors.border,
-                  borderRadius: AppRadii.full,
-                ),
+            Padding(
+              padding: const EdgeInsets.fromLTRB(20, 20, 20, 8),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    'Ön İmalattan Veri Al',
+                    style: AppTypography.headlineMedium,
+                  ),
+                  const SizedBox(height: 6),
+                  Text(
+                    'Analiz onayı verilmiş kayıtları Hesap ve Analiz\'e aktarın.',
+                    style: AppTypography.bodySmall.copyWith(
+                      color: AppColors.textMuted,
+                    ),
+                  ),
+                ],
               ),
             ),
-            const SizedBox(height: 12),
-            Text('Ön İmalattan Veri Al', style: AppTypography.titleMedium),
-            const SizedBox(height: 4),
-            Text(
-              'Analiz onayı verilmiş kayıtları Hesap ve Analiz\'e aktarın.',
-              style: AppTypography.bodySmall.copyWith(color: AppColors.textMuted),
-            ),
-            const SizedBox(height: 12),
-            Flexible(
+            Expanded(
               child: ListView.separated(
-                shrinkWrap: true,
+                padding: const EdgeInsets.fromLTRB(16, 8, 16, 16),
                 itemCount: widget.records.length,
                 separatorBuilder: (_, __) => const SizedBox(height: 8),
                 itemBuilder: (context, index) {
@@ -278,7 +282,7 @@ class _PreProductionImportSheetState extends State<_PreProductionImportSheet> {
                       child: Container(
                         padding: const EdgeInsets.all(12),
                         decoration: BoxDecoration(
-                          color: AppColors.canvas,
+                          color: AppColors.surfaceElevated,
                           borderRadius: AppRadii.sm,
                           border: Border.all(
                             color: selected
@@ -288,15 +292,19 @@ class _PreProductionImportSheetState extends State<_PreProductionImportSheet> {
                         ),
                         child: Row(
                           children: [
-                            Checkbox(value: selected, onChanged: (_) {
-                              setState(() {
-                                if (selected) {
-                                  _selectedIds.remove(record.id);
-                                } else {
-                                  _selectedIds.add(record.id);
-                                }
-                              });
-                            }),
+                            Checkbox(
+                              value: selected,
+                              activeColor: AppColors.electricBlueLight,
+                              onChanged: (_) {
+                                setState(() {
+                                  if (selected) {
+                                    _selectedIds.remove(record.id);
+                                  } else {
+                                    _selectedIds.add(record.id);
+                                  }
+                                });
+                              },
+                            ),
                             Expanded(
                               child: Column(
                                 crossAxisAlignment: CrossAxisAlignment.start,
@@ -326,22 +334,68 @@ class _PreProductionImportSheetState extends State<_PreProductionImportSheet> {
                 },
               ),
             ),
-            const SizedBox(height: 12),
-            FilledButton(
-              onPressed: _selectedIds.isEmpty
-                  ? null
-                  : () {
-                      final selected = widget.records
-                          .where((record) => _selectedIds.contains(record.id))
-                          .toList();
-                      Navigator.pop(context, selected);
-                    },
-              child: Text(
-                _selectedIds.isEmpty
-                    ? 'Kayıt seçin'
-                    : _selectedIds.length == 1
-                        ? '1 kaydı aktar'
-                        : '${_selectedIds.length} kayıt — devam',
+            Container(
+              padding: const EdgeInsets.fromLTRB(16, 12, 16, 16),
+              decoration: const BoxDecoration(
+                color: AppColors.surfaceElevated,
+                border: Border(top: BorderSide(color: AppColors.border)),
+              ),
+              child: Row(
+                children: [
+                  Expanded(
+                    child: FilledButton(
+                      onPressed: () => Navigator.pop(context),
+                      style: FilledButton.styleFrom(
+                        backgroundColor: AppColors.diameter28,
+                        foregroundColor: Colors.white,
+                        disabledBackgroundColor:
+                            AppColors.diameter28.withValues(alpha: 0.38),
+                        disabledForegroundColor:
+                            Colors.white.withValues(alpha: 0.72),
+                        elevation: 0,
+                        minimumSize: const Size.fromHeight(48),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: AppRadii.sm,
+                        ),
+                      ),
+                      child: Text(
+                        'İptal',
+                        style: AppTypography.labelMedium.copyWith(
+                          color: Colors.white,
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
+                    ),
+                  ),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: FilledButton(
+                      onPressed: hasSelection ? _confirmSelection : null,
+                      style: FilledButton.styleFrom(
+                        backgroundColor: AppColors.electricBlue,
+                        foregroundColor: Colors.white,
+                        disabledBackgroundColor:
+                            AppColors.electricBlue.withValues(alpha: 0.38),
+                        disabledForegroundColor:
+                            Colors.white.withValues(alpha: 0.72),
+                        elevation: 0,
+                        minimumSize: const Size.fromHeight(48),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: AppRadii.sm,
+                        ),
+                      ),
+                      child: Text(
+                        hasSelection
+                            ? 'Veri Al (${_selectedIds.length})'
+                            : 'Veri Al',
+                        style: AppTypography.labelMedium.copyWith(
+                          color: Colors.white,
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
+                    ),
+                  ),
+                ],
               ),
             ),
           ],
