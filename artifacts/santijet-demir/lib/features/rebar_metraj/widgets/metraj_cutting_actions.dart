@@ -5,6 +5,7 @@ import 'package:santijet_demir/core/routing/app_routes.dart';
 import 'package:santijet_demir/core/theme/app_colors.dart';
 import 'package:santijet_demir/core/theme/app_radii.dart';
 import 'package:santijet_demir/core/theme/app_typography.dart';
+import 'package:santijet_demir/core/widgets/app_bottom_nav_bar.dart';
 import 'package:santijet_demir/domain/entities/rebar_metraj.dart';
 import 'package:santijet_demir/features/analysis/cutting_bending_calculator.dart';
 import 'package:santijet_demir/features/analysis/providers/cutting_bending_provider.dart';
@@ -232,14 +233,16 @@ class _PreProductionImportPageState extends State<_PreProductionImportPage> {
   @override
   Widget build(BuildContext context) {
     final hasSelection = _selectedIds.isNotEmpty;
+    final navBarInset = AppBottomNavBar.totalHeightOf(context);
 
     return Scaffold(
       backgroundColor: AppColors.canvas,
-      body: SafeArea(
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.stretch,
-          children: [
-            Padding(
+      body: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          SafeArea(
+            bottom: false,
+            child: Padding(
               padding: const EdgeInsets.fromLTRB(20, 20, 20, 8),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
@@ -258,12 +261,13 @@ class _PreProductionImportPageState extends State<_PreProductionImportPage> {
                 ],
               ),
             ),
-            Expanded(
-              child: ListView.separated(
-                padding: const EdgeInsets.fromLTRB(16, 8, 16, 16),
-                itemCount: widget.records.length,
-                separatorBuilder: (_, __) => const SizedBox(height: 8),
-                itemBuilder: (context, index) {
+          ),
+          Expanded(
+            child: ListView.separated(
+              padding: const EdgeInsets.fromLTRB(16, 8, 16, 16),
+              itemCount: widget.records.length,
+              separatorBuilder: (_, __) => const SizedBox(height: 8),
+              itemBuilder: (context, index) {
                   final record = widget.records[index];
                   final selected = _selectedIds.contains(record.id);
                   return Material(
@@ -331,75 +335,74 @@ class _PreProductionImportPageState extends State<_PreProductionImportPage> {
                       ),
                     ),
                   );
-                },
-              ),
+              },
             ),
-            Container(
-              padding: const EdgeInsets.fromLTRB(16, 12, 16, 16),
-              decoration: const BoxDecoration(
-                color: AppColors.surfaceElevated,
-                border: Border(top: BorderSide(color: AppColors.border)),
-              ),
-              child: Row(
-                children: [
-                  Expanded(
-                    child: FilledButton(
-                      onPressed: () => Navigator.pop(context),
-                      style: FilledButton.styleFrom(
-                        backgroundColor: AppColors.diameter28,
-                        foregroundColor: Colors.white,
-                        disabledBackgroundColor:
-                            AppColors.diameter28.withValues(alpha: 0.38),
-                        disabledForegroundColor:
-                            Colors.white.withValues(alpha: 0.72),
-                        elevation: 0,
-                        minimumSize: const Size.fromHeight(48),
-                        shape: RoundedRectangleBorder(
-                          borderRadius: AppRadii.sm,
-                        ),
+          ),
+          Container(
+            padding: EdgeInsets.fromLTRB(16, 12, 16, 12 + navBarInset),
+            decoration: const BoxDecoration(
+              color: AppColors.surfaceElevated,
+              border: Border(top: BorderSide(color: AppColors.border)),
+            ),
+            child: Row(
+              children: [
+                Expanded(
+                  child: FilledButton(
+                    onPressed: () => Navigator.pop(context),
+                    style: FilledButton.styleFrom(
+                      backgroundColor: AppColors.diameter28,
+                      foregroundColor: Colors.white,
+                      disabledBackgroundColor:
+                          AppColors.diameter28.withValues(alpha: 0.38),
+                      disabledForegroundColor:
+                          Colors.white.withValues(alpha: 0.72),
+                      elevation: 0,
+                      minimumSize: const Size.fromHeight(48),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: AppRadii.sm,
                       ),
-                      child: Text(
-                        'İptal',
-                        style: AppTypography.labelMedium.copyWith(
-                          color: Colors.white,
-                          fontWeight: FontWeight.w600,
-                        ),
+                    ),
+                    child: Text(
+                      'İptal',
+                      style: AppTypography.labelMedium.copyWith(
+                        color: Colors.white,
+                        fontWeight: FontWeight.w600,
                       ),
                     ),
                   ),
-                  const SizedBox(width: 12),
-                  Expanded(
-                    child: FilledButton(
-                      onPressed: hasSelection ? _confirmSelection : null,
-                      style: FilledButton.styleFrom(
-                        backgroundColor: AppColors.electricBlue,
-                        foregroundColor: Colors.white,
-                        disabledBackgroundColor:
-                            AppColors.electricBlue.withValues(alpha: 0.38),
-                        disabledForegroundColor:
-                            Colors.white.withValues(alpha: 0.72),
-                        elevation: 0,
-                        minimumSize: const Size.fromHeight(48),
-                        shape: RoundedRectangleBorder(
-                          borderRadius: AppRadii.sm,
-                        ),
+                ),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: FilledButton(
+                    onPressed: hasSelection ? _confirmSelection : null,
+                    style: FilledButton.styleFrom(
+                      backgroundColor: AppColors.electricBlue,
+                      foregroundColor: Colors.white,
+                      disabledBackgroundColor:
+                          AppColors.electricBlue.withValues(alpha: 0.38),
+                      disabledForegroundColor:
+                          Colors.white.withValues(alpha: 0.72),
+                      elevation: 0,
+                      minimumSize: const Size.fromHeight(48),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: AppRadii.sm,
                       ),
-                      child: Text(
-                        hasSelection
-                            ? 'Veri Al (${_selectedIds.length})'
-                            : 'Veri Al',
-                        style: AppTypography.labelMedium.copyWith(
-                          color: Colors.white,
-                          fontWeight: FontWeight.w600,
-                        ),
+                    ),
+                    child: Text(
+                      hasSelection
+                          ? 'Onayla (${_selectedIds.length})'
+                          : 'Onayla',
+                      style: AppTypography.labelMedium.copyWith(
+                        color: Colors.white,
+                        fontWeight: FontWeight.w600,
                       ),
                     ),
                   ),
-                ],
-              ),
+                ),
+              ],
             ),
-          ],
-        ),
+          ),
+        ],
       ),
     );
   }
