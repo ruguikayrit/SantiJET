@@ -6,6 +6,8 @@ Türkçe inşaat şantiye yönetim uygulaması. pnpm monorepo yapısında birden
 
 | Modül | Klasör | Açıklama |
 |-------|--------|----------|
+| **B.F.A. (Flutter)** | `artifacts/santijet-bfa-flutter` | **Aktif** — Birim Fiyat Analizleri (Flutter) |
+| B.F.A. (RN arşiv) | `artifacts/imalat-poz-analizleri` | Emekli — yalnızca referans |
 | Mobil uygulama | `artifacts/santiye-takip` | Expo / React Native — ana şantiye takip uygulaması |
 | Neon HUD | `artifacts/santijet-neon` | Vite web dashboard — neon temalı yönetici paneli |
 | Web sitesi | `artifacts/santijet-website` | Tanıtım / SaaS landing page |
@@ -35,6 +37,20 @@ pnpm dev:neon
 ```
 
 Tarayıcıda: http://localhost:23301/neon/
+
+### B.F.A. — Birim Fiyat Analizleri (Flutter — aktif)
+
+```bash
+pnpm dev:bfa
+```
+
+Tarayıcıda Flutter web oturumu açılır.
+
+### B.F.A. — RN arşiv (emekli, yalnızca referans)
+
+```bash
+pnpm dev:ipa:archive
+```
 
 ### Mobil uygulama (Expo web)
 
@@ -80,6 +96,17 @@ pnpm typecheck
 pnpm build
 ```
 
+### B.F.A. kalite kapısı (Flutter)
+
+```bash
+cd artifacts/santijet-bfa-flutter
+flutter pub get
+flutter analyze
+flutter test
+```
+
+CI: `.github/workflows/bfa-ci.yml` (push/PR) ve Pages deploy öncesi otomatik çalışır.
+
 ## Ortam değişkenleri
 
 | Değişken | Gerekli | Açıklama |
@@ -96,6 +123,8 @@ pnpm build
 
 ```
 ├── artifacts/          # Uygulama modülleri
+│   ├── santijet-bfa-flutter/  # B.F.A. Flutter (aktif)
+│   ├── imalat-poz-analizleri/ # B.F.A. RN (arşiv)
 │   ├── santiye-takip/  # Expo mobil uygulama
 │   ├── santijet-neon/  # Neon HUD web paneli
 │   ├── santijet-website/

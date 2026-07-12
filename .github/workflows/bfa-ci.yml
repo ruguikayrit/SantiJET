@@ -1,0 +1,38 @@
+name: BFA CI
+
+on:
+  push:
+    branches:
+      - main
+    paths:
+      - 'artifacts/santijet-bfa-flutter/**'
+      - '.github/workflows/bfa-ci.yml'
+  pull_request:
+    paths:
+      - 'artifacts/santijet-bfa-flutter/**'
+      - '.github/workflows/bfa-ci.yml'
+
+jobs:
+  analyze-and-test:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: artifacts/santijet-bfa-flutter
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: subosito/flutter-action@v2
+        with:
+          channel: stable
+          flutter-version: '3.44.3'
+          cache: true
+          cache-key: flutter-bfa-ci-3.44.3
+
+      - name: Pub get
+        run: flutter pub get
+
+      - name: Analyze
+        run: flutter analyze
+
+      - name: Test
+        run: flutter test

@@ -9,11 +9,6 @@ on:
       - 'artifacts/santijet-bfa-flutter/**'
       - '.github/workflows/deploy-github-pages.yml'
   workflow_dispatch:
-    inputs:
-      bfa_ref:
-        description: 'BFA kaynak branch veya commit'
-        required: false
-        default: 'cursor/bfa-faz8-9-tamamlama-aca6'
 
 concurrency:
   group: pages-santijet
@@ -33,12 +28,6 @@ jobs:
     steps:
       - name: Checkout main
         uses: actions/checkout@v4
-
-      - name: Fetch BFA source
-        run: |
-          BFA_REF="${{ github.event.inputs.bfa_ref || 'cursor/bfa-faz8-9-tamamlama-aca6' }}"
-          git fetch origin "$BFA_REF"
-          git checkout FETCH_HEAD -- artifacts/santijet-bfa-flutter
 
       - name: Setup Flutter (DEMİR)
         uses: subosito/flutter-action@v2
@@ -85,6 +74,13 @@ jobs:
           flutter-version: '3.44.3'
           cache: true
           cache-key: flutter-bfa-3.44.3
+
+      - name: Verify BFA (analyze + test)
+        working-directory: artifacts/santijet-bfa-flutter
+        run: |
+          flutter pub get
+          flutter analyze
+          flutter test
 
       - name: Build BFA web
         working-directory: artifacts/santijet-bfa-flutter
