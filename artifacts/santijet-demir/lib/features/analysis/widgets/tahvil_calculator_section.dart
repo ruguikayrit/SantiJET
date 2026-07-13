@@ -1,9 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:santijet_demir/core/theme/app_colors.dart';
+import 'package:santijet_demir/data/services/rebar_weight_calculator.dart';
 import 'package:santijet_demir/core/theme/app_radii.dart';
 import 'package:santijet_demir/core/theme/app_typography.dart';
 import 'package:santijet_demir/domain/tahvil/tahvil_calculator_modes.dart';
 import 'package:santijet_demir/domain/tahvil/tahvil_rules.dart';
+
+enum _FieldAccent { source, target }
 
 class TahvilCalculatorSection extends StatefulWidget {
   const TahvilCalculatorSection({super.key, this.hideHeader = false});
@@ -413,7 +416,7 @@ class _SingleQuantityModePanel extends StatelessWidget {
   }
 }
 
-class _DualQuantityModePanel extends StatelessWidget {
+class _DualQuantityModePanel extends StatefulWidget {
   const _DualQuantityModePanel({
     required this.sourceA,
     required this.sourceB,
@@ -429,77 +432,35 @@ class _DualQuantityModePanel extends StatelessWidget {
   final VoidCallback onChanged;
 
   @override
-  Widget build(BuildContext context) {
-    final comparison = _tryDualComparison();
+  State<_DualQuantityModePanel> createState() => _DualQuantityModePanelState();
+}
 
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.stretch,
-      children: [
-        _ExcelStyleTable(
-          title: 'Kaynak donatı',
-          accentColor: AppColors.warning,
-          children: [
-            _DualInputRow(
-              rowLabel: '1. çeşit',
-              fields: sourceA,
-              onChanged: onChanged,
-            ),
-            const SizedBox(height: 6),
-            _DualInputRow(
-              rowLabel: '2. çeşit',
-              fields: sourceB,
-              onChanged: onChanged,
-            ),
-          ],
-        ),
-        const SizedBox(height: 12),
-        Row(
-          children: [
-            Icon(
-              Icons.arrow_downward,
-              size: 18,
-              color: AppColors.electricBlueLight.withValues(alpha: 0.8),
-            ),
-            const SizedBox(width: 6),
-            Text(
-              'Hedef tahvil',
-              style: AppTypography.titleMedium.copyWith(
-                color: AppColors.electricBlueLight,
-              ),
-            ),
-          ],
-        ),
-        const SizedBox(height: 8),
-        _ExcelStyleTable(
-          title: 'Hedef donatı',
-          accentColor: AppColors.electricBlueLight,
-          children: [
-            _DualInputRow(
-              rowLabel: '1. çeşit',
-              fields: targetA,
-              onChanged: onChanged,
-            ),
-            const SizedBox(height: 6),
-            _DualInputRow(
-              rowLabel: '2. çeşit',
-              fields: targetB,
-              onChanged: onChanged,
-            ),
-          ],
-        ),
-        const SizedBox(height: 12),
-        if (comparison == null)
-          Text(
-            'Mukayese için tüm adet ve çap alanlarını doldurun.',
-            style: AppTypography.bodySmall.copyWith(color: AppColors.textMuted),
-          )
-        else
-          _DualComparisonCard(comparison: comparison),
-      ],
+class _DualQuantityModePanelState extends State<_DualQuantityModePanel> {
+  String? _selectedSuggestionId;
+  bool _manualEntry = false;
+
+  _DiameterQuantityFields get sourceA => widget.sourceA;
+  _DiameterQuantityFields get sourceB => widget.sourceB;
+  _DiameterQuantityFields get targetA => widget.targetA;
+  _DiameterQuantityFields get targetB => widget.targetB;
+
+  bool get _sourceReady =>
+      sourceA.quantity != null &&
+      sourceA.diameter != null &&
+      sourceB.quantity != null &&
+      sourceB.diameter != null;
+
+  List<TahvilDualSuggestion> get _suggestions {
+    if (!_sourceReady) return const [];
+    return computeDualQuantityTahvilSuggestions(
+      sourceQuantityA: sourceA.quantity!,
+      sourceDiameterA: sourceA.diameter!,
+      sourceQuantityB: sourceB.quantity!,
+      sourceDiameterB: sourceB.diameter!,
     );
   }
 
-  TahvilDualQuantityComparison? _tryDualComparison() {
+  TahvilDualQuantityComparison? get _manualComparison {
     final values = [
       sourceA.quantity,
       sourceA.diameter,
@@ -523,7 +484,419 @@ class _DualQuantityModePanel extends StatelessWidget {
       targetDiameterB: targetB.diameter!,
     );
   }
+
+  void _handleSourceChanged() {
+    _selectedSuggestionId = null;
+    widget.onChanged();
+  }
+
+  void _applySuggestion(TahvilDualSuggestion suggestion) {
+    targetA.setValues(
+      quantity: suggestion.legA.targetQuantity,
+      diameter: suggestion.legA.targetDiameter,
+    );
+    targetB.setValues(
+      quantity: suggestion.legB.targetQuantity,
+      diameter: suggestion.legB.targetDiameter,
+    );
+    setState(() {
+      _selectedSuggestionId = suggestion.id;
+      _manualEntry = true;
+    });
+    widget.onChanged();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final suggestions = _suggestions;
+    final allowedSuggestions =
+        suggestions.where((item) => item.isAllowed).toList();
+    final manualComparison = _manualComparison;
+    final sourceArea = _sourceReady
+        ? crossSectionAreaMm2(sourceA.diameter!) * sourceA.quantity! +
+            crossSectionAreaMm2(sourceB.diameter!) * sourceB.quantity!
+        : null;
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        _ExcelStyleTable(
+          title: 'Kaynak donatı',
+          accentColor: AppColors.warning,
+          children: [
+            _DualInputRow(
+              rowLabel: '1. çeşit',
+              fields: sourceA,
+              accent: _FieldAccent.source,
+              onChanged: _handleSourceChanged,
+            ),
+            const SizedBox(height: 6),
+            _DualInputRow(
+              rowLabel: '2. çeşit',
+              fields: sourceB,
+              accent: _FieldAccent.source,
+              onChanged: _handleSourceChanged,
+            ),
+          ],
+        ),
+        if (sourceArea != null) ...[
+          const SizedBox(height: 8),
+          _AsBadge(
+            label: 'Kaynak As',
+            value: '${formatAreaMm2(sourceArea)} mm²',
+          ),
+        ],
+        if (!_sourceReady) ...[
+          const SizedBox(height: 12),
+          Text(
+            'Tahvil önerileri için kaynak adet ve çap alanlarını doldurun.',
+            style: AppTypography.bodySmall.copyWith(color: AppColors.textMuted),
+          ),
+        ] else ...[
+          const SizedBox(height: 14),
+          Row(
+            children: [
+              Icon(
+                Icons.arrow_downward,
+                size: 18,
+                color: AppColors.electricBlueLight.withValues(alpha: 0.8),
+              ),
+              const SizedBox(width: 6),
+              Expanded(
+                child: Text(
+                  'Hedef tahvil',
+                  style: AppTypography.titleMedium.copyWith(
+                    color: AppColors.electricBlueLight,
+                  ),
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 8),
+          if (suggestions.isEmpty)
+            Text(
+              'Kaynak veriler için kurala uygun tahvil önerisi bulunamadı.',
+              style: AppTypography.bodySmall.copyWith(color: AppColors.critical),
+            )
+          else ...[
+            Text('Tahvil önerileri', style: AppTypography.labelMedium),
+            const SizedBox(height: 4),
+            Text(
+              'Öneriye dokunarak hedef alanları doldurun veya manuel giriş yapın.',
+              style: AppTypography.bodySmall.copyWith(color: AppColors.textMuted),
+            ),
+            const SizedBox(height: 8),
+            ...suggestions.map(
+              (suggestion) => Padding(
+                padding: const EdgeInsets.only(bottom: 8),
+                child: _DualSuggestionCard(
+                  suggestion: suggestion,
+                  selected: _selectedSuggestionId == suggestion.id,
+                  isOptimal: allowedSuggestions.isNotEmpty &&
+                      suggestion.isAllowed &&
+                      suggestion.id == allowedSuggestions.first.id,
+                  onTap: () => _applySuggestion(suggestion),
+                ),
+              ),
+            ),
+          ],
+          const SizedBox(height: 10),
+          _ManualTargetToggle(
+            expanded: _manualEntry,
+            onChanged: (value) => setState(() => _manualEntry = value),
+          ),
+          if (_manualEntry) ...[
+            const SizedBox(height: 8),
+            _ExcelStyleTable(
+              title: 'Manuel hedef donatı',
+              accentColor: AppColors.electricBlueLight,
+              children: [
+                _DualManualTargetRow(
+                  rowLabel: '1. çeşit',
+                  fields: targetA,
+                  sourceDiameter: sourceA.diameter,
+                  onChanged: () {
+                    _selectedSuggestionId = null;
+                    widget.onChanged();
+                  },
+                ),
+                const SizedBox(height: 8),
+                _DualManualTargetRow(
+                  rowLabel: '2. çeşit',
+                  fields: targetB,
+                  sourceDiameter: sourceB.diameter,
+                  onChanged: () {
+                    _selectedSuggestionId = null;
+                    widget.onChanged();
+                  },
+                ),
+              ],
+            ),
+            const SizedBox(height: 12),
+            if (manualComparison == null)
+              Text(
+                'Mukayese için hedef adet ve çap alanlarını doldurun.',
+                style: AppTypography.bodySmall.copyWith(color: AppColors.textMuted),
+              )
+            else
+              _DualComparisonCard(comparison: manualComparison),
+          ],
+        ],
+      ],
+    );
+  }
 }
+
+class _ManualTargetToggle extends StatelessWidget {
+  const _ManualTargetToggle({
+    required this.expanded,
+    required this.onChanged,
+  });
+
+  final bool expanded;
+  final ValueChanged<bool> onChanged;
+
+  @override
+  Widget build(BuildContext context) {
+    return OutlinedButton.icon(
+      onPressed: () => onChanged(!expanded),
+      icon: Icon(
+        expanded ? Icons.edit_outlined : Icons.edit_note_outlined,
+        size: 18,
+      ),
+      label: Text(
+        expanded ? 'Manuel girişi gizle' : 'Manuel hedef girişi',
+      ),
+      style: OutlinedButton.styleFrom(
+        foregroundColor: AppColors.electricBlueLight,
+        side: BorderSide(
+          color: AppColors.electricBlueLight.withValues(alpha: 0.45),
+        ),
+        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
+      ),
+    );
+  }
+}
+
+class _DualSuggestionCard extends StatelessWidget {
+  const _DualSuggestionCard({
+    required this.suggestion,
+    required this.selected,
+    required this.isOptimal,
+    required this.onTap,
+  });
+
+  final TahvilDualSuggestion suggestion;
+  final bool selected;
+  final bool isOptimal;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    final comparison = suggestion.comparison;
+    final accent = suggestion.isAllowed ? AppColors.success : AppColors.warning;
+
+    return Material(
+      color: selected
+          ? AppColors.electricBlueLight.withValues(alpha: 0.1)
+          : suggestion.isAllowed
+              ? AppColors.success.withValues(alpha: 0.05)
+              : AppColors.surfaceElevated,
+      borderRadius: AppRadii.md,
+      child: InkWell(
+        onTap: onTap,
+        borderRadius: AppRadii.md,
+        child: Container(
+          width: double.infinity,
+          padding: const EdgeInsets.all(12),
+          decoration: BoxDecoration(
+            borderRadius: AppRadii.md,
+            border: Border.all(
+              color: selected
+                  ? AppColors.electricBlueLight.withValues(alpha: 0.55)
+                  : accent.withValues(alpha: 0.35),
+            ),
+          ),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Row(
+                children: [
+                  Expanded(
+                    child: Text(
+                      suggestion.summary,
+                      style: AppTypography.bodyMedium.copyWith(
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
+                  ),
+                  if (isOptimal)
+                    const _StatusBadge(label: 'Optimum', color: AppColors.success)
+                  else if (!suggestion.isAllowed)
+                    const _StatusBadge(
+                      label: 'Uygun değil',
+                      color: AppColors.warning,
+                    ),
+                ],
+              ),
+              const SizedBox(height: 6),
+              Text(
+                'Hedef As: ${formatAreaMm2(comparison.targetAreaMm2)} mm² · '
+                'Sapma %${comparison.areaDeviationPercent.toStringAsFixed(2)}',
+                style: AppTypography.bodySmall.copyWith(color: AppColors.textMuted),
+              ),
+              if (selected) ...[
+                const SizedBox(height: 4),
+                Text(
+                  'Seçili öneri — hedef alanlara uygulandı',
+                  style: AppTypography.labelSmall.copyWith(
+                    color: AppColors.electricBlueLight,
+                  ),
+                ),
+              ],
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class _DualManualTargetRow extends StatelessWidget {
+  const _DualManualTargetRow({
+    required this.rowLabel,
+    required this.fields,
+    required this.sourceDiameter,
+    required this.onChanged,
+  });
+
+  final String rowLabel;
+  final _DiameterQuantityFields fields;
+  final int? sourceDiameter;
+  final VoidCallback onChanged;
+
+  @override
+  Widget build(BuildContext context) {
+    final diameter = fields.diameter;
+    final diameterValid = isStandardTahvilDiameter(diameter);
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        Row(
+          children: [
+            SizedBox(
+              width: 56,
+              child: Text(
+                rowLabel,
+                style: AppTypography.labelSmall.copyWith(
+                  color: AppColors.textMuted,
+                ),
+              ),
+            ),
+            Expanded(
+              child: _InputRow(
+                labels: const ['ADET', 'ÇAP (mm)'],
+                fields: [
+                  _NumericField(
+                    controller: fields.quantityController,
+                    hint: '5',
+                    accent: _FieldAccent.target,
+                    onChanged: onChanged,
+                  ),
+                  _NumericField(
+                    controller: fields.diameterController,
+                    hint: '14',
+                    accent: _FieldAccent.target,
+                    onChanged: onChanged,
+                  ),
+                ],
+              ),
+            ),
+          ],
+        ),
+        const SizedBox(height: 6),
+        Wrap(
+          spacing: 6,
+          runSpacing: 6,
+          children: [
+            for (final option in RebarWeightCalculator.standardDiameters)
+              _DiameterChip(
+                diameter: option,
+                selected: diameter == option,
+                enabled: sourceDiameter == null ||
+                    option == sourceDiameter ||
+                    isTahvilDiameterAllowed(sourceDiameter!, option),
+                onTap: () {
+                  fields.setDiameter(option);
+                  onChanged();
+                },
+              ),
+          ],
+        ),
+        if (diameter != null && !diameterValid) ...[
+          const SizedBox(height: 4),
+          Text(
+            'Standart çap değil. Önerilen: '
+            '${RebarWeightCalculator.standardDiameters.join(', ')} mm',
+            style: AppTypography.labelSmall.copyWith(color: AppColors.warning),
+          ),
+        ],
+      ],
+    );
+  }
+}
+
+class _DiameterChip extends StatelessWidget {
+  const _DiameterChip({
+    required this.diameter,
+    required this.selected,
+    required this.enabled,
+    required this.onTap,
+  });
+
+  final int diameter;
+  final bool selected;
+  final bool enabled;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    final color = enabled
+        ? AppColors.diameterColor(diameter)
+        : AppColors.textDisabled;
+
+    return Material(
+      color: selected
+          ? color.withValues(alpha: 0.2)
+          : AppColors.canvas,
+      borderRadius: AppRadii.full,
+      child: InkWell(
+        onTap: enabled ? onTap : null,
+        borderRadius: AppRadii.full,
+        child: Container(
+          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+          decoration: BoxDecoration(
+            borderRadius: AppRadii.full,
+            border: Border.all(
+              color: selected
+                  ? color.withValues(alpha: 0.7)
+                  : AppColors.border,
+            ),
+          ),
+          child: Text(
+            'Ø$diameter',
+            style: AppTypography.labelSmall.copyWith(
+              color: enabled ? color : AppColors.textDisabled,
+              fontWeight: selected ? FontWeight.w700 : FontWeight.w500,
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+}
+
 
 class _ExcelStyleTable extends StatelessWidget {
   const _ExcelStyleTable({
@@ -614,11 +987,13 @@ class _DualInputRow extends StatelessWidget {
     required this.rowLabel,
     required this.fields,
     required this.onChanged,
+    this.accent = _FieldAccent.source,
   });
 
   final String rowLabel;
   final _DiameterQuantityFields fields;
   final VoidCallback onChanged;
+  final _FieldAccent accent;
 
   @override
   Widget build(BuildContext context) {
@@ -638,11 +1013,13 @@ class _DualInputRow extends StatelessWidget {
               _NumericField(
                 controller: fields.quantityController,
                 hint: '3',
+                accent: accent,
                 onChanged: onChanged,
               ),
               _NumericField(
                 controller: fields.diameterController,
                 hint: '16',
+                accent: accent,
                 onChanged: onChanged,
               ),
             ],
@@ -659,15 +1036,21 @@ class _NumericField extends StatelessWidget {
     required this.hint,
     required this.onChanged,
     this.decimal = false,
+    this.accent = _FieldAccent.source,
   });
 
   final TextEditingController controller;
   final String hint;
   final VoidCallback onChanged;
   final bool decimal;
+  final _FieldAccent accent;
 
   @override
   Widget build(BuildContext context) {
+    final fieldColor = accent == _FieldAccent.source
+        ? AppColors.warning
+        : AppColors.electricBlueLight;
+
     return TextField(
       controller: controller,
       keyboardType: decimal
@@ -678,19 +1061,19 @@ class _NumericField extends StatelessWidget {
       decoration: InputDecoration(
         hintText: hint,
         filled: true,
-        fillColor: AppColors.warning.withValues(alpha: 0.12),
+        fillColor: fieldColor.withValues(alpha: 0.12),
         isDense: true,
         contentPadding: const EdgeInsets.symmetric(horizontal: 6, vertical: 12),
         enabledBorder: OutlineInputBorder(
           borderRadius: AppRadii.sm,
           borderSide: BorderSide(
-            color: AppColors.warning.withValues(alpha: 0.45),
+            color: fieldColor.withValues(alpha: 0.45),
           ),
         ),
         focusedBorder: OutlineInputBorder(
           borderRadius: AppRadii.sm,
           borderSide: BorderSide(
-            color: AppColors.warning.withValues(alpha: 0.8),
+            color: fieldColor.withValues(alpha: 0.8),
             width: 1.5,
           ),
         ),
@@ -862,7 +1245,9 @@ class _DualComparisonCard extends StatelessWidget {
           Text(
             comparison.isAllowed
                 ? 'Kesit sapması kabul limiti içinde.'
-                : 'Kesit sapması %${(tahvilMaxAreaDeviationRatio * 100).toStringAsFixed(0)} limitini aşıyor.',
+                : comparison.diameterRuleViolations.isNotEmpty
+                    ? comparison.diameterRuleViolations.join(' · ')
+                    : 'Kesit sapması %${(tahvilMaxAreaDeviationRatio * 100).toStringAsFixed(0)} limitini aşıyor.',
             style: AppTypography.bodySmall.copyWith(color: AppColors.textMuted),
           ),
         ],
@@ -993,6 +1378,15 @@ class _DiameterQuantityFields {
 
   int? get quantity => int.tryParse(quantityController.text.trim());
   int? get diameter => int.tryParse(diameterController.text.trim());
+
+  void setValues({required int quantity, required int diameter}) {
+    quantityController.text = '$quantity';
+    diameterController.text = '$diameter';
+  }
+
+  void setDiameter(int diameter) {
+    diameterController.text = '$diameter';
+  }
 
   void dispose() {
     quantityController.dispose();

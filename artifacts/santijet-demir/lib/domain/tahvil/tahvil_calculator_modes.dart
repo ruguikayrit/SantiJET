@@ -211,12 +211,125 @@ class TahvilDualQuantityComparison {
     required this.targetAreaMm2,
     required this.areaDeviationPercent,
     required this.isAllowed,
+    this.diameterRuleViolations = const [],
   });
 
   final double sourceAreaMm2;
   final double targetAreaMm2;
   final double areaDeviationPercent;
   final bool isAllowed;
+  final List<String> diameterRuleViolations;
+}
+
+class TahvilDualConversionLeg {
+  const TahvilDualConversionLeg({
+    required this.sourceQuantity,
+    required this.sourceDiameter,
+    required this.targetQuantity,
+    required this.targetDiameter,
+  });
+
+  final int sourceQuantity;
+  final int sourceDiameter;
+  final int targetQuantity;
+  final int targetDiameter;
+
+  bool get isUnchanged =>
+      sourceQuantity == targetQuantity && sourceDiameter == targetDiameter;
+
+  String get label => isUnchanged
+      ? '$sourceQuantity×Ø$sourceDiameter (aynı)'
+      : '$sourceQuantity×Ø$sourceDiameter → $targetQuantity×Ø$targetDiameter';
+}
+
+class TahvilDualSuggestion {
+  const TahvilDualSuggestion({
+    required this.id,
+    required this.legA,
+    required this.legB,
+    required this.comparison,
+    required this.isAllowed,
+  });
+
+  final String id;
+  final TahvilDualConversionLeg legA;
+  final TahvilDualConversionLeg legB;
+  final TahvilDualQuantityComparison comparison;
+  final bool isAllowed;
+
+  String get summary => '${legA.label} · ${legB.label}';
+}
+
+List<_DualLegOption> _dualLegOptions({
+  required int sourceQuantity,
+  required int sourceDiameter,
+}) {
+  final options = <_DualLegOption>[
+    _DualLegOption(
+      targetQuantity: sourceQuantity,
+      targetDiameter: sourceDiameter,
+      isUnchanged: true,
+    ),
+  ];
+
+  for (final result in computeSingleQuantityTahvilResults(
+    sourceDiameter: sourceDiameter,
+    sourceQuantity: sourceQuantity,
+  )) {
+    options.add(
+      _DualLegOption(
+        targetQuantity: result.equivalentQuantity,
+        targetDiameter: result.targetDiameter,
+        isUnchanged: false,
+        isAllowed: result.isAllowed,
+        rejectReason: result.rejectReason,
+      ),
+    );
+  }
+
+  return options;
+}
+
+class _DualLegOption {
+  const _DualLegOption({
+    required this.targetQuantity,
+    required this.targetDiameter,
+    required this.isUnchanged,
+    this.isAllowed = true,
+    this.rejectReason,
+  });
+
+  final int targetQuantity;
+  final int targetDiameter;
+  final bool isUnchanged;
+  final bool isAllowed;
+  final String? rejectReason;
+}
+
+List<String> _dualDiameterRuleViolations({
+  required int sourceDiameterA,
+  required int targetDiameterA,
+  required int sourceDiameterB,
+  required int targetDiameterB,
+}) {
+  final violations = <String>[];
+
+  if (sourceDiameterA != targetDiameterA &&
+      !isTahvilDiameterAllowed(sourceDiameterA, targetDiameterA)) {
+    violations.add(
+      '1. çeşit çap farkı ${(sourceDiameterA - targetDiameterA).abs()} mm '
+      '(limit ±$tahvilMaxDiameterDiffMm mm)',
+    );
+  }
+  if (sourceDiameterB != targetDiameterB &&
+      !isTahvilDiameterAllowed(sourceDiameterB, targetDiameterB)) {
+    violations.add(
+      '2. çeşit çap farkı ${(sourceDiameterB - targetDiameterB).abs()} mm '
+      '(limit ±$tahvilMaxDiameterDiffMm mm)',
+    );
+  }
+
+  return violations;
 }
 
 TahvilDualQuantityComparison? computeDualQuantityComparison({
@@ -250,14 +363,113 @@ TahvilDualQuantityComparison? computeDualQuantityComparison({
 
   final areaDeviationPercent =
       ((sourceAreaMm2 - targetAreaMm2).abs() / sourceAreaMm2) * 100;
+  final diameterViolations = _dualDiameterRuleViolations(
+    sourceDiameterA: sourceDiameterA,
+    targetDiameterA: targetDiameterA,
+    sourceDiameterB: sourceDiameterB,
+    targetDiameterB: targetDiameterB,
+  );
 
   return TahvilDualQuantityComparison(
     sourceAreaMm2: sourceAreaMm2,
     targetAreaMm2: targetAreaMm2,
     areaDeviationPercent: areaDeviationPercent,
-    isAllowed: areaDeviationPercent / 100 <= tahvilMaxAreaDeviationRatio + 1e-9,
+    isAllowed: diameterViolations.isEmpty &&
+        areaDeviationPercent / 100 <= tahvilMaxAreaDeviationRatio + 1e-9,
+    diameterRuleViolations: diameterViolations,
   );
 }
+
+List<TahvilDualSuggestion> computeDualQuantityTahvilSuggestions({
+  required int sourceQuantityA,
+  required int sourceDiameterA,
+  required int sourceQuantityB,
+  required int sourceDiameterB,
+  int maxSuggestions = 12,
+}) {
+  if ([
+    sourceQuantityA,
+    sourceDiameterA,
+    sourceQuantityB,
+    sourceDiameterB,
+  ].any((value) => value <= 0)) {
+    return const [];
+  }
+
+  final optionsA = _dualLegOptions(
+    sourceQuantity: sourceQuantityA,
+    sourceDiameter: sourceDiameterA,
+  );
+  final optionsB = _dualLegOptions(
+    sourceQuantity: sourceQuantityB,
+    sourceDiameter: sourceDiameterB,
+  );
+
+  final suggestions = <TahvilDualSuggestion>[];
+
+  for (final optA in optionsA) {
+    for (final optB in optionsB) {
+      if (optA.isUnchanged && optB.isUnchanged) continue;
+
+      final comparison = computeDualQuantityComparison(
+        sourceQuantityA: sourceQuantityA,
+        sourceDiameterA: sourceDiameterA,
+        sourceQuantityB: sourceQuantityB,
+        sourceDiameterB: sourceDiameterB,
+        targetQuantityA: optA.targetQuantity,
+        targetDiameterA: optA.targetDiameter,
+        targetQuantityB: optB.targetQuantity,
+        targetDiameterB: optB.targetDiameter,
+      );
+      if (comparison == null) continue;
+
+      final legRuleOk =
+          (optA.isUnchanged || optA.isAllowed) && (optB.isUnchanged || optB.isAllowed);
+      final isAllowed = legRuleOk && comparison.isAllowed;
+
+      suggestions.add(
+        TahvilDualSuggestion(
+          id: '${optA.targetDiameter}-${optA.targetQuantity}_'
+              '${optB.targetDiameter}-${optB.targetQuantity}',
+          legA: TahvilDualConversionLeg(
+            sourceQuantity: sourceQuantityA,
+            sourceDiameter: sourceDiameterA,
+            targetQuantity: optA.targetQuantity,
+            targetDiameter: optA.targetDiameter,
+          ),
+          legB: TahvilDualConversionLeg(
+            sourceQuantity: sourceQuantityB,
+            sourceDiameter: sourceDiameterB,
+            targetQuantity: optB.targetQuantity,
+            targetDiameter: optB.targetDiameter,
+          ),
+          comparison: comparison,
+          isAllowed: isAllowed,
+        ),
+      );
+    }
+  }
+
+  suggestions.sort((a, b) {
+    if (a.isAllowed != b.isAllowed) return a.isAllowed ? -1 : 1;
+    final deviation = a.comparison.areaDeviationPercent
+        .compareTo(b.comparison.areaDeviationPercent);
+    if (deviation != 0) return deviation;
+    final changedA = a.legA.isUnchanged ? 1 : 0;
+    final changedB = b.legA.isUnchanged ? 1 : 0;
+    final changedCompare = changedA.compareTo(changedB);
+    if (changedCompare != 0) return changedCompare;
+    return a.summary.compareTo(b.summary);
+  });
+
+  if (suggestions.length <= maxSuggestions) return suggestions;
+  return suggestions.sublist(0, maxSuggestions);
+}
+
+bool isStandardTahvilDiameter(int? diameter) =>
+    diameter != null &&
+    RebarWeightCalculator.standardDiameters.contains(diameter);
+
 
 String formatAreaMm2(double areaMm2) => areaMm2.toStringAsFixed(2);
 

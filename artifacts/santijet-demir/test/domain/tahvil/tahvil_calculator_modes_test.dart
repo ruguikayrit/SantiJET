@@ -56,6 +56,44 @@ void main() {
       expect(comparison.targetAreaMm2, closeTo(995.88, 1.0));
     });
 
+    test('dual quantity mode suggests tahvil combinations from source', () {
+      final suggestions = computeDualQuantityTahvilSuggestions(
+        sourceQuantityA: 3,
+        sourceDiameterA: 16,
+        sourceQuantityB: 2,
+        sourceDiameterB: 14,
+      );
+
+      expect(suggestions, isNotEmpty);
+      expect(suggestions.any((item) => !item.legA.isUnchanged || !item.legB.isUnchanged),
+          isTrue);
+      expect(
+        suggestions.any(
+          (item) =>
+              item.legA.targetDiameter == 14 &&
+              item.legB.targetDiameter == 12,
+        ),
+        isTrue,
+      );
+    });
+
+    test('dual comparison reports diameter rule violations on manual entry', () {
+      final comparison = computeDualQuantityComparison(
+        sourceQuantityA: 3,
+        sourceDiameterA: 16,
+        sourceQuantityB: 2,
+        sourceDiameterB: 14,
+        targetQuantityA: 3,
+        targetDiameterA: 28,
+        targetQuantityB: 2,
+        targetDiameterB: 12,
+      );
+
+      expect(comparison, isNotNull);
+      expect(comparison!.isAllowed, isFalse);
+      expect(comparison.diameterRuleViolations, isNotEmpty);
+    });
+
     test('spacing mode rejects diameters outside ±4 mm rule', () {
       final results = computeSpacingTahvilResults(
         sourceDiameter: 16,
