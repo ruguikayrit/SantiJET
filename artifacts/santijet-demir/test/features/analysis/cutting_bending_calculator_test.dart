@@ -267,10 +267,12 @@ void main() {
 
       final optimized = await runOptimumFireAnalysis(
         batch,
-        strategy: FireReductionStrategy.both,
+        strategy: FireReductionStrategy.tahvilOnly,
       );
 
       expect(optimized.isOptimized, isTrue);
+      expect(optimized.optimizationStrategy, FireReductionStrategy.tahvilOnly);
+      expect(optimized.lengthMatches, isEmpty);
       expect(optimized.stockCutPlans, isNotEmpty);
       expect(optimized.stockCutPlans.first.totalBars, 2);
     });
@@ -400,7 +402,7 @@ void main() {
 
       final optimized = await runOptimumFireAnalysis(
         batch,
-        strategy: FireReductionStrategy.both,
+        strategy: FireReductionStrategy.tahvilOnly,
       );
       final summary = computeAnalysisFireSummary(optimized);
 
@@ -426,12 +428,13 @@ void main() {
 
       final optimized = await runOptimumFireAnalysis(
         batch,
-        strategy: FireReductionStrategy.both,
+        strategy: FireReductionStrategy.tahvilOnly,
       );
 
       expect(optimized.pieceLines, pieces);
       expect(optimized.isOptimized, isTrue);
-      expect(optimized.revisedPieceLines.length, lessThan(pieces.length));
+      expect(optimized.lengthMatches, isEmpty);
+      expect(optimized.optimizationStrategy, FireReductionStrategy.tahvilOnly);
       expect(computeAnalysisFireSummary(optimized).isPlannedReady, isTrue);
     });
 
@@ -520,12 +523,12 @@ void main() {
 
       batch = await runOptimumFireAnalysis(
         batch,
-        strategy: FireReductionStrategy.lengthMatchOnly,
+        strategy: FireReductionStrategy.tahvilOnly,
       );
 
       final saved = saveOptimizationSnapshot(batch);
 
-      expect(saved.hasSavedOptimization(FireReductionStrategy.lengthMatchOnly), isTrue);
+      expect(saved.hasSavedOptimization(FireReductionStrategy.tahvilOnly), isTrue);
       expect(saved.isCurrentOptimizationSaved, isTrue);
       expect(saved.savedOptimizations, hasLength(1));
     });
@@ -543,7 +546,7 @@ void main() {
 
       batch = await runOptimumFireAnalysis(
         batch,
-        strategy: FireReductionStrategy.both,
+        strategy: FireReductionStrategy.tahvilOnly,
       );
       final withSave = saveOptimizationSnapshot(batch);
       final cleared = clearActiveOptimization(withSave);
@@ -552,11 +555,11 @@ void main() {
 
       final restored = applyOptimizationSnapshot(
         cleared,
-        withSave.savedOptimizations[FireReductionStrategy.both]!,
+        withSave.savedOptimizations[FireReductionStrategy.tahvilOnly]!,
       );
 
       expect(restored.isOptimized, isTrue);
-      expect(restored.optimizationStrategy, FireReductionStrategy.both);
+      expect(restored.optimizationStrategy, FireReductionStrategy.tahvilOnly);
       expect(restored.revisedPieceLines.length, batch.revisedPieceLines.length);
       expect(restored.stockCutPlans, isNotEmpty);
       expect(
@@ -601,7 +604,7 @@ void main() {
 
       batch = await runOptimumFireAnalysis(
         batch,
-        strategy: FireReductionStrategy.both,
+        strategy: FireReductionStrategy.tahvilOnly,
       );
       batch = saveOptimizationSnapshot(batch);
 
@@ -610,9 +613,26 @@ void main() {
       expect(rows, hasLength(3));
       expect(rows.where((row) => row.isAvailable), hasLength(1));
       expect(
-        rows.firstWhere((row) => row.strategy == FireReductionStrategy.both).isSaved,
+        rows.firstWhere((row) => row.strategy == FireReductionStrategy.tahvilOnly).isSaved,
         isTrue,
       );
+    });
+
+    test('estimateTahvilFirePreview compares project and tahvil fire', () {
+      const pieces = [
+        RebarPieceLine(diameter: 16, lengthM: 2.00, quantity: 100),
+        RebarPieceLine(diameter: 20, lengthM: 2.05, quantity: 60),
+      ];
+      final batch = buildCuttingBendingBatch(
+        title: 'Test',
+        sourceMetrajRecordIds: const [],
+        textDetails: const [],
+      ).copyWith(pieceLines: pieces);
+
+      final preview = estimateTahvilFirePreview(batch);
+
+      expect(preview.baselineWasteTonnage, greaterThan(0));
+      expect(preview.applicableTahvilGroupCount, greaterThan(0));
     });
 
     test('mergeCuttingBendingBatchesForAnalysis combines piece lines across files', () {

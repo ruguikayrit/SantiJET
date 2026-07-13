@@ -66,7 +66,7 @@ class AnalysisScreen extends ConsumerWidget {
                   child: CollapsibleAnalysisSection(
                     sectionId: AnalysisSectionIds.tahvilCalculator,
                     title: 'Araç · Tahvil Hesaplayıcı',
-                    subtitle: 'Çap ve aralık zorunlu · adet/boy isteğe bağlı · 100 cm referans',
+                    subtitle: 'Aralığa göre · adede göre tek/iki çeşit · Excel mantığı',
                     headerAccentColor: AppColors.diameter28,
                     child: const TahvilCalculatorSection(hideHeader: true),
                   ),

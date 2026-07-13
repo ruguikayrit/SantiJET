@@ -49,7 +49,7 @@ class _AnalysisFireSummaryPanelState
           rawWastePercent: 0,
         );
     final comparison = ref.watch(analysisComparisonProvider);
-    final lengthMatchDone = isLengthMatchingComplete(batch.lengthMatches);
+    final tahvilPreview = ref.watch(tahvilFirePreviewProvider);
     final tahvilApproved =
         batch.tahvilGroups.where((group) => group.approved).length;
     final tahvilTotal = batch.tahvilGroups.length;
@@ -175,7 +175,7 @@ class _AnalysisFireSummaryPanelState
                               active: _expandedDetail ==
                                   FireSummaryDetailKind.plannedFire,
                               child: KpiCard(
-                                label: 'Plan Fire',
+                                label: 'Tahvil Fire',
                                 value: summary.isPlannedReady
                                     ? AppFormat.tonnage(
                                         summary.plannedWasteTonnage!,
@@ -256,54 +256,56 @@ class _AnalysisFireSummaryPanelState
                     const SizedBox(height: 14),
                     _AnalysisErrorBanner(message: analysisError),
                   ] else if (!isRunning) ...[
+                    if (!batch.isOptimized &&
+                        tahvilPreview != null &&
+                        tahvilPreview.hasSavings) ...[
+                      const SizedBox(height: 14),
+                      _TahvilSavingsWarningBanner(preview: tahvilPreview),
+                    ],
                     const SizedBox(height: 14),
-                    _FireReductionStrategyPanel(
+                    _TahvilFireAnalysisPanel(
                       batch: batch,
+                      preview: tahvilPreview,
                       enabled: batch.pieceLines.isNotEmpty,
-                      onStart: () => ref
-                          .read(cuttingBendingBatchesProvider.notifier)
-                          .runOptimumFireAnalysis(),
+                      onStart: () => _confirmAndRunTahvilAnalysis(
+                        context,
+                        tahvilPreview,
+                      ),
                       onSave: () async {
-                        final strategy = ref.read(
-                          selectedFireReductionStrategyProvider,
-                        );
                         await ref
                             .read(cuttingBendingBatchesProvider.notifier)
                             .saveAnalysisResult();
                         if (!context.mounted) return;
                         ScaffoldMessenger.of(context).showSnackBar(
-                          SnackBar(
-                            content: Text('${strategy.label} analizi kaydedildi'),
+                          const SnackBar(
+                            content: Text('Tahvil fire analizi kaydedildi'),
                             behavior: SnackBarBehavior.floating,
                           ),
                         );
                       },
                     ),
                   ],
+                  if (batch.isOptimized && comparison != null) ...[
+                    const SizedBox(height: 12),
+                    _TahvilFireComparisonBanner(comparison: comparison),
+                  ],
                   if (batch.isOptimized) ...[
                     const SizedBox(height: 12),
-                    if (batch.hasAnySavedOptimization)
+                    if (batch.hasSavedOptimization(FireReductionStrategy.tahvilOnly))
                       Padding(
                         padding: const EdgeInsets.only(bottom: 8),
-                        child: Wrap(
-                          spacing: 6,
-                          runSpacing: 6,
-                          children: [
-                            for (final strategy in FireReductionStrategy.values)
-                              if (batch.hasSavedOptimization(strategy))
-                                _SavedStrategyChip(
-                                  label: strategy.label,
-                                  active: batch.optimizationStrategy == strategy &&
-                                      batch.isOptimized,
-                                ),
-                          ],
+                        child: _SavedStrategyChip(
+                          label: 'Tahvil',
+                          active: batch.optimizationStrategy ==
+                                  FireReductionStrategy.tahvilOnly &&
+                              batch.isOptimized,
                         ),
                       ),
                     if (batch.optimizationStrategy != null)
                       Padding(
                         padding: const EdgeInsets.only(bottom: 8),
                         child: Text(
-                          'Strateji: ${batch.optimizationStrategy!.label}',
+                          'Analiz: Tahvil ile fire denkleştirmesi',
                           style: AppTypography.labelMedium.copyWith(
                             color: AppColors.electricBlueLight,
                           ),
@@ -313,31 +315,12 @@ class _AnalysisFireSummaryPanelState
                       spacing: 8,
                       runSpacing: 8,
                       children: [
-                        _PipelineChip(
-                          label: 'Boy eşleştirme',
-                          done: (batch.optimizationStrategy?.appliesLengthMatch ??
-                                  false) &&
-                              lengthMatchDone,
-                          detail: !(batch.optimizationStrategy?.appliesLengthMatch ??
-                              false)
-                              ? 'Atlandı'
-                              : lengthMatchDone
-                                  ? '${batch.lengthMatches.length} grup'
-                                  : 'Eksik',
-                        ),
                         if (tahvilTotal > 0)
                           _PipelineChip(
                             label: 'Tahvil',
-                            done: (batch.optimizationStrategy?.appliesTahvil ??
-                                    false) &&
-                                tahvilApproved > 0,
-                            detail: !(batch.optimizationStrategy?.appliesTahvil ??
-                                false)
-                                ? 'Atlandı'
-                                : '$tahvilApproved / $tahvilTotal',
-                            optional: tahvilApproved == 0 &&
-                                (batch.optimizationStrategy?.appliesTahvil ??
-                                    false),
+                            done: tahvilApproved > 0,
+                            detail: '$tahvilApproved / $tahvilTotal',
+                            optional: tahvilApproved == 0,
                           ),
                         _PipelineChip(
                           label: 'Kesim planı',
@@ -362,6 +345,48 @@ class _AnalysisFireSummaryPanelState
     if (percent <= 1.5) return AppColors.success;
     if (percent <= 4) return AppColors.warning;
     return AppColors.critical;
+  }
+
+  Future<void> _confirmAndRunTahvilAnalysis(
+    BuildContext context,
+    TahvilFirePreview? preview,
+  ) async {
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (dialogContext) {
+        final hasSavings = preview?.hasSavings ?? false;
+        return AlertDialog(
+          title: const Text('Tahvil ile Fire Analizi'),
+          content: Text(
+            hasSavings
+                ? 'Tahvil yaparsanız fire miktarınız '
+                    '${AppFormat.tonnage(preview!.savedWasteTonnage)} t '
+                    '(%${preview.savedWastePercent.toStringAsFixed(1)} puan) '
+                    'azalacak.\n\n'
+                    'Tahvil ile ikinci fire analizini başlatmak istiyor musunuz?'
+                : 'Proje fire özeti korunur; tahvil ile çap denkleştirmesi '
+                    'yapılarak kesim planı yeniden hesaplanır.\n\n'
+                    'Devam etmek istiyor musunuz?',
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.of(dialogContext).pop(false),
+              child: const Text('Vazgeç'),
+            ),
+            FilledButton(
+              onPressed: () => Navigator.of(dialogContext).pop(true),
+              child: const Text('Analizi Başlat'),
+            ),
+          ],
+        );
+      },
+    );
+
+    if (confirmed != true || !context.mounted) return;
+
+    await ref
+        .read(cuttingBendingBatchesProvider.notifier)
+        .runOptimumFireAnalysis();
   }
 }
 
@@ -398,64 +423,236 @@ class _ActiveKpiCard extends StatelessWidget {
   }
 }
 
-class _FireReductionStrategyPanel extends ConsumerWidget {
-  const _FireReductionStrategyPanel({
+class _TahvilSavingsWarningBanner extends StatelessWidget {
+  const _TahvilSavingsWarningBanner({required this.preview});
+
+  final TahvilFirePreview preview;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+      decoration: BoxDecoration(
+        color: AppColors.warning.withValues(alpha: 0.1),
+        borderRadius: AppRadii.sm,
+        border: Border.all(
+          color: AppColors.warning.withValues(alpha: 0.4),
+        ),
+      ),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Container(
+            width: 36,
+            height: 36,
+            alignment: Alignment.center,
+            decoration: BoxDecoration(
+              color: AppColors.warning.withValues(alpha: 0.16),
+              shape: BoxShape.circle,
+            ),
+            child: const Icon(
+              Icons.info_outline,
+              color: AppColors.warning,
+              size: 20,
+            ),
+          ),
+          const SizedBox(width: 12),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  'Tahvil ile fire azalabilir',
+                  style: AppTypography.titleMedium.copyWith(
+                    color: AppColors.warning,
+                  ),
+                ),
+                const SizedBox(height: 4),
+                Text(
+                  'Tahvil yaparsanız fire miktarınız '
+                  '${AppFormat.tonnage(preview.savedWasteTonnage)} t '
+                  '(%${preview.savedWastePercent.toStringAsFixed(1)} puan) azalacak.',
+                  style: AppTypography.bodySmall.copyWith(
+                    color: AppColors.textPrimary,
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _TahvilFireComparisonBanner extends StatelessWidget {
+  const _TahvilFireComparisonBanner({required this.comparison});
+
+  final AnalysisComparison comparison;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+      decoration: BoxDecoration(
+        color: AppColors.electricBlueLight.withValues(alpha: 0.08),
+        borderRadius: AppRadii.sm,
+        border: Border.all(
+          color: AppColors.electricBlueLight.withValues(alpha: 0.35),
+        ),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          Text(
+            'Proje Fire ↔ Tahvil Fire Mukayese',
+            style: AppTypography.titleMedium.copyWith(
+              color: AppColors.electricBlueLight,
+            ),
+          ),
+          const SizedBox(height: 10),
+          Row(
+            children: [
+              Expanded(
+                child: _ComparisonMetric(
+                  label: 'Proje Fire',
+                  tonnage: comparison.rawFireTonnage,
+                  percent: comparison.rawFirePercent,
+                  accent: AppColors.warning,
+                ),
+              ),
+              const SizedBox(width: 8),
+              const Icon(
+                Icons.arrow_forward,
+                size: 18,
+                color: AppColors.textMuted,
+              ),
+              const SizedBox(width: 8),
+              Expanded(
+                child: _ComparisonMetric(
+                  label: 'Tahvil Fire',
+                  tonnage: comparison.plannedFireTonnage,
+                  percent: comparison.plannedFirePercent,
+                  accent: AppColors.success,
+                ),
+              ),
+            ],
+          ),
+          if (comparison.savedFireTonnage > 0.001) ...[
+            const SizedBox(height: 10),
+            Text(
+              'Kazanç: ${AppFormat.tonnage(comparison.savedFireTonnage)} t '
+              '(−%${comparison.savedFirePercent.toStringAsFixed(1)})',
+              style: AppTypography.labelMedium.copyWith(
+                color: AppColors.success,
+              ),
+            ),
+          ],
+        ],
+      ),
+    );
+  }
+}
+
+class _ComparisonMetric extends StatelessWidget {
+  const _ComparisonMetric({
+    required this.label,
+    required this.tonnage,
+    required this.percent,
+    required this.accent,
+  });
+
+  final String label;
+  final double tonnage;
+  final double percent;
+  final Color accent;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
+      decoration: BoxDecoration(
+        color: AppColors.canvas,
+        borderRadius: AppRadii.sm,
+        border: Border.all(color: AppColors.border),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            label,
+            style: AppTypography.labelSmall.copyWith(color: AppColors.textMuted),
+          ),
+          const SizedBox(height: 4),
+          Text(
+            '${AppFormat.tonnage(tonnage)} t',
+            style: AppTypography.titleMedium.copyWith(color: accent),
+          ),
+          Text(
+            '%${percent.toStringAsFixed(1)}',
+            style: AppTypography.bodySmall.copyWith(color: AppColors.textMuted),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _TahvilFireAnalysisPanel extends ConsumerWidget {
+  const _TahvilFireAnalysisPanel({
     required this.batch,
+    required this.preview,
     required this.enabled,
     required this.onStart,
     required this.onSave,
   });
 
   final CuttingBendingBatch batch;
+  final TahvilFirePreview? preview;
   final bool enabled;
-  final VoidCallback onStart;
+  final Future<void> Function() onStart;
   final VoidCallback onSave;
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final selected = ref.watch(selectedFireReductionStrategyProvider);
     final notifier = ref.read(cuttingBendingBatchesProvider.notifier);
     final isSaved = batch.isCurrentOptimizationSaved;
-    final canSave = batch.isOptimized && batch.optimizationStrategy == selected;
+    final canSave = batch.isOptimized &&
+        batch.optimizationStrategy == FireReductionStrategy.tahvilOnly;
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
         Text(
-          'Fire azaltma stratejisi seçin',
-          style: AppTypography.labelMedium,
+          'Fire özeti proje verisine göre hazırlanır. '
+          'Boy eşleştirme uygulanmaz; yalnızca tahvil ile çap denkleştirmesi yapılır.',
+          style: AppTypography.bodySmall.copyWith(color: AppColors.textMuted),
         ),
-        if (batch.hasAnySavedOptimization) ...[
-          const SizedBox(height: 4),
-          Text(
-            'Kayıtlı stratejiye dokunarak sonucu yükleyin — '
-            'tekrar analiz etmenize gerek kalmaz.',
-            style: AppTypography.bodySmall.copyWith(color: AppColors.textMuted),
+        if (batch.hasSavedOptimization(FireReductionStrategy.tahvilOnly)) ...[
+          const SizedBox(height: 8),
+          OutlinedButton.icon(
+            onPressed: enabled
+                ? () => notifier.selectAnalysisStrategy(
+                      FireReductionStrategy.tahvilOnly,
+                    )
+                : null,
+            icon: const Icon(Icons.restore_outlined, size: 18),
+            label: const Text('Kayıtlı tahvil analizini yükle'),
+            style: OutlinedButton.styleFrom(
+              foregroundColor: AppColors.electricBlueLight,
+              side: BorderSide(
+                color: AppColors.electricBlueLight.withValues(alpha: 0.45),
+              ),
+            ),
           ),
         ],
         const SizedBox(height: 10),
-        ...FireReductionStrategy.values.map(
-          (strategy) => Padding(
-            padding: const EdgeInsets.only(bottom: 8),
-            child: _StrategyOptionTile(
-              strategy: strategy,
-              selected: selected == strategy,
-              saved: batch.hasSavedOptimization(strategy),
-              isActiveView: batch.isOptimized &&
-                  batch.optimizationStrategy == strategy,
-              onTap: enabled
-                  ? () => notifier.selectAnalysisStrategy(strategy)
-                  : null,
-            ),
-          ),
-        ),
-        const SizedBox(height: 6),
         _MatteGreenGradientButton(
-          onPressed: enabled ? onStart : null,
-          icon: Icons.auto_fix_high_outlined,
-          label: batch.isOptimized && batch.optimizationStrategy == selected
-              ? 'Analizi Yeniden Çalıştır'
-              : 'Fire Analizini Başlat',
+          onPressed: enabled ? () => onStart() : null,
+          icon: Icons.swap_horiz_outlined,
+          label: batch.isOptimized
+              ? 'Tahvil Analizini Yeniden Çalıştır'
+              : 'Tahvil ile Fire Analizi Yap',
         ),
         if (canSave) ...[
           const SizedBox(height: 8),
@@ -468,7 +665,7 @@ class _FireReductionStrategyPanel extends ConsumerWidget {
             label: Text(
               isSaved
                   ? 'Kaydedildi'
-                  : batch.hasSavedOptimization(selected)
+                  : batch.hasSavedOptimization(FireReductionStrategy.tahvilOnly)
                       ? 'Kaydı Güncelle'
                       : 'Analizi Kaydet',
             ),
@@ -533,122 +730,6 @@ class _SavedStrategyChip extends StatelessWidget {
             ),
           ),
         ],
-      ),
-    );
-  }
-}
-
-class _StrategyOptionTile extends StatelessWidget {
-  const _StrategyOptionTile({
-    required this.strategy,
-    required this.selected,
-    this.saved = false,
-    this.isActiveView = false,
-    this.onTap,
-  });
-
-  final FireReductionStrategy strategy;
-  final bool selected;
-  final bool saved;
-  final bool isActiveView;
-  final VoidCallback? onTap;
-
-  @override
-  Widget build(BuildContext context) {
-    return Material(
-      color: selected
-          ? AppColors.success.withValues(alpha: 0.08)
-          : AppColors.canvas,
-      borderRadius: AppRadii.sm,
-      child: InkWell(
-        onTap: onTap,
-        borderRadius: AppRadii.sm,
-        child: Container(
-          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
-          decoration: BoxDecoration(
-            borderRadius: AppRadii.sm,
-            border: Border.all(
-              color: selected
-                  ? AppColors.success.withValues(alpha: 0.45)
-                  : AppColors.border,
-            ),
-          ),
-          child: Row(
-            children: [
-              Icon(
-                selected
-                    ? Icons.radio_button_checked
-                    : Icons.radio_button_off,
-                size: 20,
-                color: selected ? AppColors.success : AppColors.textMuted,
-              ),
-              const SizedBox(width: 10),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Row(
-                      children: [
-                        Expanded(
-                          child: Text(strategy.label, style: AppTypography.bodyMedium),
-                        ),
-                        if (saved)
-                          Container(
-                            padding: const EdgeInsets.symmetric(
-                              horizontal: 6,
-                              vertical: 2,
-                            ),
-                            decoration: BoxDecoration(
-                              color: AppColors.electricBlueLight
-                                  .withValues(alpha: 0.12),
-                              borderRadius: AppRadii.full,
-                            ),
-                            child: Text(
-                              'Kayıtlı',
-                              style: AppTypography.labelSmall.copyWith(
-                                color: AppColors.electricBlueLight,
-                              ),
-                            ),
-                          ),
-                        if (isActiveView) ...[
-                          const SizedBox(width: 6),
-                          Container(
-                            padding: const EdgeInsets.symmetric(
-                              horizontal: 6,
-                              vertical: 2,
-                            ),
-                            decoration: BoxDecoration(
-                              color: AppColors.success.withValues(alpha: 0.12),
-                              borderRadius: AppRadii.full,
-                            ),
-                            child: Text(
-                              'Aktif',
-                              style: AppTypography.labelSmall.copyWith(
-                                color: AppColors.success,
-                              ),
-                            ),
-                          ),
-                        ],
-                      ],
-                    ),
-                    Text(
-                      strategy.description,
-                      style: AppTypography.bodySmall.copyWith(
-                        color: AppColors.textMuted,
-                      ),
-                    ),
-                    Text(
-                      strategy.toleranceDescription,
-                      style: AppTypography.bodySmall.copyWith(
-                        color: AppColors.textMuted,
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-            ],
-          ),
-        ),
       ),
     );
   }

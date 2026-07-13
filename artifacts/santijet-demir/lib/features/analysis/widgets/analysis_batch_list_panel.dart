@@ -43,17 +43,15 @@ class AnalysisBatchListPanel extends ConsumerWidget {
         children: [
           Padding(
             padding: const EdgeInsets.fromLTRB(14, 14, 14, 12),
-            child: OutlinedButton.icon(
+            child: FilledButton.icon(
               onPressed: onImportFromPreProduction,
               icon: const Icon(Icons.inventory_2_outlined, size: 18),
               label: const Text('Ön İmalattan Veri Al'),
-              style: OutlinedButton.styleFrom(
+              style: FilledButton.styleFrom(
                 minimumSize: const Size.fromHeight(44),
                 padding: const EdgeInsets.symmetric(horizontal: 16),
-                foregroundColor: AppColors.success,
-                side: BorderSide(
-                  color: AppColors.success.withValues(alpha: 0.55),
-                ),
+                backgroundColor: AppColors.electricBlue,
+                foregroundColor: Colors.white,
               ),
             ),
           ),

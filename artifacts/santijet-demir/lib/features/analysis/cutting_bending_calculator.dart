@@ -1054,6 +1054,76 @@ class AnalysisFireSummary {
       : 0;
 }
 
+/// Proje fire'ı ile tahvil sonrası fire arasındaki ön izleme (boy eşleştirme yok).
+class TahvilFirePreview {
+  const TahvilFirePreview({
+    required this.baselineWasteTonnage,
+    required this.baselineWastePercent,
+    required this.tahvilWasteTonnage,
+    required this.tahvilWastePercent,
+    required this.savedWasteTonnage,
+    required this.savedWastePercent,
+    required this.applicableTahvilGroupCount,
+  });
+
+  final double baselineWasteTonnage;
+  final double baselineWastePercent;
+  final double tahvilWasteTonnage;
+  final double tahvilWastePercent;
+  final double savedWasteTonnage;
+  final double savedWastePercent;
+  final int applicableTahvilGroupCount;
+
+  bool get hasSavings => savedWasteTonnage > 0.001 && applicableTahvilGroupCount > 0;
+}
+
+List<TahvilSuggestion> autoApproveBestTahvilGroups(List<TahvilSuggestion> groups) {
+  return groups
+      .map(
+        (group) => pickBestTahvilEquivalentForGroup(group) != null
+            ? group.copyWith(approved: true)
+            : group.copyWith(approved: false),
+      )
+      .toList();
+}
+
+TahvilFirePreview estimateTahvilFirePreview(CuttingBendingBatch batch) {
+  final baseline = _aggregateStockCutFireMetrics(
+    computeStockCutPlans(batch.pieceLines),
+  );
+
+  final tahvilGroups = autoApproveBestTahvilGroups(
+    batch.tahvilGroups.isNotEmpty
+        ? batch.tahvilGroups
+        : computeTahvilGroups(batch.pieceLines),
+  );
+  final tahvilPieces = applyApprovedTahvilToPieceLines(
+    batch.pieceLines,
+    tahvilGroups,
+  );
+  final tahvilMetrics = _aggregateStockCutFireMetrics(
+    computeStockCutPlans(tahvilPieces),
+  );
+
+  final savedTonnage = (baseline.wasteTonnage - tahvilMetrics.wasteTonnage)
+      .clamp(0.0, double.infinity)
+      .toDouble();
+  final savedPercent = (baseline.wastePercent - tahvilMetrics.wastePercent)
+      .clamp(0.0, double.infinity)
+      .toDouble();
+
+  return TahvilFirePreview(
+    baselineWasteTonnage: baseline.wasteTonnage,
+    baselineWastePercent: baseline.wastePercent,
+    tahvilWasteTonnage: tahvilMetrics.wasteTonnage,
+    tahvilWastePercent: tahvilMetrics.wastePercent,
+    savedWasteTonnage: savedTonnage,
+    savedWastePercent: savedPercent,
+    applicableTahvilGroupCount:
+        tahvilGroups.where((group) => group.approved).length,
+  );
+}
+
 class AnalysisComparison {
   const AnalysisComparison({
     required this.rawLineCount,
@@ -1327,7 +1397,7 @@ AnalysisComparison computeAnalysisComparison(CuttingBendingBatch batch) {
   );
 }
 
-/// Seçilen stratejiye göre fire azaltma hattını otomatik çalıştırır.
+/// Tahvil ile fire azaltma hattını çalıştırır (boy eşleştirme uygulanmaz).
 Future<CuttingBendingBatch> runOptimumFireAnalysis(
   CuttingBendingBatch batch, {
   required FireReductionStrategy strategy,
@@ -1337,86 +1407,36 @@ Future<CuttingBendingBatch> runOptimumFireAnalysis(
     await onProgress?.call(percent, stepLabel);
   }
 
-  final applyTahvil = strategy.appliesTahvil;
-  final applyLengthMatch = strategy.appliesLengthMatch;
+  const effectiveStrategy = FireReductionStrategy.tahvilOnly;
 
-  List<TahvilSuggestion> tahvilState = batch.tahvilGroups;
+  await report(10, 'Proje fire özeti hazırlanıyor...');
+  await _yieldToEventLoop();
 
-  if (applyTahvil) {
-    await report(8, 'Tahvil önerileri değerlendiriliyor...');
-    await _yieldToEventLoop();
-    tahvilState = batch.tahvilGroups
-        .map(
-          (group) => pickBestTahvilEquivalentForGroup(group) != null
-              ? group.copyWith(approved: true)
-              : group,
-        )
-        .toList();
+  final tahvilState = autoApproveBestTahvilGroups(
+    batch.tahvilGroups.isNotEmpty
+        ? batch.tahvilGroups
+        : computeTahvilGroups(batch.pieceLines),
+  );
 
-    await report(22, 'Tahvil kurallarına göre uygulanıyor...');
-    await _yieldToEventLoop();
-  } else {
-    tahvilState = batch.tahvilGroups
-        .map((group) => group.copyWith(approved: false))
-        .toList();
-    await report(15, 'Tahvil atlanıyor...');
-  }
+  await report(35, 'Tahvil kurallarına göre çap denkleştirmesi...');
+  await _yieldToEventLoop();
 
-  final workingPieces = applyTahvil
-      ? applyApprovedTahvilToPieceLines(batch.pieceLines, tahvilState)
-      : List<RebarPieceLine>.from(batch.pieceLines);
-
-  final optimizedMatches = <LengthMatchGroup>[];
-
-  if (applyLengthMatch) {
-    await report(36, 'Boy eşleştirme grupları oluşturuluyor (%5 tolerans)...');
-    await _yieldToEventLoop();
-
-    final lengthMatches = computeLengthMatchGroups(workingPieces);
-
-    final groupCount = lengthMatches.length;
-
-    for (var i = 0; i < groupCount; i++) {
-      final group = lengthMatches[i];
-      final percent = 36 + (((i + 1) / groupCount) * 40).round();
-      await report(
-        percent,
-        'Optimum boy seçiliyor (${i + 1}/$groupCount)...',
-      );
-      final optimalLength = await pickOptimalLengthForGroup(
-        group,
-        workingPieces,
-        lengthMatches,
-      );
-      optimizedMatches.add(
-        group.copyWith(approved: true, selectedLengthM: optimalLength),
-      );
-      await _yieldToEventLoop();
-    }
-
-    if (groupCount == 0) {
-      await report(76, 'Boy eşleştirme gerekmiyor...');
-    }
-  } else {
-    await report(60, 'Boy eşleştirme atlanıyor...');
-  }
-
-  await report(88, 'Planlı kesim planı oluşturuluyor...');
+  await report(65, 'Tahvilli kesim planı oluşturuluyor...');
   await _yieldToEventLoop();
 
   final result = await syncBatchLengthMatchDerivativesAsync(
     batch.copyWith(
       tahvilGroups: tahvilState,
-      lengthMatches: optimizedMatches,
+      lengthMatches: const [],
       lengthMatchTolerancePercent:
           CuttingBendingBatch.defaultLengthMatchTolerancePercent,
-      optimizationStrategy: strategy,
+      optimizationStrategy: effectiveStrategy,
       optimizationAppliedAt: DateTime.now(),
     ),
   );
 
   await _yieldToEventLoop();
-  await report(100, 'Analiz tamamlandı');
+  await report(100, 'Tahvil fire analizi tamamlandı');
   return result;
 }
 

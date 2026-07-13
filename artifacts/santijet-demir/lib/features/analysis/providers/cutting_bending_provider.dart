@@ -182,8 +182,15 @@ class OptimumFireAnalysisProgress {
 
 final selectedFireReductionStrategyProvider =
     StateProvider<FireReductionStrategy>(
-  (ref) => FireReductionStrategy.both,
+  (ref) => FireReductionStrategy.tahvilOnly,
 );
+
+/// Proje fire'ı ile tahvil ön izlemesi (boy eşleştirme yok).
+final tahvilFirePreviewProvider = Provider<analysis_calc.TahvilFirePreview?>((ref) {
+  final batch = ref.watch(mergedAnalysisBatchProvider);
+  if (batch == null || batch.pieceLines.isEmpty) return null;
+  return analysis_calc.estimateTahvilFirePreview(batch);
+});
 
 final optimumFireAnalysisProgressProvider =
     StateProvider<OptimumFireAnalysisProgress>(
@@ -444,12 +451,11 @@ class CuttingBendingNotifier extends StateNotifier<CuttingBendingState> {
         batchId: batchId,
         isCompleted: true,
         percent: 100,
-        stepLabel: 'Analiz tamamlandı',
+        stepLabel: 'Tahvil fire analizi tamamlandı',
       );
 
       _ref.read(selectedFireReductionStrategyProvider.notifier).state =
-          updated.optimizationStrategy ??
-              _ref.read(selectedFireReductionStrategyProvider);
+          FireReductionStrategy.tahvilOnly;
 
       await Future<void>.delayed(const Duration(seconds: 4));
       final current = _ref.read(optimumFireAnalysisProgressProvider);
