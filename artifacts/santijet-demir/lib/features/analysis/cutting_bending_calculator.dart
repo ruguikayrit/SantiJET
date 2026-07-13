@@ -1074,7 +1074,78 @@ class TahvilFirePreview {
   final double savedWastePercent;
   final int applicableTahvilGroupCount;
 
-  bool get hasSavings => savedWasteTonnage > 0.001 && applicableTahvilGroupCount > 0;
+  bool get hasSavings =>
+      savedWastePercent > 0.001 && applicableTahvilGroupCount > 0;
+}
+
+/// Yalnızca toplam fire oranını düşüren tahvil gruplarını onaylar.
+List<TahvilSuggestion> selectBeneficialTahvilGroups({
+  required List<RebarPieceLine> pieceLines,
+  required List<TahvilSuggestion> groups,
+}) {
+  if (groups.isEmpty || pieceLines.isEmpty) {
+    return groups.map((group) => group.copyWith(approved: false)).toList();
+  }
+
+  final baseline = _aggregateStockCutFireMetrics(
+    computeStockCutPlans(pieceLines),
+  );
+
+  final candidates = groups
+      .where((group) => pickBestTahvilEquivalentForGroup(group) != null)
+      .toList();
+  if (candidates.isEmpty) {
+    return groups.map((group) => group.copyWith(approved: false)).toList();
+  }
+
+  final approvedIds = <String>{};
+  var currentPercent = baseline.wastePercent;
+
+  while (true) {
+    TahvilSuggestion? bestGroup;
+    var bestPercent = currentPercent;
+
+    for (final group in candidates) {
+      if (approvedIds.contains(group.id)) continue;
+
+      final trialGroups = groups
+          .map(
+            (item) => item.copyWith(
+              approved:
+                  approvedIds.contains(item.id) || item.id == group.id,
+            ),
+          )
+          .toList();
+      final trialPieces = applyApprovedTahvilToPieceLines(
+        pieceLines,
+        trialGroups,
+      );
+      final trialMetrics = _aggregateStockCutFireMetrics(
+        computeStockCutPlans(trialPieces),
+      );
+
+      if (trialMetrics.wastePercent < bestPercent - 1e-9) {
+        bestGroup = group;
+        bestPercent = trialMetrics.wastePercent;
+      }
+    }
+
+    if (bestGroup == null) break;
+
+    approvedIds.add(bestGroup.id);
+    currentPercent = bestPercent;
+  }
+
+  final beneficial = currentPercent < baseline.wastePercent - 1e-9;
+  final effectiveApproved = beneficial ? approvedIds : <String>{};
+
+  return groups
+      .map(
+        (group) => group.copyWith(
+          approved: effectiveApproved.contains(group.id),
+        ),
+      )
+      .toList();
 }
 
 List<TahvilSuggestion> autoApproveBestTahvilGroups(List<TahvilSuggestion> groups) {
@@ -1092,8 +1163,9 @@ TahvilFirePreview estimateTahvilFirePreview(CuttingBendingBatch batch) {
     computeStockCutPlans(batch.pieceLines),
   );
 
-  final tahvilGroups = autoApproveBestTahvilGroups(
-    batch.tahvilGroups.isNotEmpty
+  final tahvilGroups = selectBeneficialTahvilGroups(
+    pieceLines: batch.pieceLines,
+    groups: batch.tahvilGroups.isNotEmpty
         ? batch.tahvilGroups
         : computeTahvilGroups(batch.pieceLines),
   );
@@ -1460,6 +1532,14 @@ AnalysisComparison computeAnalysisComparison(CuttingBendingBatch batch) {
 }
 
 /// Tahvil ile fire azaltma hattını çalıştırır (boy eşleştirme uygulanmaz).
+class TahvilFireNotBeneficialException implements Exception {
+  const TahvilFireNotBeneficialException();
+
+  @override
+  String toString() =>
+      'Tahvil fire oranını azaltmıyor; tahvil uygulanmadı.';
+}
+
 Future<CuttingBendingBatch> runOptimumFireAnalysis(
   CuttingBendingBatch batch, {
   required FireReductionStrategy strategy,
@@ -1474,13 +1554,19 @@ Future<CuttingBendingBatch> runOptimumFireAnalysis(
   await report(10, 'Proje fire özeti hazırlanıyor...');
   await _yieldToEventLoop();
 
-  final tahvilState = autoApproveBestTahvilGroups(
-    batch.tahvilGroups.isNotEmpty
-        ? batch.tahvilGroups
-        : computeTahvilGroups(batch.pieceLines),
+  final sourceGroups = batch.tahvilGroups.isNotEmpty
+      ? batch.tahvilGroups
+      : computeTahvilGroups(batch.pieceLines);
+  final tahvilState = selectBeneficialTahvilGroups(
+    pieceLines: batch.pieceLines,
+    groups: sourceGroups,
   );
 
-  await report(35, 'Tahvil kurallarına göre çap denkleştirmesi...');
+  if (!tahvilState.any((group) => group.approved)) {
+    throw const TahvilFireNotBeneficialException();
+  }
+
+  await report(35, 'Fire oranını düşüren tahvil grupları seçiliyor...');
   await _yieldToEventLoop();
 
   await report(65, 'Tahvilli kesim planı oluşturuluyor...');
@@ -1498,7 +1584,7 @@ Future<CuttingBendingBatch> runOptimumFireAnalysis(
   );
 
   await _yieldToEventLoop();
-  await report(100, 'Tahvil fire analizi tamamlandı');
+  await report(100, 'Fire analizi tamamlandı');
   return result;
 }
 

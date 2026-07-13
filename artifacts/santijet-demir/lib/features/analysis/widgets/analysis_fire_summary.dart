@@ -256,11 +256,14 @@ class _AnalysisFireSummaryPanelState
                     const SizedBox(height: 14),
                     _AnalysisErrorBanner(message: analysisError),
                   ] else if (!isRunning) ...[
-                    if (!batch.isOptimized &&
-                        tahvilPreview != null &&
-                        tahvilPreview.hasSavings) ...[
-                      const SizedBox(height: 14),
-                      _TahvilSavingsWarningBanner(preview: tahvilPreview),
+                    if (!batch.isOptimized && tahvilPreview != null) ...[
+                      if (tahvilPreview.hasSavings) ...[
+                        const SizedBox(height: 14),
+                        _TahvilSavingsWarningBanner(preview: tahvilPreview),
+                      ] else ...[
+                        const SizedBox(height: 14),
+                        _TahvilNoBenefitBanner(preview: tahvilPreview),
+                      ],
                     ],
                     const SizedBox(height: 14),
                     _TahvilFireAnalysisPanel(
@@ -351,22 +354,42 @@ class _AnalysisFireSummaryPanelState
     BuildContext context,
     TahvilFirePreview? preview,
   ) async {
+    if (preview == null || !preview.hasSavings) {
+      await showDialog<void>(
+        context: context,
+        builder: (dialogContext) => AlertDialog(
+          title: const Text('Fire Analizi'),
+          content: Text(
+            preview == null
+                ? 'Bu proje için uygulanabilir tahvil bulunamadı. '
+                    'Fire analizi yalnızca fire oranını düşüren tahvil '
+                    'uygulandığında çalışır.'
+                : 'Tahvil fire oranını azaltmıyor '
+                    '(%${preview.baselineWastePercent.toStringAsFixed(1)} → '
+                    '%${preview.tahvilWastePercent.toStringAsFixed(1)}). '
+                    'Fire oranı düşmediği için tahvil uygulanmayacak.',
+          ),
+          actions: [
+            FilledButton(
+              onPressed: () => Navigator.of(dialogContext).pop(),
+              child: const Text('Tamam'),
+            ),
+          ],
+        ),
+      );
+      return;
+    }
+
     final confirmed = await showDialog<bool>(
       context: context,
       builder: (dialogContext) {
-        final hasSavings = preview?.hasSavings ?? false;
         return AlertDialog(
-          title: const Text('Tahvil ile Fire Analizi'),
+          title: const Text('Fire Analizi'),
           content: Text(
-            hasSavings
-                ? 'Tahvil yaparsanız fire miktarınız '
-                    '${AppFormat.tonnage(preview!.savedWasteTonnage)} t '
-                    '(%${preview.savedWastePercent.toStringAsFixed(1)} puan) '
-                    'azalacak.\n\n'
-                    'Tahvil ile ikinci fire analizini başlatmak istiyor musunuz?'
-                : 'Proje fire özeti korunur; tahvil ile çap denkleştirmesi '
-                    'yapılarak kesim planı yeniden hesaplanır.\n\n'
-                    'Devam etmek istiyor musunuz?',
+            'Tahvil fire oranını '
+            '%${preview.savedWastePercent.toStringAsFixed(1)} puan '
+            '(${AppFormat.tonnage(preview.savedWasteTonnage)} t) azaltır.\n\n'
+            'Tahvilli fire analizini başlatmak istiyor musunuz?',
           ),
           actions: [
             TextButton(
@@ -462,16 +485,78 @@ class _TahvilSavingsWarningBanner extends StatelessWidget {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
-                  'Tahvil ile fire azalabilir',
+                  'Fire oranı tahvil ile azalabilir',
                   style: AppTypography.titleMedium.copyWith(
                     color: AppColors.warning,
                   ),
                 ),
                 const SizedBox(height: 4),
                 Text(
-                  'Tahvil yaparsanız fire miktarınız '
-                  '${AppFormat.tonnage(preview.savedWasteTonnage)} t '
-                  '(%${preview.savedWastePercent.toStringAsFixed(1)} puan) azalacak.',
+                  'Tahvil uygulanırsa fire oranı '
+                  '%${preview.savedWastePercent.toStringAsFixed(1)} puan '
+                  '(${AppFormat.tonnage(preview.savedWasteTonnage)} t) azalacak.',
+                  style: AppTypography.bodySmall.copyWith(
+                    color: AppColors.textPrimary,
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _TahvilNoBenefitBanner extends StatelessWidget {
+  const _TahvilNoBenefitBanner({required this.preview});
+
+  final TahvilFirePreview preview;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+      decoration: BoxDecoration(
+        color: AppColors.critical.withValues(alpha: 0.08),
+        borderRadius: AppRadii.sm,
+        border: Border.all(
+          color: AppColors.critical.withValues(alpha: 0.35),
+        ),
+      ),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Container(
+            width: 36,
+            height: 36,
+            alignment: Alignment.center,
+            decoration: BoxDecoration(
+              color: AppColors.critical.withValues(alpha: 0.14),
+              shape: BoxShape.circle,
+            ),
+            child: const Icon(
+              Icons.block_outlined,
+              color: AppColors.critical,
+              size: 20,
+            ),
+          ),
+          const SizedBox(width: 12),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  'Tahvil fire oranını azaltmıyor',
+                  style: AppTypography.titleMedium.copyWith(
+                    color: AppColors.critical,
+                  ),
+                ),
+                const SizedBox(height: 4),
+                Text(
+                  'Proje fire %${preview.baselineWastePercent.toStringAsFixed(1)} → '
+                  'tahvil sonrası %${preview.tahvilWastePercent.toStringAsFixed(1)}. '
+                  'Fire oranı düşmediği için tahvil uygulanmayacak.',
                   style: AppTypography.bodySmall.copyWith(
                     color: AppColors.textPrimary,
                   ),
@@ -625,7 +710,8 @@ class _TahvilFireAnalysisPanel extends ConsumerWidget {
       children: [
         Text(
           'Fire özeti proje verisine göre hazırlanır. '
-          'Boy eşleştirme uygulanmaz; yalnızca tahvil ile çap denkleştirmesi yapılır.',
+          'Tahvil yalnızca fire oranını düşürdüğünde uygulanır; '
+          'boy eşleştirme yapılmaz.',
           style: AppTypography.bodySmall.copyWith(color: AppColors.textMuted),
         ),
         if (batch.hasSavedOptimization(FireReductionStrategy.tahvilOnly)) ...[
@@ -651,8 +737,8 @@ class _TahvilFireAnalysisPanel extends ConsumerWidget {
           onPressed: enabled ? () => onStart() : null,
           icon: Icons.swap_horiz_outlined,
           label: batch.isOptimized
-              ? 'Tahvil Analizini Yeniden Çalıştır'
-              : 'Tahvil ile Fire Analizi Yap',
+              ? 'Fire Analizini Yeniden Çalıştır'
+              : 'Fire Analizi Yap',
         ),
         if (canSave) ...[
           const SizedBox(height: 8),

@@ -458,7 +458,7 @@ class CuttingBendingNotifier extends StateNotifier<CuttingBendingState> {
         batchId: batchId,
         isCompleted: true,
         percent: 100,
-        stepLabel: 'Tahvil fire analizi tamamlandı',
+        stepLabel: 'Fire analizi tamamlandı',
       );
 
       _ref.read(selectedFireReductionStrategyProvider.notifier).state =
@@ -469,6 +469,10 @@ class CuttingBendingNotifier extends StateNotifier<CuttingBendingState> {
       if (current.batchId == batchId && current.isCompleted) {
         progressNotifier.state = OptimumFireAnalysisProgress.idle;
       }
+    } on analysis_calc.TahvilFireNotBeneficialException catch (error) {
+      progressNotifier.state = OptimumFireAnalysisProgress.idle;
+      _ref.read(optimumFireAnalysisErrorProvider.notifier).state =
+          error.toString();
     } catch (e) {
       progressNotifier.state = OptimumFireAnalysisProgress.idle;
       _ref.read(optimumFireAnalysisErrorProvider.notifier).state =

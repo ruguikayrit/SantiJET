@@ -618,7 +618,7 @@ void main() {
       );
     });
 
-    test('estimateTahvilFirePreview compares project and tahvil fire', () {
+    test('estimateTahvilFirePreview only counts beneficial tahvil groups', () {
       const pieces = [
         RebarPieceLine(diameter: 16, lengthM: 2.00, quantity: 100),
         RebarPieceLine(diameter: 20, lengthM: 2.05, quantity: 60),
@@ -632,7 +632,46 @@ void main() {
       final preview = estimateTahvilFirePreview(batch);
 
       expect(preview.baselineWasteTonnage, greaterThan(0));
-      expect(preview.applicableTahvilGroupCount, greaterThan(0));
+      if (preview.hasSavings) {
+        expect(preview.savedWastePercent, greaterThan(0));
+        expect(preview.applicableTahvilGroupCount, greaterThan(0));
+        expect(
+          preview.tahvilWastePercent,
+          lessThan(preview.baselineWastePercent),
+        );
+      } else {
+        expect(preview.applicableTahvilGroupCount, 0);
+      }
+    });
+
+    test('selectBeneficialTahvilGroups never approves when fire percent would rise', () {
+      const pieces = [
+        RebarPieceLine(diameter: 16, lengthM: 2.00, quantity: 100),
+        RebarPieceLine(diameter: 20, lengthM: 2.05, quantity: 60),
+      ];
+      final groups = computeTahvilGroups(pieces);
+      final selected = selectBeneficialTahvilGroups(
+        pieceLines: pieces,
+        groups: groups,
+      );
+      final approvedCount = selected.where((group) => group.approved).length;
+      final batch = buildCuttingBendingBatch(
+        title: 'Test',
+        sourceMetrajRecordIds: const [],
+        textDetails: const [],
+      ).copyWith(pieceLines: pieces, tahvilGroups: selected);
+      final preview = estimateTahvilFirePreview(batch);
+
+      if (approvedCount > 0) {
+        expect(
+          preview.tahvilWastePercent,
+          lessThan(preview.baselineWastePercent),
+        );
+        expect(preview.hasSavings, isTrue);
+      } else {
+        expect(preview.hasSavings, isFalse);
+        expect(preview.applicableTahvilGroupCount, 0);
+      }
     });
 
     test('mergeCuttingBendingBatchesForAnalysis combines piece lines across files', () {
