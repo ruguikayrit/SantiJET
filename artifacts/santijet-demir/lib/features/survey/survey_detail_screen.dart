@@ -21,6 +21,7 @@ class SurveyDetailScreen extends ConsumerWidget {
 
     return Scaffold(
       backgroundColor: AppColors.canvas,
+      primary: false,
       appBar: appSubpageTitleAppBar(
         context,
         title: imalat.name,

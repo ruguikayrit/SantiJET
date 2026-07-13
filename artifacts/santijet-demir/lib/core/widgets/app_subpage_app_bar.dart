@@ -4,6 +4,7 @@ import 'package:santijet_demir/core/theme/app_colors.dart';
 import 'package:santijet_demir/core/theme/app_typography.dart';
 
 /// Alt sayfa üst çubuğu: güvenli alan + tek satır başlık.
+/// Scaffold'ta `primary: false` kullanın (çift safe-area önlenir).
 PreferredSizeWidget appSubpageAppBar(
   BuildContext context, {
   required Widget title,
@@ -65,13 +66,14 @@ PreferredSizeWidget appSubpageTitleAppBar(
 }
 
 /// Sekmeli alt sayfa: güvenli alan + geri ok sekmelerle aynı hizada.
+/// Scaffold'ta `primary: false` kullanın (çift safe-area önlenir).
 PreferredSizeWidget appTabbedSubpageAppBar(
   BuildContext context, {
   required Widget tabBar,
   List<Widget>? actions,
   VoidCallback? onBack,
   Color? backgroundColor,
-  double tabBarHeight = 52,
+  double tabBarHeight = 48,
 }) {
   final topInset = AppSafeAreaInsets.topOf(context);
 
@@ -81,18 +83,28 @@ PreferredSizeWidget appTabbedSubpageAppBar(
       color: backgroundColor ?? AppColors.canvas,
       child: SizedBox(
         height: topInset + tabBarHeight,
-        child: Padding(
-          padding: EdgeInsets.only(top: topInset),
-          child: Row(
-            crossAxisAlignment: CrossAxisAlignment.stretch,
-            children: [
-              BackButton(
-                onPressed: onBack ?? () => Navigator.maybePop(context),
+        child: Column(
+          children: [
+            SizedBox(height: topInset),
+            SizedBox(
+              height: tabBarHeight,
+              child: Row(
+                crossAxisAlignment: CrossAxisAlignment.center,
+                children: [
+                  SizedBox(
+                    width: 48,
+                    child: IconButton(
+                      icon: const Icon(Icons.arrow_back),
+                      tooltip: 'Geri',
+                      onPressed: onBack ?? () => Navigator.maybePop(context),
+                    ),
+                  ),
+                  Expanded(child: tabBar),
+                  if (actions != null) ...actions,
+                ],
               ),
-              Expanded(child: tabBar),
-              if (actions != null) ...actions,
-            ],
-          ),
+            ),
+          ],
         ),
       ),
     ),

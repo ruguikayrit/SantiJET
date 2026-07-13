@@ -32,7 +32,7 @@
   <link rel="icon" type="image/png" href="favicon.png"/>
 
   <title>ŞantiJET DEMİR</title>
-  <link rel="manifest" href="manifest.json?v=78">
+  <link rel="manifest" href="manifest.json?v=80">
 
   <!-- Supabase → passkeys_web eklentisi için zorunlu (yoksa uygulama başlamaz) -->
   <script src="passkeys_bundle.js?v=78"></script>
@@ -87,7 +87,7 @@
   <script>
     // ŞantiJET DEMİR — iOS PWA viewport + yükleme ekranı
     (function () {
-      var APP_VERSION = '78';
+      var APP_VERSION = '80';
       var isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent) ||
         (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
       var isStandalone = window.navigator.standalone === true ||
@@ -230,12 +230,16 @@
         try {
           var probe = document.createElement('div');
           probe.style.cssText =
-            'position:fixed;bottom:0;left:0;padding-bottom:env(safe-area-inset-bottom);pointer-events:none;visibility:hidden;';
+            'position:fixed;top:0;left:0;padding-top:env(safe-area-inset-top);' +
+            'padding-bottom:env(safe-area-inset-bottom);pointer-events:none;visibility:hidden;';
           document.body.appendChild(probe);
+          var top = parseFloat(window.getComputedStyle(probe).paddingTop) || 0;
           var bottom = parseFloat(window.getComputedStyle(probe).paddingBottom) || 0;
           document.body.removeChild(probe);
+          window.__SANTIJET_SAFE_AREA_TOP__ = top;
           window.__SANTIJET_SAFE_AREA_BOTTOM__ = bottom;
         } catch (e) {
+          window.__SANTIJET_SAFE_AREA_TOP__ = 0;
           window.__SANTIJET_SAFE_AREA_BOTTOM__ = 0;
         }
       }

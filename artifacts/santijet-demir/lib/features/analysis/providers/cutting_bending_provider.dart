@@ -73,19 +73,27 @@ final mergedAnalysisSessionProvider =
 
 /// Seçili dosyaların birleştirilmiş analiz görünümü.
 final mergedAnalysisBatchProvider = Provider<CuttingBendingBatch?>((ref) {
-  final state = ref.watch(cuttingBendingBatchesProvider);
   final scope = ref.watch(selectedAnalysisBatchIdsProvider);
   if (scope.isEmpty) return null;
-
-  final selected =
-      state.batches.where((batch) => scope.contains(batch.id)).toList();
-  if (selected.isEmpty) return null;
 
   final scopeKey = analysis_calc.analysisScopeKey(scope);
   final session = ref.watch(mergedAnalysisSessionProvider);
   if (session != null && session.scopeKey == scopeKey) {
     return session.batch;
   }
+
+  return ref.watch(_mergedBatchByScopeProvider(scopeKey));
+});
+
+final _mergedBatchByScopeProvider =
+    Provider.family<CuttingBendingBatch?, String>((ref, scopeKey) {
+  final scope = ref.watch(selectedAnalysisBatchIdsProvider);
+  if (analysis_calc.analysisScopeKey(scope) != scopeKey) return null;
+
+  final state = ref.watch(cuttingBendingBatchesProvider);
+  final selected =
+      state.batches.where((batch) => scope.contains(batch.id)).toList();
+  if (selected.isEmpty) return null;
 
   return analysis_calc.mergeCuttingBendingBatchesForAnalysis(selected);
 });

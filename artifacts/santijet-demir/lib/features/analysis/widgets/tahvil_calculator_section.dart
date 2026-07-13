@@ -97,7 +97,8 @@ class _TahvilCalculatorSectionState extends State<TahvilCalculatorSection> {
         if (source == null) ...[
           const SizedBox(height: 12),
           Text(
-            'Hesap için çap ve aralık alanlarını doldurun.',
+            'Hesap için çap ve aralık alanlarını doldurun. '
+            'Boy girilirse tahvil öncesi/sonrası tonaj mukayesesi yapılır.',
             style: AppTypography.bodySmall.copyWith(color: AppColors.textMuted),
           ),
         ] else ...[
@@ -106,6 +107,13 @@ class _TahvilCalculatorSectionState extends State<TahvilCalculatorSection> {
             'Kaynak: ${_sourceSummary(source)}',
             style: AppTypography.bodySmall,
           ),
+          if (!source.hasLength) ...[
+            const SizedBox(height: 4),
+            Text(
+              'Demir boyu girilmedi — tahvil sonuçları hesaplanır, tonaj mukayesesi gösterilmez.',
+              style: AppTypography.bodySmall.copyWith(color: AppColors.textMuted),
+            ),
+          ],
           const SizedBox(height: 12),
           Text('Tahvil seçenekleri', style: AppTypography.titleMedium),
           const SizedBox(height: 4),
@@ -422,28 +430,28 @@ class _EditableTahvilRow {
 class _InputTableHeader extends StatelessWidget {
   const _InputTableHeader();
 
+  static const _labels = ['ÇAP\n(mm)', 'ADET', 'ARALIK\n(cm)', 'BOY\n(cm)'];
+
   @override
   Widget build(BuildContext context) {
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 10),
       decoration: const BoxDecoration(
         border: Border(bottom: BorderSide(color: AppColors.border)),
       ),
-      child: Column(
+      child: Row(
         children: [
-          Row(
-            children: [
-              Expanded(child: Text('ÇAP (mm)', style: AppTypography.labelMedium)),
-              Expanded(child: Text('ADET', style: AppTypography.labelMedium)),
-            ],
-          ),
-          const SizedBox(height: 6),
-          Row(
-            children: [
-              Expanded(child: Text('ARALIK (cm)', style: AppTypography.labelMedium)),
-              Expanded(child: Text('BOY (cm)', style: AppTypography.labelMedium)),
-            ],
-          ),
+          for (var i = 0; i < _labels.length; i++) ...[
+            if (i > 0) const SizedBox(width: 6),
+            Expanded(
+              child: Text(
+                _labels[i],
+                style: AppTypography.labelMedium.copyWith(fontSize: 11),
+                textAlign: TextAlign.center,
+                maxLines: 2,
+              ),
+            ),
+          ],
         ],
       ),
     );
@@ -462,65 +470,68 @@ class _InputTableRow extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Padding(
-      padding: const EdgeInsets.fromLTRB(8, 4, 8, 8),
-      child: Column(
+      padding: const EdgeInsets.fromLTRB(6, 4, 6, 8),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Row(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Expanded(
-                child: TextField(
-                  controller: row.diameterController,
-                  keyboardType: TextInputType.number,
-                  decoration: const InputDecoration(
-                    hintText: '16',
-                    isDense: true,
-                  ),
-                  onChanged: (_) => onChanged(),
-                ),
+          Expanded(
+            child: TextField(
+              controller: row.diameterController,
+              keyboardType: TextInputType.number,
+              textAlign: TextAlign.center,
+              style: AppTypography.bodySmall,
+              decoration: const InputDecoration(
+                hintText: '16',
+                isDense: true,
+                contentPadding: EdgeInsets.symmetric(horizontal: 6, vertical: 10),
               ),
-              const SizedBox(width: 8),
-              Expanded(
-                child: TextField(
-                  controller: row.quantityController,
-                  keyboardType: TextInputType.number,
-                  decoration: const InputDecoration(
-                    hintText: 'isteğe bağlı',
-                    isDense: true,
-                  ),
-                  onChanged: (_) => onChanged(),
-                ),
-              ),
-            ],
+              onChanged: (_) => onChanged(),
+            ),
           ),
-          const SizedBox(height: 8),
-          Row(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Expanded(
-                child: TextField(
-                  controller: row.spacingController,
-                  keyboardType: const TextInputType.numberWithOptions(decimal: true),
-                  decoration: const InputDecoration(
-                    hintText: '15',
-                    isDense: true,
-                  ),
-                  onChanged: (_) => onChanged(),
-                ),
+          const SizedBox(width: 6),
+          Expanded(
+            child: TextField(
+              controller: row.quantityController,
+              keyboardType: TextInputType.number,
+              textAlign: TextAlign.center,
+              style: AppTypography.bodySmall,
+              decoration: const InputDecoration(
+                hintText: '—',
+                isDense: true,
+                contentPadding: EdgeInsets.symmetric(horizontal: 6, vertical: 10),
               ),
-              const SizedBox(width: 8),
-              Expanded(
-                child: TextField(
-                  controller: row.lengthController,
-                  keyboardType: const TextInputType.numberWithOptions(decimal: true),
-                  decoration: const InputDecoration(
-                    hintText: 'isteğe bağlı',
-                    isDense: true,
-                  ),
-                  onChanged: (_) => onChanged(),
-                ),
+              onChanged: (_) => onChanged(),
+            ),
+          ),
+          const SizedBox(width: 6),
+          Expanded(
+            child: TextField(
+              controller: row.spacingController,
+              keyboardType: const TextInputType.numberWithOptions(decimal: true),
+              textAlign: TextAlign.center,
+              style: AppTypography.bodySmall,
+              decoration: const InputDecoration(
+                hintText: '15',
+                isDense: true,
+                contentPadding: EdgeInsets.symmetric(horizontal: 6, vertical: 10),
               ),
-            ],
+              onChanged: (_) => onChanged(),
+            ),
+          ),
+          const SizedBox(width: 6),
+          Expanded(
+            child: TextField(
+              controller: row.lengthController,
+              keyboardType: const TextInputType.numberWithOptions(decimal: true),
+              textAlign: TextAlign.center,
+              style: AppTypography.bodySmall,
+              decoration: const InputDecoration(
+                hintText: '—',
+                isDense: true,
+                contentPadding: EdgeInsets.symmetric(horizontal: 6, vertical: 10),
+              ),
+              onChanged: (_) => onChanged(),
+            ),
           ),
         ],
       ),

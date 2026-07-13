@@ -5,7 +5,7 @@ import 'package:santijet_demir/core/widgets/app_components.dart';
 import 'package:santijet_demir/data/services/metraj_cetvel_summary.dart';
 import 'package:santijet_demir/domain/entities/rebar_metraj.dart';
 
-/// Metraj tonaj özeti: toplam → ince/kalın → çap kartları.
+/// Metraj tonaj özeti: toplam / ince / kalın tek satır, altında çap kartları.
 class MetrajTonnageSummaryCards extends StatelessWidget {
   const MetrajTonnageSummaryCards({
     super.key,
@@ -28,16 +28,19 @@ class MetrajTonnageSummaryCards extends StatelessWidget {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
-        KpiCard(
-          label: 'Toplam Tonaj',
-          value: numberFormat.format(summary.totalTonnage),
-          unit: 't',
-          accentColor: AppColors.electricBlueLight,
-          compactHeight: true,
-        ),
-        const SizedBox(height: _rowGap),
         Row(
           children: [
+            Expanded(
+              child: KpiCard(
+                label: 'Toplam Tonaj',
+                value: numberFormat.format(summary.totalTonnage),
+                unit: 't',
+                accentColor: AppColors.electricBlueLight,
+                dense: true,
+                compactHeight: true,
+              ),
+            ),
+            const SizedBox(width: _diameterGap),
             Expanded(
               child: KpiCard(
                 label: 'İnce Demir',

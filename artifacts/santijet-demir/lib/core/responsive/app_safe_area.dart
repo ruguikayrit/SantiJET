@@ -45,6 +45,10 @@ abstract final class AppSafeAreaInsets {
     var right = math.max(view.right, pad.right);
 
     if (_isIosWeb(context)) {
+      final injectedTop = inset_reader.readWebSafeAreaTopInset();
+      if (injectedTop != null && injectedTop > 0) {
+        top = math.max(top, injectedTop);
+      }
       if (top < 20) top = _iosWebMinTop;
     }
 

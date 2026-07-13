@@ -12,6 +12,16 @@ double? readWebSafeAreaBottomInset() {
   return null;
 }
 
+double? readWebSafeAreaTopInset() {
+  try {
+    final value = js_util.getProperty(web.window, '__SANTIJET_SAFE_AREA_TOP__');
+    if (value is num && value > 0) return value.toDouble();
+  } catch (_) {
+    // JS henüz hazır değil.
+  }
+  return null;
+}
+
 bool readIosStandalonePwa() {
   try {
     final standalone = js_util.getProperty(web.window.navigator, 'standalone');

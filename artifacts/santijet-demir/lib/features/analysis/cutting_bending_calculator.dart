@@ -17,6 +17,21 @@ const stockBarLengthM = 12.0;
 /// Safari / mobil web'de uzun senkron işlemlerde sekme çökmesini önlemek için.
 const _maxTripletSearchLengths = 24;
 
+/// Büyük envanterlerde ikili/üçlü arama yerine hızlı greedy paketleme.
+const _largeInventoryPieceThreshold = 2500;
+
+/// UI bellek tüketimini sınırlamak için plan başına saklanan çubuk sayısı.
+const _maxStoredBarsPerPlan = 200;
+
+/// Web'de paketleme döngüsünde event-loop'a ne sıklıkla bırakılır.
+const _webYieldEveryBars = 96;
+
+int totalPieceQuantity(Iterable<RebarPieceLine> pieces) =>
+    pieces.fold(0, (sum, piece) => sum + piece.quantity);
+
+_LengthInventory _cloneInventory(_LengthInventory inventory) =>
+    Map<int, int>.from(inventory);
+
 Future<void> _yieldToEventLoop() async {
   await Future<void>.delayed(
     kIsWeb ? const Duration(milliseconds: 16) : Duration.zero,
@@ -191,6 +206,10 @@ List<int> _greedyMultiFill(_LengthInventory inventory, int stockMm) {
 }
 
 List<int> _findBestBarFill(_LengthInventory inventory, int stockMm) {
+  if (_inventoryTotalCount(inventory) > _largeInventoryPieceThreshold) {
+    return _greedyMultiFill(inventory, stockMm);
+  }
+
   final candidates = <List<int>>[];
 
   final pair = _findBestPair(inventory, stockMm);
@@ -212,32 +231,110 @@ List<int> _findBestBarFill(_LengthInventory inventory, int stockMm) {
   return candidates.first;
 }
 
-List<StockBarCut> _packDiameterInventory({
+class _DiameterPackResult {
+  const _DiameterPackResult({
+    required this.bars,
+    required this.totalBars,
+    required this.totalWasteM,
+    required this.totalUsedM,
+  });
+
+  final List<StockBarCut> bars;
+  final int totalBars;
+  final double totalWasteM;
+  final double totalUsedM;
+}
+
+_DiameterPackResult _packDiameterInventory({
   required int diameter,
   required _LengthInventory inventory,
   required double stockLengthM,
+  bool retainBars = true,
+  int maxRetainedBars = _maxStoredBarsPerPlan,
 }) {
   final stockMm = _lengthToMm(stockLengthM);
   final bars = <StockBarCut>[];
   var barIndex = 1;
+  var totalWasteM = 0.0;
+  var totalUsedM = 0.0;
 
   while (_inventoryTotalCount(inventory) > 0) {
     final fill = _findBestBarFill(inventory, stockMm);
     _consumeFill(inventory, fill);
 
     final usedMm = _sumFillMm(fill);
-    bars.add(
-      StockBarCut(
-        barIndex: barIndex++,
-        diameter: diameter,
-        members: _membersFromFill(fill),
-        usedLengthM: _mmToLengthM(usedMm),
-        wasteLengthM: _mmToLengthM(stockMm - usedMm),
-      ),
-    );
+    final wasteMm = stockMm - usedMm;
+    totalUsedM += _mmToLengthM(usedMm);
+    totalWasteM += _mmToLengthM(wasteMm);
+
+    if (retainBars && bars.length < maxRetainedBars) {
+      bars.add(
+        StockBarCut(
+          barIndex: barIndex,
+          diameter: diameter,
+          members: _membersFromFill(fill),
+          usedLengthM: _mmToLengthM(usedMm),
+          wasteLengthM: _mmToLengthM(wasteMm),
+        ),
+      );
+    }
+    barIndex++;
   }
 
-  return bars;
+  return _DiameterPackResult(
+    bars: bars,
+    totalBars: barIndex - 1,
+    totalWasteM: totalWasteM,
+    totalUsedM: totalUsedM,
+  );
+}
+
+Future<_DiameterPackResult> _packDiameterInventoryAsync({
+  required int diameter,
+  required _LengthInventory inventory,
+  required double stockLengthM,
+  bool retainBars = true,
+  int maxRetainedBars = _maxStoredBarsPerPlan,
+}) async {
+  final stockMm = _lengthToMm(stockLengthM);
+  final bars = <StockBarCut>[];
+  var barIndex = 1;
+  var totalWasteM = 0.0;
+  var totalUsedM = 0.0;
+
+  while (_inventoryTotalCount(inventory) > 0) {
+    if (kIsWeb && barIndex % _webYieldEveryBars == 0) {
+      await _yieldToEventLoop();
+    }
+
+    final fill = _findBestBarFill(inventory, stockMm);
+    _consumeFill(inventory, fill);
+
+    final usedMm = _sumFillMm(fill);
+    final wasteMm = stockMm - usedMm;
+    totalUsedM += _mmToLengthM(usedMm);
+    totalWasteM += _mmToLengthM(wasteMm);
+
+    if (retainBars && bars.length < maxRetainedBars) {
+      bars.add(
+        StockBarCut(
+          barIndex: barIndex,
+          diameter: diameter,
+          members: _membersFromFill(fill),
+          usedLengthM: _mmToLengthM(usedMm),
+          wasteLengthM: _mmToLengthM(wasteMm),
+        ),
+      );
+    }
+    barIndex++;
+  }
+
+  return _DiameterPackResult(
+    bars: bars,
+    totalBars: barIndex - 1,
+    totalWasteM: totalWasteM,
+    totalUsedM: totalUsedM,
+  );
 }
 
 /// Aynı çaptaki parçaları 12 m stok boydan minimum fire ile kesim planına dönüştürür.
@@ -264,32 +361,48 @@ List<StockCutPlan> computeStockCutPlans(
   return _computeStockCutPlansUncached(pieces, stockLengthM: stockLengthM);
 }
 
-List<StockCutPlan> _computeStockCutPlansUncached(
+Future<List<StockCutPlan>> computeStockCutPlansAsync(
   List<RebarPieceLine> pieces, {
   double stockLengthM = stockBarLengthM,
-}) {
+  bool useCache = true,
+}) async {
   if (pieces.isEmpty) return const [];
 
+  if (useCache && stockLengthM == stockBarLengthM) {
+    final cacheKey = AnalysisComputeCache.keyForPieces(pieces);
+    if (AnalysisComputeCache.hasStockCutPlans(cacheKey)) {
+      return AnalysisComputeCache.readStockCutPlans(cacheKey);
+    }
+    final plans = await _computeStockCutPlansUncachedAsync(
+      pieces,
+      stockLengthM: stockLengthM,
+    );
+    AnalysisComputeCache.storeStockCutPlans(cacheKey, plans);
+    return plans;
+  }
+
+  return _computeStockCutPlansUncachedAsync(
+    pieces,
+    stockLengthM: stockLengthM,
+  );
+}
+
+List<StockCutPlan> _buildStockCutPlansFromPackResults({
+  required List<RebarPieceLine> pieces,
+  required double stockLengthM,
+  required Map<int, _DiameterPackResult> packedByDiameter,
+}) {
   final diameters = pieces.map((piece) => piece.diameter).toSet().toList()
     ..sort();
-
   final plans = <StockCutPlan>[];
 
   for (final diameter in diameters) {
-    final inventory = _buildDiameterInventory(pieces, diameter);
-    if (_inventoryTotalCount(inventory) == 0) continue;
+    final packed = packedByDiameter[diameter];
+    if (packed == null || packed.totalBars == 0) continue;
 
-    final bars = _packDiameterInventory(
-      diameter: diameter,
-      inventory: inventory,
-      stockLengthM: stockLengthM,
-    );
-
-    final totalBars = bars.length;
-    final totalWasteM =
-        bars.fold(0.0, (sum, bar) => sum + bar.wasteLengthM);
-    final totalUsedM =
-        bars.fold(0.0, (sum, bar) => sum + bar.usedLengthM);
+    final totalBars = packed.totalBars;
+    final totalWasteM = packed.totalWasteM;
+    final totalUsedM = packed.totalUsedM;
     final stockTotalM = totalBars * stockLengthM;
     final wastePercent = stockTotalM <= 0
         ? 0.0
@@ -298,7 +411,7 @@ List<StockCutPlan> _computeStockCutPlansUncached(
     plans.add(
       StockCutPlan(
         diameter: diameter,
-        bars: bars,
+        bars: packed.bars,
         totalBars: totalBars,
         totalStockM: stockTotalM,
         totalWasteM: totalWasteM,
@@ -323,6 +436,61 @@ List<StockCutPlan> _computeStockCutPlansUncached(
   return plans;
 }
 
+List<StockCutPlan> _computeStockCutPlansUncached(
+  List<RebarPieceLine> pieces, {
+  double stockLengthM = stockBarLengthM,
+}) {
+  if (pieces.isEmpty) return const [];
+
+  final diameters = pieces.map((piece) => piece.diameter).toSet().toList()
+    ..sort();
+  final packedByDiameter = <int, _DiameterPackResult>{};
+
+  for (final diameter in diameters) {
+    final inventory = _buildDiameterInventory(pieces, diameter);
+    if (_inventoryTotalCount(inventory) == 0) continue;
+    packedByDiameter[diameter] = _packDiameterInventory(
+      diameter: diameter,
+      inventory: inventory,
+      stockLengthM: stockLengthM,
+    );
+  }
+
+  return _buildStockCutPlansFromPackResults(
+    pieces: pieces,
+    stockLengthM: stockLengthM,
+    packedByDiameter: packedByDiameter,
+  );
+}
+
+Future<List<StockCutPlan>> _computeStockCutPlansUncachedAsync(
+  List<RebarPieceLine> pieces, {
+  double stockLengthM = stockBarLengthM,
+}) async {
+  if (pieces.isEmpty) return const [];
+
+  final diameters = pieces.map((piece) => piece.diameter).toSet().toList()
+    ..sort();
+  final packedByDiameter = <int, _DiameterPackResult>{};
+
+  for (final diameter in diameters) {
+    final inventory = _buildDiameterInventory(pieces, diameter);
+    if (_inventoryTotalCount(inventory) == 0) continue;
+    packedByDiameter[diameter] = await _packDiameterInventoryAsync(
+      diameter: diameter,
+      inventory: inventory,
+      stockLengthM: stockLengthM,
+    );
+    if (kIsWeb) await _yieldToEventLoop();
+  }
+
+  return _buildStockCutPlansFromPackResults(
+    pieces: pieces,
+    stockLengthM: stockLengthM,
+    packedByDiameter: packedByDiameter,
+  );
+}
+
 /// Tek çap için fire tonajı — optimum boy seçiminde tüm çapları hesaplamaz.
 double computeStockCutWasteForDiameter(
   List<RebarPieceLine> pieces,
@@ -332,15 +500,15 @@ double computeStockCutWasteForDiameter(
   final inventory = _buildDiameterInventory(pieces, diameter);
   if (_inventoryTotalCount(inventory) == 0) return 0;
 
-  final bars = _packDiameterInventory(
+  final packed = _packDiameterInventory(
     diameter: diameter,
-    inventory: inventory,
+    inventory: _cloneInventory(inventory),
     stockLengthM: stockLengthM,
+    retainBars: false,
   );
-  final totalWasteM = bars.fold(0.0, (sum, bar) => sum + bar.wasteLengthM);
   return RebarWeightCalculator.tonnage(
     diameterMm: diameter,
-    lengthM: totalWasteM,
+    lengthM: packed.totalWasteM,
   );
 }
 
@@ -724,13 +892,20 @@ List<RebarPieceLine> _workingPieceLines(CuttingBendingBatch batch) {
 }
 
 /// Bir boy eşleştirme grubu için simüle fireyi minimize eden boyu seçer.
+List<double> _lengthMatchCandidateLengths(LengthMatchGroup group) {
+  final all = group.members.map((member) => member.lengthM).toSet().toList()
+    ..sort();
+  if (!kIsWeb || all.length <= 3) return all;
+  final mid = all.length ~/ 2;
+  return [all.first, all[mid], all.last].toSet().toList()..sort();
+}
+
 Future<double> pickOptimalLengthForGroup(
   LengthMatchGroup group,
   List<RebarPieceLine> pieceLines,
   List<LengthMatchGroup> allGroups,
 ) async {
-  final candidates = group.members.map((member) => member.lengthM).toSet().toList()
-    ..sort();
+  final candidates = _lengthMatchCandidateLengths(group);
 
   var bestLength = candidates.first;
   var bestWaste = double.infinity;
@@ -767,6 +942,25 @@ CuttingBendingBatch syncBatchLengthMatchDerivatives(CuttingBendingBatch batch) {
   final stockCutPlans = batch.isOptimized &&
           isLengthMatchingComplete(batch.lengthMatches)
       ? computeStockCutPlans(revised)
+      : const <StockCutPlan>[];
+
+  return batch.copyWith(
+    revisedPieceLines: revised,
+    stockCutPlans: stockCutPlans,
+  );
+}
+
+Future<CuttingBendingBatch> syncBatchLengthMatchDerivativesAsync(
+  CuttingBendingBatch batch,
+) async {
+  final workingPieces = _workingPieceLines(batch);
+  final revised = applyLengthMatchesToPieceLines(
+    workingPieces,
+    batch.lengthMatches,
+  );
+  final stockCutPlans = batch.isOptimized &&
+          isLengthMatchingComplete(batch.lengthMatches)
+      ? await computeStockCutPlansAsync(revised)
       : const <StockCutPlan>[];
 
   return batch.copyWith(
@@ -1210,11 +1404,12 @@ Future<CuttingBendingBatch> runOptimumFireAnalysis(
   await report(88, 'Planlı kesim planı oluşturuluyor...');
   await _yieldToEventLoop();
 
-  final result = syncBatchLengthMatchDerivatives(
+  final result = await syncBatchLengthMatchDerivativesAsync(
     batch.copyWith(
       tahvilGroups: tahvilState,
       lengthMatches: optimizedMatches,
-      lengthMatchTolerancePercent: CuttingBendingBatch.defaultLengthMatchTolerancePercent,
+      lengthMatchTolerancePercent:
+          CuttingBendingBatch.defaultLengthMatchTolerancePercent,
       optimizationStrategy: strategy,
       optimizationAppliedAt: DateTime.now(),
     ),

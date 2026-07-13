@@ -15,8 +15,12 @@ class AppBottomNavBar extends ConsumerWidget {
 
   final StatefulNavigationShell navigationShell;
 
-  static const _iconBarHeight = 44.0;
-  static const _iconBarHeightTablet = 48.0;
+  static const _iconBarHeight = 52.0;
+  static const _iconBarHeightTablet = 56.0;
+  static const _iconSize = 24.0;
+  static const _iconSizeTablet = 22.0;
+  static const _activeIndicatorSize = 44.0;
+  static const _minTapExtent = 48.0;
 
   static const _icons = [
     Icons.dashboard_outlined,
@@ -129,51 +133,55 @@ class _NavItem extends StatelessWidget {
     final activeColor = AppColors.electricBlueLight;
     final inactiveColor = AppColors.textMuted.withValues(alpha: 0.85);
 
-    Widget child = SizedBox.expand(
-      child: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          AnimatedContainer(
-            duration: const Duration(milliseconds: 220),
-            curve: Curves.easeOutCubic,
-            width: selected ? 40 : 36,
-            height: selected ? 28 : 24,
-            alignment: Alignment.center,
-            decoration: BoxDecoration(
-              color: selected
-                  ? AppColors.electricBlue.withValues(alpha: 0.18)
-                  : Colors.transparent,
-              borderRadius: BorderRadius.circular(14),
-              border: selected
-                  ? Border.all(
-                      color: AppColors.electricBlueLight.withValues(alpha: 0.35),
-                    )
-                  : null,
-            ),
-            child: Icon(
-              selected ? activeIcon : icon,
-              size: showLabel ? 18 : 20,
-              color: selected ? activeColor : inactiveColor,
-            ),
-          ),
-          if (showLabel) ...[
-            const SizedBox(height: 2),
-            FittedBox(
-              fit: BoxFit.scaleDown,
-              child: Text(
-                label,
-                maxLines: 1,
-                textAlign: TextAlign.center,
-                style: AppTypography.tabLabel.copyWith(
-                  color: selected ? activeColor : inactiveColor,
-                  fontSize: 9,
-                  height: 1.0,
-                  decoration: TextDecoration.none,
-                ),
+    Widget child = ConstrainedBox(
+      constraints: const BoxConstraints(minHeight: _minTapExtent),
+      child: SizedBox.expand(
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            AnimatedContainer(
+              duration: const Duration(milliseconds: 220),
+              curve: Curves.easeOutCubic,
+              width: _activeIndicatorSize,
+              height: _activeIndicatorSize,
+              alignment: Alignment.center,
+              decoration: BoxDecoration(
+                shape: BoxShape.circle,
+                color: selected
+                    ? AppColors.electricBlue.withValues(alpha: 0.18)
+                    : Colors.transparent,
+                border: selected
+                    ? Border.all(
+                        color:
+                            AppColors.electricBlueLight.withValues(alpha: 0.35),
+                      )
+                    : null,
+              ),
+              child: Icon(
+                selected ? activeIcon : icon,
+                size: showLabel ? _iconSizeTablet : _iconSize,
+                color: selected ? activeColor : inactiveColor,
               ),
             ),
+            if (showLabel) ...[
+              const SizedBox(height: 3),
+              FittedBox(
+                fit: BoxFit.scaleDown,
+                child: Text(
+                  label,
+                  maxLines: 1,
+                  textAlign: TextAlign.center,
+                  style: AppTypography.tabLabel.copyWith(
+                    color: selected ? activeColor : inactiveColor,
+                    fontSize: 10,
+                    height: 1.0,
+                    decoration: TextDecoration.none,
+                  ),
+                ),
+              ),
+            ],
           ],
-        ],
+        ),
       ),
     );
 

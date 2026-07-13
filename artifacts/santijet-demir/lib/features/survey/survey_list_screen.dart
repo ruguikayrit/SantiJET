@@ -166,10 +166,12 @@ class _SurveyListScreenState extends ConsumerState<SurveyListScreen>
 
     return Scaffold(
       backgroundColor: screenBg,
+      primary: false,
       resizeToAvoidBottomInset: false,
       appBar: appTabbedSubpageAppBar(
         context,
         backgroundColor: screenBg,
+        tabBarHeight: 52,
         tabBar: _SurveyProportionalTabBar(
           controller: _tabController,
           labelStyle: tabLabelStyle,

@@ -396,7 +396,7 @@ class _BulkProgressEntryPanelState extends State<_BulkProgressEntryPanel> {
             hasSelection
                 ? 'Seçili imalat gruplarına tek değer uygulanır. '
                     'Satır satır düzenlemek için çap alanlarını kullanın.'
-                : 'İmalat seçmeden uygularsanız tüm çaplara yazılır. '
+                : 'İmalat seçmeden uygularsanız tüm çaplara yazılır.\n'
                     'Grup seçmek için imalat başlığındaki kutuyu işaretleyin.',
             style: AppTypography.bodySmall.copyWith(color: AppColors.textMuted),
           ),
@@ -461,39 +461,52 @@ class _BulkProgressEntryPanelState extends State<_BulkProgressEntryPanel> {
                 const SizedBox(height: 10),
                 Row(
                   children: [
-                    SizedBox(
-                      width: 92,
-                      child: TextField(
-                        controller: _controller,
-                        keyboardType: TextInputType.number,
-                        textAlign: TextAlign.center,
-                        inputFormatters: [
-                          FilteringTextInputFormatter.digitsOnly,
-                          LengthLimitingTextInputFormatter(3),
-                        ],
-                        style: AppTypography.titleMedium.copyWith(
-                          fontWeight: FontWeight.w700,
-                          color: AppColors.electricBlueLight,
+                    Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        SizedBox(
+                          width: 72,
+                          child: TextField(
+                            controller: _controller,
+                            keyboardType: TextInputType.number,
+                            textAlign: TextAlign.center,
+                            inputFormatters: [
+                              FilteringTextInputFormatter.digitsOnly,
+                              LengthLimitingTextInputFormatter(3),
+                            ],
+                            style: AppTypography.titleMedium.copyWith(
+                              fontWeight: FontWeight.w700,
+                              color: AppColors.electricBlueLight,
+                            ),
+                            decoration: InputDecoration(
+                              isDense: true,
+                              hintText: '0',
+                              contentPadding: const EdgeInsets.symmetric(
+                                horizontal: 8,
+                                vertical: 12,
+                              ),
+                              border: OutlineInputBorder(
+                                borderRadius: AppRadii.sm,
+                                borderSide:
+                                    const BorderSide(color: AppColors.border),
+                              ),
+                              enabledBorder: OutlineInputBorder(
+                                borderRadius: AppRadii.sm,
+                                borderSide:
+                                    const BorderSide(color: AppColors.border),
+                              ),
+                            ),
+                            onSubmitted: (_) => _apply(),
+                          ),
                         ),
-                        decoration: InputDecoration(
-                          isDense: true,
-                          hintText: '0',
-                          suffixText: '%',
-                          contentPadding: const EdgeInsets.symmetric(
-                            horizontal: 8,
-                            vertical: 12,
-                          ),
-                          border: OutlineInputBorder(
-                            borderRadius: AppRadii.sm,
-                            borderSide: const BorderSide(color: AppColors.border),
-                          ),
-                          enabledBorder: OutlineInputBorder(
-                            borderRadius: AppRadii.sm,
-                            borderSide: const BorderSide(color: AppColors.border),
+                        Text(
+                          '%',
+                          style: AppTypography.titleMedium.copyWith(
+                            fontWeight: FontWeight.w700,
+                            color: AppColors.electricBlueLight,
                           ),
                         ),
-                        onSubmitted: (_) => _apply(),
-                      ),
+                      ],
                     ),
                     const SizedBox(width: 10),
                     Expanded(
@@ -584,33 +597,64 @@ class _ProgressTableHeader extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
-      decoration: const BoxDecoration(
-        border: Border(bottom: BorderSide(color: AppColors.border)),
-      ),
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(14, 10, 14, 10),
       child: Row(
         children: [
           Expanded(flex: 2, child: _headerCell('ÇAP')),
+          const SizedBox(width: 4),
           Expanded(flex: 3, child: _headerCell('KEŞİF')),
+          const SizedBox(width: 4),
           Expanded(flex: 3, child: _headerCell('İLERLEME')),
-          Expanded(flex: 3, child: _headerCell('PLAN.\nKULL.')),
+          const SizedBox(width: 4),
+          Expanded(flex: 3, child: _headerCell('PLAN.', line2: 'KULL.')),
         ],
       ),
     );
   }
 
-  Widget _headerCell(String label) {
-    return Text(
-      label,
-      style: _headerStyle,
-      textAlign: TextAlign.center,
-      maxLines: 2,
+  Widget _headerCell(String line1, {String? line2}) {
+    return DecoratedBox(
+      decoration: BoxDecoration(
+        color: AppColors.electricBlueLight,
+        borderRadius: AppRadii.xs,
+        border: Border.all(color: AppColors.electricBlue),
+      ),
+      child: Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 6),
+        child: line2 == null
+            ? Text(
+                line1,
+                style: _headerStyle,
+                textAlign: TextAlign.center,
+                maxLines: 2,
+              )
+            : Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Text(
+                    line1,
+                    style: _headerStyle,
+                    textAlign: TextAlign.center,
+                    maxLines: 1,
+                  ),
+                  Text(
+                    line2,
+                    style: _headerStyle,
+                    textAlign: TextAlign.center,
+                    maxLines: 1,
+                  ),
+                ],
+              ),
+      ),
     );
   }
 
-  TextStyle get _headerStyle =>
-      AppTypography.labelSmall.copyWith(color: AppColors.textMuted);
+  TextStyle get _headerStyle => AppTypography.labelSmall.copyWith(
+        color: Colors.black,
+        fontWeight: FontWeight.w700,
+        height: 1.1,
+      );
 }
 
 class _ProgressTableRow extends StatefulWidget {

@@ -184,6 +184,7 @@ class _CollapsibleDiameterCutPlanCard extends ConsumerWidget {
                   const SizedBox(height: 10),
                   _PaginatedStockBarCutList(
                     bars: plan.bars,
+                    totalBars: plan.totalBars,
                     stockLengthM: stockLengthM,
                     diameterColor: diameterColor,
                   ),
@@ -427,6 +428,7 @@ class _SummaryLabel extends StatelessWidget {
 class _PaginatedStockBarCutList extends StatefulWidget {
   const _PaginatedStockBarCutList({
     required this.bars,
+    required this.totalBars,
     required this.stockLengthM,
     required this.diameterColor,
   });
@@ -434,6 +436,7 @@ class _PaginatedStockBarCutList extends StatefulWidget {
   static const pageSize = 10;
 
   final List<StockBarCut> bars;
+  final int totalBars;
   final double stockLengthM;
   final Color diameterColor;
 
@@ -479,6 +482,14 @@ class _PaginatedStockBarCutListState extends State<_PaginatedStockBarCutList> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
+        if (widget.totalBars > bars.length) ...[
+          Text(
+            'Önizleme: ilk ${bars.length} / ${AppFormat.integer(widget.totalBars)} çubuk gösteriliyor. '
+            'Özet tonaj ve fire değerleri tam plana göredir.',
+            style: AppTypography.bodySmall.copyWith(color: AppColors.textMuted),
+          ),
+          const SizedBox(height: 8),
+        ],
         ...visibleBars.map(
           (bar) => Padding(
             padding: const EdgeInsets.only(bottom: 8),

@@ -80,9 +80,9 @@ class MetrajCetvelSection extends StatelessWidget {
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
         if (!hideHeader && lines.isNotEmpty) ...[
-          const SizedBox(height: 28),
+          const SizedBox(height: 40),
           Text('Metraj İcmali', style: AppTypography.headlineMedium),
-          const SizedBox(height: 12),
+          const SizedBox(height: 16),
         ],
         if (lines.isNotEmpty)
           _MetrajIcmaliSection(
@@ -265,11 +265,10 @@ class _IcmalDiameterTableHeader extends StatelessWidget {
       ),
       child: const Row(
         children: [
-          _IcmalCol('Çap', flex: _IcmalLayout.capFlex, bold: true),
-          _IcmalCol('Birim ağ.', flex: _IcmalLayout.unitFlex, bold: true, align: TextAlign.end),
-          _IcmalCol('Adet', flex: _IcmalLayout.adetFlex, bold: true, align: TextAlign.end),
-          _IcmalCol('Boy (m)', flex: _IcmalLayout.boyFlex, bold: true, align: TextAlign.end),
-          _IcmalCol('t', flex: _IcmalLayout.tonFlex, bold: true, align: TextAlign.end),
+          _IcmalCol('Birim ağ.', flex: _IcmalLayout.columnFlex, bold: true, align: TextAlign.center),
+          _IcmalCol('Adet', flex: _IcmalLayout.columnFlex, bold: true, align: TextAlign.center),
+          _IcmalCol('Boy', flex: _IcmalLayout.columnFlex, bold: true, align: TextAlign.center),
+          _IcmalCol('Tonaj', flex: _IcmalLayout.columnFlex, bold: true, align: TextAlign.center),
         ],
       ),
     );
@@ -308,34 +307,45 @@ class _IcmalDiameterDataRow extends StatelessWidget {
       ),
       child: Row(
         children: [
-          _IcmalCol(
-            'Ø$diameter',
-            flex: _IcmalLayout.capFlex,
-            bold: true,
-            color: AppColors.diameterColor(diameter),
-          ),
-          _IcmalCol(
-            unitWeightFormat.format(unitWeightKgPerM),
-            flex: _IcmalLayout.unitFlex,
-            align: TextAlign.end,
-            dense: true,
+          Expanded(
+            flex: _IcmalLayout.columnFlex,
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.center,
+              children: [
+                Text(
+                  'Ø$diameter',
+                  style: AppTypography.labelMedium.copyWith(
+                    color: AppColors.diameterColor(diameter),
+                    fontWeight: FontWeight.w700,
+                  ),
+                  textAlign: TextAlign.center,
+                ),
+                Text(
+                  unitWeightFormat.format(unitWeightKgPerM),
+                  style: AppTypography.bodySmall,
+                  textAlign: TextAlign.center,
+                  maxLines: 1,
+                  overflow: TextOverflow.fade,
+                ),
+              ],
+            ),
           ),
           _IcmalCol(
             intFormat.format(barCount),
-            flex: _IcmalLayout.adetFlex,
-            align: TextAlign.end,
+            flex: _IcmalLayout.columnFlex,
+            align: TextAlign.center,
             dense: true,
           ),
           _IcmalCol(
-            lengthFormat.format(lengthM),
-            flex: _IcmalLayout.boyFlex,
-            align: TextAlign.end,
+            '${lengthFormat.format(lengthM)} m',
+            flex: _IcmalLayout.columnFlex,
+            align: TextAlign.center,
             dense: true,
           ),
           _IcmalCol(
-            numberFormat.format(tonnage),
-            flex: _IcmalLayout.tonFlex,
-            align: TextAlign.end,
+            '${numberFormat.format(tonnage)} t',
+            flex: _IcmalLayout.columnFlex,
+            align: TextAlign.center,
             dense: true,
             color: AppColors.electricBlueLight,
           ),
@@ -369,26 +379,25 @@ class _IcmalDiameterTotalRow extends StatelessWidget {
       color: AppColors.electricBlue.withValues(alpha: 0.06),
       child: Row(
         children: [
-          const _IcmalCol('TOPLAM', flex: _IcmalLayout.capFlex, bold: true),
-          const _IcmalCol('—', flex: _IcmalLayout.unitFlex, align: TextAlign.end, dense: true),
+          const _IcmalCol('TOPLAM', flex: _IcmalLayout.columnFlex, bold: true, align: TextAlign.center),
           _IcmalCol(
             intFormat.format(barCount),
-            flex: _IcmalLayout.adetFlex,
-            align: TextAlign.end,
+            flex: _IcmalLayout.columnFlex,
+            align: TextAlign.center,
             bold: true,
             dense: true,
           ),
           _IcmalCol(
-            lengthFormat.format(lengthM),
-            flex: _IcmalLayout.boyFlex,
-            align: TextAlign.end,
+            '${lengthFormat.format(lengthM)} m',
+            flex: _IcmalLayout.columnFlex,
+            align: TextAlign.center,
             bold: true,
             dense: true,
           ),
           _IcmalCol(
-            numberFormat.format(tonnage),
-            flex: _IcmalLayout.tonFlex,
-            align: TextAlign.end,
+            '${numberFormat.format(tonnage)} t',
+            flex: _IcmalLayout.columnFlex,
+            align: TextAlign.center,
             bold: true,
             dense: true,
             color: AppColors.electricBlueLight,
@@ -399,13 +408,9 @@ class _IcmalDiameterTotalRow extends StatelessWidget {
   }
 }
 
-/// Metraj icmali sütun oranları — çap dar, sayısal sütunlar geniş.
+/// Metraj icmali — dört eşit sütun: birim ağ., adet, boy, tonaj.
 abstract final class _IcmalLayout {
-  static const capFlex = 2;
-  static const unitFlex = 3;
-  static const adetFlex = 3;
-  static const boyFlex = 4;
-  static const tonFlex = 3;
+  static const columnFlex = 1;
 }
 
 class _IcmalCol extends StatelessWidget {
@@ -728,8 +733,6 @@ class _CetvelTableHeader extends StatelessWidget {
           _Col('Ø', _CetvelLayout.diameterWidth, bold: true),
           _Col('Adet', 0, bold: true, flex: _CetvelLayout.adetFlex, align: TextAlign.end),
           _Col('Boy', 0, bold: true, flex: _CetvelLayout.boyFlex, align: TextAlign.end),
-          _Col('Top.', 0, bold: true, flex: _CetvelLayout.topFlex, align: TextAlign.end),
-          _Col('kg', 0, bold: true, flex: _CetvelLayout.kgFlex, align: TextAlign.end),
           _Col('t', 0, bold: true, flex: _CetvelLayout.tonFlex, align: TextAlign.end),
         ],
       ),
@@ -788,21 +791,6 @@ class _CetvelDataRow extends StatelessWidget {
             dense: true,
           ),
           _Col(
-            '${row.totalQuantity}',
-            0,
-            flex: _CetvelLayout.topFlex,
-            align: TextAlign.end,
-            dense: true,
-          ),
-          _Col(
-            numberFormat.format(row.totalWeightKg),
-            0,
-            flex: _CetvelLayout.kgFlex,
-            align: TextAlign.end,
-            dense: true,
-            color: AppColors.textSecondary,
-          ),
-          _Col(
             numberFormat.format(row.totalTonnage),
             0,
             flex: _CetvelLayout.tonFlex,
@@ -816,15 +804,13 @@ class _CetvelDataRow extends StatelessWidget {
   }
 }
 
-/// Metraj cetveli sütun oranları — Demir dar, sayısal sütunlar geniş.
+/// Metraj cetveli sütun oranları — Demir dar, çap/adet/boy/tonaj rahat.
 abstract final class _CetvelLayout {
   static const indexWidth = 20.0;
-  static const diameterWidth = 24.0;
-  static const demirFlex = 3;
+  static const diameterWidth = 26.0;
+  static const demirFlex = 2;
   static const adetFlex = 2;
-  static const boyFlex = 2;
-  static const topFlex = 3;
-  static const kgFlex = 4;
+  static const boyFlex = 3;
   static const tonFlex = 3;
 }
 

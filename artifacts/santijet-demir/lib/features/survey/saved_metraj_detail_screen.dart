@@ -35,6 +35,7 @@ class SavedMetrajDetailScreen extends ConsumerWidget {
     if (record == null) {
       return Scaffold(
         backgroundColor: AppColors.canvas,
+        primary: false,
         appBar: appSubpageTitleAppBar(context, title: 'Ön İmalat'),
         body: const Center(child: Text('Kayıt bulunamadı')),
       );
@@ -48,6 +49,7 @@ class SavedMetrajDetailScreen extends ConsumerWidget {
 
     return Scaffold(
       backgroundColor: AppColors.canvas,
+      primary: false,
       appBar: appSubpageTitleAppBar(
         context,
         title: 'Ön İmalat',
@@ -93,6 +95,7 @@ class SavedMetrajDetailScreen extends ConsumerWidget {
           const SizedBox(height: 16),
           MetrajTonnageSummaryCards(lines: result.lines),
           if (result.lines.isNotEmpty || result.cetvel.isNotEmpty) ...[
+            const SizedBox(height: 16),
             MetrajCetvelSection(
               lines: result.lines,
               cetvel: result.cetvel,
@@ -236,8 +239,16 @@ class _MetrajDiameterTable extends StatelessWidget {
             child: const Row(
               children: [
                 _HeaderCell('ÇAP', flex: _DiameterTableLayout.capFlex),
-                _HeaderCell('TONAJ', flex: _DiameterTableLayout.tonajFlex),
-                _HeaderCell('UZUNLUK', flex: _DiameterTableLayout.lengthFlex),
+                _HeaderCell(
+                  'TONAJ',
+                  flex: _DiameterTableLayout.tonajFlex,
+                  align: TextAlign.end,
+                ),
+                _HeaderCell(
+                  'UZUNLUK',
+                  flex: _DiameterTableLayout.lengthFlex,
+                  align: TextAlign.end,
+                ),
                 Spacer(),
                 _HeaderCell(
                   'ADET',
@@ -269,10 +280,12 @@ class _MetrajDiameterTable extends StatelessWidget {
                       _DataCell(
                         '${numberFormat.format(line.tonnage)} t',
                         flex: _DiameterTableLayout.tonajFlex,
+                        align: TextAlign.end,
                       ),
                       _DataCell(
                         '${numberFormat.format(line.totalLengthM)} m',
                         flex: _DiameterTableLayout.lengthFlex,
+                        align: TextAlign.end,
                       ),
                       const Spacer(),
                       _DataCell(
@@ -305,8 +318,8 @@ class _MetrajDiameterTable extends StatelessWidget {
 abstract final class _DiameterTableLayout {
   static const capFlex = 2;
   static const tonajFlex = 2;
-  static const lengthFlex = 3;
-  static const adetWidth = 64.0;
+  static const lengthFlex = 4;
+  static const adetWidth = 72.0;
 }
 
 class _HeaderCell extends StatelessWidget {
