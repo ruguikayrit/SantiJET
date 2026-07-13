@@ -17,16 +17,11 @@ import 'package:santijet_demir/domain/entities/cutting_bending.dart';
 import 'package:santijet_demir/features/analysis/providers/cutting_bending_provider.dart';
 import 'package:santijet_demir/features/projects/providers/project_provider.dart';
 import 'package:santijet_demir/features/analysis/widgets/analysis_batch_list_panel.dart';
-import 'package:santijet_demir/features/analysis/widgets/analysis_comparison_section.dart';
 import 'package:santijet_demir/features/analysis/widgets/analysis_fire_summary.dart';
 import 'package:santijet_demir/features/analysis/widgets/collapsible_analysis_section.dart';
-import 'package:santijet_demir/features/analysis/widgets/analysis_optimization_results.dart';
 import 'package:santijet_demir/features/analysis/widgets/analysis_report_actions.dart';
-import 'package:santijet_demir/features/analysis/widgets/paginated_list_section.dart';
-import 'package:santijet_demir/features/analysis/widgets/stock_cut_section.dart';
 import 'package:santijet_demir/features/analysis/widgets/tahvil_calculator_section.dart';
 import 'package:santijet_demir/features/rebar_metraj/widgets/metraj_cutting_actions.dart';
-import 'package:santijet_demir/features/rebar_metraj/widgets/rebar_label_details_section.dart';
 
 class AnalysisScreen extends ConsumerWidget {
   const AnalysisScreen({super.key});
@@ -275,61 +270,11 @@ class _AnalysisSelectedBatchArea extends ConsumerWidget {
             AppSpacing.md,
             0,
             AppSpacing.md,
-            AppSpacing.sm,
+            AppSpacing.md,
           ),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.stretch,
-            children: [
-              CollapsibleAnalysisSection(
-                sectionId: AnalysisSectionIds.comparison,
-                title: 'Mukayese',
-                subtitle: 'Kaynak, revize ve strateji sonuçlarını karşılaştırın',
-                childBuilder: () => AnalysisComparisonSection(batch: batch),
-              ),
-              CollapsibleAnalysisSection(
-                sectionId: AnalysisSectionIds.dataSource,
-                title: '1 · Kaynak Veri',
-                subtitle: 'Metraj etiketleri ve ham parça listesi',
-                childBuilder: () => _AnalysisDataSourceSection(batch: batch),
-              ),
-              CollapsibleAnalysisSection(
-                sectionId: AnalysisSectionIds.optimizationPipeline,
-                title: '2 · Fire Azaltma',
-                subtitle: 'Otomatik fire azaltma sonuçları',
-                childBuilder: () => batch.isOptimized
-                    ? AnalysisOptimizationResultsSection(batch: batch)
-                    : const ModuleEmptyState(
-                        type: EmptyStateType.noOptimizationPending,
-                        inline: true,
-                      ),
-              ),
-              CollapsibleAnalysisSection(
-                sectionId: AnalysisSectionIds.plannedCutting,
-                title: '3 · Planlı Kesim',
-                subtitle:
-                    'Revize listeden ${CuttingBendingBatch.defaultStockBarLengthM.toStringAsFixed(0)} m '
-                    'stok minimum fire kesim planı',
-                childBuilder: () => !batch.isOptimized
-                    ? const ModuleEmptyState(
-                        type: EmptyStateType.noPlannedCuttingPending,
-                        inline: true,
-                      )
-                    : batch.stockCutPlans.isEmpty
-                        ? const ModuleEmptyState(
-                            type: EmptyStateType.noAnalysis,
-                            inline: true,
-                          )
-                        : StockCutSection(
-                            batchId: batch.id,
-                            plans: batch.stockCutPlans,
-                          ),
-              ),
-              const SizedBox(height: 16),
-              AnalysisReportActions(
-                batch: batch,
-                sourceBatches: scopedBatches,
-              ),
-            ],
+          child: AnalysisReportActions(
+            batch: batch,
+            sourceBatches: scopedBatches,
           ),
         ),
       ],
@@ -369,33 +314,6 @@ class _ReportsQuickAccessBar extends StatelessWidget {
           ],
         ),
       ),
-    );
-  }
-}
-
-class _AnalysisDataSourceSection extends StatelessWidget {
-  const _AnalysisDataSourceSection({required this.batch});
-
-  final CuttingBendingBatch batch;
-
-  @override
-  Widget build(BuildContext context) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.stretch,
-      children: [
-        if (batch.labelDetails.isNotEmpty) ...[
-          Text('Etiketler', style: AppTypography.labelMedium),
-          const SizedBox(height: 8),
-          RebarLabelDetailsSection(
-            details: batch.labelDetails,
-            hideHeader: true,
-          ),
-          const SizedBox(height: 16),
-        ],
-        Text('Ham parça listesi', style: AppTypography.labelMedium),
-        const SizedBox(height: 8),
-        _PieceListTable(pieces: batch.pieceLines),
-      ],
     );
   }
 }
@@ -565,90 +483,6 @@ class _MetaChip extends StatelessWidget {
               color: AppColors.textSecondary,
             ),
           ),
-        ],
-      ),
-    );
-  }
-}
-
-class _PieceListTable extends StatelessWidget {
-  const _PieceListTable({required this.pieces});
-
-  final List<RebarPieceLine> pieces;
-
-  @override
-  Widget build(BuildContext context) {
-    if (pieces.isEmpty) {
-      return const ModuleEmptyState(type: EmptyStateType.noSearchResult, inline: true);
-    }
-
-    return PaginatedListSection<RebarPieceLine>(
-      items: pieces,
-      header: const _TableHeader(cells: ['ÇAP', 'BOY (m)', 'ADET']),
-      itemBuilder: (context, piece, index) => _TableRow(
-        cells: [
-          'Ø${piece.diameter}',
-          piece.lengthM.toStringAsFixed(2),
-          AppFormat.integer(piece.quantity),
-        ],
-        accentColor: AppColors.diameterColor(piece.diameter),
-      ),
-    );
-  }
-}
-
-class _TableHeader extends StatelessWidget {
-  const _TableHeader({required this.cells});
-
-  final List<String> cells;
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
-      decoration: const BoxDecoration(
-        border: Border(bottom: BorderSide(color: AppColors.border)),
-      ),
-      child: Row(
-        children: [
-          for (var i = 0; i < cells.length; i++)
-            Expanded(
-              child: Text(
-                cells[i],
-                style: AppTypography.labelMedium,
-                textAlign: i == cells.length - 1 ? TextAlign.end : TextAlign.start,
-              ),
-            ),
-        ],
-      ),
-    );
-  }
-}
-
-class _TableRow extends StatelessWidget {
-  const _TableRow({required this.cells, this.accentColor});
-
-  final List<String> cells;
-  final Color? accentColor;
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
-      decoration: const BoxDecoration(
-        border: Border(bottom: BorderSide(color: AppColors.border)),
-      ),
-      child: Row(
-        children: [
-          for (var i = 0; i < cells.length; i++)
-            Expanded(
-              child: Text(
-                cells[i],
-                style: (i == 0 ? AppTypography.titleMedium : AppTypography.bodyMedium)
-                    .copyWith(color: i == 0 ? accentColor : null),
-                textAlign: i == cells.length - 1 ? TextAlign.end : TextAlign.start,
-              ),
-            ),
         ],
       ),
     );

@@ -1331,6 +1331,68 @@ List<FireDiameterBreakdown> computePlannedFireBreakdown(
   return computeFireBreakdownByDiameter(batch.stockCutPlans);
 }
 
+StockCutPlan? findStockCutPlanForDiameter(
+  List<StockCutPlan> plans,
+  int diameter,
+) {
+  for (final plan in plans) {
+    if (plan.diameter == diameter) return plan;
+  }
+  return null;
+}
+
+class FireWasteLengthBucket {
+  const FireWasteLengthBucket({
+    required this.wasteLengthM,
+    required this.barCount,
+    required this.totalWasteM,
+    required this.wasteTonnage,
+  });
+
+  final double wasteLengthM;
+  final int barCount;
+  final double totalWasteM;
+  final double wasteTonnage;
+}
+
+List<FireWasteLengthBucket> computeFireWasteLengthBuckets(StockCutPlan plan) {
+  final counts = <int, int>{};
+  for (final bar in plan.bars) {
+    if (bar.wasteLengthM <= 0.001) continue;
+    final key = (bar.wasteLengthM * 100).round();
+    counts[key] = (counts[key] ?? 0) + 1;
+  }
+
+  return counts.entries
+      .map((entry) {
+        final wasteLengthM = entry.key / 100;
+        final barCount = entry.value;
+        final totalWasteM = wasteLengthM * barCount;
+        return FireWasteLengthBucket(
+          wasteLengthM: wasteLengthM,
+          barCount: barCount,
+          totalWasteM: totalWasteM,
+          wasteTonnage: RebarWeightCalculator.tonnage(
+            diameterMm: plan.diameter,
+            lengthM: totalWasteM,
+          ),
+        );
+      })
+      .toList()
+    ..sort((a, b) {
+      final countCompare = b.barCount.compareTo(a.barCount);
+      if (countCompare != 0) return countCompare;
+      return b.wasteLengthM.compareTo(a.wasteLengthM);
+    });
+}
+
+List<StockBarCut> listStockBarsWithWaste(StockCutPlan plan) {
+  return plan.bars
+      .where((bar) => bar.wasteLengthM > 0.001)
+      .toList()
+    ..sort((a, b) => b.wasteLengthM.compareTo(a.wasteLengthM));
+}
+
 ({double stockTonnage, double wasteTonnage, double wastePercent})
     _aggregateStockCutFireMetrics(List<StockCutPlan> plans) {
   var stockT = 0.0;

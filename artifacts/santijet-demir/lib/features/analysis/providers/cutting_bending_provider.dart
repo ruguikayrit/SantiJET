@@ -152,6 +152,13 @@ final analysisRawFireBreakdownProvider =
   return analysis_calc.computeRawFireBreakdown(batch);
 });
 
+/// Ham fire kesim planları (12 m stok simülasyonu).
+final analysisRawStockCutPlansProvider = Provider<List<StockCutPlan>>((ref) {
+  final batch = ref.watch(mergedAnalysisBatchProvider);
+  if (batch == null) return const [];
+  return analysis_calc.computeStockCutPlans(batch.pieceLines);
+});
+
 /// Plan fire çap kırılımı.
 final analysisPlannedFireBreakdownProvider =
     Provider<List<analysis_calc.FireDiameterBreakdown>>((ref) {

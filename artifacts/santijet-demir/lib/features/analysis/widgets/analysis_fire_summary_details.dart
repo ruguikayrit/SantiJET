@@ -124,7 +124,7 @@ class _RawMaterialDetail extends ConsumerWidget {
   }
 }
 
-class _RawFireDetail extends ConsumerWidget {
+class _RawFireDetail extends ConsumerStatefulWidget {
   const _RawFireDetail({
     required this.batch,
     required this.summary,
@@ -134,8 +134,20 @@ class _RawFireDetail extends ConsumerWidget {
   final AnalysisFireSummary summary;
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
+  ConsumerState<_RawFireDetail> createState() => _RawFireDetailState();
+}
+
+class _RawFireDetailState extends ConsumerState<_RawFireDetail> {
+  int? _selectedDiameter;
+
+  @override
+  Widget build(BuildContext context) {
     final breakdown = ref.watch(analysisRawFireBreakdownProvider);
+    final plans = ref.watch(analysisRawStockCutPlansProvider);
+    final selectedPlan = _selectedDiameter == null
+        ? null
+        : findStockCutPlanForDiameter(plans, _selectedDiameter!);
+    final selectedBreakdown = _findBreakdown(breakdown, _selectedDiameter);
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -149,21 +161,26 @@ class _RawFireDetail extends ConsumerWidget {
         const SizedBox(height: 10),
         _FormulaRow(
           label: 'Fire tonajı',
-          value: '${AppFormat.tonnage(summary.rawWasteTonnage)} t',
+          value: '${AppFormat.tonnage(widget.summary.rawWasteTonnage)} t',
         ),
         _FormulaRow(
           label: 'Stok tonajı',
-          value: '${AppFormat.tonnage(summary.rawStockTonnage)} t',
+          value: '${AppFormat.tonnage(widget.summary.rawStockTonnage)} t',
         ),
         _FormulaRow(
           label: 'Fire oranı',
           value:
-              '${AppFormat.tonnage(summary.rawWasteTonnage)} ÷ '
-              '${AppFormat.tonnage(summary.rawStockTonnage)} = '
-              '%${summary.rawWastePercent.toStringAsFixed(1)}',
+              '${AppFormat.tonnage(widget.summary.rawWasteTonnage)} ÷ '
+              '${AppFormat.tonnage(widget.summary.rawStockTonnage)} = '
+              '%${widget.summary.rawWastePercent.toStringAsFixed(1)}',
           highlight: true,
         ),
         const SizedBox(height: 10),
+        Text(
+          'Çap satırına dokunarak kesim listesi fire detayını görün',
+          style: AppTypography.labelSmall.copyWith(color: AppColors.textMuted),
+        ),
+        const SizedBox(height: 6),
         const _DetailTableHeader(
           cells: ['ÇAP', 'STOK', 'FİRE', 'FİRE %', 'ÇUBUK'],
         ),
@@ -177,14 +194,26 @@ class _RawFireDetail extends ConsumerWidget {
               '${item.totalBars}',
             ],
             accentColor: AppColors.diameterColor(item.diameter),
+            selected: _selectedDiameter == item.diameter,
+            onTap: () => setState(() {
+              _selectedDiameter =
+                  _selectedDiameter == item.diameter ? null : item.diameter;
+            }),
           ),
         ),
+        if (selectedPlan != null && selectedBreakdown != null)
+          _FireDiameterDrillDown(
+            plan: selectedPlan,
+            breakdown: selectedBreakdown,
+            stockLengthM: CuttingBendingBatch.defaultStockBarLengthM,
+            onClose: () => setState(() => _selectedDiameter = null),
+          ),
       ],
     );
   }
 }
 
-class _PlannedFireDetail extends ConsumerWidget {
+class _PlannedFireDetail extends ConsumerStatefulWidget {
   const _PlannedFireDetail({
     required this.batch,
     required this.summary,
@@ -194,8 +223,15 @@ class _PlannedFireDetail extends ConsumerWidget {
   final AnalysisFireSummary summary;
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
-    if (!summary.isPlannedReady) {
+  ConsumerState<_PlannedFireDetail> createState() => _PlannedFireDetailState();
+}
+
+class _PlannedFireDetailState extends ConsumerState<_PlannedFireDetail> {
+  int? _selectedDiameter;
+
+  @override
+  Widget build(BuildContext context) {
+    if (!widget.summary.isPlannedReady) {
       return Text(
         'Plan fire, analiz tamamlandıktan sonra görünür.',
         style: AppTypography.bodySmall.copyWith(color: AppColors.textMuted),
@@ -203,7 +239,14 @@ class _PlannedFireDetail extends ConsumerWidget {
     }
 
     final breakdown = ref.watch(analysisPlannedFireBreakdownProvider);
-    final strategy = batch.optimizationStrategy?.label ?? '—';
+    final strategy = widget.batch.optimizationStrategy?.label ?? '—';
+    final selectedPlan = _selectedDiameter == null
+        ? null
+        : findStockCutPlanForDiameter(
+            widget.batch.stockCutPlans,
+            _selectedDiameter!,
+          );
+    final selectedBreakdown = _findBreakdown(breakdown, _selectedDiameter);
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -217,21 +260,26 @@ class _PlannedFireDetail extends ConsumerWidget {
         const SizedBox(height: 10),
         _FormulaRow(
           label: 'Fire tonajı',
-          value: '${AppFormat.tonnage(summary.plannedWasteTonnage!)} t',
+          value: '${AppFormat.tonnage(widget.summary.plannedWasteTonnage!)} t',
         ),
         _FormulaRow(
           label: 'Stok tonajı',
-          value: '${AppFormat.tonnage(summary.plannedStockTonnage!)} t',
+          value: '${AppFormat.tonnage(widget.summary.plannedStockTonnage!)} t',
         ),
         _FormulaRow(
           label: 'Fire oranı',
           value:
-              '${AppFormat.tonnage(summary.plannedWasteTonnage!)} ÷ '
-              '${AppFormat.tonnage(summary.plannedStockTonnage!)} = '
-              '%${summary.plannedWastePercent!.toStringAsFixed(1)}',
+              '${AppFormat.tonnage(widget.summary.plannedWasteTonnage!)} ÷ '
+              '${AppFormat.tonnage(widget.summary.plannedStockTonnage!)} = '
+              '%${widget.summary.plannedWastePercent!.toStringAsFixed(1)}',
           highlight: true,
         ),
         const SizedBox(height: 10),
+        Text(
+          'Çap satırına dokunarak kesim listesi fire detayını görün',
+          style: AppTypography.labelSmall.copyWith(color: AppColors.textMuted),
+        ),
+        const SizedBox(height: 6),
         const _DetailTableHeader(
           cells: ['ÇAP', 'STOK', 'FİRE', 'FİRE %', 'ÇUBUK'],
         ),
@@ -245,9 +293,194 @@ class _PlannedFireDetail extends ConsumerWidget {
               '${item.totalBars}',
             ],
             accentColor: AppColors.diameterColor(item.diameter),
+            selected: _selectedDiameter == item.diameter,
+            onTap: () => setState(() {
+              _selectedDiameter =
+                  _selectedDiameter == item.diameter ? null : item.diameter;
+            }),
           ),
         ),
+        if (selectedPlan != null && selectedBreakdown != null)
+          _FireDiameterDrillDown(
+            plan: selectedPlan,
+            breakdown: selectedBreakdown,
+            stockLengthM: CuttingBendingBatch.defaultStockBarLengthM,
+            onClose: () => setState(() => _selectedDiameter = null),
+          ),
       ],
+    );
+  }
+}
+
+class _FireDiameterDrillDown extends StatelessWidget {
+  const _FireDiameterDrillDown({
+    required this.plan,
+    required this.breakdown,
+    required this.stockLengthM,
+    required this.onClose,
+  });
+
+  final StockCutPlan plan;
+  final FireDiameterBreakdown breakdown;
+  final double stockLengthM;
+  final VoidCallback onClose;
+
+  @override
+  Widget build(BuildContext context) {
+    final diameterColor = AppColors.diameterColor(plan.diameter);
+    final wasteBuckets = computeFireWasteLengthBuckets(plan);
+    final wasteBars = listStockBarsWithWaste(plan);
+    final zeroWasteBars = plan.totalBars - wasteBars.length;
+
+    return Container(
+      width: double.infinity,
+      margin: const EdgeInsets.only(top: 12),
+      padding: const EdgeInsets.all(12),
+      decoration: BoxDecoration(
+        color: AppColors.surfaceElevated,
+        borderRadius: AppRadii.sm,
+        border: Border.all(
+          color: diameterColor.withValues(alpha: 0.45),
+        ),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          Row(
+            children: [
+              Expanded(
+                child: Text(
+                  'Ø${plan.diameter} · Kesim listesi fire detayı',
+                  style: AppTypography.titleMedium.copyWith(
+                    color: diameterColor,
+                  ),
+                ),
+              ),
+              IconButton(
+                onPressed: onClose,
+                icon: const Icon(Icons.close, size: 18),
+                color: AppColors.textMuted,
+                visualDensity: VisualDensity.compact,
+                padding: EdgeInsets.zero,
+                constraints: const BoxConstraints(minWidth: 32, minHeight: 32),
+              ),
+            ],
+          ),
+          const SizedBox(height: 6),
+          Text(
+            '${breakdown.totalBars} çubuk · '
+            '${plan.totalWasteM.toStringAsFixed(2)} m fire · '
+            '${AppFormat.tonnage(breakdown.wasteTonnage)} t · '
+            '%${breakdown.wastePercent.toStringAsFixed(1)}',
+            style: AppTypography.bodySmall.copyWith(color: AppColors.textMuted),
+          ),
+          if (wasteBuckets.isNotEmpty) ...[
+            const SizedBox(height: 12),
+            Text('Kalan boy özeti', style: AppTypography.labelMedium),
+            const SizedBox(height: 4),
+            Text(
+              'Kullanılamayan fire parçaları — hangi boyda ne kadar kaldı',
+              style: AppTypography.bodySmall.copyWith(color: AppColors.textMuted),
+            ),
+            const SizedBox(height: 8),
+            const _DetailTableHeader(
+              cells: ['KALAN BOY', 'ÇUBUK', 'TOPLAM FİRE', 'TONAJ'],
+            ),
+            ...wasteBuckets.map(
+              (bucket) => _DetailTableRow(
+                cells: [
+                  '${bucket.wasteLengthM.toStringAsFixed(2)} m',
+                  '${bucket.barCount}',
+                  '${bucket.totalWasteM.toStringAsFixed(2)} m',
+                  '${AppFormat.tonnage(bucket.wasteTonnage)} t',
+                ],
+                accentColor: diameterColor,
+              ),
+            ),
+          ],
+          const SizedBox(height: 12),
+          Text('Fire oluşturan çubuklar', style: AppTypography.labelMedium),
+          const SizedBox(height: 4),
+          Text(
+            wasteBars.isEmpty
+                ? 'Bu çapta fire oluşmadı.'
+                : '$zeroWasteBars çubuk fire oluşturmadı · '
+                    '${wasteBars.length} çubukta kalan parça var',
+            style: AppTypography.bodySmall.copyWith(color: AppColors.textMuted),
+          ),
+          if (wasteBars.isNotEmpty) ...[
+            const SizedBox(height: 8),
+            PaginatedListSection<StockBarCut>(
+              items: wasteBars,
+              pageSize: 15,
+              itemBuilder: (context, bar, index) => Padding(
+                padding: const EdgeInsets.only(bottom: 6),
+                child: _FireBarCutRow(
+                  bar: bar,
+                  stockLengthM: stockLengthM,
+                  diameterColor: diameterColor,
+                ),
+              ),
+            ),
+          ],
+        ],
+      ),
+    );
+  }
+}
+
+class _FireBarCutRow extends StatelessWidget {
+  const _FireBarCutRow({
+    required this.bar,
+    required this.stockLengthM,
+    required this.diameterColor,
+  });
+
+  final StockBarCut bar;
+  final double stockLengthM;
+  final Color diameterColor;
+
+  @override
+  Widget build(BuildContext context) {
+    final parts = bar.members
+        .expand(
+          (member) => List.filled(
+            member.count,
+            '${member.lengthM.toStringAsFixed(2)} m',
+          ),
+        )
+        .join(' + ');
+
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
+      decoration: BoxDecoration(
+        color: AppColors.canvas,
+        borderRadius: AppRadii.sm,
+        border: Border.all(color: AppColors.border),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            'Çubuk ${bar.barIndex}',
+            style: AppTypography.labelMedium.copyWith(color: diameterColor),
+          ),
+          const SizedBox(height: 4),
+          Text(
+            parts.isEmpty ? '—' : '$parts = ${bar.usedLengthM.toStringAsFixed(2)} m',
+            style: AppTypography.bodySmall,
+          ),
+          Text(
+            'Kalan: ${bar.wasteLengthM.toStringAsFixed(2)} m / '
+            '${stockLengthM.toStringAsFixed(0)} m stok',
+            style: AppTypography.bodySmall.copyWith(
+              color: AppColors.warning,
+              fontWeight: FontWeight.w600,
+            ),
+          ),
+        ],
+      ),
     );
   }
 }
@@ -399,17 +632,24 @@ class _DetailTableRow extends StatelessWidget {
   const _DetailTableRow({
     required this.cells,
     this.accentColor,
+    this.onTap,
+    this.selected = false,
   });
 
   final List<String> cells;
   final Color? accentColor;
+  final VoidCallback? onTap;
+  final bool selected;
 
   @override
   Widget build(BuildContext context) {
-    return Container(
-      padding: const EdgeInsets.symmetric(vertical: 8),
-      decoration: const BoxDecoration(
-        border: Border(bottom: BorderSide(color: AppColors.border)),
+    final row = Container(
+      padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 4),
+      decoration: BoxDecoration(
+        color: selected
+            ? AppColors.electricBlueLight.withValues(alpha: 0.08)
+            : null,
+        border: const Border(bottom: BorderSide(color: AppColors.border)),
       ),
       child: Row(
         children: [
@@ -423,8 +663,37 @@ class _DetailTableRow extends StatelessWidget {
                 textAlign: i == 0 ? TextAlign.start : TextAlign.end,
               ),
             ),
+          if (onTap != null) ...[
+            const SizedBox(width: 4),
+            Icon(
+              selected ? Icons.expand_less : Icons.chevron_right,
+              size: 16,
+              color: AppColors.textMuted,
+            ),
+          ],
         ],
       ),
     );
+
+    if (onTap == null) return row;
+
+    return Material(
+      color: Colors.transparent,
+      child: InkWell(
+        onTap: onTap,
+        child: row,
+      ),
+    );
   }
+}
+
+FireDiameterBreakdown? _findBreakdown(
+  List<FireDiameterBreakdown> breakdown,
+  int? diameter,
+) {
+  if (diameter == null) return null;
+  for (final item in breakdown) {
+    if (item.diameter == diameter) return item;
+  }
+  return null;
 }

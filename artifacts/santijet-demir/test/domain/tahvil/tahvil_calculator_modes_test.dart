@@ -3,6 +3,34 @@ import 'package:santijet_demir/domain/tahvil/tahvil_calculator_modes.dart';
 
 void main() {
   group('tahvil calculator modes', () {
+    test('spacing target diameter computes optimum spacing', () {
+      final result = computeSpacingTahvilTarget(
+        sourceDiameter: 16,
+        sourceSpacingMm: 250,
+        inputKind: TahvilSpacingTargetKind.diameter,
+        inputTargetDiameter: 14,
+      );
+
+      expect(result, isNotNull);
+      expect(result!.targetSpacingMm, closeTo(191, 1));
+      expect(result.isAdequate, isTrue);
+      expect(result.isOptimal, isTrue);
+    });
+
+    test('spacing target spacing computes optimum diameter', () {
+      final result = computeSpacingTahvilTarget(
+        sourceDiameter: 16,
+        sourceSpacingMm: 250,
+        inputKind: TahvilSpacingTargetKind.spacing,
+        inputTargetSpacingMm: 191,
+      );
+
+      expect(result, isNotNull);
+      expect(result!.targetDiameter, 14);
+      expect(result.isAdequate, isTrue);
+      expect(result.isOptimal, isTrue);
+    });
+
     test('spacing mode matches Excel φ16@250 → φ14@191 example', () {
       const sourceDiameter = 16;
       const sourceSpacingMm = 250.0;
@@ -55,7 +83,9 @@ void main() {
       expect(comparison!.sourceAreaMm2, closeTo(911.06, 0.5));
       expect(comparison.targetAreaMm2, closeTo(995.88, 1.0));
       expect(comparison.hasAreaDeficit, isFalse);
-      expect(comparison.isAllowed, isFalse);
+      expect(comparison.isAdequate, isTrue);
+      expect(comparison.isOptimal, isFalse);
+      expect(comparison.isAdequateButNotOptimal, isTrue);
     });
 
     test('rejects tahvil when target As is below source As', () {
@@ -72,7 +102,8 @@ void main() {
 
       expect(comparison, isNotNull);
       expect(comparison!.hasAreaDeficit, isTrue);
-      expect(comparison.isAllowed, isFalse);
+      expect(comparison.isAdequate, isFalse);
+      expect(comparison.isOptimal, isFalse);
       expect(comparison.areaRejectReason, isNotNull);
     });
 
@@ -112,6 +143,17 @@ void main() {
       expect(comparison, isNotNull);
       expect(comparison!.isAllowed, isFalse);
       expect(comparison.diameterRuleViolations, isNotEmpty);
+    });
+
+    test('formatDiameterSpacingLabel uses slash separator', () {
+      expect(
+        formatDiameterSpacingLabel(16, 250),
+        'Ø16 / 250 mm',
+      );
+      expect(
+        formatDiameterSpacingLabel(14, 191.2),
+        'Ø14 / 191 mm',
+      );
     });
 
     test('spacing mode rejects diameters outside ±4 mm rule', () {

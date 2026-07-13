@@ -40,21 +40,31 @@ double? computeExcessAreaDeviationPercent(
 
 class TahvilAreaCompliance {
   const TahvilAreaCompliance({
-    required this.isAllowed,
+    required this.isAdequate,
+    required this.isOptimal,
     required this.sourceAreaMm2,
     required this.targetAreaMm2,
     this.excessDeviationPercent,
     this.rejectReason,
   });
 
-  final bool isAllowed;
+  /// Hedef As ≥ kaynak As (kesit yeterli).
+  final bool isAdequate;
+
+  /// Yeterli kesit + fazla kesit limiti içinde.
+  final bool isOptimal;
+
   final double sourceAreaMm2;
   final double targetAreaMm2;
   final double? excessDeviationPercent;
   final String? rejectReason;
 
+  bool get isAllowed => isOptimal;
+
   bool get hasAreaDeficit =>
       targetAreaMm2 + _areaEpsilon < sourceAreaMm2;
+
+  bool get isAdequateButNotOptimal => isAdequate && !isOptimal;
 }
 
 TahvilAreaCompliance evaluateTahvilAreaCompliance({
@@ -63,7 +73,8 @@ TahvilAreaCompliance evaluateTahvilAreaCompliance({
 }) {
   if (sourceAreaMm2 <= 0 || targetAreaMm2 <= 0) {
     return TahvilAreaCompliance(
-      isAllowed: false,
+      isAdequate: false,
+      isOptimal: false,
       sourceAreaMm2: sourceAreaMm2,
       targetAreaMm2: targetAreaMm2,
       rejectReason: 'Geçersiz kesit alanı',
@@ -72,7 +83,8 @@ TahvilAreaCompliance evaluateTahvilAreaCompliance({
 
   if (!isTargetAreaAtLeastSource(sourceAreaMm2, targetAreaMm2)) {
     return TahvilAreaCompliance(
-      isAllowed: false,
+      isAdequate: false,
+      isOptimal: false,
       sourceAreaMm2: sourceAreaMm2,
       targetAreaMm2: targetAreaMm2,
       rejectReason:
@@ -87,7 +99,8 @@ TahvilAreaCompliance evaluateTahvilAreaCompliance({
   )!;
   if (excess / 100 > tahvilMaxAreaDeviationRatio + 1e-9) {
     return TahvilAreaCompliance(
-      isAllowed: false,
+      isAdequate: true,
+      isOptimal: false,
       sourceAreaMm2: sourceAreaMm2,
       targetAreaMm2: targetAreaMm2,
       excessDeviationPercent: excess,
@@ -98,7 +111,8 @@ TahvilAreaCompliance evaluateTahvilAreaCompliance({
   }
 
   return TahvilAreaCompliance(
-    isAllowed: true,
+    isAdequate: true,
+    isOptimal: true,
     sourceAreaMm2: sourceAreaMm2,
     targetAreaMm2: targetAreaMm2,
     excessDeviationPercent: excess,
@@ -126,6 +140,142 @@ double? computeEquivalentSpacingMm({
   return sourceSpacingMm *
       crossSectionAreaUnits(targetDiameter) /
       crossSectionAreaUnits(sourceDiameter);
+}
+
+/// Eşdeğer As için hedef aralıkta gerekli çap (mm, en yakın tam sayı).
+int? computeIdealTargetDiameterMm({
+  required int sourceDiameter,
+  required double sourceSpacingMm,
+  required double targetSpacingMm,
+}) {
+  if (sourceDiameter <= 0 || sourceSpacingMm <= 0 || targetSpacingMm <= 0) {
+    return null;
+  }
+  final ideal = sourceDiameter * math.sqrt(targetSpacingMm / sourceSpacingMm);
+  final rounded = ideal.round();
+  return rounded > 0 ? rounded : null;
+}
+
+enum TahvilSpacingTargetKind {
+  diameter('Hedef çap'),
+  spacing('Hedef aralık');
+
+  const TahvilSpacingTargetKind(this.label);
+  final String label;
+}
+
+class TahvilSpacingTargetResult {
+  const TahvilSpacingTargetResult({
+    required this.inputKind,
+    required this.sourceDiameter,
+    required this.sourceSpacingMm,
+    required this.targetDiameter,
+    required this.targetSpacingMm,
+    required this.sourceAsPerMeterMm2,
+    required this.targetAsPerMeterMm2,
+    required this.isAdequate,
+    required this.isOptimal,
+    this.rejectReason,
+  });
+
+  final TahvilSpacingTargetKind inputKind;
+  final int sourceDiameter;
+  final double sourceSpacingMm;
+  final int targetDiameter;
+  final double targetSpacingMm;
+  final double sourceAsPerMeterMm2;
+  final double targetAsPerMeterMm2;
+  final bool isAdequate;
+  final bool isOptimal;
+  final String? rejectReason;
+
+  bool get isAdequateButNotOptimal => isAdequate && !isOptimal;
+}
+
+TahvilSpacingTargetResult? computeSpacingTahvilTarget({
+  required int sourceDiameter,
+  required double sourceSpacingMm,
+  required TahvilSpacingTargetKind inputKind,
+  int? inputTargetDiameter,
+  double? inputTargetSpacingMm,
+}) {
+  if (sourceDiameter <= 0 || sourceSpacingMm <= 0) return null;
+
+  final sourceAs = computeAsPerMeterMm2(sourceDiameter, sourceSpacingMm);
+  late final int targetDiameter;
+  late final double targetSpacingMm;
+
+  switch (inputKind) {
+    case TahvilSpacingTargetKind.diameter:
+      if (inputTargetDiameter == null || inputTargetDiameter <= 0) return null;
+      if (inputTargetDiameter == sourceDiameter) return null;
+      targetDiameter = inputTargetDiameter;
+      final spacing = computeEquivalentSpacingMm(
+        sourceDiameter: sourceDiameter,
+        sourceSpacingMm: sourceSpacingMm,
+        targetDiameter: targetDiameter,
+      );
+      if (spacing == null || spacing <= 0) return null;
+      targetSpacingMm = spacing;
+    case TahvilSpacingTargetKind.spacing:
+      if (inputTargetSpacingMm == null || inputTargetSpacingMm <= 0) return null;
+      targetSpacingMm = inputTargetSpacingMm;
+      final diameter = computeIdealTargetDiameterMm(
+        sourceDiameter: sourceDiameter,
+        sourceSpacingMm: sourceSpacingMm,
+        targetSpacingMm: targetSpacingMm,
+      );
+      if (diameter == null || diameter <= 0 || diameter == sourceDiameter) {
+        return null;
+      }
+      targetDiameter = diameter;
+  }
+
+  final targetAs = computeAsPerMeterMm2(targetDiameter, targetSpacingMm);
+  final areaCompliance = evaluateTahvilAreaCompliance(
+    sourceAreaMm2: sourceAs,
+    targetAreaMm2: targetAs,
+  );
+
+  final diameterAllowed =
+      isTahvilDiameterAllowed(sourceDiameter, targetDiameter);
+  final spacingCm = targetSpacingMm / 10;
+  final spacingAllowed = spacingCm <= tahvilMaxSpacingCm + 1e-9;
+  final standardDiameter =
+      RebarWeightCalculator.standardDiameters.contains(targetDiameter);
+
+  String? rejectReason;
+  if (!standardDiameter) {
+    rejectReason = 'Ø$targetDiameter standart çap değil';
+  } else if (!diameterAllowed) {
+    rejectReason =
+        '±$tahvilMaxDiameterDiffMm mm çap (fark ${(sourceDiameter - targetDiameter).abs()} mm)';
+  } else if (!spacingAllowed) {
+    rejectReason =
+        'Aralık ${spacingCm.toStringAsFixed(1)} cm '
+        '(limit ${tahvilMaxSpacingCm.toStringAsFixed(0)} cm)';
+  } else if (!areaCompliance.isAdequate) {
+    rejectReason = areaCompliance.rejectReason;
+  } else if (!areaCompliance.isOptimal) {
+    rejectReason = areaCompliance.rejectReason;
+  }
+
+  final ruleOk = diameterAllowed && spacingAllowed && standardDiameter;
+  final isAdequate = ruleOk && areaCompliance.isAdequate;
+  final isOptimal = isAdequate && areaCompliance.isOptimal;
+
+  return TahvilSpacingTargetResult(
+    inputKind: inputKind,
+    sourceDiameter: sourceDiameter,
+    sourceSpacingMm: sourceSpacingMm,
+    targetDiameter: targetDiameter,
+    targetSpacingMm: targetSpacingMm,
+    sourceAsPerMeterMm2: sourceAs,
+    targetAsPerMeterMm2: targetAs,
+    isAdequate: isAdequate,
+    isOptimal: isOptimal,
+    rejectReason: rejectReason,
+  );
 }
 
 class TahvilSpacingResult {
@@ -205,6 +355,7 @@ class TahvilSingleQuantityResult {
     required this.sourceAreaMm2,
     required this.targetAreaMm2,
     required this.isAllowed,
+    required this.isAdequate,
     required this.areaDeviationPercent,
     this.rejectReason,
   });
@@ -214,8 +365,11 @@ class TahvilSingleQuantityResult {
   final double sourceAreaMm2;
   final double targetAreaMm2;
   final bool isAllowed;
+  final bool isAdequate;
   final double areaDeviationPercent;
   final String? rejectReason;
+
+  bool get isAdequateButNotOptimal => isAdequate && !isAllowed;
 }
 
 List<TahvilSingleQuantityResult> computeSingleQuantityTahvilResults({
@@ -250,7 +404,7 @@ List<TahvilSingleQuantityResult> computeSingleQuantityTahvilResults({
     if (!diameterAllowed) {
       rejectReason =
           '±$tahvilMaxDiameterDiffMm mm çap (fark ${(sourceDiameter - targetDiameter).abs()} mm)';
-    } else if (!areaCompliance.isAllowed) {
+    } else if (!areaCompliance.isOptimal) {
       rejectReason = areaCompliance.rejectReason;
     }
 
@@ -261,6 +415,7 @@ List<TahvilSingleQuantityResult> computeSingleQuantityTahvilResults({
         sourceAreaMm2: sourceAreaMm2,
         targetAreaMm2: targetAreaMm2,
         isAllowed: rejectReason == null,
+        isAdequate: diameterAllowed && areaCompliance.isAdequate,
         areaDeviationPercent: areaCompliance.excessDeviationPercent ?? 0,
         rejectReason: rejectReason,
       ),
@@ -269,6 +424,7 @@ List<TahvilSingleQuantityResult> computeSingleQuantityTahvilResults({
 
   results.sort((a, b) {
     if (a.isAllowed != b.isAllowed) return a.isAllowed ? -1 : 1;
+    if (a.isAdequate != b.isAdequate) return a.isAdequate ? -1 : 1;
     if (a.isAllowed && b.isAllowed) {
       final areaDiff =
           a.areaDeviationPercent.compareTo(b.areaDeviationPercent);
@@ -287,7 +443,8 @@ class TahvilDualQuantityComparison {
     required this.sourceAreaMm2,
     required this.targetAreaMm2,
     required this.areaDeviationPercent,
-    required this.isAllowed,
+    required this.isAdequate,
+    required this.isOptimal,
     required this.hasAreaDeficit,
     this.diameterRuleViolations = const [],
     this.areaRejectReason,
@@ -296,10 +453,15 @@ class TahvilDualQuantityComparison {
   final double sourceAreaMm2;
   final double targetAreaMm2;
   final double areaDeviationPercent;
-  final bool isAllowed;
+  final bool isAdequate;
+  final bool isOptimal;
   final bool hasAreaDeficit;
   final List<String> diameterRuleViolations;
   final String? areaRejectReason;
+
+  bool get isAllowed => isOptimal;
+
+  bool get isAdequateButNotOptimal => isAdequate && !isOptimal;
 }
 
 class TahvilDualConversionLeg {
@@ -329,14 +491,20 @@ class TahvilDualSuggestion {
     required this.legA,
     required this.legB,
     required this.comparison,
-    required this.isAllowed,
+    required this.isAdequate,
+    required this.isOptimal,
   });
 
   final String id;
   final TahvilDualConversionLeg legA;
   final TahvilDualConversionLeg legB;
   final TahvilDualQuantityComparison comparison;
-  final bool isAllowed;
+  final bool isAdequate;
+  final bool isOptimal;
+
+  bool get isAllowed => isOptimal;
+
+  bool get isAdequateButNotOptimal => isAdequate && !isOptimal;
 
   String get summary => '${legA.label} · ${legB.label}';
 }
@@ -452,6 +620,9 @@ TahvilDualQuantityComparison? computeDualQuantityComparison({
     sourceDiameterB: sourceDiameterB,
     targetDiameterB: targetDiameterB,
   );
+  final isAdequate =
+      diameterViolations.isEmpty && !areaCompliance.hasAreaDeficit;
+  final isOptimal = isAdequate && areaCompliance.isOptimal;
 
   return TahvilDualQuantityComparison(
     sourceAreaMm2: sourceAreaMm2,
@@ -459,7 +630,8 @@ TahvilDualQuantityComparison? computeDualQuantityComparison({
     areaDeviationPercent: areaCompliance.excessDeviationPercent ?? 0,
     hasAreaDeficit: areaCompliance.hasAreaDeficit,
     areaRejectReason: areaCompliance.rejectReason,
-    isAllowed: diameterViolations.isEmpty && areaCompliance.isAllowed,
+    isAdequate: isAdequate,
+    isOptimal: isOptimal,
     diameterRuleViolations: diameterViolations,
   );
 }
@@ -509,7 +681,8 @@ List<TahvilDualSuggestion> computeDualQuantityTahvilSuggestions({
 
       final legRuleOk =
           (optA.isUnchanged || optA.isAllowed) && (optB.isUnchanged || optB.isAllowed);
-      final isAllowed = legRuleOk && comparison.isAllowed;
+      final isAdequate = legRuleOk && comparison.isAdequate;
+      final isOptimal = legRuleOk && comparison.isOptimal;
 
       suggestions.add(
         TahvilDualSuggestion(
@@ -528,14 +701,16 @@ List<TahvilDualSuggestion> computeDualQuantityTahvilSuggestions({
             targetDiameter: optB.targetDiameter,
           ),
           comparison: comparison,
-          isAllowed: isAllowed,
+          isAdequate: isAdequate,
+          isOptimal: isOptimal,
         ),
       );
     }
   }
 
   suggestions.sort((a, b) {
-    if (a.isAllowed != b.isAllowed) return a.isAllowed ? -1 : 1;
+    if (a.isOptimal != b.isOptimal) return a.isOptimal ? -1 : 1;
+    if (a.isAdequate != b.isAdequate) return a.isAdequate ? -1 : 1;
     final deviation = a.comparison.areaDeviationPercent
         .compareTo(b.comparison.areaDeviationPercent);
     if (deviation != 0) return deviation;
@@ -558,3 +733,6 @@ bool isStandardTahvilDiameter(int? diameter) =>
 String formatAreaMm2(double areaMm2) => areaMm2.toStringAsFixed(2);
 
 String formatSpacingMm(double spacingMm) => spacingMm.toStringAsFixed(0);
+
+String formatDiameterSpacingLabel(int diameterMm, double spacingMm) =>
+    'Ø$diameterMm / ${formatSpacingMm(spacingMm)} mm';

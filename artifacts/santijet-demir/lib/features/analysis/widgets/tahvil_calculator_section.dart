@@ -205,7 +205,8 @@ class _TahvilRulesHint extends StatelessWidget {
   Widget build(BuildContext context) {
     final description = switch (basis) {
       TahvilCalculatorBasis.spacing =>
-        'Kaynak çap ve aralığı girin. Hedef çapta eşdeğer aralık ve As (mm²/m) hesaplanır.',
+        'Kaynak çap ve aralığı girin. Hedef çap veya hedef aralık verin; '
+            'diğer değer otomatik hesaplanır.',
       TahvilCalculatorBasis.quantity =>
         quantityKind == TahvilQuantityKind.single
             ? 'Kaynak adet ve çap girin. Hedef çapta eşdeğer adet ve kesit alanı gösterilir.'
@@ -238,7 +239,7 @@ class _TahvilRulesHint extends StatelessWidget {
   }
 }
 
-class _SpacingModePanel extends StatelessWidget {
+class _SpacingModePanel extends StatefulWidget {
   const _SpacingModePanel({
     required this.fields,
     required this.onChanged,
@@ -248,20 +249,70 @@ class _SpacingModePanel extends StatelessWidget {
   final VoidCallback onChanged;
 
   @override
+  State<_SpacingModePanel> createState() => _SpacingModePanelState();
+}
+
+class _SpacingModePanelState extends State<_SpacingModePanel> {
+  TahvilSpacingTargetKind _targetKind = TahvilSpacingTargetKind.diameter;
+  final _targetDiameterController = TextEditingController();
+  final _targetSpacingController = TextEditingController();
+
+  @override
+  void dispose() {
+    _targetDiameterController.dispose();
+    _targetSpacingController.dispose();
+    super.dispose();
+  }
+
+  void _handleChanged() {
+    widget.onChanged();
+    setState(() {});
+  }
+
+  void _onTargetKindChanged(TahvilSpacingTargetKind kind) {
+    setState(() {
+      _targetKind = kind;
+      if (kind == TahvilSpacingTargetKind.diameter) {
+        _targetSpacingController.clear();
+      } else {
+        _targetDiameterController.clear();
+      }
+    });
+    widget.onChanged();
+  }
+
+  @override
   Widget build(BuildContext context) {
+    final fields = widget.fields;
     final diameter = fields.diameter;
     final spacingMm = fields.spacingMm;
-    final isReady = diameter != null && spacingMm != null;
-    final results = isReady
-        ? computeSpacingTahvilResults(
-            sourceDiameter: diameter!,
-            sourceSpacingMm: spacingMm!,
-          )
-        : const <TahvilSpacingResult>[];
-    final allowed = results.where((item) => item.isAllowed).toList();
-    final sourceAs = isReady
+    final sourceReady = diameter != null && spacingMm != null;
+    final sourceAs = sourceReady
         ? computeAsPerMeterMm2(diameter!, spacingMm!)
         : null;
+
+    final targetDiameterInput = int.tryParse(_targetDiameterController.text.trim());
+    final targetSpacingInput = double.tryParse(
+      _targetSpacingController.text.trim().replaceAll(',', '.'),
+    );
+
+    final result = sourceReady
+        ? computeSpacingTahvilTarget(
+            sourceDiameter: diameter!,
+            sourceSpacingMm: spacingMm!,
+            inputKind: _targetKind,
+            inputTargetDiameter: _targetKind == TahvilSpacingTargetKind.diameter
+                ? targetDiameterInput
+                : null,
+            inputTargetSpacingMm: _targetKind == TahvilSpacingTargetKind.spacing
+                ? targetSpacingInput
+                : null,
+          )
+        : null;
+
+    final targetInputReady = _targetKind == TahvilSpacingTargetKind.diameter
+        ? targetDiameterInput != null && targetDiameterInput > 0
+        : targetSpacingInput != null && targetSpacingInput > 0;
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -276,13 +327,13 @@ class _SpacingModePanel extends StatelessWidget {
                 _NumericField(
                   controller: fields.diameterController,
                   hint: '16',
-                  onChanged: onChanged,
+                  onChanged: _handleChanged,
                 ),
                 _NumericField(
                   controller: fields.spacingController,
                   hint: '250',
                   decimal: true,
-                  onChanged: onChanged,
+                  onChanged: _handleChanged,
                 ),
               ],
             ),
@@ -295,37 +346,229 @@ class _SpacingModePanel extends StatelessWidget {
             value: '${formatAreaMm2(sourceAs)} mm²/m',
           ),
         ],
-        if (!isReady) ...[
+        if (!sourceReady) ...[
           const SizedBox(height: 12),
           Text(
-            'Hesap için çap ve aralık alanlarını doldurun.',
+            'Hesap için kaynak çap ve aralık alanlarını doldurun.',
             style: AppTypography.bodySmall.copyWith(color: AppColors.textMuted),
-          ),
-        ] else if (results.isEmpty) ...[
-          const SizedBox(height: 12),
-          Text(
-            'Girilen değerler için tahvil hesabı yapılamadı.',
-            style: AppTypography.bodySmall.copyWith(color: AppColors.critical),
           ),
         ] else ...[
           const SizedBox(height: 14),
-          Text('Hedef tahvil seçenekleri', style: AppTypography.titleMedium),
+          Text('Hedef tahvil', style: AppTypography.titleMedium),
           const SizedBox(height: 8),
-          ...results.map(
-            (result) => Padding(
-              padding: const EdgeInsets.only(bottom: 8),
-              child: _SpacingResultCard(
-                sourceDiameter: diameter!,
-                sourceSpacingMm: spacingMm!,
-                result: result,
-                isOptimal: allowed.isNotEmpty &&
-                    result.isAllowed &&
-                    result.targetDiameter == allowed.first.targetDiameter,
-              ),
-            ),
+          _ModeSegmentedControl<TahvilSpacingTargetKind>(
+            values: TahvilSpacingTargetKind.values,
+            selected: _targetKind,
+            labelBuilder: (value) => value.label,
+            onSelected: _onTargetKindChanged,
+            compact: true,
           ),
+          const SizedBox(height: 10),
+          _ExcelStyleTable(
+            title: 'Hedef donatı',
+            accentColor: AppColors.electricBlueLight,
+            children: [
+              if (_targetKind == TahvilSpacingTargetKind.diameter) ...[
+                _InputRow(
+                  labels: const ['HEDEF ÇAP (mm)', 'HESAPLANAN ARALIK (mm)'],
+                  fields: [
+                    _NumericField(
+                      controller: _targetDiameterController,
+                      hint: '14',
+                      accent: _FieldAccent.target,
+                      onChanged: _handleChanged,
+                    ),
+                    _ComputedField(
+                      value: result != null
+                          ? formatDiameterSpacingLabel(
+                              result.targetDiameter,
+                              result.targetSpacingMm,
+                            )
+                          : null,
+                      hint: '—',
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 6),
+                Wrap(
+                  spacing: 6,
+                  runSpacing: 6,
+                  children: [
+                    for (final option in RebarWeightCalculator.standardDiameters)
+                      if (option != diameter)
+                        _DiameterChip(
+                          diameter: option,
+                          selected: targetDiameterInput == option,
+                          enabled: isTahvilDiameterAllowed(diameter!, option),
+                          onTap: () {
+                            _targetDiameterController.text = '$option';
+                            _handleChanged();
+                          },
+                        ),
+                  ],
+                ),
+              ] else ...[
+                _InputRow(
+                  labels: const ['HEDEF ARALIK (mm)', 'HESAPLANAN ÇAP (mm)'],
+                  fields: [
+                    _NumericField(
+                      controller: _targetSpacingController,
+                      hint: '191',
+                      decimal: true,
+                      accent: _FieldAccent.target,
+                      onChanged: _handleChanged,
+                    ),
+                    _ComputedField(
+                      value: result != null
+                          ? formatDiameterSpacingLabel(
+                              result.targetDiameter,
+                              result.targetSpacingMm,
+                            )
+                          : null,
+                      hint: '—',
+                    ),
+                  ],
+                ),
+              ],
+            ],
+          ),
+          const SizedBox(height: 12),
+          if (!targetInputReady)
+            Text(
+              _targetKind == TahvilSpacingTargetKind.diameter
+                  ? 'Hedef çap girin — optimum aralık hesaplanacak.'
+                  : 'Hedef aralık girin — optimum çap hesaplanacak.',
+              style: AppTypography.bodySmall.copyWith(color: AppColors.textMuted),
+            )
+          else if (result == null)
+            Text(
+              'Girilen hedef için tahvil hesabı yapılamadı.',
+              style: AppTypography.bodySmall.copyWith(color: AppColors.critical),
+            )
+          else
+            _SpacingTargetResultCard(result: result),
         ],
       ],
+    );
+  }
+}
+
+class _ComputedField extends StatelessWidget {
+  const _ComputedField({
+    required this.value,
+    required this.hint,
+  });
+
+  final String? value;
+  final String hint;
+
+  @override
+  Widget build(BuildContext context) {
+    final hasValue = value != null && value!.isNotEmpty;
+
+    return Container(
+      alignment: Alignment.center,
+      padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 12),
+      decoration: BoxDecoration(
+        color: hasValue
+            ? AppColors.electricBlueLight.withValues(alpha: 0.12)
+            : AppColors.canvas,
+        borderRadius: AppRadii.sm,
+        border: Border.all(
+          color: hasValue
+              ? AppColors.electricBlueLight.withValues(alpha: 0.45)
+              : AppColors.border,
+        ),
+      ),
+      child: Text(
+        hasValue ? value! : hint,
+        textAlign: TextAlign.center,
+        style: AppTypography.bodySmall.copyWith(
+          fontWeight: FontWeight.w700,
+          color: hasValue ? AppColors.electricBlueLight : AppColors.textMuted,
+        ),
+      ),
+    );
+  }
+}
+
+class _SpacingTargetResultCard extends StatelessWidget {
+  const _SpacingTargetResultCard({required this.result});
+
+  final TahvilSpacingTargetResult result;
+
+  @override
+  Widget build(BuildContext context) {
+    final accent = result.isOptimal
+        ? AppColors.success
+        : result.isAdequateButNotOptimal
+            ? AppColors.info
+            : AppColors.critical;
+    final targetColor = AppColors.diameterColor(result.targetDiameter);
+
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.all(14),
+      decoration: BoxDecoration(
+        color: accent.withValues(alpha: 0.06),
+        borderRadius: AppRadii.md,
+        border: Border.all(color: accent.withValues(alpha: 0.35)),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Expanded(
+                child: Text(
+                  '${formatDiameterSpacingLabel(result.sourceDiameter, result.sourceSpacingMm)}  →  '
+                  '${formatDiameterSpacingLabel(result.targetDiameter, result.targetSpacingMm)}',
+                  style: AppTypography.titleMedium.copyWith(color: targetColor),
+                ),
+              ),
+              if (result.isOptimal)
+                const _StatusBadge(label: 'Optimum', color: AppColors.success)
+              else if (result.isAdequateButNotOptimal) ...[
+                const _StatusBadge(label: 'Uygun', color: AppColors.success),
+                const SizedBox(width: 6),
+                const _StatusBadge(
+                  label: 'Optimum değil',
+                  color: AppColors.warning,
+                ),
+              ] else
+                const _StatusBadge(
+                  label: 'Uygun değil',
+                  color: AppColors.critical,
+                ),
+            ],
+          ),
+          if (result.rejectReason != null && !result.isOptimal) ...[
+            const SizedBox(height: 6),
+            Text(
+              result.rejectReason!,
+              style: AppTypography.bodySmall.copyWith(color: AppColors.critical),
+            ),
+          ],
+          const SizedBox(height: 8),
+          Text(
+            'As: ${formatAreaMm2(result.sourceAsPerMeterMm2)} mm²/m → '
+            '${formatAreaMm2(result.targetAsPerMeterMm2)} mm²/m',
+            style: AppTypography.bodyMedium.copyWith(fontWeight: FontWeight.w600),
+          ),
+          const SizedBox(height: 4),
+          Text(
+            result.isOptimal
+                ? 'Tahvil uygundur — hedef '
+                    '${formatDiameterSpacingLabel(result.targetDiameter, result.targetSpacingMm)} '
+                    '(${(result.targetSpacingMm / 10).toStringAsFixed(1)} cm)'
+                : result.isAdequateButNotOptimal
+                    ? 'Tahvil uygundur — hedef As kaynak Asa eşit veya büyük, '
+                        'ancak fazla kesit limiti nedeniyle optimum değil.'
+                    : 'Tahvil koşulları sağlanmıyor.',
+            style: AppTypography.bodySmall.copyWith(color: accent),
+          ),
+        ],
+      ),
     );
   }
 }
@@ -510,8 +753,8 @@ class _DualQuantityModePanelState extends State<_DualQuantityModePanel> {
   @override
   Widget build(BuildContext context) {
     final suggestions = _suggestions;
-    final allowedSuggestions =
-        suggestions.where((item) => item.isAllowed).toList();
+    final optimalSuggestions =
+        suggestions.where((item) => item.isOptimal).toList();
     final manualComparison = _manualComparison;
     final sourceArea = _sourceReady
         ? crossSectionAreaMm2(sourceA.diameter!) * sourceA.quantity! +
@@ -593,9 +836,9 @@ class _DualQuantityModePanelState extends State<_DualQuantityModePanel> {
                 child: _DualSuggestionCard(
                   suggestion: suggestion,
                   selected: _selectedSuggestionId == suggestion.id,
-                  isOptimal: allowedSuggestions.isNotEmpty &&
-                      suggestion.isAllowed &&
-                      suggestion.id == allowedSuggestions.first.id,
+                  isOptimal: optimalSuggestions.isNotEmpty &&
+                      suggestion.isOptimal &&
+                      suggestion.id == optimalSuggestions.first.id,
                   onTap: () => _applySuggestion(suggestion),
                 ),
               ),
@@ -695,18 +938,22 @@ class _DualSuggestionCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final comparison = suggestion.comparison;
-    final accent = suggestion.isAllowed
+    final accent = suggestion.isOptimal
         ? AppColors.success
-        : comparison.hasAreaDeficit
-            ? AppColors.critical
-            : AppColors.warning;
+        : suggestion.isAdequate
+            ? AppColors.info
+            : comparison.hasAreaDeficit
+                ? AppColors.critical
+                : AppColors.warning;
 
     return Material(
       color: selected
           ? AppColors.electricBlueLight.withValues(alpha: 0.1)
-          : suggestion.isAllowed
+          : suggestion.isOptimal
               ? AppColors.success.withValues(alpha: 0.05)
-              : AppColors.surfaceElevated,
+              : suggestion.isAdequate
+                  ? AppColors.info.withValues(alpha: 0.06)
+                  : AppColors.surfaceElevated,
       borderRadius: AppRadii.md,
       child: InkWell(
         onTap: onTap,
@@ -737,14 +984,22 @@ class _DualSuggestionCard extends StatelessWidget {
                   ),
                   if (isOptimal)
                     const _StatusBadge(label: 'Optimum', color: AppColors.success)
-                  else if (!suggestion.isAllowed)
-                    _StatusBadge(
-                      label: comparison.hasAreaDeficit
-                          ? 'Yetersiz As'
-                          : 'Uygun değil',
-                      color: comparison.hasAreaDeficit
-                          ? AppColors.critical
-                          : AppColors.warning,
+                  else if (suggestion.isAdequate) ...[
+                    const _StatusBadge(label: 'Uygun', color: AppColors.success),
+                    const SizedBox(width: 6),
+                    const _StatusBadge(
+                      label: 'Optimum değil',
+                      color: AppColors.warning,
+                    ),
+                  ] else if (comparison.hasAreaDeficit)
+                    const _StatusBadge(
+                      label: 'Yetersiz As',
+                      color: AppColors.critical,
+                    )
+                  else
+                    const _StatusBadge(
+                      label: 'Uygun değil',
+                      color: AppColors.warning,
                     ),
                 ],
               ),
@@ -1127,44 +1382,6 @@ class _AsBadge extends StatelessWidget {
   }
 }
 
-class _SpacingResultCard extends StatelessWidget {
-  const _SpacingResultCard({
-    required this.sourceDiameter,
-    required this.sourceSpacingMm,
-    required this.result,
-    required this.isOptimal,
-  });
-
-  final int sourceDiameter;
-  final double sourceSpacingMm;
-  final TahvilSpacingResult result;
-  final bool isOptimal;
-
-  @override
-  Widget build(BuildContext context) {
-    return _ResultCardShell(
-      title: 'Ø$sourceDiameter @ ${formatSpacingMm(sourceSpacingMm)} mm  →  '
-          'Ø${result.targetDiameter} @ ${formatSpacingMm(result.resultingSpacingMm)} mm',
-      isAllowed: result.isAllowed,
-      isOptimal: isOptimal,
-      rejectReason: result.rejectReason,
-      targetDiameter: result.targetDiameter,
-      children: [
-        Text(
-          'As = ${formatAreaMm2(result.asPerMeterMm2)} mm²/m',
-          style: AppTypography.bodyMedium.copyWith(fontWeight: FontWeight.w600),
-        ),
-        const SizedBox(height: 4),
-        Text(
-          'Yeni aralık: ${formatSpacingMm(result.resultingSpacingMm)} mm '
-          '(${(result.resultingSpacingMm / 10).toStringAsFixed(1)} cm)',
-          style: AppTypography.bodySmall.copyWith(color: AppColors.textMuted),
-        ),
-      ],
-    );
-  }
-}
-
 class _SingleQuantityResultCard extends StatelessWidget {
   const _SingleQuantityResultCard({
     required this.sourceDiameter,
@@ -1201,12 +1418,19 @@ class _SingleQuantityResultCard extends StatelessWidget {
         const SizedBox(height: 4),
         Text(
           result.isAllowed
-              ? 'Fazla kesit %${result.areaDeviationPercent.toStringAsFixed(2)} (uygun)'
-              : result.targetAreaMm2 + 1e-6 < result.sourceAreaMm2
-                  ? 'Hedef As kaynak Astan küçük — tahvil uygun değil'
-                  : 'Fazla kesit %${result.areaDeviationPercent.toStringAsFixed(2)}',
+              ? 'Fazla kesit %${result.areaDeviationPercent.toStringAsFixed(2)} (optimum)'
+              : result.isAdequate
+                  ? 'Tahvil uygun — fazla kesit %${result.areaDeviationPercent.toStringAsFixed(2)} '
+                      '(optimum değil, limit %${(tahvilMaxAreaDeviationRatio * 100).toStringAsFixed(0)})'
+                  : result.targetAreaMm2 + 1e-6 < result.sourceAreaMm2
+                      ? 'Hedef As kaynak Astan küçük — tahvil uygun değil'
+                      : 'Fazla kesit %${result.areaDeviationPercent.toStringAsFixed(2)}',
           style: AppTypography.bodySmall.copyWith(
-            color: result.isAllowed ? AppColors.success : AppColors.critical,
+            color: result.isAllowed
+                ? AppColors.success
+                : result.isAdequate
+                    ? AppColors.info
+                    : AppColors.critical,
           ),
         ),
       ],
@@ -1225,11 +1449,13 @@ class _DualComparisonCard extends StatelessWidget {
       comparison.sourceAreaMm2,
       comparison.targetAreaMm2,
     );
-    final accent = comparison.isAllowed
+    final accent = comparison.isOptimal
         ? AppColors.success
-        : comparison.hasAreaDeficit
-            ? AppColors.critical
-            : AppColors.warning;
+        : comparison.isAdequateButNotOptimal
+            ? AppColors.info
+            : comparison.hasAreaDeficit
+                ? AppColors.critical
+                : AppColors.warning;
 
     return Container(
       width: double.infinity,
@@ -1242,7 +1468,26 @@ class _DualComparisonCard extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text('Kesit alanı mukayesesı', style: AppTypography.titleMedium),
+          Row(
+            children: [
+              Expanded(
+                child: Text(
+                  'Kesit alanı mukayesesı',
+                  style: AppTypography.titleMedium,
+                ),
+              ),
+              if (comparison.isOptimal)
+                const _StatusBadge(label: 'Optimum', color: AppColors.success)
+              else if (comparison.isAdequateButNotOptimal) ...[
+                const _StatusBadge(label: 'Uygun', color: AppColors.success),
+                const SizedBox(width: 6),
+                const _StatusBadge(
+                  label: 'Optimum değil',
+                  color: AppColors.warning,
+                ),
+              ],
+            ],
+          ),
           const SizedBox(height: 8),
           Text(
             'Kaynak As: ${formatAreaMm2(comparison.sourceAreaMm2)} mm²',
@@ -1254,7 +1499,7 @@ class _DualComparisonCard extends StatelessWidget {
           ),
           const SizedBox(height: 6),
           Text(
-            '$symbol  Sapma %${comparison.areaDeviationPercent.toStringAsFixed(2)}',
+            '$symbol  Fazla kesit %${comparison.areaDeviationPercent.toStringAsFixed(2)}',
             style: AppTypography.bodyMedium.copyWith(
               color: accent,
               fontWeight: FontWeight.w700,
@@ -1262,21 +1507,27 @@ class _DualComparisonCard extends StatelessWidget {
           ),
           const SizedBox(height: 4),
           Text(
-            comparison.isAllowed
-                ? 'Hedef As kaynak Asa eşit veya büyük — kabul limiti içinde.'
-                : comparison.hasAreaDeficit
-                    ? comparison.areaRejectReason ??
-                        'Hedef As kaynak Astan küçük — tahvil uygun değil.'
-                    : comparison.diameterRuleViolations.isNotEmpty
-                        ? comparison.diameterRuleViolations.join(' · ')
-                        : comparison.areaRejectReason ??
-                            'Fazla kesit limiti aşılıyor.',
+            comparison.isOptimal
+                ? 'Tahvil uygundur ve optimum aralıkta.'
+                : comparison.isAdequateButNotOptimal
+                    ? 'Tahvil uygundur — hedef As kaynak Asa eşit veya büyük. '
+                        'Fazla kesit %${comparison.areaDeviationPercent.toStringAsFixed(1)} '
+                        'ile optimum değil (limit %${(tahvilMaxAreaDeviationRatio * 100).toStringAsFixed(0)}).'
+                    : comparison.hasAreaDeficit
+                        ? comparison.areaRejectReason ??
+                            'Hedef As kaynak Astan küçük — tahvil uygun değil.'
+                        : comparison.diameterRuleViolations.isNotEmpty
+                            ? comparison.diameterRuleViolations.join(' · ')
+                            : comparison.areaRejectReason ??
+                                'Tahvil koşulları sağlanmıyor.',
             style: AppTypography.bodySmall.copyWith(
-              color: comparison.isAllowed
-                  ? AppColors.textMuted
-                  : comparison.hasAreaDeficit
-                      ? AppColors.critical
-                      : AppColors.textMuted,
+              color: comparison.isOptimal
+                  ? AppColors.success
+                  : comparison.isAdequateButNotOptimal
+                      ? AppColors.info
+                      : comparison.hasAreaDeficit
+                          ? AppColors.critical
+                          : AppColors.textMuted,
             ),
           ),
         ],
