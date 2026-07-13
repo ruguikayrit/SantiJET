@@ -7,6 +7,7 @@ import 'package:santijet_demir/core/routing/app_routes.dart';
 import 'package:santijet_demir/core/theme/app_colors.dart';
 import 'package:santijet_demir/core/theme/app_spacing.dart';
 import 'package:santijet_demir/core/theme/app_typography.dart';
+import 'package:santijet_demir/core/responsive/responsive_layout.dart';
 import 'package:santijet_demir/core/widgets/app_bottom_nav_bar.dart';
 import 'package:santijet_demir/core/widgets/project_permission_gate.dart';
 import 'package:santijet_demir/core/widgets/santijet_header.dart';
@@ -202,6 +203,8 @@ class _DashboardKpiSliver extends ConsumerWidget {
     );
   }
 }
+
+class _DashboardSurveyBar extends ConsumerWidget {
   const _DashboardSurveyBar();
 
   @override
@@ -218,7 +221,7 @@ class _DashboardKpiSliver extends ConsumerWidget {
   }
 }
 
-class _DashboardSurveyBar extends ConsumerWidget {
+class _DashboardAlertsBlock extends ConsumerWidget {
   const _DashboardAlertsBlock();
 
   @override

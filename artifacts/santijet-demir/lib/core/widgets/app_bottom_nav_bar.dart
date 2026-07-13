@@ -134,7 +134,7 @@ class _NavItem extends StatelessWidget {
     final inactiveColor = AppColors.textMuted.withValues(alpha: 0.85);
 
     Widget child = ConstrainedBox(
-      constraints: const BoxConstraints(minHeight: _minTapExtent),
+      constraints: const BoxConstraints(minHeight: AppBottomNavBar._minTapExtent),
       child: SizedBox.expand(
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
@@ -142,8 +142,8 @@ class _NavItem extends StatelessWidget {
             AnimatedContainer(
               duration: const Duration(milliseconds: 220),
               curve: Curves.easeOutCubic,
-              width: _activeIndicatorSize,
-              height: _activeIndicatorSize,
+              width: AppBottomNavBar._activeIndicatorSize,
+              height: AppBottomNavBar._activeIndicatorSize,
               alignment: Alignment.center,
               decoration: BoxDecoration(
                 shape: BoxShape.circle,
@@ -159,7 +159,9 @@ class _NavItem extends StatelessWidget {
               ),
               child: Icon(
                 selected ? activeIcon : icon,
-                size: showLabel ? _iconSizeTablet : _iconSize,
+                size: showLabel
+                    ? AppBottomNavBar._iconSizeTablet
+                    : AppBottomNavBar._iconSize,
                 color: selected ? activeColor : inactiveColor,
               ),
             ),
