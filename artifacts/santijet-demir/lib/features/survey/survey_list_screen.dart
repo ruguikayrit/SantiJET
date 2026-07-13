@@ -6,6 +6,7 @@ import 'package:santijet_demir/core/theme/app_colors.dart';
 import 'package:santijet_demir/core/theme/app_radii.dart';
 import 'package:santijet_demir/core/theme/app_spacing.dart';
 import 'package:santijet_demir/core/theme/app_typography.dart';
+import 'package:santijet_demir/core/widgets/app_subpage_app_bar.dart';
 import 'package:santijet_demir/core/widgets/swipe_to_delete_row.dart';
 import 'package:santijet_demir/data/services/export_service.dart';
 import 'package:santijet_demir/domain/entities/survey.dart';
@@ -166,14 +167,14 @@ class _SurveyListScreenState extends ConsumerState<SurveyListScreen>
     return Scaffold(
       backgroundColor: screenBg,
       resizeToAvoidBottomInset: false,
-      appBar: AppBar(
+      appBar: appTabbedSubpageAppBar(
+        context,
         backgroundColor: screenBg,
-        title: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text('Keşif', style: AppTypography.titleLarge),
-            Text(project.projectName, style: AppTypography.labelMedium),
-          ],
+        tabBar: _SurveyProportionalTabBar(
+          controller: _tabController,
+          labelStyle: tabLabelStyle,
+          labels: const ['İmalat', 'Otomatik Metraj', 'Ön İmalat'],
+          flexes: const [1, 2, 1],
         ),
         actions: [
           if (compactTabs)
@@ -183,18 +184,15 @@ class _SurveyListScreenState extends ConsumerState<SurveyListScreen>
               tooltip: 'Yeni İmalat',
             )
           else
-            TextButton.icon(
-              onPressed: canEdit ? _showCreateImalatDialog : null,
-              icon: const Icon(Icons.add, size: 18),
-              label: const Text('Yeni İmalat'),
+            Padding(
+              padding: const EdgeInsets.only(right: 4),
+              child: TextButton.icon(
+                onPressed: canEdit ? _showCreateImalatDialog : null,
+                icon: const Icon(Icons.add, size: 18),
+                label: const Text('Yeni İmalat'),
+              ),
             ),
         ],
-        bottom: _SurveyProportionalTabBar(
-          controller: _tabController,
-          labelStyle: tabLabelStyle,
-          labels: const ['İmalat', 'Otomatik Metraj', 'Ön İmalat'],
-          flexes: const [1, 2, 1],
-        ),
       ),
       body: ColoredBox(
         color: screenBg,
@@ -596,7 +594,7 @@ class _BottomActions extends ConsumerWidget {
   }
 }
 
-class _SurveyProportionalTabBar extends StatelessWidget implements PreferredSizeWidget {
+class _SurveyProportionalTabBar extends StatelessWidget {
   const _SurveyProportionalTabBar({
     required this.controller,
     required this.labels,
@@ -608,9 +606,6 @@ class _SurveyProportionalTabBar extends StatelessWidget implements PreferredSize
   final List<String> labels;
   final List<double> flexes;
   final TextStyle labelStyle;
-
-  @override
-  Size get preferredSize => const Size.fromHeight(48);
 
   @override
   Widget build(BuildContext context) {

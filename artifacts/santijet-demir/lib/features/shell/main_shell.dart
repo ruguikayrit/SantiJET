@@ -4,16 +4,16 @@ import 'package:go_router/go_router.dart';
 import 'package:santijet_demir/core/animations/app_animations.dart';
 import 'package:santijet_demir/core/format/app_format.dart';
 import 'package:santijet_demir/core/routing/app_routes.dart';
-import 'package:santijet_demir/core/responsive/app_safe_area.dart';
-import 'package:santijet_demir/core/responsive/responsive_layout.dart';
 import 'package:santijet_demir/core/theme/app_colors.dart';
 import 'package:santijet_demir/core/theme/app_spacing.dart';
 import 'package:santijet_demir/core/theme/app_typography.dart';
 import 'package:santijet_demir/core/widgets/app_bottom_nav_bar.dart';
-import 'package:santijet_demir/core/widgets/app_components.dart';
-import 'package:santijet_demir/core/widgets/santijet_header.dart';
 import 'package:santijet_demir/core/widgets/project_permission_gate.dart';
+import 'package:santijet_demir/core/widgets/santijet_header.dart';
+import 'package:santijet_demir/core/widgets/shell_tab_guard.dart';
+import 'package:santijet_demir/core/widgets/summary_kpi_grid.dart';
 import 'package:santijet_demir/features/analysis/widgets/analysis_running_lock_overlay.dart';
+import 'package:santijet_demir/features/projects/providers/project_provider.dart';
 import 'package:santijet_demir/features/projects/widgets/project_switcher.dart';
 import 'package:santijet_demir/features/settings/providers/profile_provider.dart';
 import 'package:santijet_demir/features/shell/dashboard_feed_provider.dart';
@@ -22,13 +22,13 @@ import 'package:santijet_demir/features/shell/widgets/dashboard_feed_section.dar
 import 'package:santijet_demir/features/shell/widgets/project_progress_section.dart';
 import 'package:santijet_demir/features/survey/providers/survey_provider.dart';
 
-class MainShell extends StatelessWidget {
+class MainShell extends ConsumerWidget {
   const MainShell({super.key, required this.navigationShell});
 
   final StatefulNavigationShell navigationShell;
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
     return Stack(
       fit: StackFit.expand,
       children: [
@@ -47,9 +47,15 @@ class MainShell extends StatelessWidget {
                         MediaQuery.of(context).viewPadding.copyWith(bottom: 0),
                   ),
                   child: ResponsiveLayout(
-                    child: AppSafeArea(
+                    child: SafeArea(
                       bottom: false,
-                      child: navigationShell,
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.stretch,
+                        children: [
+                          const ReadOnlyBanner(),
+                          Expanded(child: navigationShell),
+                        ],
+                      ),
                     ),
                   ),
                 ),
@@ -75,14 +81,7 @@ class DashboardScreen extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final avatarInitial = ref.watch(profileInitialProvider);
-    final surveySummary = ref.watch(surveyDashboardSummaryProvider);
-    final dashboard = ref.watch(dashboardKpiProvider);
-    final alerts = ref.watch(dashboardCriticalAlertsProvider);
-    final activities = ref.watch(dashboardRecentActivitiesProvider);
-    final surveyTonnageLabel = AppFormat.tonnage(dashboard.totalSurvey);
-    final surveyImalatLabel = surveySummary.imalatCount == 0
-        ? 'Henüz imalat yok'
-        : '${surveySummary.imalatCount} imalat';
+    final hasActiveProject = ref.watch(activeProjectProvider) != null;
 
     return Scaffold(
       backgroundColor: AppColors.canvas,
@@ -100,97 +99,142 @@ class DashboardScreen extends ConsumerWidget {
                 child: ProjectSwitcher(),
               ),
             ),
-            const SliverToBoxAdapter(child: ReadOnlyBanner()),
             const SliverToBoxAdapter(child: GreetingSection()),
-            SliverPadding(
-              padding: const EdgeInsets.all(AppSpacing.md),
-              sliver: SliverList(
-                delegate: SliverChildListDelegate([
-                  StaggeredFadeIn(
+            if (!hasActiveProject)
+              const ActiveProjectSliverGate()
+            else ...[
+              const SliverToBoxAdapter(
+                child: Padding(
+                  padding: EdgeInsets.fromLTRB(AppSpacing.md, 0, AppSpacing.md, 0),
+                  child: StaggeredFadeIn(
                     index: 0,
-                    child: _SurveyQuickAccessBar(
-                      subtitle: surveyImalatLabel,
-                      onTap: () => context.push(AppRoutes.survey),
-                    ),
+                    child: _DashboardSurveyBar(),
                   ),
-                  const SizedBox(height: 12),
-                  StaggeredFadeIn(
-                    index: 1,
-                    child: GridView.count(
-                      crossAxisCount: ResponsiveLayout.isTablet(context) ? 3 : 3,
-                      shrinkWrap: true,
-                      physics: const NeverScrollableScrollPhysics(),
-                      mainAxisSpacing: 12,
-                      crossAxisSpacing: 12,
-                      childAspectRatio: 1.25 / 1.2,
-                      children: [
-                        KpiCard(
-                          label: 'Toplam Keşif',
-                          value: surveyTonnageLabel,
-                          unit: 't',
-                          percent: dashboard.percentLabel(dashboard.totalSurvey),
-                          accentColor: AppColors.electricBlueLight,
-                        ),
-                        KpiCard(
-                          label: 'Toplam Sipariş',
-                          value: AppFormat.tonnage(dashboard.totalOrdered),
-                          unit: 't',
-                          percent: dashboard.percentLabel(dashboard.totalOrdered),
-                          accentColor: AppColors.info,
-                        ),
-                        KpiCard(
-                          label: 'Sahaya Gelen',
-                          value: AppFormat.tonnage(dashboard.totalDelivered),
-                          unit: 't',
-                          percent: dashboard.percentLabel(dashboard.totalDelivered),
-                          accentColor: AppColors.success,
-                        ),
-                        KpiCard(
-                          label: 'Kalan Sipariş',
-                          value: AppFormat.tonnage(dashboard.remainingOrder),
-                          unit: 't',
-                          percent: dashboard.percentLabel(dashboard.remainingOrder),
-                          accentColor: AppColors.critical,
-                        ),
-                        KpiCard(
-                          label: 'Onayda',
-                          value: AppFormat.tonnage(dashboard.pendingApproval),
-                          unit: 't',
-                          percent: dashboard.percentLabel(dashboard.pendingApproval),
-                          accentColor: AppColors.warning,
-                        ),
-                        KpiCard(
-                          label: 'Yolda',
-                          value: AppFormat.tonnage(dashboard.inTransit),
-                          unit: 't',
-                          percent: dashboard.percentLabel(dashboard.inTransit),
-                          accentColor: AppColors.partial,
-                        ),
-                      ],
-                    ),
-                  ),
-                  const SizedBox(height: AppSpacing.lg),
-                  StaggeredFadeIn(
-                    index: 2,
-                    child: const ProjectProgressSection(),
-                  ),
-                  const SizedBox(height: AppSpacing.lg),
-                  StaggeredFadeIn(
-                    index: 3,
-                    child: DashboardAlertsSection(alerts: alerts),
-                  ),
-                  const SizedBox(height: AppSpacing.lg),
-                  StaggeredFadeIn(
-                    index: 4,
-                    child: DashboardActivitiesSection(activities: activities),
-                  ),
-                  SizedBox(height: AppBottomNavBar.totalHeightOf(context) + 16),
-                ]),
+                ),
               ),
-            ),
+              _DashboardKpiSliver(),
+              SliverPadding(
+                padding: const EdgeInsets.all(AppSpacing.md),
+                sliver: SliverList(
+                  delegate: SliverChildListDelegate([
+                    const StaggeredFadeIn(
+                      index: 2,
+                      child: ProjectProgressSection(),
+                    ),
+                    const SizedBox(height: AppSpacing.lg),
+                    const StaggeredFadeIn(
+                      index: 3,
+                      child: _DashboardAlertsBlock(),
+                    ),
+                    const SizedBox(height: AppSpacing.lg),
+                    const StaggeredFadeIn(
+                      index: 4,
+                      child: _DashboardActivitiesBlock(),
+                    ),
+                    SizedBox(height: AppBottomNavBar.totalHeightOf(context) + 16),
+                  ]),
+                ),
+              ),
+            ],
+            if (!hasActiveProject)
+              SliverToBoxAdapter(
+                child: SizedBox(height: AppBottomNavBar.totalHeightOf(context) + 16),
+              ),
           ],
         ),
     );
+  }
+}
+
+class _DashboardKpiSliver extends ConsumerWidget {
+  const _DashboardKpiSliver();
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final dashboard = ref.watch(dashboardKpiProvider);
+
+    return SummaryKpiSliverGrid(
+      padding: const EdgeInsets.fromLTRB(AppSpacing.md, 12, AppSpacing.md, AppSpacing.lg),
+      items: [
+        SummaryKpiItem(
+          label: 'Toplam Keşif',
+          value: AppFormat.tonnage(dashboard.totalSurvey),
+          percent: dashboard.percentLabel(dashboard.totalSurvey),
+          accentColor: AppColors.electricBlueLight,
+          onTap: () => context.push(AppRoutes.survey),
+        ),
+        SummaryKpiItem(
+          label: 'Toplam Sipariş',
+          value: AppFormat.tonnage(dashboard.totalOrdered),
+          percent: dashboard.percentLabel(dashboard.totalOrdered),
+          accentColor: AppColors.info,
+          onTap: () => context.go(AppRoutes.orders),
+        ),
+        SummaryKpiItem(
+          label: 'Sahaya Gelen',
+          value: AppFormat.tonnage(dashboard.totalDelivered),
+          percent: dashboard.percentLabel(dashboard.totalDelivered),
+          accentColor: AppColors.success,
+          onTap: () => context.go(AppRoutes.incomingRebar),
+        ),
+        SummaryKpiItem(
+          label: 'Kalan Sipariş',
+          value: AppFormat.tonnage(dashboard.remainingOrder),
+          percent: dashboard.percentLabel(dashboard.remainingOrder),
+          accentColor: AppColors.critical,
+          onTap: () => context.go(AppRoutes.orders),
+        ),
+        SummaryKpiItem(
+          label: 'Onayda',
+          value: AppFormat.tonnage(dashboard.pendingApproval),
+          percent: dashboard.percentLabel(dashboard.pendingApproval),
+          accentColor: AppColors.warning,
+          onTap: () => context.go(AppRoutes.orders),
+        ),
+        SummaryKpiItem(
+          label: 'Yolda',
+          value: AppFormat.tonnage(dashboard.inTransit),
+          percent: dashboard.percentLabel(dashboard.inTransit),
+          accentColor: AppColors.partial,
+          onTap: () => context.go(AppRoutes.orders),
+        ),
+      ],
+    );
+  }
+}
+  const _DashboardSurveyBar();
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final surveySummary = ref.watch(surveyDashboardSummaryProvider);
+    final surveyImalatLabel = surveySummary.imalatCount == 0
+        ? 'Henüz imalat yok'
+        : '${surveySummary.imalatCount} imalat';
+
+    return _SurveyQuickAccessBar(
+      subtitle: surveyImalatLabel,
+      onTap: () => context.push(AppRoutes.survey),
+    );
+  }
+}
+
+class _DashboardSurveyBar extends ConsumerWidget {
+  const _DashboardAlertsBlock();
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final alerts = ref.watch(dashboardCriticalAlertsProvider);
+    return DashboardAlertsSection(alerts: alerts);
+  }
+}
+
+class _DashboardActivitiesBlock extends ConsumerWidget {
+  const _DashboardActivitiesBlock();
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final activities = ref.watch(dashboardRecentActivitiesProvider);
+    return DashboardActivitiesSection(activities: activities);
   }
 }
 

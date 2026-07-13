@@ -73,7 +73,11 @@ class SurveyProjectNotifier extends StateNotifier<SurveyProject> {
   Future<void> _persist() async {
     final projectId = _ref.read(activeProjectIdProvider);
     if (projectId == null) return;
-    await _repo.write(projectId, state);
+    try {
+      await _repo.write(projectId, state);
+    } catch (_) {
+      throw StateError('İlerleme kaydedilemedi');
+    }
   }
 
   void updateProjectName(String projectName) {

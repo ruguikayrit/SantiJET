@@ -34,8 +34,9 @@ class _TahvilCalculatorSectionState extends State<TahvilCalculatorSection> {
     if (source == null) return const [];
     return computeManualTahvilResults(
       fromDiameter: source.diameter!,
-      fromQuantity: source.quantity!,
+      fromQuantity: source.quantity,
       fromSpacingCm: source.spacingCm,
+      lengthCm: source.lengthCm,
     );
   }
 
@@ -45,6 +46,21 @@ class _TahvilCalculatorSectionState extends State<TahvilCalculatorSection> {
   }
 
   void _onInputChanged() => setState(() {});
+
+  String _sourceSummary(TahvilManualInputRow source) {
+    final parts = <String>['Ø${source.diameter}'];
+    final effectiveQty = source.effectiveQuantity;
+    if (!source.usesReferenceQuantity && source.quantity != null) {
+      parts.add('${AppFormat.integer(source.quantity!)} ad');
+    } else if (effectiveQty != null) {
+      parts.add('${AppFormat.integer(effectiveQty)} ad (100 cm ref.)');
+    }
+    parts.add('${source.spacingCm!.toStringAsFixed(1)} cm aralık');
+    if (source.hasLength) {
+      parts.add('${source.lengthCm!.toStringAsFixed(0)} cm boy');
+    }
+    return parts.join(' · ');
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -59,8 +75,8 @@ class _TahvilCalculatorSectionState extends State<TahvilCalculatorSection> {
           Text('Otomatik Tahvil Hesabı', style: AppTypography.headlineMedium),
           const SizedBox(height: 4),
           Text(
-            'Çap, adet ve aralık girin. Tüm hedef çaplar hesaplanır; '
-            'uygun olanlar ve elenenler gerekçeleriyle gösterilir.',
+            'Çap ve aralık zorunlu. Adet boşsa 100 cm referans kullanılır. '
+            'Boy girilirse tonaj mukayesesi gösterilir.',
             style: AppTypography.bodySmall,
           ),
           const SizedBox(height: 12),
@@ -81,14 +97,13 @@ class _TahvilCalculatorSectionState extends State<TahvilCalculatorSection> {
         if (source == null) ...[
           const SizedBox(height: 12),
           Text(
-            'Hesap için çap, adet ve aralık alanlarını doldurun.',
+            'Hesap için çap ve aralık alanlarını doldurun.',
             style: AppTypography.bodySmall.copyWith(color: AppColors.textMuted),
           ),
         ] else ...[
           const SizedBox(height: 12),
           Text(
-            'Kaynak: Ø${source.diameter} · ${AppFormat.integer(source.quantity!)} ad · '
-            '${source.spacingCm!.toStringAsFixed(1)} cm aralık',
+            'Kaynak: ${_sourceSummary(source)}',
             style: AppTypography.bodySmall,
           ),
           const SizedBox(height: 12),
@@ -141,7 +156,8 @@ class _TahvilRulesSummary extends StatelessWidget {
           Text(
             '• Hedef çap: kaynak ±$tahvilMaxDiameterDiffMm mm\n'
             '• Yeni aralık: ≤${tahvilMaxSpacingCm.toStringAsFixed(0)} cm\n'
-            '• Kesit sapması: ≤%${(tahvilMaxAreaDeviationRatio * 100).toStringAsFixed(0)}',
+            '• Kesit sapması: ≤%${(tahvilMaxAreaDeviationRatio * 100).toStringAsFixed(0)}\n'
+            '• Adet boş: ${tahvilReferenceSpanCm.toStringAsFixed(0)} cm referans',
             style: AppTypography.bodySmall.copyWith(color: AppColors.textMuted),
           ),
         ],
@@ -165,6 +181,7 @@ class _TahvilResultCard extends StatelessWidget {
   Widget build(BuildContext context) {
     final targetColor = AppColors.diameterColor(result.toDiameter);
     final isRejected = !result.isAllowed;
+    final effectiveQty = source.effectiveQuantity ?? 0;
 
     return Container(
       width: double.infinity,
@@ -200,12 +217,12 @@ class _TahvilResultCard extends StatelessWidget {
                 ),
               ),
               if (isOptimal)
-                _StatusBadge(
+                const _StatusBadge(
                   label: 'Optimum',
                   color: AppColors.success,
                 )
               else if (isRejected)
-                _StatusBadge(
+                const _StatusBadge(
                   label: 'Uygun değil',
                   color: AppColors.critical,
                 ),
@@ -220,7 +237,9 @@ class _TahvilResultCard extends StatelessWidget {
           ],
           const SizedBox(height: 8),
           Text(
-            'Yeni adet: ${AppFormat.integer(result.equivalentQuantity)}',
+            source.usesReferenceQuantity
+                ? 'Yeni adet (100 cm ref.): ${AppFormat.integer(result.equivalentQuantity)}'
+                : 'Yeni adet: ${AppFormat.integer(result.equivalentQuantity)}',
             style: AppTypography.bodyMedium.copyWith(
               color: isRejected ? AppColors.textMuted : null,
             ),
@@ -236,9 +255,59 @@ class _TahvilResultCard extends StatelessWidget {
           _CrossSectionComparison(
             source: source,
             result: result,
+            effectiveQuantity: effectiveQty,
           ),
+          if (result.fromTonnage != null && result.toTonnage != null) ...[
+            const SizedBox(height: 8),
+            _TonnageComparison(
+              fromTonnage: result.fromTonnage!,
+              toTonnage: result.toTonnage!,
+              isRejected: isRejected,
+            ),
+          ],
         ],
       ),
+    );
+  }
+}
+
+class _TonnageComparison extends StatelessWidget {
+  const _TonnageComparison({
+    required this.fromTonnage,
+    required this.toTonnage,
+    required this.isRejected,
+  });
+
+  final double fromTonnage;
+  final double toTonnage;
+  final bool isRejected;
+
+  @override
+  Widget build(BuildContext context) {
+    final delta = toTonnage - fromTonnage;
+    final deltaLabel = delta >= 0
+        ? '+${AppFormat.tonnage(delta)}t'
+        : AppFormat.tonnage(delta);
+    final accentColor = isRejected
+        ? AppColors.textMuted
+        : delta.abs() < 0.0001
+            ? AppColors.success
+            : AppColors.warning;
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text('Tonaj mukayesesi', style: AppTypography.labelMedium),
+        const SizedBox(height: 4),
+        Text(
+          'Önce: ${AppFormat.tonnage(fromTonnage)}t · '
+          'Sonra: ${AppFormat.tonnage(toTonnage)}t · Fark: $deltaLabel',
+          style: AppTypography.bodyMedium.copyWith(
+            color: accentColor,
+            fontWeight: FontWeight.w600,
+          ),
+        ),
+      ],
     );
   }
 }
@@ -247,16 +316,18 @@ class _CrossSectionComparison extends StatelessWidget {
   const _CrossSectionComparison({
     required this.source,
     required this.result,
+    required this.effectiveQuantity,
   });
 
   final TahvilManualInputRow source;
   final TahvilManualResult result;
+  final int effectiveQuantity;
 
   @override
   Widget build(BuildContext context) {
     final comparison = formatCrossSectionComparison(
       fromDiameter: source.diameter!,
-      fromQuantity: source.quantity!,
+      fromQuantity: effectiveQuantity,
       toDiameter: result.toDiameter,
       toQuantity: result.equivalentQuantity,
     );
@@ -319,23 +390,31 @@ class _EditableTahvilRow {
   final diameterController = TextEditingController();
   final quantityController = TextEditingController();
   final spacingController = TextEditingController();
+  final lengthController = TextEditingController();
 
   void dispose() {
     diameterController.dispose();
     quantityController.dispose();
     spacingController.dispose();
+    lengthController.dispose();
   }
 
   TahvilManualInputRow toInput() {
     final diameter = int.tryParse(diameterController.text.trim());
-    final quantity = int.tryParse(quantityController.text.trim());
+    final quantityText = quantityController.text.trim();
+    final quantity = quantityText.isEmpty ? null : int.tryParse(quantityText);
     final spacing = double.tryParse(
       spacingController.text.trim().replaceAll(',', '.'),
     );
+    final lengthText = lengthController.text.trim();
+    final length = lengthText.isEmpty
+        ? null
+        : double.tryParse(lengthText.replaceAll(',', '.'));
     return TahvilManualInputRow(
       diameter: diameter,
       quantity: quantity,
       spacingCm: spacing,
+      lengthCm: length,
     );
   }
 }
@@ -350,11 +429,21 @@ class _InputTableHeader extends StatelessWidget {
       decoration: const BoxDecoration(
         border: Border(bottom: BorderSide(color: AppColors.border)),
       ),
-      child: Row(
+      child: Column(
         children: [
-          Expanded(child: Text('ÇAP (mm)', style: AppTypography.labelMedium)),
-          Expanded(child: Text('ADET', style: AppTypography.labelMedium)),
-          Expanded(child: Text('ARALIK (cm)', style: AppTypography.labelMedium)),
+          Row(
+            children: [
+              Expanded(child: Text('ÇAP (mm)', style: AppTypography.labelMedium)),
+              Expanded(child: Text('ADET', style: AppTypography.labelMedium)),
+            ],
+          ),
+          const SizedBox(height: 6),
+          Row(
+            children: [
+              Expanded(child: Text('ARALIK (cm)', style: AppTypography.labelMedium)),
+              Expanded(child: Text('BOY (cm)', style: AppTypography.labelMedium)),
+            ],
+          ),
         ],
       ),
     );
@@ -374,43 +463,64 @@ class _InputTableRow extends StatelessWidget {
   Widget build(BuildContext context) {
     return Padding(
       padding: const EdgeInsets.fromLTRB(8, 4, 8, 8),
-      child: Row(
-        crossAxisAlignment: CrossAxisAlignment.start,
+      child: Column(
         children: [
-          Expanded(
-            child: TextField(
-              controller: row.diameterController,
-              keyboardType: TextInputType.number,
-              decoration: const InputDecoration(
-                hintText: '16',
-                isDense: true,
+          Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Expanded(
+                child: TextField(
+                  controller: row.diameterController,
+                  keyboardType: TextInputType.number,
+                  decoration: const InputDecoration(
+                    hintText: '16',
+                    isDense: true,
+                  ),
+                  onChanged: (_) => onChanged(),
+                ),
               ),
-              onChanged: (_) => onChanged(),
-            ),
+              const SizedBox(width: 8),
+              Expanded(
+                child: TextField(
+                  controller: row.quantityController,
+                  keyboardType: TextInputType.number,
+                  decoration: const InputDecoration(
+                    hintText: 'isteğe bağlı',
+                    isDense: true,
+                  ),
+                  onChanged: (_) => onChanged(),
+                ),
+              ),
+            ],
           ),
-          const SizedBox(width: 8),
-          Expanded(
-            child: TextField(
-              controller: row.quantityController,
-              keyboardType: TextInputType.number,
-              decoration: const InputDecoration(
-                hintText: '120',
-                isDense: true,
+          const SizedBox(height: 8),
+          Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Expanded(
+                child: TextField(
+                  controller: row.spacingController,
+                  keyboardType: const TextInputType.numberWithOptions(decimal: true),
+                  decoration: const InputDecoration(
+                    hintText: '15',
+                    isDense: true,
+                  ),
+                  onChanged: (_) => onChanged(),
+                ),
               ),
-              onChanged: (_) => onChanged(),
-            ),
-          ),
-          const SizedBox(width: 8),
-          Expanded(
-            child: TextField(
-              controller: row.spacingController,
-              keyboardType: const TextInputType.numberWithOptions(decimal: true),
-              decoration: const InputDecoration(
-                hintText: '15',
-                isDense: true,
+              const SizedBox(width: 8),
+              Expanded(
+                child: TextField(
+                  controller: row.lengthController,
+                  keyboardType: const TextInputType.numberWithOptions(decimal: true),
+                  decoration: const InputDecoration(
+                    hintText: 'isteğe bağlı',
+                    isDense: true,
+                  ),
+                  onChanged: (_) => onChanged(),
+                ),
               ),
-              onChanged: (_) => onChanged(),
-            ),
+            ],
           ),
         ],
       ),

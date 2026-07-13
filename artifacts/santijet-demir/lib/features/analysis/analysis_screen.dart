@@ -12,8 +12,10 @@ import 'package:santijet_demir/core/theme/app_typography.dart';
 import 'package:santijet_demir/core/widgets/app_bottom_nav_bar.dart';
 import 'package:santijet_demir/core/widgets/empty_states.dart';
 import 'package:santijet_demir/core/widgets/santijet_header.dart';
+import 'package:santijet_demir/core/widgets/shell_tab_guard.dart';
 import 'package:santijet_demir/domain/entities/cutting_bending.dart';
 import 'package:santijet_demir/features/analysis/providers/cutting_bending_provider.dart';
+import 'package:santijet_demir/features/projects/providers/project_provider.dart';
 import 'package:santijet_demir/features/analysis/widgets/analysis_batch_list_panel.dart';
 import 'package:santijet_demir/features/analysis/widgets/analysis_comparison_section.dart';
 import 'package:santijet_demir/features/analysis/widgets/analysis_fire_summary.dart';
@@ -31,6 +33,7 @@ class AnalysisScreen extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
+    final hasActiveProject = ref.watch(activeProjectProvider) != null;
     final state = ref.watch(cuttingBendingBatchesProvider);
     final analysisScope = ref.watch(selectedAnalysisBatchIdsProvider);
 
@@ -41,85 +44,58 @@ class AnalysisScreen extends ConsumerWidget {
             const SliverToBoxAdapter(
               child: SantijetHeader(subtitle: 'HESAP / ANALİZ / RAPOR', showNotification: false),
             ),
-            SliverToBoxAdapter(
-              child: Padding(
-                padding: const EdgeInsets.fromLTRB(
-                  AppSpacing.md,
-                  AppSpacing.sm,
-                  AppSpacing.md,
-                  AppSpacing.sm,
-                ),
-                child: _ReportsQuickAccessBar(
-                  onTap: () => context.push(AppRoutes.reports),
-                ),
-              ),
-            ),
-            SliverPadding(
-              padding: const EdgeInsets.fromLTRB(AppSpacing.md, 0, AppSpacing.md, AppSpacing.sm),
-              sliver: SliverToBoxAdapter(
-                child: CollapsibleAnalysisSection(
-                  sectionId: AnalysisSectionIds.tahvilCalculator,
-                  title: 'Araç · Tahvil Hesaplayıcı',
-                  subtitle: 'Manuel tahvil denemesi — analizden bağımsız referans aracı',
-                  headerAccentColor: AppColors.diameter28,
-                  child: const TahvilCalculatorSection(hideHeader: true),
-                ),
-              ),
-            ),
-            SliverPadding(
-              padding: const EdgeInsets.fromLTRB(AppSpacing.md, 0, AppSpacing.md, 0),
-              sliver: SliverToBoxAdapter(
-                child: Padding(
-                  padding: const EdgeInsets.only(bottom: AppSpacing.sm),
-                  child: Text(
-                    'Amaç: demir firesi azaltmak ve planlı kesim üretmek',
-                    style: AppTypography.bodySmall.copyWith(
-                      color: AppColors.textMuted,
-                    ),
-                    textAlign: TextAlign.center,
-                  ),
-                ),
-              ),
-            ),
-            if (state.batches.isEmpty) ...[
+            if (!hasActiveProject)
+              const ActiveProjectSliverGate()
+            else ...[
               SliverToBoxAdapter(
                 child: Padding(
-                  padding: const EdgeInsets.all(32),
-                  child: Column(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      const Icon(Icons.analytics_outlined, size: 48, color: AppColors.textMuted),
-                      const SizedBox(height: 16),
-                      Text('Analiz listesi boş', style: AppTypography.headlineMedium),
-                      const SizedBox(height: 8),
-                      Text(
-                        'Ön imalattan onaylı metraj alın; boy eşleştirme ve '
-                        'kesim planı ile fireyi düşürün.',
-                        style: AppTypography.bodyMedium.copyWith(color: AppColors.textMuted),
-                        textAlign: TextAlign.center,
-                      ),
-                      const SizedBox(height: 16),
-                      FilledButton.icon(
-                        onPressed: () =>
-                            showPreProductionAnalysisImportSheet(context, ref),
-                        style: FilledButton.styleFrom(
-                          backgroundColor: AppColors.success,
-                          foregroundColor: Colors.white,
-                        ),
-                        icon: const Icon(Icons.inventory_2_outlined),
-                        label: const Text('Ön İmalattan Veri Al'),
-                      ),
-                    ],
+                  padding: const EdgeInsets.fromLTRB(
+                    AppSpacing.md,
+                    AppSpacing.sm,
+                    AppSpacing.md,
+                    AppSpacing.sm,
+                  ),
+                  child: _ReportsQuickAccessBar(
+                    onTap: () => context.push(AppRoutes.reports),
                   ),
                 ),
               ),
               SliverPadding(
-                padding: EdgeInsets.only(
-                  bottom: AppBottomNavBar.totalHeightOf(context) + 16,
+                padding: const EdgeInsets.fromLTRB(AppSpacing.md, 0, AppSpacing.md, AppSpacing.sm),
+                sliver: SliverToBoxAdapter(
+                  child: CollapsibleAnalysisSection(
+                    sectionId: AnalysisSectionIds.tahvilCalculator,
+                    title: 'Araç · Tahvil Hesaplayıcı',
+                    subtitle: 'Manuel tahvil denemesi — analizden bağımsız referans aracı',
+                    headerAccentColor: AppColors.diameter28,
+                    child: const TahvilCalculatorSection(hideHeader: true),
+                  ),
                 ),
               ),
-            ]
-            else ...[
+              SliverPadding(
+                padding: const EdgeInsets.fromLTRB(AppSpacing.md, 0, AppSpacing.md, 0),
+                sliver: SliverToBoxAdapter(
+                  child: Padding(
+                    padding: const EdgeInsets.only(bottom: AppSpacing.sm),
+                    child: Text(
+                      'Amaç: demir firesi azaltmak ve planlı kesim üretmek',
+                      style: AppTypography.bodySmall.copyWith(
+                        color: AppColors.textMuted,
+                      ),
+                      textAlign: TextAlign.center,
+                    ),
+                  ),
+                ),
+              ),
+              if (state.batches.isEmpty) ...[
+                SliverToBoxAdapter(
+                  child: ModuleEmptyState(
+                    type: EmptyStateType.noAnalysis,
+                    actionLabel: 'Ön İmalattan Veri Al',
+                    onAction: () => showPreProductionAnalysisImportSheet(context, ref),
+                  ),
+                ),
+              ] else ...[
               SliverToBoxAdapter(
                 child: Padding(
                   padding: const EdgeInsets.fromLTRB(
@@ -142,12 +118,13 @@ class AnalysisScreen extends ConsumerWidget {
                 ),
               ),
               const SliverToBoxAdapter(child: _AnalysisSelectedBatchArea()),
-            ],
-            SliverPadding(
-              padding: EdgeInsets.only(
-                bottom: AppBottomNavBar.totalHeightOf(context) + 16,
+              ],
+              SliverPadding(
+                padding: EdgeInsets.only(
+                  bottom: AppBottomNavBar.totalHeightOf(context) + 16,
+                ),
               ),
-            ),
+            ],
           ],
         ),
     );
@@ -321,7 +298,10 @@ class _AnalysisSelectedBatchArea extends ConsumerWidget {
                 subtitle: 'Otomatik fire azaltma sonuçları',
                 childBuilder: () => batch.isOptimized
                     ? AnalysisOptimizationResultsSection(batch: batch)
-                    : const _OptimizationPendingPlaceholder(),
+                    : const ModuleEmptyState(
+                        type: EmptyStateType.noOptimizationPending,
+                        inline: true,
+                      ),
               ),
               CollapsibleAnalysisSection(
                 sectionId: AnalysisSectionIds.plannedCutting,
@@ -330,10 +310,13 @@ class _AnalysisSelectedBatchArea extends ConsumerWidget {
                     'Revize listeden ${CuttingBendingBatch.defaultStockBarLengthM.toStringAsFixed(0)} m '
                     'stok minimum fire kesim planı',
                 childBuilder: () => !batch.isOptimized
-                    ? const _PlannedCuttingPendingPlaceholder()
+                    ? const ModuleEmptyState(
+                        type: EmptyStateType.noPlannedCuttingPending,
+                        inline: true,
+                      )
                     : batch.stockCutPlans.isEmpty
                         ? const ModuleEmptyState(
-                            type: EmptyStateType.noSearchResult,
+                            type: EmptyStateType.noAnalysis,
                             inline: true,
                           )
                         : StockCutSection(
@@ -413,62 +396,6 @@ class _AnalysisDataSourceSection extends StatelessWidget {
         const SizedBox(height: 8),
         _PieceListTable(pieces: batch.pieceLines),
       ],
-    );
-  }
-}
-
-class _OptimizationPendingPlaceholder extends StatelessWidget {
-  const _OptimizationPendingPlaceholder();
-
-  @override
-  Widget build(BuildContext context) {
-    return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 24),
-      child: Column(
-        children: [
-          const Icon(
-            Icons.auto_fix_high_outlined,
-            size: 40,
-            color: AppColors.textMuted,
-          ),
-          const SizedBox(height: 12),
-          Text(
-            'Fire azaltma analizi henüz çalıştırılmadı.',
-            style: AppTypography.bodyMedium.copyWith(
-              color: AppColors.textMuted,
-            ),
-            textAlign: TextAlign.center,
-          ),
-          const SizedBox(height: 6),
-          Text(
-            'Fire Özeti bölümünden strateji seçip '
-            '"Fire Analizini Başlat" butonuna basın.',
-            style: AppTypography.bodySmall.copyWith(
-              color: AppColors.textMuted,
-            ),
-            textAlign: TextAlign.center,
-          ),
-        ],
-      ),
-    );
-  }
-}
-
-class _PlannedCuttingPendingPlaceholder extends StatelessWidget {
-  const _PlannedCuttingPendingPlaceholder();
-
-  @override
-  Widget build(BuildContext context) {
-    return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 24),
-      child: Text(
-        'Planlı kesim, optimum fire analizi '
-        'tamamlandıktan sonra burada görünür.',
-        style: AppTypography.bodyMedium.copyWith(
-          color: AppColors.textMuted,
-        ),
-        textAlign: TextAlign.center,
-      ),
     );
   }
 }

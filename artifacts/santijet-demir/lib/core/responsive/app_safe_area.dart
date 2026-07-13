@@ -55,6 +55,18 @@ abstract final class AppSafeAreaInsets {
 
   static double bottomOf(BuildContext context) => effective(context).bottom;
 
+  /// MediaQuery'ye zaten yansıtılmış inset'leri tekrar eklemez.
+  static EdgeInsets remaining(BuildContext context) {
+    final target = effective(context);
+    final pad = MediaQuery.of(context).padding;
+    return EdgeInsets.fromLTRB(
+      math.max(0, target.left - pad.left),
+      math.max(0, target.top - pad.top),
+      math.max(0, target.right - pad.right),
+      math.max(0, target.bottom - pad.bottom),
+    );
+  }
+
   /// Alt nav bar — home indicator alanı (View padding + iOS PWA JS probe).
   static double bottomNavInsetOf(BuildContext context) {
     final view = View.of(context);
@@ -89,13 +101,43 @@ class AppSafeArea extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final insets = AppSafeAreaInsets.effective(context);
+    final insets = AppSafeAreaInsets.remaining(context);
     return Padding(
       padding: EdgeInsets.only(
         top: top ? insets.top : 0,
         bottom: bottom ? insets.bottom : 0,
         left: left ? insets.left : 0,
         right: right ? insets.right : 0,
+      ),
+      child: child,
+    );
+  }
+}
+
+/// Tüm sayfalarda MediaQuery safe area değerlerini güvenilir hale getirir.
+class AppMediaQuery extends StatelessWidget {
+  const AppMediaQuery({super.key, required this.child});
+
+  final Widget child;
+
+  @override
+  Widget build(BuildContext context) {
+    final media = MediaQuery.of(context);
+    final insets = AppSafeAreaInsets.effective(context);
+    return MediaQuery(
+      data: media.copyWith(
+        padding: EdgeInsets.fromLTRB(
+          math.max(media.padding.left, insets.left),
+          math.max(media.padding.top, insets.top),
+          math.max(media.padding.right, insets.right),
+          math.max(media.padding.bottom, insets.bottom),
+        ),
+        viewPadding: EdgeInsets.fromLTRB(
+          math.max(media.viewPadding.left, insets.left),
+          math.max(media.viewPadding.top, insets.top),
+          math.max(media.viewPadding.right, insets.right),
+          math.max(media.viewPadding.bottom, insets.bottom),
+        ),
       ),
       child: child,
     );

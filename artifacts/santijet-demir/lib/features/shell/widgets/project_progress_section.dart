@@ -56,10 +56,18 @@ class ProjectProgressSection extends ConsumerWidget {
 
     Future<void> applyBulkProgress(double progressPercent) async {
       final targetIds = selectedImalatIds.isEmpty ? allImalatIds : selectedImalatIds;
-      await ref.read(surveyProjectProvider.notifier).updateProgressForImalats(
-            imalatIds: targetIds,
-            progressPercent: progressPercent,
+      try {
+        await ref.read(surveyProjectProvider.notifier).updateProgressForImalats(
+              imalatIds: targetIds,
+              progressPercent: progressPercent,
+            );
+      } catch (_) {
+        if (context.mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(content: Text('İlerleme kaydedilemedi')),
           );
+        }
+      }
     }
 
     return Column(
@@ -114,19 +122,27 @@ class ProjectProgressSection extends ConsumerWidget {
                     }
                     setSelectedImalats(next);
                   },
-                  onProgressChanged: (row, value) {
+                  onProgressChanged: (row, value) async {
                     final notifier = ref.read(surveyProjectProvider.notifier);
-                    if (row.diameter == null) {
-                      notifier.updateImalatProgress(
-                        imalatId: row.imalatId,
-                        progressPercent: value,
-                      );
-                    } else {
-                      notifier.updateDiameterLineProgress(
-                        imalatId: row.imalatId,
-                        diameter: row.diameter!,
-                        progressPercent: value,
-                      );
+                    try {
+                      if (row.diameter == null) {
+                        await notifier.updateImalatProgress(
+                          imalatId: row.imalatId,
+                          progressPercent: value,
+                        );
+                      } else {
+                        await notifier.updateDiameterLineProgress(
+                          imalatId: row.imalatId,
+                          diameter: row.diameter!,
+                          progressPercent: value,
+                        );
+                      }
+                    } catch (_) {
+                      if (context.mounted) {
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          const SnackBar(content: Text('İlerleme kaydedilemedi')),
+                        );
+                      }
                     }
                   },
                 ),
@@ -349,6 +365,12 @@ class _BulkProgressEntryPanelState extends State<_BulkProgressEntryPanel> {
       await widget.onApply(parsed.clamp(0, 100).toDouble());
       if (!mounted) return;
       _controller.text = '${parsed.clamp(0, 100)}';
+    } catch (_) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('İlerleme kaydedilemedi')),
+        );
+      }
     } finally {
       if (mounted) setState(() => _isApplying = false);
     }

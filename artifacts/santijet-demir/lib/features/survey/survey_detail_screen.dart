@@ -5,6 +5,7 @@ import 'package:santijet_demir/core/theme/app_radii.dart';
 import 'package:santijet_demir/core/theme/app_spacing.dart';
 import 'package:santijet_demir/core/theme/app_typography.dart';
 import 'package:santijet_demir/core/widgets/app_components.dart';
+import 'package:santijet_demir/core/widgets/app_subpage_app_bar.dart';
 import 'package:santijet_demir/domain/entities/survey.dart';
 import 'package:santijet_demir/features/survey/providers/survey_provider.dart';
 
@@ -20,14 +21,10 @@ class SurveyDetailScreen extends ConsumerWidget {
 
     return Scaffold(
       backgroundColor: AppColors.canvas,
-      appBar: AppBar(
-        title: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text(imalat.name, style: AppTypography.titleLarge),
-            Text(project.projectName, style: AppTypography.labelMedium),
-          ],
-        ),
+      appBar: appSubpageTitleAppBar(
+        context,
+        title: imalat.name,
+        subtitle: project.projectName,
       ),
       body: ListView(
         padding: const EdgeInsets.all(AppSpacing.md),

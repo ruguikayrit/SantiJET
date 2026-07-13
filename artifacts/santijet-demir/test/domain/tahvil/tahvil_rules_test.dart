@@ -4,6 +4,22 @@ import 'package:santijet_demir/domain/tahvil/tahvil_rules.dart';
 
 void main() {
   group('tahvil rules', () {
+    test('derives reference quantity from spacing', () {
+      expect(deriveReferenceQuantity(spacingCm: 10), 10);
+      expect(deriveReferenceQuantity(spacingCm: 15), 7);
+    });
+
+    test('computes reference resulting spacing', () {
+      final spacing = computeResultingSpacingCm(
+        fromQuantity: 10,
+        equivalentQuantity: 14,
+        spacingCm: 10,
+        useReferenceSpan: true,
+      );
+
+      expect(spacing, closeTo(100 / 14, 0.01));
+    });
+
     test('allows diameter pairs within 4 mm', () {
       expect(isTahvilDiameterAllowed(20, 16), isTrue);
       expect(isTahvilDiameterAllowed(20, 18), isTrue);

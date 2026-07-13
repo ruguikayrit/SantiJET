@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:intl/intl.dart';
+import 'package:santijet_demir/core/routing/app_routes.dart';
 import 'package:santijet_demir/core/theme/app_colors.dart';
 import 'package:santijet_demir/core/theme/app_radii.dart';
 import 'package:santijet_demir/core/theme/app_spacing.dart';
@@ -16,29 +18,62 @@ class DashboardAlertsSection extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    return _AlertsContent(alerts: alerts);
+  }
+}
+
+class ScopedDashboardAlertsSection extends ConsumerWidget {
+  const ScopedDashboardAlertsSection({
+    super.key,
+    required this.scope,
+    this.inline = false,
+  });
+
+  final DashboardAlertScope scope;
+  final bool inline;
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final alerts = ref.watch(dashboardScopedAlertsProvider(scope));
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Text('Kritik Uyarılar', style: AppTypography.headlineMedium),
         const SizedBox(height: AppSpacing.sm),
-        if (alerts.isEmpty)
-          const ModuleEmptyState(type: EmptyStateType.noAlert)
-        else
-          Column(
-            children: [
-              for (var i = 0; i < alerts.length; i++) ...[
-                if (i > 0) const SizedBox(height: 8),
-                AlertCard(
-                  title: alerts[i].title,
-                  message: alerts[i].message,
-                  severityColor: alerts[i].color,
-                  onTap: alerts[i].route == null
-                      ? null
-                      : () => context.push(alerts[i].route!),
-                ),
-              ],
-            ],
+        _AlertsContent(alerts: alerts, inline: inline),
+      ],
+    );
+  }
+}
+
+class _AlertsContent extends StatelessWidget {
+  const _AlertsContent({
+    required this.alerts,
+    this.inline = false,
+  });
+
+  final List<DashboardAlert> alerts;
+  final bool inline;
+
+  @override
+  Widget build(BuildContext context) {
+    if (alerts.isEmpty) {
+      return ModuleEmptyState(type: EmptyStateType.noAlert, inline: inline);
+    }
+
+    return Column(
+      children: [
+        for (var i = 0; i < alerts.length; i++) ...[
+          if (i > 0) const SizedBox(height: 8),
+          AlertCard(
+            title: alerts[i].title,
+            message: alerts[i].message,
+            severityColor: alerts[i].color,
+            onTap: alerts[i].route == null
+                ? null
+                : () => context.push(alerts[i].route!),
           ),
+        ],
       ],
     );
   }
@@ -57,9 +92,11 @@ class DashboardActivitiesSection extends StatelessWidget {
         Text('Son Aktiviteler', style: AppTypography.headlineMedium),
         const SizedBox(height: AppSpacing.sm),
         if (activities.isEmpty)
-          Text(
-            'Henüz aktivite kaydı yok',
-            style: AppTypography.bodyMedium.copyWith(color: AppColors.textMuted),
+          ModuleEmptyState(
+            type: EmptyStateType.noActivity,
+            inline: true,
+            actionLabel: 'Yeni Sipariş',
+            onAction: () => context.push(AppRoutes.newOrder),
           )
         else
           Container(

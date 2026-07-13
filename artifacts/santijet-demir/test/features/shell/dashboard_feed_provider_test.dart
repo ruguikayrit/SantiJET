@@ -11,11 +11,13 @@ void main() {
           title: 'B',
           message: 'warning',
           severity: AlertSeverity.warning,
+          category: DashboardAlertCategory.fieldCount,
         ),
         DashboardAlert(
           title: 'A',
           message: 'critical',
           severity: AlertSeverity.critical,
+          category: DashboardAlertCategory.fieldCount,
         ),
       ];
 
@@ -23,6 +25,28 @@ void main() {
         ..sort((a, b) => a.severity.index.compareTo(b.severity.index));
 
       expect(sorted.first.severity, AlertSeverity.critical);
+    });
+
+    test('scoped alerts filter by module', () {
+      const alerts = [
+        DashboardAlert(
+          title: 'Sayım',
+          message: 'critical',
+          severity: AlertSeverity.critical,
+          category: DashboardAlertCategory.fieldCount,
+        ),
+        DashboardAlert(
+          title: 'Teslimat',
+          message: 'warning',
+          severity: AlertSeverity.warning,
+          category: DashboardAlertCategory.incoming,
+        ),
+      ];
+
+      final incoming = filterDashboardAlertsByScope(alerts, DashboardAlertScope.incoming);
+
+      expect(incoming, hasLength(1));
+      expect(incoming.first.title, 'Teslimat');
     });
 
     test('activities expose icon color from severity', () {

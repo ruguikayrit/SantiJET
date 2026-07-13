@@ -9,15 +9,21 @@ import 'package:santijet_demir/core/theme/app_typography.dart';
 import 'package:santijet_demir/core/widgets/app_components.dart';
 import 'package:santijet_demir/core/widgets/empty_states.dart';
 import 'package:santijet_demir/core/widgets/santijet_header.dart';
+import 'package:santijet_demir/core/widgets/shell_tab_guard.dart';
+import 'package:santijet_demir/core/widgets/summary_kpi_grid.dart';
 import 'package:santijet_demir/features/incoming_rebar/providers/incoming_rebar_provider.dart';
 import 'package:santijet_demir/features/incoming_rebar/widgets/delivered_diameter_table.dart';
 import 'package:santijet_demir/features/incoming_rebar/widgets/delivery_card.dart';
+import 'package:santijet_demir/features/projects/providers/project_provider.dart';
+import 'package:santijet_demir/features/shell/dashboard_feed_provider.dart';
+import 'package:santijet_demir/features/shell/widgets/dashboard_feed_section.dart';
 
 class IncomingRebarScreen extends ConsumerWidget {
   const IncomingRebarScreen({super.key});
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
+    final hasActiveProject = ref.watch(activeProjectProvider) != null;
     final deliveries = ref.watch(deliveriesProvider);
     final summary = ref.watch(incomingRebarDashboardSummaryProvider);
     final diameterRows = ref.watch(deliveredDiameterRowsProvider);
@@ -26,133 +32,95 @@ class IncomingRebarScreen extends ConsumerWidget {
       backgroundColor: AppColors.canvas,
       body: CustomScrollView(
           slivers: [
-            SliverToBoxAdapter(
+            const SliverToBoxAdapter(
               child: SantijetHeader(
                 subtitle: 'GELEN DEMİR',
                 showNotification: false,
               ),
             ),
-            SliverPadding(
-              padding: const EdgeInsets.all(AppSpacing.md),
-              sliver: SliverList(
-                delegate: SliverChildListDelegate([
-                  Column(
-                    children: [
-                      Row(
-                        children: [
-                          Expanded(
-                            child: AspectRatio(
-                              aspectRatio: 1.15,
-                              child: KpiCard(
-                                label: 'Toplam Sipariş',
-                                value: AppFormat.tonnage(summary.totalOrdered),
-                                unit: 't',
-                                accentColor: AppColors.electricBlueLight,
-                              ),
-                            ),
-                          ),
-                          const SizedBox(width: 12),
-                          Expanded(
-                            child: AspectRatio(
-                              aspectRatio: 1.15,
-                              child: KpiCard(
-                                label: 'Teslim Alınan',
-                                value: AppFormat.tonnage(summary.totalDelivered),
-                                unit: 't',
-                                accentColor: AppColors.success,
-                              ),
-                            ),
-                          ),
-                          const SizedBox(width: 12),
-                          Expanded(
-                            child: AspectRatio(
-                              aspectRatio: 1.15,
-                              child: KpiCard(
-                                label: 'Teslim Oranı',
-                                value: summary.fulfillmentPercent
-                                    .round()
-                                    .clamp(0, 100)
-                                    .toString(),
-                                unit: '%',
-                                accentColor: AppColors.success,
-                              ),
-                            ),
-                          ),
-                        ],
-                      ),
-                      const SizedBox(height: 12),
-                      Row(
-                        children: [
-                          Expanded(
-                            child: AspectRatio(
-                              aspectRatio: 1.15,
-                              child: KpiCard(
-                                label: 'Kalan Sipariş',
-                                value: AppFormat.tonnage(summary.remainingOrder),
-                                unit: 't',
-                                accentColor: AppColors.warning,
-                              ),
-                            ),
-                          ),
-                          const SizedBox(width: 12),
-                          Expanded(
-                            child: AspectRatio(
-                              aspectRatio: 1.15,
-                              child: KpiCard(
-                                label: 'Eksik',
-                                value: AppFormat.tonnage(summary.missing),
-                                unit: 't',
-                                accentColor: AppColors.critical,
-                              ),
-                            ),
-                          ),
-                          const SizedBox(width: 12),
-                          Expanded(
-                            child: AspectRatio(
-                              aspectRatio: 1.15,
-                              child: KpiCard(
-                                label: 'Fazla',
-                                value: AppFormat.tonnage(summary.excess),
-                                unit: 't',
-                                accentColor: AppColors.partial,
-                              ),
-                            ),
-                          ),
-                        ],
-                      ),
-                    ],
-                  ),
-                  const SizedBox(height: 16),
-                  Text('Sahaya Gelen Demir', style: AppTypography.headlineMedium),
-                  const SizedBox(height: 8),
-                  DeliveredDiameterTable(rows: diameterRows),
-                  const SizedBox(height: 16),
-                  Text('Kritik Uyarılar', style: AppTypography.headlineMedium),
-                  const SizedBox(height: 8),
-                  const ModuleEmptyState(type: EmptyStateType.noAlert),
-                  const SizedBox(height: 16),
-                  Text('Teslimat kayıtları', style: AppTypography.headlineMedium),
-                  const SizedBox(height: 8),
-                  if (deliveries.isEmpty)
-                    const ModuleEmptyState(type: EmptyStateType.noDelivery)
-                  else
-                    ...deliveries.map(
-                      (delivery) => DeliveryCard(
-                        delivery: delivery,
-                        onTap: () =>
-                            context.push(AppRoutes.deliveryDetail(delivery.id)),
-                      ),
+            if (!hasActiveProject)
+              const ActiveProjectSliverGate()
+            else
+              SliverPadding(
+                padding: const EdgeInsets.all(AppSpacing.md),
+                sliver: SliverList(
+                  delegate: SliverChildListDelegate([
+                    SummaryKpiRow(
+                      items: [
+                        SummaryKpiItem(
+                          label: 'Toplam Sipariş',
+                          value: AppFormat.tonnage(summary.totalOrdered),
+                          accentColor: AppColors.electricBlueLight,
+                        ),
+                        SummaryKpiItem(
+                          label: 'Teslim Alınan',
+                          value: AppFormat.tonnage(summary.totalDelivered),
+                          accentColor: AppColors.success,
+                        ),
+                        SummaryKpiItem(
+                          label: 'Teslim Oranı',
+                          value: summary.fulfillmentPercent
+                              .round()
+                              .clamp(0, 100)
+                              .toString(),
+                          unit: '%',
+                          accentColor: AppColors.success,
+                        ),
+                      ],
                     ),
-                  const SizedBox(height: 80),
-                ]),
+                    const SizedBox(height: 12),
+                    SummaryKpiRow(
+                      items: [
+                        SummaryKpiItem(
+                          label: 'Kalan Sipariş',
+                          value: AppFormat.tonnage(summary.remainingOrder),
+                          accentColor: AppColors.warning,
+                        ),
+                        SummaryKpiItem(
+                          label: 'Eksik',
+                          value: AppFormat.tonnage(summary.missing),
+                          accentColor: AppColors.critical,
+                        ),
+                        SummaryKpiItem(
+                          label: 'Fazla',
+                          value: AppFormat.tonnage(summary.excess),
+                          accentColor: AppColors.partial,
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 16),
+                    Text('Sahaya Gelen Demir', style: AppTypography.headlineMedium),
+                    const SizedBox(height: 8),
+                    DeliveredDiameterTable(rows: diameterRows),
+                    const SizedBox(height: 16),
+                    const ScopedDashboardAlertsSection(
+                      scope: DashboardAlertScope.incoming,
+                    ),
+                    const SizedBox(height: 16),
+                    Text('Teslimat kayıtları', style: AppTypography.headlineMedium),
+                    const SizedBox(height: 8),
+                    if (deliveries.isEmpty)
+                      const ModuleEmptyState(type: EmptyStateType.noDelivery)
+                    else
+                      ...deliveries.map(
+                        (delivery) => DeliveryCard(
+                          delivery: delivery,
+                          onTap: () =>
+                              context.push(AppRoutes.deliveryDetail(delivery.id)),
+                        ),
+                      ),
+                    const SizedBox(height: 80),
+                  ]),
+                ),
               ),
-            ),
           ],
         ),
-      floatingActionButton: AppFab(
-        label: 'Yeni Teslimat',
-        onPressed: () => context.push(AppRoutes.selectInTransitOrder),
-      ),
+      floatingActionButton: hasActiveProject
+          ? AppFab(
+              label: 'Yeni Teslimat',
+              onPressed: () => context.push(AppRoutes.selectInTransitOrder),
+            )
+          : null,
     );
   }
 }

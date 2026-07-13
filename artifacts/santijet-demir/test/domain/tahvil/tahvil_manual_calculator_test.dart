@@ -3,6 +3,44 @@ import 'package:santijet_demir/domain/tahvil/tahvil_manual_calculator.dart';
 
 void main() {
   group('manual tahvil calculator', () {
+    test('returns empty when spacing is missing', () {
+      final results = computeManualTahvilResults(
+        fromDiameter: 12,
+        fromQuantity: 10,
+        fromSpacingCm: null,
+      );
+
+      expect(results, isEmpty);
+    });
+
+    test('uses 100 cm reference when quantity is omitted', () {
+      final results = computeManualTahvilResults(
+        fromDiameter: 12,
+        fromSpacingCm: 10,
+      );
+
+      final toTen = results.firstWhere((item) => item.toDiameter == 10);
+      expect(toTen.isAllowed, isTrue);
+      expect(toTen.equivalentQuantity, 14);
+      expect(toTen.resultingSpacingCm, closeTo(100 / 14, 0.01));
+      expect(toTen.fromTonnage, isNull);
+      expect(toTen.toTonnage, isNull);
+    });
+
+    test('computes tonnage comparison when length is provided', () {
+      final results = computeManualTahvilResults(
+        fromDiameter: 12,
+        fromSpacingCm: 10,
+        lengthCm: 200,
+      );
+
+      final toTen = results.firstWhere((item) => item.toDiameter == 10);
+      expect(toTen.fromTonnage, isNotNull);
+      expect(toTen.toTonnage, isNotNull);
+      expect(toTen.fromTonnage, greaterThan(0));
+      expect(toTen.toTonnage, greaterThan(0));
+    });
+
     test('computes quantity and spacing for valid target diameter', () {
       final results = computeManualTahvilResults(
         fromDiameter: 16,
@@ -85,6 +123,22 @@ void main() {
       );
 
       expect(optimal, isNull);
+    });
+
+    test('input row requires diameter and spacing only', () {
+      expect(
+        const TahvilManualInputRow(diameter: 12, spacingCm: 10).isComplete,
+        isTrue,
+      );
+      expect(
+        const TahvilManualInputRow(diameter: 12, quantity: 100).isComplete,
+        isFalse,
+      );
+      expect(
+        const TahvilManualInputRow(diameter: 12, spacingCm: 10, lengthCm: 200)
+            .effectiveQuantity,
+        10,
+      );
     });
 
     test('findManualInputForDiameter returns matching complete row', () {

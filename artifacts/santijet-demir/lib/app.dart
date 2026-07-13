@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:santijet_demir/core/routing/app_router.dart';
+import 'package:santijet_demir/core/responsive/app_safe_area.dart';
 import 'package:santijet_demir/core/theme/app_theme.dart';
 import 'package:santijet_demir/features/auth/app_lock_screen.dart';
 import 'package:santijet_demir/features/auth/providers/app_lock_provider.dart';
@@ -26,6 +27,8 @@ class SantijetDemirApp extends ConsumerWidget {
         theme: AppTheme.light,
         darkTheme: AppTheme.dark,
         themeMode: themeMode,
+        builder: (context, child) =>
+            AppMediaQuery(child: child ?? const SizedBox.shrink()),
         home: const SessionExpiredScreen(),
       );
     }
@@ -37,6 +40,8 @@ class SantijetDemirApp extends ConsumerWidget {
         theme: AppTheme.light,
         darkTheme: AppTheme.dark,
         themeMode: themeMode,
+        builder: (context, child) =>
+            AppMediaQuery(child: child ?? const SizedBox.shrink()),
         home: const AppLockScreen(),
       );
     }
@@ -48,6 +53,8 @@ class SantijetDemirApp extends ConsumerWidget {
       darkTheme: AppTheme.dark,
       themeMode: themeMode,
       routerConfig: router,
+      builder: (context, child) =>
+          AppMediaQuery(child: child ?? const SizedBox.shrink()),
     );
   }
 

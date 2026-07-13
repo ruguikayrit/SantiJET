@@ -14,42 +14,55 @@ class ProjectSwitcher extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final project = ref.watch(activeProjectProvider);
 
-    return Material(
-      color: Colors.transparent,
-      child: InkWell(
-        onTap: () => context.push(AppRoutes.projects),
-        borderRadius: AppRadii.md,
-        child: Container(
-          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
-          decoration: BoxDecoration(
-            color: AppColors.surfaceElevated,
-            borderRadius: AppRadii.md,
-            border: Border.all(color: AppColors.border),
-          ),
-          child: Row(
-            children: [
-              const Icon(Icons.apartment, size: 18, color: AppColors.electricBlueLight),
-              const SizedBox(width: 8),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      project?.name ?? 'Proje seçin',
-                      style: AppTypography.titleMedium,
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
-                    ),
-                    if (project != null)
-                      Text(
-                        'Kod: ${project.code}',
-                        style: AppTypography.bodySmall,
-                      ),
-                  ],
-                ),
+    return Semantics(
+      label: project == null
+          ? 'Proje seçin'
+          : 'Aktif proje: ${project.name}',
+      button: true,
+      child: Material(
+        color: Colors.transparent,
+        child: InkWell(
+          onTap: () => context.push(AppRoutes.projects),
+          borderRadius: AppRadii.md,
+          child: Tooltip(
+            message: project == null ? 'Proje seçin' : 'Projeyi değiştir',
+            child: Container(
+              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+              decoration: BoxDecoration(
+                color: AppColors.surfaceElevated,
+                borderRadius: AppRadii.md,
+                border: Border.all(color: AppColors.border),
               ),
-              const Icon(Icons.expand_more, color: AppColors.textMuted),
-            ],
+              child: Row(
+                children: [
+                  const Icon(
+                    Icons.apartment,
+                    size: 18,
+                    color: AppColors.electricBlueLight,
+                  ),
+                  const SizedBox(width: 8),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          project?.name ?? 'Proje seçin',
+                          style: AppTypography.titleMedium,
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                        if (project != null)
+                          Text(
+                            'Kod: ${project.code}',
+                            style: AppTypography.bodySmall,
+                          ),
+                      ],
+                    ),
+                  ),
+                  const Icon(Icons.expand_more, color: AppColors.textMuted),
+                ],
+              ),
+            ),
           ),
         ),
       ),

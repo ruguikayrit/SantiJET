@@ -8,6 +8,36 @@ import 'package:santijet_demir/core/theme/app_colors.dart';
 import 'package:santijet_demir/core/theme/app_spacing.dart';
 import 'package:santijet_demir/core/theme/app_typography.dart';
 import 'package:santijet_demir/features/settings/providers/profile_provider.dart';
+import 'package:santijet_demir/features/shell/dashboard_feed_provider.dart';
+
+class _HeaderNotificationButton extends ConsumerWidget {
+  const _HeaderNotificationButton();
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final alerts = ref.watch(dashboardCriticalAlertsProvider);
+    final alertCount = alerts.length;
+
+    return Semantics(
+      label: alertCount > 0
+          ? '$alertCount kritik uyarı'
+          : 'Bildirimler, uyarı yok',
+      button: true,
+      child: Badge(
+        isLabelVisible: alertCount > 0,
+        label: Text('$alertCount'),
+        backgroundColor: AppColors.critical,
+        child: IconButton(
+          onPressed: () => context.push(AppRoutes.notificationSettings),
+          icon: const Icon(
+            Icons.notifications_outlined,
+            color: AppColors.textSecondary,
+          ),
+        ),
+      ),
+    );
+  }
+}
 
 class SantijetHeader extends StatelessWidget {
   const SantijetHeader({
@@ -16,7 +46,6 @@ class SantijetHeader extends StatelessWidget {
     this.showWordmark = false,
     this.showNotification = true,
     this.showAvatar = true,
-    this.onNotificationTap,
     this.avatarInitial,
   });
 
@@ -26,7 +55,6 @@ class SantijetHeader extends StatelessWidget {
   final bool showWordmark;
   final bool showNotification;
   final bool showAvatar;
-  final VoidCallback? onNotificationTap;
   final String? avatarInitial;
 
   @override
@@ -74,38 +102,20 @@ class SantijetHeader extends StatelessWidget {
                     ],
                   ),
           ),
-          if (showNotification)
-            Stack(
-              clipBehavior: Clip.none,
-              children: [
-                IconButton(
-                  onPressed:
-                      onNotificationTap ?? () => context.push(AppRoutes.notificationSettings),
-                  icon: const Icon(Icons.notifications_outlined, color: AppColors.textSecondary),
-                ),
-                Positioned(
-                  right: 10,
-                  top: 10,
-                  child: Container(
-                    width: 8,
-                    height: 8,
-                    decoration: const BoxDecoration(
-                      color: AppColors.critical,
-                      shape: BoxShape.circle,
-                    ),
-                  ),
-                ),
-              ],
-            ),
+          if (showNotification) const _HeaderNotificationButton(),
           if (showAvatar)
-            GestureDetector(
-              onTap: () => context.push(AppRoutes.settings),
-              child: CircleAvatar(
-                radius: 18,
-                backgroundColor: AppColors.warning.withValues(alpha: 0.3),
-                child: Text(
-                  avatarInitial ?? 'U',
-                  style: AppTypography.titleMedium.copyWith(color: AppColors.warning),
+            Semantics(
+              label: 'Ayarlar',
+              button: true,
+              child: IconButton(
+                onPressed: () => context.push(AppRoutes.settings),
+                icon: CircleAvatar(
+                  radius: 18,
+                  backgroundColor: AppColors.warning.withValues(alpha: 0.3),
+                  child: Text(
+                    avatarInitial ?? 'U',
+                    style: AppTypography.titleMedium.copyWith(color: AppColors.warning),
+                  ),
                 ),
               ),
             ),

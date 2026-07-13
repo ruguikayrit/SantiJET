@@ -25,8 +25,9 @@ class ReadOnlyBanner extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
+    final project = ref.watch(activeProjectProvider);
     final canEdit = ref.watch(canEditActiveProjectProvider);
-    if (canEdit) return const SizedBox.shrink();
+    if (project == null || canEdit) return const SizedBox.shrink();
 
     return Container(
       width: double.infinity,

@@ -47,6 +47,30 @@ enum EmptyStateType {
     title: 'Arama Sonucu Yok',
     message: 'Aramanızla eşleşen kayıt bulunamadı. Filtreleri değiştirin.',
     icon: Icons.manage_search_outlined,
+  ),
+  noActivity(
+    title: 'Aktivite Yok',
+    message: 'Henüz sipariş, teslimat veya sayım kaydı bulunmuyor.',
+    icon: Icons.history_outlined,
+  ),
+  noProject(
+    title: 'Proje Seçilmedi',
+    message:
+        'Keşif, sipariş ve sayım verilerini görmek için bir proje seçin veya yeni proje oluşturun.',
+    icon: Icons.apartment_outlined,
+  ),
+  noOptimizationPending(
+    title: 'Fire Analizi Bekliyor',
+    message:
+        'Fire azaltma analizi henüz çalıştırılmadı. Fire Özeti bölümünden '
+        'strateji seçip "Fire Analizini Başlat" butonuna basın.',
+    icon: Icons.auto_fix_high_outlined,
+  ),
+  noPlannedCuttingPending(
+    title: 'Planlı Kesim Bekliyor',
+    message:
+        'Planlı kesim, optimum fire analizi tamamlandıktan sonra burada görünür.',
+    icon: Icons.content_cut_outlined,
   );
 
   const EmptyStateType({

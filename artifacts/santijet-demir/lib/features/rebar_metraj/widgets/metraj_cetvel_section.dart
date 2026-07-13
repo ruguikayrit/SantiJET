@@ -5,6 +5,7 @@ import 'package:santijet_demir/core/theme/app_radii.dart';
 import 'package:santijet_demir/core/theme/app_typography.dart';
 import 'package:santijet_demir/data/services/element_header_parser.dart';
 import 'package:santijet_demir/data/services/metraj_cetvel_summary.dart';
+import 'package:santijet_demir/data/services/rebar_weight_calculator.dart';
 import 'package:santijet_demir/domain/entities/rebar_metraj.dart';
 
 class MetrajCetvelEmptyHint extends StatelessWidget {
@@ -73,17 +74,14 @@ class MetrajCetvelSection extends StatelessWidget {
     final numberFormat = NumberFormat('#,##0.00', 'tr_TR');
     final lengthFormat = NumberFormat('#,##0.##', 'tr_TR');
     final intFormat = NumberFormat('#,##0', 'tr_TR');
+    final unitWeightFormat = NumberFormat('#,##0.###', 'tr_TR');
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
         if (!hideHeader && lines.isNotEmpty) ...[
+          const SizedBox(height: 28),
           Text('Metraj İcmali', style: AppTypography.headlineMedium),
-          const SizedBox(height: 4),
-          Text(
-            'Tüm okunan demir etiketlerine göre çap bazlı özet',
-            style: AppTypography.bodySmall.copyWith(color: AppColors.textMuted),
-          ),
           const SizedBox(height: 12),
         ],
         if (lines.isNotEmpty)
@@ -93,6 +91,7 @@ class MetrajCetvelSection extends StatelessWidget {
             numberFormat: numberFormat,
             lengthFormat: lengthFormat,
             intFormat: intFormat,
+            unitWeightFormat: unitWeightFormat,
           ),
         if (cetvel.isNotEmpty) ...[
           const SizedBox(height: 24),
@@ -142,6 +141,7 @@ class _MetrajIcmaliSection extends StatelessWidget {
     required this.numberFormat,
     required this.lengthFormat,
     required this.intFormat,
+    required this.unitWeightFormat,
   });
 
   final MetrajIcmaliSummary summary;
@@ -149,6 +149,7 @@ class _MetrajIcmaliSection extends StatelessWidget {
   final NumberFormat numberFormat;
   final NumberFormat lengthFormat;
   final NumberFormat intFormat;
+  final NumberFormat unitWeightFormat;
 
   @override
   Widget build(BuildContext context) {
@@ -198,26 +199,23 @@ class _MetrajIcmaliSection extends StatelessWidget {
               style: AppTypography.bodySmall.copyWith(color: AppColors.textMuted),
             ),
           ),
-          const _IcmalTableHeader(
-            cells: ['Çap', 'Boy (m)', 'Adet', 'kg', 't'],
-          ),
+          const _IcmalDiameterTableHeader(),
           ...summary.lines.map(
-            (line) => _IcmalDataRow(
+            (line) => _IcmalDiameterDataRow(
               diameter: line.diameter,
-              lengthM: line.totalLengthM,
+              unitWeightKgPerM: RebarWeightCalculator.kgPerMeter(line.diameter),
               barCount: line.barCount,
-              weightKg: line.weightKg,
+              lengthM: line.totalLengthM,
               tonnage: line.tonnage,
               numberFormat: numberFormat,
               lengthFormat: lengthFormat,
               intFormat: intFormat,
+              unitWeightFormat: unitWeightFormat,
             ),
           ),
-          _IcmalTotalRow(
-            label: 'TOPLAM',
-            lengthM: summary.totalLengthM,
+          _IcmalDiameterTotalRow(
             barCount: summary.totalBarCount,
-            weightKg: summary.totalTonnage * 1000,
+            lengthM: summary.totalLengthM,
             tonnage: summary.totalTonnage,
             numberFormat: numberFormat,
             lengthFormat: lengthFormat,
@@ -251,6 +249,206 @@ class _MetrajIcmaliSection extends StatelessWidget {
   }
 }
 
+class _IcmalDiameterTableHeader extends StatelessWidget {
+  const _IcmalDiameterTableHeader();
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
+      decoration: const BoxDecoration(
+        color: AppColors.canvas,
+        border: Border(
+          top: BorderSide(color: AppColors.border),
+          bottom: BorderSide(color: AppColors.border),
+        ),
+      ),
+      child: const Row(
+        children: [
+          _IcmalCol('Çap', flex: _IcmalLayout.capFlex, bold: true),
+          _IcmalCol('Birim ağ.', flex: _IcmalLayout.unitFlex, bold: true, align: TextAlign.end),
+          _IcmalCol('Adet', flex: _IcmalLayout.adetFlex, bold: true, align: TextAlign.end),
+          _IcmalCol('Boy (m)', flex: _IcmalLayout.boyFlex, bold: true, align: TextAlign.end),
+          _IcmalCol('t', flex: _IcmalLayout.tonFlex, bold: true, align: TextAlign.end),
+        ],
+      ),
+    );
+  }
+}
+
+class _IcmalDiameterDataRow extends StatelessWidget {
+  const _IcmalDiameterDataRow({
+    required this.diameter,
+    required this.unitWeightKgPerM,
+    required this.barCount,
+    required this.lengthM,
+    required this.tonnage,
+    required this.numberFormat,
+    required this.lengthFormat,
+    required this.intFormat,
+    required this.unitWeightFormat,
+  });
+
+  final int diameter;
+  final double unitWeightKgPerM;
+  final int barCount;
+  final double lengthM;
+  final double tonnage;
+  final NumberFormat numberFormat;
+  final NumberFormat lengthFormat;
+  final NumberFormat intFormat;
+  final NumberFormat unitWeightFormat;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
+      decoration: const BoxDecoration(
+        border: Border(bottom: BorderSide(color: AppColors.borderSubtle)),
+      ),
+      child: Row(
+        children: [
+          _IcmalCol(
+            'Ø$diameter',
+            flex: _IcmalLayout.capFlex,
+            bold: true,
+            color: AppColors.diameterColor(diameter),
+          ),
+          _IcmalCol(
+            unitWeightFormat.format(unitWeightKgPerM),
+            flex: _IcmalLayout.unitFlex,
+            align: TextAlign.end,
+            dense: true,
+          ),
+          _IcmalCol(
+            intFormat.format(barCount),
+            flex: _IcmalLayout.adetFlex,
+            align: TextAlign.end,
+            dense: true,
+          ),
+          _IcmalCol(
+            lengthFormat.format(lengthM),
+            flex: _IcmalLayout.boyFlex,
+            align: TextAlign.end,
+            dense: true,
+          ),
+          _IcmalCol(
+            numberFormat.format(tonnage),
+            flex: _IcmalLayout.tonFlex,
+            align: TextAlign.end,
+            dense: true,
+            color: AppColors.electricBlueLight,
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _IcmalDiameterTotalRow extends StatelessWidget {
+  const _IcmalDiameterTotalRow({
+    required this.barCount,
+    required this.lengthM,
+    required this.tonnage,
+    required this.numberFormat,
+    required this.lengthFormat,
+    required this.intFormat,
+  });
+
+  final int barCount;
+  final double lengthM;
+  final double tonnage;
+  final NumberFormat numberFormat;
+  final NumberFormat lengthFormat;
+  final NumberFormat intFormat;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 10),
+      color: AppColors.electricBlue.withValues(alpha: 0.06),
+      child: Row(
+        children: [
+          const _IcmalCol('TOPLAM', flex: _IcmalLayout.capFlex, bold: true),
+          const _IcmalCol('—', flex: _IcmalLayout.unitFlex, align: TextAlign.end, dense: true),
+          _IcmalCol(
+            intFormat.format(barCount),
+            flex: _IcmalLayout.adetFlex,
+            align: TextAlign.end,
+            bold: true,
+            dense: true,
+          ),
+          _IcmalCol(
+            lengthFormat.format(lengthM),
+            flex: _IcmalLayout.boyFlex,
+            align: TextAlign.end,
+            bold: true,
+            dense: true,
+          ),
+          _IcmalCol(
+            numberFormat.format(tonnage),
+            flex: _IcmalLayout.tonFlex,
+            align: TextAlign.end,
+            bold: true,
+            dense: true,
+            color: AppColors.electricBlueLight,
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+/// Metraj icmali sütun oranları — çap dar, sayısal sütunlar geniş.
+abstract final class _IcmalLayout {
+  static const capFlex = 2;
+  static const unitFlex = 3;
+  static const adetFlex = 3;
+  static const boyFlex = 4;
+  static const tonFlex = 3;
+}
+
+class _IcmalCol extends StatelessWidget {
+  const _IcmalCol(
+    this.text, {
+    required this.flex,
+    this.bold = false,
+    this.align = TextAlign.start,
+    this.color,
+    this.dense = false,
+  });
+
+  final String text;
+  final int flex;
+  final bool bold;
+  final TextAlign align;
+  final Color? color;
+  final bool dense;
+
+  @override
+  Widget build(BuildContext context) {
+    final style = (bold ? AppTypography.labelMedium : AppTypography.bodySmall)
+        .copyWith(
+      fontWeight: bold ? FontWeight.w700 : FontWeight.w400,
+      color: color ?? AppColors.textSecondary,
+      fontSize: dense ? 11 : null,
+      height: dense ? 1.15 : null,
+    );
+
+    return Expanded(
+      flex: flex,
+      child: Text(
+        text,
+        style: style,
+        textAlign: align,
+        maxLines: dense ? 1 : 2,
+        softWrap: !dense,
+        overflow: dense ? TextOverflow.fade : TextOverflow.ellipsis,
+      ),
+    );
+  }
+}
+
 class _IcmalTableHeader extends StatelessWidget {
   const _IcmalTableHeader({required this.cells});
 
@@ -278,155 +476,6 @@ class _IcmalTableHeader extends StatelessWidget {
                 textAlign: i == 0 ? TextAlign.start : TextAlign.end,
               ),
             ),
-        ],
-      ),
-    );
-  }
-}
-
-class _IcmalDataRow extends StatelessWidget {
-  const _IcmalDataRow({
-    required this.diameter,
-    required this.lengthM,
-    required this.barCount,
-    required this.weightKg,
-    required this.tonnage,
-    required this.numberFormat,
-    required this.lengthFormat,
-    required this.intFormat,
-  });
-
-  final int diameter;
-  final double lengthM;
-  final int barCount;
-  final double weightKg;
-  final double tonnage;
-  final NumberFormat numberFormat;
-  final NumberFormat lengthFormat;
-  final NumberFormat intFormat;
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-      decoration: const BoxDecoration(
-        border: Border(bottom: BorderSide(color: AppColors.borderSubtle)),
-      ),
-      child: Row(
-        children: [
-          Expanded(
-            flex: 2,
-            child: Text(
-              'Ø$diameter',
-              style: AppTypography.titleMedium.copyWith(
-                color: AppColors.diameterColor(diameter),
-              ),
-            ),
-          ),
-          Expanded(
-            flex: 3,
-            child: Text(
-              lengthFormat.format(lengthM),
-              style: AppTypography.bodySmall,
-              textAlign: TextAlign.end,
-            ),
-          ),
-          Expanded(
-            flex: 3,
-            child: Text(
-              intFormat.format(barCount),
-              style: AppTypography.bodySmall,
-              textAlign: TextAlign.end,
-            ),
-          ),
-          Expanded(
-            flex: 3,
-            child: Text(
-              numberFormat.format(weightKg),
-              style: AppTypography.bodySmall,
-              textAlign: TextAlign.end,
-            ),
-          ),
-          Expanded(
-            flex: 3,
-            child: Text(
-              numberFormat.format(tonnage),
-              style: AppTypography.bodySmall.copyWith(color: AppColors.textSecondary),
-              textAlign: TextAlign.end,
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-}
-
-class _IcmalTotalRow extends StatelessWidget {
-  const _IcmalTotalRow({
-    required this.label,
-    required this.lengthM,
-    required this.barCount,
-    required this.weightKg,
-    required this.tonnage,
-    required this.numberFormat,
-    required this.lengthFormat,
-    required this.intFormat,
-  });
-
-  final String label;
-  final double lengthM;
-  final int barCount;
-  final double weightKg;
-  final double tonnage;
-  final NumberFormat numberFormat;
-  final NumberFormat lengthFormat;
-  final NumberFormat intFormat;
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
-      color: AppColors.electricBlue.withValues(alpha: 0.06),
-      child: Row(
-        children: [
-          Expanded(
-            flex: 2,
-            child: Text(label, style: AppTypography.labelMedium),
-          ),
-          Expanded(
-            flex: 3,
-            child: Text(
-              lengthFormat.format(lengthM),
-              style: AppTypography.labelMedium,
-              textAlign: TextAlign.end,
-            ),
-          ),
-          Expanded(
-            flex: 3,
-            child: Text(
-              intFormat.format(barCount),
-              style: AppTypography.labelMedium,
-              textAlign: TextAlign.end,
-            ),
-          ),
-          Expanded(
-            flex: 3,
-            child: Text(
-              numberFormat.format(weightKg),
-              style: AppTypography.labelMedium,
-              textAlign: TextAlign.end,
-            ),
-          ),
-          Expanded(
-            flex: 3,
-            child: Text(
-              numberFormat.format(tonnage),
-              style: AppTypography.titleMedium.copyWith(
-                color: AppColors.electricBlueLight,
-              ),
-              textAlign: TextAlign.end,
-            ),
-          ),
         ],
       ),
     );
@@ -668,19 +717,20 @@ class _CetvelTableHeader extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
       decoration: const BoxDecoration(
         border: Border(bottom: BorderSide(color: AppColors.border)),
       ),
       child: const Row(
         children: [
-          _Col('#', 24, bold: true),
-          _Col('Demir', 72, bold: true, flex: 2),
-          _Col('Ø', 28, bold: true),
-          _Col('Adet', 36, bold: true, align: TextAlign.end),
-          _Col('Boy', 40, bold: true, align: TextAlign.end),
-          _Col('Top.', 36, bold: true, align: TextAlign.end),
-          _Col('kg', 48, bold: true, align: TextAlign.end),
+          _Col('#', _CetvelLayout.indexWidth, bold: true),
+          _Col('Demir', 0, bold: true, flex: _CetvelLayout.demirFlex),
+          _Col('Ø', _CetvelLayout.diameterWidth, bold: true),
+          _Col('Adet', 0, bold: true, flex: _CetvelLayout.adetFlex, align: TextAlign.end),
+          _Col('Boy', 0, bold: true, flex: _CetvelLayout.boyFlex, align: TextAlign.end),
+          _Col('Top.', 0, bold: true, flex: _CetvelLayout.topFlex, align: TextAlign.end),
+          _Col('kg', 0, bold: true, flex: _CetvelLayout.kgFlex, align: TextAlign.end),
+          _Col('t', 0, bold: true, flex: _CetvelLayout.tonFlex, align: TextAlign.end),
         ],
       ),
     );
@@ -705,7 +755,7 @@ class _CetvelDataRow extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 7),
+      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 7),
       color: striped
           ? AppColors.canvas.withValues(alpha: 0.45)
           : Colors.transparent,
@@ -715,27 +765,67 @@ class _CetvelDataRow extends StatelessWidget {
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          _Col('$index', 24),
-          _Col(row.role.label, 72, flex: 2),
+          _Col('$index', _CetvelLayout.indexWidth),
+          _Col(row.role.label, 0, flex: _CetvelLayout.demirFlex),
           _Col(
             '${row.diameter}',
-            28,
+            _CetvelLayout.diameterWidth,
             color: AppColors.diameterColor(row.diameter),
             bold: true,
           ),
-          _Col('${row.unitQuantity}', 36, align: TextAlign.end),
-          _Col(lengthFormat.format(row.lengthM), 40, align: TextAlign.end),
-          _Col('${row.totalQuantity}', 36, align: TextAlign.end),
+          _Col(
+            '${row.unitQuantity}',
+            0,
+            flex: _CetvelLayout.adetFlex,
+            align: TextAlign.end,
+            dense: true,
+          ),
+          _Col(
+            lengthFormat.format(row.lengthM),
+            0,
+            flex: _CetvelLayout.boyFlex,
+            align: TextAlign.end,
+            dense: true,
+          ),
+          _Col(
+            '${row.totalQuantity}',
+            0,
+            flex: _CetvelLayout.topFlex,
+            align: TextAlign.end,
+            dense: true,
+          ),
           _Col(
             numberFormat.format(row.totalWeightKg),
-            48,
+            0,
+            flex: _CetvelLayout.kgFlex,
             align: TextAlign.end,
+            dense: true,
             color: AppColors.textSecondary,
+          ),
+          _Col(
+            numberFormat.format(row.totalTonnage),
+            0,
+            flex: _CetvelLayout.tonFlex,
+            align: TextAlign.end,
+            dense: true,
+            color: AppColors.electricBlueLight,
           ),
         ],
       ),
     );
   }
+}
+
+/// Metraj cetveli sütun oranları — Demir dar, sayısal sütunlar geniş.
+abstract final class _CetvelLayout {
+  static const indexWidth = 20.0;
+  static const diameterWidth = 24.0;
+  static const demirFlex = 3;
+  static const adetFlex = 2;
+  static const boyFlex = 2;
+  static const topFlex = 3;
+  static const kgFlex = 4;
+  static const tonFlex = 3;
 }
 
 class _Col extends StatelessWidget {
@@ -746,6 +836,7 @@ class _Col extends StatelessWidget {
     this.bold = false,
     this.align = TextAlign.start,
     this.color,
+    this.dense = false,
   });
 
   final String text;
@@ -754,6 +845,7 @@ class _Col extends StatelessWidget {
   final bool bold;
   final TextAlign align;
   final Color? color;
+  final bool dense;
 
   @override
   Widget build(BuildContext context) {
@@ -761,30 +853,29 @@ class _Col extends StatelessWidget {
         .copyWith(
       fontWeight: bold ? FontWeight.w700 : FontWeight.w400,
       color: color ?? AppColors.textSecondary,
+      fontSize: dense ? 11 : null,
+      height: dense ? 1.15 : null,
+    );
+
+    final child = Text(
+      text,
+      style: style,
+      textAlign: align,
+      maxLines: dense ? 1 : 2,
+      softWrap: !dense,
+      overflow: dense ? TextOverflow.fade : TextOverflow.ellipsis,
     );
 
     if (flex != null) {
       return Expanded(
         flex: flex!,
-        child: Text(
-          text,
-          style: style,
-          textAlign: align,
-          maxLines: 2,
-          overflow: TextOverflow.ellipsis,
-        ),
+        child: child,
       );
     }
 
     return SizedBox(
       width: width,
-      child: Text(
-        text,
-        style: style,
-        textAlign: align,
-        maxLines: 2,
-        overflow: TextOverflow.ellipsis,
-      ),
+      child: child,
     );
   }
 }

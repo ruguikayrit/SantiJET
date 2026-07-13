@@ -33,6 +33,7 @@ class MetrajTonnageSummaryCards extends StatelessWidget {
           value: numberFormat.format(summary.totalTonnage),
           unit: 't',
           accentColor: AppColors.electricBlueLight,
+          compactHeight: true,
         ),
         const SizedBox(height: _rowGap),
         Row(
@@ -44,6 +45,7 @@ class MetrajTonnageSummaryCards extends StatelessWidget {
                 unit: 't',
                 accentColor: AppColors.info,
                 dense: true,
+                compactHeight: true,
               ),
             ),
             const SizedBox(width: _diameterGap),
@@ -54,6 +56,7 @@ class MetrajTonnageSummaryCards extends StatelessWidget {
                 unit: 't',
                 accentColor: AppColors.success,
                 dense: true,
+                compactHeight: true,
               ),
             ),
           ],

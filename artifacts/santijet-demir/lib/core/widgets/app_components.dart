@@ -108,7 +108,7 @@ class KpiCard extends StatelessWidget {
 
   Widget _buildLabel() {
     final parts = label.trim().split(RegExp(r'\s+'));
-    if (parts.length == 2) {
+    if (!compactHeight && parts.length == 2) {
       return Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         mainAxisSize: MainAxisSize.min,

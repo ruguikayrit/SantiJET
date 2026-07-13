@@ -6,19 +6,31 @@ class TahvilManualInputRow {
     this.diameter,
     this.quantity,
     this.spacingCm,
+    this.lengthCm,
   });
 
   final int? diameter;
   final int? quantity;
   final double? spacingCm;
+  final double? lengthCm;
 
+  /// Çap ve aralık zorunlu; adet ve boy isteğe bağlı.
   bool get isComplete =>
       diameter != null &&
       diameter! > 0 &&
-      quantity != null &&
-      quantity! > 0 &&
       spacingCm != null &&
       spacingCm! > 0;
+
+  bool get usesReferenceQuantity => quantity == null || quantity! <= 0;
+
+  bool get hasLength => lengthCm != null && lengthCm! > 0;
+
+  int? get effectiveQuantity {
+    if (!isComplete) return null;
+    if (!usesReferenceQuantity) return quantity;
+    final derived = deriveReferenceQuantity(spacingCm: spacingCm!);
+    return derived > 0 ? derived : null;
+  }
 }
 
 class TahvilManualResult {
@@ -29,6 +41,8 @@ class TahvilManualResult {
     required this.isAllowed,
     required this.areaDeviationPercent,
     this.rejectReason,
+    this.fromTonnage,
+    this.toTonnage,
   });
 
   final int toDiameter;
@@ -37,13 +51,25 @@ class TahvilManualResult {
   final bool isAllowed;
   final double areaDeviationPercent;
   final String? rejectReason;
+  final double? fromTonnage;
+  final double? toTonnage;
 }
 
 List<TahvilManualResult> computeManualTahvilResults({
   required int fromDiameter,
-  required int fromQuantity,
+  int? fromQuantity,
   required double? fromSpacingCm,
+  double? lengthCm,
 }) {
+  if (fromSpacingCm == null || fromSpacingCm <= 0) return const [];
+
+  final useReferenceSpan = fromQuantity == null || fromQuantity <= 0;
+  final effectiveQuantity = useReferenceSpan
+      ? deriveReferenceQuantity(spacingCm: fromSpacingCm)
+      : fromQuantity!;
+
+  if (effectiveQuantity <= 0) return const [];
+
   final results = <TahvilManualResult>[];
 
   for (final toDiameter in RebarWeightCalculator.standardDiameters) {
@@ -53,23 +79,24 @@ List<TahvilManualResult> computeManualTahvilResults({
 
     final equivalentQuantity = computeTahvilEquivalentQuantity(
       fromDiameter: fromDiameter,
-      fromQuantity: fromQuantity,
+      fromQuantity: effectiveQuantity,
       toDiameter: toDiameter,
     );
     if (equivalentQuantity <= 0) continue;
 
     final areaDeviationPercent = computeAreaDeviationRatio(
           fromDiameter: fromDiameter,
-          fromQuantity: fromQuantity,
+          fromQuantity: effectiveQuantity,
           toDiameter: toDiameter,
           equivalentQuantity: equivalentQuantity,
         ) *
         100;
 
     final resultingSpacingCm = computeResultingSpacingCm(
-      fromQuantity: fromQuantity,
+      fromQuantity: effectiveQuantity,
       equivalentQuantity: equivalentQuantity,
       spacingCm: fromSpacingCm,
+      useReferenceSpan: useReferenceSpan,
     );
 
     String? rejectReason;
@@ -81,15 +108,27 @@ List<TahvilManualResult> computeManualTahvilResults({
           'Sapma %${areaDeviationPercent.toStringAsFixed(1)} '
           '(limit %${(tahvilMaxAreaDeviationRatio * 100).toStringAsFixed(0)})';
     } else if (!passesSpacingRule(
-      fromQuantity: fromQuantity,
+      fromQuantity: effectiveQuantity,
       equivalentQuantity: equivalentQuantity,
       spacingCm: fromSpacingCm,
+      useReferenceSpan: useReferenceSpan,
     )) {
       rejectReason = resultingSpacingCm != null
           ? 'Aralık ${resultingSpacingCm.toStringAsFixed(1)} cm '
               '(limit ${tahvilMaxSpacingCm.toStringAsFixed(0)} cm)'
           : 'Aralık limiti aşılıyor';
     }
+
+    final fromTonnage = computeTotalTonnage(
+      diameterMm: fromDiameter,
+      quantity: effectiveQuantity,
+      lengthCm: lengthCm,
+    );
+    final toTonnage = computeTotalTonnage(
+      diameterMm: toDiameter,
+      quantity: equivalentQuantity,
+      lengthCm: lengthCm,
+    );
 
     results.add(
       TahvilManualResult(
@@ -99,6 +138,8 @@ List<TahvilManualResult> computeManualTahvilResults({
         isAllowed: rejectReason == null,
         areaDeviationPercent: areaDeviationPercent,
         rejectReason: rejectReason,
+        fromTonnage: fromTonnage,
+        toTonnage: toTonnage,
       ),
     );
   }
@@ -131,13 +172,15 @@ int _compareTahvilByOptimality(
 /// Kurallara uygun hedef çapları kesit alanı sapmasına göre sıralar.
 List<TahvilManualResult> computeAllowedManualTahvilResults({
   required int fromDiameter,
-  required int fromQuantity,
+  int? fromQuantity,
   required double? fromSpacingCm,
+  double? lengthCm,
 }) {
   final allowed = computeManualTahvilResults(
     fromDiameter: fromDiameter,
     fromQuantity: fromQuantity,
     fromSpacingCm: fromSpacingCm,
+    lengthCm: lengthCm,
   ).where((result) => result.isAllowed).toList();
 
   allowed.sort(
@@ -150,13 +193,15 @@ List<TahvilManualResult> computeAllowedManualTahvilResults({
 /// Kurallara uygun hedef çaplar arasından kesit alanı sapması en düşük olanı seçer.
 TahvilManualResult? computeOptimalManualTahvilResult({
   required int fromDiameter,
-  required int fromQuantity,
+  int? fromQuantity,
   required double? fromSpacingCm,
+  double? lengthCm,
 }) {
   final allowed = computeAllowedManualTahvilResults(
     fromDiameter: fromDiameter,
     fromQuantity: fromQuantity,
     fromSpacingCm: fromSpacingCm,
+    lengthCm: lengthCm,
   );
 
   if (allowed.isEmpty) return null;

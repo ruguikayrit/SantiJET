@@ -5,6 +5,7 @@ import 'package:santijet_demir/core/theme/app_colors.dart';
 import 'package:santijet_demir/core/theme/app_radii.dart';
 import 'package:santijet_demir/core/theme/app_spacing.dart';
 import 'package:santijet_demir/core/theme/app_typography.dart';
+import 'package:santijet_demir/core/widgets/app_subpage_app_bar.dart';
 import 'package:santijet_demir/domain/entities/rebar_metraj.dart';
 import 'package:santijet_demir/features/projects/providers/project_provider.dart';
 import 'package:santijet_demir/features/rebar_metraj/providers/rebar_metraj_storage_provider.dart';
@@ -34,7 +35,7 @@ class SavedMetrajDetailScreen extends ConsumerWidget {
     if (record == null) {
       return Scaffold(
         backgroundColor: AppColors.canvas,
-        appBar: AppBar(title: const Text('Ön İmalat')),
+        appBar: appSubpageTitleAppBar(context, title: 'Ön İmalat'),
         body: const Center(child: Text('Kayıt bulunamadı')),
       );
     }
@@ -47,14 +48,10 @@ class SavedMetrajDetailScreen extends ConsumerWidget {
 
     return Scaffold(
       backgroundColor: AppColors.canvas,
-      appBar: AppBar(
-        title: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text('Ön İmalat', style: AppTypography.titleLarge),
-            Text(record.displayTitle, style: AppTypography.labelMedium),
-          ],
-        ),
+      appBar: appSubpageTitleAppBar(
+        context,
+        title: 'Ön İmalat',
+        subtitle: record.displayTitle,
       ),
       body: ListView(
         padding: const EdgeInsets.all(AppSpacing.md),
@@ -238,10 +235,15 @@ class _MetrajDiameterTable extends StatelessWidget {
             ),
             child: const Row(
               children: [
-                _HeaderCell('ÇAP', flex: 2),
-                _HeaderCell('TONAJ', flex: 2),
-                _HeaderCell('UZUNLUK', flex: 2),
-                _HeaderCell('ADET', flex: 2),
+                _HeaderCell('ÇAP', flex: _DiameterTableLayout.capFlex),
+                _HeaderCell('TONAJ', flex: _DiameterTableLayout.tonajFlex),
+                _HeaderCell('UZUNLUK', flex: _DiameterTableLayout.lengthFlex),
+                Spacer(),
+                _HeaderCell(
+                  'ADET',
+                  width: _DiameterTableLayout.adetWidth,
+                  align: TextAlign.end,
+                ),
               ],
             ),
           ),
@@ -259,12 +261,25 @@ class _MetrajDiameterTable extends StatelessWidget {
                 children: [
                   Row(
                     children: [
-                      _DataCell('Ø${line.diameter}', flex: 2, color: color),
-                      _DataCell('${numberFormat.format(line.tonnage)} t',
-                          flex: 2),
-                      _DataCell('${numberFormat.format(line.totalLengthM)} m',
-                          flex: 2),
-                      _DataCell('${line.barCount}', flex: 2),
+                      _DataCell(
+                        'Ø${line.diameter}',
+                        flex: _DiameterTableLayout.capFlex,
+                        color: color,
+                      ),
+                      _DataCell(
+                        '${numberFormat.format(line.tonnage)} t',
+                        flex: _DiameterTableLayout.tonajFlex,
+                      ),
+                      _DataCell(
+                        '${numberFormat.format(line.totalLengthM)} m',
+                        flex: _DiameterTableLayout.lengthFlex,
+                      ),
+                      const Spacer(),
+                      _DataCell(
+                        '${line.barCount}',
+                        width: _DiameterTableLayout.adetWidth,
+                        align: TextAlign.end,
+                      ),
                     ],
                   ),
                   const SizedBox(height: 6),
@@ -287,43 +302,75 @@ class _MetrajDiameterTable extends StatelessWidget {
   }
 }
 
+abstract final class _DiameterTableLayout {
+  static const capFlex = 2;
+  static const tonajFlex = 2;
+  static const lengthFlex = 3;
+  static const adetWidth = 64.0;
+}
+
 class _HeaderCell extends StatelessWidget {
-  const _HeaderCell(this.text, {required this.flex});
+  const _HeaderCell(
+    this.text, {
+    this.flex,
+    this.width,
+    this.align = TextAlign.start,
+  });
 
   final String text;
-  final int flex;
+  final int? flex;
+  final double? width;
+  final TextAlign align;
 
   @override
   Widget build(BuildContext context) {
-    return Expanded(
-      flex: flex,
-      child: Text(
-        text,
-        style: AppTypography.labelMedium.copyWith(fontWeight: FontWeight.w700),
-      ),
+    final child = Text(
+      text,
+      style: AppTypography.labelMedium.copyWith(fontWeight: FontWeight.w700),
+      textAlign: align,
     );
+
+    if (flex != null) {
+      return Expanded(flex: flex!, child: child);
+    }
+
+    return SizedBox(width: width, child: child);
   }
 }
 
 class _DataCell extends StatelessWidget {
-  const _DataCell(this.text, {required this.flex, this.color});
+  const _DataCell(
+    this.text, {
+    this.flex,
+    this.width,
+    this.color,
+    this.align = TextAlign.start,
+  });
 
   final String text;
-  final int flex;
+  final int? flex;
+  final double? width;
   final Color? color;
+  final TextAlign align;
 
   @override
   Widget build(BuildContext context) {
-    return Expanded(
-      flex: flex,
-      child: Text(
-        text,
-        style: AppTypography.bodyMedium.copyWith(
-          fontSize: 12,
-          color: color ?? AppColors.textSecondary,
-          fontWeight: color != null ? FontWeight.w600 : FontWeight.w400,
-        ),
+    final child = Text(
+      text,
+      style: AppTypography.bodyMedium.copyWith(
+        fontSize: 12,
+        color: color ?? AppColors.textSecondary,
+        fontWeight: color != null ? FontWeight.w600 : FontWeight.w400,
       ),
+      textAlign: align,
+      maxLines: 1,
+      overflow: TextOverflow.fade,
     );
+
+    if (flex != null) {
+      return Expanded(flex: flex!, child: child);
+    }
+
+    return SizedBox(width: width, child: child);
   }
 }
