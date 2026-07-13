@@ -228,7 +228,8 @@ class _TahvilRulesHint extends StatelessWidget {
           Text(
             'Kurallar: ±$tahvilMaxDiameterDiffMm mm çap · '
             '≤${tahvilMaxSpacingCm.toStringAsFixed(0)} cm aralık · '
-            '≤%${(tahvilMaxAreaDeviationRatio * 100).toStringAsFixed(0)} kesit sapması',
+            'hedef As ≥ kaynak As · '
+            '≤%${(tahvilMaxAreaDeviationRatio * 100).toStringAsFixed(0)} fazla kesit',
             style: AppTypography.labelSmall.copyWith(color: AppColors.textMuted),
           ),
         ],
@@ -694,7 +695,11 @@ class _DualSuggestionCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final comparison = suggestion.comparison;
-    final accent = suggestion.isAllowed ? AppColors.success : AppColors.warning;
+    final accent = suggestion.isAllowed
+        ? AppColors.success
+        : comparison.hasAreaDeficit
+            ? AppColors.critical
+            : AppColors.warning;
 
     return Material(
       color: selected
@@ -733,9 +738,13 @@ class _DualSuggestionCard extends StatelessWidget {
                   if (isOptimal)
                     const _StatusBadge(label: 'Optimum', color: AppColors.success)
                   else if (!suggestion.isAllowed)
-                    const _StatusBadge(
-                      label: 'Uygun değil',
-                      color: AppColors.warning,
+                    _StatusBadge(
+                      label: comparison.hasAreaDeficit
+                          ? 'Yetersiz As'
+                          : 'Uygun değil',
+                      color: comparison.hasAreaDeficit
+                          ? AppColors.critical
+                          : AppColors.warning,
                     ),
                 ],
               ),
@@ -1050,6 +1059,9 @@ class _NumericField extends StatelessWidget {
     final fieldColor = accent == _FieldAccent.source
         ? AppColors.warning
         : AppColors.electricBlueLight;
+    final hasValue = controller.text.trim().isNotEmpty;
+    final activeColor =
+        hasValue ? AppColors.success : fieldColor;
 
     return TextField(
       controller: controller,
@@ -1061,19 +1073,20 @@ class _NumericField extends StatelessWidget {
       decoration: InputDecoration(
         hintText: hint,
         filled: true,
-        fillColor: fieldColor.withValues(alpha: 0.12),
+        fillColor: activeColor.withValues(alpha: hasValue ? 0.18 : 0.12),
         isDense: true,
         contentPadding: const EdgeInsets.symmetric(horizontal: 6, vertical: 12),
         enabledBorder: OutlineInputBorder(
           borderRadius: AppRadii.sm,
           borderSide: BorderSide(
-            color: fieldColor.withValues(alpha: 0.45),
+            color: activeColor.withValues(alpha: hasValue ? 0.65 : 0.45),
+            width: hasValue ? 1.5 : 1,
           ),
         ),
         focusedBorder: OutlineInputBorder(
           borderRadius: AppRadii.sm,
           borderSide: BorderSide(
-            color: fieldColor.withValues(alpha: 0.8),
+            color: activeColor.withValues(alpha: 0.85),
             width: 1.5,
           ),
         ),
@@ -1188,8 +1201,10 @@ class _SingleQuantityResultCard extends StatelessWidget {
         const SizedBox(height: 4),
         Text(
           result.isAllowed
-              ? 'Sapma %${result.areaDeviationPercent.toStringAsFixed(2)} (uygun)'
-              : 'Sapma %${result.areaDeviationPercent.toStringAsFixed(2)}',
+              ? 'Fazla kesit %${result.areaDeviationPercent.toStringAsFixed(2)} (uygun)'
+              : result.targetAreaMm2 + 1e-6 < result.sourceAreaMm2
+                  ? 'Hedef As kaynak Astan küçük — tahvil uygun değil'
+                  : 'Fazla kesit %${result.areaDeviationPercent.toStringAsFixed(2)}',
           style: AppTypography.bodySmall.copyWith(
             color: result.isAllowed ? AppColors.success : AppColors.critical,
           ),
@@ -1210,7 +1225,11 @@ class _DualComparisonCard extends StatelessWidget {
       comparison.sourceAreaMm2,
       comparison.targetAreaMm2,
     );
-    final accent = comparison.isAllowed ? AppColors.success : AppColors.warning;
+    final accent = comparison.isAllowed
+        ? AppColors.success
+        : comparison.hasAreaDeficit
+            ? AppColors.critical
+            : AppColors.warning;
 
     return Container(
       width: double.infinity,
@@ -1244,11 +1263,21 @@ class _DualComparisonCard extends StatelessWidget {
           const SizedBox(height: 4),
           Text(
             comparison.isAllowed
-                ? 'Kesit sapması kabul limiti içinde.'
-                : comparison.diameterRuleViolations.isNotEmpty
-                    ? comparison.diameterRuleViolations.join(' · ')
-                    : 'Kesit sapması %${(tahvilMaxAreaDeviationRatio * 100).toStringAsFixed(0)} limitini aşıyor.',
-            style: AppTypography.bodySmall.copyWith(color: AppColors.textMuted),
+                ? 'Hedef As kaynak Asa eşit veya büyük — kabul limiti içinde.'
+                : comparison.hasAreaDeficit
+                    ? comparison.areaRejectReason ??
+                        'Hedef As kaynak Astan küçük — tahvil uygun değil.'
+                    : comparison.diameterRuleViolations.isNotEmpty
+                        ? comparison.diameterRuleViolations.join(' · ')
+                        : comparison.areaRejectReason ??
+                            'Fazla kesit limiti aşılıyor.',
+            style: AppTypography.bodySmall.copyWith(
+              color: comparison.isAllowed
+                  ? AppColors.textMuted
+                  : comparison.hasAreaDeficit
+                      ? AppColors.critical
+                      : AppColors.textMuted,
+            ),
           ),
         ],
       ),

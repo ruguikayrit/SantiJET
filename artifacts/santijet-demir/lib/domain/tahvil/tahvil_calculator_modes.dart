@@ -22,6 +22,88 @@ enum TahvilQuantityKind {
 }
 
 const _piQuarter = math.pi / 4;
+const _areaEpsilon = 1e-6;
+
+/// Tahvilde hedef kesit alanı kaynak alana eşit veya büyük olmalıdır.
+bool isTargetAreaAtLeastSource(double sourceAreaMm2, double targetAreaMm2) =>
+    targetAreaMm2 + _areaEpsilon >= sourceAreaMm2;
+
+/// Kaynak alanın üzerindeki fazlalık yüzdesi (hedef < kaynak ise null).
+double? computeExcessAreaDeviationPercent(
+  double sourceAreaMm2,
+  double targetAreaMm2,
+) {
+  if (sourceAreaMm2 <= 0) return null;
+  if (targetAreaMm2 + _areaEpsilon < sourceAreaMm2) return null;
+  return ((targetAreaMm2 - sourceAreaMm2) / sourceAreaMm2) * 100;
+}
+
+class TahvilAreaCompliance {
+  const TahvilAreaCompliance({
+    required this.isAllowed,
+    required this.sourceAreaMm2,
+    required this.targetAreaMm2,
+    this.excessDeviationPercent,
+    this.rejectReason,
+  });
+
+  final bool isAllowed;
+  final double sourceAreaMm2;
+  final double targetAreaMm2;
+  final double? excessDeviationPercent;
+  final String? rejectReason;
+
+  bool get hasAreaDeficit =>
+      targetAreaMm2 + _areaEpsilon < sourceAreaMm2;
+}
+
+TahvilAreaCompliance evaluateTahvilAreaCompliance({
+  required double sourceAreaMm2,
+  required double targetAreaMm2,
+}) {
+  if (sourceAreaMm2 <= 0 || targetAreaMm2 <= 0) {
+    return TahvilAreaCompliance(
+      isAllowed: false,
+      sourceAreaMm2: sourceAreaMm2,
+      targetAreaMm2: targetAreaMm2,
+      rejectReason: 'Geçersiz kesit alanı',
+    );
+  }
+
+  if (!isTargetAreaAtLeastSource(sourceAreaMm2, targetAreaMm2)) {
+    return TahvilAreaCompliance(
+      isAllowed: false,
+      sourceAreaMm2: sourceAreaMm2,
+      targetAreaMm2: targetAreaMm2,
+      rejectReason:
+          'Hedef As ${formatAreaMm2(targetAreaMm2)} mm², '
+          'kaynak As ${formatAreaMm2(sourceAreaMm2)} mm² değerinden küçük',
+    );
+  }
+
+  final excess = computeExcessAreaDeviationPercent(
+    sourceAreaMm2,
+    targetAreaMm2,
+  )!;
+  if (excess / 100 > tahvilMaxAreaDeviationRatio + 1e-9) {
+    return TahvilAreaCompliance(
+      isAllowed: false,
+      sourceAreaMm2: sourceAreaMm2,
+      targetAreaMm2: targetAreaMm2,
+      excessDeviationPercent: excess,
+      rejectReason:
+          'Fazla kesit %${excess.toStringAsFixed(1)} '
+          '(limit %${(tahvilMaxAreaDeviationRatio * 100).toStringAsFixed(0)})',
+    );
+  }
+
+  return TahvilAreaCompliance(
+    isAllowed: true,
+    sourceAreaMm2: sourceAreaMm2,
+    targetAreaMm2: targetAreaMm2,
+    excessDeviationPercent: excess,
+  );
+}
 
 /// mm²/m — Excel tahvil tablosu ile uyumlu kesit alanı.
 double crossSectionAreaMm2(int diameterMm) =>
@@ -157,13 +239,10 @@ List<TahvilSingleQuantityResult> computeSingleQuantityTahvilResults({
 
     final targetAreaMm2 =
         crossSectionAreaMm2(targetDiameter) * equivalentQuantity;
-    final areaDeviationPercent = computeAreaDeviationRatio(
-          fromDiameter: sourceDiameter,
-          fromQuantity: sourceQuantity,
-          toDiameter: targetDiameter,
-          equivalentQuantity: equivalentQuantity,
-        ) *
-        100;
+    final areaCompliance = evaluateTahvilAreaCompliance(
+      sourceAreaMm2: sourceAreaMm2,
+      targetAreaMm2: targetAreaMm2,
+    );
 
     final diameterAllowed = isTahvilDiameterAllowed(sourceDiameter, targetDiameter);
 
@@ -171,10 +250,8 @@ List<TahvilSingleQuantityResult> computeSingleQuantityTahvilResults({
     if (!diameterAllowed) {
       rejectReason =
           '±$tahvilMaxDiameterDiffMm mm çap (fark ${(sourceDiameter - targetDiameter).abs()} mm)';
-    } else if (areaDeviationPercent / 100 > tahvilMaxAreaDeviationRatio) {
-      rejectReason =
-          'Sapma %${areaDeviationPercent.toStringAsFixed(1)} '
-          '(limit %${(tahvilMaxAreaDeviationRatio * 100).toStringAsFixed(0)})';
+    } else if (!areaCompliance.isAllowed) {
+      rejectReason = areaCompliance.rejectReason;
     }
 
     results.add(
@@ -184,7 +261,7 @@ List<TahvilSingleQuantityResult> computeSingleQuantityTahvilResults({
         sourceAreaMm2: sourceAreaMm2,
         targetAreaMm2: targetAreaMm2,
         isAllowed: rejectReason == null,
-        areaDeviationPercent: areaDeviationPercent,
+        areaDeviationPercent: areaCompliance.excessDeviationPercent ?? 0,
         rejectReason: rejectReason,
       ),
     );
@@ -211,14 +288,18 @@ class TahvilDualQuantityComparison {
     required this.targetAreaMm2,
     required this.areaDeviationPercent,
     required this.isAllowed,
+    required this.hasAreaDeficit,
     this.diameterRuleViolations = const [],
+    this.areaRejectReason,
   });
 
   final double sourceAreaMm2;
   final double targetAreaMm2;
   final double areaDeviationPercent;
   final bool isAllowed;
+  final bool hasAreaDeficit;
   final List<String> diameterRuleViolations;
+  final String? areaRejectReason;
 }
 
 class TahvilDualConversionLeg {
@@ -361,8 +442,10 @@ TahvilDualQuantityComparison? computeDualQuantityComparison({
 
   if (sourceAreaMm2 <= 0 || targetAreaMm2 <= 0) return null;
 
-  final areaDeviationPercent =
-      ((sourceAreaMm2 - targetAreaMm2).abs() / sourceAreaMm2) * 100;
+  final areaCompliance = evaluateTahvilAreaCompliance(
+    sourceAreaMm2: sourceAreaMm2,
+    targetAreaMm2: targetAreaMm2,
+  );
   final diameterViolations = _dualDiameterRuleViolations(
     sourceDiameterA: sourceDiameterA,
     targetDiameterA: targetDiameterA,
@@ -373,9 +456,10 @@ TahvilDualQuantityComparison? computeDualQuantityComparison({
   return TahvilDualQuantityComparison(
     sourceAreaMm2: sourceAreaMm2,
     targetAreaMm2: targetAreaMm2,
-    areaDeviationPercent: areaDeviationPercent,
-    isAllowed: diameterViolations.isEmpty &&
-        areaDeviationPercent / 100 <= tahvilMaxAreaDeviationRatio + 1e-9,
+    areaDeviationPercent: areaCompliance.excessDeviationPercent ?? 0,
+    hasAreaDeficit: areaCompliance.hasAreaDeficit,
+    areaRejectReason: areaCompliance.rejectReason,
+    isAllowed: diameterViolations.isEmpty && areaCompliance.isAllowed,
     diameterRuleViolations: diameterViolations,
   );
 }

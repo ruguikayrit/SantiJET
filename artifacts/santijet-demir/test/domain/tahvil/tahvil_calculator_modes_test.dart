@@ -54,6 +54,26 @@ void main() {
       expect(comparison, isNotNull);
       expect(comparison!.sourceAreaMm2, closeTo(911.06, 0.5));
       expect(comparison.targetAreaMm2, closeTo(995.88, 1.0));
+      expect(comparison.hasAreaDeficit, isFalse);
+      expect(comparison.isAllowed, isFalse);
+    });
+
+    test('rejects tahvil when target As is below source As', () {
+      final comparison = computeDualQuantityComparison(
+        sourceQuantityA: 3,
+        sourceDiameterA: 16,
+        sourceQuantityB: 2,
+        sourceDiameterB: 14,
+        targetQuantityA: 3,
+        targetDiameterA: 14,
+        targetQuantityB: 2,
+        targetDiameterB: 12,
+      );
+
+      expect(comparison, isNotNull);
+      expect(comparison!.hasAreaDeficit, isTrue);
+      expect(comparison.isAllowed, isFalse);
+      expect(comparison.areaRejectReason, isNotNull);
     });
 
     test('dual quantity mode suggests tahvil combinations from source', () {
