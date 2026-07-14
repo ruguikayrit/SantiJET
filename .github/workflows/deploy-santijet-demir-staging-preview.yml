@@ -1,14 +1,13 @@
-name: Deploy ŞantiJET GitHub Pages (DEMİR + BFA + Staging)
+name: Deploy ŞantiJET DEMİR Staging Preview
 
 on:
   push:
     branches:
-      - main
+      - staging
     paths:
       - 'artifacts/santijet-demir/**'
-      - 'artifacts/santijet-bfa-flutter/**'
-      - '.github/workflows/deploy-github-pages.yml'
       - '.github/workflows/deploy-santijet-demir-staging-preview.yml'
+      - '.github/workflows/deploy-github-pages.yml'
       - '.github/scripts/build-santijet-pages.sh'
   workflow_dispatch:
 
@@ -28,16 +27,16 @@ jobs:
       name: github-pages
       url: ${{ steps.deployment.outputs.page_url }}
     steps:
-      - name: Checkout main
+      - name: Checkout main (production + BFA)
         uses: actions/checkout@v4
+        with:
+          ref: main
 
       - name: Checkout staging (preview DEMİR)
         uses: actions/checkout@v4
         with:
           ref: staging
           path: staging-src
-          fetch-depth: 1
-        continue-on-error: true
 
       - name: Setup Flutter (DEMİR)
         uses: subosito/flutter-action@v2
@@ -91,7 +90,7 @@ jobs:
         id: deployment
         uses: actions/deploy-pages@v4
 
-      - name: Published URLs
+      - name: Preview URL
         run: |
           echo "Production: https://${{ github.repository_owner }}.github.io/${{ github.event.repository.name }}/"
           echo "Staging preview: https://${{ github.repository_owner }}.github.io/${{ github.event.repository.name }}/staging/"

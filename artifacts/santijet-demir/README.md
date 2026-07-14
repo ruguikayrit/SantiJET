@@ -110,6 +110,14 @@ GitHub Pages (Safari + Ana Ekrana Ekle):
 https://ruguikayrit.github.io/SantiJET/
 ```
 
+Staging önizleme (canlıdan ayrı):
+
+```
+https://ruguikayrit.github.io/SantiJET/staging/
+```
+
+Akış: [docs/STAGING_PREVIEW.md](docs/STAGING_PREVIEW.md)
+
 Yerel ağ (aynı Wi‑Fi):
 
 ```bash
