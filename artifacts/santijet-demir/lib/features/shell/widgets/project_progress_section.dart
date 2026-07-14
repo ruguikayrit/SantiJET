@@ -618,8 +618,6 @@ class _ProgressTableHeader extends StatelessWidget {
 
   Widget _headerCell(String line1, {String? line2}) {
     final lineStyle = _headerStyle;
-    final reservedSecondLineHeight =
-        (lineStyle.fontSize ?? 11) * (lineStyle.height ?? 1.1);
 
     return DecoratedBox(
       decoration: BoxDecoration(
@@ -629,28 +627,36 @@ class _ProgressTableHeader extends StatelessWidget {
       ),
       child: Padding(
         padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 6),
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          mainAxisSize: MainAxisSize.max,
-          children: [
-            Text(
-              line1,
-              style: lineStyle,
-              textAlign: TextAlign.center,
-              maxLines: 1,
-              overflow: TextOverflow.ellipsis,
-            ),
-            if (line2 != null)
-              Text(
-                line2,
-                style: lineStyle,
-                textAlign: TextAlign.center,
-                maxLines: 1,
-                overflow: TextOverflow.ellipsis,
-              )
-            else
-              SizedBox(height: reservedSecondLineHeight),
-          ],
+        child: Center(
+          child: line2 == null
+              ? Text(
+                  line1,
+                  style: lineStyle,
+                  textAlign: TextAlign.center,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                )
+              : Column(
+                  mainAxisSize: MainAxisSize.min,
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  crossAxisAlignment: CrossAxisAlignment.center,
+                  children: [
+                    Text(
+                      line1,
+                      style: lineStyle,
+                      textAlign: TextAlign.center,
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                    Text(
+                      line2,
+                      style: lineStyle,
+                      textAlign: TextAlign.center,
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                  ],
+                ),
         ),
       ),
     );
