@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:intl/intl.dart';
 import 'package:santijet_demir/core/routing/app_routes.dart';
@@ -18,29 +17,12 @@ class DashboardAlertsSection extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return _AlertsContent(alerts: alerts);
-  }
-}
-
-class ScopedDashboardAlertsSection extends ConsumerWidget {
-  const ScopedDashboardAlertsSection({
-    super.key,
-    required this.scope,
-    this.inline = false,
-  });
-
-  final DashboardAlertScope scope;
-  final bool inline;
-
-  @override
-  Widget build(BuildContext context, WidgetRef ref) {
-    final alerts = ref.watch(dashboardScopedAlertsProvider(scope));
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Text('Kritik Uyarılar', style: AppTypography.headlineMedium),
         const SizedBox(height: AppSpacing.sm),
-        _AlertsContent(alerts: alerts, inline: inline),
+        _AlertsContent(alerts: alerts),
       ],
     );
   }

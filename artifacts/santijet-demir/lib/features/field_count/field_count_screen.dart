@@ -13,8 +13,6 @@ import 'package:santijet_demir/core/widgets/shell_tab_guard.dart';
 import 'package:santijet_demir/core/widgets/summary_kpi_grid.dart';
 import 'package:santijet_demir/features/field_count/providers/field_count_provider.dart';
 import 'package:santijet_demir/features/projects/providers/project_provider.dart';
-import 'package:santijet_demir/features/shell/dashboard_feed_provider.dart';
-import 'package:santijet_demir/features/shell/widgets/dashboard_feed_section.dart';
 
 class FieldCountScreen extends ConsumerWidget {
   const FieldCountScreen({super.key});
@@ -115,11 +113,6 @@ class FieldCountScreen extends ConsumerWidget {
                     _CountRecordsShortcut(
                       recordCount: counts.length,
                       onTap: () => context.push(AppRoutes.countRecords),
-                    ),
-                    const SizedBox(height: 16),
-                    const ScopedDashboardAlertsSection(
-                      scope: DashboardAlertScope.fieldCount,
-                      inline: true,
                     ),
                     const SizedBox(height: 80),
                   ]),

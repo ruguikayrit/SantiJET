@@ -15,8 +15,6 @@ import 'package:santijet_demir/features/incoming_rebar/providers/incoming_rebar_
 import 'package:santijet_demir/features/incoming_rebar/widgets/delivered_diameter_table.dart';
 import 'package:santijet_demir/features/incoming_rebar/widgets/delivery_card.dart';
 import 'package:santijet_demir/features/projects/providers/project_provider.dart';
-import 'package:santijet_demir/features/shell/dashboard_feed_provider.dart';
-import 'package:santijet_demir/features/shell/widgets/dashboard_feed_section.dart';
 
 class IncomingRebarScreen extends ConsumerWidget {
   const IncomingRebarScreen({super.key});
@@ -92,10 +90,6 @@ class IncomingRebarScreen extends ConsumerWidget {
                     Text('Sahaya Gelen Demir', style: AppTypography.headlineMedium),
                     const SizedBox(height: 8),
                     DeliveredDiameterTable(rows: diameterRows),
-                    const SizedBox(height: 16),
-                    const ScopedDashboardAlertsSection(
-                      scope: DashboardAlertScope.incoming,
-                    ),
                     const SizedBox(height: 16),
                     Text('Teslimat kayıtları', style: AppTypography.headlineMedium),
                     const SizedBox(height: 8),
