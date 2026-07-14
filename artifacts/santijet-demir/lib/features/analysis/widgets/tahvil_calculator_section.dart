@@ -285,12 +285,11 @@ class _TahvilRulesHint extends StatelessWidget {
   Widget build(BuildContext context) {
     final description = switch (basis) {
       TahvilCalculatorBasis.spacing =>
-        'Proje çap ve aralığı girin. Hedef çap veya hedef aralık verin; '
-            'diğer değer otomatik hesaplanır.',
+        'Proje çap ve aralığı girin. Manuel hedef girin veya olumlu seçenekleri görüntüleyin.',
       TahvilCalculatorBasis.quantity =>
         quantityKind == TahvilQuantityKind.single
-            ? 'Proje adet ve çap girin. Hedef çapta eşdeğer adet ve kesit alanı gösterilir.'
-            : 'İki proje donatı ve iki hedef satırı girin. Toplam kesit alanı mukayese edilir.',
+            ? 'Proje adet ve çap girin. Manuel hedef girin veya olumlu seçenekleri görüntüleyin.'
+            : 'İki proje donatı girin. Manuel hedef veya olumlu seçeneklerden tahvil yapın.',
     };
 
     return Container(
@@ -334,6 +333,7 @@ class _SpacingModePanel extends StatefulWidget {
 
 class _SpacingModePanelState extends State<_SpacingModePanel> {
   TahvilSpacingTargetKind _targetKind = TahvilSpacingTargetKind.diameter;
+  bool _showPositiveOptions = false;
   final _targetDiameterController = TextEditingController();
   final _targetSpacingController = TextEditingController();
 
@@ -394,6 +394,10 @@ class _SpacingModePanelState extends State<_SpacingModePanel> {
         ? targetDiameterInput != null && targetDiameterInput > 0
         : targetSpacingInput != null && targetSpacingInput > 0;
 
+    final positiveSpacingOptions = sourceReady
+        ? _adequateSpacingOptions(diameter!, spacingMm!)
+        : const <TahvilSpacingTargetResult>[];
+
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
@@ -433,8 +437,8 @@ class _SpacingModePanelState extends State<_SpacingModePanel> {
             style: AppTypography.bodySmall.copyWith(color: AppColors.textMuted),
           ),
         ] else ...[
-          const SizedBox(height: 14),
-          Text('Hedef tahvil', style: AppTypography.titleMedium),
+          const SizedBox(height: 12),
+          Text('Manuel hedef girişi', style: AppTypography.titleMedium),
           const SizedBox(height: 8),
           _ModeSegmentedControl<TahvilSpacingTargetKind>(
             title: 'Hedef girdisi',
@@ -528,9 +532,69 @@ class _SpacingModePanelState extends State<_SpacingModePanel> {
             )
           else
             _SpacingTargetResultCard(result: result),
+          const SizedBox(height: 12),
+          _PositiveOptionsButton(
+            expanded: _showPositiveOptions,
+            optionCount: positiveSpacingOptions.length,
+            onPressed: positiveSpacingOptions.isEmpty
+                ? null
+                : () => setState(
+                      () => _showPositiveOptions = !_showPositiveOptions,
+                    ),
+          ),
+          if (_showPositiveOptions && positiveSpacingOptions.isNotEmpty) ...[
+            const SizedBox(height: 8),
+            Text('Olumlu tahvil seçenekleri', style: AppTypography.labelMedium),
+            const SizedBox(height: 8),
+            ...positiveSpacingOptions.map(
+              (option) => Padding(
+                padding: const EdgeInsets.only(bottom: 8),
+                child: _SpacingOptionCard(
+                  result: option,
+                  selected: _targetKind == TahvilSpacingTargetKind.diameter &&
+                      targetDiameterInput == option.targetDiameter,
+                  onTap: () {
+                    setState(() {
+                      _targetKind = TahvilSpacingTargetKind.diameter;
+                      _targetSpacingController.clear();
+                      _targetDiameterController.text =
+                          '${option.targetDiameter}';
+                    });
+                    _handleChanged();
+                  },
+                ),
+              ),
+            ),
+          ],
         ],
       ],
     );
+  }
+
+  List<TahvilSpacingTargetResult> _adequateSpacingOptions(
+    int sourceDiameter,
+    double sourceSpacingMm,
+  ) {
+    final options = <TahvilSpacingTargetResult>[];
+    for (final targetDiameter in RebarWeightCalculator.standardDiameters) {
+      if (targetDiameter == sourceDiameter) continue;
+      final option = computeSpacingTahvilTarget(
+        sourceDiameter: sourceDiameter,
+        sourceSpacingMm: sourceSpacingMm,
+        inputKind: TahvilSpacingTargetKind.diameter,
+        inputTargetDiameter: targetDiameter,
+      );
+      if (option != null && option.isAdequate) {
+        options.add(option);
+      }
+    }
+    options.sort((a, b) {
+      if (a.isOptimal != b.isOptimal) return a.isOptimal ? -1 : 1;
+      return (sourceDiameter - a.targetDiameter)
+          .abs()
+          .compareTo((sourceDiameter - b.targetDiameter).abs());
+    });
+    return options;
   }
 }
 
@@ -654,7 +718,7 @@ class _SpacingTargetResultCard extends StatelessWidget {
   }
 }
 
-class _SingleQuantityModePanel extends StatelessWidget {
+class _SingleQuantityModePanel extends StatefulWidget {
   const _SingleQuantityModePanel({
     required this.fields,
     required this.onChanged,
@@ -664,7 +728,28 @@ class _SingleQuantityModePanel extends StatelessWidget {
   final VoidCallback onChanged;
 
   @override
+  State<_SingleQuantityModePanel> createState() =>
+      _SingleQuantityModePanelState();
+}
+
+class _SingleQuantityModePanelState extends State<_SingleQuantityModePanel> {
+  bool _showPositiveOptions = false;
+  final _targetDiameterController = TextEditingController();
+
+  @override
+  void dispose() {
+    _targetDiameterController.dispose();
+    super.dispose();
+  }
+
+  void _handleChanged() {
+    widget.onChanged();
+    setState(() {});
+  }
+
+  @override
   Widget build(BuildContext context) {
+    final fields = widget.fields;
     final diameter = fields.diameter;
     final quantity = fields.quantity;
     final isReady = diameter != null && quantity != null;
@@ -674,7 +759,18 @@ class _SingleQuantityModePanel extends StatelessWidget {
             sourceQuantity: quantity!,
           )
         : const <TahvilSingleQuantityResult>[];
-    final allowed = results.where((item) => item.isAllowed).toList();
+    final positiveResults = results.where((item) => item.isAdequate).toList();
+    final targetDiameterInput =
+        int.tryParse(_targetDiameterController.text.trim());
+    TahvilSingleQuantityResult? manualResult;
+    if (isReady && targetDiameterInput != null) {
+      for (final result in results) {
+        if (result.targetDiameter == targetDiameterInput) {
+          manualResult = result;
+          break;
+        }
+      }
+    }
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -689,52 +785,131 @@ class _SingleQuantityModePanel extends StatelessWidget {
                 _NumericField(
                   controller: fields.quantityController,
                   hint: '3',
-                  onChanged: onChanged,
+                  onChanged: _handleChanged,
                 ),
                 _NumericField(
                   controller: fields.diameterController,
                   hint: '16',
-                  onChanged: onChanged,
+                  onChanged: _handleChanged,
                 ),
               ],
             ),
           ],
         ),
-        if (!isReady) ...[
-          const SizedBox(height: 12),
-          Text(
-            'Hesap için adet ve çap alanlarını doldurun.',
-            style: AppTypography.bodySmall.copyWith(color: AppColors.textMuted),
-          ),
-        ] else if (results.isEmpty) ...[
-          const SizedBox(height: 12),
-          Text(
-            'Girilen değerler için tahvil hesabı yapılamadı.',
-            style: AppTypography.bodySmall.copyWith(color: AppColors.critical),
-          ),
-        ] else ...[
+        if (isReady) ...[
           const SizedBox(height: 8),
           _AsBadge(
             label: 'Proje As',
             value:
                 '${formatAreaMm2(crossSectionAreaMm2(diameter!) * quantity!)} mm²',
           ),
-          const SizedBox(height: 14),
-          Text('Hedef tahvil seçenekleri', style: AppTypography.titleMedium),
+        ],
+        if (!isReady) ...[
+          const SizedBox(height: 12),
+          Text(
+            'Hesap için adet ve çap alanlarını doldurun.',
+            style: AppTypography.bodySmall.copyWith(color: AppColors.textMuted),
+          ),
+        ] else ...[
+          const SizedBox(height: 12),
+          Text('Manuel hedef girişi', style: AppTypography.titleMedium),
           const SizedBox(height: 8),
-          ...results.map(
-            (result) => Padding(
-              padding: const EdgeInsets.only(bottom: 8),
-              child: _SingleQuantityResultCard(
-                sourceDiameter: diameter!,
-                sourceQuantity: quantity!,
-                result: result,
-                isOptimal: allowed.isNotEmpty &&
-                    result.isAllowed &&
-                    result.targetDiameter == allowed.first.targetDiameter,
+          _ExcelStyleTable(
+            title: 'Hedef donatı',
+            accentColor: AppColors.electricBlueLight,
+            children: [
+              _InputRow(
+                labels: const ['HEDEF ÇAP (mm)', 'HESAPLANAN ADET'],
+                fields: [
+                  _NumericField(
+                    controller: _targetDiameterController,
+                    hint: '14',
+                    accent: _FieldAccent.target,
+                    onChanged: _handleChanged,
+                  ),
+                  _ComputedField(
+                    value: manualResult != null
+                        ? '${manualResult.equivalentQuantity}'
+                        : null,
+                    hint: '—',
+                  ),
+                ],
+              ),
+              const SizedBox(height: 6),
+              Wrap(
+                spacing: 6,
+                runSpacing: 6,
+                children: [
+                  for (final option in RebarWeightCalculator.standardDiameters)
+                    if (option != diameter)
+                      _DiameterChip(
+                        diameter: option,
+                        selected: targetDiameterInput == option,
+                        enabled: isTahvilDiameterAllowed(diameter!, option),
+                        onTap: () {
+                          _targetDiameterController.text = '$option';
+                          _handleChanged();
+                        },
+                      ),
+                ],
+              ),
+            ],
+          ),
+          const SizedBox(height: 12),
+          if (targetDiameterInput == null)
+            Text(
+              'Hedef çap girin — eşdeğer adet hesaplanacak.',
+              style: AppTypography.bodySmall.copyWith(color: AppColors.textMuted),
+            )
+          else if (manualResult == null)
+            Text(
+              'Girilen hedef için tahvil hesabı yapılamadı.',
+              style: AppTypography.bodySmall.copyWith(color: AppColors.critical),
+            )
+          else
+            _SingleQuantityResultCard(
+              sourceDiameter: diameter!,
+              sourceQuantity: quantity!,
+              result: manualResult,
+              isOptimal: positiveResults.isNotEmpty &&
+                  manualResult.isAllowed &&
+                  manualResult.targetDiameter ==
+                      positiveResults.first.targetDiameter,
+            ),
+          const SizedBox(height: 12),
+          _PositiveOptionsButton(
+            expanded: _showPositiveOptions,
+            optionCount: positiveResults.length,
+            onPressed: positiveResults.isEmpty
+                ? null
+                : () => setState(
+                      () => _showPositiveOptions = !_showPositiveOptions,
+                    ),
+          ),
+          if (_showPositiveOptions && positiveResults.isNotEmpty) ...[
+            const SizedBox(height: 8),
+            Text('Olumlu tahvil seçenekleri', style: AppTypography.labelMedium),
+            const SizedBox(height: 8),
+            ...positiveResults.map(
+              (result) => Padding(
+                padding: const EdgeInsets.only(bottom: 8),
+                child: _SingleQuantityResultCard(
+                  sourceDiameter: diameter!,
+                  sourceQuantity: quantity!,
+                  result: result,
+                  isOptimal: positiveResults.isNotEmpty &&
+                      result.isAllowed &&
+                      result.targetDiameter ==
+                          positiveResults.first.targetDiameter,
+                  selected: targetDiameterInput == result.targetDiameter,
+                  onTap: () {
+                    _targetDiameterController.text = '${result.targetDiameter}';
+                    _handleChanged();
+                  },
+                ),
               ),
             ),
-          ),
+          ],
         ],
       ],
     );
@@ -762,7 +937,7 @@ class _DualQuantityModePanel extends StatefulWidget {
 
 class _DualQuantityModePanelState extends State<_DualQuantityModePanel> {
   String? _selectedSuggestionId;
-  bool _manualEntry = false;
+  bool _showPositiveOptions = false;
 
   _DiameterQuantityFields get sourceA => widget.sourceA;
   _DiameterQuantityFields get sourceB => widget.sourceB;
@@ -812,6 +987,7 @@ class _DualQuantityModePanelState extends State<_DualQuantityModePanel> {
 
   void _handleSourceChanged() {
     _selectedSuggestionId = null;
+    _showPositiveOptions = false;
     widget.onChanged();
   }
 
@@ -826,16 +1002,16 @@ class _DualQuantityModePanelState extends State<_DualQuantityModePanel> {
     );
     setState(() {
       _selectedSuggestionId = suggestion.id;
-      _manualEntry = true;
     });
     widget.onChanged();
   }
 
   @override
   Widget build(BuildContext context) {
-    final suggestions = _suggestions;
+    final positiveSuggestions =
+        _suggestions.where((item) => item.isAdequate).toList();
     final optimalSuggestions =
-        suggestions.where((item) => item.isOptimal).toList();
+        positiveSuggestions.where((item) => item.isOptimal).toList();
     final manualComparison = _manualComparison;
     final sourceArea = _sourceReady
         ? crossSectionAreaMm2(sourceA.diameter!) * sourceA.quantity! +
@@ -874,44 +1050,66 @@ class _DualQuantityModePanelState extends State<_DualQuantityModePanel> {
         if (!_sourceReady) ...[
           const SizedBox(height: 12),
           Text(
-            'Tahvil önerileri için proje adet ve çap alanlarını doldurun.',
+            'Tahvil için proje adet ve çap alanlarını doldurun.',
             style: AppTypography.bodySmall.copyWith(color: AppColors.textMuted),
           ),
         ] else ...[
-          const SizedBox(height: 14),
-          Row(
+          const SizedBox(height: 12),
+          Text('Manuel hedef girişi', style: AppTypography.titleMedium),
+          const SizedBox(height: 8),
+          _ExcelStyleTable(
+            title: 'Hedef donatı',
+            accentColor: AppColors.electricBlueLight,
             children: [
-              Icon(
-                Icons.arrow_downward,
-                size: 18,
-                color: AppColors.electricBlueLight.withValues(alpha: 0.8),
+              _DualManualTargetRow(
+                rowLabel: '1. çeşit',
+                fields: targetA,
+                sourceDiameter: sourceA.diameter,
+                onChanged: () {
+                  _selectedSuggestionId = null;
+                  widget.onChanged();
+                },
               ),
-              const SizedBox(width: 6),
-              Expanded(
-                child: Text(
-                  'Hedef tahvil',
-                  style: AppTypography.titleMedium.copyWith(
-                    color: AppColors.electricBlueLight,
-                  ),
-                ),
+              const SizedBox(height: 8),
+              _DualManualTargetRow(
+                rowLabel: '2. çeşit',
+                fields: targetB,
+                sourceDiameter: sourceB.diameter,
+                onChanged: () {
+                  _selectedSuggestionId = null;
+                  widget.onChanged();
+                },
               ),
             ],
           ),
-          const SizedBox(height: 8),
-          if (suggestions.isEmpty)
+          const SizedBox(height: 12),
+          if (manualComparison == null)
             Text(
-              'Proje veriler için kurala uygun tahvil önerisi bulunamadı.',
-              style: AppTypography.bodySmall.copyWith(color: AppColors.critical),
+              'Mukayese için hedef adet ve çap alanlarını doldurun.',
+              style: AppTypography.bodySmall.copyWith(color: AppColors.textMuted),
             )
-          else ...[
-            Text('Tahvil önerileri', style: AppTypography.labelMedium),
+          else
+            _DualComparisonCard(comparison: manualComparison),
+          const SizedBox(height: 12),
+          _PositiveOptionsButton(
+            expanded: _showPositiveOptions,
+            optionCount: positiveSuggestions.length,
+            onPressed: positiveSuggestions.isEmpty
+                ? null
+                : () => setState(
+                      () => _showPositiveOptions = !_showPositiveOptions,
+                    ),
+          ),
+          if (_showPositiveOptions && positiveSuggestions.isNotEmpty) ...[
+            const SizedBox(height: 8),
+            Text('Olumlu tahvil seçenekleri', style: AppTypography.labelMedium),
             const SizedBox(height: 4),
             Text(
-              'Öneriye dokunarak hedef alanları doldurun veya manuel giriş yapın.',
+              'Öneriye dokunarak hedef alanları doldurun.',
               style: AppTypography.bodySmall.copyWith(color: AppColors.textMuted),
             ),
             const SizedBox(height: 8),
-            ...suggestions.map(
+            ...positiveSuggestions.map(
               (suggestion) => Padding(
                 padding: const EdgeInsets.only(bottom: 8),
                 child: _DualSuggestionCard(
@@ -925,79 +1123,131 @@ class _DualQuantityModePanelState extends State<_DualQuantityModePanel> {
               ),
             ),
           ],
-          const SizedBox(height: 10),
-          _ManualTargetToggle(
-            expanded: _manualEntry,
-            onChanged: (value) => setState(() => _manualEntry = value),
-          ),
-          if (_manualEntry) ...[
-            const SizedBox(height: 8),
-            _ExcelStyleTable(
-              title: 'Manuel hedef donatı',
-              accentColor: AppColors.electricBlueLight,
-              children: [
-                _DualManualTargetRow(
-                  rowLabel: '1. çeşit',
-                  fields: targetA,
-                  sourceDiameter: sourceA.diameter,
-                  onChanged: () {
-                    _selectedSuggestionId = null;
-                    widget.onChanged();
-                  },
-                ),
-                const SizedBox(height: 8),
-                _DualManualTargetRow(
-                  rowLabel: '2. çeşit',
-                  fields: targetB,
-                  sourceDiameter: sourceB.diameter,
-                  onChanged: () {
-                    _selectedSuggestionId = null;
-                    widget.onChanged();
-                  },
-                ),
-              ],
-            ),
-            const SizedBox(height: 12),
-            if (manualComparison == null)
-              Text(
-                'Mukayese için hedef adet ve çap alanlarını doldurun.',
-                style: AppTypography.bodySmall.copyWith(color: AppColors.textMuted),
-              )
-            else
-              _DualComparisonCard(comparison: manualComparison),
-          ],
         ],
       ],
     );
   }
 }
 
-class _ManualTargetToggle extends StatelessWidget {
-  const _ManualTargetToggle({
+class _PositiveOptionsButton extends StatelessWidget {
+  const _PositiveOptionsButton({
     required this.expanded,
-    required this.onChanged,
+    required this.optionCount,
+    required this.onPressed,
   });
 
   final bool expanded;
-  final ValueChanged<bool> onChanged;
+  final int optionCount;
+  final VoidCallback? onPressed;
 
   @override
   Widget build(BuildContext context) {
-    return OutlinedButton.icon(
-      onPressed: () => onChanged(!expanded),
+    final enabled = onPressed != null;
+    final label = !enabled
+        ? 'Olumlu tahvil seçeneği yok'
+        : expanded
+            ? 'Olumlu seçenekleri gizle ($optionCount)'
+            : 'Olumlu tahvil seçeneklerini göster ($optionCount)';
+
+    return FilledButton.tonalIcon(
+      onPressed: onPressed,
       icon: Icon(
-        expanded ? Icons.edit_outlined : Icons.edit_note_outlined,
-        size: 18,
+        expanded ? Icons.expand_less : Icons.playlist_add_check_outlined,
+        size: 20,
       ),
-      label: Text(
-        expanded ? 'Manuel girişi gizle' : 'Manuel hedef girişi',
+      label: Text(label),
+      style: FilledButton.styleFrom(
+        foregroundColor:
+            enabled ? AppColors.success : AppColors.textMuted,
+        backgroundColor: enabled
+            ? AppColors.success.withValues(alpha: 0.12)
+            : AppColors.canvas,
+        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 14),
+        alignment: Alignment.centerLeft,
       ),
-      style: OutlinedButton.styleFrom(
-        foregroundColor: AppColors.electricBlueLight,
-        side: BorderSide(
-          color: AppColors.electricBlueLight.withValues(alpha: 0.45),
+    );
+  }
+}
+
+class _SpacingOptionCard extends StatelessWidget {
+  const _SpacingOptionCard({
+    required this.result,
+    required this.selected,
+    required this.onTap,
+  });
+
+  final TahvilSpacingTargetResult result;
+  final bool selected;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    return Material(
+      color: selected
+          ? AppColors.electricBlueLight.withValues(alpha: 0.1)
+          : result.isOptimal
+              ? AppColors.success.withValues(alpha: 0.05)
+              : AppColors.info.withValues(alpha: 0.06),
+      borderRadius: AppRadii.md,
+      child: InkWell(
+        onTap: onTap,
+        borderRadius: AppRadii.md,
+        child: Container(
+          width: double.infinity,
+          padding: const EdgeInsets.all(12),
+          decoration: BoxDecoration(
+            borderRadius: AppRadii.md,
+            border: Border.all(
+              color: selected
+                  ? AppColors.electricBlueLight.withValues(alpha: 0.55)
+                  : result.isOptimal
+                      ? AppColors.success.withValues(alpha: 0.35)
+                      : AppColors.info.withValues(alpha: 0.35),
+            ),
+          ),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Row(
+                children: [
+                  Expanded(
+                    child: Text(
+                      '${formatDiameterSpacingLabel(result.sourceDiameter, result.sourceSpacingMm)}  →  '
+                      '${formatDiameterSpacingLabel(result.targetDiameter, result.targetSpacingMm)}',
+                      style: AppTypography.bodyMedium.copyWith(
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
+                  ),
+                  if (result.isOptimal)
+                    const _StatusBadge(
+                      label: 'Optimum',
+                      color: AppColors.success,
+                    )
+                  else ...[
+                    const _StatusBadge(
+                      label: 'Uygun',
+                      color: AppColors.success,
+                    ),
+                    const SizedBox(width: 6),
+                    const _StatusBadge(
+                      label: 'Optimum değil',
+                      color: AppColors.warning,
+                    ),
+                  ],
+                ],
+              ),
+              const SizedBox(height: 6),
+              Text(
+                'As: ${formatAreaMm2(result.sourceAsPerMeterMm2)} → '
+                '${formatAreaMm2(result.targetAsPerMeterMm2)} mm²/m',
+                style: AppTypography.bodySmall.copyWith(
+                  color: AppColors.textMuted,
+                ),
+              ),
+            ],
+          ),
         ),
-        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
       ),
     );
   }
@@ -1469,12 +1719,16 @@ class _SingleQuantityResultCard extends StatelessWidget {
     required this.sourceQuantity,
     required this.result,
     required this.isOptimal,
+    this.selected = false,
+    this.onTap,
   });
 
   final int sourceDiameter;
   final int sourceQuantity;
   final TahvilSingleQuantityResult result;
   final bool isOptimal;
+  final bool selected;
+  final VoidCallback? onTap;
 
   @override
   Widget build(BuildContext context) {
@@ -1483,13 +1737,15 @@ class _SingleQuantityResultCard extends StatelessWidget {
       result.targetAreaMm2,
     );
 
-    return _ResultCardShell(
+    final card = _ResultCardShell(
       title:
           '$sourceQuantity×Ø$sourceDiameter  →  ${result.equivalentQuantity}×Ø${result.targetDiameter}',
       isAllowed: result.isAllowed,
+      isAdequate: result.isAdequate,
       isOptimal: isOptimal,
       rejectReason: result.rejectReason,
       targetDiameter: result.targetDiameter,
+      selected: selected,
       children: [
         Text(
           'As: ${formatAreaMm2(result.sourceAreaMm2)} mm² '
@@ -1515,6 +1771,17 @@ class _SingleQuantityResultCard extends StatelessWidget {
           ),
         ),
       ],
+    );
+
+    if (onTap == null) return card;
+
+    return Material(
+      color: Colors.transparent,
+      child: InkWell(
+        onTap: onTap,
+        borderRadius: AppRadii.md,
+        child: card,
+      ),
     );
   }
 }
@@ -1624,36 +1891,49 @@ class _ResultCardShell extends StatelessWidget {
     required this.isOptimal,
     required this.targetDiameter,
     required this.children,
+    this.isAdequate = false,
     this.rejectReason,
+    this.selected = false,
   });
 
   final String title;
   final bool isAllowed;
+  final bool isAdequate;
   final bool isOptimal;
   final int targetDiameter;
   final List<Widget> children;
   final String? rejectReason;
+  final bool selected;
 
   @override
   Widget build(BuildContext context) {
     final targetColor = AppColors.diameterColor(targetDiameter);
+    final accent = isOptimal
+        ? AppColors.success
+        : isAdequate
+            ? AppColors.info
+            : !isAllowed
+                ? AppColors.critical
+                : AppColors.border;
 
     return Container(
       width: double.infinity,
       padding: const EdgeInsets.all(14),
       decoration: BoxDecoration(
-        color: isOptimal
-            ? AppColors.success.withValues(alpha: 0.06)
-            : !isAllowed
-                ? AppColors.critical.withValues(alpha: 0.04)
-                : AppColors.surfaceElevated,
+        color: selected
+            ? AppColors.electricBlueLight.withValues(alpha: 0.1)
+            : isOptimal
+                ? AppColors.success.withValues(alpha: 0.06)
+                : isAdequate
+                    ? AppColors.info.withValues(alpha: 0.06)
+                    : !isAllowed
+                        ? AppColors.critical.withValues(alpha: 0.04)
+                        : AppColors.surfaceElevated,
         borderRadius: AppRadii.md,
         border: Border.all(
-          color: isOptimal
-              ? AppColors.success.withValues(alpha: 0.35)
-              : !isAllowed
-                  ? AppColors.critical.withValues(alpha: 0.25)
-                  : AppColors.border,
+          color: selected
+              ? AppColors.electricBlueLight.withValues(alpha: 0.55)
+              : accent.withValues(alpha: isOptimal || isAdequate || !isAllowed ? 0.35 : 1),
         ),
       ),
       child: Column(
@@ -1665,7 +1945,7 @@ class _ResultCardShell extends StatelessWidget {
                 child: Text(
                   title,
                   style: AppTypography.titleMedium.copyWith(
-                    color: isAllowed
+                    color: isAllowed || isAdequate
                         ? targetColor
                         : targetColor.withValues(alpha: 0.55),
                   ),
@@ -1673,14 +1953,21 @@ class _ResultCardShell extends StatelessWidget {
               ),
               if (isOptimal)
                 const _StatusBadge(label: 'Optimum', color: AppColors.success)
-              else if (!isAllowed)
+              else if (isAdequate) ...[
+                const _StatusBadge(label: 'Uygun', color: AppColors.success),
+                const SizedBox(width: 6),
+                const _StatusBadge(
+                  label: 'Optimum değil',
+                  color: AppColors.warning,
+                ),
+              ] else if (!isAllowed)
                 const _StatusBadge(
                   label: 'Uygun değil',
                   color: AppColors.critical,
                 ),
             ],
           ),
-          if (!isAllowed && rejectReason != null) ...[
+          if (!isAllowed && !isAdequate && rejectReason != null) ...[
             const SizedBox(height: 6),
             Text(
               rejectReason!,
