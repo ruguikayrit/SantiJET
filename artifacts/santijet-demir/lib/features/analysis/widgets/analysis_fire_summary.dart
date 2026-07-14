@@ -844,7 +844,7 @@ class _MatteGreenGradientButton extends StatelessWidget {
                     fontWeight: FontWeight.w700,
                     letterSpacing: 0.15,
                     fontSize: (AppTypography.titleMedium.fontSize ?? 14) * 1.125,
-                    height: 0.825,
+                    height: 0.825 * 0.75,
                   ),
                 ),
               ),
