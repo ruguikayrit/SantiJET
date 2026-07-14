@@ -599,21 +599,28 @@ class _ProgressTableHeader extends StatelessWidget {
   Widget build(BuildContext context) {
     return Padding(
       padding: const EdgeInsets.fromLTRB(14, 10, 14, 10),
-      child: Row(
-        children: [
-          Expanded(flex: 2, child: _headerCell('ÇAP')),
-          const SizedBox(width: 4),
-          Expanded(flex: 3, child: _headerCell('KEŞİF')),
-          const SizedBox(width: 4),
-          Expanded(flex: 3, child: _headerCell('İLERLEME')),
-          const SizedBox(width: 4),
-          Expanded(flex: 3, child: _headerCell('PLAN.', line2: 'KULL.')),
-        ],
+      child: IntrinsicHeight(
+        child: Row(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            Expanded(flex: 2, child: _headerCell('ÇAP')),
+            const SizedBox(width: 4),
+            Expanded(flex: 3, child: _headerCell('KEŞİF')),
+            const SizedBox(width: 4),
+            Expanded(flex: 3, child: _headerCell('İLERLEME')),
+            const SizedBox(width: 4),
+            Expanded(flex: 3, child: _headerCell('PLAN.', line2: 'KULL.')),
+          ],
+        ),
       ),
     );
   }
 
   Widget _headerCell(String line1, {String? line2}) {
+    final lineStyle = _headerStyle;
+    final reservedSecondLineHeight =
+        (lineStyle.fontSize ?? 11) * (lineStyle.height ?? 1.1);
+
     return DecoratedBox(
       decoration: BoxDecoration(
         color: AppColors.electricBlueLight,
@@ -622,30 +629,29 @@ class _ProgressTableHeader extends StatelessWidget {
       ),
       child: Padding(
         padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 6),
-        child: line2 == null
-            ? Text(
-                line1,
-                style: _headerStyle,
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          mainAxisSize: MainAxisSize.max,
+          children: [
+            Text(
+              line1,
+              style: lineStyle,
+              textAlign: TextAlign.center,
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+            ),
+            if (line2 != null)
+              Text(
+                line2,
+                style: lineStyle,
                 textAlign: TextAlign.center,
-                maxLines: 2,
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
               )
-            : Column(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  Text(
-                    line1,
-                    style: _headerStyle,
-                    textAlign: TextAlign.center,
-                    maxLines: 1,
-                  ),
-                  Text(
-                    line2,
-                    style: _headerStyle,
-                    textAlign: TextAlign.center,
-                    maxLines: 1,
-                  ),
-                ],
-              ),
+            else
+              SizedBox(height: reservedSecondLineHeight),
+          ],
+        ),
       ),
     );
   }
