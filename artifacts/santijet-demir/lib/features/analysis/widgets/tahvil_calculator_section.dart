@@ -55,22 +55,12 @@ class _TahvilCalculatorSectionState extends State<TahvilCalculatorSection> {
           ),
           const SizedBox(height: 14),
         ],
-        _ModeSegmentedControl<TahvilCalculatorBasis>(
-          values: TahvilCalculatorBasis.values,
-          selected: _basis,
-          labelBuilder: (value) => value.label,
-          onSelected: (value) => setState(() => _basis = value),
+        _TahvilCalculatorModePanel(
+          basis: _basis,
+          quantityKind: _quantityKind,
+          onBasisChanged: (value) => setState(() => _basis = value),
+          onQuantityKindChanged: (value) => setState(() => _quantityKind = value),
         ),
-        if (_basis == TahvilCalculatorBasis.quantity) ...[
-          const SizedBox(height: 10),
-          _ModeSegmentedControl<TahvilQuantityKind>(
-            values: TahvilQuantityKind.values,
-            selected: _quantityKind,
-            labelBuilder: (value) => value.label,
-            onSelected: (value) => setState(() => _quantityKind = value),
-            compact: true,
-          ),
-        ],
         const SizedBox(height: 14),
         _TahvilRulesHint(basis: _basis, quantityKind: _quantityKind),
         const SizedBox(height: 12),
@@ -98,45 +88,126 @@ class _TahvilCalculatorSectionState extends State<TahvilCalculatorSection> {
   }
 }
 
+class _TahvilCalculatorModePanel extends StatelessWidget {
+  const _TahvilCalculatorModePanel({
+    required this.basis,
+    required this.quantityKind,
+    required this.onBasisChanged,
+    required this.onQuantityKindChanged,
+  });
+
+  final TahvilCalculatorBasis basis;
+  final TahvilQuantityKind quantityKind;
+  final ValueChanged<TahvilCalculatorBasis> onBasisChanged;
+  final ValueChanged<TahvilQuantityKind> onQuantityKindChanged;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.all(12),
+      decoration: BoxDecoration(
+        gradient: LinearGradient(
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+          colors: [
+            AppColors.surfaceElevated,
+            AppColors.surfaceHighlight.withValues(alpha: 0.28),
+          ],
+        ),
+        borderRadius: AppRadii.md,
+        border: Border.all(
+          color: AppColors.borderSubtle.withValues(alpha: 0.65),
+        ),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          _ModeSegmentedControl<TahvilCalculatorBasis>(
+            title: 'Hesaplama yöntemi',
+            values: TahvilCalculatorBasis.values,
+            selected: basis,
+            labelBuilder: (value) => value.label,
+            onSelected: onBasisChanged,
+          ),
+          if (basis == TahvilCalculatorBasis.quantity) ...[
+            const SizedBox(height: 12),
+            Divider(
+              height: 1,
+              color: AppColors.border.withValues(alpha: 0.75),
+            ),
+            const SizedBox(height: 12),
+            _ModeSegmentedControl<TahvilQuantityKind>(
+              title: 'Donatı yapısı',
+              values: TahvilQuantityKind.values,
+              selected: quantityKind,
+              labelBuilder: (value) => value.label,
+              onSelected: onQuantityKindChanged,
+              dense: true,
+            ),
+          ],
+        ],
+      ),
+    );
+  }
+}
+
 class _ModeSegmentedControl<T> extends StatelessWidget {
   const _ModeSegmentedControl({
     required this.values,
     required this.selected,
     required this.labelBuilder,
     required this.onSelected,
-    this.compact = false,
+    this.title,
+    this.dense = false,
   });
 
   final List<T> values;
   final T selected;
   final String Function(T value) labelBuilder;
   final ValueChanged<T> onSelected;
-  final bool compact;
+  final String? title;
+  final bool dense;
 
   @override
   Widget build(BuildContext context) {
-    return Container(
-      padding: const EdgeInsets.all(4),
-      decoration: BoxDecoration(
-        color: AppColors.canvas,
-        borderRadius: AppRadii.md,
-        border: Border.all(color: AppColors.border),
-      ),
-      child: Row(
-        children: [
-          for (var i = 0; i < values.length; i++) ...[
-            if (i > 0) const SizedBox(width: 4),
-            Expanded(
-              child: _ModeSegmentButton(
-                label: labelBuilder(values[i]),
-                selected: values[i] == selected,
-                compact: compact,
-                onTap: () => onSelected(values[i]),
-              ),
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        if (title != null) ...[
+          Text(
+            title!,
+            style: AppTypography.labelSmall.copyWith(
+              color: AppColors.textMuted,
+              fontWeight: FontWeight.w600,
+              letterSpacing: 0.35,
             ),
-          ],
+          ),
+          const SizedBox(height: 8),
         ],
-      ),
+        Container(
+          padding: const EdgeInsets.all(3),
+          decoration: BoxDecoration(
+            color: AppColors.canvas,
+            borderRadius: BorderRadius.circular(10),
+            border: Border.all(
+              color: AppColors.borderSubtle.withValues(alpha: 0.85),
+            ),
+          ),
+          child: Row(
+            children: [
+              for (var i = 0; i < values.length; i++)
+                Expanded(
+                  child: _ModeSegmentButton(
+                    label: labelBuilder(values[i]),
+                    selected: values[i] == selected,
+                    dense: dense,
+                    onTap: () => onSelected(values[i]),
+                  ),
+                ),
+            ],
+          ),
+        ),
+      ],
     );
   }
 }
@@ -146,44 +217,53 @@ class _ModeSegmentButton extends StatelessWidget {
     required this.label,
     required this.selected,
     required this.onTap,
-    this.compact = false,
+    this.dense = false,
   });
 
   final String label;
   final bool selected;
   final VoidCallback onTap;
-  final bool compact;
+  final bool dense;
 
   @override
   Widget build(BuildContext context) {
     return Material(
-      color: selected
-          ? AppColors.electricBlueLight.withValues(alpha: 0.18)
-          : Colors.transparent,
-      borderRadius: AppRadii.sm,
+      color: Colors.transparent,
       child: InkWell(
         onTap: onTap,
-        borderRadius: AppRadii.sm,
-        child: Container(
+        borderRadius: BorderRadius.circular(8),
+        splashColor: AppColors.electricBlueLight.withValues(alpha: 0.12),
+        highlightColor: AppColors.electricBlueLight.withValues(alpha: 0.06),
+        child: AnimatedContainer(
+          duration: const Duration(milliseconds: 180),
+          curve: Curves.easeOutCubic,
           padding: EdgeInsets.symmetric(
-            horizontal: compact ? 8 : 10,
-            vertical: compact ? 10 : 12,
+            horizontal: dense ? 6 : 8,
+            vertical: dense ? 9 : 11,
           ),
           decoration: BoxDecoration(
-            borderRadius: AppRadii.sm,
-            border: Border.all(
-              color: selected
-                  ? AppColors.electricBlueLight.withValues(alpha: 0.55)
-                  : Colors.transparent,
-            ),
+            borderRadius: BorderRadius.circular(8),
+            color: selected ? AppColors.electricBlue : Colors.transparent,
+            boxShadow: selected
+                ? [
+                    BoxShadow(
+                      color: AppColors.electricBlue.withValues(alpha: 0.32),
+                      blurRadius: 10,
+                      offset: const Offset(0, 2),
+                    ),
+                  ]
+                : null,
           ),
           child: Text(
             label,
             textAlign: TextAlign.center,
-            style: (compact ? AppTypography.labelMedium : AppTypography.bodyMedium)
-                .copyWith(
-              color: selected ? AppColors.electricBlueLight : AppColors.textMuted,
+            maxLines: 2,
+            overflow: TextOverflow.ellipsis,
+            style: AppTypography.labelMedium.copyWith(
+              color: selected ? Colors.white : AppColors.textMuted,
               fontWeight: selected ? FontWeight.w700 : FontWeight.w500,
+              fontSize: dense ? 12 : 13,
+              height: 1.2,
             ),
           ),
         ),
@@ -357,11 +437,12 @@ class _SpacingModePanelState extends State<_SpacingModePanel> {
           Text('Hedef tahvil', style: AppTypography.titleMedium),
           const SizedBox(height: 8),
           _ModeSegmentedControl<TahvilSpacingTargetKind>(
+            title: 'Hedef girdisi',
             values: TahvilSpacingTargetKind.values,
             selected: _targetKind,
             labelBuilder: (value) => value.label,
             onSelected: _onTargetKindChanged,
-            compact: true,
+            dense: true,
           ),
           const SizedBox(height: 10),
           _ExcelStyleTable(
