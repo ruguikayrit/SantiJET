@@ -44,10 +44,16 @@ git push origin main
 
 ## GitHub Actions
 
-- `deploy-github-pages.yml` — `main` push → production + BFA + staging klasörü
-- `deploy-santijet-demir-staging-preview.yml` — `staging` push → aynı paket, staging kodu güncel
+- `deploy-github-pages.yml` — `main` veya `staging` push → production + `/staging/` + BFA (BFA hata verirse yine de DEMİR deploy edilir)
 
-Her iki workflow da tam site paketini üretir (production silinmez).
+### Staging URL 404 alırsanız
+
+1. **Actions** sekmesinde son `Deploy ŞantiJET GitHub Pages` çalışmasının **yeşil** olduğunu kontrol edin.
+2. Kırmızıysa genelde BFA `analyze/test` değil artık; logda `staging preview missing` veya environment hatasına bakın.
+3. **Settings → Environments → github-pages → Deployment branches** bölümünde `staging` branch'ine izin verin (veya kısıtlamayı kaldırın). Aksi halde `staging` push deploy'u anında reddedilir.
+4. Alternatif: Actions → `Deploy ŞantiJET GitHub Pages` → **Run workflow** (manuel, `main` üzerinden çalışır; en güncel `staging` branch'ini okur).
+
+`deploy-santijet-demir-web.yml` yalnızca manuel acil durum içindir; normal akışta kullanmayın (BFA ve `/staging/` klasörünü ezebilir).
 
 ## Yerel geliştirme vs staging deploy
 
