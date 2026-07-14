@@ -312,7 +312,7 @@ class _PlannedFireDetailState extends ConsumerState<_PlannedFireDetail> {
   }
 }
 
-class _FireDiameterDrillDown extends StatelessWidget {
+class _FireDiameterDrillDown extends StatefulWidget {
   const _FireDiameterDrillDown({
     required this.plan,
     required this.breakdown,
@@ -326,11 +326,39 @@ class _FireDiameterDrillDown extends StatelessWidget {
   final VoidCallback onClose;
 
   @override
+  State<_FireDiameterDrillDown> createState() => _FireDiameterDrillDownState();
+}
+
+enum _FireCutFilter {
+  noWaste('Firesiz kesim'),
+  withWaste('Fireli kesim');
+
+  const _FireCutFilter(this.label);
+  final String label;
+}
+
+class _FireDiameterDrillDownState extends State<_FireDiameterDrillDown> {
+  late _FireCutFilter _filter;
+
+  @override
+  void initState() {
+    super.initState();
+    final hasWasteBars =
+        listStockBarsWithWaste(widget.plan).isNotEmpty;
+    _filter = hasWasteBars ? _FireCutFilter.withWaste : _FireCutFilter.noWaste;
+  }
+
+  @override
   Widget build(BuildContext context) {
+    final plan = widget.plan;
+    final breakdown = widget.breakdown;
+    final stockLengthM = widget.stockLengthM;
     final diameterColor = AppColors.diameterColor(plan.diameter);
     final wasteBuckets = computeFireWasteLengthBuckets(plan);
     final wasteBars = listStockBarsWithWaste(plan);
-    final zeroWasteBars = plan.totalBars - wasteBars.length;
+    final noWasteBars = listStockBarsWithoutWaste(plan);
+    final visibleBars =
+        _filter == _FireCutFilter.withWaste ? wasteBars : noWasteBars;
 
     return Container(
       width: double.infinity,
@@ -357,7 +385,7 @@ class _FireDiameterDrillDown extends StatelessWidget {
                 ),
               ),
               IconButton(
-                onPressed: onClose,
+                onPressed: widget.onClose,
                 icon: const Icon(Icons.close, size: 18),
                 color: AppColors.textMuted,
                 visualDensity: VisualDensity.compact,
@@ -399,19 +427,34 @@ class _FireDiameterDrillDown extends StatelessWidget {
             ),
           ],
           const SizedBox(height: 12),
-          Text('Fire oluşturan çubuklar', style: AppTypography.labelMedium),
+          Text('Çubuk kesim listesi', style: AppTypography.labelMedium),
           const SizedBox(height: 4),
           Text(
             wasteBars.isEmpty
-                ? 'Bu çapta fire oluşmadı.'
-                : '$zeroWasteBars çubuk fire oluşturmadı · '
+                ? 'Bu çapta fire oluşmadı · ${noWasteBars.length} firesiz çubuk'
+                : '${noWasteBars.length} çubuk fire oluşturmadı · '
                     '${wasteBars.length} çubukta kalan parça var',
             style: AppTypography.bodySmall.copyWith(color: AppColors.textMuted),
           ),
-          if (wasteBars.isNotEmpty) ...[
+          const SizedBox(height: 10),
+          _FireCutFilterTabs(
+            selected: _filter,
+            noWasteCount: noWasteBars.length,
+            wasteCount: wasteBars.length,
+            onSelected: (value) => setState(() => _filter = value),
+          ),
+          if (visibleBars.isEmpty) ...[
+            const SizedBox(height: 10),
+            Text(
+              _filter == _FireCutFilter.withWaste
+                  ? 'Fireli kesim bulunamadı.'
+                  : 'Firesiz kesim bulunamadı.',
+              style: AppTypography.bodySmall.copyWith(color: AppColors.textMuted),
+            ),
+          ] else ...[
             const SizedBox(height: 8),
             PaginatedListSection<StockBarCut>(
-              items: wasteBars,
+              items: visibleBars,
               pageSize: 15,
               itemBuilder: (context, bar, index) => Padding(
                 padding: const EdgeInsets.only(bottom: 6),
@@ -424,6 +467,96 @@ class _FireDiameterDrillDown extends StatelessWidget {
             ),
           ],
         ],
+      ),
+    );
+  }
+}
+
+class _FireCutFilterTabs extends StatelessWidget {
+  const _FireCutFilterTabs({
+    required this.selected,
+    required this.noWasteCount,
+    required this.wasteCount,
+    required this.onSelected,
+  });
+
+  final _FireCutFilter selected;
+  final int noWasteCount;
+  final int wasteCount;
+  final ValueChanged<_FireCutFilter> onSelected;
+
+  @override
+  Widget build(BuildContext context) {
+    return Row(
+      children: [
+        for (final option in _FireCutFilter.values) ...[
+          if (option != _FireCutFilter.values.first) const SizedBox(width: 8),
+          Expanded(
+            child: _FireCutFilterTab(
+              label: option.label,
+              count: option == _FireCutFilter.noWaste ? noWasteCount : wasteCount,
+              selected: selected == option,
+              onTap: () => onSelected(option),
+            ),
+          ),
+        ],
+      ],
+    );
+  }
+}
+
+class _FireCutFilterTab extends StatelessWidget {
+  const _FireCutFilterTab({
+    required this.label,
+    required this.count,
+    required this.selected,
+    required this.onTap,
+  });
+
+  final String label;
+  final int count;
+  final bool selected;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    final accent = selected ? AppColors.electricBlueLight : AppColors.textMuted;
+
+    return Material(
+      color: selected
+          ? AppColors.electricBlueLight.withValues(alpha: 0.12)
+          : AppColors.canvas,
+      borderRadius: AppRadii.sm,
+      child: InkWell(
+        onTap: onTap,
+        borderRadius: AppRadii.sm,
+        child: Container(
+          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 10),
+          decoration: BoxDecoration(
+            borderRadius: AppRadii.sm,
+            border: Border.all(
+              color: selected
+                  ? AppColors.electricBlueLight.withValues(alpha: 0.45)
+                  : AppColors.border,
+            ),
+          ),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                label,
+                style: AppTypography.labelMedium.copyWith(color: accent),
+              ),
+              const SizedBox(height: 2),
+              Text(
+                '$count çubuk',
+                style: AppTypography.bodySmall.copyWith(
+                  color: AppColors.textMuted,
+                ),
+              ),
+            ],
+          ),
+        ),
       ),
     );
   }
@@ -450,14 +583,21 @@ class _FireBarCutRow extends StatelessWidget {
           ),
         )
         .join(' + ');
+    final isZeroWaste = bar.wasteLengthM <= 0.001;
 
     return Container(
       width: double.infinity,
       padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
       decoration: BoxDecoration(
-        color: AppColors.canvas,
+        color: isZeroWaste
+            ? AppColors.success.withValues(alpha: 0.06)
+            : AppColors.canvas,
         borderRadius: AppRadii.sm,
-        border: Border.all(color: AppColors.border),
+        border: Border.all(
+          color: isZeroWaste
+              ? AppColors.success.withValues(alpha: 0.25)
+              : AppColors.border,
+        ),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -472,10 +612,12 @@ class _FireBarCutRow extends StatelessWidget {
             style: AppTypography.bodySmall,
           ),
           Text(
-            'Kalan: ${bar.wasteLengthM.toStringAsFixed(2)} m / '
-            '${stockLengthM.toStringAsFixed(0)} m stok',
+            isZeroWaste
+                ? 'Fire yok · ${stockLengthM.toStringAsFixed(0)} m stok tam kullanım'
+                : 'Kalan: ${bar.wasteLengthM.toStringAsFixed(2)} m / '
+                    '${stockLengthM.toStringAsFixed(0)} m stok',
             style: AppTypography.bodySmall.copyWith(
-              color: AppColors.warning,
+              color: isZeroWaste ? AppColors.success : AppColors.warning,
               fontWeight: FontWeight.w600,
             ),
           ),

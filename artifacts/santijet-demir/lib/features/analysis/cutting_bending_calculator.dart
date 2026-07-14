@@ -1465,6 +1465,13 @@ List<StockBarCut> listStockBarsWithWaste(StockCutPlan plan) {
     ..sort((a, b) => b.wasteLengthM.compareTo(a.wasteLengthM));
 }
 
+List<StockBarCut> listStockBarsWithoutWaste(StockCutPlan plan) {
+  return plan.bars
+      .where((bar) => bar.wasteLengthM <= 0.001)
+      .toList()
+    ..sort((a, b) => a.barIndex.compareTo(b.barIndex));
+}
+
 ({double stockTonnage, double wasteTonnage, double wastePercent})
     _aggregateStockCutFireMetrics(List<StockCutPlan> plans) {
   var stockT = 0.0;
