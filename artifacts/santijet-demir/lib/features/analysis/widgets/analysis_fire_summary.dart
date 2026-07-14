@@ -271,24 +271,11 @@ class _AnalysisFireSummaryPanelState
                     const SizedBox(height: 14),
                     _TahvilFireAnalysisPanel(
                       batch: batch,
-                      preview: tahvilPreview,
                       enabled: batch.pieceLines.isNotEmpty,
                       onStart: () => _confirmAndRunTahvilAnalysis(
                         context,
                         tahvilPreview,
                       ),
-                      onSave: () async {
-                        await ref
-                            .read(cuttingBendingBatchesProvider.notifier)
-                            .saveAnalysisResult();
-                        if (!context.mounted) return;
-                        ScaffoldMessenger.of(context).showSnackBar(
-                          const SnackBar(
-                            content: Text('Tahvil fire analizi kaydedildi'),
-                            behavior: SnackBarBehavior.floating,
-                          ),
-                        );
-                      },
                     ),
                     const SizedBox(height: 12),
                     AnalysisReportActions(
@@ -531,28 +518,19 @@ class _TahvilNoBenefitBanner extends StatelessWidget {
   }
 }
 
-class _TahvilFireAnalysisPanel extends ConsumerWidget {
+class _TahvilFireAnalysisPanel extends StatelessWidget {
   const _TahvilFireAnalysisPanel({
     required this.batch,
-    required this.preview,
     required this.enabled,
     required this.onStart,
-    required this.onSave,
   });
 
   final CuttingBendingBatch batch;
-  final TahvilFirePreview? preview;
   final bool enabled;
   final Future<void> Function() onStart;
-  final VoidCallback onSave;
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
-    final notifier = ref.read(cuttingBendingBatchesProvider.notifier);
-    final isSaved = batch.isCurrentOptimizationSaved;
-    final canSave = batch.isOptimized &&
-        batch.optimizationStrategy == FireReductionStrategy.tahvilOnly;
-
+  Widget build(BuildContext context) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
@@ -562,24 +540,6 @@ class _TahvilFireAnalysisPanel extends ConsumerWidget {
           'boy eşleştirme yapılmaz.',
           style: AppTypography.bodySmall.copyWith(color: AppColors.textMuted),
         ),
-        if (batch.hasSavedOptimization(FireReductionStrategy.tahvilOnly)) ...[
-          const SizedBox(height: 8),
-          OutlinedButton.icon(
-            onPressed: enabled
-                ? () => notifier.selectAnalysisStrategy(
-                      FireReductionStrategy.tahvilOnly,
-                    )
-                : null,
-            icon: const Icon(Icons.restore_outlined, size: 18),
-            label: const Text('Kayıtlı tahvil analizini yükle'),
-            style: OutlinedButton.styleFrom(
-              foregroundColor: AppColors.electricBlueLight,
-              side: BorderSide(
-                color: AppColors.electricBlueLight.withValues(alpha: 0.45),
-              ),
-            ),
-          ),
-        ],
         const SizedBox(height: 10),
         _MatteGreenGradientButton(
           onPressed: enabled ? () => onStart() : null,
@@ -588,37 +548,6 @@ class _TahvilFireAnalysisPanel extends ConsumerWidget {
               ? 'Fire Analizini Yeniden Çalıştır'
               : 'Fire Analizi Yap',
         ),
-        if (canSave) ...[
-          const SizedBox(height: 8),
-          OutlinedButton.icon(
-            onPressed: isSaved ? null : onSave,
-            icon: Icon(
-              isSaved ? Icons.check_circle_outline : Icons.save_outlined,
-              size: 18,
-            ),
-            label: Text(
-              isSaved
-                  ? 'Kaydedildi'
-                  : batch.hasSavedOptimization(FireReductionStrategy.tahvilOnly)
-                      ? 'Kaydı Güncelle'
-                      : 'Analizi Kaydet',
-            ),
-            style: OutlinedButton.styleFrom(
-              foregroundColor: isSaved
-                  ? AppColors.success
-                  : AppColors.electricBlueLight,
-              side: BorderSide(
-                color: isSaved
-                    ? AppColors.success.withValues(alpha: 0.45)
-                    : AppColors.electricBlueLight.withValues(alpha: 0.45),
-              ),
-              padding: const EdgeInsets.symmetric(
-                horizontal: 12,
-                vertical: 14,
-              ),
-            ),
-          ),
-        ],
       ],
     );
   }
