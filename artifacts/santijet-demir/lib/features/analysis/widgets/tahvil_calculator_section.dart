@@ -205,12 +205,12 @@ class _TahvilRulesHint extends StatelessWidget {
   Widget build(BuildContext context) {
     final description = switch (basis) {
       TahvilCalculatorBasis.spacing =>
-        'Kaynak çap ve aralığı girin. Hedef çap veya hedef aralık verin; '
+        'Proje çap ve aralığı girin. Hedef çap veya hedef aralık verin; '
             'diğer değer otomatik hesaplanır.',
       TahvilCalculatorBasis.quantity =>
         quantityKind == TahvilQuantityKind.single
-            ? 'Kaynak adet ve çap girin. Hedef çapta eşdeğer adet ve kesit alanı gösterilir.'
-            : 'İki kaynak ve iki hedef satırı girin. Toplam kesit alanı mukayese edilir.',
+            ? 'Proje adet ve çap girin. Hedef çapta eşdeğer adet ve kesit alanı gösterilir.'
+            : 'İki proje donatı ve iki hedef satırı girin. Toplam kesit alanı mukayese edilir.',
     };
 
     return Container(
@@ -229,7 +229,7 @@ class _TahvilRulesHint extends StatelessWidget {
           Text(
             'Kurallar: ±$tahvilMaxDiameterDiffMm mm çap · '
             '≤${tahvilMaxSpacingCm.toStringAsFixed(0)} cm aralık · '
-            'hedef As ≥ kaynak As · '
+            'hedef As ≥ proje As · '
             '≤%${(tahvilMaxAreaDeviationRatio * 100).toStringAsFixed(0)} fazla kesit',
             style: AppTypography.labelSmall.copyWith(color: AppColors.textMuted),
           ),
@@ -318,7 +318,7 @@ class _SpacingModePanelState extends State<_SpacingModePanel> {
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
         _ExcelStyleTable(
-          title: 'Kaynak donatı',
+          title: 'Proje donatı',
           accentColor: AppColors.warning,
           children: [
             _InputRow(
@@ -342,14 +342,14 @@ class _SpacingModePanelState extends State<_SpacingModePanel> {
         if (sourceAs != null) ...[
           const SizedBox(height: 8),
           _AsBadge(
-            label: 'Kaynak As',
+            label: 'Proje As',
             value: '${formatAreaMm2(sourceAs)} mm²/m',
           ),
         ],
         if (!sourceReady) ...[
           const SizedBox(height: 12),
           Text(
-            'Hesap için kaynak çap ve aralık alanlarını doldurun.',
+            'Hesap için proje çap ve aralık alanlarını doldurun.',
             style: AppTypography.bodySmall.copyWith(color: AppColors.textMuted),
           ),
         ] else ...[
@@ -562,7 +562,7 @@ class _SpacingTargetResultCard extends StatelessWidget {
                     '${formatDiameterSpacingLabel(result.targetDiameter, result.targetSpacingMm)} '
                     '(${(result.targetSpacingMm / 10).toStringAsFixed(1)} cm)'
                 : result.isAdequateButNotOptimal
-                    ? 'Tahvil uygundur — hedef As kaynak Asa eşit veya büyük, '
+                    ? 'Tahvil uygundur — hedef As proje Asa eşit veya büyük, '
                         'ancak fazla kesit limiti nedeniyle optimum değil.'
                     : 'Tahvil koşulları sağlanmıyor.',
             style: AppTypography.bodySmall.copyWith(color: accent),
@@ -599,7 +599,7 @@ class _SingleQuantityModePanel extends StatelessWidget {
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
         _ExcelStyleTable(
-          title: 'Kaynak donatı',
+          title: 'Proje donatı',
           accentColor: AppColors.warning,
           children: [
             _InputRow(
@@ -634,7 +634,7 @@ class _SingleQuantityModePanel extends StatelessWidget {
         ] else ...[
           const SizedBox(height: 8),
           _AsBadge(
-            label: 'Kaynak As',
+            label: 'Proje As',
             value:
                 '${formatAreaMm2(crossSectionAreaMm2(diameter!) * quantity!)} mm²',
           ),
@@ -765,7 +765,7 @@ class _DualQuantityModePanelState extends State<_DualQuantityModePanel> {
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
         _ExcelStyleTable(
-          title: 'Kaynak donatı',
+          title: 'Proje donatı',
           accentColor: AppColors.warning,
           children: [
             _DualInputRow(
@@ -786,14 +786,14 @@ class _DualQuantityModePanelState extends State<_DualQuantityModePanel> {
         if (sourceArea != null) ...[
           const SizedBox(height: 8),
           _AsBadge(
-            label: 'Kaynak As',
+            label: 'Proje As',
             value: '${formatAreaMm2(sourceArea)} mm²',
           ),
         ],
         if (!_sourceReady) ...[
           const SizedBox(height: 12),
           Text(
-            'Tahvil önerileri için kaynak adet ve çap alanlarını doldurun.',
+            'Tahvil önerileri için proje adet ve çap alanlarını doldurun.',
             style: AppTypography.bodySmall.copyWith(color: AppColors.textMuted),
           ),
         ] else ...[
@@ -819,7 +819,7 @@ class _DualQuantityModePanelState extends State<_DualQuantityModePanel> {
           const SizedBox(height: 8),
           if (suggestions.isEmpty)
             Text(
-              'Kaynak veriler için kurala uygun tahvil önerisi bulunamadı.',
+              'Proje veriler için kurala uygun tahvil önerisi bulunamadı.',
               style: AppTypography.bodySmall.copyWith(color: AppColors.critical),
             )
           else ...[
@@ -1423,7 +1423,7 @@ class _SingleQuantityResultCard extends StatelessWidget {
                   ? 'Tahvil uygun — fazla kesit %${result.areaDeviationPercent.toStringAsFixed(2)} '
                       '(optimum değil, limit %${(tahvilMaxAreaDeviationRatio * 100).toStringAsFixed(0)})'
                   : result.targetAreaMm2 + 1e-6 < result.sourceAreaMm2
-                      ? 'Hedef As kaynak Astan küçük — tahvil uygun değil'
+                      ? 'Hedef As proje Astan küçük — tahvil uygun değil'
                       : 'Fazla kesit %${result.areaDeviationPercent.toStringAsFixed(2)}',
           style: AppTypography.bodySmall.copyWith(
             color: result.isAllowed
@@ -1490,7 +1490,7 @@ class _DualComparisonCard extends StatelessWidget {
           ),
           const SizedBox(height: 8),
           Text(
-            'Kaynak As: ${formatAreaMm2(comparison.sourceAreaMm2)} mm²',
+            'Proje As: ${formatAreaMm2(comparison.sourceAreaMm2)} mm²',
             style: AppTypography.bodyMedium,
           ),
           Text(
@@ -1510,12 +1510,12 @@ class _DualComparisonCard extends StatelessWidget {
             comparison.isOptimal
                 ? 'Tahvil uygundur ve optimum aralıkta.'
                 : comparison.isAdequateButNotOptimal
-                    ? 'Tahvil uygundur — hedef As kaynak Asa eşit veya büyük. '
+                    ? 'Tahvil uygundur — hedef As proje Asa eşit veya büyük. '
                         'Fazla kesit %${comparison.areaDeviationPercent.toStringAsFixed(1)} '
                         'ile optimum değil (limit %${(tahvilMaxAreaDeviationRatio * 100).toStringAsFixed(0)}).'
                     : comparison.hasAreaDeficit
                         ? comparison.areaRejectReason ??
-                            'Hedef As kaynak Astan küçük — tahvil uygun değil.'
+                            'Hedef As proje Astan küçük — tahvil uygun değil.'
                         : comparison.diameterRuleViolations.isNotEmpty
                             ? comparison.diameterRuleViolations.join(' · ')
                             : comparison.areaRejectReason ??

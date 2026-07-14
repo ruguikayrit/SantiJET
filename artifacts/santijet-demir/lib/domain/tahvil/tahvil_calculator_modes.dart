@@ -89,7 +89,7 @@ TahvilAreaCompliance evaluateTahvilAreaCompliance({
       targetAreaMm2: targetAreaMm2,
       rejectReason:
           'Hedef As ${formatAreaMm2(targetAreaMm2)} mm², '
-          'kaynak As ${formatAreaMm2(sourceAreaMm2)} mm² değerinden küçük',
+          'proje As ${formatAreaMm2(sourceAreaMm2)} mm² değerinden küçük',
     );
   }
 
