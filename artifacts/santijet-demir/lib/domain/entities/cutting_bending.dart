@@ -411,11 +411,20 @@ class StockCutPlan {
     required this.totalStockTonnage,
     required this.totalUsedTonnage,
     required this.totalWasteTonnage,
+    this.wasteBarCount,
+    this.noWasteBarCount,
+    this.wasteLengthBucketCounts,
   });
 
   final int diameter;
   final List<StockBarCut> bars;
   final int totalBars;
+  /// Tam plana göre fireli çubuk adedi (önizleme listesi kısıtlı olsa bile).
+  final int? wasteBarCount;
+  /// Tam plana göre firesiz çubuk adedi.
+  final int? noWasteBarCount;
+  /// Kalan boy özeti — anahtar: fire boyu (cm, yuvarlanmış), değer: çubuk adedi.
+  final Map<int, int>? wasteLengthBucketCounts;
   final double totalStockM;
   final double totalWasteM;
   final double totalUsedM;
@@ -435,6 +444,11 @@ class StockCutPlan {
         'totalStockTonnage': totalStockTonnage,
         'totalUsedTonnage': totalUsedTonnage,
         'totalWasteTonnage': totalWasteTonnage,
+        if (wasteBarCount != null) 'wasteBarCount': wasteBarCount,
+        if (noWasteBarCount != null) 'noWasteBarCount': noWasteBarCount,
+        if (wasteLengthBucketCounts != null)
+          'wasteLengthBucketCounts': wasteLengthBucketCounts!
+              .map((key, value) => MapEntry('$key', value)),
       };
 
   factory StockCutPlan.fromJson(Map<dynamic, dynamic> json) {
@@ -446,10 +460,24 @@ class StockCutPlan {
     final totalUsedM = (json['totalUsedM'] as num?)?.toDouble() ?? 0;
     final totalWasteM = (json['totalWasteM'] as num?)?.toDouble() ?? 0;
 
+    final rawBucketCounts = json['wasteLengthBucketCounts'];
+    Map<int, int>? wasteLengthBucketCounts;
+    if (rawBucketCounts is Map) {
+      wasteLengthBucketCounts = rawBucketCounts.map(
+        (key, value) => MapEntry(
+          int.tryParse('$key') ?? 0,
+          (value as num?)?.toInt() ?? 0,
+        ),
+      );
+    }
+
     return StockCutPlan(
       diameter: diameter,
       bars: rawBars.whereType<Map>().map(StockBarCut.fromJson).toList(),
       totalBars: (json['totalBars'] as num?)?.toInt() ?? 0,
+      wasteBarCount: (json['wasteBarCount'] as num?)?.toInt(),
+      noWasteBarCount: (json['noWasteBarCount'] as num?)?.toInt(),
+      wasteLengthBucketCounts: wasteLengthBucketCounts,
       totalStockM: totalStockM,
       totalWasteM: totalWasteM,
       totalUsedM: totalUsedM,

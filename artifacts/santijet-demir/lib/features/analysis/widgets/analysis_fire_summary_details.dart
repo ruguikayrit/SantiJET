@@ -343,8 +343,7 @@ class _FireDiameterDrillDownState extends State<_FireDiameterDrillDown> {
   @override
   void initState() {
     super.initState();
-    final hasWasteBars =
-        listStockBarsWithWaste(widget.plan).isNotEmpty;
+    final hasWasteBars = stockBarWasteCount(widget.plan) > 0;
     _filter = hasWasteBars ? _FireCutFilter.withWaste : _FireCutFilter.noWaste;
   }
 
@@ -355,10 +354,14 @@ class _FireDiameterDrillDownState extends State<_FireDiameterDrillDown> {
     final stockLengthM = widget.stockLengthM;
     final diameterColor = AppColors.diameterColor(plan.diameter);
     final wasteBuckets = computeFireWasteLengthBuckets(plan);
+    final wasteBarCount = stockBarWasteCount(plan);
+    final noWasteBarCount = stockBarNoWasteCount(plan);
     final wasteBars = listStockBarsWithWaste(plan);
     final noWasteBars = listStockBarsWithoutWaste(plan);
     final visibleBars =
         _filter == _FireCutFilter.withWaste ? wasteBars : noWasteBars;
+    final visibleTotalCount =
+        _filter == _FireCutFilter.withWaste ? wasteBarCount : noWasteBarCount;
 
     return Container(
       width: double.infinity,
@@ -430,20 +433,20 @@ class _FireDiameterDrillDownState extends State<_FireDiameterDrillDown> {
           Text('Çubuk kesim listesi', style: AppTypography.labelMedium),
           const SizedBox(height: 4),
           Text(
-            wasteBars.isEmpty
-                ? 'Bu çapta fire oluşmadı · ${noWasteBars.length} firesiz çubuk'
-                : '${noWasteBars.length} çubuk fire oluşturmadı · '
-                    '${wasteBars.length} çubukta kalan parça var',
+            wasteBarCount == 0
+                ? 'Bu çapta fire oluşmadı · ${noWasteBarCount} firesiz çubuk'
+                : '${noWasteBarCount} çubuk fire oluşturmadı · '
+                    '${wasteBarCount} çubukta kalan parça var',
             style: AppTypography.bodySmall.copyWith(color: AppColors.textMuted),
           ),
           const SizedBox(height: 10),
           _FireCutFilterTabs(
             selected: _filter,
-            noWasteCount: noWasteBars.length,
-            wasteCount: wasteBars.length,
+            noWasteCount: noWasteBarCount,
+            wasteCount: wasteBarCount,
             onSelected: (value) => setState(() => _filter = value),
           ),
-          if (visibleBars.isEmpty) ...[
+          if (visibleTotalCount == 0) ...[
             const SizedBox(height: 10),
             Text(
               _filter == _FireCutFilter.withWaste
@@ -452,6 +455,15 @@ class _FireDiameterDrillDownState extends State<_FireDiameterDrillDown> {
               style: AppTypography.bodySmall.copyWith(color: AppColors.textMuted),
             ),
           ] else ...[
+            if (visibleBars.length < visibleTotalCount) ...[
+              const SizedBox(height: 10),
+              Text(
+                'Önizleme: ${visibleBars.length} / $visibleTotalCount çubuk gösteriliyor. '
+                'Özet adetler tam plana göredir.',
+                style:
+                    AppTypography.bodySmall.copyWith(color: AppColors.textMuted),
+              ),
+            ],
             const SizedBox(height: 8),
             PaginatedListSection<StockBarCut>(
               items: visibleBars,

@@ -21,7 +21,8 @@ const _maxTripletSearchLengths = 24;
 const _largeInventoryPieceThreshold = 2500;
 
 /// UI bellek tüketimini sınırlamak için plan başına saklanan çubuk sayısı.
-const _maxStoredBarsPerPlan = 200;
+const _maxRetainedWasteBarsPerPlan = 120;
+const _maxRetainedNoWasteBarsPerPlan = 120;
 
 /// Web'de paketleme döngüsünde event-loop'a ne sıklıkla bırakılır.
 const _webYieldEveryBars = 96;
@@ -237,12 +238,18 @@ class _DiameterPackResult {
     required this.totalBars,
     required this.totalWasteM,
     required this.totalUsedM,
+    required this.wasteBarCount,
+    required this.noWasteBarCount,
+    required this.wasteLengthBucketCounts,
   });
 
   final List<StockBarCut> bars;
   final int totalBars;
   final double totalWasteM;
   final double totalUsedM;
+  final int wasteBarCount;
+  final int noWasteBarCount;
+  final Map<int, int> wasteLengthBucketCounts;
 }
 
 _DiameterPackResult _packDiameterInventory({
@@ -250,13 +257,18 @@ _DiameterPackResult _packDiameterInventory({
   required _LengthInventory inventory,
   required double stockLengthM,
   bool retainBars = true,
-  int maxRetainedBars = _maxStoredBarsPerPlan,
+  int maxRetainedWasteBars = _maxRetainedWasteBarsPerPlan,
+  int maxRetainedNoWasteBars = _maxRetainedNoWasteBarsPerPlan,
 }) {
   final stockMm = _lengthToMm(stockLengthM);
-  final bars = <StockBarCut>[];
+  final retainedWasteBars = <StockBarCut>[];
+  final retainedNoWasteBars = <StockBarCut>[];
+  final wasteLengthBucketCounts = <int, int>{};
   var barIndex = 1;
   var totalWasteM = 0.0;
   var totalUsedM = 0.0;
+  var wasteBarCount = 0;
+  var noWasteBarCount = 0;
 
   while (_inventoryTotalCount(inventory) > 0) {
     final fill = _findBestBarFill(inventory, stockMm);
@@ -264,28 +276,47 @@ _DiameterPackResult _packDiameterInventory({
 
     final usedMm = _sumFillMm(fill);
     final wasteMm = stockMm - usedMm;
-    totalUsedM += _mmToLengthM(usedMm);
-    totalWasteM += _mmToLengthM(wasteMm);
+    final usedLengthM = _mmToLengthM(usedMm);
+    final wasteLengthM = _mmToLengthM(wasteMm);
+    totalUsedM += usedLengthM;
+    totalWasteM += wasteLengthM;
 
-    if (retainBars && bars.length < maxRetainedBars) {
-      bars.add(
-        StockBarCut(
-          barIndex: barIndex,
-          diameter: diameter,
-          members: _membersFromFill(fill),
-          usedLengthM: _mmToLengthM(usedMm),
-          wasteLengthM: _mmToLengthM(wasteMm),
-        ),
+    final hasWaste = wasteLengthM > 0.001;
+    if (hasWaste) {
+      wasteBarCount++;
+      final key = (wasteLengthM * 100).round();
+      wasteLengthBucketCounts[key] = (wasteLengthBucketCounts[key] ?? 0) + 1;
+    } else {
+      noWasteBarCount++;
+    }
+
+    if (retainBars) {
+      final bar = StockBarCut(
+        barIndex: barIndex,
+        diameter: diameter,
+        members: _membersFromFill(fill),
+        usedLengthM: usedLengthM,
+        wasteLengthM: wasteLengthM,
       );
+      if (hasWaste) {
+        if (retainedWasteBars.length < maxRetainedWasteBars) {
+          retainedWasteBars.add(bar);
+        }
+      } else if (retainedNoWasteBars.length < maxRetainedNoWasteBars) {
+        retainedNoWasteBars.add(bar);
+      }
     }
     barIndex++;
   }
 
   return _DiameterPackResult(
-    bars: bars,
+    bars: [...retainedWasteBars, ...retainedNoWasteBars],
     totalBars: barIndex - 1,
     totalWasteM: totalWasteM,
     totalUsedM: totalUsedM,
+    wasteBarCount: wasteBarCount,
+    noWasteBarCount: noWasteBarCount,
+    wasteLengthBucketCounts: wasteLengthBucketCounts,
   );
 }
 
@@ -294,13 +325,18 @@ Future<_DiameterPackResult> _packDiameterInventoryAsync({
   required _LengthInventory inventory,
   required double stockLengthM,
   bool retainBars = true,
-  int maxRetainedBars = _maxStoredBarsPerPlan,
+  int maxRetainedWasteBars = _maxRetainedWasteBarsPerPlan,
+  int maxRetainedNoWasteBars = _maxRetainedNoWasteBarsPerPlan,
 }) async {
   final stockMm = _lengthToMm(stockLengthM);
-  final bars = <StockBarCut>[];
+  final retainedWasteBars = <StockBarCut>[];
+  final retainedNoWasteBars = <StockBarCut>[];
+  final wasteLengthBucketCounts = <int, int>{};
   var barIndex = 1;
   var totalWasteM = 0.0;
   var totalUsedM = 0.0;
+  var wasteBarCount = 0;
+  var noWasteBarCount = 0;
 
   while (_inventoryTotalCount(inventory) > 0) {
     if (kIsWeb && barIndex % _webYieldEveryBars == 0) {
@@ -312,28 +348,47 @@ Future<_DiameterPackResult> _packDiameterInventoryAsync({
 
     final usedMm = _sumFillMm(fill);
     final wasteMm = stockMm - usedMm;
-    totalUsedM += _mmToLengthM(usedMm);
-    totalWasteM += _mmToLengthM(wasteMm);
+    final usedLengthM = _mmToLengthM(usedMm);
+    final wasteLengthM = _mmToLengthM(wasteMm);
+    totalUsedM += usedLengthM;
+    totalWasteM += wasteLengthM;
 
-    if (retainBars && bars.length < maxRetainedBars) {
-      bars.add(
-        StockBarCut(
-          barIndex: barIndex,
-          diameter: diameter,
-          members: _membersFromFill(fill),
-          usedLengthM: _mmToLengthM(usedMm),
-          wasteLengthM: _mmToLengthM(wasteMm),
-        ),
+    final hasWaste = wasteLengthM > 0.001;
+    if (hasWaste) {
+      wasteBarCount++;
+      final key = (wasteLengthM * 100).round();
+      wasteLengthBucketCounts[key] = (wasteLengthBucketCounts[key] ?? 0) + 1;
+    } else {
+      noWasteBarCount++;
+    }
+
+    if (retainBars) {
+      final bar = StockBarCut(
+        barIndex: barIndex,
+        diameter: diameter,
+        members: _membersFromFill(fill),
+        usedLengthM: usedLengthM,
+        wasteLengthM: wasteLengthM,
       );
+      if (hasWaste) {
+        if (retainedWasteBars.length < maxRetainedWasteBars) {
+          retainedWasteBars.add(bar);
+        }
+      } else if (retainedNoWasteBars.length < maxRetainedNoWasteBars) {
+        retainedNoWasteBars.add(bar);
+      }
     }
     barIndex++;
   }
 
   return _DiameterPackResult(
-    bars: bars,
+    bars: [...retainedWasteBars, ...retainedNoWasteBars],
     totalBars: barIndex - 1,
     totalWasteM: totalWasteM,
     totalUsedM: totalUsedM,
+    wasteBarCount: wasteBarCount,
+    noWasteBarCount: noWasteBarCount,
+    wasteLengthBucketCounts: wasteLengthBucketCounts,
   );
 }
 
@@ -413,6 +468,9 @@ List<StockCutPlan> _buildStockCutPlansFromPackResults({
         diameter: diameter,
         bars: packed.bars,
         totalBars: totalBars,
+        wasteBarCount: packed.wasteBarCount,
+        noWasteBarCount: packed.noWasteBarCount,
+        wasteLengthBucketCounts: packed.wasteLengthBucketCounts,
         totalStockM: stockTotalM,
         totalWasteM: totalWasteM,
         totalUsedM: totalUsedM,
@@ -1428,11 +1486,17 @@ class FireWasteLengthBucket {
 }
 
 List<FireWasteLengthBucket> computeFireWasteLengthBuckets(StockCutPlan plan) {
-  final counts = <int, int>{};
-  for (final bar in plan.bars) {
-    if (bar.wasteLengthM <= 0.001) continue;
-    final key = (bar.wasteLengthM * 100).round();
-    counts[key] = (counts[key] ?? 0) + 1;
+  final Map<int, int> counts;
+  if (plan.wasteLengthBucketCounts != null &&
+      plan.wasteLengthBucketCounts!.isNotEmpty) {
+    counts = plan.wasteLengthBucketCounts!;
+  } else {
+    counts = <int, int>{};
+    for (final bar in plan.bars) {
+      if (bar.wasteLengthM <= 0.001) continue;
+      final key = (bar.wasteLengthM * 100).round();
+      counts[key] = (counts[key] ?? 0) + 1;
+    }
   }
 
   return counts.entries
@@ -1456,6 +1520,16 @@ List<FireWasteLengthBucket> computeFireWasteLengthBuckets(StockCutPlan plan) {
       if (countCompare != 0) return countCompare;
       return b.wasteLengthM.compareTo(a.wasteLengthM);
     });
+}
+
+int stockBarWasteCount(StockCutPlan plan) {
+  if (plan.wasteBarCount != null) return plan.wasteBarCount!;
+  return plan.bars.where((bar) => bar.wasteLengthM > 0.001).length;
+}
+
+int stockBarNoWasteCount(StockCutPlan plan) {
+  if (plan.noWasteBarCount != null) return plan.noWasteBarCount!;
+  return plan.totalBars - stockBarWasteCount(plan);
 }
 
 List<StockBarCut> listStockBarsWithWaste(StockCutPlan plan) {

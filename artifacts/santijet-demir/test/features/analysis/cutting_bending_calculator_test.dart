@@ -220,6 +220,29 @@ void main() {
       );
     });
 
+    test('fire drill-down counts include bars beyond preview retention', () {
+      final pieces = [
+        RebarPieceLine(diameter: 28, lengthM: 12.0, quantity: 2085),
+        RebarPieceLine(diameter: 28, lengthM: 11.2, quantity: 200),
+      ];
+
+      final plan = computeStockCutPlans(pieces).first;
+
+      expect(plan.totalBars, 2285);
+      expect(stockBarWasteCount(plan), 200);
+      expect(stockBarNoWasteCount(plan), 2085);
+      expect(listStockBarsWithWaste(plan).length, lessThanOrEqualTo(120));
+      expect(listStockBarsWithoutWaste(plan).length, lessThanOrEqualTo(120));
+      expect(listStockBarsWithoutWaste(plan), isNotEmpty);
+      expect(
+        computeFireWasteLengthBuckets(plan).fold<int>(
+          0,
+          (sum, bucket) => sum + bucket.barCount,
+        ),
+        200,
+      );
+    });
+
     test('groups stock cuts separately per diameter', () {
       const pieces = [
         RebarPieceLine(diameter: 12, lengthM: 6.00, quantity: 2),
