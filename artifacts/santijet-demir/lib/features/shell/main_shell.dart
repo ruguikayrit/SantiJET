@@ -79,6 +79,8 @@ class MainShell extends ConsumerWidget {
 class DashboardScreen extends ConsumerWidget {
   const DashboardScreen({super.key});
 
+  static const _dashboardSectionGap = 12.0;
+
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final avatarInitial = ref.watch(profileInitialProvider);
@@ -106,14 +108,19 @@ class DashboardScreen extends ConsumerWidget {
             else ...[
               const SliverToBoxAdapter(
                 child: Padding(
-                  padding: EdgeInsets.fromLTRB(AppSpacing.md, 0, AppSpacing.md, 0),
+                  padding: EdgeInsets.fromLTRB(
+                    AppSpacing.md,
+                    _dashboardSectionGap,
+                    AppSpacing.md,
+                    0,
+                  ),
                   child: StaggeredFadeIn(
                     index: 0,
                     child: _DashboardSurveyBar(),
                   ),
                 ),
               ),
-              _DashboardKpiSliver(),
+              _DashboardKpiSliver(sectionGap: _dashboardSectionGap),
               SliverPadding(
                 padding: const EdgeInsets.all(AppSpacing.md),
                 sliver: SliverList(
@@ -148,14 +155,21 @@ class DashboardScreen extends ConsumerWidget {
 }
 
 class _DashboardKpiSliver extends ConsumerWidget {
-  const _DashboardKpiSliver();
+  const _DashboardKpiSliver({required this.sectionGap});
+
+  final double sectionGap;
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final dashboard = ref.watch(dashboardKpiProvider);
 
     return SummaryKpiSliverGrid(
-      padding: const EdgeInsets.fromLTRB(AppSpacing.md, 12, AppSpacing.md, AppSpacing.lg),
+      padding: EdgeInsets.fromLTRB(
+        AppSpacing.md,
+        sectionGap,
+        AppSpacing.md,
+        AppSpacing.lg,
+      ),
       items: [
         SummaryKpiItem(
           label: 'Toplam Keşif',
