@@ -32,6 +32,7 @@ class CollapsibleAnalysisSection extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final expanded = ref.watch(analysisSectionExpandedProvider(sectionId));
     final accent = headerAccentColor;
+    final compactHeader = subtitle == null;
 
     return Padding(
       padding: const EdgeInsets.only(bottom: sectionGap),
@@ -49,7 +50,7 @@ class CollapsibleAnalysisSection extends ConsumerWidget {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
-            if (accent != null)
+            if (accent != null && !compactHeader)
               Container(
                 height: 3,
                 decoration: BoxDecoration(
@@ -62,7 +63,8 @@ class CollapsibleAnalysisSection extends ConsumerWidget {
                 ),
               ),
             Material(
-              color: accent?.withValues(alpha: 0.08) ?? Colors.transparent,
+              color: accent?.withValues(alpha: compactHeader ? 0 : 0.08) ??
+                  Colors.transparent,
               child: InkWell(
                 onTap: () {
                   ref
@@ -70,59 +72,79 @@ class CollapsibleAnalysisSection extends ConsumerWidget {
                       .state = !expanded;
                 },
                 child: Padding(
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: AppSpacing.sm,
-                    vertical: AppSpacing.sm,
-                  ),
+                  padding: compactHeader
+                      ? const EdgeInsets.symmetric(horizontal: 14, vertical: 12)
+                      : const EdgeInsets.symmetric(
+                          horizontal: AppSpacing.sm,
+                          vertical: AppSpacing.sm,
+                        ),
                   child: Row(
-                    crossAxisAlignment: CrossAxisAlignment.start,
+                    crossAxisAlignment: compactHeader
+                        ? CrossAxisAlignment.center
+                        : CrossAxisAlignment.start,
                     children: [
                       if (accent != null) ...[
-                        Container(
-                          width: 36,
-                          height: 36,
-                          alignment: Alignment.center,
-                          decoration: BoxDecoration(
-                            color: accent.withValues(alpha: 0.14),
-                            borderRadius: BorderRadius.circular(10),
-                            border: Border.all(
-                              color: accent.withValues(alpha: 0.3),
+                        if (compactHeader)
+                          Icon(
+                            Icons.calculate_outlined,
+                            size: 22,
+                            color: accent,
+                          )
+                        else
+                          Container(
+                            width: 36,
+                            height: 36,
+                            alignment: Alignment.center,
+                            decoration: BoxDecoration(
+                              color: accent.withValues(alpha: 0.14),
+                              borderRadius: BorderRadius.circular(10),
+                              border: Border.all(
+                                color: accent.withValues(alpha: 0.3),
+                              ),
+                            ),
+                            child: Icon(
+                              Icons.calculate_outlined,
+                              size: 18,
+                              color: accent,
                             ),
                           ),
-                          child: Icon(
-                            Icons.calculate_outlined,
-                            size: 18,
-                            color: accent,
-                          ),
-                        ),
-                        const SizedBox(width: AppSpacing.xs),
+                        SizedBox(width: compactHeader ? 10 : AppSpacing.xs),
                       ],
                       Expanded(
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Text(
-                              title,
-                              style: AppTypography.titleMedium.copyWith(
-                                color: accent,
-                              ),
-                            ),
-                            if (subtitle != null) ...[
-                              const SizedBox(height: AppSpacing.xxs),
-                              Text(
-                                subtitle!,
-                                style: AppTypography.bodySmall.copyWith(
-                                  color: AppColors.textMuted,
+                        child: compactHeader
+                            ? Text(
+                                title,
+                                style: AppTypography.titleMedium.copyWith(
+                                  color: accent,
                                 ),
+                                maxLines: 1,
+                                overflow: TextOverflow.ellipsis,
+                              )
+                            : Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Text(
+                                    title,
+                                    style: AppTypography.titleMedium.copyWith(
+                                      color: accent,
+                                    ),
+                                  ),
+                                  if (subtitle != null) ...[
+                                    const SizedBox(height: AppSpacing.xxs),
+                                    Text(
+                                      subtitle!,
+                                      style: AppTypography.bodySmall.copyWith(
+                                        color: AppColors.textMuted,
+                                      ),
+                                    ),
+                                  ],
+                                ],
                               ),
-                            ],
-                          ],
-                        ),
                       ),
                       const SizedBox(width: AppSpacing.xs),
                       Icon(
                         expanded ? Icons.expand_less : Icons.expand_more,
-                        size: 22,
+                        size: compactHeader ? 20 : 22,
                         color: accent ?? AppColors.textMuted,
                       ),
                     ],

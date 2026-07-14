@@ -59,8 +59,7 @@ class AnalysisScreen extends ConsumerWidget {
                 sliver: SliverToBoxAdapter(
                   child: CollapsibleAnalysisSection(
                     sectionId: AnalysisSectionIds.tahvilCalculator,
-                    title: 'Araç · Tahvil Hesaplayıcı',
-                    subtitle: 'Aralığa göre · adede göre tek/iki çeşit · Excel mantığı',
+                    title: 'Tahvil Hesaplayıcı',
                     headerAccentColor: AppColors.diameter28,
                     child: const TahvilCalculatorSection(hideHeader: true),
                   ),
