@@ -8,12 +8,18 @@ import 'package:santijet_demir/core/widgets/app_components.dart';
 import 'package:santijet_demir/domain/entities/cutting_bending.dart';
 import 'package:santijet_demir/features/analysis/cutting_bending_calculator.dart';
 import 'package:santijet_demir/features/analysis/widgets/analysis_fire_summary_details.dart';
+import 'package:santijet_demir/features/analysis/widgets/analysis_report_actions.dart';
 import 'package:santijet_demir/features/analysis/providers/cutting_bending_provider.dart';
 
 class AnalysisFireSummaryPanel extends ConsumerStatefulWidget {
-  const AnalysisFireSummaryPanel({super.key, required this.batch});
+  const AnalysisFireSummaryPanel({
+    super.key,
+    required this.batch,
+    required this.sourceBatches,
+  });
 
   final CuttingBendingBatch batch;
+  final List<CuttingBendingBatch> sourceBatches;
 
   @override
   ConsumerState<AnalysisFireSummaryPanel> createState() =>
@@ -50,9 +56,6 @@ class _AnalysisFireSummaryPanelState
         );
     final comparison = ref.watch(analysisComparisonProvider);
     final tahvilPreview = ref.watch(tahvilFirePreviewProvider);
-    final tahvilApproved =
-        batch.tahvilGroups.where((group) => group.approved).length;
-    final tahvilTotal = batch.tahvilGroups.length;
     final progress = ref.watch(optimumFireAnalysisProgressProvider);
     final analysisError = ref.watch(optimumFireAnalysisErrorProvider);
     final progressForBatch = progress.appliesTo(batch.id);
@@ -287,52 +290,10 @@ class _AnalysisFireSummaryPanelState
                         );
                       },
                     ),
-                  ],
-                  if (batch.isOptimized && comparison != null) ...[
                     const SizedBox(height: 12),
-                    _TahvilFireComparisonBanner(comparison: comparison),
-                  ],
-                  if (batch.isOptimized) ...[
-                    const SizedBox(height: 12),
-                    if (batch.hasSavedOptimization(FireReductionStrategy.tahvilOnly))
-                      Padding(
-                        padding: const EdgeInsets.only(bottom: 8),
-                        child: _SavedStrategyChip(
-                          label: 'Tahvil',
-                          active: batch.optimizationStrategy ==
-                                  FireReductionStrategy.tahvilOnly &&
-                              batch.isOptimized,
-                        ),
-                      ),
-                    if (batch.optimizationStrategy != null)
-                      Padding(
-                        padding: const EdgeInsets.only(bottom: 8),
-                        child: Text(
-                          'Analiz: Tahvil ile fire denkleştirmesi',
-                          style: AppTypography.labelMedium.copyWith(
-                            color: AppColors.electricBlueLight,
-                          ),
-                        ),
-                      ),
-                    Wrap(
-                      spacing: 8,
-                      runSpacing: 8,
-                      children: [
-                        if (tahvilTotal > 0)
-                          _PipelineChip(
-                            label: 'Tahvil',
-                            done: tahvilApproved > 0,
-                            detail: '$tahvilApproved / $tahvilTotal',
-                            optional: tahvilApproved == 0,
-                          ),
-                        _PipelineChip(
-                          label: 'Kesim planı',
-                          done: batch.stockCutPlans.isNotEmpty,
-                          detail: batch.stockCutPlans.isNotEmpty
-                              ? '${batch.stockCutPlans.length} çap'
-                              : 'Yok',
-                        ),
-                      ],
+                    AnalysisReportActions(
+                      batch: batch,
+                      sourceBatches: widget.sourceBatches,
                     ),
                   ],
                 ],
@@ -570,119 +531,6 @@ class _TahvilNoBenefitBanner extends StatelessWidget {
   }
 }
 
-class _TahvilFireComparisonBanner extends StatelessWidget {
-  const _TahvilFireComparisonBanner({required this.comparison});
-
-  final AnalysisComparison comparison;
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
-      decoration: BoxDecoration(
-        color: AppColors.electricBlueLight.withValues(alpha: 0.08),
-        borderRadius: AppRadii.sm,
-        border: Border.all(
-          color: AppColors.electricBlueLight.withValues(alpha: 0.35),
-        ),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.stretch,
-        children: [
-          Text(
-            'Proje Fire ↔ Tahvil Fire Mukayese',
-            style: AppTypography.titleMedium.copyWith(
-              color: AppColors.electricBlueLight,
-            ),
-          ),
-          const SizedBox(height: 10),
-          Row(
-            children: [
-              Expanded(
-                child: _ComparisonMetric(
-                  label: 'Proje Fire',
-                  tonnage: comparison.rawFireTonnage,
-                  percent: comparison.rawFirePercent,
-                  accent: AppColors.warning,
-                ),
-              ),
-              const SizedBox(width: 8),
-              const Icon(
-                Icons.arrow_forward,
-                size: 18,
-                color: AppColors.textMuted,
-              ),
-              const SizedBox(width: 8),
-              Expanded(
-                child: _ComparisonMetric(
-                  label: 'Tahvil Fire',
-                  tonnage: comparison.plannedFireTonnage,
-                  percent: comparison.plannedFirePercent,
-                  accent: AppColors.success,
-                ),
-              ),
-            ],
-          ),
-          if (comparison.savedFireTonnage > 0.001) ...[
-            const SizedBox(height: 10),
-            Text(
-              'Kazanç: ${AppFormat.tonnage(comparison.savedFireTonnage)} t '
-              '(−%${comparison.savedFirePercent.toStringAsFixed(1)})',
-              style: AppTypography.labelMedium.copyWith(
-                color: AppColors.success,
-              ),
-            ),
-          ],
-        ],
-      ),
-    );
-  }
-}
-
-class _ComparisonMetric extends StatelessWidget {
-  const _ComparisonMetric({
-    required this.label,
-    required this.tonnage,
-    required this.percent,
-    required this.accent,
-  });
-
-  final String label;
-  final double tonnage;
-  final double percent;
-  final Color accent;
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
-      decoration: BoxDecoration(
-        color: AppColors.canvas,
-        borderRadius: AppRadii.sm,
-        border: Border.all(color: AppColors.border),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Text(
-            label,
-            style: AppTypography.labelSmall.copyWith(color: AppColors.textMuted),
-          ),
-          const SizedBox(height: 4),
-          Text(
-            '${AppFormat.tonnage(tonnage)} t',
-            style: AppTypography.titleMedium.copyWith(color: accent),
-          ),
-          Text(
-            '%${percent.toStringAsFixed(1)}',
-            style: AppTypography.bodySmall.copyWith(color: AppColors.textMuted),
-          ),
-        ],
-      ),
-    );
-  }
-}
-
 class _TahvilFireAnalysisPanel extends ConsumerWidget {
   const _TahvilFireAnalysisPanel({
     required this.batch,
@@ -772,51 +620,6 @@ class _TahvilFireAnalysisPanel extends ConsumerWidget {
           ),
         ],
       ],
-    );
-  }
-}
-
-class _SavedStrategyChip extends StatelessWidget {
-  const _SavedStrategyChip({
-    required this.label,
-    required this.active,
-  });
-
-  final String label;
-  final bool active;
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-      decoration: BoxDecoration(
-        color: active
-            ? AppColors.success.withValues(alpha: 0.12)
-            : AppColors.canvas,
-        borderRadius: AppRadii.full,
-        border: Border.all(
-          color: active
-              ? AppColors.success.withValues(alpha: 0.45)
-              : AppColors.border,
-        ),
-      ),
-      child: Row(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Icon(
-            Icons.save_outlined,
-            size: 12,
-            color: active ? AppColors.success : AppColors.textMuted,
-          ),
-          const SizedBox(width: 4),
-          Text(
-            label,
-            style: AppTypography.labelSmall.copyWith(
-              color: active ? AppColors.success : AppColors.textMuted,
-            ),
-          ),
-        ],
-      ),
     );
   }
 }
@@ -1119,60 +922,6 @@ class _MatteGreenGradientButton extends StatelessWidget {
             ],
           ),
         ),
-      ),
-    );
-  }
-}
-
-class _PipelineChip extends StatelessWidget {
-  const _PipelineChip({
-    required this.label,
-    required this.done,
-    required this.detail,
-    this.optional = false,
-  });
-
-  final String label;
-  final bool done;
-  final String detail;
-  final bool optional;
-
-  @override
-  Widget build(BuildContext context) {
-    final color = done ? AppColors.success : AppColors.textMuted;
-
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
-      decoration: BoxDecoration(
-        color: done
-            ? AppColors.success.withValues(alpha: 0.08)
-            : AppColors.canvas,
-        borderRadius: AppRadii.full,
-        border: Border.all(
-          color: done
-              ? AppColors.success.withValues(alpha: 0.35)
-              : AppColors.border,
-        ),
-      ),
-      child: Row(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Icon(
-            done ? Icons.check_circle : Icons.radio_button_unchecked,
-            size: 14,
-            color: color,
-          ),
-          const SizedBox(width: 6),
-          Text(
-            optional ? '$label (ops.)' : label,
-            style: AppTypography.labelMedium.copyWith(color: color),
-          ),
-          const SizedBox(width: 6),
-          Text(
-            detail,
-            style: AppTypography.labelSmall.copyWith(color: AppColors.textMuted),
-          ),
-        ],
       ),
     );
   }

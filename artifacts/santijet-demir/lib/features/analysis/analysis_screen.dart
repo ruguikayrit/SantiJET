@@ -19,7 +19,6 @@ import 'package:santijet_demir/features/projects/providers/project_provider.dart
 import 'package:santijet_demir/features/analysis/widgets/analysis_batch_list_panel.dart';
 import 'package:santijet_demir/features/analysis/widgets/analysis_fire_summary.dart';
 import 'package:santijet_demir/features/analysis/widgets/collapsible_analysis_section.dart';
-import 'package:santijet_demir/features/analysis/widgets/analysis_report_actions.dart';
 import 'package:santijet_demir/features/analysis/widgets/tahvil_calculator_section.dart';
 import 'package:santijet_demir/features/rebar_metraj/widgets/metraj_cutting_actions.dart';
 
@@ -261,18 +260,9 @@ class _AnalysisSelectedBatchArea extends ConsumerWidget {
             AppSpacing.md,
             0,
             AppSpacing.md,
-            AppSpacing.sm,
-          ),
-          child: AnalysisFireSummaryPanel(batch: batch),
-        ),
-        Padding(
-          padding: const EdgeInsets.fromLTRB(
-            AppSpacing.md,
-            0,
-            AppSpacing.md,
             AppSpacing.md,
           ),
-          child: AnalysisReportActions(
+          child: AnalysisFireSummaryPanel(
             batch: batch,
             sourceBatches: scopedBatches,
           ),
