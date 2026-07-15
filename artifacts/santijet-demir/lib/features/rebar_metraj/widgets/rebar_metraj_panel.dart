@@ -102,8 +102,6 @@ class _RebarMetrajPanelState extends ConsumerState<RebarMetrajPanel>
                 AppSpacing.md + bottomInset,
               ),
               children: [
-                const _InfoBanner(),
-                const SizedBox(height: 16),
                 _UploadCard(
                   loading: loading,
                   canClear: result != null,
@@ -212,49 +210,6 @@ class _RebarMetrajPanelState extends ConsumerState<RebarMetrajPanel>
     ref.read(rebarMetrajResultProvider.notifier).state = null;
     ref.read(rebarMetrajErrorProvider.notifier).state = null;
     ref.read(rebarMetrajLoadingProvider.notifier).state = false;
-  }
-}
-
-class _InfoBanner extends StatelessWidget {
-  const _InfoBanner();
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      padding: const EdgeInsets.all(14),
-      decoration: BoxDecoration(
-        color: AppColors.electricBlue.withValues(alpha: 0.08),
-        borderRadius: AppRadii.md,
-        border: Border.all(color: AppColors.electricBlue.withValues(alpha: 0.25)),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
-            children: [
-              Icon(Icons.architecture, color: AppColors.electricBlueLight, size: 20),
-              const SizedBox(width: 8),
-              Text('CAD\'den otomatik metraj', style: AppTypography.titleMedium),
-            ],
-          ),
-          const SizedBox(height: 8),
-          Text(
-            '1. AutoCAD/BricsCAD projesini DWG olarak yükleyin\n'
-            '2. Kolon/perde/kiriş/döşeme başlıkları: S1[100/160] 182 ADET\n'
-            '3. Her eleman altında etriye, çiroz, boy demiri metrajı toplanır\n'
-            '4. 1 adet eleman metrajı × benzer katsayısı = proje toplamı\n'
-            '5. Analiz sonuçlarını kaydırın; üstte Ön İmalata Gönder\n'
-            '6. Ön İmalat sekmesinde analiz onayı verin; Hesap ve Analiz sayfasından yükleyin',
-            style: AppTypography.bodySmall,
-          ),
-          const SizedBox(height: 8),
-          Text(
-            'DWG dosyaları web tarayıcıda doğrudan okunur.',
-            style: AppTypography.labelMedium.copyWith(color: AppColors.success),
-          ),
-        ],
-      ),
-    );
   }
 }
 

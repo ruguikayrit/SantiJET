@@ -21,6 +21,19 @@ normalize_supabase_url() {
   printf '%s' "${clean}"
 }
 
+install_libredwg_web() {
+  local source_dir="$1"
+  local setup="${source_dir}/artifacts/santijet-demir/scripts/setup-libredwg-web.sh"
+
+  if [[ ! -f "${setup}" ]]; then
+    echo "::warning::LibreDWG setup script missing at ${setup}"
+    return 0
+  fi
+
+  echo "Installing LibreDWG web assets for ${source_dir}..."
+  bash "${setup}"
+}
+
 build_demir_web() {
   local source_dir="$1"
   local output_subpath="$2"
@@ -34,6 +47,7 @@ build_demir_web() {
   fi
 
   mkdir -p "${output_dir}"
+  install_libredwg_web "${source_dir}"
 
   pushd "${source_dir}/artifacts/santijet-demir" >/dev/null
   flutter pub get
