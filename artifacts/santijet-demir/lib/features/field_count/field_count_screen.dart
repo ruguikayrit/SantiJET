@@ -40,8 +40,6 @@ class FieldCountScreen extends ConsumerWidget {
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Text('Özet', style: AppTypography.headlineMedium),
-                      const SizedBox(height: 12),
                       SummaryKpiRow(
                         items: [
                           SummaryKpiItem(
@@ -199,24 +197,34 @@ class _CountRecordsShortcut extends StatelessWidget {
         child: Container(
           padding: const EdgeInsets.all(16),
           decoration: BoxDecoration(
-            color: AppColors.info.withValues(alpha: 0.08),
+            color: AppColors.diameter28.withValues(alpha: 0.08),
             borderRadius: AppRadii.md,
-            border: Border.all(color: AppColors.info.withValues(alpha: 0.3)),
+            border: Border.all(
+              color: AppColors.diameter28.withValues(alpha: 0.35),
+            ),
           ),
           child: Row(
             children: [
-              const Icon(Icons.inventory_2_outlined, color: AppColors.info),
+              const Icon(
+                Icons.inventory_2_outlined,
+                color: AppColors.diameter28,
+              ),
               const SizedBox(width: 12),
               Expanded(
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Text('Sayım Kayıtları', style: AppTypography.titleMedium),
+                    Text(
+                      'Sayım Kayıtları',
+                      style: AppTypography.titleMedium.copyWith(
+                        color: AppColors.diameter28,
+                      ),
+                    ),
                     Text(subtitle, style: AppTypography.bodySmall),
                   ],
                 ),
               ),
-              const Icon(Icons.arrow_forward, color: AppColors.textMuted),
+              const Icon(Icons.arrow_forward, color: AppColors.diameter28),
             ],
           ),
         ),

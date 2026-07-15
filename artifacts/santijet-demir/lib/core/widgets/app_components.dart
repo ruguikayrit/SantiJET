@@ -108,7 +108,8 @@ class KpiCard extends StatelessWidget {
 
   Widget _buildLabel() {
     final parts = label.trim().split(RegExp(r'\s+'));
-    if (!compactHeight && parts.length == 2) {
+    // Dense cards keep the title on one line (value sits below).
+    if (!dense && !compactHeight && parts.length == 2) {
       return Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         mainAxisSize: MainAxisSize.min,
@@ -118,7 +119,12 @@ class KpiCard extends StatelessWidget {
         ],
       );
     }
-    return Text(label, style: AppTypography.labelMedium);
+    return Text(
+      label,
+      style: AppTypography.labelMedium,
+      maxLines: 1,
+      overflow: TextOverflow.ellipsis,
+    );
   }
 
   @override
