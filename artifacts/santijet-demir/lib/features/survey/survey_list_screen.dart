@@ -6,6 +6,7 @@ import 'package:santijet_demir/core/theme/app_colors.dart';
 import 'package:santijet_demir/core/theme/app_radii.dart';
 import 'package:santijet_demir/core/theme/app_spacing.dart';
 import 'package:santijet_demir/core/theme/app_typography.dart';
+import 'package:santijet_demir/core/widgets/app_components.dart';
 import 'package:santijet_demir/core/widgets/app_subpage_app_bar.dart';
 import 'package:santijet_demir/core/widgets/swipe_to_delete_row.dart';
 import 'package:santijet_demir/data/services/export_service.dart';
@@ -178,24 +179,14 @@ class _SurveyListScreenState extends ConsumerState<SurveyListScreen>
           labels: const ['İmalat', 'Otomatik Metraj', 'Ön İmalat'],
           flexes: const [1, 2, 1],
         ),
-        actions: [
-          if (compactTabs)
-            IconButton(
-              onPressed: canEdit ? _showCreateImalatDialog : null,
-              icon: const Icon(Icons.add),
-              tooltip: 'Yeni İmalat',
-            )
-          else
-            Padding(
-              padding: const EdgeInsets.only(right: 4),
-              child: TextButton.icon(
-                onPressed: canEdit ? _showCreateImalatDialog : null,
-                icon: const Icon(Icons.add, size: 18),
-                label: const Text('Yeni İmalat'),
-              ),
-            ),
-        ],
       ),
+      floatingActionButton: canEdit
+          ? AppFab(
+              label: 'Yeni İmalat',
+              aboveBottomNav: false,
+              onPressed: _showCreateImalatDialog,
+            )
+          : null,
       body: ColoredBox(
         color: screenBg,
         child: IndexedStack(
@@ -205,7 +196,12 @@ class _SurveyListScreenState extends ConsumerState<SurveyListScreen>
               color: screenBg,
               child: ListView(
               controller: _imalatListScrollController,
-              padding: const EdgeInsets.all(AppSpacing.md),
+              padding: const EdgeInsets.fromLTRB(
+                AppSpacing.md,
+                AppSpacing.md,
+                AppSpacing.md,
+                88,
+              ),
               children: [
                 _ProjectMetaRow(project: project),
                 const SizedBox(height: 16),

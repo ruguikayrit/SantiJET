@@ -108,22 +108,10 @@ class _ComparisonTable extends StatelessWidget {
         borderRadius: AppRadii.md,
         border: Border.all(color: AppColors.border),
       ),
+      clipBehavior: Clip.antiAlias,
       child: Column(
         children: [
-          Container(
-            padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
-            decoration: const BoxDecoration(
-              border: Border(bottom: BorderSide(color: AppColors.border)),
-            ),
-            child: Row(
-              children: [
-                _Header('ÇAP', flex: 2),
-                _Header('SİPARİŞ', flex: 3),
-                _Header('TESLİM', flex: 3),
-                _Header('FARK', flex: 3),
-              ],
-            ),
-          ),
+          const _ComparisonTableHeader(),
           ...lines.map((line) => _ComparisonRow(line: line)),
         ],
       ),
@@ -131,19 +119,50 @@ class _ComparisonTable extends StatelessWidget {
   }
 }
 
-class _Header extends StatelessWidget {
-  const _Header(this.text, {required this.flex});
-
-  final String text;
-  final int flex;
+class _ComparisonTableHeader extends StatelessWidget {
+  const _ComparisonTableHeader();
 
   @override
   Widget build(BuildContext context) {
-    return Expanded(
-      flex: flex,
-      child: Text(
-        text,
-        style: AppTypography.labelMedium.copyWith(fontWeight: FontWeight.w700),
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(14, 10, 14, 10),
+      child: IntrinsicHeight(
+        child: Row(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            Expanded(flex: 2, child: _headerCell('ÇAP')),
+            const SizedBox(width: 4),
+            Expanded(flex: 3, child: _headerCell('SİPARİŞ')),
+            const SizedBox(width: 4),
+            Expanded(flex: 3, child: _headerCell('TESLİM')),
+            const SizedBox(width: 4),
+            Expanded(flex: 3, child: _headerCell('FARK')),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _headerCell(String label) {
+    return DecoratedBox(
+      decoration: BoxDecoration(
+        color: AppColors.electricBlueLight,
+        borderRadius: AppRadii.xs,
+        border: Border.all(color: AppColors.electricBlue),
+      ),
+      child: Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 6),
+        child: Text(
+          label,
+          style: AppTypography.labelSmall.copyWith(
+            color: Colors.black,
+            fontWeight: FontWeight.w700,
+            height: 1.1,
+          ),
+          textAlign: TextAlign.center,
+          maxLines: 1,
+          overflow: TextOverflow.ellipsis,
+        ),
       ),
     );
   }

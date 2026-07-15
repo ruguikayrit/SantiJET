@@ -149,11 +149,11 @@ class _BrandTitleRow extends StatelessWidget {
 
     final lineMetric = textPainter.computeLineMetrics().first;
     final demirCapHeight = lineMetric.ascent;
-    final wordmarkHeight = demirCapHeight / _wordmarkLetterFillRatio * 2;
+    final wordmarkHeight = demirCapHeight / _wordmarkLetterFillRatio;
     final fontHeight = textPainter.height;
 
-    final row = Row(
-      crossAxisAlignment: CrossAxisAlignment.end,
+    final brandTitle = Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
       mainAxisSize: MainAxisSize.min,
       children: [
         ColorFiltered(
@@ -168,12 +168,12 @@ class _BrandTitleRow extends StatelessWidget {
             filterQuality: FilterQuality.high,
           ),
         ),
-        const SizedBox(width: 8),
+        const SizedBox(height: 4),
         Text('DEMİR', style: _demirTitleStyle),
       ],
     );
 
-    if (!shiftUpByFontHeight) return row;
+    if (!shiftUpByFontHeight) return brandTitle;
 
     final lift = defaultTargetPlatform == TargetPlatform.iOS && kIsWeb
         ? fontHeight * 0.15
@@ -181,7 +181,7 @@ class _BrandTitleRow extends StatelessWidget {
 
     return Transform.translate(
       offset: Offset(0, -lift),
-      child: row,
+      child: brandTitle,
     );
   }
 }
