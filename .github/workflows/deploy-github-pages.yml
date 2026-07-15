@@ -54,8 +54,12 @@ jobs:
         with:
           node-version: '20'
 
-      - name: Install LibreDWG web assets
+      - name: Install LibreDWG web assets (production)
         run: bash artifacts/santijet-demir/scripts/setup-libredwg-web.sh
+
+      - name: Install LibreDWG web assets (staging preview)
+        if: hashFiles('staging-src/artifacts/santijet-demir/scripts/setup-libredwg-web.sh') != ''
+        run: bash staging-src/artifacts/santijet-demir/scripts/setup-libredwg-web.sh
 
       - name: Build DEMİR (production + staging preview)
         env:
