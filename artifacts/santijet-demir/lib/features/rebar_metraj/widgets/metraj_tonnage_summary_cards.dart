@@ -18,6 +18,7 @@ class MetrajTonnageSummaryCards extends StatelessWidget {
   static const _rowGap = 12.0;
   static const _diameterGap = 8.0;
   static const _minDiameterCardWidth = 76.0;
+  static const _cardAspectRatio = 1.55;
 
   @override
   Widget build(BuildContext context) {
@@ -29,35 +30,48 @@ class MetrajTonnageSummaryCards extends StatelessWidget {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
-        IntrinsicHeight(
-          child: Row(
-            crossAxisAlignment: CrossAxisAlignment.stretch,
-            children: [
-              Expanded(
-                child: _StackedMetricCard(
-                  label: 'Toplam Tonaj',
-                  value: numberFormat.format(summary.totalTonnage),
-                  accentColor: AppColors.electricBlueLight,
+        LayoutBuilder(
+          builder: (context, constraints) {
+            final cardWidth =
+                (constraints.maxWidth - _diameterGap * 2) / 3;
+            final cardHeight = cardWidth / _cardAspectRatio;
+            return Row(
+              children: [
+                Expanded(
+                  child: SizedBox(
+                    height: cardHeight,
+                    child: _StackedMetricCard(
+                      label: 'Toplam Tonaj',
+                      value: numberFormat.format(summary.totalTonnage),
+                      accentColor: AppColors.electricBlueLight,
+                    ),
+                  ),
                 ),
-              ),
-              const SizedBox(width: _diameterGap),
-              Expanded(
-                child: _StackedMetricCard(
-                  label: 'İnce Demir',
-                  value: numberFormat.format(summary.thinTonnage),
-                  accentColor: AppColors.info,
+                const SizedBox(width: _diameterGap),
+                Expanded(
+                  child: SizedBox(
+                    height: cardHeight,
+                    child: _StackedMetricCard(
+                      label: 'İnce Demir',
+                      value: numberFormat.format(summary.thinTonnage),
+                      accentColor: AppColors.info,
+                    ),
+                  ),
                 ),
-              ),
-              const SizedBox(width: _diameterGap),
-              Expanded(
-                child: _StackedMetricCard(
-                  label: 'Kalın Demir',
-                  value: numberFormat.format(summary.thickTonnage),
-                  accentColor: AppColors.success,
+                const SizedBox(width: _diameterGap),
+                Expanded(
+                  child: SizedBox(
+                    height: cardHeight,
+                    child: _StackedMetricCard(
+                      label: 'Kalın Demir',
+                      value: numberFormat.format(summary.thickTonnage),
+                      accentColor: AppColors.success,
+                    ),
+                  ),
                 ),
-              ),
-            ],
-          ),
+              ],
+            );
+          },
         ),
         if (summary.lines.isNotEmpty) ...[
           const SizedBox(height: _rowGap),
@@ -68,6 +82,7 @@ class MetrajTonnageSummaryCards extends StatelessWidget {
               final perRow = _optimalCardsPerRow(maxWidth, count);
               final cardWidth =
                   (maxWidth - _diameterGap * (perRow - 1)) / perRow;
+              final cardHeight = cardWidth / _cardAspectRatio;
 
               return Wrap(
                 spacing: _diameterGap,
@@ -76,6 +91,7 @@ class MetrajTonnageSummaryCards extends StatelessWidget {
                   for (final line in summary.lines)
                     SizedBox(
                       width: cardWidth,
+                      height: cardHeight,
                       child: _StackedMetricCard(
                         label: 'Ø${line.diameter}',
                         value: numberFormat.format(line.tonnage),
@@ -118,7 +134,7 @@ class MetrajTonnageSummaryCards extends StatelessWidget {
   }
 }
 
-/// Başlık tek satır üstte, tonaj altında — hücrede yatay ve düşey ortalı.
+/// Başlık üstte, tonaj altında — hücrede yatay ve düşey ortalı.
 class _StackedMetricCard extends StatelessWidget {
   const _StackedMetricCard({
     required this.label,
@@ -132,54 +148,54 @@ class _StackedMetricCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 10),
+    return DecoratedBox(
       decoration: BoxDecoration(
         color: AppColors.surfaceElevated,
         borderRadius: AppRadii.md,
         border: Border.all(color: AppColors.border),
       ),
-      alignment: Alignment.center,
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.center,
-        mainAxisAlignment: MainAxisAlignment.center,
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Text(
-            label,
-            style: AppTypography.labelMedium,
-            maxLines: 1,
-            softWrap: false,
-            overflow: TextOverflow.ellipsis,
-            textAlign: TextAlign.center,
-          ),
-          const SizedBox(height: 6),
-          FittedBox(
-            fit: BoxFit.scaleDown,
-            alignment: Alignment.center,
-            child: Row(
-              crossAxisAlignment: CrossAxisAlignment.end,
-              mainAxisAlignment: MainAxisAlignment.center,
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                Text(
-                  value,
-                  style: AppTypography.kpiValue.copyWith(
-                    color: accentColor,
-                    fontSize: 20,
-                    height: 1,
+      child: Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 8),
+        child: SizedBox.expand(
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            crossAxisAlignment: CrossAxisAlignment.center,
+            children: [
+              Text(
+                label,
+                style: AppTypography.labelMedium,
+                maxLines: 1,
+                softWrap: false,
+                overflow: TextOverflow.ellipsis,
+                textAlign: TextAlign.center,
+              ),
+              const SizedBox(height: 6),
+              FittedBox(
+                fit: BoxFit.scaleDown,
+                child: Text.rich(
+                  TextSpan(
+                    children: [
+                      TextSpan(
+                        text: value,
+                        style: AppTypography.kpiValue.copyWith(
+                          color: accentColor,
+                          fontSize: 20,
+                          height: 1,
+                        ),
+                      ),
+                      TextSpan(
+                        text: ' t',
+                        style: AppTypography.labelSmall.copyWith(height: 1),
+                      ),
+                    ],
                   ),
                   textAlign: TextAlign.center,
+                  maxLines: 1,
                 ),
-                const SizedBox(width: 3),
-                Padding(
-                  padding: const EdgeInsets.only(bottom: 1),
-                  child: Text('t', style: AppTypography.labelSmall),
-                ),
-              ],
-            ),
+              ),
+            ],
           ),
-        ],
+        ),
       ),
     );
   }

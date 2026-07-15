@@ -301,51 +301,55 @@ class _IcmalDiameterDataRow extends StatelessWidget {
       decoration: const BoxDecoration(
         border: Border(bottom: BorderSide(color: AppColors.borderSubtle)),
       ),
-      child: Row(
-        children: [
-          Expanded(
-            flex: _IcmalLayout.columnFlex,
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.center,
-              children: [
-                Text(
-                  'Ø$diameter',
-                  style: AppTypography.labelMedium.copyWith(
-                    color: AppColors.diameterColor(diameter),
-                    fontWeight: FontWeight.w700,
+      child: IntrinsicHeight(
+        child: Row(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            Expanded(
+              flex: _IcmalLayout.columnFlex,
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                crossAxisAlignment: CrossAxisAlignment.center,
+                children: [
+                  Text(
+                    'Ø$diameter',
+                    style: AppTypography.labelMedium.copyWith(
+                      color: AppColors.diameterColor(diameter),
+                      fontWeight: FontWeight.w700,
+                    ),
+                    textAlign: TextAlign.center,
                   ),
-                  textAlign: TextAlign.center,
-                ),
-                Text(
-                  unitWeightFormat.format(unitWeightKgPerM),
-                  style: AppTypography.bodySmall,
-                  textAlign: TextAlign.center,
-                  maxLines: 1,
-                  overflow: TextOverflow.fade,
-                ),
-              ],
+                  Text(
+                    unitWeightFormat.format(unitWeightKgPerM),
+                    style: AppTypography.bodySmall,
+                    textAlign: TextAlign.center,
+                    maxLines: 1,
+                    overflow: TextOverflow.fade,
+                  ),
+                ],
+              ),
             ),
-          ),
-          _IcmalCol(
-            intFormat.format(barCount),
-            flex: _IcmalLayout.columnFlex,
-            align: TextAlign.center,
-            dense: true,
-          ),
-          _IcmalCol(
-            '${lengthFormat.format(lengthM)} m',
-            flex: _IcmalLayout.columnFlex,
-            align: TextAlign.center,
-            dense: true,
-          ),
-          _IcmalCol(
-            '${numberFormat.format(tonnage)} t',
-            flex: _IcmalLayout.columnFlex,
-            align: TextAlign.center,
-            dense: true,
-            color: AppColors.electricBlueLight,
-          ),
-        ],
+            _IcmalCol(
+              intFormat.format(barCount),
+              flex: _IcmalLayout.columnFlex,
+              align: TextAlign.center,
+              dense: true,
+            ),
+            _IcmalCol(
+              '${lengthFormat.format(lengthM)} m',
+              flex: _IcmalLayout.columnFlex,
+              align: TextAlign.center,
+              dense: true,
+            ),
+            _IcmalCol(
+              '${numberFormat.format(tonnage)} t',
+              flex: _IcmalLayout.columnFlex,
+              align: TextAlign.center,
+              dense: true,
+              color: AppColors.electricBlueLight,
+            ),
+          ],
+        ),
       ),
     );
   }
@@ -438,13 +442,20 @@ class _IcmalCol extends StatelessWidget {
 
     return Expanded(
       flex: flex,
-      child: Text(
-        text,
-        style: style,
-        textAlign: align,
-        maxLines: dense ? 1 : 2,
-        softWrap: !dense,
-        overflow: dense ? TextOverflow.fade : TextOverflow.ellipsis,
+      child: Align(
+        alignment: switch (align) {
+          TextAlign.start || TextAlign.left => Alignment.centerLeft,
+          TextAlign.end || TextAlign.right => Alignment.centerRight,
+          _ => Alignment.center,
+        },
+        child: Text(
+          text,
+          style: style,
+          textAlign: align,
+          maxLines: dense ? 1 : 2,
+          softWrap: !dense,
+          overflow: dense ? TextOverflow.fade : TextOverflow.ellipsis,
+        ),
       ),
     );
   }
