@@ -14,6 +14,7 @@ import 'package:santijet_demir/domain/entities/rebar_metraj.dart';
 import 'package:santijet_demir/features/projects/providers/project_provider.dart';
 import 'package:santijet_demir/features/rebar_metraj/providers/rebar_metraj_provider.dart';
 import 'package:santijet_demir/features/rebar_metraj/providers/rebar_metraj_storage_provider.dart';
+import 'package:santijet_demir/features/rebar_metraj/rebar_metraj_report_service.dart';
 import 'package:santijet_demir/features/rebar_metraj/widgets/metraj_cetvel_section.dart';
 import 'package:santijet_demir/features/rebar_metraj/widgets/metraj_survey_actions.dart';
 import 'package:santijet_demir/features/rebar_metraj/widgets/rebar_label_details_section.dart';
@@ -115,11 +116,6 @@ class _RebarMetrajPanelState extends ConsumerState<RebarMetrajPanel>
                 if (showResults) ...[
                   const SizedBox(height: 20),
                   _ResultSummaryBar(result: result),
-                  const SizedBox(height: 6),
-                  Text(
-                    '${result.fileName} · ${result.sourceFormat}',
-                    style: AppTypography.bodySmall,
-                  ),
                   if (result.lines.isNotEmpty || result.cetvel.isNotEmpty) ...[
                     MetrajCetvelSection(
                       lines: result.lines,
@@ -332,13 +328,42 @@ class _ErrorBanner extends StatelessWidget {
   }
 }
 
-class _ResultSummaryBar extends ConsumerWidget {
+class _ResultSummaryBar extends ConsumerStatefulWidget {
   const _ResultSummaryBar({required this.result});
 
   final RebarMetrajResult result;
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
+  ConsumerState<_ResultSummaryBar> createState() => _ResultSummaryBarState();
+}
+
+class _ResultSummaryBarState extends ConsumerState<_ResultSummaryBar> {
+  bool _pdfBusy = false;
+
+  RebarMetrajResult get result => widget.result;
+
+  Future<void> _previewPdfReport() async {
+    if (_pdfBusy) return;
+    setState(() => _pdfBusy = true);
+    try {
+      final projectName = ref.read(activeProjectProvider)?.name ?? '';
+      await rebarMetrajReportService.previewReport(
+        projectName: projectName,
+        result: result,
+      );
+    } catch (error) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('PDF rapor hatası: $error')),
+        );
+      }
+    } finally {
+      if (mounted) setState(() => _pdfBusy = false);
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
     final projectId = ref.watch(activeProjectIdProvider);
     final savedRecords = ref.watch(savedRebarMetrajProvider);
     final isSaved = savedRecords.any(
@@ -502,6 +527,34 @@ class _ResultSummaryBar extends ConsumerWidget {
                     style: FilledButton.styleFrom(
                       minimumSize: const Size.fromHeight(44),
                       padding: const EdgeInsets.symmetric(horizontal: 16),
+                    ),
+                  ),
+                  const SizedBox(height: 12),
+                  Text(
+                    '${result.fileName} · ${result.sourceFormat}',
+                    style: AppTypography.bodySmall.copyWith(
+                      color: AppColors.textMuted,
+                    ),
+                  ),
+                  const SizedBox(height: 10),
+                  OutlinedButton.icon(
+                    onPressed: _pdfBusy ? null : _previewPdfReport,
+                    icon: _pdfBusy
+                        ? const SizedBox(
+                            width: 18,
+                            height: 18,
+                            child: CircularProgressIndicator(strokeWidth: 2),
+                          )
+                        : const Icon(Icons.picture_as_pdf_outlined, size: 18),
+                    label: Text(
+                      _pdfBusy ? 'Rapor hazırlanıyor…' : 'PDF Rapor Al',
+                    ),
+                    style: OutlinedButton.styleFrom(
+                      minimumSize: const Size.fromHeight(44),
+                      foregroundColor: AppColors.electricBlueLight,
+                      side: BorderSide(
+                        color: AppColors.electricBlueLight.withValues(alpha: 0.45),
+                      ),
                     ),
                   ),
                 ],
