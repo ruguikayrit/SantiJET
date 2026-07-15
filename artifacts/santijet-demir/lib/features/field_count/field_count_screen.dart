@@ -63,9 +63,11 @@ class FieldCountScreen extends ConsumerWidget {
                         ],
                       ),
                       const SizedBox(height: 12),
-                      SummaryKpiRow(
-                        dense: true,
-                        spacing: 8,
+                      SummaryKpiGrid(
+                        crossAxisCount: 2,
+                        mainAxisSpacing: 8,
+                        crossAxisSpacing: 8,
+                        childAspectRatio: 1.45,
                         items: [
                           SummaryKpiItem(
                             label: 'Planlanan Kullanım',

@@ -139,6 +139,10 @@ class _BrandTitleRow extends StatelessWidget {
   /// PNG wordmark içinde harfler dikeyde ~%55 alan kaplar; geri kalan boşluktur.
   static const _wordmarkLetterFillRatio = 0.55;
 
+  /// splash_wordmark.png yüksekliği ve ilk opak piksel (Ş) sol boşluğu.
+  static const _wordmarkPixelHeight = 514.0;
+  static const _wordmarkLeftInkPx = 139.0;
+
   @override
   Widget build(BuildContext context) {
     final textPainter = TextPainter(
@@ -153,6 +157,9 @@ class _BrandTitleRow extends StatelessWidget {
     final wordmarkHeight =
         demirCapHeight / _wordmarkLetterFillRatio * 2.5;
     final fontHeight = textPainter.height;
+    // DEMİR satır başını wordmark'taki Ş ile hizala.
+    final demirIndent = wordmarkHeight *
+        (_wordmarkLeftInkPx / _wordmarkPixelHeight);
 
     final brandTitle = Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -171,7 +178,10 @@ class _BrandTitleRow extends StatelessWidget {
           ),
         ),
         const SizedBox(height: 4),
-        Text('DEMİR', style: _demirTitleStyle),
+        Padding(
+          padding: EdgeInsets.only(left: demirIndent),
+          child: Text('DEMİR', style: _demirTitleStyle),
+        ),
       ],
     );
 
