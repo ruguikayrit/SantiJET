@@ -3,6 +3,7 @@ import 'package:intl/intl.dart';
 import 'package:santijet_demir/core/theme/app_colors.dart';
 import 'package:santijet_demir/core/theme/app_radii.dart';
 import 'package:santijet_demir/core/theme/app_typography.dart';
+import 'package:santijet_demir/core/widgets/app_table_header.dart';
 import 'package:santijet_demir/data/services/element_header_parser.dart';
 import 'package:santijet_demir/data/services/metraj_cetvel_summary.dart';
 import 'package:santijet_demir/data/services/rebar_weight_calculator.dart';
@@ -254,23 +255,18 @@ class _IcmalDiameterTableHeader extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
-      decoration: const BoxDecoration(
-        color: AppColors.canvas,
-        border: Border(
-          top: BorderSide(color: AppColors.border),
-          bottom: BorderSide(color: AppColors.border),
+    return const AppTableHeaderRow(
+      padding: EdgeInsets.symmetric(horizontal: 10, vertical: 8),
+      cells: [
+        AppTableHeaderCell(
+          'Çap',
+          line2: 'Birim Ağırlık',
+          flex: _IcmalLayout.columnFlex,
         ),
-      ),
-      child: const Row(
-        children: [
-          _IcmalCol('Birim ağ.', flex: _IcmalLayout.columnFlex, bold: true, align: TextAlign.center),
-          _IcmalCol('Adet', flex: _IcmalLayout.columnFlex, bold: true, align: TextAlign.center),
-          _IcmalCol('Boy', flex: _IcmalLayout.columnFlex, bold: true, align: TextAlign.center),
-          _IcmalCol('Tonaj', flex: _IcmalLayout.columnFlex, bold: true, align: TextAlign.center),
-        ],
-      ),
+        AppTableHeaderCell('Adet', flex: _IcmalLayout.columnFlex),
+        AppTableHeaderCell('Boy', flex: _IcmalLayout.columnFlex),
+        AppTableHeaderCell('Tonaj', flex: _IcmalLayout.columnFlex),
+      ],
     );
   }
 }
@@ -461,28 +457,16 @@ class _IcmalTableHeader extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Container(
+    return AppTableHeaderRow(
       padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-      decoration: const BoxDecoration(
-        color: AppColors.canvas,
-        border: Border(
-          top: BorderSide(color: AppColors.border),
-          bottom: BorderSide(color: AppColors.border),
-        ),
-      ),
-      child: Row(
-        children: [
-          for (var i = 0; i < cells.length; i++)
-            Expanded(
-              flex: i == 0 ? 2 : 3,
-              child: Text(
-                cells[i],
-                style: AppTypography.labelMedium,
-                textAlign: i == 0 ? TextAlign.start : TextAlign.end,
-              ),
-            ),
-        ],
-      ),
+      cells: [
+        for (var i = 0; i < cells.length; i++)
+          AppTableHeaderCell(
+            cells[i],
+            flex: i == 0 ? 2 : 3,
+            align: i == 0 ? TextAlign.start : TextAlign.end,
+          ),
+      ],
     );
   }
 }
@@ -509,14 +493,18 @@ class _IcmalTypeRow extends StatelessWidget {
         children: [
           Expanded(
             flex: 2,
-            child: Text(row.typeLabel, style: AppTypography.bodySmall),
+            child: Text(
+              row.typeLabel,
+              style: AppTypography.bodySmall,
+              textAlign: TextAlign.center,
+            ),
           ),
           Expanded(
             flex: 3,
             child: Text(
               '${row.elementCount}',
               style: AppTypography.bodySmall,
-              textAlign: TextAlign.end,
+              textAlign: TextAlign.center,
             ),
           ),
           Expanded(
@@ -524,7 +512,7 @@ class _IcmalTypeRow extends StatelessWidget {
             child: Text(
               intFormat.format(row.barCount),
               style: AppTypography.bodySmall,
-              textAlign: TextAlign.end,
+              textAlign: TextAlign.center,
             ),
           ),
           Expanded(
@@ -532,7 +520,7 @@ class _IcmalTypeRow extends StatelessWidget {
             child: Text(
               numberFormat.format(row.tonnage),
               style: AppTypography.bodySmall.copyWith(color: AppColors.textSecondary),
-              textAlign: TextAlign.end,
+              textAlign: TextAlign.center,
             ),
           ),
         ],
@@ -555,16 +543,19 @@ class _SummaryMetric extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
+      crossAxisAlignment: CrossAxisAlignment.center,
+      mainAxisAlignment: MainAxisAlignment.center,
       children: [
         Text(
           label,
           style: AppTypography.labelMedium.copyWith(color: AppColors.textMuted),
+          textAlign: TextAlign.center,
         ),
         const SizedBox(height: 2),
         Text(
           value,
           style: AppTypography.titleMedium.copyWith(color: accent),
+          textAlign: TextAlign.center,
         ),
       ],
     );
@@ -721,20 +712,37 @@ class _CetvelTableHeader extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Container(
+    return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
-      decoration: const BoxDecoration(
-        border: Border(bottom: BorderSide(color: AppColors.border)),
-      ),
-      child: const Row(
-        children: [
-          _Col('#', _CetvelLayout.indexWidth, bold: true),
-          _Col('Demir', 0, bold: true, flex: _CetvelLayout.demirFlex),
-          _Col('Ø', _CetvelLayout.diameterWidth, bold: true),
-          _Col('Adet', 0, bold: true, flex: _CetvelLayout.adetFlex, align: TextAlign.end),
-          _Col('Boy', 0, bold: true, flex: _CetvelLayout.boyFlex, align: TextAlign.end),
-          _Col('t', 0, bold: true, flex: _CetvelLayout.tonFlex, align: TextAlign.end),
-        ],
+      child: IntrinsicHeight(
+        child: Row(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            SizedBox(width: _CetvelLayout.indexWidth, child: const AppTableHeaderBadge('#')),
+            const SizedBox(width: 4),
+            Expanded(
+              flex: _CetvelLayout.demirFlex,
+              child: const AppTableHeaderBadge('Demir', align: TextAlign.start),
+            ),
+            const SizedBox(width: 4),
+            SizedBox(width: _CetvelLayout.diameterWidth, child: const AppTableHeaderBadge('Ø')),
+            const SizedBox(width: 4),
+            Expanded(
+              flex: _CetvelLayout.adetFlex,
+              child: const AppTableHeaderBadge('Adet', align: TextAlign.end),
+            ),
+            const SizedBox(width: 4),
+            Expanded(
+              flex: _CetvelLayout.boyFlex,
+              child: const AppTableHeaderBadge('Boy', align: TextAlign.end),
+            ),
+            const SizedBox(width: 4),
+            Expanded(
+              flex: _CetvelLayout.tonFlex,
+              child: const AppTableHeaderBadge('t', align: TextAlign.end),
+            ),
+          ],
+        ),
       ),
     );
   }

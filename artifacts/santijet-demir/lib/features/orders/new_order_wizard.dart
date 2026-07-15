@@ -7,6 +7,7 @@ import 'package:santijet_demir/core/theme/app_colors.dart';
 import 'package:santijet_demir/core/theme/app_radii.dart';
 import 'package:santijet_demir/core/theme/app_spacing.dart';
 import 'package:santijet_demir/core/theme/app_typography.dart';
+import 'package:santijet_demir/core/widgets/app_table_header.dart';
 import 'package:santijet_demir/core/widgets/empty_states.dart';
 import 'package:santijet_demir/domain/entities/order.dart';
 import 'package:santijet_demir/features/orders/order_imalat_balance.dart';
@@ -707,18 +708,13 @@ class _Step3DiameterTable extends ConsumerWidget {
           ),
           child: Column(
             children: [
-              Container(
-                padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
-                decoration: const BoxDecoration(
-                  border: Border(bottom: BorderSide(color: AppColors.border)),
-                ),
-                child: Row(
-                  children: [
-                    Expanded(flex: 2, child: Text('ÇAP', style: AppTypography.labelMedium.copyWith(fontWeight: FontWeight.w700))),
-                    Expanded(flex: 3, child: Text('MEVCUT', style: AppTypography.labelMedium.copyWith(fontWeight: FontWeight.w700))),
-                    Expanded(flex: 3, child: Text('SİPARİŞ', style: AppTypography.labelMedium.copyWith(fontWeight: FontWeight.w700))),
-                  ],
-                ),
+              const AppTableHeaderRow(
+                padding: EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+                cells: [
+                  AppTableHeaderCell('ÇAP', flex: 2, align: TextAlign.start),
+                  AppTableHeaderCell('MEVCUT', flex: 3, align: TextAlign.start),
+                  AppTableHeaderCell('SİPARİŞ', flex: 3, align: TextAlign.start),
+                ],
               ),
               ...lines.map((line) {
                 final color = AppColors.diameterColor(line.diameter);

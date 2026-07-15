@@ -3,6 +3,7 @@ import 'package:santijet_demir/core/format/app_format.dart';
 import 'package:santijet_demir/core/theme/app_colors.dart';
 import 'package:santijet_demir/core/theme/app_radii.dart';
 import 'package:santijet_demir/core/theme/app_typography.dart';
+import 'package:santijet_demir/core/widgets/app_table_header.dart';
 import 'package:santijet_demir/core/widgets/empty_states.dart';
 import 'package:santijet_demir/features/incoming_rebar/providers/incoming_rebar_provider.dart';
 
@@ -27,28 +28,12 @@ class DeliveredDiameterTable extends StatelessWidget {
       ),
       child: Column(
         children: [
-          Container(
-            padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
-            decoration: const BoxDecoration(
-              border: Border(bottom: BorderSide(color: AppColors.border)),
-            ),
-            child: Row(
-              children: [
-                Expanded(
-                  child: Text(
-                    'ÇAP',
-                    style: AppTypography.labelMedium.copyWith(fontWeight: FontWeight.w700),
-                  ),
-                ),
-                Expanded(
-                  child: Text(
-                    'MİKTAR',
-                    style: AppTypography.labelMedium.copyWith(fontWeight: FontWeight.w700),
-                    textAlign: TextAlign.end,
-                  ),
-                ),
-              ],
-            ),
+          const AppTableHeaderRow(
+            padding: EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+            cells: [
+              AppTableHeaderCell('ÇAP', align: TextAlign.start),
+              AppTableHeaderCell('MİKTAR', align: TextAlign.end),
+            ],
           ),
           ...rows.map(
             (row) => Container(

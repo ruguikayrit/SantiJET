@@ -7,6 +7,7 @@ import 'package:santijet_demir/core/format/app_format.dart';
 import 'package:santijet_demir/core/theme/app_colors.dart';
 import 'package:santijet_demir/core/theme/app_radii.dart';
 import 'package:santijet_demir/core/theme/app_typography.dart';
+import 'package:santijet_demir/core/widgets/app_table_header.dart';
 import 'package:santijet_demir/core/widgets/empty_states.dart';
 import 'package:santijet_demir/features/field_count/field_count_calculator.dart';
 import 'package:santijet_demir/features/projects/providers/project_provider.dart';
@@ -597,66 +598,15 @@ class _ProgressTableHeader extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Padding(
-      padding: const EdgeInsets.fromLTRB(14, 10, 14, 10),
-      child: IntrinsicHeight(
-        child: Row(
-          crossAxisAlignment: CrossAxisAlignment.stretch,
-          children: [
-            Expanded(flex: 2, child: _headerCell('ÇAP')),
-            const SizedBox(width: 4),
-            Expanded(flex: 3, child: _headerCell('KEŞİF')),
-            const SizedBox(width: 4),
-            Expanded(flex: 3, child: _headerCell('İLERLEME')),
-            const SizedBox(width: 4),
-            Expanded(flex: 3, child: _headerCell('PLAN.', line2: 'KULL.')),
-          ],
-        ),
-      ),
+    return const AppTableHeaderRow(
+      cells: [
+        AppTableHeaderCell('ÇAP', flex: 2),
+        AppTableHeaderCell('KEŞİF', flex: 3),
+        AppTableHeaderCell('İLERLEME', flex: 3),
+        AppTableHeaderCell('PLAN.', line2: 'KULL.', flex: 3),
+      ],
     );
   }
-
-  Widget _headerCell(String line1, {String? line2}) {
-    final lineStyle = _headerStyle;
-
-    return DecoratedBox(
-      decoration: BoxDecoration(
-        color: AppColors.electricBlueLight,
-        borderRadius: AppRadii.xs,
-        border: Border.all(color: AppColors.electricBlue),
-      ),
-      child: Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 6),
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          crossAxisAlignment: CrossAxisAlignment.stretch,
-          children: [
-            Text(
-              line1,
-              style: lineStyle,
-              textAlign: TextAlign.center,
-              maxLines: 1,
-              overflow: TextOverflow.ellipsis,
-            ),
-            if (line2 != null)
-              Text(
-                line2,
-                style: lineStyle,
-                textAlign: TextAlign.center,
-                maxLines: 1,
-                overflow: TextOverflow.ellipsis,
-              ),
-          ],
-        ),
-      ),
-    );
-  }
-
-  TextStyle get _headerStyle => AppTypography.labelSmall.copyWith(
-        color: Colors.black,
-        fontWeight: FontWeight.w700,
-        height: 1.1,
-      );
 }
 
 class _ProgressTableRow extends StatefulWidget {

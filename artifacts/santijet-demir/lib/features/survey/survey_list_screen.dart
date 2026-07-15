@@ -180,7 +180,7 @@ class _SurveyListScreenState extends ConsumerState<SurveyListScreen>
           flexes: const [1, 2, 1],
         ),
       ),
-      floatingActionButton: canEdit
+      floatingActionButton: canEdit && tabIndex == 0
           ? AppFab(
               label: 'Yeni İmalat',
               aboveBottomNav: false,

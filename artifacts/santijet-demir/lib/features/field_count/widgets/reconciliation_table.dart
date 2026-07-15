@@ -8,6 +8,8 @@ import 'package:santijet_demir/core/theme/app_radii.dart';
 
 import 'package:santijet_demir/core/theme/app_typography.dart';
 
+import 'package:santijet_demir/core/widgets/app_table_header.dart';
+
 import 'package:santijet_demir/domain/entities/field_count.dart';
 
 import 'package:santijet_demir/features/field_count/field_count_calculator.dart';
@@ -35,20 +37,6 @@ class ReconciliationTable extends StatelessWidget {
   final ReconciliationTotals totals;
 
   final bool landscape;
-
-
-
-  static const _headerStyle = TextStyle(
-
-    fontSize: 9,
-
-    fontWeight: FontWeight.w700,
-
-    height: 1.1,
-
-    letterSpacing: 0.1,
-
-  );
 
 
 
@@ -127,7 +115,6 @@ class ReconciliationTable extends StatelessWidget {
 
   TableRow _headerRow() {
     return TableRow(
-      decoration: const BoxDecoration(color: AppColors.surfaceHighlight),
       children: [
         _headerCell('Çap', align: TextAlign.start),
         _headerCell('Keşif'),
@@ -256,31 +243,8 @@ class ReconciliationTable extends StatelessWidget {
     TextAlign align = TextAlign.center,
   }) {
     return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 6),
-      child: Column(
-        crossAxisAlignment: switch (align) {
-          TextAlign.start => CrossAxisAlignment.start,
-          TextAlign.end => CrossAxisAlignment.end,
-          _ => CrossAxisAlignment.center,
-        },
-        children: [
-          Text(
-            line1,
-            style: AppTypography.labelMedium.merge(_headerStyle),
-            textAlign: align,
-            maxLines: 1,
-            overflow: TextOverflow.ellipsis,
-          ),
-          if (line2 != null)
-            Text(
-              line2,
-              style: AppTypography.labelMedium.merge(_headerStyle),
-              textAlign: align,
-              maxLines: 1,
-              overflow: TextOverflow.ellipsis,
-            ),
-        ],
-      ),
+      padding: const EdgeInsets.all(3),
+      child: AppTableHeaderBadge(line1, line2: line2, align: align),
     );
   }
 

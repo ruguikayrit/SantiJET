@@ -4,6 +4,7 @@ import 'package:santijet_demir/core/format/app_format.dart';
 import 'package:santijet_demir/core/theme/app_colors.dart';
 import 'package:santijet_demir/core/theme/app_radii.dart';
 import 'package:santijet_demir/core/theme/app_typography.dart';
+import 'package:santijet_demir/core/widgets/app_table_header.dart';
 import 'package:santijet_demir/domain/entities/cutting_bending.dart';
 import 'package:santijet_demir/features/analysis/cutting_bending_calculator.dart';
 import 'package:santijet_demir/features/analysis/providers/cutting_bending_provider.dart';
@@ -152,31 +153,14 @@ class _LengthMatchChangesTableHeader extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
-      decoration: const BoxDecoration(
-        border: Border(bottom: BorderSide(color: AppColors.border)),
-      ),
-      child: Row(
-        children: [
-          Expanded(child: Text('ÇAP', style: AppTypography.labelMedium)),
-          Expanded(
-            flex: 2,
-            child: Text('ÖNCE (m)', style: AppTypography.labelMedium),
-          ),
-          Expanded(
-            flex: 2,
-            child: Text('SONRA (m)', style: AppTypography.labelMedium),
-          ),
-          Expanded(
-            child: Text(
-              'ADET',
-              style: AppTypography.labelMedium,
-              textAlign: TextAlign.end,
-            ),
-          ),
-        ],
-      ),
+    return const AppTableHeaderRow(
+      padding: EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+      cells: [
+        AppTableHeaderCell('ÇAP', align: TextAlign.start),
+        AppTableHeaderCell('ÖNCE (m)', flex: 2, align: TextAlign.start),
+        AppTableHeaderCell('SONRA (m)', flex: 2, align: TextAlign.start),
+        AppTableHeaderCell('ADET', align: TextAlign.end),
+      ],
     );
   }
 }
@@ -289,24 +273,13 @@ class _ReadOnlyPieceListTable extends StatelessWidget {
   Widget build(BuildContext context) {
     return PaginatedListSection<RebarPieceLine>(
       items: pieces,
-      header: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
-        decoration: const BoxDecoration(
-          border: Border(bottom: BorderSide(color: AppColors.border)),
-        ),
-        child: Row(
-          children: [
-            Expanded(child: Text('ÇAP', style: AppTypography.labelMedium)),
-            Expanded(child: Text('BOY (m)', style: AppTypography.labelMedium)),
-            Expanded(
-              child: Text(
-                'ADET',
-                style: AppTypography.labelMedium,
-                textAlign: TextAlign.end,
-              ),
-            ),
-          ],
-        ),
+      header: const AppTableHeaderRow(
+        padding: EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+        cells: [
+          AppTableHeaderCell('ÇAP', align: TextAlign.start),
+          AppTableHeaderCell('BOY (m)', align: TextAlign.start),
+          AppTableHeaderCell('ADET', align: TextAlign.end),
+        ],
       ),
       itemBuilder: (context, piece, index) => Container(
         padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),

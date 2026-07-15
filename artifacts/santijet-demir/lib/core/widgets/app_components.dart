@@ -108,14 +108,16 @@ class KpiCard extends StatelessWidget {
 
   Widget _buildLabel() {
     final parts = label.trim().split(RegExp(r'\s+'));
+    final align = centerContent ? TextAlign.center : TextAlign.start;
     // Dense cards keep the title on one line (value sits below).
     if (!dense && !compactHeight && parts.length == 2) {
       return Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
+        crossAxisAlignment:
+            centerContent ? CrossAxisAlignment.center : CrossAxisAlignment.start,
         mainAxisSize: MainAxisSize.min,
         children: [
-          Text(parts[0], style: AppTypography.labelMedium),
-          Text(parts[1], style: AppTypography.labelMedium),
+          Text(parts[0], style: AppTypography.labelMedium, textAlign: align),
+          Text(parts[1], style: AppTypography.labelMedium, textAlign: align),
         ],
       );
     }
@@ -124,6 +126,7 @@ class KpiCard extends StatelessWidget {
       style: AppTypography.labelMedium,
       maxLines: 1,
       overflow: TextOverflow.ellipsis,
+      textAlign: align,
     );
   }
 
@@ -170,8 +173,119 @@ class KpiCard extends StatelessWidget {
           )
         : null;
 
+    final stackedBody = Column(
+      crossAxisAlignment:
+          centerContent ? CrossAxisAlignment.center : CrossAxisAlignment.start,
+      mainAxisAlignment: centerContent
+          ? MainAxisAlignment.center
+          : MainAxisAlignment.spaceBetween,
+      mainAxisSize: centerContent ? MainAxisSize.min : MainAxisSize.max,
+      children: [
+        Row(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          mainAxisAlignment:
+              centerContent ? MainAxisAlignment.center : MainAxisAlignment.start,
+          children: [
+            if (centerContent)
+              Flexible(child: _buildLabel())
+            else
+              Expanded(child: _buildLabel()),
+            if (onTap != null && !dense)
+              Icon(Icons.chevron_right, size: 16, color: AppColors.textMuted),
+          ],
+        ),
+        if (centerContent) const SizedBox(height: 6),
+        Row(
+          crossAxisAlignment: CrossAxisAlignment.end,
+          mainAxisAlignment:
+              centerContent ? MainAxisAlignment.center : MainAxisAlignment.start,
+          mainAxisSize: centerContent ? MainAxisSize.min : MainAxisSize.max,
+          children: [
+            Flexible(
+              child: Text(
+                value,
+                style: valueStyle,
+                overflow: TextOverflow.ellipsis,
+                textAlign: centerContent ? TextAlign.center : TextAlign.start,
+              ),
+            ),
+            if (unit.isNotEmpty) ...[
+              const SizedBox(width: 2),
+              Padding(
+                padding: EdgeInsets.only(bottom: dense ? 2 : 4),
+                child: Text(
+                  unit,
+                  style: dense
+                      ? AppTypography.labelSmall
+                      : AppTypography.labelMedium,
+                ),
+              ),
+            ],
+          ],
+        ),
+        if (percent != null) ...[
+          const SizedBox(height: 4),
+          Row(
+            mainAxisAlignment: centerContent
+                ? MainAxisAlignment.center
+                : MainAxisAlignment.start,
+            children: [
+              Flexible(
+                child: Text(
+                  percent!,
+                  style: AppTypography.bodySmall.copyWith(
+                    color: accentColor,
+                  ),
+                  textAlign: centerContent ? TextAlign.center : TextAlign.start,
+                ),
+              ),
+              if (onTap != null)
+                Icon(
+                  Icons.unfold_more,
+                  size: 14,
+                  color: AppColors.textMuted,
+                ),
+            ],
+          ),
+        ] else if (onTap != null && !centerContent) ...[
+          const SizedBox(height: 4),
+          Align(
+            alignment: Alignment.centerRight,
+            child: Icon(
+              Icons.unfold_more,
+              size: 14,
+              color: AppColors.textMuted,
+            ),
+          ),
+        ],
+        if (trend != null) ...[
+          const SizedBox(height: 8),
+          Row(
+            mainAxisAlignment: centerContent
+                ? MainAxisAlignment.center
+                : MainAxisAlignment.start,
+            children: [
+              Icon(
+                trendUp == true ? Icons.trending_up : Icons.trending_down,
+                size: 14,
+                color: trendUp == true ? AppColors.success : AppColors.critical,
+              ),
+              const SizedBox(width: 4),
+              Text(
+                trend!,
+                style: AppTypography.labelMedium.copyWith(
+                  color: trendUp == true ? AppColors.success : AppColors.critical,
+                ),
+              ),
+            ],
+          ),
+        ],
+      ],
+    );
+
     final content = Container(
       padding: EdgeInsets.all(padding),
+      alignment: centerContent ? Alignment.center : null,
       decoration: BoxDecoration(
         color: AppColors.surfaceElevated,
         borderRadius: AppRadii.md,
@@ -179,112 +293,19 @@ class KpiCard extends StatelessWidget {
       ),
       child: compactHeight
           ? (centerContent
-              ? SizedBox.expand(
-                  child: Center(child: compactBody),
-                )
+              ? Center(child: compactBody)
               : compactBody!)
-          : Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                Row(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Expanded(child: _buildLabel()),
-                    if (onTap != null && !dense)
-                      Icon(Icons.chevron_right, size: 16, color: AppColors.textMuted),
-                  ],
-                ),
-                Row(
-                  crossAxisAlignment: CrossAxisAlignment.end,
-                  children: [
-                    Flexible(
-                      child: Text(
-                        value,
-                        style: valueStyle,
-                        overflow: TextOverflow.ellipsis,
-                      ),
-                    ),
-                    const SizedBox(width: 2),
-                    Padding(
-                      padding: EdgeInsets.only(bottom: dense ? 2 : 4),
-                      child: Text(
-                        unit,
-                        style: dense
-                            ? AppTypography.labelSmall
-                            : AppTypography.labelMedium,
-                      ),
-                    ),
-                  ],
-                ),
-                if (percent != null) ...[
-                  const SizedBox(height: 4),
-                  Row(
-                    children: [
-                      Expanded(
-                        child: Text(
-                          percent!,
-                          style: AppTypography.bodySmall.copyWith(
-                            color: accentColor,
-                          ),
-                        ),
-                      ),
-                      if (onTap != null)
-                        Icon(
-                          Icons.unfold_more,
-                          size: 14,
-                          color: AppColors.textMuted,
-                        ),
-                    ],
-                  ),
-                ] else if (onTap != null) ...[
-                  const SizedBox(height: 4),
-                  Align(
-                    alignment: Alignment.centerRight,
-                    child: Icon(
-                      Icons.unfold_more,
-                      size: 14,
-                      color: AppColors.textMuted,
-                    ),
-                  ),
-                ],
-                if (trend != null) ...[
-                  const SizedBox(height: 8),
-                  Row(
-                    children: [
-                      Icon(
-                        trendUp == true ? Icons.trending_up : Icons.trending_down,
-                        size: 14,
-                        color: trendUp == true ? AppColors.success : AppColors.critical,
-                      ),
-                      const SizedBox(width: 4),
-                      Text(
-                        trend!,
-                        style: AppTypography.labelMedium.copyWith(
-                          color: trendUp == true ? AppColors.success : AppColors.critical,
-                        ),
-                      ),
-                    ],
-                  ),
-                ],
-              ],
-            ),
+          : stackedBody,
     );
 
-    if (onTap == null) {
-      return centerContent && compactHeight
-          ? SizedBox.expand(child: content)
-          : content;
-    }
+    if (onTap == null) return content;
 
     return Material(
       color: Colors.transparent,
       child: InkWell(
         onTap: onTap,
         borderRadius: AppRadii.md,
-        child: centerContent && compactHeight
-            ? SizedBox.expand(child: content)
-            : content,
+        child: content,
       ),
     );
   }

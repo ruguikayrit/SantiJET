@@ -4,6 +4,7 @@ import 'package:santijet_demir/core/format/app_format.dart';
 import 'package:santijet_demir/core/theme/app_colors.dart';
 import 'package:santijet_demir/core/theme/app_radii.dart';
 import 'package:santijet_demir/core/theme/app_typography.dart';
+import 'package:santijet_demir/core/widgets/app_table_header.dart';
 import 'package:santijet_demir/domain/entities/cutting_bending.dart';
 import 'package:santijet_demir/features/analysis/cutting_bending_calculator.dart';
 import 'package:santijet_demir/features/analysis/providers/cutting_bending_provider.dart';
@@ -760,24 +761,16 @@ class _DetailTableHeader extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Container(
-      padding: const EdgeInsets.symmetric(vertical: 8),
-      decoration: const BoxDecoration(
-        border: Border(bottom: BorderSide(color: AppColors.border)),
-      ),
-      child: Row(
-        children: [
-          for (var i = 0; i < cells.length; i++)
-            Expanded(
-              flex: i == 0 ? 2 : 3,
-              child: Text(
-                cells[i],
-                style: AppTypography.labelSmall,
-                textAlign: i == 0 ? TextAlign.start : TextAlign.end,
-              ),
-            ),
-        ],
-      ),
+    return AppTableHeaderRow(
+      padding: const EdgeInsets.symmetric(vertical: 4),
+      cells: [
+        for (var i = 0; i < cells.length; i++)
+          AppTableHeaderCell(
+            cells[i],
+            flex: i == 0 ? 2 : 3,
+            align: i == 0 ? TextAlign.start : TextAlign.end,
+          ),
+      ],
     );
   }
 }

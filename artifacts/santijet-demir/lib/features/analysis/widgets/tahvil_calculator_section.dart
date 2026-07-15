@@ -260,7 +260,7 @@ class _ModeSegmentButton extends StatelessWidget {
             maxLines: 2,
             overflow: TextOverflow.ellipsis,
             style: AppTypography.labelMedium.copyWith(
-              color: selected ? Colors.white : AppColors.textMuted,
+              color: selected ? Colors.black : AppColors.textMuted,
               fontWeight: selected ? FontWeight.w700 : FontWeight.w500,
               fontSize: dense ? 12 : 13,
               height: 1.2,

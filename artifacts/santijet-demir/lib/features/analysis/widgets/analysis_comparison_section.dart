@@ -4,6 +4,7 @@ import 'package:santijet_demir/core/format/app_format.dart';
 import 'package:santijet_demir/core/theme/app_colors.dart';
 import 'package:santijet_demir/core/theme/app_radii.dart';
 import 'package:santijet_demir/core/theme/app_typography.dart';
+import 'package:santijet_demir/core/widgets/app_table_header.dart';
 import 'package:santijet_demir/core/widgets/empty_states.dart';
 import 'package:santijet_demir/domain/entities/cutting_bending.dart';
 import 'package:santijet_demir/features/analysis/cutting_bending_calculator.dart';
@@ -385,46 +386,38 @@ class _HamRevizePieceComparisonTable extends StatelessWidget {
   }
 
   Widget _headerRow() {
-    return Container(
-      color: AppColors.surfaceHighlight,
-      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 10),
-      child: Row(
-        children: [
-          SizedBox(
-            width: _capWidth,
-            child: Text('ÇAP', style: AppTypography.labelSmall),
-          ),
-          Expanded(
-            flex: 115,
-            child: Padding(
-              padding: const EdgeInsets.fromLTRB(8, 0, 16, 0),
-              child: Text('ÖNCE', style: AppTypography.labelSmall),
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
+      child: IntrinsicHeight(
+        child: Row(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            SizedBox(
+              width: _capWidth,
+              child: const AppTableHeaderBadge('ÇAP', align: TextAlign.start),
             ),
-          ),
-          Expanded(
-            flex: 115,
-            child: Padding(
-              padding: const EdgeInsets.fromLTRB(16, 0, 8, 0),
-              child: Text('SONRA', style: AppTypography.labelSmall),
+            const SizedBox(width: 4),
+            Expanded(
+              flex: 115,
+              child: const AppTableHeaderBadge('ÖNCE', align: TextAlign.start),
             ),
-          ),
-          Expanded(
-            flex: 85,
-            child: Text(
-              'Δ cm',
-              style: AppTypography.labelSmall,
-              textAlign: TextAlign.end,
+            const SizedBox(width: 4),
+            Expanded(
+              flex: 115,
+              child: const AppTableHeaderBadge('SONRA', align: TextAlign.start),
             ),
-          ),
-          SizedBox(
-            width: _adetWidth,
-            child: Text(
-              'ADET',
-              style: AppTypography.labelSmall,
-              textAlign: TextAlign.end,
+            const SizedBox(width: 4),
+            Expanded(
+              flex: 85,
+              child: const AppTableHeaderBadge('Δ cm', align: TextAlign.end),
             ),
-          ),
-        ],
+            const SizedBox(width: 4),
+            SizedBox(
+              width: _adetWidth,
+              child: const AppTableHeaderBadge('ADET', align: TextAlign.end),
+            ),
+          ],
+        ),
       ),
     );
   }
@@ -777,24 +770,16 @@ class _ComparisonTableHeader extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Container(
-      padding: const EdgeInsets.symmetric(vertical: 8),
-      decoration: const BoxDecoration(
-        border: Border(bottom: BorderSide(color: AppColors.border)),
-      ),
-      child: Row(
-        children: [
-          for (var i = 0; i < cells.length; i++)
-            Expanded(
-              flex: i == 0 ? 2 : 3,
-              child: Text(
-                cells[i],
-                style: AppTypography.labelSmall,
-                textAlign: i == 0 ? TextAlign.start : TextAlign.end,
-              ),
-            ),
-        ],
-      ),
+    return AppTableHeaderRow(
+      padding: const EdgeInsets.symmetric(vertical: 4),
+      cells: [
+        for (var i = 0; i < cells.length; i++)
+          AppTableHeaderCell(
+            cells[i],
+            flex: i == 0 ? 2 : 3,
+            align: i == 0 ? TextAlign.start : TextAlign.end,
+          ),
+      ],
     );
   }
 }

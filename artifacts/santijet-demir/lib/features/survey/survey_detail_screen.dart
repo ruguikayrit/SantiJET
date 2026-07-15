@@ -6,6 +6,7 @@ import 'package:santijet_demir/core/theme/app_spacing.dart';
 import 'package:santijet_demir/core/theme/app_typography.dart';
 import 'package:santijet_demir/core/widgets/app_components.dart';
 import 'package:santijet_demir/core/widgets/app_subpage_app_bar.dart';
+import 'package:santijet_demir/core/widgets/app_table_header.dart';
 import 'package:santijet_demir/domain/entities/survey.dart';
 import 'package:santijet_demir/features/survey/providers/survey_provider.dart';
 
@@ -163,20 +164,15 @@ class _DiameterDetailTable extends StatelessWidget {
       ),
       child: Column(
         children: [
-          Container(
-            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
-            decoration: const BoxDecoration(
-              border: Border(bottom: BorderSide(color: AppColors.border)),
-            ),
-            child: Row(
-              children: [
-                _HeaderCell('ÇAP', flex: 2),
-                _HeaderCell('PLAN.', flex: 2),
-                _HeaderCell('SİP.', flex: 2),
-                _HeaderCell('TESLİM', flex: 2),
-                _HeaderCell('BEKL.', flex: 2),
-              ],
-            ),
+          const AppTableHeaderRow(
+            padding: EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+            cells: [
+              AppTableHeaderCell('ÇAP', flex: 2),
+              AppTableHeaderCell('PLAN.', flex: 2),
+              AppTableHeaderCell('SİP.', flex: 2),
+              AppTableHeaderCell('TESLİM', flex: 2),
+              AppTableHeaderCell('BEKL.', flex: 2),
+            ],
           ),
           ...imalat.diameterLines.map((line) {
             final color = AppColors.diameterColor(line.diameter);
@@ -215,24 +211,6 @@ class _DiameterDetailTable extends StatelessWidget {
             );
           }),
         ],
-      ),
-    );
-  }
-}
-
-class _HeaderCell extends StatelessWidget {
-  const _HeaderCell(this.text, {required this.flex});
-
-  final String text;
-  final int flex;
-
-  @override
-  Widget build(BuildContext context) {
-    return Expanded(
-      flex: flex,
-      child: Text(
-        text,
-        style: AppTypography.labelMedium.copyWith(fontWeight: FontWeight.w700),
       ),
     );
   }

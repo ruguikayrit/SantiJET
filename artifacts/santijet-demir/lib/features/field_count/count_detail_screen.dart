@@ -8,6 +8,7 @@ import 'package:santijet_demir/core/theme/app_radii.dart';
 import 'package:santijet_demir/core/theme/app_spacing.dart';
 import 'package:santijet_demir/core/theme/app_typography.dart';
 import 'package:santijet_demir/core/widgets/app_components.dart';
+import 'package:santijet_demir/core/widgets/app_table_header.dart';
 import 'package:santijet_demir/data/mock/mock_field_counts.dart';
 import 'package:santijet_demir/domain/entities/field_count.dart';
 import 'package:santijet_demir/features/field_count/providers/field_count_provider.dart';
@@ -246,22 +247,15 @@ class _CountDetailScreenState extends ConsumerState<CountDetailScreen> {
 class _LineTableHeader extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
-      decoration: const BoxDecoration(
-        border: Border(bottom: BorderSide(color: AppColors.border)),
-      ),
-      child: Row(
-        children: [
-          for (final label in ['ÇAP', 'TESLİM', 'BEKLENEN', 'SAYIM', 'KULLANILAN'])
-            Expanded(
-              child: Text(
-                label,
-                style: AppTypography.labelMedium.copyWith(fontWeight: FontWeight.w700),
-              ),
-            ),
-        ],
-      ),
+    return const AppTableHeaderRow(
+      padding: EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+      cells: [
+        AppTableHeaderCell('ÇAP'),
+        AppTableHeaderCell('TESLİM'),
+        AppTableHeaderCell('BEKLENEN'),
+        AppTableHeaderCell('SAYIM'),
+        AppTableHeaderCell('KULLANILAN'),
+      ],
     );
   }
 }

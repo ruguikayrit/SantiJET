@@ -5,6 +5,7 @@ import 'package:santijet_demir/core/theme/app_colors.dart';
 import 'package:santijet_demir/core/theme/app_radii.dart';
 import 'package:santijet_demir/core/theme/app_spacing.dart';
 import 'package:santijet_demir/core/theme/app_typography.dart';
+import 'package:santijet_demir/core/widgets/app_table_header.dart';
 import 'package:santijet_demir/core/widgets/empty_states.dart';
 import 'package:santijet_demir/domain/entities/field_count.dart';
 import 'package:santijet_demir/features/field_count/providers/field_count_provider.dart';
@@ -285,22 +286,24 @@ class _CountTableHeader extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Container(
+    return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
-      decoration: const BoxDecoration(
-        border: Border(bottom: BorderSide(color: AppColors.border)),
-      ),
-      child: Row(
-        children: [
-          for (final column in _CountEntryTable._columns)
-            SizedBox(
-              width: column.width,
-              child: Text(
-                column.label,
-                style: AppTypography.labelMedium.copyWith(fontWeight: FontWeight.w700),
+      child: IntrinsicHeight(
+        child: Row(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            for (var i = 0; i < _CountEntryTable._columns.length; i++) ...[
+              if (i > 0) const SizedBox(width: 4),
+              SizedBox(
+                width: _CountEntryTable._columns[i].width,
+                child: AppTableHeaderBadge(
+                  _CountEntryTable._columns[i].label,
+                  align: TextAlign.start,
+                ),
               ),
-            ),
-        ],
+            ],
+          ],
+        ),
       ),
     );
   }

@@ -6,6 +6,7 @@ import 'package:santijet_demir/core/theme/app_radii.dart';
 import 'package:santijet_demir/core/theme/app_spacing.dart';
 import 'package:santijet_demir/core/theme/app_typography.dart';
 import 'package:santijet_demir/core/widgets/app_subpage_app_bar.dart';
+import 'package:santijet_demir/core/widgets/app_table_header.dart';
 import 'package:santijet_demir/domain/entities/rebar_metraj.dart';
 import 'package:santijet_demir/features/projects/providers/project_provider.dart';
 import 'package:santijet_demir/features/rebar_metraj/providers/rebar_metraj_storage_provider.dart';
@@ -231,31 +232,33 @@ class _MetrajDiameterTable extends StatelessWidget {
       ),
       child: Column(
         children: [
-          Container(
+          Padding(
             padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
-            decoration: const BoxDecoration(
-              border: Border(bottom: BorderSide(color: AppColors.border)),
-            ),
-            child: const Row(
-              children: [
-                _HeaderCell('ÇAP', flex: _DiameterTableLayout.capFlex),
-                _HeaderCell(
-                  'TONAJ',
-                  flex: _DiameterTableLayout.tonajFlex,
-                  align: TextAlign.end,
-                ),
-                _HeaderCell(
-                  'UZUNLUK',
-                  flex: _DiameterTableLayout.lengthFlex,
-                  align: TextAlign.end,
-                ),
-                Spacer(),
-                _HeaderCell(
-                  'ADET',
-                  width: _DiameterTableLayout.adetWidth,
-                  align: TextAlign.end,
-                ),
-              ],
+            child: IntrinsicHeight(
+              child: Row(
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: [
+                  Expanded(
+                    flex: _DiameterTableLayout.capFlex,
+                    child: const AppTableHeaderBadge('ÇAP', align: TextAlign.start),
+                  ),
+                  const SizedBox(width: 4),
+                  Expanded(
+                    flex: _DiameterTableLayout.tonajFlex,
+                    child: const AppTableHeaderBadge('TONAJ', align: TextAlign.end),
+                  ),
+                  const SizedBox(width: 4),
+                  Expanded(
+                    flex: _DiameterTableLayout.lengthFlex,
+                    child: const AppTableHeaderBadge('UZUNLUK', align: TextAlign.end),
+                  ),
+                  const Spacer(),
+                  SizedBox(
+                    width: _DiameterTableLayout.adetWidth,
+                    child: const AppTableHeaderBadge('ADET', align: TextAlign.end),
+                  ),
+                ],
+              ),
             ),
           ),
           ...result.lines.map((line) {
@@ -320,35 +323,6 @@ abstract final class _DiameterTableLayout {
   static const tonajFlex = 2;
   static const lengthFlex = 4;
   static const adetWidth = 72.0;
-}
-
-class _HeaderCell extends StatelessWidget {
-  const _HeaderCell(
-    this.text, {
-    this.flex,
-    this.width,
-    this.align = TextAlign.start,
-  });
-
-  final String text;
-  final int? flex;
-  final double? width;
-  final TextAlign align;
-
-  @override
-  Widget build(BuildContext context) {
-    final child = Text(
-      text,
-      style: AppTypography.labelMedium.copyWith(fontWeight: FontWeight.w700),
-      textAlign: align,
-    );
-
-    if (flex != null) {
-      return Expanded(flex: flex!, child: child);
-    }
-
-    return SizedBox(width: width, child: child);
-  }
 }
 
 class _DataCell extends StatelessWidget {

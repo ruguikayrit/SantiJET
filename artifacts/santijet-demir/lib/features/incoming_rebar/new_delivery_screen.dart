@@ -5,6 +5,7 @@ import 'package:santijet_demir/core/theme/app_colors.dart';
 import 'package:santijet_demir/core/theme/app_radii.dart';
 import 'package:santijet_demir/core/theme/app_spacing.dart';
 import 'package:santijet_demir/core/theme/app_typography.dart';
+import 'package:santijet_demir/core/widgets/app_table_header.dart';
 import 'package:santijet_demir/domain/entities/delivery.dart';
 import 'package:santijet_demir/features/incoming_rebar/providers/incoming_rebar_provider.dart';
 
@@ -266,33 +267,13 @@ class _CapEntryTable extends StatelessWidget {
       ),
       child: Column(
         children: [
-          Container(
-            padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
-            decoration: const BoxDecoration(
-              border: Border(bottom: BorderSide(color: AppColors.border)),
-            ),
-            child: Row(
-              children: [
-                Expanded(
-                  child: Text(
-                    'ÇAP',
-                    style: AppTypography.labelMedium.copyWith(fontWeight: FontWeight.w700),
-                  ),
-                ),
-                Expanded(
-                  child: Text(
-                    'SİPARİŞ',
-                    style: AppTypography.labelMedium.copyWith(fontWeight: FontWeight.w700),
-                  ),
-                ),
-                Expanded(
-                  child: Text(
-                    'TESLİM',
-                    style: AppTypography.labelMedium.copyWith(fontWeight: FontWeight.w700),
-                  ),
-                ),
-              ],
-            ),
+          const AppTableHeaderRow(
+            padding: EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+            cells: [
+              AppTableHeaderCell('ÇAP', align: TextAlign.start),
+              AppTableHeaderCell('SİPARİŞ', align: TextAlign.start),
+              AppTableHeaderCell('TESLİM', align: TextAlign.start),
+            ],
           ),
           ...diameters.map((diameter) {
             final color = AppColors.diameterColor(diameter);

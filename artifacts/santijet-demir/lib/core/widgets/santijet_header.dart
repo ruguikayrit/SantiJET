@@ -149,9 +149,9 @@ class _BrandTitleRow extends StatelessWidget {
 
     final lineMetric = textPainter.computeLineMetrics().first;
     final demirCapHeight = lineMetric.ascent;
-    // Optik harf yüksekliği DEMİR'den %20 daha büyük olsun.
+    // Optik harf yüksekliği DEMİR'in 2,5 katı.
     final wordmarkHeight =
-        demirCapHeight / _wordmarkLetterFillRatio * 1.2;
+        demirCapHeight / _wordmarkLetterFillRatio * 2.5;
     final fontHeight = textPainter.height;
 
     final brandTitle = Column(

@@ -6,6 +6,7 @@ import 'package:santijet_demir/core/theme/app_radii.dart';
 import 'package:santijet_demir/core/theme/app_spacing.dart';
 import 'package:santijet_demir/core/theme/app_typography.dart';
 import 'package:santijet_demir/core/widgets/app_components.dart';
+import 'package:santijet_demir/core/widgets/app_table_header.dart';
 import 'package:santijet_demir/domain/entities/delivery.dart';
 import 'package:santijet_demir/features/incoming_rebar/providers/incoming_rebar_provider.dart';
 
@@ -124,46 +125,13 @@ class _ComparisonTableHeader extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Padding(
-      padding: const EdgeInsets.fromLTRB(14, 10, 14, 10),
-      child: IntrinsicHeight(
-        child: Row(
-          crossAxisAlignment: CrossAxisAlignment.stretch,
-          children: [
-            Expanded(flex: 2, child: _headerCell('ÇAP')),
-            const SizedBox(width: 4),
-            Expanded(flex: 3, child: _headerCell('SİPARİŞ')),
-            const SizedBox(width: 4),
-            Expanded(flex: 3, child: _headerCell('TESLİM')),
-            const SizedBox(width: 4),
-            Expanded(flex: 3, child: _headerCell('FARK')),
-          ],
-        ),
-      ),
-    );
-  }
-
-  Widget _headerCell(String label) {
-    return DecoratedBox(
-      decoration: BoxDecoration(
-        color: AppColors.electricBlueLight,
-        borderRadius: AppRadii.xs,
-        border: Border.all(color: AppColors.electricBlue),
-      ),
-      child: Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 6),
-        child: Text(
-          label,
-          style: AppTypography.labelSmall.copyWith(
-            color: Colors.black,
-            fontWeight: FontWeight.w700,
-            height: 1.1,
-          ),
-          textAlign: TextAlign.center,
-          maxLines: 1,
-          overflow: TextOverflow.ellipsis,
-        ),
-      ),
+    return const AppTableHeaderRow(
+      cells: [
+        AppTableHeaderCell('ÇAP', flex: 2),
+        AppTableHeaderCell('SİPARİŞ', flex: 3),
+        AppTableHeaderCell('TESLİM', flex: 3),
+        AppTableHeaderCell('FARK', flex: 3),
+      ],
     );
   }
 }
