@@ -240,22 +240,22 @@ class _MetrajDiameterTable extends StatelessWidget {
                 children: [
                   Expanded(
                     flex: _DiameterTableLayout.capFlex,
-                    child: const AppTableHeaderBadge('ÇAP', align: TextAlign.start),
+                    child: const AppTableHeaderBadge('ÇAP'),
                   ),
                   const SizedBox(width: 4),
                   Expanded(
                     flex: _DiameterTableLayout.tonajFlex,
-                    child: const AppTableHeaderBadge('TONAJ', align: TextAlign.end),
+                    child: const AppTableHeaderBadge('TONAJ'),
                   ),
                   const SizedBox(width: 4),
                   Expanded(
                     flex: _DiameterTableLayout.lengthFlex,
-                    child: const AppTableHeaderBadge('UZUNLUK', align: TextAlign.end),
+                    child: const AppTableHeaderBadge('UZUNLUK'),
                   ),
                   const Spacer(),
                   SizedBox(
                     width: _DiameterTableLayout.adetWidth,
-                    child: const AppTableHeaderBadge('ADET', align: TextAlign.end),
+                    child: const AppTableHeaderBadge('ADET'),
                   ),
                 ],
               ),
@@ -283,18 +283,15 @@ class _MetrajDiameterTable extends StatelessWidget {
                       _DataCell(
                         '${numberFormat.format(line.tonnage)} t',
                         flex: _DiameterTableLayout.tonajFlex,
-                        align: TextAlign.end,
                       ),
                       _DataCell(
                         '${numberFormat.format(line.totalLengthM)} m',
                         flex: _DiameterTableLayout.lengthFlex,
-                        align: TextAlign.end,
                       ),
                       const Spacer(),
                       _DataCell(
                         '${line.barCount}',
                         width: _DiameterTableLayout.adetWidth,
-                        align: TextAlign.end,
                       ),
                     ],
                   ),
@@ -331,7 +328,7 @@ class _DataCell extends StatelessWidget {
     this.flex,
     this.width,
     this.color,
-    this.align = TextAlign.start,
+    this.align = TextAlign.center,
   });
 
   final String text;

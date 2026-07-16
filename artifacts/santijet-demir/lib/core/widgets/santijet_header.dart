@@ -1,6 +1,4 @@
-import 'package:flutter/foundation.dart';
-import 'package:flutter/material.dart';
-import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:flutter/material.dart';import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:intl/intl.dart';
 import 'package:santijet_demir/core/routing/app_routes.dart';
@@ -61,16 +59,17 @@ class SantijetHeader extends StatelessWidget {
   Widget build(BuildContext context) {
     return Padding(
       padding: const EdgeInsets.fromLTRB(AppSpacing.md, AppSpacing.sm, AppSpacing.md, AppSpacing.sm),
-      child: Row(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Expanded(
-            child: showWordmark
-                ? Align(
-                    alignment: Alignment.centerLeft,
-                    child: _BrandTitleRow(shiftUpByFontHeight: true),
-                  )
-                : Row(
+      child: showWordmark
+          ? _WordmarkHeader(
+              showNotification: showNotification,
+              showAvatar: showAvatar,
+              avatarInitial: avatarInitial,
+            )
+          : Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Expanded(
+                  child: Row(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Image.asset(
@@ -101,26 +100,121 @@ class SantijetHeader extends StatelessWidget {
                       ),
                     ],
                   ),
-          ),
-          if (showNotification) const _HeaderNotificationButton(),
-          if (showAvatar)
-            Semantics(
-              label: 'Ayarlar',
-              button: true,
-              child: IconButton(
-                onPressed: () => context.push(AppRoutes.settings),
-                icon: CircleAvatar(
-                  radius: 18,
-                  backgroundColor: AppColors.warning.withValues(alpha: 0.3),
-                  child: Text(
-                    avatarInitial ?? 'U',
-                    style: AppTypography.titleMedium.copyWith(color: AppColors.warning),
+                ),
+                if (showNotification) const _HeaderNotificationButton(),
+                if (showAvatar)
+                  Semantics(
+                    label: 'Ayarlar',
+                    button: true,
+                    child: IconButton(
+                      onPressed: () => context.push(AppRoutes.settings),
+                      icon: CircleAvatar(
+                        radius: 18,
+                        backgroundColor: AppColors.warning.withValues(alpha: 0.3),
+                        child: Text(
+                          avatarInitial ?? 'U',
+                          style: AppTypography.titleMedium.copyWith(color: AppColors.warning),
+                        ),
+                      ),
+                    ),
                   ),
+              ],
+            ),
+    );
+  }
+}
+
+class _WordmarkHeader extends StatelessWidget {
+  const _WordmarkHeader({
+    required this.showNotification,
+    required this.showAvatar,
+    this.avatarInitial,
+  });
+
+  final bool showNotification;
+  final bool showAvatar;
+  final String? avatarInitial;
+
+  @override
+  Widget build(BuildContext context) {
+    final wordmarkHeight = _BrandTitleMetrics.wordmarkHeightOf(context);
+    final demirIndent = _BrandTitleMetrics.demirIndentOf(context);
+    // PNG üst/alt boşluğunu çıkar; harf bandının ortasına hizala.
+    final letterBandTop = wordmarkHeight *
+        (1 - _BrandTitleMetrics.wordmarkLetterFillRatio) /
+        2;
+    final letterBandHeight =
+        wordmarkHeight * _BrandTitleMetrics.wordmarkLetterFillRatio;
+
+    final actions = Row(
+      mainAxisSize: MainAxisSize.min,
+      crossAxisAlignment: CrossAxisAlignment.center,
+      children: [
+        if (showNotification) const _HeaderNotificationButton(),
+        if (showAvatar)
+          Semantics(
+            label: 'Ayarlar',
+            button: true,
+            child: IconButton(
+              onPressed: () => context.push(AppRoutes.settings),
+              icon: CircleAvatar(
+                radius: 18,
+                backgroundColor: AppColors.warning.withValues(alpha: 0.3),
+                child: Text(
+                  avatarInitial ?? 'U',
+                  style: AppTypography.titleMedium
+                      .copyWith(color: AppColors.warning),
                 ),
               ),
             ),
-        ],
-      ),
+          ),
+      ],
+    );
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        Row(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Expanded(
+              child: ColorFiltered(
+                colorFilter: ColorFilter.mode(
+                  AppColors.canvas,
+                  BlendMode.lighten,
+                ),
+                child: Image.asset(
+                  'assets/images/splash_wordmark.png',
+                  height: wordmarkHeight,
+                  fit: BoxFit.fitHeight,
+                  filterQuality: FilterQuality.high,
+                  alignment: Alignment.centerLeft,
+                ),
+              ),
+            ),
+            if (showNotification || showAvatar)
+              SizedBox(
+                height: wordmarkHeight,
+                child: Padding(
+                  padding: EdgeInsets.only(top: letterBandTop),
+                  child: SizedBox(
+                    height: letterBandHeight,
+                    child: Align(
+                      alignment: Alignment.centerRight,
+                      child: actions,
+                    ),
+                  ),
+                ),
+              ),
+          ],
+        ),
+        const SizedBox(height: 4),
+        Padding(
+          padding: EdgeInsets.only(left: demirIndent),
+          child: Text('DEMİR', style: _demirTitleStyle),
+        ),
+      ],
     );
   }
 }
@@ -131,70 +225,25 @@ TextStyle get _demirTitleStyle => AppTypography.titleMedium.copyWith(
       height: 1.0,
     );
 
-class _BrandTitleRow extends StatelessWidget {
-  const _BrandTitleRow({this.shiftUpByFontHeight = false});
-
-  final bool shiftUpByFontHeight;
-
-  /// PNG wordmark içinde harfler dikeyde ~%55 alan kaplar; geri kalan boşluktur.
-  static const _wordmarkLetterFillRatio = 0.55;
-
-  /// splash_wordmark.png yüksekliği ve ilk opak piksel (Ş) sol boşluğu.
+abstract final class _BrandTitleMetrics {
+  static const wordmarkLetterFillRatio = 0.55;
   static const _wordmarkPixelHeight = 514.0;
   static const _wordmarkLeftInkPx = 139.0;
 
-  @override
-  Widget build(BuildContext context) {
+  static double wordmarkHeightOf(BuildContext context) {
     final textPainter = TextPainter(
       text: TextSpan(text: 'DEMİR', style: _demirTitleStyle),
       textDirection: Directionality.of(context),
       maxLines: 1,
     )..layout();
+    final demirCapHeight =
+        textPainter.computeLineMetrics().first.ascent;
+    return demirCapHeight / wordmarkLetterFillRatio * 2.5;
+  }
 
-    final lineMetric = textPainter.computeLineMetrics().first;
-    final demirCapHeight = lineMetric.ascent;
-    // Optik harf yüksekliği DEMİR'in 2,5 katı.
-    final wordmarkHeight =
-        demirCapHeight / _wordmarkLetterFillRatio * 2.5;
-    final fontHeight = textPainter.height;
-    // DEMİR satır başını wordmark'taki Ş ile hizala.
-    final demirIndent = wordmarkHeight *
+  static double demirIndentOf(BuildContext context) {
+    return wordmarkHeightOf(context) *
         (_wordmarkLeftInkPx / _wordmarkPixelHeight);
-
-    final brandTitle = Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      mainAxisSize: MainAxisSize.min,
-      children: [
-        ColorFiltered(
-          colorFilter: ColorFilter.mode(
-            AppColors.canvas,
-            BlendMode.lighten,
-          ),
-          child: Image.asset(
-            'assets/images/splash_wordmark.png',
-            height: wordmarkHeight,
-            fit: BoxFit.fitHeight,
-            filterQuality: FilterQuality.high,
-          ),
-        ),
-        const SizedBox(height: 4),
-        Padding(
-          padding: EdgeInsets.only(left: demirIndent),
-          child: Text('DEMİR', style: _demirTitleStyle),
-        ),
-      ],
-    );
-
-    if (!shiftUpByFontHeight) return brandTitle;
-
-    final lift = defaultTargetPlatform == TargetPlatform.iOS && kIsWeb
-        ? fontHeight * 0.15
-        : fontHeight - 2;
-
-    return Transform.translate(
-      offset: Offset(0, -lift),
-      child: brandTitle,
-    );
   }
 }
 

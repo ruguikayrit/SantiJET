@@ -298,7 +298,6 @@ class _CountTableHeader extends StatelessWidget {
                 width: _CountEntryTable._columns[i].width,
                 child: AppTableHeaderBadge(
                   _CountEntryTable._columns[i].label,
-                  align: TextAlign.start,
                 ),
               ),
             ],
@@ -331,6 +330,7 @@ class _CountTableRow extends StatelessWidget {
             width: 56,
             child: Text(
               'Ø${line.diameter}',
+              textAlign: TextAlign.center,
               style: AppTypography.titleMedium.copyWith(
                 color: AppColors.diameterColor(line.diameter),
               ),
@@ -340,6 +340,7 @@ class _CountTableRow extends StatelessWidget {
             width: 72,
             child: Text(
               '${line.delivered.toStringAsFixed(1)}t',
+              textAlign: TextAlign.center,
               style: AppTypography.bodyMedium,
             ),
           ),
@@ -347,6 +348,7 @@ class _CountTableRow extends StatelessWidget {
             width: 88,
             child: Text(
               '${line.plannedUsage.toStringAsFixed(1)}t',
+              textAlign: TextAlign.center,
               style: AppTypography.bodyMedium.copyWith(
                 color: AppColors.electricBlueLight,
               ),
@@ -357,6 +359,7 @@ class _CountTableRow extends StatelessWidget {
             child: TextField(
               controller: controller,
               keyboardType: const TextInputType.numberWithOptions(decimal: true),
+              textAlign: TextAlign.center,
               decoration: const InputDecoration(
                 isDense: true,
                 hintText: '0',
@@ -370,6 +373,7 @@ class _CountTableRow extends StatelessWidget {
             width: 96,
             child: Text(
               '${line.actualUsed.toStringAsFixed(1)}t',
+              textAlign: TextAlign.center,
               style: AppTypography.bodyMedium.copyWith(
                 color: line.actualUsed > line.plannedUsage
                     ? AppColors.warning

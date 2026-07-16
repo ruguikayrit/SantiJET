@@ -711,9 +711,9 @@ class _Step3DiameterTable extends ConsumerWidget {
               const AppTableHeaderRow(
                 padding: EdgeInsets.symmetric(horizontal: 14, vertical: 10),
                 cells: [
-                  AppTableHeaderCell('ÇAP', flex: 2, align: TextAlign.start),
-                  AppTableHeaderCell('MEVCUT', flex: 3, align: TextAlign.start),
-                  AppTableHeaderCell('SİPARİŞ', flex: 3, align: TextAlign.start),
+                  AppTableHeaderCell('ÇAP', flex: 2),
+                  AppTableHeaderCell('MEVCUT', flex: 3),
+                  AppTableHeaderCell('SİPARİŞ', flex: 3),
                 ],
               ),
               ...lines.map((line) {
@@ -740,6 +740,7 @@ class _Step3DiameterTable extends ConsumerWidget {
                           Expanded(
                             flex: 2,
                             child: Row(
+                              mainAxisAlignment: MainAxisAlignment.center,
                               children: [
                                 Container(
                                   width: 3,
@@ -758,35 +759,39 @@ class _Step3DiameterTable extends ConsumerWidget {
                             flex: 3,
                             child: Text(
                               '${line.currentStock.toStringAsFixed(1)}t',
+                              textAlign: TextAlign.center,
                               style: AppTypography.bodyMedium,
                             ),
                           ),
                           Expanded(
                             flex: 3,
                             child: Row(
+                              mainAxisAlignment: MainAxisAlignment.center,
                               children: [
-                                Expanded(
-                                  child: Column(
-                                    crossAxisAlignment: CrossAxisAlignment.start,
-                                    children: [
+                                Column(
+                                  mainAxisSize: MainAxisSize.min,
+                                  crossAxisAlignment: CrossAxisAlignment.center,
+                                  children: [
+                                    Text(
+                                      '${line.orderAmount.toStringAsFixed(1)}t',
+                                      textAlign: TextAlign.center,
+                                      style: AppTypography.titleMedium.copyWith(
+                                        color: isAdjusted
+                                            ? AppColors.warning
+                                            : color,
+                                      ),
+                                    ),
+                                    if (isAdjusted)
                                       Text(
-                                        '${line.orderAmount.toStringAsFixed(1)}t',
-                                        style: AppTypography.titleMedium.copyWith(
-                                          color: isAdjusted
-                                              ? AppColors.warning
-                                              : color,
+                                        'Hesap: ${calculated.toStringAsFixed(1)}t',
+                                        textAlign: TextAlign.center,
+                                        style: AppTypography.labelMedium.copyWith(
+                                          color: AppColors.textMuted,
                                         ),
                                       ),
-                                      if (isAdjusted)
-                                        Text(
-                                          'Hesap: ${calculated.toStringAsFixed(1)}t',
-                                          style: AppTypography.labelMedium.copyWith(
-                                            color: AppColors.textMuted,
-                                          ),
-                                        ),
-                                    ],
-                                  ),
+                                  ],
                                 ),
+                                const SizedBox(width: 4),
                                 Icon(
                                   Icons.edit_outlined,
                                   size: 16,

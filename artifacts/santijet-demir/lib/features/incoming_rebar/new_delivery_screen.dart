@@ -270,9 +270,9 @@ class _CapEntryTable extends StatelessWidget {
           const AppTableHeaderRow(
             padding: EdgeInsets.symmetric(horizontal: 14, vertical: 10),
             cells: [
-              AppTableHeaderCell('ÇAP', align: TextAlign.start),
-              AppTableHeaderCell('SİPARİŞ', align: TextAlign.start),
-              AppTableHeaderCell('TESLİM', align: TextAlign.start),
+              AppTableHeaderCell('ÇAP'),
+              AppTableHeaderCell('SİPARİŞ'),
+              AppTableHeaderCell('TESLİM'),
             ],
           ),
           ...diameters.map((diameter) {
@@ -285,12 +285,14 @@ class _CapEntryTable extends StatelessWidget {
                   Expanded(
                     child: Text(
                       'Ø$diameter',
+                      textAlign: TextAlign.center,
                       style: AppTypography.titleMedium.copyWith(color: color),
                     ),
                   ),
                   Expanded(
                     child: Text(
                       '${(orderedDiameters[diameter] ?? 0).toStringAsFixed(1)}t',
+                      textAlign: TextAlign.center,
                       style: AppTypography.bodyMedium,
                     ),
                   ),
@@ -298,6 +300,7 @@ class _CapEntryTable extends StatelessWidget {
                     child: TextField(
                       controller: controller,
                       keyboardType: TextInputType.number,
+                      textAlign: TextAlign.center,
                       style: AppTypography.titleMedium,
                       onChanged: (value) => onDeliveryChanged(diameter, value),
                       decoration: const InputDecoration(

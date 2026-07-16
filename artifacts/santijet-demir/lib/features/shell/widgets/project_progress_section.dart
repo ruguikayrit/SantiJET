@@ -171,7 +171,7 @@ List<List<ProjectProgressRow>> _groupProgressRows(List<ProjectProgressRow> rows)
   return order.map((id) => groups[id]!).toList();
 }
 
-class _ProgressImalatGroup extends StatelessWidget {
+class _ProgressImalatGroup extends StatefulWidget {
   const _ProgressImalatGroup({
     required this.rows,
     required this.isFirst,
@@ -189,9 +189,18 @@ class _ProgressImalatGroup extends StatelessWidget {
   final void Function(ProjectProgressRow row, double value) onProgressChanged;
 
   @override
-  Widget build(BuildContext context) {
-    if (rows.isEmpty) return const SizedBox.shrink();
+  State<_ProgressImalatGroup> createState() => _ProgressImalatGroupState();
+}
 
+class _ProgressImalatGroupState extends State<_ProgressImalatGroup> {
+  /// Çap tablosu varsayılan olarak açık; kullanıcı kapatabilir.
+  bool _expanded = true;
+
+  @override
+  Widget build(BuildContext context) {
+    if (widget.rows.isEmpty) return const SizedBox.shrink();
+
+    final rows = widget.rows;
     final imalatName = rows.first.imalatName;
     final totalPlanned =
         rows.fold(0.0, (sum, row) => sum + row.plannedTonnage);
@@ -205,92 +214,131 @@ class _ProgressImalatGroup extends StatelessWidget {
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
         Container(
-          padding: const EdgeInsets.fromLTRB(14, 12, 14, 10),
           decoration: BoxDecoration(
             color: AppColors.electricBlue.withValues(alpha: 0.06),
             border: Border(
-              top: isFirst
+              top: widget.isFirst
                   ? BorderSide.none
-                  : BorderSide(color: AppColors.border.withValues(alpha: 0.8)),
+                  : BorderSide(
+                      color: AppColors.border.withValues(alpha: 0.8),
+                    ),
               bottom: const BorderSide(color: AppColors.border),
             ),
           ),
           child: Row(
             children: [
-              if (canEdit) ...[
-                Checkbox(
-                  value: selected,
-                  onChanged: (value) => onSelectionChanged(value == true),
-                  visualDensity: VisualDensity.compact,
-                  materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
-                ),
-                const SizedBox(width: 4),
-              ],
-              Container(
-                width: 3,
-                height: 28,
-                decoration: BoxDecoration(
-                  color: AppColors.electricBlueLight,
-                  borderRadius: AppRadii.full,
-                ),
-              ),
-              const SizedBox(width: 10),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      imalatName,
-                      style: AppTypography.titleMedium.copyWith(
-                        fontWeight: FontWeight.w700,
-                        letterSpacing: 0.4,
-                      ),
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
-                    ),
-                    const SizedBox(height: 2),
-                    Text(
-                      '${rows.length} çap · Keşif ${AppFormat.tonnage(totalPlanned)}t',
-                      style: AppTypography.bodySmall.copyWith(
-                        color: AppColors.textMuted,
-                      ),
-                    ),
-                    Text(
-                      'Planlanan kullanım ${AppFormat.tonnage(totalExpected)}t',
-                      style: AppTypography.bodySmall.copyWith(
-                        color: AppColors.textMuted,
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-              Container(
-                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                decoration: BoxDecoration(
-                  color: AppColors.electricBlue.withValues(alpha: 0.12),
-                  borderRadius: AppRadii.full,
-                  border: Border.all(
-                    color: AppColors.electricBlue.withValues(alpha: 0.25),
+              if (widget.canEdit) ...[
+                Padding(
+                  padding: const EdgeInsets.only(left: 10),
+                  child: Checkbox(
+                    value: widget.selected,
+                    onChanged: (value) =>
+                        widget.onSelectionChanged(value == true),
+                    visualDensity: VisualDensity.compact,
+                    materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
                   ),
                 ),
-                child: Text(
-                  '$overallPercent%',
-                  style: AppTypography.labelMedium.copyWith(
-                    color: AppColors.electricBlueLight,
-                    fontWeight: FontWeight.w700,
+              ],
+              Expanded(
+                child: Material(
+                  color: Colors.transparent,
+                  child: InkWell(
+                    onTap: () => setState(() => _expanded = !_expanded),
+                    child: Padding(
+                      padding: EdgeInsets.fromLTRB(
+                        widget.canEdit ? 4 : 14,
+                        12,
+                        14,
+                        10,
+                      ),
+                      child: Row(
+                        children: [
+                          Container(
+                            width: 3,
+                            height: 28,
+                            decoration: BoxDecoration(
+                              color: AppColors.electricBlueLight,
+                              borderRadius: AppRadii.full,
+                            ),
+                          ),
+                          const SizedBox(width: 10),
+                          Expanded(
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Text(
+                                  imalatName,
+                                  style: AppTypography.titleMedium.copyWith(
+                                    fontWeight: FontWeight.w700,
+                                    letterSpacing: 0.4,
+                                  ),
+                                  maxLines: 1,
+                                  overflow: TextOverflow.ellipsis,
+                                ),
+                                const SizedBox(height: 2),
+                                Text(
+                                  '${rows.length} çap · Keşif ${AppFormat.tonnage(totalPlanned)}t',
+                                  style: AppTypography.bodySmall.copyWith(
+                                    color: AppColors.textMuted,
+                                  ),
+                                ),
+                                Text(
+                                  'Planlanan kullanım ${AppFormat.tonnage(totalExpected)}t',
+                                  style: AppTypography.bodySmall.copyWith(
+                                    color: AppColors.textMuted,
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                          Container(
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 8,
+                              vertical: 4,
+                            ),
+                            decoration: BoxDecoration(
+                              color: AppColors.electricBlue
+                                  .withValues(alpha: 0.12),
+                              borderRadius: AppRadii.full,
+                              border: Border.all(
+                                color: AppColors.electricBlue
+                                    .withValues(alpha: 0.25),
+                              ),
+                            ),
+                            child: Text(
+                              '$overallPercent%',
+                              style: AppTypography.labelMedium.copyWith(
+                                color: AppColors.electricBlueLight,
+                                fontWeight: FontWeight.w700,
+                              ),
+                            ),
+                          ),
+                          const SizedBox(width: 4),
+                          Icon(
+                            _expanded
+                                ? Icons.expand_less
+                                : Icons.expand_more,
+                            color: AppColors.textMuted,
+                            size: 22,
+                          ),
+                        ],
+                      ),
+                    ),
                   ),
                 ),
               ),
             ],
           ),
         ),
-        ...rows.map(
-          (row) => _ProgressTableRow(
-            row: row,
-            canEdit: canEdit,
-            onProgressChanged: (value) => onProgressChanged(row, value),
+        if (_expanded)
+          ...rows.map(
+            (row) => _ProgressTableRow(
+              row: row,
+              canEdit: widget.canEdit,
+              onProgressChanged: (value) =>
+                  widget.onProgressChanged(row, value),
+            ),
           ),
-        ),
       ],
     );
   }

@@ -93,16 +93,14 @@ class AppTableHeaderBadge extends StatelessWidget {
             const EdgeInsets.symmetric(horizontal: 4, vertical: 6),
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
-          crossAxisAlignment: switch (align) {
-            TextAlign.start || TextAlign.left => CrossAxisAlignment.start,
-            TextAlign.end || TextAlign.right => CrossAxisAlignment.end,
-            _ => CrossAxisAlignment.stretch,
-          },
+          // Always stretch/center regardless of [align] so header text stays
+          // centered by default across the whole app.
+          crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
             Text(
               label,
               style: _textStyle,
-              textAlign: align,
+              textAlign: TextAlign.center,
               maxLines: 1,
               overflow: TextOverflow.ellipsis,
             ),
@@ -110,7 +108,7 @@ class AppTableHeaderBadge extends StatelessWidget {
               Text(
                 line2!,
                 style: _textStyle,
-                textAlign: align,
+                textAlign: TextAlign.center,
                 maxLines: 1,
                 overflow: TextOverflow.ellipsis,
               ),

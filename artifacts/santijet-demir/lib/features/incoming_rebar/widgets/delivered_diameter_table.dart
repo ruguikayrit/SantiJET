@@ -31,8 +31,8 @@ class DeliveredDiameterTable extends StatelessWidget {
           const AppTableHeaderRow(
             padding: EdgeInsets.symmetric(horizontal: 14, vertical: 10),
             cells: [
-              AppTableHeaderCell('ÇAP', align: TextAlign.start),
-              AppTableHeaderCell('MİKTAR', align: TextAlign.end),
+              AppTableHeaderCell('ÇAP'),
+              AppTableHeaderCell('MİKTAR'),
             ],
           ),
           ...rows.map(
@@ -46,6 +46,7 @@ class DeliveredDiameterTable extends StatelessWidget {
                   Expanded(
                     child: Text(
                       'Ø${row.diameter}',
+                      textAlign: TextAlign.center,
                       style: AppTypography.titleMedium.copyWith(
                         color: AppColors.diameterColor(row.diameter),
                       ),
@@ -55,7 +56,7 @@ class DeliveredDiameterTable extends StatelessWidget {
                     child: Text(
                       '${AppFormat.tonnage(row.delivered)}t',
                       style: AppTypography.bodyMedium,
-                      textAlign: TextAlign.end,
+                      textAlign: TextAlign.center,
                     ),
                   ),
                 ],
@@ -68,13 +69,17 @@ class DeliveredDiameterTable extends StatelessWidget {
             child: Row(
               children: [
                 Expanded(
-                  child: Text('TOPLAM', style: AppTypography.titleMedium),
+                  child: Text(
+                    'TOPLAM',
+                    textAlign: TextAlign.center,
+                    style: AppTypography.titleMedium,
+                  ),
                 ),
                 Expanded(
                   child: Text(
                     '${AppFormat.tonnage(totalDelivered)}t',
                     style: AppTypography.titleMedium.copyWith(color: AppColors.success),
-                    textAlign: TextAlign.end,
+                    textAlign: TextAlign.center,
                   ),
                 ),
               ],

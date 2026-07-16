@@ -329,18 +329,21 @@ class _IcmalDiameterDataRow extends StatelessWidget {
                 ],
               ),
             ),
+            const SizedBox(width: 4),
             _IcmalCol(
               intFormat.format(barCount),
               flex: _IcmalLayout.columnFlex,
               align: TextAlign.center,
               dense: true,
             ),
+            const SizedBox(width: 4),
             _IcmalCol(
               '${lengthFormat.format(lengthM)} m',
               flex: _IcmalLayout.columnFlex,
               align: TextAlign.center,
               dense: true,
             ),
+            const SizedBox(width: 4),
             _IcmalCol(
               '${numberFormat.format(tonnage)} t',
               flex: _IcmalLayout.columnFlex,
@@ -380,6 +383,7 @@ class _IcmalDiameterTotalRow extends StatelessWidget {
       child: Row(
         children: [
           const _IcmalCol('TOPLAM', flex: _IcmalLayout.columnFlex, bold: true, align: TextAlign.center),
+          const SizedBox(width: 4),
           _IcmalCol(
             intFormat.format(barCount),
             flex: _IcmalLayout.columnFlex,
@@ -387,6 +391,7 @@ class _IcmalDiameterTotalRow extends StatelessWidget {
             bold: true,
             dense: true,
           ),
+          const SizedBox(width: 4),
           _IcmalCol(
             '${lengthFormat.format(lengthM)} m',
             flex: _IcmalLayout.columnFlex,
@@ -394,6 +399,7 @@ class _IcmalDiameterTotalRow extends StatelessWidget {
             bold: true,
             dense: true,
           ),
+          const SizedBox(width: 4),
           _IcmalCol(
             '${numberFormat.format(tonnage)} t',
             flex: _IcmalLayout.columnFlex,
@@ -418,7 +424,7 @@ class _IcmalCol extends StatelessWidget {
     this.text, {
     required this.flex,
     this.bold = false,
-    this.align = TextAlign.start,
+    this.align = TextAlign.center,
     this.color,
     this.dense = false,
   });
@@ -469,13 +475,12 @@ class _IcmalTableHeader extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return AppTableHeaderRow(
-      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
       cells: [
-        for (var i = 0; i < cells.length; i++)
+        for (final cell in cells)
           AppTableHeaderCell(
-            cells[i],
-            flex: i == 0 ? 2 : 3,
-            align: i == 0 ? TextAlign.start : TextAlign.end,
+            cell,
+            flex: _IcmalLayout.columnFlex,
           ),
       ],
     );
@@ -496,45 +501,43 @@ class _IcmalTypeRow extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
       decoration: const BoxDecoration(
         border: Border(bottom: BorderSide(color: AppColors.borderSubtle)),
       ),
-      child: Row(
-        children: [
-          Expanded(
-            flex: 2,
-            child: Text(
+      child: IntrinsicHeight(
+        child: Row(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            _IcmalCol(
               row.typeLabel,
-              style: AppTypography.bodySmall,
-              textAlign: TextAlign.center,
+              flex: _IcmalLayout.columnFlex,
+              align: TextAlign.center,
             ),
-          ),
-          Expanded(
-            flex: 3,
-            child: Text(
+            const SizedBox(width: 4),
+            _IcmalCol(
               '${row.elementCount}',
-              style: AppTypography.bodySmall,
-              textAlign: TextAlign.center,
+              flex: _IcmalLayout.columnFlex,
+              align: TextAlign.center,
+              dense: true,
             ),
-          ),
-          Expanded(
-            flex: 3,
-            child: Text(
+            const SizedBox(width: 4),
+            _IcmalCol(
               intFormat.format(row.barCount),
-              style: AppTypography.bodySmall,
-              textAlign: TextAlign.center,
+              flex: _IcmalLayout.columnFlex,
+              align: TextAlign.center,
+              dense: true,
             ),
-          ),
-          Expanded(
-            flex: 3,
-            child: Text(
+            const SizedBox(width: 4),
+            _IcmalCol(
               numberFormat.format(row.tonnage),
-              style: AppTypography.bodySmall.copyWith(color: AppColors.textSecondary),
-              textAlign: TextAlign.center,
+              flex: _IcmalLayout.columnFlex,
+              align: TextAlign.center,
+              dense: true,
+              color: AppColors.electricBlueLight,
             ),
-          ),
-        ],
+          ],
+        ),
       ),
     );
   }

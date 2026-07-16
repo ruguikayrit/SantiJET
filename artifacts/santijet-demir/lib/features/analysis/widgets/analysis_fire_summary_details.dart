@@ -768,7 +768,6 @@ class _DetailTableHeader extends StatelessWidget {
           AppTableHeaderCell(
             cells[i],
             flex: i == 0 ? 2 : 3,
-            align: i == 0 ? TextAlign.start : TextAlign.end,
           ),
       ],
     );
@@ -807,7 +806,7 @@ class _DetailTableRow extends StatelessWidget {
                 cells[i],
                 style: (i == 0 ? AppTypography.labelMedium : AppTypography.bodySmall)
                     .copyWith(color: i == 0 ? accentColor : null),
-                textAlign: i == 0 ? TextAlign.start : TextAlign.end,
+                textAlign: TextAlign.center,
               ),
             ),
           if (onTap != null) ...[

@@ -274,22 +274,35 @@ class _LineTableRow extends StatelessWidget {
           Expanded(
             child: Text(
               'Ø${line.diameter}',
+              textAlign: TextAlign.center,
               style: AppTypography.titleMedium.copyWith(
                 color: AppColors.diameterColor(line.diameter),
               ),
             ),
           ),
           Expanded(
-            child: Text('${line.delivered.toStringAsFixed(1)}t'),
+            child: Text(
+              '${line.delivered.toStringAsFixed(1)}t',
+              textAlign: TextAlign.center,
+            ),
           ),
           Expanded(
-            child: Text('${line.plannedUsage.toStringAsFixed(1)}t'),
+            child: Text(
+              '${line.plannedUsage.toStringAsFixed(1)}t',
+              textAlign: TextAlign.center,
+            ),
           ),
           Expanded(
-            child: Text('${line.actual.toStringAsFixed(1)}t'),
+            child: Text(
+              '${line.actual.toStringAsFixed(1)}t',
+              textAlign: TextAlign.center,
+            ),
           ),
           Expanded(
-            child: Text('${line.actualUsed.toStringAsFixed(1)}t'),
+            child: Text(
+              '${line.actualUsed.toStringAsFixed(1)}t',
+              textAlign: TextAlign.center,
+            ),
           ),
         ],
       ),

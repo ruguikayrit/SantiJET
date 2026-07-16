@@ -156,10 +156,10 @@ class _LengthMatchChangesTableHeader extends StatelessWidget {
     return const AppTableHeaderRow(
       padding: EdgeInsets.symmetric(horizontal: 12, vertical: 10),
       cells: [
-        AppTableHeaderCell('ÇAP', align: TextAlign.start),
-        AppTableHeaderCell('ÖNCE (m)', flex: 2, align: TextAlign.start),
-        AppTableHeaderCell('SONRA (m)', flex: 2, align: TextAlign.start),
-        AppTableHeaderCell('ADET', align: TextAlign.end),
+        AppTableHeaderCell('ÇAP'),
+        AppTableHeaderCell('ÖNCE (m)', flex: 2),
+        AppTableHeaderCell('SONRA (m)', flex: 2),
+        AppTableHeaderCell('ADET'),
       ],
     );
   }
@@ -184,6 +184,7 @@ class _LengthMatchChangeRow extends StatelessWidget {
           Expanded(
             child: Text(
               'Ø${change.diameter}',
+              textAlign: TextAlign.center,
               style: AppTypography.titleMedium.copyWith(color: color),
             ),
           ),
@@ -191,12 +192,14 @@ class _LengthMatchChangeRow extends StatelessWidget {
             flex: 2,
             child: Text(
               change.beforeLengthM.toStringAsFixed(2),
+              textAlign: TextAlign.center,
               style: AppTypography.bodyMedium,
             ),
           ),
           Expanded(
             flex: 2,
             child: Row(
+              mainAxisAlignment: MainAxisAlignment.center,
               children: [
                 const Icon(Icons.arrow_forward, size: 14, color: AppColors.textMuted),
                 const SizedBox(width: 4),
@@ -214,7 +217,7 @@ class _LengthMatchChangeRow extends StatelessWidget {
             child: Text(
               AppFormat.integer(change.quantity),
               style: AppTypography.bodyMedium,
-              textAlign: TextAlign.end,
+              textAlign: TextAlign.center,
             ),
           ),
         ],
@@ -276,9 +279,9 @@ class _ReadOnlyPieceListTable extends StatelessWidget {
       header: const AppTableHeaderRow(
         padding: EdgeInsets.symmetric(horizontal: 12, vertical: 10),
         cells: [
-          AppTableHeaderCell('ÇAP', align: TextAlign.start),
-          AppTableHeaderCell('BOY (m)', align: TextAlign.start),
-          AppTableHeaderCell('ADET', align: TextAlign.end),
+          AppTableHeaderCell('ÇAP'),
+          AppTableHeaderCell('BOY (m)'),
+          AppTableHeaderCell('ADET'),
         ],
       ),
       itemBuilder: (context, piece, index) => Container(
@@ -291,6 +294,7 @@ class _ReadOnlyPieceListTable extends StatelessWidget {
             Expanded(
               child: Text(
                 'Ø${piece.diameter}',
+                textAlign: TextAlign.center,
                 style: AppTypography.titleMedium.copyWith(
                   color: AppColors.diameterColor(piece.diameter),
                 ),
@@ -299,6 +303,7 @@ class _ReadOnlyPieceListTable extends StatelessWidget {
             Expanded(
               child: Text(
                 piece.lengthM.toStringAsFixed(2),
+                textAlign: TextAlign.center,
                 style: AppTypography.bodyMedium,
               ),
             ),
@@ -306,7 +311,7 @@ class _ReadOnlyPieceListTable extends StatelessWidget {
               child: Text(
                 AppFormat.integer(piece.quantity),
                 style: AppTypography.bodyMedium,
-                textAlign: TextAlign.end,
+                textAlign: TextAlign.center,
               ),
             ),
           ],

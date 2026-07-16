@@ -229,6 +229,7 @@ class _DataCell extends StatelessWidget {
       flex: flex,
       child: Text(
         text,
+        textAlign: TextAlign.center,
         style: AppTypography.bodyMedium.copyWith(
           fontSize: 12,
           color: color ?? AppColors.textSecondary,

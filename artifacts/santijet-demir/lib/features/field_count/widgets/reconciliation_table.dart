@@ -116,7 +116,7 @@ class ReconciliationTable extends StatelessWidget {
   TableRow _headerRow() {
     return TableRow(
       children: [
-        _headerCell('Çap', align: TextAlign.start),
+        _headerCell('Çap'),
         _headerCell('Keşif'),
         _headerCell('Sipariş'),
         _headerCell('Teslim', line2: 'alınan'),
@@ -252,18 +252,18 @@ class ReconciliationTable extends StatelessWidget {
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 5),
       child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
+        crossAxisAlignment: CrossAxisAlignment.center,
         mainAxisSize: MainAxisSize.min,
         children: [
           Text(
             'Son',
             style: AppTypography.bodySmall.merge(_totalStyle),
-            textAlign: TextAlign.start,
+            textAlign: TextAlign.center,
           ),
           Text(
             'Toplamlar',
             style: AppTypography.bodySmall.merge(_totalStyle),
-            textAlign: TextAlign.start,
+            textAlign: TextAlign.center,
           ),
         ],
       ),
@@ -281,6 +281,8 @@ class ReconciliationTable extends StatelessWidget {
       child: Row(
 
         mainAxisSize: MainAxisSize.min,
+
+        mainAxisAlignment: MainAxisAlignment.center,
 
         children: [
 

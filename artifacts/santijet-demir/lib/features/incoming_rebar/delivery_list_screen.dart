@@ -5,7 +5,7 @@ import 'package:santijet_demir/core/routing/app_routes.dart';
 import 'package:santijet_demir/core/theme/app_colors.dart';
 import 'package:santijet_demir/core/theme/app_spacing.dart';
 import 'package:santijet_demir/core/widgets/app_components.dart';
-import 'package:santijet_demir/data/mock/mock_deliveries.dart';
+import 'package:santijet_demir/core/widgets/empty_states.dart';
 import 'package:santijet_demir/features/incoming_rebar/providers/incoming_rebar_provider.dart';
 import 'package:santijet_demir/features/incoming_rebar/widgets/delivery_card.dart';
 
@@ -23,6 +23,7 @@ class _DeliveryListScreenState extends ConsumerState<DeliveryListScreen> {
   Widget build(BuildContext context) {
     final deliveries = ref.watch(filteredDeliveriesProvider);
     final filterIndex = ref.watch(deliveryFilterProvider);
+    final allDeliveries = ref.watch(deliveriesProvider);
 
     final filtered = _searchQuery.isEmpty
         ? deliveries
@@ -33,9 +34,13 @@ class _DeliveryListScreenState extends ConsumerState<DeliveryListScreen> {
                 d.irsaliyeNo.toLowerCase().contains(q);
           }).toList();
 
+    final emptyType = allDeliveries.isEmpty
+        ? EmptyStateType.noDelivery
+        : EmptyStateType.noSearchResult;
+
     return Scaffold(
       backgroundColor: AppColors.canvas,
-      appBar: AppBar(title: const Text('Teslimat Listesi')),
+      appBar: AppBar(title: const Text('Teslimat Kayıtları')),
       body: Column(
         children: [
           Padding(
@@ -56,19 +61,34 @@ class _DeliveryListScreenState extends ConsumerState<DeliveryListScreen> {
           ),
           const SizedBox(height: 12),
           Expanded(
-            child: ListView.builder(
-              padding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
-              itemCount: filtered.length,
-              itemBuilder: (context, index) {
-                final delivery = filtered[index];
-                return DeliveryCard(
-                  delivery: delivery,
-                  onTap: () => context.push(AppRoutes.deliveryDetail(delivery.id)),
-                );
-              },
-            ),
+            child: filtered.isEmpty
+                ? ModuleEmptyState(
+                    type: emptyType,
+                    actionLabel: allDeliveries.isEmpty ? 'Yeni Teslimat' : null,
+                    onAction: allDeliveries.isEmpty
+                        ? () => context.push(AppRoutes.selectInTransitOrder)
+                        : null,
+                  )
+                : ListView.builder(
+                    padding: const EdgeInsets.fromLTRB(16, 0, 16, 88),
+                    itemCount: filtered.length,
+                    itemBuilder: (context, index) {
+                      final delivery = filtered[index];
+                      return DeliveryCard(
+                        delivery: delivery,
+                        onTap: () => context.push(
+                          AppRoutes.deliveryDetail(delivery.id),
+                        ),
+                      );
+                    },
+                  ),
           ),
         ],
+      ),
+      floatingActionButton: AppFab(
+        label: 'Yeni Teslimat',
+        aboveBottomNav: false,
+        onPressed: () => context.push(AppRoutes.selectInTransitOrder),
       ),
     );
   }

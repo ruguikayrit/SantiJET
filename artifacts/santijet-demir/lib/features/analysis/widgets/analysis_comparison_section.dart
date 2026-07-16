@@ -394,27 +394,27 @@ class _HamRevizePieceComparisonTable extends StatelessWidget {
           children: [
             SizedBox(
               width: _capWidth,
-              child: const AppTableHeaderBadge('ÇAP', align: TextAlign.start),
+              child: const AppTableHeaderBadge('ÇAP'),
             ),
             const SizedBox(width: 4),
             Expanded(
               flex: 115,
-              child: const AppTableHeaderBadge('ÖNCE', align: TextAlign.start),
+              child: const AppTableHeaderBadge('ÖNCE'),
             ),
             const SizedBox(width: 4),
             Expanded(
               flex: 115,
-              child: const AppTableHeaderBadge('SONRA', align: TextAlign.start),
+              child: const AppTableHeaderBadge('SONRA'),
             ),
             const SizedBox(width: 4),
             Expanded(
               flex: 85,
-              child: const AppTableHeaderBadge('Δ cm', align: TextAlign.end),
+              child: const AppTableHeaderBadge('Δ cm'),
             ),
             const SizedBox(width: 4),
             SizedBox(
               width: _adetWidth,
-              child: const AppTableHeaderBadge('ADET', align: TextAlign.end),
+              child: const AppTableHeaderBadge('ADET'),
             ),
           ],
         ),
@@ -433,7 +433,7 @@ class _HamRevizePieceComparisonTable extends StatelessWidget {
       ),
       padding: const EdgeInsets.symmetric(vertical: 10),
       child: Row(
-        crossAxisAlignment: CrossAxisAlignment.start,
+        crossAxisAlignment: CrossAxisAlignment.center,
         children: [
           SizedBox(
             width: _capWidth,
@@ -441,6 +441,7 @@ class _HamRevizePieceComparisonTable extends StatelessWidget {
               padding: const EdgeInsets.fromLTRB(10, 0, 4, 0),
               child: Text(
                 'Ø${row.beforeDiameter}',
+                textAlign: TextAlign.center,
                 style: AppTypography.labelMedium.copyWith(
                   color: AppColors.diameterColor(row.beforeDiameter),
                   fontWeight: FontWeight.w700,
@@ -481,7 +482,7 @@ class _HamRevizePieceComparisonTable extends StatelessWidget {
                   color: accent,
                   fontWeight: FontWeight.w700,
                 ),
-                textAlign: TextAlign.end,
+                textAlign: TextAlign.center,
               ),
             ),
           ),
@@ -495,7 +496,7 @@ class _HamRevizePieceComparisonTable extends StatelessWidget {
                   color: row.isChanged ? accent : AppColors.textPrimary,
                   fontWeight: row.isChanged ? FontWeight.w600 : null,
                 ),
-                textAlign: TextAlign.end,
+                textAlign: TextAlign.center,
               ),
             ),
           ),
@@ -531,11 +532,12 @@ class _LengthCell extends StatelessWidget {
     final lengthText = '${lengthM.toStringAsFixed(2)} m';
 
     return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
+      crossAxisAlignment: CrossAxisAlignment.center,
       children: [
         if (showDiameter && diameter != null)
           Text(
             'Ø$diameter',
+            textAlign: TextAlign.center,
             style: AppTypography.labelSmall.copyWith(
               color: AppColors.diameterColor(diameter!),
               fontWeight: FontWeight.w600,
@@ -543,6 +545,7 @@ class _LengthCell extends StatelessWidget {
           ),
         Text(
           lengthText,
+          textAlign: TextAlign.center,
           style: AppTypography.bodySmall.copyWith(
             color: emphasize ? accent : AppColors.textPrimary,
             fontWeight: emphasize ? FontWeight.w700 : FontWeight.w500,
@@ -682,7 +685,11 @@ class _StrategyFireRow extends StatelessWidget {
         children: [
           Expanded(
             flex: 3,
-            child: Text(row.strategy.label, style: AppTypography.bodySmall),
+            child: Text(
+              row.strategy.label,
+              textAlign: TextAlign.center,
+              style: AppTypography.bodySmall,
+            ),
           ),
           Expanded(
             flex: 3,
@@ -692,7 +699,7 @@ class _StrategyFireRow extends StatelessWidget {
                       '%${row.plannedFirePercent!.toStringAsFixed(1)}'
                   : '—',
               style: AppTypography.bodySmall,
-              textAlign: TextAlign.end,
+              textAlign: TextAlign.center,
             ),
           ),
           Expanded(
@@ -712,7 +719,7 @@ class _StrategyFireRow extends StatelessWidget {
                     ? FontWeight.w600
                     : null,
               ),
-              textAlign: TextAlign.end,
+              textAlign: TextAlign.center,
             ),
           ),
           Expanded(
@@ -724,7 +731,7 @@ class _StrategyFireRow extends StatelessWidget {
                     ? AppColors.electricBlueLight
                     : AppColors.textMuted,
               ),
-              textAlign: TextAlign.end,
+              textAlign: TextAlign.center,
             ),
           ),
         ],
@@ -777,7 +784,6 @@ class _ComparisonTableHeader extends StatelessWidget {
           AppTableHeaderCell(
             cells[i],
             flex: i == 0 ? 2 : 3,
-            align: i == 0 ? TextAlign.start : TextAlign.end,
           ),
       ],
     );
@@ -817,6 +823,7 @@ class _ComparisonRow extends StatelessWidget {
             flex: 2,
             child: Text(
               label,
+              textAlign: TextAlign.center,
               style: AppTypography.bodySmall.copyWith(color: AppColors.textMuted),
             ),
           ),
@@ -824,7 +831,7 @@ class _ComparisonRow extends StatelessWidget {
             child: Text(
               before,
               style: AppTypography.bodySmall,
-              textAlign: TextAlign.end,
+              textAlign: TextAlign.center,
             ),
           ),
           const Padding(
@@ -838,7 +845,7 @@ class _ComparisonRow extends StatelessWidget {
                 color: afterColor,
                 fontWeight: (positive || negative) ? FontWeight.w600 : null,
               ),
-              textAlign: TextAlign.end,
+              textAlign: TextAlign.center,
             ),
           ),
           if (delta != null)
@@ -853,7 +860,7 @@ class _ComparisonRow extends StatelessWidget {
                           ? AppColors.warning
                           : AppColors.textMuted,
                 ),
-                textAlign: TextAlign.end,
+                textAlign: TextAlign.center,
               ),
             ),
         ],

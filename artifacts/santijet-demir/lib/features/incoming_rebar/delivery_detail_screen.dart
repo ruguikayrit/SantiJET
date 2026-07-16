@@ -176,20 +176,30 @@ class _ComparisonRow extends StatelessWidget {
                 flex: 2,
                 child: Text(
                   'Ø${line.diameter}',
+                  textAlign: TextAlign.center,
                   style: AppTypography.titleMedium.copyWith(color: color),
                 ),
               ),
               Expanded(
                 flex: 3,
-                child: Text('${line.ordered.toStringAsFixed(1)}t', style: AppTypography.bodyMedium),
+                child: Text(
+                  '${line.ordered.toStringAsFixed(1)}t',
+                  textAlign: TextAlign.center,
+                  style: AppTypography.bodyMedium,
+                ),
               ),
               Expanded(
                 flex: 3,
-                child: Text('${line.delivered.toStringAsFixed(1)}t', style: AppTypography.titleMedium),
+                child: Text(
+                  '${line.delivered.toStringAsFixed(1)}t',
+                  textAlign: TextAlign.center,
+                  style: AppTypography.titleMedium,
+                ),
               ),
               Expanded(
                 flex: 3,
                 child: Row(
+                  mainAxisAlignment: MainAxisAlignment.center,
                   children: [
                     if (icon != null) Icon(icon, size: 14, color: diffColor),
                     Text(diffText, style: AppTypography.labelMedium.copyWith(color: diffColor, fontWeight: FontWeight.w700)),
