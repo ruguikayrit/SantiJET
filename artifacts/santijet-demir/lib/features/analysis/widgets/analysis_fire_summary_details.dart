@@ -408,15 +408,15 @@ class _FireDiameterDrillDownState extends State<_FireDiameterDrillDown> {
           ),
           if (wasteBuckets.isNotEmpty) ...[
             const SizedBox(height: 12),
-            Text('Kalan boy özeti', style: AppTypography.labelMedium),
+            Text('Kalan uzunluk özeti', style: AppTypography.labelMedium),
             const SizedBox(height: 4),
             Text(
-              'Kullanılamayan fire parçaları — hangi boyda ne kadar kaldı',
+              'Kullanılamayan fire parçaları — hangi uzunlukta ne kadar kaldı',
               style: AppTypography.bodySmall.copyWith(color: AppColors.textMuted),
             ),
             const SizedBox(height: 8),
             const _DetailTableHeader(
-              cells: ['KALAN BOY', 'ÇUBUK', 'TOPLAM FİRE', 'TONAJ'],
+              cells: ['KALAN UZUNLUK', 'ÇUBUK', 'TOPLAM FİRE', 'TONAJ'],
             ),
             ...wasteBuckets.map(
               (bucket) => _DetailTableRow(
@@ -700,7 +700,7 @@ class _SavingsDetail extends StatelessWidget {
             comp.tahvilGroupsApplied > 0) ...[
           const SizedBox(height: 8),
           Text(
-            '${comp.lengthMatchGroupsApplied} boy eşleştirme · '
+            '${comp.lengthMatchGroupsApplied} uzunluk eşleştirme · '
             '${comp.tahvilGroupsApplied} tahvil uygulandı',
             style: AppTypography.bodySmall.copyWith(
               color: AppColors.textMuted,

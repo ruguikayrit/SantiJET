@@ -42,7 +42,7 @@ class _RebarLabelDetailsSectionState extends State<RebarLabelDetailsSection> {
           Text('Analiz Edilen Demir Etiketleri', style: AppTypography.headlineMedium),
           const SizedBox(height: 4),
           Text(
-            '${details.length} etiket (adet + çap + boy)',
+            '${details.length} etiket (adet + çap + uzunluk)',
             style: AppTypography.bodySmall,
           ),
           const SizedBox(height: 12),

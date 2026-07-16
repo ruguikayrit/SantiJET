@@ -114,7 +114,7 @@ class FieldCountScreen extends ConsumerWidget {
                       recordCount: counts.length,
                       onTap: () => context.push(AppRoutes.countRecords),
                     ),
-                    const SizedBox(height: 80),
+                    SizedBox(height: AppFab.scrollClearanceOf(context)),
                   ]),
                 ),
               ),

@@ -86,7 +86,12 @@ class _OrdersScreenState extends ConsumerState<OrdersScreen> {
                         onAction: () => context.push(AppRoutes.newOrder),
                       )
                     : ListView.builder(
-                        padding: const EdgeInsets.fromLTRB(16, 0, 16, 88),
+                        padding: EdgeInsets.fromLTRB(
+                          16,
+                          0,
+                          16,
+                          AppFab.scrollClearanceOf(context),
+                        ),
                         itemCount: filtered.length,
                         itemBuilder: (context, index) {
                           return OrderCard(order: filtered[index]);

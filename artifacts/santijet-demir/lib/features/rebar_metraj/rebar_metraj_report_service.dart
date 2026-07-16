@@ -103,7 +103,7 @@ class RebarMetrajReportService {
         ('Format', result.sourceFormat),
         ('Analiz tarihi', dateFormat.format(result.parsedAt)),
         ('Toplam tonaj', '${numberFormat.format(result.totalTonnage)} t'),
-        ('Toplam boy', '${lengthFormat.format(result.totalLengthM)} m'),
+        ('Toplam uzunluk', '${lengthFormat.format(result.totalLengthM)} m'),
         ('Toplam çubuk', intFormat.format(result.totalBarCount)),
         ('Okunan etiket', intFormat.format(result.textDetails.length)),
         ('Dahil edilen etiket', intFormat.format(result.includedTextCount)),
@@ -149,7 +149,7 @@ class RebarMetrajReportService {
           'Toplam ${numberFormat.format(summary.totalTonnage)} t · '
           'İnce (Ø8–12) ${numberFormat.format(summary.thinTonnage)} t · '
           'Kalın (Ø≥14) ${numberFormat.format(summary.thickTonnage)} t',
-      headers: const ['Çap', 'Birim ağ.', 'Adet', 'Boy', 'Tonaj'],
+      headers: const ['Çap', 'Birim ağ.', 'Adet', 'Uzunluk', 'Tonaj'],
       rows: rows,
     );
 
@@ -183,7 +183,7 @@ class RebarMetrajReportService {
   }) {
     return PdfReportSection(
       title: 'Çap Bazlı Metraj',
-      headers: const ['Çap', 'Çubuk', 'Boy', 'Tonaj', 'Katman'],
+      headers: const ['Çap', 'Çubuk', 'Uzunluk', 'Tonaj', 'Katman'],
       rows: result.lines
           .map(
             (line) => [
@@ -218,7 +218,7 @@ class RebarMetrajReportService {
           ('Eleman sayısı', intFormat.format(cetvelSummary.elementCount)),
           ('Satır sayısı', intFormat.format(cetvelSummary.rowCount)),
           ('Toplam tonaj', '${numberFormat.format(cetvelSummary.totalTonnage)} t'),
-          ('Toplam boy', '${lengthFormat.format(cetvelSummary.totalLengthM)} m'),
+          ('Toplam uzunluk', '${lengthFormat.format(cetvelSummary.totalLengthM)} m'),
           (
             'İnce / Kalın',
             '${numberFormat.format(cetvelSummary.thinTonnage)} t / '
@@ -281,7 +281,7 @@ class RebarMetrajReportService {
             'Demir',
             'Ø',
             'Adet',
-            'Boy (m)',
+            'Uzunluk (m)',
             'Tonaj (t)',
           ],
           rows: rows,
@@ -300,7 +300,7 @@ class RebarMetrajReportService {
   }) {
     return PdfReportSection(
       title: 'Analiz Edilen Demir Etiketleri',
-      subtitle: '${result.textDetails.length} etiket (adet + çap + boy)',
+      subtitle: '${result.textDetails.length} etiket (adet + çap + uzunluk)',
       headers: const [
         'Durum',
         'Tip',
@@ -308,7 +308,7 @@ class RebarMetrajReportService {
         'Eleman',
         'Ø',
         'Adet',
-        'Boy (m)',
+        'Uzunluk (m)',
         'Ağırlık',
       ],
       rows: result.textDetails

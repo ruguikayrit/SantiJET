@@ -625,6 +625,20 @@ class AppFab extends StatelessWidget {
   /// Alt sekmeli gezinme çubuğunun üstünde konumlandır (MainShell sekmeleri).
   final bool aboveBottomNav;
 
+  static const _extendedHeight = 56.0;
+  static const _fabEdgeMargin = 16.0;
+  /// FAB ile son etkileşimli içerik arasında ek boşluk.
+  static const _contentGap = 24.0;
+
+  /// Kaydırılabilir içerik altına konacak boşluk — FAB / alt nav hiçbir butonu örtmez.
+  static double scrollClearanceOf(
+    BuildContext context, {
+    bool aboveBottomNav = true,
+  }) {
+    final nav = aboveBottomNav ? AppBottomNavBar.totalHeightOf(context) : 0.0;
+    return nav + _extendedHeight + _fabEdgeMargin + _contentGap;
+  }
+
   @override
   Widget build(BuildContext context) {
     final Widget fab;

@@ -17,7 +17,6 @@ class MetrajTonnageSummaryCards extends StatelessWidget {
 
   static const _rowGap = 12.0;
   static const _diameterGap = 8.0;
-  static const _minDiameterCardWidth = 76.0;
   static const _cardAspectRatio = 1.55;
 
   @override
@@ -77,9 +76,8 @@ class MetrajTonnageSummaryCards extends StatelessWidget {
           const SizedBox(height: _rowGap),
           LayoutBuilder(
             builder: (context, constraints) {
-              final count = summary.lines.length;
+              const perRow = 2;
               final maxWidth = constraints.maxWidth;
-              final perRow = _optimalCardsPerRow(maxWidth, count);
               final cardWidth =
                   (maxWidth - _diameterGap * (perRow - 1)) / perRow;
               final cardHeight = cardWidth / _cardAspectRatio;
@@ -105,32 +103,6 @@ class MetrajTonnageSummaryCards extends StatelessWidget {
         ],
       ],
     );
-  }
-
-  int _optimalCardsPerRow(double maxWidth, int count) {
-    if (count <= 1) return 1;
-
-    var bestPerRow = 2;
-    var bestScore = double.negativeInfinity;
-
-    for (var perRow = 2; perRow <= count; perRow++) {
-      final cardWidth =
-          (maxWidth - _diameterGap * (perRow - 1)) / perRow;
-      if (cardWidth < _minDiameterCardWidth) break;
-
-      final rowCount = (count / perRow).ceil();
-      final lastRowCount = count - (rowCount - 1) * perRow;
-      final balancePenalty = (perRow - lastRowCount).abs() * 0.35;
-      final widthBonus = cardWidth / maxWidth;
-      final score = widthBonus - balancePenalty - rowCount * 0.08;
-
-      if (score > bestScore) {
-        bestScore = score;
-        bestPerRow = perRow;
-      }
-    }
-
-    return bestPerRow.clamp(2, count);
   }
 }
 

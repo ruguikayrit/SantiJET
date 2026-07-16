@@ -195,7 +195,7 @@ class _RebarMetrajPanelState extends ConsumerState<RebarMetrajPanel>
     } catch (e) {
       ref.read(rebarMetrajErrorProvider.notifier).state =
           'DWG dosyası işlenemedi. Sayfayı yenileyip tekrar deneyin. '
-          'Etiketlerde adet, çap (FI/Ø) ve l= boy birlikte olmalı '
+          'Etiketlerde adet, çap (FI/Ø) ve l= uzunluk birlikte olmalı '
           '(ör. üst.334Ø22/15 l=1200).';
     } finally {
       ref.read(rebarMetrajLoadingProvider.notifier).state = false;
@@ -679,7 +679,7 @@ class _SkippedHint extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Text(
-      '$count CAD metni demir etiketi olarak tanınmadı (adet + çap + boy yok).',
+      '$count CAD metni demir etiketi olarak tanınmadı (adet + çap + uzunluk yok).',
       style: AppTypography.bodySmall.copyWith(color: AppColors.textMuted),
     );
   }

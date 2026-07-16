@@ -196,11 +196,11 @@ class _SurveyListScreenState extends ConsumerState<SurveyListScreen>
               color: screenBg,
               child: ListView(
               controller: _imalatListScrollController,
-              padding: const EdgeInsets.fromLTRB(
+              padding: EdgeInsets.fromLTRB(
                 AppSpacing.md,
                 AppSpacing.md,
                 AppSpacing.md,
-                88,
+                AppFab.scrollClearanceOf(context, aboveBottomNav: false),
               ),
               children: [
                 _ProjectMetaRow(project: project),

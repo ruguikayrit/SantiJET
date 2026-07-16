@@ -54,7 +54,7 @@ class StockCutSection extends StatelessWidget {
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
         Text(
-          '${stockLengthM.toStringAsFixed(0)} m stok boy · planlı minimum fire kesim',
+          '${stockLengthM.toStringAsFixed(0)} m stok uzunluğu · planlı minimum fire kesim',
           style: AppTypography.bodySmall.copyWith(color: AppColors.textMuted),
         ),
         const SizedBox(height: 8),

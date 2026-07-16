@@ -10,17 +10,17 @@ enum FireReductionStrategy {
 
   String get label => switch (this) {
         FireReductionStrategy.tahvilOnly => 'Sadece tahvil',
-        FireReductionStrategy.lengthMatchOnly => 'Sadece boy eşleştirme',
-        FireReductionStrategy.both => 'Tahvil + boy eşleştirme',
+        FireReductionStrategy.lengthMatchOnly => 'Sadece uzunluk eşleştirme',
+        FireReductionStrategy.both => 'Tahvil + uzunluk eşleştirme',
       };
 
   String get description => switch (this) {
-        FireReductionStrategy.tahvilOnly => 'Farklı çaplarda yakın boylar',
-        FireReductionStrategy.lengthMatchOnly => 'Aynı çapta yakın boylar',
-        FireReductionStrategy.both => 'Tahvil + boy eşleştirme',
+        FireReductionStrategy.tahvilOnly => 'Farklı çaplarda yakın uzunluklar',
+        FireReductionStrategy.lengthMatchOnly => 'Aynı çapta yakın uzunluklar',
+        FireReductionStrategy.both => 'Tahvil + uzunluk eşleştirme',
       };
 
-  String get toleranceDescription => 'Proje boyunun max %5 toleransı';
+  String get toleranceDescription => 'Proje uzunluğunun max %5 toleransı';
 
   bool get appliesTahvil =>
       this == FireReductionStrategy.tahvilOnly ||
@@ -592,7 +592,7 @@ class CuttingBendingBatch {
       lengthM * 100 * defaultLengthMatchTolerancePercent;
 
   static String get lengthMatchToleranceDescription =>
-      'proje boyunun max %${(defaultLengthMatchTolerancePercent * 100).toStringAsFixed(0)}\'i';
+      'proje uzunluğunun max %${(defaultLengthMatchTolerancePercent * 100).toStringAsFixed(0)}\'i';
 
   static double parseLengthMatchTolerancePercent(Map<dynamic, dynamic> json) {
     final percent = json['lengthMatchTolerancePercent'];

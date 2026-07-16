@@ -60,7 +60,7 @@ class AnalysisOptimizationResultsSection extends ConsumerWidget {
         if (strategy?.appliesLengthMatch ?? false) ...[
           AnalysisStepHeader(
             step: 1,
-            title: 'Boy Eşleştirme',
+            title: 'Uzunluk Eşleştirme',
             subtitle:
                 'Aynı çapta ${CuttingBendingBatch.lengthMatchToleranceDescription} — otomatik',
             complete: batch.lengthMatches.isNotEmpty ||
@@ -70,7 +70,7 @@ class AnalysisOptimizationResultsSection extends ConsumerWidget {
             Padding(
               padding: const EdgeInsets.symmetric(vertical: 8),
               child: Text(
-                'Boy eşleştirme gerektiren satır bulunamadı.',
+                'Uzunluk eşleştirme gerektiren satır bulunamadı.',
                 style: AppTypography.bodySmall.copyWith(
                   color: AppColors.textMuted,
                 ),
@@ -247,7 +247,7 @@ class _ReadOnlyTahvilCard extends StatelessWidget {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Text(
-            'Boy ${group.minLengthM.toStringAsFixed(2)}–${group.maxLengthM.toStringAsFixed(2)} m · '
+            'Uzunluk ${group.minLengthM.toStringAsFixed(2)}–${group.maxLengthM.toStringAsFixed(2)} m · '
             'Ø${group.diameters.join(', Ø')}',
             style: AppTypography.titleMedium,
           ),
@@ -280,7 +280,7 @@ class _ReadOnlyPieceListTable extends StatelessWidget {
         padding: EdgeInsets.symmetric(horizontal: 12, vertical: 10),
         cells: [
           AppTableHeaderCell('ÇAP'),
-          AppTableHeaderCell('BOY (m)'),
+          AppTableHeaderCell('UZUNLUK (m)'),
           AppTableHeaderCell('ADET'),
         ],
       ),

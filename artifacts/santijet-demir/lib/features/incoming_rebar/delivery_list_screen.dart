@@ -71,7 +71,12 @@ class _DeliveryListScreenState extends ConsumerState<DeliveryListScreen> {
                         : null,
                   )
                 : ListView.builder(
-                    padding: const EdgeInsets.fromLTRB(16, 0, 16, 88),
+                    padding: EdgeInsets.fromLTRB(
+                      16,
+                      0,
+                      16,
+                      AppFab.scrollClearanceOf(context, aboveBottomNav: false),
+                    ),
                     itemCount: filtered.length,
                     itemBuilder: (context, index) {
                       final delivery = filtered[index];

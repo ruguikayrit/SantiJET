@@ -7,6 +7,7 @@ import 'package:santijet_demir/core/theme/app_colors.dart';
 import 'package:santijet_demir/core/theme/app_radii.dart';
 import 'package:santijet_demir/core/theme/app_spacing.dart';
 import 'package:santijet_demir/core/theme/app_typography.dart';
+import 'package:santijet_demir/core/widgets/app_components.dart';
 import 'package:santijet_demir/features/auth/providers/auth_provider.dart';
 import 'package:santijet_demir/data/repositories/project_repository.dart';
 import 'package:santijet_demir/domain/entities/project.dart';
@@ -65,7 +66,13 @@ class _ProjectListScreenState extends ConsumerState<ProjectListScreen> {
         ],
       ),
       body: ListView(
-        padding: const EdgeInsets.all(AppSpacing.md),
+        padding: EdgeInsets.fromLTRB(
+          AppSpacing.md,
+          AppSpacing.md,
+          AppSpacing.md,
+          // İki stacked FAB (Koda Katıl + Yeni Proje)
+          AppFab.scrollClearanceOf(context, aboveBottomNav: false) + 68,
+        ),
         children: [
           Text(
             'Merhaba, ${auth.user?.displayName ?? ''}',

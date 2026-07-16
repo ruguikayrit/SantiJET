@@ -195,7 +195,7 @@ class _MetrajIcmaliSection extends StatelessWidget {
           Padding(
             padding: const EdgeInsets.fromLTRB(14, 0, 14, 12),
             child: Text(
-              'Toplam boy: ${lengthFormat.format(summary.totalLengthM)} m · '
+              'Toplam uzunluk: ${lengthFormat.format(summary.totalLengthM)} m · '
               '${intFormat.format(summary.totalBarCount)} çubuk',
               style: AppTypography.bodySmall.copyWith(color: AppColors.textMuted),
             ),
@@ -264,7 +264,7 @@ class _IcmalDiameterTableHeader extends StatelessWidget {
           flex: _IcmalLayout.columnFlex,
         ),
         AppTableHeaderCell('Adet', flex: _IcmalLayout.columnFlex),
-        AppTableHeaderCell('Boy', flex: _IcmalLayout.columnFlex),
+        AppTableHeaderCell('Uzunluk', flex: _IcmalLayout.columnFlex),
         AppTableHeaderCell('Tonaj', flex: _IcmalLayout.columnFlex),
       ],
     );
@@ -625,7 +625,7 @@ class _TypeGroupSection extends StatelessWidget {
   }
 }
 
-class _ElementCetvelCard extends StatelessWidget {
+class _ElementCetvelCard extends StatefulWidget {
   const _ElementCetvelCard({
     required this.entry,
     required this.numberFormat,
@@ -637,7 +637,19 @@ class _ElementCetvelCard extends StatelessWidget {
   final NumberFormat lengthFormat;
 
   @override
+  State<_ElementCetvelCard> createState() => _ElementCetvelCardState();
+}
+
+class _ElementCetvelCardState extends State<_ElementCetvelCard> {
+  /// Varsayılan: sadece eleman satırı; tıklanınca çap tablosu açılır.
+  bool _expanded = false;
+
+  @override
   Widget build(BuildContext context) {
+    final entry = widget.entry;
+    final numberFormat = widget.numberFormat;
+    final lengthFormat = widget.lengthFormat;
+
     return Container(
       margin: const EdgeInsets.only(bottom: 10),
       decoration: BoxDecoration(
@@ -649,72 +661,86 @@ class _ElementCetvelCard extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
-          Container(
-            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+          Material(
             color: AppColors.electricBlue.withValues(alpha: 0.06),
-            child: Row(
-              children: [
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(entry.title, style: AppTypography.titleMedium),
-                      Text(
-                        'Benzer × ${entry.benzerCount} · '
-                        '1 ad ${numberFormat.format(entry.unitTonnage)} t',
-                        style: AppTypography.bodySmall,
+            child: InkWell(
+              onTap: () => setState(() => _expanded = !_expanded),
+              child: Padding(
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+                child: Row(
+                  children: [
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(entry.title, style: AppTypography.titleMedium),
+                          Text(
+                            'Benzer × ${entry.benzerCount} · '
+                            '1 ad ${numberFormat.format(entry.unitTonnage)} t',
+                            style: AppTypography.bodySmall,
+                          ),
+                        ],
                       ),
-                    ],
-                  ),
-                ),
-                Text(
-                  '${numberFormat.format(entry.totalTonnage)} t',
-                  style: AppTypography.titleMedium.copyWith(
-                    color: AppColors.success,
-                  ),
-                ),
-              ],
-            ),
-          ),
-          const _CetvelTableHeader(),
-          ...entry.rows.asMap().entries.map(
-                (indexed) => _CetvelDataRow(
-                  index: indexed.key + 1,
-                  row: indexed.value,
-                  numberFormat: numberFormat,
-                  lengthFormat: lengthFormat,
-                  striped: indexed.key.isOdd,
+                    ),
+                    Text(
+                      '${numberFormat.format(entry.totalTonnage)} t',
+                      style: AppTypography.titleMedium.copyWith(
+                        color: AppColors.success,
+                      ),
+                    ),
+                    const SizedBox(width: 4),
+                    Icon(
+                      _expanded ? Icons.expand_less : Icons.expand_more,
+                      color: AppColors.textMuted,
+                      size: 22,
+                    ),
+                  ],
                 ),
               ),
-          Container(
-            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-            decoration: const BoxDecoration(
-              border: Border(top: BorderSide(color: AppColors.border)),
-              color: AppColors.canvas,
-            ),
-            child: Row(
-              children: [
-                Expanded(
-                  child: Text(
-                    'Eleman toplamı',
-                    style: AppTypography.labelMedium,
-                  ),
-                ),
-                Text(
-                  '${entry.totalBarCount} ad · '
-                  '${lengthFormat.format(entry.totalLengthM)} m',
-                  style: AppTypography.bodySmall,
-                ),
-                const SizedBox(width: 12),
-                Text(
-                  '${numberFormat.format(entry.totalTonnage)} t',
-                  style: AppTypography.labelMedium.copyWith(
-                    color: AppColors.electricBlueLight,
-                  ),
-                ),
-              ],
             ),
           ),
+          if (_expanded) ...[
+            const _CetvelTableHeader(),
+            ...entry.rows.asMap().entries.map(
+                  (indexed) => _CetvelDataRow(
+                    index: indexed.key + 1,
+                    row: indexed.value,
+                    numberFormat: numberFormat,
+                    lengthFormat: lengthFormat,
+                    striped: indexed.key.isOdd,
+                  ),
+                ),
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+              decoration: const BoxDecoration(
+                border: Border(top: BorderSide(color: AppColors.border)),
+                color: AppColors.canvas,
+              ),
+              child: Row(
+                children: [
+                  Expanded(
+                    child: Text(
+                      'Eleman toplamı',
+                      style: AppTypography.labelMedium,
+                    ),
+                  ),
+                  Text(
+                    '${entry.totalBarCount} ad · '
+                    '${lengthFormat.format(entry.totalLengthM)} m',
+                    style: AppTypography.bodySmall,
+                  ),
+                  const SizedBox(width: 12),
+                  Text(
+                    '${numberFormat.format(entry.totalTonnage)} t',
+                    style: AppTypography.labelMedium.copyWith(
+                      color: AppColors.electricBlueLight,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ],
         ],
       ),
     );
@@ -748,7 +774,7 @@ class _CetvelTableHeader extends StatelessWidget {
             const SizedBox(width: 4),
             Expanded(
               flex: _CetvelLayout.boyFlex,
-              child: const AppTableHeaderBadge('Boy'),
+              child: const AppTableHeaderBadge('Uzunluk'),
             ),
             const SizedBox(width: 4),
             Expanded(

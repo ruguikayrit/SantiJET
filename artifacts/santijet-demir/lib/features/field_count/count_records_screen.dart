@@ -53,7 +53,12 @@ class _CountRecordsScreenState extends ConsumerState<CountRecordsScreen> {
                     child: ModuleEmptyState(type: EmptyStateType.noCount),
                   )
                 : ListView.builder(
-                    padding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
+                    padding: EdgeInsets.fromLTRB(
+                      16,
+                      0,
+                      16,
+                      AppFab.scrollClearanceOf(context, aboveBottomNav: false),
+                    ),
                     itemCount: filtered.length,
                     itemBuilder: (context, index) {
                       final record = filtered[index];

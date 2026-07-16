@@ -229,7 +229,7 @@ class _SourceVsRevisedPanel extends StatelessWidget {
           const SizedBox(height: 10),
           _ComparisonTableHeader(cells: const ['', 'KAYNAK', 'REVİZE', 'FARK']),
           _ComparisonRow(
-            label: 'Boy çeşidi',
+            label: 'Uzunluk çeşidi',
             before: '${comparison!.rawLineCount} satır',
             after: '${comparison!.revisedLineCount} satır',
             delta: comparison!.savedLines > 0
@@ -283,7 +283,7 @@ class _SourceVsRevisedPanel extends StatelessWidget {
                   _ChangeChip(
                     icon: Icons.straighten,
                     label:
-                        '${comparison!.lengthMatchGroupsApplied} boy eşleştirme',
+                        '${comparison!.lengthMatchGroupsApplied} uzunluk eşleştirme',
                   ),
                 if (comparison!.tahvilGroupsApplied > 0)
                   _ChangeChip(

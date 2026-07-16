@@ -537,7 +537,7 @@ class _TahvilFireAnalysisPanel extends StatelessWidget {
         Text(
           'Fire özeti proje verisine göre hazırlanır. '
           'Tahvil yalnızca fire oranını düşürdüğünde uygulanır; '
-          'boy eşleştirme yapılmaz.',
+          'uzunluk eşleştirme yapılmaz.',
           style: AppTypography.bodySmall.copyWith(color: AppColors.textMuted),
         ),
         const SizedBox(height: 10),

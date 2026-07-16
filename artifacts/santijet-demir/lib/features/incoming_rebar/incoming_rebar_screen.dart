@@ -97,7 +97,7 @@ class IncomingRebarScreen extends ConsumerWidget {
                     recordCount: deliveries.length,
                     onTap: () => context.push(AppRoutes.deliveryList),
                   ),
-                  const SizedBox(height: 80),
+                  SizedBox(height: AppFab.scrollClearanceOf(context)),
                 ]),
               ),
             ),

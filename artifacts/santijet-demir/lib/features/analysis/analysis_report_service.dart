@@ -167,7 +167,7 @@ class AnalysisReportService {
           ('Analiz tamamlanma', dateFormat.format(batch.optimizationAppliedAt!)),
         ('Satır sayısı', AppFormat.integer(batch.pieceLines.length)),
         ('Toplam adet', AppFormat.integer(totalPieces)),
-        ('Stok boyu', '${CuttingBendingBatch.defaultStockBarLengthM.toStringAsFixed(0)} m'),
+        ('Stok uzunluğu', '${CuttingBendingBatch.defaultStockBarLengthM.toStringAsFixed(0)} m'),
         (
           'Analiz durumu',
           batch.isOptimized ? 'Tamamlandı' : 'Ham veri — analiz bekleniyor',
@@ -199,7 +199,7 @@ class AnalysisReportService {
     if (batch.isOptimized) {
       values.addAll([
         (
-          'Boy eşleştirme grupları',
+          'Uzunluk eşleştirme grupları',
           AppFormat.integer(
             batch.lengthMatches.where((group) => group.approved).length,
           ),
@@ -234,7 +234,7 @@ class AnalysisReportService {
         ('Ham fire', '${_tonnage(comparison.rawFireTonnage)} (${_percent(comparison.rawFirePercent)})'),
         ('Plan fire', '${_tonnage(comparison.plannedFireTonnage)} (${_percent(comparison.plannedFirePercent)})'),
         ('Fire kazancı', '${_tonnage(comparison.savedFireTonnage)} (${_percent(comparison.savedFirePercent)})'),
-        ('Uygulanan boy eşleştirme', AppFormat.integer(comparison.lengthMatchGroupsApplied)),
+        ('Uygulanan uzunluk eşleştirme', AppFormat.integer(comparison.lengthMatchGroupsApplied)),
         ('Uygulanan tahvil', AppFormat.integer(comparison.tahvilGroupsApplied)),
       ],
     );
@@ -322,7 +322,7 @@ class AnalysisReportService {
   }) {
     return PdfReportSection(
       title: title,
-      headers: const ['ÇAP', 'Boy (m)', 'Adet'],
+      headers: const ['ÇAP', 'Uzunluk (m)', 'Adet'],
       rows: pieces
           .map(
             (piece) => [
@@ -340,7 +340,7 @@ class AnalysisReportService {
     return PdfReportSection(
       title: 'Metraj Etiketleri',
       subtitle: 'Analize dahil edilen etiket metinleri',
-      headers: const ['Tür', 'Metin', 'Çap', 'Boy (m)', 'Adet'],
+      headers: const ['Tür', 'Metin', 'Çap', 'Uzunluk (m)', 'Adet'],
       rows: included
           .map(
             (detail) => [
@@ -357,7 +357,7 @@ class AnalysisReportService {
 
   PdfReportSection _buildLengthMatchSection(List<LengthMatchChange> changes) {
     return PdfReportSection(
-      title: 'Boy Eşleştirme Değişiklikleri',
+      title: 'Uzunluk Eşleştirme Değişiklikleri',
       headers: const ['ÇAP', 'Önce (m)', 'Sonra (m)', 'Δ (cm)', 'Adet'],
       rows: changes
           .map(
@@ -376,7 +376,7 @@ class AnalysisReportService {
   PdfReportSection _buildTahvilSection(List<TahvilSuggestion> groups) {
     return PdfReportSection(
       title: 'Onaylı Tahvil Grupları',
-      headers: const ['Grup', 'Boy (m)', 'Üyeler', 'Dönüşüm', 'Adet'],
+      headers: const ['Grup', 'Uzunluk (m)', 'Üyeler', 'Dönüşüm', 'Adet'],
       rows: groups.map((group) {
         final equivalent = pickBestTahvilEquivalentForGroup(group);
         final memberSummary = group.members

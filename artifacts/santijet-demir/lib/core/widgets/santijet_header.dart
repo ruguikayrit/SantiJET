@@ -257,9 +257,23 @@ class GreetingSection extends ConsumerWidget {
     final profession = ref.watch(profileProfessionProvider);
     final role = ref.watch(profileRoleProvider);
 
-    // Referans satır: isim (headline). Diğer satırlar aynı sol mürekkep
-    // hizasına çekilir — Inter boy/ağırlık farkından gelen bearing kayması giderilir.
-    final nameStyle = AppTypography.headlineLarge.copyWith(letterSpacing: 0);
+    // Tipografik sol baş: tüm satırların ilk glif mürekkebi aynı x'te.
+    final nameStyle = AppTypography.headlineLarge.copyWith(
+      letterSpacing: 0,
+      height: 1.15,
+    );
+    final welcomeStyle = AppTypography.bodySmall.copyWith(
+      letterSpacing: 0,
+      height: 1.2,
+    );
+    final metaStyle = AppTypography.bodyMedium.copyWith(
+      letterSpacing: 0,
+      height: 1.25,
+    );
+    final roleStyle = AppTypography.bodySmall.copyWith(
+      letterSpacing: 0,
+      height: 1.2,
+    );
     final nameText = displayName.toUpperCase();
 
     return Padding(
@@ -274,27 +288,12 @@ class GreetingSection extends ConsumerWidget {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  _TypographicFlushText(
-                    'Hoş geldin',
-                    style: AppTypography.bodySmall.copyWith(letterSpacing: 0),
-                    referenceText: nameText,
-                    referenceStyle: nameStyle,
-                  ),
-                  Text(nameText, style: nameStyle),
+                  _InkFlushStartText('Hoş geldin', style: welcomeStyle),
+                  _InkFlushStartText(nameText, style: nameStyle),
                   if (profession.isNotEmpty)
-                    _TypographicFlushText(
-                      profession,
-                      style: AppTypography.bodyMedium.copyWith(letterSpacing: 0),
-                      referenceText: nameText,
-                      referenceStyle: nameStyle,
-                    ),
+                    _InkFlushStartText(profession, style: metaStyle),
                   if (role.isNotEmpty)
-                    _TypographicFlushText(
-                      role,
-                      style: AppTypography.bodySmall.copyWith(letterSpacing: 0),
-                      referenceText: nameText,
-                      referenceStyle: nameStyle,
-                    ),
+                    _InkFlushStartText(role, style: roleStyle),
                 ],
               ),
             ),
@@ -335,21 +334,23 @@ class GreetingSection extends ConsumerWidget {
   }
 }
 
-/// Sol baş hizası: satırın ilk glif mürekkebini [referenceText] ile hizalar.
-class _TypographicFlushText extends StatelessWidget {
-  const _TypographicFlushText(
-    this.text, {
-    required this.style,
-    required this.referenceText,
-    required this.referenceStyle,
-  });
+/// Sol mürekkep kenarını sütun başlangıcına hizalar (Inter side-bearing farkı).
+class _InkFlushStartText extends StatelessWidget {
+  const _InkFlushStartText(this.text, {required this.style});
 
   final String text;
   final TextStyle style;
-  final String referenceText;
-  final TextStyle referenceStyle;
 
-  static double _firstGlyphLeft(String value, TextStyle textStyle, TextDirection direction) {
+  /// Inter Latin için yaklaşık sol bearing (em oranı).
+  static double _estimatedBearing(TextStyle textStyle) {
+    final size = textStyle.fontSize ?? 14.0;
+    final weight = textStyle.fontWeight?.value ?? 400;
+    // Bold / büyük kapaklar daha dar bearing taşır.
+    final fraction = weight >= 700 ? 0.018 : 0.06;
+    return size * fraction;
+  }
+
+  static double _inkLeft(String value, TextStyle textStyle, TextDirection direction) {
     if (value.isEmpty) return 0;
     final painter = TextPainter(
       text: TextSpan(text: value, style: textStyle),
@@ -359,20 +360,17 @@ class _TypographicFlushText extends StatelessWidget {
     final boxes = painter.getBoxesForSelection(
       const TextSelection(baseOffset: 0, extentOffset: 1),
     );
-    if (boxes.isEmpty) return 0;
-    return boxes.first.left;
+    final measured = boxes.isEmpty ? 0.0 : boxes.first.left;
+    // Web / bazı renderer'larda kutu sol kenarı 0 döner; tahmini bearing kullan.
+    if (measured.abs() < 0.05) return _estimatedBearing(textStyle);
+    return measured;
   }
 
   @override
   Widget build(BuildContext context) {
-    final direction = Directionality.of(context);
-    final referenceLeft =
-        _firstGlyphLeft(referenceText, referenceStyle, direction);
-    final lineLeft = _firstGlyphLeft(text, style, direction);
-    final dx = referenceLeft - lineLeft;
-
+    final inkLeft = _inkLeft(text, style, Directionality.of(context));
     return Transform.translate(
-      offset: Offset(dx, 0),
+      offset: Offset(-inkLeft, 0),
       child: Text(text, style: style),
     );
   }
