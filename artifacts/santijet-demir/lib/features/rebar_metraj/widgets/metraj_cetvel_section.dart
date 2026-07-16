@@ -781,11 +781,11 @@ class _CetvelDataRow extends StatelessWidget {
   Widget build(BuildContext context) {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 7),
-      color: striped
-          ? AppColors.canvas.withValues(alpha: 0.45)
-          : Colors.transparent,
-      decoration: const BoxDecoration(
-        border: Border(bottom: BorderSide(color: AppColors.borderSubtle)),
+      decoration: BoxDecoration(
+        color: striped
+            ? AppColors.canvas.withValues(alpha: 0.45)
+            : Colors.transparent,
+        border: const Border(bottom: BorderSide(color: AppColors.borderSubtle)),
       ),
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.center,
