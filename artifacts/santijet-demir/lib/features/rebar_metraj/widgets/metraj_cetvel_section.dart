@@ -733,24 +733,24 @@ class _CetvelTableHeader extends StatelessWidget {
             const SizedBox(width: 4),
             Expanded(
               flex: _CetvelLayout.demirFlex,
-              child: const AppTableHeaderBadge('Demir', align: TextAlign.start),
+              child: const AppTableHeaderBadge('Demir'),
             ),
             const SizedBox(width: 4),
             SizedBox(width: _CetvelLayout.diameterWidth, child: const AppTableHeaderBadge('Ø')),
             const SizedBox(width: 4),
             Expanded(
               flex: _CetvelLayout.adetFlex,
-              child: const AppTableHeaderBadge('Adet', align: TextAlign.end),
+              child: const AppTableHeaderBadge('Adet'),
             ),
             const SizedBox(width: 4),
             Expanded(
               flex: _CetvelLayout.boyFlex,
-              child: const AppTableHeaderBadge('Boy', align: TextAlign.end),
+              child: const AppTableHeaderBadge('Boy'),
             ),
             const SizedBox(width: 4),
             Expanded(
               flex: _CetvelLayout.tonFlex,
-              child: const AppTableHeaderBadge('t', align: TextAlign.end),
+              child: const AppTableHeaderBadge('t'),
             ),
           ],
         ),
@@ -785,7 +785,7 @@ class _CetvelDataRow extends StatelessWidget {
         border: Border(bottom: BorderSide(color: AppColors.borderSubtle)),
       ),
       child: Row(
-        crossAxisAlignment: CrossAxisAlignment.start,
+        crossAxisAlignment: CrossAxisAlignment.center,
         children: [
           _Col('$index', _CetvelLayout.indexWidth),
           _Col(row.role.label, 0, flex: _CetvelLayout.demirFlex),
@@ -799,21 +799,21 @@ class _CetvelDataRow extends StatelessWidget {
             '${row.unitQuantity}',
             0,
             flex: _CetvelLayout.adetFlex,
-            align: TextAlign.end,
+            align: TextAlign.center,
             dense: true,
           ),
           _Col(
             lengthFormat.format(row.lengthM),
             0,
             flex: _CetvelLayout.boyFlex,
-            align: TextAlign.end,
+            align: TextAlign.center,
             dense: true,
           ),
           _Col(
             numberFormat.format(row.totalTonnage),
             0,
             flex: _CetvelLayout.tonFlex,
-            align: TextAlign.end,
+            align: TextAlign.center,
             dense: true,
             color: AppColors.electricBlueLight,
           ),
@@ -839,7 +839,7 @@ class _Col extends StatelessWidget {
     this.width, {
     this.flex,
     this.bold = false,
-    this.align = TextAlign.start,
+    this.align = TextAlign.center,
     this.color,
     this.dense = false,
   });
@@ -862,13 +862,20 @@ class _Col extends StatelessWidget {
       height: dense ? 1.15 : null,
     );
 
-    final child = Text(
-      text,
-      style: style,
-      textAlign: align,
-      maxLines: dense ? 1 : 2,
-      softWrap: !dense,
-      overflow: dense ? TextOverflow.fade : TextOverflow.ellipsis,
+    final child = Align(
+      alignment: switch (align) {
+        TextAlign.start || TextAlign.left => Alignment.centerLeft,
+        TextAlign.end || TextAlign.right => Alignment.centerRight,
+        _ => Alignment.center,
+      },
+      child: Text(
+        text,
+        style: style,
+        textAlign: align,
+        maxLines: dense ? 1 : 2,
+        softWrap: !dense,
+        overflow: dense ? TextOverflow.fade : TextOverflow.ellipsis,
+      ),
     );
 
     if (flex != null) {
