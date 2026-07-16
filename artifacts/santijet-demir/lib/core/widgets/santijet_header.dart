@@ -1,4 +1,5 @@
-import 'package:flutter/material.dart';import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:intl/intl.dart';
 import 'package:santijet_demir/core/routing/app_routes.dart';
@@ -256,10 +257,16 @@ class GreetingSection extends ConsumerWidget {
     final profession = ref.watch(profileProfessionProvider);
     final role = ref.watch(profileRoleProvider);
 
+    // Referans satır: isim (headline). Diğer satırlar aynı sol mürekkep
+    // hizasına çekilir — Inter boy/ağırlık farkından gelen bearing kayması giderilir.
+    final nameStyle = AppTypography.headlineLarge.copyWith(letterSpacing: 0);
+    final nameText = displayName.toUpperCase();
+
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: AppSpacing.md),
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
+        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Expanded(
             child: GestureDetector(
@@ -267,15 +274,27 @@ class GreetingSection extends ConsumerWidget {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Text('Hoş geldin', style: AppTypography.bodySmall),
-                  Text(
-                    displayName.toUpperCase(),
-                    style: AppTypography.headlineLarge,
+                  _TypographicFlushText(
+                    'Hoş geldin',
+                    style: AppTypography.bodySmall.copyWith(letterSpacing: 0),
+                    referenceText: nameText,
+                    referenceStyle: nameStyle,
                   ),
+                  Text(nameText, style: nameStyle),
                   if (profession.isNotEmpty)
-                    Text(profession, style: AppTypography.bodyMedium),
+                    _TypographicFlushText(
+                      profession,
+                      style: AppTypography.bodyMedium.copyWith(letterSpacing: 0),
+                      referenceText: nameText,
+                      referenceStyle: nameStyle,
+                    ),
                   if (role.isNotEmpty)
-                    Text(role, style: AppTypography.bodySmall),
+                    _TypographicFlushText(
+                      role,
+                      style: AppTypography.bodySmall.copyWith(letterSpacing: 0),
+                      referenceText: nameText,
+                      referenceStyle: nameStyle,
+                    ),
                 ],
               ),
             ),
@@ -313,5 +332,48 @@ class GreetingSection extends ConsumerWidget {
 
   String _formatWeekday() {
     return DateFormat('EEEE', 'tr_TR').format(DateTime.now());
+  }
+}
+
+/// Sol baş hizası: satırın ilk glif mürekkebini [referenceText] ile hizalar.
+class _TypographicFlushText extends StatelessWidget {
+  const _TypographicFlushText(
+    this.text, {
+    required this.style,
+    required this.referenceText,
+    required this.referenceStyle,
+  });
+
+  final String text;
+  final TextStyle style;
+  final String referenceText;
+  final TextStyle referenceStyle;
+
+  static double _firstGlyphLeft(String value, TextStyle textStyle, TextDirection direction) {
+    if (value.isEmpty) return 0;
+    final painter = TextPainter(
+      text: TextSpan(text: value, style: textStyle),
+      textDirection: direction,
+      maxLines: 1,
+    )..layout();
+    final boxes = painter.getBoxesForSelection(
+      const TextSelection(baseOffset: 0, extentOffset: 1),
+    );
+    if (boxes.isEmpty) return 0;
+    return boxes.first.left;
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final direction = Directionality.of(context);
+    final referenceLeft =
+        _firstGlyphLeft(referenceText, referenceStyle, direction);
+    final lineLeft = _firstGlyphLeft(text, style, direction);
+    final dx = referenceLeft - lineLeft;
+
+    return Transform.translate(
+      offset: Offset(dx, 0),
+      child: Text(text, style: style),
+    );
   }
 }
