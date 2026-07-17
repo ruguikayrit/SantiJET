@@ -156,7 +156,8 @@ class OrderCard extends ConsumerWidget {
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
                           Text(
-                            'İptal Eden: ${cancellation.cancelledByName}',
+                            'İptal Eden: ${cancellation.cancelledByName}'
+                            '${cancellation.rejectedByRole != null ? ' (${cancellation.rejectedByRole!.label})' : ''}',
                             style: AppTypography.labelMedium,
                           ),
                           const SizedBox(height: 6),

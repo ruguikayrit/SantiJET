@@ -106,21 +106,27 @@ class OrderCancellation {
     required this.cancelledByName,
     required this.cancellationReason,
     required this.cancelledAt,
+    this.rejectedByRole,
   });
 
   final String cancelledByName;
   final String cancellationReason;
   final DateTime cancelledAt;
 
+  /// Onay sürecinde red veren rol (varsa).
+  final OrderApproverRole? rejectedByRole;
+
   OrderCancellation copyWith({
     String? cancelledByName,
     String? cancellationReason,
     DateTime? cancelledAt,
+    OrderApproverRole? rejectedByRole,
   }) {
     return OrderCancellation(
       cancelledByName: cancelledByName ?? this.cancelledByName,
       cancellationReason: cancellationReason ?? this.cancellationReason,
       cancelledAt: cancelledAt ?? this.cancelledAt,
+      rejectedByRole: rejectedByRole ?? this.rejectedByRole,
     );
   }
 
@@ -128,6 +134,7 @@ class OrderCancellation {
         'cancelledByName': cancelledByName,
         'cancellationReason': cancellationReason,
         'cancelledAt': cancelledAt.toIso8601String(),
+        if (rejectedByRole != null) 'rejectedByRole': rejectedByRole!.name,
       };
 
   factory OrderCancellation.fromJson(Map<dynamic, dynamic>? json) {
@@ -138,12 +145,19 @@ class OrderCancellation {
         cancelledAt: DateTime.now(),
       );
     }
+    final roleName = json['rejectedByRole'] as String?;
     return OrderCancellation(
       cancelledByName: json['cancelledByName'] as String? ?? '',
       cancellationReason: json['cancellationReason'] as String? ?? '',
       cancelledAt:
           DateTime.tryParse(json['cancelledAt'] as String? ?? '') ??
               DateTime.now(),
+      rejectedByRole: switch (roleName) {
+        'projectManager' => OrderApproverRole.projectManager,
+        'purchasing' => OrderApproverRole.purchasing,
+        'employer' => OrderApproverRole.employer,
+        _ => null,
+      },
     );
   }
 }

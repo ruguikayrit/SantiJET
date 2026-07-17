@@ -270,6 +270,52 @@ class OrdersNotifier extends StateNotifier<List<OrderItem>> {
 
     return OrderCancelResult.success;
   }
+
+  /// Onay sürecinde red — siparişi iptal eder. Açıklama zorunlu.
+  Future<OrderRejectResult> rejectOrderRole({
+    required String orderId,
+    required OrderApproverRole role,
+    required String rejectedByName,
+    required String rejectionReason,
+  }) async {
+    final user = _ref.read(authProvider).user;
+    final permissions = AppPermissionMatrix.forMembership(
+      membershipType: user?.membershipType ?? MembershipType.individual,
+      corporateRole: user?.corporateRole,
+    );
+    if (!AppPermissionMatrix.canApproveOrderRole(permissions, role)) {
+      return OrderRejectResult.notAllowed;
+    }
+
+    final index = state.indexWhere((order) => order.id == orderId);
+    if (index < 0) return OrderRejectResult.notFound;
+
+    final order = state[index];
+    if (order.status != OrderStatus.pendingApproval) {
+      return OrderRejectResult.notPending;
+    }
+
+    final name = rejectedByName.trim();
+    final reason = rejectionReason.trim();
+    if (reason.isEmpty) return OrderRejectResult.invalidInput;
+
+    final displayName = name.isEmpty ? role.label : name;
+
+    final updated = List<OrderItem>.from(state);
+    updated[index] = order.copyWith(
+      status: OrderStatus.cancelled,
+      cancellation: OrderCancellation(
+        cancelledByName: displayName,
+        cancellationReason: reason,
+        cancelledAt: DateTime.now(),
+        rejectedByRole: role,
+      ),
+    );
+    state = updated;
+    await _persist();
+    // Onay tamamlanmadan sipariş tonajı keşfe yazılmadığı için geri alma yok.
+    return OrderRejectResult.success;
+  }
 }
 
 enum OrderApprovalResultType {
@@ -283,6 +329,14 @@ enum OrderCancelResult {
   success,
   notFound,
   notCancellable,
+  invalidInput,
+}
+
+enum OrderRejectResult {
+  success,
+  notFound,
+  notPending,
+  notAllowed,
   invalidInput,
 }
 
