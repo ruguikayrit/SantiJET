@@ -7,7 +7,7 @@ import 'package:santijet_demir/core/responsive/app_safe_area.dart';
 import 'package:santijet_demir/core/responsive/responsive_layout.dart';
 import 'package:santijet_demir/core/theme/app_colors.dart';
 import 'package:santijet_demir/core/theme/app_typography.dart';
-import 'package:santijet_demir/domain/enums/app_enums.dart';
+import 'package:santijet_demir/features/auth/providers/membership_permission_provider.dart';
 
 /// Alt navigasyon — arka plan ekranın dibine kadar uzanır, ikonlar home indicator üstünde.
 class AppBottomNavBar extends ConsumerWidget {
@@ -54,6 +54,16 @@ class AppBottomNavBar extends ConsumerWidget {
     final showLabels = ResponsiveLayout.isTablet(context);
     final iconBarHeight = showLabels ? _iconBarHeightTablet : _iconBarHeight;
     final bottomInset = _bottomInsetOf(context);
+    final visibleTabs = ref.watch(visibleBottomNavTabsProvider);
+
+    // Yetkisiz sekmedeyse ilk görünür sekmeye yönlendir.
+    final current = navigationShell.currentIndex;
+    final currentAllowed = visibleTabs.any((t) => t.index == current);
+    if (!currentAllowed && visibleTabs.isNotEmpty) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        navigationShell.goBranch(visibleTabs.first.index);
+      });
+    }
 
     final bar = DecoratedBox(
       decoration: BoxDecoration(
@@ -79,18 +89,19 @@ class AppBottomNavBar extends ConsumerWidget {
             width: double.infinity,
             child: Row(
               children: [
-                for (var i = 0; i < BottomNavTab.values.length; i++)
+                for (final tab in visibleTabs)
                   Expanded(
                     child: _NavItem(
-                      icon: _icons[i],
-                      activeIcon: _activeIcons[i],
-                      label: BottomNavTab.values[i].navLabel,
-                      semanticsLabel: BottomNavTab.values[i].label,
-                      selected: navigationShell.currentIndex == i,
+                      icon: _icons[tab.index],
+                      activeIcon: _activeIcons[tab.index],
+                      label: tab.navLabel,
+                      semanticsLabel: tab.label,
+                      selected: navigationShell.currentIndex == tab.index,
                       showLabel: showLabels,
                       onTap: () => navigationShell.goBranch(
-                        i,
-                        initialLocation: i == navigationShell.currentIndex,
+                        tab.index,
+                        initialLocation:
+                            tab.index == navigationShell.currentIndex,
                       ),
                     ),
                   ),

@@ -7,6 +7,8 @@ import 'package:santijet_demir/data/remote/supabase_service.dart';
 import 'package:santijet_demir/data/repositories/auth_repository.dart';
 import 'package:santijet_demir/data/repositories/supabase_auth_repository.dart';
 import 'package:santijet_demir/domain/entities/user_account.dart';
+import 'package:santijet_demir/domain/enums/corporate_role.dart';
+import 'package:santijet_demir/domain/enums/membership_type.dart';
 import 'package:santijet_demir/features/projects/providers/project_provider.dart';
 import 'package:santijet_demir/features/settings/providers/settings_provider.dart';
 
@@ -151,6 +153,8 @@ class AuthNotifier extends StateNotifier<AuthState> {
     required String email,
     required String displayName,
     required String password,
+    MembershipType membershipType = MembershipType.individual,
+    CorporateRole? corporateRole,
   }) async {
     if (!_isValidEmail(email)) {
       state = state.copyWith(error: 'Geçerli bir e-posta adresi girin');
@@ -158,6 +162,10 @@ class AuthNotifier extends StateNotifier<AuthState> {
     }
     if (password.trim().length < 6) {
       state = state.copyWith(error: 'Şifre en az 6 karakter olmalı');
+      return false;
+    }
+    if (membershipType == MembershipType.corporate && corporateRole == null) {
+      state = state.copyWith(error: 'Kurumsal üyelik için rol seçin');
       return false;
     }
 
@@ -177,6 +185,8 @@ class AuthNotifier extends StateNotifier<AuthState> {
           displayName: displayName,
           password: password,
           sessionId: sessionId,
+          membershipType: membershipType,
+          corporateRole: corporateRole,
         );
       } else {
         user = await _localAuth.register(
@@ -185,8 +195,20 @@ class AuthNotifier extends StateNotifier<AuthState> {
           displayName: displayName,
           password: password,
           sessionId: sessionId,
+          membershipType: membershipType,
+          corporateRole: corporateRole,
         );
       }
+
+      // Profil görevinde kurumsal rol etiketini yansıt.
+      final roleLabel = membershipType == MembershipType.corporate
+          ? (corporateRole?.label ?? '')
+          : 'Bireysel';
+      await _ref.read(appSettingsProvider.notifier).updateProfile(
+            profileName: displayName.trim(),
+            profileProfession: '',
+            profileRole: roleLabel,
+          );
 
       state = AuthState(
         user: user,
@@ -344,6 +366,73 @@ class AuthNotifier extends StateNotifier<AuthState> {
       return false;
     } catch (e) {
       state = state.copyWith(error: 'Profil güncellenemedi: $e');
+      return false;
+    }
+  }
+
+  Future<bool> updateMembership({
+    required MembershipType membershipType,
+    CorporateRole? corporateRole,
+  }) async {
+    final user = state.user;
+    if (user == null) {
+      state = state.copyWith(error: 'Oturum bulunamadı');
+      return false;
+    }
+    if (membershipType == MembershipType.corporate && corporateRole == null) {
+      state = state.copyWith(error: 'Kurumsal üyelik için rol seçin');
+      return false;
+    }
+
+    try {
+      final UserAccount updated;
+      if (_usesSupabase) {
+        updated = await _supabaseAuth.updateMembership(
+          membershipType: membershipType,
+          corporateRole: corporateRole,
+        );
+        // Yerel önbelleğe de yaz (Hive hesapları).
+        try {
+          await _localAuth.updateMembership(
+            userId: user.id,
+            membershipType: membershipType,
+            corporateRole: corporateRole,
+          );
+        } catch (_) {}
+      } else {
+        updated = await _localAuth.updateMembership(
+          userId: user.id,
+          membershipType: membershipType,
+          corporateRole: corporateRole,
+        );
+      }
+
+      final roleLabel = membershipType == MembershipType.corporate
+          ? (corporateRole?.label ?? '')
+          : 'Bireysel';
+      await _ref.read(appSettingsProvider.notifier).updateProfile(
+            profileName: updated.displayName.isEmpty
+                ? user.displayName
+                : updated.displayName,
+            profileProfession:
+                _ref.read(appSettingsProvider).profileProfession,
+            profileRole: roleLabel,
+          );
+
+      state = state.copyWith(
+        user: user.copyWith(
+          membershipType: membershipType,
+          corporateRole: corporateRole,
+          clearCorporateRole: membershipType == MembershipType.individual,
+        ),
+        clearError: true,
+      );
+      return true;
+    } on AppAuthException catch (e) {
+      state = state.copyWith(error: e.message);
+      return false;
+    } catch (e) {
+      state = state.copyWith(error: 'Üyelik güncellenemedi: $e');
       return false;
     }
   }

@@ -6,6 +6,7 @@ import 'package:santijet_demir/data/repositories/project_repository.dart';
 import 'package:santijet_demir/domain/entities/project.dart';
 import 'package:santijet_demir/domain/entities/project_member.dart';
 import 'package:santijet_demir/domain/entities/user_account.dart';
+import 'package:santijet_demir/domain/enums/corporate_role.dart';
 import 'package:santijet_demir/domain/enums/project_role.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
@@ -197,6 +198,28 @@ class SupabaseProjectSync {
     );
   }
 
+  Future<void> updateMemberCorporateRole({
+    required String projectId,
+    required String memberUserId,
+    required CorporateRole? corporateRole,
+    required String actingUserId,
+  }) async {
+    try {
+      await _client.from('project_members').update({
+        'corporate_role': corporateRole?.storageValue,
+      }).eq('project_id', projectId).eq('user_id', memberUserId);
+    } catch (_) {
+      // Kolon yoksa yalnızca yerel saklanır.
+    }
+
+    await _local.updateMemberCorporateRole(
+      projectId: projectId,
+      memberUserId: memberUserId,
+      corporateRole: corporateRole,
+      actingUserId: actingUserId,
+    );
+  }
+
   Project _projectFromJson(Map<String, dynamic> json) {
     return Project(
       id: json['id'] as String,
@@ -224,6 +247,9 @@ class SupabaseProjectSync {
       role: ProjectRole.values.byName(json['role'] as String? ?? 'viewer'),
       canEdit: json['can_edit'] as bool? ?? false,
       joinedAt: DateTime.parse(json['joined_at'] as String),
+      corporateRole: CorporateRole.fromStorage(
+        json['corporate_role'] as String?,
+      ),
     );
   }
 

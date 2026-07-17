@@ -2,6 +2,8 @@ import 'package:hive/hive.dart';
 import 'package:santijet_demir/data/remote/supabase_service.dart';
 import 'package:santijet_demir/data/repositories/auth_repository.dart';
 import 'package:santijet_demir/domain/entities/user_account.dart';
+import 'package:santijet_demir/domain/enums/corporate_role.dart';
+import 'package:santijet_demir/domain/enums/membership_type.dart';
 import 'package:supabase_flutter/supabase_flutter.dart' hide AuthException;
 
 class SupabaseAuthRepository {
@@ -62,6 +64,8 @@ class SupabaseAuthRepository {
       displayName: profile['display_name'] as String? ?? '',
       passwordHash: '',
       currentSessionId: profile['current_session_id'] as String? ?? '',
+      membershipType: _membershipFromMeta(session.user.userMetadata),
+      corporateRole: _roleFromMeta(session.user.userMetadata),
     );
   }
 
@@ -70,13 +74,22 @@ class SupabaseAuthRepository {
     required String displayName,
     required String password,
     required String sessionId,
+    MembershipType membershipType = MembershipType.individual,
+    CorporateRole? corporateRole,
   }) async {
     try {
+      final roleValue = membershipType == MembershipType.corporate
+          ? corporateRole?.storageValue
+          : null;
       final response = await _client.auth.signUp(
         email: email.trim().toLowerCase(),
         password: password,
         emailRedirectTo: _authRedirectUrl,
-        data: {'display_name': displayName.trim()},
+        data: {
+          'display_name': displayName.trim(),
+          'membership_type': membershipType.storageValue,
+          if (roleValue != null) 'corporate_role': roleValue,
+        },
       );
 
       final user = response.user;
@@ -99,6 +112,9 @@ class SupabaseAuthRepository {
         displayName: displayName.trim(),
         passwordHash: '',
         currentSessionId: sessionId,
+        membershipType: membershipType,
+        corporateRole:
+            membershipType == MembershipType.corporate ? corporateRole : null,
       );
     } on AppAuthException {
       rethrow;
@@ -149,6 +165,8 @@ class SupabaseAuthRepository {
         displayName: profile?['display_name'] as String? ?? '',
         passwordHash: '',
         currentSessionId: sessionId,
+        membershipType: _membershipFromMeta(user.userMetadata),
+        corporateRole: _roleFromMeta(user.userMetadata),
       );
     } on AppAuthException {
       rethrow;
@@ -178,6 +196,44 @@ class SupabaseAuthRepository {
 
     await _client.auth.updateUser(
       UserAttributes(data: {'display_name': displayName}),
+    );
+  }
+
+  Future<UserAccount> updateMembership({
+    required MembershipType membershipType,
+    CorporateRole? corporateRole,
+  }) async {
+    if (membershipType == MembershipType.corporate && corporateRole == null) {
+      throw AppAuthException('Kurumsal üyelik için rol seçin');
+    }
+
+    final session = _client.auth.currentSession;
+    if (session == null) {
+      throw AppAuthException('Oturum bulunamadı');
+    }
+
+    final roleValue = membershipType == MembershipType.corporate
+        ? corporateRole?.storageValue
+        : null;
+
+    await _client.auth.updateUser(
+      UserAttributes(
+        data: {
+          'membership_type': membershipType.storageValue,
+          'corporate_role': roleValue,
+        },
+      ),
+    );
+
+    return UserAccount(
+      id: session.user.id,
+      email: session.user.email ?? '',
+      displayName: session.user.userMetadata?['display_name'] as String? ?? '',
+      passwordHash: '',
+      currentSessionId: '',
+      membershipType: membershipType,
+      corporateRole:
+          membershipType == MembershipType.corporate ? corporateRole : null,
     );
   }
 
@@ -300,7 +356,17 @@ class SupabaseAuthRepository {
       displayName: session.user.userMetadata?['display_name'] as String? ?? '',
       passwordHash: '',
       currentSessionId: '',
+      membershipType: _membershipFromMeta(session.user.userMetadata),
+      corporateRole: _roleFromMeta(session.user.userMetadata),
     );
+  }
+
+  static MembershipType _membershipFromMeta(Map<String, dynamic>? meta) {
+    return MembershipType.fromStorage(meta?['membership_type'] as String?);
+  }
+
+  static CorporateRole? _roleFromMeta(Map<String, dynamic>? meta) {
+    return CorporateRole.fromStorage(meta?['corporate_role'] as String?);
   }
 
   String _mapAuthError(String message) {

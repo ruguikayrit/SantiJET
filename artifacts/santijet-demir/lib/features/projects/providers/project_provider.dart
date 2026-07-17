@@ -6,6 +6,7 @@ import 'package:santijet_demir/data/repositories/project_repository.dart';
 import 'package:santijet_demir/data/repositories/supabase_project_sync.dart';
 import 'package:santijet_demir/domain/entities/project.dart';
 import 'package:santijet_demir/domain/entities/project_member.dart';
+import 'package:santijet_demir/domain/enums/corporate_role.dart';
 import 'package:santijet_demir/features/auth/providers/auth_provider.dart';
 import 'package:santijet_demir/features/settings/providers/settings_provider.dart';
 
@@ -256,6 +257,37 @@ class ProjectsController {
         projectId: projectId,
         memberUserId: memberUserId,
         canEdit: canEdit,
+        actingUserId: _auth.user!.id,
+      );
+    }
+    _ref.invalidate(projectMembersProvider(projectId));
+    _ref.invalidate(activeProjectMembershipProvider);
+  }
+
+  Future<void> setMemberCorporateRole({
+    required String projectId,
+    required String memberUserId,
+    required CorporateRole? corporateRole,
+  }) async {
+    final sync = await _cloudSync();
+    if (SupabaseService.isConfigured && sync == null) {
+      throw ProjectException(
+        'Bulut bağlantısı kurulamadı. Rol ataması güncellenemedi.',
+      );
+    }
+
+    if (sync != null) {
+      await sync.updateMemberCorporateRole(
+        projectId: projectId,
+        memberUserId: memberUserId,
+        corporateRole: corporateRole,
+        actingUserId: _auth.user!.id,
+      );
+    } else {
+      await _repo.updateMemberCorporateRole(
+        projectId: projectId,
+        memberUserId: memberUserId,
+        corporateRole: corporateRole,
         actingUserId: _auth.user!.id,
       );
     }

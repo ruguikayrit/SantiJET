@@ -3,6 +3,7 @@ import 'package:santijet_demir/core/utils/project_code_generator.dart';
 import 'package:santijet_demir/domain/entities/project.dart';
 import 'package:santijet_demir/domain/entities/project_member.dart';
 import 'package:santijet_demir/domain/entities/user_account.dart';
+import 'package:santijet_demir/domain/enums/corporate_role.dart';
 import 'package:santijet_demir/domain/enums/project_role.dart';
 
 const _projectsKey = 'projects';
@@ -204,6 +205,29 @@ class ProjectRepository {
       canEdit: canEdit,
       role: canEdit ? ProjectRole.editor : ProjectRole.viewer,
     );
+    await _saveMembers(members);
+  }
+
+  Future<void> updateMemberCorporateRole({
+    required String projectId,
+    required String memberUserId,
+    required CorporateRole? corporateRole,
+    required String actingUserId,
+  }) async {
+    final acting = getMembership(projectId: projectId, userId: actingUserId);
+    if (acting == null || !acting.isOwner) {
+      throw ProjectException('Rol atama izniniz yok');
+    }
+
+    final members = _allMembers();
+    final index = members.indexWhere(
+      (m) => m.projectId == projectId && m.userId == memberUserId,
+    );
+    if (index < 0) throw ProjectException('Üye bulunamadı');
+
+    members[index] = corporateRole == null
+        ? members[index].copyWith(clearCorporateRole: true)
+        : members[index].copyWith(corporateRole: corporateRole);
     await _saveMembers(members);
   }
 

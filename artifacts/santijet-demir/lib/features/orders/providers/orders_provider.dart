@@ -2,6 +2,9 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:santijet_demir/data/repositories/order_repository.dart';
 import 'package:santijet_demir/domain/entities/order.dart';
 import 'package:santijet_demir/domain/enums/app_enums.dart';
+import 'package:santijet_demir/domain/enums/membership_type.dart';
+import 'package:santijet_demir/domain/permissions/app_permission.dart';
+import 'package:santijet_demir/features/auth/providers/auth_provider.dart';
 import 'package:santijet_demir/features/field_count/field_count_calculator.dart';
 import 'package:santijet_demir/features/orders/order_imalat_balance.dart';
 import 'package:santijet_demir/features/projects/providers/project_provider.dart';
@@ -158,6 +161,16 @@ class OrdersNotifier extends StateNotifier<List<OrderItem>> {
     String orderId,
     OrderApproverRole role,
   ) async {
+    final user = _ref.read(authProvider).user;
+    final permissions = AppPermissionMatrix.forMembership(
+      membershipType: user?.membershipType ??
+          MembershipType.individual,
+      corporateRole: user?.corporateRole,
+    );
+    if (!AppPermissionMatrix.canApproveOrderRole(permissions, role)) {
+      return OrderApprovalResult.notPending;
+    }
+
     final index = state.indexWhere((order) => order.id == orderId);
     if (index < 0) return OrderApprovalResult.notFound;
 

@@ -11,6 +11,7 @@ import 'package:santijet_demir/core/theme/app_typography.dart';
 import 'package:santijet_demir/core/widgets/app_components.dart';
 import 'package:santijet_demir/core/widgets/empty_states.dart';
 import 'package:santijet_demir/domain/entities/field_count.dart';
+import 'package:santijet_demir/features/auth/providers/membership_permission_provider.dart';
 import 'package:santijet_demir/features/field_count/providers/field_count_provider.dart';
 
 class CountRecordsScreen extends ConsumerStatefulWidget {
@@ -71,11 +72,13 @@ class _CountRecordsScreenState extends ConsumerState<CountRecordsScreen> {
           ),
         ],
       ),
-      floatingActionButton: AppFab(
-        label: 'Yeni Sayım',
-        aboveBottomNav: false,
-        onPressed: () => context.push(AppRoutes.newCount),
-      ),
+      floatingActionButton: ref.watch(canEditFieldCountProvider)
+          ? AppFab(
+              label: 'Yeni Sayım',
+              aboveBottomNav: false,
+              onPressed: () => context.push(AppRoutes.newCount),
+            )
+          : null,
     );
   }
 }

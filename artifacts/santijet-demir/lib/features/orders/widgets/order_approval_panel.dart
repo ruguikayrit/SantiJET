@@ -6,6 +6,7 @@ import 'package:santijet_demir/core/theme/app_radii.dart';
 import 'package:santijet_demir/core/theme/app_typography.dart';
 import 'package:santijet_demir/domain/entities/order.dart';
 import 'package:santijet_demir/domain/enums/app_enums.dart';
+import 'package:santijet_demir/features/auth/providers/membership_permission_provider.dart';
 import 'package:santijet_demir/features/orders/providers/orders_provider.dart';
 
 class OrderApprovalPanel extends ConsumerWidget {
@@ -58,6 +59,7 @@ class OrderApprovalPanel extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final approvals = order.approvals;
     final dateFormat = DateFormat('d MMM HH:mm');
+    final permissions = ref.watch(userPermissionsProvider);
 
     return Container(
       padding: const EdgeInsets.all(12),
@@ -72,7 +74,9 @@ class OrderApprovalPanel extends ConsumerWidget {
           Text('Onay Süreci', style: AppTypography.titleMedium),
           const SizedBox(height: 4),
           Text(
-            'Satın Alma + (Proje Müdürü veya İşveren) onayı ile sipariş verilir.',
+            'Satın Alma onayı zorunludur. Ek olarak Proje Müdürü veya İşveren '
+            'onayından biri yeterlidir. Siparişi Proje Müdürü, İşveren veya '
+            'Şantiye Şefi oluşturur.',
             style: AppTypography.bodySmall,
           ),
           const SizedBox(height: 12),
@@ -82,6 +86,10 @@ class OrderApprovalPanel extends ConsumerWidget {
             approvedAt: approvals.purchasingAt,
             dateFormat: dateFormat,
             required: true,
+            canApprove: userCanApproveOrderRole(
+              permissions,
+              OrderApproverRole.purchasing,
+            ),
             onApprove: () => _approve(context, ref, OrderApproverRole.purchasing),
           ),
           const SizedBox(height: 8),
@@ -91,6 +99,10 @@ class OrderApprovalPanel extends ConsumerWidget {
             approvedAt: approvals.projectManagerAt,
             dateFormat: dateFormat,
             required: false,
+            canApprove: userCanApproveOrderRole(
+              permissions,
+              OrderApproverRole.projectManager,
+            ),
             onApprove: () =>
                 _approve(context, ref, OrderApproverRole.projectManager),
           ),
@@ -101,6 +113,10 @@ class OrderApprovalPanel extends ConsumerWidget {
             approvedAt: approvals.employerAt,
             dateFormat: dateFormat,
             required: false,
+            canApprove: userCanApproveOrderRole(
+              permissions,
+              OrderApproverRole.employer,
+            ),
             onApprove: () => _approve(context, ref, OrderApproverRole.employer),
           ),
           if (approvals.isComplete) ...[
@@ -133,6 +149,7 @@ class _ApproverRow extends StatelessWidget {
     required this.approvedAt,
     required this.dateFormat,
     required this.required,
+    required this.canApprove,
     required this.onApprove,
   });
 
@@ -141,6 +158,7 @@ class _ApproverRow extends StatelessWidget {
   final DateTime? approvedAt;
   final DateFormat dateFormat;
   final bool required;
+  final bool canApprove;
   final VoidCallback onApprove;
 
   @override
@@ -175,16 +193,23 @@ class _ApproverRow extends StatelessWidget {
                 Text(
                   dateFormat.format(approvedAt!),
                   style: AppTypography.bodySmall,
+                )
+              else if (!approved && !canApprove)
+                Text(
+                  'Bu onay sizin rolünüze ait değil',
+                  style: AppTypography.bodySmall.copyWith(
+                    color: AppColors.textMuted,
+                  ),
                 ),
             ],
           ),
         ),
-        if (!approved)
+        if (!approved && canApprove)
           FilledButton.tonal(
             onPressed: onApprove,
             child: const Text('Onayla'),
           )
-        else
+        else if (approved)
           Text(
             'Onaylandı',
             style: AppTypography.labelMedium.copyWith(color: AppColors.success),

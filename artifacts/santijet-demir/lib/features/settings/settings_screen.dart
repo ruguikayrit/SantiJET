@@ -6,6 +6,8 @@ import 'package:santijet_demir/core/theme/app_colors.dart';
 import 'package:santijet_demir/core/theme/app_radii.dart';
 import 'package:santijet_demir/core/theme/app_spacing.dart';
 import 'package:santijet_demir/core/theme/app_typography.dart';
+import 'package:santijet_demir/domain/enums/corporate_role.dart';
+import 'package:santijet_demir/domain/enums/membership_type.dart';
 import 'package:santijet_demir/features/auth/providers/app_lock_provider.dart';
 import 'package:santijet_demir/features/auth/providers/auth_provider.dart';
 import 'package:santijet_demir/features/projects/providers/project_provider.dart';
@@ -26,6 +28,8 @@ class SettingsScreen extends ConsumerWidget {
     final profession = ref.watch(profileProfessionProvider);
     final role = ref.watch(profileRoleProvider);
     final initial = ref.watch(profileInitialProvider);
+    final membershipLabel =
+        ref.watch(authProvider).user?.membershipSummary ?? 'Bireysel';
 
     return Scaffold(
       backgroundColor: AppColors.canvas,
@@ -37,6 +41,7 @@ class SettingsScreen extends ConsumerWidget {
             displayName: displayName,
             profession: profession,
             role: role,
+            membershipLabel: membershipLabel,
             initial: initial,
             projectName: project?.name ?? 'Proje seçilmedi',
             onEdit: () => _showProfileEditor(
@@ -121,76 +126,148 @@ class SettingsScreen extends ConsumerWidget {
     required String profession,
     required String role,
   }) {
+    final user = ref.read(authProvider).user;
     final nameCtrl = TextEditingController(text: displayName);
     final professionCtrl = TextEditingController(text: profession);
     final roleCtrl = TextEditingController(text: role);
+    var membershipType =
+        user?.membershipType ?? MembershipType.individual;
+    CorporateRole? corporateRole = user?.corporateRole;
 
     showModalBottomSheet<void>(
       context: context,
       isScrollControlled: true,
       backgroundColor: AppColors.surfaceElevated,
       builder: (ctx) {
-        return Padding(
-          padding: EdgeInsets.fromLTRB(
-            16,
-            16,
-            16,
-            16 + MediaQuery.viewInsetsOf(ctx).bottom,
-          ),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            crossAxisAlignment: CrossAxisAlignment.stretch,
-            children: [
-              Text('Profil Bilgileri', style: AppTypography.headlineMedium),
-              const SizedBox(height: 16),
-              TextField(
-                controller: nameCtrl,
-                textCapitalization: TextCapitalization.words,
-                decoration: const InputDecoration(labelText: 'Ad Soyad'),
+        return StatefulBuilder(
+          builder: (ctx, setModalState) {
+            return Padding(
+              padding: EdgeInsets.fromLTRB(
+                16,
+                16,
+                16,
+                16 + MediaQuery.viewInsetsOf(ctx).bottom,
               ),
-              const SizedBox(height: 12),
-              TextField(
-                controller: professionCtrl,
-                textCapitalization: TextCapitalization.sentences,
-                decoration: const InputDecoration(
-                  labelText: 'Meslek',
-                  hintText: 'Örn: İnşaat mühendisi',
+              child: SingleChildScrollView(
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                  children: [
+                    Text('Profil Bilgileri', style: AppTypography.headlineMedium),
+                    const SizedBox(height: 16),
+                    TextField(
+                      controller: nameCtrl,
+                      textCapitalization: TextCapitalization.words,
+                      decoration: const InputDecoration(labelText: 'Ad Soyad'),
+                    ),
+                    const SizedBox(height: 12),
+                    TextField(
+                      controller: professionCtrl,
+                      textCapitalization: TextCapitalization.sentences,
+                      decoration: const InputDecoration(
+                        labelText: 'Meslek',
+                        hintText: 'Örn: İnşaat mühendisi',
+                      ),
+                    ),
+                    const SizedBox(height: 12),
+                    TextField(
+                      controller: roleCtrl,
+                      textCapitalization: TextCapitalization.sentences,
+                      decoration: const InputDecoration(
+                        labelText: 'Görev (serbest metin)',
+                        hintText: 'Örn: Saha mühendisi',
+                      ),
+                    ),
+                    const SizedBox(height: 16),
+                    Text('Üyelik tipi', style: AppTypography.titleMedium),
+                    const SizedBox(height: 8),
+                    SegmentedButton<MembershipType>(
+                      segments: [
+                        for (final type in MembershipType.values)
+                          ButtonSegment(
+                            value: type,
+                            label: Text(type.label),
+                          ),
+                      ],
+                      selected: {membershipType},
+                      onSelectionChanged: (value) {
+                        setModalState(() {
+                          membershipType = value.first;
+                          if (membershipType == MembershipType.individual) {
+                            corporateRole = null;
+                          }
+                        });
+                      },
+                    ),
+                    if (membershipType == MembershipType.corporate) ...[
+                      const SizedBox(height: 12),
+                      DropdownButtonFormField<CorporateRole>(
+                        value: corporateRole,
+                        decoration: const InputDecoration(
+                          labelText: 'Kurumsal rol',
+                        ),
+                        items: [
+                          for (final r in CorporateRole.values)
+                            DropdownMenuItem(
+                              value: r,
+                              child: Text(r.label),
+                            ),
+                        ],
+                        onChanged: (value) {
+                          setModalState(() => corporateRole = value);
+                        },
+                      ),
+                    ],
+                    const SizedBox(height: 20),
+                    FilledButton(
+                      onPressed: () async {
+                        final okProfile =
+                            await ref.read(authProvider.notifier).updateProfile(
+                                  displayName: nameCtrl.text,
+                                  profession: professionCtrl.text,
+                                  role: roleCtrl.text,
+                                );
+                        if (!okProfile) {
+                          if (!context.mounted) return;
+                          final error = ref.read(authProvider).error;
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            SnackBar(
+                              content: Text(error ?? 'Profil güncellenemedi'),
+                            ),
+                          );
+                          return;
+                        }
+
+                        final okMembership = await ref
+                            .read(authProvider.notifier)
+                            .updateMembership(
+                              membershipType: membershipType,
+                              corporateRole: corporateRole,
+                            );
+                        if (!context.mounted) return;
+                        if (okMembership) {
+                          Navigator.pop(ctx);
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            const SnackBar(
+                              content: Text('Profil ve üyelik güncellendi'),
+                            ),
+                          );
+                        } else {
+                          final error = ref.read(authProvider).error;
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            SnackBar(
+                              content: Text(error ?? 'Üyelik güncellenemedi'),
+                            ),
+                          );
+                        }
+                      },
+                      child: const Text('Kaydet'),
+                    ),
+                  ],
                 ),
               ),
-              const SizedBox(height: 12),
-              TextField(
-                controller: roleCtrl,
-                textCapitalization: TextCapitalization.sentences,
-                decoration: const InputDecoration(
-                  labelText: 'Görev',
-                  hintText: 'Örn: Şantiye şefi, Saha mühendisi, Proje müdürü',
-                ),
-              ),
-              const SizedBox(height: 20),
-              FilledButton(
-                onPressed: () async {
-                  final ok = await ref.read(authProvider.notifier).updateProfile(
-                        displayName: nameCtrl.text,
-                        profession: professionCtrl.text,
-                        role: roleCtrl.text,
-                      );
-                  if (!context.mounted) return;
-                  if (ok) {
-                    Navigator.pop(ctx);
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      const SnackBar(content: Text('Profil güncellendi')),
-                    );
-                  } else {
-                    final error = ref.read(authProvider).error;
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      SnackBar(content: Text(error ?? 'Profil güncellenemedi')),
-                    );
-                  }
-                },
-                child: const Text('Kaydet'),
-              ),
-            ],
-          ),
+            );
+          },
         );
       },
     ).whenComplete(() {
@@ -679,6 +756,7 @@ class _ProfileHeader extends StatelessWidget {
     required this.displayName,
     required this.profession,
     required this.role,
+    required this.membershipLabel,
     required this.initial,
     required this.projectName,
     required this.onEdit,
@@ -687,6 +765,7 @@ class _ProfileHeader extends StatelessWidget {
   final String displayName;
   final String profession;
   final String role;
+  final String membershipLabel;
   final String initial;
   final String projectName;
   final VoidCallback onEdit;
@@ -718,6 +797,12 @@ class _ProfileHeader extends StatelessWidget {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(displayName.toUpperCase(), style: AppTypography.titleLarge),
+                    Text(
+                      membershipLabel,
+                      style: AppTypography.labelMedium.copyWith(
+                        color: AppColors.electricBlueLight,
+                      ),
+                    ),
                     if (profession.isNotEmpty)
                       Text(profession, style: AppTypography.bodySmall),
                     if (role.isNotEmpty)

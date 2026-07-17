@@ -140,7 +140,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
             const SizedBox(height: 12),
             TextButton(
               onPressed: () => context.push(AppRoutes.register),
-              child: const Text('Hesabınız yok mu? Kayıt olun'),
+              child: const Text('Bireysel veya kurumsal hesap oluştur'),
             ),
           ],
         ),

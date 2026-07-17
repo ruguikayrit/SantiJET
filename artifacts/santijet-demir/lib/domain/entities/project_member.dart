@@ -1,3 +1,4 @@
+import 'package:santijet_demir/domain/enums/corporate_role.dart';
 import 'package:santijet_demir/domain/enums/project_role.dart';
 
 class ProjectMember {
@@ -9,6 +10,7 @@ class ProjectMember {
     required this.role,
     required this.canEdit,
     required this.joinedAt,
+    this.corporateRole,
   });
 
   final String projectId;
@@ -18,6 +20,9 @@ class ProjectMember {
   final ProjectRole role;
   final bool canEdit;
   final DateTime joinedAt;
+
+  /// Proje bazlı kurumsal rol (sahip atar). Yoksa hesap rolü kullanılır.
+  final CorporateRole? corporateRole;
 
   bool get isOwner => role == ProjectRole.owner;
 
@@ -29,6 +34,8 @@ class ProjectMember {
     ProjectRole? role,
     bool? canEdit,
     DateTime? joinedAt,
+    CorporateRole? corporateRole,
+    bool clearCorporateRole = false,
   }) {
     return ProjectMember(
       projectId: projectId ?? this.projectId,
@@ -38,6 +45,9 @@ class ProjectMember {
       role: role ?? this.role,
       canEdit: canEdit ?? this.canEdit,
       joinedAt: joinedAt ?? this.joinedAt,
+      corporateRole: clearCorporateRole
+          ? null
+          : (corporateRole ?? this.corporateRole),
     );
   }
 
@@ -49,6 +59,7 @@ class ProjectMember {
         'role': role.name,
         'canEdit': canEdit,
         'joinedAt': joinedAt.toIso8601String(),
+        'corporateRole': corporateRole?.storageValue,
       };
 
   factory ProjectMember.fromJson(Map<dynamic, dynamic> json) {
@@ -60,6 +71,9 @@ class ProjectMember {
       role: ProjectRole.values.byName(json['role'] as String? ?? 'viewer'),
       canEdit: json['canEdit'] as bool? ?? false,
       joinedAt: DateTime.parse(json['joinedAt'] as String),
+      corporateRole: CorporateRole.fromStorage(
+        json['corporateRole'] as String? ?? json['corporate_role'] as String?,
+      ),
     );
   }
 }

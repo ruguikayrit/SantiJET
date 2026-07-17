@@ -13,6 +13,7 @@ import 'package:santijet_demir/core/widgets/shell_tab_guard.dart';
 import 'package:santijet_demir/core/widgets/summary_kpi_grid.dart';
 import 'package:santijet_demir/features/incoming_rebar/providers/incoming_rebar_provider.dart';
 import 'package:santijet_demir/features/incoming_rebar/widgets/delivered_diameter_table.dart';
+import 'package:santijet_demir/features/auth/providers/membership_permission_provider.dart';
 import 'package:santijet_demir/features/projects/providers/project_provider.dart';
 
 class IncomingRebarScreen extends ConsumerWidget {
@@ -103,7 +104,8 @@ class IncomingRebarScreen extends ConsumerWidget {
             ),
         ],
       ),
-      floatingActionButton: hasActiveProject
+      floatingActionButton: hasActiveProject &&
+              ref.watch(canCreateDeliveryProvider)
           ? AppFab(
               label: 'Yeni Teslimat',
               onPressed: () => context.push(AppRoutes.selectInTransitOrder),

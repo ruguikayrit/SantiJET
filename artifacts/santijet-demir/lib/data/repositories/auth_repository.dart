@@ -1,6 +1,8 @@
 import 'package:hive/hive.dart';
 import 'package:santijet_demir/core/security/pin_hasher.dart';
 import 'package:santijet_demir/domain/entities/user_account.dart';
+import 'package:santijet_demir/domain/enums/corporate_role.dart';
+import 'package:santijet_demir/domain/enums/membership_type.dart';
 
 const _accountsKey = 'accounts';
 const _activeSessionKey = 'active_session';
@@ -40,6 +42,8 @@ class AuthRepository {
     required String displayName,
     required String password,
     required String sessionId,
+    MembershipType membershipType = MembershipType.individual,
+    CorporateRole? corporateRole,
   }) async {
     final normalizedEmail = email.trim().toLowerCase();
     if (findByEmail(normalizedEmail) != null) {
@@ -52,6 +56,10 @@ class AuthRepository {
       displayName: displayName.trim(),
       passwordHash: PinHasher.hash(password),
       currentSessionId: sessionId,
+      membershipType: membershipType,
+      corporateRole: membershipType == MembershipType.corporate
+          ? corporateRole
+          : null,
     );
 
     final accounts = getAllAccounts()..add(account);
@@ -97,6 +105,29 @@ class AuthRepository {
       throw AppAuthException('Kullanıcı bulunamadı');
     }
     await _upsertAccount(account.copyWith(displayName: displayName.trim()));
+  }
+
+  Future<UserAccount> updateMembership({
+    required String userId,
+    required MembershipType membershipType,
+    CorporateRole? corporateRole,
+  }) async {
+    final account = findById(userId);
+    if (account == null) {
+      throw AppAuthException('Kullanıcı bulunamadı');
+    }
+    if (membershipType == MembershipType.corporate && corporateRole == null) {
+      throw AppAuthException('Kurumsal üyelik için rol seçin');
+    }
+    final updated = account.copyWith(
+      membershipType: membershipType,
+      corporateRole: membershipType == MembershipType.corporate
+          ? corporateRole
+          : null,
+      clearCorporateRole: membershipType == MembershipType.individual,
+    );
+    await _upsertAccount(updated);
+    return updated;
   }
 
   ActiveSession? getActiveSession() {

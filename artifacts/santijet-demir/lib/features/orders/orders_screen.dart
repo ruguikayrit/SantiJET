@@ -8,6 +8,7 @@ import 'package:santijet_demir/core/widgets/app_components.dart';
 import 'package:santijet_demir/core/widgets/empty_states.dart';
 import 'package:santijet_demir/core/widgets/santijet_header.dart';
 import 'package:santijet_demir/core/widgets/shell_tab_guard.dart';
+import 'package:santijet_demir/features/auth/providers/membership_permission_provider.dart';
 import 'package:santijet_demir/features/orders/providers/orders_provider.dart';
 import 'package:santijet_demir/features/orders/widgets/order_card.dart';
 import 'package:santijet_demir/features/projects/providers/project_provider.dart';
@@ -101,7 +102,8 @@ class _OrdersScreenState extends ConsumerState<OrdersScreen> {
             ),
           ],
         ),
-      floatingActionButton: hasActiveProject
+      floatingActionButton: hasActiveProject &&
+              ref.watch(canCreateOrderProvider)
           ? AppFab(
               label: 'Yeni Sipariş',
               onPressed: () => context.push(AppRoutes.newOrder),

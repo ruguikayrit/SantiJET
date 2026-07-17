@@ -12,6 +12,7 @@ import 'package:santijet_demir/core/widgets/santijet_header.dart';
 import 'package:santijet_demir/core/widgets/shell_tab_guard.dart';
 import 'package:santijet_demir/core/widgets/summary_kpi_grid.dart';
 import 'package:santijet_demir/features/field_count/providers/field_count_provider.dart';
+import 'package:santijet_demir/features/auth/providers/membership_permission_provider.dart';
 import 'package:santijet_demir/features/projects/providers/project_provider.dart';
 
 class FieldCountScreen extends ConsumerWidget {
@@ -121,7 +122,8 @@ class FieldCountScreen extends ConsumerWidget {
             ],
           ],
         ),
-      floatingActionButton: hasActiveProject
+      floatingActionButton: hasActiveProject &&
+              ref.watch(canEditFieldCountProvider)
           ? AppFab(
               label: 'Yeni Sayım',
               onPressed: () => context.push(AppRoutes.newCount),
