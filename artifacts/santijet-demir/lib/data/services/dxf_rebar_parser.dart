@@ -1,4 +1,5 @@
 import 'package:santijet_demir/data/services/cad_text_entity.dart';
+import 'package:santijet_demir/data/services/drawing_style_catalog.dart';
 import 'package:santijet_demir/data/services/dwg_text_extractor.dart';
 import 'package:santijet_demir/data/services/dxf_ascii_parser.dart';
 import 'package:santijet_demir/data/services/metraj_cetvel_builder.dart';
@@ -84,6 +85,11 @@ class DxfRebarParser {
       );
     }
 
+    // Pafta stilini tanı (katalog); uyarıya yazma — sadece boş sonuçta ipucu.
+    final styleMatch = const DrawingStyleCatalog().detect(
+      entities.map((e) => e.text),
+    );
+
     final buildResult = MetrajCetvelBuilder(
       textParser: textParser,
       unitScale: settings.unitScale,
@@ -106,18 +112,23 @@ class DxfRebarParser {
     }
 
     if (entities.isNotEmpty && grouped.isEmpty) {
+      final styleHint = styleMatch.primary.id != CadDrawingStyleId.unknown
+          ? '\nAlgılanan stil: ${styleMatch.primary.name} — '
+              '${styleMatch.primary.sampleLabels.take(2).join(' · ')}'
+          : '';
       warnings.add(
-        'Demir etiketi bulunamadı. Örnek formatlar:\n'
-        'S1[100/160] 182 ADET\n'
-        '42Ø28 L=280 · etr*18Ø12/10 L=510\n'
-        'üst.334Ø22/15 l=1200 (334 ad × 12 m)',
+        'Demir etiketi bulunamadı. Desteklenen örnekler:\n'
+        'SB107 (35/30) · 42Φ10/15/7/15/10 Etr. L=130 · 108Φ10 Çiroz L=53\n'
+        'S1[100/160] 182 ADET · 42Ø28 L=280 · etr*18Ø12/10 L=510\n'
+        'KB101 (30/50) · 2Φ12 L=441 · K101 / 28 Adet · 11Φ10/30 L=522'
+        '$styleHint',
       );
     }
 
     if (buildResult.unassignedCount > 0) {
       warnings.add(
-        '${buildResult.unassignedCount} demir etiketi eleman başlığı (S/P/K/D) '
-        'altında gruplanamadı; benzer katsayısı uygulanmadı.',
+        '${buildResult.unassignedCount} demir etiketi eleman başlığı '
+        '(S/SB/KB/PS/PSB/K/D) altında gruplanamadı; benzer katsayısı uygulanmadı.',
       );
     }
 

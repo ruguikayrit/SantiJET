@@ -70,6 +70,14 @@ void main() {
     test('proje adı', () {
       expect(parser.parseOne('PROJE ADI'), isNull);
     });
+
+    test('kesit çağrısı 6Φ16 (L= yok) atlanır', () {
+      expect(parser.parseOne('6Φ16'), isNull);
+    });
+
+    test('zon etiketi 13Φ10/9 108 (L= yok) atlanır', () {
+      expect(parser.parseOne('13Φ10/9 108'), isNull);
+    });
   });
 
   group('kolon/perde etiketleri', () {
@@ -103,6 +111,86 @@ void main() {
       final entry = parser.parseOne('Çiroz*12Ø12 L=170');
       expect(entry?.quantity, 12);
       expect(entry?.role, RebarLabelRole.crosstie);
+    });
+  });
+
+  group('IdeCAD referans — kolon detay', () {
+    test('42Φ10/15/7/15/10 Etr. L=130', () {
+      final entry = parser.parseOne('42Φ10/15/7/15/10 Etr. L=130');
+      expect(entry?.quantity, 42);
+      expect(entry?.diameter, 10);
+      expect(entry?.lengthM, closeTo(1.3, 0.001));
+      expect(entry?.role, RebarLabelRole.stirrup);
+    });
+
+    test('108Φ10 Çiroz L=53', () {
+      final entry = parser.parseOne('108Φ10 Çiroz L=53');
+      expect(entry?.quantity, 108);
+      expect(entry?.diameter, 10);
+      expect(entry?.lengthM, closeTo(0.53, 0.001));
+      expect(entry?.role, RebarLabelRole.crosstie);
+    });
+
+    test('35Φ10/15/9/10/10 Etr. L=220', () {
+      final entry = parser.parseOne('35Φ10/15/9/10/10 Etr. L=220');
+      expect(entry?.quantity, 35);
+      expect(entry?.diameter, 10);
+      expect(entry?.lengthM, closeTo(2.2, 0.001));
+      expect(entry?.role, RebarLabelRole.stirrup);
+    });
+
+    test('12Φ18 L=270 boy', () {
+      final entry = parser.parseOne('12Φ18 L=270');
+      expect(entry?.quantity, 12);
+      expect(entry?.diameter, 18);
+      expect(entry?.lengthM, closeTo(2.7, 0.001));
+    });
+  });
+
+  group('IdeCAD referans — kiriş / plan', () {
+    test('11Φ10/30 L=522 döşeme', () {
+      final entry = parser.parseOne('11Φ10/30 L=522');
+      expect(entry?.quantity, 11);
+      expect(entry?.diameter, 10);
+      expect(entry?.lengthM, closeTo(5.22, 0.001));
+      expect(entry?.spacingCm, 30);
+    });
+
+    test('2 Φ 12 L=441 boşluklu', () {
+      final entry = parser.parseOne('2 Φ 12 L=441');
+      expect(entry?.quantity, 2);
+      expect(entry?.diameter, 12);
+      expect(entry?.lengthM, closeTo(4.41, 0.001));
+    });
+
+    test('5 2Φ12 L=446 poz + adet', () {
+      final entry = parser.parseOne('5 2Φ12 L=446');
+      expect(entry?.quantity, 2);
+      expect(entry?.diameter, 12);
+      expect(entry?.lengthM, closeTo(4.46, 0.001));
+    });
+
+    test('1Φ16 L=155', () {
+      final entry = parser.parseOne('1Φ16 L=155');
+      expect(entry?.quantity, 1);
+      expect(entry?.diameter, 16);
+      expect(entry?.lengthM, closeTo(1.55, 0.001));
+    });
+  });
+
+  group('kısmi etiket birleştirme', () {
+    test('15 Φ 10 / 25 + Etz. L=330', () {
+      final entry = parser.parseJoined('15 Φ 10 / 25', 'Etz. L=330');
+      expect(entry?.quantity, 15);
+      expect(entry?.diameter, 10);
+      expect(entry?.lengthM, closeTo(3.3, 0.001));
+      expect(entry?.role, RebarLabelRole.stirrup);
+    });
+
+    test('looksIncomplete', () {
+      expect(parser.looksIncomplete('15Φ10/25'), isTrue);
+      expect(parser.looksIncomplete('Etz. L=330'), isTrue);
+      expect(parser.looksIncomplete('42Φ10/15/7/15/10 Etr. L=130'), isFalse);
     });
   });
 }

@@ -74,31 +74,13 @@ class MetrajCetvelBuilder {
       awaitingBenzer = false;
     }
 
-    for (final entity in entities) {
-      final raw = entity.text.trim();
-      if (raw.isEmpty) continue;
+    CadTextEntity? pendingIncomplete;
 
-      final header = headerParser.tryParse(raw);
-      if (header != null) {
-        finalizeCurrentElement();
-        startElement(header);
-        continue;
-      }
-
-      if (awaitingBenzer && currentHeader != null) {
-        final benzer = headerParser.tryParseBenzerOnly(raw);
-        if (benzer != null && benzer > 0) {
-          final updated = currentHeader!.copyWithBenzer(benzer, raw);
-          currentHeader = updated;
-          currentBuilder?.updateHeader(updated);
-          awaitingBenzer = false;
-          continue;
-        }
-      }
-
-      final parsed = textParser.parseOne(raw);
-      if (parsed == null) continue;
-
+    void consumeParsed({
+      required CadTextEntity entity,
+      required RebarTextEntry parsed,
+      required String sourceText,
+    }) {
       final detail = _detailFromParsed(
         entity: entity,
         parsed: parsed,
@@ -108,7 +90,7 @@ class MetrajCetvelBuilder {
 
       if (currentHeader == null || currentBuilder == null) {
         unassignedCount++;
-        continue;
+        return;
       }
 
       currentBuilder!.addRow(
@@ -118,8 +100,58 @@ class MetrajCetvelBuilder {
         unitQuantity: parsed.quantity,
         benzerCount: currentHeader!.benzerCount,
         unitWeightKg: detail.quantity > 0 ? detail.weightKg / detail.quantity : 0,
-        sourceText: raw,
+        sourceText: sourceText,
       );
+    }
+
+    for (final entity in entities) {
+      final raw = entity.text.trim();
+      if (raw.isEmpty) continue;
+
+      final header = headerParser.tryParse(raw);
+      if (header != null) {
+        pendingIncomplete = null;
+        finalizeCurrentElement();
+        startElement(header);
+        continue;
+      }
+
+      if (awaitingBenzer && currentHeader != null) {
+        final benzer = headerParser.tryParseBenzerOnly(raw);
+        if (benzer != null && benzer > 0) {
+          pendingIncomplete = null;
+          final updated = currentHeader!.copyWithBenzer(benzer, raw);
+          currentHeader = updated;
+          currentBuilder?.updateHeader(updated);
+          awaitingBenzer = false;
+          continue;
+        }
+      }
+
+      // Kısmi etiket birleştirme: "15Ø10/25" + "Etz. L=330"
+      if (pendingIncomplete != null) {
+        final joined = textParser.parseJoined(pendingIncomplete!.text, raw);
+        if (joined != null) {
+          consumeParsed(
+            entity: entity,
+            parsed: joined,
+            sourceText: '${pendingIncomplete!.text.trim()} $raw',
+          );
+          pendingIncomplete = null;
+          continue;
+        }
+        pendingIncomplete = null;
+      }
+
+      final parsed = textParser.parseOne(raw);
+      if (parsed != null) {
+        consumeParsed(entity: entity, parsed: parsed, sourceText: raw);
+        continue;
+      }
+
+      if (textParser.looksIncomplete(raw)) {
+        pendingIncomplete = entity;
+      }
     }
 
     finalizeCurrentElement();
@@ -155,6 +187,37 @@ class MetrajCetvelBuilder {
       final parsed = textParser.parseOne(raw);
       if (parsed != null) {
         rebars.add((entity: entity, parsed: parsed));
+      }
+    }
+
+    // Konumlu kısmi etiketleri birleştir (15Ø10/25 + Etz. L=330)
+    final usedIncomplete = <int>{};
+    final incompletes = <CadTextEntity>[];
+    for (final entity in entities) {
+      final raw = entity.text.trim();
+      if (raw.isEmpty) continue;
+      if (headerParser.tryParse(raw) != null) continue;
+      if (headerParser.tryParseBenzerOnly(raw) != null) continue;
+      if (textParser.parseOne(raw) != null) continue;
+      if (textParser.looksIncomplete(raw) && entity.hasPosition) {
+        incompletes.add(entity);
+      }
+    }
+    for (var i = 0; i < incompletes.length; i++) {
+      if (usedIncomplete.contains(i)) continue;
+      for (var j = i + 1; j < incompletes.length; j++) {
+        if (usedIncomplete.contains(j)) continue;
+        final dist = cadTextDistance(incompletes[i], incompletes[j]);
+        if (dist > assignRadius) continue;
+        final joined = textParser.parseJoined(
+          incompletes[i].text,
+          incompletes[j].text,
+        );
+        if (joined == null) continue;
+        rebars.add((entity: incompletes[j], parsed: joined));
+        usedIncomplete.add(i);
+        usedIncomplete.add(j);
+        break;
       }
     }
 

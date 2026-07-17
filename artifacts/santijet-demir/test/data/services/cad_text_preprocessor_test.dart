@@ -16,5 +16,10 @@ void main() {
         'üst.1670Ø22/15 l=1200',
       );
     });
+
+    test('Φ sembolünü Ø yapar', () {
+      expect(preprocessCadText('12Φ18 L=270'), '12Ø18 L=270');
+      expect(preprocessCadText('15 φ 10'), '15Ø10');
+    });
   });
 }
