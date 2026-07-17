@@ -1,8 +1,10 @@
 import 'dart:async';
 
 import 'package:flutter/material.dart';
+import 'package:santijet_demir/core/widgets/app_toast.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:santijet_demir/core/animations/app_animations.dart';
 import 'package:santijet_demir/core/format/app_format.dart';
 import 'package:santijet_demir/core/theme/app_colors.dart';
 import 'package:santijet_demir/core/theme/app_radii.dart';
@@ -64,7 +66,7 @@ class ProjectProgressSection extends ConsumerWidget {
             );
       } catch (_) {
         if (context.mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
+          ScaffoldMessenger.of(context).showAppSnackBar(
             const SnackBar(content: Text('İlerleme kaydedilemedi')),
           );
         }
@@ -140,7 +142,7 @@ class ProjectProgressSection extends ConsumerWidget {
                       }
                     } catch (_) {
                       if (context.mounted) {
-                        ScaffoldMessenger.of(context).showSnackBar(
+                        ScaffoldMessenger.of(context).showAppSnackBar(
                           const SnackBar(content: Text('İlerleme kaydedilemedi')),
                         );
                       }
@@ -230,7 +232,7 @@ class _ProgressImalatGroupState extends State<_ProgressImalatGroup> {
               if (widget.canEdit) ...[
                 Padding(
                   padding: const EdgeInsets.only(left: 10),
-                  child: Checkbox(
+                  child: AppAnimatedCheckbox(
                     value: widget.selected,
                     onChanged: (value) =>
                         widget.onSelectionChanged(value == true),
@@ -366,6 +368,7 @@ class _BulkProgressEntryPanel extends StatefulWidget {
 class _BulkProgressEntryPanelState extends State<_BulkProgressEntryPanel> {
   late final TextEditingController _controller;
   bool _isApplying = false;
+  double _livePercent = 0;
 
   @override
   void initState() {
@@ -377,6 +380,14 @@ class _BulkProgressEntryPanelState extends State<_BulkProgressEntryPanel> {
   void dispose() {
     _controller.dispose();
     super.dispose();
+  }
+
+  void _onPercentChanged(String value) {
+    final parsed = int.tryParse(value.trim());
+    setState(() {
+      _livePercent =
+          parsed == null ? 0 : parsed.clamp(0, 100).toDouble();
+    });
   }
 
   bool get _allSelected =>
@@ -416,7 +427,7 @@ class _BulkProgressEntryPanelState extends State<_BulkProgressEntryPanel> {
       _controller.text = '${parsed.clamp(0, 100)}';
     } catch (_) {
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
+        ScaffoldMessenger.of(context).showAppSnackBar(
           const SnackBar(content: Text('İlerleme kaydedilemedi')),
         );
       }
@@ -546,6 +557,7 @@ class _BulkProgressEntryPanelState extends State<_BulkProgressEntryPanel> {
                               ),
                             ),
                             onSubmitted: (_) => _apply(),
+                            onChanged: _onPercentChanged,
                           ),
                         ),
                         Text(
@@ -574,6 +586,28 @@ class _BulkProgressEntryPanelState extends State<_BulkProgressEntryPanel> {
                               )
                             : const Text('Uygula'),
                       ),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 12),
+                Row(
+                  children: [
+                    Expanded(
+                      child: AnimatedProgressBar(
+                        percent: _livePercent,
+                        color: AppColors.electricBlueLight,
+                        height: 8,
+                      ),
+                    ),
+                    const SizedBox(width: 10),
+                    AnimatedCountText(
+                      value: '${_livePercent.round()}',
+                      numericValue: _livePercent,
+                      style: AppTypography.titleMedium.copyWith(
+                        color: AppColors.electricBlueLight,
+                        fontWeight: FontWeight.w700,
+                      ),
+                      formatter: (n) => '${n.round()}%',
                     ),
                   ],
                 ),
@@ -614,17 +648,19 @@ class _OverallProgressCard extends StatelessWidget {
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
               Text('Proje İlerleme Oranı', style: AppTypography.titleMedium),
-              Text(
-                '$percent%',
+              AnimatedCountText(
+                value: '$percent',
+                numericValue: percent,
                 style: AppTypography.kpiValue.copyWith(
                   fontSize: 28,
                   color: AppColors.electricBlueLight,
                 ),
+                formatter: (n) => '${n.round()}%',
               ),
             ],
           ),
           const SizedBox(height: 12),
-          _PercentBar(
+          AnimatedProgressBar(
             percent: percent.toDouble(),
             color: AppColors.electricBlueLight,
             height: 10,
@@ -824,7 +860,7 @@ class _ProgressTableRowState extends State<_ProgressTableRow> {
           const SizedBox(height: 8),
           Padding(
             padding: const EdgeInsets.only(left: 4, right: 4),
-            child: _PercentBar(
+            child: AnimatedProgressBar(
               percent: percent.toDouble(),
               color: AppColors.electricBlueLight,
               height: 6,
@@ -896,41 +932,6 @@ class _ProgressTableRowState extends State<_ProgressTableRow> {
           ),
         ),
       ],
-    );
-  }
-}
-
-class _PercentBar extends StatelessWidget {
-  const _PercentBar({
-    required this.percent,
-    required this.color,
-    this.height = 8,
-  });
-
-  final double percent;
-  final Color color;
-  final double height;
-
-  @override
-  Widget build(BuildContext context) {
-    final ratio = (percent / 100).clamp(0.0, 1.0);
-
-    return ClipRRect(
-      borderRadius: AppRadii.full,
-      child: SizedBox(
-        height: height,
-        child: Stack(
-          fit: StackFit.expand,
-          children: [
-            ColoredBox(color: AppColors.border),
-            FractionallySizedBox(
-              alignment: Alignment.centerLeft,
-              widthFactor: ratio,
-              child: ColoredBox(color: color),
-            ),
-          ],
-        ),
-      ),
     );
   }
 }

@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:santijet_demir/core/widgets/app_toast.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:santijet_demir/core/routing/app_routes.dart';
@@ -76,6 +77,11 @@ class SettingsScreen extends ConsumerWidget {
             title: 'Bildirim Ayarları',
             subtitle: 'Stok, sipariş, teslimat, analiz',
             onTap: () => context.push(AppRoutes.notificationSettings),
+          ),
+          _HapticSettingsTile(
+            enabled: settings.hapticFeedback,
+            onChanged: (v) =>
+                ref.read(appSettingsProvider.notifier).setHapticFeedback(v),
           ),
           _AppLockSettingsTile(
             isEnabled: lock.isEnabled,
@@ -230,7 +236,7 @@ class SettingsScreen extends ConsumerWidget {
                         if (!okProfile) {
                           if (!context.mounted) return;
                           final error = ref.read(authProvider).error;
-                          ScaffoldMessenger.of(context).showSnackBar(
+                          ScaffoldMessenger.of(context).showAppSnackBar(
                             SnackBar(
                               content: Text(error ?? 'Profil güncellenemedi'),
                             ),
@@ -247,14 +253,14 @@ class SettingsScreen extends ConsumerWidget {
                         if (!context.mounted) return;
                         if (okMembership) {
                           Navigator.pop(ctx);
-                          ScaffoldMessenger.of(context).showSnackBar(
+                          ScaffoldMessenger.of(context).showAppSnackBar(
                             const SnackBar(
                               content: Text('Profil ve üyelik güncellendi'),
                             ),
                           );
                         } else {
                           final error = ref.read(authProvider).error;
-                          ScaffoldMessenger.of(context).showSnackBar(
+                          ScaffoldMessenger.of(context).showAppSnackBar(
                             SnackBar(
                               content: Text(error ?? 'Üyelik güncellenemedi'),
                             ),
@@ -311,7 +317,7 @@ class SettingsScreen extends ConsumerWidget {
     ref.invalidate(activeProjectIdProvider);
 
     if (!context.mounted) return;
-    ScaffoldMessenger.of(context).showSnackBar(
+    ScaffoldMessenger.of(context).showAppSnackBar(
       const SnackBar(content: Text('Tüm veriler silindi')),
     );
     context.go(AppRoutes.login);
@@ -429,19 +435,19 @@ class SettingsScreen extends ConsumerWidget {
     try {
       await ref.read(projectBackupControllerProvider).exportProject();
       if (context.mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
+        ScaffoldMessenger.of(context).showAppSnackBar(
           const SnackBar(content: Text('Proje yedeği dışa aktarıldı')),
         );
       }
     } on BackupParseException catch (e) {
       if (context.mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
+        ScaffoldMessenger.of(context).showAppSnackBar(
           SnackBar(content: Text(e.message)),
         );
       }
     } catch (e) {
       if (context.mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
+        ScaffoldMessenger.of(context).showAppSnackBar(
           SnackBar(content: Text('Dışa aktarma hatası: $e')),
         );
       }
@@ -479,7 +485,7 @@ class SettingsScreen extends ConsumerWidget {
           );
       if (!context.mounted || summary.cancelled) return;
 
-      ScaffoldMessenger.of(context).showSnackBar(
+      ScaffoldMessenger.of(context).showAppSnackBar(
         SnackBar(
           content: Text(
             '${summary.domainCount} veri alanı içe aktarıldı'
@@ -489,13 +495,13 @@ class SettingsScreen extends ConsumerWidget {
       );
     } on BackupParseException catch (e) {
       if (context.mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
+        ScaffoldMessenger.of(context).showAppSnackBar(
           SnackBar(content: Text(e.message)),
         );
       }
     } catch (e) {
       if (context.mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
+        ScaffoldMessenger.of(context).showAppSnackBar(
           SnackBar(content: Text('İçe aktarma hatası: $e')),
         );
       }
@@ -545,13 +551,13 @@ class SettingsScreen extends ConsumerWidget {
               final newPin = newController.text.trim();
               final confirm = confirmController.text.trim();
               if (!AppLockNotifier.isValidPin(newPin)) {
-                ScaffoldMessenger.of(ctx).showSnackBar(
+                ScaffoldMessenger.of(ctx).showAppSnackBar(
                   const SnackBar(content: Text('PIN 4–8 haneli olmalıdır')),
                 );
                 return;
               }
               if (newPin != confirm) {
-                ScaffoldMessenger.of(ctx).showSnackBar(
+                ScaffoldMessenger.of(ctx).showAppSnackBar(
                   const SnackBar(content: Text('PIN eşleşmiyor')),
                 );
                 return;
@@ -577,11 +583,11 @@ class SettingsScreen extends ConsumerWidget {
       final ok = await ref.read(appLockProvider.notifier).enableWithPin(newPin);
       if (!context.mounted) return;
       if (ok) {
-        ScaffoldMessenger.of(context).showSnackBar(
+        ScaffoldMessenger.of(context).showAppSnackBar(
           const SnackBar(content: Text('PIN kilidi etkinleştirildi')),
         );
       } else {
-        ScaffoldMessenger.of(context).showSnackBar(
+        ScaffoldMessenger.of(context).showAppSnackBar(
           const SnackBar(content: Text('PIN 4–8 haneli olmalıdır')),
         );
       }
@@ -636,11 +642,11 @@ class SettingsScreen extends ConsumerWidget {
 
     if (!context.mounted) return;
     if (ok) {
-      ScaffoldMessenger.of(context).showSnackBar(
+      ScaffoldMessenger.of(context).showAppSnackBar(
         const SnackBar(content: Text('PIN kilidi kapatıldı')),
       );
     } else {
-      ScaffoldMessenger.of(context).showSnackBar(
+      ScaffoldMessenger.of(context).showAppSnackBar(
         const SnackBar(content: Text('PIN hatalı, kilitleme kapatılamadı')),
       );
     }
@@ -706,7 +712,7 @@ class SettingsScreen extends ConsumerWidget {
                     final confirm = confirmController.text.trim();
 
                     if (newPin != confirm) {
-                      ScaffoldMessenger.of(context).showSnackBar(
+                      ScaffoldMessenger.of(context).showAppSnackBar(
                         const SnackBar(content: Text('Yeni PIN eşleşmiyor')),
                       );
                       return;
@@ -719,11 +725,11 @@ class SettingsScreen extends ConsumerWidget {
                     if (!context.mounted) return;
                     if (ok) {
                       Navigator.pop(ctx);
-                      ScaffoldMessenger.of(context).showSnackBar(
+                      ScaffoldMessenger.of(context).showAppSnackBar(
                         const SnackBar(content: Text('PIN güncellendi')),
                       );
                     } else {
-                      ScaffoldMessenger.of(context).showSnackBar(
+                      ScaffoldMessenger.of(context).showAppSnackBar(
                         const SnackBar(content: Text('PIN değiştirilemedi')),
                       );
                     }
@@ -879,6 +885,57 @@ class _AppLockSettingsTile extends StatelessWidget {
           Switch(
             value: isEnabled,
             onChanged: onToggle,
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _HapticSettingsTile extends StatelessWidget {
+  const _HapticSettingsTile({
+    required this.enabled,
+    required this.onChanged,
+  });
+
+  final bool enabled;
+  final ValueChanged<bool> onChanged;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      margin: const EdgeInsets.only(bottom: 8),
+      padding: const EdgeInsets.fromLTRB(14, 8, 8, 8),
+      decoration: BoxDecoration(
+        color: AppColors.surfaceElevated,
+        borderRadius: AppRadii.md,
+        border: Border.all(color: AppColors.border),
+      ),
+      child: Row(
+        children: [
+          const Icon(
+            Icons.vibration,
+            color: AppColors.electricBlueLight,
+            size: 22,
+          ),
+          const SizedBox(width: 14),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text('Dokunma Titreşimi', style: AppTypography.titleMedium),
+                Text(
+                  enabled
+                      ? 'Kart ve seçimlerde titreşim açık'
+                      : 'Titreşim kapalı',
+                  style: AppTypography.bodySmall,
+                ),
+              ],
+            ),
+          ),
+          Switch(
+            value: enabled,
+            onChanged: onChanged,
           ),
         ],
       ),

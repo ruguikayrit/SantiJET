@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:santijet_demir/core/widgets/app_toast.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:santijet_demir/core/theme/app_colors.dart';
 import 'package:santijet_demir/core/theme/app_radii.dart';
@@ -139,7 +140,7 @@ class _ImalatDiameterEditorState extends ConsumerState<ImalatDiameterEditor> {
     }
 
     if (plannedByDiameter.isEmpty) {
-      ScaffoldMessenger.of(context).showSnackBar(
+      ScaffoldMessenger.of(context).showAppSnackBar(
         const SnackBar(content: Text('En az bir çap için miktar girin')),
       );
       return;
@@ -156,7 +157,7 @@ class _ImalatDiameterEditorState extends ConsumerState<ImalatDiameterEditor> {
     // Kayıt sonrası kartın kapanmaması için genişletilmiş durumu koru.
     ref.read(expandedImalatProvider.notifier).state = widget.imalat.id;
 
-    ScaffoldMessenger.of(context).showSnackBar(
+    ScaffoldMessenger.of(context).showAppSnackBar(
       SnackBar(
         content: Text(
           '${widget.imalat.name} güncellendi — ${_draftTotal.toStringAsFixed(1)}t',

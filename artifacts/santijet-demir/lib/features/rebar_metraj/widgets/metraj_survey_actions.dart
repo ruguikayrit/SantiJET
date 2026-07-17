@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:santijet_demir/core/widgets/app_toast.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:santijet_demir/core/routing/app_routes.dart';
@@ -25,7 +26,7 @@ Future<void> saveMetrajResultToPreProduction(
 
   ref.read(surveyTabIndexProvider.notifier).state = 2;
 
-  ScaffoldMessenger.of(context).showSnackBar(
+  ScaffoldMessenger.of(context).showAppSnackBar(
     SnackBar(content: Text('"$title" Ön İmalat listesine kaydedildi.')),
   );
 }
@@ -94,7 +95,7 @@ Future<void> sendMetrajRecordToSurvey(
 ) async {
   final canEdit = ref.read(canEditActiveProjectProvider);
   if (!canEdit) {
-    ScaffoldMessenger.of(context).showSnackBar(
+    ScaffoldMessenger.of(context).showAppSnackBar(
       const SnackBar(
           content: Text('İmalata göndermek için düzenleme yetkisi gerekir.')),
     );
@@ -119,7 +120,7 @@ Future<void> sendSelectedMetrajRecordsToSurvey(
 
   final canEdit = ref.read(canEditActiveProjectProvider);
   if (!canEdit) {
-    ScaffoldMessenger.of(context).showSnackBar(
+    ScaffoldMessenger.of(context).showAppSnackBar(
       const SnackBar(
           content: Text('İmalata göndermek için düzenleme yetkisi gerekir.')),
     );
@@ -152,7 +153,7 @@ Future<void> sendSelectedMetrajRecordsToSurvey(
       if (sent > 0) {
         ref.read(selectedMetrajRecordIdsProvider.notifier).state = {};
         ref.read(surveyTabIndexProvider.notifier).state = 0;
-        ScaffoldMessenger.of(context).showSnackBar(
+        ScaffoldMessenger.of(context).showAppSnackBar(
           SnackBar(content: Text('$sent kayıt imalat listesine gönderildi.')),
         );
       }
@@ -233,7 +234,7 @@ Future<void> _applySendRequest(
   ref.read(surveyTabIndexProvider.notifier).state = 0;
 
   if (!context.mounted) return;
-  ScaffoldMessenger.of(context).showSnackBar(
+  ScaffoldMessenger.of(context).showAppSnackBar(
     SnackBar(
       content: Text('Metraj "${imalat.name}" imalat listesine aktarıldı.'),
       action: SnackBarAction(

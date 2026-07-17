@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:santijet_demir/core/animations/app_animations.dart';
 import 'package:santijet_demir/core/responsive/responsive_layout.dart';
 import 'package:santijet_demir/core/widgets/app_components.dart';
 
@@ -6,6 +7,7 @@ class SummaryKpiItem {
   const SummaryKpiItem({
     required this.label,
     required this.value,
+    this.numericValue,
     this.unit = 't',
     this.percent,
     required this.accentColor,
@@ -14,6 +16,7 @@ class SummaryKpiItem {
 
   final String label;
   final String value;
+  final num? numericValue;
   final String unit;
   final String? percent;
   final Color accentColor;
@@ -45,6 +48,7 @@ class SummaryKpiRow extends StatelessWidget {
               aspectRatio: aspectRatio,
               child: _SummaryKpiCard(
                 item: items[i],
+                index: i,
                 dense: dense,
                 compactHeight: aspectRatio >= 2,
               ),
@@ -88,7 +92,10 @@ class SummaryKpiGrid extends StatelessWidget {
         childAspectRatio: ratio,
       ),
       itemCount: items.length,
-      itemBuilder: (context, index) => _SummaryKpiCard(item: items[index]),
+      itemBuilder: (context, index) => _SummaryKpiCard(
+        item: items[index],
+        index: index,
+      ),
     );
   }
 }
@@ -127,7 +134,10 @@ class SummaryKpiSliverGrid extends StatelessWidget {
           childAspectRatio: ratio,
         ),
         delegate: SliverChildBuilderDelegate(
-          (context, index) => _SummaryKpiCard(item: items[index]),
+          (context, index) => _SummaryKpiCard(
+            item: items[index],
+            index: index,
+          ),
           childCount: items.length,
         ),
       ),
@@ -138,25 +148,31 @@ class SummaryKpiSliverGrid extends StatelessWidget {
 class _SummaryKpiCard extends StatelessWidget {
   const _SummaryKpiCard({
     required this.item,
+    required this.index,
     this.dense = false,
     this.compactHeight = false,
   });
 
   final SummaryKpiItem item;
+  final int index;
   final bool dense;
   final bool compactHeight;
 
   @override
   Widget build(BuildContext context) {
-    return KpiCard(
-      label: item.label,
-      value: item.value,
-      unit: item.unit,
-      percent: item.percent,
-      accentColor: item.accentColor,
-      onTap: item.onTap,
-      dense: dense,
-      compactHeight: compactHeight,
+    return KpiEntrance(
+      index: index,
+      child: KpiCard(
+        label: item.label,
+        value: item.value,
+        numericValue: item.numericValue,
+        unit: item.unit,
+        percent: item.percent,
+        accentColor: item.accentColor,
+        onTap: item.onTap,
+        dense: dense,
+        compactHeight: compactHeight,
+      ),
     );
   }
 }

@@ -1,5 +1,7 @@
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
+import 'package:santijet_demir/core/animations/app_animations.dart';
+import 'package:santijet_demir/core/haptics/app_haptics.dart';
 import 'package:santijet_demir/core/theme/app_colors.dart';
 import 'package:santijet_demir/core/theme/app_radii.dart';
 import 'package:santijet_demir/core/theme/app_spacing.dart';
@@ -84,6 +86,7 @@ class KpiCard extends StatelessWidget {
     required this.label,
     required this.value,
     required this.unit,
+    this.numericValue,
     this.percent,
     this.trend,
     this.trendUp,
@@ -92,10 +95,13 @@ class KpiCard extends StatelessWidget {
     this.dense = false,
     this.compactHeight = false,
     this.centerContent = false,
+    this.animateValue = true,
   });
 
   final String label;
   final String value;
+  /// Sayı animasyonu için ham değer (yoksa [value] parse edilir).
+  final num? numericValue;
   final String unit;
   final String? percent;
   final String? trend;
@@ -105,6 +111,7 @@ class KpiCard extends StatelessWidget {
   final bool dense;
   final bool compactHeight;
   final bool centerContent;
+  final bool animateValue;
 
   Widget _buildLabel() {
     final parts = label.trim().split(RegExp(r'\s+'));
@@ -147,13 +154,22 @@ class KpiCard extends StatelessWidget {
                   mainAxisSize: MainAxisSize.min,
                   children: [
                     Flexible(
-                      child: Text(
-                        value,
-                        style: valueStyle,
-                        overflow: TextOverflow.ellipsis,
-                        maxLines: 1,
-                        textAlign: TextAlign.end,
-                      ),
+                      child: animateValue
+                          ? AnimatedCountText(
+                              value: value,
+                              numericValue: numericValue,
+                              style: valueStyle,
+                              overflow: TextOverflow.ellipsis,
+                              maxLines: 1,
+                              textAlign: TextAlign.end,
+                            )
+                          : Text(
+                              value,
+                              style: valueStyle,
+                              overflow: TextOverflow.ellipsis,
+                              maxLines: 1,
+                              textAlign: TextAlign.end,
+                            ),
                     ),
                     if (unit.isNotEmpty) ...[
                       const SizedBox(width: 2),
@@ -202,12 +218,22 @@ class KpiCard extends StatelessWidget {
           mainAxisSize: centerContent ? MainAxisSize.min : MainAxisSize.max,
           children: [
             Flexible(
-              child: Text(
-                value,
-                style: valueStyle,
-                overflow: TextOverflow.ellipsis,
-                textAlign: centerContent ? TextAlign.center : TextAlign.start,
-              ),
+              child: animateValue
+                  ? AnimatedCountText(
+                      value: value,
+                      numericValue: numericValue,
+                      style: valueStyle,
+                      overflow: TextOverflow.ellipsis,
+                      textAlign:
+                          centerContent ? TextAlign.center : TextAlign.start,
+                    )
+                  : Text(
+                      value,
+                      style: valueStyle,
+                      overflow: TextOverflow.ellipsis,
+                      textAlign:
+                          centerContent ? TextAlign.center : TextAlign.start,
+                    ),
             ),
             if (unit.isNotEmpty) ...[
               const SizedBox(width: 2),
@@ -303,7 +329,10 @@ class KpiCard extends StatelessWidget {
     return Material(
       color: Colors.transparent,
       child: InkWell(
-        onTap: onTap,
+        onTap: () {
+          AppHaptics.light();
+          onTap!();
+        },
         borderRadius: AppRadii.md,
         child: content,
       ),
@@ -330,7 +359,12 @@ class AlertCard extends StatelessWidget {
     return Material(
       color: Colors.transparent,
       child: InkWell(
-        onTap: onTap,
+        onTap: onTap == null
+            ? null
+            : () {
+                AppHaptics.light();
+                onTap!();
+              },
         borderRadius: AppRadii.md,
         child: Container(
           padding: const EdgeInsets.all(14),
@@ -396,22 +430,23 @@ class ProgressCard extends StatelessWidget {
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              Text(label, style: AppTypography.titleMedium),
               Text(
-                '${percentage.toStringAsFixed(0)}%',
+                label,
+                style: AppTypography.titleMedium,
+              ),
+              AnimatedCountText(
+                value: percentage.toStringAsFixed(0),
+                numericValue: percentage,
                 style: AppTypography.titleMedium.copyWith(color: color),
+                formatter: (n) => '${n.round()}%',
               ),
             ],
           ),
           const SizedBox(height: 10),
-          ClipRRect(
-            borderRadius: AppRadii.full,
-            child: LinearProgressIndicator(
-              value: percentage / 100,
-              minHeight: 6,
-              backgroundColor: AppColors.border,
-              color: color,
-            ),
+          AnimatedProgressBar(
+            percent: percentage,
+            color: color,
+            height: 6,
           ),
         ],
       ),

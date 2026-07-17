@@ -234,7 +234,7 @@ class _MetrajIcmaliSection extends StatelessWidget {
               ),
             ),
             const _IcmalTableHeader(
-              cells: ['Eleman', 'Adet', 'Çubuk', 't'],
+              cells: ['Eleman', 'Adet', 'Çubuk', 'Ağırlık/ton'],
             ),
             ...typeRows.map(
               (row) => _IcmalTypeRow(
@@ -265,7 +265,7 @@ class _IcmalDiameterTableHeader extends StatelessWidget {
         ),
         AppTableHeaderCell('Adet', flex: _IcmalLayout.columnFlex),
         AppTableHeaderCell('Uzunluk', flex: _IcmalLayout.columnFlex),
-        AppTableHeaderCell('Tonaj', flex: _IcmalLayout.columnFlex),
+        AppTableHeaderCell('Ağırlık/ton', flex: _IcmalLayout.columnFlex),
       ],
     );
   }
@@ -779,7 +779,7 @@ class _CetvelTableHeader extends StatelessWidget {
             const SizedBox(width: 4),
             Expanded(
               flex: _CetvelLayout.tonFlex,
-              child: const AppTableHeaderBadge('t'),
+              child: const AppTableHeaderBadge('Ağırlık/ton'),
             ),
           ],
         ),

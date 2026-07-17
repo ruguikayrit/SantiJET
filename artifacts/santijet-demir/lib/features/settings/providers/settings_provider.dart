@@ -1,5 +1,6 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:hive/hive.dart';
+import 'package:santijet_demir/core/haptics/app_haptics.dart';
 import 'package:santijet_demir/domain/entities/app_settings.dart';
 
 const _settingsKey = 'app_settings';
@@ -15,8 +16,9 @@ final appSettingsProvider =
 });
 
 class AppSettingsNotifier extends StateNotifier<AppSettings> {
-  AppSettingsNotifier(this._box)
-      : super(_loadSettings(_box));
+  AppSettingsNotifier(this._box) : super(_loadSettings(_box)) {
+    AppHaptics.enabled = state.hapticFeedback;
+  }
 
   final Box _box;
 
@@ -29,6 +31,7 @@ class AppSettingsNotifier extends StateNotifier<AppSettings> {
   }
 
   Future<void> _persist() async {
+    AppHaptics.enabled = state.hapticFeedback;
     await _box.put(_settingsKey, state.toJson());
   }
 
@@ -75,6 +78,11 @@ class AppSettingsNotifier extends StateNotifier<AppSettings> {
 
   Future<void> setWeightUnit(String unit) async {
     state = state.copyWith(weightUnit: unit);
+    await _persist();
+  }
+
+  Future<void> setHapticFeedback(bool enabled) async {
+    state = state.copyWith(hapticFeedback: enabled);
     await _persist();
   }
 

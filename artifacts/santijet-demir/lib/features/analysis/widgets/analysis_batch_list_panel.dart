@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
+import 'package:santijet_demir/core/animations/app_animations.dart';
 import 'package:santijet_demir/core/format/app_format.dart';
 import 'package:santijet_demir/core/theme/app_colors.dart';
 import 'package:santijet_demir/core/theme/app_radii.dart';
@@ -152,7 +153,7 @@ class AnalysisBatchListPanel extends ConsumerWidget {
                   padding: const EdgeInsets.fromLTRB(8, 6, 14, 6),
                   child: Row(
                     children: [
-                      Checkbox(
+                      AppAnimatedCheckbox(
                         value: inScope,
                         onChanged: (selected) {
                           final next = Set<String>.from(analysisScopeIds);

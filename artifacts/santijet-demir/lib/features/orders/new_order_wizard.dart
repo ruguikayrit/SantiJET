@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:santijet_demir/core/widgets/app_toast.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:santijet_demir/core/format/app_format.dart';
@@ -73,7 +74,7 @@ class _NewOrderWizardScreenState extends ConsumerState<NewOrderWizardScreen> {
 
     if (!mounted) return;
 
-    ScaffoldMessenger.of(context).showSnackBar(
+    ScaffoldMessenger.of(context).showAppSnackBar(
       SnackBar(
         content: Text(
           created == null
@@ -395,7 +396,7 @@ class _Step2RatioSelector extends ConsumerWidget {
             onPressed: () {
               final value = int.tryParse(controller.text.trim());
               if (value == null || value < 1 || value > 100) {
-                ScaffoldMessenger.of(context).showSnackBar(
+                ScaffoldMessenger.of(context).showAppSnackBar(
                   const SnackBar(content: Text('1 ile 100 arasında bir oran girin')),
                 );
                 return;
@@ -643,7 +644,7 @@ class _Step3DiameterTable extends ConsumerWidget {
               final normalized = controller.text.trim().replaceAll(',', '.');
               final value = double.tryParse(normalized);
               if (value == null || value < 0) {
-                ScaffoldMessenger.of(context).showSnackBar(
+                ScaffoldMessenger.of(context).showAppSnackBar(
                   const SnackBar(content: Text('Geçerli bir tonaj girin')),
                 );
                 return;
@@ -893,19 +894,19 @@ class _Step4SupplierSelection extends ConsumerWidget {
               final delivery = int.tryParse(deliveryCtrl.text.trim());
 
               if (name.isEmpty) {
-                ScaffoldMessenger.of(context).showSnackBar(
+                ScaffoldMessenger.of(context).showAppSnackBar(
                   const SnackBar(content: Text('Tedarikçi adı girin')),
                 );
                 return;
               }
               if (price == null || price <= 0) {
-                ScaffoldMessenger.of(context).showSnackBar(
+                ScaffoldMessenger.of(context).showAppSnackBar(
                   const SnackBar(content: Text('Geçerli bir birim fiyat girin')),
                 );
                 return;
               }
               if (delivery == null || delivery < 1) {
-                ScaffoldMessenger.of(context).showSnackBar(
+                ScaffoldMessenger.of(context).showAppSnackBar(
                   const SnackBar(content: Text('Geçerli bir teslimat süresi girin')),
                 );
                 return;

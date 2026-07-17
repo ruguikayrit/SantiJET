@@ -20,6 +20,7 @@ class AppSettings {
     this.notifyReports = false,
     this.notifyAnalysis = true,
     this.notifyCritical = true,
+    this.hapticFeedback = true,
     this.profileName = '',
     this.profileProfession = '',
     this.profileRole = '',
@@ -45,6 +46,8 @@ class AppSettings {
   final bool notifyReports;
   final bool notifyAnalysis;
   final bool notifyCritical;
+  /// Kart dokunuşlarında telefon titreşimi.
+  final bool hapticFeedback;
   final String profileName;
   final String profileProfession;
   final String profileRole;
@@ -70,6 +73,7 @@ class AppSettings {
     bool? notifyReports,
     bool? notifyAnalysis,
     bool? notifyCritical,
+    bool? hapticFeedback,
     String? profileName,
     String? profileProfession,
     String? profileRole,
@@ -95,6 +99,7 @@ class AppSettings {
       notifyReports: notifyReports ?? this.notifyReports,
       notifyAnalysis: notifyAnalysis ?? this.notifyAnalysis,
       notifyCritical: notifyCritical ?? this.notifyCritical,
+      hapticFeedback: hapticFeedback ?? this.hapticFeedback,
       profileName: profileName ?? this.profileName,
       profileProfession: profileProfession ?? this.profileProfession,
       profileRole: profileRole ?? this.profileRole,
@@ -122,6 +127,7 @@ class AppSettings {
         'notifyReports': notifyReports,
         'notifyAnalysis': notifyAnalysis,
         'notifyCritical': notifyCritical,
+        'hapticFeedback': hapticFeedback,
         'profileName': profileName,
         'profileProfession': profileProfession,
         'profileRole': profileRole,
@@ -153,6 +159,7 @@ class AppSettings {
       notifyReports: json['notifyReports'] as bool? ?? false,
       notifyAnalysis: json['notifyAnalysis'] as bool? ?? true,
       notifyCritical: json['notifyCritical'] as bool? ?? true,
+      hapticFeedback: json['hapticFeedback'] as bool? ?? true,
       profileName: json['profileName'] as String? ?? '',
       profileProfession: json['profileProfession'] as String? ?? '',
       profileRole: json['profileRole'] as String? ?? '',

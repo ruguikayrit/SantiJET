@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:santijet_demir/core/widgets/app_toast.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:santijet_demir/core/config/supabase_config.dart';
@@ -41,7 +42,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
 
       if (!ok) {
         final error = ref.read(authProvider).error;
-        messenger.showSnackBar(
+        messenger.showAppSnackBar(
           SnackBar(content: Text(error ?? 'Giriş başarısız')),
         );
         return;
@@ -54,7 +55,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
               .refreshFromCloud()
               .timeout(const Duration(seconds: 15));
         } catch (_) {
-          messenger.showSnackBar(
+          messenger.showAppSnackBar(
             const SnackBar(
               content: Text(
                 'Giriş başarılı. Proje senkronu tamamlanamadı; Projelerim ekranından devam edebilirsiniz.',

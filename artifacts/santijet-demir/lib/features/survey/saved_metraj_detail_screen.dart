@@ -245,7 +245,7 @@ class _MetrajDiameterTable extends StatelessWidget {
                   const SizedBox(width: 4),
                   Expanded(
                     flex: _DiameterTableLayout.tonajFlex,
-                    child: const AppTableHeaderBadge('TONAJ'),
+                    child: const AppTableHeaderBadge('Ağırlık/ton'),
                   ),
                   const SizedBox(width: 4),
                   Expanded(

@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:santijet_demir/core/widgets/app_toast.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
@@ -32,12 +33,12 @@ class _ProjectListScreenState extends ConsumerState<ProjectListScreen> {
         }
       } on ProjectException catch (e) {
         if (!mounted) return;
-        ScaffoldMessenger.of(context).showSnackBar(
+        ScaffoldMessenger.of(context).showAppSnackBar(
           SnackBar(content: Text(e.message)),
         );
       } catch (e) {
         if (!mounted) return;
-        ScaffoldMessenger.of(context).showSnackBar(
+        ScaffoldMessenger.of(context).showAppSnackBar(
           SnackBar(content: Text('Projeler yüklenemedi: $e')),
         );
       }
@@ -183,7 +184,7 @@ class _ProjectListScreenState extends ConsumerState<ProjectListScreen> {
           );
       if (!context.mounted) return;
       Navigator.pop(context);
-      messenger.showSnackBar(
+      messenger.showAppSnackBar(
         SnackBar(content: Text('Proje kartı oluşturuldu — Kod: ${project.code}')),
       );
       await ref.read(projectsControllerProvider).switchProject(project.id);
@@ -198,13 +199,13 @@ class _ProjectListScreenState extends ConsumerState<ProjectListScreen> {
     } on ProjectException catch (e) {
       if (!context.mounted) return;
       Navigator.pop(context);
-      messenger.showSnackBar(
+      messenger.showAppSnackBar(
         SnackBar(content: Text(e.message)),
       );
     } catch (e) {
       if (!context.mounted) return;
       Navigator.pop(context);
-      messenger.showSnackBar(
+      messenger.showAppSnackBar(
         SnackBar(content: Text('Proje oluşturulamadı: $e')),
       );
     }
@@ -276,7 +277,7 @@ class _ProjectCard extends StatelessWidget {
                     tooltip: 'Kodu kopyala',
                     onPressed: () {
                       Clipboard.setData(ClipboardData(text: project.code));
-                      ScaffoldMessenger.of(context).showSnackBar(
+                      ScaffoldMessenger.of(context).showAppSnackBar(
                         const SnackBar(content: Text('Proje kodu kopyalandı')),
                       );
                     },

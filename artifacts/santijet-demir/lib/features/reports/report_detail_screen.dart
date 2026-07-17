@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:santijet_demir/core/widgets/app_toast.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
 import 'package:santijet_demir/core/theme/app_colors.dart';
@@ -94,7 +95,7 @@ class ReportDetailScreen extends ConsumerWidget {
         );
       }
       if (context.mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
+        ScaffoldMessenger.of(context).showAppSnackBar(
           SnackBar(
             content: Text('${asPdf ? 'PDF' : 'Excel'} dışa aktarıldı'),
             backgroundColor: AppColors.success,
@@ -103,7 +104,7 @@ class ReportDetailScreen extends ConsumerWidget {
       }
     } catch (e) {
       if (context.mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
+        ScaffoldMessenger.of(context).showAppSnackBar(
           SnackBar(
             content: Text('Dışa aktarma hatası: $e'),
             backgroundColor: AppColors.critical,
@@ -125,7 +126,7 @@ class ReportDetailScreen extends ConsumerWidget {
       );
     } catch (e) {
       if (context.mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
+        ScaffoldMessenger.of(context).showAppSnackBar(
           SnackBar(content: Text('Önizleme hatası: $e')),
         );
       }

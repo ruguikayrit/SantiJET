@@ -247,7 +247,7 @@ class _SourceVsRevisedPanel extends StatelessWidget {
             positive: comparison!.revisedPieceCount >= comparison!.rawPieceCount,
           ),
           _ComparisonRow(
-            label: 'Tonaj',
+            label: 'Ağırlık/ton',
             before: '${AppFormat.tonnage(comparison!.rawMaterialTonnage)} t',
             after: '${AppFormat.tonnage(comparison!.revisedMaterialTonnage)} t',
           ),

@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:santijet_demir/core/widgets/app_toast.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:santijet_demir/core/responsive/responsive_layout.dart';
@@ -175,7 +176,7 @@ class _ReconciliationScreenState extends ConsumerState<ReconciliationScreen> {
         rows: _buildExportRows(rows),
       );
       if (context.mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
+        ScaffoldMessenger.of(context).showAppSnackBar(
           const SnackBar(
             content: Text('Mukayese tablosu Excel olarak dışa aktarıldı'),
           ),
@@ -183,7 +184,7 @@ class _ReconciliationScreenState extends ConsumerState<ReconciliationScreen> {
       }
     } catch (e) {
       if (context.mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
+        ScaffoldMessenger.of(context).showAppSnackBar(
           SnackBar(content: Text('Dışa aktarma hatası: $e')),
         );
       }
@@ -202,7 +203,7 @@ class _ReconciliationScreenState extends ConsumerState<ReconciliationScreen> {
       );
     } catch (e) {
       if (context.mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
+        ScaffoldMessenger.of(context).showAppSnackBar(
           SnackBar(content: Text('PDF önizleme hatası: $e')),
         );
       }

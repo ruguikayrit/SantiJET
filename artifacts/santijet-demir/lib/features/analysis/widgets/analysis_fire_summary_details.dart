@@ -90,7 +90,7 @@ class _RawMaterialDetail extends ConsumerWidget {
         ),
         const SizedBox(height: 10),
         const _DetailTableHeader(
-          cells: ['ÇAP', 'TONAJ', 'ADET', 'SATIR'],
+          cells: ['ÇAP', 'AĞIRLIK/TON', 'ADET', 'SATIR'],
         ),
         ...byDiameter.map(
           (item) => _DetailTableRow(
@@ -416,7 +416,7 @@ class _FireDiameterDrillDownState extends State<_FireDiameterDrillDown> {
             ),
             const SizedBox(height: 8),
             const _DetailTableHeader(
-              cells: ['KALAN UZUNLUK', 'ÇUBUK', 'TOPLAM FİRE', 'TONAJ'],
+              cells: ['KALAN UZUNLUK', 'ÇUBUK', 'TOPLAM FİRE', 'AĞIRLIK/TON'],
             ),
             ...wasteBuckets.map(
               (bucket) => _DetailTableRow(

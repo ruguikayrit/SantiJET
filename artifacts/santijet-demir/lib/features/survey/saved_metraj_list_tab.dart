@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
+import 'package:santijet_demir/core/widgets/app_toast.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import 'package:santijet_demir/core/animations/app_animations.dart';
 import 'package:santijet_demir/core/routing/app_routes.dart';
 import 'package:santijet_demir/core/theme/app_colors.dart';
 import 'package:santijet_demir/core/theme/app_radii.dart';
@@ -118,7 +120,7 @@ class SavedMetrajListTab extends ConsumerWidget {
                           }
                         }
                         if (context.mounted) {
-                          ScaffoldMessenger.of(context).showSnackBar(
+                          ScaffoldMessenger.of(context).showAppSnackBar(
                             SnackBar(
                               content: Text(
                                 '${selectedRecords.length} kayıt analiz için onaylandı. '
@@ -378,7 +380,7 @@ class MetrajRecordCard extends StatelessWidget {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     if (onSelectChanged != null) ...[
-                      Checkbox(
+                      AppAnimatedCheckbox(
                         value: selected,
                         onChanged: (value) => onSelectChanged!(value ?? false),
                       ),

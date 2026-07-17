@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:santijet_demir/core/widgets/app_toast.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:santijet_demir/core/theme/app_colors.dart';
@@ -189,7 +190,7 @@ class _NewCountScreenState extends ConsumerState<NewCountScreen> {
                     }
 
                     if (record == null) {
-                      ScaffoldMessenger.of(context).showSnackBar(
+                      ScaffoldMessenger.of(context).showAppSnackBar(
                         const SnackBar(
                           content: Text('En az bir çap için sayım girin'),
                           backgroundColor: AppColors.warning,
@@ -198,7 +199,7 @@ class _NewCountScreenState extends ConsumerState<NewCountScreen> {
                       return;
                     }
 
-                    ScaffoldMessenger.of(context).showSnackBar(
+                    ScaffoldMessenger.of(context).showAppSnackBar(
                       const SnackBar(
                         content: Text('Sayım kaydedildi'),
                         backgroundColor: AppColors.success,
@@ -213,7 +214,7 @@ class _NewCountScreenState extends ConsumerState<NewCountScreen> {
             onPressed: lines.isEmpty
                 ? null
                 : () {
-                    ScaffoldMessenger.of(context).showSnackBar(
+                    ScaffoldMessenger.of(context).showAppSnackBar(
                       const SnackBar(content: Text('Taslak kaydedildi')),
                     );
                     context.pop();

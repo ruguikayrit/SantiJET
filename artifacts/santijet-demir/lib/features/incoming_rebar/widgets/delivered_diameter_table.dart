@@ -32,7 +32,7 @@ class DeliveredDiameterTable extends StatelessWidget {
             padding: EdgeInsets.symmetric(horizontal: 14, vertical: 10),
             cells: [
               AppTableHeaderCell('ÇAP'),
-              AppTableHeaderCell('MİKTAR'),
+              AppTableHeaderCell('AĞIRLIK/TON'),
             ],
           ),
           ...rows.map(

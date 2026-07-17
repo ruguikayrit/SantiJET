@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:santijet_demir/core/widgets/app_toast.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:santijet_demir/core/routing/app_routes.dart';
@@ -133,7 +134,7 @@ class _SurveyListScreenState extends ConsumerState<SurveyListScreen>
     ref.read(surveyTabIndexProvider.notifier).state = 0;
     _scrollToImalatListEnd();
 
-    ScaffoldMessenger.of(context).showSnackBar(
+    ScaffoldMessenger.of(context).showAppSnackBar(
       SnackBar(
         content: Text('"${imalat.name}" imalatı oluşturuldu'),
         backgroundColor: AppColors.success,
@@ -450,13 +451,13 @@ class _BottomActions extends ConsumerWidget {
         rows: _buildRows(),
       );
       if (context.mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
+        ScaffoldMessenger.of(context).showAppSnackBar(
           const SnackBar(content: Text('Keşif Excel olarak dışa aktarıldı')),
         );
       }
     } catch (e) {
       if (context.mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
+        ScaffoldMessenger.of(context).showAppSnackBar(
           SnackBar(content: Text('Dışa aktarma hatası: $e')),
         );
       }
@@ -467,19 +468,19 @@ class _BottomActions extends ConsumerWidget {
     try {
       await ref.read(projectBackupControllerProvider).exportSurvey();
       if (context.mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
+        ScaffoldMessenger.of(context).showAppSnackBar(
           const SnackBar(content: Text('Keşif verisi JSON olarak dışa aktarıldı')),
         );
       }
     } on BackupParseException catch (e) {
       if (context.mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
+        ScaffoldMessenger.of(context).showAppSnackBar(
           SnackBar(content: Text(e.message)),
         );
       }
     } catch (e) {
       if (context.mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
+        ScaffoldMessenger.of(context).showAppSnackBar(
           SnackBar(content: Text('Dışa aktarma hatası: $e')),
         );
       }
@@ -489,7 +490,7 @@ class _BottomActions extends ConsumerWidget {
   Future<void> _importSurveyJson(BuildContext context, WidgetRef ref) async {
     final canEdit = ref.read(canEditActiveProjectProvider);
     if (!canEdit) {
-      ScaffoldMessenger.of(context).showSnackBar(
+      ScaffoldMessenger.of(context).showAppSnackBar(
         const SnackBar(content: Text('İçe aktarmak için düzenleme yetkisi gerekir')),
       );
       return;
@@ -525,18 +526,18 @@ class _BottomActions extends ConsumerWidget {
           );
       if (!context.mounted || summary.cancelled) return;
 
-      ScaffoldMessenger.of(context).showSnackBar(
+      ScaffoldMessenger.of(context).showAppSnackBar(
         const SnackBar(content: Text('Keşif verisi içe aktarıldı')),
       );
     } on BackupParseException catch (e) {
       if (context.mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
+        ScaffoldMessenger.of(context).showAppSnackBar(
           SnackBar(content: Text(e.message)),
         );
       }
     } catch (e) {
       if (context.mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
+        ScaffoldMessenger.of(context).showAppSnackBar(
           SnackBar(content: Text('İçe aktarma hatası: $e')),
         );
       }
@@ -552,7 +553,7 @@ class _BottomActions extends ConsumerWidget {
       );
     } catch (e) {
       if (context.mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
+        ScaffoldMessenger.of(context).showAppSnackBar(
           SnackBar(content: Text('PDF önizleme hatası: $e')),
         );
       }

@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:santijet_demir/core/widgets/app_toast.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:santijet_demir/core/routing/app_routes.dart';
@@ -39,7 +40,7 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
     final router = GoRouter.of(context);
 
     if (_membershipType == MembershipType.corporate && _corporateRole == null) {
-      messenger.showSnackBar(
+      messenger.showAppSnackBar(
         const SnackBar(content: Text('Kurumsal üyelik için bir rol seçin')),
       );
       return;
@@ -58,7 +59,7 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
 
       if (!ok) {
         final error = ref.read(authProvider).error;
-        messenger.showSnackBar(
+        messenger.showAppSnackBar(
           SnackBar(content: Text(error ?? 'Kayıt başarısız')),
         );
         return;

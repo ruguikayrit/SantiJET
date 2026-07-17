@@ -73,6 +73,12 @@ abstract final class AppTheme {
         selectedLabelStyle: AppTypography.tabLabel,
         unselectedLabelStyle: AppTypography.tabLabel,
       ),
+      snackBarTheme: SnackBarThemeData(
+        behavior: SnackBarBehavior.floating,
+        elevation: 6,
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+        insetPadding: const EdgeInsets.fromLTRB(16, 0, 16, 24),
+      ),
       textTheme: TextTheme(
         displayLarge: AppTypography.displayLarge.copyWith(color: const Color(0xFF0F172A)),
         displayMedium: AppTypography.displayMedium.copyWith(color: const Color(0xFF0F172A)),
@@ -158,6 +164,12 @@ abstract final class AppTheme {
         type: BottomNavigationBarType.fixed,
         selectedLabelStyle: AppTypography.tabLabel,
         unselectedLabelStyle: AppTypography.tabLabel,
+      ),
+      snackBarTheme: SnackBarThemeData(
+        behavior: SnackBarBehavior.floating,
+        elevation: 6,
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+        insetPadding: const EdgeInsets.fromLTRB(16, 0, 16, 24),
       ),
       textTheme: TextTheme(
         displayLarge: AppTypography.displayLarge,

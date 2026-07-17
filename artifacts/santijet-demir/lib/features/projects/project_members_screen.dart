@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:santijet_demir/core/widgets/app_toast.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:santijet_demir/core/theme/app_colors.dart';
 import 'package:santijet_demir/core/theme/app_radii.dart';
@@ -57,7 +58,7 @@ class ProjectMembersScreen extends ConsumerWidget {
                       );
                 } on ProjectException catch (e) {
                   if (context.mounted) {
-                    ScaffoldMessenger.of(context).showSnackBar(
+                    ScaffoldMessenger.of(context).showAppSnackBar(
                       SnackBar(content: Text(e.message)),
                     );
                   }
@@ -74,7 +75,7 @@ class ProjectMembersScreen extends ConsumerWidget {
                               corporateRole: role,
                             );
                         if (context.mounted) {
-                          ScaffoldMessenger.of(context).showSnackBar(
+                          ScaffoldMessenger.of(context).showAppSnackBar(
                             SnackBar(
                               content: Text(
                                 role == null
@@ -86,7 +87,7 @@ class ProjectMembersScreen extends ConsumerWidget {
                         }
                       } on ProjectException catch (e) {
                         if (context.mounted) {
-                          ScaffoldMessenger.of(context).showSnackBar(
+                          ScaffoldMessenger.of(context).showAppSnackBar(
                             SnackBar(content: Text(e.message)),
                           );
                         }

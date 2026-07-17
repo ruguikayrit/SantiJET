@@ -149,7 +149,7 @@ class RebarMetrajReportService {
           'Toplam ${numberFormat.format(summary.totalTonnage)} t · '
           'İnce (Ø8–12) ${numberFormat.format(summary.thinTonnage)} t · '
           'Kalın (Ø≥14) ${numberFormat.format(summary.thickTonnage)} t',
-      headers: const ['Çap', 'Birim ağ.', 'Adet', 'Uzunluk', 'Tonaj'],
+      headers: const ['Çap', 'Birim ağ.', 'Adet', 'Uzunluk', 'Ağırlık/ton'],
       rows: rows,
     );
 
@@ -183,7 +183,7 @@ class RebarMetrajReportService {
   }) {
     return PdfReportSection(
       title: 'Çap Bazlı Metraj',
-      headers: const ['Çap', 'Çubuk', 'Uzunluk', 'Tonaj', 'Katman'],
+      headers: const ['Çap', 'Çubuk', 'Uzunluk', 'Ağırlık/ton', 'Katman'],
       rows: result.lines
           .map(
             (line) => [
@@ -282,7 +282,7 @@ class RebarMetrajReportService {
             'Ø',
             'Adet',
             'Uzunluk (m)',
-            'Tonaj (t)',
+            'Ağırlık/ton',
           ],
           rows: rows,
         ),
@@ -309,7 +309,7 @@ class RebarMetrajReportService {
         'Ø',
         'Adet',
         'Uzunluk (m)',
-        'Ağırlık',
+        'Ağırlık/ton',
       ],
       rows: result.textDetails
           .map(

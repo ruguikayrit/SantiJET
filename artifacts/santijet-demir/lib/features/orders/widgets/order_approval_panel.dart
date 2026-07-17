@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:santijet_demir/core/widgets/app_toast.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
 import 'package:santijet_demir/core/theme/app_colors.dart';
@@ -27,7 +28,7 @@ class OrderApprovalPanel extends ConsumerWidget {
     switch (result.type) {
       case OrderApprovalResultType.success:
         if (result.completed) {
-          messenger.showSnackBar(
+          messenger.showAppSnackBar(
             SnackBar(
               content: Text(
                 '${order.orderNo} onaylandı → ${OrderStatus.submitted.label}',
@@ -36,7 +37,7 @@ class OrderApprovalPanel extends ConsumerWidget {
             ),
           );
         } else {
-          messenger.showSnackBar(
+          messenger.showAppSnackBar(
             SnackBar(
               content: Text('${role.label} onayı kaydedildi'),
               backgroundColor: AppColors.success,
@@ -44,12 +45,12 @@ class OrderApprovalPanel extends ConsumerWidget {
           );
         }
       case OrderApprovalResultType.alreadyApproved:
-        messenger.showSnackBar(
+        messenger.showAppSnackBar(
           SnackBar(content: Text('${role.label} zaten onayladı')),
         );
       case OrderApprovalResultType.notPending:
       case OrderApprovalResultType.notFound:
-        messenger.showSnackBar(
+        messenger.showAppSnackBar(
           const SnackBar(content: Text('Onay işlemi yapılamadı')),
         );
     }

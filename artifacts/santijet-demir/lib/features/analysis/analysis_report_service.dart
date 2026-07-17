@@ -302,7 +302,7 @@ class AnalysisReportService {
     return PdfReportSection(
       title: 'Malzeme Özeti — Çap Bazında',
       subtitle: 'Ham parça listesi toplamları',
-      headers: const ['ÇAP', 'Tonaj (t)', 'Adet', 'Satır'],
+      headers: const ['ÇAP', 'Ağırlık/ton', 'Adet', 'Satır'],
       rows: summary
           .map(
             (row) => [

@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
+import 'package:santijet_demir/core/widgets/app_toast.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import 'package:santijet_demir/core/animations/app_animations.dart';
 import 'package:santijet_demir/core/routing/app_routes.dart';
 import 'package:santijet_demir/core/theme/app_colors.dart';
 import 'package:santijet_demir/core/theme/app_radii.dart';
@@ -27,7 +29,7 @@ Future<void> approveMetrajRecordForAnalysis(
   await ref.read(savedRebarMetrajProvider.notifier).approveForAnalysis(record.id);
 
   if (!context.mounted) return;
-  ScaffoldMessenger.of(context).showSnackBar(
+  ScaffoldMessenger.of(context).showAppSnackBar(
     SnackBar(
       content: Text(
         '"${record.displayTitle}" analiz için onaylandı. '
@@ -53,7 +55,7 @@ Future<void> showPreProductionAnalysisImportSheet(
   if (!context.mounted) return;
 
   if (approved.isEmpty) {
-    ScaffoldMessenger.of(context).showSnackBar(
+    ScaffoldMessenger.of(context).showAppSnackBar(
       const SnackBar(
         content: Text(
           'Onaylı ön imalat kaydı yok. Keşif → Ön İmalat sekmesinden onay verin.',
@@ -136,7 +138,7 @@ Future<void> _importMetrajRecordsToAnalysis(
       records.where((record) => !record.isApprovedForAnalysis).toList();
   if (unapproved.isNotEmpty) {
     if (context.mounted) {
-      ScaffoldMessenger.of(context).showSnackBar(
+      ScaffoldMessenger.of(context).showAppSnackBar(
         const SnackBar(
           content: Text('Yalnızca onaylı ön imalat kayıtları aktarılabilir.'),
         ),
@@ -164,7 +166,7 @@ Future<void> _importMetrajRecordsToAnalysis(
 
     if (!context.mounted) return;
     if (addedCount == 0) {
-      ScaffoldMessenger.of(context).showSnackBar(
+      ScaffoldMessenger.of(context).showAppSnackBar(
         const SnackBar(
           content: Text('Gönderilecek parça verisi bulunamadı (CAD etiketleri).'),
         ),
@@ -175,7 +177,7 @@ Future<void> _importMetrajRecordsToAnalysis(
     final message = skippedCount > 0
         ? '$addedCount kayıt ayrı ayrı aktarıldı ($skippedCount kayıt atlandı).'
         : '$addedCount kayıt ayrı ayrı Hesap ve Analiz listesine aktarıldı.';
-    ScaffoldMessenger.of(context).showSnackBar(
+    ScaffoldMessenger.of(context).showAppSnackBar(
       SnackBar(content: Text(message)),
     );
     return;
@@ -193,7 +195,7 @@ Future<void> _importMetrajRecordsToAnalysis(
 
   if (batch.pieceLines.isEmpty) {
     if (context.mounted) {
-      ScaffoldMessenger.of(context).showSnackBar(
+      ScaffoldMessenger.of(context).showAppSnackBar(
         const SnackBar(
           content: Text('Gönderilecek parça verisi bulunamadı (CAD etiketleri).'),
         ),
@@ -205,7 +207,7 @@ Future<void> _importMetrajRecordsToAnalysis(
   await ref.read(cuttingBendingBatchesProvider.notifier).addBatch(batch);
 
   if (!context.mounted) return;
-  ScaffoldMessenger.of(context).showSnackBar(
+  ScaffoldMessenger.of(context).showAppSnackBar(
     SnackBar(content: Text('"$title" Hesap ve Analiz listesine aktarıldı.')),
   );
 }
@@ -296,9 +298,8 @@ class _PreProductionImportPageState extends State<_PreProductionImportPage> {
                         ),
                         child: Row(
                           children: [
-                            Checkbox(
+                            AppAnimatedCheckbox(
                               value: selected,
-                              activeColor: AppColors.electricBlueLight,
                               onChanged: (_) {
                                 setState(() {
                                   if (selected) {
