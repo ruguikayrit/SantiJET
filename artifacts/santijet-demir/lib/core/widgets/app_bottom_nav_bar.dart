@@ -3,24 +3,28 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:pointer_interceptor/pointer_interceptor.dart';
-import 'package:santijet_demir/core/responsive/app_safe_area.dart';
 import 'package:santijet_demir/core/responsive/responsive_layout.dart';
 import 'package:santijet_demir/core/theme/app_colors.dart';
 import 'package:santijet_demir/core/theme/app_typography.dart';
 import 'package:santijet_demir/features/auth/providers/membership_permission_provider.dart';
 
-/// Alt navigasyon — arka plan ekranın dibine kadar uzanır, ikonlar home indicator üstünde.
+/// Alt navigasyon — yükseklik ve genişlik her zaman sabit (MediaQuery'ye bağlı değil).
 class AppBottomNavBar extends ConsumerWidget {
   const AppBottomNavBar({super.key, required this.navigationShell});
 
   final StatefulNavigationShell navigationShell;
 
-  static const _iconBarHeight = 52.0;
-  static const _iconBarHeightTablet = 56.0;
-  static const _iconSize = 24.0;
-  static const _iconSizeTablet = 22.0;
-  static const _activeIndicatorSize = 44.0;
-  static const _minTapExtent = 48.0;
+  /// İkon satırı — sabit.
+  static const iconBarHeight = 56.0;
+
+  /// Home indicator / alt boşluk — sabit (dinamik inset şişmesini önler).
+  static const bottomInset = 16.0;
+
+  /// Toplam bar yüksekliği — her zaman aynı.
+  static const totalHeight = iconBarHeight + bottomInset;
+
+  static const _iconSize = 22.0;
+  static const _activeIndicatorSize = 36.0;
 
   static const _icons = [
     Icons.dashboard_outlined,
@@ -38,25 +42,18 @@ class AppBottomNavBar extends ConsumerWidget {
     Icons.analytics,
   ];
 
-  static double _bottomInsetOf(BuildContext context) {
-    return AppSafeAreaInsets.bottomNavInsetOf(context);
-  }
+  /// Geriye dönük API — context yok sayılır, sabit döner.
+  static double iconBarHeightOf(BuildContext context) => iconBarHeight;
 
-  static double totalHeightOf(BuildContext context) {
-    final showLabels = ResponsiveLayout.isTablet(context);
-    final iconBarHeight = showLabels ? _iconBarHeightTablet : _iconBarHeight;
-    final bottomInset = _bottomInsetOf(context);
-    return iconBarHeight + bottomInset;
-  }
+  static double bottomInsetOf(BuildContext context) => bottomInset;
+
+  static double totalHeightOf(BuildContext context) => totalHeight;
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final showLabels = ResponsiveLayout.isTablet(context);
-    final iconBarHeight = showLabels ? _iconBarHeightTablet : _iconBarHeight;
-    final bottomInset = _bottomInsetOf(context);
     final visibleTabs = ref.watch(visibleBottomNavTabsProvider);
 
-    // Yetkisiz sekmedeyse ilk görünür sekmeye yönlendir.
     final current = navigationShell.currentIndex;
     final currentAllowed = visibleTabs.any((t) => t.index == current);
     if (!currentAllowed && visibleTabs.isNotEmpty) {
@@ -65,51 +62,58 @@ class AppBottomNavBar extends ConsumerWidget {
       });
     }
 
-    final bar = DecoratedBox(
-      decoration: BoxDecoration(
-        color: AppColors.surface,
-        border: Border(
-          top: BorderSide(
-            color: AppColors.border.withValues(alpha: 0.85),
-          ),
-        ),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withValues(alpha: 0.35),
-            blurRadius: 8,
-            offset: const Offset(0, -2),
-          ),
-        ],
-      ),
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          SizedBox(
-            height: iconBarHeight,
-            width: double.infinity,
-            child: Row(
-              children: [
-                for (final tab in visibleTabs)
-                  Expanded(
-                    child: _NavItem(
-                      icon: _icons[tab.index],
-                      activeIcon: _activeIcons[tab.index],
-                      label: tab.navLabel,
-                      semanticsLabel: tab.label,
-                      selected: navigationShell.currentIndex == tab.index,
-                      showLabel: showLabels,
-                      onTap: () => navigationShell.goBranch(
-                        tab.index,
-                        initialLocation:
-                            tab.index == navigationShell.currentIndex,
-                      ),
+    final bar = SizedBox(
+      width: double.infinity,
+      height: totalHeight,
+      child: ClipRect(
+        child: ColoredBox(
+          color: AppColors.surface,
+          child: Column(
+            mainAxisSize: MainAxisSize.max,
+            children: [
+              Container(
+                height: iconBarHeight,
+                width: double.infinity,
+                decoration: BoxDecoration(
+                  border: Border(
+                    top: BorderSide(
+                      color: AppColors.border.withValues(alpha: 0.85),
                     ),
                   ),
-              ],
-            ),
+                  boxShadow: [
+                    BoxShadow(
+                      color: Colors.black.withValues(alpha: 0.35),
+                      blurRadius: 8,
+                      offset: const Offset(0, -2),
+                    ),
+                  ],
+                ),
+                child: Row(
+                  children: [
+                    for (final tab in visibleTabs)
+                      Expanded(
+                        child: _NavItem(
+                          height: iconBarHeight,
+                          icon: _icons[tab.index],
+                          activeIcon: _activeIcons[tab.index],
+                          label: tab.navLabel,
+                          semanticsLabel: tab.label,
+                          selected: navigationShell.currentIndex == tab.index,
+                          showLabel: showLabels,
+                          onTap: () => navigationShell.goBranch(
+                            tab.index,
+                            initialLocation:
+                                tab.index == navigationShell.currentIndex,
+                          ),
+                        ),
+                      ),
+                  ],
+                ),
+              ),
+              const SizedBox(height: bottomInset, width: double.infinity),
+            ],
           ),
-          if (bottomInset > 0) SizedBox(height: bottomInset),
-        ],
+        ),
       ),
     );
 
@@ -122,6 +126,7 @@ class AppBottomNavBar extends ConsumerWidget {
 
 class _NavItem extends StatelessWidget {
   const _NavItem({
+    required this.height,
     required this.icon,
     required this.activeIcon,
     required this.label,
@@ -131,6 +136,7 @@ class _NavItem extends StatelessWidget {
     required this.onTap,
   });
 
+  final double height;
   final IconData icon;
   final IconData activeIcon;
   final String label;
@@ -144,56 +150,58 @@ class _NavItem extends StatelessWidget {
     final activeColor = AppColors.electricBlueLight;
     final inactiveColor = AppColors.textMuted.withValues(alpha: 0.85);
 
-    Widget child = ConstrainedBox(
-      constraints: const BoxConstraints(minHeight: AppBottomNavBar._minTapExtent),
-      child: SizedBox.expand(
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            AnimatedContainer(
-              duration: const Duration(milliseconds: 220),
-              curve: Curves.easeOutCubic,
-              width: AppBottomNavBar._activeIndicatorSize,
-              height: AppBottomNavBar._activeIndicatorSize,
-              alignment: Alignment.center,
-              decoration: BoxDecoration(
-                shape: BoxShape.circle,
-                color: selected
-                    ? AppColors.electricBlue.withValues(alpha: 0.18)
-                    : Colors.transparent,
-                border: selected
-                    ? Border.all(
-                        color:
-                            AppColors.electricBlueLight.withValues(alpha: 0.35),
-                      )
-                    : null,
-              ),
-              child: Icon(
-                selected ? activeIcon : icon,
-                size: showLabel
-                    ? AppBottomNavBar._iconSizeTablet
-                    : AppBottomNavBar._iconSize,
-                color: selected ? activeColor : inactiveColor,
-              ),
+    final content = Column(
+      mainAxisAlignment: MainAxisAlignment.center,
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        Container(
+          width: AppBottomNavBar._activeIndicatorSize,
+          height: AppBottomNavBar._activeIndicatorSize,
+          alignment: Alignment.center,
+          decoration: BoxDecoration(
+            shape: BoxShape.circle,
+            color: selected
+                ? AppColors.electricBlue.withValues(alpha: 0.18)
+                : Colors.transparent,
+            border: selected
+                ? Border.all(
+                    color: AppColors.electricBlueLight.withValues(alpha: 0.35),
+                  )
+                : null,
+          ),
+          child: Icon(
+            selected ? activeIcon : icon,
+            size: AppBottomNavBar._iconSize,
+            color: selected ? activeColor : inactiveColor,
+          ),
+        ),
+        if (showLabel) ...[
+          const SizedBox(height: 2),
+          Text(
+            label,
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
+            textAlign: TextAlign.center,
+            style: AppTypography.tabLabel.copyWith(
+              color: selected ? activeColor : inactiveColor,
+              fontSize: 9,
+              height: 1.0,
+              decoration: TextDecoration.none,
             ),
-            if (showLabel) ...[
-              const SizedBox(height: 3),
-              FittedBox(
-                fit: BoxFit.scaleDown,
-                child: Text(
-                  label,
-                  maxLines: 1,
-                  textAlign: TextAlign.center,
-                  style: AppTypography.tabLabel.copyWith(
-                    color: selected ? activeColor : inactiveColor,
-                    fontSize: 10,
-                    height: 1.0,
-                    decoration: TextDecoration.none,
-                  ),
-                ),
-              ),
-            ],
-          ],
+          ),
+        ],
+      ],
+    );
+
+    Widget child = SizedBox(
+      height: height,
+      width: double.infinity,
+      child: ClipRect(
+        child: Center(
+          child: FittedBox(
+            fit: BoxFit.scaleDown,
+            child: content,
+          ),
         ),
       ),
     );

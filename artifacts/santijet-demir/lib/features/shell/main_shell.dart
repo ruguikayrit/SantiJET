@@ -66,7 +66,22 @@ class MainShell extends ConsumerWidget {
                 left: 0,
                 right: 0,
                 bottom: 0,
-                child: AppBottomNavBar(navigationShell: navigationShell),
+                height: AppBottomNavBar.totalHeight,
+                child: MediaQuery.removeViewInsets(
+                  removeBottom: true,
+                  context: context,
+                  child: MediaQuery.removePadding(
+                    removeBottom: true,
+                    context: context,
+                    child: SizedBox(
+                      height: AppBottomNavBar.totalHeight,
+                      width: double.infinity,
+                      child: AppBottomNavBar(
+                        navigationShell: navigationShell,
+                      ),
+                    ),
+                  ),
+                ),
               ),
             ],
           ),
