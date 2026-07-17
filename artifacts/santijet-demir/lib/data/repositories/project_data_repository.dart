@@ -14,6 +14,10 @@ class ProjectDataRepository {
     'field_counts',
     'rebar_metraj',
     'cutting_bending',
+    'work_schedule',
+    'workforce',
+    'prediction_history',
+    'prediction_config',
   ];
 
   String _key(String projectId, String domain) => 'pdata:$projectId:$domain';

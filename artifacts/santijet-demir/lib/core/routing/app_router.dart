@@ -36,6 +36,9 @@ import 'package:santijet_demir/features/splash/splash_screen.dart';
 import 'package:santijet_demir/features/survey/saved_metraj_detail_screen.dart';
 import 'package:santijet_demir/features/survey/survey_detail_screen.dart';
 import 'package:santijet_demir/features/survey/survey_list_screen.dart';
+import 'package:santijet_demir/features/prediction/prediction_screen.dart';
+import 'package:santijet_demir/features/prediction/work_schedule_screen.dart';
+import 'package:santijet_demir/features/prediction/workforce_screen.dart';
 
 final _rootNavigatorKey = GlobalKey<NavigatorState>();
 
@@ -333,6 +336,30 @@ final routerProvider = Provider<GoRouter>((ref) {
             ),
           ),
         ],
+      ),
+      GoRoute(
+        path: AppRoutes.prediction,
+        parentNavigatorKey: _rootNavigatorKey,
+        pageBuilder: (context, state) => fadeSlidePage(
+          key: state.pageKey,
+          child: const PredictionScreen(),
+        ),
+      ),
+      GoRoute(
+        path: AppRoutes.workSchedule,
+        parentNavigatorKey: _rootNavigatorKey,
+        pageBuilder: (context, state) => fadeSlidePage(
+          key: state.pageKey,
+          child: const WorkScheduleScreen(),
+        ),
+      ),
+      GoRoute(
+        path: AppRoutes.workforce,
+        parentNavigatorKey: _rootNavigatorKey,
+        pageBuilder: (context, state) => fadeSlidePage(
+          key: state.pageKey,
+          child: const WorkforceScreen(),
+        ),
       ),
       StatefulShellRoute.indexedStack(
         builder: (context, state, navigationShell) {

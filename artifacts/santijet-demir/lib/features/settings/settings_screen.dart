@@ -73,6 +73,24 @@ class SettingsScreen extends ConsumerWidget {
             onTap: () => context.push(AppRoutes.projectSettings),
           ),
           _SettingsTile(
+            icon: Icons.analytics_outlined,
+            title: 'Demir Tahmin Motoru',
+            subtitle: 'Stok tükenme, sipariş önerisi, iş programı',
+            onTap: () => context.push(AppRoutes.prediction),
+          ),
+          _SettingsTile(
+            icon: Icons.calendar_month_outlined,
+            title: 'İş Programı',
+            subtitle: 'Günlük planlı imalat ve demir tonajı',
+            onTap: () => context.push(AppRoutes.workSchedule),
+          ),
+          _SettingsTile(
+            icon: Icons.groups_outlined,
+            title: 'Günlük Puantaj',
+            subtitle: 'Demirci, usta, şef ve çalışma saati',
+            onTap: () => context.push(AppRoutes.workforce),
+          ),
+          _SettingsTile(
             icon: Icons.notifications,
             title: 'Bildirim Ayarları',
             subtitle: 'Stok, sipariş, teslimat, analiz',

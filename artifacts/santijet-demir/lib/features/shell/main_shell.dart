@@ -21,6 +21,7 @@ import 'package:santijet_demir/features/shell/dashboard_feed_provider.dart';
 import 'package:santijet_demir/features/shell/dashboard_summary_provider.dart';
 import 'package:santijet_demir/features/shell/widgets/dashboard_feed_section.dart';
 import 'package:santijet_demir/features/shell/widgets/project_progress_section.dart';
+import 'package:santijet_demir/features/prediction/widgets/prediction_dashboard_card.dart';
 import 'package:santijet_demir/features/survey/providers/survey_provider.dart';
 
 class MainShell extends ConsumerWidget {
@@ -132,11 +133,16 @@ class DashboardScreen extends ConsumerWidget {
                     const SizedBox(height: AppSpacing.lg),
                     const StaggeredFadeIn(
                       index: 3,
-                      child: _DashboardAlertsBlock(),
+                      child: PredictionDashboardCard(),
                     ),
                     const SizedBox(height: AppSpacing.lg),
                     const StaggeredFadeIn(
                       index: 4,
+                      child: _DashboardAlertsBlock(),
+                    ),
+                    const SizedBox(height: AppSpacing.lg),
+                    const StaggeredFadeIn(
+                      index: 5,
                       child: _DashboardActivitiesBlock(),
                     ),
                     SizedBox(height: AppBottomNavBar.totalHeightOf(context) + 16),
