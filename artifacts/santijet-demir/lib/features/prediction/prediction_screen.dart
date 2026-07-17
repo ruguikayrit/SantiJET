@@ -32,7 +32,7 @@ class _PredictionScreenState extends ConsumerState<PredictionScreen> {
   }
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
+  Widget build(BuildContext context) {
     final snapshot = ref.watch(predictionSnapshotProvider);
     final history = ref.watch(predictionHistoryProvider);
     final dateFmt = DateFormat('d MMM yyyy', 'tr_TR');
