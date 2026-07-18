@@ -69,7 +69,6 @@ class MetrajCetvelSection extends StatelessWidget {
     if (lines.isEmpty && cetvel.isEmpty) return const SizedBox.shrink();
 
     final icmali = summarizeLines(lines);
-    final typeRows = cetvel.isNotEmpty ? summarizeCetvelByType(cetvel) : const <MetrajIcmaliTypeRow>[];
     final cetvelSummary = cetvel.isNotEmpty ? summarizeCetvel(cetvel) : null;
     final grouped = _groupByType(cetvel);
     final numberFormat = NumberFormat('#,##0.00', 'tr_TR');
@@ -80,20 +79,17 @@ class MetrajCetvelSection extends StatelessWidget {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
-        if (!hideHeader && lines.isNotEmpty) ...[
-          const SizedBox(height: 40),
-          Text('Metraj İcmali', style: AppTypography.headlineMedium),
-          const SizedBox(height: 16),
-        ],
-        if (lines.isNotEmpty)
+        if (lines.isNotEmpty) ...[
+          if (!hideHeader) const SizedBox(height: 40),
           _MetrajIcmaliSection(
             summary: icmali,
-            typeRows: typeRows,
+            showTitle: !hideHeader,
             numberFormat: numberFormat,
             lengthFormat: lengthFormat,
             intFormat: intFormat,
             unitWeightFormat: unitWeightFormat,
           ),
+        ],
         if (cetvel.isNotEmpty) ...[
           const SizedBox(height: 24),
           Text('Metraj Cetveli', style: AppTypography.headlineMedium),
@@ -135,10 +131,10 @@ class MetrajCetvelSection extends StatelessWidget {
   }
 }
 
-class _MetrajIcmaliSection extends StatelessWidget {
+class _MetrajIcmaliSection extends StatefulWidget {
   const _MetrajIcmaliSection({
     required this.summary,
-    required this.typeRows,
+    required this.showTitle,
     required this.numberFormat,
     required this.lengthFormat,
     required this.intFormat,
@@ -146,14 +142,28 @@ class _MetrajIcmaliSection extends StatelessWidget {
   });
 
   final MetrajIcmaliSummary summary;
-  final List<MetrajIcmaliTypeRow> typeRows;
+  final bool showTitle;
   final NumberFormat numberFormat;
   final NumberFormat lengthFormat;
   final NumberFormat intFormat;
   final NumberFormat unitWeightFormat;
 
   @override
+  State<_MetrajIcmaliSection> createState() => _MetrajIcmaliSectionState();
+}
+
+class _MetrajIcmaliSectionState extends State<_MetrajIcmaliSection> {
+  /// Varsayılan kapalı; başlığa tıklanınca açılır.
+  bool _expanded = false;
+
+  @override
   Widget build(BuildContext context) {
+    final summary = widget.summary;
+    final numberFormat = widget.numberFormat;
+    final lengthFormat = widget.lengthFormat;
+    final intFormat = widget.intFormat;
+    final unitWeightFormat = widget.unitWeightFormat;
+
     return Container(
       decoration: BoxDecoration(
         color: AppColors.surfaceElevated,
@@ -164,84 +174,112 @@ class _MetrajIcmaliSection extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
-          Padding(
-            padding: const EdgeInsets.fromLTRB(14, 14, 14, 10),
-            child: Row(
-              children: [
-                Expanded(
-                  child: _SummaryMetric(
-                    label: 'Toplam',
-                    value: '${numberFormat.format(summary.totalTonnage)} t',
-                    accent: AppColors.electricBlueLight,
-                  ),
+          Material(
+            color: AppColors.electricBlue.withValues(alpha: 0.06),
+            child: InkWell(
+              onTap: () => setState(() => _expanded = !_expanded),
+              child: Padding(
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
+                child: Row(
+                  children: [
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          if (widget.showTitle)
+                            Text(
+                              'Metraj İcmali',
+                              style: AppTypography.headlineMedium,
+                            )
+                          else
+                            Text(
+                              'Metraj İcmali',
+                              style: AppTypography.titleMedium,
+                            ),
+                          const SizedBox(height: 2),
+                          Text(
+                            '${numberFormat.format(summary.totalTonnage)} t · '
+                            '${intFormat.format(summary.totalBarCount)} çubuk',
+                            style: AppTypography.bodySmall.copyWith(
+                              color: AppColors.textMuted,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                    Icon(
+                      _expanded
+                          ? Icons.expand_less_rounded
+                          : Icons.expand_more_rounded,
+                      color: AppColors.electricBlueLight,
+                    ),
+                  ],
                 ),
-                Expanded(
-                  child: _SummaryMetric(
-                    label: 'İnce (Ø8–12)',
-                    value: '${numberFormat.format(summary.thinTonnage)} t',
-                    accent: AppColors.info,
-                  ),
-                ),
-                Expanded(
-                  child: _SummaryMetric(
-                    label: 'Kalın (Ø≥14)',
-                    value: '${numberFormat.format(summary.thickTonnage)} t',
-                    accent: AppColors.success,
-                  ),
-                ),
-              ],
+              ),
             ),
           ),
-          Padding(
-            padding: const EdgeInsets.fromLTRB(14, 0, 14, 12),
-            child: Text(
-              'Toplam uzunluk: ${lengthFormat.format(summary.totalLengthM)} m · '
-              '${intFormat.format(summary.totalBarCount)} çubuk',
-              style: AppTypography.bodySmall.copyWith(color: AppColors.textMuted),
-            ),
-          ),
-          const _IcmalDiameterTableHeader(),
-          ...summary.lines.map(
-            (line) => _IcmalDiameterDataRow(
-              diameter: line.diameter,
-              unitWeightKgPerM: RebarWeightCalculator.kgPerMeter(line.diameter),
-              barCount: line.barCount,
-              lengthM: line.totalLengthM,
-              tonnage: line.tonnage,
-              numberFormat: numberFormat,
-              lengthFormat: lengthFormat,
-              intFormat: intFormat,
-              unitWeightFormat: unitWeightFormat,
-            ),
-          ),
-          _IcmalDiameterTotalRow(
-            barCount: summary.totalBarCount,
-            lengthM: summary.totalLengthM,
-            tonnage: summary.totalTonnage,
-            numberFormat: numberFormat,
-            lengthFormat: lengthFormat,
-            intFormat: intFormat,
-          ),
-          if (typeRows.isNotEmpty) ...[
-            const Divider(height: 1, color: AppColors.border),
+          if (_expanded) ...[
             Padding(
-              padding: const EdgeInsets.fromLTRB(14, 12, 14, 8),
+              padding: const EdgeInsets.fromLTRB(14, 14, 14, 10),
+              child: Row(
+                children: [
+                  Expanded(
+                    child: _SummaryMetric(
+                      label: 'Toplam',
+                      value: '${numberFormat.format(summary.totalTonnage)} t',
+                      accent: AppColors.electricBlueLight,
+                    ),
+                  ),
+                  Expanded(
+                    child: _SummaryMetric(
+                      label: 'İnce (Ø8–12)',
+                      value: '${numberFormat.format(summary.thinTonnage)} t',
+                      accent: AppColors.info,
+                    ),
+                  ),
+                  Expanded(
+                    child: _SummaryMetric(
+                      label: 'Kalın (Ø≥14)',
+                      value: '${numberFormat.format(summary.thickTonnage)} t',
+                      accent: AppColors.success,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            Padding(
+              padding: const EdgeInsets.fromLTRB(14, 0, 14, 12),
               child: Text(
-                'Eleman tipi özeti (cetvel)',
-                style: AppTypography.labelMedium.copyWith(
+                'Toplam uzunluk: ${lengthFormat.format(summary.totalLengthM)} m · '
+                '${intFormat.format(summary.totalBarCount)} çubuk',
+                style: AppTypography.bodySmall.copyWith(
                   color: AppColors.textMuted,
                 ),
               ),
             ),
-            const _IcmalTableHeader(
-              cells: ['Eleman', 'Adet', 'Çubuk', 'Ağırlık/ton'],
-            ),
-            ...typeRows.map(
-              (row) => _IcmalTypeRow(
-                row: row,
+            const _IcmalDiameterTableHeader(),
+            ...summary.lines.map(
+              (line) => _IcmalDiameterDataRow(
+                diameter: line.diameter,
+                unitWeightKgPerM:
+                    RebarWeightCalculator.kgPerMeter(line.diameter),
+                barCount: line.barCount,
+                lengthM: line.totalLengthM,
+                tonnage: line.tonnage,
                 numberFormat: numberFormat,
+                lengthFormat: lengthFormat,
                 intFormat: intFormat,
+                unitWeightFormat: unitWeightFormat,
               ),
+            ),
+            _IcmalDiameterTotalRow(
+              barCount: summary.totalBarCount,
+              lengthM: summary.totalLengthM,
+              tonnage: summary.totalTonnage,
+              numberFormat: numberFormat,
+              lengthFormat: lengthFormat,
+              intFormat: intFormat,
             ),
           ],
         ],
@@ -461,82 +499,6 @@ class _IcmalCol extends StatelessWidget {
           maxLines: dense ? 1 : 2,
           softWrap: !dense,
           overflow: dense ? TextOverflow.fade : TextOverflow.ellipsis,
-        ),
-      ),
-    );
-  }
-}
-
-class _IcmalTableHeader extends StatelessWidget {
-  const _IcmalTableHeader({required this.cells});
-
-  final List<String> cells;
-
-  @override
-  Widget build(BuildContext context) {
-    return AppTableHeaderRow(
-      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
-      cells: [
-        for (final cell in cells)
-          AppTableHeaderCell(
-            cell,
-            flex: _IcmalLayout.columnFlex,
-          ),
-      ],
-    );
-  }
-}
-
-class _IcmalTypeRow extends StatelessWidget {
-  const _IcmalTypeRow({
-    required this.row,
-    required this.numberFormat,
-    required this.intFormat,
-  });
-
-  final MetrajIcmaliTypeRow row;
-  final NumberFormat numberFormat;
-  final NumberFormat intFormat;
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
-      decoration: const BoxDecoration(
-        border: Border(bottom: BorderSide(color: AppColors.borderSubtle)),
-      ),
-      child: IntrinsicHeight(
-        child: Row(
-          crossAxisAlignment: CrossAxisAlignment.stretch,
-          children: [
-            _IcmalCol(
-              row.typeLabel,
-              flex: _IcmalLayout.columnFlex,
-              align: TextAlign.center,
-            ),
-            const SizedBox(width: 4),
-            _IcmalCol(
-              '${row.elementCount}',
-              flex: _IcmalLayout.columnFlex,
-              align: TextAlign.center,
-              dense: true,
-            ),
-            const SizedBox(width: 4),
-            _IcmalCol(
-              intFormat.format(row.barCount),
-              flex: _IcmalLayout.columnFlex,
-              align: TextAlign.center,
-              dense: true,
-            ),
-            const SizedBox(width: 4),
-            _IcmalCol(
-              numberFormat.format(row.tonnage),
-              flex: _IcmalLayout.columnFlex,
-              align: TextAlign.center,
-              dense: true,
-              color: AppColors.electricBlueLight,
-            ),
-          ],
         ),
       ),
     );

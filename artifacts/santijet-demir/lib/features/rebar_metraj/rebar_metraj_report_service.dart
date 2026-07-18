@@ -121,9 +121,6 @@ class RebarMetrajReportService {
     required NumberFormat unitWeightFormat,
   }) {
     final summary = summarizeLines(result.lines);
-    final typeRows = result.cetvel.isNotEmpty
-        ? summarizeCetvelByType(result.cetvel)
-        : const <MetrajIcmaliTypeRow>[];
 
     final rows = <List<String>>[
       for (final line in summary.lines)
@@ -143,7 +140,7 @@ class RebarMetrajReportService {
       ],
     ];
 
-    final section = PdfReportSection(
+    return PdfReportSection(
       title: 'Metraj İcmali',
       subtitle:
           'Toplam ${numberFormat.format(summary.totalTonnage)} t · '
@@ -151,27 +148,6 @@ class RebarMetrajReportService {
           'Kalın (Ø≥14) ${numberFormat.format(summary.thickTonnage)} t',
       headers: const ['Çap', 'Birim ağ.', 'Adet', 'Uzunluk', 'Ağırlık/ton'],
       rows: rows,
-    );
-
-    if (typeRows.isEmpty) return section;
-
-    return PdfReportSection(
-      title: section.title,
-      subtitle: section.subtitle,
-      headers: section.headers,
-      rows: [
-        ...section.rows,
-        ['', '', '', '', ''],
-        ['Eleman tipi özeti (cetvel)', '', '', '', ''],
-        for (final row in typeRows)
-          [
-            row.typeLabel,
-            intFormat.format(row.elementCount),
-            intFormat.format(row.barCount),
-            '',
-            '${numberFormat.format(row.tonnage)} t',
-          ],
-      ],
     );
   }
 
