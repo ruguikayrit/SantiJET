@@ -69,7 +69,6 @@ class MetrajCetvelSection extends StatelessWidget {
     if (lines.isEmpty && cetvel.isEmpty) return const SizedBox.shrink();
 
     final icmali = summarizeLines(lines);
-    final cetvelSummary = cetvel.isNotEmpty ? summarizeCetvel(cetvel) : null;
     final grouped = _groupByType(cetvel);
     final numberFormat = NumberFormat('#,##0.00', 'tr_TR');
     final lengthFormat = NumberFormat('#,##0.##', 'tr_TR');
@@ -93,10 +92,6 @@ class MetrajCetvelSection extends StatelessWidget {
         if (cetvel.isNotEmpty) ...[
           const SizedBox(height: 16),
           _MetrajCetvelAccordion(
-            subtitle:
-                '${cetvelSummary!.elementCount} eleman · ${cetvelSummary.rowCount} satır · '
-                'benzer katsayısı uygulandı · '
-                '${numberFormat.format(cetvelSummary.totalTonnage)} t',
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
@@ -113,9 +108,6 @@ class MetrajCetvelSection extends StatelessWidget {
         ] else if (lines.isNotEmpty) ...[
           const SizedBox(height: 16),
           _MetrajCetvelAccordion(
-            subtitle: labelCount > 0
-                ? '$labelCount etiket okundu · cetvel oluşmadı'
-                : 'Eleman başlığı veya demir etiketi bulunamadı',
             child: MetrajCetvelEmptyHint(labelCount: labelCount),
           ),
         ],
@@ -138,11 +130,9 @@ class MetrajCetvelSection extends StatelessWidget {
 /// Metraj İcmali ile aynı açılır-kapanır kart deseni.
 class _MetrajCetvelAccordion extends StatefulWidget {
   const _MetrajCetvelAccordion({
-    required this.subtitle,
     required this.child,
   });
 
-  final String subtitle;
   final Widget child;
 
   @override
@@ -174,21 +164,9 @@ class _MetrajCetvelAccordionState extends State<_MetrajCetvelAccordion> {
                 child: Row(
                   children: [
                     Expanded(
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text(
-                            'Metraj Cetveli',
-                            style: AppTypography.headlineMedium,
-                          ),
-                          const SizedBox(height: 2),
-                          Text(
-                            widget.subtitle,
-                            style: AppTypography.bodySmall.copyWith(
-                              color: AppColors.textMuted,
-                            ),
-                          ),
-                        ],
+                      child: Text(
+                        'Metraj Cetveli',
+                        style: AppTypography.headlineMedium,
                       ),
                     ),
                     Icon(
@@ -266,28 +244,11 @@ class _MetrajIcmaliSectionState extends State<_MetrajIcmaliSection> {
                 child: Row(
                   children: [
                     Expanded(
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          if (widget.showTitle)
-                            Text(
-                              'Metraj İcmali',
-                              style: AppTypography.headlineMedium,
-                            )
-                          else
-                            Text(
-                              'Metraj İcmali',
-                              style: AppTypography.titleMedium,
-                            ),
-                          const SizedBox(height: 2),
-                          Text(
-                            '${numberFormat.format(summary.totalTonnage)} t · '
-                            '${intFormat.format(summary.totalBarCount)} çubuk',
-                            style: AppTypography.bodySmall.copyWith(
-                              color: AppColors.textMuted,
-                            ),
-                          ),
-                        ],
+                      child: Text(
+                        'Metraj İcmali',
+                        style: widget.showTitle
+                            ? AppTypography.headlineMedium
+                            : AppTypography.titleMedium,
                       ),
                     ),
                     Icon(

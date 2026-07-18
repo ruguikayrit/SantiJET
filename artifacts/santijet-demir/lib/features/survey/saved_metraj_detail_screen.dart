@@ -236,7 +236,6 @@ class _CollapsibleDiameterDetailState extends State<_CollapsibleDiameterDetail> 
   Widget build(BuildContext context) {
     final result = widget.result;
     final numberFormat = widget.numberFormat;
-    final intFormat = NumberFormat('#,##0', 'tr_TR');
 
     return Container(
       decoration: BoxDecoration(
@@ -258,22 +257,9 @@ class _CollapsibleDiameterDetailState extends State<_CollapsibleDiameterDetail> 
                 child: Row(
                   children: [
                     Expanded(
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text(
-                            'Çap Detay Tablosu',
-                            style: AppTypography.headlineMedium,
-                          ),
-                          const SizedBox(height: 2),
-                          Text(
-                            '${numberFormat.format(result.totalTonnage)} t · '
-                            '${intFormat.format(result.totalBarCount)} çubuk',
-                            style: AppTypography.bodySmall.copyWith(
-                              color: AppColors.textMuted,
-                            ),
-                          ),
-                        ],
+                      child: Text(
+                        'Çap Detay Tablosu',
+                        style: AppTypography.headlineMedium,
                       ),
                     ),
                     Icon(
