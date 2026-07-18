@@ -357,7 +357,6 @@ class MetrajRecordCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final result = record.result;
-    final lines = result.lines;
 
     return Container(
       decoration: BoxDecoration(
@@ -475,62 +474,16 @@ class MetrajRecordCard extends StatelessWidget {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Text('Çap Bazlı Tonaj', style: AppTypography.titleMedium),
-                  const SizedBox(height: 10),
-                  if (lines.isEmpty)
-                    Text(
-                      'Çap bazlı analiz satırı bulunamadı.',
-                      style: AppTypography.bodySmall,
-                    )
-                  else
-                    ...lines.map((line) {
-                      final color = AppColors.diameterColor(line.diameter);
-                      final ratio = result.totalTonnage > 0
-                          ? line.tonnage / result.totalTonnage * 100
-                          : 0.0;
-                      return Padding(
-                        padding: const EdgeInsets.only(bottom: 8),
-                        child: Row(
-                          children: [
-                            Expanded(
-                              flex: 2,
-                              child: Text(
-                                'Ø${line.diameter}',
-                                style: AppTypography.titleMedium
-                                    .copyWith(color: color),
-                              ),
-                            ),
-                            Expanded(
-                              flex: 3,
-                              child: Text(
-                                _formatTonnage(line.tonnage),
-                                style: AppTypography.bodyMedium
-                                    .copyWith(fontSize: 12),
-                              ),
-                            ),
-                            Expanded(
-                              flex: 2,
-                              child: Text(
-                                '${ratio.toStringAsFixed(0)}%',
-                                style: AppTypography.labelMedium,
-                                textAlign: TextAlign.end,
-                              ),
-                            ),
-                          ],
-                        ),
-                      );
-                    }),
-                  const SizedBox(height: 12),
                   if (onOpenDetail != null)
                     SizedBox(
                       width: double.infinity,
                       child: OutlinedButton(
                         onPressed: onOpenDetail,
-                        child: const Text('Detayı İncele →'),
+                        child: const Text('Metraj detayını incele →'),
                       ),
                     ),
                   if (onSendToImalat != null) ...[
-                    const SizedBox(height: 8),
+                    if (onOpenDetail != null) const SizedBox(height: 8),
                     SizedBox(
                       width: double.infinity,
                       child: FilledButton.icon(

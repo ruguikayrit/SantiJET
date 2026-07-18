@@ -91,29 +91,33 @@ class MetrajCetvelSection extends StatelessWidget {
           ),
         ],
         if (cetvel.isNotEmpty) ...[
-          const SizedBox(height: 24),
-          Text('Metraj Cetveli', style: AppTypography.headlineMedium),
-          const SizedBox(height: 4),
-          Text(
-            '${cetvelSummary!.elementCount} eleman · ${cetvelSummary.rowCount} satır · '
-            'benzer katsayısı uygulandı · '
-            '${numberFormat.format(cetvelSummary.totalTonnage)} t',
-            style: AppTypography.bodySmall.copyWith(color: AppColors.textMuted),
-          ),
-          const SizedBox(height: 12),
-          ...grouped.entries.map(
-            (entry) => _TypeGroupSection(
-              type: entry.key,
-              entries: entry.value,
-              numberFormat: numberFormat,
-              lengthFormat: lengthFormat,
+          const SizedBox(height: 16),
+          _MetrajCetvelAccordion(
+            subtitle:
+                '${cetvelSummary!.elementCount} eleman · ${cetvelSummary.rowCount} satır · '
+                'benzer katsayısı uygulandı · '
+                '${numberFormat.format(cetvelSummary.totalTonnage)} t',
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                for (final entry in grouped.entries)
+                  _TypeGroupSection(
+                    type: entry.key,
+                    entries: entry.value,
+                    numberFormat: numberFormat,
+                    lengthFormat: lengthFormat,
+                  ),
+              ],
             ),
           ),
         ] else if (lines.isNotEmpty) ...[
-          const SizedBox(height: 20),
-          Text('Metraj Cetveli', style: AppTypography.headlineMedium),
-          const SizedBox(height: 8),
-          MetrajCetvelEmptyHint(labelCount: labelCount),
+          const SizedBox(height: 16),
+          _MetrajCetvelAccordion(
+            subtitle: labelCount > 0
+                ? '$labelCount etiket okundu · cetvel oluşmadı'
+                : 'Eleman başlığı veya demir etiketi bulunamadı',
+            child: MetrajCetvelEmptyHint(labelCount: labelCount),
+          ),
         ],
       ],
     );
@@ -128,6 +132,84 @@ class MetrajCetvelSection extends StatelessWidget {
       grouped.putIfAbsent(type, () => []).add(entry);
     }
     return grouped;
+  }
+}
+
+/// Metraj İcmali ile aynı açılır-kapanır kart deseni.
+class _MetrajCetvelAccordion extends StatefulWidget {
+  const _MetrajCetvelAccordion({
+    required this.subtitle,
+    required this.child,
+  });
+
+  final String subtitle;
+  final Widget child;
+
+  @override
+  State<_MetrajCetvelAccordion> createState() => _MetrajCetvelAccordionState();
+}
+
+class _MetrajCetvelAccordionState extends State<_MetrajCetvelAccordion> {
+  bool _expanded = false;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      decoration: BoxDecoration(
+        color: AppColors.surfaceElevated,
+        borderRadius: AppRadii.md,
+        border: Border.all(color: AppColors.border),
+      ),
+      clipBehavior: Clip.antiAlias,
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          Material(
+            color: AppColors.electricBlue.withValues(alpha: 0.06),
+            child: InkWell(
+              onTap: () => setState(() => _expanded = !_expanded),
+              child: Padding(
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
+                child: Row(
+                  children: [
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            'Metraj Cetveli',
+                            style: AppTypography.headlineMedium,
+                          ),
+                          const SizedBox(height: 2),
+                          Text(
+                            widget.subtitle,
+                            style: AppTypography.bodySmall.copyWith(
+                              color: AppColors.textMuted,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                    Icon(
+                      _expanded
+                          ? Icons.expand_less_rounded
+                          : Icons.expand_more_rounded,
+                      color: AppColors.electricBlueLight,
+                    ),
+                  ],
+                ),
+              ),
+            ),
+          ),
+          if (_expanded)
+            Padding(
+              padding: const EdgeInsets.fromLTRB(12, 12, 12, 8),
+              child: widget.child,
+            ),
+        ],
+      ),
+    );
   }
 }
 
