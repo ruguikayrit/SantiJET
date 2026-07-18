@@ -49,6 +49,9 @@ class SantijetHeader extends StatelessWidget {
   /// Ana sayfa (wordmark) hariç: marka biraz büyür, sayfa adı daha öne çıkar.
   static const pageBrandScale = 1.25;
   static const pageSubtitleScale = 1.5;
+  /// Ana sayfa DEMİR — wordmark’a göre ürün adı okunurluğu.
+  static const homeDemirScale = 1.25;
+  static const homeDemirLetterSpacing = 0.75;
   static const _baseLogoSize = 36.0;
   static const _baseLogoGap = 10.0;
   static const _baseSubtitleGap = 4.0;
@@ -262,7 +265,7 @@ class _WordmarkHeader extends StatelessWidget {
         const SizedBox(height: 4),
         Padding(
           padding: EdgeInsets.only(left: demirIndent),
-          child: Text('DEMİR', style: _demirTitleStyle),
+          child: Text('DEMİR', style: _homeDemirTitleStyle),
         ),
       ],
     );
@@ -273,6 +276,13 @@ TextStyle get _demirTitleStyle => AppTypography.titleMedium.copyWith(
       letterSpacing: 1.2,
       fontWeight: FontWeight.w700,
       height: 1.0,
+    );
+
+/// Wordmark altındaki DEMİR — daha büyük, daha az tracking; wordmark ölçüsü değişmez.
+TextStyle get _homeDemirTitleStyle => _demirTitleStyle.copyWith(
+      fontSize:
+          (_demirTitleStyle.fontSize ?? 14) * SantijetHeader.homeDemirScale,
+      letterSpacing: SantijetHeader.homeDemirLetterSpacing,
     );
 
 abstract final class _BrandTitleMetrics {
