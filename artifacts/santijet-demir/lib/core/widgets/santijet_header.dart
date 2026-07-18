@@ -1,12 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
-import 'package:intl/intl.dart' hide TextDirection;
 import 'package:santijet_demir/core/routing/app_routes.dart';
 import 'package:santijet_demir/core/theme/app_colors.dart';
 import 'package:santijet_demir/core/theme/app_spacing.dart';
 import 'package:santijet_demir/core/theme/app_typography.dart';
-import 'package:santijet_demir/features/settings/providers/profile_provider.dart';
 import 'package:santijet_demir/features/shell/dashboard_feed_provider.dart';
 
 class _HeaderNotificationButton extends ConsumerWidget {
@@ -48,6 +46,11 @@ class SantijetHeader extends StatelessWidget {
     this.avatarInitial,
   });
 
+  /// Ana sayfa (wordmark) hariç sayfa başlık grubu ölçeği.
+  static const pageBrandScale = 1.5;
+  static const _baseLogoSize = 36.0;
+  static const _baseLogoGap = 10.0;
+  static const _baseSubtitleGap = 4.0;
   static const _titleGroupLift = 6.0;
 
   final String? subtitle;
@@ -66,61 +69,103 @@ class SantijetHeader extends StatelessWidget {
               showAvatar: showAvatar,
               avatarInitial: avatarInitial,
             )
-          : Row(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Expanded(
-                  child: Row(
+          : _PageBrandHeader(
+              subtitle: subtitle,
+              showNotification: showNotification,
+              showAvatar: showAvatar,
+              avatarInitial: avatarInitial,
+            ),
+    );
+  }
+}
+
+/// Bolt + DEMİR + sayfa alt başlığı (ana sayfa hariç, ×1.50).
+class _PageBrandHeader extends StatelessWidget {
+  const _PageBrandHeader({
+    required this.showNotification,
+    required this.showAvatar,
+    this.subtitle,
+    this.avatarInitial,
+  });
+
+  final String? subtitle;
+  final bool showNotification;
+  final bool showAvatar;
+  final String? avatarInitial;
+
+  @override
+  Widget build(BuildContext context) {
+    const scale = SantijetHeader.pageBrandScale;
+    final logoSize = SantijetHeader._baseLogoSize * scale;
+    final logoGap = SantijetHeader._baseLogoGap * scale;
+    final subtitleGap = SantijetHeader._baseSubtitleGap * scale;
+    final titleLift = SantijetHeader._titleGroupLift * scale;
+
+    final demirStyle = _demirTitleStyle.copyWith(
+      fontSize: (_demirTitleStyle.fontSize ?? 14) * scale,
+      letterSpacing: 1.2 * scale,
+    );
+    final subtitleStyle = AppTypography.labelMedium.copyWith(
+      fontSize: (AppTypography.labelMedium.fontSize ?? 12) * scale,
+      letterSpacing:
+          (AppTypography.labelMedium.letterSpacing ?? 0.04) * scale,
+    );
+
+    return Row(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Expanded(
+          child: Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Image.asset(
+                'assets/images/splash_bolt.png',
+                width: logoSize,
+                height: logoSize,
+                fit: BoxFit.contain,
+                filterQuality: FilterQuality.high,
+              ),
+              SizedBox(width: logoGap),
+              Expanded(
+                child: Transform.translate(
+                  offset: subtitle != null
+                      ? Offset(0, titleLift)
+                      : Offset.zero,
+                  child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
+                    mainAxisSize: MainAxisSize.min,
                     children: [
-                      Image.asset(
-                        'assets/images/splash_bolt.png',
-                        width: 36,
-                        height: 36,
-                        fit: BoxFit.contain,
-                        filterQuality: FilterQuality.high,
-                      ),
-                      const SizedBox(width: 10),
-                      Expanded(
-                        child: Transform.translate(
-                          offset: subtitle != null
-                              ? const Offset(0, _titleGroupLift)
-                              : Offset.zero,
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            mainAxisSize: MainAxisSize.min,
-                            children: [
-                              Text('DEMİR', style: _demirTitleStyle),
-                              if (subtitle != null) ...[
-                                const SizedBox(height: 4),
-                                Text(subtitle!, style: AppTypography.labelMedium),
-                              ],
-                            ],
-                          ),
-                        ),
-                      ),
+                      Text('DEMİR', style: demirStyle),
+                      if (subtitle != null) ...[
+                        SizedBox(height: subtitleGap),
+                        Text(subtitle!, style: subtitleStyle),
+                      ],
                     ],
                   ),
                 ),
-                if (showNotification) const _HeaderNotificationButton(),
-                if (showAvatar)
-                  Semantics(
-                    label: 'Ayarlar',
-                    button: true,
-                    child: IconButton(
-                      onPressed: () => context.push(AppRoutes.settings),
-                      icon: CircleAvatar(
-                        radius: 18,
-                        backgroundColor: AppColors.warning.withValues(alpha: 0.3),
-                        child: Text(
-                          avatarInitial ?? 'U',
-                          style: AppTypography.titleMedium.copyWith(color: AppColors.warning),
-                        ),
-                      ),
-                    ),
-                  ),
-              ],
+              ),
+            ],
+          ),
+        ),
+        if (showNotification) const _HeaderNotificationButton(),
+        if (showAvatar)
+          Semantics(
+            label: 'Ayarlar',
+            button: true,
+            child: IconButton(
+              onPressed: () => context.push(AppRoutes.settings),
+              icon: CircleAvatar(
+                radius: 18,
+                backgroundColor: AppColors.warning.withValues(alpha: 0.3),
+                child: Text(
+                  avatarInitial ?? 'U',
+                  style: AppTypography.titleMedium
+                      .copyWith(color: AppColors.warning),
+                ),
+              ),
             ),
+          ),
+      ],
     );
   }
 }
@@ -245,133 +290,5 @@ abstract final class _BrandTitleMetrics {
   static double demirIndentOf(BuildContext context) {
     return wordmarkHeightOf(context) *
         (_wordmarkLeftInkPx / _wordmarkPixelHeight);
-  }
-}
-
-class GreetingSection extends ConsumerWidget {
-  const GreetingSection({super.key});
-
-  @override
-  Widget build(BuildContext context, WidgetRef ref) {
-    final displayName = ref.watch(profileDisplayNameProvider);
-    final profession = ref.watch(profileProfessionProvider);
-    final role = ref.watch(profileRoleProvider);
-
-    // Tipografik sol baş: tüm satırların ilk glif mürekkebi aynı x'te.
-    final nameStyle = AppTypography.headlineLarge.copyWith(
-      letterSpacing: 0,
-      height: 1.15,
-    );
-    final welcomeStyle = AppTypography.bodySmall.copyWith(
-      letterSpacing: 0,
-      height: 1.2,
-    );
-    final metaStyle = AppTypography.bodyMedium.copyWith(
-      letterSpacing: 0,
-      height: 1.25,
-    );
-    final roleStyle = AppTypography.bodySmall.copyWith(
-      letterSpacing: 0,
-      height: 1.2,
-    );
-    final nameText = displayName.toUpperCase();
-
-    return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: AppSpacing.md),
-      child: Row(
-        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Expanded(
-            child: GestureDetector(
-              onTap: () => context.push(AppRoutes.settings),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  _InkFlushStartText('Hoş geldin', style: welcomeStyle),
-                  _InkFlushStartText(nameText, style: nameStyle),
-                  if (profession.isNotEmpty)
-                    _InkFlushStartText(profession, style: metaStyle),
-                  if (role.isNotEmpty)
-                    _InkFlushStartText(role, style: roleStyle),
-                ],
-              ),
-            ),
-          ),
-          Container(
-            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-            decoration: BoxDecoration(
-              color: AppColors.surfaceElevated,
-              borderRadius: BorderRadius.circular(12),
-              border: Border.all(color: AppColors.border),
-            ),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.end,
-              children: [
-                Text('Bugün', style: AppTypography.labelMedium),
-                Text(
-                  _formatToday(),
-                  style: AppTypography.titleMedium,
-                ),
-                Text(
-                  _formatWeekday(),
-                  style: AppTypography.bodySmall,
-                ),
-              ],
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
-  String _formatToday() {
-    return DateFormat('d MMMM yyyy', 'tr_TR').format(DateTime.now());
-  }
-
-  String _formatWeekday() {
-    return DateFormat('EEEE', 'tr_TR').format(DateTime.now());
-  }
-}
-
-/// Sol mürekkep kenarını sütun başlangıcına hizalar (Inter side-bearing farkı).
-class _InkFlushStartText extends StatelessWidget {
-  const _InkFlushStartText(this.text, {required this.style});
-
-  final String text;
-  final TextStyle style;
-
-  /// Inter Latin için yaklaşık sol bearing (em oranı).
-  static double _estimatedBearing(TextStyle textStyle) {
-    final size = textStyle.fontSize ?? 14.0;
-    final weight = textStyle.fontWeight?.value ?? 400;
-    // Bold / büyük kapaklar daha dar bearing taşır.
-    final fraction = weight >= 700 ? 0.018 : 0.06;
-    return size * fraction;
-  }
-
-  static double _inkLeft(String value, TextStyle textStyle, TextDirection direction) {
-    if (value.isEmpty) return 0;
-    final painter = TextPainter(
-      text: TextSpan(text: value, style: textStyle),
-      textDirection: direction,
-      maxLines: 1,
-    )..layout();
-    final boxes = painter.getBoxesForSelection(
-      const TextSelection(baseOffset: 0, extentOffset: 1),
-    );
-    final measured = boxes.isEmpty ? 0.0 : boxes.first.left;
-    // Web / bazı renderer'larda kutu sol kenarı 0 döner; tahmini bearing kullan.
-    if (measured.abs() < 0.05) return _estimatedBearing(textStyle);
-    return measured;
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    final inkLeft = _inkLeft(text, style, Directionality.of(context));
-    return Transform.translate(
-      offset: Offset(-inkLeft, 0),
-      child: Text(text, style: style),
-    );
   }
 }
