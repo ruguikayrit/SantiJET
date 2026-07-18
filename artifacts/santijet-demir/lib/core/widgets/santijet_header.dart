@@ -46,8 +46,9 @@ class SantijetHeader extends StatelessWidget {
     this.avatarInitial,
   });
 
-  /// Ana sayfa (wordmark) hariç sayfa başlık grubu ölçeği.
-  static const pageBrandScale = 1.5;
+  /// Ana sayfa (wordmark) hariç: marka biraz büyür, sayfa adı daha öne çıkar.
+  static const pageBrandScale = 1.25;
+  static const pageSubtitleScale = 1.5;
   static const _baseLogoSize = 36.0;
   static const _baseLogoGap = 10.0;
   static const _baseSubtitleGap = 4.0;
@@ -79,7 +80,7 @@ class SantijetHeader extends StatelessWidget {
   }
 }
 
-/// Bolt + DEMİR + sayfa alt başlığı (ana sayfa hariç, ×1.50).
+/// Bolt + DEMİR (×1.25) + sayfa alt başlığı (×1.50) — ana sayfa hariç.
 class _PageBrandHeader extends StatelessWidget {
   const _PageBrandHeader({
     required this.showNotification,
@@ -95,20 +96,23 @@ class _PageBrandHeader extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    const scale = SantijetHeader.pageBrandScale;
-    final logoSize = SantijetHeader._baseLogoSize * scale;
-    final logoGap = SantijetHeader._baseLogoGap * scale;
-    final subtitleGap = SantijetHeader._baseSubtitleGap * scale;
-    final titleLift = SantijetHeader._titleGroupLift * scale;
+    const brandScale = SantijetHeader.pageBrandScale;
+    const subtitleScale = SantijetHeader.pageSubtitleScale;
+    final logoSize = SantijetHeader._baseLogoSize * brandScale;
+    final logoGap = SantijetHeader._baseLogoGap * brandScale;
+    final subtitleGap = SantijetHeader._baseSubtitleGap * brandScale;
+    final titleLift = SantijetHeader._titleGroupLift * brandScale;
 
     final demirStyle = _demirTitleStyle.copyWith(
-      fontSize: (_demirTitleStyle.fontSize ?? 14) * scale,
-      letterSpacing: 1.2 * scale,
+      fontSize: (_demirTitleStyle.fontSize ?? 14) * brandScale,
+      letterSpacing: 1.2 * brandScale,
     );
     final subtitleStyle = AppTypography.labelMedium.copyWith(
-      fontSize: (AppTypography.labelMedium.fontSize ?? 12) * scale,
+      fontSize: (AppTypography.labelMedium.fontSize ?? 12) * subtitleScale,
       letterSpacing:
-          (AppTypography.labelMedium.letterSpacing ?? 0.04) * scale,
+          (AppTypography.labelMedium.letterSpacing ?? 0.04) * subtitleScale,
+      fontWeight: FontWeight.w600,
+      color: AppColors.textSecondary,
     );
 
     return Row(
