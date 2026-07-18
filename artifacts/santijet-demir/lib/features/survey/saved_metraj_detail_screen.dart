@@ -107,9 +107,10 @@ class SavedMetrajDetailScreen extends ConsumerWidget {
             MetrajCetvelEmptyHint(labelCount: result.textDetails.length),
             const SizedBox(height: 20),
           ],
-          Text('Çap Detay Tablosu', style: AppTypography.headlineMedium),
-          const SizedBox(height: 12),
-          _MetrajDiameterTable(result: result, numberFormat: numberFormat),
+          _CollapsibleDiameterDetail(
+            result: result,
+            numberFormat: numberFormat,
+          ),
           const SizedBox(height: 16),
           Container(
             padding: const EdgeInsets.all(14),
@@ -213,8 +214,91 @@ class SavedMetrajDetailScreen extends ConsumerWidget {
   }
 }
 
-class _MetrajDiameterTable extends StatelessWidget {
-  const _MetrajDiameterTable({
+/// Varsayılan kapalı; başlığa tıklanınca çap tablosu açılır.
+class _CollapsibleDiameterDetail extends StatefulWidget {
+  const _CollapsibleDiameterDetail({
+    required this.result,
+    required this.numberFormat,
+  });
+
+  final RebarMetrajResult result;
+  final NumberFormat numberFormat;
+
+  @override
+  State<_CollapsibleDiameterDetail> createState() =>
+      _CollapsibleDiameterDetailState();
+}
+
+class _CollapsibleDiameterDetailState extends State<_CollapsibleDiameterDetail> {
+  bool _expanded = false;
+
+  @override
+  Widget build(BuildContext context) {
+    final result = widget.result;
+    final numberFormat = widget.numberFormat;
+    final intFormat = NumberFormat('#,##0', 'tr_TR');
+
+    return Container(
+      decoration: BoxDecoration(
+        color: AppColors.surfaceElevated,
+        borderRadius: AppRadii.md,
+        border: Border.all(color: AppColors.border),
+      ),
+      clipBehavior: Clip.antiAlias,
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          Material(
+            color: AppColors.electricBlue.withValues(alpha: 0.06),
+            child: InkWell(
+              onTap: () => setState(() => _expanded = !_expanded),
+              child: Padding(
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
+                child: Row(
+                  children: [
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            'Çap Detay Tablosu',
+                            style: AppTypography.headlineMedium,
+                          ),
+                          const SizedBox(height: 2),
+                          Text(
+                            '${numberFormat.format(result.totalTonnage)} t · '
+                            '${intFormat.format(result.totalBarCount)} çubuk',
+                            style: AppTypography.bodySmall.copyWith(
+                              color: AppColors.textMuted,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                    Icon(
+                      _expanded
+                          ? Icons.expand_less_rounded
+                          : Icons.expand_more_rounded,
+                      color: AppColors.electricBlueLight,
+                    ),
+                  ],
+                ),
+              ),
+            ),
+          ),
+          if (_expanded) _MetrajDiameterTableBody(
+            result: result,
+            numberFormat: numberFormat,
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _MetrajDiameterTableBody extends StatelessWidget {
+  const _MetrajDiameterTableBody({
     required this.result,
     required this.numberFormat,
   });
@@ -224,137 +308,129 @@ class _MetrajDiameterTable extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Container(
-      decoration: BoxDecoration(
-        color: AppColors.surfaceElevated,
-        borderRadius: AppRadii.md,
-        border: Border.all(color: AppColors.border),
-      ),
-      child: Column(
-        children: [
-          Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
-            child: IntrinsicHeight(
-              child: Row(
-                crossAxisAlignment: CrossAxisAlignment.stretch,
-                children: [
-                  Expanded(
-                    flex: _DiameterTableLayout.capFlex,
-                    child: const AppTableHeaderBadge('ÇAP'),
-                  ),
-                  const SizedBox(width: 4),
-                  Expanded(
-                    flex: _DiameterTableLayout.tonajFlex,
-                    child: const AppTableHeaderBadge('Ağırlık/ton'),
-                  ),
-                  const SizedBox(width: 4),
-                  Expanded(
-                    flex: _DiameterTableLayout.lengthFlex,
-                    child: const AppTableHeaderBadge('UZUNLUK'),
-                  ),
-                  const Spacer(),
-                  SizedBox(
-                    width: _DiameterTableLayout.adetWidth,
-                    child: const AppTableHeaderBadge('ADET'),
-                  ),
-                ],
-              ),
+    return Column(
+      children: [
+        Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+          child: IntrinsicHeight(
+            child: Row(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                Expanded(
+                  flex: _DiameterTableLayout.capFlex,
+                  child: const AppTableHeaderBadge('ÇAP'),
+                ),
+                const SizedBox(width: _DiameterTableLayout.gap),
+                Expanded(
+                  flex: _DiameterTableLayout.agirlikFlex,
+                  child: const AppTableHeaderBadge('AĞIRLIK'),
+                ),
+                const SizedBox(width: _DiameterTableLayout.gap),
+                Expanded(
+                  flex: _DiameterTableLayout.lengthFlex,
+                  child: const AppTableHeaderBadge('UZUNLUK'),
+                ),
+                const SizedBox(width: _DiameterTableLayout.gap),
+                Expanded(
+                  flex: _DiameterTableLayout.adetFlex,
+                  child: const AppTableHeaderBadge('ADET'),
+                ),
+              ],
             ),
           ),
-          ...result.lines.map((line) {
-            final color = AppColors.diameterColor(line.diameter);
-            final ratio = result.totalTonnage > 0
-                ? line.tonnage / result.totalTonnage
-                : 0.0;
-            return Container(
-              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
-              decoration: const BoxDecoration(
-                border: Border(bottom: BorderSide(color: AppColors.border)),
-              ),
-              child: Column(
-                children: [
-                  Row(
-                    children: [
-                      _DataCell(
-                        'Ø${line.diameter}',
-                        flex: _DiameterTableLayout.capFlex,
-                        color: color,
-                      ),
-                      _DataCell(
-                        '${numberFormat.format(line.tonnage)} t',
-                        flex: _DiameterTableLayout.tonajFlex,
-                      ),
-                      _DataCell(
-                        '${numberFormat.format(line.totalLengthM)} m',
-                        flex: _DiameterTableLayout.lengthFlex,
-                      ),
-                      const Spacer(),
-                      _DataCell(
-                        '${line.barCount}',
-                        width: _DiameterTableLayout.adetWidth,
-                      ),
-                    ],
-                  ),
-                  const SizedBox(height: 6),
-                  ClipRRect(
-                    borderRadius: AppRadii.full,
-                    child: LinearProgressIndicator(
-                      value: ratio,
-                      minHeight: 3,
-                      backgroundColor: AppColors.border,
-                      color: color.withValues(alpha: 0.5),
+        ),
+        ...result.lines.map((line) {
+          final color = AppColors.diameterColor(line.diameter);
+          final ratio = result.totalTonnage > 0
+              ? line.tonnage / result.totalTonnage
+              : 0.0;
+          return Container(
+            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
+            decoration: const BoxDecoration(
+              border: Border(bottom: BorderSide(color: AppColors.border)),
+            ),
+            child: Column(
+              children: [
+                Row(
+                  children: [
+                    _DataCell(
+                      'Ø${line.diameter}',
+                      flex: _DiameterTableLayout.capFlex,
+                      color: color,
                     ),
+                    const SizedBox(width: _DiameterTableLayout.gap),
+                    _DataCell(
+                      '${numberFormat.format(line.tonnage)} t',
+                      flex: _DiameterTableLayout.agirlikFlex,
+                    ),
+                    const SizedBox(width: _DiameterTableLayout.gap),
+                    _DataCell(
+                      '${numberFormat.format(line.totalLengthM)} m',
+                      flex: _DiameterTableLayout.lengthFlex,
+                    ),
+                    const SizedBox(width: _DiameterTableLayout.gap),
+                    _DataCell(
+                      '${line.barCount}',
+                      flex: _DiameterTableLayout.adetFlex,
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 6),
+                ClipRRect(
+                  borderRadius: AppRadii.full,
+                  child: LinearProgressIndicator(
+                    value: ratio,
+                    minHeight: 3,
+                    backgroundColor: AppColors.border,
+                    color: color.withValues(alpha: 0.5),
                   ),
-                ],
-              ),
-            );
-          }),
-        ],
-      ),
+                ),
+              ],
+            ),
+          );
+        }),
+      ],
     );
   }
 }
 
+/// Dört sütun dengeli; gereksiz Spacer / aşırı UZUNLUK flex yok.
 abstract final class _DiameterTableLayout {
+  static const gap = 4.0;
   static const capFlex = 2;
-  static const tonajFlex = 2;
-  static const lengthFlex = 4;
-  static const adetWidth = 72.0;
+  static const agirlikFlex = 3;
+  static const lengthFlex = 3;
+  static const adetFlex = 2;
 }
 
 class _DataCell extends StatelessWidget {
   const _DataCell(
     this.text, {
-    this.flex,
-    this.width,
+    required this.flex,
     this.color,
     this.align = TextAlign.center,
   });
 
   final String text;
-  final int? flex;
-  final double? width;
+  final int flex;
   final Color? color;
   final TextAlign align;
 
   @override
   Widget build(BuildContext context) {
-    final child = Text(
-      text,
-      style: AppTypography.bodyMedium.copyWith(
-        fontSize: 12,
-        color: color ?? AppColors.textSecondary,
-        fontWeight: color != null ? FontWeight.w600 : FontWeight.w400,
+    return Expanded(
+      flex: flex,
+      child: Text(
+        text,
+        style: AppTypography.bodyMedium.copyWith(
+          fontSize: 12,
+          color: color ?? AppColors.textSecondary,
+          fontWeight: color != null ? FontWeight.w600 : FontWeight.w400,
+        ),
+        textAlign: align,
+        maxLines: 1,
+        overflow: TextOverflow.ellipsis,
       ),
-      textAlign: align,
-      maxLines: 1,
-      overflow: TextOverflow.fade,
     );
-
-    if (flex != null) {
-      return Expanded(flex: flex!, child: child);
-    }
-
-    return SizedBox(width: width, child: child);
   }
 }
