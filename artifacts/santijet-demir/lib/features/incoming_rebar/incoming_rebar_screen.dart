@@ -32,7 +32,7 @@ class IncomingRebarScreen extends ConsumerWidget {
         slivers: [
           const SliverToBoxAdapter(
             child: SantijetHeader(
-              subtitle: 'GELEN DEMİR',
+              subtitle: 'Gelen Demir',
               showNotification: false,
             ),
           ),

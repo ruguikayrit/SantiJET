@@ -60,7 +60,7 @@ class _OrdersScreenState extends ConsumerState<OrdersScreen> {
       body: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            const SantijetHeader(subtitle: 'SİPARİŞ'),
+            const SantijetHeader(subtitle: 'Sipariş'),
             if (hasActiveProject) ...[
               Padding(
                 padding: const EdgeInsets.symmetric(horizontal: AppSpacing.md),

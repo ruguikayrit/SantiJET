@@ -46,16 +46,14 @@ class SantijetHeader extends StatelessWidget {
     this.avatarInitial,
   });
 
-  /// Ana sayfa (wordmark) hariç: marka biraz büyür, sayfa adı daha öne çıkar.
-  static const pageBrandScale = 1.25;
-  static const pageSubtitleScale = 1.5;
   /// Ana sayfa DEMİR — wordmark’a göre ürün adı okunurluğu.
   static const homeDemirScale = 1.25;
   static const homeDemirLetterSpacing = 0.75;
-  static const _baseLogoSize = 36.0;
-  static const _baseLogoGap = 10.0;
-  static const _baseSubtitleGap = 4.0;
-  static const _titleGroupLift = 6.0;
+  /// İç sayfa: bolt + küçük DEMİR etiketi + baskın sayfa adı.
+  static const _pageLogoSize = 40.0;
+  static const _pageLogoGap = 12.0;
+  static const _pageTitleGap = 2.0;
+  static const _pageTitleLift = 4.0;
 
   final String? subtitle;
   final bool showWordmark;
@@ -83,7 +81,7 @@ class SantijetHeader extends StatelessWidget {
   }
 }
 
-/// Bolt + DEMİR (×1.25) + sayfa alt başlığı (×1.50) — ana sayfa hariç.
+/// Bolt + muted DEMİR etiketi + baskın sayfa adı — ana sayfa hariç.
 class _PageBrandHeader extends StatelessWidget {
   const _PageBrandHeader({
     required this.showNotification,
@@ -97,27 +95,24 @@ class _PageBrandHeader extends StatelessWidget {
   final bool showAvatar;
   final String? avatarInitial;
 
+  static final _productLabelStyle = AppTypography.labelSmall.copyWith(
+    fontSize: 11,
+    letterSpacing: 0.9,
+    fontWeight: FontWeight.w700,
+    color: AppColors.textMuted,
+    height: 1.0,
+  );
+
+  static final _pageTitleStyle = AppTypography.headlineMedium.copyWith(
+    fontSize: 18,
+    fontWeight: FontWeight.w700,
+    letterSpacing: -0.2,
+    color: AppColors.textPrimary,
+    height: 1.15,
+  );
+
   @override
   Widget build(BuildContext context) {
-    const brandScale = SantijetHeader.pageBrandScale;
-    const subtitleScale = SantijetHeader.pageSubtitleScale;
-    final logoSize = SantijetHeader._baseLogoSize * brandScale;
-    final logoGap = SantijetHeader._baseLogoGap * brandScale;
-    final subtitleGap = SantijetHeader._baseSubtitleGap * brandScale;
-    final titleLift = SantijetHeader._titleGroupLift * brandScale;
-
-    final demirStyle = _demirTitleStyle.copyWith(
-      fontSize: (_demirTitleStyle.fontSize ?? 14) * brandScale,
-      letterSpacing: 1.2 * brandScale,
-    );
-    final subtitleStyle = AppTypography.labelMedium.copyWith(
-      fontSize: (AppTypography.labelMedium.fontSize ?? 12) * subtitleScale,
-      letterSpacing:
-          (AppTypography.labelMedium.letterSpacing ?? 0.04) * subtitleScale,
-      fontWeight: FontWeight.w600,
-      color: AppColors.textSecondary,
-    );
-
     return Row(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -127,25 +122,25 @@ class _PageBrandHeader extends StatelessWidget {
             children: [
               Image.asset(
                 'assets/images/splash_bolt.png',
-                width: logoSize,
-                height: logoSize,
+                width: SantijetHeader._pageLogoSize,
+                height: SantijetHeader._pageLogoSize,
                 fit: BoxFit.contain,
                 filterQuality: FilterQuality.high,
               ),
-              SizedBox(width: logoGap),
+              const SizedBox(width: SantijetHeader._pageLogoGap),
               Expanded(
                 child: Transform.translate(
                   offset: subtitle != null
-                      ? Offset(0, titleLift)
+                      ? const Offset(0, SantijetHeader._pageTitleLift)
                       : Offset.zero,
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     mainAxisSize: MainAxisSize.min,
                     children: [
-                      Text('DEMİR', style: demirStyle),
+                      Text('DEMİR', style: _productLabelStyle),
                       if (subtitle != null) ...[
-                        SizedBox(height: subtitleGap),
-                        Text(subtitle!, style: subtitleStyle),
+                        const SizedBox(height: SantijetHeader._pageTitleGap),
+                        Text(subtitle!, style: _pageTitleStyle),
                       ],
                     ],
                   ),

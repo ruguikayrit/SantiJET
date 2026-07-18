@@ -37,7 +37,7 @@ class AnalysisScreen extends ConsumerWidget {
       body: CustomScrollView(
           slivers: [
             const SliverToBoxAdapter(
-              child: SantijetHeader(subtitle: 'HESAP / ANALİZ / RAPOR', showNotification: false),
+              child: SantijetHeader(subtitle: 'Hesap / Analiz / Rapor', showNotification: false),
             ),
             if (!hasActiveProject)
               const ActiveProjectSliverGate()
