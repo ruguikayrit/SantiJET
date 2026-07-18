@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:santijet_demir/core/theme/app_colors.dart';
 import 'package:santijet_demir/core/theme/app_radii.dart';
+import 'package:santijet_demir/core/theme/app_spacing.dart';
 import 'package:santijet_demir/core/theme/app_typography.dart';
 import 'package:santijet_demir/core/widgets/app_table_header.dart';
 import 'package:santijet_demir/data/services/element_header_parser.dart';
@@ -78,8 +79,7 @@ class MetrajCetvelSection extends StatelessWidget {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
-        if (lines.isNotEmpty) ...[
-          if (!hideHeader) const SizedBox(height: 40),
+        if (lines.isNotEmpty)
           _MetrajIcmaliSection(
             summary: icmali,
             showTitle: !hideHeader,
@@ -88,9 +88,8 @@ class MetrajCetvelSection extends StatelessWidget {
             intFormat: intFormat,
             unitWeightFormat: unitWeightFormat,
           ),
-        ],
         if (cetvel.isNotEmpty) ...[
-          const SizedBox(height: 16),
+          if (lines.isNotEmpty) const SizedBox(height: AppSpacing.sm),
           _MetrajCetvelAccordion(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -106,7 +105,7 @@ class MetrajCetvelSection extends StatelessWidget {
             ),
           ),
         ] else if (lines.isNotEmpty) ...[
-          const SizedBox(height: 16),
+          const SizedBox(height: AppSpacing.sm),
           _MetrajCetvelAccordion(
             child: MetrajCetvelEmptyHint(labelCount: labelCount),
           ),

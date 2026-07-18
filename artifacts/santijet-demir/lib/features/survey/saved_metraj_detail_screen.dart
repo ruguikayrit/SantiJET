@@ -96,22 +96,22 @@ class SavedMetrajDetailScreen extends ConsumerWidget {
           const SizedBox(height: 16),
           MetrajTonnageSummaryCards(lines: result.lines),
           if (result.lines.isNotEmpty || result.cetvel.isNotEmpty) ...[
-            const SizedBox(height: 16),
+            const SizedBox(height: AppSpacing.sm),
             MetrajCetvelSection(
               lines: result.lines,
               cetvel: result.cetvel,
               labelCount: result.textDetails.length,
             ),
-            const SizedBox(height: 20),
+            const SizedBox(height: AppSpacing.sm),
           ] else if (result.textDetails.isNotEmpty) ...[
             MetrajCetvelEmptyHint(labelCount: result.textDetails.length),
-            const SizedBox(height: 20),
+            const SizedBox(height: AppSpacing.sm),
           ],
           _CollapsibleDiameterDetail(
             result: result,
             numberFormat: numberFormat,
           ),
-          const SizedBox(height: 16),
+          const SizedBox(height: AppSpacing.sm),
           Container(
             padding: const EdgeInsets.all(14),
             decoration: BoxDecoration(
@@ -134,7 +134,7 @@ class SavedMetrajDetailScreen extends ConsumerWidget {
             ),
           ),
           if (record.surveyImalatName != null) ...[
-            const SizedBox(height: 12),
+            const SizedBox(height: AppSpacing.sm),
             Container(
               padding: const EdgeInsets.all(12),
               decoration: BoxDecoration(
@@ -159,7 +159,7 @@ class SavedMetrajDetailScreen extends ConsumerWidget {
             ),
           ],
           if (record.isApprovedForAnalysis) ...[
-            const SizedBox(height: 12),
+            const SizedBox(height: AppSpacing.sm),
             Container(
               padding: const EdgeInsets.all(12),
               decoration: BoxDecoration(
@@ -185,7 +185,7 @@ class SavedMetrajDetailScreen extends ConsumerWidget {
             ),
           ],
           if (canEdit) ...[
-            const SizedBox(height: 16),
+            const SizedBox(height: AppSpacing.sm),
             SizedBox(
               width: double.infinity,
               child: FilledButton.icon(
@@ -196,7 +196,7 @@ class SavedMetrajDetailScreen extends ConsumerWidget {
               ),
             ),
             if (!record.isApprovedForAnalysis) ...[
-              const SizedBox(height: 8),
+              const SizedBox(height: AppSpacing.sm),
               SizedBox(
                 width: double.infinity,
                 child: OutlinedButton.icon(
