@@ -6,6 +6,7 @@ import 'package:santijet_demir/core/theme/app_radii.dart';
 import 'package:santijet_demir/core/theme/app_typography.dart';
 import 'package:santijet_demir/domain/entities/cutting_bending.dart';
 import 'package:santijet_demir/features/analysis/providers/cutting_bending_provider.dart';
+import 'package:santijet_demir/features/analysis/widgets/stock_bar_cut_visual.dart';
 
 String _formatLengthM(double lengthM) {
   if (lengthM >= 100) return AppFormat.integer(lengthM.round());
@@ -493,10 +494,11 @@ class _PaginatedStockBarCutListState extends State<_PaginatedStockBarCutList> {
         ...visibleBars.map(
           (bar) => Padding(
             padding: const EdgeInsets.only(bottom: 8),
-            child: _StockBarCutRow(
+            child: StockBarCutVisualCard(
               bar: bar,
               stockLengthM: widget.stockLengthM,
               diameterColor: widget.diameterColor,
+              remainderLabelStyle: StockBarRemainderLabel.fire,
             ),
           ),
         ),
@@ -526,68 +528,6 @@ class _PaginatedStockBarCutListState extends State<_PaginatedStockBarCutList> {
           ),
         ],
       ],
-    );
-  }
-}
-
-class _StockBarCutRow extends StatelessWidget {
-  const _StockBarCutRow({
-    required this.bar,
-    required this.stockLengthM,
-    required this.diameterColor,
-  });
-
-  final StockBarCut bar;
-  final double stockLengthM;
-  final Color diameterColor;
-
-  @override
-  Widget build(BuildContext context) {
-    final parts = bar.members
-        .expand(
-          (member) => List.filled(
-            member.count,
-            '${member.lengthM.toStringAsFixed(2)} m',
-          ),
-        )
-        .join(' + ');
-    final isZeroWaste = bar.wasteLengthM <= 0.001;
-
-    return Container(
-      width: double.infinity,
-      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
-      decoration: BoxDecoration(
-        color: isZeroWaste
-            ? AppColors.success.withValues(alpha: 0.06)
-            : AppColors.canvas,
-        borderRadius: AppRadii.sm,
-        border: Border.all(
-          color: isZeroWaste
-              ? AppColors.success.withValues(alpha: 0.25)
-              : AppColors.border,
-        ),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Text(
-            'Çubuk ${bar.barIndex}',
-            style: AppTypography.labelMedium.copyWith(color: diameterColor),
-          ),
-          const SizedBox(height: 4),
-          Text(
-            '$parts = ${bar.usedLengthM.toStringAsFixed(2)} m',
-            style: AppTypography.bodyMedium,
-          ),
-          Text(
-            'Fire: ${bar.wasteLengthM.toStringAsFixed(2)} m / '
-            '${stockLengthM.toStringAsFixed(0)} m',
-            style: AppTypography.bodySmall.copyWith(
-              color: isZeroWaste ? AppColors.success : AppColors.textMuted,
-            ),
-          ),
-        ],
-      ),
     );
   }
 }

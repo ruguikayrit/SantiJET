@@ -745,5 +745,63 @@ void main() {
       );
       expect(merged.sourceMetrajRecordIds, containsAll(['a', 'b']));
     });
+
+    test('keeps element identity on piece lines and stock cut members', () {
+      const details = [
+        RebarMetrajTextDetail(
+          entityType: 'TEXT',
+          sourceText: 's1',
+          included: true,
+          diameter: 12,
+          lengthM: 4.10,
+          quantity: 2,
+          elementCode: 'SB12',
+          elementTypeCode: 'S',
+        ),
+        RebarMetrajTextDetail(
+          entityType: 'TEXT',
+          sourceText: 'k1',
+          included: true,
+          diameter: 12,
+          lengthM: 4.10,
+          quantity: 1,
+          elementCode: 'K101',
+          elementTypeCode: 'K',
+        ),
+        RebarMetrajTextDetail(
+          entityType: 'TEXT',
+          sourceText: 'd1',
+          included: true,
+          diameter: 12,
+          lengthM: 3.75,
+          quantity: 1,
+          elementCode: 'D3',
+          elementTypeCode: 'D',
+        ),
+      ];
+
+      final lines = extractPieceLinesFromMetrajDetails(details);
+      expect(lines, hasLength(3));
+      expect(
+        lines.map((line) => line.elementDisplayLabel).toSet(),
+        containsAll(['Kolon SB12', 'Kiriş K101', 'Döşeme D3']),
+      );
+
+      final plans = computeStockCutPlans(lines, useCache: false);
+      expect(plans, hasLength(1));
+      final members = plans.first.bars.expand((bar) => bar.members).toList();
+      expect(
+        members.any((m) => m.elementDisplayLabel == 'Kolon SB12'),
+        isTrue,
+      );
+      expect(
+        members.any((m) => m.elementDisplayLabel == 'Kiriş K101'),
+        isTrue,
+      );
+      expect(
+        members.any((m) => m.elementDisplayLabel == 'Döşeme D3'),
+        isTrue,
+      );
+    });
   });
 }

@@ -85,6 +85,9 @@ class RebarPieceLine {
     required this.quantity,
     this.sourceText,
     this.spacingCm,
+    this.elementCode,
+    this.elementTypeCode,
+    this.elementTypeLabel,
   });
 
   final int diameter;
@@ -92,6 +95,44 @@ class RebarPieceLine {
   final int quantity;
   final String? sourceText;
   final double? spacingCm;
+  /// Örn. SB12, K101 — metraj eleman kodu.
+  final String? elementCode;
+  /// S / P / K / D
+  final String? elementTypeCode;
+  /// Kolon / Perde / Kiriş / Döşeme
+  final String? elementTypeLabel;
+
+  /// UI: "Kolon SB12" — hata ayıklamada imalat kimliği.
+  String get elementDisplayLabel {
+    final type = elementTypeLabel?.trim() ?? '';
+    final code = elementCode?.trim() ?? '';
+    if (type.isEmpty && code.isEmpty) return '';
+    if (type.isEmpty) return code;
+    if (code.isEmpty) return type;
+    return '$type $code';
+  }
+
+  RebarPieceLine copyWith({
+    int? diameter,
+    double? lengthM,
+    int? quantity,
+    String? sourceText,
+    double? spacingCm,
+    String? elementCode,
+    String? elementTypeCode,
+    String? elementTypeLabel,
+  }) {
+    return RebarPieceLine(
+      diameter: diameter ?? this.diameter,
+      lengthM: lengthM ?? this.lengthM,
+      quantity: quantity ?? this.quantity,
+      sourceText: sourceText ?? this.sourceText,
+      spacingCm: spacingCm ?? this.spacingCm,
+      elementCode: elementCode ?? this.elementCode,
+      elementTypeCode: elementTypeCode ?? this.elementTypeCode,
+      elementTypeLabel: elementTypeLabel ?? this.elementTypeLabel,
+    );
+  }
 
   Map<String, dynamic> toJson() => {
         'diameter': diameter,
@@ -99,6 +140,9 @@ class RebarPieceLine {
         'quantity': quantity,
         'sourceText': sourceText,
         if (spacingCm != null) 'spacingCm': spacingCm,
+        if (elementCode != null) 'elementCode': elementCode,
+        if (elementTypeCode != null) 'elementTypeCode': elementTypeCode,
+        if (elementTypeLabel != null) 'elementTypeLabel': elementTypeLabel,
       };
 
   factory RebarPieceLine.fromJson(Map<dynamic, dynamic> json) {
@@ -108,6 +152,9 @@ class RebarPieceLine {
       quantity: (json['quantity'] as num?)?.toInt() ?? 0,
       sourceText: json['sourceText'] as String?,
       spacingCm: (json['spacingCm'] as num?)?.toDouble(),
+      elementCode: json['elementCode'] as String?,
+      elementTypeCode: json['elementTypeCode'] as String?,
+      elementTypeLabel: json['elementTypeLabel'] as String?,
     );
   }
 }
@@ -343,20 +390,49 @@ class StockBarCutMember {
   const StockBarCutMember({
     required this.lengthM,
     required this.count,
+    this.elementCode,
+    this.elementTypeCode,
+    this.elementTypeLabel,
   });
 
   final double lengthM;
   final int count;
+  final String? elementCode;
+  final String? elementTypeCode;
+  final String? elementTypeLabel;
+
+  /// UI: "Kolon SB12"
+  String get elementDisplayLabel {
+    final type = elementTypeLabel?.trim() ?? '';
+    final code = elementCode?.trim() ?? '';
+    if (type.isEmpty && code.isEmpty) return '';
+    if (type.isEmpty) return code;
+    if (code.isEmpty) return type;
+    return '$type $code';
+  }
+
+  /// Kısa etiket (bar segmenti): kod varsa kod, yoksa tip.
+  String get shortLabel {
+    final code = elementCode?.trim() ?? '';
+    if (code.isNotEmpty) return code;
+    return elementTypeLabel?.trim() ?? '';
+  }
 
   Map<String, dynamic> toJson() => {
         'lengthM': lengthM,
         'count': count,
+        if (elementCode != null) 'elementCode': elementCode,
+        if (elementTypeCode != null) 'elementTypeCode': elementTypeCode,
+        if (elementTypeLabel != null) 'elementTypeLabel': elementTypeLabel,
       };
 
   factory StockBarCutMember.fromJson(Map<dynamic, dynamic> json) {
     return StockBarCutMember(
       lengthM: (json['lengthM'] as num?)?.toDouble() ?? 0,
       count: (json['count'] as num?)?.toInt() ?? 0,
+      elementCode: json['elementCode'] as String?,
+      elementTypeCode: json['elementTypeCode'] as String?,
+      elementTypeLabel: json['elementTypeLabel'] as String?,
     );
   }
 }

@@ -1,4 +1,5 @@
 import 'package:flutter/foundation.dart';
+import 'package:santijet_demir/data/services/element_header_parser.dart';
 import 'package:santijet_demir/data/services/rebar_weight_calculator.dart';
 import 'package:santijet_demir/domain/entities/cutting_bending.dart';
 import 'package:santijet_demir/domain/entities/rebar_metraj.dart';
@@ -45,6 +46,21 @@ double _mmToLengthM(int lengthMm) => lengthMm / 1000.0;
 
 typedef _LengthInventory = Map<int, int>;
 
+class _PieceIdentity {
+  const _PieceIdentity({
+    this.elementCode,
+    this.elementTypeCode,
+    this.elementTypeLabel,
+  });
+
+  final String? elementCode;
+  final String? elementTypeCode;
+  final String? elementTypeLabel;
+}
+
+/// lengthMm → her birim parça için imalat kimliği (FIFO).
+typedef _IdentityPool = Map<int, List<_PieceIdentity>>;
+
 int _inventoryTotalCount(_LengthInventory inventory) {
   return inventory.values.fold(0, (sum, count) => sum + count);
 }
@@ -62,22 +78,66 @@ _LengthInventory _buildDiameterInventory(
   return inventory;
 }
 
+_IdentityPool _buildIdentityPool(List<RebarPieceLine> pieces, int diameter) {
+  final pool = <int, List<_PieceIdentity>>{};
+  for (final piece in pieces) {
+    if (piece.diameter != diameter) continue;
+    final key = _lengthToMm(piece.lengthM);
+    final identity = _PieceIdentity(
+      elementCode: piece.elementCode,
+      elementTypeCode: piece.elementTypeCode,
+      elementTypeLabel: piece.elementTypeLabel,
+    );
+    final bucket = pool.putIfAbsent(key, () => <_PieceIdentity>[]);
+    for (var i = 0; i < piece.quantity; i++) {
+      bucket.add(identity);
+    }
+  }
+  return pool;
+}
+
 int _sumFillMm(List<int> fill) => fill.fold(0, (sum, value) => sum + value);
 
-List<StockBarCutMember> _membersFromFill(List<int> fill) {
-  final counts = <int, int>{};
+_PieceIdentity? _popIdentity(_IdentityPool pool, int lengthMm) {
+  final bucket = pool[lengthMm];
+  if (bucket == null || bucket.isEmpty) return null;
+  final identity = bucket.removeAt(0);
+  if (bucket.isEmpty) pool.remove(lengthMm);
+  return identity;
+}
+
+List<StockBarCutMember> _membersFromFill(List<int> fill, _IdentityPool pool) {
+  final grouped = <String, StockBarCutMember>{};
   for (final lengthMm in fill) {
-    counts[lengthMm] = (counts[lengthMm] ?? 0) + 1;
+    final identity = _popIdentity(pool, lengthMm);
+    final typeCode = identity?.elementTypeCode ?? '';
+    final code = identity?.elementCode ?? '';
+    final groupKey = '$lengthMm|$typeCode|$code';
+    final existing = grouped[groupKey];
+    if (existing == null) {
+      grouped[groupKey] = StockBarCutMember(
+        lengthM: _mmToLengthM(lengthMm),
+        count: 1,
+        elementCode: identity?.elementCode,
+        elementTypeCode: identity?.elementTypeCode,
+        elementTypeLabel: identity?.elementTypeLabel,
+      );
+    } else {
+      grouped[groupKey] = StockBarCutMember(
+        lengthM: existing.lengthM,
+        count: existing.count + 1,
+        elementCode: existing.elementCode,
+        elementTypeCode: existing.elementTypeCode,
+        elementTypeLabel: existing.elementTypeLabel,
+      );
+    }
   }
-  final members = counts.entries
-      .map(
-        (entry) => StockBarCutMember(
-          lengthM: _mmToLengthM(entry.key),
-          count: entry.value,
-        ),
-      )
-      .toList()
-    ..sort((a, b) => b.lengthM.compareTo(a.lengthM));
+  final members = grouped.values.toList()
+    ..sort((a, b) {
+      final byLength = b.lengthM.compareTo(a.lengthM);
+      if (byLength != 0) return byLength;
+      return (a.elementDisplayLabel).compareTo(b.elementDisplayLabel);
+    });
   return members;
 }
 
@@ -255,6 +315,7 @@ class _DiameterPackResult {
 _DiameterPackResult _packDiameterInventory({
   required int diameter,
   required _LengthInventory inventory,
+  required _IdentityPool identityPool,
   required double stockLengthM,
   bool retainBars = true,
   int maxRetainedWasteBars = _maxRetainedWasteBarsPerPlan,
@@ -294,7 +355,7 @@ _DiameterPackResult _packDiameterInventory({
       final bar = StockBarCut(
         barIndex: barIndex,
         diameter: diameter,
-        members: _membersFromFill(fill),
+        members: _membersFromFill(fill, identityPool),
         usedLengthM: usedLengthM,
         wasteLengthM: wasteLengthM,
       );
@@ -304,6 +365,11 @@ _DiameterPackResult _packDiameterInventory({
         }
       } else if (retainedNoWasteBars.length < maxRetainedNoWasteBars) {
         retainedNoWasteBars.add(bar);
+      }
+    } else {
+      // Üyelik oluşturulmasa da havuz stokla senkron kalsın.
+      for (final lengthMm in fill) {
+        _popIdentity(identityPool, lengthMm);
       }
     }
     barIndex++;
@@ -323,6 +389,7 @@ _DiameterPackResult _packDiameterInventory({
 Future<_DiameterPackResult> _packDiameterInventoryAsync({
   required int diameter,
   required _LengthInventory inventory,
+  required _IdentityPool identityPool,
   required double stockLengthM,
   bool retainBars = true,
   int maxRetainedWasteBars = _maxRetainedWasteBarsPerPlan,
@@ -366,7 +433,7 @@ Future<_DiameterPackResult> _packDiameterInventoryAsync({
       final bar = StockBarCut(
         barIndex: barIndex,
         diameter: diameter,
-        members: _membersFromFill(fill),
+        members: _membersFromFill(fill, identityPool),
         usedLengthM: usedLengthM,
         wasteLengthM: wasteLengthM,
       );
@@ -376,6 +443,10 @@ Future<_DiameterPackResult> _packDiameterInventoryAsync({
         }
       } else if (retainedNoWasteBars.length < maxRetainedNoWasteBars) {
         retainedNoWasteBars.add(bar);
+      }
+    } else {
+      for (final lengthMm in fill) {
+        _popIdentity(identityPool, lengthMm);
       }
     }
     barIndex++;
@@ -510,6 +581,7 @@ List<StockCutPlan> _computeStockCutPlansUncached(
     packedByDiameter[diameter] = _packDiameterInventory(
       diameter: diameter,
       inventory: inventory,
+      identityPool: _buildIdentityPool(pieces, diameter),
       stockLengthM: stockLengthM,
     );
   }
@@ -537,6 +609,7 @@ Future<List<StockCutPlan>> _computeStockCutPlansUncachedAsync(
     packedByDiameter[diameter] = await _packDiameterInventoryAsync(
       diameter: diameter,
       inventory: inventory,
+      identityPool: _buildIdentityPool(pieces, diameter),
       stockLengthM: stockLengthM,
     );
     if (kIsWeb) await _yieldToEventLoop();
@@ -561,6 +634,7 @@ double computeStockCutWasteForDiameter(
   final packed = _packDiameterInventory(
     diameter: diameter,
     inventory: _cloneInventory(inventory),
+    identityPool: _buildIdentityPool(pieces, diameter),
     stockLengthM: stockLengthM,
     retainBars: false,
   );
@@ -582,7 +656,14 @@ List<RebarPieceLine> extractPieceLinesFromMetrajDetails(
     if (diameter == null || lengthM == null || lengthM <= 0) continue;
     if (detail.quantity <= 0) continue;
 
-    final key = '$diameter:${lengthM.toStringAsFixed(3)}';
+    final typeCode = detail.elementTypeCode;
+    final typeLabel = detail.elementTypeCode == null
+        ? null
+        : StructuralElementType.fromLetter(detail.elementTypeCode).label;
+    final elementCode = detail.elementCode;
+
+    final key =
+        '$diameter:${lengthM.toStringAsFixed(3)}:${typeCode ?? ''}:${elementCode ?? ''}';
     final existing = grouped[key];
     if (existing == null) {
       grouped[key] = RebarPieceLine(
@@ -591,6 +672,9 @@ List<RebarPieceLine> extractPieceLinesFromMetrajDetails(
         quantity: detail.quantity,
         sourceText: detail.sourceText,
         spacingCm: detail.spacingCm,
+        elementCode: elementCode,
+        elementTypeCode: typeCode,
+        elementTypeLabel: typeLabel,
       );
     } else {
       final totalQty = existing.quantity + detail.quantity;
@@ -611,6 +695,9 @@ List<RebarPieceLine> extractPieceLinesFromMetrajDetails(
         quantity: totalQty,
         sourceText: existing.sourceText ?? detail.sourceText,
         spacingCm: mergedSpacing,
+        elementCode: existing.elementCode,
+        elementTypeCode: existing.elementTypeCode,
+        elementTypeLabel: existing.elementTypeLabel,
       );
     }
   }
@@ -619,7 +706,9 @@ List<RebarPieceLine> extractPieceLinesFromMetrajDetails(
     ..sort((a, b) {
       final byDiameter = a.diameter.compareTo(b.diameter);
       if (byDiameter != 0) return byDiameter;
-      return a.lengthM.compareTo(b.lengthM);
+      final byLength = a.lengthM.compareTo(b.lengthM);
+      if (byLength != 0) return byLength;
+      return a.elementDisplayLabel.compareTo(b.elementDisplayLabel);
     });
   return lines;
 }
@@ -703,7 +792,8 @@ LengthMatchGroup _buildLengthMatchGroup(List<RebarPieceLine> cluster, int index)
 }
 
 String pieceLineKey(RebarPieceLine piece) =>
-    '${piece.diameter}|${piece.lengthM.toStringAsFixed(4)}';
+    '${piece.diameter}|${piece.lengthM.toStringAsFixed(4)}|'
+    '${piece.elementTypeCode ?? ''}|${piece.elementCode ?? ''}';
 
 /// Boy eşleştirme onaylarına göre revize parça listesi üretir.
 List<RebarPieceLine> applyLengthMatchesToPieceLines(
@@ -725,13 +815,12 @@ List<RebarPieceLine> applyLengthMatchesToPieceLines(
 
   for (final group in lengthMatches) {
     if (group.approved && group.selectedLengthM != null) {
-      revised.add(
-        RebarPieceLine(
-          diameter: group.diameter,
-          lengthM: group.selectedLengthM!,
-          quantity: group.totalQuantity,
-        ),
-      );
+      // İmalat kimliğini koru — her kaynak satır ayrı kalır.
+      for (final member in group.members) {
+        revised.add(
+          member.copyWith(lengthM: group.selectedLengthM!),
+        );
+      }
     } else {
       revised.addAll(group.members);
     }
@@ -746,10 +835,12 @@ List<RebarPieceLine> applyLengthMatchesToPieceLines(
   revised.sort((a, b) {
     final byDiameter = a.diameter.compareTo(b.diameter);
     if (byDiameter != 0) return byDiameter;
-    return a.lengthM.compareTo(b.lengthM);
+    final byLength = a.lengthM.compareTo(b.lengthM);
+    if (byLength != 0) return byLength;
+    return a.elementDisplayLabel.compareTo(b.elementDisplayLabel);
   });
 
-  return revised;
+  return _mergePieceLines(revised);
 }
 
 bool isLengthMatchingComplete(List<LengthMatchGroup> lengthMatches) {
@@ -825,6 +916,11 @@ RebarPieceLine _resolveRevisedStateForRawPiece(
     diameter: diameter,
     lengthM: length,
     quantity: raw.quantity,
+    sourceText: raw.sourceText,
+    spacingCm: raw.spacingCm,
+    elementCode: raw.elementCode,
+    elementTypeCode: raw.elementTypeCode,
+    elementTypeLabel: raw.elementTypeLabel,
   );
 }
 
@@ -862,9 +958,7 @@ List<RebarPieceLine> _mergePieceLines(List<RebarPieceLine> pieces) {
     if (existing == null) {
       grouped[key] = piece;
     } else {
-      grouped[key] = RebarPieceLine(
-        diameter: piece.diameter,
-        lengthM: piece.lengthM,
+      grouped[key] = existing.copyWith(
         quantity: existing.quantity + piece.quantity,
         sourceText: existing.sourceText ?? piece.sourceText,
         spacingCm: existing.spacingCm ?? piece.spacingCm,
@@ -876,7 +970,9 @@ List<RebarPieceLine> _mergePieceLines(List<RebarPieceLine> pieces) {
     ..sort((a, b) {
       final byDiameter = a.diameter.compareTo(b.diameter);
       if (byDiameter != 0) return byDiameter;
-      return a.lengthM.compareTo(b.lengthM);
+      final byLength = a.lengthM.compareTo(b.lengthM);
+      if (byLength != 0) return byLength;
+      return a.elementDisplayLabel.compareTo(b.elementDisplayLabel);
     });
 }
 

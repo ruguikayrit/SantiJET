@@ -465,12 +465,16 @@ class AnalysisReportService {
           .map(
             (bar) => [
               '#${bar.barIndex}',
-              bar.members
-                  .map(
-                    (member) =>
-                        '${member.lengthM.toStringAsFixed(2)} m×${member.count}',
-                  )
-                  .join(' + '),
+                  bar.members
+                      .map(
+                        (member) {
+                          final label = member.elementDisplayLabel;
+                          final piece =
+                              '${member.lengthM.toStringAsFixed(2)} m×${member.count}';
+                          return label.isEmpty ? piece : '$label $piece';
+                        },
+                      )
+                      .join(' + '),
               bar.usedLengthM.toStringAsFixed(2),
               bar.wasteLengthM.toStringAsFixed(2),
             ],

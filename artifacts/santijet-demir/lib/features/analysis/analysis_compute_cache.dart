@@ -16,6 +16,8 @@ abstract final class AnalysisComputeCache {
       hash = 37 * hash + piece.diameter;
       hash = 37 * hash + piece.lengthM.hashCode;
       hash = 37 * hash + piece.quantity;
+      hash = 37 * hash + (piece.elementTypeCode?.hashCode ?? 0);
+      hash = 37 * hash + (piece.elementCode?.hashCode ?? 0);
       totalQty += piece.quantity;
     }
     return '${pieces.length}:$totalQty:$hash';
