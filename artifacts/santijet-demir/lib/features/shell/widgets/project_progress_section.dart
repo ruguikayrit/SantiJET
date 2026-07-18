@@ -196,7 +196,7 @@ class _ProgressImalatGroup extends StatefulWidget {
 
 class _ProgressImalatGroupState extends State<_ProgressImalatGroup> {
   /// Çap tablosu varsayılan olarak açık; kullanıcı kapatabilir.
-  bool _expanded = true;
+  bool _expanded = false;
 
   @override
   Widget build(BuildContext context) {
