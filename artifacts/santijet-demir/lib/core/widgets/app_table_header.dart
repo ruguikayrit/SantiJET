@@ -26,11 +26,13 @@ class AppTableHeaderRow extends StatelessWidget {
     required this.cells,
     this.padding = const EdgeInsets.fromLTRB(14, 10, 14, 10),
     this.gap = 4,
+    this.trailing,
   });
 
   final List<AppTableHeaderCell> cells;
   final EdgeInsetsGeometry padding;
   final double gap;
+  final Widget? trailing;
 
   @override
   Widget build(BuildContext context) {
@@ -51,6 +53,7 @@ class AppTableHeaderRow extends StatelessWidget {
                 ),
               ),
             ],
+            if (trailing != null) trailing!,
           ],
         ),
       ),

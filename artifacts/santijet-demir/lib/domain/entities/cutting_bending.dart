@@ -495,7 +495,7 @@ class StockCutPlan {
   final int diameter;
   final List<StockBarCut> bars;
   final int totalBars;
-  /// Tam plana göre fireli çubuk adedi (önizleme listesi kısıtlı olsa bile).
+  /// Tam plana göre fireli çubuk adedi.
   final int? wasteBarCount;
   /// Tam plana göre firesiz çubuk adedi.
   final int? noWasteBarCount;

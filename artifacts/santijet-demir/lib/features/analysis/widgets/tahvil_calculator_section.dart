@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:santijet_demir/core/theme/app_colors.dart';
+import 'package:santijet_demir/core/widgets/app_description_lines.dart';
 import 'package:santijet_demir/data/services/rebar_weight_calculator.dart';
 import 'package:santijet_demir/core/theme/app_radii.dart';
 import 'package:santijet_demir/core/theme/app_typography.dart';
@@ -49,10 +50,10 @@ class _TahvilCalculatorSectionState extends State<TahvilCalculatorSection> {
         if (!widget.hideHeader) ...[
           Text('Tahvil Hesaplayıcı', style: AppTypography.headlineMedium),
           const SizedBox(height: 4),
-          Text(
-            'Aralığa veya adede göre donatı tahvili — Excel tablosu ile aynı mantık.',
-            style: AppTypography.bodySmall.copyWith(color: AppColors.textMuted),
-          ),
+          const AppDescriptionLines([
+            'Aralığa veya adede göre donatı tahvili.',
+            'Excel tablosu ile aynı mantık.',
+          ]),
           const SizedBox(height: 14),
         ],
         _TahvilCalculatorModePanel(
@@ -305,11 +306,14 @@ class _TahvilRulesHint extends StatelessWidget {
         children: [
           Text(description, style: AppTypography.bodySmall),
           const SizedBox(height: 6),
-          Text(
-            'Kurallar: ±$tahvilMaxDiameterDiffMm mm çap · '
-            '≤${tahvilMaxSpacingCm.toStringAsFixed(0)} cm aralık · '
-            'hedef As ≥ proje As · '
-            '≤%${(tahvilMaxAreaDeviationRatio * 100).toStringAsFixed(0)} fazla kesit',
+          AppDescriptionLines(
+            [
+              'Kurallar:',
+              '±$tahvilMaxDiameterDiffMm mm çap.',
+              '≤${tahvilMaxSpacingCm.toStringAsFixed(0)} cm aralık.',
+              'Hedef As ≥ proje As.',
+              '≤%${(tahvilMaxAreaDeviationRatio * 100).toStringAsFixed(0)} fazla kesit.',
+            ],
             style: AppTypography.labelSmall.copyWith(color: AppColors.textMuted),
           ),
         ],

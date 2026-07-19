@@ -10,6 +10,8 @@ import 'package:santijet_demir/core/theme/app_typography.dart';
 import 'package:santijet_demir/core/widgets/app_components.dart';
 import 'package:santijet_demir/domain/entities/order.dart';
 import 'package:santijet_demir/domain/enums/app_enums.dart';
+import 'package:santijet_demir/domain/enums/membership_type.dart';
+import 'package:santijet_demir/features/auth/providers/auth_provider.dart';
 import 'package:santijet_demir/features/orders/providers/orders_provider.dart';
 import 'package:santijet_demir/features/orders/widgets/order_approval_panel.dart';
 import 'package:santijet_demir/features/orders/widgets/order_cancel_dialog.dart';
@@ -73,7 +75,10 @@ class OrderCard extends ConsumerWidget {
     final statusColor = Color(order.status.colorValue);
     final dateStr = DateFormat('d MMM yyyy').format(order.date);
     final actionLabel = order.status.actionLabel;
-    final showApprovalPanel = order.status == OrderStatus.pendingApproval;
+    final isIndividual = ref.watch(authProvider).user?.membershipType !=
+        MembershipType.corporate;
+    final showApprovalPanel =
+        !isIndividual && order.status == OrderStatus.pendingApproval;
     final showCancelButton = order.status.canCancel;
     final cancellation = order.cancellation;
 

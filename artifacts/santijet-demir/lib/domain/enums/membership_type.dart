@@ -10,9 +10,9 @@ enum MembershipType {
 
   String get description => switch (this) {
         MembershipType.individual =>
-          'Tek kullanıcı — tüm modüllere tam erişim',
+          'Tek kullanıcı — onay süreci yok, tüm modüllere tam erişim',
         MembershipType.corporate =>
-          'Firma hesabı — rolünüze göre sayfa ve işlem yetkileri',
+          'Firma hesabı — rolünüze göre sayfa, onay ve işlem yetkileri',
       };
 
   static MembershipType fromStorage(String? raw) {

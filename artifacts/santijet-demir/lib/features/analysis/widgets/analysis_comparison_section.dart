@@ -4,6 +4,7 @@ import 'package:santijet_demir/core/format/app_format.dart';
 import 'package:santijet_demir/core/theme/app_colors.dart';
 import 'package:santijet_demir/core/theme/app_radii.dart';
 import 'package:santijet_demir/core/theme/app_typography.dart';
+import 'package:santijet_demir/core/widgets/app_description_lines.dart';
 import 'package:santijet_demir/core/widgets/app_table_header.dart';
 import 'package:santijet_demir/core/widgets/empty_states.dart';
 import 'package:santijet_demir/domain/entities/cutting_bending.dart';
@@ -48,10 +49,10 @@ class _AnalysisComparisonSectionState
           style: AppTypography.labelMedium,
         ),
         const SizedBox(height: 4),
-        Text(
-          'Kaynak ile revize veriyi veya strateji sonuçlarını karşılaştırın',
-          style: AppTypography.bodySmall.copyWith(color: AppColors.textMuted),
-        ),
+        const AppDescriptionLines([
+          'Kaynak ile revize veriyi karşılaştırın.',
+          'İsterseniz strateji sonuçlarını da inceleyin.',
+        ]),
         const SizedBox(height: 12),
         _ComparisonOptionBar(
           selected: _selected,
@@ -222,10 +223,10 @@ class _SourceVsRevisedPanel extends StatelessWidget {
         children: [
           Text('Kaynak veri → Revize veri', style: AppTypography.labelMedium),
           const SizedBox(height: 4),
-          Text(
-            'Ham parça listesi ile optimize edilmiş revize sonuç',
-            style: AppTypography.bodySmall.copyWith(color: AppColors.textMuted),
-          ),
+          const AppDescriptionLines([
+            'Ham parça listesi.',
+            'Optimize edilmiş revize sonuç.',
+          ]),
           const SizedBox(height: 10),
           _ComparisonTableHeader(cells: const ['', 'KAYNAK', 'REVİZE', 'FARK']),
           _ComparisonRow(
@@ -247,7 +248,7 @@ class _SourceVsRevisedPanel extends StatelessWidget {
             positive: comparison!.revisedPieceCount >= comparison!.rawPieceCount,
           ),
           _ComparisonRow(
-            label: 'Ağırlık/ton',
+            label: 'Ağırlık',
             before: '${AppFormat.tonnage(comparison!.rawMaterialTonnage)} t',
             after: '${AppFormat.tonnage(comparison!.revisedMaterialTonnage)} t',
           ),
@@ -272,25 +273,11 @@ class _SourceVsRevisedPanel extends StatelessWidget {
                 : null,
             positive: comparison!.savedFireTonnage > 0,
           ),
-          if (comparison!.lengthMatchGroupsApplied > 0 ||
-              comparison!.tahvilGroupsApplied > 0) ...[
+          if (comparison!.tahvilGroupsApplied > 0) ...[
             const SizedBox(height: 8),
-            Wrap(
-              spacing: 8,
-              runSpacing: 6,
-              children: [
-                if (comparison!.lengthMatchGroupsApplied > 0)
-                  _ChangeChip(
-                    icon: Icons.straighten,
-                    label:
-                        '${comparison!.lengthMatchGroupsApplied} uzunluk eşleştirme',
-                  ),
-                if (comparison!.tahvilGroupsApplied > 0)
-                  _ChangeChip(
-                    icon: Icons.swap_horiz,
-                    label: '${comparison!.tahvilGroupsApplied} tahvil',
-                  ),
-              ],
+            _ChangeChip(
+              icon: Icons.swap_horiz,
+              lines: comparison!.tahvilApplicationLines,
             ),
           ],
         ],
@@ -336,11 +323,10 @@ class _PieceListComparisonPanel extends ConsumerWidget {
             style: AppTypography.labelMedium,
           ),
           const SizedBox(height: 4),
-          Text(
-            '${batch.pieceLines.length} ham satır · '
-            '${batch.revisedPieceLines.length} revize satır',
-            style: AppTypography.bodySmall.copyWith(color: AppColors.textMuted),
-          ),
+          AppDescriptionLines([
+            '${batch.pieceLines.length} ham satır.',
+            '${batch.revisedPieceLines.length} revize satır.',
+          ]),
           const SizedBox(height: 8),
           _PieceCompareLegend(
             unchangedCount: unchangedCount,
@@ -645,10 +631,10 @@ class _StrategyFireComparisonPanel extends StatelessWidget {
             style: AppTypography.labelMedium,
           ),
           const SizedBox(height: 4),
-          Text(
-            'Ham fireye göre plan fire ve tonaj kazancı',
-            style: AppTypography.bodySmall.copyWith(color: AppColors.textMuted),
-          ),
+          const AppDescriptionLines([
+            'Ham fireye göre plan fire.',
+            'Tonaj kazancı özeti.',
+          ]),
           const SizedBox(height: 10),
           const _ComparisonTableHeader(
             cells: ['STRATEJİ', 'PLAN FİRE', 'KAZANÇ', 'DURUM'],
@@ -870,28 +856,40 @@ class _ComparisonRow extends StatelessWidget {
 }
 
 class _ChangeChip extends StatelessWidget {
-  const _ChangeChip({required this.icon, required this.label});
+  const _ChangeChip({required this.icon, required this.lines});
 
   final IconData icon;
-  final String label;
+  final List<String> lines;
 
   @override
   Widget build(BuildContext context) {
+    final style =
+        AppTypography.labelSmall.copyWith(color: AppColors.success);
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 6),
       decoration: BoxDecoration(
         color: AppColors.success.withValues(alpha: 0.08),
-        borderRadius: AppRadii.full,
+        borderRadius: AppRadii.md,
         border: Border.all(color: AppColors.success.withValues(alpha: 0.25)),
       ),
       child: Row(
-        mainAxisSize: MainAxisSize.min,
+        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Icon(icon, size: 12, color: AppColors.success),
-          const SizedBox(width: 4),
-          Text(
-            label,
-            style: AppTypography.labelSmall.copyWith(color: AppColors.success),
+          Padding(
+            padding: const EdgeInsets.only(top: 1),
+            child: Icon(icon, size: 12, color: AppColors.success),
+          ),
+          const SizedBox(width: 6),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                for (var i = 0; i < lines.length; i++) ...[
+                  if (i > 0) const SizedBox(height: 2),
+                  Text(lines[i], style: style),
+                ],
+              ],
+            ),
           ),
         ],
       ),

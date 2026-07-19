@@ -33,7 +33,14 @@ abstract final class AppPermissionMatrix {
     CorporateRole? corporateRole,
   }) {
     if (membershipType == MembershipType.individual) {
-      return _all.toSet();
+      // Bireysel: onay süreci yok — onay yetkileri kurumsal rolleredir.
+      return {
+        for (final permission in _all)
+          if (permission != AppPermission.approveOrderPurchasing &&
+              permission != AppPermission.approveOrderProjectManager &&
+              permission != AppPermission.approveOrderEmployer)
+            permission,
+      };
     }
 
     return switch (corporateRole) {

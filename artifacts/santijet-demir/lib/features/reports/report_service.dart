@@ -113,7 +113,7 @@ class ReportService {
         'İrsaliye',
         'Firma',
         'Tarih',
-        'Ağırlık/ton',
+        'Ağırlık',
         'Durum',
       ],
       rows: [

@@ -9,7 +9,7 @@ abstract final class AnalysisComputeCache {
   static final _accessOrder = <String>[];
 
   static String keyForPieces(List<RebarPieceLine> pieces) {
-    if (pieces.isEmpty) return 'empty';
+    if (pieces.isEmpty) return 'v2:empty';
     var hash = 17;
     var totalQty = 0;
     for (final piece in pieces) {
@@ -20,7 +20,8 @@ abstract final class AnalysisComputeCache {
       hash = 37 * hash + (piece.elementCode?.hashCode ?? 0);
       totalQty += piece.quantity;
     }
-    return '${pieces.length}:$totalQty:$hash';
+    // v2: tüm çubuklar saklanır (eski 120’lik önizleme önbelleğini geçersiz kılar).
+    return 'v2:${pieces.length}:$totalQty:$hash';
   }
 
   static List<StockCutPlan> readStockCutPlans(String key) {

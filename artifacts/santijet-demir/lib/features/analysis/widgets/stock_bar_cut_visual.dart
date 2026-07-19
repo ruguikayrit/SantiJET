@@ -146,14 +146,20 @@ class StockBarCutVisualCard extends StatelessWidget {
         )
         .join(' + ');
 
-    final remainderText = switch (remainderLabelStyle) {
+    final remainderLines = switch (remainderLabelStyle) {
       StockBarRemainderLabel.kalan => isZeroWaste
-          ? 'Fire yok · ${stockLengthM.toStringAsFixed(0)} m stok tam kullanım'
-          : 'Kalan: ${bar.wasteLengthM.toStringAsFixed(2)} m / '
-              '${stockLengthM.toStringAsFixed(0)} m stok',
-      StockBarRemainderLabel.fire =>
-        'Fire: ${bar.wasteLengthM.toStringAsFixed(2)} m / '
-            '${stockLengthM.toStringAsFixed(0)} m',
+          ? [
+              'Fire yok.',
+              '${stockLengthM.toStringAsFixed(0)} m stok tam kullanım.',
+            ]
+          : [
+              'Kalan: ${bar.wasteLengthM.toStringAsFixed(2)} m / '
+                  '${stockLengthM.toStringAsFixed(0)} m stok',
+            ],
+      StockBarRemainderLabel.fire => [
+          'Fire: ${bar.wasteLengthM.toStringAsFixed(2)} m / '
+              '${stockLengthM.toStringAsFixed(0)} m',
+        ],
     };
 
     return Container(
@@ -190,12 +196,20 @@ class StockBarCutVisualCard extends StatelessWidget {
             style: AppTypography.bodySmall,
           ),
           const SizedBox(height: 2),
-          Text(
-            remainderText,
-            style: AppTypography.bodySmall.copyWith(
-              color: isZeroWaste ? AppColors.success : AppColors.warning,
-              fontWeight: FontWeight.w600,
-            ),
+          Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              for (var i = 0; i < remainderLines.length; i++) ...[
+                if (i > 0) const SizedBox(height: 2),
+                Text(
+                  remainderLines[i],
+                  style: AppTypography.bodySmall.copyWith(
+                    color: isZeroWaste ? AppColors.success : AppColors.warning,
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+              ],
+            ],
           ),
         ],
       ),

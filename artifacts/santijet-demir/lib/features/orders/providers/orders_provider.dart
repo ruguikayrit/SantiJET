@@ -44,14 +44,47 @@ const _filterStatuses = [
   OrderStatus.cancelled,
 ];
 
+const _individualOrderFilterLabels = [
+  'Tümü',
+  'Verildi',
+  'Yolda',
+  'Tamamlandı',
+  'İptal',
+];
+
+const _individualFilterStatuses = [
+  OrderStatus.submitted,
+  OrderStatus.inTransit,
+  OrderStatus.completed,
+  OrderStatus.cancelled,
+];
+
+bool _isIndividualMembership(Ref ref) {
+  return ref.read(authProvider).user?.membershipType !=
+      MembershipType.corporate;
+}
+
+final orderFilterLabelsProvider = Provider<List<String>>((ref) {
+  final membership =
+      ref.watch(authProvider).user?.membershipType ?? MembershipType.individual;
+  return membership == MembershipType.individual
+      ? _individualOrderFilterLabels
+      : orderFilterLabels;
+});
+
 final filteredOrdersProvider = Provider<List<OrderItem>>((ref) {
   final orders = ref.watch(ordersProvider);
   final filterIndex = ref.watch(orderFilterProvider);
+  final membership =
+      ref.watch(authProvider).user?.membershipType ?? MembershipType.individual;
+  final statuses = membership == MembershipType.individual
+      ? _individualFilterStatuses
+      : _filterStatuses;
 
   if (filterIndex == 0) return orders;
-  if (filterIndex < 1 || filterIndex > _filterStatuses.length) return orders;
+  if (filterIndex < 1 || filterIndex > statuses.length) return orders;
 
-  final status = _filterStatuses[filterIndex - 1];
+  final status = statuses[filterIndex - 1];
   return orders.where((order) => order.status == status).toList();
 });
 
@@ -100,12 +133,23 @@ final imalatOrderBalanceProvider = Provider<List<ImalatOrderBalance>>((ref) {
 class OrdersNotifier extends StateNotifier<List<OrderItem>> {
   OrdersNotifier(this._ref) : super(const []) {
     loadForProject(_ref.read(activeProjectIdProvider));
+    _ref.listen(authProvider, (previous, next) {
+      final wasCorporate =
+          previous?.user?.membershipType == MembershipType.corporate;
+      final isIndividual =
+          next.user?.membershipType == MembershipType.individual;
+      if (wasCorporate && isIndividual) {
+        promotePendingApprovalsForIndividual();
+      }
+    });
   }
 
   final Ref _ref;
   String? _loadedProjectId;
 
   OrderRepository get _repo => _ref.read(orderRepositoryProvider);
+
+  bool get _isIndividual => _isIndividualMembership(_ref);
 
   void loadForProject(String? projectId) {
     _loadedProjectId = projectId;
@@ -114,6 +158,10 @@ class OrdersNotifier extends StateNotifier<List<OrderItem>> {
       return;
     }
     state = _repo.read(projectId);
+    if (_isIndividual) {
+      // Fire-and-forget: bireysel hesapta bekleyen onayları Verildi'ye çek.
+      promotePendingApprovalsForIndividual();
+    }
   }
 
   Future<void> _persist() async {
@@ -131,6 +179,33 @@ class OrdersNotifier extends StateNotifier<List<OrderItem>> {
     return '$prefix${(existing + 1).toString().padLeft(4, '0')}';
   }
 
+  /// Bireysel kullanımda onay bekleyen siparişleri doğrudan Verildi yapar.
+  Future<void> promotePendingApprovalsForIndividual() async {
+    if (!_isIndividual) return;
+
+    final pending = state
+        .where((order) => order.status == OrderStatus.pendingApproval)
+        .toList();
+    if (pending.isEmpty) return;
+
+    final updated = [
+      for (final order in state)
+        if (order.status == OrderStatus.pendingApproval)
+          order.copyWith(status: OrderStatus.submitted)
+        else
+          order,
+    ];
+    state = updated;
+    await _persist();
+
+    for (final order in pending) {
+      if (order.imalatTonnages.isEmpty) continue;
+      await _ref
+          .read(surveyProjectProvider.notifier)
+          .addOrderedTonnages(order.imalatTonnages);
+    }
+  }
+
   Future<OrderItem?> createOrder(NewOrderDraft draft) async {
     final projectId = _loadedProjectId;
     final supplier = draft.selectedSupplier;
@@ -141,19 +216,27 @@ class OrdersNotifier extends StateNotifier<List<OrderItem>> {
         name: draft.imalatOrderTonnage(name),
     };
 
+    final skipApproval = _isIndividual;
     final order = OrderItem(
       id: DateTime.now().microsecondsSinceEpoch.toString(),
       orderNo: _nextOrderNo(),
       date: DateTime.now(),
       imalatTypes: draft.selectedImalats.keys.toList(),
       tonnage: draft.finalOrderTonnage,
-      status: OrderStatus.pendingApproval,
+      status: skipApproval ? OrderStatus.submitted : OrderStatus.pendingApproval,
       supplier: supplier.name,
       imalatTonnages: imalatTonnages,
     );
 
     state = [order, ...state];
     await _persist();
+
+    if (skipApproval && imalatTonnages.isNotEmpty) {
+      await _ref
+          .read(surveyProjectProvider.notifier)
+          .addOrderedTonnages(imalatTonnages);
+    }
+
     return order;
   }
 

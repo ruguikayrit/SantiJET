@@ -21,10 +21,6 @@ const _maxTripletSearchLengths = 24;
 /// Büyük envanterlerde ikili/üçlü arama yerine hızlı greedy paketleme.
 const _largeInventoryPieceThreshold = 2500;
 
-/// UI bellek tüketimini sınırlamak için plan başına saklanan çubuk sayısı.
-const _maxRetainedWasteBarsPerPlan = 120;
-const _maxRetainedNoWasteBarsPerPlan = 120;
-
 /// Web'de paketleme döngüsünde event-loop'a ne sıklıkla bırakılır.
 const _webYieldEveryBars = 96;
 
@@ -318,8 +314,6 @@ _DiameterPackResult _packDiameterInventory({
   required _IdentityPool identityPool,
   required double stockLengthM,
   bool retainBars = true,
-  int maxRetainedWasteBars = _maxRetainedWasteBarsPerPlan,
-  int maxRetainedNoWasteBars = _maxRetainedNoWasteBarsPerPlan,
 }) {
   final stockMm = _lengthToMm(stockLengthM);
   final retainedWasteBars = <StockBarCut>[];
@@ -360,10 +354,8 @@ _DiameterPackResult _packDiameterInventory({
         wasteLengthM: wasteLengthM,
       );
       if (hasWaste) {
-        if (retainedWasteBars.length < maxRetainedWasteBars) {
-          retainedWasteBars.add(bar);
-        }
-      } else if (retainedNoWasteBars.length < maxRetainedNoWasteBars) {
+        retainedWasteBars.add(bar);
+      } else {
         retainedNoWasteBars.add(bar);
       }
     } else {
@@ -392,8 +384,6 @@ Future<_DiameterPackResult> _packDiameterInventoryAsync({
   required _IdentityPool identityPool,
   required double stockLengthM,
   bool retainBars = true,
-  int maxRetainedWasteBars = _maxRetainedWasteBarsPerPlan,
-  int maxRetainedNoWasteBars = _maxRetainedNoWasteBarsPerPlan,
 }) async {
   final stockMm = _lengthToMm(stockLengthM);
   final retainedWasteBars = <StockBarCut>[];
@@ -438,10 +428,8 @@ Future<_DiameterPackResult> _packDiameterInventoryAsync({
         wasteLengthM: wasteLengthM,
       );
       if (hasWaste) {
-        if (retainedWasteBars.length < maxRetainedWasteBars) {
-          retainedWasteBars.add(bar);
-        }
-      } else if (retainedNoWasteBars.length < maxRetainedNoWasteBars) {
+        retainedWasteBars.add(bar);
+      } else {
         retainedNoWasteBars.add(bar);
       }
     } else {
@@ -1040,6 +1028,47 @@ TahvilEquivalent? pickBestTahvilEquivalentForGroup(TahvilSuggestion group) {
   return candidates.first;
 }
 
+/// Onaylı tahvil uygulamalarının çap / imalat özeti.
+class TahvilApplicationSummary {
+  const TahvilApplicationSummary({
+    required this.groupCount,
+    required this.diameterCount,
+    required this.imalatCount,
+  });
+
+  final int groupCount;
+  final int diameterCount;
+  final int imalatCount;
+}
+
+TahvilApplicationSummary summarizeAppliedTahvil(CuttingBendingBatch batch) {
+  final approved =
+      batch.tahvilGroups.where((group) => group.approved).toList();
+  final diameters = <int>{};
+  final imalats = <String>{};
+
+  for (final group in approved) {
+    for (final member in group.members) {
+      diameters.add(member.diameter);
+      final label = member.elementDisplayLabel.trim();
+      if (label.isNotEmpty) {
+        imalats.add(label);
+      }
+    }
+    final equivalent = pickBestTahvilEquivalentForGroup(group);
+    if (equivalent != null) {
+      diameters.add(equivalent.fromDiameter);
+      diameters.add(equivalent.toDiameter);
+    }
+  }
+
+  return TahvilApplicationSummary(
+    groupCount: approved.length,
+    diameterCount: diameters.length,
+    imalatCount: imalats.length,
+  );
+}
+
 List<RebarPieceLine> _workingPieceLines(CuttingBendingBatch batch) {
   if (!batch.isOptimized) return batch.pieceLines;
   return applyApprovedTahvilToPieceLines(batch.pieceLines, batch.tahvilGroups);
@@ -1364,6 +1393,8 @@ class AnalysisComparison {
     required this.plannedFirePercent,
     required this.lengthMatchGroupsApplied,
     required this.tahvilGroupsApplied,
+    this.tahvilDiameterCount = 0,
+    this.tahvilImalatCount = 0,
   });
 
   final int rawLineCount;
@@ -1378,6 +1409,8 @@ class AnalysisComparison {
   final double plannedFirePercent;
   final int lengthMatchGroupsApplied;
   final int tahvilGroupsApplied;
+  final int tahvilDiameterCount;
+  final int tahvilImalatCount;
 
   int get savedLines => (rawLineCount - revisedLineCount).clamp(0, rawLineCount);
 
@@ -1386,6 +1419,20 @@ class AnalysisComparison {
 
   double get savedFirePercent =>
       (rawFirePercent - plannedFirePercent).clamp(-100, 100);
+
+  String get tahvilApplicationCaption =>
+      tahvilApplicationLines.join('\n');
+
+  List<String> get tahvilApplicationLines {
+    if (tahvilGroupsApplied <= 0) return const [];
+    if (tahvilImalatCount > 0) {
+      return [
+        '$tahvilDiameterCount çapta tahvil uygulandı.',
+        '$tahvilImalatCount farklı imalatta tahvil uygulandı.',
+      ];
+    }
+    return ['$tahvilDiameterCount çapta tahvil uygulandı.'];
+  }
 }
 
 class StrategyFireComparison {
@@ -1691,6 +1738,8 @@ AnalysisComparison computeAnalysisComparison(CuttingBendingBatch batch) {
     (sum, piece) => sum + piece.quantity,
   );
 
+  final tahvilSummary = summarizeAppliedTahvil(batch);
+
   return AnalysisComparison(
     rawLineCount: batch.pieceLines.length,
     rawPieceCount: rawPieceCount,
@@ -1704,7 +1753,9 @@ AnalysisComparison computeAnalysisComparison(CuttingBendingBatch batch) {
     plannedFirePercent: summary.plannedWastePercent ?? 0,
     lengthMatchGroupsApplied:
         batch.lengthMatches.where((group) => group.approved).length,
-    tahvilGroupsApplied: batch.tahvilGroups.where((group) => group.approved).length,
+    tahvilGroupsApplied: tahvilSummary.groupCount,
+    tahvilDiameterCount: tahvilSummary.diameterCount,
+    tahvilImalatCount: tahvilSummary.imalatCount,
   );
 }
 

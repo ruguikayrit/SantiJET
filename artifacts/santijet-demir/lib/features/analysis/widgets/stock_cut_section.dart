@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:santijet_demir/core/widgets/app_description_lines.dart';
 import 'package:santijet_demir/core/format/app_format.dart';
 import 'package:santijet_demir/core/theme/app_colors.dart';
 import 'package:santijet_demir/core/theme/app_radii.dart';
@@ -45,19 +46,19 @@ class StockCutSection extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     if (plans.isEmpty) {
-      return Text(
-        'Parça listesi boş veya kesim planı oluşturulamadı.',
-        style: AppTypography.bodySmall.copyWith(color: AppColors.textMuted),
-      );
+      return const AppDescriptionLines([
+        'Parça listesi boş.',
+        'Kesim planı oluşturulamadı.',
+      ]);
     }
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
-        Text(
-          '${stockLengthM.toStringAsFixed(0)} m stok uzunluğu · planlı minimum fire kesim',
-          style: AppTypography.bodySmall.copyWith(color: AppColors.textMuted),
-        ),
+        AppDescriptionLines([
+          '${stockLengthM.toStringAsFixed(0)} m stok uzunluğu.',
+          'Planlı minimum fire kesim.',
+        ]),
         const SizedBox(height: 8),
         ...plans.map(
           (plan) => Padding(
@@ -487,18 +488,17 @@ class _PaginatedStockBarCutListState extends State<_PaginatedStockBarCutList> {
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
         if (widget.totalBars > listedBarCount) ...[
-          Text(
-            'Önizleme: ilk $listedBarCount / ${AppFormat.integer(widget.totalBars)} çubuk · '
-            '${groups.length} kesim grubu. '
+          AppDescriptionLines([
+            'Önizleme: ilk $listedBarCount / ${AppFormat.integer(widget.totalBars)} çubuk.',
+            '${groups.length} kesim grubu.',
             'Özet tonaj ve fire değerleri tam plana göredir.',
-            style: AppTypography.bodySmall.copyWith(color: AppColors.textMuted),
-          ),
+          ]),
           const SizedBox(height: 8),
         ] else if (groups.length < listedBarCount) ...[
-          Text(
-            '$listedBarCount çubuk · ${groups.length} kesim grubu (aynı kesimler birleştirildi)',
-            style: AppTypography.bodySmall.copyWith(color: AppColors.textMuted),
-          ),
+          AppDescriptionLines([
+            '$listedBarCount çubuk.',
+            '${groups.length} kesim grubu (aynı kesimler birleştirildi).',
+          ]),
           const SizedBox(height: 8),
         ],
         ...visibleGroups.map(

@@ -11,6 +11,8 @@ import 'package:santijet_demir/core/theme/app_typography.dart';
 import 'package:santijet_demir/core/widgets/app_table_header.dart';
 import 'package:santijet_demir/core/widgets/empty_states.dart';
 import 'package:santijet_demir/domain/entities/order.dart';
+import 'package:santijet_demir/domain/enums/membership_type.dart';
+import 'package:santijet_demir/features/auth/providers/auth_provider.dart';
 import 'package:santijet_demir/features/orders/order_imalat_balance.dart';
 import 'package:santijet_demir/features/orders/providers/orders_provider.dart';
 import 'package:santijet_demir/features/orders/providers/supplier_provider.dart';
@@ -28,13 +30,17 @@ class _NewOrderWizardScreenState extends ConsumerState<NewOrderWizardScreen> {
   int _step = 0;
   final _pageController = PageController();
 
-  static const _stepTitles = [
-    'İmalat Seçimi',
-    'Oran Belirleme',
-    'Çap Hesabı',
-    'Tedarikçi Seçimi',
-    'Özet & Onay',
-  ];
+  List<String> get _stepTitles {
+    final isIndividual = ref.read(authProvider).user?.membershipType !=
+        MembershipType.corporate;
+    return [
+      'İmalat Seçimi',
+      'Oran Belirleme',
+      'Çap Hesabı',
+      'Tedarikçi Seçimi',
+      isIndividual ? 'Özet' : 'Özet & Onay',
+    ];
+  }
 
   @override
   void dispose() {
@@ -74,12 +80,16 @@ class _NewOrderWizardScreenState extends ConsumerState<NewOrderWizardScreen> {
 
     if (!mounted) return;
 
+    final isIndividual = ref.read(authProvider).user?.membershipType !=
+        MembershipType.corporate;
     ScaffoldMessenger.of(context).showAppSnackBar(
       SnackBar(
         content: Text(
           created == null
               ? 'Sipariş kaydedilemedi'
-              : 'Sipariş oluşturuldu — Onay Bek. sekmesinde',
+              : isIndividual
+                  ? 'Sipariş oluşturuldu — Verildi'
+                  : 'Sipariş oluşturuldu — Onay Bek. sekmesinde',
         ),
         backgroundColor:
             created == null ? AppColors.warning : AppColors.success,

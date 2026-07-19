@@ -5,6 +5,7 @@ import 'package:santijet_demir/core/theme/app_colors.dart';
 import 'package:santijet_demir/core/theme/app_radii.dart';
 import 'package:santijet_demir/core/theme/app_typography.dart';
 import 'package:santijet_demir/core/widgets/app_components.dart';
+import 'package:santijet_demir/core/widgets/app_description_lines.dart';
 import 'package:santijet_demir/domain/entities/cutting_bending.dart';
 import 'package:santijet_demir/features/analysis/cutting_bending_calculator.dart';
 import 'package:santijet_demir/features/analysis/widgets/analysis_fire_summary_details.dart';
@@ -309,12 +310,12 @@ class _AnalysisFireSummaryPanelState
           title: const Text('Fire Analizi'),
           content: Text(
             preview == null
-                ? 'Bu proje için uygulanabilir tahvil bulunamadı. '
+                ? 'Bu proje için uygulanabilir tahvil bulunamadı.\n'
                     'Fire analizi yalnızca fire oranını düşüren tahvil '
                     'uygulandığında çalışır.'
                 : 'Tahvil fire oranını azaltmıyor '
                     '(%${preview.baselineWastePercent.toStringAsFixed(1)} → '
-                    '%${preview.tahvilWastePercent.toStringAsFixed(1)}). '
+                    '%${preview.tahvilWastePercent.toStringAsFixed(1)}).\n'
                     'Fire oranı düşmediği için tahvil uygulanmayacak.',
           ),
           actions: [
@@ -501,10 +502,12 @@ class _TahvilNoBenefitBanner extends StatelessWidget {
                   ),
                 ),
                 const SizedBox(height: 4),
-                Text(
-                  'Proje fire %${preview.baselineWastePercent.toStringAsFixed(1)} → '
-                  'tahvil sonrası %${preview.tahvilWastePercent.toStringAsFixed(1)}. '
-                  'Fire oranı düşmediği için tahvil uygulanmayacak.',
+                AppDescriptionLines(
+                  [
+                    'Proje fire %${preview.baselineWastePercent.toStringAsFixed(1)} → '
+                        'tahvil sonrası %${preview.tahvilWastePercent.toStringAsFixed(1)}.',
+                    'Fire oranı düşmediği için tahvil uygulanmayacak.',
+                  ],
                   style: AppTypography.bodySmall.copyWith(
                     color: AppColors.textPrimary,
                   ),
@@ -534,10 +537,12 @@ class _TahvilFireAnalysisPanel extends StatelessWidget {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
-        Text(
-          'Sadece kurallara göre çap değişikliği yapılır; '
-          'donatıların uzunluklarında herhangi bir değişiklik yapılmaz.',
-          style: AppTypography.bodySmall.copyWith(color: AppColors.textMuted),
+        const AppDescriptionLines(
+          [
+            'Sadece kurallara göre çap değişikliği yapılır.',
+            'Donatıların uzunluklarında herhangi bir değişiklik yapılmaz.',
+          ],
+          textAlign: TextAlign.center,
         ),
         const SizedBox(height: 10),
         _MatteGreenGradientButton(

@@ -345,7 +345,7 @@ class _IcmalDiameterTableHeader extends StatelessWidget {
         ),
         AppTableHeaderCell('Adet', flex: _IcmalLayout.columnFlex),
         AppTableHeaderCell('Uzunluk', flex: _IcmalLayout.columnFlex),
-        AppTableHeaderCell('Ağırlık/ton', flex: _IcmalLayout.columnFlex),
+        AppTableHeaderCell('Ağırlık', flex: _IcmalLayout.columnFlex),
       ],
     );
   }
@@ -783,7 +783,7 @@ class _CetvelTableHeader extends StatelessWidget {
             const SizedBox(width: 4),
             Expanded(
               flex: _CetvelLayout.tonFlex,
-              child: const AppTableHeaderBadge('Ağırlık/ton'),
+              child: const AppTableHeaderBadge('Ağırlık'),
             ),
           ],
         ),

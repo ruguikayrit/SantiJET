@@ -235,8 +235,8 @@ class AnalysisReportService {
         ('Ham fire', '${_tonnage(comparison.rawFireTonnage)} (${_percent(comparison.rawFirePercent)})'),
         ('Plan fire', '${_tonnage(comparison.plannedFireTonnage)} (${_percent(comparison.plannedFirePercent)})'),
         ('Fire kazancı', '${_tonnage(comparison.savedFireTonnage)} (${_percent(comparison.savedFirePercent)})'),
-        ('Uygulanan uzunluk eşleştirme', AppFormat.integer(comparison.lengthMatchGroupsApplied)),
-        ('Uygulanan tahvil', AppFormat.integer(comparison.tahvilGroupsApplied)),
+        if (comparison.tahvilGroupsApplied > 0)
+          ('Tahvil özeti', comparison.tahvilApplicationCaption),
       ],
     );
   }
@@ -303,7 +303,7 @@ class AnalysisReportService {
     return PdfReportSection(
       title: 'Malzeme Özeti — Çap Bazında',
       subtitle: 'Ham parça listesi toplamları',
-      headers: const ['ÇAP', 'Ağırlık/ton', 'Adet', 'Satır'],
+      headers: const ['ÇAP', 'Ağırlık', 'Adet', 'Satır'],
       rows: summary
           .map(
             (row) => [

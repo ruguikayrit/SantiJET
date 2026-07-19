@@ -27,9 +27,10 @@ class _OrdersScreenState extends ConsumerState<OrdersScreen> {
   Widget build(BuildContext context) {
     final hasActiveProject = ref.watch(activeProjectProvider) != null;
     final orders = ref.watch(filteredOrdersProvider);
+    final filterLabels = ref.watch(orderFilterLabelsProvider);
     final rawFilterIndex = ref.watch(orderFilterProvider);
     final filterIndex =
-        rawFilterIndex.clamp(0, orderFilterLabels.length - 1);
+        rawFilterIndex.clamp(0, filterLabels.length - 1);
     if (rawFilterIndex != filterIndex) {
       WidgetsBinding.instance.addPostFrameCallback((_) {
         if (!mounted) return;
@@ -71,7 +72,7 @@ class _OrdersScreenState extends ConsumerState<OrdersScreen> {
               ),
               const SizedBox(height: 12),
               FilterChips(
-                labels: orderFilterLabels,
+                labels: filterLabels,
                 selectedIndex: filterIndex,
                 onSelected: (i) =>
                     ref.read(orderFilterProvider.notifier).state = i,

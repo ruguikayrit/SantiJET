@@ -4,6 +4,7 @@ import 'package:santijet_demir/core/format/app_format.dart';
 import 'package:santijet_demir/core/theme/app_colors.dart';
 import 'package:santijet_demir/core/theme/app_radii.dart';
 import 'package:santijet_demir/core/theme/app_typography.dart';
+import 'package:santijet_demir/core/widgets/app_description_lines.dart';
 import 'package:santijet_demir/core/widgets/app_table_header.dart';
 import 'package:santijet_demir/domain/entities/cutting_bending.dart';
 import 'package:santijet_demir/features/analysis/cutting_bending_calculator.dart';
@@ -82,16 +83,22 @@ class _RawMaterialDetail extends ConsumerWidget {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
-        Text('Analiz edilen donatılar', style: AppTypography.labelMedium),
-        const SizedBox(height: 4),
         Text(
-          'Ham kaynak parça listesi · ${batch.pieceLines.length} satır · '
-          '${AppFormat.integer(totalPieces)} adet',
-          style: AppTypography.bodySmall.copyWith(color: AppColors.textMuted),
+          'Analiz edilen donatılar',
+          style: AppTypography.labelMedium,
+          textAlign: TextAlign.center,
+        ),
+        const SizedBox(height: 4),
+        AppDescriptionLines(
+          [
+            'Ham kaynak parça listesi.',
+            '${batch.pieceLines.length} satır · ${AppFormat.integer(totalPieces)} adet.',
+          ],
+          textAlign: TextAlign.center,
         ),
         const SizedBox(height: 10),
         const _DetailTableHeader(
-          cells: ['ÇAP', 'AĞIRLIK/TON', 'ADET', 'SATIR'],
+          cells: ['ÇAP', 'AĞIRLIK', 'ADET', 'SATIR'],
         ),
         ...byDiameter.map(
           (item) => _DetailTableRow(
@@ -105,7 +112,11 @@ class _RawMaterialDetail extends ConsumerWidget {
           ),
         ),
         const SizedBox(height: 10),
-        Text('Parça detayı', style: AppTypography.labelMedium),
+        Text(
+          'Parça detayı',
+          style: AppTypography.labelMedium,
+          textAlign: TextAlign.center,
+        ),
         const SizedBox(height: 6),
         PaginatedListSection<RebarPieceLine>(
           items: batch.pieceLines,
@@ -154,11 +165,18 @@ class _RawFireDetailState extends ConsumerState<_RawFireDetail> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
-        Text('Ham fire hesabı', style: AppTypography.labelMedium),
-        const SizedBox(height: 4),
         Text(
-          '12 m stok simülasyonu · ham parça listesi',
-          style: AppTypography.bodySmall.copyWith(color: AppColors.textMuted),
+          'Ham fire hesabı',
+          style: AppTypography.labelMedium,
+          textAlign: TextAlign.center,
+        ),
+        const SizedBox(height: 4),
+        const AppDescriptionLines(
+          [
+            '12 m stok simülasyonu.',
+            'Ham parça listesi.',
+          ],
+          textAlign: TextAlign.center,
         ),
         const SizedBox(height: 10),
         _FormulaRow(
@@ -181,10 +199,12 @@ class _RawFireDetailState extends ConsumerState<_RawFireDetail> {
         Text(
           'Çap satırına dokunarak kesim listesi fire detayını görün',
           style: AppTypography.labelSmall.copyWith(color: AppColors.textMuted),
+          textAlign: TextAlign.center,
         ),
         const SizedBox(height: 6),
         const _DetailTableHeader(
           cells: ['ÇAP', 'STOK', 'FİRE', 'FİRE %', 'ÇUBUK'],
+          trailingSlot: true,
         ),
         ...breakdown.map(
           (item) => _DetailTableRow(
@@ -253,11 +273,18 @@ class _PlannedFireDetailState extends ConsumerState<_PlannedFireDetail> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
-        Text('Plan fire hesabı', style: AppTypography.labelMedium),
-        const SizedBox(height: 4),
         Text(
-          'Revize liste · strateji: $strategy',
-          style: AppTypography.bodySmall.copyWith(color: AppColors.textMuted),
+          'Plan fire hesabı',
+          style: AppTypography.labelMedium,
+          textAlign: TextAlign.center,
+        ),
+        const SizedBox(height: 4),
+        AppDescriptionLines(
+          [
+            'Revize liste.',
+            'Strateji: $strategy.',
+          ],
+          textAlign: TextAlign.center,
         ),
         const SizedBox(height: 10),
         _FormulaRow(
@@ -280,10 +307,12 @@ class _PlannedFireDetailState extends ConsumerState<_PlannedFireDetail> {
         Text(
           'Çap satırına dokunarak kesim listesi fire detayını görün',
           style: AppTypography.labelSmall.copyWith(color: AppColors.textMuted),
+          textAlign: TextAlign.center,
         ),
         const SizedBox(height: 6),
         const _DetailTableHeader(
           cells: ['ÇAP', 'STOK', 'FİRE', 'FİRE %', 'ÇUBUK'],
+          trailingSlot: true,
         ),
         ...breakdown.map(
           (item) => _DetailTableRow(
@@ -387,6 +416,7 @@ class _FireDiameterDrillDownState extends State<_FireDiameterDrillDown> {
                   style: AppTypography.titleMedium.copyWith(
                     color: diameterColor,
                   ),
+                  textAlign: TextAlign.center,
                 ),
               ),
               IconButton(
@@ -406,18 +436,26 @@ class _FireDiameterDrillDownState extends State<_FireDiameterDrillDown> {
             '${AppFormat.tonnage(breakdown.wasteTonnage)} t · '
             '%${breakdown.wastePercent.toStringAsFixed(1)}',
             style: AppTypography.bodySmall.copyWith(color: AppColors.textMuted),
+            textAlign: TextAlign.center,
           ),
           if (wasteBuckets.isNotEmpty) ...[
             const SizedBox(height: 12),
-            Text('Kalan uzunluk özeti', style: AppTypography.labelMedium),
-            const SizedBox(height: 4),
             Text(
-              'Kullanılamayan fire parçaları — hangi uzunlukta ne kadar kaldı',
-              style: AppTypography.bodySmall.copyWith(color: AppColors.textMuted),
+              'Kalan uzunluk özeti',
+              style: AppTypography.labelMedium,
+              textAlign: TextAlign.center,
+            ),
+            const SizedBox(height: 4),
+            const AppDescriptionLines(
+              [
+                'Kullanılamayan fire parçaları.',
+                'Hangi uzunlukta ne kadar kaldığı özetlenir.',
+              ],
+              textAlign: TextAlign.center,
             ),
             const SizedBox(height: 8),
             const _DetailTableHeader(
-              cells: ['KALAN UZUNLUK', 'ÇUBUK', 'TOPLAM FİRE', 'AĞIRLIK/TON'],
+              cells: ['KALAN UZUNLUK', 'ÇUBUK', 'TOPLAM FİRE', 'AĞIRLIK'],
             ),
             ...wasteBuckets.map(
               (bucket) => _DetailTableRow(
@@ -432,14 +470,23 @@ class _FireDiameterDrillDownState extends State<_FireDiameterDrillDown> {
             ),
           ],
           const SizedBox(height: 12),
-          Text('Çubuk kesim listesi', style: AppTypography.labelMedium),
-          const SizedBox(height: 4),
           Text(
+            'Çubuk kesim listesi',
+            style: AppTypography.labelMedium,
+            textAlign: TextAlign.center,
+          ),
+          const SizedBox(height: 4),
+          AppDescriptionLines(
             wasteBarCount == 0
-                ? 'Bu çapta fire oluşmadı · ${noWasteBarCount} firesiz çubuk'
-                : '${noWasteBarCount} çubuk fire oluşturmadı · '
-                    '${wasteBarCount} çubukta kalan parça var',
-            style: AppTypography.bodySmall.copyWith(color: AppColors.textMuted),
+                ? [
+                    'Bu çapta fire oluşmadı.',
+                    '$noWasteBarCount firesiz çubuk.',
+                  ]
+                : [
+                    '$noWasteBarCount çubuk fire oluşturmadı.',
+                    '$wasteBarCount çubukta kalan parça var.',
+                  ],
+            textAlign: TextAlign.center,
           ),
           const SizedBox(height: 10),
           _FireCutFilterTabs(
@@ -459,11 +506,12 @@ class _FireDiameterDrillDownState extends State<_FireDiameterDrillDown> {
           ] else ...[
             if (visibleBars.length < visibleTotalCount) ...[
               const SizedBox(height: 10),
-              Text(
-                'Önizleme: ${visibleBars.length} / $visibleTotalCount çubuk gösteriliyor. '
-                'Özet adetler tam plana göredir.',
-                style:
-                    AppTypography.bodySmall.copyWith(color: AppColors.textMuted),
+              AppDescriptionLines(
+                [
+                  'Önizleme: ${visibleBars.length} / $visibleTotalCount çubuk gösteriliyor.',
+                  'Özet adetler tam plana göredir.',
+                ],
+                textAlign: TextAlign.center,
               ),
             ],
             const SizedBox(height: 8),
@@ -601,11 +649,16 @@ class _SavingsDetail extends StatelessWidget {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
-        Text('Fire kazancı', style: AppTypography.labelMedium),
+        Text(
+          'Fire kazancı',
+          style: AppTypography.labelMedium,
+          textAlign: TextAlign.center,
+        ),
         const SizedBox(height: 4),
         Text(
           batch.optimizationStrategy?.label ?? 'Optimize analiz',
           style: AppTypography.bodySmall.copyWith(color: AppColors.textMuted),
+          textAlign: TextAlign.center,
         ),
         const SizedBox(height: 10),
         _FormulaRow(
@@ -632,15 +685,11 @@ class _SavingsDetail extends StatelessWidget {
               : '—',
           highlight: summary.savedWastePercent > 0,
         ),
-        if (comp.lengthMatchGroupsApplied > 0 ||
-            comp.tahvilGroupsApplied > 0) ...[
+        if (comp.tahvilGroupsApplied > 0) ...[
           const SizedBox(height: 8),
-          Text(
-            '${comp.lengthMatchGroupsApplied} uzunluk eşleştirme · '
-            '${comp.tahvilGroupsApplied} tahvil uygulandı',
-            style: AppTypography.bodySmall.copyWith(
-              color: AppColors.textMuted,
-            ),
+          AppDescriptionLines(
+            comp.tahvilApplicationLines,
+            textAlign: TextAlign.center,
           ),
         ],
       ],
@@ -663,42 +712,45 @@ class _FormulaRow extends StatelessWidget {
   Widget build(BuildContext context) {
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 3),
-      child: Row(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          SizedBox(
-            width: 96,
-            child: Text(
-              label,
+      child: Text.rich(
+        TextSpan(
+          children: [
+            TextSpan(
+              text: '$label  ',
               style: AppTypography.bodySmall.copyWith(
                 color: AppColors.textMuted,
               ),
             ),
-          ),
-          Expanded(
-            child: Text(
-              value,
+            TextSpan(
+              text: value,
               style: AppTypography.bodySmall.copyWith(
                 color: highlight ? AppColors.success : null,
                 fontWeight: highlight ? FontWeight.w600 : null,
               ),
             ),
-          ),
-        ],
+          ],
+        ),
+        textAlign: TextAlign.center,
       ),
     );
   }
 }
 
 class _DetailTableHeader extends StatelessWidget {
-  const _DetailTableHeader({required this.cells});
+  const _DetailTableHeader({
+    required this.cells,
+    this.trailingSlot = false,
+  });
 
   final List<String> cells;
+  final bool trailingSlot;
+
+  static const _trailingWidth = 20.0;
 
   @override
   Widget build(BuildContext context) {
     return AppTableHeaderRow(
-      padding: const EdgeInsets.symmetric(vertical: 4),
+      padding: const EdgeInsets.symmetric(vertical: 4, horizontal: 4),
       cells: [
         for (var i = 0; i < cells.length; i++)
           AppTableHeaderCell(
@@ -706,6 +758,9 @@ class _DetailTableHeader extends StatelessWidget {
             flex: i == 0 ? 2 : 3,
           ),
       ],
+      trailing: trailingSlot
+          ? const SizedBox(width: _trailingWidth)
+          : null,
     );
   }
 }
