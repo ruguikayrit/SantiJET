@@ -75,32 +75,29 @@ class StockBarCutGroup {
   }
 }
 
-/// Aynı kesim yapan çubukları tek grupta toplar (ilk görünüş sırası korunur).
+/// Aynı kesim yapan çubukları tek grupta toplar; gruplar min çubuk no’ya göre sıralanır.
 List<StockBarCutGroup> groupIdenticalStockBarCuts(List<StockBarCut> bars) {
   if (bars.isEmpty) return const [];
 
-  final order = <String>[];
   final buckets = <String, List<StockBarCut>>{};
   for (final bar in bars) {
-    final key = stockBarCutPatternKey(bar);
-    final bucket = buckets[key];
-    if (bucket == null) {
-      order.add(key);
-      buckets[key] = [bar];
-    } else {
-      bucket.add(bar);
-    }
+    buckets.putIfAbsent(stockBarCutPatternKey(bar), () => <StockBarCut>[]).add(bar);
   }
 
-  return [
-    for (final key in order)
+  final groups = <StockBarCutGroup>[];
+  for (final bucket in buckets.values) {
+    bucket.sort((a, b) => a.barIndex.compareTo(b.barIndex));
+    groups.add(
       StockBarCutGroup(
-        representative: buckets[key]!.first,
-        barIndexes: [
-          for (final bar in buckets[key]!) bar.barIndex,
-        ],
+        representative: bucket.first,
+        barIndexes: [for (final bar in bucket) bar.barIndex],
       ),
-  ];
+    );
+  }
+  groups.sort(
+    (a, b) => a.barIndexes.first.compareTo(b.barIndexes.first),
+  );
+  return groups;
 }
 
 /// Çubuk kesim satırı — imalat etiketli formül + orantılı bar.
@@ -249,8 +246,8 @@ class _StockCutProportionalBar extends StatelessWidget {
       segments.add(
         _BarSegment(
           lengthM: bar.wasteLengthM,
-          label: 'Fire',
-          subtitle: bar.wasteLengthM.toStringAsFixed(2),
+          label: 'F',
+          subtitle: '',
           color: AppColors.textMuted.withValues(alpha: 0.45),
           isWaste: true,
         ),
@@ -280,37 +277,50 @@ class _StockCutProportionalBar extends StatelessWidget {
                   ),
                   child: Padding(
                     padding: const EdgeInsets.symmetric(horizontal: 4),
-                    child: Column(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: [
-                        if (segment.label.isNotEmpty)
-                          Text(
-                            segment.label,
-                            maxLines: 1,
-                            overflow: TextOverflow.ellipsis,
-                            textAlign: TextAlign.center,
-                            style: AppTypography.labelSmall.copyWith(
-                              color: segment.isWaste
-                                  ? AppColors.textMuted
-                                  : AppColors.textPrimary,
-                              fontWeight: FontWeight.w700,
-                              fontSize: 10,
-                              height: 1.1,
+                    child: segment.isWaste
+                        ? Center(
+                            child: Text(
+                              'F',
+                              maxLines: 1,
+                              overflow: TextOverflow.clip,
+                              textAlign: TextAlign.center,
+                              style: AppTypography.labelSmall.copyWith(
+                                color: AppColors.textMuted,
+                                fontWeight: FontWeight.w700,
+                                fontSize: 11,
+                                height: 1.1,
+                              ),
                             ),
+                          )
+                        : Column(
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            children: [
+                              if (segment.label.isNotEmpty)
+                                Text(
+                                  segment.label,
+                                  maxLines: 1,
+                                  overflow: TextOverflow.ellipsis,
+                                  textAlign: TextAlign.center,
+                                  style: AppTypography.labelSmall.copyWith(
+                                    color: AppColors.textPrimary,
+                                    fontWeight: FontWeight.w700,
+                                    fontSize: 10,
+                                    height: 1.1,
+                                  ),
+                                ),
+                              Text(
+                                '${segment.subtitle} m',
+                                maxLines: 1,
+                                overflow: TextOverflow.ellipsis,
+                                textAlign: TextAlign.center,
+                                style: AppTypography.labelSmall.copyWith(
+                                  color: AppColors.textSecondary,
+                                  fontSize: 9,
+                                  height: 1.1,
+                                ),
+                              ),
+                            ],
                           ),
-                        Text(
-                          '${segment.subtitle} m',
-                          maxLines: 1,
-                          overflow: TextOverflow.ellipsis,
-                          textAlign: TextAlign.center,
-                          style: AppTypography.labelSmall.copyWith(
-                            color: AppColors.textSecondary,
-                            fontSize: 9,
-                            height: 1.1,
-                          ),
-                        ),
-                      ],
-                    ),
                   ),
                 ),
               ),

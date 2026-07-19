@@ -1679,7 +1679,7 @@ List<StockBarCut> listStockBarsWithWaste(StockCutPlan plan) {
   return plan.bars
       .where((bar) => bar.wasteLengthM > 0.001)
       .toList()
-    ..sort((a, b) => b.wasteLengthM.compareTo(a.wasteLengthM));
+    ..sort((a, b) => a.barIndex.compareTo(b.barIndex));
 }
 
 List<StockBarCut> listStockBarsWithoutWaste(StockCutPlan plan) {
