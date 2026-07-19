@@ -3,6 +3,7 @@ import 'package:santijet_demir/core/format/app_format.dart';
 import 'package:santijet_demir/data/services/export_service.dart';
 import 'package:santijet_demir/domain/entities/cutting_bending.dart';
 import 'package:santijet_demir/features/analysis/cutting_bending_calculator.dart';
+import 'package:santijet_demir/features/analysis/widgets/stock_bar_cut_visual.dart';
 
 class AnalysisReportService {
   const AnalysisReportService();
@@ -456,28 +457,34 @@ class AnalysisReportService {
   }
 
   PdfReportSection _buildStockCutDetailSection(StockCutPlan plan) {
+    final groups = groupIdenticalStockBarCuts(plan.bars);
     return PdfReportSection(
       title: 'Planlı Kesim Detayı — Ø${plan.diameter}',
       subtitle:
-          '${AppFormat.integer(plan.totalBars)} çubuk · fire ${_percent(plan.wastePercent)}',
-      headers: const ['Çubuk', 'Parçalar', 'Kullanılan (m)', 'Fire (m)'],
-      rows: plan.bars
+          '${AppFormat.integer(plan.totalBars)} çubuk · '
+          '${groups.length} kesim grubu · fire ${_percent(plan.wastePercent)}',
+      headers: const ['Çubuk', 'Adet', 'Parçalar', 'Kullanılan (m)', 'Fire (m)'],
+      rows: groups
           .map(
-            (bar) => [
-              '#${bar.barIndex}',
-                  bar.members
-                      .map(
-                        (member) {
-                          final label = member.elementDisplayLabel;
-                          final piece =
-                              '${member.lengthM.toStringAsFixed(2)} m×${member.count}';
-                          return label.isEmpty ? piece : '$label $piece';
-                        },
-                      )
-                      .join(' + '),
-              bar.usedLengthM.toStringAsFixed(2),
-              bar.wasteLengthM.toStringAsFixed(2),
-            ],
+            (group) {
+              final bar = group.representative;
+              return [
+                formatBarIndexRanges(group.barIndexes),
+                '${group.count}',
+                bar.members
+                    .map(
+                      (member) {
+                        final label = member.elementDisplayLabel;
+                        final piece =
+                            '${member.lengthM.toStringAsFixed(2)} m×${member.count}';
+                        return label.isEmpty ? piece : '$label $piece';
+                      },
+                    )
+                    .join(' + '),
+                bar.usedLengthM.toStringAsFixed(2),
+                bar.wasteLengthM.toStringAsFixed(2),
+              ];
+            },
           )
           .toList(),
     );

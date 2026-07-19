@@ -467,13 +467,13 @@ class _FireDiameterDrillDownState extends State<_FireDiameterDrillDown> {
               ),
             ],
             const SizedBox(height: 8),
-            PaginatedListSection<StockBarCut>(
-              items: visibleBars,
+            PaginatedListSection<StockBarCutGroup>(
+              items: groupIdenticalStockBarCuts(visibleBars),
               pageSize: 15,
-              itemBuilder: (context, bar, index) => Padding(
+              itemBuilder: (context, group, index) => Padding(
                 padding: const EdgeInsets.only(bottom: 6),
-                child: StockBarCutVisualCard(
-                  bar: bar,
+                child: StockBarCutVisualCard.fromGroup(
+                  group: group,
                   stockLengthM: stockLengthM,
                   diameterColor: diameterColor,
                 ),

@@ -22,6 +22,87 @@ String stockCutMemberToken(StockBarCutMember member) {
   return '$label · $length';
 }
 
+/// Aynı kesim deseni (barIndex hariç) için imza.
+String stockBarCutPatternKey(StockBarCut bar) {
+  final members = bar.members
+      .map(
+        (m) =>
+            '${m.lengthM.toStringAsFixed(3)}x${m.count}|'
+            '${m.elementTypeCode ?? ''}|${m.elementCode ?? ''}',
+      )
+      .join(';');
+  return '${bar.usedLengthM.toStringAsFixed(3)}|'
+      '${bar.wasteLengthM.toStringAsFixed(3)}|$members';
+}
+
+/// Ardışık çubuk indekslerini "1–35, 40, 42–44" biçiminde yazar.
+String formatBarIndexRanges(Iterable<int> indexes) {
+  final sorted = indexes.toList()..sort();
+  if (sorted.isEmpty) return '';
+  final parts = <String>[];
+  var start = sorted.first;
+  var prev = start;
+  for (var i = 1; i < sorted.length; i++) {
+    final value = sorted[i];
+    if (value == prev + 1) {
+      prev = value;
+      continue;
+    }
+    parts.add(start == prev ? '$start' : '$start–$prev');
+    start = value;
+    prev = value;
+  }
+  parts.add(start == prev ? '$start' : '$start–$prev');
+  return parts.join(', ');
+}
+
+class StockBarCutGroup {
+  const StockBarCutGroup({
+    required this.representative,
+    required this.barIndexes,
+  });
+
+  final StockBarCut representative;
+  final List<int> barIndexes;
+
+  int get count => barIndexes.length;
+
+  /// Örn. "Çubuk 1–35 · 35 adet" veya "Çubuk 7".
+  String get titleLabel {
+    final ranges = formatBarIndexRanges(barIndexes);
+    if (count <= 1) return 'Çubuk $ranges';
+    return 'Çubuk $ranges · $count adet';
+  }
+}
+
+/// Aynı kesim yapan çubukları tek grupta toplar (ilk görünüş sırası korunur).
+List<StockBarCutGroup> groupIdenticalStockBarCuts(List<StockBarCut> bars) {
+  if (bars.isEmpty) return const [];
+
+  final order = <String>[];
+  final buckets = <String, List<StockBarCut>>{};
+  for (final bar in bars) {
+    final key = stockBarCutPatternKey(bar);
+    final bucket = buckets[key];
+    if (bucket == null) {
+      order.add(key);
+      buckets[key] = [bar];
+    } else {
+      bucket.add(bar);
+    }
+  }
+
+  return [
+    for (final key in order)
+      StockBarCutGroup(
+        representative: buckets[key]!.first,
+        barIndexes: [
+          for (final bar in buckets[key]!) bar.barIndex,
+        ],
+      ),
+  ];
+}
+
 /// Çubuk kesim satırı — imalat etiketli formül + orantılı bar.
 class StockBarCutVisualCard extends StatelessWidget {
   const StockBarCutVisualCard({
@@ -30,12 +111,31 @@ class StockBarCutVisualCard extends StatelessWidget {
     required this.stockLengthM,
     required this.diameterColor,
     this.remainderLabelStyle = StockBarRemainderLabel.kalan,
+    this.titleLabel,
   });
+
+  factory StockBarCutVisualCard.fromGroup({
+    Key? key,
+    required StockBarCutGroup group,
+    required double stockLengthM,
+    required Color diameterColor,
+    StockBarRemainderLabel remainderLabelStyle = StockBarRemainderLabel.kalan,
+  }) {
+    return StockBarCutVisualCard(
+      key: key,
+      bar: group.representative,
+      stockLengthM: stockLengthM,
+      diameterColor: diameterColor,
+      remainderLabelStyle: remainderLabelStyle,
+      titleLabel: group.titleLabel,
+    );
+  }
 
   final StockBarCut bar;
   final double stockLengthM;
   final Color diameterColor;
   final StockBarRemainderLabel remainderLabelStyle;
+  final String? titleLabel;
 
   @override
   Widget build(BuildContext context) {
@@ -74,7 +174,7 @@ class StockBarCutVisualCard extends StatelessWidget {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Text(
-            'Çubuk ${bar.barIndex}',
+            titleLabel ?? 'Çubuk ${bar.barIndex}',
             style: AppTypography.labelMedium.copyWith(color: diameterColor),
           ),
           const SizedBox(height: 8),

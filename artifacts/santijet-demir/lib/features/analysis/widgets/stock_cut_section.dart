@@ -461,41 +461,51 @@ class _PaginatedStockBarCutListState extends State<_PaginatedStockBarCutList> {
   }
 
   void _showMore() {
+    final groupCount = groupIdenticalStockBarCuts(widget.bars).length;
     setState(() {
-      _visibleCount = (_visibleCount + _pageSize).clamp(0, widget.bars.length);
+      _visibleCount = (_visibleCount + _pageSize).clamp(0, groupCount);
     });
   }
 
   @override
   Widget build(BuildContext context) {
-    final bars = widget.bars;
-    if (bars.isEmpty) {
+    final groups = groupIdenticalStockBarCuts(widget.bars);
+    if (groups.isEmpty) {
       return Text(
         'Kesim planı boş.',
         style: AppTypography.bodySmall.copyWith(color: AppColors.textMuted),
       );
     }
 
-    final visibleBars = bars.take(_visibleCount).toList();
-    final remaining = bars.length - _visibleCount;
+    final visibleGroups = groups.take(_visibleCount).toList();
+    final remaining = groups.length - _visibleCount;
     final nextBatch = remaining > _pageSize ? _pageSize : remaining;
+    final listedBarCount =
+        groups.fold<int>(0, (sum, group) => sum + group.count);
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
-        if (widget.totalBars > bars.length) ...[
+        if (widget.totalBars > listedBarCount) ...[
           Text(
-            'Önizleme: ilk ${bars.length} / ${AppFormat.integer(widget.totalBars)} çubuk gösteriliyor. '
+            'Önizleme: ilk $listedBarCount / ${AppFormat.integer(widget.totalBars)} çubuk · '
+            '${groups.length} kesim grubu. '
             'Özet tonaj ve fire değerleri tam plana göredir.',
             style: AppTypography.bodySmall.copyWith(color: AppColors.textMuted),
           ),
           const SizedBox(height: 8),
+        ] else if (groups.length < listedBarCount) ...[
+          Text(
+            '$listedBarCount çubuk · ${groups.length} kesim grubu (aynı kesimler birleştirildi)',
+            style: AppTypography.bodySmall.copyWith(color: AppColors.textMuted),
+          ),
+          const SizedBox(height: 8),
         ],
-        ...visibleBars.map(
-          (bar) => Padding(
+        ...visibleGroups.map(
+          (group) => Padding(
             padding: const EdgeInsets.only(bottom: 8),
-            child: StockBarCutVisualCard(
-              bar: bar,
+            child: StockBarCutVisualCard.fromGroup(
+              group: group,
               stockLengthM: widget.stockLengthM,
               diameterColor: widget.diameterColor,
               remainderLabelStyle: StockBarRemainderLabel.fire,
@@ -515,14 +525,14 @@ class _PaginatedStockBarCutListState extends State<_PaginatedStockBarCutList> {
             ),
             child: Text(
               nextBatch == _pageSize
-                  ? '10 satır daha göster ($remaining kaldı)'
-                  : '$nextBatch satır daha göster',
+                  ? '10 grup daha göster ($remaining kaldı)'
+                  : '$nextBatch grup daha göster',
             ),
           ),
-        ] else if (bars.length > _pageSize) ...[
+        ] else if (groups.length > _pageSize) ...[
           const SizedBox(height: 4),
           Text(
-            '${bars.length} çubuk listelendi',
+            '${groups.length} kesim grubu listelendi',
             style: AppTypography.labelSmall.copyWith(color: AppColors.textMuted),
             textAlign: TextAlign.center,
           ),
