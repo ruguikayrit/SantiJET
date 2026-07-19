@@ -260,25 +260,28 @@ class _AnalysisFireSummaryPanelState
                     const SizedBox(height: 14),
                     _AnalysisErrorBanner(message: analysisError),
                   ] else if (!isRunning) ...[
-                    if (!batch.isOptimized && tahvilPreview != null) ...[
-                      if (tahvilPreview.hasSavings) ...[
-                        const SizedBox(height: 14),
-                        _TahvilSavingsWarningBanner(preview: tahvilPreview),
-                      ] else ...[
-                        const SizedBox(height: 14),
-                        _TahvilNoBenefitBanner(preview: tahvilPreview),
+                    if (!batch.isOptimized) ...[
+                      if (tahvilPreview != null) ...[
+                        if (tahvilPreview.hasSavings) ...[
+                          const SizedBox(height: 14),
+                          _TahvilSavingsWarningBanner(preview: tahvilPreview),
+                        ] else ...[
+                          const SizedBox(height: 14),
+                          _TahvilNoBenefitBanner(preview: tahvilPreview),
+                        ],
                       ],
-                    ],
-                    const SizedBox(height: 14),
-                    _TahvilFireAnalysisPanel(
-                      batch: batch,
-                      enabled: batch.pieceLines.isNotEmpty,
-                      onStart: () => _confirmAndRunTahvilAnalysis(
-                        context,
-                        tahvilPreview,
+                      const SizedBox(height: 14),
+                      _TahvilFireAnalysisPanel(
+                        enabled: batch.pieceLines.isNotEmpty,
+                        onStart: () => _confirmAndRunTahvilAnalysis(
+                          context,
+                          tahvilPreview,
+                        ),
                       ),
-                    ),
-                    const SizedBox(height: 12),
+                      const SizedBox(height: 12),
+                    ] else ...[
+                      const SizedBox(height: 12),
+                    ],
                     AnalysisReportActions(
                       batch: batch,
                       sourceBatches: widget.sourceBatches,
@@ -523,12 +526,10 @@ class _TahvilNoBenefitBanner extends StatelessWidget {
 
 class _TahvilFireAnalysisPanel extends StatelessWidget {
   const _TahvilFireAnalysisPanel({
-    required this.batch,
     required this.enabled,
     required this.onStart,
   });
 
-  final CuttingBendingBatch batch;
   final bool enabled;
   final Future<void> Function() onStart;
 
@@ -548,9 +549,7 @@ class _TahvilFireAnalysisPanel extends StatelessWidget {
         _MatteGreenGradientButton(
           onPressed: enabled ? () => onStart() : null,
           icon: Icons.swap_horiz_outlined,
-          label: batch.isOptimized
-              ? 'Fire Analizini Yeniden Çalıştır'
-              : 'Fire Analizi Yap',
+          label: 'Fire Analizi Yap',
         ),
       ],
     );

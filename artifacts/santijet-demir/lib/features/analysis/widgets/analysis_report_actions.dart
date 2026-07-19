@@ -69,8 +69,6 @@ class _AnalysisReportActionsState extends ConsumerState<AnalysisReportActions> {
 
   @override
   Widget build(BuildContext context) {
-    final optimized = widget.batch.isOptimized;
-
     return Container(
       padding: const EdgeInsets.all(AppSpacing.md),
       decoration: BoxDecoration(
@@ -114,12 +112,8 @@ class _AnalysisReportActionsState extends ConsumerState<AnalysisReportActions> {
                     Text('Rapor Oluştur', style: AppTypography.titleMedium),
                     const SizedBox(height: 4),
                     Text(
-                      optimized
-                          ? 'Fire özeti, mukayese, revize liste ve planlı kesim '
-                              'sonuçlarını PDF rapor olarak dışa aktarın.'
-                          : 'Ham parça listesi ve ham fire sonuçlarını PDF '
-                              'rapor olarak dışa aktarın. Analiz tamamlandığında '
-                              'rapor otomatik genişler.',
+                      'Fire özeti, firesiz kesim listesi ve fireli kesim '
+                      'listesini PDF rapor olarak dışa aktarın.',
                       style: AppTypography.bodySmall.copyWith(
                         color: AppColors.textMuted,
                         height: 1.4,

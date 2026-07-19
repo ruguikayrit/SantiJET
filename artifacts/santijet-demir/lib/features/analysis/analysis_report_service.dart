@@ -15,8 +15,6 @@ class AnalysisReportService {
   }) {
     final fireSummary = computeAnalysisFireSummary(batch);
     final rawFireByDiameter = computeRawFireBreakdown(batch);
-    final materialSummary = computeMaterialSummaryByDiameter(batch.pieceLines);
-    final strategyComparisons = computeStrategyFireComparisons(batch);
     final dateFormat = DateFormat('dd.MM.yyyy HH:mm', 'tr_TR');
 
     final sections = <PdfReportSection>[
@@ -32,75 +30,38 @@ class AnalysisReportService {
     if (batch.isOptimized) {
       final comparison = computeAnalysisComparison(batch);
       sections.add(_buildComparisonSection(comparison));
-    }
-
-    final availableStrategies =
-        strategyComparisons.where((item) => item.isAvailable).toList();
-    if (availableStrategies.isNotEmpty) {
-      sections.add(_buildStrategySection(availableStrategies));
-    }
-
-    sections.add(_buildFireBreakdownSection(
-      title: 'Ham Fire — Çap Bazında',
-      subtitle: 'Kaynak parça listesinden ${CuttingBendingBatch.defaultStockBarLengthM.toStringAsFixed(0)} m stok kesim simülasyonu',
-      breakdown: rawFireByDiameter,
-    ));
-
-    if (batch.isOptimized) {
       sections.add(_buildFireBreakdownSection(
         title: 'Plan Fire — Çap Bazında',
         subtitle: 'Revize parça listesi ve planlı kesim sonuçları',
         breakdown: computePlannedFireBreakdown(batch),
       ));
-    }
-
-    sections.add(_buildMaterialSummarySection(materialSummary));
-    sections.add(_buildPieceListSection(
-      title: 'Ham Parça Listesi',
-      pieces: batch.pieceLines,
-    ));
-
-    if (batch.labelDetails.isNotEmpty) {
-      sections.add(_buildLabelDetailsSection(batch));
-    }
-
-    if (batch.isOptimized) {
-      final lengthChanges = computeLengthMatchChanges(batch.lengthMatches);
-      if (lengthChanges.isNotEmpty) {
-        sections.add(_buildLengthMatchSection(lengthChanges));
-      }
-
-      final approvedTahvil =
-          batch.tahvilGroups.where((group) => group.approved).toList();
-      if (approvedTahvil.isNotEmpty) {
-        sections.add(_buildTahvilSection(approvedTahvil));
-      }
-
-      sections.add(_buildPieceListSection(
-        title: 'Revize Parça Listesi',
-        pieces: batch.revisedPieceLines,
-      ));
-
-      final comparisonRows = computePieceListComparisonRows(batch);
-      sections.add(_buildPieceComparisonSection(comparisonRows));
-
-      if (batch.stockCutPlans.isNotEmpty) {
-        sections.add(_buildStockCutSummarySection(batch.stockCutPlans));
-        for (final plan in batch.stockCutPlans) {
-          sections.add(_buildStockCutDetailSection(plan));
-        }
-      }
     } else {
-      sections.add(
-        const PdfReportSection(
-          title: 'Fire Azaltma ve Planlı Kesim',
-          subtitle:
-              'Fire analizi henüz çalıştırılmadı. Ham veri ve ham fire sonuçları raporlanmıştır.',
-          keyValues: [
-            ('Durum', 'Analiz bekleniyor'),
-          ],
-        ),
-      );
+      sections.add(_buildFireBreakdownSection(
+        title: 'Ham Fire — Çap Bazında',
+        subtitle:
+            'Kaynak parça listesinden ${CuttingBendingBatch.defaultStockBarLengthM.toStringAsFixed(0)} m stok kesim simülasyonu',
+        breakdown: rawFireByDiameter,
+      ));
+    }
+
+    final cutPlans = batch.isOptimized && batch.stockCutPlans.isNotEmpty
+        ? batch.stockCutPlans
+        : computeStockCutPlans(batch.pieceLines);
+    final scopeLabel = batch.isOptimized ? 'Plan' : 'Ham';
+
+    if (cutPlans.isNotEmpty) {
+      sections.add(_buildStockCutSummarySection(
+        cutPlans,
+        title: '$scopeLabel Kesim Özeti',
+        subtitle:
+            '${CuttingBendingBatch.defaultStockBarLengthM.toStringAsFixed(0)} m stok — çap bazında toplamlar',
+      ));
+      for (final plan in cutPlans) {
+        sections.addAll(_buildStockCutListSections(
+          plan,
+          scopeLabel: scopeLabel,
+        ));
+      }
     }
 
     final batchLabel = sourceBatches.length > 1
@@ -426,16 +387,20 @@ class AnalysisReportService {
     );
   }
 
-  PdfReportSection _buildStockCutSummarySection(List<StockCutPlan> plans) {
+  PdfReportSection _buildStockCutSummarySection(
+    List<StockCutPlan> plans, {
+    required String title,
+    required String subtitle,
+  }) {
     return PdfReportSection(
-      title: 'Planlı Kesim Özeti',
-      subtitle:
-          '${CuttingBendingBatch.defaultStockBarLengthM.toStringAsFixed(0)} m stok çubuk — çap bazında toplamlar',
+      title: title,
+      subtitle: subtitle,
       headers: const [
         'ÇAP',
         'Çubuk',
+        'Firesiz',
+        'Fireli',
         'Stok (m)',
-        'Kullanım (m)',
         'Fire (m)',
         'Fire (%)',
         'Fire (t)',
@@ -445,8 +410,9 @@ class AnalysisReportService {
             (plan) => [
               'Ø${plan.diameter}',
               AppFormat.integer(plan.totalBars),
+              AppFormat.integer(stockBarNoWasteCount(plan)),
+              AppFormat.integer(stockBarWasteCount(plan)),
               plan.totalStockM.toStringAsFixed(2),
-              plan.totalUsedM.toStringAsFixed(2),
               plan.totalWasteM.toStringAsFixed(2),
               _percent(plan.wastePercent),
               _tonnage(plan.totalWasteTonnage, includeUnit: false),
@@ -456,34 +422,80 @@ class AnalysisReportService {
     );
   }
 
-  PdfReportSection _buildStockCutDetailSection(StockCutPlan plan) {
-    final groups = groupIdenticalStockBarCuts(plan.bars);
+  List<PdfReportSection> _buildStockCutListSections(
+    StockCutPlan plan, {
+    required String scopeLabel,
+  }) {
+    final noWasteGroups =
+        groupIdenticalStockBarCuts(listStockBarsWithoutWaste(plan));
+    final wasteGroups =
+        groupIdenticalStockBarCuts(listStockBarsWithWaste(plan));
+
+    return [
+      _buildGroupedCutListSection(
+        title: '$scopeLabel — Ø${plan.diameter} Firesiz Kesim Listesi',
+        subtitle:
+            '${AppFormat.integer(stockBarNoWasteCount(plan))} çubuk · '
+            '${noWasteGroups.length} kesim grubu',
+        groups: noWasteGroups,
+        includeWasteColumn: false,
+      ),
+      _buildGroupedCutListSection(
+        title: '$scopeLabel — Ø${plan.diameter} Fireli Kesim Listesi',
+        subtitle:
+            '${AppFormat.integer(stockBarWasteCount(plan))} çubuk · '
+            '${wasteGroups.length} kesim grubu · '
+            'toplam fire ${plan.totalWasteM.toStringAsFixed(2)} m',
+        groups: wasteGroups,
+        includeWasteColumn: true,
+      ),
+    ];
+  }
+
+  PdfReportSection _buildGroupedCutListSection({
+    required String title,
+    required String subtitle,
+    required List<StockBarCutGroup> groups,
+    required bool includeWasteColumn,
+  }) {
+    if (groups.isEmpty) {
+      return PdfReportSection(
+        title: title,
+        subtitle: subtitle,
+        keyValues: const [('Durum', 'Bu çapta kayıt yok')],
+      );
+    }
+
     return PdfReportSection(
-      title: 'Planlı Kesim Detayı — Ø${plan.diameter}',
-      subtitle:
-          '${AppFormat.integer(plan.totalBars)} çubuk · '
-          '${groups.length} kesim grubu · fire ${_percent(plan.wastePercent)}',
-      headers: const ['Çubuk', 'Adet', 'Parçalar', 'Kullanılan (m)', 'Fire (m)'],
+      title: title,
+      subtitle: subtitle,
+      headers: includeWasteColumn
+          ? const ['Çubuk', 'Adet', 'Parçalar', 'Kullanılan (m)', 'Fire (m)']
+          : const ['Çubuk', 'Adet', 'Parçalar', 'Kullanılan (m)'],
       rows: groups
           .map(
             (group) {
               final bar = group.representative;
-              return [
+              final pieces = bar.members
+                  .map(
+                    (member) {
+                      final label = member.elementDisplayLabel;
+                      final piece =
+                          '${member.lengthM.toStringAsFixed(2)} m×${member.count}';
+                      return label.isEmpty ? piece : '$label $piece';
+                    },
+                  )
+                  .join(' + ');
+              final row = <String>[
                 formatBarIndexRanges(group.barIndexes),
                 '${group.count}',
-                bar.members
-                    .map(
-                      (member) {
-                        final label = member.elementDisplayLabel;
-                        final piece =
-                            '${member.lengthM.toStringAsFixed(2)} m×${member.count}';
-                        return label.isEmpty ? piece : '$label $piece';
-                      },
-                    )
-                    .join(' + '),
+                pieces,
                 bar.usedLengthM.toStringAsFixed(2),
-                bar.wasteLengthM.toStringAsFixed(2),
               ];
+              if (includeWasteColumn) {
+                row.add(bar.wasteLengthM.toStringAsFixed(2));
+              }
+              return row;
             },
           )
           .toList(),
