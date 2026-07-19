@@ -394,142 +394,153 @@ class _FireDiameterDrillDownState extends State<_FireDiameterDrillDown> {
     final visibleTotalCount =
         _filter == _FireCutFilter.withWaste ? wasteBarCount : noWasteBarCount;
 
-    return Container(
-      width: double.infinity,
-      margin: const EdgeInsets.only(top: 12),
-      padding: const EdgeInsets.all(12),
-      decoration: BoxDecoration(
-        color: AppColors.surfaceElevated,
-        borderRadius: AppRadii.sm,
-        border: Border.all(
-          color: diameterColor.withValues(alpha: 0.45),
-        ),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.stretch,
-        children: [
-          Row(
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        const SizedBox(height: 12),
+        Container(
+          width: double.infinity,
+          padding: const EdgeInsets.only(top: 12),
+          decoration: BoxDecoration(
+            border: Border(
+              top: BorderSide(
+                color: diameterColor.withValues(alpha: 0.35),
+              ),
+            ),
+          ),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
-              Expanded(
-                child: Text(
-                  'Ø${plan.diameter} · Kesim listesi fire detayı',
-                  style: AppTypography.titleMedium.copyWith(
-                    color: diameterColor,
+              Row(
+                children: [
+                  Expanded(
+                    child: Text(
+                      'Ø${plan.diameter} · Kesim listesi fire detayı',
+                      style: AppTypography.titleMedium.copyWith(
+                        color: diameterColor,
+                      ),
+                      textAlign: TextAlign.center,
+                    ),
                   ),
-                  textAlign: TextAlign.center,
-                ),
-              ),
-              IconButton(
-                onPressed: widget.onClose,
-                icon: const Icon(Icons.close, size: 18),
-                color: AppColors.textMuted,
-                visualDensity: VisualDensity.compact,
-                padding: EdgeInsets.zero,
-                constraints: const BoxConstraints(minWidth: 32, minHeight: 32),
-              ),
-            ],
-          ),
-          const SizedBox(height: 6),
-          Text(
-            '${breakdown.totalBars} çubuk · '
-            '${plan.totalWasteM.toStringAsFixed(2)} m fire · '
-            '${AppFormat.tonnage(breakdown.wasteTonnage)} t · '
-            '%${breakdown.wastePercent.toStringAsFixed(1)}',
-            style: AppTypography.bodySmall.copyWith(color: AppColors.textMuted),
-            textAlign: TextAlign.center,
-          ),
-          if (wasteBuckets.isNotEmpty) ...[
-            const SizedBox(height: 12),
-            Text(
-              'Kalan uzunluk özeti',
-              style: AppTypography.labelMedium,
-              textAlign: TextAlign.center,
-            ),
-            const SizedBox(height: 4),
-            const AppDescriptionLines(
-              [
-                'Kullanılamayan fire parçaları.',
-                'Hangi uzunlukta ne kadar kaldığı özetlenir.',
-              ],
-              textAlign: TextAlign.center,
-            ),
-            const SizedBox(height: 8),
-            const _DetailTableHeader(
-              cells: ['KALAN UZUNLUK', 'ÇUBUK', 'TOPLAM FİRE', 'AĞIRLIK'],
-            ),
-            ...wasteBuckets.map(
-              (bucket) => _DetailTableRow(
-                cells: [
-                  '${bucket.wasteLengthM.toStringAsFixed(2)} m',
-                  '${bucket.barCount}',
-                  '${bucket.totalWasteM.toStringAsFixed(2)} m',
-                  '${AppFormat.tonnage(bucket.wasteTonnage)} t',
+                  IconButton(
+                    onPressed: widget.onClose,
+                    icon: const Icon(Icons.close, size: 18),
+                    color: AppColors.textMuted,
+                    visualDensity: VisualDensity.compact,
+                    padding: EdgeInsets.zero,
+                    constraints:
+                        const BoxConstraints(minWidth: 32, minHeight: 32),
+                  ),
                 ],
-                accentColor: diameterColor,
               ),
-            ),
-          ],
-          const SizedBox(height: 12),
-          Text(
-            'Çubuk kesim listesi',
-            style: AppTypography.labelMedium,
-            textAlign: TextAlign.center,
-          ),
-          const SizedBox(height: 4),
-          AppDescriptionLines(
-            wasteBarCount == 0
-                ? [
-                    'Bu çapta fire oluşmadı.',
-                    '$noWasteBarCount firesiz çubuk.',
-                  ]
-                : [
-                    '$noWasteBarCount çubuk fire oluşturmadı.',
-                    '$wasteBarCount çubukta kalan parça var.',
-                  ],
-            textAlign: TextAlign.center,
-          ),
-          const SizedBox(height: 10),
-          _FireCutFilterTabs(
-            selected: _filter,
-            noWasteCount: noWasteBarCount,
-            wasteCount: wasteBarCount,
-            onSelected: (value) => setState(() => _filter = value),
-          ),
-          if (visibleTotalCount == 0) ...[
-            const SizedBox(height: 10),
-            Text(
-              _filter == _FireCutFilter.withWaste
-                  ? 'Fireli kesim bulunamadı.'
-                  : 'Firesiz kesim bulunamadı.',
-              style: AppTypography.bodySmall.copyWith(color: AppColors.textMuted),
-            ),
-          ] else ...[
-            if (visibleBars.length < visibleTotalCount) ...[
-              const SizedBox(height: 10),
-              AppDescriptionLines(
-                [
-                  'Önizleme: ${visibleBars.length} / $visibleTotalCount çubuk gösteriliyor.',
-                  'Özet adetler tam plana göredir.',
-                ],
+              const SizedBox(height: 6),
+              Text(
+                '${breakdown.totalBars} çubuk · '
+                '${plan.totalWasteM.toStringAsFixed(2)} m fire · '
+                '${AppFormat.tonnage(breakdown.wasteTonnage)} t · '
+                '%${breakdown.wastePercent.toStringAsFixed(1)}',
+                style: AppTypography.bodySmall
+                    .copyWith(color: AppColors.textMuted),
                 textAlign: TextAlign.center,
               ),
-            ],
-            const SizedBox(height: 8),
-            PaginatedListSection<StockBarCutGroup>(
-              items: groupIdenticalStockBarCuts(visibleBars),
-              pageSize: 15,
-              itemBuilder: (context, group, index) => Padding(
-                padding: const EdgeInsets.only(bottom: 6),
-                child: StockBarCutVisualCard.fromGroup(
-                  group: group,
-                  stockLengthM: stockLengthM,
-                  diameterColor: diameterColor,
+              if (wasteBuckets.isNotEmpty) ...[
+                const SizedBox(height: 12),
+                Text(
+                  'Kalan uzunluk özeti',
+                  style: AppTypography.labelMedium,
+                  textAlign: TextAlign.center,
                 ),
+                const SizedBox(height: 4),
+                const AppDescriptionLines(
+                  [
+                    'Kullanılamayan fire parçaları.',
+                    'Hangi uzunlukta ne kadar kaldığı özetlenir.',
+                  ],
+                  textAlign: TextAlign.center,
+                ),
+                const SizedBox(height: 8),
+                const _DetailTableHeader(
+                  cells: ['KALAN UZUNLUK', 'ÇUBUK', 'TOPLAM FİRE', 'AĞIRLIK'],
+                ),
+                ...wasteBuckets.map(
+                  (bucket) => _DetailTableRow(
+                    cells: [
+                      '${bucket.wasteLengthM.toStringAsFixed(2)} m',
+                      '${bucket.barCount}',
+                      '${bucket.totalWasteM.toStringAsFixed(2)} m',
+                      '${AppFormat.tonnage(bucket.wasteTonnage)} t',
+                    ],
+                    accentColor: diameterColor,
+                  ),
+                ),
+              ],
+              const SizedBox(height: 12),
+              Text(
+                'Çubuk kesim listesi',
+                style: AppTypography.labelMedium,
+                textAlign: TextAlign.center,
               ),
-            ),
-          ],
-        ],
-      ),
+              const SizedBox(height: 4),
+              AppDescriptionLines(
+                wasteBarCount == 0
+                    ? [
+                        'Bu çapta fire oluşmadı.',
+                        '$noWasteBarCount firesiz çubuk.',
+                      ]
+                    : [
+                        '$noWasteBarCount çubuk fire oluşturmadı.',
+                        '$wasteBarCount çubukta kalan parça var.',
+                      ],
+                textAlign: TextAlign.center,
+              ),
+              const SizedBox(height: 10),
+              _FireCutFilterTabs(
+                selected: _filter,
+                noWasteCount: noWasteBarCount,
+                wasteCount: wasteBarCount,
+                onSelected: (value) => setState(() => _filter = value),
+              ),
+              if (visibleTotalCount == 0) ...[
+                const SizedBox(height: 10),
+                Text(
+                  _filter == _FireCutFilter.withWaste
+                      ? 'Fireli kesim bulunamadı.'
+                      : 'Firesiz kesim bulunamadı.',
+                  style: AppTypography.bodySmall
+                      .copyWith(color: AppColors.textMuted),
+                ),
+              ] else ...[
+                if (visibleBars.length < visibleTotalCount) ...[
+                  const SizedBox(height: 10),
+                  AppDescriptionLines(
+                    [
+                      'Önizleme: ${visibleBars.length} / $visibleTotalCount çubuk gösteriliyor.',
+                      'Özet adetler tam plana göredir.',
+                    ],
+                    textAlign: TextAlign.center,
+                  ),
+                ],
+                const SizedBox(height: 8),
+                PaginatedListSection<StockBarCutGroup>(
+                  items: groupIdenticalStockBarCuts(visibleBars),
+                  pageSize: 15,
+                  itemBuilder: (context, group, index) => Padding(
+                    padding: const EdgeInsets.only(bottom: 6),
+                    child: SizedBox(
+                      width: double.infinity,
+                      child: StockBarCutVisualCard.fromGroup(
+                        group: group,
+                        stockLengthM: stockLengthM,
+                        diameterColor: diameterColor,
+                      ),
+                    ),
+                  ),
+                ),
+              ],
+            ],
+          ),
+        ),
+      ],
     );
   }
 }
@@ -750,7 +761,7 @@ class _DetailTableHeader extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return AppTableHeaderRow(
-      padding: const EdgeInsets.symmetric(vertical: 4, horizontal: 4),
+      padding: const EdgeInsets.symmetric(vertical: 4),
       cells: [
         for (var i = 0; i < cells.length; i++)
           AppTableHeaderCell(
@@ -781,7 +792,8 @@ class _DetailTableRow extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final row = Container(
-      padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 4),
+      width: double.infinity,
+      padding: const EdgeInsets.symmetric(vertical: 8),
       decoration: BoxDecoration(
         color: selected
             ? AppColors.electricBlueLight.withValues(alpha: 0.08)
