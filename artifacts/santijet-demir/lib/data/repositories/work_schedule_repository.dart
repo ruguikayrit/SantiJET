@@ -6,22 +6,56 @@ class WorkScheduleRepository {
 
   final ProjectDataRepository _projectDataRepository;
   static const _domain = 'work_schedule';
+  static const _schemaVersion = 2;
 
-  List<WorkScheduleDay> read(String projectId) {
+  List<WorkScheduleImalat> read(String projectId) {
     final raw = _projectDataRepository.readDomain(projectId, _domain);
-    final items = raw?['items'];
+    if (raw == null) return [];
+
+    final version = (raw['version'] as num?)?.toInt() ?? 1;
+    final items = raw['items'];
     if (items is! List) return [];
 
-    return items
-        .whereType<Map>()
-        .map(WorkScheduleDay.fromJson)
-        .toList()
-      ..sort((a, b) => b.date.compareTo(a.date));
+    if (version >= _schemaVersion) {
+      return items
+          .whereType<Map>()
+          .map(WorkScheduleImalat.fromJson)
+          .where((item) => item.imalatId.isNotEmpty)
+          .toList()
+        ..sort((a, b) => a.imalatName.compareTo(b.imalatName));
+    }
+
+    // Eski günlük format — imalat adlarını tarih olmadan taşı.
+    final migrated = <String, WorkScheduleImalat>{};
+    for (final rawItem in items.whereType<Map>()) {
+      if (rawItem.containsKey('startDate') || rawItem.containsKey('imalatId')) {
+        final item = WorkScheduleImalat.fromJson(rawItem);
+        if (item.imalatId.isEmpty) continue;
+        migrated[item.imalatId] = item;
+        continue;
+      }
+      final day = WorkScheduleDay.fromJson(rawItem);
+      for (final activity in day.activities) {
+        final imalatId = activity.imalatId;
+        if (imalatId == null || imalatId.isEmpty) continue;
+        migrated.putIfAbsent(
+          imalatId,
+          () => WorkScheduleImalat(
+            id: 'ws-$imalatId',
+            imalatId: imalatId,
+            imalatName: activity.imalatName,
+          ),
+        );
+      }
+    }
+    return migrated.values.toList()
+      ..sort((a, b) => a.imalatName.compareTo(b.imalatName));
   }
 
-  Future<void> write(String projectId, List<WorkScheduleDay> days) async {
+  Future<void> write(String projectId, List<WorkScheduleImalat> items) async {
     await _projectDataRepository.writeDomain(projectId, _domain, {
-      'items': days.map((d) => d.toJson()).toList(),
+      'version': _schemaVersion,
+      'items': items.map((item) => item.toJson()).toList(),
     });
   }
 }

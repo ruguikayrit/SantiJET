@@ -7,6 +7,7 @@ class WorkforceEntry {
     required this.foremen,
     required this.supervisors,
     required this.hours,
+    this.overtimeHours = 0,
     this.notes,
   });
 
@@ -15,15 +16,20 @@ class WorkforceEntry {
   final int steelWorkers;
   final int foremen;
   final int supervisors;
+  /// Normal çalışma saati (varsayılan 8).
   final double hours;
+  /// Mesai saati (fazla çalışma).
+  final double overtimeHours;
   final String? notes;
 
   int get totalCrew => steelWorkers + foremen + supervisors;
 
-  /// İşçi-gün eşdeğeri (demirci × saat / 8).
+  double get totalHours => hours + overtimeHours;
+
+  /// İşçi-gün eşdeğeri (demirci × (saat+mesai) / 8).
   double get workerDayUnits {
-    if (hours <= 0 || steelWorkers <= 0) return 0;
-    return steelWorkers * (hours / 8.0);
+    if (totalHours <= 0 || steelWorkers <= 0) return 0;
+    return steelWorkers * (totalHours / 8.0);
   }
 
   String get dateKey =>
@@ -38,6 +44,7 @@ class WorkforceEntry {
     int? foremen,
     int? supervisors,
     double? hours,
+    double? overtimeHours,
     String? notes,
   }) {
     return WorkforceEntry(
@@ -47,6 +54,7 @@ class WorkforceEntry {
       foremen: foremen ?? this.foremen,
       supervisors: supervisors ?? this.supervisors,
       hours: hours ?? this.hours,
+      overtimeHours: overtimeHours ?? this.overtimeHours,
       notes: notes ?? this.notes,
     );
   }
@@ -58,6 +66,7 @@ class WorkforceEntry {
         'foremen': foremen,
         'supervisors': supervisors,
         'hours': hours,
+        'overtimeHours': overtimeHours,
         'notes': notes,
       };
 
@@ -69,6 +78,7 @@ class WorkforceEntry {
       foremen: (json['foremen'] as num?)?.toInt() ?? 0,
       supervisors: (json['supervisors'] as num?)?.toInt() ?? 0,
       hours: (json['hours'] as num?)?.toDouble() ?? 8,
+      overtimeHours: (json['overtimeHours'] as num?)?.toDouble() ?? 0,
       notes: json['notes'] as String?,
     );
   }

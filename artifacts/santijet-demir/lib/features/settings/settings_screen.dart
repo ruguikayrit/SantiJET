@@ -81,13 +81,13 @@ class SettingsScreen extends ConsumerWidget {
           _SettingsTile(
             icon: Icons.calendar_month_outlined,
             title: 'İş Programı',
-            subtitle: 'Günlük planlı imalat ve demir tonajı',
+            subtitle: 'Keşif imalatları · başlangıç / bitiş / süre',
             onTap: () => context.push(AppRoutes.workSchedule),
           ),
           _SettingsTile(
             icon: Icons.groups_outlined,
             title: 'Günlük Puantaj',
-            subtitle: 'Demirci, usta, şef ve çalışma saati',
+            subtitle: 'Demirci sayısı ve mesai — tablo girişi',
             onTap: () => context.push(AppRoutes.workforce),
           ),
           _SettingsTile(

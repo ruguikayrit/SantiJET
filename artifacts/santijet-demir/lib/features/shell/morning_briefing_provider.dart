@@ -6,13 +6,15 @@ import 'package:santijet_demir/features/prediction/providers/work_schedule_provi
 import 'package:santijet_demir/features/projects/providers/project_provider.dart';
 import 'package:santijet_demir/features/settings/providers/profile_provider.dart';
 import 'package:santijet_demir/features/shell/morning_briefing.dart';
+import 'package:santijet_demir/features/survey/providers/survey_provider.dart';
 
 final morningBriefingProvider = Provider<MorningBriefing>((ref) {
   final now = DateTime.now();
   final hasProject = ref.watch(activeProjectProvider) != null;
   final name = ref.watch(profileDisplayNameProvider);
   ref.watch(workScheduleProvider);
-  final today = ref.read(workScheduleProvider.notifier).dayFor(now);
+  final survey = ref.watch(surveyProjectProvider);
+  final today = ref.read(workScheduleProvider.notifier).dayFor(now, survey);
 
   return const MorningBriefingBuilder().build(
     now: now,

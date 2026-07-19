@@ -535,9 +535,8 @@ class _TahvilFireAnalysisPanel extends StatelessWidget {
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
         Text(
-          'Fire özeti proje verisine göre hazırlanır. '
-          'Tahvil yalnızca fire oranını düşürdüğünde uygulanır; '
-          'uzunluk eşleştirme yapılmaz.',
+          'Sadece kurallara göre çap değişikliği yapılır; '
+          'donatıların uzunluklarında herhangi bir değişiklik yapılmaz.',
           style: AppTypography.bodySmall.copyWith(color: AppColors.textMuted),
         ),
         const SizedBox(height: 10),

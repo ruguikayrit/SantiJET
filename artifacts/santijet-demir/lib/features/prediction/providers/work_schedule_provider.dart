@@ -1,14 +1,16 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:santijet_demir/data/repositories/work_schedule_repository.dart';
+import 'package:santijet_demir/domain/entities/survey.dart';
 import 'package:santijet_demir/domain/entities/work_schedule.dart';
 import 'package:santijet_demir/features/projects/providers/project_provider.dart';
+import 'package:santijet_demir/features/survey/providers/survey_provider.dart';
 
 final workScheduleRepositoryProvider = Provider<WorkScheduleRepository>((ref) {
   return WorkScheduleRepository(ref.watch(projectDataRepositoryProvider));
 });
 
 final workScheduleProvider =
-    StateNotifierProvider<WorkScheduleNotifier, List<WorkScheduleDay>>((ref) {
+    StateNotifierProvider<WorkScheduleNotifier, List<WorkScheduleImalat>>((ref) {
   final notifier = WorkScheduleNotifier(ref);
   ref.listen(activeProjectIdProvider, (previous, next) {
     if (previous != next) notifier.loadForProject(next);
@@ -16,7 +18,14 @@ final workScheduleProvider =
   return notifier;
 });
 
-class WorkScheduleNotifier extends StateNotifier<List<WorkScheduleDay>> {
+/// Keşif + iş programından türetilen günlük plan (tahmin / brifing).
+final workScheduleDaysProvider = Provider<List<WorkScheduleDay>>((ref) {
+  final items = ref.watch(workScheduleProvider);
+  final survey = ref.watch(surveyProjectProvider);
+  return expandWorkScheduleToDays(items: items, survey: survey);
+});
+
+class WorkScheduleNotifier extends StateNotifier<List<WorkScheduleImalat>> {
   WorkScheduleNotifier(this._ref) : super(const []) {
     loadForProject(_ref.read(activeProjectIdProvider));
   }
@@ -42,33 +51,47 @@ class WorkScheduleNotifier extends StateNotifier<List<WorkScheduleDay>> {
     await _repo.write(projectId, state);
   }
 
-  WorkScheduleDay? dayFor(DateTime date) {
-    final key = WorkScheduleDay.normalizeDate(date);
-    for (final day in state) {
-      if (WorkScheduleDay.normalizeDate(day.date) == key) return day;
+  /// Keşif imalatlarıyla satırları senkronize eder (eksik olanları ekler).
+  Future<void> syncFromSurvey(SurveyProject survey) async {
+    final byId = {for (final item in state) item.imalatId: item};
+    final next = <WorkScheduleImalat>[];
+    for (final imalat in survey.imalats) {
+      final existing = byId[imalat.id];
+      if (existing != null) {
+        next.add(
+          existing.copyWith(imalatName: imalat.name),
+        );
+      } else {
+        next.add(
+          WorkScheduleImalat(
+            id: 'ws-${imalat.id}',
+            imalatId: imalat.id,
+            imalatName: imalat.name,
+          ),
+        );
+      }
     }
-    return null;
-  }
-
-  Future<void> upsertDay(WorkScheduleDay day) async {
-    final normalized = day.copyWith(
-      date: WorkScheduleDay.normalizeDate(day.date),
-    );
-    final key = normalized.dateKey;
-    final next = state.where((d) => d.dateKey != key).toList();
-    if (normalized.activities.isNotEmpty) {
-      next.add(normalized);
-    }
-    next.sort((a, b) => b.date.compareTo(a.date));
+    next.sort((a, b) => a.imalatName.compareTo(b.imalatName));
     state = next;
     await _persist();
   }
 
-  Future<void> deleteDay(DateTime date) async {
-    final key = WorkScheduleDay.normalizeDate(date);
-    state = state
-        .where((d) => WorkScheduleDay.normalizeDate(d.date) != key)
-        .toList();
+  Future<void> upsert(WorkScheduleImalat item) async {
+    final next = state.where((e) => e.imalatId != item.imalatId).toList()
+      ..add(item);
+    next.sort((a, b) => a.imalatName.compareTo(b.imalatName));
+    state = next;
     await _persist();
+  }
+
+  Future<void> replaceAll(List<WorkScheduleImalat> items) async {
+    final next = [...items]
+      ..sort((a, b) => a.imalatName.compareTo(b.imalatName));
+    state = next;
+    await _persist();
+  }
+
+  WorkScheduleDay? dayFor(DateTime date, SurveyProject survey) {
+    return workScheduleDayFor(date: date, items: state, survey: survey);
   }
 }
