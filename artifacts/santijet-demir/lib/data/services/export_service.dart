@@ -16,6 +16,8 @@ class PdfReportSection {
     this.headers = const [],
     this.rows = const [],
     this.keyValues = const [],
+    this.cutCards = const [],
+    this.stockLengthM = 12,
   });
 
   final String title;
@@ -23,6 +25,38 @@ class PdfReportSection {
   final List<String> headers;
   final List<List<String>> rows;
   final List<(String, String)> keyValues;
+  /// Uygulamadaki kesim özet kartlarıyla aynı içerik (görsel bar + formül).
+  final List<PdfCutCardData> cutCards;
+  final double stockLengthM;
+}
+
+/// PDF’te çizilecek tek kesim özet kartı.
+class PdfCutCardData {
+  const PdfCutCardData({
+    required this.title,
+    required this.formula,
+    required this.remainder,
+    required this.segments,
+  });
+
+  final String title;
+  final String formula;
+  final String remainder;
+  final List<PdfCutSegmentData> segments;
+}
+
+class PdfCutSegmentData {
+  const PdfCutSegmentData({
+    required this.lengthM,
+    required this.label,
+    this.subtitle = '',
+    this.isWaste = false,
+  });
+
+  final double lengthM;
+  final String label;
+  final String subtitle;
+  final bool isWaste;
 }
 
 class ExportService {
@@ -201,9 +235,23 @@ class ExportService {
               .toList(),
         ),
       );
+      if (section.cutCards.isNotEmpty ||
+          (section.headers.isNotEmpty && section.rows.isNotEmpty)) {
+        widgets.add(pw.SizedBox(height: 10));
+      }
     }
 
-    if (section.headers.isNotEmpty && section.rows.isNotEmpty) {
+    if (section.cutCards.isNotEmpty) {
+      for (var i = 0; i < section.cutCards.length; i++) {
+        if (i > 0) widgets.add(pw.SizedBox(height: 8));
+        widgets.add(
+          _buildCutCardWidget(
+            section.cutCards[i],
+            stockLengthM: section.stockLengthM,
+          ),
+        );
+      }
+    } else if (section.headers.isNotEmpty && section.rows.isNotEmpty) {
       widgets.add(
         pw.TableHelper.fromTextArray(
           headers: section.headers,
@@ -226,6 +274,107 @@ class ExportService {
 
     widgets.add(pw.SizedBox(height: 20));
     return widgets;
+  }
+
+  pw.Widget _buildCutCardWidget(
+    PdfCutCardData card, {
+    required double stockLengthM,
+  }) {
+    final total = stockLengthM <= 0 ? 1.0 : stockLengthM;
+    return pw.Container(
+      width: double.infinity,
+      padding: const pw.EdgeInsets.all(8),
+      decoration: pw.BoxDecoration(
+        border: pw.Border.all(color: PdfColors.grey400, width: 0.8),
+        borderRadius: pw.BorderRadius.circular(4),
+      ),
+      child: pw.Column(
+        crossAxisAlignment: pw.CrossAxisAlignment.start,
+        children: [
+          pw.Text(
+            card.title,
+            style: pw.TextStyle(
+              fontSize: 10,
+              fontWeight: pw.FontWeight.bold,
+              color: PdfColors.orange800,
+            ),
+          ),
+          pw.SizedBox(height: 6),
+          pw.SizedBox(
+            height: 28,
+            child: pw.Row(
+              children: [
+                for (final segment in card.segments)
+                  pw.Expanded(
+                    flex: ((segment.lengthM / total) * 1000).round().clamp(1, 100000),
+                    child: pw.Container(
+                      margin: const pw.EdgeInsets.only(right: 1),
+                      alignment: pw.Alignment.center,
+                      decoration: pw.BoxDecoration(
+                        color: segment.isWaste
+                            ? PdfColors.grey300
+                            : PdfColors.indigo100,
+                        border: pw.Border.all(
+                          color: segment.isWaste
+                              ? PdfColors.grey500
+                              : PdfColors.indigo400,
+                          width: 0.6,
+                        ),
+                      ),
+                      child: pw.Padding(
+                        padding: const pw.EdgeInsets.symmetric(horizontal: 2),
+                        child: segment.isWaste
+                            ? pw.Text(
+                                'F',
+                                style: pw.TextStyle(
+                                  fontSize: 8,
+                                  fontWeight: pw.FontWeight.bold,
+                                  color: PdfColors.grey700,
+                                ),
+                              )
+                            : pw.Column(
+                                mainAxisAlignment: pw.MainAxisAlignment.center,
+                                children: [
+                                  if (segment.label.isNotEmpty)
+                                    pw.Text(
+                                      segment.label,
+                                      maxLines: 1,
+                                      style: pw.TextStyle(
+                                        fontSize: 7,
+                                        fontWeight: pw.FontWeight.bold,
+                                      ),
+                                    ),
+                                  if (segment.subtitle.isNotEmpty)
+                                    pw.Text(
+                                      '${segment.subtitle} m',
+                                      maxLines: 1,
+                                      style: const pw.TextStyle(fontSize: 6),
+                                    ),
+                                ],
+                              ),
+                      ),
+                    ),
+                  ),
+              ],
+            ),
+          ),
+          pw.SizedBox(height: 5),
+          pw.Text(
+            card.formula,
+            style: const pw.TextStyle(fontSize: 8, color: PdfColors.grey800),
+          ),
+          pw.SizedBox(height: 2),
+          pw.Text(
+            card.remainder,
+            style: pw.TextStyle(
+              fontSize: 8,
+              fontWeight: pw.FontWeight.bold,
+              color: PdfColors.orange800,
+            ),
+          ),
+        ],
+      ),
+    );
   }
 
   Future<List<int>> _buildPdfBytes({

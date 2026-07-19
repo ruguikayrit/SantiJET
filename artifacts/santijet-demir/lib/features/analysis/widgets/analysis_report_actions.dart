@@ -112,8 +112,8 @@ class _AnalysisReportActionsState extends ConsumerState<AnalysisReportActions> {
                     Text('Rapor Oluştur', style: AppTypography.titleMedium),
                     const SizedBox(height: 4),
                     Text(
-                      'Fire özeti, firesiz kesim listesi ve fireli kesim '
-                      'listesini PDF rapor olarak dışa aktarın.',
+                      'Fire özeti ile firesiz/fireli kesim kartlarını '
+                      '(görsel bar dahil) PDF rapor olarak dışa aktarın.',
                       style: AppTypography.bodySmall.copyWith(
                         color: AppColors.textMuted,
                         height: 1.4,

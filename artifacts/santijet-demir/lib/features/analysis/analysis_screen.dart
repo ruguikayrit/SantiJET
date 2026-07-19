@@ -238,12 +238,7 @@ class _AnalysisSelectedBatchArea extends ConsumerWidget {
     }
 
     return Padding(
-      padding: const EdgeInsets.fromLTRB(
-        AppSpacing.md,
-        0,
-        AppSpacing.md,
-        AppSpacing.md,
-      ),
+      padding: const EdgeInsets.fromLTRB(8, 0, 8, AppSpacing.md),
       child: AnalysisFireSummaryPanel(
         batch: batch,
         sourceBatches: scopedBatches,

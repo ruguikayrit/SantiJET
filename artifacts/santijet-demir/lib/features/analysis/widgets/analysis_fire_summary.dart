@@ -93,7 +93,7 @@ class _AnalysisFireSummaryPanelState
               ),
             ),
             Padding(
-              padding: const EdgeInsets.fromLTRB(16, 16, 16, 14),
+              padding: const EdgeInsets.fromLTRB(10, 16, 10, 14),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: [

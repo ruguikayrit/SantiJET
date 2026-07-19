@@ -41,8 +41,8 @@ class FireSummaryDetailPanel extends StatelessWidget {
       alignment: Alignment.topCenter,
       child: Container(
         width: double.infinity,
-        margin: const EdgeInsets.only(top: 12),
-        padding: const EdgeInsets.all(12),
+        margin: const EdgeInsets.fromLTRB(-8, 12, -8, 0),
+        padding: const EdgeInsets.fromLTRB(4, 12, 4, 8),
         decoration: BoxDecoration(
           color: AppColors.canvas,
           borderRadius: AppRadii.sm,

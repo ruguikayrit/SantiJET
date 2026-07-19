@@ -161,7 +161,7 @@ class StockBarCutVisualCard extends StatelessWidget {
 
     return Container(
       width: double.infinity,
-      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
+      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 8),
       decoration: BoxDecoration(
         color: isZeroWaste
             ? AppColors.success.withValues(alpha: 0.06)

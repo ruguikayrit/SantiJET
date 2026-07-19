@@ -426,37 +426,38 @@ class AnalysisReportService {
     StockCutPlan plan, {
     required String scopeLabel,
   }) {
+    final stockLengthM = CuttingBendingBatch.defaultStockBarLengthM;
     final noWasteGroups =
         groupIdenticalStockBarCuts(listStockBarsWithoutWaste(plan));
     final wasteGroups =
         groupIdenticalStockBarCuts(listStockBarsWithWaste(plan));
 
     return [
-      _buildGroupedCutListSection(
+      _buildGroupedCutCardsSection(
         title: '$scopeLabel — Ø${plan.diameter} Firesiz Kesim Listesi',
         subtitle:
             '${AppFormat.integer(stockBarNoWasteCount(plan))} çubuk · '
             '${noWasteGroups.length} kesim grubu',
         groups: noWasteGroups,
-        includeWasteColumn: false,
+        stockLengthM: stockLengthM,
       ),
-      _buildGroupedCutListSection(
+      _buildGroupedCutCardsSection(
         title: '$scopeLabel — Ø${plan.diameter} Fireli Kesim Listesi',
         subtitle:
             '${AppFormat.integer(stockBarWasteCount(plan))} çubuk · '
             '${wasteGroups.length} kesim grubu · '
             'toplam fire ${plan.totalWasteM.toStringAsFixed(2)} m',
         groups: wasteGroups,
-        includeWasteColumn: true,
+        stockLengthM: stockLengthM,
       ),
     ];
   }
 
-  PdfReportSection _buildGroupedCutListSection({
+  PdfReportSection _buildGroupedCutCardsSection({
     required String title,
     required String subtitle,
     required List<StockBarCutGroup> groups,
-    required bool includeWasteColumn,
+    required double stockLengthM,
   }) {
     if (groups.isEmpty) {
       return PdfReportSection(
@@ -469,36 +470,55 @@ class AnalysisReportService {
     return PdfReportSection(
       title: title,
       subtitle: subtitle,
-      headers: includeWasteColumn
-          ? const ['Çubuk', 'Adet', 'Parçalar', 'Kullanılan (m)', 'Fire (m)']
-          : const ['Çubuk', 'Adet', 'Parçalar', 'Kullanılan (m)'],
-      rows: groups
-          .map(
-            (group) {
-              final bar = group.representative;
-              final pieces = bar.members
-                  .map(
-                    (member) {
-                      final label = member.elementDisplayLabel;
-                      final piece =
-                          '${member.lengthM.toStringAsFixed(2)} m×${member.count}';
-                      return label.isEmpty ? piece : '$label $piece';
-                    },
-                  )
-                  .join(' + ');
-              final row = <String>[
-                formatBarIndexRanges(group.barIndexes),
-                '${group.count}',
-                pieces,
-                bar.usedLengthM.toStringAsFixed(2),
-              ];
-              if (includeWasteColumn) {
-                row.add(bar.wasteLengthM.toStringAsFixed(2));
-              }
-              return row;
-            },
-          )
-          .toList(),
+      stockLengthM: stockLengthM,
+      cutCards: [
+        for (final group in groups) _cutCardFromGroup(group, stockLengthM),
+      ],
+    );
+  }
+
+  PdfCutCardData _cutCardFromGroup(
+    StockBarCutGroup group,
+    double stockLengthM,
+  ) {
+    final bar = group.representative;
+    final isZeroWaste = bar.wasteLengthM <= 0.001;
+    final formulaParts = bar.members
+        .expand(
+          (member) => List.filled(member.count, stockCutMemberToken(member)),
+        )
+        .join(' + ');
+    final formula = formulaParts.isEmpty
+        ? '—'
+        : '$formulaParts = ${bar.usedLengthM.toStringAsFixed(2)} m';
+    final remainder = isZeroWaste
+        ? 'Fire yok. ${stockLengthM.toStringAsFixed(0)} m stok tam kullanım.'
+        : 'Kalan: ${bar.wasteLengthM.toStringAsFixed(2)} m / '
+            '${stockLengthM.toStringAsFixed(0)} m stok';
+
+    final segments = <PdfCutSegmentData>[
+      for (final member in bar.members)
+        for (var i = 0; i < member.count; i++)
+          PdfCutSegmentData(
+            lengthM: member.lengthM,
+            label: member.shortLabel.isNotEmpty
+                ? member.shortLabel
+                : (member.elementTypeLabel ?? ''),
+            subtitle: member.lengthM.toStringAsFixed(2),
+          ),
+      if (!isZeroWaste)
+        PdfCutSegmentData(
+          lengthM: bar.wasteLengthM,
+          label: 'F',
+          isWaste: true,
+        ),
+    ];
+
+    return PdfCutCardData(
+      title: group.titleLabel,
+      formula: formula,
+      remainder: remainder,
+      segments: segments,
     );
   }
 
