@@ -193,10 +193,17 @@ final selectedFireReductionStrategyProvider =
 );
 
 /// Proje fire'ı ile tahvil ön izlemesi (boy eşleştirme yok).
+/// Optimize batch'te gerekmez; sayfa açılışında ağır hesabı atlar.
 final tahvilFirePreviewProvider = Provider<analysis_calc.TahvilFirePreview?>((ref) {
   final batch = ref.watch(mergedAnalysisBatchProvider);
-  if (batch == null || batch.pieceLines.isEmpty) return null;
-  return analysis_calc.estimateTahvilFirePreview(batch);
+  if (batch == null || batch.pieceLines.isEmpty || batch.isOptimized) {
+    return null;
+  }
+  try {
+    return analysis_calc.estimateTahvilFirePreview(batch);
+  } catch (_) {
+    return null;
+  }
 });
 
 final optimumFireAnalysisProgressProvider =

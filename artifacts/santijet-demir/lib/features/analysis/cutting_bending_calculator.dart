@@ -452,14 +452,19 @@ Future<_DiameterPackResult> _packDiameterInventoryAsync({
 }
 
 /// Aynı çaptaki parçaları 12 m stok boydan minimum fire ile kesim planına dönüştürür.
+///
+/// [retainBars] false iken çubuk listesi / kimlik havuzu tutulmaz — yalnızca
+/// fire özeti metrikleri için (sayfa açılışında OOM riskini düşürür).
 List<StockCutPlan> computeStockCutPlans(
   List<RebarPieceLine> pieces, {
   double stockLengthM = stockBarLengthM,
   bool useCache = true,
+  bool retainBars = true,
 }) {
   if (pieces.isEmpty) return const [];
 
-  if (useCache && stockLengthM == stockBarLengthM) {
+  // Metrik-only sonuçları tam plan önbelleğine yazma / oradan okuma.
+  if (useCache && retainBars && stockLengthM == stockBarLengthM) {
     final cacheKey = AnalysisComputeCache.keyForPieces(pieces);
     if (AnalysisComputeCache.hasStockCutPlans(cacheKey)) {
       return AnalysisComputeCache.readStockCutPlans(cacheKey);
@@ -467,12 +472,17 @@ List<StockCutPlan> computeStockCutPlans(
     final plans = _computeStockCutPlansUncached(
       pieces,
       stockLengthM: stockLengthM,
+      retainBars: true,
     );
     AnalysisComputeCache.storeStockCutPlans(cacheKey, plans);
     return plans;
   }
 
-  return _computeStockCutPlansUncached(pieces, stockLengthM: stockLengthM);
+  return _computeStockCutPlansUncached(
+    pieces,
+    stockLengthM: stockLengthM,
+    retainBars: retainBars,
+  );
 }
 
 Future<List<StockCutPlan>> computeStockCutPlansAsync(
@@ -556,6 +566,7 @@ List<StockCutPlan> _buildStockCutPlansFromPackResults({
 List<StockCutPlan> _computeStockCutPlansUncached(
   List<RebarPieceLine> pieces, {
   double stockLengthM = stockBarLengthM,
+  bool retainBars = true,
 }) {
   if (pieces.isEmpty) return const [];
 
@@ -569,8 +580,12 @@ List<StockCutPlan> _computeStockCutPlansUncached(
     packedByDiameter[diameter] = _packDiameterInventory(
       diameter: diameter,
       inventory: inventory,
-      identityPool: _buildIdentityPool(pieces, diameter),
+      // Metrik-only: kimlik havuzu oluşturma (bellek / süre).
+      identityPool: retainBars
+          ? _buildIdentityPool(pieces, diameter)
+          : <int, List<_PieceIdentity>>{},
       stockLengthM: stockLengthM,
+      retainBars: retainBars,
     );
   }
 
@@ -1326,7 +1341,7 @@ List<TahvilSuggestion> selectBeneficialTahvilGroups({
   }
 
   final baseline = _aggregateStockCutFireMetrics(
-    computeStockCutPlans(pieceLines),
+    computeStockCutPlans(pieceLines, retainBars: false, useCache: false),
   );
 
   final candidates = groups
@@ -1359,7 +1374,11 @@ List<TahvilSuggestion> selectBeneficialTahvilGroups({
         trialGroups,
       );
       final trialMetrics = _aggregateStockCutFireMetrics(
-        computeStockCutPlans(trialPieces),
+        computeStockCutPlans(
+          trialPieces,
+          retainBars: false,
+          useCache: false,
+        ),
       );
 
       if (trialMetrics.wastePercent < bestPercent - 1e-9) {
@@ -1397,22 +1416,30 @@ List<TahvilSuggestion> autoApproveBestTahvilGroups(List<TahvilSuggestion> groups
 }
 
 TahvilFirePreview estimateTahvilFirePreview(CuttingBendingBatch batch) {
+  // Sayfa açılışında greedy tahvil seçimi (N× paketleme) yapılmaz —
+  // önerilen grupların hepsi ile tek metrik paketi yeterlidir.
   final baseline = _aggregateStockCutFireMetrics(
-    computeStockCutPlans(batch.pieceLines),
+    computeStockCutPlans(
+      batch.pieceLines,
+      retainBars: false,
+      useCache: false,
+    ),
   );
 
-  final tahvilGroups = selectBeneficialTahvilGroups(
-    pieceLines: batch.pieceLines,
-    groups: batch.tahvilGroups.isNotEmpty
-        ? batch.tahvilGroups
-        : computeTahvilGroups(batch.pieceLines),
-  );
+  final sourceGroups = batch.tahvilGroups.isNotEmpty
+      ? batch.tahvilGroups
+      : computeTahvilGroups(batch.pieceLines);
+  final tahvilGroups = autoApproveBestTahvilGroups(sourceGroups);
   final tahvilPieces = applyApprovedTahvilToPieceLines(
     batch.pieceLines,
     tahvilGroups,
   );
   final tahvilMetrics = _aggregateStockCutFireMetrics(
-    computeStockCutPlans(tahvilPieces),
+    computeStockCutPlans(
+      tahvilPieces,
+      retainBars: false,
+      useCache: false,
+    ),
   );
 
   final savedTonnage = (baseline.wasteTonnage - tahvilMetrics.wasteTonnage)
@@ -1516,7 +1543,11 @@ List<StrategyFireComparison> computeStrategyFireComparisons(
   CuttingBendingBatch batch,
 ) {
   final rawMetrics = _aggregateStockCutFireMetrics(
-    computeStockCutPlans(batch.pieceLines),
+    computeStockCutPlans(
+      batch.pieceLines,
+      retainBars: false,
+      useCache: false,
+    ),
   );
 
   return FireReductionStrategy.values.map((strategy) {
@@ -1649,7 +1680,11 @@ List<FireDiameterBreakdown> computeFireBreakdownByDiameter(
 
 List<FireDiameterBreakdown> computeRawFireBreakdown(CuttingBendingBatch batch) {
   return computeFireBreakdownByDiameter(
-    computeStockCutPlans(batch.pieceLines),
+    computeStockCutPlans(
+      batch.pieceLines,
+      retainBars: false,
+      useCache: false,
+    ),
   );
 }
 
@@ -1755,7 +1790,11 @@ List<StockBarCut> listStockBarsWithoutWaste(StockCutPlan plan) {
 AnalysisFireSummary computeAnalysisFireSummary(CuttingBendingBatch batch) {
   final rawMaterialT = computeMaterialTonnage(batch.pieceLines);
   final rawMetrics = _aggregateStockCutFireMetrics(
-    computeStockCutPlans(batch.pieceLines),
+    computeStockCutPlans(
+      batch.pieceLines,
+      retainBars: false,
+      useCache: false,
+    ),
   );
 
   if (!batch.isOptimized) {
