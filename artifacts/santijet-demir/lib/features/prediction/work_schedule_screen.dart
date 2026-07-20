@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
 import 'package:santijet_demir/core/format/app_format.dart';
@@ -81,8 +82,9 @@ class _WorkScheduleScreenState extends ConsumerState<WorkScheduleScreen> {
                         8,
                       ),
                       child: Text(
-                        'Keşif imalatlarına göre başlangıç / bitiş girin. '
-                        'Tonaj keşiften alınır; süre otomatik hesaplanır.',
+                        'Keşif imalatlarına göre başlangıç / bitiş ve '
+                        'planlanan adam sayısını girin. Tonaj keşiften alınır; '
+                        'süre otomatik hesaplanır.',
                         style: AppTypography.bodySmall.copyWith(
                           color: AppColors.textMuted,
                         ),
@@ -115,6 +117,12 @@ class _WorkScheduleScreenState extends ConsumerState<WorkScheduleScreen> {
                               child: _SummaryChip(
                                 label: 'Keşif',
                                 value: '${AppFormat.tonnage(totalTonnage)} t',
+                              ),
+                            ),
+                            Expanded(
+                              child: _SummaryChip(
+                                label: 'Adam',
+                                value: '${rows.fold<int>(0, (s, r) => s + (r.item.plannedWorkerCount ?? 0))}',
                               ),
                             ),
                           ],
@@ -208,6 +216,20 @@ class _WorkScheduleScreenState extends ConsumerState<WorkScheduleScreen> {
                                   ],
                                 ),
                                 const SizedBox(height: 10),
+                                _PlannedWorkerField(
+                                  key: ValueKey(
+                                    'workers-${row.item.id}-${row.item.plannedWorkerCount}',
+                                  ),
+                                  value: row.item.plannedWorkerCount,
+                                  enabled: canEdit,
+                                  onCommit: (count) => _saveRow(
+                                    row.item.copyWith(
+                                      plannedWorkerCount: count,
+                                      clearPlannedWorkerCount: count == null,
+                                    ),
+                                  ),
+                                ),
+                                const SizedBox(height: 10),
                                 Text(
                                   duration == null
                                       ? 'Süre: —'
@@ -285,6 +307,93 @@ class _SummaryChip extends StatelessWidget {
         const SizedBox(height: 2),
         Text(value, style: AppTypography.titleMedium),
       ],
+    );
+  }
+}
+
+class _PlannedWorkerField extends StatefulWidget {
+  const _PlannedWorkerField({
+    super.key,
+    required this.value,
+    required this.enabled,
+    required this.onCommit,
+  });
+
+  final int? value;
+  final bool enabled;
+  final ValueChanged<int?> onCommit;
+
+  @override
+  State<_PlannedWorkerField> createState() => _PlannedWorkerFieldState();
+}
+
+class _PlannedWorkerFieldState extends State<_PlannedWorkerField> {
+  late final TextEditingController _controller;
+
+  @override
+  void initState() {
+    super.initState();
+    _controller = TextEditingController(
+      text: widget.value == null ? '' : '${widget.value}',
+    );
+  }
+
+  @override
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
+  }
+
+  void _commit() {
+    final raw = _controller.text.trim();
+    if (raw.isEmpty) {
+      if (widget.value != null) widget.onCommit(null);
+      return;
+    }
+    final parsed = int.tryParse(raw);
+    if (parsed == null || parsed < 0) {
+      _controller.text = widget.value == null ? '' : '${widget.value}';
+      return;
+    }
+    if (parsed != widget.value) widget.onCommit(parsed);
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+      decoration: BoxDecoration(
+        color: AppColors.canvas,
+        borderRadius: AppRadii.sm,
+        border: Border.all(color: AppColors.border),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            'Planlanan adam sayısı',
+            style: AppTypography.labelSmall.copyWith(
+              color: AppColors.textMuted,
+            ),
+          ),
+          TextField(
+            controller: _controller,
+            enabled: widget.enabled,
+            keyboardType: TextInputType.number,
+            inputFormatters: [FilteringTextInputFormatter.digitsOnly],
+            style: AppTypography.bodyMedium,
+            decoration: const InputDecoration(
+              isDense: true,
+              border: InputBorder.none,
+              hintText: 'örn. 12',
+              contentPadding: EdgeInsets.symmetric(vertical: 4),
+            ),
+            onEditingComplete: _commit,
+            onSubmitted: (_) => _commit(),
+            onTapOutside: (_) => _commit(),
+          ),
+        ],
+      ),
     );
   }
 }

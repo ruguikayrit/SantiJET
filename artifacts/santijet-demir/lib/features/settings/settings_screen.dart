@@ -2,20 +2,24 @@ import 'package:flutter/material.dart';
 import 'package:santijet_demir/core/widgets/app_toast.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import 'package:intl/intl.dart';
 import 'package:santijet_demir/core/routing/app_routes.dart';
 import 'package:santijet_demir/core/theme/app_colors.dart';
 import 'package:santijet_demir/core/theme/app_radii.dart';
 import 'package:santijet_demir/core/theme/app_spacing.dart';
 import 'package:santijet_demir/core/theme/app_typography.dart';
+import 'package:santijet_demir/data/services/project_backup_service.dart';
+import 'package:santijet_demir/data/services/rebar_weight_calculator.dart';
 import 'package:santijet_demir/domain/enums/corporate_role.dart';
 import 'package:santijet_demir/domain/enums/membership_type.dart';
 import 'package:santijet_demir/features/auth/providers/app_lock_provider.dart';
 import 'package:santijet_demir/features/auth/providers/auth_provider.dart';
+import 'package:santijet_demir/features/auth/providers/membership_permission_provider.dart';
 import 'package:santijet_demir/features/projects/providers/project_provider.dart';
 import 'package:santijet_demir/features/settings/providers/profile_provider.dart';
 import 'package:santijet_demir/features/settings/providers/backup_provider.dart';
 import 'package:santijet_demir/features/settings/providers/settings_provider.dart';
-import 'package:santijet_demir/data/services/project_backup_service.dart';
+import 'package:santijet_demir/features/subscription/providers/subscription_provider.dart';
 
 class SettingsScreen extends ConsumerWidget {
   const SettingsScreen({super.key});
@@ -31,6 +35,17 @@ class SettingsScreen extends ConsumerWidget {
     final initial = ref.watch(profileInitialProvider);
     final membershipLabel =
         ref.watch(authProvider).user?.membershipSummary ?? 'Bireysel';
+    final package = ref.watch(currentSubscriptionPackageProvider);
+    final canPrediction = ref.watch(canAccessPredictionProvider);
+    final predictionRoute =
+        canPrediction ? AppRoutes.prediction : AppRoutes.subscription;
+    final workScheduleRoute =
+        canPrediction ? AppRoutes.workSchedule : AppRoutes.subscription;
+    final workforceRoute =
+        canPrediction ? AppRoutes.workforce : AppRoutes.subscription;
+    final lockedHint = canPrediction
+        ? null
+        : 'Analiz & Tahmin paketi gerekir · Paketleri gör';
 
     return Scaffold(
       backgroundColor: AppColors.canvas,
@@ -55,6 +70,12 @@ class SettingsScreen extends ConsumerWidget {
           ),
           const SizedBox(height: 16),
           _SettingsTile(
+            icon: Icons.workspace_premium_outlined,
+            title: 'Abonelik',
+            subtitle: '${package.title} · Paketleri gör',
+            onTap: () => context.push(AppRoutes.subscription),
+          ),
+          _SettingsTile(
             icon: Icons.folder_copy,
             title: 'Projelerim',
             subtitle: project?.name ?? 'Proje seç veya oluştur',
@@ -75,20 +96,23 @@ class SettingsScreen extends ConsumerWidget {
           _SettingsTile(
             icon: Icons.analytics_outlined,
             title: 'Demir Tahmin Motoru',
-            subtitle: 'Stok tükenme, sipariş önerisi, iş programı',
-            onTap: () => context.push(AppRoutes.prediction),
+            subtitle: lockedHint ??
+                'Stok tükenme, sipariş önerisi, iş programı',
+            onTap: () => context.push(predictionRoute),
           ),
           _SettingsTile(
             icon: Icons.calendar_month_outlined,
             title: 'İş Programı',
-            subtitle: 'Keşif imalatları · başlangıç / bitiş / süre',
-            onTap: () => context.push(AppRoutes.workSchedule),
+            subtitle: lockedHint ??
+                'Keşif imalatları · başlangıç / bitiş / süre',
+            onTap: () => context.push(workScheduleRoute),
           ),
           _SettingsTile(
             icon: Icons.groups_outlined,
             title: 'Günlük Puantaj',
-            subtitle: 'Gün × imalat puantajı — adam.gün ve iş gücü',
-            onTap: () => context.push(AppRoutes.workforce),
+            subtitle: lockedHint ??
+                'Gün × imalat puantajı — adam.gün ve iş gücü',
+            onTap: () => context.push(workforceRoute),
           ),
           _SettingsTile(
             icon: Icons.notifications,
@@ -118,6 +142,7 @@ class SettingsScreen extends ConsumerWidget {
             subtitle: settings.weightUnit == 'kg' ? 'Kilogram (kg)' : 'Ton',
             onTap: () => _showUnitPicker(context, ref),
           ),
+          const _RebarUnitWeightTable(),
           _SettingsTile(
             icon: Icons.backup,
             title: 'Yedekleme & Geri Yükleme',
@@ -955,6 +980,123 @@ class _HapticSettingsTile extends StatelessWidget {
             value: enabled,
             onChanged: onChanged,
           ),
+        ],
+      ),
+    );
+  }
+}
+
+class _RebarUnitWeightTable extends StatelessWidget {
+  const _RebarUnitWeightTable();
+
+  @override
+  Widget build(BuildContext context) {
+    final weightFormat = NumberFormat('#,##0.###', 'tr_TR');
+    final diameters = RebarWeightCalculator.standardDiameters;
+
+    return Container(
+      margin: const EdgeInsets.only(bottom: 8),
+      padding: const EdgeInsets.fromLTRB(14, 14, 14, 10),
+      decoration: BoxDecoration(
+        color: AppColors.surfaceElevated,
+        borderRadius: AppRadii.md,
+        border: Border.all(color: AppColors.border),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          Row(
+            children: [
+              const Icon(
+                Icons.table_chart_outlined,
+                color: AppColors.electricBlueLight,
+                size: 22,
+              ),
+              const SizedBox(width: 14),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      'Demir Birim Hacim Ağırlık Tablosu',
+                      style: AppTypography.titleMedium,
+                    ),
+                    Text(
+                      'kg/m = d² / 162',
+                      style: AppTypography.bodySmall.copyWith(
+                        color: AppColors.textMuted,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 12),
+          Container(
+            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
+            decoration: BoxDecoration(
+              color: AppColors.canvas.withValues(alpha: 0.55),
+              borderRadius: AppRadii.sm,
+            ),
+            child: Row(
+              children: [
+                Expanded(
+                  child: Text(
+                    'Çap (mm)',
+                    style: AppTypography.labelMedium.copyWith(
+                      fontWeight: FontWeight.w700,
+                      color: AppColors.textMuted,
+                    ),
+                  ),
+                ),
+                Expanded(
+                  child: Text(
+                    'Birim ağırlık (kg/m)',
+                    textAlign: TextAlign.right,
+                    style: AppTypography.labelMedium.copyWith(
+                      fontWeight: FontWeight.w700,
+                      color: AppColors.textMuted,
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
+          for (var i = 0; i < diameters.length; i++) ...[
+            if (i > 0)
+              Divider(
+                height: 1,
+                color: AppColors.border.withValues(alpha: 0.7),
+              ),
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 9),
+              child: Row(
+                children: [
+                  Expanded(
+                    child: Text(
+                      'Ø${diameters[i]}',
+                      style: AppTypography.bodyMedium.copyWith(
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
+                  ),
+                  Expanded(
+                    child: Text(
+                      weightFormat.format(
+                        RebarWeightCalculator.kgPerMeter(diameters[i]),
+                      ),
+                      textAlign: TextAlign.right,
+                      style: AppTypography.bodyMedium.copyWith(
+                        color: AppColors.electricBlueLight,
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ],
         ],
       ),
     );

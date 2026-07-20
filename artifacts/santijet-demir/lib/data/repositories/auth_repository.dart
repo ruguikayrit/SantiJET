@@ -1,8 +1,9 @@
-import 'package:hive/hive.dart';
-import 'package:santijet_demir/core/security/pin_hasher.dart';
-import 'package:santijet_demir/domain/entities/user_account.dart';
 import 'package:santijet_demir/domain/enums/corporate_role.dart';
 import 'package:santijet_demir/domain/enums/membership_type.dart';
+import 'package:santijet_demir/domain/enums/subscription_plan.dart';
+import 'package:santijet_demir/domain/entities/user_account.dart';
+import 'package:santijet_demir/core/security/pin_hasher.dart';
+import 'package:hive/hive.dart';
 
 const _accountsKey = 'accounts';
 const _activeSessionKey = 'active_session';
@@ -126,6 +127,19 @@ class AuthRepository {
           : null,
       clearCorporateRole: membershipType == MembershipType.individual,
     );
+    await _upsertAccount(updated);
+    return updated;
+  }
+
+  Future<UserAccount> updateSubscriptionPlan({
+    required String userId,
+    required SubscriptionPlan subscriptionPlan,
+  }) async {
+    final account = findById(userId);
+    if (account == null) {
+      throw AppAuthException('Kullanıcı bulunamadı');
+    }
+    final updated = account.copyWith(subscriptionPlan: subscriptionPlan);
     await _upsertAccount(updated);
     return updated;
   }

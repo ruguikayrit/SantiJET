@@ -39,6 +39,8 @@ import 'package:santijet_demir/features/survey/survey_list_screen.dart';
 import 'package:santijet_demir/features/prediction/prediction_screen.dart';
 import 'package:santijet_demir/features/prediction/work_schedule_screen.dart';
 import 'package:santijet_demir/features/prediction/workforce_screen.dart';
+import 'package:santijet_demir/features/subscription/subscription_screen.dart';
+import 'package:santijet_demir/domain/enums/subscription_plan.dart';
 
 final _rootNavigatorKey = GlobalKey<NavigatorState>();
 
@@ -89,6 +91,18 @@ final routerProvider = Provider<GoRouter>((ref) {
       if (auth.isAuthenticated &&
           (location == AppRoutes.login || location == AppRoutes.register)) {
         return AppRoutes.projects;
+      }
+
+      if (auth.isAuthenticated) {
+        final plan = auth.user?.subscriptionPlan ?? SubscriptionPlan.demirTakip;
+        final needsAnaliz = location == AppRoutes.analysis ||
+            location == AppRoutes.prediction ||
+            location == AppRoutes.workSchedule ||
+            location == AppRoutes.workforce ||
+            location.startsWith('${AppRoutes.prediction}/');
+        if (needsAnaliz && !plan.includesAnalysis) {
+          return AppRoutes.subscription;
+        }
       }
 
       return null;
@@ -307,6 +321,13 @@ final routerProvider = Provider<GoRouter>((ref) {
           child: const SettingsScreen(),
         ),
         routes: [
+          GoRoute(
+            path: 'subscription',
+            pageBuilder: (context, state) => fadeSlidePage(
+              key: state.pageKey,
+              child: const SubscriptionScreen(),
+            ),
+          ),
           GoRoute(
             path: 'company',
             pageBuilder: (context, state) => fadeSlidePage(

@@ -32,6 +32,7 @@ abstract final class AppRoutes {
   static String surveyDetail(String id) => '/survey/$id';
   static String savedMetrajDetail(String id) => '/survey/metraj/$id';
   static const settings = '/settings';
+  static const subscription = '/settings/subscription';
   static const companySettings = '/settings/company';
   static const projectSettings = '/settings/project';
   static const notificationSettings = '/settings/notifications';

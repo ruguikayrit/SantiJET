@@ -6,6 +6,7 @@ import 'package:santijet_demir/domain/entities/order.dart';
 import 'package:santijet_demir/domain/permissions/app_permission.dart';
 import 'package:santijet_demir/features/auth/providers/auth_provider.dart';
 import 'package:santijet_demir/features/projects/providers/project_provider.dart';
+import 'package:santijet_demir/features/subscription/providers/subscription_provider.dart';
 
 /// Hesap + aktif projedeki kurumsal rol atamasına göre yetkiler.
 final userPermissionsProvider = Provider<Set<AppPermission>>((ref) {
@@ -29,7 +30,11 @@ final userPermissionsProvider = Provider<Set<AppPermission>>((ref) {
 
 final visibleBottomNavTabsProvider = Provider<List<BottomNavTab>>((ref) {
   final permissions = ref.watch(userPermissionsProvider);
-  final tabs = AppPermissionMatrix.visibleTabs(permissions);
+  final canAnalysis = ref.watch(canAccessAnalysisBySubscriptionProvider);
+  var tabs = AppPermissionMatrix.visibleTabs(permissions);
+  if (!canAnalysis) {
+    tabs = tabs.where((tab) => tab != BottomNavTab.analysis).toList();
+  }
   if (tabs.isEmpty) return [BottomNavTab.dashboard];
   return tabs;
 });
@@ -61,7 +66,20 @@ final canEditSurveyProvider = Provider<bool>((ref) {
 final canRunAnalysisProvider = Provider<bool>((ref) {
   final permissions = ref.watch(userPermissionsProvider);
   final projectEdit = ref.watch(canEditActiveProjectProvider);
-  return projectEdit && permissions.contains(AppPermission.runAnalysis);
+  final planOk = ref.watch(canAccessAnalysisBySubscriptionProvider);
+  return planOk &&
+      projectEdit &&
+      permissions.contains(AppPermission.runAnalysis);
+});
+
+final canViewAnalysisProvider = Provider<bool>((ref) {
+  final permissions = ref.watch(userPermissionsProvider);
+  final planOk = ref.watch(canAccessAnalysisBySubscriptionProvider);
+  return planOk && permissions.contains(AppPermission.viewAnalysis);
+});
+
+final canAccessPredictionProvider = Provider<bool>((ref) {
+  return ref.watch(canAccessPredictionBySubscriptionProvider);
 });
 
 bool userCanApproveOrderRole(

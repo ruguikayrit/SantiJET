@@ -8,6 +8,7 @@ class WorkScheduleImalat {
     required this.imalatName,
     this.startDate,
     this.endDate,
+    this.plannedWorkerCount,
     this.notes,
   });
 
@@ -16,6 +17,9 @@ class WorkScheduleImalat {
   final String imalatName;
   final DateTime? startDate;
   final DateTime? endDate;
+
+  /// Bu imalat için planlanan adam sayısı (iş gücü planı).
+  final int? plannedWorkerCount;
   final String? notes;
 
   /// Takvim günü sayısı (başlangıç ve bitiş dahil).
@@ -46,9 +50,11 @@ class WorkScheduleImalat {
     String? imalatName,
     DateTime? startDate,
     DateTime? endDate,
+    int? plannedWorkerCount,
     String? notes,
     bool clearStartDate = false,
     bool clearEndDate = false,
+    bool clearPlannedWorkerCount = false,
     bool clearNotes = false,
   }) {
     return WorkScheduleImalat(
@@ -57,6 +63,9 @@ class WorkScheduleImalat {
       imalatName: imalatName ?? this.imalatName,
       startDate: clearStartDate ? null : (startDate ?? this.startDate),
       endDate: clearEndDate ? null : (endDate ?? this.endDate),
+      plannedWorkerCount: clearPlannedWorkerCount
+          ? null
+          : (plannedWorkerCount ?? this.plannedWorkerCount),
       notes: clearNotes ? null : (notes ?? this.notes),
     );
   }
@@ -67,16 +76,22 @@ class WorkScheduleImalat {
         'imalatName': imalatName,
         if (startDate != null) 'startDate': startDate!.toIso8601String(),
         if (endDate != null) 'endDate': endDate!.toIso8601String(),
+        if (plannedWorkerCount != null)
+          'plannedWorkerCount': plannedWorkerCount,
         if (notes != null) 'notes': notes,
       };
 
   factory WorkScheduleImalat.fromJson(Map<dynamic, dynamic> json) {
+    final rawWorkers = json['plannedWorkerCount'];
     return WorkScheduleImalat(
       id: json['id'] as String? ?? '',
       imalatId: json['imalatId'] as String? ?? '',
       imalatName: json['imalatName'] as String? ?? '',
       startDate: DateTime.tryParse(json['startDate'] as String? ?? ''),
       endDate: DateTime.tryParse(json['endDate'] as String? ?? ''),
+      plannedWorkerCount: rawWorkers is num
+          ? rawWorkers.toInt()
+          : int.tryParse(rawWorkers?.toString() ?? ''),
       notes: json['notes'] as String?,
     );
   }
@@ -92,6 +107,7 @@ class WorkActivity {
     required this.imalatName,
     required this.plannedTonnageByDiameter,
     this.imalatId,
+    this.plannedWorkerCount,
     this.notes,
   });
 
@@ -99,6 +115,7 @@ class WorkActivity {
   final String? imalatId;
   final String imalatName;
   final Map<int, double> plannedTonnageByDiameter;
+  final int? plannedWorkerCount;
   final String? notes;
 
   double get totalPlannedTonnage =>
@@ -109,7 +126,9 @@ class WorkActivity {
     String? imalatId,
     String? imalatName,
     Map<int, double>? plannedTonnageByDiameter,
+    int? plannedWorkerCount,
     String? notes,
+    bool clearPlannedWorkerCount = false,
   }) {
     return WorkActivity(
       id: id ?? this.id,
@@ -117,6 +136,9 @@ class WorkActivity {
       imalatName: imalatName ?? this.imalatName,
       plannedTonnageByDiameter:
           plannedTonnageByDiameter ?? this.plannedTonnageByDiameter,
+      plannedWorkerCount: clearPlannedWorkerCount
+          ? null
+          : (plannedWorkerCount ?? this.plannedWorkerCount),
       notes: notes ?? this.notes,
     );
   }
@@ -128,6 +150,8 @@ class WorkActivity {
         'plannedTonnageByDiameter': plannedTonnageByDiameter.map(
           (k, v) => MapEntry(k.toString(), v),
         ),
+        if (plannedWorkerCount != null)
+          'plannedWorkerCount': plannedWorkerCount,
         'notes': notes,
       };
 
@@ -141,11 +165,15 @@ class WorkActivity {
         if (d != null && t != null) map[d] = t;
       }
     }
+    final rawWorkers = json['plannedWorkerCount'];
     return WorkActivity(
       id: json['id'] as String? ?? '',
       imalatId: json['imalatId'] as String?,
       imalatName: json['imalatName'] as String? ?? '',
       plannedTonnageByDiameter: map,
+      plannedWorkerCount: rawWorkers is num
+          ? rawWorkers.toInt()
+          : int.tryParse(rawWorkers?.toString() ?? ''),
       notes: json['notes'] as String?,
     );
   }
@@ -256,6 +284,7 @@ List<WorkScheduleDay> expandWorkScheduleToDays({
               imalatId: item.imalatId,
               imalatName: imalat.name,
               plannedTonnageByDiameter: Map<int, double>.from(dailyByDiameter),
+              plannedWorkerCount: item.plannedWorkerCount,
               notes: item.notes,
             ),
           );

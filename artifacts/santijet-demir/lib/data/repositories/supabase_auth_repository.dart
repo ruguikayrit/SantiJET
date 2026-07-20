@@ -4,6 +4,7 @@ import 'package:santijet_demir/data/repositories/auth_repository.dart';
 import 'package:santijet_demir/domain/entities/user_account.dart';
 import 'package:santijet_demir/domain/enums/corporate_role.dart';
 import 'package:santijet_demir/domain/enums/membership_type.dart';
+import 'package:santijet_demir/domain/enums/subscription_plan.dart';
 import 'package:supabase_flutter/supabase_flutter.dart' hide AuthException;
 
 class SupabaseAuthRepository {
@@ -66,6 +67,7 @@ class SupabaseAuthRepository {
       currentSessionId: profile['current_session_id'] as String? ?? '',
       membershipType: _membershipFromMeta(session.user.userMetadata),
       corporateRole: _roleFromMeta(session.user.userMetadata),
+      subscriptionPlan: _subscriptionFromMeta(session.user.userMetadata),
     );
   }
 
@@ -88,6 +90,7 @@ class SupabaseAuthRepository {
         data: {
           'display_name': displayName.trim(),
           'membership_type': membershipType.storageValue,
+          'subscription_plan': SubscriptionPlan.demirTakip.storageValue,
           if (roleValue != null) 'corporate_role': roleValue,
         },
       );
@@ -115,6 +118,7 @@ class SupabaseAuthRepository {
         membershipType: membershipType,
         corporateRole:
             membershipType == MembershipType.corporate ? corporateRole : null,
+        subscriptionPlan: SubscriptionPlan.demirTakip,
       );
     } on AppAuthException {
       rethrow;
@@ -167,6 +171,7 @@ class SupabaseAuthRepository {
         currentSessionId: sessionId,
         membershipType: _membershipFromMeta(user.userMetadata),
         corporateRole: _roleFromMeta(user.userMetadata),
+        subscriptionPlan: _subscriptionFromMeta(user.userMetadata),
       );
     } on AppAuthException {
       rethrow;
@@ -234,6 +239,35 @@ class SupabaseAuthRepository {
       membershipType: membershipType,
       corporateRole:
           membershipType == MembershipType.corporate ? corporateRole : null,
+      subscriptionPlan: _subscriptionFromMeta(session.user.userMetadata),
+    );
+  }
+
+  Future<UserAccount> updateSubscriptionPlan({
+    required SubscriptionPlan subscriptionPlan,
+  }) async {
+    final session = _client.auth.currentSession;
+    if (session == null) {
+      throw AppAuthException('Oturum bulunamadı');
+    }
+
+    await _client.auth.updateUser(
+      UserAttributes(
+        data: {
+          'subscription_plan': subscriptionPlan.storageValue,
+        },
+      ),
+    );
+
+    return UserAccount(
+      id: session.user.id,
+      email: session.user.email ?? '',
+      displayName: session.user.userMetadata?['display_name'] as String? ?? '',
+      passwordHash: '',
+      currentSessionId: '',
+      membershipType: _membershipFromMeta(session.user.userMetadata),
+      corporateRole: _roleFromMeta(session.user.userMetadata),
+      subscriptionPlan: subscriptionPlan,
     );
   }
 
@@ -358,6 +392,7 @@ class SupabaseAuthRepository {
       currentSessionId: '',
       membershipType: _membershipFromMeta(session.user.userMetadata),
       corporateRole: _roleFromMeta(session.user.userMetadata),
+      subscriptionPlan: _subscriptionFromMeta(session.user.userMetadata),
     );
   }
 
@@ -367,6 +402,10 @@ class SupabaseAuthRepository {
 
   static CorporateRole? _roleFromMeta(Map<String, dynamic>? meta) {
     return CorporateRole.fromStorage(meta?['corporate_role'] as String?);
+  }
+
+  static SubscriptionPlan _subscriptionFromMeta(Map<String, dynamic>? meta) {
+    return SubscriptionPlan.fromStorage(meta?['subscription_plan'] as String?);
   }
 
   String _mapAuthError(String message) {

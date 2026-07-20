@@ -9,6 +9,7 @@ import 'package:santijet_demir/data/repositories/supabase_auth_repository.dart';
 import 'package:santijet_demir/domain/entities/user_account.dart';
 import 'package:santijet_demir/domain/enums/corporate_role.dart';
 import 'package:santijet_demir/domain/enums/membership_type.dart';
+import 'package:santijet_demir/domain/enums/subscription_plan.dart';
 import 'package:santijet_demir/features/projects/providers/project_provider.dart';
 import 'package:santijet_demir/features/settings/providers/settings_provider.dart';
 
@@ -433,6 +434,47 @@ class AuthNotifier extends StateNotifier<AuthState> {
       return false;
     } catch (e) {
       state = state.copyWith(error: 'Üyelik güncellenemedi: $e');
+      return false;
+    }
+  }
+
+  /// Mock satın alma — gerçek ödeme sonra bağlanacak.
+  Future<bool> setSubscriptionPlan(SubscriptionPlan plan) async {
+    final user = state.user;
+    if (user == null) {
+      state = state.copyWith(error: 'Oturum bulunamadı');
+      return false;
+    }
+
+    try {
+      final UserAccount updated;
+      if (_usesSupabase) {
+        updated = await _supabaseAuth.updateSubscriptionPlan(
+          subscriptionPlan: plan,
+        );
+        try {
+          await _localAuth.updateSubscriptionPlan(
+            userId: user.id,
+            subscriptionPlan: plan,
+          );
+        } catch (_) {}
+      } else {
+        updated = await _localAuth.updateSubscriptionPlan(
+          userId: user.id,
+          subscriptionPlan: plan,
+        );
+      }
+
+      state = state.copyWith(
+        user: user.copyWith(subscriptionPlan: updated.subscriptionPlan),
+        clearError: true,
+      );
+      return true;
+    } on AppAuthException catch (e) {
+      state = state.copyWith(error: e.message);
+      return false;
+    } catch (e) {
+      state = state.copyWith(error: 'Abonelik güncellenemedi: $e');
       return false;
     }
   }

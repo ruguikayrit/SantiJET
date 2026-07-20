@@ -8,6 +8,7 @@ import 'package:santijet_demir/core/theme/app_radii.dart';
 import 'package:santijet_demir/core/theme/app_spacing.dart';
 import 'package:santijet_demir/core/theme/app_typography.dart';
 import 'package:santijet_demir/domain/entities/prediction_models.dart';
+import 'package:santijet_demir/features/auth/providers/membership_permission_provider.dart';
 import 'package:santijet_demir/features/prediction/widgets/prediction_dashboard_card.dart';
 import 'package:santijet_demir/features/shell/morning_briefing_provider.dart';
 
@@ -18,9 +19,15 @@ class MorningBriefingCard extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final briefing = ref.watch(morningBriefingProvider);
+    final canPrediction = ref.watch(canAccessPredictionProvider);
     final tone = predictionRiskColor(briefing.tone);
     final dateLabel =
         DateFormat('d MMMM yyyy · EEEE', 'tr_TR').format(briefing.forDate);
+    final detailRoute =
+        canPrediction ? AppRoutes.prediction : AppRoutes.subscription;
+    final detailLabel = canPrediction
+        ? 'Detay → Demir Tahmin Motoru'
+        : 'Detay → Abonelik paketleri';
 
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: AppSpacing.md),
@@ -28,7 +35,7 @@ class MorningBriefingCard extends ConsumerWidget {
         color: AppColors.surfaceElevated,
         borderRadius: AppRadii.md,
         child: InkWell(
-          onTap: () => context.push(AppRoutes.prediction),
+          onTap: () => context.push(detailRoute),
           borderRadius: AppRadii.md,
           child: Container(
             width: double.infinity,
@@ -80,10 +87,11 @@ class MorningBriefingCard extends ConsumerWidget {
                   if (i > 0) const SizedBox(height: 6),
                   _BriefingBullet(text: briefing.bullets[i]),
                 ],
-                if (briefing.tone != PredictionRiskLevel.unknown) ...[
+                if (briefing.tone != PredictionRiskLevel.unknown ||
+                    !canPrediction) ...[
                   const SizedBox(height: 10),
                   Text(
-                    'Detay → Demir Tahmin Motoru',
+                    detailLabel,
                     style: AppTypography.labelMedium.copyWith(
                       color: AppColors.electricBlueLight,
                     ),

@@ -9,6 +9,7 @@ import 'package:santijet_demir/core/theme/app_colors.dart';
 import 'package:santijet_demir/core/theme/app_radii.dart';
 import 'package:santijet_demir/core/theme/app_typography.dart';
 import 'package:santijet_demir/domain/entities/prediction_models.dart';
+import 'package:santijet_demir/features/auth/providers/membership_permission_provider.dart';
 import 'package:santijet_demir/features/prediction/providers/prediction_provider.dart';
 
 Color predictionRiskColor(PredictionRiskLevel risk) {
@@ -36,6 +37,9 @@ class PredictionDashboardCard extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
+    final canPrediction = ref.watch(canAccessPredictionProvider);
+    if (!canPrediction) return const SizedBox.shrink();
+
     final snapshot = ref.watch(predictionSnapshotProvider);
     if (snapshot == null) return const SizedBox.shrink();
 

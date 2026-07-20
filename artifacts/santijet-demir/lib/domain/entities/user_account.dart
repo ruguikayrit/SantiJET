@@ -1,5 +1,6 @@
 import 'package:santijet_demir/domain/enums/corporate_role.dart';
 import 'package:santijet_demir/domain/enums/membership_type.dart';
+import 'package:santijet_demir/domain/enums/subscription_plan.dart';
 
 class UserAccount {
   const UserAccount({
@@ -10,6 +11,7 @@ class UserAccount {
     required this.currentSessionId,
     this.membershipType = MembershipType.individual,
     this.corporateRole,
+    this.subscriptionPlan = SubscriptionPlan.demirTakip,
   });
 
   final String id;
@@ -19,6 +21,7 @@ class UserAccount {
   final String currentSessionId;
   final MembershipType membershipType;
   final CorporateRole? corporateRole;
+  final SubscriptionPlan subscriptionPlan;
 
   bool get isCorporate => membershipType == MembershipType.corporate;
 
@@ -29,6 +32,8 @@ class UserAccount {
     return '${MembershipType.corporate.label} · $role';
   }
 
+  String get subscriptionSummary => subscriptionPlan.label;
+
   UserAccount copyWith({
     String? id,
     String? email,
@@ -37,6 +42,7 @@ class UserAccount {
     String? currentSessionId,
     MembershipType? membershipType,
     CorporateRole? corporateRole,
+    SubscriptionPlan? subscriptionPlan,
     bool clearCorporateRole = false,
   }) {
     return UserAccount(
@@ -48,6 +54,7 @@ class UserAccount {
       membershipType: membershipType ?? this.membershipType,
       corporateRole:
           clearCorporateRole ? null : (corporateRole ?? this.corporateRole),
+      subscriptionPlan: subscriptionPlan ?? this.subscriptionPlan,
     );
   }
 
@@ -59,6 +66,7 @@ class UserAccount {
         'currentSessionId': currentSessionId,
         'membershipType': membershipType.storageValue,
         'corporateRole': corporateRole?.storageValue,
+        'subscriptionPlan': subscriptionPlan.storageValue,
       };
 
   factory UserAccount.fromJson(Map<dynamic, dynamic> json) {
@@ -73,6 +81,10 @@ class UserAccount {
       ),
       corporateRole: CorporateRole.fromStorage(
         json['corporateRole'] as String?,
+      ),
+      subscriptionPlan: SubscriptionPlan.fromStorage(
+        json['subscriptionPlan'] as String? ??
+            json['subscription_plan'] as String?,
       ),
     );
   }
