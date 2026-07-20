@@ -40,7 +40,7 @@ class PredictionCalculatorInput {
   /// İş programından türetilen çap bazlı ortalama günlük plan (t/gün).
   final Map<int, double> plannedDailyByDiameter;
 
-  /// Penceredeki toplam işçi-gün (puantaj).
+  /// Penceredeki toplam adam-gün (puantaj; usta+düz, kalfa hariç).
   final double workerDayUnitsInWindow;
 
   final int supplierLeadDays;

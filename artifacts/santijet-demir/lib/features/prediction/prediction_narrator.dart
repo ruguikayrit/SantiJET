@@ -65,8 +65,8 @@ abstract final class PredictionNarrator {
 
     if (snapshot.tonsPerWorkerDay != null && snapshot.tonsPerWorkerDay! > 0) {
       lines.add(
-        'Puantaj verilerine göre işçi başına yaklaşık '
-        '${snapshot.tonsPerWorkerDay!.toStringAsFixed(2)} t/işçi-gün verimlilik.',
+        'Puantaj verilerine göre yaklaşık '
+        '${snapshot.tonsPerWorkerDay!.toStringAsFixed(2)} t/adam-gün verimlilik.',
       );
     }
 
