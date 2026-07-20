@@ -87,7 +87,7 @@ class SettingsScreen extends ConsumerWidget {
           _SettingsTile(
             icon: Icons.groups_outlined,
             title: 'Günlük Puantaj',
-            subtitle: 'Demirci sayısı ve mesai — tablo girişi',
+            subtitle: 'Kalfa, usta, düz işçi ve mesai — tablo girişi',
             onTap: () => context.push(AppRoutes.workforce),
           ),
           _SettingsTile(

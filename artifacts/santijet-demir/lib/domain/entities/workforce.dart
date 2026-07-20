@@ -3,33 +3,33 @@ class WorkforceEntry {
   const WorkforceEntry({
     required this.id,
     required this.date,
-    required this.steelWorkers,
-    required this.foremen,
-    required this.supervisors,
-    required this.hours,
-    this.overtimeHours = 0,
+    required this.kalfa,
+    required this.usta,
+    required this.duzIsci,
+    required this.tamGun,
+    required this.yarimGun,
+    this.mesaiSaati = 0,
     this.notes,
   });
 
   final String id;
   final DateTime date;
-  final int steelWorkers;
-  final int foremen;
-  final int supervisors;
-  /// Normal çalışma saati (varsayılan 8).
-  final double hours;
+  final int kalfa;
+  final int usta;
+  final int duzIsci;
+  final int tamGun;
+  final int yarimGun;
   /// Mesai saati (fazla çalışma).
-  final double overtimeHours;
+  final double mesaiSaati;
   final String? notes;
 
-  int get totalCrew => steelWorkers + foremen + supervisors;
+  int get totalCrew => kalfa + usta + duzIsci;
 
-  double get totalHours => hours + overtimeHours;
-
-  /// İşçi-gün eşdeğeri (demirci × (saat+mesai) / 8).
+  /// İşçi-gün eşdeğeri (tam gün + yarım gün/2 + mesai/8).
   double get workerDayUnits {
-    if (totalHours <= 0 || steelWorkers <= 0) return 0;
-    return steelWorkers * (totalHours / 8.0);
+    final base = tamGun + (yarimGun * 0.5);
+    final overtime = mesaiSaati > 0 ? mesaiSaati / 8.0 : 0.0;
+    return base + overtime;
   }
 
   String get dateKey =>
@@ -40,21 +40,23 @@ class WorkforceEntry {
   WorkforceEntry copyWith({
     String? id,
     DateTime? date,
-    int? steelWorkers,
-    int? foremen,
-    int? supervisors,
-    double? hours,
-    double? overtimeHours,
+    int? kalfa,
+    int? usta,
+    int? duzIsci,
+    int? tamGun,
+    int? yarimGun,
+    double? mesaiSaati,
     String? notes,
   }) {
     return WorkforceEntry(
       id: id ?? this.id,
       date: date ?? this.date,
-      steelWorkers: steelWorkers ?? this.steelWorkers,
-      foremen: foremen ?? this.foremen,
-      supervisors: supervisors ?? this.supervisors,
-      hours: hours ?? this.hours,
-      overtimeHours: overtimeHours ?? this.overtimeHours,
+      kalfa: kalfa ?? this.kalfa,
+      usta: usta ?? this.usta,
+      duzIsci: duzIsci ?? this.duzIsci,
+      tamGun: tamGun ?? this.tamGun,
+      yarimGun: yarimGun ?? this.yarimGun,
+      mesaiSaati: mesaiSaati ?? this.mesaiSaati,
       notes: notes ?? this.notes,
     );
   }
@@ -62,11 +64,12 @@ class WorkforceEntry {
   Map<String, dynamic> toJson() => {
         'id': id,
         'date': date.toIso8601String(),
-        'steelWorkers': steelWorkers,
-        'foremen': foremen,
-        'supervisors': supervisors,
-        'hours': hours,
-        'overtimeHours': overtimeHours,
+        'kalfa': kalfa,
+        'usta': usta,
+        'duzIsci': duzIsci,
+        'tamGun': tamGun,
+        'yarimGun': yarimGun,
+        'mesaiSaati': mesaiSaati,
         'notes': notes,
       };
 
@@ -74,11 +77,18 @@ class WorkforceEntry {
     return WorkforceEntry(
       id: json['id'] as String? ?? '',
       date: DateTime.tryParse(json['date'] as String? ?? '') ?? DateTime.now(),
-      steelWorkers: (json['steelWorkers'] as num?)?.toInt() ?? 0,
-      foremen: (json['foremen'] as num?)?.toInt() ?? 0,
-      supervisors: (json['supervisors'] as num?)?.toInt() ?? 0,
-      hours: (json['hours'] as num?)?.toDouble() ?? 8,
-      overtimeHours: (json['overtimeHours'] as num?)?.toDouble() ?? 0,
+      kalfa: (json['kalfa'] as num?)?.toInt() ??
+          (json['steelWorkers'] as num?)?.toInt() ??
+          0,
+      usta: (json['usta'] as num?)?.toInt() ??
+          (json['foremen'] as num?)?.toInt() ??
+          0,
+      duzIsci: (json['duzIsci'] as num?)?.toInt() ?? 0,
+      tamGun: (json['tamGun'] as num?)?.toInt() ?? 0,
+      yarimGun: (json['yarimGun'] as num?)?.toInt() ?? 0,
+      mesaiSaati: (json['mesaiSaati'] as num?)?.toDouble() ??
+          (json['overtimeHours'] as num?)?.toDouble() ??
+          0,
       notes: json['notes'] as String?,
     );
   }

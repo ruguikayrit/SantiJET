@@ -77,26 +77,10 @@ class _RawMaterialDetail extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final byDiameter = ref.watch(analysisMaterialSummaryProvider);
-    final totalPieces =
-        batch.pieceLines.fold(0, (sum, piece) => sum + piece.quantity);
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
-        Text(
-          'Analiz edilen donatılar',
-          style: AppTypography.labelMedium,
-          textAlign: TextAlign.center,
-        ),
-        const SizedBox(height: 4),
-        AppDescriptionLines(
-          [
-            'Ham kaynak parça listesi.',
-            '${batch.pieceLines.length} satır · ${AppFormat.integer(totalPieces)} adet.',
-          ],
-          textAlign: TextAlign.center,
-        ),
-        const SizedBox(height: 10),
         const _DetailTableHeader(
           cells: ['ÇAP', 'AĞIRLIK', 'ADET', 'SATIR'],
         ),
@@ -459,8 +443,14 @@ class _FireDiameterDrillDownState extends State<_FireDiameterDrillDown> {
                   textAlign: TextAlign.center,
                 ),
                 const SizedBox(height: 8),
-                const _DetailTableHeader(
-                  cells: ['KALAN UZUNLUK', 'ÇUBUK', 'TOPLAM FİRE', 'AĞIRLIK'],
+                const AppTableHeaderRow(
+                  padding: EdgeInsets.symmetric(vertical: 4),
+                  cells: [
+                    AppTableHeaderCell('KALAN', line2: 'UZUNLUK', flex: 3),
+                    AppTableHeaderCell('ÇUBUK', flex: 2),
+                    AppTableHeaderCell('TOPLAM', line2: 'FİRE', flex: 3),
+                    AppTableHeaderCell('AĞIRLIK', flex: 3),
+                  ],
                 ),
                 ...wasteBuckets.map(
                   (bucket) => _DetailTableRow(
@@ -470,30 +460,12 @@ class _FireDiameterDrillDownState extends State<_FireDiameterDrillDown> {
                       '${bucket.totalWasteM.toStringAsFixed(2)} m',
                       '${AppFormat.tonnage(bucket.wasteTonnage)} t',
                     ],
+                    flexes: const [3, 2, 3, 3],
                     accentColor: diameterColor,
                   ),
                 ),
               ],
               const SizedBox(height: 12),
-              Text(
-                'Çubuk kesim listesi',
-                style: AppTypography.labelMedium,
-                textAlign: TextAlign.center,
-              ),
-              const SizedBox(height: 4),
-              AppDescriptionLines(
-                wasteBarCount == 0
-                    ? [
-                        'Bu çapta fire oluşmadı.',
-                        '$noWasteBarCount firesiz çubuk.',
-                      ]
-                    : [
-                        '$noWasteBarCount çubuk fire oluşturmadı.',
-                        '$wasteBarCount çubukta kalan parça var.',
-                      ],
-                textAlign: TextAlign.center,
-              ),
-              const SizedBox(height: 10),
               _FireCutFilterTabs(
                 selected: _filter,
                 noWasteCount: noWasteBarCount,
@@ -779,15 +751,22 @@ class _DetailTableHeader extends StatelessWidget {
 class _DetailTableRow extends StatelessWidget {
   const _DetailTableRow({
     required this.cells,
+    this.flexes,
     this.accentColor,
     this.onTap,
     this.selected = false,
   });
 
   final List<String> cells;
+  final List<int>? flexes;
   final Color? accentColor;
   final VoidCallback? onTap;
   final bool selected;
+
+  int _flexFor(int index) {
+    if (flexes != null && index < flexes!.length) return flexes![index];
+    return index == 0 ? 2 : 3;
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -804,7 +783,7 @@ class _DetailTableRow extends StatelessWidget {
         children: [
           for (var i = 0; i < cells.length; i++)
             Expanded(
-              flex: i == 0 ? 2 : 3,
+              flex: _flexFor(i),
               child: Text(
                 cells[i],
                 style: (i == 0 ? AppTypography.labelMedium : AppTypography.bodySmall)

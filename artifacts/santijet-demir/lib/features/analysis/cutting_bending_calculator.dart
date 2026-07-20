@@ -977,6 +977,9 @@ double computeMaterialTonnage(List<RebarPieceLine> pieces) {
 }
 
 /// Onaylı tahvil gruplarını parça listesine uygular; kaynak liste korunur.
+///
+/// Dönüştürülen satırlar imalat kimliğini (elementCode / tip) korur;
+/// eşdeğer adet kaynak satırlara orantılı dağıtılır.
 List<RebarPieceLine> applyApprovedTahvilToPieceLines(
   List<RebarPieceLine> pieceLines,
   List<TahvilSuggestion> tahvilGroups,
@@ -987,29 +990,81 @@ List<RebarPieceLine> applyApprovedTahvilToPieceLines(
     final equivalent = pickBestTahvilEquivalentForGroup(group);
     if (equivalent == null) continue;
 
-    final memberKeys = group.members
+    final sources = group.members
         .where((member) => member.diameter == equivalent.fromDiameter)
-        .map(pieceLineKey)
-        .toSet();
-    if (memberKeys.isEmpty) continue;
+        .toList();
+    if (sources.isEmpty) continue;
 
+    final memberKeys = sources.map(pieceLineKey).toSet();
     final updated = <RebarPieceLine>[];
     for (final piece in result) {
       if (memberKeys.contains(pieceLineKey(piece))) continue;
       updated.add(piece);
     }
 
-    updated.add(
-      RebarPieceLine(
-        diameter: equivalent.toDiameter,
+    updated.addAll(
+      _distributeTahvilEquivalentPieces(
+        sources: sources,
+        toDiameter: equivalent.toDiameter,
         lengthM: group.representativeLengthM,
-        quantity: equivalent.equivalentQuantity,
+        equivalentQuantity: equivalent.equivalentQuantity,
       ),
     );
     result = updated;
   }
 
   return _mergePieceLines(result);
+}
+
+/// Eşdeğer tahvil adedini kaynak satırlara miktar oranında dağıtır.
+List<RebarPieceLine> _distributeTahvilEquivalentPieces({
+  required List<RebarPieceLine> sources,
+  required int toDiameter,
+  required double lengthM,
+  required int equivalentQuantity,
+}) {
+  if (equivalentQuantity <= 0 || sources.isEmpty) return const [];
+
+  final totalFromQty =
+      sources.fold<int>(0, (sum, piece) => sum + piece.quantity);
+  if (totalFromQty <= 0) return const [];
+
+  final exactShares = <double>[
+    for (final piece in sources)
+      equivalentQuantity * piece.quantity / totalFromQty,
+  ];
+  final quantities = exactShares.map((share) => share.floor()).toList();
+  var assigned = quantities.fold<int>(0, (sum, qty) => sum + qty);
+  var remainder = equivalentQuantity - assigned;
+
+  if (remainder > 0) {
+    final order = List<int>.generate(sources.length, (i) => i)
+      ..sort((a, b) {
+        final fracA = exactShares[a] - quantities[a];
+        final fracB = exactShares[b] - quantities[b];
+        final byFrac = fracB.compareTo(fracA);
+        if (byFrac != 0) return byFrac;
+        return sources[b].quantity.compareTo(sources[a].quantity);
+      });
+    for (var i = 0; i < remainder; i++) {
+      quantities[order[i % order.length]]++;
+    }
+  }
+
+  final converted = <RebarPieceLine>[];
+  for (var i = 0; i < sources.length; i++) {
+    final qty = quantities[i];
+    if (qty <= 0) continue;
+    final source = sources[i];
+    converted.add(
+      source.copyWith(
+        diameter: toDiameter,
+        lengthM: lengthM,
+        quantity: qty,
+      ),
+    );
+  }
+  return converted;
 }
 
 /// Grup başına tek tahvil yönü seçer (çift yönlü uygulama parça kaybına yol açar).
@@ -1658,11 +1713,7 @@ List<FireWasteLengthBucket> computeFireWasteLengthBuckets(StockCutPlan plan) {
         );
       })
       .toList()
-    ..sort((a, b) {
-      final countCompare = b.barCount.compareTo(a.barCount);
-      if (countCompare != 0) return countCompare;
-      return b.wasteLengthM.compareTo(a.wasteLengthM);
-    });
+    ..sort((a, b) => a.wasteLengthM.compareTo(b.wasteLengthM));
 }
 
 int stockBarWasteCount(StockCutPlan plan) {

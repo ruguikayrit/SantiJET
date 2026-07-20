@@ -135,99 +135,124 @@ class _AnalysisFireSummaryPanelState
                     ],
                   ),
                   const SizedBox(height: 14),
-                  IntrinsicHeight(
-                    child: Row(
-                      crossAxisAlignment: CrossAxisAlignment.stretch,
-                      children: [
-                        Expanded(
-                          child: _ActiveKpiCard(
-                            active: _expandedDetail ==
-                                FireSummaryDetailKind.rawMaterial,
-                            child: KpiCard(
-                              label: 'Ham Tonaj',
-                              value: AppFormat.tonnage(summary.rawMaterialTonnage),
-                              unit: 't',
-                              accentColor: AppColors.electricBlueLight,
-                              dense: true,
-                              onTap: () =>
-                                  _toggleDetail(FireSummaryDetailKind.rawMaterial),
-                            ),
-                          ),
-                        ),
-                        const SizedBox(width: 8),
-                        Expanded(
-                          child: _ActiveKpiCard(
-                            active: _expandedDetail ==
-                                FireSummaryDetailKind.rawFire,
-                            child: KpiCard(
-                              label: 'Ham Fire',
-                              value: AppFormat.tonnage(summary.rawWasteTonnage),
-                              unit: 't',
-                              percent:
-                                  '%${summary.rawWastePercent.toStringAsFixed(1)}',
-                              accentColor: AppColors.warning,
-                              dense: true,
-                              onTap: () =>
-                                  _toggleDetail(FireSummaryDetailKind.rawFire),
-                            ),
-                          ),
-                        ),
-                        if (batch.isOptimized) ...[
-                          const SizedBox(width: 8),
-                          Expanded(
-                            child: _ActiveKpiCard(
-                              active: _expandedDetail ==
-                                  FireSummaryDetailKind.plannedFire,
-                              child: KpiCard(
-                                label: 'Tahvil Fire',
-                                value: summary.isPlannedReady
-                                    ? AppFormat.tonnage(
-                                        summary.plannedWasteTonnage!,
-                                      )
-                                    : '—',
-                                unit: summary.isPlannedReady ? 't' : '',
-                                percent: summary.isPlannedReady
-                                    ? '%${summary.plannedWastePercent!.toStringAsFixed(1)}'
-                                    : null,
-                                accentColor: summary.isPlannedReady
-                                    ? _fireColor(summary.plannedWastePercent!)
-                                    : AppColors.textMuted,
-                                dense: true,
-                                onTap: summary.isPlannedReady
-                                    ? () => _toggleDetail(
-                                          FireSummaryDetailKind.plannedFire,
-                                        )
-                                    : null,
+                  Column(
+                    children: [
+                      IntrinsicHeight(
+                        child: Row(
+                          crossAxisAlignment: CrossAxisAlignment.stretch,
+                          children: [
+                            Expanded(
+                              child: _ActiveKpiCard(
+                                active: _expandedDetail ==
+                                    FireSummaryDetailKind.rawMaterial,
+                                child: KpiCard(
+                                  label: 'Ham Tonaj',
+                                  value: AppFormat.tonnage(
+                                    summary.rawMaterialTonnage,
+                                  ),
+                                  unit: 't',
+                                  accentColor: AppColors.electricBlueLight,
+                                  dense: true,
+                                  onTap: () => _toggleDetail(
+                                    FireSummaryDetailKind.rawMaterial,
+                                  ),
+                                ),
                               ),
                             ),
-                          ),
-                          const SizedBox(width: 8),
-                          Expanded(
-                            child: _ActiveKpiCard(
-                              active: _expandedDetail ==
-                                  FireSummaryDetailKind.savings,
-                              child: KpiCard(
-                                label: 'Kazanç',
-                                value: summary.savedWasteTonnage > 0
-                                    ? AppFormat.tonnage(summary.savedWasteTonnage)
-                                    : '—',
-                                unit: summary.savedWasteTonnage > 0 ? 't' : '',
-                                percent: summary.savedWastePercent > 0
-                                    ? '−%${summary.savedWastePercent.toStringAsFixed(1)}'
-                                    : null,
-                                accentColor: AppColors.success,
-                                dense: true,
-                                onTap: summary.isPlannedReady
-                                    ? () => _toggleDetail(
-                                          FireSummaryDetailKind.savings,
-                                        )
-                                    : null,
+                            const SizedBox(width: 8),
+                            Expanded(
+                              child: _ActiveKpiCard(
+                                active: _expandedDetail ==
+                                    FireSummaryDetailKind.rawFire,
+                                child: KpiCard(
+                                  label: 'Ham Fire',
+                                  value: AppFormat.tonnage(
+                                    summary.rawWasteTonnage,
+                                  ),
+                                  unit: 't',
+                                  percent:
+                                      '%${summary.rawWastePercent.toStringAsFixed(1)}',
+                                  accentColor: AppColors.warning,
+                                  dense: true,
+                                  onTap: () => _toggleDetail(
+                                    FireSummaryDetailKind.rawFire,
+                                  ),
+                                ),
                               ),
                             ),
+                          ],
+                        ),
+                      ),
+                      if (batch.isOptimized) ...[
+                        const SizedBox(height: 8),
+                        IntrinsicHeight(
+                          child: Row(
+                            crossAxisAlignment: CrossAxisAlignment.stretch,
+                            children: [
+                              Expanded(
+                                child: _ActiveKpiCard(
+                                  active: _expandedDetail ==
+                                      FireSummaryDetailKind.plannedFire,
+                                  child: KpiCard(
+                                    label: 'Tahvil Fire',
+                                    value: summary.isPlannedReady
+                                        ? AppFormat.tonnage(
+                                            summary.plannedWasteTonnage!,
+                                          )
+                                        : '—',
+                                    unit:
+                                        summary.isPlannedReady ? 't' : '',
+                                    percent: summary.isPlannedReady
+                                        ? '%${summary.plannedWastePercent!.toStringAsFixed(1)}'
+                                        : null,
+                                    accentColor: summary.isPlannedReady
+                                        ? _fireColor(
+                                            summary.plannedWastePercent!,
+                                          )
+                                        : AppColors.textMuted,
+                                    dense: true,
+                                    onTap: summary.isPlannedReady
+                                        ? () => _toggleDetail(
+                                              FireSummaryDetailKind
+                                                  .plannedFire,
+                                            )
+                                        : null,
+                                  ),
+                                ),
+                              ),
+                              const SizedBox(width: 8),
+                              Expanded(
+                                child: _ActiveKpiCard(
+                                  active: _expandedDetail ==
+                                      FireSummaryDetailKind.savings,
+                                  child: KpiCard(
+                                    label: 'Kazanç',
+                                    value: summary.savedWasteTonnage > 0
+                                        ? AppFormat.tonnage(
+                                            summary.savedWasteTonnage,
+                                          )
+                                        : '—',
+                                    unit: summary.savedWasteTonnage > 0
+                                        ? 't'
+                                        : '',
+                                    percent: summary.savedWastePercent > 0
+                                        ? '−%${summary.savedWastePercent.toStringAsFixed(1)}'
+                                        : null,
+                                    accentColor: AppColors.success,
+                                    dense: true,
+                                    onTap: summary.isPlannedReady
+                                        ? () => _toggleDetail(
+                                              FireSummaryDetailKind.savings,
+                                            )
+                                        : null,
+                                  ),
+                                ),
+                              ),
+                            ],
                           ),
-                        ],
+                        ),
                       ],
-                    ),
+                    ],
                   ),
                   if (_expandedDetail != null)
                     FireSummaryDetailPanel(

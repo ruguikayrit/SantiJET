@@ -55,11 +55,12 @@ class _WorkforceScreenState extends ConsumerState<WorkforceScreen> {
       _drafts[id] = _PuantajDraft(
         id: id,
         date: DateTime.now(),
-        steelWorkers: '0',
-        foremen: '0',
-        supervisors: '0',
-        hours: '8',
-        overtimeHours: '0',
+        kalfa: '0',
+        usta: '0',
+        duzIsci: '0',
+        tamGun: '0',
+        yarimGun: '0',
+        mesaiSaati: '0',
       );
       _dirty = true;
     });
@@ -84,9 +85,12 @@ class _WorkforceScreenState extends ConsumerState<WorkforceScreen> {
           );
           return;
         }
-        if (entry.steelWorkers <= 0 &&
-            entry.foremen <= 0 &&
-            entry.supervisors <= 0) {
+        if (entry.kalfa <= 0 &&
+            entry.usta <= 0 &&
+            entry.duzIsci <= 0 &&
+            entry.tamGun <= 0 &&
+            entry.yarimGun <= 0 &&
+            entry.mesaiSaati <= 0) {
           continue;
         }
         await notifier.upsert(entry);
@@ -164,7 +168,7 @@ class _WorkforceScreenState extends ConsumerState<WorkforceScreen> {
                         8,
                       ),
                       child: Text(
-                        'Tabloya demirci ve mesai bilgisini girin. '
+                        'Tabloya kalfa, usta, düz işçi ve mesai bilgisini girin. '
                         'Değişikliklerden sonra Kaydet’e basın.',
                         style: AppTypography.bodySmall.copyWith(
                           color: AppColors.textMuted,
@@ -187,24 +191,39 @@ class _WorkforceScreenState extends ConsumerState<WorkforceScreen> {
                               minWidth: MediaQuery.sizeOf(context).width - 32,
                             ),
                             child: DataTable(
-                              headingRowHeight: 40,
+                              headingRowHeight: 48,
                               dataRowMinHeight: 52,
                               dataRowMaxHeight: 64,
-                              columnSpacing: 12,
+                              columnSpacing: 10,
                               horizontalMargin: 8,
-                              headingTextStyle: AppTypography.labelSmall.copyWith(
+                              headingTextStyle:
+                                  AppTypography.labelSmall.copyWith(
                                 color: AppColors.electricBlueLight,
                                 fontWeight: FontWeight.w700,
+                                height: 1.15,
                               ),
                               dataTextStyle: AppTypography.bodySmall,
                               border: TableBorder.all(color: AppColors.border),
                               columns: const [
                                 DataColumn(label: Text('TARİH')),
-                                DataColumn(label: Text('DEMİRCİ')),
-                                DataColumn(label: Text('USTA')),
-                                DataColumn(label: Text('ŞEF')),
-                                DataColumn(label: Text('SAAT')),
-                                DataColumn(label: Text('MESAI')),
+                                DataColumn(
+                                  label: _HeaderLabel('KALFA'),
+                                ),
+                                DataColumn(
+                                  label: _HeaderLabel('USTA'),
+                                ),
+                                DataColumn(
+                                  label: _HeaderLabel('DÜZ', line2: 'İŞÇİ'),
+                                ),
+                                DataColumn(
+                                  label: _HeaderLabel('TAM', line2: 'GÜN'),
+                                ),
+                                DataColumn(
+                                  label: _HeaderLabel('YARIM', line2: 'GÜN'),
+                                ),
+                                DataColumn(
+                                  label: _HeaderLabel('MESAI', line2: 'SAATİ'),
+                                ),
                                 DataColumn(label: Text('')),
                               ],
                               rows: [
@@ -235,7 +254,7 @@ class _WorkforceScreenState extends ConsumerState<WorkforceScreen> {
                                       ),
                                       DataCell(
                                         _CellField(
-                                          controller: draft.workers,
+                                          controller: draft.kalfa,
                                           enabled: canEdit,
                                           onChanged: (_) =>
                                               setState(() => _dirty = true),
@@ -243,7 +262,7 @@ class _WorkforceScreenState extends ConsumerState<WorkforceScreen> {
                                       ),
                                       DataCell(
                                         _CellField(
-                                          controller: draft.foremen,
+                                          controller: draft.usta,
                                           enabled: canEdit,
                                           onChanged: (_) =>
                                               setState(() => _dirty = true),
@@ -251,7 +270,7 @@ class _WorkforceScreenState extends ConsumerState<WorkforceScreen> {
                                       ),
                                       DataCell(
                                         _CellField(
-                                          controller: draft.supervisors,
+                                          controller: draft.duzIsci,
                                           enabled: canEdit,
                                           onChanged: (_) =>
                                               setState(() => _dirty = true),
@@ -259,16 +278,23 @@ class _WorkforceScreenState extends ConsumerState<WorkforceScreen> {
                                       ),
                                       DataCell(
                                         _CellField(
-                                          controller: draft.hours,
+                                          controller: draft.tamGun,
                                           enabled: canEdit,
-                                          decimal: true,
                                           onChanged: (_) =>
                                               setState(() => _dirty = true),
                                         ),
                                       ),
                                       DataCell(
                                         _CellField(
-                                          controller: draft.overtime,
+                                          controller: draft.yarimGun,
+                                          enabled: canEdit,
+                                          onChanged: (_) =>
+                                              setState(() => _dirty = true),
+                                        ),
+                                      ),
+                                      DataCell(
+                                        _CellField(
+                                          controller: draft.mesaiSaati,
                                           enabled: canEdit,
                                           decimal: true,
                                           onChanged: (_) =>
@@ -302,6 +328,32 @@ class _WorkforceScreenState extends ConsumerState<WorkforceScreen> {
   }
 }
 
+class _HeaderLabel extends StatelessWidget {
+  const _HeaderLabel(this.line1, {this.line2});
+
+  final String line1;
+  final String? line2;
+
+  @override
+  Widget build(BuildContext context) {
+    final style = AppTypography.labelSmall.copyWith(
+      color: AppColors.electricBlueLight,
+      fontWeight: FontWeight.w700,
+      height: 1.15,
+    );
+    if (line2 == null) {
+      return Text(line1, style: style, textAlign: TextAlign.center);
+    }
+    return Column(
+      mainAxisAlignment: MainAxisAlignment.center,
+      children: [
+        Text(line1, style: style, textAlign: TextAlign.center),
+        Text(line2!, style: style, textAlign: TextAlign.center),
+      ],
+    );
+  }
+}
+
 class _CellField extends StatelessWidget {
   const _CellField({
     required this.controller,
@@ -318,7 +370,7 @@ class _CellField extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return SizedBox(
-      width: 56,
+      width: 52,
       child: TextField(
         controller: controller,
         enabled: enabled,
@@ -347,69 +399,78 @@ class _PuantajDraft {
   _PuantajDraft({
     required this.id,
     required this.date,
-    required String steelWorkers,
-    required String foremen,
-    required String supervisors,
-    required String hours,
-    required String overtimeHours,
-  })  : workers = TextEditingController(text: steelWorkers),
-        foremen = TextEditingController(text: foremen),
-        supervisors = TextEditingController(text: supervisors),
-        hours = TextEditingController(text: hours),
-        overtime = TextEditingController(text: overtimeHours);
+    required String kalfa,
+    required String usta,
+    required String duzIsci,
+    required String tamGun,
+    required String yarimGun,
+    required String mesaiSaati,
+  })  : kalfa = TextEditingController(text: kalfa),
+        usta = TextEditingController(text: usta),
+        duzIsci = TextEditingController(text: duzIsci),
+        tamGun = TextEditingController(text: tamGun),
+        yarimGun = TextEditingController(text: yarimGun),
+        mesaiSaati = TextEditingController(text: mesaiSaati);
 
   factory _PuantajDraft.fromEntry(WorkforceEntry entry) {
     return _PuantajDraft(
       id: entry.id,
       date: entry.date,
-      steelWorkers: '${entry.steelWorkers}',
-      foremen: '${entry.foremen}',
-      supervisors: '${entry.supervisors}',
-      hours: entry.hours.toString().replaceAll('.0', ''),
-      overtimeHours: entry.overtimeHours.toString().replaceAll('.0', ''),
+      kalfa: '${entry.kalfa}',
+      usta: '${entry.usta}',
+      duzIsci: '${entry.duzIsci}',
+      tamGun: '${entry.tamGun}',
+      yarimGun: '${entry.yarimGun}',
+      mesaiSaati: entry.mesaiSaati.toString().replaceAll('.0', ''),
     );
   }
 
   final String id;
   DateTime date;
-  final TextEditingController workers;
-  final TextEditingController foremen;
-  final TextEditingController supervisors;
-  final TextEditingController hours;
-  final TextEditingController overtime;
+  final TextEditingController kalfa;
+  final TextEditingController usta;
+  final TextEditingController duzIsci;
+  final TextEditingController tamGun;
+  final TextEditingController yarimGun;
+  final TextEditingController mesaiSaati;
 
   WorkforceEntry? toEntry() {
-    final steel = int.tryParse(workers.text.trim());
-    final usta = int.tryParse(foremen.text.trim());
-    final sef = int.tryParse(supervisors.text.trim());
-    final saat = double.tryParse(hours.text.replaceAll(',', '.').trim());
-    final mesai = double.tryParse(overtime.text.replaceAll(',', '.').trim());
-    if (steel == null ||
-        usta == null ||
-        sef == null ||
-        saat == null ||
+    final k = int.tryParse(kalfa.text.trim());
+    final u = int.tryParse(usta.text.trim());
+    final d = int.tryParse(duzIsci.text.trim());
+    final tg = int.tryParse(tamGun.text.trim());
+    final yg = int.tryParse(yarimGun.text.trim());
+    final mesai =
+        double.tryParse(mesaiSaati.text.replaceAll(',', '.').trim());
+    if (k == null ||
+        u == null ||
+        d == null ||
+        tg == null ||
+        yg == null ||
         mesai == null) {
       return null;
     }
-    if (saat < 0 || mesai < 0) return null;
+    if (mesai < 0) return null;
     return WorkforceEntry(
       id: id.startsWith('new-')
           ? 'wf-${DateTime.now().millisecondsSinceEpoch}'
           : id,
       date: date,
-      steelWorkers: steel,
-      foremen: usta,
-      supervisors: sef,
-      hours: saat == 0 ? 8 : saat,
-      overtimeHours: mesai,
+      kalfa: k,
+      usta: u,
+      duzIsci: d,
+      tamGun: tg,
+      yarimGun: yg,
+      mesaiSaati: mesai,
     );
   }
 
   void dispose() {
-    workers.dispose();
-    foremen.dispose();
-    supervisors.dispose();
-    hours.dispose();
-    overtime.dispose();
+    kalfa.dispose();
+    usta.dispose();
+    duzIsci.dispose();
+    tamGun.dispose();
+    yarimGun.dispose();
+    mesaiSaati.dispose();
   }
 }

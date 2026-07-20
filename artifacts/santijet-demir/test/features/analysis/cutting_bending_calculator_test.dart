@@ -410,6 +410,71 @@ void main() {
       );
     });
 
+    test('applyApprovedTahvil preserves element identity on converted pieces', () {
+      const pieces = [
+        RebarPieceLine(
+          diameter: 16,
+          lengthM: 2.00,
+          quantity: 100,
+          elementCode: 'P21',
+          elementTypeCode: 'P',
+          elementTypeLabel: 'Perde',
+        ),
+        RebarPieceLine(
+          diameter: 16,
+          lengthM: 2.02,
+          quantity: 40,
+          elementCode: 'P22',
+          elementTypeCode: 'P',
+          elementTypeLabel: 'Perde',
+        ),
+        RebarPieceLine(
+          diameter: 20,
+          lengthM: 2.05,
+          quantity: 60,
+          elementCode: 'K10',
+          elementTypeCode: 'K',
+          elementTypeLabel: 'Kiriş',
+        ),
+      ];
+      final tahvil = computeTahvilGroups(pieces);
+      expect(tahvil, isNotEmpty);
+
+      final approved = tahvil.first.copyWith(approved: true);
+      final equivalent = pickBestTahvilEquivalentForGroup(approved);
+      expect(equivalent, isNotNull);
+
+      final converted = applyApprovedTahvilToPieceLines(pieces, [approved]);
+      expect(converted, isNotEmpty);
+      expect(
+        converted.every(
+          (piece) =>
+              (piece.elementCode ?? '').isNotEmpty &&
+              (piece.elementTypeLabel ?? '').isNotEmpty,
+        ),
+        isTrue,
+      );
+
+      final fromCodes = pieces
+          .where((piece) => piece.diameter == equivalent!.fromDiameter)
+          .map((piece) => piece.elementCode)
+          .toSet();
+      final convertedCodes = converted
+          .where((piece) => piece.diameter == equivalent!.toDiameter)
+          .map((piece) => piece.elementCode)
+          .toSet();
+      expect(convertedCodes, containsAll(fromCodes));
+
+      final convertedQty = converted
+          .where(
+            (piece) =>
+                piece.diameter == equivalent!.toDiameter &&
+                fromCodes.contains(piece.elementCode),
+          )
+          .fold<int>(0, (sum, piece) => sum + piece.quantity);
+      expect(convertedQty, equivalent!.equivalentQuantity);
+    });
+
     test('optimized fire percent moves with fire tonnage', () async {
       const pieces = [
         RebarPieceLine(diameter: 16, lengthM: 2.00, quantity: 10),
