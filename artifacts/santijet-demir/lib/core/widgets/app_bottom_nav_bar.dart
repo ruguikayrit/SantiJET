@@ -23,8 +23,9 @@ class AppBottomNavBar extends ConsumerWidget {
   /// Toplam bar yüksekliği — her zaman aynı.
   static const totalHeight = iconBarHeight + bottomInset;
 
-  static const _iconSize = 22.0;
-  static const _activeIndicatorSize = 36.0;
+  /// İkon ve aktif halka — [iconBarHeight] ile orantılı.
+  static const _iconSize = 28.0;
+  static const _activeIndicatorSize = 46.0;
 
   static const _icons = [
     Icons.dashboard_outlined,
