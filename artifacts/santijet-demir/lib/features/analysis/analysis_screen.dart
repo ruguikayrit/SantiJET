@@ -211,7 +211,7 @@ class _AnalysisSelectedBatchArea extends ConsumerWidget {
           ),
           child: Column(
             children: [
-              const Icon(
+              Icon(
                 Icons.check_box_outline_blank,
                 size: 40,
                 color: AppColors.textMuted,

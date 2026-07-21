@@ -170,7 +170,7 @@ class _NewOrderWizardScreenState extends ConsumerState<NewOrderWizardScreen> {
 
     return Container(
       padding: const EdgeInsets.all(AppSpacing.md),
-      decoration: const BoxDecoration(
+      decoration: BoxDecoration(
         color: AppColors.surface,
         border: Border(top: BorderSide(color: AppColors.border)),
       ),
@@ -743,7 +743,7 @@ class _Step3DiameterTable extends ConsumerWidget {
                     ),
                     child: Container(
                       padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
-                      decoration: const BoxDecoration(
+                      decoration: BoxDecoration(
                         border: Border(bottom: BorderSide(color: AppColors.border)),
                       ),
                       child: Row(

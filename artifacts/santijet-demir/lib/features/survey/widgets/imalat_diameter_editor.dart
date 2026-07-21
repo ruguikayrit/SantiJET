@@ -177,7 +177,7 @@ class _ImalatDiameterEditorState extends ConsumerState<ImalatDiameterEditor> {
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
         Row(
-          children: const [
+          children: [
             Expanded(
               child: Text(
                 'ÇAP',

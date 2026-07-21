@@ -341,7 +341,7 @@ class _PreProductionImportPageState extends State<_PreProductionImportPage> {
           ),
           Container(
             padding: EdgeInsets.fromLTRB(16, 12, 16, 12 + navBarInset),
-            decoration: const BoxDecoration(
+            decoration: BoxDecoration(
               color: AppColors.surfaceElevated,
               border: Border(top: BorderSide(color: AppColors.border)),
             ),

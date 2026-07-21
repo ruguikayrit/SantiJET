@@ -332,7 +332,7 @@ class _MetrajDiameterTableBody extends StatelessWidget {
               : 0.0;
           return Container(
             padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
-            decoration: const BoxDecoration(
+            decoration: BoxDecoration(
               border: Border(bottom: BorderSide(color: AppColors.border)),
             ),
             child: Column(

@@ -378,7 +378,7 @@ class _IcmalDiameterDataRow extends StatelessWidget {
   Widget build(BuildContext context) {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
-      decoration: const BoxDecoration(
+      decoration: BoxDecoration(
         border: Border(bottom: BorderSide(color: AppColors.borderSubtle)),
       ),
       child: IntrinsicHeight(
@@ -717,7 +717,7 @@ class _ElementCetvelCardState extends State<_ElementCetvelCard> {
                 ),
             Container(
               padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-              decoration: const BoxDecoration(
+              decoration: BoxDecoration(
                 border: Border(top: BorderSide(color: AppColors.border)),
                 color: AppColors.canvas,
               ),

@@ -666,7 +666,7 @@ class _SurveyProportionalTabBar extends StatelessWidget {
                   child: Stack(
                     clipBehavior: Clip.none,
                     children: [
-                      const Positioned(
+                      Positioned(
                         left: 0,
                         right: 0,
                         bottom: 0,

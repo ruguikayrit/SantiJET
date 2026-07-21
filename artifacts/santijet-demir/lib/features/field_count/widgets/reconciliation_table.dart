@@ -72,7 +72,7 @@ class ReconciliationTable extends StatelessWidget {
       columnWidths:
           landscape ? _landscapeColumnWidths() : _portraitColumnWidths(),
       defaultVerticalAlignment: TableCellVerticalAlignment.middle,
-      border: const TableBorder(
+      border: TableBorder(
         horizontalInside: BorderSide(color: AppColors.border, width: 0.5),
       ),
       children: [

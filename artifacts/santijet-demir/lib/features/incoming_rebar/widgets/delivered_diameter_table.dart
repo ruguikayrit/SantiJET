@@ -38,7 +38,7 @@ class DeliveredDiameterTable extends StatelessWidget {
           ...rows.map(
             (row) => Container(
               padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
-              decoration: const BoxDecoration(
+              decoration: BoxDecoration(
                 border: Border(bottom: BorderSide(color: AppColors.border)),
               ),
               child: Row(

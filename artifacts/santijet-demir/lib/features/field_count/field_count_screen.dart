@@ -266,7 +266,7 @@ class _ReconciliationShortcut extends StatelessWidget {
           ),
           child: Row(
             children: [
-              const Icon(Icons.table_chart, color: AppColors.electricBlueLight),
+              Icon(Icons.table_chart, color: AppColors.electricBlueLight),
               const SizedBox(width: 12),
               Expanded(
                 child: Column(

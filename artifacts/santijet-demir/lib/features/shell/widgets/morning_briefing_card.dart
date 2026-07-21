@@ -121,7 +121,7 @@ class _BriefingBullet extends StatelessWidget {
           child: Container(
             width: 5,
             height: 5,
-            decoration: const BoxDecoration(
+            decoration: BoxDecoration(
               color: AppColors.textMuted,
               shape: BoxShape.circle,
             ),
