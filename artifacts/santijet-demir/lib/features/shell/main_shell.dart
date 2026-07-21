@@ -303,7 +303,7 @@ class _SurveyQuickAccessBar extends StatelessWidget {
                 overflow: TextOverflow.ellipsis,
               ),
             ),
-            const Icon(Icons.chevron_right, color: AppColors.textMuted, size: 20),
+            Icon(Icons.chevron_right, color: AppColors.textMuted, size: 20),
           ],
         ),
       ),

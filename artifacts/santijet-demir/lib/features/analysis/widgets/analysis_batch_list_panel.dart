@@ -109,7 +109,7 @@ class AnalysisBatchListPanel extends ConsumerWidget {
                     style: AppTypography.labelMedium,
                   ),
                   backgroundColor: AppColors.canvas,
-                  side: const BorderSide(color: AppColors.border),
+                  side: BorderSide(color: AppColors.border),
                   onPressed: () {
                     onScopeChanged(
                       allSelected ? {} : batches.map((batch) => batch.id).toSet(),
@@ -138,7 +138,7 @@ class AnalysisBatchListPanel extends ConsumerWidget {
               ],
             ),
           ),
-          const Divider(height: 1, color: AppColors.border),
+          Divider(height: 1, color: AppColors.border),
           ...batches.map(
             (batch) {
               final inScope = analysisScopeIds.contains(batch.id);

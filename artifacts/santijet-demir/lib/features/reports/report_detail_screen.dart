@@ -201,7 +201,7 @@ class ReportDetailScreen extends ConsumerWidget {
                     padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
                     decoration: BoxDecoration(
                       border: i < previewRows.length - 1
-                          ? const Border(bottom: BorderSide(color: AppColors.border))
+                          ? Border(bottom: BorderSide(color: AppColors.border))
                           : null,
                     ),
                     child: Row(

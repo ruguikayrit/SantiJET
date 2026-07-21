@@ -476,7 +476,7 @@ class AppSearchBar extends StatelessWidget {
             style: AppTypography.bodyMedium.copyWith(color: AppColors.textPrimary),
             decoration: InputDecoration(
               hintText: hint,
-              prefixIcon: const Icon(Icons.search, color: AppColors.textMuted, size: 20),
+              prefixIcon: Icon(Icons.search, color: AppColors.textMuted, size: 20),
               isDense: true,
             ),
           ),
@@ -485,7 +485,7 @@ class AppSearchBar extends StatelessWidget {
           const SizedBox(width: 8),
           IconButton(
             onPressed: onFilterTap,
-            icon: const Icon(Icons.tune, color: AppColors.textMuted),
+            icon: Icon(Icons.tune, color: AppColors.textMuted),
             style: IconButton.styleFrom(
               backgroundColor: AppColors.surfaceElevated,
               shape: RoundedRectangleBorder(borderRadius: AppRadii.md),

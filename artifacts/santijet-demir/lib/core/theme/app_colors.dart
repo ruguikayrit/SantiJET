@@ -1,32 +1,73 @@
 import 'package:flutter/material.dart';
 
-/// Figma Make Design System — 14 renk paleti.
+/// Figma Make Design System — açık/koyu uyumlu palet.
+///
+/// Marka mavileri ve durum renkleri temadan bağımsızdır.
+/// Yüzey / metin / kenarlık [applyBrightness] ile temaya göre değişir.
 abstract final class AppColors {
-  // Arka plan
-  static const canvas = Color(0xFF05070A);
-  static const surface = Color(0xFF0D1117);
-  static const surfaceElevated = Color(0xFF151B26);
-  static const surfaceHighlight = Color(0xFF1E293B);
+  static Brightness _brightness = Brightness.dark;
 
-  // Marka
+  /// MaterialApp builder içinde her karede çağrılır.
+  static void applyBrightness(Brightness brightness) {
+    _brightness = brightness;
+  }
+
+  static bool get isDark => _brightness == Brightness.dark;
+  static bool get isLight => _brightness == Brightness.light;
+
+  // —— Koyu sabitler ——
+  static const darkCanvas = Color(0xFF05070A);
+  static const darkSurface = Color(0xFF0D1117);
+  static const darkSurfaceElevated = Color(0xFF151B26);
+  static const darkSurfaceHighlight = Color(0xFF1E293B);
+  static const darkTextPrimary = Color(0xFFFFFFFF);
+  static const darkTextSecondary = Color(0xB3FFFFFF);
+  static const darkTextMuted = Color(0x66FFFFFF);
+  static const darkTextDisabled = Color(0x4DFFFFFF);
+  static const darkBorder = Color(0xFF1E293B);
+  static const darkBorderSubtle = Color(0xFF334155);
+
+  // —— Açık sabitler (logo: beyaz→siyah; mavi aynı) ——
+  static const lightCanvas = Color(0xFFF1F5F9);
+  static const lightSurface = Color(0xFFFFFFFF);
+  static const lightSurfaceElevated = Color(0xFFF8FAFC);
+  static const lightSurfaceHighlight = Color(0xFFE2E8F0);
+  static const lightTextPrimary = Color(0xFF0F172A);
+  static const lightTextSecondary = Color(0xFF334155);
+  static const lightTextMuted = Color(0xFF64748B);
+  static const lightTextDisabled = Color(0xFF94A3B8);
+  static const lightBorder = Color(0xFFE2E8F0);
+  static const lightBorderSubtle = Color(0xFFCBD5E1);
+
+  // Arka plan (tema duyarlı)
+  static Color get canvas => isDark ? darkCanvas : lightCanvas;
+  static Color get surface => isDark ? darkSurface : lightSurface;
+  static Color get surfaceElevated =>
+      isDark ? darkSurfaceElevated : lightSurfaceElevated;
+  static Color get surfaceHighlight =>
+      isDark ? darkSurfaceHighlight : lightSurfaceHighlight;
+
+  // Marka — temadan bağımsız
   static const electricBlue = Color(0xFF0055FF);
   static const electricBlueLight = Color(0xFF3B82F6);
   static const electricBlueGlow = Color(0x334877DC);
 
-  // Metin
-  static const textPrimary = Color(0xFFFFFFFF);
-  static const textSecondary = Color(0xB3FFFFFF);
-  static const textMuted = Color(0x66FFFFFF);
-  static const textDisabled = Color(0x4DFFFFFF);
+  // Metin (tema duyarlı)
+  static Color get textPrimary => isDark ? darkTextPrimary : lightTextPrimary;
+  static Color get textSecondary =>
+      isDark ? darkTextSecondary : lightTextSecondary;
+  static Color get textMuted => isDark ? darkTextMuted : lightTextMuted;
+  static Color get textDisabled =>
+      isDark ? darkTextDisabled : lightTextDisabled;
 
-  // Durum
+  // Durum — temadan bağımsız
   static const success = Color(0xFF10B981);
   static const warning = Color(0xFFF59E0B);
   static const critical = Color(0xFFEF4444);
   static const info = Color(0xFF0EA5E9);
   static const partial = Color(0xFFA855F7);
 
-  // Çap gradyanı (Figma: Ø8 yeşil → Ø28 turuncu)
+  // Çap gradyanı
   static const diameter8 = Color(0xFF10B981);
   static const diameter10 = Color(0xFF06B6D4);
   static const diameter12 = Color(0xFF3B82F6);
@@ -36,13 +77,22 @@ abstract final class AppColors {
   static const diameter22 = Color(0xFFDC2626);
   static const diameter28 = Color(0xFFF97316);
 
-  // Kenarlık & ayırıcı
-  static const border = Color(0xFF1E293B);
-  static const borderSubtle = Color(0xFF334155);
+  // Kenarlık
+  static Color get border => isDark ? darkBorder : lightBorder;
+  static Color get borderSubtle =>
+      isDark ? darkBorderSubtle : lightBorderSubtle;
 
-  // Blueprint arka plan
+  // Blueprint / overlay
   static const blueprintGrid = Color(0x0B4876DC);
-  static const rebarOverlay = Color(0x0AFFFFFF);
+  static Color get rebarOverlay =>
+      isDark ? const Color(0x0AFFFFFF) : const Color(0x0A0F172A);
+
+  /// Wordmark asset — koyuda beyaz harf, açıkta siyah harf; mavi aynı.
+  static String wordmarkAssetFor(Brightness brightness) {
+    return brightness == Brightness.dark
+        ? 'assets/images/splash_wordmark.png'
+        : 'assets/images/splash_wordmark_light.png';
+  }
 
   static Color diameterColor(int diameter) {
     return switch (diameter) {

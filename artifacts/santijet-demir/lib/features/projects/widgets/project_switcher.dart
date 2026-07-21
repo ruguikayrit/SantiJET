@@ -59,7 +59,7 @@ class ProjectSwitcher extends ConsumerWidget {
                       ],
                     ),
                   ),
-                  const Icon(Icons.expand_more, color: AppColors.textMuted),
+                  Icon(Icons.expand_more, color: AppColors.textMuted),
                 ],
               ),
             ),

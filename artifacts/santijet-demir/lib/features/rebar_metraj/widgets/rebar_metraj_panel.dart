@@ -494,7 +494,7 @@ class _ResultSummaryBarState extends ConsumerState<_ResultSummaryBar> {
                     ],
                   ),
                   const SizedBox(height: 16),
-                  const Divider(height: 1, color: AppColors.border),
+                  Divider(height: 1, color: AppColors.border),
                   const SizedBox(height: 14),
                   Text('Aktarım', style: AppTypography.labelMedium),
                   const SizedBox(height: 10),

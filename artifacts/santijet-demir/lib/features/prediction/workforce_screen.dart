@@ -176,27 +176,16 @@ class _WorkforceScreenState extends ConsumerState<WorkforceScreen> {
                     AppSpacing.md,
                     100,
                   ),
-                  itemCount: drafts.length + 1,
+                  itemCount: drafts.length,
                   itemBuilder: (context, index) {
-                    if (index == 0) {
-                      return Padding(
-                        padding: const EdgeInsets.only(bottom: 12),
-                        child: Text(
-                          'Her gün için kalfa (bilgi) ve imalat satırları girin. '
-                          'Adam-gün = (tam×8 + yarım×4 + mesai_saat×kişi) / 8. '
-                          'Kalfa hesaba girmez.',
-                          style: AppTypography.bodySmall.copyWith(
-                            color: AppColors.textMuted,
-                          ),
-                        ),
-                      );
-                    }
-                    final draft = drafts[index - 1];
+                    final draft = drafts[index];
                     return _DayCard(
+                      key: ValueKey(draft.id),
                       draft: draft,
                       dateLabel: dateFmt.format(draft.date),
                       canEdit: canEdit,
                       imalats: imalats,
+                      initiallyExpanded: draft.id.startsWith('new-'),
                       onChanged: () => setState(() => _dirty = true),
                       onPickDate: canEdit
                           ? () async {
@@ -238,13 +227,15 @@ class _WorkforceScreenState extends ConsumerState<WorkforceScreen> {
   }
 }
 
-class _DayCard extends StatelessWidget {
+class _DayCard extends StatefulWidget {
   const _DayCard({
+    super.key,
     required this.draft,
     required this.dateLabel,
     required this.canEdit,
     required this.imalats,
     required this.onChanged,
+    this.initiallyExpanded = false,
     this.onPickDate,
     this.onDelete,
     this.onAddLine,
@@ -256,98 +247,165 @@ class _DayCard extends StatelessWidget {
   final bool canEdit;
   final List<SurveyImalat> imalats;
   final VoidCallback onChanged;
+  final bool initiallyExpanded;
   final VoidCallback? onPickDate;
   final VoidCallback? onDelete;
   final VoidCallback? onAddLine;
   final ValueChanged<_LineDraft>? onRemoveLine;
 
   @override
+  State<_DayCard> createState() => _DayCardState();
+}
+
+class _DayCardState extends State<_DayCard> {
+  late bool _expanded = widget.initiallyExpanded;
+
+  @override
   Widget build(BuildContext context) {
+    final draft = widget.draft;
     final ustaGun = draft.previewUstaAdamGun;
     final duzGun = draft.previewDuzAdamGun;
 
     return Container(
       margin: const EdgeInsets.only(bottom: 12),
-      padding: const EdgeInsets.all(12),
       decoration: BoxDecoration(
         color: AppColors.surfaceElevated,
         borderRadius: AppRadii.md,
         border: Border.all(color: AppColors.border),
       ),
+      clipBehavior: Clip.antiAlias,
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
-          Row(
-            children: [
-              Expanded(
-                child: InkWell(
-                  onTap: onPickDate,
-                  child: Text(
-                    dateLabel,
-                    style: AppTypography.titleMedium.copyWith(
-                      fontWeight: FontWeight.w700,
+          Material(
+            color: Colors.transparent,
+            child: InkWell(
+              onTap: () => setState(() => _expanded = !_expanded),
+              child: Padding(
+                padding: const EdgeInsets.fromLTRB(12, 10, 4, 10),
+                child: Row(
+                  children: [
+                    Icon(
+                      _expanded
+                          ? Icons.expand_less
+                          : Icons.expand_more,
+                      color: AppColors.textMuted,
+                      size: 22,
                     ),
+                    const SizedBox(width: 4),
+                    Expanded(
+                      child: Text(
+                        widget.dateLabel,
+                        style: AppTypography.titleMedium.copyWith(
+                          fontWeight: FontWeight.w700,
+                        ),
+                      ),
+                    ),
+                    Text(
+                      'Σ ${(ustaGun + duzGun).toStringAsFixed(2)} adam.gün',
+                      style: AppTypography.labelMedium.copyWith(
+                        color: AppColors.electricBlueLight,
+                      ),
+                    ),
+                    if (widget.onDelete != null)
+                      IconButton(
+                        icon: const Icon(Icons.delete_outline, size: 20),
+                        color: AppColors.textMuted,
+                        onPressed: widget.onDelete,
+                      ),
+                  ],
+                ),
+              ),
+            ),
+          ),
+          if (_expanded) ...[
+            const Divider(height: 1),
+            Padding(
+              padding: const EdgeInsets.fromLTRB(12, 12, 12, 12),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: [
+                  Row(
+                    children: [
+                      Expanded(
+                        child: InkWell(
+                          onTap: widget.onPickDate,
+                          borderRadius: AppRadii.sm,
+                          child: Padding(
+                            padding: const EdgeInsets.symmetric(vertical: 4),
+                            child: Row(
+                              children: [
+                                Text(
+                                  widget.dateLabel,
+                                  style: AppTypography.bodyMedium.copyWith(
+                                    fontWeight: FontWeight.w600,
+                                  ),
+                                ),
+                                if (widget.onPickDate != null) ...[
+                                  const SizedBox(width: 6),
+                                  const Icon(
+                                    Icons.calendar_today,
+                                    size: 14,
+                                    color: AppColors.textMuted,
+                                  ),
+                                ],
+                              ],
+                            ),
+                          ),
+                        ),
+                      ),
+                      Text(
+                        'Usta ${ustaGun.toStringAsFixed(2)} · '
+                        'Düz ${duzGun.toStringAsFixed(2)}',
+                        style: AppTypography.bodySmall.copyWith(
+                          color: AppColors.textMuted,
+                        ),
+                      ),
+                    ],
                   ),
-                ),
+                  const SizedBox(height: 10),
+                  Row(
+                    children: [
+                      Text('Kalfa (bilgi)', style: AppTypography.labelMedium),
+                      const SizedBox(width: 12),
+                      SizedBox(
+                        width: 64,
+                        child: _NumField(
+                          controller: draft.kalfa,
+                          enabled: widget.canEdit,
+                          onChanged: (_) => widget.onChanged(),
+                        ),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 12),
+                  Text('Çalışma (imalat)', style: AppTypography.labelMedium),
+                  const SizedBox(height: 8),
+                  for (final line in draft.lines) ...[
+                    _ImalatLineEditor(
+                      line: line,
+                      canEdit: widget.canEdit,
+                      imalats: widget.imalats,
+                      onChanged: widget.onChanged,
+                      onRemove: widget.onRemoveLine == null
+                          ? null
+                          : () => widget.onRemoveLine!(line),
+                    ),
+                    const SizedBox(height: 10),
+                  ],
+                  if (widget.onAddLine != null)
+                    Align(
+                      alignment: Alignment.centerLeft,
+                      child: TextButton.icon(
+                        onPressed: widget.onAddLine,
+                        icon: const Icon(Icons.add, size: 18),
+                        label: const Text('İmalat satırı'),
+                      ),
+                    ),
+                ],
               ),
-              Text(
-                'Σ ${ (ustaGun + duzGun).toStringAsFixed(2) } adam.gün',
-                style: AppTypography.labelMedium.copyWith(
-                  color: AppColors.electricBlueLight,
-                ),
-              ),
-              if (onDelete != null)
-                IconButton(
-                  icon: const Icon(Icons.delete_outline, size: 20),
-                  color: AppColors.textMuted,
-                  onPressed: onDelete,
-                ),
-            ],
-          ),
-          const SizedBox(height: 8),
-          Row(
-            children: [
-              Text('Kalfa (bilgi)', style: AppTypography.labelMedium),
-              const SizedBox(width: 12),
-              SizedBox(
-                width: 64,
-                child: _NumField(
-                  controller: draft.kalfa,
-                  enabled: canEdit,
-                  onChanged: (_) => onChanged(),
-                ),
-              ),
-              const Spacer(),
-              Text(
-                'Usta ${ustaGun.toStringAsFixed(2)} · Düz ${duzGun.toStringAsFixed(2)}',
-                style: AppTypography.bodySmall.copyWith(
-                  color: AppColors.textMuted,
-                ),
-              ),
-            ],
-          ),
-          const SizedBox(height: 12),
-          Text('Çalışma (imalat)', style: AppTypography.labelMedium),
-          const SizedBox(height: 8),
-          for (final line in draft.lines) ...[
-            _ImalatLineEditor(
-              line: line,
-              canEdit: canEdit,
-              imalats: imalats,
-              onChanged: onChanged,
-              onRemove: onRemoveLine == null ? null : () => onRemoveLine!(line),
             ),
-            const SizedBox(height: 10),
           ],
-          if (onAddLine != null)
-            Align(
-              alignment: Alignment.centerLeft,
-              child: TextButton.icon(
-                onPressed: onAddLine,
-                icon: const Icon(Icons.add, size: 18),
-                label: const Text('İmalat satırı'),
-              ),
-            ),
         ],
       ),
     );

@@ -121,7 +121,7 @@ class _NewCountScreenState extends ConsumerState<NewCountScreen> {
             tileColor: AppColors.surfaceElevated,
             shape: RoundedRectangleBorder(
               borderRadius: AppRadii.md,
-              side: const BorderSide(color: AppColors.border),
+              side: BorderSide(color: AppColors.border),
             ),
             leading: const Icon(Icons.calendar_today, color: AppColors.electricBlueLight),
             title: Text(

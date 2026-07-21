@@ -777,7 +777,7 @@ class _DetailTableRow extends StatelessWidget {
         color: selected
             ? AppColors.electricBlueLight.withValues(alpha: 0.08)
             : null,
-        border: const Border(bottom: BorderSide(color: AppColors.border)),
+        border: Border(bottom: BorderSide(color: AppColors.border)),
       ),
       child: Row(
         children: [

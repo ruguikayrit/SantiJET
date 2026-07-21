@@ -860,7 +860,7 @@ class _ProfileHeader extends StatelessWidget {
                   ],
                 ),
               ),
-              const Icon(Icons.edit_outlined, color: AppColors.textMuted, size: 20),
+              Icon(Icons.edit_outlined, color: AppColors.textMuted, size: 20),
             ],
           ),
         ),
@@ -918,7 +918,7 @@ class _AppLockSettingsTile extends StatelessWidget {
                           ],
                         ),
                       ),
-                      const Icon(Icons.chevron_right, color: AppColors.textMuted),
+                      Icon(Icons.chevron_right, color: AppColors.textMuted),
                     ],
                   ),
                 ),
@@ -986,8 +986,15 @@ class _HapticSettingsTile extends StatelessWidget {
   }
 }
 
-class _RebarUnitWeightTable extends StatelessWidget {
+class _RebarUnitWeightTable extends StatefulWidget {
   const _RebarUnitWeightTable();
+
+  @override
+  State<_RebarUnitWeightTable> createState() => _RebarUnitWeightTableState();
+}
+
+class _RebarUnitWeightTableState extends State<_RebarUnitWeightTable> {
+  var _expanded = false;
 
   @override
   Widget build(BuildContext context) {
@@ -996,103 +1003,134 @@ class _RebarUnitWeightTable extends StatelessWidget {
 
     return Container(
       margin: const EdgeInsets.only(bottom: 8),
-      padding: const EdgeInsets.fromLTRB(14, 14, 14, 10),
       decoration: BoxDecoration(
         color: AppColors.surfaceElevated,
         borderRadius: AppRadii.md,
         border: Border.all(color: AppColors.border),
       ),
+      clipBehavior: Clip.antiAlias,
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
-          Row(
-            children: [
-              const Icon(
-                Icons.table_chart_outlined,
-                color: AppColors.electricBlueLight,
-                size: 22,
-              ),
-              const SizedBox(width: 14),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
+          Material(
+            color: Colors.transparent,
+            child: InkWell(
+              onTap: () => setState(() => _expanded = !_expanded),
+              child: Padding(
+                padding: const EdgeInsets.fromLTRB(14, 14, 10, 14),
+                child: Row(
                   children: [
-                    Text(
-                      'Demir Birim Hacim Ağırlık Tablosu',
-                      style: AppTypography.titleMedium,
+                    const Icon(
+                      Icons.table_chart_outlined,
+                      color: AppColors.electricBlueLight,
+                      size: 22,
                     ),
-                    Text(
-                      'kg/m = d² / 162',
-                      style: AppTypography.bodySmall.copyWith(
-                        color: AppColors.textMuted,
+                    const SizedBox(width: 14),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            'Demir Birim Hacim Ağırlık Tablosu',
+                            style: AppTypography.titleMedium,
+                          ),
+                          Text(
+                            'kg/m = d² / 162',
+                            style: AppTypography.bodySmall.copyWith(
+                              color: AppColors.textMuted,
+                            ),
+                          ),
+                        ],
                       ),
+                    ),
+                    Icon(
+                      _expanded ? Icons.expand_less : Icons.expand_more,
+                      color: AppColors.textMuted,
                     ),
                   ],
                 ),
               ),
-            ],
-          ),
-          const SizedBox(height: 12),
-          Container(
-            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
-            decoration: BoxDecoration(
-              color: AppColors.canvas.withValues(alpha: 0.55),
-              borderRadius: AppRadii.sm,
-            ),
-            child: Row(
-              children: [
-                Expanded(
-                  child: Text(
-                    'Çap (mm)',
-                    style: AppTypography.labelMedium.copyWith(
-                      fontWeight: FontWeight.w700,
-                      color: AppColors.textMuted,
-                    ),
-                  ),
-                ),
-                Expanded(
-                  child: Text(
-                    'Birim ağırlık (kg/m)',
-                    textAlign: TextAlign.right,
-                    style: AppTypography.labelMedium.copyWith(
-                      fontWeight: FontWeight.w700,
-                      color: AppColors.textMuted,
-                    ),
-                  ),
-                ),
-              ],
             ),
           ),
-          for (var i = 0; i < diameters.length; i++) ...[
-            if (i > 0)
-              Divider(
-                height: 1,
-                color: AppColors.border.withValues(alpha: 0.7),
-              ),
+          if (_expanded) ...[
+            const Divider(height: 1),
             Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 9),
-              child: Row(
+              padding: const EdgeInsets.fromLTRB(14, 10, 14, 10),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: [
-                  Expanded(
-                    child: Text(
-                      'Ø${diameters[i]}',
-                      style: AppTypography.bodyMedium.copyWith(
-                        fontWeight: FontWeight.w600,
-                      ),
+                  Container(
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 10,
+                      vertical: 8,
+                    ),
+                    decoration: BoxDecoration(
+                      color: AppColors.canvas.withValues(alpha: 0.55),
+                      borderRadius: AppRadii.sm,
+                    ),
+                    child: Row(
+                      children: [
+                        Expanded(
+                          child: Text(
+                            'Çap (mm)',
+                            style: AppTypography.labelMedium.copyWith(
+                              fontWeight: FontWeight.w700,
+                              color: AppColors.textMuted,
+                            ),
+                          ),
+                        ),
+                        Expanded(
+                          child: Text(
+                            'Birim ağırlık (kg/m)',
+                            textAlign: TextAlign.right,
+                            style: AppTypography.labelMedium.copyWith(
+                              fontWeight: FontWeight.w700,
+                              color: AppColors.textMuted,
+                            ),
+                          ),
+                        ),
+                      ],
                     ),
                   ),
-                  Expanded(
-                    child: Text(
-                      weightFormat.format(
-                        RebarWeightCalculator.kgPerMeter(diameters[i]),
+                  for (var i = 0; i < diameters.length; i++) ...[
+                    if (i > 0)
+                      Divider(
+                        height: 1,
+                        color: AppColors.border.withValues(alpha: 0.7),
                       ),
-                      textAlign: TextAlign.right,
-                      style: AppTypography.bodyMedium.copyWith(
-                        color: AppColors.electricBlueLight,
-                        fontWeight: FontWeight.w600,
+                    Padding(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 10,
+                        vertical: 9,
+                      ),
+                      child: Row(
+                        children: [
+                          Expanded(
+                            child: Text(
+                              'Ø${diameters[i]}',
+                              style: AppTypography.bodyMedium.copyWith(
+                                fontWeight: FontWeight.w600,
+                              ),
+                            ),
+                          ),
+                          Expanded(
+                            child: Text(
+                              weightFormat.format(
+                                RebarWeightCalculator.kgPerMeter(
+                                  diameters[i],
+                                ),
+                              ),
+                              textAlign: TextAlign.right,
+                              style: AppTypography.bodyMedium.copyWith(
+                                color: AppColors.electricBlueLight,
+                                fontWeight: FontWeight.w600,
+                              ),
+                            ),
+                          ),
+                        ],
                       ),
                     ),
-                  ),
+                  ],
                 ],
               ),
             ),
@@ -1150,7 +1188,7 @@ class _SettingsTile extends StatelessWidget {
                   ],
                 ),
               ),
-              const Icon(Icons.chevron_right, color: AppColors.textMuted),
+              Icon(Icons.chevron_right, color: AppColors.textMuted),
             ],
           ),
         ),

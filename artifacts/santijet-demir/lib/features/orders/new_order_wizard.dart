@@ -592,7 +592,7 @@ class _Step2RatioSelector extends ConsumerWidget {
                 'Kalan Toplam',
                 '${totalRemaining.toStringAsFixed(0)}t',
               ),
-              const Divider(height: 24, color: AppColors.border),
+              Divider(height: 24, color: AppColors.border),
               _SummaryRow(
                 'Toplam Sipariş Tonajı',
                 '${draft.totalTonnage.toStringAsFixed(1)}t',
@@ -1104,7 +1104,7 @@ class _Step5Summary extends StatelessWidget {
               ),
               const SizedBox(height: 8),
               _SummaryRow('Tedarikçi', supplier.name),
-              const Divider(height: 24, color: AppColors.border),
+              Divider(height: 24, color: AppColors.border),
               _SummaryRow(
                 'Tahmini Tutar',
                 AppFormat.currency(totalCost),

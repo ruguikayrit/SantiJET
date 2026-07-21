@@ -77,7 +77,7 @@ class SavedMetrajListTab extends ConsumerWidget {
                       style: AppTypography.labelMedium,
                     ),
                     backgroundColor: AppColors.surfaceElevated,
-                    side: const BorderSide(color: AppColors.border),
+                    side: BorderSide(color: AppColors.border),
                     onPressed: () {
                       ref.read(selectedMetrajRecordIdsProvider.notifier).state =
                           selectedIds.length == records.length
@@ -94,7 +94,7 @@ class SavedMetrajListTab extends ConsumerWidget {
                         style: AppTypography.labelMedium,
                       ),
                       backgroundColor: AppColors.surfaceElevated,
-                      side: const BorderSide(color: AppColors.border),
+                      side: BorderSide(color: AppColors.border),
                       onPressed: () => sendSelectedMetrajRecordsToSurvey(
                         context,
                         ref,
@@ -110,7 +110,7 @@ class SavedMetrajListTab extends ConsumerWidget {
                         style: AppTypography.labelMedium,
                       ),
                       backgroundColor: AppColors.surfaceElevated,
-                      side: const BorderSide(color: AppColors.border),
+                      side: BorderSide(color: AppColors.border),
                       onPressed: () async {
                         for (final record in selectedRecords) {
                           if (!record.isApprovedForAnalysis) {
@@ -205,14 +205,14 @@ class SavedMetrajListTab extends ConsumerWidget {
                   label: Text('${records.length} kayıt',
                       style: AppTypography.labelMedium),
                   backgroundColor: AppColors.surfaceElevated,
-                  side: const BorderSide(color: AppColors.border),
+                  side: BorderSide(color: AppColors.border),
                 ),
                 ActionChip(
                   avatar: const Icon(Icons.add,
                       size: 16, color: AppColors.electricBlueLight),
                   label: Text('Yeni Metraj', style: AppTypography.labelMedium),
                   backgroundColor: AppColors.surfaceElevated,
-                  side: const BorderSide(color: AppColors.border),
+                  side: BorderSide(color: AppColors.border),
                   onPressed: () =>
                       ref.read(surveyTabIndexProvider.notifier).state = 1,
                 ),
@@ -468,7 +468,7 @@ class MetrajRecordCard extends StatelessWidget {
             ),
           ),
           if (expanded) ...[
-            const Divider(height: 1, color: AppColors.border),
+            Divider(height: 1, color: AppColors.border),
             Padding(
               padding: const EdgeInsets.all(14),
               child: Column(

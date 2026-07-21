@@ -123,7 +123,7 @@ class _HeaderNotificationButton extends ConsumerWidget {
               height: SantijetHeader.actionSize,
             ),
             iconSize: SantijetHeader.actionIconSize,
-            icon: const Icon(
+            icon: Icon(
               Icons.notifications_outlined,
               color: AppColors.textSecondary,
             ),
@@ -275,18 +275,12 @@ class _WordmarkHeader extends StatelessWidget {
             crossAxisAlignment: CrossAxisAlignment.start,
             mainAxisSize: MainAxisSize.min,
             children: [
-              ColorFiltered(
-                colorFilter: const ColorFilter.mode(
-                  AppColors.canvas,
-                  BlendMode.lighten,
-                ),
-                child: Image.asset(
-                  'assets/images/splash_wordmark.png',
-                  height: wordmarkHeight,
-                  fit: BoxFit.fitHeight,
-                  filterQuality: FilterQuality.high,
-                  alignment: Alignment.centerLeft,
-                ),
+              Image.asset(
+                AppColors.wordmarkAssetFor(Theme.of(context).brightness),
+                height: wordmarkHeight,
+                fit: BoxFit.fitHeight,
+                filterQuality: FilterQuality.high,
+                alignment: Alignment.centerLeft,
               ),
               const SizedBox(height: SantijetHeader._homeWordmarkToDemirGap),
               Padding(

@@ -815,7 +815,7 @@ class _CetvelDataRow extends StatelessWidget {
         color: striped
             ? AppColors.canvas.withValues(alpha: 0.45)
             : Colors.transparent,
-        border: const Border(bottom: BorderSide(color: AppColors.borderSubtle)),
+        border: Border(bottom: BorderSide(color: AppColors.borderSubtle)),
       ),
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.center,

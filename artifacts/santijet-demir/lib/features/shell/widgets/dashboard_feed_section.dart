@@ -124,7 +124,7 @@ class _ActivityTile extends StatelessWidget {
           padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
           decoration: BoxDecoration(
             border: showDivider
-                ? const Border(bottom: BorderSide(color: AppColors.border))
+                ? Border(bottom: BorderSide(color: AppColors.border))
                 : null,
           ),
           child: Row(

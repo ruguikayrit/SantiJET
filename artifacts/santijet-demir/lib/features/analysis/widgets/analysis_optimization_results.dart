@@ -90,7 +90,7 @@ class AnalysisOptimizationResultsSection extends ConsumerWidget {
             ),
           ],
           const SizedBox(height: 20),
-          const Divider(height: 1, color: AppColors.border),
+          Divider(height: 1, color: AppColors.border),
           const SizedBox(height: 16),
         ],
         if (strategy?.appliesTahvil ?? false) ...[
@@ -115,7 +115,7 @@ class AnalysisOptimizationResultsSection extends ConsumerWidget {
               (group) => _ReadOnlyTahvilCard(group: group),
             ),
           const SizedBox(height: 20),
-          const Divider(height: 1, color: AppColors.border),
+          Divider(height: 1, color: AppColors.border),
           const SizedBox(height: 16),
         ],
         AnalysisStepHeader(
@@ -201,7 +201,7 @@ class _LengthMatchChangeRow extends StatelessWidget {
             child: Row(
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
-                const Icon(Icons.arrow_forward, size: 14, color: AppColors.textMuted),
+                Icon(Icons.arrow_forward, size: 14, color: AppColors.textMuted),
                 const SizedBox(width: 4),
                 Text(
                   change.afterLengthM.toStringAsFixed(2),

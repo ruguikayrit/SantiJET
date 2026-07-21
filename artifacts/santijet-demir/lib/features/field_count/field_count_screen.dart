@@ -277,7 +277,7 @@ class _ReconciliationShortcut extends StatelessWidget {
                   ],
                 ),
               ),
-              const Icon(Icons.arrow_forward, color: AppColors.textMuted),
+              Icon(Icons.arrow_forward, color: AppColors.textMuted),
             ],
           ),
         ),

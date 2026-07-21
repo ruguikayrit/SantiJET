@@ -390,7 +390,7 @@ class SurveyImalatCard extends StatelessWidget {
             ),
           ),
           if (expanded) ...[
-            const Divider(height: 1, color: AppColors.border),
+            Divider(height: 1, color: AppColors.border),
             Padding(
               padding: const EdgeInsets.all(14),
               child: Column(
@@ -710,7 +710,7 @@ class _ActionChip extends StatelessWidget {
       avatar: Icon(icon, size: 16, color: AppColors.electricBlueLight),
       label: Text(label, style: AppTypography.labelMedium),
       backgroundColor: AppColors.surfaceElevated,
-      side: const BorderSide(color: AppColors.border),
+      side: BorderSide(color: AppColors.border),
       onPressed: onPressed,
     );
   }

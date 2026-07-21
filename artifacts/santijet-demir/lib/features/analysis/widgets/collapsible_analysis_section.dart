@@ -153,7 +153,7 @@ class CollapsibleAnalysisSection extends ConsumerWidget {
               ),
             ),
             if (expanded) ...[
-              const Divider(height: 1, color: AppColors.border),
+              Divider(height: 1, color: AppColors.border),
               Padding(
                 padding: const EdgeInsets.all(AppSpacing.sm),
                 child: childBuilder != null ? childBuilder!() : child!,

@@ -743,7 +743,7 @@ class _ComparisonPlaceholder extends StatelessWidget {
       ),
       child: Column(
         children: [
-          const Icon(Icons.compare_outlined, size: 36, color: AppColors.textMuted),
+          Icon(Icons.compare_outlined, size: 36, color: AppColors.textMuted),
           const SizedBox(height: 10),
           Text(
             message,

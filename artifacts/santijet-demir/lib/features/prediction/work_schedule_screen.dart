@@ -216,29 +216,31 @@ class _WorkScheduleScreenState extends ConsumerState<WorkScheduleScreen> {
                                   ],
                                 ),
                                 const SizedBox(height: 10),
-                                _PlannedWorkerField(
-                                  key: ValueKey(
-                                    'workers-${row.item.id}-${row.item.plannedWorkerCount}',
-                                  ),
-                                  value: row.item.plannedWorkerCount,
-                                  enabled: canEdit,
-                                  onCommit: (count) => _saveRow(
-                                    row.item.copyWith(
-                                      plannedWorkerCount: count,
-                                      clearPlannedWorkerCount: count == null,
+                                Row(
+                                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                                  children: [
+                                    Expanded(
+                                      flex: 3,
+                                      child: _PlannedWorkerField(
+                                        value: row.item.plannedWorkerCount,
+                                        enabled: canEdit,
+                                        onCommit: (count) => _saveRow(
+                                          row.item.copyWith(
+                                            plannedWorkerCount: count,
+                                            clearPlannedWorkerCount:
+                                                count == null,
+                                          ),
+                                        ),
+                                      ),
                                     ),
-                                  ),
-                                ),
-                                const SizedBox(height: 10),
-                                Text(
-                                  duration == null
-                                      ? 'Süre: —'
-                                      : 'Toplam süre: $duration gün',
-                                  style: AppTypography.labelMedium.copyWith(
-                                    color: duration == null
-                                        ? AppColors.textMuted
-                                        : AppColors.textSecondary,
-                                  ),
+                                    const SizedBox(width: 8),
+                                    Expanded(
+                                      flex: 2,
+                                      child: _DurationBadge(
+                                        days: duration,
+                                      ),
+                                    ),
+                                  ],
                                 ),
                               ],
                             ),
@@ -311,9 +313,8 @@ class _SummaryChip extends StatelessWidget {
   }
 }
 
-class _PlannedWorkerField extends StatefulWidget {
+class _PlannedWorkerField extends StatelessWidget {
   const _PlannedWorkerField({
-    super.key,
     required this.value,
     required this.enabled,
     required this.onCommit,
@@ -323,45 +324,224 @@ class _PlannedWorkerField extends StatefulWidget {
   final bool enabled;
   final ValueChanged<int?> onCommit;
 
-  @override
-  State<_PlannedWorkerField> createState() => _PlannedWorkerFieldState();
-}
+  static const _max = 999;
 
-class _PlannedWorkerFieldState extends State<_PlannedWorkerField> {
-  late final TextEditingController _controller;
-
-  @override
-  void initState() {
-    super.initState();
-    _controller = TextEditingController(
-      text: widget.value == null ? '' : '${widget.value}',
-    );
-  }
-
-  @override
-  void dispose() {
-    _controller.dispose();
-    super.dispose();
-  }
-
-  void _commit() {
-    final raw = _controller.text.trim();
-    if (raw.isEmpty) {
-      if (widget.value != null) widget.onCommit(null);
-      return;
-    }
-    final parsed = int.tryParse(raw);
-    if (parsed == null || parsed < 0) {
-      _controller.text = widget.value == null ? '' : '${widget.value}';
-      return;
-    }
-    if (parsed != widget.value) widget.onCommit(parsed);
+  void _step(int delta) {
+    if (!enabled) return;
+    final current = value ?? 0;
+    final next = (current + delta).clamp(0, _max);
+    if (next == 0 && value == null) return;
+    onCommit(next == 0 ? null : next);
   }
 
   @override
   Widget build(BuildContext context) {
+    final count = value;
+    final display = count == null ? '—' : '$count';
+
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+      padding: const EdgeInsets.fromLTRB(10, 8, 6, 8),
+      decoration: BoxDecoration(
+        color: AppColors.canvas,
+        borderRadius: AppRadii.sm,
+        border: Border.all(
+          color: count != null
+              ? AppColors.electricBlueLight.withValues(alpha: 0.45)
+              : AppColors.border,
+        ),
+      ),
+      child: Row(
+        children: [
+          Container(
+            width: 32,
+            height: 32,
+            alignment: Alignment.center,
+            decoration: BoxDecoration(
+              color: AppColors.electricBlue.withValues(alpha: 0.14),
+              borderRadius: AppRadii.sm,
+            ),
+            child: const Icon(
+              Icons.groups_outlined,
+              size: 18,
+              color: AppColors.electricBlueLight,
+            ),
+          ),
+          const SizedBox(width: 10),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                Text(
+                  'Planlanan ekip',
+                  style: AppTypography.labelSmall.copyWith(
+                    color: AppColors.textMuted,
+                  ),
+                ),
+                const SizedBox(height: 2),
+                InkWell(
+                  onTap: enabled
+                      ? () => _promptCount(context)
+                      : null,
+                  borderRadius: AppRadii.sm,
+                  child: Text(
+                    display,
+                    style: AppTypography.kpiValue.copyWith(
+                      fontSize: 22,
+                      height: 1.1,
+                      color: count == null
+                          ? AppColors.textMuted
+                          : AppColors.electricBlueLight,
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
+          _CrewStepButton(
+            icon: Icons.remove,
+            enabled: enabled && (count ?? 0) > 0,
+            onTap: () => _step(-1),
+          ),
+          const SizedBox(width: 4),
+          _CrewStepButton(
+            icon: Icons.add,
+            enabled: enabled && (count ?? 0) < _max,
+            onTap: () => _step(1),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Future<void> _promptCount(BuildContext context) async {
+    final controller = TextEditingController(
+      text: value == null ? '' : '$value',
+    );
+    final confirmed = await showDialog<_CountDialogResult>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: const Text('Planlanan adam sayısı'),
+        content: TextField(
+          controller: controller,
+          autofocus: true,
+          keyboardType: TextInputType.number,
+          inputFormatters: [FilteringTextInputFormatter.digitsOnly],
+          decoration: const InputDecoration(
+            hintText: 'Örn. 12',
+            suffixText: 'adam',
+          ),
+          onSubmitted: (raw) {
+            final trimmed = raw.trim();
+            if (trimmed.isEmpty) {
+              Navigator.pop(ctx, const _CountDialogResult.clear());
+              return;
+            }
+            final parsed = int.tryParse(trimmed);
+            if (parsed == null) {
+              Navigator.pop(ctx);
+              return;
+            }
+            Navigator.pop(ctx, _CountDialogResult.value(parsed.clamp(0, _max)));
+          },
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(ctx),
+            child: const Text('Vazgeç'),
+          ),
+          TextButton(
+            onPressed: () =>
+                Navigator.pop(ctx, const _CountDialogResult.clear()),
+            child: const Text('Temizle'),
+          ),
+          FilledButton(
+            onPressed: () {
+              final trimmed = controller.text.trim();
+              if (trimmed.isEmpty) {
+                Navigator.pop(ctx, const _CountDialogResult.clear());
+                return;
+              }
+              final parsed = int.tryParse(trimmed);
+              if (parsed == null) {
+                Navigator.pop(ctx);
+                return;
+              }
+              Navigator.pop(
+                ctx,
+                _CountDialogResult.value(parsed.clamp(0, _max)),
+              );
+            },
+            child: const Text('Tamam'),
+          ),
+        ],
+      ),
+    );
+    controller.dispose();
+    if (confirmed == null) return;
+    if (confirmed.clear) {
+      if (value != null) onCommit(null);
+      return;
+    }
+    if (confirmed.count != value) onCommit(confirmed.count);
+  }
+}
+
+class _CountDialogResult {
+  const _CountDialogResult.value(this.count) : clear = false;
+  const _CountDialogResult.clear()
+      : count = null,
+        clear = true;
+
+  final int? count;
+  final bool clear;
+}
+
+class _CrewStepButton extends StatelessWidget {
+  const _CrewStepButton({
+    required this.icon,
+    required this.enabled,
+    required this.onTap,
+  });
+
+  final IconData icon;
+  final bool enabled;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    return Material(
+      color: enabled
+          ? AppColors.surfaceElevated
+          : AppColors.border.withValues(alpha: 0.25),
+      borderRadius: AppRadii.sm,
+      child: InkWell(
+        onTap: enabled ? onTap : null,
+        borderRadius: AppRadii.sm,
+        child: SizedBox(
+          width: 36,
+          height: 36,
+          child: Icon(
+            icon,
+            size: 18,
+            color: enabled ? AppColors.textPrimary : AppColors.textMuted,
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class _DurationBadge extends StatelessWidget {
+  const _DurationBadge({required this.days});
+
+  final int? days;
+
+  @override
+  Widget build(BuildContext context) {
+    final hasDays = days != null;
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
       decoration: BoxDecoration(
         color: AppColors.canvas,
         borderRadius: AppRadii.sm,
@@ -369,28 +549,31 @@ class _PlannedWorkerFieldState extends State<_PlannedWorkerField> {
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
+        mainAxisAlignment: MainAxisAlignment.center,
         children: [
           Text(
-            'Planlanan adam sayısı',
+            'Süre',
             style: AppTypography.labelSmall.copyWith(
               color: AppColors.textMuted,
             ),
           ),
-          TextField(
-            controller: _controller,
-            enabled: widget.enabled,
-            keyboardType: TextInputType.number,
-            inputFormatters: [FilteringTextInputFormatter.digitsOnly],
-            style: AppTypography.bodyMedium,
-            decoration: const InputDecoration(
-              isDense: true,
-              border: InputBorder.none,
-              hintText: 'örn. 12',
-              contentPadding: EdgeInsets.symmetric(vertical: 4),
+          const SizedBox(height: 2),
+          Text(
+            hasDays ? '$days' : '—',
+            style: AppTypography.kpiValue.copyWith(
+              fontSize: 22,
+              height: 1.1,
+              color: hasDays
+                  ? AppColors.textPrimary
+                  : AppColors.textMuted,
             ),
-            onEditingComplete: _commit,
-            onSubmitted: (_) => _commit(),
-            onTapOutside: (_) => _commit(),
+          ),
+          Text(
+            hasDays ? 'gün' : 'tarih gir',
+            style: AppTypography.labelSmall.copyWith(
+              color: AppColors.textMuted,
+              fontSize: 10,
+            ),
           ),
         ],
       ),

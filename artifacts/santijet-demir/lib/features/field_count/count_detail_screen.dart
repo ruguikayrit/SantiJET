@@ -201,7 +201,7 @@ class _CountDetailScreenState extends ConsumerState<CountDetailScreen> {
                 tileColor: AppColors.surfaceElevated,
                 shape: RoundedRectangleBorder(
                   borderRadius: AppRadii.sm,
-                  side: const BorderSide(color: AppColors.border),
+                  side: BorderSide(color: AppColors.border),
                 ),
               ),
             );
@@ -221,11 +221,11 @@ class _CountDetailScreenState extends ConsumerState<CountDetailScreen> {
                 fillColor: AppColors.surfaceElevated,
                 border: OutlineInputBorder(
                   borderRadius: AppRadii.sm,
-                  borderSide: const BorderSide(color: AppColors.border),
+                  borderSide: BorderSide(color: AppColors.border),
                 ),
                 enabledBorder: OutlineInputBorder(
                   borderRadius: AppRadii.sm,
-                  borderSide: const BorderSide(color: AppColors.border),
+                  borderSide: BorderSide(color: AppColors.border),
                 ),
                 focusedBorder: OutlineInputBorder(
                   borderRadius: AppRadii.sm,

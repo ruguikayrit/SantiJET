@@ -49,9 +49,38 @@ class ProjectProgressSection extends ConsumerWidget {
     }
 
     final overallPercent = summary.overallProgressPercent.round();
+    final allImalatIds = {
+      for (final group in groupedRows) group.first.imalatId,
+    };
 
     void setSelectedImalats(Set<String> next) {
       ref.read(selectedProgressImalatIdsProvider.notifier).state = next;
+    }
+
+    Future<void> applyBulkProgress(double progressPercent) async {
+      if (selectedImalatIds.isEmpty) return;
+      try {
+        await ref.read(surveyProjectProvider.notifier).updateProgressForImalats(
+              imalatIds: selectedImalatIds,
+              progressPercent: progressPercent,
+            );
+        if (context.mounted) {
+          ScaffoldMessenger.of(context).showAppSnackBar(
+            SnackBar(
+              content: Text(
+                '${selectedImalatIds.length} imalata '
+                '%${progressPercent.round()} uygulandı',
+              ),
+            ),
+          );
+        }
+      } catch (_) {
+        if (context.mounted) {
+          ScaffoldMessenger.of(context).showAppSnackBar(
+            const SnackBar(content: Text('İlerleme kaydedilemedi')),
+          );
+        }
+      }
     }
 
     return Column(
@@ -68,6 +97,23 @@ class ProjectProgressSection extends ConsumerWidget {
           percent: overallPercent,
           totalPlanned: summary.totalPlanned,
           totalExpected: summary.totalExpected,
+        ),
+        AnimatedSize(
+          duration: const Duration(milliseconds: 220),
+          curve: Curves.easeOutCubic,
+          alignment: Alignment.topCenter,
+          child: canEdit && selectedImalatIds.isNotEmpty
+              ? Padding(
+                  padding: const EdgeInsets.only(top: 12),
+                  child: _BulkProgressEntryPanel(
+                    selectedImalatIds: selectedImalatIds,
+                    allImalatIds: allImalatIds,
+                    groupedRows: groupedRows,
+                    onSelectionChanged: setSelectedImalats,
+                    onApply: applyBulkProgress,
+                  ),
+                )
+              : const SizedBox.shrink(),
         ),
         const SizedBox(height: 12),
         Container(
@@ -144,6 +190,265 @@ List<List<ProjectProgressRow>> _groupProgressRows(List<ProjectProgressRow> rows)
   return order.map((id) => groups[id]!).toList();
 }
 
+class _BulkProgressEntryPanel extends StatefulWidget {
+  const _BulkProgressEntryPanel({
+    required this.selectedImalatIds,
+    required this.allImalatIds,
+    required this.groupedRows,
+    required this.onSelectionChanged,
+    required this.onApply,
+  });
+
+  final Set<String> selectedImalatIds;
+  final Set<String> allImalatIds;
+  final List<List<ProjectProgressRow>> groupedRows;
+  final ValueChanged<Set<String>> onSelectionChanged;
+  final Future<void> Function(double progressPercent) onApply;
+
+  @override
+  State<_BulkProgressEntryPanel> createState() =>
+      _BulkProgressEntryPanelState();
+}
+
+class _BulkProgressEntryPanelState extends State<_BulkProgressEntryPanel> {
+  late final TextEditingController _controller;
+  var _isApplying = false;
+  var _livePercent = 0.0;
+
+  @override
+  void initState() {
+    super.initState();
+    _controller = TextEditingController();
+  }
+
+  @override
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
+  }
+
+  void _onPercentChanged(String value) {
+    final parsed = int.tryParse(value.trim());
+    setState(() {
+      _livePercent = parsed == null ? 0 : parsed.clamp(0, 100).toDouble();
+    });
+  }
+
+  bool get _allSelected =>
+      widget.allImalatIds.isNotEmpty &&
+      widget.selectedImalatIds.length == widget.allImalatIds.length;
+
+  int get _targetRowCount => widget.groupedRows
+      .where((group) => widget.selectedImalatIds.contains(group.first.imalatId))
+      .fold(0, (sum, group) => sum + group.length);
+
+  String get _targetLabel {
+    if (widget.selectedImalatIds.length == 1) {
+      final group = widget.groupedRows.firstWhere(
+        (rows) => widget.selectedImalatIds.contains(rows.first.imalatId),
+      );
+      return group.first.imalatName;
+    }
+    return '${widget.selectedImalatIds.length} imalat';
+  }
+
+  Future<void> _apply() async {
+    final parsed = int.tryParse(_controller.text.trim());
+    if (parsed == null) return;
+
+    setState(() => _isApplying = true);
+    try {
+      await widget.onApply(parsed.clamp(0, 100).toDouble());
+      if (!mounted) return;
+      _controller.text = '${parsed.clamp(0, 100)}';
+    } finally {
+      if (mounted) setState(() => _isApplying = false);
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.all(14),
+      decoration: BoxDecoration(
+        color: AppColors.surfaceElevated,
+        borderRadius: AppRadii.md,
+        border: Border.all(
+          color: AppColors.electricBlueLight.withValues(alpha: 0.45),
+        ),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          Row(
+            children: [
+              const Icon(
+                Icons.percent,
+                size: 18,
+                color: AppColors.electricBlueLight,
+              ),
+              const SizedBox(width: 8),
+              Expanded(
+                child: Text(
+                  'Toplu ilerleme',
+                  style: AppTypography.titleMedium.copyWith(
+                    fontWeight: FontWeight.w700,
+                  ),
+                ),
+              ),
+              TextButton(
+                onPressed: () => widget.onSelectionChanged({}),
+                child: const Text('Seçimi kaldır'),
+              ),
+            ],
+          ),
+          const SizedBox(height: 4),
+          Text(
+            'Hedef: $_targetLabel · $_targetRowCount çap satırı',
+            style: AppTypography.bodySmall.copyWith(
+              color: AppColors.textSecondary,
+            ),
+          ),
+          const SizedBox(height: 10),
+          Wrap(
+            spacing: 8,
+            runSpacing: 8,
+            children: [
+              ActionChip(
+                avatar: Icon(
+                  _allSelected ? Icons.deselect : Icons.select_all,
+                  size: 16,
+                  color: AppColors.electricBlueLight,
+                ),
+                label: Text(
+                  _allSelected ? 'Seçimi kaldır' : 'Tümünü seç',
+                  style: AppTypography.labelMedium,
+                ),
+                backgroundColor: AppColors.canvas,
+                side: BorderSide(color: AppColors.border),
+                onPressed: () {
+                  widget.onSelectionChanged(
+                    _allSelected
+                        ? <String>{}
+                        : Set<String>.from(widget.allImalatIds),
+                  );
+                },
+              ),
+              ActionChip(
+                label: Text(
+                  '${widget.selectedImalatIds.length} seçili',
+                  style: AppTypography.labelMedium.copyWith(
+                    color: AppColors.electricBlueLight,
+                  ),
+                ),
+                backgroundColor:
+                    AppColors.electricBlue.withValues(alpha: 0.1),
+                side: BorderSide(
+                  color: AppColors.electricBlue.withValues(alpha: 0.35),
+                ),
+                onPressed: () => widget.onSelectionChanged({}),
+              ),
+            ],
+          ),
+          const SizedBox(height: 12),
+          Row(
+            children: [
+              Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  SizedBox(
+                    width: 72,
+                    child: TextField(
+                      controller: _controller,
+                      keyboardType: TextInputType.number,
+                      textAlign: TextAlign.center,
+                      autofocus: true,
+                      inputFormatters: [
+                        FilteringTextInputFormatter.digitsOnly,
+                        LengthLimitingTextInputFormatter(3),
+                      ],
+                      style: AppTypography.titleMedium.copyWith(
+                        fontWeight: FontWeight.w700,
+                        color: AppColors.electricBlueLight,
+                      ),
+                      decoration: InputDecoration(
+                        isDense: true,
+                        hintText: '0',
+                        contentPadding: const EdgeInsets.symmetric(
+                          horizontal: 8,
+                          vertical: 12,
+                        ),
+                        border: OutlineInputBorder(
+                          borderRadius: AppRadii.sm,
+                          borderSide: BorderSide(color: AppColors.border),
+                        ),
+                        enabledBorder: OutlineInputBorder(
+                          borderRadius: AppRadii.sm,
+                          borderSide: BorderSide(color: AppColors.border),
+                        ),
+                      ),
+                      onSubmitted: (_) => _apply(),
+                      onChanged: _onPercentChanged,
+                    ),
+                  ),
+                  const SizedBox(width: 6),
+                  Text(
+                    '%',
+                    style: AppTypography.titleMedium.copyWith(
+                      fontWeight: FontWeight.w700,
+                      color: AppColors.electricBlueLight,
+                    ),
+                  ),
+                ],
+              ),
+              const SizedBox(width: 10),
+              Expanded(
+                child: FilledButton(
+                  onPressed: _isApplying ? null : _apply,
+                  style: FilledButton.styleFrom(
+                    minimumSize: const Size.fromHeight(48),
+                    backgroundColor: AppColors.electricBlueLight,
+                    foregroundColor: AppColors.canvas,
+                  ),
+                  child: _isApplying
+                      ? const SizedBox(
+                          width: 18,
+                          height: 18,
+                          child: CircularProgressIndicator(strokeWidth: 2),
+                        )
+                      : const Text('Uygula'),
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 12),
+          Row(
+            children: [
+              Expanded(
+                child: AnimatedProgressBar(
+                  percent: _livePercent,
+                  color: AppColors.electricBlueLight,
+                  height: 8,
+                ),
+              ),
+              const SizedBox(width: 10),
+              AnimatedCountText(
+                value: '${_livePercent.round()}',
+                numericValue: _livePercent,
+                style: AppTypography.titleMedium.copyWith(
+                  color: AppColors.electricBlueLight,
+                  fontWeight: FontWeight.w700,
+                ),
+                formatter: (n) => '${n.round()}%',
+              ),
+            ],
+          ),
+        ],
+      ),
+    );
+  }
+}
+
 class _ProgressImalatGroup extends StatefulWidget {
   const _ProgressImalatGroup({
     required this.rows,
@@ -195,7 +500,7 @@ class _ProgressImalatGroupState extends State<_ProgressImalatGroup> {
                   : BorderSide(
                       color: AppColors.border.withValues(alpha: 0.8),
                     ),
-              bottom: const BorderSide(color: AppColors.border),
+              bottom: BorderSide(color: AppColors.border),
             ),
           ),
           child: Row(
@@ -608,11 +913,11 @@ class _ProgressTableRowState extends State<_ProgressTableRow> {
               hintText: '0',
               border: OutlineInputBorder(
                 borderRadius: AppRadii.sm,
-                borderSide: const BorderSide(color: AppColors.border),
+                borderSide: BorderSide(color: AppColors.border),
               ),
               enabledBorder: OutlineInputBorder(
                 borderRadius: AppRadii.sm,
-                borderSide: const BorderSide(color: AppColors.border),
+                borderSide: BorderSide(color: AppColors.border),
               ),
             ),
             onTap: () => _isEditing = true,

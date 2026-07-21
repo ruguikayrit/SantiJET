@@ -168,7 +168,7 @@ class _CollapsibleDiameterCutPlanCard extends ConsumerWidget {
             ),
           ),
           if (expanded) ...[
-            const Divider(height: 1, color: AppColors.border),
+            Divider(height: 1, color: AppColors.border),
             Padding(
               padding: const EdgeInsets.fromLTRB(14, 14, 14, 14),
               child: Column(
@@ -180,7 +180,7 @@ class _CollapsibleDiameterCutPlanCard extends ConsumerWidget {
                     fireColor: fireColor,
                   ),
                   const SizedBox(height: 14),
-                  const Divider(height: 1, color: AppColors.border),
+                  Divider(height: 1, color: AppColors.border),
                   const SizedBox(height: 12),
                   Text('Kesim Planı', style: AppTypography.labelMedium),
                   const SizedBox(height: 10),
