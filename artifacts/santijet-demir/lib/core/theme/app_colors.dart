@@ -27,17 +27,18 @@ abstract final class AppColors {
   static const darkBorder = Color(0xFF1E293B);
   static const darkBorderSubtle = Color(0xFF334155);
 
-  // —— Açık sabitler (logo: beyaz→siyah; mavi aynı) ——
-  static const lightCanvas = Color(0xFFF1F5F9);
+  // —— Açık sabitler (logo: siyah ŞANTİ + mavi JET; saydam zemin) ——
+  // Soğuk çelik / beton: logo mürekkebine yakın ink, mavi marka vurgusu.
+  static const lightCanvas = Color(0xFFE8EDF4);
   static const lightSurface = Color(0xFFFFFFFF);
-  static const lightSurfaceElevated = Color(0xFFF8FAFC);
-  static const lightSurfaceHighlight = Color(0xFFE2E8F0);
-  static const lightTextPrimary = Color(0xFF0F172A);
-  static const lightTextSecondary = Color(0xFF334155);
-  static const lightTextMuted = Color(0xFF64748B);
-  static const lightTextDisabled = Color(0xFF94A3B8);
-  static const lightBorder = Color(0xFFE2E8F0);
-  static const lightBorderSubtle = Color(0xFFCBD5E1);
+  static const lightSurfaceElevated = Color(0xFFF7F9FC);
+  static const lightSurfaceHighlight = Color(0xFFDDE5F0);
+  static const lightTextPrimary = Color(0xFF0B1220);
+  static const lightTextSecondary = Color(0xFF3A465A);
+  static const lightTextMuted = Color(0xFF6B7A90);
+  static const lightTextDisabled = Color(0xFF9AA8BC);
+  static const lightBorder = Color(0xFFD5DEEA);
+  static const lightBorderSubtle = Color(0xFFB8C5D6);
 
   // Arka plan (tema duyarlı)
   static Color get canvas => isDark ? darkCanvas : lightCanvas;
@@ -85,7 +86,18 @@ abstract final class AppColors {
   // Blueprint / overlay
   static const blueprintGrid = Color(0x0B4876DC);
   static Color get rebarOverlay =>
-      isDark ? const Color(0x0AFFFFFF) : const Color(0x0A0F172A);
+      isDark ? const Color(0x0AFFFFFF) : const Color(0x0A0B1220);
+
+  /// Hafif yükselti gölgesi — açık temada kart/nav ayrımı.
+  static List<BoxShadow> get elevationSoft => isDark
+      ? const []
+      : [
+          BoxShadow(
+            color: Color(0x140B1220),
+            blurRadius: 16,
+            offset: Offset(0, 4),
+          ),
+        ];
 
   /// Wordmark asset — koyuda beyaz harf, açıkta siyah harf; mavi aynı.
   static String wordmarkAssetFor(Brightness brightness) {

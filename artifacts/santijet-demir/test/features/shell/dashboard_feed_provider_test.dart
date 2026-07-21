@@ -50,7 +50,7 @@ void main() {
     });
 
     test('activities expose icon color from severity', () {
-      const activity = DashboardActivity(
+      final activity = DashboardActivity(
         date: DateTime(2026, 6, 1, 10),
         title: 'Sayım',
         subtitle: 'Test',

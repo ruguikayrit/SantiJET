@@ -316,6 +316,7 @@ class KpiCard extends StatelessWidget {
         color: AppColors.surfaceElevated,
         borderRadius: AppRadii.md,
         border: Border.all(color: AppColors.border),
+        boxShadow: AppColors.elevationSoft,
       ),
       child: compactHeight
           ? (centerContent

@@ -47,6 +47,7 @@ abstract final class AppTheme {
       cardTheme: CardThemeData(
         color: AppColors.lightSurface,
         elevation: 0,
+        shadowColor: const Color(0x140B1220),
         shape: RoundedRectangleBorder(
           borderRadius: AppRadii.md,
           side: const BorderSide(color: AppColors.lightBorder),
@@ -89,15 +90,19 @@ abstract final class AppTheme {
         type: BottomNavigationBarType.fixed,
         selectedLabelStyle: AppTypography.tabLabel,
         unselectedLabelStyle: AppTypography.tabLabel,
+        elevation: 0,
       ),
       snackBarTheme: SnackBarThemeData(
         behavior: SnackBarBehavior.floating,
-        elevation: 6,
-        backgroundColor: AppColors.lightSurfaceElevated,
+        elevation: 4,
+        backgroundColor: AppColors.lightSurface,
         contentTextStyle: AppTypography.bodyMedium.copyWith(
           color: AppColors.lightTextPrimary,
         ),
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(12),
+          side: const BorderSide(color: AppColors.lightBorder),
+        ),
         insetPadding: const EdgeInsets.fromLTRB(16, 0, 16, 24),
       ),
       textTheme: TextTheme(

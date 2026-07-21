@@ -187,21 +187,21 @@ class _PageBrandHeader extends StatelessWidget {
   final bool showAvatar;
   final String? avatarInitial;
 
-  static final _productLabelStyle = AppTypography.labelSmall.copyWith(
-    fontSize: 11,
-    letterSpacing: 0.9,
-    fontWeight: FontWeight.w700,
-    color: AppColors.textMuted,
-    height: 1.0,
-  );
+  static TextStyle get _productLabelStyle => AppTypography.labelSmall.copyWith(
+        fontSize: 11,
+        letterSpacing: 0.9,
+        fontWeight: FontWeight.w700,
+        color: AppColors.textMuted,
+        height: 1.0,
+      );
 
-  static final _pageTitleStyle = AppTypography.headlineMedium.copyWith(
-    fontSize: 18,
-    fontWeight: FontWeight.w700,
-    letterSpacing: -0.2,
-    color: AppColors.textPrimary,
-    height: 1.15,
-  );
+  static TextStyle get _pageTitleStyle => AppTypography.headlineMedium.copyWith(
+        fontSize: 18,
+        fontWeight: FontWeight.w700,
+        letterSpacing: -0.2,
+        color: AppColors.textPrimary,
+        height: 1.15,
+      );
 
   @override
   Widget build(BuildContext context) {
@@ -307,6 +307,7 @@ TextStyle get _demirTitleStyle => AppTypography.titleMedium.copyWith(
       letterSpacing: 1.2,
       fontWeight: FontWeight.w700,
       height: 1.0,
+      color: AppColors.textPrimary,
     );
 
 /// Wordmark altındaki DEMİR — daha büyük, daha az tracking; wordmark ölçüsü değişmez.
@@ -317,9 +318,16 @@ TextStyle get _homeDemirTitleStyle => _demirTitleStyle.copyWith(
     );
 
 abstract final class _BrandTitleMetrics {
+  /// Koyu wordmark (yalnızca ŞANTİJET) — harf doluluk oranı.
   static const wordmarkLetterFillRatio = 0.55;
-  static const _wordmarkPixelHeight = 514.0;
-  static const _wordmarkLeftInkPx = 139.0;
+
+  /// Açık wordmark asset (ŞANTİJET + OPERASYON YÖNETİMİ, saydam zemin).
+  static const _lightWordmarkPixelHeight = 206.0;
+  static const _lightWordmarkLeftInkPx = 16.0;
+
+  /// Koyu wordmark asset ölçüleri.
+  static const _darkWordmarkPixelHeight = 514.0;
+  static const _darkWordmarkLeftInkPx = 139.0;
 
   static double wordmarkHeightOf(BuildContext context) {
     final textPainter = TextPainter(
@@ -328,11 +336,18 @@ abstract final class _BrandTitleMetrics {
       maxLines: 1,
     )..layout();
     final demirCapHeight = textPainter.computeLineMetrics().first.ascent;
-    return demirCapHeight / wordmarkLetterFillRatio * 2.5;
+    final isLight = Theme.of(context).brightness == Brightness.light;
+    // Açık asset alt satır (tagline) içerir; biraz daha yüksek basılır.
+    final scale = isLight ? 3.15 : 2.5;
+    return demirCapHeight / wordmarkLetterFillRatio * scale;
   }
 
   static double demirIndentOf(BuildContext context) {
-    return wordmarkHeightOf(context) *
-        (_wordmarkLeftInkPx / _wordmarkPixelHeight);
+    final isLight = Theme.of(context).brightness == Brightness.light;
+    final leftInk =
+        isLight ? _lightWordmarkLeftInkPx : _darkWordmarkLeftInkPx;
+    final pixelHeight =
+        isLight ? _lightWordmarkPixelHeight : _darkWordmarkPixelHeight;
+    return wordmarkHeightOf(context) * (leftInk / pixelHeight);
   }
 }
