@@ -343,7 +343,7 @@ class _DayCardState extends State<_DayCard> {
                                 ),
                                 if (widget.onPickDate != null) ...[
                                   const SizedBox(width: 6),
-                                  const Icon(
+                                  Icon(
                                     Icons.calendar_today,
                                     size: 14,
                                     color: AppColors.textMuted,
