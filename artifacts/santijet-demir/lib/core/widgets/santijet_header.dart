@@ -162,8 +162,10 @@ class _HeaderAvatarButton extends StatelessWidget {
               initial ?? 'U',
               style: AppTypography.titleMedium.copyWith(
                 color: AppColors.warning,
-                fontSize: AppTypography.scale * 14,
+                fontSize: AppTypography.scale *
+                    ((initial?.length ?? 1) > 1 ? 11 : 14),
                 height: 1.0,
+                letterSpacing: (initial?.length ?? 1) > 1 ? -0.4 : 0,
               ),
             ),
           ),

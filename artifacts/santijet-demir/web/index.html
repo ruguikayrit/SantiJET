@@ -43,8 +43,8 @@
       height: -webkit-fill-available;
       height: 100dvh;
       touch-action: manipulation;
-      /* Flutter yüzeyi ekranı kaplayana kadar; açık temada siyah şerit olmasın */
-      background-color: #E8EDF4;
+      /* Açılış koyu; Flutter tema ile syncPageBackground günceller */
+      background-color: #05070A;
     }
     body {
       height: 100%;
@@ -53,7 +53,7 @@
       margin: 0;
       padding: 0;
       overflow: hidden;
-      background-color: #E8EDF4;
+      background-color: #05070A;
       touch-action: manipulation;
       overscroll-behavior: none;
       -webkit-touch-callout: none;
@@ -69,6 +69,7 @@
       height: 100dvh;
       min-height: 100dvh;
       touch-action: manipulation;
+      background-color: #05070A;
     }
     #santijet-loading {
       position: fixed;
@@ -88,7 +89,7 @@
   <script>
     // ŞantiJET DEMİR — iOS PWA viewport + yükleme ekranı
     (function () {
-      var APP_VERSION = '86';
+      var APP_VERSION = '87';
       var isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent) ||
         (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
       var isStandalone = window.navigator.standalone === true ||

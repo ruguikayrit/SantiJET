@@ -23,5 +23,16 @@ final profileRoleProvider = Provider<String>((ref) {
 final profileInitialProvider = Provider<String>((ref) {
   final name = ref.watch(profileDisplayNameProvider).trim();
   if (name.isEmpty) return 'U';
-  return name[0].toUpperCase();
+
+  final parts = name
+      .split(RegExp(r'\s+'))
+      .where((part) => part.isNotEmpty)
+      .toList();
+  if (parts.isEmpty) return 'U';
+
+  final first = parts.first.substring(0, 1).toUpperCase();
+  if (parts.length == 1) return first;
+
+  final last = parts.last.substring(0, 1).toUpperCase();
+  return '$first$last';
 });

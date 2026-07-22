@@ -146,6 +146,7 @@ class _AnalysisReportActionsState extends ConsumerState<AnalysisReportActions> {
               _busy ? 'Rapor hazırlanıyor…' : 'PDF Rapor Oluştur',
               style: AppTypography.labelLarge.copyWith(
                 fontWeight: FontWeight.w700,
+                color: Colors.white,
               ),
             ),
           ),

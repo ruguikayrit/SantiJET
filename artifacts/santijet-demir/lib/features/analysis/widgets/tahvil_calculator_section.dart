@@ -63,8 +63,6 @@ class _TahvilCalculatorSectionState extends State<TahvilCalculatorSection> {
           onQuantityKindChanged: (value) => setState(() => _quantityKind = value),
         ),
         const SizedBox(height: 14),
-        _TahvilRulesHint(basis: _basis, quantityKind: _quantityKind),
-        const SizedBox(height: 12),
         switch (_basis) {
           TahvilCalculatorBasis.spacing => _SpacingModePanel(
               fields: _spacingSource,
@@ -226,7 +224,8 @@ class _ModeSegmentButton extends StatelessWidget {
   final VoidCallback onTap;
   final bool dense;
 
-  static const _accent = AppColors.diameter28;
+  /// Donuk / mat turuncu — seçili segment; bölümün canlı turuncusundan daha soft.
+  static const _accent = Color(0xFFC67B45);
 
   @override
   Widget build(BuildContext context) {
@@ -270,55 +269,6 @@ class _ModeSegmentButton extends StatelessWidget {
             ),
           ),
         ),
-      ),
-    );
-  }
-}
-
-class _TahvilRulesHint extends StatelessWidget {
-  const _TahvilRulesHint({
-    required this.basis,
-    required this.quantityKind,
-  });
-
-  final TahvilCalculatorBasis basis;
-  final TahvilQuantityKind quantityKind;
-
-  @override
-  Widget build(BuildContext context) {
-    final description = switch (basis) {
-      TahvilCalculatorBasis.spacing =>
-        'Proje çap ve aralığı girin. Manuel hedef girin veya olumlu seçenekleri görüntüleyin.',
-      TahvilCalculatorBasis.quantity =>
-        quantityKind == TahvilQuantityKind.single
-            ? 'Proje adet ve çap girin. Manuel hedef girin veya olumlu seçenekleri görüntüleyin.'
-            : 'İki proje donatı girin. Manuel hedef veya olumlu seçeneklerden tahvil yapın.',
-    };
-
-    return Container(
-      width: double.infinity,
-      padding: const EdgeInsets.all(12),
-      decoration: BoxDecoration(
-        color: AppColors.surfaceElevated,
-        borderRadius: AppRadii.sm,
-        border: Border.all(color: AppColors.border),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Text(description, style: AppTypography.bodySmall),
-          const SizedBox(height: 6),
-          AppDescriptionLines(
-            [
-              'Kurallar:',
-              '±$tahvilMaxDiameterDiffMm mm çap.',
-              '≤${tahvilMaxSpacingCm.toStringAsFixed(0)} cm aralık.',
-              'Hedef As ≥ proje As.',
-              '≤%${(tahvilMaxAreaDeviationRatio * 100).toStringAsFixed(0)} fazla kesit.',
-            ],
-            style: AppTypography.labelSmall.copyWith(color: AppColors.textMuted),
-          ),
-        ],
       ),
     );
   }

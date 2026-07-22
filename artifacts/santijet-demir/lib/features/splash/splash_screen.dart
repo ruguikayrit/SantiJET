@@ -8,6 +8,7 @@ import 'package:santijet_demir/core/theme/app_shadows.dart';
 import 'package:santijet_demir/core/theme/app_spacing.dart';
 import 'package:santijet_demir/core/theme/app_theme.dart';
 import 'package:santijet_demir/core/theme/app_typography.dart';
+import 'package:santijet_demir/core/theme/page_background.dart';
 import 'package:santijet_demir/features/auth/providers/auth_provider.dart';
 import 'package:santijet_demir/features/projects/providers/project_provider.dart';
 
@@ -98,11 +99,15 @@ class _SplashScreenState extends ConsumerState<SplashScreen>
     final wordmarkHeight = wordmarkWidth / _wordmarkAspect;
 
     // Açılış her zaman koyu marka görünümü — uygulama teması ne olursa olsun.
+    syncPageBackground(AppColors.darkCanvas);
     return Theme(
       data: AppTheme.dark,
       child: Scaffold(
         backgroundColor: AppColors.darkCanvas,
-        body: Stack(
+        body: ColoredBox(
+          color: AppColors.darkCanvas,
+          child: Stack(
+          fit: StackFit.expand,
           children: [
             Positioned.fill(
               child: CustomPaint(
@@ -219,6 +224,7 @@ class _SplashScreenState extends ConsumerState<SplashScreen>
               ),
             ),
           ],
+          ),
         ),
       ),
     );

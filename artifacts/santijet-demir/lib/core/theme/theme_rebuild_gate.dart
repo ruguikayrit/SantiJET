@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:santijet_demir/core/theme/app_colors.dart';
+import 'package:santijet_demir/core/theme/page_background.dart';
 
 /// [Theme] parlaklığını [AppColors] ile senkronlar (ağacı yeniden oluşturmaz).
 class AppColorsThemeSync extends StatelessWidget {
@@ -10,6 +11,7 @@ class AppColorsThemeSync extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     AppColors.applyBrightness(Theme.of(context).brightness);
+    syncPageBackground(AppColors.canvas);
     return child;
   }
 }
@@ -28,6 +30,7 @@ class ThemeRebuildGate extends StatelessWidget {
   Widget build(BuildContext context) {
     final brightness = Theme.of(context).brightness;
     AppColors.applyBrightness(brightness);
+    syncPageBackground(AppColors.canvas);
     return KeyedSubtree(
       key: ValueKey(brightness),
       child: child,
