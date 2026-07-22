@@ -65,16 +65,25 @@ class _AnalysisFireSummaryPanelState
 
     return Container(
       decoration: BoxDecoration(
-        color: AppColors.surfaceElevated,
+        color: AppColors.cardSurface,
         borderRadius: AppRadii.md,
-        border: Border.all(color: AppColors.borderSubtle),
-        boxShadow: const [
-          BoxShadow(
-            color: AppColors.electricBlueGlow,
-            blurRadius: 20,
-            offset: Offset(0, 6),
-          ),
-        ],
+        border: Border.all(color: AppColors.cardBorderSubtle),
+        boxShadow: AppColors.cardElevation.isEmpty
+            ? const [
+                BoxShadow(
+                  color: AppColors.electricBlueGlow,
+                  blurRadius: 20,
+                  offset: Offset(0, 6),
+                ),
+              ]
+            : [
+                ...AppColors.cardElevation,
+                const BoxShadow(
+                  color: AppColors.electricBlueGlow,
+                  blurRadius: 20,
+                  offset: Offset(0, 6),
+                ),
+              ],
       ),
       child: ClipRRect(
         borderRadius: AppRadii.md,
@@ -209,7 +218,7 @@ class _AnalysisFireSummaryPanelState
                                         ? _fireColor(
                                             summary.plannedWastePercent!,
                                           )
-                                        : AppColors.textMuted,
+                                        : AppColors.cardTextMuted,
                                     dense: true,
                                     onTap: summary.isPlannedReady
                                         ? () => _toggleDetail(
@@ -266,7 +275,7 @@ class _AnalysisFireSummaryPanelState
                     Text(
                       'Detay görmek için karta dokunun',
                       style: AppTypography.labelSmall.copyWith(
-                        color: AppColors.textMuted,
+                        color: AppColors.cardTextMuted,
                       ),
                       textAlign: TextAlign.center,
                     ),
@@ -473,7 +482,7 @@ class _TahvilSavingsWarningBanner extends StatelessWidget {
                   '%${preview.savedWastePercent.toStringAsFixed(1)} puan '
                   '(${AppFormat.tonnage(preview.savedWasteTonnage)} t) azalacak.',
                   style: AppTypography.bodySmall.copyWith(
-                    color: AppColors.textPrimary,
+                    color: AppColors.cardTextPrimary,
                   ),
                 ),
               ],
@@ -537,7 +546,7 @@ class _TahvilNoBenefitBanner extends StatelessWidget {
                     'Fire oranı düşmediği için tahvil uygulanmayacak.',
                   ],
                   style: AppTypography.bodySmall.copyWith(
-                    color: AppColors.textPrimary,
+                    color: AppColors.cardTextPrimary,
                   ),
                 ),
               ],
@@ -618,7 +627,7 @@ class _OptimumFireAnalysisProgressPanel extends StatelessWidget {
                     CircularProgressIndicator(
                       value: progressValue,
                       strokeWidth: 4,
-                      backgroundColor: AppColors.border,
+                      backgroundColor: AppColors.cardBorder,
                       color: AppColors.success,
                     ),
                     Text(
@@ -646,7 +655,7 @@ class _OptimumFireAnalysisProgressPanel extends StatelessWidget {
                     Text(
                       stepLabel,
                       style: AppTypography.bodySmall.copyWith(
-                        color: AppColors.textMuted,
+                        color: AppColors.cardTextMuted,
                       ),
                     ),
                   ],
@@ -660,7 +669,7 @@ class _OptimumFireAnalysisProgressPanel extends StatelessWidget {
             child: LinearProgressIndicator(
               value: progressValue,
               minHeight: 8,
-              backgroundColor: AppColors.border,
+              backgroundColor: AppColors.cardBorder,
               color: AppColors.success,
             ),
           ),
@@ -708,7 +717,7 @@ class _AnalysisErrorBanner extends StatelessWidget {
             child: Text(
               message,
               style: AppTypography.bodySmall.copyWith(
-                color: AppColors.textPrimary,
+                color: AppColors.cardTextPrimary,
               ),
             ),
           ),
@@ -766,7 +775,7 @@ class _AnalysisCompletedBanner extends StatelessWidget {
                   Text(
                     stepLabel,
                     style: AppTypography.bodySmall.copyWith(
-                      color: AppColors.textMuted,
+                      color: AppColors.cardTextMuted,
                     ),
                   ),
                 ],
@@ -835,7 +844,7 @@ class _MatteGreenGradientButton extends StatelessWidget {
             border: Border.all(
               color: enabled
                   ? const Color(0xFF14A07A).withValues(alpha: 0.55)
-                  : AppColors.border,
+                  : AppColors.cardBorder,
               width: enabled ? 1.25 : 1,
             ),
             boxShadow: enabled
@@ -856,7 +865,7 @@ class _MatteGreenGradientButton extends StatelessWidget {
                 size: 22,
                 color: enabled
                     ? const Color(0xFFE8FFF5)
-                    : AppColors.textDisabled,
+                    : AppColors.cardTextDisabled,
               ),
               const SizedBox(width: 10),
               Flexible(
@@ -868,7 +877,7 @@ class _MatteGreenGradientButton extends StatelessWidget {
                   style: AppTypography.titleMedium.copyWith(
                     color: enabled
                         ? Colors.white
-                        : AppColors.textDisabled,
+                        : AppColors.cardTextDisabled,
                     fontWeight: FontWeight.w700,
                     letterSpacing: 0.15,
                     fontSize: (AppTypography.titleMedium.fontSize ?? 14) * 1.125,
@@ -935,7 +944,7 @@ class AnalysisStepHeader extends StatelessWidget {
                 Text(
                   subtitle,
                   style: AppTypography.bodySmall.copyWith(
-                    color: AppColors.textMuted,
+                    color: AppColors.cardTextMuted,
                   ),
                 ),
               ],

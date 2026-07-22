@@ -369,6 +369,7 @@ class SettingsScreen extends ConsumerWidget {
   String _themeLabel(String mode) => switch (mode) {
         'light' => 'Açık',
         'dark' => 'Koyu',
+        'santijet' => 'ŞantiJET',
         _ => 'Sistem',
       };
 
@@ -390,6 +391,14 @@ class SettingsScreen extends ConsumerWidget {
             title: const Text('Koyu'),
             onTap: () {
               ref.read(appSettingsProvider.notifier).setThemeMode('dark');
+              Navigator.pop(ctx);
+            },
+          ),
+          ListTile(
+            title: const Text('ŞantiJET'),
+            subtitle: const Text('Açık zemin · koyu özet kartları'),
+            onTap: () {
+              ref.read(appSettingsProvider.notifier).setThemeMode('santijet');
               Navigator.pop(ctx);
             },
           ),

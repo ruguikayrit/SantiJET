@@ -18,6 +18,7 @@ import 'package:santijet_demir/features/analysis/widgets/analysis_running_lock_o
 import 'package:santijet_demir/features/projects/providers/project_provider.dart';
 import 'package:santijet_demir/features/projects/widgets/project_switcher.dart';
 import 'package:santijet_demir/features/settings/providers/profile_provider.dart';
+import 'package:santijet_demir/features/settings/providers/settings_provider.dart';
 import 'package:santijet_demir/features/shell/dashboard_feed_provider.dart';
 import 'package:santijet_demir/features/shell/dashboard_summary_provider.dart';
 import 'package:santijet_demir/features/shell/widgets/dashboard_feed_section.dart';
@@ -33,8 +34,8 @@ class MainShell extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     // Tema değişince shell + nav yeniden çizilsin (AppColors Theme bağımlısı değil).
-    final brightness = Theme.of(context).brightness;
-    AppColors.applyBrightness(brightness);
+    final themeMode = ref.watch(appSettingsProvider.select((s) => s.themeMode));
+    AppColors.applyPaletteFromMode(themeMode, Theme.of(context).brightness);
 
     return Stack(
       fit: StackFit.expand,

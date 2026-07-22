@@ -30,7 +30,7 @@ class FieldCountScreen extends ConsumerWidget {
       body: CustomScrollView(
           slivers: [
             const SliverToBoxAdapter(
-              child: SantijetHeader(subtitle: 'Saha Sayım', showNotification: false),
+              child: SantijetHeader(subtitle: 'Saha Sayım'),
             ),
             if (!hasActiveProject)
               const ActiveProjectSliverGate()

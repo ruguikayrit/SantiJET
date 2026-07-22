@@ -2,25 +2,29 @@ import 'package:flutter/material.dart';
 import 'package:santijet_demir/core/theme/app_colors.dart';
 import 'package:santijet_demir/core/theme/page_background.dart';
 
-/// [Theme] parlaklığını [AppColors] ile senkronlar (ağacı yeniden oluşturmaz).
+/// Tema modunu [AppColors] ile senkronlar.
 class AppColorsThemeSync extends StatelessWidget {
-  const AppColorsThemeSync({super.key, required this.child});
+  const AppColorsThemeSync({
+    super.key,
+    required this.themeMode,
+    required this.child,
+  });
 
+  final String themeMode;
   final Widget child;
 
   @override
   Widget build(BuildContext context) {
-    AppColors.applyBrightness(Theme.of(context).brightness);
+    AppColors.applyPaletteFromMode(themeMode, Theme.of(context).brightness);
     syncPageBackground(AppColors.canvas);
-    return child;
+    return KeyedSubtree(
+      key: ValueKey(AppColors.palette),
+      child: child,
+    );
   }
 }
 
 /// [AppColors] kullanan alt ağacı tema değişince yeniden oluşturur.
-///
-/// `AppColors.*` getter'ları [Theme.of] bağımlılığı oluşturmaz; StatefulShell
-/// / Navigator sayfaları bu yüzden eski renklerde kalabilir. [KeyedSubtree]
-/// ile zorunlu yenileme yapılır.
 class ThemeRebuildGate extends StatelessWidget {
   const ThemeRebuildGate({super.key, required this.child});
 
@@ -29,10 +33,13 @@ class ThemeRebuildGate extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final brightness = Theme.of(context).brightness;
-    AppColors.applyBrightness(brightness);
+    // System modunda brightness değişince palette'i koru (santijet dışı).
+    if (!AppColors.isSantijet) {
+      AppColors.applyBrightness(brightness);
+    }
     syncPageBackground(AppColors.canvas);
     return KeyedSubtree(
-      key: ValueKey(brightness),
+      key: ValueKey('${AppColors.palette}-$brightness'),
       child: child,
     );
   }

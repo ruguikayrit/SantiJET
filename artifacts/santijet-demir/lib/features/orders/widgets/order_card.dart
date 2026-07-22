@@ -85,9 +85,10 @@ class OrderCard extends ConsumerWidget {
     return Container(
       margin: const EdgeInsets.only(bottom: 10),
       decoration: BoxDecoration(
-        color: AppColors.surfaceElevated,
+        color: AppColors.cardSurface,
         borderRadius: AppRadii.md,
-        border: Border.all(color: AppColors.border),
+        border: Border.all(color: AppColors.cardBorder),
+        boxShadow: AppColors.cardElevation,
       ),
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -112,18 +113,28 @@ class OrderCard extends ConsumerWidget {
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
                       Expanded(
-                        child: Text(order.orderNo, style: AppTypography.titleMedium),
+                        child: Text(
+                          order.orderNo,
+                          style: AppTypography.titleMedium.copyWith(
+                            color: AppColors.cardTextPrimary,
+                          ),
+                        ),
                       ),
                       StatusBadge(label: order.status.label, color: statusColor),
                     ],
                   ),
                   const SizedBox(height: 6),
-                  Text(dateStr, style: AppTypography.bodySmall),
+                  Text(
+                    dateStr,
+                    style: AppTypography.bodySmall.copyWith(
+                      color: AppColors.cardTextMuted,
+                    ),
+                  ),
                   const SizedBox(height: 8),
                   Text(
                     order.imalatTypes.join(' · '),
                     style: AppTypography.bodyMedium.copyWith(
-                      color: AppColors.textPrimary,
+                      color: AppColors.cardTextPrimary,
                     ),
                   ),
                   const SizedBox(height: 10),
@@ -132,7 +143,10 @@ class OrderCard extends ConsumerWidget {
                     children: [
                       Text(
                         '${order.tonnage.toStringAsFixed(0)}t',
-                        style: AppTypography.kpiValue.copyWith(fontSize: 22),
+                        style: AppTypography.kpiValue.copyWith(
+                          fontSize: 22,
+                          color: AppColors.cardTextPrimary,
+                        ),
                       ),
                       Flexible(
                         child: Text(

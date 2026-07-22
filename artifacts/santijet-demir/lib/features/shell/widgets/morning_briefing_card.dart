@@ -32,7 +32,7 @@ class MorningBriefingCard extends ConsumerWidget {
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: AppSpacing.md),
       child: Material(
-        color: AppColors.surfaceElevated,
+        color: AppColors.cardSurface,
         borderRadius: AppRadii.md,
         child: InkWell(
           onTap: () => context.push(detailRoute),
@@ -42,7 +42,8 @@ class MorningBriefingCard extends ConsumerWidget {
             padding: const EdgeInsets.fromLTRB(14, 12, 14, 14),
             decoration: BoxDecoration(
               borderRadius: AppRadii.md,
-              border: Border.all(color: AppColors.border),
+              border: Border.all(color: AppColors.cardBorder),
+              boxShadow: AppColors.cardElevation,
             ),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
@@ -62,7 +63,7 @@ class MorningBriefingCard extends ConsumerWidget {
                       child: Text(
                         briefing.eyebrow,
                         style: AppTypography.labelMedium.copyWith(
-                          color: AppColors.textMuted,
+                          color: AppColors.cardTextMuted,
                           letterSpacing: 0.3,
                         ),
                       ),
@@ -70,7 +71,7 @@ class MorningBriefingCard extends ConsumerWidget {
                     Text(
                       dateLabel,
                       style: AppTypography.labelSmall.copyWith(
-                        color: AppColors.textMuted,
+                        color: AppColors.cardTextMuted,
                       ),
                     ),
                   ],
@@ -80,6 +81,7 @@ class MorningBriefingCard extends ConsumerWidget {
                   briefing.greetingLine,
                   style: AppTypography.headlineMedium.copyWith(
                     fontWeight: FontWeight.w700,
+                    color: AppColors.cardTextPrimary,
                   ),
                 ),
                 const SizedBox(height: 10),
@@ -122,7 +124,7 @@ class _BriefingBullet extends StatelessWidget {
             width: 5,
             height: 5,
             decoration: BoxDecoration(
-              color: AppColors.textMuted,
+              color: AppColors.cardTextMuted,
               shape: BoxShape.circle,
             ),
           ),
@@ -132,7 +134,7 @@ class _BriefingBullet extends StatelessWidget {
           child: Text(
             text,
             style: AppTypography.bodyMedium.copyWith(
-              color: AppColors.textSecondary,
+              color: AppColors.cardTextSecondary,
               height: 1.35,
             ),
           ),

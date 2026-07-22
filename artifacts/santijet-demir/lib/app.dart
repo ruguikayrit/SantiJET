@@ -20,6 +20,14 @@ class SantijetDemirApp extends ConsumerWidget {
     final lock = ref.watch(appLockProvider);
     final auth = ref.watch(authProvider);
     final themeMode = _themeModeFromSettings(settings.themeMode);
+    final modeKey = settings.themeMode;
+
+    Widget wrap(Widget? child) => AppMediaQuery(
+          child: AppColorsThemeSync(
+            themeMode: modeKey,
+            child: child ?? const SizedBox.shrink(),
+          ),
+        );
 
     if (auth.user != null && !auth.isSessionValid) {
       return MaterialApp(
@@ -28,9 +36,7 @@ class SantijetDemirApp extends ConsumerWidget {
         theme: AppTheme.light,
         darkTheme: AppTheme.dark,
         themeMode: themeMode,
-        builder: (context, child) => AppMediaQuery(
-          child: AppColorsThemeSync(child: child ?? const SizedBox.shrink()),
-        ),
+        builder: (context, child) => wrap(child),
         home: const SessionExpiredScreen(),
       );
     }
@@ -42,9 +48,7 @@ class SantijetDemirApp extends ConsumerWidget {
         theme: AppTheme.light,
         darkTheme: AppTheme.dark,
         themeMode: themeMode,
-        builder: (context, child) => AppMediaQuery(
-          child: AppColorsThemeSync(child: child ?? const SizedBox.shrink()),
-        ),
+        builder: (context, child) => wrap(child),
         home: const AppLockScreen(),
       );
     }
@@ -56,14 +60,13 @@ class SantijetDemirApp extends ConsumerWidget {
       darkTheme: AppTheme.dark,
       themeMode: themeMode,
       routerConfig: router,
-      builder: (context, child) => AppMediaQuery(
-        child: AppColorsThemeSync(child: child ?? const SizedBox.shrink()),
-      ),
+      builder: (context, child) => wrap(child),
     );
   }
 
+  /// ŞantiJET açık Material chrome kullanır; kartlar [AppColors.cardSurface] ile koyu.
   ThemeMode _themeModeFromSettings(String mode) => switch (mode) {
-        'light' => ThemeMode.light,
+        'light' || 'santijet' => ThemeMode.light,
         'dark' => ThemeMode.dark,
         _ => ThemeMode.system,
       };

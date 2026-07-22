@@ -31,10 +31,7 @@ class IncomingRebarScreen extends ConsumerWidget {
       body: CustomScrollView(
         slivers: [
           const SliverToBoxAdapter(
-            child: SantijetHeader(
-              subtitle: 'Gelen Demir',
-              showNotification: false,
-            ),
+            child: SantijetHeader(subtitle: 'Gelen Demir'),
           ),
           if (!hasActiveProject)
             const ActiveProjectSliverGate()

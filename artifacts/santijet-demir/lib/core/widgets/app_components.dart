@@ -116,6 +116,9 @@ class KpiCard extends StatelessWidget {
   Widget _buildLabel() {
     final parts = label.trim().split(RegExp(r'\s+'));
     final align = centerContent ? TextAlign.center : TextAlign.start;
+    final labelStyle = AppTypography.labelMedium.copyWith(
+      color: AppColors.cardTextMuted,
+    );
     // Dense cards keep the title on one line (value sits below).
     if (!dense && !compactHeight && parts.length == 2) {
       return Column(
@@ -123,14 +126,14 @@ class KpiCard extends StatelessWidget {
             centerContent ? CrossAxisAlignment.center : CrossAxisAlignment.start,
         mainAxisSize: MainAxisSize.min,
         children: [
-          Text(parts[0], style: AppTypography.labelMedium, textAlign: align),
-          Text(parts[1], style: AppTypography.labelMedium, textAlign: align),
+          Text(parts[0], style: labelStyle, textAlign: align),
+          Text(parts[1], style: labelStyle, textAlign: align),
         ],
       );
     }
     return Text(
       label,
-      style: AppTypography.labelMedium,
+      style: labelStyle,
       maxLines: 1,
       overflow: TextOverflow.ellipsis,
       textAlign: align,
@@ -175,12 +178,12 @@ class KpiCard extends StatelessWidget {
                       const SizedBox(width: 2),
                       Padding(
                         padding: const EdgeInsets.only(bottom: 2),
-                        child: Text(unit, style: AppTypography.labelSmall),
+                        child: Text(unit, style: AppTypography.labelSmall.copyWith(color: AppColors.cardTextMuted)),
                       ),
                     ],
                     if (onTap != null) ...[
                       const SizedBox(width: 4),
-                      Icon(Icons.chevron_right, size: 16, color: AppColors.textMuted),
+                      Icon(Icons.chevron_right, size: 16, color: AppColors.cardTextMuted),
                     ],
                   ],
                 ),
@@ -207,7 +210,7 @@ class KpiCard extends StatelessWidget {
             else
               Expanded(child: _buildLabel()),
             if (onTap != null && !dense)
-              Icon(Icons.chevron_right, size: 16, color: AppColors.textMuted),
+              Icon(Icons.chevron_right, size: 16, color: AppColors.cardTextMuted),
           ],
         ),
         if (centerContent) const SizedBox(height: 6),
@@ -242,8 +245,8 @@ class KpiCard extends StatelessWidget {
                 child: Text(
                   unit,
                   style: dense
-                      ? AppTypography.labelSmall
-                      : AppTypography.labelMedium,
+                      ? AppTypography.labelSmall.copyWith(color: AppColors.cardTextMuted)
+                      : AppTypography.labelMedium.copyWith(color: AppColors.cardTextMuted),
                 ),
               ),
             ],
@@ -269,7 +272,7 @@ class KpiCard extends StatelessWidget {
                 Icon(
                   Icons.unfold_more,
                   size: 14,
-                  color: AppColors.textMuted,
+                  color: AppColors.cardTextMuted,
                 ),
             ],
           ),
@@ -280,7 +283,7 @@ class KpiCard extends StatelessWidget {
             child: Icon(
               Icons.unfold_more,
               size: 14,
-              color: AppColors.textMuted,
+              color: AppColors.cardTextMuted,
             ),
           ),
         ],
@@ -313,10 +316,10 @@ class KpiCard extends StatelessWidget {
       padding: EdgeInsets.all(padding),
       alignment: centerContent ? Alignment.center : null,
       decoration: BoxDecoration(
-        color: AppColors.surfaceElevated,
+        color: AppColors.cardSurface,
         borderRadius: AppRadii.md,
-        border: Border.all(color: AppColors.border),
-        boxShadow: AppColors.elevationSoft,
+        border: Border.all(color: AppColors.cardBorder),
+        boxShadow: AppColors.cardElevation,
       ),
       child: compactHeight
           ? (centerContent
@@ -370,9 +373,9 @@ class AlertCard extends StatelessWidget {
         child: Container(
           padding: const EdgeInsets.all(14),
           decoration: BoxDecoration(
-            color: AppColors.surfaceElevated,
+            color: AppColors.cardSurface,
             borderRadius: AppRadii.md,
-            border: Border.all(color: AppColors.border),
+            border: Border.all(color: AppColors.cardBorder),
           ),
           child: Row(
             children: [
@@ -389,13 +392,23 @@ class AlertCard extends StatelessWidget {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Text(title, style: AppTypography.titleMedium),
+                    Text(
+                      title,
+                      style: AppTypography.titleMedium.copyWith(
+                        color: AppColors.cardTextPrimary,
+                      ),
+                    ),
                     const SizedBox(height: 2),
-                    Text(message, style: AppTypography.bodySmall),
+                    Text(
+                      message,
+                      style: AppTypography.bodySmall.copyWith(
+                        color: AppColors.cardTextMuted,
+                      ),
+                    ),
                   ],
                 ),
               ),
-              Icon(Icons.chevron_right, color: AppColors.textMuted, size: 20),
+              Icon(Icons.chevron_right, color: AppColors.cardTextMuted, size: 20),
             ],
           ),
         ),

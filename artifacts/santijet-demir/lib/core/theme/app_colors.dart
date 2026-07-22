@@ -1,23 +1,51 @@
 import 'package:flutter/material.dart';
 
-/// Figma Make Design System — açık/koyu uyumlu palet.
+/// Uygulama renk paleti — açık / koyu / ŞantiJET (hibrit).
+enum AppColorPalette { light, dark, santijet }
+
+/// Figma Make Design System — açık/koyu/ŞantiJET uyumlu palet.
 ///
 /// Marka mavileri ve durum renkleri temadan bağımsızdır.
-/// Yüzey / metin / kenarlık [applyBrightness] ile temaya göre değişir.
+/// Yüzey / metin / kenarlık [applyPalette] ile temaya göre değişir.
+///
+/// ŞantiJET: açık iskelet (canvas) + koyu özet/uyarı kartları ([cardSurface]).
 ///
 /// Önemli: Bu getter'lar [Theme.of] bağımlılığı oluşturmaz. Tema değişiminde
 /// ekranın yeniden çizilmesi için [ThemeRebuildGate] / [AppColorsThemeSync]
 /// veya [Theme.of] kullanılmalıdır.
 abstract final class AppColors {
-  static Brightness _brightness = Brightness.dark;
+  static AppColorPalette _palette = AppColorPalette.dark;
 
-  /// MaterialApp builder içinde her karede çağrılır.
+  /// Geriye dönük — yalnızca brightness (system/light/dark).
   static void applyBrightness(Brightness brightness) {
-    _brightness = brightness;
+    _palette = brightness == Brightness.dark
+        ? AppColorPalette.dark
+        : AppColorPalette.light;
   }
 
-  static bool get isDark => _brightness == Brightness.dark;
-  static bool get isLight => _brightness == Brightness.light;
+  /// Ayarlar tema modu + sistem brightness.
+  static void applyPaletteFromMode(String mode, Brightness systemBrightness) {
+    _palette = switch (mode) {
+      'light' => AppColorPalette.light,
+      'dark' => AppColorPalette.dark,
+      'santijet' => AppColorPalette.santijet,
+      _ => systemBrightness == Brightness.dark
+          ? AppColorPalette.dark
+          : AppColorPalette.light,
+    };
+  }
+
+  static void applyPalette(AppColorPalette palette) {
+    _palette = palette;
+  }
+
+  static AppColorPalette get palette => _palette;
+  static bool get isDark => _palette == AppColorPalette.dark;
+  static bool get isLight => _palette == AppColorPalette.light;
+  static bool get isSantijet => _palette == AppColorPalette.santijet;
+
+  /// Özet / brifing / uyarı kartlarında koyu yüzey kullan.
+  static bool get useDarkCards => isDark || isSantijet;
 
   // —— Koyu sabitler ——
   static const darkCanvas = Color(0xFF05070A);
@@ -31,8 +59,7 @@ abstract final class AppColors {
   static const darkBorder = Color(0xFF1E293B);
   static const darkBorderSubtle = Color(0xFF334155);
 
-  // —— Açık sabitler (logo: siyah ŞANTİ + mavi JET; saydam zemin) ——
-  // Soğuk çelik / beton: logo mürekkebine yakın ink, mavi marka vurgusu.
+  // —— Açık sabitler ——
   static const lightCanvas = Color(0xFFE8EDF4);
   static const lightSurface = Color(0xFFFFFFFF);
   static const lightSurfaceElevated = Color(0xFFF7F9FC);
@@ -44,7 +71,7 @@ abstract final class AppColors {
   static const lightBorder = Color(0xFFD5DEEA);
   static const lightBorderSubtle = Color(0xFFB8C5D6);
 
-  // Arka plan (tema duyarlı)
+  // Chrome (iskelet) — ŞantiJET'te açık kalır
   static Color get canvas => isDark ? darkCanvas : lightCanvas;
   static Color get surface => isDark ? darkSurface : lightSurface;
   static Color get surfaceElevated =>
@@ -52,12 +79,12 @@ abstract final class AppColors {
   static Color get surfaceHighlight =>
       isDark ? darkSurfaceHighlight : lightSurfaceHighlight;
 
-  // Marka — temadan bağımsız
+  // Marka
   static const electricBlue = Color(0xFF0055FF);
   static const electricBlueLight = Color(0xFF3B82F6);
   static const electricBlueGlow = Color(0x334877DC);
 
-  // Metin (tema duyarlı)
+  // Genel metin — chrome ile uyumlu (ŞantiJET'te koyu mürekkep)
   static Color get textPrimary => isDark ? darkTextPrimary : lightTextPrimary;
   static Color get textSecondary =>
       isDark ? darkTextSecondary : lightTextSecondary;
@@ -65,14 +92,14 @@ abstract final class AppColors {
   static Color get textDisabled =>
       isDark ? darkTextDisabled : lightTextDisabled;
 
-  // Durum — temadan bağımsız
+  // Durum
   static const success = Color(0xFF10B981);
   static const warning = Color(0xFFF59E0B);
   static const critical = Color(0xFFEF4444);
   static const info = Color(0xFF0EA5E9);
   static const partial = Color(0xFFA855F7);
 
-  // Çap gradyanı
+  // Çap
   static const diameter8 = Color(0xFF10B981);
   static const diameter10 = Color(0xFF06B6D4);
   static const diameter12 = Color(0xFF3B82F6);
@@ -82,28 +109,56 @@ abstract final class AppColors {
   static const diameter22 = Color(0xFFDC2626);
   static const diameter28 = Color(0xFFF97316);
 
-  // Kenarlık
+  // Kenarlık (chrome)
   static Color get border => isDark ? darkBorder : lightBorder;
   static Color get borderSubtle =>
       isDark ? darkBorderSubtle : lightBorderSubtle;
+
+  // —— Kart paleti (özet / brifing / uyarı / sipariş / fire) ——
+  // ŞantiJET ve koyuda koyu yüzey + açık metin.
+  static Color get cardSurface =>
+      useDarkCards ? darkSurfaceElevated : lightSurfaceElevated;
+  static Color get cardSurfaceHighlight =>
+      useDarkCards ? darkSurfaceHighlight : lightSurfaceHighlight;
+  static Color get cardBorder => useDarkCards ? darkBorder : lightBorder;
+  static Color get cardBorderSubtle =>
+      useDarkCards ? darkBorderSubtle : lightBorderSubtle;
+  static Color get cardTextPrimary =>
+      useDarkCards ? darkTextPrimary : lightTextPrimary;
+  static Color get cardTextSecondary =>
+      useDarkCards ? darkTextSecondary : lightTextSecondary;
+  static Color get cardTextMuted =>
+      useDarkCards ? darkTextMuted : lightTextMuted;
+  static Color get cardTextDisabled =>
+      useDarkCards ? darkTextDisabled : lightTextDisabled;
+
+  static List<BoxShadow> get cardElevation => useDarkCards
+      ? [
+          BoxShadow(
+            color: Colors.black.withValues(alpha: isSantijet ? 0.22 : 0.35),
+            blurRadius: isSantijet ? 12 : 8,
+            offset: const Offset(0, 3),
+          ),
+        ]
+      : elevationSoft;
 
   // Blueprint / overlay
   static const blueprintGrid = Color(0x0B4876DC);
   static Color get rebarOverlay =>
       isDark ? const Color(0x0AFFFFFF) : const Color(0x0A0B1220);
 
-  /// Hafif yükselti gölgesi — açık temada kart/nav ayrımı.
+  /// Hafif yükselti gölgesi — açık chrome'da kart/nav ayrımı.
   static List<BoxShadow> get elevationSoft => isDark
       ? const []
       : [
-          BoxShadow(
+          const BoxShadow(
             color: Color(0x140B1220),
             blurRadius: 16,
             offset: Offset(0, 4),
           ),
         ];
 
-  /// Wordmark asset — koyuda beyaz harf, açıkta siyah harf; mavi aynı.
+  /// Wordmark — koyuda beyaz; açık ve ŞantiJET'te siyah harf.
   static String wordmarkAssetFor(Brightness brightness) {
     return brightness == Brightness.dark
         ? 'assets/images/splash_wordmark.png'

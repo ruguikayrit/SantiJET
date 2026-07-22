@@ -5,6 +5,7 @@ import 'package:santijet_demir/core/routing/app_routes.dart';
 import 'package:santijet_demir/core/theme/app_colors.dart';
 import 'package:santijet_demir/core/theme/app_spacing.dart';
 import 'package:santijet_demir/core/theme/app_typography.dart';
+import 'package:santijet_demir/features/settings/providers/profile_provider.dart';
 import 'package:santijet_demir/features/shell/dashboard_feed_provider.dart';
 
 class SantijetHeader extends StatelessWidget {
@@ -150,7 +151,7 @@ class _HeaderNotificationButton extends ConsumerWidget {
   }
 }
 
-class _HeaderAvatarButton extends StatelessWidget {
+class _HeaderAvatarButton extends ConsumerWidget {
   const _HeaderAvatarButton({
     this.initial,
     this.onDarkBand = false,
@@ -160,7 +161,12 @@ class _HeaderAvatarButton extends StatelessWidget {
   final bool onDarkBand;
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
+    final resolvedInitial =
+        (initial == null || initial!.trim().isEmpty)
+            ? ref.watch(profileInitialProvider)
+            : initial!.trim();
+
     return Semantics(
       label: 'Ayarlar',
       button: true,
@@ -181,13 +187,13 @@ class _HeaderAvatarButton extends StatelessWidget {
                 ? AppColors.warning.withValues(alpha: 0.35)
                 : AppColors.warning.withValues(alpha: 0.3),
             child: Text(
-              initial ?? 'U',
+              resolvedInitial,
               style: AppTypography.titleMedium.copyWith(
                 color: onDarkBand ? Colors.white : AppColors.warning,
                 fontSize: AppTypography.scale *
-                    ((initial?.length ?? 1) > 1 ? 11 : 14),
+                    (resolvedInitial.length > 1 ? 11 : 14),
                 height: 1.0,
-                letterSpacing: (initial?.length ?? 1) > 1 ? -0.4 : 0,
+                letterSpacing: resolvedInitial.length > 1 ? -0.4 : 0,
               ),
             ),
           ),
