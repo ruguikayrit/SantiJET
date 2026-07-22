@@ -72,18 +72,36 @@ abstract final class AppSafeAreaInsets {
   }
 
   /// Alt nav bar — home indicator alanı (View padding + iOS PWA JS probe).
+  /// Mantıksal piksel; aşırı değerleri üst katmanda [AppBottomNavBar] clamp eder.
   static double bottomNavInsetOf(BuildContext context) {
-    final view = View.of(context);
-    var bottom = view.padding.bottom / view.devicePixelRatio;
-
-    if (kIsWeb && _isIosWeb(context) && inset_reader.readIosStandalonePwa()) {
-      final injected = inset_reader.readWebSafeAreaBottomInset();
-      if (injected != null && injected > 0) {
-        bottom = math.max(bottom, injected);
-      }
+    final media = MediaQuery.maybeOf(context);
+    var bottom = 0.0;
+    if (media != null) {
+      bottom = math.max(media.viewPadding.bottom, media.padding.bottom);
     }
 
-    return bottom;
+    try {
+      final view = View.of(context);
+      final fromView = view.padding.bottom / view.devicePixelRatio;
+      if (fromView.isFinite && !fromView.isNaN) {
+        bottom = math.max(bottom, fromView);
+      }
+    } catch (_) {
+      // View henüz hazır değil.
+    }
+
+    if (kIsWeb && _isIosWeb(context)) {
+      final injected = inset_reader.readWebSafeAreaBottomInset();
+      if (injected != null && injected > 0 && injected.isFinite) {
+        bottom = math.max(bottom, injected);
+      }
+      // Safari / PWA: home indicator için minimum — aksi halde nav altında boşluk.
+      if (bottom < 20) bottom = _iosWebMinBottom;
+    }
+
+    if (!bottom.isFinite || bottom.isNaN || bottom < 0) return 0;
+    // Home indicator makul üst sınırı — ara sıra gelen şişik değerleri kes.
+    return math.min(bottom, 40.0);
   }
 }
 

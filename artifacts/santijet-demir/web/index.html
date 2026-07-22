@@ -43,7 +43,8 @@
       height: -webkit-fill-available;
       height: 100dvh;
       touch-action: manipulation;
-      background-color: #05070A;
+      /* Flutter yüzeyi ekranı kaplayana kadar; açık temada siyah şerit olmasın */
+      background-color: #E8EDF4;
     }
     body {
       height: 100%;
@@ -52,7 +53,7 @@
       margin: 0;
       padding: 0;
       overflow: hidden;
-      background-color: #05070A;
+      background-color: #E8EDF4;
       touch-action: manipulation;
       overscroll-behavior: none;
       -webkit-touch-callout: none;
@@ -87,7 +88,7 @@
   <script>
     // ŞantiJET DEMİR — iOS PWA viewport + yükleme ekranı
     (function () {
-      var APP_VERSION = '85';
+      var APP_VERSION = '86';
       var isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent) ||
         (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
       var isStandalone = window.navigator.standalone === true ||

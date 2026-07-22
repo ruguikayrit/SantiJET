@@ -226,6 +226,8 @@ class _ModeSegmentButton extends StatelessWidget {
   final VoidCallback onTap;
   final bool dense;
 
+  static const _accent = AppColors.diameter28;
+
   @override
   Widget build(BuildContext context) {
     return Material(
@@ -233,8 +235,8 @@ class _ModeSegmentButton extends StatelessWidget {
       child: InkWell(
         onTap: onTap,
         borderRadius: BorderRadius.circular(8),
-        splashColor: AppColors.electricBlueLight.withValues(alpha: 0.12),
-        highlightColor: AppColors.electricBlueLight.withValues(alpha: 0.06),
+        splashColor: _accent.withValues(alpha: 0.14),
+        highlightColor: _accent.withValues(alpha: 0.08),
         child: AnimatedContainer(
           duration: const Duration(milliseconds: 180),
           curve: Curves.easeOutCubic,
@@ -244,12 +246,12 @@ class _ModeSegmentButton extends StatelessWidget {
           ),
           decoration: BoxDecoration(
             borderRadius: BorderRadius.circular(8),
-            color: selected ? AppColors.electricBlue : Colors.transparent,
+            color: selected ? _accent : Colors.transparent,
             boxShadow: selected
                 ? [
                     BoxShadow(
-                      color: AppColors.electricBlue.withValues(alpha: 0.32),
-                      blurRadius: 10,
+                      color: _accent.withValues(alpha: 0.28),
+                      blurRadius: 8,
                       offset: const Offset(0, 2),
                     ),
                   ]
@@ -261,7 +263,7 @@ class _ModeSegmentButton extends StatelessWidget {
             maxLines: 2,
             overflow: TextOverflow.ellipsis,
             style: AppTypography.labelMedium.copyWith(
-              color: selected ? Colors.black : AppColors.textMuted,
+              color: selected ? Colors.white : AppColors.textMuted,
               fontWeight: selected ? FontWeight.w700 : FontWeight.w500,
               fontSize: dense ? 12 : 13,
               height: 1.2,

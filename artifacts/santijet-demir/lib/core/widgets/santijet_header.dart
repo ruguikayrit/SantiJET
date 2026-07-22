@@ -17,8 +17,8 @@ class SantijetHeader extends StatelessWidget {
     this.avatarInitial,
   });
 
-  /// Ana sayfa DEMİR — wordmark’a göre ürün adı okunurluğu.
-  static const homeDemirScale = 1.25;
+  /// Ana sayfa DEMİR — wordmark altı ürün adı (%50 büyütülmüş).
+  static const homeDemirScale = 1.875; // 1.25 × 1.5
   static const homeDemirLetterSpacing = 0.75;
   static const _homeBrandToActionsGap = 8.0;
   static const _homeWordmarkToDemirGap = 6.0;
@@ -310,11 +310,16 @@ TextStyle get _demirTitleStyle => AppTypography.titleMedium.copyWith(
       color: AppColors.textPrimary,
     );
 
-/// Wordmark altındaki DEMİR — daha büyük, daha az tracking; wordmark ölçüsü değişmez.
+/// Wordmark metrikleri için kilitli marka ölçeği (global scale’ten bağımsız).
+TextStyle get _brandMetricStyle => _demirTitleStyle.copyWith(
+      fontSize: AppTypography.brandScale * 14,
+    );
+
+/// Wordmark altındaki DEMİR — marka ölçeğinde, homeDemirScale ile büyütülür.
 TextStyle get _homeDemirTitleStyle => _demirTitleStyle.copyWith(
-      fontSize:
-          (_demirTitleStyle.fontSize ?? AppTypography.scale * 14) *
-              SantijetHeader.homeDemirScale,
+      fontSize: AppTypography.brandScale *
+          14 *
+          SantijetHeader.homeDemirScale,
       letterSpacing: SantijetHeader.homeDemirLetterSpacing,
     );
 
@@ -333,12 +338,12 @@ abstract final class _BrandTitleMetrics {
 
   static double wordmarkHeightOf(BuildContext context) {
     final textPainter = TextPainter(
-      text: TextSpan(text: 'DEMİR', style: _demirTitleStyle),
+      text: TextSpan(text: 'DEMİR', style: _brandMetricStyle),
       textDirection: Directionality.of(context),
       maxLines: 1,
     )..layout();
     final demirCapHeight = textPainter.computeLineMetrics().first.ascent;
-    // Açık ve koyu temada aynı yükseklik — tipografi büyüklüğü eşit.
+    // Marka ölçeğine kilitli — global tipografi değişince wordmark büyümez.
     return demirCapHeight / wordmarkLetterFillRatio * _wordmarkHeightScale;
   }
 

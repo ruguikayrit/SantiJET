@@ -73,7 +73,7 @@ class MainShell extends ConsumerWidget {
                 left: 0,
                 right: 0,
                 bottom: 0,
-                height: AppBottomNavBar.totalHeight,
+                height: AppBottomNavBar.totalHeightOf(context),
                 child: MediaQuery.removeViewInsets(
                   removeBottom: true,
                   context: context,
@@ -81,7 +81,7 @@ class MainShell extends ConsumerWidget {
                     removeBottom: true,
                     context: context,
                     child: SizedBox(
-                      height: AppBottomNavBar.totalHeight,
+                      height: AppBottomNavBar.totalHeightOf(context),
                       width: double.infinity,
                       child: AppBottomNavBar(
                         navigationShell: navigationShell,
