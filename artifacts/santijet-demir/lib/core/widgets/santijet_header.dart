@@ -35,6 +35,9 @@ class SantijetHeader extends StatelessWidget {
   static const actionAvatarRadius = 16.0;
   static const actionGap = 2.0;
 
+  /// Açık temada iç sayfa başlık bandı (ana sayfa hariç).
+  static const pageHeaderBandColor = Color(0xFF05070A);
+
   final String? subtitle;
   final bool showWordmark;
   final bool showNotification;
@@ -43,25 +46,27 @@ class SantijetHeader extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Padding(
-      padding: const EdgeInsets.fromLTRB(
-        AppSpacing.md,
-        AppSpacing.sm,
-        AppSpacing.md,
-        AppSpacing.sm,
-      ),
-      child: showWordmark
-          ? _WordmarkHeader(
-              showNotification: showNotification,
-              showAvatar: showAvatar,
-              avatarInitial: avatarInitial,
-            )
-          : _PageBrandHeader(
-              subtitle: subtitle,
-              showNotification: showNotification,
-              showAvatar: showAvatar,
-              avatarInitial: avatarInitial,
-            ),
+    if (showWordmark) {
+      return Padding(
+        padding: const EdgeInsets.fromLTRB(
+          AppSpacing.md,
+          AppSpacing.sm,
+          AppSpacing.md,
+          AppSpacing.sm,
+        ),
+        child: _WordmarkHeader(
+          showNotification: showNotification,
+          showAvatar: showAvatar,
+          avatarInitial: avatarInitial,
+        ),
+      );
+    }
+
+    return _PageBrandHeader(
+      subtitle: subtitle,
+      showNotification: showNotification,
+      showAvatar: showAvatar,
+      avatarInitial: avatarInitial,
     );
   }
 }
@@ -71,11 +76,13 @@ class _HeaderActions extends StatelessWidget {
     required this.showNotification,
     required this.showAvatar,
     this.avatarInitial,
+    this.onDarkBand = false,
   });
 
   final bool showNotification;
   final bool showAvatar;
   final String? avatarInitial;
+  final bool onDarkBand;
 
   @override
   Widget build(BuildContext context) {
@@ -85,17 +92,24 @@ class _HeaderActions extends StatelessWidget {
       mainAxisSize: MainAxisSize.min,
       crossAxisAlignment: CrossAxisAlignment.center,
       children: [
-        if (showNotification) const _HeaderNotificationButton(),
+        if (showNotification)
+          _HeaderNotificationButton(onDarkBand: onDarkBand),
         if (showNotification && showAvatar)
           const SizedBox(width: SantijetHeader.actionGap),
-        if (showAvatar) _HeaderAvatarButton(initial: avatarInitial),
+        if (showAvatar)
+          _HeaderAvatarButton(
+            initial: avatarInitial,
+            onDarkBand: onDarkBand,
+          ),
       ],
     );
   }
 }
 
 class _HeaderNotificationButton extends ConsumerWidget {
-  const _HeaderNotificationButton();
+  const _HeaderNotificationButton({this.onDarkBand = false});
+
+  final bool onDarkBand;
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -125,7 +139,9 @@ class _HeaderNotificationButton extends ConsumerWidget {
             iconSize: SantijetHeader.actionIconSize,
             icon: Icon(
               Icons.notifications_outlined,
-              color: AppColors.textSecondary,
+              color: onDarkBand
+                  ? Colors.white.withValues(alpha: 0.88)
+                  : AppColors.textSecondary,
             ),
           ),
         ),
@@ -135,9 +151,13 @@ class _HeaderNotificationButton extends ConsumerWidget {
 }
 
 class _HeaderAvatarButton extends StatelessWidget {
-  const _HeaderAvatarButton({this.initial});
+  const _HeaderAvatarButton({
+    this.initial,
+    this.onDarkBand = false,
+  });
 
   final String? initial;
+  final bool onDarkBand;
 
   @override
   Widget build(BuildContext context) {
@@ -157,11 +177,13 @@ class _HeaderAvatarButton extends StatelessWidget {
           ),
           icon: CircleAvatar(
             radius: SantijetHeader.actionAvatarRadius,
-            backgroundColor: AppColors.warning.withValues(alpha: 0.3),
+            backgroundColor: onDarkBand
+                ? AppColors.warning.withValues(alpha: 0.35)
+                : AppColors.warning.withValues(alpha: 0.3),
             child: Text(
               initial ?? 'U',
               style: AppTypography.titleMedium.copyWith(
-                color: AppColors.warning,
+                color: onDarkBand ? Colors.white : AppColors.warning,
                 fontSize: AppTypography.scale *
                     ((initial?.length ?? 1) > 1 ? 11 : 14),
                 height: 1.0,
@@ -189,66 +211,87 @@ class _PageBrandHeader extends StatelessWidget {
   final bool showAvatar;
   final String? avatarInitial;
 
-  static TextStyle get _productLabelStyle => AppTypography.labelSmall.copyWith(
-        fontSize: AppTypography.scale * 11,
-        letterSpacing: 0.9,
-        fontWeight: FontWeight.w700,
-        color: AppColors.textMuted,
-        height: 1.0,
-      );
-
-  static TextStyle get _pageTitleStyle => AppTypography.headlineMedium.copyWith(
-        fontSize: AppTypography.scale * 18,
-        fontWeight: FontWeight.w700,
-        letterSpacing: -0.2,
-        color: AppColors.textPrimary,
-        height: 1.15,
-      );
-
   @override
   Widget build(BuildContext context) {
-    return Row(
-      crossAxisAlignment: CrossAxisAlignment.center,
-      children: [
-        Expanded(
-          child: Row(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Image.asset(
-                'assets/images/splash_bolt.png',
-                width: SantijetHeader._pageLogoSize,
-                height: SantijetHeader._pageLogoSize,
-                fit: BoxFit.contain,
-                filterQuality: FilterQuality.high,
-              ),
-              const SizedBox(width: SantijetHeader._pageLogoGap),
-              Expanded(
-                child: Transform.translate(
-                  offset: subtitle != null
-                      ? const Offset(0, SantijetHeader._pageTitleLift)
-                      : Offset.zero,
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      Text('DEMİR', style: _productLabelStyle),
-                      if (subtitle != null) ...[
-                        const SizedBox(height: SantijetHeader._pageTitleGap),
-                        Text(subtitle!, style: _pageTitleStyle),
+    final onDarkBand = Theme.of(context).brightness == Brightness.light;
+
+    final productLabelStyle = AppTypography.labelSmall.copyWith(
+      fontSize: AppTypography.scale * 11,
+      letterSpacing: 0.9,
+      fontWeight: FontWeight.w700,
+      color: onDarkBand
+          ? Colors.white.withValues(alpha: 0.62)
+          : AppColors.textMuted,
+      height: 1.0,
+    );
+
+    final pageTitleStyle = AppTypography.headlineMedium.copyWith(
+      fontSize: AppTypography.scale * 18,
+      fontWeight: FontWeight.w700,
+      letterSpacing: -0.2,
+      color: onDarkBand ? Colors.white : AppColors.textPrimary,
+      height: 1.15,
+    );
+
+    final content = Padding(
+      padding: const EdgeInsets.fromLTRB(
+        AppSpacing.md,
+        AppSpacing.sm,
+        AppSpacing.md,
+        AppSpacing.sm,
+      ),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.center,
+        children: [
+          Expanded(
+            child: Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Image.asset(
+                  'assets/images/splash_bolt.png',
+                  width: SantijetHeader._pageLogoSize,
+                  height: SantijetHeader._pageLogoSize,
+                  fit: BoxFit.contain,
+                  filterQuality: FilterQuality.high,
+                ),
+                const SizedBox(width: SantijetHeader._pageLogoGap),
+                Expanded(
+                  child: Transform.translate(
+                    offset: subtitle != null
+                        ? const Offset(0, SantijetHeader._pageTitleLift)
+                        : Offset.zero,
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Text('DEMİR', style: productLabelStyle),
+                        if (subtitle != null) ...[
+                          const SizedBox(height: SantijetHeader._pageTitleGap),
+                          Text(subtitle!, style: pageTitleStyle),
+                        ],
                       ],
-                    ],
+                    ),
                   ),
                 ),
-              ),
-            ],
+              ],
+            ),
           ),
-        ),
-        _HeaderActions(
-          showNotification: showNotification,
-          showAvatar: showAvatar,
-          avatarInitial: avatarInitial,
-        ),
-      ],
+          _HeaderActions(
+            showNotification: showNotification,
+            showAvatar: showAvatar,
+            avatarInitial: avatarInitial,
+            onDarkBand: onDarkBand,
+          ),
+        ],
+      ),
+    );
+
+    if (!onDarkBand) return content;
+
+    // Açık tema: logo + DEMİR + sayfa adı + aksiyonlar siyah bant içinde.
+    return ColoredBox(
+      color: SantijetHeader.pageHeaderBandColor,
+      child: content,
     );
   }
 }
