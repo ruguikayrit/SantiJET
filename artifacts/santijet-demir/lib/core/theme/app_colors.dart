@@ -4,6 +4,10 @@ import 'package:flutter/material.dart';
 ///
 /// Marka mavileri ve durum renkleri temadan bağımsızdır.
 /// Yüzey / metin / kenarlık [applyBrightness] ile temaya göre değişir.
+///
+/// Önemli: Bu getter'lar [Theme.of] bağımlılığı oluşturmaz. Tema değişiminde
+/// ekranın yeniden çizilmesi için [ThemeRebuildGate] / [AppColorsThemeSync]
+/// veya [Theme.of] kullanılmalıdır.
 abstract final class AppColors {
   static Brightness _brightness = Brightness.dark;
 

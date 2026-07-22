@@ -6,7 +6,9 @@ import 'package:santijet_demir/core/theme/app_typography.dart';
 
 abstract final class AppTheme {
   static ThemeData get light {
-    AppColors.applyBrightness(Brightness.light);
+    // Not: applyBrightness burada çağrılmaz — MaterialApp hem light hem dark
+    // ThemeData'yı üretir; son çağrı AppColors'u yanlış temada kilitlerdi.
+    // Senkron yalnızca MaterialApp.builder / ThemeRebuildGate içinde yapılır.
 
     final colorScheme = ColorScheme.light(
       surface: AppColors.lightSurfaceElevated,
@@ -150,8 +152,6 @@ abstract final class AppTheme {
   }
 
   static ThemeData get dark {
-    AppColors.applyBrightness(Brightness.dark);
-
     final colorScheme = ColorScheme.dark(
       surface: AppColors.darkSurface,
       primary: AppColors.electricBlue,

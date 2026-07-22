@@ -6,6 +6,7 @@ import 'package:santijet_demir/core/routing/app_routes.dart';
 import 'package:santijet_demir/core/theme/app_colors.dart';
 import 'package:santijet_demir/core/theme/app_shadows.dart';
 import 'package:santijet_demir/core/theme/app_spacing.dart';
+import 'package:santijet_demir/core/theme/app_theme.dart';
 import 'package:santijet_demir/core/theme/app_typography.dart';
 import 'package:santijet_demir/features/auth/providers/auth_provider.dart';
 import 'package:santijet_demir/features/projects/providers/project_provider.dart';
@@ -96,120 +97,129 @@ class _SplashScreenState extends ConsumerState<SplashScreen>
     final wordmarkWidth = (screenWidth * 0.78).clamp(260.0, 360.0);
     final wordmarkHeight = wordmarkWidth / _wordmarkAspect;
 
-    return Scaffold(
-      backgroundColor: AppColors.canvas,
-      body: Stack(
-        children: [
-          Positioned.fill(
-            child: CustomPaint(
-              painter: _BlueprintGridPainter(),
-            ),
-          ),
-          Positioned.fill(
-            child: Opacity(
-              opacity: 0.04,
+    // Açılış her zaman koyu marka görünümü — uygulama teması ne olursa olsun.
+    return Theme(
+      data: AppTheme.dark,
+      child: Scaffold(
+        backgroundColor: AppColors.darkCanvas,
+        body: Stack(
+          children: [
+            Positioned.fill(
               child: CustomPaint(
-                painter: _RebarOverlayPainter(),
+                painter: _BlueprintGridPainter(),
               ),
             ),
-          ),
-          SafeArea(
-            bottom: false,
-            minimum: EdgeInsets.zero,
-            child: Column(
-              children: [
-                Expanded(
-                  child: Center(
-                    child: Padding(
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: AppSpacing.lg,
-                      ),
-                      child: FittedBox(
-                        fit: BoxFit.scaleDown,
-                        child: Column(
-                          mainAxisSize: MainAxisSize.min,
-                          children: [
-                            const SizedBox(height: _wordmarkAnchorCompensation),
-                            FadeIn(
-                              delay: const Duration(milliseconds: 150),
-                              child: Image.asset(
-                                'assets/images/splash_bolt.png',
-                                width: boltSize,
-                                height: boltSize,
-                                fit: BoxFit.contain,
-                                filterQuality: FilterQuality.high,
-                              ),
-                            ),
-                            const SizedBox(height: _boltWordmarkGapReduced),
-                            FadeIn(
-                              delay: const Duration(milliseconds: 350),
-                              child: Image.asset(
-                                'assets/images/splash_wordmark.png',
-                                width: wordmarkWidth,
-                                height: wordmarkHeight,
-                                fit: BoxFit.contain,
-                                filterQuality: FilterQuality.high,
-                              ),
-                            ),
-                            const SizedBox(height: AppSpacing.splashWordmarkToDemir),
-                            FadeIn(
-                              delay: const Duration(milliseconds: 550),
-                              child: Text(
-                                'DEMİR',
-                                style: AppTypography.displayLarge.copyWith(
-                                  letterSpacing: 6,
-                                  shadows: const [
-                                    Shadow(
-                                      color: AppColors.electricBlueGlow,
-                                      blurRadius: 24,
-                                    ),
-                                  ],
+            Positioned.fill(
+              child: Opacity(
+                opacity: 0.04,
+                child: CustomPaint(
+                  painter: _RebarOverlayPainter(),
+                ),
+              ),
+            ),
+            SafeArea(
+              bottom: false,
+              minimum: EdgeInsets.zero,
+              child: Column(
+                children: [
+                  Expanded(
+                    child: Center(
+                      child: Padding(
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: AppSpacing.lg,
+                        ),
+                        child: FittedBox(
+                          fit: BoxFit.scaleDown,
+                          child: Column(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              const SizedBox(height: _wordmarkAnchorCompensation),
+                              FadeIn(
+                                delay: const Duration(milliseconds: 150),
+                                child: Image.asset(
+                                  'assets/images/splash_bolt.png',
+                                  width: boltSize,
+                                  height: boltSize,
+                                  fit: BoxFit.contain,
+                                  filterQuality: FilterQuality.high,
                                 ),
                               ),
-                            ),
-                          ],
+                              const SizedBox(height: _boltWordmarkGapReduced),
+                              FadeIn(
+                                delay: const Duration(milliseconds: 350),
+                                child: Image.asset(
+                                  'assets/images/splash_wordmark.png',
+                                  width: wordmarkWidth,
+                                  height: wordmarkHeight,
+                                  fit: BoxFit.contain,
+                                  filterQuality: FilterQuality.high,
+                                ),
+                              ),
+                              const SizedBox(
+                                height: AppSpacing.splashWordmarkToDemir,
+                              ),
+                              FadeIn(
+                                delay: const Duration(milliseconds: 550),
+                                child: Text(
+                                  'DEMİR',
+                                  style: AppTypography.displayLarge.copyWith(
+                                    color: AppColors.electricBlue,
+                                    letterSpacing: 6,
+                                    shadows: const [
+                                      Shadow(
+                                        color: AppColors.electricBlueGlow,
+                                        blurRadius: 24,
+                                      ),
+                                    ],
+                                  ),
+                                ),
+                              ),
+                            ],
+                          ),
                         ),
                       ),
                     ),
                   ),
-                ),
-                AnimatedBuilder(
-                  animation: _loadingController,
-                  builder: (context, child) {
-                    return Container(
-                      width: 130,
-                      height: 4,
-                      decoration: BoxDecoration(
-                        borderRadius: BorderRadius.circular(2),
-                        color: AppColors.border,
-                        boxShadow: AppShadows.loadingBarGlow,
-                      ),
-                      child: Align(
-                        alignment: Alignment(_loadingController.value * 2 - 1, 0),
-                        child: Container(
-                          width: 40,
-                          height: 4,
-                          decoration: BoxDecoration(
-                            borderRadius: BorderRadius.circular(2),
-                            gradient: const LinearGradient(
-                              colors: [
-                                AppColors.electricBlue,
-                                AppColors.electricBlueLight,
-                              ],
+                  AnimatedBuilder(
+                    animation: _loadingController,
+                    builder: (context, child) {
+                      return Container(
+                        width: 130,
+                        height: 4,
+                        decoration: BoxDecoration(
+                          borderRadius: BorderRadius.circular(2),
+                          color: AppColors.darkBorder,
+                          boxShadow: AppShadows.loadingBarGlow,
+                        ),
+                        child: Align(
+                          alignment:
+                              Alignment(_loadingController.value * 2 - 1, 0),
+                          child: Container(
+                            width: 40,
+                            height: 4,
+                            decoration: BoxDecoration(
+                              borderRadius: BorderRadius.circular(2),
+                              gradient: const LinearGradient(
+                                colors: [
+                                  AppColors.electricBlue,
+                                  AppColors.electricBlueLight,
+                                ],
+                              ),
                             ),
                           ),
                         ),
-                      ),
-                    );
-                  },
-                ),
-                SizedBox(
-                  height: MediaQuery.viewPaddingOf(context).bottom + AppSpacing.lg,
-                ),
-              ],
+                      );
+                    },
+                  ),
+                  SizedBox(
+                    height: MediaQuery.viewPaddingOf(context).bottom +
+                        AppSpacing.lg,
+                  ),
+                ],
+              ),
             ),
-          ),
-        ],
+          ],
+        ),
       ),
     );
   }
@@ -239,7 +249,7 @@ class _RebarOverlayPainter extends CustomPainter {
   @override
   void paint(Canvas canvas, Size size) {
     final paint = Paint()
-      ..color = AppColors.rebarOverlay
+      ..color = const Color(0x0AFFFFFF) // koyu tema overlay — temadan bağımsız
       ..strokeWidth = 2;
 
     for (var i = 0; i < 6; i++) {

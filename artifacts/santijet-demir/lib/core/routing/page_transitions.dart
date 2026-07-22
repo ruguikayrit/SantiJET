@@ -2,6 +2,7 @@ import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:santijet_demir/core/animations/app_animations.dart';
+import 'package:santijet_demir/core/theme/theme_rebuild_gate.dart';
 
 /// iOS tarzı yatay slide + parallax (CupertinoPageTransition).
 CustomTransitionPage<T> fadeSlidePage<T>({
@@ -10,7 +11,7 @@ CustomTransitionPage<T> fadeSlidePage<T>({
 }) {
   return CustomTransitionPage<T>(
     key: key,
-    child: child,
+    child: ThemeRebuildGate(child: child),
     transitionDuration: const Duration(milliseconds: 400),
     reverseTransitionDuration: const Duration(milliseconds: 350),
     transitionsBuilder: (context, animation, secondaryAnimation, child) {
@@ -31,7 +32,7 @@ CustomTransitionPage<T> fadePage<T>({
 }) {
   return CustomTransitionPage<T>(
     key: key,
-    child: child,
+    child: ThemeRebuildGate(child: child),
     transitionDuration: AppAnimations.normal,
     transitionsBuilder: (context, animation, secondaryAnimation, child) {
       return FadeTransition(

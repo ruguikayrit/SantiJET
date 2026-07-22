@@ -7,6 +7,7 @@ import 'package:santijet_demir/core/routing/app_routes.dart';
 import 'package:santijet_demir/core/theme/app_colors.dart';
 import 'package:santijet_demir/core/theme/app_spacing.dart';
 import 'package:santijet_demir/core/theme/app_typography.dart';
+import 'package:santijet_demir/core/theme/theme_rebuild_gate.dart';
 import 'package:santijet_demir/core/responsive/responsive_layout.dart';
 import 'package:santijet_demir/core/widgets/app_bottom_nav_bar.dart';
 import 'package:santijet_demir/core/widgets/project_permission_gate.dart';
@@ -31,6 +32,10 @@ class MainShell extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
+    // Tema değişince shell + nav yeniden çizilsin (AppColors Theme bağımlısı değil).
+    final brightness = Theme.of(context).brightness;
+    AppColors.applyBrightness(brightness);
+
     return Stack(
       fit: StackFit.expand,
       children: [
@@ -54,8 +59,10 @@ class MainShell extends ConsumerWidget {
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.stretch,
                         children: [
-                          const ReadOnlyBanner(),
-                          Expanded(child: navigationShell),
+                          ReadOnlyBanner(),
+                          Expanded(
+                            child: ThemeRebuildGate(child: navigationShell),
+                          ),
                         ],
                       ),
                     ),
