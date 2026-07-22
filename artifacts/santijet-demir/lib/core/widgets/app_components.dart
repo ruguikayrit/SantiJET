@@ -141,7 +141,7 @@ class KpiCard extends StatelessWidget {
   Widget build(BuildContext context) {
     final padding = compactHeight ? 8.0 : (dense ? 10.0 : 16.0);
     final valueStyle = dense
-        ? AppTypography.kpiValue.copyWith(color: accentColor, fontSize: 20)
+        ? AppTypography.kpiValue.copyWith(color: accentColor, fontSize: AppTypography.scale * 20)
         : AppTypography.kpiValue.copyWith(color: accentColor);
 
     final compactBody = compactHeight

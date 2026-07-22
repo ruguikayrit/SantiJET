@@ -162,7 +162,7 @@ class _HeaderAvatarButton extends StatelessWidget {
               initial ?? 'U',
               style: AppTypography.titleMedium.copyWith(
                 color: AppColors.warning,
-                fontSize: 14,
+                fontSize: AppTypography.scale * 14,
                 height: 1.0,
               ),
             ),
@@ -188,7 +188,7 @@ class _PageBrandHeader extends StatelessWidget {
   final String? avatarInitial;
 
   static TextStyle get _productLabelStyle => AppTypography.labelSmall.copyWith(
-        fontSize: 11,
+        fontSize: AppTypography.scale * 11,
         letterSpacing: 0.9,
         fontWeight: FontWeight.w700,
         color: AppColors.textMuted,
@@ -196,7 +196,7 @@ class _PageBrandHeader extends StatelessWidget {
       );
 
   static TextStyle get _pageTitleStyle => AppTypography.headlineMedium.copyWith(
-        fontSize: 18,
+        fontSize: AppTypography.scale * 18,
         fontWeight: FontWeight.w700,
         letterSpacing: -0.2,
         color: AppColors.textPrimary,
@@ -313,7 +313,8 @@ TextStyle get _demirTitleStyle => AppTypography.titleMedium.copyWith(
 /// Wordmark altındaki DEMİR — daha büyük, daha az tracking; wordmark ölçüsü değişmez.
 TextStyle get _homeDemirTitleStyle => _demirTitleStyle.copyWith(
       fontSize:
-          (_demirTitleStyle.fontSize ?? 14) * SantijetHeader.homeDemirScale,
+          (_demirTitleStyle.fontSize ?? AppTypography.scale * 14) *
+              SantijetHeader.homeDemirScale,
       letterSpacing: SantijetHeader.homeDemirLetterSpacing,
     );
 

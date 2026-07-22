@@ -654,7 +654,7 @@ class _OverallProgressCard extends StatelessWidget {
                 value: '$percent',
                 numericValue: percent,
                 style: AppTypography.kpiValue.copyWith(
-                  fontSize: 28,
+                  fontSize: AppTypography.scale * 28,
                   color: AppColors.electricBlueLight,
                 ),
                 formatter: (n) => '${n.round()}%',

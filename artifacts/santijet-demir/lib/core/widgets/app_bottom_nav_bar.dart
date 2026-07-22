@@ -187,7 +187,7 @@ class _NavItem extends StatelessWidget {
             textAlign: TextAlign.center,
             style: AppTypography.tabLabel.copyWith(
               color: selected ? activeColor : inactiveColor,
-              fontSize: 9,
+              fontSize: AppTypography.scale * 9,
               height: 1.0,
               decoration: TextDecoration.none,
             ),
