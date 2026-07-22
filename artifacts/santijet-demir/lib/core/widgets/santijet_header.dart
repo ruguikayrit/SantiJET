@@ -318,12 +318,13 @@ TextStyle get _homeDemirTitleStyle => _demirTitleStyle.copyWith(
     );
 
 abstract final class _BrandTitleMetrics {
-  /// Koyu wordmark (yalnızca ŞANTİJET) — harf doluluk oranı.
+  /// Wordmark harf doluluk oranı — açık/koyu aynı görsel ölçü.
   static const wordmarkLetterFillRatio = 0.55;
+  static const _wordmarkHeightScale = 2.5;
 
-  /// Açık wordmark asset (ŞANTİJET + OPERASYON YÖNETİMİ, saydam zemin).
-  static const _lightWordmarkPixelHeight = 206.0;
-  static const _lightWordmarkLeftInkPx = 16.0;
+  /// Açık wordmark asset (yalnızca ŞANTİJET, saydam zemin) — koyu ile aynı ölçü.
+  static const _lightWordmarkPixelHeight = 157.0;
+  static const _lightWordmarkLeftInkPx = 12.0;
 
   /// Koyu wordmark asset ölçüleri.
   static const _darkWordmarkPixelHeight = 514.0;
@@ -336,10 +337,8 @@ abstract final class _BrandTitleMetrics {
       maxLines: 1,
     )..layout();
     final demirCapHeight = textPainter.computeLineMetrics().first.ascent;
-    final isLight = Theme.of(context).brightness == Brightness.light;
-    // Açık asset alt satır (tagline) içerir; biraz daha yüksek basılır.
-    final scale = isLight ? 3.15 : 2.5;
-    return demirCapHeight / wordmarkLetterFillRatio * scale;
+    // Açık ve koyu temada aynı yükseklik — tipografi büyüklüğü eşit.
+    return demirCapHeight / wordmarkLetterFillRatio * _wordmarkHeightScale;
   }
 
   static double demirIndentOf(BuildContext context) {
