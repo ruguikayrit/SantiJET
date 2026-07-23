@@ -375,14 +375,18 @@ TextStyle get _homeDemirTitleStyle => _demirTitleStyle.copyWith(
     );
 
 abstract final class _BrandTitleMetrics {
-  /// Wordmark harf doluluk oranı — tüm temalarda aynı görsel ölçü.
+  /// Wordmark harf doluluk oranı — açık/koyu aynı görsel ölçek.
   static const wordmarkLetterFillRatio = 0.55;
   static const _wordmarkHeightScale = 2.5;
 
-  /// Koyu ve açık wordmark asset'leri artık aynı tipografiden (dolu harf,
-  /// aynı piksel boyutu) üretiliyor — tek ölçü seti tüm temalarda geçerli.
-  static const _wordmarkPixelHeight = 157.0;
-  static const _wordmarkLeftInkPx = 12.0;
+  /// Açık wordmark asset (splash_wordmark_light.png).
+  static const _lightWordmarkPixelHeight = 157.0;
+  static const _lightWordmarkLeftInkPx = 12.0;
+
+  /// Koyu wordmark — kullanıcının referans tipografisinden kesilmiş
+  /// (splash_wordmark.png, OPERASYON YÖNETİMİ yok).
+  static const _darkWordmarkPixelHeight = 150.0;
+  static const _darkWordmarkLeftInkPx = 12.0;
 
   static double wordmarkHeightOf(BuildContext context) {
     final textPainter = TextPainter(
@@ -392,11 +396,16 @@ abstract final class _BrandTitleMetrics {
     )..layout();
     final demirCapHeight = textPainter.computeLineMetrics().first.ascent;
     // Marka ölçeğine kilitli — global tipografi değişince wordmark büyümez.
+    // Açık/koyu asset farklı piksel boyutunda olsa da aynı görsel yükseklik.
     return demirCapHeight / wordmarkLetterFillRatio * _wordmarkHeightScale;
   }
 
   static double demirIndentOf(BuildContext context) {
-    return wordmarkHeightOf(context) *
-        (_wordmarkLeftInkPx / _wordmarkPixelHeight);
+    final isLight = Theme.of(context).brightness == Brightness.light;
+    final leftInk =
+        isLight ? _lightWordmarkLeftInkPx : _darkWordmarkLeftInkPx;
+    final pixelHeight =
+        isLight ? _lightWordmarkPixelHeight : _darkWordmarkPixelHeight;
+    return wordmarkHeightOf(context) * (leftInk / pixelHeight);
   }
 }
