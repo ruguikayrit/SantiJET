@@ -16,7 +16,9 @@ class AppColorsThemeSync extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     AppColors.applyPaletteFromMode(themeMode, Theme.of(context).brightness);
-    syncPageBackground(AppColors.canvas);
+    // HTML gövde rengi = alt nav yüzeyi: mobil tarayıcıda Flutter alanının
+    // altında kalan bant nav ile aynı renk olsun (nav altında ölü alan olmaz).
+    syncPageBackground(AppColors.surface);
     return KeyedSubtree(
       key: ValueKey(AppColors.palette),
       child: child,
@@ -37,7 +39,8 @@ class ThemeRebuildGate extends StatelessWidget {
     if (!AppColors.isSantijet) {
       AppColors.applyBrightness(brightness);
     }
-    syncPageBackground(AppColors.canvas);
+    // Alt nav yüzeyiyle aynı renk — nav altında gri bant/ölü alan görünmesin.
+    syncPageBackground(AppColors.surface);
     return KeyedSubtree(
       key: ValueKey('${AppColors.palette}-$brightness'),
       child: child,
