@@ -81,10 +81,14 @@ class AppTableHeaderBadge extends StatelessWidget {
         color: Colors.black,
         fontWeight: FontWeight.w700,
         height: 1.1,
+        fontSize: (AppTypography.labelSmall.fontSize ?? 11) * 0.95,
       );
 
   @override
   Widget build(BuildContext context) {
+    // Tek satırlı başlıklar da iki satır yüksekliği alsın — tüm mavi kutular eşit.
+    final secondLine = line2 ?? '\u00A0';
+
     return DecoratedBox(
       decoration: BoxDecoration(
         color: AppColors.electricBlueLight,
@@ -93,11 +97,10 @@ class AppTableHeaderBadge extends StatelessWidget {
       ),
       child: Padding(
         padding: padding ??
-            const EdgeInsets.symmetric(horizontal: 4, vertical: 6),
+            const EdgeInsets.symmetric(horizontal: 3, vertical: 5),
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
-          // Always stretch/center regardless of [align] so header text stays
-          // centered by default across the whole app.
+          mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
             Text(
@@ -105,16 +108,19 @@ class AppTableHeaderBadge extends StatelessWidget {
               style: _textStyle,
               textAlign: TextAlign.center,
               maxLines: 1,
-              overflow: TextOverflow.ellipsis,
+              softWrap: false,
+              overflow: TextOverflow.clip,
             ),
-            if (line2 != null)
-              Text(
-                line2!,
-                style: _textStyle,
-                textAlign: TextAlign.center,
-                maxLines: 1,
-                overflow: TextOverflow.ellipsis,
+            Text(
+              secondLine,
+              style: _textStyle.copyWith(
+                color: line2 == null ? Colors.transparent : Colors.black,
               ),
+              textAlign: TextAlign.center,
+              maxLines: 1,
+              softWrap: false,
+              overflow: TextOverflow.clip,
+            ),
           ],
         ),
       ),

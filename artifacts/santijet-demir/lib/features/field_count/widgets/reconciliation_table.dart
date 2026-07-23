@@ -66,6 +66,32 @@ class ReconciliationTable extends StatelessWidget {
 
   static const _columnCount = 9;
 
+  /// Yatay: kısa başlıklar dar, uzun başlıklar geniş — tüm harfler görünsün.
+  static const _landscapeFlex = <double>[
+    0.62, // Çap
+    0.78, // Keşif
+    0.88, // Sipariş
+    1.05, // Teslim alınan
+    1.22, // Planlanan kullanım
+    1.18, // Gerçek kullanım
+    1.12, // Planlanan stok
+    1.55, // Gerçek stok (sayım)
+    0.82, // Fire %
+  ];
+
+  /// Dikey kaydırma: sabit px — en uzun başlığa göre.
+  static const _portraitWidths = <double>[
+    42, // Çap
+    50, // Keşif
+    56, // Sipariş
+    64, // Teslim alınan
+    74, // Planlanan kullanım
+    72, // Gerçek kullanım
+    68, // Planlanan stok
+    92, // Gerçek stok (sayım)
+    54, // Fire %
+  ];
+
   @override
   Widget build(BuildContext context) {
     final table = Table(
@@ -103,13 +129,15 @@ class ReconciliationTable extends StatelessWidget {
 
   Map<int, TableColumnWidth> _landscapeColumnWidths() {
     return {
-      for (var i = 0; i < _columnCount; i++) i: const FlexColumnWidth(1),
+      for (var i = 0; i < _columnCount; i++)
+        i: FlexColumnWidth(_landscapeFlex[i]),
     };
   }
 
   Map<int, TableColumnWidth> _portraitColumnWidths() {
     return {
-      for (var i = 0; i < _columnCount; i++) i: const FixedColumnWidth(56),
+      for (var i = 0; i < _columnCount; i++)
+        i: FixedColumnWidth(_portraitWidths[i]),
     };
   }
 
@@ -123,7 +151,7 @@ class ReconciliationTable extends StatelessWidget {
         _headerCell('Planlanan', line2: 'kullanım'),
         _headerCell('Gerçek', line2: 'kullanım'),
         _headerCell('Planlanan', line2: 'stok'),
-        _headerCell('Gerçek', line2: 'stok (sayım)'),
+        _headerCell('Gerçek stok', line2: '(sayım)'),
         _headerCell('Fire', line2: '%'),
       ],
     );
