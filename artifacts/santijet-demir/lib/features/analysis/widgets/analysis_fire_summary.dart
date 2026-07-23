@@ -133,6 +133,7 @@ class _AnalysisFireSummaryPanelState
                             Text(
                               'FİRE ÖZETİ',
                               style: AppTypography.titleMedium.copyWith(
+                                color: AppColors.cardTextPrimary,
                                 fontSize:
                                     (AppTypography.titleMedium.fontSize ?? 14) *
                                         1.5,

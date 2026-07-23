@@ -1,17 +1,14 @@
-import 'dart:math' as math;
-
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:pointer_interceptor/pointer_interceptor.dart';
-import 'package:santijet_demir/core/responsive/app_safe_area.dart';
 import 'package:santijet_demir/core/responsive/responsive_layout.dart';
 import 'package:santijet_demir/core/theme/app_colors.dart';
 import 'package:santijet_demir/core/theme/app_typography.dart';
 import 'package:santijet_demir/features/auth/providers/membership_permission_provider.dart';
 
-/// Alt navigasyon — ikon satırı sabit; alt boşluk cihaz safe area’sına yaslanır.
+/// Alt navigasyon — ikon satırı sayfanın en altına oturur (alt boşluk yok).
 class AppBottomNavBar extends ConsumerWidget {
   const AppBottomNavBar({super.key, required this.navigationShell});
 
@@ -20,8 +17,8 @@ class AppBottomNavBar extends ConsumerWidget {
   /// İkon satırı — sabit.
   static const iconBarHeight = 56.0;
 
-  /// Geriye dönük sabit (tercihen [bottomInsetOf] kullanın).
-  static const bottomInset = 16.0;
+  /// Alt boşluk iptal — nav ekranın dibine yaslanır.
+  static const bottomInset = 0.0;
 
   /// Geriye dönük sabit toplam (tercihen [totalHeightOf] kullanın).
   static const totalHeight = iconBarHeight + bottomInset;
@@ -48,22 +45,15 @@ class AppBottomNavBar extends ConsumerWidget {
 
   static double iconBarHeightOf(BuildContext context) => iconBarHeight;
 
-  /// Home indicator / alt güvenli alan — nav yüzeyi ekranın altına kadar uzar.
-  static double bottomInsetOf(BuildContext context) {
-    final safe = AppSafeAreaInsets.bottomNavInsetOf(context);
-    // En az 8px nefes; iOS’ta tipik ~34px ile siyah boşluk kalmaz.
-    return math.max(safe, 8.0);
-  }
+  /// Alt güvenli alan / ekstra padding yok — bar tamamen sayfa altına oturur.
+  static double bottomInsetOf(BuildContext context) => 0;
 
-  static double totalHeightOf(BuildContext context) =>
-      iconBarHeight + bottomInsetOf(context);
+  static double totalHeightOf(BuildContext context) => iconBarHeight;
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final showLabels = ResponsiveLayout.isTablet(context);
     final visibleTabs = ref.watch(visibleBottomNavTabsProvider);
-    final inset = bottomInsetOf(context);
-    final height = iconBarHeight + inset;
 
     final current = navigationShell.currentIndex;
     final currentAllowed = visibleTabs.any((t) => t.index == current);
@@ -75,55 +65,49 @@ class AppBottomNavBar extends ConsumerWidget {
 
     final bar = SizedBox(
       width: double.infinity,
-      height: height,
+      height: iconBarHeight,
       child: ColoredBox(
         color: AppColors.surface,
-        child: Column(
-          mainAxisSize: MainAxisSize.max,
-          children: [
-            Container(
-              height: iconBarHeight,
-              width: double.infinity,
-              decoration: BoxDecoration(
-                border: Border(
-                  top: BorderSide(
-                    color: AppColors.border.withValues(alpha: 0.85),
-                  ),
-                ),
-                boxShadow: [
-                  BoxShadow(
-                    color: AppColors.isDark
-                        ? Colors.black.withValues(alpha: 0.35)
-                        : Colors.black.withValues(alpha: 0.08),
-                    blurRadius: AppColors.isDark ? 8 : 10,
-                    offset: const Offset(0, -2),
-                  ),
-                ],
-              ),
-              child: Row(
-                children: [
-                  for (final tab in visibleTabs)
-                    Expanded(
-                      child: _NavItem(
-                        height: iconBarHeight,
-                        icon: _icons[tab.index],
-                        activeIcon: _activeIcons[tab.index],
-                        label: tab.navLabel,
-                        semanticsLabel: tab.label,
-                        selected: navigationShell.currentIndex == tab.index,
-                        showLabel: showLabels,
-                        onTap: () => navigationShell.goBranch(
-                          tab.index,
-                          initialLocation:
-                              tab.index == navigationShell.currentIndex,
-                        ),
-                      ),
-                    ),
-                ],
+        child: Container(
+          height: iconBarHeight,
+          width: double.infinity,
+          decoration: BoxDecoration(
+            border: Border(
+              top: BorderSide(
+                color: AppColors.border.withValues(alpha: 0.85),
               ),
             ),
-            SizedBox(height: inset, width: double.infinity),
-          ],
+            boxShadow: [
+              BoxShadow(
+                color: AppColors.isDark
+                    ? Colors.black.withValues(alpha: 0.35)
+                    : Colors.black.withValues(alpha: 0.08),
+                blurRadius: AppColors.isDark ? 8 : 10,
+                offset: const Offset(0, -2),
+              ),
+            ],
+          ),
+          child: Row(
+            children: [
+              for (final tab in visibleTabs)
+                Expanded(
+                  child: _NavItem(
+                    height: iconBarHeight,
+                    icon: _icons[tab.index],
+                    activeIcon: _activeIcons[tab.index],
+                    label: tab.navLabel,
+                    semanticsLabel: tab.label,
+                    selected: navigationShell.currentIndex == tab.index,
+                    showLabel: showLabels,
+                    onTap: () => navigationShell.goBranch(
+                      tab.index,
+                      initialLocation:
+                          tab.index == navigationShell.currentIndex,
+                    ),
+                  ),
+                ),
+            ],
+          ),
         ),
       ),
     );
