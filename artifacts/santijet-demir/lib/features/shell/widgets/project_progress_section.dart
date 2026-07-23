@@ -16,14 +16,29 @@ import 'package:santijet_demir/features/projects/providers/project_provider.dart
 import 'package:santijet_demir/features/shell/project_progress_provider.dart';
 import 'package:santijet_demir/features/survey/providers/survey_provider.dart';
 
-class ProjectProgressSection extends ConsumerWidget {
+class ProjectProgressSection extends ConsumerStatefulWidget {
   const ProjectProgressSection({super.key});
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
+  ConsumerState<ProjectProgressSection> createState() =>
+      _ProjectProgressSectionState();
+}
+
+class _ProjectProgressSectionState
+    extends ConsumerState<ProjectProgressSection> {
+  /// Toplu uygulama sonrası açılacak imalat satırları.
+  var _expandSignal = 0;
+  Set<String> _imalatIdsToExpand = {};
+
+  @override
+  Widget build(BuildContext context) {
     ref.listen(activeProjectIdProvider, (previous, next) {
       if (previous != next) {
         ref.read(selectedProgressImalatIdsProvider.notifier).state = {};
+        setState(() {
+          _imalatIdsToExpand = {};
+          _expandSignal++;
+        });
       }
     });
 
@@ -59,27 +74,32 @@ class ProjectProgressSection extends ConsumerWidget {
 
     Future<void> applyBulkProgress(double progressPercent) async {
       if (selectedImalatIds.isEmpty) return;
+      final appliedIds = Set<String>.from(selectedImalatIds);
       try {
         await ref.read(surveyProjectProvider.notifier).updateProgressForImalats(
-              imalatIds: selectedImalatIds,
+              imalatIds: appliedIds,
               progressPercent: progressPercent,
             );
-        if (context.mounted) {
-          ScaffoldMessenger.of(context).showAppSnackBar(
-            SnackBar(
-              content: Text(
-                '${selectedImalatIds.length} imalata '
-                '%${progressPercent.round()} uygulandı',
-              ),
+        if (!mounted) return;
+        // Panel kapansın; uygulanan imalat satırları açılsın (çap kontrolü).
+        setSelectedImalats({});
+        setState(() {
+          _imalatIdsToExpand = appliedIds;
+          _expandSignal++;
+        });
+        ScaffoldMessenger.of(context).showAppSnackBar(
+          SnackBar(
+            content: Text(
+              '${appliedIds.length} imalata '
+              '%${progressPercent.round()} uygulandı',
             ),
-          );
-        }
+          ),
+        );
       } catch (_) {
-        if (context.mounted) {
-          ScaffoldMessenger.of(context).showAppSnackBar(
-            const SnackBar(content: Text('İlerleme kaydedilemedi')),
-          );
-        }
+        if (!mounted) return;
+        ScaffoldMessenger.of(context).showAppSnackBar(
+          const SnackBar(content: Text('İlerleme kaydedilemedi')),
+        );
       }
     }
 
@@ -132,6 +152,10 @@ class ProjectProgressSection extends ConsumerWidget {
                   isFirst: entry.$1 == 0,
                   canEdit: canEdit,
                   selected: selectedImalatIds.contains(entry.$2.first.imalatId),
+                  expandSignal: _expandSignal,
+                  forceExpand: _imalatIdsToExpand.contains(
+                    entry.$2.first.imalatId,
+                  ),
                   onSelectionChanged: (selected) {
                     final imalatId = entry.$2.first.imalatId;
                     final next = Set<String>.from(selectedImalatIds);
@@ -455,6 +479,8 @@ class _ProgressImalatGroup extends StatefulWidget {
     required this.isFirst,
     required this.canEdit,
     required this.selected,
+    required this.expandSignal,
+    required this.forceExpand,
     required this.onSelectionChanged,
     required this.onProgressChanged,
   });
@@ -463,6 +489,8 @@ class _ProgressImalatGroup extends StatefulWidget {
   final bool isFirst;
   final bool canEdit;
   final bool selected;
+  final int expandSignal;
+  final bool forceExpand;
   final ValueChanged<bool> onSelectionChanged;
   final void Function(ProjectProgressRow row, double value) onProgressChanged;
 
@@ -471,8 +499,16 @@ class _ProgressImalatGroup extends StatefulWidget {
 }
 
 class _ProgressImalatGroupState extends State<_ProgressImalatGroup> {
-  /// Çap tablosu varsayılan olarak açık; kullanıcı kapatabilir.
+  /// Çap tablosu varsayılan kapalı; toplu uygulama sonrası açılır.
   bool _expanded = false;
+
+  @override
+  void didUpdateWidget(covariant _ProgressImalatGroup oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (widget.expandSignal != oldWidget.expandSignal && widget.forceExpand) {
+      _expanded = true;
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
