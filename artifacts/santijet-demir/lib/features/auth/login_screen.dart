@@ -73,6 +73,14 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final brightness = Theme.of(context).brightness;
+    final wordmarkAsset = AppColors.wordmarkAssetFor(brightness);
+    // Koyu: kullanıcı referans tipografisi (895×150). Açık: mevcut light asset.
+    final wordmarkAspect =
+        brightness == Brightness.dark ? (895 / 150) : (900 / 157);
+    final wordmarkWidth = 240.0;
+    final wordmarkHeight = wordmarkWidth / wordmarkAspect;
+
     return Scaffold(
       backgroundColor: AppColors.canvas,
       body: SafeArea(
@@ -86,19 +94,48 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
             AppSpacing.lg + MediaQuery.viewPaddingOf(context).bottom,
           ),
           children: [
-            const SizedBox(height: 51),
+            const SizedBox(height: 36),
             Center(
-              child: Image.asset(
-                'assets/images/splash_bolt.png',
-                width: 88,
-                height: 88,
-                fit: BoxFit.contain,
-                filterQuality: FilterQuality.high,
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Image.asset(
+                    'assets/images/splash_bolt.png',
+                    width: 72,
+                    height: 72,
+                    fit: BoxFit.contain,
+                    filterQuality: FilterQuality.high,
+                  ),
+                  const SizedBox(height: 10),
+                  Image.asset(
+                    wordmarkAsset,
+                    width: wordmarkWidth,
+                    height: wordmarkHeight,
+                    fit: BoxFit.contain,
+                    filterQuality: FilterQuality.high,
+                    alignment: Alignment.center,
+                  ),
+                  const SizedBox(height: 8),
+                  Text(
+                    'DEMİR',
+                    style: AppTypography.titleMedium.copyWith(
+                      fontSize: AppTypography.brandScale * 18,
+                      fontWeight: FontWeight.w700,
+                      letterSpacing: 4,
+                      height: 1.0,
+                      color: AppColors.electricBlue,
+                    ),
+                  ),
+                ],
               ),
             ),
-            const SizedBox(height: 5),
-            Text('Giriş Yap', style: AppTypography.headlineLarge, textAlign: TextAlign.center),
-            const SizedBox(height: 32),
+            const SizedBox(height: 28),
+            Text(
+              'Giriş Yap',
+              style: AppTypography.headlineLarge,
+              textAlign: TextAlign.center,
+            ),
+            const SizedBox(height: 28),
             TextField(
               controller: _emailCtrl,
               keyboardType: TextInputType.emailAddress,
