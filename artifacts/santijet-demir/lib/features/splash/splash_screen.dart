@@ -22,7 +22,8 @@ class SplashScreen extends ConsumerStatefulWidget {
 
 class _SplashScreenState extends ConsumerState<SplashScreen>
     with SingleTickerProviderStateMixin {
-  static const _wordmarkAspect = 1774 / 514;
+  // Wordmark artık açık temanın dolu tipografisinden üretiliyor (900×157).
+  static const _wordmarkAspect = 900 / 157;
   static const _boltWordmarkGap = 28.0;
   static const _boltWordmarkGapReduced = _boltWordmarkGap * 0.3;
   static const _wordmarkAnchorCompensation = _boltWordmarkGap * 0.35;
