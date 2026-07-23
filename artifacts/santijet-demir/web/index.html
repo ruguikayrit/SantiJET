@@ -42,6 +42,9 @@
       height: 100%;
       height: -webkit-fill-available;
       height: 100dvh;
+      /* JS ölçümü hazır olunca gerçek piksel yükseklik devreye girer —
+         iOS Safari'nin dinamik adres çubuğu dvh/fixed uyumsuzluğunu düzeltir. */
+      height: var(--app-height, 100dvh);
       touch-action: manipulation;
       /* Açılış koyu; Flutter tema ile syncPageBackground günceller */
       background-color: #05070A;
@@ -50,6 +53,7 @@
       height: 100%;
       height: -webkit-fill-available;
       height: 100dvh;
+      height: var(--app-height, 100dvh);
       margin: 0;
       padding: 0;
       overflow: hidden;
@@ -67,6 +71,7 @@
       width: 100%;
       height: 100%;
       height: 100dvh;
+      height: var(--app-height, 100dvh);
       min-height: 100dvh;
       touch-action: manipulation;
       background-color: #05070A;
@@ -86,6 +91,40 @@
       padding: 24px;
     }
   </style>
+  <script>
+    // Gerçek görünür yükseklik (px) — iOS Safari'de adres çubuğu açılıp
+    // kapanınca `position:fixed` + `dvh` senkron kalmayabilir; bu, nav bar
+    // altında/altında boşluk bırakan bilinen bir WebKit sorunudur. JS ile
+    // ölçülen değeri CSS değişkenine yazarak kesin ve tutarlı bir yükseklik
+    // sağlanır.
+    (function () {
+      var root = document.documentElement;
+
+      function setAppHeight() {
+        var h = (window.visualViewport && window.visualViewport.height) ||
+          window.innerHeight ||
+          (root && root.clientHeight) ||
+          0;
+        if (h > 0) {
+          root.style.setProperty('--app-height', h + 'px');
+        }
+      }
+
+      setAppHeight();
+      window.addEventListener('resize', setAppHeight);
+      window.addEventListener('orientationchange', setAppHeight);
+      if (window.visualViewport) {
+        window.visualViewport.addEventListener('resize', setAppHeight);
+        window.visualViewport.addEventListener('scroll', setAppHeight);
+      }
+      // Flutter ilk kareyi çizdikten kısa süre sonra bir kez daha ölç —
+      // engine mount sırasında adres çubuğu durumu değişmiş olabilir.
+      window.addEventListener('flutter-first-frame', function () {
+        setAppHeight();
+        setTimeout(setAppHeight, 300);
+      }, { once: true });
+    })();
+  </script>
   <script>
     // ŞantiJET DEMİR — iOS PWA viewport + yükleme ekranı
     (function () {

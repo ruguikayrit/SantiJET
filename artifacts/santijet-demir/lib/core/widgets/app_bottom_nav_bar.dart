@@ -1,27 +1,24 @@
-import 'dart:math' as math;
-
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:pointer_interceptor/pointer_interceptor.dart';
-import 'package:santijet_demir/core/responsive/app_safe_area.dart';
 import 'package:santijet_demir/core/responsive/responsive_layout.dart';
 import 'package:santijet_demir/core/theme/app_colors.dart';
 import 'package:santijet_demir/core/theme/app_typography.dart';
 import 'package:santijet_demir/features/auth/providers/membership_permission_provider.dart';
 
-/// Alt navigasyon — ikon satırı ekranın dibine oturur; home-indicator alanı
-/// yalnızca gerçek cihaz inset'i kadar yine nav yüzeyiyle (surface) doldurulur.
+/// Alt navigasyon — ikon satırı, ekstra boşluk/inset olmadan doğrudan
+/// sayfanın en altına oturur (nav çerçevesinin altı = ekranın altı).
 class AppBottomNavBar extends ConsumerWidget {
   const AppBottomNavBar({super.key, required this.navigationShell});
 
   final StatefulNavigationShell navigationShell;
 
-  /// İkon satırı — sabit.
+  /// İkon satırı — sabit. Nav'ın toplam yüksekliği de budur; alt boşluk yok.
   static const iconBarHeight = 56.0;
 
-  /// Geriye dönük sabit (tercihen [bottomInsetOf] kullanın).
+  /// Alt boşluk kalıcı olarak iptal — nav çerçevesinin altı ekranın altına sıfırlanır.
   static const bottomInset = 0.0;
 
   /// Geriye dönük sabit toplam (tercihen [totalHeightOf] kullanın).
@@ -49,19 +46,15 @@ class AppBottomNavBar extends ConsumerWidget {
 
   static double iconBarHeightOf(BuildContext context) => iconBarHeight;
 
-  /// Yalnızca gerçek home-indicator/güvenli alan kadar (masaüstü/web = 0).
-  /// Bu bölge nav yüzeyiyle (surface) doldurulur; ekstra "nefes" eklenmez.
-  static double bottomInsetOf(BuildContext context) =>
-      AppSafeAreaInsets.bottomNavInsetOf(context);
+  /// Kalıcı olarak sıfır — nav'ın altında hiçbir ek alan/inset bırakılmaz.
+  static double bottomInsetOf(BuildContext context) => 0;
 
-  static double totalHeightOf(BuildContext context) =>
-      iconBarHeight + bottomInsetOf(context);
+  static double totalHeightOf(BuildContext context) => iconBarHeight;
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final showLabels = ResponsiveLayout.isTablet(context);
     final visibleTabs = ref.watch(visibleBottomNavTabsProvider);
-    final inset = math.max(0.0, bottomInsetOf(context));
 
     final current = navigationShell.currentIndex;
     final currentAllowed = visibleTabs.any((t) => t.index == current);
@@ -73,56 +66,49 @@ class AppBottomNavBar extends ConsumerWidget {
 
     final bar = SizedBox(
       width: double.infinity,
-      height: iconBarHeight + inset,
+      height: iconBarHeight,
       child: ColoredBox(
         color: AppColors.surface,
-        child: Column(
-          mainAxisSize: MainAxisSize.max,
-          children: [
-            Container(
-              height: iconBarHeight,
-              width: double.infinity,
-              decoration: BoxDecoration(
-                border: Border(
-                  top: BorderSide(
-                    color: AppColors.border.withValues(alpha: 0.85),
-                  ),
-                ),
-                boxShadow: [
-                  BoxShadow(
-                    color: AppColors.isDark
-                        ? Colors.black.withValues(alpha: 0.35)
-                        : Colors.black.withValues(alpha: 0.08),
-                    blurRadius: AppColors.isDark ? 8 : 10,
-                    offset: const Offset(0, -2),
-                  ),
-                ],
-              ),
-              child: Row(
-                children: [
-                  for (final tab in visibleTabs)
-                    Expanded(
-                      child: _NavItem(
-                        height: iconBarHeight,
-                        icon: _icons[tab.index],
-                        activeIcon: _activeIcons[tab.index],
-                        label: tab.navLabel,
-                        semanticsLabel: tab.label,
-                        selected: navigationShell.currentIndex == tab.index,
-                        showLabel: showLabels,
-                        onTap: () => navigationShell.goBranch(
-                          tab.index,
-                          initialLocation:
-                              tab.index == navigationShell.currentIndex,
-                        ),
-                      ),
-                    ),
-                ],
+        child: Container(
+          height: iconBarHeight,
+          width: double.infinity,
+          decoration: BoxDecoration(
+            border: Border(
+              top: BorderSide(
+                color: AppColors.border.withValues(alpha: 0.85),
               ),
             ),
-            // Home-indicator alanı — nav yüzeyiyle aynı renk (kesintisiz).
-            if (inset > 0) SizedBox(height: inset, width: double.infinity),
-          ],
+            boxShadow: [
+              BoxShadow(
+                color: AppColors.isDark
+                    ? Colors.black.withValues(alpha: 0.35)
+                    : Colors.black.withValues(alpha: 0.08),
+                blurRadius: AppColors.isDark ? 8 : 10,
+                offset: const Offset(0, -2),
+              ),
+            ],
+          ),
+          child: Row(
+            children: [
+              for (final tab in visibleTabs)
+                Expanded(
+                  child: _NavItem(
+                    height: iconBarHeight,
+                    icon: _icons[tab.index],
+                    activeIcon: _activeIcons[tab.index],
+                    label: tab.navLabel,
+                    semanticsLabel: tab.label,
+                    selected: navigationShell.currentIndex == tab.index,
+                    showLabel: showLabels,
+                    onTap: () => navigationShell.goBranch(
+                      tab.index,
+                      initialLocation:
+                          tab.index == navigationShell.currentIndex,
+                    ),
+                  ),
+                ),
+            ],
+          ),
         ),
       ),
     );
