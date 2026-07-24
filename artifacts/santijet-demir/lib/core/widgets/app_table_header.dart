@@ -63,6 +63,8 @@ class AppTableHeaderRow extends StatelessWidget {
 
 /// Single decorated header cell for use inside `Table` widgets, `Row`s with
 /// fixed-width columns, or anywhere a standalone blue header badge is needed.
+///
+/// Etiket metni çerçeve içinde her iki yönde (yatay + dikey) ortalanır.
 class AppTableHeaderBadge extends StatelessWidget {
   const AppTableHeaderBadge(
     this.label, {
@@ -77,53 +79,85 @@ class AppTableHeaderBadge extends StatelessWidget {
   final TextAlign align;
   final EdgeInsetsGeometry? padding;
 
+  /// Tek/çift satır başlıklar için ortak minimum çerçeve yüksekliği.
+  static const minHeight = 36.0;
+
   static TextStyle get _textStyle => AppTypography.labelSmall.copyWith(
         color: Colors.black,
         fontWeight: FontWeight.w700,
-        height: 1.1,
+        // 1.0 → satır üst/alt boşluğu simetrik; optik dikey ortalama bozulmaz.
+        height: 1.0,
         fontSize: (AppTypography.labelSmall.fontSize ?? 11) * 0.95,
       );
 
   @override
   Widget build(BuildContext context) {
-    // Tek satırlı başlıklar da iki satır yüksekliği alsın — tüm mavi kutular eşit.
-    final secondLine = line2 ?? '\u00A0';
-
-    return DecoratedBox(
-      decoration: BoxDecoration(
-        color: AppColors.electricBlueLight,
-        borderRadius: AppRadii.xs,
-        border: Border.all(color: AppColors.electricBlue),
-      ),
-      child: Padding(
-        padding: padding ??
-            const EdgeInsets.symmetric(horizontal: 3, vertical: 5),
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.stretch,
-          children: [
-            Text(
-              label,
-              style: _textStyle,
-              textAlign: TextAlign.center,
-              maxLines: 1,
-              softWrap: false,
-              overflow: TextOverflow.clip,
-            ),
-            Text(
-              secondLine,
-              style: _textStyle.copyWith(
-                color: line2 == null ? Colors.transparent : Colors.black,
-              ),
-              textAlign: TextAlign.center,
-              maxLines: 1,
-              softWrap: false,
-              overflow: TextOverflow.clip,
-            ),
-          ],
+    final labelBlock = Column(
+      mainAxisSize: MainAxisSize.min,
+      mainAxisAlignment: MainAxisAlignment.center,
+      crossAxisAlignment: CrossAxisAlignment.center,
+      children: [
+        Text(
+          label,
+          style: _textStyle,
+          textAlign: align,
+          maxLines: 1,
+          softWrap: false,
+          overflow: TextOverflow.clip,
         ),
-      ),
+        if (line2 != null) ...[
+          const SizedBox(height: 2),
+          Text(
+            line2!,
+            style: _textStyle,
+            textAlign: align,
+            maxLines: 1,
+            softWrap: false,
+            overflow: TextOverflow.clip,
+          ),
+        ],
+      ],
+    );
+
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        final fillHeight = constraints.hasBoundedHeight &&
+            constraints.maxHeight.isFinite &&
+            constraints.maxHeight > 0;
+
+        // Dikey padding yok — Align.center gerçek geometrik ortayı verir.
+        final edgePadding = padding ??
+            const EdgeInsets.symmetric(horizontal: 4);
+
+        final framed = DecoratedBox(
+          decoration: BoxDecoration(
+            color: AppColors.electricBlueLight,
+            borderRadius: AppRadii.xs,
+            border: Border.all(color: AppColors.electricBlue),
+          ),
+          child: Padding(
+            padding: edgePadding,
+            child: Align(
+              alignment: Alignment.center,
+              child: labelBlock,
+            ),
+          ),
+        );
+
+        if (fillHeight) {
+          return SizedBox(
+            width: double.infinity,
+            height: constraints.maxHeight,
+            child: framed,
+          );
+        }
+
+        return SizedBox(
+          width: double.infinity,
+          height: minHeight,
+          child: framed,
+        );
+      },
     );
   }
 }
