@@ -65,6 +65,8 @@ class AppTableHeaderRow extends StatelessWidget {
 /// fixed-width columns, or anywhere a standalone blue header badge is needed.
 ///
 /// Etiket metni çerçeve içinde her iki yönde (yatay + dikey) ortalanır.
+/// [LayoutBuilder] kullanılmaz — [IntrinsicHeight] içinde 0 yüksekliğe
+/// çöküp başlık yazısının kaybolmasına yol açıyordu.
 class AppTableHeaderBadge extends StatelessWidget {
   const AppTableHeaderBadge(
     this.label, {
@@ -79,13 +81,12 @@ class AppTableHeaderBadge extends StatelessWidget {
   final TextAlign align;
   final EdgeInsetsGeometry? padding;
 
-  /// Tek/çift satır başlıklar için ortak minimum çerçeve yüksekliği.
+  /// Tek/çift satır başlıklar için ortak çerçeve yüksekliği.
   static const minHeight = 36.0;
 
   static TextStyle get _textStyle => AppTypography.labelSmall.copyWith(
         color: Colors.black,
         fontWeight: FontWeight.w700,
-        // 1.0 → satır üst/alt boşluğu simetrik; optik dikey ortalama bozulmaz.
         height: 1.0,
         fontSize: (AppTypography.labelSmall.fontSize ?? 11) * 0.95,
       );
@@ -119,45 +120,26 @@ class AppTableHeaderBadge extends StatelessWidget {
       ],
     );
 
-    return LayoutBuilder(
-      builder: (context, constraints) {
-        final fillHeight = constraints.hasBoundedHeight &&
-            constraints.maxHeight.isFinite &&
-            constraints.maxHeight > 0;
-
-        // Dikey padding yok — Align.center gerçek geometrik ortayı verir.
-        final edgePadding = padding ??
-            const EdgeInsets.symmetric(horizontal: 4);
-
-        final framed = DecoratedBox(
-          decoration: BoxDecoration(
-            color: AppColors.electricBlueLight,
-            borderRadius: AppRadii.xs,
-            border: Border.all(color: AppColors.electricBlue),
-          ),
-          child: Padding(
-            padding: edgePadding,
+    return ConstrainedBox(
+      constraints: const BoxConstraints(minHeight: minHeight),
+      child: DecoratedBox(
+        decoration: BoxDecoration(
+          color: AppColors.electricBlueLight,
+          borderRadius: AppRadii.xs,
+          border: Border.all(color: AppColors.electricBlue),
+        ),
+        child: Padding(
+          // Yatay nefes; dikey ortalama Align ile — asimetrik padding yok.
+          padding: padding ?? const EdgeInsets.symmetric(horizontal: 4),
+          child: SizedBox(
+            width: double.infinity,
             child: Align(
               alignment: Alignment.center,
               child: labelBlock,
             ),
           ),
-        );
-
-        if (fillHeight) {
-          return SizedBox(
-            width: double.infinity,
-            height: constraints.maxHeight,
-            child: framed,
-          );
-        }
-
-        return SizedBox(
-          width: double.infinity,
-          height: minHeight,
-          child: framed,
-        );
-      },
+        ),
+      ),
     );
   }
 }
