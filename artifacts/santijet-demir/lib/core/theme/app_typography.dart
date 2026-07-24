@@ -5,8 +5,8 @@ import 'package:santijet_demir/core/theme/app_colors.dart';
 /// Figma Make — 9 adımlı tipografi ölçeği.
 abstract final class AppTypography {
   /// Global tipografi ölçeği (1.0 = tasarım referansı).
-  /// 0.7 (önceki) × 1.15 = 0.805
-  static const double scale = 0.805;
+  /// 0.805 × 1.10 = 0.8855
+  static const double scale = 0.8855;
 
   /// Marka wordmark ölçü kilidi — global ölçekten bağımsız.
   static const double brandScale = 0.7;
