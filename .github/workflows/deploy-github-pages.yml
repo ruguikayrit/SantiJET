@@ -89,7 +89,15 @@ jobs:
         continue-on-error: true
         env:
           GITHUB_REPOSITORY_NAME: ${{ github.event.repository.name }}
-        run: bash .github/scripts/build-puantaj-pages.sh
+        run: |
+          if [ -f .github/scripts/build-puantaj-pages.sh ]; then
+            bash .github/scripts/build-puantaj-pages.sh
+          elif [ -f staging-src/.github/scripts/build-puantaj-pages.sh ]; then
+            bash staging-src/.github/scripts/build-puantaj-pages.sh
+          else
+            echo "::warning::build-puantaj-pages.sh missing on main and staging"
+            exit 1
+          fi
 
       - name: Verify site bundle
         run: |
