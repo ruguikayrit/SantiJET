@@ -84,18 +84,26 @@ jobs:
           GITHUB_REPOSITORY_NAME: ${{ github.event.repository.name }}
         run: bash .github/scripts/build-bfa-pages.sh
 
+      - name: Setup Flutter (Puantaj)
+        uses: subosito/flutter-action@v2
+        with:
+          channel: stable
+          flutter-version: '3.27.4'
+          cache: true
+          cache-key: flutter-puantaj-3.27.4
+
       - name: Build Puantaj web (staging preview)
         id: puantaj_build
-        continue-on-error: true
         env:
           GITHUB_REPOSITORY_NAME: ${{ github.event.repository.name }}
         run: |
-          if [ -f .github/scripts/build-puantaj-pages.sh ]; then
-            bash .github/scripts/build-puantaj-pages.sh
-          elif [ -f staging-src/.github/scripts/build-puantaj-pages.sh ]; then
+          # staging push'larında staging betiği öncelikli (main checkout üzerine yazar).
+          if [ -f staging-src/.github/scripts/build-puantaj-pages.sh ]; then
             bash staging-src/.github/scripts/build-puantaj-pages.sh
+          elif [ -f .github/scripts/build-puantaj-pages.sh ]; then
+            bash .github/scripts/build-puantaj-pages.sh
           else
-            echo "::warning::build-puantaj-pages.sh missing on main and staging"
+            echo "::error::build-puantaj-pages.sh missing on main and staging"
             exit 1
           fi
 
@@ -111,10 +119,9 @@ jobs:
           elif [ ! -f site/bfa/index.html ]; then
             echo "::warning::BFA bundle missing after build step."
           fi
-          if [ "${{ steps.puantaj_build.outcome }}" != "success" ]; then
-            echo "::warning::Puantaj build failed; /puantaj/ may be unavailable in this deploy."
-          elif [ ! -f site/puantaj/index.html ]; then
-            echo "::warning::Puantaj bundle missing after build step."
+          if [ ! -f site/puantaj/index.html ]; then
+            echo "::error::Puantaj bundle missing (site/puantaj/index.html). Refusing to deploy a broken /puantaj/."
+            exit 1
           fi
 
       - name: Upload Pages artifact

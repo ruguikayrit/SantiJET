@@ -322,7 +322,7 @@ class _VerimRowCard extends StatelessWidget {
           const SizedBox(height: AppSpacing.sm),
           _metric(
             theme,
-            'İş gücü',
+            label: 'İş gücü',
             planned: item.plannedWorkerCount?.toString() ?? '—',
             actual: row.actualWorkerDays.toStringAsFixed(1),
             unit: 'adam-gün',
@@ -331,7 +331,7 @@ class _VerimRowCard extends StatelessWidget {
             const SizedBox(height: AppSpacing.xs),
             _metric(
               theme,
-              'Miktar',
+              label: 'Miktar',
               planned: item.plannedQty!.toStringAsFixed(1),
               actual: row.actualQty.toStringAsFixed(1),
               unit: item.unit ?? '',
