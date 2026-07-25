@@ -422,12 +422,14 @@ class _DailyView extends StatelessWidget {
                   child: _SumChip(
                     count: counts[s] ?? 0,
                     label: s.short,
+                    fullLabel: s.label,
                     color: s.color,
                   ),
                 ),
               _SumChip(
                 count: people.length,
                 label: 'Top',
+                fullLabel: 'Toplam',
                 color: theme.colorScheme.onSurfaceVariant,
               ),
               if (none > 0)
@@ -436,6 +438,7 @@ class _DailyView extends StatelessWidget {
                   child: _SumChip(
                     count: none,
                     label: '–',
+                    fullLabel: 'Girilmedi',
                     color: theme.colorScheme.onSurfaceVariant,
                   ),
                 ),
@@ -517,40 +520,75 @@ class _DailyView extends StatelessWidget {
   }
 }
 
-class _SumChip extends StatelessWidget {
+/// Özet rozeti — kısa kod (M, Y…) varsayılan; tıklanınca tam ad (Mevcut…).
+class _SumChip extends StatefulWidget {
   const _SumChip({
     required this.count,
     required this.label,
     required this.color,
+    this.fullLabel,
   });
 
   final int count;
   final String label;
+  final String? fullLabel;
   final Color color;
 
   @override
+  State<_SumChip> createState() => _SumChipState();
+}
+
+class _SumChipState extends State<_SumChip> {
+  bool _expanded = false;
+
+  @override
   Widget build(BuildContext context) {
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
-      decoration: BoxDecoration(
-        color: color.withValues(alpha: 0.12),
+    final color = widget.color;
+    final text = _expanded && widget.fullLabel != null
+        ? widget.fullLabel!
+        : widget.label;
+
+    return Material(
+      color: Colors.transparent,
+      child: InkWell(
+        onTap: widget.fullLabel == null
+            ? null
+            : () => setState(() => _expanded = !_expanded),
         borderRadius: AppRadii.sm,
-        border: Border.all(color: color.withValues(alpha: 0.35)),
-      ),
-      child: Row(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Text(
-            '$count',
-            style: TextStyle(
-              color: color,
-              fontWeight: FontWeight.w700,
-              fontSize: 14,
+        child: AnimatedContainer(
+          duration: const Duration(milliseconds: 180),
+          curve: Curves.easeOut,
+          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+          decoration: BoxDecoration(
+            color: color.withValues(alpha: _expanded ? 0.2 : 0.12),
+            borderRadius: AppRadii.sm,
+            border: Border.all(
+              color: color.withValues(alpha: _expanded ? 0.55 : 0.35),
             ),
           ),
-          const SizedBox(width: 4),
-          Text(label, style: TextStyle(color: color, fontSize: 11)),
-        ],
+          child: Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Text(
+                '${widget.count}',
+                style: TextStyle(
+                  color: color,
+                  fontWeight: FontWeight.w700,
+                  fontSize: 14,
+                ),
+              ),
+              const SizedBox(width: 4),
+              Text(
+                text,
+                style: TextStyle(
+                  color: color,
+                  fontSize: 11,
+                  fontWeight: _expanded ? FontWeight.w600 : FontWeight.w400,
+                ),
+              ),
+            ],
+          ),
+        ),
       ),
     );
   }
