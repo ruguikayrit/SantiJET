@@ -89,7 +89,7 @@ class HomeScreen extends ConsumerWidget {
                             style: theme.textTheme.headlineMedium,
                           ),
                           Text(
-                            project.name,
+                            AppInfo.tagline,
                             style: theme.textTheme.bodySmall,
                             maxLines: 1,
                             overflow: TextOverflow.ellipsis,

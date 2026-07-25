@@ -3,7 +3,7 @@ abstract final class AppInfo {
   static const String displayName = 'ŞantiJET Puantaj';
   static const String legalName = 'ŞantiJET Puantaj';
   static const String productLabel = 'PUANTAJ';
-  static const String tagline = 'Personel devam ve puantaj takip';
+  static const String tagline = 'İş gücünü yönetin, üretimi ölçün.';
   static const String supportEmail = 'destek@santijet.com';
   static const String version = '0.1.0';
 
