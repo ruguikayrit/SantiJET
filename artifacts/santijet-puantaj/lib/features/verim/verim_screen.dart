@@ -1,0 +1,387 @@
+import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
+
+import '../../core/design_system/sj_button.dart';
+import '../../core/design_system/sj_card.dart';
+import '../../core/design_system/sj_empty_state.dart';
+import '../../core/routing/app_routes.dart';
+import '../../core/theme/app_colors.dart';
+import '../../core/theme/app_radii.dart';
+import '../../core/theme/app_spacing.dart';
+import '../../data/providers/app_data_provider.dart';
+import '../../data/providers/verim_provider.dart';
+
+/// Verim — plan (İş Programı bulut) × gerçekleşen (puantaj + imalat).
+class VerimScreen extends ConsumerWidget {
+  const VerimScreen({super.key});
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final theme = Theme.of(context);
+    final project = ref.watch(activeProjectProvider);
+    final verim = ref.watch(verimProvider);
+    final rows = ref.watch(verimRowsProvider);
+    final todayWorkers = ref.watch(todayWorkerDaysProvider);
+    final syncing = verim.status == VerimSyncStatus.syncing;
+
+    if (project == null) {
+      return Scaffold(
+        appBar: AppBar(title: const Text('Verim')),
+        body: SJEmptyState(
+          title: 'Önce proje ekleyin',
+          message: 'Verim hesabı aktif projeye bağlıdır.',
+          icon: Icons.apartment_outlined,
+          actionLabel: 'Projelere Git',
+          onAction: () => context.go(AppRoutes.projeler),
+        ),
+      );
+    }
+
+    return Scaffold(
+      appBar: AppBar(title: const Text('Verim')),
+      body: RefreshIndicator(
+        onRefresh: () =>
+            ref.read(verimProvider.notifier).syncFromCloud(),
+        child: ListView(
+          padding: const EdgeInsets.fromLTRB(
+            AppSpacing.md,
+            AppSpacing.sm,
+            AppSpacing.md,
+            AppSpacing.xxl,
+          ),
+          children: [
+            _CloudBanner(
+              projectName: project.name,
+              verim: verim,
+              syncing: syncing,
+              onSync: () =>
+                  ref.read(verimProvider.notifier).syncFromCloud(),
+              onDemo: () => ref
+                  .read(verimProvider.notifier)
+                  .syncFromCloud(demoFallback: true),
+            ),
+            const SizedBox(height: AppSpacing.md),
+            if (!verim.hasCloudPlan) ...[
+              SJCard(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Row(
+                      children: [
+                        Icon(Icons.cloud_off_outlined,
+                            color: theme.colorScheme.onSurfaceVariant),
+                        const SizedBox(width: AppSpacing.sm),
+                        Expanded(
+                          child: Text(
+                            'Bulut planı yok',
+                            style: theme.textTheme.titleMedium,
+                          ),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: AppSpacing.sm),
+                    Text(
+                      'Verim hesaplayabilmek için İş Programı uygulamasından '
+                      'bulut üzerinden iş programı verisi çekilmesi gerekir. '
+                      'Yalnızca yerel puantaj ile verim hesaplanamaz.',
+                      style: theme.textTheme.bodyMedium,
+                    ),
+                    const SizedBox(height: AppSpacing.md),
+                    SJButton(
+                      label: 'İş Programı’ndan Çek',
+                      icon: Icons.cloud_download_outlined,
+                      loading: syncing,
+                      expanded: true,
+                      onPressed: syncing
+                          ? null
+                          : () => ref
+                              .read(verimProvider.notifier)
+                              .syncFromCloud(),
+                    ),
+                    const SizedBox(height: AppSpacing.sm),
+                    SJButton(
+                      label: 'Demo bulut verisi (önizleme)',
+                      icon: Icons.science_outlined,
+                      variant: SJButtonVariant.secondary,
+                      expanded: true,
+                      loading: syncing,
+                      onPressed: syncing
+                          ? null
+                          : () => ref
+                              .read(verimProvider.notifier)
+                              .syncFromCloud(demoFallback: true),
+                    ),
+                  ],
+                ),
+              ),
+            ] else ...[
+              Row(
+                children: [
+                  Expanded(
+                    child: _KpiTile(
+                      label: 'Bugün adam-gün',
+                      value: todayWorkers.toStringAsFixed(
+                        todayWorkers == todayWorkers.roundToDouble() ? 0 : 1,
+                      ),
+                      color: AppColors.electricBlue,
+                    ),
+                  ),
+                  const SizedBox(width: AppSpacing.sm),
+                  Expanded(
+                    child: _KpiTile(
+                      label: 'Plan satırı',
+                      value: '${rows.length}',
+                      color: AppColors.info,
+                    ),
+                  ),
+                ],
+              ),
+              const SizedBox(height: AppSpacing.md),
+              Text('İmalat bazlı verim', style: theme.textTheme.titleMedium),
+              const SizedBox(height: AppSpacing.xs),
+              Text(
+                'Plan: İş Programı bulutu · Gerçek: puantaj + imalat',
+                style: theme.textTheme.bodySmall,
+              ),
+              const SizedBox(height: AppSpacing.sm),
+              for (final row in rows) ...[
+                _VerimRowCard(row: row),
+                const SizedBox(height: AppSpacing.sm),
+              ],
+            ],
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class _CloudBanner extends StatelessWidget {
+  const _CloudBanner({
+    required this.projectName,
+    required this.verim,
+    required this.syncing,
+    required this.onSync,
+    required this.onDemo,
+  });
+
+  final String projectName;
+  final VerimState verim;
+  final bool syncing;
+  final VoidCallback onSync;
+  final VoidCallback onDemo;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final ready = verim.hasCloudPlan;
+    final accent = ready ? AppColors.success : AppColors.warning;
+
+    return Container(
+      padding: const EdgeInsets.all(AppSpacing.md),
+      decoration: BoxDecoration(
+        color: accent.withValues(alpha: 0.1),
+        borderRadius: AppRadii.md,
+        border: Border.all(color: accent.withValues(alpha: 0.35)),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Icon(
+                ready ? Icons.cloud_done_outlined : Icons.cloud_sync_outlined,
+                color: accent,
+                size: 22,
+              ),
+              const SizedBox(width: AppSpacing.sm),
+              Expanded(
+                child: Text(
+                  'İş Programı bulut senkronu',
+                  style: theme.textTheme.titleMedium?.copyWith(color: accent),
+                ),
+              ),
+              if (ready)
+                IconButton(
+                  tooltip: 'Yeniden çek',
+                  onPressed: syncing ? null : onSync,
+                  icon: syncing
+                      ? const SizedBox(
+                          width: 18,
+                          height: 18,
+                          child: CircularProgressIndicator(strokeWidth: 2),
+                        )
+                      : Icon(Icons.refresh, color: accent),
+                ),
+            ],
+          ),
+          Text(projectName, style: theme.textTheme.bodySmall),
+          if (verim.message != null) ...[
+            const SizedBox(height: AppSpacing.xs),
+            Text(verim.message!, style: theme.textTheme.bodySmall),
+          ],
+          if (ready) ...[
+            const SizedBox(height: AppSpacing.sm),
+            Align(
+              alignment: Alignment.centerLeft,
+              child: TextButton.icon(
+                onPressed: syncing ? null : onDemo,
+                icon: const Icon(Icons.science_outlined, size: 16),
+                label: const Text('Demo veriyi yenile'),
+              ),
+            ),
+          ],
+        ],
+      ),
+    );
+  }
+}
+
+class _KpiTile extends StatelessWidget {
+  const _KpiTile({
+    required this.label,
+    required this.value,
+    required this.color,
+  });
+
+  final String label;
+  final String value;
+  final Color color;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    return SJCard(
+      padding: const EdgeInsets.all(AppSpacing.md),
+      accentColor: color,
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(label, style: theme.textTheme.labelMedium),
+          const SizedBox(height: 4),
+          Text(
+            value,
+            style: theme.textTheme.headlineMedium?.copyWith(color: color),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _VerimRowCard extends StatelessWidget {
+  const _VerimRowCard({required this.row});
+
+  final VerimRow row;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final item = row.item;
+    final workerEff = row.workerEfficiency;
+    final qtyEff = row.qtyEfficiency;
+    final primary = qtyEff ?? workerEff;
+    final color = _pctColor(primary);
+
+    return SJCard(
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Expanded(
+                child: Text(item.imalatName, style: theme.textTheme.titleMedium),
+              ),
+              if (primary != null)
+                Container(
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                  decoration: BoxDecoration(
+                    color: color.withValues(alpha: 0.15),
+                    borderRadius: AppRadii.full,
+                    border: Border.all(color: color.withValues(alpha: 0.4)),
+                  ),
+                  child: Text(
+                    '%${(primary * 100).toStringAsFixed(0)}',
+                    style: theme.textTheme.labelMedium?.copyWith(
+                      color: color,
+                      fontWeight: FontWeight.w700,
+                    ),
+                  ),
+                ),
+            ],
+          ),
+          if (item.startDate != null && item.endDate != null) ...[
+            const SizedBox(height: 4),
+            Text(
+              '${item.startDate} → ${item.endDate}',
+              style: theme.textTheme.labelSmall,
+            ),
+          ],
+          const SizedBox(height: AppSpacing.sm),
+          _metric(
+            theme,
+            'İş gücü',
+            planned: item.plannedWorkerCount?.toString() ?? '—',
+            actual: row.actualWorkerDays.toStringAsFixed(1),
+            unit: 'adam-gün',
+          ),
+          if (item.plannedQty != null) ...[
+            const SizedBox(height: AppSpacing.xs),
+            _metric(
+              theme,
+              'Miktar',
+              planned: item.plannedQty!.toStringAsFixed(1),
+              actual: row.actualQty.toStringAsFixed(1),
+              unit: item.unit ?? '',
+            ),
+          ],
+          if (primary != null) ...[
+            const SizedBox(height: AppSpacing.sm),
+            ClipRRect(
+              borderRadius: BorderRadius.circular(4),
+              child: LinearProgressIndicator(
+                value: primary.clamp(0.0, 1.0),
+                minHeight: 6,
+                backgroundColor: color.withValues(alpha: 0.15),
+                color: color,
+              ),
+            ),
+          ],
+        ],
+      ),
+    );
+  }
+
+  Widget _metric(
+    ThemeData theme, {
+    required String label,
+    required String planned,
+    required String actual,
+    required String unit,
+  }) {
+    return Row(
+      children: [
+        SizedBox(
+          width: 72,
+          child: Text(label, style: theme.textTheme.labelMedium),
+        ),
+        Expanded(
+          child: Text(
+            'Plan $planned  ·  Gerçek $actual ${unit.trim()}',
+            style: theme.textTheme.bodySmall,
+          ),
+        ),
+      ],
+    );
+  }
+
+  Color _pctColor(double? ratio) {
+    if (ratio == null) return AppColors.textMuted;
+    final pct = ratio * 100;
+    if (pct >= 80) return AppColors.success;
+    if (pct >= 50) return AppColors.warning;
+    return AppColors.critical;
+  }
+}

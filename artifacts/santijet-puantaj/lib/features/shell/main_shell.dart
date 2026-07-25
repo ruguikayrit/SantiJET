@@ -21,14 +21,14 @@ class MainShell extends StatelessWidget {
       label: 'Puantaj',
     ),
     SJNavItem(
-      icon: Icons.groups_outlined,
-      activeIcon: Icons.groups,
-      label: 'Personel',
+      icon: Icons.precision_manufacturing_outlined,
+      activeIcon: Icons.precision_manufacturing,
+      label: 'İmalat',
     ),
     SJNavItem(
-      icon: Icons.apartment_outlined,
-      activeIcon: Icons.apartment,
-      label: 'Projeler',
+      icon: Icons.speed_outlined,
+      activeIcon: Icons.speed,
+      label: 'Verim',
     ),
     SJNavItem(
       icon: Icons.settings_outlined,

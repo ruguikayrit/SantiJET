@@ -171,15 +171,40 @@ class HomeScreen extends ConsumerWidget {
                     ),
                     const SizedBox(height: AppSpacing.sm),
                     SJCard(
-                      onTap: () => context.go(AppRoutes.personel),
+                      onTap: () => context.go(AppRoutes.imalat),
                       child: Row(
                         children: [
-                          Icon(Icons.groups, color: theme.colorScheme.primary),
+                          Icon(Icons.precision_manufacturing,
+                              color: theme.colorScheme.primary),
                           const SizedBox(width: AppSpacing.sm),
                           Expanded(
                             child: Text(
-                              'Personel (${people.length})',
+                              'İmalat girişi',
                               style: theme.textTheme.titleMedium,
+                            ),
+                          ),
+                          const Icon(Icons.chevron_right),
+                        ],
+                      ),
+                    ),
+                    const SizedBox(height: AppSpacing.sm),
+                    SJCard(
+                      onTap: () => context.go(AppRoutes.verim),
+                      child: Row(
+                        children: [
+                          Icon(Icons.speed, color: theme.colorScheme.primary),
+                          const SizedBox(width: AppSpacing.sm),
+                          Expanded(
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Text('Verim',
+                                    style: theme.textTheme.titleMedium),
+                                Text(
+                                  'İş Programı bulut verisi gerekir',
+                                  style: theme.textTheme.bodySmall,
+                                ),
+                              ],
                             ),
                           ),
                           const Icon(Icons.chevron_right),

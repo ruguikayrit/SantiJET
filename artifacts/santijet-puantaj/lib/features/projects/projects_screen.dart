@@ -1,8 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
 
 import '../../core/design_system/sj_card.dart';
 import '../../core/design_system/sj_empty_state.dart';
+import '../../core/routing/app_routes.dart';
 import '../../core/theme/app_colors.dart';
 import '../../core/theme/app_spacing.dart';
 import '../../data/providers/app_data_provider.dart';
@@ -19,7 +21,13 @@ class ProjectsScreen extends ConsumerWidget {
     final theme = Theme.of(context);
 
     return Scaffold(
-      appBar: AppBar(title: const Text('Projeler')),
+      appBar: AppBar(
+        title: const Text('Projeler'),
+        leading: IconButton(
+          icon: const Icon(Icons.arrow_back),
+          onPressed: () => context.go(AppRoutes.ayarlar),
+        ),
+      ),
       floatingActionButton: FloatingActionButton.extended(
         onPressed: () => _openEditor(context, ref),
         icon: const Icon(Icons.add),

@@ -1,11 +1,14 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
 
 import '../../core/constants/app_info.dart';
+import '../../core/routing/app_routes.dart';
 import '../../core/theme/app_spacing.dart';
 import '../../core/theme/theme_mode_provider.dart';
+import '../../data/providers/app_data_provider.dart';
 
-/// Tema ve uygulama bilgisi.
+/// Tema, personel/proje yönetimi ve uygulama bilgisi.
 class SettingsScreen extends ConsumerWidget {
   const SettingsScreen({super.key});
 
@@ -13,12 +16,38 @@ class SettingsScreen extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final themeMode = ref.watch(themeModeProvider);
     final theme = Theme.of(context);
+    final peopleCount = ref.watch(personnelProvider).length;
+    final projectCount = ref.watch(projectsProvider).length;
+    final active = ref.watch(activeProjectProvider);
 
     return Scaffold(
       appBar: AppBar(title: const Text('Ayarlar')),
       body: ListView(
         padding: const EdgeInsets.all(AppSpacing.md),
         children: [
+          Text('Yönetim', style: theme.textTheme.titleMedium),
+          const SizedBox(height: AppSpacing.sm),
+          ListTile(
+            contentPadding: EdgeInsets.zero,
+            leading: const Icon(Icons.groups_outlined),
+            title: const Text('Personel'),
+            subtitle: Text('$peopleCount kayıt'),
+            trailing: const Icon(Icons.chevron_right),
+            onTap: () => context.go(AppRoutes.personel),
+          ),
+          ListTile(
+            contentPadding: EdgeInsets.zero,
+            leading: const Icon(Icons.apartment_outlined),
+            title: const Text('Projeler'),
+            subtitle: Text(
+              active == null
+                  ? '$projectCount proje'
+                  : 'Aktif: ${active.name}',
+            ),
+            trailing: const Icon(Icons.chevron_right),
+            onTap: () => context.go(AppRoutes.projeler),
+          ),
+          const SizedBox(height: AppSpacing.xl),
           Text('Görünüm', style: theme.textTheme.titleMedium),
           const SizedBox(height: AppSpacing.sm),
           SegmentedButton<ThemeMode>(

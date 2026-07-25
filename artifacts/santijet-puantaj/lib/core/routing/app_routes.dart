@@ -2,7 +2,9 @@
 abstract final class AppRoutes {
   static const home = '/';
   static const puantaj = '/puantaj';
-  static const personel = '/personel';
-  static const projeler = '/projeler';
+  static const imalat = '/imalat';
+  static const verim = '/verim';
   static const ayarlar = '/ayarlar';
+  static const personel = '/ayarlar/personel';
+  static const projeler = '/ayarlar/projeler';
 }
