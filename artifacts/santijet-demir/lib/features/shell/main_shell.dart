@@ -43,55 +43,25 @@ class MainShell extends ConsumerWidget {
         Scaffold(
           backgroundColor: AppColors.canvas,
           resizeToAvoidBottomInset: false,
-          extendBody: true,
-          body: Stack(
-            fit: StackFit.expand,
-            children: [
-              Positioned.fill(
-                child: MediaQuery(
-                  data: MediaQuery.of(context).copyWith(
-                    padding: MediaQuery.of(context).padding.copyWith(bottom: 0),
-                    viewPadding:
-                        MediaQuery.of(context).viewPadding.copyWith(bottom: 0),
+          body: ResponsiveLayout(
+            child: SafeArea(
+              bottom: false,
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: [
+                  ReadOnlyBanner(),
+                  Expanded(
+                    child: ThemeRebuildGate(child: navigationShell),
                   ),
-                  child: ResponsiveLayout(
-                    child: SafeArea(
-                      bottom: false,
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.stretch,
-                        children: [
-                          ReadOnlyBanner(),
-                          Expanded(
-                            child: ThemeRebuildGate(child: navigationShell),
-                          ),
-                        ],
-                      ),
-                    ),
-                  ),
-                ),
+                ],
               ),
-              Positioned(
-                left: 0,
-                right: 0,
-                bottom: 0,
-                height: AppBottomNavBar.totalHeightOf(context),
-                child: MediaQuery.removeViewInsets(
-                  removeBottom: true,
-                  context: context,
-                  child: MediaQuery.removePadding(
-                    removeBottom: true,
-                    context: context,
-                    child: SizedBox(
-                      height: AppBottomNavBar.totalHeightOf(context),
-                      width: double.infinity,
-                      child: AppBottomNavBar(
-                        navigationShell: navigationShell,
-                      ),
-                    ),
-                  ),
-                ),
-              ),
-            ],
+            ),
+          ),
+          // Puantaj ile aynı konum: Scaffold.bottomNavigationBar
+          bottomNavigationBar: MediaQuery.removePadding(
+            context: context,
+            removeBottom: true,
+            child: AppBottomNavBar(navigationShell: navigationShell),
           ),
         ),
         const AnalysisRunningLockOverlay(),
@@ -163,14 +133,14 @@ class DashboardScreen extends ConsumerWidget {
                       index: 4,
                       child: _DashboardActivitiesBlock(),
                     ),
-                    SizedBox(height: AppBottomNavBar.totalHeightOf(context) + 16),
+                    SizedBox(height: AppSpacing.lg),
                   ]),
                 ),
               ),
             ],
             if (!hasActiveProject)
-              SliverToBoxAdapter(
-                child: SizedBox(height: AppBottomNavBar.totalHeightOf(context) + 16),
+              const SliverToBoxAdapter(
+                child: SizedBox(height: AppSpacing.lg),
               ),
           ],
         ),

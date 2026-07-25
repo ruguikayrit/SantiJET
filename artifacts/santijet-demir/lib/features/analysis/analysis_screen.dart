@@ -8,7 +8,6 @@ import 'package:santijet_demir/core/theme/app_colors.dart';
 import 'package:santijet_demir/core/theme/app_radii.dart';
 import 'package:santijet_demir/core/theme/app_spacing.dart';
 import 'package:santijet_demir/core/theme/app_typography.dart';
-import 'package:santijet_demir/core/widgets/app_bottom_nav_bar.dart';
 import 'package:santijet_demir/core/widgets/empty_states.dart';
 import 'package:santijet_demir/core/widgets/santijet_header.dart';
 import 'package:santijet_demir/core/widgets/shell_tab_guard.dart';
@@ -111,9 +110,7 @@ class AnalysisScreen extends ConsumerWidget {
               const SliverToBoxAdapter(child: _AnalysisSelectedBatchArea()),
               ],
               SliverPadding(
-                padding: EdgeInsets.only(
-                  bottom: AppBottomNavBar.totalHeightOf(context) + 16,
-                ),
+                padding: const EdgeInsets.only(bottom: 16),
               ),
             ],
           ],
