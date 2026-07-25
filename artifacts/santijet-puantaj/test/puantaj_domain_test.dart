@@ -1,7 +1,10 @@
 import 'package:flutter_test/flutter_test.dart';
 
-import 'package:santijet_puantaj/domain/enums/attendance_status.dart';
 import 'package:santijet_puantaj/core/utils/puantaj_date.dart';
+import 'package:santijet_puantaj/domain/entities/attendance.dart';
+import 'package:santijet_puantaj/domain/entities/person.dart';
+import 'package:santijet_puantaj/domain/enums/attendance_status.dart';
+import 'package:santijet_puantaj/domain/yevmiye/yevmiye_calculator.dart';
 
 void main() {
   group('AttendanceStatus', () {
@@ -13,6 +16,73 @@ void main() {
       expect(AttendanceStatus.present.isWorkedDay, isTrue);
       expect(AttendanceStatus.half.isWorkedDay, isTrue);
       expect(AttendanceStatus.absent.isWorkedDay, isFalse);
+    });
+  });
+
+  group('YevmiyeCalculator', () {
+    test('mesai dahil adam-gün', () {
+      const a = Attendance(
+        id: '1',
+        projectId: 'p',
+        personId: 'u1',
+        personName: 'Ali',
+        date: '25.07.2026',
+        status: AttendanceStatus.present,
+        hours: 8,
+        overtimeHours: 2,
+      );
+      expect(a.yevmiye, 1.25);
+      expect(YevmiyeCalculator.ofAttendance(a), 1.25);
+    });
+
+    test('ekip toplamı yalnızca ekip üyelerinden', () {
+      const people = [
+        Person(id: 'u1', name: 'Ali', team: 'Demir'),
+        Person(id: 'u2', name: 'Veli', team: 'Demir'),
+        Person(id: 'u3', name: 'Ayşe', team: 'Kalıp'),
+      ];
+      const att = [
+        Attendance(
+          id: 'a1',
+          projectId: 'p',
+          personId: 'u1',
+          personName: 'Ali',
+          date: '25.07.2026',
+          status: AttendanceStatus.present,
+          hours: 8,
+          overtimeHours: 0,
+        ),
+        Attendance(
+          id: 'a2',
+          projectId: 'p',
+          personId: 'u2',
+          personName: 'Veli',
+          date: '25.07.2026',
+          status: AttendanceStatus.half,
+          hours: 4,
+          overtimeHours: 2,
+        ),
+        Attendance(
+          id: 'a3',
+          projectId: 'p',
+          personId: 'u3',
+          personName: 'Ayşe',
+          date: '25.07.2026',
+          status: AttendanceStatus.present,
+          hours: 8,
+        ),
+      ];
+      // u1: 8/8=1, u2: (4+2)/8=0.75 → 1.75
+      expect(
+        YevmiyeCalculator.forTeam(
+          projectId: 'p',
+          date: '25.07.2026',
+          teamName: 'Demir',
+          people: people,
+          attendance: att,
+        ),
+        1.75,
+      );
     });
   });
 

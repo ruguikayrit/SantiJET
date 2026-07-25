@@ -1,12 +1,13 @@
 import 'package:equatable/equatable.dart';
 
-/// Günlük imalat kaydı — santiye-takip `Production` ile hizalı temel alanlar.
+/// Günlük imalat kaydı — ekip seçimi + puantaj yevmiyesi ile.
 class Production extends Equatable {
   const Production({
     required this.id,
     required this.projectId,
     required this.name,
     required this.date,
+    this.teamName = '',
     this.unit = 'adet',
     this.plannedQty = 0,
     this.completedQty = 0,
@@ -17,6 +18,9 @@ class Production extends Equatable {
   final String projectId;
   final String name;
   final String date; // dd.MM.yyyy
+
+  /// Personel `team` (ekip) adı — listeden seçilir.
+  final String teamName;
   final String unit;
   final double plannedQty;
   final double completedQty;
@@ -32,6 +36,7 @@ class Production extends Equatable {
     String? projectId,
     String? name,
     String? date,
+    String? teamName,
     String? unit,
     double? plannedQty,
     double? completedQty,
@@ -42,6 +47,7 @@ class Production extends Equatable {
       projectId: projectId ?? this.projectId,
       name: name ?? this.name,
       date: date ?? this.date,
+      teamName: teamName ?? this.teamName,
       unit: unit ?? this.unit,
       plannedQty: plannedQty ?? this.plannedQty,
       completedQty: completedQty ?? this.completedQty,
@@ -54,6 +60,7 @@ class Production extends Equatable {
         'projectId': projectId,
         'name': name,
         'date': date,
+        'teamName': teamName,
         'unit': unit,
         'plannedQty': plannedQty,
         'completedQty': completedQty,
@@ -65,6 +72,7 @@ class Production extends Equatable {
         projectId: json['projectId'] as String? ?? '',
         name: json['name'] as String? ?? '',
         date: json['date'] as String? ?? '',
+        teamName: json['teamName'] as String? ?? '',
         unit: json['unit'] as String? ?? 'adet',
         plannedQty: (json['plannedQty'] as num?)?.toDouble() ?? 0,
         completedQty: (json['completedQty'] as num?)?.toDouble() ?? 0,
@@ -72,6 +80,15 @@ class Production extends Equatable {
       );
 
   @override
-  List<Object?> get props =>
-      [id, projectId, name, date, unit, plannedQty, completedQty, note];
+  List<Object?> get props => [
+        id,
+        projectId,
+        name,
+        date,
+        teamName,
+        unit,
+        plannedQty,
+        completedQty,
+        note,
+      ];
 }

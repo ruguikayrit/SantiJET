@@ -205,11 +205,17 @@ class AttendanceNotifier extends StateNotifier<List<Attendance>> {
       personId: person.id,
       date: date,
     );
+    // Çalışılmayan günde mesai sıfırlanır.
+    final overtime = status.isWorkedDay ? (existing?.overtimeHours ?? 0) : 0.0;
     if (existing != null) {
       state = [
         for (final a in state)
           if (a.id == existing.id)
-            a.copyWith(status: status, hours: status.hours)
+            a.copyWith(
+              status: status,
+              hours: status.hours,
+              overtimeHours: overtime,
+            )
           else
             a,
       ];
@@ -224,6 +230,46 @@ class AttendanceNotifier extends StateNotifier<List<Attendance>> {
           date: date,
           status: status,
           hours: status.hours,
+          overtimeHours: 0,
+        ),
+      ];
+    }
+    _persist();
+  }
+
+  void setOvertime({
+    required String projectId,
+    required Person person,
+    required String date,
+    required double overtimeHours,
+  }) {
+    final clamped = overtimeHours.clamp(0, 12).toDouble();
+    final existing = find(
+      projectId: projectId,
+      personId: person.id,
+      date: date,
+    );
+    if (existing != null) {
+      if (!existing.status.isWorkedDay) return;
+      state = [
+        for (final a in state)
+          if (a.id == existing.id)
+            a.copyWith(overtimeHours: clamped)
+          else
+            a,
+      ];
+    } else if (clamped > 0) {
+      state = [
+        ...state,
+        Attendance(
+          id: IdGen.make('att'),
+          projectId: projectId,
+          personId: person.id,
+          personName: person.name,
+          date: date,
+          status: AttendanceStatus.present,
+          hours: AttendanceStatus.present.hours,
+          overtimeHours: clamped,
         ),
       ];
     }
@@ -308,6 +354,7 @@ class AttendanceNotifier extends StateNotifier<List<Attendance>> {
               a.copyWith(
                 status: prev.status,
                 hours: prev.hours,
+                overtimeHours: prev.overtimeHours,
                 note: prev.note,
               )
             else
@@ -324,6 +371,7 @@ class AttendanceNotifier extends StateNotifier<List<Attendance>> {
             date: date,
             status: prev.status,
             hours: prev.hours,
+            overtimeHours: prev.overtimeHours,
             note: prev.note,
           ),
         ];

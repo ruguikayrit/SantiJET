@@ -223,7 +223,7 @@ class _PersonEditorSheetState extends State<_PersonEditorSheet> {
             const SizedBox(height: AppSpacing.sm),
             DropdownButtonFormField<String>(
               value: _team.isEmpty ? null : _team,
-              decoration: const InputDecoration(labelText: 'Meslek grubu'),
+              decoration: const InputDecoration(labelText: 'Ekip'),
               items: [
                 for (final t in ProfessionCatalog.defaultTradeGroups)
                   DropdownMenuItem(value: t, child: Text(t)),

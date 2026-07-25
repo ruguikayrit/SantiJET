@@ -52,8 +52,10 @@ class HomeScreen extends ConsumerWidget {
     final absent = todayRecords
         .where((a) => a.status == AttendanceStatus.absent)
         .length;
-    final totalHours =
-        todayRecords.fold<int>(0, (sum, a) => sum + a.hours);
+    final totalHours = todayRecords.fold<double>(
+      0,
+      (sum, a) => sum + a.hours + a.overtimeHours,
+    );
 
     return Scaffold(
       body: SafeArea(
@@ -126,7 +128,9 @@ class HomeScreen extends ConsumerWidget {
                   ),
                   SJStatCard(
                     label: 'Toplam Saat',
-                    value: '$totalHours',
+                    value: totalHours == totalHours.roundToDouble()
+                        ? totalHours.toStringAsFixed(0)
+                        : totalHours.toStringAsFixed(1),
                     unit: 'sa',
                     accentColor: AppColors.electricBlue,
                   ),

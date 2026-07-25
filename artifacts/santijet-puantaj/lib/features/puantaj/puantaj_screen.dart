@@ -98,6 +98,17 @@ class _PuantajScreenState extends ConsumerState<PuantajScreen> {
       return null;
     }
 
+    double overtimeOf(String personId) {
+      for (final a in attendance) {
+        if (a.projectId == project.id &&
+            a.personId == personId &&
+            a.date == _date) {
+          return a.overtimeHours;
+        }
+      }
+      return 0;
+    }
+
     final missing = people
         .where((p) => statusOf(p.id, _date) == null)
         .length;
@@ -199,6 +210,7 @@ class _PuantajScreenState extends ConsumerState<PuantajScreen> {
                 none: none,
                 statusOf: (id) => statusOf(id, _date),
                 noteOf: noteOf,
+                overtimeOf: overtimeOf,
                 openDropdown: _openDropdown,
                 openNote: _openNote,
                 noteController: _noteController,
@@ -231,6 +243,14 @@ class _PuantajScreenState extends ConsumerState<PuantajScreen> {
                     status: status,
                   );
                   setState(() => _openDropdown = null);
+                },
+                onSetOvertime: (person, hours) {
+                  notifier.setOvertime(
+                    projectId: project.id,
+                    person: person,
+                    date: _date,
+                    overtimeHours: hours,
+                  );
                 },
                 onBulk: (status) {
                   notifier.bulkSetStatus(
@@ -302,6 +322,7 @@ class _DailyView extends StatelessWidget {
     required this.none,
     required this.statusOf,
     required this.noteOf,
+    required this.overtimeOf,
     required this.openDropdown,
     required this.openNote,
     required this.noteController,
@@ -310,6 +331,7 @@ class _DailyView extends StatelessWidget {
     required this.onCloseNote,
     required this.onSaveNote,
     required this.onSetStatus,
+    required this.onSetOvertime,
     required this.onBulk,
     required this.onCopyYesterday,
   });
@@ -323,6 +345,7 @@ class _DailyView extends StatelessWidget {
   final int none;
   final AttendanceStatus? Function(String personId) statusOf;
   final String? Function(String personId) noteOf;
+  final double Function(String personId) overtimeOf;
   final String? openDropdown;
   final String? openNote;
   final TextEditingController noteController;
@@ -331,6 +354,7 @@ class _DailyView extends StatelessWidget {
   final VoidCallback onCloseNote;
   final ValueChanged<Person> onSaveNote;
   final void Function(Person, AttendanceStatus) onSetStatus;
+  final void Function(Person, double) onSetOvertime;
   final ValueChanged<AttendanceStatus> onBulk;
   final VoidCallback onCopyYesterday;
 
@@ -503,6 +527,7 @@ class _DailyView extends StatelessWidget {
                 person: person,
                 status: statusOf(person.id),
                 note: noteOf(person.id),
+                overtimeHours: overtimeOf(person.id),
                 dropdownOpen: openDropdown == person.id,
                 noteOpen: openNote == person.id,
                 noteController: noteController,
@@ -511,6 +536,7 @@ class _DailyView extends StatelessWidget {
                 onCloseNote: onCloseNote,
                 onSaveNote: () => onSaveNote(person),
                 onSetStatus: (s) => onSetStatus(person, s),
+                onSetOvertime: (h) => onSetOvertime(person, h),
               ),
             ),
           const SizedBox(height: AppSpacing.sm),
@@ -599,6 +625,7 @@ class _PersonCard extends StatelessWidget {
     required this.person,
     required this.status,
     required this.note,
+    required this.overtimeHours,
     required this.dropdownOpen,
     required this.noteOpen,
     required this.noteController,
@@ -607,11 +634,13 @@ class _PersonCard extends StatelessWidget {
     required this.onCloseNote,
     required this.onSaveNote,
     required this.onSetStatus,
+    required this.onSetOvertime,
   });
 
   final Person person;
   final AttendanceStatus? status;
   final String? note;
+  final double overtimeHours;
   final bool dropdownOpen;
   final bool noteOpen;
   final TextEditingController noteController;
@@ -620,14 +649,19 @@ class _PersonCard extends StatelessWidget {
   final VoidCallback onCloseNote;
   final VoidCallback onSaveNote;
   final ValueChanged<AttendanceStatus> onSetStatus;
+  final ValueChanged<double> onSetOvertime;
 
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final statusColor = status?.color ?? theme.colorScheme.onSurfaceVariant;
-    final meta = [person.profession, person.phone]
-        .where((s) => s.trim().isNotEmpty)
-        .join(' · ');
+    final meta = [
+      if (person.team.trim().isNotEmpty) person.team.trim(),
+      if (person.profession.trim().isNotEmpty) person.profession.trim(),
+    ].join(' · ');
+    final worked = status?.isWorkedDay ?? false;
+    final baseHours = status?.hours ?? 0;
+    final yevmiye = worked ? (baseHours + overtimeHours) / 8.0 : 0.0;
 
     return SJCard(
       padding: const EdgeInsets.all(AppSpacing.sm),
@@ -702,6 +736,49 @@ class _PersonCard extends StatelessWidget {
               ),
             ],
           ),
+          if (worked) ...[
+            const SizedBox(height: AppSpacing.sm),
+            Row(
+              children: [
+                Text('Mesai', style: theme.textTheme.labelMedium),
+                const Spacer(),
+                IconButton(
+                  visualDensity: VisualDensity.compact,
+                  onPressed: overtimeHours <= 0
+                      ? null
+                      : () => onSetOvertime(
+                            (overtimeHours - 0.5).clamp(0, 12),
+                          ),
+                  icon: const Icon(Icons.remove_circle_outline, size: 20),
+                ),
+                Text(
+                  overtimeHours == overtimeHours.roundToDouble()
+                      ? '${overtimeHours.toStringAsFixed(0)} sa'
+                      : '${overtimeHours.toStringAsFixed(1)} sa',
+                  style: theme.textTheme.labelLarge?.copyWith(
+                    fontWeight: FontWeight.w700,
+                  ),
+                ),
+                IconButton(
+                  visualDensity: VisualDensity.compact,
+                  onPressed: overtimeHours >= 12
+                      ? null
+                      : () => onSetOvertime(
+                            (overtimeHours + 0.5).clamp(0, 12),
+                          ),
+                  icon: const Icon(Icons.add_circle_outline, size: 20),
+                ),
+                const SizedBox(width: AppSpacing.sm),
+                Text(
+                  '${yevmiye.toStringAsFixed(yevmiye == yevmiye.roundToDouble() ? 0 : 2)} yv',
+                  style: theme.textTheme.labelSmall?.copyWith(
+                    color: AppColors.electricBlue,
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+              ],
+            ),
+          ],
           if (note != null && !noteOpen) ...[
             const SizedBox(height: AppSpacing.xs),
             Row(

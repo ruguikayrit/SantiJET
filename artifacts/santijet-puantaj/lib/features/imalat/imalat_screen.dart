@@ -10,9 +10,12 @@ import '../../core/theme/app_spacing.dart';
 import '../../core/utils/puantaj_date.dart';
 import '../../data/providers/app_data_provider.dart';
 import '../../data/providers/production_provider.dart';
+import '../../domain/entities/attendance.dart';
+import '../../domain/entities/person.dart';
 import '../../domain/entities/production.dart';
+import '../../domain/yevmiye/yevmiye_calculator.dart';
 
-/// Günlük imalat miktar girişi.
+/// Günlük imalat — ekip listeden seçilir; yevmiye puantajdan (mesai dahil).
 class ImalatScreen extends ConsumerWidget {
   const ImalatScreen({super.key});
 
@@ -21,6 +24,8 @@ class ImalatScreen extends ConsumerWidget {
     final theme = Theme.of(context);
     final project = ref.watch(activeProjectProvider);
     final items = ref.watch(activeProductionProvider);
+    final people = ref.watch(activePersonnelProvider);
+    final attendance = ref.watch(attendanceProvider);
 
     if (project == null) {
       return Scaffold(
@@ -34,6 +39,8 @@ class ImalatScreen extends ConsumerWidget {
         ),
       );
     }
+
+    final teams = YevmiyeCalculator.teamNames(people);
 
     return Scaffold(
       appBar: AppBar(
@@ -51,18 +58,36 @@ class ImalatScreen extends ConsumerWidget {
         ],
       ),
       floatingActionButton: FloatingActionButton.extended(
-        onPressed: () => _openEditor(context, ref, projectId: project.id),
+        onPressed: teams.isEmpty
+            ? () => _warnNoTeams(context)
+            : () => _openEditor(
+                  context,
+                  ref,
+                  projectId: project.id,
+                  teams: teams,
+                ),
         icon: const Icon(Icons.add),
         label: const Text('İmalat Ekle'),
       ),
       body: items.isEmpty
           ? SJEmptyState(
-              title: 'Henüz imalat yok',
-              message: 'Günlük üretim miktarını buradan girin.',
-              icon: Icons.precision_manufacturing_outlined,
-              actionLabel: 'İmalat Ekle',
-              onAction: () =>
-                  _openEditor(context, ref, projectId: project.id),
+              title: teams.isEmpty ? 'Önce ekip tanımlayın' : 'Henüz imalat yok',
+              message: teams.isEmpty
+                  ? 'Personel kartında Ekip seçin; yevmiye puantajdan gelir.'
+                  : 'Ekip seçerek günlük üretim miktarını girin. '
+                      'Çalışan yevmiyesi puantajdan (mesai dahil) alınır.',
+              icon: teams.isEmpty
+                  ? Icons.groups_outlined
+                  : Icons.precision_manufacturing_outlined,
+              actionLabel: teams.isEmpty ? 'Personel' : 'İmalat Ekle',
+              onAction: teams.isEmpty
+                  ? () => context.go(AppRoutes.personel)
+                  : () => _openEditor(
+                        context,
+                        ref,
+                        projectId: project.id,
+                        teams: teams,
+                      ),
             )
           : ListView.separated(
               padding: const EdgeInsets.fromLTRB(
@@ -76,6 +101,13 @@ class ImalatScreen extends ConsumerWidget {
                   const SizedBox(height: AppSpacing.sm),
               itemBuilder: (context, i) {
                 final p = items[i];
+                final yevmiye = YevmiyeCalculator.forTeam(
+                  projectId: project.id,
+                  date: p.date,
+                  teamName: p.teamName,
+                  people: people,
+                  attendance: attendance,
+                );
                 final pct = p.progressPct;
                 final color = pct >= 80
                     ? AppColors.success
@@ -87,6 +119,7 @@ class ImalatScreen extends ConsumerWidget {
                     context,
                     ref,
                     projectId: project.id,
+                    teams: teams,
                     existing: p,
                   ),
                   child: Column(
@@ -105,6 +138,17 @@ class ImalatScreen extends ConsumerWidget {
                       ),
                       const SizedBox(height: AppSpacing.xs),
                       Text(
+                        p.teamName.isEmpty
+                            ? 'Ekip seçilmedi'
+                            : 'Ekip: ${p.teamName}',
+                        style: theme.textTheme.labelMedium?.copyWith(
+                          color: AppColors.electricBlue,
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
+                      const SizedBox(height: 2),
+                      Text(
+                        'Yevmiye: ${_fmtY(yevmiye)}  ·  '
                         '${_fmt(p.completedQty)} / ${_fmt(p.plannedQty)} ${p.unit}',
                         style: theme.textTheme.bodyMedium,
                       ),
@@ -134,177 +178,341 @@ class ImalatScreen extends ConsumerWidget {
     );
   }
 
+  void _warnNoTeams(BuildContext context) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(
+        content: Text(
+          'İmalat için personelde Ekip seçilmiş olmalı (Ayarlar → Personel).',
+        ),
+      ),
+    );
+  }
+
   static String _fmt(double v) {
     if (v == v.roundToDouble()) return v.toStringAsFixed(0);
     return v.toStringAsFixed(1);
+  }
+
+  static String _fmtY(double v) {
+    if (v == v.roundToDouble()) return v.toStringAsFixed(0);
+    return v.toStringAsFixed(2);
   }
 
   Future<void> _openEditor(
     BuildContext context,
     WidgetRef ref, {
     required String projectId,
+    required List<String> teams,
     Production? existing,
   }) async {
-    final nameCtrl = TextEditingController(text: existing?.name ?? '');
-    final unitCtrl = TextEditingController(text: existing?.unit ?? 'adet');
-    final plannedCtrl = TextEditingController(
-      text: existing != null ? _fmt(existing.plannedQty) : '',
-    );
-    final doneCtrl = TextEditingController(
-      text: existing != null ? _fmt(existing.completedQty) : '',
-    );
-    final noteCtrl = TextEditingController(text: existing?.note ?? '');
-    var date = existing?.date ?? PuantajDate.today();
+    final people = ref.read(activePersonnelProvider);
+    final attendance = ref.read(attendanceProvider);
 
-    final saved = await showModalBottomSheet<bool>(
+    await showModalBottomSheet<void>(
       context: context,
       isScrollControlled: true,
       showDragHandle: true,
-      builder: (ctx) {
-        return StatefulBuilder(
-          builder: (ctx, setModal) {
-            return Padding(
-              padding: EdgeInsets.only(
-                left: AppSpacing.md,
-                right: AppSpacing.md,
-                top: AppSpacing.sm,
-                bottom: MediaQuery.viewInsetsOf(ctx).bottom + AppSpacing.lg,
+      builder: (ctx) => _ImalatEditorSheet(
+        projectId: projectId,
+        teams: teams,
+        existing: existing,
+        people: people,
+        attendance: attendance,
+        onDelete: existing == null
+            ? null
+            : () {
+                ref.read(productionProvider.notifier).delete(existing.id);
+                Navigator.pop(ctx);
+              },
+        onSave: (draft) {
+          final notifier = ref.read(productionProvider.notifier);
+          if (existing == null) {
+            notifier.add(draft);
+          } else {
+            notifier.update(draft);
+          }
+          Navigator.pop(ctx);
+        },
+      ),
+    );
+  }
+}
+
+class _ImalatEditorSheet extends StatefulWidget {
+  const _ImalatEditorSheet({
+    required this.projectId,
+    required this.teams,
+    required this.people,
+    required this.attendance,
+    required this.onSave,
+    this.existing,
+    this.onDelete,
+  });
+
+  final String projectId;
+  final List<String> teams;
+  final List<Person> people;
+  final List<Attendance> attendance;
+  final Production? existing;
+  final ValueChanged<Production> onSave;
+  final VoidCallback? onDelete;
+
+  @override
+  State<_ImalatEditorSheet> createState() => _ImalatEditorSheetState();
+}
+
+class _ImalatEditorSheetState extends State<_ImalatEditorSheet> {
+  late final TextEditingController _name;
+  late final TextEditingController _unit;
+  late final TextEditingController _planned;
+  late final TextEditingController _done;
+  late final TextEditingController _note;
+  late String _date;
+  late String? _team;
+
+  @override
+  void initState() {
+    super.initState();
+    final e = widget.existing;
+    _name = TextEditingController(text: e?.name ?? '');
+    _unit = TextEditingController(text: e?.unit ?? 'adet');
+    _planned = TextEditingController(
+      text: e == null
+          ? ''
+          : (e.plannedQty == e.plannedQty.roundToDouble()
+              ? e.plannedQty.toStringAsFixed(0)
+              : e.plannedQty.toStringAsFixed(1)),
+    );
+    _done = TextEditingController(
+      text: e == null
+          ? ''
+          : (e.completedQty == e.completedQty.roundToDouble()
+              ? e.completedQty.toStringAsFixed(0)
+              : e.completedQty.toStringAsFixed(1)),
+    );
+    _note = TextEditingController(text: e?.note ?? '');
+    _date = e?.date ?? PuantajDate.today();
+    final existingTeam = e?.teamName.trim() ?? '';
+    _team = existingTeam.isNotEmpty && widget.teams.contains(existingTeam)
+        ? existingTeam
+        : (widget.teams.isNotEmpty ? widget.teams.first : null);
+  }
+
+  @override
+  void dispose() {
+    _name.dispose();
+    _unit.dispose();
+    _planned.dispose();
+    _done.dispose();
+    _note.dispose();
+    super.dispose();
+  }
+
+  double get _yevmiye {
+    if (_team == null || _team!.isEmpty) return 0;
+    return YevmiyeCalculator.forTeam(
+      projectId: widget.projectId,
+      date: _date,
+      teamName: _team!,
+      people: widget.people,
+      attendance: widget.attendance,
+    );
+  }
+
+  int get _headcount {
+    if (_team == null) return 0;
+    return YevmiyeCalculator.teamHeadcount(widget.people, _team!);
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final yevmiye = _yevmiye;
+
+    return Padding(
+      padding: EdgeInsets.only(
+        left: AppSpacing.md,
+        right: AppSpacing.md,
+        top: AppSpacing.sm,
+        bottom: MediaQuery.viewInsetsOf(context).bottom + AppSpacing.lg,
+      ),
+      child: SingleChildScrollView(
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            Text(
+              widget.existing == null ? 'Yeni imalat' : 'İmalatı düzenle',
+              style: theme.textTheme.titleLarge,
+            ),
+            const SizedBox(height: AppSpacing.md),
+            TextField(
+              controller: _name,
+              decoration: const InputDecoration(
+                labelText: 'İmalat adı',
+                hintText: 'Örn. Kolon demiri',
               ),
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                crossAxisAlignment: CrossAxisAlignment.stretch,
+              textCapitalization: TextCapitalization.sentences,
+            ),
+            const SizedBox(height: AppSpacing.sm),
+            DropdownButtonFormField<String>(
+              value: _team,
+              decoration: const InputDecoration(
+                labelText: 'Ekip',
+                helperText: 'Personel kartındaki ekip listesi',
+              ),
+              items: [
+                for (final t in widget.teams)
+                  DropdownMenuItem(value: t, child: Text(t)),
+              ],
+              onChanged: (v) => setState(() => _team = v),
+            ),
+            const SizedBox(height: AppSpacing.sm),
+            Container(
+              padding: const EdgeInsets.all(AppSpacing.sm),
+              decoration: BoxDecoration(
+                color: AppColors.electricBlue.withValues(alpha: 0.08),
+                borderRadius: BorderRadius.circular(8),
+                border: Border.all(
+                  color: AppColors.electricBlue.withValues(alpha: 0.3),
+                ),
+              ),
+              child: Row(
                 children: [
-                  Text(
-                    existing == null ? 'Yeni imalat' : 'İmalatı düzenle',
-                    style: Theme.of(ctx).textTheme.titleLarge,
-                  ),
-                  const SizedBox(height: AppSpacing.md),
-                  TextField(
-                    controller: nameCtrl,
-                    decoration: const InputDecoration(
-                      labelText: 'İmalat adı',
-                      hintText: 'Örn. Kolon demiri',
+                  const Icon(Icons.fact_check_outlined,
+                      size: 20, color: AppColors.electricBlue),
+                  const SizedBox(width: AppSpacing.sm),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          'Yevmiye (puantaj · mesai dahil)',
+                          style: theme.textTheme.labelMedium?.copyWith(
+                            color: AppColors.electricBlue,
+                            fontWeight: FontWeight.w600,
+                          ),
+                        ),
+                        Text(
+                          _team == null
+                              ? 'Ekip seçin'
+                              : '$_headcount kişi · ${_fmtY(yevmiye)} adam-gün · $_date',
+                          style: theme.textTheme.bodySmall,
+                        ),
+                      ],
                     ),
-                    textCapitalization: TextCapitalization.sentences,
                   ),
-                  const SizedBox(height: AppSpacing.sm),
-                  Row(
-                    children: [
-                      Expanded(
-                        child: TextField(
-                          controller: plannedCtrl,
-                          decoration:
-                              const InputDecoration(labelText: 'Plan'),
-                          keyboardType: const TextInputType.numberWithOptions(
-                            decimal: true,
-                          ),
-                        ),
-                      ),
-                      const SizedBox(width: AppSpacing.sm),
-                      Expanded(
-                        child: TextField(
-                          controller: doneCtrl,
-                          decoration:
-                              const InputDecoration(labelText: 'Gerçekleşen'),
-                          keyboardType: const TextInputType.numberWithOptions(
-                            decimal: true,
-                          ),
-                        ),
-                      ),
-                      const SizedBox(width: AppSpacing.sm),
-                      SizedBox(
-                        width: 88,
-                        child: TextField(
-                          controller: unitCtrl,
-                          decoration:
-                              const InputDecoration(labelText: 'Birim'),
-                        ),
-                      ),
-                    ],
-                  ),
-                  const SizedBox(height: AppSpacing.sm),
-                  OutlinedButton.icon(
-                    onPressed: () async {
-                      final picked = await showDatePicker(
-                        context: ctx,
-                        initialDate: PuantajDate.parse(date),
-                        firstDate: DateTime(2020),
-                        lastDate: DateTime(2100),
-                      );
-                      if (picked != null) {
-                        setModal(() => date = PuantajDate.format(picked));
-                      }
-                    },
-                    icon: const Icon(Icons.calendar_today, size: 16),
-                    label: Text(date),
-                  ),
-                  const SizedBox(height: AppSpacing.sm),
-                  TextField(
-                    controller: noteCtrl,
-                    decoration: const InputDecoration(labelText: 'Not'),
-                    maxLines: 2,
-                  ),
-                  const SizedBox(height: AppSpacing.md),
-                  Row(
-                    children: [
-                      if (existing != null)
-                        TextButton(
-                          onPressed: () {
-                            ref
-                                .read(productionProvider.notifier)
-                                .delete(existing.id);
-                            Navigator.pop(ctx, true);
-                          },
-                          child: const Text('Sil',
-                              style: TextStyle(color: AppColors.critical)),
-                        ),
-                      const Spacer(),
-                      FilledButton(
-                        onPressed: () {
-                          final name = nameCtrl.text.trim();
-                          if (name.isEmpty) return;
-                          final draft = Production(
-                            id: existing?.id ?? '',
-                            projectId: projectId,
-                            name: name,
-                            date: date,
-                            unit: unitCtrl.text.trim().isEmpty
-                                ? 'adet'
-                                : unitCtrl.text.trim(),
-                            plannedQty:
-                                double.tryParse(plannedCtrl.text.trim()) ?? 0,
-                            completedQty:
-                                double.tryParse(doneCtrl.text.trim()) ?? 0,
-                            note: noteCtrl.text.trim(),
-                          );
-                          final notifier =
-                              ref.read(productionProvider.notifier);
-                          if (existing == null) {
-                            notifier.add(draft);
-                          } else {
-                            notifier.update(draft);
-                          }
-                          Navigator.pop(ctx, true);
-                        },
-                        child: const Text('Kaydet'),
-                      ),
-                    ],
+                  Text(
+                    _fmtY(yevmiye),
+                    style: theme.textTheme.headlineMedium?.copyWith(
+                      color: AppColors.electricBlue,
+                    ),
                   ),
                 ],
               ),
-            );
-          },
-        );
-      },
+            ),
+            const SizedBox(height: AppSpacing.sm),
+            Row(
+              children: [
+                Expanded(
+                  child: TextField(
+                    controller: _planned,
+                    decoration: const InputDecoration(labelText: 'Plan'),
+                    keyboardType: const TextInputType.numberWithOptions(
+                      decimal: true,
+                    ),
+                  ),
+                ),
+                const SizedBox(width: AppSpacing.sm),
+                Expanded(
+                  child: TextField(
+                    controller: _done,
+                    decoration:
+                        const InputDecoration(labelText: 'Gerçekleşen'),
+                    keyboardType: const TextInputType.numberWithOptions(
+                      decimal: true,
+                    ),
+                  ),
+                ),
+                const SizedBox(width: AppSpacing.sm),
+                SizedBox(
+                  width: 88,
+                  child: TextField(
+                    controller: _unit,
+                    decoration: const InputDecoration(labelText: 'Birim'),
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: AppSpacing.sm),
+            OutlinedButton.icon(
+              onPressed: () async {
+                final picked = await showDatePicker(
+                  context: context,
+                  initialDate: PuantajDate.parse(_date),
+                  firstDate: DateTime(2020),
+                  lastDate: DateTime(2100),
+                );
+                if (picked != null) {
+                  setState(() => _date = PuantajDate.format(picked));
+                }
+              },
+              icon: const Icon(Icons.calendar_today, size: 16),
+              label: Text(_date),
+            ),
+            const SizedBox(height: AppSpacing.sm),
+            TextField(
+              controller: _note,
+              decoration: const InputDecoration(labelText: 'Not'),
+              maxLines: 2,
+            ),
+            const SizedBox(height: AppSpacing.md),
+            Row(
+              children: [
+                if (widget.onDelete != null)
+                  TextButton(
+                    onPressed: widget.onDelete,
+                    child: const Text(
+                      'Sil',
+                      style: TextStyle(color: AppColors.critical),
+                    ),
+                  ),
+                const Spacer(),
+                FilledButton(
+                  onPressed: () {
+                    final name = _name.text.trim();
+                    final team = _team?.trim() ?? '';
+                    if (name.isEmpty || team.isEmpty) return;
+                    widget.onSave(
+                      Production(
+                        id: widget.existing?.id ?? '',
+                        projectId: widget.projectId,
+                        name: name,
+                        date: _date,
+                        teamName: team,
+                        unit: _unit.text.trim().isEmpty
+                            ? 'adet'
+                            : _unit.text.trim(),
+                        plannedQty:
+                            double.tryParse(_planned.text.trim()) ?? 0,
+                        completedQty:
+                            double.tryParse(_done.text.trim()) ?? 0,
+                        note: _note.text.trim(),
+                      ),
+                    );
+                  },
+                  child: const Text('Kaydet'),
+                ),
+              ],
+            ),
+          ],
+        ),
+      ),
     );
+  }
 
-    nameCtrl.dispose();
-    unitCtrl.dispose();
-    plannedCtrl.dispose();
-    doneCtrl.dispose();
-    noteCtrl.dispose();
-    if (saved == true && context.mounted) {
-      // list refreshes via provider
-    }
+  static String _fmtY(double v) {
+    if (v == v.roundToDouble()) return v.toStringAsFixed(0);
+    return v.toStringAsFixed(2);
   }
 }

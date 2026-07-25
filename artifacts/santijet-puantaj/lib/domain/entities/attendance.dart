@@ -5,6 +5,7 @@ import '../enums/attendance_status.dart';
 /// Günlük personel puantaj kaydı — santiye-takip `Attendance` ile birebir.
 ///
 /// Mantıksal tekillik: `(projectId, personId, date)`.
+/// Yevmiye (adam-gün) = `(hours + overtimeHours) / 8`.
 class Attendance extends Equatable {
   const Attendance({
     required this.id,
@@ -14,6 +15,7 @@ class Attendance extends Equatable {
     required this.date,
     required this.status,
     required this.hours,
+    this.overtimeHours = 0,
     this.note = '',
   });
 
@@ -25,8 +27,16 @@ class Attendance extends Equatable {
   /// TR tarih: `dd.MM.yyyy`
   final String date;
   final AttendanceStatus status;
+
+  /// Durum saatleri (M=8, Y=4, diğer=0).
   final int hours;
+
+  /// Mesai saatleri — yevmiyeye eklenir.
+  final double overtimeHours;
   final String note;
+
+  /// Adam-gün (mesai dahil).
+  double get yevmiye => (hours + overtimeHours) / 8.0;
 
   Attendance copyWith({
     String? id,
@@ -36,6 +46,7 @@ class Attendance extends Equatable {
     String? date,
     AttendanceStatus? status,
     int? hours,
+    double? overtimeHours,
     String? note,
   }) {
     return Attendance(
@@ -46,6 +57,7 @@ class Attendance extends Equatable {
       date: date ?? this.date,
       status: status ?? this.status,
       hours: hours ?? this.hours,
+      overtimeHours: overtimeHours ?? this.overtimeHours,
       note: note ?? this.note,
     );
   }
@@ -58,6 +70,7 @@ class Attendance extends Equatable {
         'date': date,
         'status': status.jsonValue,
         'hours': hours,
+        'overtimeHours': overtimeHours,
         'note': note,
       };
 
@@ -71,11 +84,21 @@ class Attendance extends Equatable {
       date: json['date'] as String,
       status: status,
       hours: (json['hours'] as num?)?.toInt() ?? status.hours,
+      overtimeHours: (json['overtimeHours'] as num?)?.toDouble() ?? 0,
       note: json['note'] as String? ?? '',
     );
   }
 
   @override
-  List<Object?> get props =>
-      [id, projectId, personId, personName, date, status, hours, note];
+  List<Object?> get props => [
+        id,
+        projectId,
+        personId,
+        personName,
+        date,
+        status,
+        hours,
+        overtimeHours,
+        note,
+      ];
 }

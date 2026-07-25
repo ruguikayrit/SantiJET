@@ -3,7 +3,6 @@ import 'package:hive/hive.dart';
 
 import '../../core/utils/puantaj_date.dart';
 import '../../domain/entities/work_schedule_plan.dart';
-import '../../domain/enums/attendance_status.dart';
 import '../services/is_programi_cloud_service.dart';
 import 'app_data_provider.dart';
 import 'production_provider.dart';
@@ -189,11 +188,9 @@ final verimRowsProvider = Provider<List<VerimRow>>((ref) {
   final productions = ref.watch(productionProvider);
 
   final projectAtt = attendance.where((a) => a.projectId == project.id);
-  final totalWorkerDays = projectAtt.fold<double>(0, (sum, a) {
-    if (a.status == AttendanceStatus.present) return sum + 1;
-    if (a.status == AttendanceStatus.half) return sum + 0.5;
-    return sum;
-  });
+  // Mesai dahil adam-gün: (saat + mesai) / 8
+  final totalWorkerDays =
+      projectAtt.fold<double>(0, (sum, a) => sum + a.yevmiye);
 
   // İmalat bazlı dağılım yoksa iş gücünü planlanan adam oranına göre böl.
   final plannedSum = snap.items.fold<int>(
@@ -230,9 +227,5 @@ final todayWorkerDaysProvider = Provider<double>((ref) {
   final attendance = ref.watch(attendanceProvider);
   return attendance
       .where((a) => a.projectId == project.id && a.date == today)
-      .fold<double>(0, (sum, a) {
-    if (a.status == AttendanceStatus.present) return sum + 1;
-    if (a.status == AttendanceStatus.half) return sum + 0.5;
-    return sum;
-  });
+      .fold<double>(0, (sum, a) => sum + a.yevmiye);
 });
