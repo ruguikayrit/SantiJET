@@ -13,6 +13,7 @@ import '../../core/utils/puantaj_date.dart';
 import '../../data/providers/app_data_provider.dart';
 import '../../data/providers/production_provider.dart';
 import '../../data/providers/verim_provider.dart';
+import '../../domain/entities/production.dart';
 import '../../domain/enums/attendance_status.dart';
 
 /// Ana sayfa — bugünkü puantaj, imalat ve verim özetleri.
@@ -64,25 +65,8 @@ class HomeScreen extends ConsumerWidget {
     final overtimeHours =
         todayRecords.fold<double>(0, (sum, a) => sum + a.overtimeHours);
 
-    // —— İmalat özeti ——
-    final todayImalat =
-        productions.where((p) => p.entriesOnDate(today).isNotEmpty).toList();
-    final todayEntries = productions
-        .expand((p) => p.entriesOnDate(today))
-        .toList();
-    final plannedQty =
-        todayImalat.fold<double>(0, (s, p) => s + p.plannedQty);
-    final doneQty =
-        todayEntries.fold<double>(0, (s, e) => s + e.completedQty);
-    final imalatYevmiye = todayEntries.fold<double>(
-      0,
-      (s, e) => s + e.ustaCount + e.duzIsciCount,
-    );
-    final imalatPct = todayImalat.isEmpty
-        ? 0.0
-        : todayImalat
-                .fold<double>(0, (s, p) => s + p.progressPct) /
-            todayImalat.length;
+    // —— İmalat özeti (ekip icmali) ——
+    final teamSummaries = _TeamImalatSummary.fromProductions(productions);
 
     // —— Verim özeti ——
     double? avgEff;
@@ -222,70 +206,20 @@ class HomeScreen extends ConsumerWidget {
                     title: 'Özet İmalat',
                     icon: Icons.precision_manufacturing_outlined,
                     onTap: () => context.go(AppRoutes.imalat),
-                    child: todayImalat.isEmpty
+                    child: teamSummaries.isEmpty
                         ? Text(
-                            'Bugün için imalat kaydı yok.',
+                            'Henüz imalat yok. İmalat ekleyince ekip '
+                            'icmali burada görünür.',
                             style: theme.textTheme.bodyMedium,
                           )
                         : Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
+                            crossAxisAlignment: CrossAxisAlignment.stretch,
                             children: [
-                              Row(
-                                children: [
-                                  Expanded(
-                                    child: _MiniStat(
-                                      label: 'Kayıt',
-                                      value: '${todayEntries.length}',
-                                      color: AppColors.info,
-                                    ),
-                                  ),
-                                  const SizedBox(width: AppSpacing.sm),
-                                  Expanded(
-                                    child: _MiniStat(
-                                      label: 'Tamamlanma',
-                                      value: '%${imalatPct.toStringAsFixed(0)}',
-                                      color: imalatPct >= 80
-                                          ? AppColors.success
-                                          : imalatPct >= 50
-                                              ? AppColors.warning
-                                              : AppColors.critical,
-                                    ),
-                                  ),
-                                ],
-                              ),
-                              const SizedBox(height: AppSpacing.sm),
-                              Row(
-                                children: [
-                                  Expanded(
-                                    child: _MiniStat(
-                                      label: 'Gerçek / Plan',
-                                      value:
-                                          '${_fmt(doneQty)} / ${_fmt(plannedQty)}',
-                                      color: theme.colorScheme.onSurface,
-                                    ),
-                                  ),
-                                  const SizedBox(width: AppSpacing.sm),
-                                  Expanded(
-                                    child: _MiniStat(
-                                      label: 'Atanan iş gücü',
-                                      value: _fmt(imalatYevmiye),
-                                      color: AppColors.electricBlue,
-                                      unit: 'yv',
-                                    ),
-                                  ),
-                                ],
-                              ),
-                              const SizedBox(height: AppSpacing.sm),
-                              ClipRRect(
-                                borderRadius: AppRadii.xs,
-                                child: LinearProgressIndicator(
-                                  value: (imalatPct / 100).clamp(0.0, 1.0),
-                                  minHeight: 6,
-                                  backgroundColor:
-                                      AppColors.info.withValues(alpha: 0.15),
-                                  color: AppColors.info,
-                                ),
-                              ),
+                              for (var i = 0; i < teamSummaries.length; i++) ...[
+                                if (i > 0)
+                                  const SizedBox(height: AppSpacing.sm),
+                                _TeamImalatCard(summary: teamSummaries[i]),
+                              ],
                             ],
                           ),
                   ),
@@ -358,6 +292,204 @@ class HomeScreen extends ConsumerWidget {
   static String _fmt(double v) {
     if (v == v.roundToDouble()) return v.toStringAsFixed(0);
     return v.toStringAsFixed(1);
+  }
+}
+
+/// Ekip bazlı imalat icmali — plan / gerçekleşen / kalan.
+class _TeamImalatSummary {
+  const _TeamImalatSummary({
+    required this.teamName,
+    required this.jobCount,
+    required this.lines,
+  });
+
+  final String teamName;
+  final int jobCount;
+  final List<_UnitLine> lines;
+
+  double get plannedQty => lines.fold(0, (s, l) => s + l.planned);
+  double get completedQty => lines.fold(0, (s, l) => s + l.completed);
+  double get remainingQty => lines.fold(0, (s, l) => s + l.remaining);
+
+  double get progressPct {
+    if (plannedQty <= 0) return completedQty > 0 ? 100 : 0;
+    return ((completedQty / plannedQty) * 100).clamp(0, 100);
+  }
+
+  static List<_TeamImalatSummary> fromProductions(List<Production> productions) {
+    final byTeam = <String, List<Production>>{};
+    for (final p in productions) {
+      final team =
+          p.teamName.trim().isEmpty ? 'Ekip seçilmedi' : p.teamName.trim();
+      byTeam.putIfAbsent(team, () => []).add(p);
+    }
+
+    final teams = byTeam.keys.toList()..sort();
+    return [
+      for (final team in teams)
+        () {
+          final jobs = byTeam[team]!;
+          final byUnit = <String, _UnitLine>{};
+          for (final p in jobs) {
+            final unit = p.unit.trim().isEmpty ? 'adet' : p.unit.trim();
+            final prev = byUnit[unit];
+            byUnit[unit] = _UnitLine(
+              unit: unit,
+              planned: (prev?.planned ?? 0) + p.plannedQty,
+              completed: (prev?.completed ?? 0) + p.completedQty,
+              remaining: (prev?.remaining ?? 0) + p.remainingQty,
+            );
+          }
+          final lines = byUnit.values.toList()
+            ..sort((a, b) => a.unit.compareTo(b.unit));
+          return _TeamImalatSummary(
+            teamName: team,
+            jobCount: jobs.length,
+            lines: lines,
+          );
+        }(),
+    ];
+  }
+}
+
+class _UnitLine {
+  const _UnitLine({
+    required this.unit,
+    required this.planned,
+    required this.completed,
+    required this.remaining,
+  });
+
+  final String unit;
+  final double planned;
+  final double completed;
+  final double remaining;
+}
+
+class _TeamImalatCard extends StatelessWidget {
+  const _TeamImalatCard({required this.summary});
+
+  final _TeamImalatSummary summary;
+
+  static String _fmt(double v) {
+    if (v == v.roundToDouble()) return v.toStringAsFixed(0);
+    return v.toStringAsFixed(1);
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final pct = summary.progressPct;
+    final color = pct >= 100
+        ? AppColors.success
+        : pct >= 50
+            ? AppColors.warning
+            : AppColors.critical;
+
+    return Container(
+      padding: const EdgeInsets.all(AppSpacing.sm),
+      decoration: BoxDecoration(
+        color: AppColors.electricBlue.withValues(alpha: 0.06),
+        borderRadius: AppRadii.sm,
+        border: Border.all(
+          color: AppColors.electricBlue.withValues(alpha: 0.22),
+        ),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          Row(
+            children: [
+              Expanded(
+                child: Text(
+                  summary.teamName,
+                  style: theme.textTheme.titleSmall?.copyWith(
+                    color: AppColors.electricBlue,
+                    fontWeight: FontWeight.w700,
+                  ),
+                ),
+              ),
+              Text(
+                '${summary.jobCount} imalat · %${pct.toStringAsFixed(0)}',
+                style: theme.textTheme.labelSmall?.copyWith(color: color),
+              ),
+            ],
+          ),
+          const SizedBox(height: AppSpacing.xs),
+          for (final line in summary.lines) ...[
+            const SizedBox(height: 4),
+            Row(
+              children: [
+                Expanded(
+                  child: _QtyCell(
+                    label: 'Plan',
+                    value: '${_fmt(line.planned)} ${line.unit}',
+                  ),
+                ),
+                Expanded(
+                  child: _QtyCell(
+                    label: 'Gerçekleşen',
+                    value: '${_fmt(line.completed)} ${line.unit}',
+                    valueColor: AppColors.success,
+                  ),
+                ),
+                Expanded(
+                  child: _QtyCell(
+                    label: 'Kalan',
+                    value: '${_fmt(line.remaining)} ${line.unit}',
+                    valueColor: line.remaining > 0
+                        ? AppColors.warning
+                        : AppColors.success,
+                  ),
+                ),
+              ],
+            ),
+          ],
+          const SizedBox(height: AppSpacing.xs),
+          ClipRRect(
+            borderRadius: AppRadii.xs,
+            child: LinearProgressIndicator(
+              value: (pct / 100).clamp(0.0, 1.0),
+              minHeight: 5,
+              backgroundColor: color.withValues(alpha: 0.15),
+              color: color,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _QtyCell extends StatelessWidget {
+  const _QtyCell({
+    required this.label,
+    required this.value,
+    this.valueColor,
+  });
+
+  final String label;
+  final String value;
+  final Color? valueColor;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(label, style: theme.textTheme.labelSmall),
+        Text(
+          value,
+          style: theme.textTheme.bodyMedium?.copyWith(
+            fontWeight: FontWeight.w600,
+            color: valueColor,
+          ),
+          maxLines: 1,
+          overflow: TextOverflow.ellipsis,
+        ),
+      ],
+    );
   }
 }
 
