@@ -115,7 +115,7 @@ class _TahvilCalculatorModePanel extends StatelessWidget {
         ),
         borderRadius: AppRadii.md,
         border: Border.all(
-          color: AppColors.borderSubtle.withValues(alpha: 0.65),
+          color: AppColors.electricBlueLight.withValues(alpha: 0.22),
         ),
       ),
       child: Column(
@@ -224,18 +224,17 @@ class _ModeSegmentButton extends StatelessWidget {
   final VoidCallback onTap;
   final bool dense;
 
-  /// Donuk / mat turuncu — seçili segment; bölümün canlı turuncusundan daha soft.
-  static const _accent = Color(0xFFC67B45);
-
   @override
   Widget build(BuildContext context) {
+    const accent = AppColors.electricBlue;
+
     return Material(
       color: Colors.transparent,
       child: InkWell(
         onTap: onTap,
         borderRadius: BorderRadius.circular(8),
-        splashColor: _accent.withValues(alpha: 0.14),
-        highlightColor: _accent.withValues(alpha: 0.08),
+        splashColor: accent.withValues(alpha: 0.12),
+        highlightColor: accent.withValues(alpha: 0.06),
         child: AnimatedContainer(
           duration: const Duration(milliseconds: 180),
           curve: Curves.easeOutCubic,
@@ -245,13 +244,13 @@ class _ModeSegmentButton extends StatelessWidget {
           ),
           decoration: BoxDecoration(
             borderRadius: BorderRadius.circular(8),
-            color: selected ? _accent : Colors.transparent,
+            color: selected ? accent : Colors.transparent,
             boxShadow: selected
                 ? [
                     BoxShadow(
-                      color: _accent.withValues(alpha: 0.28),
-                      blurRadius: 8,
-                      offset: const Offset(0, 2),
+                      color: accent.withValues(alpha: 0.22),
+                      blurRadius: 6,
+                      offset: const Offset(0, 1),
                     ),
                   ]
                 : null,
@@ -359,7 +358,7 @@ class _SpacingModePanelState extends State<_SpacingModePanel> {
       children: [
         _ExcelStyleTable(
           title: 'Proje donatı',
-          accentColor: AppColors.warning,
+          accentColor: AppColors.info,
           children: [
             _InputRow(
               labels: const ['ÇAP (mm)', 'ARALIK (mm)'],
@@ -733,7 +732,7 @@ class _SingleQuantityModePanelState extends State<_SingleQuantityModePanel> {
       children: [
         _ExcelStyleTable(
           title: 'Proje donatı',
-          accentColor: AppColors.warning,
+          accentColor: AppColors.info,
           children: [
             _InputRow(
               labels: const ['ADET', 'ÇAP (mm)'],
@@ -979,7 +978,7 @@ class _DualQuantityModePanelState extends State<_DualQuantityModePanel> {
       children: [
         _ExcelStyleTable(
           title: 'Proje donatı',
-          accentColor: AppColors.warning,
+          accentColor: AppColors.info,
           children: [
             _DualInputRow(
               rowLabel: '1. çeşit',
@@ -1466,7 +1465,9 @@ class _ExcelStyleTable extends StatelessWidget {
       decoration: BoxDecoration(
         color: AppColors.surfaceElevated,
         borderRadius: AppRadii.md,
-        border: Border.all(color: AppColors.border),
+        border: Border.all(
+          color: accentColor.withValues(alpha: 0.28),
+        ),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -1474,15 +1475,19 @@ class _ExcelStyleTable extends StatelessWidget {
           Container(
             padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
             decoration: BoxDecoration(
-              color: accentColor.withValues(alpha: 0.12),
+              color: accentColor.withValues(alpha: 0.1),
               borderRadius: const BorderRadius.vertical(top: Radius.circular(8)),
               border: Border(
-                bottom: BorderSide(color: accentColor.withValues(alpha: 0.25)),
+                bottom: BorderSide(color: accentColor.withValues(alpha: 0.22)),
               ),
             ),
             child: Text(
               title,
-              style: AppTypography.labelMedium.copyWith(color: accentColor),
+              style: AppTypography.labelMedium.copyWith(
+                color: accentColor,
+                fontWeight: FontWeight.w700,
+                letterSpacing: 0.2,
+              ),
             ),
           ),
           Padding(
@@ -1599,7 +1604,7 @@ class _NumericField extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final fieldColor = accent == _FieldAccent.source
-        ? AppColors.warning
+        ? AppColors.info
         : AppColors.electricBlueLight;
     final hasValue = controller.text.trim().isNotEmpty;
     final activeColor =

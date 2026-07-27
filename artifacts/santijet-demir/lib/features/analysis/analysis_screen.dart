@@ -57,7 +57,7 @@ class AnalysisScreen extends ConsumerWidget {
                   child: CollapsibleAnalysisSection(
                     sectionId: AnalysisSectionIds.tahvilCalculator,
                     title: 'Tahvil Hesaplayıcı',
-                    headerAccentColor: AppColors.diameter28,
+                    headerAccentColor: AppColors.electricBlueLight,
                     child: const TahvilCalculatorSection(hideHeader: true),
                   ),
                 ),

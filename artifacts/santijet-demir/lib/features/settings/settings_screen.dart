@@ -39,10 +39,6 @@ class SettingsScreen extends ConsumerWidget {
     final canPrediction = ref.watch(canAccessPredictionProvider);
     final predictionRoute =
         canPrediction ? AppRoutes.prediction : AppRoutes.subscription;
-    final workScheduleRoute =
-        canPrediction ? AppRoutes.workSchedule : AppRoutes.subscription;
-    final workforceRoute =
-        canPrediction ? AppRoutes.workforce : AppRoutes.subscription;
     final lockedHint = canPrediction
         ? null
         : 'Analiz & Tahmin paketi gerekir · Paketleri gör';
@@ -99,20 +95,6 @@ class SettingsScreen extends ConsumerWidget {
             subtitle: lockedHint ??
                 'Stok tükenme, sipariş önerisi, iş programı',
             onTap: () => context.push(predictionRoute),
-          ),
-          _SettingsTile(
-            icon: Icons.calendar_month_outlined,
-            title: 'İş Programı',
-            subtitle: lockedHint ??
-                'Keşif imalatları · başlangıç / bitiş / süre',
-            onTap: () => context.push(workScheduleRoute),
-          ),
-          _SettingsTile(
-            icon: Icons.groups_outlined,
-            title: 'Günlük Puantaj',
-            subtitle: lockedHint ??
-                'Gün × imalat puantajı — adam.gün ve iş gücü',
-            onTap: () => context.push(workforceRoute),
           ),
           _SettingsTile(
             icon: Icons.notifications,
