@@ -1,6 +1,7 @@
 import 'package:flutter_test/flutter_test.dart';
 
 import 'package:santijet_puantaj/core/utils/puantaj_date.dart';
+import 'package:santijet_puantaj/data/services/puantaj_backup_service.dart';
 import 'package:santijet_puantaj/domain/entities/attendance.dart';
 import 'package:santijet_puantaj/domain/entities/person.dart';
 import 'package:santijet_puantaj/domain/entities/production.dart';
@@ -8,6 +9,7 @@ import 'package:santijet_puantaj/domain/entities/production_day_entry.dart';
 import 'package:santijet_puantaj/domain/enums/attendance_status.dart';
 import 'package:santijet_puantaj/domain/yevmiye/imalat_crew_allocator.dart';
 import 'package:santijet_puantaj/domain/yevmiye/yevmiye_calculator.dart';
+import 'dart:convert';
 
 void main() {
   group('AttendanceStatus', () {
@@ -199,6 +201,37 @@ void main() {
       expect(days.length, 7);
       expect(days.first, '20.07.2026');
       expect(days.last, '26.07.2026');
+    });
+  });
+
+  group('PuantajBackupPayload', () {
+    test('parse geçerli yedek', () {
+      final raw = jsonEncode({
+        'format': puantajBackupFormatId,
+        'version': 1,
+        'exportedAt': '2026-07-27T12:00:00.000',
+        'projects': [
+          {'id': 'p1', 'name': 'Site A'},
+        ],
+        'personnel': [],
+        'attendance': [],
+        'productions': [],
+        'professions': ['Usta'],
+        'teams': ['Demir'],
+      });
+      final payload = PuantajBackupPayload.parse(raw);
+      expect(payload.projects.length, 1);
+      expect(payload.projects.first['name'], 'Site A');
+      expect(payload.teams, ['Demir']);
+    });
+
+    test('yanlış format reddedilir', () {
+      expect(
+        () => PuantajBackupPayload.parse(
+          jsonEncode({'format': 'other', 'version': 1}),
+        ),
+        throwsA(isA<PuantajBackupException>()),
+      );
     });
   });
 }

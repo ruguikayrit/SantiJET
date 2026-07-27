@@ -114,6 +114,11 @@ class ProductionNotifier extends StateNotifier<List<Production>> {
     state = state.where((p) => p.projectId != projectId).toList();
     _persist();
   }
+
+  void replaceAll(List<Production> items) {
+    state = List<Production>.from(items);
+    _persist();
+  }
 }
 
 final productionProvider =

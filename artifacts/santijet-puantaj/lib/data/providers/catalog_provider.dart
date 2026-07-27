@@ -68,6 +68,14 @@ class CatalogNotifier extends StateNotifier<List<String>> {
     state = List<String>.from(defaults);
     _persist();
   }
+
+  void replaceAll(List<String> items) {
+    state = [
+      for (final e in items)
+        if (e.trim().isNotEmpty) e.trim(),
+    ]..sort((a, b) => a.compareTo(b));
+    _persist();
+  }
 }
 
 final professionsProvider =

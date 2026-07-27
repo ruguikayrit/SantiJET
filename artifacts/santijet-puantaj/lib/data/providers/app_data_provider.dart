@@ -103,6 +103,11 @@ class ProjectsNotifier extends StateNotifier<List<Project>> {
     state = state.where((p) => p.id != id).toList();
     _persist();
   }
+
+  void replaceAll(List<Project> items) {
+    state = List<Project>.from(items);
+    _persist();
+  }
 }
 
 final projectsProvider =
@@ -161,6 +166,11 @@ class PersonnelNotifier extends StateNotifier<List<Person>> {
 
   void deleteForProject(String projectId) {
     state = state.where((p) => p.projectId != projectId).toList();
+    _persist();
+  }
+
+  void replaceAll(List<Person> items) {
+    state = List<Person>.from(items);
     _persist();
   }
 
@@ -425,6 +435,11 @@ class AttendanceNotifier extends StateNotifier<List<Attendance>> {
 
   void deleteForProject(String projectId) {
     state = state.where((a) => a.projectId != projectId).toList();
+    _persist();
+  }
+
+  void replaceAll(List<Attendance> items) {
+    state = List<Attendance>.from(items);
     _persist();
   }
 }

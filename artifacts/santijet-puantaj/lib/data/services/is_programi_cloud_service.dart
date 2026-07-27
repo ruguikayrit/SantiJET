@@ -38,6 +38,9 @@ class IsProgramiCloudService {
     _cacheBox.put('$_cachePrefix${snap.projectId}', jsonEncode(snap.toJson()));
   }
 
+  /// Yedekten / harici kaynaktan gelen anlık görüntüyü önbelleğe yazar.
+  void cacheSnapshot(WorkScheduleSnapshot snap) => _saveCache(snap);
+
   void clearCache(String projectId) {
     _cacheBox.delete('$_cachePrefix$projectId');
   }

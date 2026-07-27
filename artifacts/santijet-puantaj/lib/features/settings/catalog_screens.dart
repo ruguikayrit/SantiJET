@@ -134,40 +134,63 @@ class _CatalogManageScreen extends StatelessWidget {
               ),
               itemCount: items.length,
               separatorBuilder: (_, __) =>
-                  const SizedBox(height: AppSpacing.sm),
+                  const SizedBox(height: AppSpacing.xs),
               itemBuilder: (context, i) {
                 final name = items[i];
                 return SJCard(
                   onTap: () => _openEditor(context, existing: name),
-                  child: Row(
-                    children: [
-                      Expanded(
-                        child: Text(name, style: theme.textTheme.titleMedium),
-                      ),
-                      IconButton(
-                        icon: const Icon(Icons.delete_outline),
-                        onPressed: () async {
-                          final ok = await showDialog<bool>(
-                            context: context,
-                            builder: (ctx) => AlertDialog(
-                              title: Text('$title sil'),
-                              content: Text('"$name" silinsin mi?'),
-                              actions: [
-                                TextButton(
-                                  onPressed: () => Navigator.pop(ctx, false),
-                                  child: const Text('Vazgeç'),
-                                ),
-                                FilledButton(
-                                  onPressed: () => Navigator.pop(ctx, true),
-                                  child: const Text('Sil'),
-                                ),
-                              ],
-                            ),
-                          );
-                          if (ok == true) onRemove(name);
-                        },
-                      ),
-                    ],
+                  padding: const EdgeInsets.fromLTRB(
+                    AppSpacing.md,
+                    AppSpacing.xs,
+                    AppSpacing.xs,
+                    AppSpacing.xs,
+                  ),
+                  child: SizedBox(
+                    height: 40,
+                    child: Row(
+                      children: [
+                        Expanded(
+                          child: Text(
+                            name,
+                            style: theme.textTheme.titleSmall,
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                          ),
+                        ),
+                        IconButton(
+                          icon: const Icon(Icons.delete_outline, size: 20),
+                          tooltip: 'Sil',
+                          visualDensity: VisualDensity.compact,
+                          constraints: const BoxConstraints(
+                            minWidth: 36,
+                            minHeight: 36,
+                          ),
+                          padding: EdgeInsets.zero,
+                          onPressed: () async {
+                            final ok = await showDialog<bool>(
+                              context: context,
+                              builder: (ctx) => AlertDialog(
+                                title: Text('$title sil'),
+                                content: Text('"$name" silinsin mi?'),
+                                actions: [
+                                  TextButton(
+                                    onPressed: () =>
+                                        Navigator.pop(ctx, false),
+                                    child: const Text('Vazgeç'),
+                                  ),
+                                  FilledButton(
+                                    onPressed: () =>
+                                        Navigator.pop(ctx, true),
+                                    child: const Text('Sil'),
+                                  ),
+                                ],
+                              ),
+                            );
+                            if (ok == true) onRemove(name);
+                          },
+                        ),
+                      ],
+                    ),
                   ),
                 );
               },
