@@ -5,6 +5,7 @@ import 'package:hive/hive.dart';
 
 import '../../core/utils/id_gen.dart';
 import '../../domain/entities/production.dart';
+import '../../domain/entities/production_day_entry.dart';
 import 'app_data_provider.dart';
 
 final productionBoxProvider = Provider<Box>(
@@ -65,6 +66,49 @@ class ProductionNotifier extends StateNotifier<List<Production>> {
     state = state.where((p) => p.id != id).toList();
     _persist();
   }
+
+  ProductionDayEntry addDayEntry(String productionId, ProductionDayEntry draft) {
+    final entry = draft.copyWith(id: IdGen.make('prd'));
+    state = [
+      for (final p in state)
+        if (p.id == productionId)
+          p.copyWith(dailyEntries: [...p.dailyEntries, entry])
+        else
+          p,
+    ];
+    _persist();
+    return entry;
+  }
+
+  void updateDayEntry(String productionId, ProductionDayEntry entry) {
+    state = [
+      for (final p in state)
+        if (p.id == productionId)
+          p.copyWith(
+            dailyEntries: [
+              for (final e in p.dailyEntries)
+                if (e.id == entry.id) entry else e,
+            ],
+          )
+        else
+          p,
+    ];
+    _persist();
+  }
+
+  void deleteDayEntry(String productionId, String entryId) {
+    state = [
+      for (final p in state)
+        if (p.id == productionId)
+          p.copyWith(
+            dailyEntries:
+                p.dailyEntries.where((e) => e.id != entryId).toList(),
+          )
+        else
+          p,
+    ];
+    _persist();
+  }
 }
 
 final productionProvider =
@@ -77,6 +121,11 @@ final activeProductionProvider = Provider<List<Production>>((ref) {
   final all = ref.watch(productionProvider);
   if (project == null) return const [];
   final list = all.where((p) => p.projectId == project.id).toList()
-    ..sort((a, b) => b.date.compareTo(a.date));
+    ..sort((a, b) {
+      if (a.isComplete != b.isComplete) {
+        return a.isComplete ? 1 : -1;
+      }
+      return b.latestDate.compareTo(a.latestDate);
+    });
   return list;
 });

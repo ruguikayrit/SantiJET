@@ -142,24 +142,26 @@ abstract final class ImalatCrewAllocator {
     return CrewPool(ustaTotal: usta, duzTotal: duz);
   }
 
-  /// Diğer imalatların atadığı usta/düz toplamı (excludeId düzenlenen kayıt).
+  /// Aynı gün/ekipteki tüm günlük imalat kayıtlarının usta/düz toplamı.
   static ({double usta, double duz}) allocatedOnDay({
     required String projectId,
     required String date,
     required String teamName,
     required List<Production> productions,
-    String? excludeId,
+    String? excludeDayEntryId,
   }) {
     final team = teamName.trim();
     var usta = 0.0;
     var duz = 0.0;
     for (final p in productions) {
       if (p.projectId != projectId) continue;
-      if (p.date != date) continue;
       if (p.teamName.trim() != team) continue;
-      if (excludeId != null && p.id == excludeId) continue;
-      usta += p.ustaCount;
-      duz += p.duzIsciCount;
+      for (final e in p.dailyEntries) {
+        if (e.date != date) continue;
+        if (excludeDayEntryId != null && e.id == excludeDayEntryId) continue;
+        usta += e.ustaCount;
+        duz += e.duzIsciCount;
+      }
     }
     return (usta: usta, duz: duz);
   }
@@ -172,7 +174,7 @@ abstract final class ImalatCrewAllocator {
     required List<Person> people,
     required List<Attendance> attendance,
     required List<Production> productions,
-    String? excludeProductionId,
+    String? excludeDayEntryId,
   }) {
     final base = poolFromPuantaj(
       projectId: projectId,
@@ -186,7 +188,7 @@ abstract final class ImalatCrewAllocator {
       date: date,
       teamName: teamName,
       productions: productions,
-      excludeId: excludeProductionId,
+      excludeDayEntryId: excludeDayEntryId,
     );
     return CrewPool(
       ustaTotal: base.ustaTotal,

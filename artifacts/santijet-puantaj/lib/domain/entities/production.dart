@@ -1,70 +1,92 @@
 import 'package:equatable/equatable.dart';
 
-/// Günlük imalat kaydı — ekip + usta/düz işçi ataması + miktar.
+import 'production_day_entry.dart';
+
+/// İmalat işi — plan miktarına %100 ulaşana kadar günlük kayıtlar eklenir.
 class Production extends Equatable {
   const Production({
     required this.id,
     required this.projectId,
     required this.name,
-    required this.date,
     this.teamName = '',
-    this.ustaCount = 0,
-    this.duzIsciCount = 0,
     this.unit = 'adet',
     this.plannedQty = 0,
-    this.completedQty = 0,
     this.note = '',
+    this.dailyEntries = const [],
   });
 
   final String id;
   final String projectId;
   final String name;
-  final String date; // dd.MM.yyyy
 
   /// Personel `team` (ekip) adı — listeden seçilir.
   final String teamName;
 
-  /// Bu imalata atanan usta (adam-gün / kişi; kullanıcı manuel girer).
-  final double ustaCount;
-
-  /// Bu imalata atanan düz işçi / çırak.
-  final double duzIsciCount;
-
   final String unit;
   final double plannedQty;
-  final double completedQty;
   final String note;
+
+  /// %100'e kadar her gün eklenen usta/düz ve gerçekleşen miktar kayıtları.
+  final List<ProductionDayEntry> dailyEntries;
+
+  double get completedQty =>
+      dailyEntries.fold<double>(0, (s, e) => s + e.completedQty);
+
+  double get ustaCount =>
+      dailyEntries.fold<double>(0, (s, e) => s + e.ustaCount);
+
+  double get duzIsciCount =>
+      dailyEntries.fold<double>(0, (s, e) => s + e.duzIsciCount);
+
+  /// Son günlük kayıt tarihi (sıralama için).
+  String get latestDate {
+    if (dailyEntries.isEmpty) return '';
+    return dailyEntries
+        .map((e) => e.date)
+        .reduce((a, b) => a.compareTo(b) > 0 ? a : b);
+  }
+
+  double get remainingQty {
+    if (plannedQty <= 0) return 0;
+    return (plannedQty - completedQty).clamp(0, double.infinity);
+  }
 
   double get progressPct {
     if (plannedQty <= 0) return completedQty > 0 ? 100 : 0;
-    return ((completedQty / plannedQty) * 100).clamp(0, 999);
+    return ((completedQty / plannedQty) * 100).clamp(0, 100);
   }
+
+  bool get isComplete => progressPct >= 100;
+
+  ProductionDayEntry? entryOnDate(String date) {
+    for (final e in dailyEntries) {
+      if (e.date == date) return e;
+    }
+    return null;
+  }
+
+  List<ProductionDayEntry> entriesOnDate(String date) =>
+      dailyEntries.where((e) => e.date == date).toList();
 
   Production copyWith({
     String? id,
     String? projectId,
     String? name,
-    String? date,
     String? teamName,
-    double? ustaCount,
-    double? duzIsciCount,
     String? unit,
     double? plannedQty,
-    double? completedQty,
     String? note,
+    List<ProductionDayEntry>? dailyEntries,
   }) {
     return Production(
       id: id ?? this.id,
       projectId: projectId ?? this.projectId,
       name: name ?? this.name,
-      date: date ?? this.date,
       teamName: teamName ?? this.teamName,
-      ustaCount: ustaCount ?? this.ustaCount,
-      duzIsciCount: duzIsciCount ?? this.duzIsciCount,
       unit: unit ?? this.unit,
       plannedQty: plannedQty ?? this.plannedQty,
-      completedQty: completedQty ?? this.completedQty,
       note: note ?? this.note,
+      dailyEntries: dailyEntries ?? this.dailyEntries,
     );
   }
 
@@ -72,42 +94,65 @@ class Production extends Equatable {
         'id': id,
         'projectId': projectId,
         'name': name,
-        'date': date,
         'teamName': teamName,
-        'ustaCount': ustaCount,
-        'duzIsciCount': duzIsciCount,
         'unit': unit,
         'plannedQty': plannedQty,
-        'completedQty': completedQty,
         'note': note,
+        'dailyEntries': dailyEntries.map((e) => e.toJson()).toList(),
       };
 
-  factory Production.fromJson(Map<String, dynamic> json) => Production(
-        id: json['id'] as String,
-        projectId: json['projectId'] as String? ?? '',
-        name: json['name'] as String? ?? '',
-        date: json['date'] as String? ?? '',
-        teamName: json['teamName'] as String? ?? '',
-        ustaCount: (json['ustaCount'] as num?)?.toDouble() ?? 0,
-        duzIsciCount: (json['duzIsciCount'] as num?)?.toDouble() ?? 0,
-        unit: json['unit'] as String? ?? 'adet',
-        plannedQty: (json['plannedQty'] as num?)?.toDouble() ?? 0,
-        completedQty: (json['completedQty'] as num?)?.toDouble() ?? 0,
-        note: json['note'] as String? ?? '',
-      );
+  factory Production.fromJson(Map<String, dynamic> json) {
+    final rawEntries = json['dailyEntries'];
+    List<ProductionDayEntry> entries;
+    if (rawEntries is List && rawEntries.isNotEmpty) {
+      entries = rawEntries
+          .map((e) => ProductionDayEntry.fromJson(
+                Map<String, dynamic>.from(e as Map),
+              ))
+          .toList();
+    } else {
+      // Eski tek-gün formatından yükseltme.
+      final date = json['date'] as String? ?? '';
+      final usta = (json['ustaCount'] as num?)?.toDouble() ?? 0;
+      final duz = (json['duzIsciCount'] as num?)?.toDouble() ?? 0;
+      final done = (json['completedQty'] as num?)?.toDouble() ?? 0;
+      if (date.isNotEmpty && (usta > 0 || duz > 0 || done > 0)) {
+        entries = [
+          ProductionDayEntry(
+            id: '${json['id'] as String? ?? 'legacy'}_d1',
+            date: date,
+            ustaCount: usta,
+            duzIsciCount: duz,
+            completedQty: done,
+            note: json['note'] as String? ?? '',
+          ),
+        ];
+      } else {
+        entries = [];
+      }
+    }
+
+    return Production(
+      id: json['id'] as String,
+      projectId: json['projectId'] as String? ?? '',
+      name: json['name'] as String? ?? '',
+      teamName: json['teamName'] as String? ?? '',
+      unit: json['unit'] as String? ?? 'adet',
+      plannedQty: (json['plannedQty'] as num?)?.toDouble() ?? 0,
+      note: json['note'] as String? ?? '',
+      dailyEntries: entries,
+    );
+  }
 
   @override
   List<Object?> get props => [
         id,
         projectId,
         name,
-        date,
         teamName,
-        ustaCount,
-        duzIsciCount,
         unit,
         plannedQty,
-        completedQty,
         note,
+        dailyEntries,
       ];
 }

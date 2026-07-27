@@ -14,7 +14,6 @@ import '../../data/providers/app_data_provider.dart';
 import '../../data/providers/production_provider.dart';
 import '../../data/providers/verim_provider.dart';
 import '../../domain/enums/attendance_status.dart';
-import '../../domain/yevmiye/yevmiye_calculator.dart';
 
 /// Ana sayfa — bugünkü puantaj, imalat ve verim özetleri.
 class HomeScreen extends ConsumerWidget {
@@ -67,24 +66,23 @@ class HomeScreen extends ConsumerWidget {
 
     // —— İmalat özeti ——
     final todayImalat =
-        productions.where((p) => p.date == today).toList();
+        productions.where((p) => p.entriesOnDate(today).isNotEmpty).toList();
+    final todayEntries = productions
+        .expand((p) => p.entriesOnDate(today))
+        .toList();
     final plannedQty =
         todayImalat.fold<double>(0, (s, p) => s + p.plannedQty);
     final doneQty =
-        todayImalat.fold<double>(0, (s, p) => s + p.completedQty);
-    final imalatYevmiye = todayImalat.fold<double>(0, (s, p) {
-      return s +
-          YevmiyeCalculator.forTeam(
-            projectId: project.id,
-            date: p.date,
-            teamName: p.teamName,
-            people: people,
-            attendance: attendance,
-          );
-    });
-    final imalatPct = plannedQty <= 0
-        ? (doneQty > 0 ? 100.0 : 0.0)
-        : ((doneQty / plannedQty) * 100).clamp(0, 999);
+        todayEntries.fold<double>(0, (s, e) => s + e.completedQty);
+    final imalatYevmiye = todayEntries.fold<double>(
+      0,
+      (s, e) => s + e.ustaCount + e.duzIsciCount,
+    );
+    final imalatPct = todayImalat.isEmpty
+        ? 0.0
+        : todayImalat
+                .fold<double>(0, (s, p) => s + p.progressPct) /
+            todayImalat.length;
 
     // —— Verim özeti ——
     double? avgEff;
@@ -237,7 +235,7 @@ class HomeScreen extends ConsumerWidget {
                                   Expanded(
                                     child: _MiniStat(
                                       label: 'Kayıt',
-                                      value: '${todayImalat.length}',
+                                      value: '${todayEntries.length}',
                                       color: AppColors.info,
                                     ),
                                   ),
@@ -269,7 +267,7 @@ class HomeScreen extends ConsumerWidget {
                                   const SizedBox(width: AppSpacing.sm),
                                   Expanded(
                                     child: _MiniStat(
-                                      label: 'Ekip yevmiye',
+                                      label: 'Atanan iş gücü',
                                       value: _fmt(imalatYevmiye),
                                       color: AppColors.electricBlue,
                                       unit: 'yv',

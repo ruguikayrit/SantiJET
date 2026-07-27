@@ -4,6 +4,7 @@ import 'package:santijet_puantaj/core/utils/puantaj_date.dart';
 import 'package:santijet_puantaj/domain/entities/attendance.dart';
 import 'package:santijet_puantaj/domain/entities/person.dart';
 import 'package:santijet_puantaj/domain/entities/production.dart';
+import 'package:santijet_puantaj/domain/entities/production_day_entry.dart';
 import 'package:santijet_puantaj/domain/enums/attendance_status.dart';
 import 'package:santijet_puantaj/domain/yevmiye/imalat_crew_allocator.dart';
 import 'package:santijet_puantaj/domain/yevmiye/yevmiye_calculator.dart';
@@ -128,10 +129,15 @@ void main() {
         id: 'pr1',
         projectId: 'p',
         name: 'Temel',
-        date: '25.07.2026',
         teamName: 'Demir',
-        ustaCount: 1,
-        duzIsciCount: 1,
+        dailyEntries: [
+          ProductionDayEntry(
+            id: 'd1',
+            date: '25.07.2026',
+            ustaCount: 1,
+            duzIsciCount: 1,
+          ),
+        ],
       );
       final pool = ImalatCrewAllocator.availableFor(
         projectId: 'p',
@@ -145,6 +151,37 @@ void main() {
       expect(pool.duzTotal, 1);
       expect(pool.ustaRemaining, 1);
       expect(pool.duzRemaining, 0);
+    });
+  });
+
+  group('Production', () {
+    test('ilerleme günlük kayıtlardan hesaplanır', () {
+      final job = Production(
+        id: 'p1',
+        projectId: 'pr',
+        name: 'Kolon',
+        plannedQty: 100,
+        dailyEntries: [
+          ProductionDayEntry(
+            id: 'd1',
+            date: '01.07.2026',
+            ustaCount: 2,
+            completedQty: 30,
+          ),
+          ProductionDayEntry(
+            id: 'd2',
+            date: '02.07.2026',
+            ustaCount: 1,
+            duzIsciCount: 2,
+            completedQty: 70,
+          ),
+        ],
+      );
+      expect(job.completedQty, 100);
+      expect(job.progressPct, 100);
+      expect(job.isComplete, isTrue);
+      expect(job.ustaCount, 3);
+      expect(job.duzIsciCount, 2);
     });
   });
 
