@@ -58,37 +58,37 @@ class SJBottomNavigation extends StatelessWidget {
     final surface = theme.cardTheme.color ?? theme.colorScheme.surface;
     final bottomInset = MediaQuery.viewPaddingOf(context).bottom;
 
-    return Padding(
-      padding: const EdgeInsets.only(bottom: bottomLift),
-      child: ColoredBox(
-        color: surface,
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            DecoratedBox(
-              decoration: BoxDecoration(
-                border: Border(top: BorderSide(color: theme.dividerColor)),
-              ),
-              child: SizedBox(
-                height: _iconBarHeight,
-                width: double.infinity,
-                child: Row(
-                  children: [
-                    for (var i = 0; i < items.length; i++)
-                      Expanded(
-                        child: _NavItemView(
-                          item: items[i],
-                          selected: items[i].branchIndex == currentIndex,
-                          onTap: () => onTap(items[i].branchIndex),
-                        ),
+    // ColoredBox en dışta: yüzey sayfanın en altına dayanır.
+    // bottomLift dış Padding olursa canvas rengi görünür (nav “havada” kalır).
+    return ColoredBox(
+      color: surface,
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          DecoratedBox(
+            decoration: BoxDecoration(
+              border: Border(top: BorderSide(color: theme.dividerColor)),
+            ),
+            child: SizedBox(
+              height: _iconBarHeight,
+              width: double.infinity,
+              child: Row(
+                children: [
+                  for (var i = 0; i < items.length; i++)
+                    Expanded(
+                      child: _NavItemView(
+                        item: items[i],
+                        selected: items[i].branchIndex == currentIndex,
+                        onTap: () => onTap(items[i].branchIndex),
                       ),
-                  ],
-                ),
+                    ),
+                ],
               ),
             ),
-            if (bottomInset > 0) SizedBox(height: bottomInset),
-          ],
-        ),
+          ),
+          // Home indicator + hafif lift — hepsi yüzey rengi içinde.
+          SizedBox(height: bottomInset + bottomLift),
+        ],
       ),
     );
   }
