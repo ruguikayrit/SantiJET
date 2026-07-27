@@ -161,7 +161,7 @@ class ImalatScreen extends ConsumerWidget {
                         style: theme.textTheme.bodyMedium,
                       ),
                       Text(
-                        'Puantaj kalan (diğerleri düşülmüş): '
+                        'Ataması yapılmamış (diğerleri düşülmüş): '
                         '${_fmt(pool.ustaRemaining)} usta · '
                         '${_fmt(pool.duzRemaining)} düz',
                         style: theme.textTheme.labelSmall,
@@ -211,21 +211,13 @@ class ImalatScreen extends ConsumerWidget {
     required List<String> teams,
     Production? existing,
   }) async {
-    final people = ref.read(activePersonnelProvider);
-    final attendance = ref.read(attendanceProvider);
-    final productions = ref.read(productionProvider);
-
     await showModalBottomSheet<void>(
       context: context,
       isScrollControlled: true,
       showDragHandle: true,
       builder: (ctx) => _ImalatEditorSheet(
         projectId: projectId,
-        teams: teams,
         existing: existing,
-        people: people,
-        attendance: attendance,
-        productions: productions,
         onDelete: existing == null
             ? null
             : () {
@@ -246,32 +238,24 @@ class ImalatScreen extends ConsumerWidget {
   }
 }
 
-class _ImalatEditorSheet extends StatefulWidget {
+class _ImalatEditorSheet extends ConsumerStatefulWidget {
   const _ImalatEditorSheet({
     required this.projectId,
-    required this.teams,
-    required this.people,
-    required this.attendance,
-    required this.productions,
     required this.onSave,
     this.existing,
     this.onDelete,
   });
 
   final String projectId;
-  final List<String> teams;
-  final List<Person> people;
-  final List<Attendance> attendance;
-  final List<Production> productions;
   final Production? existing;
   final ValueChanged<Production> onSave;
   final VoidCallback? onDelete;
 
   @override
-  State<_ImalatEditorSheet> createState() => _ImalatEditorSheetState();
+  ConsumerState<_ImalatEditorSheet> createState() => _ImalatEditorSheetState();
 }
 
-class _ImalatEditorSheetState extends State<_ImalatEditorSheet> {
+class _ImalatEditorSheetState extends ConsumerState<_ImalatEditorSheet> {
   late final TextEditingController _name;
   late final TextEditingController _unit;
   late final TextEditingController _planned;
@@ -280,7 +264,8 @@ class _ImalatEditorSheetState extends State<_ImalatEditorSheet> {
   late final TextEditingController _usta;
   late final TextEditingController _duz;
   late String _date;
-  late String? _team;
+  String? _team;
+  bool _teamInitialized = false;
 
   @override
   void initState() {
@@ -294,19 +279,32 @@ class _ImalatEditorSheetState extends State<_ImalatEditorSheet> {
     _usta = TextEditingController(text: e == null ? '' : _num(e.ustaCount));
     _duz = TextEditingController(text: e == null ? '' : _num(e.duzIsciCount));
     _date = e?.date ?? PuantajDate.today();
-    final existingTeam = e?.teamName.trim() ?? '';
-    _team = existingTeam.isNotEmpty && widget.teams.contains(existingTeam)
-        ? existingTeam
-        : (widget.teams.isNotEmpty ? widget.teams.first : null);
+    _team = e?.teamName.trim().isNotEmpty == true ? e!.teamName.trim() : null;
 
-    // Yeni kayıtta kalan kapasiteyi öneri olarak yaz (manuel değiştirilebilir).
     if (e == null) {
-      WidgetsBinding.instance.addPostFrameCallback((_) => _suggestRemaining());
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (mounted) _fillUnassignedIfEmpty();
+      });
     }
   }
 
-  void _suggestRemaining() {
-    final pool = _pool;
+  void _ensureTeam(List<String> teams) {
+    if (_teamInitialized) return;
+    _teamInitialized = true;
+    if (_team != null && teams.contains(_team)) return;
+    if (_team != null && _team!.isNotEmpty && !teams.contains(_team)) {
+      // Mevcut değer listede yoksa yine de koru (aşağıda item eklenir).
+      return;
+    }
+    _team = teams.isNotEmpty ? teams.first : null;
+  }
+
+  void _fillUnassignedIfEmpty() {
+    final pool = _poolFor(
+      people: ref.read(activePersonnelProvider),
+      attendance: ref.read(attendanceProvider),
+      productions: ref.read(productionProvider),
+    );
     if (_usta.text.trim().isEmpty) {
       _usta.text = _num(pool.ustaRemaining);
     }
@@ -316,7 +314,11 @@ class _ImalatEditorSheetState extends State<_ImalatEditorSheet> {
     setState(() {});
   }
 
-  CrewPool get _pool {
+  CrewPool _poolFor({
+    required List<Person> people,
+    required List<Attendance> attendance,
+    required List<Production> productions,
+  }) {
     if (_team == null || _team!.isEmpty) {
       return const CrewPool(ustaTotal: 0, duzTotal: 0);
     }
@@ -324,9 +326,9 @@ class _ImalatEditorSheetState extends State<_ImalatEditorSheet> {
       projectId: widget.projectId,
       date: _date,
       teamName: _team!,
-      people: widget.people,
-      attendance: widget.attendance,
-      productions: widget.productions,
+      people: people,
+      attendance: attendance,
+      productions: productions,
       excludeProductionId: widget.existing?.id,
     );
   }
@@ -351,7 +353,26 @@ class _ImalatEditorSheetState extends State<_ImalatEditorSheet> {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    final pool = _pool;
+    final people = ref.watch(activePersonnelProvider);
+    final attendance = ref.watch(attendanceProvider);
+    final productions = ref.watch(productionProvider);
+    final teams = {
+      ...ref.watch(teamsProvider),
+      ...YevmiyeCalculator.teamNames(people),
+    }.toList()
+      ..sort();
+    _ensureTeam(teams);
+
+    final teamItems = [
+      ...teams,
+      if (_team != null && _team!.isNotEmpty && !teams.contains(_team)) _team!,
+    ];
+
+    final pool = _poolFor(
+      people: people,
+      attendance: attendance,
+      productions: productions,
+    );
 
     return Padding(
       padding: EdgeInsets.only(
@@ -383,14 +404,16 @@ class _ImalatEditorSheetState extends State<_ImalatEditorSheet> {
               value: _team,
               decoration: const InputDecoration(labelText: 'Ekip'),
               items: [
-                for (final t in widget.teams)
+                for (final t in teamItems)
                   DropdownMenuItem(value: t, child: Text(t)),
               ],
               onChanged: (v) {
                 setState(() => _team = v);
                 _usta.clear();
                 _duz.clear();
-                _suggestRemaining();
+                WidgetsBinding.instance.addPostFrameCallback((_) {
+                  if (mounted) _fillUnassignedIfEmpty();
+                });
               },
             ),
             const SizedBox(height: AppSpacing.sm),
@@ -407,9 +430,9 @@ class _ImalatEditorSheetState extends State<_ImalatEditorSheet> {
                   if (widget.existing == null) {
                     _usta.clear();
                     _duz.clear();
-                    _suggestRemaining();
-                  } else {
-                    setState(() {});
+                    WidgetsBinding.instance.addPostFrameCallback((_) {
+                      if (mounted) _fillUnassignedIfEmpty();
+                    });
                   }
                 }
               },
@@ -428,7 +451,8 @@ class _ImalatEditorSheetState extends State<_ImalatEditorSheet> {
                     controller: _usta,
                     decoration: InputDecoration(
                       labelText: 'Usta',
-                      helperText: 'Kalan ${_num(pool.ustaRemaining)}',
+                      helperText:
+                          'Ataması yapılmamış ${_num(pool.ustaRemaining)}',
                     ),
                     keyboardType: const TextInputType.numberWithOptions(
                       decimal: true,
@@ -441,7 +465,8 @@ class _ImalatEditorSheetState extends State<_ImalatEditorSheet> {
                     controller: _duz,
                     decoration: InputDecoration(
                       labelText: 'Düz işçi / Çırak',
-                      helperText: 'Kalan ${_num(pool.duzRemaining)}',
+                      helperText:
+                          'Ataması yapılmamış ${_num(pool.duzRemaining)}',
                     ),
                     keyboardType: const TextInputType.numberWithOptions(
                       decimal: true,
@@ -459,7 +484,7 @@ class _ImalatEditorSheetState extends State<_ImalatEditorSheet> {
                   setState(() {});
                 },
                 icon: const Icon(Icons.content_paste_go, size: 16),
-                label: const Text('Kalanı doldur'),
+                label: const Text('Atanmayanı doldur'),
               ),
             ),
             const SizedBox(height: AppSpacing.sm),
@@ -513,6 +538,11 @@ class _ImalatEditorSheetState extends State<_ImalatEditorSheet> {
                     ),
                   ),
                 const Spacer(),
+                OutlinedButton(
+                  onPressed: () => Navigator.pop(context),
+                  child: const Text('İptal'),
+                ),
+                const SizedBox(width: AppSpacing.sm),
                 FilledButton(
                   onPressed: () {
                     final name = _name.text.trim();
@@ -599,7 +629,7 @@ class _CrewPoolBanner extends StatelessWidget {
             style: theme.textTheme.bodySmall,
           ),
           Text(
-            'Kalan (öneri): ${_n(pool.ustaRemaining)} usta · '
+            'Ataması yapılmamış: ${_n(pool.ustaRemaining)} usta · '
             '${_n(pool.duzRemaining)} düz',
             style: theme.textTheme.titleSmall?.copyWith(
               color: AppColors.electricBlue,
@@ -608,7 +638,8 @@ class _CrewPoolBanner extends StatelessWidget {
           ),
           const SizedBox(height: 4),
           Text(
-            'Sayılar bilgi amaçlıdır; atamayı siz girersiniz.',
+            'Sayılar bilgi amaçlıdır; atamayı siz girersiniz. '
+            'Personel / puantaj değişince otomatik güncellenir.',
             style: theme.textTheme.labelSmall,
           ),
         ],
