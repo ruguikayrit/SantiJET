@@ -5,11 +5,11 @@ import '../../domain/entities/person.dart';
 import '../../domain/entities/production.dart';
 import '../../domain/entities/project.dart';
 import '../../domain/entities/work_schedule_plan.dart';
-import '../providers/app_data_provider.dart';
-import '../providers/catalog_provider.dart';
-import '../providers/production_provider.dart';
-import '../providers/verim_provider.dart';
-import 'puantaj_backup_service.dart';
+import '../services/puantaj_backup_service.dart';
+import 'app_data_provider.dart';
+import 'catalog_provider.dart';
+import 'production_provider.dart';
+import 'verim_provider.dart';
 
 final puantajBackupControllerProvider =
     Provider<PuantajBackupController>((ref) {
