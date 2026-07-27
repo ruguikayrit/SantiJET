@@ -5,7 +5,9 @@ import 'package:go_router/go_router.dart';
 import '../../core/constants/app_info.dart';
 import '../../core/routing/app_routes.dart';
 import '../../core/theme/app_colors.dart';
+import '../../core/theme/app_radii.dart';
 import '../../core/theme/app_spacing.dart';
+import '../../core/theme/app_typography.dart';
 import '../../core/theme/theme_mode_provider.dart';
 import '../../data/providers/app_data_provider.dart';
 import '../../data/providers/backup_provider.dart';
@@ -105,6 +107,47 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
     }
   }
 
+  void _showThemePicker(BuildContext context) {
+    showModalBottomSheet<void>(
+      context: context,
+      backgroundColor: AppColors.surfaceElevated,
+      builder: (ctx) => Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          ListTile(
+            title: const Text('Açık'),
+            onTap: () {
+              ref.read(themeModeProvider.notifier).setThemeMode('light');
+              Navigator.pop(ctx);
+            },
+          ),
+          ListTile(
+            title: const Text('Koyu'),
+            onTap: () {
+              ref.read(themeModeProvider.notifier).setThemeMode('dark');
+              Navigator.pop(ctx);
+            },
+          ),
+          ListTile(
+            title: const Text('ŞantiJET'),
+            subtitle: const Text('Açık zemin · koyu özet kartları'),
+            onTap: () {
+              ref.read(themeModeProvider.notifier).setThemeMode('santijet');
+              Navigator.pop(ctx);
+            },
+          ),
+          ListTile(
+            title: const Text('Sistem'),
+            onTap: () {
+              ref.read(themeModeProvider.notifier).setThemeMode('system');
+              Navigator.pop(ctx);
+            },
+          ),
+        ],
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     final themeMode = ref.watch(themeModeProvider);
@@ -202,28 +245,9 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
           const SizedBox(height: AppSpacing.xl),
           Text('Görünüm', style: theme.textTheme.titleMedium),
           const SizedBox(height: AppSpacing.sm),
-          SegmentedButton<ThemeMode>(
-            segments: const [
-              ButtonSegment(
-                value: ThemeMode.system,
-                label: Text('Sistem'),
-                icon: Icon(Icons.brightness_auto),
-              ),
-              ButtonSegment(
-                value: ThemeMode.light,
-                label: Text('Açık'),
-                icon: Icon(Icons.light_mode),
-              ),
-              ButtonSegment(
-                value: ThemeMode.dark,
-                label: Text('Koyu'),
-                icon: Icon(Icons.dark_mode),
-              ),
-            ],
-            selected: {themeMode},
-            onSelectionChanged: (s) {
-              ref.read(themeModeProvider.notifier).set(s.first);
-            },
+          _ThemeSettingsTile(
+            subtitle: themeLabel(themeMode),
+            onTap: () => _showThemePicker(context),
           ),
           const SizedBox(height: AppSpacing.xl),
           Text('Uygulama', style: theme.textTheme.titleMedium),
@@ -244,6 +268,55 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
             style: theme.textTheme.labelMedium,
           ),
         ],
+      ),
+    );
+  }
+}
+
+class _ThemeSettingsTile extends StatelessWidget {
+  const _ThemeSettingsTile({
+    required this.subtitle,
+    required this.onTap,
+  });
+
+  final String subtitle;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    return Material(
+      color: Colors.transparent,
+      child: InkWell(
+        onTap: onTap,
+        borderRadius: AppRadii.md,
+        child: Container(
+          padding: const EdgeInsets.all(14),
+          decoration: BoxDecoration(
+            color: AppColors.surfaceElevated,
+            borderRadius: AppRadii.md,
+            border: Border.all(color: AppColors.border),
+          ),
+          child: Row(
+            children: [
+              const Icon(
+                Icons.dark_mode,
+                color: AppColors.electricBlueLight,
+                size: 22,
+              ),
+              const SizedBox(width: 14),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text('Tema', style: AppTypography.titleMedium),
+                    Text(subtitle, style: AppTypography.bodySmall),
+                  ],
+                ),
+              ),
+              Icon(Icons.chevron_right, color: AppColors.textMuted),
+            ],
+          ),
+        ),
       ),
     );
   }

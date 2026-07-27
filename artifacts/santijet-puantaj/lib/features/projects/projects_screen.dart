@@ -72,15 +72,24 @@ class ProjectsScreen extends ConsumerWidget {
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
-                            Text(p.name, style: theme.textTheme.titleMedium),
-                            if (p.code.isNotEmpty || p.company.isNotEmpty)
-                              Text(
-                                [
-                                  if (p.code.isNotEmpty) p.code,
-                                  if (p.company.isNotEmpty) p.company,
-                                ].join(' · '),
-                                style: theme.textTheme.bodySmall,
-                              ),
+                            Text(
+                              p.company.isEmpty ? 'Firma adı yok' : p.company,
+                              style: theme.textTheme.titleMedium,
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                            ),
+                            Text(
+                              p.name.isEmpty ? 'İşin adı yok' : p.name,
+                              style: theme.textTheme.bodyMedium,
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                            ),
+                            Text(
+                              p.code.isEmpty ? 'İşin kodu yok' : p.code,
+                              style: theme.textTheme.bodySmall,
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                            ),
                             if (selected)
                               Text(
                                 'Aktif proje',
@@ -181,19 +190,20 @@ class ProjectsScreen extends ConsumerWidget {
               ),
               const SizedBox(height: AppSpacing.md),
               TextField(
+                controller: companyCtrl,
+                decoration: const InputDecoration(labelText: 'Firma adı'),
+                textCapitalization: TextCapitalization.sentences,
+              ),
+              const SizedBox(height: AppSpacing.sm),
+              TextField(
                 controller: nameCtrl,
-                decoration: const InputDecoration(labelText: 'Proje adı'),
+                decoration: const InputDecoration(labelText: 'İşin adı'),
                 textCapitalization: TextCapitalization.sentences,
               ),
               const SizedBox(height: AppSpacing.sm),
               TextField(
                 controller: codeCtrl,
-                decoration: const InputDecoration(labelText: 'Proje kodu'),
-              ),
-              const SizedBox(height: AppSpacing.sm),
-              TextField(
-                controller: companyCtrl,
-                decoration: const InputDecoration(labelText: 'Firma'),
+                decoration: const InputDecoration(labelText: 'İşin kodu'),
               ),
               const SizedBox(height: AppSpacing.md),
               FilledButton(

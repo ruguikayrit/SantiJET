@@ -1,13 +1,12 @@
 import 'package:flutter/material.dart';
 
+import '../theme/app_colors.dart';
 import '../theme/app_radii.dart';
 import '../theme/app_spacing.dart';
 
 /// ŞantiJET Design System — kart.
 ///
-/// ŞantiJET Demir kart desenine (yüzey + ince kenarlık + md yarıçap) dayanır;
-/// hem açık hem koyu temada doğru görünmesi için yapısal renkler `Theme`'den
-/// alınır. İsteğe bağlı sol renk şeridi (`accentColor`) ve dokunma desteği vardır.
+/// Demir kart deseni: [AppColors.cardSurface] (ŞantiJET'te koyu özet kartları).
 class SJCard extends StatelessWidget {
   const SJCard({
     required this.child,
@@ -27,12 +26,14 @@ class SJCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    final cardTheme = theme.cardTheme;
-    final surface = cardTheme.color ?? theme.colorScheme.surface;
-    final borderColor =
-        selected ? theme.colorScheme.primary : theme.dividerColor;
+    final surface = AppColors.isSantijet
+        ? AppColors.cardSurface
+        : (theme.cardTheme.color ?? theme.colorScheme.surface);
+    final borderColor = selected
+        ? theme.colorScheme.primary
+        : (AppColors.isSantijet ? AppColors.cardBorder : theme.dividerColor);
 
-    final content = Padding(
+    Widget content = Padding(
       padding: padding,
       child: accentColor == null
           ? child
@@ -54,6 +55,22 @@ class SJCard extends StatelessWidget {
             ),
     );
 
+    if (AppColors.isSantijet) {
+      content = Theme(
+        data: theme.copyWith(
+          textTheme: theme.textTheme.apply(
+            bodyColor: AppColors.cardTextPrimary,
+            displayColor: AppColors.cardTextPrimary,
+          ),
+          iconTheme: IconThemeData(color: AppColors.cardTextSecondary),
+        ),
+        child: DefaultTextStyle.merge(
+          style: TextStyle(color: AppColors.cardTextPrimary),
+          child: content,
+        ),
+      );
+    }
+
     final decorated = DecoratedBox(
       decoration: BoxDecoration(
         color: surface,
@@ -62,6 +79,7 @@ class SJCard extends StatelessWidget {
           color: borderColor,
           width: selected ? 1.5 : 1,
         ),
+        boxShadow: AppColors.isSantijet ? AppColors.cardElevation : null,
       ),
       child: content,
     );

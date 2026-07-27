@@ -17,6 +17,7 @@ import '../../domain/entities/attendance.dart';
 import '../../domain/entities/person.dart';
 import '../../domain/entities/production.dart';
 import '../../domain/entities/production_day_entry.dart';
+import '../../domain/catalogs/imalat_units.dart';
 import '../../domain/yevmiye/imalat_crew_allocator.dart';
 import '../../domain/yevmiye/yevmiye_calculator.dart';
 
@@ -342,17 +343,20 @@ class _ImalatJobSheet extends StatefulWidget {
 
 class _ImalatJobSheetState extends State<_ImalatJobSheet> {
   late final TextEditingController _name;
-  late final TextEditingController _unit;
   late final TextEditingController _planned;
   late final TextEditingController _note;
   String? _team;
+  late String _unit;
 
   @override
   void initState() {
     super.initState();
     final e = widget.existing;
     _name = TextEditingController(text: e?.name ?? '');
-    _unit = TextEditingController(text: e?.unit ?? 'adet');
+    final existingUnit = e?.unit.trim() ?? '';
+    _unit = existingUnit.isEmpty
+        ? ImalatUnitCatalog.defaultUnit
+        : existingUnit;
     _planned = TextEditingController(
       text: e == null ? '' : _num(e.plannedQty),
     );
@@ -365,7 +369,6 @@ class _ImalatJobSheetState extends State<_ImalatJobSheet> {
   @override
   void dispose() {
     _name.dispose();
-    _unit.dispose();
     _planned.dispose();
     _note.dispose();
     super.dispose();
@@ -385,6 +388,10 @@ class _ImalatJobSheetState extends State<_ImalatJobSheet> {
           _team!.isNotEmpty &&
           !widget.teams.contains(_team))
         _team!,
+    ];
+    final unitItems = [
+      ...ImalatUnitCatalog.units,
+      if (_unit.isNotEmpty && !ImalatUnitCatalog.units.contains(_unit)) _unit,
     ];
 
     return Padding(
@@ -447,10 +454,19 @@ class _ImalatJobSheetState extends State<_ImalatJobSheet> {
                 ),
                 const SizedBox(width: AppSpacing.sm),
                 SizedBox(
-                  width: 88,
-                  child: TextField(
-                    controller: _unit,
+                  width: 120,
+                  child: DropdownButtonFormField<String>(
+                    value: _unit,
                     decoration: const InputDecoration(labelText: 'Birim'),
+                    isExpanded: true,
+                    items: [
+                      for (final u in unitItems)
+                        DropdownMenuItem(value: u, child: Text(u)),
+                    ],
+                    onChanged: (v) {
+                      if (v == null) return;
+                      setState(() => _unit = v);
+                    },
                   ),
                 ),
               ],
@@ -489,9 +505,9 @@ class _ImalatJobSheetState extends State<_ImalatJobSheet> {
                         projectId: widget.projectId,
                         name: name,
                         teamName: team,
-                        unit: _unit.text.trim().isEmpty
-                            ? 'adet'
-                            : _unit.text.trim(),
+                        unit: _unit.trim().isEmpty
+                            ? ImalatUnitCatalog.defaultUnit
+                            : _unit.trim(),
                         plannedQty:
                             double.tryParse(_planned.text.trim()) ?? 0,
                         note: _note.text.trim(),

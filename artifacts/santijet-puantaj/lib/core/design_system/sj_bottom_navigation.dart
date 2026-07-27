@@ -45,20 +45,18 @@ class SJBottomNavigation extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-    final surface = theme.cardTheme.color ?? theme.colorScheme.surface;
     final bottomInset = MediaQuery.viewPaddingOf(context).bottom;
 
     return Padding(
       padding: const EdgeInsets.only(bottom: bottomLift),
       child: ColoredBox(
-        color: surface,
+        color: AppColors.surface,
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
             DecoratedBox(
               decoration: BoxDecoration(
-                border: Border(top: BorderSide(color: theme.dividerColor)),
+                border: Border(top: BorderSide(color: AppColors.border)),
               ),
               child: SizedBox(
                 height: _iconBarHeight,
@@ -100,7 +98,7 @@ class _NavItemView extends StatelessWidget {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final color =
-        selected ? AppColors.electricBlue : theme.colorScheme.onSurfaceVariant;
+        selected ? AppColors.electricBlue : AppColors.textMuted;
 
     return InkWell(
       onTap: onTap,

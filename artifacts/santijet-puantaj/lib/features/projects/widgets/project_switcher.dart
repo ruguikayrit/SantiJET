@@ -5,10 +5,11 @@ import 'package:go_router/go_router.dart';
 import '../../../core/routing/app_routes.dart';
 import '../../../core/theme/app_colors.dart';
 import '../../../core/theme/app_radii.dart';
+import '../../../core/theme/app_spacing.dart';
 import '../../../core/theme/app_typography.dart';
 import '../../../data/providers/app_data_provider.dart';
 
-/// Aktif proje kartı — Demir `ProjectSwitcher` düzeni.
+/// Aktif proje kartı — firma / iş adı / iş kodu (3 satır).
 class ProjectSwitcher extends ConsumerWidget {
   const ProjectSwitcher({super.key});
 
@@ -16,12 +17,15 @@ class ProjectSwitcher extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final project = ref.watch(activeProjectProvider);
     final brightness = Theme.of(context).brightness;
-    final isDark = brightness == Brightness.dark;
+
+    final company = project?.company.trim() ?? '';
+    final name = project?.name.trim() ?? '';
+    final code = project?.code.trim() ?? '';
 
     return Semantics(
       label: project == null
           ? 'Proje seçin'
-          : 'Aktif proje: ${project.name}',
+          : 'Aktif iş: $name',
       button: true,
       child: Material(
         color: Colors.transparent,
@@ -33,46 +37,62 @@ class ProjectSwitcher extends ConsumerWidget {
             child: Container(
               padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
               decoration: BoxDecoration(
-                color: isDark
-                    ? AppColors.surfaceElevated
-                    : AppColors.lightSurface,
+                color: AppColors.surfaceElevated,
                 borderRadius: AppRadii.md,
-                border: Border.all(
-                  color: isDark ? AppColors.border : AppColors.lightBorder,
-                ),
+                border: Border.all(color: AppColors.border),
               ),
               child: Row(
+                crossAxisAlignment: CrossAxisAlignment.center,
                 children: [
                   const Icon(
                     Icons.apartment,
-                    size: 18,
+                    size: 20,
                     color: AppColors.electricBlueLight,
                   ),
-                  const SizedBox(width: 8),
+                  const SizedBox(width: 10),
                   Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          project?.name ?? 'Proje seçin',
-                          style: AppTypography.titleMedium.copyWith(
-                            color: AppColors.inkFor(brightness),
-                          ),
-                          maxLines: 1,
-                          overflow: TextOverflow.ellipsis,
-                        ),
-                        if (project != null)
-                          Text(
-                            project.code.trim().isEmpty
-                                ? 'Kod yok'
-                                : 'Kod: ${project.code}',
-                            style: AppTypography.bodySmall.copyWith(
-                              color: AppColors.inkMutedFor(brightness),
+                    child: project == null
+                        ? Text(
+                            'Proje seçin',
+                            style: AppTypography.titleMedium.copyWith(
+                              color: AppColors.inkFor(brightness),
                             ),
+                          )
+                        : Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(
+                                company.isEmpty ? 'Firma adı yok' : company,
+                                style: AppTypography.titleMedium.copyWith(
+                                  color: AppColors.inkFor(brightness),
+                                  fontWeight: FontWeight.w700,
+                                ),
+                                maxLines: 1,
+                                overflow: TextOverflow.ellipsis,
+                              ),
+                              const SizedBox(height: 2),
+                              Text(
+                                name.isEmpty ? 'İşin adı yok' : name,
+                                style: AppTypography.bodyMedium.copyWith(
+                                  color: AppColors.inkSecondaryFor(brightness),
+                                  fontWeight: FontWeight.w600,
+                                ),
+                                maxLines: 1,
+                                overflow: TextOverflow.ellipsis,
+                              ),
+                              const SizedBox(height: 2),
+                              Text(
+                                code.isEmpty ? 'İşin kodu yok' : code,
+                                style: AppTypography.bodySmall.copyWith(
+                                  color: AppColors.inkMutedFor(brightness),
+                                ),
+                                maxLines: 1,
+                                overflow: TextOverflow.ellipsis,
+                              ),
+                            ],
                           ),
-                      ],
-                    ),
                   ),
+                  const SizedBox(width: AppSpacing.xs),
                   Icon(
                     Icons.expand_more,
                     color: AppColors.inkMutedFor(brightness),

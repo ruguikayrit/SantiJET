@@ -68,16 +68,14 @@ class HomeScreen extends ConsumerWidget {
     final todayRecords = attendance
         .where((a) => a.projectId == project.id && a.date == today)
         .toList();
-    final enteredIds = todayRecords.map((a) => a.personId).toSet();
-    final missing = people.where((p) => !enteredIds.contains(p.id)).length;
     final present = todayRecords
-        .where((a) =>
-            a.status == AttendanceStatus.present ||
-            a.status == AttendanceStatus.half)
+        .where((a) => a.status == AttendanceStatus.present)
         .length;
-    final absent = todayRecords
-        .where((a) => a.status == AttendanceStatus.absent)
+    final half = todayRecords
+        .where((a) => a.status == AttendanceStatus.half)
         .length;
+    // Yok = kayıtlı personel − mevcut − yarım
+    final absent = (people.length - present - half).clamp(0, people.length);
     final totalYevmiye =
         todayRecords.fold<double>(0, (sum, a) => sum + a.yevmiye);
     final overtimeHours =
@@ -138,12 +136,20 @@ class HomeScreen extends ConsumerWidget {
                           children: [
                             Expanded(
                               child: _MiniStat(
-                                label: 'Mevcut / Yarım',
+                                label: 'Mevcut',
                                 value: '$present',
                                 color: AttendanceStatus.present.color,
                               ),
                             ),
-                            const SizedBox(width: AppSpacing.sm),
+                            const SizedBox(width: AppSpacing.xs),
+                            Expanded(
+                              child: _MiniStat(
+                                label: 'Yarım',
+                                value: '$half',
+                                color: AttendanceStatus.half.color,
+                              ),
+                            ),
+                            const SizedBox(width: AppSpacing.xs),
                             Expanded(
                               child: _MiniStat(
                                 label: 'Yok',
@@ -154,25 +160,11 @@ class HomeScreen extends ConsumerWidget {
                           ],
                         ),
                         const SizedBox(height: AppSpacing.sm),
-                        Row(
-                          children: [
-                            Expanded(
-                              child: _MiniStat(
-                                label: 'Girilmedi',
-                                value: '$missing',
-                                color: AppColors.warning,
-                              ),
-                            ),
-                            const SizedBox(width: AppSpacing.sm),
-                            Expanded(
-                              child: _MiniStat(
-                                label: 'Yevmiye',
-                                value: _fmt(totalYevmiye),
-                                color: AppColors.electricBlue,
-                                unit: 'yv',
-                              ),
-                            ),
-                          ],
+                        _MiniStat(
+                          label: 'Yevmiye',
+                          value: _fmt(totalYevmiye),
+                          color: AppColors.electricBlue,
+                          unit: 'yv',
                         ),
                         if (overtimeHours > 0) ...[
                           const SizedBox(height: AppSpacing.sm),
