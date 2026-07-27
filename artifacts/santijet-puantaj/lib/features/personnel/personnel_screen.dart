@@ -27,7 +27,7 @@ class PersonnelScreen extends ConsumerWidget {
           title: const Text('Personel'),
           leading: IconButton(
             icon: const Icon(Icons.arrow_back),
-            onPressed: () => context.go(AppRoutes.ayarlar),
+            onPressed: () => context.go(AppRoutes.yonetim),
           ),
         ),
         body: SJEmptyState(
@@ -45,7 +45,7 @@ class PersonnelScreen extends ConsumerWidget {
         title: const Text('Personel'),
         leading: IconButton(
           icon: const Icon(Icons.arrow_back),
-          onPressed: () => context.go(AppRoutes.ayarlar),
+          onPressed: () => context.go(AppRoutes.yonetim),
         ),
         actions: [
           Padding(

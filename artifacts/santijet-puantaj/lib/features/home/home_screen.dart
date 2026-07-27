@@ -75,8 +75,6 @@ class HomeScreen extends ConsumerWidget {
         .length;
     // Yok = kayıtlı personel − mevcut − yarım
     final absent = (people.length - present - half).clamp(0, people.length);
-    final totalYevmiye =
-        todayRecords.fold<double>(0, (sum, a) => sum + a.yevmiye);
     final overtimeHours =
         todayRecords.fold<double>(0, (sum, a) => sum + a.overtimeHours);
 
@@ -160,13 +158,6 @@ class HomeScreen extends ConsumerWidget {
                                   ),
                                 ),
                               ],
-                            ),
-                            const SizedBox(height: AppSpacing.sm),
-                            _MiniStat(
-                              label: 'Yevmiye',
-                              value: _fmt(totalYevmiye),
-                              color: AppColors.electricBlue,
-                              unit: 'yv',
                             ),
                             if (overtimeHours > 0) ...[
                               const SizedBox(height: AppSpacing.sm),
@@ -535,13 +526,11 @@ class _MiniStat extends StatelessWidget {
     required this.label,
     required this.value,
     required this.color,
-    this.unit,
   });
 
   final String label;
   final String value;
   final Color color;
-  final String? unit;
 
   @override
   Widget build(BuildContext context) {
@@ -572,13 +561,6 @@ class _MiniStat extends StatelessWidget {
                   overflow: TextOverflow.ellipsis,
                 ),
               ),
-              if (unit != null) ...[
-                const SizedBox(width: 4),
-                Padding(
-                  padding: const EdgeInsets.only(bottom: 2),
-                  child: Text(unit!, style: theme.textTheme.labelSmall),
-                ),
-              ],
             ],
           ),
         ],

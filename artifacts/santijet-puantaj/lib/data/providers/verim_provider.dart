@@ -107,6 +107,10 @@ class VerimNotifier extends StateNotifier<VerimState> {
 
   void reloadForActiveProject() => _loadCache();
 
+  void clear() {
+    state = const VerimState(status: VerimSyncStatus.idle);
+  }
+
   Future<void> syncFromCloud({bool demoFallback = false}) async {
     final project = _ref.read(activeProjectProvider);
     if (project == null) {

@@ -12,9 +12,12 @@ import '../../core/theme/theme_mode_provider.dart';
 import '../../data/providers/app_data_provider.dart';
 import '../../data/providers/backup_provider.dart';
 import '../../data/providers/catalog_provider.dart';
+import '../../data/providers/production_provider.dart';
+import '../../data/providers/verim_provider.dart';
 import '../../data/services/puantaj_backup_service.dart';
+import '../../domain/catalogs/professions.dart';
 
-/// Tema, personel/proje/katalog yönetimi, yedekleme ve uygulama bilgisi.
+/// Ayarlar — Demir ile aynı kart/tile düzeni; Puantaj kapsamına indirgenmiş.
 class SettingsScreen extends ConsumerStatefulWidget {
   const SettingsScreen({super.key});
 
@@ -24,6 +27,97 @@ class SettingsScreen extends ConsumerStatefulWidget {
 
 class _SettingsScreenState extends ConsumerState<SettingsScreen> {
   bool _busy = false;
+
+  void _showThemePicker(BuildContext context) {
+    showModalBottomSheet<void>(
+      context: context,
+      backgroundColor: AppColors.surfaceElevated,
+      builder: (ctx) => Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          ListTile(
+            title: const Text('Açık'),
+            onTap: () {
+              ref.read(themeModeProvider.notifier).setThemeMode('light');
+              Navigator.pop(ctx);
+            },
+          ),
+          ListTile(
+            title: const Text('Koyu'),
+            onTap: () {
+              ref.read(themeModeProvider.notifier).setThemeMode('dark');
+              Navigator.pop(ctx);
+            },
+          ),
+          ListTile(
+            title: const Text('ŞantiJET'),
+            subtitle: const Text('Açık zemin · koyu özet kartları'),
+            onTap: () {
+              ref.read(themeModeProvider.notifier).setThemeMode('santijet');
+              Navigator.pop(ctx);
+            },
+          ),
+          ListTile(
+            title: const Text('Sistem'),
+            onTap: () {
+              ref.read(themeModeProvider.notifier).setThemeMode('system');
+              Navigator.pop(ctx);
+            },
+          ),
+        ],
+      ),
+    );
+  }
+
+  void _showBackupDialog(BuildContext context) {
+    showModalBottomSheet<void>(
+      context: context,
+      backgroundColor: AppColors.surfaceElevated,
+      builder: (ctx) => SafeArea(
+        child: Padding(
+          padding: const EdgeInsets.all(AppSpacing.md),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              Text(
+                'Yedekleme & Geri Yükleme',
+                style: AppTypography.headlineMedium,
+              ),
+              const SizedBox(height: 8),
+              Text(
+                'Tüm projeler, personel, puantaj, imalat ve katalogları '
+                'JSON dosyası olarak dışa / içe aktarın.',
+                style: AppTypography.bodySmall,
+              ),
+              const SizedBox(height: 16),
+              FilledButton.icon(
+                onPressed: _busy
+                    ? null
+                    : () async {
+                        Navigator.pop(ctx);
+                        await _export();
+                      },
+                icon: const Icon(Icons.upload),
+                label: const Text('Verileri Dışa Aktar'),
+              ),
+              const SizedBox(height: 8),
+              OutlinedButton.icon(
+                onPressed: _busy
+                    ? null
+                    : () async {
+                        Navigator.pop(ctx);
+                        await _import();
+                      },
+                icon: const Icon(Icons.download),
+                label: const Text('Verileri İçe Aktar'),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
 
   Future<void> _export() async {
     if (_busy) return;
@@ -54,7 +148,8 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
     final ok = await showDialog<bool>(
       context: context,
       builder: (ctx) => AlertDialog(
-        title: const Text('İçe aktar'),
+        backgroundColor: AppColors.surfaceElevated,
+        title: const Text('Verileri İçe Aktar'),
         content: const Text(
           'Seçilen yedek dosyası mevcut proje, personel, puantaj ve '
           'imalat verilerinin üzerine yazılacak. Devam edilsin mi?',
@@ -107,165 +202,104 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
     }
   }
 
-  void _showThemePicker(BuildContext context) {
-    showModalBottomSheet<void>(
+  Future<void> _confirmDeleteAllData(BuildContext context) async {
+    final ok = await showDialog<bool>(
       context: context,
-      backgroundColor: AppColors.surfaceElevated,
-      builder: (ctx) => Column(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          ListTile(
-            title: const Text('Açık'),
-            onTap: () {
-              ref.read(themeModeProvider.notifier).setThemeMode('light');
-              Navigator.pop(ctx);
-            },
+      builder: (ctx) => AlertDialog(
+        backgroundColor: AppColors.surfaceElevated,
+        title: const Text('Tüm Verileri Sil'),
+        content: const Text(
+          'Projeler, personel, puantaj, imalat ve kataloglar silinir. '
+          'Bu işlem geri alınamaz. Devam edilsin mi?',
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(ctx, false),
+            child: const Text('Vazgeç'),
           ),
-          ListTile(
-            title: const Text('Koyu'),
-            onTap: () {
-              ref.read(themeModeProvider.notifier).setThemeMode('dark');
-              Navigator.pop(ctx);
-            },
-          ),
-          ListTile(
-            title: const Text('ŞantiJET'),
-            subtitle: const Text('Açık zemin · koyu özet kartları'),
-            onTap: () {
-              ref.read(themeModeProvider.notifier).setThemeMode('santijet');
-              Navigator.pop(ctx);
-            },
-          ),
-          ListTile(
-            title: const Text('Sistem'),
-            onTap: () {
-              ref.read(themeModeProvider.notifier).setThemeMode('system');
-              Navigator.pop(ctx);
-            },
+          FilledButton(
+            style: FilledButton.styleFrom(backgroundColor: AppColors.critical),
+            onPressed: () => Navigator.pop(ctx, true),
+            child: const Text('Sil'),
           ),
         ],
       ),
+    );
+    if (ok != true || !mounted) return;
+
+    ref.read(projectsProvider.notifier).replaceAll([]);
+    ref.read(personnelProvider.notifier).replaceAll([]);
+    ref.read(attendanceProvider.notifier).replaceAll([]);
+    ref.read(productionProvider.notifier).replaceAll([]);
+    ref
+        .read(professionsProvider.notifier)
+        .resetToDefaults(ProfessionCatalog.defaultProfessions);
+    ref
+        .read(teamsProvider.notifier)
+        .resetToDefaults(ProfessionCatalog.defaultTradeGroups);
+    ref.read(activeProjectIdProvider.notifier).set(null);
+    ref.read(verimProvider.notifier).clear();
+
+    if (!mounted) return;
+    ScaffoldMessenger.of(this.context).showSnackBar(
+      const SnackBar(content: Text('Tüm veriler silindi')),
     );
   }
 
   @override
   Widget build(BuildContext context) {
     final themeMode = ref.watch(themeModeProvider);
-    final theme = Theme.of(context);
+    final project = ref.watch(activeProjectProvider);
     final peopleCount = ref.watch(projectPersonnelProvider).length;
-    final projectCount = ref.watch(projectsProvider).length;
-    final active = ref.watch(activeProjectProvider);
     final professionCount = ref.watch(professionsProvider).length;
     final teamCount = ref.watch(teamsProvider).length;
 
     return Scaffold(
+      backgroundColor: AppColors.canvas,
       appBar: AppBar(title: const Text('Ayarlar')),
       body: ListView(
         padding: const EdgeInsets.all(AppSpacing.md),
         children: [
-          Text('Yönetim', style: theme.textTheme.titleMedium),
-          const SizedBox(height: AppSpacing.sm),
-          ListTile(
-            contentPadding: EdgeInsets.zero,
-            leading: const Icon(Icons.groups_outlined),
-            title: const Text('Personel'),
-            subtitle: Text(
-              active == null
-                  ? 'Önce proje seçin'
-                  : '${active.name}: $peopleCount kayıt',
-            ),
-            trailing: const Icon(Icons.chevron_right),
-            onTap: () => context.go(AppRoutes.personel),
+          _SettingsTile(
+            icon: Icons.folder_copy,
+            title: 'Projelerim',
+            subtitle: project?.name ?? 'Proje seç veya oluştur',
+            onTap: () => context.push(AppRoutes.projeler),
           ),
-          ListTile(
-            contentPadding: EdgeInsets.zero,
-            leading: const Icon(Icons.apartment_outlined),
-            title: const Text('Projeler'),
-            subtitle: Text(
-              active == null
-                  ? '$projectCount proje'
-                  : 'Aktif: ${active.name}',
-            ),
-            trailing: const Icon(Icons.chevron_right),
-            onTap: () => context.go(AppRoutes.projeler),
+          _SettingsTile(
+            icon: Icons.manage_accounts_outlined,
+            title: 'Yönetim',
+            subtitle: project == null
+                ? 'Personel, meslekler, ekipler'
+                : '$peopleCount personel · $professionCount meslek · '
+                    '$teamCount ekip',
+            onTap: () => context.push(AppRoutes.yonetim),
           ),
-          ListTile(
-            contentPadding: EdgeInsets.zero,
-            leading: const Icon(Icons.work_outline),
-            title: const Text('Meslekler'),
-            subtitle: Text('$professionCount meslek · manuel eklenebilir'),
-            trailing: const Icon(Icons.chevron_right),
-            onTap: () => context.go(AppRoutes.meslekler),
-          ),
-          ListTile(
-            contentPadding: EdgeInsets.zero,
-            leading: const Icon(Icons.diversity_3_outlined),
-            title: const Text('Ekipler'),
-            subtitle: Text('$teamCount ekip · manuel eklenebilir'),
-            trailing: const Icon(Icons.chevron_right),
-            onTap: () => context.go(AppRoutes.ekipler),
-          ),
-          const SizedBox(height: AppSpacing.xl),
-          Text('Yedekleme', style: theme.textTheme.titleMedium),
-          const SizedBox(height: AppSpacing.xs),
-          Text(
-            'Tüm projeler, personel, puantaj, imalat ve kataloglar '
-            'JSON dosyası olarak dışa / içe aktarılır.',
-            style: theme.textTheme.bodySmall,
-          ),
-          const SizedBox(height: AppSpacing.sm),
-          Row(
-            children: [
-              Expanded(
-                child: FilledButton.icon(
-                  onPressed: _busy ? null : _export,
-                  icon: _busy
-                      ? const SizedBox(
-                          width: 16,
-                          height: 16,
-                          child: CircularProgressIndicator(strokeWidth: 2),
-                        )
-                      : const Icon(Icons.upload_outlined),
-                  label: const Text('Dışa aktar'),
-                ),
-              ),
-              const SizedBox(width: AppSpacing.sm),
-              Expanded(
-                child: OutlinedButton.icon(
-                  onPressed: _busy ? null : _import,
-                  icon: const Icon(Icons.download_outlined),
-                  label: const Text('İçe aktar'),
-                  style: OutlinedButton.styleFrom(
-                    foregroundColor: AppColors.electricBlue,
-                  ),
-                ),
-              ),
-            ],
-          ),
-          const SizedBox(height: AppSpacing.xl),
-          Text('Görünüm', style: theme.textTheme.titleMedium),
-          const SizedBox(height: AppSpacing.sm),
-          _ThemeSettingsTile(
+          _SettingsTile(
+            icon: Icons.dark_mode,
+            title: 'Tema',
             subtitle: themeLabel(themeMode),
             onTap: () => _showThemePicker(context),
           ),
-          const SizedBox(height: AppSpacing.xl),
-          Text('Uygulama', style: theme.textTheme.titleMedium),
-          const SizedBox(height: AppSpacing.sm),
-          ListTile(
-            contentPadding: EdgeInsets.zero,
-            title: Text(AppInfo.displayName),
-            subtitle: Text(AppInfo.tagline),
-            trailing: Text(AppInfo.version),
+          _SettingsTile(
+            icon: Icons.backup,
+            title: 'Yedekleme & Geri Yükleme',
+            subtitle: 'Verileri JSON olarak dışa/içe aktar',
+            onTap: () => _showBackupDialog(context),
           ),
-          Text(
-            AppInfo.localDataNote,
-            style: theme.textTheme.bodySmall,
+          _SettingsTile(
+            icon: Icons.info_outline,
+            title: 'Hakkında',
+            subtitle: '${AppInfo.displayName} v${AppInfo.version}',
+            onTap: () => context.push(AppRoutes.hakkinda),
           ),
-          const SizedBox(height: AppSpacing.md),
-          Text(
-            'Destek: ${AppInfo.supportEmail}',
-            style: theme.textTheme.labelMedium,
+          const SizedBox(height: 8),
+          _SettingsTile(
+            icon: Icons.delete_forever,
+            title: 'Tüm Verileri Sil',
+            subtitle: 'Projeler, personel, puantaj ve imalat silinir',
+            onTap: () => _confirmDeleteAllData(context),
+            destructive: true,
           ),
         ],
       ),
@@ -273,14 +307,21 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
   }
 }
 
-class _ThemeSettingsTile extends StatelessWidget {
-  const _ThemeSettingsTile({
+/// Demir `_SettingsTile` ile birebir aynı görünüm.
+class _SettingsTile extends StatelessWidget {
+  const _SettingsTile({
+    required this.icon,
+    required this.title,
     required this.subtitle,
     required this.onTap,
+    this.destructive = false,
   });
 
+  final IconData icon;
+  final String title;
   final String subtitle;
   final VoidCallback onTap;
+  final bool destructive;
 
   @override
   Widget build(BuildContext context) {
@@ -290,6 +331,7 @@ class _ThemeSettingsTile extends StatelessWidget {
         onTap: onTap,
         borderRadius: AppRadii.md,
         child: Container(
+          margin: const EdgeInsets.only(bottom: 8),
           padding: const EdgeInsets.all(14),
           decoration: BoxDecoration(
             color: AppColors.surfaceElevated,
@@ -298,9 +340,11 @@ class _ThemeSettingsTile extends StatelessWidget {
           ),
           child: Row(
             children: [
-              const Icon(
-                Icons.dark_mode,
-                color: AppColors.electricBlueLight,
+              Icon(
+                icon,
+                color: destructive
+                    ? AppColors.critical
+                    : AppColors.electricBlueLight,
                 size: 22,
               ),
               const SizedBox(width: 14),
@@ -308,7 +352,7 @@ class _ThemeSettingsTile extends StatelessWidget {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Text('Tema', style: AppTypography.titleMedium),
+                    Text(title, style: AppTypography.titleMedium),
                     Text(subtitle, style: AppTypography.bodySmall),
                   ],
                 ),
@@ -316,6 +360,53 @@ class _ThemeSettingsTile extends StatelessWidget {
               Icon(Icons.chevron_right, color: AppColors.textMuted),
             ],
           ),
+        ),
+      ),
+    );
+  }
+}
+
+/// Hakkında — Demir AboutScreen düzeni, Puantaj metni.
+class AboutScreen extends StatelessWidget {
+  const AboutScreen({super.key});
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      backgroundColor: AppColors.canvas,
+      appBar: AppBar(title: const Text('Hakkında')),
+      body: Padding(
+        padding: const EdgeInsets.all(AppSpacing.md),
+        child: Column(
+          children: [
+            Image.asset(
+              'assets/images/splash_bolt.png',
+              width: 120,
+              height: 120,
+              fit: BoxFit.contain,
+              filterQuality: FilterQuality.high,
+            ),
+            const SizedBox(height: 4),
+            Text(AppInfo.displayName, style: AppTypography.headlineLarge),
+            const SizedBox(height: 8),
+            Text(
+              'Versiyon ${AppInfo.version}',
+              style: AppTypography.bodyMedium,
+            ),
+            const SizedBox(height: 24),
+            Text(
+              'Personel devam, yevmiye, imalat ve verim takibi yapan '
+              'ŞantiJET Puantaj uygulaması. ${AppInfo.tagline}',
+              style: AppTypography.bodyMedium,
+              textAlign: TextAlign.center,
+            ),
+            const SizedBox(height: 16),
+            Text(
+              'Destek: ${AppInfo.supportEmail}',
+              style: AppTypography.labelMedium,
+              textAlign: TextAlign.center,
+            ),
+          ],
         ),
       ),
     );

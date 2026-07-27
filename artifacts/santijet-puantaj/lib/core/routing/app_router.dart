@@ -8,6 +8,7 @@ import '../../features/personnel/personnel_screen.dart';
 import '../../features/projects/projects_screen.dart';
 import '../../features/puantaj/puantaj_screen.dart';
 import '../../features/settings/catalog_screens.dart';
+import '../../features/settings/management_screen.dart';
 import '../../features/settings/settings_screen.dart';
 import '../../features/shell/main_shell.dart';
 import '../../features/splash/splash_screen.dart';
@@ -18,7 +19,7 @@ import 'page_transitions.dart';
 final _rootNavigatorKey = GlobalKey<NavigatorState>();
 
 /// Alt sekmeler: Ana Sayfa, Puantaj, İmalat, Verim, Ayarlar.
-/// Personel / Projeler Ayarlar altındadır.
+/// Yönetim (Personel / Meslekler / Ekipler) ve Projeler Ayarlar altındadır.
 final routerProvider = Provider<GoRouter>((ref) {
   return GoRouter(
     navigatorKey: _rootNavigatorKey,
@@ -87,13 +88,6 @@ final routerProvider = Provider<GoRouter>((ref) {
                 ),
                 routes: [
                   GoRoute(
-                    path: 'personel',
-                    pageBuilder: (context, state) => fadePage(
-                      key: state.pageKey,
-                      child: const PersonnelScreen(),
-                    ),
-                  ),
-                  GoRoute(
                     path: 'projeler',
                     pageBuilder: (context, state) => fadePage(
                       key: state.pageKey,
@@ -101,18 +95,41 @@ final routerProvider = Provider<GoRouter>((ref) {
                     ),
                   ),
                   GoRoute(
-                    path: 'meslekler',
+                    path: 'hakkinda',
                     pageBuilder: (context, state) => fadePage(
                       key: state.pageKey,
-                      child: const ProfessionsScreen(),
+                      child: const AboutScreen(),
                     ),
                   ),
                   GoRoute(
-                    path: 'ekipler',
+                    path: 'yonetim',
                     pageBuilder: (context, state) => fadePage(
                       key: state.pageKey,
-                      child: const TeamsScreen(),
+                      child: const ManagementScreen(),
                     ),
+                    routes: [
+                      GoRoute(
+                        path: 'personel',
+                        pageBuilder: (context, state) => fadePage(
+                          key: state.pageKey,
+                          child: const PersonnelScreen(),
+                        ),
+                      ),
+                      GoRoute(
+                        path: 'meslekler',
+                        pageBuilder: (context, state) => fadePage(
+                          key: state.pageKey,
+                          child: const ProfessionsScreen(),
+                        ),
+                      ),
+                      GoRoute(
+                        path: 'ekipler',
+                        pageBuilder: (context, state) => fadePage(
+                          key: state.pageKey,
+                          child: const TeamsScreen(),
+                        ),
+                      ),
+                    ],
                   ),
                 ],
               ),

@@ -78,7 +78,7 @@ class _CatalogManageScreen extends StatelessWidget {
         title: Text(title),
         leading: IconButton(
           icon: const Icon(Icons.arrow_back),
-          onPressed: () => context.go(AppRoutes.ayarlar),
+          onPressed: () => context.go(AppRoutes.yonetim),
         ),
         actions: [
           IconButton(
