@@ -9,11 +9,14 @@ import 'package:santijet_demir/core/format/app_format.dart';
 import 'package:santijet_demir/core/theme/app_colors.dart';
 import 'package:santijet_demir/core/theme/app_radii.dart';
 import 'package:santijet_demir/core/theme/app_typography.dart';
+import 'package:santijet_demir/core/utils/open_external_url.dart';
 import 'package:santijet_demir/core/widgets/app_table_header.dart';
 import 'package:santijet_demir/core/widgets/empty_states.dart';
+import 'package:santijet_demir/data/services/puantaj_progress_cloud_service.dart';
 import 'package:santijet_demir/features/field_count/field_count_calculator.dart';
 import 'package:santijet_demir/features/projects/providers/project_provider.dart';
 import 'package:santijet_demir/features/shell/project_progress_provider.dart';
+import 'package:santijet_demir/features/shell/puantaj_progress_sync.dart';
 import 'package:santijet_demir/features/survey/providers/survey_provider.dart';
 
 class ProjectProgressSection extends ConsumerStatefulWidget {
@@ -57,6 +60,10 @@ class _ProjectProgressSectionState
             'Planlanan kullanım = keşif tonajı × ilerleme oranı',
             style: AppTypography.bodySmall,
           ),
+          const SizedBox(height: 10),
+          const _PuantajProgressNudge(),
+          const SizedBox(height: 10),
+          const _PuantajCloudImportButton(),
           const SizedBox(height: 12),
           const ModuleEmptyState(type: EmptyStateType.noSurvey, inline: true),
         ],
@@ -112,6 +119,10 @@ class _ProjectProgressSectionState
           'Proje ilerleme = planlanan kullanım toplamı / keşif miktarı',
           style: AppTypography.bodySmall,
         ),
+        const SizedBox(height: 10),
+        const _PuantajProgressNudge(),
+        const SizedBox(height: 10),
+        const _PuantajCloudImportButton(),
         const SizedBox(height: 12),
         _OverallProgressCard(
           percent: overallPercent,
@@ -654,6 +665,153 @@ class _ProgressImalatGroupState extends State<_ProgressImalatGroup> {
             ),
           ),
       ],
+    );
+  }
+}
+
+class _PuantajCloudImportButton extends ConsumerWidget {
+  const _PuantajCloudImportButton();
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final syncing = ref.watch(puantajProgressSyncingProvider);
+    final canEdit = ref.watch(canEditActiveProjectProvider);
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        FilledButton.icon(
+          onPressed: (!canEdit || syncing)
+              ? null
+              : () => _import(context, ref),
+          icon: syncing
+              ? const SizedBox(
+                  width: 18,
+                  height: 18,
+                  child: CircularProgressIndicator(
+                    strokeWidth: 2,
+                    color: Colors.white,
+                  ),
+                )
+              : const Icon(Icons.cloud_download_outlined, size: 20),
+          label: Text(
+            syncing
+                ? 'Buluttan aktarılıyor…'
+                : 'Puantaj’dan imalat ilerlemesini al',
+          ),
+          style: FilledButton.styleFrom(
+            backgroundColor: AppColors.electricBlue,
+            foregroundColor: Colors.white,
+            disabledBackgroundColor:
+                AppColors.electricBlue.withValues(alpha: 0.35),
+            padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 14),
+            shape: RoundedRectangleBorder(borderRadius: AppRadii.md),
+          ),
+        ),
+        const SizedBox(height: 6),
+        Text(
+          'Aktarım, giriş yaptığınız e-posta hesabına bağlı bulut '
+          'kaydından yapılır. Puantaj ve Demir’de aynı hesap ve iş kodu gerekir.',
+          style: AppTypography.bodySmall.copyWith(
+            color: AppColors.textMuted,
+            height: 1.35,
+          ),
+        ),
+      ],
+    );
+  }
+
+  Future<void> _import(BuildContext context, WidgetRef ref) async {
+    try {
+      final result = await importPuantajProgressFromCloud(ref);
+      if (!context.mounted) return;
+      final unmatched = result.unmatchedNames;
+      final detail = unmatched.isEmpty
+          ? '${result.updatedCount} imalat güncellendi'
+          : '${result.updatedCount} imalat güncellendi · '
+              '${unmatched.length} eşleşmedi';
+      ScaffoldMessenger.of(context).showAppSnackBar(
+        SnackBar(content: Text(detail)),
+      );
+    } on PuantajProgressCloudException catch (error) {
+      if (!context.mounted) return;
+      ScaffoldMessenger.of(context).showAppSnackBar(
+        SnackBar(content: Text(error.message)),
+      );
+    } catch (_) {
+      if (!context.mounted) return;
+      ScaffoldMessenger.of(context).showAppSnackBar(
+        const SnackBar(content: Text('Bulut aktarımı tamamlanamadı')),
+      );
+    }
+  }
+}
+
+class _PuantajProgressNudge extends StatelessWidget {
+  const _PuantajProgressNudge();
+
+  @override
+  Widget build(BuildContext context) {
+    return Material(
+      color: Colors.transparent,
+      child: InkWell(
+        onTap: () => openPuantajStorePage(),
+        borderRadius: AppRadii.md,
+        child: Ink(
+          decoration: BoxDecoration(
+            color: AppColors.electricBlueLight.withValues(alpha: 0.08),
+            borderRadius: AppRadii.md,
+            border: Border.all(
+              color: AppColors.electricBlueLight.withValues(alpha: 0.28),
+            ),
+          ),
+          child: Padding(
+            padding: const EdgeInsets.fromLTRB(12, 10, 12, 10),
+            child: Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Icon(
+                  Icons.insights_outlined,
+                  size: 20,
+                  color: AppColors.electricBlueLight,
+                ),
+                const SizedBox(width: 10),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        'Daha hassas ilerleme için ŞantiJET Puantaj',
+                        style: AppTypography.labelMedium.copyWith(
+                          color: AppColors.electricBlueLight,
+                          fontWeight: FontWeight.w700,
+                        ),
+                      ),
+                      const SizedBox(height: 4),
+                      Text(
+                        'Proje İlerleme Durumu’nda Puantaj uygulaması üzerinden '
+                        'gerçek imalat ilerleme verisini kullanın ve daha '
+                        'hassas sonuç elde edin.',
+                        style: AppTypography.bodySmall.copyWith(
+                          color: AppColors.textSecondary,
+                          height: 1.35,
+                        ),
+                      ),
+                      const SizedBox(height: 6),
+                      Text(
+                        'Marketten indir →',
+                        style: AppTypography.labelMedium.copyWith(
+                          color: AppColors.electricBlueLight,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ),
+      ),
     );
   }
 }
