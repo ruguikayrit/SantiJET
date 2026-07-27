@@ -5,63 +5,62 @@ import 'app_colors.dart';
 import 'app_radii.dart';
 import 'app_typography.dart';
 
-/// ŞantiJET Material 3 teması (açık + koyu).
-///
-/// ŞantiJET Demir referans projesinden birebir alınmıştır; BFA ile Demir'in
-/// görsel dili tamamen aynıdır.
+/// ŞantiJET Material 3 teması (açık + koyu) — Demir ile hizalı.
 abstract final class AppTheme {
   static ThemeData get light {
     const colorScheme = ColorScheme.light(
-      surface: Color(0xFFF8FAFC),
+      surface: AppColors.lightSurface,
       primary: AppColors.electricBlue,
       onPrimary: Colors.white,
       secondary: AppColors.electricBlueLight,
       onSecondary: Colors.white,
       error: AppColors.critical,
       onError: Colors.white,
-      onSurface: Color(0xFF0F172A),
+      onSurface: AppColors.lightTextPrimary,
     );
 
     return ThemeData(
       useMaterial3: true,
       brightness: Brightness.light,
-      scaffoldBackgroundColor: const Color(0xFFF1F5F9),
+      scaffoldBackgroundColor: AppColors.lightCanvas,
       colorScheme: colorScheme,
       appBarTheme: AppBarTheme(
-        backgroundColor: const Color(0xFFF1F5F9),
-        foregroundColor: const Color(0xFF0F172A),
+        backgroundColor: AppColors.lightCanvas,
+        foregroundColor: AppColors.lightTextPrimary,
         elevation: 0,
         centerTitle: false,
-        titleTextStyle: AppTypography.headlineMedium
-            .copyWith(color: const Color(0xFF0F172A)),
+        titleTextStyle: AppTypography.headlineMedium.copyWith(
+          color: AppColors.lightTextPrimary,
+        ),
         systemOverlayStyle: SystemUiOverlayStyle.dark,
       ),
       cardTheme: CardThemeData(
-        color: Colors.white,
+        color: AppColors.lightSurface,
         elevation: 0,
         shape: RoundedRectangleBorder(
           borderRadius: AppRadii.md,
-          side: const BorderSide(color: Color(0xFFE2E8F0)),
+          side: const BorderSide(color: AppColors.lightBorder),
         ),
       ),
       dividerTheme: const DividerThemeData(
-        color: Color(0xFFE2E8F0),
+        color: AppColors.lightBorder,
         thickness: 1,
       ),
       inputDecorationTheme: InputDecorationTheme(
         filled: true,
-        fillColor: Colors.white,
-        hintStyle:
-            AppTypography.bodyMedium.copyWith(color: const Color(0xFF94A3B8)),
+        fillColor: AppColors.lightSurface,
+        hintStyle: AppTypography.bodyMedium.copyWith(
+          color: AppColors.lightTextMuted,
+        ),
         contentPadding:
             const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
         border: OutlineInputBorder(
           borderRadius: AppRadii.md,
-          borderSide: const BorderSide(color: Color(0xFFE2E8F0)),
+          borderSide: const BorderSide(color: AppColors.lightBorder),
         ),
         enabledBorder: OutlineInputBorder(
           borderRadius: AppRadii.md,
-          borderSide: const BorderSide(color: Color(0xFFE2E8F0)),
+          borderSide: const BorderSide(color: AppColors.lightBorder),
         ),
         focusedBorder: OutlineInputBorder(
           borderRadius: AppRadii.md,
@@ -74,40 +73,53 @@ abstract final class AppTheme {
         elevation: 4,
       ),
       bottomNavigationBarTheme: BottomNavigationBarThemeData(
-        backgroundColor: Colors.white,
+        backgroundColor: AppColors.lightSurface,
         selectedItemColor: AppColors.electricBlue,
-        unselectedItemColor: const Color(0xFF94A3B8),
+        unselectedItemColor: AppColors.lightTextMuted,
         type: BottomNavigationBarType.fixed,
         selectedLabelStyle: AppTypography.tabLabel,
         unselectedLabelStyle: AppTypography.tabLabel,
       ),
       textTheme: TextTheme(
-        displayLarge:
-            AppTypography.displayLarge.copyWith(color: const Color(0xFF0F172A)),
-        displayMedium: AppTypography.displayMedium
-            .copyWith(color: const Color(0xFF0F172A)),
-        displaySmall:
-            AppTypography.displaySmall.copyWith(color: const Color(0xFF0F172A)),
-        headlineLarge: AppTypography.headlineLarge
-            .copyWith(color: const Color(0xFF0F172A)),
-        headlineMedium: AppTypography.headlineMedium
-            .copyWith(color: const Color(0xFF0F172A)),
-        titleLarge:
-            AppTypography.titleLarge.copyWith(color: const Color(0xFF0F172A)),
-        titleMedium:
-            AppTypography.titleMedium.copyWith(color: const Color(0xFF0F172A)),
-        bodyLarge:
-            AppTypography.bodyLarge.copyWith(color: const Color(0xFF334155)),
-        bodyMedium:
-            AppTypography.bodyMedium.copyWith(color: const Color(0xFF334155)),
-        bodySmall:
-            AppTypography.bodySmall.copyWith(color: const Color(0xFF64748B)),
-        labelLarge:
-            AppTypography.labelLarge.copyWith(color: const Color(0xFF64748B)),
-        labelMedium:
-            AppTypography.labelMedium.copyWith(color: const Color(0xFF64748B)),
-        labelSmall:
-            AppTypography.labelSmall.copyWith(color: const Color(0xFF64748B)),
+        displayLarge: AppTypography.displayLarge.copyWith(
+          color: AppColors.lightTextPrimary,
+        ),
+        displayMedium: AppTypography.displayMedium.copyWith(
+          color: AppColors.lightTextPrimary,
+        ),
+        displaySmall: AppTypography.displaySmall.copyWith(
+          color: AppColors.lightTextPrimary,
+        ),
+        headlineLarge: AppTypography.headlineLarge.copyWith(
+          color: AppColors.lightTextPrimary,
+        ),
+        headlineMedium: AppTypography.headlineMedium.copyWith(
+          color: AppColors.lightTextPrimary,
+        ),
+        titleLarge: AppTypography.titleLarge.copyWith(
+          color: AppColors.lightTextPrimary,
+        ),
+        titleMedium: AppTypography.titleMedium.copyWith(
+          color: AppColors.lightTextPrimary,
+        ),
+        bodyLarge: AppTypography.bodyLarge.copyWith(
+          color: AppColors.lightTextSecondary,
+        ),
+        bodyMedium: AppTypography.bodyMedium.copyWith(
+          color: AppColors.lightTextSecondary,
+        ),
+        bodySmall: AppTypography.bodySmall.copyWith(
+          color: AppColors.lightTextMuted,
+        ),
+        labelLarge: AppTypography.labelLarge.copyWith(
+          color: AppColors.lightTextMuted,
+        ),
+        labelMedium: AppTypography.labelMedium.copyWith(
+          color: AppColors.lightTextMuted,
+        ),
+        labelSmall: AppTypography.labelSmall.copyWith(
+          color: AppColors.lightTextMuted,
+        ),
       ),
     );
   }
@@ -127,14 +139,16 @@ abstract final class AppTheme {
     return ThemeData(
       useMaterial3: true,
       brightness: Brightness.dark,
-      scaffoldBackgroundColor: AppColors.canvas,
+      scaffoldBackgroundColor: AppColors.darkCanvas,
       colorScheme: colorScheme,
       appBarTheme: AppBarTheme(
-        backgroundColor: AppColors.canvas,
+        backgroundColor: AppColors.darkCanvas,
         foregroundColor: AppColors.textPrimary,
         elevation: 0,
         centerTitle: false,
-        titleTextStyle: AppTypography.headlineMedium,
+        titleTextStyle: AppTypography.headlineMedium.copyWith(
+          color: AppColors.textPrimary,
+        ),
         systemOverlayStyle: SystemUiOverlayStyle.light,
       ),
       cardTheme: CardThemeData(
@@ -184,18 +198,42 @@ abstract final class AppTheme {
       ),
       textTheme: TextTheme(
         displayLarge: AppTypography.displayLarge,
-        displayMedium: AppTypography.displayMedium,
-        displaySmall: AppTypography.displaySmall,
-        headlineLarge: AppTypography.headlineLarge,
-        headlineMedium: AppTypography.headlineMedium,
-        titleLarge: AppTypography.titleLarge,
-        titleMedium: AppTypography.titleMedium,
-        bodyLarge: AppTypography.bodyLarge,
-        bodyMedium: AppTypography.bodyMedium,
-        bodySmall: AppTypography.bodySmall,
-        labelLarge: AppTypography.labelLarge,
-        labelMedium: AppTypography.labelMedium,
-        labelSmall: AppTypography.labelSmall,
+        displayMedium: AppTypography.displayMedium.copyWith(
+          color: AppColors.textPrimary,
+        ),
+        displaySmall: AppTypography.displaySmall.copyWith(
+          color: AppColors.textPrimary,
+        ),
+        headlineLarge: AppTypography.headlineLarge.copyWith(
+          color: AppColors.textPrimary,
+        ),
+        headlineMedium: AppTypography.headlineMedium.copyWith(
+          color: AppColors.textPrimary,
+        ),
+        titleLarge: AppTypography.titleLarge.copyWith(
+          color: AppColors.textPrimary,
+        ),
+        titleMedium: AppTypography.titleMedium.copyWith(
+          color: AppColors.textPrimary,
+        ),
+        bodyLarge: AppTypography.bodyLarge.copyWith(
+          color: AppColors.textSecondary,
+        ),
+        bodyMedium: AppTypography.bodyMedium.copyWith(
+          color: AppColors.textSecondary,
+        ),
+        bodySmall: AppTypography.bodySmall.copyWith(
+          color: AppColors.textMuted,
+        ),
+        labelLarge: AppTypography.labelLarge.copyWith(
+          color: AppColors.textSecondary,
+        ),
+        labelMedium: AppTypography.labelMedium.copyWith(
+          color: AppColors.textMuted,
+        ),
+        labelSmall: AppTypography.labelSmall.copyWith(
+          color: AppColors.textMuted,
+        ),
       ),
     );
   }

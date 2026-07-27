@@ -2,19 +2,20 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
-import '../../core/constants/app_info.dart';
 import '../../core/design_system/sj_card.dart';
 import '../../core/design_system/sj_empty_state.dart';
 import '../../core/routing/app_routes.dart';
 import '../../core/theme/app_colors.dart';
 import '../../core/theme/app_radii.dart';
 import '../../core/theme/app_spacing.dart';
+import '../../core/widgets/santijet_header.dart';
 import '../../core/utils/puantaj_date.dart';
 import '../../data/providers/app_data_provider.dart';
 import '../../data/providers/production_provider.dart';
 import '../../data/providers/verim_provider.dart';
 import '../../domain/entities/production.dart';
 import '../../domain/enums/attendance_status.dart';
+import '../projects/widgets/project_switcher.dart';
 
 /// Ana sayfa — bugünkü puantaj, imalat ve verim özetleri.
 class HomeScreen extends ConsumerWidget {
@@ -35,12 +36,29 @@ class HomeScreen extends ConsumerWidget {
     if (project == null) {
       return Scaffold(
         body: SafeArea(
-          child: SJEmptyState(
-            title: 'Önce proje ekleyin',
-            message: 'Puantaj tutmak için en az bir projeniz olmalı.',
-            icon: Icons.apartment_outlined,
-            actionLabel: 'Projelere Git',
-            onAction: () => context.go(AppRoutes.projeler),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              const SantijetHeader(showWordmark: true, avatarInitial: 'SJ'),
+              const Padding(
+                padding: EdgeInsets.fromLTRB(
+                  AppSpacing.md,
+                  0,
+                  AppSpacing.md,
+                  AppSpacing.sm,
+                ),
+                child: ProjectSwitcher(),
+              ),
+              Expanded(
+                child: SJEmptyState(
+                  title: 'Önce proje ekleyin',
+                  message: 'Puantaj tutmak için en az bir projeniz olmalı.',
+                  icon: Icons.apartment_outlined,
+                  actionLabel: 'Projelere Git',
+                  onAction: () => context.go(AppRoutes.projeler),
+                ),
+              ),
+            ],
           ),
         ),
       );
@@ -87,50 +105,18 @@ class HomeScreen extends ConsumerWidget {
       body: SafeArea(
         child: CustomScrollView(
           slivers: [
-            SliverToBoxAdapter(
+            const SliverToBoxAdapter(
+              child: SantijetHeader(showWordmark: true, avatarInitial: 'SJ'),
+            ),
+            const SliverToBoxAdapter(
               child: Padding(
-                padding: const EdgeInsets.fromLTRB(
+                padding: EdgeInsets.fromLTRB(
                   AppSpacing.md,
-                  AppSpacing.md,
+                  0,
                   AppSpacing.md,
                   AppSpacing.sm,
                 ),
-                child: Row(
-                  children: [
-                    Image.asset(
-                      'assets/images/s_logo.png',
-                      width: 36,
-                      height: 36,
-                      errorBuilder: (_, __, ___) => const Icon(
-                        Icons.apartment,
-                        color: AppColors.electricBlue,
-                        size: 32,
-                      ),
-                    ),
-                    const SizedBox(width: AppSpacing.sm),
-                    Expanded(
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text(
-                            AppInfo.displayName,
-                            style: theme.textTheme.headlineMedium,
-                          ),
-                          Text(
-                            AppInfo.tagline,
-                            style: theme.textTheme.bodySmall,
-                            maxLines: 1,
-                            overflow: TextOverflow.ellipsis,
-                          ),
-                        ],
-                      ),
-                    ),
-                    Text(
-                      today,
-                      style: theme.textTheme.labelMedium,
-                    ),
-                  ],
-                ),
+                child: ProjectSwitcher(),
               ),
             ),
             SliverPadding(

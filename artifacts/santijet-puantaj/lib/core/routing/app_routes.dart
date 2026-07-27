@@ -1,5 +1,6 @@
 /// Uygulama rota yolları — Demir / BFA konvansiyonu.
 abstract final class AppRoutes {
+  static const splash = '/splash';
   static const home = '/';
   static const puantaj = '/puantaj';
   static const imalat = '/imalat';
