@@ -6,16 +6,19 @@ import '../../core/design_system/sj_card.dart';
 import '../../core/design_system/sj_empty_state.dart';
 import '../../core/routing/app_routes.dart';
 import '../../core/theme/app_colors.dart';
+import '../../core/theme/app_radii.dart';
 import '../../core/theme/app_spacing.dart';
 import '../../core/utils/puantaj_date.dart';
 import '../../data/providers/app_data_provider.dart';
+import '../../data/providers/catalog_provider.dart';
 import '../../data/providers/production_provider.dart';
 import '../../domain/entities/attendance.dart';
 import '../../domain/entities/person.dart';
 import '../../domain/entities/production.dart';
+import '../../domain/yevmiye/imalat_crew_allocator.dart';
 import '../../domain/yevmiye/yevmiye_calculator.dart';
 
-/// Günlük imalat — ekip listeden seçilir; yevmiye puantajdan (mesai dahil).
+/// Günlük imalat — ekip seçimi; usta/düz işçi puantajdan, manuel atama.
 class ImalatScreen extends ConsumerWidget {
   const ImalatScreen({super.key});
 
@@ -26,6 +29,7 @@ class ImalatScreen extends ConsumerWidget {
     final items = ref.watch(activeProductionProvider);
     final people = ref.watch(activePersonnelProvider);
     final attendance = ref.watch(attendanceProvider);
+    final allProductions = ref.watch(productionProvider);
 
     if (project == null) {
       return Scaffold(
@@ -40,7 +44,11 @@ class ImalatScreen extends ConsumerWidget {
       );
     }
 
-    final teams = YevmiyeCalculator.teamNames(people);
+    final teams = {
+      ...ref.watch(teamsProvider),
+      ...YevmiyeCalculator.teamNames(people),
+    }.toList()
+      ..sort();
 
     return Scaffold(
       appBar: AppBar(
@@ -49,10 +57,7 @@ class ImalatScreen extends ConsumerWidget {
           Padding(
             padding: const EdgeInsets.only(right: AppSpacing.sm),
             child: Center(
-              child: Text(
-                project.name,
-                style: theme.textTheme.labelMedium,
-              ),
+              child: Text(project.name, style: theme.textTheme.labelMedium),
             ),
           ),
         ],
@@ -73,9 +78,10 @@ class ImalatScreen extends ConsumerWidget {
           ? SJEmptyState(
               title: teams.isEmpty ? 'Önce ekip tanımlayın' : 'Henüz imalat yok',
               message: teams.isEmpty
-                  ? 'Personel kartında Ekip seçin; yevmiye puantajdan gelir.'
-                  : 'Ekip seçerek günlük üretim miktarını girin. '
-                      'Çalışan yevmiyesi puantajdan (mesai dahil) alınır.',
+                  ? 'Ayarlar → Ekipler / Personel’de ekip tanımlayın.'
+                  : 'Aynı ekip günde birden fazla imalat yapabilir. '
+                      'Usta ve düz işçi sayıları puantajdan gelir; '
+                      'atamayı manuel yaparsınız.',
               icon: teams.isEmpty
                   ? Icons.groups_outlined
                   : Icons.precision_manufacturing_outlined,
@@ -101,12 +107,14 @@ class ImalatScreen extends ConsumerWidget {
                   const SizedBox(height: AppSpacing.sm),
               itemBuilder: (context, i) {
                 final p = items[i];
-                final yevmiye = YevmiyeCalculator.forTeam(
+                final pool = ImalatCrewAllocator.availableFor(
                   projectId: project.id,
                   date: p.date,
                   teamName: p.teamName,
                   people: people,
                   attendance: attendance,
+                  productions: allProductions,
+                  excludeProductionId: p.id,
                 );
                 final pct = p.progressPct;
                 final color = pct >= 80
@@ -146,11 +154,22 @@ class ImalatScreen extends ConsumerWidget {
                           fontWeight: FontWeight.w600,
                         ),
                       ),
+                      const SizedBox(height: 4),
+                      Text(
+                        'Atama: ${_fmt(p.ustaCount)} usta · '
+                        '${_fmt(p.duzIsciCount)} düz işçi',
+                        style: theme.textTheme.bodyMedium,
+                      ),
+                      Text(
+                        'Puantaj kalan (diğerleri düşülmüş): '
+                        '${_fmt(pool.ustaRemaining)} usta · '
+                        '${_fmt(pool.duzRemaining)} düz',
+                        style: theme.textTheme.labelSmall,
+                      ),
                       const SizedBox(height: 2),
                       Text(
-                        'Yevmiye: ${_fmtY(yevmiye)}  ·  '
                         '${_fmt(p.completedQty)} / ${_fmt(p.plannedQty)} ${p.unit}',
-                        style: theme.textTheme.bodyMedium,
+                        style: theme.textTheme.bodySmall,
                       ),
                       const SizedBox(height: AppSpacing.sm),
                       ClipRRect(
@@ -160,14 +179,6 @@ class ImalatScreen extends ConsumerWidget {
                           minHeight: 6,
                           backgroundColor: color.withValues(alpha: 0.15),
                           color: color,
-                        ),
-                      ),
-                      const SizedBox(height: AppSpacing.xs),
-                      Text(
-                        '%${pct.toStringAsFixed(0)} tamamlandı',
-                        style: theme.textTheme.labelSmall?.copyWith(
-                          color: color,
-                          fontWeight: FontWeight.w600,
                         ),
                       ),
                     ],
@@ -182,7 +193,7 @@ class ImalatScreen extends ConsumerWidget {
     ScaffoldMessenger.of(context).showSnackBar(
       const SnackBar(
         content: Text(
-          'İmalat için personelde Ekip seçilmiş olmalı (Ayarlar → Personel).',
+          'İmalat için ekip tanımlı olmalı (Ayarlar → Ekipler / Personel).',
         ),
       ),
     );
@@ -191,11 +202,6 @@ class ImalatScreen extends ConsumerWidget {
   static String _fmt(double v) {
     if (v == v.roundToDouble()) return v.toStringAsFixed(0);
     return v.toStringAsFixed(1);
-  }
-
-  static String _fmtY(double v) {
-    if (v == v.roundToDouble()) return v.toStringAsFixed(0);
-    return v.toStringAsFixed(2);
   }
 
   Future<void> _openEditor(
@@ -207,6 +213,7 @@ class ImalatScreen extends ConsumerWidget {
   }) async {
     final people = ref.read(activePersonnelProvider);
     final attendance = ref.read(attendanceProvider);
+    final productions = ref.read(productionProvider);
 
     await showModalBottomSheet<void>(
       context: context,
@@ -218,6 +225,7 @@ class ImalatScreen extends ConsumerWidget {
         existing: existing,
         people: people,
         attendance: attendance,
+        productions: productions,
         onDelete: existing == null
             ? null
             : () {
@@ -244,6 +252,7 @@ class _ImalatEditorSheet extends StatefulWidget {
     required this.teams,
     required this.people,
     required this.attendance,
+    required this.productions,
     required this.onSave,
     this.existing,
     this.onDelete,
@@ -253,6 +262,7 @@ class _ImalatEditorSheet extends StatefulWidget {
   final List<String> teams;
   final List<Person> people;
   final List<Attendance> attendance;
+  final List<Production> productions;
   final Production? existing;
   final ValueChanged<Production> onSave;
   final VoidCallback? onDelete;
@@ -267,6 +277,8 @@ class _ImalatEditorSheetState extends State<_ImalatEditorSheet> {
   late final TextEditingController _planned;
   late final TextEditingController _done;
   late final TextEditingController _note;
+  late final TextEditingController _usta;
+  late final TextEditingController _duz;
   late String _date;
   late String? _team;
 
@@ -276,26 +288,47 @@ class _ImalatEditorSheetState extends State<_ImalatEditorSheet> {
     final e = widget.existing;
     _name = TextEditingController(text: e?.name ?? '');
     _unit = TextEditingController(text: e?.unit ?? 'adet');
-    _planned = TextEditingController(
-      text: e == null
-          ? ''
-          : (e.plannedQty == e.plannedQty.roundToDouble()
-              ? e.plannedQty.toStringAsFixed(0)
-              : e.plannedQty.toStringAsFixed(1)),
-    );
-    _done = TextEditingController(
-      text: e == null
-          ? ''
-          : (e.completedQty == e.completedQty.roundToDouble()
-              ? e.completedQty.toStringAsFixed(0)
-              : e.completedQty.toStringAsFixed(1)),
-    );
+    _planned = TextEditingController(text: e == null ? '' : _num(e.plannedQty));
+    _done = TextEditingController(text: e == null ? '' : _num(e.completedQty));
     _note = TextEditingController(text: e?.note ?? '');
+    _usta = TextEditingController(text: e == null ? '' : _num(e.ustaCount));
+    _duz = TextEditingController(text: e == null ? '' : _num(e.duzIsciCount));
     _date = e?.date ?? PuantajDate.today();
     final existingTeam = e?.teamName.trim() ?? '';
     _team = existingTeam.isNotEmpty && widget.teams.contains(existingTeam)
         ? existingTeam
         : (widget.teams.isNotEmpty ? widget.teams.first : null);
+
+    // Yeni kayıtta kalan kapasiteyi öneri olarak yaz (manuel değiştirilebilir).
+    if (e == null) {
+      WidgetsBinding.instance.addPostFrameCallback((_) => _suggestRemaining());
+    }
+  }
+
+  void _suggestRemaining() {
+    final pool = _pool;
+    if (_usta.text.trim().isEmpty) {
+      _usta.text = _num(pool.ustaRemaining);
+    }
+    if (_duz.text.trim().isEmpty) {
+      _duz.text = _num(pool.duzRemaining);
+    }
+    setState(() {});
+  }
+
+  CrewPool get _pool {
+    if (_team == null || _team!.isEmpty) {
+      return const CrewPool(ustaTotal: 0, duzTotal: 0);
+    }
+    return ImalatCrewAllocator.availableFor(
+      projectId: widget.projectId,
+      date: _date,
+      teamName: _team!,
+      people: widget.people,
+      attendance: widget.attendance,
+      productions: widget.productions,
+      excludeProductionId: widget.existing?.id,
+    );
   }
 
   @override
@@ -305,29 +338,20 @@ class _ImalatEditorSheetState extends State<_ImalatEditorSheet> {
     _planned.dispose();
     _done.dispose();
     _note.dispose();
+    _usta.dispose();
+    _duz.dispose();
     super.dispose();
   }
 
-  double get _yevmiye {
-    if (_team == null || _team!.isEmpty) return 0;
-    return YevmiyeCalculator.forTeam(
-      projectId: widget.projectId,
-      date: _date,
-      teamName: _team!,
-      people: widget.people,
-      attendance: widget.attendance,
-    );
-  }
-
-  int get _headcount {
-    if (_team == null) return 0;
-    return YevmiyeCalculator.teamHeadcount(widget.people, _team!);
+  static String _num(double v) {
+    if (v == v.roundToDouble()) return v.toStringAsFixed(0);
+    return v.toStringAsFixed(1);
   }
 
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    final yevmiye = _yevmiye;
+    final pool = _pool;
 
     return Padding(
       padding: EdgeInsets.only(
@@ -350,65 +374,92 @@ class _ImalatEditorSheetState extends State<_ImalatEditorSheet> {
               controller: _name,
               decoration: const InputDecoration(
                 labelText: 'İmalat adı',
-                hintText: 'Örn. Kolon demiri',
+                hintText: 'Örn. Temel demiri',
               ),
               textCapitalization: TextCapitalization.sentences,
             ),
             const SizedBox(height: AppSpacing.sm),
             DropdownButtonFormField<String>(
               value: _team,
-              decoration: const InputDecoration(
-                labelText: 'Ekip',
-                helperText: 'Personel kartındaki ekip listesi',
-              ),
+              decoration: const InputDecoration(labelText: 'Ekip'),
               items: [
                 for (final t in widget.teams)
                   DropdownMenuItem(value: t, child: Text(t)),
               ],
-              onChanged: (v) => setState(() => _team = v),
+              onChanged: (v) {
+                setState(() => _team = v);
+                _usta.clear();
+                _duz.clear();
+                _suggestRemaining();
+              },
             ),
             const SizedBox(height: AppSpacing.sm),
-            Container(
-              padding: const EdgeInsets.all(AppSpacing.sm),
-              decoration: BoxDecoration(
-                color: AppColors.electricBlue.withValues(alpha: 0.08),
-                borderRadius: BorderRadius.circular(8),
-                border: Border.all(
-                  color: AppColors.electricBlue.withValues(alpha: 0.3),
+            OutlinedButton.icon(
+              onPressed: () async {
+                final picked = await showDatePicker(
+                  context: context,
+                  initialDate: PuantajDate.parse(_date),
+                  firstDate: DateTime(2020),
+                  lastDate: DateTime(2100),
+                );
+                if (picked != null) {
+                  setState(() => _date = PuantajDate.format(picked));
+                  if (widget.existing == null) {
+                    _usta.clear();
+                    _duz.clear();
+                    _suggestRemaining();
+                  } else {
+                    setState(() {});
+                  }
+                }
+              },
+              icon: const Icon(Icons.calendar_today, size: 16),
+              label: Text(_date),
+            ),
+            const SizedBox(height: AppSpacing.sm),
+            _CrewPoolBanner(pool: pool),
+            const SizedBox(height: AppSpacing.sm),
+            Text('Bu imalata atama (manuel)', style: theme.textTheme.titleSmall),
+            const SizedBox(height: AppSpacing.xs),
+            Row(
+              children: [
+                Expanded(
+                  child: TextField(
+                    controller: _usta,
+                    decoration: InputDecoration(
+                      labelText: 'Usta',
+                      helperText: 'Kalan ${_num(pool.ustaRemaining)}',
+                    ),
+                    keyboardType: const TextInputType.numberWithOptions(
+                      decimal: true,
+                    ),
+                  ),
                 ),
-              ),
-              child: Row(
-                children: [
-                  const Icon(Icons.fact_check_outlined,
-                      size: 20, color: AppColors.electricBlue),
-                  const SizedBox(width: AppSpacing.sm),
-                  Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          'Yevmiye (puantaj · mesai dahil)',
-                          style: theme.textTheme.labelMedium?.copyWith(
-                            color: AppColors.electricBlue,
-                            fontWeight: FontWeight.w600,
-                          ),
-                        ),
-                        Text(
-                          _team == null
-                              ? 'Ekip seçin'
-                              : '$_headcount kişi · ${_fmtY(yevmiye)} adam-gün · $_date',
-                          style: theme.textTheme.bodySmall,
-                        ),
-                      ],
+                const SizedBox(width: AppSpacing.sm),
+                Expanded(
+                  child: TextField(
+                    controller: _duz,
+                    decoration: InputDecoration(
+                      labelText: 'Düz işçi / Çırak',
+                      helperText: 'Kalan ${_num(pool.duzRemaining)}',
+                    ),
+                    keyboardType: const TextInputType.numberWithOptions(
+                      decimal: true,
                     ),
                   ),
-                  Text(
-                    _fmtY(yevmiye),
-                    style: theme.textTheme.headlineMedium?.copyWith(
-                      color: AppColors.electricBlue,
-                    ),
-                  ),
-                ],
+                ),
+              ],
+            ),
+            Align(
+              alignment: Alignment.centerRight,
+              child: TextButton.icon(
+                onPressed: () {
+                  _usta.text = _num(pool.ustaRemaining);
+                  _duz.text = _num(pool.duzRemaining);
+                  setState(() {});
+                },
+                icon: const Icon(Icons.content_paste_go, size: 16),
+                label: const Text('Kalanı doldur'),
               ),
             ),
             const SizedBox(height: AppSpacing.sm),
@@ -445,22 +496,6 @@ class _ImalatEditorSheetState extends State<_ImalatEditorSheet> {
               ],
             ),
             const SizedBox(height: AppSpacing.sm),
-            OutlinedButton.icon(
-              onPressed: () async {
-                final picked = await showDatePicker(
-                  context: context,
-                  initialDate: PuantajDate.parse(_date),
-                  firstDate: DateTime(2020),
-                  lastDate: DateTime(2100),
-                );
-                if (picked != null) {
-                  setState(() => _date = PuantajDate.format(picked));
-                }
-              },
-              icon: const Icon(Icons.calendar_today, size: 16),
-              label: Text(_date),
-            ),
-            const SizedBox(height: AppSpacing.sm),
             TextField(
               controller: _note,
               decoration: const InputDecoration(labelText: 'Not'),
@@ -490,6 +525,8 @@ class _ImalatEditorSheetState extends State<_ImalatEditorSheet> {
                         name: name,
                         date: _date,
                         teamName: team,
+                        ustaCount: double.tryParse(_usta.text.trim()) ?? 0,
+                        duzIsciCount: double.tryParse(_duz.text.trim()) ?? 0,
                         unit: _unit.text.trim().isEmpty
                             ? 'adet'
                             : _unit.text.trim(),
@@ -510,9 +547,72 @@ class _ImalatEditorSheetState extends State<_ImalatEditorSheet> {
       ),
     );
   }
+}
 
-  static String _fmtY(double v) {
+class _CrewPoolBanner extends StatelessWidget {
+  const _CrewPoolBanner({required this.pool});
+
+  final CrewPool pool;
+
+  static String _n(double v) {
     if (v == v.roundToDouble()) return v.toStringAsFixed(0);
-    return v.toStringAsFixed(2);
+    return v.toStringAsFixed(1);
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    return Container(
+      padding: const EdgeInsets.all(AppSpacing.sm),
+      decoration: BoxDecoration(
+        color: AppColors.electricBlue.withValues(alpha: 0.08),
+        borderRadius: AppRadii.sm,
+        border: Border.all(
+          color: AppColors.electricBlue.withValues(alpha: 0.3),
+        ),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              const Icon(Icons.fact_check_outlined,
+                  size: 18, color: AppColors.electricBlue),
+              const SizedBox(width: AppSpacing.xs),
+              Text(
+                'Puantaj havuzu (mesai dahil)',
+                style: theme.textTheme.labelMedium?.copyWith(
+                  color: AppColors.electricBlue,
+                  fontWeight: FontWeight.w700,
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: AppSpacing.xs),
+          Text(
+            'Toplam: ${_n(pool.ustaTotal)} usta · ${_n(pool.duzTotal)} düz işçi',
+            style: theme.textTheme.bodyMedium,
+          ),
+          Text(
+            'Diğer imalatlarda: ${_n(pool.ustaAllocated)} usta · '
+            '${_n(pool.duzAllocated)} düz',
+            style: theme.textTheme.bodySmall,
+          ),
+          Text(
+            'Kalan (öneri): ${_n(pool.ustaRemaining)} usta · '
+            '${_n(pool.duzRemaining)} düz',
+            style: theme.textTheme.titleSmall?.copyWith(
+              color: AppColors.electricBlue,
+              fontWeight: FontWeight.w700,
+            ),
+          ),
+          const SizedBox(height: 4),
+          Text(
+            'Sayılar bilgi amaçlıdır; atamayı siz girersiniz.',
+            style: theme.textTheme.labelSmall,
+          ),
+        ],
+      ),
+    );
   }
 }

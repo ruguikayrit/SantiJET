@@ -7,6 +7,7 @@ import '../../features/imalat/imalat_screen.dart';
 import '../../features/personnel/personnel_screen.dart';
 import '../../features/projects/projects_screen.dart';
 import '../../features/puantaj/puantaj_screen.dart';
+import '../../features/settings/catalog_screens.dart';
 import '../../features/settings/settings_screen.dart';
 import '../../features/shell/main_shell.dart';
 import '../../features/verim/verim_screen.dart';
@@ -89,6 +90,20 @@ final routerProvider = Provider<GoRouter>((ref) {
                     pageBuilder: (context, state) => fadePage(
                       key: state.pageKey,
                       child: const ProjectsScreen(),
+                    ),
+                  ),
+                  GoRoute(
+                    path: 'meslekler',
+                    pageBuilder: (context, state) => fadePage(
+                      key: state.pageKey,
+                      child: const ProfessionsScreen(),
+                    ),
+                  ),
+                  GoRoute(
+                    path: 'ekipler',
+                    pageBuilder: (context, state) => fadePage(
+                      key: state.pageKey,
+                      child: const TeamsScreen(),
                     ),
                   ),
                 ],

@@ -1,6 +1,6 @@
 import 'package:equatable/equatable.dart';
 
-/// Günlük imalat kaydı — ekip seçimi + puantaj yevmiyesi ile.
+/// Günlük imalat kaydı — ekip + usta/düz işçi ataması + miktar.
 class Production extends Equatable {
   const Production({
     required this.id,
@@ -8,6 +8,8 @@ class Production extends Equatable {
     required this.name,
     required this.date,
     this.teamName = '',
+    this.ustaCount = 0,
+    this.duzIsciCount = 0,
     this.unit = 'adet',
     this.plannedQty = 0,
     this.completedQty = 0,
@@ -21,6 +23,13 @@ class Production extends Equatable {
 
   /// Personel `team` (ekip) adı — listeden seçilir.
   final String teamName;
+
+  /// Bu imalata atanan usta (adam-gün / kişi; kullanıcı manuel girer).
+  final double ustaCount;
+
+  /// Bu imalata atanan düz işçi / çırak.
+  final double duzIsciCount;
+
   final String unit;
   final double plannedQty;
   final double completedQty;
@@ -37,6 +46,8 @@ class Production extends Equatable {
     String? name,
     String? date,
     String? teamName,
+    double? ustaCount,
+    double? duzIsciCount,
     String? unit,
     double? plannedQty,
     double? completedQty,
@@ -48,6 +59,8 @@ class Production extends Equatable {
       name: name ?? this.name,
       date: date ?? this.date,
       teamName: teamName ?? this.teamName,
+      ustaCount: ustaCount ?? this.ustaCount,
+      duzIsciCount: duzIsciCount ?? this.duzIsciCount,
       unit: unit ?? this.unit,
       plannedQty: plannedQty ?? this.plannedQty,
       completedQty: completedQty ?? this.completedQty,
@@ -61,6 +74,8 @@ class Production extends Equatable {
         'name': name,
         'date': date,
         'teamName': teamName,
+        'ustaCount': ustaCount,
+        'duzIsciCount': duzIsciCount,
         'unit': unit,
         'plannedQty': plannedQty,
         'completedQty': completedQty,
@@ -73,6 +88,8 @@ class Production extends Equatable {
         name: json['name'] as String? ?? '',
         date: json['date'] as String? ?? '',
         teamName: json['teamName'] as String? ?? '',
+        ustaCount: (json['ustaCount'] as num?)?.toDouble() ?? 0,
+        duzIsciCount: (json['duzIsciCount'] as num?)?.toDouble() ?? 0,
         unit: json['unit'] as String? ?? 'adet',
         plannedQty: (json['plannedQty'] as num?)?.toDouble() ?? 0,
         completedQty: (json['completedQty'] as num?)?.toDouble() ?? 0,
@@ -86,6 +103,8 @@ class Production extends Equatable {
         name,
         date,
         teamName,
+        ustaCount,
+        duzIsciCount,
         unit,
         plannedQty,
         completedQty,

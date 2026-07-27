@@ -8,7 +8,7 @@ import '../../core/routing/app_routes.dart';
 import '../../core/theme/app_spacing.dart';
 import '../../core/utils/id_gen.dart';
 import '../../data/providers/app_data_provider.dart';
-import '../../domain/catalogs/professions.dart';
+import '../../data/providers/catalog_provider.dart';
 import '../../domain/entities/person.dart';
 
 /// Personel listesi ve ekleme / düzenleme.
@@ -146,16 +146,16 @@ class PersonnelScreen extends ConsumerWidget {
   }
 }
 
-class _PersonEditorSheet extends StatefulWidget {
+class _PersonEditorSheet extends ConsumerStatefulWidget {
   const _PersonEditorSheet({this.existing});
 
   final Person? existing;
 
   @override
-  State<_PersonEditorSheet> createState() => _PersonEditorSheetState();
+  ConsumerState<_PersonEditorSheet> createState() => _PersonEditorSheetState();
 }
 
-class _PersonEditorSheetState extends State<_PersonEditorSheet> {
+class _PersonEditorSheetState extends ConsumerState<_PersonEditorSheet> {
   late final TextEditingController _name;
   late final TextEditingController _phone;
   late final TextEditingController _company;
@@ -189,6 +189,19 @@ class _PersonEditorSheetState extends State<_PersonEditorSheet> {
   @override
   Widget build(BuildContext context) {
     final bottom = MediaQuery.viewInsetsOf(context).bottom;
+    final professions = ref.watch(professionsProvider);
+    final teams = ref.watch(teamsProvider);
+    // Mevcut değer listede yoksa yine de gösterilebilsin.
+    final professionItems = [
+      ...professions,
+      if (_profession.isNotEmpty && !professions.contains(_profession))
+        _profession,
+    ];
+    final teamItems = [
+      ...teams,
+      if (_team.isNotEmpty && !teams.contains(_team)) _team,
+    ];
+
     return Padding(
       padding: EdgeInsets.fromLTRB(
         AppSpacing.md,
@@ -213,9 +226,12 @@ class _PersonEditorSheetState extends State<_PersonEditorSheet> {
             const SizedBox(height: AppSpacing.sm),
             DropdownButtonFormField<String>(
               value: _profession.isEmpty ? null : _profession,
-              decoration: const InputDecoration(labelText: 'Meslek'),
+              decoration: const InputDecoration(
+                labelText: 'Meslek',
+                helperText: 'Listeyi Ayarlar → Meslekler’den düzenleyin',
+              ),
               items: [
-                for (final p in ProfessionCatalog.defaultProfessions)
+                for (final p in professionItems)
                   DropdownMenuItem(value: p, child: Text(p)),
               ],
               onChanged: (v) => setState(() => _profession = v ?? ''),
@@ -223,9 +239,12 @@ class _PersonEditorSheetState extends State<_PersonEditorSheet> {
             const SizedBox(height: AppSpacing.sm),
             DropdownButtonFormField<String>(
               value: _team.isEmpty ? null : _team,
-              decoration: const InputDecoration(labelText: 'Ekip'),
+              decoration: const InputDecoration(
+                labelText: 'Ekip',
+                helperText: 'Listeyi Ayarlar → Ekipler’den düzenleyin',
+              ),
               items: [
-                for (final t in ProfessionCatalog.defaultTradeGroups)
+                for (final t in teamItems)
                   DropdownMenuItem(value: t, child: Text(t)),
               ],
               onChanged: (v) => setState(() => _team = v ?? ''),

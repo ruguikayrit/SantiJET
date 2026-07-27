@@ -7,4 +7,6 @@ abstract final class AppRoutes {
   static const ayarlar = '/ayarlar';
   static const personel = '/ayarlar/personel';
   static const projeler = '/ayarlar/projeler';
+  static const meslekler = '/ayarlar/meslekler';
+  static const ekipler = '/ayarlar/ekipler';
 }

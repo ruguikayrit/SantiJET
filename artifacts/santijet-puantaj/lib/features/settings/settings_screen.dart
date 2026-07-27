@@ -7,8 +7,9 @@ import '../../core/routing/app_routes.dart';
 import '../../core/theme/app_spacing.dart';
 import '../../core/theme/theme_mode_provider.dart';
 import '../../data/providers/app_data_provider.dart';
+import '../../data/providers/catalog_provider.dart';
 
-/// Tema, personel/proje yönetimi ve uygulama bilgisi.
+/// Tema, personel/proje/katalog yönetimi ve uygulama bilgisi.
 class SettingsScreen extends ConsumerWidget {
   const SettingsScreen({super.key});
 
@@ -19,6 +20,8 @@ class SettingsScreen extends ConsumerWidget {
     final peopleCount = ref.watch(personnelProvider).length;
     final projectCount = ref.watch(projectsProvider).length;
     final active = ref.watch(activeProjectProvider);
+    final professionCount = ref.watch(professionsProvider).length;
+    final teamCount = ref.watch(teamsProvider).length;
 
     return Scaffold(
       appBar: AppBar(title: const Text('Ayarlar')),
@@ -46,6 +49,22 @@ class SettingsScreen extends ConsumerWidget {
             ),
             trailing: const Icon(Icons.chevron_right),
             onTap: () => context.go(AppRoutes.projeler),
+          ),
+          ListTile(
+            contentPadding: EdgeInsets.zero,
+            leading: const Icon(Icons.work_outline),
+            title: const Text('Meslekler'),
+            subtitle: Text('$professionCount meslek · manuel eklenebilir'),
+            trailing: const Icon(Icons.chevron_right),
+            onTap: () => context.go(AppRoutes.meslekler),
+          ),
+          ListTile(
+            contentPadding: EdgeInsets.zero,
+            leading: const Icon(Icons.diversity_3_outlined),
+            title: const Text('Ekipler'),
+            subtitle: Text('$teamCount ekip · manuel eklenebilir'),
+            trailing: const Icon(Icons.chevron_right),
+            onTap: () => context.go(AppRoutes.ekipler),
           ),
           const SizedBox(height: AppSpacing.xl),
           Text('Görünüm', style: theme.textTheme.titleMedium),
