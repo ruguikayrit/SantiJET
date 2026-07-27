@@ -136,6 +136,9 @@ class PersonnelNotifier extends StateNotifier<List<Person>> {
 
   List<Person> get active => state.where((p) => p.active).toList();
 
+  List<Person> forProject(String projectId) =>
+      state.where((p) => p.projectId == projectId).toList();
+
   Person add(Person draft) {
     final person = draft.copyWith(id: IdGen.make('per'));
     state = [...state, person];
@@ -155,6 +158,29 @@ class PersonnelNotifier extends StateNotifier<List<Person>> {
     state = state.where((p) => p.id != id).toList();
     _persist();
   }
+
+  void deleteForProject(String projectId) {
+    state = state.where((p) => p.projectId != projectId).toList();
+    _persist();
+  }
+
+  /// Eski (projectId'siz) kayıtları verilen projeye bağlar.
+  int migrateOrphansToProject(String projectId) {
+    if (projectId.isEmpty) return 0;
+    var n = 0;
+    state = [
+      for (final p in state)
+        if (p.projectId.isEmpty)
+          () {
+            n++;
+            return p.copyWith(projectId: projectId);
+          }()
+        else
+          p,
+    ];
+    if (n > 0) _persist();
+    return n;
+  }
 }
 
 final personnelProvider =
@@ -162,9 +188,24 @@ final personnelProvider =
   return PersonnelNotifier(ref.watch(personnelBoxProvider));
 });
 
-final activePersonnelProvider = Provider<List<Person>>((ref) {
+/// Aktif projedeki tüm personel (aktif + pasif) — Personel ekranı.
+final projectPersonnelProvider = Provider<List<Person>>((ref) {
+  final project = ref.watch(activeProjectProvider);
   final all = ref.watch(personnelProvider);
-  return all.where((p) => p.active).toList();
+  if (project == null) return const [];
+  return all.where((p) => p.projectId == project.id).toList()
+    ..sort((a, b) => a.name.compareTo(b.name));
+});
+
+/// Aktif projedeki aktif personel — Puantaj / İmalat / Ana sayfa.
+final activePersonnelProvider = Provider<List<Person>>((ref) {
+  final project = ref.watch(activeProjectProvider);
+  final all = ref.watch(personnelProvider);
+  if (project == null) return const [];
+  return all
+      .where((p) => p.active && p.projectId == project.id)
+      .toList()
+    ..sort((a, b) => a.name.compareTo(b.name));
 });
 
 class AttendanceNotifier extends StateNotifier<List<Attendance>> {

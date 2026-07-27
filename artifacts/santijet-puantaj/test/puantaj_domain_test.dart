@@ -40,9 +40,9 @@ void main() {
 
     test('ekip toplamı yalnızca ekip üyelerinden', () {
       const people = [
-        Person(id: 'u1', name: 'Ali', team: 'Demir'),
-        Person(id: 'u2', name: 'Veli', team: 'Demir'),
-        Person(id: 'u3', name: 'Ayşe', team: 'Kalıp'),
+        Person(id: 'u1', projectId: 'p', name: 'Ali', team: 'Demir'),
+        Person(id: 'u2', projectId: 'p', name: 'Veli', team: 'Demir'),
+        Person(id: 'u3', projectId: 'p', name: 'Ayşe', team: 'Kalıp'),
       ];
       const att = [
         Attendance(
@@ -92,9 +92,9 @@ void main() {
   group('ImalatCrewAllocator', () {
     test('ikinci imalat için kalan usta/düz düşülür', () {
       const people = [
-        Person(id: 'u1', name: 'A', team: 'Demir', profession: 'Usta'),
-        Person(id: 'u2', name: 'B', team: 'Demir', profession: 'Usta'),
-        Person(id: 'u3', name: 'C', team: 'Demir', profession: 'Saha Düz İşçi'),
+        Person(id: 'u1', projectId: 'p', name: 'A', team: 'Demir', profession: 'Usta'),
+        Person(id: 'u2', projectId: 'p', name: 'B', team: 'Demir', profession: 'Usta'),
+        Person(id: 'u3', projectId: 'p', name: 'C', team: 'Demir', profession: 'Saha Düz İşçi'),
       ];
       const att = [
         Attendance(

@@ -1,11 +1,12 @@
 import 'package:equatable/equatable.dart';
 
-/// Personel kaydı — santiye-takip `AppUser` alanlarının puantaj alt kümesi.
+/// Personel kaydı — her proje kendi personel listesine sahiptir.
 ///
 /// PIN / rol yetkilendirmesi sonraki fazda; şimdilik puantaj cetveli kaynağı.
 class Person extends Equatable {
   const Person({
     required this.id,
+    required this.projectId,
     required this.name,
     this.profession = '',
     this.phone = '',
@@ -16,6 +17,10 @@ class Person extends Equatable {
   });
 
   final String id;
+
+  /// Personelin ait olduğu proje — projeler arası paylaşılmaz.
+  final String projectId;
+
   final String name;
   final String profession;
   final String phone;
@@ -26,6 +31,7 @@ class Person extends Equatable {
 
   Person copyWith({
     String? id,
+    String? projectId,
     String? name,
     String? profession,
     String? phone,
@@ -36,6 +42,7 @@ class Person extends Equatable {
   }) {
     return Person(
       id: id ?? this.id,
+      projectId: projectId ?? this.projectId,
       name: name ?? this.name,
       profession: profession ?? this.profession,
       phone: phone ?? this.phone,
@@ -48,6 +55,7 @@ class Person extends Equatable {
 
   Map<String, dynamic> toJson() => {
         'id': id,
+        'projectId': projectId,
         'name': name,
         'profession': profession,
         'phone': phone,
@@ -59,6 +67,7 @@ class Person extends Equatable {
 
   factory Person.fromJson(Map<String, dynamic> json) => Person(
         id: json['id'] as String,
+        projectId: json['projectId'] as String? ?? '',
         name: json['name'] as String? ?? '',
         profession: json['profession'] as String? ?? '',
         phone: json['phone'] as String? ?? '',
@@ -69,6 +78,15 @@ class Person extends Equatable {
       );
 
   @override
-  List<Object?> get props =>
-      [id, name, profession, phone, company, team, address, active];
+  List<Object?> get props => [
+        id,
+        projectId,
+        name,
+        profession,
+        phone,
+        company,
+        team,
+        address,
+        active,
+      ];
 }

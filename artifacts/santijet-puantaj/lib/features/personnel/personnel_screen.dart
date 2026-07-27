@@ -11,14 +11,34 @@ import '../../data/providers/app_data_provider.dart';
 import '../../data/providers/catalog_provider.dart';
 import '../../domain/entities/person.dart';
 
-/// Personel listesi ve ekleme / düzenleme.
+/// Personel listesi — aktif projeye özel.
 class PersonnelScreen extends ConsumerWidget {
   const PersonnelScreen({super.key});
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final people = ref.watch(personnelProvider);
+    final project = ref.watch(activeProjectProvider);
+    final people = ref.watch(projectPersonnelProvider);
     final theme = Theme.of(context);
+
+    if (project == null) {
+      return Scaffold(
+        appBar: AppBar(
+          title: const Text('Personel'),
+          leading: IconButton(
+            icon: const Icon(Icons.arrow_back),
+            onPressed: () => context.go(AppRoutes.ayarlar),
+          ),
+        ),
+        body: SJEmptyState(
+          title: 'Önce proje ekleyin',
+          message: 'Personel her proje için ayrı tutulur.',
+          icon: Icons.apartment_outlined,
+          actionLabel: 'Projelere Git',
+          onAction: () => context.go(AppRoutes.projeler),
+        ),
+      );
+    }
 
     return Scaffold(
       appBar: AppBar(
@@ -27,19 +47,30 @@ class PersonnelScreen extends ConsumerWidget {
           icon: const Icon(Icons.arrow_back),
           onPressed: () => context.go(AppRoutes.ayarlar),
         ),
+        actions: [
+          Padding(
+            padding: const EdgeInsets.only(right: AppSpacing.sm),
+            child: Center(
+              child: Text(project.name, style: theme.textTheme.labelMedium),
+            ),
+          ),
+        ],
       ),
       floatingActionButton: FloatingActionButton.extended(
-        onPressed: () => _openEditor(context, ref),
+        onPressed: () => _openEditor(context, ref, projectId: project.id),
         icon: const Icon(Icons.person_add_alt_1),
         label: const Text('Ekle'),
       ),
       body: people.isEmpty
           ? SJEmptyState(
-              title: 'Henüz personel yok',
-              message: 'Puantaj girebilmek için personel ekleyin.',
+              title: 'Bu projede personel yok',
+              message:
+                  '${project.name} için personel ekleyin. '
+                  'Diğer projelerin personeli burada görünmez.',
               icon: Icons.groups_outlined,
               actionLabel: 'Personel Ekle',
-              onAction: () => _openEditor(context, ref),
+              onAction: () =>
+                  _openEditor(context, ref, projectId: project.id),
             )
           : ListView.separated(
               padding: const EdgeInsets.fromLTRB(
@@ -49,7 +80,8 @@ class PersonnelScreen extends ConsumerWidget {
                 88,
               ),
               itemCount: people.length,
-              separatorBuilder: (_, __) => const SizedBox(height: AppSpacing.sm),
+              separatorBuilder: (_, __) =>
+                  const SizedBox(height: AppSpacing.sm),
               itemBuilder: (context, index) {
                 final p = people[index];
                 final meta = [
@@ -58,7 +90,12 @@ class PersonnelScreen extends ConsumerWidget {
                   if (p.team.isNotEmpty) p.team,
                 ].join(' · ');
                 return SJCard(
-                  onTap: () => _openEditor(context, ref, existing: p),
+                  onTap: () => _openEditor(
+                    context,
+                    ref,
+                    projectId: project.id,
+                    existing: p,
+                  ),
                   child: Row(
                     children: [
                       CircleAvatar(
@@ -128,13 +165,17 @@ class PersonnelScreen extends ConsumerWidget {
   Future<void> _openEditor(
     BuildContext context,
     WidgetRef ref, {
+    required String projectId,
     Person? existing,
   }) async {
     final result = await showModalBottomSheet<Person>(
       context: context,
       isScrollControlled: true,
       showDragHandle: true,
-      builder: (ctx) => _PersonEditorSheet(existing: existing),
+      builder: (ctx) => _PersonEditorSheet(
+        projectId: projectId,
+        existing: existing,
+      ),
     );
     if (result == null) return;
     final notifier = ref.read(personnelProvider.notifier);
@@ -147,8 +188,12 @@ class PersonnelScreen extends ConsumerWidget {
 }
 
 class _PersonEditorSheet extends ConsumerStatefulWidget {
-  const _PersonEditorSheet({this.existing});
+  const _PersonEditorSheet({
+    required this.projectId,
+    this.existing,
+  });
 
+  final String projectId;
   final Person? existing;
 
   @override
@@ -191,7 +236,6 @@ class _PersonEditorSheetState extends ConsumerState<_PersonEditorSheet> {
     final bottom = MediaQuery.viewInsetsOf(context).bottom;
     final professions = ref.watch(professionsProvider);
     final teams = ref.watch(teamsProvider);
-    // Mevcut değer listede yoksa yine de gösterilebilsin.
     final professionItems = [
       ...professions,
       if (_profession.isNotEmpty && !professions.contains(_profession))
@@ -279,6 +323,7 @@ class _PersonEditorSheetState extends ConsumerState<_PersonEditorSheet> {
                   context,
                   Person(
                     id: widget.existing?.id ?? IdGen.make('per'),
+                    projectId: widget.existing?.projectId ?? widget.projectId,
                     name: name,
                     profession: _profession,
                     phone: _phone.text.trim(),

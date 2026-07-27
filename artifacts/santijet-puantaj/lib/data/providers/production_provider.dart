@@ -109,6 +109,11 @@ class ProductionNotifier extends StateNotifier<List<Production>> {
     ];
     _persist();
   }
+
+  void deleteForProject(String projectId) {
+    state = state.where((p) => p.projectId != projectId).toList();
+    _persist();
+  }
 }
 
 final productionProvider =

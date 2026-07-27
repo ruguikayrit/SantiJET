@@ -17,7 +17,7 @@ class SettingsScreen extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final themeMode = ref.watch(themeModeProvider);
     final theme = Theme.of(context);
-    final peopleCount = ref.watch(personnelProvider).length;
+    final peopleCount = ref.watch(projectPersonnelProvider).length;
     final projectCount = ref.watch(projectsProvider).length;
     final active = ref.watch(activeProjectProvider);
     final professionCount = ref.watch(professionsProvider).length;
@@ -34,7 +34,11 @@ class SettingsScreen extends ConsumerWidget {
             contentPadding: EdgeInsets.zero,
             leading: const Icon(Icons.groups_outlined),
             title: const Text('Personel'),
-            subtitle: Text('$peopleCount kayıt'),
+            subtitle: Text(
+              active == null
+                  ? 'Önce proje seçin'
+                  : '${active.name}: $peopleCount kayıt',
+            ),
             trailing: const Icon(Icons.chevron_right),
             onTap: () => context.go(AppRoutes.personel),
           ),

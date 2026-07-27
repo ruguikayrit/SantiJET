@@ -8,6 +8,7 @@ import '../../core/routing/app_routes.dart';
 import '../../core/theme/app_colors.dart';
 import '../../core/theme/app_spacing.dart';
 import '../../data/providers/app_data_provider.dart';
+import '../../data/providers/production_provider.dart';
 import '../../domain/entities/project.dart';
 
 /// Proje listesi, aktif proje seçimi, ekleme / silme.
@@ -103,7 +104,8 @@ class ProjectsScreen extends ConsumerWidget {
                             builder: (ctx) => AlertDialog(
                               title: const Text('Projeyi sil'),
                               content: Text(
-                                '${p.name} ve bu projeye ait puantaj kayıtları silinsin mi?',
+                                '${p.name} ile bu projeye ait personel, '
+                                'puantaj ve imalat kayıtları silinsin mi?',
                               ),
                               actions: [
                                 TextButton(
@@ -120,6 +122,12 @@ class ProjectsScreen extends ConsumerWidget {
                           if (ok != true) return;
                           ref
                               .read(attendanceProvider.notifier)
+                              .deleteForProject(p.id);
+                          ref
+                              .read(personnelProvider.notifier)
+                              .deleteForProject(p.id);
+                          ref
+                              .read(productionProvider.notifier)
                               .deleteForProject(p.id);
                           ref.read(projectsProvider.notifier).delete(p.id);
                           if (activeId == p.id) {
