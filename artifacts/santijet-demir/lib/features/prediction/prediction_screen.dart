@@ -14,6 +14,7 @@ import 'package:santijet_demir/core/widgets/app_toast.dart';
 import 'package:santijet_demir/domain/entities/prediction_models.dart';
 import 'package:santijet_demir/features/prediction/providers/prediction_provider.dart';
 import 'package:santijet_demir/features/prediction/widgets/prediction_dashboard_card.dart';
+import 'package:santijet_demir/features/shell/morning_briefing_provider.dart';
 
 class PredictionScreen extends ConsumerStatefulWidget {
   const PredictionScreen({super.key});
@@ -56,6 +57,8 @@ class _PredictionScreenState extends ConsumerState<PredictionScreen> {
               children: [
                 _RiskBanner(snapshot: snapshot),
                 const SizedBox(height: 12),
+                const _DailyBriefingPanel(),
+                const SizedBox(height: 16),
                 if (!snapshot.canPredict) ...[
                   Text('Eksik veriler', style: AppTypography.titleMedium),
                   const SizedBox(height: 8),
@@ -111,24 +114,20 @@ class _PredictionScreenState extends ConsumerState<PredictionScreen> {
                   runSpacing: 8,
                   children: [
                     ActionChip(
-                      label: const Text('İş Programı'),
-                      onPressed: () => context.push(AppRoutes.workSchedule),
-                    ),
-                    ActionChip(
-                      label: const Text('Puantaj'),
-                      onPressed: () => context.push(AppRoutes.workforce),
+                      label: const Text('Keşif'),
+                      onPressed: () => context.push(AppRoutes.survey),
                     ),
                     ActionChip(
                       label: const Text('Saha Sayımı'),
                       onPressed: () => context.push(AppRoutes.newCount),
                     ),
                     ActionChip(
-                      label: const Text('Keşif'),
-                      onPressed: () => context.push(AppRoutes.survey),
-                    ),
-                    ActionChip(
                       label: const Text('Siparişler'),
                       onPressed: () => context.push(AppRoutes.orders),
+                    ),
+                    ActionChip(
+                      label: const Text('Gelen Demir'),
+                      onPressed: () => context.push(AppRoutes.incomingRebar),
                     ),
                   ],
                 ),
@@ -251,6 +250,80 @@ class _PredictionScreenState extends ConsumerState<PredictionScreen> {
           ),
         );
       },
+    );
+  }
+}
+
+class _DailyBriefingPanel extends ConsumerWidget {
+  const _DailyBriefingPanel();
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final briefing = ref.watch(morningBriefingProvider);
+    final tone = predictionRiskColor(briefing.tone);
+
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.fromLTRB(14, 12, 14, 14),
+      decoration: BoxDecoration(
+        color: AppColors.surfaceElevated,
+        borderRadius: AppRadii.md,
+        border: Border.all(color: AppColors.border),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Container(
+                width: 8,
+                height: 8,
+                decoration: BoxDecoration(color: tone, shape: BoxShape.circle),
+              ),
+              const SizedBox(width: 8),
+              Text(
+                briefing.eyebrow,
+                style: AppTypography.labelMedium.copyWith(
+                  color: AppColors.textMuted,
+                  letterSpacing: 0.3,
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 6),
+          Text(
+            'Keşif · imalat · stok · saha sayımı',
+            style: AppTypography.bodySmall.copyWith(color: AppColors.textMuted),
+          ),
+          const SizedBox(height: 10),
+          for (var i = 0; i < briefing.bullets.length; i++) ...[
+            if (i > 0) const SizedBox(height: 6),
+            Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Padding(
+                  padding: const EdgeInsets.only(top: 6),
+                  child: Container(
+                    width: 5,
+                    height: 5,
+                    decoration: BoxDecoration(
+                      color: AppColors.textMuted,
+                      shape: BoxShape.circle,
+                    ),
+                  ),
+                ),
+                const SizedBox(width: 10),
+                Expanded(
+                  child: Text(
+                    briefing.bullets[i],
+                    style: AppTypography.bodyMedium.copyWith(height: 1.35),
+                  ),
+                ),
+              ],
+            ),
+          ],
+        ],
+      ),
     );
   }
 }

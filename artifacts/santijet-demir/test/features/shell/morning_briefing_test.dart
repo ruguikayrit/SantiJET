@@ -1,132 +1,140 @@
 import 'package:flutter_test/flutter_test.dart';
 import 'package:santijet_demir/domain/entities/field_count.dart';
 import 'package:santijet_demir/domain/entities/prediction_models.dart';
-import 'package:santijet_demir/domain/entities/work_schedule.dart';
 import 'package:santijet_demir/features/shell/morning_briefing.dart';
 
 void main() {
   const builder = MorningBriefingBuilder();
 
-  test('sabah selamı ve planlı tüketim', () {
+  test('beş operasyon kaynağı ile günlük brifing', () {
     final briefing = builder.build(
       now: DateTime(2026, 7, 19, 8),
       displayName: 'Uğur Yılmaz',
-      todaySchedule: WorkScheduleDay(
-        date: DateTime(2026, 7, 19),
-        activities: [
-          WorkActivity(
-            id: '1',
-            imalatName: 'KİRİŞ',
-            plannedTonnageByDiameter: const {16: 8.2},
+      ops: DailyOpsBriefingInput(
+        kesifTonnage: 120,
+        gerceklesenImalat: 48,
+        kalanImalat: 72,
+        overallProgressPercent: 40,
+        latestCount: FieldCountRecord(
+          id: 'c1',
+          title: 'Sayım 1',
+          date: DateTime(2026, 7, 18),
+          personnel: 'Ali',
+          region: 'Blok A',
+          expected: 55,
+          actual: 52,
+          status: 'completed',
+          lines: const [
+            FieldCountLineRecord(
+              diameter: 16,
+              delivered: 80,
+              expectedStock: 40,
+              plannedUsage: 40,
+              actual: 38,
+            ),
+            FieldCountLineRecord(
+              diameter: 12,
+              delivered: 40,
+              expectedStock: 15,
+              plannedUsage: 25,
+              actual: 14,
+            ),
+          ],
+        ),
+        reconciliation: const [
+          ReconciliationRow(
+            diameter: 16,
+            survey: 100,
+            ordered: 80,
+            delivered: 80,
+            plannedUsage: 40,
+            expectedStock: 40,
+            counted: 38,
+            used: 42,
           ),
         ],
       ),
-      reconciliation: const [],
     );
 
     expect(briefing.greetingLine, 'Günaydın Uğur');
-    expect(
-      briefing.bullets.any((b) => b.contains('8.2') || b.contains('8,2')),
-      isTrue,
-    );
-    expect(briefing.bullets.any((b) => b.contains('teslimat')), isTrue);
-    expect(
-      briefing.bullets.any((b) => b.toLowerCase().contains('fire')),
-      isTrue,
-    );
+    expect(briefing.eyebrow, 'Günlük Brifing');
+    expect(briefing.bullets[0], contains('Keşif'));
+    expect(briefing.bullets[0], contains('120'));
+    expect(briefing.bullets[1], contains('Gerçekleşen imalat'));
+    expect(briefing.bullets[1], contains('48'));
+    expect(briefing.bullets[1], contains('%40'));
+    expect(briefing.bullets[2], contains('Kalan imalat'));
+    expect(briefing.bullets[2], contains('72'));
+    expect(briefing.bullets[3], contains('Demir stok'));
+    expect(briefing.bullets[4], contains('Saha sayımı'));
+    expect(briefing.bullets[4], contains('18.7.2026'));
   });
 
-  test('stok yeterli ve sipariş önerisi', () {
+  test('keşif ve sayım yoksa boş durum mesajları', () {
     final briefing = builder.build(
-      now: DateTime(2026, 7, 19, 9),
-      displayName: 'Uğur',
-      snapshot: PredictionSnapshot(
-        id: 't1',
-        projectId: 'p1',
-        createdAt: DateTime(2026, 7, 19),
-        dataGaps: const [],
-        canPredict: true,
-        diameters: const [
-          DiameterPrediction(
-            diameter: 16,
-            currentStock: 40,
-            actualDailyConsumption: 3,
-            plannedDailyConsumption: 3,
-            daysRemaining: 13,
-            remainingRequirement: 10,
-            inTransit: 0,
-            recommendedPurchase: 0,
-            risk: PredictionRiskLevel.green,
-          ),
-          DiameterPrediction(
-            diameter: 12,
-            currentStock: 8,
-            actualDailyConsumption: 2,
-            plannedDailyConsumption: 2,
-            daysRemaining: 4,
-            remainingRequirement: 20,
-            inTransit: 0,
-            recommendedPurchase: 12,
-            risk: PredictionRiskLevel.orange,
+      now: DateTime(2026, 7, 19, 15),
+      displayName: 'Ali',
+      ops: const DailyOpsBriefingInput(
+        kesifTonnage: 0,
+        gerceklesenImalat: 0,
+        kalanImalat: 0,
+        overallProgressPercent: 0,
+      ),
+    );
+
+    expect(briefing.greetingLine, 'İyi günler Ali');
+    expect(briefing.bullets.any((b) => b.contains('keşif tonajı')), isTrue);
+    expect(briefing.bullets.any((b) => b.contains('saha sayımı yok')), isTrue);
+    expect(briefing.tone, PredictionRiskLevel.unknown);
+  });
+
+  test('kritik fire risk satırı eklenir', () {
+    final briefing = builder.build(
+      now: DateTime(2026, 7, 19),
+      displayName: 'Ali',
+      ops: DailyOpsBriefingInput(
+        kesifTonnage: 100,
+        gerceklesenImalat: 40,
+        kalanImalat: 60,
+        overallProgressPercent: 40,
+        latestCount: FieldCountRecord(
+          id: 'c1',
+          title: 'Sayım',
+          date: DateTime(2026, 7, 19),
+          personnel: 'Ali',
+          region: 'A',
+          expected: 30,
+          actual: 20,
+          status: 'completed',
+        ),
+        reconciliation: const [
+          ReconciliationRow(
+            diameter: 14,
+            survey: 100,
+            ordered: 80,
+            delivered: 80,
+            plannedUsage: 40,
+            expectedStock: 40,
+            counted: 30,
+            used: 50,
           ),
         ],
-        purchase: const PurchaseRecommendation(
-          totalRequired: 12,
-          byDiameter: {12: 12},
-          requiredPurchaseDate: null,
-          supplierLeadDays: 5,
-        ),
       ),
     );
 
     expect(
-      briefing.bullets.any((b) => b.contains('Ø16') && b.contains('13')),
+      briefing.bullets.any((b) => b.contains('Ø14') && b.contains('fire')),
       isTrue,
     );
-    expect(
-      briefing.bullets.any((b) => b.contains('Ø12') && b.contains('sipariş')),
-      isTrue,
-    );
+    expect(briefing.tone, PredictionRiskLevel.red);
   });
 
-  test('fire riski düşük / yüksek', () {
-    final low = builder.build(
-      now: DateTime(2026, 7, 19),
-      displayName: 'Ali',
-      reconciliation: const [
-        ReconciliationRow(
-          diameter: 16,
-          survey: 100,
-          ordered: 80,
-          delivered: 80,
-          plannedUsage: 40,
-          expectedStock: 40,
-          counted: 40,
-          used: 40,
-        ),
-      ],
+  test('aktif proje yok', () {
+    final briefing = builder.build(
+      now: DateTime(2026, 7, 19, 8),
+      displayName: 'Uğur',
+      hasActiveProject: false,
     );
-    expect(low.bullets.any((b) => b.contains('Fire riski düşük')), isTrue);
-
-    final high = builder.build(
-      now: DateTime(2026, 7, 19),
-      displayName: 'Ali',
-      reconciliation: const [
-        ReconciliationRow(
-          diameter: 14,
-          survey: 100,
-          ordered: 80,
-          delivered: 80,
-          plannedUsage: 40,
-          expectedStock: 40,
-          counted: 30,
-          used: 50,
-        ),
-      ],
-    );
-    expect(
-      high.bullets.any((b) => b.contains('Ø14') && b.contains('fire')),
-      isTrue,
-    );
+    expect(briefing.bullets.first, contains('Aktif proje'));
   });
 }

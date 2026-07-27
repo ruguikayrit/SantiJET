@@ -1,28 +1,34 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:santijet_demir/features/field_count/providers/field_count_provider.dart';
-import 'package:santijet_demir/features/incoming_rebar/providers/incoming_rebar_provider.dart';
 import 'package:santijet_demir/features/prediction/providers/prediction_provider.dart';
-import 'package:santijet_demir/features/prediction/providers/work_schedule_provider.dart';
 import 'package:santijet_demir/features/projects/providers/project_provider.dart';
 import 'package:santijet_demir/features/settings/providers/profile_provider.dart';
 import 'package:santijet_demir/features/shell/morning_briefing.dart';
-import 'package:santijet_demir/features/survey/providers/survey_provider.dart';
+import 'package:santijet_demir/features/shell/project_progress_provider.dart';
 
 final morningBriefingProvider = Provider<MorningBriefing>((ref) {
   final now = DateTime.now();
   final hasProject = ref.watch(activeProjectProvider) != null;
   final name = ref.watch(profileDisplayNameProvider);
-  ref.watch(workScheduleProvider);
-  final survey = ref.watch(surveyProjectProvider);
-  final today = ref.read(workScheduleProvider.notifier).dayFor(now, survey);
+  final progress = ref.watch(projectProgressSummaryProvider);
+  final counts = ref.watch(fieldCountsProvider);
+  final latestCount = counts.isEmpty ? null : counts.first;
+  final kalan = (progress.totalPlanned - progress.totalExpected)
+      .clamp(0.0, double.infinity)
+      .toDouble();
 
   return const MorningBriefingBuilder().build(
     now: now,
     displayName: name,
-    todaySchedule: today,
-    snapshot: ref.watch(predictionSnapshotProvider),
-    inTransitOrders: ref.watch(inTransitOrdersProvider),
-    reconciliation: ref.watch(reconciliationRowsProvider),
     hasActiveProject: hasProject,
+    ops: DailyOpsBriefingInput(
+      kesifTonnage: progress.totalPlanned,
+      gerceklesenImalat: progress.totalExpected,
+      kalanImalat: kalan,
+      overallProgressPercent: progress.overallProgressPercent,
+      latestCount: latestCount,
+      reconciliation: ref.watch(reconciliationRowsProvider),
+      snapshot: ref.watch(predictionSnapshotProvider),
+    ),
   );
 });

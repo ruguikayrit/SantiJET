@@ -1,10 +1,10 @@
 import 'package:santijet_demir/core/format/app_format.dart';
 import 'package:santijet_demir/domain/entities/field_count.dart';
-import 'package:santijet_demir/domain/entities/order.dart';
 import 'package:santijet_demir/domain/entities/prediction_models.dart';
-import 'package:santijet_demir/domain/entities/work_schedule.dart';
 
-/// Ana sayfa AI Sabah Brifingi — kural tabanlı, LLM yok.
+/// Ana sayfa / Demir Tahmin Motoru — kural tabanlı günlük brifing (LLM yok).
+///
+/// Kaynaklar: keşif, gerçekleşen imalat, kalan imalat, demir stok, saha sayımı.
 class MorningBriefing {
   const MorningBriefing({
     required this.forDate,
@@ -21,191 +21,194 @@ class MorningBriefing {
   final String eyebrow;
 }
 
+/// Günlük operasyon özeti girdileri.
+class DailyOpsBriefingInput {
+  const DailyOpsBriefingInput({
+    required this.kesifTonnage,
+    required this.gerceklesenImalat,
+    required this.kalanImalat,
+    required this.overallProgressPercent,
+    this.latestCount,
+    this.reconciliation = const [],
+    this.snapshot,
+  });
+
+  /// Keşif toplam plan tonajı.
+  final double kesifTonnage;
+
+  /// İlerleme % ile hesaplanan gerçekleşen imalat (ton).
+  final double gerceklesenImalat;
+
+  /// Kalan imalat = keşif − gerçekleşen (ton, ≥ 0).
+  final double kalanImalat;
+
+  final double overallProgressPercent;
+
+  /// En güncel saha sayımı (stok = [FieldCountRecord.actual]).
+  final FieldCountRecord? latestCount;
+
+  final List<ReconciliationRow> reconciliation;
+  final PredictionSnapshot? snapshot;
+
+  double get demirStok {
+    final count = latestCount;
+    if (count == null) return 0;
+    if (count.lines.isNotEmpty) {
+      return count.lines.fold(0.0, (s, l) => s + l.actual);
+    }
+    return count.actual;
+  }
+
+  bool get hasKesif => kesifTonnage > 0.0001;
+  bool get hasCount => latestCount != null;
+}
+
 class MorningBriefingBuilder {
   const MorningBriefingBuilder();
 
   MorningBriefing build({
     required DateTime now,
     required String displayName,
-    WorkScheduleDay? todaySchedule,
-    PredictionSnapshot? snapshot,
-    List<OrderItem> inTransitOrders = const [],
-    List<ReconciliationRow> reconciliation = const [],
+    DailyOpsBriefingInput? ops,
     bool hasActiveProject = true,
   }) {
     final firstName = _firstName(displayName);
     final greeting = '${_daypartGreeting(now.hour)} $firstName';
-    final daySeed = now.year * 1000 + now.month * 40 + now.day;
 
     if (!hasActiveProject) {
       return MorningBriefing(
         forDate: now,
         greetingLine: greeting,
         tone: PredictionRiskLevel.unknown,
-        eyebrow: 'AI Sabah Brifingi',
+        eyebrow: 'Günlük Brifing',
         bullets: const [
           'Aktif proje seçildiğinde günlük brifing hazırlanır.',
-          'İş programı, stok ve sipariş verileri burada özetlenir.',
+          'Keşif, imalat, stok ve saha sayımı burada özetlenir.',
         ],
       );
     }
 
-    final bullets = <String>[];
-
-    // 1) Bugünkü plan
-    final planned = todaySchedule?.totalPlannedTonnage ?? 0;
-    if (planned > 0) {
-      bullets.add(
-        'Bugün planlanan tüketim ${AppFormat.tonnage(planned)} ton',
-      );
-    } else {
-      bullets.add(
-        daySeed.isEven
-            ? 'Bugün iş programında planlı tüketim yok'
-            : 'Bugün için kayıtlı imalat planı bulunmuyor',
-      );
-    }
-
-    // 2–3) Stok / sipariş (tahmin varsa)
-    if (snapshot != null && snapshot.diameters.isNotEmpty) {
-      final diameters = [...snapshot.diameters];
-      final healthy = diameters
-          .where(
-            (d) =>
-                d.risk == PredictionRiskLevel.green ||
-                d.risk == PredictionRiskLevel.yellow,
-          )
-          .where((d) => d.daysRemaining != null && d.daysRemaining! > 0)
-          .toList()
-        ..sort(
-          (a, b) => (b.daysRemaining ?? 0).compareTo(a.daysRemaining ?? 0),
-        );
-      final urgent = diameters
-          .where(
-            (d) =>
-                d.risk == PredictionRiskLevel.red ||
-                d.risk == PredictionRiskLevel.orange ||
-                (d.recommendedPurchase > 0 &&
-                    (d.daysRemaining ?? 99) <= 7),
-          )
-          .toList()
-        ..sort(
-          (a, b) => (a.daysRemaining ?? 99).compareTo(b.daysRemaining ?? 99),
+    final input = ops ??
+        const DailyOpsBriefingInput(
+          kesifTonnage: 0,
+          gerceklesenImalat: 0,
+          kalanImalat: 0,
+          overallProgressPercent: 0,
         );
 
-      if (healthy.isNotEmpty) {
-        final pick = healthy[daySeed % healthy.length];
-        final days = pick.daysRemaining!.round().clamp(1, 999);
-        bullets.add(
-          pick.risk == PredictionRiskLevel.green
-              ? 'Ø${pick.diameter} stokunuz yeterli ($days gün)'
-              : 'Ø${pick.diameter} stoğu izleniyor ($days gün)',
-        );
-      }
+    final bullets = <String>[
+      _kesifBullet(input),
+      _gerceklesenBullet(input),
+      _kalanBullet(input),
+      _stokBullet(input),
+      _sayimBullet(input),
+    ];
 
-      if (urgent.isNotEmpty) {
-        final u = urgent.first;
-        final days = (u.daysRemaining ?? 0).round().clamp(0, 999);
-        if (days <= 0) {
-          bullets.add(
-            'Ø${u.diameter} stoğu kritik — hemen sipariş değerlendirin',
-          );
-        } else {
-          bullets.add(
-            'Ø${u.diameter} için $days gün içinde sipariş öneriliyor',
-          );
-        }
-      } else if ((snapshot.purchase?.totalRequired ?? 0) > 0) {
-        bullets.add(
-          'Önerilen sipariş ${AppFormat.tonnage(snapshot.purchase!.totalRequired)} ton',
-        );
-      }
-    } else {
-      bullets.add(
-        daySeed % 3 == 0
-            ? 'Stok tahmini için en az 2 saha sayımı gerekir'
-            : 'Demir tahmin motoru için veri tamamlanıyor',
-      );
-    }
-
-    // 4) Teslimat
-    if (inTransitOrders.isEmpty) {
-      bullets.add('Beklenen teslimat bulunmuyor');
-    } else {
-      final tons = inTransitOrders.fold<double>(0, (s, o) => s + o.tonnage);
-      bullets.add(
-        inTransitOrders.length == 1
-            ? 'Yolda 1 teslimat · ${AppFormat.tonnage(tons)} ton'
-            : 'Yolda ${inTransitOrders.length} teslimat · ${AppFormat.tonnage(tons)} ton',
-      );
-    }
-
-    // 5) Fire
-    bullets.add(_fireBullet(reconciliation, daySeed));
-
-    // Günlük çeşitlilik: ilk 2 madde sabit, kalanlar güne göre kaydırılır
-    var capped = bullets.take(5).toList();
-    if (capped.length > 3) {
-      final rotate = daySeed % (capped.length - 2);
-      if (rotate > 0) {
-        final head = capped.sublist(0, 2);
-        final rest = capped.sublist(2);
-        capped = [
-          ...head,
-          ...rest.sublist(rotate),
-          ...rest.sublist(0, rotate),
-        ];
-      }
-    }
+    // İsteğe bağlı 6. satır: kritik çap riski (tahmin motoru çıktısı varsa).
+    final risk = _riskBullet(input);
+    if (risk != null) bullets.add(risk);
 
     return MorningBriefing(
       forDate: now,
       greetingLine: greeting,
-      tone: _tone(snapshot, reconciliation, inTransitOrders),
-      eyebrow: 'AI Sabah Brifingi',
-      bullets: capped,
+      tone: _tone(input),
+      eyebrow: 'Günlük Brifing',
+      bullets: bullets.take(6).toList(),
     );
   }
 
-  String _fireBullet(List<ReconciliationRow> rows, int daySeed) {
-    if (rows.isEmpty) {
-      return daySeed.isEven
-          ? 'Fire riski değerlendirilemiyor — saha sayımı yok'
-          : 'Fire özeti için güncel saha sayımı gerekir';
+  String _kesifBullet(DailyOpsBriefingInput input) {
+    if (!input.hasKesif) {
+      return 'Keşif: henüz keşif tonajı girilmemiş';
     }
-    final critical = rows.where((r) => r.status == 'critical').toList();
-    final warning = rows.where((r) => r.status == 'warning').toList();
-    if (critical.isNotEmpty) {
-      final r = critical.first;
-      return 'Ø${r.diameter} fire riski yüksek (${AppFormat.tonnage(r.fire)} t)';
-    }
-    if (warning.isNotEmpty) {
-      return 'Fire uyarısı var — çap bazlı sapmayı kontrol edin';
-    }
-    return 'Fire riski düşük';
+    return 'Keşif: ${AppFormat.tonnage(input.kesifTonnage)} ton';
   }
 
-  PredictionRiskLevel _tone(
-    PredictionSnapshot? snapshot,
-    List<ReconciliationRow> rows,
-    List<OrderItem> inTransit,
-  ) {
-    if (rows.any((r) => r.status == 'critical')) {
+  String _gerceklesenBullet(DailyOpsBriefingInput input) {
+    if (!input.hasKesif) {
+      return 'Gerçekleşen imalat: keşif olmadan hesaplanamaz';
+    }
+    final pct = input.overallProgressPercent.clamp(0, 100);
+    return 'Gerçekleşen imalat: ${AppFormat.tonnage(input.gerceklesenImalat)} ton '
+        '(%${pct.toStringAsFixed(0)})';
+  }
+
+  String _kalanBullet(DailyOpsBriefingInput input) {
+    if (!input.hasKesif) {
+      return 'Kalan imalat: keşif tamamlanınca görünecek';
+    }
+    return 'Kalan imalat: ${AppFormat.tonnage(input.kalanImalat)} ton';
+  }
+
+  String _stokBullet(DailyOpsBriefingInput input) {
+    if (!input.hasCount) {
+      return 'Demir stok: saha sayımı yok — stok henüz ölçülmedi';
+    }
+    return 'Demir stok: ${AppFormat.tonnage(input.demirStok)} ton '
+        '(son saha sayımı)';
+  }
+
+  String _sayimBullet(DailyOpsBriefingInput input) {
+    final count = input.latestCount;
+    if (count == null) {
+      return 'Saha sayımı: kayıt yok — stok ve fire için sayım ekleyin';
+    }
+    final d = count.date;
+    final dateLabel = '${d.day}.${d.month}.${d.year}';
+    final stock = input.demirStok;
+    final used = count.totalUsed;
+    if (used > 0.0001) {
+      return 'Saha sayımı: $dateLabel · stok ${AppFormat.tonnage(stock)} t · '
+          'kullanılan ${AppFormat.tonnage(used)} t';
+    }
+    return 'Saha sayımı: $dateLabel · ${AppFormat.tonnage(stock)} ton sayıldı';
+  }
+
+  String? _riskBullet(DailyOpsBriefingInput input) {
+    final critical = input.reconciliation
+        .where((r) => r.status == 'critical')
+        .toList();
+    if (critical.isNotEmpty) {
+      final r = critical.first;
+      return 'Ø${r.diameter} fire riski yüksek '
+          '(${AppFormat.tonnage(r.fire)} t sapma)';
+    }
+
+    final snapshot = input.snapshot;
+    if (snapshot == null || !snapshot.canPredict) return null;
+    final urgent = snapshot.criticalDiameters;
+    if (urgent.isEmpty) return null;
+    final u = urgent.first;
+    final days = (u.daysRemaining ?? 0).round().clamp(0, 999);
+    if (days <= 0) {
+      return 'Ø${u.diameter} stok tahmini kritik — sipariş değerlendirin';
+    }
+    return 'Ø${u.diameter} stok tahmini: ~$days gün kaldı';
+  }
+
+  PredictionRiskLevel _tone(DailyOpsBriefingInput input) {
+    if (input.reconciliation.any((r) => r.status == 'critical')) {
       return PredictionRiskLevel.red;
     }
-    if (snapshot?.criticalDiameters.isNotEmpty == true) {
+    if (input.snapshot?.criticalDiameters.isNotEmpty == true) {
       return PredictionRiskLevel.red;
     }
-    final risks = snapshot?.diameters.map((d) => d.risk).toList() ?? [];
-    if (risks.contains(PredictionRiskLevel.orange) ||
-        rows.any((r) => r.status == 'warning')) {
+    if (input.reconciliation.any((r) => r.status == 'warning') ||
+        (input.snapshot?.diameters
+                .any((d) => d.risk == PredictionRiskLevel.orange) ??
+            false)) {
       return PredictionRiskLevel.orange;
     }
-    if (risks.contains(PredictionRiskLevel.yellow)) {
+    if (!input.hasKesif && !input.hasCount) {
+      return PredictionRiskLevel.unknown;
+    }
+    if (!input.hasCount) {
       return PredictionRiskLevel.yellow;
     }
-    if (snapshot == null && rows.isEmpty && inTransit.isEmpty) {
-      return PredictionRiskLevel.unknown;
+    if (input.snapshot?.diameters
+            .any((d) => d.risk == PredictionRiskLevel.yellow) ??
+        false) {
+      return PredictionRiskLevel.yellow;
     }
     return PredictionRiskLevel.green;
   }
