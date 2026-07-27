@@ -1,16 +1,16 @@
 enum BottomNavTab {
-  dashboard('Dashboard', 'Panel', '/dashboard'),
-  orders('Siparişler', 'Sipariş', '/orders'),
-  incomingRebar('Gelen Demir', 'Gelen', '/incoming-rebar'),
-  fieldCount('Saha Sayım', 'Sayım', '/field-count'),
-  analysis('Hesap / Analiz / Rapor', 'Hesap / Analiz / Rapor', '/analysis');
+  dashboard('Ana Sayfa', 'Ana Sayfa', '/dashboard'),
+  orders('Sipariş', 'Sipariş', '/orders'),
+  incomingRebar('Gelen Demir', 'Gelen Demir', '/incoming-rebar'),
+  fieldCount('Saha Sayım', 'Saha Sayım', '/field-count'),
+  analysis('Hesap / Analiz / Rapor', 'Analiz', '/analysis');
 
   const BottomNavTab(this.label, this.navLabel, this.path);
 
   /// Ekran başlıkları için tam ad.
   final String label;
 
-  /// Alt nav bar — dar ekranlara sığan kısa ad.
+  /// Alt nav bar — sayfa adına uygun etiket.
   final String navLabel;
   final String path;
 }
