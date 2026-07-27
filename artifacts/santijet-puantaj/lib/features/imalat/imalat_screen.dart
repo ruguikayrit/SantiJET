@@ -109,79 +109,84 @@ class ImalatScreen extends ConsumerWidget {
                         : AppColors.critical;
                 return SJCard(
                   onTap: () => _openDetail(context, ref, production: p),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Row(
+                  child: Builder(
+                    builder: (context) {
+                      final theme = Theme.of(context);
+                      return Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          Expanded(
-                            child: Text(
-                              p.name,
-                              style: theme.textTheme.titleMedium,
+                          Row(
+                            children: [
+                              Expanded(
+                                child: Text(
+                                  p.name,
+                                  style: theme.textTheme.titleMedium,
+                                ),
+                              ),
+                              if (p.isComplete)
+                                SJStatusBadge(
+                                  label: 'Tamamlandı',
+                                  color: AppColors.success,
+                                )
+                              else
+                                Text(
+                                  '%${pct.toStringAsFixed(0)}',
+                                  style: theme.textTheme.titleSmall?.copyWith(
+                                    color: color,
+                                    fontWeight: FontWeight.w700,
+                                  ),
+                                ),
+                            ],
+                          ),
+                          const SizedBox(height: AppSpacing.xs),
+                          Text(
+                            p.teamName.isEmpty
+                                ? 'Ekip seçilmedi'
+                                : 'Ekip: ${p.teamName}',
+                            style: theme.textTheme.labelMedium?.copyWith(
+                              color: AppColors.electricBlueLight,
+                              fontWeight: FontWeight.w600,
                             ),
                           ),
-                          if (p.isComplete)
-                            SJStatusBadge(
-                              label: 'Tamamlandı',
-                              color: AppColors.success,
-                            )
-                          else
-                            Text(
-                              '%${pct.toStringAsFixed(0)}',
-                              style: theme.textTheme.titleSmall?.copyWith(
-                                color: color,
-                                fontWeight: FontWeight.w700,
+                          const SizedBox(height: 4),
+                          Text(
+                            '${_fmt(p.completedQty)} / ${_fmt(p.plannedQty)} ${p.unit}',
+                            style: theme.textTheme.bodyMedium,
+                          ),
+                          Text(
+                            'Toplam atama: ${_fmt(p.ustaCount)} usta · '
+                            '${_fmt(p.duzIsciCount)} düz · '
+                            '${p.dailyEntries.length} günlük kayıt',
+                            style: theme.textTheme.labelSmall,
+                          ),
+                          const SizedBox(height: AppSpacing.sm),
+                          ClipRRect(
+                            borderRadius: BorderRadius.circular(4),
+                            child: LinearProgressIndicator(
+                              value: (pct / 100).clamp(0.0, 1.0),
+                              minHeight: 6,
+                              backgroundColor: color.withValues(alpha: 0.15),
+                              color: color,
+                            ),
+                          ),
+                          if (!p.isComplete) ...[
+                            const SizedBox(height: AppSpacing.sm),
+                            Align(
+                              alignment: Alignment.centerRight,
+                              child: TextButton.icon(
+                                onPressed: () => _openDayEntry(
+                                  context,
+                                  ref,
+                                  production: p,
+                                ),
+                                icon: const Icon(Icons.add, size: 18),
+                                label: const Text('Günlük kayıt ekle'),
                               ),
                             ),
+                          ],
                         ],
-                      ),
-                      const SizedBox(height: AppSpacing.xs),
-                      Text(
-                        p.teamName.isEmpty
-                            ? 'Ekip seçilmedi'
-                            : 'Ekip: ${p.teamName}',
-                        style: theme.textTheme.labelMedium?.copyWith(
-                          color: AppColors.electricBlue,
-                          fontWeight: FontWeight.w600,
-                        ),
-                      ),
-                      const SizedBox(height: 4),
-                      Text(
-                        '${_fmt(p.completedQty)} / ${_fmt(p.plannedQty)} ${p.unit}',
-                        style: theme.textTheme.bodyMedium,
-                      ),
-                      Text(
-                        'Toplam atama: ${_fmt(p.ustaCount)} usta · '
-                        '${_fmt(p.duzIsciCount)} düz · '
-                        '${p.dailyEntries.length} günlük kayıt',
-                        style: theme.textTheme.labelSmall,
-                      ),
-                      const SizedBox(height: AppSpacing.sm),
-                      ClipRRect(
-                        borderRadius: BorderRadius.circular(4),
-                        child: LinearProgressIndicator(
-                          value: (pct / 100).clamp(0.0, 1.0),
-                          minHeight: 6,
-                          backgroundColor: color.withValues(alpha: 0.15),
-                          color: color,
-                        ),
-                      ),
-                      if (!p.isComplete) ...[
-                        const SizedBox(height: AppSpacing.sm),
-                        Align(
-                          alignment: Alignment.centerRight,
-                          child: TextButton.icon(
-                            onPressed: () => _openDayEntry(
-                              context,
-                              ref,
-                              production: p,
-                            ),
-                            icon: const Icon(Icons.add, size: 18),
-                            label: const Text('Günlük kayıt ekle'),
-                          ),
-                        ),
-                      ],
-                    ],
+                      );
+                    },
                   ),
                 );
               },

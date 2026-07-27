@@ -6,7 +6,9 @@ import '../theme/app_spacing.dart';
 
 /// ŞantiJET Design System — kart.
 ///
-/// Demir kart deseni: [AppColors.cardSurface] (ŞantiJET'te koyu özet kartları).
+/// ŞantiJET temasında koyu yüzey + açık mürekkep teması sağlar.
+/// İçerikte [Theme.of] kullanırken kartın altındaki context'i alın
+/// ([Builder] ile); aksi halde dış açık tema renkleri gömülür.
 class SJCard extends StatelessWidget {
   const SJCard({
     required this.child,
@@ -23,15 +25,83 @@ class SJCard extends StatelessWidget {
   final Color? accentColor;
   final bool selected;
 
+  /// ŞantiJET (ve koyu) kartlar için yüksek kontrastlı yerel tema.
+  static ThemeData contrastTheme(ThemeData base) {
+    const onPrimary = AppColors.darkTextPrimary;
+    const onSecondary = AppColors.darkTextSecondary;
+    final scheme = ColorScheme.dark(
+      surface: AppColors.darkSurfaceElevated,
+      primary: AppColors.electricBlueLight,
+      onPrimary: onPrimary,
+      secondary: AppColors.electricBlueLight,
+      onSecondary: onPrimary,
+      error: AppColors.critical,
+      onError: onPrimary,
+      onSurface: onPrimary,
+      onSurfaceVariant: onSecondary,
+      outline: AppColors.darkBorderSubtle,
+    );
+
+    return base.copyWith(
+      brightness: Brightness.dark,
+      colorScheme: scheme,
+      textTheme: base.textTheme.apply(
+        bodyColor: onSecondary,
+        displayColor: onPrimary,
+      ),
+      primaryTextTheme: base.primaryTextTheme.apply(
+        bodyColor: onSecondary,
+        displayColor: onPrimary,
+      ),
+      iconTheme: const IconThemeData(color: onSecondary),
+      primaryIconTheme: const IconThemeData(color: AppColors.electricBlueLight),
+      dividerColor: AppColors.darkBorder,
+      disabledColor: AppColors.darkTextMuted,
+      hintColor: AppColors.darkTextMuted,
+      unselectedWidgetColor: onSecondary,
+      outlinedButtonTheme: OutlinedButtonThemeData(
+        style: OutlinedButton.styleFrom(
+          foregroundColor: AppColors.electricBlueLight,
+          side: const BorderSide(color: AppColors.electricBlueLight),
+        ),
+      ),
+      textButtonTheme: TextButtonThemeData(
+        style: TextButton.styleFrom(
+          foregroundColor: AppColors.electricBlueLight,
+        ),
+      ),
+      listTileTheme: const ListTileThemeData(
+        iconColor: onSecondary,
+        textColor: onPrimary,
+      ),
+      inputDecorationTheme: base.inputDecorationTheme.copyWith(
+        fillColor: AppColors.darkSurface,
+        hintStyle: base.textTheme.bodyMedium?.copyWith(
+          color: AppColors.darkTextMuted,
+        ),
+        labelStyle: base.textTheme.bodyMedium?.copyWith(color: onSecondary),
+        enabledBorder: OutlineInputBorder(
+          borderRadius: AppRadii.md,
+          borderSide: const BorderSide(color: AppColors.darkBorderSubtle),
+        ),
+        focusedBorder: OutlineInputBorder(
+          borderRadius: AppRadii.md,
+          borderSide: const BorderSide(color: AppColors.electricBlueLight),
+        ),
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    final surface = AppColors.isSantijet
+    final useContrast = AppColors.useDarkCards;
+    final surface = useContrast
         ? AppColors.cardSurface
         : (theme.cardTheme.color ?? theme.colorScheme.surface);
     final borderColor = selected
         ? theme.colorScheme.primary
-        : (AppColors.isSantijet ? AppColors.cardBorder : theme.dividerColor);
+        : (useContrast ? AppColors.cardBorder : theme.dividerColor);
 
     Widget content = Padding(
       padding: padding,
@@ -55,18 +125,15 @@ class SJCard extends StatelessWidget {
             ),
     );
 
-    if (AppColors.isSantijet) {
+    if (useContrast) {
       content = Theme(
-        data: theme.copyWith(
-          textTheme: theme.textTheme.apply(
-            bodyColor: AppColors.cardTextPrimary,
-            displayColor: AppColors.cardTextPrimary,
+        data: contrastTheme(theme),
+        child: IconTheme.merge(
+          data: const IconThemeData(color: AppColors.darkTextSecondary),
+          child: DefaultTextStyle.merge(
+            style: const TextStyle(color: AppColors.darkTextPrimary),
+            child: content,
           ),
-          iconTheme: IconThemeData(color: AppColors.cardTextSecondary),
-        ),
-        child: DefaultTextStyle.merge(
-          style: TextStyle(color: AppColors.cardTextPrimary),
-          child: content,
         ),
       );
     }

@@ -653,8 +653,6 @@ class _PersonCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-    final statusColor = status?.color ?? theme.colorScheme.onSurfaceVariant;
     final meta = [
       if (person.team.trim().isNotEmpty) person.team.trim(),
       if (person.profession.trim().isNotEmpty) person.profession.trim(),
@@ -665,177 +663,193 @@ class _PersonCard extends StatelessWidget {
 
     return SJCard(
       padding: const EdgeInsets.all(AppSpacing.sm),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.stretch,
-        children: [
-          Row(
-            crossAxisAlignment: CrossAxisAlignment.start,
+      child: Builder(
+        builder: (context) {
+          final theme = Theme.of(context);
+          final statusColor =
+              status?.color ?? theme.colorScheme.onSurfaceVariant;
+
+          return Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
+              Row(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(person.name, style: theme.textTheme.titleMedium),
+                        if (meta.isNotEmpty)
+                          Text(meta, style: theme.textTheme.bodySmall),
+                      ],
+                    ),
+                  ),
+                  IconButton(
+                    visualDensity: VisualDensity.compact,
+                    onPressed: noteOpen ? onCloseNote : onOpenNote,
+                    icon: Icon(
+                      Icons.edit_note,
+                      color: note != null
+                          ? theme.colorScheme.primary
+                          : theme.colorScheme.onSurfaceVariant,
+                    ),
+                  ),
+                  InkWell(
+                    onTap: onToggleDropdown,
+                    borderRadius: AppRadii.sm,
+                    child: Container(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 10,
+                        vertical: 6,
+                      ),
+                      decoration: BoxDecoration(
+                        color: statusColor.withValues(alpha: 0.12),
+                        borderRadius: AppRadii.sm,
+                        border: Border.all(
+                          color: statusColor.withValues(alpha: 0.4),
+                        ),
+                      ),
+                      child: Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Container(
+                            width: 8,
+                            height: 8,
+                            decoration: BoxDecoration(
+                              color: statusColor,
+                              shape: BoxShape.circle,
+                            ),
+                          ),
+                          const SizedBox(width: 6),
+                          Text(
+                            status?.label ?? 'Seçilmedi',
+                            style: theme.textTheme.labelMedium?.copyWith(
+                              color: statusColor,
+                              fontWeight: FontWeight.w600,
+                            ),
+                          ),
+                          Icon(
+                            dropdownOpen
+                                ? Icons.keyboard_arrow_up
+                                : Icons.keyboard_arrow_down,
+                            size: 16,
+                            color: statusColor,
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+              if (worked) ...[
+                const SizedBox(height: AppSpacing.sm),
+                Row(
                   children: [
-                    Text(person.name, style: theme.textTheme.titleMedium),
-                    if (meta.isNotEmpty)
-                      Text(meta, style: theme.textTheme.bodySmall),
+                    Text('Mesai', style: theme.textTheme.labelMedium),
+                    const Spacer(),
+                    IconButton(
+                      visualDensity: VisualDensity.compact,
+                      onPressed: overtimeHours <= 0
+                          ? null
+                          : () => onSetOvertime(
+                                (overtimeHours - 0.5).clamp(0, 12),
+                              ),
+                      icon: const Icon(Icons.remove_circle_outline, size: 20),
+                    ),
+                    Text(
+                      overtimeHours == overtimeHours.roundToDouble()
+                          ? '${overtimeHours.toStringAsFixed(0)} sa'
+                          : '${overtimeHours.toStringAsFixed(1)} sa',
+                      style: theme.textTheme.labelLarge?.copyWith(
+                        fontWeight: FontWeight.w700,
+                      ),
+                    ),
+                    IconButton(
+                      visualDensity: VisualDensity.compact,
+                      onPressed: overtimeHours >= 12
+                          ? null
+                          : () => onSetOvertime(
+                                (overtimeHours + 0.5).clamp(0, 12),
+                              ),
+                      icon: const Icon(Icons.add_circle_outline, size: 20),
+                    ),
+                    const SizedBox(width: AppSpacing.sm),
+                    Text(
+                      '${yevmiye.toStringAsFixed(yevmiye == yevmiye.roundToDouble() ? 0 : 2)} yv',
+                      style: theme.textTheme.labelSmall?.copyWith(
+                        color: AppColors.electricBlueLight,
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
                   ],
                 ),
-              ),
-              IconButton(
-                visualDensity: VisualDensity.compact,
-                onPressed: noteOpen ? onCloseNote : onOpenNote,
-                icon: Icon(
-                  Icons.edit_note,
-                  color: note != null
-                      ? theme.colorScheme.primary
-                      : theme.colorScheme.onSurfaceVariant,
+              ],
+              if (note != null && !noteOpen) ...[
+                const SizedBox(height: AppSpacing.xs),
+                Row(
+                  children: [
+                    Icon(
+                      Icons.chat_bubble_outline,
+                      size: 12,
+                      color: theme.colorScheme.onSurfaceVariant,
+                    ),
+                    const SizedBox(width: 4),
+                    Expanded(
+                      child: Text(note!, style: theme.textTheme.bodySmall),
+                    ),
+                  ],
                 ),
-              ),
-              InkWell(
-                onTap: onToggleDropdown,
-                borderRadius: AppRadii.sm,
-                child: Container(
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 10,
-                    vertical: 6,
-                  ),
-                  decoration: BoxDecoration(
-                    color: statusColor.withValues(alpha: 0.12),
-                    borderRadius: AppRadii.sm,
-                    border: Border.all(color: statusColor.withValues(alpha: 0.4)),
-                  ),
-                  child: Row(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      Container(
-                        width: 8,
-                        height: 8,
-                        decoration: BoxDecoration(
-                          color: statusColor,
-                          shape: BoxShape.circle,
-                        ),
-                      ),
-                      const SizedBox(width: 6),
-                      Text(
-                        status?.label ?? 'Seçilmedi',
-                        style: theme.textTheme.labelMedium?.copyWith(
-                          color: statusColor,
-                          fontWeight: FontWeight.w600,
-                        ),
-                      ),
-                      Icon(
-                        dropdownOpen
-                            ? Icons.keyboard_arrow_up
-                            : Icons.keyboard_arrow_down,
-                        size: 16,
-                        color: statusColor,
-                      ),
-                    ],
+              ],
+              if (noteOpen) ...[
+                const SizedBox(height: AppSpacing.sm),
+                TextField(
+                  controller: noteController,
+                  maxLines: 2,
+                  decoration: const InputDecoration(
+                    hintText: 'Not ekle...',
                   ),
                 ),
-              ),
+                const SizedBox(height: AppSpacing.xs),
+                Align(
+                  alignment: Alignment.centerRight,
+                  child: FilledButton(
+                    onPressed: onSaveNote,
+                    child: const Text('Kaydet'),
+                  ),
+                ),
+              ],
+              if (dropdownOpen) ...[
+                const SizedBox(height: AppSpacing.sm),
+                for (final s in AttendanceStatus.values)
+                  ListTile(
+                    dense: true,
+                    contentPadding: EdgeInsets.zero,
+                    leading: Container(
+                      width: 10,
+                      height: 10,
+                      decoration: BoxDecoration(
+                        color: s.color,
+                        shape: BoxShape.circle,
+                      ),
+                    ),
+                    title: Text(
+                      s.label,
+                      style: TextStyle(
+                        color: s.color,
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
+                    trailing: status == s
+                        ? Icon(Icons.check, color: s.color, size: 18)
+                        : null,
+                    selected: status == s,
+                    onTap: () => onSetStatus(s),
+                  ),
+              ],
             ],
-          ),
-          if (worked) ...[
-            const SizedBox(height: AppSpacing.sm),
-            Row(
-              children: [
-                Text('Mesai', style: theme.textTheme.labelMedium),
-                const Spacer(),
-                IconButton(
-                  visualDensity: VisualDensity.compact,
-                  onPressed: overtimeHours <= 0
-                      ? null
-                      : () => onSetOvertime(
-                            (overtimeHours - 0.5).clamp(0, 12),
-                          ),
-                  icon: const Icon(Icons.remove_circle_outline, size: 20),
-                ),
-                Text(
-                  overtimeHours == overtimeHours.roundToDouble()
-                      ? '${overtimeHours.toStringAsFixed(0)} sa'
-                      : '${overtimeHours.toStringAsFixed(1)} sa',
-                  style: theme.textTheme.labelLarge?.copyWith(
-                    fontWeight: FontWeight.w700,
-                  ),
-                ),
-                IconButton(
-                  visualDensity: VisualDensity.compact,
-                  onPressed: overtimeHours >= 12
-                      ? null
-                      : () => onSetOvertime(
-                            (overtimeHours + 0.5).clamp(0, 12),
-                          ),
-                  icon: const Icon(Icons.add_circle_outline, size: 20),
-                ),
-                const SizedBox(width: AppSpacing.sm),
-                Text(
-                  '${yevmiye.toStringAsFixed(yevmiye == yevmiye.roundToDouble() ? 0 : 2)} yv',
-                  style: theme.textTheme.labelSmall?.copyWith(
-                    color: AppColors.electricBlue,
-                    fontWeight: FontWeight.w600,
-                  ),
-                ),
-              ],
-            ),
-          ],
-          if (note != null && !noteOpen) ...[
-            const SizedBox(height: AppSpacing.xs),
-            Row(
-              children: [
-                Icon(Icons.chat_bubble_outline,
-                    size: 12, color: theme.colorScheme.onSurfaceVariant),
-                const SizedBox(width: 4),
-                Expanded(
-                  child: Text(note!, style: theme.textTheme.bodySmall),
-                ),
-              ],
-            ),
-          ],
-          if (noteOpen) ...[
-            const SizedBox(height: AppSpacing.sm),
-            TextField(
-              controller: noteController,
-              maxLines: 2,
-              decoration: const InputDecoration(
-                hintText: 'Not ekle...',
-              ),
-            ),
-            const SizedBox(height: AppSpacing.xs),
-            Align(
-              alignment: Alignment.centerRight,
-              child: FilledButton(
-                onPressed: onSaveNote,
-                child: const Text('Kaydet'),
-              ),
-            ),
-          ],
-          if (dropdownOpen) ...[
-            const SizedBox(height: AppSpacing.sm),
-            for (final s in AttendanceStatus.values)
-              ListTile(
-                dense: true,
-                contentPadding: EdgeInsets.zero,
-                leading: Container(
-                  width: 10,
-                  height: 10,
-                  decoration: BoxDecoration(
-                    color: s.color,
-                    shape: BoxShape.circle,
-                  ),
-                ),
-                title: Text(
-                  s.label,
-                  style: TextStyle(color: s.color, fontWeight: FontWeight.w600),
-                ),
-                trailing: status == s
-                    ? Icon(Icons.check, color: s.color, size: 18)
-                    : null,
-                selected: status == s,
-                onTap: () => onSetStatus(s),
-              ),
-          ],
-        ],
+          );
+        },
       ),
     );
   }

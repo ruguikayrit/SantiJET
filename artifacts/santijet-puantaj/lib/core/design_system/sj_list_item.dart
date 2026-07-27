@@ -31,66 +31,70 @@ class SJListItem extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-    final accent = accentColor ?? theme.colorScheme.primary;
-
     return SJCard(
       onTap: onTap,
       selected: selected,
       padding: const EdgeInsets.all(AppSpacing.sm),
-      child: Row(
-        children: [
-          if (leadingIcon != null) ...[
-            Container(
-              width: 40,
-              height: 40,
-              decoration: BoxDecoration(
-                color: accent.withValues(alpha: 0.15),
-                borderRadius: BorderRadius.circular(10),
-              ),
-              child: Icon(leadingIcon, color: accent, size: 20),
-            ),
-            const SizedBox(width: AppSpacing.sm),
-          ],
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  title,
-                  style: theme.textTheme.titleMedium,
-                  maxLines: 2,
-                  overflow: TextOverflow.ellipsis,
-                ),
-                if (subtitle != null) ...[
-                  const SizedBox(height: 2),
-                  Text(
-                    subtitle!,
-                    style: theme.textTheme.bodySmall,
-                    maxLines: 2,
-                    overflow: TextOverflow.ellipsis,
+      child: Builder(
+        builder: (context) {
+          final theme = Theme.of(context);
+          final accent = accentColor ?? theme.colorScheme.primary;
+
+          return Row(
+            children: [
+              if (leadingIcon != null) ...[
+                Container(
+                  width: 40,
+                  height: 40,
+                  decoration: BoxDecoration(
+                    color: accent.withValues(alpha: 0.15),
+                    borderRadius: BorderRadius.circular(10),
                   ),
-                ],
+                  child: Icon(leadingIcon, color: accent, size: 20),
+                ),
+                const SizedBox(width: AppSpacing.sm),
               ],
-            ),
-          ),
-          if (trailing != null)
-            trailing!
-          else if (trailingText != null)
-            Padding(
-              padding: const EdgeInsets.only(left: AppSpacing.xs),
-              child: Text(
-                trailingText!,
-                style: theme.textTheme.titleMedium?.copyWith(color: accent),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      title,
+                      style: theme.textTheme.titleMedium,
+                      maxLines: 2,
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                    if (subtitle != null) ...[
+                      const SizedBox(height: 2),
+                      Text(
+                        subtitle!,
+                        style: theme.textTheme.bodySmall,
+                        maxLines: 2,
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                    ],
+                  ],
+                ),
               ),
-            )
-          else if (onTap != null)
-            Icon(
-              Icons.chevron_right,
-              size: 20,
-              color: theme.colorScheme.onSurfaceVariant,
-            ),
-        ],
+              if (trailing != null)
+                trailing!
+              else if (trailingText != null)
+                Padding(
+                  padding: const EdgeInsets.only(left: AppSpacing.xs),
+                  child: Text(
+                    trailingText!,
+                    style: theme.textTheme.titleMedium?.copyWith(color: accent),
+                  ),
+                )
+              else if (onTap != null)
+                Icon(
+                  Icons.chevron_right,
+                  size: 20,
+                  color: theme.colorScheme.onSurfaceVariant,
+                ),
+            ],
+          );
+        },
       ),
     );
   }

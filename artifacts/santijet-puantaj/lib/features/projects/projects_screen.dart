@@ -19,7 +19,6 @@ class ProjectsScreen extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final projects = ref.watch(projectsProvider);
     final activeId = ref.watch(activeProjectIdProvider);
-    final theme = Theme.of(context);
 
     return Scaffold(
       appBar: AppBar(
@@ -59,98 +58,108 @@ class ProjectsScreen extends ConsumerWidget {
                   onTap: () {
                     ref.read(activeProjectIdProvider.notifier).set(p.id);
                   },
-                  child: Row(
-                    children: [
-                      Icon(
-                        selected ? Icons.check_circle : Icons.apartment_outlined,
-                        color: selected
-                            ? AppColors.electricBlue
-                            : theme.colorScheme.onSurfaceVariant,
-                      ),
-                      const SizedBox(width: AppSpacing.sm),
-                      Expanded(
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Text(
-                              p.company.isEmpty ? 'Firma adı yok' : p.company,
-                              style: theme.textTheme.titleMedium,
-                              maxLines: 1,
-                              overflow: TextOverflow.ellipsis,
-                            ),
-                            Text(
-                              p.name.isEmpty ? 'İşin adı yok' : p.name,
-                              style: theme.textTheme.bodyMedium,
-                              maxLines: 1,
-                              overflow: TextOverflow.ellipsis,
-                            ),
-                            Text(
-                              p.code.isEmpty ? 'İşin kodu yok' : p.code,
-                              style: theme.textTheme.bodySmall,
-                              maxLines: 1,
-                              overflow: TextOverflow.ellipsis,
-                            ),
-                            if (selected)
-                              Text(
-                                'Aktif proje',
-                                style: theme.textTheme.labelSmall?.copyWith(
-                                  color: AppColors.electricBlue,
+                  child: Builder(
+                    builder: (context) {
+                      final theme = Theme.of(context);
+                      return Row(
+                        children: [
+                          Icon(
+                            selected
+                                ? Icons.check_circle
+                                : Icons.apartment_outlined,
+                            color: selected
+                                ? AppColors.electricBlueLight
+                                : theme.colorScheme.onSurfaceVariant,
+                          ),
+                          const SizedBox(width: AppSpacing.sm),
+                          Expanded(
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Text(
+                                  p.company.isEmpty
+                                      ? 'Firma adı yok'
+                                      : p.company,
+                                  style: theme.textTheme.titleMedium,
+                                  maxLines: 1,
+                                  overflow: TextOverflow.ellipsis,
                                 ),
-                              ),
-                          ],
-                        ),
-                      ),
-                      IconButton(
-                        icon: const Icon(Icons.edit_outlined),
-                        onPressed: () =>
-                            _openEditor(context, ref, existing: p),
-                      ),
-                      IconButton(
-                        icon: const Icon(Icons.delete_outline),
-                        onPressed: () async {
-                          final ok = await showDialog<bool>(
-                            context: context,
-                            builder: (ctx) => AlertDialog(
-                              title: const Text('Projeyi sil'),
-                              content: Text(
-                                '${p.name} ile bu projeye ait personel, '
-                                'puantaj ve imalat kayıtları silinsin mi?',
-                              ),
-                              actions: [
-                                TextButton(
-                                  onPressed: () => Navigator.pop(ctx, false),
-                                  child: const Text('Vazgeç'),
+                                Text(
+                                  p.name.isEmpty ? 'İşin adı yok' : p.name,
+                                  style: theme.textTheme.bodyMedium,
+                                  maxLines: 1,
+                                  overflow: TextOverflow.ellipsis,
                                 ),
-                                FilledButton(
-                                  onPressed: () => Navigator.pop(ctx, true),
-                                  child: const Text('Sil'),
+                                Text(
+                                  p.code.isEmpty ? 'İşin kodu yok' : p.code,
+                                  style: theme.textTheme.bodySmall,
+                                  maxLines: 1,
+                                  overflow: TextOverflow.ellipsis,
                                 ),
+                                if (selected)
+                                  Text(
+                                    'Aktif proje',
+                                    style: theme.textTheme.labelSmall?.copyWith(
+                                      color: AppColors.electricBlueLight,
+                                    ),
+                                  ),
                               ],
                             ),
-                          );
-                          if (ok != true) return;
-                          ref
-                              .read(attendanceProvider.notifier)
-                              .deleteForProject(p.id);
-                          ref
-                              .read(personnelProvider.notifier)
-                              .deleteForProject(p.id);
-                          ref
-                              .read(productionProvider.notifier)
-                              .deleteForProject(p.id);
-                          ref.read(projectsProvider.notifier).delete(p.id);
-                          if (activeId == p.id) {
-                            final remaining =
-                                ref.read(projectsProvider);
-                            ref
-                                .read(activeProjectIdProvider.notifier)
-                                .set(remaining.isEmpty
-                                    ? null
-                                    : remaining.first.id);
-                          }
-                        },
-                      ),
-                    ],
+                          ),
+                          IconButton(
+                            icon: const Icon(Icons.edit_outlined),
+                            onPressed: () =>
+                                _openEditor(context, ref, existing: p),
+                          ),
+                          IconButton(
+                            icon: const Icon(Icons.delete_outline),
+                            onPressed: () async {
+                              final ok = await showDialog<bool>(
+                                context: context,
+                                builder: (ctx) => AlertDialog(
+                                  title: const Text('Projeyi sil'),
+                                  content: Text(
+                                    '${p.name} ile bu projeye ait personel, '
+                                    'puantaj ve imalat kayıtları silinsin mi?',
+                                  ),
+                                  actions: [
+                                    TextButton(
+                                      onPressed: () =>
+                                          Navigator.pop(ctx, false),
+                                      child: const Text('Vazgeç'),
+                                    ),
+                                    FilledButton(
+                                      onPressed: () =>
+                                          Navigator.pop(ctx, true),
+                                      child: const Text('Sil'),
+                                    ),
+                                  ],
+                                ),
+                              );
+                              if (ok != true) return;
+                              ref
+                                  .read(attendanceProvider.notifier)
+                                  .deleteForProject(p.id);
+                              ref
+                                  .read(personnelProvider.notifier)
+                                  .deleteForProject(p.id);
+                              ref
+                                  .read(productionProvider.notifier)
+                                  .deleteForProject(p.id);
+                              ref.read(projectsProvider.notifier).delete(p.id);
+                              if (activeId == p.id) {
+                                final remaining = ref.read(projectsProvider);
+                                ref
+                                    .read(activeProjectIdProvider.notifier)
+                                    .set(remaining.isEmpty
+                                        ? null
+                                        : remaining.first.id);
+                              }
+                            },
+                          ),
+                        ],
+                      );
+                    },
                   ),
                 );
               },

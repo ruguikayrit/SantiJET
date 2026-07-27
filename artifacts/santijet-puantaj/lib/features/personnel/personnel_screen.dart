@@ -96,65 +96,82 @@ class PersonnelScreen extends ConsumerWidget {
                     projectId: project.id,
                     existing: p,
                   ),
-                  child: Row(
-                    children: [
-                      CircleAvatar(
-                        backgroundColor:
-                            theme.colorScheme.primary.withValues(alpha: 0.15),
-                        child: Text(
-                          p.name.isNotEmpty ? p.name[0].toUpperCase() : '?',
-                          style: TextStyle(
-                            color: theme.colorScheme.primary,
-                            fontWeight: FontWeight.w700,
+                  child: Builder(
+                    builder: (context) {
+                      final theme = Theme.of(context);
+                      return Row(
+                        children: [
+                          CircleAvatar(
+                            backgroundColor: theme.colorScheme.primary
+                                .withValues(alpha: 0.15),
+                            child: Text(
+                              p.name.isNotEmpty
+                                  ? p.name[0].toUpperCase()
+                                  : '?',
+                              style: TextStyle(
+                                color: theme.colorScheme.primary,
+                                fontWeight: FontWeight.w700,
+                              ),
+                            ),
                           ),
-                        ),
-                      ),
-                      const SizedBox(width: AppSpacing.sm),
-                      Expanded(
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Text(p.name, style: theme.textTheme.titleMedium),
-                            if (meta.isNotEmpty)
-                              Text(meta, style: theme.textTheme.bodySmall),
-                            if (p.phone.isNotEmpty)
-                              Text(p.phone, style: theme.textTheme.labelSmall),
-                          ],
-                        ),
-                      ),
-                      if (!p.active)
-                        Text(
-                          'Pasif',
-                          style: theme.textTheme.labelSmall?.copyWith(
-                            color: theme.colorScheme.error,
-                          ),
-                        ),
-                      IconButton(
-                        icon: const Icon(Icons.delete_outline),
-                        onPressed: () async {
-                          final ok = await showDialog<bool>(
-                            context: context,
-                            builder: (ctx) => AlertDialog(
-                              title: const Text('Personeli sil'),
-                              content: Text('${p.name} silinsin mi?'),
-                              actions: [
-                                TextButton(
-                                  onPressed: () => Navigator.pop(ctx, false),
-                                  child: const Text('Vazgeç'),
+                          const SizedBox(width: AppSpacing.sm),
+                          Expanded(
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Text(
+                                  p.name,
+                                  style: theme.textTheme.titleMedium,
                                 ),
-                                FilledButton(
-                                  onPressed: () => Navigator.pop(ctx, true),
-                                  child: const Text('Sil'),
-                                ),
+                                if (meta.isNotEmpty)
+                                  Text(meta, style: theme.textTheme.bodySmall),
+                                if (p.phone.isNotEmpty)
+                                  Text(
+                                    p.phone,
+                                    style: theme.textTheme.labelSmall,
+                                  ),
                               ],
                             ),
-                          );
-                          if (ok == true) {
-                            ref.read(personnelProvider.notifier).delete(p.id);
-                          }
-                        },
-                      ),
-                    ],
+                          ),
+                          if (!p.active)
+                            Text(
+                              'Pasif',
+                              style: theme.textTheme.labelSmall?.copyWith(
+                                color: theme.colorScheme.error,
+                              ),
+                            ),
+                          IconButton(
+                            icon: const Icon(Icons.delete_outline),
+                            onPressed: () async {
+                              final ok = await showDialog<bool>(
+                                context: context,
+                                builder: (ctx) => AlertDialog(
+                                  title: const Text('Personeli sil'),
+                                  content: Text('${p.name} silinsin mi?'),
+                                  actions: [
+                                    TextButton(
+                                      onPressed: () =>
+                                          Navigator.pop(ctx, false),
+                                      child: const Text('Vazgeç'),
+                                    ),
+                                    FilledButton(
+                                      onPressed: () =>
+                                          Navigator.pop(ctx, true),
+                                      child: const Text('Sil'),
+                                    ),
+                                  ],
+                                ),
+                              );
+                              if (ok == true) {
+                                ref
+                                    .read(personnelProvider.notifier)
+                                    .delete(p.id);
+                              }
+                            },
+                          ),
+                        ],
+                      );
+                    },
                   ),
                 );
               },

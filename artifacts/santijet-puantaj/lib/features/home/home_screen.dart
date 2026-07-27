@@ -23,7 +23,6 @@ class HomeScreen extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final theme = Theme.of(context);
     final project = ref.watch(activeProjectProvider);
     final people = ref.watch(activePersonnelProvider);
     final attendance = ref.watch(attendanceProvider);
@@ -130,53 +129,58 @@ class HomeScreen extends ConsumerWidget {
                     title: 'Günlük Puantaj',
                     icon: Icons.fact_check_outlined,
                     onTap: () => context.go(AppRoutes.puantaj),
-                    child: Column(
-                      children: [
-                        Row(
+                    child: Builder(
+                      builder: (context) {
+                        final theme = Theme.of(context);
+                        return Column(
                           children: [
-                            Expanded(
-                              child: _MiniStat(
-                                label: 'Mevcut',
-                                value: '$present',
-                                color: AttendanceStatus.present.color,
-                              ),
+                            Row(
+                              children: [
+                                Expanded(
+                                  child: _MiniStat(
+                                    label: 'Mevcut',
+                                    value: '$present',
+                                    color: AttendanceStatus.present.color,
+                                  ),
+                                ),
+                                const SizedBox(width: AppSpacing.xs),
+                                Expanded(
+                                  child: _MiniStat(
+                                    label: 'Yarım',
+                                    value: '$half',
+                                    color: AttendanceStatus.half.color,
+                                  ),
+                                ),
+                                const SizedBox(width: AppSpacing.xs),
+                                Expanded(
+                                  child: _MiniStat(
+                                    label: 'Yok',
+                                    value: '$absent',
+                                    color: AttendanceStatus.absent.color,
+                                  ),
+                                ),
+                              ],
                             ),
-                            const SizedBox(width: AppSpacing.xs),
-                            Expanded(
-                              child: _MiniStat(
-                                label: 'Yarım',
-                                value: '$half',
-                                color: AttendanceStatus.half.color,
-                              ),
+                            const SizedBox(height: AppSpacing.sm),
+                            _MiniStat(
+                              label: 'Yevmiye',
+                              value: _fmt(totalYevmiye),
+                              color: AppColors.electricBlue,
+                              unit: 'yv',
                             ),
-                            const SizedBox(width: AppSpacing.xs),
-                            Expanded(
-                              child: _MiniStat(
-                                label: 'Yok',
-                                value: '$absent',
-                                color: AttendanceStatus.absent.color,
+                            if (overtimeHours > 0) ...[
+                              const SizedBox(height: AppSpacing.sm),
+                              Align(
+                                alignment: Alignment.centerLeft,
+                                child: Text(
+                                  'Mesai: ${_fmt(overtimeHours)} sa',
+                                  style: theme.textTheme.labelSmall,
+                                ),
                               ),
-                            ),
+                            ],
                           ],
-                        ),
-                        const SizedBox(height: AppSpacing.sm),
-                        _MiniStat(
-                          label: 'Yevmiye',
-                          value: _fmt(totalYevmiye),
-                          color: AppColors.electricBlue,
-                          unit: 'yv',
-                        ),
-                        if (overtimeHours > 0) ...[
-                          const SizedBox(height: AppSpacing.sm),
-                          Align(
-                            alignment: Alignment.centerLeft,
-                            child: Text(
-                              'Mesai: ${_fmt(overtimeHours)} sa',
-                              style: theme.textTheme.labelSmall,
-                            ),
-                          ),
-                        ],
-                      ],
+                        );
+                      },
                     ),
                   ),
                   const SizedBox(height: AppSpacing.md),
@@ -185,10 +189,12 @@ class HomeScreen extends ConsumerWidget {
                     icon: Icons.precision_manufacturing_outlined,
                     onTap: () => context.go(AppRoutes.imalat),
                     child: teamSummaries.isEmpty
-                        ? Text(
-                            'Henüz imalat yok. İmalat ekleyince ekip '
-                            'icmali burada görünür.',
-                            style: theme.textTheme.bodyMedium,
+                        ? Builder(
+                            builder: (context) => Text(
+                              'Henüz imalat yok. İmalat ekleyince ekip '
+                              'icmali burada görünür.',
+                              style: Theme.of(context).textTheme.bodyMedium,
+                            ),
                           )
                         : Column(
                             crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -206,57 +212,63 @@ class HomeScreen extends ConsumerWidget {
                     title: 'Özet Verim',
                     icon: Icons.speed_outlined,
                     onTap: () => context.go(AppRoutes.verim),
-                    child: !verim.hasCloudPlan
-                        ? Text(
+                    child: Builder(
+                      builder: (context) {
+                        final theme = Theme.of(context);
+                        if (!verim.hasCloudPlan) {
+                          return Text(
                             'İş Programı bulut verisi yok. Verim için '
                             'buluttan plan çekilmesi gerekir.',
                             style: theme.textTheme.bodyMedium,
-                          )
-                        : Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Row(
-                                children: [
-                                  Expanded(
-                                    child: _MiniStat(
-                                      label: 'Bugün adam-gün',
-                                      value: _fmt(todayWorkers),
-                                      color: AppColors.electricBlue,
-                                    ),
+                          );
+                        }
+                        return Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Row(
+                              children: [
+                                Expanded(
+                                  child: _MiniStat(
+                                    label: 'Bugün adam-gün',
+                                    value: _fmt(todayWorkers),
+                                    color: AppColors.electricBlue,
                                   ),
-                                  const SizedBox(width: AppSpacing.sm),
-                                  Expanded(
-                                    child: _MiniStat(
-                                      label: 'Plan satırı',
-                                      value: '${verimRows.length}',
-                                      color: AppColors.info,
-                                    ),
+                                ),
+                                const SizedBox(width: AppSpacing.sm),
+                                Expanded(
+                                  child: _MiniStat(
+                                    label: 'Plan satırı',
+                                    value: '${verimRows.length}',
+                                    color: AppColors.info,
                                   ),
-                                ],
-                              ),
-                              const SizedBox(height: AppSpacing.sm),
-                              _MiniStat(
-                                label: 'Ortalama verim',
-                                value: avgEff == null
-                                    ? '—'
-                                    : '%${(avgEff * 100).toStringAsFixed(0)}',
-                                color: avgEff == null
-                                    ? theme.colorScheme.onSurfaceVariant
-                                    : avgEff >= 0.8
-                                        ? AppColors.success
-                                        : avgEff >= 0.5
-                                            ? AppColors.warning
-                                            : AppColors.critical,
-                              ),
-                              if (verim.message != null) ...[
-                                const SizedBox(height: AppSpacing.xs),
-                                Text(
-                                  verim.message!,
-                                  style: theme.textTheme.labelSmall,
                                 ),
                               ],
+                            ),
+                            const SizedBox(height: AppSpacing.sm),
+                            _MiniStat(
+                              label: 'Ortalama verim',
+                              value: avgEff == null
+                                  ? '—'
+                                  : '%${(avgEff * 100).toStringAsFixed(0)}',
+                              color: avgEff == null
+                                  ? theme.colorScheme.onSurfaceVariant
+                                  : avgEff >= 0.8
+                                      ? AppColors.success
+                                      : avgEff >= 0.5
+                                          ? AppColors.warning
+                                          : AppColors.critical,
+                            ),
+                            if (verim.message != null) ...[
+                              const SizedBox(height: AppSpacing.xs),
+                              Text(
+                                verim.message!,
+                                style: theme.textTheme.labelSmall,
+                              ),
                             ],
-                          ),
+                          ],
+                        );
+                      },
+                    ),
                   ),
                 ]),
               ),
@@ -486,29 +498,33 @@ class _SummarySection extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final theme = Theme.of(context);
     return SJCard(
       onTap: onTap,
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.stretch,
-        children: [
-          Row(
+      child: Builder(
+        builder: (context) {
+          final theme = Theme.of(context);
+          return Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
-              Icon(icon, size: 20, color: theme.colorScheme.primary),
-              const SizedBox(width: AppSpacing.sm),
-              Expanded(
-                child: Text(title, style: theme.textTheme.titleMedium),
+              Row(
+                children: [
+                  Icon(icon, size: 20, color: theme.colorScheme.primary),
+                  const SizedBox(width: AppSpacing.sm),
+                  Expanded(
+                    child: Text(title, style: theme.textTheme.titleMedium),
+                  ),
+                  if (onTap != null)
+                    Icon(
+                      Icons.chevron_right,
+                      color: theme.colorScheme.onSurfaceVariant,
+                    ),
+                ],
               ),
-              if (onTap != null)
-                Icon(
-                  Icons.chevron_right,
-                  color: theme.colorScheme.onSurfaceVariant,
-                ),
+              const SizedBox(height: AppSpacing.md),
+              child,
             ],
-          ),
-          const SizedBox(height: AppSpacing.md),
-          child,
-        ],
+          );
+        },
       ),
     );
   }
