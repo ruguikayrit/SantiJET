@@ -3,8 +3,8 @@ import 'dart:convert';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:hive/hive.dart';
 
+import '../../core/theme/theme_mode_provider.dart';
 import '../../domain/catalogs/professions.dart';
-import '../providers/app_data_provider.dart';
 
 /// Meslek ve ekip katalogları — varsayılanlar + kullanıcının ekledikleri (Hive).
 class CatalogNotifier extends StateNotifier<List<String>> {
