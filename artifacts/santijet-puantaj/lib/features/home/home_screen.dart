@@ -680,13 +680,23 @@ enum _AsRange {
   final String label;
 }
 
-/// Grafik tipi — borsa tarzı mum veya çizgi.
+/// Grafik tipi — borsa / analitik stiller.
 enum _AsChartStyle {
-  candle('Mum'),
-  line('Çizgi');
+  candle('Mum', 'Açılış · yüksek · düşük · kapanış'),
+  hollow('İçi boş mum', 'Yükseliş boş, düşüş dolu gövde'),
+  ohlc('OHLC', 'Klasik borsa çubuğu'),
+  bar('Çubuk', 'Kapanış değerini çubuk olarak gösterir'),
+  line('Çizgi', 'Kapanış değerlerini birleştirir'),
+  area('Alan', 'Çizgi + dolgu alanı'),
+  step('Basamak', 'Değişimleri basamaklı gösterir'),
+  scatter('Nokta', 'Her periyodu nokta olarak gösterir');
 
-  const _AsChartStyle(this.label);
+  const _AsChartStyle(this.label, this.subtitle);
   final String label;
+  final String subtitle;
+
+  bool get usesCompactSlots =>
+      this == line || this == area || this == step || this == scatter;
 }
 
 /// Mum/çizgi periyodu — günlük · haftalık · aylık (OHLC agregasyon).
@@ -938,16 +948,12 @@ class _AdamSaatEfficiencyChartState extends State<_AdamSaatEfficiencyChart> {
                         onSelect: (v) =>
                             setSheet(() => draftStyle = v as _AsChartStyle),
                         items: [
-                          (
-                            value: _AsChartStyle.candle,
-                            label: 'Mum',
-                            subtitle: 'Açılış · yüksek · düşük · kapanış',
-                          ),
-                          (
-                            value: _AsChartStyle.line,
-                            label: 'Çizgi',
-                            subtitle: 'Kapanış değerlerini birleştirir',
-                          ),
+                          for (final s in _AsChartStyle.values)
+                            (
+                              value: s,
+                              label: s.label,
+                              subtitle: s.subtitle,
+                            ),
                         ],
                       ),
                       const SizedBox(height: AppSpacing.md),
@@ -1130,7 +1136,7 @@ class _AdamSaatEfficiencyChartState extends State<_AdamSaatEfficiencyChart> {
                 final avg =
                     candles.fold<double>(0, (s, c) => s + c.close) /
                         candles.length;
-                final minSlot = _style == _AsChartStyle.line ? 14.0 : 18.0;
+                final minSlot = _style.usesCompactSlots ? 14.0 : 18.0;
                 final chartWidth = (candles.length * minSlot)
                     .clamp(constraints.maxWidth, double.infinity);
                 return SingleChildScrollView(
@@ -1221,6 +1227,14 @@ class _AdamSaatChartPainter extends CustomPainter {
   final Color averageColor;
   final Color axisColor;
 
+  Color _closeColor(_AsOhlc c) {
+    if (average <= 0) return lineColor;
+    final delta = (c.close - average) / average;
+    if (delta >= 0.05) return bullish;
+    if (delta <= -0.05) return bearish;
+    return lineColor;
+  }
+
   @override
   void paint(Canvas canvas, Size size) {
     if (candles.isEmpty) return;
@@ -1230,12 +1244,15 @@ class _AdamSaatChartPainter extends CustomPainter {
     for (final c in candles) {
       if (c.high > maxRate) maxRate = c.high;
       if (c.low < minRate) minRate = c.low;
+      // Çubuk/çizgi stillerinde yalnızca close kullanılır; yine de ölçek
+      // OHLC aralığıyla tutarlı kalsın.
+      if (c.close > maxRate) maxRate = c.close;
+      if (c.close < minRate) minRate = c.close;
     }
     final span = (maxRate - minRate).abs();
     final top = maxRate <= 0
         ? 1.0
         : maxRate + (span <= 0 ? maxRate * 0.08 : span * 0.12);
-    // Alt boşluk: düşük fitiller kesilmesin.
     final floor = (minRate - (span <= 0 ? maxRate * 0.04 : span * 0.08))
         .clamp(0.0, double.infinity);
 
@@ -1247,6 +1264,10 @@ class _AdamSaatChartPainter extends CustomPainter {
     final chartH = size.height - padT - padB;
     final n = candles.length;
     final slotW = chartW / n;
+    final barW = n <= 1
+        ? (chartW * 0.28).clamp(8.0, 36.0)
+        : (slotW * 0.55).clamp(3.0, 28.0);
+    final baselineY = padT + chartH;
 
     double mapY(double v) {
       final t = top - floor;
@@ -1258,8 +1279,8 @@ class _AdamSaatChartPainter extends CustomPainter {
       ..color = axisColor
       ..strokeWidth = 1;
     canvas.drawLine(
-      Offset(padL, padT + chartH),
-      Offset(size.width - padR, padT + chartH),
+      Offset(padL, baselineY),
+      Offset(size.width - padR, baselineY),
       axisPaint,
     );
 
@@ -1281,59 +1302,243 @@ class _AdamSaatChartPainter extends CustomPainter {
       }
     }
 
-    if (style == _AsChartStyle.line) {
-      final path = Path();
-      final fillPath = Path();
-      for (var i = 0; i < n; i++) {
-        final midX = padL + slotW * (i + 0.5);
-        final y = mapY(candles[i].close);
-        if (i == 0) {
-          path.moveTo(midX, y);
-          fillPath.moveTo(midX, padT + chartH);
-          fillPath.lineTo(midX, y);
-        } else {
-          path.lineTo(midX, y);
-          fillPath.lineTo(midX, y);
-        }
-      }
-      if (n > 0) {
-        final lastX = padL + slotW * (n - 0.5);
-        fillPath
-          ..lineTo(lastX, padT + chartH)
-          ..close();
-        canvas.drawPath(
-          fillPath,
-          Paint()
-            ..color = lineColor.withValues(alpha: 0.12)
-            ..style = PaintingStyle.fill,
+    switch (style) {
+      case _AsChartStyle.line:
+      case _AsChartStyle.area:
+        _paintLineSeries(
+          canvas,
+          mapY: mapY,
+          padL: padL,
+          slotW: slotW,
+          baselineY: baselineY,
+          fill: style == _AsChartStyle.area,
         );
-      }
-      canvas.drawPath(
-        path,
-        Paint()
-          ..color = lineColor
-          ..strokeWidth = 2
-          ..style = PaintingStyle.stroke
-          ..strokeJoin = StrokeJoin.round
-          ..strokeCap = StrokeCap.round,
-      );
-      for (var i = 0; i < n; i++) {
-        final midX = padL + slotW * (i + 0.5);
-        final y = mapY(candles[i].close);
-        canvas.drawCircle(
-          Offset(midX, y),
-          2.5,
-          Paint()..color = lineColor,
+      case _AsChartStyle.step:
+        _paintStepSeries(
+          canvas,
+          mapY: mapY,
+          padL: padL,
+          slotW: slotW,
         );
-      }
-      return;
+      case _AsChartStyle.scatter:
+        _paintScatter(canvas, mapY: mapY, padL: padL, slotW: slotW);
+      case _AsChartStyle.bar:
+        _paintBars(
+          canvas,
+          mapY: mapY,
+          padL: padL,
+          slotW: slotW,
+          barW: barW,
+          baselineY: baselineY,
+        );
+      case _AsChartStyle.ohlc:
+        _paintOhlc(
+          canvas,
+          mapY: mapY,
+          padL: padL,
+          slotW: slotW,
+          tickW: (barW * 0.45).clamp(3.0, 10.0),
+        );
+      case _AsChartStyle.candle:
+        _paintCandles(
+          canvas,
+          mapY: mapY,
+          padL: padL,
+          slotW: slotW,
+          barW: barW,
+          hollow: false,
+        );
+      case _AsChartStyle.hollow:
+        _paintCandles(
+          canvas,
+          mapY: mapY,
+          padL: padL,
+          slotW: slotW,
+          barW: barW,
+          hollow: true,
+        );
     }
+  }
 
-    // Mum (OHLC)
-    final barW = n <= 1
-        ? (chartW * 0.28).clamp(8.0, 36.0)
-        : (slotW * 0.55).clamp(3.0, 28.0);
+  void _paintLineSeries(
+    Canvas canvas, {
+    required double Function(double) mapY,
+    required double padL,
+    required double slotW,
+    required double baselineY,
+    required bool fill,
+  }) {
+    final n = candles.length;
+    final path = Path();
+    final fillPath = Path();
     for (var i = 0; i < n; i++) {
+      final midX = padL + slotW * (i + 0.5);
+      final y = mapY(candles[i].close);
+      if (i == 0) {
+        path.moveTo(midX, y);
+        fillPath
+          ..moveTo(midX, baselineY)
+          ..lineTo(midX, y);
+      } else {
+        path.lineTo(midX, y);
+        fillPath.lineTo(midX, y);
+      }
+    }
+    if (fill && n > 0) {
+      final lastX = padL + slotW * (n - 0.5);
+      fillPath
+        ..lineTo(lastX, baselineY)
+        ..close();
+      canvas.drawPath(
+        fillPath,
+        Paint()
+          ..color = lineColor.withValues(alpha: 0.18)
+          ..style = PaintingStyle.fill,
+      );
+    }
+    canvas.drawPath(
+      path,
+      Paint()
+        ..color = lineColor
+        ..strokeWidth = 2
+        ..style = PaintingStyle.stroke
+        ..strokeJoin = StrokeJoin.round
+        ..strokeCap = StrokeCap.round,
+    );
+    for (var i = 0; i < n; i++) {
+      final midX = padL + slotW * (i + 0.5);
+      final y = mapY(candles[i].close);
+      canvas.drawCircle(Offset(midX, y), 2.2, Paint()..color = lineColor);
+    }
+  }
+
+  void _paintStepSeries(
+    Canvas canvas, {
+    required double Function(double) mapY,
+    required double padL,
+    required double slotW,
+  }) {
+    final n = candles.length;
+    if (n == 0) return;
+    final path = Path();
+    for (var i = 0; i < n; i++) {
+      final left = padL + slotW * i;
+      final right = padL + slotW * (i + 1);
+      final y = mapY(candles[i].close);
+      if (i == 0) {
+        path.moveTo(left + slotW * 0.15, y);
+      } else {
+        path.lineTo(left, y);
+      }
+      path.lineTo(right - (i == n - 1 ? slotW * 0.15 : 0), y);
+    }
+    canvas.drawPath(
+      path,
+      Paint()
+        ..color = lineColor
+        ..strokeWidth = 2
+        ..style = PaintingStyle.stroke
+        ..strokeJoin = StrokeJoin.miter
+        ..strokeCap = StrokeCap.butt,
+    );
+  }
+
+  void _paintScatter(
+    Canvas canvas, {
+    required double Function(double) mapY,
+    required double padL,
+    required double slotW,
+  }) {
+    for (var i = 0; i < candles.length; i++) {
+      final c = candles[i];
+      final midX = padL + slotW * (i + 0.5);
+      final y = mapY(c.close);
+      final color = _closeColor(c);
+      canvas.drawCircle(
+        Offset(midX, y),
+        3.2,
+        Paint()..color = color.withValues(alpha: 0.9),
+      );
+      canvas.drawCircle(
+        Offset(midX, y),
+        3.2,
+        Paint()
+          ..color = color
+          ..style = PaintingStyle.stroke
+          ..strokeWidth = 1,
+      );
+    }
+  }
+
+  void _paintBars(
+    Canvas canvas, {
+    required double Function(double) mapY,
+    required double padL,
+    required double slotW,
+    required double barW,
+    required double baselineY,
+  }) {
+    for (var i = 0; i < candles.length; i++) {
+      final c = candles[i];
+      final midX = padL + slotW * (i + 0.5);
+      final y = mapY(c.close);
+      final topY = y < baselineY ? y : baselineY;
+      final h = (baselineY - y).abs().clamp(2.0, double.infinity);
+      final left = midX - barW / 2;
+      canvas.drawRRect(
+        RRect.fromRectAndRadius(
+          Rect.fromLTWH(left, topY, barW, h),
+          const Radius.circular(2),
+        ),
+        Paint()..color = _closeColor(c).withValues(alpha: 0.9),
+      );
+    }
+  }
+
+  void _paintOhlc(
+    Canvas canvas, {
+    required double Function(double) mapY,
+    required double padL,
+    required double slotW,
+    required double tickW,
+  }) {
+    for (var i = 0; i < candles.length; i++) {
+      final c = candles[i];
+      final midX = padL + slotW * (i + 0.5);
+      final color = c.bullish ? bullish : bearish;
+      final paint = Paint()
+        ..color = color
+        ..strokeWidth = 1.4
+        ..strokeCap = StrokeCap.round;
+      canvas.drawLine(
+        Offset(midX, mapY(c.high)),
+        Offset(midX, mapY(c.low)),
+        paint,
+      );
+      final yOpen = mapY(c.open);
+      final yClose = mapY(c.close);
+      canvas.drawLine(
+        Offset(midX - tickW, yOpen),
+        Offset(midX, yOpen),
+        paint,
+      );
+      canvas.drawLine(
+        Offset(midX, yClose),
+        Offset(midX + tickW, yClose),
+        paint,
+      );
+    }
+  }
+
+  void _paintCandles(
+    Canvas canvas, {
+    required double Function(double) mapY,
+    required double padL,
+    required double slotW,
+    required double barW,
+    required bool hollow,
+  }) {
+    for (var i = 0; i < candles.length; i++) {
       final c = candles[i];
       final midX = padL + slotW * (i + 0.5);
       final yHigh = mapY(c.high);
@@ -1354,12 +1559,23 @@ class _AdamSaatChartPainter extends CustomPainter {
         Rect.fromLTWH(left, bodyTop, barW, bodyH),
         const Radius.circular(1.5),
       );
-      canvas.drawRRect(
-        body,
-        Paint()
-          ..color = color.withValues(alpha: 0.92)
-          ..style = PaintingStyle.fill,
-      );
+      final fillHollowBullish = hollow && c.bullish;
+      if (fillHollowBullish) {
+        canvas.drawRRect(
+          body,
+          Paint()
+            ..color = color
+            ..style = PaintingStyle.stroke
+            ..strokeWidth = 1.4,
+        );
+      } else {
+        canvas.drawRRect(
+          body,
+          Paint()
+            ..color = color.withValues(alpha: 0.92)
+            ..style = PaintingStyle.fill,
+        );
+      }
     }
   }
 
