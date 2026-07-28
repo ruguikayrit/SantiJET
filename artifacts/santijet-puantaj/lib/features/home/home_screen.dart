@@ -648,7 +648,7 @@ class _QtyCell extends StatelessWidget {
   }
 }
 
-/// Günlük adam-saat verim çubuk grafiği — zaman filtresi + dikey tarih etiketleri.
+/// Adam-saat verim grafiği — dönem filtresi, mum/çizgi, günlük–haftalık–aylık.
 class _AdamSaatEfficiencyChart extends StatefulWidget {
   const _AdamSaatEfficiencyChart({
     required this.points,
@@ -678,9 +678,48 @@ enum _AsRange {
   final String label;
 }
 
+/// Grafik tipi — borsa tarzı mum veya çizgi.
+enum _AsChartStyle {
+  candle('Mum'),
+  line('Çizgi');
+
+  const _AsChartStyle(this.label);
+  final String label;
+}
+
+/// Mum/çizgi periyodu — günlük · haftalık · aylık (OHLC agregasyon).
+enum _AsInterval {
+  day('1G'),
+  week('1H'),
+  month('1A');
+
+  const _AsInterval(this.label);
+  final String label;
+}
+
+/// Tek mum / periyot noktası (açılış–yüksek–düşük–kapanış).
+class _AsOhlc {
+  const _AsOhlc({
+    required this.label,
+    required this.open,
+    required this.high,
+    required this.low,
+    required this.close,
+  });
+
+  final String label;
+  final double open;
+  final double high;
+  final double low;
+  final double close;
+
+  bool get bullish => close >= open;
+}
+
 class _AdamSaatEfficiencyChartState extends State<_AdamSaatEfficiencyChart> {
-  /// İnceleme için varsayılan: yıllık (örnek veri sonrası diğer filtreler de kullanılır).
   _AsRange _range = _AsRange.year;
+  _AsChartStyle _style = _AsChartStyle.candle;
+  _AsInterval _interval = _AsInterval.day;
 
   static String _fmt(double v) {
     if (v == v.roundToDouble()) return v.toStringAsFixed(0);
@@ -706,16 +745,123 @@ class _AdamSaatEfficiencyChartState extends State<_AdamSaatEfficiencyChart> {
     return out;
   }
 
-  String _shortDate(String date) {
-    // dd.MM
-    if (date.length >= 5) return date.substring(0, 5);
-    return date;
+  /// Günlük noktaları seçilen periyotta OHLC mumlarına toplar.
+  List<_AsOhlc> _aggregate(List<_AsRatePoint> points) {
+    if (points.isEmpty) return const [];
+
+    String bucketKey(DateTime d) {
+      switch (_interval) {
+        case _AsInterval.day:
+          return '${d.year}-${d.month}-${d.day}';
+        case _AsInterval.week:
+          final monday = d.subtract(Duration(days: d.weekday - 1));
+          return '${monday.year}-W${monday.month}-${monday.day}';
+        case _AsInterval.month:
+          return '${d.year}-${d.month}';
+      }
+    }
+
+    String labelFor(DateTime d) {
+      switch (_interval) {
+        case _AsInterval.day:
+          return PuantajDate.format(d).substring(0, 5); // dd.MM
+        case _AsInterval.week:
+          final monday = d.subtract(Duration(days: d.weekday - 1));
+          return PuantajDate.format(monday).substring(0, 5);
+        case _AsInterval.month:
+          final mm = d.month.toString().padLeft(2, '0');
+          final yy = (d.year % 100).toString().padLeft(2, '0');
+          return '$mm.$yy';
+      }
+    }
+
+    final buckets = <String, List<({DateTime day, double rate})>>{};
+    final order = <String>[];
+    for (final p in points) {
+      DateTime day;
+      try {
+        final d = PuantajDate.parse(p.date);
+        day = DateTime(d.year, d.month, d.day);
+      } catch (_) {
+        continue;
+      }
+      final key = bucketKey(day);
+      if (!buckets.containsKey(key)) {
+        order.add(key);
+        buckets[key] = [];
+      }
+      buckets[key]!.add((day: day, rate: p.rate));
+    }
+
+    return [
+      for (final key in order)
+        () {
+          final rows = buckets[key]!;
+          rows.sort((a, b) => a.day.compareTo(b.day));
+          final rates = rows.map((e) => e.rate).toList();
+          var high = rates.first;
+          var low = rates.first;
+          for (final r in rates) {
+            if (r > high) high = r;
+            if (r < low) low = r;
+          }
+          return _AsOhlc(
+            label: labelFor(rows.last.day),
+            open: rates.first,
+            high: high,
+            low: low,
+            close: rates.last,
+          );
+        }(),
+    ];
+  }
+
+  Widget _chipRow({
+    required ThemeData theme,
+    required List<({Object value, String label})> items,
+    required Object selected,
+    required ValueChanged<Object> onSelect,
+  }) {
+    return SingleChildScrollView(
+      scrollDirection: Axis.horizontal,
+      child: Row(
+        children: [
+          for (var i = 0; i < items.length; i++) ...[
+            if (i > 0) const SizedBox(width: 6),
+            ChoiceChip(
+              label: Text(items[i].label),
+              selected: selected == items[i].value,
+              visualDensity: VisualDensity.compact,
+              labelStyle: theme.textTheme.labelSmall?.copyWith(
+                fontWeight: selected == items[i].value
+                    ? FontWeight.w700
+                    : FontWeight.w500,
+                color: selected == items[i].value
+                    ? Colors.white
+                    : theme.colorScheme.onSurfaceVariant,
+              ),
+              selectedColor: AppColors.electricBlue,
+              backgroundColor:
+                  theme.colorScheme.surface.withValues(alpha: 0.8),
+              side: BorderSide(
+                color: selected == items[i].value
+                    ? AppColors.electricBlue
+                    : theme.dividerColor,
+              ),
+              onSelected: (_) => onSelect(items[i].value),
+              materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
+              padding: const EdgeInsets.symmetric(horizontal: 6),
+            ),
+          ],
+        ],
+      ),
+    );
   }
 
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    final points = _filtered();
+    final candles = _aggregate(_filtered());
 
     return Container(
       padding: const EdgeInsets.all(AppSpacing.sm),
@@ -740,13 +886,13 @@ class _AdamSaatEfficiencyChartState extends State<_AdamSaatEfficiencyChart> {
                   ),
                 ),
               ),
-              if (points.isNotEmpty)
+              if (candles.isNotEmpty)
                 Builder(
                   builder: (context) {
                     final avg =
-                        points.fold<double>(0, (s, p) => s + p.rate) /
-                            points.length;
-                    final latest = points.last.rate;
+                        candles.fold<double>(0, (s, c) => s + c.close) /
+                            candles.length;
+                    final latest = candles.last.close;
                     final vsAvg = avg <= 0 ? 0.0 : (latest - avg) / avg;
                     final verdictColor = vsAvg >= 0.05
                         ? AppColors.success
@@ -770,42 +916,46 @@ class _AdamSaatEfficiencyChartState extends State<_AdamSaatEfficiencyChart> {
             ],
           ),
           const SizedBox(height: AppSpacing.xs),
-          SingleChildScrollView(
-            scrollDirection: Axis.horizontal,
-            child: Row(
-              children: [
-                for (final r in _AsRange.values) ...[
-                  if (r != _AsRange.values.first)
-                    const SizedBox(width: 6),
-                  ChoiceChip(
-                    label: Text(r.label),
-                    selected: _range == r,
-                    visualDensity: VisualDensity.compact,
-                    labelStyle: theme.textTheme.labelSmall?.copyWith(
-                      fontWeight:
-                          _range == r ? FontWeight.w700 : FontWeight.w500,
-                      color: _range == r
-                          ? Colors.white
-                          : theme.colorScheme.onSurfaceVariant,
-                    ),
-                    selectedColor: AppColors.electricBlue,
-                    backgroundColor:
-                        theme.colorScheme.surface.withValues(alpha: 0.8),
-                    side: BorderSide(
-                      color: _range == r
-                          ? AppColors.electricBlue
-                          : theme.dividerColor,
-                    ),
-                    onSelected: (_) => setState(() => _range = r),
-                    materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
-                    padding: const EdgeInsets.symmetric(horizontal: 6),
-                  ),
-                ],
-              ],
-            ),
+          _chipRow(
+            theme: theme,
+            selected: _range,
+            onSelect: (v) => setState(() => _range = v as _AsRange),
+            items: [
+              for (final r in _AsRange.values) (value: r, label: r.label),
+            ],
+          ),
+          const SizedBox(height: 6),
+          Row(
+            children: [
+              Expanded(
+                child: _chipRow(
+                  theme: theme,
+                  selected: _style,
+                  onSelect: (v) =>
+                      setState(() => _style = v as _AsChartStyle),
+                  items: [
+                    for (final s in _AsChartStyle.values)
+                      (value: s, label: s.label),
+                  ],
+                ),
+              ),
+              const SizedBox(width: 8),
+              Expanded(
+                child: _chipRow(
+                  theme: theme,
+                  selected: _interval,
+                  onSelect: (v) =>
+                      setState(() => _interval = v as _AsInterval),
+                  items: [
+                    for (final i in _AsInterval.values)
+                      (value: i, label: i.label),
+                  ],
+                ),
+              ),
+            ],
           ),
           const SizedBox(height: AppSpacing.sm),
-          if (points.isEmpty)
+          if (candles.isEmpty)
             Padding(
               padding: const EdgeInsets.symmetric(vertical: AppSpacing.md),
               child: Text(
@@ -817,9 +967,10 @@ class _AdamSaatEfficiencyChartState extends State<_AdamSaatEfficiencyChart> {
           else ...[
             Builder(
               builder: (context) {
-                final avg = points.fold<double>(0, (s, p) => s + p.rate) /
-                    points.length;
-                final latest = points.last.rate;
+                final avg =
+                    candles.fold<double>(0, (s, c) => s + c.close) /
+                        candles.length;
+                final latest = candles.last.close;
                 return Text(
                   'Ort ${_fmt(avg)} · Son ${_fmt(latest)}'
                   '${widget.overallRate != null ? ' · Genel ${_fmt(widget.overallRate!)}' : ''}'
@@ -833,10 +984,11 @@ class _AdamSaatEfficiencyChartState extends State<_AdamSaatEfficiencyChart> {
             const SizedBox(height: AppSpacing.sm),
             LayoutBuilder(
               builder: (context, constraints) {
-                final avg = points.fold<double>(0, (s, p) => s + p.rate) /
-                    points.length;
-                final minBarSlot = 22.0;
-                final chartWidth = (points.length * minBarSlot)
+                final avg =
+                    candles.fold<double>(0, (s, c) => s + c.close) /
+                        candles.length;
+                final minSlot = _style == _AsChartStyle.line ? 14.0 : 18.0;
+                final chartWidth = (candles.length * minSlot)
                     .clamp(constraints.maxWidth, double.infinity);
                 return SingleChildScrollView(
                   scrollDirection: Axis.horizontal,
@@ -846,14 +998,15 @@ class _AdamSaatEfficiencyChartState extends State<_AdamSaatEfficiencyChart> {
                       crossAxisAlignment: CrossAxisAlignment.stretch,
                       children: [
                         SizedBox(
-                          height: 96,
+                          height: 110,
                           child: CustomPaint(
-                            painter: _AdamSaatBarPainter(
-                              points: points,
+                            painter: _AdamSaatChartPainter(
+                              candles: candles,
                               average: avg,
-                              barAbove: AppColors.success,
-                              barNear: AppColors.info,
-                              barBelow: AppColors.critical,
+                              style: _style,
+                              bullish: AppColors.success,
+                              bearish: AppColors.critical,
+                              lineColor: AppColors.electricBlue,
                               averageColor: AppColors.electricBlue,
                               axisColor: theme.colorScheme.onSurfaceVariant
                                   .withValues(alpha: 0.35),
@@ -867,14 +1020,14 @@ class _AdamSaatEfficiencyChartState extends State<_AdamSaatEfficiencyChart> {
                           child: Row(
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
-                              for (final p in points)
+                              for (final c in candles)
                                 Expanded(
                                   child: Align(
                                     alignment: Alignment.topCenter,
                                     child: RotatedBox(
                                       quarterTurns: 3,
                                       child: Text(
-                                        _shortDate(p.date),
+                                        c.label,
                                         textAlign: TextAlign.center,
                                         style:
                                             theme.textTheme.labelSmall?.copyWith(
@@ -904,46 +1057,59 @@ class _AdamSaatEfficiencyChartState extends State<_AdamSaatEfficiencyChart> {
   }
 }
 
-class _AdamSaatBarPainter extends CustomPainter {
-  _AdamSaatBarPainter({
-    required this.points,
+class _AdamSaatChartPainter extends CustomPainter {
+  _AdamSaatChartPainter({
+    required this.candles,
     required this.average,
-    required this.barAbove,
-    required this.barNear,
-    required this.barBelow,
+    required this.style,
+    required this.bullish,
+    required this.bearish,
+    required this.lineColor,
     required this.averageColor,
     required this.axisColor,
   });
 
-  final List<_AsRatePoint> points;
+  final List<_AsOhlc> candles;
   final double average;
-  final Color barAbove;
-  final Color barNear;
-  final Color barBelow;
+  final _AsChartStyle style;
+  final Color bullish;
+  final Color bearish;
+  final Color lineColor;
   final Color averageColor;
   final Color axisColor;
 
   @override
   void paint(Canvas canvas, Size size) {
-    if (points.isEmpty) return;
+    if (candles.isEmpty) return;
 
-    final maxRate = points.fold<double>(
-      average,
-      (m, p) => p.rate > m ? p.rate : m,
-    );
-    final top = maxRate <= 0 ? 1.0 : maxRate * 1.15;
-    // Etiket satırıyla aynı: eşit sütunlar; mum sütunun merkezinde.
+    var maxRate = average;
+    var minRate = average > 0 ? average : candles.first.low;
+    for (final c in candles) {
+      if (c.high > maxRate) maxRate = c.high;
+      if (c.low < minRate) minRate = c.low;
+    }
+    final span = (maxRate - minRate).abs();
+    final top = maxRate <= 0
+        ? 1.0
+        : maxRate + (span <= 0 ? maxRate * 0.08 : span * 0.12);
+    // Alt boşluk: düşük fitiller kesilmesin.
+    final floor = (minRate - (span <= 0 ? maxRate * 0.04 : span * 0.08))
+        .clamp(0.0, double.infinity);
+
     const padL = 0.0;
     const padR = 0.0;
     const padT = 6.0;
     const padB = 4.0;
     final chartW = size.width - padL - padR;
     final chartH = size.height - padT - padB;
-    final n = points.length;
+    final n = candles.length;
     final slotW = chartW / n;
-    final barW = n <= 1
-        ? (chartW * 0.28).clamp(8.0, 36.0)
-        : (slotW * 0.55).clamp(4.0, 28.0);
+
+    double mapY(double v) {
+      final t = top - floor;
+      if (t <= 0) return padT + chartH / 2;
+      return padT + chartH * (1 - ((v - floor) / t).clamp(0.0, 1.0));
+    }
 
     final axisPaint = Paint()
       ..color = axisColor
@@ -955,7 +1121,7 @@ class _AdamSaatBarPainter extends CustomPainter {
     );
 
     if (average > 0) {
-      final ay = padT + chartH * (1 - (average / top).clamp(0.0, 1.0));
+      final ay = mapY(average);
       final avgPaint = Paint()
         ..color = averageColor
         ..strokeWidth = 1.5
@@ -972,41 +1138,93 @@ class _AdamSaatBarPainter extends CustomPainter {
       }
     }
 
-    for (var i = 0; i < n; i++) {
-      final rate = points[i].rate;
-      final h = chartH * (rate / top).clamp(0.0, 1.0);
-      final midX = padL + slotW * (i + 0.5);
-      final left = midX - barW / 2;
-      final topY = padT + chartH - h;
-      // Mum gövdesi
-      final body = RRect.fromRectAndRadius(
-        Rect.fromLTWH(left, topY, barW, h < 3 ? 3 : h),
-        const Radius.circular(2),
+    if (style == _AsChartStyle.line) {
+      final path = Path();
+      final fillPath = Path();
+      for (var i = 0; i < n; i++) {
+        final midX = padL + slotW * (i + 0.5);
+        final y = mapY(candles[i].close);
+        if (i == 0) {
+          path.moveTo(midX, y);
+          fillPath.moveTo(midX, padT + chartH);
+          fillPath.lineTo(midX, y);
+        } else {
+          path.lineTo(midX, y);
+          fillPath.lineTo(midX, y);
+        }
+      }
+      if (n > 0) {
+        final lastX = padL + slotW * (n - 0.5);
+        fillPath
+          ..lineTo(lastX, padT + chartH)
+          ..close();
+        canvas.drawPath(
+          fillPath,
+          Paint()
+            ..color = lineColor.withValues(alpha: 0.12)
+            ..style = PaintingStyle.fill,
+        );
+      }
+      canvas.drawPath(
+        path,
+        Paint()
+          ..color = lineColor
+          ..strokeWidth = 2
+          ..style = PaintingStyle.stroke
+          ..strokeJoin = StrokeJoin.round
+          ..strokeCap = StrokeCap.round,
       );
-      final delta = average <= 0 ? 0.0 : (rate - average) / average;
-      final color = delta >= 0.05
-          ? barAbove
-          : delta <= -0.05
-              ? barBelow
-              : barNear;
-      canvas.drawRRect(body, Paint()..color = color.withValues(alpha: 0.9));
-      // Fitil (mum üst/alt çizgisi) — sütun merkezi
-      final wickPaint = Paint()
+      for (var i = 0; i < n; i++) {
+        final midX = padL + slotW * (i + 0.5);
+        final y = mapY(candles[i].close);
+        canvas.drawCircle(
+          Offset(midX, y),
+          2.5,
+          Paint()..color = lineColor,
+        );
+      }
+      return;
+    }
+
+    // Mum (OHLC)
+    final barW = n <= 1
+        ? (chartW * 0.28).clamp(8.0, 36.0)
+        : (slotW * 0.55).clamp(3.0, 28.0);
+    for (var i = 0; i < n; i++) {
+      final c = candles[i];
+      final midX = padL + slotW * (i + 0.5);
+      final yHigh = mapY(c.high);
+      final yLow = mapY(c.low);
+      final yOpen = mapY(c.open);
+      final yClose = mapY(c.close);
+      final color = c.bullish ? bullish : bearish;
+      final wick = Paint()
         ..color = color
         ..strokeWidth = 1.2
         ..strokeCap = StrokeCap.round;
-      canvas.drawLine(
-        Offset(midX, topY - 3),
-        Offset(midX, topY + (h < 3 ? 3 : h) + 2),
-        wickPaint,
+      canvas.drawLine(Offset(midX, yHigh), Offset(midX, yLow), wick);
+      final bodyTop = yOpen < yClose ? yOpen : yClose;
+      final bodyBot = yOpen < yClose ? yClose : yOpen;
+      final bodyH = (bodyBot - bodyTop).abs() < 2 ? 2.0 : (bodyBot - bodyTop);
+      final left = midX - barW / 2;
+      final body = RRect.fromRectAndRadius(
+        Rect.fromLTWH(left, bodyTop, barW, bodyH),
+        const Radius.circular(1.5),
+      );
+      canvas.drawRRect(
+        body,
+        Paint()
+          ..color = color.withValues(alpha: 0.92)
+          ..style = PaintingStyle.fill,
       );
     }
   }
 
   @override
-  bool shouldRepaint(covariant _AdamSaatBarPainter oldDelegate) {
-    return oldDelegate.points != points ||
+  bool shouldRepaint(covariant _AdamSaatChartPainter oldDelegate) {
+    return oldDelegate.candles != candles ||
         oldDelegate.average != average ||
+        oldDelegate.style != style ||
         oldDelegate.axisColor != axisColor;
   }
 }
