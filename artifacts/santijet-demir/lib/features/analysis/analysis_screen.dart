@@ -266,7 +266,7 @@ class _ReportsQuickAccessBar extends StatelessWidget {
             const SizedBox(width: 10),
             Expanded(
               child: Text(
-                'Raporlar · Henüz rapor yok',
+                'Raporlar · 16 rapor hazır',
                 style: AppTypography.titleMedium,
                 maxLines: 1,
                 overflow: TextOverflow.ellipsis,

@@ -1,16 +1,24 @@
 import 'package:intl/intl.dart';
 import 'package:santijet_demir/core/format/app_format.dart';
-import 'package:santijet_demir/features/field_count/field_count_calculator.dart';
+import 'package:santijet_demir/data/mock/demo_report_payloads.dart';
+import 'package:santijet_demir/data/mock/mock_reports.dart';
 import 'package:santijet_demir/features/reports/report_context.dart';
 
 class ReportService {
   const ReportService();
 
-  static const pdfReportIds = {'pdf', 'stok', 'teslimat', 'sapma', 'aylik'};
+  static final pdfReportIds = {
+    for (final c in reportCategories) c.id,
+  };
 
   bool isPdfReport(String reportId) => pdfReportIds.contains(reportId);
 
   ReportValidation validate(String reportId, ReportContext context) {
+    // DEMO: önizleme için veri zorunluluğu yok.
+    if (useDemoReports) {
+      return const ReportValidation(isValid: true, missingRequirements: []);
+    }
+
     if (!isPdfReport(reportId)) {
       return const ReportValidation(isValid: true, missingRequirements: []);
     }
@@ -23,24 +31,34 @@ class ReportService {
     require(context.hasActiveProject, 'Aktif proje seçimi');
 
     switch (reportId) {
-      case 'pdf':
-        require(context.hasSurveyData, 'Keşif / imalat metraj verisi');
-        require(context.hasOrders, 'Sipariş kaydı');
-        require(context.hasDeliveries, 'Teslimat kaydı');
-        require(context.hasFieldCounts, 'Saha sayım kaydı');
-      case 'stok':
+      case 'genel':
+      case 'stok_mukayese':
+      case 'sayim_sapma':
         require(context.hasSurveyData, 'Keşif / imalat metraj verisi');
         require(context.hasReconciliationData, 'Mukayese / stok verisi');
         require(context.hasFieldCounts, 'Saha sayım kaydı');
-      case 'teslimat':
-        require(context.hasOrders, 'Sipariş kaydı');
-        require(context.hasDeliveries, 'Teslimat kaydı');
-      case 'sapma':
+        break;
+      case 'kesif_icmal':
+      case 'kesif_ilerleme':
         require(context.hasSurveyData, 'Keşif / imalat metraj verisi');
+        break;
+      case 'siparis_ozet':
+      case 'siparis_bakiye':
+        require(context.hasOrders, 'Sipariş kaydı');
+        require(context.hasSurveyData, 'Keşif verisi');
+        break;
+      case 'teslimat_liste':
+      case 'teslim_sapma':
+        require(context.hasDeliveries, 'Teslimat kaydı');
+        break;
+      case 'saha_tutanak':
         require(context.hasFieldCounts, 'Saha sayım kaydı');
-        require(context.hasReconciliationData, 'Mukayese / sapma verisi');
-      case 'aylik':
+        break;
+      case 'aylik_ozet':
         require(context.hasMonthlyActivity, 'Bu aya ait proje aktivitesi');
+        break;
+      default:
+        break;
     }
 
     return ReportValidation(
@@ -50,12 +68,17 @@ class ReportService {
   }
 
   ReportPayload build(String reportId, ReportContext context) {
+    if (useDemoReports) {
+      final demo = demoReportPayload(reportId);
+      if (demo != null) return demo;
+    }
+
     return switch (reportId) {
-      'pdf' => _buildGeneralSummary(context),
-      'stok' => _buildStockReport(context),
-      'teslimat' => _buildDeliveryReport(context),
-      'sapma' => _buildVarianceReport(context),
-      'aylik' => _buildMonthlyReport(context),
+      'genel' => _buildGeneralSummary(context),
+      'stok_mukayese' => _buildStockReport(context),
+      'teslimat_liste' => _buildDeliveryReport(context),
+      'sayim_sapma' => _buildVarianceReport(context),
+      'aylik_ozet' => _buildMonthlyReport(context),
       _ => _buildGeneralSummary(context),
     };
   }
@@ -63,7 +86,7 @@ class ReportService {
   ReportPayload _buildGeneralSummary(ReportContext context) {
     final summary = context.summary;
     return ReportPayload(
-      title: 'Genel Özet Raporu',
+      title: 'Genel Proje Özeti',
       headers: const ['Alan', 'Değer'],
       rows: [
         ['Proje', context.projectName],
@@ -84,7 +107,7 @@ class ReportService {
 
   ReportPayload _buildStockReport(ReportContext context) {
     return ReportPayload(
-      title: 'Stok Raporu',
+      title: 'Stok Mukayese Raporu',
       headers: const ['Çap', 'Planlanan Stok', 'Gerçek Stok', 'Fark'],
       rows: [
         for (final row in context.reconciliationRows)
@@ -98,7 +121,9 @@ class ReportService {
           'TOPLAM',
           AppFormat.tonnage(context.summary.plannedStock),
           AppFormat.tonnage(context.summary.fieldCount),
-          AppFormat.tonnage(context.summary.fieldCount - context.summary.plannedStock),
+          AppFormat.tonnage(
+            context.summary.fieldCount - context.summary.plannedStock,
+          ),
         ],
       ],
     );
@@ -107,7 +132,7 @@ class ReportService {
   ReportPayload _buildDeliveryReport(ReportContext context) {
     final dateFormat = DateFormat('d MMM yyyy', 'tr_TR');
     return ReportPayload(
-      title: 'Teslimat Raporu',
+      title: 'Teslimat / İrsaliye Listesi',
       headers: const [
         'Sipariş No',
         'İrsaliye',
@@ -132,7 +157,7 @@ class ReportService {
 
   ReportPayload _buildVarianceReport(ReportContext context) {
     return ReportPayload(
-      title: 'Sapma Raporu',
+      title: 'Sayım Sapma Raporu',
       headers: const ['Çap', 'Planlanan Stok', 'Sayım', 'Sapma', 'Sapma %'],
       rows: [
         for (final row in context.reconciliationRows)
@@ -174,7 +199,7 @@ class ReportService {
         monthOrders.fold(0.0, (sum, item) => sum + item.tonnage);
 
     return ReportPayload(
-      title: 'Aylık Rapor — $monthLabel',
+      title: 'Aylık Proje Özeti — $monthLabel',
       headers: const ['Alan', 'Değer'],
       rows: [
         ['Proje', context.projectName],
@@ -184,7 +209,10 @@ class ReportService {
         ['Teslimat Adedi', '${monthDeliveries.length}'],
         ['Teslimat Tonajı', AppFormat.tonnage(deliveredTonnage)],
         ['Saha Sayım Adedi', '${monthCounts.length}'],
-        ['Keşif Revizyonu', DateFormat('d MMM yyyy', 'tr_TR').format(context.survey.date)],
+        [
+          'Keşif Revizyonu',
+          DateFormat('d MMM yyyy', 'tr_TR').format(context.survey.date),
+        ],
         ['Güncel Fire', AppFormat.tonnage(context.summary.fire)],
       ],
     );

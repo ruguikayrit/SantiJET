@@ -8,10 +8,10 @@ import 'package:santijet_demir/core/theme/app_radii.dart';
 import 'package:santijet_demir/core/theme/app_spacing.dart';
 import 'package:santijet_demir/core/theme/app_typography.dart';
 import 'package:santijet_demir/core/widgets/app_components.dart';
+import 'package:santijet_demir/data/mock/mock_reports.dart';
 import 'package:santijet_demir/domain/entities/report.dart';
 import 'package:santijet_demir/features/reports/providers/reports_provider.dart';
 import 'package:santijet_demir/features/reports/report_dialogs.dart';
-import 'package:santijet_demir/features/reports/report_service.dart';
 
 class ReportsScreen extends ConsumerWidget {
   const ReportsScreen({super.key});
@@ -49,6 +49,27 @@ class ReportsScreen extends ConsumerWidget {
       body: ListView(
         padding: const EdgeInsets.all(AppSpacing.md),
         children: [
+          if (useDemoReports) ...[
+            Container(
+              width: double.infinity,
+              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+              decoration: BoxDecoration(
+                color: AppColors.warning.withValues(alpha: 0.12),
+                borderRadius: AppRadii.md,
+                border: Border.all(
+                  color: AppColors.warning.withValues(alpha: 0.4),
+                ),
+              ),
+              child: Text(
+                'DEMO — 16 rapor örnek veri ile hazır. İndir / Önizle ile PDF açılır.',
+                style: AppTypography.bodySmall.copyWith(
+                  color: AppColors.warning,
+                  fontWeight: FontWeight.w600,
+                ),
+              ),
+            ),
+            const SizedBox(height: 12),
+          ],
           Text('Rapor Kategorileri', style: AppTypography.headlineMedium),
           const SizedBox(height: 12),
           GridView.builder(
@@ -91,15 +112,26 @@ class _CategoryCard extends StatelessWidget {
   final VoidCallback onTap;
 
   IconData get _icon => switch (category.iconName) {
+        'summarize' => Icons.summarize,
+        'architecture' => Icons.architecture,
+        'trending_up' => Icons.trending_up,
+        'auto_fix_high' => Icons.auto_fix_high,
+        'receipt_long' => Icons.receipt_long,
+        'account_balance' => Icons.account_balance,
+        'local_shipping' => Icons.local_shipping,
+        'swap_vert' => Icons.swap_vert,
+        'assignment' => Icons.assignment,
+        'inventory_2' => Icons.inventory_2,
+        'compare_arrows' => Icons.compare_arrows,
+        'analytics' => Icons.analytics,
+        'local_fire_department' => Icons.local_fire_department,
+        'transform' => Icons.transform,
+        'content_cut' => Icons.content_cut,
+        'calendar_month' => Icons.calendar_month,
         'picture_as_pdf' => Icons.picture_as_pdf,
         'table_chart' => Icons.table_chart,
         'inventory' => Icons.inventory,
-        'receipt_long' => Icons.receipt_long,
-        'local_shipping' => Icons.local_shipping,
         'warehouse' => Icons.warehouse,
-        'compare_arrows' => Icons.compare_arrows,
-        'local_fire_department' => Icons.local_fire_department,
-        'calendar_month' => Icons.calendar_month,
         'date_range' => Icons.date_range,
         _ => Icons.description,
       };
