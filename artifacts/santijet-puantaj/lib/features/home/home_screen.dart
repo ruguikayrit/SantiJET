@@ -513,34 +513,55 @@ class _TeamImalatCard extends StatelessWidget {
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
         Row(
+          crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Expanded(
-              child: Text(
-                summary.teamName,
-                style: theme.textTheme.titleSmall?.copyWith(
-                  color: AppColors.useDarkCards
-                      ? AppColors.electricBlueLight
-                      : AppColors.electricBlue,
-                  fontWeight: FontWeight.w700,
-                ),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    summary.teamName,
+                    style: theme.textTheme.titleSmall?.copyWith(
+                      color: AppColors.useDarkCards
+                          ? AppColors.electricBlueLight
+                          : AppColors.electricBlue,
+                      fontWeight: FontWeight.w700,
+                    ),
+                  ),
+                  const SizedBox(height: 4),
+                  Text(
+                    '${summary.workDayCount} gün · '
+                    '${_fmt(summary.ustaTotal)} usta · '
+                    '${_fmt(summary.cirakTotal)} çırak',
+                    style: theme.textTheme.labelSmall?.copyWith(
+                      color: theme.colorScheme.onSurfaceVariant,
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+                ],
               ),
             ),
-            Text(
-              '${summary.jobCount} imalat · %${pct.toStringAsFixed(0)}',
-              style: theme.textTheme.labelSmall?.copyWith(color: color),
+            const SizedBox(width: AppSpacing.sm),
+            Column(
+              crossAxisAlignment: CrossAxisAlignment.end,
+              children: [
+                Text(
+                  '${summary.jobCount} imalat · %${pct.toStringAsFixed(0)}',
+                  style: theme.textTheme.labelSmall?.copyWith(color: color),
+                  textAlign: TextAlign.right,
+                ),
+                const SizedBox(height: 4),
+                Text(
+                  '${_fmt(summary.adamGunTotal)} adam-gün',
+                  style: theme.textTheme.labelSmall?.copyWith(
+                    color: theme.colorScheme.onSurfaceVariant,
+                    fontWeight: FontWeight.w700,
+                  ),
+                  textAlign: TextAlign.right,
+                ),
+              ],
             ),
           ],
-        ),
-        const SizedBox(height: 4),
-        Text(
-          '${summary.workDayCount} gün · '
-          '${_fmt(summary.ustaTotal)} usta · '
-          '${_fmt(summary.cirakTotal)} çırak · '
-          '${_fmt(summary.adamGunTotal)} adam-gün',
-          style: theme.textTheme.labelSmall?.copyWith(
-            color: theme.colorScheme.onSurfaceVariant,
-            fontWeight: FontWeight.w600,
-          ),
         ),
         const SizedBox(height: AppSpacing.xs),
         for (final line in summary.lines) ...[
