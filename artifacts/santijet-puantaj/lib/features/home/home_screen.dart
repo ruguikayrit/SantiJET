@@ -213,8 +213,17 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                             crossAxisAlignment: CrossAxisAlignment.stretch,
                             children: [
                               for (var i = 0; i < teamSummaries.length; i++) ...[
-                                if (i > 0)
+                                if (i > 0) ...[
                                   const SizedBox(height: AppSpacing.sm),
+                                  Divider(
+                                    height: 1,
+                                    thickness: 1,
+                                    color: Theme.of(context)
+                                        .dividerColor
+                                        .withValues(alpha: 0.55),
+                                  ),
+                                  const SizedBox(height: AppSpacing.sm),
+                                ],
                                 _TeamImalatCard(summary: teamSummaries[i]),
                               ],
                             ],
@@ -500,126 +509,110 @@ class _TeamImalatCard extends StatelessWidget {
             ? AppColors.warning
             : AppColors.critical;
 
-    return Container(
-      padding: const EdgeInsets.all(AppSpacing.sm),
-      decoration: BoxDecoration(
-        color: AppColors.useDarkCards
-            ? AppColors.cardSurfaceHighlight
-            : AppColors.electricBlue.withValues(alpha: 0.06),
-        borderRadius: AppRadii.sm,
-        border: Border.all(
-          color: AppColors.useDarkCards
-              ? AppColors.cardBorderSubtle
-              : AppColors.electricBlue.withValues(alpha: 0.22),
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        Row(
+          children: [
+            Expanded(
+              child: Text(
+                summary.teamName,
+                style: theme.textTheme.titleSmall?.copyWith(
+                  color: AppColors.useDarkCards
+                      ? AppColors.electricBlueLight
+                      : AppColors.electricBlue,
+                  fontWeight: FontWeight.w700,
+                ),
+              ),
+            ),
+            Text(
+              '${summary.jobCount} imalat · %${pct.toStringAsFixed(0)}',
+              style: theme.textTheme.labelSmall?.copyWith(color: color),
+            ),
+          ],
         ),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.stretch,
-        children: [
+        const SizedBox(height: 4),
+        Text(
+          '${summary.workDayCount} gün · '
+          '${_fmt(summary.ustaTotal)} usta · '
+          '${_fmt(summary.cirakTotal)} çırak · '
+          '${_fmt(summary.adamGunTotal)} adam-gün',
+          style: theme.textTheme.labelSmall?.copyWith(
+            color: theme.colorScheme.onSurfaceVariant,
+            fontWeight: FontWeight.w600,
+          ),
+        ),
+        const SizedBox(height: AppSpacing.xs),
+        for (final line in summary.lines) ...[
+          const SizedBox(height: 4),
           Row(
             children: [
               Expanded(
-                child: Text(
-                  summary.teamName,
-                  style: theme.textTheme.titleSmall?.copyWith(
-                    color: AppColors.useDarkCards
-                        ? AppColors.electricBlueLight
-                        : AppColors.electricBlue,
-                    fontWeight: FontWeight.w700,
-                  ),
+                child: _QtyCell(
+                  label: 'Plan',
+                  value: '${_fmt(line.planned)} ${line.unit}',
                 ),
               ),
-              Text(
-                '${summary.jobCount} imalat · %${pct.toStringAsFixed(0)}',
-                style: theme.textTheme.labelSmall?.copyWith(color: color),
+              Expanded(
+                child: _QtyCell(
+                  label: 'Gerçekleşen',
+                  value: '${_fmt(line.completed)} ${line.unit}',
+                  valueColor: AppColors.success,
+                ),
+              ),
+              Expanded(
+                child: _QtyCell(
+                  label: 'Kalan',
+                  value: '${_fmt(line.remaining)} ${line.unit}',
+                  valueColor: line.remaining > 0
+                      ? AppColors.warning
+                      : AppColors.success,
+                ),
               ),
             ],
           ),
-          const SizedBox(height: 4),
-          Text(
-            '${summary.workDayCount} gün · '
-            '${_fmt(summary.ustaTotal)} usta · '
-            '${_fmt(summary.cirakTotal)} çırak · '
-            '${_fmt(summary.adamGunTotal)} adam-gün',
-            style: theme.textTheme.labelSmall?.copyWith(
-              color: theme.colorScheme.onSurfaceVariant,
-              fontWeight: FontWeight.w600,
-            ),
-          ),
-          const SizedBox(height: AppSpacing.xs),
-          for (final line in summary.lines) ...[
+          if (line.ratePerAdamGun != null) ...[
             const SizedBox(height: 4),
             Row(
               children: [
                 Expanded(
                   child: _QtyCell(
-                    label: 'Plan',
-                    value: '${_fmt(line.planned)} ${line.unit}',
+                    label: 'Adam-gün',
+                    value: '${_fmt(line.ratePerAdamGun!)} ${line.unit}/ag',
+                    valueColor: AppColors.info,
                   ),
                 ),
                 Expanded(
                   child: _QtyCell(
-                    label: 'Gerçekleşen',
-                    value: '${_fmt(line.completed)} ${line.unit}',
-                    valueColor: AppColors.success,
+                    label: 'Adam-saat',
+                    value: '${_fmt(line.ratePerAdamSaat!)} ${line.unit}/as',
+                    valueColor: AppColors.info,
                   ),
                 ),
-                Expanded(
-                  child: _QtyCell(
-                    label: 'Kalan',
-                    value: '${_fmt(line.remaining)} ${line.unit}',
-                    valueColor: line.remaining > 0
-                        ? AppColors.warning
-                        : AppColors.success,
-                  ),
-                ),
+                const Expanded(child: SizedBox.shrink()),
               ],
             ),
-            if (line.ratePerAdamGun != null) ...[
-              const SizedBox(height: 4),
-              Row(
-                children: [
-                  Expanded(
-                    child: _QtyCell(
-                      label: 'Adam-gün',
-                      value:
-                          '${_fmt(line.ratePerAdamGun!)} ${line.unit}/ag',
-                      valueColor: AppColors.info,
-                    ),
-                  ),
-                  Expanded(
-                    child: _QtyCell(
-                      label: 'Adam-saat',
-                      value:
-                          '${_fmt(line.ratePerAdamSaat!)} ${line.unit}/as',
-                      valueColor: AppColors.info,
-                    ),
-                  ),
-                  const Expanded(child: SizedBox.shrink()),
-                ],
-              ),
-            ],
-            if (line.dailyAsRates.isNotEmpty) ...[
-              const SizedBox(height: AppSpacing.sm),
-              _AdamSaatEfficiencyChart(
-                points: line.dailyAsRates,
-                unit: line.unit,
-                overallRate: line.ratePerAdamSaat,
-              ),
-            ],
           ],
-          const SizedBox(height: AppSpacing.xs),
-          ClipRRect(
-            borderRadius: AppRadii.xs,
-            child: LinearProgressIndicator(
-              value: (pct / 100).clamp(0.0, 1.0),
-              minHeight: 5,
-              backgroundColor: color.withValues(alpha: 0.15),
-              color: color,
+          if (line.dailyAsRates.isNotEmpty) ...[
+            const SizedBox(height: AppSpacing.sm),
+            _AdamSaatEfficiencyChart(
+              points: line.dailyAsRates,
+              unit: line.unit,
+              overallRate: line.ratePerAdamSaat,
             ),
-          ),
+          ],
         ],
-      ),
+        const SizedBox(height: AppSpacing.xs),
+        ClipRRect(
+          borderRadius: AppRadii.xs,
+          child: LinearProgressIndicator(
+            value: (pct / 100).clamp(0.0, 1.0),
+            minHeight: 5,
+            backgroundColor: color.withValues(alpha: 0.15),
+            color: color,
+          ),
+        ),
+      ],
     );
   }
 }
@@ -748,13 +741,22 @@ class _AdamSaatEfficiencyChartState extends State<_AdamSaatEfficiencyChart> {
   List<_AsRatePoint> _filtered() {
     final now = DateTime.now();
     final today = DateTime(now.year, now.month, now.day);
-    final start = today.subtract(Duration(days: _range.days - 1));
+    final DateTime start;
+    final DateTime end;
+    if (_range == _AsRange.week) {
+      // Takvim haftası: Pazartesi → Pazar
+      start = today.subtract(Duration(days: today.weekday - 1));
+      end = start.add(const Duration(days: 6));
+    } else {
+      start = today.subtract(Duration(days: _range.days - 1));
+      end = today;
+    }
     final out = <_AsRatePoint>[];
     for (final p in widget.points) {
       try {
         final d = PuantajDate.parse(p.date);
         final day = DateTime(d.year, d.month, d.day);
-        if (!day.isBefore(start) && !day.isAfter(today)) out.add(p);
+        if (!day.isBefore(start) && !day.isAfter(end)) out.add(p);
       } catch (_) {
         // Geçersiz tarih — atla.
       }
@@ -762,18 +764,19 @@ class _AdamSaatEfficiencyChartState extends State<_AdamSaatEfficiencyChart> {
     return out;
   }
 
-  /// Haftalık dönem + günlük periyot: her zaman 7 takvim günü (eksik günler 0).
+  /// Haftalık dönem + günlük periyot: Pazartesi–Pazar (7 gün, eksik günler 0).
   List<_AsOhlc> _weekSevenDaySeries(List<_AsRatePoint> points) {
     final now = DateTime.now();
     final today = DateTime(now.year, now.month, now.day);
-    final start = today.subtract(const Duration(days: 6));
+    final monday = today.subtract(Duration(days: today.weekday - 1));
+    final sunday = monday.add(const Duration(days: 6));
     final ratesByDay = <String, List<double>>{};
 
     for (final p in points) {
       try {
         final d = PuantajDate.parse(p.date);
         final day = DateTime(d.year, d.month, d.day);
-        if (day.isBefore(start) || day.isAfter(today)) continue;
+        if (day.isBefore(monday) || day.isAfter(sunday)) continue;
         final key = '${day.year}-${day.month}-${day.day}';
         ratesByDay.putIfAbsent(key, () => []).add(p.rate);
       } catch (_) {
@@ -784,7 +787,7 @@ class _AdamSaatEfficiencyChartState extends State<_AdamSaatEfficiencyChart> {
     return [
       for (var i = 0; i < 7; i++)
         () {
-          final d = start.add(Duration(days: i));
+          final d = monday.add(Duration(days: i));
           final key = '${d.year}-${d.month}-${d.day}';
           final rates = ratesByDay[key];
           final label = PuantajDate.format(d).substring(0, 5);
@@ -1084,244 +1087,236 @@ class _AdamSaatEfficiencyChartState extends State<_AdamSaatEfficiencyChart> {
     final candles = _chartOpen ? _aggregate(_filtered()) : const <_AsOhlc>[];
     final hasData = candles.any(_hasRate);
 
-    return Container(
-      padding: const EdgeInsets.all(AppSpacing.sm),
-      decoration: BoxDecoration(
-        color: AppColors.useDarkCards
-            ? AppColors.darkSurface.withValues(alpha: 0.55)
-            : theme.colorScheme.surface.withValues(alpha: 0.55),
-        borderRadius: AppRadii.sm,
-        border: Border.all(
-          color: AppColors.useDarkCards
-              ? AppColors.electricBlueLight.withValues(alpha: 0.35)
-              : AppColors.electricBlue.withValues(alpha: 0.18),
-        ),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.stretch,
-        children: [
-          Material(
-            color: Colors.transparent,
-            child: InkWell(
-              borderRadius: AppRadii.sm,
-              onTap: () => setState(() => _chartOpen = !_chartOpen),
-              child: Padding(
-                padding: const EdgeInsets.symmetric(vertical: 2),
-                child: Row(
-                  children: [
-                    Icon(
-                      Icons.show_chart_rounded,
-                      size: 18,
-                      color: accent,
-                    ),
-                    const SizedBox(width: 8),
-                    Expanded(
-                      child: Text(
-                        'Grafik',
-                        style: theme.textTheme.labelMedium?.copyWith(
-                          fontWeight: FontWeight.w700,
-                          color: accent,
-                        ),
-                      ),
-                    ),
-                    Text(
-                      _chartOpen ? 'Kapat' : 'Aç',
-                      style: theme.textTheme.labelSmall?.copyWith(
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        Material(
+          color: Colors.transparent,
+          child: InkWell(
+            borderRadius: AppRadii.sm,
+            onTap: () => setState(() => _chartOpen = !_chartOpen),
+            child: Padding(
+              padding: const EdgeInsets.symmetric(vertical: 4),
+              child: Row(
+                children: [
+                  Icon(
+                    Icons.show_chart_rounded,
+                    size: 18,
+                    color: accent,
+                  ),
+                  const SizedBox(width: 8),
+                  Expanded(
+                    child: Text(
+                      'Grafik',
+                      style: theme.textTheme.labelMedium?.copyWith(
                         fontWeight: FontWeight.w700,
-                        color: theme.colorScheme.onSurfaceVariant,
+                        color: accent,
                       ),
                     ),
-                    const SizedBox(width: 2),
-                    Icon(
-                      _chartOpen
-                          ? Icons.keyboard_arrow_up_rounded
-                          : Icons.keyboard_arrow_down_rounded,
-                      size: 20,
+                  ),
+                  Text(
+                    _chartOpen ? 'Kapat' : 'Aç',
+                    style: theme.textTheme.labelSmall?.copyWith(
+                      fontWeight: FontWeight.w700,
                       color: theme.colorScheme.onSurfaceVariant,
                     ),
-                  ],
+                  ),
+                  const SizedBox(width: 2),
+                  Icon(
+                    _chartOpen
+                        ? Icons.keyboard_arrow_up_rounded
+                        : Icons.keyboard_arrow_down_rounded,
+                    size: 20,
+                    color: theme.colorScheme.onSurfaceVariant,
+                  ),
+                ],
+              ),
+            ),
+          ),
+        ),
+        if (_chartOpen) ...[
+          const SizedBox(height: AppSpacing.xs),
+          Divider(
+            height: 1,
+            thickness: 1,
+            color: theme.dividerColor.withValues(alpha: 0.45),
+          ),
+          const SizedBox(height: AppSpacing.sm),
+          Row(
+            children: [
+              Expanded(
+                child: Text(
+                  'Verim · ${widget.unit}/as',
+                  style: theme.textTheme.labelMedium?.copyWith(
+                    fontWeight: FontWeight.w700,
+                    color: accent,
+                  ),
+                ),
+              ),
+              if (hasData)
+                Builder(
+                  builder: (context) {
+                    final avg = _avgClose(candles);
+                    final latest = candles.lastWhere(_hasRate).close;
+                    final vsAvg = avg <= 0 ? 0.0 : (latest - avg) / avg;
+                    final verdictColor = vsAvg >= 0.05
+                        ? AppColors.success
+                        : vsAvg <= -0.05
+                            ? AppColors.critical
+                            : AppColors.warning;
+                    final verdictLabel = vsAvg >= 0.05
+                        ? 'Ortalamanın üstünde'
+                        : vsAvg <= -0.05
+                            ? 'Ortalamanın altında'
+                            : 'Ortalama civarı';
+                    return Text(
+                      verdictLabel,
+                      style: theme.textTheme.labelSmall?.copyWith(
+                        color: verdictColor,
+                        fontWeight: FontWeight.w700,
+                      ),
+                    );
+                  },
+                ),
+            ],
+          ),
+          const SizedBox(height: AppSpacing.xs),
+          Align(
+            alignment: Alignment.centerLeft,
+            child: Material(
+              color: accent.withValues(alpha: 0.16),
+              borderRadius: AppRadii.full,
+              child: InkWell(
+                borderRadius: AppRadii.full,
+                onTap: _openOptions,
+                child: Padding(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 10,
+                    vertical: 6,
+                  ),
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Icon(Icons.tune_rounded, size: 16, color: accent),
+                      const SizedBox(width: 6),
+                      Flexible(
+                        child: Text(
+                          _optionsSummary,
+                          style: theme.textTheme.labelSmall?.copyWith(
+                            fontWeight: FontWeight.w700,
+                            color: accent,
+                          ),
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                      ),
+                      const SizedBox(width: 2),
+                      Icon(
+                        Icons.keyboard_arrow_down_rounded,
+                        size: 18,
+                        color: accent,
+                      ),
+                    ],
+                  ),
                 ),
               ),
             ),
           ),
-          if (_chartOpen) ...[
-            const SizedBox(height: AppSpacing.sm),
-            Row(
-              children: [
-                Expanded(
-                  child: Text(
-                    'Verim · ${widget.unit}/as',
-                    style: theme.textTheme.labelMedium?.copyWith(
-                      fontWeight: FontWeight.w700,
-                      color: accent,
-                    ),
+          const SizedBox(height: AppSpacing.sm),
+          if (!hasData)
+            Padding(
+              padding: const EdgeInsets.symmetric(vertical: AppSpacing.md),
+              child: Text(
+                'Seçilen dönemde verim kaydı yok.',
+                style: theme.textTheme.bodySmall,
+                textAlign: TextAlign.center,
+              ),
+            )
+          else ...[
+            Builder(
+              builder: (context) {
+                final avg = _avgClose(candles);
+                final latest = candles.lastWhere(_hasRate).close;
+                return Text(
+                  'Ort ${_fmt(avg)} · Son ${_fmt(latest)}'
+                  '${widget.overallRate != null ? ' · Genel ${_fmt(widget.overallRate!)}' : ''}'
+                  ' ${widget.unit}/as',
+                  style: theme.textTheme.labelSmall?.copyWith(
+                    color: theme.colorScheme.onSurfaceVariant,
                   ),
-                ),
-                if (hasData)
-                  Builder(
-                    builder: (context) {
-                      final avg = _avgClose(candles);
-                      final latest = candles.lastWhere(_hasRate).close;
-                      final vsAvg = avg <= 0 ? 0.0 : (latest - avg) / avg;
-                      final verdictColor = vsAvg >= 0.05
-                          ? AppColors.success
-                          : vsAvg <= -0.05
-                              ? AppColors.critical
-                              : AppColors.warning;
-                      final verdictLabel = vsAvg >= 0.05
-                          ? 'Ortalamanın üstünde'
-                          : vsAvg <= -0.05
-                              ? 'Ortalamanın altında'
-                              : 'Ortalama civarı';
-                      return Text(
-                        verdictLabel,
-                        style: theme.textTheme.labelSmall?.copyWith(
-                          color: verdictColor,
-                          fontWeight: FontWeight.w700,
-                        ),
-                      );
-                    },
-                  ),
-              ],
+                );
+              },
             ),
-            const SizedBox(height: AppSpacing.xs),
-            Align(
-              alignment: Alignment.centerLeft,
-              child: Material(
-                color: accent.withValues(alpha: 0.16),
-                borderRadius: AppRadii.full,
-                child: InkWell(
-                  borderRadius: AppRadii.full,
-                  onTap: _openOptions,
-                  child: Padding(
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 10,
-                      vertical: 6,
-                    ),
-                    child: Row(
-                      mainAxisSize: MainAxisSize.min,
+            const SizedBox(height: AppSpacing.sm),
+            LayoutBuilder(
+              builder: (context, constraints) {
+                final avg = _avgClose(candles);
+                final minSlot = _style.usesCompactSlots ? 14.0 : 18.0;
+                final chartWidth = (candles.length * minSlot)
+                    .clamp(constraints.maxWidth, double.infinity);
+                return SingleChildScrollView(
+                  scrollDirection: Axis.horizontal,
+                  child: SizedBox(
+                    width: chartWidth.toDouble(),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.stretch,
                       children: [
-                        Icon(Icons.tune_rounded, size: 16, color: accent),
-                        const SizedBox(width: 6),
-                        Flexible(
-                          child: Text(
-                            _optionsSummary,
-                            style: theme.textTheme.labelSmall?.copyWith(
-                              fontWeight: FontWeight.w700,
-                              color: accent,
+                        SizedBox(
+                          height: 110,
+                          child: CustomPaint(
+                            painter: _AdamSaatChartPainter(
+                              candles: candles,
+                              average: avg,
+                              style: _style,
+                              bullish: AppColors.success,
+                              bearish: AppColors.critical,
+                              lineColor: accent,
+                              averageColor: accent,
+                              axisColor: theme.colorScheme.onSurfaceVariant
+                                  .withValues(alpha: 0.35),
                             ),
-                            maxLines: 1,
-                            overflow: TextOverflow.ellipsis,
+                            child: const SizedBox.expand(),
                           ),
                         ),
-                        const SizedBox(width: 2),
-                        Icon(
-                          Icons.keyboard_arrow_down_rounded,
-                          size: 18,
-                          color: accent,
+                        const SizedBox(height: 4),
+                        SizedBox(
+                          height: 56,
+                          child: Row(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              for (final c in candles)
+                                Expanded(
+                                  child: Align(
+                                    alignment: Alignment.topCenter,
+                                    child: RotatedBox(
+                                      quarterTurns: 3,
+                                      child: Text(
+                                        c.label,
+                                        textAlign: TextAlign.center,
+                                        style: theme.textTheme.labelSmall
+                                            ?.copyWith(
+                                          fontSize: 9,
+                                          height: 1,
+                                          fontWeight: FontWeight.w600,
+                                        ),
+                                        maxLines: 1,
+                                        softWrap: false,
+                                      ),
+                                    ),
+                                  ),
+                                ),
+                            ],
+                          ),
                         ),
                       ],
                     ),
                   ),
-                ),
-              ),
+                );
+              },
             ),
-            const SizedBox(height: AppSpacing.sm),
-            if (!hasData)
-              Padding(
-                padding: const EdgeInsets.symmetric(vertical: AppSpacing.md),
-                child: Text(
-                  'Seçilen dönemde verim kaydı yok.',
-                  style: theme.textTheme.bodySmall,
-                  textAlign: TextAlign.center,
-                ),
-              )
-            else ...[
-              Builder(
-                builder: (context) {
-                  final avg = _avgClose(candles);
-                  final latest = candles.lastWhere(_hasRate).close;
-                  return Text(
-                    'Ort ${_fmt(avg)} · Son ${_fmt(latest)}'
-                    '${widget.overallRate != null ? ' · Genel ${_fmt(widget.overallRate!)}' : ''}'
-                    ' ${widget.unit}/as',
-                    style: theme.textTheme.labelSmall?.copyWith(
-                      color: theme.colorScheme.onSurfaceVariant,
-                    ),
-                  );
-                },
-              ),
-              const SizedBox(height: AppSpacing.sm),
-              LayoutBuilder(
-                builder: (context, constraints) {
-                  final avg = _avgClose(candles);
-                  final minSlot = _style.usesCompactSlots ? 14.0 : 18.0;
-                  final chartWidth = (candles.length * minSlot)
-                      .clamp(constraints.maxWidth, double.infinity);
-                  return SingleChildScrollView(
-                    scrollDirection: Axis.horizontal,
-                    child: SizedBox(
-                      width: chartWidth.toDouble(),
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.stretch,
-                        children: [
-                          SizedBox(
-                            height: 110,
-                            child: CustomPaint(
-                              painter: _AdamSaatChartPainter(
-                                candles: candles,
-                                average: avg,
-                                style: _style,
-                                bullish: AppColors.success,
-                                bearish: AppColors.critical,
-                                lineColor: accent,
-                                averageColor: accent,
-                                axisColor: theme.colorScheme.onSurfaceVariant
-                                    .withValues(alpha: 0.35),
-                              ),
-                              child: const SizedBox.expand(),
-                            ),
-                          ),
-                          const SizedBox(height: 4),
-                          SizedBox(
-                            height: 56,
-                            child: Row(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                for (final c in candles)
-                                  Expanded(
-                                    child: Align(
-                                      alignment: Alignment.topCenter,
-                                      child: RotatedBox(
-                                        quarterTurns: 3,
-                                        child: Text(
-                                          c.label,
-                                          textAlign: TextAlign.center,
-                                          style: theme.textTheme.labelSmall
-                                              ?.copyWith(
-                                            fontSize: 9,
-                                            height: 1,
-                                            fontWeight: FontWeight.w600,
-                                          ),
-                                          maxLines: 1,
-                                          softWrap: false,
-                                        ),
-                                      ),
-                                    ),
-                                  ),
-                              ],
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-                  );
-                },
-              ),
-            ],
           ],
         ],
-      ),
+      ],
     );
   }
 }
