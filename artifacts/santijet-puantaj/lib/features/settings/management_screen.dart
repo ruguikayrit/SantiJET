@@ -2,11 +2,10 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
+import '../../core/design_system/sj_card.dart';
 import '../../core/routing/app_routes.dart';
 import '../../core/theme/app_colors.dart';
-import '../../core/theme/app_radii.dart';
 import '../../core/theme/app_spacing.dart';
-import '../../core/theme/app_typography.dart';
 import '../../data/providers/app_data_provider.dart';
 import '../../data/providers/catalog_provider.dart';
 
@@ -59,6 +58,7 @@ class ManagementScreen extends ConsumerWidget {
   }
 }
 
+/// Ana sayfa özet kartlarıyla aynı yüzey (ŞantiJET’te koyu dolgu).
 class _SettingsTile extends StatelessWidget {
   const _SettingsTile({
     required this.icon,
@@ -74,35 +74,44 @@ class _SettingsTile extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Material(
-      color: Colors.transparent,
-      child: InkWell(
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 8),
+      child: SJCard(
         onTap: onTap,
-        borderRadius: AppRadii.md,
-        child: Container(
-          margin: const EdgeInsets.only(bottom: 8),
-          padding: const EdgeInsets.all(14),
-          decoration: BoxDecoration(
-            color: AppColors.surfaceElevated,
-            borderRadius: AppRadii.md,
-            border: Border.all(color: AppColors.border),
-          ),
-          child: Row(
-            children: [
-              Icon(icon, color: AppColors.electricBlueLight, size: 22),
-              const SizedBox(width: 14),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(title, style: AppTypography.titleMedium),
-                    Text(subtitle, style: AppTypography.bodySmall),
-                  ],
+        padding: const EdgeInsets.all(14),
+        child: Builder(
+          builder: (context) {
+            final theme = Theme.of(context);
+            return Row(
+              children: [
+                Icon(icon, color: theme.colorScheme.primary, size: 22),
+                const SizedBox(width: 14),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        title,
+                        style: theme.textTheme.titleMedium?.copyWith(
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
+                      Text(
+                        subtitle,
+                        style: theme.textTheme.bodySmall?.copyWith(
+                          color: theme.colorScheme.onSurfaceVariant,
+                        ),
+                      ),
+                    ],
+                  ),
                 ),
-              ),
-              Icon(Icons.chevron_right, color: AppColors.textMuted),
-            ],
-          ),
+                Icon(
+                  Icons.chevron_right,
+                  color: theme.colorScheme.onSurfaceVariant,
+                ),
+              ],
+            );
+          },
         ),
       ),
     );
