@@ -747,14 +747,14 @@ class _AdamSaatEfficiencyChartState extends State<_AdamSaatEfficiencyChart> {
 
   List<_AsRatePoint> _filtered() {
     final now = DateTime.now();
-    final start = DateTime(now.year, now.month, now.day)
-        .subtract(Duration(days: _range.days - 1));
+    final today = DateTime(now.year, now.month, now.day);
+    final start = today.subtract(Duration(days: _range.days - 1));
     final out = <_AsRatePoint>[];
     for (final p in widget.points) {
       try {
         final d = PuantajDate.parse(p.date);
         final day = DateTime(d.year, d.month, d.day);
-        if (!day.isBefore(start)) out.add(p);
+        if (!day.isBefore(start) && !day.isAfter(today)) out.add(p);
       } catch (_) {
         // Geçersiz tarih — atla.
       }
@@ -762,8 +762,63 @@ class _AdamSaatEfficiencyChartState extends State<_AdamSaatEfficiencyChart> {
     return out;
   }
 
+  /// Haftalık dönem + günlük periyot: her zaman 7 takvim günü (eksik günler 0).
+  List<_AsOhlc> _weekSevenDaySeries(List<_AsRatePoint> points) {
+    final now = DateTime.now();
+    final today = DateTime(now.year, now.month, now.day);
+    final start = today.subtract(const Duration(days: 6));
+    final ratesByDay = <String, List<double>>{};
+
+    for (final p in points) {
+      try {
+        final d = PuantajDate.parse(p.date);
+        final day = DateTime(d.year, d.month, d.day);
+        if (day.isBefore(start) || day.isAfter(today)) continue;
+        final key = '${day.year}-${day.month}-${day.day}';
+        ratesByDay.putIfAbsent(key, () => []).add(p.rate);
+      } catch (_) {
+        // Geçersiz tarih — atla.
+      }
+    }
+
+    return [
+      for (var i = 0; i < 7; i++)
+        () {
+          final d = start.add(Duration(days: i));
+          final key = '${d.year}-${d.month}-${d.day}';
+          final rates = ratesByDay[key];
+          final label = PuantajDate.format(d).substring(0, 5);
+          if (rates == null || rates.isEmpty) {
+            return _AsOhlc(
+              label: label,
+              open: 0,
+              high: 0,
+              low: 0,
+              close: 0,
+            );
+          }
+          var high = rates.first;
+          var low = rates.first;
+          for (final r in rates) {
+            if (r > high) high = r;
+            if (r < low) low = r;
+          }
+          return _AsOhlc(
+            label: label,
+            open: rates.first,
+            high: high,
+            low: low,
+            close: rates.last,
+          );
+        }(),
+    ];
+  }
+
   /// Günlük noktaları seçilen periyotta OHLC mumlarına toplar.
   List<_AsOhlc> _aggregate(List<_AsRatePoint> points) {
+    if (_range == _AsRange.week && _interval == _AsInterval.day) {
+      return _weekSevenDaySeries(points);
+    }
     if (points.isEmpty) return const [];
 
     String bucketKey(DateTime d) {
@@ -1012,6 +1067,14 @@ class _AdamSaatEfficiencyChartState extends State<_AdamSaatEfficiencyChart> {
   String get _optionsSummary =>
       '${_range.label} · ${_style.label} · ${_interval.shortLabel}';
 
+  bool _hasRate(_AsOhlc c) => c.close > 0 || c.high > 0 || c.open > 0;
+
+  double _avgClose(List<_AsOhlc> candles) {
+    final rates = [for (final c in candles) if (_hasRate(c)) c.close];
+    if (rates.isEmpty) return 0;
+    return rates.fold<double>(0, (s, r) => s + r) / rates.length;
+  }
+
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
@@ -1019,6 +1082,7 @@ class _AdamSaatEfficiencyChartState extends State<_AdamSaatEfficiencyChart> {
         ? AppColors.electricBlueLight
         : AppColors.electricBlue;
     final candles = _chartOpen ? _aggregate(_filtered()) : const <_AsOhlc>[];
+    final hasData = candles.any(_hasRate);
 
     return Container(
       padding: const EdgeInsets.all(AppSpacing.sm),
@@ -1093,13 +1157,11 @@ class _AdamSaatEfficiencyChartState extends State<_AdamSaatEfficiencyChart> {
                     ),
                   ),
                 ),
-                if (candles.isNotEmpty)
+                if (hasData)
                   Builder(
                     builder: (context) {
-                      final avg =
-                          candles.fold<double>(0, (s, c) => s + c.close) /
-                              candles.length;
-                      final latest = candles.last.close;
+                      final avg = _avgClose(candles);
+                      final latest = candles.lastWhere(_hasRate).close;
                       final vsAvg = avg <= 0 ? 0.0 : (latest - avg) / avg;
                       final verdictColor = vsAvg >= 0.05
                           ? AppColors.success
@@ -1165,7 +1227,7 @@ class _AdamSaatEfficiencyChartState extends State<_AdamSaatEfficiencyChart> {
               ),
             ),
             const SizedBox(height: AppSpacing.sm),
-            if (candles.isEmpty)
+            if (!hasData)
               Padding(
                 padding: const EdgeInsets.symmetric(vertical: AppSpacing.md),
                 child: Text(
@@ -1177,10 +1239,8 @@ class _AdamSaatEfficiencyChartState extends State<_AdamSaatEfficiencyChart> {
             else ...[
               Builder(
                 builder: (context) {
-                  final avg =
-                      candles.fold<double>(0, (s, c) => s + c.close) /
-                          candles.length;
-                  final latest = candles.last.close;
+                  final avg = _avgClose(candles);
+                  final latest = candles.lastWhere(_hasRate).close;
                   return Text(
                     'Ort ${_fmt(avg)} · Son ${_fmt(latest)}'
                     '${widget.overallRate != null ? ' · Genel ${_fmt(widget.overallRate!)}' : ''}'
@@ -1194,9 +1254,7 @@ class _AdamSaatEfficiencyChartState extends State<_AdamSaatEfficiencyChart> {
               const SizedBox(height: AppSpacing.sm),
               LayoutBuilder(
                 builder: (context, constraints) {
-                  final avg =
-                      candles.fold<double>(0, (s, c) => s + c.close) /
-                          candles.length;
+                  final avg = _avgClose(candles);
                   final minSlot = _style.usesCompactSlots ? 14.0 : 18.0;
                   final chartWidth = (candles.length * minSlot)
                       .clamp(constraints.maxWidth, double.infinity);
