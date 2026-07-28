@@ -139,6 +139,16 @@ class ImalatScreen extends ConsumerWidget {
                             ],
                           ),
                           const SizedBox(height: AppSpacing.xs),
+                          if (p.locationLabel.isNotEmpty)
+                            Text(
+                              p.locationLabel,
+                              style: theme.textTheme.labelMedium?.copyWith(
+                                color: theme.colorScheme.onSurfaceVariant,
+                                fontWeight: FontWeight.w600,
+                              ),
+                            ),
+                          if (p.locationLabel.isNotEmpty)
+                            const SizedBox(height: 4),
                           Text(
                             p.teamName.isEmpty
                                 ? 'Ekip seçilmedi'
@@ -150,7 +160,8 @@ class ImalatScreen extends ConsumerWidget {
                           ),
                           const SizedBox(height: 4),
                           Text(
-                            '${_fmt(p.completedQty)} / ${_fmt(p.plannedQty)} ${p.unit}',
+                            'Keşif: ${_fmt(p.completedQty)} / '
+                            '${_fmt(p.plannedQty)} ${p.unit}',
                             style: theme.textTheme.bodyMedium,
                           ),
                           Text(
@@ -347,6 +358,8 @@ class _ImalatJobSheet extends StatefulWidget {
 }
 
 class _ImalatJobSheetState extends State<_ImalatJobSheet> {
+  late final TextEditingController _floor;
+  late final TextEditingController _section;
   late final TextEditingController _name;
   late final TextEditingController _planned;
   late final TextEditingController _note;
@@ -357,6 +370,8 @@ class _ImalatJobSheetState extends State<_ImalatJobSheet> {
   void initState() {
     super.initState();
     final e = widget.existing;
+    _floor = TextEditingController(text: e?.floor ?? '');
+    _section = TextEditingController(text: e?.section ?? '');
     _name = TextEditingController(text: e?.name ?? '');
     final existingUnit = e?.unit.trim() ?? '';
     _unit = existingUnit.isEmpty
@@ -373,6 +388,8 @@ class _ImalatJobSheetState extends State<_ImalatJobSheet> {
 
   @override
   void dispose() {
+    _floor.dispose();
+    _section.dispose();
     _name.dispose();
     _planned.dispose();
     _note.dispose();
@@ -419,17 +436,35 @@ class _ImalatJobSheetState extends State<_ImalatJobSheet> {
               Padding(
                 padding: const EdgeInsets.only(top: AppSpacing.xs),
                 child: Text(
-                  'Plan miktarını girin; günlük usta/düz kayıtlarını '
-                  'sonradan ekleyebilirsiniz.',
+                  'Planlanan keşif miktarını girin; günlük usta/düz '
+                  'kayıtlarını sonradan ekleyebilirsiniz.',
                   style: theme.textTheme.bodySmall,
                 ),
               ),
             const SizedBox(height: AppSpacing.md),
             TextField(
+              controller: _floor,
+              decoration: const InputDecoration(
+                labelText: 'Bulunduğu Kat',
+                hintText: 'Örn. Bodrum, Zemin, 3. Kat',
+              ),
+              textCapitalization: TextCapitalization.sentences,
+            ),
+            const SizedBox(height: AppSpacing.sm),
+            TextField(
+              controller: _section,
+              decoration: const InputDecoration(
+                labelText: 'Bulunduğu Kısım/Bölge/Etap',
+                hintText: 'Örn. A Blok, Etap 2, Doğu cephe',
+              ),
+              textCapitalization: TextCapitalization.sentences,
+            ),
+            const SizedBox(height: AppSpacing.sm),
+            TextField(
               controller: _name,
               decoration: const InputDecoration(
-                labelText: 'İmalat adı',
-                hintText: 'Örn. Temel demiri',
+                labelText: 'İmalatın Adı',
+                hintText: 'Örn. Kolon Demiri',
               ),
               textCapitalization: TextCapitalization.sentences,
             ),
@@ -450,7 +485,7 @@ class _ImalatJobSheetState extends State<_ImalatJobSheet> {
                   child: TextField(
                     controller: _planned,
                     decoration: const InputDecoration(
-                      labelText: 'Plan miktarı',
+                      labelText: 'Planlanan keşif miktarı',
                     ),
                     keyboardType: const TextInputType.numberWithOptions(
                       decimal: true,
@@ -509,6 +544,8 @@ class _ImalatJobSheetState extends State<_ImalatJobSheet> {
                         id: widget.existing?.id ?? '',
                         projectId: widget.projectId,
                         name: name,
+                        floor: _floor.text.trim(),
+                        section: _section.text.trim(),
                         teamName: team,
                         unit: _unit.trim().isEmpty
                             ? ImalatUnitCatalog.defaultUnit
@@ -593,7 +630,11 @@ class _ImalatDetailSheet extends ConsumerWidget {
               ],
             ),
             Text(
-              'Ekip: ${p.teamName} · Kalan: ${_fmt(p.remainingQty)} ${p.unit}',
+              [
+                if (p.locationLabel.isNotEmpty) p.locationLabel,
+                'Ekip: ${p.teamName}',
+                'Kalan: ${_fmt(p.remainingQty)} ${p.unit}',
+              ].join(' · '),
               style: theme.textTheme.labelMedium?.copyWith(
                 color: AppColors.electricBlue,
               ),
@@ -603,7 +644,8 @@ class _ImalatDetailSheet extends ConsumerWidget {
               children: [
                 Expanded(
                   child: Text(
-                    '${_fmt(p.completedQty)} / ${_fmt(p.plannedQty)} ${p.unit}',
+                    'Keşif: ${_fmt(p.completedQty)} / '
+                    '${_fmt(p.plannedQty)} ${p.unit}',
                     style: theme.textTheme.titleMedium,
                   ),
                 ),

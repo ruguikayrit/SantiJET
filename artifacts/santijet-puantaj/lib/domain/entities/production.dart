@@ -2,12 +2,14 @@ import 'package:equatable/equatable.dart';
 
 import 'production_day_entry.dart';
 
-/// İmalat işi — plan miktarına %100 ulaşana kadar günlük kayıtlar eklenir.
+/// İmalat işi — planlanan keşif miktarına %100 ulaşana kadar günlük kayıtlar.
 class Production extends Equatable {
   const Production({
     required this.id,
     required this.projectId,
     required this.name,
+    this.floor = '',
+    this.section = '',
     this.teamName = '',
     this.unit = 'adet',
     this.plannedQty = 0,
@@ -17,17 +19,36 @@ class Production extends Equatable {
 
   final String id;
   final String projectId;
+
+  /// İmalatın adı.
   final String name;
+
+  /// Bulunduğu kat.
+  final String floor;
+
+  /// Bulunduğu kısım / bölge / etap.
+  final String section;
 
   /// Personel `team` (ekip) adı — listeden seçilir.
   final String teamName;
 
   final String unit;
+
+  /// Planlanan keşif miktarı.
   final double plannedQty;
   final String note;
 
   /// %100'e kadar her gün eklenen usta/düz ve gerçekleşen miktar kayıtları.
   final List<ProductionDayEntry> dailyEntries;
+
+  /// Kat + kısım/bölge/etap özeti (boş olanlar atlanır).
+  String get locationLabel {
+    final parts = <String>[
+      if (floor.trim().isNotEmpty) floor.trim(),
+      if (section.trim().isNotEmpty) section.trim(),
+    ];
+    return parts.join(' · ');
+  }
 
   double get completedQty =>
       dailyEntries.fold<double>(0, (s, e) => s + e.completedQty);
@@ -72,6 +93,8 @@ class Production extends Equatable {
     String? id,
     String? projectId,
     String? name,
+    String? floor,
+    String? section,
     String? teamName,
     String? unit,
     double? plannedQty,
@@ -82,6 +105,8 @@ class Production extends Equatable {
       id: id ?? this.id,
       projectId: projectId ?? this.projectId,
       name: name ?? this.name,
+      floor: floor ?? this.floor,
+      section: section ?? this.section,
       teamName: teamName ?? this.teamName,
       unit: unit ?? this.unit,
       plannedQty: plannedQty ?? this.plannedQty,
@@ -94,6 +119,8 @@ class Production extends Equatable {
         'id': id,
         'projectId': projectId,
         'name': name,
+        'floor': floor,
+        'section': section,
         'teamName': teamName,
         'unit': unit,
         'plannedQty': plannedQty,
@@ -136,6 +163,8 @@ class Production extends Equatable {
       id: json['id'] as String,
       projectId: json['projectId'] as String? ?? '',
       name: json['name'] as String? ?? '',
+      floor: json['floor'] as String? ?? '',
+      section: json['section'] as String? ?? '',
       teamName: json['teamName'] as String? ?? '',
       unit: json['unit'] as String? ?? 'adet',
       plannedQty: (json['plannedQty'] as num?)?.toDouble() ?? 0,
@@ -149,6 +178,8 @@ class Production extends Equatable {
         id,
         projectId,
         name,
+        floor,
+        section,
         teamName,
         unit,
         plannedQty,

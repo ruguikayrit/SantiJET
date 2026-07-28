@@ -180,6 +180,8 @@ class ProductionNotifier extends StateNotifier<List<Production>> {
       id: '$demoYearPrefix$projectId',
       projectId: projectId,
       name: 'Demo · Yıllık Verim Grafiği',
+      floor: 'Zemin',
+      section: 'Demo Etap',
       teamName: 'Demo Ekip',
       unit: 'm³',
       plannedQty: double.parse((completed * 1.08).toStringAsFixed(2)),
