@@ -18,11 +18,31 @@ import '../../domain/enums/attendance_status.dart';
 import '../projects/widgets/project_switcher.dart';
 
 /// Ana sayfa — bugünkü puantaj, imalat ve verim özetleri.
-class HomeScreen extends ConsumerWidget {
+class HomeScreen extends ConsumerStatefulWidget {
   const HomeScreen({super.key});
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
+  ConsumerState<HomeScreen> createState() => _HomeScreenState();
+}
+
+class _HomeScreenState extends ConsumerState<HomeScreen> {
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      final project = ref.read(activeProjectProvider);
+      if (project == null) return;
+      ref.read(productionProvider.notifier).ensureYearlyChartDemo(project.id);
+    });
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    ref.listen<String?>(activeProjectIdProvider, (prev, next) {
+      if (next == null || next == prev) return;
+      ref.read(productionProvider.notifier).ensureYearlyChartDemo(next);
+    });
+
     final project = ref.watch(activeProjectProvider);
     final people = ref.watch(activePersonnelProvider);
     final attendance = ref.watch(attendanceProvider);
@@ -659,7 +679,8 @@ enum _AsRange {
 }
 
 class _AdamSaatEfficiencyChartState extends State<_AdamSaatEfficiencyChart> {
-  _AsRange _range = _AsRange.month;
+  /// İnceleme için varsayılan: yıllık (örnek veri sonrası diğer filtreler de kullanılır).
+  _AsRange _range = _AsRange.year;
 
   static String _fmt(double v) {
     if (v == v.roundToDouble()) return v.toStringAsFixed(0);
@@ -848,11 +869,13 @@ class _AdamSaatEfficiencyChartState extends State<_AdamSaatEfficiencyChart> {
                             children: [
                               for (final p in points)
                                 Expanded(
-                                  child: Center(
+                                  child: Align(
+                                    alignment: Alignment.topCenter,
                                     child: RotatedBox(
                                       quarterTurns: 3,
                                       child: Text(
                                         _shortDate(p.date),
+                                        textAlign: TextAlign.center,
                                         style:
                                             theme.textTheme.labelSmall?.copyWith(
                                           fontSize: 9,
@@ -909,19 +932,18 @@ class _AdamSaatBarPainter extends CustomPainter {
       (m, p) => p.rate > m ? p.rate : m,
     );
     final top = maxRate <= 0 ? 1.0 : maxRate * 1.15;
-    const padL = 2.0;
-    const padR = 2.0;
+    // Etiket satırıyla aynı: eşit sütunlar; mum sütunun merkezinde.
+    const padL = 0.0;
+    const padR = 0.0;
     const padT = 6.0;
     const padB = 4.0;
     final chartW = size.width - padL - padR;
     final chartH = size.height - padT - padB;
     final n = points.length;
-    final gap = n <= 1 ? 0.0 : chartW * 0.06 / n;
+    final slotW = chartW / n;
     final barW = n <= 1
-        ? chartW * 0.35
-        : ((chartW - gap * (n - 1)) / n).clamp(6.0, 36.0);
-    final totalBars = n * barW + (n - 1) * gap;
-    final startX = padL + (chartW - totalBars) / 2;
+        ? (chartW * 0.28).clamp(8.0, 36.0)
+        : (slotW * 0.55).clamp(4.0, 28.0);
 
     final axisPaint = Paint()
       ..color = axisColor
@@ -953,7 +975,8 @@ class _AdamSaatBarPainter extends CustomPainter {
     for (var i = 0; i < n; i++) {
       final rate = points[i].rate;
       final h = chartH * (rate / top).clamp(0.0, 1.0);
-      final left = startX + i * (barW + gap);
+      final midX = padL + slotW * (i + 0.5);
+      final left = midX - barW / 2;
       final topY = padT + chartH - h;
       // Mum gövdesi
       final body = RRect.fromRectAndRadius(
@@ -967,8 +990,7 @@ class _AdamSaatBarPainter extends CustomPainter {
               ? barBelow
               : barNear;
       canvas.drawRRect(body, Paint()..color = color.withValues(alpha: 0.9));
-      // Fitil (mum üst/alt çizgisi)
-      final midX = left + barW / 2;
+      // Fitil (mum üst/alt çizgisi) — sütun merkezi
       final wickPaint = Paint()
         ..color = color
         ..strokeWidth = 1.2
