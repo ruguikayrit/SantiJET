@@ -276,7 +276,7 @@ class HomeScreen extends ConsumerWidget {
   }
 }
 
-/// Ekip bazlı imalat icmali — plan / gerçekleşen / kalan + iş gücü.
+/// Ekip bazlı imalat icmali — plan / gerçekleşen / kalan + iş gücü + verim katsayıları.
 class _TeamImalatSummary {
   const _TeamImalatSummary({
     required this.teamName,
@@ -299,6 +299,9 @@ class _TeamImalatSummary {
 
   /// Toplam düz işçi / çırak ataması.
   final double cirakTotal;
+
+  /// Toplam adam.gün (usta + çırak atamaları).
+  double get adamGunTotal => ustaTotal + cirakTotal;
 
   double get plannedQty => lines.fold(0, (s, l) => s + l.planned);
   double get completedQty => lines.fold(0, (s, l) => s + l.completed);
@@ -328,18 +331,21 @@ class _TeamImalatSummary {
           var cirak = 0.0;
           for (final p in jobs) {
             final unit = p.unit.trim().isEmpty ? 'adet' : p.unit.trim();
+            var jobLabor = 0.0;
+            for (final e in p.dailyEntries) {
+              if (e.date.trim().isNotEmpty) workDays.add(e.date.trim());
+              usta += e.ustaCount;
+              cirak += e.duzIsciCount;
+              jobLabor += e.laborDays;
+            }
             final prev = byUnit[unit];
             byUnit[unit] = _UnitLine(
               unit: unit,
               planned: (prev?.planned ?? 0) + p.plannedQty,
               completed: (prev?.completed ?? 0) + p.completedQty,
               remaining: (prev?.remaining ?? 0) + p.remainingQty,
+              laborAdamGun: (prev?.laborAdamGun ?? 0) + jobLabor,
             );
-            for (final e in p.dailyEntries) {
-              if (e.date.trim().isNotEmpty) workDays.add(e.date.trim());
-              usta += e.ustaCount;
-              cirak += e.duzIsciCount;
-            }
           }
           final lines = byUnit.values.toList()
             ..sort((a, b) => a.unit.compareTo(b.unit));
@@ -362,12 +368,32 @@ class _UnitLine {
     required this.planned,
     required this.completed,
     required this.remaining,
+    this.laborAdamGun = 0,
   });
 
   final String unit;
   final double planned;
   final double completed;
   final double remaining;
+
+  /// Bu birimdeki işlere yazılan toplam adam.gün (usta + çırak).
+  final double laborAdamGun;
+
+  /// Standart çalışma günü (yevmiye ile aynı).
+  static const hoursPerDay = 8.0;
+
+  /// Gerçekleşen miktar / adam.gün — 1 adam.gün başına üretim.
+  double? get ratePerAdamGun {
+    if (laborAdamGun <= 0 || completed <= 0) return null;
+    return completed / laborAdamGun;
+  }
+
+  /// Adam.gün katsayısı / 8 — 1 adam.saat başına üretim.
+  double? get ratePerAdamSaat {
+    final perDay = ratePerAdamGun;
+    if (perDay == null) return null;
+    return perDay / hoursPerDay;
+  }
 }
 
 class _TeamImalatCard extends StatelessWidget {
@@ -377,7 +403,9 @@ class _TeamImalatCard extends StatelessWidget {
 
   static String _fmt(double v) {
     if (v == v.roundToDouble()) return v.toStringAsFixed(0);
-    return v.toStringAsFixed(1);
+    if (v.abs() >= 10) return v.toStringAsFixed(1);
+    if (v.abs() >= 1) return v.toStringAsFixed(2);
+    return v.toStringAsFixed(3);
   }
 
   @override
@@ -423,7 +451,8 @@ class _TeamImalatCard extends StatelessWidget {
           Text(
             '${summary.workDayCount} gün · '
             '${_fmt(summary.ustaTotal)} usta · '
-            '${_fmt(summary.cirakTotal)} çırak',
+            '${_fmt(summary.cirakTotal)} çırak · '
+            '${_fmt(summary.adamGunTotal)} adam-gün',
             style: theme.textTheme.labelSmall?.copyWith(
               color: theme.colorScheme.onSurfaceVariant,
               fontWeight: FontWeight.w600,
@@ -458,6 +487,30 @@ class _TeamImalatCard extends StatelessWidget {
                 ),
               ],
             ),
+            if (line.ratePerAdamGun != null) ...[
+              const SizedBox(height: 4),
+              Row(
+                children: [
+                  Expanded(
+                    child: _QtyCell(
+                      label: 'Adam-gün',
+                      value:
+                          '${_fmt(line.ratePerAdamGun!)} ${line.unit}/ag',
+                      valueColor: AppColors.info,
+                    ),
+                  ),
+                  Expanded(
+                    child: _QtyCell(
+                      label: 'Adam-saat',
+                      value:
+                          '${_fmt(line.ratePerAdamSaat!)} ${line.unit}/as',
+                      valueColor: AppColors.info,
+                    ),
+                  ),
+                  const Expanded(child: SizedBox.shrink()),
+                ],
+              ),
+            ],
           ],
           const SizedBox(height: AppSpacing.xs),
           ClipRRect(
