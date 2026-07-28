@@ -730,8 +730,12 @@ class _AsOhlc {
 }
 
 class _AdamSaatEfficiencyChartState extends State<_AdamSaatEfficiencyChart> {
-  _AsRange _range = _AsRange.year;
-  _AsChartStyle _style = _AsChartStyle.area;
+  /// Standart: kapalı — kullanıcı gerektiğinde açar.
+  bool _chartOpen = false;
+
+  /// Standart görünüm: haftalık dönem · çubuk · 1G.
+  _AsRange _range = _AsRange.week;
+  _AsChartStyle _style = _AsChartStyle.bar;
   _AsInterval _interval = _AsInterval.day;
 
   static String _fmt(double v) {
@@ -1011,7 +1015,10 @@ class _AdamSaatEfficiencyChartState extends State<_AdamSaatEfficiencyChart> {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    final candles = _aggregate(_filtered());
+    final accent = AppColors.useDarkCards
+        ? AppColors.electricBlueLight
+        : AppColors.electricBlue;
+    final candles = _chartOpen ? _aggregate(_filtered()) : const <_AsOhlc>[];
 
     return Container(
       padding: const EdgeInsets.all(AppSpacing.sm),
@@ -1029,203 +1036,231 @@ class _AdamSaatEfficiencyChartState extends State<_AdamSaatEfficiencyChart> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
-          Row(
-            children: [
-              Expanded(
-                child: Text(
-                  'Verim · ${widget.unit}/as',
-                  style: theme.textTheme.labelMedium?.copyWith(
-                    fontWeight: FontWeight.w700,
-                    color: AppColors.useDarkCards
-                        ? AppColors.electricBlueLight
-                        : AppColors.electricBlue,
-                  ),
-                ),
-              ),
-              if (candles.isNotEmpty)
-                Builder(
-                  builder: (context) {
-                    final avg =
-                        candles.fold<double>(0, (s, c) => s + c.close) /
-                            candles.length;
-                    final latest = candles.last.close;
-                    final vsAvg = avg <= 0 ? 0.0 : (latest - avg) / avg;
-                    final verdictColor = vsAvg >= 0.05
-                        ? AppColors.success
-                        : vsAvg <= -0.05
-                            ? AppColors.critical
-                            : AppColors.warning;
-                    final verdictLabel = vsAvg >= 0.05
-                        ? 'Ortalamanın üstünde'
-                        : vsAvg <= -0.05
-                            ? 'Ortalamanın altında'
-                            : 'Ortalama civarı';
-                    return Text(
-                      verdictLabel,
+          Material(
+            color: Colors.transparent,
+            child: InkWell(
+              borderRadius: AppRadii.sm,
+              onTap: () => setState(() => _chartOpen = !_chartOpen),
+              child: Padding(
+                padding: const EdgeInsets.symmetric(vertical: 2),
+                child: Row(
+                  children: [
+                    Icon(
+                      Icons.show_chart_rounded,
+                      size: 18,
+                      color: accent,
+                    ),
+                    const SizedBox(width: 8),
+                    Expanded(
+                      child: Text(
+                        'Grafik',
+                        style: theme.textTheme.labelMedium?.copyWith(
+                          fontWeight: FontWeight.w700,
+                          color: accent,
+                        ),
+                      ),
+                    ),
+                    Text(
+                      _chartOpen ? 'Kapat' : 'Aç',
                       style: theme.textTheme.labelSmall?.copyWith(
-                        color: verdictColor,
                         fontWeight: FontWeight.w700,
+                        color: theme.colorScheme.onSurfaceVariant,
                       ),
-                    );
-                  },
-                ),
-            ],
-          ),
-          const SizedBox(height: AppSpacing.xs),
-          Align(
-            alignment: Alignment.centerLeft,
-            child: Material(
-              color: (AppColors.useDarkCards
-                      ? AppColors.electricBlueLight
-                      : AppColors.electricBlue)
-                  .withValues(alpha: 0.16),
-              borderRadius: AppRadii.full,
-              child: InkWell(
-                borderRadius: AppRadii.full,
-                onTap: _openOptions,
-                child: Padding(
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 10,
-                    vertical: 6,
-                  ),
-                  child: Row(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      Icon(
-                        Icons.tune_rounded,
-                        size: 16,
-                        color: AppColors.useDarkCards
-                            ? AppColors.electricBlueLight
-                            : AppColors.electricBlue,
-                      ),
-                      const SizedBox(width: 6),
-                      Flexible(
-                        child: Text(
-                          _optionsSummary,
-                          style: theme.textTheme.labelSmall?.copyWith(
-                            fontWeight: FontWeight.w700,
-                            color: AppColors.useDarkCards
-                                ? AppColors.electricBlueLight
-                                : AppColors.electricBlue,
-                          ),
-                          maxLines: 1,
-                          overflow: TextOverflow.ellipsis,
-                        ),
-                      ),
-                      const SizedBox(width: 2),
-                      Icon(
-                        Icons.keyboard_arrow_down_rounded,
-                        size: 18,
-                        color: AppColors.useDarkCards
-                            ? AppColors.electricBlueLight
-                            : AppColors.electricBlue,
-                      ),
-                    ],
-                  ),
+                    ),
+                    const SizedBox(width: 2),
+                    Icon(
+                      _chartOpen
+                          ? Icons.keyboard_arrow_up_rounded
+                          : Icons.keyboard_arrow_down_rounded,
+                      size: 20,
+                      color: theme.colorScheme.onSurfaceVariant,
+                    ),
+                  ],
                 ),
               ),
             ),
           ),
-          const SizedBox(height: AppSpacing.sm),
-          if (candles.isEmpty)
-            Padding(
-              padding: const EdgeInsets.symmetric(vertical: AppSpacing.md),
-              child: Text(
-                'Seçilen dönemde verim kaydı yok.',
-                style: theme.textTheme.bodySmall,
-                textAlign: TextAlign.center,
-              ),
-            )
-          else ...[
-            Builder(
-              builder: (context) {
-                final avg =
-                    candles.fold<double>(0, (s, c) => s + c.close) /
-                        candles.length;
-                final latest = candles.last.close;
-                return Text(
-                  'Ort ${_fmt(avg)} · Son ${_fmt(latest)}'
-                  '${widget.overallRate != null ? ' · Genel ${_fmt(widget.overallRate!)}' : ''}'
-                  ' ${widget.unit}/as',
-                  style: theme.textTheme.labelSmall?.copyWith(
-                    color: theme.colorScheme.onSurfaceVariant,
-                  ),
-                );
-              },
-            ),
+          if (_chartOpen) ...[
             const SizedBox(height: AppSpacing.sm),
-            LayoutBuilder(
-              builder: (context, constraints) {
-                final avg =
-                    candles.fold<double>(0, (s, c) => s + c.close) /
-                        candles.length;
-                final minSlot = _style.usesCompactSlots ? 14.0 : 18.0;
-                final chartWidth = (candles.length * minSlot)
-                    .clamp(constraints.maxWidth, double.infinity);
-                return SingleChildScrollView(
-                  scrollDirection: Axis.horizontal,
-                  child: SizedBox(
-                    width: chartWidth.toDouble(),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.stretch,
+            Row(
+              children: [
+                Expanded(
+                  child: Text(
+                    'Verim · ${widget.unit}/as',
+                    style: theme.textTheme.labelMedium?.copyWith(
+                      fontWeight: FontWeight.w700,
+                      color: accent,
+                    ),
+                  ),
+                ),
+                if (candles.isNotEmpty)
+                  Builder(
+                    builder: (context) {
+                      final avg =
+                          candles.fold<double>(0, (s, c) => s + c.close) /
+                              candles.length;
+                      final latest = candles.last.close;
+                      final vsAvg = avg <= 0 ? 0.0 : (latest - avg) / avg;
+                      final verdictColor = vsAvg >= 0.05
+                          ? AppColors.success
+                          : vsAvg <= -0.05
+                              ? AppColors.critical
+                              : AppColors.warning;
+                      final verdictLabel = vsAvg >= 0.05
+                          ? 'Ortalamanın üstünde'
+                          : vsAvg <= -0.05
+                              ? 'Ortalamanın altında'
+                              : 'Ortalama civarı';
+                      return Text(
+                        verdictLabel,
+                        style: theme.textTheme.labelSmall?.copyWith(
+                          color: verdictColor,
+                          fontWeight: FontWeight.w700,
+                        ),
+                      );
+                    },
+                  ),
+              ],
+            ),
+            const SizedBox(height: AppSpacing.xs),
+            Align(
+              alignment: Alignment.centerLeft,
+              child: Material(
+                color: accent.withValues(alpha: 0.16),
+                borderRadius: AppRadii.full,
+                child: InkWell(
+                  borderRadius: AppRadii.full,
+                  onTap: _openOptions,
+                  child: Padding(
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 10,
+                      vertical: 6,
+                    ),
+                    child: Row(
+                      mainAxisSize: MainAxisSize.min,
                       children: [
-                        SizedBox(
-                          height: 110,
-                          child: CustomPaint(
-                            painter: _AdamSaatChartPainter(
-                              candles: candles,
-                              average: avg,
-                              style: _style,
-                              bullish: AppColors.success,
-                              bearish: AppColors.critical,
-                              lineColor: AppColors.useDarkCards
-                                  ? AppColors.electricBlueLight
-                                  : AppColors.electricBlue,
-                              averageColor: AppColors.useDarkCards
-                                  ? AppColors.electricBlueLight
-                                  : AppColors.electricBlue,
-                              axisColor: theme.colorScheme.onSurfaceVariant
-                                  .withValues(alpha: 0.35),
+                        Icon(Icons.tune_rounded, size: 16, color: accent),
+                        const SizedBox(width: 6),
+                        Flexible(
+                          child: Text(
+                            _optionsSummary,
+                            style: theme.textTheme.labelSmall?.copyWith(
+                              fontWeight: FontWeight.w700,
+                              color: accent,
                             ),
-                            child: const SizedBox.expand(),
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
                           ),
                         ),
-                        const SizedBox(height: 4),
-                        SizedBox(
-                          height: 56,
-                          child: Row(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              for (final c in candles)
-                                Expanded(
-                                  child: Align(
-                                    alignment: Alignment.topCenter,
-                                    child: RotatedBox(
-                                      quarterTurns: 3,
-                                      child: Text(
-                                        c.label,
-                                        textAlign: TextAlign.center,
-                                        style:
-                                            theme.textTheme.labelSmall?.copyWith(
-                                          fontSize: 9,
-                                          height: 1,
-                                          fontWeight: FontWeight.w600,
-                                        ),
-                                        maxLines: 1,
-                                        softWrap: false,
-                                      ),
-                                    ),
-                                  ),
-                                ),
-                            ],
-                          ),
+                        const SizedBox(width: 2),
+                        Icon(
+                          Icons.keyboard_arrow_down_rounded,
+                          size: 18,
+                          color: accent,
                         ),
                       ],
                     ),
                   ),
-                );
-              },
+                ),
+              ),
             ),
+            const SizedBox(height: AppSpacing.sm),
+            if (candles.isEmpty)
+              Padding(
+                padding: const EdgeInsets.symmetric(vertical: AppSpacing.md),
+                child: Text(
+                  'Seçilen dönemde verim kaydı yok.',
+                  style: theme.textTheme.bodySmall,
+                  textAlign: TextAlign.center,
+                ),
+              )
+            else ...[
+              Builder(
+                builder: (context) {
+                  final avg =
+                      candles.fold<double>(0, (s, c) => s + c.close) /
+                          candles.length;
+                  final latest = candles.last.close;
+                  return Text(
+                    'Ort ${_fmt(avg)} · Son ${_fmt(latest)}'
+                    '${widget.overallRate != null ? ' · Genel ${_fmt(widget.overallRate!)}' : ''}'
+                    ' ${widget.unit}/as',
+                    style: theme.textTheme.labelSmall?.copyWith(
+                      color: theme.colorScheme.onSurfaceVariant,
+                    ),
+                  );
+                },
+              ),
+              const SizedBox(height: AppSpacing.sm),
+              LayoutBuilder(
+                builder: (context, constraints) {
+                  final avg =
+                      candles.fold<double>(0, (s, c) => s + c.close) /
+                          candles.length;
+                  final minSlot = _style.usesCompactSlots ? 14.0 : 18.0;
+                  final chartWidth = (candles.length * minSlot)
+                      .clamp(constraints.maxWidth, double.infinity);
+                  return SingleChildScrollView(
+                    scrollDirection: Axis.horizontal,
+                    child: SizedBox(
+                      width: chartWidth.toDouble(),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.stretch,
+                        children: [
+                          SizedBox(
+                            height: 110,
+                            child: CustomPaint(
+                              painter: _AdamSaatChartPainter(
+                                candles: candles,
+                                average: avg,
+                                style: _style,
+                                bullish: AppColors.success,
+                                bearish: AppColors.critical,
+                                lineColor: accent,
+                                averageColor: accent,
+                                axisColor: theme.colorScheme.onSurfaceVariant
+                                    .withValues(alpha: 0.35),
+                              ),
+                              child: const SizedBox.expand(),
+                            ),
+                          ),
+                          const SizedBox(height: 4),
+                          SizedBox(
+                            height: 56,
+                            child: Row(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                for (final c in candles)
+                                  Expanded(
+                                    child: Align(
+                                      alignment: Alignment.topCenter,
+                                      child: RotatedBox(
+                                        quarterTurns: 3,
+                                        child: Text(
+                                          c.label,
+                                          textAlign: TextAlign.center,
+                                          style: theme.textTheme.labelSmall
+                                              ?.copyWith(
+                                            fontSize: 9,
+                                            height: 1,
+                                            fontWeight: FontWeight.w600,
+                                          ),
+                                          maxLines: 1,
+                                          softWrap: false,
+                                        ),
+                                      ),
+                                    ),
+                                  ),
+                              ],
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  );
+                },
+              ),
+            ],
           ],
         ],
       ),
