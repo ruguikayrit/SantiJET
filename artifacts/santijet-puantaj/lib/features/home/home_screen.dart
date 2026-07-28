@@ -503,10 +503,14 @@ class _TeamImalatCard extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.all(AppSpacing.sm),
       decoration: BoxDecoration(
-        color: AppColors.electricBlue.withValues(alpha: 0.06),
+        color: AppColors.useDarkCards
+            ? AppColors.cardSurfaceHighlight
+            : AppColors.electricBlue.withValues(alpha: 0.06),
         borderRadius: AppRadii.sm,
         border: Border.all(
-          color: AppColors.electricBlue.withValues(alpha: 0.22),
+          color: AppColors.useDarkCards
+              ? AppColors.cardBorderSubtle
+              : AppColors.electricBlue.withValues(alpha: 0.22),
         ),
       ),
       child: Column(
@@ -518,7 +522,9 @@ class _TeamImalatCard extends StatelessWidget {
                 child: Text(
                   summary.teamName,
                   style: theme.textTheme.titleSmall?.copyWith(
-                    color: AppColors.electricBlue,
+                    color: AppColors.useDarkCards
+                        ? AppColors.electricBlueLight
+                        : AppColors.electricBlue,
                     fontWeight: FontWeight.w700,
                   ),
                 ),
@@ -680,23 +686,17 @@ enum _AsRange {
   final String label;
 }
 
-/// Grafik tipi — borsa / analitik stiller.
+/// Grafik tipi — alan / çizgi / çubuk.
 enum _AsChartStyle {
-  candle('Mum', 'Açılış · yüksek · düşük · kapanış'),
-  hollow('İçi boş mum', 'Yükseliş boş, düşüş dolu gövde'),
-  ohlc('OHLC', 'Klasik borsa çubuğu'),
-  bar('Çubuk', 'Kapanış değerini çubuk olarak gösterir'),
-  line('Çizgi', 'Kapanış değerlerini birleştirir'),
   area('Alan', 'Çizgi + dolgu alanı'),
-  step('Basamak', 'Değişimleri basamaklı gösterir'),
-  scatter('Nokta', 'Her periyodu nokta olarak gösterir');
+  line('Çizgi', 'Kapanış değerlerini birleştirir'),
+  bar('Çubuk', 'Kapanış değerini çubuk olarak gösterir');
 
   const _AsChartStyle(this.label, this.subtitle);
   final String label;
   final String subtitle;
 
-  bool get usesCompactSlots =>
-      this == line || this == area || this == step || this == scatter;
+  bool get usesCompactSlots => this != bar;
 }
 
 /// Mum/çizgi periyodu — günlük · haftalık · aylık (OHLC agregasyon).
@@ -731,7 +731,7 @@ class _AsOhlc {
 
 class _AdamSaatEfficiencyChartState extends State<_AdamSaatEfficiencyChart> {
   _AsRange _range = _AsRange.year;
-  _AsChartStyle _style = _AsChartStyle.candle;
+  _AsChartStyle _style = _AsChartStyle.area;
   _AsInterval _interval = _AsInterval.day;
 
   static String _fmt(double v) {
@@ -836,6 +836,13 @@ class _AdamSaatEfficiencyChartState extends State<_AdamSaatEfficiencyChart> {
     required Object selected,
     required ValueChanged<Object> onSelect,
   }) {
+    final onSurface = theme.colorScheme.onSurface;
+    final onVariant = theme.colorScheme.onSurfaceVariant;
+    final selectedBg = AppColors.electricBlue.withValues(alpha: 0.12);
+    final unselectedBg = theme.brightness == Brightness.dark
+        ? theme.colorScheme.surface.withValues(alpha: 0.85)
+        : AppColors.lightSurfaceHighlight;
+
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
@@ -843,7 +850,7 @@ class _AdamSaatEfficiencyChartState extends State<_AdamSaatEfficiencyChart> {
           title,
           style: theme.textTheme.labelLarge?.copyWith(
             fontWeight: FontWeight.w700,
-            color: theme.colorScheme.onSurfaceVariant,
+            color: onVariant,
           ),
         ),
         const SizedBox(height: AppSpacing.xs),
@@ -851,9 +858,7 @@ class _AdamSaatEfficiencyChartState extends State<_AdamSaatEfficiencyChart> {
           Padding(
             padding: const EdgeInsets.only(bottom: 4),
             child: Material(
-              color: selected == item.value
-                  ? AppColors.electricBlue.withValues(alpha: 0.12)
-                  : theme.colorScheme.surface.withValues(alpha: 0.6),
+              color: selected == item.value ? selectedBg : unselectedBg,
               borderRadius: AppRadii.sm,
               child: InkWell(
                 borderRadius: AppRadii.sm,
@@ -875,13 +880,16 @@ class _AdamSaatEfficiencyChartState extends State<_AdamSaatEfficiencyChart> {
                                 fontWeight: selected == item.value
                                     ? FontWeight.w700
                                     : FontWeight.w500,
+                                color: selected == item.value
+                                    ? AppColors.electricBlue
+                                    : onSurface,
                               ),
                             ),
                             if (item.subtitle != null)
                               Text(
                                 item.subtitle!,
                                 style: theme.textTheme.labelSmall?.copyWith(
-                                  color: theme.colorScheme.onSurfaceVariant,
+                                  color: onVariant,
                                 ),
                               ),
                           ],
@@ -894,7 +902,7 @@ class _AdamSaatEfficiencyChartState extends State<_AdamSaatEfficiencyChart> {
                         size: 20,
                         color: selected == item.value
                             ? AppColors.electricBlue
-                            : theme.colorScheme.onSurfaceVariant,
+                            : onVariant,
                       ),
                     ],
                   ),
@@ -1008,10 +1016,14 @@ class _AdamSaatEfficiencyChartState extends State<_AdamSaatEfficiencyChart> {
     return Container(
       padding: const EdgeInsets.all(AppSpacing.sm),
       decoration: BoxDecoration(
-        color: theme.colorScheme.surface.withValues(alpha: 0.55),
+        color: AppColors.useDarkCards
+            ? AppColors.darkSurface.withValues(alpha: 0.55)
+            : theme.colorScheme.surface.withValues(alpha: 0.55),
         borderRadius: AppRadii.sm,
         border: Border.all(
-          color: AppColors.electricBlue.withValues(alpha: 0.18),
+          color: AppColors.useDarkCards
+              ? AppColors.electricBlueLight.withValues(alpha: 0.35)
+              : AppColors.electricBlue.withValues(alpha: 0.18),
         ),
       ),
       child: Column(
@@ -1024,7 +1036,9 @@ class _AdamSaatEfficiencyChartState extends State<_AdamSaatEfficiencyChart> {
                   'Verim · ${widget.unit}/as',
                   style: theme.textTheme.labelMedium?.copyWith(
                     fontWeight: FontWeight.w700,
-                    color: AppColors.electricBlue,
+                    color: AppColors.useDarkCards
+                        ? AppColors.electricBlueLight
+                        : AppColors.electricBlue,
                   ),
                 ),
               ),
@@ -1061,7 +1075,10 @@ class _AdamSaatEfficiencyChartState extends State<_AdamSaatEfficiencyChart> {
           Align(
             alignment: Alignment.centerLeft,
             child: Material(
-              color: AppColors.electricBlue.withValues(alpha: 0.1),
+              color: (AppColors.useDarkCards
+                      ? AppColors.electricBlueLight
+                      : AppColors.electricBlue)
+                  .withValues(alpha: 0.16),
               borderRadius: AppRadii.full,
               child: InkWell(
                 borderRadius: AppRadii.full,
@@ -1077,7 +1094,9 @@ class _AdamSaatEfficiencyChartState extends State<_AdamSaatEfficiencyChart> {
                       Icon(
                         Icons.tune_rounded,
                         size: 16,
-                        color: AppColors.electricBlue,
+                        color: AppColors.useDarkCards
+                            ? AppColors.electricBlueLight
+                            : AppColors.electricBlue,
                       ),
                       const SizedBox(width: 6),
                       Flexible(
@@ -1085,7 +1104,9 @@ class _AdamSaatEfficiencyChartState extends State<_AdamSaatEfficiencyChart> {
                           _optionsSummary,
                           style: theme.textTheme.labelSmall?.copyWith(
                             fontWeight: FontWeight.w700,
-                            color: AppColors.electricBlue,
+                            color: AppColors.useDarkCards
+                                ? AppColors.electricBlueLight
+                                : AppColors.electricBlue,
                           ),
                           maxLines: 1,
                           overflow: TextOverflow.ellipsis,
@@ -1095,7 +1116,9 @@ class _AdamSaatEfficiencyChartState extends State<_AdamSaatEfficiencyChart> {
                       Icon(
                         Icons.keyboard_arrow_down_rounded,
                         size: 18,
-                        color: AppColors.electricBlue,
+                        color: AppColors.useDarkCards
+                            ? AppColors.electricBlueLight
+                            : AppColors.electricBlue,
                       ),
                     ],
                   ),
@@ -1155,8 +1178,12 @@ class _AdamSaatEfficiencyChartState extends State<_AdamSaatEfficiencyChart> {
                               style: _style,
                               bullish: AppColors.success,
                               bearish: AppColors.critical,
-                              lineColor: AppColors.electricBlue,
-                              averageColor: AppColors.electricBlue,
+                              lineColor: AppColors.useDarkCards
+                                  ? AppColors.electricBlueLight
+                                  : AppColors.electricBlue,
+                              averageColor: AppColors.useDarkCards
+                                  ? AppColors.electricBlueLight
+                                  : AppColors.electricBlue,
                               axisColor: theme.colorScheme.onSurfaceVariant
                                   .withValues(alpha: 0.35),
                             ),
@@ -1313,15 +1340,6 @@ class _AdamSaatChartPainter extends CustomPainter {
           baselineY: baselineY,
           fill: style == _AsChartStyle.area,
         );
-      case _AsChartStyle.step:
-        _paintStepSeries(
-          canvas,
-          mapY: mapY,
-          padL: padL,
-          slotW: slotW,
-        );
-      case _AsChartStyle.scatter:
-        _paintScatter(canvas, mapY: mapY, padL: padL, slotW: slotW);
       case _AsChartStyle.bar:
         _paintBars(
           canvas,
@@ -1330,32 +1348,6 @@ class _AdamSaatChartPainter extends CustomPainter {
           slotW: slotW,
           barW: barW,
           baselineY: baselineY,
-        );
-      case _AsChartStyle.ohlc:
-        _paintOhlc(
-          canvas,
-          mapY: mapY,
-          padL: padL,
-          slotW: slotW,
-          tickW: (barW * 0.45).clamp(3.0, 10.0),
-        );
-      case _AsChartStyle.candle:
-        _paintCandles(
-          canvas,
-          mapY: mapY,
-          padL: padL,
-          slotW: slotW,
-          barW: barW,
-          hollow: false,
-        );
-      case _AsChartStyle.hollow:
-        _paintCandles(
-          canvas,
-          mapY: mapY,
-          padL: padL,
-          slotW: slotW,
-          barW: barW,
-          hollow: true,
         );
     }
   }
@@ -1412,64 +1404,6 @@ class _AdamSaatChartPainter extends CustomPainter {
     }
   }
 
-  void _paintStepSeries(
-    Canvas canvas, {
-    required double Function(double) mapY,
-    required double padL,
-    required double slotW,
-  }) {
-    final n = candles.length;
-    if (n == 0) return;
-    final path = Path();
-    for (var i = 0; i < n; i++) {
-      final left = padL + slotW * i;
-      final right = padL + slotW * (i + 1);
-      final y = mapY(candles[i].close);
-      if (i == 0) {
-        path.moveTo(left + slotW * 0.15, y);
-      } else {
-        path.lineTo(left, y);
-      }
-      path.lineTo(right - (i == n - 1 ? slotW * 0.15 : 0), y);
-    }
-    canvas.drawPath(
-      path,
-      Paint()
-        ..color = lineColor
-        ..strokeWidth = 2
-        ..style = PaintingStyle.stroke
-        ..strokeJoin = StrokeJoin.miter
-        ..strokeCap = StrokeCap.butt,
-    );
-  }
-
-  void _paintScatter(
-    Canvas canvas, {
-    required double Function(double) mapY,
-    required double padL,
-    required double slotW,
-  }) {
-    for (var i = 0; i < candles.length; i++) {
-      final c = candles[i];
-      final midX = padL + slotW * (i + 0.5);
-      final y = mapY(c.close);
-      final color = _closeColor(c);
-      canvas.drawCircle(
-        Offset(midX, y),
-        3.2,
-        Paint()..color = color.withValues(alpha: 0.9),
-      );
-      canvas.drawCircle(
-        Offset(midX, y),
-        3.2,
-        Paint()
-          ..color = color
-          ..style = PaintingStyle.stroke
-          ..strokeWidth = 1,
-      );
-    }
-  }
-
   void _paintBars(
     Canvas canvas, {
     required double Function(double) mapY,
@@ -1492,90 +1426,6 @@ class _AdamSaatChartPainter extends CustomPainter {
         ),
         Paint()..color = _closeColor(c).withValues(alpha: 0.9),
       );
-    }
-  }
-
-  void _paintOhlc(
-    Canvas canvas, {
-    required double Function(double) mapY,
-    required double padL,
-    required double slotW,
-    required double tickW,
-  }) {
-    for (var i = 0; i < candles.length; i++) {
-      final c = candles[i];
-      final midX = padL + slotW * (i + 0.5);
-      final color = c.bullish ? bullish : bearish;
-      final paint = Paint()
-        ..color = color
-        ..strokeWidth = 1.4
-        ..strokeCap = StrokeCap.round;
-      canvas.drawLine(
-        Offset(midX, mapY(c.high)),
-        Offset(midX, mapY(c.low)),
-        paint,
-      );
-      final yOpen = mapY(c.open);
-      final yClose = mapY(c.close);
-      canvas.drawLine(
-        Offset(midX - tickW, yOpen),
-        Offset(midX, yOpen),
-        paint,
-      );
-      canvas.drawLine(
-        Offset(midX, yClose),
-        Offset(midX + tickW, yClose),
-        paint,
-      );
-    }
-  }
-
-  void _paintCandles(
-    Canvas canvas, {
-    required double Function(double) mapY,
-    required double padL,
-    required double slotW,
-    required double barW,
-    required bool hollow,
-  }) {
-    for (var i = 0; i < candles.length; i++) {
-      final c = candles[i];
-      final midX = padL + slotW * (i + 0.5);
-      final yHigh = mapY(c.high);
-      final yLow = mapY(c.low);
-      final yOpen = mapY(c.open);
-      final yClose = mapY(c.close);
-      final color = c.bullish ? bullish : bearish;
-      final wick = Paint()
-        ..color = color
-        ..strokeWidth = 1.2
-        ..strokeCap = StrokeCap.round;
-      canvas.drawLine(Offset(midX, yHigh), Offset(midX, yLow), wick);
-      final bodyTop = yOpen < yClose ? yOpen : yClose;
-      final bodyBot = yOpen < yClose ? yClose : yOpen;
-      final bodyH = (bodyBot - bodyTop).abs() < 2 ? 2.0 : (bodyBot - bodyTop);
-      final left = midX - barW / 2;
-      final body = RRect.fromRectAndRadius(
-        Rect.fromLTWH(left, bodyTop, barW, bodyH),
-        const Radius.circular(1.5),
-      );
-      final fillHollowBullish = hollow && c.bullish;
-      if (fillHollowBullish) {
-        canvas.drawRRect(
-          body,
-          Paint()
-            ..color = color
-            ..style = PaintingStyle.stroke
-            ..strokeWidth = 1.4,
-        );
-      } else {
-        canvas.drawRRect(
-          body,
-          Paint()
-            ..color = color.withValues(alpha: 0.92)
-            ..style = PaintingStyle.fill,
-        );
-      }
     }
   }
 
