@@ -276,17 +276,29 @@ class HomeScreen extends ConsumerWidget {
   }
 }
 
-/// Ekip bazlı imalat icmali — plan / gerçekleşen / kalan.
+/// Ekip bazlı imalat icmali — plan / gerçekleşen / kalan + iş gücü.
 class _TeamImalatSummary {
   const _TeamImalatSummary({
     required this.teamName,
     required this.jobCount,
     required this.lines,
+    required this.workDayCount,
+    required this.ustaTotal,
+    required this.cirakTotal,
   });
 
   final String teamName;
   final int jobCount;
   final List<_UnitLine> lines;
+
+  /// Benzersiz çalışma günü sayısı.
+  final int workDayCount;
+
+  /// Toplam usta ataması (tüm günlük kayıtlar).
+  final double ustaTotal;
+
+  /// Toplam düz işçi / çırak ataması.
+  final double cirakTotal;
 
   double get plannedQty => lines.fold(0, (s, l) => s + l.planned);
   double get completedQty => lines.fold(0, (s, l) => s + l.completed);
@@ -311,6 +323,9 @@ class _TeamImalatSummary {
         () {
           final jobs = byTeam[team]!;
           final byUnit = <String, _UnitLine>{};
+          final workDays = <String>{};
+          var usta = 0.0;
+          var cirak = 0.0;
           for (final p in jobs) {
             final unit = p.unit.trim().isEmpty ? 'adet' : p.unit.trim();
             final prev = byUnit[unit];
@@ -320,6 +335,11 @@ class _TeamImalatSummary {
               completed: (prev?.completed ?? 0) + p.completedQty,
               remaining: (prev?.remaining ?? 0) + p.remainingQty,
             );
+            for (final e in p.dailyEntries) {
+              if (e.date.trim().isNotEmpty) workDays.add(e.date.trim());
+              usta += e.ustaCount;
+              cirak += e.duzIsciCount;
+            }
           }
           final lines = byUnit.values.toList()
             ..sort((a, b) => a.unit.compareTo(b.unit));
@@ -327,6 +347,9 @@ class _TeamImalatSummary {
             teamName: team,
             jobCount: jobs.length,
             lines: lines,
+            workDayCount: workDays.length,
+            ustaTotal: usta,
+            cirakTotal: cirak,
           );
         }(),
     ];
@@ -395,6 +418,16 @@ class _TeamImalatCard extends StatelessWidget {
                 style: theme.textTheme.labelSmall?.copyWith(color: color),
               ),
             ],
+          ),
+          const SizedBox(height: 4),
+          Text(
+            '${summary.workDayCount} gün · '
+            '${_fmt(summary.ustaTotal)} usta · '
+            '${_fmt(summary.cirakTotal)} çırak',
+            style: theme.textTheme.labelSmall?.copyWith(
+              color: theme.colorScheme.onSurfaceVariant,
+              fontWeight: FontWeight.w600,
+            ),
           ),
           const SizedBox(height: AppSpacing.xs),
           for (final line in summary.lines) ...[
