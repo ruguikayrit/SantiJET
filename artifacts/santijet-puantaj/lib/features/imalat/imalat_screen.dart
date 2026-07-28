@@ -13,10 +13,13 @@ import '../../core/utils/puantaj_date.dart';
 import '../../data/providers/app_data_provider.dart';
 import '../../data/providers/catalog_provider.dart';
 import '../../data/providers/production_provider.dart';
+import '../../data/providers/verim_provider.dart';
+import '../../data/services/is_programi_cloud_service.dart';
 import '../../domain/entities/attendance.dart';
 import '../../domain/entities/person.dart';
 import '../../domain/entities/production.dart';
 import '../../domain/entities/production_day_entry.dart';
+import '../../domain/entities/work_schedule_plan.dart';
 import '../../domain/catalogs/imalat_units.dart';
 import '../../domain/yevmiye/imalat_crew_allocator.dart';
 import '../../domain/yevmiye/yevmiye_calculator.dart';
@@ -161,7 +164,8 @@ class ImalatScreen extends ConsumerWidget {
                           const SizedBox(height: 4),
                           Text(
                             'Keşif: ${_fmt(p.completedQty)} / '
-                            '${_fmt(p.plannedQty)} ${p.unit}',
+                            '${_fmt(p.plannedQty)} ${p.unit}'
+                            '${p.plannedDays > 0 ? ' · ${p.plannedDays} gün' : ''}',
                             style: theme.textTheme.bodyMedium,
                           ),
                           Text(
@@ -337,8 +341,8 @@ class ImalatScreen extends ConsumerWidget {
   }
 }
 
-/// İmalat iş tanımı — ad, ekip, plan miktarı (günlük kayıt ayrı).
-class _ImalatJobSheet extends StatefulWidget {
+/// İmalat iş tanımı — ad, ekip, plan miktarı / gün (günlük kayıt ayrı).
+class _ImalatJobSheet extends ConsumerStatefulWidget {
   const _ImalatJobSheet({
     required this.projectId,
     required this.teams,
@@ -354,17 +358,20 @@ class _ImalatJobSheet extends StatefulWidget {
   final VoidCallback? onDelete;
 
   @override
-  State<_ImalatJobSheet> createState() => _ImalatJobSheetState();
+  ConsumerState<_ImalatJobSheet> createState() => _ImalatJobSheetState();
 }
 
-class _ImalatJobSheetState extends State<_ImalatJobSheet> {
+class _ImalatJobSheetState extends ConsumerState<_ImalatJobSheet> {
   late final TextEditingController _floor;
   late final TextEditingController _section;
   late final TextEditingController _name;
   late final TextEditingController _planned;
+  late final TextEditingController _plannedDays;
   late final TextEditingController _note;
   String? _team;
   late String _unit;
+  bool _pullingDays = false;
+  String? _scheduleHint;
 
   @override
   void initState() {
@@ -380,6 +387,9 @@ class _ImalatJobSheetState extends State<_ImalatJobSheet> {
     _planned = TextEditingController(
       text: e == null ? '' : _num(e.plannedQty),
     );
+    _plannedDays = TextEditingController(
+      text: e == null || e.plannedDays <= 0 ? '' : '${e.plannedDays}',
+    );
     _note = TextEditingController(text: e?.note ?? '');
     _team = e?.teamName.trim().isNotEmpty == true
         ? e!.teamName.trim()
@@ -392,6 +402,7 @@ class _ImalatJobSheetState extends State<_ImalatJobSheet> {
     _section.dispose();
     _name.dispose();
     _planned.dispose();
+    _plannedDays.dispose();
     _note.dispose();
     super.dispose();
   }
@@ -399,6 +410,123 @@ class _ImalatJobSheetState extends State<_ImalatJobSheet> {
   static String _num(double v) {
     if (v == v.roundToDouble()) return v.toStringAsFixed(0);
     return v.toStringAsFixed(1);
+  }
+
+  static String _norm(String s) => s
+      .trim()
+      .toLowerCase()
+      .replaceAll(RegExp(r'\s+'), ' ');
+
+  WorkScheduleItem? _matchItem(List<WorkScheduleItem> items, String name) {
+    final target = _norm(name);
+    if (target.isEmpty) return null;
+    for (final item in items) {
+      if (_norm(item.imalatName) == target) return item;
+    }
+    for (final item in items) {
+      final n = _norm(item.imalatName);
+      if (n.contains(target) || target.contains(n)) return item;
+    }
+    return null;
+  }
+
+  Future<void> _pullPlannedDaysFromSchedule() async {
+    final name = _name.text.trim();
+    if (name.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Önce imalat adını girin; eşleştirme ada göre yapılır.'),
+        ),
+      );
+      return;
+    }
+
+    setState(() {
+      _pullingDays = true;
+      _scheduleHint = null;
+    });
+
+    try {
+      final project = ref.read(activeProjectProvider);
+      final service = ref.read(isProgramiCloudServiceProvider);
+      WorkScheduleSnapshot snap;
+      var fromDemo = false;
+      try {
+        snap = await service.sync(
+          projectId: widget.projectId,
+          projectCode: project?.code,
+          projectName: project?.name,
+        );
+      } on IsProgramiCloudException {
+        final cached = service.cachedFor(widget.projectId);
+        if (cached != null && cached.items.isNotEmpty) {
+          snap = cached;
+        } else {
+          snap = await service.syncDemo(
+            projectId: widget.projectId,
+            projectName: project?.name,
+          );
+          fromDemo = true;
+        }
+      }
+
+      if (!mounted) return;
+      final match = _matchItem(snap.items, name);
+      if (match == null) {
+        setState(() {
+          _scheduleHint =
+              'İş Programı’nda “$name” ile eşleşen satır bulunamadı.';
+        });
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text(_scheduleHint!)),
+        );
+        return;
+      }
+
+      final days = match.durationDays;
+      if (days == null || days <= 0) {
+        setState(() {
+          _scheduleHint =
+              'Eşleşen satırda başlangıç/bitiş tarihi yok.';
+        });
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text(_scheduleHint!)),
+        );
+        return;
+      }
+
+      setState(() {
+        _plannedDays.text = '$days';
+        if (_planned.text.trim().isEmpty &&
+            match.plannedQty != null &&
+            match.plannedQty! > 0) {
+          _planned.text = _num(match.plannedQty!);
+        }
+        if (match.unit != null &&
+            match.unit!.trim().isNotEmpty &&
+            (_unit.trim().isEmpty ||
+                _unit == ImalatUnitCatalog.defaultUnit)) {
+          _unit = match.unit!.trim();
+        }
+        _scheduleHint = fromDemo
+            ? 'Demo buluttan alındı: $days gün'
+                '${match.startDate != null && match.endDate != null ? ' (${match.startDate} → ${match.endDate})' : ''}.'
+            : 'İş Programı’ndan alındı: $days gün'
+                '${match.startDate != null && match.endDate != null ? ' (${match.startDate} → ${match.endDate})' : ''}.';
+      });
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(_scheduleHint!)),
+      );
+    } catch (_) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('İş Programı verisi alınamadı.'),
+        ),
+      );
+    } finally {
+      if (mounted) setState(() => _pullingDays = false);
+    }
   }
 
   @override
@@ -436,8 +564,8 @@ class _ImalatJobSheetState extends State<_ImalatJobSheet> {
               Padding(
                 padding: const EdgeInsets.only(top: AppSpacing.xs),
                 child: Text(
-                  'Planlanan keşif miktarını girin; günlük usta/düz '
-                  'kayıtlarını sonradan ekleyebilirsiniz.',
+                  'Planlanan keşif miktarı ve gün sayısını girin; '
+                  'günlük usta/düz kayıtlarını sonradan ekleyebilirsiniz.',
                   style: theme.textTheme.bodySmall,
                 ),
               ),
@@ -513,6 +641,41 @@ class _ImalatJobSheetState extends State<_ImalatJobSheet> {
             ),
             const SizedBox(height: AppSpacing.sm),
             TextField(
+              controller: _plannedDays,
+              decoration: const InputDecoration(
+                labelText: 'Planlanan gün sayısı',
+                hintText: 'Örn. 14',
+                suffixText: 'gün',
+              ),
+              keyboardType: TextInputType.number,
+            ),
+            const SizedBox(height: AppSpacing.sm),
+            OutlinedButton.icon(
+              onPressed: _pullingDays ? null : _pullPlannedDaysFromSchedule,
+              icon: _pullingDays
+                  ? const SizedBox(
+                      width: 18,
+                      height: 18,
+                      child: CircularProgressIndicator(strokeWidth: 2),
+                    )
+                  : const Icon(Icons.cloud_download_outlined, size: 20),
+              label: Text(
+                _pullingDays
+                    ? 'İş Programı’ndan alınıyor…'
+                    : 'İş Programı’ndan planlanan günü al',
+              ),
+            ),
+            if (_scheduleHint != null) ...[
+              const SizedBox(height: 6),
+              Text(
+                _scheduleHint!,
+                style: theme.textTheme.labelSmall?.copyWith(
+                  color: theme.colorScheme.onSurfaceVariant,
+                ),
+              ),
+            ],
+            const SizedBox(height: AppSpacing.sm),
+            TextField(
               controller: _note,
               decoration: const InputDecoration(labelText: 'Not'),
               maxLines: 2,
@@ -552,6 +715,8 @@ class _ImalatJobSheetState extends State<_ImalatJobSheet> {
                             : _unit.trim(),
                         plannedQty:
                             double.tryParse(_planned.text.trim()) ?? 0,
+                        plannedDays:
+                            int.tryParse(_plannedDays.text.trim()) ?? 0,
                         note: _note.text.trim(),
                         dailyEntries: widget.existing?.dailyEntries ?? [],
                       ),
@@ -645,7 +810,8 @@ class _ImalatDetailSheet extends ConsumerWidget {
                 Expanded(
                   child: Text(
                     'Keşif: ${_fmt(p.completedQty)} / '
-                    '${_fmt(p.plannedQty)} ${p.unit}',
+                    '${_fmt(p.plannedQty)} ${p.unit}'
+                    '${p.plannedDays > 0 ? ' · Plan ${p.plannedDays} gün' : ''}',
                     style: theme.textTheme.titleMedium,
                   ),
                 ),

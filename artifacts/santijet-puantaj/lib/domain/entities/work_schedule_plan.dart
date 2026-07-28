@@ -24,6 +24,20 @@ class WorkScheduleItem extends Equatable {
   final String? unit;
   final String? notes;
 
+  /// Başlangıç–bitiş dahil planlanan takvim günü (Demir `durationDays` hizası).
+  int? get durationDays {
+    final start = _parseDay(startDate);
+    final end = _parseDay(endDate);
+    if (start == null || end == null) return null;
+    final days = end.difference(start).inDays + 1;
+    return days > 0 ? days : null;
+  }
+
+  static DateTime? _parseDay(String? raw) {
+    if (raw == null || raw.isEmpty) return null;
+    return DateTime.tryParse(raw.length >= 10 ? raw.substring(0, 10) : raw);
+  }
+
   Map<String, dynamic> toJson() => {
         'id': id,
         'imalatId': imalatId,

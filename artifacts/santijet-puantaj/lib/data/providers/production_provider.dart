@@ -185,6 +185,7 @@ class ProductionNotifier extends StateNotifier<List<Production>> {
       teamName: 'Demo Ekip',
       unit: 'm³',
       plannedQty: double.parse((completed * 1.08).toStringAsFixed(2)),
+      plannedDays: entries.length,
       note: '[DEMO] Yıllık grafik örneği — inceledikten sonra silin',
       dailyEntries: entries,
     );
