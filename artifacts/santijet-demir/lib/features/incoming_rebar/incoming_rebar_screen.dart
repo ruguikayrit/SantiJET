@@ -95,15 +95,15 @@ class IncomingRebarScreen extends ConsumerWidget {
                     recordCount: deliveries.length,
                     onTap: () => context.push(AppRoutes.deliveryList),
                   ),
-                  const SizedBox(height: AppSpacing.md),
+                  SizedBox(height: AppFab.scrollClearanceOf(context)),
                 ]),
               ),
             ),
         ],
       ),
-      bottomNavigationBar: hasActiveProject &&
+      floatingActionButton: hasActiveProject &&
               ref.watch(canCreateDeliveryProvider)
-          ? AppShellDockAction(
+          ? AppFab(
               label: 'Yeni Teslimat',
               onPressed: () => context.push(AppRoutes.selectInTransitOrder),
             )

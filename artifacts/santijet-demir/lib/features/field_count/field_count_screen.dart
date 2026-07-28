@@ -115,16 +115,16 @@ class FieldCountScreen extends ConsumerWidget {
                       recordCount: counts.length,
                       onTap: () => context.push(AppRoutes.countRecords),
                     ),
-                    const SizedBox(height: AppSpacing.md),
+                    SizedBox(height: AppFab.scrollClearanceOf(context)),
                   ]),
                 ),
               ),
             ],
           ],
         ),
-      bottomNavigationBar: hasActiveProject &&
+      floatingActionButton: hasActiveProject &&
               ref.watch(canEditFieldCountProvider)
-          ? AppShellDockAction(
+          ? AppFab(
               label: 'Yeni Sayım',
               onPressed: () => context.push(AppRoutes.newCount),
             )
