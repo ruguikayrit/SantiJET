@@ -2,8 +2,10 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
+import '../../core/design_system/sj_button.dart';
 import '../../core/design_system/sj_card.dart';
 import '../../core/design_system/sj_empty_state.dart';
+import '../../core/design_system/sj_modal.dart';
 import '../../core/routing/app_routes.dart';
 import '../../core/theme/app_colors.dart';
 import '../../core/theme/app_radii.dart';
@@ -689,11 +691,12 @@ enum _AsChartStyle {
 
 /// Mum/çizgi periyodu — günlük · haftalık · aylık (OHLC agregasyon).
 enum _AsInterval {
-  day('1G'),
-  week('1H'),
-  month('1A');
+  day('1G', 'Günlük'),
+  week('1H', 'Haftalık'),
+  month('1A', 'Aylık');
 
-  const _AsInterval(this.label);
+  const _AsInterval(this.shortLabel, this.label);
+  final String shortLabel;
   final String label;
 }
 
@@ -816,47 +819,180 @@ class _AdamSaatEfficiencyChartState extends State<_AdamSaatEfficiencyChart> {
     ];
   }
 
-  Widget _chipRow({
+  Widget _optionSection({
     required ThemeData theme,
-    required List<({Object value, String label})> items,
+    required String title,
+    required List<({Object value, String label, String? subtitle})> items,
     required Object selected,
     required ValueChanged<Object> onSelect,
   }) {
-    return SingleChildScrollView(
-      scrollDirection: Axis.horizontal,
-      child: Row(
-        children: [
-          for (var i = 0; i < items.length; i++) ...[
-            if (i > 0) const SizedBox(width: 6),
-            ChoiceChip(
-              label: Text(items[i].label),
-              selected: selected == items[i].value,
-              visualDensity: VisualDensity.compact,
-              labelStyle: theme.textTheme.labelSmall?.copyWith(
-                fontWeight: selected == items[i].value
-                    ? FontWeight.w700
-                    : FontWeight.w500,
-                color: selected == items[i].value
-                    ? Colors.white
-                    : theme.colorScheme.onSurfaceVariant,
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        Text(
+          title,
+          style: theme.textTheme.labelLarge?.copyWith(
+            fontWeight: FontWeight.w700,
+            color: theme.colorScheme.onSurfaceVariant,
+          ),
+        ),
+        const SizedBox(height: AppSpacing.xs),
+        for (final item in items)
+          Padding(
+            padding: const EdgeInsets.only(bottom: 4),
+            child: Material(
+              color: selected == item.value
+                  ? AppColors.electricBlue.withValues(alpha: 0.12)
+                  : theme.colorScheme.surface.withValues(alpha: 0.6),
+              borderRadius: AppRadii.sm,
+              child: InkWell(
+                borderRadius: AppRadii.sm,
+                onTap: () => onSelect(item.value),
+                child: Padding(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: AppSpacing.sm,
+                    vertical: 10,
+                  ),
+                  child: Row(
+                    children: [
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              item.label,
+                              style: theme.textTheme.bodyMedium?.copyWith(
+                                fontWeight: selected == item.value
+                                    ? FontWeight.w700
+                                    : FontWeight.w500,
+                              ),
+                            ),
+                            if (item.subtitle != null)
+                              Text(
+                                item.subtitle!,
+                                style: theme.textTheme.labelSmall?.copyWith(
+                                  color: theme.colorScheme.onSurfaceVariant,
+                                ),
+                              ),
+                          ],
+                        ),
+                      ),
+                      Icon(
+                        selected == item.value
+                            ? Icons.radio_button_checked
+                            : Icons.radio_button_unchecked,
+                        size: 20,
+                        color: selected == item.value
+                            ? AppColors.electricBlue
+                            : theme.colorScheme.onSurfaceVariant,
+                      ),
+                    ],
+                  ),
+                ),
               ),
-              selectedColor: AppColors.electricBlue,
-              backgroundColor:
-                  theme.colorScheme.surface.withValues(alpha: 0.8),
-              side: BorderSide(
-                color: selected == items[i].value
-                    ? AppColors.electricBlue
-                    : theme.dividerColor,
-              ),
-              onSelected: (_) => onSelect(items[i].value),
-              materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
-              padding: const EdgeInsets.symmetric(horizontal: 6),
             ),
-          ],
-        ],
-      ),
+          ),
+      ],
     );
   }
+
+  Future<void> _openOptions() async {
+    var draftRange = _range;
+    var draftStyle = _style;
+    var draftInterval = _interval;
+
+    final applied = await SJModal.showSheet<bool>(
+      context: context,
+      title: 'Grafik ayarları',
+      child: StatefulBuilder(
+        builder: (context, setSheet) {
+          final theme = Theme.of(context);
+          return Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              ConstrainedBox(
+                constraints: BoxConstraints(
+                  maxHeight: MediaQuery.sizeOf(context).height * 0.55,
+                ),
+                child: SingleChildScrollView(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.stretch,
+                    children: [
+                      _optionSection(
+                        theme: theme,
+                        title: 'Dönem',
+                        selected: draftRange,
+                        onSelect: (v) =>
+                            setSheet(() => draftRange = v as _AsRange),
+                        items: [
+                          for (final r in _AsRange.values)
+                            (value: r, label: r.label, subtitle: null),
+                        ],
+                      ),
+                      const SizedBox(height: AppSpacing.md),
+                      _optionSection(
+                        theme: theme,
+                        title: 'Grafik tipi',
+                        selected: draftStyle,
+                        onSelect: (v) =>
+                            setSheet(() => draftStyle = v as _AsChartStyle),
+                        items: [
+                          (
+                            value: _AsChartStyle.candle,
+                            label: 'Mum',
+                            subtitle: 'Açılış · yüksek · düşük · kapanış',
+                          ),
+                          (
+                            value: _AsChartStyle.line,
+                            label: 'Çizgi',
+                            subtitle: 'Kapanış değerlerini birleştirir',
+                          ),
+                        ],
+                      ),
+                      const SizedBox(height: AppSpacing.md),
+                      _optionSection(
+                        theme: theme,
+                        title: 'Periyot',
+                        selected: draftInterval,
+                        onSelect: (v) => setSheet(
+                          () => draftInterval = v as _AsInterval,
+                        ),
+                        items: [
+                          for (final i in _AsInterval.values)
+                            (
+                              value: i,
+                              label: '${i.label} (${i.shortLabel})',
+                              subtitle: null,
+                            ),
+                        ],
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+              const SizedBox(height: AppSpacing.md),
+              SJButton(
+                label: 'Uygula',
+                onPressed: () => Navigator.of(context).pop(true),
+              ),
+            ],
+          );
+        },
+      ),
+    );
+
+    if (applied == true && mounted) {
+      setState(() {
+        _range = draftRange;
+        _style = draftStyle;
+        _interval = draftInterval;
+      });
+    }
+  }
+
+  String get _optionsSummary =>
+      '${_range.label} · ${_style.label} · ${_interval.shortLabel}';
 
   @override
   Widget build(BuildContext context) {
@@ -916,43 +1052,50 @@ class _AdamSaatEfficiencyChartState extends State<_AdamSaatEfficiencyChart> {
             ],
           ),
           const SizedBox(height: AppSpacing.xs),
-          _chipRow(
-            theme: theme,
-            selected: _range,
-            onSelect: (v) => setState(() => _range = v as _AsRange),
-            items: [
-              for (final r in _AsRange.values) (value: r, label: r.label),
-            ],
-          ),
-          const SizedBox(height: 6),
-          Row(
-            children: [
-              Expanded(
-                child: _chipRow(
-                  theme: theme,
-                  selected: _style,
-                  onSelect: (v) =>
-                      setState(() => _style = v as _AsChartStyle),
-                  items: [
-                    for (final s in _AsChartStyle.values)
-                      (value: s, label: s.label),
-                  ],
+          Align(
+            alignment: Alignment.centerLeft,
+            child: Material(
+              color: AppColors.electricBlue.withValues(alpha: 0.1),
+              borderRadius: AppRadii.full,
+              child: InkWell(
+                borderRadius: AppRadii.full,
+                onTap: _openOptions,
+                child: Padding(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 10,
+                    vertical: 6,
+                  ),
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Icon(
+                        Icons.tune_rounded,
+                        size: 16,
+                        color: AppColors.electricBlue,
+                      ),
+                      const SizedBox(width: 6),
+                      Flexible(
+                        child: Text(
+                          _optionsSummary,
+                          style: theme.textTheme.labelSmall?.copyWith(
+                            fontWeight: FontWeight.w700,
+                            color: AppColors.electricBlue,
+                          ),
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                      ),
+                      const SizedBox(width: 2),
+                      Icon(
+                        Icons.keyboard_arrow_down_rounded,
+                        size: 18,
+                        color: AppColors.electricBlue,
+                      ),
+                    ],
+                  ),
                 ),
               ),
-              const SizedBox(width: 8),
-              Expanded(
-                child: _chipRow(
-                  theme: theme,
-                  selected: _interval,
-                  onSelect: (v) =>
-                      setState(() => _interval = v as _AsInterval),
-                  items: [
-                    for (final i in _AsInterval.values)
-                      (value: i, label: i.label),
-                  ],
-                ),
-              ),
-            ],
+            ),
           ),
           const SizedBox(height: AppSpacing.sm),
           if (candles.isEmpty)
