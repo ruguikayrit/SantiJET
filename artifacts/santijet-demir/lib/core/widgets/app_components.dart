@@ -6,7 +6,6 @@ import 'package:santijet_demir/core/theme/app_colors.dart';
 import 'package:santijet_demir/core/theme/app_radii.dart';
 import 'package:santijet_demir/core/theme/app_spacing.dart';
 import 'package:santijet_demir/core/theme/app_typography.dart';
-import 'package:santijet_demir/core/widgets/app_bottom_nav_bar.dart';
 
 class StatusBadge extends StatelessWidget {
   const StatusBadge({
@@ -671,21 +670,26 @@ class AppFab extends StatelessWidget {
   final VoidCallback onPressed;
   final bool extended;
 
-  /// Alt sekmeli gezinme çubuğunun üstünde konumlandır (MainShell sekmeleri).
+  /// MainShell sekmesinde: gövde zaten alt nav üstünde biter; yalnızca hafif boşluk.
   final bool aboveBottomNav;
 
   static const _extendedHeight = 56.0;
   static const _fabEdgeMargin = 16.0;
   /// FAB ile son etkileşimli içerik arasında ek boşluk.
   static const _contentGap = 24.0;
+  /// Nested shell gövdesinde nav’a yapışık duruş için ek alt boşluk.
+  static const _shellDockGap = 8.0;
 
-  /// Kaydırılabilir içerik altına konacak boşluk — FAB / alt nav hiçbir butonu örtmez.
+  /// Kaydırılabilir içerik altına konacak boşluk — FAB hiçbir butonu örtmez.
+  ///
+  /// [aboveBottomNav] true iken nav yüksekliği eklenmez: MainShell gövdesi
+  /// zaten alt navigasyonun üstünde biter (çift ofset FAB’ı yukarı iterdi).
   static double scrollClearanceOf(
     BuildContext context, {
     bool aboveBottomNav = true,
   }) {
-    final nav = aboveBottomNav ? AppBottomNavBar.totalHeightOf(context) : 0.0;
-    return nav + _extendedHeight + _fabEdgeMargin + _contentGap;
+    final dock = aboveBottomNav ? _shellDockGap : 0.0;
+    return dock + _extendedHeight + _fabEdgeMargin + _contentGap;
   }
 
   @override
@@ -707,8 +711,52 @@ class AppFab extends StatelessWidget {
     if (!aboveBottomNav) return fab;
 
     return Padding(
-      padding: EdgeInsets.only(bottom: AppBottomNavBar.totalHeightOf(context)),
+      padding: const EdgeInsets.only(bottom: _shellDockGap),
       child: fab,
+    );
+  }
+}
+
+/// MainShell sekme ekranlarında alt nav’ın hemen üstüne oturan birincil CTA.
+class AppShellDockAction extends StatelessWidget {
+  const AppShellDockAction({
+    super.key,
+    required this.label,
+    required this.onPressed,
+  });
+
+  final String label;
+  final VoidCallback onPressed;
+
+  @override
+  Widget build(BuildContext context) {
+    return Material(
+      color: AppColors.surfaceElevated,
+      child: DecoratedBox(
+        decoration: BoxDecoration(
+          border: Border(top: BorderSide(color: AppColors.border)),
+        ),
+        child: Padding(
+          padding: const EdgeInsets.fromLTRB(
+            AppSpacing.md,
+            8,
+            AppSpacing.md,
+            8,
+          ),
+          child: SizedBox(
+            width: double.infinity,
+            height: 48,
+            child: FilledButton.icon(
+              onPressed: () {
+                AppHaptics.light();
+                onPressed();
+              },
+              icon: const Icon(Icons.add, size: 20),
+              label: Text(label),
+            ),
+          ),
+        ),
+      ),
     );
   }
 }
