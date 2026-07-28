@@ -628,8 +628,8 @@ class _QtyCell extends StatelessWidget {
   }
 }
 
-/// Günlük adam-saat verim çubuk grafiği — ortalamanın üstü/altı renklenir.
-class _AdamSaatEfficiencyChart extends StatelessWidget {
+/// Günlük adam-saat verim çubuk grafiği — zaman filtresi + dikey tarih etiketleri.
+class _AdamSaatEfficiencyChart extends StatefulWidget {
   const _AdamSaatEfficiencyChart({
     required this.points,
     required this.unit,
@@ -640,6 +640,27 @@ class _AdamSaatEfficiencyChart extends StatelessWidget {
   final String unit;
   final double? overallRate;
 
+  @override
+  State<_AdamSaatEfficiencyChart> createState() =>
+      _AdamSaatEfficiencyChartState();
+}
+
+enum _AsRange {
+  week(7, 'Haftalık'),
+  month(30, 'Aylık'),
+  m3(90, '3 Aylık'),
+  m6(180, '6 Aylık'),
+  m9(270, '9 Aylık'),
+  year(365, 'Yıllık');
+
+  const _AsRange(this.days, this.label);
+  final int days;
+  final String label;
+}
+
+class _AdamSaatEfficiencyChartState extends State<_AdamSaatEfficiencyChart> {
+  _AsRange _range = _AsRange.month;
+
   static String _fmt(double v) {
     if (v == v.roundToDouble()) return v.toStringAsFixed(0);
     if (v.abs() >= 10) return v.toStringAsFixed(1);
@@ -647,22 +668,33 @@ class _AdamSaatEfficiencyChart extends StatelessWidget {
     return v.toStringAsFixed(3);
   }
 
+  List<_AsRatePoint> _filtered() {
+    final now = DateTime.now();
+    final start = DateTime(now.year, now.month, now.day)
+        .subtract(Duration(days: _range.days - 1));
+    final out = <_AsRatePoint>[];
+    for (final p in widget.points) {
+      try {
+        final d = PuantajDate.parse(p.date);
+        final day = DateTime(d.year, d.month, d.day);
+        if (!day.isBefore(start)) out.add(p);
+      } catch (_) {
+        // Geçersiz tarih — atla.
+      }
+    }
+    return out;
+  }
+
+  String _shortDate(String date) {
+    // dd.MM
+    if (date.length >= 5) return date.substring(0, 5);
+    return date;
+  }
+
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    final avg = points.fold<double>(0, (s, p) => s + p.rate) / points.length;
-    final latest = points.last.rate;
-    final vsAvg = avg <= 0 ? 0.0 : (latest - avg) / avg;
-    final verdictColor = vsAvg >= 0.05
-        ? AppColors.success
-        : vsAvg <= -0.05
-            ? AppColors.critical
-            : AppColors.warning;
-    final verdictLabel = vsAvg >= 0.05
-        ? 'Ortalamanın üstünde'
-        : vsAvg <= -0.05
-            ? 'Ortalamanın altında'
-            : 'Ortalama civarı';
+    final points = _filtered();
 
     return Container(
       padding: const EdgeInsets.all(AppSpacing.sm),
@@ -680,63 +712,167 @@ class _AdamSaatEfficiencyChart extends StatelessWidget {
             children: [
               Expanded(
                 child: Text(
-                  'Verim · $unit/as',
+                  'Verim · ${widget.unit}/as',
                   style: theme.textTheme.labelMedium?.copyWith(
                     fontWeight: FontWeight.w700,
                     color: AppColors.electricBlue,
                   ),
                 ),
               ),
-              Text(
-                verdictLabel,
-                style: theme.textTheme.labelSmall?.copyWith(
-                  color: verdictColor,
-                  fontWeight: FontWeight.w700,
+              if (points.isNotEmpty)
+                Builder(
+                  builder: (context) {
+                    final avg =
+                        points.fold<double>(0, (s, p) => s + p.rate) /
+                            points.length;
+                    final latest = points.last.rate;
+                    final vsAvg = avg <= 0 ? 0.0 : (latest - avg) / avg;
+                    final verdictColor = vsAvg >= 0.05
+                        ? AppColors.success
+                        : vsAvg <= -0.05
+                            ? AppColors.critical
+                            : AppColors.warning;
+                    final verdictLabel = vsAvg >= 0.05
+                        ? 'Ortalamanın üstünde'
+                        : vsAvg <= -0.05
+                            ? 'Ortalamanın altında'
+                            : 'Ortalama civarı';
+                    return Text(
+                      verdictLabel,
+                      style: theme.textTheme.labelSmall?.copyWith(
+                        color: verdictColor,
+                        fontWeight: FontWeight.w700,
+                      ),
+                    );
+                  },
                 ),
-              ),
             ],
           ),
-          const SizedBox(height: 2),
-          Text(
-            'Ort ${_fmt(avg)} · Son ${_fmt(latest)}'
-            '${overallRate != null ? ' · Genel ${_fmt(overallRate!)}' : ''}'
-            ' $unit/as',
-            style: theme.textTheme.labelSmall?.copyWith(
-              color: theme.colorScheme.onSurfaceVariant,
+          const SizedBox(height: AppSpacing.xs),
+          SingleChildScrollView(
+            scrollDirection: Axis.horizontal,
+            child: Row(
+              children: [
+                for (final r in _AsRange.values) ...[
+                  if (r != _AsRange.values.first)
+                    const SizedBox(width: 6),
+                  ChoiceChip(
+                    label: Text(r.label),
+                    selected: _range == r,
+                    visualDensity: VisualDensity.compact,
+                    labelStyle: theme.textTheme.labelSmall?.copyWith(
+                      fontWeight:
+                          _range == r ? FontWeight.w700 : FontWeight.w500,
+                      color: _range == r
+                          ? Colors.white
+                          : theme.colorScheme.onSurfaceVariant,
+                    ),
+                    selectedColor: AppColors.electricBlue,
+                    backgroundColor:
+                        theme.colorScheme.surface.withValues(alpha: 0.8),
+                    side: BorderSide(
+                      color: _range == r
+                          ? AppColors.electricBlue
+                          : theme.dividerColor,
+                    ),
+                    onSelected: (_) => setState(() => _range = r),
+                    materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                    padding: const EdgeInsets.symmetric(horizontal: 6),
+                  ),
+                ],
+              ],
             ),
           ),
           const SizedBox(height: AppSpacing.sm),
-          SizedBox(
-            height: 88,
-            child: CustomPaint(
-              painter: _AdamSaatBarPainter(
-                points: points,
-                average: avg,
-                barAbove: AppColors.success,
-                barNear: AppColors.info,
-                barBelow: AppColors.critical,
-                averageColor: AppColors.electricBlue,
-                axisColor: theme.colorScheme.onSurfaceVariant
-                    .withValues(alpha: 0.35),
+          if (points.isEmpty)
+            Padding(
+              padding: const EdgeInsets.symmetric(vertical: AppSpacing.md),
+              child: Text(
+                'Seçilen dönemde verim kaydı yok.',
+                style: theme.textTheme.bodySmall,
+                textAlign: TextAlign.center,
               ),
-              child: const SizedBox.expand(),
+            )
+          else ...[
+            Builder(
+              builder: (context) {
+                final avg = points.fold<double>(0, (s, p) => s + p.rate) /
+                    points.length;
+                final latest = points.last.rate;
+                return Text(
+                  'Ort ${_fmt(avg)} · Son ${_fmt(latest)}'
+                  '${widget.overallRate != null ? ' · Genel ${_fmt(widget.overallRate!)}' : ''}'
+                  ' ${widget.unit}/as',
+                  style: theme.textTheme.labelSmall?.copyWith(
+                    color: theme.colorScheme.onSurfaceVariant,
+                  ),
+                );
+              },
             ),
-          ),
-          if (points.length <= 8) ...[
-            const SizedBox(height: 4),
-            Row(
-              children: [
-                for (final p in points)
-                  Expanded(
-                    child: Text(
-                      p.date.length >= 5 ? p.date.substring(0, 5) : p.date,
-                      textAlign: TextAlign.center,
-                      style: theme.textTheme.labelSmall?.copyWith(fontSize: 9),
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
+            const SizedBox(height: AppSpacing.sm),
+            LayoutBuilder(
+              builder: (context, constraints) {
+                final avg = points.fold<double>(0, (s, p) => s + p.rate) /
+                    points.length;
+                final minBarSlot = 22.0;
+                final chartWidth = (points.length * minBarSlot)
+                    .clamp(constraints.maxWidth, double.infinity);
+                return SingleChildScrollView(
+                  scrollDirection: Axis.horizontal,
+                  child: SizedBox(
+                    width: chartWidth.toDouble(),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.stretch,
+                      children: [
+                        SizedBox(
+                          height: 96,
+                          child: CustomPaint(
+                            painter: _AdamSaatBarPainter(
+                              points: points,
+                              average: avg,
+                              barAbove: AppColors.success,
+                              barNear: AppColors.info,
+                              barBelow: AppColors.critical,
+                              averageColor: AppColors.electricBlue,
+                              axisColor: theme.colorScheme.onSurfaceVariant
+                                  .withValues(alpha: 0.35),
+                            ),
+                            child: const SizedBox.expand(),
+                          ),
+                        ),
+                        const SizedBox(height: 4),
+                        SizedBox(
+                          height: 56,
+                          child: Row(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              for (final p in points)
+                                Expanded(
+                                  child: Center(
+                                    child: RotatedBox(
+                                      quarterTurns: 3,
+                                      child: Text(
+                                        _shortDate(p.date),
+                                        style:
+                                            theme.textTheme.labelSmall?.copyWith(
+                                          fontSize: 9,
+                                          height: 1,
+                                          fontWeight: FontWeight.w600,
+                                        ),
+                                        maxLines: 1,
+                                        softWrap: false,
+                                      ),
+                                    ),
+                                  ),
+                                ),
+                            ],
+                          ),
+                        ),
+                      ],
                     ),
                   ),
-              ],
+                );
+              },
             ),
           ],
         ],
@@ -780,14 +916,13 @@ class _AdamSaatBarPainter extends CustomPainter {
     final chartW = size.width - padL - padR;
     final chartH = size.height - padT - padB;
     final n = points.length;
-    final gap = n <= 1 ? 0.0 : chartW * 0.08 / n;
+    final gap = n <= 1 ? 0.0 : chartW * 0.06 / n;
     final barW = n <= 1
         ? chartW * 0.35
-        : ((chartW - gap * (n - 1)) / n).clamp(4.0, 28.0);
+        : ((chartW - gap * (n - 1)) / n).clamp(6.0, 36.0);
     final totalBars = n * barW + (n - 1) * gap;
     final startX = padL + (chartW - totalBars) / 2;
 
-    // Baseline
     final axisPaint = Paint()
       ..color = axisColor
       ..strokeWidth = 1;
@@ -797,14 +932,13 @@ class _AdamSaatBarPainter extends CustomPainter {
       axisPaint,
     );
 
-    // Average line
     if (average > 0) {
       final ay = padT + chartH * (1 - (average / top).clamp(0.0, 1.0));
       final avgPaint = Paint()
         ..color = averageColor
         ..strokeWidth = 1.5
         ..style = PaintingStyle.stroke;
-      final dash = 4.0;
+      const dash = 4.0;
       var x = padL;
       while (x < size.width - padR) {
         canvas.drawLine(
@@ -821,9 +955,10 @@ class _AdamSaatBarPainter extends CustomPainter {
       final h = chartH * (rate / top).clamp(0.0, 1.0);
       final left = startX + i * (barW + gap);
       final topY = padT + chartH - h;
-      final rect = RRect.fromRectAndRadius(
-        Rect.fromLTWH(left, topY, barW, h < 2 ? 2 : h),
-        const Radius.circular(3),
+      // Mum gövdesi
+      final body = RRect.fromRectAndRadius(
+        Rect.fromLTWH(left, topY, barW, h < 3 ? 3 : h),
+        const Radius.circular(2),
       );
       final delta = average <= 0 ? 0.0 : (rate - average) / average;
       final color = delta >= 0.05
@@ -831,7 +966,18 @@ class _AdamSaatBarPainter extends CustomPainter {
           : delta <= -0.05
               ? barBelow
               : barNear;
-      canvas.drawRRect(rect, Paint()..color = color.withValues(alpha: 0.85));
+      canvas.drawRRect(body, Paint()..color = color.withValues(alpha: 0.9));
+      // Fitil (mum üst/alt çizgisi)
+      final midX = left + barW / 2;
+      final wickPaint = Paint()
+        ..color = color
+        ..strokeWidth = 1.2
+        ..strokeCap = StrokeCap.round;
+      canvas.drawLine(
+        Offset(midX, topY - 3),
+        Offset(midX, topY + (h < 3 ? 3 : h) + 2),
+        wickPaint,
+      );
     }
   }
 
