@@ -45,7 +45,8 @@ class _SeedAndRunState extends ConsumerState<_SeedAndRun> {
   void initState() {
     super.initState();
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      seedDemoIfEmpty(
+      ensureDemoSeed(
+        settingsBox: ref.read(settingsBoxProvider),
         projects: ref.read(projectsProvider.notifier),
         plans: ref.read(pourPlansProvider.notifier),
         pours: ref.read(pourRecordsProvider.notifier),
