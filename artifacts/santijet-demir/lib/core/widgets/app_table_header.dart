@@ -82,13 +82,14 @@ class AppTableHeaderBadge extends StatelessWidget {
   final EdgeInsetsGeometry? padding;
 
   /// Tek/çift satır başlıklar için ortak çerçeve yüksekliği.
-  static const minHeight = 36.0;
+  static const minHeight = 40.0;
 
-  static TextStyle get _textStyle => AppTypography.labelSmall.copyWith(
+  /// Satır değerleriyle (titleMedium ~14) hizalı, net okunur başlık.
+  static TextStyle get _textStyle => AppTypography.titleMedium.copyWith(
         color: Colors.black,
         fontWeight: FontWeight.w700,
-        height: 1.0,
-        fontSize: (AppTypography.labelSmall.fontSize ?? 11) * 0.95,
+        height: 1.1,
+        letterSpacing: 0.3,
       );
 
   @override

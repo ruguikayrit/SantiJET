@@ -68,7 +68,7 @@ class ReconciliationTable extends StatelessWidget {
 
   /// Yatay: kısa başlıklar dar, uzun başlıklar geniş — tüm harfler görünsün.
   static const _landscapeFlex = <double>[
-    0.62, // Çap
+    1.15, // Çap / Son Toplamlar — tek satır etiket için geniş
     0.78, // Keşif
     0.88, // Sipariş
     1.05, // Teslim alınan
@@ -81,7 +81,7 @@ class ReconciliationTable extends StatelessWidget {
 
   /// Dikey kaydırma: sabit px — en uzun başlığa göre.
   static const _portraitWidths = <double>[
-    42, // Çap
+    72, // Çap / Son Toplamlar
     50, // Keşif
     56, // Sipariş
     64, // Teslim alınan
@@ -270,30 +270,29 @@ class ReconciliationTable extends StatelessWidget {
     String? line2,
     TextAlign align = TextAlign.center,
   }) {
-    return Padding(
-      padding: const EdgeInsets.all(3),
-      child: AppTableHeaderBadge(line1, line2: line2, align: align),
+    return TableCell(
+      verticalAlignment: TableCellVerticalAlignment.fill,
+      child: Padding(
+        padding: const EdgeInsets.all(3),
+        child: SizedBox.expand(
+          child: AppTableHeaderBadge(line1, line2: line2, align: align),
+        ),
+      ),
     );
   }
 
   Widget _totalLabelCell() {
     return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 5),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.center,
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Text(
-            'Son',
-            style: AppTypography.bodySmall.merge(_totalStyle),
-            textAlign: TextAlign.center,
-          ),
-          Text(
-            'Toplamlar',
-            style: AppTypography.bodySmall.merge(_totalStyle),
-            textAlign: TextAlign.center,
-          ),
-        ],
+      padding: const EdgeInsets.symmetric(horizontal: 2, vertical: 5),
+      child: FittedBox(
+        fit: BoxFit.scaleDown,
+        child: Text(
+          'Son Toplamlar',
+          style: AppTypography.bodySmall.merge(_totalStyle),
+          textAlign: TextAlign.center,
+          maxLines: 1,
+          softWrap: false,
+        ),
       ),
     );
   }
