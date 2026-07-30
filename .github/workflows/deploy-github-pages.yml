@@ -1,4 +1,4 @@
-name: Deploy ŞantiJET GitHub Pages (DEMİR + BFA + Puantaj + Staging)
+name: Deploy ŞantiJET GitHub Pages (DEMİR + BFA + Puantaj + Beton + Staging)
 
 on:
   push:
@@ -9,6 +9,7 @@ on:
       - 'artifacts/santijet-demir/**'
       - 'artifacts/santijet-bfa-flutter/**'
       - 'artifacts/santijet-puantaj/**'
+      - 'artifacts/santijet-beton/**'
       - '.github/workflows/deploy-github-pages.yml'
       - '.github/scripts/**'
   workflow_dispatch:
@@ -107,6 +108,28 @@ jobs:
             exit 1
           fi
 
+      - name: Setup Flutter (Beton)
+        uses: subosito/flutter-action@v2
+        with:
+          channel: stable
+          flutter-version: '3.27.4'
+          cache: true
+          cache-key: flutter-beton-3.27.4
+
+      - name: Build Beton web (staging preview)
+        id: beton_build
+        env:
+          GITHUB_REPOSITORY_NAME: ${{ github.event.repository.name }}
+        run: |
+          if [ -f staging-src/.github/scripts/build-beton-pages.sh ]; then
+            bash staging-src/.github/scripts/build-beton-pages.sh
+          elif [ -f .github/scripts/build-beton-pages.sh ]; then
+            bash .github/scripts/build-beton-pages.sh
+          else
+            echo "::error::build-beton-pages.sh missing on main and staging"
+            exit 1
+          fi
+
       - name: Verify site bundle
         run: |
           test -f site/index.html
@@ -121,6 +144,10 @@ jobs:
           fi
           if [ ! -f site/puantaj/index.html ]; then
             echo "::error::Puantaj bundle missing (site/puantaj/index.html). Refusing to deploy a broken /puantaj/."
+            exit 1
+          fi
+          if [ ! -f site/beton/index.html ]; then
+            echo "::error::Beton bundle missing (site/beton/index.html). Refusing to deploy a broken /beton/."
             exit 1
           fi
 
@@ -139,3 +166,4 @@ jobs:
           echo "Staging DEMİR: https://${{ github.repository_owner }}.github.io/${{ github.event.repository.name }}/staging/"
           echo "BFA: https://${{ github.repository_owner }}.github.io/${{ github.event.repository.name }}/bfa/"
           echo "Puantaj staging: https://${{ github.repository_owner }}.github.io/${{ github.event.repository.name }}/puantaj/"
+          echo "Beton staging: https://${{ github.repository_owner }}.github.io/${{ github.event.repository.name }}/beton/"
