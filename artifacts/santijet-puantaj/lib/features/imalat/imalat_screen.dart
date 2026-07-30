@@ -132,12 +132,31 @@ class ImalatScreen extends ConsumerWidget {
                                   color: AppColors.success,
                                 )
                               else
-                                Text(
-                                  '%${pct.toStringAsFixed(0)}',
-                                  style: theme.textTheme.titleSmall?.copyWith(
-                                    color: color,
-                                    fontWeight: FontWeight.w700,
-                                  ),
+                                Column(
+                                  crossAxisAlignment: CrossAxisAlignment.end,
+                                  children: [
+                                    Text(
+                                      'Metraj %${pct.toStringAsFixed(0)}',
+                                      style:
+                                          theme.textTheme.titleSmall?.copyWith(
+                                        color: color,
+                                        fontWeight: FontWeight.w700,
+                                      ),
+                                    ),
+                                    if (p.plannedDays > 0) ...[
+                                      const SizedBox(height: 2),
+                                      Text(
+                                        'Süre %${p.timeProgressPct.toStringAsFixed(0)}',
+                                        style: theme.textTheme.labelSmall
+                                            ?.copyWith(
+                                          color: _progressColor(
+                                            p.timeProgressPct,
+                                          ),
+                                          fontWeight: FontWeight.w700,
+                                        ),
+                                      ),
+                                    ],
+                                  ],
                                 ),
                             ],
                           ),
@@ -165,7 +184,7 @@ class ImalatScreen extends ConsumerWidget {
                           Text(
                             'Keşif: ${_fmt(p.completedQty)} / '
                             '${_fmt(p.plannedQty)} ${p.unit}'
-                            '${p.plannedDays > 0 ? ' · ${p.plannedDays} gün' : ''}',
+                            '${p.plannedDays > 0 ? ' · Süre: ${p.workedDays}/${p.plannedDays} gün' : ''}',
                             style: theme.textTheme.bodyMedium,
                           ),
                           Text(
@@ -175,15 +194,7 @@ class ImalatScreen extends ConsumerWidget {
                             style: theme.textTheme.labelSmall,
                           ),
                           const SizedBox(height: AppSpacing.sm),
-                          ClipRRect(
-                            borderRadius: BorderRadius.circular(4),
-                            child: LinearProgressIndicator(
-                              value: (pct / 100).clamp(0.0, 1.0),
-                              minHeight: 6,
-                              backgroundColor: color.withValues(alpha: 0.15),
-                              color: color,
-                            ),
-                          ),
+                          _ImalatDualProgress(production: p),
                           if (!p.isComplete) ...[
                             const SizedBox(height: AppSpacing.sm),
                             Align(
@@ -806,34 +817,42 @@ class _ImalatDetailSheet extends ConsumerWidget {
             ),
             const SizedBox(height: AppSpacing.sm),
             Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Expanded(
                   child: Text(
                     'Keşif: ${_fmt(p.completedQty)} / '
                     '${_fmt(p.plannedQty)} ${p.unit}'
-                    '${p.plannedDays > 0 ? ' · Plan ${p.plannedDays} gün' : ''}',
+                    '${p.plannedDays > 0 ? ' · Süre: ${p.workedDays}/${p.plannedDays} gün' : ''}',
                     style: theme.textTheme.titleMedium,
                   ),
                 ),
-                Text(
-                  '%${pct.toStringAsFixed(0)}',
-                  style: theme.textTheme.titleMedium?.copyWith(
-                    color: color,
-                    fontWeight: FontWeight.w700,
-                  ),
+                Column(
+                  crossAxisAlignment: CrossAxisAlignment.end,
+                  children: [
+                    Text(
+                      'Metraj %${pct.toStringAsFixed(0)}',
+                      style: theme.textTheme.titleMedium?.copyWith(
+                        color: color,
+                        fontWeight: FontWeight.w700,
+                      ),
+                    ),
+                    if (p.plannedDays > 0) ...[
+                      const SizedBox(height: 2),
+                      Text(
+                        'Süre %${p.timeProgressPct.toStringAsFixed(0)}',
+                        style: theme.textTheme.labelMedium?.copyWith(
+                          color: _progressColor(p.timeProgressPct),
+                          fontWeight: FontWeight.w700,
+                        ),
+                      ),
+                    ],
+                  ],
                 ),
               ],
             ),
-            const SizedBox(height: AppSpacing.xs),
-            ClipRRect(
-              borderRadius: BorderRadius.circular(4),
-              child: LinearProgressIndicator(
-                value: (pct / 100).clamp(0.0, 1.0),
-                minHeight: 8,
-                backgroundColor: color.withValues(alpha: 0.15),
-                color: color,
-              ),
-            ),
+            const SizedBox(height: AppSpacing.sm),
+            _ImalatDualProgress(production: p, dense: false),
             const SizedBox(height: AppSpacing.md),
             Row(
               children: [
@@ -1226,6 +1245,123 @@ class _ImalatDayEntrySheetState extends ConsumerState<_ImalatDayEntrySheet> {
           ],
         ),
       ),
+    );
+  }
+}
+
+Color _progressColor(double pct) {
+  if (pct >= 100) return AppColors.success;
+  if (pct >= 50) return AppColors.warning;
+  return AppColors.critical;
+}
+
+/// Metraj ve süre bazlı çift ilerleme çubuğu.
+class _ImalatDualProgress extends StatelessWidget {
+  const _ImalatDualProgress({
+    required this.production,
+    this.dense = true,
+  });
+
+  final Production production;
+  final bool dense;
+
+  static String _fmt(double v) {
+    if (v == v.roundToDouble()) return v.toStringAsFixed(0);
+    return v.toStringAsFixed(1);
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final barH = dense ? 6.0 : 8.0;
+    final gap = dense ? AppSpacing.xs : AppSpacing.sm;
+    final showTime = production.plannedDays > 0;
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        _ProgressLine(
+          label: 'Metraj',
+          detail:
+              '${_fmt(production.completedQty)} / ${_fmt(production.plannedQty)} ${production.unit}',
+          pct: production.progressPct,
+          color: _progressColor(production.progressPct),
+          barHeight: barH,
+          labelStyle: theme.textTheme.labelSmall,
+        ),
+        if (showTime) ...[
+          SizedBox(height: gap),
+          _ProgressLine(
+            label: 'Süre',
+            detail: '${production.workedDays} / ${production.plannedDays} gün',
+            pct: production.timeProgressPct,
+            color: _progressColor(production.timeProgressPct),
+            barHeight: barH,
+            labelStyle: theme.textTheme.labelSmall,
+          ),
+        ],
+      ],
+    );
+  }
+}
+
+class _ProgressLine extends StatelessWidget {
+  const _ProgressLine({
+    required this.label,
+    required this.detail,
+    required this.pct,
+    required this.color,
+    required this.barHeight,
+    required this.labelStyle,
+  });
+
+  final String label;
+  final String detail;
+  final double pct;
+  final Color color;
+  final double barHeight;
+  final TextStyle? labelStyle;
+
+  @override
+  Widget build(BuildContext context) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        Row(
+          children: [
+            Text(
+              label,
+              style: labelStyle?.copyWith(fontWeight: FontWeight.w700),
+            ),
+            const SizedBox(width: AppSpacing.xs),
+            Expanded(
+              child: Text(
+                detail,
+                style: labelStyle,
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+              ),
+            ),
+            Text(
+              '%${pct.toStringAsFixed(0)}',
+              style: labelStyle?.copyWith(
+                color: color,
+                fontWeight: FontWeight.w700,
+              ),
+            ),
+          ],
+        ),
+        const SizedBox(height: 4),
+        ClipRRect(
+          borderRadius: BorderRadius.circular(4),
+          child: LinearProgressIndicator(
+            value: (pct / 100).clamp(0.0, 1.0),
+            minHeight: barHeight,
+            backgroundColor: color.withValues(alpha: 0.15),
+            color: color,
+          ),
+        ),
+      ],
     );
   }
 }

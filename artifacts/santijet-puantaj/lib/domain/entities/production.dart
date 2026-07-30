@@ -82,6 +82,25 @@ class Production extends Equatable {
     return ((completedQty / plannedQty) * 100).clamp(0, 100);
   }
 
+  /// İş yapılan benzersiz gün sayısı (günlük kayıt tarihi).
+  int get workedDays {
+    final days = <String>{};
+    for (final e in dailyEntries) {
+      final d = e.date.trim();
+      if (d.isEmpty) continue;
+      if (e.ustaCount > 0 || e.duzIsciCount > 0 || e.completedQty > 0) {
+        days.add(d);
+      }
+    }
+    return days.length;
+  }
+
+  /// Süre bazlı ilerleme: çalışılan gün / planlanan gün.
+  double get timeProgressPct {
+    if (plannedDays <= 0) return workedDays > 0 ? 100 : 0;
+    return ((workedDays / plannedDays) * 100).clamp(0, 100);
+  }
+
   bool get isComplete => progressPct >= 100;
 
   ProductionDayEntry? entryOnDate(String date) {
