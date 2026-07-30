@@ -786,8 +786,8 @@ class _PersonCard extends StatelessWidget {
                 const SizedBox(height: AppSpacing.sm),
                 Row(
                   children: [
-                    Text('Mesai', style: theme.textTheme.labelMedium),
                     const Spacer(),
+                    Text('Mesai', style: theme.textTheme.labelMedium),
                     IconButton(
                       visualDensity: VisualDensity.compact,
                       onPressed: overtimeHours <= 0
