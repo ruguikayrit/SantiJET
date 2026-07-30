@@ -66,9 +66,16 @@ class KesifScreen extends ConsumerWidget {
                             const SizedBox(height: AppSpacing.sm),
                             if (elements.isEmpty)
                               SJCard(
-                                child: Text(
-                                  'Henüz element keşfi yok.',
-                                  style: Theme.of(context).textTheme.bodyMedium,
+                                child: Builder(
+                                  builder: (context) => Text(
+                                    'Henüz element keşfi yok.',
+                                    style: Theme.of(context)
+                                        .textTheme
+                                        .bodyMedium
+                                        ?.copyWith(
+                                          color: AppColors.cardTextSecondary,
+                                        ),
+                                  ),
                                 ),
                               )
                             else
@@ -119,9 +126,16 @@ class KesifScreen extends ConsumerWidget {
                             const SizedBox(height: AppSpacing.sm),
                             if (variance.isEmpty)
                               SJCard(
-                                child: Text(
-                                  'Plan ↔ gerçekleşen farkı için henüz açıklama yok.',
-                                  style: Theme.of(context).textTheme.bodyMedium,
+                                child: Builder(
+                                  builder: (context) => Text(
+                                    'Plan ↔ gerçekleşen farkı için henüz açıklama yok.',
+                                    style: Theme.of(context)
+                                        .textTheme
+                                        .bodyMedium
+                                        ?.copyWith(
+                                          color: AppColors.cardTextSecondary,
+                                        ),
+                                  ),
                                 ),
                               )
                             else
@@ -433,7 +447,10 @@ class _OverallProgressCard extends StatelessWidget {
                   Expanded(
                     child: Text(
                       'Genel İlerleme',
-                      style: theme.textTheme.titleMedium,
+                      style: theme.textTheme.titleMedium?.copyWith(
+                        color: AppColors.cardTextPrimary,
+                        fontWeight: FontWeight.w700,
+                      ),
                     ),
                   ),
                   Text(
@@ -525,6 +542,7 @@ class _ElementProgressTile extends StatelessWidget {
                     child: Text(
                       row.elementName.isEmpty ? 'İsimsiz' : row.elementName,
                       style: theme.textTheme.titleSmall?.copyWith(
+                        color: AppColors.cardTextPrimary,
                         fontWeight: FontWeight.w700,
                       ),
                     ),
@@ -540,7 +558,12 @@ class _ElementProgressTile extends StatelessWidget {
               ),
               if (subtitle.isNotEmpty) ...[
                 const SizedBox(height: 2),
-                Text(subtitle, style: theme.textTheme.labelSmall),
+                Text(
+                  subtitle,
+                  style: theme.textTheme.labelSmall?.copyWith(
+                    color: AppColors.cardTextMuted,
+                  ),
+                ),
               ],
               const SizedBox(height: AppSpacing.sm),
               Row(
@@ -548,20 +571,26 @@ class _ElementProgressTile extends StatelessWidget {
                   Expanded(
                     child: Text(
                       'Plan ${BetonProgress.fmtM3(row.plannedM3)} m³',
-                      style: theme.textTheme.bodySmall,
+                      style: theme.textTheme.bodySmall?.copyWith(
+                        color: AppColors.cardTextSecondary,
+                      ),
                     ),
                   ),
                   Expanded(
                     child: Text(
                       'Dökülen ${BetonProgress.fmtM3(row.pouredM3)} m³',
-                      style: theme.textTheme.bodySmall,
+                      style: theme.textTheme.bodySmall?.copyWith(
+                        color: AppColors.cardTextSecondary,
+                      ),
                       textAlign: TextAlign.center,
                     ),
                   ),
                   Expanded(
                     child: Text(
                       'Kalan ${BetonProgress.fmtM3(row.remainingM3)} m³',
-                      style: theme.textTheme.bodySmall,
+                      style: theme.textTheme.bodySmall?.copyWith(
+                        color: AppColors.cardTextSecondary,
+                      ),
                       textAlign: TextAlign.end,
                     ),
                   ),
@@ -614,6 +643,7 @@ class _VarianceTile extends StatelessWidget {
                     child: Text(
                       note.reason,
                       style: theme.textTheme.titleSmall?.copyWith(
+                        color: AppColors.cardTextPrimary,
                         fontWeight: FontWeight.w700,
                       ),
                     ),

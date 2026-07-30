@@ -128,6 +128,23 @@ abstract final class AppColors {
   static Color get cardTextDisabled =>
       useDarkCards ? darkTextDisabled : lightTextDisabled;
 
+  /// Arka plan koyuysa her zaman açık mürekkep; açıkta koyu mürekkep.
+  /// Koyu-üzerine-koyu / açık-üzerine-açık kombinasyonunu engeller.
+  static Color readableOn(Color background) {
+    final luminance = background.computeLuminance();
+    return luminance < 0.45 ? darkTextPrimary : lightTextPrimary;
+  }
+
+  static Color readableSecondaryOn(Color background) {
+    final luminance = background.computeLuminance();
+    return luminance < 0.45 ? darkTextSecondary : lightTextSecondary;
+  }
+
+  static Color readableMutedOn(Color background) {
+    final luminance = background.computeLuminance();
+    return luminance < 0.45 ? darkTextMuted : lightTextMuted;
+  }
+
   static List<BoxShadow> get cardElevation => useDarkCards
       ? [
           BoxShadow(

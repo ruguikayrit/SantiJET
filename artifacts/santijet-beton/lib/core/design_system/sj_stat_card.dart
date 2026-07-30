@@ -38,7 +38,12 @@ class SJStatCard extends StatelessWidget {
           return Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Text(label, style: theme.textTheme.labelMedium),
+              Text(
+                label,
+                style: theme.textTheme.labelMedium?.copyWith(
+                  color: AppColors.cardTextMuted,
+                ),
+              ),
               const SizedBox(height: AppSpacing.xs),
               Row(
                 crossAxisAlignment: CrossAxisAlignment.end,
@@ -57,7 +62,12 @@ class SJStatCard extends StatelessWidget {
                     const SizedBox(width: 4),
                     Padding(
                       padding: const EdgeInsets.only(bottom: 4),
-                      child: Text(unit!, style: theme.textTheme.labelMedium),
+                      child: Text(
+                        unit!,
+                        style: theme.textTheme.labelMedium?.copyWith(
+                          color: AppColors.cardTextMuted,
+                        ),
+                      ),
                     ),
                   ],
                 ],

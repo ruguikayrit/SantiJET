@@ -376,7 +376,10 @@ class _ProgramSummaryCard extends StatelessWidget {
                   Expanded(
                     child: Text(
                       'Planlı · Gerçekleşen',
-                      style: theme.textTheme.titleMedium,
+                      style: theme.textTheme.titleMedium?.copyWith(
+                        color: AppColors.cardTextPrimary,
+                        fontWeight: FontWeight.w700,
+                      ),
                     ),
                   ),
                 ],
@@ -466,6 +469,7 @@ class _OrderCard extends StatelessWidget {
                     child: Text(
                       title,
                       style: theme.textTheme.titleSmall?.copyWith(
+                        color: AppColors.cardTextPrimary,
                         fontWeight: FontWeight.w700,
                       ),
                     ),
@@ -488,11 +492,21 @@ class _OrderCard extends StatelessWidget {
                   ),
                 ],
               ),
-              Text(meta, style: theme.textTheme.labelSmall),
+              Text(
+                meta,
+                style: theme.textTheme.labelSmall?.copyWith(
+                  color: AppColors.cardTextMuted,
+                ),
+              ),
               if (order.location.isNotEmpty &&
                   order.elementName.isNotEmpty) ...[
                 const SizedBox(height: 2),
-                Text(order.location, style: theme.textTheme.labelSmall),
+                Text(
+                  order.location,
+                  style: theme.textTheme.labelSmall?.copyWith(
+                    color: AppColors.cardTextMuted,
+                  ),
+                ),
               ],
               const SizedBox(height: AppSpacing.sm),
               Row(
@@ -525,7 +539,12 @@ class _OrderCard extends StatelessWidget {
               ),
               if (order.notes.isNotEmpty) ...[
                 const SizedBox(height: AppSpacing.sm),
-                Text(order.notes, style: theme.textTheme.bodySmall),
+                Text(
+                  order.notes,
+                  style: theme.textTheme.bodySmall?.copyWith(
+                    color: AppColors.cardTextSecondary,
+                  ),
+                ),
               ],
             ],
           );
@@ -559,7 +578,12 @@ class _MiniStat extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text(label, style: theme.textTheme.labelSmall),
+          Text(
+            label,
+            style: theme.textTheme.labelSmall?.copyWith(
+              color: AppColors.cardTextMuted,
+            ),
+          ),
           const SizedBox(height: 4),
           Row(
             crossAxisAlignment: CrossAxisAlignment.end,

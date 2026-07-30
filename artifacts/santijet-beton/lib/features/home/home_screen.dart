@@ -307,7 +307,10 @@ class _SummarySection extends StatelessWidget {
                   Icon(icon, size: 20, color: theme.colorScheme.primary),
                   const SizedBox(width: AppSpacing.sm),
                   Expanded(
-                    child: Text(title, style: theme.textTheme.titleMedium),
+                    child: Text(title, style: theme.textTheme.titleMedium?.copyWith(
+                      color: AppColors.cardTextPrimary,
+                      fontWeight: FontWeight.w700,
+                    )),
                   ),
                   if (onTap != null)
                     Icon(
@@ -352,7 +355,12 @@ class _MiniStat extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text(label, style: theme.textTheme.labelSmall),
+          Text(
+            label,
+            style: theme.textTheme.labelSmall?.copyWith(
+              color: AppColors.cardTextMuted,
+            ),
+          ),
           const SizedBox(height: 4),
           Row(
             crossAxisAlignment: CrossAxisAlignment.end,

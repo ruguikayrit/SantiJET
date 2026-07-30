@@ -79,19 +79,26 @@ class ProjectsScreen extends ConsumerWidget {
                                   p.company.isEmpty
                                       ? 'Firma adı yok'
                                       : p.company,
-                                  style: theme.textTheme.titleMedium,
+                                  style: theme.textTheme.titleMedium?.copyWith(
+                                    color: AppColors.cardTextPrimary,
+                                    fontWeight: FontWeight.w700,
+                                  ),
                                   maxLines: 1,
                                   overflow: TextOverflow.ellipsis,
                                 ),
                                 Text(
                                   p.name.isEmpty ? 'İşin adı yok' : p.name,
-                                  style: theme.textTheme.bodyMedium,
+                                  style: theme.textTheme.bodyMedium?.copyWith(
+                                    color: AppColors.cardTextSecondary,
+                                  ),
                                   maxLines: 1,
                                   overflow: TextOverflow.ellipsis,
                                 ),
                                 Text(
                                   p.code.isEmpty ? 'İşin kodu yok' : p.code,
-                                  style: theme.textTheme.bodySmall,
+                                  style: theme.textTheme.bodySmall?.copyWith(
+                                    color: AppColors.cardTextMuted,
+                                  ),
                                   maxLines: 1,
                                   overflow: TextOverflow.ellipsis,
                                 ),

@@ -59,65 +59,74 @@ class DokumScreen extends ConsumerWidget {
                     final p = pours[index];
                     return SJCard(
                       onTap: () => _openEditor(context, ref, existing: p),
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Row(
+                      child: Builder(
+                        builder: (context) {
+                          final theme = Theme.of(context);
+                          return Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
-                              Expanded(
-                                child: Text(
-                                  p.elementName.isEmpty
-                                      ? 'Element belirtilmedi'
-                                      : p.elementName,
-                                  style: Theme.of(context)
-                                      .textTheme
-                                      .titleMedium
-                                      ?.copyWith(fontWeight: FontWeight.w700),
-                                ),
-                              ),
-                              Container(
-                                padding: const EdgeInsets.symmetric(
-                                  horizontal: 8,
-                                  vertical: 4,
-                                ),
-                                decoration: BoxDecoration(
-                                  color: AppColors.success.withValues(
-                                    alpha: 0.12,
+                              Row(
+                                children: [
+                                  Expanded(
+                                    child: Text(
+                                      p.elementName.isEmpty
+                                          ? 'Element belirtilmedi'
+                                          : p.elementName,
+                                      style: theme.textTheme.titleMedium
+                                          ?.copyWith(
+                                        color: AppColors.cardTextPrimary,
+                                        fontWeight: FontWeight.w700,
+                                      ),
+                                    ),
                                   ),
-                                  borderRadius: AppRadii.sm,
-                                ),
-                                child: Text(
-                                  '${BetonProgress.fmtM3(p.volumeM3)} m³',
-                                  style: Theme.of(context)
-                                      .textTheme
-                                      .labelMedium
-                                      ?.copyWith(
+                                  Container(
+                                    padding: const EdgeInsets.symmetric(
+                                      horizontal: 8,
+                                      vertical: 4,
+                                    ),
+                                    decoration: BoxDecoration(
+                                      color: AppColors.success.withValues(
+                                        alpha: 0.18,
+                                      ),
+                                      borderRadius: AppRadii.sm,
+                                    ),
+                                    child: Text(
+                                      '${BetonProgress.fmtM3(p.volumeM3)} m³',
+                                      style: theme.textTheme.labelMedium
+                                          ?.copyWith(
                                         color: AppColors.success,
                                         fontWeight: FontWeight.w700,
                                       ),
+                                    ),
+                                  ),
+                                ],
+                              ),
+                              const SizedBox(height: 6),
+                              Text(
+                                '${p.date} · ${p.concreteClass}'
+                                '${p.supplier.isEmpty ? '' : ' · ${p.supplier}'}',
+                                style: theme.textTheme.bodySmall?.copyWith(
+                                  color: AppColors.cardTextSecondary,
                                 ),
                               ),
+                              if (p.location.isNotEmpty ||
+                                  p.ticketNo.isNotEmpty)
+                                Padding(
+                                  padding: const EdgeInsets.only(top: 4),
+                                  child: Text(
+                                    [
+                                      if (p.location.isNotEmpty) p.location,
+                                      if (p.ticketNo.isNotEmpty)
+                                        'İrsaliye ${p.ticketNo}',
+                                    ].join(' · '),
+                                    style: theme.textTheme.labelSmall?.copyWith(
+                                      color: AppColors.cardTextMuted,
+                                    ),
+                                  ),
+                                ),
                             ],
-                          ),
-                          const SizedBox(height: 6),
-                          Text(
-                            '${p.date} · ${p.concreteClass}'
-                            '${p.supplier.isEmpty ? '' : ' · ${p.supplier}'}',
-                            style: Theme.of(context).textTheme.bodySmall,
-                          ),
-                          if (p.location.isNotEmpty || p.ticketNo.isNotEmpty)
-                            Padding(
-                              padding: const EdgeInsets.only(top: 4),
-                              child: Text(
-                                [
-                                  if (p.location.isNotEmpty) p.location,
-                                  if (p.ticketNo.isNotEmpty)
-                                    'İrsaliye ${p.ticketNo}',
-                                ].join(' · '),
-                                style: Theme.of(context).textTheme.labelSmall,
-                              ),
-                            ),
-                        ],
+                          );
+                        },
                       ),
                     );
                   },

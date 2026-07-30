@@ -177,7 +177,9 @@ class _SettingsTile extends StatelessWidget {
           builder: (context) {
             final theme = Theme.of(context);
             final titleStyle = theme.textTheme.titleMedium?.copyWith(
-              color: destructive ? AppColors.critical : null,
+              color: destructive
+                  ? AppColors.critical
+                  : AppColors.cardTextPrimary,
               fontWeight: FontWeight.w600,
             );
             return Row(

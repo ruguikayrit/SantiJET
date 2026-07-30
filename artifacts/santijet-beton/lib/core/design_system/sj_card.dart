@@ -6,9 +6,9 @@ import '../theme/app_spacing.dart';
 
 /// ŞantiJET Design System — kart.
 ///
-/// ŞantiJET temasında koyu yüzey + açık mürekkep teması sağlar.
-/// İçerikte [Theme.of] kullanırken kartın altındaki context'i alın
-/// ([Builder] ile); aksi halde dış açık tema renkleri gömülür.
+/// ŞantiJET / koyu temada kart yüzeyi her zaman koyu; metin her zaman açık.
+/// Kart içinde [Theme.of] kullanırken mutlaka [Builder] ile kart context'ini alın;
+/// aksi halde dış (açık chrome) mürekkep renkleri TextStyle'a gömülür.
 class SJCard extends StatelessWidget {
   const SJCard({
     required this.child,
@@ -26,9 +26,11 @@ class SJCard extends StatelessWidget {
   final bool selected;
 
   /// ŞantiJET (ve koyu) kartlar için yüksek kontrastlı yerel tema.
+  /// Tüm tipografi stillerine açık mürekkep zorlanır (koyu-üzerine-koyu yok).
   static ThemeData contrastTheme(ThemeData base) {
     const onPrimary = AppColors.darkTextPrimary;
     const onSecondary = AppColors.darkTextSecondary;
+    const onMuted = AppColors.darkTextMuted;
     final scheme = ColorScheme.dark(
       surface: AppColors.darkSurfaceElevated,
       primary: AppColors.electricBlueLight,
@@ -42,22 +44,38 @@ class SJCard extends StatelessWidget {
       outline: AppColors.darkBorderSubtle,
     );
 
+    TextTheme forceOnDark(TextTheme source) {
+      TextStyle? paint(TextStyle? style, Color color) =>
+          style?.copyWith(color: color);
+      return source.copyWith(
+        displayLarge: paint(source.displayLarge, onPrimary),
+        displayMedium: paint(source.displayMedium, onPrimary),
+        displaySmall: paint(source.displaySmall, onPrimary),
+        headlineLarge: paint(source.headlineLarge, onPrimary),
+        headlineMedium: paint(source.headlineMedium, onPrimary),
+        headlineSmall: paint(source.headlineSmall, onPrimary),
+        titleLarge: paint(source.titleLarge, onPrimary),
+        titleMedium: paint(source.titleMedium, onPrimary),
+        titleSmall: paint(source.titleSmall, onPrimary),
+        bodyLarge: paint(source.bodyLarge, onSecondary),
+        bodyMedium: paint(source.bodyMedium, onSecondary),
+        bodySmall: paint(source.bodySmall, onMuted),
+        labelLarge: paint(source.labelLarge, onMuted),
+        labelMedium: paint(source.labelMedium, onMuted),
+        labelSmall: paint(source.labelSmall, onMuted),
+      );
+    }
+
     return base.copyWith(
       brightness: Brightness.dark,
       colorScheme: scheme,
-      textTheme: base.textTheme.apply(
-        bodyColor: onSecondary,
-        displayColor: onPrimary,
-      ),
-      primaryTextTheme: base.primaryTextTheme.apply(
-        bodyColor: onSecondary,
-        displayColor: onPrimary,
-      ),
+      textTheme: forceOnDark(base.textTheme),
+      primaryTextTheme: forceOnDark(base.primaryTextTheme),
       iconTheme: const IconThemeData(color: onSecondary),
       primaryIconTheme: const IconThemeData(color: AppColors.electricBlueLight),
       dividerColor: AppColors.darkBorder,
-      disabledColor: AppColors.darkTextMuted,
-      hintColor: AppColors.darkTextMuted,
+      disabledColor: onMuted,
+      hintColor: onMuted,
       unselectedWidgetColor: onSecondary,
       outlinedButtonTheme: OutlinedButtonThemeData(
         style: OutlinedButton.styleFrom(
@@ -76,9 +94,7 @@ class SJCard extends StatelessWidget {
       ),
       inputDecorationTheme: base.inputDecorationTheme.copyWith(
         fillColor: AppColors.darkSurface,
-        hintStyle: base.textTheme.bodyMedium?.copyWith(
-          color: AppColors.darkTextMuted,
-        ),
+        hintStyle: base.textTheme.bodyMedium?.copyWith(color: onMuted),
         labelStyle: base.textTheme.bodyMedium?.copyWith(color: onSecondary),
         enabledBorder: OutlineInputBorder(
           borderRadius: AppRadii.md,
@@ -103,6 +119,8 @@ class SJCard extends StatelessWidget {
         ? theme.colorScheme.primary
         : (useContrast ? AppColors.cardBorder : theme.dividerColor);
 
+    // childBuilder: kartın kontrast Theme'i altında yeniden kurulur —
+    // dış açık chrome'dan gömülmüş koyu TextStyle renkleri engellenir.
     Widget content = Padding(
       padding: padding,
       child: accentColor == null
@@ -131,7 +149,10 @@ class SJCard extends StatelessWidget {
         child: IconTheme.merge(
           data: const IconThemeData(color: AppColors.darkTextSecondary),
           child: DefaultTextStyle.merge(
-            style: const TextStyle(color: AppColors.darkTextPrimary),
+            style: const TextStyle(
+              color: AppColors.darkTextPrimary,
+              decoration: TextDecoration.none,
+            ),
             child: content,
           ),
         ),
