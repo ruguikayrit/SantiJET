@@ -4,14 +4,20 @@ import 'package:go_router/go_router.dart';
 
 import '../../core/design_system/sj_card.dart';
 import '../../core/design_system/sj_empty_state.dart';
+import '../../core/design_system/sj_button.dart';
+import '../../core/design_system/sj_modal.dart';
 import '../../core/routing/app_routes.dart';
 import '../../core/theme/app_colors.dart';
 import '../../core/theme/app_radii.dart';
 import '../../core/theme/app_spacing.dart';
 import '../../core/utils/puantaj_date.dart';
 import '../../data/providers/app_data_provider.dart';
+import '../../data/services/puantaj_export_service.dart';
+import '../../data/services/puantaj_report_builder.dart';
 import '../../domain/entities/person.dart';
 import '../../domain/enums/attendance_status.dart';
+import '../../domain/entities/attendance.dart';
+import '../../domain/entities/project.dart';
 
 enum _ViewMode { daily, weekly, monthly }
 
@@ -130,6 +136,16 @@ class _PuantajScreenState extends ConsumerState<PuantajScreen> {
       appBar: AppBar(
         title: const Text('Puantaj'),
         actions: [
+          IconButton(
+            tooltip: 'Dışa aktar',
+            icon: const Icon(Icons.ios_share_outlined),
+            onPressed: () => _openExportSheet(
+              context,
+              project: project,
+              people: people,
+              attendance: attendance,
+            ),
+          ),
           Padding(
             padding: const EdgeInsets.only(right: AppSpacing.sm),
             child: Center(
@@ -306,6 +322,30 @@ class _PuantajScreenState extends ConsumerState<PuantajScreen> {
               ),
             ),
         ],
+      ),
+    );
+  }
+
+  Future<void> _openExportSheet(
+    BuildContext context, {
+    required Project project,
+    required List<Person> people,
+    required List<Attendance> attendance,
+  }) {
+    final initial = switch (_mode) {
+      _ViewMode.daily => PuantajReportPeriod.daily,
+      _ViewMode.weekly => PuantajReportPeriod.weekly,
+      _ViewMode.monthly => PuantajReportPeriod.monthly,
+    };
+    return SJModal.showSheet(
+      context: context,
+      title: 'Puantaj dışa aktar',
+      child: _PuantajExportSheet(
+        project: project,
+        people: people,
+        attendance: attendance,
+        anchorDate: _date,
+        initialPeriod: initial,
       ),
     );
   }
@@ -1158,6 +1198,155 @@ class _CetvelView extends StatelessWidget {
             ),
           ),
         SizedBox(width: totalW),
+      ],
+    );
+  }
+}
+
+class _PuantajExportSheet extends StatefulWidget {
+  const _PuantajExportSheet({
+    required this.project,
+    required this.people,
+    required this.attendance,
+    required this.anchorDate,
+    required this.initialPeriod,
+  });
+
+  final Project project;
+  final List<Person> people;
+  final List<Attendance> attendance;
+  final String anchorDate;
+  final PuantajReportPeriod initialPeriod;
+
+  @override
+  State<_PuantajExportSheet> createState() => _PuantajExportSheetState();
+}
+
+class _PuantajExportSheetState extends State<_PuantajExportSheet> {
+  late PuantajReportPeriod _period = widget.initialPeriod;
+  bool _busy = false;
+  String? _error;
+
+  String get _rangeHint {
+    switch (_period) {
+      case PuantajReportPeriod.daily:
+        return widget.anchorDate;
+      case PuantajReportPeriod.weekly:
+        return PuantajDate.weekLabel(PuantajDate.weekDays(widget.anchorDate));
+      case PuantajReportPeriod.monthly:
+        return PuantajDate.monthLabel(widget.anchorDate);
+    }
+  }
+
+  Future<void> _export({required bool pdf}) async {
+    if (_busy) return;
+    setState(() {
+      _busy = true;
+      _error = null;
+    });
+    try {
+      final report = PuantajReportBuilder.build(
+        projectName: widget.project.name,
+        projectId: widget.project.id,
+        people: widget.people,
+        attendance: widget.attendance,
+        period: _period,
+        anchorDate: widget.anchorDate,
+      );
+      if (pdf) {
+        await puantajExportService.exportPdf(report);
+      } else {
+        await puantajExportService.exportExcel(report);
+      }
+      if (!mounted) return;
+      Navigator.of(context).pop();
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(
+            pdf ? 'PDF dışa aktarıldı.' : 'Excel dışa aktarıldı.',
+          ),
+        ),
+      );
+    } catch (e) {
+      if (!mounted) return;
+      setState(() => _error = e.toString());
+    } finally {
+      if (mounted) setState(() => _busy = false);
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    return Column(
+      mainAxisSize: MainAxisSize.min,
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        Text(
+          '${widget.project.name} · $_rangeHint',
+          style: theme.textTheme.bodyMedium?.copyWith(
+            color: theme.colorScheme.onSurfaceVariant,
+          ),
+        ),
+        const SizedBox(height: AppSpacing.md),
+        Text('Dönem', style: theme.textTheme.labelLarge),
+        const SizedBox(height: AppSpacing.xs),
+        SegmentedButton<PuantajReportPeriod>(
+          segments: const [
+            ButtonSegment(
+              value: PuantajReportPeriod.daily,
+              label: Text('Günlük'),
+            ),
+            ButtonSegment(
+              value: PuantajReportPeriod.weekly,
+              label: Text('Haftalık'),
+            ),
+            ButtonSegment(
+              value: PuantajReportPeriod.monthly,
+              label: Text('Aylık'),
+            ),
+          ],
+          selected: {_period},
+          onSelectionChanged: _busy
+              ? null
+              : (s) => setState(() => _period = s.first),
+        ),
+        const SizedBox(height: AppSpacing.md),
+        Text('Format', style: theme.textTheme.labelLarge),
+        const SizedBox(height: AppSpacing.sm),
+        Row(
+          children: [
+            Expanded(
+              child: SJButton(
+                label: 'PDF',
+                icon: Icons.picture_as_pdf_outlined,
+                loading: _busy,
+                expanded: true,
+                onPressed: () => _export(pdf: true),
+              ),
+            ),
+            const SizedBox(width: AppSpacing.sm),
+            Expanded(
+              child: SJButton(
+                label: 'Excel',
+                icon: Icons.table_chart_outlined,
+                variant: SJButtonVariant.secondary,
+                loading: _busy,
+                expanded: true,
+                onPressed: () => _export(pdf: false),
+              ),
+            ),
+          ],
+        ),
+        if (_error != null) ...[
+          const SizedBox(height: AppSpacing.sm),
+          Text(
+            _error!,
+            style: theme.textTheme.bodySmall?.copyWith(
+              color: AppColors.critical,
+            ),
+          ),
+        ],
       ],
     );
   }
