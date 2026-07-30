@@ -38,24 +38,22 @@ class AppTableHeaderRow extends StatelessWidget {
   Widget build(BuildContext context) {
     return Padding(
       padding: padding,
-      child: IntrinsicHeight(
-        child: Row(
-          crossAxisAlignment: CrossAxisAlignment.stretch,
-          children: [
-            for (var i = 0; i < cells.length; i++) ...[
-              if (i > 0) SizedBox(width: gap),
-              Expanded(
-                flex: cells[i].flex,
-                child: AppTableHeaderBadge(
-                  cells[i].label,
-                  line2: cells[i].line2,
-                  align: cells[i].align,
-                ),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.center,
+        children: [
+          for (var i = 0; i < cells.length; i++) ...[
+            if (i > 0) SizedBox(width: gap),
+            Expanded(
+              flex: cells[i].flex,
+              child: AppTableHeaderBadge(
+                cells[i].label,
+                line2: cells[i].line2,
+                align: cells[i].align,
               ),
-            ],
-            if (trailing != null) trailing!,
+            ),
           ],
-        ),
+          if (trailing != null) trailing!,
+        ],
       ),
     );
   }
@@ -64,9 +62,7 @@ class AppTableHeaderRow extends StatelessWidget {
 /// Single decorated header cell for use inside `Table` widgets, `Row`s with
 /// fixed-width columns, or anywhere a standalone blue header badge is needed.
 ///
-/// Etiket metni çerçeve içinde her iki yönde (yatay + dikey) ortalanır.
-/// [LayoutBuilder] kullanılmaz — [IntrinsicHeight] içinde 0 yüksekliğe
-/// çöküp başlık yazısının kaybolmasına yol açıyordu.
+/// Tüm başlık pencereleri aynı sabit yükseklikte — tek/çift satır fark etmez.
 class AppTableHeaderBadge extends StatelessWidget {
   const AppTableHeaderBadge(
     this.label, {
@@ -81,15 +77,18 @@ class AppTableHeaderBadge extends StatelessWidget {
   final TextAlign align;
   final EdgeInsetsGeometry? padding;
 
-  /// Tek/çift satır başlıklar için ortak çerçeve yüksekliği.
-  static const minHeight = 40.0;
+  /// Tek ve çift satır başlıklar için ortak çerçeve yüksekliği.
+  static const height = 48.0;
 
-  /// Satır değerleriyle (titleMedium ~14) hizalı, net okunur başlık.
-  static TextStyle get _textStyle => AppTypography.titleMedium.copyWith(
+  /// Geriye dönük: eski [minHeight] kullanan çağrılar.
+  static const minHeight = height;
+
+  static TextStyle get _textStyle => AppTypography.labelMedium.copyWith(
         color: Colors.black,
         fontWeight: FontWeight.w700,
         height: 1.1,
-        letterSpacing: 0.3,
+        letterSpacing: 0.2,
+        fontSize: 12.5,
       );
 
   @override
@@ -121,8 +120,9 @@ class AppTableHeaderBadge extends StatelessWidget {
       ],
     );
 
-    return ConstrainedBox(
-      constraints: const BoxConstraints(minHeight: minHeight),
+    return SizedBox(
+      height: height,
+      width: double.infinity,
       child: DecoratedBox(
         decoration: BoxDecoration(
           color: AppColors.electricBlueLight,
@@ -130,12 +130,10 @@ class AppTableHeaderBadge extends StatelessWidget {
           border: Border.all(color: AppColors.electricBlue),
         ),
         child: Padding(
-          // Yatay nefes; dikey ortalama Align ile — asimetrik padding yok.
           padding: padding ?? const EdgeInsets.symmetric(horizontal: 4),
-          child: SizedBox(
-            width: double.infinity,
-            child: Align(
-              alignment: Alignment.center,
+          child: Center(
+            child: FittedBox(
+              fit: BoxFit.scaleDown,
               child: labelBlock,
             ),
           ),
