@@ -1,12 +1,11 @@
 name: santijet_beton
-description: "ŞantiJET BETON — Beton döküm planı, sipariş/irsaliye ve kalite takibi. ŞantiJET Demir/Puantaj görsel diliyle hizalı."
+description: "ŞantiJET Beton — Şantiye beton döküm kayıt, ilerleme ve sipariş takibi. ŞantiJET Demir/Puantaj görsel diliyle hizalı."
 publish_to: 'none'
 version: 0.1.0+1
 
 environment:
   sdk: ^3.6.2
 
-# Bağımlılık sürümleri ŞantiJET Demir / Puantaj / BFA ile hizalıdır.
 dependencies:
   flutter:
     sdk: flutter
@@ -17,6 +16,8 @@ dependencies:
   equatable: ^2.0.7
   hive: ^2.2.3
   hive_flutter: ^1.1.0
+  share_plus: ^10.1.4
+  url_launcher: ^6.3.1
 
 dev_dependencies:
   flutter_test:

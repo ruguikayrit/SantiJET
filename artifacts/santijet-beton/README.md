@@ -1,21 +1,21 @@
-# ŞantiJET Beton
+# ŞantiJET BETON
 
-Şantiye beton döküm kayıt, keşif ilerleme, plan–gerçekleşen fark ve WhatsApp
-paylaşımı. Görsel dil ŞantiJET Demir / Puantaj ile aynıdır
-(Inter + Rajdhani, electric blue, splash / shell / settings).
+Şantiye beton yönetimi — döküm planı, günlük döküm, sipariş/irsaliye ve kalite (numune / basınç dayanımı).
 
-## Çalıştırma
+Hive-only offline; Türkçe UI; ŞantiJET Demir / Puantaj görsel dili.
+
+## Geliştirme
 
 ```bash
+# monorepo kökünden
+pnpm dev:beton
+
+# veya
 cd artifacts/santijet-beton
 flutter pub get
-flutter run
+flutter run -d chrome
 ```
 
-## Sekmeler
+## Pages
 
-- **Ana Sayfa** — bugünkü döküm, keşif ilerleme, sipariş fark özeti
-- **Döküm** — şantiyeye gelen beton kayıtları
-- **Keşif** — keşif metrajına göre ilerleme + fark açıklamaları
-- **Program** — iş programı / döküm saatleri + WhatsApp paylaşımı
-- **Ayarlar** — proje, tema, hakkında (Puantaj ile aynı tile düzeni)
+Deploy: `/beton/` (GitHub Pages, `build-beton-pages.sh`).

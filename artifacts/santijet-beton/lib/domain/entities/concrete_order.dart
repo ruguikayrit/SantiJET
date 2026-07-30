@@ -1,120 +1,107 @@
 import 'package:equatable/equatable.dart';
 
-/// Sipariş / irsaliye durumu.
-enum OrderStatus {
-  open,
-  partial,
-  delivered,
-  cancelled;
-
-  String get label => switch (this) {
-        OrderStatus.open => 'Açık',
-        OrderStatus.partial => 'Kısmi',
-        OrderStatus.delivered => 'Teslim',
-        OrderStatus.cancelled => 'İptal',
-      };
-
-  static OrderStatus fromStorage(String? raw) => switch (raw) {
-        'partial' => OrderStatus.partial,
-        'delivered' => OrderStatus.delivered,
-        'cancelled' => OrderStatus.cancelled,
-        _ => OrderStatus.open,
-      };
-
-  String get storage => name;
-}
-
-/// Beton siparişi ve irsaliye takibi.
+/// Planlı beton siparişi (program / WhatsApp paylaşımı).
 class ConcreteOrder extends Equatable {
   const ConcreteOrder({
     required this.id,
     required this.projectId,
-    required this.orderDate,
-    required this.orderedM3,
-    this.supplier = '',
-    this.deliveredM3 = 0,
-    this.waybillNo = '',
+    required this.plannedDate,
+    required this.plannedM3,
+    this.elementName = '',
+    this.location = '',
     this.concreteClass = 'C30/37',
-    this.status = OrderStatus.open,
+    this.supplier = '',
+    this.plannedStartHour = '',
     this.notes = '',
+    this.sharedViaWhatsApp = false,
   });
 
   final String id;
   final String projectId;
 
   /// gg.aa.yyyy
-  final String orderDate;
-  final String supplier;
-  final double orderedM3;
-  final double deliveredM3;
-  final String waybillNo;
+  final String plannedDate;
+  final double plannedM3;
+  final String elementName;
+  final String location;
   final String concreteClass;
-  final OrderStatus status;
+  final String supplier;
+  final String plannedStartHour;
   final String notes;
+  final bool sharedViaWhatsApp;
 
   ConcreteOrder copyWith({
     String? id,
     String? projectId,
-    String? orderDate,
-    String? supplier,
-    double? orderedM3,
-    double? deliveredM3,
-    String? waybillNo,
+    String? plannedDate,
+    double? plannedM3,
+    String? elementName,
+    String? location,
     String? concreteClass,
-    OrderStatus? status,
+    String? supplier,
+    String? plannedStartHour,
     String? notes,
+    bool? sharedViaWhatsApp,
   }) {
     return ConcreteOrder(
       id: id ?? this.id,
       projectId: projectId ?? this.projectId,
-      orderDate: orderDate ?? this.orderDate,
-      supplier: supplier ?? this.supplier,
-      orderedM3: orderedM3 ?? this.orderedM3,
-      deliveredM3: deliveredM3 ?? this.deliveredM3,
-      waybillNo: waybillNo ?? this.waybillNo,
+      plannedDate: plannedDate ?? this.plannedDate,
+      plannedM3: plannedM3 ?? this.plannedM3,
+      elementName: elementName ?? this.elementName,
+      location: location ?? this.location,
       concreteClass: concreteClass ?? this.concreteClass,
-      status: status ?? this.status,
+      supplier: supplier ?? this.supplier,
+      plannedStartHour: plannedStartHour ?? this.plannedStartHour,
       notes: notes ?? this.notes,
+      sharedViaWhatsApp: sharedViaWhatsApp ?? this.sharedViaWhatsApp,
     );
   }
 
   Map<String, dynamic> toJson() => {
         'id': id,
         'projectId': projectId,
-        'orderDate': orderDate,
-        'supplier': supplier,
-        'orderedM3': orderedM3,
-        'deliveredM3': deliveredM3,
-        'waybillNo': waybillNo,
+        'plannedDate': plannedDate,
+        'plannedM3': plannedM3,
+        'elementName': elementName,
+        'location': location,
         'concreteClass': concreteClass,
-        'status': status.storage,
+        'supplier': supplier,
+        'plannedStartHour': plannedStartHour,
         'notes': notes,
+        'sharedViaWhatsApp': sharedViaWhatsApp,
       };
 
   factory ConcreteOrder.fromJson(Map<String, dynamic> json) => ConcreteOrder(
         id: json['id'] as String,
         projectId: json['projectId'] as String? ?? '',
-        orderDate: json['orderDate'] as String? ?? '',
-        supplier: json['supplier'] as String? ?? '',
-        orderedM3: (json['orderedM3'] as num?)?.toDouble() ?? 0,
-        deliveredM3: (json['deliveredM3'] as num?)?.toDouble() ?? 0,
-        waybillNo: json['waybillNo'] as String? ?? '',
+        plannedDate: json['plannedDate'] as String? ??
+            json['orderDate'] as String? ??
+            '',
+        plannedM3: (json['plannedM3'] as num?)?.toDouble() ??
+            (json['orderedM3'] as num?)?.toDouble() ??
+            0,
+        elementName: json['elementName'] as String? ?? '',
+        location: json['location'] as String? ?? '',
         concreteClass: json['concreteClass'] as String? ?? 'C30/37',
-        status: OrderStatus.fromStorage(json['status'] as String?),
+        supplier: json['supplier'] as String? ?? '',
+        plannedStartHour: json['plannedStartHour'] as String? ?? '',
         notes: json['notes'] as String? ?? '',
+        sharedViaWhatsApp: json['sharedViaWhatsApp'] as bool? ?? false,
       );
 
   @override
   List<Object?> get props => [
         id,
         projectId,
-        orderDate,
-        supplier,
-        orderedM3,
-        deliveredM3,
-        waybillNo,
+        plannedDate,
+        plannedM3,
+        elementName,
+        location,
         concreteClass,
-        status,
+        supplier,
+        plannedStartHour,
         notes,
+        sharedViaWhatsApp,
       ];
 }

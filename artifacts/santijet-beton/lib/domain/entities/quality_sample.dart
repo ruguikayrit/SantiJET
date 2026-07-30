@@ -17,8 +17,6 @@ class QualitySample extends Equatable {
   final String id;
   final String projectId;
   final String? pourRecordId;
-
-  /// gg.aa.yyyy
   final String sampleDate;
   final String sampleCode;
   final int ageDays;

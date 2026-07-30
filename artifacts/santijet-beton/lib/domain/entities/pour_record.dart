@@ -18,8 +18,6 @@ class PourRecord extends Equatable {
   final String id;
   final String projectId;
   final String? planId;
-
-  /// gg.aa.yyyy
   final String date;
   final double actualM3;
   final String concreteClass;

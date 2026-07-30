@@ -36,8 +36,6 @@ class PourPlan extends Equatable {
 
   final String id;
   final String projectId;
-
-  /// gg.aa.yyyy
   final String date;
   final String location;
   final String concreteClass;
@@ -90,14 +88,6 @@ class PourPlan extends Equatable {
       );
 
   @override
-  List<Object?> get props => [
-        id,
-        projectId,
-        date,
-        location,
-        concreteClass,
-        plannedM3,
-        status,
-        notes,
-      ];
+  List<Object?> get props =>
+      [id, projectId, date, location, concreteClass, plannedM3, status, notes];
 }

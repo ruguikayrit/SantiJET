@@ -11,7 +11,7 @@ import '../../core/theme/app_typography.dart';
 import '../../core/theme/theme_mode_provider.dart';
 import '../../data/providers/app_data_provider.dart';
 
-/// Ayarlar — Demir/Puantaj ile aynı kart/tile düzeni; Beton kapsamına uyarlanmış.
+/// Ayarlar — projeler, kalite, tema, hakkında.
 class SettingsScreen extends ConsumerWidget {
   const SettingsScreen({super.key});
 
@@ -66,8 +66,8 @@ class SettingsScreen extends ConsumerWidget {
         backgroundColor: AppColors.surfaceElevated,
         title: const Text('Tüm Verileri Sil'),
         content: const Text(
-          'Projeler, keşif, döküm, sipariş ve fark kayıtları silinir. '
-          'Bu işlem geri alınamaz. Devam edilsin mi?',
+          'Projeler, döküm planı, günlük döküm, sipariş ve kalite '
+          'kayıtları silinir. Bu işlem geri alınamaz.',
         ),
         actions: [
           TextButton(
@@ -85,10 +85,10 @@ class SettingsScreen extends ConsumerWidget {
     if (ok != true) return;
 
     ref.read(projectsProvider.notifier).replaceAll([]);
-    ref.read(discoveryProvider.notifier).replaceAll([]);
-    ref.read(poursProvider.notifier).replaceAll([]);
+    ref.read(pourPlansProvider.notifier).replaceAll([]);
+    ref.read(pourRecordsProvider.notifier).replaceAll([]);
     ref.read(ordersProvider.notifier).replaceAll([]);
-    ref.read(varianceProvider.notifier).replaceAll([]);
+    ref.read(qualityProvider.notifier).replaceAll([]);
     ref.read(activeProjectIdProvider.notifier).set(null);
 
     if (!context.mounted) return;
@@ -101,9 +101,7 @@ class SettingsScreen extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final themeMode = ref.watch(themeModeProvider);
     final project = ref.watch(activeProjectProvider);
-    final discoveryCount = ref.watch(activeDiscoveryProvider).length;
-    final pourCount = ref.watch(activePoursProvider).length;
-    final orderCount = ref.watch(activeOrdersProvider).length;
+    final pending = ref.watch(dashboardSummaryProvider).pendingSamples;
 
     return Scaffold(
       backgroundColor: AppColors.canvas,
@@ -118,12 +116,12 @@ class SettingsScreen extends ConsumerWidget {
             onTap: () => context.push(AppRoutes.projeler),
           ),
           _SettingsTile(
-            icon: Icons.inventory_2_outlined,
-            title: 'Aktif proje özeti',
-            subtitle: project == null
-                ? 'Keşif, döküm, sipariş'
-                : '$discoveryCount keşif · $pourCount döküm · $orderCount sipariş',
-            onTap: () => context.go(AppRoutes.home),
+            icon: Icons.science_outlined,
+            title: 'Kalite / Numune',
+            subtitle: pending == 0
+                ? 'Basınç dayanımı ve cüruf kayıtları'
+                : '$pending bekleyen numune',
+            onTap: () => context.push(AppRoutes.kalite),
           ),
           _SettingsTile(
             icon: Icons.dark_mode,
@@ -141,7 +139,7 @@ class SettingsScreen extends ConsumerWidget {
           _SettingsTile(
             icon: Icons.delete_forever,
             title: 'Tüm Verileri Sil',
-            subtitle: 'Projeler, keşif, döküm ve siparişler silinir',
+            subtitle: 'Projeler ve beton kayıtları silinir',
             onTap: () => _confirmDeleteAllData(context, ref),
             destructive: true,
           ),
@@ -151,7 +149,6 @@ class SettingsScreen extends ConsumerWidget {
   }
 }
 
-/// Ana sayfa özet kartlarıyla aynı yüzey (ŞantiJET’te koyu dolgu).
 class _SettingsTile extends StatelessWidget {
   const _SettingsTile({
     required this.icon,
@@ -218,7 +215,7 @@ class _SettingsTile extends StatelessWidget {
   }
 }
 
-/// Hakkında — Demir/Puantaj AboutScreen düzeni, Beton metni.
+/// Hakkında ekranı.
 class AboutScreen extends StatelessWidget {
   const AboutScreen({super.key});
 
@@ -247,16 +244,15 @@ class AboutScreen extends StatelessWidget {
             ),
             const SizedBox(height: 24),
             Text(
-              'Şantiyeye gelen betonların kaydı, keşfe göre ilerleme, '
-              'plan–gerçekleşen farkları ve WhatsApp ile beton firması '
-              'paylaşımı. ${AppInfo.tagline}',
+              'Şantiye beton yönetimi: döküm planı, günlük döküm, '
+              'sipariş/irsaliye ve kalite kayıtları. ${AppInfo.tagline}',
               style: AppTypography.bodyMedium,
               textAlign: TextAlign.center,
             ),
             const SizedBox(height: 16),
             Text(
               AppInfo.localDataNote,
-              style: AppTypography.labelMedium,
+              style: AppTypography.bodySmall,
               textAlign: TextAlign.center,
             ),
             const SizedBox(height: 16),

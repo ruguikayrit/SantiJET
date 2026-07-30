@@ -5,47 +5,57 @@ import '../../core/constants/app_info.dart';
 import '../../core/design_system/sj_empty_state.dart';
 import '../../core/design_system/sj_list_item.dart';
 import '../../core/design_system/sj_modal.dart';
+import '../../core/design_system/sj_status_badge.dart';
 import '../../core/theme/app_colors.dart';
 import '../../core/theme/app_spacing.dart';
 import '../../core/utils/app_date.dart';
 import '../../core/widgets/santijet_header.dart';
 import '../../data/providers/app_data_provider.dart';
-import '../../domain/entities/pour_plan.dart';
-import '../../domain/entities/pour_record.dart';
+import '../../domain/entities/concrete_order.dart';
 
-/// Günlük döküm kayıtları.
-class DokumScreen extends ConsumerWidget {
-  const DokumScreen({super.key});
+/// Sipariş / irsaliye listesi.
+class SiparisScreen extends ConsumerWidget {
+  const SiparisScreen({super.key});
 
   static String _m3(double v) {
     if (v == v.roundToDouble()) return v.toStringAsFixed(0);
     return v.toStringAsFixed(1);
   }
 
+  Color _statusColor(OrderStatus s) => switch (s) {
+        OrderStatus.open => AppColors.warning,
+        OrderStatus.partial => AppColors.info,
+        OrderStatus.delivered => AppColors.success,
+        OrderStatus.cancelled => AppColors.textMuted,
+      };
+
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final project = ref.watch(activeProjectProvider);
-    final pours = ref.watch(activePourRecordsProvider);
+    final orders = ref.watch(activeOrdersProvider);
 
     return Scaffold(
       body: SafeArea(
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
-            const SantijetHeader(subtitle: 'Günlük Döküm', avatarInitial: 'SJ'),
+            const SantijetHeader(
+              subtitle: 'Sipariş / İrsaliye',
+              avatarInitial: 'SJ',
+            ),
             Expanded(
               child: project == null
                   ? const SJEmptyState(
                       title: 'Proje seçin',
-                      message: 'Döküm kaydı için aktif bir proje gerekir.',
+                      message: 'Sipariş için aktif bir proje gerekir.',
                       icon: Icons.apartment_outlined,
                     )
-                  : pours.isEmpty
+                  : orders.isEmpty
                       ? SJEmptyState(
-                          title: 'Döküm yok',
-                          message: 'Fiili döküm miktarını m³ olarak kaydedin.',
-                          icon: Icons.water_drop_outlined,
-                          actionLabel: 'Döküm Ekle',
+                          title: 'Sipariş yok',
+                          message: 'Beton siparişi ve irsaliye kaydı ekleyin.',
+                          icon: Icons.receipt_long_outlined,
+                          actionLabel: 'Sipariş Ekle',
                           onAction: () => _openEditor(context, ref),
                         )
                       : ListView.separated(
@@ -55,29 +65,30 @@ class DokumScreen extends ConsumerWidget {
                             AppSpacing.md,
                             88,
                           ),
-                          itemCount: pours.length,
+                          itemCount: orders.length,
                           separatorBuilder: (_, __) =>
                               const SizedBox(height: AppSpacing.sm),
                           itemBuilder: (context, index) {
-                            final p = pours[index];
-                            final extras = <String>[
-                              if (p.mixerNote.isNotEmpty)
-                                'Mikser: ${p.mixerNote}',
-                              if (p.pumpNote.isNotEmpty) 'Pompa: ${p.pumpNote}',
-                            ].join(' · ');
+                            final o = orders[index];
+                            final waybill = o.waybillNo.isEmpty
+                                ? 'İrsaliye yok'
+                                : 'İrs: ${o.waybillNo}';
                             return SJListItem(
-                              title: p.location.isEmpty
-                                  ? 'Lokasyon yok'
-                                  : p.location,
-                              subtitle: [
-                                '${p.date} · ${p.concreteClass}',
-                                if (extras.isNotEmpty) extras,
-                              ].join('\n'),
-                              leadingIcon: Icons.water_drop_outlined,
-                              accentColor: AppColors.electricBlueLight,
-                              trailingText: '${_m3(p.actualM3)} m³',
+                              title: o.supplier.isEmpty
+                                  ? 'Tedarikçi yok'
+                                  : o.supplier,
+                              subtitle:
+                                  '${o.orderDate} · ${o.concreteClass} · $waybill\n'
+                                  'Sipariş ${_m3(o.orderedM3)} · '
+                                  'Teslim ${_m3(o.deliveredM3)} m³',
+                              leadingIcon: Icons.receipt_long_outlined,
+                              accentColor: _statusColor(o.status),
+                              trailing: SJStatusBadge(
+                                label: o.status.label,
+                                color: _statusColor(o.status),
+                              ),
                               onTap: () =>
-                                  _openEditor(context, ref, existing: p),
+                                  _openEditor(context, ref, existing: o),
                             );
                           },
                         ),
@@ -90,7 +101,7 @@ class DokumScreen extends ConsumerWidget {
           : FloatingActionButton.extended(
               onPressed: () => _openEditor(context, ref),
               icon: const Icon(Icons.add),
-              label: const Text('Döküm Ekle'),
+              label: const Text('Sipariş Ekle'),
             ),
     );
   }
@@ -98,34 +109,31 @@ class DokumScreen extends ConsumerWidget {
   Future<void> _openEditor(
     BuildContext context,
     WidgetRef ref, {
-    PourRecord? existing,
+    ConcreteOrder? existing,
   }) async {
     final project = ref.read(activeProjectProvider);
     if (project == null) return;
 
-    final plans = ref
-        .read(activePourPlansProvider)
-        .where((p) => p.status != PourPlanStatus.cancelled)
-        .toList();
-
     final dateCtrl = TextEditingController(
-      text: existing?.date ?? AppDate.format(AppDate.today()),
+      text: existing?.orderDate ?? AppDate.format(AppDate.today()),
     );
-    final locationCtrl =
-        TextEditingController(text: existing?.location ?? '');
-    final m3Ctrl = TextEditingController(
-      text: existing == null ? '' : _m3(existing.actualM3),
+    final supplierCtrl =
+        TextEditingController(text: existing?.supplier ?? '');
+    final orderedCtrl = TextEditingController(
+      text: existing == null ? '' : _m3(existing.orderedM3),
     );
-    final mixerCtrl =
-        TextEditingController(text: existing?.mixerNote ?? '');
-    final pumpCtrl = TextEditingController(text: existing?.pumpNote ?? '');
+    final deliveredCtrl = TextEditingController(
+      text: existing == null ? '0' : _m3(existing.deliveredM3),
+    );
+    final waybillCtrl =
+        TextEditingController(text: existing?.waybillNo ?? '');
     final notesCtrl = TextEditingController(text: existing?.notes ?? '');
     var concreteClass = existing?.concreteClass ?? 'C30/37';
-    String? planId = existing?.planId;
+    var status = existing?.status ?? OrderStatus.open;
 
     final saved = await SJModal.showSheet<bool>(
       context: context,
-      title: existing == null ? 'Yeni döküm' : 'Dökümü düzenle',
+      title: existing == null ? 'Yeni sipariş' : 'Siparişi düzenle',
       child: StatefulBuilder(
         builder: (ctx, setLocal) {
           return SingleChildScrollView(
@@ -135,49 +143,13 @@ class DokumScreen extends ConsumerWidget {
                 TextField(
                   controller: dateCtrl,
                   decoration: const InputDecoration(
-                    labelText: 'Tarih (gg.aa.yyyy)',
+                    labelText: 'Sipariş tarihi (gg.aa.yyyy)',
                   ),
                 ),
                 const SizedBox(height: AppSpacing.sm),
-                if (plans.isNotEmpty) ...[
-                  DropdownButtonFormField<String?>(
-                    value: planId,
-                    decoration: const InputDecoration(
-                      labelText: 'Bağlı plan (opsiyonel)',
-                    ),
-                    items: [
-                      const DropdownMenuItem<String?>(
-                        value: null,
-                        child: Text('Yok'),
-                      ),
-                      for (final p in plans)
-                        DropdownMenuItem<String?>(
-                          value: p.id,
-                          child: Text(
-                            '${p.date} · ${p.location.isEmpty ? p.concreteClass : p.location}',
-                            overflow: TextOverflow.ellipsis,
-                          ),
-                        ),
-                    ],
-                    onChanged: (v) {
-                      setLocal(() {
-                        planId = v;
-                        if (v != null) {
-                          final plan = plans.firstWhere((e) => e.id == v);
-                          locationCtrl.text = plan.location;
-                          concreteClass = plan.concreteClass;
-                          if (m3Ctrl.text.isEmpty) {
-                            m3Ctrl.text = _m3(plan.plannedM3);
-                          }
-                        }
-                      });
-                    },
-                  ),
-                  const SizedBox(height: AppSpacing.sm),
-                ],
                 TextField(
-                  controller: locationCtrl,
-                  decoration: const InputDecoration(labelText: 'Lokasyon'),
+                  controller: supplierCtrl,
+                  decoration: const InputDecoration(labelText: 'Tedarikçi'),
                 ),
                 const SizedBox(height: AppSpacing.sm),
                 DropdownButtonFormField<String>(
@@ -194,21 +166,37 @@ class DokumScreen extends ConsumerWidget {
                 ),
                 const SizedBox(height: AppSpacing.sm),
                 TextField(
-                  controller: m3Ctrl,
-                  decoration: const InputDecoration(labelText: 'Dökülen m³'),
+                  controller: orderedCtrl,
+                  decoration: const InputDecoration(labelText: 'Sipariş m³'),
                   keyboardType: const TextInputType.numberWithOptions(
                     decimal: true,
                   ),
                 ),
                 const SizedBox(height: AppSpacing.sm),
                 TextField(
-                  controller: mixerCtrl,
-                  decoration: const InputDecoration(labelText: 'Mikser notu'),
+                  controller: deliveredCtrl,
+                  decoration: const InputDecoration(labelText: 'Teslim m³'),
+                  keyboardType: const TextInputType.numberWithOptions(
+                    decimal: true,
+                  ),
                 ),
                 const SizedBox(height: AppSpacing.sm),
                 TextField(
-                  controller: pumpCtrl,
-                  decoration: const InputDecoration(labelText: 'Pompa notu'),
+                  controller: waybillCtrl,
+                  decoration: const InputDecoration(labelText: 'İrsaliye no'),
+                ),
+                const SizedBox(height: AppSpacing.sm),
+                DropdownButtonFormField<OrderStatus>(
+                  value: status,
+                  decoration: const InputDecoration(labelText: 'Durum'),
+                  items: [
+                    for (final s in OrderStatus.values)
+                      DropdownMenuItem(value: s, child: Text(s.label)),
+                  ],
+                  onChanged: (v) {
+                    if (v == null) return;
+                    setLocal(() => status = v);
+                  },
                 ),
                 const SizedBox(height: AppSpacing.sm),
                 TextField(
@@ -219,10 +207,10 @@ class DokumScreen extends ConsumerWidget {
                 const SizedBox(height: AppSpacing.md),
                 FilledButton(
                   onPressed: () {
-                    final m3 = double.tryParse(
-                      m3Ctrl.text.trim().replaceAll(',', '.'),
+                    final ordered = double.tryParse(
+                      orderedCtrl.text.trim().replaceAll(',', '.'),
                     );
-                    if (m3 == null || m3 <= 0) return;
+                    if (ordered == null || ordered <= 0) return;
                     Navigator.pop(ctx, true);
                   },
                   child: const Text('Kaydet'),
@@ -233,15 +221,13 @@ class DokumScreen extends ConsumerWidget {
                     onPressed: () async {
                       final ok = await SJModal.confirm(
                         context: ctx,
-                        title: 'Dökümü sil',
-                        message: 'Bu döküm kaydı silinsin mi?',
+                        title: 'Siparişi sil',
+                        message: 'Bu sipariş kaydı silinsin mi?',
                         confirmLabel: 'Sil',
                         destructive: true,
                       );
                       if (!ok || !ctx.mounted) return;
-                      ref
-                          .read(pourRecordsProvider.notifier)
-                          .delete(existing.id);
+                      ref.read(ordersProvider.notifier).delete(existing.id);
                       Navigator.pop(ctx, false);
                     },
                     child: Text(
@@ -258,23 +244,26 @@ class DokumScreen extends ConsumerWidget {
     );
 
     if (saved != true) return;
-    final m3 = double.tryParse(m3Ctrl.text.trim().replaceAll(',', '.')) ?? 0;
-    final draft = PourRecord(
+    final ordered =
+        double.tryParse(orderedCtrl.text.trim().replaceAll(',', '.')) ?? 0;
+    final delivered =
+        double.tryParse(deliveredCtrl.text.trim().replaceAll(',', '.')) ?? 0;
+    final draft = ConcreteOrder(
       id: existing?.id ?? '',
       projectId: project.id,
-      planId: planId,
-      date: dateCtrl.text.trim(),
-      actualM3: m3,
+      orderDate: dateCtrl.text.trim(),
+      supplier: supplierCtrl.text.trim(),
+      orderedM3: ordered,
+      deliveredM3: delivered,
+      waybillNo: waybillCtrl.text.trim(),
       concreteClass: concreteClass,
-      location: locationCtrl.text.trim(),
-      mixerNote: mixerCtrl.text.trim(),
-      pumpNote: pumpCtrl.text.trim(),
+      status: status,
       notes: notesCtrl.text.trim(),
     );
     if (existing == null) {
-      ref.read(pourRecordsProvider.notifier).add(draft);
+      ref.read(ordersProvider.notifier).add(draft);
     } else {
-      ref.read(pourRecordsProvider.notifier).update(draft);
+      ref.read(ordersProvider.notifier).update(draft);
     }
   }
 }
