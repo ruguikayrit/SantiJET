@@ -7,6 +7,8 @@ Türkçe inşaat şantiye yönetim uygulaması. pnpm monorepo yapısında birden
 | Modül | Klasör | Açıklama |
 |-------|--------|----------|
 | **B.F.A. (Flutter)** | `artifacts/santijet-bfa-flutter` | **Aktif** — Birim Fiyat Analizleri (Flutter) |
+| **BETON (Flutter)** | `artifacts/santijet-beton` | **Aktif** — Mevcut beton uygulaması (`/beton/`) |
+| **BETON R1 (Flutter)** | `artifacts/santijet-beton-r1` | **Aktif** — R1 MVP: plan / döküm / sipariş / kalite (`/beton-r1/`) |
 | B.F.A. (RN arşiv) | `artifacts/imalat-poz-analizleri` | Emekli — yalnızca referans |
 | Mobil uygulama | `artifacts/santiye-takip` | Expo / React Native — ana şantiye takip uygulaması |
 | Neon HUD | `artifacts/santijet-neon` | Vite web dashboard — neon temalı yönetici paneli |
@@ -45,6 +47,22 @@ pnpm dev:bfa
 ```
 
 Tarayıcıda Flutter web oturumu açılır.
+
+### BETON — Mevcut beton uygulaması (Flutter)
+
+```bash
+pnpm dev:beton
+```
+
+Pages: `/beton/`.
+
+### BETON R1 — Yeni MVP (Flutter — mevcut BETON'dan ayrı)
+
+```bash
+pnpm dev:beton-r1
+```
+
+Pages: `/beton-r1/`.
 
 ### B.F.A. — RN arşiv (emekli, yalnızca referans)
 
@@ -124,6 +142,8 @@ CI: `.github/workflows/bfa-ci.yml` (push/PR) ve Pages deploy öncesi otomatik ç
 ```
 ├── artifacts/          # Uygulama modülleri
 │   ├── santijet-bfa-flutter/  # B.F.A. Flutter (aktif)
+│   ├── santijet-beton/        # BETON Flutter (/beton/)
+│   ├── santijet-beton-r1/     # BETON R1 Flutter (/beton-r1/)
 │   ├── imalat-poz-analizleri/ # B.F.A. RN (arşiv)
 │   ├── santiye-takip/  # Expo mobil uygulama
 │   ├── santijet-neon/  # Neon HUD web paneli
