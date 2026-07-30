@@ -1,6 +1,6 @@
-import '../entities/concrete_discovery.dart';
-import '../entities/concrete_order.dart';
-import '../entities/concrete_pour.dart';
+import 'entities/concrete_discovery.dart';
+import 'entities/concrete_order.dart';
+import 'entities/concrete_pour.dart';
 
 /// Keşif / döküm / sipariş özet hesapları.
 abstract final class BetonProgress {

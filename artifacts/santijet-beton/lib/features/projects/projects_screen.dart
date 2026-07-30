@@ -48,8 +48,7 @@ class ProjectsScreen extends ConsumerWidget {
                 88,
               ),
               itemCount: projects.length,
-              separatorBuilder: (_, __) =>
-                  const SizedBox(height: AppSpacing.sm),
+              separatorBuilder: (_, __) => const SizedBox(height: AppSpacing.sm),
               itemBuilder: (context, index) {
                 final p = projects[index];
                 final selected = (activeId ?? projects.first.id) == p.id;
@@ -119,9 +118,8 @@ class ProjectsScreen extends ConsumerWidget {
                                 builder: (ctx) => AlertDialog(
                                   title: const Text('Projeyi sil'),
                                   content: Text(
-                                    '${p.name} ile bu projeye ait plan, '
-                                    'döküm, sipariş ve kalite kayıtları '
-                                    'silinsin mi?',
+                                    '${p.name} ile bu projeye ait keşif, '
+                                    'döküm ve sipariş kayıtları silinsin mi?',
                                   ),
                                   actions: [
                                     TextButton(
@@ -138,18 +136,34 @@ class ProjectsScreen extends ConsumerWidget {
                                 ),
                               );
                               if (ok != true) return;
+                              final discovery = ref
+                                  .read(discoveryProvider)
+                                  .where((e) => e.projectId != p.id)
+                                  .toList();
+                              final pours = ref
+                                  .read(poursProvider)
+                                  .where((e) => e.projectId != p.id)
+                                  .toList();
+                              final orders = ref
+                                  .read(ordersProvider)
+                                  .where((e) => e.projectId != p.id)
+                                  .toList();
+                              final variance = ref
+                                  .read(varianceProvider)
+                                  .where((e) => e.projectId != p.id)
+                                  .toList();
                               ref
-                                  .read(pourPlansProvider.notifier)
-                                  .deleteForProject(p.id);
+                                  .read(discoveryProvider.notifier)
+                                  .replaceAll(discovery);
                               ref
-                                  .read(pourRecordsProvider.notifier)
-                                  .deleteForProject(p.id);
+                                  .read(poursProvider.notifier)
+                                  .replaceAll(pours);
                               ref
                                   .read(ordersProvider.notifier)
-                                  .deleteForProject(p.id);
+                                  .replaceAll(orders);
                               ref
-                                  .read(qualityProvider.notifier)
-                                  .deleteForProject(p.id);
+                                  .read(varianceProvider.notifier)
+                                  .replaceAll(variance);
                               ref.read(projectsProvider.notifier).delete(p.id);
                               if (activeId == p.id) {
                                 final remaining = ref.read(projectsProvider);
