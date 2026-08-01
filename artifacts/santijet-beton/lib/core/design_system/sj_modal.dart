@@ -45,6 +45,52 @@ abstract final class SJModal {
     );
   }
 
+  /// Klavye üstünde kalan kullanılabilir yükseklik (sheet max yüksekliği).
+  static double sheetMaxHeight(BuildContext context) {
+    final mq = MediaQuery.of(context);
+    final available = mq.size.height - mq.viewInsets.bottom - mq.padding.top;
+    return (available * 0.92).clamp(240.0, mq.size.height);
+  }
+
+  /// Klavye-aware kaydırılabilir bottom sheet gövdesi (özel sheet'ler için).
+  ///
+  /// [child] içinde ek [SingleChildScrollView] kullanmayın — kaydırma burada.
+  static Widget scrollableBody({
+    required BuildContext context,
+    required Widget child,
+    EdgeInsetsGeometry padding = const EdgeInsets.only(
+      left: AppSpacing.md,
+      right: AppSpacing.md,
+      top: AppSpacing.md,
+      bottom: AppSpacing.md,
+    ),
+  }) {
+    return AnimatedPadding(
+      duration: const Duration(milliseconds: 120),
+      curve: Curves.easeOut,
+      padding: EdgeInsets.only(
+        bottom: MediaQuery.viewInsetsOf(context).bottom,
+      ),
+      child: SafeArea(
+        child: Align(
+          alignment: Alignment.bottomCenter,
+          child: ConstrainedBox(
+            constraints: BoxConstraints(maxHeight: sheetMaxHeight(context)),
+            child: Material(
+              color: Colors.transparent,
+              child: SingleChildScrollView(
+                keyboardDismissBehavior:
+                    ScrollViewKeyboardDismissBehavior.onDrag,
+                padding: padding,
+                child: child,
+              ),
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+
   /// Alt sayfa (bottom sheet) gösterir.
   static Future<T?> showSheet<T>({
     required BuildContext context,
@@ -67,40 +113,39 @@ abstract final class SJModal {
       ),
       builder: (context) => Theme(
         data: theme,
-        child: SafeArea(
-          child: Padding(
-            padding: EdgeInsets.only(
-              left: AppSpacing.md,
-              right: AppSpacing.md,
-              top: AppSpacing.sm,
-              bottom: AppSpacing.md + MediaQuery.viewInsetsOf(context).bottom,
-            ),
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              crossAxisAlignment: CrossAxisAlignment.stretch,
-              children: [
-                Center(
-                  child: Container(
-                    width: 40,
-                    height: 4,
-                    margin: const EdgeInsets.only(bottom: AppSpacing.sm),
-                    decoration: BoxDecoration(
-                      color: theme.dividerColor,
-                      borderRadius: AppRadii.full,
-                    ),
+        child: scrollableBody(
+          context: context,
+          padding: const EdgeInsets.only(
+            left: AppSpacing.md,
+            right: AppSpacing.md,
+            top: AppSpacing.sm,
+            bottom: AppSpacing.md,
+          ),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              Center(
+                child: Container(
+                  width: 40,
+                  height: 4,
+                  margin: const EdgeInsets.only(bottom: AppSpacing.sm),
+                  decoration: BoxDecoration(
+                    color: theme.dividerColor,
+                    borderRadius: AppRadii.full,
                   ),
                 ),
-                Text(
-                  title,
-                  style: theme.textTheme.titleLarge?.copyWith(
-                    color: theme.colorScheme.onSurface,
-                    fontWeight: FontWeight.w700,
-                  ),
+              ),
+              Text(
+                title,
+                style: theme.textTheme.titleLarge?.copyWith(
+                  color: theme.colorScheme.onSurface,
+                  fontWeight: FontWeight.w700,
                 ),
-                const SizedBox(height: AppSpacing.sm),
-                child,
-              ],
-            ),
+              ),
+              const SizedBox(height: AppSpacing.sm),
+              child,
+            ],
           ),
         ),
       ),

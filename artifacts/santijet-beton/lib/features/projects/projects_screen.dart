@@ -4,6 +4,7 @@ import 'package:go_router/go_router.dart';
 
 import '../../core/design_system/sj_card.dart';
 import '../../core/design_system/sj_empty_state.dart';
+import '../../core/design_system/sj_modal.dart';
 import '../../core/routing/app_routes.dart';
 import '../../core/theme/app_colors.dart';
 import '../../core/theme/app_spacing.dart';
@@ -208,14 +209,8 @@ class ProjectsScreen extends ConsumerWidget {
       isScrollControlled: true,
       showDragHandle: true,
       builder: (ctx) {
-        final bottom = MediaQuery.viewInsetsOf(ctx).bottom;
-        return Padding(
-          padding: EdgeInsets.fromLTRB(
-            AppSpacing.md,
-            0,
-            AppSpacing.md,
-            bottom + AppSpacing.md,
-          ),
+        return SJModal.scrollableBody(
+          context: ctx,
           child: Column(
             mainAxisSize: MainAxisSize.min,
             crossAxisAlignment: CrossAxisAlignment.stretch,

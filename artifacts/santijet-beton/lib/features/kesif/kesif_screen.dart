@@ -202,8 +202,7 @@ class KesifScreen extends ConsumerWidget {
       title: existing == null ? 'Yeni keşif kalemi' : 'Keşfi düzenle',
       child: StatefulBuilder(
         builder: (ctx, setLocal) {
-          return SingleChildScrollView(
-            child: Column(
+          return Column(
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
                 TextField(
@@ -276,8 +275,7 @@ class KesifScreen extends ConsumerWidget {
                   ),
                 ],
               ],
-            ),
-          );
+            );
         },
       ),
     );
@@ -322,8 +320,7 @@ class KesifScreen extends ConsumerWidget {
       title: 'Metraj fark açıklaması',
       child: Builder(
         builder: (ctx) {
-          return SingleChildScrollView(
-            child: Column(
+          return Column(
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
                 TextField(
@@ -386,8 +383,7 @@ class KesifScreen extends ConsumerWidget {
                   child: const Text('Kaydet'),
                 ),
               ],
-            ),
-          );
+            );
         },
       ),
     );

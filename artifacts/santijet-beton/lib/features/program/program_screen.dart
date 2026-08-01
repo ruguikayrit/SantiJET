@@ -225,8 +225,7 @@ class ProgramScreen extends ConsumerWidget {
       title: existing == null ? 'Yeni sipariş' : 'Siparişi düzenle',
       child: StatefulBuilder(
         builder: (ctx, setLocal) {
-          return SingleChildScrollView(
-            child: Column(
+          return Column(
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
                 TextField(
@@ -359,8 +358,7 @@ class ProgramScreen extends ConsumerWidget {
                   ),
                 ],
               ],
-            ),
-          );
+            );
         },
       ),
     );

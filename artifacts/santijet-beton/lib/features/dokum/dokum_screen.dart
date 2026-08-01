@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../core/design_system/sj_card.dart';
 import '../../core/design_system/sj_empty_state.dart';
+import '../../core/design_system/sj_modal.dart';
 import '../../core/theme/app_colors.dart';
 import '../../core/theme/app_radii.dart';
 import '../../core/theme/app_spacing.dart';
@@ -179,35 +180,16 @@ class DokumScreen extends ConsumerWidget {
 
     var isExtra = existing?.isExtraPour ?? false;
 
-    final saved = await showModalBottomSheet<bool>(
+    final saved = await SJModal.showSheet<bool>(
       context: context,
-      isScrollControlled: true,
-      backgroundColor: AppColors.surfaceElevated,
-      builder: (ctx) {
-        return Padding(
-          padding: EdgeInsets.only(
-            left: AppSpacing.md,
-            right: AppSpacing.md,
-            top: AppSpacing.md,
-            bottom: MediaQuery.viewInsetsOf(ctx).bottom + AppSpacing.md,
-          ),
-          child: StatefulBuilder(
-            builder: (context, setSheet) {
-              final order = selectedOrder;
-              return SingleChildScrollView(
-                child: Column(
-                  mainAxisSize: MainAxisSize.min,
-                  crossAxisAlignment: CrossAxisAlignment.stretch,
-                  children: [
-                    Text(
-                      existing == null
-                          ? (isExtra ? 'Ek Döküm' : 'Yeni Döküm')
-                          : (isExtra
-                              ? 'Ek Dökümü Düzenle'
-                              : 'Dökümü Düzenle'),
-                      style: Theme.of(context).textTheme.titleLarge,
-                    ),
-                    const SizedBox(height: AppSpacing.md),
+      title: existing == null ? 'Yeni Döküm' : 'Dökümü Düzenle',
+      child: StatefulBuilder(
+        builder: (ctx, setSheet) {
+          final order = selectedOrder;
+          return Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
                     if (orders.isNotEmpty) ...[
                       DropdownButtonFormField<String>(
                         value: order!.id,
@@ -455,12 +437,9 @@ class DokumScreen extends ConsumerWidget {
                       ),
                     ],
                   ],
-                ),
-              );
-            },
-          ),
-        );
-      },
+                );
+        },
+      ),
     );
 
     volumeCtrl.dispose();

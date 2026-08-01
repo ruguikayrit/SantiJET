@@ -122,8 +122,7 @@ class PlanScreen extends ConsumerWidget {
       title: existing == null ? 'Yeni döküm planı' : 'Planı düzenle',
       child: StatefulBuilder(
         builder: (ctx, setLocal) {
-          return SingleChildScrollView(
-            child: Column(
+          return Column(
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
                 TextField(
@@ -211,8 +210,7 @@ class PlanScreen extends ConsumerWidget {
                   ),
                 ],
               ],
-            ),
-          );
+            );
         },
       ),
     );

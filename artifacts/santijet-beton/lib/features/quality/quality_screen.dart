@@ -118,8 +118,7 @@ class QualityScreen extends ConsumerWidget {
       title: existing == null ? 'Yeni numune' : 'Numuneyi düzenle',
       child: StatefulBuilder(
         builder: (ctx, setLocal) {
-          return SingleChildScrollView(
-            child: Column(
+          return Column(
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
                 TextField(
@@ -201,8 +200,7 @@ class QualityScreen extends ConsumerWidget {
                   ),
                 ],
               ],
-            ),
-          );
+            );
         },
       ),
     );
