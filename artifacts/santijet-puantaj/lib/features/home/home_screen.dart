@@ -197,37 +197,9 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                     ),
                   ),
                   const SizedBox(height: AppSpacing.md),
-                  _SummarySection(
-                    title: 'Özet İmalat',
-                    icon: Icons.precision_manufacturing_outlined,
-                    onTap: () => context.go(AppRoutes.imalat),
-                    child: teamSummaries.isEmpty
-                        ? Builder(
-                            builder: (context) => Text(
-                              'Henüz imalat yok. İmalat ekleyince ekip '
-                              'icmali burada görünür.',
-                              style: Theme.of(context).textTheme.bodyMedium,
-                            ),
-                          )
-                        : Column(
-                            crossAxisAlignment: CrossAxisAlignment.stretch,
-                            children: [
-                              for (var i = 0; i < teamSummaries.length; i++) ...[
-                                if (i > 0) ...[
-                                  const SizedBox(height: AppSpacing.sm),
-                                  Divider(
-                                    height: 1,
-                                    thickness: 1,
-                                    color: Theme.of(context)
-                                        .dividerColor
-                                        .withValues(alpha: 0.55),
-                                  ),
-                                  const SizedBox(height: AppSpacing.sm),
-                                ],
-                                _TeamImalatCard(summary: teamSummaries[i]),
-                              ],
-                            ],
-                          ),
+                  _ImalatOverviewSection(
+                    summaries: teamSummaries,
+                    onOpenImalat: () => context.go(AppRoutes.imalat),
                   ),
                   const SizedBox(height: AppSpacing.md),
                   _SummarySection(
@@ -487,6 +459,97 @@ class _UnitLine {
   }
 }
 
+class _ImalatOverviewSection extends StatelessWidget {
+  const _ImalatOverviewSection({
+    required this.summaries,
+    required this.onOpenImalat,
+  });
+
+  final List<_TeamImalatSummary> summaries;
+  final VoidCallback onOpenImalat;
+
+  static Color _progressColor(double pct) {
+    if (pct >= 100) return AppColors.success;
+    if (pct >= 50) return AppColors.warning;
+    return AppColors.critical;
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        SJCard(
+          onTap: onOpenImalat,
+          padding: const EdgeInsets.symmetric(
+            horizontal: AppSpacing.md,
+            vertical: AppSpacing.sm + 2,
+          ),
+          child: Builder(
+            builder: (context) {
+              final theme = Theme.of(context);
+              return Row(
+                children: [
+                  Icon(
+                    Icons.precision_manufacturing_outlined,
+                    size: 20,
+                    color: theme.colorScheme.primary,
+                  ),
+                  const SizedBox(width: AppSpacing.sm),
+                  Expanded(
+                    child: Text(
+                      'Özet İmalat',
+                      style: theme.textTheme.titleMedium,
+                    ),
+                  ),
+                  Text(
+                    summaries.isEmpty
+                        ? 'İmalat yok'
+                        : '${summaries.length} ekip',
+                    style: theme.textTheme.labelMedium?.copyWith(
+                      color: theme.colorScheme.onSurfaceVariant,
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+                  const SizedBox(width: 4),
+                  Icon(
+                    Icons.chevron_right,
+                    color: theme.colorScheme.onSurfaceVariant,
+                  ),
+                ],
+              );
+            },
+          ),
+        ),
+        if (summaries.isEmpty) ...[
+          const SizedBox(height: AppSpacing.sm),
+          SJCard(
+            child: Builder(
+              builder: (context) => Text(
+                'Henüz imalat yok. İmalat ekleyince ekip icmali burada görünür.',
+                style: Theme.of(context).textTheme.bodyMedium,
+              ),
+            ),
+          ),
+        ] else
+          for (final summary in summaries) ...[
+            const SizedBox(height: AppSpacing.sm),
+            SJCard(
+              accentColor: _progressColor(summary.progressPct),
+              padding: const EdgeInsets.fromLTRB(
+                AppSpacing.sm,
+                AppSpacing.md,
+                AppSpacing.md,
+                AppSpacing.md,
+              ),
+              child: _TeamImalatCard(summary: summary),
+            ),
+          ],
+      ],
+    );
+  }
+}
+
 class _TeamImalatCard extends StatelessWidget {
   const _TeamImalatCard({required this.summary});
 
@@ -519,14 +582,29 @@ class _TeamImalatCard extends StatelessWidget {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Text(
-                    summary.teamName,
-                    style: theme.textTheme.titleSmall?.copyWith(
-                      color: AppColors.useDarkCards
-                          ? AppColors.electricBlueLight
-                          : AppColors.electricBlue,
-                      fontWeight: FontWeight.w700,
-                    ),
+                  Row(
+                    children: [
+                      Container(
+                        width: 10,
+                        height: 10,
+                        decoration: BoxDecoration(
+                          color: color,
+                          shape: BoxShape.circle,
+                        ),
+                      ),
+                      const SizedBox(width: 8),
+                      Expanded(
+                        child: Text(
+                          summary.teamName,
+                          style: theme.textTheme.titleSmall?.copyWith(
+                            color: AppColors.useDarkCards
+                                ? AppColors.electricBlueLight
+                                : AppColors.electricBlue,
+                            fontWeight: FontWeight.w700,
+                          ),
+                        ),
+                      ),
+                    ],
                   ),
                   const SizedBox(height: 4),
                   Text(
