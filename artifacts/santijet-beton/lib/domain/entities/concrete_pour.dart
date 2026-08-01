@@ -2,11 +2,29 @@ import 'package:equatable/equatable.dart';
 
 import 'mixer_entry.dart';
 
+/// Beton numune tipi.
+enum ConcreteSampleType {
+  cylinder('Silindir'),
+  cube('Küp');
+
+  const ConcreteSampleType(this.label);
+  final String label;
+
+  static ConcreteSampleType? tryParse(String? raw) {
+    if (raw == null || raw.trim().isEmpty) return null;
+    final v = raw.trim().toLowerCase();
+    if (v == 'silindir' || v == 'cylinder') return ConcreteSampleType.cylinder;
+    if (v == 'küp' || v == 'kup' || v == 'cube') return ConcreteSampleType.cube;
+    return null;
+  }
+
+  String get storageValue => switch (this) {
+        ConcreteSampleType.cylinder => 'silindir',
+        ConcreteSampleType.cube => 'küp',
+      };
+}
+
 /// Şantiyeye gelen / dökülen beton kaydı.
-///
-/// Sipariş seçilince yapısal eleman, blok, kat, sınıf ve firma siparişten
-/// gelir. Kullanıcı mikser (çoklu) ve pompa verilerini girer.
-/// Sipariş dışı yere döküm → [isExtraPour] = true.
 class ConcretePour extends Equatable {
   const ConcretePour({
     required this.id,
@@ -27,6 +45,9 @@ class ConcretePour extends Equatable {
     this.pumpType = '',
     this.pumpNote = '',
     this.slumpCm,
+    this.sampleType,
+    this.sampleCount,
+    this.sampleTakenHour = '',
     this.pourStart,
     this.pourEnd,
     this.notes = '',
@@ -38,8 +59,6 @@ class ConcretePour extends Equatable {
   final String id;
   final String projectId;
   final String date;
-
-  /// Toplam dökülen hacim (genelde mikser hacimleri toplamı).
   final double volumeM3;
 
   final String elementName;
@@ -48,13 +67,10 @@ class ConcretePour extends Equatable {
   final String concreteClass;
   final String supplier;
 
-  /// Özet / geriye dönük tek satır alanlar.
   final String ticketNo;
   final int? mixerCount;
   final String mixerPlate;
   final String mixerNote;
-
-  /// Mikser / irsaliye satırları.
   final List<MixerEntry> mixers;
 
   final int? pumpCount;
@@ -62,6 +78,14 @@ class ConcretePour extends Equatable {
   final String pumpNote;
 
   final double? slumpCm;
+
+  /// Beton numune tipi (silindir / küp).
+  final ConcreteSampleType? sampleType;
+  final int? sampleCount;
+
+  /// Numune alım saati (örn. 07:30).
+  final String sampleTakenHour;
+
   final DateTime? pourStart;
   final DateTime? pourEnd;
   final String notes;
@@ -96,6 +120,9 @@ class ConcretePour extends Equatable {
     String? pumpType,
     String? pumpNote,
     double? slumpCm,
+    ConcreteSampleType? sampleType,
+    int? sampleCount,
+    String? sampleTakenHour,
     DateTime? pourStart,
     DateTime? pourEnd,
     String? notes,
@@ -122,6 +149,9 @@ class ConcretePour extends Equatable {
       pumpType: pumpType ?? this.pumpType,
       pumpNote: pumpNote ?? this.pumpNote,
       slumpCm: slumpCm ?? this.slumpCm,
+      sampleType: sampleType ?? this.sampleType,
+      sampleCount: sampleCount ?? this.sampleCount,
+      sampleTakenHour: sampleTakenHour ?? this.sampleTakenHour,
       pourStart: pourStart ?? this.pourStart,
       pourEnd: pourEnd ?? this.pourEnd,
       notes: notes ?? this.notes,
@@ -150,6 +180,9 @@ class ConcretePour extends Equatable {
         'pumpType': pumpType,
         'pumpNote': pumpNote,
         'slumpCm': slumpCm,
+        'sampleType': sampleType?.storageValue,
+        'sampleCount': sampleCount,
+        'sampleTakenHour': sampleTakenHour,
         'pourStart': pourStart?.toIso8601String(),
         'pourEnd': pourEnd?.toIso8601String(),
         'notes': notes,
@@ -180,13 +213,12 @@ class ConcretePour extends Equatable {
         .map((e) => MixerEntry.fromJson(Map<String, dynamic>.from(e)))
         .toList();
 
-    // Eski tek mikser alanlarından satır üret
     if (mixers.isEmpty) {
       final ticket = json['ticketNo'] as String? ?? '';
       final plate = json['mixerPlate'] as String? ?? '';
       final vol = (json['volumeM3'] as num?)?.toDouble() ?? 0;
-      final slump = (json['slumpCm'] as num?)?.toDouble();
       final note = json['mixerNote'] as String? ?? '';
+      final cls = json['concreteClass'] as String? ?? '';
       if (ticket.isNotEmpty || plate.isNotEmpty || vol > 0) {
         mixers = [
           MixerEntry(
@@ -194,7 +226,7 @@ class ConcretePour extends Equatable {
             ticketNo: ticket,
             plate: plate,
             volumeM3: vol,
-            slumpCm: slump,
+            concreteClass: cls,
             note: note,
           ),
         ];
@@ -221,6 +253,9 @@ class ConcretePour extends Equatable {
       pumpType: json['pumpType'] as String? ?? '',
       pumpNote: json['pumpNote'] as String? ?? '',
       slumpCm: (json['slumpCm'] as num?)?.toDouble(),
+      sampleType: ConcreteSampleType.tryParse(json['sampleType'] as String?),
+      sampleCount: (json['sampleCount'] as num?)?.toInt(),
+      sampleTakenHour: json['sampleTakenHour'] as String? ?? '',
       pourStart: json['pourStart'] != null
           ? DateTime.tryParse(json['pourStart'] as String)
           : null,
@@ -254,6 +289,9 @@ class ConcretePour extends Equatable {
         pumpType,
         pumpNote,
         slumpCm,
+        sampleType,
+        sampleCount,
+        sampleTakenHour,
         pourStart,
         pourEnd,
         notes,

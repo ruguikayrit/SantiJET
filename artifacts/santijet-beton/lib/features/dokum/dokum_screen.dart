@@ -231,6 +231,24 @@ class _PourCard extends StatelessWidget {
                     ),
                   ),
                 ),
+              if (pour.sampleType != null ||
+                  pour.sampleCount != null ||
+                  pour.sampleTakenHour.isNotEmpty)
+                Padding(
+                  padding: const EdgeInsets.only(top: 2),
+                  child: Text(
+                    [
+                      if (pour.sampleType != null)
+                        'Numune ${pour.sampleType!.label}',
+                      if (pour.sampleCount != null) '${pour.sampleCount} adet',
+                      if (pour.sampleTakenHour.isNotEmpty)
+                        pour.sampleTakenHour,
+                    ].join(' · '),
+                    style: theme.textTheme.labelSmall?.copyWith(
+                      color: AppColors.cardTextMuted,
+                    ),
+                  ),
+                ),
             ],
           );
         },

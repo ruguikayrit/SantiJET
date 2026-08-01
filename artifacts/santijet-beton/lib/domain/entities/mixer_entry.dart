@@ -7,7 +7,7 @@ class MixerEntry extends Equatable {
     this.ticketNo = '',
     this.plate = '',
     this.volumeM3 = 0,
-    this.slumpCm,
+    this.concreteClass = '',
     this.note = '',
     this.waybillImageBase64 = '',
     this.ocrRawText = '',
@@ -17,7 +17,7 @@ class MixerEntry extends Equatable {
   final String ticketNo;
   final String plate;
   final double volumeM3;
-  final double? slumpCm;
+  final String concreteClass;
   final String note;
 
   /// İrsaliye fotoğrafı (JPEG/PNG base64, data-URL öneki olmadan).
@@ -29,7 +29,7 @@ class MixerEntry extends Equatable {
     String? ticketNo,
     String? plate,
     double? volumeM3,
-    double? slumpCm,
+    String? concreteClass,
     String? note,
     String? waybillImageBase64,
     String? ocrRawText,
@@ -39,7 +39,7 @@ class MixerEntry extends Equatable {
       ticketNo: ticketNo ?? this.ticketNo,
       plate: plate ?? this.plate,
       volumeM3: volumeM3 ?? this.volumeM3,
-      slumpCm: slumpCm ?? this.slumpCm,
+      concreteClass: concreteClass ?? this.concreteClass,
       note: note ?? this.note,
       waybillImageBase64: waybillImageBase64 ?? this.waybillImageBase64,
       ocrRawText: ocrRawText ?? this.ocrRawText,
@@ -51,7 +51,7 @@ class MixerEntry extends Equatable {
         'ticketNo': ticketNo,
         'plate': plate,
         'volumeM3': volumeM3,
-        'slumpCm': slumpCm,
+        'concreteClass': concreteClass,
         'note': note,
         'waybillImageBase64': waybillImageBase64,
         'ocrRawText': ocrRawText,
@@ -62,7 +62,7 @@ class MixerEntry extends Equatable {
         ticketNo: json['ticketNo'] as String? ?? '',
         plate: json['plate'] as String? ?? '',
         volumeM3: (json['volumeM3'] as num?)?.toDouble() ?? 0,
-        slumpCm: (json['slumpCm'] as num?)?.toDouble(),
+        concreteClass: json['concreteClass'] as String? ?? '',
         note: json['note'] as String? ?? '',
         waybillImageBase64: json['waybillImageBase64'] as String? ?? '',
         ocrRawText: json['ocrRawText'] as String? ?? '',
@@ -74,7 +74,7 @@ class MixerEntry extends Equatable {
         ticketNo,
         plate,
         volumeM3,
-        slumpCm,
+        concreteClass,
         note,
         waybillImageBase64,
         ocrRawText,

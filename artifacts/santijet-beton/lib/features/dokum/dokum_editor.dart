@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:convert';
 import 'dart:typed_data';
 
@@ -5,6 +6,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:image_picker/image_picker.dart';
 
+import '../../core/constants/app_info.dart';
 import '../../core/design_system/sj_button.dart';
 import '../../core/design_system/sj_modal.dart';
 import '../../core/theme/app_colors.dart';
@@ -20,13 +22,11 @@ import '../../domain/entities/concrete_pour.dart';
 import '../../domain/entities/mixer_entry.dart';
 import '../../domain/entities/project.dart';
 
-/// Sipariş özeti — koyu lacivert zemin.
 const _navySummary = Color(0xFF0A1A33);
 const _navySummaryText = Color(0xFFFFFFFF);
 const _navySummaryMuted = Color(0xB3FFFFFF);
-
-/// Form satır aralığı (sıkışıklığı açar).
 const _fieldGap = AppSpacing.md;
+const _autoCloseDelay = Duration(seconds: 3);
 
 Future<bool?> openDokumEditor(
   BuildContext context,
@@ -50,17 +50,17 @@ class _MixerDraft {
     String ticketNo = '',
     String plate = '',
     String volume = '',
-    String slump = '',
+    String concreteClass = '',
     String note = '',
     this.ocrRawText = '',
   })  : imageBytes = imageBytes,
+        concreteClass = concreteClass.isEmpty ? 'C30/37' : concreteClass,
         ticketCtrl = TextEditingController(text: ticketNo),
         plateCtrl = TextEditingController(text: plate),
         volumeCtrl = TextEditingController(text: volume),
-        slumpCtrl = TextEditingController(text: slump),
         noteCtrl = TextEditingController(text: note);
 
-  factory _MixerDraft.fromEntry(MixerEntry e) {
+  factory _MixerDraft.fromEntry(MixerEntry e, {String fallbackClass = 'C30/37'}) {
     Uint8List? bytes;
     if (e.waybillImageBase64.isNotEmpty) {
       try {
@@ -74,7 +74,8 @@ class _MixerDraft {
       ticketNo: e.ticketNo,
       plate: e.plate,
       volume: e.volumeM3 > 0 ? BetonProgress.fmtM3(e.volumeM3) : '',
-      slump: e.slumpCm == null ? '' : BetonProgress.fmtM3(e.slumpCm!),
+      concreteClass:
+          e.concreteClass.isNotEmpty ? e.concreteClass : fallbackClass,
       note: e.note,
       ocrRawText: e.ocrRawText,
     );
@@ -85,13 +86,11 @@ class _MixerDraft {
   bool ocrBusy;
   String ocrMessage;
   String ocrRawText;
-
-  /// Veri giriş gövdesi açık mı — varsayılan kapalı.
   bool expanded;
+  String concreteClass;
   final TextEditingController ticketCtrl;
   final TextEditingController plateCtrl;
   final TextEditingController volumeCtrl;
-  final TextEditingController slumpCtrl;
   final TextEditingController noteCtrl;
 
   String get collapsedSummary {
@@ -99,6 +98,7 @@ class _MixerDraft {
       if (ticketCtrl.text.trim().isNotEmpty) ticketCtrl.text.trim(),
       if (plateCtrl.text.trim().isNotEmpty) plateCtrl.text.trim(),
       if (volumeCtrl.text.trim().isNotEmpty) '${volumeCtrl.text.trim()} m³',
+      if (concreteClass.isNotEmpty) concreteClass,
     ];
     if (parts.isEmpty) return 'Veri girmek için açın';
     return parts.join(' · ');
@@ -108,7 +108,6 @@ class _MixerDraft {
     ticketCtrl.dispose();
     plateCtrl.dispose();
     volumeCtrl.dispose();
-    slumpCtrl.dispose();
     noteCtrl.dispose();
   }
 
@@ -119,7 +118,7 @@ class _MixerDraft {
       plate: plateCtrl.text.trim(),
       volumeM3:
           double.tryParse(volumeCtrl.text.trim().replaceAll(',', '.')) ?? 0,
-      slumpCm: double.tryParse(slumpCtrl.text.trim().replaceAll(',', '.')),
+      concreteClass: concreteClass,
       note: noteCtrl.text.trim(),
       waybillImageBase64:
           imageBytes == null ? '' : base64Encode(imageBytes!),
@@ -148,8 +147,15 @@ class _DokumEditorBodyState extends ConsumerState<_DokumEditorBody> {
   late final TextEditingController _pumpCountCtrl;
   late final TextEditingController _pumpTypeCtrl;
   late final TextEditingController _pumpNoteCtrl;
+  late final TextEditingController _sampleCountCtrl;
+  late final TextEditingController _sampleHourCtrl;
   late final List<_MixerDraft> _mixers;
+  ConcreteSampleType? _sampleType;
   final _picker = ImagePicker();
+
+  /// Veri girişi yapılan mikser — 3 sn otomatik kapanmada hariç tutulur.
+  String? _editingMixerId;
+  Timer? _autoCloseTimer;
 
   @override
   void initState() {
@@ -212,9 +218,19 @@ class _DokumEditorBodyState extends ConsumerState<_DokumEditorBody> {
     );
     _pumpTypeCtrl = TextEditingController(text: existing?.pumpType ?? '');
     _pumpNoteCtrl = TextEditingController(text: existing?.pumpNote ?? '');
+    _sampleType = existing?.sampleType;
+    _sampleCountCtrl = TextEditingController(
+      text: existing?.sampleCount?.toString() ?? '',
+    );
+    _sampleHourCtrl =
+        TextEditingController(text: existing?.sampleTakenHour ?? '');
 
+    final fallbackClass =
+        selected?.concreteClass ?? existing?.concreteClass ?? 'C30/37';
     if (existing != null && existing.mixers.isNotEmpty) {
-      _mixers = existing.mixers.map(_MixerDraft.fromEntry).toList();
+      _mixers = existing.mixers
+          .map((e) => _MixerDraft.fromEntry(e, fallbackClass: fallbackClass))
+          .toList();
     } else if (existing != null &&
         (existing.ticketNo.isNotEmpty ||
             existing.mixerPlate.isNotEmpty ||
@@ -225,32 +241,54 @@ class _DokumEditorBodyState extends ConsumerState<_DokumEditorBody> {
           ticketNo: existing.ticketNo,
           plate: existing.mixerPlate,
           volume: BetonProgress.fmtM3(existing.volumeM3),
-          slump: existing.slumpCm == null
-              ? ''
-              : BetonProgress.fmtM3(existing.slumpCm!),
+          concreteClass: existing.concreteClass,
           note: existing.mixerNote,
         ),
       ];
     } else {
-      _mixers = [_MixerDraft(id: IdGen.make('mx'))];
+      _mixers = [
+        _MixerDraft(id: IdGen.make('mx'), concreteClass: fallbackClass),
+      ];
     }
   }
 
   @override
   void dispose() {
+    _autoCloseTimer?.cancel();
     _extraElementCtrl.dispose();
     _extraBlockCtrl.dispose();
     _extraFloorCtrl.dispose();
     _pumpCountCtrl.dispose();
     _pumpTypeCtrl.dispose();
     _pumpNoteCtrl.dispose();
+    _sampleCountCtrl.dispose();
+    _sampleHourCtrl.dispose();
     for (final m in _mixers) {
       m.dispose();
     }
     super.dispose();
   }
 
+  void _markMixerEditing(String id) {
+    _editingMixerId = id;
+    _scheduleAutoClose();
+  }
+
+  void _scheduleAutoClose() {
+    _autoCloseTimer?.cancel();
+    _autoCloseTimer = Timer(_autoCloseDelay, () {
+      if (!mounted) return;
+      setState(() {
+        for (final m in _mixers) {
+          if (m.id == _editingMixerId) continue;
+          m.expanded = false;
+        }
+      });
+    });
+  }
+
   Future<void> _pickWaybill(_MixerDraft draft, ImageSource source) async {
+    _markMixerEditing(draft.id);
     try {
       final file = await _picker.pickImage(
         source: source,
@@ -264,7 +302,9 @@ class _DokumEditorBodyState extends ConsumerState<_DokumEditorBody> {
         draft.imageBytes = bytes;
         draft.ocrBusy = true;
         draft.ocrMessage = 'İrsaliye okunuyor…';
+        draft.expanded = true;
       });
+      _markMixerEditing(draft.id);
 
       final result = await WaybillOcr.fromImageBytes(bytes);
       if (!mounted) return;
@@ -284,13 +324,15 @@ class _DokumEditorBodyState extends ConsumerState<_DokumEditorBody> {
         if (result.volumeM3 != null) {
           draft.volumeCtrl.text = BetonProgress.fmtM3(result.volumeM3!);
         }
-        if (result.slumpCm != null) {
-          draft.slumpCtrl.text = BetonProgress.fmtM3(result.slumpCm!);
+        if (result.concreteClass.isNotEmpty &&
+            AppInfo.concreteClasses.contains(result.concreteClass)) {
+          draft.concreteClass = result.concreteClass;
         }
         draft.ocrMessage = result.hasAnyField
             ? 'Otomatik okundu — gerekirse düzeltin'
             : (result.error ?? 'Alanları manuel girebilirsiniz');
       });
+      _markMixerEditing(draft.id);
     } catch (_) {
       if (!mounted) return;
       setState(() {
@@ -302,20 +344,41 @@ class _DokumEditorBodyState extends ConsumerState<_DokumEditorBody> {
   }
 
   void _addMixer() {
+    final cls = _selectedOrder?.concreteClass ?? 'C30/37';
     setState(() {
       for (final m in _mixers) {
         m.expanded = false;
       }
-      _mixers.add(_MixerDraft(id: IdGen.make('mx'), expanded: true));
+      final draft = _MixerDraft(
+        id: IdGen.make('mx'),
+        expanded: true,
+        concreteClass: cls,
+      );
+      _mixers.add(draft);
+      _editingMixerId = draft.id;
     });
+    _scheduleAutoClose();
   }
 
   void _removeMixer(int index) {
     if (_mixers.length <= 1) return;
     setState(() {
-      _mixers[index].dispose();
-      _mixers.removeAt(index);
+      final removed = _mixers.removeAt(index);
+      if (_editingMixerId == removed.id) _editingMixerId = null;
+      removed.dispose();
     });
+  }
+
+  void _onMixerExpansion(_MixerDraft draft, bool open) {
+    setState(() {
+      draft.expanded = open;
+      if (open) {
+        _editingMixerId = draft.id;
+      } else if (_editingMixerId == draft.id) {
+        _editingMixerId = null;
+      }
+    });
+    if (open) _scheduleAutoClose();
   }
 
   void _save() {
@@ -338,6 +401,10 @@ class _DokumEditorBodyState extends ConsumerState<_DokumEditorBody> {
     if (_isExtra && element.isEmpty) return;
 
     final first = entries.first;
+    final pourClass = first.concreteClass.isNotEmpty
+        ? first.concreteClass
+        : order.concreteClass;
+
     final draft = ConcretePour(
       id: widget.existing?.id ?? '',
       projectId: _project.id,
@@ -346,7 +413,7 @@ class _DokumEditorBodyState extends ConsumerState<_DokumEditorBody> {
       elementName: element,
       block: block,
       floor: floor,
-      concreteClass: order.concreteClass,
+      concreteClass: pourClass,
       supplier: order.supplier,
       ticketNo: first.ticketNo,
       mixerCount: entries.length,
@@ -356,7 +423,9 @@ class _DokumEditorBodyState extends ConsumerState<_DokumEditorBody> {
       pumpCount: int.tryParse(_pumpCountCtrl.text.trim()),
       pumpType: _pumpTypeCtrl.text.trim(),
       pumpNote: _pumpNoteCtrl.text.trim(),
-      slumpCm: first.slumpCm,
+      sampleType: _sampleType,
+      sampleCount: int.tryParse(_sampleCountCtrl.text.trim()),
+      sampleTakenHour: _sampleHourCtrl.text.trim(),
       pourStart: widget.existing?.pourStart ?? DateTime.now(),
       orderId: order.id,
       isExtraPour: _isExtra,
@@ -485,7 +554,8 @@ class _DokumEditorBodyState extends ConsumerState<_DokumEditorBody> {
         ),
         const SizedBox(height: AppSpacing.xs),
         Text(
-          'Mikser başlıkları kapalı gelir. Veri girmek için ilgili mikseri açın.',
+          'Başlıklar kapalı gelir. Açılan kartlar 3 sn sonra kapanır; '
+          'veri girilen kart açık kalır.',
           style: theme.textTheme.bodySmall?.copyWith(
             color: AppColors.textSecondary,
           ),
@@ -498,15 +568,22 @@ class _DokumEditorBodyState extends ConsumerState<_DokumEditorBody> {
             draft: _mixers[i],
             canRemove: _mixers.length > 1,
             onRemove: () => _removeMixer(i),
-            onExpansionChanged: (open) {
-              setState(() => _mixers[i].expanded = open);
+            onExpansionChanged: (open) =>
+                _onMixerExpansion(_mixers[i], open),
+            onInteract: () => _markMixerEditing(_mixers[i].id),
+            onClassChanged: (v) {
+              setState(() => _mixers[i].concreteClass = v);
+              _markMixerEditing(_mixers[i].id);
             },
             onCamera: () => _pickWaybill(_mixers[i], ImageSource.camera),
             onGallery: () => _pickWaybill(_mixers[i], ImageSource.gallery),
-            onClearImage: () => setState(() {
-              _mixers[i].imageBytes = null;
-              _mixers[i].ocrMessage = '';
-            }),
+            onClearImage: () {
+              setState(() {
+                _mixers[i].imageBytes = null;
+                _mixers[i].ocrMessage = '';
+              });
+              _markMixerEditing(_mixers[i].id);
+            },
           ),
         ],
         const SizedBox(height: _fieldGap),
@@ -516,6 +593,41 @@ class _DokumEditorBodyState extends ConsumerState<_DokumEditorBody> {
           variant: SJButtonVariant.secondary,
           expanded: true,
           onPressed: _addMixer,
+        ),
+        const SizedBox(height: AppSpacing.xl),
+        Text(
+          'Beton numune',
+          style: theme.textTheme.titleSmall?.copyWith(
+            fontWeight: FontWeight.w700,
+          ),
+        ),
+        const SizedBox(height: _fieldGap),
+        DropdownButtonFormField<ConcreteSampleType?>(
+          value: _sampleType,
+          decoration: const InputDecoration(labelText: 'Numune tipi'),
+          items: [
+            const DropdownMenuItem<ConcreteSampleType?>(
+              value: null,
+              child: Text('Seçilmedi'),
+            ),
+            for (final t in ConcreteSampleType.values)
+              DropdownMenuItem(value: t, child: Text(t.label)),
+          ],
+          onChanged: (v) => setState(() => _sampleType = v),
+        ),
+        const SizedBox(height: _fieldGap),
+        TextField(
+          controller: _sampleCountCtrl,
+          keyboardType: TextInputType.number,
+          decoration: const InputDecoration(labelText: 'Numune adedi'),
+        ),
+        const SizedBox(height: _fieldGap),
+        TextField(
+          controller: _sampleHourCtrl,
+          decoration: const InputDecoration(
+            labelText: 'Numune alım saati',
+            hintText: 'örn. 07:30',
+          ),
         ),
         const SizedBox(height: AppSpacing.xl),
         Text(
@@ -652,6 +764,8 @@ class _MixerCard extends StatelessWidget {
     required this.canRemove,
     required this.onRemove,
     required this.onExpansionChanged,
+    required this.onInteract,
+    required this.onClassChanged,
     required this.onCamera,
     required this.onGallery,
     required this.onClearImage,
@@ -662,6 +776,8 @@ class _MixerCard extends StatelessWidget {
   final bool canRemove;
   final VoidCallback onRemove;
   final ValueChanged<bool> onExpansionChanged;
+  final VoidCallback onInteract;
+  final ValueChanged<String> onClassChanged;
   final VoidCallback onCamera;
   final VoidCallback onGallery;
   final VoidCallback onClearImage;
@@ -669,6 +785,10 @@ class _MixerCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
+    final classValue = AppInfo.concreteClasses.contains(draft.concreteClass)
+        ? draft.concreteClass
+        : AppInfo.concreteClasses.first;
+
     return Container(
       decoration: BoxDecoration(
         color: AppColors.surfaceElevated,
@@ -679,7 +799,7 @@ class _MixerCard extends StatelessWidget {
       child: Theme(
         data: theme.copyWith(dividerColor: Colors.transparent),
         child: ExpansionTile(
-          key: ValueKey('mixer-${draft.id}'),
+          key: ValueKey('mixer-${draft.id}-exp-${draft.expanded}'),
           initiallyExpanded: draft.expanded,
           onExpansionChanged: onExpansionChanged,
           tilePadding: const EdgeInsets.symmetric(
@@ -717,127 +837,147 @@ class _MixerCard extends StatelessWidget {
                   visualDensity: VisualDensity.compact,
                 ),
               Icon(
-                draft.expanded
-                    ? Icons.expand_less
-                    : Icons.expand_more,
+                draft.expanded ? Icons.expand_less : Icons.expand_more,
                 color: theme.colorScheme.onSurfaceVariant,
               ),
             ],
           ),
           children: [
-            Text(
-              'İrsaliye fotoğrafı',
-              style: theme.textTheme.labelMedium?.copyWith(
-                fontWeight: FontWeight.w600,
-              ),
-            ),
-            const SizedBox(height: AppSpacing.xs),
-            if (draft.imageBytes != null) ...[
-              ClipRRect(
-                borderRadius: AppRadii.sm,
-                child: AspectRatio(
-                  aspectRatio: 16 / 10,
-                  child: Image.memory(
-                    draft.imageBytes!,
-                    fit: BoxFit.cover,
+            Focus(
+              onFocusChange: (hasFocus) {
+                if (hasFocus) onInteract();
+              },
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: [
+                  Text(
+                    'İrsaliye fotoğrafı',
+                    style: theme.textTheme.labelMedium?.copyWith(
+                      fontWeight: FontWeight.w600,
+                    ),
                   ),
-                ),
-              ),
-              const SizedBox(height: AppSpacing.xs),
-              Align(
-                alignment: Alignment.centerRight,
-                child: TextButton(
-                  onPressed: onClearImage,
-                  child: const Text('Fotoğrafı kaldır'),
-                ),
-              ),
-            ] else
-              Container(
-                height: 96,
-                alignment: Alignment.center,
-                decoration: BoxDecoration(
-                  color: AppColors.canvas,
-                  borderRadius: AppRadii.sm,
-                  border: Border.all(color: AppColors.borderSubtle),
-                ),
-                child: Text(
-                  'Kamera veya galeriden irsaliye yükleyin',
-                  style: theme.textTheme.bodySmall?.copyWith(
-                    color: AppColors.textMuted,
+                  const SizedBox(height: AppSpacing.xs),
+                  if (draft.imageBytes != null) ...[
+                    ClipRRect(
+                      borderRadius: AppRadii.sm,
+                      child: AspectRatio(
+                        aspectRatio: 16 / 10,
+                        child: Image.memory(
+                          draft.imageBytes!,
+                          fit: BoxFit.cover,
+                        ),
+                      ),
+                    ),
+                    const SizedBox(height: AppSpacing.xs),
+                    Align(
+                      alignment: Alignment.centerRight,
+                      child: TextButton(
+                        onPressed: onClearImage,
+                        child: const Text('Fotoğrafı kaldır'),
+                      ),
+                    ),
+                  ] else
+                    Container(
+                      height: 96,
+                      alignment: Alignment.center,
+                      decoration: BoxDecoration(
+                        color: AppColors.canvas,
+                        borderRadius: AppRadii.sm,
+                        border: Border.all(color: AppColors.borderSubtle),
+                      ),
+                      child: Text(
+                        'Kamera veya galeriden irsaliye yükleyin',
+                        style: theme.textTheme.bodySmall?.copyWith(
+                          color: AppColors.textMuted,
+                        ),
+                        textAlign: TextAlign.center,
+                      ),
+                    ),
+                  const SizedBox(height: AppSpacing.sm),
+                  Row(
+                    children: [
+                      Expanded(
+                        child: SJButton(
+                          label: 'Kamera',
+                          icon: Icons.photo_camera_outlined,
+                          variant: SJButtonVariant.secondary,
+                          expanded: true,
+                          loading: draft.ocrBusy,
+                          onPressed: onCamera,
+                        ),
+                      ),
+                      const SizedBox(width: AppSpacing.sm),
+                      Expanded(
+                        child: SJButton(
+                          label: 'Galeri',
+                          icon: Icons.photo_library_outlined,
+                          variant: SJButtonVariant.secondary,
+                          expanded: true,
+                          loading: draft.ocrBusy,
+                          onPressed: onGallery,
+                        ),
+                      ),
+                    ],
                   ),
-                  textAlign: TextAlign.center,
-                ),
+                  if (draft.ocrBusy || draft.ocrMessage.isNotEmpty) ...[
+                    const SizedBox(height: AppSpacing.sm),
+                    if (draft.ocrBusy)
+                      const LinearProgressIndicator(minHeight: 3)
+                    else
+                      Text(
+                        draft.ocrMessage,
+                        style: theme.textTheme.labelSmall?.copyWith(
+                          color: AppColors.textSecondary,
+                        ),
+                      ),
+                  ],
+                  const SizedBox(height: _fieldGap),
+                  TextField(
+                    controller: draft.ticketCtrl,
+                    decoration: const InputDecoration(labelText: 'İrsaliye no'),
+                    onChanged: (_) => onInteract(),
+                  ),
+                  const SizedBox(height: _fieldGap),
+                  TextField(
+                    controller: draft.plateCtrl,
+                    decoration: const InputDecoration(labelText: 'Plaka'),
+                    textCapitalization: TextCapitalization.characters,
+                    onChanged: (_) => onInteract(),
+                  ),
+                  const SizedBox(height: _fieldGap),
+                  TextField(
+                    controller: draft.volumeCtrl,
+                    keyboardType: const TextInputType.numberWithOptions(
+                      decimal: true,
+                    ),
+                    decoration: const InputDecoration(labelText: 'Hacim (m³)'),
+                    onChanged: (_) => onInteract(),
+                  ),
+                  const SizedBox(height: _fieldGap),
+                  DropdownButtonFormField<String>(
+                    value: classValue,
+                    decoration:
+                        const InputDecoration(labelText: 'Beton sınıfı'),
+                    items: [
+                      for (final c in AppInfo.concreteClasses)
+                        DropdownMenuItem(value: c, child: Text(c)),
+                    ],
+                    onChanged: (v) {
+                      if (v == null) return;
+                      onClassChanged(v);
+                    },
+                  ),
+                  const SizedBox(height: _fieldGap),
+                  TextField(
+                    controller: draft.noteCtrl,
+                    decoration: const InputDecoration(
+                      labelText: 'Özel not (isteğe bağlı)',
+                    ),
+                    maxLines: 2,
+                    onChanged: (_) => onInteract(),
+                  ),
+                ],
               ),
-            const SizedBox(height: AppSpacing.sm),
-            Row(
-              children: [
-                Expanded(
-                  child: SJButton(
-                    label: 'Kamera',
-                    icon: Icons.photo_camera_outlined,
-                    variant: SJButtonVariant.secondary,
-                    expanded: true,
-                    loading: draft.ocrBusy,
-                    onPressed: onCamera,
-                  ),
-                ),
-                const SizedBox(width: AppSpacing.sm),
-                Expanded(
-                  child: SJButton(
-                    label: 'Galeri',
-                    icon: Icons.photo_library_outlined,
-                    variant: SJButtonVariant.secondary,
-                    expanded: true,
-                    loading: draft.ocrBusy,
-                    onPressed: onGallery,
-                  ),
-                ),
-              ],
-            ),
-            if (draft.ocrBusy || draft.ocrMessage.isNotEmpty) ...[
-              const SizedBox(height: AppSpacing.sm),
-              if (draft.ocrBusy)
-                const LinearProgressIndicator(minHeight: 3)
-              else
-                Text(
-                  draft.ocrMessage,
-                  style: theme.textTheme.labelSmall?.copyWith(
-                    color: AppColors.textSecondary,
-                  ),
-                ),
-            ],
-            const SizedBox(height: _fieldGap),
-            TextField(
-              controller: draft.ticketCtrl,
-              decoration: const InputDecoration(labelText: 'İrsaliye no'),
-            ),
-            const SizedBox(height: _fieldGap),
-            TextField(
-              controller: draft.plateCtrl,
-              decoration: const InputDecoration(labelText: 'Plaka'),
-              textCapitalization: TextCapitalization.characters,
-            ),
-            const SizedBox(height: _fieldGap),
-            TextField(
-              controller: draft.volumeCtrl,
-              keyboardType:
-                  const TextInputType.numberWithOptions(decimal: true),
-              decoration: const InputDecoration(labelText: 'Hacim (m³)'),
-            ),
-            const SizedBox(height: _fieldGap),
-            TextField(
-              controller: draft.slumpCtrl,
-              keyboardType:
-                  const TextInputType.numberWithOptions(decimal: true),
-              decoration: const InputDecoration(labelText: 'Çökme / Slump'),
-            ),
-            const SizedBox(height: _fieldGap),
-            TextField(
-              controller: draft.noteCtrl,
-              decoration: const InputDecoration(
-                labelText: 'Özel not (isteğe bağlı)',
-              ),
-              maxLines: 2,
             ),
           ],
         ),
