@@ -46,6 +46,7 @@ class _MixerDraft {
     Uint8List? imageBytes,
     this.ocrBusy = false,
     this.ocrMessage = '',
+    this.expanded = false,
     String ticketNo = '',
     String plate = '',
     String volume = '',
@@ -69,6 +70,7 @@ class _MixerDraft {
     return _MixerDraft(
       id: e.id,
       imageBytes: bytes,
+      expanded: false,
       ticketNo: e.ticketNo,
       plate: e.plate,
       volume: e.volumeM3 > 0 ? BetonProgress.fmtM3(e.volumeM3) : '',
@@ -83,11 +85,24 @@ class _MixerDraft {
   bool ocrBusy;
   String ocrMessage;
   String ocrRawText;
+
+  /// Veri giriş gövdesi açık mı — varsayılan kapalı.
+  bool expanded;
   final TextEditingController ticketCtrl;
   final TextEditingController plateCtrl;
   final TextEditingController volumeCtrl;
   final TextEditingController slumpCtrl;
   final TextEditingController noteCtrl;
+
+  String get collapsedSummary {
+    final parts = <String>[
+      if (ticketCtrl.text.trim().isNotEmpty) ticketCtrl.text.trim(),
+      if (plateCtrl.text.trim().isNotEmpty) plateCtrl.text.trim(),
+      if (volumeCtrl.text.trim().isNotEmpty) '${volumeCtrl.text.trim()} m³',
+    ];
+    if (parts.isEmpty) return 'Veri girmek için açın';
+    return parts.join(' · ');
+  }
 
   void dispose() {
     ticketCtrl.dispose();
@@ -287,7 +302,12 @@ class _DokumEditorBodyState extends ConsumerState<_DokumEditorBody> {
   }
 
   void _addMixer() {
-    setState(() => _mixers.add(_MixerDraft(id: IdGen.make('mx'))));
+    setState(() {
+      for (final m in _mixers) {
+        m.expanded = false;
+      }
+      _mixers.add(_MixerDraft(id: IdGen.make('mx'), expanded: true));
+    });
   }
 
   void _removeMixer(int index) {
@@ -465,8 +485,7 @@ class _DokumEditorBodyState extends ConsumerState<_DokumEditorBody> {
         ),
         const SizedBox(height: AppSpacing.xs),
         Text(
-          'Her gelen mikser için ayrı kayıt ekleyin. İrsaliye fotoğrafından '
-          'veriler otomatik okunur; isteğe göre manuel düzeltebilirsiniz.',
+          'Mikser başlıkları kapalı gelir. Veri girmek için ilgili mikseri açın.',
           style: theme.textTheme.bodySmall?.copyWith(
             color: AppColors.textSecondary,
           ),
@@ -479,6 +498,9 @@ class _DokumEditorBodyState extends ConsumerState<_DokumEditorBody> {
             draft: _mixers[i],
             canRemove: _mixers.length > 1,
             onRemove: () => _removeMixer(i),
+            onExpansionChanged: (open) {
+              setState(() => _mixers[i].expanded = open);
+            },
             onCamera: () => _pickWaybill(_mixers[i], ImageSource.camera),
             onGallery: () => _pickWaybill(_mixers[i], ImageSource.gallery),
             onClearImage: () => setState(() {
@@ -629,6 +651,7 @@ class _MixerCard extends StatelessWidget {
     required this.draft,
     required this.canRemove,
     required this.onRemove,
+    required this.onExpansionChanged,
     required this.onCamera,
     required this.onGallery,
     required this.onClearImage,
@@ -638,6 +661,7 @@ class _MixerCard extends StatelessWidget {
   final _MixerDraft draft;
   final bool canRemove;
   final VoidCallback onRemove;
+  final ValueChanged<bool> onExpansionChanged;
   final VoidCallback onCamera;
   final VoidCallback onGallery;
   final VoidCallback onClearImage;
@@ -646,151 +670,177 @@ class _MixerCard extends StatelessWidget {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     return Container(
-      padding: const EdgeInsets.all(AppSpacing.md),
       decoration: BoxDecoration(
         color: AppColors.surfaceElevated,
         borderRadius: AppRadii.md,
         border: Border.all(color: AppColors.borderSubtle),
       ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.stretch,
-        children: [
-          Row(
+      clipBehavior: Clip.antiAlias,
+      child: Theme(
+        data: theme.copyWith(dividerColor: Colors.transparent),
+        child: ExpansionTile(
+          key: ValueKey('mixer-${draft.id}'),
+          initiallyExpanded: draft.expanded,
+          onExpansionChanged: onExpansionChanged,
+          tilePadding: const EdgeInsets.symmetric(
+            horizontal: AppSpacing.md,
+            vertical: AppSpacing.xs,
+          ),
+          childrenPadding: const EdgeInsets.fromLTRB(
+            AppSpacing.md,
+            0,
+            AppSpacing.md,
+            AppSpacing.md,
+          ),
+          title: Text(
+            'Mikser ${index + 1}',
+            style: theme.textTheme.titleSmall?.copyWith(
+              fontWeight: FontWeight.w700,
+            ),
+          ),
+          subtitle: Text(
+            draft.collapsedSummary,
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
+            style: theme.textTheme.labelSmall?.copyWith(
+              color: AppColors.textMuted,
+            ),
+          ),
+          trailing: Row(
+            mainAxisSize: MainAxisSize.min,
             children: [
-              Expanded(
-                child: Text(
-                  'Mikser ${index + 1}',
-                  style: theme.textTheme.titleSmall?.copyWith(
-                    fontWeight: FontWeight.w700,
-                  ),
-                ),
-              ),
               if (canRemove)
                 IconButton(
                   onPressed: onRemove,
                   tooltip: 'Mikseri kaldır',
-                  icon: Icon(Icons.close, color: AppColors.critical),
+                  icon: Icon(Icons.close, color: AppColors.critical, size: 20),
                   visualDensity: VisualDensity.compact,
                 ),
+              Icon(
+                draft.expanded
+                    ? Icons.expand_less
+                    : Icons.expand_more,
+                color: theme.colorScheme.onSurfaceVariant,
+              ),
             ],
           ),
-          const SizedBox(height: AppSpacing.sm),
-          Text(
-            'İrsaliye fotoğrafı',
-            style: theme.textTheme.labelMedium?.copyWith(
-              fontWeight: FontWeight.w600,
-            ),
-          ),
-          const SizedBox(height: AppSpacing.xs),
-          if (draft.imageBytes != null) ...[
-            ClipRRect(
-              borderRadius: AppRadii.sm,
-              child: AspectRatio(
-                aspectRatio: 16 / 10,
-                child: Image.memory(
-                  draft.imageBytes!,
-                  fit: BoxFit.cover,
-                ),
+          children: [
+            Text(
+              'İrsaliye fotoğrafı',
+              style: theme.textTheme.labelMedium?.copyWith(
+                fontWeight: FontWeight.w600,
               ),
             ),
             const SizedBox(height: AppSpacing.xs),
-            Align(
-              alignment: Alignment.centerRight,
-              child: TextButton(
-                onPressed: onClearImage,
-                child: const Text('Fotoğrafı kaldır'),
-              ),
-            ),
-          ] else
-            Container(
-              height: 96,
-              alignment: Alignment.center,
-              decoration: BoxDecoration(
-                color: AppColors.canvas,
+            if (draft.imageBytes != null) ...[
+              ClipRRect(
                 borderRadius: AppRadii.sm,
-                border: Border.all(
-                  color: AppColors.borderSubtle,
-                  style: BorderStyle.solid,
+                child: AspectRatio(
+                  aspectRatio: 16 / 10,
+                  child: Image.memory(
+                    draft.imageBytes!,
+                    fit: BoxFit.cover,
+                  ),
                 ),
               ),
-              child: Text(
-                'Kamera veya galeriden irsaliye yükleyin',
-                style: theme.textTheme.bodySmall?.copyWith(
-                  color: AppColors.textMuted,
-                ),
-                textAlign: TextAlign.center,
-              ),
-            ),
-          const SizedBox(height: AppSpacing.sm),
-          Row(
-            children: [
-              Expanded(
-                child: SJButton(
-                  label: 'Kamera',
-                  icon: Icons.photo_camera_outlined,
-                  variant: SJButtonVariant.secondary,
-                  expanded: true,
-                  loading: draft.ocrBusy,
-                  onPressed: onCamera,
+              const SizedBox(height: AppSpacing.xs),
+              Align(
+                alignment: Alignment.centerRight,
+                child: TextButton(
+                  onPressed: onClearImage,
+                  child: const Text('Fotoğrafı kaldır'),
                 ),
               ),
-              const SizedBox(width: AppSpacing.sm),
-              Expanded(
-                child: SJButton(
-                  label: 'Galeri',
-                  icon: Icons.photo_library_outlined,
-                  variant: SJButtonVariant.secondary,
-                  expanded: true,
-                  loading: draft.ocrBusy,
-                  onPressed: onGallery,
+            ] else
+              Container(
+                height: 96,
+                alignment: Alignment.center,
+                decoration: BoxDecoration(
+                  color: AppColors.canvas,
+                  borderRadius: AppRadii.sm,
+                  border: Border.all(color: AppColors.borderSubtle),
+                ),
+                child: Text(
+                  'Kamera veya galeriden irsaliye yükleyin',
+                  style: theme.textTheme.bodySmall?.copyWith(
+                    color: AppColors.textMuted,
+                  ),
+                  textAlign: TextAlign.center,
                 ),
               ),
-            ],
-          ),
-          if (draft.ocrBusy || draft.ocrMessage.isNotEmpty) ...[
             const SizedBox(height: AppSpacing.sm),
-            if (draft.ocrBusy)
-              const LinearProgressIndicator(minHeight: 3)
-            else
-              Text(
-                draft.ocrMessage,
-                style: theme.textTheme.labelSmall?.copyWith(
-                  color: AppColors.textSecondary,
+            Row(
+              children: [
+                Expanded(
+                  child: SJButton(
+                    label: 'Kamera',
+                    icon: Icons.photo_camera_outlined,
+                    variant: SJButtonVariant.secondary,
+                    expanded: true,
+                    loading: draft.ocrBusy,
+                    onPressed: onCamera,
+                  ),
                 ),
-              ),
-          ],
-          const SizedBox(height: _fieldGap),
-          TextField(
-            controller: draft.ticketCtrl,
-            decoration: const InputDecoration(labelText: 'İrsaliye no'),
-          ),
-          const SizedBox(height: _fieldGap),
-          TextField(
-            controller: draft.plateCtrl,
-            decoration: const InputDecoration(labelText: 'Plaka'),
-            textCapitalization: TextCapitalization.characters,
-          ),
-          const SizedBox(height: _fieldGap),
-          TextField(
-            controller: draft.volumeCtrl,
-            keyboardType: const TextInputType.numberWithOptions(decimal: true),
-            decoration: const InputDecoration(labelText: 'Hacim (m³)'),
-          ),
-          const SizedBox(height: _fieldGap),
-          TextField(
-            controller: draft.slumpCtrl,
-            keyboardType: const TextInputType.numberWithOptions(decimal: true),
-            decoration: const InputDecoration(labelText: 'Çökme / Slump'),
-          ),
-          const SizedBox(height: _fieldGap),
-          TextField(
-            controller: draft.noteCtrl,
-            decoration: const InputDecoration(
-              labelText: 'Özel not (isteğe bağlı)',
+                const SizedBox(width: AppSpacing.sm),
+                Expanded(
+                  child: SJButton(
+                    label: 'Galeri',
+                    icon: Icons.photo_library_outlined,
+                    variant: SJButtonVariant.secondary,
+                    expanded: true,
+                    loading: draft.ocrBusy,
+                    onPressed: onGallery,
+                  ),
+                ),
+              ],
             ),
-            maxLines: 2,
-          ),
-        ],
+            if (draft.ocrBusy || draft.ocrMessage.isNotEmpty) ...[
+              const SizedBox(height: AppSpacing.sm),
+              if (draft.ocrBusy)
+                const LinearProgressIndicator(minHeight: 3)
+              else
+                Text(
+                  draft.ocrMessage,
+                  style: theme.textTheme.labelSmall?.copyWith(
+                    color: AppColors.textSecondary,
+                  ),
+                ),
+            ],
+            const SizedBox(height: _fieldGap),
+            TextField(
+              controller: draft.ticketCtrl,
+              decoration: const InputDecoration(labelText: 'İrsaliye no'),
+            ),
+            const SizedBox(height: _fieldGap),
+            TextField(
+              controller: draft.plateCtrl,
+              decoration: const InputDecoration(labelText: 'Plaka'),
+              textCapitalization: TextCapitalization.characters,
+            ),
+            const SizedBox(height: _fieldGap),
+            TextField(
+              controller: draft.volumeCtrl,
+              keyboardType:
+                  const TextInputType.numberWithOptions(decimal: true),
+              decoration: const InputDecoration(labelText: 'Hacim (m³)'),
+            ),
+            const SizedBox(height: _fieldGap),
+            TextField(
+              controller: draft.slumpCtrl,
+              keyboardType:
+                  const TextInputType.numberWithOptions(decimal: true),
+              decoration: const InputDecoration(labelText: 'Çökme / Slump'),
+            ),
+            const SizedBox(height: _fieldGap),
+            TextField(
+              controller: draft.noteCtrl,
+              decoration: const InputDecoration(
+                labelText: 'Özel not (isteğe bağlı)',
+              ),
+              maxLines: 2,
+            ),
+          ],
+        ),
       ),
     );
   }
