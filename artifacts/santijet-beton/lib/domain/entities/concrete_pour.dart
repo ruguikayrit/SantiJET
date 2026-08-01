@@ -44,10 +44,12 @@ class ConcretePour extends Equatable {
     this.pumpCount,
     this.pumpType = '',
     this.pumpNote = '',
+    this.pumpImageBase64 = '',
     this.slumpCm,
     this.sampleType,
     this.sampleCount,
     this.sampleTakenHour = '',
+    this.sampleImageBase64 = '',
     this.pourStart,
     this.pourEnd,
     this.notes = '',
@@ -77,6 +79,9 @@ class ConcretePour extends Equatable {
   final String pumpType;
   final String pumpNote;
 
+  /// Pompa fotoğrafı (JPEG/PNG base64).
+  final String pumpImageBase64;
+
   final double? slumpCm;
 
   /// Beton numune tipi (silindir / küp).
@@ -85,6 +90,9 @@ class ConcretePour extends Equatable {
 
   /// Numune alım saati (örn. 07:30).
   final String sampleTakenHour;
+
+  /// Numune fotoğrafı (JPEG/PNG base64).
+  final String sampleImageBase64;
 
   final DateTime? pourStart;
   final DateTime? pourEnd;
@@ -119,10 +127,12 @@ class ConcretePour extends Equatable {
     int? pumpCount,
     String? pumpType,
     String? pumpNote,
+    String? pumpImageBase64,
     double? slumpCm,
     ConcreteSampleType? sampleType,
     int? sampleCount,
     String? sampleTakenHour,
+    String? sampleImageBase64,
     DateTime? pourStart,
     DateTime? pourEnd,
     String? notes,
@@ -148,10 +158,12 @@ class ConcretePour extends Equatable {
       pumpCount: pumpCount ?? this.pumpCount,
       pumpType: pumpType ?? this.pumpType,
       pumpNote: pumpNote ?? this.pumpNote,
+      pumpImageBase64: pumpImageBase64 ?? this.pumpImageBase64,
       slumpCm: slumpCm ?? this.slumpCm,
       sampleType: sampleType ?? this.sampleType,
       sampleCount: sampleCount ?? this.sampleCount,
       sampleTakenHour: sampleTakenHour ?? this.sampleTakenHour,
+      sampleImageBase64: sampleImageBase64 ?? this.sampleImageBase64,
       pourStart: pourStart ?? this.pourStart,
       pourEnd: pourEnd ?? this.pourEnd,
       notes: notes ?? this.notes,
@@ -179,10 +191,12 @@ class ConcretePour extends Equatable {
         'pumpCount': pumpCount,
         'pumpType': pumpType,
         'pumpNote': pumpNote,
+        'pumpImageBase64': pumpImageBase64,
         'slumpCm': slumpCm,
         'sampleType': sampleType?.storageValue,
         'sampleCount': sampleCount,
         'sampleTakenHour': sampleTakenHour,
+        'sampleImageBase64': sampleImageBase64,
         'pourStart': pourStart?.toIso8601String(),
         'pourEnd': pourEnd?.toIso8601String(),
         'notes': notes,
@@ -252,10 +266,12 @@ class ConcretePour extends Equatable {
       pumpCount: (json['pumpCount'] as num?)?.toInt(),
       pumpType: json['pumpType'] as String? ?? '',
       pumpNote: json['pumpNote'] as String? ?? '',
+      pumpImageBase64: json['pumpImageBase64'] as String? ?? '',
       slumpCm: (json['slumpCm'] as num?)?.toDouble(),
       sampleType: ConcreteSampleType.tryParse(json['sampleType'] as String?),
       sampleCount: (json['sampleCount'] as num?)?.toInt(),
       sampleTakenHour: json['sampleTakenHour'] as String? ?? '',
+      sampleImageBase64: json['sampleImageBase64'] as String? ?? '',
       pourStart: json['pourStart'] != null
           ? DateTime.tryParse(json['pourStart'] as String)
           : null,
@@ -288,10 +304,12 @@ class ConcretePour extends Equatable {
         pumpCount,
         pumpType,
         pumpNote,
+        pumpImageBase64,
         slumpCm,
         sampleType,
         sampleCount,
         sampleTakenHour,
+        sampleImageBase64,
         pourStart,
         pourEnd,
         notes,

@@ -151,6 +151,8 @@ class _DokumEditorBodyState extends ConsumerState<_DokumEditorBody> {
   late final TextEditingController _sampleHourCtrl;
   late final List<_MixerDraft> _mixers;
   ConcreteSampleType? _sampleType;
+  Uint8List? _sampleImageBytes;
+  Uint8List? _pumpImageBytes;
   final _picker = ImagePicker();
 
   /// Veri girişi yapılan mikser — 3 sn otomatik kapanmada hariç tutulur.
@@ -224,6 +226,8 @@ class _DokumEditorBodyState extends ConsumerState<_DokumEditorBody> {
     );
     _sampleHourCtrl =
         TextEditingController(text: existing?.sampleTakenHour ?? '');
+    _sampleImageBytes = _decodeImageB64(existing?.sampleImageBase64);
+    _pumpImageBytes = _decodeImageB64(existing?.pumpImageBase64);
 
     final fallbackClass =
         selected?.concreteClass ?? existing?.concreteClass ?? 'C30/37';
@@ -267,6 +271,15 @@ class _DokumEditorBodyState extends ConsumerState<_DokumEditorBody> {
       m.dispose();
     }
     super.dispose();
+  }
+
+  static Uint8List? _decodeImageB64(String? raw) {
+    if (raw == null || raw.isEmpty) return null;
+    try {
+      return base64Decode(raw);
+    } catch (_) {
+      return null;
+    }
   }
 
   void _markMixerEditing(String id) {
@@ -340,6 +353,29 @@ class _DokumEditorBodyState extends ConsumerState<_DokumEditorBody> {
         draft.ocrMessage =
             'Fotoğraf alınamadı. Alanları manuel girebilirsiniz.';
       });
+    }
+  }
+
+  Future<void> _pickSectionPhoto({
+    required ImageSource source,
+    required void Function(Uint8List bytes) onPicked,
+  }) async {
+    try {
+      final file = await _picker.pickImage(
+        source: source,
+        maxWidth: 1600,
+        maxHeight: 1600,
+        imageQuality: 72,
+      );
+      if (file == null) return;
+      final bytes = await file.readAsBytes();
+      if (!mounted) return;
+      setState(() => onPicked(bytes));
+    } catch (_) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Fotoğraf alınamadı')),
+      );
     }
   }
 
@@ -423,9 +459,13 @@ class _DokumEditorBodyState extends ConsumerState<_DokumEditorBody> {
       pumpCount: int.tryParse(_pumpCountCtrl.text.trim()),
       pumpType: _pumpTypeCtrl.text.trim(),
       pumpNote: _pumpNoteCtrl.text.trim(),
+      pumpImageBase64:
+          _pumpImageBytes == null ? '' : base64Encode(_pumpImageBytes!),
       sampleType: _sampleType,
       sampleCount: int.tryParse(_sampleCountCtrl.text.trim()),
       sampleTakenHour: _sampleHourCtrl.text.trim(),
+      sampleImageBase64:
+          _sampleImageBytes == null ? '' : base64Encode(_sampleImageBytes!),
       pourStart: widget.existing?.pourStart ?? DateTime.now(),
       orderId: order.id,
       isExtraPour: _isExtra,
@@ -552,14 +592,6 @@ class _DokumEditorBodyState extends ConsumerState<_DokumEditorBody> {
             ),
           ],
         ),
-        const SizedBox(height: AppSpacing.xs),
-        Text(
-          'Başlıklar kapalı gelir. Açılan kartlar 3 sn sonra kapanır; '
-          'veri girilen kart açık kalır.',
-          style: theme.textTheme.bodySmall?.copyWith(
-            color: AppColors.textSecondary,
-          ),
-        ),
         const SizedBox(height: _fieldGap),
         for (var i = 0; i < _mixers.length; i++) ...[
           if (i > 0) const SizedBox(height: AppSpacing.xs),
@@ -602,6 +634,20 @@ class _DokumEditorBodyState extends ConsumerState<_DokumEditorBody> {
           ),
         ),
         const SizedBox(height: _fieldGap),
+        _PhotoAttachRow(
+          emptyHint: 'Numune fotoğrafı ekleyin',
+          imageBytes: _sampleImageBytes,
+          onCamera: () => _pickSectionPhoto(
+            source: ImageSource.camera,
+            onPicked: (b) => _sampleImageBytes = b,
+          ),
+          onGallery: () => _pickSectionPhoto(
+            source: ImageSource.gallery,
+            onPicked: (b) => _sampleImageBytes = b,
+          ),
+          onClear: () => setState(() => _sampleImageBytes = null),
+        ),
+        const SizedBox(height: _fieldGap),
         DropdownButtonFormField<ConcreteSampleType?>(
           value: _sampleType,
           decoration: const InputDecoration(labelText: 'Numune tipi'),
@@ -635,6 +681,20 @@ class _DokumEditorBodyState extends ConsumerState<_DokumEditorBody> {
           style: theme.textTheme.titleSmall?.copyWith(
             fontWeight: FontWeight.w700,
           ),
+        ),
+        const SizedBox(height: _fieldGap),
+        _PhotoAttachRow(
+          emptyHint: 'Pompa fotoğrafı ekleyin',
+          imageBytes: _pumpImageBytes,
+          onCamera: () => _pickSectionPhoto(
+            source: ImageSource.camera,
+            onPicked: (b) => _pumpImageBytes = b,
+          ),
+          onGallery: () => _pickSectionPhoto(
+            source: ImageSource.gallery,
+            onPicked: (b) => _pumpImageBytes = b,
+          ),
+          onClear: () => setState(() => _pumpImageBytes = null),
         ),
         const SizedBox(height: _fieldGap),
         TextField(
@@ -700,6 +760,89 @@ class _DokumEditorBodyState extends ConsumerState<_DokumEditorBody> {
       if (loc.isNotEmpty) loc,
       '${BetonProgress.fmtM3(o.plannedM3)} m³',
     ].join(' · ');
+  }
+}
+
+class _PhotoAttachRow extends StatelessWidget {
+  const _PhotoAttachRow({
+    required this.emptyHint,
+    required this.imageBytes,
+    required this.onCamera,
+    required this.onGallery,
+    required this.onClear,
+  });
+
+  final String emptyHint;
+  final Uint8List? imageBytes;
+  final VoidCallback onCamera;
+  final VoidCallback onGallery;
+  final VoidCallback onClear;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        if (imageBytes != null) ...[
+          ClipRRect(
+            borderRadius: AppRadii.sm,
+            child: AspectRatio(
+              aspectRatio: 16 / 10,
+              child: Image.memory(imageBytes!, fit: BoxFit.cover),
+            ),
+          ),
+          const SizedBox(height: AppSpacing.xs),
+          Align(
+            alignment: Alignment.centerRight,
+            child: TextButton(
+              onPressed: onClear,
+              child: const Text('Fotoğrafı kaldır'),
+            ),
+          ),
+        ] else
+          Container(
+            height: 72,
+            alignment: Alignment.center,
+            decoration: BoxDecoration(
+              color: AppColors.canvas,
+              borderRadius: AppRadii.sm,
+              border: Border.all(color: AppColors.borderSubtle),
+            ),
+            child: Text(
+              emptyHint,
+              style: theme.textTheme.bodySmall?.copyWith(
+                color: AppColors.textMuted,
+              ),
+              textAlign: TextAlign.center,
+            ),
+          ),
+        const SizedBox(height: AppSpacing.sm),
+        Row(
+          children: [
+            Expanded(
+              child: SJButton(
+                label: 'Kamera',
+                icon: Icons.photo_camera_outlined,
+                variant: SJButtonVariant.secondary,
+                expanded: true,
+                onPressed: onCamera,
+              ),
+            ),
+            const SizedBox(width: AppSpacing.sm),
+            Expanded(
+              child: SJButton(
+                label: 'Galeri',
+                icon: Icons.photo_library_outlined,
+                variant: SJButtonVariant.secondary,
+                expanded: true,
+                onPressed: onGallery,
+              ),
+            ),
+          ],
+        ),
+      ],
+    );
   }
 }
 
