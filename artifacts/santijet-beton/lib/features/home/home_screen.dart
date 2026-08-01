@@ -23,6 +23,7 @@ class HomeScreen extends ConsumerWidget {
     final project = ref.watch(activeProjectProvider);
     final progress = ref.watch(projectProgressProvider);
     final todayPours = ref.watch(todayPoursProvider);
+    final pours = ref.watch(activePoursProvider);
     final orders = ref.watch(activeOrdersProvider);
     final variance = ref.watch(activeVarianceProvider);
     final today = AppDate.format(AppDate.today());
@@ -31,6 +32,22 @@ class HomeScreen extends ConsumerWidget {
         .fold<double>(0, (s, o) => s + o.plannedM3);
     final todayPoured =
         todayPours.fold<double>(0, (s, p) => s + p.volumeM3);
+
+    final samplePours = pours.where((p) {
+      return p.sampleType != null ||
+          (p.sampleCount ?? 0) > 0 ||
+          p.sampleTakenHour.trim().isNotEmpty ||
+          p.sampleImageBase64.isNotEmpty;
+    }).toList();
+    final sampleTotalCount =
+        samplePours.fold<int>(0, (s, p) => s + (p.sampleCount ?? 0));
+    final sampleWithPhoto =
+        samplePours.where((p) => p.sampleImageBase64.isNotEmpty).length;
+    final sampleCylinder = samplePours
+        .where((p) => p.sampleType?.storageValue == 'silindir')
+        .length;
+    final sampleCube =
+        samplePours.where((p) => p.sampleType?.storageValue == 'küp').length;
 
     if (project == null) {
       return Scaffold(
@@ -221,6 +238,68 @@ class HomeScreen extends ConsumerWidget {
                         ],
                       ],
                     ),
+                  ),
+                  const SizedBox(height: AppSpacing.md),
+                  _SummarySection(
+                    title: 'Beton Numune',
+                    icon: Icons.science_outlined,
+                    onTap: () => context.go(AppRoutes.dokum),
+                    child: samplePours.isEmpty
+                        ? Text(
+                            'Döküm kayıtlarında henüz numune yok',
+                            style: Theme.of(context)
+                                .textTheme
+                                .bodyMedium
+                                ?.copyWith(color: AppColors.textSecondary),
+                          )
+                        : Column(
+                            crossAxisAlignment: CrossAxisAlignment.stretch,
+                            children: [
+                              Row(
+                                children: [
+                                  Expanded(
+                                    child: _MiniStat(
+                                      label: 'Kayıt',
+                                      value: '${samplePours.length}',
+                                      unit: 'döküm',
+                                      color: AppColors.info,
+                                    ),
+                                  ),
+                                  const SizedBox(width: AppSpacing.xs),
+                                  Expanded(
+                                    child: _MiniStat(
+                                      label: 'Adet',
+                                      value: '$sampleTotalCount',
+                                      unit: 'numune',
+                                      color: AppColors.electricBlue,
+                                    ),
+                                  ),
+                                  const SizedBox(width: AppSpacing.xs),
+                                  Expanded(
+                                    child: _MiniStat(
+                                      label: 'Fotoğraf',
+                                      value: '$sampleWithPhoto',
+                                      unit: 'adet',
+                                      color: sampleWithPhoto > 0
+                                          ? AppColors.success
+                                          : AppColors.warning,
+                                    ),
+                                  ),
+                                ],
+                              ),
+                              if (sampleCylinder > 0 || sampleCube > 0) ...[
+                                const SizedBox(height: AppSpacing.sm),
+                                Text(
+                                  [
+                                    if (sampleCylinder > 0)
+                                      'Silindir: $sampleCylinder',
+                                    if (sampleCube > 0) 'Küp: $sampleCube',
+                                  ].join(' · '),
+                                  style: Theme.of(context).textTheme.labelSmall,
+                                ),
+                              ],
+                            ],
+                          ),
                   ),
                 ]),
               ),

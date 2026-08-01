@@ -17,6 +17,7 @@ class ConcreteOrder extends Equatable {
     this.pumpCount,
     this.pumpType = '',
     this.notes = '',
+    this.excessPourNote = '',
     this.sharedViaWhatsApp = false,
   });
 
@@ -50,6 +51,10 @@ class ConcreteOrder extends Equatable {
   final String pumpType;
 
   final String notes;
+
+  /// Fazla dökülen beton açıklaması.
+  final String excessPourNote;
+
   final bool sharedViaWhatsApp;
 
   /// Blok + kat özeti (gösterim / paylaşım).
@@ -84,6 +89,7 @@ class ConcreteOrder extends Equatable {
     int? pumpCount,
     String? pumpType,
     String? notes,
+    String? excessPourNote,
     bool? sharedViaWhatsApp,
   }) {
     return ConcreteOrder(
@@ -101,6 +107,7 @@ class ConcreteOrder extends Equatable {
       pumpCount: pumpCount ?? this.pumpCount,
       pumpType: pumpType ?? this.pumpType,
       notes: notes ?? this.notes,
+      excessPourNote: excessPourNote ?? this.excessPourNote,
       sharedViaWhatsApp: sharedViaWhatsApp ?? this.sharedViaWhatsApp,
     );
   }
@@ -120,6 +127,7 @@ class ConcreteOrder extends Equatable {
         'pumpCount': pumpCount,
         'pumpType': pumpType,
         'notes': notes,
+        'excessPourNote': excessPourNote,
         'sharedViaWhatsApp': sharedViaWhatsApp,
       };
 
@@ -159,6 +167,7 @@ class ConcreteOrder extends Equatable {
       pumpCount: (json['pumpCount'] as num?)?.toInt(),
       pumpType: json['pumpType'] as String? ?? '',
       notes: json['notes'] as String? ?? '',
+      excessPourNote: json['excessPourNote'] as String? ?? '',
       sharedViaWhatsApp: json['sharedViaWhatsApp'] as bool? ?? false,
     );
   }
@@ -179,6 +188,7 @@ class ConcreteOrder extends Equatable {
         pumpCount,
         pumpType,
         notes,
+        excessPourNote,
         sharedViaWhatsApp,
       ];
 }

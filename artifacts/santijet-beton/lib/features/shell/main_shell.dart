@@ -32,7 +32,7 @@ class MainShell extends ConsumerWidget {
     SJNavItem(
       icon: Icons.calendar_month_outlined,
       activeIcon: Icons.calendar_month,
-      label: 'Program',
+      label: 'Sipariş',
     ),
     SJNavItem(
       icon: Icons.settings_outlined,

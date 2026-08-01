@@ -36,7 +36,7 @@ class ProgramScreen extends ConsumerWidget {
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
             const SantijetHeader(
-              subtitle: 'Program / Sipariş',
+              subtitle: 'Sipariş',
               avatarInitial: 'SJ',
             ),
             Expanded(
@@ -219,6 +219,8 @@ class ProgramScreen extends ConsumerWidget {
     final pumpTypeCtrl =
         TextEditingController(text: existing?.pumpType ?? '');
     final notesCtrl = TextEditingController(text: existing?.notes ?? '');
+    final excessPourNoteCtrl =
+        TextEditingController(text: existing?.excessPourNote ?? '');
     var concreteClass = existing?.concreteClass ?? 'C30/37';
 
     final saved = await SJModal.showSheet<bool>(
@@ -326,6 +328,16 @@ class ProgramScreen extends ConsumerWidget {
                   decoration: const InputDecoration(labelText: 'Not'),
                   maxLines: 2,
                 ),
+                const SizedBox(height: AppSpacing.sm),
+                TextField(
+                  controller: excessPourNoteCtrl,
+                  decoration: const InputDecoration(
+                    labelText: 'Fazla dökülen beton açıklaması',
+                    hintText: 'Sipariş üstü döküm nedeni',
+                  ),
+                  maxLines: 3,
+                  textCapitalization: TextCapitalization.sentences,
+                ),
                 const SizedBox(height: AppSpacing.md),
                 Row(
                   children: [
@@ -398,6 +410,7 @@ class ProgramScreen extends ConsumerWidget {
       pumpCount: int.tryParse(pumpCountCtrl.text.trim()),
       pumpType: pumpTypeCtrl.text.trim(),
       notes: notesCtrl.text.trim(),
+      excessPourNote: excessPourNoteCtrl.text.trim(),
       sharedViaWhatsApp: existing?.sharedViaWhatsApp ?? false,
     );
     if (existing == null) {
@@ -432,30 +445,9 @@ class _ProgramSummaryCard extends StatelessWidget {
     return SJCard(
       child: Builder(
         builder: (context) {
-          final theme = Theme.of(context);
           return Column(
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
-              Row(
-                children: [
-                  Icon(
-                    Icons.calendar_month_outlined,
-                    size: 20,
-                    color: theme.colorScheme.primary,
-                  ),
-                  const SizedBox(width: AppSpacing.sm),
-                  Expanded(
-                    child: Text(
-                      'Planlı · Gerçekleşen',
-                      style: theme.textTheme.titleMedium?.copyWith(
-                        color: AppColors.cardTextPrimary,
-                        fontWeight: FontWeight.w700,
-                      ),
-                    ),
-                  ),
-                ],
-              ),
-              const SizedBox(height: AppSpacing.md),
               Row(
                 children: [
                   Expanded(

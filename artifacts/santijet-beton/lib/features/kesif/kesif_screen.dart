@@ -107,22 +107,14 @@ class KesifScreen extends ConsumerWidget {
                                 ],
                               ],
                             const SizedBox(height: AppSpacing.md),
-                            Row(
-                              children: [
-                                Expanded(
-                                  child: Text(
-                                    'Metraj Fark Açıklamaları',
-                                    style:
-                                        Theme.of(context).textTheme.titleMedium,
-                                  ),
-                                ),
-                                TextButton.icon(
-                                  onPressed: () =>
-                                      _openVarianceEditor(context, ref),
-                                  icon: const Icon(Icons.add, size: 18),
-                                  label: const Text('Fark Ekle'),
-                                ),
-                              ],
+                            Align(
+                              alignment: Alignment.centerRight,
+                              child: TextButton.icon(
+                                onPressed: () =>
+                                    _openVarianceEditor(context, ref),
+                                icon: const Icon(Icons.add, size: 18),
+                                label: const Text('Fark Ekle'),
+                              ),
                             ),
                             const SizedBox(height: AppSpacing.sm),
                             if (variance.isEmpty)
