@@ -140,15 +140,12 @@ class _DokumEditorBodyState extends ConsumerState<_DokumEditorBody> {
   late ConcreteOrder? _selectedOrder;
   late List<ConcreteOrder> _orders;
   late Project _project;
-  late bool _isExtra;
-  late final TextEditingController _extraElementCtrl;
-  late final TextEditingController _extraBlockCtrl;
-  late final TextEditingController _extraFloorCtrl;
   late final TextEditingController _pumpCountCtrl;
   late final TextEditingController _pumpTypeCtrl;
   late final TextEditingController _pumpNoteCtrl;
   late final TextEditingController _sampleCountCtrl;
   late final TextEditingController _sampleHourCtrl;
+  late final TextEditingController _notesCtrl;
   late final List<_MixerDraft> _mixers;
   ConcreteSampleType? _sampleType;
   Uint8List? _sampleImageBytes;
@@ -207,14 +204,6 @@ class _DokumEditorBodyState extends ConsumerState<_DokumEditorBody> {
     }
     _selectedOrder = selected;
 
-    _isExtra = existing?.isExtraPour ?? false;
-    _extraElementCtrl = TextEditingController(
-      text: _isExtra ? (existing?.elementName ?? '') : '',
-    );
-    _extraBlockCtrl =
-        TextEditingController(text: _isExtra ? (existing?.block ?? '') : '');
-    _extraFloorCtrl =
-        TextEditingController(text: _isExtra ? (existing?.floor ?? '') : '');
     _pumpCountCtrl = TextEditingController(
       text: existing?.pumpCount?.toString() ?? '',
     );
@@ -226,6 +215,7 @@ class _DokumEditorBodyState extends ConsumerState<_DokumEditorBody> {
     );
     _sampleHourCtrl =
         TextEditingController(text: existing?.sampleTakenHour ?? '');
+    _notesCtrl = TextEditingController(text: existing?.notes ?? '');
     _sampleImageBytes = _decodeImageB64(existing?.sampleImageBase64);
     _pumpImageBytes = _decodeImageB64(existing?.pumpImageBase64);
 
@@ -259,14 +249,12 @@ class _DokumEditorBodyState extends ConsumerState<_DokumEditorBody> {
   @override
   void dispose() {
     _autoCloseTimer?.cancel();
-    _extraElementCtrl.dispose();
-    _extraBlockCtrl.dispose();
-    _extraFloorCtrl.dispose();
     _pumpCountCtrl.dispose();
     _pumpTypeCtrl.dispose();
     _pumpNoteCtrl.dispose();
     _sampleCountCtrl.dispose();
     _sampleHourCtrl.dispose();
+    _notesCtrl.dispose();
     for (final m in _mixers) {
       m.dispose();
     }
@@ -430,12 +418,6 @@ class _DokumEditorBodyState extends ConsumerState<_DokumEditorBody> {
       return;
     }
 
-    final element =
-        _isExtra ? _extraElementCtrl.text.trim() : order.elementName;
-    final block = _isExtra ? _extraBlockCtrl.text.trim() : order.block;
-    final floor = _isExtra ? _extraFloorCtrl.text.trim() : order.floor;
-    if (_isExtra && element.isEmpty) return;
-
     final first = entries.first;
     final pourClass = first.concreteClass.isNotEmpty
         ? first.concreteClass
@@ -446,9 +428,9 @@ class _DokumEditorBodyState extends ConsumerState<_DokumEditorBody> {
       projectId: _project.id,
       date: order.plannedDate,
       volumeM3: totalVol,
-      elementName: element,
-      block: block,
-      floor: floor,
+      elementName: order.elementName,
+      block: order.block,
+      floor: order.floor,
       concreteClass: pourClass,
       supplier: order.supplier,
       ticketNo: first.ticketNo,
@@ -467,8 +449,9 @@ class _DokumEditorBodyState extends ConsumerState<_DokumEditorBody> {
       sampleImageBase64:
           _sampleImageBytes == null ? '' : base64Encode(_sampleImageBytes!),
       pourStart: widget.existing?.pourStart ?? DateTime.now(),
+      notes: _notesCtrl.text.trim(),
       orderId: order.id,
-      isExtraPour: _isExtra,
+      isExtraPour: false,
     );
 
     if (widget.existing == null) {
@@ -535,44 +518,6 @@ class _DokumEditorBodyState extends ConsumerState<_DokumEditorBody> {
               color: AppColors.critical,
             ),
           ),
-        const SizedBox(height: _fieldGap),
-        SwitchListTile(
-          contentPadding: EdgeInsets.zero,
-          title: const Text('Ek döküm'),
-          subtitle: const Text(
-            'Beton sipariş dışı bir yere döküldüyse açın',
-          ),
-          value: _isExtra,
-          onChanged: (v) => setState(() => _isExtra = v),
-        ),
-        if (_isExtra) ...[
-          const SizedBox(height: AppSpacing.sm),
-          TextField(
-            controller: _extraElementCtrl,
-            decoration: const InputDecoration(
-              labelText: 'Dökülen yapısal eleman',
-            ),
-            textCapitalization: TextCapitalization.sentences,
-          ),
-          const SizedBox(height: _fieldGap),
-          TextField(
-            controller: _extraBlockCtrl,
-            decoration: const InputDecoration(
-              labelText: 'Blok',
-              hintText: 'örn. A Blok',
-            ),
-            textCapitalization: TextCapitalization.sentences,
-          ),
-          const SizedBox(height: _fieldGap),
-          TextField(
-            controller: _extraFloorCtrl,
-            decoration: const InputDecoration(
-              labelText: 'Kat',
-              hintText: 'örn. Bodrum Kat',
-            ),
-            textCapitalization: TextCapitalization.sentences,
-          ),
-        ],
         const SizedBox(height: AppSpacing.lg),
         Row(
           children: [
@@ -715,6 +660,23 @@ class _DokumEditorBodyState extends ConsumerState<_DokumEditorBody> {
           controller: _pumpNoteCtrl,
           decoration: const InputDecoration(labelText: 'Pompa notu'),
           maxLines: 2,
+        ),
+        const SizedBox(height: AppSpacing.xl),
+        Text(
+          'Notlar ve açıklamalar',
+          style: theme.textTheme.titleSmall?.copyWith(
+            fontWeight: FontWeight.w700,
+          ),
+        ),
+        const SizedBox(height: _fieldGap),
+        TextField(
+          controller: _notesCtrl,
+          decoration: const InputDecoration(
+            labelText: 'Notlar',
+            hintText: 'Genel döküm notu / açıklama',
+          ),
+          maxLines: 4,
+          textCapitalization: TextCapitalization.sentences,
         ),
         const SizedBox(height: AppSpacing.xl),
         Row(
