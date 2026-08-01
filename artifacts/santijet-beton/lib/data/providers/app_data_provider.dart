@@ -11,6 +11,7 @@ import '../../domain/entities/concrete_discovery.dart';
 import '../../domain/entities/concrete_order.dart';
 import '../../domain/entities/concrete_pour.dart';
 import '../../domain/entities/metraj_variance_note.dart';
+import '../../domain/entities/mixer_entry.dart';
 import '../../domain/entities/project.dart';
 
 final projectsBoxProvider = Provider<Box>(
@@ -467,8 +468,24 @@ void seedDemoIfEmpty({
       concreteClass: 'C35/45',
       supplier: 'Akdeniz Beton',
       ticketNo: 'IR-10421',
-      mixerCount: 7,
+      mixerCount: 2,
       mixerPlate: '34 ABC 123',
+      mixers: [
+        MixerEntry(
+          id: IdGen.make('mx'),
+          ticketNo: 'IR-10421',
+          plate: '34 ABC 123',
+          volumeM3: 43,
+          slumpCm: 16,
+        ),
+        MixerEntry(
+          id: IdGen.make('mx'),
+          ticketNo: 'IR-10422',
+          plate: '34 ABC 124',
+          volumeM3: 43,
+          slumpCm: 16,
+        ),
+      ],
       pumpCount: 1,
       pumpType: 'Sabit',
       slumpCm: 16,
@@ -486,8 +503,17 @@ void seedDemoIfEmpty({
       concreteClass: 'C30/37',
       supplier: 'Akdeniz Beton',
       ticketNo: 'IR-10488',
-      mixerCount: 4,
+      mixerCount: 1,
       mixerPlate: '34 XYZ 456',
+      mixers: [
+        MixerEntry(
+          id: IdGen.make('mx'),
+          ticketNo: 'IR-10488',
+          plate: '34 XYZ 456',
+          volumeM3: 42,
+          slumpCm: 14,
+        ),
+      ],
       pumpCount: 1,
       pumpType: 'Mobil',
       slumpCm: 14,

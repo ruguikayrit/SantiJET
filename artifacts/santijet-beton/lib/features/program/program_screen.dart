@@ -141,7 +141,7 @@ class ProgramScreen extends ConsumerWidget {
       'Sınıf: ${order.concreteClass}',
       'Plan: ${BetonProgress.fmtM3(order.plannedM3)} m³',
       if (order.slumpCm != null)
-        'Slump: ${BetonProgress.fmtM3(order.slumpCm!)} cm',
+        'Slump: ${BetonProgress.fmtM3(order.slumpCm!)}',
       if (order.pumpRequestSummary.isNotEmpty)
         'Pompa talebi: ${order.pumpRequestSummary}',
       if (order.supplier.isNotEmpty) 'Tedarikçi: ${order.supplier}',

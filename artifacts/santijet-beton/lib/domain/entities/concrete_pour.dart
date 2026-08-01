@@ -1,9 +1,11 @@
 import 'package:equatable/equatable.dart';
 
+import 'mixer_entry.dart';
+
 /// Şantiyeye gelen / dökülen beton kaydı.
 ///
 /// Sipariş seçilince yapısal eleman, blok, kat, sınıf ve firma siparişten
-/// gelir. Kullanıcı yalnızca mikser ve pompa verilerini girer.
+/// gelir. Kullanıcı mikser (çoklu) ve pompa verilerini girer.
 /// Sipariş dışı yere döküm → [isExtraPour] = true.
 class ConcretePour extends Equatable {
   const ConcretePour({
@@ -20,6 +22,7 @@ class ConcretePour extends Equatable {
     this.mixerCount,
     this.mixerPlate = '',
     this.mixerNote = '',
+    this.mixers = const [],
     this.pumpCount,
     this.pumpType = '',
     this.pumpNote = '',
@@ -36,25 +39,25 @@ class ConcretePour extends Equatable {
   final String projectId;
   final String date;
 
-  /// Mikserden gelen / dökülen hacim (m³).
+  /// Toplam dökülen hacim (genelde mikser hacimleri toplamı).
   final double volumeM3;
 
-  /// Yapısal eleman (siparişten veya ek döküm hedefi).
   final String elementName;
   final String block;
   final String floor;
   final String concreteClass;
   final String supplier;
 
-  /// Mikser irsaliye no.
+  /// Özet / geriye dönük tek satır alanlar.
   final String ticketNo;
   final int? mixerCount;
   final String mixerPlate;
   final String mixerNote;
 
-  final int? pumpCount;
+  /// Mikser / irsaliye satırları.
+  final List<MixerEntry> mixers;
 
-  /// Sabit / mobil vb.
+  final int? pumpCount;
   final String pumpType;
   final String pumpNote;
 
@@ -63,8 +66,6 @@ class ConcretePour extends Equatable {
   final DateTime? pourEnd;
   final String notes;
   final String? orderId;
-
-  /// Siparişteki yer dışında döküldüyse true.
   final bool isExtraPour;
   final String? discoveryItemId;
 
@@ -73,8 +74,7 @@ class ConcretePour extends Equatable {
       if (block.trim().isNotEmpty) block.trim(),
       if (floor.trim().isNotEmpty) floor.trim(),
     ];
-    if (parts.isNotEmpty) return parts.join(' · ');
-    return '';
+    return parts.join(' · ');
   }
 
   ConcretePour copyWith({
@@ -91,6 +91,7 @@ class ConcretePour extends Equatable {
     int? mixerCount,
     String? mixerPlate,
     String? mixerNote,
+    List<MixerEntry>? mixers,
     int? pumpCount,
     String? pumpType,
     String? pumpNote,
@@ -116,6 +117,7 @@ class ConcretePour extends Equatable {
       mixerCount: mixerCount ?? this.mixerCount,
       mixerPlate: mixerPlate ?? this.mixerPlate,
       mixerNote: mixerNote ?? this.mixerNote,
+      mixers: mixers ?? this.mixers,
       pumpCount: pumpCount ?? this.pumpCount,
       pumpType: pumpType ?? this.pumpType,
       pumpNote: pumpNote ?? this.pumpNote,
@@ -143,6 +145,7 @@ class ConcretePour extends Equatable {
         'mixerCount': mixerCount,
         'mixerPlate': mixerPlate,
         'mixerNote': mixerNote,
+        'mixers': mixers.map((e) => e.toJson()).toList(),
         'pumpCount': pumpCount,
         'pumpType': pumpType,
         'pumpNote': pumpNote,
@@ -171,6 +174,33 @@ class ConcretePour extends Equatable {
       }
     }
 
+    final rawMixers = json['mixers'] as List<dynamic>? ?? const [];
+    var mixers = rawMixers
+        .whereType<Map>()
+        .map((e) => MixerEntry.fromJson(Map<String, dynamic>.from(e)))
+        .toList();
+
+    // Eski tek mikser alanlarından satır üret
+    if (mixers.isEmpty) {
+      final ticket = json['ticketNo'] as String? ?? '';
+      final plate = json['mixerPlate'] as String? ?? '';
+      final vol = (json['volumeM3'] as num?)?.toDouble() ?? 0;
+      final slump = (json['slumpCm'] as num?)?.toDouble();
+      final note = json['mixerNote'] as String? ?? '';
+      if (ticket.isNotEmpty || plate.isNotEmpty || vol > 0) {
+        mixers = [
+          MixerEntry(
+            id: '${json['id']}_m1',
+            ticketNo: ticket,
+            plate: plate,
+            volumeM3: vol,
+            slumpCm: slump,
+            note: note,
+          ),
+        ];
+      }
+    }
+
     return ConcretePour(
       id: json['id'] as String,
       projectId: json['projectId'] as String? ?? '',
@@ -182,9 +212,11 @@ class ConcretePour extends Equatable {
       concreteClass: json['concreteClass'] as String? ?? 'C30/37',
       supplier: json['supplier'] as String? ?? '',
       ticketNo: json['ticketNo'] as String? ?? '',
-      mixerCount: (json['mixerCount'] as num?)?.toInt(),
+      mixerCount: (json['mixerCount'] as num?)?.toInt() ??
+          (mixers.isEmpty ? null : mixers.length),
       mixerPlate: json['mixerPlate'] as String? ?? '',
       mixerNote: json['mixerNote'] as String? ?? '',
+      mixers: mixers,
       pumpCount: (json['pumpCount'] as num?)?.toInt(),
       pumpType: json['pumpType'] as String? ?? '',
       pumpNote: json['pumpNote'] as String? ?? '',
@@ -217,6 +249,7 @@ class ConcretePour extends Equatable {
         mixerCount,
         mixerPlate,
         mixerNote,
+        mixers,
         pumpCount,
         pumpType,
         pumpNote,
