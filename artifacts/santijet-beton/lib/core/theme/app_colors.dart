@@ -1,11 +1,12 @@
 import 'package:flutter/material.dart';
 
-/// Uygulama renk paleti — açık / koyu / ŞantiJET (hibrit). Demir ile aynı.
-enum AppColorPalette { light, dark, santijet }
+/// Uygulama renk paleti — açık / koyu / ŞantiJET / GeceJET (hibritler).
+enum AppColorPalette { light, dark, santijet, gecejet }
 
-/// Figma Make Design System — açık/koyu/ŞantiJET uyumlu palet.
+/// Figma Make Design System — açık/koyu/hibrit paletler.
 ///
 /// ŞantiJET: açık iskelet (canvas) + koyu özet/uyarı kartları ([cardSurface]).
+/// GeceJET: ŞantiJET'in tersi — koyu iskelet + açık özet kartları.
 abstract final class AppColors {
   static AppColorPalette _palette = AppColorPalette.dark;
 
@@ -22,6 +23,7 @@ abstract final class AppColors {
       'light' => AppColorPalette.light,
       'dark' => AppColorPalette.dark,
       'santijet' => AppColorPalette.santijet,
+      'gecejet' => AppColorPalette.gecejet,
       _ => systemBrightness == Brightness.dark
           ? AppColorPalette.dark
           : AppColorPalette.light,
@@ -36,6 +38,10 @@ abstract final class AppColors {
   static bool get isDark => _palette == AppColorPalette.dark;
   static bool get isLight => _palette == AppColorPalette.light;
   static bool get isSantijet => _palette == AppColorPalette.santijet;
+  static bool get isGecejet => _palette == AppColorPalette.gecejet;
+
+  /// Koyu chrome (iskelet) — koyu ve GeceJET.
+  static bool get useDarkChrome => isDark || isGecejet;
 
   /// Özet / brifing / uyarı kartlarında koyu yüzey kullan.
   static bool get useDarkCards => isDark || isSantijet;
@@ -64,26 +70,28 @@ abstract final class AppColors {
   static const lightBorder = Color(0xFFD5DEEA);
   static const lightBorderSubtle = Color(0xFFB8C5D6);
 
-  // Chrome (iskelet) — ŞantiJET'te açık kalır
-  static Color get canvas => isDark ? darkCanvas : lightCanvas;
-  static Color get surface => isDark ? darkSurface : lightSurface;
+  // Chrome (iskelet) — ŞantiJET açık; GeceJET koyu
+  static Color get canvas => useDarkChrome ? darkCanvas : lightCanvas;
+  static Color get surface => useDarkChrome ? darkSurface : lightSurface;
   static Color get surfaceElevated =>
-      isDark ? darkSurfaceElevated : lightSurfaceElevated;
+      useDarkChrome ? darkSurfaceElevated : lightSurfaceElevated;
   static Color get surfaceHighlight =>
-      isDark ? darkSurfaceHighlight : lightSurfaceHighlight;
+      useDarkChrome ? darkSurfaceHighlight : lightSurfaceHighlight;
 
   // Marka
   static const electricBlue = Color(0xFF0055FF);
   static const electricBlueLight = Color(0xFF3B82F6);
   static const electricBlueGlow = Color(0x334877DC);
 
-  // Genel metin — chrome ile uyumlu (ŞantiJET'te koyu mürekkep)
-  static Color get textPrimary => isDark ? darkTextPrimary : lightTextPrimary;
+  // Genel metin — chrome ile uyumlu
+  static Color get textPrimary =>
+      useDarkChrome ? darkTextPrimary : lightTextPrimary;
   static Color get textSecondary =>
-      isDark ? darkTextSecondary : lightTextSecondary;
-  static Color get textMuted => isDark ? darkTextMuted : lightTextMuted;
+      useDarkChrome ? darkTextSecondary : lightTextSecondary;
+  static Color get textMuted =>
+      useDarkChrome ? darkTextMuted : lightTextMuted;
   static Color get textDisabled =>
-      isDark ? darkTextDisabled : lightTextDisabled;
+      useDarkChrome ? darkTextDisabled : lightTextDisabled;
 
   /// Tipografi varsayılanı (açık chrome mürekkebi).
   static const inkPrimary = lightTextPrimary;
@@ -107,9 +115,9 @@ abstract final class AppColors {
   static const partial = Color(0xFFA855F7);
 
   // Kenarlık (chrome)
-  static Color get border => isDark ? darkBorder : lightBorder;
+  static Color get border => useDarkChrome ? darkBorder : lightBorder;
   static Color get borderSubtle =>
-      isDark ? darkBorderSubtle : lightBorderSubtle;
+      useDarkChrome ? darkBorderSubtle : lightBorderSubtle;
 
   // —— Kart paleti (özet / brifing / uyarı) ——
   static Color get cardSurface =>
@@ -145,21 +153,31 @@ abstract final class AppColors {
     return luminance < 0.45 ? darkTextMuted : lightTextMuted;
   }
 
-  static List<BoxShadow> get cardElevation => useDarkCards
-      ? [
-          BoxShadow(
-            color: Colors.black.withValues(alpha: isSantijet ? 0.22 : 0.35),
-            blurRadius: isSantijet ? 12 : 8,
-            offset: const Offset(0, 3),
-          ),
-        ]
-      : elevationSoft;
+  static List<BoxShadow> get cardElevation {
+    if (useDarkCards) {
+      return [
+        BoxShadow(
+          color: Colors.black.withValues(alpha: isSantijet ? 0.22 : 0.35),
+          blurRadius: isSantijet ? 12 : 8,
+          offset: const Offset(0, 3),
+        ),
+      ];
+    }
+    // Açık kartlar — GeceJET'te koyu zeminde daha belirgin gölge
+    return [
+      BoxShadow(
+        color: Color(isGecejet ? 0x59000000 : 0x140B1220),
+        blurRadius: isGecejet ? 14 : 16,
+        offset: Offset(0, isGecejet ? 3 : 4),
+      ),
+    ];
+  }
 
   // Blueprint / overlay
   static const blueprintGrid = Color(0x0B4876DC);
 
   /// Hafif yükselti gölgesi — açık chrome'da kart/nav ayrımı.
-  static List<BoxShadow> get elevationSoft => isDark
+  static List<BoxShadow> get elevationSoft => useDarkChrome
       ? const []
       : [
           const BoxShadow(
@@ -169,9 +187,9 @@ abstract final class AppColors {
           ),
         ];
 
-  /// Wordmark — koyuda beyaz; açık ve ŞantiJET'te siyah harf.
+  /// Wordmark — koyu chrome'da beyaz; açık ve ŞantiJET'te siyah harf.
   static String wordmarkAssetFor(Brightness brightness) {
-    return brightness == Brightness.dark
+    return brightness == Brightness.dark || isGecejet
         ? 'assets/images/splash_wordmark.png'
         : 'assets/images/splash_wordmark_light.png';
   }

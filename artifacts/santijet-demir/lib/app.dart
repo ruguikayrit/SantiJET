@@ -67,7 +67,7 @@ class SantijetDemirApp extends ConsumerWidget {
   /// ŞantiJET açık Material chrome kullanır; kartlar [AppColors.cardSurface] ile koyu.
   ThemeMode _themeModeFromSettings(String mode) => switch (mode) {
         'light' || 'santijet' => ThemeMode.light,
-        'dark' => ThemeMode.dark,
+        'dark' || 'gecejet' => ThemeMode.dark,
         _ => ThemeMode.system,
       };
 }

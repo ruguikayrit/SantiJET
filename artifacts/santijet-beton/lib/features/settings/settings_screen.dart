@@ -45,6 +45,14 @@ class SettingsScreen extends ConsumerWidget {
             },
           ),
           ListTile(
+            title: const Text('GeceJET'),
+            subtitle: const Text('Koyu zemin · açık özet kartları'),
+            onTap: () {
+              ref.read(themeModeProvider.notifier).setThemeMode('gecejet');
+              Navigator.pop(ctx);
+            },
+          ),
+          ListTile(
             title: const Text('Sistem'),
             onTap: () {
               ref.read(themeModeProvider.notifier).setThemeMode('system');
