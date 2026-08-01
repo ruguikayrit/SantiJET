@@ -10,7 +10,6 @@ on:
       - 'artifacts/santijet-bfa-flutter/**'
       - 'artifacts/santijet-puantaj/**'
       - 'artifacts/santijet-beton/**'
-      - 'artifacts/santijet-beton-r1/**'
       - '.github/workflows/deploy-github-pages.yml'
       - '.github/scripts/**'
   workflow_dispatch:
@@ -131,28 +130,6 @@ jobs:
             exit 1
           fi
 
-      - name: Setup Flutter (Beton R1)
-        uses: subosito/flutter-action@v2
-        with:
-          channel: stable
-          flutter-version: '3.27.4'
-          cache: true
-          cache-key: flutter-beton-r1-3.27.4
-
-      - name: Build Beton R1 web (staging preview)
-        id: beton_r1_build
-        continue-on-error: true
-        env:
-          GITHUB_REPOSITORY_NAME: ${{ github.event.repository.name }}
-        run: |
-          if [ -f staging-src/.github/scripts/build-beton-r1-pages.sh ]; then
-            bash staging-src/.github/scripts/build-beton-r1-pages.sh
-          elif [ -f .github/scripts/build-beton-r1-pages.sh ]; then
-            bash .github/scripts/build-beton-r1-pages.sh
-          else
-            echo "::warning::build-beton-r1-pages.sh missing; skipping /beton-r1/"
-          fi
-
       - name: Verify site bundle
         run: |
           test -f site/index.html
@@ -173,11 +150,6 @@ jobs:
             echo "::error::Beton bundle missing (site/beton/index.html). Refusing to deploy a broken /beton/."
             exit 1
           fi
-          if [ "${{ steps.beton_r1_build.outcome }}" != "success" ]; then
-            echo "::warning::Beton R1 build failed or skipped; /beton-r1/ may be unavailable."
-          elif [ ! -f site/beton-r1/index.html ]; then
-            echo "::warning::Beton R1 bundle missing after build step."
-          fi
 
       - name: Upload Pages artifact
         uses: actions/upload-pages-artifact@v3
@@ -195,4 +167,3 @@ jobs:
           echo "BFA: https://${{ github.repository_owner }}.github.io/${{ github.event.repository.name }}/bfa/"
           echo "Puantaj staging: https://${{ github.repository_owner }}.github.io/${{ github.event.repository.name }}/puantaj/"
           echo "Beton staging: https://${{ github.repository_owner }}.github.io/${{ github.event.repository.name }}/beton/"
-          echo "Beton R1 staging: https://${{ github.repository_owner }}.github.io/${{ github.event.repository.name }}/beton-r1/"

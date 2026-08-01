@@ -20,8 +20,6 @@
     "dev:bfa:web": "cd artifacts/santijet-bfa-flutter && flutter run -d chrome",
     "dev:beton": "cd artifacts/santijet-beton && flutter run -d chrome",
     "dev:beton:web": "cd artifacts/santijet-beton && flutter run -d chrome",
-    "dev:beton-r1": "cd artifacts/santijet-beton-r1 && flutter run -d chrome",
-    "dev:beton-r1:web": "cd artifacts/santijet-beton-r1 && flutter run -d chrome",
     "dev:mockup": "PORT=8081 BASE_PATH=/__mockup pnpm --filter @workspace/mockup-sandbox run dev"
   },
   "private": true,

@@ -1,9 +1,0 @@
-# ŞantiJET Puantaj — Demir / BFA ile aynı lint yapılandırması.
-include: package:flutter_lints/flutter.yaml
-
-analyzer:
-  exclude:
-    - "build/**"
-
-linter:
-  rules:
