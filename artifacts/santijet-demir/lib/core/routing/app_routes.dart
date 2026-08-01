@@ -37,6 +37,8 @@ abstract final class AppRoutes {
   static const projectSettings = '/settings/project';
   static const notificationSettings = '/settings/notifications';
   static const about = '/settings/about';
+
+  /// İptal edildi — UI girişi yok; eski kod derlemesi için sabitler duruyor.
   static const workSchedule = '/prediction/work-schedule';
   static const workforce = '/prediction/workforce';
   static const prediction = '/prediction';

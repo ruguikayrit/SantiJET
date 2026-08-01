@@ -14,7 +14,6 @@ import 'package:santijet_demir/domain/enums/corporate_role.dart';
 import 'package:santijet_demir/domain/enums/membership_type.dart';
 import 'package:santijet_demir/features/auth/providers/app_lock_provider.dart';
 import 'package:santijet_demir/features/auth/providers/auth_provider.dart';
-import 'package:santijet_demir/features/auth/providers/membership_permission_provider.dart';
 import 'package:santijet_demir/features/projects/providers/project_provider.dart';
 import 'package:santijet_demir/features/settings/providers/profile_provider.dart';
 import 'package:santijet_demir/features/settings/providers/backup_provider.dart';
@@ -36,12 +35,6 @@ class SettingsScreen extends ConsumerWidget {
     final membershipLabel =
         ref.watch(authProvider).user?.membershipSummary ?? 'Bireysel';
     final package = ref.watch(currentSubscriptionPackageProvider);
-    final canPrediction = ref.watch(canAccessPredictionProvider);
-    final predictionRoute =
-        canPrediction ? AppRoutes.prediction : AppRoutes.subscription;
-    final lockedHint = canPrediction
-        ? null
-        : 'Analiz & Tahmin paketi gerekir · Paketleri gör';
 
     return Scaffold(
       backgroundColor: AppColors.canvas,
@@ -88,13 +81,6 @@ class SettingsScreen extends ConsumerWidget {
             title: 'Proje Bilgileri',
             subtitle: project?.name ?? 'Aktif proje yok',
             onTap: () => context.push(AppRoutes.projectSettings),
-          ),
-          _SettingsTile(
-            icon: Icons.analytics_outlined,
-            title: 'Demir Tahmin Motoru',
-            subtitle: lockedHint ??
-                'Stok tükenme, sipariş önerisi, iş programı',
-            onTap: () => context.push(predictionRoute),
           ),
           _SettingsTile(
             icon: Icons.notifications,

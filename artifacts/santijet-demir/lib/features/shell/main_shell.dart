@@ -22,7 +22,6 @@ import 'package:santijet_demir/features/settings/providers/settings_provider.dar
 import 'package:santijet_demir/features/shell/dashboard_feed_provider.dart';
 import 'package:santijet_demir/features/shell/dashboard_summary_provider.dart';
 import 'package:santijet_demir/features/shell/widgets/dashboard_feed_section.dart';
-import 'package:santijet_demir/features/shell/widgets/morning_briefing_card.dart';
 import 'package:santijet_demir/features/shell/widgets/project_progress_section.dart';
 import 'package:santijet_demir/features/survey/providers/survey_provider.dart';
 
@@ -96,7 +95,6 @@ class DashboardScreen extends ConsumerWidget {
                 child: ProjectSwitcher(),
               ),
             ),
-            const SliverToBoxAdapter(child: MorningBriefingCard()),
             if (!hasActiveProject)
               const ActiveProjectSliverGate()
             else ...[

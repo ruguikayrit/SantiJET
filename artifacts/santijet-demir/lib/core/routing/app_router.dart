@@ -36,9 +36,6 @@ import 'package:santijet_demir/features/splash/splash_screen.dart';
 import 'package:santijet_demir/features/survey/saved_metraj_detail_screen.dart';
 import 'package:santijet_demir/features/survey/survey_detail_screen.dart';
 import 'package:santijet_demir/features/survey/survey_list_screen.dart';
-import 'package:santijet_demir/features/prediction/prediction_screen.dart';
-import 'package:santijet_demir/features/prediction/work_schedule_screen.dart';
-import 'package:santijet_demir/features/prediction/workforce_screen.dart';
 import 'package:santijet_demir/features/subscription/subscription_screen.dart';
 import 'package:santijet_demir/domain/enums/subscription_plan.dart';
 
@@ -95,11 +92,7 @@ final routerProvider = Provider<GoRouter>((ref) {
 
       if (auth.isAuthenticated) {
         final plan = auth.user?.subscriptionPlan ?? SubscriptionPlan.demirTakip;
-        final needsAnaliz = location == AppRoutes.analysis ||
-            location == AppRoutes.prediction ||
-            location == AppRoutes.workSchedule ||
-            location == AppRoutes.workforce ||
-            location.startsWith('${AppRoutes.prediction}/');
+        final needsAnaliz = location == AppRoutes.analysis;
         if (needsAnaliz && !plan.includesAnalysis) {
           return AppRoutes.subscription;
         }
@@ -357,30 +350,6 @@ final routerProvider = Provider<GoRouter>((ref) {
             ),
           ),
         ],
-      ),
-      GoRoute(
-        path: AppRoutes.prediction,
-        parentNavigatorKey: _rootNavigatorKey,
-        pageBuilder: (context, state) => fadeSlidePage(
-          key: state.pageKey,
-          child: const PredictionScreen(),
-        ),
-      ),
-      GoRoute(
-        path: AppRoutes.workSchedule,
-        parentNavigatorKey: _rootNavigatorKey,
-        pageBuilder: (context, state) => fadeSlidePage(
-          key: state.pageKey,
-          child: const WorkScheduleScreen(),
-        ),
-      ),
-      GoRoute(
-        path: AppRoutes.workforce,
-        parentNavigatorKey: _rootNavigatorKey,
-        pageBuilder: (context, state) => fadeSlidePage(
-          key: state.pageKey,
-          child: const WorkforceScreen(),
-        ),
       ),
       StatefulShellRoute.indexedStack(
         builder: (context, state, navigationShell) {
