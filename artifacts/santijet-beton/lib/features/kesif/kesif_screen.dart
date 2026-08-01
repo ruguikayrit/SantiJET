@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../core/constants/app_info.dart';
+import '../../core/design_system/sj_button.dart';
 import '../../core/design_system/sj_card.dart';
 import '../../core/design_system/sj_empty_state.dart';
 import '../../core/design_system/sj_modal.dart';
@@ -240,16 +241,32 @@ class KesifScreen extends ConsumerWidget {
                   },
                 ),
                 const SizedBox(height: AppSpacing.md),
-                FilledButton(
-                  onPressed: () {
-                    final m3 = double.tryParse(
-                      m3Ctrl.text.trim().replaceAll(',', '.'),
-                    );
-                    if (nameCtrl.text.trim().isEmpty) return;
-                    if (m3 == null || m3 <= 0) return;
-                    Navigator.pop(ctx, true);
-                  },
-                  child: const Text('Kaydet'),
+                Row(
+                  children: [
+                    Expanded(
+                      child: SJButton(
+                        label: 'İptal',
+                        variant: SJButtonVariant.secondary,
+                        expanded: true,
+                        onPressed: () => Navigator.pop(ctx, false),
+                      ),
+                    ),
+                    const SizedBox(width: AppSpacing.sm),
+                    Expanded(
+                      child: SJButton(
+                        label: 'Kaydet',
+                        expanded: true,
+                        onPressed: () {
+                          final m3 = double.tryParse(
+                            m3Ctrl.text.trim().replaceAll(',', '.'),
+                          );
+                          if (nameCtrl.text.trim().isEmpty) return;
+                          if (m3 == null || m3 <= 0) return;
+                          Navigator.pop(ctx, true);
+                        },
+                      ),
+                    ),
+                  ],
                 ),
                 if (existing != null) ...[
                   const SizedBox(height: AppSpacing.sm),
@@ -368,19 +385,35 @@ class KesifScreen extends ConsumerWidget {
                   maxLines: 2,
                 ),
                 const SizedBox(height: AppSpacing.md),
-                FilledButton(
-                  onPressed: () {
-                    final planned = double.tryParse(
-                      plannedCtrl.text.trim().replaceAll(',', '.'),
-                    );
-                    final actual = double.tryParse(
-                      actualCtrl.text.trim().replaceAll(',', '.'),
-                    );
-                    if (planned == null || actual == null) return;
-                    if (reasonCtrl.text.trim().isEmpty) return;
-                    Navigator.pop(ctx, true);
-                  },
-                  child: const Text('Kaydet'),
+                Row(
+                  children: [
+                    Expanded(
+                      child: SJButton(
+                        label: 'İptal',
+                        variant: SJButtonVariant.secondary,
+                        expanded: true,
+                        onPressed: () => Navigator.pop(ctx, false),
+                      ),
+                    ),
+                    const SizedBox(width: AppSpacing.sm),
+                    Expanded(
+                      child: SJButton(
+                        label: 'Kaydet',
+                        expanded: true,
+                        onPressed: () {
+                          final planned = double.tryParse(
+                            plannedCtrl.text.trim().replaceAll(',', '.'),
+                          );
+                          final actual = double.tryParse(
+                            actualCtrl.text.trim().replaceAll(',', '.'),
+                          );
+                          if (planned == null || actual == null) return;
+                          if (reasonCtrl.text.trim().isEmpty) return;
+                          Navigator.pop(ctx, true);
+                        },
+                      ),
+                    ),
+                  ],
                 ),
               ],
             );

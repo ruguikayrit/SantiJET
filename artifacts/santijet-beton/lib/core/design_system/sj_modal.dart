@@ -55,6 +55,9 @@ abstract final class SJModal {
   /// Klavye-aware kaydırılabilir bottom sheet gövdesi (özel sheet'ler için).
   ///
   /// [child] içinde ek [SingleChildScrollView] kullanmayın — kaydırma burada.
+  ///
+  /// `ListView(shrinkWrap: true)` + `Align(heightFactor: 1)` ile sheet yalnızca
+  /// içerik kadar yükselir; kısa formlar tüm ekranı beyaz boşlukla doldurmaz.
   static Widget scrollableBody({
     required BuildContext context,
     required Widget child,
@@ -65,24 +68,27 @@ abstract final class SJModal {
       bottom: AppSpacing.md,
     ),
   }) {
+    final mq = MediaQuery.of(context);
     return AnimatedPadding(
       duration: const Duration(milliseconds: 120),
       curve: Curves.easeOut,
-      padding: EdgeInsets.only(
-        bottom: MediaQuery.viewInsetsOf(context).bottom,
-      ),
-      child: SafeArea(
-        child: Align(
-          alignment: Alignment.bottomCenter,
-          child: ConstrainedBox(
-            constraints: BoxConstraints(maxHeight: sheetMaxHeight(context)),
-            child: Material(
-              color: Colors.transparent,
-              child: SingleChildScrollView(
+      padding: EdgeInsets.only(bottom: mq.viewInsets.bottom),
+      child: Align(
+        alignment: Alignment.bottomCenter,
+        heightFactor: 1,
+        widthFactor: 1,
+        child: ConstrainedBox(
+          constraints: BoxConstraints(maxHeight: sheetMaxHeight(context)),
+          child: Material(
+            color: Colors.transparent,
+            child: SafeArea(
+              top: false,
+              child: ListView(
+                shrinkWrap: true,
                 keyboardDismissBehavior:
                     ScrollViewKeyboardDismissBehavior.onDrag,
                 padding: padding,
-                child: child,
+                children: [child],
               ),
             ),
           ),
