@@ -7,5 +7,6 @@ abstract final class AppRoutes {
   static const program = '/program';
   static const ayarlar = '/ayarlar';
   static const projeler = '/ayarlar/projeler';
+  static const joinProject = '/ayarlar/projeler/katil';
   static const hakkinda = '/ayarlar/hakkinda';
 }

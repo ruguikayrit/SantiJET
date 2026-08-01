@@ -6,6 +6,7 @@ import '../../features/dokum/dokum_screen.dart';
 import '../../features/home/home_screen.dart';
 import '../../features/kesif/kesif_screen.dart';
 import '../../features/program/program_screen.dart';
+import '../../features/projects/join_project_screen.dart';
 import '../../features/projects/projects_screen.dart';
 import '../../features/settings/settings_screen.dart';
 import '../../features/shell/main_shell.dart';
@@ -89,6 +90,15 @@ final routerProvider = Provider<GoRouter>((ref) {
                       key: state.pageKey,
                       child: const ProjectsScreen(),
                     ),
+                    routes: [
+                      GoRoute(
+                        path: 'katil',
+                        pageBuilder: (context, state) => fadePage(
+                          key: state.pageKey,
+                          child: const JoinProjectScreen(),
+                        ),
+                      ),
+                    ],
                   ),
                   GoRoute(
                     path: 'hakkinda',

@@ -9,7 +9,7 @@ import '../../../core/theme/app_spacing.dart';
 import '../../../core/theme/app_typography.dart';
 import '../../../data/providers/app_data_provider.dart';
 
-/// Aktif proje kartı — firma / iş adı / iş kodu (3 satır).
+/// Aktif proje kartı — Demir Projelerim kart hiyerarşisi (ad / konum / kod).
 class ProjectSwitcher extends ConsumerWidget {
   const ProjectSwitcher({super.key});
 
@@ -18,14 +18,12 @@ class ProjectSwitcher extends ConsumerWidget {
     final project = ref.watch(activeProjectProvider);
     final brightness = Theme.of(context).brightness;
 
-    final company = project?.company.trim() ?? '';
     final name = project?.name.trim() ?? '';
+    final location = project?.company.trim() ?? '';
     final code = project?.code.trim() ?? '';
 
     return Semantics(
-      label: project == null
-          ? 'Proje seçin'
-          : 'Aktif iş: $name',
+      label: project == null ? 'Proje seçin' : 'Aktif iş: $name',
       button: true,
       child: Material(
         color: Colors.transparent,
@@ -62,7 +60,7 @@ class ProjectSwitcher extends ConsumerWidget {
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
                               Text(
-                                company.isEmpty ? 'Firma adı yok' : company,
+                                name.isEmpty ? 'Proje adı yok' : name,
                                 style: AppTypography.titleMedium.copyWith(
                                   color: AppColors.inkFor(brightness),
                                   fontWeight: FontWeight.w700,
@@ -72,7 +70,7 @@ class ProjectSwitcher extends ConsumerWidget {
                               ),
                               const SizedBox(height: 2),
                               Text(
-                                name.isEmpty ? 'İşin adı yok' : name,
+                                location.isEmpty ? 'Konum yok' : location,
                                 style: AppTypography.bodyMedium.copyWith(
                                   color: AppColors.inkSecondaryFor(brightness),
                                   fontWeight: FontWeight.w600,
@@ -82,7 +80,7 @@ class ProjectSwitcher extends ConsumerWidget {
                               ),
                               const SizedBox(height: 2),
                               Text(
-                                code.isEmpty ? 'İşin kodu yok' : code,
+                                code.isEmpty ? 'Kod yok' : 'Kod: $code',
                                 style: AppTypography.bodySmall.copyWith(
                                   color: AppColors.inkMutedFor(brightness),
                                 ),

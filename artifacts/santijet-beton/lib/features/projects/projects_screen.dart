@@ -1,271 +1,382 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
-import '../../core/design_system/sj_card.dart';
-import '../../core/design_system/sj_empty_state.dart';
 import '../../core/design_system/sj_modal.dart';
 import '../../core/routing/app_routes.dart';
 import '../../core/theme/app_colors.dart';
+import '../../core/theme/app_radii.dart';
 import '../../core/theme/app_spacing.dart';
+import '../../core/theme/app_typography.dart';
+import '../../core/utils/project_code_generator.dart';
 import '../../data/providers/app_data_provider.dart';
 import '../../domain/entities/project.dart';
 
-/// Proje listesi, aktif proje seçimi, ekleme / silme.
-class ProjectsScreen extends ConsumerWidget {
+/// Projelerim — Demir `ProjectListScreen` ile aynı kurgu ve kart tasarımı.
+class ProjectsScreen extends ConsumerStatefulWidget {
   const ProjectsScreen({super.key});
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
+  ConsumerState<ProjectsScreen> createState() => _ProjectsScreenState();
+}
+
+class _ProjectsScreenState extends ConsumerState<ProjectsScreen> {
+  /// İki stacked FAB (Koda Katıl + Yeni Proje) için alt boşluk.
+  static const _fabStackClearance = 140.0;
+
+  @override
+  Widget build(BuildContext context) {
     final projects = ref.watch(projectsProvider);
     final activeId = ref.watch(activeProjectIdProvider);
 
     return Scaffold(
+      backgroundColor: AppColors.canvas,
       appBar: AppBar(
-        title: const Text('Projeler'),
+        title: const Text('Projelerim'),
         leading: IconButton(
           icon: const Icon(Icons.arrow_back),
           onPressed: () => context.go(AppRoutes.ayarlar),
         ),
       ),
-      floatingActionButton: FloatingActionButton.extended(
-        onPressed: () => _openEditor(context, ref),
-        icon: const Icon(Icons.add),
-        label: const Text('Yeni Proje'),
-      ),
-      body: projects.isEmpty
-          ? SJEmptyState(
-              title: 'Henüz proje yok',
-              message: 'Beton kayıtları proje kapsamında tutulur.',
-              icon: Icons.apartment_outlined,
-              actionLabel: 'Proje Ekle',
-              onAction: () => _openEditor(context, ref),
-            )
-          : ListView.separated(
-              padding: const EdgeInsets.fromLTRB(
-                AppSpacing.md,
-                AppSpacing.sm,
-                AppSpacing.md,
-                88,
+      body: ListView(
+        padding: const EdgeInsets.fromLTRB(
+          AppSpacing.md,
+          AppSpacing.md,
+          AppSpacing.md,
+          _fabStackClearance,
+        ),
+        children: [
+          Text(
+            'Merhaba',
+            style: AppTypography.titleLarge,
+          ),
+          const SizedBox(height: 4),
+          Text(
+            'Her projenin verileri birbirinden ayrıdır. '
+            'Proje kodu ile ekip arkadaşlarınızı davet edin.',
+            style: AppTypography.bodySmall,
+          ),
+          const SizedBox(height: 20),
+          ...projects.map((project) {
+            final selected = project.id == activeId ||
+                (activeId == null &&
+                    projects.isNotEmpty &&
+                    project.id == projects.first.id);
+            return _ProjectCard(
+              project: project,
+              selected: selected,
+              onOpen: () => _openProject(project),
+              onEdit: () => _openEditor(context, existing: project),
+              onDelete: () => _deleteProject(project),
+            );
+          }),
+          if (projects.isEmpty)
+            Padding(
+              padding: const EdgeInsets.symmetric(vertical: 24),
+              child: Text(
+                'Henüz proje yok. Yeni proje oluşturun veya kod ile katılın.',
+                style: AppTypography.bodyMedium,
+                textAlign: TextAlign.center,
               ),
-              itemCount: projects.length,
-              separatorBuilder: (_, __) => const SizedBox(height: AppSpacing.sm),
-              itemBuilder: (context, index) {
-                final p = projects[index];
-                final selected = (activeId ?? projects.first.id) == p.id;
-                return SJCard(
-                  selected: selected,
-                  onTap: () {
-                    ref.read(activeProjectIdProvider.notifier).set(p.id);
-                  },
-                  child: Builder(
-                    builder: (context) {
-                      final theme = Theme.of(context);
-                      return Row(
-                        children: [
-                          Icon(
-                            selected
-                                ? Icons.check_circle
-                                : Icons.apartment_outlined,
-                            color: selected
-                                ? AppColors.electricBlueLight
-                                : theme.colorScheme.onSurfaceVariant,
-                          ),
-                          const SizedBox(width: AppSpacing.sm),
-                          Expanded(
-                            child: Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                Text(
-                                  p.company.isEmpty
-                                      ? 'Firma adı yok'
-                                      : p.company,
-                                  style: theme.textTheme.titleMedium?.copyWith(
-                                    color: AppColors.cardTextPrimary,
-                                    fontWeight: FontWeight.w700,
-                                  ),
-                                  maxLines: 1,
-                                  overflow: TextOverflow.ellipsis,
-                                ),
-                                Text(
-                                  p.name.isEmpty ? 'İşin adı yok' : p.name,
-                                  style: theme.textTheme.bodyMedium?.copyWith(
-                                    color: AppColors.cardTextSecondary,
-                                  ),
-                                  maxLines: 1,
-                                  overflow: TextOverflow.ellipsis,
-                                ),
-                                Text(
-                                  p.code.isEmpty ? 'İşin kodu yok' : p.code,
-                                  style: theme.textTheme.bodySmall?.copyWith(
-                                    color: AppColors.cardTextMuted,
-                                  ),
-                                  maxLines: 1,
-                                  overflow: TextOverflow.ellipsis,
-                                ),
-                                if (selected)
-                                  Text(
-                                    'Aktif proje',
-                                    style: theme.textTheme.labelSmall?.copyWith(
-                                      color: AppColors.electricBlueLight,
-                                    ),
-                                  ),
-                              ],
-                            ),
-                          ),
-                          IconButton(
-                            icon: const Icon(Icons.edit_outlined),
-                            onPressed: () =>
-                                _openEditor(context, ref, existing: p),
-                          ),
-                          IconButton(
-                            icon: const Icon(Icons.delete_outline),
-                            onPressed: () async {
-                              final ok = await showDialog<bool>(
-                                context: context,
-                                builder: (ctx) => AlertDialog(
-                                  title: const Text('Projeyi sil'),
-                                  content: Text(
-                                    '${p.name} ile bu projeye ait keşif, '
-                                    'döküm ve sipariş kayıtları silinsin mi?',
-                                  ),
-                                  actions: [
-                                    TextButton(
-                                      onPressed: () =>
-                                          Navigator.pop(ctx, false),
-                                      child: const Text('Vazgeç'),
-                                    ),
-                                    FilledButton(
-                                      onPressed: () =>
-                                          Navigator.pop(ctx, true),
-                                      child: const Text('Sil'),
-                                    ),
-                                  ],
-                                ),
-                              );
-                              if (ok != true) return;
-                              final discovery = ref
-                                  .read(discoveryProvider)
-                                  .where((e) => e.projectId != p.id)
-                                  .toList();
-                              final pours = ref
-                                  .read(poursProvider)
-                                  .where((e) => e.projectId != p.id)
-                                  .toList();
-                              final orders = ref
-                                  .read(ordersProvider)
-                                  .where((e) => e.projectId != p.id)
-                                  .toList();
-                              final variance = ref
-                                  .read(varianceProvider)
-                                  .where((e) => e.projectId != p.id)
-                                  .toList();
-                              ref
-                                  .read(discoveryProvider.notifier)
-                                  .replaceAll(discovery);
-                              ref
-                                  .read(poursProvider.notifier)
-                                  .replaceAll(pours);
-                              ref
-                                  .read(ordersProvider.notifier)
-                                  .replaceAll(orders);
-                              ref
-                                  .read(varianceProvider.notifier)
-                                  .replaceAll(variance);
-                              ref.read(projectsProvider.notifier).delete(p.id);
-                              if (activeId == p.id) {
-                                final remaining = ref.read(projectsProvider);
-                                ref
-                                    .read(activeProjectIdProvider.notifier)
-                                    .set(
-                                      remaining.isEmpty
-                                          ? null
-                                          : remaining.first.id,
-                                    );
-                              }
-                            },
-                          ),
-                        ],
-                      );
-                    },
-                  ),
-                );
-              },
             ),
+        ],
+      ),
+      floatingActionButton: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          FloatingActionButton.extended(
+            heroTag: 'join',
+            onPressed: () => context.push(AppRoutes.joinProject),
+            icon: const Icon(Icons.qr_code),
+            label: const Text('Koda Katıl'),
+          ),
+          const SizedBox(height: 12),
+          FloatingActionButton.extended(
+            heroTag: 'new',
+            onPressed: () => _createProject(context),
+            icon: const Icon(Icons.add),
+            label: const Text('Yeni Proje'),
+          ),
+        ],
+      ),
     );
   }
 
-  Future<void> _openEditor(
-    BuildContext context,
-    WidgetRef ref, {
-    Project? existing,
-  }) async {
-    final nameCtrl = TextEditingController(text: existing?.name ?? '');
-    final codeCtrl = TextEditingController(text: existing?.code ?? '');
-    final companyCtrl = TextEditingController(text: existing?.company ?? '');
+  Future<void> _openProject(Project project) async {
+    ref.read(activeProjectIdProvider.notifier).set(project.id);
+    if (mounted) context.go(AppRoutes.home);
+  }
 
-    final saved = await showModalBottomSheet<bool>(
+  Future<void> _createProject(BuildContext context) async {
+    final messenger = ScaffoldMessenger.of(context);
+    final nameCtrl = TextEditingController();
+    final locationCtrl = TextEditingController(text: 'İstanbul');
+
+    final created = await showDialog<bool>(
       context: context,
-      isScrollControlled: true,
-      showDragHandle: true,
-      builder: (ctx) {
-        return SJModal.scrollableBody(
-          context: ctx,
+      builder: (ctx) => AlertDialog(
+        backgroundColor: AppColors.surfaceElevated,
+        title: const Text('Yeni Proje'),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            TextField(
+              controller: nameCtrl,
+              autofocus: true,
+              decoration: const InputDecoration(labelText: 'Proje Adı'),
+            ),
+            const SizedBox(height: 8),
+            TextField(
+              controller: locationCtrl,
+              decoration: const InputDecoration(labelText: 'Konum'),
+            ),
+          ],
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(ctx, false),
+            child: const Text('İptal'),
+          ),
+          FilledButton(
+            onPressed: () => Navigator.pop(ctx, true),
+            child: const Text('Oluştur'),
+          ),
+        ],
+      ),
+    );
+
+    final name = nameCtrl.text.trim();
+    final location = locationCtrl.text.trim();
+    nameCtrl.dispose();
+    locationCtrl.dispose();
+
+    if (created != true || !context.mounted) return;
+    if (name.isEmpty) {
+      messenger.showSnackBar(
+        const SnackBar(content: Text('Proje adı gerekli')),
+      );
+      return;
+    }
+
+    final code = _uniqueCode(ref.read(projectsProvider));
+    final project = ref.read(projectsProvider.notifier).add(
+          name: name,
+          code: code,
+          company: location,
+        );
+    ref.read(activeProjectIdProvider.notifier).set(project.id);
+    messenger.showSnackBar(
+      SnackBar(content: Text('Proje kartı oluşturuldu — Kod: ${project.code}')),
+    );
+  }
+
+  String _uniqueCode(List<Project> existing) {
+    final used = existing.map((e) => e.code.toUpperCase()).toSet();
+    for (var i = 0; i < 20; i++) {
+      final code = ProjectCodeGenerator.generate();
+      if (!used.contains(code)) return code;
+    }
+    return ProjectCodeGenerator.generate();
+  }
+
+  Future<void> _openEditor(
+    BuildContext context, {
+    required Project existing,
+  }) async {
+    final nameCtrl = TextEditingController(text: existing.name);
+    final locationCtrl = TextEditingController(text: existing.company);
+    final codeCtrl = TextEditingController(text: existing.code);
+
+    final saved = await showDialog<bool>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        backgroundColor: AppColors.surfaceElevated,
+        title: const Text('Projeyi düzenle'),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            TextField(
+              controller: nameCtrl,
+              autofocus: true,
+              decoration: const InputDecoration(labelText: 'Proje Adı'),
+            ),
+            const SizedBox(height: 8),
+            TextField(
+              controller: locationCtrl,
+              decoration: const InputDecoration(labelText: 'Konum'),
+            ),
+            const SizedBox(height: 8),
+            TextField(
+              controller: codeCtrl,
+              textCapitalization: TextCapitalization.characters,
+              decoration: const InputDecoration(labelText: 'Proje Kodu'),
+            ),
+          ],
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(ctx, false),
+            child: const Text('İptal'),
+          ),
+          FilledButton(
+            onPressed: () {
+              if (nameCtrl.text.trim().isEmpty) return;
+              Navigator.pop(ctx, true);
+            },
+            child: const Text('Kaydet'),
+          ),
+        ],
+      ),
+    );
+
+    final name = nameCtrl.text.trim();
+    final location = locationCtrl.text.trim();
+    final code = codeCtrl.text.trim().toUpperCase();
+    nameCtrl.dispose();
+    locationCtrl.dispose();
+    codeCtrl.dispose();
+
+    if (saved != true || !context.mounted) return;
+
+    ref.read(projectsProvider.notifier).update(
+          existing.copyWith(name: name, company: location, code: code),
+        );
+  }
+
+  Future<void> _deleteProject(Project p) async {
+    final ok = await SJModal.confirm(
+      context: context,
+      title: 'Projeyi sil',
+      message:
+          '${p.name} ile bu projeye ait keşif, döküm ve sipariş kayıtları silinsin mi?',
+      confirmLabel: 'Sil',
+      destructive: true,
+    );
+    if (!ok || !mounted) return;
+
+    final activeId = ref.read(activeProjectIdProvider);
+    final discovery = ref
+        .read(discoveryProvider)
+        .where((e) => e.projectId != p.id)
+        .toList();
+    final pours =
+        ref.read(poursProvider).where((e) => e.projectId != p.id).toList();
+    final orders =
+        ref.read(ordersProvider).where((e) => e.projectId != p.id).toList();
+    final variance =
+        ref.read(varianceProvider).where((e) => e.projectId != p.id).toList();
+    ref.read(discoveryProvider.notifier).replaceAll(discovery);
+    ref.read(poursProvider.notifier).replaceAll(pours);
+    ref.read(ordersProvider.notifier).replaceAll(orders);
+    ref.read(varianceProvider.notifier).replaceAll(variance);
+    ref.read(projectsProvider.notifier).delete(p.id);
+    if (activeId == p.id) {
+      final remaining = ref.read(projectsProvider);
+      ref.read(activeProjectIdProvider.notifier).set(
+            remaining.isEmpty ? null : remaining.first.id,
+          );
+    }
+  }
+}
+
+class _ProjectCard extends StatelessWidget {
+  const _ProjectCard({
+    required this.project,
+    required this.selected,
+    required this.onOpen,
+    required this.onEdit,
+    required this.onDelete,
+  });
+
+  final Project project;
+  final bool selected;
+  final VoidCallback onOpen;
+  final VoidCallback onEdit;
+  final VoidCallback onDelete;
+
+  @override
+  Widget build(BuildContext context) {
+    final location = project.company.trim().isEmpty
+        ? 'Konum yok'
+        : project.company.trim();
+    final code = project.code.trim().isEmpty ? '—' : project.code.trim();
+
+    return Container(
+      margin: const EdgeInsets.only(bottom: 10),
+      decoration: BoxDecoration(
+        color: AppColors.surfaceElevated,
+        borderRadius: AppRadii.md,
+        border: Border.all(
+          color: selected ? AppColors.electricBlueLight : AppColors.border,
+        ),
+      ),
+      child: InkWell(
+        onTap: onOpen,
+        onLongPress: onDelete,
+        borderRadius: AppRadii.md,
+        child: Padding(
+          padding: const EdgeInsets.all(14),
           child: Column(
-            mainAxisSize: MainAxisSize.min,
-            crossAxisAlignment: CrossAxisAlignment.stretch,
+            crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Text(
-                existing == null ? 'Yeni proje' : 'Projeyi düzenle',
-                style: Theme.of(ctx).textTheme.headlineMedium,
+              Row(
+                children: [
+                  Expanded(
+                    child: Text(
+                      project.name.isEmpty ? 'Proje adı yok' : project.name,
+                      style: AppTypography.titleMedium,
+                    ),
+                  ),
+                  if (selected)
+                    Container(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 8,
+                        vertical: 4,
+                      ),
+                      decoration: BoxDecoration(
+                        color: AppColors.electricBlue.withValues(alpha: 0.15),
+                        borderRadius: AppRadii.full,
+                      ),
+                      child: Text('Aktif', style: AppTypography.labelSmall),
+                    ),
+                ],
               ),
-              const SizedBox(height: AppSpacing.md),
-              TextField(
-                controller: companyCtrl,
-                decoration: const InputDecoration(labelText: 'Firma adı'),
-                textCapitalization: TextCapitalization.sentences,
-              ),
-              const SizedBox(height: AppSpacing.sm),
-              TextField(
-                controller: nameCtrl,
-                decoration: const InputDecoration(labelText: 'İşin adı'),
-                textCapitalization: TextCapitalization.sentences,
-              ),
-              const SizedBox(height: AppSpacing.sm),
-              TextField(
-                controller: codeCtrl,
-                decoration: const InputDecoration(labelText: 'İşin kodu'),
-              ),
-              const SizedBox(height: AppSpacing.md),
-              FilledButton(
-                onPressed: () {
-                  if (nameCtrl.text.trim().isEmpty) return;
-                  Navigator.pop(ctx, true);
-                },
-                child: const Text('Kaydet'),
+              const SizedBox(height: 4),
+              Text(location, style: AppTypography.bodySmall),
+              const SizedBox(height: 8),
+              Row(
+                children: [
+                  Expanded(
+                    child: Text(
+                      'Kod: $code',
+                      style: AppTypography.labelMedium.copyWith(
+                        color: AppColors.electricBlueLight,
+                      ),
+                    ),
+                  ),
+                  IconButton(
+                    tooltip: 'Kodu kopyala',
+                    onPressed: () {
+                      if (project.code.trim().isEmpty) return;
+                      Clipboard.setData(ClipboardData(text: project.code));
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        const SnackBar(content: Text('Proje kodu kopyalandı')),
+                      );
+                    },
+                    icon: const Icon(Icons.copy, size: 18),
+                  ),
+                  IconButton(
+                    tooltip: 'Düzenle',
+                    onPressed: onEdit,
+                    icon: const Icon(Icons.edit_outlined, size: 20),
+                  ),
+                ],
               ),
             ],
           ),
-        );
-      },
+        ),
+      ),
     );
-
-    if (saved != true) return;
-    final name = nameCtrl.text.trim();
-    final code = codeCtrl.text.trim();
-    final company = companyCtrl.text.trim();
-
-    if (existing == null) {
-      final created = ref.read(projectsProvider.notifier).add(
-            name: name,
-            code: code,
-            company: company,
-          );
-      ref.read(activeProjectIdProvider.notifier).set(created.id);
-    } else {
-      ref.read(projectsProvider.notifier).update(
-            existing.copyWith(name: name, code: code, company: company),
-          );
-    }
   }
 }
