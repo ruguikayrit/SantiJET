@@ -104,12 +104,6 @@ class ImalatScreen extends ConsumerWidget {
                   const SizedBox(height: AppSpacing.sm),
               itemBuilder: (context, i) {
                 final p = items[i];
-                final pct = p.progressPct;
-                final color = pct >= 100
-                    ? AppColors.success
-                    : pct >= 50
-                        ? AppColors.warning
-                        : AppColors.critical;
                 return SJCard(
                   onTap: () => _openDetail(context, ref, production: p),
                   child: Builder(
@@ -130,33 +124,6 @@ class ImalatScreen extends ConsumerWidget {
                                 SJStatusBadge(
                                   label: 'Tamamlandı',
                                   color: AppColors.success,
-                                )
-                              else
-                                Column(
-                                  crossAxisAlignment: CrossAxisAlignment.end,
-                                  children: [
-                                    Text(
-                                      'Metraj %${pct.toStringAsFixed(0)}',
-                                      style:
-                                          theme.textTheme.titleSmall?.copyWith(
-                                        color: color,
-                                        fontWeight: FontWeight.w700,
-                                      ),
-                                    ),
-                                    if (p.plannedDays > 0) ...[
-                                      const SizedBox(height: 2),
-                                      Text(
-                                        'Süre %${p.timeProgressPct.toStringAsFixed(0)}',
-                                        style: theme.textTheme.labelSmall
-                                            ?.copyWith(
-                                          color: _progressColor(
-                                            p.timeProgressPct,
-                                          ),
-                                          fontWeight: FontWeight.w700,
-                                        ),
-                                      ),
-                                    ],
-                                  ],
                                 ),
                             ],
                           ),
@@ -182,15 +149,8 @@ class ImalatScreen extends ConsumerWidget {
                           ),
                           const SizedBox(height: 4),
                           Text(
-                            'Keşif: ${_fmt(p.completedQty)} / '
-                            '${_fmt(p.plannedQty)} ${p.unit}'
-                            '${p.plannedDays > 0 ? ' · Süre: ${p.workedDays}/${p.plannedDays} gün' : ''}',
-                            style: theme.textTheme.bodyMedium,
-                          ),
-                          Text(
-                            'Toplam atama: ${_fmt(p.ustaCount)} usta · '
-                            '${_fmt(p.duzIsciCount)} düz · '
-                            '${p.dailyEntries.length} günlük kayıt',
+                            'Toplam çalışan: ${_fmt(p.ustaCount)} usta · '
+                            '${_fmt(p.duzIsciCount)} düz',
                             style: theme.textTheme.labelSmall,
                           ),
                           const SizedBox(height: AppSpacing.sm),
@@ -774,12 +734,6 @@ class _ImalatDetailSheet extends ConsumerWidget {
       );
     }
 
-    final pct = p.progressPct;
-    final color = pct >= 100
-        ? AppColors.success
-        : pct >= 50
-            ? AppColors.warning
-            : AppColors.critical;
     final entries = [...p.dailyEntries]
       ..sort((a, b) => b.date.compareTo(a.date));
 
@@ -816,40 +770,11 @@ class _ImalatDetailSheet extends ConsumerWidget {
               ),
             ),
             const SizedBox(height: AppSpacing.sm),
-            Row(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Expanded(
-                  child: Text(
-                    'Keşif: ${_fmt(p.completedQty)} / '
-                    '${_fmt(p.plannedQty)} ${p.unit}'
-                    '${p.plannedDays > 0 ? ' · Süre: ${p.workedDays}/${p.plannedDays} gün' : ''}',
-                    style: theme.textTheme.titleMedium,
-                  ),
-                ),
-                Column(
-                  crossAxisAlignment: CrossAxisAlignment.end,
-                  children: [
-                    Text(
-                      'Metraj %${pct.toStringAsFixed(0)}',
-                      style: theme.textTheme.titleMedium?.copyWith(
-                        color: color,
-                        fontWeight: FontWeight.w700,
-                      ),
-                    ),
-                    if (p.plannedDays > 0) ...[
-                      const SizedBox(height: 2),
-                      Text(
-                        'Süre %${p.timeProgressPct.toStringAsFixed(0)}',
-                        style: theme.textTheme.labelMedium?.copyWith(
-                          color: _progressColor(p.timeProgressPct),
-                          fontWeight: FontWeight.w700,
-                        ),
-                      ),
-                    ],
-                  ],
-                ),
-              ],
+            Text(
+              'Keşif: ${_fmt(p.completedQty)} / '
+              '${_fmt(p.plannedQty)} ${p.unit}'
+              '${p.plannedDays > 0 ? ' · Süre: ${p.workedDays}/${p.plannedDays} gün' : ''}',
+              style: theme.textTheme.titleMedium,
             ),
             const SizedBox(height: AppSpacing.sm),
             _ImalatDualProgress(production: p, dense: false),
