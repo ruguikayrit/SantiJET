@@ -562,7 +562,7 @@ class _DokumEditorBodyState extends ConsumerState<_DokumEditorBody> {
         ),
         const SizedBox(height: _fieldGap),
         for (var i = 0; i < _mixers.length; i++) ...[
-          if (i > 0) const SizedBox(height: _fieldGap),
+          if (i > 0) const SizedBox(height: AppSpacing.xs),
           _MixerCard(
             index: i,
             draft: _mixers[i],
@@ -792,39 +792,58 @@ class _MixerCard extends StatelessWidget {
     return Container(
       decoration: BoxDecoration(
         color: AppColors.surfaceElevated,
-        borderRadius: AppRadii.md,
+        borderRadius: AppRadii.sm,
         border: Border.all(color: AppColors.borderSubtle),
       ),
       clipBehavior: Clip.antiAlias,
       child: Theme(
-        data: theme.copyWith(dividerColor: Colors.transparent),
+        data: theme.copyWith(
+          dividerColor: Colors.transparent,
+          listTileTheme: const ListTileThemeData(
+            dense: true,
+            visualDensity: VisualDensity.compact,
+            minVerticalPadding: 0,
+            horizontalTitleGap: 8,
+          ),
+        ),
         child: ExpansionTile(
           key: ValueKey('mixer-${draft.id}-exp-${draft.expanded}'),
           initiallyExpanded: draft.expanded,
           onExpansionChanged: onExpansionChanged,
+          dense: true,
+          visualDensity: const VisualDensity(horizontal: 0, vertical: -3),
           tilePadding: const EdgeInsets.symmetric(
-            horizontal: AppSpacing.md,
-            vertical: AppSpacing.xs,
+            horizontal: AppSpacing.sm,
+            vertical: 0,
           ),
           childrenPadding: const EdgeInsets.fromLTRB(
-            AppSpacing.md,
+            AppSpacing.sm,
             0,
-            AppSpacing.md,
-            AppSpacing.md,
+            AppSpacing.sm,
+            AppSpacing.sm,
           ),
-          title: Text(
-            'Mikser ${index + 1}',
-            style: theme.textTheme.titleSmall?.copyWith(
-              fontWeight: FontWeight.w700,
-            ),
-          ),
-          subtitle: Text(
-            draft.collapsedSummary,
-            maxLines: 1,
-            overflow: TextOverflow.ellipsis,
-            style: theme.textTheme.labelSmall?.copyWith(
-              color: AppColors.textMuted,
-            ),
+          title: Row(
+            children: [
+              Text(
+                'Mikser ${index + 1}',
+                style: theme.textTheme.labelLarge?.copyWith(
+                  fontWeight: FontWeight.w700,
+                  height: 1.1,
+                ),
+              ),
+              const SizedBox(width: AppSpacing.xs),
+              Expanded(
+                child: Text(
+                  draft.collapsedSummary,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: theme.textTheme.labelSmall?.copyWith(
+                    color: AppColors.textMuted,
+                    height: 1.1,
+                  ),
+                ),
+              ),
+            ],
           ),
           trailing: Row(
             mainAxisSize: MainAxisSize.min,
@@ -833,11 +852,17 @@ class _MixerCard extends StatelessWidget {
                 IconButton(
                   onPressed: onRemove,
                   tooltip: 'Mikseri kaldır',
-                  icon: Icon(Icons.close, color: AppColors.critical, size: 20),
+                  icon: Icon(Icons.close, color: AppColors.critical, size: 16),
                   visualDensity: VisualDensity.compact,
+                  padding: EdgeInsets.zero,
+                  constraints: const BoxConstraints(
+                    minWidth: 28,
+                    minHeight: 28,
+                  ),
                 ),
               Icon(
                 draft.expanded ? Icons.expand_less : Icons.expand_more,
+                size: 20,
                 color: theme.colorScheme.onSurfaceVariant,
               ),
             ],
