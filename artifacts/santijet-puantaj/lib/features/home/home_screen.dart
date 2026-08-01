@@ -199,7 +199,6 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                   const SizedBox(height: AppSpacing.md),
                   _ImalatOverviewSection(
                     summaries: teamSummaries,
-                    onOpenImalat: () => context.go(AppRoutes.imalat),
                   ),
                   const SizedBox(height: AppSpacing.md),
                   _SummarySection(
@@ -462,11 +461,9 @@ class _UnitLine {
 class _ImalatOverviewSection extends StatelessWidget {
   const _ImalatOverviewSection({
     required this.summaries,
-    required this.onOpenImalat,
   });
 
   final List<_TeamImalatSummary> summaries;
-  final VoidCallback onOpenImalat;
 
   static Color _progressColor(double pct) {
     if (pct >= 100) return AppColors.success;
@@ -479,50 +476,7 @@ class _ImalatOverviewSection extends StatelessWidget {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
-        SJCard(
-          onTap: onOpenImalat,
-          padding: const EdgeInsets.symmetric(
-            horizontal: AppSpacing.md,
-            vertical: AppSpacing.sm + 2,
-          ),
-          child: Builder(
-            builder: (context) {
-              final theme = Theme.of(context);
-              return Row(
-                children: [
-                  Icon(
-                    Icons.precision_manufacturing_outlined,
-                    size: 20,
-                    color: theme.colorScheme.primary,
-                  ),
-                  const SizedBox(width: AppSpacing.sm),
-                  Expanded(
-                    child: Text(
-                      'Özet İmalat',
-                      style: theme.textTheme.titleMedium,
-                    ),
-                  ),
-                  Text(
-                    summaries.isEmpty
-                        ? 'İmalat yok'
-                        : '${summaries.length} ekip',
-                    style: theme.textTheme.labelMedium?.copyWith(
-                      color: theme.colorScheme.onSurfaceVariant,
-                      fontWeight: FontWeight.w600,
-                    ),
-                  ),
-                  const SizedBox(width: 4),
-                  Icon(
-                    Icons.chevron_right,
-                    color: theme.colorScheme.onSurfaceVariant,
-                  ),
-                ],
-              );
-            },
-          ),
-        ),
-        if (summaries.isEmpty) ...[
-          const SizedBox(height: AppSpacing.sm),
+        if (summaries.isEmpty)
           SJCard(
             child: Builder(
               builder: (context) => Text(
@@ -530,19 +484,19 @@ class _ImalatOverviewSection extends StatelessWidget {
                 style: Theme.of(context).textTheme.bodyMedium,
               ),
             ),
-          ),
-        ] else
-          for (final summary in summaries) ...[
-            const SizedBox(height: AppSpacing.sm),
+          )
+        else
+          for (var i = 0; i < summaries.length; i++) ...[
+            if (i > 0) const SizedBox(height: AppSpacing.sm),
             SJCard(
-              accentColor: _progressColor(summary.progressPct),
+              accentColor: _progressColor(summaries[i].progressPct),
               padding: const EdgeInsets.fromLTRB(
                 AppSpacing.sm,
                 AppSpacing.md,
                 AppSpacing.md,
                 AppSpacing.md,
               ),
-              child: _TeamImalatCard(summary: summary),
+              child: _TeamImalatCard(summary: summaries[i]),
             ),
           ],
       ],

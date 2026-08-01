@@ -26,7 +26,6 @@ class ProgramScreen extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final project = ref.watch(activeProjectProvider);
-    final progress = ref.watch(projectProgressProvider);
     final orders = ref.watch(activeOrdersProvider);
     final pours = ref.watch(activePoursProvider);
 
@@ -63,8 +62,6 @@ class ProgramScreen extends ConsumerWidget {
                             88,
                           ),
                           children: [
-                            _ProgramSummaryCard(progress: progress),
-                            const SizedBox(height: AppSpacing.md),
                             Text(
                               'Siparişler',
                               style: Theme.of(context).textTheme.titleMedium,

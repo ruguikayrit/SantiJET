@@ -20,11 +20,6 @@ class MainShell extends ConsumerWidget {
       label: 'Ana Sayfa',
     ),
     SJNavItem(
-      icon: Icons.local_shipping_outlined,
-      activeIcon: Icons.local_shipping,
-      label: 'Döküm',
-    ),
-    SJNavItem(
       icon: Icons.pie_chart_outline,
       activeIcon: Icons.pie_chart,
       label: 'Keşif',
@@ -33,6 +28,11 @@ class MainShell extends ConsumerWidget {
       icon: Icons.calendar_month_outlined,
       activeIcon: Icons.calendar_month,
       label: 'Sipariş',
+    ),
+    SJNavItem(
+      icon: Icons.local_shipping_outlined,
+      activeIcon: Icons.local_shipping,
+      label: 'Döküm',
     ),
     SJNavItem(
       icon: Icons.settings_outlined,

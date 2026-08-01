@@ -16,7 +16,7 @@ import 'page_transitions.dart';
 
 final _rootNavigatorKey = GlobalKey<NavigatorState>();
 
-/// Alt sekmeler: Ana Sayfa, Döküm, Keşif, Program, Ayarlar.
+/// Alt sekmeler: Ana Sayfa, Keşif, Sipariş, Döküm, Ayarlar.
 final routerProvider = Provider<GoRouter>((ref) {
   return GoRouter(
     navigatorKey: _rootNavigatorKey,
@@ -45,17 +45,6 @@ final routerProvider = Provider<GoRouter>((ref) {
           StatefulShellBranch(
             routes: [
               GoRoute(
-                path: AppRoutes.dokum,
-                pageBuilder: (context, state) => fadePage(
-                  key: state.pageKey,
-                  child: const DokumScreen(),
-                ),
-              ),
-            ],
-          ),
-          StatefulShellBranch(
-            routes: [
-              GoRoute(
                 path: AppRoutes.kesif,
                 pageBuilder: (context, state) => fadePage(
                   key: state.pageKey,
@@ -71,6 +60,17 @@ final routerProvider = Provider<GoRouter>((ref) {
                 pageBuilder: (context, state) => fadePage(
                   key: state.pageKey,
                   child: const ProgramScreen(),
+                ),
+              ),
+            ],
+          ),
+          StatefulShellBranch(
+            routes: [
+              GoRoute(
+                path: AppRoutes.dokum,
+                pageBuilder: (context, state) => fadePage(
+                  key: state.pageKey,
+                  child: const DokumScreen(),
                 ),
               ),
             ],

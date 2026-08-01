@@ -148,7 +148,11 @@ class VerimScreen extends ConsumerWidget {
               Text('İmalat bazlı verim', style: theme.textTheme.titleMedium),
               const SizedBox(height: AppSpacing.xs),
               Text(
-                'Plan: İş Programı bulutu · Gerçek: puantaj + imalat',
+                'Plan: ŞantiJET İş Programı bulut',
+                style: theme.textTheme.bodySmall,
+              ),
+              Text(
+                'Gerçek: puantaj + imalat',
                 style: theme.textTheme.bodySmall,
               ),
               const SizedBox(height: AppSpacing.sm),
