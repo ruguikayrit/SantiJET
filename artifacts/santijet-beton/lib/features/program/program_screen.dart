@@ -85,8 +85,6 @@ class ProgramScreen extends ConsumerWidget {
                                   ref,
                                   project: project,
                                   order: orders[i],
-                                  actualM3:
-                                      _actualForOrder(orders[i], pours),
                                 ),
                               ),
                             ],
@@ -112,6 +110,10 @@ class ProgramScreen extends ConsumerWidget {
   ) {
     return pours
         .where((p) {
+          if (p.orderId != null && p.orderId!.isNotEmpty) {
+            return p.orderId == order.id;
+          }
+          // Eski kayıtlar: tarih + yapısal eleman
           if (p.date != order.plannedDate) return false;
           if (order.elementName.trim().isEmpty) return true;
           return p.elementName.trim() == order.elementName.trim();
@@ -124,22 +126,23 @@ class ProgramScreen extends ConsumerWidget {
     WidgetRef ref, {
     required Project project,
     required ConcreteOrder order,
-    required double actualM3,
   }) async {
-    final gap = actualM3 - order.plannedM3;
     final lines = <String>[
       'ŞantiJET Beton — Sipariş',
       'Proje: ${project.name}',
-      if (project.code.isNotEmpty) 'Kod: ${project.code}',
       'Tarih: ${order.plannedDate}',
       if (order.plannedStartHour.isNotEmpty)
         'Saat: ${order.plannedStartHour}',
-      if (order.elementName.isNotEmpty) 'Element: ${order.elementName}',
-      if (order.location.isNotEmpty) 'Lokasyon: ${order.location}',
+      if (order.elementName.isNotEmpty)
+        'Yapısal eleman: ${order.elementName}',
+      if (order.block.isNotEmpty) 'Blok: ${order.block}',
+      if (order.floor.isNotEmpty) 'Kat: ${order.floor}',
       'Sınıf: ${order.concreteClass}',
       'Plan: ${BetonProgress.fmtM3(order.plannedM3)} m³',
-      'Dökülen: ${BetonProgress.fmtM3(actualM3)} m³',
-      'Fark: ${gap >= 0 ? '+' : ''}${BetonProgress.fmtM3(gap)} m³',
+      if (order.slumpCm != null)
+        'Slump: ${BetonProgress.fmtM3(order.slumpCm!)} cm',
+      if (order.pumpRequestSummary.isNotEmpty)
+        'Pompa talebi: ${order.pumpRequestSummary}',
       if (order.supplier.isNotEmpty) 'Tedarikçi: ${order.supplier}',
       if (order.notes.isNotEmpty) 'Not: ${order.notes}',
     ];
@@ -197,13 +200,23 @@ class ProgramScreen extends ConsumerWidget {
         TextEditingController(text: existing?.plannedStartHour ?? '');
     final elementCtrl =
         TextEditingController(text: existing?.elementName ?? '');
-    final locationCtrl =
-        TextEditingController(text: existing?.location ?? '');
+    final blockCtrl = TextEditingController(text: existing?.block ?? '');
+    final floorCtrl = TextEditingController(text: existing?.floor ?? '');
     final supplierCtrl =
         TextEditingController(text: existing?.supplier ?? '');
     final m3Ctrl = TextEditingController(
       text: existing == null ? '' : BetonProgress.fmtM3(existing.plannedM3),
     );
+    final slumpCtrl = TextEditingController(
+      text: existing?.slumpCm == null
+          ? ''
+          : BetonProgress.fmtM3(existing!.slumpCm!),
+    );
+    final pumpCountCtrl = TextEditingController(
+      text: existing?.pumpCount?.toString() ?? '',
+    );
+    final pumpTypeCtrl =
+        TextEditingController(text: existing?.pumpType ?? '');
     final notesCtrl = TextEditingController(text: existing?.notes ?? '');
     var concreteClass = existing?.concreteClass ?? 'C30/37';
 
@@ -232,13 +245,26 @@ class ProgramScreen extends ConsumerWidget {
                 const SizedBox(height: AppSpacing.sm),
                 TextField(
                   controller: elementCtrl,
-                  decoration: const InputDecoration(labelText: 'Element'),
+                  decoration:
+                      const InputDecoration(labelText: 'Yapısal eleman'),
                   textCapitalization: TextCapitalization.sentences,
                 ),
                 const SizedBox(height: AppSpacing.sm),
                 TextField(
-                  controller: locationCtrl,
-                  decoration: const InputDecoration(labelText: 'Lokasyon'),
+                  controller: blockCtrl,
+                  decoration: const InputDecoration(
+                    labelText: 'Blok',
+                    hintText: 'örn. A Blok',
+                  ),
+                  textCapitalization: TextCapitalization.sentences,
+                ),
+                const SizedBox(height: AppSpacing.sm),
+                TextField(
+                  controller: floorCtrl,
+                  decoration: const InputDecoration(
+                    labelText: 'Kat',
+                    hintText: 'örn. Bodrum Kat',
+                  ),
                   textCapitalization: TextCapitalization.sentences,
                 ),
                 const SizedBox(height: AppSpacing.sm),
@@ -267,6 +293,32 @@ class ProgramScreen extends ConsumerWidget {
                 TextField(
                   controller: supplierCtrl,
                   decoration: const InputDecoration(labelText: 'Tedarikçi'),
+                ),
+                const SizedBox(height: AppSpacing.sm),
+                TextField(
+                  controller: slumpCtrl,
+                  decoration: const InputDecoration(
+                    labelText: 'Beton slump değeri (cm)',
+                  ),
+                  keyboardType: const TextInputType.numberWithOptions(
+                    decimal: true,
+                  ),
+                ),
+                const SizedBox(height: AppSpacing.sm),
+                TextField(
+                  controller: pumpCountCtrl,
+                  decoration: const InputDecoration(
+                    labelText: 'Pompa talebi — sayı',
+                  ),
+                  keyboardType: TextInputType.number,
+                ),
+                const SizedBox(height: AppSpacing.sm),
+                TextField(
+                  controller: pumpTypeCtrl,
+                  decoration: const InputDecoration(
+                    labelText: 'Pompa talebi — tip',
+                    hintText: 'örn. Sabit / Mobil',
+                  ),
                 ),
                 const SizedBox(height: AppSpacing.sm),
                 TextField(
@@ -322,10 +374,14 @@ class ProgramScreen extends ConsumerWidget {
       plannedDate: dateCtrl.text.trim(),
       plannedM3: m3,
       elementName: elementCtrl.text.trim(),
-      location: locationCtrl.text.trim(),
+      block: blockCtrl.text.trim(),
+      floor: floorCtrl.text.trim(),
       concreteClass: concreteClass,
       supplier: supplierCtrl.text.trim(),
       plannedStartHour: hourCtrl.text.trim(),
+      slumpCm: double.tryParse(slumpCtrl.text.trim().replaceAll(',', '.')),
+      pumpCount: int.tryParse(pumpCountCtrl.text.trim()),
+      pumpType: pumpTypeCtrl.text.trim(),
       notes: notesCtrl.text.trim(),
       sharedViaWhatsApp: existing?.sharedViaWhatsApp ?? false,
     );
@@ -452,7 +508,9 @@ class _OrderCard extends StatelessWidget {
           final theme = Theme.of(context);
           final title = order.elementName.isNotEmpty
               ? order.elementName
-              : (order.location.isNotEmpty ? order.location : 'Sipariş');
+              : (order.locationSummary.isNotEmpty
+                  ? order.locationSummary
+                  : 'Sipariş');
           final meta = [
             order.plannedDate,
             if (order.plannedStartHour.isNotEmpty) order.plannedStartHour,
@@ -498,11 +556,26 @@ class _OrderCard extends StatelessWidget {
                   color: AppColors.cardTextMuted,
                 ),
               ),
-              if (order.location.isNotEmpty &&
+              if (order.locationSummary.isNotEmpty &&
                   order.elementName.isNotEmpty) ...[
                 const SizedBox(height: 2),
                 Text(
-                  order.location,
+                  order.locationSummary,
+                  style: theme.textTheme.labelSmall?.copyWith(
+                    color: AppColors.cardTextMuted,
+                  ),
+                ),
+              ],
+              if (order.slumpCm != null ||
+                  order.pumpRequestSummary.isNotEmpty) ...[
+                const SizedBox(height: 2),
+                Text(
+                  [
+                    if (order.slumpCm != null)
+                      'Slump ${BetonProgress.fmtM3(order.slumpCm!)} cm',
+                    if (order.pumpRequestSummary.isNotEmpty)
+                      'Pompa ${order.pumpRequestSummary}',
+                  ].join(' · '),
                   style: theme.textTheme.labelSmall?.copyWith(
                     color: AppColors.cardTextMuted,
                   ),

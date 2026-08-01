@@ -1,5 +1,10 @@
 import 'package:equatable/equatable.dart';
 
+/// Şantiyeye gelen / dökülen beton kaydı.
+///
+/// Sipariş seçilince yapısal eleman, blok, kat, sınıf ve firma siparişten
+/// gelir. Kullanıcı yalnızca mikser ve pompa verilerini girer.
+/// Sipariş dışı yere döküm → [isExtraPour] = true.
 class ConcretePour extends Equatable {
   const ConcretePour({
     required this.id,
@@ -7,33 +12,70 @@ class ConcretePour extends Equatable {
     required this.date,
     required this.volumeM3,
     this.elementName = '',
-    this.location = '',
+    this.block = '',
+    this.floor = '',
     this.concreteClass = 'C30/37',
     this.supplier = '',
     this.ticketNo = '',
+    this.mixerCount,
+    this.mixerPlate = '',
+    this.mixerNote = '',
+    this.pumpCount,
+    this.pumpType = '',
+    this.pumpNote = '',
     this.slumpCm,
     this.pourStart,
     this.pourEnd,
     this.notes = '',
     this.orderId,
+    this.isExtraPour = false,
     this.discoveryItemId,
   });
 
   final String id;
   final String projectId;
   final String date;
+
+  /// Mikserden gelen / dökülen hacim (m³).
   final double volumeM3;
+
+  /// Yapısal eleman (siparişten veya ek döküm hedefi).
   final String elementName;
-  final String location;
+  final String block;
+  final String floor;
   final String concreteClass;
   final String supplier;
+
+  /// Mikser irsaliye no.
   final String ticketNo;
+  final int? mixerCount;
+  final String mixerPlate;
+  final String mixerNote;
+
+  final int? pumpCount;
+
+  /// Sabit / mobil vb.
+  final String pumpType;
+  final String pumpNote;
+
   final double? slumpCm;
   final DateTime? pourStart;
   final DateTime? pourEnd;
   final String notes;
   final String? orderId;
+
+  /// Siparişteki yer dışında döküldüyse true.
+  final bool isExtraPour;
   final String? discoveryItemId;
+
+  String get locationSummary {
+    final parts = <String>[
+      if (block.trim().isNotEmpty) block.trim(),
+      if (floor.trim().isNotEmpty) floor.trim(),
+    ];
+    if (parts.isNotEmpty) return parts.join(' · ');
+    return '';
+  }
 
   ConcretePour copyWith({
     String? id,
@@ -41,15 +83,23 @@ class ConcretePour extends Equatable {
     String? date,
     double? volumeM3,
     String? elementName,
-    String? location,
+    String? block,
+    String? floor,
     String? concreteClass,
     String? supplier,
     String? ticketNo,
+    int? mixerCount,
+    String? mixerPlate,
+    String? mixerNote,
+    int? pumpCount,
+    String? pumpType,
+    String? pumpNote,
     double? slumpCm,
     DateTime? pourStart,
     DateTime? pourEnd,
     String? notes,
     String? orderId,
+    bool? isExtraPour,
     String? discoveryItemId,
   }) {
     return ConcretePour(
@@ -58,15 +108,23 @@ class ConcretePour extends Equatable {
       date: date ?? this.date,
       volumeM3: volumeM3 ?? this.volumeM3,
       elementName: elementName ?? this.elementName,
-      location: location ?? this.location,
+      block: block ?? this.block,
+      floor: floor ?? this.floor,
       concreteClass: concreteClass ?? this.concreteClass,
       supplier: supplier ?? this.supplier,
       ticketNo: ticketNo ?? this.ticketNo,
+      mixerCount: mixerCount ?? this.mixerCount,
+      mixerPlate: mixerPlate ?? this.mixerPlate,
+      mixerNote: mixerNote ?? this.mixerNote,
+      pumpCount: pumpCount ?? this.pumpCount,
+      pumpType: pumpType ?? this.pumpType,
+      pumpNote: pumpNote ?? this.pumpNote,
       slumpCm: slumpCm ?? this.slumpCm,
       pourStart: pourStart ?? this.pourStart,
       pourEnd: pourEnd ?? this.pourEnd,
       notes: notes ?? this.notes,
       orderId: orderId ?? this.orderId,
+      isExtraPour: isExtraPour ?? this.isExtraPour,
       discoveryItemId: discoveryItemId ?? this.discoveryItemId,
     );
   }
@@ -77,39 +135,72 @@ class ConcretePour extends Equatable {
         'date': date,
         'volumeM3': volumeM3,
         'elementName': elementName,
-        'location': location,
+        'block': block,
+        'floor': floor,
         'concreteClass': concreteClass,
         'supplier': supplier,
         'ticketNo': ticketNo,
+        'mixerCount': mixerCount,
+        'mixerPlate': mixerPlate,
+        'mixerNote': mixerNote,
+        'pumpCount': pumpCount,
+        'pumpType': pumpType,
+        'pumpNote': pumpNote,
         'slumpCm': slumpCm,
         'pourStart': pourStart?.toIso8601String(),
         'pourEnd': pourEnd?.toIso8601String(),
         'notes': notes,
         'orderId': orderId,
+        'isExtraPour': isExtraPour,
         'discoveryItemId': discoveryItemId,
       };
 
-  factory ConcretePour.fromJson(Map<String, dynamic> json) => ConcretePour(
-        id: json['id'] as String,
-        projectId: json['projectId'] as String? ?? '',
-        date: json['date'] as String? ?? '',
-        volumeM3: (json['volumeM3'] as num?)?.toDouble() ?? 0,
-        elementName: json['elementName'] as String? ?? '',
-        location: json['location'] as String? ?? '',
-        concreteClass: json['concreteClass'] as String? ?? 'C30/37',
-        supplier: json['supplier'] as String? ?? '',
-        ticketNo: json['ticketNo'] as String? ?? '',
-        slumpCm: (json['slumpCm'] as num?)?.toDouble(),
-        pourStart: json['pourStart'] != null
-            ? DateTime.tryParse(json['pourStart'] as String)
-            : null,
-        pourEnd: json['pourEnd'] != null
-            ? DateTime.tryParse(json['pourEnd'] as String)
-            : null,
-        notes: json['notes'] as String? ?? '',
-        orderId: json['orderId'] as String?,
-        discoveryItemId: json['discoveryItemId'] as String?,
-      );
+  factory ConcretePour.fromJson(Map<String, dynamic> json) {
+    var block = json['block'] as String? ?? '';
+    var floor = json['floor'] as String? ?? '';
+    if (block.isEmpty && floor.isEmpty) {
+      final legacy = (json['location'] as String? ?? '').trim();
+      if (legacy.isNotEmpty) {
+        final parts = legacy.split('·').map((e) => e.trim()).toList();
+        if (parts.length >= 2) {
+          block = parts.first;
+          floor = parts.sublist(1).join(' · ');
+        } else {
+          block = legacy;
+        }
+      }
+    }
+
+    return ConcretePour(
+      id: json['id'] as String,
+      projectId: json['projectId'] as String? ?? '',
+      date: json['date'] as String? ?? '',
+      volumeM3: (json['volumeM3'] as num?)?.toDouble() ?? 0,
+      elementName: json['elementName'] as String? ?? '',
+      block: block,
+      floor: floor,
+      concreteClass: json['concreteClass'] as String? ?? 'C30/37',
+      supplier: json['supplier'] as String? ?? '',
+      ticketNo: json['ticketNo'] as String? ?? '',
+      mixerCount: (json['mixerCount'] as num?)?.toInt(),
+      mixerPlate: json['mixerPlate'] as String? ?? '',
+      mixerNote: json['mixerNote'] as String? ?? '',
+      pumpCount: (json['pumpCount'] as num?)?.toInt(),
+      pumpType: json['pumpType'] as String? ?? '',
+      pumpNote: json['pumpNote'] as String? ?? '',
+      slumpCm: (json['slumpCm'] as num?)?.toDouble(),
+      pourStart: json['pourStart'] != null
+          ? DateTime.tryParse(json['pourStart'] as String)
+          : null,
+      pourEnd: json['pourEnd'] != null
+          ? DateTime.tryParse(json['pourEnd'] as String)
+          : null,
+      notes: json['notes'] as String? ?? '',
+      orderId: json['orderId'] as String?,
+      isExtraPour: json['isExtraPour'] as bool? ?? false,
+      discoveryItemId: json['discoveryItemId'] as String?,
+    );
+  }
 
   @override
   List<Object?> get props => [
@@ -118,15 +209,23 @@ class ConcretePour extends Equatable {
         date,
         volumeM3,
         elementName,
-        location,
+        block,
+        floor,
         concreteClass,
         supplier,
         ticketNo,
+        mixerCount,
+        mixerPlate,
+        mixerNote,
+        pumpCount,
+        pumpType,
+        pumpNote,
         slumpCm,
         pourStart,
         pourEnd,
         notes,
         orderId,
+        isExtraPour,
         discoveryItemId,
       ];
 }

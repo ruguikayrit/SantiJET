@@ -462,10 +462,15 @@ void seedDemoIfEmpty({
       date: yesterday,
       volumeM3: 86,
       elementName: 'Temel Radye',
-      location: 'Blok A · Kot -3.20',
+      block: 'A Blok',
+      floor: 'Kot -3.20',
       concreteClass: 'C35/45',
       supplier: 'Akdeniz Beton',
       ticketNo: 'IR-10421',
+      mixerCount: 7,
+      mixerPlate: '34 ABC 123',
+      pumpCount: 1,
+      pumpType: 'Sabit',
       slumpCm: 16,
       pourStart: DateTime.now().subtract(const Duration(days: 1, hours: 6)),
       pourEnd: DateTime.now().subtract(const Duration(days: 1, hours: 2)),
@@ -476,40 +481,62 @@ void seedDemoIfEmpty({
       date: today,
       volumeM3: 42,
       elementName: 'Perde Duvar B1',
-      location: 'Blok A · Bodrum',
+      block: 'A Blok',
+      floor: 'Bodrum Kat',
       concreteClass: 'C30/37',
       supplier: 'Akdeniz Beton',
       ticketNo: 'IR-10488',
+      mixerCount: 4,
+      mixerPlate: '34 XYZ 456',
+      pumpCount: 1,
+      pumpType: 'Mobil',
       slumpCm: 14,
       pourStart: DateTime.now().subtract(const Duration(hours: 3)),
     ),
   ]);
 
-  orders.replaceAll([
-    ConcreteOrder(
-      id: IdGen.make('sip'),
-      projectId: project.id,
-      plannedDate: today,
-      plannedM3: 48,
-      elementName: 'Perde Duvar B1',
-      location: 'Blok A · Bodrum',
-      concreteClass: 'C30/37',
-      supplier: 'Akdeniz Beton',
-      plannedStartHour: '07:30',
-      notes: 'Pompa + 2 mikser peş peşe',
-    ),
-    ConcreteOrder(
-      id: IdGen.make('sip'),
-      projectId: project.id,
-      plannedDate: AppDate.format(AppDate.today().add(const Duration(days: 1))),
-      plannedM3: 55,
-      elementName: 'Döşeme K1',
-      location: 'Blok A · Kat 1',
-      concreteClass: 'C30/37',
-      supplier: 'Akdeniz Beton',
-      plannedStartHour: '08:00',
-    ),
-  ]);
+  final orderPerde = ConcreteOrder(
+    id: IdGen.make('sip'),
+    projectId: project.id,
+    plannedDate: today,
+    plannedM3: 48,
+    elementName: 'Perde Duvar B1',
+    block: 'A Blok',
+    floor: 'Bodrum Kat',
+    concreteClass: 'C30/37',
+    supplier: 'Akdeniz Beton',
+    plannedStartHour: '07:30',
+    slumpCm: 14,
+    pumpCount: 1,
+    pumpType: 'Mobil',
+    notes: 'Pompa + 2 mikser peş peşe',
+  );
+  final orderDoseme = ConcreteOrder(
+    id: IdGen.make('sip'),
+    projectId: project.id,
+    plannedDate: AppDate.format(AppDate.today().add(const Duration(days: 1))),
+    plannedM3: 55,
+    elementName: 'Döşeme K1',
+    block: 'A Blok',
+    floor: 'Kat 1',
+    concreteClass: 'C30/37',
+    supplier: 'Akdeniz Beton',
+    plannedStartHour: '08:00',
+    slumpCm: 16,
+    pumpCount: 1,
+    pumpType: 'Sabit',
+  );
+
+  orders.replaceAll([orderPerde, orderDoseme]);
+
+  // Bugünkü dökümü siparişe bağla
+  final linkedPours = pours.state.map((p) {
+    if (p.date == today && p.elementName == orderPerde.elementName) {
+      return p.copyWith(orderId: orderPerde.id);
+    }
+    return p;
+  }).toList();
+  pours.replaceAll(linkedPours);
 
   variance.replaceAll([
     MetrajVarianceNote(

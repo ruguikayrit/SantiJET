@@ -60,7 +60,7 @@ class KesifScreen extends ConsumerWidget {
                             _OverallProgressCard(progress: progress),
                             const SizedBox(height: AppSpacing.md),
                             Text(
-                              'Element İlerlemesi',
+                              'Yapısal eleman ilerlemesi',
                               style: Theme.of(context).textTheme.titleMedium,
                             ),
                             const SizedBox(height: AppSpacing.sm),
@@ -208,7 +208,8 @@ class KesifScreen extends ConsumerWidget {
               children: [
                 TextField(
                   controller: nameCtrl,
-                  decoration: const InputDecoration(labelText: 'Element adı'),
+                  decoration:
+                      const InputDecoration(labelText: 'Yapısal eleman'),
                   textCapitalization: TextCapitalization.sentences,
                 ),
                 const SizedBox(height: AppSpacing.sm),
@@ -335,7 +336,7 @@ class KesifScreen extends ConsumerWidget {
                 TextField(
                   controller: elementCtrl,
                   decoration: const InputDecoration(
-                    labelText: 'Element (opsiyonel)',
+                    labelText: 'Yapısal eleman (opsiyonel)',
                   ),
                   textCapitalization: TextCapitalization.sentences,
                 ),
