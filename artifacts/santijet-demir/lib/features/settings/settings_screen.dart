@@ -77,12 +77,6 @@ class SettingsScreen extends ConsumerWidget {
             onTap: () => context.push(AppRoutes.companySettings),
           ),
           _SettingsTile(
-            icon: Icons.apartment,
-            title: 'Proje Bilgileri',
-            subtitle: project?.name ?? 'Aktif proje yok',
-            onTap: () => context.push(AppRoutes.projectSettings),
-          ),
-          _SettingsTile(
             icon: Icons.notifications,
             title: 'Bildirim Ayarları',
             subtitle: 'Stok, sipariş, teslimat, analiz',
