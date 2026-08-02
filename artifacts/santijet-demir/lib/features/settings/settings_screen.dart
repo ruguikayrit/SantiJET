@@ -82,11 +82,6 @@ class SettingsScreen extends ConsumerWidget {
             subtitle: 'Stok, sipariş, teslimat, analiz',
             onTap: () => context.push(AppRoutes.notificationSettings),
           ),
-          _HapticSettingsTile(
-            enabled: settings.hapticFeedback,
-            onChanged: (v) =>
-                ref.read(appSettingsProvider.notifier).setHapticFeedback(v),
-          ),
           _AppLockSettingsTile(
             isEnabled: lock.isEnabled,
             onToggle: (enabled) => _toggleAppLock(context, ref, enabled),
@@ -908,57 +903,6 @@ class _AppLockSettingsTile extends StatelessWidget {
           Switch(
             value: isEnabled,
             onChanged: onToggle,
-          ),
-        ],
-      ),
-    );
-  }
-}
-
-class _HapticSettingsTile extends StatelessWidget {
-  const _HapticSettingsTile({
-    required this.enabled,
-    required this.onChanged,
-  });
-
-  final bool enabled;
-  final ValueChanged<bool> onChanged;
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      margin: const EdgeInsets.only(bottom: 8),
-      padding: const EdgeInsets.fromLTRB(14, 8, 8, 8),
-      decoration: BoxDecoration(
-        color: AppColors.surfaceElevated,
-        borderRadius: AppRadii.md,
-        border: Border.all(color: AppColors.border),
-      ),
-      child: Row(
-        children: [
-          const Icon(
-            Icons.vibration,
-            color: AppColors.electricBlueLight,
-            size: 22,
-          ),
-          const SizedBox(width: 14),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text('Dokunma Titreşimi', style: AppTypography.titleMedium),
-                Text(
-                  enabled
-                      ? 'Kart ve seçimlerde titreşim açık'
-                      : 'Titreşim kapalı',
-                  style: AppTypography.bodySmall,
-                ),
-              ],
-            ),
-          ),
-          Switch(
-            value: enabled,
-            onChanged: onChanged,
           ),
         ],
       ),
