@@ -132,7 +132,7 @@ class HomeScreen extends ConsumerWidget {
                       ],
                     ),
                   ),
-                  const SizedBox(height: AppSpacing.md),
+                  const SizedBox(height: AppSpacing.sm),
                   _SummarySection(
                     title: 'Keşif İlerlemesi',
                     icon: Icons.pie_chart_outline,
@@ -170,12 +170,12 @@ class HomeScreen extends ConsumerWidget {
                             ),
                           ],
                         ),
-                        const SizedBox(height: AppSpacing.sm),
+                        const SizedBox(height: AppSpacing.xs),
                         _ProgressBar(pct: progress.progressPct),
                       ],
                     ),
                   ),
-                  const SizedBox(height: AppSpacing.md),
+                  const SizedBox(height: AppSpacing.sm),
                   _SummarySection(
                     title: 'Sipariş · Gerçekleşen',
                     icon: Icons.calendar_month_outlined,
@@ -218,7 +218,7 @@ class HomeScreen extends ConsumerWidget {
                           ],
                         ),
                         if (variance.isNotEmpty) ...[
-                          const SizedBox(height: AppSpacing.sm),
+                          const SizedBox(height: AppSpacing.xs),
                           Text(
                             '${variance.length} metraj fark açıklaması kayıtlı',
                             style: Theme.of(context).textTheme.labelSmall,
@@ -227,7 +227,7 @@ class HomeScreen extends ConsumerWidget {
                       ],
                     ),
                   ),
-                  const SizedBox(height: AppSpacing.md),
+                  const SizedBox(height: AppSpacing.sm),
                   _SummarySection(
                     title: 'Beton Numune',
                     icon: Icons.science_outlined,
@@ -239,12 +239,13 @@ class HomeScreen extends ConsumerWidget {
                           'Laboratuvar basınç dayanım raporu özeti',
                           style: Theme.of(context).textTheme.labelSmall?.copyWith(
                                 color: AppColors.cardTextMuted,
+                                height: 1.2,
                               ),
                         ),
-                        const SizedBox(height: AppSpacing.sm),
+                        const SizedBox(height: AppSpacing.xs),
                         for (final group in ConcreteElementGroup.values) ...[
                           if (group != ConcreteElementGroup.values.first)
-                            const SizedBox(height: AppSpacing.xs),
+                            const SizedBox(height: 6),
                           _ElementQualityRow(
                             group: group,
                             samples: qualitySamples
@@ -297,12 +298,12 @@ class _ProgressBar extends StatelessWidget {
             ),
           ],
         ),
-        const SizedBox(height: 6),
+        const SizedBox(height: 4),
         ClipRRect(
           borderRadius: AppRadii.xs,
           child: LinearProgressIndicator(
             value: (pct / 100).clamp(0.0, 1.0),
-            minHeight: 6,
+            minHeight: 5,
             backgroundColor: color.withValues(alpha: 0.15),
             color: color,
           ),
@@ -356,7 +357,7 @@ class _ElementQualityRow extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.symmetric(
         horizontal: AppSpacing.sm,
-        vertical: AppSpacing.sm,
+        vertical: AppSpacing.xs,
       ),
       decoration: BoxDecoration(
         color: accent.withValues(alpha: 0.08),
@@ -369,9 +370,10 @@ class _ElementQualityRow extends StatelessWidget {
             flex: 3,
             child: Text(
               group.label,
-              style: theme.textTheme.labelLarge?.copyWith(
+              style: theme.textTheme.labelMedium?.copyWith(
                 color: AppColors.cardTextPrimary,
                 fontWeight: FontWeight.w700,
+                height: 1.2,
               ),
             ),
           ),
@@ -432,30 +434,42 @@ class _SummarySection extends StatelessWidget {
   Widget build(BuildContext context) {
     return SJCard(
       onTap: onTap,
+      padding: const EdgeInsets.fromLTRB(
+        AppSpacing.md,
+        AppSpacing.sm,
+        AppSpacing.md,
+        AppSpacing.sm,
+      ),
       child: Builder(
         builder: (context) {
           final theme = Theme.of(context);
           return Column(
+            mainAxisSize: MainAxisSize.min,
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
               Row(
                 children: [
-                  Icon(icon, size: 20, color: theme.colorScheme.primary),
-                  const SizedBox(width: AppSpacing.sm),
+                  Icon(icon, size: 18, color: theme.colorScheme.primary),
+                  const SizedBox(width: AppSpacing.xs),
                   Expanded(
-                    child: Text(title, style: theme.textTheme.titleMedium?.copyWith(
-                      color: AppColors.cardTextPrimary,
-                      fontWeight: FontWeight.w700,
-                    )),
+                    child: Text(
+                      title,
+                      style: theme.textTheme.titleSmall?.copyWith(
+                        color: AppColors.cardTextPrimary,
+                        fontWeight: FontWeight.w700,
+                        height: 1.2,
+                      ),
+                    ),
                   ),
                   if (onTap != null)
                     Icon(
                       Icons.chevron_right,
+                      size: 20,
                       color: theme.colorScheme.onSurfaceVariant,
                     ),
                 ],
               ),
-              const SizedBox(height: AppSpacing.md),
+              const SizedBox(height: AppSpacing.xs),
               child,
             ],
           );
@@ -482,31 +496,41 @@ class _MiniStat extends StatelessWidget {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     return Container(
-      padding: const EdgeInsets.all(AppSpacing.sm),
+      padding: const EdgeInsets.symmetric(
+        horizontal: AppSpacing.xs,
+        vertical: 8,
+      ),
       decoration: BoxDecoration(
         color: color.withValues(alpha: 0.08),
         borderRadius: AppRadii.sm,
         border: Border.all(color: color.withValues(alpha: 0.25)),
       ),
       child: Column(
+        mainAxisSize: MainAxisSize.min,
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Text(
             label,
             style: theme.textTheme.labelSmall?.copyWith(
               color: AppColors.cardTextMuted,
+              height: 1.15,
+              fontSize: 10,
             ),
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
           ),
-          const SizedBox(height: 4),
+          const SizedBox(height: 2),
           Row(
-            crossAxisAlignment: CrossAxisAlignment.end,
+            crossAxisAlignment: CrossAxisAlignment.baseline,
+            textBaseline: TextBaseline.alphabetic,
             children: [
               Flexible(
                 child: Text(
                   value,
-                  style: theme.textTheme.titleLarge?.copyWith(
+                  style: theme.textTheme.titleMedium?.copyWith(
                     color: color,
                     fontWeight: FontWeight.w700,
+                    height: 1.15,
                   ),
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
@@ -514,11 +538,12 @@ class _MiniStat extends StatelessWidget {
               ),
               if (unit != null) ...[
                 const SizedBox(width: 2),
-                Padding(
-                  padding: const EdgeInsets.only(bottom: 2),
-                  child: Text(
-                    unit!,
-                    style: theme.textTheme.labelSmall?.copyWith(color: color),
+                Text(
+                  unit!,
+                  style: theme.textTheme.labelSmall?.copyWith(
+                    color: color,
+                    height: 1.15,
+                    fontSize: 10,
                   ),
                 ),
               ],
