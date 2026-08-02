@@ -465,7 +465,7 @@ class _SummarySection extends StatelessWidget {
                     Icon(
                       Icons.chevron_right,
                       size: 20,
-                      color: theme.colorScheme.onSurfaceVariant,
+                      color: AppColors.cardTextMuted,
                     ),
                 ],
               ),

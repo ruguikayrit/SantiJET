@@ -25,50 +25,62 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
   bool _busy = false;
 
   void _showThemePicker(BuildContext context) {
+    final ink = AppColors.textPrimary;
+    final muted = AppColors.textSecondary;
     showModalBottomSheet<void>(
       context: context,
       backgroundColor: AppColors.surfaceElevated,
-      builder: (ctx) => Column(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          ListTile(
-            title: const Text('Açık'),
-            onTap: () {
-              ref.read(themeModeProvider.notifier).setThemeMode('light');
-              Navigator.pop(ctx);
-            },
-          ),
-          ListTile(
-            title: const Text('Koyu'),
-            onTap: () {
-              ref.read(themeModeProvider.notifier).setThemeMode('dark');
-              Navigator.pop(ctx);
-            },
-          ),
-          ListTile(
-            title: const Text('ŞantiJET'),
-            subtitle: const Text('Açık zemin · koyu özet kartları'),
-            onTap: () {
-              ref.read(themeModeProvider.notifier).setThemeMode('santijet');
-              Navigator.pop(ctx);
-            },
-          ),
-          ListTile(
-            title: const Text('ŞantiJET Pro'),
-            subtitle: const Text('Koyu zemin · açık özet kartları'),
-            onTap: () {
-              ref.read(themeModeProvider.notifier).setThemeMode('santijet_pro');
-              Navigator.pop(ctx);
-            },
-          ),
-          ListTile(
-            title: const Text('Sistem'),
-            onTap: () {
-              ref.read(themeModeProvider.notifier).setThemeMode('system');
-              Navigator.pop(ctx);
-            },
-          ),
-        ],
+      builder: (ctx) => SafeArea(
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            ListTile(
+              title: Text('Açık', style: TextStyle(color: ink)),
+              onTap: () {
+                ref.read(themeModeProvider.notifier).setThemeMode('light');
+                Navigator.pop(ctx);
+              },
+            ),
+            ListTile(
+              title: Text('Koyu', style: TextStyle(color: ink)),
+              onTap: () {
+                ref.read(themeModeProvider.notifier).setThemeMode('dark');
+                Navigator.pop(ctx);
+              },
+            ),
+            ListTile(
+              title: Text('ŞantiJET', style: TextStyle(color: ink)),
+              subtitle: Text(
+                'Açık zemin · koyu özet kartları',
+                style: TextStyle(color: muted),
+              ),
+              onTap: () {
+                ref.read(themeModeProvider.notifier).setThemeMode('santijet');
+                Navigator.pop(ctx);
+              },
+            ),
+            ListTile(
+              title: Text('ŞantiJET Pro', style: TextStyle(color: ink)),
+              subtitle: Text(
+                'Koyu zemin · açık özet kartları',
+                style: TextStyle(color: muted),
+              ),
+              onTap: () {
+                ref
+                    .read(themeModeProvider.notifier)
+                    .setThemeMode('santijet_pro');
+                Navigator.pop(ctx);
+              },
+            ),
+            ListTile(
+              title: Text('Sistem', style: TextStyle(color: ink)),
+              onTap: () {
+                ref.read(themeModeProvider.notifier).setThemeMode('system');
+                Navigator.pop(ctx);
+              },
+            ),
+          ],
+        ),
       ),
     );
   }
@@ -78,15 +90,22 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
       context: context,
       builder: (ctx) => AlertDialog(
         backgroundColor: AppColors.surfaceElevated,
-        title: const Text('Tüm Verileri Sil'),
-        content: const Text(
+        title: Text(
+          'Tüm Verileri Sil',
+          style: TextStyle(color: AppColors.textPrimary),
+        ),
+        content: Text(
           'Projeler, keşif, döküm, sipariş, fark ve basınç dayanım '
           'kayıtları silinir. Bu işlem geri alınamaz. Devam edilsin mi?',
+          style: TextStyle(color: AppColors.textSecondary),
         ),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(ctx, false),
-            child: const Text('Vazgeç'),
+            child: Text(
+              'Vazgeç',
+              style: TextStyle(color: AppColors.textPrimary),
+            ),
           ),
           FilledButton(
             style: FilledButton.styleFrom(backgroundColor: AppColors.critical),
@@ -234,40 +253,58 @@ class _SettingsTile extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final color = destructive ? AppColors.critical : null;
     return Padding(
       padding: const EdgeInsets.only(bottom: AppSpacing.sm),
       child: SJCard(
         onTap: onTap,
-        child: Row(
-          children: [
-            Icon(icon, color: color ?? AppColors.electricBlueLight),
-            const SizedBox(width: AppSpacing.md),
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    title,
-                    style: AppTypography.titleMedium.copyWith(color: color),
+        child: Builder(
+          builder: (context) {
+            final theme = Theme.of(context);
+            // Kart yüzeyi mürekkebi — chrome textPrimary hibritte çakışır.
+            final titleColor =
+                destructive ? AppColors.critical : AppColors.cardTextPrimary;
+            final subtitleColor = destructive
+                ? AppColors.critical.withValues(alpha: 0.8)
+                : AppColors.cardTextSecondary;
+            return Row(
+              children: [
+                Icon(
+                  icon,
+                  color: destructive
+                      ? AppColors.critical
+                      : theme.colorScheme.primary,
+                ),
+                const SizedBox(width: AppSpacing.md),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        title,
+                        style: theme.textTheme.titleMedium?.copyWith(
+                          color: titleColor,
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
+                      const SizedBox(height: 2),
+                      Text(
+                        subtitle,
+                        style: theme.textTheme.bodySmall?.copyWith(
+                          color: subtitleColor,
+                        ),
+                      ),
+                    ],
                   ),
-                  const SizedBox(height: 2),
-                  Text(
-                    subtitle,
-                    style: AppTypography.bodySmall.copyWith(
-                      color: destructive
-                          ? AppColors.critical.withValues(alpha: 0.8)
-                          : AppColors.cardTextSecondary,
-                    ),
-                  ),
-                ],
-              ),
-            ),
-            Icon(
-              Icons.chevron_right,
-              color: color ?? AppColors.cardTextMuted,
-            ),
-          ],
+                ),
+                Icon(
+                  Icons.chevron_right,
+                  color: destructive
+                      ? AppColors.critical
+                      : AppColors.cardTextMuted,
+                ),
+              ],
+            );
+          },
         ),
       ),
     );
@@ -295,30 +332,43 @@ class AboutScreen extends StatelessWidget {
               filterQuality: FilterQuality.high,
             ),
             const SizedBox(height: 4),
-            Text(AppInfo.displayName, style: AppTypography.headlineLarge),
+            Text(
+              AppInfo.displayName,
+              style: AppTypography.headlineLarge.copyWith(
+                color: AppColors.textPrimary,
+              ),
+            ),
             const SizedBox(height: 8),
             Text(
               'Versiyon ${AppInfo.version}',
-              style: AppTypography.bodyMedium,
+              style: AppTypography.bodyMedium.copyWith(
+                color: AppColors.textSecondary,
+              ),
             ),
             const SizedBox(height: 24),
             Text(
               'Şantiyeye gelen betonların kaydı, keşfe göre ilerleme, '
               'plan–gerçekleşen farkları ve WhatsApp ile beton firması '
               'paylaşımı. ${AppInfo.tagline}',
-              style: AppTypography.bodyMedium,
+              style: AppTypography.bodyMedium.copyWith(
+                color: AppColors.textSecondary,
+              ),
               textAlign: TextAlign.center,
             ),
             const SizedBox(height: 16),
             Text(
               AppInfo.localDataNote,
-              style: AppTypography.labelMedium,
+              style: AppTypography.labelMedium.copyWith(
+                color: AppColors.textMuted,
+              ),
               textAlign: TextAlign.center,
             ),
             const SizedBox(height: 16),
             Text(
               'Destek: ${AppInfo.supportEmail}',
-              style: AppTypography.labelMedium,
+              style: AppTypography.labelMedium.copyWith(
+                color: AppColors.textMuted,
+              ),
               textAlign: TextAlign.center,
             ),
           ],

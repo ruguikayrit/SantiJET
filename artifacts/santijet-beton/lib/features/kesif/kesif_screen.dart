@@ -694,7 +694,12 @@ class _VarianceTile extends StatelessWidget {
               ),
               if (note.detail.isNotEmpty) ...[
                 const SizedBox(height: 4),
-                Text(note.detail, style: theme.textTheme.bodySmall),
+                Text(
+                  note.detail,
+                  style: theme.textTheme.bodySmall?.copyWith(
+                    color: AppColors.cardTextSecondary,
+                  ),
+                ),
               ],
             ],
           );

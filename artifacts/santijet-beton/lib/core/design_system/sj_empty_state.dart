@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 
+import '../theme/app_colors.dart';
 import '../theme/app_spacing.dart';
 import 'sj_button.dart';
 
@@ -32,17 +33,21 @@ class SJEmptyState extends StatelessWidget {
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            Icon(icon, size: 64, color: theme.colorScheme.onSurfaceVariant),
+            Icon(icon, size: 64, color: AppColors.textMuted),
             const SizedBox(height: AppSpacing.md),
             Text(
               title,
-              style: theme.textTheme.headlineMedium,
+              style: theme.textTheme.headlineMedium?.copyWith(
+                color: AppColors.textPrimary,
+              ),
               textAlign: TextAlign.center,
             ),
             const SizedBox(height: AppSpacing.xs),
             Text(
               message,
-              style: theme.textTheme.bodyMedium,
+              style: theme.textTheme.bodyMedium?.copyWith(
+                color: AppColors.textSecondary,
+              ),
               textAlign: TextAlign.center,
             ),
             if (actionLabel != null && onAction != null) ...[

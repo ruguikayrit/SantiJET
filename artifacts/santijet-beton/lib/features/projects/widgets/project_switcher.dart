@@ -16,11 +16,15 @@ class ProjectSwitcher extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final project = ref.watch(activeProjectProvider);
-    final brightness = Theme.of(context).brightness;
 
     final name = project?.name.trim() ?? '';
     final location = project?.company.trim() ?? '';
     final code = project?.code.trim() ?? '';
+
+    // surfaceElevated = chrome yüzeyi → chrome mürekkebi.
+    final ink = AppColors.textPrimary;
+    final inkSecondary = AppColors.textSecondary;
+    final inkMuted = AppColors.textMuted;
 
     return Semantics(
       label: project == null ? 'Proje seçin' : 'Aktif iş: $name',
@@ -53,7 +57,7 @@ class ProjectSwitcher extends ConsumerWidget {
                         ? Text(
                             'Proje seçin',
                             style: AppTypography.titleMedium.copyWith(
-                              color: AppColors.inkFor(brightness),
+                              color: ink,
                             ),
                           )
                         : Column(
@@ -62,7 +66,7 @@ class ProjectSwitcher extends ConsumerWidget {
                               Text(
                                 name.isEmpty ? 'Proje adı yok' : name,
                                 style: AppTypography.titleMedium.copyWith(
-                                  color: AppColors.inkFor(brightness),
+                                  color: ink,
                                   fontWeight: FontWeight.w700,
                                 ),
                                 maxLines: 1,
@@ -72,7 +76,7 @@ class ProjectSwitcher extends ConsumerWidget {
                               Text(
                                 location.isEmpty ? 'Konum yok' : location,
                                 style: AppTypography.bodyMedium.copyWith(
-                                  color: AppColors.inkSecondaryFor(brightness),
+                                  color: inkSecondary,
                                   fontWeight: FontWeight.w600,
                                 ),
                                 maxLines: 1,
@@ -82,7 +86,7 @@ class ProjectSwitcher extends ConsumerWidget {
                               Text(
                                 code.isEmpty ? 'Kod yok' : 'Kod: $code',
                                 style: AppTypography.bodySmall.copyWith(
-                                  color: AppColors.inkMutedFor(brightness),
+                                  color: inkMuted,
                                 ),
                                 maxLines: 1,
                                 overflow: TextOverflow.ellipsis,
@@ -93,7 +97,7 @@ class ProjectSwitcher extends ConsumerWidget {
                   const SizedBox(width: AppSpacing.xs),
                   Icon(
                     Icons.expand_more,
-                    color: AppColors.inkMutedFor(brightness),
+                    color: inkMuted,
                   ),
                 ],
               ),

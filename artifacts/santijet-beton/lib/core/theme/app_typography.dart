@@ -4,6 +4,11 @@ import 'app_colors.dart';
 
 /// ŞantiJET tipografi — Demir ile aynı ölçek / aile / renkler.
 ///
+/// Varsayılan renkler **chrome** mürekkebidir ([AppColors.textPrimary]).
+/// [SJCard] / hibrit özet kartlarında mutlaka [AppColors.cardTextPrimary]
+/// (veya kart Theme'i) ile override edin — aksi halde Pro/ŞantiJET'te
+/// başlıklar zemine karışır.
+///
 /// Fontlar uygulamada paketlenmiştir (Inter + Rajdhani).
 abstract final class AppTypography {
   static const _inter = 'Inter';

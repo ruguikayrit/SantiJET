@@ -49,13 +49,17 @@ class _ProjectsScreenState extends ConsumerState<ProjectsScreen> {
         children: [
           Text(
             'Merhaba',
-            style: AppTypography.titleLarge,
+            style: AppTypography.titleLarge.copyWith(
+              color: AppColors.textPrimary,
+            ),
           ),
           const SizedBox(height: 4),
           Text(
             'Her projenin verileri birbirinden ayrıdır. '
             'Proje kodu ile ekip arkadaşlarınızı davet edin.',
-            style: AppTypography.bodySmall,
+            style: AppTypography.bodySmall.copyWith(
+              color: AppColors.textMuted,
+            ),
           ),
           const SizedBox(height: 20),
           ...projects.map((project) {
@@ -76,7 +80,9 @@ class _ProjectsScreenState extends ConsumerState<ProjectsScreen> {
               padding: const EdgeInsets.symmetric(vertical: 24),
               child: Text(
                 'Henüz proje yok. Yeni proje oluşturun veya kod ile katılın.',
-                style: AppTypography.bodyMedium,
+                style: AppTypography.bodyMedium.copyWith(
+                  color: AppColors.textSecondary,
+                ),
                 textAlign: TextAlign.center,
               ),
             ),
@@ -328,7 +334,9 @@ class _ProjectCard extends StatelessWidget {
                   Expanded(
                     child: Text(
                       project.name.isEmpty ? 'Proje adı yok' : project.name,
-                      style: AppTypography.titleMedium,
+                      style: AppTypography.titleMedium.copyWith(
+                        color: AppColors.textPrimary,
+                      ),
                     ),
                   ),
                   if (selected)
@@ -341,12 +349,22 @@ class _ProjectCard extends StatelessWidget {
                         color: AppColors.electricBlue.withValues(alpha: 0.15),
                         borderRadius: AppRadii.full,
                       ),
-                      child: Text('Aktif', style: AppTypography.labelSmall),
+                      child: Text(
+                        'Aktif',
+                        style: AppTypography.labelSmall.copyWith(
+                          color: AppColors.textMuted,
+                        ),
+                      ),
                     ),
                 ],
               ),
               const SizedBox(height: 4),
-              Text(location, style: AppTypography.bodySmall),
+              Text(
+                location,
+                style: AppTypography.bodySmall.copyWith(
+                  color: AppColors.textMuted,
+                ),
+              ),
               const SizedBox(height: 8),
               Row(
                 children: [
