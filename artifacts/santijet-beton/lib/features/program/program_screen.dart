@@ -16,7 +16,6 @@ import '../../core/widgets/santijet_header.dart';
 import '../../data/providers/app_data_provider.dart';
 import '../../domain/beton_progress.dart';
 import '../../domain/entities/concrete_order.dart';
-import '../../domain/entities/concrete_pour.dart';
 import '../../domain/entities/project.dart';
 import '../../domain/structural_element_kind.dart';
 
@@ -28,7 +27,6 @@ class ProgramScreen extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final project = ref.watch(activeProjectProvider);
     final orders = ref.watch(activeOrdersProvider);
-    final pours = ref.watch(activePoursProvider);
 
     return Scaffold(
       body: SafeArea(
@@ -73,7 +71,6 @@ class ProgramScreen extends ConsumerWidget {
                               _OrderCard(
                                 order: orders[i],
                                 project: project,
-                                actualM3: _actualForOrder(orders[i], pours),
                                 onTap: () => _openOrderEditor(
                                   context,
                                   ref,
@@ -101,23 +98,6 @@ class ProgramScreen extends ConsumerWidget {
               label: const Text('Sipariş Ekle'),
             ),
     );
-  }
-
-  static double _actualForOrder(
-    ConcreteOrder order,
-    List<ConcretePour> pours,
-  ) {
-    return pours
-        .where((p) {
-          if (p.orderId != null && p.orderId!.isNotEmpty) {
-            return p.orderId == order.id;
-          }
-          // Eski kayıtlar: tarih + yapısal eleman
-          if (p.date != order.plannedDate) return false;
-          if (order.elementName.trim().isEmpty) return true;
-          return p.elementName.trim() == order.elementName.trim();
-        })
-        .fold<double>(0, (s, p) => s + p.volumeM3);
   }
 
   Future<void> _shareOrder(
@@ -419,91 +399,21 @@ class ProgramScreen extends ConsumerWidget {
   }
 }
 
-class _ProgramSummaryCard extends StatelessWidget {
-  const _ProgramSummaryCard({required this.progress});
-
-  final ({
-    double planned,
-    double poured,
-    double ordered,
-    double progressPct,
-    double orderGap,
-    double remaining,
-  }) progress;
-
-  @override
-  Widget build(BuildContext context) {
-    final gap = progress.orderGap;
-    final gapColor = gap.abs() < 0.01
-        ? AppColors.success
-        : gap > 0
-            ? AppColors.warning
-            : AppColors.critical;
-
-    return SJCard(
-      child: Builder(
-        builder: (context) {
-          return Column(
-            crossAxisAlignment: CrossAxisAlignment.stretch,
-            children: [
-              Row(
-                children: [
-                  Expanded(
-                    child: _MiniStat(
-                      label: 'Planlı sipariş',
-                      value: BetonProgress.fmtM3(progress.ordered),
-                      color: AppColors.info,
-                    ),
-                  ),
-                  const SizedBox(width: AppSpacing.xs),
-                  Expanded(
-                    child: _MiniStat(
-                      label: 'Dökülen',
-                      value: BetonProgress.fmtM3(progress.poured),
-                      color: AppColors.success,
-                    ),
-                  ),
-                  const SizedBox(width: AppSpacing.xs),
-                  Expanded(
-                    child: _MiniStat(
-                      label: 'Fark',
-                      value: BetonProgress.fmtM3(gap),
-                      color: gapColor,
-                    ),
-                  ),
-                ],
-              ),
-            ],
-          );
-        },
-      ),
-    );
-  }
-}
-
 class _OrderCard extends StatelessWidget {
   const _OrderCard({
     required this.order,
     required this.project,
-    required this.actualM3,
     required this.onTap,
     required this.onShare,
   });
 
   final ConcreteOrder order;
   final Project project;
-  final double actualM3;
   final VoidCallback onTap;
   final VoidCallback onShare;
 
   @override
   Widget build(BuildContext context) {
-    final gap = actualM3 - order.plannedM3;
-    final gapColor = gap.abs() < 0.01
-        ? AppColors.success
-        : gap > 0
-            ? AppColors.warning
-            : AppColors.critical;
     // Döküm kartlarıyla aynı yapısal eleman renk şeridi.
     final accent = StructuralElementKind.fromElementName(order.elementName)
         .accentColor;
@@ -549,6 +459,24 @@ class _OrderCard extends StatelessWidget {
                         color: AppColors.success,
                       ),
                     ),
+                  Container(
+                    margin: const EdgeInsets.only(right: 4),
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 8,
+                      vertical: 4,
+                    ),
+                    decoration: BoxDecoration(
+                      color: accent.withValues(alpha: 0.18),
+                      borderRadius: AppRadii.sm,
+                    ),
+                    child: Text(
+                      '${BetonProgress.fmtM3(order.plannedM3)} m³',
+                      style: theme.textTheme.labelMedium?.copyWith(
+                        color: accent,
+                        fontWeight: FontWeight.w700,
+                      ),
+                    ),
+                  ),
                   IconButton(
                     onPressed: onShare,
                     tooltip: 'WhatsApp ile paylaş',
@@ -589,35 +517,6 @@ class _OrderCard extends StatelessWidget {
                   ),
                 ),
               ],
-              const SizedBox(height: AppSpacing.sm),
-              Row(
-                children: [
-                  Expanded(
-                    child: _MiniStat(
-                      label: 'Plan',
-                      value: BetonProgress.fmtM3(order.plannedM3),
-                      color: AppColors.info,
-                    ),
-                  ),
-                  const SizedBox(width: AppSpacing.xs),
-                  Expanded(
-                    child: _MiniStat(
-                      label: 'Dökülen',
-                      value: BetonProgress.fmtM3(actualM3),
-                      color: AppColors.success,
-                    ),
-                  ),
-                  const SizedBox(width: AppSpacing.xs),
-                  Expanded(
-                    child: _MiniStat(
-                      label: 'Fark',
-                      value:
-                          '${gap >= 0 ? '+' : ''}${BetonProgress.fmtM3(gap)}',
-                      color: gapColor,
-                    ),
-                  ),
-                ],
-              ),
               if (order.notes.isNotEmpty) ...[
                 const SizedBox(height: AppSpacing.sm),
                 Text(
@@ -630,67 +529,6 @@ class _OrderCard extends StatelessWidget {
             ],
           );
         },
-      ),
-    );
-  }
-}
-
-class _MiniStat extends StatelessWidget {
-  const _MiniStat({
-    required this.label,
-    required this.value,
-    required this.color,
-  });
-
-  final String label;
-  final String value;
-  final Color color;
-
-  @override
-  Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-    return Container(
-      padding: const EdgeInsets.all(AppSpacing.sm),
-      decoration: BoxDecoration(
-        color: color.withValues(alpha: 0.08),
-        borderRadius: AppRadii.sm,
-        border: Border.all(color: color.withValues(alpha: 0.25)),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Text(
-            label,
-            style: theme.textTheme.labelSmall?.copyWith(
-              color: AppColors.cardTextMuted,
-            ),
-          ),
-          const SizedBox(height: 4),
-          Row(
-            crossAxisAlignment: CrossAxisAlignment.end,
-            children: [
-              Flexible(
-                child: Text(
-                  value,
-                  style: theme.textTheme.titleMedium?.copyWith(
-                    color: color,
-                    fontWeight: FontWeight.w700,
-                  ),
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                ),
-              ),
-              const SizedBox(width: 2),
-              Padding(
-                padding: const EdgeInsets.only(bottom: 1),
-                child: Text(
-                  'm³',
-                  style: theme.textTheme.labelSmall?.copyWith(color: color),
-                ),
-              ),
-            ],
-          ),
-        ],
       ),
     );
   }

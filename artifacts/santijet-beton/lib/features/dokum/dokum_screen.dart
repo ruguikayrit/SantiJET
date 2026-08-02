@@ -9,6 +9,7 @@ import '../../core/theme/app_spacing.dart';
 import '../../core/widgets/santijet_header.dart';
 import '../../data/providers/app_data_provider.dart';
 import '../../domain/beton_progress.dart';
+import '../../domain/entities/concrete_order.dart';
 import '../../domain/entities/concrete_pour.dart';
 import '../../domain/structural_element_kind.dart';
 import 'dokum_editor.dart';
@@ -83,6 +84,7 @@ class DokumScreen extends ConsumerWidget {
                             final p = pours[index];
                             return _PourCard(
                               pour: p,
+                              plannedM3: _plannedForPour(p, orders),
                               onTap: () => _open(context, ref, existing: p),
                             );
                           },
@@ -92,6 +94,27 @@ class DokumScreen extends ConsumerWidget {
         ),
       ),
     );
+  }
+
+  /// Bağlı siparişin plan metrajı (yoksa null).
+  static double? _plannedForPour(
+    ConcretePour pour,
+    List<ConcreteOrder> orders,
+  ) {
+    if (pour.orderId != null && pour.orderId!.isNotEmpty) {
+      for (final o in orders) {
+        if (o.id == pour.orderId) return o.plannedM3;
+      }
+    }
+    // Eski kayıtlar: tarih + yapısal eleman
+    for (final o in orders) {
+      if (o.plannedDate != pour.date) continue;
+      if (o.elementName.trim().isEmpty) return o.plannedM3;
+      if (o.elementName.trim() == pour.elementName.trim()) {
+        return o.plannedM3;
+      }
+    }
+    return null;
   }
 
   Future<void> _open(
@@ -123,15 +146,30 @@ class DokumScreen extends ConsumerWidget {
 }
 
 class _PourCard extends StatelessWidget {
-  const _PourCard({required this.pour, required this.onTap});
+  const _PourCard({
+    required this.pour,
+    required this.plannedM3,
+    required this.onTap,
+  });
 
   final ConcretePour pour;
+  final double? plannedM3;
   final VoidCallback onTap;
 
   @override
   Widget build(BuildContext context) {
     final kind = StructuralElementKind.fromElementName(pour.elementName);
     final accent = pour.isExtraPour ? AppColors.warning : kind.accentColor;
+    final poured = pour.volumeM3;
+    final plan = plannedM3;
+    final gap = plan == null ? null : poured - plan;
+    final gapColor = gap == null
+        ? AppColors.cardTextMuted
+        : gap.abs() < 0.01
+            ? AppColors.success
+            : gap > 0
+                ? AppColors.warning
+                : AppColors.critical;
 
     return SJCard(
       onTap: onTap,
@@ -171,7 +209,6 @@ class _PourCard extends StatelessWidget {
                   ),
                   if (pour.isExtraPour)
                     Container(
-                      margin: const EdgeInsets.only(right: 8),
                       padding: const EdgeInsets.symmetric(
                         horizontal: 8,
                         vertical: 4,
@@ -188,23 +225,6 @@ class _PourCard extends StatelessWidget {
                         ),
                       ),
                     ),
-                  Container(
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 8,
-                      vertical: 4,
-                    ),
-                    decoration: BoxDecoration(
-                      color: accent.withValues(alpha: 0.18),
-                      borderRadius: AppRadii.sm,
-                    ),
-                    child: Text(
-                      '${BetonProgress.fmtM3(pour.volumeM3)} m³',
-                      style: theme.textTheme.labelMedium?.copyWith(
-                        color: accent,
-                        fontWeight: FontWeight.w700,
-                      ),
-                    ),
-                  ),
                 ],
               ),
               const SizedBox(height: 6),
@@ -266,9 +286,108 @@ class _PourCard extends StatelessWidget {
                     ),
                   ),
                 ),
+              const SizedBox(height: AppSpacing.sm),
+              Row(
+                children: [
+                  Expanded(
+                    child: _MiniStat(
+                      label: 'Plan',
+                      value: plan == null
+                          ? '—'
+                          : BetonProgress.fmtM3(plan),
+                      color: AppColors.info,
+                      showUnit: plan != null,
+                    ),
+                  ),
+                  const SizedBox(width: AppSpacing.xs),
+                  Expanded(
+                    child: _MiniStat(
+                      label: 'Dökülen',
+                      value: BetonProgress.fmtM3(poured),
+                      color: AppColors.success,
+                    ),
+                  ),
+                  const SizedBox(width: AppSpacing.xs),
+                  Expanded(
+                    child: _MiniStat(
+                      label: 'Fark',
+                      value: gap == null
+                          ? '—'
+                          : '${gap >= 0 ? '+' : ''}${BetonProgress.fmtM3(gap)}',
+                      color: gapColor,
+                      showUnit: gap != null,
+                    ),
+                  ),
+                ],
+              ),
             ],
           );
         },
+      ),
+    );
+  }
+}
+
+class _MiniStat extends StatelessWidget {
+  const _MiniStat({
+    required this.label,
+    required this.value,
+    required this.color,
+    this.showUnit = true,
+  });
+
+  final String label;
+  final String value;
+  final Color color;
+  final bool showUnit;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    return Container(
+      padding: const EdgeInsets.all(AppSpacing.sm),
+      decoration: BoxDecoration(
+        color: color.withValues(alpha: 0.08),
+        borderRadius: AppRadii.sm,
+        border: Border.all(color: color.withValues(alpha: 0.25)),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            label,
+            style: theme.textTheme.labelSmall?.copyWith(
+              color: AppColors.cardTextMuted,
+            ),
+          ),
+          const SizedBox(height: 4),
+          Row(
+            crossAxisAlignment: CrossAxisAlignment.end,
+            children: [
+              Flexible(
+                child: Text(
+                  value,
+                  style: theme.textTheme.titleMedium?.copyWith(
+                    color: color,
+                    fontWeight: FontWeight.w700,
+                  ),
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                ),
+              ),
+              if (showUnit) ...[
+                const SizedBox(width: 2),
+                Padding(
+                  padding: const EdgeInsets.only(bottom: 1),
+                  child: Text(
+                    'm³',
+                    style: theme.textTheme.labelSmall?.copyWith(color: color),
+                  ),
+                ),
+              ],
+            ],
+          ),
+        ],
       ),
     );
   }
