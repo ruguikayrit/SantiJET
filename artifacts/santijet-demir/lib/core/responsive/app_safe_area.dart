@@ -101,7 +101,12 @@ class AppSafeArea extends StatelessWidget {
   }
 }
 
-/// Üst notch güvenli alanı — alt inset şişirilmez (Scaffold ölü alanı önlenir).
+/// Üst notch güvenli alanı.
+///
+/// **Kritik:** [padding.bottom] her zaman 0.
+/// Flutter Scaffold, `padding.bottom` kadar alanı ekranın altında boş bırakır
+/// (giriş, splash, ayarlar ve nav barın altı). Home indicator için gerçek
+/// değer [viewPadding.bottom] içinde kalır; nav onu kendi içinde çizer.
 class AppMediaQuery extends StatelessWidget {
   const AppMediaQuery({super.key, required this.child});
 
@@ -117,7 +122,7 @@ class AppMediaQuery extends StatelessWidget {
           math.max(media.padding.left, insets.left),
           math.max(media.padding.top, insets.top),
           math.max(media.padding.right, insets.right),
-          media.padding.bottom,
+          0,
         ),
         viewPadding: EdgeInsets.fromLTRB(
           math.max(media.viewPadding.left, insets.left),
