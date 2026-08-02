@@ -3,7 +3,6 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:pointer_interceptor/pointer_interceptor.dart';
-import 'package:santijet_demir/core/responsive/app_safe_area.dart';
 import 'package:santijet_demir/core/theme/app_colors.dart';
 import 'package:santijet_demir/core/theme/app_spacing.dart';
 import 'package:santijet_demir/core/theme/app_typography.dart';
@@ -49,7 +48,8 @@ class SJBottomNavigation extends StatelessWidget {
   final ValueChanged<int> onTap;
 
   static double totalHeightOf(BuildContext context) {
-    final bottomInset = AppSafeAreaInsets.bottomNavInsetOf(context);
+    // Puantaj/Beton ile aynı: yalnızca motor viewPadding — yapay +34 yok.
+    final bottomInset = MediaQuery.viewPaddingOf(context).bottom;
     return _iconBarHeight + bottomInset + bottomLift;
   }
 
@@ -57,10 +57,10 @@ class SJBottomNavigation extends StatelessWidget {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final surface = theme.cardTheme.color ?? theme.colorScheme.surface;
-    // Scaffold MediaQuery.padding'e yazılmaz; yalnızca nav kendi inset'ini çizer.
-    final bottomInset = AppSafeAreaInsets.bottomNavInsetOf(context);
+    // Puantaj/Beton ile aynı kaynak. Yapay iOS min inset ölü şerit üretir.
+    final bottomInset = MediaQuery.viewPaddingOf(context).bottom;
 
-    // ColoredBox en dışta: yüzey sayfanın en altına dayanır.
+    // ColoredBox en dışta: bottomLift canvas rengi ile “ölü alan” oluşturmaz.
     return ColoredBox(
       color: surface,
       child: Column(
@@ -87,7 +87,9 @@ class SJBottomNavigation extends StatelessWidget {
               ),
             ),
           ),
-          SizedBox(height: bottomInset + bottomLift),
+          SizedBox(
+            height: bottomInset > 0 ? bottomInset + bottomLift : bottomLift,
+          ),
         ],
       ),
     );
@@ -165,7 +167,7 @@ class AppBottomNavBar extends ConsumerWidget {
   static double iconBarHeightOf(BuildContext context) => iconBarHeight;
 
   static double bottomInsetOf(BuildContext context) =>
-      AppSafeAreaInsets.bottomNavInsetOf(context);
+      MediaQuery.viewPaddingOf(context).bottom;
 
   static double totalHeightOf(BuildContext context) =>
       SJBottomNavigation.totalHeightOf(context);

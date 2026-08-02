@@ -35,6 +35,8 @@ class MainShell extends ConsumerWidget {
     final themeMode = ref.watch(appSettingsProvider.select((s) => s.themeMode));
     AppColors.applyPaletteFromMode(themeMode, Theme.of(context).brightness);
 
+    // Beton/Puantaj ile aynı iskelet: body = shell, nav = bottomNavigationBar.
+    // Stack yalnızca analiz kilidi için — nav yüksekliğini etkilemez.
     return Stack(
       fit: StackFit.expand,
       children: [
@@ -44,16 +46,10 @@ class MainShell extends ConsumerWidget {
           body: Column(
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
-              SafeArea(
-                bottom: false,
-                child: ReadOnlyBanner(),
-              ),
-              Expanded(
-                child: ThemeRebuildGate(child: navigationShell),
-              ),
+              SafeArea(bottom: false, child: ReadOnlyBanner()),
+              Expanded(child: ThemeRebuildGate(child: navigationShell)),
             ],
           ),
-          // Puantaj / Beton ile aynı konum: Scaffold.bottomNavigationBar
           bottomNavigationBar: MediaQuery.removePadding(
             context: context,
             removeBottom: true,

@@ -101,10 +101,17 @@
       var root = document.documentElement;
 
       function setAppHeight() {
-        var h = (window.visualViewport && window.visualViewport.height) ||
-          window.innerHeight ||
-          (root && root.clientHeight) ||
-          0;
+        // innerHeight öncelikli: visualViewport çoğu iOS durumda home-indicator
+        // alanını dışarıda bırakır → flutter-view kısalır, altında ölü şerit kalır.
+        // Klavye açıkken (viewport belirgin kısalır) visualViewport kullanılır.
+        var inner = window.innerHeight || (root && root.clientHeight) || 0;
+        var vv = (window.visualViewport && window.visualViewport.height) || 0;
+        var h = inner;
+        if (vv > 0 && inner > 0 && vv < inner * 0.85) {
+          h = vv;
+        } else if (inner <= 0 && vv > 0) {
+          h = vv;
+        }
         if (h > 0) {
           root.style.setProperty('--app-height', h + 'px');
         }
@@ -128,7 +135,7 @@
   <script>
     // ŞantiJET DEMİR — iOS PWA viewport + yükleme ekranı
     (function () {
-      var APP_VERSION = '87';
+      var APP_VERSION = '88';
       var isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent) ||
         (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
       var isStandalone = window.navigator.standalone === true ||

@@ -12,7 +12,6 @@ import 'package:santijet_demir/core/responsive/app_safe_area_inset_web.dart'
 /// boş "ölü" şerit oluşur (nav ayrıca kendi home-indicator alanını çizer).
 abstract final class AppSafeAreaInsets {
   static const _iosWebMinTop = 47.0;
-  static const _iosWebMinBottom = 34.0;
 
   static bool _isIosWeb(BuildContext context) {
     if (!kIsWeb) return false;
@@ -58,35 +57,16 @@ abstract final class AppSafeAreaInsets {
     );
   }
 
-  /// Yalnızca alt nav — home indicator (View + iOS PWA JS probe).
-  /// [AppMediaQuery] / Scaffold padding'ine yazılmaz.
+  /// Alt nav yüksekliği hesabı — Puantaj/Beton ile aynı: yalnızca viewPadding.
+  ///
+  /// Eski sürüm iOS web'de zorunlu +34 ekliyordu; visualViewport ile birlikte
+  /// nav altında çift boş / ölü şerit oluşturuyordu. Kullanmayın / şişirmeyin.
   static double bottomNavInsetOf(BuildContext context) {
     final media = MediaQuery.maybeOf(context);
-    var bottom = 0.0;
-    if (media != null) {
-      bottom = math.max(media.viewPadding.bottom, media.padding.bottom);
-    }
-
-    try {
-      final view = View.of(context);
-      final fromView = view.padding.bottom / view.devicePixelRatio;
-      if (fromView.isFinite && !fromView.isNaN) {
-        bottom = math.max(bottom, fromView);
-      }
-    } catch (_) {
-      // View henüz hazır değil.
-    }
-
-    if (kIsWeb && _isIosWeb(context)) {
-      final injected = inset_reader.readWebSafeAreaBottomInset();
-      if (injected != null && injected > 0 && injected.isFinite) {
-        bottom = math.max(bottom, injected);
-      }
-      if (bottom < 20) bottom = _iosWebMinBottom;
-    }
-
+    if (media == null) return 0;
+    final bottom = media.viewPadding.bottom;
     if (!bottom.isFinite || bottom.isNaN || bottom < 0) return 0;
-    return math.min(bottom, 40.0);
+    return bottom;
   }
 }
 
