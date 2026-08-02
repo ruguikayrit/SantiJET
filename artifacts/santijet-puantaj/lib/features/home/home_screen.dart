@@ -50,8 +50,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
     final attendance = ref.watch(attendanceProvider);
     final productions = ref.watch(activeProductionProvider);
     final verim = ref.watch(verimProvider);
-    final verimRows = ref.watch(verimRowsProvider);
-    final todayWorkers = ref.watch(todayWorkerDaysProvider);
+    final teamVerim = ref.watch(teamVerimSummariesProvider);
     final today = PuantajDate.today();
 
     if (project == null) {
@@ -102,21 +101,6 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
 
     // —— İmalat özeti (ekip icmali) ——
     final teamSummaries = _TeamImalatSummary.fromProductions(productions);
-
-    // —— Verim özeti ——
-    double? avgEff;
-    if (verimRows.isNotEmpty) {
-      final ratios = <double>[
-        for (final r in verimRows)
-          if (r.qtyEfficiency != null)
-            r.qtyEfficiency!
-          else if (r.workerEfficiency != null)
-            r.workerEfficiency!,
-      ];
-      if (ratios.isNotEmpty) {
-        avgEff = ratios.reduce((a, b) => a + b) / ratios.length;
-      }
-    }
 
     return Scaffold(
       body: SafeArea(
@@ -215,42 +199,27 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                             style: theme.textTheme.bodyMedium,
                           );
                         }
+                        if (teamVerim.isEmpty) {
+                          return Text(
+                            'Ekip bazlı iş gücü verimi için plan satırı yok.',
+                            style: theme.textTheme.bodyMedium,
+                          );
+                        }
                         return Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
+                          crossAxisAlignment: CrossAxisAlignment.stretch,
                           children: [
-                            Row(
-                              children: [
-                                Expanded(
-                                  child: _MiniStat(
-                                    label: 'Bugün adam-gün',
-                                    value: _fmt(todayWorkers),
-                                    color: AppColors.electricBlue,
-                                  ),
-                                ),
-                                const SizedBox(width: AppSpacing.sm),
-                                Expanded(
-                                  child: _MiniStat(
-                                    label: 'Plan satırı',
-                                    value: '${verimRows.length}',
-                                    color: AppColors.info,
-                                  ),
-                                ),
-                              ],
+                            Text(
+                              'İş gücü verimi (adam-gün)',
+                              style: theme.textTheme.labelMedium?.copyWith(
+                                color: theme.colorScheme.onSurfaceVariant,
+                                fontWeight: FontWeight.w600,
+                              ),
                             ),
                             const SizedBox(height: AppSpacing.sm),
-                            _MiniStat(
-                              label: 'Ortalama verim',
-                              value: avgEff == null
-                                  ? '—'
-                                  : '%${(avgEff * 100).toStringAsFixed(0)}',
-                              color: avgEff == null
-                                  ? theme.colorScheme.onSurfaceVariant
-                                  : avgEff >= 0.8
-                                      ? AppColors.success
-                                      : avgEff >= 0.5
-                                          ? AppColors.warning
-                                          : AppColors.critical,
-                            ),
+                            for (var i = 0; i < teamVerim.length; i++) ...[
+                              if (i > 0) const SizedBox(height: AppSpacing.sm),
+                              _TeamVerimTile(summary: teamVerim[i]),
+                            ],
                             if (verim.message != null) ...[
                               const SizedBox(height: AppSpacing.xs),
                               Text(
@@ -1576,6 +1545,94 @@ class _AdamSaatChartPainter extends CustomPainter {
         oldDelegate.average != average ||
         oldDelegate.style != style ||
         oldDelegate.axisColor != axisColor;
+  }
+}
+
+class _TeamVerimTile extends StatelessWidget {
+  const _TeamVerimTile({required this.summary});
+
+  final TeamVerimSummary summary;
+
+  static String _fmt(double v) {
+    if (v == v.roundToDouble()) return v.toStringAsFixed(0);
+    if (v.abs() >= 10) return v.toStringAsFixed(1);
+    return v.toStringAsFixed(2);
+  }
+
+  static Color _pctColor(double? ratio) {
+    if (ratio == null) return AppColors.info;
+    if (ratio >= 0.8) return AppColors.success;
+    if (ratio >= 0.5) return AppColors.warning;
+    return AppColors.critical;
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final eff = summary.workerEfficiency;
+    final color = _pctColor(eff);
+    final pct = eff == null ? '—' : '%${(eff * 100).toStringAsFixed(0)}';
+
+    return Container(
+      padding: const EdgeInsets.all(AppSpacing.sm),
+      decoration: BoxDecoration(
+        color: color.withValues(alpha: 0.08),
+        borderRadius: AppRadii.sm,
+        border: Border.all(color: color.withValues(alpha: 0.28)),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          Row(
+            children: [
+              Container(
+                width: 8,
+                height: 8,
+                decoration: BoxDecoration(color: color, shape: BoxShape.circle),
+              ),
+              const SizedBox(width: 8),
+              Expanded(
+                child: Text(
+                  summary.teamName,
+                  style: theme.textTheme.titleSmall?.copyWith(
+                    fontWeight: FontWeight.w700,
+                  ),
+                ),
+              ),
+              Text(
+                pct,
+                style: theme.textTheme.labelLarge?.copyWith(
+                  color: color,
+                  fontWeight: FontWeight.w700,
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 4),
+          Text(
+            'Adam-gün: ${_fmt(summary.actualWorkerDays)} / '
+            '${_fmt(summary.plannedWorkerDays)}'
+            '${summary.planLineCount > 0 ? ' · ${summary.planLineCount} plan' : ''}',
+            style: theme.textTheme.labelSmall?.copyWith(
+              color: theme.colorScheme.onSurfaceVariant,
+              fontWeight: FontWeight.w600,
+            ),
+          ),
+          if (eff != null) ...[
+            const SizedBox(height: 6),
+            ClipRRect(
+              borderRadius: AppRadii.xs,
+              child: LinearProgressIndicator(
+                value: eff.clamp(0.0, 1.0),
+                minHeight: 5,
+                backgroundColor: color.withValues(alpha: 0.15),
+                color: color,
+              ),
+            ),
+          ],
+        ],
+      ),
+    );
   }
 }
 

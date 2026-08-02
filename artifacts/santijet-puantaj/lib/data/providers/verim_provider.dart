@@ -233,3 +233,106 @@ final todayWorkerDaysProvider = Provider<double>((ref) {
       .where((a) => a.projectId == project.id && a.date == today)
       .fold<double>(0, (sum, a) => sum + a.yevmiye);
 });
+
+/// Ana sayfa Özet Verim — ekip bazlı iş gücü (adam-gün) verimi.
+class TeamVerimSummary {
+  const TeamVerimSummary({
+    required this.teamName,
+    required this.actualWorkerDays,
+    required this.plannedWorkerDays,
+    required this.planLineCount,
+  });
+
+  final String teamName;
+  final double actualWorkerDays;
+  final double plannedWorkerDays;
+  final int planLineCount;
+
+  /// Gerçekleşen adam-gün / planlanan adam-gün.
+  double? get workerEfficiency {
+    if (plannedWorkerDays <= 0) return null;
+    return actualWorkerDays / plannedWorkerDays;
+  }
+}
+
+final teamVerimSummariesProvider = Provider<List<TeamVerimSummary>>((ref) {
+  final verim = ref.watch(verimProvider);
+  final snap = verim.snapshot;
+  final project = ref.watch(activeProjectProvider);
+  if (snap == null || project == null || snap.items.isEmpty) {
+    return const [];
+  }
+
+  final people = ref.watch(activePersonnelProvider);
+  final attendance = ref.watch(attendanceProvider);
+  final productions = ref
+      .watch(productionProvider)
+      .where((p) => p.projectId == project.id)
+      .toList(growable: false);
+
+  String resolveTeam(WorkScheduleItem item) {
+    final nameLower = item.imalatName.toLowerCase().trim();
+    if (nameLower.isEmpty) return 'Diğer';
+    final token = nameLower.split(RegExp(r'\s+')).first;
+    for (final p in productions) {
+      final pName = p.name.toLowerCase().trim();
+      if (pName.isEmpty) continue;
+      if (pName.contains(token) || nameLower.contains(pName.split(' ').first)) {
+        final t = p.teamName.trim();
+        return t.isEmpty ? 'Diğer' : t;
+      }
+    }
+    return 'Diğer';
+  }
+
+  double plannedAdamGun(WorkScheduleItem item) {
+    final workers = (item.plannedWorkerCount ?? 0).toDouble();
+    if (workers <= 0) return 0;
+    final days = item.durationDays;
+    if (days != null && days > 0) return workers * days;
+    return workers;
+  }
+
+  final plannedByTeam = <String, double>{};
+  final linesByTeam = <String, int>{};
+  for (final item in snap.items) {
+    final team = resolveTeam(item);
+    plannedByTeam[team] = (plannedByTeam[team] ?? 0) + plannedAdamGun(item);
+    linesByTeam[team] = (linesByTeam[team] ?? 0) + 1;
+  }
+
+  final memberIdsByTeam = <String, Set<String>>{};
+  for (final p in people) {
+    if (!p.active) continue;
+    final team = p.team.trim().isEmpty ? 'Diğer' : p.team.trim();
+    memberIdsByTeam.putIfAbsent(team, () => <String>{}).add(p.id);
+  }
+
+  final actualByTeam = <String, double>{
+    for (final t in plannedByTeam.keys) t: 0,
+  };
+  for (final a in attendance) {
+    if (a.projectId != project.id) continue;
+    for (final entry in memberIdsByTeam.entries) {
+      if (!entry.value.contains(a.personId)) continue;
+      actualByTeam[entry.key] = (actualByTeam[entry.key] ?? 0) + a.yevmiye;
+      break;
+    }
+  }
+
+  final teams = {
+    ...plannedByTeam.keys,
+    ...actualByTeam.keys.where((t) => (actualByTeam[t] ?? 0) > 0),
+  }.toList()
+    ..sort();
+
+  return [
+    for (final team in teams)
+      TeamVerimSummary(
+        teamName: team,
+        actualWorkerDays: actualByTeam[team] ?? 0,
+        plannedWorkerDays: plannedByTeam[team] ?? 0,
+        planLineCount: linesByTeam[team] ?? 0,
+      ),
+  ];
+});
