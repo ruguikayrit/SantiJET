@@ -194,7 +194,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                           crossAxisAlignment: CrossAxisAlignment.stretch,
                           children: [
                             Text(
-                              'İş gücü verimi (adam-gün)',
+                              'Birim verim',
                               style: theme.textTheme.labelMedium?.copyWith(
                                 color: theme.colorScheme.onSurfaceVariant,
                                 fontWeight: FontWeight.w600,
@@ -1538,12 +1538,6 @@ class _TeamVerimTile extends StatelessWidget {
 
   final TeamVerimSummary summary;
 
-  static String _fmt(double v) {
-    if (v == v.roundToDouble()) return v.toStringAsFixed(0);
-    if (v.abs() >= 10) return v.toStringAsFixed(1);
-    return v.toStringAsFixed(2);
-  }
-
   static Color _pctColor(double? ratio) {
     if (ratio == null) return AppColors.info;
     if (ratio >= 0.8) return AppColors.success;
@@ -1554,7 +1548,7 @@ class _TeamVerimTile extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    final eff = summary.workerEfficiency;
+    final eff = summary.unitEfficiency;
     final color = _pctColor(eff);
     final pct = eff == null ? '—' : '%${(eff * 100).toStringAsFixed(0)}';
 
@@ -1592,16 +1586,6 @@ class _TeamVerimTile extends StatelessWidget {
                 ),
               ),
             ],
-          ),
-          const SizedBox(height: 4),
-          Text(
-            'Adam-gün: ${_fmt(summary.actualWorkerDays)} / '
-            '${_fmt(summary.plannedWorkerDays)}'
-            '${summary.planLineCount > 0 ? ' · ${summary.planLineCount} plan' : ''}',
-            style: theme.textTheme.labelSmall?.copyWith(
-              color: theme.colorScheme.onSurfaceVariant,
-              fontWeight: FontWeight.w600,
-            ),
           ),
           if (eff != null) ...[
             const SizedBox(height: 6),

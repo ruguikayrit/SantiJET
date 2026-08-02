@@ -22,7 +22,6 @@ class VerimScreen extends ConsumerWidget {
     final project = ref.watch(activeProjectProvider);
     final verim = ref.watch(verimProvider);
     final rows = ref.watch(verimRowsProvider);
-    final todayWorkers = ref.watch(todayWorkerDaysProvider);
     final syncing = verim.status == VerimSyncStatus.syncing;
 
     if (project == null) {
@@ -123,36 +122,10 @@ class VerimScreen extends ConsumerWidget {
                 ),
               ),
             ] else ...[
-              Row(
-                children: [
-                  Expanded(
-                    child: _KpiTile(
-                      label: 'Bugün adam-gün',
-                      value: todayWorkers.toStringAsFixed(
-                        todayWorkers == todayWorkers.roundToDouble() ? 0 : 1,
-                      ),
-                      color: AppColors.electricBlue,
-                    ),
-                  ),
-                  const SizedBox(width: AppSpacing.sm),
-                  Expanded(
-                    child: _KpiTile(
-                      label: 'Plan satırı',
-                      value: '${rows.length}',
-                      color: AppColors.info,
-                    ),
-                  ),
-                ],
-              ),
-              const SizedBox(height: AppSpacing.md),
               Text('İmalat bazlı verim', style: theme.textTheme.titleMedium),
               const SizedBox(height: AppSpacing.xs),
               Text(
-                'Plan: ŞantiJET İş Programı bulut',
-                style: theme.textTheme.bodySmall,
-              ),
-              Text(
-                'Gerçek: puantaj + imalat',
+                'Birim verim = (metraj oranı) ÷ (adam-gün oranı)',
                 style: theme.textTheme.bodySmall,
               ),
               const SizedBox(height: AppSpacing.sm),
@@ -249,42 +222,6 @@ class _CloudBanner extends StatelessWidget {
   }
 }
 
-class _KpiTile extends StatelessWidget {
-  const _KpiTile({
-    required this.label,
-    required this.value,
-    required this.color,
-  });
-
-  final String label;
-  final String value;
-  final Color color;
-
-  @override
-  Widget build(BuildContext context) {
-    return SJCard(
-      padding: const EdgeInsets.all(AppSpacing.md),
-      accentColor: color,
-      child: Builder(
-        builder: (context) {
-          final theme = Theme.of(context);
-          return Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(label, style: theme.textTheme.labelMedium),
-              const SizedBox(height: 4),
-              Text(
-                value,
-                style: theme.textTheme.headlineMedium?.copyWith(color: color),
-              ),
-            ],
-          );
-        },
-      ),
-    );
-  }
-}
-
 class _VerimRowCard extends StatelessWidget {
   const _VerimRowCard({required this.row});
 
@@ -293,9 +230,7 @@ class _VerimRowCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final item = row.item;
-    final workerEff = row.workerEfficiency;
-    final qtyEff = row.qtyEfficiency;
-    final primary = qtyEff ?? workerEff;
+    final primary = row.unitEfficiency;
     final color = _pctColor(primary);
 
     return SJCard(
@@ -345,7 +280,11 @@ class _VerimRowCard extends StatelessWidget {
               _metric(
                 theme,
                 label: 'İş gücü',
-                planned: item.plannedWorkerCount?.toString() ?? '—',
+                planned: row.plannedWorkerDays.toStringAsFixed(
+                  row.plannedWorkerDays == row.plannedWorkerDays.roundToDouble()
+                      ? 0
+                      : 1,
+                ),
                 actual: row.actualWorkerDays.toStringAsFixed(1),
                 unit: 'adam-gün',
               ),
