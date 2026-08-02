@@ -48,18 +48,24 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
 
     return Scaffold(
       backgroundColor: AppColors.canvas,
-      floatingActionButton: FloatingActionButton.extended(
-        onPressed: () async {
-          final discipline = await NewAnalizModuleSheet.show(context);
-          if (discipline == null || !context.mounted) return;
-          context.push(
-            '${AppRoutes.analizYeni}?modul=${discipline.jsonValue}',
-          );
-        },
-        icon: const Icon(Icons.add),
-        label: const Text('Yeni Analiz'),
+      // Shell alt nav üstünde kalsın; nested scaffold FAB alt çubuğu örtmesin.
+      floatingActionButtonLocation: FloatingActionButtonLocation.endFloat,
+      floatingActionButton: Padding(
+        padding: const EdgeInsets.only(bottom: 8),
+        child: FloatingActionButton.extended(
+          onPressed: () async {
+            final discipline = await NewAnalizModuleSheet.show(context);
+            if (discipline == null || !context.mounted) return;
+            context.push(
+              '${AppRoutes.analizYeni}?modul=${discipline.jsonValue}',
+            );
+          },
+          icon: const Icon(Icons.add),
+          label: const Text('Yeni Analiz'),
+        ),
       ),
       body: SafeArea(
+        bottom: false,
         child: catalogAsync.when(
           loading: () => const Center(child: CircularProgressIndicator()),
           error: (e, _) => SJEmptyState(

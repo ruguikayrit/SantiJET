@@ -1,4 +1,6 @@
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
+import 'package:pointer_interceptor/pointer_interceptor.dart';
 
 import '../theme/app_colors.dart';
 import '../theme/app_spacing.dart';
@@ -19,8 +21,8 @@ class SJNavItem {
 /// ŞantiJET Design System — alt navigasyon.
 ///
 /// ŞantiJET Demir `AppBottomNavBar` görsel deseni (üst kenarlık + yüzey zemin +
-/// aktif/pasif ikon). Faz 5'te go_router `StatefulNavigationShell` ile bağlanır;
-/// burada yeniden kullanılabilir, durum-bağımsız sunum bileşeni olarak tanımlıdır.
+/// aktif/pasif ikon). Web'de [PointerInterceptor] ile HTML katmanının
+/// dokunmaları çalması engellenir.
 class SJBottomNavigation extends StatelessWidget {
   const SJBottomNavigation({
     required this.items,
@@ -47,21 +49,20 @@ class SJBottomNavigation extends StatelessWidget {
   Widget build(BuildContext context) {
     final bottomInset = MediaQuery.viewPaddingOf(context).bottom;
 
-    return Padding(
-      padding: const EdgeInsets.only(bottom: bottomLift),
-      child: ColoredBox(
-        color: AppColors.surface,
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            DecoratedBox(
-              decoration: BoxDecoration(
-                border: Border(top: BorderSide(color: AppColors.border)),
-              ),
-              child: SizedBox(
-                height: _iconBarHeight,
-                width: double.infinity,
-                child: Row(
+    // Lift, ColoredBox içinde — padding boşluğu hit-test dışı kalmasın.
+    final bar = Material(
+      color: AppColors.surface,
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          DecoratedBox(
+            decoration: BoxDecoration(
+              border: Border(top: BorderSide(color: AppColors.border)),
+            ),
+            child: SizedBox(
+              height: _iconBarHeight,
+              width: double.infinity,
+              child: Row(
                 children: [
                   for (var i = 0; i < items.length; i++)
                     Expanded(
@@ -75,11 +76,15 @@ class SJBottomNavigation extends StatelessWidget {
               ),
             ),
           ),
-            if (bottomInset > 0) SizedBox(height: bottomInset),
-          ],
-        ),
+          SizedBox(height: bottomInset + bottomLift),
+        ],
       ),
     );
+
+    if (kIsWeb) {
+      return PointerInterceptor(child: bar);
+    }
+    return bar;
   }
 }
 
@@ -100,23 +105,33 @@ class _NavItemView extends StatelessWidget {
     final color =
         selected ? AppColors.electricBlue : AppColors.textMuted;
 
-    return InkWell(
-      onTap: onTap,
-      child: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          Icon(selected ? item.activeIcon : item.icon, size: 22, color: color),
-          const SizedBox(height: 2),
-          Text(
-            item.label,
-            style: theme.textTheme.labelSmall?.copyWith(
-              color: color,
-              fontWeight: selected ? FontWeight.w600 : FontWeight.w400,
-            ),
-            maxLines: 1,
-            overflow: TextOverflow.ellipsis,
+    // Opaque hit target — InkWell yalnız ikon/metin boyutunda kalmasın.
+    return Material(
+      color: Colors.transparent,
+      child: InkWell(
+        onTap: onTap,
+        child: SizedBox.expand(
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Icon(
+                selected ? item.activeIcon : item.icon,
+                size: 22,
+                color: color,
+              ),
+              const SizedBox(height: 2),
+              Text(
+                item.label,
+                style: theme.textTheme.labelSmall?.copyWith(
+                  color: color,
+                  fontWeight: selected ? FontWeight.w600 : FontWeight.w400,
+                ),
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+              ),
+            ],
           ),
-        ],
+        ),
       ),
     );
   }

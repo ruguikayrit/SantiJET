@@ -27,6 +27,7 @@ dependencies:
   archive: ^4.0.9
   file_picker: ^3.0.4
   url_launcher: ^6.3.2
+  pointer_interceptor: ^0.10.1+2
 
 dev_dependencies:
   flutter_test:
