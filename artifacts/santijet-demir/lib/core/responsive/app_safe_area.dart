@@ -6,7 +6,10 @@ import 'package:santijet_demir/core/responsive/app_safe_area_inset_web.dart'
     if (dart.library.io) 'package:santijet_demir/core/responsive/app_safe_area_inset_io.dart'
     as inset_reader;
 
-/// iOS Safari PWA'da MediaQuery safe area çoğu zaman 0 gelir; minimum inset uygular.
+/// iOS Safari PWA'da MediaQuery safe area çoğu zaman 0 gelir; üst için minimum.
+///
+/// Alt inset MediaQuery.padding'e yazılmaz — aksi halde her [Scaffold] altında
+/// boş "ölü" şerit oluşur (nav ayrıca kendi home-indicator alanını çizer).
 abstract final class AppSafeAreaInsets {
   static const _iosWebMinTop = 47.0;
   static const _iosWebMinBottom = 34.0;
@@ -17,30 +20,14 @@ abstract final class AppSafeAreaInsets {
         defaultTargetPlatform == TargetPlatform.iOS;
   }
 
-  static double _readBottomInset(BuildContext context, {required bool standaloneMinimum}) {
-    final media = MediaQuery.of(context);
-    var bottom = math.max(media.viewPadding.bottom, media.padding.bottom);
-
-    if (!_isIosWeb(context)) return bottom;
-
-    if (standaloneMinimum && inset_reader.readIosStandalonePwa()) {
-      final injectedBottom = inset_reader.readWebSafeAreaBottomInset();
-      if (injectedBottom != null && injectedBottom > 0) {
-        bottom = math.max(bottom, injectedBottom);
-      }
-      if (bottom < 20) bottom = _iosWebMinBottom;
-    }
-
-    return bottom;
-  }
-
   static EdgeInsets effective(BuildContext context) {
     final media = MediaQuery.of(context);
     final view = media.viewPadding;
     final pad = media.padding;
 
     var top = math.max(view.top, pad.top);
-    var bottom = _readBottomInset(context, standaloneMinimum: true);
+    // Bottom: yalnızca motorun bildirdiği değer — şişirme yok.
+    final bottom = math.max(view.bottom, pad.bottom);
     var left = math.max(view.left, pad.left);
     var right = math.max(view.right, pad.right);
 
@@ -71,8 +58,8 @@ abstract final class AppSafeAreaInsets {
     );
   }
 
-  /// Alt nav bar — home indicator alanı (View padding + iOS PWA JS probe).
-  /// Mantıksal piksel; aşırı değerleri üst katmanda [AppBottomNavBar] clamp eder.
+  /// Yalnızca alt nav — home indicator (View + iOS PWA JS probe).
+  /// [AppMediaQuery] / Scaffold padding'ine yazılmaz.
   static double bottomNavInsetOf(BuildContext context) {
     final media = MediaQuery.maybeOf(context);
     var bottom = 0.0;
@@ -95,12 +82,10 @@ abstract final class AppSafeAreaInsets {
       if (injected != null && injected > 0 && injected.isFinite) {
         bottom = math.max(bottom, injected);
       }
-      // Safari / PWA: home indicator için minimum — aksi halde nav altında boşluk.
       if (bottom < 20) bottom = _iosWebMinBottom;
     }
 
     if (!bottom.isFinite || bottom.isNaN || bottom < 0) return 0;
-    // Home indicator makul üst sınırı — ara sıra gelen şişik değerleri kes.
     return math.min(bottom, 40.0);
   }
 }
@@ -136,7 +121,7 @@ class AppSafeArea extends StatelessWidget {
   }
 }
 
-/// Tüm sayfalarda MediaQuery safe area değerlerini güvenilir hale getirir.
+/// Üst notch güvenli alanı — alt inset şişirilmez (Scaffold ölü alanı önlenir).
 class AppMediaQuery extends StatelessWidget {
   const AppMediaQuery({super.key, required this.child});
 
@@ -152,13 +137,13 @@ class AppMediaQuery extends StatelessWidget {
           math.max(media.padding.left, insets.left),
           math.max(media.padding.top, insets.top),
           math.max(media.padding.right, insets.right),
-          math.max(media.padding.bottom, insets.bottom),
+          media.padding.bottom,
         ),
         viewPadding: EdgeInsets.fromLTRB(
           math.max(media.viewPadding.left, insets.left),
           math.max(media.viewPadding.top, insets.top),
           math.max(media.viewPadding.right, insets.right),
-          math.max(media.viewPadding.bottom, insets.bottom),
+          media.viewPadding.bottom,
         ),
       ),
       child: child,

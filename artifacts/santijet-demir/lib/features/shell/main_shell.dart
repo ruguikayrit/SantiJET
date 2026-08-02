@@ -8,7 +8,6 @@ import 'package:santijet_demir/core/theme/app_colors.dart';
 import 'package:santijet_demir/core/theme/app_spacing.dart';
 import 'package:santijet_demir/core/theme/app_typography.dart';
 import 'package:santijet_demir/core/theme/theme_rebuild_gate.dart';
-import 'package:santijet_demir/core/responsive/responsive_layout.dart';
 import 'package:santijet_demir/core/widgets/app_bottom_nav_bar.dart';
 import 'package:santijet_demir/core/widgets/project_permission_gate.dart';
 import 'package:santijet_demir/core/widgets/santijet_header.dart';
@@ -42,21 +41,19 @@ class MainShell extends ConsumerWidget {
         Scaffold(
           backgroundColor: AppColors.canvas,
           resizeToAvoidBottomInset: false,
-          body: ResponsiveLayout(
-            child: SafeArea(
-              bottom: false,
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.stretch,
-                children: [
-                  ReadOnlyBanner(),
-                  Expanded(
-                    child: ThemeRebuildGate(child: navigationShell),
-                  ),
-                ],
+          body: Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              SafeArea(
+                bottom: false,
+                child: ReadOnlyBanner(),
               ),
-            ),
+              Expanded(
+                child: ThemeRebuildGate(child: navigationShell),
+              ),
+            ],
           ),
-          // Puantaj ile aynı konum: Scaffold.bottomNavigationBar
+          // Puantaj / Beton ile aynı konum: Scaffold.bottomNavigationBar
           bottomNavigationBar: MediaQuery.removePadding(
             context: context,
             removeBottom: true,

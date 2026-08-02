@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:pointer_interceptor/pointer_interceptor.dart';
+import 'package:santijet_demir/core/responsive/app_safe_area.dart';
 import 'package:santijet_demir/core/theme/app_colors.dart';
 import 'package:santijet_demir/core/theme/app_spacing.dart';
 import 'package:santijet_demir/core/theme/app_typography.dart';
@@ -48,7 +49,7 @@ class SJBottomNavigation extends StatelessWidget {
   final ValueChanged<int> onTap;
 
   static double totalHeightOf(BuildContext context) {
-    final bottomInset = MediaQuery.viewPaddingOf(context).bottom;
+    final bottomInset = AppSafeAreaInsets.bottomNavInsetOf(context);
     return _iconBarHeight + bottomInset + bottomLift;
   }
 
@@ -56,10 +57,10 @@ class SJBottomNavigation extends StatelessWidget {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final surface = theme.cardTheme.color ?? theme.colorScheme.surface;
-    final bottomInset = MediaQuery.viewPaddingOf(context).bottom;
+    // Scaffold MediaQuery.padding'e yazılmaz; yalnızca nav kendi inset'ini çizer.
+    final bottomInset = AppSafeAreaInsets.bottomNavInsetOf(context);
 
     // ColoredBox en dışta: yüzey sayfanın en altına dayanır.
-    // bottomLift dış Padding olursa canvas rengi görünür (nav “havada” kalır).
     return ColoredBox(
       color: surface,
       child: Column(
@@ -86,7 +87,6 @@ class SJBottomNavigation extends StatelessWidget {
               ),
             ),
           ),
-          // Home indicator + hafif lift — hepsi yüzey rengi içinde.
           SizedBox(height: bottomInset + bottomLift),
         ],
       ),
@@ -165,7 +165,7 @@ class AppBottomNavBar extends ConsumerWidget {
   static double iconBarHeightOf(BuildContext context) => iconBarHeight;
 
   static double bottomInsetOf(BuildContext context) =>
-      MediaQuery.viewPaddingOf(context).bottom;
+      AppSafeAreaInsets.bottomNavInsetOf(context);
 
   static double totalHeightOf(BuildContext context) =>
       SJBottomNavigation.totalHeightOf(context);
