@@ -25,11 +25,256 @@ import '../../domain/yevmiye/imalat_crew_allocator.dart';
 import '../../domain/yevmiye/yevmiye_calculator.dart';
 
 /// İmalat — iş tanımı + %100'e kadar günlük usta/düz kayıtları.
-class ImalatScreen extends ConsumerWidget {
+class ImalatScreen extends ConsumerStatefulWidget {
   const ImalatScreen({super.key});
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
+  ConsumerState<ImalatScreen> createState() => _ImalatScreenState();
+}
+
+class _ImalatScreenState extends ConsumerState<ImalatScreen> {
+  /// `null` = tüm ekipler; aksi halde ekip adına göre filtre.
+  String? _teamFilter;
+
+  /// `null` = tüm imalat tipleri; aksi halde tip adına göre filtre.
+  String? _typeFilter;
+
+  static String _typeKey(Production p) {
+    final n = p.name.trim();
+    return n.isEmpty ? 'Adsız imalat' : n;
+  }
+
+  static String _teamKey(Production p) {
+    final t = p.teamName.trim();
+    return t.isEmpty ? 'Ekip seçilmedi' : t;
+  }
+
+  List<Production> _applyFilters(List<Production> items) {
+    return items.where((p) {
+      if (_teamFilter != null && _teamKey(p) != _teamFilter) return false;
+      if (_typeFilter != null && _typeKey(p) != _typeFilter) return false;
+      return true;
+    }).toList();
+  }
+
+  /// İmalat tipi (ad) başlıkları altında gruplar.
+  List<({String type, List<Production> items})> _groupByType(
+    List<Production> items,
+  ) {
+    final map = <String, List<Production>>{};
+    for (final p in items) {
+      map.putIfAbsent(_typeKey(p), () => []).add(p);
+    }
+    final keys = map.keys.toList()
+      ..sort((a, b) => a.toLowerCase().compareTo(b.toLowerCase()));
+    for (final list in map.values) {
+      list.sort((a, b) {
+        final loc = a.locationLabel.compareTo(b.locationLabel);
+        if (loc != 0) return loc;
+        return b.latestDate.compareTo(a.latestDate);
+      });
+    }
+    return [for (final k in keys) (type: k, items: map[k]!)];
+  }
+
+  Future<void> _openFilterSheet({
+    required List<String> teamOptions,
+    required List<String> typeOptions,
+  }) async {
+    var draftTeam = _teamFilter;
+    var draftType = _typeFilter;
+    final applied = await showModalBottomSheet<bool>(
+      context: context,
+      showDragHandle: true,
+      builder: (ctx) {
+        final theme = Theme.of(ctx);
+        return StatefulBuilder(
+          builder: (ctx, setModal) {
+            Widget chipRow({
+              required String title,
+              required List<String> options,
+              required String? selected,
+              required ValueChanged<String?> onSelect,
+            }) {
+              return Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    title,
+                    style: theme.textTheme.labelLarge?.copyWith(
+                      fontWeight: FontWeight.w700,
+                    ),
+                  ),
+                  const SizedBox(height: AppSpacing.sm),
+                  Wrap(
+                    spacing: 8,
+                    runSpacing: 8,
+                    children: [
+                      FilterChip(
+                        label: const Text('Tümü'),
+                        selected: selected == null,
+                        onSelected: (_) => setModal(() => onSelect(null)),
+                      ),
+                      for (final o in options)
+                        FilterChip(
+                          label: Text(o),
+                          selected: selected == o,
+                          onSelected: (_) => setModal(() => onSelect(o)),
+                        ),
+                    ],
+                  ),
+                ],
+              );
+            }
+
+            return SafeArea(
+              child: Padding(
+                padding: const EdgeInsets.fromLTRB(
+                  AppSpacing.md,
+                  0,
+                  AppSpacing.md,
+                  AppSpacing.md,
+                ),
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                  children: [
+                    Text(
+                      'Filtrele',
+                      style: theme.textTheme.titleMedium?.copyWith(
+                        fontWeight: FontWeight.w700,
+                      ),
+                    ),
+                    const SizedBox(height: AppSpacing.md),
+                    if (typeOptions.length > 1) ...[
+                      chipRow(
+                        title: 'İmalat tipi',
+                        options: typeOptions,
+                        selected: draftType,
+                        onSelect: (v) => draftType = v,
+                      ),
+                      const SizedBox(height: AppSpacing.md),
+                    ],
+                    if (teamOptions.length > 1) ...[
+                      chipRow(
+                        title: 'Ekip',
+                        options: teamOptions,
+                        selected: draftTeam,
+                        onSelect: (v) => draftTeam = v,
+                      ),
+                      const SizedBox(height: AppSpacing.md),
+                    ],
+                    if (typeOptions.length <= 1 && teamOptions.length <= 1)
+                      Padding(
+                        padding: const EdgeInsets.only(bottom: AppSpacing.md),
+                        child: Text(
+                          'Filtrelenecek ek tip veya ekip yok.',
+                          style: theme.textTheme.bodyMedium,
+                        ),
+                      ),
+                    Row(
+                      children: [
+                        TextButton(
+                          onPressed: () {
+                            draftTeam = null;
+                            draftType = null;
+                            setModal(() {});
+                          },
+                          child: const Text('Temizle'),
+                        ),
+                        const Spacer(),
+                        FilledButton(
+                          onPressed: () => Navigator.pop(ctx, true),
+                          child: const Text('Uygula'),
+                        ),
+                      ],
+                    ),
+                  ],
+                ),
+              ),
+            );
+          },
+        );
+      },
+    );
+    if (applied == true && mounted) {
+      setState(() {
+        _teamFilter = draftTeam;
+        _typeFilter = draftType;
+      });
+    }
+  }
+
+  Widget _productionCard(Production p) {
+    return SJCard(
+      onTap: () => _openDetail(context, ref, production: p),
+      child: Builder(
+        builder: (context) {
+          final theme = Theme.of(context);
+          return Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Row(
+                children: [
+                  Expanded(
+                    child: Text(
+                      p.locationLabel.isNotEmpty
+                          ? p.locationLabel
+                          : (p.name.trim().isEmpty ? 'İmalat' : p.name),
+                      style: theme.textTheme.titleMedium,
+                    ),
+                  ),
+                  if (p.isComplete)
+                    SJStatusBadge(
+                      label: 'Tamamlandı',
+                      color: AppColors.success,
+                    ),
+                ],
+              ),
+              const SizedBox(height: AppSpacing.xs),
+              Text(
+                p.teamName.isEmpty
+                    ? 'Ekip seçilmedi'
+                    : 'Ekip: ${p.teamName}',
+                style: theme.textTheme.labelMedium?.copyWith(
+                  color: AppColors.useDarkCards
+                      ? AppColors.electricBlueLight
+                      : AppColors.electricBlue,
+                  fontWeight: FontWeight.w600,
+                ),
+              ),
+              const SizedBox(height: 4),
+              Text(
+                'Toplam çalışan: ${_fmt(p.ustaCount)} usta · '
+                '${_fmt(p.duzIsciCount)} düz',
+                style: theme.textTheme.labelSmall,
+              ),
+              const SizedBox(height: AppSpacing.sm),
+              _ImalatDualProgress(production: p),
+              if (!p.isComplete) ...[
+                const SizedBox(height: AppSpacing.sm),
+                Align(
+                  alignment: Alignment.centerRight,
+                  child: TextButton.icon(
+                    onPressed: () => _openDayEntry(
+                      context,
+                      ref,
+                      production: p,
+                    ),
+                    icon: const Icon(Icons.add, size: 18),
+                    label: const Text('Günlük kayıt ekle'),
+                  ),
+                ),
+              ],
+            ],
+          );
+        },
+      ),
+    );
+  }
+
+  @override
+  Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final project = ref.watch(activeProjectProvider);
     final items = ref.watch(activeProductionProvider);
@@ -53,10 +298,48 @@ class ImalatScreen extends ConsumerWidget {
     }.toList()
       ..sort();
 
+    final typeOptions = {
+      for (final p in items) _typeKey(p),
+    }.toList()
+      ..sort((a, b) => a.toLowerCase().compareTo(b.toLowerCase()));
+    final teamOptions = {
+      for (final p in items) _teamKey(p),
+    }.toList()
+      ..sort((a, b) => a.toLowerCase().compareTo(b.toLowerCase()));
+
+    // Geçersiz filtreleri temizle (silinen tip/ekip).
+    if (_typeFilter != null && !typeOptions.contains(_typeFilter)) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (mounted) setState(() => _typeFilter = null);
+      });
+    }
+    if (_teamFilter != null && !teamOptions.contains(_teamFilter)) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (mounted) setState(() => _teamFilter = null);
+      });
+    }
+
+    final filtered = _applyFilters(items);
+    final groups = _groupByType(filtered);
+    final filterActive = _teamFilter != null || _typeFilter != null;
+
     return Scaffold(
       appBar: AppBar(
         title: const Text('İmalat'),
         actions: [
+          if (items.isNotEmpty)
+            IconButton(
+              tooltip: 'Filtrele',
+              onPressed: () => _openFilterSheet(
+                teamOptions: teamOptions,
+                typeOptions: typeOptions,
+              ),
+              icon: Badge(
+                isLabelVisible: filterActive,
+                smallSize: 8,
+                child: const Icon(Icons.filter_list_rounded),
+              ),
+            ),
           Padding(
             padding: const EdgeInsets.only(right: AppSpacing.sm),
             child: Center(
@@ -68,7 +351,12 @@ class ImalatScreen extends ConsumerWidget {
       floatingActionButton: FloatingActionButton.extended(
         onPressed: teams.isEmpty
             ? () => _warnNoTeams(context)
-            : () => _openJobEditor(context, ref, projectId: project.id, teams: teams),
+            : () => _openJobEditor(
+                  context,
+                  ref,
+                  projectId: project.id,
+                  teams: teams,
+                ),
         icon: const Icon(Icons.add),
         label: const Text('İmalat Ekle'),
       ),
@@ -92,91 +380,79 @@ class ImalatScreen extends ConsumerWidget {
                         teams: teams,
                       ),
             )
-          : ListView.separated(
-              padding: const EdgeInsets.fromLTRB(
-                AppSpacing.md,
-                AppSpacing.sm,
-                AppSpacing.md,
-                88,
-              ),
-              itemCount: items.length,
-              separatorBuilder: (_, __) =>
-                  const SizedBox(height: AppSpacing.sm),
-              itemBuilder: (context, i) {
-                final p = items[i];
-                return SJCard(
-                  onTap: () => _openDetail(context, ref, production: p),
-                  child: Builder(
-                    builder: (context) {
-                      final theme = Theme.of(context);
-                      return Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Row(
+          : filtered.isEmpty
+              ? SJEmptyState(
+                  title: 'Sonuç yok',
+                  message: 'Seçilen filtreye uyan imalat bulunamadı.',
+                  icon: Icons.filter_alt_off_outlined,
+                  actionLabel: 'Filtreyi temizle',
+                  onAction: () => setState(() {
+                    _teamFilter = null;
+                    _typeFilter = null;
+                  }),
+                )
+              : ListView.builder(
+                  padding: const EdgeInsets.fromLTRB(
+                    AppSpacing.md,
+                    AppSpacing.sm,
+                    AppSpacing.md,
+                    88,
+                  ),
+                  itemCount: groups.fold<int>(
+                    0,
+                    (n, g) => n + 1 + g.items.length,
+                  ),
+                  itemBuilder: (context, index) {
+                    var cursor = 0;
+                    for (final g in groups) {
+                      if (index == cursor) {
+                        return Padding(
+                          padding: EdgeInsets.only(
+                            top: cursor == 0 ? 0 : AppSpacing.md,
+                            bottom: AppSpacing.sm,
+                          ),
+                          child: Row(
                             children: [
                               Expanded(
                                 child: Text(
-                                  p.name,
-                                  style: theme.textTheme.titleMedium,
+                                  g.type,
+                                  style: theme.textTheme.titleSmall?.copyWith(
+                                    fontWeight: FontWeight.w800,
+                                    color: AppColors.useDarkCards
+                                        ? AppColors.electricBlueLight
+                                        : AppColors.electricBlue,
+                                  ),
                                 ),
                               ),
-                              if (p.isComplete)
-                                SJStatusBadge(
-                                  label: 'Tamamlandı',
-                                  color: AppColors.success,
+                              Text(
+                                '${g.items.length}',
+                                style: theme.textTheme.labelMedium?.copyWith(
+                                  color: theme.colorScheme.onSurfaceVariant,
+                                  fontWeight: FontWeight.w700,
                                 ),
+                              ),
                             ],
                           ),
-                          const SizedBox(height: AppSpacing.xs),
-                          if (p.locationLabel.isNotEmpty)
-                            Text(
-                              p.locationLabel,
-                              style: theme.textTheme.labelMedium?.copyWith(
-                                color: theme.colorScheme.onSurfaceVariant,
-                                fontWeight: FontWeight.w600,
-                              ),
+                        );
+                      }
+                      cursor++;
+                      for (var i = 0; i < g.items.length; i++) {
+                        if (index == cursor) {
+                          return Padding(
+                            padding: EdgeInsets.only(
+                              bottom: i == g.items.length - 1
+                                  ? 0
+                                  : AppSpacing.sm,
                             ),
-                          if (p.locationLabel.isNotEmpty)
-                            const SizedBox(height: 4),
-                          Text(
-                            p.teamName.isEmpty
-                                ? 'Ekip seçilmedi'
-                                : 'Ekip: ${p.teamName}',
-                            style: theme.textTheme.labelMedium?.copyWith(
-                              color: AppColors.electricBlueLight,
-                              fontWeight: FontWeight.w600,
-                            ),
-                          ),
-                          const SizedBox(height: 4),
-                          Text(
-                            'Toplam çalışan: ${_fmt(p.ustaCount)} usta · '
-                            '${_fmt(p.duzIsciCount)} düz',
-                            style: theme.textTheme.labelSmall,
-                          ),
-                          const SizedBox(height: AppSpacing.sm),
-                          _ImalatDualProgress(production: p),
-                          if (!p.isComplete) ...[
-                            const SizedBox(height: AppSpacing.sm),
-                            Align(
-                              alignment: Alignment.centerRight,
-                              child: TextButton.icon(
-                                onPressed: () => _openDayEntry(
-                                  context,
-                                  ref,
-                                  production: p,
-                                ),
-                                icon: const Icon(Icons.add, size: 18),
-                                label: const Text('Günlük kayıt ekle'),
-                              ),
-                            ),
-                          ],
-                        ],
-                      );
-                    },
-                  ),
-                );
-              },
-            ),
+                            child: _productionCard(g.items[i]),
+                          );
+                        }
+                        cursor++;
+                      }
+                    }
+                    return const SizedBox.shrink();
+                  },
+                ),
     );
   }
 
