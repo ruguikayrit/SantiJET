@@ -205,25 +205,32 @@ class SJCard extends StatelessWidget {
         ? theme.colorScheme.primary
         : (useContrast ? AppColors.cardBorder : theme.dividerColor);
 
+    // Accent şerit: IntrinsicHeight kullanma — LayoutBuilder / CustomPaint
+    // gibi çocuklar intrinsik yüksekliği 0 verir; kart grafik açılınca
+    // sıkışır ve taşar. Stack, içeriğin gerçek yüksekliğine göre uzar.
     Widget content = Padding(
       padding: padding,
       child: accentColor == null
           ? child
-          : IntrinsicHeight(
-              child: Row(
-                crossAxisAlignment: CrossAxisAlignment.stretch,
-                children: [
-                  Container(
+          : Stack(
+              children: [
+                Positioned(
+                  left: 0,
+                  top: 0,
+                  bottom: 0,
+                  child: Container(
                     width: 4,
                     decoration: BoxDecoration(
                       color: accentColor,
                       borderRadius: AppRadii.xs,
                     ),
                   ),
-                  const SizedBox(width: AppSpacing.sm),
-                  Expanded(child: child),
-                ],
-              ),
+                ),
+                Padding(
+                  padding: const EdgeInsets.only(left: 4 + AppSpacing.sm),
+                  child: child,
+                ),
+              ],
             ),
     );
 

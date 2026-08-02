@@ -1255,71 +1255,76 @@ class _AdamSaatEfficiencyChartState extends State<_AdamSaatEfficiencyChart> {
               },
             ),
             const SizedBox(height: AppSpacing.sm),
-            LayoutBuilder(
-              builder: (context, constraints) {
-                final avg = _avgClose(candles);
-                final minSlot = _style.usesCompactSlots ? 14.0 : 18.0;
-                final chartWidth = (candles.length * minSlot)
-                    .clamp(constraints.maxWidth, double.infinity);
-                return SingleChildScrollView(
-                  scrollDirection: Axis.horizontal,
-                  child: SizedBox(
-                    width: chartWidth.toDouble(),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.stretch,
-                      children: [
-                        SizedBox(
-                          height: 110,
-                          child: CustomPaint(
-                            painter: _AdamSaatChartPainter(
-                              candles: candles,
-                              average: avg,
-                              style: _style,
-                              bullish: AppColors.success,
-                              bearish: AppColors.critical,
-                              lineColor: accent,
-                              averageColor: accent,
-                              axisColor: theme.colorScheme.onSurfaceVariant
-                                  .withValues(alpha: 0.35),
+            // Sabit yükseklik: kart/layout intrinsik ölçümünde grafik alanı
+            // sıkışmasın; yatay kaydırma LayoutBuilder içinde kalsın.
+            SizedBox(
+              height: 170,
+              child: LayoutBuilder(
+                builder: (context, constraints) {
+                  final avg = _avgClose(candles);
+                  final minSlot = _style.usesCompactSlots ? 14.0 : 18.0;
+                  final chartWidth = (candles.length * minSlot)
+                      .clamp(constraints.maxWidth, double.infinity);
+                  return SingleChildScrollView(
+                    scrollDirection: Axis.horizontal,
+                    child: SizedBox(
+                      width: chartWidth.toDouble(),
+                      height: constraints.maxHeight,
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.stretch,
+                        children: [
+                          SizedBox(
+                            height: 110,
+                            child: CustomPaint(
+                              painter: _AdamSaatChartPainter(
+                                candles: candles,
+                                average: avg,
+                                style: _style,
+                                bullish: AppColors.success,
+                                bearish: AppColors.critical,
+                                lineColor: accent,
+                                averageColor: accent,
+                                axisColor: theme.colorScheme.onSurfaceVariant
+                                    .withValues(alpha: 0.35),
+                              ),
+                              child: const SizedBox.expand(),
                             ),
-                            child: const SizedBox.expand(),
                           ),
-                        ),
-                        const SizedBox(height: 4),
-                        SizedBox(
-                          height: 56,
-                          child: Row(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              for (final c in candles)
-                                Expanded(
-                                  child: Align(
-                                    alignment: Alignment.topCenter,
-                                    child: RotatedBox(
-                                      quarterTurns: 3,
-                                      child: Text(
-                                        c.label,
-                                        textAlign: TextAlign.center,
-                                        style: theme.textTheme.labelSmall
-                                            ?.copyWith(
-                                          fontSize: 9,
-                                          height: 1,
-                                          fontWeight: FontWeight.w600,
+                          const SizedBox(height: 4),
+                          Expanded(
+                            child: Row(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                for (final c in candles)
+                                  Expanded(
+                                    child: Align(
+                                      alignment: Alignment.topCenter,
+                                      child: RotatedBox(
+                                        quarterTurns: 3,
+                                        child: Text(
+                                          c.label,
+                                          textAlign: TextAlign.center,
+                                          style: theme.textTheme.labelSmall
+                                              ?.copyWith(
+                                            fontSize: 9,
+                                            height: 1,
+                                            fontWeight: FontWeight.w600,
+                                          ),
+                                          maxLines: 1,
+                                          softWrap: false,
                                         ),
-                                        maxLines: 1,
-                                        softWrap: false,
                                       ),
                                     ),
                                   ),
-                                ),
-                            ],
+                              ],
+                            ),
                           ),
-                        ),
-                      ],
+                        ],
+                      ),
                     ),
-                  ),
-                );
-              },
+                  );
+                },
+              ),
             ),
           ],
         ],
