@@ -1,6 +1,9 @@
 import 'package:equatable/equatable.dart';
 
 /// İş Programı bulutundan gelen imalat satırı (Demir `WorkScheduleImalat` hizası).
+///
+/// Süre ve plan iş gücü burada; plan metraj Keşif (`KesifItem`) tarafındadır.
+/// [plannedQty] eski önbellek uyumu için okunur, Verim yeni kurguyla Keşif’ten alır.
 class WorkScheduleItem extends Equatable {
   const WorkScheduleItem({
     required this.id,
@@ -20,6 +23,8 @@ class WorkScheduleItem extends Equatable {
   final String? startDate; // yyyy-MM-dd
   final String? endDate;
   final int? plannedWorkerCount;
+
+  /// Eski senkron uyumu — yeni kurgu plan metrajı Keşif’ten alır.
   final double? plannedQty;
   final String? unit;
   final String? notes;

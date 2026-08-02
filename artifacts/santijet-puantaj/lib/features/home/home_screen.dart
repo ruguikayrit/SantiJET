@@ -179,8 +179,8 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                         final theme = Theme.of(context);
                         if (!verim.hasCloudPlan) {
                           return Text(
-                            'İş Programı bulut verisi yok. Verim için '
-                            'buluttan plan çekilmesi gerekir.',
+                            'İş Programı (süre) ve Keşif (metraj) bulut '
+                            'verisi gerekir. Verim’den senkronlayın.',
                             style: theme.textTheme.bodyMedium,
                           );
                         }

@@ -263,7 +263,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
       title: 'Demo veriyi yükle',
       message:
           'Demo Şantiye projesi oluşturulur/güncellenir; personel, puantaj, '
-          'imalat ve İş Programı demo planı doldurulur. '
+          'imalat, İş Programı (süre) ve Keşif (metraj) demo planı doldurulur. '
           'Aynı adlı demo projenin mevcut verileri yenilenir.',
       confirmLabel: 'Yükle',
     );

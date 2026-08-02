@@ -6,8 +6,8 @@ import '../../domain/entities/work_schedule_plan.dart';
 
 /// İş Programı uygulamasından bulut üzerinden iş programı çeker.
 ///
-/// Verim hesabı yalnızca bu kaynaktan gelen plana dayanır; yerel puantaj
-/// verisi tek başına yeterli değildir.
+/// Verimde planlanan süre / iş gücü bu kaynaktan gelir.
+/// Plan metraj Keşif bulutundan (`KesifCloudService`) gelir.
 class IsProgramiCloudException implements Exception {
   IsProgramiCloudException(this.message);
   final String message;
@@ -92,10 +92,8 @@ class IsProgramiCloudService {
           startDate: iso(start),
           endDate: iso(end),
           plannedWorkerCount: 6,
-          plannedQty: 12,
-          unit: 'ton',
           notes: projectName == null
-              ? 'İş Programı demo verisi'
+              ? 'İş Programı demo verisi (süre / iş gücü)'
               : '$projectName — İş Programı demo',
         ),
         WorkScheduleItem(
@@ -105,8 +103,6 @@ class IsProgramiCloudService {
           startDate: iso(start),
           endDate: iso(end),
           plannedWorkerCount: 4,
-          plannedQty: 8,
-          unit: 'ton',
         ),
       ],
     );

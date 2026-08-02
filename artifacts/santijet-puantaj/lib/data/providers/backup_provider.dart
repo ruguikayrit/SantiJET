@@ -4,6 +4,7 @@ import '../../domain/entities/attendance.dart';
 import '../../domain/entities/person.dart';
 import '../../domain/entities/production.dart';
 import '../../domain/entities/project.dart';
+import '../../domain/entities/kesif_plan.dart';
 import '../../domain/entities/work_schedule_plan.dart';
 import '../services/puantaj_backup_service.dart';
 import 'app_data_provider.dart';
@@ -41,7 +42,8 @@ class PuantajBackupController {
       productions: productions.map((e) => e.toJson()).toList(),
       professions: professions,
       teams: teams,
-      workSchedule: verim.snapshot?.toJson(),
+      workSchedule: verim.schedule?.toJson(),
+      kesif: verim.kesif?.toJson(),
     );
 
     await puantajBackupService.exportBackup(payload);
@@ -86,10 +88,20 @@ class PuantajBackupController {
       try {
         final snap = WorkScheduleSnapshot.fromJson(payload.workSchedule!);
         _ref.read(isProgramiCloudServiceProvider).cacheSnapshot(snap);
-        _ref.read(verimProvider.notifier).reloadForActiveProject();
       } catch (_) {
-        // Verim önbelleği opsiyonel; ana veri zaten yüklendi.
+        // İş Programı önbelleği opsiyonel.
       }
+    }
+    if (payload.kesif != null) {
+      try {
+        final snap = KesifSnapshot.fromJson(payload.kesif!);
+        _ref.read(kesifCloudServiceProvider).cacheSnapshot(snap);
+      } catch (_) {
+        // Keşif önbelleği opsiyonel.
+      }
+    }
+    if (payload.workSchedule != null || payload.kesif != null) {
+      _ref.read(verimProvider.notifier).reloadForActiveProject();
     }
 
     return payload;

@@ -25,8 +25,8 @@ class MainShell extends ConsumerWidget {
       label: 'Puantaj',
     ),
     SJNavItem(
-      icon: Icons.precision_manufacturing_outlined,
-      activeIcon: Icons.precision_manufacturing,
+      icon: Icons.construction_outlined,
+      activeIcon: Icons.construction,
       label: 'İmalat',
     ),
     SJNavItem(

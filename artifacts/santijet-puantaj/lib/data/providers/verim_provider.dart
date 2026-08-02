@@ -2,8 +2,10 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:hive/hive.dart';
 
 import '../../core/utils/puantaj_date.dart';
+import '../../domain/entities/kesif_plan.dart';
 import '../../domain/entities/work_schedule_plan.dart';
 import '../services/is_programi_cloud_service.dart';
+import '../services/kesif_cloud_service.dart';
 import 'app_data_provider.dart';
 import 'production_provider.dart';
 
@@ -12,34 +14,60 @@ final workScheduleCacheBoxProvider = Provider<Box>(
       throw UnimplementedError('workScheduleCacheBoxProvider override edilmeli'),
 );
 
+final kesifCacheBoxProvider = Provider<Box>(
+  (ref) => throw UnimplementedError('kesifCacheBoxProvider override edilmeli'),
+);
+
 final isProgramiCloudServiceProvider = Provider<IsProgramiCloudService>((ref) {
   return IsProgramiCloudService(ref.watch(workScheduleCacheBoxProvider));
+});
+
+final kesifCloudServiceProvider = Provider<KesifCloudService>((ref) {
+  return KesifCloudService(ref.watch(kesifCacheBoxProvider));
 });
 
 enum VerimSyncStatus { idle, syncing, ready, unavailable, error }
 
 class VerimState {
   const VerimState({
-    this.snapshot,
+    this.schedule,
+    this.kesif,
     this.status = VerimSyncStatus.idle,
     this.message,
   });
 
-  final WorkScheduleSnapshot? snapshot;
+  /// Plan süre / iş gücü — İş Programı bulutu.
+  final WorkScheduleSnapshot? schedule;
+
+  /// Plan metraj — Keşif bulutu.
+  final KesifSnapshot? kesif;
+
   final VerimSyncStatus status;
   final String? message;
 
-  bool get hasCloudPlan => snapshot != null && snapshot!.items.isNotEmpty;
+  bool get hasSchedulePlan =>
+      schedule != null && schedule!.items.isNotEmpty;
+
+  bool get hasKesifPlan => kesif != null && kesif!.items.isNotEmpty;
+
+  /// Verim satırları için İş Programı + Keşif planı gerekir.
+  bool get hasCloudPlan => hasSchedulePlan && hasKesifPlan;
+
+  /// Geriye dönük: eski kod `snapshot` bekliyorsa İş Programı’nı döner.
+  WorkScheduleSnapshot? get snapshot => schedule;
 
   VerimState copyWith({
-    WorkScheduleSnapshot? snapshot,
+    WorkScheduleSnapshot? schedule,
+    KesifSnapshot? kesif,
     VerimSyncStatus? status,
     String? message,
     bool clearMessage = false,
-    bool clearSnapshot = false,
+    bool clearSchedule = false,
+    bool clearKesif = false,
   }) {
     return VerimState(
-      snapshot: clearSnapshot ? null : (snapshot ?? this.snapshot),
+      schedule: clearSchedule ? null : (schedule ?? this.schedule),
+      kesif: clearKesif ? null : (kesif ?? this.kesif),
       status: status ?? this.status,
       message: clearMessage ? null : (message ?? this.message),
     );
@@ -50,15 +78,21 @@ class VerimState {
 class VerimRow {
   const VerimRow({
     required this.item,
+    this.kesif,
     required this.actualWorkerDays,
     required this.actualQty,
   });
 
+  /// İş Programı satırı — süre / plan iş gücü.
   final WorkScheduleItem item;
+
+  /// Keşif satırı — plan metraj (yoksa verim hesaplanamaz).
+  final KesifItem? kesif;
+
   final double actualWorkerDays;
   final double actualQty;
 
-  /// Planlanan adam-gün: planlanan kişi × süre (gün).
+  /// Planlanan adam-gün: planlanan kişi × süre (gün) — İş Programı.
   double get plannedWorkerDays {
     final workers = (item.plannedWorkerCount ?? 0).toDouble();
     if (workers <= 0) return 0;
@@ -67,7 +101,15 @@ class VerimRow {
     return workers;
   }
 
-  double? get plannedQty => item.plannedQty;
+  /// Plan metraj — Keşif.
+  double? get plannedQty {
+    final q = kesif?.plannedQty;
+    if (q != null && q > 0) return q;
+    return null;
+  }
+
+  String? get unit =>
+      (kesif?.unit.trim().isNotEmpty == true) ? kesif!.unit : item.unit;
 
   /// Birim verim =
   /// (gerçek metraj / plan metraj) / (gerçek adam-gün / plan adam-gün).
@@ -83,6 +125,30 @@ class VerimRow {
   }
 }
 
+String _normName(String s) => s
+    .trim()
+    .toLowerCase()
+    .replaceAll(RegExp(r'\s+'), ' ');
+
+KesifItem? matchKesifItem(List<KesifItem> items, WorkScheduleItem schedule) {
+  final id = schedule.imalatId.trim();
+  if (id.isNotEmpty) {
+    for (final k in items) {
+      if (k.imalatId.trim() == id) return k;
+    }
+  }
+  final target = _normName(schedule.imalatName);
+  if (target.isEmpty) return null;
+  for (final k in items) {
+    if (_normName(k.imalatName) == target) return k;
+  }
+  for (final k in items) {
+    final n = _normName(k.imalatName);
+    if (n.contains(target) || target.contains(n)) return k;
+  }
+  return null;
+}
+
 class VerimNotifier extends StateNotifier<VerimState> {
   VerimNotifier(this._ref) : super(const VerimState()) {
     _loadCache();
@@ -90,8 +156,11 @@ class VerimNotifier extends StateNotifier<VerimState> {
 
   final Ref _ref;
 
-  IsProgramiCloudService get _service =>
+  IsProgramiCloudService get _scheduleService =>
       _ref.read(isProgramiCloudServiceProvider);
+
+  KesifCloudService get _kesifService =>
+      _ref.read(kesifCloudServiceProvider);
 
   void _loadCache() {
     final project = _ref.read(activeProjectProvider);
@@ -99,18 +168,35 @@ class VerimNotifier extends StateNotifier<VerimState> {
       state = const VerimState(status: VerimSyncStatus.idle);
       return;
     }
-    final cached = _service.cachedFor(project.id);
-    if (cached != null && cached.items.isNotEmpty) {
+    final schedule = _scheduleService.cachedFor(project.id);
+    final kesif = _kesifService.cachedFor(project.id);
+    final hasS = schedule != null && schedule.items.isNotEmpty;
+    final hasK = kesif != null && kesif.items.isNotEmpty;
+
+    if (hasS && hasK) {
       state = VerimState(
-        snapshot: cached,
+        schedule: schedule,
+        kesif: kesif,
         status: VerimSyncStatus.ready,
-        message: 'Son senkron: ${_fmt(cached.updatedAt)}',
+        message:
+            'İş Programı: ${_fmt(schedule.updatedAt)} · Keşif: ${_fmt(kesif.updatedAt)}',
+      );
+    } else if (hasS || hasK) {
+      final missing = [
+        if (!hasS) 'İş Programı (süre)',
+        if (!hasK) 'Keşif (metraj)',
+      ].join(' + ');
+      state = VerimState(
+        schedule: schedule,
+        kesif: kesif,
+        status: VerimSyncStatus.unavailable,
+        message: 'Eksik bulut planı: $missing. Senkron gerekli.',
       );
     } else {
       state = const VerimState(
         status: VerimSyncStatus.unavailable,
         message:
-            'Verim hesabı için İş Programı uygulamasından bulut verisi gerekir.',
+            'Verim için İş Programı (süre) ve Keşif (plan metraj) bulut verisi gerekir.',
       );
     }
   }
@@ -121,6 +207,7 @@ class VerimNotifier extends StateNotifier<VerimState> {
     state = const VerimState(status: VerimSyncStatus.idle);
   }
 
+  /// İş Programı + Keşif bulutunu birlikte çeker.
   Future<void> syncFromCloud({bool demoFallback = false}) async {
     final project = _ref.read(activeProjectProvider);
     if (project == null) {
@@ -136,39 +223,73 @@ class VerimNotifier extends StateNotifier<VerimState> {
       clearMessage: true,
     );
 
+    WorkScheduleSnapshot? schedule;
+    KesifSnapshot? kesif;
+    final errors = <String>[];
+
     try {
-      final snap = demoFallback
-          ? await _service.syncDemo(
+      schedule = demoFallback
+          ? await _scheduleService.syncDemo(
               projectId: project.id,
               projectName: project.name,
             )
-          : await _service.sync(
+          : await _scheduleService.sync(
               projectId: project.id,
               projectCode: project.code,
               projectName: project.name,
             );
+    } on IsProgramiCloudException catch (e) {
+      schedule = _scheduleService.cachedFor(project.id);
+      errors.add(e.message);
+    } catch (e) {
+      schedule = _scheduleService.cachedFor(project.id);
+      errors.add('İş Programı: $e');
+    }
+
+    try {
+      kesif = demoFallback
+          ? await _kesifService.syncDemo(
+              projectId: project.id,
+              projectName: project.name,
+            )
+          : await _kesifService.sync(
+              projectId: project.id,
+              projectCode: project.code,
+              projectName: project.name,
+            );
+    } on KesifCloudException catch (e) {
+      kesif = _kesifService.cachedFor(project.id);
+      errors.add(e.message);
+    } catch (e) {
+      kesif = _kesifService.cachedFor(project.id);
+      errors.add('Keşif: $e');
+    }
+
+    final hasS = schedule != null && schedule.items.isNotEmpty;
+    final hasK = kesif != null && kesif.items.isNotEmpty;
+
+    if (hasS && hasK) {
       state = VerimState(
-        snapshot: snap,
+        schedule: schedule,
+        kesif: kesif,
         status: VerimSyncStatus.ready,
         message: demoFallback
-            ? 'Demo bulut verisi yüklendi (${_fmt(snap.updatedAt)})'
-            : 'Senkron tamam (${_fmt(snap.updatedAt)})',
+            ? 'Demo İş Programı + Keşif yüklendi'
+            : 'Senkron tamam — süre: İş Programı, metraj: Keşif',
       );
-    } on IsProgramiCloudException catch (e) {
-      final cached = _service.cachedFor(project.id);
-      state = VerimState(
-        snapshot: cached,
-        status: cached != null && cached.items.isNotEmpty
-            ? VerimSyncStatus.ready
-            : VerimSyncStatus.unavailable,
-        message: e.message,
-      );
-    } catch (e) {
-      state = state.copyWith(
-        status: VerimSyncStatus.error,
-        message: 'Senkron başarısız: $e',
-      );
+      return;
     }
+
+    state = VerimState(
+      schedule: schedule,
+      kesif: kesif,
+      status: (hasS || hasK)
+          ? VerimSyncStatus.unavailable
+          : VerimSyncStatus.error,
+      message: errors.isEmpty
+          ? 'Bulut planı eksik (İş Programı ve/veya Keşif).'
+          : errors.join('\n'),
+    );
   }
 
   static String _fmt(DateTime d) {
@@ -189,12 +310,18 @@ final verimProvider =
   return notifier;
 });
 
-/// Plan (İş Programı bulut) × gerçekleşen (yerel puantaj + imalat).
+/// Plan: süre/iş gücü ← İş Programı, metraj ← Keşif.
+/// Gerçekleşen ← yerel puantaj + imalat.
 final verimRowsProvider = Provider<List<VerimRow>>((ref) {
   final verim = ref.watch(verimProvider);
-  final snap = verim.snapshot;
+  final schedule = verim.schedule;
+  final kesif = verim.kesif;
   final project = ref.watch(activeProjectProvider);
-  if (snap == null || project == null || snap.items.isEmpty) {
+  if (schedule == null ||
+      project == null ||
+      schedule.items.isEmpty ||
+      kesif == null ||
+      kesif.items.isEmpty) {
     return const [];
   }
 
@@ -202,12 +329,10 @@ final verimRowsProvider = Provider<List<VerimRow>>((ref) {
   final productions = ref.watch(productionProvider);
 
   final projectAtt = attendance.where((a) => a.projectId == project.id);
-  // Mesai dahil adam-gün: (saat + mesai) / 8
   final totalWorkerDays =
       projectAtt.fold<double>(0, (sum, a) => sum + a.yevmiye);
 
-  // İş gücünü planlanan adam-gün oranına göre imalatlara böl.
-  final plannedAgSum = snap.items.fold<double>(0, (s, i) {
+  final plannedAgSum = schedule.items.fold<double>(0, (s, i) {
     final workers = (i.plannedWorkerCount ?? 0).toDouble();
     if (workers <= 0) return s;
     final days = i.durationDays;
@@ -215,7 +340,7 @@ final verimRowsProvider = Provider<List<VerimRow>>((ref) {
   });
 
   return [
-    for (final item in snap.items)
+    for (final item in schedule.items)
       () {
         final workers = (item.plannedWorkerCount ?? 0).toDouble();
         final days = item.durationDays;
@@ -224,7 +349,7 @@ final verimRowsProvider = Provider<List<VerimRow>>((ref) {
             : (days != null && days > 0 ? workers * days : workers);
         final share = plannedAgSum > 0
             ? plannedAg / plannedAgSum
-            : (1 / snap.items.length);
+            : (1 / schedule.items.length);
         final nameLower = item.imalatName.toLowerCase();
         final token = nameLower.split(RegExp(r'\s+')).first;
         final qty = productions
@@ -234,6 +359,7 @@ final verimRowsProvider = Provider<List<VerimRow>>((ref) {
             .fold<double>(0, (s, p) => s + p.completedQty);
         return VerimRow(
           item: item,
+          kesif: matchKesifItem(kesif.items, item),
           actualWorkerDays: totalWorkerDays * share,
           actualQty: qty,
         );
@@ -253,9 +379,6 @@ final todayWorkerDaysProvider = Provider<double>((ref) {
 });
 
 /// Ana sayfa Özet Verim — ekip bazında toplu birim verim.
-///
-/// Verim sayfasındaki imalat satırlarının plan/gerçek miktar ve adam-gün
-/// değerleri ekip altında toplanır; yüzde bu toplamlar üzerinden tek hesaplanır.
 class TeamVerimSummary {
   const TeamVerimSummary({
     required this.teamName,
@@ -273,8 +396,6 @@ class TeamVerimSummary {
   final double plannedQty;
   final int planLineCount;
 
-  /// Birim verim =
-  /// (Σ gerçek metraj / Σ plan metraj) / (Σ gerçek adam-gün / Σ plan adam-gün).
   double? get unitEfficiency {
     if (plannedQty <= 0 || plannedWorkerDays <= 0) return null;
     if (actualWorkerDays <= 0) return null;

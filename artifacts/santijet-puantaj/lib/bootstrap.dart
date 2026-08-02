@@ -21,6 +21,7 @@ Future<void> bootstrap() async {
     Hive.openBox('attendance'),
     Hive.openBox('production'),
     Hive.openBox('work_schedule_cloud'),
+    Hive.openBox('kesif_cloud'),
   ]);
 
   _migratePersonnelToProjects(boxes[2], boxes[1], boxes[0]);
@@ -34,6 +35,7 @@ Future<void> bootstrap() async {
         attendanceBoxProvider.overrideWithValue(boxes[3]),
         productionBoxProvider.overrideWithValue(boxes[4]),
         workScheduleCacheBoxProvider.overrideWithValue(boxes[5]),
+        kesifCacheBoxProvider.overrideWithValue(boxes[6]),
       ],
       child: const SantijetPuantajApp(),
     ),

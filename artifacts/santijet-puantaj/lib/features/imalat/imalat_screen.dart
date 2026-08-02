@@ -15,7 +15,9 @@ import '../../data/providers/catalog_provider.dart';
 import '../../data/providers/production_provider.dart';
 import '../../data/providers/verim_provider.dart';
 import '../../data/services/is_programi_cloud_service.dart';
+import '../../data/services/kesif_cloud_service.dart';
 import '../../domain/entities/attendance.dart';
+import '../../domain/entities/kesif_plan.dart';
 import '../../domain/entities/person.dart';
 import '../../domain/entities/production.dart';
 import '../../domain/entities/production_day_entry.dart';
@@ -664,7 +666,7 @@ class _ImalatJobSheetState extends ConsumerState<_ImalatJobSheet> {
       .toLowerCase()
       .replaceAll(RegExp(r'\s+'), ' ');
 
-  WorkScheduleItem? _matchItem(List<WorkScheduleItem> items, String name) {
+  WorkScheduleItem? _matchSchedule(List<WorkScheduleItem> items, String name) {
     final target = _norm(name);
     if (target.isEmpty) return null;
     for (final item in items) {
@@ -677,6 +679,20 @@ class _ImalatJobSheetState extends ConsumerState<_ImalatJobSheet> {
     return null;
   }
 
+  KesifItem? _matchKesif(List<KesifItem> items, String name) {
+    final target = _norm(name);
+    if (target.isEmpty) return null;
+    for (final item in items) {
+      if (_norm(item.imalatName) == target) return item;
+    }
+    for (final item in items) {
+      final n = _norm(item.imalatName);
+      if (n.contains(target) || target.contains(n)) return item;
+    }
+    return null;
+  }
+
+  /// Süre ← İş Programı, plan metraj ← Keşif.
   Future<void> _pullPlannedDaysFromSchedule() async {
     final name = _name.text.trim();
     if (name.isEmpty) {
@@ -695,21 +711,44 @@ class _ImalatJobSheetState extends ConsumerState<_ImalatJobSheet> {
 
     try {
       final project = ref.read(activeProjectProvider);
-      final service = ref.read(isProgramiCloudServiceProvider);
-      WorkScheduleSnapshot snap;
+      final scheduleSvc = ref.read(isProgramiCloudServiceProvider);
+      final kesifSvc = ref.read(kesifCloudServiceProvider);
+
+      WorkScheduleSnapshot scheduleSnap;
+      KesifSnapshot kesifSnap;
       var fromDemo = false;
+
       try {
-        snap = await service.sync(
+        scheduleSnap = await scheduleSvc.sync(
           projectId: widget.projectId,
           projectCode: project?.code,
           projectName: project?.name,
         );
       } on IsProgramiCloudException {
-        final cached = service.cachedFor(widget.projectId);
+        final cached = scheduleSvc.cachedFor(widget.projectId);
         if (cached != null && cached.items.isNotEmpty) {
-          snap = cached;
+          scheduleSnap = cached;
         } else {
-          snap = await service.syncDemo(
+          scheduleSnap = await scheduleSvc.syncDemo(
+            projectId: widget.projectId,
+            projectName: project?.name,
+          );
+          fromDemo = true;
+        }
+      }
+
+      try {
+        kesifSnap = await kesifSvc.sync(
+          projectId: widget.projectId,
+          projectCode: project?.code,
+          projectName: project?.name,
+        );
+      } on KesifCloudException {
+        final cached = kesifSvc.cachedFor(widget.projectId);
+        if (cached != null && cached.items.isNotEmpty) {
+          kesifSnap = cached;
+        } else {
+          kesifSnap = await kesifSvc.syncDemo(
             projectId: widget.projectId,
             projectName: project?.name,
           );
@@ -718,48 +757,44 @@ class _ImalatJobSheetState extends ConsumerState<_ImalatJobSheet> {
       }
 
       if (!mounted) return;
-      final match = _matchItem(snap.items, name);
-      if (match == null) {
-        setState(() {
-          _scheduleHint =
-              'İş Programı’nda “$name” ile eşleşen satır bulunamadı.';
-        });
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text(_scheduleHint!)),
-        );
-        return;
-      }
 
-      final days = match.durationDays;
-      if (days == null || days <= 0) {
-        setState(() {
-          _scheduleHint =
-              'Eşleşen satırda başlangıç/bitiş tarihi yok.';
-        });
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text(_scheduleHint!)),
-        );
-        return;
-      }
+      final scheduleMatch = _matchSchedule(scheduleSnap.items, name);
+      final kesifMatch = _matchKesif(kesifSnap.items, name);
+      final parts = <String>[];
 
-      setState(() {
-        _plannedDays.text = '$days';
-        if (_planned.text.trim().isEmpty &&
-            match.plannedQty != null &&
-            match.plannedQty! > 0) {
-          _planned.text = _num(match.plannedQty!);
+      if (scheduleMatch != null) {
+        final days = scheduleMatch.durationDays;
+        if (days != null && days > 0) {
+          _plannedDays.text = '$days';
+          parts.add(
+            'süre $days gün'
+            '${scheduleMatch.startDate != null && scheduleMatch.endDate != null ? ' (${scheduleMatch.startDate} → ${scheduleMatch.endDate})' : ''}',
+          );
+        } else {
+          parts.add('İş Programı’nda tarih yok');
         }
-        if (match.unit != null &&
-            match.unit!.trim().isNotEmpty &&
+      } else {
+        parts.add('İş Programı eşleşmedi');
+      }
+
+      if (kesifMatch != null && kesifMatch.plannedQty > 0) {
+        _planned.text = _num(kesifMatch.plannedQty);
+        parts.add(
+          'metraj ${_num(kesifMatch.plannedQty)} ${kesifMatch.unit}',
+        );
+      } else {
+        parts.add('Keşif metraj eşleşmedi');
+      }
+
+      final prefix = fromDemo ? 'Demo buluttan' : 'Buluttan';
+      setState(() {
+        if (kesifMatch != null &&
+            kesifMatch.unit.trim().isNotEmpty &&
             (_unit.trim().isEmpty ||
                 _unit == ImalatUnitCatalog.defaultUnit)) {
-          _unit = match.unit!.trim();
+          _unit = kesifMatch.unit.trim();
         }
-        _scheduleHint = fromDemo
-            ? 'Demo buluttan alındı: $days gün'
-                '${match.startDate != null && match.endDate != null ? ' (${match.startDate} → ${match.endDate})' : ''}.'
-            : 'İş Programı’ndan alındı: $days gün'
-                '${match.startDate != null && match.endDate != null ? ' (${match.startDate} → ${match.endDate})' : ''}.';
+        _scheduleHint = '$prefix: ${parts.join(' · ')}.';
       });
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text(_scheduleHint!)),
@@ -768,7 +803,7 @@ class _ImalatJobSheetState extends ConsumerState<_ImalatJobSheet> {
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
-          content: Text('İş Programı verisi alınamadı.'),
+          content: Text('İş Programı / Keşif verisi alınamadı.'),
         ),
       );
     } finally {
@@ -811,8 +846,8 @@ class _ImalatJobSheetState extends ConsumerState<_ImalatJobSheet> {
               Padding(
                 padding: const EdgeInsets.only(top: AppSpacing.xs),
                 child: Text(
-                  'Planlanan keşif miktarı ve gün sayısını girin; '
-                  'günlük usta/düz kayıtlarını sonradan ekleyebilirsiniz.',
+                  'Plan metraj (Keşif) ve gün (İş Programı) girin veya '
+                  'buluttan çekin; günlük kayıtları sonradan ekleyin.',
                   style: theme.textTheme.bodySmall,
                 ),
               ),
@@ -908,8 +943,8 @@ class _ImalatJobSheetState extends ConsumerState<_ImalatJobSheet> {
                   : const Icon(Icons.cloud_download_outlined, size: 20),
               label: Text(
                 _pullingDays
-                    ? 'İş Programı’ndan alınıyor…'
-                    : 'İş Programı’ndan planlanan günü al',
+                    ? 'Buluttan alınıyor…'
+                    : 'Buluttan al (süre: İş Programı · metraj: Keşif)',
               ),
             ),
             if (_scheduleHint != null) ...[

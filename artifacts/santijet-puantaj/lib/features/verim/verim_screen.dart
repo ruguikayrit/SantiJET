@@ -12,7 +12,7 @@ import '../../core/theme/app_spacing.dart';
 import '../../data/providers/app_data_provider.dart';
 import '../../data/providers/verim_provider.dart';
 
-/// Verim — plan (İş Programı bulut) × gerçekleşen (puantaj + imalat).
+/// Verim — plan süre (İş Programı) + plan metraj (Keşif) × gerçekleşen.
 class VerimScreen extends ConsumerWidget {
   const VerimScreen({super.key});
 
@@ -78,7 +78,7 @@ class VerimScreen extends ConsumerWidget {
                             const SizedBox(width: AppSpacing.sm),
                             Expanded(
                               child: Text(
-                                'Bulut planı yok',
+                                'Plan kaynakları eksik',
                                 style: theme.textTheme.titleMedium,
                               ),
                             ),
@@ -86,14 +86,15 @@ class VerimScreen extends ConsumerWidget {
                         ),
                         const SizedBox(height: AppSpacing.sm),
                         Text(
-                          'Verim hesaplayabilmek için İş Programı uygulamasından '
-                          'bulut üzerinden iş programı verisi çekilmesi gerekir. '
+                          'Verim için iki bulut kaynağı gerekir:\n'
+                          '• İş Programı → planlanan süre / iş gücü\n'
+                          '• Keşif → planlanan metraj\n'
                           'Yalnızca yerel puantaj ile verim hesaplanamaz.',
                           style: theme.textTheme.bodyMedium,
                         ),
                         const SizedBox(height: AppSpacing.md),
                         SJButton(
-                          label: 'İş Programı’ndan Çek',
+                          label: 'Buluttan çek (İş Programı + Keşif)',
                           icon: Icons.cloud_download_outlined,
                           loading: syncing,
                           expanded: true,
@@ -125,6 +126,7 @@ class VerimScreen extends ConsumerWidget {
               Text('İmalat bazlı verim', style: theme.textTheme.titleMedium),
               const SizedBox(height: AppSpacing.xs),
               Text(
+                'Süre ← İş Programı · Metraj ← Keşif\n'
                 'Birim verim = (metraj oranı) ÷ (adam-gün oranı)',
                 style: theme.textTheme.bodySmall,
               ),
@@ -182,7 +184,7 @@ class _CloudBanner extends StatelessWidget {
               const SizedBox(width: AppSpacing.sm),
               Expanded(
                 child: Text(
-                  'İş Programı bulut senkronu',
+                  'Plan bulut senkronu',
                   style: theme.textTheme.titleMedium?.copyWith(color: accent),
                 ),
               ),
@@ -201,6 +203,17 @@ class _CloudBanner extends StatelessWidget {
             ],
           ),
           Text(projectName, style: theme.textTheme.bodySmall),
+          const SizedBox(height: AppSpacing.xs),
+          _sourceLine(
+            theme,
+            label: 'İş Programı (süre)',
+            ok: verim.hasSchedulePlan,
+          ),
+          _sourceLine(
+            theme,
+            label: 'Keşif (metraj)',
+            ok: verim.hasKesifPlan,
+          ),
           if (verim.message != null) ...[
             const SizedBox(height: AppSpacing.xs),
             Text(verim.message!, style: theme.textTheme.bodySmall),
@@ -220,6 +233,29 @@ class _CloudBanner extends StatelessWidget {
       ),
     );
   }
+
+  Widget _sourceLine(ThemeData theme, {required String label, required bool ok}) {
+    return Padding(
+      padding: const EdgeInsets.only(top: 2),
+      child: Row(
+        children: [
+          Icon(
+            ok ? Icons.check_circle_outline : Icons.radio_button_unchecked,
+            size: 16,
+            color: ok ? AppColors.success : theme.colorScheme.onSurfaceVariant,
+          ),
+          const SizedBox(width: 6),
+          Text(
+            label,
+            style: theme.textTheme.labelMedium?.copyWith(
+              fontWeight: FontWeight.w600,
+              color: ok ? AppColors.success : theme.colorScheme.onSurfaceVariant,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
 }
 
 class _VerimRowCard extends StatelessWidget {
@@ -232,6 +268,7 @@ class _VerimRowCard extends StatelessWidget {
     final item = row.item;
     final primary = row.unitEfficiency;
     final color = _pctColor(primary);
+    final plannedQty = row.plannedQty;
 
     return SJCard(
       child: Builder(
@@ -288,14 +325,22 @@ class _VerimRowCard extends StatelessWidget {
                 actual: row.actualWorkerDays.toStringAsFixed(1),
                 unit: 'adam-gün',
               ),
-              if (item.plannedQty != null) ...[
+              if (plannedQty != null) ...[
                 const SizedBox(height: AppSpacing.xs),
                 _metric(
                   theme,
                   label: 'Miktar',
-                  planned: item.plannedQty!.toStringAsFixed(1),
+                  planned: plannedQty.toStringAsFixed(1),
                   actual: row.actualQty.toStringAsFixed(1),
-                  unit: item.unit ?? '',
+                  unit: row.unit ?? '',
+                ),
+              ] else ...[
+                const SizedBox(height: AppSpacing.xs),
+                Text(
+                  'Keşif metraj eşleşmesi yok',
+                  style: theme.textTheme.labelSmall?.copyWith(
+                    color: AppColors.warning,
+                  ),
                 ),
               ],
               if (primary != null) ...[

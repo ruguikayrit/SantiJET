@@ -28,6 +28,7 @@ class PuantajBackupPayload {
     required this.teams,
     this.activeProjectId,
     this.workSchedule,
+    this.kesif,
   });
 
   final int version;
@@ -40,6 +41,7 @@ class PuantajBackupPayload {
   final List<String> teams;
   final String? activeProjectId;
   final Map<String, dynamic>? workSchedule;
+  final Map<String, dynamic>? kesif;
 
   Map<String, dynamic> toJson() => {
         'format': puantajBackupFormatId,
@@ -53,6 +55,7 @@ class PuantajBackupPayload {
         'professions': professions,
         'teams': teams,
         if (workSchedule != null) 'workSchedule': workSchedule,
+        if (kesif != null) 'kesif': kesif,
       };
 
   String toJsonString() =>
@@ -92,6 +95,7 @@ class PuantajBackupPayload {
 
     final exportedAtRaw = json['exportedAt'] as String?;
     final workRaw = json['workSchedule'];
+    final kesifRaw = json['kesif'];
 
     return PuantajBackupPayload(
       version: version,
@@ -108,6 +112,7 @@ class PuantajBackupPayload {
       workSchedule: workRaw is Map
           ? Map<String, dynamic>.from(workRaw)
           : null,
+      kesif: kesifRaw is Map ? Map<String, dynamic>.from(kesifRaw) : null,
     );
   }
 
