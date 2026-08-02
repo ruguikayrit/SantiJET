@@ -4,18 +4,27 @@ import 'package:go_router/go_router.dart';
 
 import '../../core/constants/app_info.dart';
 import '../../core/design_system/sj_card.dart';
+import '../../core/design_system/sj_modal.dart';
 import '../../core/routing/app_routes.dart';
 import '../../core/theme/app_colors.dart';
 import '../../core/theme/app_spacing.dart';
 import '../../core/theme/app_typography.dart';
 import '../../core/theme/theme_mode_provider.dart';
 import '../../data/providers/app_data_provider.dart';
+import '../../data/providers/demo_seed_provider.dart';
 
 /// Ayarlar — Demir/Puantaj tile düzeni; Beton kapsamı.
-class SettingsScreen extends ConsumerWidget {
+class SettingsScreen extends ConsumerStatefulWidget {
   const SettingsScreen({super.key});
 
-  void _showThemePicker(BuildContext context, WidgetRef ref) {
+  @override
+  ConsumerState<SettingsScreen> createState() => _SettingsScreenState();
+}
+
+class _SettingsScreenState extends ConsumerState<SettingsScreen> {
+  bool _busy = false;
+
+  void _showThemePicker(BuildContext context) {
     showModalBottomSheet<void>(
       context: context,
       backgroundColor: AppColors.surfaceElevated,
@@ -64,10 +73,7 @@ class SettingsScreen extends ConsumerWidget {
     );
   }
 
-  Future<void> _confirmDeleteAllData(
-    BuildContext context,
-    WidgetRef ref,
-  ) async {
+  Future<void> _confirmDeleteAllData(BuildContext context) async {
     final ok = await showDialog<bool>(
       context: context,
       builder: (ctx) => AlertDialog(
@@ -100,14 +106,49 @@ class SettingsScreen extends ConsumerWidget {
     ref.read(qualityProvider.notifier).replaceAll([]);
     ref.read(activeProjectIdProvider.notifier).set(null);
 
-    if (!context.mounted) return;
-    ScaffoldMessenger.of(context).showSnackBar(
+    if (!mounted) return;
+    ScaffoldMessenger.of(this.context).showSnackBar(
       const SnackBar(content: Text('Tüm veriler silindi')),
     );
   }
 
+  Future<void> _confirmLoadDemo(BuildContext context) async {
+    final ok = await SJModal.confirm(
+      context: context,
+      title: 'Demo veriyi yükle',
+      message:
+          'Demo Şantiye projesi oluşturulur/güncellenir; keşif, döküm, '
+          'sipariş, metraj farkı ve basınç dayanım (Temel / Kolon & Perde / '
+          'Döşeme) örnekleri doldurulur. Aynı adlı demo projenin mevcut '
+          'verileri yenilenir.',
+      confirmLabel: 'Yükle',
+    );
+    if (!ok || !mounted) return;
+
+    setState(() => _busy = true);
+    try {
+      final project = await ref.read(demoSeedControllerProvider).loadAll();
+      if (!mounted) return;
+      ScaffoldMessenger.of(this.context).showSnackBar(
+        SnackBar(
+          content: Text(
+            'Demo yüklendi: ${project.name}. Ana sayfa / Keşif / Sipariş / '
+            'Döküm / Basınç raporları üzerinden test edebilirsiniz.',
+          ),
+        ),
+      );
+    } catch (e) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(this.context).showSnackBar(
+        SnackBar(content: Text('Demo yüklenemedi: $e')),
+      );
+    } finally {
+      if (mounted) setState(() => _busy = false);
+    }
+  }
+
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
+  Widget build(BuildContext context) {
     final themeMode = ref.watch(themeModeProvider);
     final project = ref.watch(activeProjectProvider);
     final discoveryCount = ref.watch(activeDiscoveryProvider).length;
@@ -144,7 +185,17 @@ class SettingsScreen extends ConsumerWidget {
             icon: Icons.dark_mode,
             title: 'Tema',
             subtitle: themeLabel(themeMode),
-            onTap: () => _showThemePicker(context, ref),
+            onTap: () => _showThemePicker(context),
+          ),
+          _SettingsTile(
+            icon: Icons.dataset_outlined,
+            title: 'Demo veriyi yükle',
+            subtitle: _busy
+                ? 'Yükleniyor…'
+                : 'Proje, keşif, döküm, sipariş ve basınç raporu örneği',
+            onTap: () {
+              if (!_busy) _confirmLoadDemo(context);
+            },
           ),
           _SettingsTile(
             icon: Icons.info_outline,
@@ -157,7 +208,7 @@ class SettingsScreen extends ConsumerWidget {
             icon: Icons.delete_forever,
             title: 'Tüm Verileri Sil',
             subtitle: 'Projeler, keşif, döküm ve siparişler silinir',
-            onTap: () => _confirmDeleteAllData(context, ref),
+            onTap: () => _confirmDeleteAllData(context),
             destructive: true,
           ),
         ],
@@ -183,57 +234,47 @@ class _SettingsTile extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final color = destructive ? AppColors.critical : null;
     return Padding(
-      padding: const EdgeInsets.only(bottom: 8),
+      padding: const EdgeInsets.only(bottom: AppSpacing.sm),
       child: SJCard(
         onTap: onTap,
-        padding: const EdgeInsets.all(14),
-        child: Builder(
-          builder: (context) {
-            final theme = Theme.of(context);
-            final titleStyle = theme.textTheme.titleMedium?.copyWith(
-              color: destructive
-                  ? AppColors.critical
-                  : AppColors.cardTextPrimary,
-              fontWeight: FontWeight.w600,
-            );
-            return Row(
-              children: [
-                Icon(
-                  icon,
-                  color: destructive
-                      ? AppColors.critical
-                      : theme.colorScheme.primary,
-                  size: 22,
-                ),
-                const SizedBox(width: 14),
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(title, style: titleStyle),
-                      Text(
-                        subtitle,
-                        style: theme.textTheme.bodySmall?.copyWith(
-                          color: theme.colorScheme.onSurfaceVariant,
-                        ),
-                      ),
-                    ],
+        child: Row(
+          children: [
+            Icon(icon, color: color ?? AppColors.electricBlueLight),
+            const SizedBox(width: AppSpacing.md),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    title,
+                    style: AppTypography.titleMedium.copyWith(color: color),
                   ),
-                ),
-                Icon(
-                  Icons.chevron_right,
-                  color: theme.colorScheme.onSurfaceVariant,
-                ),
-              ],
-            );
-          },
+                  const SizedBox(height: 2),
+                  Text(
+                    subtitle,
+                    style: AppTypography.bodySmall.copyWith(
+                      color: destructive
+                          ? AppColors.critical.withValues(alpha: 0.8)
+                          : AppColors.cardTextSecondary,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            Icon(
+              Icons.chevron_right,
+              color: color ?? AppColors.cardTextMuted,
+            ),
+          ],
         ),
       ),
     );
   }
 }
 
+/// Hakkında — Ayarlar alt rotası.
 class AboutScreen extends StatelessWidget {
   const AboutScreen({super.key});
 
