@@ -83,7 +83,15 @@ jobs:
         continue-on-error: true
         env:
           GITHUB_REPOSITORY_NAME: ${{ github.event.repository.name }}
-        run: bash .github/scripts/build-bfa-pages.sh
+        run: |
+          # staging push'larında staging betiği + kaynak öncelikli.
+          if [ -f staging-src/.github/scripts/build-bfa-pages.sh ]; then
+            bash staging-src/.github/scripts/build-bfa-pages.sh
+          elif [ -f .github/scripts/build-bfa-pages.sh ]; then
+            bash .github/scripts/build-bfa-pages.sh
+          else
+            echo "::warning::build-bfa-pages.sh missing; skipping /bfa/."
+          fi
 
       - name: Setup Flutter (Puantaj)
         uses: subosito/flutter-action@v2
