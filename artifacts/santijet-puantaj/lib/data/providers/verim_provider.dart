@@ -206,23 +206,31 @@ final verimRowsProvider = Provider<List<VerimRow>>((ref) {
   final totalWorkerDays =
       projectAtt.fold<double>(0, (sum, a) => sum + a.yevmiye);
 
-  // İmalat bazlı dağılım yoksa iş gücünü planlanan adam oranına göre böl.
-  final plannedSum = snap.items.fold<int>(
-    0,
-    (s, i) => s + (i.plannedWorkerCount ?? 0),
-  );
+  // İş gücünü planlanan adam-gün oranına göre imalatlara böl.
+  final plannedAgSum = snap.items.fold<double>(0, (s, i) {
+    final workers = (i.plannedWorkerCount ?? 0).toDouble();
+    if (workers <= 0) return s;
+    final days = i.durationDays;
+    return s + (days != null && days > 0 ? workers * days : workers);
+  });
 
   return [
     for (final item in snap.items)
       () {
-        final share = plannedSum > 0 && item.plannedWorkerCount != null
-            ? item.plannedWorkerCount! / plannedSum
+        final workers = (item.plannedWorkerCount ?? 0).toDouble();
+        final days = item.durationDays;
+        final plannedAg = workers <= 0
+            ? 0.0
+            : (days != null && days > 0 ? workers * days : workers);
+        final share = plannedAgSum > 0
+            ? plannedAg / plannedAgSum
             : (1 / snap.items.length);
         final nameLower = item.imalatName.toLowerCase();
+        final token = nameLower.split(RegExp(r'\s+')).first;
         final qty = productions
             .where((p) =>
                 p.projectId == project.id &&
-                p.name.toLowerCase().contains(nameLower.split(' ').first))
+                p.name.toLowerCase().contains(token))
             .fold<double>(0, (s, p) => s + p.completedQty);
         return VerimRow(
           item: item,
@@ -244,7 +252,10 @@ final todayWorkerDaysProvider = Provider<double>((ref) {
       .fold<double>(0, (sum, a) => sum + a.yevmiye);
 });
 
-/// Ana sayfa Özet Verim — ekip bazlı birim verim.
+/// Ana sayfa Özet Verim — ekip bazında toplu birim verim.
+///
+/// Verim sayfasındaki imalat satırlarının plan/gerçek miktar ve adam-gün
+/// değerleri ekip altında toplanır; yüzde bu toplamlar üzerinden tek hesaplanır.
 class TeamVerimSummary {
   const TeamVerimSummary({
     required this.teamName,
@@ -263,7 +274,7 @@ class TeamVerimSummary {
   final int planLineCount;
 
   /// Birim verim =
-  /// (gerçek metraj / plan metraj) / (gerçek adam-gün / plan adam-gün).
+  /// (Σ gerçek metraj / Σ plan metraj) / (Σ gerçek adam-gün / Σ plan adam-gün).
   double? get unitEfficiency {
     if (plannedQty <= 0 || plannedWorkerDays <= 0) return null;
     if (actualWorkerDays <= 0) return null;
@@ -275,19 +286,10 @@ class TeamVerimSummary {
 }
 
 final teamVerimSummariesProvider = Provider<List<TeamVerimSummary>>((ref) {
-  final verim = ref.watch(verimProvider);
-  final snap = verim.snapshot;
-  final project = ref.watch(activeProjectProvider);
-  if (snap == null || project == null || snap.items.isEmpty) {
-    return const [];
-  }
+  final rows = ref.watch(verimRowsProvider);
+  if (rows.isEmpty) return const [];
 
-  final people = ref.watch(activePersonnelProvider);
-  final attendance = ref.watch(attendanceProvider);
-  final productions = ref
-      .watch(productionProvider)
-      .where((p) => p.projectId == project.id)
-      .toList(growable: false);
+  final productions = ref.watch(activeProductionProvider);
 
   String resolveTeam(WorkScheduleItem item) {
     final nameLower = item.imalatName.toLowerCase().trim();
@@ -304,62 +306,25 @@ final teamVerimSummariesProvider = Provider<List<TeamVerimSummary>>((ref) {
     return 'Diğer';
   }
 
-  double plannedAdamGun(WorkScheduleItem item) {
-    final workers = (item.plannedWorkerCount ?? 0).toDouble();
-    if (workers <= 0) return 0;
-    final days = item.durationDays;
-    if (days != null && days > 0) return workers * days;
-    return workers;
-  }
-
-  double actualQtyForItem(WorkScheduleItem item) {
-    final nameLower = item.imalatName.toLowerCase();
-    final token = nameLower.split(RegExp(r'\s+')).first;
-    return productions
-        .where((p) => p.name.toLowerCase().contains(token))
-        .fold<double>(0, (s, p) => s + p.completedQty);
-  }
-
   final plannedAgByTeam = <String, double>{};
+  final actualAgByTeam = <String, double>{};
   final plannedQtyByTeam = <String, double>{};
   final actualQtyByTeam = <String, double>{};
   final linesByTeam = <String, int>{};
-  for (final item in snap.items) {
-    final team = resolveTeam(item);
+
+  for (final row in rows) {
+    final team = resolveTeam(row.item);
     plannedAgByTeam[team] =
-        (plannedAgByTeam[team] ?? 0) + plannedAdamGun(item);
+        (plannedAgByTeam[team] ?? 0) + row.plannedWorkerDays;
+    actualAgByTeam[team] =
+        (actualAgByTeam[team] ?? 0) + row.actualWorkerDays;
     plannedQtyByTeam[team] =
-        (plannedQtyByTeam[team] ?? 0) + (item.plannedQty ?? 0);
-    actualQtyByTeam[team] =
-        (actualQtyByTeam[team] ?? 0) + actualQtyForItem(item);
+        (plannedQtyByTeam[team] ?? 0) + (row.plannedQty ?? 0);
+    actualQtyByTeam[team] = (actualQtyByTeam[team] ?? 0) + row.actualQty;
     linesByTeam[team] = (linesByTeam[team] ?? 0) + 1;
   }
 
-  final memberIdsByTeam = <String, Set<String>>{};
-  for (final p in people) {
-    if (!p.active) continue;
-    final team = p.team.trim().isEmpty ? 'Diğer' : p.team.trim();
-    memberIdsByTeam.putIfAbsent(team, () => <String>{}).add(p.id);
-  }
-
-  final actualAgByTeam = <String, double>{
-    for (final t in plannedAgByTeam.keys) t: 0,
-  };
-  for (final a in attendance) {
-    if (a.projectId != project.id) continue;
-    for (final entry in memberIdsByTeam.entries) {
-      if (!entry.value.contains(a.personId)) continue;
-      actualAgByTeam[entry.key] = (actualAgByTeam[entry.key] ?? 0) + a.yevmiye;
-      break;
-    }
-  }
-
-  final teams = {
-    ...plannedAgByTeam.keys,
-    ...actualAgByTeam.keys.where((t) => (actualAgByTeam[t] ?? 0) > 0),
-  }.toList()
-    ..sort();
-
+  final teams = plannedAgByTeam.keys.toList()..sort();
   return [
     for (final team in teams)
       TeamVerimSummary(
