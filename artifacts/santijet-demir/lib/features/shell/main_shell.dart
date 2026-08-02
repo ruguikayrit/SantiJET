@@ -43,12 +43,17 @@ class MainShell extends ConsumerWidget {
         Scaffold(
           backgroundColor: AppColors.canvas,
           resizeToAvoidBottomInset: false,
-          body: Column(
-            crossAxisAlignment: CrossAxisAlignment.stretch,
-            children: [
-              SafeArea(bottom: false, child: ReadOnlyBanner()),
-              Expanded(child: ThemeRebuildGate(child: navigationShell)),
-            ],
+          // Üst SafeArea: bildirim/ayar butonları status bar & staging bandı
+          // altında kalıp tıklanamaz olmasın. Alt false: nav kendi inset'ini çizer.
+          body: SafeArea(
+            bottom: false,
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                ReadOnlyBanner(),
+                Expanded(child: ThemeRebuildGate(child: navigationShell)),
+              ],
+            ),
           ),
           bottomNavigationBar: MediaQuery.removePadding(
             context: context,

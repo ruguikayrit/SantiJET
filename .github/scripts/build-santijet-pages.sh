@@ -66,7 +66,9 @@ build_demir_web() {
   perl -i -pe 's/_flutter\.loader\.load\(\{\}\);/window.__SANTIJET_START_FLUTTER__&&window.__SANTIJET_START_FLUTTER__();/g' build/web/flutter_bootstrap.js
 
   if [[ "${channel_label}" == "staging" ]]; then
-    perl -i -pe 's|<body>|<body><div id="santijet-staging-banner" style="position:fixed;top:0;left:0;right:0;z-index:99999;background:#f59e0b;color:#111827;text-align:center;font:600 12px/1.4 system-ui,sans-serif;padding:6px 10px;pointer-events:none;">STAGING ÖNİZLEME — canlı sürüm değil</div><div style="height:28px"></div>|' build/web/index.html
+    # Banner flutter-view ÜSTÜNE bindirilmez: üst inset + pointer-events none.
+    # Aksi halde iOS Safari'de header bildirim/ayar dokunuşları yutulur.
+    perl -i -pe 's|<body>|<body><div id="santijet-staging-banner" style="position:fixed;top:0;left:0;right:0;height:28px;z-index:99999;background:#f59e0b;color:#111827;text-align:center;font:600 12px/28px system-ui,sans-serif;pointer-events:none;">STAGING ÖNİZLEME — canlı sürüm değil</div><style>flutter-view,flt-glass-pane{top:28px!important;height:calc(var(--app-height,100dvh) - 28px)!important;min-height:0!important;}</style>|' build/web/index.html
   fi
 
   cp -r build/web/. "${output_dir}/"

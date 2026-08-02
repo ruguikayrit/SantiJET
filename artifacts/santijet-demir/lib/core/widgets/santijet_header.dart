@@ -1,6 +1,8 @@
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import 'package:pointer_interceptor/pointer_interceptor.dart';
 import 'package:santijet_demir/core/routing/app_routes.dart';
 import 'package:santijet_demir/core/theme/app_colors.dart';
 import 'package:santijet_demir/core/theme/app_spacing.dart';
@@ -117,7 +119,7 @@ class _HeaderNotificationButton extends ConsumerWidget {
     final alerts = ref.watch(dashboardCriticalAlertsProvider);
     final alertCount = alerts.length;
 
-    return Semantics(
+    final button = Semantics(
       label: alertCount > 0
           ? '$alertCount kritik uyarı'
           : 'Bildirimler, uyarı yok',
@@ -129,25 +131,28 @@ class _HeaderNotificationButton extends ConsumerWidget {
         child: SizedBox(
           width: SantijetHeader.actionSize,
           height: SantijetHeader.actionSize,
-          child: IconButton(
-            onPressed: () => context.push(AppRoutes.notificationSettings),
-            padding: EdgeInsets.zero,
-            visualDensity: VisualDensity.compact,
-            constraints: const BoxConstraints.tightFor(
-              width: SantijetHeader.actionSize,
-              height: SantijetHeader.actionSize,
-            ),
-            iconSize: SantijetHeader.actionIconSize,
-            icon: Icon(
-              Icons.notifications_outlined,
-              color: onDarkBand
-                  ? Colors.white.withValues(alpha: 0.88)
-                  : AppColors.textSecondary,
+          child: Material(
+            color: Colors.transparent,
+            child: InkWell(
+              customBorder: const CircleBorder(),
+              onTap: () => GoRouter.of(context).push(AppRoutes.notificationSettings),
+              child: Center(
+                child: Icon(
+                  Icons.notifications_outlined,
+                  size: SantijetHeader.actionIconSize,
+                  color: onDarkBand
+                      ? Colors.white.withValues(alpha: 0.88)
+                      : AppColors.textSecondary,
+                ),
+              ),
             ),
           ),
         ),
       ),
     );
+
+    if (kIsWeb) return PointerInterceptor(child: button);
+    return button;
   }
 }
 
@@ -167,39 +172,42 @@ class _HeaderAvatarButton extends ConsumerWidget {
             ? ref.watch(profileInitialProvider)
             : initial!.trim();
 
-    return Semantics(
+    final button = Semantics(
       label: 'Ayarlar',
       button: true,
       child: SizedBox(
         width: SantijetHeader.actionSize,
         height: SantijetHeader.actionSize,
-        child: IconButton(
-          onPressed: () => context.push(AppRoutes.settings),
-          padding: EdgeInsets.zero,
-          visualDensity: VisualDensity.compact,
-          constraints: const BoxConstraints.tightFor(
-            width: SantijetHeader.actionSize,
-            height: SantijetHeader.actionSize,
-          ),
-          icon: CircleAvatar(
-            radius: SantijetHeader.actionAvatarRadius,
-            backgroundColor: onDarkBand
-                ? AppColors.warning.withValues(alpha: 0.35)
-                : AppColors.warning.withValues(alpha: 0.3),
-            child: Text(
-              resolvedInitial,
-              style: AppTypography.titleMedium.copyWith(
-                color: onDarkBand ? Colors.white : AppColors.warning,
-                fontSize: AppTypography.scale *
-                    (resolvedInitial.length > 1 ? 11 : 14),
-                height: 1.0,
-                letterSpacing: resolvedInitial.length > 1 ? -0.4 : 0,
+        child: Material(
+          color: Colors.transparent,
+          child: InkWell(
+            customBorder: const CircleBorder(),
+            onTap: () => GoRouter.of(context).push(AppRoutes.settings),
+            child: Center(
+              child: CircleAvatar(
+                radius: SantijetHeader.actionAvatarRadius,
+                backgroundColor: onDarkBand
+                    ? AppColors.warning.withValues(alpha: 0.35)
+                    : AppColors.warning.withValues(alpha: 0.3),
+                child: Text(
+                  resolvedInitial,
+                  style: AppTypography.titleMedium.copyWith(
+                    color: onDarkBand ? Colors.white : AppColors.warning,
+                    fontSize: AppTypography.scale *
+                        (resolvedInitial.length > 1 ? 11 : 14),
+                    height: 1.0,
+                    letterSpacing: resolvedInitial.length > 1 ? -0.4 : 0,
+                  ),
+                ),
               ),
             ),
           ),
         ),
       ),
     );
+
+    if (kIsWeb) return PointerInterceptor(child: button);
+    return button;
   }
 }
 
