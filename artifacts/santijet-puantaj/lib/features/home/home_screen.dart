@@ -532,7 +532,7 @@ class _TeamImalatCard extends StatelessWidget {
               crossAxisAlignment: CrossAxisAlignment.end,
               children: [
                 Text(
-                  '${summary.jobCount} imalat · %${pct.toStringAsFixed(0)}',
+                  '${summary.jobCount} imalat',
                   style: theme.textTheme.labelSmall?.copyWith(color: color),
                   textAlign: TextAlign.right,
                 ),
@@ -610,14 +610,28 @@ class _TeamImalatCard extends StatelessWidget {
           ],
         ],
         const SizedBox(height: AppSpacing.xs),
-        ClipRRect(
-          borderRadius: AppRadii.xs,
-          child: LinearProgressIndicator(
-            value: (pct / 100).clamp(0.0, 1.0),
-            minHeight: 10,
-            backgroundColor: AppColors.success.withValues(alpha: 0.15),
-            color: AppColors.success,
-          ),
+        Row(
+          children: [
+            Expanded(
+              child: ClipRRect(
+                borderRadius: AppRadii.xs,
+                child: LinearProgressIndicator(
+                  value: (pct / 100).clamp(0.0, 1.0),
+                  minHeight: 10,
+                  backgroundColor: AppColors.success.withValues(alpha: 0.15),
+                  color: AppColors.success,
+                ),
+              ),
+            ),
+            const SizedBox(width: 8),
+            Text(
+              '%${pct.toStringAsFixed(0)}',
+              style: theme.textTheme.labelMedium?.copyWith(
+                color: AppColors.success,
+                fontWeight: FontWeight.w700,
+              ),
+            ),
+          ],
         ),
       ],
     );
