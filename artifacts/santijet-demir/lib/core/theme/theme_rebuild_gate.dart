@@ -35,8 +35,8 @@ class ThemeRebuildGate extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final brightness = Theme.of(context).brightness;
-    // System modunda brightness değişince palette'i koru (santijet dışı).
-    if (!AppColors.isSantijet) {
+    // Hibrit temalar (ŞantiJET / GeceJET) brightness ile ezilmesin.
+    if (!AppColors.isSantijet && !AppColors.isGecejet) {
       AppColors.applyBrightness(brightness);
     }
     // Alt nav yüzeyiyle aynı renk — nav altında gri bant/ölü alan görünmesin.

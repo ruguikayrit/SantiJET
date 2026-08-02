@@ -120,8 +120,10 @@ abstract final class AppColors {
       useDarkChrome ? darkBorderSubtle : lightBorderSubtle;
 
   // —— Kart paleti (özet / brifing / uyarı) ——
-  static Color get cardSurface =>
-      useDarkCards ? darkSurfaceElevated : lightSurfaceElevated;
+  // GeceJET: açık tema kartları (beyaz yüzey + koyu mürekkep).
+  static Color get cardSurface => useDarkCards
+      ? darkSurfaceElevated
+      : (isGecejet ? lightSurface : lightSurfaceElevated);
   static Color get cardSurfaceHighlight =>
       useDarkCards ? darkSurfaceHighlight : lightSurfaceHighlight;
   static Color get cardBorder => useDarkCards ? darkBorder : lightBorder;
@@ -135,6 +137,9 @@ abstract final class AppColors {
       useDarkCards ? darkTextMuted : lightTextMuted;
   static Color get cardTextDisabled =>
       useDarkCards ? darkTextDisabled : lightTextDisabled;
+
+  /// Hibrit özet kartı: ŞantiJET koyu / GeceJET açık.
+  static bool get useHybridCards => isSantijet || isGecejet;
 
   /// Arka plan koyuysa her zaman açık mürekkep; açıkta koyu mürekkep.
   /// Koyu-üzerine-koyu / açık-üzerine-açık kombinasyonunu engeller.
