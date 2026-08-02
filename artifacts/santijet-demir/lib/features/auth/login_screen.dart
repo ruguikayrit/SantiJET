@@ -101,8 +101,8 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                 children: [
                   Image.asset(
                     'assets/images/splash_bolt.png',
-                    width: 72,
-                    height: 72,
+                    width: 108,
+                    height: 108,
                     fit: BoxFit.contain,
                     filterQuality: FilterQuality.high,
                   ),
