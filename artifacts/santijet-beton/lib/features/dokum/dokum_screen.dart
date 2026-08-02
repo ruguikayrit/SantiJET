@@ -9,6 +9,7 @@ import '../../core/theme/app_spacing.dart';
 import '../../data/providers/app_data_provider.dart';
 import '../../domain/beton_progress.dart';
 import '../../domain/entities/concrete_pour.dart';
+import '../../domain/structural_element_kind.dart';
 import 'dokum_editor.dart';
 
 /// Gelen / dökülen beton kayıtları — sipariş seçimi + mikser / pompa.
@@ -116,9 +117,12 @@ class _PourCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final kind = StructuralElementKind.fromElementName(pour.elementName);
+    final accent = pour.isExtraPour ? AppColors.warning : kind.accentColor;
+
     return SJCard(
       onTap: onTap,
-      accentColor: pour.isExtraPour ? AppColors.warning : AppColors.success,
+      accentColor: accent,
       child: Builder(
         builder: (context) {
           final theme = Theme.of(context);
@@ -177,13 +181,13 @@ class _PourCard extends StatelessWidget {
                       vertical: 4,
                     ),
                     decoration: BoxDecoration(
-                      color: AppColors.success.withValues(alpha: 0.18),
+                      color: accent.withValues(alpha: 0.18),
                       borderRadius: AppRadii.sm,
                     ),
                     child: Text(
                       '${BetonProgress.fmtM3(pour.volumeM3)} m³',
                       style: theme.textTheme.labelMedium?.copyWith(
-                        color: AppColors.success,
+                        color: accent,
                         fontWeight: FontWeight.w700,
                       ),
                     ),
