@@ -41,21 +41,30 @@ class MainShell extends ConsumerWidget {
     final themeMode = ref.watch(themeModeProvider);
     AppColors.applyPaletteFromMode(themeMode, Theme.of(context).brightness);
 
+    // Nav'ı Column kardeşine al — nested Scaffold/FAB body üstüne taşsa bile
+    // bottomNavigationBar hit-test kayması olmasın (Puantaj ile aynı shell API,
+    // yerleşim web'de daha deterministik).
     return Scaffold(
       backgroundColor: AppColors.canvas,
       resizeToAvoidBottomInset: false,
-      body: ThemeRebuildGate(child: navigationShell),
-      bottomNavigationBar: MediaQuery.removePadding(
-        context: context,
-        removeBottom: true,
-        child: SJBottomNavigation(
-          items: _items,
-          currentIndex: navigationShell.currentIndex,
-          onTap: (index) => navigationShell.goBranch(
-            index,
-            initialLocation: index == navigationShell.currentIndex,
+      body: Column(
+        children: [
+          Expanded(
+            child: ThemeRebuildGate(child: navigationShell),
           ),
-        ),
+          MediaQuery.removePadding(
+            context: context,
+            removeBottom: true,
+            child: SJBottomNavigation(
+              items: _items,
+              currentIndex: navigationShell.currentIndex,
+              onTap: (index) => navigationShell.goBranch(
+                index,
+                initialLocation: index == navigationShell.currentIndex,
+              ),
+            ),
+          ),
+        ],
       ),
     );
   }

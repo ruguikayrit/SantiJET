@@ -96,31 +96,30 @@ class _NavItemView extends StatelessWidget {
     final color =
         selected ? AppColors.electricBlue : AppColors.textMuted;
 
-    return Material(
-      color: Colors.transparent,
-      child: InkWell(
-        onTap: onTap,
-        child: SizedBox.expand(
-          child: Column(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              Icon(
-                selected ? item.activeIcon : item.icon,
-                size: 22,
+    // GestureDetector.opaque — web'de InkWell splash alanı kadar değil, tüm hücre.
+    return GestureDetector(
+      behavior: HitTestBehavior.opaque,
+      onTap: onTap,
+      child: SizedBox.expand(
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Icon(
+              selected ? item.activeIcon : item.icon,
+              size: 22,
+              color: color,
+            ),
+            const SizedBox(height: 2),
+            Text(
+              item.label,
+              style: theme.textTheme.labelSmall?.copyWith(
                 color: color,
+                fontWeight: selected ? FontWeight.w600 : FontWeight.w400,
               ),
-              const SizedBox(height: 2),
-              Text(
-                item.label,
-                style: theme.textTheme.labelSmall?.copyWith(
-                  color: color,
-                  fontWeight: selected ? FontWeight.w600 : FontWeight.w400,
-                ),
-                maxLines: 1,
-                overflow: TextOverflow.ellipsis,
-              ),
-            ],
-          ),
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+            ),
+          ],
         ),
       ),
     );
