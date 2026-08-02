@@ -1,6 +1,4 @@
-import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
-import 'package:pointer_interceptor/pointer_interceptor.dart';
 
 import '../theme/app_colors.dart';
 import '../theme/app_spacing.dart';
@@ -20,9 +18,8 @@ class SJNavItem {
 
 /// ŞantiJET Design System — alt navigasyon.
 ///
-/// ŞantiJET Demir `AppBottomNavBar` görsel deseni (üst kenarlık + yüzey zemin +
-/// aktif/pasif ikon). Web'de [PointerInterceptor] ile HTML katmanının
-/// dokunmaları çalması engellenir.
+/// ŞantiJET Puantaj/Beton deseni (üst kenarlık + yüzey zemin + aktif/pasif ikon).
+/// Web'de [PointerInterceptor] kullanılmaz — boş platform view tıklamaları yutar.
 class SJBottomNavigation extends StatelessWidget {
   const SJBottomNavigation({
     required this.items,
@@ -49,8 +46,7 @@ class SJBottomNavigation extends StatelessWidget {
   Widget build(BuildContext context) {
     final bottomInset = MediaQuery.viewPaddingOf(context).bottom;
 
-    // Lift, ColoredBox içinde — padding boşluğu hit-test dışı kalmasın.
-    final bar = Material(
+    return ColoredBox(
       color: AppColors.surface,
       child: Column(
         mainAxisSize: MainAxisSize.min,
@@ -80,11 +76,6 @@ class SJBottomNavigation extends StatelessWidget {
         ],
       ),
     );
-
-    if (kIsWeb) {
-      return PointerInterceptor(child: bar);
-    }
-    return bar;
   }
 }
 
@@ -105,7 +96,6 @@ class _NavItemView extends StatelessWidget {
     final color =
         selected ? AppColors.electricBlue : AppColors.textMuted;
 
-    // Opaque hit target — InkWell yalnız ikon/metin boyutunda kalmasın.
     return Material(
       color: Colors.transparent,
       child: InkWell(
