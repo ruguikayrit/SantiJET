@@ -1,6 +1,6 @@
 class AppSettings {
   AppSettings({
-    this.themeMode = 'system',
+    this.themeMode = 'santijet_pro',
     this.weightUnit = 'kg',
     this.language = 'tr',
     this.companyName = '',
@@ -135,7 +135,12 @@ class AppSettings {
 
   factory AppSettings.fromJson(Map<dynamic, dynamic> json) {
     return AppSettings(
-      themeMode: json['themeMode'] as String? ?? 'system',
+      themeMode: switch (json['themeMode'] as String?) {
+        'gecejet' => 'santijet_pro',
+        'light' || 'dark' || 'santijet' || 'santijet_pro' || 'system' =>
+          json['themeMode'] as String,
+        _ => 'santijet_pro',
+      },
       weightUnit: json['weightUnit'] as String? ?? 'kg',
       language: json['language'] as String? ?? 'tr',
       companyName: json['companyName'] as String? ?? '',

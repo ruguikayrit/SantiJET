@@ -64,10 +64,10 @@ class SantijetDemirApp extends ConsumerWidget {
     );
   }
 
-  /// ŞantiJET açık Material chrome kullanır; kartlar [AppColors.cardSurface] ile koyu.
+  /// ŞantiJET açık Material chrome; ŞantiJET Pro koyu chrome — kartlar [AppColors.cardSurface].
   ThemeMode _themeModeFromSettings(String mode) => switch (mode) {
         'light' || 'santijet' => ThemeMode.light,
-        'dark' || 'gecejet' => ThemeMode.dark,
+        'dark' || 'santijet_pro' || 'gecejet' => ThemeMode.dark,
         _ => ThemeMode.system,
       };
 }

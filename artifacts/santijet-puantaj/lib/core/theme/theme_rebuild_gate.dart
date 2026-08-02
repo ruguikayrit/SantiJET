@@ -34,7 +34,8 @@ class ThemeRebuildGate extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final brightness = Theme.of(context).brightness;
-    if (!AppColors.isSantijet) {
+    // Hibrit temalar (ŞantiJET / ŞantiJET Pro) brightness ile ezilmesin.
+    if (!AppColors.isSantijet && !AppColors.isSantijetPro) {
       AppColors.applyBrightness(brightness);
     }
     syncPageBackground(AppColors.surface);

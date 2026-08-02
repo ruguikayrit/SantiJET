@@ -23,7 +23,7 @@ abstract final class AppTypography {
     fontFamily: _rajdhani,
     fontSize: 32,
     fontWeight: FontWeight.w700,
-    color: AppColors.textPrimary,
+    color: AppColors.darkTextPrimary,
     height: 1.15,
   );
 
@@ -31,7 +31,7 @@ abstract final class AppTypography {
     fontFamily: _rajdhani,
     fontSize: 24,
     fontWeight: FontWeight.w600,
-    color: AppColors.textPrimary,
+    color: AppColors.darkTextPrimary,
     height: 1.2,
   );
 
@@ -39,7 +39,7 @@ abstract final class AppTypography {
     fontFamily: _inter,
     fontSize: 22,
     fontWeight: FontWeight.w700,
-    color: AppColors.textPrimary,
+    color: AppColors.darkTextPrimary,
     height: 1.25,
   );
 
@@ -47,7 +47,7 @@ abstract final class AppTypography {
     fontFamily: _inter,
     fontSize: 18,
     fontWeight: FontWeight.w600,
-    color: AppColors.textPrimary,
+    color: AppColors.darkTextPrimary,
     height: 1.3,
   );
 
@@ -55,7 +55,7 @@ abstract final class AppTypography {
     fontFamily: _inter,
     fontSize: 16,
     fontWeight: FontWeight.w600,
-    color: AppColors.textPrimary,
+    color: AppColors.darkTextPrimary,
     height: 1.35,
   );
 
@@ -63,7 +63,7 @@ abstract final class AppTypography {
     fontFamily: _inter,
     fontSize: 14,
     fontWeight: FontWeight.w600,
-    color: AppColors.textPrimary,
+    color: AppColors.darkTextPrimary,
     height: 1.4,
   );
 
@@ -71,7 +71,7 @@ abstract final class AppTypography {
     fontFamily: _inter,
     fontSize: 16,
     fontWeight: FontWeight.w400,
-    color: AppColors.textSecondary,
+    color: AppColors.darkTextSecondary,
     height: 1.5,
   );
 
@@ -79,7 +79,7 @@ abstract final class AppTypography {
     fontFamily: _inter,
     fontSize: 14,
     fontWeight: FontWeight.w400,
-    color: AppColors.textSecondary,
+    color: AppColors.darkTextSecondary,
     height: 1.45,
   );
 
@@ -87,7 +87,7 @@ abstract final class AppTypography {
     fontFamily: _inter,
     fontSize: 12,
     fontWeight: FontWeight.w400,
-    color: AppColors.textMuted,
+    color: AppColors.darkTextMuted,
     height: 1.4,
   );
 
@@ -95,7 +95,7 @@ abstract final class AppTypography {
     fontFamily: _inter,
     fontSize: 14,
     fontWeight: FontWeight.w500,
-    color: AppColors.textSecondary,
+    color: AppColors.darkTextSecondary,
     height: 1.2,
     letterSpacing: 0.02,
   );
@@ -104,7 +104,7 @@ abstract final class AppTypography {
     fontFamily: _inter,
     fontSize: 12,
     fontWeight: FontWeight.w500,
-    color: AppColors.textMuted,
+    color: AppColors.darkTextMuted,
     height: 1.2,
     letterSpacing: 0.04,
   );
@@ -113,7 +113,7 @@ abstract final class AppTypography {
     fontFamily: _inter,
     fontSize: 11,
     fontWeight: FontWeight.w400,
-    color: AppColors.textMuted,
+    color: AppColors.darkTextMuted,
     height: 1.2,
     letterSpacing: 0.28,
   );
@@ -122,7 +122,7 @@ abstract final class AppTypography {
     fontFamily: _rajdhani,
     fontSize: 28,
     fontWeight: FontWeight.w700,
-    color: AppColors.textPrimary,
+    color: AppColors.darkTextPrimary,
     height: 1.0,
   );
 

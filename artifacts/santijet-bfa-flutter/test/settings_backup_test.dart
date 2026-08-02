@@ -1,7 +1,6 @@
 import 'dart:convert';
 import 'dart:io';
 
-import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:hive/hive.dart';
 
@@ -65,10 +64,17 @@ void main() {
   test('ThemeModeNotifier Hive kalıcılığı', () async {
     final box = await Hive.openBox('settings_${_seq++}');
     final notifier = ThemeModeNotifier(box);
-    expect(notifier.state, ThemeMode.system);
+    expect(notifier.state, 'santijet_pro');
 
-    notifier.set(ThemeMode.dark);
+    await notifier.setThemeMode('dark');
     final restored = ThemeModeNotifier(box);
-    expect(restored.state, ThemeMode.dark);
+    expect(restored.state, 'dark');
+  });
+
+  test('ThemeModeNotifier gecejet → santijet_pro migrasyonu', () async {
+    final box = await Hive.openBox('settings_${_seq++}');
+    await box.put('themeMode', 'gecejet');
+    final notifier = ThemeModeNotifier(box);
+    expect(notifier.state, 'santijet_pro');
   });
 }

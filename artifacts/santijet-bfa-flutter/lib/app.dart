@@ -5,15 +5,17 @@ import 'core/constants/app_info.dart';
 import 'core/routing/app_router.dart';
 import 'core/theme/app_theme.dart';
 import 'core/theme/theme_mode_provider.dart';
+import 'core/theme/theme_rebuild_gate.dart';
 
-/// Uygulama kökü — Demir `SantijetDemirApp` deseniyle hizalı.
+/// Uygulama kökü — Demir / Puantaj deseniyle hizalı.
 class SantijetBfaApp extends ConsumerWidget {
   const SantijetBfaApp({super.key});
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final router = ref.watch(routerProvider);
-    final themeMode = ref.watch(themeModeProvider);
+    final modeKey = ref.watch(themeModeProvider);
+    final themeMode = themeModeFromSettings(modeKey);
 
     return MaterialApp.router(
       title: AppInfo.legalName,
@@ -22,6 +24,10 @@ class SantijetBfaApp extends ConsumerWidget {
       darkTheme: AppTheme.dark,
       themeMode: themeMode,
       routerConfig: router,
+      builder: (context, child) => AppColorsThemeSync(
+        themeMode: modeKey,
+        child: child ?? const SizedBox.shrink(),
+      ),
     );
   }
 }

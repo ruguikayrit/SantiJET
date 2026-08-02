@@ -332,7 +332,7 @@ class SettingsScreen extends ConsumerWidget {
         'light' => 'Açık',
         'dark' => 'Koyu',
         'santijet' => 'ŞantiJET',
-        'gecejet' => 'GeceJET',
+        'santijet_pro' || 'gecejet' => 'ŞantiJET Pro',
         _ => 'Sistem',
       };
 
@@ -366,10 +366,10 @@ class SettingsScreen extends ConsumerWidget {
             },
           ),
           ListTile(
-            title: const Text('GeceJET'),
+            title: const Text('ŞantiJET Pro'),
             subtitle: const Text('Koyu zemin · açık özet kartları'),
             onTap: () {
-              ref.read(appSettingsProvider.notifier).setThemeMode('gecejet');
+              ref.read(appSettingsProvider.notifier).setThemeMode('santijet_pro');
               Navigator.pop(ctx);
             },
           ),

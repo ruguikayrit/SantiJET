@@ -1,14 +1,14 @@
 import 'package:flutter/material.dart';
 
-/// Uygulama renk paleti — açık / koyu / ŞantiJET / GeceJET (hibritler).
-enum AppColorPalette { light, dark, santijet, gecejet }
+/// Uygulama renk paleti — açık / koyu / ŞantiJET / ŞantiJET Pro (hibritler).
+enum AppColorPalette { light, dark, santijet, santijetPro }
 
 /// Figma Make Design System — açık/koyu/hibrit paletler.
 ///
 /// ŞantiJET: açık iskelet (canvas) + koyu özet/uyarı kartları ([cardSurface]).
-/// GeceJET: ŞantiJET'in tersi — koyu iskelet + açık özet kartları.
+/// ŞantiJET Pro: ŞantiJET'in tersi — koyu iskelet + açık özet kartları.
 abstract final class AppColors {
-  static AppColorPalette _palette = AppColorPalette.dark;
+  static AppColorPalette _palette = AppColorPalette.santijetPro;
 
   /// Geriye dönük — yalnızca brightness (system/light/dark).
   static void applyBrightness(Brightness brightness) {
@@ -23,7 +23,7 @@ abstract final class AppColors {
       'light' => AppColorPalette.light,
       'dark' => AppColorPalette.dark,
       'santijet' => AppColorPalette.santijet,
-      'gecejet' => AppColorPalette.gecejet,
+      'santijet_pro' || 'gecejet' => AppColorPalette.santijetPro,
       _ => systemBrightness == Brightness.dark
           ? AppColorPalette.dark
           : AppColorPalette.light,
@@ -38,10 +38,10 @@ abstract final class AppColors {
   static bool get isDark => _palette == AppColorPalette.dark;
   static bool get isLight => _palette == AppColorPalette.light;
   static bool get isSantijet => _palette == AppColorPalette.santijet;
-  static bool get isGecejet => _palette == AppColorPalette.gecejet;
+  static bool get isSantijetPro => _palette == AppColorPalette.santijetPro;
 
-  /// Koyu chrome (iskelet) — koyu ve GeceJET.
-  static bool get useDarkChrome => isDark || isGecejet;
+  /// Koyu chrome (iskelet) — koyu ve ŞantiJET Pro.
+  static bool get useDarkChrome => isDark || isSantijetPro;
 
   /// Özet / brifing / uyarı kartlarında koyu yüzey kullan.
   static bool get useDarkCards => isDark || isSantijet;
@@ -70,7 +70,7 @@ abstract final class AppColors {
   static const lightBorder = Color(0xFFD5DEEA);
   static const lightBorderSubtle = Color(0xFFB8C5D6);
 
-  // Chrome (iskelet) — ŞantiJET açık; GeceJET koyu
+  // Chrome (iskelet) — ŞantiJET açık; ŞantiJET Pro koyu
   static Color get canvas => useDarkChrome ? darkCanvas : lightCanvas;
   static Color get surface => useDarkChrome ? darkSurface : lightSurface;
   static Color get surfaceElevated =>
@@ -120,10 +120,10 @@ abstract final class AppColors {
       useDarkChrome ? darkBorderSubtle : lightBorderSubtle;
 
   // —— Kart paleti (özet / brifing / uyarı) ——
-  // GeceJET: açık tema kartları (beyaz yüzey + koyu mürekkep).
+  // ŞantiJET Pro: açık tema kartları (beyaz yüzey + koyu mürekkep).
   static Color get cardSurface => useDarkCards
       ? darkSurfaceElevated
-      : (isGecejet ? lightSurface : lightSurfaceElevated);
+      : (isSantijetPro ? lightSurface : lightSurfaceElevated);
   static Color get cardSurfaceHighlight =>
       useDarkCards ? darkSurfaceHighlight : lightSurfaceHighlight;
   static Color get cardBorder => useDarkCards ? darkBorder : lightBorder;
@@ -138,8 +138,8 @@ abstract final class AppColors {
   static Color get cardTextDisabled =>
       useDarkCards ? darkTextDisabled : lightTextDisabled;
 
-  /// Hibrit özet kartı: ŞantiJET koyu / GeceJET açık.
-  static bool get useHybridCards => isSantijet || isGecejet;
+  /// Hibrit özet kartı: ŞantiJET koyu / ŞantiJET Pro açık.
+  static bool get useHybridCards => isSantijet || isSantijetPro;
 
   /// Arka plan koyuysa her zaman açık mürekkep; açıkta koyu mürekkep.
   /// Koyu-üzerine-koyu / açık-üzerine-açık kombinasyonunu engeller.
@@ -168,12 +168,12 @@ abstract final class AppColors {
         ),
       ];
     }
-    // Açık kartlar — GeceJET'te koyu zeminde daha belirgin gölge
+    // Açık kartlar — ŞantiJET Pro'da koyu zeminde daha belirgin gölge
     return [
       BoxShadow(
-        color: Color(isGecejet ? 0x59000000 : 0x140B1220),
-        blurRadius: isGecejet ? 14 : 16,
-        offset: Offset(0, isGecejet ? 3 : 4),
+        color: Color(isSantijetPro ? 0x59000000 : 0x140B1220),
+        blurRadius: isSantijetPro ? 14 : 16,
+        offset: Offset(0, isSantijetPro ? 3 : 4),
       ),
     ];
   }
@@ -194,7 +194,7 @@ abstract final class AppColors {
 
   /// Wordmark — koyu chrome'da beyaz; açık ve ŞantiJET'te siyah harf.
   static String wordmarkAssetFor(Brightness brightness) {
-    return brightness == Brightness.dark || isGecejet
+    return brightness == Brightness.dark || isSantijetPro
         ? 'assets/images/splash_wordmark.png'
         : 'assets/images/splash_wordmark_light.png';
   }

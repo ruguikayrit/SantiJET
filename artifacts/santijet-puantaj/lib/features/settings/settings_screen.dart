@@ -58,6 +58,14 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
             },
           ),
           ListTile(
+            title: const Text('ŞantiJET Pro'),
+            subtitle: const Text('Koyu zemin · açık özet kartları'),
+            onTap: () {
+              ref.read(themeModeProvider.notifier).setThemeMode('santijet_pro');
+              Navigator.pop(ctx);
+            },
+          ),
+          ListTile(
             title: const Text('Sistem'),
             onTap: () {
               ref.read(themeModeProvider.notifier).setThemeMode('system');

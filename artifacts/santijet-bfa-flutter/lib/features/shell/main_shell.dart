@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../core/design_system/sj_bottom_navigation.dart';
+import '../../core/theme/theme_rebuild_gate.dart';
 
 /// Ana kabuk (shell) — kalıcı alt navigasyon + indexedStack gövdesi.
 ///
@@ -39,7 +40,7 @@ class MainShell extends StatelessWidget {
   Widget build(BuildContext context) {
     return Scaffold(
       resizeToAvoidBottomInset: false,
-      body: navigationShell,
+      body: ThemeRebuildGate(child: navigationShell),
       bottomNavigationBar: MediaQuery.removePadding(
         context: context,
         removeBottom: true,

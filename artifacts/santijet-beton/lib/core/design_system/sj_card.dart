@@ -7,7 +7,7 @@ import '../theme/app_spacing.dart';
 /// ŞantiJET Design System — kart.
 ///
 /// ŞantiJET: koyu kart + açık mürekkep.
-/// GeceJET: açık (light) kart + koyu mürekkep — koyu zemin üzerinde.
+/// ŞantiJET Pro: açık (light) kart + koyu mürekkep — koyu zemin üzerinde.
 /// Kart içinde [Theme.of] kullanırken mutlaka [Builder] ile kart context'ini alın.
 class SJCard extends StatelessWidget {
   const SJCard({
@@ -107,7 +107,7 @@ class SJCard extends StatelessWidget {
     );
   }
 
-  /// Açık kart (GeceJET) — koyu mürekkep zorlanır.
+  /// Açık kart (ŞantiJET Pro) — koyu mürekkep zorlanır.
   static ThemeData lightContrastTheme(ThemeData base) {
     const onPrimary = AppColors.lightTextPrimary;
     const onSecondary = AppColors.lightTextSecondary;
@@ -196,7 +196,7 @@ class SJCard extends StatelessWidget {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final useDarkContrast = AppColors.useDarkCards;
-    final useLightContrast = AppColors.isGecejet;
+    final useLightContrast = AppColors.isSantijetPro;
     final useContrast = useDarkContrast || useLightContrast;
     final surface = useContrast
         ? AppColors.cardSurface

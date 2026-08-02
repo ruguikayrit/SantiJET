@@ -38,27 +38,44 @@ class SettingsScreen extends ConsumerWidget {
             Text('Görünüm', style: theme.textTheme.titleLarge),
             const SizedBox(height: AppSpacing.sm),
             _ThemeTile(
-              title: 'Sistem',
-              subtitle: 'Cihaz tema ayarını kullan',
-              selected: mode == ThemeMode.system,
-              onTap: () =>
-                  ref.read(themeModeProvider.notifier).set(ThemeMode.system),
-            ),
-            const SizedBox(height: AppSpacing.xs),
-            _ThemeTile(
               title: 'Açık',
-              subtitle: 'ŞantiJET açık tema',
-              selected: mode == ThemeMode.light,
+              subtitle: 'Açık zemin · açık kartlar',
+              selected: mode == 'light',
               onTap: () =>
-                  ref.read(themeModeProvider.notifier).set(ThemeMode.light),
+                  ref.read(themeModeProvider.notifier).setThemeMode('light'),
             ),
             const SizedBox(height: AppSpacing.xs),
             _ThemeTile(
               title: 'Koyu',
-              subtitle: 'ŞantiJET Demir premium koyu tema',
-              selected: mode == ThemeMode.dark,
+              subtitle: 'Koyu zemin · koyu kartlar',
+              selected: mode == 'dark',
               onTap: () =>
-                  ref.read(themeModeProvider.notifier).set(ThemeMode.dark),
+                  ref.read(themeModeProvider.notifier).setThemeMode('dark'),
+            ),
+            const SizedBox(height: AppSpacing.xs),
+            _ThemeTile(
+              title: 'ŞantiJET',
+              subtitle: 'Açık zemin · koyu özet kartları',
+              selected: mode == 'santijet',
+              onTap: () =>
+                  ref.read(themeModeProvider.notifier).setThemeMode('santijet'),
+            ),
+            const SizedBox(height: AppSpacing.xs),
+            _ThemeTile(
+              title: 'ŞantiJET Pro',
+              subtitle: 'Koyu zemin · açık özet kartları',
+              selected: mode == 'santijet_pro',
+              onTap: () => ref
+                  .read(themeModeProvider.notifier)
+                  .setThemeMode('santijet_pro'),
+            ),
+            const SizedBox(height: AppSpacing.xs),
+            _ThemeTile(
+              title: 'Sistem',
+              subtitle: 'Cihaz tema ayarını kullan',
+              selected: mode == 'system',
+              onTap: () =>
+                  ref.read(themeModeProvider.notifier).setThemeMode('system'),
             ),
             const SizedBox(height: AppSpacing.lg),
             Text('Veri', style: theme.textTheme.titleLarge),
@@ -149,11 +166,7 @@ class SettingsScreen extends ConsumerWidget {
       favoriteIds: ref.read(favoritesProvider).toList(),
       recentIds: ref.read(recentViewsProvider),
       kesifProjects: ref.read(kesifProvider),
-      themeMode: switch (mode) {
-        ThemeMode.light => 'light',
-        ThemeMode.dark => 'dark',
-        ThemeMode.system => 'system',
-      },
+      themeMode: mode,
     );
     await backupService.share(backup);
   }
@@ -184,11 +197,16 @@ class SettingsScreen extends ConsumerWidget {
         ref.read(kesifProvider.notifier).replaceAll(backup.kesifProjects);
       }
 
-      ref.read(themeModeProvider.notifier).set(switch (backup.themeMode) {
-            'light' => ThemeMode.light,
-            'dark' => ThemeMode.dark,
-            _ => ThemeMode.system,
-          });
+      final restored = backup.themeMode == 'gecejet'
+          ? 'santijet_pro'
+          : backup.themeMode;
+      await ref.read(themeModeProvider.notifier).setThemeMode(
+            switch (restored) {
+              'light' || 'dark' || 'santijet' || 'santijet_pro' || 'system' =>
+                restored,
+              _ => 'santijet_pro',
+            },
+          );
       if (context.mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(content: Text('Yedek içe aktarıldı.')),
