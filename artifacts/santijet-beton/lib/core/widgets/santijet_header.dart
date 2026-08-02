@@ -132,7 +132,7 @@ class _HeaderNotificationButton extends StatelessWidget {
             Icons.notifications_outlined,
             color: onDarkBand
                 ? Colors.white.withValues(alpha: 0.88)
-                : AppColors.inkMutedFor(Theme.of(context).brightness),
+                : AppColors.textSecondary,
           ),
         ),
       ),
@@ -208,13 +208,15 @@ class _PageBrandHeader extends StatelessWidget {
   Widget build(BuildContext context) {
     final onDarkBand = Theme.of(context).brightness == Brightness.light;
 
+    // Açık / ŞantiJET: koyu bant + beyaz yazı.
+    // Koyu / ŞantiJET Pro: bant yok; chrome mürekkebi (textPrimary).
     final productLabelStyle = AppTypography.labelSmall.copyWith(
       fontSize: AppTypography.scale * 11,
       letterSpacing: 0.9,
       fontWeight: FontWeight.w700,
       color: onDarkBand
           ? Colors.white.withValues(alpha: 0.62)
-          : AppColors.inkMuted,
+          : AppColors.textMuted,
       height: 1.0,
     );
 
@@ -222,7 +224,7 @@ class _PageBrandHeader extends StatelessWidget {
       fontSize: AppTypography.scale * 18,
       fontWeight: FontWeight.w700,
       letterSpacing: -0.2,
-      color: onDarkBand ? Colors.white : AppColors.inkPrimary,
+      color: onDarkBand ? Colors.white : AppColors.textPrimary,
       height: 1.15,
     );
 
@@ -303,7 +305,7 @@ class _WordmarkHeader extends StatelessWidget {
   Widget build(BuildContext context) {
     final wordmarkHeight = _BrandTitleMetrics.wordmarkHeightOf(context);
     final productIndent = _BrandTitleMetrics.productIndentOf(context);
-    final ink = AppColors.inkFor(Theme.of(context).brightness);
+    final ink = AppColors.textPrimary;
 
     return Row(
       crossAxisAlignment: CrossAxisAlignment.center,

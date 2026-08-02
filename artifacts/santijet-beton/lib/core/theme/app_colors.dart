@@ -98,14 +98,21 @@ abstract final class AppColors {
   static const inkSecondary = lightTextSecondary;
   static const inkMuted = lightTextMuted;
 
+  /// Chrome mürekkebi — hibrit paletlerde brightness yerine [useDarkChrome].
   static Color inkFor(Brightness brightness) =>
-      brightness == Brightness.dark ? darkTextPrimary : lightTextPrimary;
+      useDarkChrome || brightness == Brightness.dark
+          ? darkTextPrimary
+          : lightTextPrimary;
 
   static Color inkSecondaryFor(Brightness brightness) =>
-      brightness == Brightness.dark ? darkTextSecondary : lightTextSecondary;
+      useDarkChrome || brightness == Brightness.dark
+          ? darkTextSecondary
+          : lightTextSecondary;
 
   static Color inkMutedFor(Brightness brightness) =>
-      brightness == Brightness.dark ? darkTextMuted : lightTextMuted;
+      useDarkChrome || brightness == Brightness.dark
+          ? darkTextMuted
+          : lightTextMuted;
 
   // Durum
   static const success = Color(0xFF10B981);
