@@ -13,8 +13,8 @@ abstract final class AnalizDraftHelpers {
   }
 
   static AnalizKalemi recalcKalem(AnalizKalemi kalem) {
-    final miktar = kalem.miktar.isFinite ? kalem.miktar : 0;
-    final bf = kalem.birimFiyati.isFinite ? kalem.birimFiyati : 0;
+    final miktar = kalem.miktar.isFinite ? kalem.miktar : 0.0;
+    final bf = kalem.birimFiyati.isFinite ? kalem.birimFiyati : 0.0;
     return kalem.copyWith(tutar: AnalizHesap.satirTutar(miktar, bf));
   }
 
