@@ -8,4 +8,7 @@ abstract final class AppSpacing {
   static const xl = 24.0;
   static const xxl = 32.0;
   static const xxxl = 48.0;
+
+  /// Splash wordmark → ürün adı arası — Demir/Beton/Puantaj ile aynı.
+  static const splashWordmarkToDemir = 30.0;
 }

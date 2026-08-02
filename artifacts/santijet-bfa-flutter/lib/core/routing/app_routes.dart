@@ -3,6 +3,9 @@
 /// React Native expo-router yapısının Flutter/go_router karşılığı.
 /// Alt navigasyon sekmeleri: home, katalog, kesif, ayarlar.
 abstract final class AppRoutes {
+  /// Ortak açılış ekranı (Demir/Beton/Puantaj ile aynı akış).
+  static const splash = '/splash';
+
   // Alt navigasyon sekmeleri
   static const home = '/';
   static const katalog = '/katalog';

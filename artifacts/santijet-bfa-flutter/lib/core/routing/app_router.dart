@@ -15,6 +15,7 @@ import '../../features/legal/sources_screen.dart';
 import '../../features/ozel_analiz/analiz_editor_screen.dart';
 import '../../features/settings/settings_screen.dart';
 import '../../features/shell/main_shell.dart';
+import '../../features/splash/splash_screen.dart';
 import '../../domain/enums/app_enums.dart';
 import 'app_routes.dart';
 import 'page_transitions.dart';
@@ -27,8 +28,15 @@ final _rootNavigatorKey = GlobalKey<NavigatorState>();
 final routerProvider = Provider<GoRouter>((ref) {
   return GoRouter(
     navigatorKey: _rootNavigatorKey,
-    initialLocation: AppRoutes.home,
+    initialLocation: AppRoutes.splash,
     routes: [
+      GoRoute(
+        path: AppRoutes.splash,
+        pageBuilder: (context, state) => fadePage(
+          key: state.pageKey,
+          child: const SplashScreen(),
+        ),
+      ),
       StatefulShellRoute.indexedStack(
         builder: (context, state, navigationShell) =>
             MainShell(navigationShell: navigationShell),
