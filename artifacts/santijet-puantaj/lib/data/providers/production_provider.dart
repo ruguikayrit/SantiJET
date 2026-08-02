@@ -203,6 +203,23 @@ class ProductionNotifier extends StateNotifier<List<Production>> {
         .toList();
     _persist();
   }
+
+  /// Demo butonu için: önceki yıllık örneği silip yeniden oluşturur.
+  void seedYearlyChartDemo(String projectId) {
+    if (projectId.isEmpty) return;
+    removeYearlyChartDemo(projectId);
+    _box.delete('$_demoSeededKeyPrefix$projectId');
+    ensureYearlyChartDemo(projectId);
+  }
+
+  void clearAllYearlyChartDemoFlags() {
+    final keys = _box.keys
+        .where((k) => k.toString().startsWith(_demoSeededKeyPrefix))
+        .toList();
+    for (final k in keys) {
+      _box.delete(k);
+    }
+  }
 }
 
 final productionProvider =

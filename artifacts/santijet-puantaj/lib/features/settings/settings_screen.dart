@@ -12,10 +12,12 @@ import '../../core/theme/theme_mode_provider.dart';
 import '../../data/providers/app_data_provider.dart';
 import '../../data/providers/backup_provider.dart';
 import '../../data/providers/catalog_provider.dart';
+import '../../data/providers/demo_seed_provider.dart';
 import '../../data/providers/production_provider.dart';
 import '../../data/providers/verim_provider.dart';
 import '../../data/services/puantaj_backup_service.dart';
 import '../../domain/catalogs/professions.dart';
+import '../../core/design_system/sj_modal.dart';
 
 /// Ayarlar — Demir ile aynı kart/tile düzeni; Puantaj kapsamına indirgenmiş.
 class SettingsScreen extends ConsumerStatefulWidget {
@@ -239,6 +241,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
     ref.read(personnelProvider.notifier).replaceAll([]);
     ref.read(attendanceProvider.notifier).replaceAll([]);
     ref.read(productionProvider.notifier).replaceAll([]);
+    ref.read(productionProvider.notifier).clearAllYearlyChartDemoFlags();
     ref
         .read(professionsProvider.notifier)
         .resetToDefaults(ProfessionCatalog.defaultProfessions);
@@ -252,6 +255,41 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
     ScaffoldMessenger.of(this.context).showSnackBar(
       const SnackBar(content: Text('Tüm veriler silindi')),
     );
+  }
+
+  Future<void> _confirmLoadDemo(BuildContext context) async {
+    final ok = await SJModal.confirm(
+      context: context,
+      title: 'Demo veriyi yükle',
+      message:
+          'Demo Şantiye projesi oluşturulur/güncellenir; personel, puantaj, '
+          'imalat ve İş Programı demo planı doldurulur. '
+          'Aynı adlı demo projenin mevcut verileri yenilenir.',
+      confirmLabel: 'Yükle',
+    );
+    if (!ok || !mounted) return;
+
+    setState(() => _busy = true);
+    try {
+      final project =
+          await ref.read(demoSeedControllerProvider).loadAll();
+      if (!mounted) return;
+      ScaffoldMessenger.of(this.context).showSnackBar(
+        SnackBar(
+          content: Text(
+            'Demo yüklendi: ${project.name}. Ana sayfa / Puantaj / '
+            'İmalat / Verim üzerinden test edebilirsiniz.',
+          ),
+        ),
+      );
+    } catch (e) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(this.context).showSnackBar(
+        SnackBar(content: Text('Demo yüklenemedi: $e')),
+      );
+    } finally {
+      if (mounted) setState(() => _busy = false);
+    }
   }
 
   @override
@@ -294,6 +332,16 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
             title: 'Yedekleme & Geri Yükleme',
             subtitle: 'Verileri JSON olarak dışa/içe aktar',
             onTap: () => _showBackupDialog(context),
+          ),
+          _SettingsTile(
+            icon: Icons.science_outlined,
+            title: 'Demo veriyi yükle',
+            subtitle: _busy
+                ? 'Yükleniyor…'
+                : 'Proje, personel, puantaj, imalat ve verim örneği',
+            onTap: () {
+              if (!_busy) _confirmLoadDemo(context);
+            },
           ),
           _SettingsTile(
             icon: Icons.info_outline,

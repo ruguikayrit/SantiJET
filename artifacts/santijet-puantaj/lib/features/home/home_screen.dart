@@ -29,22 +29,7 @@ class HomeScreen extends ConsumerStatefulWidget {
 
 class _HomeScreenState extends ConsumerState<HomeScreen> {
   @override
-  void initState() {
-    super.initState();
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      final project = ref.read(activeProjectProvider);
-      if (project == null) return;
-      ref.read(productionProvider.notifier).ensureYearlyChartDemo(project.id);
-    });
-  }
-
-  @override
   Widget build(BuildContext context) {
-    ref.listen<String?>(activeProjectIdProvider, (prev, next) {
-      if (next == null || next == prev) return;
-      ref.read(productionProvider.notifier).ensureYearlyChartDemo(next);
-    });
-
     final project = ref.watch(activeProjectProvider);
     final people = ref.watch(activePersonnelProvider);
     final attendance = ref.watch(attendanceProvider);
