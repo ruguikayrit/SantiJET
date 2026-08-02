@@ -10,6 +10,7 @@ import '../../core/theme/app_colors.dart';
 import '../../core/theme/app_radii.dart';
 import '../../core/theme/app_spacing.dart';
 import '../../core/utils/puantaj_date.dart';
+import '../../core/widgets/santijet_header.dart';
 import '../../data/providers/app_data_provider.dart';
 import '../../data/providers/catalog_provider.dart';
 import '../../data/providers/production_provider.dart';
@@ -404,19 +405,29 @@ class _ImalatScreenState extends ConsumerState<ImalatScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final theme = Theme.of(context);
     final project = ref.watch(activeProjectProvider);
     final items = ref.watch(activeProductionProvider);
 
     if (project == null) {
       return Scaffold(
-        appBar: AppBar(title: const Text('İmalat')),
-        body: SJEmptyState(
-          title: 'Önce proje ekleyin',
-          message: 'İmalat kayıtları proje kapsamında tutulur.',
-          icon: Icons.apartment_outlined,
-          actionLabel: 'Projelere Git',
-          onAction: () => context.go(AppRoutes.projeler),
+        backgroundColor: AppColors.canvas,
+        body: SafeArea(
+          bottom: false,
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              const SantijetHeader(subtitle: 'İmalat'),
+              Expanded(
+                child: SJEmptyState(
+                  title: 'Önce proje ekleyin',
+                  message: 'İmalat kayıtları proje kapsamında tutulur.',
+                  icon: Icons.apartment_outlined,
+                  actionLabel: 'Projelere Git',
+                  onAction: () => context.go(AppRoutes.projeler),
+                ),
+              ),
+            ],
+          ),
         ),
       );
     }
@@ -453,30 +464,7 @@ class _ImalatScreenState extends ConsumerState<ImalatScreen> {
     final filterActive = _teamFilter != null || _typeFilter != null;
 
     return Scaffold(
-      appBar: AppBar(
-        title: const Text('İmalat'),
-        actions: [
-          if (items.isNotEmpty)
-            IconButton(
-              tooltip: 'Filtrele',
-              onPressed: () => _openFilterSheet(
-                teamOptions: teamOptions,
-                typeOptions: typeOptions,
-              ),
-              icon: Badge(
-                isLabelVisible: filterActive,
-                smallSize: 8,
-                child: const Icon(Icons.filter_list_rounded),
-              ),
-            ),
-          Padding(
-            padding: const EdgeInsets.only(right: AppSpacing.sm),
-            child: Center(
-              child: Text(project.name, style: theme.textTheme.labelMedium),
-            ),
-          ),
-        ],
-      ),
+      backgroundColor: AppColors.canvas,
       floatingActionButton: FloatingActionButton.extended(
         onPressed: teams.isEmpty
             ? () => _warnNoTeams(context)
@@ -489,38 +477,66 @@ class _ImalatScreenState extends ConsumerState<ImalatScreen> {
         icon: const Icon(Icons.add),
         label: const Text('İmalat Ekle'),
       ),
-      body: items.isEmpty
-          ? SJEmptyState(
-              title: teams.isEmpty ? 'Önce ekip tanımlayın' : 'Henüz imalat yok',
-              message: teams.isEmpty
-                  ? 'Ayarlar → Ekipler / Personel’de ekip tanımlayın.'
-                  : 'İmalat tanımlayın; %100 tamamlanana kadar her gün '
-                      'usta ve düz işçi ekleyebilirsiniz.',
-              icon: teams.isEmpty
-                  ? Icons.groups_outlined
-                  : Icons.precision_manufacturing_outlined,
-              actionLabel: teams.isEmpty ? 'Personel' : 'İmalat Ekle',
-              onAction: teams.isEmpty
-                  ? () => context.go(AppRoutes.personel)
-                  : () => _openJobEditor(
-                        context,
-                        ref,
-                        projectId: project.id,
-                        teams: teams,
-                      ),
-            )
-          : filtered.isEmpty
-              ? SJEmptyState(
-                  title: 'Sonuç yok',
-                  message: 'Seçilen filtreye uyan imalat bulunamadı.',
-                  icon: Icons.filter_alt_off_outlined,
-                  actionLabel: 'Filtreyi temizle',
-                  onAction: () => setState(() {
-                    _teamFilter = null;
-                    _typeFilter = null;
-                  }),
-                )
-              : ListView(
+      body: SafeArea(
+        bottom: false,
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            const SantijetHeader(subtitle: 'İmalat'),
+            if (items.isNotEmpty)
+              Align(
+                alignment: Alignment.centerRight,
+                child: Padding(
+                  padding: const EdgeInsets.only(right: AppSpacing.xs),
+                  child: IconButton(
+                    tooltip: 'Filtrele',
+                    onPressed: () => _openFilterSheet(
+                      teamOptions: teamOptions,
+                      typeOptions: typeOptions,
+                    ),
+                    icon: Badge(
+                      isLabelVisible: filterActive,
+                      smallSize: 8,
+                      child: const Icon(Icons.filter_list_rounded),
+                    ),
+                  ),
+                ),
+              ),
+            Expanded(
+              child: items.isEmpty
+                  ? SJEmptyState(
+                      title: teams.isEmpty
+                          ? 'Önce ekip tanımlayın'
+                          : 'Henüz imalat yok',
+                      message: teams.isEmpty
+                          ? 'Ayarlar → Ekipler / Personel’de ekip tanımlayın.'
+                          : 'İmalat tanımlayın; %100 tamamlanana kadar her gün '
+                              'usta ve düz işçi ekleyebilirsiniz.',
+                      icon: teams.isEmpty
+                          ? Icons.groups_outlined
+                          : Icons.construction_outlined,
+                      actionLabel: teams.isEmpty ? 'Personel' : 'İmalat Ekle',
+                      onAction: teams.isEmpty
+                          ? () => context.go(AppRoutes.personel)
+                          : () => _openJobEditor(
+                                context,
+                                ref,
+                                projectId: project.id,
+                                teams: teams,
+                              ),
+                    )
+                  : filtered.isEmpty
+                      ? SJEmptyState(
+                          title: 'Sonuç yok',
+                          message: 'Seçilen filtreye uyan imalat bulunamadı.',
+                          icon: Icons.filter_alt_off_outlined,
+                          actionLabel: 'Filtreyi temizle',
+                          onAction: () => setState(() {
+                            _teamFilter = null;
+                            _typeFilter = null;
+                          }),
+                        )
+                      : ListView(
                   padding: const EdgeInsets.fromLTRB(
                     AppSpacing.md,
                     AppSpacing.sm,
@@ -561,6 +577,10 @@ class _ImalatScreenState extends ConsumerState<ImalatScreen> {
                     ],
                   ],
                 ),
+            ),
+          ],
+        ),
+      ),
     );
   }
 

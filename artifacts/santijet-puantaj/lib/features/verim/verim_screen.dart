@@ -9,6 +9,7 @@ import '../../core/routing/app_routes.dart';
 import '../../core/theme/app_colors.dart';
 import '../../core/theme/app_radii.dart';
 import '../../core/theme/app_spacing.dart';
+import '../../core/widgets/santijet_header.dart';
 import '../../data/providers/app_data_provider.dart';
 import '../../data/providers/verim_provider.dart';
 
@@ -26,116 +27,141 @@ class VerimScreen extends ConsumerWidget {
 
     if (project == null) {
       return Scaffold(
-        appBar: AppBar(title: const Text('Verim')),
-        body: SJEmptyState(
-          title: 'Önce proje ekleyin',
-          message: 'Verim hesabı aktif projeye bağlıdır.',
-          icon: Icons.apartment_outlined,
-          actionLabel: 'Projelere Git',
-          onAction: () => context.go(AppRoutes.projeler),
+        backgroundColor: AppColors.canvas,
+        body: SafeArea(
+          bottom: false,
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              const SantijetHeader(subtitle: 'Verim'),
+              Expanded(
+                child: SJEmptyState(
+                  title: 'Önce proje ekleyin',
+                  message: 'Verim hesabı aktif projeye bağlıdır.',
+                  icon: Icons.apartment_outlined,
+                  actionLabel: 'Projelere Git',
+                  onAction: () => context.go(AppRoutes.projeler),
+                ),
+              ),
+            ],
+          ),
         ),
       );
     }
 
     return Scaffold(
-      appBar: AppBar(title: const Text('Verim')),
-      body: RefreshIndicator(
-        onRefresh: () =>
-            ref.read(verimProvider.notifier).syncFromCloud(),
-        child: ListView(
-          padding: const EdgeInsets.fromLTRB(
-            AppSpacing.md,
-            AppSpacing.sm,
-            AppSpacing.md,
-            AppSpacing.xxl,
-          ),
+      backgroundColor: AppColors.canvas,
+      body: SafeArea(
+        bottom: false,
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
-            _CloudBanner(
-              projectName: project.name,
-              verim: verim,
-              syncing: syncing,
-              onSync: () =>
-                  ref.read(verimProvider.notifier).syncFromCloud(),
-              onDemo: () => ref
-                  .read(verimProvider.notifier)
-                  .syncFromCloud(demoFallback: true),
-            ),
-            const SizedBox(height: AppSpacing.md),
-            if (!verim.hasCloudPlan) ...[
-              SJCard(
-                child: Builder(
-                  builder: (context) {
-                    final theme = Theme.of(context);
-                    return Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Row(
-                          children: [
-                            Icon(
-                              Icons.cloud_off_outlined,
-                              color: theme.colorScheme.onSurfaceVariant,
-                            ),
-                            const SizedBox(width: AppSpacing.sm),
-                            Expanded(
-                              child: Text(
-                                'Plan kaynakları eksik',
-                                style: theme.textTheme.titleMedium,
-                              ),
-                            ),
-                          ],
+            const SantijetHeader(subtitle: 'Verim'),
+            Expanded(
+              child: RefreshIndicator(
+                onRefresh: () =>
+                    ref.read(verimProvider.notifier).syncFromCloud(),
+                child: ListView(
+                  padding: const EdgeInsets.fromLTRB(
+                    AppSpacing.md,
+                    AppSpacing.sm,
+                    AppSpacing.md,
+                    AppSpacing.xxl,
+                  ),
+                  children: [
+                    _CloudBanner(
+                      projectName: project.name,
+                      verim: verim,
+                      syncing: syncing,
+                      onSync: () =>
+                          ref.read(verimProvider.notifier).syncFromCloud(),
+                      onDemo: () => ref
+                          .read(verimProvider.notifier)
+                          .syncFromCloud(demoFallback: true),
+                    ),
+                    const SizedBox(height: AppSpacing.md),
+                    if (!verim.hasCloudPlan) ...[
+                      SJCard(
+                        child: Builder(
+                          builder: (context) {
+                            final theme = Theme.of(context);
+                            return Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Row(
+                                  children: [
+                                    Icon(
+                                      Icons.cloud_off_outlined,
+                                      color: theme.colorScheme.onSurfaceVariant,
+                                    ),
+                                    const SizedBox(width: AppSpacing.sm),
+                                    Expanded(
+                                      child: Text(
+                                        'Plan kaynakları eksik',
+                                        style: theme.textTheme.titleMedium,
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                                const SizedBox(height: AppSpacing.sm),
+                                Text(
+                                  'Verim için iki bulut kaynağı gerekir:\n'
+                                  '• İş Programı → planlanan süre / iş gücü\n'
+                                  '• Keşif → planlanan metraj\n'
+                                  'Yalnızca yerel puantaj ile verim hesaplanamaz.',
+                                  style: theme.textTheme.bodyMedium,
+                                ),
+                                const SizedBox(height: AppSpacing.md),
+                                SJButton(
+                                  label: 'Buluttan çek (İş Programı + Keşif)',
+                                  icon: Icons.cloud_download_outlined,
+                                  loading: syncing,
+                                  expanded: true,
+                                  onPressed: syncing
+                                      ? null
+                                      : () => ref
+                                          .read(verimProvider.notifier)
+                                          .syncFromCloud(),
+                                ),
+                                const SizedBox(height: AppSpacing.sm),
+                                SJButton(
+                                  label: 'Demo bulut verisi (önizleme)',
+                                  icon: Icons.science_outlined,
+                                  variant: SJButtonVariant.secondary,
+                                  expanded: true,
+                                  loading: syncing,
+                                  onPressed: syncing
+                                      ? null
+                                      : () => ref
+                                          .read(verimProvider.notifier)
+                                          .syncFromCloud(demoFallback: true),
+                                ),
+                              ],
+                            );
+                          },
                         ),
+                      ),
+                    ] else ...[
+                      Text(
+                        'İmalat bazlı verim',
+                        style: theme.textTheme.titleMedium,
+                      ),
+                      const SizedBox(height: AppSpacing.xs),
+                      Text(
+                        'Süre ← İş Programı · Metraj ← Keşif\n'
+                        'Birim verim = (metraj oranı) ÷ (adam-gün oranı)',
+                        style: theme.textTheme.bodySmall,
+                      ),
+                      const SizedBox(height: AppSpacing.sm),
+                      for (final row in rows) ...[
+                        _VerimRowCard(row: row),
                         const SizedBox(height: AppSpacing.sm),
-                        Text(
-                          'Verim için iki bulut kaynağı gerekir:\n'
-                          '• İş Programı → planlanan süre / iş gücü\n'
-                          '• Keşif → planlanan metraj\n'
-                          'Yalnızca yerel puantaj ile verim hesaplanamaz.',
-                          style: theme.textTheme.bodyMedium,
-                        ),
-                        const SizedBox(height: AppSpacing.md),
-                        SJButton(
-                          label: 'Buluttan çek (İş Programı + Keşif)',
-                          icon: Icons.cloud_download_outlined,
-                          loading: syncing,
-                          expanded: true,
-                          onPressed: syncing
-                              ? null
-                              : () => ref
-                                  .read(verimProvider.notifier)
-                                  .syncFromCloud(),
-                        ),
-                        const SizedBox(height: AppSpacing.sm),
-                        SJButton(
-                          label: 'Demo bulut verisi (önizleme)',
-                          icon: Icons.science_outlined,
-                          variant: SJButtonVariant.secondary,
-                          expanded: true,
-                          loading: syncing,
-                          onPressed: syncing
-                              ? null
-                              : () => ref
-                                  .read(verimProvider.notifier)
-                                  .syncFromCloud(demoFallback: true),
-                        ),
                       ],
-                    );
-                  },
+                    ],
+                  ],
                 ),
               ),
-            ] else ...[
-              Text('İmalat bazlı verim', style: theme.textTheme.titleMedium),
-              const SizedBox(height: AppSpacing.xs),
-              Text(
-                'Süre ← İş Programı · Metraj ← Keşif\n'
-                'Birim verim = (metraj oranı) ÷ (adam-gün oranı)',
-                style: theme.textTheme.bodySmall,
-              ),
-              const SizedBox(height: AppSpacing.sm),
-              for (final row in rows) ...[
-                _VerimRowCard(row: row),
-                const SizedBox(height: AppSpacing.sm),
-              ],
-            ],
+            ),
           ],
         ),
       ),

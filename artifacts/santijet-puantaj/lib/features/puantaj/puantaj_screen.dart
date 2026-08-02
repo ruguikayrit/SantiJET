@@ -11,6 +11,7 @@ import '../../core/theme/app_colors.dart';
 import '../../core/theme/app_radii.dart';
 import '../../core/theme/app_spacing.dart';
 import '../../core/utils/puantaj_date.dart';
+import '../../core/widgets/santijet_header.dart';
 import '../../data/providers/app_data_provider.dart';
 import '../../data/services/puantaj_export_service.dart';
 import '../../data/services/puantaj_report_builder.dart';
@@ -71,13 +72,24 @@ class _PuantajScreenState extends ConsumerState<PuantajScreen> {
 
     if (project == null) {
       return Scaffold(
-        appBar: AppBar(title: const Text('Puantaj')),
-        body: SJEmptyState(
-          title: 'Önce proje ekleyin',
-          message: 'Puantaj tutmak için en az bir projeniz olmalı.',
-          icon: Icons.apartment_outlined,
-          actionLabel: 'Projelere Git',
-          onAction: () => context.go(AppRoutes.projeler),
+        backgroundColor: AppColors.canvas,
+        body: SafeArea(
+          bottom: false,
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              const SantijetHeader(subtitle: 'Puantaj'),
+              Expanded(
+                child: SJEmptyState(
+                  title: 'Önce proje ekleyin',
+                  message: 'Puantaj tutmak için en az bir projeniz olmalı.',
+                  icon: Icons.apartment_outlined,
+                  actionLabel: 'Projelere Git',
+                  onAction: () => context.go(AppRoutes.projeler),
+                ),
+              ),
+            ],
+          ),
         ),
       );
     }
@@ -133,42 +145,36 @@ class _PuantajScreenState extends ConsumerState<PuantajScreen> {
     }
 
     return Scaffold(
-      appBar: AppBar(
-        title: const Text('Puantaj'),
-        actions: [
-          IconButton(
-            tooltip: 'Dışa aktar',
-            icon: const Icon(Icons.ios_share_outlined),
-            onPressed: () => _openExportSheet(
-              context,
-              project: project,
-              people: people,
-              attendance: attendance,
-            ),
-          ),
-          Padding(
-            padding: const EdgeInsets.only(right: AppSpacing.sm),
-            child: Center(
-              child: Text(
-                project.name,
-                style: theme.textTheme.labelMedium,
-                maxLines: 1,
-                overflow: TextOverflow.ellipsis,
+      backgroundColor: AppColors.canvas,
+      body: SafeArea(
+        bottom: false,
+        child: Column(
+          children: [
+            const SantijetHeader(subtitle: 'Puantaj'),
+            Align(
+              alignment: Alignment.centerRight,
+              child: Padding(
+                padding: const EdgeInsets.only(right: AppSpacing.xs),
+                child: IconButton(
+                  tooltip: 'Dışa aktar',
+                  icon: const Icon(Icons.ios_share_outlined),
+                  onPressed: () => _openExportSheet(
+                    context,
+                    project: project,
+                    people: people,
+                    attendance: attendance,
+                  ),
+                ),
               ),
             ),
-          ),
-        ],
-      ),
-      body: Column(
-        children: [
-          Padding(
-            padding: const EdgeInsets.fromLTRB(
-              AppSpacing.md,
-              AppSpacing.xs,
-              AppSpacing.md,
-              AppSpacing.sm,
-            ),
-            child: DecoratedBox(
+            Padding(
+              padding: const EdgeInsets.fromLTRB(
+                AppSpacing.md,
+                0,
+                AppSpacing.md,
+                AppSpacing.sm,
+              ),
+              child: DecoratedBox(
               decoration: BoxDecoration(
                 color: theme.cardTheme.color ?? theme.colorScheme.surface,
                 borderRadius: AppRadii.md,
@@ -321,7 +327,8 @@ class _PuantajScreenState extends ConsumerState<PuantajScreen> {
                 statusOf: statusOf,
               ),
             ),
-        ],
+          ],
+        ),
       ),
     );
   }
