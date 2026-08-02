@@ -13,6 +13,7 @@ import '../../domain/entities/concrete_pour.dart';
 import '../../domain/entities/metraj_variance_note.dart';
 import '../../domain/entities/mixer_entry.dart';
 import '../../domain/entities/project.dart';
+import '../../domain/entities/quality_sample.dart';
 
 final projectsBoxProvider = Provider<Box>(
   (ref) => throw UnimplementedError('projectsBoxProvider override edilmeli'),
@@ -32,6 +33,10 @@ final ordersBoxProvider = Provider<Box>(
 
 final varianceBoxProvider = Provider<Box>(
   (ref) => throw UnimplementedError('varianceBoxProvider override edilmeli'),
+);
+
+final qualityBoxProvider = Provider<Box>(
+  (ref) => throw UnimplementedError('qualityBoxProvider override edilmeli'),
 );
 
 /// Aktif proje kimliği (Hive settings kutusu üzerinden).
@@ -303,6 +308,56 @@ class VarianceNotifier extends StateNotifier<List<MetrajVarianceNote>> {
 final varianceProvider =
     StateNotifierProvider<VarianceNotifier, List<MetrajVarianceNote>>((ref) {
   return VarianceNotifier(ref.watch(varianceBoxProvider));
+});
+
+class QualityNotifier extends StateNotifier<List<QualitySample>> {
+  QualityNotifier(this._box) : super(_load(_box));
+
+  final Box _box;
+  static const _key = 'items';
+
+  static List<QualitySample> _load(Box box) =>
+      _readList(box, _key).map(QualitySample.fromJson).toList();
+
+  void _persist() =>
+      _writeList(_box, _key, state.map((e) => e.toJson()).toList());
+
+  void add(QualitySample draft) {
+    state = [...state, draft.copyWith(id: IdGen.make('num'))];
+    _persist();
+  }
+
+  void update(QualitySample sample) {
+    state = [
+      for (final s in state)
+        if (s.id == sample.id) sample else s,
+    ];
+    _persist();
+  }
+
+  void delete(String id) {
+    state = state.where((e) => e.id != id).toList();
+    _persist();
+  }
+
+  void replaceAll(List<QualitySample> items) {
+    state = List<QualitySample>.from(items);
+    _persist();
+  }
+}
+
+final qualityProvider =
+    StateNotifierProvider<QualityNotifier, List<QualitySample>>((ref) {
+  return QualityNotifier(ref.watch(qualityBoxProvider));
+});
+
+final activeQualityProvider = Provider<List<QualitySample>>((ref) {
+  final project = ref.watch(activeProjectProvider);
+  final all = ref.watch(qualityProvider);
+  if (project == null) return const [];
+  final list = all.where((e) => e.projectId == project.id).toList()
+    ..sort((a, b) => b.sampleDate.compareTo(a.sampleDate));
+  return list;
 });
 
 final activeDiscoveryProvider = Provider<List<ConcreteDiscoveryItem>>((ref) {

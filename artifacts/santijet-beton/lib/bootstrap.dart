@@ -17,6 +17,7 @@ Future<void> bootstrap() async {
     Hive.openBox('pours'),
     Hive.openBox('orders'),
     Hive.openBox('variance'),
+    Hive.openBox('quality'),
   ]);
 
   runApp(
@@ -28,6 +29,7 @@ Future<void> bootstrap() async {
         poursBoxProvider.overrideWithValue(boxes[3]),
         ordersBoxProvider.overrideWithValue(boxes[4]),
         varianceBoxProvider.overrideWithValue(boxes[5]),
+        qualityBoxProvider.overrideWithValue(boxes[6]),
       ],
       child: const _SeedAndRun(child: SantijetBetonApp()),
     ),

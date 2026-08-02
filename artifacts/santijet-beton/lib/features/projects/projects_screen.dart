@@ -266,10 +266,13 @@ class _ProjectsScreenState extends ConsumerState<ProjectsScreen> {
         ref.read(ordersProvider).where((e) => e.projectId != p.id).toList();
     final variance =
         ref.read(varianceProvider).where((e) => e.projectId != p.id).toList();
+    final quality =
+        ref.read(qualityProvider).where((e) => e.projectId != p.id).toList();
     ref.read(discoveryProvider.notifier).replaceAll(discovery);
     ref.read(poursProvider.notifier).replaceAll(pours);
     ref.read(ordersProvider.notifier).replaceAll(orders);
     ref.read(varianceProvider.notifier).replaceAll(variance);
+    ref.read(qualityProvider.notifier).replaceAll(quality);
     ref.read(projectsProvider.notifier).delete(p.id);
     if (activeId == p.id) {
       final remaining = ref.read(projectsProvider);

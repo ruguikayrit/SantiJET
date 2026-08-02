@@ -12,6 +12,7 @@ import '../../core/utils/app_date.dart';
 import '../../core/widgets/santijet_header.dart';
 import '../../data/providers/app_data_provider.dart';
 import '../../domain/beton_progress.dart';
+import '../../domain/entities/quality_sample.dart';
 import '../projects/widgets/project_switcher.dart';
 
 /// Ana sayfa — döküm, keşif ilerleme, sipariş fark özetleri.
@@ -23,7 +24,6 @@ class HomeScreen extends ConsumerWidget {
     final project = ref.watch(activeProjectProvider);
     final progress = ref.watch(projectProgressProvider);
     final todayPours = ref.watch(todayPoursProvider);
-    final pours = ref.watch(activePoursProvider);
     final orders = ref.watch(activeOrdersProvider);
     final variance = ref.watch(activeVarianceProvider);
     final today = AppDate.format(AppDate.today());
@@ -33,21 +33,7 @@ class HomeScreen extends ConsumerWidget {
     final todayPoured =
         todayPours.fold<double>(0, (s, p) => s + p.volumeM3);
 
-    final samplePours = pours.where((p) {
-      return p.sampleType != null ||
-          (p.sampleCount ?? 0) > 0 ||
-          p.sampleTakenHour.trim().isNotEmpty ||
-          p.sampleImageBase64.isNotEmpty;
-    }).toList();
-    final sampleTotalCount =
-        samplePours.fold<int>(0, (s, p) => s + (p.sampleCount ?? 0));
-    final sampleWithPhoto =
-        samplePours.where((p) => p.sampleImageBase64.isNotEmpty).length;
-    final sampleCylinder = samplePours
-        .where((p) => p.sampleType?.storageValue == 'silindir')
-        .length;
-    final sampleCube =
-        samplePours.where((p) => p.sampleType?.storageValue == 'küp').length;
+    final qualitySamples = ref.watch(activeQualityProvider);
 
     if (project == null) {
       return Scaffold(
@@ -207,7 +193,7 @@ class HomeScreen extends ConsumerWidget {
                                 color: AppColors.info,
                               ),
                             ),
-                            const SizedBox(width: AppSpacing.sm),
+                            const SizedBox(width: AppSpacing.xs),
                             Expanded(
                               child: _MiniStat(
                                 label: 'Gerçekleşen',
@@ -216,18 +202,20 @@ class HomeScreen extends ConsumerWidget {
                                 color: AppColors.success,
                               ),
                             ),
+                            const SizedBox(width: AppSpacing.xs),
+                            Expanded(
+                              child: _MiniStat(
+                                label: 'Sipariş farkı',
+                                value: BetonProgress.fmtM3(progress.orderGap),
+                                unit: 'm³',
+                                color: progress.orderGap.abs() < 0.01
+                                    ? AppColors.success
+                                    : progress.orderGap > 0
+                                        ? AppColors.warning
+                                        : AppColors.critical,
+                              ),
+                            ),
                           ],
-                        ),
-                        const SizedBox(height: AppSpacing.sm),
-                        _MiniStat(
-                          label: 'Sipariş farkı',
-                          value: BetonProgress.fmtM3(progress.orderGap),
-                          unit: 'm³',
-                          color: progress.orderGap.abs() < 0.01
-                              ? AppColors.success
-                              : progress.orderGap > 0
-                                  ? AppColors.warning
-                                  : AppColors.critical,
                         ),
                         if (variance.isNotEmpty) ...[
                           const SizedBox(height: AppSpacing.sm),
@@ -243,63 +231,29 @@ class HomeScreen extends ConsumerWidget {
                   _SummarySection(
                     title: 'Beton Numune',
                     icon: Icons.science_outlined,
-                    onTap: () => context.go(AppRoutes.dokum),
-                    child: samplePours.isEmpty
-                        ? Text(
-                            'Döküm kayıtlarında henüz numune yok',
-                            style: Theme.of(context)
-                                .textTheme
-                                .bodyMedium
-                                ?.copyWith(color: AppColors.textSecondary),
-                          )
-                        : Column(
-                            crossAxisAlignment: CrossAxisAlignment.stretch,
-                            children: [
-                              Row(
-                                children: [
-                                  Expanded(
-                                    child: _MiniStat(
-                                      label: 'Kayıt',
-                                      value: '${samplePours.length}',
-                                      unit: 'döküm',
-                                      color: AppColors.info,
-                                    ),
-                                  ),
-                                  const SizedBox(width: AppSpacing.xs),
-                                  Expanded(
-                                    child: _MiniStat(
-                                      label: 'Adet',
-                                      value: '$sampleTotalCount',
-                                      unit: 'numune',
-                                      color: AppColors.electricBlue,
-                                    ),
-                                  ),
-                                  const SizedBox(width: AppSpacing.xs),
-                                  Expanded(
-                                    child: _MiniStat(
-                                      label: 'Fotoğraf',
-                                      value: '$sampleWithPhoto',
-                                      unit: 'adet',
-                                      color: sampleWithPhoto > 0
-                                          ? AppColors.success
-                                          : AppColors.warning,
-                                    ),
-                                  ),
-                                ],
+                    onTap: () => context.push(AppRoutes.kalite),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.stretch,
+                      children: [
+                        Text(
+                          'Laboratuvar basınç dayanım raporu özeti',
+                          style: Theme.of(context).textTheme.labelSmall?.copyWith(
+                                color: AppColors.cardTextMuted,
                               ),
-                              if (sampleCylinder > 0 || sampleCube > 0) ...[
-                                const SizedBox(height: AppSpacing.sm),
-                                Text(
-                                  [
-                                    if (sampleCylinder > 0)
-                                      'Silindir: $sampleCylinder',
-                                    if (sampleCube > 0) 'Küp: $sampleCube',
-                                  ].join(' · '),
-                                  style: Theme.of(context).textTheme.labelSmall,
-                                ),
-                              ],
-                            ],
+                        ),
+                        const SizedBox(height: AppSpacing.sm),
+                        for (final group in ConcreteElementGroup.values) ...[
+                          if (group != ConcreteElementGroup.values.first)
+                            const SizedBox(height: AppSpacing.xs),
+                          _ElementQualityRow(
+                            group: group,
+                            samples: qualitySamples
+                                .where((s) => s.elementGroup == group)
+                                .toList(),
                           ),
+                        ],
+                      ],
+                    ),
                   ),
                 ]),
               ),
@@ -354,6 +308,109 @@ class _ProgressBar extends StatelessWidget {
           ),
         ),
       ],
+    );
+  }
+}
+
+class _ElementQualityRow extends StatelessWidget {
+  const _ElementQualityRow({
+    required this.group,
+    required this.samples,
+  });
+
+  final ConcreteElementGroup group;
+  final List<QualitySample> samples;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final withResult =
+        samples.where((s) => s.strengthMpa != null).toList(growable: false);
+    final avg = withResult.isEmpty
+        ? null
+        : withResult.fold<double>(0, (s, e) => s + e.strengthMpa!) /
+            withResult.length;
+    final passCount = samples.where((s) => s.isCompliant == true).length;
+    final failCount = samples.where((s) => s.isCompliant == false).length;
+    final pending = samples.where((s) => s.isPending).length;
+
+    final Color accent;
+    final String resultLabel;
+    if (samples.isEmpty) {
+      accent = AppColors.cardTextMuted;
+      resultLabel = 'Kayıt yok';
+    } else if (failCount > 0) {
+      accent = AppColors.critical;
+      resultLabel = '$failCount uygunsuz';
+    } else if (passCount > 0) {
+      accent = AppColors.success;
+      resultLabel = '$passCount uygun';
+    } else if (pending > 0) {
+      accent = AppColors.partial;
+      resultLabel = '$pending bekliyor';
+    } else {
+      accent = AppColors.info;
+      resultLabel = '${samples.length} kayıt';
+    }
+
+    return Container(
+      padding: const EdgeInsets.symmetric(
+        horizontal: AppSpacing.sm,
+        vertical: AppSpacing.sm,
+      ),
+      decoration: BoxDecoration(
+        color: accent.withValues(alpha: 0.08),
+        borderRadius: AppRadii.sm,
+        border: Border.all(color: accent.withValues(alpha: 0.25)),
+      ),
+      child: Row(
+        children: [
+          Expanded(
+            flex: 3,
+            child: Text(
+              group.label,
+              style: theme.textTheme.labelLarge?.copyWith(
+                color: AppColors.cardTextPrimary,
+                fontWeight: FontWeight.w700,
+              ),
+            ),
+          ),
+          Expanded(
+            flex: 2,
+            child: Text(
+              samples.isEmpty ? '—' : '${samples.length} rapor',
+              style: theme.textTheme.labelSmall?.copyWith(
+                color: AppColors.cardTextSecondary,
+              ),
+              textAlign: TextAlign.center,
+            ),
+          ),
+          Expanded(
+            flex: 3,
+            child: Text(
+              avg == null ? '— MPa' : 'Ort. ${avg.toStringAsFixed(1)} MPa',
+              style: theme.textTheme.labelMedium?.copyWith(
+                color: accent,
+                fontWeight: FontWeight.w700,
+              ),
+              textAlign: TextAlign.center,
+            ),
+          ),
+          Expanded(
+            flex: 2,
+            child: Text(
+              resultLabel,
+              style: theme.textTheme.labelSmall?.copyWith(
+                color: accent,
+                fontWeight: FontWeight.w600,
+              ),
+              textAlign: TextAlign.end,
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+            ),
+          ),
+        ],
+      ),
     );
   }
 }

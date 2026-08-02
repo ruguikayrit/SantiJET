@@ -74,8 +74,8 @@ class SettingsScreen extends ConsumerWidget {
         backgroundColor: AppColors.surfaceElevated,
         title: const Text('Tüm Verileri Sil'),
         content: const Text(
-          'Projeler, keşif, döküm, sipariş ve fark kayıtları silinir. '
-          'Bu işlem geri alınamaz. Devam edilsin mi?',
+          'Projeler, keşif, döküm, sipariş, fark ve basınç dayanım '
+          'kayıtları silinir. Bu işlem geri alınamaz. Devam edilsin mi?',
         ),
         actions: [
           TextButton(
@@ -97,6 +97,7 @@ class SettingsScreen extends ConsumerWidget {
     ref.read(poursProvider.notifier).replaceAll([]);
     ref.read(ordersProvider.notifier).replaceAll([]);
     ref.read(varianceProvider.notifier).replaceAll([]);
+    ref.read(qualityProvider.notifier).replaceAll([]);
     ref.read(activeProjectIdProvider.notifier).set(null);
 
     if (!context.mounted) return;
@@ -132,6 +133,12 @@ class SettingsScreen extends ConsumerWidget {
                 ? 'Keşif, döküm, sipariş'
                 : '$discoveryCount keşif · $pourCount döküm · $orderCount sipariş',
             onTap: () => context.go(AppRoutes.home),
+          ),
+          _SettingsTile(
+            icon: Icons.science_outlined,
+            title: 'Basınç dayanım raporları',
+            subtitle: 'Temel · Kolon & Perde · Döşeme laboratuvar kayıtları',
+            onTap: () => context.push(AppRoutes.kalite),
           ),
           _SettingsTile(
             icon: Icons.dark_mode,

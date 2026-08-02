@@ -8,6 +8,7 @@ import '../../features/kesif/kesif_screen.dart';
 import '../../features/program/program_screen.dart';
 import '../../features/projects/join_project_screen.dart';
 import '../../features/projects/projects_screen.dart';
+import '../../features/quality/quality_screen.dart';
 import '../../features/settings/settings_screen.dart';
 import '../../features/shell/main_shell.dart';
 import '../../features/splash/splash_screen.dart';
@@ -99,6 +100,13 @@ final routerProvider = Provider<GoRouter>((ref) {
                         ),
                       ),
                     ],
+                  ),
+                  GoRoute(
+                    path: 'kalite',
+                    pageBuilder: (context, state) => fadePage(
+                      key: state.pageKey,
+                      child: const QualityScreen(),
+                    ),
                   ),
                   GoRoute(
                     path: 'hakkinda',
