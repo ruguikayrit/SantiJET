@@ -18,6 +18,7 @@ import '../../domain/beton_progress.dart';
 import '../../domain/entities/concrete_order.dart';
 import '../../domain/entities/concrete_pour.dart';
 import '../../domain/entities/project.dart';
+import '../../domain/structural_element_kind.dart';
 
 /// Sipariş programı — planlı sipariş ↔ dökülen karşılaştırma + WhatsApp paylaşım.
 class ProgramScreen extends ConsumerWidget {
@@ -503,10 +504,13 @@ class _OrderCard extends StatelessWidget {
         : gap > 0
             ? AppColors.warning
             : AppColors.critical;
+    // Döküm kartlarıyla aynı yapısal eleman renk şeridi.
+    final accent = StructuralElementKind.fromElementName(order.elementName)
+        .accentColor;
 
     return SJCard(
       onTap: onTap,
-      accentColor: gapColor,
+      accentColor: accent,
       child: Builder(
         builder: (context) {
           final theme = Theme.of(context);

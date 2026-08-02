@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 
 import '../core/theme/app_colors.dart';
 
-/// Yapısal eleman türü — döküm kart renkleri ve sınıflandırma.
+/// Yapısal eleman türü — döküm / sipariş kart renkleri ve sınıflandırma.
 enum StructuralElementKind {
   temel('Temel'),
   kolonPerde('Perde & Kolon'),

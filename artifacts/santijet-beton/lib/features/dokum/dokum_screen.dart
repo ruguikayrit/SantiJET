@@ -6,6 +6,7 @@ import '../../core/design_system/sj_empty_state.dart';
 import '../../core/theme/app_colors.dart';
 import '../../core/theme/app_radii.dart';
 import '../../core/theme/app_spacing.dart';
+import '../../core/widgets/santijet_header.dart';
 import '../../data/providers/app_data_provider.dart';
 import '../../domain/beton_progress.dart';
 import '../../domain/entities/concrete_pour.dart';
@@ -24,7 +25,6 @@ class DokumScreen extends ConsumerWidget {
 
     return Scaffold(
       backgroundColor: AppColors.canvas,
-      appBar: AppBar(title: const Text('Döküm Kayıtları')),
       floatingActionButton: project == null
           ? null
           : FloatingActionButton.extended(
@@ -42,42 +42,55 @@ class DokumScreen extends ConsumerWidget {
               icon: const Icon(Icons.add),
               label: const Text('Yeni Döküm'),
             ),
-      body: project == null
-          ? const SJEmptyState(
-              title: 'Proje seçin',
-              message: 'Döküm kaydı için aktif bir proje gerekli.',
-              icon: Icons.apartment_outlined,
-            )
-          : pours.isEmpty
-              ? SJEmptyState(
-                  title: 'Henüz döküm yok',
-                  message: orders.isEmpty
-                      ? 'Önce Program’dan aktif sipariş oluşturun, '
-                          'sonra mikser ve pompa verilerini girin.'
-                      : 'Aktif sipariş seçip mikser / pompa verilerini girin.',
-                  icon: Icons.local_shipping_outlined,
-                  actionLabel: orders.isEmpty ? null : 'Döküm Ekle',
-                  onAction:
-                      orders.isEmpty ? null : () => _open(context, ref),
-                )
-              : ListView.separated(
-                  padding: const EdgeInsets.fromLTRB(
-                    AppSpacing.md,
-                    AppSpacing.sm,
-                    AppSpacing.md,
-                    88,
-                  ),
-                  itemCount: pours.length,
-                  separatorBuilder: (_, __) =>
-                      const SizedBox(height: AppSpacing.sm),
-                  itemBuilder: (context, index) {
-                    final p = pours[index];
-                    return _PourCard(
-                      pour: p,
-                      onTap: () => _open(context, ref, existing: p),
-                    );
-                  },
-                ),
+      body: SafeArea(
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            const SantijetHeader(
+              subtitle: 'Döküm',
+              avatarInitial: 'SJ',
+            ),
+            Expanded(
+              child: project == null
+                  ? const SJEmptyState(
+                      title: 'Proje seçin',
+                      message: 'Döküm kaydı için aktif bir proje gerekli.',
+                      icon: Icons.apartment_outlined,
+                    )
+                  : pours.isEmpty
+                      ? SJEmptyState(
+                          title: 'Henüz döküm yok',
+                          message: orders.isEmpty
+                              ? 'Önce Program’dan aktif sipariş oluşturun, '
+                                  'sonra mikser ve pompa verilerini girin.'
+                              : 'Aktif sipariş seçip mikser / pompa verilerini girin.',
+                          icon: Icons.local_shipping_outlined,
+                          actionLabel: orders.isEmpty ? null : 'Döküm Ekle',
+                          onAction:
+                              orders.isEmpty ? null : () => _open(context, ref),
+                        )
+                      : ListView.separated(
+                          padding: const EdgeInsets.fromLTRB(
+                            AppSpacing.md,
+                            AppSpacing.sm,
+                            AppSpacing.md,
+                            88,
+                          ),
+                          itemCount: pours.length,
+                          separatorBuilder: (_, __) =>
+                              const SizedBox(height: AppSpacing.sm),
+                          itemBuilder: (context, index) {
+                            final p = pours[index];
+                            return _PourCard(
+                              pour: p,
+                              onTap: () => _open(context, ref, existing: p),
+                            );
+                          },
+                        ),
+            ),
+          ],
+        ),
+      ),
     );
   }
 
