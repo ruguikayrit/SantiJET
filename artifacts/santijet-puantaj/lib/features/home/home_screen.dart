@@ -614,9 +614,9 @@ class _TeamImalatCard extends StatelessWidget {
           borderRadius: AppRadii.xs,
           child: LinearProgressIndicator(
             value: (pct / 100).clamp(0.0, 1.0),
-            minHeight: 5,
-            backgroundColor: color.withValues(alpha: 0.15),
-            color: color,
+            minHeight: 10,
+            backgroundColor: AppColors.success.withValues(alpha: 0.15),
+            color: AppColors.success,
           ),
         ),
       ],
