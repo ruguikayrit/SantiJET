@@ -41,6 +41,12 @@ class _ImalatScreenState extends ConsumerState<ImalatScreen> {
   /// `null` = tüm imalat tipleri; aksi halde tip adına göre filtre.
   String? _typeFilter;
 
+  /// Kullanıcının elle açtığı ekip başlıkları.
+  final Set<String> _manualExpand = {};
+
+  /// Kullanıcının elle kapattığı ekip başlıkları.
+  final Set<String> _manualCollapse = {};
+
   static String _typeKey(Production p) {
     final n = p.name.trim();
     return n.isEmpty ? 'Adsız imalat' : n;
@@ -51,6 +57,33 @@ class _ImalatScreenState extends ConsumerState<ImalatScreen> {
     return t.isEmpty ? 'Ekip seçilmedi' : t;
   }
 
+  static bool _updatedToday(Production p) {
+    final today = PuantajDate.today();
+    return p.dailyEntries.any((e) => e.date.trim() == today);
+  }
+
+  static bool _teamUpdatedToday(List<Production> items) =>
+      items.any(_updatedToday);
+
+  bool _isTeamExpanded(String team, bool updatedToday) {
+    if (_manualExpand.contains(team)) return true;
+    if (_manualCollapse.contains(team)) return false;
+    // Varsayılan: kapalı; yalnızca bugün güncellenen ekip açık.
+    return updatedToday;
+  }
+
+  void _toggleTeam(String team, bool currentlyExpanded) {
+    setState(() {
+      if (currentlyExpanded) {
+        _manualExpand.remove(team);
+        _manualCollapse.add(team);
+      } else {
+        _manualCollapse.remove(team);
+        _manualExpand.add(team);
+      }
+    });
+  }
+
   List<Production> _applyFilters(List<Production> items) {
     return items.where((p) {
       if (_teamFilter != null && _teamKey(p) != _teamFilter) return false;
@@ -59,24 +92,38 @@ class _ImalatScreenState extends ConsumerState<ImalatScreen> {
     }).toList();
   }
 
-  /// İmalat tipi (ad) başlıkları altında gruplar.
-  List<({String type, List<Production> items})> _groupByType(
+  /// Ekip başlıkları altında gruplar (Demir, Kalıp, Beton…).
+  List<({String team, List<Production> items, bool updatedToday})> _groupByTeam(
     List<Production> items,
   ) {
     final map = <String, List<Production>>{};
     for (final p in items) {
-      map.putIfAbsent(_typeKey(p), () => []).add(p);
+      map.putIfAbsent(_teamKey(p), () => []).add(p);
     }
-    final keys = map.keys.toList()
-      ..sort((a, b) => a.toLowerCase().compareTo(b.toLowerCase()));
     for (final list in map.values) {
       list.sort((a, b) {
+        final name = a.name.toLowerCase().compareTo(b.name.toLowerCase());
+        if (name != 0) return name;
         final loc = a.locationLabel.compareTo(b.locationLabel);
         if (loc != 0) return loc;
         return b.latestDate.compareTo(a.latestDate);
       });
     }
-    return [for (final k in keys) (type: k, items: map[k]!)];
+    final keys = map.keys.toList()
+      ..sort((a, b) {
+        final aToday = _teamUpdatedToday(map[a]!) ? 0 : 1;
+        final bToday = _teamUpdatedToday(map[b]!) ? 0 : 1;
+        if (aToday != bToday) return aToday.compareTo(bToday);
+        return a.toLowerCase().compareTo(b.toLowerCase());
+      });
+    return [
+      for (final k in keys)
+        (
+          team: k,
+          items: map[k]!,
+          updatedToday: _teamUpdatedToday(map[k]!),
+        ),
+    ];
   }
 
   Future<void> _openFilterSheet({
@@ -208,6 +255,7 @@ class _ImalatScreenState extends ConsumerState<ImalatScreen> {
   }
 
   Widget _productionCard(Production p) {
+    final title = p.name.trim().isEmpty ? 'İmalat' : p.name.trim();
     return SJCard(
       onTap: () => _openDetail(context, ref, production: p),
       child: Builder(
@@ -220,12 +268,18 @@ class _ImalatScreenState extends ConsumerState<ImalatScreen> {
                 children: [
                   Expanded(
                     child: Text(
-                      p.locationLabel.isNotEmpty
-                          ? p.locationLabel
-                          : (p.name.trim().isEmpty ? 'İmalat' : p.name),
+                      title,
                       style: theme.textTheme.titleMedium,
                     ),
                   ),
+                  if (_updatedToday(p))
+                    Padding(
+                      padding: const EdgeInsets.only(right: 8),
+                      child: SJStatusBadge(
+                        label: 'Bugün',
+                        color: AppColors.info,
+                      ),
+                    ),
                   if (p.isComplete)
                     SJStatusBadge(
                       label: 'Tamamlandı',
@@ -233,18 +287,16 @@ class _ImalatScreenState extends ConsumerState<ImalatScreen> {
                     ),
                 ],
               ),
-              const SizedBox(height: AppSpacing.xs),
-              Text(
-                p.teamName.isEmpty
-                    ? 'Ekip seçilmedi'
-                    : 'Ekip: ${p.teamName}',
-                style: theme.textTheme.labelMedium?.copyWith(
-                  color: AppColors.useDarkCards
-                      ? AppColors.electricBlueLight
-                      : AppColors.electricBlue,
-                  fontWeight: FontWeight.w600,
+              if (p.locationLabel.isNotEmpty) ...[
+                const SizedBox(height: AppSpacing.xs),
+                Text(
+                  p.locationLabel,
+                  style: theme.textTheme.labelMedium?.copyWith(
+                    color: theme.colorScheme.onSurfaceVariant,
+                    fontWeight: FontWeight.w600,
+                  ),
                 ),
-              ),
+              ],
               const SizedBox(height: 4),
               Text(
                 'Toplam çalışan: ${_fmt(p.ustaCount)} usta · '
@@ -271,6 +323,81 @@ class _ImalatScreenState extends ConsumerState<ImalatScreen> {
             ],
           );
         },
+      ),
+    );
+  }
+
+  Widget _teamHeader({
+    required String team,
+    required int count,
+    required bool expanded,
+    required bool updatedToday,
+    required VoidCallback onToggle,
+  }) {
+    final theme = Theme.of(context);
+    final accent = AppColors.useDarkCards
+        ? AppColors.electricBlueLight
+        : AppColors.electricBlue;
+    return Material(
+      color: Colors.transparent,
+      child: InkWell(
+        borderRadius: AppRadii.md,
+        onTap: onToggle,
+        child: Container(
+          padding: const EdgeInsets.symmetric(
+            horizontal: AppSpacing.sm,
+            vertical: AppSpacing.sm,
+          ),
+          decoration: BoxDecoration(
+            borderRadius: AppRadii.md,
+            border: Border.all(
+              color: updatedToday
+                  ? accent.withValues(alpha: 0.45)
+                  : theme.dividerColor.withValues(alpha: 0.5),
+            ),
+            color: updatedToday
+                ? accent.withValues(alpha: 0.08)
+                : theme.colorScheme.surface.withValues(alpha: 0.35),
+          ),
+          child: Row(
+            children: [
+              Icon(
+                expanded
+                    ? Icons.keyboard_arrow_down_rounded
+                    : Icons.keyboard_arrow_right_rounded,
+                color: accent,
+              ),
+              const SizedBox(width: 4),
+              Expanded(
+                child: Text(
+                  team,
+                  style: theme.textTheme.titleSmall?.copyWith(
+                    fontWeight: FontWeight.w800,
+                    color: accent,
+                  ),
+                ),
+              ),
+              if (updatedToday)
+                Padding(
+                  padding: const EdgeInsets.only(right: 8),
+                  child: Text(
+                    'Bugün',
+                    style: theme.textTheme.labelSmall?.copyWith(
+                      color: accent,
+                      fontWeight: FontWeight.w700,
+                    ),
+                  ),
+                ),
+              Text(
+                '$count',
+                style: theme.textTheme.labelMedium?.copyWith(
+                  color: theme.colorScheme.onSurfaceVariant,
+                  fontWeight: FontWeight.w700,
+                ),
+              ),
+            ],
+          ),
+        ),
       ),
     );
   }
@@ -322,7 +449,7 @@ class _ImalatScreenState extends ConsumerState<ImalatScreen> {
     }
 
     final filtered = _applyFilters(items);
-    final groups = _groupByType(filtered);
+    final groups = _groupByTeam(filtered);
     final filterActive = _teamFilter != null || _typeFilter != null;
 
     return Scaffold(
@@ -393,67 +520,46 @@ class _ImalatScreenState extends ConsumerState<ImalatScreen> {
                     _typeFilter = null;
                   }),
                 )
-              : ListView.builder(
+              : ListView(
                   padding: const EdgeInsets.fromLTRB(
                     AppSpacing.md,
                     AppSpacing.sm,
                     AppSpacing.md,
                     88,
                   ),
-                  itemCount: groups.fold<int>(
-                    0,
-                    (n, g) => n + 1 + g.items.length,
-                  ),
-                  itemBuilder: (context, index) {
-                    var cursor = 0;
-                    for (final g in groups) {
-                      if (index == cursor) {
-                        return Padding(
-                          padding: EdgeInsets.only(
-                            top: cursor == 0 ? 0 : AppSpacing.md,
-                            bottom: AppSpacing.sm,
-                          ),
-                          child: Row(
+                  children: [
+                    for (var gi = 0; gi < groups.length; gi++) ...[
+                      if (gi > 0) const SizedBox(height: AppSpacing.sm),
+                      Builder(
+                        builder: (context) {
+                          final g = groups[gi];
+                          final expanded =
+                              _isTeamExpanded(g.team, g.updatedToday);
+                          return Column(
+                            crossAxisAlignment: CrossAxisAlignment.stretch,
                             children: [
-                              Expanded(
-                                child: Text(
-                                  g.type,
-                                  style: theme.textTheme.titleSmall?.copyWith(
-                                    fontWeight: FontWeight.w800,
-                                    color: AppColors.useDarkCards
-                                        ? AppColors.electricBlueLight
-                                        : AppColors.electricBlue,
-                                  ),
-                                ),
+                              _teamHeader(
+                                team: g.team,
+                                count: g.items.length,
+                                expanded: expanded,
+                                updatedToday: g.updatedToday,
+                                onToggle: () =>
+                                    _toggleTeam(g.team, expanded),
                               ),
-                              Text(
-                                '${g.items.length}',
-                                style: theme.textTheme.labelMedium?.copyWith(
-                                  color: theme.colorScheme.onSurfaceVariant,
-                                  fontWeight: FontWeight.w700,
-                                ),
-                              ),
+                              if (expanded) ...[
+                                const SizedBox(height: AppSpacing.sm),
+                                for (var i = 0; i < g.items.length; i++) ...[
+                                  if (i > 0)
+                                    const SizedBox(height: AppSpacing.sm),
+                                  _productionCard(g.items[i]),
+                                ],
+                              ],
                             ],
-                          ),
-                        );
-                      }
-                      cursor++;
-                      for (var i = 0; i < g.items.length; i++) {
-                        if (index == cursor) {
-                          return Padding(
-                            padding: EdgeInsets.only(
-                              bottom: i == g.items.length - 1
-                                  ? 0
-                                  : AppSpacing.sm,
-                            ),
-                            child: _productionCard(g.items[i]),
                           );
-                        }
-                        cursor++;
-                      }
-                    }
-                    return const SizedBox.shrink();
-                  },
+                        },
+                      ),
+                    ],
+                  ],
                 ),
     );
   }
