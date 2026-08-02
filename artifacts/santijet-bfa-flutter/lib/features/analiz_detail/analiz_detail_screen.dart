@@ -187,13 +187,18 @@ class _Detail extends ConsumerWidget {
           padding: const EdgeInsets.all(AppSpacing.md),
           sliver: SliverList.list(
             children: [
-              _headerCard(theme, discipline),
+              _headerCard(discipline),
               const SizedBox(height: AppSpacing.sm),
               if (analiz.pozTarifi.trim().isNotEmpty) ...[
-                _infoCard(theme, 'Poz Tarifi', analiz.pozTarifi),
+                _infoCard('Poz Tarifi', analiz.pozTarifi),
                 const SizedBox(height: AppSpacing.sm),
               ],
-              Text('Metraj & Maliyet', style: theme.textTheme.titleLarge),
+              Text(
+                'Metraj & Maliyet',
+                style: theme.textTheme.titleLarge?.copyWith(
+                  color: AppColors.textPrimary,
+                ),
+              ),
               const SizedBox(height: AppSpacing.xs),
               MetrajInput(
                 birimFiyati: birimFiyati,
@@ -203,17 +208,22 @@ class _Detail extends ConsumerWidget {
               CostSummaryCard(analiz: analiz),
               if (analiz.kalemler.isNotEmpty) ...[
                 const SizedBox(height: AppSpacing.lg),
-                Text('Analiz Kalemleri', style: theme.textTheme.titleLarge),
+                Text(
+                  'Analiz Kalemleri',
+                  style: theme.textTheme.titleLarge?.copyWith(
+                    color: AppColors.textPrimary,
+                  ),
+                ),
                 const SizedBox(height: AppSpacing.xs),
-                ..._kalemSections(theme),
+                ..._kalemSections(),
               ],
               if (analiz.yapimSartlari.trim().isNotEmpty) ...[
                 const SizedBox(height: AppSpacing.lg),
-                _infoCard(theme, 'Yapım Şartları', analiz.yapimSartlari),
+                _infoCard('Yapım Şartları', analiz.yapimSartlari),
               ],
               if ((analiz.notlar ?? '').trim().isNotEmpty) ...[
                 const SizedBox(height: AppSpacing.sm),
-                _infoCard(theme, 'Notlar', analiz.notlar!),
+                _infoCard('Notlar', analiz.notlar!),
               ],
               const SizedBox(height: AppSpacing.lg),
               _exportRow(context),
@@ -225,57 +235,90 @@ class _Detail extends ConsumerWidget {
     );
   }
 
-  Widget _headerCard(ThemeData theme, AnalizDiscipline discipline) {
+  Widget _headerCard(AnalizDiscipline discipline) {
     return SJCard(
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Text(analiz.analizAdi, style: theme.textTheme.headlineMedium),
-          const SizedBox(height: AppSpacing.sm),
-          Wrap(
-            spacing: 8,
-            runSpacing: 8,
-            crossAxisAlignment: WrapCrossAlignment.center,
+      child: Builder(
+        builder: (context) {
+          final theme = Theme.of(context);
+          return Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              DisciplineBadge(discipline: discipline),
-              _chip(theme, Icons.category_outlined, analiz.kategori),
-              _chip(theme, Icons.straighten, 'Birim: ${analiz.olcuBirimi}'),
+              Text(
+                analiz.analizAdi,
+                style: theme.textTheme.headlineMedium?.copyWith(
+                  color: AppColors.cardTextPrimary,
+                ),
+              ),
+              const SizedBox(height: AppSpacing.sm),
+              Wrap(
+                spacing: 8,
+                runSpacing: 8,
+                crossAxisAlignment: WrapCrossAlignment.center,
+                children: [
+                  DisciplineBadge(discipline: discipline),
+                  _chip(Icons.category_outlined, analiz.kategori),
+                  _chip(Icons.straighten, 'Birim: ${analiz.olcuBirimi}'),
+                ],
+              ),
             ],
-          ),
-        ],
+          );
+        },
       ),
     );
   }
 
-  Widget _chip(ThemeData theme, IconData icon, String label) {
+  Widget _chip(IconData icon, String label) {
     if (label.trim().isEmpty) return const SizedBox.shrink();
-    return Row(
-      mainAxisSize: MainAxisSize.min,
-      children: [
-        Icon(icon, size: 14, color: theme.colorScheme.onSurfaceVariant),
-        const SizedBox(width: 4),
-        Text(label, style: theme.textTheme.labelMedium),
-      ],
+    return Builder(
+      builder: (context) {
+        final theme = Theme.of(context);
+        return Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Icon(icon, size: 14, color: AppColors.cardTextMuted),
+            const SizedBox(width: 4),
+            Text(
+              label,
+              style: theme.textTheme.labelMedium?.copyWith(
+                color: AppColors.cardTextMuted,
+              ),
+            ),
+          ],
+        );
+      },
     );
   }
 
-  Widget _infoCard(ThemeData theme, String title, String body) {
+  Widget _infoCard(String title, String body) {
     return SJCard(
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Text(title, style: theme.textTheme.titleMedium),
-          const SizedBox(height: AppSpacing.xs),
-          Text(
-            body.trim(),
-            style: theme.textTheme.bodyMedium?.copyWith(height: 1.5),
-          ),
-        ],
+      child: Builder(
+        builder: (context) {
+          final theme = Theme.of(context);
+          return Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                title,
+                style: theme.textTheme.titleMedium?.copyWith(
+                  color: AppColors.cardTextPrimary,
+                ),
+              ),
+              const SizedBox(height: AppSpacing.xs),
+              Text(
+                body.trim(),
+                style: theme.textTheme.bodyMedium?.copyWith(
+                  height: 1.5,
+                  color: AppColors.cardTextSecondary,
+                ),
+              ),
+            ],
+          );
+        },
       ),
     );
   }
 
-  List<Widget> _kalemSections(ThemeData theme) {
+  List<Widget> _kalemSections() {
     const order = [
       (AnalizKalemTip.malzeme, 'Malzeme Kalemleri'),
       (AnalizKalemTip.iscilik, 'İşçilik Kalemleri'),
@@ -291,20 +334,34 @@ class _Detail extends ConsumerWidget {
         padding: const EdgeInsets.only(bottom: AppSpacing.xs),
         child: SJCard(
           accentColor: KalemRow.tipColor(tip),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          child: Builder(
+            builder: (context) {
+              final theme = Theme.of(context);
+              return Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Text(label, style: theme.textTheme.titleMedium),
-                  Text(AppFormat.currency(toplam),
-                      style: theme.textTheme.titleMedium),
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      Text(
+                        label,
+                        style: theme.textTheme.titleMedium?.copyWith(
+                          color: AppColors.cardTextPrimary,
+                        ),
+                      ),
+                      Text(
+                        AppFormat.currency(toplam),
+                        style: theme.textTheme.titleMedium?.copyWith(
+                          color: AppColors.cardTextPrimary,
+                        ),
+                      ),
+                    ],
+                  ),
+                  const Divider(height: AppSpacing.md),
+                  for (final k in items) KalemRow(kalem: k),
                 ],
-              ),
-              const Divider(height: AppSpacing.md),
-              for (final k in items) KalemRow(kalem: k),
-            ],
+              );
+            },
           ),
         ),
       ));

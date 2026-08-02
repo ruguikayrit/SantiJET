@@ -31,7 +31,6 @@ class SourcesScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final theme = Theme.of(context);
     return Scaffold(
       backgroundColor: AppColors.canvas,
       appBar: AppBar(title: const Text('Kaynaklar')),
@@ -42,21 +41,36 @@ class SourcesScreen extends StatelessWidget {
           children: [
             SJCard(
               accentColor: AppColors.info,
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text('Veri Doğrulama', style: theme.textTheme.titleMedium),
-                  const SizedBox(height: AppSpacing.xs),
-                  Text(
-                    OfficialSources.verificationText,
-                    style: theme.textTheme.bodyMedium?.copyWith(height: 1.45),
-                  ),
-                  const SizedBox(height: AppSpacing.xs),
-                  Text(
-                    OfficialSources.distributionNotice,
-                    style: theme.textTheme.bodySmall,
-                  ),
-                ],
+              child: Builder(
+                builder: (context) {
+                  final cardTheme = Theme.of(context);
+                  return Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        'Veri Doğrulama',
+                        style: cardTheme.textTheme.titleMedium?.copyWith(
+                          color: AppColors.cardTextPrimary,
+                        ),
+                      ),
+                      const SizedBox(height: AppSpacing.xs),
+                      Text(
+                        OfficialSources.verificationText,
+                        style: cardTheme.textTheme.bodyMedium?.copyWith(
+                          height: 1.45,
+                          color: AppColors.cardTextSecondary,
+                        ),
+                      ),
+                      const SizedBox(height: AppSpacing.xs),
+                      Text(
+                        OfficialSources.distributionNotice,
+                        style: cardTheme.textTheme.bodySmall?.copyWith(
+                          color: AppColors.cardTextMuted,
+                        ),
+                      ),
+                    ],
+                  );
+                },
               ),
             ),
             const SizedBox(height: AppSpacing.md),

@@ -241,13 +241,6 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
             title: 'Analiz Karşılaştır',
             onTap: () => context.push(AppRoutes.karsilastir),
           ),
-          const SizedBox(height: AppSpacing.xs),
-          _quickAccessTile(
-            icon: Icons.palette_outlined,
-            color: AppColors.electricBlueLight,
-            title: 'Design System',
-            onTap: () => context.push(AppRoutes.tasarimSistemi),
-          ),
         ]),
       ),
     ];

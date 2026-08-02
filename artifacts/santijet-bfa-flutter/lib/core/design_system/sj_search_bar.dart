@@ -1,11 +1,11 @@
 import 'package:flutter/material.dart';
 
+import '../theme/app_colors.dart';
 import '../theme/app_radii.dart';
 
 /// ŞantiJET Design System — arama çubuğu.
 ///
-/// ŞantiJET Demir `AppSearchBar` deseni: arama alanı + opsiyonel filtre butonu.
-/// Temizleme (clear) ikonu, controller ve değişim geri çağrısı destekler.
+/// Chrome yüzey + chrome mürekkep kullanır (hibrit kart yüzeyinden bağımsız).
 class SJSearchBar extends StatelessWidget {
   const SJSearchBar({
     this.controller,
@@ -34,15 +34,28 @@ class SJSearchBar extends StatelessWidget {
             controller: controller,
             onChanged: onChanged,
             style: theme.textTheme.bodyMedium?.copyWith(
-              color: theme.colorScheme.onSurface,
+              color: AppColors.textPrimary,
             ),
             decoration: InputDecoration(
               hintText: hint,
+              hintStyle: theme.textTheme.bodyMedium?.copyWith(
+                color: AppColors.textMuted,
+              ),
+              filled: true,
+              fillColor: AppColors.surface,
               isDense: true,
-              prefixIcon: const Icon(Icons.search, size: 20),
+              prefixIcon: Icon(
+                Icons.search,
+                size: 20,
+                color: AppColors.textMuted,
+              ),
               suffixIcon: hasText && onClear != null
                   ? IconButton(
-                      icon: const Icon(Icons.close, size: 18),
+                      icon: Icon(
+                        Icons.close,
+                        size: 18,
+                        color: AppColors.textMuted,
+                      ),
                       onPressed: onClear,
                     )
                   : null,
@@ -53,10 +66,9 @@ class SJSearchBar extends StatelessWidget {
           const SizedBox(width: 8),
           IconButton(
             onPressed: onFilterTap,
-            icon: const Icon(Icons.tune),
+            icon: Icon(Icons.tune, color: AppColors.textSecondary),
             style: IconButton.styleFrom(
-              backgroundColor:
-                  theme.cardTheme.color ?? theme.colorScheme.surface,
+              backgroundColor: AppColors.surface,
               shape: RoundedRectangleBorder(borderRadius: AppRadii.md),
             ),
           ),

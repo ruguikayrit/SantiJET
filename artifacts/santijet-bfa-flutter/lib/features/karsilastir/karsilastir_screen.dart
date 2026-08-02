@@ -212,47 +212,68 @@ class _CompareBody extends StatelessWidget {
             ),
             const SizedBox(height: AppSpacing.sm),
             SJCard(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text('Birim Fiyat Özeti',
-                      style: theme.textTheme.titleLarge),
-                  const SizedBox(height: AppSpacing.sm),
-                  _summaryHeader(theme),
-                  _summaryRow(
-                    theme,
-                    'Malzeme + İşçilik',
-                    (a) => a.malzemeIscilikToplami,
-                  ),
-                  _summaryRow(
-                    theme,
-                    'Yüklenici Karı',
-                    (a) => a.yukleniciKarTutari,
-                  ),
-                  _summaryRow(
-                    theme,
-                    '1 Birim Fiyatı',
-                    (a) => a.birimFiyati,
-                    highlight: true,
-                  ),
-                ],
+              child: Builder(
+                builder: (context) {
+                  final cardTheme = Theme.of(context);
+                  return Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        'Birim Fiyat Özeti',
+                        style: cardTheme.textTheme.titleLarge?.copyWith(
+                          color: AppColors.cardTextPrimary,
+                        ),
+                      ),
+                      const SizedBox(height: AppSpacing.sm),
+                      _summaryHeader(cardTheme),
+                      _summaryRow(
+                        cardTheme,
+                        'Malzeme + İşçilik',
+                        (a) => a.malzemeIscilikToplami,
+                      ),
+                      _summaryRow(
+                        cardTheme,
+                        'Yüklenici Karı',
+                        (a) => a.yukleniciKarTutari,
+                      ),
+                      _summaryRow(
+                        cardTheme,
+                        '1 Birim Fiyatı',
+                        (a) => a.birimFiyati,
+                        highlight: true,
+                      ),
+                    ],
+                  );
+                },
               ),
             ),
             const SizedBox(height: AppSpacing.md),
             SJCard(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text('Kalem Karşılaştırması',
-                      style: theme.textTheme.titleLarge),
-                  Text(
-                    'Yeşil: en düşük tutar · Kırmızı: en yüksek tutar',
-                    style: theme.textTheme.bodySmall,
-                  ),
-                  const SizedBox(height: AppSpacing.sm),
-                  _kalemHeader(theme),
-                  for (final row in compare.kalemRows) _kalemRow(theme, row),
-                ],
+              child: Builder(
+                builder: (context) {
+                  final cardTheme = Theme.of(context);
+                  return Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        'Kalem Karşılaştırması',
+                        style: cardTheme.textTheme.titleLarge?.copyWith(
+                          color: AppColors.cardTextPrimary,
+                        ),
+                      ),
+                      Text(
+                        'Yeşil: en düşük tutar · Kırmızı: en yüksek tutar',
+                        style: cardTheme.textTheme.bodySmall?.copyWith(
+                          color: AppColors.cardTextMuted,
+                        ),
+                      ),
+                      const SizedBox(height: AppSpacing.sm),
+                      _kalemHeader(cardTheme),
+                      for (final row in compare.kalemRows)
+                        _kalemRow(cardTheme, row),
+                    ],
+                  );
+                },
               ),
             ),
           ],
@@ -266,7 +287,12 @@ class _CompareBody extends StatelessWidget {
       children: [
         SizedBox(
           width: 180,
-          child: Text('Analiz', style: theme.textTheme.labelMedium),
+          child: Text(
+            'Analiz',
+            style: theme.textTheme.labelMedium?.copyWith(
+              color: AppColors.cardTextMuted,
+            ),
+          ),
         ),
         for (final a in compare.analizler)
           SizedBox(
@@ -274,11 +300,18 @@ class _CompareBody extends StatelessWidget {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text(a.pozNo,
-                    style: theme.textTheme.labelMedium
-                        ?.copyWith(color: AppColors.electricBlue)),
-                Text(a.analizAdi,
-                    style: theme.textTheme.bodySmall, maxLines: 2),
+                Text(
+                  a.pozNo,
+                  style: theme.textTheme.labelMedium
+                      ?.copyWith(color: AppColors.electricBlue),
+                ),
+                Text(
+                  a.analizAdi,
+                  style: theme.textTheme.bodySmall?.copyWith(
+                    color: AppColors.cardTextMuted,
+                  ),
+                  maxLines: 2,
+                ),
               ],
             ),
           ),
@@ -298,7 +331,12 @@ class _CompareBody extends StatelessWidget {
         children: [
           SizedBox(
             width: 180,
-            child: Text(label, style: theme.textTheme.bodyMedium),
+            child: Text(
+              label,
+              style: theme.textTheme.bodyMedium?.copyWith(
+                color: AppColors.cardTextSecondary,
+              ),
+            ),
           ),
           for (final a in compare.analizler)
             Builder(

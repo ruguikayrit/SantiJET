@@ -41,7 +41,9 @@ class KalemRow extends StatelessWidget {
               children: [
                 Text(
                   kalem.tanim,
-                  style: theme.textTheme.bodyMedium,
+                  style: theme.textTheme.bodyMedium?.copyWith(
+                    color: AppColors.cardTextSecondary,
+                  ),
                   maxLines: 2,
                   overflow: TextOverflow.ellipsis,
                 ),
@@ -49,7 +51,9 @@ class KalemRow extends StatelessWidget {
                 Text(
                   '${kalem.pozNo} · ${AppFormat.decimal(kalem.miktar, fractionDigits: 4)} '
                   '${kalem.olcuBirimi} × ${AppFormat.currency(kalem.birimFiyati)}',
-                  style: theme.textTheme.labelSmall,
+                  style: theme.textTheme.labelSmall?.copyWith(
+                    color: AppColors.cardTextMuted,
+                  ),
                 ),
               ],
             ),
@@ -57,7 +61,9 @@ class KalemRow extends StatelessWidget {
           const SizedBox(width: 8),
           Text(
             AppFormat.currency(kalem.tutar),
-            style: theme.textTheme.titleMedium,
+            style: theme.textTheme.titleMedium?.copyWith(
+              color: AppColors.cardTextPrimary,
+            ),
           ),
         ],
       ),

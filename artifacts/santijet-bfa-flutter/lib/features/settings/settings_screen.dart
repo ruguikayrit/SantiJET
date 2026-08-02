@@ -93,13 +93,17 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
             children: [
               Text(
                 'Yedekleme & Geri Yükleme',
-                style: AppTypography.headlineMedium,
+                style: AppTypography.headlineMedium.copyWith(
+                  color: AppColors.textPrimary,
+                ),
               ),
               const SizedBox(height: 8),
               Text(
                 'Özel analizler, favoriler, son görüntülenenler ve keşif '
                 'projelerini JSON dosyası olarak dışa / içe aktarın.',
-                style: AppTypography.bodySmall,
+                style: AppTypography.bodySmall.copyWith(
+                  color: AppColors.textMuted,
+                ),
               ),
               const SizedBox(height: 16),
               FilledButton.icon(
@@ -290,28 +294,41 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
                 filterQuality: FilterQuality.high,
               ),
               const SizedBox(height: 8),
-              Text(AppInfo.displayName, style: AppTypography.headlineMedium),
+              Text(
+                AppInfo.displayName,
+                style: AppTypography.headlineMedium.copyWith(
+                  color: AppColors.textPrimary,
+                ),
+              ),
               const SizedBox(height: 4),
               Text(
                 'Versiyon ${AppInfo.version}',
-                style: AppTypography.bodyMedium,
+                style: AppTypography.bodyMedium.copyWith(
+                  color: AppColors.textSecondary,
+                ),
               ),
               const SizedBox(height: 12),
               Text(
                 AppInfo.tagline,
-                style: AppTypography.bodyMedium,
+                style: AppTypography.bodyMedium.copyWith(
+                  color: AppColors.textSecondary,
+                ),
                 textAlign: TextAlign.center,
               ),
               const SizedBox(height: 8),
               Text(
                 '${AppInfo.dataSourceLabel} · ${AppInfo.dataUpdateLabel}',
-                style: AppTypography.labelMedium,
+                style: AppTypography.labelMedium.copyWith(
+                  color: AppColors.textMuted,
+                ),
                 textAlign: TextAlign.center,
               ),
               const SizedBox(height: 8),
               Text(
                 'Destek: ${AppInfo.supportEmail}',
-                style: AppTypography.labelMedium,
+                style: AppTypography.labelMedium.copyWith(
+                  color: AppColors.textMuted,
+                ),
                 textAlign: TextAlign.center,
               ),
             ],

@@ -114,7 +114,12 @@ class KesifDetailScreen extends ConsumerWidget {
                       ),
                     )
                   else ...[
-                    Text('Pozlar', style: theme.textTheme.titleLarge),
+                    Text(
+                      'Pozlar',
+                      style: theme.textTheme.titleLarge?.copyWith(
+                        color: AppColors.textPrimary,
+                      ),
+                    ),
                     const SizedBox(height: AppSpacing.sm),
                     for (final satir in kesif.satirlar) ...[
                       _SatirCard(projectId: projectId, satir: satir),
@@ -170,76 +175,89 @@ class _SatirCardState extends ConsumerState<_SatirCard> {
 
   @override
   Widget build(BuildContext context) {
-    final theme = Theme.of(context);
     final satir = widget.satir;
 
     return SJCard(
-      child: Row(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  satir.pozNo,
-                  style: theme.textTheme.labelMedium
-                      ?.copyWith(color: AppColors.moduleKesif),
+      child: Builder(
+        builder: (context) {
+          final theme = Theme.of(context);
+          return Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      satir.pozNo,
+                      style: theme.textTheme.labelMedium
+                          ?.copyWith(color: AppColors.moduleKesif),
+                    ),
+                    Text(
+                      satir.analizAdi,
+                      style: theme.textTheme.titleMedium?.copyWith(
+                        color: AppColors.cardTextPrimary,
+                      ),
+                      maxLines: 2,
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                    const SizedBox(height: 4),
+                    Text(
+                      '${AppFormat.currency(satir.birimFiyati)} / ${satir.olcuBirimi}',
+                      style: theme.textTheme.bodySmall?.copyWith(
+                        color: AppColors.cardTextMuted,
+                      ),
+                    ),
+                  ],
                 ),
-                Text(
-                  satir.analizAdi,
-                  style: theme.textTheme.titleMedium,
-                  maxLines: 2,
-                  overflow: TextOverflow.ellipsis,
-                ),
-                const SizedBox(height: 4),
-                Text(
-                  '${AppFormat.currency(satir.birimFiyati)} / ${satir.olcuBirimi}',
-                  style: theme.textTheme.bodySmall,
-                ),
-              ],
-            ),
-          ),
-          SizedBox(
-            width: 92,
-            child: TextField(
-              controller: _qtyController,
-              keyboardType:
-                  const TextInputType.numberWithOptions(decimal: true),
-              textAlign: TextAlign.right,
-              onSubmitted: (raw) {
-                final value = double.tryParse(
-                        raw.replaceAll('.', '').replaceAll(',', '.')) ??
-                    0;
-                ref.read(kesifProvider.notifier).updateMiktar(
-                      widget.projectId,
-                      satir.id,
-                      value,
-                    );
-              },
-              decoration: InputDecoration(
-                suffixText: satir.olcuBirimi,
-                isDense: true,
               ),
-            ),
-          ),
-          const SizedBox(width: AppSpacing.xs),
-          SizedBox(
-            width: 88,
-            child: Text(
-              AppFormat.currency(satir.tutar),
-              style: theme.textTheme.titleMedium,
-              textAlign: TextAlign.right,
-            ),
-          ),
-          IconButton(
-            tooltip: 'Sil',
-            onPressed: () => ref
-                .read(kesifProvider.notifier)
-                .removeSatir(widget.projectId, satir.id),
-            icon: Icon(Icons.close, color: theme.colorScheme.error),
-          ),
-        ],
+              SizedBox(
+                width: 92,
+                child: TextField(
+                  controller: _qtyController,
+                  keyboardType:
+                      const TextInputType.numberWithOptions(decimal: true),
+                  textAlign: TextAlign.right,
+                  style: theme.textTheme.titleMedium?.copyWith(
+                    color: AppColors.cardTextPrimary,
+                  ),
+                  onSubmitted: (raw) {
+                    final value = double.tryParse(
+                            raw.replaceAll('.', '').replaceAll(',', '.')) ??
+                        0;
+                    ref.read(kesifProvider.notifier).updateMiktar(
+                          widget.projectId,
+                          satir.id,
+                          value,
+                        );
+                  },
+                  decoration: InputDecoration(
+                    suffixText: satir.olcuBirimi,
+                    isDense: true,
+                  ),
+                ),
+              ),
+              const SizedBox(width: AppSpacing.xs),
+              SizedBox(
+                width: 88,
+                child: Text(
+                  AppFormat.currency(satir.tutar),
+                  style: theme.textTheme.titleMedium?.copyWith(
+                    color: AppColors.cardTextPrimary,
+                  ),
+                  textAlign: TextAlign.right,
+                ),
+              ),
+              IconButton(
+                tooltip: 'Sil',
+                onPressed: () => ref
+                    .read(kesifProvider.notifier)
+                    .removeSatir(widget.projectId, satir.id),
+                icon: Icon(Icons.close, color: theme.colorScheme.error),
+              ),
+            ],
+          );
+        },
       ),
     );
   }

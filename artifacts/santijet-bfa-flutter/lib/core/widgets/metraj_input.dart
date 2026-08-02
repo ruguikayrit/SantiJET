@@ -53,45 +53,61 @@ class _MetrajInputState extends State<MetrajInput> {
 
   @override
   Widget build(BuildContext context) {
-    final theme = Theme.of(context);
     final tutar = AnalizHesap.satirTutar(_miktar, widget.birimFiyati);
 
     return SJCard(
-      child: Row(
-        children: [
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text('Metraj (${widget.olcuBirimi})',
-                    style: theme.textTheme.labelMedium),
-                const SizedBox(height: 6),
-                TextField(
-                  controller: _controller,
-                  keyboardType:
-                      const TextInputType.numberWithOptions(decimal: true),
-                  onChanged: _onChanged,
-                  style: theme.textTheme.titleLarge,
-                  decoration: const InputDecoration(isDense: true),
-                ),
-              ],
-            ),
-          ),
-          const SizedBox(width: AppSpacing.md),
-          Column(
-            crossAxisAlignment: CrossAxisAlignment.end,
+      child: Builder(
+        builder: (context) {
+          final theme = Theme.of(context);
+          return Row(
             children: [
-              Text('Tutar', style: theme.textTheme.labelMedium),
-              const SizedBox(height: 6),
-              Text(
-                AppFormat.currency(tutar),
-                style: theme.textTheme.titleLarge?.copyWith(
-                  color: AppColors.electricBlueLight,
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      'Metraj (${widget.olcuBirimi})',
+                      style: theme.textTheme.labelMedium?.copyWith(
+                        color: AppColors.cardTextMuted,
+                      ),
+                    ),
+                    const SizedBox(height: 6),
+                    TextField(
+                      controller: _controller,
+                      keyboardType: const TextInputType.numberWithOptions(
+                        decimal: true,
+                      ),
+                      onChanged: _onChanged,
+                      style: theme.textTheme.titleLarge?.copyWith(
+                        color: AppColors.cardTextPrimary,
+                      ),
+                      decoration: const InputDecoration(isDense: true),
+                    ),
+                  ],
                 ),
               ),
+              const SizedBox(width: AppSpacing.md),
+              Column(
+                crossAxisAlignment: CrossAxisAlignment.end,
+                children: [
+                  Text(
+                    'Tutar',
+                    style: theme.textTheme.labelMedium?.copyWith(
+                      color: AppColors.cardTextMuted,
+                    ),
+                  ),
+                  const SizedBox(height: 6),
+                  Text(
+                    AppFormat.currency(tutar),
+                    style: theme.textTheme.titleLarge?.copyWith(
+                      color: AppColors.electricBlueLight,
+                    ),
+                  ),
+                ],
+              ),
             ],
-          ),
-        ],
+          );
+        },
       ),
     );
   }

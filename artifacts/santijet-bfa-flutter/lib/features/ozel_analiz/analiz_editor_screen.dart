@@ -228,7 +228,12 @@ class _AnalizEditorScreenState extends ConsumerState<AnalizEditorScreen> {
         child: ListView(
           padding: const EdgeInsets.all(AppSpacing.md),
           children: [
-            Text('Temel Bilgiler', style: theme.textTheme.titleLarge),
+            Text(
+              'Temel Bilgiler',
+              style: theme.textTheme.titleLarge?.copyWith(
+                color: AppColors.textPrimary,
+              ),
+            ),
             const SizedBox(height: AppSpacing.sm),
             SJInput(controller: _pozNoCtrl, label: 'Poz No'),
             const SizedBox(height: AppSpacing.xs),
@@ -255,7 +260,12 @@ class _AnalizEditorScreenState extends ConsumerState<AnalizEditorScreen> {
                   const TextInputType.numberWithOptions(decimal: true),
             ),
             const SizedBox(height: AppSpacing.lg),
-            Text('Kalemler', style: theme.textTheme.titleLarge),
+            Text(
+              'Kalemler',
+              style: theme.textTheme.titleLarge?.copyWith(
+                color: AppColors.textPrimary,
+              ),
+            ),
             const SizedBox(height: AppSpacing.sm),
             Wrap(
               spacing: AppSpacing.xs,
@@ -409,64 +419,86 @@ class _KalemEditorCardState extends State<_KalemEditorCard> {
       AnalizDraftHelpers.parseNum(_bfCtrl.text),
     );
     return SJCard(
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
+      child: Builder(
+        builder: (context) {
+          final theme = Theme.of(context);
+          return Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Expanded(
-                child: Text(
-                  _tipLabel(widget.kalem.tip),
-                  style: Theme.of(context).textTheme.titleMedium,
-                ),
+              Row(
+                children: [
+                  Expanded(
+                    child: Text(
+                      _tipLabel(widget.kalem.tip),
+                      style: theme.textTheme.titleMedium?.copyWith(
+                        color: AppColors.cardTextPrimary,
+                      ),
+                    ),
+                  ),
+                  Text(
+                    AppFormat.currency(tutar),
+                    style: theme.textTheme.titleMedium?.copyWith(
+                      color: AppColors.cardTextPrimary,
+                    ),
+                  ),
+                  IconButton(
+                    tooltip: 'Sil',
+                    onPressed: widget.onDelete,
+                    icon: Icon(
+                      Icons.delete_outline,
+                      color: theme.colorScheme.error,
+                    ),
+                  ),
+                ],
               ),
-              Text(AppFormat.currency(tutar)),
-              IconButton(
-                tooltip: 'Sil',
-                onPressed: widget.onDelete,
-                icon: Icon(
-                  Icons.delete_outline,
-                  color: Theme.of(context).colorScheme.error,
-                ),
+              SJInput(
+                controller: _pozCtrl,
+                label: 'Poz No',
+                onChanged: (_) => _emit(),
+              ),
+              const SizedBox(height: AppSpacing.xxs),
+              SJInput(
+                controller: _tanimCtrl,
+                label: 'Tanım',
+                onChanged: (_) => _emit(),
+              ),
+              const SizedBox(height: AppSpacing.xxs),
+              Row(
+                children: [
+                  Expanded(
+                    child: SJInput(
+                      controller: _birimCtrl,
+                      label: 'Birim',
+                      onChanged: (_) => _emit(),
+                    ),
+                  ),
+                  const SizedBox(width: AppSpacing.xs),
+                  Expanded(
+                    child: SJInput(
+                      controller: _miktarCtrl,
+                      label: 'Miktar',
+                      keyboardType: const TextInputType.numberWithOptions(
+                        decimal: true,
+                      ),
+                      onChanged: (_) => _emit(),
+                    ),
+                  ),
+                  const SizedBox(width: AppSpacing.xs),
+                  Expanded(
+                    child: SJInput(
+                      controller: _bfCtrl,
+                      label: 'Birim Fiyat',
+                      keyboardType: const TextInputType.numberWithOptions(
+                        decimal: true,
+                      ),
+                      onChanged: (_) => _emit(),
+                    ),
+                  ),
+                ],
               ),
             ],
-          ),
-          SJInput(controller: _pozCtrl, label: 'Poz No', onChanged: (_) => _emit()),
-          const SizedBox(height: AppSpacing.xxs),
-          SJInput(controller: _tanimCtrl, label: 'Tanım', onChanged: (_) => _emit()),
-          const SizedBox(height: AppSpacing.xxs),
-          Row(
-            children: [
-              Expanded(
-                child: SJInput(
-                  controller: _birimCtrl,
-                  label: 'Birim',
-                  onChanged: (_) => _emit(),
-                ),
-              ),
-              const SizedBox(width: AppSpacing.xs),
-              Expanded(
-                child: SJInput(
-                  controller: _miktarCtrl,
-                  label: 'Miktar',
-                  keyboardType:
-                      const TextInputType.numberWithOptions(decimal: true),
-                  onChanged: (_) => _emit(),
-                ),
-              ),
-              const SizedBox(width: AppSpacing.xs),
-              Expanded(
-                child: SJInput(
-                  controller: _bfCtrl,
-                  label: 'Birim Fiyat',
-                  keyboardType:
-                      const TextInputType.numberWithOptions(decimal: true),
-                  onChanged: (_) => _emit(),
-                ),
-              ),
-            ],
-          ),
-        ],
+          );
+        },
       ),
     );
   }
