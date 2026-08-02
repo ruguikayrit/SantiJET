@@ -20,6 +20,7 @@ class KesifListScreen extends ConsumerWidget {
     final theme = Theme.of(context);
 
     return Scaffold(
+      backgroundColor: AppColors.canvas,
       appBar: AppBar(
         title: const Text('Keşif'),
         actions: [

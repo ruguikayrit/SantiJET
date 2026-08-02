@@ -5,6 +5,7 @@ import 'package:go_router/go_router.dart';
 import '../../core/constants/poz_constants.dart';
 import '../../core/design_system/design_system.dart';
 import '../../core/routing/app_routes.dart';
+import '../../core/theme/app_colors.dart';
 import '../../core/theme/app_spacing.dart';
 import '../../core/utils/app_format.dart';
 import '../../core/widgets/cost_summary_card.dart';
@@ -182,6 +183,7 @@ class _AnalizEditorScreenState extends ConsumerState<AnalizEditorScreen> {
           final analiz = catalog.byIdOrNull(widget.analizId!);
           if (analiz == null) {
             return Scaffold(
+              backgroundColor: AppColors.canvas,
               appBar: AppBar(title: const Text('Düzenle')),
               body: const SJEmptyState(
                 title: 'Analiz bulunamadı',
@@ -214,6 +216,7 @@ class _AnalizEditorScreenState extends ConsumerState<AnalizEditorScreen> {
     final isNew = widget.analizId == null || widget.analizId!.isEmpty;
 
     return Scaffold(
+      backgroundColor: AppColors.canvas,
       appBar: AppBar(
         title: Text(isNew ? 'Yeni Analiz' : 'Analizi Düzenle'),
         actions: [

@@ -11,7 +11,7 @@ import '../../core/theme/app_spacing.dart';
 import '../../core/utils/app_format.dart';
 import '../../core/widgets/analiz_list_item.dart';
 import '../../core/widgets/module_tile.dart';
-import '../../core/widgets/santijet_logo.dart';
+import '../../core/widgets/santijet_header.dart';
 import '../../data/providers/catalog_provider.dart';
 import '../../data/providers/favorites_provider.dart';
 import '../../data/providers/recent_views_provider.dart';
@@ -19,8 +19,7 @@ import '../../domain/entities/poz_analiz.dart';
 import '../../domain/enums/app_enums.dart';
 import '../ozel_analiz/new_analiz_module_sheet.dart';
 
-/// Ana sayfa — marka alanı, güçlü arama, modüller (canlı sayılar),
-/// son görüntülenenler ve favoriler. Kalıcı alt navigasyonun ilk sekmesidir.
+/// Ana sayfa — SantijetHeader + arama + modüller (Puantaj/Demir chrome deseni).
 class HomeScreen extends ConsumerStatefulWidget {
   const HomeScreen({super.key});
 
@@ -45,10 +44,10 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final theme = Theme.of(context);
     final catalogAsync = ref.watch(catalogProvider);
 
     return Scaffold(
+      backgroundColor: AppColors.canvas,
       floatingActionButton: FloatingActionButton.extended(
         onPressed: () async {
           final discipline = await NewAnalizModuleSheet.show(context);
@@ -68,18 +67,37 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
             message: '$e',
             icon: Icons.error_outline,
           ),
-          data: (catalog) => _content(theme, catalog),
+          data: (catalog) => _content(catalog),
         ),
       ),
     );
   }
 
-  Widget _content(ThemeData theme, CatalogData catalog) {
+  Widget _content(CatalogData catalog) {
     final searching = _query.trim().isNotEmpty;
+    final theme = Theme.of(context);
 
     return CustomScrollView(
       slivers: [
-        SliverToBoxAdapter(child: _brandHeader(theme, catalog)),
+        const SliverToBoxAdapter(
+          child: SantijetHeader(showWordmark: true, avatarInitial: 'BF'),
+        ),
+        SliverToBoxAdapter(
+          child: Padding(
+            padding: const EdgeInsets.fromLTRB(
+              AppSpacing.md,
+              0,
+              AppSpacing.md,
+              AppSpacing.xs,
+            ),
+            child: Text(
+              '${AppFormat.integer(catalog.all.length)} birim fiyat analizi',
+              style: theme.textTheme.labelMedium?.copyWith(
+                color: AppColors.textMuted,
+              ),
+            ),
+          ),
+        ),
         SliverPadding(
           padding: const EdgeInsets.fromLTRB(
             AppSpacing.md,
@@ -102,40 +120,9 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
         if (searching)
           _searchResults(catalog)
         else
-          ..._dashboard(theme, catalog),
+          ..._dashboard(catalog),
         const SliverToBoxAdapter(child: SizedBox(height: AppSpacing.xl)),
       ],
-    );
-  }
-
-  Widget _brandHeader(ThemeData theme, CatalogData catalog) {
-    return Padding(
-      padding: const EdgeInsets.fromLTRB(
-        AppSpacing.md,
-        AppSpacing.md,
-        AppSpacing.md,
-        AppSpacing.xs,
-      ),
-      child: Row(
-        children: [
-          const SantijetLogo(iconHeight: 44),
-          const SizedBox(width: AppSpacing.sm),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text('ŞantiJET BFA',
-                    style: theme.textTheme.titleLarge
-                        ?.copyWith(letterSpacing: 0.5)),
-                Text(
-                  '${AppFormat.integer(catalog.all.length)} birim fiyat analizi',
-                  style: theme.textTheme.labelMedium,
-                ),
-              ],
-            ),
-          ),
-        ],
-      ),
     );
   }
 
@@ -173,7 +160,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
     );
   }
 
-  List<Widget> _dashboard(ThemeData theme, CatalogData catalog) {
+  List<Widget> _dashboard(CatalogData catalog) {
     final favorites = ref.watch(favoritesProvider);
     final recentIds = ref.watch(recentViewsProvider);
     final recent = recentIds
@@ -188,7 +175,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
         .toList();
 
     return [
-      _sectionTitle(theme, 'Modüller'),
+      _sectionTitle('Modüller'),
       SliverPadding(
         padding: const EdgeInsets.symmetric(horizontal: AppSpacing.md),
         sliver: SliverList.list(children: [
@@ -230,70 +217,74 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
         ]),
       ),
       if (recent.isNotEmpty) ...[
-        _sectionTitle(theme, 'Son Görüntülenenler'),
+        _sectionTitle('Son Görüntülenenler'),
         _analizSliverList(recent, favorites),
       ],
       if (favList.isNotEmpty) ...[
-        _sectionTitle(theme, 'Favoriler'),
+        _sectionTitle('Favoriler'),
         _analizSliverList(favList, favorites),
       ],
-      _sectionTitle(theme, 'Hızlı Erişim'),
+      _sectionTitle('Hızlı Erişim'),
       SliverPadding(
         padding: const EdgeInsets.symmetric(horizontal: AppSpacing.md),
         sliver: SliverList.list(children: [
-          SJCard(
+          _quickAccessTile(
+            icon: Icons.folder_open_outlined,
+            color: AppColors.moduleInsaat,
+            title: 'Analiz Kataloğu',
             onTap: () => context.push(AppRoutes.analizKatalogu),
-            child: Row(
-              children: [
-                const Icon(Icons.folder_open_outlined,
-                    color: AppColors.moduleInsaat),
-                const SizedBox(width: AppSpacing.sm),
-                Expanded(
-                  child: Text('Analiz Kataloğu',
-                      style: theme.textTheme.titleMedium),
-                ),
-                Icon(Icons.chevron_right,
-                    color: theme.colorScheme.onSurfaceVariant),
-              ],
-            ),
           ),
           const SizedBox(height: AppSpacing.xs),
-          SJCard(
+          _quickAccessTile(
+            icon: Icons.compare_arrows,
+            color: AppColors.moduleMekanik,
+            title: 'Analiz Karşılaştır',
             onTap: () => context.push(AppRoutes.karsilastir),
-            child: Row(
-              children: [
-                const Icon(Icons.compare_arrows,
-                    color: AppColors.moduleMekanik),
-                const SizedBox(width: AppSpacing.sm),
-                Expanded(
-                  child: Text('Analiz Karşılaştır',
-                      style: theme.textTheme.titleMedium),
-                ),
-                Icon(Icons.chevron_right,
-                    color: theme.colorScheme.onSurfaceVariant),
-              ],
-            ),
           ),
           const SizedBox(height: AppSpacing.xs),
-          SJCard(
+          _quickAccessTile(
+            icon: Icons.palette_outlined,
+            color: AppColors.electricBlueLight,
+            title: 'Design System',
             onTap: () => context.push(AppRoutes.tasarimSistemi),
-            child: Row(
-              children: [
-                const Icon(Icons.palette_outlined,
-                    color: AppColors.electricBlueLight),
-                const SizedBox(width: AppSpacing.sm),
-                Expanded(
-                  child:
-                      Text('Design System', style: theme.textTheme.titleMedium),
-                ),
-                Icon(Icons.chevron_right,
-                    color: theme.colorScheme.onSurfaceVariant),
-              ],
-            ),
           ),
         ]),
       ),
     ];
+  }
+
+  Widget _quickAccessTile({
+    required IconData icon,
+    required Color color,
+    required String title,
+    required VoidCallback onTap,
+  }) {
+    return SJCard(
+      onTap: onTap,
+      child: Builder(
+        builder: (context) {
+          final theme = Theme.of(context);
+          return Row(
+            children: [
+              Icon(icon, color: color),
+              const SizedBox(width: AppSpacing.sm),
+              Expanded(
+                child: Text(
+                  title,
+                  style: theme.textTheme.titleMedium?.copyWith(
+                    color: AppColors.cardTextPrimary,
+                  ),
+                ),
+              ),
+              Icon(
+                Icons.chevron_right,
+                color: AppColors.cardTextMuted,
+              ),
+            ],
+          );
+        },
+      ),
+    );
   }
 
   Widget _analizSliverList(List<PozAnaliz> list, Set<String> favorites) {
@@ -316,7 +307,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
     );
   }
 
-  Widget _sectionTitle(ThemeData theme, String title) {
+  Widget _sectionTitle(String title) {
     return SliverPadding(
       padding: const EdgeInsets.fromLTRB(
         AppSpacing.md,
@@ -325,7 +316,12 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
         AppSpacing.sm,
       ),
       sliver: SliverToBoxAdapter(
-        child: Text(title, style: theme.textTheme.titleLarge),
+        child: Text(
+          title,
+          style: Theme.of(context).textTheme.titleLarge?.copyWith(
+                color: AppColors.textPrimary,
+              ),
+        ),
       ),
     );
   }

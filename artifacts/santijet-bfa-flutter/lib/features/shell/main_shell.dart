@@ -1,14 +1,14 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../core/design_system/sj_bottom_navigation.dart';
+import '../../core/theme/app_colors.dart';
+import '../../core/theme/theme_mode_provider.dart';
 import '../../core/theme/theme_rebuild_gate.dart';
 
-/// Ana kabuk (shell) — kalıcı alt navigasyon + indexedStack gövdesi.
-///
-/// Demir `MainShell` deseni: `StatefulNavigationShell` gövde olarak gösterilir,
-/// alt navigasyon sekme değişimini yönetir.
-class MainShell extends StatelessWidget {
+/// Ana kabuk — kalıcı alt navigasyon + indexedStack (Puantaj/Demir deseni).
+class MainShell extends ConsumerWidget {
   const MainShell({required this.navigationShell, super.key});
 
   final StatefulNavigationShell navigationShell;
@@ -37,8 +37,12 @@ class MainShell extends StatelessWidget {
   ];
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
+    final themeMode = ref.watch(themeModeProvider);
+    AppColors.applyPaletteFromMode(themeMode, Theme.of(context).brightness);
+
     return Scaffold(
+      backgroundColor: AppColors.canvas,
       resizeToAvoidBottomInset: false,
       body: ThemeRebuildGate(child: navigationShell),
       bottomNavigationBar: MediaQuery.removePadding(

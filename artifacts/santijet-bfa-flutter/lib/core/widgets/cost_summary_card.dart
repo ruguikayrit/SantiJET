@@ -9,7 +9,8 @@ import '../utils/app_format.dart';
 
 /// Maliyet özeti kartı — malzeme+işçilik toplamı, yüklenici kârı, birim fiyat.
 ///
-/// Değerler `AnalizHesap` ile anlık hesaplanır (RN `hesaplaAnalizToplam`).
+/// Değerler `AnalizHesap` ile anlık hesaplanır. Kart mürekkebi hibrit temalara
+/// uyar (ŞantiJET koyu kart / ŞantiJET Pro açık kart).
 class CostSummaryCard extends StatelessWidget {
   const CostSummaryCard({required this.analiz, super.key});
 
@@ -17,41 +18,50 @@ class CostSummaryCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final theme = Theme.of(context);
     final h = AnalizHesap.hesapla(analiz);
 
     return SJCard(
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.stretch,
-        children: [
-          _row(
-            theme,
-            'Malzeme + İşçilik + Ekipman',
-            AppFormat.currency(h.malzemeIscilikToplami),
-          ),
-          const SizedBox(height: AppSpacing.xs),
-          _row(
-            theme,
-            'Yüklenici Kârı (%${AppFormat.decimal(analiz.yukleniciKarOrani, fractionDigits: 0)})',
-            AppFormat.currency(h.yukleniciKarTutari),
-          ),
-          const Padding(
-            padding: EdgeInsets.symmetric(vertical: AppSpacing.sm),
-            child: Divider(height: 1),
-          ),
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+      child: Builder(
+        builder: (context) {
+          final theme = Theme.of(context);
+          return Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
-              Text('Birim Fiyat', style: theme.textTheme.titleMedium),
-              Text(
-                '${AppFormat.currency(h.birimFiyati)} / ${analiz.olcuBirimi}',
-                style: theme.textTheme.titleLarge?.copyWith(
-                  color: AppColors.electricBlueLight,
-                ),
+              _row(
+                theme,
+                'Malzeme + İşçilik + Ekipman',
+                AppFormat.currency(h.malzemeIscilikToplami),
+              ),
+              const SizedBox(height: AppSpacing.xs),
+              _row(
+                theme,
+                'Yüklenici Kârı (%${AppFormat.decimal(analiz.yukleniciKarOrani, fractionDigits: 0)})',
+                AppFormat.currency(h.yukleniciKarTutari),
+              ),
+              const Padding(
+                padding: EdgeInsets.symmetric(vertical: AppSpacing.sm),
+                child: Divider(height: 1),
+              ),
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  Text(
+                    'Birim Fiyat',
+                    style: theme.textTheme.titleMedium?.copyWith(
+                      color: AppColors.cardTextPrimary,
+                    ),
+                  ),
+                  Text(
+                    '${AppFormat.currency(h.birimFiyati)} / ${analiz.olcuBirimi}',
+                    style: theme.textTheme.titleLarge?.copyWith(
+                      color: AppColors.electricBlueLight,
+                    ),
+                  ),
+                ],
               ),
             ],
-          ),
-        ],
+          );
+        },
       ),
     );
   }
@@ -60,9 +70,21 @@ class CostSummaryCard extends StatelessWidget {
     return Row(
       mainAxisAlignment: MainAxisAlignment.spaceBetween,
       children: [
-        Flexible(child: Text(label, style: theme.textTheme.bodyMedium)),
+        Flexible(
+          child: Text(
+            label,
+            style: theme.textTheme.bodyMedium?.copyWith(
+              color: AppColors.cardTextSecondary,
+            ),
+          ),
+        ),
         const SizedBox(width: 8),
-        Text(value, style: theme.textTheme.titleMedium),
+        Text(
+          value,
+          style: theme.textTheme.titleMedium?.copyWith(
+            color: AppColors.cardTextPrimary,
+          ),
+        ),
       ],
     );
   }

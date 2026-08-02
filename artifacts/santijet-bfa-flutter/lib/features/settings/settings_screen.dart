@@ -3,10 +3,12 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../core/constants/app_info.dart';
-import '../../core/design_system/design_system.dart';
+import '../../core/design_system/sj_card.dart';
+import '../../core/design_system/sj_modal.dart';
 import '../../core/routing/app_routes.dart';
 import '../../core/theme/app_colors.dart';
 import '../../core/theme/app_spacing.dart';
+import '../../core/theme/app_typography.dart';
 import '../../core/theme/theme_mode_provider.dart';
 import '../../data/providers/favorites_provider.dart';
 import '../../data/providers/kesif_provider.dart';
@@ -14,143 +16,63 @@ import '../../data/providers/recent_views_provider.dart';
 import '../../data/providers/user_analiz_provider.dart';
 import '../../data/services/backup_service.dart';
 
-/// Ayarlar — Faz 12'de uygulanacaktır
-/// (tema seçimi, JSON yedek dışa/içe aktarma, hukuki linkler, sürüm bilgisi).
-class SettingsScreen extends ConsumerWidget {
+/// Ayarlar — Puantaj/Beton ile aynı kart/tile + tema sheet düzeni.
+class SettingsScreen extends ConsumerStatefulWidget {
   const SettingsScreen({super.key});
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
-    final theme = Theme.of(context);
-    final mode = ref.watch(themeModeProvider);
-    final userAnalizleri = ref.watch(userAnalizProvider);
-    final favoriteIds = ref.watch(favoritesProvider);
-    final recentIds = ref.watch(recentViewsProvider);
-    final kesifProjects = ref.watch(kesifProvider);
+  ConsumerState<SettingsScreen> createState() => _SettingsScreenState();
+}
 
-    return Scaffold(
-      appBar: AppBar(title: const Text('Ayarlar')),
-      body: SafeArea(
-        top: false,
-        child: ListView(
-          padding: const EdgeInsets.all(AppSpacing.md),
+class _SettingsScreenState extends ConsumerState<SettingsScreen> {
+  bool _busy = false;
+
+  void _showThemePicker(BuildContext context) {
+    showModalBottomSheet<void>(
+      context: context,
+      backgroundColor: AppColors.surfaceElevated,
+      builder: (ctx) => SafeArea(
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
           children: [
-            Text('Görünüm', style: theme.textTheme.titleLarge),
-            const SizedBox(height: AppSpacing.sm),
-            _ThemeTile(
-              title: 'Açık',
-              subtitle: 'Açık zemin · açık kartlar',
-              selected: mode == 'light',
-              onTap: () =>
-                  ref.read(themeModeProvider.notifier).setThemeMode('light'),
+            ListTile(
+              title: const Text('Açık'),
+              onTap: () {
+                ref.read(themeModeProvider.notifier).setThemeMode('light');
+                Navigator.pop(ctx);
+              },
             ),
-            const SizedBox(height: AppSpacing.xs),
-            _ThemeTile(
-              title: 'Koyu',
-              subtitle: 'Koyu zemin · koyu kartlar',
-              selected: mode == 'dark',
-              onTap: () =>
-                  ref.read(themeModeProvider.notifier).setThemeMode('dark'),
+            ListTile(
+              title: const Text('Koyu'),
+              onTap: () {
+                ref.read(themeModeProvider.notifier).setThemeMode('dark');
+                Navigator.pop(ctx);
+              },
             ),
-            const SizedBox(height: AppSpacing.xs),
-            _ThemeTile(
-              title: 'ŞantiJET',
-              subtitle: 'Açık zemin · koyu özet kartları',
-              selected: mode == 'santijet',
-              onTap: () =>
-                  ref.read(themeModeProvider.notifier).setThemeMode('santijet'),
+            ListTile(
+              title: const Text('ŞantiJET'),
+              subtitle: const Text('Açık zemin · koyu özet kartları'),
+              onTap: () {
+                ref.read(themeModeProvider.notifier).setThemeMode('santijet');
+                Navigator.pop(ctx);
+              },
             ),
-            const SizedBox(height: AppSpacing.xs),
-            _ThemeTile(
-              title: 'ŞantiJET Pro',
-              subtitle: 'Koyu zemin · açık özet kartları',
-              selected: mode == 'santijet_pro',
-              onTap: () => ref
-                  .read(themeModeProvider.notifier)
-                  .setThemeMode('santijet_pro'),
+            ListTile(
+              title: const Text('ŞantiJET Pro'),
+              subtitle: const Text('Koyu zemin · açık özet kartları'),
+              onTap: () {
+                ref
+                    .read(themeModeProvider.notifier)
+                    .setThemeMode('santijet_pro');
+                Navigator.pop(ctx);
+              },
             ),
-            const SizedBox(height: AppSpacing.xs),
-            _ThemeTile(
-              title: 'Sistem',
-              subtitle: 'Cihaz tema ayarını kullan',
-              selected: mode == 'system',
-              onTap: () =>
-                  ref.read(themeModeProvider.notifier).setThemeMode('system'),
-            ),
-            const SizedBox(height: AppSpacing.lg),
-            Text('Veri', style: theme.textTheme.titleLarge),
-            const SizedBox(height: AppSpacing.sm),
-            SJCard(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text('Yerel veriler', style: theme.textTheme.titleMedium),
-                  const SizedBox(height: AppSpacing.xs),
-                  Text(
-                    '${userAnalizleri.length} özel analiz · '
-                    '${favoriteIds.length} favori · '
-                    '${recentIds.length} son görüntülenen · '
-                    '${kesifProjects.length} keşif',
-                    style: theme.textTheme.bodyMedium,
-                  ),
-                  const SizedBox(height: AppSpacing.md),
-                  Row(
-                    children: [
-                      Expanded(
-                        child: SJButton(
-                          label: 'Dışa Aktar',
-                          icon: Icons.upload_file,
-                          onPressed: () => _exportBackup(context, ref),
-                        ),
-                      ),
-                      const SizedBox(width: AppSpacing.sm),
-                      Expanded(
-                        child: SJButton(
-                          label: 'İçe Aktar',
-                          icon: Icons.download,
-                          variant: SJButtonVariant.secondary,
-                          onPressed: () => _importBackup(context, ref),
-                        ),
-                      ),
-                    ],
-                  ),
-                ],
-              ),
-            ),
-            const SizedBox(height: AppSpacing.lg),
-            Text('Hakkında', style: theme.textTheme.titleLarge),
-            const SizedBox(height: AppSpacing.sm),
-            SJListItem(
-              title: AppInfo.displayName,
-              subtitle:
-                  '${AppInfo.dataSourceLabel} · ${AppInfo.dataUpdateLabel}',
-              leadingIcon: Icons.info_outline,
-              accentColor: AppColors.electricBlueLight,
-              trailingText: AppInfo.version,
-            ),
-            const SizedBox(height: AppSpacing.xs),
-            SJListItem(
-              title: 'Gizlilik Politikası',
-              subtitle: 'Yerel veri ve gizlilik ilkeleri',
-              leadingIcon: Icons.privacy_tip_outlined,
-              accentColor: AppColors.info,
-              onTap: () => context.push(AppRoutes.legalDocument('privacy')),
-            ),
-            const SizedBox(height: AppSpacing.xs),
-            SJListItem(
-              title: 'Kullanım Koşulları',
-              subtitle: 'Kullanım kapsamı ve sorumluluk reddi',
-              leadingIcon: Icons.gavel_outlined,
-              accentColor: AppColors.warning,
-              onTap: () => context.push(AppRoutes.legalDocument('terms')),
-            ),
-            const SizedBox(height: AppSpacing.xs),
-            SJListItem(
-              title: 'Kaynaklar',
-              subtitle: 'ÇŞİDB YFK 2026 Yayınları',
-              leadingIcon: Icons.open_in_browser,
-              accentColor: AppColors.electricBlueLight,
-              onTap: () => context.push(AppRoutes.sources),
+            ListTile(
+              title: const Text('Sistem'),
+              onTap: () {
+                ref.read(themeModeProvider.notifier).setThemeMode('system');
+                Navigator.pop(ctx);
+              },
             ),
           ],
         ),
@@ -158,25 +80,92 @@ class SettingsScreen extends ConsumerWidget {
     );
   }
 
-  Future<void> _exportBackup(BuildContext context, WidgetRef ref) async {
-    final mode = ref.read(themeModeProvider);
-    final backup = BfaBackup(
-      exportedAt: DateTime.now().toIso8601String(),
-      userAnalizleri: ref.read(userAnalizProvider),
-      favoriteIds: ref.read(favoritesProvider).toList(),
-      recentIds: ref.read(recentViewsProvider),
-      kesifProjects: ref.read(kesifProvider),
-      themeMode: mode,
+  void _showBackupDialog(BuildContext context) {
+    showModalBottomSheet<void>(
+      context: context,
+      backgroundColor: AppColors.surfaceElevated,
+      builder: (ctx) => SafeArea(
+        child: Padding(
+          padding: const EdgeInsets.all(AppSpacing.md),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              Text(
+                'Yedekleme & Geri Yükleme',
+                style: AppTypography.headlineMedium,
+              ),
+              const SizedBox(height: 8),
+              Text(
+                'Özel analizler, favoriler, son görüntülenenler ve keşif '
+                'projelerini JSON dosyası olarak dışa / içe aktarın.',
+                style: AppTypography.bodySmall,
+              ),
+              const SizedBox(height: 16),
+              FilledButton.icon(
+                onPressed: _busy
+                    ? null
+                    : () async {
+                        Navigator.pop(ctx);
+                        await _exportBackup();
+                      },
+                icon: const Icon(Icons.upload),
+                label: const Text('Verileri Dışa Aktar'),
+              ),
+              const SizedBox(height: 8),
+              OutlinedButton.icon(
+                onPressed: _busy
+                    ? null
+                    : () async {
+                        Navigator.pop(ctx);
+                        await _importBackup();
+                      },
+                icon: const Icon(Icons.download),
+                label: const Text('Verileri İçe Aktar'),
+              ),
+            ],
+          ),
+        ),
+      ),
     );
-    await backupService.share(backup);
   }
 
-  Future<void> _importBackup(BuildContext context, WidgetRef ref) async {
+  Future<void> _exportBackup() async {
+    if (_busy) return;
+    setState(() => _busy = true);
+    try {
+      final mode = ref.read(themeModeProvider);
+      final backup = BfaBackup(
+        exportedAt: DateTime.now().toIso8601String(),
+        userAnalizleri: ref.read(userAnalizProvider),
+        favoriteIds: ref.read(favoritesProvider).toList(),
+        recentIds: ref.read(recentViewsProvider),
+        kesifProjects: ref.read(kesifProvider),
+        themeMode: mode,
+      );
+      await backupService.share(backup);
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Yedek dışa aktarıldı')),
+      );
+    } catch (e) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Dışa aktarma hatası: $e')),
+      );
+    } finally {
+      if (mounted) setState(() => _busy = false);
+    }
+  }
+
+  Future<void> _importBackup() async {
+    if (_busy) return;
+    setState(() => _busy = true);
     try {
       final backup = await backupService.pickAndParse();
-      if (backup == null || !context.mounted) return;
+      if (backup == null || !mounted) return;
 
-      final replace = await SJModal.confirm(
+      final merge = await SJModal.confirm(
         context: context,
         title: 'Yedek İçe Aktar',
         message:
@@ -185,7 +174,7 @@ class SettingsScreen extends ConsumerWidget {
         cancelLabel: 'Değiştir',
       );
 
-      if (replace) {
+      if (merge) {
         ref.read(userAnalizProvider.notifier).merge(backup.userAnalizleri);
         ref.read(favoritesProvider.notifier).merge(backup.favoriteIds);
         ref.read(recentViewsProvider.notifier).merge(backup.recentIds);
@@ -207,58 +196,188 @@ class SettingsScreen extends ConsumerWidget {
               _ => 'santijet_pro',
             },
           );
-      if (context.mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Yedek içe aktarıldı.')),
-        );
-      }
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Yedek içe aktarıldı')),
+      );
     } catch (e) {
-      if (context.mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Yedek okunamadı: $e')),
-        );
-      }
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Yedek okunamadı: $e')),
+      );
+    } finally {
+      if (mounted) setState(() => _busy = false);
     }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final themeMode = ref.watch(themeModeProvider);
+    final userAnalizleri = ref.watch(userAnalizProvider);
+    final favoriteIds = ref.watch(favoritesProvider);
+    final recentIds = ref.watch(recentViewsProvider);
+    final kesifProjects = ref.watch(kesifProvider);
+
+    return Scaffold(
+      backgroundColor: AppColors.canvas,
+      appBar: AppBar(title: const Text('Ayarlar')),
+      body: ListView(
+        padding: const EdgeInsets.all(AppSpacing.md),
+        children: [
+          _SettingsTile(
+            icon: Icons.dark_mode,
+            title: 'Tema',
+            subtitle: themeLabel(themeMode),
+            onTap: () => _showThemePicker(context),
+          ),
+          _SettingsTile(
+            icon: Icons.backup,
+            title: 'Yedekleme & Geri Yükleme',
+            subtitle: _busy
+                ? 'İşleniyor…'
+                : '${userAnalizleri.length} özel analiz · '
+                    '${favoriteIds.length} favori · '
+                    '${recentIds.length} son · '
+                    '${kesifProjects.length} keşif',
+            onTap: () {
+              if (!_busy) _showBackupDialog(context);
+            },
+          ),
+          _SettingsTile(
+            icon: Icons.privacy_tip_outlined,
+            title: 'Gizlilik Politikası',
+            subtitle: 'Yerel veri ve gizlilik ilkeleri',
+            onTap: () => context.push(AppRoutes.legalDocument('privacy')),
+          ),
+          _SettingsTile(
+            icon: Icons.gavel_outlined,
+            title: 'Kullanım Koşulları',
+            subtitle: 'Kullanım kapsamı ve sorumluluk reddi',
+            onTap: () => context.push(AppRoutes.legalDocument('terms')),
+          ),
+          _SettingsTile(
+            icon: Icons.open_in_browser,
+            title: 'Kaynaklar',
+            subtitle: 'ÇŞİDB YFK 2026 Yayınları',
+            onTap: () => context.push(AppRoutes.sources),
+          ),
+          _SettingsTile(
+            icon: Icons.info_outline,
+            title: 'Hakkında',
+            subtitle: '${AppInfo.displayName} v${AppInfo.version}',
+            onTap: () => _showAbout(context),
+          ),
+        ],
+      ),
+    );
+  }
+
+  void _showAbout(BuildContext context) {
+    showModalBottomSheet<void>(
+      context: context,
+      backgroundColor: AppColors.surfaceElevated,
+      builder: (ctx) => SafeArea(
+        child: Padding(
+          padding: const EdgeInsets.all(AppSpacing.md),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Image.asset(
+                'assets/images/splash_bolt.png',
+                width: 96,
+                height: 96,
+                fit: BoxFit.contain,
+                filterQuality: FilterQuality.high,
+              ),
+              const SizedBox(height: 8),
+              Text(AppInfo.displayName, style: AppTypography.headlineMedium),
+              const SizedBox(height: 4),
+              Text(
+                'Versiyon ${AppInfo.version}',
+                style: AppTypography.bodyMedium,
+              ),
+              const SizedBox(height: 12),
+              Text(
+                AppInfo.tagline,
+                style: AppTypography.bodyMedium,
+                textAlign: TextAlign.center,
+              ),
+              const SizedBox(height: 8),
+              Text(
+                '${AppInfo.dataSourceLabel} · ${AppInfo.dataUpdateLabel}',
+                style: AppTypography.labelMedium,
+                textAlign: TextAlign.center,
+              ),
+              const SizedBox(height: 8),
+              Text(
+                'Destek: ${AppInfo.supportEmail}',
+                style: AppTypography.labelMedium,
+                textAlign: TextAlign.center,
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
   }
 }
 
-class _ThemeTile extends StatelessWidget {
-  const _ThemeTile({
+/// Ana sayfa özet kartlarıyla aynı yüzey (ŞantiJET’te koyu dolgu).
+class _SettingsTile extends StatelessWidget {
+  const _SettingsTile({
+    required this.icon,
     required this.title,
     required this.subtitle,
-    required this.selected,
     required this.onTap,
   });
 
+  final IconData icon;
   final String title;
   final String subtitle;
-  final bool selected;
   final VoidCallback onTap;
 
   @override
   Widget build(BuildContext context) {
-    return SJCard(
-      selected: selected,
-      onTap: onTap,
-      child: Row(
-        children: [
-          Icon(
-            selected ? Icons.radio_button_checked : Icons.radio_button_off,
-            color: selected
-                ? Theme.of(context).colorScheme.primary
-                : Theme.of(context).colorScheme.onSurfaceVariant,
-          ),
-          const SizedBox(width: AppSpacing.sm),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 8),
+      child: SJCard(
+        onTap: onTap,
+        padding: const EdgeInsets.all(14),
+        child: Builder(
+          builder: (context) {
+            final theme = Theme.of(context);
+            return Row(
               children: [
-                Text(title, style: Theme.of(context).textTheme.titleMedium),
-                Text(subtitle, style: Theme.of(context).textTheme.bodySmall),
+                Icon(icon, color: theme.colorScheme.primary, size: 22),
+                const SizedBox(width: 14),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        title,
+                        style: theme.textTheme.titleMedium?.copyWith(
+                          color: AppColors.cardTextPrimary,
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
+                      Text(
+                        subtitle,
+                        style: theme.textTheme.bodySmall?.copyWith(
+                          color: AppColors.cardTextMuted,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+                Icon(
+                  Icons.chevron_right,
+                  color: AppColors.cardTextMuted,
+                ),
               ],
-            ),
-          ),
-        ],
+            );
+          },
+        ),
       ),
     );
   }

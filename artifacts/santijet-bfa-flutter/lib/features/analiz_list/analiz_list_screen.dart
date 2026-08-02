@@ -7,6 +7,7 @@ import '../../core/design_system/sj_empty_state.dart';
 import '../../core/design_system/sj_filter_chips.dart';
 import '../../core/design_system/sj_search_bar.dart';
 import '../../core/routing/app_routes.dart';
+import '../../core/theme/app_colors.dart';
 import '../../core/theme/app_spacing.dart';
 import '../../core/utils/app_format.dart';
 import '../../core/widgets/analiz_list_item.dart';
@@ -114,6 +115,7 @@ class _AnalizListScreenState extends ConsumerState<AnalizListScreen> {
     final favorites = ref.watch(favoritesProvider);
 
     return Scaffold(
+      backgroundColor: AppColors.canvas,
       appBar: AppBar(
         title: Text(_selectionMode ? '${_selectedIds.length} seçili' : _title),
         actions: [

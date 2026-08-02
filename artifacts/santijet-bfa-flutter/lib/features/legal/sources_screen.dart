@@ -33,6 +33,7 @@ class SourcesScreen extends StatelessWidget {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     return Scaffold(
+      backgroundColor: AppColors.canvas,
       appBar: AppBar(title: const Text('Kaynaklar')),
       body: SafeArea(
         top: false,

@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 
 import '../../core/constants/legal_documents.dart';
 import '../../core/design_system/design_system.dart';
+import '../../core/theme/app_colors.dart';
 import '../../core/theme/app_spacing.dart';
 
 /// Gizlilik Politikası / Kullanım Koşulları ekranı.
@@ -14,8 +15,9 @@ class LegalDocumentScreen extends StatelessWidget {
   Widget build(BuildContext context) {
     final doc = legalDocumentById(documentId);
     if (doc == null) {
-      return const Scaffold(
-        body: SafeArea(
+      return Scaffold(
+        backgroundColor: AppColors.canvas,
+        body: const SafeArea(
           child: SJEmptyState(
             title: 'Belge bulunamadı',
             message: 'İstenen hukuki belge mevcut değil.',
@@ -27,6 +29,7 @@ class LegalDocumentScreen extends StatelessWidget {
 
     final theme = Theme.of(context);
     return Scaffold(
+      backgroundColor: AppColors.canvas,
       appBar: AppBar(title: Text(doc.title)),
       body: SafeArea(
         top: false,
@@ -35,21 +38,36 @@ class LegalDocumentScreen extends StatelessWidget {
           children: [
             Text(doc.title, style: theme.textTheme.headlineLarge),
             const SizedBox(height: AppSpacing.xxs),
-            Text('Güncelleme: ${doc.updatedAt}',
-                style: theme.textTheme.labelMedium),
+            Text(
+              'Güncelleme: ${doc.updatedAt}',
+              style: theme.textTheme.labelMedium,
+            ),
             const SizedBox(height: AppSpacing.lg),
             for (final section in doc.sections) ...[
               SJCard(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(section.heading, style: theme.textTheme.titleMedium),
-                    const SizedBox(height: AppSpacing.xs),
-                    Text(
-                      section.body,
-                      style: theme.textTheme.bodyMedium?.copyWith(height: 1.5),
-                    ),
-                  ],
+                child: Builder(
+                  builder: (context) {
+                    final cardTheme = Theme.of(context);
+                    return Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          section.heading,
+                          style: cardTheme.textTheme.titleMedium?.copyWith(
+                            color: AppColors.cardTextPrimary,
+                          ),
+                        ),
+                        const SizedBox(height: AppSpacing.xs),
+                        Text(
+                          section.body,
+                          style: cardTheme.textTheme.bodyMedium?.copyWith(
+                            height: 1.5,
+                            color: AppColors.cardTextSecondary,
+                          ),
+                        ),
+                      ],
+                    );
+                  },
                 ),
               ),
               const SizedBox(height: AppSpacing.sm),

@@ -37,6 +37,7 @@ class KesifDetailScreen extends ConsumerWidget {
 
     final theme = Theme.of(context);
     return Scaffold(
+      backgroundColor: AppColors.canvas,
       appBar: AppBar(
         title: Text(kesif.ad),
         actions: [

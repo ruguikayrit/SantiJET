@@ -51,6 +51,7 @@ class DesignGalleryScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      backgroundColor: AppColors.canvas,
       appBar: AppBar(title: const Text('Design System')),
       body: ListView(
         padding: const EdgeInsets.all(AppSpacing.md),

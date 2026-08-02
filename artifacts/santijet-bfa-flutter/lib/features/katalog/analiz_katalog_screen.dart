@@ -4,6 +4,7 @@ import 'package:go_router/go_router.dart';
 
 import '../../core/design_system/design_system.dart';
 import '../../core/routing/app_routes.dart';
+import '../../core/theme/app_colors.dart';
 import '../../core/theme/app_spacing.dart';
 import '../../core/utils/app_format.dart';
 import '../../data/providers/catalog_provider.dart';
@@ -28,6 +29,7 @@ class _AnalizKatalogScreenState extends ConsumerState<AnalizKatalogScreen> {
     final theme = Theme.of(context);
 
     return Scaffold(
+      backgroundColor: AppColors.canvas,
       appBar: AppBar(title: const Text('Analiz Kataloğu')),
       body: SafeArea(
         top: false,

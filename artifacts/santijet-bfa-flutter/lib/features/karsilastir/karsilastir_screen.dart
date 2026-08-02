@@ -55,6 +55,7 @@ class _KarsilastirScreenState extends ConsumerState<KarsilastirScreen> {
     final catalogAsync = ref.watch(catalogProvider);
 
     return Scaffold(
+      backgroundColor: AppColors.canvas,
       appBar: AppBar(
         title: const Text('Karşılaştırma'),
         actions: [

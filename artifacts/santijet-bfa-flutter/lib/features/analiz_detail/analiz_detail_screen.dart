@@ -7,6 +7,7 @@ import '../../core/design_system/sj_button.dart';
 import '../../core/design_system/sj_empty_state.dart';
 import '../../core/design_system/sj_modal.dart';
 import '../../core/routing/app_routes.dart';
+import '../../core/theme/app_colors.dart';
 import '../../core/theme/app_spacing.dart';
 import '../../core/utils/app_format.dart';
 import '../../core/widgets/cost_summary_card.dart';
@@ -37,6 +38,7 @@ class AnalizDetailScreen extends ConsumerWidget {
     final catalogAsync = ref.watch(catalogProvider);
 
     return Scaffold(
+      backgroundColor: AppColors.canvas,
       body: SafeArea(
         child: catalogAsync.when(
           loading: () => const Center(child: CircularProgressIndicator()),

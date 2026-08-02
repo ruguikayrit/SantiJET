@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../theme/app_colors.dart';
+import '../theme/app_spacing.dart';
 
 /// Alt navigasyon sekmesi tanımı.
 class SJNavItem {
@@ -28,29 +29,39 @@ class SJBottomNavigation extends StatelessWidget {
     super.key,
   });
 
+  static const _iconBarHeight = 52.0;
+
+  /// Alt kenardan hafif yukarı kaydırma — home indicator alanında daha dengeli duruş.
+  static const bottomLift = AppSpacing.xs;
+
   final List<SJNavItem> items;
   final int currentIndex;
   final ValueChanged<int> onTap;
 
+  static double totalHeightOf(BuildContext context) {
+    final bottomInset = MediaQuery.viewPaddingOf(context).bottom;
+    return _iconBarHeight + bottomInset + bottomLift;
+  }
+
   @override
   Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-    final surface = theme.cardTheme.color ?? theme.colorScheme.surface;
     final bottomInset = MediaQuery.viewPaddingOf(context).bottom;
 
-    return ColoredBox(
-      color: surface,
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          DecoratedBox(
-            decoration: BoxDecoration(
-              border: Border(top: BorderSide(color: theme.dividerColor)),
-            ),
-            child: SizedBox(
-              height: 56,
-              width: double.infinity,
-              child: Row(
+    return Padding(
+      padding: const EdgeInsets.only(bottom: bottomLift),
+      child: ColoredBox(
+        color: AppColors.surface,
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            DecoratedBox(
+              decoration: BoxDecoration(
+                border: Border(top: BorderSide(color: AppColors.border)),
+              ),
+              child: SizedBox(
+                height: _iconBarHeight,
+                width: double.infinity,
+                child: Row(
                 children: [
                   for (var i = 0; i < items.length; i++)
                     Expanded(
@@ -64,8 +75,9 @@ class SJBottomNavigation extends StatelessWidget {
               ),
             ),
           ),
-          if (bottomInset > 0) SizedBox(height: bottomInset),
-        ],
+            if (bottomInset > 0) SizedBox(height: bottomInset),
+          ],
+        ),
       ),
     );
   }
@@ -86,7 +98,7 @@ class _NavItemView extends StatelessWidget {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final color =
-        selected ? AppColors.electricBlue : theme.colorScheme.onSurfaceVariant;
+        selected ? AppColors.electricBlue : AppColors.textMuted;
 
     return InkWell(
       onTap: onTap,

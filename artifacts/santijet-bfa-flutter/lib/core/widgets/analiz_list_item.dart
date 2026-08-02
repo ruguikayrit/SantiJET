@@ -25,7 +25,6 @@ class AnalizListItem extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final theme = Theme.of(context);
     final discipline = analiz.discipline ?? AnalizDiscipline.insaat;
     final accent = AppColors.disciplineColor(discipline.name);
 
@@ -37,51 +36,62 @@ class AnalizListItem extends StatelessWidget {
         AppSpacing.xs,
         AppSpacing.sm,
       ),
-      child: Row(
-        children: [
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Row(
+      child: Builder(
+        builder: (context) {
+          final theme = Theme.of(context);
+          return Row(
+            children: [
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
+                    Row(
+                      children: [
+                        Text(
+                          analiz.pozNo,
+                          style: theme.textTheme.labelMedium?.copyWith(
+                            color: accent,
+                            fontWeight: FontWeight.w700,
+                          ),
+                        ),
+                        const SizedBox(width: 8),
+                        Text(
+                          analiz.olcuBirimi,
+                          style: theme.textTheme.labelSmall?.copyWith(
+                            color: AppColors.cardTextMuted,
+                          ),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 2),
                     Text(
-                      analiz.pozNo,
-                      style: theme.textTheme.labelMedium?.copyWith(
-                        color: accent,
-                        fontWeight: FontWeight.w700,
+                      analiz.analizAdi,
+                      style: theme.textTheme.titleMedium?.copyWith(
+                        color: AppColors.cardTextPrimary,
                       ),
+                      maxLines: 2,
+                      overflow: TextOverflow.ellipsis,
                     ),
-                    const SizedBox(width: 8),
-                    Text(
-                      analiz.olcuBirimi,
-                      style: theme.textTheme.labelSmall,
-                    ),
+                    if (analiz.birimFiyati > 0) ...[
+                      const SizedBox(height: 4),
+                      Text(
+                        AppFormat.currency(analiz.birimFiyati),
+                        style: theme.textTheme.titleMedium?.copyWith(
+                          color: accent,
+                        ),
+                      ),
+                    ],
                   ],
                 ),
-                const SizedBox(height: 2),
-                Text(
-                  analiz.analizAdi,
-                  style: theme.textTheme.titleMedium,
-                  maxLines: 2,
-                  overflow: TextOverflow.ellipsis,
+              ),
+              if (onToggleFavorite != null)
+                FavoriteButton(
+                  isFavorite: isFavorite,
+                  onToggle: onToggleFavorite!,
                 ),
-                if (analiz.birimFiyati > 0) ...[
-                  const SizedBox(height: 4),
-                  Text(
-                    AppFormat.currency(analiz.birimFiyati),
-                    style: theme.textTheme.titleMedium?.copyWith(color: accent),
-                  ),
-                ],
-              ],
-            ),
-          ),
-          if (onToggleFavorite != null)
-            FavoriteButton(
-              isFavorite: isFavorite,
-              onToggle: onToggleFavorite!,
-            ),
-        ],
+            ],
+          );
+        },
       ),
     );
   }
