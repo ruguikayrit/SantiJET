@@ -1,8 +1,6 @@
-import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
-import 'package:pointer_interceptor/pointer_interceptor.dart';
 import 'package:santijet_demir/core/routing/app_routes.dart';
 import 'package:santijet_demir/core/theme/app_colors.dart';
 import 'package:santijet_demir/core/theme/app_spacing.dart';
@@ -32,11 +30,11 @@ class SantijetHeader extends StatelessWidget {
   static const _pageTitleGap = 2.0;
   static const _pageTitleLift = 4.0;
 
-  /// Sağ aksiyon kümesi — eşit dokunma alanı, sıkı görsel boşluk.
-  static const actionSize = 40.0;
+  /// Sağ aksiyon kümesi — en az 48px dokunma alanı (Material erişilebilirlik).
+  static const actionSize = 48.0;
   static const actionIconSize = 22.0;
   static const actionAvatarRadius = 16.0;
-  static const actionGap = 2.0;
+  static const actionGap = 4.0;
 
   /// Açık temada iç sayfa başlık bandı (ana sayfa hariç).
   static const pageHeaderBandColor = Color(0xFF05070A);
@@ -119,40 +117,68 @@ class _HeaderNotificationButton extends ConsumerWidget {
     final alerts = ref.watch(dashboardCriticalAlertsProvider);
     final alertCount = alerts.length;
 
-    final button = Semantics(
+    return Semantics(
       label: alertCount > 0
           ? '$alertCount kritik uyarı'
           : 'Bildirimler, uyarı yok',
       button: true,
-      child: Badge(
-        isLabelVisible: alertCount > 0,
-        label: Text('$alertCount'),
-        backgroundColor: AppColors.critical,
-        child: SizedBox(
-          width: SantijetHeader.actionSize,
-          height: SantijetHeader.actionSize,
-          child: Material(
-            color: Colors.transparent,
-            child: InkWell(
-              customBorder: const CircleBorder(),
-              onTap: () => GoRouter.of(context).push(AppRoutes.notificationSettings),
-              child: Center(
-                child: Icon(
-                  Icons.notifications_outlined,
-                  size: SantijetHeader.actionIconSize,
-                  color: onDarkBand
-                      ? Colors.white.withValues(alpha: 0.88)
-                      : AppColors.textSecondary,
+      child: SizedBox(
+        width: SantijetHeader.actionSize,
+        height: SantijetHeader.actionSize,
+        child: Stack(
+          clipBehavior: Clip.none,
+          children: [
+            Positioned.fill(
+              child: Material(
+                type: MaterialType.transparency,
+                child: InkWell(
+                  customBorder: const CircleBorder(),
+                  onTap: () {
+                    GoRouter.of(context).push(AppRoutes.notificationSettings);
+                  },
+                  child: Center(
+                    child: Icon(
+                      Icons.notifications_outlined,
+                      size: SantijetHeader.actionIconSize,
+                      color: onDarkBand
+                          ? Colors.white.withValues(alpha: 0.88)
+                          : AppColors.textSecondary,
+                    ),
+                  ),
                 ),
               ),
             ),
-          ),
+            if (alertCount > 0)
+              Positioned(
+                right: 6,
+                top: 6,
+                child: IgnorePointer(
+                  child: ConstrainedBox(
+                    constraints: const BoxConstraints(minWidth: 16),
+                    child: Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 4),
+                      decoration: BoxDecoration(
+                        color: AppColors.critical,
+                        borderRadius: BorderRadius.circular(8),
+                      ),
+                      child: Text(
+                        '$alertCount',
+                        textAlign: TextAlign.center,
+                        style: const TextStyle(
+                          color: Colors.white,
+                          fontSize: 10,
+                          fontWeight: FontWeight.w700,
+                          height: 1.4,
+                        ),
+                      ),
+                    ),
+                  ),
+                ),
+              ),
+          ],
         ),
       ),
     );
-
-    if (kIsWeb) return PointerInterceptor(child: button);
-    return button;
   }
 }
 
@@ -172,17 +198,19 @@ class _HeaderAvatarButton extends ConsumerWidget {
             ? ref.watch(profileInitialProvider)
             : initial!.trim();
 
-    final button = Semantics(
+    return Semantics(
       label: 'Ayarlar',
       button: true,
       child: SizedBox(
         width: SantijetHeader.actionSize,
         height: SantijetHeader.actionSize,
         child: Material(
-          color: Colors.transparent,
+          type: MaterialType.transparency,
           child: InkWell(
             customBorder: const CircleBorder(),
-            onTap: () => GoRouter.of(context).push(AppRoutes.settings),
+            onTap: () {
+              GoRouter.of(context).push(AppRoutes.settings);
+            },
             child: Center(
               child: CircleAvatar(
                 radius: SantijetHeader.actionAvatarRadius,
@@ -205,9 +233,6 @@ class _HeaderAvatarButton extends ConsumerWidget {
         ),
       ),
     );
-
-    if (kIsWeb) return PointerInterceptor(child: button);
-    return button;
   }
 }
 
