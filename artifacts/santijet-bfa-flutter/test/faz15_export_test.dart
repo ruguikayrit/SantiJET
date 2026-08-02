@@ -102,6 +102,63 @@ void main() {
     expect(xml, contains('15.225.1009'));
   });
 
+  test('CompareExportService renkli ve mono PDF üretir', () async {
+    TestWidgetsFlutterBinding.ensureInitialized();
+    const a1 = PozAnaliz(
+      id: 'c1',
+      pozNo: '15.225.1009',
+      analizAdi: 'A',
+      olcuBirimi: 'm²',
+      kategori: 'Duvar',
+      yukleniciKarOrani: 25,
+      kalemler: [
+        AnalizKalemi(
+          id: 'k1',
+          tip: AnalizKalemTip.malzeme,
+          pozNo: '10',
+          tanim: 'M',
+          olcuBirimi: 'kg',
+          miktar: 1,
+          birimFiyati: 100,
+          tutar: 100,
+        ),
+      ],
+    );
+    const a2 = PozAnaliz(
+      id: 'c2',
+      pozNo: '15.225.1010',
+      analizAdi: 'B',
+      olcuBirimi: 'm²',
+      kategori: 'Duvar',
+      yukleniciKarOrani: 25,
+      kalemler: [
+        AnalizKalemi(
+          id: 'k2',
+          tip: AnalizKalemTip.malzeme,
+          pozNo: '10',
+          tanim: 'M',
+          olcuBirimi: 'kg',
+          miktar: 1,
+          birimFiyati: 200,
+          tutar: 200,
+        ),
+      ],
+    );
+    final compare = buildAnalizCompare([a1, a2]);
+    final colorBytes = await compareExportService.buildPdfBytes(
+      compare,
+      style: ComparePdfStyle.colorFilled,
+    );
+    final monoBytes = await compareExportService.buildPdfBytes(
+      compare,
+      style: ComparePdfStyle.monoPlain,
+    );
+    expect(colorBytes.length, greaterThan(1000));
+    expect(monoBytes.length, greaterThan(1000));
+    expect(colorBytes.sublist(0, 4), [0x25, 0x50, 0x44, 0x46]); // %PDF
+    expect(monoBytes.sublist(0, 4), [0x25, 0x50, 0x44, 0x46]);
+  });
+
   test('KesifExportService XLSX üretir', () {
     const project = KesifProject(
       id: 'kp1',

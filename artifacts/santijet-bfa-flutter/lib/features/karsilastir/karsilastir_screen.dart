@@ -11,7 +11,7 @@ import '../../data/services/compare_export_service.dart';
 import '../../domain/calc/analiz_compare.dart';
 import '../../domain/entities/poz_analiz.dart';
 import '../../domain/enums/app_enums.dart';
-import '../export/export_format_sheet.dart';
+import '../export/compare_pdf_style_sheet.dart';
 
 /// Analiz karşılaştırma
 class KarsilastirScreen extends ConsumerStatefulWidget {
@@ -179,9 +179,32 @@ class _CompareBody extends StatelessWidget {
 
   static const _colMin = 140.0;
 
+  Future<void> _exportPdf(
+    BuildContext context,
+    AnalizCompareResult compare,
+  ) async {
+    final style = await ComparePdfStyleSheet.pick(context);
+    if (style == null || !context.mounted) return;
+    final messenger = ScaffoldMessenger.of(context);
+    messenger.showSnackBar(
+      const SnackBar(content: Text('PDF hazırlanıyor...')),
+    );
+    try {
+      await compareExportService.sharePdf(compare, style: style);
+      if (!context.mounted) return;
+      messenger.showSnackBar(
+        const SnackBar(content: Text('PDF paylaşım için hazırlandı.')),
+      );
+    } catch (e) {
+      if (!context.mounted) return;
+      messenger.showSnackBar(
+        SnackBar(content: Text('PDF oluşturulamadı: $e')),
+      );
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
-    final theme = Theme.of(context);
     return SingleChildScrollView(
       padding: const EdgeInsets.all(AppSpacing.md),
       child: SingleChildScrollView(
@@ -196,7 +219,7 @@ class _CompareBody extends StatelessWidget {
                     label: 'PDF',
                     icon: Icons.picture_as_pdf_outlined,
                     variant: SJButtonVariant.secondary,
-                    onPressed: () => compareExportService.sharePdf(compare),
+                    onPressed: () => _exportPdf(context, compare),
                   ),
                 ),
                 const SizedBox(width: AppSpacing.sm),
