@@ -11,6 +11,7 @@ import '../../core/theme/app_colors.dart';
 import '../../core/theme/app_radii.dart';
 import '../../core/theme/app_spacing.dart';
 import '../../core/utils/id_gen.dart';
+import '../../core/widgets/santijet_header.dart';
 import '../../data/providers/app_data_provider.dart';
 import '../../data/providers/catalog_provider.dart';
 import '../../data/providers/company_provider.dart';
@@ -164,19 +165,24 @@ class _PersonnelScreenState extends ConsumerState<PersonnelScreen> {
 
     if (project == null) {
       return Scaffold(
-        appBar: AppBar(
-          title: const Text('Personel'),
-          leading: IconButton(
-            icon: const Icon(Icons.arrow_back),
-            onPressed: () => context.go(AppRoutes.yonetim),
+        backgroundColor: AppColors.canvas,
+        body: SafeArea(
+          bottom: false,
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              const SantijetHeader(subtitle: 'Personel'),
+              Expanded(
+                child: SJEmptyState(
+                  title: 'Önce proje ekleyin',
+                  message: 'Personel her proje için ayrı tutulur.',
+                  icon: Icons.apartment_outlined,
+                  actionLabel: 'Projelere Git',
+                  onAction: () => context.go(AppRoutes.projeler),
+                ),
+              ),
+            ],
           ),
-        ),
-        body: SJEmptyState(
-          title: 'Önce proje ekleyin',
-          message: 'Personel her proje için ayrı tutulur.',
-          icon: Icons.apartment_outlined,
-          actionLabel: 'Projelere Git',
-          onAction: () => context.go(AppRoutes.projeler),
         ),
       );
     }
@@ -184,57 +190,28 @@ class _PersonnelScreenState extends ConsumerState<PersonnelScreen> {
     final groups = _groupByCompany(people);
 
     return Scaffold(
-      appBar: AppBar(
-        title: Text(
-          _selectionMode ? '${_selectedIds.length} seçili' : 'Personel',
-        ),
-        leading: IconButton(
-          icon: Icon(_selectionMode ? Icons.close : Icons.arrow_back),
-          onPressed: () {
-            if (_selectionMode) {
-              _exitSelection();
-            } else {
-              context.go(AppRoutes.yonetim);
-            }
-          },
-        ),
-        actions: [
-          if (_selectionMode) ...[
-            IconButton(
-              tooltip: 'Tümünü seç',
-              onPressed: people.isEmpty ? null : () => _selectAll(people),
-              icon: const Icon(Icons.select_all),
-            ),
-            IconButton(
-              tooltip: 'Seçilenleri sil',
-              onPressed: _selectedIds.isEmpty ? null : _deleteSelected,
-              icon: const Icon(Icons.delete_outline),
-            ),
-          ] else ...[
-            if (people.isNotEmpty)
-              IconButton(
-                tooltip: 'Seç',
-                onPressed: () => _enterSelection(),
-                icon: const Icon(Icons.checklist_rtl),
+      backgroundColor: AppColors.canvas,
+      appBar: _selectionMode
+          ? AppBar(
+              title: Text('${_selectedIds.length} seçili'),
+              leading: IconButton(
+                icon: const Icon(Icons.close),
+                onPressed: _exitSelection,
               ),
-            IconButton(
-              tooltip: 'Excel’den içe aktar',
-              onPressed: () => _importFromFile(
-                context,
-                ref,
-                projectId: project.id,
-              ),
-              icon: const Icon(Icons.upload_file_outlined),
-            ),
-            Padding(
-              padding: const EdgeInsets.only(right: AppSpacing.sm),
-              child: Center(
-                child: Text(project.name, style: theme.textTheme.labelMedium),
-              ),
-            ),
-          ],
-        ],
-      ),
+              actions: [
+                IconButton(
+                  tooltip: 'Tümünü seç',
+                  onPressed: people.isEmpty ? null : () => _selectAll(people),
+                  icon: const Icon(Icons.select_all),
+                ),
+                IconButton(
+                  tooltip: 'Seçilenleri sil',
+                  onPressed: _selectedIds.isEmpty ? null : _deleteSelected,
+                  icon: const Icon(Icons.delete_outline),
+                ),
+              ],
+            )
+          : null,
       floatingActionButton: _selectionMode
           ? null
           : Column(
@@ -261,108 +238,160 @@ class _PersonnelScreenState extends ConsumerState<PersonnelScreen> {
                 ),
               ],
             ),
-      body: people.isEmpty
-          ? SJEmptyState(
-              title: 'Bu projede personel yok',
-              message:
-                  '${project.name} için personel ekleyin veya '
-                  'Excel’den liste yükleyin.',
-              icon: Icons.groups_outlined,
-              actionLabel: 'Personel Ekle',
-              onAction: () =>
-                  _openEditor(context, ref, projectId: project.id),
-            )
-          : ListView.builder(
-              padding: const EdgeInsets.fromLTRB(
-                AppSpacing.md,
-                AppSpacing.sm,
-                AppSpacing.md,
-                160,
-              ),
-              itemCount: groups.length,
-              itemBuilder: (context, gi) {
-                final g = groups[gi];
-                final key = g.company;
-                final expanded = !_collapsedCompanies.contains(key);
-                return Padding(
-                  padding: EdgeInsets.only(
-                    bottom: gi == groups.length - 1 ? 0 : AppSpacing.md,
-                  ),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.stretch,
-                    children: [
-                      _CompanyHeader(
-                        label: _companyLabel(key),
-                        count: g.people.length,
-                        expanded: expanded,
-                        selectionMode: _selectionMode,
-                        selectedInGroup: g.people
-                            .where((p) => _selectedIds.contains(p.id))
-                            .length,
-                        onToggle: () => _toggleCompany(key),
-                        onSelectGroup: () => _toggleSelectGroup(g.people),
+      body: SafeArea(
+        bottom: false,
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            if (!_selectionMode) ...[
+              const SantijetHeader(subtitle: 'Personel'),
+              Padding(
+                padding: const EdgeInsets.fromLTRB(
+                  AppSpacing.md,
+                  0,
+                  AppSpacing.md,
+                  AppSpacing.sm,
+                ),
+                child: Row(
+                  children: [
+                    Expanded(
+                      child: Text(
+                        project.name,
+                        style: theme.textTheme.labelMedium,
+                        overflow: TextOverflow.ellipsis,
                       ),
-                      if (expanded) ...[
-                        const SizedBox(height: AppSpacing.sm),
-                        for (var i = 0; i < g.people.length; i++) ...[
-                          if (i > 0) const SizedBox(height: AppSpacing.sm),
-                          _PersonTile(
-                            index: i + 1,
-                            person: g.people[i],
-                            selectionMode: _selectionMode,
-                            selected: _selectedIds.contains(g.people[i].id),
-                            onTap: () {
-                              if (_selectionMode) {
-                                _toggleSelected(g.people[i].id);
-                              } else {
-                                _openEditor(
-                                  context,
-                                  ref,
-                                  projectId: project.id,
-                                  existing: g.people[i],
-                                );
-                              }
-                            },
-                            onLongPress: () {
-                              if (!_selectionMode) {
-                                _enterSelection(g.people[i].id);
-                              }
-                            },
-                            onDelete: () async {
-                              final p = g.people[i];
-                              final ok = await showDialog<bool>(
-                                context: context,
-                                builder: (ctx) => AlertDialog(
-                                  title: const Text('Personeli sil'),
-                                  content: Text('${p.name} silinsin mi?'),
-                                  actions: [
-                                    TextButton(
-                                      onPressed: () =>
-                                          Navigator.pop(ctx, false),
-                                      child: const Text('Vazgeç'),
-                                    ),
-                                    FilledButton(
-                                      onPressed: () =>
-                                          Navigator.pop(ctx, true),
-                                      child: const Text('Sil'),
-                                    ),
-                                  ],
-                                ),
-                              );
-                              if (ok == true) {
-                                ref
-                                    .read(personnelProvider.notifier)
-                                    .delete(p.id);
-                              }
-                            },
+                    ),
+                    if (people.isNotEmpty)
+                      IconButton(
+                        tooltip: 'Seç',
+                        onPressed: () => _enterSelection(),
+                        icon: const Icon(Icons.checklist_rtl),
+                      ),
+                    IconButton(
+                      tooltip: 'Excel’den içe aktar',
+                      onPressed: () => _importFromFile(
+                        context,
+                        ref,
+                        projectId: project.id,
+                      ),
+                      icon: const Icon(Icons.upload_file_outlined),
+                    ),
+                  ],
+                ),
+              ),
+            ],
+            Expanded(
+              child: people.isEmpty
+                  ? SJEmptyState(
+                      title: 'Bu projede personel yok',
+                      message:
+                          '${project.name} için personel ekleyin veya '
+                          'Excel’den liste yükleyin.',
+                      icon: Icons.groups_outlined,
+                      actionLabel: 'Personel Ekle',
+                      onAction: () =>
+                          _openEditor(context, ref, projectId: project.id),
+                    )
+                  : ListView.builder(
+                      padding: const EdgeInsets.fromLTRB(
+                        AppSpacing.md,
+                        AppSpacing.sm,
+                        AppSpacing.md,
+                        160,
+                      ),
+                      itemCount: groups.length,
+                      itemBuilder: (context, gi) {
+                        final g = groups[gi];
+                        final key = g.company;
+                        final expanded = !_collapsedCompanies.contains(key);
+                        return Padding(
+                          padding: EdgeInsets.only(
+                            bottom:
+                                gi == groups.length - 1 ? 0 : AppSpacing.md,
                           ),
-                        ],
-                      ],
-                    ],
-                  ),
-                );
-              },
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.stretch,
+                            children: [
+                              _CompanyHeader(
+                                label: _companyLabel(key),
+                                count: g.people.length,
+                                expanded: expanded,
+                                selectionMode: _selectionMode,
+                                selectedInGroup: g.people
+                                    .where((p) => _selectedIds.contains(p.id))
+                                    .length,
+                                onToggle: () => _toggleCompany(key),
+                                onSelectGroup: () =>
+                                    _toggleSelectGroup(g.people),
+                              ),
+                              if (expanded) ...[
+                                const SizedBox(height: AppSpacing.sm),
+                                for (var i = 0; i < g.people.length; i++) ...[
+                                  if (i > 0)
+                                    const SizedBox(height: AppSpacing.sm),
+                                  _PersonTile(
+                                    index: i + 1,
+                                    person: g.people[i],
+                                    selectionMode: _selectionMode,
+                                    selected: _selectedIds
+                                        .contains(g.people[i].id),
+                                    onTap: () {
+                                      if (_selectionMode) {
+                                        _toggleSelected(g.people[i].id);
+                                      } else {
+                                        _openEditor(
+                                          context,
+                                          ref,
+                                          projectId: project.id,
+                                          existing: g.people[i],
+                                        );
+                                      }
+                                    },
+                                    onLongPress: () {
+                                      if (!_selectionMode) {
+                                        _enterSelection(g.people[i].id);
+                                      }
+                                    },
+                                    onDelete: () async {
+                                      final p = g.people[i];
+                                      final ok = await showDialog<bool>(
+                                        context: context,
+                                        builder: (ctx) => AlertDialog(
+                                          title: const Text('Personeli sil'),
+                                          content:
+                                              Text('${p.name} silinsin mi?'),
+                                          actions: [
+                                            TextButton(
+                                              onPressed: () =>
+                                                  Navigator.pop(ctx, false),
+                                              child: const Text('Vazgeç'),
+                                            ),
+                                            FilledButton(
+                                              onPressed: () =>
+                                                  Navigator.pop(ctx, true),
+                                              child: const Text('Sil'),
+                                            ),
+                                          ],
+                                        ),
+                                      );
+                                      if (ok == true) {
+                                        ref
+                                            .read(personnelProvider.notifier)
+                                            .delete(p.id);
+                                      }
+                                    },
+                                  ),
+                                ],
+                              ],
+                            ],
+                          ),
+                        );
+                      },
+                    ),
             ),
+          ],
+        ),
+      ),
     );
   }
 

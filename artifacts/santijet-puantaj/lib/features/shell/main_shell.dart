@@ -35,9 +35,9 @@ class MainShell extends ConsumerWidget {
       label: 'Verim',
     ),
     SJNavItem(
-      icon: Icons.settings_outlined,
-      activeIcon: Icons.settings,
-      label: 'Ayarlar',
+      icon: Icons.groups_outlined,
+      activeIcon: Icons.groups,
+      label: 'Personel',
     ),
   ];
 

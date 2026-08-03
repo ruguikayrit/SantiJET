@@ -19,12 +19,20 @@ import 'page_transitions.dart';
 
 final _rootNavigatorKey = GlobalKey<NavigatorState>();
 
-/// Alt sekmeler: Ana Sayfa, Puantaj, İmalat, Verim, Ayarlar.
-/// Yönetim (Personel / Meslekler / Ekipler) ve Projeler Ayarlar altındadır.
+/// Alt sekmeler: Ana Sayfa, Puantaj, İmalat, Verim, Personel.
+/// Ayarlar sağ üst butondan açılır (shell dışı).
 final routerProvider = Provider<GoRouter>((ref) {
   return GoRouter(
     navigatorKey: _rootNavigatorKey,
     initialLocation: AppRoutes.splash,
+    redirect: (context, state) {
+      final loc = state.matchedLocation;
+      if (loc == AppRoutes.personelLegacy ||
+          loc.startsWith('${AppRoutes.personelLegacy}/')) {
+        return AppRoutes.personel;
+      }
+      return null;
+    },
     routes: [
       GoRoute(
         path: AppRoutes.splash,
@@ -82,64 +90,71 @@ final routerProvider = Provider<GoRouter>((ref) {
           StatefulShellBranch(
             routes: [
               GoRoute(
-                path: AppRoutes.ayarlar,
+                path: AppRoutes.personel,
                 pageBuilder: (context, state) => fadePage(
                   key: state.pageKey,
-                  child: const SettingsScreen(),
+                  child: const PersonnelScreen(),
                 ),
-                routes: [
-                  GoRoute(
-                    path: 'projeler',
-                    pageBuilder: (context, state) => fadePage(
-                      key: state.pageKey,
-                      child: const ProjectsScreen(),
-                    ),
-                  ),
-                  GoRoute(
-                    path: 'hakkinda',
-                    pageBuilder: (context, state) => fadePage(
-                      key: state.pageKey,
-                      child: const AboutScreen(),
-                    ),
-                  ),
-                  GoRoute(
-                    path: 'yonetim',
-                    pageBuilder: (context, state) => fadePage(
-                      key: state.pageKey,
-                      child: const ManagementScreen(),
-                    ),
-                    routes: [
-                      GoRoute(
-                        path: 'firma',
-                        pageBuilder: (context, state) => fadePage(
-                          key: state.pageKey,
-                          child: const CompanySettingsScreen(),
-                        ),
-                      ),
-                      GoRoute(
-                        path: 'personel',
-                        pageBuilder: (context, state) => fadePage(
-                          key: state.pageKey,
-                          child: const PersonnelScreen(),
-                        ),
-                      ),
-                      GoRoute(
-                        path: 'meslekler',
-                        pageBuilder: (context, state) => fadePage(
-                          key: state.pageKey,
-                          child: const ProfessionsScreen(),
-                        ),
-                      ),
-                      GoRoute(
-                        path: 'ekipler',
-                        pageBuilder: (context, state) => fadePage(
-                          key: state.pageKey,
-                          child: const TeamsScreen(),
-                        ),
-                      ),
-                    ],
-                  ),
-                ],
+              ),
+            ],
+          ),
+        ],
+      ),
+      GoRoute(
+        path: AppRoutes.ayarlar,
+        parentNavigatorKey: _rootNavigatorKey,
+        pageBuilder: (context, state) => fadePage(
+          key: state.pageKey,
+          child: const SettingsScreen(),
+        ),
+        routes: [
+          GoRoute(
+            path: 'projeler',
+            parentNavigatorKey: _rootNavigatorKey,
+            pageBuilder: (context, state) => fadePage(
+              key: state.pageKey,
+              child: const ProjectsScreen(),
+            ),
+          ),
+          GoRoute(
+            path: 'hakkinda',
+            parentNavigatorKey: _rootNavigatorKey,
+            pageBuilder: (context, state) => fadePage(
+              key: state.pageKey,
+              child: const AboutScreen(),
+            ),
+          ),
+          GoRoute(
+            path: 'yonetim',
+            parentNavigatorKey: _rootNavigatorKey,
+            pageBuilder: (context, state) => fadePage(
+              key: state.pageKey,
+              child: const ManagementScreen(),
+            ),
+            routes: [
+              GoRoute(
+                path: 'firma',
+                parentNavigatorKey: _rootNavigatorKey,
+                pageBuilder: (context, state) => fadePage(
+                  key: state.pageKey,
+                  child: const CompanySettingsScreen(),
+                ),
+              ),
+              GoRoute(
+                path: 'meslekler',
+                parentNavigatorKey: _rootNavigatorKey,
+                pageBuilder: (context, state) => fadePage(
+                  key: state.pageKey,
+                  child: const ProfessionsScreen(),
+                ),
+              ),
+              GoRoute(
+                path: 'ekipler',
+                parentNavigatorKey: _rootNavigatorKey,
+                pageBuilder: (context, state) => fadePage(
+                  key: state.pageKey,
+                  child: const TeamsScreen(),
+                ),
               ),
             ],
           ),

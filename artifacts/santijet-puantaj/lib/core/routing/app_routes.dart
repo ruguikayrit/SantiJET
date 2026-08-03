@@ -5,12 +5,15 @@ abstract final class AppRoutes {
   static const puantaj = '/puantaj';
   static const imalat = '/imalat';
   static const verim = '/verim';
+  static const personel = '/personel';
   static const ayarlar = '/ayarlar';
   static const yonetim = '/ayarlar/yonetim';
   static const firma = '/ayarlar/yonetim/firma';
-  static const personel = '/ayarlar/yonetim/personel';
   static const projeler = '/ayarlar/projeler';
   static const meslekler = '/ayarlar/yonetim/meslekler';
   static const ekipler = '/ayarlar/yonetim/ekipler';
   static const hakkinda = '/ayarlar/hakkinda';
+
+  /// Eski yol — `/personel` sekmesine yönlendirilir.
+  static const personelLegacy = '/ayarlar/yonetim/personel';
 }
