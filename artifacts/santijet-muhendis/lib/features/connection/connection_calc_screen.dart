@@ -496,6 +496,13 @@ class _DropdownField<T> extends StatelessWidget {
           // ignore: deprecated_member_use
           value: value,
           isExpanded: true,
+          dropdownColor: AppColors.lightSurface,
+          style: const TextStyle(
+            color: AppColors.inkPrimary,
+            fontWeight: FontWeight.w600,
+            fontSize: 15,
+          ),
+          iconEnabledColor: AppColors.inkSecondary,
           decoration: InputDecoration(
             filled: true,
             fillColor: fill,
@@ -504,7 +511,7 @@ class _DropdownField<T> extends StatelessWidget {
             border: OutlineInputBorder(borderRadius: AppRadii.md),
             enabledBorder: OutlineInputBorder(
               borderRadius: AppRadii.md,
-              borderSide: BorderSide(color: AppColors.border),
+              borderSide: const BorderSide(color: AppColors.lightBorder),
             ),
             focusedBorder: OutlineInputBorder(
               borderRadius: AppRadii.md,
@@ -516,7 +523,14 @@ class _DropdownField<T> extends StatelessWidget {
           ),
           items: [
             for (final item in items)
-              DropdownMenuItem(value: item, child: Text(labelOf(item))),
+              DropdownMenuItem(
+                value: item,
+                child: Text(
+                  labelOf(item),
+                  style: const TextStyle(color: AppColors.inkPrimary),
+                  overflow: TextOverflow.ellipsis,
+                ),
+              ),
           ],
           onChanged: onChanged,
         ),
@@ -557,7 +571,12 @@ class _NumberField extends StatelessWidget {
             FilteringTextInputFormatter.allow(RegExp(r'[0-9.,]')),
           ],
           onChanged: onChanged,
-          style: const TextStyle(fontWeight: FontWeight.w600),
+          cursorColor: AppColors.electricBlue,
+          style: const TextStyle(
+            color: AppColors.inkPrimary,
+            fontWeight: FontWeight.w600,
+            fontSize: 15,
+          ),
           decoration: InputDecoration(
             filled: true,
             fillColor: fill,
@@ -566,7 +585,7 @@ class _NumberField extends StatelessWidget {
             border: OutlineInputBorder(borderRadius: AppRadii.md),
             enabledBorder: OutlineInputBorder(
               borderRadius: AppRadii.md,
-              borderSide: BorderSide(color: AppColors.border),
+              borderSide: const BorderSide(color: AppColors.lightBorder),
             ),
             focusedBorder: OutlineInputBorder(
               borderRadius: AppRadii.md,
