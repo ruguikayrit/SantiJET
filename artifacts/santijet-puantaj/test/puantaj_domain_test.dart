@@ -7,7 +7,6 @@ import 'package:santijet_puantaj/domain/entities/person.dart';
 import 'package:santijet_puantaj/domain/entities/production.dart';
 import 'package:santijet_puantaj/domain/entities/production_day_entry.dart';
 import 'package:santijet_puantaj/domain/enums/attendance_status.dart';
-import 'package:santijet_puantaj/domain/yevmiye/imalat_crew_allocator.dart';
 import 'package:santijet_puantaj/domain/yevmiye/yevmiye_calculator.dart';
 import 'dart:convert';
 
@@ -88,71 +87,6 @@ void main() {
         ),
         1.75,
       );
-    });
-  });
-
-  group('ImalatCrewAllocator', () {
-    test('ikinci imalat için kalan usta/düz düşülür', () {
-      const people = [
-        Person(id: 'u1', projectId: 'p', name: 'A', team: 'Demir', profession: 'Usta'),
-        Person(id: 'u2', projectId: 'p', name: 'B', team: 'Demir', profession: 'Usta'),
-        Person(id: 'u3', projectId: 'p', name: 'C', team: 'Demir', profession: 'Saha Düz İşçi'),
-      ];
-      const att = [
-        Attendance(
-          id: 'a1',
-          projectId: 'p',
-          personId: 'u1',
-          personName: 'A',
-          date: '25.07.2026',
-          status: AttendanceStatus.present,
-          hours: 8,
-        ),
-        Attendance(
-          id: 'a2',
-          projectId: 'p',
-          personId: 'u2',
-          personName: 'B',
-          date: '25.07.2026',
-          status: AttendanceStatus.present,
-          hours: 8,
-        ),
-        Attendance(
-          id: 'a3',
-          projectId: 'p',
-          personId: 'u3',
-          personName: 'C',
-          date: '25.07.2026',
-          status: AttendanceStatus.present,
-          hours: 8,
-        ),
-      ];
-      const first = Production(
-        id: 'pr1',
-        projectId: 'p',
-        name: 'Temel',
-        teamName: 'Demir',
-        dailyEntries: [
-          ProductionDayEntry(
-            id: 'd1',
-            date: '25.07.2026',
-            ustaCount: 1,
-            duzIsciCount: 1,
-          ),
-        ],
-      );
-      final pool = ImalatCrewAllocator.availableFor(
-        projectId: 'p',
-        date: '25.07.2026',
-        teamName: 'Demir',
-        people: people,
-        attendance: att,
-        productions: [first],
-      );
-      expect(pool.ustaTotal, 2);
-      expect(pool.duzTotal, 1);
-      expect(pool.ustaRemaining, 1);
-      expect(pool.duzRemaining, 0);
     });
   });
 

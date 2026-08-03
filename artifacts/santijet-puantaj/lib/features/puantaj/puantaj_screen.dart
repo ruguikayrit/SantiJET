@@ -1299,6 +1299,11 @@ class _PuantajExportSheetState extends State<_PuantajExportSheet> {
         Text('Dönem', style: theme.textTheme.labelLarge),
         const SizedBox(height: AppSpacing.xs),
         SegmentedButton<PuantajReportPeriod>(
+          style: SegmentedButton.styleFrom(
+            // Ana dönem seçici (Günlük/Haftalık/Aylık) ile aynı yazı renkleri.
+            foregroundColor: theme.colorScheme.onSurfaceVariant,
+            selectedForegroundColor: Colors.white,
+          ),
           segments: const [
             ButtonSegment(
               value: PuantajReportPeriod.daily,
