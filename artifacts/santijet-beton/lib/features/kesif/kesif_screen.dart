@@ -9,14 +9,12 @@ import '../../core/design_system/sj_modal.dart';
 import '../../core/theme/app_colors.dart';
 import '../../core/theme/app_radii.dart';
 import '../../core/theme/app_spacing.dart';
-import '../../core/utils/app_date.dart';
 import '../../core/widgets/santijet_header.dart';
 import '../../data/providers/app_data_provider.dart';
 import '../../domain/beton_progress.dart';
 import '../../domain/entities/concrete_discovery.dart';
-import '../../domain/entities/metraj_variance_note.dart';
 
-/// Keşif metrajı, element ilerlemesi ve metraj fark açıklamaları.
+/// Keşif metrajı ve element ilerlemesi.
 class KesifScreen extends ConsumerWidget {
   const KesifScreen({super.key});
 
@@ -25,7 +23,6 @@ class KesifScreen extends ConsumerWidget {
     final project = ref.watch(activeProjectProvider);
     final progress = ref.watch(projectProgressProvider);
     final elements = ref.watch(elementProgressProvider);
-    final variance = ref.watch(activeVarianceProvider);
     final discovery = ref.watch(activeDiscoveryProvider);
 
     return Scaffold(
@@ -41,7 +38,7 @@ class KesifScreen extends ConsumerWidget {
                       message: 'Keşif metrajı için aktif bir proje gerekir.',
                       icon: Icons.apartment_outlined,
                     )
-                  : discovery.isEmpty && variance.isEmpty
+                  : discovery.isEmpty
                       ? SJEmptyState(
                           title: 'Keşif yok',
                           message:
@@ -102,55 +99,6 @@ class KesifScreen extends ConsumerWidget {
                                           existing: match,
                                         );
                                       }
-                                    },
-                                  ),
-                                ],
-                              ],
-                            const SizedBox(height: AppSpacing.md),
-                            Align(
-                              alignment: Alignment.centerRight,
-                              child: TextButton.icon(
-                                onPressed: () =>
-                                    _openVarianceEditor(context, ref),
-                                icon: const Icon(Icons.add, size: 18),
-                                label: const Text('Fark Ekle'),
-                              ),
-                            ),
-                            const SizedBox(height: AppSpacing.sm),
-                            if (variance.isEmpty)
-                              SJCard(
-                                child: Builder(
-                                  builder: (context) => Text(
-                                    'Plan ↔ gerçekleşen farkı için henüz açıklama yok.',
-                                    style: Theme.of(context)
-                                        .textTheme
-                                        .bodyMedium
-                                        ?.copyWith(
-                                          color: AppColors.cardTextSecondary,
-                                        ),
-                                  ),
-                                ),
-                              )
-                            else
-                              ...[
-                                for (var i = 0; i < variance.length; i++) ...[
-                                  if (i > 0)
-                                    const SizedBox(height: AppSpacing.sm),
-                                  _VarianceTile(
-                                    note: variance[i],
-                                    onDelete: () async {
-                                      final ok = await SJModal.confirm(
-                                        context: context,
-                                        title: 'Açıklamayı sil',
-                                        message:
-                                            'Bu metraj fark kaydı silinsin mi?',
-                                        confirmLabel: 'Sil',
-                                        destructive: true,
-                                      );
-                                      if (!ok) return;
-                                      ref
-                                          .read(varianceProvider.notifier)
-                                          .delete(variance[i].id);
                                     },
                                   ),
                                 ],
@@ -308,129 +256,6 @@ class KesifScreen extends ConsumerWidget {
     }
   }
 
-  Future<void> _openVarianceEditor(
-    BuildContext context,
-    WidgetRef ref,
-  ) async {
-    final project = ref.read(activeProjectProvider);
-    if (project == null) return;
-
-    final dateCtrl = TextEditingController(
-      text: AppDate.format(AppDate.today()),
-    );
-    final plannedCtrl = TextEditingController();
-    final actualCtrl = TextEditingController();
-    final reasonCtrl = TextEditingController();
-    final elementCtrl = TextEditingController();
-    final detailCtrl = TextEditingController();
-
-    final saved = await SJModal.showSheet<bool>(
-      context: context,
-      title: 'Metraj fark açıklaması',
-      child: Builder(
-        builder: (ctx) {
-          return Column(
-              crossAxisAlignment: CrossAxisAlignment.stretch,
-              children: [
-                TextField(
-                  controller: dateCtrl,
-                  decoration: const InputDecoration(
-                    labelText: 'Tarih (gg.aa.yyyy)',
-                  ),
-                ),
-                const SizedBox(height: AppSpacing.sm),
-                TextField(
-                  controller: elementCtrl,
-                  decoration: const InputDecoration(
-                    labelText: 'Yapısal eleman (opsiyonel)',
-                  ),
-                  textCapitalization: TextCapitalization.sentences,
-                ),
-                const SizedBox(height: AppSpacing.sm),
-                TextField(
-                  controller: plannedCtrl,
-                  decoration:
-                      const InputDecoration(labelText: 'Planlanan m³'),
-                  keyboardType: const TextInputType.numberWithOptions(
-                    decimal: true,
-                  ),
-                ),
-                const SizedBox(height: AppSpacing.sm),
-                TextField(
-                  controller: actualCtrl,
-                  decoration:
-                      const InputDecoration(labelText: 'Gerçekleşen m³'),
-                  keyboardType: const TextInputType.numberWithOptions(
-                    decimal: true,
-                  ),
-                ),
-                const SizedBox(height: AppSpacing.sm),
-                TextField(
-                  controller: reasonCtrl,
-                  decoration: const InputDecoration(labelText: 'Neden'),
-                  textCapitalization: TextCapitalization.sentences,
-                ),
-                const SizedBox(height: AppSpacing.sm),
-                TextField(
-                  controller: detailCtrl,
-                  decoration: const InputDecoration(labelText: 'Detay'),
-                  maxLines: 2,
-                ),
-                const SizedBox(height: AppSpacing.md),
-                Row(
-                  children: [
-                    Expanded(
-                      child: SJButton(
-                        label: 'İptal',
-                        variant: SJButtonVariant.secondary,
-                        expanded: true,
-                        onPressed: () => Navigator.pop(ctx, false),
-                      ),
-                    ),
-                    const SizedBox(width: AppSpacing.sm),
-                    Expanded(
-                      child: SJButton(
-                        label: 'Kaydet',
-                        expanded: true,
-                        onPressed: () {
-                          final planned = double.tryParse(
-                            plannedCtrl.text.trim().replaceAll(',', '.'),
-                          );
-                          final actual = double.tryParse(
-                            actualCtrl.text.trim().replaceAll(',', '.'),
-                          );
-                          if (planned == null || actual == null) return;
-                          if (reasonCtrl.text.trim().isEmpty) return;
-                          Navigator.pop(ctx, true);
-                        },
-                      ),
-                    ),
-                  ],
-                ),
-              ],
-            );
-        },
-      ),
-    );
-
-    if (saved != true) return;
-    final planned =
-        double.tryParse(plannedCtrl.text.trim().replaceAll(',', '.')) ?? 0;
-    final actual =
-        double.tryParse(actualCtrl.text.trim().replaceAll(',', '.')) ?? 0;
-    ref.read(varianceProvider.notifier).add(
-          MetrajVarianceNote(
-            id: '',
-            projectId: project.id,
-            date: dateCtrl.text.trim(),
-            plannedM3: planned,
-            actualM3: actual,
-            reason: reasonCtrl.text.trim(),
-            elementName: elementCtrl.text.trim(),
-            detail: detailCtrl.text.trim(),
-          ),
-        );
-  }
 }
 
 class _OverallProgressCard extends StatelessWidget {
@@ -628,79 +453,6 @@ class _ElementProgressTile extends StatelessWidget {
                   color: color,
                 ),
               ),
-            ],
-          );
-        },
-      ),
-    );
-  }
-}
-
-class _VarianceTile extends StatelessWidget {
-  const _VarianceTile({required this.note, required this.onDelete});
-
-  final MetrajVarianceNote note;
-  final VoidCallback onDelete;
-
-  @override
-  Widget build(BuildContext context) {
-    final delta = note.deltaM3;
-    final color = delta.abs() < 0.01
-        ? AppColors.success
-        : delta > 0
-            ? AppColors.warning
-            : AppColors.critical;
-
-    return SJCard(
-      accentColor: color,
-      child: Builder(
-        builder: (context) {
-          final theme = Theme.of(context);
-          return Column(
-            crossAxisAlignment: CrossAxisAlignment.stretch,
-            children: [
-              Row(
-                children: [
-                  Expanded(
-                    child: Text(
-                      note.reason,
-                      style: theme.textTheme.titleSmall?.copyWith(
-                        color: AppColors.cardTextPrimary,
-                        fontWeight: FontWeight.w700,
-                      ),
-                    ),
-                  ),
-                  IconButton(
-                    onPressed: onDelete,
-                    icon: const Icon(Icons.delete_outline, size: 20),
-                    color: AppColors.critical,
-                    visualDensity: VisualDensity.compact,
-                  ),
-                ],
-              ),
-              Text(
-                [
-                  note.date,
-                  if (note.elementName.isNotEmpty) note.elementName,
-                ].join(' · '),
-                style: theme.textTheme.labelSmall,
-              ),
-              const SizedBox(height: AppSpacing.xs),
-              Text(
-                'Plan ${BetonProgress.fmtM3(note.plannedM3)} → '
-                'Gerçek ${BetonProgress.fmtM3(note.actualM3)}  '
-                '(${delta >= 0 ? '+' : ''}${BetonProgress.fmtM3(delta)} m³)',
-                style: theme.textTheme.bodySmall?.copyWith(color: color),
-              ),
-              if (note.detail.isNotEmpty) ...[
-                const SizedBox(height: 4),
-                Text(
-                  note.detail,
-                  style: theme.textTheme.bodySmall?.copyWith(
-                    color: AppColors.cardTextSecondary,
-                  ),
-                ),
-              ],
             ],
           );
         },

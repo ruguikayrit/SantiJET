@@ -25,7 +25,6 @@ class HomeScreen extends ConsumerWidget {
     final progress = ref.watch(projectProgressProvider);
     final todayPours = ref.watch(todayPoursProvider);
     final orders = ref.watch(activeOrdersProvider);
-    final variance = ref.watch(activeVarianceProvider);
     final today = AppDate.format(AppDate.today());
     final todayOrdered = orders
         .where((o) => o.plannedDate == today)
@@ -217,13 +216,6 @@ class HomeScreen extends ConsumerWidget {
                             ),
                           ],
                         ),
-                        if (variance.isNotEmpty) ...[
-                          const SizedBox(height: AppSpacing.xs),
-                          Text(
-                            '${variance.length} metraj fark açıklaması kayıtlı',
-                            style: Theme.of(context).textTheme.labelSmall,
-                          ),
-                        ],
                       ],
                     ),
                   ),
@@ -235,14 +227,6 @@ class HomeScreen extends ConsumerWidget {
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.stretch,
                       children: [
-                        Text(
-                          'Laboratuvar basınç dayanım raporu özeti',
-                          style: Theme.of(context).textTheme.labelSmall?.copyWith(
-                                color: AppColors.cardTextMuted,
-                                height: 1.2,
-                              ),
-                        ),
-                        const SizedBox(height: AppSpacing.xs),
                         for (final group in ConcreteElementGroup.values) ...[
                           if (group != ConcreteElementGroup.values.first)
                             const SizedBox(height: 6),
