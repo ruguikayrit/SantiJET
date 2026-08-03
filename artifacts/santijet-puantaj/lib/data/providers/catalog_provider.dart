@@ -14,6 +14,10 @@ class CatalogNotifier extends StateNotifier<List<String>> {
   final Box _box;
   final String _key;
 
+  static const _legacyAlciAsma = 'Alçı / Asma Tavan';
+  static const _alciSiva = 'Alçı Sıva';
+  static const _asmaTavan = 'Asma Tavan';
+
   static List<String> _load(Box box, String key, List<String> defaults) {
     final raw = box.get(key);
     if (raw is String && raw.isNotEmpty) {
@@ -24,11 +28,36 @@ class CatalogNotifier extends StateNotifier<List<String>> {
               .map((e) => e.toString().trim())
               .where((e) => e.isNotEmpty)
               .toList();
-          if (list.isNotEmpty) return list;
+          if (list.isNotEmpty) {
+            final migrated = key == 'catalog_teams'
+                ? _migrateAlciAsmaTeams(list)
+                : list;
+            if (migrated != list) {
+              box.put(key, jsonEncode(migrated));
+            }
+            return migrated;
+          }
         }
       } catch (_) {}
     }
     return List<String>.from(defaults);
+  }
+
+  /// Eski birleşik ekip adını ayrı ekiple değiştirir.
+  static List<String> _migrateAlciAsmaTeams(List<String> list) {
+    if (!list.any((e) => e == _legacyAlciAsma)) return list;
+    final next = <String>[
+      for (final e in list)
+        if (e != _legacyAlciAsma) e,
+    ];
+    if (!next.any((e) => e.toLowerCase() == _alciSiva.toLowerCase())) {
+      next.add(_alciSiva);
+    }
+    if (!next.any((e) => e.toLowerCase() == _asmaTavan.toLowerCase())) {
+      next.add(_asmaTavan);
+    }
+    next.sort((a, b) => a.compareTo(b));
+    return next;
   }
 
   void _persist() => _box.put(_key, jsonEncode(state));

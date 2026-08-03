@@ -9,6 +9,7 @@ import '../../core/theme/app_spacing.dart';
 import '../../core/utils/id_gen.dart';
 import '../../data/providers/app_data_provider.dart';
 import '../../data/providers/catalog_provider.dart';
+import '../../data/providers/company_provider.dart';
 import '../../domain/entities/person.dart';
 
 /// Personel listesi — aktif projeye özel.
@@ -248,11 +249,114 @@ class _PersonEditorSheetState extends ConsumerState<_PersonEditorSheet> {
     super.dispose();
   }
 
+  /// Firma Bilgileri + proje firmaları + mevcut personel firmaları.
+  List<String> _registeredCompanies() {
+    final names = <String>{};
+    final companyInfo = ref.read(companyInfoProvider).name.trim();
+    if (companyInfo.isNotEmpty) names.add(companyInfo);
+    for (final p in ref.read(projectsProvider)) {
+      final c = p.company.trim();
+      if (c.isNotEmpty) names.add(c);
+    }
+    for (final p in ref.read(personnelProvider)) {
+      final c = p.company.trim();
+      if (c.isNotEmpty) names.add(c);
+    }
+    final list = names.toList()
+      ..sort((a, b) => a.toLowerCase().compareTo(b.toLowerCase()));
+    return list;
+  }
+
+  Future<void> _pickCompany() async {
+    final companies = _registeredCompanies();
+    final selected = await showModalBottomSheet<String>(
+      context: context,
+      showDragHandle: true,
+      builder: (ctx) {
+        final theme = Theme.of(ctx);
+        return SafeArea(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              Padding(
+                padding: const EdgeInsets.fromLTRB(
+                  AppSpacing.md,
+                  0,
+                  AppSpacing.md,
+                  AppSpacing.sm,
+                ),
+                child: Text(
+                  'Kayıtlı firmalar',
+                  style: theme.textTheme.titleMedium?.copyWith(
+                    fontWeight: FontWeight.w700,
+                  ),
+                ),
+              ),
+              if (companies.isEmpty)
+                Padding(
+                  padding: const EdgeInsets.all(AppSpacing.md),
+                  child: Text(
+                    'Henüz kayıtlı firma yok.\n'
+                    'Ayarlar → Yönetim → Firma Bilgileri veya proje firma adından eklenir.',
+                    style: theme.textTheme.bodyMedium,
+                  ),
+                )
+              else
+                ConstrainedBox(
+                  constraints: BoxConstraints(
+                    maxHeight: MediaQuery.sizeOf(ctx).height * 0.45,
+                  ),
+                  child: ListView.separated(
+                    shrinkWrap: true,
+                    itemCount: companies.length,
+                    separatorBuilder: (_, __) => const Divider(height: 1),
+                    itemBuilder: (context, i) {
+                      final name = companies[i];
+                      final selected = _company.text.trim() == name;
+                      return ListTile(
+                        title: Text(name),
+                        trailing: selected
+                            ? Icon(
+                                Icons.check,
+                                color: theme.colorScheme.primary,
+                              )
+                            : null,
+                        onTap: () => Navigator.pop(ctx, name),
+                      );
+                    },
+                  ),
+                ),
+              Padding(
+                padding: const EdgeInsets.fromLTRB(
+                  AppSpacing.md,
+                  AppSpacing.sm,
+                  AppSpacing.md,
+                  AppSpacing.md,
+                ),
+                child: TextButton(
+                  onPressed: () => Navigator.pop(ctx, ''),
+                  child: const Text('Temizle'),
+                ),
+              ),
+            ],
+          ),
+        );
+      },
+    );
+    if (!mounted || selected == null) return;
+    setState(() => _company.text = selected);
+  }
+
   @override
   Widget build(BuildContext context) {
     final bottom = MediaQuery.viewInsetsOf(context).bottom;
     final professions = ref.watch(professionsProvider);
     final teams = ref.watch(teamsProvider);
+    // Firma listesi değişince alan yeniden çizilsin.
+    ref.watch(companyInfoProvider);
+    ref.watch(projectsProvider);
+    ref.watch(personnelProvider);
     final professionItems = [
       ...professions,
       if (_profession.isNotEmpty && !professions.contains(_profession))
@@ -313,7 +417,13 @@ class _PersonEditorSheetState extends ConsumerState<_PersonEditorSheet> {
             const SizedBox(height: AppSpacing.sm),
             TextField(
               controller: _company,
-              decoration: const InputDecoration(labelText: 'Firma'),
+              readOnly: true,
+              onTap: _pickCompany,
+              decoration: const InputDecoration(
+                labelText: 'Firma',
+                hintText: 'Kayıtlı firmadan seçin',
+                suffixIcon: Icon(Icons.arrow_drop_down),
+              ),
             ),
             const SizedBox(height: AppSpacing.sm),
             TextField(
