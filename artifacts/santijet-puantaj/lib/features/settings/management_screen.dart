@@ -8,14 +8,16 @@ import '../../core/theme/app_colors.dart';
 import '../../core/theme/app_spacing.dart';
 import '../../data/providers/app_data_provider.dart';
 import '../../data/providers/catalog_provider.dart';
+import '../../data/providers/company_provider.dart';
 
-/// Personel / Meslekler / Ekipler yönetimi — Ayarlar alt sayfası.
+/// Firma / Personel / Meslekler / Ekipler yönetimi — Ayarlar alt sayfası.
 class ManagementScreen extends ConsumerWidget {
   const ManagementScreen({super.key});
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final active = ref.watch(activeProjectProvider);
+    final company = ref.watch(companyInfoProvider);
     final peopleCount = ref.watch(projectPersonnelProvider).length;
     final professionCount = ref.watch(professionsProvider).length;
     final teamCount = ref.watch(teamsProvider).length;
@@ -32,6 +34,14 @@ class ManagementScreen extends ConsumerWidget {
       body: ListView(
         padding: const EdgeInsets.all(AppSpacing.md),
         children: [
+          _SettingsTile(
+            icon: Icons.business_outlined,
+            title: 'Firma Bilgileri',
+            subtitle: company.name.trim().isEmpty
+                ? 'Firma adı, vergi no, iletişim'
+                : company.name.trim(),
+            onTap: () => context.push(AppRoutes.firma),
+          ),
           _SettingsTile(
             icon: Icons.groups_outlined,
             title: 'Personel',

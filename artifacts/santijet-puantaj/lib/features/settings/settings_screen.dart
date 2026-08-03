@@ -12,6 +12,7 @@ import '../../core/theme/theme_mode_provider.dart';
 import '../../data/providers/app_data_provider.dart';
 import '../../data/providers/backup_provider.dart';
 import '../../data/providers/catalog_provider.dart';
+import '../../data/providers/company_provider.dart';
 import '../../data/providers/demo_seed_provider.dart';
 import '../../data/providers/production_provider.dart';
 import '../../data/providers/verim_provider.dart';
@@ -250,6 +251,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
         .resetToDefaults(ProfessionCatalog.defaultTradeGroups);
     ref.read(activeProjectIdProvider.notifier).set(null);
     ref.read(verimProvider.notifier).clear();
+    ref.read(companyInfoProvider.notifier).clear();
 
     if (!mounted) return;
     ScaffoldMessenger.of(this.context).showSnackBar(
