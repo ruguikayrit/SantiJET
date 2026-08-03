@@ -578,7 +578,6 @@ class _PersonTile extends StatelessWidget {
     final meta = [
       if (p.profession.isNotEmpty) p.profession,
       if (p.team.isNotEmpty) p.team,
-      if (p.tc.isNotEmpty) 'TC ${p.tc}',
     ].join(' · ');
 
     return GestureDetector(
@@ -618,23 +617,9 @@ class _PersonTile extends StatelessWidget {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Text(
-                    '$index. ${p.name}',
-                    style: theme.textTheme.titleMedium,
-                  ),
+                  Text(p.name, style: theme.textTheme.titleMedium),
                   if (meta.isNotEmpty)
                     Text(meta, style: theme.textTheme.bodySmall),
-                  if (p.phone.isNotEmpty ||
-                      p.hireDate.isNotEmpty ||
-                      p.leaveDate.isNotEmpty)
-                    Text(
-                      [
-                        if (p.phone.isNotEmpty) p.phone,
-                        if (p.hireDate.isNotEmpty) 'Giriş ${p.hireDate}',
-                        if (p.leaveDate.isNotEmpty) 'Çıkış ${p.leaveDate}',
-                      ].join(' · '),
-                      style: theme.textTheme.labelSmall,
-                    ),
                 ],
               ),
             ),
