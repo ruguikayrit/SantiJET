@@ -234,21 +234,8 @@ class SJCard extends StatelessWidget {
             ),
     );
 
-    if (useDarkContrast) {
-      content = Theme(
-        data: darkContrastTheme(theme),
-        child: IconTheme.merge(
-          data: const IconThemeData(color: AppColors.darkTextSecondary),
-          child: DefaultTextStyle.merge(
-            style: const TextStyle(
-              color: AppColors.darkTextPrimary,
-              decoration: TextDecoration.none,
-            ),
-            child: content,
-          ),
-        ),
-      );
-    } else if (useLightContrast) {
+    // Pro açık kart öncelikli — koyu chrome’da koyu mürekkep.
+    if (useLightContrast) {
       content = Theme(
         data: lightContrastTheme(theme),
         child: IconTheme.merge(
@@ -256,6 +243,20 @@ class SJCard extends StatelessWidget {
           child: DefaultTextStyle.merge(
             style: const TextStyle(
               color: AppColors.lightTextPrimary,
+              decoration: TextDecoration.none,
+            ),
+            child: content,
+          ),
+        ),
+      );
+    } else if (useDarkContrast) {
+      content = Theme(
+        data: darkContrastTheme(theme),
+        child: IconTheme.merge(
+          data: const IconThemeData(color: AppColors.darkTextSecondary),
+          child: DefaultTextStyle.merge(
+            style: const TextStyle(
+              color: AppColors.darkTextPrimary,
               decoration: TextDecoration.none,
             ),
             child: content,

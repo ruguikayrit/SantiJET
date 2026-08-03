@@ -44,7 +44,8 @@ abstract final class AppColors {
   static bool get useDarkChrome => isDark || isSantijetPro;
 
   /// Özet / brifing / uyarı kartlarında koyu yüzey kullan.
-  static bool get useDarkCards => isDark || isSantijet;
+  /// ŞantiJET Pro her zaman açık kart + koyu mürekkep (koyu chrome üzerinde).
+  static bool get useDarkCards => isSantijet || (isDark && !isSantijetPro);
 
   // —— Koyu sabitler ——
   static const darkCanvas = Color(0xFF05070A);

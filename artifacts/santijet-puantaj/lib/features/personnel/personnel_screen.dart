@@ -214,29 +214,12 @@ class _PersonnelScreenState extends ConsumerState<PersonnelScreen> {
           : null,
       floatingActionButton: _selectionMode
           ? null
-          : Column(
-              mainAxisSize: MainAxisSize.min,
-              crossAxisAlignment: CrossAxisAlignment.end,
-              children: [
-                FloatingActionButton.extended(
-                  heroTag: 'personnel_add',
-                  onPressed: () =>
-                      _openEditor(context, ref, projectId: project.id),
-                  icon: const Icon(Icons.person_add_alt_1),
-                  label: const Text('Ekle'),
-                ),
-                const SizedBox(height: AppSpacing.sm),
-                FloatingActionButton.extended(
-                  heroTag: 'personnel_import',
-                  onPressed: () => _importFromFile(
-                    context,
-                    ref,
-                    projectId: project.id,
-                  ),
-                  icon: const Icon(Icons.upload_file_outlined),
-                  label: const Text('Excel’den içe aktar'),
-                ),
-              ],
+          : FloatingActionButton.extended(
+              heroTag: 'personnel_add',
+              onPressed: () =>
+                  _openEditor(context, ref, projectId: project.id),
+              icon: const Icon(Icons.person_add_alt_1),
+              label: const Text('Ekle'),
             ),
       body: SafeArea(
         bottom: false,
@@ -257,7 +240,11 @@ class _PersonnelScreenState extends ConsumerState<PersonnelScreen> {
                     Expanded(
                       child: Text(
                         project.name,
-                        style: theme.textTheme.labelMedium,
+                        style: theme.textTheme.labelMedium?.copyWith(
+                          color: AppColors.useDarkChrome
+                              ? AppColors.darkTextSecondary
+                              : AppColors.lightTextSecondary,
+                        ),
                         overflow: TextOverflow.ellipsis,
                       ),
                     ),
@@ -297,7 +284,7 @@ class _PersonnelScreenState extends ConsumerState<PersonnelScreen> {
                         AppSpacing.md,
                         AppSpacing.sm,
                         AppSpacing.md,
-                        160,
+                        88,
                       ),
                       itemCount: groups.length,
                       itemBuilder: (context, gi) {
@@ -602,7 +589,6 @@ class _PersonTile extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final theme = Theme.of(context);
     final p = person;
     final meta = [
       if (p.profession.isNotEmpty) p.profession,
@@ -614,57 +600,63 @@ class _PersonTile extends StatelessWidget {
       child: SJCard(
         onTap: onTap,
         selected: selected,
-        child: Row(
-          children: [
-            if (selectionMode)
-              Padding(
-                padding: const EdgeInsets.only(right: AppSpacing.sm),
-                child: Icon(
-                  selected
-                      ? Icons.check_circle
-                      : Icons.radio_button_unchecked,
-                  color: selected
-                      ? theme.colorScheme.primary
-                      : theme.colorScheme.onSurface.withValues(alpha: 0.4),
-                ),
-              )
-            else
-              CircleAvatar(
-                backgroundColor:
-                    theme.colorScheme.primary.withValues(alpha: 0.15),
-                child: Text(
-                  '$index',
-                  style: TextStyle(
-                    color: theme.colorScheme.primary,
-                    fontWeight: FontWeight.w700,
-                    fontSize: index >= 100 ? 11 : 14,
+        // Kart kontrast teması — Theme.of dış context'ten alınmamalı.
+        child: Builder(
+          builder: (context) {
+            final theme = Theme.of(context);
+            return Row(
+              children: [
+                if (selectionMode)
+                  Padding(
+                    padding: const EdgeInsets.only(right: AppSpacing.sm),
+                    child: Icon(
+                      selected
+                          ? Icons.check_circle
+                          : Icons.radio_button_unchecked,
+                      color: selected
+                          ? theme.colorScheme.primary
+                          : theme.colorScheme.onSurface.withValues(alpha: 0.4),
+                    ),
+                  )
+                else
+                  CircleAvatar(
+                    backgroundColor:
+                        theme.colorScheme.primary.withValues(alpha: 0.15),
+                    child: Text(
+                      '$index',
+                      style: TextStyle(
+                        color: theme.colorScheme.primary,
+                        fontWeight: FontWeight.w700,
+                        fontSize: index >= 100 ? 11 : 14,
+                      ),
+                    ),
+                  ),
+                if (!selectionMode) const SizedBox(width: AppSpacing.sm),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(p.name, style: theme.textTheme.titleMedium),
+                      if (meta.isNotEmpty)
+                        Text(meta, style: theme.textTheme.bodySmall),
+                    ],
                   ),
                 ),
-              ),
-            if (!selectionMode) const SizedBox(width: AppSpacing.sm),
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(p.name, style: theme.textTheme.titleMedium),
-                  if (meta.isNotEmpty)
-                    Text(meta, style: theme.textTheme.bodySmall),
-                ],
-              ),
-            ),
-            if (!p.active)
-              Text(
-                'Pasif',
-                style: theme.textTheme.labelSmall?.copyWith(
-                  color: theme.colorScheme.error,
-                ),
-              ),
-            if (!selectionMode)
-              IconButton(
-                icon: const Icon(Icons.delete_outline),
-                onPressed: onDelete,
-              ),
-          ],
+                if (!p.active)
+                  Text(
+                    'Pasif',
+                    style: theme.textTheme.labelSmall?.copyWith(
+                      color: theme.colorScheme.error,
+                    ),
+                  ),
+                if (!selectionMode)
+                  IconButton(
+                    icon: const Icon(Icons.delete_outline),
+                    onPressed: onDelete,
+                  ),
+              ],
+            );
+          },
         ),
       ),
     );

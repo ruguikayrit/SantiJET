@@ -1204,13 +1204,6 @@ class _ImalatDetailSheet extends ConsumerWidget {
               ),
             ),
             const SizedBox(height: AppSpacing.sm),
-            Text(
-              'Keşif: ${_fmt(p.completedQty)} / '
-              '${_fmt(p.plannedQty)} ${p.unit}'
-              '${p.plannedDays > 0 ? ' · Süre: ${p.workedDays}/${p.plannedDays} gün' : ''}',
-              style: theme.textTheme.titleMedium,
-            ),
-            const SizedBox(height: AppSpacing.sm),
             _ImalatDualProgress(production: p, dense: false),
             const SizedBox(height: AppSpacing.md),
             Row(

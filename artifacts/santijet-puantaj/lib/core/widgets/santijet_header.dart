@@ -206,13 +206,15 @@ class _PageBrandHeader extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    // Açık chrome: siyah şerit + beyaz yazı. Koyu chrome: koyu zemin + açık yazı.
     final onDarkBand = Theme.of(context).brightness == Brightness.light;
+    final onDarkChrome = onDarkBand || AppColors.useDarkChrome;
 
     final productLabelStyle = AppTypography.labelSmall.copyWith(
       fontSize: AppTypography.scale * 11,
       letterSpacing: 0.9,
       fontWeight: FontWeight.w700,
-      color: onDarkBand
+      color: onDarkChrome
           ? Colors.white.withValues(alpha: 0.62)
           : AppColors.inkMuted,
       height: 1.0,
@@ -222,7 +224,7 @@ class _PageBrandHeader extends StatelessWidget {
       fontSize: AppTypography.scale * 18,
       fontWeight: FontWeight.w700,
       letterSpacing: -0.2,
-      color: onDarkBand ? Colors.white : AppColors.inkPrimary,
+      color: onDarkChrome ? Colors.white : AppColors.inkPrimary,
       height: 1.15,
     );
 
@@ -273,7 +275,7 @@ class _PageBrandHeader extends StatelessWidget {
             showNotification: showNotification,
             showAvatar: showAvatar,
             avatarInitial: avatarInitial,
-            onDarkBand: onDarkBand,
+            onDarkBand: onDarkChrome,
           ),
         ],
       ),

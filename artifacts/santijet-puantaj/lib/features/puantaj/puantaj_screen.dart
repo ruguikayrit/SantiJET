@@ -191,7 +191,8 @@ class _PuantajScreenState extends ConsumerState<PuantajScreen> {
                           padding: const EdgeInsets.symmetric(vertical: 10),
                           decoration: BoxDecoration(
                             color: _mode == m
-                                ? AppColors.electricBlue
+                                // Dışa aktarma dönem seçicisi ile aynı dolgu.
+                                ? theme.colorScheme.secondary
                                 : Colors.transparent,
                             borderRadius: AppRadii.md,
                           ),
@@ -1300,9 +1301,9 @@ class _PuantajExportSheetState extends State<_PuantajExportSheet> {
         const SizedBox(height: AppSpacing.xs),
         SegmentedButton<PuantajReportPeriod>(
           style: SegmentedButton.styleFrom(
-            // Ana dönem seçici (Günlük/Haftalık/Aylık) ile aynı yazı renkleri.
             foregroundColor: theme.colorScheme.onSurfaceVariant,
             selectedForegroundColor: Colors.white,
+            selectedBackgroundColor: theme.colorScheme.secondary,
           ),
           segments: const [
             ButtonSegment(
