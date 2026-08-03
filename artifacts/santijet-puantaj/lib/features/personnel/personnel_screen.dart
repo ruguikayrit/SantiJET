@@ -87,27 +87,43 @@ class _PersonnelScreenState extends ConsumerState<PersonnelScreen> {
     setState(() {
       if (_selectedIds.contains(id)) {
         _selectedIds.remove(id);
+        if (_selectedIds.isEmpty) _selectionMode = false;
       } else {
+        _selectionMode = true;
         _selectedIds.add(id);
       }
     });
   }
 
-  void _selectAllInGroup(List<Person> group) {
+  void _toggleSelectGroup(List<Person> group) {
     setState(() {
-      _selectionMode = true;
-      for (final p in group) {
-        _selectedIds.add(p.id);
+      final ids = group.map((p) => p.id).toList();
+      final allSelected =
+          ids.isNotEmpty && ids.every(_selectedIds.contains);
+      if (allSelected) {
+        _selectedIds.removeAll(ids);
+        if (_selectedIds.isEmpty) _selectionMode = false;
+      } else {
+        _selectionMode = true;
+        _selectedIds.addAll(ids);
       }
     });
   }
 
   void _selectAll(List<Person> people) {
     setState(() {
-      _selectionMode = true;
-      _selectedIds
-        ..clear()
-        ..addAll(people.map((p) => p.id));
+      final ids = people.map((p) => p.id).toList();
+      final allSelected =
+          ids.isNotEmpty && ids.every(_selectedIds.contains);
+      if (allSelected) {
+        _selectedIds.clear();
+        _selectionMode = false;
+      } else {
+        _selectionMode = true;
+        _selectedIds
+          ..clear()
+          ..addAll(ids);
+      }
     });
   }
 
@@ -284,13 +300,14 @@ class _PersonnelScreenState extends ConsumerState<PersonnelScreen> {
                             .where((p) => _selectedIds.contains(p.id))
                             .length,
                         onToggle: () => _toggleCompany(key),
-                        onSelectGroup: () => _selectAllInGroup(g.people),
+                        onSelectGroup: () => _toggleSelectGroup(g.people),
                       ),
                       if (expanded) ...[
                         const SizedBox(height: AppSpacing.sm),
                         for (var i = 0; i < g.people.length; i++) ...[
                           if (i > 0) const SizedBox(height: AppSpacing.sm),
                           _PersonTile(
+                            index: i + 1,
                             person: g.people[i],
                             selectionMode: _selectionMode,
                             selected: _selectedIds.contains(g.people[i].id),
@@ -511,13 +528,17 @@ class _CompanyHeader extends StatelessWidget {
                 ),
               ),
               IconButton(
-                tooltip: 'Grubu seç',
+                tooltip: selectedInGroup == count && count > 0
+                    ? 'Grup seçimini kaldır'
+                    : 'Grubu seç',
                 visualDensity: VisualDensity.compact,
                 onPressed: onSelectGroup,
                 icon: Icon(
                   selectedInGroup == count && count > 0
                       ? Icons.check_box
-                      : Icons.check_box_outline_blank,
+                      : selectedInGroup > 0
+                          ? Icons.indeterminate_check_box
+                          : Icons.check_box_outline_blank,
                   size: 22,
                   color: accent,
                 ),
@@ -532,6 +553,7 @@ class _CompanyHeader extends StatelessWidget {
 
 class _PersonTile extends StatelessWidget {
   const _PersonTile({
+    required this.index,
     required this.person,
     required this.selectionMode,
     required this.selected,
@@ -540,6 +562,8 @@ class _PersonTile extends StatelessWidget {
     required this.onDelete,
   });
 
+  /// Firma içi sıra numarası (1’den başlar).
+  final int index;
   final Person person;
   final bool selectionMode;
   final bool selected;
@@ -581,10 +605,11 @@ class _PersonTile extends StatelessWidget {
                 backgroundColor:
                     theme.colorScheme.primary.withValues(alpha: 0.15),
                 child: Text(
-                  p.name.isNotEmpty ? p.name[0].toUpperCase() : '?',
+                  '$index',
                   style: TextStyle(
                     color: theme.colorScheme.primary,
                     fontWeight: FontWeight.w700,
+                    fontSize: index >= 100 ? 11 : 14,
                   ),
                 ),
               ),
@@ -593,7 +618,10 @@ class _PersonTile extends StatelessWidget {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Text(p.name, style: theme.textTheme.titleMedium),
+                  Text(
+                    '$index. ${p.name}',
+                    style: theme.textTheme.titleMedium,
+                  ),
                   if (meta.isNotEmpty)
                     Text(meta, style: theme.textTheme.bodySmall),
                   if (p.phone.isNotEmpty ||
