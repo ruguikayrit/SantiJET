@@ -151,6 +151,16 @@ class PersonnelNotifier extends StateNotifier<List<Person>> {
     return person;
   }
 
+  void addAll(List<Person> drafts) {
+    if (drafts.isEmpty) return;
+    state = [
+      ...state,
+      for (final d in drafts)
+        d.id.trim().isEmpty ? d.copyWith(id: IdGen.make('per')) : d,
+    ];
+    _persist();
+  }
+
   void update(Person person) {
     state = [
       for (final p in state)

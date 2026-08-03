@@ -13,6 +13,9 @@ class Person extends Equatable {
     this.company = '',
     this.team = '',
     this.address = '',
+    this.tc = '',
+    this.hireDate = '',
+    this.leaveDate = '',
     this.active = true,
   });
 
@@ -27,6 +30,16 @@ class Person extends Equatable {
   final String company;
   final String team;
   final String address;
+
+  /// T.C. kimlik no (opsiyonel).
+  final String tc;
+
+  /// İşe giriş tarihi — yyyy-MM-dd.
+  final String hireDate;
+
+  /// İşten çıkış tarihi — yyyy-MM-dd; doluysa genelde pasif.
+  final String leaveDate;
+
   final bool active;
 
   Person copyWith({
@@ -38,6 +51,9 @@ class Person extends Equatable {
     String? company,
     String? team,
     String? address,
+    String? tc,
+    String? hireDate,
+    String? leaveDate,
     bool? active,
   }) {
     return Person(
@@ -49,6 +65,9 @@ class Person extends Equatable {
       company: company ?? this.company,
       team: team ?? this.team,
       address: address ?? this.address,
+      tc: tc ?? this.tc,
+      hireDate: hireDate ?? this.hireDate,
+      leaveDate: leaveDate ?? this.leaveDate,
       active: active ?? this.active,
     );
   }
@@ -62,6 +81,9 @@ class Person extends Equatable {
         'company': company,
         'team': team,
         'address': address,
+        'tc': tc,
+        'hireDate': hireDate,
+        'leaveDate': leaveDate,
         'active': active,
       };
 
@@ -74,6 +96,9 @@ class Person extends Equatable {
         company: json['company'] as String? ?? '',
         team: json['team'] as String? ?? '',
         address: json['address'] as String? ?? '',
+        tc: json['tc'] as String? ?? '',
+        hireDate: json['hireDate'] as String? ?? '',
+        leaveDate: json['leaveDate'] as String? ?? '',
         active: json['active'] as bool? ?? true,
       );
 
@@ -87,6 +112,9 @@ class Person extends Equatable {
         company,
         team,
         address,
+        tc,
+        hireDate,
+        leaveDate,
         active,
       ];
 }

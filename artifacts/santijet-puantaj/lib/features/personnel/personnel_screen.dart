@@ -1,15 +1,19 @@
+import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
+import '../../core/design_system/sj_button.dart';
 import '../../core/design_system/sj_card.dart';
 import '../../core/design_system/sj_empty_state.dart';
 import '../../core/routing/app_routes.dart';
+import '../../core/theme/app_colors.dart';
 import '../../core/theme/app_spacing.dart';
 import '../../core/utils/id_gen.dart';
 import '../../data/providers/app_data_provider.dart';
 import '../../data/providers/catalog_provider.dart';
 import '../../data/providers/company_provider.dart';
+import '../../data/services/personnel_import_service.dart';
 import '../../domain/entities/person.dart';
 
 /// Personel listesi — aktif projeye özel.
@@ -49,6 +53,15 @@ class PersonnelScreen extends ConsumerWidget {
           onPressed: () => context.go(AppRoutes.yonetim),
         ),
         actions: [
+          IconButton(
+            tooltip: 'PDF / Excel’den veri al',
+            onPressed: () => _importFromFile(
+              context,
+              ref,
+              projectId: project.id,
+            ),
+            icon: const Icon(Icons.upload_file_outlined),
+          ),
           Padding(
             padding: const EdgeInsets.only(right: AppSpacing.sm),
             child: Center(
@@ -57,17 +70,35 @@ class PersonnelScreen extends ConsumerWidget {
           ),
         ],
       ),
-      floatingActionButton: FloatingActionButton.extended(
-        onPressed: () => _openEditor(context, ref, projectId: project.id),
-        icon: const Icon(Icons.person_add_alt_1),
-        label: const Text('Ekle'),
+      floatingActionButton: Column(
+        mainAxisSize: MainAxisSize.min,
+        crossAxisAlignment: CrossAxisAlignment.end,
+        children: [
+          FloatingActionButton.extended(
+            heroTag: 'personnel_import',
+            onPressed: () => _importFromFile(
+              context,
+              ref,
+              projectId: project.id,
+            ),
+            icon: const Icon(Icons.upload_file_outlined),
+            label: const Text('PDF / Excel’den veri al'),
+          ),
+          const SizedBox(height: AppSpacing.sm),
+          FloatingActionButton.extended(
+            heroTag: 'personnel_add',
+            onPressed: () => _openEditor(context, ref, projectId: project.id),
+            icon: const Icon(Icons.person_add_alt_1),
+            label: const Text('Ekle'),
+          ),
+        ],
       ),
       body: people.isEmpty
           ? SJEmptyState(
               title: 'Bu projede personel yok',
               message:
-                  '${project.name} için personel ekleyin. '
-                  'Diğer projelerin personeli burada görünmez.',
+                  '${project.name} için personel ekleyin veya '
+                  'PDF / Excel’den liste yükleyin.',
               icon: Icons.groups_outlined,
               actionLabel: 'Personel Ekle',
               onAction: () =>
@@ -78,7 +109,7 @@ class PersonnelScreen extends ConsumerWidget {
                 AppSpacing.md,
                 AppSpacing.sm,
                 AppSpacing.md,
-                88,
+                160,
               ),
               itemCount: people.length,
               separatorBuilder: (_, __) =>
@@ -86,9 +117,10 @@ class PersonnelScreen extends ConsumerWidget {
               itemBuilder: (context, index) {
                 final p = people[index];
                 final meta = [
-                  if (p.profession.isNotEmpty) p.profession,
                   if (p.company.isNotEmpty) p.company,
+                  if (p.profession.isNotEmpty) p.profession,
                   if (p.team.isNotEmpty) p.team,
+                  if (p.tc.isNotEmpty) 'TC ${p.tc}',
                 ].join(' · ');
                 return SJCard(
                   onTap: () => _openEditor(
@@ -126,9 +158,16 @@ class PersonnelScreen extends ConsumerWidget {
                                 ),
                                 if (meta.isNotEmpty)
                                   Text(meta, style: theme.textTheme.bodySmall),
-                                if (p.phone.isNotEmpty)
+                                if (p.phone.isNotEmpty ||
+                                    p.hireDate.isNotEmpty)
                                   Text(
-                                    p.phone,
+                                    [
+                                      if (p.phone.isNotEmpty) p.phone,
+                                      if (p.hireDate.isNotEmpty)
+                                        'Giriş ${p.hireDate}',
+                                      if (p.leaveDate.isNotEmpty)
+                                        'Çıkış ${p.leaveDate}',
+                                    ].join(' · '),
                                     style: theme.textTheme.labelSmall,
                                   ),
                               ],
@@ -180,6 +219,75 @@ class PersonnelScreen extends ConsumerWidget {
     );
   }
 
+  Future<void> _importFromFile(
+    BuildContext context,
+    WidgetRef ref, {
+    required String projectId,
+  }) async {
+    final proceed = await showModalBottomSheet<bool>(
+      context: context,
+      isScrollControlled: true,
+      showDragHandle: true,
+      builder: (ctx) => const _PersonnelImportPreviewSheet(),
+    );
+    if (proceed != true || !context.mounted) return;
+
+    final picked = await FilePicker.platform.pickFiles(
+      type: FileType.custom,
+      allowedExtensions: PersonnelImportService.allowedExtensions,
+      withData: true,
+    );
+    if (picked == null || picked.files.isEmpty || !context.mounted) return;
+    final file = picked.files.first;
+    final bytes = file.bytes;
+    if (bytes == null || bytes.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Dosya okunamadı.')),
+      );
+      return;
+    }
+
+    try {
+      final rows = PersonnelImportService().parseBytes(
+        bytes: bytes,
+        fileName: file.name,
+      );
+      final confirm = await showModalBottomSheet<bool>(
+        context: context,
+        isScrollControlled: true,
+        showDragHandle: true,
+        builder: (ctx) => _PersonnelImportConfirmSheet(rows: rows),
+      );
+      if (confirm != true || !context.mounted) return;
+
+      final people = [for (final r in rows) r.toPerson(projectId)];
+      ref.read(personnelProvider.notifier).addAll(people);
+
+      // Kataloglara yeni meslek / ekip ekle
+      final professions = ref.read(professionsProvider.notifier);
+      final teams = ref.read(teamsProvider.notifier);
+      for (final p in people) {
+        if (p.profession.isNotEmpty) professions.add(p.profession);
+        if (p.team.isNotEmpty) teams.add(p.team);
+      }
+
+      if (!context.mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('${people.length} personel yüklendi')),
+      );
+    } on PersonnelImportException catch (e) {
+      if (!context.mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(e.message)),
+      );
+    } catch (e) {
+      if (!context.mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('İçe aktarma başarısız: $e')),
+      );
+    }
+  }
+
   Future<void> _openEditor(
     BuildContext context,
     WidgetRef ref, {
@@ -205,6 +313,179 @@ class PersonnelScreen extends ConsumerWidget {
   }
 }
 
+/// Yüklemeden önce örnek sütun / satır önizlemesi.
+class _PersonnelImportPreviewSheet extends StatelessWidget {
+  const _PersonnelImportPreviewSheet();
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    return SafeArea(
+      child: Padding(
+        padding: const EdgeInsets.fromLTRB(
+          AppSpacing.md,
+          0,
+          AppSpacing.md,
+          AppSpacing.md,
+        ),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            Text(
+              'PDF / Excel’den veri al',
+              style: theme.textTheme.titleLarge?.copyWith(
+                fontWeight: FontWeight.w700,
+              ),
+            ),
+            const SizedBox(height: AppSpacing.sm),
+            Text(
+              'Yüklemeden önce örnek liste formatı. Sütunlar yalnızca bunlar '
+              'olabilir; diğer sütunlar yok sayılır.',
+              style: theme.textTheme.bodyMedium,
+            ),
+            const SizedBox(height: AppSpacing.md),
+            Container(
+              decoration: BoxDecoration(
+                border: Border.all(color: theme.dividerColor),
+                borderRadius: BorderRadius.circular(8),
+                color: AppColors.canvas,
+              ),
+              child: SingleChildScrollView(
+                scrollDirection: Axis.horizontal,
+                child: DataTable(
+                  headingRowHeight: 36,
+                  dataRowMinHeight: 32,
+                  dataRowMaxHeight: 40,
+                  columnSpacing: 16,
+                  columns: [
+                    for (final h in PersonnelImportSample.headers)
+                      DataColumn(
+                        label: Text(
+                          h,
+                          style: theme.textTheme.labelSmall?.copyWith(
+                            fontWeight: FontWeight.w700,
+                          ),
+                        ),
+                      ),
+                  ],
+                  rows: [
+                    for (final row in PersonnelImportSample.rows)
+                      DataRow(
+                        cells: [
+                          for (final cell in row)
+                            DataCell(
+                              Text(cell, style: theme.textTheme.labelSmall),
+                            ),
+                        ],
+                      ),
+                  ],
+                ),
+              ),
+            ),
+            const SizedBox(height: AppSpacing.sm),
+            Text(
+              'Desteklenen: .xlsx · .xls · .csv · .pdf',
+              style: theme.textTheme.labelSmall,
+            ),
+            const SizedBox(height: AppSpacing.md),
+            SJButton(
+              label: 'Dosya seç ve yükle',
+              icon: Icons.upload_file_outlined,
+              expanded: true,
+              onPressed: () => Navigator.pop(context, true),
+            ),
+            TextButton(
+              onPressed: () => Navigator.pop(context, false),
+              child: const Text('Vazgeç'),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class _PersonnelImportConfirmSheet extends StatelessWidget {
+  const _PersonnelImportConfirmSheet({required this.rows});
+
+  final List<PersonnelImportRow> rows;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    return SafeArea(
+      child: Padding(
+        padding: const EdgeInsets.fromLTRB(
+          AppSpacing.md,
+          0,
+          AppSpacing.md,
+          AppSpacing.md,
+        ),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            Text(
+              '${rows.length} satır bulundu',
+              style: theme.textTheme.titleLarge?.copyWith(
+                fontWeight: FontWeight.w700,
+              ),
+            ),
+            const SizedBox(height: AppSpacing.sm),
+            ConstrainedBox(
+              constraints: BoxConstraints(
+                maxHeight: MediaQuery.sizeOf(context).height * 0.4,
+              ),
+              child: ListView.separated(
+                shrinkWrap: true,
+                itemCount: rows.length.clamp(0, 50),
+                separatorBuilder: (_, __) => const Divider(height: 1),
+                itemBuilder: (context, i) {
+                  final r = rows[i];
+                  return ListTile(
+                    dense: true,
+                    title: Text(r.displayName),
+                    subtitle: Text(
+                      [
+                        if (r.company.isNotEmpty) r.company,
+                        if (r.profession.isNotEmpty) r.profession,
+                        if (r.team.isNotEmpty) r.team,
+                        if (r.phone.isNotEmpty) r.phone,
+                      ].join(' · '),
+                      maxLines: 2,
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                  );
+                },
+              ),
+            ),
+            if (rows.length > 50)
+              Padding(
+                padding: const EdgeInsets.only(top: 4),
+                child: Text(
+                  '… ve ${rows.length - 50} satır daha',
+                  style: theme.textTheme.labelSmall,
+                ),
+              ),
+            const SizedBox(height: AppSpacing.md),
+            SJButton(
+              label: 'İçe aktar',
+              icon: Icons.check,
+              expanded: true,
+              onPressed: () => Navigator.pop(context, true),
+            ),
+            TextButton(
+              onPressed: () => Navigator.pop(context, false),
+              child: const Text('Vazgeç'),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
 class _PersonEditorSheet extends ConsumerStatefulWidget {
   const _PersonEditorSheet({
     required this.projectId,
@@ -223,6 +504,9 @@ class _PersonEditorSheetState extends ConsumerState<_PersonEditorSheet> {
   late final TextEditingController _phone;
   late final TextEditingController _company;
   late final TextEditingController _address;
+  late final TextEditingController _tc;
+  late final TextEditingController _hireDate;
+  late final TextEditingController _leaveDate;
   String _profession = '';
   String _team = '';
   bool _active = true;
@@ -235,6 +519,9 @@ class _PersonEditorSheetState extends ConsumerState<_PersonEditorSheet> {
     _phone = TextEditingController(text: e?.phone ?? '');
     _company = TextEditingController(text: e?.company ?? '');
     _address = TextEditingController(text: e?.address ?? '');
+    _tc = TextEditingController(text: e?.tc ?? '');
+    _hireDate = TextEditingController(text: e?.hireDate ?? '');
+    _leaveDate = TextEditingController(text: e?.leaveDate ?? '');
     _profession = e?.profession ?? '';
     _team = e?.team ?? '';
     _active = e?.active ?? true;
@@ -246,6 +533,9 @@ class _PersonEditorSheetState extends ConsumerState<_PersonEditorSheet> {
     _phone.dispose();
     _company.dispose();
     _address.dispose();
+    _tc.dispose();
+    _hireDate.dispose();
+    _leaveDate.dispose();
     super.dispose();
   }
 
@@ -427,9 +717,31 @@ class _PersonEditorSheetState extends ConsumerState<_PersonEditorSheet> {
             ),
             const SizedBox(height: AppSpacing.sm),
             TextField(
+              controller: _tc,
+              decoration: const InputDecoration(labelText: 'TC'),
+              keyboardType: TextInputType.number,
+            ),
+            const SizedBox(height: AppSpacing.sm),
+            TextField(
               controller: _phone,
               decoration: const InputDecoration(labelText: 'Telefon'),
               keyboardType: TextInputType.phone,
+            ),
+            const SizedBox(height: AppSpacing.sm),
+            TextField(
+              controller: _hireDate,
+              decoration: const InputDecoration(
+                labelText: 'İşe giriş',
+                hintText: 'yyyy-MM-dd',
+              ),
+            ),
+            const SizedBox(height: AppSpacing.sm),
+            TextField(
+              controller: _leaveDate,
+              decoration: const InputDecoration(
+                labelText: 'İşten çıkış',
+                hintText: 'yyyy-MM-dd',
+              ),
             ),
             const SizedBox(height: AppSpacing.sm),
             TextField(
@@ -457,6 +769,9 @@ class _PersonEditorSheetState extends ConsumerState<_PersonEditorSheet> {
                     company: _company.text.trim(),
                     team: _team,
                     address: _address.text.trim(),
+                    tc: _tc.text.trim(),
+                    hireDate: _hireDate.text.trim(),
+                    leaveDate: _leaveDate.text.trim(),
                     active: _active,
                   ),
                 );
