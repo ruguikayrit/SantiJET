@@ -10,36 +10,40 @@ import '../../domain/entities/person.dart';
 class PersonnelImportRow {
   const PersonnelImportRow({
     required this.company,
+    required this.name,
     required this.profession,
     required this.team,
     required this.tc,
     required this.phone,
+    required this.address,
     required this.hireDate,
     required this.leaveDate,
-    required this.address,
   });
 
   final String company;
+  final String name;
   final String profession;
   final String team;
   final String tc;
   final String phone;
+  final String address;
   final String hireDate;
   final String leaveDate;
-  final String address;
 
   bool get isEmpty =>
       company.isEmpty &&
+      name.isEmpty &&
       profession.isEmpty &&
       team.isEmpty &&
       tc.isEmpty &&
       phone.isEmpty &&
+      address.isEmpty &&
       hireDate.isEmpty &&
-      leaveDate.isEmpty &&
-      address.isEmpty;
+      leaveDate.isEmpty;
 
-  /// Görünen ad: TC varsa TC, yoksa telefon / firma.
+  /// Görünen ad: Ad Soyad öncelikli.
   String get displayName {
+    if (name.isNotEmpty) return name;
     if (tc.isNotEmpty) return tc;
     if (phone.isNotEmpty) return phone;
     if (company.isNotEmpty) return company;
@@ -57,9 +61,9 @@ class PersonnelImportRow {
       team: team,
       tc: tc,
       phone: phone,
+      address: address,
       hireDate: hireDate,
       leaveDate: leaveDate,
-      address: address,
       active: !left,
     );
   }
@@ -69,53 +73,57 @@ class PersonnelImportRow {
 class PersonnelImportSample {
   static const headers = [
     'Firma adı',
+    'Ad Soyad',
     'Meslek',
     'Ekip',
-    'TC',
+    'TC No',
     'Telefon',
+    'Adres',
     'İşe giriş',
     'İşten çıkış',
-    'Adres',
   ];
 
   static const rows = [
     [
       'Örnek İnşaat A.Ş.',
+      'Ali Yılmaz',
       'Usta',
       'Demir',
       '12345678901',
       '05321234567',
+      'Ankara / Çankaya',
       '2024-03-01',
       '',
-      'Ankara / Çankaya',
     ],
     [
       'Örnek İnşaat A.Ş.',
+      'Ayşe Demir',
       'Saha Düz İşçi',
       'Kalıp',
       '10987654321',
       '05329876543',
+      'Ankara / Yenimahalle',
       '2024-06-15',
       '2025-12-31',
-      'Ankara / Yenimahalle',
     ],
   ];
 }
 
 enum PersonnelImportColumn {
   company,
+  name,
   profession,
   team,
   tc,
   phone,
+  address,
   hireDate,
   leaveDate,
-  address,
 }
 
-/// Excel / CSV / PDF personel listesi içe aktarma.
+/// Excel / CSV personel listesi içe aktarma.
 class PersonnelImportService {
-  static const allowedExtensions = ['xlsx', 'xls', 'csv', 'pdf'];
+  static const allowedExtensions = ['xlsx', 'xls', 'csv'];
 
   List<PersonnelImportRow> parseBytes({
     required Uint8List bytes,
@@ -125,14 +133,11 @@ class PersonnelImportService {
     if (lower.endsWith('.csv')) {
       return _parseDelimited(utf8.decode(bytes, allowMalformed: true));
     }
-    if (lower.endsWith('.pdf')) {
-      return _parsePdf(bytes);
-    }
     if (lower.endsWith('.xlsx') || lower.endsWith('.xls')) {
       return _parseExcel(bytes);
     }
     throw PersonnelImportException(
-      'Desteklenen formatlar: Excel (.xlsx), CSV, PDF.',
+      'Desteklenen formatlar: Excel (.xlsx, .xls) veya CSV.',
     );
   }
 
@@ -169,7 +174,6 @@ class PersonnelImportService {
   }
 
   List<String> _splitCsvLine(String line, String sep) {
-    // Basit ayırıcı; tırnak içi ayırıcı desteklenir.
     final out = <String>[];
     final buf = StringBuffer();
     var inQuotes = false;
@@ -190,61 +194,10 @@ class PersonnelImportService {
     return out;
   }
 
-  List<PersonnelImportRow> _parsePdf(Uint8List bytes) {
-    final raw = latin1.decode(bytes, allowInvalid: true);
-    final extracted = StringBuffer();
-    // PDF string literals: (text) Tj / TJ
-    final re = RegExp(r'\(([^)\\]*(?:\\.[^)\\]*)*)\)\s*Tj', dotAll: true);
-    for (final m in re.allMatches(raw)) {
-      var s = m.group(1) ?? '';
-      s = s
-          .replaceAll(r'\n', '\n')
-          .replaceAll(r'\r', '')
-          .replaceAll(r'\t', '\t')
-          .replaceAll(r'\(', '(')
-          .replaceAll(r'\)', ')');
-      extracted.writeln(s);
-    }
-    // Ayrıca satır sonu ile ayrılmış düz metin blokları
-    final text = extracted.toString();
-    if (text.trim().isEmpty) {
-      throw PersonnelImportException(
-        'PDF’den tablo okunamadı. Excel (.xlsx) veya CSV yükleyin.',
-      );
-    }
-    // Önce tab/pipe, sonra satır bazlı CSV dene
-    final lines = text
-        .split('\n')
-        .map((e) => e.trim())
-        .where((e) => e.isNotEmpty)
-        .toList();
-    final matrix = <List<String>>[];
-    for (final line in lines) {
-      if (line.contains('\t')) {
-        matrix.add(line.split('\t').map((e) => e.trim()).toList());
-      } else if (line.contains('|')) {
-        matrix.add(
-          line.split('|').map((e) => e.trim()).where((e) => e.isNotEmpty).toList(),
-        );
-      } else if (line.contains(';')) {
-        matrix.add(_splitCsvLine(line, ';'));
-      } else if (line.contains(',')) {
-        matrix.add(_splitCsvLine(line, ','));
-      }
-    }
-    if (matrix.length < 2) {
-      throw PersonnelImportException(
-        'PDF tablo formatı tanınmadı. Excel (.xlsx) kullanın.',
-      );
-    }
-    return _parseMatrix(matrix);
-  }
-
   List<PersonnelImportRow> _parseMatrix(List<List<String>> matrix) {
     if (matrix.isEmpty) {
       throw PersonnelImportException('Dosya boş.');
     }
-    // Başlık satırını bul
     var headerIndex = -1;
     Map<PersonnelImportColumn, int>? map;
     for (var i = 0; i < matrix.length && i < 10; i++) {
@@ -273,13 +226,14 @@ class PersonnelImportService {
 
       final row = PersonnelImportRow(
         company: cell(PersonnelImportColumn.company),
+        name: cell(PersonnelImportColumn.name),
         profession: cell(PersonnelImportColumn.profession),
         team: cell(PersonnelImportColumn.team),
         tc: _normalizeTc(cell(PersonnelImportColumn.tc)),
         phone: cell(PersonnelImportColumn.phone),
+        address: cell(PersonnelImportColumn.address),
         hireDate: _normalizeDate(cell(PersonnelImportColumn.hireDate)),
         leaveDate: _normalizeDate(cell(PersonnelImportColumn.leaveDate)),
-        address: cell(PersonnelImportColumn.address),
       );
       if (!row.isEmpty) rows.add(row);
     }
@@ -299,8 +253,8 @@ class PersonnelImportService {
         map[col] = i;
       }
     }
-    // En az TC veya telefon veya firma beklenir
-    final hasIdentity = map.containsKey(PersonnelImportColumn.tc) ||
+    final hasIdentity = map.containsKey(PersonnelImportColumn.name) ||
+        map.containsKey(PersonnelImportColumn.tc) ||
         map.containsKey(PersonnelImportColumn.phone) ||
         map.containsKey(PersonnelImportColumn.company);
     if (!hasIdentity) return {};
@@ -322,11 +276,19 @@ class PersonnelImportService {
   PersonnelImportColumn? _matchColumn(String key) {
     // Yalnızca izin verilen sütunlar — diğerleri yok sayılır.
     if (key.contains('firma')) return PersonnelImportColumn.company;
+    if (key.contains('adsoyad') ||
+        key == 'ad' ||
+        key == 'soyad' ||
+        key == 'isim' ||
+        key == 'name') {
+      return PersonnelImportColumn.name;
+    }
     if (key.contains('meslek')) return PersonnelImportColumn.profession;
     if (key.contains('ekip') || key == 'team') {
       return PersonnelImportColumn.team;
     }
     if (key == 'tc' ||
+        key == 'tcno' ||
         key.contains('tckimlik') ||
         key.contains('kimlikno') ||
         key == 'tckn') {
@@ -335,6 +297,7 @@ class PersonnelImportService {
     if (key.contains('telefon') || key == 'tel' || key == 'gsm') {
       return PersonnelImportColumn.phone;
     }
+    if (key.contains('adres')) return PersonnelImportColumn.address;
     if (key.contains('isegiris') || key.contains('giristarih')) {
       return PersonnelImportColumn.hireDate;
     }
@@ -343,25 +306,21 @@ class PersonnelImportService {
         key.contains('istenayril')) {
       return PersonnelImportColumn.leaveDate;
     }
-    if (key.contains('adres')) return PersonnelImportColumn.address;
     return null;
   }
 
   String _normalizeTc(String raw) {
-    final digits = raw.replaceAll(RegExp(r'\D'), '');
-    return digits;
+    return raw.replaceAll(RegExp(r'\D'), '');
   }
 
   String _normalizeDate(String raw) {
     final t = raw.trim();
     if (t.isEmpty) return '';
-    // yyyy-MM-dd
     final iso = RegExp(r'^(\d{4})-(\d{2})-(\d{2})');
     final mIso = iso.firstMatch(t);
     if (mIso != null) {
       return '${mIso[1]}-${mIso[2]}-${mIso[3]}';
     }
-    // dd.MM.yyyy or dd/MM/yyyy
     final tr = RegExp(r'^(\d{1,2})[./](\d{1,2})[./](\d{4})');
     final mTr = tr.firstMatch(t);
     if (mTr != null) {
@@ -370,7 +329,6 @@ class PersonnelImportService {
       final y = mTr[3]!;
       return '$y-$m-$d';
     }
-    // Excel serial roughly skipped — keep raw truncated
     return t.length > 32 ? t.substring(0, 32) : t;
   }
 }

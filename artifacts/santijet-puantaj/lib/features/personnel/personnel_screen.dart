@@ -8,6 +8,7 @@ import '../../core/design_system/sj_card.dart';
 import '../../core/design_system/sj_empty_state.dart';
 import '../../core/routing/app_routes.dart';
 import '../../core/theme/app_colors.dart';
+import '../../core/theme/app_radii.dart';
 import '../../core/theme/app_spacing.dart';
 import '../../core/utils/id_gen.dart';
 import '../../data/providers/app_data_provider.dart';
@@ -16,12 +17,131 @@ import '../../data/providers/company_provider.dart';
 import '../../data/services/personnel_import_service.dart';
 import '../../domain/entities/person.dart';
 
-/// Personel listesi — aktif projeye özel.
-class PersonnelScreen extends ConsumerWidget {
+/// Personel listesi — aktif projeye özel; firmaya göre gruplu.
+class PersonnelScreen extends ConsumerStatefulWidget {
   const PersonnelScreen({super.key});
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
+  ConsumerState<PersonnelScreen> createState() => _PersonnelScreenState();
+}
+
+class _PersonnelScreenState extends ConsumerState<PersonnelScreen> {
+  /// Kapalı firma başlıkları (varsayılan: hepsi açık).
+  final Set<String> _collapsedCompanies = {};
+  bool _selectionMode = false;
+  final Set<String> _selectedIds = {};
+
+  List<({String company, List<Person> people})> _groupByCompany(
+    List<Person> people,
+  ) {
+    final map = <String, List<Person>>{};
+    for (final p in people) {
+      final key = p.company.trim();
+      map.putIfAbsent(key, () => []).add(p);
+    }
+    for (final list in map.values) {
+      list.sort(
+        (a, b) => a.name.toLowerCase().compareTo(b.name.toLowerCase()),
+      );
+    }
+    final keys = map.keys.toList()
+      ..sort((a, b) {
+        if (a.isEmpty && b.isNotEmpty) return 1;
+        if (b.isEmpty && a.isNotEmpty) return -1;
+        return a.toLowerCase().compareTo(b.toLowerCase());
+      });
+    return [
+      for (final k in keys) (company: k, people: map[k]!),
+    ];
+  }
+
+  String _companyLabel(String key) =>
+      key.isEmpty ? 'Firma belirtilmemiş' : key;
+
+  void _toggleCompany(String key) {
+    setState(() {
+      if (_collapsedCompanies.contains(key)) {
+        _collapsedCompanies.remove(key);
+      } else {
+        _collapsedCompanies.add(key);
+      }
+    });
+  }
+
+  void _exitSelection() {
+    setState(() {
+      _selectionMode = false;
+      _selectedIds.clear();
+    });
+  }
+
+  void _enterSelection([String? initialId]) {
+    setState(() {
+      _selectionMode = true;
+      _selectedIds.clear();
+      if (initialId != null) _selectedIds.add(initialId);
+    });
+  }
+
+  void _toggleSelected(String id) {
+    setState(() {
+      if (_selectedIds.contains(id)) {
+        _selectedIds.remove(id);
+      } else {
+        _selectedIds.add(id);
+      }
+    });
+  }
+
+  void _selectAllInGroup(List<Person> group) {
+    setState(() {
+      _selectionMode = true;
+      for (final p in group) {
+        _selectedIds.add(p.id);
+      }
+    });
+  }
+
+  void _selectAll(List<Person> people) {
+    setState(() {
+      _selectionMode = true;
+      _selectedIds
+        ..clear()
+        ..addAll(people.map((p) => p.id));
+    });
+  }
+
+  Future<void> _deleteSelected() async {
+    if (_selectedIds.isEmpty) return;
+    final count = _selectedIds.length;
+    final ok = await showDialog<bool>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: const Text('Toplu sil'),
+        content: Text('$count personel silinsin mi?'),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(ctx, false),
+            child: const Text('Vazgeç'),
+          ),
+          FilledButton(
+            onPressed: () => Navigator.pop(ctx, true),
+            child: const Text('Sil'),
+          ),
+        ],
+      ),
+    );
+    if (ok != true || !mounted) return;
+    ref.read(personnelProvider.notifier).deleteMany(_selectedIds);
+    _exitSelection();
+    if (!mounted) return;
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(content: Text('$count personel silindi')),
+    );
+  }
+
+  @override
+  Widget build(BuildContext context) {
     final project = ref.watch(activeProjectProvider);
     final people = ref.watch(projectPersonnelProvider);
     final theme = Theme.of(context);
@@ -45,144 +165,154 @@ class PersonnelScreen extends ConsumerWidget {
       );
     }
 
+    final groups = _groupByCompany(people);
+
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Personel'),
+        title: Text(
+          _selectionMode ? '${_selectedIds.length} seçili' : 'Personel',
+        ),
         leading: IconButton(
-          icon: const Icon(Icons.arrow_back),
-          onPressed: () => context.go(AppRoutes.yonetim),
+          icon: Icon(_selectionMode ? Icons.close : Icons.arrow_back),
+          onPressed: () {
+            if (_selectionMode) {
+              _exitSelection();
+            } else {
+              context.go(AppRoutes.yonetim);
+            }
+          },
         ),
         actions: [
-          IconButton(
-            tooltip: 'PDF / Excel’den veri al',
-            onPressed: () => _importFromFile(
-              context,
-              ref,
-              projectId: project.id,
+          if (_selectionMode) ...[
+            IconButton(
+              tooltip: 'Tümünü seç',
+              onPressed: people.isEmpty ? null : () => _selectAll(people),
+              icon: const Icon(Icons.select_all),
             ),
-            icon: const Icon(Icons.upload_file_outlined),
-          ),
-          Padding(
-            padding: const EdgeInsets.only(right: AppSpacing.sm),
-            child: Center(
-              child: Text(project.name, style: theme.textTheme.labelMedium),
+            IconButton(
+              tooltip: 'Seçilenleri sil',
+              onPressed: _selectedIds.isEmpty ? null : _deleteSelected,
+              icon: const Icon(Icons.delete_outline),
             ),
-          ),
+          ] else ...[
+            if (people.isNotEmpty)
+              IconButton(
+                tooltip: 'Seç',
+                onPressed: () => _enterSelection(),
+                icon: const Icon(Icons.checklist_rtl),
+              ),
+            IconButton(
+              tooltip: 'Excel’den içe aktar',
+              onPressed: () => _importFromFile(
+                context,
+                ref,
+                projectId: project.id,
+              ),
+              icon: const Icon(Icons.upload_file_outlined),
+            ),
+            Padding(
+              padding: const EdgeInsets.only(right: AppSpacing.sm),
+              child: Center(
+                child: Text(project.name, style: theme.textTheme.labelMedium),
+              ),
+            ),
+          ],
         ],
       ),
-      floatingActionButton: Column(
-        mainAxisSize: MainAxisSize.min,
-        crossAxisAlignment: CrossAxisAlignment.end,
-        children: [
-          FloatingActionButton.extended(
-            heroTag: 'personnel_import',
-            onPressed: () => _importFromFile(
-              context,
-              ref,
-              projectId: project.id,
+      floatingActionButton: _selectionMode
+          ? null
+          : Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.end,
+              children: [
+                FloatingActionButton.extended(
+                  heroTag: 'personnel_import',
+                  onPressed: () => _importFromFile(
+                    context,
+                    ref,
+                    projectId: project.id,
+                  ),
+                  icon: const Icon(Icons.upload_file_outlined),
+                  label: const Text('Excel’den içe aktar'),
+                ),
+                const SizedBox(height: AppSpacing.sm),
+                FloatingActionButton.extended(
+                  heroTag: 'personnel_add',
+                  onPressed: () =>
+                      _openEditor(context, ref, projectId: project.id),
+                  icon: const Icon(Icons.person_add_alt_1),
+                  label: const Text('Ekle'),
+                ),
+              ],
             ),
-            icon: const Icon(Icons.upload_file_outlined),
-            label: const Text('PDF / Excel’den veri al'),
-          ),
-          const SizedBox(height: AppSpacing.sm),
-          FloatingActionButton.extended(
-            heroTag: 'personnel_add',
-            onPressed: () => _openEditor(context, ref, projectId: project.id),
-            icon: const Icon(Icons.person_add_alt_1),
-            label: const Text('Ekle'),
-          ),
-        ],
-      ),
       body: people.isEmpty
           ? SJEmptyState(
               title: 'Bu projede personel yok',
               message:
                   '${project.name} için personel ekleyin veya '
-                  'PDF / Excel’den liste yükleyin.',
+                  'Excel’den liste yükleyin.',
               icon: Icons.groups_outlined,
               actionLabel: 'Personel Ekle',
               onAction: () =>
                   _openEditor(context, ref, projectId: project.id),
             )
-          : ListView.separated(
+          : ListView.builder(
               padding: const EdgeInsets.fromLTRB(
                 AppSpacing.md,
                 AppSpacing.sm,
                 AppSpacing.md,
                 160,
               ),
-              itemCount: people.length,
-              separatorBuilder: (_, __) =>
-                  const SizedBox(height: AppSpacing.sm),
-              itemBuilder: (context, index) {
-                final p = people[index];
-                final meta = [
-                  if (p.company.isNotEmpty) p.company,
-                  if (p.profession.isNotEmpty) p.profession,
-                  if (p.team.isNotEmpty) p.team,
-                  if (p.tc.isNotEmpty) 'TC ${p.tc}',
-                ].join(' · ');
-                return SJCard(
-                  onTap: () => _openEditor(
-                    context,
-                    ref,
-                    projectId: project.id,
-                    existing: p,
+              itemCount: groups.length,
+              itemBuilder: (context, gi) {
+                final g = groups[gi];
+                final key = g.company;
+                final expanded = !_collapsedCompanies.contains(key);
+                return Padding(
+                  padding: EdgeInsets.only(
+                    bottom: gi == groups.length - 1 ? 0 : AppSpacing.md,
                   ),
-                  child: Builder(
-                    builder: (context) {
-                      final theme = Theme.of(context);
-                      return Row(
-                        children: [
-                          CircleAvatar(
-                            backgroundColor: theme.colorScheme.primary
-                                .withValues(alpha: 0.15),
-                            child: Text(
-                              p.name.isNotEmpty
-                                  ? p.name[0].toUpperCase()
-                                  : '?',
-                              style: TextStyle(
-                                color: theme.colorScheme.primary,
-                                fontWeight: FontWeight.w700,
-                              ),
-                            ),
-                          ),
-                          const SizedBox(width: AppSpacing.sm),
-                          Expanded(
-                            child: Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                Text(
-                                  p.name,
-                                  style: theme.textTheme.titleMedium,
-                                ),
-                                if (meta.isNotEmpty)
-                                  Text(meta, style: theme.textTheme.bodySmall),
-                                if (p.phone.isNotEmpty ||
-                                    p.hireDate.isNotEmpty)
-                                  Text(
-                                    [
-                                      if (p.phone.isNotEmpty) p.phone,
-                                      if (p.hireDate.isNotEmpty)
-                                        'Giriş ${p.hireDate}',
-                                      if (p.leaveDate.isNotEmpty)
-                                        'Çıkış ${p.leaveDate}',
-                                    ].join(' · '),
-                                    style: theme.textTheme.labelSmall,
-                                  ),
-                              ],
-                            ),
-                          ),
-                          if (!p.active)
-                            Text(
-                              'Pasif',
-                              style: theme.textTheme.labelSmall?.copyWith(
-                                color: theme.colorScheme.error,
-                              ),
-                            ),
-                          IconButton(
-                            icon: const Icon(Icons.delete_outline),
-                            onPressed: () async {
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.stretch,
+                    children: [
+                      _CompanyHeader(
+                        label: _companyLabel(key),
+                        count: g.people.length,
+                        expanded: expanded,
+                        selectionMode: _selectionMode,
+                        selectedInGroup: g.people
+                            .where((p) => _selectedIds.contains(p.id))
+                            .length,
+                        onToggle: () => _toggleCompany(key),
+                        onSelectGroup: () => _selectAllInGroup(g.people),
+                      ),
+                      if (expanded) ...[
+                        const SizedBox(height: AppSpacing.sm),
+                        for (var i = 0; i < g.people.length; i++) ...[
+                          if (i > 0) const SizedBox(height: AppSpacing.sm),
+                          _PersonTile(
+                            person: g.people[i],
+                            selectionMode: _selectionMode,
+                            selected: _selectedIds.contains(g.people[i].id),
+                            onTap: () {
+                              if (_selectionMode) {
+                                _toggleSelected(g.people[i].id);
+                              } else {
+                                _openEditor(
+                                  context,
+                                  ref,
+                                  projectId: project.id,
+                                  existing: g.people[i],
+                                );
+                              }
+                            },
+                            onLongPress: () {
+                              if (!_selectionMode) {
+                                _enterSelection(g.people[i].id);
+                              }
+                            },
+                            onDelete: () async {
+                              final p = g.people[i];
                               final ok = await showDialog<bool>(
                                 context: context,
                                 builder: (ctx) => AlertDialog(
@@ -210,8 +340,8 @@ class PersonnelScreen extends ConsumerWidget {
                             },
                           ),
                         ],
-                      );
-                    },
+                      ],
+                    ],
                   ),
                 );
               },
@@ -260,20 +390,19 @@ class PersonnelScreen extends ConsumerWidget {
       );
       if (confirm != true || !context.mounted) return;
 
-      final people = [for (final r in rows) r.toPerson(projectId)];
-      ref.read(personnelProvider.notifier).addAll(people);
+      final imported = [for (final r in rows) r.toPerson(projectId)];
+      ref.read(personnelProvider.notifier).addAll(imported);
 
-      // Kataloglara yeni meslek / ekip ekle
       final professions = ref.read(professionsProvider.notifier);
       final teams = ref.read(teamsProvider.notifier);
-      for (final p in people) {
+      for (final p in imported) {
         if (p.profession.isNotEmpty) professions.add(p.profession);
         if (p.team.isNotEmpty) teams.add(p.team);
       }
 
       if (!context.mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('${people.length} personel yüklendi')),
+        SnackBar(content: Text('${imported.length} personel yüklendi')),
       );
     } on PersonnelImportException catch (e) {
       if (!context.mounted) return;
@@ -313,6 +442,193 @@ class PersonnelScreen extends ConsumerWidget {
   }
 }
 
+class _CompanyHeader extends StatelessWidget {
+  const _CompanyHeader({
+    required this.label,
+    required this.count,
+    required this.expanded,
+    required this.selectionMode,
+    required this.selectedInGroup,
+    required this.onToggle,
+    required this.onSelectGroup,
+  });
+
+  final String label;
+  final int count;
+  final bool expanded;
+  final bool selectionMode;
+  final int selectedInGroup;
+  final VoidCallback onToggle;
+  final VoidCallback onSelectGroup;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final accent = AppColors.useDarkCards
+        ? AppColors.electricBlueLight
+        : AppColors.electricBlue;
+    return Material(
+      color: Colors.transparent,
+      child: InkWell(
+        borderRadius: AppRadii.md,
+        onTap: onToggle,
+        child: Container(
+          padding: const EdgeInsets.symmetric(
+            horizontal: AppSpacing.sm,
+            vertical: AppSpacing.sm,
+          ),
+          decoration: BoxDecoration(
+            borderRadius: AppRadii.md,
+            border: Border.all(
+              color: theme.dividerColor.withValues(alpha: 0.5),
+            ),
+            color: theme.colorScheme.surface.withValues(alpha: 0.35),
+          ),
+          child: Row(
+            children: [
+              Icon(
+                expanded
+                    ? Icons.keyboard_arrow_down_rounded
+                    : Icons.keyboard_arrow_right_rounded,
+                color: accent,
+              ),
+              const SizedBox(width: 4),
+              Expanded(
+                child: Text(
+                  label,
+                  style: theme.textTheme.titleSmall?.copyWith(
+                    fontWeight: FontWeight.w800,
+                    color: accent,
+                  ),
+                ),
+              ),
+              Text(
+                selectionMode && selectedInGroup > 0
+                    ? '$selectedInGroup / $count'
+                    : '$count',
+                style: theme.textTheme.labelMedium?.copyWith(
+                  color: theme.colorScheme.onSurface.withValues(alpha: 0.7),
+                ),
+              ),
+              IconButton(
+                tooltip: 'Grubu seç',
+                visualDensity: VisualDensity.compact,
+                onPressed: onSelectGroup,
+                icon: Icon(
+                  selectedInGroup == count && count > 0
+                      ? Icons.check_box
+                      : Icons.check_box_outline_blank,
+                  size: 22,
+                  color: accent,
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class _PersonTile extends StatelessWidget {
+  const _PersonTile({
+    required this.person,
+    required this.selectionMode,
+    required this.selected,
+    required this.onTap,
+    required this.onLongPress,
+    required this.onDelete,
+  });
+
+  final Person person;
+  final bool selectionMode;
+  final bool selected;
+  final VoidCallback onTap;
+  final VoidCallback onLongPress;
+  final VoidCallback onDelete;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final p = person;
+    final meta = [
+      if (p.profession.isNotEmpty) p.profession,
+      if (p.team.isNotEmpty) p.team,
+      if (p.tc.isNotEmpty) 'TC ${p.tc}',
+    ].join(' · ');
+
+    return GestureDetector(
+      onLongPress: onLongPress,
+      child: SJCard(
+        onTap: onTap,
+        selected: selected,
+        child: Row(
+          children: [
+            if (selectionMode)
+              Padding(
+                padding: const EdgeInsets.only(right: AppSpacing.sm),
+                child: Icon(
+                  selected
+                      ? Icons.check_circle
+                      : Icons.radio_button_unchecked,
+                  color: selected
+                      ? theme.colorScheme.primary
+                      : theme.colorScheme.onSurface.withValues(alpha: 0.4),
+                ),
+              )
+            else
+              CircleAvatar(
+                backgroundColor:
+                    theme.colorScheme.primary.withValues(alpha: 0.15),
+                child: Text(
+                  p.name.isNotEmpty ? p.name[0].toUpperCase() : '?',
+                  style: TextStyle(
+                    color: theme.colorScheme.primary,
+                    fontWeight: FontWeight.w700,
+                  ),
+                ),
+              ),
+            if (!selectionMode) const SizedBox(width: AppSpacing.sm),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(p.name, style: theme.textTheme.titleMedium),
+                  if (meta.isNotEmpty)
+                    Text(meta, style: theme.textTheme.bodySmall),
+                  if (p.phone.isNotEmpty ||
+                      p.hireDate.isNotEmpty ||
+                      p.leaveDate.isNotEmpty)
+                    Text(
+                      [
+                        if (p.phone.isNotEmpty) p.phone,
+                        if (p.hireDate.isNotEmpty) 'Giriş ${p.hireDate}',
+                        if (p.leaveDate.isNotEmpty) 'Çıkış ${p.leaveDate}',
+                      ].join(' · '),
+                      style: theme.textTheme.labelSmall,
+                    ),
+                ],
+              ),
+            ),
+            if (!p.active)
+              Text(
+                'Pasif',
+                style: theme.textTheme.labelSmall?.copyWith(
+                  color: theme.colorScheme.error,
+                ),
+              ),
+            if (!selectionMode)
+              IconButton(
+                icon: const Icon(Icons.delete_outline),
+                onPressed: onDelete,
+              ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
 /// Yüklemeden önce örnek sütun / satır önizlemesi.
 class _PersonnelImportPreviewSheet extends StatelessWidget {
   const _PersonnelImportPreviewSheet();
@@ -333,7 +649,7 @@ class _PersonnelImportPreviewSheet extends StatelessWidget {
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
             Text(
-              'PDF / Excel’den veri al',
+              'Excel’den içe aktar',
               style: theme.textTheme.titleLarge?.copyWith(
                 fontWeight: FontWeight.w700,
               ),
@@ -385,7 +701,7 @@ class _PersonnelImportPreviewSheet extends StatelessWidget {
             ),
             const SizedBox(height: AppSpacing.sm),
             Text(
-              'Desteklenen: .xlsx · .xls · .csv · .pdf',
+              'Desteklenen: .xlsx · .xls · .csv',
               style: theme.textTheme.labelSmall,
             ),
             const SizedBox(height: AppSpacing.md),
@@ -539,7 +855,6 @@ class _PersonEditorSheetState extends ConsumerState<_PersonEditorSheet> {
     super.dispose();
   }
 
-  /// Firma Bilgileri + proje firmaları + mevcut personel firmaları.
   List<String> _registeredCompanies() {
     final names = <String>{};
     final companyInfo = ref.read(companyInfoProvider).name.trim();
@@ -643,7 +958,6 @@ class _PersonEditorSheetState extends ConsumerState<_PersonEditorSheet> {
     final bottom = MediaQuery.viewInsetsOf(context).bottom;
     final professions = ref.watch(professionsProvider);
     final teams = ref.watch(teamsProvider);
-    // Firma listesi değişince alan yeniden çizilsin.
     ref.watch(companyInfoProvider);
     ref.watch(projectsProvider);
     ref.watch(personnelProvider);
@@ -718,7 +1032,7 @@ class _PersonEditorSheetState extends ConsumerState<_PersonEditorSheet> {
             const SizedBox(height: AppSpacing.sm),
             TextField(
               controller: _tc,
-              decoration: const InputDecoration(labelText: 'TC'),
+              decoration: const InputDecoration(labelText: 'TC No'),
               keyboardType: TextInputType.number,
             ),
             const SizedBox(height: AppSpacing.sm),
@@ -726,6 +1040,11 @@ class _PersonEditorSheetState extends ConsumerState<_PersonEditorSheet> {
               controller: _phone,
               decoration: const InputDecoration(labelText: 'Telefon'),
               keyboardType: TextInputType.phone,
+            ),
+            const SizedBox(height: AppSpacing.sm),
+            TextField(
+              controller: _address,
+              decoration: const InputDecoration(labelText: 'Adres'),
             ),
             const SizedBox(height: AppSpacing.sm),
             TextField(
@@ -742,11 +1061,6 @@ class _PersonEditorSheetState extends ConsumerState<_PersonEditorSheet> {
                 labelText: 'İşten çıkış',
                 hintText: 'yyyy-MM-dd',
               ),
-            ),
-            const SizedBox(height: AppSpacing.sm),
-            TextField(
-              controller: _address,
-              decoration: const InputDecoration(labelText: 'Adres'),
             ),
             SwitchListTile(
               contentPadding: EdgeInsets.zero,

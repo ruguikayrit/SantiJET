@@ -174,6 +174,13 @@ class PersonnelNotifier extends StateNotifier<List<Person>> {
     _persist();
   }
 
+  void deleteMany(Iterable<String> ids) {
+    final remove = ids.toSet();
+    if (remove.isEmpty) return;
+    state = state.where((p) => !remove.contains(p.id)).toList();
+    _persist();
+  }
+
   void deleteForProject(String projectId) {
     state = state.where((p) => p.projectId != projectId).toList();
     _persist();
