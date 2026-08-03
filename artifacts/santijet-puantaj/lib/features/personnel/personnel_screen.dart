@@ -242,6 +242,14 @@ class _PersonnelScreenState extends ConsumerState<PersonnelScreen> {
               crossAxisAlignment: CrossAxisAlignment.end,
               children: [
                 FloatingActionButton.extended(
+                  heroTag: 'personnel_add',
+                  onPressed: () =>
+                      _openEditor(context, ref, projectId: project.id),
+                  icon: const Icon(Icons.person_add_alt_1),
+                  label: const Text('Ekle'),
+                ),
+                const SizedBox(height: AppSpacing.sm),
+                FloatingActionButton.extended(
                   heroTag: 'personnel_import',
                   onPressed: () => _importFromFile(
                     context,
@@ -250,14 +258,6 @@ class _PersonnelScreenState extends ConsumerState<PersonnelScreen> {
                   ),
                   icon: const Icon(Icons.upload_file_outlined),
                   label: const Text('Excel’den içe aktar'),
-                ),
-                const SizedBox(height: AppSpacing.sm),
-                FloatingActionButton.extended(
-                  heroTag: 'personnel_add',
-                  onPressed: () =>
-                      _openEditor(context, ref, projectId: project.id),
-                  icon: const Icon(Icons.person_add_alt_1),
-                  label: const Text('Ekle'),
                 ),
               ],
             ),
@@ -1119,6 +1119,10 @@ class _PersonEditorSheetState extends ConsumerState<_PersonEditorSheet> {
                 );
               },
               child: const Text('Kaydet'),
+            ),
+            TextButton(
+              onPressed: () => Navigator.pop(context),
+              child: const Text('İptal'),
             ),
           ],
         ),
