@@ -118,22 +118,6 @@ class _TasksScreenState extends ConsumerState<TasksScreen> {
     );
   }
 
-  Future<void> _pickOperator(List<Person> people) async {
-    final currentId = ref.read(activeOperatorIdProvider);
-    final picked = await _pickPersonSheet(
-      people: people,
-      title: 'Kim olarak çalışıyorsunuz?',
-      subtitle:
-          'Görevler yalnızca size atananlar ve (1. derece iseniz) '
-          'sizin atadıklarınız olarak listelenir.',
-      selectedId: currentId,
-      showDegreeHint: true,
-    );
-    if (picked != null) {
-      ref.read(activeOperatorIdProvider.notifier).set(picked.id);
-    }
-  }
-
   Future<String?> _pickDateField({
     required BuildContext hostContext,
     required String label,
@@ -575,73 +559,19 @@ class _TasksScreenState extends ConsumerState<TasksScreen> {
               ),
               child: ProjectSwitcher(),
             ),
-            Padding(
-              padding: const EdgeInsets.symmetric(horizontal: AppSpacing.md),
-              child: SJCard(
-                padding: const EdgeInsets.symmetric(
-                  horizontal: AppSpacing.sm,
-                  vertical: AppSpacing.sm,
-                ),
-                onTap: () => _pickOperator(people),
-                child: Builder(
-                  builder: (context) {
-                    final theme = Theme.of(context);
-                    return Row(
-                      children: [
-                        Icon(
-                          Icons.badge_outlined,
-                          color: theme.colorScheme.primary,
-                        ),
-                        const SizedBox(width: AppSpacing.sm),
-                        Expanded(
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Text(
-                                operator == null
-                                    ? 'Kim olarak çalışıyorsunuz?'
-                                    : operator.name,
-                                style: theme.textTheme.titleSmall?.copyWith(
-                                  fontWeight: FontWeight.w700,
-                                ),
-                              ),
-                              Text(
-                                operator == null
-                                    ? 'Görevleri görmek için personel seçin'
-                                    : [
-                                        if (operator.profession.isNotEmpty)
-                                          operator.profession,
-                                        canAssign
-                                            ? '1. derece · atama yapabilir'
-                                            : 'Yalnızca size atananlar',
-                                      ].join(' · '),
-                                style: theme.textTheme.labelSmall,
-                              ),
-                            ],
-                          ),
-                        ),
-                        Icon(
-                          Icons.expand_more,
-                          color: theme.colorScheme.onSurfaceVariant,
-                        ),
-                      ],
-                    );
-                  },
-                ),
-              ),
-            ),
             if (operator == null)
-              const Expanded(
+              Expanded(
                 child: SJEmptyState(
-                  title: 'Operatör seçin',
+                  title: 'Aktif kullanıcı yok',
                   message:
-                      'Görev listesi seçtiğiniz personele göre filtrelenir. '
-                      'Formen, Saha Mühendisi’ne atanan görevi görmez.',
-                  icon: Icons.person_search_outlined,
+                      'Görev yetkisi Ayarlar → Yönetim → Aktif kullanıcı '
+                      'üzerinden belirlenir.',
+                  icon: Icons.manage_accounts_outlined,
+                  actionLabel: 'Aktif kullanıcı',
+                  onAction: () => context.push(AppRoutes.aktifKullanici),
                 ),
               )
             else ...[
-              const SizedBox(height: AppSpacing.sm),
               TaskCalendarPanel(tasks: tasks),
               const SizedBox(height: AppSpacing.sm),
               Padding(
