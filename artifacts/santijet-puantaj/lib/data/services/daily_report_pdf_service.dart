@@ -149,12 +149,7 @@ class DailyReportPdfService {
       pw.SizedBox(height: 12),
       _sectionTitle('YAPILAN İŞLER'),
       pw.SizedBox(height: 6),
-      pw.Text(
-        report.workDone.trim().isEmpty
-            ? '—'
-            : _truncate(report.workDone.trim(), 600),
-        style: const pw.TextStyle(fontSize: 10, color: _ink, lineSpacing: 3),
-      ),
+      ..._workCategoryBlocks(report, truncateEach: 220),
       pw.SizedBox(height: 20),
       _signatureBlock(),
       pw.SizedBox(height: 8),
@@ -191,11 +186,15 @@ class DailyReportPdfService {
       pw.SizedBox(height: 12),
       _sectionTitle('YAPILAN İŞLER'),
       pw.SizedBox(height: 6),
-      _workDoneBox(report.workDone),
+      ..._workCategoryBlocks(report),
       pw.SizedBox(height: 12),
       _sectionTitle('GELEN MALZEME'),
       pw.SizedBox(height: 6),
-      _materialTable(report.incomingMaterials, advanced: advanced),
+      _materialTable(
+        report.incomingMaterials,
+        advanced: advanced,
+        incoming: true,
+      ),
       pw.SizedBox(height: 12),
       _sectionTitle('SİPARİŞ VERİLEN MALZEMELER'),
       pw.SizedBox(height: 6),
@@ -447,24 +446,60 @@ class DailyReportPdfService {
     );
   }
 
-  pw.Widget _workDoneBox(String work) {
-    final text = work.trim().isEmpty ? '—' : work.trim();
-    return pw.Container(
-      width: double.infinity,
-      padding: const pw.EdgeInsets.all(8),
-      decoration: pw.BoxDecoration(
-        border: pw.Border.all(color: _line, width: 0.7),
-      ),
-      child: pw.Text(
-        text,
-        style: const pw.TextStyle(fontSize: 10, color: _ink, lineSpacing: 3),
-      ),
-    );
+  List<pw.Widget> _workCategoryBlocks(
+    DailyReport report, {
+    int? truncateEach,
+  }) {
+    final entries = <(String, String)>[
+      ('İNŞAAT İŞLERİ', report.workConstruction),
+      ('ELEKTRİK İŞLERİ', report.workElectrical),
+      ('MEKANİK İŞLER', report.workMechanical),
+    ];
+    final nonEmpty = [
+      for (final e in entries)
+        if (e.$2.trim().isNotEmpty) e,
+    ];
+    if (nonEmpty.isEmpty) {
+      return [
+        pw.Text(
+          '—',
+          style: const pw.TextStyle(fontSize: 10, color: _muted),
+        ),
+      ];
+    }
+    return [
+      for (final e in nonEmpty) ...[
+        pw.Text(
+          e.$1,
+          style: pw.TextStyle(
+            fontSize: 9,
+            fontWeight: pw.FontWeight.bold,
+            color: _blue,
+          ),
+        ),
+        pw.SizedBox(height: 3),
+        pw.Container(
+          width: double.infinity,
+          padding: const pw.EdgeInsets.all(8),
+          margin: const pw.EdgeInsets.only(bottom: 8),
+          decoration: pw.BoxDecoration(
+            border: pw.Border.all(color: _line, width: 0.7),
+          ),
+          child: pw.Text(
+            truncateEach != null
+                ? _truncate(e.$2.trim(), truncateEach)
+                : e.$2.trim(),
+            style: const pw.TextStyle(fontSize: 10, color: _ink, lineSpacing: 3),
+          ),
+        ),
+      ],
+    ];
   }
 
   pw.Widget _materialTable(
     List<DailyReportMaterial> items, {
     required bool advanced,
+    bool incoming = false,
   }) {
     if (items.isEmpty) {
       return pw.Text(
@@ -472,27 +507,64 @@ class DailyReportPdfService {
         style: const pw.TextStyle(fontSize: 9, color: _muted),
       );
     }
-    final headers = advanced
-        ? const ['Malzeme', 'Miktar', 'Birim', 'Tedarikçi / Sipariş', 'Not']
-        : const ['Malzeme', 'Miktar', 'Birim', 'Not'];
+    final headers = incoming
+        ? (advanced
+            ? const [
+                'Tarih',
+                'Firma',
+                'Ürün',
+                'Miktar',
+                'Birim',
+                'Fiyat',
+                'Not',
+              ]
+            : const [
+                'Tarih',
+                'Firma',
+                'Ürün',
+                'Miktar',
+                'Birim',
+                'Fiyat',
+              ])
+        : (advanced
+            ? const ['Malzeme', 'Miktar', 'Birim', 'Tedarikçi / Sipariş', 'Not']
+            : const ['Malzeme', 'Miktar', 'Birim', 'Not']);
     final data = [
       for (final m in items)
-        advanced
-            ? [
-                m.name,
-                m.quantity,
-                m.unit,
-                m.supplierOrOrder,
-                m.note,
-              ]
-            : [
-                m.name,
-                m.quantity,
-                m.unit,
-                m.note.isNotEmpty
-                    ? m.note
-                    : m.supplierOrOrder,
-              ],
+        if (incoming)
+          advanced
+              ? [
+                  m.supplyDate,
+                  m.supplierOrOrder,
+                  m.name,
+                  m.quantity,
+                  m.unit,
+                  m.price,
+                  m.note,
+                ]
+              : [
+                  m.supplyDate,
+                  m.supplierOrOrder,
+                  m.name,
+                  m.quantity,
+                  m.unit,
+                  m.price,
+                ]
+        else
+          advanced
+              ? [
+                  m.name,
+                  m.quantity,
+                  m.unit,
+                  m.supplierOrOrder,
+                  m.note,
+                ]
+              : [
+                  m.name,
+                  m.quantity,
+                  m.unit,
+                  m.note.isNotEmpty ? m.note : m.supplierOrOrder,
+                ],
     ];
     return pw.TableHelper.fromTextArray(
       headers: headers,

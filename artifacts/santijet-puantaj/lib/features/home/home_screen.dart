@@ -190,8 +190,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                           );
                         }
                         final parts = <String>[
-                          if (todayReport.workDone.trim().isNotEmpty)
-                            'İşler girildi',
+                          if (todayReport.hasWorkEntries) 'İşler girildi',
                           if (todayReport.photos.isNotEmpty)
                             '${todayReport.photos.length} foto',
                           if (todayReport.incomingMaterials.isNotEmpty)

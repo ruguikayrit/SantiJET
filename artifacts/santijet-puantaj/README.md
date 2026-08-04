@@ -27,7 +27,9 @@ Proje + takvim günü başına tek kayıt (Hive upsert):
 
 - Fotoğraflar + açıklama (**açıklama önerilir**; boş izinli)
   - Saklama: **base64 → Hive** (mobil + web ortak; dosya yolu yok)
-- Yapılan işler (serbest metin)
+- Gelen malzeme: **irsaliye fotoğrafı** + OCR (OCR.space) ile otomatik satır
+  - Tedarik tarihi, firma, ürün adı, miktar, birim, fiyat (opsiyonel)
+- Yapılan işler: İnşaat / Elektrik / Mekanik alt başlıkları
 - Gelen malzeme / sipariş malzeme satırları
 - İş makinesi puantajı
 - **Hava** otomatik (Open-Meteo; proje firma/şehir → geocode; yoksa İstanbul)

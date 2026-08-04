@@ -6,8 +6,11 @@ class DailyReport extends Equatable {
     required this.id,
     required this.projectId,
     required this.date,
-    this.workDone = '',
+    this.workConstruction = '',
+    this.workElectrical = '',
+    this.workMechanical = '',
     this.photos = const [],
+    this.irsaliyePhotos = const [],
     this.incomingMaterials = const [],
     this.orderedMaterials = const [],
     this.machines = const [],
@@ -23,9 +26,39 @@ class DailyReport extends Equatable {
   /// TR tarih: `dd.MM.yyyy`
   final String date;
 
-  /// Gün içinde yapılan işler (serbest metin / satır satır).
-  final String workDone;
+  /// İnşaat işleri (serbest metin).
+  final String workConstruction;
+
+  /// Elektrik işleri (serbest metin).
+  final String workElectrical;
+
+  /// Mekanik işler (serbest metin).
+  final String workMechanical;
+
+  /// Özet / geriye dönük birleşik metin.
+  String get workDone {
+    final parts = <String>[];
+    void add(String title, String body) {
+      final t = body.trim();
+      if (t.isEmpty) return;
+      parts.add('$title:\n$t');
+    }
+
+    add('İNŞAAT İŞLERİ', workConstruction);
+    add('ELEKTRİK İŞLERİ', workElectrical);
+    add('MEKANİK İŞLER', workMechanical);
+    return parts.join('\n\n');
+  }
+
+  bool get hasWorkEntries =>
+      workConstruction.trim().isNotEmpty ||
+      workElectrical.trim().isNotEmpty ||
+      workMechanical.trim().isNotEmpty;
+
   final List<DailyReportPhoto> photos;
+
+  /// Gelen malzeme irsaliye görselleri (Hive + base64).
+  final List<DailyReportPhoto> irsaliyePhotos;
   final List<DailyReportMaterial> incomingMaterials;
   final List<DailyReportMaterial> orderedMaterials;
   final List<DailyReportMachine> machines;
@@ -38,8 +71,11 @@ class DailyReport extends Equatable {
     String? id,
     String? projectId,
     String? date,
-    String? workDone,
+    String? workConstruction,
+    String? workElectrical,
+    String? workMechanical,
     List<DailyReportPhoto>? photos,
+    List<DailyReportPhoto>? irsaliyePhotos,
     List<DailyReportMaterial>? incomingMaterials,
     List<DailyReportMaterial>? orderedMaterials,
     List<DailyReportMachine>? machines,
@@ -54,8 +90,11 @@ class DailyReport extends Equatable {
       id: id ?? this.id,
       projectId: projectId ?? this.projectId,
       date: date ?? this.date,
-      workDone: workDone ?? this.workDone,
+      workConstruction: workConstruction ?? this.workConstruction,
+      workElectrical: workElectrical ?? this.workElectrical,
+      workMechanical: workMechanical ?? this.workMechanical,
       photos: photos ?? this.photos,
+      irsaliyePhotos: irsaliyePhotos ?? this.irsaliyePhotos,
       incomingMaterials: incomingMaterials ?? this.incomingMaterials,
       orderedMaterials: orderedMaterials ?? this.orderedMaterials,
       machines: machines ?? this.machines,
@@ -72,8 +111,13 @@ class DailyReport extends Equatable {
         'id': id,
         'projectId': projectId,
         'date': date,
+        'workConstruction': workConstruction,
+        'workElectrical': workElectrical,
+        'workMechanical': workMechanical,
+        // Geriye dönük yedek alanı.
         'workDone': workDone,
         'photos': photos.map((e) => e.toJson()).toList(),
+        'irsaliyePhotos': irsaliyePhotos.map((e) => e.toJson()).toList(),
         'incomingMaterials':
             incomingMaterials.map((e) => e.toJson()).toList(),
         'orderedMaterials': orderedMaterials.map((e) => e.toJson()).toList(),
@@ -92,12 +136,27 @@ class DailyReport extends Equatable {
           .toList();
     }
 
+    var construction = json['workConstruction'] as String? ?? '';
+    var electrical = json['workElectrical'] as String? ?? '';
+    var mechanical = json['workMechanical'] as String? ?? '';
+    final legacy = json['workDone'] as String? ?? '';
+    if (construction.isEmpty &&
+        electrical.isEmpty &&
+        mechanical.isEmpty &&
+        legacy.trim().isNotEmpty) {
+      construction = legacy;
+    }
+
     return DailyReport(
       id: json['id'] as String,
       projectId: json['projectId'] as String,
       date: json['date'] as String,
-      workDone: json['workDone'] as String? ?? '',
+      workConstruction: construction,
+      workElectrical: electrical,
+      workMechanical: mechanical,
       photos: asMaps(json['photos']).map(DailyReportPhoto.fromJson).toList(),
+      irsaliyePhotos:
+          asMaps(json['irsaliyePhotos']).map(DailyReportPhoto.fromJson).toList(),
       incomingMaterials: asMaps(json['incomingMaterials'])
           .map(DailyReportMaterial.fromJson)
           .toList(),
@@ -130,8 +189,11 @@ class DailyReport extends Equatable {
         id,
         projectId,
         date,
-        workDone,
+        workConstruction,
+        workElectrical,
+        workMechanical,
         photos,
+        irsaliyePhotos,
         incomingMaterials,
         orderedMaterials,
         machines,
@@ -209,7 +271,10 @@ class DailyReportMaterial extends Equatable {
     this.quantity = '',
     this.unit = '',
     this.supplierOrOrder = '',
+    this.supplyDate = '',
+    this.price = '',
     this.note = '',
+    this.irsaliyePhotoId = '',
     this.recordedAt,
   });
 
@@ -220,7 +285,16 @@ class DailyReportMaterial extends Equatable {
 
   /// Gelen: tedarikçi · Sipariş: kime / sipariş no.
   final String supplierOrOrder;
+
+  /// Tedarik tarihi (`dd.MM.yyyy` tercih).
+  final String supplyDate;
+
+  /// Birim fiyat (opsiyonel).
+  final String price;
   final String note;
+
+  /// İlişkili irsaliye foto id (opsiyonel).
+  final String irsaliyePhotoId;
   final DateTime? recordedAt;
 
   DailyReportMaterial copyWith({
@@ -229,7 +303,10 @@ class DailyReportMaterial extends Equatable {
     String? quantity,
     String? unit,
     String? supplierOrOrder,
+    String? supplyDate,
+    String? price,
     String? note,
+    String? irsaliyePhotoId,
     DateTime? recordedAt,
   }) {
     return DailyReportMaterial(
@@ -238,7 +315,10 @@ class DailyReportMaterial extends Equatable {
       quantity: quantity ?? this.quantity,
       unit: unit ?? this.unit,
       supplierOrOrder: supplierOrOrder ?? this.supplierOrOrder,
+      supplyDate: supplyDate ?? this.supplyDate,
+      price: price ?? this.price,
       note: note ?? this.note,
+      irsaliyePhotoId: irsaliyePhotoId ?? this.irsaliyePhotoId,
       recordedAt: recordedAt ?? this.recordedAt,
     );
   }
@@ -249,7 +329,10 @@ class DailyReportMaterial extends Equatable {
         'quantity': quantity,
         'unit': unit,
         'supplierOrOrder': supplierOrOrder,
+        'supplyDate': supplyDate,
+        'price': price,
         'note': note,
+        'irsaliyePhotoId': irsaliyePhotoId,
         'recordedAt': recordedAt?.toIso8601String(),
       };
 
@@ -262,15 +345,28 @@ class DailyReportMaterial extends Equatable {
         supplierOrOrder: json['supplierOrOrder'] as String? ??
             json['supplier'] as String? ??
             '',
+        supplyDate: json['supplyDate'] as String? ?? '',
+        price: json['price'] as String? ?? '',
         note: json['note'] as String? ?? '',
+        irsaliyePhotoId: json['irsaliyePhotoId'] as String? ?? '',
         recordedAt: json['recordedAt'] != null
             ? DateTime.tryParse(json['recordedAt'] as String)
             : null,
       );
 
   @override
-  List<Object?> get props =>
-      [id, name, quantity, unit, supplierOrOrder, note, recordedAt];
+  List<Object?> get props => [
+        id,
+        name,
+        quantity,
+        unit,
+        supplierOrOrder,
+        supplyDate,
+        price,
+        note,
+        irsaliyePhotoId,
+        recordedAt,
+      ];
 }
 
 /// İş makinesi puantaj satırı.

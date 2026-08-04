@@ -21,6 +21,7 @@ import '../../data/providers/company_provider.dart';
 import '../../data/providers/daily_report_provider.dart';
 import '../../data/services/daily_report_export_style.dart';
 import '../../data/services/daily_report_pdf_service.dart';
+import '../../data/services/irsaliye_material_ocr.dart';
 import '../../domain/entities/company_info.dart';
 import '../../domain/entities/daily_report.dart';
 import '../../domain/entities/project.dart';
@@ -35,16 +36,21 @@ class DailyReportScreen extends ConsumerStatefulWidget {
 }
 
 class _DailyReportScreenState extends ConsumerState<DailyReportScreen> {
-  final _workCtrl = TextEditingController();
+  final _workConstructionCtrl = TextEditingController();
+  final _workElectricalCtrl = TextEditingController();
+  final _workMechanicalCtrl = TextEditingController();
   final _picker = ImagePicker();
   bool _weatherLoading = false;
   bool _saving = false;
+  bool _irsaliyeBusy = false;
   bool _bootstrapped = false;
   String? _boundKey;
 
   @override
   void dispose() {
-    _workCtrl.dispose();
+    _workConstructionCtrl.dispose();
+    _workElectricalCtrl.dispose();
+    _workMechanicalCtrl.dispose();
     super.dispose();
   }
 
@@ -59,7 +65,9 @@ class _DailyReportScreenState extends ConsumerState<DailyReportScreen> {
         .read(dailyReportsProvider.notifier)
         .ensureDraft(projectId: project.id, date: date);
 
-    _workCtrl.text = report.workDone;
+    _workConstructionCtrl.text = report.workConstruction;
+    _workElectricalCtrl.text = report.workElectrical;
+    _workMechanicalCtrl.text = report.workMechanical;
     _boundKey = key;
     _bootstrapped = true;
 
@@ -105,7 +113,11 @@ class _DailyReportScreenState extends ConsumerState<DailyReportScreen> {
     if (project == null || report == null) return;
     setState(() => _saving = true);
     try {
-      var next = report.copyWith(workDone: _workCtrl.text.trim());
+      var next = report.copyWith(
+        workConstruction: _workConstructionCtrl.text.trim(),
+        workElectrical: _workElectricalCtrl.text.trim(),
+        workMechanical: _workMechanicalCtrl.text.trim(),
+      );
       next = syncAttendanceIntoReport(ref, next);
       ref.read(dailyReportsProvider.notifier).upsert(next);
       if (mounted) {
@@ -121,7 +133,11 @@ class _DailyReportScreenState extends ConsumerState<DailyReportScreen> {
   DailyReport? _persistDraftForExport() {
     final report = ref.read(activeDailyReportProvider);
     if (report == null) return null;
-    var next = report.copyWith(workDone: _workCtrl.text.trim());
+    var next = report.copyWith(
+      workConstruction: _workConstructionCtrl.text.trim(),
+      workElectrical: _workElectricalCtrl.text.trim(),
+      workMechanical: _workMechanicalCtrl.text.trim(),
+    );
     next = syncAttendanceIntoReport(ref, next);
     return next;
   }
@@ -294,6 +310,9 @@ class _DailyReportScreenState extends ConsumerState<DailyReportScreen> {
     final unit = TextEditingController(text: existing?.unit ?? '');
     final supplier =
         TextEditingController(text: existing?.supplierOrOrder ?? '');
+    final supplyDate =
+        TextEditingController(text: existing?.supplyDate ?? '');
+    final price = TextEditingController(text: existing?.price ?? '');
     final note = TextEditingController(text: existing?.note ?? '');
 
     final values = await showDialog<Map<String, String>>(
@@ -308,25 +327,43 @@ class _DailyReportScreenState extends ConsumerState<DailyReportScreen> {
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
+              if (incoming)
+                TextField(
+                  controller: supplyDate,
+                  decoration: const InputDecoration(
+                    labelText: 'Tedarik tarihi',
+                    hintText: 'dd.MM.yyyy',
+                  ),
+                ),
               TextField(
                 controller: name,
-                decoration: const InputDecoration(labelText: 'Malzeme adı *'),
+                decoration: const InputDecoration(labelText: 'Ürün adı *'),
               ),
               TextField(
                 controller: qty,
-                decoration: const InputDecoration(labelText: 'Miktar'),
+                decoration: const InputDecoration(labelText: 'Ürün miktarı'),
                 keyboardType: TextInputType.number,
               ),
               TextField(
                 controller: unit,
-                decoration: const InputDecoration(labelText: 'Birim'),
+                decoration: const InputDecoration(labelText: 'Ürün birimi'),
               ),
               TextField(
                 controller: supplier,
                 decoration: InputDecoration(
-                  labelText: incoming ? 'Tedarikçi' : 'Kime / sipariş no',
+                  labelText:
+                      incoming ? 'Tedarik edilen firma' : 'Kime / sipariş no',
                 ),
               ),
+              if (incoming)
+                TextField(
+                  controller: price,
+                  decoration: const InputDecoration(
+                    labelText: 'Ürün fiyatı (opsiyonel)',
+                  ),
+                  keyboardType:
+                      const TextInputType.numberWithOptions(decimal: true),
+                ),
               TextField(
                 controller: note,
                 decoration: const InputDecoration(labelText: 'Not'),
@@ -348,6 +385,8 @@ class _DailyReportScreenState extends ConsumerState<DailyReportScreen> {
                 'qty': qty.text.trim(),
                 'unit': unit.text.trim(),
                 'supplier': supplier.text.trim(),
+                'supplyDate': supplyDate.text.trim(),
+                'price': price.text.trim(),
                 'note': note.text.trim(),
               });
             },
@@ -360,6 +399,8 @@ class _DailyReportScreenState extends ConsumerState<DailyReportScreen> {
     qty.dispose();
     unit.dispose();
     supplier.dispose();
+    supplyDate.dispose();
+    price.dispose();
     note.dispose();
     if (values == null) return;
 
@@ -369,7 +410,10 @@ class _DailyReportScreenState extends ConsumerState<DailyReportScreen> {
       quantity: values['qty'] ?? '',
       unit: values['unit'] ?? '',
       supplierOrOrder: values['supplier'] ?? '',
+      supplyDate: values['supplyDate'] ?? '',
+      price: values['price'] ?? '',
       note: values['note'] ?? '',
+      irsaliyePhotoId: existing?.irsaliyePhotoId ?? '',
       recordedAt: existing?.recordedAt ?? DateTime.now(),
     );
 
@@ -396,6 +440,307 @@ class _DailyReportScreenState extends ConsumerState<DailyReportScreen> {
           .read(dailyReportsProvider.notifier)
           .upsert(report.copyWith(orderedMaterials: list));
     }
+  }
+
+  Future<void> _pickIrsaliye(ImageSource source) async {
+    final report = ref.read(activeDailyReportProvider);
+    if (report == null || _irsaliyeBusy) return;
+    try {
+      final file = await _picker.pickImage(
+        source: source,
+        maxWidth: 1600,
+        imageQuality: 78,
+      );
+      if (file == null) return;
+      final bytes = await file.readAsBytes();
+      if (bytes.length > 2 * 1024 * 1024) {
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text('İrsaliye görseli çok büyük (en fazla ~2 MB)'),
+            ),
+          );
+        }
+        return;
+      }
+
+      setState(() => _irsaliyeBusy = true);
+      final mime = file.mimeType ?? 'image/jpeg';
+      final photo = DailyReportPhoto(
+        id: IdGen.make('irs'),
+        dataBase64: base64Encode(bytes),
+        mimeType: mime,
+        caption: 'İrsaliye',
+        createdAt: DateTime.now(),
+      );
+
+      final ocr = await IrsaliyeMaterialOcr.fromImageBytes(bytes, mime: mime);
+      if (!mounted) return;
+
+      final confirmed = await _confirmIrsaliyeLines(
+        ocr: ocr,
+        photoId: photo.id,
+      );
+      if (!mounted) return;
+      if (confirmed == null) return; // diyalog kapatıldı — iptal
+
+      ref.read(dailyReportsProvider.notifier).upsert(
+            report.copyWith(
+              irsaliyePhotos: [...report.irsaliyePhotos, photo],
+              incomingMaterials: [
+                ...report.incomingMaterials,
+                ...confirmed,
+              ],
+            ),
+          );
+
+      if (!mounted) return;
+      final msg = confirmed.isEmpty
+          ? (ocr.error ??
+              'İrsaliye kaydedildi. Malzeme satırını manuel ekleyin.')
+          : '${confirmed.length} malzeme satırı irsaliyeden eklendi.';
+      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(msg)));
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('İrsaliye eklenemedi: $e')),
+        );
+      }
+    } finally {
+      if (mounted) setState(() => _irsaliyeBusy = false);
+    }
+  }
+
+  List<DailyReportMaterial> _materialsFromOcr(
+    IrsaliyeMaterialOcrResult ocr, {
+    required String photoId,
+  }) {
+    final lines = ocr.lines.where((l) => l.hasName).toList();
+    if (lines.isEmpty &&
+        (ocr.supplier.isNotEmpty || ocr.supplyDate.isNotEmpty)) {
+      return [
+        DailyReportMaterial(
+          id: IdGen.make('mat'),
+          name: '',
+          supplierOrOrder: ocr.supplier,
+          supplyDate: ocr.supplyDate,
+          irsaliyePhotoId: photoId,
+          recordedAt: DateTime.now(),
+        ),
+      ];
+    }
+    return [
+      for (final line in lines)
+        DailyReportMaterial(
+          id: IdGen.make('mat'),
+          name: line.name,
+          quantity: line.quantity,
+          unit: line.unit,
+          price: line.price,
+          supplierOrOrder: ocr.supplier,
+          supplyDate: ocr.supplyDate,
+          irsaliyePhotoId: photoId,
+          recordedAt: DateTime.now(),
+        ),
+    ];
+  }
+
+  Future<List<DailyReportMaterial>?> _confirmIrsaliyeLines({
+    required IrsaliyeMaterialOcrResult ocr,
+    required String photoId,
+  }) async {
+    final drafts = List<DailyReportMaterial>.from(
+      _materialsFromOcr(ocr, photoId: photoId),
+    );
+    if (drafts.isEmpty) {
+      drafts.add(
+        DailyReportMaterial(
+          id: IdGen.make('mat'),
+          name: '',
+          supplierOrOrder: ocr.supplier,
+          supplyDate: ocr.supplyDate,
+          irsaliyePhotoId: photoId,
+          recordedAt: DateTime.now(),
+        ),
+      );
+    }
+
+    final supplierCtrl = TextEditingController(text: ocr.supplier);
+    final dateCtrl = TextEditingController(text: ocr.supplyDate);
+    final rowCtrls = [
+      for (final d in drafts)
+        (
+          name: TextEditingController(text: d.name),
+          qty: TextEditingController(text: d.quantity),
+          unit: TextEditingController(text: d.unit),
+          price: TextEditingController(text: d.price),
+        ),
+    ];
+
+    final ok = await showDialog<bool>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: const Text('İrsaliye — malzeme onayı'),
+        content: SizedBox(
+          width: double.maxFinite,
+          child: SingleChildScrollView(
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                if (ocr.error != null)
+                  Padding(
+                    padding: const EdgeInsets.only(bottom: AppSpacing.sm),
+                    child: Text(
+                      ocr.error!,
+                      style: TextStyle(color: AppColors.warning, fontSize: 12),
+                    ),
+                  ),
+                TextField(
+                  controller: dateCtrl,
+                  decoration: const InputDecoration(
+                    labelText: 'Tedarik tarihi',
+                    hintText: 'dd.MM.yyyy',
+                  ),
+                ),
+                TextField(
+                  controller: supplierCtrl,
+                  decoration: const InputDecoration(
+                    labelText: 'Tedarik edilen firma',
+                  ),
+                ),
+                const SizedBox(height: AppSpacing.sm),
+                for (var i = 0; i < rowCtrls.length; i++) ...[
+                  Text(
+                    'Ürün ${i + 1}',
+                    style: Theme.of(ctx).textTheme.labelLarge?.copyWith(
+                          fontWeight: FontWeight.w700,
+                        ),
+                  ),
+                  TextField(
+                    controller: rowCtrls[i].name,
+                    decoration: const InputDecoration(labelText: 'Ürün adı *'),
+                  ),
+                  TextField(
+                    controller: rowCtrls[i].qty,
+                    decoration:
+                        const InputDecoration(labelText: 'Ürün miktarı'),
+                  ),
+                  TextField(
+                    controller: rowCtrls[i].unit,
+                    decoration: const InputDecoration(labelText: 'Ürün birimi'),
+                  ),
+                  TextField(
+                    controller: rowCtrls[i].price,
+                    decoration: const InputDecoration(
+                      labelText: 'Ürün fiyatı (opsiyonel)',
+                    ),
+                  ),
+                  const SizedBox(height: AppSpacing.sm),
+                ],
+              ],
+            ),
+          ),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(ctx, false),
+            child: const Text('Atla'),
+          ),
+          FilledButton(
+            onPressed: () => Navigator.pop(ctx, true),
+            child: const Text('Listeye ekle'),
+          ),
+        ],
+      ),
+    );
+
+    final supplier = supplierCtrl.text.trim();
+    final date = dateCtrl.text.trim();
+    supplierCtrl.dispose();
+    dateCtrl.dispose();
+
+    void disposeRows() {
+      for (final r in rowCtrls) {
+        r.name.dispose();
+        r.qty.dispose();
+        r.unit.dispose();
+        r.price.dispose();
+      }
+    }
+
+    if (ok == null) {
+      disposeRows();
+      return null; // diyalog kapatıldı → tamamen iptal
+    }
+    if (ok == false) {
+      disposeRows();
+      return const []; // Atla → yalnızca irsaliye foto
+    }
+
+    final result = <DailyReportMaterial>[];
+    for (final r in rowCtrls) {
+      final n = r.name.text.trim();
+      if (n.isNotEmpty) {
+        result.add(
+          DailyReportMaterial(
+            id: IdGen.make('mat'),
+            name: n,
+            quantity: r.qty.text.trim(),
+            unit: r.unit.text.trim(),
+            price: r.price.text.trim(),
+            supplierOrOrder: supplier,
+            supplyDate: date,
+            irsaliyePhotoId: photoId,
+            recordedAt: DateTime.now(),
+          ),
+        );
+      }
+      r.name.dispose();
+      r.qty.dispose();
+      r.unit.dispose();
+      r.price.dispose();
+    }
+    return result;
+  }
+
+  void _showIrsaliyeSource() {
+    showModalBottomSheet<void>(
+      context: context,
+      backgroundColor: AppColors.surfaceElevated,
+      builder: (ctx) => SafeArea(
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            ListTile(
+              leading: const Icon(Icons.photo_library_outlined),
+              title: const Text('Galeriden irsaliye'),
+              onTap: () {
+                Navigator.pop(ctx);
+                _pickIrsaliye(ImageSource.gallery);
+              },
+            ),
+            if (!kIsWeb)
+              ListTile(
+                leading: const Icon(Icons.photo_camera_outlined),
+                title: const Text('Kamera ile irsaliye'),
+                onTap: () {
+                  Navigator.pop(ctx);
+                  _pickIrsaliye(ImageSource.camera);
+                },
+              ),
+            const Padding(
+              padding: EdgeInsets.fromLTRB(16, 0, 16, 16),
+              child: Text(
+                'İrsaliye görseli okunur; tedarik tarihi, firma, ürün adı, '
+                'miktar, birim ve fiyat (varsa) listeye eklenmeden önce onaylanır.',
+                style: TextStyle(fontSize: 12),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
   }
 
   Future<void> _upsertMachine({DailyReportMachine? existing}) async {
@@ -772,15 +1117,27 @@ class _DailyReportScreenState extends ConsumerState<DailyReportScreen> {
                   _SectionCard(
                     title: 'Yapılan işler',
                     icon: Icons.checklist_outlined,
-                    child: TextField(
-                      controller: _workCtrl,
-                      maxLines: 5,
-                      decoration: const InputDecoration(
-                        hintText:
-                            'Gün içinde yapılan işler…\n(Satır satır madde yazabilirsiniz)',
-                        border: OutlineInputBorder(),
-                      ),
-                      onChanged: (_) {},
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.stretch,
+                      children: [
+                        _WorkCategoryField(
+                          label: 'İnşaat işleri',
+                          controller: _workConstructionCtrl,
+                          hint: 'İnşaat kapsamında yapılan işler…',
+                        ),
+                        const SizedBox(height: AppSpacing.sm),
+                        _WorkCategoryField(
+                          label: 'Elektrik işleri',
+                          controller: _workElectricalCtrl,
+                          hint: 'Elektrik kapsamında yapılan işler…',
+                        ),
+                        const SizedBox(height: AppSpacing.sm),
+                        _WorkCategoryField(
+                          label: 'Mekanik işler',
+                          controller: _workMechanicalCtrl,
+                          hint: 'Mekanik kapsamında yapılan işler…',
+                        ),
+                      ],
                     ),
                   ),
                   const SizedBox(height: AppSpacing.md),
@@ -884,30 +1241,152 @@ class _DailyReportScreenState extends ConsumerState<DailyReportScreen> {
                           ),
                   ),
                   const SizedBox(height: AppSpacing.md),
-                  _ListSection(
+                  _SectionCard(
                     title: 'Gelen malzeme',
                     icon: Icons.local_shipping_outlined,
-                    onAdd: () => _upsertMaterial(incoming: true),
-                    empty: 'Gelen malzeme kaydı yok',
-                    children: [
-                      for (final m in report?.incomingMaterials ?? const [])
-                        _MaterialTile(
-                          item: m,
-                          onEdit: () =>
-                              _upsertMaterial(incoming: true, existing: m),
-                          onDelete: () {
-                            final r = ref.read(activeDailyReportProvider);
-                            if (r == null) return;
-                            ref.read(dailyReportsProvider.notifier).upsert(
-                                  r.copyWith(
-                                    incomingMaterials: r.incomingMaterials
-                                        .where((e) => e.id != m.id)
-                                        .toList(),
+                    trailing: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        IconButton(
+                          tooltip: 'İrsaliye fotoğrafı',
+                          onPressed:
+                              _irsaliyeBusy ? null : _showIrsaliyeSource,
+                          icon: _irsaliyeBusy
+                              ? const SizedBox(
+                                  width: 18,
+                                  height: 18,
+                                  child: CircularProgressIndicator(
+                                    strokeWidth: 2,
                                   ),
-                                );
-                          },
+                                )
+                              : const Icon(Icons.receipt_long_outlined),
                         ),
-                    ],
+                        IconButton(
+                          tooltip: 'Manuel ekle',
+                          onPressed: () =>
+                              _upsertMaterial(incoming: true),
+                          icon: const Icon(Icons.add),
+                        ),
+                      ],
+                    ),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.stretch,
+                      children: [
+                        if (report?.irsaliyePhotos.isNotEmpty == true) ...[
+                          Text(
+                            'İrsaliye görselleri',
+                            style: theme.textTheme.labelMedium?.copyWith(
+                              fontWeight: FontWeight.w700,
+                            ),
+                          ),
+                          const SizedBox(height: AppSpacing.xs),
+                          SizedBox(
+                            height: 72,
+                            child: ListView.separated(
+                              scrollDirection: Axis.horizontal,
+                              itemCount: report!.irsaliyePhotos.length,
+                              separatorBuilder: (_, __) =>
+                                  const SizedBox(width: AppSpacing.xs),
+                              itemBuilder: (context, i) {
+                                final ph = report.irsaliyePhotos[i];
+                                return Stack(
+                                  children: [
+                                    ClipRRect(
+                                      borderRadius: AppRadii.sm,
+                                      child: Image.memory(
+                                        base64Decode(ph.dataBase64),
+                                        width: 72,
+                                        height: 72,
+                                        fit: BoxFit.cover,
+                                        errorBuilder: (_, __, ___) =>
+                                            Container(
+                                          width: 72,
+                                          height: 72,
+                                          color: theme.dividerColor,
+                                          child: const Icon(Icons.broken_image),
+                                        ),
+                                      ),
+                                    ),
+                                    Positioned(
+                                      right: 0,
+                                      top: 0,
+                                      child: IconButton(
+                                        visualDensity: VisualDensity.compact,
+                                        padding: EdgeInsets.zero,
+                                        constraints:
+                                            const BoxConstraints.tightFor(
+                                          width: 28,
+                                          height: 28,
+                                        ),
+                                        icon: const Icon(
+                                          Icons.close,
+                                          size: 16,
+                                          color: Colors.white,
+                                        ),
+                                        style: IconButton.styleFrom(
+                                          backgroundColor: Colors.black54,
+                                        ),
+                                        onPressed: () {
+                                          final r = ref.read(
+                                            activeDailyReportProvider,
+                                          );
+                                          if (r == null) return;
+                                          ref
+                                              .read(
+                                                dailyReportsProvider.notifier,
+                                              )
+                                              .upsert(
+                                                r.copyWith(
+                                                  irsaliyePhotos: r
+                                                      .irsaliyePhotos
+                                                      .where(
+                                                        (p) => p.id != ph.id,
+                                                      )
+                                                      .toList(),
+                                                ),
+                                              );
+                                        },
+                                      ),
+                                    ),
+                                  ],
+                                );
+                              },
+                            ),
+                          ),
+                          const SizedBox(height: AppSpacing.sm),
+                        ],
+                        if ((report?.incomingMaterials.isEmpty ?? true))
+                          Text(
+                            'Gelen malzeme kaydı yok.\n'
+                            'İrsaliye fotoğrafı ekleyerek otomatik doldurun '
+                            'veya + ile manuel ekleyin.',
+                            style: theme.textTheme.bodyMedium,
+                          )
+                        else
+                          for (final m in report!.incomingMaterials)
+                            _MaterialTile(
+                              item: m,
+                              onEdit: () => _upsertMaterial(
+                                incoming: true,
+                                existing: m,
+                              ),
+                              onDelete: () {
+                                final r =
+                                    ref.read(activeDailyReportProvider);
+                                if (r == null) return;
+                                ref
+                                    .read(dailyReportsProvider.notifier)
+                                    .upsert(
+                                      r.copyWith(
+                                        incomingMaterials: r.incomingMaterials
+                                            .where((e) => e.id != m.id)
+                                            .toList(),
+                                      ),
+                                    );
+                              },
+                            ),
+                      ],
+                    ),
                   ),
                   const SizedBox(height: AppSpacing.md),
                   _ListSection(
@@ -1029,6 +1508,44 @@ class _DailyReportScreenState extends ConsumerState<DailyReportScreen> {
   }
 }
 
+class _WorkCategoryField extends StatelessWidget {
+  const _WorkCategoryField({
+    required this.label,
+    required this.controller,
+    required this.hint,
+  });
+
+  final String label;
+  final TextEditingController controller;
+  final String hint;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        Text(
+          label,
+          style: theme.textTheme.labelLarge?.copyWith(
+            fontWeight: FontWeight.w700,
+          ),
+        ),
+        const SizedBox(height: AppSpacing.xs),
+        TextField(
+          controller: controller,
+          maxLines: 3,
+          decoration: InputDecoration(
+            hintText: hint,
+            border: const OutlineInputBorder(),
+            isDense: true,
+          ),
+        ),
+      ],
+    );
+  }
+}
+
 class _SectionCard extends StatelessWidget {
   const _SectionCard({
     required this.title,
@@ -1126,12 +1643,15 @@ class _MaterialTile extends StatelessWidget {
     ].join(' ');
     return ListTile(
       contentPadding: EdgeInsets.zero,
-      title: Text(item.name),
+      title: Text(item.name.isEmpty ? '(ürün adı yok)' : item.name),
       subtitle: Text(
         [
+          if (item.supplyDate.isNotEmpty) item.supplyDate,
           if (qty.isNotEmpty) qty,
           if (item.supplierOrOrder.isNotEmpty) item.supplierOrOrder,
+          if (item.price.isNotEmpty) '₺${item.price}',
           if (item.note.isNotEmpty) item.note,
+          if (item.irsaliyePhotoId.isNotEmpty) 'İrsaliye',
         ].join(' · '),
       ),
       trailing: Row(

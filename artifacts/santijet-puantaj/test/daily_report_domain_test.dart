@@ -1,4 +1,5 @@
 import 'package:flutter_test/flutter_test.dart';
+import 'package:santijet_puantaj/data/services/irsaliye_material_ocr.dart';
 import 'package:santijet_puantaj/data/services/weather_service.dart';
 import 'package:santijet_puantaj/domain/daily_report/attendance_snapshot_builder.dart';
 import 'package:santijet_puantaj/domain/entities/attendance.dart';
@@ -69,7 +70,9 @@ void main() {
         id: 'dr1',
         projectId: 'p',
         date: '04.08.2026',
-        workDone: 'Kazı',
+        workConstruction: 'Kazı',
+        workElectrical: 'Pano bağlantısı',
+        workMechanical: 'Klima altyapı',
         photos: const [
           DailyReportPhoto(
             id: 'ph1',
@@ -86,9 +89,25 @@ void main() {
         ),
       );
       final restored = DailyReport.fromJson(report.toJson());
-      expect(restored.workDone, 'Kazı');
+      expect(restored.workConstruction, 'Kazı');
+      expect(restored.workElectrical, 'Pano bağlantısı');
+      expect(restored.workMechanical, 'Klima altyapı');
+      expect(restored.hasWorkEntries, isTrue);
+      expect(restored.workDone, contains('İNŞAAT İŞLERİ'));
       expect(restored.photos.single.caption, 'Batı cephe');
       expect(restored.weather?.temperatureC, 28);
+    });
+
+    test('eski workDone alanı inşaata taşınır', () {
+      final restored = DailyReport.fromJson({
+        'id': 'dr2',
+        'projectId': 'p',
+        'date': '04.08.2026',
+        'workDone': 'Eski tek satır iş',
+      });
+      expect(restored.workConstruction, 'Eski tek satır iş');
+      expect(restored.workElectrical, '');
+      expect(restored.workMechanical, '');
     });
   });
 
@@ -97,6 +116,27 @@ void main() {
       expect(WeatherService.wmoDescription(0), contains('güneşli'));
       expect(WeatherService.wmoDescription(61), contains('Yağmur'));
       expect(WeatherService.wmoDescription(999), 'Değişken');
+    });
+  });
+
+  group('IrsaliyeMaterialOcr.parseText', () {
+    test('etiketli alanları okur', () {
+      const raw = '''
+TEDARİK TARİHİ: 27.07.2026
+TEDARİKÇİ: BSD İNŞAAT LTD. ŞTİ.
+ÜRÜN ADI: Çimento CEM I 42.5
+MİKTAR: 120
+BİRİM: kg
+BİRİM FİYAT: 4.5
+''';
+      final r = IrsaliyeMaterialOcr.parseText(raw);
+      expect(r.supplyDate, '27.07.2026');
+      expect(r.supplier.toLowerCase(), contains('bsd'));
+      expect(r.lines, isNotEmpty);
+      expect(r.lines.first.name.toLowerCase(), contains('imento'));
+      expect(r.lines.first.quantity, '120');
+      expect(r.lines.first.unit.toLowerCase(), 'kg');
+      expect(r.lines.first.price, '4.5');
     });
   });
 }
