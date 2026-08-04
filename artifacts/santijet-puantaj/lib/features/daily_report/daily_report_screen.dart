@@ -22,6 +22,7 @@ import '../../data/providers/daily_report_provider.dart';
 import '../../data/services/daily_report_export_style.dart';
 import '../../data/services/daily_report_pdf_service.dart';
 import '../../data/services/irsaliye_material_ocr.dart';
+import '../../domain/catalogs/turkey_cities.dart';
 import '../../domain/entities/company_info.dart';
 import '../../domain/entities/daily_report.dart';
 import '../../domain/entities/project.dart';
@@ -74,19 +75,53 @@ class _DailyReportScreenState extends ConsumerState<DailyReportScreen> {
     // Snapshot her açılışta canlıdan yazılır.
     syncAttendanceIntoReport(ref, report);
 
-    // Hava yoksa veya senkron değilse çek.
+    // Şehir seçiliyse ve hava yok/senkron değilse güncelle.
+    final city = ref.read(selectedWeatherCityProvider);
     final needsWeather =
-        report.weather == null || report.weather?.synced != true;
+        city != null &&
+        (report.weather == null || report.weather?.synced != true);
     if (needsWeather && !_weatherLoading) {
       setState(() => _weatherLoading = true);
       try {
-        final city = project.company.trim().isNotEmpty
-            ? project.company
-            : project.name;
-        await refreshReportWeather(ref, report: report, cityHint: city);
+        await refreshReportWeather(ref, report: report, city: city);
       } finally {
         if (mounted) setState(() => _weatherLoading = false);
       }
+    }
+  }
+
+  Future<void> _pickWeatherCity() async {
+    final selectedId = ref.read(weatherCityIdProvider);
+    final picked = await showModalBottomSheet<TurkeyCity>(
+      context: context,
+      isScrollControlled: true,
+      showDragHandle: true,
+      builder: (ctx) => _CityPickerSheet(selectedId: selectedId),
+    );
+    if (picked == null || !mounted) return;
+    final report = ref.read(activeDailyReportProvider);
+    if (report == null) return;
+    setState(() => _weatherLoading = true);
+    try {
+      await refreshReportWeather(ref, report: report, city: picked);
+    } finally {
+      if (mounted) setState(() => _weatherLoading = false);
+    }
+  }
+
+  Future<void> _refreshWeather() async {
+    final city = ref.read(selectedWeatherCityProvider);
+    if (city == null) {
+      await _pickWeatherCity();
+      return;
+    }
+    final report = ref.read(activeDailyReportProvider);
+    if (report == null) return;
+    setState(() => _weatherLoading = true);
+    try {
+      await refreshReportWeather(ref, report: report, city: city);
+    } finally {
+      if (mounted) setState(() => _weatherLoading = false);
     }
   }
 
@@ -986,27 +1021,7 @@ class _DailyReportScreenState extends ConsumerState<DailyReportScreen> {
                     icon: Icons.wb_sunny_outlined,
                     trailing: IconButton(
                       tooltip: 'Yenile',
-                      onPressed: _weatherLoading
-                          ? null
-                          : () async {
-                              setState(() => _weatherLoading = true);
-                              try {
-                                final r = ref.read(activeDailyReportProvider);
-                                if (r == null) return;
-                                final city = project.company.trim().isNotEmpty
-                                    ? project.company
-                                    : project.name;
-                                await refreshReportWeather(
-                                  ref,
-                                  report: r,
-                                  cityHint: city,
-                                );
-                              } finally {
-                                if (mounted) {
-                                  setState(() => _weatherLoading = false);
-                                }
-                              }
-                            },
+                      onPressed: _weatherLoading ? null : _refreshWeather,
                       icon: _weatherLoading
                           ? const SizedBox(
                               width: 18,
@@ -1015,50 +1030,66 @@ class _DailyReportScreenState extends ConsumerState<DailyReportScreen> {
                             )
                           : const Icon(Icons.refresh, size: 20),
                     ),
-                    child: weather == null
-                        ? Text(
-                            _weatherLoading
-                                ? 'Hava çekiliyor…'
-                                : 'Henüz hava bilgisi yok',
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.stretch,
+                      children: [
+                        OutlinedButton.icon(
+                          onPressed: _weatherLoading ? null : _pickWeatherCity,
+                          icon: const Icon(Icons.location_city_outlined),
+                          label: Text(
+                            ref.watch(selectedWeatherCityProvider)?.name ??
+                                'Şehir seçin',
+                          ),
+                        ),
+                        const SizedBox(height: AppSpacing.sm),
+                        if (_weatherLoading)
+                          Text(
+                            'Hava çekiliyor…',
                             style: theme.textTheme.bodyMedium,
                           )
-                        : Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Text(
-                                [
-                                  if (weather.temperatureC != null)
-                                    '${weather.temperatureC!.toStringAsFixed(0)}°C',
-                                  if (weather.description.isNotEmpty)
-                                    weather.description,
-                                  if (weather.windKmh != null)
-                                    'Rüzgar ${weather.windKmh!.toStringAsFixed(0)} km/s',
-                                ].join(' · '),
-                                style: theme.textTheme.titleSmall?.copyWith(
-                                  fontWeight: FontWeight.w600,
-                                ),
-                              ),
-                              if (weather.locationLabel.isNotEmpty) ...[
-                                const SizedBox(height: 4),
-                                Text(
-                                  weather.locationLabel,
-                                  style: theme.textTheme.labelSmall,
-                                ),
-                              ],
-                              if (!weather.synced ||
-                                  weather.offlineNote.isNotEmpty) ...[
-                                const SizedBox(height: 6),
-                                Text(
-                                  weather.offlineNote.isNotEmpty
-                                      ? weather.offlineNote
-                                      : 'Senkron edilemedi',
-                                  style: theme.textTheme.labelSmall?.copyWith(
-                                    color: AppColors.warning,
-                                  ),
-                                ),
-                              ],
-                            ],
+                        else if (weather == null)
+                          Text(
+                            ref.watch(selectedWeatherCityProvider) == null
+                                ? 'Hava tahmini için listeden şehir seçin.'
+                                : 'Henüz hava bilgisi yok — yenileyin.',
+                            style: theme.textTheme.bodyMedium,
+                          )
+                        else ...[
+                          Text(
+                            [
+                              if (weather.temperatureC != null)
+                                '${weather.temperatureC!.toStringAsFixed(0)}°C',
+                              if (weather.description.isNotEmpty)
+                                weather.description,
+                              if (weather.windKmh != null)
+                                'Rüzgar ${weather.windKmh!.toStringAsFixed(0)} km/s',
+                            ].join(' · '),
+                            style: theme.textTheme.titleSmall?.copyWith(
+                              fontWeight: FontWeight.w600,
+                            ),
                           ),
+                          if (weather.locationLabel.isNotEmpty) ...[
+                            const SizedBox(height: 4),
+                            Text(
+                              weather.locationLabel,
+                              style: theme.textTheme.labelSmall,
+                            ),
+                          ],
+                          if (!weather.synced ||
+                              weather.offlineNote.isNotEmpty) ...[
+                            const SizedBox(height: 6),
+                            Text(
+                              weather.offlineNote.isNotEmpty
+                                  ? weather.offlineNote
+                                  : 'Senkron edilemedi',
+                              style: theme.textTheme.labelSmall?.copyWith(
+                                color: AppColors.warning,
+                              ),
+                            ),
+                          ],
+                        ],
+                      ],
+                    ),
                   ),
                   const SizedBox(height: AppSpacing.md),
                   _SectionCard(
@@ -1816,6 +1847,108 @@ class _DailyReportExportSheetState extends State<_DailyReportExportSheet> {
             ),
           ],
         ],
+      ),
+    );
+  }
+}
+
+/// Türkiye illeri seçici — arama + alfabetik liste.
+class _CityPickerSheet extends StatefulWidget {
+  const _CityPickerSheet({this.selectedId});
+
+  final String? selectedId;
+
+  @override
+  State<_CityPickerSheet> createState() => _CityPickerSheetState();
+}
+
+class _CityPickerSheetState extends State<_CityPickerSheet> {
+  final _queryCtrl = TextEditingController();
+  late final List<TurkeyCity> _all = turkeyCitiesSorted();
+
+  @override
+  void dispose() {
+    _queryCtrl.dispose();
+    super.dispose();
+  }
+
+  static String _foldTr(String s) => s
+      .toLowerCase()
+      .replaceAll('ı', 'i')
+      .replaceAll('İ', 'i')
+      .replaceAll('ğ', 'g')
+      .replaceAll('ü', 'u')
+      .replaceAll('ş', 's')
+      .replaceAll('ö', 'o')
+      .replaceAll('ç', 'c');
+
+  List<TurkeyCity> get _filtered {
+    final q = _foldTr(_queryCtrl.text.trim());
+    if (q.isEmpty) return _all;
+    return _all.where((c) => _foldTr(c.name).contains(q)).toList();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final bottom = MediaQuery.viewInsetsOf(context).bottom;
+    final filtered = _filtered;
+    return Padding(
+      padding: EdgeInsets.only(bottom: bottom),
+      child: SizedBox(
+        height: MediaQuery.sizeOf(context).height * 0.72,
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            Padding(
+              padding: const EdgeInsets.fromLTRB(
+                AppSpacing.md,
+                0,
+                AppSpacing.md,
+                AppSpacing.sm,
+              ),
+              child: Text(
+                'Şehir seçin',
+                style: theme.textTheme.headlineMedium,
+              ),
+            ),
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: AppSpacing.md),
+              child: TextField(
+                controller: _queryCtrl,
+                autofocus: true,
+                decoration: const InputDecoration(
+                  hintText: 'İl ara…',
+                  prefixIcon: Icon(Icons.search),
+                  isDense: true,
+                ),
+                onChanged: (_) => setState(() {}),
+              ),
+            ),
+            const SizedBox(height: AppSpacing.sm),
+            Expanded(
+              child: ListView.separated(
+                itemCount: filtered.length,
+                separatorBuilder: (_, __) => const Divider(height: 1),
+                itemBuilder: (context, index) {
+                  final city = filtered[index];
+                  final selected = city.id == widget.selectedId;
+                  return ListTile(
+                    title: Text(city.name),
+                    trailing: selected
+                        ? Icon(
+                            Icons.check_circle,
+                            color: theme.colorScheme.primary,
+                          )
+                        : null,
+                    selected: selected,
+                    onTap: () => Navigator.pop(context, city),
+                  );
+                },
+              ),
+            ),
+          ],
+        ),
       ),
     );
   }

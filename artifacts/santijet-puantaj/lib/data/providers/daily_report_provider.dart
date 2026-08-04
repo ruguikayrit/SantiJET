@@ -3,8 +3,10 @@ import 'dart:convert';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:hive/hive.dart';
 
+import '../../core/theme/theme_mode_provider.dart';
 import '../../core/utils/id_gen.dart';
 import '../../core/utils/puantaj_date.dart';
+import '../../domain/catalogs/turkey_cities.dart';
 import '../../domain/daily_report/attendance_snapshot_builder.dart';
 import '../../domain/entities/daily_report.dart';
 import '../services/weather_service.dart';
@@ -160,14 +162,52 @@ final todayDailyReportProvider = Provider<DailyReport?>((ref) {
 
 final weatherServiceProvider = Provider<WeatherService>((ref) => weatherService);
 
+/// Son seçilen hava ili (plaka kodu) — Hive settings.
+class WeatherCityNotifier extends StateNotifier<String?> {
+  WeatherCityNotifier(this._box) : super(_read(_box));
+
+  final Box _box;
+  static const _key = 'weatherCityId';
+
+  static String? _read(Box box) {
+    final raw = box.get(_key);
+    if (raw is String && raw.trim().isNotEmpty) return raw.trim();
+    return null;
+  }
+
+  void set(String? cityId) {
+    final id = cityId?.trim();
+    if (id == null || id.isEmpty) {
+      state = null;
+      _box.delete(_key);
+      return;
+    }
+    state = id;
+    _box.put(_key, id);
+  }
+
+  TurkeyCity? get city => turkeyCityById(state);
+}
+
+final weatherCityIdProvider =
+    StateNotifierProvider<WeatherCityNotifier, String?>((ref) {
+  return WeatherCityNotifier(ref.watch(settingsBoxProvider));
+});
+
+final selectedWeatherCityProvider = Provider<TurkeyCity?>((ref) {
+  return turkeyCityById(ref.watch(weatherCityIdProvider));
+});
+
 /// Hava çek + rapora yaz (son bilinen + offline notu).
 Future<DailyReportWeather> refreshReportWeather(
   WidgetRef ref, {
   required DailyReport report,
-  String? cityHint,
+  required TurkeyCity city,
 }) async {
+  ref.read(weatherCityIdProvider.notifier).set(city.id);
   final previous = report.weather;
-  final weather = await ref.read(weatherServiceProvider).fetch(cityHint: cityHint);
+  final weather =
+      await ref.read(weatherServiceProvider).fetchForCity(city);
   if (!weather.synced && previous != null && previous.synced) {
     final merged = previous.copyWith(
       synced: false,
@@ -175,6 +215,7 @@ Future<DailyReportWeather> refreshReportWeather(
           ? weather.offlineNote
           : 'Hava durumu senkron edilemedi. Son bilinen değerler gösteriliyor.',
       fetchedAt: previous.fetchedAt,
+      locationLabel: city.name,
     );
     ref.read(dailyReportsProvider.notifier).upsert(
           report.copyWith(weather: merged),

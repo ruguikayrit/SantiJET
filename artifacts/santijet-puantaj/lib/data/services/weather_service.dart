@@ -2,45 +2,22 @@ import 'dart:convert';
 
 import 'package:http/http.dart' as http;
 
+import '../../domain/catalogs/turkey_cities.dart';
 import '../../domain/entities/daily_report.dart';
 
 /// Open-Meteo hava servisi — API key gerektirmez.
 ///
-/// Konum stratejisi:
-/// 1) [cityHint] (proje firma/şehir) → geocoding
-/// 2) Başarısızsa İstanbul varsayılan + not
+/// Konum: listeden seçilen [TurkeyCity] koordinatları (GPS / geocode yok).
 class WeatherService {
   WeatherService({http.Client? client}) : _client = client ?? http.Client();
 
   final http.Client _client;
 
-  static const _defaultLat = 41.0082;
-  static const _defaultLon = 28.9784;
-  static const _defaultLabel = 'İstanbul (varsayılan)';
-
-  Future<DailyReportWeather> fetch({String? cityHint}) async {
+  Future<DailyReportWeather> fetchForCity(TurkeyCity city) async {
     try {
-      var lat = _defaultLat;
-      var lon = _defaultLon;
-      var label = _defaultLabel;
-      var usedFallback = true;
-
-      final hint = cityHint?.trim() ?? '';
-      if (hint.isNotEmpty) {
-        final geo = await _geocode(hint);
-        if (geo != null) {
-          lat = geo.$1;
-          lon = geo.$2;
-          label = geo.$3;
-          usedFallback = false;
-        } else {
-          label = '$_defaultLabel · “$hint” bulunamadı';
-        }
-      }
-
       final uri = Uri.https('api.open-meteo.com', '/v1/forecast', {
-        'latitude': lat.toString(),
-        'longitude': lon.toString(),
+        'latitude': city.lat.toString(),
+        'longitude': city.lon.toString(),
         'current': 'temperature_2m,weather_code,wind_speed_10m',
         'timezone': 'auto',
         'wind_speed_unit': 'kmh',
@@ -61,46 +38,19 @@ class WeatherService {
         temperatureC: temp,
         description: wmoDescription(code),
         windKmh: wind,
-        locationLabel: label,
+        locationLabel: city.name,
         fetchedAt: DateTime.now(),
         synced: true,
-        offlineNote: usedFallback && hint.isNotEmpty
-            ? 'Şehir bulunamadı; varsayılan konum kullanıldı.'
-            : '',
+        offlineNote: '',
       );
     } catch (_) {
       return DailyReportWeather(
         synced: false,
         offlineNote: 'Hava durumu senkron edilemedi.',
         fetchedAt: DateTime.now(),
-        locationLabel: cityHint?.trim().isNotEmpty == true
-            ? cityHint!.trim()
-            : _defaultLabel,
+        locationLabel: city.name,
       );
     }
-  }
-
-  Future<(double, double, String)?> _geocode(String name) async {
-    final uri = Uri.https('geocoding-api.open-meteo.com', '/v1/search', {
-      'name': name,
-      'count': '1',
-      'language': 'tr',
-      'format': 'json',
-    });
-    final res = await _client.get(uri).timeout(const Duration(seconds: 10));
-    if (res.statusCode != 200) return null;
-    final body = jsonDecode(res.body) as Map<String, dynamic>;
-    final results = body['results'];
-    if (results is! List || results.isEmpty) return null;
-    final first = Map<String, dynamic>.from(results.first as Map);
-    final lat = (first['latitude'] as num?)?.toDouble();
-    final lon = (first['longitude'] as num?)?.toDouble();
-    if (lat == null || lon == null) return null;
-    final place = first['name'] as String? ?? name;
-    final admin = first['admin1'] as String?;
-    final country = first['country'] as String?;
-    final parts = [place, if (admin != null && admin.isNotEmpty) admin, if (country != null) country];
-    return (lat, lon, parts.join(', '));
   }
 
   /// WMO weather interpretation codes → Türkçe kısa açıklama.
