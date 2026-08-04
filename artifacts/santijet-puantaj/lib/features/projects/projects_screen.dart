@@ -1,6 +1,9 @@
+import 'dart:convert';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import 'package:image_picker/image_picker.dart';
 
 import '../../core/design_system/sj_card.dart';
 import '../../core/design_system/sj_empty_state.dart';
@@ -76,6 +79,8 @@ class ProjectsScreen extends ConsumerWidget {
                             child: Column(
                               crossAxisAlignment: CrossAxisAlignment.start,
                               children: [
+                                _CompanyLogoAvatar(project: p),
+                                const SizedBox(height: AppSpacing.xs),
                                 Text(
                                   p.company.isEmpty
                                       ? 'Firma adı yok'
@@ -172,78 +177,307 @@ class ProjectsScreen extends ConsumerWidget {
     WidgetRef ref, {
     Project? existing,
   }) async {
-    final nameCtrl = TextEditingController(text: existing?.name ?? '');
-    final codeCtrl = TextEditingController(text: existing?.code ?? '');
-    final companyCtrl = TextEditingController(text: existing?.company ?? '');
-
-    final saved = await showModalBottomSheet<bool>(
+    final result = await showModalBottomSheet<_ProjectEditResult>(
       context: context,
       isScrollControlled: true,
       showDragHandle: true,
-      builder: (ctx) {
-        final bottom = MediaQuery.viewInsetsOf(ctx).bottom;
-        return Padding(
-          padding: EdgeInsets.fromLTRB(
-            AppSpacing.md,
-            0,
-            AppSpacing.md,
-            bottom + AppSpacing.md,
-          ),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            crossAxisAlignment: CrossAxisAlignment.stretch,
-            children: [
-              Text(
-                existing == null ? 'Yeni proje' : 'Projeyi düzenle',
-                style: Theme.of(ctx).textTheme.headlineMedium,
-              ),
-              const SizedBox(height: AppSpacing.md),
-              TextField(
-                controller: companyCtrl,
-                decoration: const InputDecoration(labelText: 'Firma adı'),
-                textCapitalization: TextCapitalization.sentences,
-              ),
-              const SizedBox(height: AppSpacing.sm),
-              TextField(
-                controller: nameCtrl,
-                decoration: const InputDecoration(labelText: 'İşin adı'),
-                textCapitalization: TextCapitalization.sentences,
-              ),
-              const SizedBox(height: AppSpacing.sm),
-              TextField(
-                controller: codeCtrl,
-                decoration: const InputDecoration(labelText: 'İşin kodu'),
-              ),
-              const SizedBox(height: AppSpacing.md),
-              FilledButton(
-                onPressed: () {
-                  if (nameCtrl.text.trim().isEmpty) return;
-                  Navigator.pop(ctx, true);
-                },
-                child: const Text('Kaydet'),
-              ),
-            ],
-          ),
-        );
-      },
+      builder: (ctx) => _ProjectEditorSheet(existing: existing),
     );
 
-    if (saved != true) return;
-    final name = nameCtrl.text.trim();
-    final code = codeCtrl.text.trim();
-    final company = companyCtrl.text.trim();
+    if (result == null) return;
 
     if (existing == null) {
       final created = ref.read(projectsProvider.notifier).add(
-            name: name,
-            code: code,
-            company: company,
+            name: result.name,
+            code: result.code,
+            company: result.company,
+            logoBase64: result.logoBase64,
+            logoMimeType: result.logoMimeType,
           );
       ref.read(activeProjectIdProvider.notifier).set(created.id);
     } else {
       ref.read(projectsProvider.notifier).update(
-            existing.copyWith(name: name, code: code, company: company),
+            existing.copyWith(
+              name: result.name,
+              code: result.code,
+              company: result.company,
+              logoBase64: result.logoBase64,
+              logoMimeType: result.logoMimeType,
+              clearLogo: result.logoBase64.isEmpty,
+            ),
           );
+    }
+  }
+}
+
+class _ProjectEditResult {
+  const _ProjectEditResult({
+    required this.name,
+    required this.code,
+    required this.company,
+    required this.logoBase64,
+    required this.logoMimeType,
+  });
+
+  final String name;
+  final String code;
+  final String company;
+  final String logoBase64;
+  final String logoMimeType;
+}
+
+class _ProjectEditorSheet extends StatefulWidget {
+  const _ProjectEditorSheet({this.existing});
+
+  final Project? existing;
+
+  @override
+  State<_ProjectEditorSheet> createState() => _ProjectEditorSheetState();
+}
+
+class _ProjectEditorSheetState extends State<_ProjectEditorSheet> {
+  late final TextEditingController _nameCtrl;
+  late final TextEditingController _codeCtrl;
+  late final TextEditingController _companyCtrl;
+  final _picker = ImagePicker();
+
+  String _logoBase64 = '';
+  String _logoMimeType = 'image/jpeg';
+  bool _picking = false;
+
+  @override
+  void initState() {
+    super.initState();
+    final e = widget.existing;
+    _nameCtrl = TextEditingController(text: e?.name ?? '');
+    _codeCtrl = TextEditingController(text: e?.code ?? '');
+    _companyCtrl = TextEditingController(text: e?.company ?? '');
+    _logoBase64 = e?.logoBase64 ?? '';
+    _logoMimeType = e?.logoMimeType ?? 'image/jpeg';
+  }
+
+  @override
+  void dispose() {
+    _nameCtrl.dispose();
+    _codeCtrl.dispose();
+    _companyCtrl.dispose();
+    super.dispose();
+  }
+
+  Future<void> _pickLogo() async {
+    if (_picking) return;
+    setState(() => _picking = true);
+    try {
+      final file = await _picker.pickImage(
+        source: ImageSource.gallery,
+        maxWidth: 1024,
+        imageQuality: 85,
+      );
+      if (file == null) return;
+      final bytes = await file.readAsBytes();
+      if (bytes.length > 1.5 * 1024 * 1024) {
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text('Logo çok büyük (en fazla ~1.5 MB)'),
+            ),
+          );
+        }
+        return;
+      }
+      setState(() {
+        _logoBase64 = base64Encode(bytes);
+        _logoMimeType = file.mimeType ?? 'image/jpeg';
+      });
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Logo seçilemedi: $e')),
+        );
+      }
+    } finally {
+      if (mounted) setState(() => _picking = false);
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final bottom = MediaQuery.viewInsetsOf(context).bottom;
+    final theme = Theme.of(context);
+    return Padding(
+      padding: EdgeInsets.fromLTRB(
+        AppSpacing.md,
+        0,
+        AppSpacing.md,
+        bottom + AppSpacing.md,
+      ),
+      child: SingleChildScrollView(
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            Text(
+              widget.existing == null ? 'Yeni proje' : 'Projeyi düzenle',
+              style: theme.textTheme.headlineMedium,
+            ),
+            const SizedBox(height: AppSpacing.md),
+            Text(
+              'Firma logosu',
+              style: theme.textTheme.labelLarge,
+            ),
+            const SizedBox(height: AppSpacing.xs),
+            Center(
+              child: Column(
+                children: [
+                  Material(
+                    color: theme.colorScheme.surfaceContainerHighest,
+                    borderRadius: BorderRadius.circular(12),
+                    child: InkWell(
+                      onTap: _picking ? null : _pickLogo,
+                      borderRadius: BorderRadius.circular(12),
+                      child: SizedBox(
+                        width: 96,
+                        height: 96,
+                        child: _logoBase64.isEmpty
+                            ? Column(
+                                mainAxisAlignment: MainAxisAlignment.center,
+                                children: [
+                                  if (_picking)
+                                    const SizedBox(
+                                      width: 24,
+                                      height: 24,
+                                      child: CircularProgressIndicator(
+                                        strokeWidth: 2,
+                                      ),
+                                    )
+                                  else
+                                    Icon(
+                                      Icons.add_photo_alternate_outlined,
+                                      color: theme.colorScheme.primary,
+                                    ),
+                                  const SizedBox(height: 6),
+                                  Text(
+                                    'Logo ekle',
+                                    style: theme.textTheme.labelSmall,
+                                  ),
+                                ],
+                              )
+                            : ClipRRect(
+                                borderRadius: BorderRadius.circular(12),
+                                child: Image.memory(
+                                  base64Decode(_logoBase64),
+                                  fit: BoxFit.contain,
+                                  width: 96,
+                                  height: 96,
+                                  errorBuilder: (_, __, ___) => const Icon(
+                                    Icons.broken_image_outlined,
+                                  ),
+                                ),
+                              ),
+                      ),
+                    ),
+                  ),
+                  if (_logoBase64.isNotEmpty) ...[
+                    const SizedBox(height: AppSpacing.xs),
+                    TextButton.icon(
+                      onPressed: () => setState(() {
+                        _logoBase64 = '';
+                        _logoMimeType = 'image/jpeg';
+                      }),
+                      icon: const Icon(Icons.delete_outline, size: 18),
+                      label: const Text('Logoyu kaldır'),
+                    ),
+                  ],
+                ],
+              ),
+            ),
+            const SizedBox(height: AppSpacing.md),
+            TextField(
+              controller: _companyCtrl,
+              decoration: const InputDecoration(labelText: 'Firma adı'),
+              textCapitalization: TextCapitalization.sentences,
+            ),
+            const SizedBox(height: AppSpacing.sm),
+            TextField(
+              controller: _nameCtrl,
+              decoration: const InputDecoration(labelText: 'İşin adı'),
+              textCapitalization: TextCapitalization.sentences,
+            ),
+            const SizedBox(height: AppSpacing.sm),
+            TextField(
+              controller: _codeCtrl,
+              decoration: const InputDecoration(labelText: 'İşin kodu'),
+            ),
+            const SizedBox(height: AppSpacing.md),
+            FilledButton(
+              onPressed: () {
+                if (_nameCtrl.text.trim().isEmpty) return;
+                Navigator.pop(
+                  context,
+                  _ProjectEditResult(
+                    name: _nameCtrl.text.trim(),
+                    code: _codeCtrl.text.trim(),
+                    company: _companyCtrl.text.trim(),
+                    logoBase64: _logoBase64,
+                    logoMimeType: _logoMimeType,
+                  ),
+                );
+              },
+              child: const Text('Kaydet'),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class _CompanyLogoAvatar extends StatelessWidget {
+  const _CompanyLogoAvatar({required this.project});
+
+  final Project project;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    if (!project.hasLogo) {
+      return Container(
+        width: 40,
+        height: 40,
+        alignment: Alignment.center,
+        decoration: BoxDecoration(
+          color: theme.colorScheme.surfaceContainerHighest,
+          borderRadius: BorderRadius.circular(8),
+        ),
+        child: Icon(
+          Icons.business_outlined,
+          size: 20,
+          color: theme.colorScheme.onSurfaceVariant,
+        ),
+      );
+    }
+    try {
+      final bytes = base64Decode(project.logoBase64);
+      return ClipRRect(
+        borderRadius: BorderRadius.circular(8),
+        child: Image.memory(
+          bytes,
+          width: 40,
+          height: 40,
+          fit: BoxFit.contain,
+          errorBuilder: (_, __, ___) => Icon(
+            Icons.broken_image_outlined,
+            size: 20,
+            color: theme.colorScheme.onSurfaceVariant,
+          ),
+        ),
+      );
+    } catch (_) {
+      return Icon(
+        Icons.broken_image_outlined,
+        size: 20,
+        color: theme.colorScheme.onSurfaceVariant,
+      );
     }
   }
 }

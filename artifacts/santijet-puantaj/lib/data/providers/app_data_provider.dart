@@ -78,12 +78,20 @@ class ProjectsNotifier extends StateNotifier<List<Project>> {
   void _persist() =>
       _writeList(_box, _key, state.map((e) => e.toJson()).toList());
 
-  Project add({required String name, String code = '', String company = ''}) {
+  Project add({
+    required String name,
+    String code = '',
+    String company = '',
+    String logoBase64 = '',
+    String logoMimeType = 'image/jpeg',
+  }) {
     final project = Project(
       id: IdGen.make('prj'),
       name: name.trim(),
       code: code.trim(),
       company: company.trim(),
+      logoBase64: logoBase64,
+      logoMimeType: logoMimeType,
       createdAt: DateTime.now(),
     );
     state = [...state, project];

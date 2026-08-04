@@ -242,6 +242,7 @@ class DailyReportPdfService {
     required String contractor,
     required DailyReport report,
   }) {
+    final logo = _projectLogoImage(project);
     return pw.Column(
       crossAxisAlignment: pw.CrossAxisAlignment.stretch,
       children: [
@@ -250,6 +251,14 @@ class DailyReportPdfService {
           padding: const pw.EdgeInsets.symmetric(vertical: 8, horizontal: 10),
           child: pw.Column(
             children: [
+              if (logo != null) ...[
+                pw.Container(
+                  height: 52,
+                  alignment: pw.Alignment.center,
+                  child: pw.Image(logo, fit: pw.BoxFit.contain),
+                ),
+                pw.SizedBox(height: 6),
+              ],
               pw.Text(
                 'GÜNLÜK ŞANTİYE RAPORU',
                 textAlign: pw.TextAlign.center,
@@ -287,6 +296,15 @@ class DailyReportPdfService {
         ),
       ],
     );
+  }
+
+  pw.MemoryImage? _projectLogoImage(Project project) {
+    if (!project.hasLogo) return null;
+    try {
+      return pw.MemoryImage(base64Decode(project.logoBase64));
+    } catch (_) {
+      return null;
+    }
   }
 
   pw.Widget _kv(String k, String v) {
