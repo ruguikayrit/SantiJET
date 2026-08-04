@@ -7,6 +7,7 @@ import 'package:hive_flutter/hive_flutter.dart';
 import 'app.dart';
 import 'core/theme/theme_mode_provider.dart';
 import 'data/providers/app_data_provider.dart';
+import 'data/providers/daily_report_provider.dart';
 import 'data/providers/production_provider.dart';
 import 'data/providers/verim_provider.dart';
 
@@ -22,6 +23,7 @@ Future<void> bootstrap() async {
     Hive.openBox('production'),
     Hive.openBox('work_schedule_cloud'),
     Hive.openBox('kesif_cloud'),
+    Hive.openBox('daily_reports'),
   ]);
 
   _migratePersonnelToProjects(boxes[2], boxes[1], boxes[0]);
@@ -36,6 +38,7 @@ Future<void> bootstrap() async {
         productionBoxProvider.overrideWithValue(boxes[4]),
         workScheduleCacheBoxProvider.overrideWithValue(boxes[5]),
         kesifCacheBoxProvider.overrideWithValue(boxes[6]),
+        dailyReportsBoxProvider.overrideWithValue(boxes[7]),
       ],
       child: const SantijetPuantajApp(),
     ),

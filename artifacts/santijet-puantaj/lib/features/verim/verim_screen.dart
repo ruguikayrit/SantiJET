@@ -15,7 +15,10 @@ import '../../data/providers/verim_provider.dart';
 
 /// Verim — plan süre (İş Programı) + plan metraj (Keşif) × gerçekleşen.
 class VerimScreen extends ConsumerWidget {
-  const VerimScreen({super.key});
+  const VerimScreen({super.key, this.embedded = false});
+
+  /// Hub içindeyken üst chrome (header) gösterilmez.
+  final bool embedded;
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -26,6 +29,14 @@ class VerimScreen extends ConsumerWidget {
     final syncing = verim.status == VerimSyncStatus.syncing;
 
     if (project == null) {
+      final empty = SJEmptyState(
+        title: 'Önce proje ekleyin',
+        message: 'Verim hesabı aktif projeye bağlıdır.',
+        icon: Icons.apartment_outlined,
+        actionLabel: 'Projelere Git',
+        onAction: () => context.go(AppRoutes.projeler),
+      );
+      if (embedded) return empty;
       return Scaffold(
         backgroundColor: AppColors.canvas,
         body: SafeArea(
@@ -34,31 +45,14 @@ class VerimScreen extends ConsumerWidget {
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
               const SantijetHeader(subtitle: 'Verim'),
-              Expanded(
-                child: SJEmptyState(
-                  title: 'Önce proje ekleyin',
-                  message: 'Verim hesabı aktif projeye bağlıdır.',
-                  icon: Icons.apartment_outlined,
-                  actionLabel: 'Projelere Git',
-                  onAction: () => context.go(AppRoutes.projeler),
-                ),
-              ),
+              Expanded(child: empty),
             ],
           ),
         ),
       );
     }
 
-    return Scaffold(
-      backgroundColor: AppColors.canvas,
-      body: SafeArea(
-        bottom: false,
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.stretch,
-          children: [
-            const SantijetHeader(subtitle: 'Verim'),
-            Expanded(
-              child: RefreshIndicator(
+    final body = RefreshIndicator(
                 onRefresh: () =>
                     ref.read(verimProvider.notifier).syncFromCloud(),
                 child: ListView(
@@ -160,8 +154,18 @@ class VerimScreen extends ConsumerWidget {
                     ],
                   ],
                 ),
-              ),
-            ),
+    );
+
+    if (embedded) return body;
+    return Scaffold(
+      backgroundColor: AppColors.canvas,
+      body: SafeArea(
+        bottom: false,
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            const SantijetHeader(subtitle: 'Verim'),
+            Expanded(child: body),
           ],
         ),
       ),

@@ -189,6 +189,8 @@ class _PersonnelScreenState extends ConsumerState<PersonnelScreen> {
 
     final groups = _groupByCompany(people);
 
+    final canPop = context.canPop();
+
     return Scaffold(
       backgroundColor: AppColors.canvas,
       appBar: _selectionMode
@@ -211,7 +213,15 @@ class _PersonnelScreenState extends ConsumerState<PersonnelScreen> {
                 ),
               ],
             )
-          : null,
+          : canPop
+              ? AppBar(
+                  title: const Text('Personel'),
+                  leading: IconButton(
+                    icon: const Icon(Icons.arrow_back),
+                    onPressed: () => context.pop(),
+                  ),
+                )
+              : null,
       floatingActionButton: _selectionMode
           ? null
           : FloatingActionButton.extended(
@@ -226,8 +236,10 @@ class _PersonnelScreenState extends ConsumerState<PersonnelScreen> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
-            if (!_selectionMode) ...[
+            if (!_selectionMode && !canPop) ...[
               const SantijetHeader(subtitle: 'Personel'),
+            ],
+            if (!_selectionMode) ...[
               Padding(
                 padding: const EdgeInsets.fromLTRB(
                   AppSpacing.md,

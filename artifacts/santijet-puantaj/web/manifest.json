@@ -1,11 +1,11 @@
 {
-  "name": "ŞantiJET Puantaj",
-  "short_name": "Puantaj",
+  "name": "ŞantiJET SAHA",
+  "short_name": "SAHA",
   "start_url": ".",
   "display": "standalone",
   "background_color": "#05070A",
   "theme_color": "#05070A",
-  "description": "ŞantiJET Puantaj — Personel devam ve puantaj takip",
+  "description": "ŞantiJET SAHA — Saha operasyonu, günlük rapor ve adam-gün puantaj",
   "orientation": "portrait-primary",
   "prefer_related_applications": false,
   "icons": [

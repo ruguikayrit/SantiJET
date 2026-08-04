@@ -1,15 +1,41 @@
-# ŞantiJET Puantaj
+# ŞantiJET SAHA (Puantaj & Saha)
 
-ŞantiJET ürün ailesinin **Puantaj** uygulaması (Flutter).
+ŞantiJET ürün ailesinin **birleşik saha + puantaj** Flutter uygulaması.
 
-Personel bazlı günlük devam kaydı, haftalık/aylık cetvel. Görsel dil
-**ŞantiJET Demir / BFA** ile ortaktır; iş kurgusu ana mobil uygulamadaki
-(`artifacts/santiye-takip`) Puantaj modülünden alınmıştır.
+Klasör/package adı şimdilik `santijet-puantaj` (rename Faz 2). Kullanıcıya görünen
+ad: **ŞantiJET SAHA**.
 
-> Demir’in “Günlük Puantaj” (imalat × ekip sayıları) özelliğinden farklıdır.
-> Bu uygulama kişi-gün attendance modelini kullanır.
+Adam-gün devam kaydı, imalat/verim, günlük saha raporu. Görsel dil
+**ŞantiJET Demir / BFA** ile ortaktır.
 
-## Kurgu (santiye-takip paritesi)
+## Navigasyon
+
+Kalıcı alt bar (**4 sekme**):
+
+| Sekme | İçerik |
+|-------|--------|
+| Ana Sayfa | Bugünkü puantaj, imalat, **bugünün raporu**, verim özeti |
+| Puantaj | Adam-gün devam; personel yönetimi buradan / Ayarlar’dan |
+| İmalat | İçinde segment: **İmalat \| Verim** (ayrı bottom tab yok) |
+| Günlük Rapor | Saha günlük formu |
+
+Personel ayrı bottom tab değildir; `/personel` rotası ve Yönetim menüsü durur.
+
+## Günlük Rapor (MVP)
+
+Proje + takvim günü başına tek kayıt (Hive upsert):
+
+- Fotoğraflar + açıklama (**açıklama önerilir**; boş izinli)
+  - Saklama: **base64 → Hive** (mobil + web ortak; dosya yolu yok)
+- Yapılan işler (serbest metin)
+- Gelen malzeme / sipariş malzeme satırları
+- İş makinesi puantajı
+- **Hava** otomatik (Open-Meteo; proje firma/şehir → geocode; yoksa İstanbul)
+- **Puantaj snapshot** otomatik (aynı gün mevcut/yarım/izin/yok + adam-saat/yevmiye)
+
+Offline-first; bulut senkron bu fazda zorunlu değil.
+
+## Puantaj durumları
 
 | Durum | Kısa | Saat |
 |-------|------|------|
@@ -17,20 +43,16 @@ Personel bazlı günlük devam kaydı, haftalık/aylık cetvel. Görsel dil
 | Yarım Gün | Y | 4 |
 | İzinli / Raporlu / Mazeret / Res. Tatil / Yok | İ R Mz T X | 0 |
 
-- Günlük giriş, toplu “Tümünü Mevcut/Yok”, “Dünden Kopyala”
-- Haftalık / aylık cetvel (firma gruplu)
-- Personel + proje yönetimi (Hive, cihaz içi)
-
 ## Mimari
 
-Demir / BFA deseni: Riverpod + go_router + Hive + SJ design system.
+Riverpod + go_router + Hive + SJ design system.
 
 ```
 lib/
   core/          tema, SJ bileşenleri, routing
-  domain/        Attendance, Person, Project, status
-  data/          Hive providers
-  features/      home, puantaj, personnel, projects, settings
+  domain/        Attendance, DailyReport, Person, Project…
+  data/          Hive providers, weather, export
+  features/      home, puantaj, imalat (+verim hub), daily_report, …
 ```
 
 ## Çalıştırma
@@ -41,34 +63,24 @@ flutter pub get
 flutter run
 ```
 
-## Staging önizleme (Safari / farklı ağlar)
+## Staging
 
 | Ortam | URL |
 |-------|-----|
-| **Puantaj staging** | https://ruguikayrit.github.io/SantiJET/puantaj/ |
-| DEMİR staging | https://ruguikayrit.github.io/SantiJET/staging/ |
-| DEMİR canlı | https://ruguikayrit.github.io/SantiJET/ |
-| BFA | https://ruguikayrit.github.io/SantiJET/bfa/ |
-
-Üstte turuncu **STAGING ÖNİZLEME** bandı görünür. iPhone Safari’de açıp
-**Paylaş → Ana Ekrana Ekle** ile PWA gibi kullanılabilir.
+| **SAHA / Puantaj staging** | https://ruguikayrit.github.io/SantiJET/puantaj/ |
 
 ```bash
-# staging branch'e push → /puantaj/ ~3–5 dk içinde güncellenir
 git checkout staging
-git add artifacts/santijet-puantaj .github/scripts/build-puantaj-pages.sh .github/workflows/deploy-github-pages.yml
-git commit -m "..."
+# …commit sonrası
 git push origin staging
 ```
-
-Manuel: Actions → **Deploy ŞantiJET GitHub Pages** → **Run workflow**.
 
 ## Fazlar
 
 | Faz | İçerik | Durum |
 |-----|--------|-------|
-| 1 | İskelet + tema + domain + günlük/haftalık/aylık puantaj | ✅ |
-| 2 | PIN / rol yetkileri (view/edit) | ⬜ |
-| 3 | Cetvel HTML/XLSX export | ⬜ |
-| 4 | Günlük rapor entegrasyonu | ⬜ |
-| 5 | Bulut senkron (opsiyonel) | ⬜ |
+| 1 | Puantaj iskelet + imalat/verim | ✅ |
+| 1b | 4 sekme + Günlük Rapor MVP (hava + snapshot + foto) | ✅ |
+| 2 | Klasör rename + PIN / roller | ⬜ |
+| 3 | Cetvel / rapor export genişletme | ⬜ |
+| 4 | Bulut senkron (opsiyonel) | ⬜ |

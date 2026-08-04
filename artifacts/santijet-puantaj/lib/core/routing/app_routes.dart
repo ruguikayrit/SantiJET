@@ -4,7 +4,9 @@ abstract final class AppRoutes {
   static const home = '/';
   static const puantaj = '/puantaj';
   static const imalat = '/imalat';
+  /// Eski bağımsız Verim sekmesi — İmalat hub’a yönlendirilir.
   static const verim = '/verim';
+  static const gunlukRapor = '/gunluk-rapor';
   static const personel = '/personel';
   static const ayarlar = '/ayarlar';
   static const yonetim = '/ayarlar/yonetim';
@@ -14,6 +16,6 @@ abstract final class AppRoutes {
   static const ekipler = '/ayarlar/yonetim/ekipler';
   static const hakkinda = '/ayarlar/hakkinda';
 
-  /// Eski yol — `/personel` sekmesine yönlendirilir.
+  /// Eski yol — `/personel` rotasına yönlendirilir.
   static const personelLegacy = '/ayarlar/yonetim/personel';
 }

@@ -1,5 +1,5 @@
 name: santijet_puantaj
-description: "ŞantiJET Puantaj — Personel devam ve puantaj takip. ŞantiJET Demir görsel diliyle hizalı."
+description: "ŞantiJET SAHA — Saha operasyonu, günlük rapor ve adam-gün puantaj. Demir görsel diliyle hizalı."
 publish_to: 'none'
 version: 0.1.0+1
 
@@ -22,6 +22,8 @@ dependencies:
   pdf: ^3.11.1
   printing: ^5.13.4
   excel: ^4.0.6
+  http: ^1.2.2
+  image_picker: ^1.1.2
 
 dev_dependencies:
   flutter_test:

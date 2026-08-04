@@ -7,7 +7,11 @@
 	<key>CFBundleDevelopmentRegion</key>
 	<string>$(DEVELOPMENT_LANGUAGE)</string>
 	<key>CFBundleDisplayName</key>
-	<string>ŞantiJET BFA</string>
+	<string>ŞantiJET SAHA</string>
+	<key>NSCameraUsageDescription</key>
+	<string>Günlük saha raporu fotoğrafları için kamera erişimi gerekir.</string>
+	<key>NSPhotoLibraryUsageDescription</key>
+	<string>Günlük saha raporu fotoğrafları için galeri erişimi gerekir.</string>
 	<key>CFBundleExecutable</key>
 	<string>$(EXECUTABLE_NAME)</string>
 	<key>CFBundleIdentifier</key>

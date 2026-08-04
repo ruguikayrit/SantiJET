@@ -2,8 +2,9 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
+import '../../features/daily_report/daily_report_screen.dart';
 import '../../features/home/home_screen.dart';
-import '../../features/imalat/imalat_screen.dart';
+import '../../features/imalat/imalat_hub_screen.dart';
 import '../../features/personnel/personnel_screen.dart';
 import '../../features/projects/projects_screen.dart';
 import '../../features/puantaj/puantaj_screen.dart';
@@ -13,14 +14,13 @@ import '../../features/settings/management_screen.dart';
 import '../../features/settings/settings_screen.dart';
 import '../../features/shell/main_shell.dart';
 import '../../features/splash/splash_screen.dart';
-import '../../features/verim/verim_screen.dart';
 import 'app_routes.dart';
 import 'page_transitions.dart';
 
 final _rootNavigatorKey = GlobalKey<NavigatorState>();
 
-/// Alt sekmeler: Ana Sayfa, Puantaj, İmalat, Verim, Personel.
-/// Ayarlar sağ üst butondan açılır (shell dışı).
+/// Alt sekmeler: Ana Sayfa, Puantaj, İmalat (Verim içerde), Günlük Rapor.
+/// Personel ve Ayarlar shell dışı.
 final routerProvider = Provider<GoRouter>((ref) {
   return GoRouter(
     navigatorKey: _rootNavigatorKey,
@@ -30,6 +30,9 @@ final routerProvider = Provider<GoRouter>((ref) {
       if (loc == AppRoutes.personelLegacy ||
           loc.startsWith('${AppRoutes.personelLegacy}/')) {
         return AppRoutes.personel;
+      }
+      if (loc == AppRoutes.verim) {
+        return '${AppRoutes.imalat}?tab=verim';
       }
       return null;
     },
@@ -69,36 +72,38 @@ final routerProvider = Provider<GoRouter>((ref) {
             routes: [
               GoRoute(
                 path: AppRoutes.imalat,
-                pageBuilder: (context, state) => fadePage(
-                  key: state.pageKey,
-                  child: const ImalatScreen(),
-                ),
+                pageBuilder: (context, state) {
+                  final tab = state.uri.queryParameters['tab'];
+                  return fadePage(
+                    key: state.pageKey,
+                    child: ImalatHubScreen(
+                      initialTab: tab == 'verim' ? 1 : 0,
+                    ),
+                  );
+                },
               ),
             ],
           ),
           StatefulShellBranch(
             routes: [
               GoRoute(
-                path: AppRoutes.verim,
+                path: AppRoutes.gunlukRapor,
                 pageBuilder: (context, state) => fadePage(
                   key: state.pageKey,
-                  child: const VerimScreen(),
-                ),
-              ),
-            ],
-          ),
-          StatefulShellBranch(
-            routes: [
-              GoRoute(
-                path: AppRoutes.personel,
-                pageBuilder: (context, state) => fadePage(
-                  key: state.pageKey,
-                  child: const PersonnelScreen(),
+                  child: const DailyReportScreen(),
                 ),
               ),
             ],
           ),
         ],
+      ),
+      GoRoute(
+        path: AppRoutes.personel,
+        parentNavigatorKey: _rootNavigatorKey,
+        pageBuilder: (context, state) => fadePage(
+          key: state.pageKey,
+          child: const PersonnelScreen(),
+        ),
       ),
       GoRoute(
         path: AppRoutes.ayarlar,

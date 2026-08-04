@@ -13,6 +13,7 @@ import '../../core/theme/app_spacing.dart';
 import '../../core/widgets/santijet_header.dart';
 import '../../core/utils/puantaj_date.dart';
 import '../../data/providers/app_data_provider.dart';
+import '../../data/providers/daily_report_provider.dart';
 import '../../data/providers/production_provider.dart';
 import '../../data/providers/verim_provider.dart';
 import '../../domain/entities/production.dart';
@@ -36,6 +37,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
     final productions = ref.watch(activeProductionProvider);
     final verim = ref.watch(verimProvider);
     final teamVerim = ref.watch(teamVerimSummariesProvider);
+    final todayReport = ref.watch(todayDailyReportProvider);
     final today = PuantajDate.today();
 
     if (project == null) {
@@ -171,9 +173,49 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                   ),
                   const SizedBox(height: AppSpacing.md),
                   _SummarySection(
+                    title: 'Bugünün raporu',
+                    icon: Icons.edit_note_outlined,
+                    onTap: () {
+                      ref.read(dailyReportSelectedDateProvider.notifier).state =
+                          today;
+                      context.go(AppRoutes.gunlukRapor);
+                    },
+                    child: Builder(
+                      builder: (context) {
+                        final theme = Theme.of(context);
+                        if (todayReport == null) {
+                          return Text(
+                            'Henüz kayıt yok. Günlük Rapor’dan bugünü doldurun.',
+                            style: theme.textTheme.bodyMedium,
+                          );
+                        }
+                        final parts = <String>[
+                          if (todayReport.workDone.trim().isNotEmpty)
+                            'İşler girildi',
+                          if (todayReport.photos.isNotEmpty)
+                            '${todayReport.photos.length} foto',
+                          if (todayReport.incomingMaterials.isNotEmpty)
+                            '${todayReport.incomingMaterials.length} gelen',
+                          if (todayReport.machines.isNotEmpty)
+                            '${todayReport.machines.length} makine',
+                          if (todayReport.weather?.temperatureC != null)
+                            '${todayReport.weather!.temperatureC!.toStringAsFixed(0)}°C',
+                        ];
+                        return Text(
+                          parts.isEmpty
+                              ? 'Taslak mevcut — dokunarak düzenleyin.'
+                              : parts.join(' · '),
+                          style: theme.textTheme.bodyMedium,
+                        );
+                      },
+                    ),
+                  ),
+                  const SizedBox(height: AppSpacing.md),
+                  _SummarySection(
                     title: 'Özet Verim',
                     icon: Icons.speed_outlined,
-                    onTap: () => context.go(AppRoutes.verim),
+                    onTap: () =>
+                        context.go('${AppRoutes.imalat}?tab=verim'),
                     child: Builder(
                       builder: (context) {
                         final theme = Theme.of(context);

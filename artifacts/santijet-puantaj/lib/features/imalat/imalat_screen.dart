@@ -26,7 +26,10 @@ import '../../domain/yevmiye/yevmiye_calculator.dart';
 
 /// İmalat — iş tanımı + %100'e kadar günlük usta/düz kayıtları.
 class ImalatScreen extends ConsumerStatefulWidget {
-  const ImalatScreen({super.key});
+  const ImalatScreen({super.key, this.embedded = false});
+
+  /// Hub içindeyken üst chrome (header) gösterilmez.
+  final bool embedded;
 
   @override
   ConsumerState<ImalatScreen> createState() => _ImalatScreenState();
@@ -406,6 +409,14 @@ class _ImalatScreenState extends ConsumerState<ImalatScreen> {
     final items = ref.watch(activeProductionProvider);
 
     if (project == null) {
+      final empty = SJEmptyState(
+        title: 'Önce proje ekleyin',
+        message: 'İmalat kayıtları proje kapsamında tutulur.',
+        icon: Icons.apartment_outlined,
+        actionLabel: 'Projelere Git',
+        onAction: () => context.go(AppRoutes.projeler),
+      );
+      if (widget.embedded) return empty;
       return Scaffold(
         backgroundColor: AppColors.canvas,
         body: SafeArea(
@@ -414,15 +425,7 @@ class _ImalatScreenState extends ConsumerState<ImalatScreen> {
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
               const SantijetHeader(subtitle: 'İmalat'),
-              Expanded(
-                child: SJEmptyState(
-                  title: 'Önce proje ekleyin',
-                  message: 'İmalat kayıtları proje kapsamında tutulur.',
-                  icon: Icons.apartment_outlined,
-                  actionLabel: 'Projelere Git',
-                  onAction: () => context.go(AppRoutes.projeler),
-                ),
-              ),
+              Expanded(child: empty),
             ],
           ),
         ),
@@ -475,11 +478,12 @@ class _ImalatScreenState extends ConsumerState<ImalatScreen> {
         label: const Text('İmalat Ekle'),
       ),
       body: SafeArea(
+        top: !widget.embedded,
         bottom: false,
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
-            const SantijetHeader(subtitle: 'İmalat'),
+            if (!widget.embedded) const SantijetHeader(subtitle: 'İmalat'),
             if (items.isNotEmpty)
               Align(
                 alignment: Alignment.centerRight,
@@ -514,7 +518,7 @@ class _ImalatScreenState extends ConsumerState<ImalatScreen> {
                           : Icons.construction_outlined,
                       actionLabel: teams.isEmpty ? 'Personel' : 'İmalat Ekle',
                       onAction: teams.isEmpty
-                          ? () => context.go(AppRoutes.personel)
+                          ? () => context.push(AppRoutes.personel)
                           : () => _openJobEditor(
                                 context,
                                 ref,

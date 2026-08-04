@@ -473,8 +473,8 @@ class AboutScreen extends StatelessWidget {
             ),
             const SizedBox(height: 24),
             Text(
-              'Personel devam, yevmiye, imalat ve verim takibi yapan '
-              'ŞantiJET Puantaj uygulaması. ${AppInfo.tagline}',
+              'Saha operasyonu, günlük rapor, personel devam, yevmiye, '
+              'imalat ve verim takibi. ${AppInfo.tagline}',
               style: AppTypography.bodyMedium,
               textAlign: TextAlign.center,
             ),

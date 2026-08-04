@@ -427,7 +427,7 @@ class _DailyView extends StatelessWidget {
         message: 'Personel yönetiminden ekip üyesi ekleyin.',
         icon: Icons.groups_outlined,
         actionLabel: 'Personel',
-        onAction: () => context.go(AppRoutes.personel),
+        onAction: () => context.push(AppRoutes.personel),
       );
     }
 

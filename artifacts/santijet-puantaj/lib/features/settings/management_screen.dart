@@ -48,7 +48,7 @@ class ManagementScreen extends ConsumerWidget {
             subtitle: active == null
                 ? 'Önce proje seçin'
                 : '${active.name}: $peopleCount kayıt',
-            onTap: () => context.go(AppRoutes.personel),
+            onTap: () => context.push(AppRoutes.personel),
           ),
           _SettingsTile(
             icon: Icons.work_outline,
