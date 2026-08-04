@@ -486,7 +486,7 @@ class DailyReportPdfService {
     return _centeredTable(
       headers: const [
         'Personel',
-        'Ekip',
+        'Meslek',
         'Durum',
         'Saat',
         'Mesai',
@@ -496,7 +496,9 @@ class DailyReportPdfService {
         for (final p in snap.people)
           [
             p.personName,
-            p.team.isEmpty ? '—' : p.team,
+            p.profession.isNotEmpty
+                ? p.profession
+                : (p.team.isEmpty ? '—' : p.team),
             p.status,
             '${p.hours}',
             _fmt(p.overtimeHours),

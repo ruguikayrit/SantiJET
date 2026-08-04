@@ -587,6 +587,7 @@ class DailyReportAttendancePerson extends Equatable {
     required this.status,
     required this.hours,
     this.team = '',
+    this.profession = '',
     this.overtimeHours = 0,
     this.yevmiye = 0,
   });
@@ -594,6 +595,7 @@ class DailyReportAttendancePerson extends Equatable {
   final String personId;
   final String personName;
   final String team;
+  final String profession;
   final String status;
   final int hours;
   final double overtimeHours;
@@ -603,6 +605,7 @@ class DailyReportAttendancePerson extends Equatable {
         'personId': personId,
         'personName': personName,
         'team': team,
+        'profession': profession,
         'status': status,
         'hours': hours,
         'overtimeHours': overtimeHours,
@@ -614,6 +617,7 @@ class DailyReportAttendancePerson extends Equatable {
         personId: json['personId'] as String? ?? '',
         personName: json['personName'] as String? ?? '',
         team: json['team'] as String? ?? '',
+        profession: json['profession'] as String? ?? '',
         status: json['status'] as String? ?? '',
         hours: (json['hours'] as num?)?.toInt() ?? 0,
         overtimeHours: (json['overtimeHours'] as num?)?.toDouble() ?? 0,
@@ -621,8 +625,16 @@ class DailyReportAttendancePerson extends Equatable {
       );
 
   @override
-  List<Object?> get props =>
-      [personId, personName, team, status, hours, overtimeHours, yevmiye];
+  List<Object?> get props => [
+        personId,
+        personName,
+        team,
+        profession,
+        status,
+        hours,
+        overtimeHours,
+        yevmiye,
+      ];
 }
 
 /// Aynı proje + gün puantaj özeti (bağlamsal snapshot).

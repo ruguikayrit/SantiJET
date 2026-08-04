@@ -27,6 +27,7 @@ import '../../domain/entities/company_info.dart';
 import '../../domain/entities/daily_report.dart';
 import '../../domain/entities/project.dart';
 import '../projects/widgets/project_switcher.dart';
+import 'widgets/attendance_summary_table.dart';
 
 /// Kart içi metin stili — renk [SJCard] DefaultTextStyle / kart Theme'den gelir.
 ///
@@ -1181,44 +1182,7 @@ class _DailyReportScreenState extends ConsumerState<DailyReportScreen> {
                             'Puantaj verisi yok',
                             style: _cardInk(theme.textTheme.bodyMedium),
                           )
-                        : Column(
-                            crossAxisAlignment: CrossAxisAlignment.stretch,
-                            children: [
-                              Row(
-                                children: [
-                                  _ChipStat('Mevcut', '${snap.present}'),
-                                  _ChipStat('Yarım', '${snap.half}'),
-                                  _ChipStat('İzin', '${snap.leave}'),
-                                  _ChipStat('Yok', '${snap.absent}'),
-                                ],
-                              ),
-                              const SizedBox(height: AppSpacing.sm),
-                              Text(
-                                'Toplam ${snap.totalAdamSaat.toStringAsFixed(snap.totalAdamSaat == snap.totalAdamSaat.roundToDouble() ? 0 : 1)} adam-saat · '
-                                '${snap.totalYevmiye.toStringAsFixed(snap.totalYevmiye == snap.totalYevmiye.roundToDouble() ? 0 : 2)} yevmiye',
-                                style: _cardInk(theme.textTheme.labelMedium),
-                              ),
-                              if (snap.people.isNotEmpty) ...[
-                                const SizedBox(height: AppSpacing.sm),
-                                for (final p in snap.people.take(8))
-                                  Padding(
-                                    padding: const EdgeInsets.only(bottom: 2),
-                                    child: Text(
-                                      '${p.personName}'
-                                      '${p.team.isNotEmpty ? ' · ${p.team}' : ''}'
-                                      ' — ${p.status}'
-                                      '${p.yevmiye > 0 ? ' (${p.yevmiye.toStringAsFixed(p.yevmiye == p.yevmiye.roundToDouble() ? 0 : 2)} yv)' : ''}',
-                                      style: _cardInk(theme.textTheme.bodySmall),
-                                    ),
-                                  ),
-                                if (snap.people.length > 8)
-                                  Text(
-                                    '+${snap.people.length - 8} kişi daha',
-                                    style: _cardInk(theme.textTheme.labelSmall),
-                                  ),
-                              ],
-                            ],
-                          ),
+                        : AttendanceSummaryChips(snapshot: snap),
                   ),
                   const SizedBox(height: AppSpacing.md),
                   _SectionCard(
@@ -1897,31 +1861,6 @@ class _MaterialTile extends StatelessWidget {
             icon: const Icon(Icons.delete_outline, size: 20),
             onPressed: onDelete,
           ),
-        ],
-      ),
-    );
-  }
-}
-
-class _ChipStat extends StatelessWidget {
-  const _ChipStat(this.label, this.value);
-
-  final String label;
-  final String value;
-
-  @override
-  Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-    return Expanded(
-      child: Column(
-        children: [
-          Text(
-            value,
-            style: theme.textTheme.titleMedium?.copyWith(
-              fontWeight: FontWeight.w700,
-            ),
-          ),
-          Text(label, style: theme.textTheme.labelSmall),
         ],
       ),
     );

@@ -47,8 +47,9 @@ abstract final class AttendanceSnapshotBuilder {
     final unrecorded = activePeople.where((p) => !byPerson.containsKey(p.id)).length;
     final absent = recordedAbsent + unrecorded;
 
-    final teamById = {
-      for (final p in activePeople) p.id: p.team.trim(),
+    final metaById = {
+      for (final p in activePeople)
+        p.id: (team: p.team.trim(), profession: p.profession.trim()),
     };
 
     final people = [
@@ -56,7 +57,8 @@ abstract final class AttendanceSnapshotBuilder {
         DailyReportAttendancePerson(
           personId: a.personId,
           personName: a.personName,
-          team: teamById[a.personId] ?? '',
+          team: metaById[a.personId]?.team ?? '',
+          profession: metaById[a.personId]?.profession ?? '',
           status: a.status.label,
           hours: a.hours,
           overtimeHours: a.overtimeHours,
