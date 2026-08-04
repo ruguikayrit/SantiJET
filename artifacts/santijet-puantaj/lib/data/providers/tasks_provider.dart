@@ -4,8 +4,11 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:hive/hive.dart';
 
 import '../../core/utils/id_gen.dart';
+import '../../domain/entities/person.dart';
 import '../../domain/entities/site_task.dart';
 import '../../domain/enums/task_status.dart';
+import '../../domain/permissions/role_degree.dart';
+import 'active_operator_provider.dart';
 import 'app_data_provider.dart';
 
 final tasksBoxProvider = Provider<Box>(
@@ -45,32 +48,28 @@ class TasksNotifier extends StateNotifier<List<SiteTask>> {
   void _persist() =>
       _writeList(_box, _key, state.map((e) => e.toJson()).toList());
 
-  List<SiteTask> forProject(String projectId) {
-    final list = state.where((t) => t.projectId == projectId).toList()
-      ..sort((a, b) {
-        final byStatus = a.status.index.compareTo(b.status.index);
-        if (byStatus != 0) return byStatus;
-        return (b.updatedAt ?? b.createdAt ?? DateTime(1970))
-            .compareTo(a.updatedAt ?? a.createdAt ?? DateTime(1970));
-      });
-    return list;
-  }
-
   SiteTask add({
     required String projectId,
     required String title,
+    required Person assigner,
+    required Person assignee,
     String description = '',
-    String assignee = '',
     String dueDate = '',
     TaskStatus status = TaskStatus.todo,
   }) {
+    if (!RoleDegree.canAssignTasks(assigner)) {
+      throw StateError('Yalnızca 1. derece roller görev atayabilir.');
+    }
     final now = DateTime.now();
     final task = SiteTask(
       id: IdGen.make('tsk'),
       projectId: projectId,
       title: title.trim(),
       description: description.trim(),
-      assignee: assignee.trim(),
+      assignee: assignee.name.trim(),
+      assigneePersonId: assignee.id,
+      assignerPersonId: assigner.id,
+      assignerName: assigner.name.trim(),
       dueDate: dueDate.trim(),
       status: status,
       createdAt: now,
@@ -126,11 +125,18 @@ final tasksProvider =
   return TasksNotifier(ref.watch(tasksBoxProvider));
 });
 
-final projectTasksProvider = Provider<List<SiteTask>>((ref) {
+/// Aktif operatörün görebileceği görevler (atanan veya atayan).
+final visibleProjectTasksProvider = Provider<List<SiteTask>>((ref) {
   final project = ref.watch(activeProjectProvider);
+  final operator = ref.watch(activeOperatorProvider);
   final tasks = ref.watch(tasksProvider);
-  if (project == null) return const [];
-  final list = tasks.where((t) => t.projectId == project.id).toList()
+  if (project == null || operator == null) return const [];
+
+  final list = tasks
+      .where(
+        (t) => t.projectId == project.id && t.isVisibleTo(operator),
+      )
+      .toList()
     ..sort((a, b) {
       final byStatus = a.status.index.compareTo(b.status.index);
       if (byStatus != 0) return byStatus;

@@ -1,8 +1,10 @@
 import 'package:equatable/equatable.dart';
 
 import '../enums/task_status.dart';
+import '../permissions/role_degree.dart';
+import 'person.dart';
 
-/// Proje kapsamındaki saha görevi.
+/// Proje kapsamındaki saha görevi — atayan + atanan görünür.
 class SiteTask extends Equatable {
   const SiteTask({
     required this.id,
@@ -10,6 +12,9 @@ class SiteTask extends Equatable {
     required this.title,
     this.description = '',
     this.assignee = '',
+    this.assigneePersonId = '',
+    this.assignerPersonId = '',
+    this.assignerName = '',
     this.dueDate = '',
     this.status = TaskStatus.todo,
     this.createdAt,
@@ -20,7 +25,18 @@ class SiteTask extends Equatable {
   final String projectId;
   final String title;
   final String description;
+
+  /// Atanan personel görünen adı (önbellek).
   final String assignee;
+
+  /// Atanan personel id — görünürlük için zorunlu.
+  final String assigneePersonId;
+
+  /// Görevi oluşturup atayan 1. derece personel id.
+  final String assignerPersonId;
+
+  /// Atayan görünen adı (önbellek).
+  final String assignerName;
 
   /// TR tarih: `dd.MM.yyyy` (boş olabilir).
   final String dueDate;
@@ -28,12 +44,24 @@ class SiteTask extends Equatable {
   final DateTime? createdAt;
   final DateTime? updatedAt;
 
+  /// Görüntüleyen yalnızca atayan veya atanan ise görür.
+  /// Eski kayıtlarda id yoksa yalnızca 1. derece görür (yeniden atama için).
+  bool isVisibleTo(Person viewer) {
+    if (assigneePersonId.isNotEmpty || assignerPersonId.isNotEmpty) {
+      return viewer.id == assigneePersonId || viewer.id == assignerPersonId;
+    }
+    return RoleDegree.isFirstDegree(viewer);
+  }
+
   SiteTask copyWith({
     String? id,
     String? projectId,
     String? title,
     String? description,
     String? assignee,
+    String? assigneePersonId,
+    String? assignerPersonId,
+    String? assignerName,
     String? dueDate,
     TaskStatus? status,
     DateTime? createdAt,
@@ -45,6 +73,9 @@ class SiteTask extends Equatable {
       title: title ?? this.title,
       description: description ?? this.description,
       assignee: assignee ?? this.assignee,
+      assigneePersonId: assigneePersonId ?? this.assigneePersonId,
+      assignerPersonId: assignerPersonId ?? this.assignerPersonId,
+      assignerName: assignerName ?? this.assignerName,
       dueDate: dueDate ?? this.dueDate,
       status: status ?? this.status,
       createdAt: createdAt ?? this.createdAt,
@@ -58,6 +89,9 @@ class SiteTask extends Equatable {
         'title': title,
         'description': description,
         'assignee': assignee,
+        'assigneePersonId': assigneePersonId,
+        'assignerPersonId': assignerPersonId,
+        'assignerName': assignerName,
         'dueDate': dueDate,
         'status': status.storage,
         'createdAt': createdAt?.toIso8601String(),
@@ -70,6 +104,9 @@ class SiteTask extends Equatable {
         title: json['title'] as String? ?? '',
         description: json['description'] as String? ?? '',
         assignee: json['assignee'] as String? ?? '',
+        assigneePersonId: json['assigneePersonId'] as String? ?? '',
+        assignerPersonId: json['assignerPersonId'] as String? ?? '',
+        assignerName: json['assignerName'] as String? ?? '',
         dueDate: json['dueDate'] as String? ?? '',
         status: TaskStatus.fromStorage(json['status'] as String?),
         createdAt: json['createdAt'] != null
@@ -87,6 +124,9 @@ class SiteTask extends Equatable {
         title,
         description,
         assignee,
+        assigneePersonId,
+        assignerPersonId,
+        assignerName,
         dueDate,
         status,
         createdAt,
