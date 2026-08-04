@@ -342,6 +342,10 @@ class DailyReportPdfService {
       if (w.description.isNotEmpty) w.description.toUpperCase(),
       if (w.temperatureC != null)
         '${w.temperatureC!.toStringAsFixed(0)}°C',
+      if (w.nightTemperatureC != null)
+        'Gece ${w.nightTemperatureC!.toStringAsFixed(0)}°C',
+      if (w.humidityPercent != null)
+        'Nem %${w.humidityPercent!.toStringAsFixed(0)}',
       if (w.windKmh != null) 'Rüzgar ${w.windKmh!.toStringAsFixed(0)} km/s',
       if (w.locationLabel.isNotEmpty) w.locationLabel,
     ];

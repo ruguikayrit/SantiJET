@@ -18,7 +18,10 @@ class WeatherService {
       final uri = Uri.https('api.open-meteo.com', '/v1/forecast', {
         'latitude': city.lat.toString(),
         'longitude': city.lon.toString(),
-        'current': 'temperature_2m,weather_code,wind_speed_10m',
+        'current':
+            'temperature_2m,relative_humidity_2m,weather_code,wind_speed_10m',
+        'daily': 'temperature_2m_min',
+        'forecast_days': '1',
         'timezone': 'auto',
         'wind_speed_unit': 'kmh',
       });
@@ -31,11 +34,15 @@ class WeatherService {
       if (current == null) throw Exception('current yok');
 
       final temp = (current['temperature_2m'] as num?)?.toDouble();
+      final humidity = (current['relative_humidity_2m'] as num?)?.toDouble();
       final wind = (current['wind_speed_10m'] as num?)?.toDouble();
       final code = (current['weather_code'] as num?)?.toInt() ?? 0;
+      final nightTemp = _dailyMin(body);
 
       return DailyReportWeather(
         temperatureC: temp,
+        nightTemperatureC: nightTemp,
+        humidityPercent: humidity,
         description: wmoDescription(code),
         windKmh: wind,
         locationLabel: city.name,
@@ -51,6 +58,17 @@ class WeatherService {
         locationLabel: city.name,
       );
     }
+  }
+
+  /// Günlük minimum = gece sıcaklığı tahmini.
+  static double? _dailyMin(Map<String, dynamic> body) {
+    final daily = body['daily'];
+    if (daily is! Map) return null;
+    final mins = daily['temperature_2m_min'];
+    if (mins is! List || mins.isEmpty) return null;
+    final first = mins.first;
+    if (first is num) return first.toDouble();
+    return null;
   }
 
   /// WMO weather interpretation codes → Türkçe kısa açıklama.

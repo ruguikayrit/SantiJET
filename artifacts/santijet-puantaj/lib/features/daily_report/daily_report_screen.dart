@@ -1059,6 +1059,10 @@ class _DailyReportScreenState extends ConsumerState<DailyReportScreen> {
                             [
                               if (weather.temperatureC != null)
                                 '${weather.temperatureC!.toStringAsFixed(0)}°C',
+                              if (weather.nightTemperatureC != null)
+                                'Gece ${weather.nightTemperatureC!.toStringAsFixed(0)}°C',
+                              if (weather.humidityPercent != null)
+                                'Nem %${weather.humidityPercent!.toStringAsFixed(0)}',
                               if (weather.description.isNotEmpty)
                                 weather.description,
                               if (weather.windKmh != null)

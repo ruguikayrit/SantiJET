@@ -33,6 +33,7 @@ Proje + takvim günü başına tek kayıt (Hive upsert):
 - Gelen malzeme / sipariş malzeme satırları
 - İş makinesi puantajı
 - **Hava** listeden il seçimi (Open-Meteo; GPS/geocode yok; seçim hatırlanır)
+  - Anlık sıcaklık, **gece sıcaklığı**, **nem**, açıklama, rüzgar
 - **Puantaj snapshot** otomatik (aynı gün mevcut/yarım/izin/yok + adam-saat/yevmiye)
 - **PDF dışa aktarma** — 3 stil: **Özet · Standart · Gelişmiş**
   - Standart = örnek “Günlük Şantiye Raporu” form düzeni (başlık, yüklenici, hava, puantaj, işler, malzeme, makine, imza; fotoğraflar ayrı sayfa)

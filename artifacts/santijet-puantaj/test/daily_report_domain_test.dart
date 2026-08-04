@@ -82,6 +82,8 @@ void main() {
         ],
         weather: const DailyReportWeather(
           temperatureC: 28,
+          nightTemperatureC: 18,
+          humidityPercent: 45,
           description: 'Açık / güneşli',
           windKmh: 12,
           locationLabel: 'Ankara',
@@ -96,6 +98,8 @@ void main() {
       expect(restored.workDone, contains('İNŞAAT İŞLERİ'));
       expect(restored.photos.single.caption, 'Batı cephe');
       expect(restored.weather?.temperatureC, 28);
+      expect(restored.weather?.nightTemperatureC, 18);
+      expect(restored.weather?.humidityPercent, 45);
     });
 
     test('eski workDone alanı inşaata taşınır', () {

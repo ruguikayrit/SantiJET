@@ -446,6 +446,8 @@ class DailyReportMachine extends Equatable {
 class DailyReportWeather extends Equatable {
   const DailyReportWeather({
     this.temperatureC,
+    this.nightTemperatureC,
+    this.humidityPercent,
     this.description = '',
     this.windKmh,
     this.locationLabel = '',
@@ -454,7 +456,14 @@ class DailyReportWeather extends Equatable {
     this.offlineNote = '',
   });
 
+  /// Anlık / gündüz sıcaklık (°C).
   final double? temperatureC;
+
+  /// Gece (günlük minimum) sıcaklık (°C).
+  final double? nightTemperatureC;
+
+  /// Bağıl nem (%).
+  final double? humidityPercent;
   final String description;
   final double? windKmh;
   final String locationLabel;
@@ -464,6 +473,8 @@ class DailyReportWeather extends Equatable {
 
   DailyReportWeather copyWith({
     double? temperatureC,
+    double? nightTemperatureC,
+    double? humidityPercent,
     String? description,
     double? windKmh,
     String? locationLabel,
@@ -473,6 +484,8 @@ class DailyReportWeather extends Equatable {
   }) {
     return DailyReportWeather(
       temperatureC: temperatureC ?? this.temperatureC,
+      nightTemperatureC: nightTemperatureC ?? this.nightTemperatureC,
+      humidityPercent: humidityPercent ?? this.humidityPercent,
       description: description ?? this.description,
       windKmh: windKmh ?? this.windKmh,
       locationLabel: locationLabel ?? this.locationLabel,
@@ -484,6 +497,8 @@ class DailyReportWeather extends Equatable {
 
   Map<String, dynamic> toJson() => {
         'temperatureC': temperatureC,
+        'nightTemperatureC': nightTemperatureC,
+        'humidityPercent': humidityPercent,
         'description': description,
         'windKmh': windKmh,
         'locationLabel': locationLabel,
@@ -495,6 +510,8 @@ class DailyReportWeather extends Equatable {
   factory DailyReportWeather.fromJson(Map<String, dynamic> json) =>
       DailyReportWeather(
         temperatureC: (json['temperatureC'] as num?)?.toDouble(),
+        nightTemperatureC: (json['nightTemperatureC'] as num?)?.toDouble(),
+        humidityPercent: (json['humidityPercent'] as num?)?.toDouble(),
         description: json['description'] as String? ?? '',
         windKmh: (json['windKmh'] as num?)?.toDouble(),
         locationLabel: json['locationLabel'] as String? ?? '',
@@ -508,6 +525,8 @@ class DailyReportWeather extends Equatable {
   @override
   List<Object?> get props => [
         temperatureC,
+        nightTemperatureC,
+        humidityPercent,
         description,
         windKmh,
         locationLabel,
