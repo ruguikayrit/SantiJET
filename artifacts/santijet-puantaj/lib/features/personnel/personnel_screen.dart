@@ -324,10 +324,10 @@ class _PersonnelScreenState extends ConsumerState<PersonnelScreen> {
                                     _toggleSelectGroup(g.people),
                               ),
                               if (expanded) ...[
-                                const SizedBox(height: AppSpacing.sm),
+                                const SizedBox(height: AppSpacing.xs),
                                 for (var i = 0; i < g.people.length; i++) ...[
                                   if (i > 0)
-                                    const SizedBox(height: AppSpacing.sm),
+                                    const SizedBox(height: AppSpacing.xs),
                                   _PersonTile(
                                     index: i + 1,
                                     person: g.people[i],
@@ -612,6 +612,10 @@ class _PersonTile extends StatelessWidget {
       child: SJCard(
         onTap: onTap,
         selected: selected,
+        padding: const EdgeInsets.symmetric(
+          horizontal: AppSpacing.sm,
+          vertical: AppSpacing.xs,
+        ),
         // Kart kontrast teması — Theme.of dış context'ten alınmamalı.
         child: Builder(
           builder: (context) {
@@ -620,11 +624,12 @@ class _PersonTile extends StatelessWidget {
               children: [
                 if (selectionMode)
                   Padding(
-                    padding: const EdgeInsets.only(right: AppSpacing.sm),
+                    padding: const EdgeInsets.only(right: AppSpacing.xs),
                     child: Icon(
                       selected
                           ? Icons.check_circle
                           : Icons.radio_button_unchecked,
+                      size: 22,
                       color: selected
                           ? theme.colorScheme.primary
                           : theme.colorScheme.onSurface.withValues(alpha: 0.4),
@@ -632,6 +637,7 @@ class _PersonTile extends StatelessWidget {
                   )
                 else
                   CircleAvatar(
+                    radius: 14,
                     backgroundColor:
                         theme.colorScheme.primary.withValues(alpha: 0.15),
                     child: Text(
@@ -639,32 +645,62 @@ class _PersonTile extends StatelessWidget {
                       style: TextStyle(
                         color: theme.colorScheme.primary,
                         fontWeight: FontWeight.w700,
-                        fontSize: index >= 100 ? 11 : 14,
+                        fontSize: index >= 100 ? 10 : 12,
+                        height: 1,
                       ),
                     ),
                   ),
-                if (!selectionMode) const SizedBox(width: AppSpacing.sm),
+                if (!selectionMode) const SizedBox(width: AppSpacing.xs),
                 Expanded(
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
+                    mainAxisSize: MainAxisSize.min,
                     children: [
-                      Text(p.name, style: theme.textTheme.titleMedium),
-                      if (meta.isNotEmpty)
-                        Text(meta, style: theme.textTheme.bodySmall),
+                      Text(
+                        p.name,
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: theme.textTheme.titleSmall?.copyWith(
+                          fontWeight: FontWeight.w700,
+                          height: 1.15,
+                        ),
+                      ),
+                      if (meta.isNotEmpty) ...[
+                        const SizedBox(height: 2),
+                        Text(
+                          meta,
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                          style: theme.textTheme.bodySmall?.copyWith(
+                            height: 1.15,
+                          ),
+                        ),
+                      ],
                     ],
                   ),
                 ),
                 if (!p.active)
-                  Text(
-                    'Pasif',
-                    style: theme.textTheme.labelSmall?.copyWith(
-                      color: theme.colorScheme.error,
+                  Padding(
+                    padding: const EdgeInsets.only(right: AppSpacing.xxs),
+                    child: Text(
+                      'Pasif',
+                      style: theme.textTheme.labelSmall?.copyWith(
+                        color: theme.colorScheme.error,
+                        height: 1,
+                      ),
                     ),
                   ),
                 if (!selectionMode)
                   IconButton(
-                    icon: const Icon(Icons.delete_outline),
+                    icon: const Icon(Icons.delete_outline, size: 20),
                     onPressed: onDelete,
+                    tooltip: 'Sil',
+                    visualDensity: VisualDensity.compact,
+                    padding: EdgeInsets.zero,
+                    constraints: const BoxConstraints.tightFor(
+                      width: 36,
+                      height: 36,
+                    ),
                   ),
               ],
             );

@@ -36,22 +36,11 @@ class ImalatScreen extends ConsumerStatefulWidget {
 }
 
 class _ImalatScreenState extends ConsumerState<ImalatScreen> {
-  /// `null` = tüm ekipler; aksi halde ekip adına göre filtre.
-  String? _teamFilter;
-
-  /// `null` = tüm imalat tipleri; aksi halde tip adına göre filtre.
-  String? _typeFilter;
-
   /// Kullanıcının elle açtığı ekip başlıkları.
   final Set<String> _manualExpand = {};
 
   /// Kullanıcının elle kapattığı ekip başlıkları.
   final Set<String> _manualCollapse = {};
-
-  static String _typeKey(Production p) {
-    final n = p.name.trim();
-    return n.isEmpty ? 'Adsız imalat' : n;
-  }
 
   static String _teamKey(Production p) {
     final t = p.teamName.trim();
@@ -83,14 +72,6 @@ class _ImalatScreenState extends ConsumerState<ImalatScreen> {
         _manualExpand.add(team);
       }
     });
-  }
-
-  List<Production> _applyFilters(List<Production> items) {
-    return items.where((p) {
-      if (_teamFilter != null && _teamKey(p) != _teamFilter) return false;
-      if (_typeFilter != null && _typeKey(p) != _typeFilter) return false;
-      return true;
-    }).toList();
   }
 
   /// Ekip başlıkları altında gruplar (Demir, Kalıp, Beton…).
@@ -125,134 +106,6 @@ class _ImalatScreenState extends ConsumerState<ImalatScreen> {
           updatedToday: _teamUpdatedToday(map[k]!),
         ),
     ];
-  }
-
-  Future<void> _openFilterSheet({
-    required List<String> teamOptions,
-    required List<String> typeOptions,
-  }) async {
-    var draftTeam = _teamFilter;
-    var draftType = _typeFilter;
-    final applied = await showModalBottomSheet<bool>(
-      context: context,
-      showDragHandle: true,
-      builder: (ctx) {
-        final theme = Theme.of(ctx);
-        return StatefulBuilder(
-          builder: (ctx, setModal) {
-            Widget chipRow({
-              required String title,
-              required List<String> options,
-              required String? selected,
-              required ValueChanged<String?> onSelect,
-            }) {
-              return Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    title,
-                    style: theme.textTheme.labelLarge?.copyWith(
-                      fontWeight: FontWeight.w700,
-                    ),
-                  ),
-                  const SizedBox(height: AppSpacing.sm),
-                  Wrap(
-                    spacing: 8,
-                    runSpacing: 8,
-                    children: [
-                      FilterChip(
-                        label: const Text('Tümü'),
-                        selected: selected == null,
-                        onSelected: (_) => setModal(() => onSelect(null)),
-                      ),
-                      for (final o in options)
-                        FilterChip(
-                          label: Text(o),
-                          selected: selected == o,
-                          onSelected: (_) => setModal(() => onSelect(o)),
-                        ),
-                    ],
-                  ),
-                ],
-              );
-            }
-
-            return SafeArea(
-              child: Padding(
-                padding: const EdgeInsets.fromLTRB(
-                  AppSpacing.md,
-                  0,
-                  AppSpacing.md,
-                  AppSpacing.md,
-                ),
-                child: Column(
-                  mainAxisSize: MainAxisSize.min,
-                  crossAxisAlignment: CrossAxisAlignment.stretch,
-                  children: [
-                    Text(
-                      'Filtrele',
-                      style: theme.textTheme.titleMedium?.copyWith(
-                        fontWeight: FontWeight.w700,
-                      ),
-                    ),
-                    const SizedBox(height: AppSpacing.md),
-                    if (typeOptions.length > 1) ...[
-                      chipRow(
-                        title: 'İmalat tipi',
-                        options: typeOptions,
-                        selected: draftType,
-                        onSelect: (v) => draftType = v,
-                      ),
-                      const SizedBox(height: AppSpacing.md),
-                    ],
-                    if (teamOptions.length > 1) ...[
-                      chipRow(
-                        title: 'Ekip',
-                        options: teamOptions,
-                        selected: draftTeam,
-                        onSelect: (v) => draftTeam = v,
-                      ),
-                      const SizedBox(height: AppSpacing.md),
-                    ],
-                    if (typeOptions.length <= 1 && teamOptions.length <= 1)
-                      Padding(
-                        padding: const EdgeInsets.only(bottom: AppSpacing.md),
-                        child: Text(
-                          'Filtrelenecek ek tip veya ekip yok.',
-                          style: theme.textTheme.bodyMedium,
-                        ),
-                      ),
-                    Row(
-                      children: [
-                        TextButton(
-                          onPressed: () {
-                            draftTeam = null;
-                            draftType = null;
-                            setModal(() {});
-                          },
-                          child: const Text('Temizle'),
-                        ),
-                        const Spacer(),
-                        FilledButton(
-                          onPressed: () => Navigator.pop(ctx, true),
-                          child: const Text('Uygula'),
-                        ),
-                      ],
-                    ),
-                  ],
-                ),
-              ),
-            );
-          },
-        );
-      },
-    );
-    if (applied == true && mounted) {
-      setState(() {
-        _teamFilter = draftTeam;
-        _typeFilter = draftType;
-      });
-    }
   }
 
   Widget _productionCard(Production p) {
@@ -438,30 +291,7 @@ class _ImalatScreenState extends ConsumerState<ImalatScreen> {
     }.toList()
       ..sort();
 
-    final typeOptions = {
-      for (final p in items) _typeKey(p),
-    }.toList()
-      ..sort((a, b) => a.toLowerCase().compareTo(b.toLowerCase()));
-    final teamOptions = {
-      for (final p in items) _teamKey(p),
-    }.toList()
-      ..sort((a, b) => a.toLowerCase().compareTo(b.toLowerCase()));
-
-    // Geçersiz filtreleri temizle (silinen tip/ekip).
-    if (_typeFilter != null && !typeOptions.contains(_typeFilter)) {
-      WidgetsBinding.instance.addPostFrameCallback((_) {
-        if (mounted) setState(() => _typeFilter = null);
-      });
-    }
-    if (_teamFilter != null && !teamOptions.contains(_teamFilter)) {
-      WidgetsBinding.instance.addPostFrameCallback((_) {
-        if (mounted) setState(() => _teamFilter = null);
-      });
-    }
-
-    final filtered = _applyFilters(items);
-    final groups = _groupByTeam(filtered);
-    final filterActive = _teamFilter != null || _typeFilter != null;
+    final groups = _groupByTeam(items);
 
     return Scaffold(
       backgroundColor: AppColors.canvas,
@@ -484,25 +314,6 @@ class _ImalatScreenState extends ConsumerState<ImalatScreen> {
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
             if (!widget.embedded) const SantijetHeader(subtitle: 'İmalat'),
-            if (items.isNotEmpty)
-              Align(
-                alignment: Alignment.centerRight,
-                child: Padding(
-                  padding: const EdgeInsets.only(right: AppSpacing.xs),
-                  child: IconButton(
-                    tooltip: 'Filtrele',
-                    onPressed: () => _openFilterSheet(
-                      teamOptions: teamOptions,
-                      typeOptions: typeOptions,
-                    ),
-                    icon: Badge(
-                      isLabelVisible: filterActive,
-                      smallSize: 8,
-                      child: const Icon(Icons.filter_list_rounded),
-                    ),
-                  ),
-                ),
-              ),
             Expanded(
               child: items.isEmpty
                   ? SJEmptyState(
@@ -526,18 +337,7 @@ class _ImalatScreenState extends ConsumerState<ImalatScreen> {
                                 teams: teams,
                               ),
                     )
-                  : filtered.isEmpty
-                      ? SJEmptyState(
-                          title: 'Sonuç yok',
-                          message: 'Seçilen filtreye uyan imalat bulunamadı.',
-                          icon: Icons.filter_alt_off_outlined,
-                          actionLabel: 'Filtreyi temizle',
-                          onAction: () => setState(() {
-                            _teamFilter = null;
-                            _typeFilter = null;
-                          }),
-                        )
-                      : ListView(
+                  : ListView(
                   padding: const EdgeInsets.fromLTRB(
                     AppSpacing.md,
                     AppSpacing.sm,

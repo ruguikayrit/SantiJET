@@ -32,6 +32,8 @@ Proje + takvim günü başına tek kayıt (Hive upsert):
 - İş makinesi puantajı
 - **Hava** otomatik (Open-Meteo; proje firma/şehir → geocode; yoksa İstanbul)
 - **Puantaj snapshot** otomatik (aynı gün mevcut/yarım/izin/yok + adam-saat/yevmiye)
+- **PDF dışa aktarma** — 3 stil: **Özet · Standart · Gelişmiş**
+  - Standart = örnek “Günlük Şantiye Raporu” form düzeni (başlık, yüklenici, hava, puantaj, işler, malzeme, makine, imza; fotoğraflar ayrı sayfa)
 
 Offline-first; bulut senkron bu fazda zorunlu değil.
 

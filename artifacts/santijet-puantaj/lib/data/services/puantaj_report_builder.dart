@@ -5,6 +5,7 @@ import '../../domain/enums/attendance_status.dart';
 
 enum PuantajReportPeriod { daily, weekly, monthly }
 
+/// Excel / düz tablo için satır verisi + PDF görsel modeli.
 class PuantajReportData {
   const PuantajReportData({
     required this.title,
@@ -14,6 +15,7 @@ class PuantajReportData {
     required this.summaryLines,
     required this.landscape,
     required this.fileStem,
+    required this.visual,
   });
 
   final String title;
@@ -23,6 +25,62 @@ class PuantajReportData {
   final List<String> summaryLines;
   final bool landscape;
   final String fileStem;
+
+  /// Uygulama cetveli ile aynı görsel PDF düzeni.
+  final PuantajReportVisual visual;
+}
+
+/// PDF’de renkli rozet + firma bandı için yapılandırılmış veri.
+class PuantajReportVisual {
+  const PuantajReportVisual({
+    required this.isMatrix,
+    required this.dayHeaders,
+    required this.companies,
+    this.footerPresentCounts = const [],
+  });
+
+  final bool isMatrix;
+
+  /// Haftalık/aylık gün başlıkları (ör. `01`, `Pzt 3`).
+  final List<String> dayHeaders;
+  final List<PuantajVisualCompany> companies;
+
+  /// Matris altı “Mevcut” satırı (gün başına çalışılan kişi).
+  final List<int> footerPresentCounts;
+}
+
+class PuantajVisualCompany {
+  const PuantajVisualCompany({
+    required this.name,
+    required this.rows,
+  });
+
+  final String name;
+  final List<PuantajVisualPersonRow> rows;
+}
+
+class PuantajVisualPersonRow {
+  const PuantajVisualPersonRow({
+    required this.name,
+    required this.statuses,
+    this.team = '',
+    this.hours = '',
+    this.overtime = '',
+    this.yevmiye = '',
+    this.note = '',
+    this.totalLabel = '',
+  });
+
+  final String name;
+
+  /// Matris: gün sayısı kadar; günlük: tek eleman (null = boş).
+  final List<AttendanceStatus?> statuses;
+  final String team;
+  final String hours;
+  final String overtime;
+  final String yevmiye;
+  final String note;
+  final String totalLabel;
 }
 
 /// Aktif proje puantajından günlük / haftalık / aylık rapor tablosu üretir.
@@ -91,6 +149,7 @@ abstract final class PuantajReportBuilder {
       'Not',
     ];
     final rows = <List<String>>[];
+    final visualCompanies = <PuantajVisualCompany>[];
     final counts = <AttendanceStatus, int>{
       for (final s in AttendanceStatus.values) s: 0,
     };
@@ -98,20 +157,19 @@ abstract final class PuantajReportBuilder {
     var totalAg = 0.0;
 
     for (final group in _grouped(people)) {
+      final visualRows = <PuantajVisualPersonRow>[];
       for (final p in group.users) {
         final a = byPerson[p.id];
         if (a == null) {
           none++;
-          rows.add([
-            p.name,
-            group.company,
-            p.team,
-            '—',
-            '',
-            '',
-            '',
-            '',
-          ]);
+          rows.add([p.name, group.company, p.team, '—', '', '', '', '']);
+          visualRows.add(
+            PuantajVisualPersonRow(
+              name: p.name,
+              statuses: const [null],
+              team: p.team,
+            ),
+          );
           continue;
         }
         counts[a.status] = (counts[a.status] ?? 0) + 1;
@@ -126,7 +184,21 @@ abstract final class PuantajReportBuilder {
           _fmtNum(a.yevmiye),
           a.note,
         ]);
+        visualRows.add(
+          PuantajVisualPersonRow(
+            name: p.name,
+            statuses: [a.status],
+            team: p.team,
+            hours: a.hours.toString(),
+            overtime: _fmtNum(a.overtimeHours),
+            yevmiye: _fmtNum(a.yevmiye),
+            note: a.note,
+          ),
+        );
       }
+      visualCompanies.add(
+        PuantajVisualCompany(name: group.company, rows: visualRows),
+      );
     }
 
     return PuantajReportData(
@@ -142,6 +214,11 @@ abstract final class PuantajReportBuilder {
       ),
       landscape: false,
       fileStem: 'gunluk-${_fileDate(date)}',
+      visual: PuantajReportVisual(
+        isMatrix: false,
+        dayHeaders: const [],
+        companies: visualCompanies,
+      ),
     );
   }
 
@@ -162,33 +239,46 @@ abstract final class PuantajReportBuilder {
       }
     }
 
+    final dayHeaders = [for (final d in days) dayHeader(d)];
     final headers = [
       'Personel',
       'Firma',
       'Ekip',
-      for (final d in days) dayHeader(d),
+      ...dayHeaders,
       'Toplam AG',
     ];
     final rows = <List<String>>[];
+    final visualCompanies = <PuantajVisualCompany>[];
     final counts = <AttendanceStatus, int>{
       for (final s in AttendanceStatus.values) s: 0,
     };
     var noneCells = 0;
     var totalAg = 0.0;
+    final footer = List<int>.filled(days.length, 0);
 
     for (final group in _grouped(people)) {
+      final visualRows = <PuantajVisualPersonRow>[];
       for (final p in group.users) {
         var rowAg = 0.0;
+        var workCount = 0;
         final cells = <String>[];
-        for (final d in days) {
+        final statuses = <AttendanceStatus?>[];
+        for (var di = 0; di < days.length; di++) {
+          final d = days[di];
           final a = lookup['${p.id}|$d'];
           if (a == null) {
             noneCells++;
             cells.add('');
+            statuses.add(null);
           } else {
             counts[a.status] = (counts[a.status] ?? 0) + 1;
             rowAg += a.yevmiye;
             cells.add(a.status.short);
+            statuses.add(a.status);
+            if (a.status.isWorkedDay) {
+              workCount++;
+              footer[di]++;
+            }
           }
         }
         totalAg += rowAg;
@@ -199,7 +289,19 @@ abstract final class PuantajReportBuilder {
           ...cells,
           _fmtNum(rowAg),
         ]);
+        visualRows.add(
+          PuantajVisualPersonRow(
+            name: p.name,
+            statuses: statuses,
+            team: p.team,
+            totalLabel: workCount > 0 ? '$workCount' : '–',
+            yevmiye: _fmtNum(rowAg),
+          ),
+        );
       }
+      visualCompanies.add(
+        PuantajVisualCompany(name: group.company, rows: visualRows),
+      );
     }
 
     return PuantajReportData(
@@ -215,6 +317,12 @@ abstract final class PuantajReportBuilder {
       ),
       landscape: true,
       fileStem: fileStem,
+      visual: PuantajReportVisual(
+        isMatrix: true,
+        dayHeaders: dayHeaders,
+        companies: visualCompanies,
+        footerPresentCounts: footer,
+      ),
     );
   }
 
@@ -262,12 +370,12 @@ abstract final class PuantajReportBuilder {
   static String _weekDayHeader(String date) {
     final d = PuantajDate.parse(date);
     final dayName = PuantajDate.trDaysShort[d.weekday - 1];
-    return '$dayName ${d.day}';
+    return '$dayName\n${d.day.toString().padLeft(2, '0')}';
   }
 
   static String _monthDayHeader(String date) {
     final d = PuantajDate.parse(date);
-    return '${d.day}';
+    return d.day.toString().padLeft(2, '0');
   }
 
   static String _fmtNum(double v) {

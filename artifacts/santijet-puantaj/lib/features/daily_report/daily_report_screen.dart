@@ -17,8 +17,13 @@ import '../../core/utils/id_gen.dart';
 import '../../core/utils/puantaj_date.dart';
 import '../../core/widgets/santijet_header.dart';
 import '../../data/providers/app_data_provider.dart';
+import '../../data/providers/company_provider.dart';
 import '../../data/providers/daily_report_provider.dart';
+import '../../data/services/daily_report_export_style.dart';
+import '../../data/services/daily_report_pdf_service.dart';
+import '../../domain/entities/company_info.dart';
 import '../../domain/entities/daily_report.dart';
+import '../../domain/entities/project.dart';
 import '../projects/widgets/project_switcher.dart';
 
 /// Günlük saha raporu — foto, işler, malzeme, makine, hava, puantaj snapshot.
@@ -111,6 +116,42 @@ class _DailyReportScreenState extends ConsumerState<DailyReportScreen> {
     } finally {
       if (mounted) setState(() => _saving = false);
     }
+  }
+
+  DailyReport? _persistDraftForExport() {
+    final report = ref.read(activeDailyReportProvider);
+    if (report == null) return null;
+    var next = report.copyWith(workDone: _workCtrl.text.trim());
+    next = syncAttendanceIntoReport(ref, next);
+    return next;
+  }
+
+  Future<void> _openExportSheet() async {
+    final project = ref.read(activeProjectProvider);
+    final report = _persistDraftForExport();
+    if (project == null || report == null) return;
+    final snap = ref.read(liveAttendanceSnapshotProvider);
+    final company = ref.read(companyInfoProvider);
+
+    await showModalBottomSheet<void>(
+      context: context,
+      showDragHandle: true,
+      backgroundColor: AppColors.surfaceElevated,
+      builder: (ctx) => Padding(
+        padding: const EdgeInsets.fromLTRB(
+          AppSpacing.md,
+          0,
+          AppSpacing.md,
+          AppSpacing.md,
+        ),
+        child: _DailyReportExportSheet(
+          project: project,
+          report: report,
+          company: company,
+          liveSnapshot: snap,
+        ),
+      ),
+    );
   }
 
   Future<void> _addPhoto(ImageSource source) async {
@@ -578,6 +619,11 @@ class _DailyReportScreenState extends ConsumerState<DailyReportScreen> {
                     },
                     child: const Text('Bugün'),
                   ),
+                  IconButton(
+                    tooltip: 'PDF dışa aktar',
+                    onPressed: _openExportSheet,
+                    icon: const Icon(Icons.ios_share_outlined),
+                  ),
                 ],
               ),
             ),
@@ -952,12 +998,28 @@ class _DailyReportScreenState extends ConsumerState<DailyReportScreen> {
                 AppSpacing.md,
                 AppSpacing.md,
               ),
-              child: SJButton(
-                label: 'Kaydet / Güncelle',
-                icon: Icons.save_outlined,
-                loading: _saving,
-                expanded: true,
-                onPressed: _save,
+              child: Row(
+                children: [
+                  Expanded(
+                    child: SJButton(
+                      label: 'Kaydet',
+                      icon: Icons.save_outlined,
+                      loading: _saving,
+                      expanded: true,
+                      onPressed: _save,
+                    ),
+                  ),
+                  const SizedBox(width: AppSpacing.sm),
+                  Expanded(
+                    child: SJButton(
+                      label: 'PDF',
+                      icon: Icons.picture_as_pdf_outlined,
+                      variant: SJButtonVariant.secondary,
+                      expanded: true,
+                      onPressed: _openExportSheet,
+                    ),
+                  ),
+                ],
               ),
             ),
           ],
@@ -1108,6 +1170,131 @@ class _ChipStat extends StatelessWidget {
             ),
           ),
           Text(label, style: theme.textTheme.labelSmall),
+        ],
+      ),
+    );
+  }
+}
+
+/// Günlük rapor PDF — Özet / Standart / Gelişmiş seçimi.
+class _DailyReportExportSheet extends StatefulWidget {
+  const _DailyReportExportSheet({
+    required this.project,
+    required this.report,
+    required this.company,
+    this.liveSnapshot,
+  });
+
+  final Project project;
+  final DailyReport report;
+  final CompanyInfo company;
+  final DailyReportAttendanceSnapshot? liveSnapshot;
+
+  @override
+  State<_DailyReportExportSheet> createState() =>
+      _DailyReportExportSheetState();
+}
+
+class _DailyReportExportSheetState extends State<_DailyReportExportSheet> {
+  DailyReportExportStyle _style = DailyReportExportStyle.standart;
+  bool _busy = false;
+  String? _error;
+
+  Future<void> _export() async {
+    if (_busy) return;
+    setState(() {
+      _busy = true;
+      _error = null;
+    });
+    try {
+      await dailyReportPdfService.export(
+        report: widget.report,
+        project: widget.project,
+        company: widget.company,
+        style: _style,
+        liveSnapshot: widget.liveSnapshot,
+      );
+      if (!mounted) return;
+      Navigator.of(context).pop();
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('${_style.label} PDF dışa aktarıldı'),
+        ),
+      );
+    } catch (e) {
+      if (!mounted) return;
+      setState(() => _error = e.toString());
+    } finally {
+      if (mounted) setState(() => _busy = false);
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    return SafeArea(
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          Text(
+            'Günlük rapor PDF',
+            style: theme.textTheme.titleMedium?.copyWith(
+              fontWeight: FontWeight.w700,
+            ),
+          ),
+          const SizedBox(height: AppSpacing.xs),
+          Text(
+            '${widget.project.name} · ${widget.report.date}',
+            style: theme.textTheme.bodyMedium?.copyWith(
+              color: theme.colorScheme.onSurfaceVariant,
+            ),
+          ),
+          const SizedBox(height: AppSpacing.md),
+          Text('Çıktı stili', style: theme.textTheme.labelLarge),
+          const SizedBox(height: AppSpacing.xs),
+          SegmentedButton<DailyReportExportStyle>(
+            style: SegmentedButton.styleFrom(
+              foregroundColor: theme.colorScheme.onSurfaceVariant,
+              selectedForegroundColor: Colors.white,
+              selectedBackgroundColor: theme.colorScheme.secondary,
+            ),
+            segments: [
+              for (final s in DailyReportExportStyle.values)
+                ButtonSegment(
+                  value: s,
+                  label: Text(s.label),
+                ),
+            ],
+            selected: {_style},
+            onSelectionChanged: _busy
+                ? null
+                : (v) => setState(() => _style = v.first),
+          ),
+          const SizedBox(height: AppSpacing.sm),
+          Text(
+            _style.description,
+            style: theme.textTheme.bodySmall?.copyWith(
+              color: theme.colorScheme.onSurfaceVariant,
+            ),
+          ),
+          const SizedBox(height: AppSpacing.md),
+          SJButton(
+            label: 'PDF Oluştur',
+            icon: Icons.picture_as_pdf_outlined,
+            loading: _busy,
+            expanded: true,
+            onPressed: _export,
+          ),
+          if (_error != null) ...[
+            const SizedBox(height: AppSpacing.sm),
+            Text(
+              _error!,
+              style: theme.textTheme.bodySmall?.copyWith(
+                color: AppColors.critical,
+              ),
+            ),
+          ],
         ],
       ),
     );

@@ -62,4 +62,20 @@ abstract final class PuantajDate {
     final d = parse(dateStr);
     return '${trMonths[d.month - 1]} ${d.year}';
   }
+
+  static const trDaysLong = [
+    'Pazartesi',
+    'Salı',
+    'Çarşamba',
+    'Perşembe',
+    'Cuma',
+    'Cumartesi',
+    'Pazar',
+  ];
+
+  /// Örn. `27 Temmuz 2026 Pazartesi`
+  static String longLabel(String dateStr) {
+    final d = parse(dateStr);
+    return '${d.day} ${trMonths[d.month - 1]} ${d.year} ${trDaysLong[d.weekday - 1]}';
+  }
 }

@@ -1,19 +1,31 @@
 import 'dart:typed_data';
+import 'dart:ui' show Color;
 
 import 'package:excel/excel.dart';
 import 'package:pdf/pdf.dart';
 import 'package:pdf/widgets.dart' as pw;
 import 'package:printing/printing.dart';
 
+import '../../core/constants/app_info.dart';
+import '../../domain/enums/attendance_status.dart';
 import 'puantaj_report_builder.dart';
 import 'report_file_access_stub.dart'
     if (dart.library.html) 'report_file_access_web.dart'
     if (dart.library.io) 'report_file_access_io.dart' as file_access;
 
 /// Puantaj cetvelini PDF / Excel olarak üretir ve paylaşır.
+///
+/// PDF, uygulamadaki renkli durum rozetleri + firma bandı düzenini takip eder.
 class PuantajExportService {
   pw.Font? _regularFont;
   pw.Font? _boldFont;
+
+  static const _electricBlue = PdfColor.fromInt(0xFF0055FF);
+  static const _electricBlueSoft = PdfColor.fromInt(0xFFE8F0FF);
+  static const _emptyCell = PdfColor.fromInt(0xFFD1D5DB);
+  static const _rowBorder = PdfColor.fromInt(0xFFE5E7EB);
+  static const _ink = PdfColor.fromInt(0xFF111827);
+  static const _inkMuted = PdfColor.fromInt(0xFF6B7280);
 
   Future<pw.ThemeData> _pdfTheme() async {
     _regularFont ??= await PdfGoogleFonts.notoSansRegular();
@@ -23,6 +35,9 @@ class PuantajExportService {
       bold: _boldFont!,
     );
   }
+
+  // ignore: deprecated_member_use — Flutter SDK Color.value
+  static PdfColor _fromFlutter(Color c) => PdfColor.fromInt(c.value);
 
   Future<void> exportPdf(PuantajReportData report) async {
     final bytes = await _buildPdfBytes(report);
@@ -51,71 +66,329 @@ class PuantajExportService {
     final now = DateTime.now();
     final pageFormat =
         report.landscape ? PdfPageFormat.a4.landscape : PdfPageFormat.a4;
-    final cellFont = report.landscape ? 7.0 : 9.0;
-    final headerFont = report.landscape ? 8.0 : 10.0;
 
     doc.addPage(
       pw.MultiPage(
         pageFormat: pageFormat,
-        margin: const pw.EdgeInsets.all(24),
+        margin: const pw.EdgeInsets.all(18),
         build: (context) => [
           pw.Text(
-            'ŞantiJET Puantaj',
-            style: pw.TextStyle(fontSize: 10, color: PdfColors.grey700),
+            AppInfo.displayName,
+            style: const pw.TextStyle(fontSize: 9, color: _inkMuted),
           ),
-          pw.SizedBox(height: 4),
+          pw.SizedBox(height: 2),
           pw.Text(
             report.title,
-            style: pw.TextStyle(fontSize: 18, fontWeight: pw.FontWeight.bold),
+            style: pw.TextStyle(
+              fontSize: 16,
+              fontWeight: pw.FontWeight.bold,
+              color: _ink,
+            ),
           ),
           pw.SizedBox(height: 2),
           pw.Text(
             report.subtitle,
-            style: const pw.TextStyle(fontSize: 11, color: PdfColors.grey700),
+            style: const pw.TextStyle(fontSize: 10, color: _inkMuted),
           ),
-          pw.SizedBox(height: 2),
           pw.Text(
             'Oluşturulma: ${now.day.toString().padLeft(2, '0')}.'
             '${now.month.toString().padLeft(2, '0')}.${now.year} '
             '${now.hour.toString().padLeft(2, '0')}:'
             '${now.minute.toString().padLeft(2, '0')}',
-            style: const pw.TextStyle(fontSize: 9, color: PdfColors.grey600),
+            style: const pw.TextStyle(fontSize: 8, color: _inkMuted),
           ),
-          pw.SizedBox(height: 16),
-          pw.TableHelper.fromTextArray(
-            headers: report.headers,
-            data: report.rows,
-            headerStyle: pw.TextStyle(
-              fontWeight: pw.FontWeight.bold,
-              fontSize: headerFont,
-            ),
-            cellStyle: pw.TextStyle(fontSize: cellFont),
-            headerDecoration:
-                const pw.BoxDecoration(color: PdfColors.grey300),
-            cellAlignment: pw.Alignment.centerLeft,
-            cellPadding: const pw.EdgeInsets.symmetric(
-              horizontal: 3,
-              vertical: 3,
-            ),
-          ),
-          pw.SizedBox(height: 16),
+          pw.SizedBox(height: 10),
+          _legend(),
+          pw.SizedBox(height: 10),
+          if (report.visual.isMatrix)
+            _matrixTable(report.visual)
+          else
+            _dailyTable(report.visual),
+          pw.SizedBox(height: 12),
           for (final line in report.summaryLines) ...[
             pw.Text(
               line,
               style: pw.TextStyle(
-                fontSize: 9,
+                fontSize: 8,
                 fontWeight: line.startsWith('Özet')
                     ? pw.FontWeight.bold
                     : pw.FontWeight.normal,
+                color: _ink,
               ),
             ),
-            pw.SizedBox(height: 4),
+            pw.SizedBox(height: 3),
           ],
         ],
       ),
     );
 
     return Uint8List.fromList(await doc.save());
+  }
+
+  pw.Widget _legend() {
+    return pw.Wrap(
+      spacing: 8,
+      runSpacing: 4,
+      children: [
+        for (final s in AttendanceStatus.values)
+          pw.Row(
+            mainAxisSize: pw.MainAxisSize.min,
+            children: [
+              _statusBadge(s, size: 12),
+              pw.SizedBox(width: 3),
+              pw.Text(
+                s.label,
+                style: const pw.TextStyle(fontSize: 7, color: _inkMuted),
+              ),
+            ],
+          ),
+      ],
+    );
+  }
+
+  pw.Widget _statusBadge(AttendanceStatus? status, {double size = 11}) {
+    final bg = status != null ? _fromFlutter(status.color) : _emptyCell;
+    final label = status?.short ?? '–';
+    final fontSize = label.length > 1 ? size * 0.55 : size * 0.72;
+    return pw.Container(
+      width: size + 2,
+      height: size,
+      alignment: pw.Alignment.center,
+      decoration: pw.BoxDecoration(
+        color: bg,
+        borderRadius: pw.BorderRadius.circular(2),
+      ),
+      child: pw.Text(
+        label,
+        style: pw.TextStyle(
+          color: status != null ? PdfColors.white : _inkMuted,
+          fontSize: fontSize,
+          fontWeight: pw.FontWeight.bold,
+        ),
+      ),
+    );
+  }
+
+  pw.Widget _matrixTable(PuantajReportVisual visual) {
+    final dayCount = visual.dayHeaders.length;
+    // A4 landscape ~842pt usable; isim + top + günler
+    const nameW = 72.0;
+    const totalW = 22.0;
+    final dayW = dayCount <= 0
+        ? 14.0
+        : ((842 - 36 - nameW - totalW) / dayCount).clamp(9.0, 22.0);
+
+    pw.Widget dayCell(pw.Widget child) => pw.SizedBox(
+          width: dayW,
+          child: pw.Center(child: child),
+        );
+
+    return pw.Column(
+      crossAxisAlignment: pw.CrossAxisAlignment.start,
+      children: [
+        pw.Row(
+          children: [
+            pw.SizedBox(
+              width: nameW,
+              child: pw.Text(
+                'Personel',
+                style: const pw.TextStyle(fontSize: 7, color: _inkMuted),
+              ),
+            ),
+            for (final h in visual.dayHeaders)
+              dayCell(
+                pw.Text(
+                  h,
+                  textAlign: pw.TextAlign.center,
+                  style: const pw.TextStyle(fontSize: 6, color: _inkMuted),
+                ),
+              ),
+            pw.SizedBox(
+              width: totalW,
+              child: pw.Text(
+                'Top.',
+                textAlign: pw.TextAlign.center,
+                style: const pw.TextStyle(fontSize: 7, color: _inkMuted),
+              ),
+            ),
+          ],
+        ),
+        pw.SizedBox(height: 3),
+        for (final company in visual.companies) ...[
+          pw.Container(
+            width: nameW + dayCount * dayW + totalW,
+            padding: const pw.EdgeInsets.symmetric(horizontal: 6, vertical: 3),
+            color: _electricBlueSoft,
+            child: pw.Text(
+              company.name,
+              style: pw.TextStyle(
+                fontSize: 8,
+                fontWeight: pw.FontWeight.bold,
+                color: _electricBlue,
+              ),
+            ),
+          ),
+          for (final row in company.rows)
+            pw.Container(
+              decoration: const pw.BoxDecoration(
+                border: pw.Border(
+                  bottom: pw.BorderSide(color: _rowBorder, width: 0.5),
+                ),
+              ),
+              padding: const pw.EdgeInsets.symmetric(vertical: 2),
+              child: pw.Row(
+                children: [
+                  pw.SizedBox(
+                    width: nameW,
+                    child: pw.Padding(
+                      padding: const pw.EdgeInsets.symmetric(horizontal: 2),
+                      child: pw.Text(
+                        row.name,
+                        maxLines: 2,
+                        style: const pw.TextStyle(fontSize: 7, color: _ink),
+                      ),
+                    ),
+                  ),
+                  for (final s in row.statuses)
+                    dayCell(_statusBadge(s, size: dayW > 14 ? 11 : 9)),
+                  pw.SizedBox(
+                    width: totalW,
+                    child: pw.Text(
+                      row.totalLabel,
+                      textAlign: pw.TextAlign.center,
+                      style: pw.TextStyle(
+                        fontSize: 7,
+                        fontWeight: pw.FontWeight.bold,
+                        color: row.totalLabel == '–'
+                            ? _inkMuted
+                            : _fromFlutter(AttendanceStatus.present.color),
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+        ],
+        if (visual.footerPresentCounts.isNotEmpty) ...[
+          pw.SizedBox(height: 4),
+          pw.Row(
+            children: [
+              pw.SizedBox(
+                width: nameW,
+                child: pw.Text(
+                  'Mevcut',
+                  style: pw.TextStyle(
+                    fontSize: 7,
+                    fontWeight: pw.FontWeight.bold,
+                    color: _ink,
+                  ),
+                ),
+              ),
+              for (final c in visual.footerPresentCounts)
+                dayCell(
+                  pw.Text(
+                    c > 0 ? '$c' : '–',
+                    textAlign: pw.TextAlign.center,
+                    style: pw.TextStyle(
+                      fontSize: 7,
+                      fontWeight: pw.FontWeight.bold,
+                      color: c > 0
+                          ? _fromFlutter(AttendanceStatus.present.color)
+                          : _inkMuted,
+                    ),
+                  ),
+                ),
+              pw.SizedBox(width: totalW),
+            ],
+          ),
+        ],
+      ],
+    );
+  }
+
+  pw.Widget _dailyTable(PuantajReportVisual visual) {
+    return pw.Column(
+      crossAxisAlignment: pw.CrossAxisAlignment.start,
+      children: [
+        for (final company in visual.companies) ...[
+          pw.Container(
+            width: double.infinity,
+            padding: const pw.EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+            color: _electricBlueSoft,
+            child: pw.Text(
+              company.name,
+              style: pw.TextStyle(
+                fontSize: 9,
+                fontWeight: pw.FontWeight.bold,
+                color: _electricBlue,
+              ),
+            ),
+          ),
+          pw.SizedBox(height: 2),
+          for (final row in company.rows)
+            pw.Container(
+              decoration: const pw.BoxDecoration(
+                border: pw.Border(
+                  bottom: pw.BorderSide(color: _rowBorder, width: 0.5),
+                ),
+              ),
+              padding: const pw.EdgeInsets.symmetric(vertical: 4, horizontal: 4),
+              child: pw.Row(
+                crossAxisAlignment: pw.CrossAxisAlignment.center,
+                children: [
+                  pw.Expanded(
+                    flex: 3,
+                    child: pw.Column(
+                      crossAxisAlignment: pw.CrossAxisAlignment.start,
+                      children: [
+                        pw.Text(
+                          row.name,
+                          style: pw.TextStyle(
+                            fontSize: 9,
+                            fontWeight: pw.FontWeight.bold,
+                            color: _ink,
+                          ),
+                        ),
+                        if (row.team.isNotEmpty)
+                          pw.Text(
+                            row.team,
+                            style: const pw.TextStyle(
+                              fontSize: 7,
+                              color: _inkMuted,
+                            ),
+                          ),
+                      ],
+                    ),
+                  ),
+                  _statusBadge(
+                    row.statuses.isEmpty ? null : row.statuses.first,
+                    size: 14,
+                  ),
+                  pw.SizedBox(width: 6),
+                  pw.SizedBox(
+                    width: 70,
+                    child: pw.Text(
+                      (row.statuses.isEmpty ? null : row.statuses.first)
+                              ?.label ??
+                          '—',
+                      style: const pw.TextStyle(fontSize: 8, color: _ink),
+                    ),
+                  ),
+                  pw.SizedBox(
+                    width: 48,
+                    child: pw.Text(
+                      row.yevmiye.isEmpty ? '' : '${row.yevmiye} yv',
+                      textAlign: pw.TextAlign.right,
+                      style: const pw.TextStyle(fontSize: 8, color: _inkMuted),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          pw.SizedBox(height: 8),
+        ],
+      ],
+    );
   }
 
   List<int> _buildExcelBytes(PuantajReportData report) {
@@ -125,7 +398,9 @@ class PuantajExportService {
       excel.delete('Sheet1');
     }
 
-    sheet.appendRow([TextCellValue('ŞantiJET Puantaj — ${report.title}')]);
+    sheet.appendRow(
+      [TextCellValue('${AppInfo.displayName} — ${report.title}')],
+    );
     sheet.appendRow([TextCellValue(report.subtitle)]);
     sheet.appendRow([TextCellValue('')]);
     sheet.appendRow(report.headers.map(TextCellValue.new).toList());
