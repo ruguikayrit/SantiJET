@@ -9,11 +9,14 @@ class DailyReport extends Equatable {
     this.workConstruction = '',
     this.workElectrical = '',
     this.workMechanical = '',
+    this.nextDayPlan = '',
     this.photos = const [],
     this.irsaliyePhotos = const [],
     this.incomingMaterials = const [],
+    this.outgoingMaterials = const [],
     this.orderedMaterials = const [],
     this.machines = const [],
+    this.vehicles = const [],
     this.weather,
     this.attendanceSnapshot,
     this.createdAt,
@@ -35,6 +38,9 @@ class DailyReport extends Equatable {
   /// Mekanik işler (serbest metin).
   final String workMechanical;
 
+  /// Ertesi gün planı (serbest metin).
+  final String nextDayPlan;
+
   /// Özet / geriye dönük birleşik metin.
   String get workDone {
     final parts = <String>[];
@@ -47,21 +53,40 @@ class DailyReport extends Equatable {
     add('İNŞAAT İŞLERİ', workConstruction);
     add('ELEKTRİK İŞLERİ', workElectrical);
     add('MEKANİK İŞLER', workMechanical);
+    final caps = photoCaptions;
+    if (caps.isNotEmpty) {
+      parts.add(
+        'FOTOĞRAF AÇIKLAMALARI:\n${caps.map((c) => '• $c').join('\n')}',
+      );
+    }
     return parts.join('\n\n');
   }
+
+  /// Fotoğraf açıklamaları — yapılan işler listesine otomatik yansır.
+  List<String> get photoCaptions => [
+        for (final p in photos)
+          if (p.hasCaption) p.caption.trim(),
+      ];
 
   bool get hasWorkEntries =>
       workConstruction.trim().isNotEmpty ||
       workElectrical.trim().isNotEmpty ||
-      workMechanical.trim().isNotEmpty;
+      workMechanical.trim().isNotEmpty ||
+      photoCaptions.isNotEmpty;
 
   final List<DailyReportPhoto> photos;
 
   /// Gelen malzeme irsaliye görselleri (Hive + base64).
   final List<DailyReportPhoto> irsaliyePhotos;
   final List<DailyReportMaterial> incomingMaterials;
+
+  /// Giden / gönderilen malzeme.
+  final List<DailyReportMaterial> outgoingMaterials;
   final List<DailyReportMaterial> orderedMaterials;
   final List<DailyReportMachine> machines;
+
+  /// Vasıta puantajı (binek, kamyon vb.).
+  final List<DailyReportMachine> vehicles;
   final DailyReportWeather? weather;
   final DailyReportAttendanceSnapshot? attendanceSnapshot;
   final DateTime? createdAt;
@@ -74,11 +99,14 @@ class DailyReport extends Equatable {
     String? workConstruction,
     String? workElectrical,
     String? workMechanical,
+    String? nextDayPlan,
     List<DailyReportPhoto>? photos,
     List<DailyReportPhoto>? irsaliyePhotos,
     List<DailyReportMaterial>? incomingMaterials,
+    List<DailyReportMaterial>? outgoingMaterials,
     List<DailyReportMaterial>? orderedMaterials,
     List<DailyReportMachine>? machines,
+    List<DailyReportMachine>? vehicles,
     DailyReportWeather? weather,
     DailyReportAttendanceSnapshot? attendanceSnapshot,
     DateTime? createdAt,
@@ -93,11 +121,14 @@ class DailyReport extends Equatable {
       workConstruction: workConstruction ?? this.workConstruction,
       workElectrical: workElectrical ?? this.workElectrical,
       workMechanical: workMechanical ?? this.workMechanical,
+      nextDayPlan: nextDayPlan ?? this.nextDayPlan,
       photos: photos ?? this.photos,
       irsaliyePhotos: irsaliyePhotos ?? this.irsaliyePhotos,
       incomingMaterials: incomingMaterials ?? this.incomingMaterials,
+      outgoingMaterials: outgoingMaterials ?? this.outgoingMaterials,
       orderedMaterials: orderedMaterials ?? this.orderedMaterials,
       machines: machines ?? this.machines,
+      vehicles: vehicles ?? this.vehicles,
       weather: clearWeather ? null : (weather ?? this.weather),
       attendanceSnapshot: clearAttendance
           ? null
@@ -114,14 +145,18 @@ class DailyReport extends Equatable {
         'workConstruction': workConstruction,
         'workElectrical': workElectrical,
         'workMechanical': workMechanical,
+        'nextDayPlan': nextDayPlan,
         // Geriye dönük yedek alanı.
         'workDone': workDone,
         'photos': photos.map((e) => e.toJson()).toList(),
         'irsaliyePhotos': irsaliyePhotos.map((e) => e.toJson()).toList(),
         'incomingMaterials':
             incomingMaterials.map((e) => e.toJson()).toList(),
+        'outgoingMaterials':
+            outgoingMaterials.map((e) => e.toJson()).toList(),
         'orderedMaterials': orderedMaterials.map((e) => e.toJson()).toList(),
         'machines': machines.map((e) => e.toJson()).toList(),
+        'vehicles': vehicles.map((e) => e.toJson()).toList(),
         'weather': weather?.toJson(),
         'attendanceSnapshot': attendanceSnapshot?.toJson(),
         'createdAt': createdAt?.toIso8601String(),
@@ -154,10 +189,14 @@ class DailyReport extends Equatable {
       workConstruction: construction,
       workElectrical: electrical,
       workMechanical: mechanical,
+      nextDayPlan: json['nextDayPlan'] as String? ?? '',
       photos: asMaps(json['photos']).map(DailyReportPhoto.fromJson).toList(),
       irsaliyePhotos:
           asMaps(json['irsaliyePhotos']).map(DailyReportPhoto.fromJson).toList(),
       incomingMaterials: asMaps(json['incomingMaterials'])
+          .map(DailyReportMaterial.fromJson)
+          .toList(),
+      outgoingMaterials: asMaps(json['outgoingMaterials'])
           .map(DailyReportMaterial.fromJson)
           .toList(),
       orderedMaterials: asMaps(json['orderedMaterials'])
@@ -165,6 +204,8 @@ class DailyReport extends Equatable {
           .toList(),
       machines:
           asMaps(json['machines']).map(DailyReportMachine.fromJson).toList(),
+      vehicles:
+          asMaps(json['vehicles']).map(DailyReportMachine.fromJson).toList(),
       weather: json['weather'] is Map
           ? DailyReportWeather.fromJson(
               Map<String, dynamic>.from(json['weather'] as Map),
@@ -192,11 +233,14 @@ class DailyReport extends Equatable {
         workConstruction,
         workElectrical,
         workMechanical,
+        nextDayPlan,
         photos,
         irsaliyePhotos,
         incomingMaterials,
+        outgoingMaterials,
         orderedMaterials,
         machines,
+        vehicles,
         weather,
         attendanceSnapshot,
         createdAt,
@@ -542,12 +586,14 @@ class DailyReportAttendancePerson extends Equatable {
     required this.personName,
     required this.status,
     required this.hours,
+    this.team = '',
     this.overtimeHours = 0,
     this.yevmiye = 0,
   });
 
   final String personId;
   final String personName;
+  final String team;
   final String status;
   final int hours;
   final double overtimeHours;
@@ -556,6 +602,7 @@ class DailyReportAttendancePerson extends Equatable {
   Map<String, dynamic> toJson() => {
         'personId': personId,
         'personName': personName,
+        'team': team,
         'status': status,
         'hours': hours,
         'overtimeHours': overtimeHours,
@@ -566,6 +613,7 @@ class DailyReportAttendancePerson extends Equatable {
       DailyReportAttendancePerson(
         personId: json['personId'] as String? ?? '',
         personName: json['personName'] as String? ?? '',
+        team: json['team'] as String? ?? '',
         status: json['status'] as String? ?? '',
         hours: (json['hours'] as num?)?.toInt() ?? 0,
         overtimeHours: (json['overtimeHours'] as num?)?.toDouble() ?? 0,
@@ -574,7 +622,7 @@ class DailyReportAttendancePerson extends Equatable {
 
   @override
   List<Object?> get props =>
-      [personId, personName, status, hours, overtimeHours, yevmiye];
+      [personId, personName, team, status, hours, overtimeHours, yevmiye];
 }
 
 /// Aynı proje + gün puantaj özeti (bağlamsal snapshot).

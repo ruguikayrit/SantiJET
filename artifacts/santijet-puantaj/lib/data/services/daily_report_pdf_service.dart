@@ -106,27 +106,6 @@ class DailyReportPdfService {
             ),
           ),
         );
-        if (report.photos.isNotEmpty) {
-          doc.addPage(
-            pw.MultiPage(
-              pageFormat: PdfPageFormat.a4,
-              margin: const pw.EdgeInsets.all(22),
-              build: (ctx) => [
-                _docHeader(
-                  project: project,
-                  contractor: contractor,
-                  report: report,
-                ),
-                pw.SizedBox(height: 12),
-                _sectionTitle('FOTOĞRAFLAR'),
-                pw.SizedBox(height: 8),
-                ..._photoWidgets(report.photos, withCaptions: true),
-                pw.SizedBox(height: 20),
-                _signatureBlock(),
-              ],
-            ),
-          );
-        }
     }
 
     return Uint8List.fromList(await doc.save());
@@ -147,6 +126,13 @@ class DailyReportPdfService {
       pw.SizedBox(height: 6),
       _attendanceSummary(snap),
       pw.SizedBox(height: 12),
+      _sectionTitle('FOTOĞRAFLAR'),
+      pw.SizedBox(height: 6),
+      if (report.photos.isEmpty)
+        pw.Text('—', style: const pw.TextStyle(fontSize: 10, color: _muted))
+      else
+        ..._photoWidgets(report.photos, withCaptions: true, maxHeight: 120),
+      pw.SizedBox(height: 12),
       _sectionTitle('YAPILAN İŞLER'),
       pw.SizedBox(height: 6),
       ..._workCategoryBlocks(report, truncateEach: 220),
@@ -155,6 +141,7 @@ class DailyReportPdfService {
       pw.SizedBox(height: 8),
       pw.Text(
         '${AppInfo.displayName} · Özet çıktı',
+        textAlign: pw.TextAlign.center,
         style: const pw.TextStyle(fontSize: 8, color: _muted),
       ),
     ];
@@ -172,7 +159,7 @@ class DailyReportPdfService {
       pw.SizedBox(height: 10),
       _weatherLine(report.weather),
       pw.SizedBox(height: 12),
-      _sectionTitle('PUANTAJ / PERSONEL'),
+      _sectionTitle('PUANTAJ ÖZETİ'),
       pw.SizedBox(height: 6),
       _attendanceSummary(snap),
     ];
@@ -184,6 +171,17 @@ class DailyReportPdfService {
 
     widgets.addAll([
       pw.SizedBox(height: 12),
+      _sectionTitle('FOTOĞRAFLAR'),
+      pw.SizedBox(height: 6),
+      if (report.photos.isEmpty)
+        pw.Text(
+          'Kayıt yok',
+          textAlign: pw.TextAlign.center,
+          style: const pw.TextStyle(fontSize: 9, color: _muted),
+        )
+      else
+        ..._photoWidgets(report.photos, withCaptions: true),
+      pw.SizedBox(height: 12),
       _sectionTitle('YAPILAN İŞLER'),
       pw.SizedBox(height: 6),
       ..._workCategoryBlocks(report),
@@ -193,16 +191,53 @@ class DailyReportPdfService {
       _materialTable(
         report.incomingMaterials,
         advanced: advanced,
-        incoming: true,
+        kind: _MaterialKind.incoming,
       ),
       pw.SizedBox(height: 12),
-      _sectionTitle('SİPARİŞ VERİLEN MALZEMELER'),
+      _sectionTitle('GİDEN MALZEME'),
       pw.SizedBox(height: 6),
-      _materialTable(report.orderedMaterials, advanced: advanced),
+      _materialTable(
+        report.outgoingMaterials,
+        advanced: advanced,
+        kind: _MaterialKind.outgoing,
+      ),
       pw.SizedBox(height: 12),
-      _sectionTitle('MAKİNE / EKİPMAN PUANTAJI'),
+      _sectionTitle('SİPARİŞ VERİLEN MALZEME'),
       pw.SizedBox(height: 6),
-      _machineTable(report.machines, advanced: advanced),
+      _materialTable(
+        report.orderedMaterials,
+        advanced: advanced,
+        kind: _MaterialKind.ordered,
+      ),
+      pw.SizedBox(height: 12),
+      _sectionTitle('İŞ MAKİNESİ PUANTAJI'),
+      pw.SizedBox(height: 6),
+      _machineTable(report.machines, advanced: advanced, vehicle: false),
+      pw.SizedBox(height: 12),
+      _sectionTitle('VASITA PUANTAJI'),
+      pw.SizedBox(height: 6),
+      _machineTable(report.vehicles, advanced: advanced, vehicle: true),
+      pw.SizedBox(height: 12),
+      _sectionTitle('ERTESİ GÜN PLANI'),
+      pw.SizedBox(height: 6),
+      pw.Container(
+        width: double.infinity,
+        constraints: const pw.BoxConstraints(minHeight: 40),
+        padding: const pw.EdgeInsets.all(8),
+        alignment: pw.Alignment.center,
+        decoration: pw.BoxDecoration(
+          border: pw.Border.all(color: _line, width: 0.7),
+        ),
+        child: pw.Text(
+          report.nextDayPlan.trim().isEmpty ? '—' : report.nextDayPlan.trim(),
+          textAlign: pw.TextAlign.center,
+          style: pw.TextStyle(
+            fontSize: 10,
+            color: report.nextDayPlan.trim().isEmpty ? _muted : _ink,
+            lineSpacing: 3,
+          ),
+        ),
+      ),
       pw.SizedBox(height: 12),
       _sectionTitle('NOT'),
       pw.SizedBox(height: 6),
@@ -210,6 +245,7 @@ class DailyReportPdfService {
         width: double.infinity,
         constraints: const pw.BoxConstraints(minHeight: 36),
         padding: const pw.EdgeInsets.all(6),
+        alignment: pw.Alignment.center,
         decoration: pw.BoxDecoration(
           border: pw.Border.all(color: _line, width: 0.7),
         ),
@@ -217,6 +253,7 @@ class DailyReportPdfService {
           advanced && report.weather?.offlineNote.isNotEmpty == true
               ? report.weather!.offlineNote
               : '',
+          textAlign: pw.TextAlign.center,
           style: const pw.TextStyle(fontSize: 9, color: _muted),
         ),
       ),
@@ -226,13 +263,10 @@ class DailyReportPdfService {
       pw.Text(
         '${AppInfo.displayName} · '
         '${advanced ? 'Gelişmiş' : 'Standart'} çıktı',
+        textAlign: pw.TextAlign.center,
         style: const pw.TextStyle(fontSize: 8, color: _muted),
       ),
     ]);
-
-    if (!advanced && report.photos.isEmpty) {
-      // foto yoksa imza bu sayfada kalır
-    }
 
     return widgets;
   }
@@ -358,6 +392,7 @@ class DailyReportPdfService {
       ),
       child: pw.Text(
         'Hava Durumu  ${parts.join(' · ')}',
+        textAlign: pw.TextAlign.center,
         style: pw.TextStyle(
           fontSize: 9,
           fontWeight: pw.FontWeight.bold,
@@ -370,10 +405,12 @@ class DailyReportPdfService {
   pw.Widget _sectionTitle(String title) {
     return pw.Container(
       width: double.infinity,
+      alignment: pw.Alignment.center,
       padding: const pw.EdgeInsets.symmetric(horizontal: 6, vertical: 4),
       color: _headerBg,
       child: pw.Text(
         title,
+        textAlign: pw.TextAlign.center,
         style: pw.TextStyle(
           fontSize: 9,
           fontWeight: pw.FontWeight.bold,
@@ -387,11 +424,12 @@ class DailyReportPdfService {
     if (snap == null) {
       return pw.Text(
         'Puantaj kaydı yok',
+        textAlign: pw.TextAlign.center,
         style: const pw.TextStyle(fontSize: 9, color: _muted),
       );
     }
     return pw.Column(
-      crossAxisAlignment: pw.CrossAxisAlignment.start,
+      crossAxisAlignment: pw.CrossAxisAlignment.center,
       children: [
         pw.Row(
           children: [
@@ -409,6 +447,7 @@ class DailyReportPdfService {
         pw.Text(
           'Adam-saat: ${_fmt(snap.totalAdamSaat)} · '
           'Yevmiye: ${_fmt(snap.totalYevmiye)}',
+          textAlign: pw.TextAlign.center,
           style: const pw.TextStyle(fontSize: 9, color: _muted),
         ),
       ],
@@ -444,27 +483,26 @@ class DailyReportPdfService {
   }
 
   pw.Widget _personBreakdown(DailyReportAttendanceSnapshot snap) {
-    return pw.TableHelper.fromTextArray(
-      headers: const ['Personel', 'Durum', 'Saat', 'Mesai', 'Yevmiye'],
+    return _centeredTable(
+      headers: const [
+        'Personel',
+        'Ekip',
+        'Durum',
+        'Saat',
+        'Mesai',
+        'Yevmiye',
+      ],
       data: [
         for (final p in snap.people)
           [
             p.personName,
+            p.team.isEmpty ? '—' : p.team,
             p.status,
             '${p.hours}',
             _fmt(p.overtimeHours),
             _fmt(p.yevmiye),
           ],
       ],
-      headerStyle: pw.TextStyle(
-        fontWeight: pw.FontWeight.bold,
-        fontSize: 8,
-        color: _ink,
-      ),
-      cellStyle: const pw.TextStyle(fontSize: 8, color: _ink),
-      headerDecoration: const pw.BoxDecoration(color: _headerBg),
-      cellPadding: const pw.EdgeInsets.symmetric(horizontal: 3, vertical: 2),
-      border: pw.TableBorder.all(color: _line, width: 0.4),
     );
   }
 
@@ -477,14 +515,16 @@ class DailyReportPdfService {
       ('ELEKTRİK İŞLERİ', report.workElectrical),
       ('MEKANİK İŞLER', report.workMechanical),
     ];
+    final caps = report.photoCaptions;
     final nonEmpty = [
       for (final e in entries)
         if (e.$2.trim().isNotEmpty) e,
     ];
-    if (nonEmpty.isEmpty) {
+    if (nonEmpty.isEmpty && caps.isEmpty) {
       return [
         pw.Text(
           '—',
+          textAlign: pw.TextAlign.center,
           style: const pw.TextStyle(fontSize: 10, color: _muted),
         ),
       ];
@@ -493,6 +533,7 @@ class DailyReportPdfService {
       for (final e in nonEmpty) ...[
         pw.Text(
           e.$1,
+          textAlign: pw.TextAlign.center,
           style: pw.TextStyle(
             fontSize: 9,
             fontWeight: pw.FontWeight.bold,
@@ -504,6 +545,7 @@ class DailyReportPdfService {
           width: double.infinity,
           padding: const pw.EdgeInsets.all(8),
           margin: const pw.EdgeInsets.only(bottom: 8),
+          alignment: pw.Alignment.center,
           decoration: pw.BoxDecoration(
             border: pw.Border.all(color: _line, width: 0.7),
           ),
@@ -511,6 +553,33 @@ class DailyReportPdfService {
             truncateEach != null
                 ? _truncate(e.$2.trim(), truncateEach)
                 : e.$2.trim(),
+            textAlign: pw.TextAlign.center,
+            style: const pw.TextStyle(fontSize: 10, color: _ink, lineSpacing: 3),
+          ),
+        ),
+      ],
+      if (caps.isNotEmpty) ...[
+        pw.Text(
+          'FOTOĞRAF AÇIKLAMALARI',
+          textAlign: pw.TextAlign.center,
+          style: pw.TextStyle(
+            fontSize: 9,
+            fontWeight: pw.FontWeight.bold,
+            color: _blue,
+          ),
+        ),
+        pw.SizedBox(height: 3),
+        pw.Container(
+          width: double.infinity,
+          padding: const pw.EdgeInsets.all(8),
+          margin: const pw.EdgeInsets.only(bottom: 8),
+          alignment: pw.Alignment.center,
+          decoration: pw.BoxDecoration(
+            border: pw.Border.all(color: _line, width: 0.7),
+          ),
+          child: pw.Text(
+            caps.map((c) => '• $c').join('\n'),
+            textAlign: pw.TextAlign.center,
             style: const pw.TextStyle(fontSize: 10, color: _ink, lineSpacing: 3),
           ),
         ),
@@ -521,28 +590,33 @@ class DailyReportPdfService {
   pw.Widget _materialTable(
     List<DailyReportMaterial> items, {
     required bool advanced,
-    bool incoming = false,
+    required _MaterialKind kind,
   }) {
     if (items.isEmpty) {
       return pw.Text(
         'Kayıt yok',
+        textAlign: pw.TextAlign.center,
         style: const pw.TextStyle(fontSize: 9, color: _muted),
       );
     }
-    final headers = incoming
+    final stockLike =
+        kind == _MaterialKind.incoming || kind == _MaterialKind.outgoing;
+    final partyHeader =
+        kind == _MaterialKind.outgoing ? 'Alıcı / Yer' : 'Firma';
+    final headers = stockLike
         ? (advanced
-            ? const [
+            ? [
                 'Tarih',
-                'Firma',
+                partyHeader,
                 'Ürün',
                 'Miktar',
                 'Birim',
                 'Fiyat',
                 'Not',
               ]
-            : const [
+            : [
                 'Tarih',
-                'Firma',
+                partyHeader,
                 'Ürün',
                 'Miktar',
                 'Birim',
@@ -553,7 +627,7 @@ class DailyReportPdfService {
             : const ['Malzeme', 'Miktar', 'Birim', 'Not']);
     final data = [
       for (final m in items)
-        if (incoming)
+        if (stockLike)
           advanced
               ? [
                   m.supplyDate,
@@ -588,41 +662,32 @@ class DailyReportPdfService {
                   m.note.isNotEmpty ? m.note : m.supplierOrOrder,
                 ],
     ];
-    return pw.TableHelper.fromTextArray(
-      headers: headers,
-      data: data,
-      headerStyle: pw.TextStyle(
-        fontWeight: pw.FontWeight.bold,
-        fontSize: 8,
-        color: _ink,
-      ),
-      cellStyle: const pw.TextStyle(fontSize: 8, color: _ink),
-      headerDecoration: const pw.BoxDecoration(color: _headerBg),
-      cellPadding: const pw.EdgeInsets.symmetric(horizontal: 3, vertical: 2),
-      border: pw.TableBorder.all(color: _line, width: 0.4),
-    );
+    return _centeredTable(headers: headers, data: data);
   }
 
   pw.Widget _machineTable(
     List<DailyReportMachine> items, {
     required bool advanced,
+    required bool vehicle,
   }) {
     if (items.isEmpty) {
       return pw.Text(
         'Kayıt yok',
+        textAlign: pw.TextAlign.center,
         style: const pw.TextStyle(fontSize: 9, color: _muted),
       );
     }
+    final nameHeader = vehicle ? 'Vasıta' : 'Makine';
     final headers = advanced
-        ? const [
-            'Makine',
+        ? [
+            nameHeader,
             'Tip',
             'Plaka',
             'Saat',
             'Yapılan iş',
             'Operatör',
           ]
-        : const ['Makine', 'Saat', 'Yapılan iş', 'Operatör'];
+        : [nameHeader, 'Saat', 'Yapılan iş', 'Operatör'];
     final data = [
       for (final m in items)
         advanced
@@ -641,6 +706,13 @@ class DailyReportPdfService {
                 m.operatorName,
               ],
     ];
+    return _centeredTable(headers: headers, data: data);
+  }
+
+  pw.Widget _centeredTable({
+    required List<String> headers,
+    required List<List<String>> data,
+  }) {
     return pw.TableHelper.fromTextArray(
       headers: headers,
       data: data,
@@ -651,8 +723,10 @@ class DailyReportPdfService {
       ),
       cellStyle: const pw.TextStyle(fontSize: 8, color: _ink),
       headerDecoration: const pw.BoxDecoration(color: _headerBg),
-      cellPadding: const pw.EdgeInsets.symmetric(horizontal: 3, vertical: 2),
+      cellPadding: const pw.EdgeInsets.symmetric(horizontal: 3, vertical: 3),
       border: pw.TableBorder.all(color: _line, width: 0.4),
+      cellAlignment: pw.Alignment.center,
+      headerAlignment: pw.Alignment.center,
     );
   }
 
@@ -713,6 +787,7 @@ class DailyReportPdfService {
   List<pw.Widget> _photoWidgets(
     List<DailyReportPhoto> photos, {
     required bool withCaptions,
+    double maxHeight = 200,
   }) {
     final out = <pw.Widget>[];
     for (var i = 0; i < photos.length; i++) {
@@ -729,11 +804,11 @@ class DailyReportPdfService {
         pw.Container(
           margin: const pw.EdgeInsets.only(bottom: 10),
           child: pw.Column(
-            crossAxisAlignment: pw.CrossAxisAlignment.start,
+            crossAxisAlignment: pw.CrossAxisAlignment.center,
             children: [
               if (img != null)
                 pw.Container(
-                  height: 220,
+                  height: maxHeight,
                   width: double.infinity,
                   alignment: pw.Alignment.center,
                   child: pw.Image(img, fit: pw.BoxFit.contain),
@@ -744,6 +819,7 @@ class DailyReportPdfService {
                   alignment: pw.Alignment.center,
                   child: pw.Text(
                     'Fotoğraf yüklenemedi',
+                    textAlign: pw.TextAlign.center,
                     style: const pw.TextStyle(fontSize: 9, color: _muted),
                   ),
                 ),
@@ -753,6 +829,7 @@ class DailyReportPdfService {
                   p.hasCaption
                       ? '${i + 1}. ${p.caption}'
                       : '${i + 1}. (açıklama yok)',
+                  textAlign: pw.TextAlign.center,
                   style: const pw.TextStyle(fontSize: 9, color: _ink),
                 ),
               ],
@@ -783,5 +860,7 @@ class DailyReportPdfService {
     return '${s.substring(0, max)}…';
   }
 }
+
+enum _MaterialKind { incoming, outgoing, ordered }
 
 final dailyReportPdfService = DailyReportPdfService();

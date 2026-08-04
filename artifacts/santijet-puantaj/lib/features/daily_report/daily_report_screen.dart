@@ -40,6 +40,7 @@ class _DailyReportScreenState extends ConsumerState<DailyReportScreen> {
   final _workConstructionCtrl = TextEditingController();
   final _workElectricalCtrl = TextEditingController();
   final _workMechanicalCtrl = TextEditingController();
+  final _nextDayPlanCtrl = TextEditingController();
   final _picker = ImagePicker();
   bool _weatherLoading = false;
   bool _saving = false;
@@ -52,6 +53,7 @@ class _DailyReportScreenState extends ConsumerState<DailyReportScreen> {
     _workConstructionCtrl.dispose();
     _workElectricalCtrl.dispose();
     _workMechanicalCtrl.dispose();
+    _nextDayPlanCtrl.dispose();
     super.dispose();
   }
 
@@ -69,6 +71,7 @@ class _DailyReportScreenState extends ConsumerState<DailyReportScreen> {
     _workConstructionCtrl.text = report.workConstruction;
     _workElectricalCtrl.text = report.workElectrical;
     _workMechanicalCtrl.text = report.workMechanical;
+    _nextDayPlanCtrl.text = report.nextDayPlan;
     _boundKey = key;
     _bootstrapped = true;
 
@@ -152,6 +155,7 @@ class _DailyReportScreenState extends ConsumerState<DailyReportScreen> {
         workConstruction: _workConstructionCtrl.text.trim(),
         workElectrical: _workElectricalCtrl.text.trim(),
         workMechanical: _workMechanicalCtrl.text.trim(),
+        nextDayPlan: _nextDayPlanCtrl.text.trim(),
       );
       next = syncAttendanceIntoReport(ref, next);
       ref.read(dailyReportsProvider.notifier).upsert(next);
@@ -172,6 +176,7 @@ class _DailyReportScreenState extends ConsumerState<DailyReportScreen> {
       workConstruction: _workConstructionCtrl.text.trim(),
       workElectrical: _workElectricalCtrl.text.trim(),
       workMechanical: _workMechanicalCtrl.text.trim(),
+      nextDayPlan: _nextDayPlanCtrl.text.trim(),
     );
     next = syncAttendanceIntoReport(ref, next);
     return next;
@@ -335,11 +340,13 @@ class _DailyReportScreenState extends ConsumerState<DailyReportScreen> {
   }
 
   Future<void> _upsertMaterial({
-    required bool incoming,
+    required _MaterialList kind,
     DailyReportMaterial? existing,
   }) async {
     final report = ref.read(activeDailyReportProvider);
     if (report == null) return;
+    final stockLike =
+        kind == _MaterialList.incoming || kind == _MaterialList.outgoing;
     final name = TextEditingController(text: existing?.name ?? '');
     final qty = TextEditingController(text: existing?.quantity ?? '');
     final unit = TextEditingController(text: existing?.unit ?? '');
@@ -350,23 +357,32 @@ class _DailyReportScreenState extends ConsumerState<DailyReportScreen> {
     final price = TextEditingController(text: existing?.price ?? '');
     final note = TextEditingController(text: existing?.note ?? '');
 
+    String titleNew() => switch (kind) {
+          _MaterialList.incoming => 'Gelen malzeme',
+          _MaterialList.outgoing => 'Giden malzeme',
+          _MaterialList.ordered => 'Sipariş malzeme',
+        };
+    String partyLabel() => switch (kind) {
+          _MaterialList.incoming => 'Tedarik edilen firma',
+          _MaterialList.outgoing => 'Alıcı / gönderilen yer',
+          _MaterialList.ordered => 'Kime / sipariş no',
+        };
+
     final values = await showDialog<Map<String, String>>(
       context: context,
       builder: (ctx) => AlertDialog(
-        title: Text(
-          existing == null
-              ? (incoming ? 'Gelen malzeme' : 'Sipariş malzeme')
-              : 'Malzeme düzenle',
-        ),
+        title: Text(existing == null ? titleNew() : 'Malzeme düzenle'),
         content: SingleChildScrollView(
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
-              if (incoming)
+              if (stockLike)
                 TextField(
                   controller: supplyDate,
-                  decoration: const InputDecoration(
-                    labelText: 'Tedarik tarihi',
+                  decoration: InputDecoration(
+                    labelText: kind == _MaterialList.outgoing
+                        ? 'Gönderim tarihi'
+                        : 'Tedarik tarihi',
                     hintText: 'dd.MM.yyyy',
                   ),
                 ),
@@ -385,12 +401,9 @@ class _DailyReportScreenState extends ConsumerState<DailyReportScreen> {
               ),
               TextField(
                 controller: supplier,
-                decoration: InputDecoration(
-                  labelText:
-                      incoming ? 'Tedarik edilen firma' : 'Kime / sipariş no',
-                ),
+                decoration: InputDecoration(labelText: partyLabel()),
               ),
-              if (incoming)
+              if (stockLike)
                 TextField(
                   controller: price,
                   decoration: const InputDecoration(
@@ -452,29 +465,38 @@ class _DailyReportScreenState extends ConsumerState<DailyReportScreen> {
       recordedAt: existing?.recordedAt ?? DateTime.now(),
     );
 
-    if (incoming) {
-      final list = [...report.incomingMaterials];
-      final i = list.indexWhere((e) => e.id == item.id);
-      if (i >= 0) {
-        list[i] = item;
-      } else {
-        list.add(item);
-      }
-      ref
-          .read(dailyReportsProvider.notifier)
-          .upsert(report.copyWith(incomingMaterials: list));
-    } else {
-      final list = [...report.orderedMaterials];
-      final i = list.indexWhere((e) => e.id == item.id);
-      if (i >= 0) {
-        list[i] = item;
-      } else {
-        list.add(item);
-      }
-      ref
-          .read(dailyReportsProvider.notifier)
-          .upsert(report.copyWith(orderedMaterials: list));
+    List<DailyReportMaterial> list;
+    DailyReport next;
+    switch (kind) {
+      case _MaterialList.incoming:
+        list = [...report.incomingMaterials];
+        final i = list.indexWhere((e) => e.id == item.id);
+        if (i >= 0) {
+          list[i] = item;
+        } else {
+          list.add(item);
+        }
+        next = report.copyWith(incomingMaterials: list);
+      case _MaterialList.outgoing:
+        list = [...report.outgoingMaterials];
+        final i = list.indexWhere((e) => e.id == item.id);
+        if (i >= 0) {
+          list[i] = item;
+        } else {
+          list.add(item);
+        }
+        next = report.copyWith(outgoingMaterials: list);
+      case _MaterialList.ordered:
+        list = [...report.orderedMaterials];
+        final i = list.indexWhere((e) => e.id == item.id);
+        if (i >= 0) {
+          list[i] = item;
+        } else {
+          list.add(item);
+        }
+        next = report.copyWith(orderedMaterials: list);
     }
+    ref.read(dailyReportsProvider.notifier).upsert(next);
   }
 
   Future<void> _pickIrsaliye(ImageSource source) async {
@@ -778,7 +800,10 @@ class _DailyReportScreenState extends ConsumerState<DailyReportScreen> {
     );
   }
 
-  Future<void> _upsertMachine({DailyReportMachine? existing}) async {
+  Future<void> _upsertMachine({
+    DailyReportMachine? existing,
+    bool vehicle = false,
+  }) async {
     final report = ref.read(activeDailyReportProvider);
     if (report == null) return;
     final name = TextEditingController(text: existing?.name ?? '');
@@ -795,15 +820,22 @@ class _DailyReportScreenState extends ConsumerState<DailyReportScreen> {
     final values = await showDialog<Map<String, String>>(
       context: context,
       builder: (ctx) => AlertDialog(
-        title: Text(existing == null ? 'İş makinesi' : 'Makine düzenle'),
+        title: Text(
+          existing == null
+              ? (vehicle ? 'Vasıta' : 'İş makinesi')
+              : (vehicle ? 'Vasıta düzenle' : 'Makine düzenle'),
+        ),
         content: SingleChildScrollView(
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
               TextField(
                 controller: name,
-                decoration:
-                    const InputDecoration(labelText: 'Makine adı / tipi *'),
+                decoration: InputDecoration(
+                  labelText: vehicle
+                      ? 'Vasıta adı / tipi *'
+                      : 'Makine adı / tipi *',
+                ),
               ),
               TextField(
                 controller: type,
@@ -828,7 +860,9 @@ class _DailyReportScreenState extends ConsumerState<DailyReportScreen> {
               ),
               TextField(
                 controller: op,
-                decoration: const InputDecoration(labelText: 'Operatör'),
+                decoration: InputDecoration(
+                  labelText: vehicle ? 'Sürücü / operatör' : 'Operatör',
+                ),
               ),
             ],
           ),
@@ -864,7 +898,7 @@ class _DailyReportScreenState extends ConsumerState<DailyReportScreen> {
     if (values == null) return;
 
     final item = DailyReportMachine(
-      id: existing?.id ?? IdGen.make('mch'),
+      id: existing?.id ?? IdGen.make(vehicle ? 'veh' : 'mch'),
       name: values['name']!,
       type: values['type'] ?? '',
       plateOrId: values['plate'] ?? '',
@@ -875,16 +909,29 @@ class _DailyReportScreenState extends ConsumerState<DailyReportScreen> {
       workDescription: values['work'] ?? '',
       operatorName: values['op'] ?? '',
     );
-    final list = [...report.machines];
-    final i = list.indexWhere((e) => e.id == item.id);
-    if (i >= 0) {
-      list[i] = item;
+    if (vehicle) {
+      final list = [...report.vehicles];
+      final i = list.indexWhere((e) => e.id == item.id);
+      if (i >= 0) {
+        list[i] = item;
+      } else {
+        list.add(item);
+      }
+      ref
+          .read(dailyReportsProvider.notifier)
+          .upsert(report.copyWith(vehicles: list));
     } else {
-      list.add(item);
+      final list = [...report.machines];
+      final i = list.indexWhere((e) => e.id == item.id);
+      if (i >= 0) {
+        list[i] = item;
+      } else {
+        list.add(item);
+      }
+      ref
+          .read(dailyReportsProvider.notifier)
+          .upsert(report.copyWith(machines: list));
     }
-    ref
-        .read(dailyReportsProvider.notifier)
-        .upsert(report.copyWith(machines: list));
   }
 
   @override
@@ -1134,7 +1181,9 @@ class _DailyReportScreenState extends ConsumerState<DailyReportScreen> {
                                   Padding(
                                     padding: const EdgeInsets.only(bottom: 2),
                                     child: Text(
-                                      '${p.personName} — ${p.status}'
+                                      '${p.personName}'
+                                      '${p.team.isNotEmpty ? ' · ${p.team}' : ''}'
+                                      ' — ${p.status}'
                                       '${p.yevmiye > 0 ? ' (${p.yevmiye.toStringAsFixed(p.yevmiye == p.yevmiye.roundToDouble() ? 0 : 2)} yv)' : ''}',
                                       style: theme.textTheme.bodySmall,
                                     ),
@@ -1150,33 +1199,6 @@ class _DailyReportScreenState extends ConsumerState<DailyReportScreen> {
                   ),
                   const SizedBox(height: AppSpacing.md),
                   _SectionCard(
-                    title: 'Yapılan işler',
-                    icon: Icons.checklist_outlined,
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.stretch,
-                      children: [
-                        _WorkCategoryField(
-                          label: 'İnşaat işleri',
-                          controller: _workConstructionCtrl,
-                          hint: 'İnşaat kapsamında yapılan işler…',
-                        ),
-                        const SizedBox(height: AppSpacing.sm),
-                        _WorkCategoryField(
-                          label: 'Elektrik işleri',
-                          controller: _workElectricalCtrl,
-                          hint: 'Elektrik kapsamında yapılan işler…',
-                        ),
-                        const SizedBox(height: AppSpacing.sm),
-                        _WorkCategoryField(
-                          label: 'Mekanik işler',
-                          controller: _workMechanicalCtrl,
-                          hint: 'Mekanik kapsamında yapılan işler…',
-                        ),
-                      ],
-                    ),
-                  ),
-                  const SizedBox(height: AppSpacing.md),
-                  _SectionCard(
                     title: 'Fotoğraflar',
                     icon: Icons.photo_camera_outlined,
                     trailing: IconButton(
@@ -1186,7 +1208,7 @@ class _DailyReportScreenState extends ConsumerState<DailyReportScreen> {
                     child: (report?.photos.isEmpty ?? true)
                         ? Text(
                             'Henüz foto yok. Kamera veya galeriden ekleyin.\n'
-                            'Her foto için açıklama önerilir (Hive + base64).',
+                            'Açıklamalar yapılan işler listesine otomatik eklenir.',
                             style: theme.textTheme.bodyMedium,
                           )
                         : Column(
@@ -1277,6 +1299,51 @@ class _DailyReportScreenState extends ConsumerState<DailyReportScreen> {
                   ),
                   const SizedBox(height: AppSpacing.md),
                   _SectionCard(
+                    title: 'Yapılan işler',
+                    icon: Icons.checklist_outlined,
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.stretch,
+                      children: [
+                        _WorkCategoryField(
+                          label: 'İnşaat işleri',
+                          controller: _workConstructionCtrl,
+                          hint: 'İnşaat kapsamında yapılan işler…',
+                        ),
+                        const SizedBox(height: AppSpacing.sm),
+                        _WorkCategoryField(
+                          label: 'Elektrik işleri',
+                          controller: _workElectricalCtrl,
+                          hint: 'Elektrik kapsamında yapılan işler…',
+                        ),
+                        const SizedBox(height: AppSpacing.sm),
+                        _WorkCategoryField(
+                          label: 'Mekanik işler',
+                          controller: _workMechanicalCtrl,
+                          hint: 'Mekanik kapsamında yapılan işler…',
+                        ),
+                        if (report?.photoCaptions.isNotEmpty == true) ...[
+                          const SizedBox(height: AppSpacing.md),
+                          Text(
+                            'Fotoğraf açıklamaları (otomatik)',
+                            style: theme.textTheme.labelLarge?.copyWith(
+                              fontWeight: FontWeight.w700,
+                            ),
+                          ),
+                          const SizedBox(height: AppSpacing.xs),
+                          for (final c in report!.photoCaptions)
+                            Padding(
+                              padding: const EdgeInsets.only(bottom: 4),
+                              child: Text(
+                                '• $c',
+                                style: theme.textTheme.bodyMedium,
+                              ),
+                            ),
+                        ],
+                      ],
+                    ),
+                  ),
+                  const SizedBox(height: AppSpacing.md),
+                  _SectionCard(
                     title: 'Gelen malzeme',
                     icon: Icons.local_shipping_outlined,
                     trailing: Row(
@@ -1298,8 +1365,9 @@ class _DailyReportScreenState extends ConsumerState<DailyReportScreen> {
                         ),
                         IconButton(
                           tooltip: 'Manuel ekle',
-                          onPressed: () =>
-                              _upsertMaterial(incoming: true),
+                          onPressed: () => _upsertMaterial(
+                            kind: _MaterialList.incoming,
+                          ),
                           icon: const Icon(Icons.add),
                         ),
                       ],
@@ -1402,7 +1470,7 @@ class _DailyReportScreenState extends ConsumerState<DailyReportScreen> {
                             _MaterialTile(
                               item: m,
                               onEdit: () => _upsertMaterial(
-                                incoming: true,
+                                kind: _MaterialList.incoming,
                                 existing: m,
                               ),
                               onDelete: () {
@@ -1425,16 +1493,48 @@ class _DailyReportScreenState extends ConsumerState<DailyReportScreen> {
                   ),
                   const SizedBox(height: AppSpacing.md),
                   _ListSection(
-                    title: 'Sipariş verilen malzemeler',
+                    title: 'Giden malzeme',
+                    icon: Icons.outbox_outlined,
+                    onAdd: () =>
+                        _upsertMaterial(kind: _MaterialList.outgoing),
+                    empty: 'Giden / gönderilen malzeme kaydı yok',
+                    children: [
+                      for (final m in report?.outgoingMaterials ?? const [])
+                        _MaterialTile(
+                          item: m,
+                          onEdit: () => _upsertMaterial(
+                            kind: _MaterialList.outgoing,
+                            existing: m,
+                          ),
+                          onDelete: () {
+                            final r = ref.read(activeDailyReportProvider);
+                            if (r == null) return;
+                            ref.read(dailyReportsProvider.notifier).upsert(
+                                  r.copyWith(
+                                    outgoingMaterials: r.outgoingMaterials
+                                        .where((e) => e.id != m.id)
+                                        .toList(),
+                                  ),
+                                );
+                          },
+                        ),
+                    ],
+                  ),
+                  const SizedBox(height: AppSpacing.md),
+                  _ListSection(
+                    title: 'Sipariş verilen malzeme',
                     icon: Icons.shopping_cart_outlined,
-                    onAdd: () => _upsertMaterial(incoming: false),
+                    onAdd: () =>
+                        _upsertMaterial(kind: _MaterialList.ordered),
                     empty: 'Sipariş kaydı yok',
                     children: [
                       for (final m in report?.orderedMaterials ?? const [])
                         _MaterialTile(
                           item: m,
-                          onEdit: () =>
-                              _upsertMaterial(incoming: false, existing: m),
+                          onEdit: () => _upsertMaterial(
+                            kind: _MaterialList.ordered,
+                            existing: m,
+                          ),
                           onDelete: () {
                             final r = ref.read(activeDailyReportProvider);
                             if (r == null) return;
@@ -1501,6 +1601,72 @@ class _DailyReportScreenState extends ConsumerState<DailyReportScreen> {
                           ),
                         ),
                     ],
+                  ),
+                  const SizedBox(height: AppSpacing.md),
+                  _ListSection(
+                    title: 'Vasıta puantajı',
+                    icon: Icons.directions_car_outlined,
+                    onAdd: () => _upsertMachine(vehicle: true),
+                    empty: 'Vasıta kaydı yok',
+                    children: [
+                      for (final m in report?.vehicles ?? const [])
+                        ListTile(
+                          contentPadding: EdgeInsets.zero,
+                          title: Text(m.name),
+                          subtitle: Text(
+                            [
+                              if (m.type.isNotEmpty) m.type,
+                              if (m.plateOrId.isNotEmpty) m.plateOrId,
+                              if (m.hoursWorked > 0)
+                                '${m.hoursWorked} sa',
+                              if (m.workDescription.isNotEmpty)
+                                m.workDescription,
+                              if (m.operatorName.isNotEmpty)
+                                'Sürücü: ${m.operatorName}',
+                            ].join(' · '),
+                          ),
+                          trailing: Row(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              IconButton(
+                                icon: const Icon(Icons.edit_outlined, size: 20),
+                                onPressed: () => _upsertMachine(
+                                  existing: m,
+                                  vehicle: true,
+                                ),
+                              ),
+                              IconButton(
+                                icon:
+                                    const Icon(Icons.delete_outline, size: 20),
+                                onPressed: () {
+                                  final r =
+                                      ref.read(activeDailyReportProvider);
+                                  if (r == null) return;
+                                  ref
+                                      .read(dailyReportsProvider.notifier)
+                                      .upsert(
+                                        r.copyWith(
+                                          vehicles: r.vehicles
+                                              .where((e) => e.id != m.id)
+                                              .toList(),
+                                        ),
+                                      );
+                                },
+                              ),
+                            ],
+                          ),
+                        ),
+                    ],
+                  ),
+                  const SizedBox(height: AppSpacing.md),
+                  _SectionCard(
+                    title: 'Ertesi gün planı',
+                    icon: Icons.event_note_outlined,
+                    child: _WorkCategoryField(
+                      label: 'Yarın yapılacak işler',
+                      controller: _nextDayPlanCtrl,
+                      hint: 'Ertesi gün planlanan işler, ekipler, malzeme…',
+                    ),
                   ),
                 ],
               ),
@@ -1855,6 +2021,8 @@ class _DailyReportExportSheetState extends State<_DailyReportExportSheet> {
     );
   }
 }
+
+enum _MaterialList { incoming, outgoing, ordered }
 
 /// Türkiye illeri seçici — arama + alfabetik liste.
 class _CityPickerSheet extends StatefulWidget {

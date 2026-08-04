@@ -11,8 +11,8 @@ void main() {
   group('AttendanceSnapshotBuilder', () {
     test('mevcut / yarım / izin / yok ve adam-saat', () {
       const people = [
-        Person(id: 'u1', projectId: 'p', name: 'Ali'),
-        Person(id: 'u2', projectId: 'p', name: 'Veli'),
+        Person(id: 'u1', projectId: 'p', name: 'Ali', team: 'A Ekibi'),
+        Person(id: 'u2', projectId: 'p', name: 'Veli', team: 'B Ekibi'),
         Person(id: 'u3', projectId: 'p', name: 'Ayşe'),
         Person(id: 'u4', projectId: 'p', name: 'Can'),
       ];
@@ -61,6 +61,10 @@ void main() {
       expect(snap.totalAdamSaat, 14); // 8+2+4
       expect(snap.totalYevmiye, 1.75); // 1.25 + 0.5
       expect(snap.people.length, 3);
+      expect(
+        snap.people.firstWhere((p) => p.personId == 'u1').team,
+        'A Ekibi',
+      );
     });
   });
 
@@ -80,6 +84,12 @@ void main() {
             caption: 'Batı cephe',
           ),
         ],
+        outgoingMaterials: const [
+          DailyReportMaterial(id: 'om1', name: 'Kalıp', quantity: '10', unit: 'adet'),
+        ],
+        vehicles: const [
+          DailyReportMachine(id: 'v1', name: 'Pickup', plateOrId: '34 ABC 01'),
+        ],
         weather: const DailyReportWeather(
           temperatureC: 28,
           nightTemperatureC: 18,
@@ -96,7 +106,10 @@ void main() {
       expect(restored.workMechanical, 'Klima altyapı');
       expect(restored.hasWorkEntries, isTrue);
       expect(restored.workDone, contains('İNŞAAT İŞLERİ'));
+      expect(restored.workDone, contains('Batı cephe'));
       expect(restored.photos.single.caption, 'Batı cephe');
+      expect(restored.outgoingMaterials.single.name, 'Kalıp');
+      expect(restored.vehicles.single.plateOrId, '34 ABC 01');
       expect(restored.weather?.temperatureC, 28);
       expect(restored.weather?.nightTemperatureC, 18);
       expect(restored.weather?.humidityPercent, 45);

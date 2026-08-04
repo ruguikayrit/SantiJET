@@ -27,11 +27,14 @@ Proje + takvim günü başına tek kayıt (Hive upsert):
 
 - Fotoğraflar + açıklama (**açıklama önerilir**; boş izinli)
   - Saklama: **base64 → Hive** (mobil + web ortak; dosya yolu yok)
+- Bölüm sırası: Hava → Puantaj → Fotoğraflar → Yapılan işler → Gelen / Giden / Sipariş malzeme → İş makinesi → Vasıta → Ertesi gün planı
 - Gelen malzeme: **irsaliye fotoğrafı** + OCR (OCR.space) ile otomatik satır
   - Tedarik tarihi, firma, ürün adı, miktar, birim, fiyat (opsiyonel)
-- Yapılan işler: İnşaat / Elektrik / Mekanik alt başlıkları
-- Gelen malzeme / sipariş malzeme satırları
-- İş makinesi puantajı
+- Giden (gönderilen) malzeme satırları
+- Yapılan işler: İnşaat / Elektrik / Mekanik + fotoğraf açıklamaları (otomatik)
+- Sipariş verilen malzeme
+- İş makinesi puantajı + **vasıta puantajı**
+- PDF: hücreler ortalı; gelişmişte personel yanında **ekip** sütunu
 - **Hava** listeden il seçimi (Open-Meteo; GPS/geocode yok; seçim hatırlanır)
   - Anlık sıcaklık, **gece sıcaklığı**, **nem**, açıklama, rüzgar
 - **Puantaj snapshot** otomatik (aynı gün mevcut/yarım/izin/yok + adam-saat/yevmiye)
