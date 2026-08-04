@@ -513,33 +513,35 @@ class DailyReportPdfService {
     int? truncateEach,
   }) {
     final entries = <(String, String)>[
-      ('İNŞAAT İŞLERİ', report.workConstruction),
-      ('ELEKTRİK İŞLERİ', report.workElectrical),
-      ('MEKANİK İŞLER', report.workMechanical),
+      ('İNŞAAT İŞLERİ', report.effectiveWorkConstruction),
+      ('ELEKTRİK İŞLERİ', report.effectiveWorkElectrical),
+      ('MEKANİK İŞLER', report.effectiveWorkMechanical),
     ];
-    final caps = report.photoCaptions;
     final nonEmpty = [
       for (final e in entries)
         if (e.$2.trim().isNotEmpty) e,
     ];
-    if (nonEmpty.isEmpty && caps.isEmpty) {
+    if (nonEmpty.isEmpty) {
       return [
         pw.Text(
           '—',
-          textAlign: pw.TextAlign.center,
+          textAlign: pw.TextAlign.left,
           style: const pw.TextStyle(fontSize: 10, color: _muted),
         ),
       ];
     }
     return [
       for (final e in nonEmpty) ...[
-        pw.Text(
-          e.$1,
-          textAlign: pw.TextAlign.center,
-          style: pw.TextStyle(
-            fontSize: 9,
-            fontWeight: pw.FontWeight.bold,
-            color: _blue,
+        pw.Align(
+          alignment: pw.Alignment.centerLeft,
+          child: pw.Text(
+            e.$1,
+            textAlign: pw.TextAlign.left,
+            style: pw.TextStyle(
+              fontSize: 9,
+              fontWeight: pw.FontWeight.bold,
+              color: _blue,
+            ),
           ),
         ),
         pw.SizedBox(height: 3),
@@ -547,7 +549,7 @@ class DailyReportPdfService {
           width: double.infinity,
           padding: const pw.EdgeInsets.all(8),
           margin: const pw.EdgeInsets.only(bottom: 8),
-          alignment: pw.Alignment.center,
+          alignment: pw.Alignment.centerLeft,
           decoration: pw.BoxDecoration(
             border: pw.Border.all(color: _line, width: 0.7),
           ),
@@ -555,33 +557,7 @@ class DailyReportPdfService {
             truncateEach != null
                 ? _truncate(e.$2.trim(), truncateEach)
                 : e.$2.trim(),
-            textAlign: pw.TextAlign.center,
-            style: const pw.TextStyle(fontSize: 10, color: _ink, lineSpacing: 3),
-          ),
-        ),
-      ],
-      if (caps.isNotEmpty) ...[
-        pw.Text(
-          'FOTOĞRAF AÇIKLAMALARI',
-          textAlign: pw.TextAlign.center,
-          style: pw.TextStyle(
-            fontSize: 9,
-            fontWeight: pw.FontWeight.bold,
-            color: _blue,
-          ),
-        ),
-        pw.SizedBox(height: 3),
-        pw.Container(
-          width: double.infinity,
-          padding: const pw.EdgeInsets.all(8),
-          margin: const pw.EdgeInsets.only(bottom: 8),
-          alignment: pw.Alignment.center,
-          decoration: pw.BoxDecoration(
-            border: pw.Border.all(color: _line, width: 0.7),
-          ),
-          child: pw.Text(
-            caps.map((c) => '• $c').join('\n'),
-            textAlign: pw.TextAlign.center,
+            textAlign: pw.TextAlign.left,
             style: const pw.TextStyle(fontSize: 10, color: _ink, lineSpacing: 3),
           ),
         ),
@@ -625,8 +601,21 @@ class DailyReportPdfService {
                 'Fiyat',
               ])
         : (advanced
-            ? const ['Malzeme', 'Miktar', 'Birim', 'Tedarikçi / Sipariş', 'Not']
-            : const ['Malzeme', 'Miktar', 'Birim', 'Not']);
+            ? const [
+                'Malzeme Açıklaması',
+                'Miktar',
+                'Birim',
+                'Tedarikçi / Sipariş',
+                'Satın Alma Onayı',
+                'Not',
+              ]
+            : const [
+                'Malzeme Açıklaması',
+                'Miktar',
+                'Birim',
+                'Satın Alma Onayı',
+                'Not',
+              ]);
     final data = [
       for (final m in items)
         if (stockLike)
@@ -655,12 +644,14 @@ class DailyReportPdfService {
                   m.quantity,
                   m.unit,
                   m.supplierOrOrder,
+                  m.purchaseApproved ? '✓' : '',
                   m.note,
                 ]
               : [
                   m.name,
                   m.quantity,
                   m.unit,
+                  m.purchaseApproved ? '✓' : '',
                   m.note.isNotEmpty ? m.note : m.supplierOrOrder,
                 ],
     ];
@@ -680,33 +671,66 @@ class DailyReportPdfService {
       );
     }
     final nameHeader = vehicle ? 'Vasıta' : 'Makine';
-    final headers = advanced
-        ? [
-            nameHeader,
-            'Tip',
-            'Plaka',
-            'Saat',
-            'Yapılan iş',
-            'Operatör',
-          ]
-        : [nameHeader, 'Saat', 'Yapılan iş', 'Operatör'];
+    final typeHeader = vehicle ? 'Marka/Model' : 'Tip';
+    final opHeader = vehicle ? 'Şoför' : 'Operatör';
+    final headers = vehicle
+        ? (advanced
+            ? [
+                nameHeader,
+                typeHeader,
+                'Plaka',
+                'Saat',
+                'Yapılan iş',
+                opHeader,
+              ]
+            : [nameHeader, 'Saat', 'Yapılan iş', opHeader])
+        : (advanced
+            ? [
+                nameHeader,
+                typeHeader,
+                'Firma',
+                'Plaka',
+                'Saat',
+                'Yapılan iş',
+                opHeader,
+              ]
+            : [nameHeader, 'Firma', 'Saat', 'Yapılan iş', opHeader]);
     final data = [
       for (final m in items)
-        advanced
-            ? [
-                m.name,
-                m.type,
-                m.plateOrId,
-                _fmt(m.hoursWorked),
-                m.workDescription,
-                m.operatorName,
-              ]
-            : [
-                m.name,
-                _fmt(m.hoursWorked),
-                m.workDescription,
-                m.operatorName,
-              ],
+        if (vehicle)
+          advanced
+              ? [
+                  m.name,
+                  m.type,
+                  m.plateOrId,
+                  _fmt(m.hoursWorked),
+                  m.workDescription,
+                  m.operatorName,
+                ]
+              : [
+                  m.name,
+                  _fmt(m.hoursWorked),
+                  m.workDescription,
+                  m.operatorName,
+                ]
+        else
+          advanced
+              ? [
+                  m.name,
+                  m.type,
+                  m.company,
+                  m.plateOrId,
+                  _fmt(m.hoursWorked),
+                  m.workDescription,
+                  m.operatorName,
+                ]
+              : [
+                  m.name,
+                  m.company,
+                  _fmt(m.hoursWorked),
+                  m.workDescription,
+                  m.operatorName,
+                ],
     ];
     return _centeredTable(headers: headers, data: data);
   }
@@ -791,9 +815,9 @@ class DailyReportPdfService {
     required bool withCaptions,
     double maxHeight = 200,
   }) {
-    final out = <pw.Widget>[];
-    for (var i = 0; i < photos.length; i++) {
-      final p = photos[i];
+    if (photos.isEmpty) return const [];
+
+    pw.Widget cell(DailyReportPhoto p, {required double cellHeight}) {
       pw.MemoryImage? img;
       try {
         if (p.dataBase64.isNotEmpty) {
@@ -802,39 +826,56 @@ class DailyReportPdfService {
       } catch (_) {
         img = null;
       }
-      out.add(
-        pw.Container(
-          margin: const pw.EdgeInsets.only(bottom: 10),
+      return pw.Expanded(
+        child: pw.Container(
+          margin: const pw.EdgeInsets.symmetric(horizontal: 3),
           child: pw.Column(
             crossAxisAlignment: pw.CrossAxisAlignment.center,
             children: [
               if (img != null)
                 pw.Container(
-                  height: maxHeight,
+                  height: cellHeight,
                   width: double.infinity,
                   alignment: pw.Alignment.center,
                   child: pw.Image(img, fit: pw.BoxFit.contain),
                 )
               else
                 pw.Container(
-                  height: 40,
+                  height: cellHeight * 0.4,
                   alignment: pw.Alignment.center,
                   child: pw.Text(
-                    'Fotoğraf yüklenemedi',
+                    'Yüklenemedi',
                     textAlign: pw.TextAlign.center,
-                    style: const pw.TextStyle(fontSize: 9, color: _muted),
+                    style: const pw.TextStyle(fontSize: 8, color: _muted),
                   ),
                 ),
               if (withCaptions) ...[
                 pw.SizedBox(height: 3),
                 pw.Text(
-                  p.hasCaption
-                      ? '${i + 1}. ${p.caption}'
-                      : '${i + 1}. (açıklama yok)',
+                  p.hasCaption ? p.caption : '(açıklama yok)',
                   textAlign: pw.TextAlign.center,
-                  style: const pw.TextStyle(fontSize: 9, color: _ink),
+                  style: const pw.TextStyle(fontSize: 8, color: _ink),
                 ),
               ],
+            ],
+          ),
+        ),
+      );
+    }
+
+    final out = <pw.Widget>[];
+    final rowHeight = maxHeight * 0.55;
+    for (var i = 0; i < photos.length; i += 3) {
+      final chunk = photos.skip(i).take(3).toList();
+      out.add(
+        pw.Container(
+          margin: const pw.EdgeInsets.only(bottom: 10),
+          child: pw.Row(
+            crossAxisAlignment: pw.CrossAxisAlignment.start,
+            children: [
+              for (final p in chunk) cell(p, cellHeight: rowHeight),
+              for (var j = chunk.length; j < 3; j++)
+                pw.Expanded(child: pw.SizedBox()),
             ],
           ),
         ),

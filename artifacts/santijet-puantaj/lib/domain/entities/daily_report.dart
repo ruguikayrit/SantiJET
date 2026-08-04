@@ -1,5 +1,7 @@
 import 'package:equatable/equatable.dart';
 
+import '../enums/photo_work_category.dart';
+
 /// Günlük saha raporu — proje + takvim günü başına tek kayıt (upsert).
 class DailyReport extends Equatable {
   const DailyReport({
@@ -50,29 +52,49 @@ class DailyReport extends Equatable {
       parts.add('$title:\n$t');
     }
 
-    add('İNŞAAT İŞLERİ', workConstruction);
-    add('ELEKTRİK İŞLERİ', workElectrical);
-    add('MEKANİK İŞLER', workMechanical);
-    final caps = photoCaptions;
-    if (caps.isNotEmpty) {
-      parts.add(
-        'FOTOĞRAF AÇIKLAMALARI:\n${caps.map((c) => '• $c').join('\n')}',
-      );
-    }
+    add('İNŞAAT İŞLERİ', effectiveWorkConstruction);
+    add('ELEKTRİK İŞLERİ', effectiveWorkElectrical);
+    add('MEKANİK İŞLER', effectiveWorkMechanical);
     return parts.join('\n\n');
   }
 
-  /// Fotoğraf açıklamaları — yapılan işler listesine otomatik yansır.
+  /// Manuel metin + ilgili kategorideki foto açıklamaları.
+  String effectiveWorkFor(PhotoWorkCategory category) {
+    final manual = switch (category) {
+      PhotoWorkCategory.construction => workConstruction,
+      PhotoWorkCategory.electrical => workElectrical,
+      PhotoWorkCategory.mechanical => workMechanical,
+      PhotoWorkCategory.none => '',
+    }.trim();
+    final caps = photoCaptionsFor(category);
+    if (manual.isEmpty && caps.isEmpty) return '';
+    if (caps.isEmpty) return manual;
+    if (manual.isEmpty) return caps.join('\n');
+    return '$manual\n${caps.join('\n')}';
+  }
+
+  String get effectiveWorkConstruction =>
+      effectiveWorkFor(PhotoWorkCategory.construction);
+  String get effectiveWorkElectrical =>
+      effectiveWorkFor(PhotoWorkCategory.electrical);
+  String get effectiveWorkMechanical =>
+      effectiveWorkFor(PhotoWorkCategory.mechanical);
+
+  List<String> photoCaptionsFor(PhotoWorkCategory category) => [
+        for (final p in photos)
+          if (p.hasCaption && p.workCategory == category) p.caption.trim(),
+      ];
+
+  /// Geriye dönük — tüm foto açıklamaları.
   List<String> get photoCaptions => [
         for (final p in photos)
           if (p.hasCaption) p.caption.trim(),
       ];
 
   bool get hasWorkEntries =>
-      workConstruction.trim().isNotEmpty ||
-      workElectrical.trim().isNotEmpty ||
-      workMechanical.trim().isNotEmpty ||
-      photoCaptions.isNotEmpty;
+      effectiveWorkConstruction.isNotEmpty ||
+      effectiveWorkElectrical.isNotEmpty ||
+      effectiveWorkMechanical.isNotEmpty;
 
   final List<DailyReportPhoto> photos;
 
@@ -256,6 +278,7 @@ class DailyReportPhoto extends Equatable {
     required this.id,
     required this.dataBase64,
     this.caption = '',
+    this.workCategory = PhotoWorkCategory.none,
     this.mimeType = 'image/jpeg',
     this.createdAt,
   });
@@ -263,6 +286,7 @@ class DailyReportPhoto extends Equatable {
   final String id;
   final String dataBase64;
   final String caption;
+  final PhotoWorkCategory workCategory;
   final String mimeType;
   final DateTime? createdAt;
 
@@ -272,6 +296,7 @@ class DailyReportPhoto extends Equatable {
     String? id,
     String? dataBase64,
     String? caption,
+    PhotoWorkCategory? workCategory,
     String? mimeType,
     DateTime? createdAt,
   }) {
@@ -279,6 +304,7 @@ class DailyReportPhoto extends Equatable {
       id: id ?? this.id,
       dataBase64: dataBase64 ?? this.dataBase64,
       caption: caption ?? this.caption,
+      workCategory: workCategory ?? this.workCategory,
       mimeType: mimeType ?? this.mimeType,
       createdAt: createdAt ?? this.createdAt,
     );
@@ -288,6 +314,7 @@ class DailyReportPhoto extends Equatable {
         'id': id,
         'dataBase64': dataBase64,
         'caption': caption,
+        'workCategory': workCategory.storage,
         'mimeType': mimeType,
         'createdAt': createdAt?.toIso8601String(),
       };
@@ -297,6 +324,8 @@ class DailyReportPhoto extends Equatable {
         id: json['id'] as String,
         dataBase64: json['dataBase64'] as String? ?? '',
         caption: json['caption'] as String? ?? '',
+        workCategory:
+            PhotoWorkCategory.fromStorage(json['workCategory'] as String?),
         mimeType: json['mimeType'] as String? ?? 'image/jpeg',
         createdAt: json['createdAt'] != null
             ? DateTime.tryParse(json['createdAt'] as String)
@@ -304,7 +333,8 @@ class DailyReportPhoto extends Equatable {
       );
 
   @override
-  List<Object?> get props => [id, dataBase64, caption, mimeType, createdAt];
+  List<Object?> get props =>
+      [id, dataBase64, caption, workCategory, mimeType, createdAt];
 }
 
 /// Gelen veya sipariş malzeme satırı.
@@ -319,6 +349,7 @@ class DailyReportMaterial extends Equatable {
     this.price = '',
     this.note = '',
     this.irsaliyePhotoId = '',
+    this.purchaseApproved = false,
     this.recordedAt,
   });
 
@@ -339,6 +370,9 @@ class DailyReportMaterial extends Equatable {
 
   /// İlişkili irsaliye foto id (opsiyonel).
   final String irsaliyePhotoId;
+
+  /// Sipariş malzemede satın alma onayı.
+  final bool purchaseApproved;
   final DateTime? recordedAt;
 
   DailyReportMaterial copyWith({
@@ -351,6 +385,7 @@ class DailyReportMaterial extends Equatable {
     String? price,
     String? note,
     String? irsaliyePhotoId,
+    bool? purchaseApproved,
     DateTime? recordedAt,
   }) {
     return DailyReportMaterial(
@@ -363,6 +398,7 @@ class DailyReportMaterial extends Equatable {
       price: price ?? this.price,
       note: note ?? this.note,
       irsaliyePhotoId: irsaliyePhotoId ?? this.irsaliyePhotoId,
+      purchaseApproved: purchaseApproved ?? this.purchaseApproved,
       recordedAt: recordedAt ?? this.recordedAt,
     );
   }
@@ -377,6 +413,7 @@ class DailyReportMaterial extends Equatable {
         'price': price,
         'note': note,
         'irsaliyePhotoId': irsaliyePhotoId,
+        'purchaseApproved': purchaseApproved,
         'recordedAt': recordedAt?.toIso8601String(),
       };
 
@@ -393,6 +430,7 @@ class DailyReportMaterial extends Equatable {
         price: json['price'] as String? ?? '',
         note: json['note'] as String? ?? '',
         irsaliyePhotoId: json['irsaliyePhotoId'] as String? ?? '',
+        purchaseApproved: json['purchaseApproved'] as bool? ?? false,
         recordedAt: json['recordedAt'] != null
             ? DateTime.tryParse(json['recordedAt'] as String)
             : null,
@@ -409,6 +447,7 @@ class DailyReportMaterial extends Equatable {
         price,
         note,
         irsaliyePhotoId,
+        purchaseApproved,
         recordedAt,
       ];
 }
@@ -420,6 +459,7 @@ class DailyReportMachine extends Equatable {
     required this.name,
     this.type = '',
     this.plateOrId = '',
+    this.company = '',
     this.hoursWorked = 0,
     this.workDescription = '',
     this.operatorName = '',
@@ -429,6 +469,9 @@ class DailyReportMachine extends Equatable {
   final String name;
   final String type;
   final String plateOrId;
+
+  /// İş makinesi firma adı (vasıtada kullanılmaz).
+  final String company;
   final double hoursWorked;
   final String workDescription;
   final String operatorName;
@@ -438,6 +481,7 @@ class DailyReportMachine extends Equatable {
     String? name,
     String? type,
     String? plateOrId,
+    String? company,
     double? hoursWorked,
     String? workDescription,
     String? operatorName,
@@ -447,6 +491,7 @@ class DailyReportMachine extends Equatable {
       name: name ?? this.name,
       type: type ?? this.type,
       plateOrId: plateOrId ?? this.plateOrId,
+      company: company ?? this.company,
       hoursWorked: hoursWorked ?? this.hoursWorked,
       workDescription: workDescription ?? this.workDescription,
       operatorName: operatorName ?? this.operatorName,
@@ -458,6 +503,7 @@ class DailyReportMachine extends Equatable {
         'name': name,
         'type': type,
         'plateOrId': plateOrId,
+        'company': company,
         'hoursWorked': hoursWorked,
         'workDescription': workDescription,
         'operatorName': operatorName,
@@ -469,6 +515,7 @@ class DailyReportMachine extends Equatable {
         name: json['name'] as String? ?? '',
         type: json['type'] as String? ?? '',
         plateOrId: json['plateOrId'] as String? ?? '',
+        company: json['company'] as String? ?? '',
         hoursWorked: (json['hoursWorked'] as num?)?.toDouble() ?? 0,
         workDescription: json['workDescription'] as String? ?? '',
         operatorName: json['operatorName'] as String? ?? '',
@@ -480,6 +527,7 @@ class DailyReportMachine extends Equatable {
         name,
         type,
         plateOrId,
+        company,
         hoursWorked,
         workDescription,
         operatorName,
