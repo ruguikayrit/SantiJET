@@ -10,14 +10,15 @@ Adam-gün devam kaydı, imalat/verim, günlük saha raporu. Görsel dil
 
 ## Navigasyon
 
-Kalıcı alt bar (**4 sekme**):
+Kalıcı alt bar (**5 sekme**):
 
 | Sekme | İçerik |
 |-------|--------|
 | Ana Sayfa | Bugünkü puantaj, imalat, **bugünün raporu**, verim özeti |
 | Puantaj | Adam-gün devam; personel yönetimi buradan / Ayarlar’dan |
 | İmalat | İçinde segment: **İmalat \| Verim** (ayrı bottom tab yok) |
-| Günlük Rapor | Saha günlük formu |
+| Görevler | Proje görevleri (yapılacak / devam / tamamlandı) |
+| Rapor | Saha günlük formu |
 
 Personel ayrı bottom tab değildir; `/personel` rotası ve Yönetim menüsü durur.
 

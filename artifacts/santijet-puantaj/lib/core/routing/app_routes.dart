@@ -7,6 +7,7 @@ abstract final class AppRoutes {
   /// Eski bağımsız Verim sekmesi — İmalat hub’a yönlendirilir.
   static const verim = '/verim';
   static const gunlukRapor = '/gunluk-rapor';
+  static const gorevler = '/gorevler';
   static const personel = '/personel';
   static const ayarlar = '/ayarlar';
   static const yonetim = '/ayarlar/yonetim';

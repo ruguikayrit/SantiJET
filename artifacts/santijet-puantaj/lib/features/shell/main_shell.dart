@@ -30,9 +30,14 @@ class MainShell extends ConsumerWidget {
       label: 'İmalat',
     ),
     SJNavItem(
+      icon: Icons.task_alt_outlined,
+      activeIcon: Icons.task_alt,
+      label: 'Görevler',
+    ),
+    SJNavItem(
       icon: Icons.edit_note_outlined,
       activeIcon: Icons.edit_note,
-      label: 'Günlük Rapor',
+      label: 'Rapor',
     ),
   ];
 

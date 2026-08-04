@@ -14,12 +14,13 @@ import '../../features/settings/management_screen.dart';
 import '../../features/settings/settings_screen.dart';
 import '../../features/shell/main_shell.dart';
 import '../../features/splash/splash_screen.dart';
+import '../../features/tasks/tasks_screen.dart';
 import 'app_routes.dart';
 import 'page_transitions.dart';
 
 final _rootNavigatorKey = GlobalKey<NavigatorState>();
 
-/// Alt sekmeler: Ana Sayfa, Puantaj, İmalat (Verim içerde), Günlük Rapor.
+/// Alt sekmeler: Ana, Puantaj, İmalat, Görevler, Rapor.
 /// Personel ve Ayarlar shell dışı.
 final routerProvider = Provider<GoRouter>((ref) {
   return GoRouter(
@@ -81,6 +82,17 @@ final routerProvider = Provider<GoRouter>((ref) {
                     ),
                   );
                 },
+              ),
+            ],
+          ),
+          StatefulShellBranch(
+            routes: [
+              GoRoute(
+                path: AppRoutes.gorevler,
+                pageBuilder: (context, state) => fadePage(
+                  key: state.pageKey,
+                  child: const TasksScreen(),
+                ),
               ),
             ],
           ),

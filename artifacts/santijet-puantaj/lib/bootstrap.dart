@@ -9,6 +9,7 @@ import 'core/theme/theme_mode_provider.dart';
 import 'data/providers/app_data_provider.dart';
 import 'data/providers/daily_report_provider.dart';
 import 'data/providers/production_provider.dart';
+import 'data/providers/tasks_provider.dart';
 import 'data/providers/verim_provider.dart';
 
 /// Uygulama başlatma — Demir / BFA `bootstrap()` deseniyle hizalı.
@@ -24,6 +25,7 @@ Future<void> bootstrap() async {
     Hive.openBox('work_schedule_cloud'),
     Hive.openBox('kesif_cloud'),
     Hive.openBox('daily_reports'),
+    Hive.openBox('tasks'),
   ]);
 
   _migratePersonnelToProjects(boxes[2], boxes[1], boxes[0]);
@@ -39,6 +41,7 @@ Future<void> bootstrap() async {
         workScheduleCacheBoxProvider.overrideWithValue(boxes[5]),
         kesifCacheBoxProvider.overrideWithValue(boxes[6]),
         dailyReportsBoxProvider.overrideWithValue(boxes[7]),
+        tasksBoxProvider.overrideWithValue(boxes[8]),
       ],
       child: const SantijetPuantajApp(),
     ),

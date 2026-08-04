@@ -12,6 +12,7 @@ import '../../core/theme/app_colors.dart';
 import '../../core/theme/app_spacing.dart';
 import '../../data/providers/app_data_provider.dart';
 import '../../data/providers/production_provider.dart';
+import '../../data/providers/tasks_provider.dart';
 import '../../domain/entities/project.dart';
 
 /// Proje listesi, aktif proje seçimi, ekleme / silme.
@@ -150,6 +151,9 @@ class ProjectsScreen extends ConsumerWidget {
                                   .deleteForProject(p.id);
                               ref
                                   .read(productionProvider.notifier)
+                                  .deleteForProject(p.id);
+                              ref
+                                  .read(tasksProvider.notifier)
                                   .deleteForProject(p.id);
                               ref.read(projectsProvider.notifier).delete(p.id);
                               if (activeId == p.id) {
