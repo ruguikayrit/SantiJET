@@ -7,7 +7,6 @@ import '../../core/design_system/sj_card.dart';
 import '../../core/routing/app_routes.dart';
 import '../../core/theme/app_colors.dart';
 import '../../core/theme/app_spacing.dart';
-import '../../core/theme/app_typography.dart';
 import '../../core/theme/theme_mode_provider.dart';
 import '../../data/providers/app_data_provider.dart';
 import '../../data/providers/backup_provider.dart';
@@ -93,13 +92,13 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
             children: [
               Text(
                 'Yedekleme & Geri Yükleme',
-                style: AppTypography.headlineMedium,
+                style: Theme.of(ctx).textTheme.headlineMedium,
               ),
               const SizedBox(height: 8),
               Text(
                 'Tüm projeler, personel, puantaj, imalat ve katalogları '
                 'JSON dosyası olarak dışa / içe aktarın.',
-                style: AppTypography.bodySmall,
+                style: Theme.of(ctx).textTheme.bodySmall,
               ),
               const SizedBox(height: 16),
               FilledButton.icon(
@@ -465,23 +464,26 @@ class AboutScreen extends StatelessWidget {
               filterQuality: FilterQuality.high,
             ),
             const SizedBox(height: 4),
-            Text(AppInfo.displayName, style: AppTypography.headlineLarge),
+            Text(
+              AppInfo.displayName,
+              style: Theme.of(context).textTheme.headlineLarge,
+            ),
             const SizedBox(height: 8),
             Text(
               'Versiyon ${AppInfo.version}',
-              style: AppTypography.bodyMedium,
+              style: Theme.of(context).textTheme.bodyMedium,
             ),
             const SizedBox(height: 24),
             Text(
               'Saha operasyonu, günlük rapor, personel devam, yevmiye, '
               'imalat ve verim takibi. ${AppInfo.tagline}',
-              style: AppTypography.bodyMedium,
+              style: Theme.of(context).textTheme.bodyMedium,
               textAlign: TextAlign.center,
             ),
             const SizedBox(height: 16),
             Text(
               'Destek: ${AppInfo.supportEmail}',
-              style: AppTypography.labelMedium,
+              style: Theme.of(context).textTheme.labelMedium,
               textAlign: TextAlign.center,
             ),
           ],

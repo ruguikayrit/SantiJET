@@ -17,6 +17,8 @@ abstract final class AppTheme {
       error: AppColors.critical,
       onError: Colors.white,
       onSurface: AppColors.lightTextPrimary,
+      onSurfaceVariant: AppColors.lightTextSecondary,
+      outline: AppColors.lightBorder,
     );
 
     return ThemeData(
@@ -96,10 +98,16 @@ abstract final class AppTheme {
         headlineMedium: AppTypography.headlineMedium.copyWith(
           color: AppColors.lightTextPrimary,
         ),
+        headlineSmall: AppTypography.headlineSmall.copyWith(
+          color: AppColors.lightTextPrimary,
+        ),
         titleLarge: AppTypography.titleLarge.copyWith(
           color: AppColors.lightTextPrimary,
         ),
         titleMedium: AppTypography.titleMedium.copyWith(
+          color: AppColors.lightTextPrimary,
+        ),
+        titleSmall: AppTypography.titleSmall.copyWith(
           color: AppColors.lightTextPrimary,
         ),
         bodyLarge: AppTypography.bodyLarge.copyWith(
@@ -134,6 +142,8 @@ abstract final class AppTheme {
       error: AppColors.critical,
       onError: AppColors.darkTextPrimary,
       onSurface: AppColors.darkTextPrimary,
+      onSurfaceVariant: AppColors.darkTextSecondary,
+      outline: AppColors.darkBorder,
     );
 
     return ThemeData(
@@ -211,10 +221,16 @@ abstract final class AppTheme {
         headlineMedium: AppTypography.headlineMedium.copyWith(
           color: AppColors.darkTextPrimary,
         ),
+        headlineSmall: AppTypography.headlineSmall.copyWith(
+          color: AppColors.darkTextPrimary,
+        ),
         titleLarge: AppTypography.titleLarge.copyWith(
           color: AppColors.darkTextPrimary,
         ),
         titleMedium: AppTypography.titleMedium.copyWith(
+          color: AppColors.darkTextPrimary,
+        ),
+        titleSmall: AppTypography.titleSmall.copyWith(
           color: AppColors.darkTextPrimary,
         ),
         bodyLarge: AppTypography.bodyLarge.copyWith(

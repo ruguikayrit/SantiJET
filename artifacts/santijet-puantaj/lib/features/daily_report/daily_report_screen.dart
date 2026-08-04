@@ -28,6 +28,27 @@ import '../../domain/entities/daily_report.dart';
 import '../../domain/entities/project.dart';
 import '../projects/widgets/project_switcher.dart';
 
+/// Kart içi metin stili — renk [SJCard] DefaultTextStyle / kart Theme'den gelir.
+///
+/// Chrome [ThemeData] stillerini karta taşımak hibrit temalarda
+/// (ŞantiJET / Pro) mürekkep çakışması yaratır.
+TextStyle _cardInk(
+  TextStyle? base, {
+  FontWeight? fontWeight,
+  FontStyle? fontStyle,
+  Color? color,
+}) {
+  return TextStyle(
+    fontSize: base?.fontSize,
+    fontWeight: fontWeight ?? base?.fontWeight,
+    fontStyle: fontStyle ?? base?.fontStyle,
+    height: base?.height,
+    letterSpacing: base?.letterSpacing,
+    color: color,
+    decoration: TextDecoration.none,
+  );
+}
+
 /// Günlük saha raporu — foto, işler, malzeme, makine, hava, puantaj snapshot.
 class DailyReportScreen extends ConsumerStatefulWidget {
   const DailyReportScreen({super.key});
@@ -1092,14 +1113,14 @@ class _DailyReportScreenState extends ConsumerState<DailyReportScreen> {
                         if (_weatherLoading)
                           Text(
                             'Hava çekiliyor…',
-                            style: theme.textTheme.bodyMedium,
+                            style: _cardInk(theme.textTheme.bodyMedium),
                           )
                         else if (weather == null)
                           Text(
                             ref.watch(selectedWeatherCityProvider) == null
                                 ? 'Hava tahmini için listeden şehir seçin.'
                                 : 'Henüz hava bilgisi yok — yenileyin.',
-                            style: theme.textTheme.bodyMedium,
+                            style: _cardInk(theme.textTheme.bodyMedium),
                           )
                         else ...[
                           Text(
@@ -1115,7 +1136,8 @@ class _DailyReportScreenState extends ConsumerState<DailyReportScreen> {
                               if (weather.windKmh != null)
                                 'Rüzgar ${weather.windKmh!.toStringAsFixed(0)} km/s',
                             ].join(' · '),
-                            style: theme.textTheme.titleSmall?.copyWith(
+                            style: _cardInk(
+                              theme.textTheme.titleSmall,
                               fontWeight: FontWeight.w600,
                             ),
                           ),
@@ -1123,7 +1145,7 @@ class _DailyReportScreenState extends ConsumerState<DailyReportScreen> {
                             const SizedBox(height: 4),
                             Text(
                               weather.locationLabel,
-                              style: theme.textTheme.labelSmall,
+                              style: _cardInk(theme.textTheme.labelSmall),
                             ),
                           ],
                           if (!weather.synced ||
@@ -1133,7 +1155,8 @@ class _DailyReportScreenState extends ConsumerState<DailyReportScreen> {
                               weather.offlineNote.isNotEmpty
                                   ? weather.offlineNote
                                   : 'Senkron edilemedi',
-                              style: theme.textTheme.labelSmall?.copyWith(
+                              style: _cardInk(
+                                theme.textTheme.labelSmall,
                                 color: AppColors.warning,
                               ),
                             ),
@@ -1156,7 +1179,7 @@ class _DailyReportScreenState extends ConsumerState<DailyReportScreen> {
                     child: snap == null
                         ? Text(
                             'Puantaj verisi yok',
-                            style: theme.textTheme.bodyMedium,
+                            style: _cardInk(theme.textTheme.bodyMedium),
                           )
                         : Column(
                             crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -1173,7 +1196,7 @@ class _DailyReportScreenState extends ConsumerState<DailyReportScreen> {
                               Text(
                                 'Toplam ${snap.totalAdamSaat.toStringAsFixed(snap.totalAdamSaat == snap.totalAdamSaat.roundToDouble() ? 0 : 1)} adam-saat · '
                                 '${snap.totalYevmiye.toStringAsFixed(snap.totalYevmiye == snap.totalYevmiye.roundToDouble() ? 0 : 2)} yevmiye',
-                                style: theme.textTheme.labelMedium,
+                                style: _cardInk(theme.textTheme.labelMedium),
                               ),
                               if (snap.people.isNotEmpty) ...[
                                 const SizedBox(height: AppSpacing.sm),
@@ -1185,13 +1208,13 @@ class _DailyReportScreenState extends ConsumerState<DailyReportScreen> {
                                       '${p.team.isNotEmpty ? ' · ${p.team}' : ''}'
                                       ' — ${p.status}'
                                       '${p.yevmiye > 0 ? ' (${p.yevmiye.toStringAsFixed(p.yevmiye == p.yevmiye.roundToDouble() ? 0 : 2)} yv)' : ''}',
-                                      style: theme.textTheme.bodySmall,
+                                      style: _cardInk(theme.textTheme.bodySmall),
                                     ),
                                   ),
                                 if (snap.people.length > 8)
                                   Text(
                                     '+${snap.people.length - 8} kişi daha',
-                                    style: theme.textTheme.labelSmall,
+                                    style: _cardInk(theme.textTheme.labelSmall),
                                   ),
                               ],
                             ],
@@ -1209,7 +1232,7 @@ class _DailyReportScreenState extends ConsumerState<DailyReportScreen> {
                         ? Text(
                             'Henüz foto yok. Kamera veya galeriden ekleyin.\n'
                             'Açıklamalar yapılan işler listesine otomatik eklenir.',
-                            style: theme.textTheme.bodyMedium,
+                            style: _cardInk(theme.textTheme.bodyMedium),
                           )
                         : Column(
                             children: [
@@ -1248,8 +1271,8 @@ class _DailyReportScreenState extends ConsumerState<DailyReportScreen> {
                                               photo.hasCaption
                                                   ? photo.caption
                                                   : '(açıklama yok — önerilir)',
-                                              style: theme.textTheme.bodyMedium
-                                                  ?.copyWith(
+                                              style: _cardInk(
+                                                theme.textTheme.bodyMedium,
                                                 fontStyle: photo.hasCaption
                                                     ? FontStyle.normal
                                                     : FontStyle.italic,
@@ -1325,7 +1348,8 @@ class _DailyReportScreenState extends ConsumerState<DailyReportScreen> {
                           const SizedBox(height: AppSpacing.md),
                           Text(
                             'Fotoğraf açıklamaları (otomatik)',
-                            style: theme.textTheme.labelLarge?.copyWith(
+                            style: _cardInk(
+                              theme.textTheme.labelLarge,
                               fontWeight: FontWeight.w700,
                             ),
                           ),
@@ -1335,7 +1359,7 @@ class _DailyReportScreenState extends ConsumerState<DailyReportScreen> {
                               padding: const EdgeInsets.only(bottom: 4),
                               child: Text(
                                 '• $c',
-                                style: theme.textTheme.bodyMedium,
+                                style: _cardInk(theme.textTheme.bodyMedium),
                               ),
                             ),
                         ],
@@ -1378,7 +1402,8 @@ class _DailyReportScreenState extends ConsumerState<DailyReportScreen> {
                         if (report?.irsaliyePhotos.isNotEmpty == true) ...[
                           Text(
                             'İrsaliye görselleri',
-                            style: theme.textTheme.labelMedium?.copyWith(
+                            style: _cardInk(
+                              theme.textTheme.labelMedium,
                               fontWeight: FontWeight.w700,
                             ),
                           ),
@@ -1463,7 +1488,7 @@ class _DailyReportScreenState extends ConsumerState<DailyReportScreen> {
                             'Gelen malzeme kaydı yok.\n'
                             'İrsaliye fotoğrafı ekleyerek otomatik doldurun '
                             'veya + ile manuel ekleyin.',
-                            style: theme.textTheme.bodyMedium,
+                            style: _cardInk(theme.textTheme.bodyMedium),
                           )
                         else
                           for (final m in report!.incomingMaterials)
@@ -1728,7 +1753,8 @@ class _WorkCategoryField extends StatelessWidget {
       children: [
         Text(
           label,
-          style: theme.textTheme.labelLarge?.copyWith(
+          style: _cardInk(
+            theme.textTheme.labelLarge,
             fontWeight: FontWeight.w700,
           ),
         ),
@@ -1819,7 +1845,12 @@ class _ListSection extends StatelessWidget {
         icon: const Icon(Icons.add),
       ),
       child: children.isEmpty
-          ? Text(empty, style: Theme.of(context).textTheme.bodyMedium)
+          ? Builder(
+              builder: (ctx) => Text(
+                empty,
+                style: _cardInk(Theme.of(ctx).textTheme.bodyMedium),
+              ),
+            )
           : Column(children: children),
     );
   }

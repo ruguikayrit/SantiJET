@@ -216,7 +216,7 @@ class _PageBrandHeader extends StatelessWidget {
       fontWeight: FontWeight.w700,
       color: onDarkChrome
           ? Colors.white.withValues(alpha: 0.62)
-          : AppColors.inkMuted,
+          : AppColors.inkMutedFor(Theme.of(context).brightness),
       height: 1.0,
     );
 
@@ -224,7 +224,9 @@ class _PageBrandHeader extends StatelessWidget {
       fontSize: AppTypography.scale * 18,
       fontWeight: FontWeight.w700,
       letterSpacing: -0.2,
-      color: onDarkChrome ? Colors.white : AppColors.inkPrimary,
+      color: onDarkChrome
+          ? Colors.white
+          : AppColors.inkFor(Theme.of(context).brightness),
       height: 1.15,
     );
 
