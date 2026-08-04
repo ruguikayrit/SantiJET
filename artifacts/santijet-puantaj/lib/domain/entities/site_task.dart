@@ -1,5 +1,6 @@
 import 'package:equatable/equatable.dart';
 
+import '../../core/utils/puantaj_date.dart';
 import '../enums/task_status.dart';
 import '../permissions/role_degree.dart';
 import 'person.dart';
@@ -15,6 +16,7 @@ class SiteTask extends Equatable {
     this.assigneePersonId = '',
     this.assignerPersonId = '',
     this.assignerName = '',
+    this.earliestStart = '',
     this.dueDate = '',
     this.status = TaskStatus.todo,
     this.createdAt,
@@ -38,11 +40,17 @@ class SiteTask extends Equatable {
   /// Atayan görünen adı (önbellek).
   final String assignerName;
 
-  /// TR tarih: `dd.MM.yyyy` (boş olabilir).
+  /// En erken başlangıç — TR `dd.MM.yyyy`.
+  final String earliestStart;
+
+  /// En geç teslimat — TR `dd.MM.yyyy` (eski ad: dueDate).
   final String dueDate;
   final TaskStatus status;
   final DateTime? createdAt;
   final DateTime? updatedAt;
+
+  DateTime? get earliestStartDate => PuantajDate.tryParse(earliestStart);
+  DateTime? get latestDeliveryDate => PuantajDate.tryParse(dueDate);
 
   /// Görüntüleyen yalnızca atayan veya atanan ise görür.
   /// Eski kayıtlarda id yoksa yalnızca 1. derece görür (yeniden atama için).
@@ -62,6 +70,7 @@ class SiteTask extends Equatable {
     String? assigneePersonId,
     String? assignerPersonId,
     String? assignerName,
+    String? earliestStart,
     String? dueDate,
     TaskStatus? status,
     DateTime? createdAt,
@@ -76,6 +85,7 @@ class SiteTask extends Equatable {
       assigneePersonId: assigneePersonId ?? this.assigneePersonId,
       assignerPersonId: assignerPersonId ?? this.assignerPersonId,
       assignerName: assignerName ?? this.assignerName,
+      earliestStart: earliestStart ?? this.earliestStart,
       dueDate: dueDate ?? this.dueDate,
       status: status ?? this.status,
       createdAt: createdAt ?? this.createdAt,
@@ -92,6 +102,7 @@ class SiteTask extends Equatable {
         'assigneePersonId': assigneePersonId,
         'assignerPersonId': assignerPersonId,
         'assignerName': assignerName,
+        'earliestStart': earliestStart,
         'dueDate': dueDate,
         'status': status.storage,
         'createdAt': createdAt?.toIso8601String(),
@@ -107,6 +118,7 @@ class SiteTask extends Equatable {
         assigneePersonId: json['assigneePersonId'] as String? ?? '',
         assignerPersonId: json['assignerPersonId'] as String? ?? '',
         assignerName: json['assignerName'] as String? ?? '',
+        earliestStart: json['earliestStart'] as String? ?? '',
         dueDate: json['dueDate'] as String? ?? '',
         status: TaskStatus.fromStorage(json['status'] as String?),
         createdAt: json['createdAt'] != null
@@ -127,6 +139,7 @@ class SiteTask extends Equatable {
         assigneePersonId,
         assignerPersonId,
         assignerName,
+        earliestStart,
         dueDate,
         status,
         createdAt,

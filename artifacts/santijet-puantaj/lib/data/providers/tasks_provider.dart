@@ -54,6 +54,7 @@ class TasksNotifier extends StateNotifier<List<SiteTask>> {
     required Person assigner,
     required Person assignee,
     String description = '',
+    String earliestStart = '',
     String dueDate = '',
     TaskStatus status = TaskStatus.todo,
   }) {
@@ -70,6 +71,7 @@ class TasksNotifier extends StateNotifier<List<SiteTask>> {
       assigneePersonId: assignee.id,
       assignerPersonId: assigner.id,
       assignerName: assigner.name.trim(),
+      earliestStart: earliestStart.trim(),
       dueDate: dueDate.trim(),
       status: status,
       createdAt: now,

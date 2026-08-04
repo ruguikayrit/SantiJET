@@ -8,6 +8,7 @@ import '../../core/routing/app_routes.dart';
 import '../../core/theme/app_colors.dart';
 import '../../core/theme/app_radii.dart';
 import '../../core/theme/app_spacing.dart';
+import '../../core/utils/puantaj_date.dart';
 import '../../core/widgets/santijet_header.dart';
 import '../../data/providers/active_operator_provider.dart';
 import '../../data/providers/app_data_provider.dart';
@@ -17,6 +18,7 @@ import '../../domain/entities/site_task.dart';
 import '../../domain/enums/task_status.dart';
 import '../../domain/permissions/role_degree.dart';
 import '../projects/widgets/project_switcher.dart';
+import 'widgets/task_calendar_panel.dart';
 
 /// Saha görevleri — atayan (1. derece) + atanan görür.
 class TasksScreen extends ConsumerStatefulWidget {
@@ -29,9 +31,14 @@ class TasksScreen extends ConsumerStatefulWidget {
 class _TasksScreenState extends ConsumerState<TasksScreen> {
   TaskStatus? _filter;
 
-  Future<void> _pickOperator(List<Person> people) async {
-    final currentId = ref.read(activeOperatorIdProvider);
-    final picked = await showModalBottomSheet<Person>(
+  Future<Person?> _pickPersonSheet({
+    required List<Person> people,
+    required String title,
+    String? subtitle,
+    String? selectedId,
+    bool showDegreeHint = false,
+  }) {
+    return showModalBottomSheet<Person>(
       context: context,
       isScrollControlled: true,
       showDragHandle: true,
@@ -51,27 +58,22 @@ class _TasksScreenState extends ConsumerState<TasksScreen> {
                     AppSpacing.md,
                     AppSpacing.sm,
                   ),
-                  child: Text(
-                    'Kim olarak çalışıyorsunuz?',
-                    style: theme.textTheme.headlineMedium,
-                  ),
+                  child: Text(title, style: theme.textTheme.headlineMedium),
                 ),
-                Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: AppSpacing.md),
-                  child: Text(
-                    'Görevler yalnızca size atananlar ve (1. derece iseniz) '
-                    'sizin atadıklarınız olarak listelenir.',
-                    style: theme.textTheme.bodySmall,
+                if (subtitle != null)
+                  Padding(
+                    padding:
+                        const EdgeInsets.symmetric(horizontal: AppSpacing.md),
+                    child: Text(subtitle, style: theme.textTheme.bodySmall),
                   ),
-                ),
-                const SizedBox(height: AppSpacing.sm),
+                if (subtitle != null) const SizedBox(height: AppSpacing.sm),
                 Expanded(
                   child: ListView.separated(
                     itemCount: people.length,
                     separatorBuilder: (_, __) => const Divider(height: 1),
                     itemBuilder: (context, index) {
                       final p = people[index];
-                      final selected = p.id == currentId;
+                      final selected = p.id == selectedId;
                       final degree = RoleDegree.forPerson(p);
                       return ListTile(
                         selected: selected,
@@ -79,9 +81,10 @@ class _TasksScreenState extends ConsumerState<TasksScreen> {
                         subtitle: Text(
                           [
                             if (p.profession.isNotEmpty) p.profession,
-                            degree == RoleDegree.first
-                                ? '1. derece · görev atayabilir'
-                                : 'Atanan görevleri görür',
+                            if (showDegreeHint)
+                              degree == RoleDegree.first
+                                  ? '1. derece · görev atayabilir'
+                                  : 'Atanan görevleri görür',
                           ].join(' · '),
                         ),
                         trailing: selected
@@ -95,15 +98,64 @@ class _TasksScreenState extends ConsumerState<TasksScreen> {
                     },
                   ),
                 ),
+                Padding(
+                  padding: const EdgeInsets.fromLTRB(
+                    AppSpacing.md,
+                    AppSpacing.sm,
+                    AppSpacing.md,
+                    AppSpacing.md,
+                  ),
+                  child: OutlinedButton(
+                    onPressed: () => Navigator.pop(ctx),
+                    child: const Text('İptal'),
+                  ),
+                ),
               ],
             ),
           ),
         );
       },
     );
+  }
+
+  Future<void> _pickOperator(List<Person> people) async {
+    final currentId = ref.read(activeOperatorIdProvider);
+    final picked = await _pickPersonSheet(
+      people: people,
+      title: 'Kim olarak çalışıyorsunuz?',
+      subtitle:
+          'Görevler yalnızca size atananlar ve (1. derece iseniz) '
+          'sizin atadıklarınız olarak listelenir.',
+      selectedId: currentId,
+      showDegreeHint: true,
+    );
     if (picked != null) {
       ref.read(activeOperatorIdProvider.notifier).set(picked.id);
     }
+  }
+
+  Future<String?> _pickDateField({
+    required BuildContext hostContext,
+    required String label,
+    required String current,
+    DateTime? firstDate,
+    DateTime? lastDate,
+  }) async {
+    final first = firstDate ?? DateTime(2020);
+    final last = lastDate ?? DateTime(2100);
+    if (first.isAfter(last)) return null;
+    var initial = PuantajDate.tryParse(current) ?? DateTime.now();
+    if (initial.isBefore(first)) initial = first;
+    if (initial.isAfter(last)) initial = last;
+    final picked = await showDatePicker(
+      context: hostContext,
+      helpText: label,
+      initialDate: initial,
+      firstDate: first,
+      lastDate: last,
+    );
+    if (picked == null) return null;
+    return PuantajDate.format(picked);
   }
 
   Future<void> _openEditor({
@@ -131,13 +183,16 @@ class _TasksScreenState extends ConsumerState<TasksScreen> {
     final isAssigner = existing == null ||
         existing.assignerPersonId == operator.id ||
         (existing.assignerPersonId.isEmpty && canAssign);
-    if (existing != null && !isAssigner && existing.assigneePersonId != operator.id) {
+    if (existing != null &&
+        !isAssigner &&
+        existing.assigneePersonId != operator.id) {
       return;
     }
 
     final titleCtrl = TextEditingController(text: existing?.title ?? '');
     final descCtrl = TextEditingController(text: existing?.description ?? '');
-    final dueCtrl = TextEditingController(text: existing?.dueDate ?? '');
+    var earliestStart = existing?.earliestStart ?? '';
+    var latestDelivery = existing?.dueDate ?? '';
     var status = existing?.status ?? TaskStatus.todo;
     Person? assignee;
     if (existing != null) {
@@ -160,6 +215,42 @@ class _TasksScreenState extends ConsumerState<TasksScreen> {
           builder: (ctx, setModal) {
             final theme = Theme.of(ctx);
             final canEditFields = existing == null || isAssigner;
+
+            Future<void> pickAssignee() async {
+              if (!canEditFields) return;
+              final picked = await _pickPersonSheet(
+                people: people,
+                title: 'Atanan personel',
+                subtitle: 'Görevi yalnızca bu kişi ve siz görürsünüz.',
+                selectedId: assignee?.id,
+              );
+              if (picked != null) setModal(() => assignee = picked);
+            }
+
+            Future<void> pickStart() async {
+              if (!canEditFields) return;
+              final due = PuantajDate.tryParse(latestDelivery);
+              final value = await _pickDateField(
+                hostContext: ctx,
+                label: 'En erken başlangıç',
+                current: earliestStart,
+                lastDate: due,
+              );
+              if (value != null) setModal(() => earliestStart = value);
+            }
+
+            Future<void> pickDue() async {
+              if (!canEditFields) return;
+              final start = PuantajDate.tryParse(earliestStart);
+              final value = await _pickDateField(
+                hostContext: ctx,
+                label: 'En geç teslimat',
+                current: latestDelivery,
+                firstDate: start,
+              );
+              if (value != null) setModal(() => latestDelivery = value);
+            }
+
             return Padding(
               padding: EdgeInsets.fromLTRB(
                 AppSpacing.md,
@@ -202,43 +293,80 @@ class _TasksScreenState extends ConsumerState<TasksScreen> {
                       textCapitalization: TextCapitalization.sentences,
                     ),
                     const SizedBox(height: AppSpacing.sm),
-                    DropdownButtonFormField<String>(
-                      value: assignee?.id,
+                    InputDecorator(
                       decoration: const InputDecoration(
                         labelText: 'Atanan personel *',
                       ),
-                      items: [
-                        for (final p in people)
-                          DropdownMenuItem(
-                            value: p.id,
-                            child: Text(
-                              '${p.name}'
-                              '${p.profession.isNotEmpty ? ' · ${p.profession}' : ''}',
-                              overflow: TextOverflow.ellipsis,
-                            ),
+                      child: InkWell(
+                        onTap: canEditFields ? pickAssignee : null,
+                        child: Padding(
+                          padding: const EdgeInsets.symmetric(vertical: 4),
+                          child: Row(
+                            children: [
+                              Expanded(
+                                child: Text(
+                                  assignee == null
+                                      ? 'Personel seçin'
+                                      : '${assignee!.name}'
+                                          '${assignee!.profession.isNotEmpty ? ' · ${assignee!.profession}' : ''}',
+                                  style: theme.textTheme.bodyLarge?.copyWith(
+                                    color: assignee == null
+                                        ? theme.hintColor
+                                        : null,
+                                  ),
+                                ),
+                              ),
+                              Icon(
+                                Icons.expand_more,
+                                color: theme.colorScheme.onSurfaceVariant,
+                              ),
+                            ],
                           ),
-                      ],
-                      onChanged: canEditFields
-                          ? (id) => setModal(() {
-                                Person? next;
-                                for (final p in people) {
-                                  if (p.id == id) {
-                                    next = p;
-                                    break;
-                                  }
-                                }
-                                assignee = next;
-                              })
-                          : null,
+                        ),
+                      ),
                     ),
                     const SizedBox(height: AppSpacing.sm),
-                    TextField(
-                      controller: dueCtrl,
-                      enabled: canEditFields,
-                      decoration: const InputDecoration(
-                        labelText: 'Termin',
-                        hintText: 'dd.MM.yyyy',
-                      ),
+                    Row(
+                      children: [
+                        Expanded(
+                          child: OutlinedButton.icon(
+                            onPressed: canEditFields ? pickStart : null,
+                            icon: const Icon(Icons.play_arrow_rounded, size: 18),
+                            label: Text(
+                              earliestStart.isEmpty
+                                  ? 'En erken başlangıç'
+                                  : earliestStart,
+                              overflow: TextOverflow.ellipsis,
+                            ),
+                            style: OutlinedButton.styleFrom(
+                              foregroundColor: AppColors.success,
+                              side: BorderSide(
+                                color: AppColors.success.withValues(alpha: 0.6),
+                              ),
+                            ),
+                          ),
+                        ),
+                        const SizedBox(width: AppSpacing.sm),
+                        Expanded(
+                          child: OutlinedButton.icon(
+                            onPressed: canEditFields ? pickDue : null,
+                            icon: const Icon(Icons.flag_outlined, size: 18),
+                            label: Text(
+                              latestDelivery.isEmpty
+                                  ? 'En geç teslimat'
+                                  : latestDelivery,
+                              overflow: TextOverflow.ellipsis,
+                            ),
+                            style: OutlinedButton.styleFrom(
+                              foregroundColor: AppColors.critical,
+                              side: BorderSide(
+                                color:
+                                    AppColors.critical.withValues(alpha: 0.6),
+                              ),
+                            ),
+                          ),
+                        ),
+                      ],
                     ),
                     const SizedBox(height: AppSpacing.sm),
                     Text('Durum', style: theme.textTheme.labelLarge),
@@ -259,6 +387,17 @@ class _TasksScreenState extends ConsumerState<TasksScreen> {
                       onPressed: () {
                         if (titleCtrl.text.trim().isEmpty) return;
                         if (assignee == null) return;
+                        if (earliestStart.isEmpty || latestDelivery.isEmpty) {
+                          ScaffoldMessenger.of(ctx).showSnackBar(
+                            const SnackBar(
+                              content: Text(
+                                'En erken başlangıç ve en geç teslimat '
+                                'tarihlerini seçin.',
+                              ),
+                            ),
+                          );
+                          return;
+                        }
                         Navigator.pop(ctx, true);
                       },
                       child: const Text('Kaydet'),
@@ -274,18 +413,23 @@ class _TasksScreenState extends ConsumerState<TasksScreen> {
 
     final title = titleCtrl.text.trim();
     final description = descCtrl.text.trim();
-    final dueDate = dueCtrl.text.trim();
     titleCtrl.dispose();
     descCtrl.dispose();
-    dueCtrl.dispose();
-    if (saved != true || title.isEmpty || assignee == null) return;
+    if (saved != true ||
+        title.isEmpty ||
+        assignee == null ||
+        earliestStart.isEmpty ||
+        latestDelivery.isEmpty) {
+      return;
+    }
 
     if (existing == null) {
       ref.read(tasksProvider.notifier).add(
             projectId: project.id,
             title: title,
             description: description,
-            dueDate: dueDate,
+            earliestStart: earliestStart,
+            dueDate: latestDelivery,
             status: status,
             assigner: operator,
             assignee: assignee!,
@@ -295,7 +439,8 @@ class _TasksScreenState extends ConsumerState<TasksScreen> {
             existing.copyWith(
               title: title,
               description: description,
-              dueDate: dueDate,
+              earliestStart: earliestStart,
+              dueDate: latestDelivery,
               status: status,
               assignee: assignee!.name,
               assigneePersonId: assignee!.id,
@@ -308,7 +453,6 @@ class _TasksScreenState extends ConsumerState<TasksScreen> {
             ),
           );
     } else {
-      // Atanan yalnızca durum günceller.
       ref.read(tasksProvider.notifier).setStatus(existing.id, status);
     }
   }
@@ -498,6 +642,8 @@ class _TasksScreenState extends ConsumerState<TasksScreen> {
               )
             else ...[
               const SizedBox(height: AppSpacing.sm),
+              TaskCalendarPanel(tasks: tasks),
+              const SizedBox(height: AppSpacing.sm),
               Padding(
                 padding: const EdgeInsets.symmetric(horizontal: AppSpacing.md),
                 child: SingleChildScrollView(
@@ -619,11 +765,31 @@ class _TasksScreenState extends ConsumerState<TasksScreen> {
                                           'Atanan: ${task.assignee}',
                                         if (task.assignerName.isNotEmpty)
                                           'Atayan: ${task.assignerName}',
-                                        if (task.dueDate.isNotEmpty)
-                                          'Termin ${task.dueDate}',
                                       ].join(' · '),
                                       style: theme.textTheme.labelSmall,
                                     ),
+                                    if (task.earliestStart.isNotEmpty ||
+                                        task.dueDate.isNotEmpty) ...[
+                                      const SizedBox(height: 6),
+                                      Wrap(
+                                        spacing: AppSpacing.sm,
+                                        runSpacing: 4,
+                                        children: [
+                                          if (task.earliestStart.isNotEmpty)
+                                            _DateChip(
+                                              label:
+                                                  'Başlangıç ${task.earliestStart}',
+                                              color: AppColors.success,
+                                            ),
+                                          if (task.dueDate.isNotEmpty)
+                                            _DateChip(
+                                              label:
+                                                  'Teslimat ${task.dueDate}',
+                                              color: AppColors.critical,
+                                            ),
+                                        ],
+                                      ),
+                                    ],
                                     const SizedBox(height: AppSpacing.sm),
                                     Row(
                                       children: [
@@ -719,6 +885,32 @@ class _TasksScreenState extends ConsumerState<TasksScreen> {
               ),
             ],
           ],
+        ),
+      ),
+    );
+  }
+}
+
+class _DateChip extends StatelessWidget {
+  const _DateChip({required this.label, required this.color});
+
+  final String label;
+  final Color color;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+      decoration: BoxDecoration(
+        color: color.withValues(alpha: 0.14),
+        borderRadius: AppRadii.sm,
+      ),
+      child: Text(
+        label,
+        style: theme.textTheme.labelSmall?.copyWith(
+          color: color,
+          fontWeight: FontWeight.w700,
         ),
       ),
     );
