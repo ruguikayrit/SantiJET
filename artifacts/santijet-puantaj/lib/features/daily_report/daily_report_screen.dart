@@ -28,8 +28,9 @@ import '../../domain/entities/company_info.dart';
 import '../../domain/entities/daily_report.dart';
 import '../../domain/entities/project.dart';
 import '../../domain/enums/photo_work_category.dart';
-import '../projects/widgets/project_switcher.dart';
 import 'widgets/attendance_summary_table.dart';
+import 'widgets/daily_report_entry_page.dart';
+import 'widgets/weather_compact_card.dart';
 
 /// Kart içi metin stili — renk [SJCard] DefaultTextStyle / kart Theme'den gelir.
 ///
@@ -262,10 +263,110 @@ class _DailyReportScreenState extends ConsumerState<DailyReportScreen> {
       if (!unlock || !mounted) return;
     }
     final current = report.weather ?? const DailyReportWeather(isManual: true);
-    final result = await showDialog<DailyReportWeather>(
-      context: context,
-      builder: (ctx) => _ManualWeatherDialog(initial: current),
+    final temp = TextEditingController(
+      text: current.temperatureC?.toStringAsFixed(0) ?? '',
     );
+    final night = TextEditingController(
+      text: current.nightTemperatureC?.toStringAsFixed(0) ?? '',
+    );
+    final humidity = TextEditingController(
+      text: current.humidityPercent?.toStringAsFixed(0) ?? '',
+    );
+    final wind = TextEditingController(
+      text: current.windKmh?.toStringAsFixed(0) ?? '',
+    );
+    final desc = TextEditingController(text: current.description);
+    final location = TextEditingController(text: current.locationLabel);
+
+    double? parse(String raw) {
+      final t = raw.trim().replaceAll(',', '.');
+      if (t.isEmpty) return null;
+      return double.tryParse(t);
+    }
+
+    final result = await showDailyReportEntryPage<DailyReportWeather>(
+      context: context,
+      title: 'Hava durumu',
+      formBuilder: (ctx, setModal) => Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          Row(
+            children: [
+              Expanded(
+                child: TextField(
+                  controller: temp,
+                  keyboardType:
+                      const TextInputType.numberWithOptions(decimal: true),
+                  decoration:
+                      _dialogFieldDecoration(labelText: 'Gündüz (°C)'),
+                ),
+              ),
+              const SizedBox(width: AppSpacing.sm),
+              Expanded(
+                child: TextField(
+                  controller: night,
+                  keyboardType:
+                      const TextInputType.numberWithOptions(decimal: true),
+                  decoration: _dialogFieldDecoration(labelText: 'Gece (°C)'),
+                ),
+              ),
+            ],
+          ),
+          _kDialogFieldGap,
+          Row(
+            children: [
+              Expanded(
+                child: TextField(
+                  controller: humidity,
+                  keyboardType:
+                      const TextInputType.numberWithOptions(decimal: true),
+                  decoration: _dialogFieldDecoration(labelText: 'Nem (%)'),
+                ),
+              ),
+              const SizedBox(width: AppSpacing.sm),
+              Expanded(
+                child: TextField(
+                  controller: wind,
+                  keyboardType:
+                      const TextInputType.numberWithOptions(decimal: true),
+                  decoration:
+                      _dialogFieldDecoration(labelText: 'Rüzgar (km/s)'),
+                ),
+              ),
+            ],
+          ),
+          _kDialogFieldGap,
+          TextField(
+            controller: desc,
+            decoration: _dialogFieldDecoration(labelText: 'Açıklama'),
+          ),
+          _kDialogFieldGap,
+          TextField(
+            controller: location,
+            decoration: _dialogFieldDecoration(labelText: 'Konum / şehir'),
+          ),
+        ],
+      ),
+      onSave: () => DailyReportWeather(
+        temperatureC: parse(temp.text),
+        nightTemperatureC: parse(night.text),
+        humidityPercent: parse(humidity.text),
+        windKmh: parse(wind.text),
+        description: desc.text.trim(),
+        locationLabel: location.text.trim(),
+        fetchedAt: DateTime.now(),
+        synced: true,
+        offlineNote: '',
+        isManual: true,
+      ),
+    );
+
+    temp.dispose();
+    night.dispose();
+    humidity.dispose();
+    wind.dispose();
+    desc.dispose();
+    location.dispose();
     if (result == null || !mounted) return;
     saveManualWeather(ref, report: report, weather: result);
   }
@@ -466,55 +567,39 @@ class _DailyReportScreenState extends ConsumerState<DailyReportScreen> {
     if (report == null) return;
     final ctrl = TextEditingController(text: photo.caption);
     var category = photo.workCategory;
-    final result = await showDialog<({String caption, PhotoWorkCategory cat})>(
+    final result =
+        await showDailyReportEntryPage<({String caption, PhotoWorkCategory cat})>(
       context: context,
-      builder: (ctx) => StatefulBuilder(
-        builder: (ctx, setModal) => AlertDialog(
-          title: const Text('Fotoğraf açıklaması'),
-          content: Column(
-            mainAxisSize: MainAxisSize.min,
-            crossAxisAlignment: CrossAxisAlignment.stretch,
-            children: [
-              DropdownButtonFormField<PhotoWorkCategory>(
-                value: category,
-                decoration: _dialogFieldDecoration(labelText: 'İmalat türü'),
-                items: [
-                  for (final c in PhotoWorkCategory.values)
-                    DropdownMenuItem(value: c, child: Text(c.label)),
-                ],
-                onChanged: (v) {
-                  if (v != null) setModal(() => category = v);
-                },
-              ),
-              _kDialogFieldGap,
-              TextField(
-                controller: ctrl,
-                maxLines: 3,
-                decoration: _dialogFieldDecoration(
-                  labelText: 'Açıklama',
-                  hintText: 'Örn. Temel kazısı — batı cephe',
-                  helperText:
-                      'Seçilen türe göre yapılan işler altına senkronize olur',
-                ),
-                autofocus: true,
-              ),
+      title: 'Fotoğraf açıklaması',
+      formBuilder: (ctx, setModal) => Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          DropdownButtonFormField<PhotoWorkCategory>(
+            value: category,
+            decoration: _dialogFieldDecoration(labelText: 'İmalat türü'),
+            items: [
+              for (final c in PhotoWorkCategory.values)
+                DropdownMenuItem(value: c, child: Text(c.label)),
             ],
+            onChanged: (v) {
+              if (v != null) setModal(() => category = v);
+            },
           ),
-          actions: [
-            TextButton(
-              onPressed: () => Navigator.pop(ctx),
-              child: const Text('İptal'),
+          _kDialogFieldGap,
+          TextField(
+            controller: ctrl,
+            maxLines: 5,
+            decoration: _dialogFieldDecoration(
+              labelText: 'Açıklama',
+              hintText: 'Örn. Temel kazısı — batı cephe',
+              helperText:
+                  'Seçilen türe göre yapılan işler altına senkronize olur',
             ),
-            FilledButton(
-              onPressed: () => Navigator.pop(
-                ctx,
-                (caption: ctrl.text.trim(), cat: category),
-              ),
-              child: const Text('Kaydet'),
-            ),
-          ],
-        ),
+            autofocus: true,
+          ),
+        ],
       ),
+      onSave: () => (caption: ctrl.text.trim(), cat: category),
     );
     ctrl.dispose();
     if (result == null) return;
@@ -566,106 +651,86 @@ class _DailyReportScreenState extends ConsumerState<DailyReportScreen> {
     final nameLabel =
         kind == _MaterialList.ordered ? 'Malzeme açıklaması *' : 'Ürün adı *';
 
-    final values = await showDialog<Map<String, String>>(
+    final values = await showDailyReportEntryPage<Map<String, String>>(
       context: context,
-      builder: (ctx) => StatefulBuilder(
-        builder: (ctx, setModal) => AlertDialog(
-          title: Text(existing == null ? titleNew() : 'Malzeme düzenle'),
-          content: SingleChildScrollView(
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              crossAxisAlignment: CrossAxisAlignment.stretch,
-              children: [
-                if (stockLike) ...[
-                  TextField(
-                    controller: supplyDate,
-                    decoration: _dialogFieldDecoration(
-                      labelText: kind == _MaterialList.outgoing
-                          ? 'Gönderim tarihi'
-                          : 'Tedarik tarihi',
-                      hintText: 'dd.MM.yyyy',
-                    ),
-                  ),
-                  _kDialogFieldGap,
-                ],
-                TextField(
-                  controller: name,
-                  decoration: _dialogFieldDecoration(labelText: nameLabel),
-                ),
-                _kDialogFieldGap,
-                TextField(
-                  controller: qty,
-                  decoration:
-                      _dialogFieldDecoration(labelText: 'Ürün miktarı'),
-                  keyboardType: TextInputType.number,
-                ),
-                _kDialogFieldGap,
-                TextField(
-                  controller: unit,
-                  decoration:
-                      _dialogFieldDecoration(labelText: 'Ürün birimi'),
-                ),
-                _kDialogFieldGap,
-                TextField(
-                  controller: supplier,
-                  decoration:
-                      _dialogFieldDecoration(labelText: partyLabel()),
-                ),
-                if (stockLike) ...[
-                  _kDialogFieldGap,
-                  TextField(
-                    controller: price,
-                    decoration: _dialogFieldDecoration(
-                      labelText: 'Ürün fiyatı (opsiyonel)',
-                    ),
-                    keyboardType:
-                        const TextInputType.numberWithOptions(decimal: true),
-                  ),
-                ],
-                if (kind == _MaterialList.ordered) ...[
-                  _kDialogFieldGap,
-                  CheckboxListTile(
-                    contentPadding: EdgeInsets.zero,
-                    title: const Text('Satın alma onayı'),
-                    value: purchaseApproved,
-                    onChanged: (v) =>
-                        setModal(() => purchaseApproved = v ?? false),
-                    controlAffinity: ListTileControlAffinity.leading,
-                  ),
-                ],
-                _kDialogFieldGap,
-                TextField(
-                  controller: note,
-                  decoration: _dialogFieldDecoration(labelText: 'Not'),
-                  maxLines: 2,
-                ),
-              ],
+      title: existing == null ? titleNew() : 'Malzeme düzenle',
+      formBuilder: (ctx, setModal) => Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          if (stockLike) ...[
+            TextField(
+              controller: supplyDate,
+              decoration: _dialogFieldDecoration(
+                labelText: kind == _MaterialList.outgoing
+                    ? 'Gönderim tarihi'
+                    : 'Tedarik tarihi',
+                hintText: 'dd.MM.yyyy',
+              ),
             ),
+            _kDialogFieldGap,
+          ],
+          TextField(
+            controller: name,
+            decoration: _dialogFieldDecoration(labelText: nameLabel),
           ),
-          actions: [
-            TextButton(
-              onPressed: () => Navigator.pop(ctx),
-              child: const Text('İptal'),
-            ),
-            FilledButton(
-              onPressed: () {
-                if (name.text.trim().isEmpty) return;
-                Navigator.pop(ctx, {
-                  'name': name.text.trim(),
-                  'qty': qty.text.trim(),
-                  'unit': unit.text.trim(),
-                  'supplier': supplier.text.trim(),
-                  'supplyDate': supplyDate.text.trim(),
-                  'price': price.text.trim(),
-                  'note': note.text.trim(),
-                  'approved': purchaseApproved ? '1' : '0',
-                });
-              },
-              child: const Text('Kaydet'),
+          _kDialogFieldGap,
+          TextField(
+            controller: qty,
+            decoration: _dialogFieldDecoration(labelText: 'Ürün miktarı'),
+            keyboardType: TextInputType.number,
+          ),
+          _kDialogFieldGap,
+          TextField(
+            controller: unit,
+            decoration: _dialogFieldDecoration(labelText: 'Ürün birimi'),
+          ),
+          _kDialogFieldGap,
+          TextField(
+            controller: supplier,
+            decoration: _dialogFieldDecoration(labelText: partyLabel()),
+          ),
+          if (stockLike) ...[
+            _kDialogFieldGap,
+            TextField(
+              controller: price,
+              decoration: _dialogFieldDecoration(
+                labelText: 'Ürün fiyatı (opsiyonel)',
+              ),
+              keyboardType:
+                  const TextInputType.numberWithOptions(decimal: true),
             ),
           ],
-        ),
+          if (kind == _MaterialList.ordered) ...[
+            _kDialogFieldGap,
+            CheckboxListTile(
+              contentPadding: EdgeInsets.zero,
+              title: const Text('Satın alma onayı'),
+              value: purchaseApproved,
+              onChanged: (v) => setModal(() => purchaseApproved = v ?? false),
+              controlAffinity: ListTileControlAffinity.leading,
+            ),
+          ],
+          _kDialogFieldGap,
+          TextField(
+            controller: note,
+            decoration: _dialogFieldDecoration(labelText: 'Not'),
+            maxLines: 2,
+          ),
+        ],
       ),
+      onSave: () {
+        if (name.text.trim().isEmpty) return null;
+        return {
+          'name': name.text.trim(),
+          'qty': qty.text.trim(),
+          'unit': unit.text.trim(),
+          'supplier': supplier.text.trim(),
+          'supplyDate': supplyDate.text.trim(),
+          'price': price.text.trim(),
+          'note': note.text.trim(),
+          'approved': purchaseApproved ? '1' : '0',
+        };
+      },
     );
     name.dispose();
     qty.dispose();
@@ -859,88 +924,71 @@ class _DailyReportScreenState extends ConsumerState<DailyReportScreen> {
         ),
     ];
 
-    final ok = await showDialog<bool>(
+    final ok = await showDailyReportEntryPage<bool>(
       context: context,
-      builder: (ctx) => AlertDialog(
-        title: const Text('İrsaliye — malzeme onayı'),
-        content: SizedBox(
-          width: double.maxFinite,
-          child: SingleChildScrollView(
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              crossAxisAlignment: CrossAxisAlignment.stretch,
-              children: [
-                if (ocr.error != null)
-                  Padding(
-                    padding: const EdgeInsets.only(bottom: AppSpacing.sm),
-                    child: Text(
-                      ocr.error!,
-                      style: TextStyle(color: AppColors.warning, fontSize: 12),
-                    ),
-                  ),
-                TextField(
-                  controller: dateCtrl,
-                  decoration: _dialogFieldDecoration(
-                    labelText: 'Tedarik tarihi',
-                    hintText: 'dd.MM.yyyy',
-                  ),
-                ),
-                _kDialogFieldGap,
-                TextField(
-                  controller: supplierCtrl,
-                  decoration: _dialogFieldDecoration(
-                    labelText: 'Tedarik edilen firma',
-                  ),
-                ),
-                const SizedBox(height: AppSpacing.md),
-                for (var i = 0; i < rowCtrls.length; i++) ...[
-                  Text(
-                    'Ürün ${i + 1}',
-                    style: Theme.of(ctx).textTheme.labelLarge?.copyWith(
-                          fontWeight: FontWeight.w700,
-                        ),
-                  ),
-                  _kDialogFieldGap,
-                  TextField(
-                    controller: rowCtrls[i].name,
-                    decoration:
-                        _dialogFieldDecoration(labelText: 'Ürün adı *'),
-                  ),
-                  _kDialogFieldGap,
-                  TextField(
-                    controller: rowCtrls[i].qty,
-                    decoration:
-                        _dialogFieldDecoration(labelText: 'Ürün miktarı'),
-                  ),
-                  _kDialogFieldGap,
-                  TextField(
-                    controller: rowCtrls[i].unit,
-                    decoration:
-                        _dialogFieldDecoration(labelText: 'Ürün birimi'),
-                  ),
-                  _kDialogFieldGap,
-                  TextField(
-                    controller: rowCtrls[i].price,
-                    decoration: _dialogFieldDecoration(
-                      labelText: 'Ürün fiyatı (opsiyonel)',
-                    ),
-                  ),
-                  if (i < rowCtrls.length - 1)
-                    const SizedBox(height: AppSpacing.md),
-                ],
-              ],
+      title: 'İrsaliye — malzeme onayı',
+      cancelLabel: 'Atla',
+      saveLabel: 'Listeye ekle',
+      onCancel: () => false,
+      onSave: () => true,
+      formBuilder: (ctx, setModal) => Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          if (ocr.error != null)
+            Padding(
+              padding: const EdgeInsets.only(bottom: AppSpacing.sm),
+              child: Text(
+                ocr.error!,
+                style: TextStyle(color: AppColors.warning, fontSize: 12),
+              ),
+            ),
+          TextField(
+            controller: dateCtrl,
+            decoration: _dialogFieldDecoration(
+              labelText: 'Tedarik tarihi',
+              hintText: 'dd.MM.yyyy',
             ),
           ),
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(ctx, false),
-            child: const Text('Atla'),
+          _kDialogFieldGap,
+          TextField(
+            controller: supplierCtrl,
+            decoration: _dialogFieldDecoration(
+              labelText: 'Tedarik edilen firma',
+            ),
           ),
-          FilledButton(
-            onPressed: () => Navigator.pop(ctx, true),
-            child: const Text('Listeye ekle'),
-          ),
+          const SizedBox(height: AppSpacing.md),
+          for (var i = 0; i < rowCtrls.length; i++) ...[
+            Text(
+              'Ürün ${i + 1}',
+              style: Theme.of(ctx).textTheme.labelLarge?.copyWith(
+                    fontWeight: FontWeight.w700,
+                  ),
+            ),
+            _kDialogFieldGap,
+            TextField(
+              controller: rowCtrls[i].name,
+              decoration: _dialogFieldDecoration(labelText: 'Ürün adı *'),
+            ),
+            _kDialogFieldGap,
+            TextField(
+              controller: rowCtrls[i].qty,
+              decoration: _dialogFieldDecoration(labelText: 'Ürün miktarı'),
+            ),
+            _kDialogFieldGap,
+            TextField(
+              controller: rowCtrls[i].unit,
+              decoration: _dialogFieldDecoration(labelText: 'Ürün birimi'),
+            ),
+            _kDialogFieldGap,
+            TextField(
+              controller: rowCtrls[i].price,
+              decoration: _dialogFieldDecoration(
+                labelText: 'Ürün fiyatı (opsiyonel)',
+              ),
+            ),
+            if (i < rowCtrls.length - 1)
+              const SizedBox(height: AppSpacing.md),
+          ],
         ],
       ),
     );
@@ -1051,93 +1099,75 @@ class _DailyReportScreenState extends ConsumerState<DailyReportScreen> {
     final op = TextEditingController(text: existing?.operatorName ?? '');
     final company = TextEditingController(text: existing?.company ?? '');
 
-    final values = await showDialog<Map<String, String>>(
+    final values = await showDailyReportEntryPage<Map<String, String>>(
       context: context,
-      builder: (ctx) => AlertDialog(
-        title: Text(
-          existing == null
-              ? (vehicle ? 'Vasıta' : 'İş makinesi')
-              : (vehicle ? 'Vasıta düzenle' : 'Makine düzenle'),
-        ),
-        content: SingleChildScrollView(
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            crossAxisAlignment: CrossAxisAlignment.stretch,
-            children: [
-              TextField(
-                controller: name,
-                decoration: _dialogFieldDecoration(
-                  labelText: vehicle ? 'Vasıta adı *' : 'Makine adı *',
-                ),
-              ),
-              _kDialogFieldGap,
-              TextField(
-                controller: type,
-                decoration: _dialogFieldDecoration(
-                  labelText: vehicle ? 'Marka/Model' : 'Tip (opsiyonel)',
-                ),
-              ),
-              if (!vehicle) ...[
-                _kDialogFieldGap,
-                TextField(
-                  controller: company,
-                  decoration: _dialogFieldDecoration(labelText: 'Firma'),
-                ),
-              ],
-              _kDialogFieldGap,
-              TextField(
-                controller: plate,
-                decoration:
-                    _dialogFieldDecoration(labelText: 'Plaka / kimlik'),
-              ),
-              _kDialogFieldGap,
-              TextField(
-                controller: hours,
-                decoration:
-                    _dialogFieldDecoration(labelText: 'Çalışma saati'),
-                keyboardType:
-                    const TextInputType.numberWithOptions(decimal: true),
-              ),
-              _kDialogFieldGap,
-              TextField(
-                controller: work,
-                decoration: _dialogFieldDecoration(
-                  labelText: 'Yapılan iş açıklaması',
-                ),
-                maxLines: 2,
-              ),
-              _kDialogFieldGap,
-              TextField(
-                controller: op,
-                decoration: _dialogFieldDecoration(
-                  labelText: vehicle ? 'Şoför' : 'Operatör',
-                ),
-              ),
-            ],
+      title: existing == null
+          ? (vehicle ? 'Vasıta' : 'İş makinesi')
+          : (vehicle ? 'Vasıta düzenle' : 'Makine düzenle'),
+      formBuilder: (ctx, setModal) => Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          TextField(
+            controller: name,
+            decoration: _dialogFieldDecoration(
+              labelText: vehicle ? 'Vasıta adı *' : 'Makine adı *',
+            ),
           ),
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(ctx),
-            child: const Text('İptal'),
+          _kDialogFieldGap,
+          TextField(
+            controller: type,
+            decoration: _dialogFieldDecoration(
+              labelText: vehicle ? 'Marka/Model' : 'Tip (opsiyonel)',
+            ),
           ),
-          FilledButton(
-            onPressed: () {
-              if (name.text.trim().isEmpty) return;
-              Navigator.pop(ctx, {
-                'name': name.text.trim(),
-                'type': type.text.trim(),
-                'plate': plate.text.trim(),
-                'company': company.text.trim(),
-                'hours': hours.text.trim(),
-                'work': work.text.trim(),
-                'op': op.text.trim(),
-              });
-            },
-            child: const Text('Kaydet'),
+          if (!vehicle) ...[
+            _kDialogFieldGap,
+            TextField(
+              controller: company,
+              decoration: _dialogFieldDecoration(labelText: 'Firma'),
+            ),
+          ],
+          _kDialogFieldGap,
+          TextField(
+            controller: plate,
+            decoration: _dialogFieldDecoration(labelText: 'Plaka / kimlik'),
+          ),
+          _kDialogFieldGap,
+          TextField(
+            controller: hours,
+            decoration: _dialogFieldDecoration(labelText: 'Çalışma saati'),
+            keyboardType:
+                const TextInputType.numberWithOptions(decimal: true),
+          ),
+          _kDialogFieldGap,
+          TextField(
+            controller: work,
+            decoration: _dialogFieldDecoration(
+              labelText: 'Yapılan iş açıklaması',
+            ),
+            maxLines: 2,
+          ),
+          _kDialogFieldGap,
+          TextField(
+            controller: op,
+            decoration: _dialogFieldDecoration(
+              labelText: vehicle ? 'Şoför' : 'Operatör',
+            ),
           ),
         ],
       ),
+      onSave: () {
+        if (name.text.trim().isEmpty) return null;
+        return {
+          'name': name.text.trim(),
+          'type': type.text.trim(),
+          'plate': plate.text.trim(),
+          'company': company.text.trim(),
+          'hours': hours.text.trim(),
+          'work': work.text.trim(),
+          'op': op.text.trim(),
+        };
+      },
     );
     name.dispose();
     type.dispose();
@@ -1207,15 +1237,6 @@ class _DailyReportScreenState extends ConsumerState<DailyReportScreen> {
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
               const SantijetHeader(subtitle: 'Günlük Rapor'),
-              const Padding(
-                padding: EdgeInsets.fromLTRB(
-                  AppSpacing.md,
-                  0,
-                  AppSpacing.md,
-                  AppSpacing.sm,
-                ),
-                child: ProjectSwitcher(),
-              ),
               Expanded(
                 child: SJEmptyState(
                   title: 'Önce proje ekleyin',
@@ -1242,15 +1263,6 @@ class _DailyReportScreenState extends ConsumerState<DailyReportScreen> {
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
             const SantijetHeader(subtitle: 'Günlük Rapor'),
-            const Padding(
-              padding: EdgeInsets.fromLTRB(
-                AppSpacing.md,
-                0,
-                AppSpacing.md,
-                AppSpacing.sm,
-              ),
-              child: ProjectSwitcher(),
-            ),
             Padding(
               padding: const EdgeInsets.symmetric(horizontal: AppSpacing.md),
               child: Row(
@@ -1312,139 +1324,17 @@ class _DailyReportScreenState extends ConsumerState<DailyReportScreen> {
                   AppSpacing.md,
                   AppSpacing.sm,
                   AppSpacing.md,
-                  100,
+                  AppSpacing.xl,
                 ),
                 children: [
-                  _SectionCard(
-                    title: 'Hava durumu',
-                    icon: Icons.wb_sunny_outlined,
-                    trailing: Row(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        IconButton(
-                          tooltip: 'Manuel gir / düzenle',
-                          onPressed: _weatherLoading ? null : _editManualWeather,
-                          icon: const Icon(Icons.edit_outlined, size: 20),
-                        ),
-                        IconButton(
-                          tooltip: 'Otomatik yenile',
-                          onPressed: _weatherLoading
-                              ? null
-                              : () => _refreshWeather(),
-                          icon: _weatherLoading
-                              ? const SizedBox(
-                                  width: 18,
-                                  height: 18,
-                                  child:
-                                      CircularProgressIndicator(strokeWidth: 2),
-                                )
-                              : const Icon(Icons.refresh, size: 20),
-                        ),
-                      ],
-                    ),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.stretch,
-                      children: [
-                        OutlinedButton.icon(
-                          onPressed: _weatherLoading ? null : _pickWeatherCity,
-                          icon: const Icon(Icons.location_city_outlined),
-                          label: Text(
-                            ref.watch(selectedWeatherCityProvider)?.name ??
-                                'Şehir seçin',
-                          ),
-                        ),
-                        const SizedBox(height: AppSpacing.sm),
-                        if (_weatherLoading)
-                          Text(
-                            'Hava çekiliyor…',
-                            style: _cardInk(theme.textTheme.bodyMedium),
-                          )
-                        else if (weather == null)
-                          Text(
-                            ref.watch(selectedWeatherCityProvider) == null
-                                ? 'Hava tahmini için şehir seçin veya manuel girin.'
-                                : 'Henüz hava bilgisi yok — yenileyin veya manuel girin.',
-                            style: _cardInk(theme.textTheme.bodyMedium),
-                          )
-                        else ...[
-                          if (weather.isAutoLocked(date)) ...[
-                            Container(
-                              padding: const EdgeInsets.symmetric(
-                                horizontal: 10,
-                                vertical: 6,
-                              ),
-                              decoration: BoxDecoration(
-                                color: AppColors.info.withValues(alpha: 0.12),
-                                borderRadius: AppRadii.sm,
-                              ),
-                              child: Text(
-                                'Otomatik kayıt kilitli — gerekirse manuel müdahale edin.',
-                                style: _cardInk(
-                                  theme.textTheme.labelSmall,
-                                  color: AppColors.info,
-                                ),
-                              ),
-                            ),
-                            const SizedBox(height: 8),
-                          ] else if (weather.isManual) ...[
-                            Text(
-                              'Manuel giriş',
-                              style: _cardInk(
-                                theme.textTheme.labelSmall,
-                                color: theme.colorScheme.primary,
-                              ),
-                            ),
-                            const SizedBox(height: 6),
-                          ],
-                          Text(
-                            [
-                              if (weather.temperatureC != null)
-                                '${weather.temperatureC!.toStringAsFixed(0)}°C',
-                              if (weather.nightTemperatureC != null)
-                                'Gece ${weather.nightTemperatureC!.toStringAsFixed(0)}°C',
-                              if (weather.humidityPercent != null)
-                                'Nem %${weather.humidityPercent!.toStringAsFixed(0)}',
-                              if (weather.description.isNotEmpty)
-                                weather.description,
-                              if (weather.windKmh != null)
-                                'Rüzgar ${weather.windKmh!.toStringAsFixed(0)} km/s',
-                            ].join(' · '),
-                            style: _cardInk(
-                              theme.textTheme.titleSmall,
-                              fontWeight: FontWeight.w600,
-                            ),
-                          ),
-                          if (weather.locationLabel.isNotEmpty) ...[
-                            const SizedBox(height: 4),
-                            Text(
-                              weather.locationLabel,
-                              style: _cardInk(theme.textTheme.labelSmall),
-                            ),
-                          ],
-                          if (!weather.synced ||
-                              weather.offlineNote.isNotEmpty) ...[
-                            const SizedBox(height: 6),
-                            Text(
-                              weather.offlineNote.isNotEmpty
-                                  ? weather.offlineNote
-                                  : 'Senkron edilemedi',
-                              style: _cardInk(
-                                theme.textTheme.labelSmall,
-                                color: AppColors.warning,
-                              ),
-                            ),
-                          ],
-                          if (weather.isAutoLocked(date)) ...[
-                            const SizedBox(height: AppSpacing.sm),
-                            TextButton.icon(
-                              onPressed: _editManualWeather,
-                              icon: const Icon(Icons.lock_open_outlined, size: 18),
-                              label: const Text('Manuel müdahale'),
-                            ),
-                          ],
-                        ],
-                      ],
-                    ),
+                  WeatherCompactCard(
+                    weather: weather,
+                    date: date,
+                    loading: _weatherLoading,
+                    cityName: ref.watch(selectedWeatherCityProvider)?.name,
+                    onPickCity: _pickWeatherCity,
+                    onEdit: _editManualWeather,
+                    onRefresh: () => _refreshWeather(),
                   ),
                   const SizedBox(height: AppSpacing.md),
                   _SectionCard(
@@ -1945,20 +1835,6 @@ class _DailyReportScreenState extends ConsumerState<DailyReportScreen> {
                 ],
               ),
             ),
-            Padding(
-              padding: const EdgeInsets.fromLTRB(
-                AppSpacing.md,
-                AppSpacing.sm,
-                AppSpacing.md,
-                AppSpacing.md,
-              ),
-              child: SJButton(
-                label: 'PDF Rapor Dışa Aktar',
-                icon: Icons.picture_as_pdf_outlined,
-                expanded: true,
-                onPressed: _openExportSheet,
-              ),
-            ),
           ],
         ),
       ),
@@ -2416,146 +2292,6 @@ class _DailyReportExportSheetState extends State<_DailyReportExportSheet> {
 }
 
 enum _MaterialList { incoming, outgoing, ordered }
-
-class _ManualWeatherDialog extends StatefulWidget {
-  const _ManualWeatherDialog({required this.initial});
-
-  final DailyReportWeather initial;
-
-  @override
-  State<_ManualWeatherDialog> createState() => _ManualWeatherDialogState();
-}
-
-class _ManualWeatherDialogState extends State<_ManualWeatherDialog> {
-  late final TextEditingController _temp;
-  late final TextEditingController _night;
-  late final TextEditingController _humidity;
-  late final TextEditingController _wind;
-  late final TextEditingController _desc;
-  late final TextEditingController _location;
-
-  @override
-  void initState() {
-    super.initState();
-    final w = widget.initial;
-    _temp = TextEditingController(
-      text: w.temperatureC?.toStringAsFixed(0) ?? '',
-    );
-    _night = TextEditingController(
-      text: w.nightTemperatureC?.toStringAsFixed(0) ?? '',
-    );
-    _humidity = TextEditingController(
-      text: w.humidityPercent?.toStringAsFixed(0) ?? '',
-    );
-    _wind = TextEditingController(
-      text: w.windKmh?.toStringAsFixed(0) ?? '',
-    );
-    _desc = TextEditingController(text: w.description);
-    _location = TextEditingController(text: w.locationLabel);
-  }
-
-  @override
-  void dispose() {
-    _temp.dispose();
-    _night.dispose();
-    _humidity.dispose();
-    _wind.dispose();
-    _desc.dispose();
-    _location.dispose();
-    super.dispose();
-  }
-
-  double? _parse(String raw) {
-    final t = raw.trim().replaceAll(',', '.');
-    if (t.isEmpty) return null;
-    return double.tryParse(t);
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    return AlertDialog(
-      title: const Text('Hava durumu — manuel'),
-      content: SingleChildScrollView(
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            TextField(
-              controller: _temp,
-              keyboardType: const TextInputType.numberWithOptions(decimal: true),
-              decoration: const InputDecoration(
-                labelText: 'Gündüz (°C)',
-              ),
-            ),
-            const SizedBox(height: 8),
-            TextField(
-              controller: _night,
-              keyboardType: const TextInputType.numberWithOptions(decimal: true),
-              decoration: const InputDecoration(
-                labelText: 'Gece (°C)',
-              ),
-            ),
-            const SizedBox(height: 8),
-            TextField(
-              controller: _humidity,
-              keyboardType: const TextInputType.numberWithOptions(decimal: true),
-              decoration: const InputDecoration(
-                labelText: 'Nem (%)',
-              ),
-            ),
-            const SizedBox(height: 8),
-            TextField(
-              controller: _wind,
-              keyboardType: const TextInputType.numberWithOptions(decimal: true),
-              decoration: const InputDecoration(
-                labelText: 'Rüzgar (km/s)',
-              ),
-            ),
-            const SizedBox(height: 8),
-            TextField(
-              controller: _desc,
-              decoration: const InputDecoration(
-                labelText: 'Açıklama',
-              ),
-            ),
-            const SizedBox(height: 8),
-            TextField(
-              controller: _location,
-              decoration: const InputDecoration(
-                labelText: 'Konum / şehir',
-              ),
-            ),
-          ],
-        ),
-      ),
-      actions: [
-        TextButton(
-          onPressed: () => Navigator.pop(context),
-          child: const Text('İptal'),
-        ),
-        FilledButton(
-          onPressed: () {
-            Navigator.pop(
-              context,
-              DailyReportWeather(
-                temperatureC: _parse(_temp.text),
-                nightTemperatureC: _parse(_night.text),
-                humidityPercent: _parse(_humidity.text),
-                windKmh: _parse(_wind.text),
-                description: _desc.text.trim(),
-                locationLabel: _location.text.trim(),
-                fetchedAt: DateTime.now(),
-                synced: true,
-                offlineNote: '',
-                isManual: true,
-              ),
-            );
-          },
-          child: const Text('Kaydet'),
-        ),
-      ],
-    );
-  }
-}
 
 /// Türkiye illeri seçici — arama + alfabetik liste.
 class _CityPickerSheet extends StatefulWidget {
