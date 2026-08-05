@@ -20,7 +20,7 @@ import '../../core/widgets/santijet_header.dart';
 import '../../data/providers/app_data_provider.dart';
 import '../../data/providers/company_provider.dart';
 import '../../data/providers/daily_report_provider.dart';
-import '../../data/services/daily_report_export_style.dart';
+import '../../data/services/daily_report_export_sections.dart';
 import '../../data/services/daily_report_pdf_service.dart';
 import '../../data/services/irsaliye_material_ocr.dart';
 import '../../domain/catalogs/turkey_cities.dart';
@@ -2007,7 +2007,7 @@ class _MaterialTile extends StatelessWidget {
   }
 }
 
-/// Günlük rapor PDF — Özet / Standart / Gelişmiş seçimi.
+/// Günlük rapor PDF — çıktıya girecek başlık seçimi.
 class _DailyReportExportSheet extends StatefulWidget {
   const _DailyReportExportSheet({
     required this.project,
@@ -2027,12 +2027,16 @@ class _DailyReportExportSheet extends StatefulWidget {
 }
 
 class _DailyReportExportSheetState extends State<_DailyReportExportSheet> {
-  DailyReportExportStyle _style = DailyReportExportStyle.standart;
+  DailyReportExportSections _sections = DailyReportExportSections.all();
   bool _busy = false;
   String? _error;
 
   Future<void> _export() async {
     if (_busy) return;
+    if (!_sections.hasAny) {
+      setState(() => _error = 'En az bir başlık seçin.');
+      return;
+    }
     setState(() {
       _busy = true;
       _error = null;
@@ -2042,15 +2046,13 @@ class _DailyReportExportSheetState extends State<_DailyReportExportSheet> {
         report: widget.report,
         project: widget.project,
         company: widget.company,
-        style: _style,
+        sections: _sections,
         liveSnapshot: widget.liveSnapshot,
       );
       if (!mounted) return;
       Navigator.of(context).pop();
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text('${_style.label} PDF dışa aktarıldı'),
-        ),
+        const SnackBar(content: Text('PDF rapor dışa aktarıldı')),
       );
     } catch (e) {
       if (!mounted) return;
@@ -2058,6 +2060,23 @@ class _DailyReportExportSheetState extends State<_DailyReportExportSheet> {
     } finally {
       if (mounted) setState(() => _busy = false);
     }
+  }
+
+  Widget _sectionTile({
+    required String title,
+    required String subtitle,
+    required bool value,
+    required ValueChanged<bool> onChanged,
+  }) {
+    return CheckboxListTile(
+      contentPadding: EdgeInsets.zero,
+      dense: true,
+      title: Text(title),
+      subtitle: Text(subtitle),
+      value: value,
+      onChanged: _busy ? null : (v) => onChanged(v ?? false),
+      controlAffinity: ListTileControlAffinity.leading,
+    );
   }
 
   @override
@@ -2069,7 +2088,7 @@ class _DailyReportExportSheetState extends State<_DailyReportExportSheet> {
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
           Text(
-            'Günlük rapor PDF',
+            'PDF Rapor Dışa Aktar',
             style: theme.textTheme.titleMedium?.copyWith(
               fontWeight: FontWeight.w700,
             ),
@@ -2081,32 +2100,136 @@ class _DailyReportExportSheetState extends State<_DailyReportExportSheet> {
               color: theme.colorScheme.onSurfaceVariant,
             ),
           ),
-          const SizedBox(height: AppSpacing.md),
-          Text('Çıktı stili', style: theme.textTheme.labelLarge),
-          const SizedBox(height: AppSpacing.xs),
-          SegmentedButton<DailyReportExportStyle>(
-            style: SegmentedButton.styleFrom(
-              foregroundColor: theme.colorScheme.onSurfaceVariant,
-              selectedForegroundColor: Colors.white,
-              selectedBackgroundColor: theme.colorScheme.secondary,
-            ),
-            segments: [
-              for (final s in DailyReportExportStyle.values)
-                ButtonSegment(
-                  value: s,
-                  label: Text(s.label),
-                ),
-            ],
-            selected: {_style},
-            onSelectionChanged: _busy
-                ? null
-                : (v) => setState(() => _style = v.first),
-          ),
           const SizedBox(height: AppSpacing.sm),
           Text(
-            _style.description,
-            style: theme.textTheme.bodySmall?.copyWith(
-              color: theme.colorScheme.onSurfaceVariant,
+            'Çıktıda yer alacak başlıklar',
+            style: theme.textTheme.labelLarge,
+          ),
+          const SizedBox(height: AppSpacing.xs),
+          Row(
+            children: [
+              TextButton(
+                onPressed: _busy
+                    ? null
+                    : () => setState(
+                          () => _sections = DailyReportExportSections.all(),
+                        ),
+                child: const Text('Tümünü seç'),
+              ),
+              TextButton(
+                onPressed: _busy
+                    ? null
+                    : () => setState(
+                          () => _sections = DailyReportExportSections.none(),
+                        ),
+                child: const Text('Temizle'),
+              ),
+            ],
+          ),
+          ConstrainedBox(
+            constraints: BoxConstraints(
+              maxHeight: MediaQuery.sizeOf(context).height * 0.42,
+            ),
+            child: ListView(
+              shrinkWrap: true,
+              children: [
+                _sectionTile(
+                  title: 'Hava durumu',
+                  subtitle: 'Sıcaklık, nem, rüzgar',
+                  value: _sections.weather,
+                  onChanged: (v) =>
+                      setState(() => _sections = _sections.copyWith(weather: v)),
+                ),
+                _sectionTile(
+                  title: 'Puantaj — sayılar',
+                  subtitle: 'Mevcut / yarım / izin / yok özeti',
+                  value: _sections.puantajCounts,
+                  onChanged: (v) => setState(
+                    () => _sections = _sections.copyWith(puantajCounts: v),
+                  ),
+                ),
+                _sectionTile(
+                  title: 'Puantaj — isimler',
+                  subtitle: 'Personel adı, meslek, durum, yevmiye',
+                  value: _sections.puantajNames,
+                  onChanged: (v) => setState(
+                    () => _sections = _sections.copyWith(puantajNames: v),
+                  ),
+                ),
+                _sectionTile(
+                  title: 'Fotoğraflar',
+                  subtitle: 'Açıklamalı saha fotoğrafları',
+                  value: _sections.photos,
+                  onChanged: (v) =>
+                      setState(() => _sections = _sections.copyWith(photos: v)),
+                ),
+                _sectionTile(
+                  title: 'Yapılan işler',
+                  subtitle: 'İnşaat / elektrik / mekanik',
+                  value: _sections.workDone,
+                  onChanged: (v) => setState(
+                    () => _sections = _sections.copyWith(workDone: v),
+                  ),
+                ),
+                _sectionTile(
+                  title: 'Gelen malzeme',
+                  subtitle: 'Tedarik kayıtları',
+                  value: _sections.incomingMaterials,
+                  onChanged: (v) => setState(
+                    () =>
+                        _sections = _sections.copyWith(incomingMaterials: v),
+                  ),
+                ),
+                _sectionTile(
+                  title: 'Giden malzeme',
+                  subtitle: 'Gönderim kayıtları',
+                  value: _sections.outgoingMaterials,
+                  onChanged: (v) => setState(
+                    () =>
+                        _sections = _sections.copyWith(outgoingMaterials: v),
+                  ),
+                ),
+                _sectionTile(
+                  title: 'Sipariş verilen malzeme',
+                  subtitle: 'Sipariş ve satın alma onayı',
+                  value: _sections.orderedMaterials,
+                  onChanged: (v) => setState(
+                    () => _sections = _sections.copyWith(orderedMaterials: v),
+                  ),
+                ),
+                _sectionTile(
+                  title: 'İş makinesi puantajı',
+                  subtitle: 'Makine, firma, saat',
+                  value: _sections.machines,
+                  onChanged: (v) => setState(
+                    () => _sections = _sections.copyWith(machines: v),
+                  ),
+                ),
+                _sectionTile(
+                  title: 'Vasıta puantajı',
+                  subtitle: 'Marka/model, şoför, saat',
+                  value: _sections.vehicles,
+                  onChanged: (v) => setState(
+                    () => _sections = _sections.copyWith(vehicles: v),
+                  ),
+                ),
+                _sectionTile(
+                  title: 'Ertesi gün planı',
+                  subtitle: 'Yarın yapılacak işler',
+                  value: _sections.nextDayPlan,
+                  onChanged: (v) => setState(
+                    () => _sections = _sections.copyWith(nextDayPlan: v),
+                  ),
+                ),
+                _sectionTile(
+                  title: 'İmza alanları',
+                  subtitle: 'Dolduran / inceleyen / onay',
+                  value: _sections.signatures,
+                  onChanged: (v) => setState(
+                    () => _sections = _sections.copyWith(signatures: v),
+                  ),
+                ),
+              ],
             ),
           ),
           const SizedBox(height: AppSpacing.md),

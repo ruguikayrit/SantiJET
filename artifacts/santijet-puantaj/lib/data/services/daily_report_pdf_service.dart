@@ -10,16 +10,12 @@ import '../../core/utils/puantaj_date.dart';
 import '../../domain/entities/company_info.dart';
 import '../../domain/entities/daily_report.dart';
 import '../../domain/entities/project.dart';
-import 'daily_report_export_style.dart';
+import 'daily_report_export_sections.dart';
 import 'report_file_access_stub.dart'
     if (dart.library.html) 'report_file_access_web.dart'
     if (dart.library.io) 'report_file_access_io.dart' as file_access;
 
-/// Günlük rapor PDF — Özet / Standart / Gelişmiş.
-///
-/// Standart düzen, örnek “GÜNLÜK ŞANTİYE RAPORU” formuna yaklaşır:
-/// başlık, iş/yüklenici, tarih+hava, puantaj, yapılan işler, malzeme,
-/// makine, imza alanları; fotoğraflar ayrı sayfada.
+/// Günlük rapor PDF — seçilen başlıklara göre form çıktısı.
 class DailyReportPdfService {
   pw.Font? _regularFont;
   pw.Font? _boldFont;
@@ -41,17 +37,17 @@ class DailyReportPdfService {
     required DailyReport report,
     required Project project,
     required CompanyInfo company,
-    required DailyReportExportStyle style,
+    required DailyReportExportSections sections,
     DailyReportAttendanceSnapshot? liveSnapshot,
   }) async {
     final bytes = await buildBytes(
       report: report,
       project: project,
       company: company,
-      style: style,
+      sections: sections,
       liveSnapshot: liveSnapshot,
     );
-    final stem = _fileStem(project.name, report.date, style);
+    final stem = _fileStem(project.name, report.date);
     await file_access.downloadBytesFile(
       fileName: '$stem.pdf',
       bytes: bytes,
@@ -64,7 +60,7 @@ class DailyReportPdfService {
     required DailyReport report,
     required Project project,
     required CompanyInfo company,
-    required DailyReportExportStyle style,
+    required DailyReportExportSections sections,
     DailyReportAttendanceSnapshot? liveSnapshot,
   }) async {
     final theme = await _theme();
@@ -76,197 +72,186 @@ class DailyReportPdfService {
             ? project.company.trim()
             : '—');
 
-    switch (style) {
-      case DailyReportExportStyle.ozet:
-        doc.addPage(
-          pw.MultiPage(
-            pageFormat: PdfPageFormat.a4,
-            margin: const pw.EdgeInsets.all(28),
-            build: (ctx) => _ozetBody(
-              report: report,
-              project: project,
-              contractor: contractor,
-              snap: snap,
-            ),
-          ),
-        );
-      case DailyReportExportStyle.standart:
-      case DailyReportExportStyle.gelismis:
-        final advanced = style == DailyReportExportStyle.gelismis;
-        doc.addPage(
-          pw.MultiPage(
-            pageFormat: PdfPageFormat.a4,
-            margin: const pw.EdgeInsets.all(22),
-            build: (ctx) => _standartBody(
-              report: report,
-              project: project,
-              contractor: contractor,
-              snap: snap,
-              advanced: advanced,
-            ),
-          ),
-        );
-    }
+    doc.addPage(
+      pw.MultiPage(
+        pageFormat: PdfPageFormat.a4,
+        margin: const pw.EdgeInsets.all(22),
+        build: (ctx) => _body(
+          report: report,
+          project: project,
+          contractor: contractor,
+          snap: snap,
+          sections: sections,
+        ),
+      ),
+    );
 
     return Uint8List.fromList(await doc.save());
   }
 
-  List<pw.Widget> _ozetBody({
+  List<pw.Widget> _body({
     required DailyReport report,
     required Project project,
     required String contractor,
     required DailyReportAttendanceSnapshot? snap,
-  }) {
-    return [
-      _docHeader(project: project, contractor: contractor, report: report),
-      pw.SizedBox(height: 14),
-      _weatherLine(report.weather),
-      pw.SizedBox(height: 12),
-      _sectionTitle('PUANTAJ ÖZETİ'),
-      pw.SizedBox(height: 6),
-      _attendanceSummary(snap),
-      pw.SizedBox(height: 12),
-      _sectionTitle('FOTOĞRAFLAR'),
-      pw.SizedBox(height: 6),
-      if (report.photos.isEmpty)
-        pw.Text('—', style: const pw.TextStyle(fontSize: 10, color: _muted))
-      else
-        ..._photoWidgets(report.photos, withCaptions: true, maxHeight: 120),
-      pw.SizedBox(height: 12),
-      _sectionTitle('YAPILAN İŞLER'),
-      pw.SizedBox(height: 6),
-      ..._workCategoryBlocks(report, truncateEach: 220),
-      pw.SizedBox(height: 20),
-      _signatureBlock(),
-      pw.SizedBox(height: 8),
-      pw.Text(
-        '${AppInfo.displayName} · Özet çıktı',
-        textAlign: pw.TextAlign.center,
-        style: const pw.TextStyle(fontSize: 8, color: _muted),
-      ),
-    ];
-  }
-
-  List<pw.Widget> _standartBody({
-    required DailyReport report,
-    required Project project,
-    required String contractor,
-    required DailyReportAttendanceSnapshot? snap,
-    required bool advanced,
+    required DailyReportExportSections sections,
   }) {
     final widgets = <pw.Widget>[
       _docHeader(project: project, contractor: contractor, report: report),
-      pw.SizedBox(height: 10),
-      _weatherLine(report.weather),
-      pw.SizedBox(height: 12),
-      _sectionTitle('PUANTAJ ÖZETİ'),
-      pw.SizedBox(height: 6),
-      _attendanceSummary(snap),
     ];
 
-    if (advanced && snap != null && snap.people.isNotEmpty) {
-      widgets.add(pw.SizedBox(height: 6));
-      widgets.add(_personBreakdown(snap));
+    void gap() => widgets.add(pw.SizedBox(height: 12));
+
+    if (sections.weather) {
+      gap();
+      widgets.add(_weatherLine(report.weather));
     }
 
-    widgets.addAll([
-      pw.SizedBox(height: 12),
-      _sectionTitle('FOTOĞRAFLAR'),
-      pw.SizedBox(height: 6),
-      if (report.photos.isEmpty)
-        pw.Text(
-          'Kayıt yok',
-          textAlign: pw.TextAlign.center,
-          style: const pw.TextStyle(fontSize: 9, color: _muted),
-        )
-      else
-        ..._photoWidgets(report.photos, withCaptions: true),
-      pw.SizedBox(height: 12),
-      _sectionTitle('YAPILAN İŞLER'),
-      pw.SizedBox(height: 6),
-      ..._workCategoryBlocks(report),
-      pw.SizedBox(height: 12),
-      _sectionTitle('GELEN MALZEME'),
-      pw.SizedBox(height: 6),
-      _materialTable(
-        report.incomingMaterials,
-        advanced: advanced,
-        kind: _MaterialKind.incoming,
-      ),
-      pw.SizedBox(height: 12),
-      _sectionTitle('GİDEN MALZEME'),
-      pw.SizedBox(height: 6),
-      _materialTable(
-        report.outgoingMaterials,
-        advanced: advanced,
-        kind: _MaterialKind.outgoing,
-      ),
-      pw.SizedBox(height: 12),
-      _sectionTitle('SİPARİŞ VERİLEN MALZEME'),
-      pw.SizedBox(height: 6),
-      _materialTable(
-        report.orderedMaterials,
-        advanced: advanced,
-        kind: _MaterialKind.ordered,
-      ),
-      pw.SizedBox(height: 12),
-      _sectionTitle('İŞ MAKİNESİ PUANTAJI'),
-      pw.SizedBox(height: 6),
-      _machineTable(report.machines, advanced: advanced, vehicle: false),
-      pw.SizedBox(height: 12),
-      _sectionTitle('VASITA PUANTAJI'),
-      pw.SizedBox(height: 6),
-      _machineTable(report.vehicles, advanced: advanced, vehicle: true),
-      pw.SizedBox(height: 12),
-      _sectionTitle('ERTESİ GÜN PLANI'),
-      pw.SizedBox(height: 6),
-      pw.Container(
-        width: double.infinity,
-        constraints: const pw.BoxConstraints(minHeight: 40),
-        padding: const pw.EdgeInsets.all(8),
-        alignment: pw.Alignment.center,
-        decoration: pw.BoxDecoration(
-          border: pw.Border.all(color: _line, width: 0.7),
+    if (sections.puantajCounts || sections.puantajNames) {
+      gap();
+      widgets.add(_sectionTitle('PUANTAJ'));
+      widgets.add(pw.SizedBox(height: 6));
+      if (sections.puantajCounts) {
+        widgets.add(_attendanceSummary(snap));
+      }
+      if (sections.puantajNames) {
+        if (sections.puantajCounts) widgets.add(pw.SizedBox(height: 6));
+        if (snap != null && snap.people.isNotEmpty) {
+          widgets.add(_personBreakdown(snap));
+        } else {
+          widgets.add(
+            pw.Text(
+              'Personel listesi yok',
+              textAlign: pw.TextAlign.center,
+              style: const pw.TextStyle(fontSize: 9, color: _muted),
+            ),
+          );
+        }
+      }
+    }
+
+    if (sections.photos) {
+      gap();
+      widgets.add(_sectionTitle('FOTOĞRAFLAR'));
+      widgets.add(pw.SizedBox(height: 6));
+      if (report.photos.isEmpty) {
+        widgets.add(
+          pw.Text(
+            'Kayıt yok',
+            textAlign: pw.TextAlign.center,
+            style: const pw.TextStyle(fontSize: 9, color: _muted),
+          ),
+        );
+      } else {
+        widgets.addAll(_photoWidgets(report.photos, withCaptions: true));
+      }
+    }
+
+    if (sections.workDone) {
+      gap();
+      widgets.add(_sectionTitle('YAPILAN İŞLER'));
+      widgets.add(pw.SizedBox(height: 6));
+      widgets.addAll(_workCategoryBlocks(report));
+    }
+
+    if (sections.incomingMaterials) {
+      gap();
+      widgets.add(_sectionTitle('GELEN MALZEME'));
+      widgets.add(pw.SizedBox(height: 6));
+      widgets.add(
+        _materialTable(
+          report.incomingMaterials,
+          advanced: true,
+          kind: _MaterialKind.incoming,
         ),
-        child: pw.Text(
-          report.nextDayPlan.trim().isEmpty ? '—' : report.nextDayPlan.trim(),
-          textAlign: pw.TextAlign.center,
-          style: pw.TextStyle(
-            fontSize: 10,
-            color: report.nextDayPlan.trim().isEmpty ? _muted : _ink,
-            lineSpacing: 3,
+      );
+    }
+
+    if (sections.outgoingMaterials) {
+      gap();
+      widgets.add(_sectionTitle('GİDEN MALZEME'));
+      widgets.add(pw.SizedBox(height: 6));
+      widgets.add(
+        _materialTable(
+          report.outgoingMaterials,
+          advanced: true,
+          kind: _MaterialKind.outgoing,
+        ),
+      );
+    }
+
+    if (sections.orderedMaterials) {
+      gap();
+      widgets.add(_sectionTitle('SİPARİŞ VERİLEN MALZEME'));
+      widgets.add(pw.SizedBox(height: 6));
+      widgets.add(
+        _materialTable(
+          report.orderedMaterials,
+          advanced: true,
+          kind: _MaterialKind.ordered,
+        ),
+      );
+    }
+
+    if (sections.machines) {
+      gap();
+      widgets.add(_sectionTitle('İŞ MAKİNESİ PUANTAJI'));
+      widgets.add(pw.SizedBox(height: 6));
+      widgets.add(
+        _machineTable(report.machines, advanced: true, vehicle: false),
+      );
+    }
+
+    if (sections.vehicles) {
+      gap();
+      widgets.add(_sectionTitle('VASITA PUANTAJI'));
+      widgets.add(pw.SizedBox(height: 6));
+      widgets.add(
+        _machineTable(report.vehicles, advanced: true, vehicle: true),
+      );
+    }
+
+    if (sections.nextDayPlan) {
+      gap();
+      widgets.add(_sectionTitle('ERTESİ GÜN PLANI'));
+      widgets.add(pw.SizedBox(height: 6));
+      widgets.add(
+        pw.Container(
+          width: double.infinity,
+          constraints: const pw.BoxConstraints(minHeight: 40),
+          padding: const pw.EdgeInsets.all(8),
+          alignment: pw.Alignment.centerLeft,
+          decoration: pw.BoxDecoration(
+            border: pw.Border.all(color: _line, width: 0.7),
+          ),
+          child: pw.Text(
+            report.nextDayPlan.trim().isEmpty
+                ? '—'
+                : report.nextDayPlan.trim(),
+            textAlign: pw.TextAlign.left,
+            style: pw.TextStyle(
+              fontSize: 10,
+              color: report.nextDayPlan.trim().isEmpty ? _muted : _ink,
+              lineSpacing: 3,
+            ),
           ),
         ),
-      ),
-      pw.SizedBox(height: 12),
-      _sectionTitle('NOT'),
-      pw.SizedBox(height: 6),
-      pw.Container(
-        width: double.infinity,
-        constraints: const pw.BoxConstraints(minHeight: 36),
-        padding: const pw.EdgeInsets.all(6),
-        alignment: pw.Alignment.center,
-        decoration: pw.BoxDecoration(
-          border: pw.Border.all(color: _line, width: 0.7),
-        ),
-        child: pw.Text(
-          advanced && report.weather?.offlineNote.isNotEmpty == true
-              ? report.weather!.offlineNote
-              : '',
-          textAlign: pw.TextAlign.center,
-          style: const pw.TextStyle(fontSize: 9, color: _muted),
-        ),
-      ),
-      pw.SizedBox(height: 18),
-      _signatureBlock(),
-      pw.SizedBox(height: 8),
+      );
+    }
+
+    if (sections.signatures) {
+      widgets.add(pw.SizedBox(height: 18));
+      widgets.add(_signatureBlock());
+    }
+
+    widgets.add(pw.SizedBox(height: 8));
+    widgets.add(
       pw.Text(
-        '${AppInfo.displayName} · '
-        '${advanced ? 'Gelişmiş' : 'Standart'} çıktı',
+        '${AppInfo.displayName} · Günlük şantiye raporu',
         textAlign: pw.TextAlign.center,
         style: const pw.TextStyle(fontSize: 8, color: _muted),
       ),
-    ]);
+    );
 
     return widgets;
   }
@@ -884,13 +869,13 @@ class DailyReportPdfService {
     return out;
   }
 
-  String _fileStem(String projectName, String date, DailyReportExportStyle style) {
+  String _fileStem(String projectName, String date) {
     final safe = projectName
         .replaceAll(RegExp(r'[^\w\s\-ğüşıöçĞÜŞİÖÇ]', caseSensitive: false), '')
         .trim()
         .replaceAll(RegExp(r'\s+'), '_');
     final d = date.replaceAll('.', '');
-    return 'gunluk-rapor-${style.name}-$d-${safe.isEmpty ? 'proje' : safe}';
+    return 'gunluk-rapor-$d-${safe.isEmpty ? 'proje' : safe}';
   }
 
   String _fmt(double v) {
