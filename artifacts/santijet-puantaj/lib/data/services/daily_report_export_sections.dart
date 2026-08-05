@@ -90,4 +90,42 @@ class DailyReportExportSections {
       signatures: signatures ?? this.signatures,
     );
   }
+
+  Map<String, dynamic> toJson() => {
+        'weather': weather,
+        'puantajCounts': puantajCounts,
+        'puantajNames': puantajNames,
+        'photos': photos,
+        'workDone': workDone,
+        'incomingMaterials': incomingMaterials,
+        'outgoingMaterials': outgoingMaterials,
+        'orderedMaterials': orderedMaterials,
+        'machines': machines,
+        'vehicles': vehicles,
+        'nextDayPlan': nextDayPlan,
+        'signatures': signatures,
+      };
+
+  factory DailyReportExportSections.fromJson(Map<String, dynamic> json) {
+    bool flag(String key, {bool fallback = true}) {
+      final v = json[key];
+      if (v is bool) return v;
+      return fallback;
+    }
+
+    return DailyReportExportSections(
+      weather: flag('weather'),
+      puantajCounts: flag('puantajCounts'),
+      puantajNames: flag('puantajNames'),
+      photos: flag('photos'),
+      workDone: flag('workDone'),
+      incomingMaterials: flag('incomingMaterials'),
+      outgoingMaterials: flag('outgoingMaterials'),
+      orderedMaterials: flag('orderedMaterials'),
+      machines: flag('machines'),
+      vehicles: flag('vehicles'),
+      nextDayPlan: flag('nextDayPlan'),
+      signatures: flag('signatures'),
+    );
+  }
 }

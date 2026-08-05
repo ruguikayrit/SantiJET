@@ -7,17 +7,20 @@ import '../../core/theme/app_radii.dart';
 import '../../core/theme/app_spacing.dart';
 import '../../core/utils/puantaj_date.dart';
 import '../../data/providers/company_provider.dart';
+import '../../data/providers/daily_report_export_sections_provider.dart';
 import '../../data/providers/daily_report_provider.dart';
 import '../../data/services/daily_report_export_sections.dart';
 import '../../data/services/daily_report_pdf_service.dart';
 import '../../domain/entities/daily_report.dart';
 import '../../domain/entities/project.dart';
+import '../daily_report/widgets/daily_report_export_sections_sheet.dart';
 
 /// Seçili gün(ler) için PDF üret (anasayfa Dün/Bugün ve takvim sheet ortak).
 Future<void> exportHomeDailyReportPdf(
   WidgetRef ref, {
   required Project project,
   required List<String> dates,
+  required DailyReportExportSections sections,
 }) async {
   if (dates.isEmpty) {
     throw ArgumentError('En az bir gün seçin');
@@ -49,7 +52,7 @@ Future<void> exportHomeDailyReportPdf(
     reports: reports,
     project: project,
     company: company,
-    sections: DailyReportExportSections.all(),
+    sections: sections,
     liveSnapshots: snaps,
   );
 }
@@ -158,6 +161,18 @@ class _HomeDailyReportPdfSheetState
       return;
     }
 
+    final sections = await showDailyReportExportSectionsPicker(
+      context,
+      ref,
+      title: 'Çıktıda yer alacak başlıklar',
+      subtitle: dates.length == 1
+          ? '${widget.project.name} · ${dates.first}'
+          : '${widget.project.name} · ${dates.length} gün',
+    );
+    if (sections == null || !mounted) return;
+
+    ref.read(dailyReportExportSectionsProvider.notifier).save(sections);
+
     setState(() {
       _busy = true;
       _error = null;
@@ -168,6 +183,7 @@ class _HomeDailyReportPdfSheetState
         ref,
         project: widget.project,
         dates: dates,
+        sections: sections,
       );
 
       if (!mounted) return;

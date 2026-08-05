@@ -228,7 +228,7 @@ class DailyReportPdfService {
           ),
         );
       } else {
-        widgets.addAll(_photoWidgets(report.photos, withCaptions: true));
+        widgets.addAll(_photoWidgets(report.photosByWorkCategory, withCaptions: true));
       }
     }
 

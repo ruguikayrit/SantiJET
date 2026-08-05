@@ -114,6 +114,23 @@ class DailyReport extends Equatable {
           if (p.hasCaption && p.workCategory == category) p.caption.trim(),
       ];
 
+  /// İnşaat → elektrik → mekanik → seçilmemiş; aynı kategoride ekleme sırası korunur.
+  List<DailyReportPhoto> get photosByWorkCategory =>
+      sortPhotosByWorkCategory(photos);
+
+  static List<DailyReportPhoto> sortPhotosByWorkCategory(
+    List<DailyReportPhoto> photos,
+  ) {
+    final indexed = photos.asMap().entries.toList();
+    indexed.sort((a, b) {
+      final byCat = a.value.workCategory.sortOrder
+          .compareTo(b.value.workCategory.sortOrder);
+      if (byCat != 0) return byCat;
+      return a.key.compareTo(b.key);
+    });
+    return [for (final e in indexed) e.value];
+  }
+
   /// Geriye dönük — tüm foto açıklamaları.
   List<String> get photoCaptions => [
         for (final p in photos)

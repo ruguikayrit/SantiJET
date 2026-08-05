@@ -7,7 +7,6 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:image_picker/image_picker.dart';
 
-import '../../core/design_system/sj_button.dart';
 import '../../core/design_system/sj_card.dart';
 import '../../core/design_system/sj_empty_state.dart';
 import '../../core/routing/app_routes.dart';
@@ -19,17 +18,16 @@ import '../../core/utils/puantaj_date.dart';
 import '../../core/widgets/santijet_header.dart';
 import '../../data/providers/app_data_provider.dart';
 import '../../data/providers/company_provider.dart';
+import '../../data/providers/daily_report_export_sections_provider.dart';
 import '../../data/providers/daily_report_provider.dart';
-import '../../data/services/daily_report_export_sections.dart';
 import '../../data/services/daily_report_pdf_service.dart';
 import '../../data/services/irsaliye_material_ocr.dart';
 import '../../domain/catalogs/turkey_cities.dart';
-import '../../domain/entities/company_info.dart';
 import '../../domain/entities/daily_report.dart';
-import '../../domain/entities/project.dart';
 import '../../domain/enums/photo_work_category.dart';
 import 'widgets/attendance_summary_table.dart';
 import 'widgets/daily_report_entry_page.dart';
+import 'widgets/daily_report_export_sections_sheet.dart';
 import 'widgets/weather_compact_card.dart';
 
 /// Kart içi metin stili — renk [SJCard] DefaultTextStyle / kart Theme'den gelir.
@@ -409,26 +407,34 @@ class _DailyReportScreenState extends ConsumerState<DailyReportScreen> {
     final snap = ref.read(liveAttendanceSnapshotProvider);
     final company = ref.read(companyInfoProvider);
 
-    await showModalBottomSheet<void>(
-      context: context,
-      isScrollControlled: true,
-      showDragHandle: true,
-      backgroundColor: AppColors.surfaceElevated,
-      builder: (ctx) => Padding(
-        padding: const EdgeInsets.fromLTRB(
-          AppSpacing.md,
-          0,
-          AppSpacing.md,
-          AppSpacing.md,
-        ),
-        child: _DailyReportExportSheet(
-          project: project,
-          report: report,
-          company: company,
-          liveSnapshot: snap,
-        ),
-      ),
+    final sections = await showDailyReportExportSectionsPicker(
+      context,
+      ref,
+      title: 'PDF Rapor Dışa Aktar',
+      subtitle: '${project.name} · ${report.date}',
     );
+    if (sections == null || !mounted) return;
+
+    ref.read(dailyReportExportSectionsProvider.notifier).save(sections);
+
+    try {
+      await dailyReportPdfService.export(
+        report: report,
+        project: project,
+        company: company,
+        sections: sections,
+        liveSnapshot: snap,
+      );
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('PDF rapor dışa aktarıldı')),
+      );
+    } catch (e) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('PDF oluşturulamadı: $e')),
+      );
+    }
   }
 
   Future<void> _addPhotosFromFiles(List<XFile> files) async {
@@ -474,7 +480,12 @@ class _DailyReportScreenState extends ConsumerState<DailyReportScreen> {
     }
 
     ref.read(dailyReportsProvider.notifier).upsert(
-          report.copyWith(photos: [...report.photos, ...added]),
+          report.copyWith(
+            photos: DailyReport.sortPhotosByWorkCategory([
+              ...report.photos,
+              ...added,
+            ]),
+          ),
         );
 
     if (!mounted) return;
@@ -605,7 +616,7 @@ class _DailyReportScreenState extends ConsumerState<DailyReportScreen> {
     if (result == null) return;
     ref.read(dailyReportsProvider.notifier).upsert(
           report.copyWith(
-            photos: [
+            photos: DailyReport.sortPhotosByWorkCategory([
               for (final p in report.photos)
                 if (p.id == photo.id)
                   p.copyWith(
@@ -614,20 +625,8 @@ class _DailyReportScreenState extends ConsumerState<DailyReportScreen> {
                   )
                 else
                   p,
-            ],
+            ]),
           ),
-        );
-  }
-
-  void _reorderPhotos(int oldIndex, int newIndex) {
-    final report = ref.read(activeDailyReportProvider);
-    if (report == null) return;
-    final photos = [...report.photos];
-    if (newIndex > oldIndex) newIndex--;
-    final photo = photos.removeAt(oldIndex);
-    photos.insert(newIndex, photo);
-    ref.read(dailyReportsProvider.notifier).upsert(
-          report.copyWith(photos: photos),
         );
   }
 
@@ -1377,134 +1376,115 @@ class _DailyReportScreenState extends ConsumerState<DailyReportScreen> {
                     child: (report?.photos.isEmpty ?? true)
                         ? Text(
                             'Henüz foto yok. Kamera veya galeriden ekleyin.\n'
-                            'Açıklama + imalat türü yapılan işlere senkronize olur.',
+                            'Açıklama + imalat türü yapılan işlere senkronize olur.\n'
+                            'Sıra: inşaat → elektrik → mekanik.',
                             style: _cardInk(theme.textTheme.bodyMedium),
                           )
-                        : ReorderableListView.builder(
-                            shrinkWrap: true,
-                            physics: const NeverScrollableScrollPhysics(),
-                            buildDefaultDragHandles: false,
-                            itemCount: report!.photos.length,
-                            onReorder: _reorderPhotos,
-                            itemBuilder: (context, index) {
-                              final photo = report.photos[index];
-                              return Padding(
-                                  key: ValueKey(photo.id),
-                                  padding: const EdgeInsets.only(
-                                    bottom: AppSpacing.sm,
-                                  ),
-                                  child: Row(
-                                    crossAxisAlignment:
-                                        CrossAxisAlignment.start,
-                                    children: [
-                                      ClipRRect(
-                                        borderRadius: AppRadii.sm,
-                                        child: Image.memory(
-                                          base64Decode(photo.dataBase64),
-                                          width: 72,
-                                          height: 72,
-                                          fit: BoxFit.cover,
-                                          errorBuilder: (_, __, ___) =>
-                                              Container(
+                        : Builder(
+                            builder: (context) {
+                              final photos = report!.photosByWorkCategory;
+                              return ListView.builder(
+                                shrinkWrap: true,
+                                physics: const NeverScrollableScrollPhysics(),
+                                itemCount: photos.length,
+                                itemBuilder: (context, index) {
+                                  final photo = photos[index];
+                                  return Padding(
+                                    padding: const EdgeInsets.only(
+                                      bottom: AppSpacing.sm,
+                                    ),
+                                    child: Row(
+                                      crossAxisAlignment:
+                                          CrossAxisAlignment.start,
+                                      children: [
+                                        ClipRRect(
+                                          borderRadius: AppRadii.sm,
+                                          child: Image.memory(
+                                            base64Decode(photo.dataBase64),
                                             width: 72,
                                             height: 72,
-                                            color: theme.dividerColor,
-                                            child: const Icon(Icons.broken_image),
+                                            fit: BoxFit.cover,
+                                            errorBuilder: (_, __, ___) =>
+                                                Container(
+                                              width: 72,
+                                              height: 72,
+                                              color: theme.dividerColor,
+                                              child: const Icon(
+                                                Icons.broken_image,
+                                              ),
+                                            ),
                                           ),
                                         ),
-                                      ),
-                                      const SizedBox(width: AppSpacing.sm),
-                                      Expanded(
-                                        child: Column(
-                                          crossAxisAlignment:
-                                              CrossAxisAlignment.start,
-                                          children: [
-                                            Text(
-                                              photo.hasCaption
-                                                  ? photo.caption
-                                                  : '(açıklama yok — önerilir)',
-                                              style: _cardInk(
-                                                theme.textTheme.bodyMedium,
-                                                fontStyle: photo.hasCaption
-                                                    ? FontStyle.normal
-                                                    : FontStyle.italic,
-                                                color: photo.hasCaption
-                                                    ? null
-                                                    : AppColors.warning,
-                                              ),
-                                            ),
-                                            if (photo.workCategory !=
-                                                PhotoWorkCategory.none)
+                                        const SizedBox(width: AppSpacing.sm),
+                                        Expanded(
+                                          child: Column(
+                                            crossAxisAlignment:
+                                                CrossAxisAlignment.start,
+                                            children: [
                                               Text(
-                                                '→ ${photo.workCategory.workSectionTitle}',
+                                                photo.hasCaption
+                                                    ? photo.caption
+                                                    : '(açıklama yok — önerilir)',
                                                 style: _cardInk(
-                                                  theme.textTheme.labelSmall,
-                                                  color: theme
-                                                      .colorScheme.primary,
+                                                  theme.textTheme.bodyMedium,
+                                                  fontStyle: photo.hasCaption
+                                                      ? FontStyle.normal
+                                                      : FontStyle.italic,
+                                                  color: photo.hasCaption
+                                                      ? null
+                                                      : AppColors.warning,
                                                 ),
                                               ),
-                                            TextButton(
-                                              onPressed: () =>
-                                                  _editCaption(photo),
-                                              child: Text(
-                                                photo.hasCaption
-                                                    ? 'Düzenle'
-                                                    : 'Açıklama ekle',
-                                              ),
-                                            ),
-                                          ],
-                                        ),
-                                      ),
-                                      ReorderableDragStartListener(
-                                        index: index,
-                                        child: Tooltip(
-                                          message: 'Sürükleyerek sırala',
-                                          child: Padding(
-                                            padding: const EdgeInsets.symmetric(
-                                              vertical: 12,
-                                            ),
-                                            child: Column(
-                                              children: [
+                                              if (photo.workCategory !=
+                                                  PhotoWorkCategory.none)
                                                 Text(
-                                                  '${index + 1}',
+                                                  '→ ${photo.workCategory.workSectionTitle}',
                                                   style: _cardInk(
                                                     theme.textTheme.labelSmall,
-                                                    fontWeight: FontWeight.w700,
+                                                    color: theme
+                                                        .colorScheme.primary,
                                                   ),
                                                 ),
-                                                const Icon(
-                                                  Icons.drag_handle,
-                                                  size: 22,
+                                              TextButton(
+                                                onPressed: () =>
+                                                    _editCaption(photo),
+                                                child: Text(
+                                                  photo.hasCaption
+                                                      ? 'Düzenle'
+                                                      : 'Açıklama ekle',
                                                 ),
-                                              ],
-                                            ),
+                                              ),
+                                            ],
                                           ),
                                         ),
-                                      ),
-                                      IconButton(
-                                        onPressed: () {
-                                          ref
-                                              .read(
-                                                dailyReportsProvider.notifier,
-                                              )
-                                              .upsert(
-                                                report.copyWith(
-                                                  photos: report.photos
-                                                      .where(
-                                                        (p) => p.id != photo.id,
-                                                      )
-                                                      .toList(),
-                                                ),
-                                              );
-                                        },
-                                        icon: const Icon(
-                                          Icons.delete_outline,
-                                          size: 20,
+                                        IconButton(
+                                          onPressed: () {
+                                            ref
+                                                .read(
+                                                  dailyReportsProvider
+                                                      .notifier,
+                                                )
+                                                .upsert(
+                                                  report.copyWith(
+                                                    photos: report.photos
+                                                        .where(
+                                                          (p) =>
+                                                              p.id != photo.id,
+                                                        )
+                                                        .toList(),
+                                                  ),
+                                                );
+                                          },
+                                          icon: const Icon(
+                                            Icons.delete_outline,
+                                            size: 20,
+                                          ),
                                         ),
-                                      ),
-                                    ],
-                                  ),
-                                );
+                                      ],
+                                    ),
+                                  );
+                                },
+                              );
                             },
                           ),
                   ),
@@ -2081,254 +2061,6 @@ class _MaterialTile extends StatelessWidget {
             icon: const Icon(Icons.delete_outline, size: 20),
             onPressed: onDelete,
           ),
-        ],
-      ),
-    );
-  }
-}
-
-/// Günlük rapor PDF — çıktıya girecek başlık seçimi.
-class _DailyReportExportSheet extends StatefulWidget {
-  const _DailyReportExportSheet({
-    required this.project,
-    required this.report,
-    required this.company,
-    this.liveSnapshot,
-  });
-
-  final Project project;
-  final DailyReport report;
-  final CompanyInfo company;
-  final DailyReportAttendanceSnapshot? liveSnapshot;
-
-  @override
-  State<_DailyReportExportSheet> createState() =>
-      _DailyReportExportSheetState();
-}
-
-class _DailyReportExportSheetState extends State<_DailyReportExportSheet> {
-  DailyReportExportSections _sections = DailyReportExportSections.all();
-  bool _busy = false;
-  String? _error;
-
-  Future<void> _export() async {
-    if (_busy) return;
-    if (!_sections.hasAny) {
-      setState(() => _error = 'En az bir başlık seçin.');
-      return;
-    }
-    setState(() {
-      _busy = true;
-      _error = null;
-    });
-    try {
-      await dailyReportPdfService.export(
-        report: widget.report,
-        project: widget.project,
-        company: widget.company,
-        sections: _sections,
-        liveSnapshot: widget.liveSnapshot,
-      );
-      if (!mounted) return;
-      Navigator.of(context).pop();
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('PDF rapor dışa aktarıldı')),
-      );
-    } catch (e) {
-      if (!mounted) return;
-      setState(() => _error = e.toString());
-    } finally {
-      if (mounted) setState(() => _busy = false);
-    }
-  }
-
-  Widget _sectionTile({
-    required String title,
-    required String subtitle,
-    required bool value,
-    required ValueChanged<bool> onChanged,
-  }) {
-    return CheckboxListTile(
-      contentPadding: EdgeInsets.zero,
-      dense: true,
-      title: Text(title),
-      subtitle: Text(subtitle),
-      value: value,
-      onChanged: _busy ? null : (v) => onChanged(v ?? false),
-      controlAffinity: ListTileControlAffinity.leading,
-    );
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-    return SafeArea(
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        crossAxisAlignment: CrossAxisAlignment.stretch,
-        children: [
-          Text(
-            'PDF Rapor Dışa Aktar',
-            style: theme.textTheme.titleMedium?.copyWith(
-              fontWeight: FontWeight.w700,
-            ),
-          ),
-          const SizedBox(height: AppSpacing.xs),
-          Text(
-            '${widget.project.name} · ${widget.report.date}',
-            style: theme.textTheme.bodyMedium?.copyWith(
-              color: theme.colorScheme.onSurfaceVariant,
-            ),
-          ),
-          const SizedBox(height: AppSpacing.sm),
-          Text(
-            'Çıktıda yer alacak başlıklar',
-            style: theme.textTheme.labelLarge,
-          ),
-          const SizedBox(height: AppSpacing.xs),
-          Row(
-            children: [
-              TextButton(
-                onPressed: _busy
-                    ? null
-                    : () => setState(
-                          () => _sections = DailyReportExportSections.all(),
-                        ),
-                child: const Text('Tümünü seç'),
-              ),
-              TextButton(
-                onPressed: _busy
-                    ? null
-                    : () => setState(
-                          () => _sections = DailyReportExportSections.none(),
-                        ),
-                child: const Text('Temizle'),
-              ),
-            ],
-          ),
-          ConstrainedBox(
-            constraints: BoxConstraints(
-              maxHeight: MediaQuery.sizeOf(context).height * 0.42,
-            ),
-            child: ListView(
-              shrinkWrap: true,
-              children: [
-                _sectionTile(
-                  title: 'Hava durumu',
-                  subtitle: 'Sıcaklık, nem, rüzgar',
-                  value: _sections.weather,
-                  onChanged: (v) =>
-                      setState(() => _sections = _sections.copyWith(weather: v)),
-                ),
-                _sectionTile(
-                  title: 'Puantaj — sayılar',
-                  subtitle: 'Mevcut / yarım / izin / yok özeti',
-                  value: _sections.puantajCounts,
-                  onChanged: (v) => setState(
-                    () => _sections = _sections.copyWith(puantajCounts: v),
-                  ),
-                ),
-                _sectionTile(
-                  title: 'Puantaj — isimler',
-                  subtitle: 'Personel, meslek, ekip, durum, yevmiye',
-                  value: _sections.puantajNames,
-                  onChanged: (v) => setState(
-                    () => _sections = _sections.copyWith(puantajNames: v),
-                  ),
-                ),
-                _sectionTile(
-                  title: 'Fotoğraflar',
-                  subtitle: 'Açıklamalı saha fotoğrafları',
-                  value: _sections.photos,
-                  onChanged: (v) =>
-                      setState(() => _sections = _sections.copyWith(photos: v)),
-                ),
-                _sectionTile(
-                  title: 'Yapılan işler',
-                  subtitle: 'İnşaat / elektrik / mekanik',
-                  value: _sections.workDone,
-                  onChanged: (v) => setState(
-                    () => _sections = _sections.copyWith(workDone: v),
-                  ),
-                ),
-                _sectionTile(
-                  title: 'Gelen malzeme',
-                  subtitle: 'Tedarik kayıtları',
-                  value: _sections.incomingMaterials,
-                  onChanged: (v) => setState(
-                    () =>
-                        _sections = _sections.copyWith(incomingMaterials: v),
-                  ),
-                ),
-                _sectionTile(
-                  title: 'Giden malzeme',
-                  subtitle: 'Gönderim kayıtları',
-                  value: _sections.outgoingMaterials,
-                  onChanged: (v) => setState(
-                    () =>
-                        _sections = _sections.copyWith(outgoingMaterials: v),
-                  ),
-                ),
-                _sectionTile(
-                  title: 'Sipariş verilen malzeme',
-                  subtitle: 'Sipariş ve satın alma onayı',
-                  value: _sections.orderedMaterials,
-                  onChanged: (v) => setState(
-                    () => _sections = _sections.copyWith(orderedMaterials: v),
-                  ),
-                ),
-                _sectionTile(
-                  title: 'İş makinesi puantajı',
-                  subtitle: 'Makine, firma, saat',
-                  value: _sections.machines,
-                  onChanged: (v) => setState(
-                    () => _sections = _sections.copyWith(machines: v),
-                  ),
-                ),
-                _sectionTile(
-                  title: 'Vasıta puantajı',
-                  subtitle: 'Marka/model, şoför, saat',
-                  value: _sections.vehicles,
-                  onChanged: (v) => setState(
-                    () => _sections = _sections.copyWith(vehicles: v),
-                  ),
-                ),
-                _sectionTile(
-                  title: 'Ertesi gün planı',
-                  subtitle: 'Yarın yapılacak işler',
-                  value: _sections.nextDayPlan,
-                  onChanged: (v) => setState(
-                    () => _sections = _sections.copyWith(nextDayPlan: v),
-                  ),
-                ),
-                _sectionTile(
-                  title: 'İmza alanları',
-                  subtitle: 'Dolduran / inceleyen / onay',
-                  value: _sections.signatures,
-                  onChanged: (v) => setState(
-                    () => _sections = _sections.copyWith(signatures: v),
-                  ),
-                ),
-              ],
-            ),
-          ),
-          const SizedBox(height: AppSpacing.md),
-          SJButton(
-            label: 'PDF Oluştur',
-            icon: Icons.picture_as_pdf_outlined,
-            loading: _busy,
-            expanded: true,
-            onPressed: _export,
-          ),
-          if (_error != null) ...[
-            const SizedBox(height: AppSpacing.sm),
-            Text(
-              _error!,
-              style: theme.textTheme.bodySmall?.copyWith(
-                color: AppColors.critical,
-              ),
-            ),
-          ],
         ],
       ),
     );

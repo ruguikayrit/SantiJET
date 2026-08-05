@@ -18,6 +18,8 @@ import '../../domain/enums/attendance_status.dart';
 import '../projects/widgets/project_switcher.dart';
 import 'home_daily_report_pdf_sheet.dart';
 import 'home_task_summary_dialog.dart';
+import '../daily_report/widgets/daily_report_export_sections_sheet.dart';
+import '../../data/providers/daily_report_export_sections_provider.dart';
 
 /// Ana sayfa — günlük puantaj, günlük rapor, acil görevler.
 class HomeScreen extends ConsumerStatefulWidget {
@@ -36,12 +38,26 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
     required String successLabel,
   }) async {
     if (_dailyReportBusy) return;
+
+    final sections = await showDailyReportExportSectionsPicker(
+      context,
+      ref,
+      title: 'Çıktıda yer alacak başlıklar',
+      subtitle: dates.length == 1
+          ? '${project.name} · ${dates.first}'
+          : '${project.name} · ${dates.length} gün',
+    );
+    if (sections == null || !mounted) return;
+
+    ref.read(dailyReportExportSectionsProvider.notifier).save(sections);
+
     setState(() => _dailyReportBusy = true);
     try {
       await exportHomeDailyReportPdf(
         ref,
         project: project,
         dates: dates,
+        sections: sections,
       );
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
@@ -371,7 +387,6 @@ class _DailyReportQuickActions extends StatelessWidget {
                 label: 'Bugün',
                 icon: Icons.today_outlined,
                 busy: busy,
-                emphasized: true,
                 onPressed: onBugun,
               ),
             ),
@@ -401,25 +416,19 @@ class _DailyReportPeriodButton extends StatelessWidget {
     required this.icon,
     required this.onPressed,
     this.busy = false,
-    this.emphasized = false,
   });
 
   final String label;
   final IconData icon;
   final VoidCallback onPressed;
   final bool busy;
-  final bool emphasized;
 
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    final fg = emphasized ? Colors.white : theme.colorScheme.primary;
-    final bg = emphasized
-        ? AppColors.electricBlue
-        : AppColors.electricBlue.withValues(alpha: 0.08);
-    final border = emphasized
-        ? AppColors.electricBlue
-        : AppColors.electricBlue.withValues(alpha: 0.35);
+    final fg = theme.colorScheme.primary;
+    final bg = AppColors.electricBlue.withValues(alpha: 0.08);
+    final border = AppColors.electricBlue.withValues(alpha: 0.35);
 
     return Material(
       color: bg,
