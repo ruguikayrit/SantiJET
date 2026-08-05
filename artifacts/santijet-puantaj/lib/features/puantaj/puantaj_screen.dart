@@ -127,9 +127,7 @@ class _PuantajScreenState extends ConsumerState<PuantajScreen> {
       return 0;
     }
 
-    final missing = people
-        .where((p) => statusOf(p.id, _date) == null)
-        .length;
+    final missing = people.where((p) => statusOf(p.id, _date) == null).length;
 
     final counts = <AttendanceStatus, int>{
       for (final s in AttendanceStatus.values) s: 0,
@@ -159,159 +157,161 @@ class _PuantajScreenState extends ConsumerState<PuantajScreen> {
                 AppSpacing.sm,
               ),
               child: DecoratedBox(
-              decoration: BoxDecoration(
-                color: theme.cardTheme.color ?? theme.colorScheme.surface,
-                borderRadius: AppRadii.md,
-                border: Border.all(color: theme.dividerColor),
-              ),
-              child: Row(
-                children: [
-                  for (final m in _ViewMode.values)
-                    Expanded(
-                      child: InkWell(
-                        onTap: () => setState(() => _mode = m),
-                        borderRadius: AppRadii.md,
-                        child: Container(
-                          padding: const EdgeInsets.symmetric(vertical: 10),
-                          decoration: BoxDecoration(
-                            color: _mode == m
-                                // Dışa aktarma dönem seçicisi ile aynı dolgu.
-                                ? theme.colorScheme.secondary
-                                : Colors.transparent,
-                            borderRadius: AppRadii.md,
-                          ),
-                          child: Text(
-                            switch (m) {
-                              _ViewMode.daily => 'Günlük',
-                              _ViewMode.weekly => 'Haftalık',
-                              _ViewMode.monthly => 'Aylık',
-                            },
-                            textAlign: TextAlign.center,
-                            style: theme.textTheme.labelLarge?.copyWith(
+                decoration: BoxDecoration(
+                  color: theme.cardTheme.color ?? theme.colorScheme.surface,
+                  borderRadius: AppRadii.md,
+                  border: Border.all(color: theme.dividerColor),
+                ),
+                child: Row(
+                  children: [
+                    for (final m in _ViewMode.values)
+                      Expanded(
+                        child: InkWell(
+                          onTap: () => setState(() => _mode = m),
+                          borderRadius: AppRadii.md,
+                          child: Container(
+                            padding: const EdgeInsets.symmetric(vertical: 10),
+                            decoration: BoxDecoration(
                               color: _mode == m
-                                  ? Colors.white
-                                  : theme.colorScheme.onSurfaceVariant,
-                              fontWeight: FontWeight.w600,
+                                  // Dışa aktarma dönem seçicisi ile aynı dolgu.
+                                  ? theme.colorScheme.secondary
+                                  : Colors.transparent,
+                              borderRadius: AppRadii.md,
+                            ),
+                            child: Text(
+                              switch (m) {
+                                _ViewMode.daily => 'Günlük',
+                                _ViewMode.weekly => 'Haftalık',
+                                _ViewMode.monthly => 'Aylık',
+                              },
+                              textAlign: TextAlign.center,
+                              style: theme.textTheme.labelLarge?.copyWith(
+                                color: _mode == m
+                                    ? Colors.white
+                                    : theme.colorScheme.onSurfaceVariant,
+                                fontWeight: FontWeight.w600,
+                              ),
                             ),
                           ),
                         ),
                       ),
-                    ),
-                ],
+                  ],
+                ),
               ),
             ),
-          ),
-          if (_mode == _ViewMode.daily)
-            Expanded(
-              child: _DailyView(
-                date: _date,
-                onDateChanged: (d) => setState(() {
-                  _date = d;
-                  _openDropdown = null;
-                  _openNote = null;
-                }),
-                people: people,
-                grouped: _grouped(people),
-                missing: missing,
-                counts: counts,
-                none: none,
-                statusOf: (id) => statusOf(id, _date),
-                noteOf: noteOf,
-                overtimeOf: overtimeOf,
-                openDropdown: _openDropdown,
-                openNote: _openNote,
-                noteController: _noteController,
-                onToggleDropdown: (id) => setState(() {
-                  _openDropdown = _openDropdown == id ? null : id;
-                  _openNote = null;
-                }),
-                onOpenNote: (person) {
-                  _noteController.text = noteOf(person.id) ?? '';
-                  setState(() {
-                    _openNote = person.id;
+            if (_mode == _ViewMode.daily)
+              Expanded(
+                child: _DailyView(
+                  date: _date,
+                  onDateChanged: (d) => setState(() {
+                    _date = d;
                     _openDropdown = null;
-                  });
-                },
-                onCloseNote: () => setState(() => _openNote = null),
-                onSaveNote: (person) {
-                  notifier.setNote(
-                    projectId: project.id,
-                    person: person,
-                    date: _date,
-                    note: _noteController.text,
-                  );
-                  setState(() => _openNote = null);
-                },
-                onSetStatus: (person, status) {
-                  notifier.setStatus(
-                    projectId: project.id,
-                    person: person,
-                    date: _date,
-                    status: status,
-                  );
-                  setState(() => _openDropdown = null);
-                },
-                onSetOvertime: (person, hours) {
-                  notifier.setOvertime(
-                    projectId: project.id,
-                    person: person,
-                    date: _date,
-                    overtimeHours: hours,
-                  );
-                },
-                onBulk: (status) {
-                  notifier.bulkSetStatus(
-                    projectId: project.id,
-                    people: people,
-                    date: _date,
-                    status: status,
-                  );
-                },
-                onCopyYesterday: () {
-                  final copied = notifier.copyFromPreviousDay(
-                    projectId: project.id,
-                    people: people,
-                    date: _date,
-                    previousDate: PuantajDate.shift(_date, -1),
-                  );
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    SnackBar(
-                      content: Text(
-                        copied == 0
-                            ? 'Önceki gün için kayıt bulunamadı.'
-                            : '$copied kayıt kopyalandı.',
+                    _openNote = null;
+                  }),
+                  people: people,
+                  grouped: _grouped(people),
+                  missing: missing,
+                  counts: counts,
+                  none: none,
+                  statusOf: (id) => statusOf(id, _date),
+                  noteOf: noteOf,
+                  overtimeOf: overtimeOf,
+                  openDropdown: _openDropdown,
+                  openNote: _openNote,
+                  noteController: _noteController,
+                  onToggleDropdown: (id) => setState(() {
+                    _openDropdown = _openDropdown == id ? null : id;
+                    _openNote = null;
+                  }),
+                  onOpenNote: (person) {
+                    _noteController.text = noteOf(person.id) ?? '';
+                    setState(() {
+                      _openNote = person.id;
+                      _openDropdown = null;
+                    });
+                  },
+                  onCloseNote: () => setState(() => _openNote = null),
+                  onSaveNote: (person) {
+                    notifier.setNote(
+                      projectId: project.id,
+                      person: person,
+                      date: _date,
+                      note: _noteController.text,
+                    );
+                    setState(() => _openNote = null);
+                  },
+                  onSetStatus: (person, status) {
+                    notifier.setStatus(
+                      projectId: project.id,
+                      person: person,
+                      date: _date,
+                      status: status,
+                    );
+                    setState(() => _openDropdown = null);
+                  },
+                  onSetOvertime: (person, hours) {
+                    notifier.setOvertime(
+                      projectId: project.id,
+                      person: person,
+                      date: _date,
+                      overtimeHours: hours,
+                    );
+                  },
+                  onBulk: (status) {
+                    notifier.bulkSetStatus(
+                      projectId: project.id,
+                      people: people,
+                      date: _date,
+                      status: status,
+                    );
+                  },
+                  onCopyYesterday: () {
+                    final copied = notifier.copyFromPreviousDay(
+                      projectId: project.id,
+                      people: people,
+                      date: _date,
+                      previousDate: PuantajDate.shift(_date, -1),
+                    );
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      SnackBar(
+                        content: Text(
+                          copied == 0
+                              ? 'Önceki gün için kayıt bulunamadı.'
+                              : '$copied kayıt kopyalandı.',
+                        ),
                       ),
-                    ),
-                  );
-                },
+                    );
+                  },
+                ),
+              )
+            else
+              Expanded(
+                child: _CetvelView(
+                  mode: _mode,
+                  date: _date,
+                  onPrev: () => setState(() {
+                    if (_mode == _ViewMode.weekly) {
+                      _date = PuantajDate.shift(_date, -7);
+                    } else {
+                      final d = PuantajDate.parse(_date);
+                      _date =
+                          PuantajDate.format(DateTime(d.year, d.month - 1, 1));
+                    }
+                  }),
+                  onNext: () => setState(() {
+                    if (_mode == _ViewMode.weekly) {
+                      _date = PuantajDate.shift(_date, 7);
+                    } else {
+                      final d = PuantajDate.parse(_date);
+                      _date =
+                          PuantajDate.format(DateTime(d.year, d.month + 1, 1));
+                    }
+                  }),
+                  people: people,
+                  grouped: _grouped(people),
+                  statusOf: statusOf,
+                ),
               ),
-            )
-          else
-            Expanded(
-              child: _CetvelView(
-                mode: _mode,
-                date: _date,
-                onPrev: () => setState(() {
-                  if (_mode == _ViewMode.weekly) {
-                    _date = PuantajDate.shift(_date, -7);
-                  } else {
-                    final d = PuantajDate.parse(_date);
-                    _date = PuantajDate.format(DateTime(d.year, d.month - 1, 1));
-                  }
-                }),
-                onNext: () => setState(() {
-                  if (_mode == _ViewMode.weekly) {
-                    _date = PuantajDate.shift(_date, 7);
-                  } else {
-                    final d = PuantajDate.parse(_date);
-                    _date = PuantajDate.format(DateTime(d.year, d.month + 1, 1));
-                  }
-                }),
-                people: people,
-                grouped: _grouped(people),
-                statusOf: statusOf,
-              ),
-            ),
             Padding(
               padding: const EdgeInsets.fromLTRB(
                 AppSpacing.md,
@@ -472,7 +472,8 @@ class _DailyView extends StatelessWidget {
             ),
             child: Row(
               children: [
-                const Icon(Icons.warning_amber, size: 16, color: AppColors.warning),
+                const Icon(Icons.warning_amber,
+                    size: 16, color: AppColors.warning),
                 const SizedBox(width: AppSpacing.xs),
                 Expanded(
                   child: Text(
@@ -936,7 +937,12 @@ class _CetvelView extends StatelessWidget {
         : PuantajDate.monthLabel(date);
     final cellW = mode == _ViewMode.weekly ? 36.0 : 26.0;
     const nameW = 88.0;
-    const totalW = 36.0;
+    const summaryW = 48.0;
+    const totalW = 56.0;
+    final tableW = nameW +
+        days.length * cellW +
+        AttendanceStatus.values.length * summaryW +
+        totalW;
     final today = PuantajDate.today();
 
     if (people.isEmpty) {
@@ -1015,10 +1021,18 @@ class _CetvelView extends StatelessWidget {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  _cetvelHeader(theme, days, cellW, nameW, totalW, today),
+                  _cetvelHeader(
+                    theme,
+                    days,
+                    cellW,
+                    nameW,
+                    summaryW,
+                    totalW,
+                    today,
+                  ),
                   for (final group in grouped) ...[
                     Container(
-                      width: nameW + days.length * cellW + totalW,
+                      width: tableW,
                       padding: const EdgeInsets.symmetric(
                         horizontal: 8,
                         vertical: 6,
@@ -1039,11 +1053,21 @@ class _CetvelView extends StatelessWidget {
                         days,
                         cellW,
                         nameW,
+                        summaryW,
                         totalW,
                         statusOf,
                       ),
                   ],
-                  _mevcutFooter(theme, people, days, cellW, nameW, totalW, statusOf),
+                  _totalsFooter(
+                    theme,
+                    people,
+                    days,
+                    cellW,
+                    nameW,
+                    summaryW,
+                    totalW,
+                    statusOf,
+                  ),
                 ],
               ),
             ),
@@ -1058,6 +1082,7 @@ class _CetvelView extends StatelessWidget {
     List<String> days,
     double cellW,
     double nameW,
+    double summaryW,
     double totalW,
     String today,
   ) {
@@ -1084,10 +1109,31 @@ class _CetvelView extends StatelessWidget {
               ),
             ),
           ),
+        for (final s in AttendanceStatus.values)
+          SizedBox(
+            width: summaryW,
+            child: Text(
+              switch (s) {
+                AttendanceStatus.present => 'Mevcut',
+                AttendanceStatus.half => 'Yarım',
+                AttendanceStatus.izinli => 'İzinli',
+                AttendanceStatus.raporlu => 'Raporlu',
+                AttendanceStatus.mazeret => 'Mazeret',
+                AttendanceStatus.tatil => 'Res.\nTatil',
+                AttendanceStatus.absent => 'Yok',
+              },
+              textAlign: TextAlign.center,
+              style: theme.textTheme.labelSmall?.copyWith(
+                color: s.color,
+                fontWeight: FontWeight.w700,
+                fontSize: 9,
+              ),
+            ),
+          ),
         SizedBox(
           width: totalW,
           child: Text(
-            'Top.',
+            'Genel\nToplam',
             textAlign: TextAlign.center,
             style: theme.textTheme.labelSmall,
           ),
@@ -1102,11 +1148,18 @@ class _CetvelView extends StatelessWidget {
     List<String> days,
     double cellW,
     double nameW,
+    double summaryW,
     double totalW,
     AttendanceStatus? Function(String, String) statusOf,
   ) {
     final statuses = [for (final d in days) statusOf(person.id, d)];
-    final workCount = statuses.where((s) => s?.isWorkedDay ?? false).length;
+    final statusCounts = <AttendanceStatus, int>{
+      for (final s in AttendanceStatus.values)
+        s: statuses.where((value) => value == s).length,
+    };
+    final generalTotal = AttendanceStatus.values
+        .where((s) => s != AttendanceStatus.absent)
+        .fold<int>(0, (sum, s) => sum + (statusCounts[s] ?? 0));
     return Container(
       decoration: BoxDecoration(
         border: Border(bottom: BorderSide(color: theme.dividerColor)),
@@ -1152,13 +1205,25 @@ class _CetvelView extends StatelessWidget {
                 ),
               ),
             ),
+          for (final s in AttendanceStatus.values)
+            SizedBox(
+              width: summaryW,
+              child: Text(
+                '${statusCounts[s] ?? 0}',
+                textAlign: TextAlign.center,
+                style: theme.textTheme.labelMedium?.copyWith(
+                  color: s.color,
+                  fontWeight: FontWeight.w700,
+                ),
+              ),
+            ),
           SizedBox(
             width: totalW,
             child: Text(
-              workCount > 0 ? '$workCount' : '–',
+              generalTotal > 0 ? '$generalTotal' : '–',
               textAlign: TextAlign.center,
               style: theme.textTheme.labelMedium?.copyWith(
-                color: workCount > 0
+                color: generalTotal > 0
                     ? AttendanceStatus.present.color
                     : theme.colorScheme.onSurfaceVariant,
                 fontWeight: FontWeight.w700,
@@ -1170,21 +1235,33 @@ class _CetvelView extends StatelessWidget {
     );
   }
 
-  Widget _mevcutFooter(
+  Widget _totalsFooter(
     ThemeData theme,
     List<Person> people,
     List<String> days,
     double cellW,
     double nameW,
+    double summaryW,
     double totalW,
     AttendanceStatus? Function(String, String) statusOf,
   ) {
+    final allStatuses = [
+      for (final p in people)
+        for (final d in days) statusOf(p.id, d),
+    ];
+    final statusTotals = <AttendanceStatus, int>{
+      for (final s in AttendanceStatus.values)
+        s: allStatuses.where((value) => value == s).length,
+    };
+    final generalTotal = AttendanceStatus.values
+        .where((s) => s != AttendanceStatus.absent)
+        .fold<int>(0, (sum, s) => sum + (statusTotals[s] ?? 0));
     return Row(
       children: [
         SizedBox(
           width: nameW,
           child: Text(
-            'Mevcut',
+            'Toplam',
             style: theme.textTheme.labelMedium?.copyWith(
               fontWeight: FontWeight.w700,
             ),
@@ -1208,7 +1285,29 @@ class _CetvelView extends StatelessWidget {
               ),
             ),
           ),
-        SizedBox(width: totalW),
+        for (final s in AttendanceStatus.values)
+          SizedBox(
+            width: summaryW,
+            child: Text(
+              '${statusTotals[s] ?? 0}',
+              textAlign: TextAlign.center,
+              style: theme.textTheme.labelMedium?.copyWith(
+                color: s.color,
+                fontWeight: FontWeight.w700,
+              ),
+            ),
+          ),
+        SizedBox(
+          width: totalW,
+          child: Text(
+            '$generalTotal',
+            textAlign: TextAlign.center,
+            style: theme.textTheme.labelMedium?.copyWith(
+              color: AttendanceStatus.present.color,
+              fontWeight: FontWeight.w700,
+            ),
+          ),
+        ),
       ],
     );
   }
@@ -1323,9 +1422,8 @@ class _PuantajExportSheetState extends State<_PuantajExportSheet> {
             ),
           ],
           selected: {_period},
-          onSelectionChanged: _busy
-              ? null
-              : (s) => setState(() => _period = s.first),
+          onSelectionChanged:
+              _busy ? null : (s) => setState(() => _period = s.first),
         ),
         const SizedBox(height: AppSpacing.md),
         Text('Format', style: theme.textTheme.labelLarge),

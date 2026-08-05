@@ -2,6 +2,7 @@ import 'package:flutter_test/flutter_test.dart';
 
 import 'package:santijet_puantaj/core/utils/puantaj_date.dart';
 import 'package:santijet_puantaj/data/services/puantaj_backup_service.dart';
+import 'package:santijet_puantaj/data/services/puantaj_report_builder.dart';
 import 'package:santijet_puantaj/domain/entities/attendance.dart';
 import 'package:santijet_puantaj/domain/entities/person.dart';
 import 'package:santijet_puantaj/domain/entities/production.dart';
@@ -135,6 +136,69 @@ void main() {
       expect(days.length, 7);
       expect(days.first, '20.07.2026');
       expect(days.last, '26.07.2026');
+    });
+  });
+
+  group('PuantajReportBuilder', () {
+    test('haftalık durum sütunlarını ve yok hariç genel toplamı üretir', () {
+      const person = Person(
+        id: 'u1',
+        projectId: 'p',
+        name: 'Ali',
+        company: 'Firma',
+      );
+      final days = PuantajDate.weekDays('05.08.2026');
+      final statuses = AttendanceStatus.values;
+      final attendance = [
+        for (var i = 0; i < statuses.length; i++)
+          Attendance(
+            id: 'a$i',
+            projectId: 'p',
+            personId: person.id,
+            personName: person.name,
+            date: days[i],
+            status: statuses[i],
+            hours: statuses[i].hours,
+          ),
+      ];
+
+      final report = PuantajReportBuilder.build(
+        projectName: 'Test',
+        projectId: 'p',
+        people: const [person],
+        attendance: attendance,
+        period: PuantajReportPeriod.weekly,
+        anchorDate: '05.08.2026',
+      );
+
+      expect(
+        report.headers.sublist(10),
+        [
+          'Mevcut',
+          'Yarım Gün',
+          'İzinli',
+          'Raporlu',
+          'Mazeret',
+          'Res. Tatil',
+          'Yok',
+          'Genel Toplam',
+        ],
+      );
+      expect(report.rows.single.sublist(10), [
+        '1',
+        '1',
+        '1',
+        '1',
+        '1',
+        '1',
+        '1',
+        '6',
+      ]);
+      expect(
+        report.visual.companies.single.rows.single.statusCounts,
+        [1, 1, 1, 1, 1, 1, 1],
+      );
+      expect(report.visual.companies.single.rows.single.totalLabel, '6');
     });
   });
 

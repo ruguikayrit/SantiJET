@@ -63,6 +63,7 @@ class PuantajVisualPersonRow {
   const PuantajVisualPersonRow({
     required this.name,
     required this.statuses,
+    this.statusCounts = const [],
     this.team = '',
     this.hours = '',
     this.overtime = '',
@@ -75,6 +76,9 @@ class PuantajVisualPersonRow {
 
   /// Matris: gün sayısı kadar; günlük: tek eleman (null = boş).
   final List<AttendanceStatus?> statuses;
+
+  /// Matris özet sütunları; [AttendanceStatus.values] sırasındadır.
+  final List<int> statusCounts;
   final String team;
   final String hours;
   final String overtime;
@@ -245,7 +249,8 @@ abstract final class PuantajReportBuilder {
       'Firma',
       'Ekip',
       ...dayHeaders,
-      'Toplam AG',
+      for (final s in AttendanceStatus.values) s.label,
+      'Genel Toplam',
     ];
     final rows = <List<String>>[];
     final visualCompanies = <PuantajVisualCompany>[];
@@ -260,9 +265,11 @@ abstract final class PuantajReportBuilder {
       final visualRows = <PuantajVisualPersonRow>[];
       for (final p in group.users) {
         var rowAg = 0.0;
-        var workCount = 0;
         final cells = <String>[];
         final statuses = <AttendanceStatus?>[];
+        final rowStatusCounts = <AttendanceStatus, int>{
+          for (final s in AttendanceStatus.values) s: 0,
+        };
         for (var di = 0; di < days.length; di++) {
           final d = days[di];
           final a = lookup['${p.id}|$d'];
@@ -272,29 +279,36 @@ abstract final class PuantajReportBuilder {
             statuses.add(null);
           } else {
             counts[a.status] = (counts[a.status] ?? 0) + 1;
+            rowStatusCounts[a.status] = (rowStatusCounts[a.status] ?? 0) + 1;
             rowAg += a.yevmiye;
             cells.add(a.status.short);
             statuses.add(a.status);
             if (a.status.isWorkedDay) {
-              workCount++;
               footer[di]++;
             }
           }
         }
         totalAg += rowAg;
+        final generalTotal = AttendanceStatus.values
+            .where((s) => s != AttendanceStatus.absent)
+            .fold<int>(0, (sum, s) => sum + (rowStatusCounts[s] ?? 0));
         rows.add([
           p.name,
           group.company,
           p.team,
           ...cells,
-          _fmtNum(rowAg),
+          for (final s in AttendanceStatus.values) '${rowStatusCounts[s] ?? 0}',
+          '$generalTotal',
         ]);
         visualRows.add(
           PuantajVisualPersonRow(
             name: p.name,
             statuses: statuses,
+            statusCounts: [
+              for (final s in AttendanceStatus.values) rowStatusCounts[s] ?? 0,
+            ],
             team: p.team,
-            totalLabel: workCount > 0 ? '$workCount' : '–',
+            totalLabel: generalTotal > 0 ? '$generalTotal' : '–',
             yevmiye: _fmtNum(rowAg),
           ),
         );

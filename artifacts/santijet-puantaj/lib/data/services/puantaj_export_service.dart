@@ -171,16 +171,38 @@ class PuantajExportService {
 
   pw.Widget _matrixTable(PuantajReportVisual visual) {
     final dayCount = visual.dayHeaders.length;
-    // A4 landscape ~842pt usable; isim + top + günler
+    // A4 landscape ~842pt kullanılabilir; isim + günler + durum özetleri.
     const nameW = 72.0;
-    const totalW = 22.0;
+    const summaryW = 29.0;
+    const totalW = 34.0;
+    final summaryTotalW = AttendanceStatus.values.length * summaryW;
     final dayW = dayCount <= 0
         ? 14.0
-        : ((842 - 36 - nameW - totalW) / dayCount).clamp(9.0, 22.0);
+        : ((842 - 36 - nameW - summaryTotalW - totalW) / dayCount)
+            .clamp(8.0, 22.0);
+    final tableW = nameW + dayCount * dayW + summaryTotalW + totalW;
 
     pw.Widget dayCell(pw.Widget child) => pw.SizedBox(
           width: dayW,
           child: pw.Center(child: child),
+        );
+    pw.Widget summaryCell(pw.Widget child) => pw.SizedBox(
+          width: summaryW,
+          child: pw.Center(child: child),
+        );
+    final statusTotals = List<int>.filled(AttendanceStatus.values.length, 0);
+    for (final company in visual.companies) {
+      for (final row in company.rows) {
+        for (var i = 0; i < row.statusCounts.length; i++) {
+          statusTotals[i] += row.statusCounts[i];
+        }
+      }
+    }
+    final generalTotal = statusTotals.asMap().entries.fold<int>(
+          0,
+          (sum, entry) => entry.key == AttendanceStatus.absent.index
+              ? sum
+              : sum + entry.value,
         );
 
     return pw.Column(
@@ -203,10 +225,30 @@ class PuantajExportService {
                   style: const pw.TextStyle(fontSize: 6, color: _inkMuted),
                 ),
               ),
+            for (final s in AttendanceStatus.values)
+              summaryCell(
+                pw.Text(
+                  switch (s) {
+                    AttendanceStatus.present => 'Mevcut',
+                    AttendanceStatus.half => 'Yarım',
+                    AttendanceStatus.izinli => 'İzinli',
+                    AttendanceStatus.raporlu => 'Raporlu',
+                    AttendanceStatus.mazeret => 'Maz.',
+                    AttendanceStatus.tatil => 'Res.\nTatil',
+                    AttendanceStatus.absent => 'Yok',
+                  },
+                  textAlign: pw.TextAlign.center,
+                  style: pw.TextStyle(
+                    fontSize: 5.5,
+                    fontWeight: pw.FontWeight.bold,
+                    color: _fromFlutter(s.color),
+                  ),
+                ),
+              ),
             pw.SizedBox(
               width: totalW,
               child: pw.Text(
-                'Top.',
+                'Genel\nToplam',
                 textAlign: pw.TextAlign.center,
                 style: const pw.TextStyle(fontSize: 7, color: _inkMuted),
               ),
@@ -216,7 +258,7 @@ class PuantajExportService {
         pw.SizedBox(height: 3),
         for (final company in visual.companies) ...[
           pw.Container(
-            width: nameW + dayCount * dayW + totalW,
+            width: tableW,
             padding: const pw.EdgeInsets.symmetric(horizontal: 6, vertical: 3),
             color: _electricBlueSoft,
             child: pw.Text(
@@ -251,6 +293,22 @@ class PuantajExportService {
                   ),
                   for (final s in row.statuses)
                     dayCell(_statusBadge(s, size: dayW > 14 ? 11 : 9)),
+                  for (var i = 0; i < AttendanceStatus.values.length; i++)
+                    summaryCell(
+                      pw.Text(
+                        i < row.statusCounts.length
+                            ? '${row.statusCounts[i]}'
+                            : '0',
+                        textAlign: pw.TextAlign.center,
+                        style: pw.TextStyle(
+                          fontSize: 7,
+                          fontWeight: pw.FontWeight.bold,
+                          color: _fromFlutter(
+                            AttendanceStatus.values[i].color,
+                          ),
+                        ),
+                      ),
+                    ),
                   pw.SizedBox(
                     width: totalW,
                     child: pw.Text(
@@ -276,7 +334,7 @@ class PuantajExportService {
               pw.SizedBox(
                 width: nameW,
                 child: pw.Text(
-                  'Mevcut',
+                  'Toplam',
                   style: pw.TextStyle(
                     fontSize: 7,
                     fontWeight: pw.FontWeight.bold,
@@ -298,7 +356,30 @@ class PuantajExportService {
                     ),
                   ),
                 ),
-              pw.SizedBox(width: totalW),
+              for (var i = 0; i < AttendanceStatus.values.length; i++)
+                summaryCell(
+                  pw.Text(
+                    '${statusTotals[i]}',
+                    textAlign: pw.TextAlign.center,
+                    style: pw.TextStyle(
+                      fontSize: 7,
+                      fontWeight: pw.FontWeight.bold,
+                      color: _fromFlutter(AttendanceStatus.values[i].color),
+                    ),
+                  ),
+                ),
+              pw.SizedBox(
+                width: totalW,
+                child: pw.Text(
+                  '$generalTotal',
+                  textAlign: pw.TextAlign.center,
+                  style: pw.TextStyle(
+                    fontSize: 7,
+                    fontWeight: pw.FontWeight.bold,
+                    color: _fromFlutter(AttendanceStatus.present.color),
+                  ),
+                ),
+              ),
             ],
           ),
         ],
@@ -332,7 +413,8 @@ class PuantajExportService {
                   bottom: pw.BorderSide(color: _rowBorder, width: 0.5),
                 ),
               ),
-              padding: const pw.EdgeInsets.symmetric(vertical: 4, horizontal: 4),
+              padding:
+                  const pw.EdgeInsets.symmetric(vertical: 4, horizontal: 4),
               child: pw.Row(
                 crossAxisAlignment: pw.CrossAxisAlignment.center,
                 children: [
