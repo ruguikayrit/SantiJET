@@ -147,3 +147,28 @@ final visibleProjectTasksProvider = Provider<List<SiteTask>>((ref) {
     });
   return list;
 });
+
+/// Ana sayfa — teslimatı 7 gün içinde (veya gecikmiş) açık görevler, aciliyet sırası.
+final upcomingUrgentTasksProvider = Provider<List<SiteTask>>((ref) {
+  final tasks = ref.watch(visibleProjectTasksProvider);
+  final now = DateTime.now();
+  final today = DateTime(now.year, now.month, now.day);
+  final weekEnd = today.add(const Duration(days: 7));
+
+  final list = tasks.where((t) {
+    if (t.status == TaskStatus.done) return false;
+    final due = t.latestDeliveryDate;
+    if (due == null) return false;
+    final day = DateTime(due.year, due.month, due.day);
+    return !day.isAfter(weekEnd);
+  }).toList()
+    ..sort((a, b) {
+      final da = a.latestDeliveryDate!;
+      final db = b.latestDeliveryDate!;
+      final byDue = DateTime(da.year, da.month, da.day)
+          .compareTo(DateTime(db.year, db.month, db.day));
+      if (byDue != 0) return byDue;
+      return a.title.toLowerCase().compareTo(b.title.toLowerCase());
+    });
+  return list;
+});
