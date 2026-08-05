@@ -198,14 +198,23 @@ final selectedWeatherCityProvider = Provider<TurkeyCity?>((ref) {
   return turkeyCityById(ref.watch(weatherCityIdProvider));
 });
 
-/// Hava çek + rapora yaz (son bilinen + offline notu).
-Future<DailyReportWeather> refreshReportWeather(
+/// Hava çek + rapora yaz (otomatik; `isManual: false`).
+///
+/// Geçmiş günde kilitli otomatik kayıt varken yenileme yapılmaz.
+Future<DailyReportWeather?> refreshReportWeather(
   WidgetRef ref, {
   required DailyReport report,
   required TurkeyCity city,
+  bool force = false,
 }) async {
-  ref.read(weatherCityIdProvider.notifier).set(city.id);
   final previous = report.weather;
+  if (!force &&
+      previous != null &&
+      previous.isAutoLocked(report.date)) {
+    return previous;
+  }
+
+  ref.read(weatherCityIdProvider.notifier).set(city.id);
   final weather =
       await ref.read(weatherServiceProvider).fetchForCity(city);
   if (!weather.synced && previous != null && previous.synced) {
@@ -216,23 +225,46 @@ Future<DailyReportWeather> refreshReportWeather(
           : 'Hava durumu senkron edilemedi. Son bilinen değerler gösteriliyor.',
       fetchedAt: previous.fetchedAt,
       locationLabel: city.name,
+      isManual: previous.isManual,
     );
     ref.read(dailyReportsProvider.notifier).upsert(
           report.copyWith(weather: merged),
         );
     return merged;
   }
+  final saved = weather.copyWith(isManual: false);
   ref.read(dailyReportsProvider.notifier).upsert(
-        report.copyWith(weather: weather),
+        report.copyWith(weather: saved),
       );
-  return weather;
+  return saved;
 }
 
-/// Canlı snapshot’ı rapora yazar.
+/// Canlı snapshot’ı rapora yazar (`report.date` baz alınır).
 DailyReport syncAttendanceIntoReport(WidgetRef ref, DailyReport report) {
-  final snap = ref.read(liveAttendanceSnapshotProvider);
-  if (snap == null) return report;
+  final snap = AttendanceSnapshotBuilder.build(
+    projectId: report.projectId,
+    date: report.date,
+    attendance: ref.read(attendanceProvider),
+    activePeople: ref.read(activePersonnelProvider),
+  );
   return ref.read(dailyReportsProvider.notifier).upsert(
         report.copyWith(attendanceSnapshot: snap),
+      );
+}
+
+/// Manuel hava girişi / müdahale — kilidi açar.
+DailyReport saveManualWeather(
+  WidgetRef ref, {
+  required DailyReport report,
+  required DailyReportWeather weather,
+}) {
+  final saved = weather.copyWith(
+    isManual: true,
+    synced: true,
+    offlineNote: '',
+    fetchedAt: weather.fetchedAt ?? DateTime.now(),
+  );
+  return ref.read(dailyReportsProvider.notifier).upsert(
+        report.copyWith(weather: saved),
       );
 }

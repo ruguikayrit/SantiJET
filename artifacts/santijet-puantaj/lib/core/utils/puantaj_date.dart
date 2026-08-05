@@ -61,6 +61,34 @@ abstract final class PuantajDate {
     return List.generate(7, (i) => format(monday.add(Duration(days: i))));
   }
 
+  /// İş haftası Pzt–Cmt (6 gün).
+  static List<String> workWeekDays(String dateStr) =>
+      weekDays(dateStr).take(6).toList();
+
+  /// [from]–[to] arası günler (dahil), artan sıra.
+  static List<String> rangeDays(String from, String to) {
+    var a = parse(from);
+    var b = parse(to);
+    if (b.isBefore(a)) {
+      final t = a;
+      a = b;
+      b = t;
+    }
+    final out = <String>[];
+    for (var d = a; !d.isAfter(b); d = d.add(const Duration(days: 1))) {
+      out.add(format(d));
+    }
+    return out;
+  }
+
+  static bool isPastDay(String dateStr) {
+    final d = tryParse(dateStr);
+    if (d == null) return false;
+    final now = DateTime.now();
+    final today = DateTime(now.year, now.month, now.day);
+    return DateTime(d.year, d.month, d.day).isBefore(today);
+  }
+
   static List<String> monthDays(String dateStr) {
     final d = parse(dateStr);
     final last = DateTime(d.year, d.month + 1, 0).day;

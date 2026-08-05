@@ -154,11 +154,14 @@ class _DailyReportScreenState extends ConsumerState<DailyReportScreen> {
     // Snapshot her açılışta canlıdan yazılır.
     syncAttendanceIntoReport(ref, report);
 
-    // Şehir seçiliyse ve hava yok/senkron değilse güncelle.
+    // Otomatik hava: yoksa veya senkron değilse çek.
+    // Geçmiş günde kilitli otomatik kayıt varsa dokunma.
     final city = ref.read(selectedWeatherCityProvider);
-    final needsWeather =
-        city != null &&
-        (report.weather == null || report.weather?.synced != true);
+    final w = report.weather;
+    final locked = w != null && w.isAutoLocked(report.date);
+    final needsWeather = city != null &&
+        !locked &&
+        (w == null || (!w.isManual && !w.synced));
     if (needsWeather && !_weatherLoading) {
       setState(() => _weatherLoading = true);
       try {
@@ -170,6 +173,12 @@ class _DailyReportScreenState extends ConsumerState<DailyReportScreen> {
   }
 
   Future<void> _pickWeatherCity() async {
+    final report = ref.read(activeDailyReportProvider);
+    if (report != null &&
+        report.weather?.isAutoLocked(report.date) == true) {
+      final unlock = await _confirmManualWeatherOverride();
+      if (!unlock || !mounted) return;
+    }
     final selectedId = ref.read(weatherCityIdProvider);
     final picked = await showModalBottomSheet<TurkeyCity>(
       context: context,
@@ -178,30 +187,87 @@ class _DailyReportScreenState extends ConsumerState<DailyReportScreen> {
       builder: (ctx) => _CityPickerSheet(selectedId: selectedId),
     );
     if (picked == null || !mounted) return;
-    final report = ref.read(activeDailyReportProvider);
-    if (report == null) return;
+    final current = ref.read(activeDailyReportProvider);
+    if (current == null) return;
     setState(() => _weatherLoading = true);
     try {
-      await refreshReportWeather(ref, report: report, city: picked);
+      await refreshReportWeather(
+        ref,
+        report: current,
+        city: picked,
+        force: true,
+      );
     } finally {
       if (mounted) setState(() => _weatherLoading = false);
     }
   }
 
-  Future<void> _refreshWeather() async {
+  Future<void> _refreshWeather({bool force = false}) async {
+    final report = ref.read(activeDailyReportProvider);
+    if (report == null) return;
+    final locked = report.weather?.isAutoLocked(report.date) == true;
+    if (locked && !force) {
+      final unlock = await _confirmManualWeatherOverride();
+      if (!unlock || !mounted) return;
+      force = true;
+    }
     final city = ref.read(selectedWeatherCityProvider);
     if (city == null) {
       await _pickWeatherCity();
       return;
     }
-    final report = ref.read(activeDailyReportProvider);
-    if (report == null) return;
     setState(() => _weatherLoading = true);
     try {
-      await refreshReportWeather(ref, report: report, city: city);
+      await refreshReportWeather(
+        ref,
+        report: report,
+        city: city,
+        force: force,
+      );
     } finally {
       if (mounted) setState(() => _weatherLoading = false);
     }
+  }
+
+  Future<bool> _confirmManualWeatherOverride() async {
+    final ok = await showDialog<bool>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: const Text('Manuel müdahale'),
+        content: const Text(
+          'Bu güne ait hava durumu otomatik kaydedilmiş ve kilitlenmiş. '
+          'Manuel müdahale ile değiştirebilirsiniz.',
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(ctx, false),
+            child: const Text('İptal'),
+          ),
+          FilledButton(
+            onPressed: () => Navigator.pop(ctx, true),
+            child: const Text('Müdahale et'),
+          ),
+        ],
+      ),
+    );
+    return ok == true;
+  }
+
+  Future<void> _editManualWeather() async {
+    final report = ref.read(activeDailyReportProvider);
+    if (report == null) return;
+    final locked = report.weather?.isAutoLocked(report.date) == true;
+    if (locked) {
+      final unlock = await _confirmManualWeatherOverride();
+      if (!unlock || !mounted) return;
+    }
+    final current = report.weather ?? const DailyReportWeather(isManual: true);
+    final result = await showDialog<DailyReportWeather>(
+      context: context,
+      builder: (ctx) => _ManualWeatherDialog(initial: current),
+    );
+    if (result == null || !mounted) return;
+    saveManualWeather(ref, report: report, weather: result);
   }
 
   Future<void> _pickDate() async {
@@ -1209,16 +1275,29 @@ class _DailyReportScreenState extends ConsumerState<DailyReportScreen> {
                   _SectionCard(
                     title: 'Hava durumu',
                     icon: Icons.wb_sunny_outlined,
-                    trailing: IconButton(
-                      tooltip: 'Yenile',
-                      onPressed: _weatherLoading ? null : _refreshWeather,
-                      icon: _weatherLoading
-                          ? const SizedBox(
-                              width: 18,
-                              height: 18,
-                              child: CircularProgressIndicator(strokeWidth: 2),
-                            )
-                          : const Icon(Icons.refresh, size: 20),
+                    trailing: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        IconButton(
+                          tooltip: 'Manuel gir / düzenle',
+                          onPressed: _weatherLoading ? null : _editManualWeather,
+                          icon: const Icon(Icons.edit_outlined, size: 20),
+                        ),
+                        IconButton(
+                          tooltip: 'Otomatik yenile',
+                          onPressed: _weatherLoading
+                              ? null
+                              : () => _refreshWeather(),
+                          icon: _weatherLoading
+                              ? const SizedBox(
+                                  width: 18,
+                                  height: 18,
+                                  child:
+                                      CircularProgressIndicator(strokeWidth: 2),
+                                )
+                              : const Icon(Icons.refresh, size: 20),
+                        ),
+                      ],
                     ),
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -1240,11 +1319,40 @@ class _DailyReportScreenState extends ConsumerState<DailyReportScreen> {
                         else if (weather == null)
                           Text(
                             ref.watch(selectedWeatherCityProvider) == null
-                                ? 'Hava tahmini için listeden şehir seçin.'
-                                : 'Henüz hava bilgisi yok — yenileyin.',
+                                ? 'Hava tahmini için şehir seçin veya manuel girin.'
+                                : 'Henüz hava bilgisi yok — yenileyin veya manuel girin.',
                             style: _cardInk(theme.textTheme.bodyMedium),
                           )
                         else ...[
+                          if (weather.isAutoLocked(date)) ...[
+                            Container(
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: 10,
+                                vertical: 6,
+                              ),
+                              decoration: BoxDecoration(
+                                color: AppColors.info.withValues(alpha: 0.12),
+                                borderRadius: AppRadii.sm,
+                              ),
+                              child: Text(
+                                'Otomatik kayıt kilitli — gerekirse manuel müdahale edin.',
+                                style: _cardInk(
+                                  theme.textTheme.labelSmall,
+                                  color: AppColors.info,
+                                ),
+                              ),
+                            ),
+                            const SizedBox(height: 8),
+                          ] else if (weather.isManual) ...[
+                            Text(
+                              'Manuel giriş',
+                              style: _cardInk(
+                                theme.textTheme.labelSmall,
+                                color: theme.colorScheme.primary,
+                              ),
+                            ),
+                            const SizedBox(height: 6),
+                          ],
                           Text(
                             [
                               if (weather.temperatureC != null)
@@ -1281,6 +1389,14 @@ class _DailyReportScreenState extends ConsumerState<DailyReportScreen> {
                                 theme.textTheme.labelSmall,
                                 color: AppColors.warning,
                               ),
+                            ),
+                          ],
+                          if (weather.isAutoLocked(date)) ...[
+                            const SizedBox(height: AppSpacing.sm),
+                            TextButton.icon(
+                              onPressed: _editManualWeather,
+                              icon: const Icon(Icons.lock_open_outlined, size: 18),
+                              label: const Text('Manuel müdahale'),
                             ),
                           ],
                         ],
@@ -2257,6 +2373,146 @@ class _DailyReportExportSheetState extends State<_DailyReportExportSheet> {
 }
 
 enum _MaterialList { incoming, outgoing, ordered }
+
+class _ManualWeatherDialog extends StatefulWidget {
+  const _ManualWeatherDialog({required this.initial});
+
+  final DailyReportWeather initial;
+
+  @override
+  State<_ManualWeatherDialog> createState() => _ManualWeatherDialogState();
+}
+
+class _ManualWeatherDialogState extends State<_ManualWeatherDialog> {
+  late final TextEditingController _temp;
+  late final TextEditingController _night;
+  late final TextEditingController _humidity;
+  late final TextEditingController _wind;
+  late final TextEditingController _desc;
+  late final TextEditingController _location;
+
+  @override
+  void initState() {
+    super.initState();
+    final w = widget.initial;
+    _temp = TextEditingController(
+      text: w.temperatureC?.toStringAsFixed(0) ?? '',
+    );
+    _night = TextEditingController(
+      text: w.nightTemperatureC?.toStringAsFixed(0) ?? '',
+    );
+    _humidity = TextEditingController(
+      text: w.humidityPercent?.toStringAsFixed(0) ?? '',
+    );
+    _wind = TextEditingController(
+      text: w.windKmh?.toStringAsFixed(0) ?? '',
+    );
+    _desc = TextEditingController(text: w.description);
+    _location = TextEditingController(text: w.locationLabel);
+  }
+
+  @override
+  void dispose() {
+    _temp.dispose();
+    _night.dispose();
+    _humidity.dispose();
+    _wind.dispose();
+    _desc.dispose();
+    _location.dispose();
+    super.dispose();
+  }
+
+  double? _parse(String raw) {
+    final t = raw.trim().replaceAll(',', '.');
+    if (t.isEmpty) return null;
+    return double.tryParse(t);
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return AlertDialog(
+      title: const Text('Hava durumu — manuel'),
+      content: SingleChildScrollView(
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            TextField(
+              controller: _temp,
+              keyboardType: const TextInputType.numberWithOptions(decimal: true),
+              decoration: const InputDecoration(
+                labelText: 'Gündüz (°C)',
+              ),
+            ),
+            const SizedBox(height: 8),
+            TextField(
+              controller: _night,
+              keyboardType: const TextInputType.numberWithOptions(decimal: true),
+              decoration: const InputDecoration(
+                labelText: 'Gece (°C)',
+              ),
+            ),
+            const SizedBox(height: 8),
+            TextField(
+              controller: _humidity,
+              keyboardType: const TextInputType.numberWithOptions(decimal: true),
+              decoration: const InputDecoration(
+                labelText: 'Nem (%)',
+              ),
+            ),
+            const SizedBox(height: 8),
+            TextField(
+              controller: _wind,
+              keyboardType: const TextInputType.numberWithOptions(decimal: true),
+              decoration: const InputDecoration(
+                labelText: 'Rüzgar (km/s)',
+              ),
+            ),
+            const SizedBox(height: 8),
+            TextField(
+              controller: _desc,
+              decoration: const InputDecoration(
+                labelText: 'Açıklama',
+              ),
+            ),
+            const SizedBox(height: 8),
+            TextField(
+              controller: _location,
+              decoration: const InputDecoration(
+                labelText: 'Konum / şehir',
+              ),
+            ),
+          ],
+        ),
+      ),
+      actions: [
+        TextButton(
+          onPressed: () => Navigator.pop(context),
+          child: const Text('İptal'),
+        ),
+        FilledButton(
+          onPressed: () {
+            Navigator.pop(
+              context,
+              DailyReportWeather(
+                temperatureC: _parse(_temp.text),
+                nightTemperatureC: _parse(_night.text),
+                humidityPercent: _parse(_humidity.text),
+                windKmh: _parse(_wind.text),
+                description: _desc.text.trim(),
+                locationLabel: _location.text.trim(),
+                fetchedAt: DateTime.now(),
+                synced: true,
+                offlineNote: '',
+                isManual: true,
+              ),
+            );
+          },
+          child: const Text('Kaydet'),
+        ),
+      ],
+    );
+  }
+}
 
 /// Türkiye illeri seçici — arama + alfabetik liste.
 class _CityPickerSheet extends StatefulWidget {

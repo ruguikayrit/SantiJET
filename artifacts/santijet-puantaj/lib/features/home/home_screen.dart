@@ -13,12 +13,11 @@ import '../../core/theme/app_spacing.dart';
 import '../../core/widgets/santijet_header.dart';
 import '../../core/utils/puantaj_date.dart';
 import '../../data/providers/app_data_provider.dart';
-import '../../data/providers/daily_report_provider.dart';
 import '../../data/providers/production_provider.dart';
-import '../../data/providers/verim_provider.dart';
 import '../../domain/entities/production.dart';
 import '../../domain/enums/attendance_status.dart';
 import '../projects/widgets/project_switcher.dart';
+import 'home_daily_report_pdf_sheet.dart';
 
 /// Ana sayfa — bugünkü puantaj, imalat ve verim özetleri.
 class HomeScreen extends ConsumerStatefulWidget {
@@ -35,9 +34,6 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
     final people = ref.watch(activePersonnelProvider);
     final attendance = ref.watch(attendanceProvider);
     final productions = ref.watch(activeProductionProvider);
-    final verim = ref.watch(verimProvider);
-    final teamVerim = ref.watch(teamVerimSummariesProvider);
-    final todayReport = ref.watch(todayDailyReportProvider);
     final today = PuantajDate.today();
 
     if (project == null) {
@@ -173,87 +169,20 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                   ),
                   const SizedBox(height: AppSpacing.md),
                   _SummarySection(
-                    title: 'Bugünün raporu',
-                    icon: Icons.edit_note_outlined,
-                    onTap: () {
-                      ref.read(dailyReportSelectedDateProvider.notifier).state =
-                          today;
-                      context.go(AppRoutes.gunlukRapor);
-                    },
-                    child: Builder(
-                      builder: (context) {
-                        final theme = Theme.of(context);
-                        if (todayReport == null) {
-                          return Text(
-                            'Henüz kayıt yok. Günlük Rapor’dan bugünü doldurun.',
-                            style: theme.textTheme.bodyMedium,
-                          );
-                        }
-                        final parts = <String>[
-                          if (todayReport.hasWorkEntries) 'İşler girildi',
-                          if (todayReport.photos.isNotEmpty)
-                            '${todayReport.photos.length} foto',
-                          if (todayReport.incomingMaterials.isNotEmpty)
-                            '${todayReport.incomingMaterials.length} gelen',
-                          if (todayReport.machines.isNotEmpty)
-                            '${todayReport.machines.length} makine',
-                          if (todayReport.weather?.temperatureC != null)
-                            '${todayReport.weather!.temperatureC!.toStringAsFixed(0)}°C',
-                        ];
-                        return Text(
-                          parts.isEmpty
-                              ? 'Taslak mevcut — dokunarak düzenleyin.'
-                              : parts.join(' · '),
-                          style: theme.textTheme.bodyMedium,
-                        );
-                      },
+                    title: 'Günlük rapor',
+                    icon: Icons.edit_calendar_outlined,
+                    onTap: () => showHomeDailyReportPdfSheet(
+                      context,
+                      ref,
+                      project: project,
                     ),
-                  ),
-                  const SizedBox(height: AppSpacing.md),
-                  _SummarySection(
-                    title: 'Özet Verim',
-                    icon: Icons.speed_outlined,
-                    onTap: () =>
-                        context.go('${AppRoutes.imalat}?tab=verim'),
                     child: Builder(
                       builder: (context) {
                         final theme = Theme.of(context);
-                        if (!verim.hasCloudPlan) {
-                          return Text(
-                            'İş Programı (süre) ve Keşif (metraj) bulut '
-                            'verisi gerekir. Verim’den senkronlayın.',
-                            style: theme.textTheme.bodyMedium,
-                          );
-                        }
-                        if (teamVerim.isEmpty) {
-                          return Text(
-                            'Ekip bazlı iş gücü verimi için plan satırı yok.',
-                            style: theme.textTheme.bodyMedium,
-                          );
-                        }
-                        return Column(
-                          crossAxisAlignment: CrossAxisAlignment.stretch,
-                          children: [
-                            Text(
-                              'Birim verim',
-                              style: theme.textTheme.labelMedium?.copyWith(
-                                color: theme.colorScheme.onSurfaceVariant,
-                                fontWeight: FontWeight.w600,
-                              ),
-                            ),
-                            const SizedBox(height: AppSpacing.sm),
-                            for (var i = 0; i < teamVerim.length; i++) ...[
-                              if (i > 0) const SizedBox(height: AppSpacing.sm),
-                              _TeamVerimTile(summary: teamVerim[i]),
-                            ],
-                            if (verim.message != null) ...[
-                              const SizedBox(height: AppSpacing.xs),
-                              Text(
-                                verim.message!,
-                                style: theme.textTheme.labelSmall,
-                              ),
-                            ],
-                          ],
+                        return Text(
+                          'Takvimden gün veya hafta seçerek PDF rapor oluşturun. '
+                          'Çoklu gün tek PDF’te birleşir.',
+                          style: theme.textTheme.bodyMedium,
                         );
                       },
                     ),
@@ -1590,78 +1519,6 @@ class _AdamSaatChartPainter extends CustomPainter {
         oldDelegate.average != average ||
         oldDelegate.style != style ||
         oldDelegate.axisColor != axisColor;
-  }
-}
-
-class _TeamVerimTile extends StatelessWidget {
-  const _TeamVerimTile({required this.summary});
-
-  final TeamVerimSummary summary;
-
-  static Color _pctColor(double? ratio) {
-    if (ratio == null) return AppColors.info;
-    if (ratio >= 0.8) return AppColors.success;
-    if (ratio >= 0.5) return AppColors.warning;
-    return AppColors.critical;
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-    final eff = summary.unitEfficiency;
-    final color = _pctColor(eff);
-    final pct = eff == null ? '—' : '%${(eff * 100).toStringAsFixed(0)}';
-
-    return Container(
-      padding: const EdgeInsets.all(AppSpacing.sm),
-      decoration: BoxDecoration(
-        color: color.withValues(alpha: 0.08),
-        borderRadius: AppRadii.sm,
-        border: Border.all(color: color.withValues(alpha: 0.28)),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.stretch,
-        children: [
-          Row(
-            children: [
-              Container(
-                width: 8,
-                height: 8,
-                decoration: BoxDecoration(color: color, shape: BoxShape.circle),
-              ),
-              const SizedBox(width: 8),
-              Expanded(
-                child: Text(
-                  summary.teamName,
-                  style: theme.textTheme.titleSmall?.copyWith(
-                    fontWeight: FontWeight.w700,
-                  ),
-                ),
-              ),
-              Text(
-                pct,
-                style: theme.textTheme.labelLarge?.copyWith(
-                  color: color,
-                  fontWeight: FontWeight.w700,
-                ),
-              ),
-            ],
-          ),
-          if (eff != null) ...[
-            const SizedBox(height: 6),
-            ClipRRect(
-              borderRadius: AppRadii.xs,
-              child: LinearProgressIndicator(
-                value: eff.clamp(0.0, 1.0),
-                minHeight: 5,
-                backgroundColor: color.withValues(alpha: 0.15),
-                color: color,
-              ),
-            ),
-          ],
-        ],
-      ),
-    );
   }
 }
 

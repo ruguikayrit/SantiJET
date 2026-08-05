@@ -534,7 +534,7 @@ class DailyReportMachine extends Equatable {
       ];
 }
 
-/// Otomatik hava durumu bloğu (Open-Meteo).
+/// Hava durumu bloğu — otomatik (Open-Meteo) veya manuel.
 class DailyReportWeather extends Equatable {
   const DailyReportWeather({
     this.temperatureC,
@@ -546,6 +546,7 @@ class DailyReportWeather extends Equatable {
     this.fetchedAt,
     this.synced = true,
     this.offlineNote = '',
+    this.isManual = false,
   });
 
   /// Anlık / gündüz sıcaklık (°C).
@@ -563,6 +564,24 @@ class DailyReportWeather extends Equatable {
   final bool synced;
   final String offlineNote;
 
+  /// true → kullanıcı girdi / müdahale etti (geçmiş günde kilit yok).
+  final bool isManual;
+
+  /// Geçmiş gün + otomatik senkron → kilitli (manuel müdahale ile açılır).
+  bool isAutoLocked(String reportDate) {
+    if (isManual || !synced) return false;
+    final parts = reportDate.split('.');
+    if (parts.length != 3) return false;
+    final day = int.tryParse(parts[0]);
+    final month = int.tryParse(parts[1]);
+    final year = int.tryParse(parts[2]);
+    if (day == null || month == null || year == null) return false;
+    final d = DateTime(year, month, day);
+    final now = DateTime.now();
+    final today = DateTime(now.year, now.month, now.day);
+    return d.isBefore(today);
+  }
+
   DailyReportWeather copyWith({
     double? temperatureC,
     double? nightTemperatureC,
@@ -573,17 +592,26 @@ class DailyReportWeather extends Equatable {
     DateTime? fetchedAt,
     bool? synced,
     String? offlineNote,
+    bool? isManual,
+    bool clearTemperature = false,
+    bool clearNight = false,
+    bool clearHumidity = false,
+    bool clearWind = false,
   }) {
     return DailyReportWeather(
-      temperatureC: temperatureC ?? this.temperatureC,
-      nightTemperatureC: nightTemperatureC ?? this.nightTemperatureC,
-      humidityPercent: humidityPercent ?? this.humidityPercent,
+      temperatureC:
+          clearTemperature ? null : (temperatureC ?? this.temperatureC),
+      nightTemperatureC:
+          clearNight ? null : (nightTemperatureC ?? this.nightTemperatureC),
+      humidityPercent:
+          clearHumidity ? null : (humidityPercent ?? this.humidityPercent),
       description: description ?? this.description,
-      windKmh: windKmh ?? this.windKmh,
+      windKmh: clearWind ? null : (windKmh ?? this.windKmh),
       locationLabel: locationLabel ?? this.locationLabel,
       fetchedAt: fetchedAt ?? this.fetchedAt,
       synced: synced ?? this.synced,
       offlineNote: offlineNote ?? this.offlineNote,
+      isManual: isManual ?? this.isManual,
     );
   }
 
@@ -597,6 +625,7 @@ class DailyReportWeather extends Equatable {
         'fetchedAt': fetchedAt?.toIso8601String(),
         'synced': synced,
         'offlineNote': offlineNote,
+        'isManual': isManual,
       };
 
   factory DailyReportWeather.fromJson(Map<String, dynamic> json) =>
@@ -612,6 +641,7 @@ class DailyReportWeather extends Equatable {
             : null,
         synced: json['synced'] as bool? ?? true,
         offlineNote: json['offlineNote'] as String? ?? '',
+        isManual: json['isManual'] as bool? ?? false,
       );
 
   @override
@@ -625,6 +655,7 @@ class DailyReportWeather extends Equatable {
         fetchedAt,
         synced,
         offlineNote,
+        isManual,
       ];
 }
 

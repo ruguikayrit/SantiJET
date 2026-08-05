@@ -49,6 +49,7 @@ class WeatherService {
         fetchedAt: DateTime.now(),
         synced: true,
         offlineNote: '',
+        isManual: false,
       );
     } catch (_) {
       return DailyReportWeather(
@@ -56,6 +57,7 @@ class WeatherService {
         offlineNote: 'Hava durumu senkron edilemedi.',
         fetchedAt: DateTime.now(),
         locationLabel: city.name,
+        isManual: false,
       );
     }
   }

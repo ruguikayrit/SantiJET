@@ -40,19 +40,45 @@ class DailyReportPdfService {
     required DailyReportExportSections sections,
     DailyReportAttendanceSnapshot? liveSnapshot,
   }) async {
-    final bytes = await buildBytes(
-      report: report,
+    await exportMany(
+      reports: [report],
       project: project,
       company: company,
       sections: sections,
-      liveSnapshot: liveSnapshot,
+      liveSnapshots: liveSnapshot == null ? null : [liveSnapshot],
     );
-    final stem = _fileStem(project.name, report.date);
+  }
+
+  /// Bir veya daha fazla günü tek PDF’te birleştirir (günler arası yeni sayfa).
+  Future<void> exportMany({
+    required List<DailyReport> reports,
+    required Project project,
+    required CompanyInfo company,
+    required DailyReportExportSections sections,
+    List<DailyReportAttendanceSnapshot?>? liveSnapshots,
+  }) async {
+    if (reports.isEmpty) {
+      throw ArgumentError('En az bir günlük rapor gerekli');
+    }
+    final bytes = await buildBytesMany(
+      reports: reports,
+      project: project,
+      company: company,
+      sections: sections,
+      liveSnapshots: liveSnapshots,
+    );
+    final sorted = _sorted(reports);
+    final stem = sorted.length == 1
+        ? _fileStem(project.name, sorted.first.date)
+        : _fileStemRange(project.name, sorted.first.date, sorted.last.date);
+    final label = sorted.length == 1
+        ? sorted.first.date
+        : '${sorted.first.date} – ${sorted.last.date}';
     await file_access.downloadBytesFile(
       fileName: '$stem.pdf',
       bytes: bytes,
       mimeType: 'application/pdf',
-      shareText: 'Günlük Şantiye Raporu — ${project.name}',
+      shareText: 'Şantiye Raporu ($label) — ${project.name}',
     );
   }
 
@@ -62,31 +88,80 @@ class DailyReportPdfService {
     required CompanyInfo company,
     required DailyReportExportSections sections,
     DailyReportAttendanceSnapshot? liveSnapshot,
+  }) {
+    return buildBytesMany(
+      reports: [report],
+      project: project,
+      company: company,
+      sections: sections,
+      liveSnapshots: liveSnapshot == null ? null : [liveSnapshot],
+    );
+  }
+
+  Future<Uint8List> buildBytesMany({
+    required List<DailyReport> reports,
+    required Project project,
+    required CompanyInfo company,
+    required DailyReportExportSections sections,
+    List<DailyReportAttendanceSnapshot?>? liveSnapshots,
   }) async {
     final theme = await _theme();
     final doc = pw.Document(theme: theme);
-    final snap = liveSnapshot ?? report.attendanceSnapshot;
+    final sorted = _sorted(reports);
     final contractor = company.name.trim().isNotEmpty
         ? company.name.trim()
         : (project.company.trim().isNotEmpty
             ? project.company.trim()
             : '—');
 
+    final byDateSnap = <String, DailyReportAttendanceSnapshot?>{};
+    if (liveSnapshots != null) {
+      for (var i = 0; i < reports.length && i < liveSnapshots.length; i++) {
+        byDateSnap[reports[i].date] = liveSnapshots[i];
+      }
+    }
+
     doc.addPage(
       pw.MultiPage(
         pageFormat: PdfPageFormat.a4,
         margin: const pw.EdgeInsets.all(22),
-        build: (ctx) => _body(
-          report: report,
-          project: project,
-          contractor: contractor,
-          snap: snap,
-          sections: sections,
-        ),
+        build: (ctx) {
+          final widgets = <pw.Widget>[];
+          for (var i = 0; i < sorted.length; i++) {
+            if (i > 0) widgets.add(pw.NewPage());
+            final report = sorted[i];
+            final snap =
+                byDateSnap[report.date] ?? report.attendanceSnapshot;
+            widgets.addAll(
+              _body(
+                report: report,
+                project: project,
+                contractor: contractor,
+                snap: snap,
+                sections: sections,
+                multiDay: sorted.length > 1,
+                dayIndex: i + 1,
+                dayCount: sorted.length,
+              ),
+            );
+          }
+          return widgets;
+        },
       ),
     );
 
     return Uint8List.fromList(await doc.save());
+  }
+
+  List<DailyReport> _sorted(List<DailyReport> reports) {
+    final copy = List<DailyReport>.from(reports);
+    copy.sort((a, b) {
+      final da = PuantajDate.tryParse(a.date);
+      final db = PuantajDate.tryParse(b.date);
+      if (da == null || db == null) return a.date.compareTo(b.date);
+      return da.compareTo(db);
+    });
+    return copy;
   }
 
   List<pw.Widget> _body({
@@ -95,9 +170,19 @@ class DailyReportPdfService {
     required String contractor,
     required DailyReportAttendanceSnapshot? snap,
     required DailyReportExportSections sections,
+    bool multiDay = false,
+    int dayIndex = 1,
+    int dayCount = 1,
   }) {
     final widgets = <pw.Widget>[
-      _docHeader(project: project, contractor: contractor, report: report),
+      _docHeader(
+        project: project,
+        contractor: contractor,
+        report: report,
+        multiDay: multiDay,
+        dayIndex: dayIndex,
+        dayCount: dayCount,
+      ),
     ];
 
     void gap() => widgets.add(pw.SizedBox(height: 12));
@@ -247,7 +332,9 @@ class DailyReportPdfService {
     widgets.add(pw.SizedBox(height: 8));
     widgets.add(
       pw.Text(
-        '${AppInfo.displayName} · Günlük şantiye raporu',
+        multiDay
+            ? '${AppInfo.displayName} · Şantiye raporu · Gün $dayIndex/$dayCount'
+            : '${AppInfo.displayName} · Günlük şantiye raporu',
         textAlign: pw.TextAlign.center,
         style: const pw.TextStyle(fontSize: 8, color: _muted),
       ),
@@ -260,8 +347,14 @@ class DailyReportPdfService {
     required Project project,
     required String contractor,
     required DailyReport report,
+    bool multiDay = false,
+    int dayIndex = 1,
+    int dayCount = 1,
   }) {
     final logo = _projectLogoImage(project);
+    final title = multiDay
+        ? 'ŞANTİYE RAPORU ($dayIndex/$dayCount)'
+        : 'GÜNLÜK ŞANTİYE RAPORU';
     return pw.Column(
       crossAxisAlignment: pw.CrossAxisAlignment.stretch,
       children: [
@@ -279,7 +372,7 @@ class DailyReportPdfService {
                 pw.SizedBox(height: 6),
               ],
               pw.Text(
-                'GÜNLÜK ŞANTİYE RAPORU',
+                title,
                 textAlign: pw.TextAlign.center,
                 style: pw.TextStyle(
                   fontSize: 14,
@@ -869,13 +962,23 @@ class DailyReportPdfService {
     return out;
   }
 
-  String _fileStem(String projectName, String date) {
+  String _safeProject(String projectName) {
     final safe = projectName
         .replaceAll(RegExp(r'[^\w\s\-ğüşıöçĞÜŞİÖÇ]', caseSensitive: false), '')
         .trim()
         .replaceAll(RegExp(r'\s+'), '_');
+    return safe.isEmpty ? 'proje' : safe;
+  }
+
+  String _fileStem(String projectName, String date) {
     final d = date.replaceAll('.', '');
-    return 'gunluk-rapor-$d-${safe.isEmpty ? 'proje' : safe}';
+    return 'gunluk-rapor-$d-${_safeProject(projectName)}';
+  }
+
+  String _fileStemRange(String projectName, String from, String to) {
+    final a = from.replaceAll('.', '');
+    final b = to.replaceAll('.', '');
+    return 'santiye-rapor-$a-$b-${_safeProject(projectName)}';
   }
 
   String _fmt(double v) {
