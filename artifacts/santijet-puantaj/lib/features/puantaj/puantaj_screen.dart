@@ -1364,7 +1364,11 @@ class _PuantajExportSheetState extends State<_PuantajExportSheet> {
         anchorDate: widget.anchorDate,
       );
       if (pdf) {
-        await puantajExportService.exportPdf(report);
+        await puantajExportService.exportPdf(
+          report,
+          companyName: widget.project.name,
+          companyLogoBase64: widget.project.logoBase64,
+        );
       } else {
         await puantajExportService.exportExcel(report);
       }

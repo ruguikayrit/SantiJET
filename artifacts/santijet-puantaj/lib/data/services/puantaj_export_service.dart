@@ -1,7 +1,9 @@
+import 'dart:convert';
 import 'dart:typed_data';
 import 'dart:ui' show Color;
 
 import 'package:excel/excel.dart';
+import 'package:flutter/services.dart' show rootBundle;
 import 'package:pdf/pdf.dart';
 import 'package:pdf/widgets.dart' as pw;
 import 'package:printing/printing.dart';
@@ -26,6 +28,10 @@ class PuantajExportService {
   static const _rowBorder = PdfColor.fromInt(0xFFE5E7EB);
   static const _ink = PdfColor.fromInt(0xFF111827);
   static const _inkMuted = PdfColor.fromInt(0xFF6B7280);
+  static const _brandDark = PdfColor.fromInt(0xFF05070A);
+
+  pw.MemoryImage? _boltImage;
+  pw.MemoryImage? _wordmarkImage;
 
   Future<pw.ThemeData> _pdfTheme() async {
     _regularFont ??= await PdfGoogleFonts.notoSansRegular();
@@ -39,8 +45,16 @@ class PuantajExportService {
   // ignore: deprecated_member_use — Flutter SDK Color.value
   static PdfColor _fromFlutter(Color c) => PdfColor.fromInt(c.value);
 
-  Future<void> exportPdf(PuantajReportData report) async {
-    final bytes = await _buildPdfBytes(report);
+  Future<void> exportPdf(
+    PuantajReportData report, {
+    String companyName = '',
+    String companyLogoBase64 = '',
+  }) async {
+    final bytes = await _buildPdfBytes(
+      report,
+      companyName: companyName,
+      companyLogoBase64: companyLogoBase64,
+    );
     await file_access.downloadBytesFile(
       fileName: 'santijet-puantaj-${report.fileStem}.pdf',
       bytes: bytes,
@@ -60,8 +74,13 @@ class PuantajExportService {
     );
   }
 
-  Future<Uint8List> _buildPdfBytes(PuantajReportData report) async {
+  Future<Uint8List> _buildPdfBytes(
+    PuantajReportData report, {
+    String companyName = '',
+    String companyLogoBase64 = '',
+  }) async {
     final theme = await _pdfTheme();
+    await _loadBrandAssets();
     final doc = pw.Document(theme: theme);
     final now = DateTime.now();
     final pageFormat =
@@ -72,11 +91,11 @@ class PuantajExportService {
         pageFormat: pageFormat,
         margin: const pw.EdgeInsets.all(18),
         build: (context) => [
-          pw.Text(
-            AppInfo.displayName,
-            style: const pw.TextStyle(fontSize: 9, color: _inkMuted),
+          _brandHeader(
+            companyName: companyName,
+            companyLogo: _decodeLogo(companyLogoBase64),
           ),
-          pw.SizedBox(height: 2),
+          pw.SizedBox(height: 8),
           pw.Text(
             report.title,
             style: pw.TextStyle(
@@ -123,6 +142,130 @@ class PuantajExportService {
     );
 
     return Uint8List.fromList(await doc.save());
+  }
+
+  Future<void> _loadBrandAssets() async {
+    try {
+      _boltImage ??= pw.MemoryImage(
+        (await rootBundle.load('assets/images/splash_bolt.png'))
+            .buffer
+            .asUint8List(),
+      );
+      _wordmarkImage ??= pw.MemoryImage(
+        (await rootBundle.load('assets/images/splash_wordmark_light.png'))
+            .buffer
+            .asUint8List(),
+      );
+    } catch (_) {
+      // Marka görselleri yüklenemezse başlık metinle üretilir.
+    }
+  }
+
+  pw.MemoryImage? _decodeLogo(String base64Data) {
+    if (base64Data.trim().isEmpty) return null;
+    try {
+      return pw.MemoryImage(base64Decode(base64Data));
+    } catch (_) {
+      return null;
+    }
+  }
+
+  /// Sol üst: firma logosu — sağ üst: ŞantiJET logo + tipografisi.
+  pw.Widget _brandHeader({
+    required String companyName,
+    pw.MemoryImage? companyLogo,
+  }) {
+    final bolt = _boltImage;
+    final wordmark = _wordmarkImage;
+    return pw.Column(
+      crossAxisAlignment: pw.CrossAxisAlignment.stretch,
+      children: [
+        pw.Row(
+          crossAxisAlignment: pw.CrossAxisAlignment.center,
+          mainAxisAlignment: pw.MainAxisAlignment.spaceBetween,
+          children: [
+            pw.Container(
+              height: 40,
+              width: 170,
+              alignment: pw.Alignment.centerLeft,
+              child: companyLogo != null
+                  ? pw.Image(
+                      companyLogo,
+                      fit: pw.BoxFit.contain,
+                      alignment: pw.Alignment.centerLeft,
+                    )
+                  : pw.Text(
+                      companyName,
+                      maxLines: 2,
+                      style: pw.TextStyle(
+                        fontSize: 11,
+                        fontWeight: pw.FontWeight.bold,
+                        color: _ink,
+                      ),
+                    ),
+            ),
+            pw.Container(
+              height: 40,
+              width: 170,
+              alignment: pw.Alignment.centerRight,
+              child: pw.Column(
+                mainAxisSize: pw.MainAxisSize.min,
+                mainAxisAlignment: pw.MainAxisAlignment.center,
+                crossAxisAlignment: pw.CrossAxisAlignment.end,
+                children: [
+                  pw.Row(
+                    mainAxisSize: pw.MainAxisSize.min,
+                    crossAxisAlignment: pw.CrossAxisAlignment.center,
+                    children: [
+                      if (bolt != null) ...[
+                        pw.Container(
+                          width: 22,
+                          height: 22,
+                          padding: const pw.EdgeInsets.all(3),
+                          decoration: pw.BoxDecoration(
+                            color: _brandDark,
+                            borderRadius: pw.BorderRadius.circular(5),
+                          ),
+                          child: pw.Image(bolt, fit: pw.BoxFit.contain),
+                        ),
+                        pw.SizedBox(width: 6),
+                      ],
+                      if (wordmark != null)
+                        pw.SizedBox(
+                          width: 92,
+                          height: 15,
+                          child: pw.Image(wordmark, fit: pw.BoxFit.contain),
+                        )
+                      else
+                        pw.Text(
+                          AppInfo.displayName,
+                          style: pw.TextStyle(
+                            fontSize: 13,
+                            fontWeight: pw.FontWeight.bold,
+                            color: _ink,
+                          ),
+                        ),
+                    ],
+                  ),
+                  pw.SizedBox(height: 3),
+                  pw.Text(
+                    AppInfo.productLabel,
+                    style: pw.TextStyle(
+                      fontSize: 7,
+                      fontWeight: pw.FontWeight.bold,
+                      letterSpacing: 1.8,
+                      color: _electricBlue,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ],
+        ),
+        pw.SizedBox(height: 6),
+        pw.Container(height: 0.8, color: _rowBorder),
+      ],
+    );
   }
 
   pw.Widget _legend() {
