@@ -52,6 +52,23 @@ TextStyle _cardInk(
   );
 }
 
+/// Diyalog form satırları arasında tutarlı boşluk.
+const _kDialogFieldGap = SizedBox(height: AppSpacing.sm);
+
+InputDecoration _dialogFieldDecoration({
+  required String labelText,
+  String? hintText,
+  String? helperText,
+}) {
+  return InputDecoration(
+    labelText: labelText,
+    hintText: hintText,
+    helperText: helperText,
+    isDense: true,
+    contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 14),
+  );
+}
+
 /// Günlük saha raporu — foto, işler, malzeme, makine, hava, puantaj snapshot.
 class DailyReportScreen extends ConsumerStatefulWidget {
   const DailyReportScreen({super.key});
@@ -346,10 +363,11 @@ class _DailyReportScreenState extends ConsumerState<DailyReportScreen> {
           title: const Text('Fotoğraf açıklaması'),
           content: Column(
             mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
               DropdownButtonFormField<PhotoWorkCategory>(
                 value: category,
-                decoration: const InputDecoration(labelText: 'İmalat türü'),
+                decoration: _dialogFieldDecoration(labelText: 'İmalat türü'),
                 items: [
                   for (final c in PhotoWorkCategory.values)
                     DropdownMenuItem(value: c, child: Text(c.label)),
@@ -358,11 +376,12 @@ class _DailyReportScreenState extends ConsumerState<DailyReportScreen> {
                   if (v != null) setModal(() => category = v);
                 },
               ),
-              const SizedBox(height: 12),
+              _kDialogFieldGap,
               TextField(
                 controller: ctrl,
                 maxLines: 3,
-                decoration: const InputDecoration(
+                decoration: _dialogFieldDecoration(
+                  labelText: 'Açıklama',
                   hintText: 'Örn. Temel kazısı — batı cephe',
                   helperText:
                       'Seçilen türe göre yapılan işler altına senkronize olur',
@@ -445,44 +464,56 @@ class _DailyReportScreenState extends ConsumerState<DailyReportScreen> {
           content: SingleChildScrollView(
             child: Column(
               mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
-                if (stockLike)
+                if (stockLike) ...[
                   TextField(
                     controller: supplyDate,
-                    decoration: InputDecoration(
+                    decoration: _dialogFieldDecoration(
                       labelText: kind == _MaterialList.outgoing
                           ? 'Gönderim tarihi'
                           : 'Tedarik tarihi',
                       hintText: 'dd.MM.yyyy',
                     ),
                   ),
+                  _kDialogFieldGap,
+                ],
                 TextField(
                   controller: name,
-                  decoration: InputDecoration(labelText: nameLabel),
+                  decoration: _dialogFieldDecoration(labelText: nameLabel),
                 ),
+                _kDialogFieldGap,
                 TextField(
                   controller: qty,
-                  decoration: const InputDecoration(labelText: 'Ürün miktarı'),
+                  decoration:
+                      _dialogFieldDecoration(labelText: 'Ürün miktarı'),
                   keyboardType: TextInputType.number,
                 ),
+                _kDialogFieldGap,
                 TextField(
                   controller: unit,
-                  decoration: const InputDecoration(labelText: 'Ürün birimi'),
+                  decoration:
+                      _dialogFieldDecoration(labelText: 'Ürün birimi'),
                 ),
+                _kDialogFieldGap,
                 TextField(
                   controller: supplier,
-                  decoration: InputDecoration(labelText: partyLabel()),
+                  decoration:
+                      _dialogFieldDecoration(labelText: partyLabel()),
                 ),
-                if (stockLike)
+                if (stockLike) ...[
+                  _kDialogFieldGap,
                   TextField(
                     controller: price,
-                    decoration: const InputDecoration(
+                    decoration: _dialogFieldDecoration(
                       labelText: 'Ürün fiyatı (opsiyonel)',
                     ),
                     keyboardType:
                         const TextInputType.numberWithOptions(decimal: true),
                   ),
-                if (kind == _MaterialList.ordered)
+                ],
+                if (kind == _MaterialList.ordered) ...[
+                  _kDialogFieldGap,
                   CheckboxListTile(
                     contentPadding: EdgeInsets.zero,
                     title: const Text('Satın alma onayı'),
@@ -491,9 +522,11 @@ class _DailyReportScreenState extends ConsumerState<DailyReportScreen> {
                         setModal(() => purchaseApproved = v ?? false),
                     controlAffinity: ListTileControlAffinity.leading,
                   ),
+                ],
+                _kDialogFieldGap,
                 TextField(
                   controller: note,
-                  decoration: const InputDecoration(labelText: 'Not'),
+                  decoration: _dialogFieldDecoration(labelText: 'Not'),
                   maxLines: 2,
                 ),
               ],
@@ -737,18 +770,19 @@ class _DailyReportScreenState extends ConsumerState<DailyReportScreen> {
                   ),
                 TextField(
                   controller: dateCtrl,
-                  decoration: const InputDecoration(
+                  decoration: _dialogFieldDecoration(
                     labelText: 'Tedarik tarihi',
                     hintText: 'dd.MM.yyyy',
                   ),
                 ),
+                _kDialogFieldGap,
                 TextField(
                   controller: supplierCtrl,
-                  decoration: const InputDecoration(
+                  decoration: _dialogFieldDecoration(
                     labelText: 'Tedarik edilen firma',
                   ),
                 ),
-                const SizedBox(height: AppSpacing.sm),
+                const SizedBox(height: AppSpacing.md),
                 for (var i = 0; i < rowCtrls.length; i++) ...[
                   Text(
                     'Ürün ${i + 1}',
@@ -756,26 +790,33 @@ class _DailyReportScreenState extends ConsumerState<DailyReportScreen> {
                           fontWeight: FontWeight.w700,
                         ),
                   ),
+                  _kDialogFieldGap,
                   TextField(
                     controller: rowCtrls[i].name,
-                    decoration: const InputDecoration(labelText: 'Ürün adı *'),
+                    decoration:
+                        _dialogFieldDecoration(labelText: 'Ürün adı *'),
                   ),
+                  _kDialogFieldGap,
                   TextField(
                     controller: rowCtrls[i].qty,
                     decoration:
-                        const InputDecoration(labelText: 'Ürün miktarı'),
+                        _dialogFieldDecoration(labelText: 'Ürün miktarı'),
                   ),
+                  _kDialogFieldGap,
                   TextField(
                     controller: rowCtrls[i].unit,
-                    decoration: const InputDecoration(labelText: 'Ürün birimi'),
+                    decoration:
+                        _dialogFieldDecoration(labelText: 'Ürün birimi'),
                   ),
+                  _kDialogFieldGap,
                   TextField(
                     controller: rowCtrls[i].price,
-                    decoration: const InputDecoration(
+                    decoration: _dialogFieldDecoration(
                       labelText: 'Ürün fiyatı (opsiyonel)',
                     ),
                   ),
-                  const SizedBox(height: AppSpacing.sm),
+                  if (i < rowCtrls.length - 1)
+                    const SizedBox(height: AppSpacing.md),
                 ],
               ],
             ),
@@ -911,44 +952,54 @@ class _DailyReportScreenState extends ConsumerState<DailyReportScreen> {
         content: SingleChildScrollView(
           child: Column(
             mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
               TextField(
                 controller: name,
-                decoration: InputDecoration(
+                decoration: _dialogFieldDecoration(
                   labelText: vehicle ? 'Vasıta adı *' : 'Makine adı *',
                 ),
               ),
+              _kDialogFieldGap,
               TextField(
                 controller: type,
-                decoration: InputDecoration(
+                decoration: _dialogFieldDecoration(
                   labelText: vehicle ? 'Marka/Model' : 'Tip (opsiyonel)',
                 ),
               ),
-              if (!vehicle)
+              if (!vehicle) ...[
+                _kDialogFieldGap,
                 TextField(
                   controller: company,
-                  decoration: const InputDecoration(labelText: 'Firma'),
+                  decoration: _dialogFieldDecoration(labelText: 'Firma'),
                 ),
+              ],
+              _kDialogFieldGap,
               TextField(
                 controller: plate,
                 decoration:
-                    const InputDecoration(labelText: 'Plaka / kimlik'),
+                    _dialogFieldDecoration(labelText: 'Plaka / kimlik'),
               ),
+              _kDialogFieldGap,
               TextField(
                 controller: hours,
-                decoration: const InputDecoration(labelText: 'Çalışma saati'),
+                decoration:
+                    _dialogFieldDecoration(labelText: 'Çalışma saati'),
                 keyboardType:
                     const TextInputType.numberWithOptions(decimal: true),
               ),
+              _kDialogFieldGap,
               TextField(
                 controller: work,
-                decoration:
-                    const InputDecoration(labelText: 'Yapılan iş açıklaması'),
+                decoration: _dialogFieldDecoration(
+                  labelText: 'Yapılan iş açıklaması',
+                ),
                 maxLines: 2,
               ),
+              _kDialogFieldGap,
               TextField(
                 controller: op,
-                decoration: InputDecoration(
+                decoration: _dialogFieldDecoration(
                   labelText: vehicle ? 'Şoför' : 'Operatör',
                 ),
               ),
