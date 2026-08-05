@@ -17,7 +17,6 @@ import '../../domain/entities/person.dart';
 import '../../domain/entities/site_task.dart';
 import '../../domain/enums/task_status.dart';
 import '../../domain/permissions/role_degree.dart';
-import '../projects/widgets/project_switcher.dart';
 import 'widgets/task_calendar_panel.dart';
 
 /// Saha görevleri — atayan (1. derece) + atanan görür.
@@ -467,15 +466,6 @@ class _TasksScreenState extends ConsumerState<TasksScreen> {
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
               const SantijetHeader(subtitle: 'Görevler'),
-              const Padding(
-                padding: EdgeInsets.fromLTRB(
-                  AppSpacing.md,
-                  0,
-                  AppSpacing.md,
-                  AppSpacing.sm,
-                ),
-                child: ProjectSwitcher(),
-              ),
               Expanded(
                 child: SJEmptyState(
                   title: 'Önce proje ekleyin',
@@ -499,15 +489,6 @@ class _TasksScreenState extends ConsumerState<TasksScreen> {
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
               const SantijetHeader(subtitle: 'Görevler'),
-              const Padding(
-                padding: EdgeInsets.fromLTRB(
-                  AppSpacing.md,
-                  0,
-                  AppSpacing.md,
-                  AppSpacing.sm,
-                ),
-                child: ProjectSwitcher(),
-              ),
               Expanded(
                 child: SJEmptyState(
                   title: 'Personel yok',
@@ -550,15 +531,6 @@ class _TasksScreenState extends ConsumerState<TasksScreen> {
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
             const SantijetHeader(subtitle: 'Görevler'),
-            const Padding(
-              padding: EdgeInsets.fromLTRB(
-                AppSpacing.md,
-                0,
-                AppSpacing.md,
-                AppSpacing.sm,
-              ),
-              child: ProjectSwitcher(),
-            ),
             if (operator == null)
               Expanded(
                 child: SJEmptyState(

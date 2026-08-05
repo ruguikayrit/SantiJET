@@ -15,6 +15,7 @@ import '../../core/utils/puantaj_date.dart';
 import '../../data/providers/app_data_provider.dart';
 import '../../data/providers/production_provider.dart';
 import '../../domain/entities/production.dart';
+import '../../domain/entities/project.dart';
 import '../../domain/enums/attendance_status.dart';
 import '../projects/widgets/project_switcher.dart';
 import 'home_daily_report_pdf_sheet.dart';
@@ -28,6 +29,35 @@ class HomeScreen extends ConsumerStatefulWidget {
 }
 
 class _HomeScreenState extends ConsumerState<HomeScreen> {
+  bool _dailyReportBusy = false;
+
+  Future<void> _exportDailyReportForDates(
+    Project project,
+    List<String> dates, {
+    required String successLabel,
+  }) async {
+    if (_dailyReportBusy) return;
+    setState(() => _dailyReportBusy = true);
+    try {
+      await exportHomeDailyReportPdf(
+        ref,
+        project: project,
+        dates: dates,
+      );
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('$successLabel PDF dışa aktarıldı')),
+      );
+    } catch (e) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('PDF oluşturulamadı: $e')),
+      );
+    } finally {
+      if (mounted) setState(() => _dailyReportBusy = false);
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     final project = ref.watch(activeProjectProvider);
@@ -171,20 +201,23 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                   _SummarySection(
                     title: 'Günlük rapor',
                     icon: Icons.edit_calendar_outlined,
-                    onTap: () => showHomeDailyReportPdfSheet(
-                      context,
-                      ref,
-                      project: project,
-                    ),
-                    child: Builder(
-                      builder: (context) {
-                        final theme = Theme.of(context);
-                        return Text(
-                          'Takvimden gün veya hafta seçerek PDF rapor oluşturun. '
-                          'Çoklu gün tek PDF’te birleşir.',
-                          style: theme.textTheme.bodyMedium,
-                        );
-                      },
+                    child: _DailyReportQuickActions(
+                      busy: _dailyReportBusy,
+                      onDun: () => _exportDailyReportForDates(
+                        project,
+                        [PuantajDate.shift(today, -1)],
+                        successLabel: 'Dünün raporu',
+                      ),
+                      onBugun: () => _exportDailyReportForDates(
+                        project,
+                        [today],
+                        successLabel: 'Bugünün raporu',
+                      ),
+                      onOzel: () => showHomeDailyReportPdfSheet(
+                        context,
+                        ref,
+                        project: project,
+                      ),
                     ),
                   ),
                 ]),
@@ -1519,6 +1552,130 @@ class _AdamSaatChartPainter extends CustomPainter {
         oldDelegate.average != average ||
         oldDelegate.style != style ||
         oldDelegate.axisColor != axisColor;
+  }
+}
+
+class _DailyReportQuickActions extends StatelessWidget {
+  const _DailyReportQuickActions({
+    required this.busy,
+    required this.onDun,
+    required this.onBugun,
+    required this.onOzel,
+  });
+
+  final bool busy;
+  final VoidCallback onDun;
+  final VoidCallback onBugun;
+  final VoidCallback onOzel;
+
+  @override
+  Widget build(BuildContext context) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        Row(
+          children: [
+            Expanded(
+              child: _DailyReportPeriodButton(
+                label: 'Dün',
+                icon: Icons.history,
+                busy: busy,
+                onPressed: onDun,
+              ),
+            ),
+            const SizedBox(width: AppSpacing.xs),
+            Expanded(
+              child: _DailyReportPeriodButton(
+                label: 'Bugün',
+                icon: Icons.today_outlined,
+                busy: busy,
+                emphasized: true,
+                onPressed: onBugun,
+              ),
+            ),
+            const SizedBox(width: AppSpacing.xs),
+            Expanded(
+              child: _DailyReportPeriodButton(
+                label: 'Özel tarih',
+                icon: Icons.calendar_month_outlined,
+                busy: busy,
+                onPressed: onOzel,
+              ),
+            ),
+          ],
+        ),
+        if (busy) ...[
+          const SizedBox(height: AppSpacing.sm),
+          const LinearProgressIndicator(minHeight: 2),
+        ],
+      ],
+    );
+  }
+}
+
+class _DailyReportPeriodButton extends StatelessWidget {
+  const _DailyReportPeriodButton({
+    required this.label,
+    required this.icon,
+    required this.onPressed,
+    this.busy = false,
+    this.emphasized = false,
+  });
+
+  final String label;
+  final IconData icon;
+  final VoidCallback onPressed;
+  final bool busy;
+  final bool emphasized;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final fg = emphasized ? Colors.white : theme.colorScheme.primary;
+    final bg = emphasized
+        ? AppColors.electricBlue
+        : AppColors.electricBlue.withValues(alpha: 0.08);
+    final border = emphasized
+        ? AppColors.electricBlue
+        : AppColors.electricBlue.withValues(alpha: 0.35);
+
+    return Material(
+      color: bg,
+      borderRadius: AppRadii.sm,
+      child: InkWell(
+        onTap: busy ? null : onPressed,
+        borderRadius: AppRadii.sm,
+        child: Container(
+          constraints: const BoxConstraints(minHeight: 72),
+          padding: const EdgeInsets.symmetric(
+            horizontal: 6,
+            vertical: AppSpacing.sm,
+          ),
+          decoration: BoxDecoration(
+            borderRadius: AppRadii.sm,
+            border: Border.all(color: border),
+          ),
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Icon(icon, size: 20, color: fg),
+              const SizedBox(height: 6),
+              Text(
+                label,
+                textAlign: TextAlign.center,
+                maxLines: 2,
+                overflow: TextOverflow.ellipsis,
+                style: theme.textTheme.labelMedium?.copyWith(
+                  color: fg,
+                  fontWeight: FontWeight.w700,
+                  height: 1.15,
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
   }
 }
 

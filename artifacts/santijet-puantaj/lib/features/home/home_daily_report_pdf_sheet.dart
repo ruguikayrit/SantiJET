@@ -13,11 +13,53 @@ import '../../data/services/daily_report_pdf_service.dart';
 import '../../domain/entities/daily_report.dart';
 import '../../domain/entities/project.dart';
 
+/// Seçili gün(ler) için PDF üret (anasayfa Dün/Bugün ve takvim sheet ortak).
+Future<void> exportHomeDailyReportPdf(
+  WidgetRef ref, {
+  required Project project,
+  required List<String> dates,
+}) async {
+  if (dates.isEmpty) {
+    throw ArgumentError('En az bir gün seçin');
+  }
+  final sorted = List<String>.from(dates)
+    ..sort((a, b) {
+      final da = PuantajDate.tryParse(a);
+      final db = PuantajDate.tryParse(b);
+      if (da == null || db == null) return a.compareTo(b);
+      return da.compareTo(db);
+    });
+
+  final notifier = ref.read(dailyReportsProvider.notifier);
+  final reports = <DailyReport>[];
+  final snaps = <DailyReportAttendanceSnapshot?>[];
+
+  for (final date in sorted) {
+    var report = notifier.ensureDraft(
+      projectId: project.id,
+      date: date,
+    );
+    report = syncAttendanceIntoReport(ref, report);
+    reports.add(report);
+    snaps.add(report.attendanceSnapshot);
+  }
+
+  final company = ref.read(companyInfoProvider);
+  await dailyReportPdfService.exportMany(
+    reports: reports,
+    project: project,
+    company: company,
+    sections: DailyReportExportSections.all(),
+    liveSnapshots: snaps,
+  );
+}
+
 /// Ana sayfa — günlük rapor PDF için hızlı filtre + çoklu gün takvimi.
 Future<void> showHomeDailyReportPdfSheet(
   BuildContext context,
   WidgetRef ref, {
   required Project project,
+  List<String>? initialDates,
 }) {
   return showModalBottomSheet<void>(
     context: context,
@@ -31,6 +73,7 @@ Future<void> showHomeDailyReportPdfSheet(
       builder: (_, scrollController) => HomeDailyReportPdfSheet(
         project: project,
         scrollController: scrollController,
+        initialDates: initialDates,
       ),
     ),
   );
@@ -40,11 +83,13 @@ class HomeDailyReportPdfSheet extends ConsumerStatefulWidget {
   const HomeDailyReportPdfSheet({
     required this.project,
     this.scrollController,
+    this.initialDates,
     super.key,
   });
 
   final Project project;
   final ScrollController? scrollController;
+  final List<String>? initialDates;
 
   @override
   ConsumerState<HomeDailyReportPdfSheet> createState() =>
@@ -61,9 +106,12 @@ class _HomeDailyReportPdfSheetState
   @override
   void initState() {
     super.initState();
-    final now = DateTime.now();
-    _month = DateTime(now.year, now.month);
-    _selected.add(PuantajDate.today());
+    final seed = widget.initialDates?.isNotEmpty == true
+        ? widget.initialDates!
+        : [PuantajDate.today()];
+    _selected.addAll(seed);
+    final first = PuantajDate.tryParse(seed.first) ?? DateTime.now();
+    _month = DateTime(first.year, first.month);
   }
 
   void _applyQuick(List<String> dates) {
@@ -116,27 +164,10 @@ class _HomeDailyReportPdfSheetState
     });
 
     try {
-      final notifier = ref.read(dailyReportsProvider.notifier);
-      final reports = <DailyReport>[];
-      final snaps = <DailyReportAttendanceSnapshot?>[];
-
-      for (final date in dates) {
-        var report = notifier.ensureDraft(
-          projectId: widget.project.id,
-          date: date,
-        );
-        report = syncAttendanceIntoReport(ref, report);
-        reports.add(report);
-        snaps.add(report.attendanceSnapshot);
-      }
-
-      final company = ref.read(companyInfoProvider);
-      await dailyReportPdfService.exportMany(
-        reports: reports,
+      await exportHomeDailyReportPdf(
+        ref,
         project: widget.project,
-        company: company,
-        sections: DailyReportExportSections.all(),
-        liveSnapshots: snaps,
+        dates: dates,
       );
 
       if (!mounted) return;
@@ -192,6 +223,13 @@ class _HomeDailyReportPdfSheetState
             runSpacing: 8,
             children: [
               _QuickChip(
+                label: 'Dün',
+                selected: _selected.length == 1 &&
+                    _selected.contains(PuantajDate.shift(today, -1)),
+                onTap: () =>
+                    _applyQuick([PuantajDate.shift(today, -1)]),
+              ),
+              _QuickChip(
                 label: 'Bugün',
                 selected:
                     _selected.length == 1 && _selected.contains(today),
@@ -202,15 +240,6 @@ class _HomeDailyReportPdfSheetState
                 selected: _isSameSet(PuantajDate.workWeekDays(today)),
                 onTap: () =>
                     _applyQuick(PuantajDate.workWeekDays(today)),
-              ),
-              _QuickChip(
-                label: 'Geçen hafta',
-                selected: _isSameSet(
-                  PuantajDate.workWeekDays(PuantajDate.shift(today, -7)),
-                ),
-                onTap: () => _applyQuick(
-                  PuantajDate.workWeekDays(PuantajDate.shift(today, -7)),
-                ),
               ),
             ],
           ),
