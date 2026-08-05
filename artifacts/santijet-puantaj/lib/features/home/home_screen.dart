@@ -284,9 +284,7 @@ class _HomeUrgentTaskTile extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    final urgency = TaskUrgency.of(task, today);
-    final accent = urgency.color;
-    final urgencyLabel = urgency.label;
+    final accent = TaskUrgency.of(task, today).color;
 
     return Material(
       color: accent.withValues(alpha: 0.08),
@@ -304,7 +302,7 @@ class _HomeUrgentTaskTile extends StatelessWidget {
             children: [
               Container(
                 width: 4,
-                height: 40,
+                height: 24,
                 decoration: BoxDecoration(
                   color: accent,
                   borderRadius: AppRadii.xs,
@@ -312,41 +310,25 @@ class _HomeUrgentTaskTile extends StatelessWidget {
               ),
               const SizedBox(width: AppSpacing.sm),
               Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      task.title,
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
-                      style: theme.textTheme.titleSmall?.copyWith(
-                        fontWeight: FontWeight.w700,
-                      ),
-                    ),
-                    const SizedBox(height: 2),
-                    Text(
-                      [
-                        if (task.dueDate.isNotEmpty) 'Teslim ${task.dueDate}',
-                        if (task.assignee.isNotEmpty) task.assignee,
-                        task.status.label,
-                      ].join(' · '),
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
-                      style: theme.textTheme.labelSmall?.copyWith(
-                        color: theme.colorScheme.onSurfaceVariant,
-                      ),
-                    ),
-                  ],
+                child: Text(
+                  task.title,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: theme.textTheme.titleSmall?.copyWith(
+                    fontWeight: FontWeight.w700,
+                  ),
                 ),
               ),
-              const SizedBox(width: AppSpacing.xs),
-              Text(
-                urgencyLabel,
-                style: theme.textTheme.labelSmall?.copyWith(
-                  color: accent,
-                  fontWeight: FontWeight.w700,
+              if (task.dueDate.isNotEmpty) ...[
+                const SizedBox(width: AppSpacing.xs),
+                Text(
+                  task.dueDate,
+                  style: theme.textTheme.labelSmall?.copyWith(
+                    color: accent,
+                    fontWeight: FontWeight.w700,
+                  ),
                 ),
-              ),
+              ],
             ],
           ),
         ),
