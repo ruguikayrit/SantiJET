@@ -20,7 +20,15 @@ class AttendanceSummaryTable extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    final people = snapshot.people;
+    final people = [...snapshot.people]..sort((a, b) {
+      final byProfession = a.profession
+          .toLowerCase()
+          .compareTo(b.profession.toLowerCase());
+      if (byProfession != 0) return byProfession;
+      final byTeam = a.team.toLowerCase().compareTo(b.team.toLowerCase());
+      if (byTeam != 0) return byTeam;
+      return a.personName.toLowerCase().compareTo(b.personName.toLowerCase());
+    });
     final border = theme.dividerColor.withValues(alpha: 0.55);
 
     return Container(
@@ -39,6 +47,7 @@ class AttendanceSummaryTable extends StatelessWidget {
               cells: [
                 _HeaderCell('PERSONEL', flex: 3),
                 _HeaderCell('MESLEK', flex: 2),
+                _HeaderCell('EKİP', flex: 2),
                 _HeaderCell('DURUM', flex: 2),
                 _HeaderCell('YV', flex: 1),
               ],
@@ -64,9 +73,9 @@ class AttendanceSummaryTable extends StatelessWidget {
                 itemCount: people.length,
                 itemBuilder: (context, index) {
                   final p = people[index];
-                  final meslek = p.profession.isNotEmpty
-                      ? p.profession
-                      : (p.team.isNotEmpty ? p.team : '—');
+                  final meslek =
+                      p.profession.isNotEmpty ? p.profession : '—';
+                  final ekip = p.team.isNotEmpty ? p.team : '—';
                   final yv = p.yevmiye > 0 ? _num(p.yevmiye) : '—';
                   return Container(
                     padding: const EdgeInsets.symmetric(
@@ -93,6 +102,16 @@ class AttendanceSummaryTable extends StatelessWidget {
                           flex: 2,
                           child: Text(
                             meslek,
+                            textAlign: TextAlign.center,
+                            style: theme.textTheme.labelSmall,
+                            maxLines: 2,
+                            overflow: TextOverflow.ellipsis,
+                          ),
+                        ),
+                        Expanded(
+                          flex: 2,
+                          child: Text(
+                            ekip,
                             textAlign: TextAlign.center,
                             style: theme.textTheme.labelSmall,
                             maxLines: 2,
@@ -150,6 +169,7 @@ class AttendanceSummaryTable extends StatelessWidget {
                     style: theme.textTheme.labelSmall,
                   ),
                 ),
+                const Expanded(flex: 2, child: SizedBox.shrink()),
                 Expanded(
                   flex: 2,
                   child: Text(

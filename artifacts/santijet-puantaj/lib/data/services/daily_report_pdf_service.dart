@@ -561,22 +561,31 @@ class DailyReportPdfService {
   }
 
   pw.Widget _personBreakdown(DailyReportAttendanceSnapshot snap) {
+    final people = [...snap.people]..sort((a, b) {
+      final byProfession = a.profession
+          .toLowerCase()
+          .compareTo(b.profession.toLowerCase());
+      if (byProfession != 0) return byProfession;
+      final byTeam = a.team.toLowerCase().compareTo(b.team.toLowerCase());
+      if (byTeam != 0) return byTeam;
+      return a.personName.toLowerCase().compareTo(b.personName.toLowerCase());
+    });
     return _centeredTable(
       headers: const [
         'Personel',
         'Meslek',
+        'Ekip',
         'Durum',
         'Saat',
         'Mesai',
         'Yevmiye',
       ],
       data: [
-        for (final p in snap.people)
+        for (final p in people)
           [
             p.personName,
-            p.profession.isNotEmpty
-                ? p.profession
-                : (p.team.isEmpty ? '—' : p.team),
+            p.profession.isNotEmpty ? p.profession : '—',
+            p.team.isNotEmpty ? p.team : '—',
             p.status,
             '${p.hours}',
             _fmt(p.overtimeHours),

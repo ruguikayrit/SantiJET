@@ -44,7 +44,8 @@ abstract final class AttendanceSnapshotBuilder {
     }
 
     // Kaydı olmayan aktif personel → yok sayılır.
-    final unrecorded = activePeople.where((p) => !byPerson.containsKey(p.id)).length;
+    final unrecorded =
+        activePeople.where((p) => !byPerson.containsKey(p.id)).length;
     final absent = recordedAbsent + unrecorded;
 
     final metaById = {
@@ -64,7 +65,7 @@ abstract final class AttendanceSnapshotBuilder {
           overtimeHours: a.overtimeHours,
           yevmiye: a.yevmiye,
         ),
-    ]..sort((a, b) => a.personName.compareTo(b.personName));
+    ]..sort(_byProfessionTeamName);
 
     return DailyReportAttendanceSnapshot(
       present: present,
@@ -77,4 +78,28 @@ abstract final class AttendanceSnapshotBuilder {
       capturedAt: capturedAt ?? DateTime.now(),
     );
   }
+
+  /// Meslek → ekip → personel adı.
+  static int _byProfessionTeamName(
+    DailyReportAttendancePerson a,
+    DailyReportAttendancePerson b,
+  ) {
+    final byProfession =
+        _foldTr(a.profession).compareTo(_foldTr(b.profession));
+    if (byProfession != 0) return byProfession;
+    final byTeam = _foldTr(a.team).compareTo(_foldTr(b.team));
+    if (byTeam != 0) return byTeam;
+    return _foldTr(a.personName).compareTo(_foldTr(b.personName));
+  }
+
+  static String _foldTr(String s) => s
+      .trim()
+      .toLowerCase()
+      .replaceAll('ı', 'i')
+      .replaceAll('İ', 'i')
+      .replaceAll('ş', 's')
+      .replaceAll('ğ', 'g')
+      .replaceAll('ü', 'u')
+      .replaceAll('ö', 'o')
+      .replaceAll('ç', 'c');
 }

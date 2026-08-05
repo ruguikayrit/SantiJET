@@ -6,6 +6,7 @@ import 'package:santijet_puantaj/domain/entities/attendance.dart';
 import 'package:santijet_puantaj/domain/entities/daily_report.dart';
 import 'package:santijet_puantaj/domain/entities/person.dart';
 import 'package:santijet_puantaj/domain/enums/attendance_status.dart';
+import 'package:santijet_puantaj/domain/enums/photo_work_category.dart';
 
 void main() {
   group('AttendanceSnapshotBuilder', () {
@@ -82,6 +83,7 @@ void main() {
             id: 'ph1',
             dataBase64: 'YWJj',
             caption: 'Batı cephe',
+            workCategory: PhotoWorkCategory.construction,
           ),
         ],
         outgoingMaterials: const [
@@ -125,6 +127,29 @@ void main() {
       expect(restored.workConstruction, 'Eski tek satır iş');
       expect(restored.workElectrical, '');
       expect(restored.workMechanical, '');
+    });
+
+    test('manuel alana sızmış foto açıklamaları temizlenir', () {
+      final restored = DailyReport.fromJson({
+        'id': 'dr3',
+        'projectId': 'p',
+        'date': '04.08.2026',
+        'workConstruction': 'İNŞAAT İŞLERİ:\nKazı\nBatı cephe',
+        'photos': [
+          const DailyReportPhoto(
+            id: 'ph1',
+            dataBase64: 'YWJj',
+            caption: 'Batı cephe',
+            workCategory: PhotoWorkCategory.construction,
+          ).toJson(),
+        ],
+      });
+      expect(restored.workConstruction, 'Kazı');
+      expect(
+        restored.syncedCaptionsFor(PhotoWorkCategory.construction),
+        ['Batı cephe'],
+      );
+      expect(restored.effectiveWorkConstruction, 'Kazı\nBatı cephe');
     });
   });
 

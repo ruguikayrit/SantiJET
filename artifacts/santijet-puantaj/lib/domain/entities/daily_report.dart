@@ -44,7 +44,12 @@ class DailyReport extends Equatable {
   final String nextDayPlan;
 
   /// Özet / geriye dönük birleşik metin.
-  String get workDone {
+  String get workDone => _combinedWork(withPhotoCaptions: true);
+
+  /// Sadece manuel yazılan metinlerin birleşimi.
+  String get manualWorkDone => _combinedWork(withPhotoCaptions: false);
+
+  String _combinedWork({required bool withPhotoCaptions}) {
     final parts = <String>[];
     void add(String title, String body) {
       final t = body.trim();
@@ -52,21 +57,45 @@ class DailyReport extends Equatable {
       parts.add('$title:\n$t');
     }
 
-    add('İNŞAAT İŞLERİ', effectiveWorkConstruction);
-    add('ELEKTRİK İŞLERİ', effectiveWorkElectrical);
-    add('MEKANİK İŞLER', effectiveWorkMechanical);
+    add(
+      'İNŞAAT İŞLERİ',
+      withPhotoCaptions ? effectiveWorkConstruction : workConstruction,
+    );
+    add(
+      'ELEKTRİK İŞLERİ',
+      withPhotoCaptions ? effectiveWorkElectrical : workElectrical,
+    );
+    add(
+      'MEKANİK İŞLER',
+      withPhotoCaptions ? effectiveWorkMechanical : workMechanical,
+    );
     return parts.join('\n\n');
+  }
+
+  /// Kullanıcının ilgili alana yazdığı serbest metin.
+  String manualWorkFor(PhotoWorkCategory category) => switch (category) {
+        PhotoWorkCategory.construction => workConstruction,
+        PhotoWorkCategory.electrical => workElectrical,
+        PhotoWorkCategory.mechanical => workMechanical,
+        PhotoWorkCategory.none => '',
+      }.trim();
+
+  /// Manuel metinde zaten yazılmayan foto açıklamaları.
+  List<String> syncedCaptionsFor(PhotoWorkCategory category) {
+    final manualKeys = {
+      for (final line in manualWorkFor(category).split('\n'))
+        if (_lineKey(line).isNotEmpty) _lineKey(line),
+    };
+    return [
+      for (final c in photoCaptionsFor(category))
+        if (!manualKeys.contains(_lineKey(c))) c,
+    ];
   }
 
   /// Manuel metin + ilgili kategorideki foto açıklamaları.
   String effectiveWorkFor(PhotoWorkCategory category) {
-    final manual = switch (category) {
-      PhotoWorkCategory.construction => workConstruction,
-      PhotoWorkCategory.electrical => workElectrical,
-      PhotoWorkCategory.mechanical => workMechanical,
-      PhotoWorkCategory.none => '',
-    }.trim();
-    final caps = photoCaptionsFor(category);
+    final manual = manualWorkFor(category);
+    final caps = syncedCaptionsFor(category);
     if (manual.isEmpty && caps.isEmpty) return '';
     if (caps.isEmpty) return manual;
     if (manual.isEmpty) return caps.join('\n');
@@ -168,8 +197,9 @@ class DailyReport extends Equatable {
         'workElectrical': workElectrical,
         'workMechanical': workMechanical,
         'nextDayPlan': nextDayPlan,
-        // Geriye dönük yedek alanı.
-        'workDone': workDone,
+        // Geriye dönük yedek alanı — foto açıklamaları hariç, aksi halde
+        // tekrar okunurken manuel alana kopyalanıp mükerrer satır oluşuyor.
+        'workDone': manualWorkDone,
         'photos': photos.map((e) => e.toJson()).toList(),
         'irsaliyePhotos': irsaliyePhotos.map((e) => e.toJson()).toList(),
         'incomingMaterials':
@@ -185,6 +215,36 @@ class DailyReport extends Equatable {
         'updatedAt': updatedAt?.toIso8601String(),
       };
 
+  static String _lineKey(String raw) => raw
+      .trim()
+      .replaceAll(RegExp(r'^[•\-*]+\s*'), '')
+      .replaceAll(RegExp(r'\s+'), ' ')
+      .toLowerCase();
+
+  static final Set<String> _generatedSectionKeys = {
+    _lineKey('İNŞAAT İŞLERİ:'),
+    _lineKey('ELEKTRİK İŞLERİ:'),
+    _lineKey('MEKANİK İŞLER:'),
+  };
+
+  /// Manuel metne sızmış senkron satırlarını (bölüm başlıkları ve foto
+  /// açıklamaları) ayıklar; bu satırlar rapora zaten fotoğraflardan geliyor.
+  static String _withoutSyncedLines(String raw, Set<String> captionKeys) {
+    if (raw.trim().isEmpty) return '';
+    final kept = <String>[];
+    for (final line in raw.split('\n')) {
+      final key = _lineKey(line);
+      if (key.isEmpty) {
+        kept.add('');
+        continue;
+      }
+      if (_generatedSectionKeys.contains(key)) continue;
+      if (captionKeys.contains(key)) continue;
+      kept.add(line);
+    }
+    return kept.join('\n').trim();
+  }
+
   factory DailyReport.fromJson(Map<String, dynamic> json) {
     List<Map<String, dynamic>> asMaps(dynamic raw) {
       if (raw is! List) return const [];
@@ -192,6 +252,9 @@ class DailyReport extends Equatable {
           .map((e) => Map<String, dynamic>.from(e as Map))
           .toList();
     }
+
+    final photos =
+        asMaps(json['photos']).map(DailyReportPhoto.fromJson).toList();
 
     var construction = json['workConstruction'] as String? ?? '';
     var electrical = json['workElectrical'] as String? ?? '';
@@ -204,6 +267,14 @@ class DailyReport extends Equatable {
       construction = legacy;
     }
 
+    final captionKeys = <String>{
+      for (final p in photos)
+        if (p.hasCaption) _lineKey(p.caption),
+    };
+    construction = _withoutSyncedLines(construction, captionKeys);
+    electrical = _withoutSyncedLines(electrical, captionKeys);
+    mechanical = _withoutSyncedLines(mechanical, captionKeys);
+
     return DailyReport(
       id: json['id'] as String,
       projectId: json['projectId'] as String,
@@ -212,7 +283,7 @@ class DailyReport extends Equatable {
       workElectrical: electrical,
       workMechanical: mechanical,
       nextDayPlan: json['nextDayPlan'] as String? ?? '',
-      photos: asMaps(json['photos']).map(DailyReportPhoto.fromJson).toList(),
+      photos: photos,
       irsaliyePhotos:
           asMaps(json['irsaliyePhotos']).map(DailyReportPhoto.fromJson).toList(),
       incomingMaterials: asMaps(json['incomingMaterials'])

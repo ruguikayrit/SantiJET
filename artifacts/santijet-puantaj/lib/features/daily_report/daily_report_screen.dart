@@ -1519,7 +1519,7 @@ class _DailyReportScreenState extends ConsumerState<DailyReportScreen> {
                           label: 'İnşaat işleri',
                           controller: _workConstructionCtrl,
                           hint: 'İnşaat kapsamında yapılan işler…',
-                          syncedCaptions: report?.photoCaptionsFor(
+                          syncedCaptions: report?.syncedCaptionsFor(
                                 PhotoWorkCategory.construction,
                               ) ??
                               const [],
@@ -1529,7 +1529,7 @@ class _DailyReportScreenState extends ConsumerState<DailyReportScreen> {
                           label: 'Elektrik işleri',
                           controller: _workElectricalCtrl,
                           hint: 'Elektrik kapsamında yapılan işler…',
-                          syncedCaptions: report?.photoCaptionsFor(
+                          syncedCaptions: report?.syncedCaptionsFor(
                                 PhotoWorkCategory.electrical,
                               ) ??
                               const [],
@@ -1539,7 +1539,7 @@ class _DailyReportScreenState extends ConsumerState<DailyReportScreen> {
                           label: 'Mekanik işler',
                           controller: _workMechanicalCtrl,
                           hint: 'Mekanik kapsamında yapılan işler…',
-                          syncedCaptions: report?.photoCaptionsFor(
+                          syncedCaptions: report?.syncedCaptionsFor(
                                 PhotoWorkCategory.mechanical,
                               ) ??
                               const [],
@@ -2230,7 +2230,7 @@ class _DailyReportExportSheetState extends State<_DailyReportExportSheet> {
                 ),
                 _sectionTile(
                   title: 'Puantaj — isimler',
-                  subtitle: 'Personel adı, meslek, durum, yevmiye',
+                  subtitle: 'Personel, meslek, ekip, durum, yevmiye',
                   value: _sections.puantajNames,
                   onChanged: (v) => setState(
                     () => _sections = _sections.copyWith(puantajNames: v),
