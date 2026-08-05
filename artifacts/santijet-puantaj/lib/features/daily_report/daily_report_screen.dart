@@ -330,45 +330,87 @@ class _DailyReportScreenState extends ConsumerState<DailyReportScreen> {
     );
   }
 
-  Future<void> _addPhoto(ImageSource source) async {
+  Future<void> _addPhotosFromFiles(List<XFile> files) async {
     final report = ref.read(activeDailyReportProvider);
-    if (report == null) return;
+    if (report == null || files.isEmpty) return;
+
+    final added = <DailyReportPhoto>[];
+    var skippedLarge = 0;
+
+    for (final file in files) {
+      try {
+        final bytes = await file.readAsBytes();
+        if (bytes.length > 2 * 1024 * 1024) {
+          skippedLarge++;
+          continue;
+        }
+        added.add(
+          DailyReportPhoto(
+            id: IdGen.make('ph'),
+            dataBase64: base64Encode(bytes),
+            mimeType: file.mimeType ?? 'image/jpeg',
+            caption: '',
+            createdAt: DateTime.now(),
+          ),
+        );
+      } catch (_) {
+        // Tek dosya hatası diğerlerini engellemesin.
+      }
+    }
+
+    if (added.isEmpty) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(
+            skippedLarge > 0
+                ? 'Seçilen fotoğraflar çok büyük (en fazla ~2 MB)'
+                : 'Foto eklenemedi',
+          ),
+        ),
+      );
+      return;
+    }
+
+    ref.read(dailyReportsProvider.notifier).upsert(
+          report.copyWith(photos: [...report.photos, ...added]),
+        );
+
+    if (!mounted) return;
+    final msg = skippedLarge > 0
+        ? '${added.length} foto eklendi, $skippedLarge tanesi boyuttan atlandı'
+        : added.length == 1
+            ? 'Foto eklendi — açıklama eklemeniz önerilir'
+            : '${added.length} foto eklendi — açıklama eklemeniz önerilir';
+    ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(msg)));
+  }
+
+  Future<void> _addPhotoFromCamera() async {
     try {
       final file = await _picker.pickImage(
-        source: source,
+        source: ImageSource.camera,
         maxWidth: 1280,
         imageQuality: 72,
       );
       if (file == null) return;
-      final bytes = await file.readAsBytes();
-      if (bytes.length > 2 * 1024 * 1024) {
-        if (mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(
-              content: Text('Fotoğraf çok büyük (en fazla ~2 MB)'),
-            ),
-          );
-        }
-        return;
-      }
-      final mime = file.mimeType ?? 'image/jpeg';
-      final photo = DailyReportPhoto(
-        id: IdGen.make('ph'),
-        dataBase64: base64Encode(bytes),
-        mimeType: mime,
-        caption: '',
-        createdAt: DateTime.now(),
-      );
-      ref.read(dailyReportsProvider.notifier).upsert(
-            report.copyWith(photos: [...report.photos, photo]),
-          );
+      await _addPhotosFromFiles([file]);
+    } catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('Foto eklendi — açıklama eklemeniz önerilir'),
-          ),
+          SnackBar(content: Text('Foto eklenemedi: $e')),
         );
       }
+    }
+  }
+
+  Future<void> _addPhotosFromGallery() async {
+    try {
+      final files = await _picker.pickMultiImage(
+        maxWidth: 1280,
+        imageQuality: 72,
+      );
+      if (files.isEmpty) return;
+      await _addPhotosFromFiles(files);
     } catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
@@ -389,9 +431,10 @@ class _DailyReportScreenState extends ConsumerState<DailyReportScreen> {
             ListTile(
               leading: const Icon(Icons.photo_library_outlined),
               title: const Text('Galeriden seç'),
+              subtitle: const Text('Birden fazla fotoğraf seçebilirsiniz'),
               onTap: () {
                 Navigator.pop(ctx);
-                _addPhoto(ImageSource.gallery);
+                _addPhotosFromGallery();
               },
             ),
             if (!kIsWeb)
@@ -400,15 +443,15 @@ class _DailyReportScreenState extends ConsumerState<DailyReportScreen> {
                 title: const Text('Kamera'),
                 onTap: () {
                   Navigator.pop(ctx);
-                  _addPhoto(ImageSource.camera);
+                  _addPhotoFromCamera();
                 },
               ),
             if (kIsWeb)
               const Padding(
                 padding: EdgeInsets.fromLTRB(16, 0, 16, 16),
                 child: Text(
-                  'Web’de fotoğraflar galeriden seçilir ve Hive’da '
-                  'base64 olarak saklanır.',
+                  'Web’de birden fazla fotoğraf seçebilirsiniz; '
+                  'Hive’da base64 olarak saklanır.',
                   style: TextStyle(fontSize: 12),
                 ),
               ),
