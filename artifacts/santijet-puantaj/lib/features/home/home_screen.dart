@@ -15,9 +15,9 @@ import '../../data/providers/tasks_provider.dart';
 import '../../domain/entities/project.dart';
 import '../../domain/entities/site_task.dart';
 import '../../domain/enums/attendance_status.dart';
-import '../../domain/enums/task_status.dart';
 import '../projects/widgets/project_switcher.dart';
 import 'home_daily_report_pdf_sheet.dart';
+import 'home_task_summary_dialog.dart';
 
 /// Ana sayfa — günlük puantaj, günlük rapor, acil görevler.
 class HomeScreen extends ConsumerStatefulWidget {
@@ -284,36 +284,15 @@ class _HomeUrgentTaskTile extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    final due = task.latestDeliveryDate;
-    final dueDay = due == null
-        ? null
-        : DateTime(due.year, due.month, due.day);
-    final overdue = dueDay != null && dueDay.isBefore(today);
-    final dueToday = dueDay != null && dueDay == today;
-    final accent = overdue
-        ? AppColors.critical
-        : dueToday
-            ? AppColors.warning
-            : AppColors.info;
-
-    String urgencyLabel;
-    if (dueDay == null) {
-      urgencyLabel = task.dueDate;
-    } else if (overdue) {
-      final days = today.difference(dueDay).inDays;
-      urgencyLabel = days == 1 ? '1 gün gecikti' : '$days gün gecikti';
-    } else if (dueToday) {
-      urgencyLabel = 'Bugün teslim';
-    } else {
-      final days = dueDay.difference(today).inDays;
-      urgencyLabel = days == 1 ? 'Yarın teslim' : '$days gün kaldı';
-    }
+    final urgency = TaskUrgency.of(task, today);
+    final accent = urgency.color;
+    final urgencyLabel = urgency.label;
 
     return Material(
       color: accent.withValues(alpha: 0.08),
       borderRadius: AppRadii.sm,
       child: InkWell(
-        onTap: () => context.go(AppRoutes.gorevler),
+        onTap: () => showHomeTaskSummaryDialog(context, task: task),
         borderRadius: AppRadii.sm,
         child: Container(
           padding: const EdgeInsets.all(AppSpacing.sm),
