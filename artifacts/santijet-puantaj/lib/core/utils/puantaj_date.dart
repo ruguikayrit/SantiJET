@@ -61,9 +61,28 @@ abstract final class PuantajDate {
     return List.generate(7, (i) => format(monday.add(Duration(days: i))));
   }
 
-  /// İş haftası Pzt–Cmt (6 gün).
+  /// İş haftası Pzt–Cmt (6 gün) — geriye dönük.
   static List<String> workWeekDays(String dateStr) =>
       weekDays(dateStr).take(6).toList();
+
+  /// Ayın günleri; [through] verilirse o güne kadar (dahil).
+  static List<String> monthDaysThrough(String dateStr, {String? through}) {
+    final days = monthDays(dateStr);
+    if (through == null) return days;
+    final end = tryParse(through);
+    if (end == null) return days;
+    return [
+      for (final d in days)
+        if (!(tryParse(d)?.isAfter(end) ?? true)) d,
+    ];
+  }
+
+  /// Bir önceki ayın tüm günleri.
+  static List<String> previousMonthDays(String dateStr) {
+    final d = parse(dateStr);
+    final prev = DateTime(d.year, d.month - 1, 1);
+    return monthDays(format(prev));
+  }
 
   /// [from]–[to] arası günler (dahil), artan sıra.
   static List<String> rangeDays(String from, String to) {

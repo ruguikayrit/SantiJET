@@ -68,9 +68,10 @@ Future<void> showHomeDailyReportPdfSheet(
     context: context,
     isScrollControlled: true,
     showDragHandle: true,
+    useSafeArea: true,
     builder: (ctx) => DraggableScrollableSheet(
       expand: false,
-      initialChildSize: 0.88,
+      initialChildSize: 0.9,
       minChildSize: 0.55,
       maxChildSize: 0.95,
       builder: (_, scrollController) => HomeDailyReportPdfSheet(
@@ -210,102 +211,127 @@ class _HomeDailyReportPdfSheetState
     final theme = Theme.of(context);
     final today = PuantajDate.today();
     final sorted = _sortedSelected();
+    final thisMonthDays = PuantajDate.monthDaysThrough(today, through: today);
+    final lastMonthDays = PuantajDate.previousMonthDays(today);
+    final weekDays = PuantajDate.weekDays(today);
+    final bottomPad = MediaQuery.viewPaddingOf(context).bottom;
 
-    return Padding(
-      padding: EdgeInsets.only(
-        left: AppSpacing.md,
-        right: AppSpacing.md,
-        bottom: MediaQuery.paddingOf(context).bottom + AppSpacing.md,
-      ),
-      child: ListView(
-        controller: widget.scrollController,
-        children: [
-          Text(
-            'Günlük rapor',
-            style: theme.textTheme.titleLarge?.copyWith(
-              fontWeight: FontWeight.w700,
-            ),
-          ),
-          const SizedBox(height: 4),
-          Text(
-            'Takvimden gün seçin. Haftalık filtre 6 iş gününü (Pzt–Cmt) tek PDF’te birleştirir.',
-            style: theme.textTheme.bodyMedium?.copyWith(
-              color: theme.colorScheme.onSurfaceVariant,
-            ),
-          ),
-          const SizedBox(height: AppSpacing.md),
-          Wrap(
-            spacing: 8,
-            runSpacing: 8,
-            children: [
-              _QuickChip(
-                label: 'Dün',
-                selected: _selected.length == 1 &&
-                    _selected.contains(PuantajDate.shift(today, -1)),
-                onTap: () =>
-                    _applyQuick([PuantajDate.shift(today, -1)]),
+    return SafeArea(
+      top: false,
+      child: Padding(
+        padding: EdgeInsets.fromLTRB(
+          AppSpacing.md,
+          0,
+          AppSpacing.md,
+          bottomPad > 0 ? AppSpacing.sm : AppSpacing.md,
+        ),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            Expanded(
+              child: ListView(
+                controller: widget.scrollController,
+                padding: const EdgeInsets.only(bottom: AppSpacing.sm),
+                children: [
+                  Text(
+                    'Günlük rapor',
+                    style: theme.textTheme.titleLarge?.copyWith(
+                      fontWeight: FontWeight.w700,
+                    ),
+                  ),
+                  const SizedBox(height: 4),
+                  Text(
+                    'Takvimden gün seçin. Haftalık filtre Pzt–Paz 7 günü tek PDF’te birleştirir.',
+                    style: theme.textTheme.bodyMedium?.copyWith(
+                      color: theme.colorScheme.onSurfaceVariant,
+                    ),
+                  ),
+                  const SizedBox(height: AppSpacing.md),
+                  Wrap(
+                    spacing: 8,
+                    runSpacing: 8,
+                    children: [
+                      _QuickChip(
+                        label: 'Dün',
+                        selected: _selected.length == 1 &&
+                            _selected.contains(PuantajDate.shift(today, -1)),
+                        onTap: () =>
+                            _applyQuick([PuantajDate.shift(today, -1)]),
+                      ),
+                      _QuickChip(
+                        label: 'Bugün',
+                        selected: _selected.length == 1 &&
+                            _selected.contains(today),
+                        onTap: () => _applyQuick([today]),
+                      ),
+                      _QuickChip(
+                        label: 'Bu hafta (7 gün)',
+                        selected: _isSameSet(weekDays),
+                        onTap: () => _applyQuick(weekDays),
+                      ),
+                      _QuickChip(
+                        label: 'Bu ay',
+                        selected: _isSameSet(thisMonthDays),
+                        onTap: () => _applyQuick(thisMonthDays),
+                      ),
+                      _QuickChip(
+                        label: 'Geçen ay',
+                        selected: _isSameSet(lastMonthDays),
+                        onTap: () => _applyQuick(lastMonthDays),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: AppSpacing.md),
+                  _MonthHeader(
+                    month: _month,
+                    onPrev: () => setState(
+                      () => _month = DateTime(_month.year, _month.month - 1),
+                    ),
+                    onNext: () => setState(
+                      () => _month = DateTime(_month.year, _month.month + 1),
+                    ),
+                  ),
+                  const SizedBox(height: AppSpacing.sm),
+                  _MultiDayCalendar(
+                    month: _month,
+                    selected: _selected,
+                    onToggle: _toggleDay,
+                  ),
+                  const SizedBox(height: AppSpacing.md),
+                  Text(
+                    sorted.isEmpty
+                        ? 'Seçili gün yok'
+                        : sorted.length == 1
+                            ? 'Seçili: ${sorted.first}'
+                            : 'Seçili: ${sorted.length} gün · ${sorted.first} – ${sorted.last}',
+                    style: theme.textTheme.labelLarge?.copyWith(
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+                  if (_error != null) ...[
+                    const SizedBox(height: AppSpacing.sm),
+                    Text(
+                      _error!,
+                      style: theme.textTheme.bodySmall?.copyWith(
+                        color: AppColors.critical,
+                      ),
+                    ),
+                  ],
+                ],
               ),
-              _QuickChip(
-                label: 'Bugün',
-                selected:
-                    _selected.length == 1 && _selected.contains(today),
-                onTap: () => _applyQuick([today]),
-              ),
-              _QuickChip(
-                label: 'Bu hafta (6 gün)',
-                selected: _isSameSet(PuantajDate.workWeekDays(today)),
-                onTap: () =>
-                    _applyQuick(PuantajDate.workWeekDays(today)),
-              ),
-            ],
-          ),
-          const SizedBox(height: AppSpacing.md),
-          _MonthHeader(
-            month: _month,
-            onPrev: () => setState(
-              () => _month = DateTime(_month.year, _month.month - 1),
             ),
-            onNext: () => setState(
-              () => _month = DateTime(_month.year, _month.month + 1),
-            ),
-          ),
-          const SizedBox(height: AppSpacing.sm),
-          _MultiDayCalendar(
-            month: _month,
-            selected: _selected,
-            onToggle: _toggleDay,
-          ),
-          const SizedBox(height: AppSpacing.md),
-          Text(
-            sorted.isEmpty
-                ? 'Seçili gün yok'
-                : sorted.length == 1
-                    ? 'Seçili: ${sorted.first}'
-                    : 'Seçili: ${sorted.length} gün · ${sorted.first} – ${sorted.last}',
-            style: theme.textTheme.labelLarge?.copyWith(
-              fontWeight: FontWeight.w600,
-            ),
-          ),
-          if (_error != null) ...[
             const SizedBox(height: AppSpacing.sm),
-            Text(
-              _error!,
-              style: theme.textTheme.bodySmall?.copyWith(
-                color: AppColors.critical,
-              ),
+            SJButton(
+              label: sorted.length <= 1
+                  ? 'PDF Rapor Oluştur'
+                  : '${sorted.length} Günlük PDF Oluştur',
+              icon: Icons.picture_as_pdf_outlined,
+              loading: _busy,
+              expanded: true,
+              onPressed: _busy ? null : _exportPdf,
             ),
           ],
-          const SizedBox(height: AppSpacing.md),
-          SJButton(
-            label: sorted.length <= 1
-                ? 'PDF Rapor Oluştur'
-                : '${sorted.length} Günlük PDF Oluştur',
-            icon: Icons.picture_as_pdf_outlined,
-            loading: _busy,
-            expanded: true,
-            onPressed: _busy ? null : _exportPdf,
-          ),
-        ],
+        ),
       ),
     );
   }
