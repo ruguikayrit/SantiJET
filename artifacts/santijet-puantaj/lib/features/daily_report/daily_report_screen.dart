@@ -619,6 +619,18 @@ class _DailyReportScreenState extends ConsumerState<DailyReportScreen> {
         );
   }
 
+  void _reorderPhotos(int oldIndex, int newIndex) {
+    final report = ref.read(activeDailyReportProvider);
+    if (report == null) return;
+    final photos = [...report.photos];
+    if (newIndex > oldIndex) newIndex--;
+    final photo = photos.removeAt(oldIndex);
+    photos.insert(newIndex, photo);
+    ref.read(dailyReportsProvider.notifier).upsert(
+          report.copyWith(photos: photos),
+        );
+  }
+
   Future<void> _upsertMaterial({
     required _MaterialList kind,
     DailyReportMaterial? existing,
@@ -1368,10 +1380,16 @@ class _DailyReportScreenState extends ConsumerState<DailyReportScreen> {
                             'Açıklama + imalat türü yapılan işlere senkronize olur.',
                             style: _cardInk(theme.textTheme.bodyMedium),
                           )
-                        : Column(
-                            children: [
-                              for (final photo in report!.photos)
-                                Padding(
+                        : ReorderableListView.builder(
+                            shrinkWrap: true,
+                            physics: const NeverScrollableScrollPhysics(),
+                            buildDefaultDragHandles: false,
+                            itemCount: report!.photos.length,
+                            onReorder: _reorderPhotos,
+                            itemBuilder: (context, index) {
+                              final photo = report.photos[index];
+                              return Padding(
+                                  key: ValueKey(photo.id),
                                   padding: const EdgeInsets.only(
                                     bottom: AppSpacing.sm,
                                   ),
@@ -1437,6 +1455,32 @@ class _DailyReportScreenState extends ConsumerState<DailyReportScreen> {
                                           ],
                                         ),
                                       ),
+                                      ReorderableDragStartListener(
+                                        index: index,
+                                        child: Tooltip(
+                                          message: 'Sürükleyerek sırala',
+                                          child: Padding(
+                                            padding: const EdgeInsets.symmetric(
+                                              vertical: 12,
+                                            ),
+                                            child: Column(
+                                              children: [
+                                                Text(
+                                                  '${index + 1}',
+                                                  style: _cardInk(
+                                                    theme.textTheme.labelSmall,
+                                                    fontWeight: FontWeight.w700,
+                                                  ),
+                                                ),
+                                                const Icon(
+                                                  Icons.drag_handle,
+                                                  size: 22,
+                                                ),
+                                              ],
+                                            ),
+                                          ),
+                                        ),
+                                      ),
                                       IconButton(
                                         onPressed: () {
                                           ref
@@ -1460,8 +1504,8 @@ class _DailyReportScreenState extends ConsumerState<DailyReportScreen> {
                                       ),
                                     ],
                                   ),
-                                ),
-                            ],
+                                );
+                            },
                           ),
                   ),
                   const SizedBox(height: AppSpacing.md),
