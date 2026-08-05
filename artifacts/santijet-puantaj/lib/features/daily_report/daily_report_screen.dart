@@ -244,6 +244,7 @@ class _DailyReportScreenState extends ConsumerState<DailyReportScreen> {
 
     await showModalBottomSheet<void>(
       context: context,
+      isScrollControlled: true,
       showDragHandle: true,
       backgroundColor: AppColors.surfaceElevated,
       builder: (ctx) => Padding(
