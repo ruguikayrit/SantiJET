@@ -151,22 +151,6 @@ class _PuantajScreenState extends ConsumerState<PuantajScreen> {
         child: Column(
           children: [
             const SantijetHeader(subtitle: 'Puantaj'),
-            Align(
-              alignment: Alignment.centerRight,
-              child: Padding(
-                padding: const EdgeInsets.only(right: AppSpacing.xs),
-                child: IconButton(
-                  tooltip: 'Dışa aktar',
-                  icon: const Icon(Icons.ios_share_outlined),
-                  onPressed: () => _openExportSheet(
-                    context,
-                    project: project,
-                    people: people,
-                    attendance: attendance,
-                  ),
-                ),
-              ),
-            ),
             Padding(
               padding: const EdgeInsets.fromLTRB(
                 AppSpacing.md,
@@ -326,6 +310,25 @@ class _PuantajScreenState extends ConsumerState<PuantajScreen> {
                 people: people,
                 grouped: _grouped(people),
                 statusOf: statusOf,
+              ),
+            ),
+            Padding(
+              padding: const EdgeInsets.fromLTRB(
+                AppSpacing.md,
+                AppSpacing.sm,
+                AppSpacing.md,
+                AppSpacing.md,
+              ),
+              child: SJButton(
+                label: 'Puantaj Dışa Aktar',
+                icon: Icons.ios_share_outlined,
+                expanded: true,
+                onPressed: () => _openExportSheet(
+                  context,
+                  project: project,
+                  people: people,
+                  attendance: attendance,
+                ),
               ),
             ),
           ],
