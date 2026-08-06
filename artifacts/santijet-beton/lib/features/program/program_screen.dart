@@ -61,11 +61,6 @@ class ProgramScreen extends ConsumerWidget {
                             88,
                           ),
                           children: [
-                            Text(
-                              'Siparişler',
-                              style: Theme.of(context).textTheme.titleMedium,
-                            ),
-                            const SizedBox(height: AppSpacing.sm),
                             for (var i = 0; i < orders.length; i++) ...[
                               if (i > 0) const SizedBox(height: AppSpacing.sm),
                               _OrderCard(
