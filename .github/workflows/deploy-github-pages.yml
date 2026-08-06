@@ -167,6 +167,9 @@ jobs:
       - name: Deploy to GitHub Pages
         id: deployment
         uses: actions/deploy-pages@v4
+        with:
+          # Büyük site paketinde Pages status reporting 10 dk'yı aşabiliyor.
+          timeout: 1800000
 
       - name: Published URLs
         run: |
