@@ -565,7 +565,6 @@ class DailyReportPdfService {
         'Meslek',
         'Ekip',
         'Durum',
-        'Saat',
         'Mesai',
         'Yevmiye',
       ],
@@ -576,7 +575,6 @@ class DailyReportPdfService {
             p.profession.isNotEmpty ? p.profession : '—',
             p.team.isNotEmpty ? p.team : '—',
             p.status,
-            '${p.hours}',
             _fmt(p.overtimeHours),
             _fmt(p.yevmiye),
           ],
@@ -898,12 +896,24 @@ class DailyReportPdfService {
                   height: cellHeight,
                   width: double.infinity,
                   alignment: pw.Alignment.center,
+                  decoration: pw.BoxDecoration(
+                    border: pw.Border.all(
+                      color: PdfColors.black,
+                      width: 0.5,
+                    ),
+                  ),
                   child: pw.Image(img, fit: pw.BoxFit.contain),
                 )
               else
                 pw.Container(
                   height: cellHeight * 0.4,
                   alignment: pw.Alignment.center,
+                  decoration: pw.BoxDecoration(
+                    border: pw.Border.all(
+                      color: PdfColors.black,
+                      width: 0.5,
+                    ),
+                  ),
                   child: pw.Text(
                     'Yüklenemedi',
                     textAlign: pw.TextAlign.center,
