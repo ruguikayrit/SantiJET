@@ -882,43 +882,16 @@ class _TasksScreenState extends ConsumerState<TasksScreen> {
                                   crossAxisAlignment:
                                       CrossAxisAlignment.stretch,
                                   children: [
-                                    Row(
-                                      crossAxisAlignment:
-                                          CrossAxisAlignment.start,
-                                      children: [
-                                        Expanded(
-                                          child: Text(
-                                            task.title,
-                                            style: theme.textTheme.titleMedium
-                                                ?.copyWith(
-                                              fontWeight: FontWeight.w700,
-                                              decoration: task.status ==
-                                                      TaskStatus.done
-                                                  ? TextDecoration.lineThrough
-                                                  : null,
-                                            ),
-                                          ),
-                                        ),
-                                        Container(
-                                          padding: const EdgeInsets.symmetric(
-                                            horizontal: 8,
-                                            vertical: 4,
-                                          ),
-                                          decoration: BoxDecoration(
-                                            color: _statusColor(task.status)
-                                                .withValues(alpha: 0.16),
-                                            borderRadius: AppRadii.sm,
-                                          ),
-                                          child: Text(
-                                            task.status.label,
-                                            style: theme.textTheme.labelSmall
-                                                ?.copyWith(
-                                              color: _statusColor(task.status),
-                                              fontWeight: FontWeight.w700,
-                                            ),
-                                          ),
-                                        ),
-                                      ],
+                                    Text(
+                                      task.title,
+                                      style:
+                                          theme.textTheme.titleMedium?.copyWith(
+                                        fontWeight: FontWeight.w700,
+                                        decoration:
+                                            task.status == TaskStatus.done
+                                                ? TextDecoration.lineThrough
+                                                : null,
+                                      ),
                                     ),
                                     if (task.category.trim().isNotEmpty) ...[
                                       const SizedBox(height: 6),

@@ -329,17 +329,6 @@ class DailyReportPdfService {
       widgets.add(_signatureBlock());
     }
 
-    widgets.add(pw.SizedBox(height: 8));
-    widgets.add(
-      pw.Text(
-        multiDay
-            ? '${AppInfo.displayName} · Şantiye raporu · Gün $dayIndex/$dayCount'
-            : '${AppInfo.displayName} · Günlük şantiye raporu',
-        textAlign: pw.TextAlign.center,
-        style: const pw.TextStyle(fontSize: 8, color: _muted),
-      ),
-    );
-
     return widgets;
   }
 
@@ -876,23 +865,6 @@ class DailyReportPdfService {
       crossAxisAlignment: pw.CrossAxisAlignment.stretch,
       children: [
         pw.Row(children: [col('FORMU DOLDURAN'), col('İNCELEYEN'), col('ONAY')]),
-        pw.SizedBox(height: 8),
-        pw.Row(
-          children: [
-            pw.Expanded(
-              child: pw.Text(
-                'Yer: ________________',
-                style: const pw.TextStyle(fontSize: 8, color: _muted),
-              ),
-            ),
-            pw.Expanded(
-              child: pw.Text(
-                'Tarih: ________________',
-                style: const pw.TextStyle(fontSize: 8, color: _muted),
-              ),
-            ),
-          ],
-        ),
       ],
     );
   }

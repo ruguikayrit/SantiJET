@@ -3,7 +3,9 @@ import 'package:flutter/material.dart';
 import '../../../core/theme/app_colors.dart';
 import '../../../core/theme/app_spacing.dart';
 
-/// Veri giriş formu — tam ekran; İptal / Kaydet en altta.
+/// Veri giriş formu — tam ekran; İptal / Kaydet klavye üstünde sabit.
+///
+/// [scrollable] false iken form [Expanded] çocuk kullanabilir (geniş metin alanı).
 Future<T?> showDailyReportEntryPage<T>({
   required BuildContext context,
   required String title,
@@ -12,6 +14,7 @@ Future<T?> showDailyReportEntryPage<T>({
   T? Function()? onCancel,
   String cancelLabel = 'İptal',
   String saveLabel = 'Kaydet',
+  bool scrollable = true,
 }) {
   return Navigator.of(context).push<T>(
     MaterialPageRoute(
@@ -23,6 +26,7 @@ Future<T?> showDailyReportEntryPage<T>({
         onCancel: onCancel,
         cancelLabel: cancelLabel,
         saveLabel: saveLabel,
+        scrollable: scrollable,
       ),
     ),
   );
@@ -35,6 +39,7 @@ class _DailyReportEntryPage<T> extends StatefulWidget {
     required this.onSave,
     required this.cancelLabel,
     required this.saveLabel,
+    required this.scrollable,
     this.onCancel,
   });
 
@@ -44,6 +49,7 @@ class _DailyReportEntryPage<T> extends StatefulWidget {
   final T? Function()? onCancel;
   final String cancelLabel;
   final String saveLabel;
+  final bool scrollable;
 
   @override
   State<_DailyReportEntryPage<T>> createState() =>
@@ -54,8 +60,11 @@ class _DailyReportEntryPageState<T> extends State<_DailyReportEntryPage<T>> {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
+    final bottomSafe = MediaQuery.paddingOf(context).bottom;
+
     return Scaffold(
       backgroundColor: AppColors.canvas,
+      resizeToAvoidBottomInset: true,
       appBar: AppBar(
         title: Text(widget.title),
         automaticallyImplyLeading: false,
@@ -67,27 +76,36 @@ class _DailyReportEntryPageState<T> extends State<_DailyReportEntryPage<T>> {
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
           Expanded(
-            child: SingleChildScrollView(
-              padding: const EdgeInsets.fromLTRB(
-                AppSpacing.md,
-                AppSpacing.md,
-                AppSpacing.md,
-                AppSpacing.lg,
-              ),
-              child: widget.formBuilder(context, setState),
-            ),
+            child: widget.scrollable
+                ? SingleChildScrollView(
+                    padding: const EdgeInsets.fromLTRB(
+                      AppSpacing.md,
+                      AppSpacing.md,
+                      AppSpacing.md,
+                      AppSpacing.lg,
+                    ),
+                    child: widget.formBuilder(context, setState),
+                  )
+                : Padding(
+                    padding: const EdgeInsets.fromLTRB(
+                      AppSpacing.md,
+                      AppSpacing.md,
+                      AppSpacing.md,
+                      AppSpacing.sm,
+                    ),
+                    child: widget.formBuilder(context, setState),
+                  ),
           ),
-          SafeArea(
-            top: false,
+          Material(
+            color: AppColors.surfaceElevated,
             child: Container(
-              padding: const EdgeInsets.fromLTRB(
+              padding: EdgeInsets.fromLTRB(
                 AppSpacing.md,
                 AppSpacing.sm,
                 AppSpacing.md,
-                AppSpacing.md,
+                AppSpacing.sm + bottomSafe,
               ),
               decoration: BoxDecoration(
-                color: AppColors.surfaceElevated,
                 border: Border(
                   top: BorderSide(
                     color: theme.colorScheme.outlineVariant.withValues(

@@ -52,7 +52,7 @@ class AttendanceSummaryTable extends StatelessWidget {
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
           const Padding(
-            padding: EdgeInsets.fromLTRB(8, 8, 8, 6),
+            padding: EdgeInsets.fromLTRB(8, 6, 8, 4),
             child: _HeaderRow(
               cells: [
                 _HeaderCell('PERSONEL', flex: 3),
@@ -249,25 +249,25 @@ class _HeaderCell extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return SizedBox(
-      height: 40,
-      child: DecoratedBox(
-        decoration: BoxDecoration(
-          color: AppColors.electricBlueLight,
-          borderRadius: AppRadii.xs,
-          border: Border.all(color: AppColors.electricBlue),
-        ),
-        child: Center(
-          child: Text(
-            label,
-            textAlign: TextAlign.center,
-            style: TextStyle(
-              color: AppColors.inkPrimary,
-              fontWeight: FontWeight.w700,
-              fontSize: 11,
-              letterSpacing: 0.2,
-              height: 1.1,
-            ),
+    return DecoratedBox(
+      decoration: BoxDecoration(
+        color: AppColors.electricBlueLight,
+        borderRadius: AppRadii.xs,
+        border: Border.all(color: AppColors.electricBlue),
+      ),
+      child: Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 6),
+        child: Text(
+          label,
+          textAlign: TextAlign.center,
+          maxLines: 1,
+          overflow: TextOverflow.ellipsis,
+          style: const TextStyle(
+            color: AppColors.inkPrimary,
+            fontWeight: FontWeight.w700,
+            fontSize: 10,
+            letterSpacing: 0.15,
+            height: 1.1,
           ),
         ),
       ),

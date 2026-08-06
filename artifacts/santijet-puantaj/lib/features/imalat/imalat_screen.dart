@@ -24,6 +24,18 @@ import '../../domain/entities/work_schedule_plan.dart';
 import '../../domain/catalogs/imalat_units.dart';
 import '../../domain/yevmiye/yevmiye_calculator.dart';
 
+enum _ImalatPhase {
+  bekleyen,
+  devamEden,
+  tamamlanan;
+
+  String get label => switch (this) {
+        _ImalatPhase.bekleyen => 'Bekleyen imalatlar',
+        _ImalatPhase.devamEden => 'Devam eden imalatlar',
+        _ImalatPhase.tamamlanan => 'Tamamlanan imalatlar',
+      };
+}
+
 /// İmalat — iş tanımı + %100'e kadar günlük usta/düz kayıtları.
 class ImalatScreen extends ConsumerStatefulWidget {
   const ImalatScreen({super.key, this.embedded = false});
@@ -36,10 +48,10 @@ class ImalatScreen extends ConsumerStatefulWidget {
 }
 
 class _ImalatScreenState extends ConsumerState<ImalatScreen> {
-  /// Kullanıcının elle açtığı ekip başlıkları.
+  /// Kullanıcının elle açtığı durum / ekip başlıkları.
   final Set<String> _manualExpand = {};
 
-  /// Kullanıcının elle kapattığı ekip başlıkları.
+  /// Kullanıcının elle kapattığı durum / ekip başlıkları.
   final Set<String> _manualCollapse = {};
 
   static String _teamKey(Production p) {
@@ -55,21 +67,49 @@ class _ImalatScreenState extends ConsumerState<ImalatScreen> {
   static bool _teamUpdatedToday(List<Production> items) =>
       items.any(_updatedToday);
 
-  bool _isTeamExpanded(String team, bool updatedToday) {
-    if (_manualExpand.contains(team)) return true;
-    if (_manualCollapse.contains(team)) return false;
+  /// Bekleyen = henüz günlük kayıt yok; tamamlanan = %100; aksi devam eden.
+  static _ImalatPhase _phaseOf(Production p) {
+    if (p.isComplete) return _ImalatPhase.tamamlanan;
+    if (p.dailyEntries.isEmpty) return _ImalatPhase.bekleyen;
+    return _ImalatPhase.devamEden;
+  }
+
+  bool _isPhaseExpanded(_ImalatPhase phase) {
+    final key = 'phase:${phase.name}';
+    if (_manualExpand.contains(key)) return true;
+    if (_manualCollapse.contains(key)) return false;
+    // Tamamlanan varsayılan kapalı; diğerleri açık.
+    return phase != _ImalatPhase.tamamlanan;
+  }
+
+  void _togglePhase(_ImalatPhase phase, bool currentlyExpanded) {
+    final key = 'phase:${phase.name}';
+    setState(() {
+      if (currentlyExpanded) {
+        _manualExpand.remove(key);
+        _manualCollapse.add(key);
+      } else {
+        _manualCollapse.remove(key);
+        _manualExpand.add(key);
+      }
+    });
+  }
+
+  bool _isTeamExpanded(String teamKey, bool updatedToday) {
+    if (_manualExpand.contains(teamKey)) return true;
+    if (_manualCollapse.contains(teamKey)) return false;
     // Varsayılan: kapalı; yalnızca bugün güncellenen ekip açık.
     return updatedToday;
   }
 
-  void _toggleTeam(String team, bool currentlyExpanded) {
+  void _toggleTeam(String teamKey, bool currentlyExpanded) {
     setState(() {
       if (currentlyExpanded) {
-        _manualExpand.remove(team);
-        _manualCollapse.add(team);
+        _manualExpand.remove(teamKey);
+        _manualCollapse.add(teamKey);
       } else {
-        _manualCollapse.remove(team);
-        _manualExpand.add(team);
+        _manualCollapse.remove(teamKey);
+        _manualExpand.add(teamKey);
       }
     });
   }
@@ -106,6 +146,23 @@ class _ImalatScreenState extends ConsumerState<ImalatScreen> {
           updatedToday: _teamUpdatedToday(map[k]!),
         ),
     ];
+  }
+
+  Map<_ImalatPhase, List<Production>> _groupByPhase(List<Production> items) {
+    final map = {
+      for (final p in _ImalatPhase.values) p: <Production>[],
+    };
+    for (final p in items) {
+      map[_phaseOf(p)]!.add(p);
+    }
+    for (final list in map.values) {
+      list.sort((a, b) {
+        final name = a.name.toLowerCase().compareTo(b.name.toLowerCase());
+        if (name != 0) return name;
+        return b.latestDate.compareTo(a.latestDate);
+      });
+    }
+    return map;
   }
 
   Widget _productionCard(Production p) {
@@ -177,6 +234,65 @@ class _ImalatScreenState extends ConsumerState<ImalatScreen> {
             ],
           );
         },
+      ),
+    );
+  }
+
+  Widget _phaseHeader({
+    required _ImalatPhase phase,
+    required int count,
+    required bool expanded,
+    required VoidCallback onToggle,
+  }) {
+    final theme = Theme.of(context);
+    final accent = switch (phase) {
+      _ImalatPhase.bekleyen => AppColors.warning,
+      _ImalatPhase.devamEden => AppColors.info,
+      _ImalatPhase.tamamlanan => AppColors.success,
+    };
+    return Material(
+      color: Colors.transparent,
+      child: InkWell(
+        borderRadius: AppRadii.md,
+        onTap: onToggle,
+        child: Container(
+          padding: const EdgeInsets.symmetric(
+            horizontal: AppSpacing.sm,
+            vertical: AppSpacing.sm,
+          ),
+          decoration: BoxDecoration(
+            borderRadius: AppRadii.md,
+            border: Border.all(color: accent.withValues(alpha: 0.45)),
+            color: accent.withValues(alpha: 0.1),
+          ),
+          child: Row(
+            children: [
+              Icon(
+                expanded
+                    ? Icons.keyboard_arrow_down_rounded
+                    : Icons.keyboard_arrow_right_rounded,
+                color: accent,
+              ),
+              const SizedBox(width: 4),
+              Expanded(
+                child: Text(
+                  phase.label,
+                  style: theme.textTheme.titleSmall?.copyWith(
+                    fontWeight: FontWeight.w800,
+                    color: accent,
+                  ),
+                ),
+              ),
+              Text(
+                '$count',
+                style: theme.textTheme.labelMedium?.copyWith(
+                  color: theme.colorScheme.onSurfaceVariant,
+                  fontWeight: FontWeight.w700,
+                ),
+              ),
+            ],
+          ),
+        ),
       ),
     );
   }
@@ -291,7 +407,7 @@ class _ImalatScreenState extends ConsumerState<ImalatScreen> {
     }.toList()
       ..sort();
 
-    final groups = _groupByTeam(items);
+    final byPhase = _groupByPhase(items);
 
     return Scaffold(
       backgroundColor: AppColors.canvas,
@@ -338,46 +454,114 @@ class _ImalatScreenState extends ConsumerState<ImalatScreen> {
                               ),
                     )
                   : ListView(
-                  padding: const EdgeInsets.fromLTRB(
-                    AppSpacing.md,
-                    AppSpacing.sm,
-                    AppSpacing.md,
-                    88,
-                  ),
-                  children: [
-                    for (var gi = 0; gi < groups.length; gi++) ...[
-                      if (gi > 0) const SizedBox(height: AppSpacing.sm),
-                      Builder(
-                        builder: (context) {
-                          final g = groups[gi];
-                          final expanded =
-                              _isTeamExpanded(g.team, g.updatedToday);
-                          return Column(
-                            crossAxisAlignment: CrossAxisAlignment.stretch,
-                            children: [
-                              _teamHeader(
-                                team: g.team,
-                                count: g.items.length,
-                                expanded: expanded,
-                                updatedToday: g.updatedToday,
-                                onToggle: () =>
-                                    _toggleTeam(g.team, expanded),
-                              ),
-                              if (expanded) ...[
-                                const SizedBox(height: AppSpacing.sm),
-                                for (var i = 0; i < g.items.length; i++) ...[
-                                  if (i > 0)
-                                    const SizedBox(height: AppSpacing.sm),
-                                  _productionCard(g.items[i]),
-                                ],
-                              ],
-                            ],
-                          );
-                        },
+                      padding: const EdgeInsets.fromLTRB(
+                        AppSpacing.md,
+                        AppSpacing.sm,
+                        AppSpacing.md,
+                        88,
                       ),
-                    ],
-                  ],
-                ),
+                      children: [
+                        for (var pi = 0;
+                            pi < _ImalatPhase.values.length;
+                            pi++) ...[
+                          if (pi > 0) const SizedBox(height: AppSpacing.md),
+                          Builder(
+                            builder: (context) {
+                              final phase = _ImalatPhase.values[pi];
+                              final phaseItems = byPhase[phase]!;
+                              final phaseExpanded = _isPhaseExpanded(phase);
+                              final teamGroups = _groupByTeam(phaseItems);
+                              return Column(
+                                crossAxisAlignment: CrossAxisAlignment.stretch,
+                                children: [
+                                  _phaseHeader(
+                                    phase: phase,
+                                    count: phaseItems.length,
+                                    expanded: phaseExpanded,
+                                    onToggle: () =>
+                                        _togglePhase(phase, phaseExpanded),
+                                  ),
+                                  if (phaseExpanded) ...[
+                                    if (phaseItems.isEmpty)
+                                      Padding(
+                                        padding: const EdgeInsets.fromLTRB(
+                                          AppSpacing.sm,
+                                          AppSpacing.sm,
+                                          AppSpacing.sm,
+                                          0,
+                                        ),
+                                        child: Text(
+                                          'Bu grupta imalat yok',
+                                          style: Theme.of(context)
+                                              .textTheme
+                                              .bodySmall
+                                              ?.copyWith(
+                                                color: Theme.of(context)
+                                                    .colorScheme
+                                                    .onSurfaceVariant,
+                                              ),
+                                        ),
+                                      )
+                                    else ...[
+                                      const SizedBox(height: AppSpacing.sm),
+                                      for (var gi = 0;
+                                          gi < teamGroups.length;
+                                          gi++) ...[
+                                        if (gi > 0)
+                                          const SizedBox(height: AppSpacing.sm),
+                                        Builder(
+                                          builder: (context) {
+                                            final g = teamGroups[gi];
+                                            final teamKey =
+                                                '${phase.name}|${g.team}';
+                                            final expanded = _isTeamExpanded(
+                                              teamKey,
+                                              g.updatedToday,
+                                            );
+                                            return Column(
+                                              crossAxisAlignment:
+                                                  CrossAxisAlignment.stretch,
+                                              children: [
+                                                _teamHeader(
+                                                  team: g.team,
+                                                  count: g.items.length,
+                                                  expanded: expanded,
+                                                  updatedToday: g.updatedToday,
+                                                  onToggle: () => _toggleTeam(
+                                                    teamKey,
+                                                    expanded,
+                                                  ),
+                                                ),
+                                                if (expanded) ...[
+                                                  const SizedBox(
+                                                    height: AppSpacing.sm,
+                                                  ),
+                                                  for (var i = 0;
+                                                      i < g.items.length;
+                                                      i++) ...[
+                                                    if (i > 0)
+                                                      const SizedBox(
+                                                        height: AppSpacing.sm,
+                                                      ),
+                                                    _productionCard(
+                                                      g.items[i],
+                                                    ),
+                                                  ],
+                                                ],
+                                              ],
+                                            );
+                                          },
+                                        ),
+                                      ],
+                                    ],
+                                  ],
+                                ],
+                              );
+                            },
+                          ),
+                        ],
+                      ],
+                    ),
             ),
           ],
         ),

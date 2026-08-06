@@ -587,6 +587,7 @@ class _DailyReportScreenState extends ConsumerState<DailyReportScreen> {
         await showDailyReportEntryPage<({String caption, PhotoWorkCategory cat})>(
       context: context,
       title: 'Fotoğraf açıklaması',
+      scrollable: false,
       formBuilder: (ctx, setModal) => Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
@@ -602,16 +603,25 @@ class _DailyReportScreenState extends ConsumerState<DailyReportScreen> {
             },
           ),
           _kDialogFieldGap,
-          TextField(
-            controller: ctrl,
-            maxLines: 5,
-            decoration: _dialogFieldDecoration(
-              labelText: 'Açıklama',
-              hintText: 'Örn. Temel kazısı — batı cephe',
-              helperText:
-                  'Seçilen türe göre yapılan işler altına senkronize olur',
+          Expanded(
+            child: TextField(
+              controller: ctrl,
+              maxLines: null,
+              expands: true,
+              textAlignVertical: TextAlignVertical.top,
+              decoration: _dialogFieldDecoration(
+                labelText: 'Açıklama',
+                hintText: 'Örn. Temel kazısı — batı cephe',
+              ).copyWith(
+                alignLabelWithHint: true,
+              ),
+              autofocus: true,
             ),
-            autofocus: true,
+          ),
+          const SizedBox(height: AppSpacing.xs),
+          Text(
+            'Seçilen türe göre yapılan işler altına senkronize olur',
+            style: Theme.of(ctx).textTheme.bodySmall,
           ),
         ],
       ),
