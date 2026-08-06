@@ -12,6 +12,8 @@ import '../../core/theme/app_colors.dart';
 import '../../core/theme/app_spacing.dart';
 import '../../core/utils/app_date.dart';
 import '../../data/providers/app_data_provider.dart';
+import '../../data/services/quality_export_service.dart';
+import '../../domain/entities/project.dart';
 import '../../domain/entities/quality_sample.dart';
 
 /// Laboratuvar beton basınç dayanım rapor kayıtları.
@@ -60,63 +62,162 @@ class QualityScreen extends ConsumerWidget {
                   actionLabel: 'Rapor Ekle',
                   onAction: () => _openEditor(context, ref),
                 )
-              : ListView.separated(
-                  padding: const EdgeInsets.fromLTRB(
-                    AppSpacing.md,
-                    AppSpacing.sm,
-                    AppSpacing.md,
-                    88,
-                  ),
-                  itemCount: samples.length,
-                  separatorBuilder: (_, __) =>
-                      const SizedBox(height: AppSpacing.sm),
-                  itemBuilder: (context, index) {
-                    final s = samples[index];
-                    final strength = s.strengthMpa == null
-                        ? 'Sonuç bekleniyor'
-                        : 'Ort. ${s.strengthMpa!.toStringAsFixed(1)} MPa';
-                    final min = s.minStrengthMpa == null
-                        ? null
-                        : 'Min ${s.minStrengthMpa!.toStringAsFixed(1)} MPa';
-                    final compliance = switch (s.isCompliant) {
-                      true => 'Uygun',
-                      false => 'Uygunsuz',
-                      null => s.isPending ? 'Bekliyor' : 'Karar yok',
-                    };
-                    return SJListItem(
-                      title: s.sampleCode.isEmpty
-                          ? (s.labReportNo.isEmpty
-                              ? s.elementGroup.label
-                              : s.labReportNo)
-                          : s.sampleCode,
-                      subtitle: [
-                        '${s.elementGroup.label} · ${s.concreteClass}',
-                        '${s.sampleDate} · ${s.ageDays} gün · $strength',
-                        if (min != null) min,
-                        if (s.labReportNo.isNotEmpty)
-                          'Rapor: ${s.labReportNo}',
-                      ].join('\n'),
-                      leadingIcon: Icons.science_outlined,
-                      accentColor: switch (s.isCompliant) {
-                        true => AppColors.success,
-                        false => AppColors.critical,
-                        null =>
-                          s.isPending ? AppColors.partial : AppColors.info,
-                      },
-                      trailing: SJStatusBadge(
-                        label: compliance,
-                        color: switch (s.isCompliant) {
-                          true => AppColors.success,
-                          false => AppColors.critical,
-                          null =>
-                            s.isPending ? AppColors.partial : AppColors.info,
+              : Column(
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                  children: [
+                    Padding(
+                      padding: const EdgeInsets.fromLTRB(
+                        AppSpacing.md,
+                        AppSpacing.sm,
+                        AppSpacing.md,
+                        0,
+                      ),
+                      child: Row(
+                        children: [
+                          Expanded(
+                            child: SJButton(
+                              label: 'PDF',
+                              icon: Icons.picture_as_pdf_outlined,
+                              variant: SJButtonVariant.secondary,
+                              onPressed: () => _exportPdf(
+                                context,
+                                project: project,
+                                samples: samples,
+                              ),
+                            ),
+                          ),
+                          const SizedBox(width: AppSpacing.sm),
+                          Expanded(
+                            child: SJButton(
+                              label: 'Excel',
+                              icon: Icons.table_chart_outlined,
+                              variant: SJButtonVariant.secondary,
+                              onPressed: () => _exportExcel(
+                                context,
+                                project: project,
+                                samples: samples,
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                    Expanded(
+                      child: ListView.separated(
+                        padding: const EdgeInsets.fromLTRB(
+                          AppSpacing.md,
+                          AppSpacing.sm,
+                          AppSpacing.md,
+                          88,
+                        ),
+                        itemCount: samples.length,
+                        separatorBuilder: (_, __) =>
+                            const SizedBox(height: AppSpacing.sm),
+                        itemBuilder: (context, index) {
+                          final s = samples[index];
+                          final strength = s.strengthMpa == null
+                              ? 'Sonuç bekleniyor'
+                              : 'Ort. ${s.strengthMpa!.toStringAsFixed(1)} MPa';
+                          final min = s.minStrengthMpa == null
+                              ? null
+                              : 'Min ${s.minStrengthMpa!.toStringAsFixed(1)} MPa';
+                          final compliance = switch (s.isCompliant) {
+                            true => 'Uygun',
+                            false => 'Uygunsuz',
+                            null => s.isPending ? 'Bekliyor' : 'Karar yok',
+                          };
+                          return SJListItem(
+                            title: s.sampleCode.isEmpty
+                                ? (s.labReportNo.isEmpty
+                                    ? s.elementGroup.label
+                                    : s.labReportNo)
+                                : s.sampleCode,
+                            subtitle: [
+                              '${s.elementGroup.label} · ${s.concreteClass}',
+                              '${s.sampleDate} · ${s.ageDays} gün · $strength',
+                              if (min != null) min,
+                              if (s.labReportNo.isNotEmpty)
+                                'Rapor: ${s.labReportNo}',
+                            ].join('\n'),
+                            leadingIcon: Icons.science_outlined,
+                            accentColor: switch (s.isCompliant) {
+                              true => AppColors.success,
+                              false => AppColors.critical,
+                              null => s.isPending
+                                  ? AppColors.partial
+                                  : AppColors.info,
+                            },
+                            trailing: SJStatusBadge(
+                              label: compliance,
+                              color: switch (s.isCompliant) {
+                                true => AppColors.success,
+                                false => AppColors.critical,
+                                null => s.isPending
+                                    ? AppColors.partial
+                                    : AppColors.info,
+                              },
+                            ),
+                            onTap: () =>
+                                _openEditor(context, ref, existing: s),
+                          );
                         },
                       ),
-                      onTap: () => _openEditor(context, ref, existing: s),
-                    );
-                  },
+                    ),
+                  ],
                 ),
     );
+  }
+
+  Future<void> _exportPdf(
+    BuildContext context, {
+    required Project project,
+    required List<QualitySample> samples,
+  }) async {
+    final messenger = ScaffoldMessenger.of(context);
+    messenger.showSnackBar(
+      const SnackBar(content: Text('PDF hazırlanıyor...')),
+    );
+    try {
+      await qualityExportService.sharePdf(
+        project: project,
+        samples: samples,
+      );
+      if (!context.mounted) return;
+      messenger.showSnackBar(
+        const SnackBar(content: Text('PDF paylaşım için hazırlandı.')),
+      );
+    } catch (e) {
+      if (!context.mounted) return;
+      messenger.showSnackBar(
+        SnackBar(content: Text('PDF oluşturulamadı: $e')),
+      );
+    }
+  }
+
+  Future<void> _exportExcel(
+    BuildContext context, {
+    required Project project,
+    required List<QualitySample> samples,
+  }) async {
+    final messenger = ScaffoldMessenger.of(context);
+    messenger.showSnackBar(
+      const SnackBar(content: Text('Excel hazırlanıyor...')),
+    );
+    try {
+      await qualityExportService.shareExcel(
+        project: project,
+        samples: samples,
+      );
+      if (!context.mounted) return;
+      messenger.showSnackBar(
+        const SnackBar(content: Text('Excel paylaşım için hazırlandı.')),
+      );
+    } catch (e) {
+      if (!context.mounted) return;
+      messenger.showSnackBar(
+        SnackBar(content: Text('Excel oluşturulamadı: $e')),
+      );
+    }
   }
 
   Future<void> _openEditor(
