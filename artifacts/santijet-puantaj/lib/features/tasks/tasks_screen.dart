@@ -991,30 +991,29 @@ class _TasksScreenState extends ConsumerState<TasksScreen> {
                                     const SizedBox(height: AppSpacing.sm),
                                     Row(
                                       children: [
-                                        PopupMenuButton<TaskStatus>(
-                                          tooltip: 'Durum değiştir',
-                                          onSelected: (s) => ref
-                                              .read(tasksProvider.notifier)
-                                              .setStatus(task.id, s),
-                                          itemBuilder: (ctx) => [
-                                            for (final s in TaskStatus.values)
-                                              PopupMenuItem(
-                                                value: s,
-                                                child: Text(s.label),
-                                              ),
-                                          ],
-                                          child: Text(
-                                            'Durum',
-                                            style: theme.textTheme.labelLarge
-                                                ?.copyWith(
-                                              color: theme.colorScheme.primary,
-                                              fontWeight: FontWeight.w700,
+                                        for (final s in TaskStatus.values) ...[
+                                          Expanded(
+                                            child: _StatusSelectButton(
+                                              label: s.label,
+                                              selected: task.status == s,
+                                              color: _statusColor(s),
+                                              onTap: () => ref
+                                                  .read(tasksProvider.notifier)
+                                                  .setStatus(task.id, s),
                                             ),
                                           ),
-                                        ),
+                                          if (s != TaskStatus.done)
+                                            const SizedBox(width: 6),
+                                        ],
+                                      ],
+                                    ),
+                                    const SizedBox(height: AppSpacing.xs),
+                                    Row(
+                                      children: [
                                         const Spacer(),
                                         IconButton(
                                           tooltip: 'Düzenle',
+                                          visualDensity: VisualDensity.compact,
                                           onPressed: () => _openEditor(
                                             existing: task,
                                             operator: operator,
@@ -1028,6 +1027,7 @@ class _TasksScreenState extends ConsumerState<TasksScreen> {
                                         if (iAmAssigner)
                                           IconButton(
                                             tooltip: 'Sil',
+                                            visualDensity: VisualDensity.compact,
                                             onPressed: () async {
                                               final ok = await showDialog<bool>(
                                                 context: context,
@@ -1109,6 +1109,61 @@ class _DateChip extends StatelessWidget {
         style: theme.textTheme.labelSmall?.copyWith(
           color: color,
           fontWeight: FontWeight.w700,
+        ),
+      ),
+    );
+  }
+}
+
+/// Görev durumu seçici — seçili dolgulu, diğerleri yalnızca çerçeve.
+class _StatusSelectButton extends StatelessWidget {
+  const _StatusSelectButton({
+    required this.label,
+    required this.selected,
+    required this.color,
+    required this.onTap,
+  });
+
+  final String label;
+  final bool selected;
+  final Color color;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final ink = selected
+        ? AppColors.readableOn(color)
+        : theme.colorScheme.onSurfaceVariant;
+    return Material(
+      color: selected ? color : Colors.transparent,
+      borderRadius: AppRadii.sm,
+      child: InkWell(
+        onTap: onTap,
+        borderRadius: AppRadii.sm,
+        child: Container(
+          alignment: Alignment.center,
+          padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 2),
+          decoration: BoxDecoration(
+            borderRadius: AppRadii.sm,
+            border: Border.all(
+              color: selected ? color : theme.dividerColor,
+              width: selected ? 1.5 : 1,
+            ),
+          ),
+          child: FittedBox(
+            fit: BoxFit.scaleDown,
+            child: Text(
+              label,
+              maxLines: 1,
+              textAlign: TextAlign.center,
+              style: theme.textTheme.labelSmall?.copyWith(
+                color: ink,
+                fontWeight: FontWeight.w700,
+                height: 1.1,
+              ),
+            ),
+          ),
         ),
       ),
     );
