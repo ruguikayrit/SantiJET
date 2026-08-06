@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
+import '../../core/design_system/sj_button.dart';
 import '../../core/design_system/sj_empty_state.dart';
 import '../../core/design_system/sj_list_item.dart';
 import '../../core/design_system/sj_modal.dart';
@@ -272,19 +273,38 @@ class QualityScreen extends ConsumerWidget {
                 maxLines: 2,
               ),
               const SizedBox(height: AppSpacing.md),
-              FilledButton(
-                onPressed: () {
-                  if (codeCtrl.text.trim().isEmpty &&
-                      reportCtrl.text.trim().isEmpty) {
-                    return;
-                  }
-                  Navigator.pop(ctx, true);
-                },
-                child: const Text('Kaydet'),
+              Row(
+                children: [
+                  Expanded(
+                    child: SJButton(
+                      label: 'İptal',
+                      variant: SJButtonVariant.secondary,
+                      expanded: true,
+                      onPressed: () => Navigator.pop(ctx, false),
+                    ),
+                  ),
+                  const SizedBox(width: AppSpacing.sm),
+                  Expanded(
+                    child: SJButton(
+                      label: 'Kaydet',
+                      expanded: true,
+                      onPressed: () {
+                        if (codeCtrl.text.trim().isEmpty &&
+                            reportCtrl.text.trim().isEmpty) {
+                          return;
+                        }
+                        Navigator.pop(ctx, true);
+                      },
+                    ),
+                  ),
+                ],
               ),
               if (existing != null) ...[
                 const SizedBox(height: AppSpacing.sm),
-                TextButton(
+                SJButton(
+                  label: 'Sil',
+                  variant: SJButtonVariant.destructive,
+                  expanded: true,
                   onPressed: () async {
                     final ok = await SJModal.confirm(
                       context: ctx,
@@ -297,10 +317,6 @@ class QualityScreen extends ConsumerWidget {
                     ref.read(qualityProvider.notifier).delete(existing.id);
                     Navigator.pop(ctx, false);
                   },
-                  child: Text(
-                    'Sil',
-                    style: TextStyle(color: AppColors.critical),
-                  ),
                 ),
               ],
             ],
