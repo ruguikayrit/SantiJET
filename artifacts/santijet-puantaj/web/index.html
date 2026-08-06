@@ -25,7 +25,10 @@
       height: -webkit-fill-available;
       height: 100dvh;
       height: var(--app-height, 100dvh);
-      touch-action: manipulation;
+      touch-action: pan-y;
+      overscroll-behavior: none;
+      overscroll-behavior-x: none;
+      overscroll-behavior-y: none;
       background-color: #05070A;
     }
     body {
@@ -37,8 +40,10 @@
       padding: 0;
       overflow: hidden;
       background-color: #05070A;
-      touch-action: manipulation;
+      touch-action: pan-y;
       overscroll-behavior: none;
+      overscroll-behavior-x: none;
+      overscroll-behavior-y: none;
       -webkit-touch-callout: none;
       -webkit-user-select: none;
       user-select: none;
@@ -52,7 +57,9 @@
       height: 100dvh;
       height: var(--app-height, 100dvh);
       min-height: 100dvh;
-      touch-action: manipulation;
+      touch-action: pan-y;
+      overscroll-behavior: none;
+      overscroll-behavior-x: none;
       background-color: #05070A;
     }
     #santijet-loading {
@@ -95,7 +102,7 @@
   </script>
   <script>
     (function () {
-      var APP_VERSION = '1';
+      var APP_VERSION = '2';
       var isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent) ||
         (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
       var isStandalone = window.navigator.standalone === true ||
