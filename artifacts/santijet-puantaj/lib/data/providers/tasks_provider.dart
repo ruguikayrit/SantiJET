@@ -118,6 +118,49 @@ class TasksNotifier extends StateNotifier<List<SiteTask>> {
     _persist();
   }
 
+  /// Katalog yeniden adlandırıldığında görevlerdeki kategori etiketini günceller.
+  int reassignCategory(String from, String to) {
+    final oldName = from.trim();
+    final newName = to.trim();
+    if (oldName.isEmpty || newName.isEmpty || oldName == newName) return 0;
+    final now = DateTime.now();
+    var count = 0;
+    final next = <SiteTask>[];
+    for (final t in state) {
+      if (t.category.trim() == oldName) {
+        next.add(t.copyWith(category: newName, updatedAt: now));
+        count++;
+      } else {
+        next.add(t);
+      }
+    }
+    if (count == 0) return 0;
+    state = next;
+    _persist();
+    return count;
+  }
+
+  /// Katalogdan silinen kategoriyi görevlerden temizler.
+  int clearCategory(String name) {
+    final target = name.trim();
+    if (target.isEmpty) return 0;
+    final now = DateTime.now();
+    var count = 0;
+    final next = <SiteTask>[];
+    for (final t in state) {
+      if (t.category.trim() == target) {
+        next.add(t.copyWith(category: '', updatedAt: now));
+        count++;
+      } else {
+        next.add(t);
+      }
+    }
+    if (count == 0) return 0;
+    state = next;
+    _persist();
+    return count;
+  }
+
   void deleteForProject(String projectId) {
     state = state.where((t) => t.projectId != projectId).toList();
     _persist();

@@ -780,45 +780,64 @@ class _TasksScreenState extends ConsumerState<TasksScreen> {
                   ),
                 ),
               ),
-              if (filterCategories.isNotEmpty) ...[
-                const SizedBox(height: AppSpacing.xs),
-                Padding(
-                  padding:
-                      const EdgeInsets.symmetric(horizontal: AppSpacing.md),
-                  child: SingleChildScrollView(
-                    scrollDirection: Axis.horizontal,
-                    child: Row(
-                      children: [
-                        FilterChip(
-                          avatar: Icon(
-                            Icons.category_outlined,
-                            size: 16,
-                            color: _categoryFilter == null
-                                ? null
-                                : Theme.of(context).colorScheme.onSurfaceVariant,
-                          ),
-                          label: const Text('Tüm kategoriler'),
-                          selected: _categoryFilter == null,
-                          onSelected: (_) =>
-                              setState(() => _categoryFilter = null),
-                        ),
-                        const SizedBox(width: AppSpacing.xs),
-                        for (final c in filterCategories) ...[
-                          FilterChip(
-                            label: Text(
-                              '$c (${tasks.where((t) => t.category.trim() == c).length})',
+              const SizedBox(height: AppSpacing.xs),
+              Padding(
+                padding: const EdgeInsets.symmetric(horizontal: AppSpacing.md),
+                child: Row(
+                  children: [
+                    Expanded(
+                      child: SingleChildScrollView(
+                        scrollDirection: Axis.horizontal,
+                        child: Row(
+                          children: [
+                            FilterChip(
+                              avatar: Icon(
+                                Icons.category_outlined,
+                                size: 16,
+                                color: _categoryFilter == null
+                                    ? null
+                                    : Theme.of(context)
+                                        .colorScheme
+                                        .onSurfaceVariant,
+                              ),
+                              label: const Text('Tüm kategoriler'),
+                              selected: _categoryFilter == null,
+                              onSelected: (_) =>
+                                  setState(() => _categoryFilter = null),
                             ),
-                            selected: _categoryFilter == c,
-                            onSelected: (_) =>
-                                setState(() => _categoryFilter = c),
-                          ),
-                          const SizedBox(width: AppSpacing.xs),
-                        ],
-                      ],
+                            const SizedBox(width: AppSpacing.xs),
+                            for (final c in filterCategories) ...[
+                              FilterChip(
+                                label: Text(
+                                  '$c (${tasks.where((t) => t.category.trim() == c).length})',
+                                ),
+                                selected: _categoryFilter == c,
+                                onSelected: (_) =>
+                                    setState(() => _categoryFilter = c),
+                              ),
+                              const SizedBox(width: AppSpacing.xs),
+                            ],
+                          ],
+                        ),
+                      ),
                     ),
-                  ),
+                    IconButton(
+                      tooltip: 'Kategorileri yönet',
+                      visualDensity: VisualDensity.compact,
+                      onPressed: () async {
+                        await context.push(AppRoutes.gorevKategorileri);
+                        if (!mounted) return;
+                        final cats = ref.read(taskCategoriesProvider);
+                        if (_categoryFilter != null &&
+                            !cats.contains(_categoryFilter)) {
+                          setState(() => _categoryFilter = null);
+                        }
+                      },
+                      icon: const Icon(Icons.tune_outlined, size: 20),
+                    ),
+                  ],
                 ),
-              ],
+              ),
               const SizedBox(height: AppSpacing.sm),
               Expanded(
                 child: filtered.isEmpty

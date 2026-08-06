@@ -243,7 +243,7 @@ class _PersonnelScreenState extends ConsumerState<PersonnelScreen> {
               Padding(
                 padding: const EdgeInsets.fromLTRB(
                   AppSpacing.md,
-                  0,
+                  AppSpacing.afterHeader,
                   AppSpacing.md,
                   AppSpacing.sm,
                 ),

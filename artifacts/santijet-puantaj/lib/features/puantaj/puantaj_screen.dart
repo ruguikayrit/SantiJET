@@ -152,7 +152,7 @@ class _PuantajScreenState extends ConsumerState<PuantajScreen> {
             Padding(
               padding: const EdgeInsets.fromLTRB(
                 AppSpacing.md,
-                AppSpacing.sm,
+                AppSpacing.afterHeader,
                 AppSpacing.md,
                 AppSpacing.sm,
               ),

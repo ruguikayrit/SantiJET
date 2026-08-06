@@ -54,7 +54,7 @@ class _ImalatHubScreenState extends ConsumerState<ImalatHubScreen> {
             Padding(
               padding: const EdgeInsets.fromLTRB(
                 AppSpacing.md,
-                AppSpacing.lg,
+                AppSpacing.afterHeader,
                 AppSpacing.md,
                 AppSpacing.sm,
               ),

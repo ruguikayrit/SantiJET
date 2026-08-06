@@ -8,6 +8,7 @@ import '../../core/routing/app_routes.dart';
 import '../../core/theme/app_colors.dart';
 import '../../core/theme/app_spacing.dart';
 import '../../data/providers/catalog_provider.dart';
+import '../../data/providers/tasks_provider.dart';
 import '../../domain/catalogs/professions.dart';
 import '../../domain/catalogs/task_categories.dart';
 
@@ -20,6 +21,7 @@ class ProfessionsScreen extends ConsumerWidget {
     return _CatalogManageScreen(
       title: 'Meslekler',
       emptyMessage: 'Henüz meslek yok. Yeni meslek ekleyin.',
+      itemNoun: 'meslek',
       items: ref.watch(professionsProvider),
       onAdd: (name) => ref.read(professionsProvider.notifier).add(name),
       onRename: (oldName, newName) =>
@@ -41,6 +43,7 @@ class TeamsScreen extends ConsumerWidget {
     return _CatalogManageScreen(
       title: 'Ekipler',
       emptyMessage: 'Henüz ekip yok. Yeni ekip ekleyin.',
+      itemNoun: 'ekip',
       items: ref.watch(teamsProvider),
       onAdd: (name) => ref.read(teamsProvider.notifier).add(name),
       onRename: (oldName, newName) =>
@@ -53,24 +56,46 @@ class TeamsScreen extends ConsumerWidget {
   }
 }
 
-/// Ayarlar → Görev kategorileri (ekle / düzenle / sil).
+/// Ayarlar / Görevler → Görev kategorileri (ekle / düzenle / sil).
 class TaskCategoriesScreen extends ConsumerWidget {
   const TaskCategoriesScreen({super.key});
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
+    final tasks = ref.watch(tasksProvider);
     return _CatalogManageScreen(
       title: 'Görev kategorileri',
       emptyMessage: 'Henüz kategori yok. Yeni kategori ekleyin.',
+      itemNoun: 'kategori',
       items: ref.watch(taskCategoriesProvider),
+      usageCount: (name) =>
+          tasks.where((t) => t.category.trim() == name).length,
       onAdd: (name) => ref.read(taskCategoriesProvider.notifier).add(name),
-      onRename: (oldName, newName) =>
-          ref.read(taskCategoriesProvider.notifier).rename(oldName, newName),
-      onRemove: (name) =>
-          ref.read(taskCategoriesProvider.notifier).remove(name),
-      onReset: () => ref
-          .read(taskCategoriesProvider.notifier)
-          .resetToDefaults(TaskCategoryCatalog.defaults),
+      onRename: (oldName, newName) {
+        final ok =
+            ref.read(taskCategoriesProvider.notifier).rename(oldName, newName);
+        if (ok) {
+          ref.read(tasksProvider.notifier).reassignCategory(oldName, newName);
+        }
+        return ok;
+      },
+      onRemove: (name) {
+        ref.read(taskCategoriesProvider.notifier).remove(name);
+        ref.read(tasksProvider.notifier).clearCategory(name);
+      },
+      onReset: () {
+        final defaults = TaskCategoryCatalog.defaults;
+        final removed = ref
+            .read(taskCategoriesProvider)
+            .where((c) => !defaults.contains(c))
+            .toList();
+        ref
+            .read(taskCategoriesProvider.notifier)
+            .resetToDefaults(defaults);
+        for (final name in removed) {
+          ref.read(tasksProvider.notifier).clearCategory(name);
+        }
+      },
     );
   }
 }
@@ -84,15 +109,19 @@ class _CatalogManageScreen extends StatelessWidget {
     required this.onRename,
     required this.onRemove,
     required this.onReset,
+    this.usageCount,
+    this.itemNoun = 'öğe',
   });
 
   final String title;
   final String emptyMessage;
+  final String itemNoun;
   final List<String> items;
   final bool Function(String name) onAdd;
-  final void Function(String oldName, String newName) onRename;
+  final bool Function(String oldName, String newName) onRename;
   final void Function(String name) onRemove;
   final VoidCallback onReset;
+  final int Function(String name)? usageCount;
 
   @override
   Widget build(BuildContext context) {
@@ -101,7 +130,13 @@ class _CatalogManageScreen extends StatelessWidget {
         title: Text(title),
         leading: IconButton(
           icon: const Icon(Icons.arrow_back),
-          onPressed: () => context.go(AppRoutes.yonetim),
+          onPressed: () {
+            if (context.canPop()) {
+              context.pop();
+            } else {
+              context.go(AppRoutes.yonetim);
+            }
+          },
         ),
         actions: [
           IconButton(
@@ -149,7 +184,7 @@ class _CatalogManageScreen extends StatelessWidget {
           : ListView.separated(
               padding: const EdgeInsets.fromLTRB(
                 AppSpacing.md,
-                AppSpacing.sm,
+                AppSpacing.afterHeader,
                 AppSpacing.md,
                 88,
               ),
@@ -158,6 +193,7 @@ class _CatalogManageScreen extends StatelessWidget {
                   const SizedBox(height: AppSpacing.xs),
               itemBuilder: (context, i) {
                 final name = items[i];
+                final used = usageCount?.call(name) ?? 0;
                 return SJCard(
                   onTap: () => _openEditor(context, existing: name),
                   padding: const EdgeInsets.fromLTRB(
@@ -170,16 +206,47 @@ class _CatalogManageScreen extends StatelessWidget {
                     builder: (context) {
                       final theme = Theme.of(context);
                       return SizedBox(
-                        height: 40,
+                        height: 48,
                         child: Row(
                           children: [
                             Expanded(
-                              child: Text(
-                                name,
-                                style: theme.textTheme.titleSmall,
-                                maxLines: 1,
-                                overflow: TextOverflow.ellipsis,
+                              child: Column(
+                                mainAxisAlignment: MainAxisAlignment.center,
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Text(
+                                    name,
+                                    style: theme.textTheme.titleSmall,
+                                    maxLines: 1,
+                                    overflow: TextOverflow.ellipsis,
+                                  ),
+                                  if (usageCount != null)
+                                    Text(
+                                      used == 0
+                                          ? 'Görevde kullanılmıyor'
+                                          : '$used görevde',
+                                      style: theme.textTheme.labelSmall?.copyWith(
+                                        color: theme.colorScheme.onSurfaceVariant,
+                                      ),
+                                    ),
+                                ],
                               ),
+                            ),
+                            IconButton(
+                              icon: Icon(
+                                Icons.edit_outlined,
+                                size: 20,
+                                color: theme.colorScheme.onSurfaceVariant,
+                              ),
+                              tooltip: 'Düzenle',
+                              visualDensity: VisualDensity.compact,
+                              constraints: const BoxConstraints(
+                                minWidth: 36,
+                                minHeight: 36,
+                              ),
+                              padding: EdgeInsets.zero,
+                              onPressed: () =>
+                                  _openEditor(context, existing: name),
                             ),
                             IconButton(
                               icon: const Icon(Icons.delete_outline, size: 20),
@@ -194,8 +261,13 @@ class _CatalogManageScreen extends StatelessWidget {
                                 final ok = await showDialog<bool>(
                                   context: context,
                                   builder: (ctx) => AlertDialog(
-                                    title: const Text('Sil'),
-                                    content: Text('"$name" silinsin mi?'),
+                                    title: Text('$itemNoun sil'),
+                                    content: Text(
+                                      used > 0
+                                          ? '"$name" silinsin mi?\n'
+                                              '$used görevdeki $itemNoun temizlenecek.'
+                                          : '"$name" silinsin mi?',
+                                    ),
                                     actions: [
                                       TextButton(
                                         onPressed: () =>
@@ -243,14 +315,16 @@ class _CatalogManageScreen extends StatelessWidget {
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
               Text(
-                existing == null ? 'Yeni ekle' : 'Düzenle',
+                existing == null ? 'Yeni $itemNoun' : '$itemNoun düzenle',
                 style: Theme.of(ctx).textTheme.titleLarge,
               ),
               const SizedBox(height: AppSpacing.md),
               TextField(
                 controller: controller,
                 autofocus: true,
-                decoration: InputDecoration(labelText: title),
+                decoration: InputDecoration(
+                  labelText: itemNoun[0].toUpperCase() + itemNoun.substring(1),
+                ),
                 textCapitalization: TextCapitalization.sentences,
                 onSubmitted: (v) {
                   if (v.trim().isNotEmpty) Navigator.pop(ctx, v.trim());
@@ -289,7 +363,20 @@ class _CatalogManageScreen extends StatelessWidget {
         );
       }
     } else if (saved != existing) {
-      onRename(existing, saved);
+      final ok = onRename(existing, saved);
+      if (!ok && context.mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            backgroundColor: AppColors.warning,
+            content: Text(
+              'Bu ad zaten listede var.',
+              style: TextStyle(
+                color: AppColors.readableOn(AppColors.warning),
+              ),
+            ),
+          ),
+        );
+      }
     }
   }
 }

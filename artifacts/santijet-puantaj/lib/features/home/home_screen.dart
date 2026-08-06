@@ -91,7 +91,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
               const Padding(
                 padding: EdgeInsets.fromLTRB(
                   AppSpacing.md,
-                  0,
+                  AppSpacing.afterHeader,
                   AppSpacing.md,
                   AppSpacing.sm,
                 ),
@@ -138,7 +138,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
               child: Padding(
                 padding: EdgeInsets.fromLTRB(
                   AppSpacing.md,
-                  0,
+                  AppSpacing.afterHeader,
                   AppSpacing.md,
                   AppSpacing.sm,
                 ),

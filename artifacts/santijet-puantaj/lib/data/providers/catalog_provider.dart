@@ -73,20 +73,21 @@ class CatalogNotifier extends StateNotifier<List<String>> {
     return true;
   }
 
-  void rename(String oldName, String newName) {
+  bool rename(String oldName, String newName) {
     final trimmed = newName.trim();
-    if (trimmed.isEmpty) return;
+    if (trimmed.isEmpty) return false;
     final idx = state.indexOf(oldName);
-    if (idx < 0) return;
+    if (idx < 0) return false;
     final exists = state.any(
       (e) => e.toLowerCase() == trimmed.toLowerCase() && e != oldName,
     );
-    if (exists) return;
+    if (exists) return false;
     final next = [...state];
     next[idx] = trimmed;
     next.sort((a, b) => a.compareTo(b));
     state = next;
     _persist();
+    return true;
   }
 
   void remove(String name) {

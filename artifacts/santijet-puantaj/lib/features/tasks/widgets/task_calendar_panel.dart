@@ -136,7 +136,12 @@ class _TaskCalendarPanelState extends State<TaskCalendarPanel> {
     final label = PuantajDate.monthLabel(PuantajDate.format(_month));
 
     return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: AppSpacing.md),
+      padding: const EdgeInsets.fromLTRB(
+        AppSpacing.md,
+        AppSpacing.afterHeader,
+        AppSpacing.md,
+        0,
+      ),
       child: SJCard(
         padding: EdgeInsets.zero,
         // Kart kontrast teması: mürekkep kart yüzeyine göre çözülür.

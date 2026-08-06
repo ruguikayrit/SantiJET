@@ -1284,7 +1284,12 @@ class _DailyReportScreenState extends ConsumerState<DailyReportScreen> {
           children: [
             const SantijetHeader(subtitle: 'Günlük Rapor'),
             Padding(
-              padding: const EdgeInsets.symmetric(horizontal: AppSpacing.md),
+              padding: const EdgeInsets.fromLTRB(
+                AppSpacing.md,
+                AppSpacing.afterHeader,
+                AppSpacing.md,
+                0,
+              ),
               child: Row(
                 children: [
                   IconButton(
