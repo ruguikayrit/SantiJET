@@ -892,28 +892,29 @@ class DailyReportPdfService {
             crossAxisAlignment: pw.CrossAxisAlignment.center,
             children: [
               if (img != null)
-                pw.Container(
+                pw.SizedBox(
                   height: cellHeight,
                   width: double.infinity,
-                  alignment: pw.Alignment.center,
-                  decoration: pw.BoxDecoration(
-                    border: pw.Border.all(
-                      color: PdfColors.black,
-                      width: 0.5,
+                  child: pw.Center(
+                    child: pw.Container(
+                      decoration: pw.BoxDecoration(
+                        border: pw.Border.all(
+                          color: PdfColors.black,
+                          width: 0.5,
+                        ),
+                      ),
+                      child: pw.Image(
+                        img,
+                        height: cellHeight - 1,
+                        fit: pw.BoxFit.contain,
+                      ),
                     ),
                   ),
-                  child: pw.Image(img, fit: pw.BoxFit.contain),
                 )
               else
                 pw.Container(
                   height: cellHeight * 0.4,
                   alignment: pw.Alignment.center,
-                  decoration: pw.BoxDecoration(
-                    border: pw.Border.all(
-                      color: PdfColors.black,
-                      width: 0.5,
-                    ),
-                  ),
                   child: pw.Text(
                     'Yüklenemedi',
                     textAlign: pw.TextAlign.center,
