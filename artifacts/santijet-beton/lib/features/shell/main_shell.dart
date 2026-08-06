@@ -46,19 +46,29 @@ class MainShell extends ConsumerWidget {
     final themeMode = ref.watch(themeModeProvider);
     AppColors.applyPaletteFromMode(themeMode, Theme.of(context).brightness);
 
-    return Scaffold(
-      backgroundColor: AppColors.canvas,
-      resizeToAvoidBottomInset: false,
-      body: ThemeRebuildGate(child: navigationShell),
-      bottomNavigationBar: MediaQuery.removePadding(
-        context: context,
-        removeBottom: true,
-        child: SJBottomNavigation(
-          items: _items,
-          currentIndex: navigationShell.currentIndex,
-          onTap: (index) => navigationShell.goBranch(
-            index,
-            initialLocation: index == navigationShell.currentIndex,
+    return PopScope(
+      // Alt sekmeler arası tarayıcı/geçmiş kaydırmasıyla geri gitmeyi engelle.
+      canPop: false,
+      child: Scaffold(
+        backgroundColor: AppColors.canvas,
+        resizeToAvoidBottomInset: false,
+        body: ThemeRebuildGate(child: navigationShell),
+        bottomNavigationBar: MediaQuery.removePadding(
+          context: context,
+          removeBottom: true,
+          child: SJBottomNavigation(
+            items: _items,
+            currentIndex: navigationShell.currentIndex,
+            onTap: (index) {
+              // Sekme değişimini tarayıcı geçmişine yazma → sağa/sola
+              // kaydırarak sekme geçişi oluşmasın.
+              Router.neglect(context, () {
+                navigationShell.goBranch(
+                  index,
+                  initialLocation: index == navigationShell.currentIndex,
+                );
+              });
+            },
           ),
         ),
       ),
