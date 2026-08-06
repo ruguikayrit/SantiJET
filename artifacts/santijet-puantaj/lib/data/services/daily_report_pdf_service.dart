@@ -841,10 +841,11 @@ class DailyReportPdfService {
               border: pw.Border.all(color: _line, width: 0.7),
             ),
             child: pw.Column(
-              crossAxisAlignment: pw.CrossAxisAlignment.start,
+              crossAxisAlignment: pw.CrossAxisAlignment.center,
               children: [
                 pw.Text(
                   title,
+                  textAlign: pw.TextAlign.center,
                   style: pw.TextStyle(
                     fontSize: 8,
                     fontWeight: pw.FontWeight.bold,
@@ -854,6 +855,7 @@ class DailyReportPdfService {
                 pw.SizedBox(height: 16),
                 pw.Text(
                   'Ad Soyad / İmza',
+                  textAlign: pw.TextAlign.center,
                   style: const pw.TextStyle(fontSize: 7, color: _muted),
                 ),
               ],
