@@ -17,6 +17,7 @@ import '../../data/providers/production_provider.dart';
 import '../../data/providers/verim_provider.dart';
 import '../../data/services/puantaj_backup_service.dart';
 import '../../domain/catalogs/professions.dart';
+import '../../domain/catalogs/task_categories.dart';
 import '../../core/design_system/sj_modal.dart';
 
 /// Ayarlar — Demir ile aynı kart/tile düzeni; Puantaj kapsamına indirgenmiş.
@@ -31,10 +32,13 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
   bool _busy = false;
 
   void _showThemePicker(BuildContext context) {
+    final sheetTheme = SJModal.sheetThemeOf(context);
     showModalBottomSheet<void>(
       context: context,
-      backgroundColor: AppColors.surfaceElevated,
-      builder: (ctx) => Column(
+      backgroundColor: SJModal.sheetSurface,
+      builder: (ctx) => Theme(
+        data: sheetTheme,
+        child: Column(
         mainAxisSize: MainAxisSize.min,
         children: [
           ListTile(
@@ -75,15 +79,19 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
             },
           ),
         ],
+        ),
       ),
     );
   }
 
   void _showBackupDialog(BuildContext context) {
+    final sheetTheme = SJModal.sheetThemeOf(context);
     showModalBottomSheet<void>(
       context: context,
-      backgroundColor: AppColors.surfaceElevated,
-      builder: (ctx) => SafeArea(
+      backgroundColor: SJModal.sheetSurface,
+      builder: (ctx) => Theme(
+        data: sheetTheme,
+        child: SafeArea(
         child: Padding(
           padding: const EdgeInsets.all(AppSpacing.md),
           child: Column(
@@ -92,13 +100,13 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
             children: [
               Text(
                 'Yedekleme & Geri Yükleme',
-                style: Theme.of(ctx).textTheme.headlineMedium,
+                style: sheetTheme.textTheme.headlineMedium,
               ),
               const SizedBox(height: 8),
               Text(
                 'Tüm projeler, personel, puantaj, imalat ve katalogları '
                 'JSON dosyası olarak dışa / içe aktarın.',
-                style: Theme.of(ctx).textTheme.bodySmall,
+                style: sheetTheme.textTheme.bodySmall,
               ),
               const SizedBox(height: 16),
               FilledButton.icon(
@@ -124,6 +132,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
               ),
             ],
           ),
+        ),
         ),
       ),
     );
@@ -155,10 +164,13 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
 
   Future<void> _import() async {
     if (_busy) return;
+    final dialogTheme = SJModal.sheetThemeOf(context);
     final ok = await showDialog<bool>(
       context: context,
-      builder: (ctx) => AlertDialog(
-        backgroundColor: AppColors.surfaceElevated,
+      builder: (ctx) => Theme(
+        data: dialogTheme,
+        child: AlertDialog(
+        backgroundColor: SJModal.sheetSurface,
         title: const Text('Verileri İçe Aktar'),
         content: const Text(
           'Seçilen yedek dosyası mevcut proje, personel, puantaj ve '
@@ -174,6 +186,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
             child: const Text('İçe aktar'),
           ),
         ],
+        ),
       ),
     );
     if (ok != true || !mounted) return;
@@ -213,10 +226,13 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
   }
 
   Future<void> _confirmDeleteAllData(BuildContext context) async {
+    final dialogTheme = SJModal.sheetThemeOf(context);
     final ok = await showDialog<bool>(
       context: context,
-      builder: (ctx) => AlertDialog(
-        backgroundColor: AppColors.surfaceElevated,
+      builder: (ctx) => Theme(
+        data: dialogTheme,
+        child: AlertDialog(
+        backgroundColor: SJModal.sheetSurface,
         title: const Text('Tüm Verileri Sil'),
         content: const Text(
           'Projeler, personel, puantaj, imalat ve kataloglar silinir. '
@@ -228,11 +244,15 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
             child: const Text('Vazgeç'),
           ),
           FilledButton(
-            style: FilledButton.styleFrom(backgroundColor: AppColors.critical),
+            style: FilledButton.styleFrom(
+              backgroundColor: AppColors.critical,
+              foregroundColor: AppColors.readableOn(AppColors.critical),
+            ),
             onPressed: () => Navigator.pop(ctx, true),
             child: const Text('Sil'),
           ),
         ],
+        ),
       ),
     );
     if (ok != true || !mounted) return;
@@ -248,6 +268,9 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
     ref
         .read(teamsProvider.notifier)
         .resetToDefaults(ProfessionCatalog.defaultTradeGroups);
+    ref
+        .read(taskCategoriesProvider.notifier)
+        .resetToDefaults(TaskCategoryCatalog.defaults);
     ref.read(activeProjectIdProvider.notifier).set(null);
     ref.read(verimProvider.notifier).clear();
     ref.read(companyInfoProvider.notifier).clear();

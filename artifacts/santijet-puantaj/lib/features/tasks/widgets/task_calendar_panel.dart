@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../../../core/design_system/sj_card.dart';
+import '../../../core/design_system/sj_modal.dart';
 import '../../../core/theme/app_colors.dart';
 import '../../../core/theme/app_radii.dart';
 import '../../../core/theme/app_spacing.dart';
@@ -73,13 +74,16 @@ class _TaskCalendarPanelState extends State<TaskCalendarPanel> {
       return;
     }
     if (!mounted) return;
+    final sheetTheme = SJModal.sheetThemeOf(context);
     await showModalBottomSheet<void>(
       context: context,
       showDragHandle: true,
-      backgroundColor: AppColors.surfaceElevated,
+      backgroundColor: SJModal.sheetSurface,
       builder: (ctx) {
-        final theme = Theme.of(ctx);
-        return SafeArea(
+        final theme = sheetTheme;
+        return Theme(
+          data: sheetTheme,
+          child: SafeArea(
           child: Padding(
             padding: const EdgeInsets.fromLTRB(
               AppSpacing.md,
@@ -118,6 +122,7 @@ class _TaskCalendarPanelState extends State<TaskCalendarPanel> {
               ],
             ),
           ),
+          ),
         );
       },
     );
@@ -126,7 +131,6 @@ class _TaskCalendarPanelState extends State<TaskCalendarPanel> {
 
   @override
   Widget build(BuildContext context) {
-    final theme = Theme.of(context);
     final starts = _startKeys;
     final dues = _dueKeys;
     final label = PuantajDate.monthLabel(PuantajDate.format(_month));
@@ -135,7 +139,11 @@ class _TaskCalendarPanelState extends State<TaskCalendarPanel> {
       padding: const EdgeInsets.symmetric(horizontal: AppSpacing.md),
       child: SJCard(
         padding: EdgeInsets.zero,
-        child: Column(
+        // Kart kontrast teması: mürekkep kart yüzeyine göre çözülür.
+        child: Builder(
+          builder: (context) {
+            final theme = Theme.of(context);
+            return Column(
           children: [
             InkWell(
               onTap: () => setState(() => _expanded = !_expanded),
@@ -255,6 +263,8 @@ class _TaskCalendarPanelState extends State<TaskCalendarPanel> {
               ),
             ],
           ],
+            );
+          },
         ),
       ),
     );
@@ -441,7 +451,15 @@ class _DayCell extends StatelessWidget {
                           ? FontWeight.w800
                           : FontWeight.w500,
                       color: hasMark
-                          ? theme.colorScheme.onSurface
+                          ? AppColors.readableOn(
+                              Color.lerp(
+                                AppColors.cardSurface,
+                                isDue && !isStart
+                                    ? AppColors.critical
+                                    : AppColors.success,
+                                0.45,
+                              )!,
+                            )
                           : theme.colorScheme.onSurfaceVariant,
                     ),
                   ),

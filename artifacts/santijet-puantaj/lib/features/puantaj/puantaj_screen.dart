@@ -187,7 +187,7 @@ class _PuantajScreenState extends ConsumerState<PuantajScreen> {
                               textAlign: TextAlign.center,
                               style: theme.textTheme.labelLarge?.copyWith(
                                 color: _mode == m
-                                    ? Colors.white
+                                    ? theme.colorScheme.onSecondary
                                     : theme.colorScheme.onSurfaceVariant,
                                 fontWeight: FontWeight.w600,
                               ),
@@ -472,14 +472,17 @@ class _DailyView extends StatelessWidget {
             ),
             child: Row(
               children: [
-                const Icon(Icons.warning_amber,
-                    size: 16, color: AppColors.warning),
+                Icon(
+                  Icons.warning_amber,
+                  size: 16,
+                  color: AppColors.statusInkOnChrome(AppColors.warning),
+                ),
                 const SizedBox(width: AppSpacing.xs),
                 Expanded(
                   child: Text(
                     '$missing personelin puantajı girilmedi',
                     style: theme.textTheme.bodySmall?.copyWith(
-                      color: AppColors.warning,
+                      color: AppColors.statusInkOnChrome(AppColors.warning),
                     ),
                   ),
                 ),
@@ -527,11 +530,20 @@ class _DailyView extends StatelessWidget {
             Expanded(
               child: OutlinedButton.icon(
                 onPressed: () => onBulk(AttendanceStatus.present),
-                icon: Icon(Icons.check_circle,
-                    size: 16, color: AttendanceStatus.present.color),
+                icon: Icon(
+                  Icons.check_circle,
+                  size: 16,
+                  color: AppColors.statusInkOnChrome(
+                    AttendanceStatus.present.color,
+                  ),
+                ),
                 label: Text(
                   'Tümünü Mevcut',
-                  style: TextStyle(color: AttendanceStatus.present.color),
+                  style: TextStyle(
+                    color: AppColors.statusInkOnChrome(
+                      AttendanceStatus.present.color,
+                    ),
+                  ),
                 ),
               ),
             ),
@@ -539,11 +551,20 @@ class _DailyView extends StatelessWidget {
             Expanded(
               child: OutlinedButton.icon(
                 onPressed: () => onBulk(AttendanceStatus.absent),
-                icon: Icon(Icons.cancel,
-                    size: 16, color: AttendanceStatus.absent.color),
+                icon: Icon(
+                  Icons.cancel,
+                  size: 16,
+                  color: AppColors.statusInkOnChrome(
+                    AttendanceStatus.absent.color,
+                  ),
+                ),
                 label: Text(
                   'Tümünü Yok',
-                  style: TextStyle(color: AttendanceStatus.absent.color),
+                  style: TextStyle(
+                    color: AppColors.statusInkOnChrome(
+                      AttendanceStatus.absent.color,
+                    ),
+                  ),
                 ),
               ),
             ),
@@ -650,7 +671,7 @@ class _SumChipState extends State<_SumChip> {
               Text(
                 '${widget.count}',
                 style: TextStyle(
-                  color: color,
+                  color: AppColors.statusInkOnChrome(color),
                   fontWeight: FontWeight.w700,
                   fontSize: 14,
                 ),
@@ -659,7 +680,7 @@ class _SumChipState extends State<_SumChip> {
               Text(
                 text,
                 style: TextStyle(
-                  color: color,
+                  color: AppColors.statusInkOnChrome(color),
                   fontSize: 11,
                   fontWeight: _expanded ? FontWeight.w600 : FontWeight.w400,
                 ),
@@ -777,7 +798,7 @@ class _PersonCard extends StatelessWidget {
                           Text(
                             status?.label ?? 'Seçilmedi',
                             style: theme.textTheme.labelMedium?.copyWith(
-                              color: statusColor,
+                              color: AppColors.statusInkOnCard(statusColor),
                               fontWeight: FontWeight.w600,
                             ),
                           ),
@@ -786,7 +807,7 @@ class _PersonCard extends StatelessWidget {
                                 ? Icons.keyboard_arrow_up
                                 : Icons.keyboard_arrow_down,
                             size: 16,
-                            color: statusColor,
+                            color: AppColors.statusInkOnCard(statusColor),
                           ),
                         ],
                       ),
@@ -887,13 +908,17 @@ class _PersonCard extends StatelessWidget {
                     ),
                     title: Text(
                       s.label,
-                      style: TextStyle(
-                        color: s.color,
+                      style: theme.textTheme.labelLarge?.copyWith(
+                        color: AppColors.statusInkOnCard(s.color),
                         fontWeight: FontWeight.w600,
                       ),
                     ),
                     trailing: status == s
-                        ? Icon(Icons.check, color: s.color, size: 18)
+                        ? Icon(
+                            Icons.check,
+                            color: AppColors.statusInkOnCard(s.color),
+                            size: 18,
+                          )
                         : null,
                     selected: status == s,
                     onTap: () => onSetStatus(s),
@@ -998,7 +1023,7 @@ class _CetvelView extends StatelessWidget {
                       child: Text(
                         s.short,
                         style: TextStyle(
-                          color: Colors.white,
+                          color: AppColors.readableOn(s.color),
                           fontSize: s.short.length > 1 ? 8 : 10,
                           fontWeight: FontWeight.w700,
                         ),
@@ -1124,7 +1149,7 @@ class _CetvelView extends StatelessWidget {
               },
               textAlign: TextAlign.center,
               style: theme.textTheme.labelSmall?.copyWith(
-                color: s.color,
+                color: AppColors.statusInkOnChrome(s.color),
                 fontWeight: FontWeight.w700,
                 fontSize: 9,
               ),
@@ -1196,7 +1221,7 @@ class _CetvelView extends StatelessWidget {
                     s?.short ?? '–',
                     style: TextStyle(
                       color: s != null
-                          ? Colors.white
+                          ? AppColors.readableOn(s.color)
                           : theme.colorScheme.onSurfaceVariant,
                       fontSize: (s?.short.length ?? 0) > 1 ? 8 : 10,
                       fontWeight: FontWeight.w700,
@@ -1212,7 +1237,7 @@ class _CetvelView extends StatelessWidget {
                 '${statusCounts[s] ?? 0}',
                 textAlign: TextAlign.center,
                 style: theme.textTheme.labelMedium?.copyWith(
-                  color: s.color,
+                  color: AppColors.statusInkOnChrome(s.color),
                   fontWeight: FontWeight.w700,
                 ),
               ),
@@ -1224,7 +1249,9 @@ class _CetvelView extends StatelessWidget {
               textAlign: TextAlign.center,
               style: theme.textTheme.labelMedium?.copyWith(
                 color: generalTotal > 0
-                    ? AttendanceStatus.present.color
+                    ? AppColors.statusInkOnChrome(
+                        AttendanceStatus.present.color,
+                      )
                     : theme.colorScheme.onSurfaceVariant,
                 fontWeight: FontWeight.w700,
               ),
@@ -1280,7 +1307,9 @@ class _CetvelView extends StatelessWidget {
               }(),
               textAlign: TextAlign.center,
               style: theme.textTheme.labelMedium?.copyWith(
-                color: AttendanceStatus.present.color,
+                color: AppColors.statusInkOnChrome(
+                  AttendanceStatus.present.color,
+                ),
                 fontWeight: FontWeight.w700,
               ),
             ),
@@ -1292,7 +1321,7 @@ class _CetvelView extends StatelessWidget {
               '${statusTotals[s] ?? 0}',
               textAlign: TextAlign.center,
               style: theme.textTheme.labelMedium?.copyWith(
-                color: s.color,
+                color: AppColors.statusInkOnChrome(s.color),
                 fontWeight: FontWeight.w700,
               ),
             ),
@@ -1303,7 +1332,9 @@ class _CetvelView extends StatelessWidget {
             '$generalTotal',
             textAlign: TextAlign.center,
             style: theme.textTheme.labelMedium?.copyWith(
-              color: AttendanceStatus.present.color,
+              color: AppColors.statusInkOnChrome(
+                AttendanceStatus.present.color,
+              ),
               fontWeight: FontWeight.w700,
             ),
           ),
@@ -1408,7 +1439,7 @@ class _PuantajExportSheetState extends State<_PuantajExportSheet> {
         SegmentedButton<PuantajReportPeriod>(
           style: SegmentedButton.styleFrom(
             foregroundColor: theme.colorScheme.onSurfaceVariant,
-            selectedForegroundColor: Colors.white,
+            selectedForegroundColor: theme.colorScheme.onSecondary,
             selectedBackgroundColor: theme.colorScheme.secondary,
           ),
           segments: const [

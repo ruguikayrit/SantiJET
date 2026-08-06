@@ -142,22 +142,40 @@ abstract final class AppColors {
   /// Hibrit özet kartı: ŞantiJET koyu / ŞantiJET Pro açık.
   static bool get useHybridCards => isSantijet || isSantijetPro;
 
-  /// Arka plan koyuysa her zaman açık mürekkep; açıkta koyu mürekkep.
-  /// Koyu-üzerine-koyu / açık-üzerine-açık kombinasyonunu engeller.
+  /// Arka plan koyuysa açık mürekkep; açıkta / parlak dolguda koyu mürekkep.
+  ///
+  /// Eşik 0.35 — amber (`#F59E0B`, L≈0.44) ve yarım gün (`#D97706`, L≈0.36)
+  /// gibi parlak durum renklerinde beyaz yazının kaybolmasını engeller.
   static Color readableOn(Color background) {
     final luminance = background.computeLuminance();
-    return luminance < 0.45 ? darkTextPrimary : lightTextPrimary;
+    return luminance < 0.35 ? darkTextPrimary : lightTextPrimary;
   }
 
   static Color readableSecondaryOn(Color background) {
     final luminance = background.computeLuminance();
-    return luminance < 0.45 ? darkTextSecondary : lightTextSecondary;
+    return luminance < 0.35 ? darkTextSecondary : lightTextSecondary;
   }
 
   static Color readableMutedOn(Color background) {
     final luminance = background.computeLuminance();
-    return luminance < 0.45 ? darkTextMuted : lightTextMuted;
+    return luminance < 0.35 ? darkTextMuted : lightTextMuted;
   }
+
+  /// Durum / uyarı rengini metin mürekkebi olarak kullanırken:
+  /// açık yüzeylerde rengi koyulaştırır (AA kontrast), koyu yüzeyde bırakır.
+  static Color statusInk(Color status, {required Color surface}) {
+    if (surface.computeLuminance() < 0.45) return status;
+    // Açık zemin: doygun rengi koyu mürekkebe yaklaştır.
+    return Color.lerp(status, lightTextPrimary, 0.42) ?? status;
+  }
+
+  /// Kart yüzeyi üzerinde durum mürekkebi.
+  static Color statusInkOnCard(Color status) =>
+      statusInk(status, surface: cardSurface);
+
+  /// Chrome / canvas üzerinde durum mürekkebi.
+  static Color statusInkOnChrome(Color status) =>
+      statusInk(status, surface: canvas);
 
   static List<BoxShadow> get cardElevation {
     if (useDarkCards) {

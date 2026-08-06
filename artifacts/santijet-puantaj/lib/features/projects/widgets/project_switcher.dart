@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../../../core/design_system/sj_modal.dart';
 import '../../../core/theme/app_colors.dart';
 import '../../../core/theme/app_radii.dart';
 import '../../../core/theme/app_spacing.dart';
@@ -17,92 +18,111 @@ class ProjectSwitcher extends ConsumerWidget {
     final activeId = ref.read(activeProjectIdProvider) ??
         ref.read(activeProjectProvider)?.id;
 
+    final sheetTheme = SJModal.sheetThemeOf(context);
+
     await showModalBottomSheet<void>(
       context: context,
       showDragHandle: true,
-      backgroundColor: AppColors.surfaceElevated,
-      builder: (ctx) {
-        final theme = Theme.of(ctx);
-        if (projects.isEmpty) {
-          return SafeArea(
-            child: Padding(
+      backgroundColor: SJModal.sheetSurface,
+      builder: (ctx) => Theme(
+        data: sheetTheme,
+        child: _pickerBody(
+          ctx: ctx,
+          theme: sheetTheme,
+          projects: projects,
+          activeId: activeId,
+          onSelect: (id) {
+            ref.read(activeProjectIdProvider.notifier).set(id);
+            Navigator.pop(ctx);
+          },
+        ),
+      ),
+    );
+  }
+
+  Widget _pickerBody({
+    required BuildContext ctx,
+    required ThemeData theme,
+    required List<Project> projects,
+    required String? activeId,
+    required ValueChanged<String> onSelect,
+  }) {
+    if (projects.isEmpty) {
+      return SafeArea(
+        child: Padding(
+          padding: const EdgeInsets.fromLTRB(
+            AppSpacing.md,
+            0,
+            AppSpacing.md,
+            AppSpacing.md,
+          ),
+          child: Text(
+            'Henüz kayıtlı iş yok. Ayarlar → Projeler’den ekleyebilirsiniz.',
+            style: theme.textTheme.bodyMedium,
+          ),
+        ),
+      );
+    }
+
+    return SafeArea(
+      child: ConstrainedBox(
+        constraints: BoxConstraints(
+          maxHeight: MediaQuery.sizeOf(ctx).height * 0.55,
+        ),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            Padding(
               padding: const EdgeInsets.fromLTRB(
                 AppSpacing.md,
                 0,
                 AppSpacing.md,
-                AppSpacing.md,
+                AppSpacing.sm,
               ),
               child: Text(
-                'Henüz kayıtlı iş yok. Ayarlar → Projeler’den ekleyebilirsiniz.',
-                style: theme.textTheme.bodyMedium,
+                'İş seçin',
+                style: theme.textTheme.titleMedium?.copyWith(
+                  fontWeight: FontWeight.w700,
+                ),
               ),
             ),
-          );
-        }
-
-        return SafeArea(
-          child: ConstrainedBox(
-            constraints: BoxConstraints(
-              maxHeight: MediaQuery.sizeOf(ctx).height * 0.55,
-            ),
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              crossAxisAlignment: CrossAxisAlignment.stretch,
-              children: [
-                Padding(
-                  padding: const EdgeInsets.fromLTRB(
-                    AppSpacing.md,
-                    0,
-                    AppSpacing.md,
-                    AppSpacing.sm,
-                  ),
-                  child: Text(
-                    'İş seçin',
-                    style: theme.textTheme.titleMedium?.copyWith(
-                      fontWeight: FontWeight.w700,
-                    ),
-                  ),
+            Flexible(
+              child: ListView.separated(
+                shrinkWrap: true,
+                padding: const EdgeInsets.fromLTRB(
+                  AppSpacing.md,
+                  0,
+                  AppSpacing.md,
+                  AppSpacing.md,
                 ),
-                Flexible(
-                  child: ListView.separated(
-                    shrinkWrap: true,
-                    padding: const EdgeInsets.fromLTRB(
-                      AppSpacing.md,
-                      0,
-                      AppSpacing.md,
-                      AppSpacing.md,
-                    ),
-                    itemCount: projects.length,
-                    separatorBuilder: (_, __) =>
-                        const SizedBox(height: AppSpacing.xs),
-                    itemBuilder: (context, index) {
-                      final p = projects[index];
-                      final selected = p.id == activeId;
-                      return _ProjectOptionTile(
-                        project: p,
-                        selected: selected,
-                        onTap: () {
-                          ref
-                              .read(activeProjectIdProvider.notifier)
-                              .set(p.id);
-                          Navigator.pop(ctx);
-                        },
-                      );
-                    },
-                  ),
-                ),
-              ],
+                itemCount: projects.length,
+                separatorBuilder: (_, __) =>
+                    const SizedBox(height: AppSpacing.xs),
+                itemBuilder: (context, index) {
+                  final p = projects[index];
+                  return _ProjectOptionTile(
+                    project: p,
+                    selected: p.id == activeId,
+                    onTap: () => onSelect(p.id),
+                  );
+                },
+              ),
             ),
-          ),
-        );
-      },
+          ],
+        ),
+      ),
     );
   }
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final project = ref.watch(activeProjectProvider);
-    final brightness = Theme.of(context).brightness;
+    // Zemin chrome yüzeyi; mürekkep zeminin parlaklığından türetilir.
+    final surface = AppColors.surfaceElevated;
+    final ink = AppColors.readableOn(surface);
+    final inkSecondary = AppColors.readableSecondaryOn(surface);
+    final inkMuted = AppColors.readableMutedOn(surface);
 
     final company = project?.company.trim() ?? '';
     final name = project?.name.trim() ?? '';
@@ -121,17 +141,19 @@ class ProjectSwitcher extends ConsumerWidget {
             child: Container(
               padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
               decoration: BoxDecoration(
-                color: AppColors.surfaceElevated,
+                color: surface,
                 borderRadius: AppRadii.md,
                 border: Border.all(color: AppColors.border),
               ),
               child: Row(
                 crossAxisAlignment: CrossAxisAlignment.center,
                 children: [
-                  const Icon(
+                  Icon(
                     Icons.apartment,
                     size: 20,
-                    color: AppColors.electricBlueLight,
+                    color: AppColors.useDarkChrome
+                        ? AppColors.electricBlueLight
+                        : AppColors.electricBlue,
                   ),
                   const SizedBox(width: 10),
                   Expanded(
@@ -139,7 +161,7 @@ class ProjectSwitcher extends ConsumerWidget {
                         ? Text(
                             'Proje seçin',
                             style: AppTypography.titleMedium.copyWith(
-                              color: AppColors.inkFor(brightness),
+                              color: ink,
                             ),
                           )
                         : Column(
@@ -148,7 +170,7 @@ class ProjectSwitcher extends ConsumerWidget {
                               Text(
                                 company.isEmpty ? 'Firma adı yok' : company,
                                 style: AppTypography.titleMedium.copyWith(
-                                  color: AppColors.inkFor(brightness),
+                                  color: ink,
                                   fontWeight: FontWeight.w700,
                                 ),
                                 maxLines: 1,
@@ -158,7 +180,7 @@ class ProjectSwitcher extends ConsumerWidget {
                               Text(
                                 name.isEmpty ? 'İşin adı yok' : name,
                                 style: AppTypography.bodyMedium.copyWith(
-                                  color: AppColors.inkSecondaryFor(brightness),
+                                  color: inkSecondary,
                                   fontWeight: FontWeight.w600,
                                 ),
                                 maxLines: 1,
@@ -168,7 +190,7 @@ class ProjectSwitcher extends ConsumerWidget {
                               Text(
                                 code.isEmpty ? 'İşin kodu yok' : code,
                                 style: AppTypography.bodySmall.copyWith(
-                                  color: AppColors.inkMutedFor(brightness),
+                                  color: inkMuted,
                                 ),
                                 maxLines: 1,
                                 overflow: TextOverflow.ellipsis,
@@ -177,10 +199,7 @@ class ProjectSwitcher extends ConsumerWidget {
                           ),
                   ),
                   const SizedBox(width: AppSpacing.xs),
-                  Icon(
-                    Icons.expand_more,
-                    color: AppColors.inkMutedFor(brightness),
-                  ),
+                  Icon(Icons.expand_more, color: inkMuted),
                 ],
               ),
             ),

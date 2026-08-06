@@ -193,6 +193,10 @@ class _CloudBanner extends StatelessWidget {
     final theme = Theme.of(context);
     final ready = verim.hasCloudPlan;
     final accent = ready ? AppColors.success : AppColors.warning;
+    final wash = Color.lerp(AppColors.canvas, accent, 0.12)!;
+    final bodyInk = AppColors.readableSecondaryOn(wash);
+    final mutedInk = AppColors.readableMutedOn(wash);
+    final accentInk = AppColors.statusInk(accent, surface: wash);
 
     return Container(
       padding: const EdgeInsets.all(AppSpacing.md),
@@ -208,14 +212,14 @@ class _CloudBanner extends StatelessWidget {
             children: [
               Icon(
                 ready ? Icons.cloud_done_outlined : Icons.cloud_sync_outlined,
-                color: accent,
+                color: accentInk,
                 size: 22,
               ),
               const SizedBox(width: AppSpacing.sm),
               Expanded(
                 child: Text(
                   'Plan bulut senkronu',
-                  style: theme.textTheme.titleMedium?.copyWith(color: accent),
+                  style: theme.textTheme.titleMedium?.copyWith(color: accentInk),
                 ),
               ),
               if (ready)
@@ -228,11 +232,14 @@ class _CloudBanner extends StatelessWidget {
                           height: 18,
                           child: CircularProgressIndicator(strokeWidth: 2),
                         )
-                      : Icon(Icons.refresh, color: accent),
+                      : Icon(Icons.refresh, color: accentInk),
                 ),
             ],
           ),
-          Text(projectName, style: theme.textTheme.bodySmall),
+          Text(
+            projectName,
+            style: theme.textTheme.bodySmall?.copyWith(color: bodyInk),
+          ),
           const SizedBox(height: AppSpacing.xs),
           _sourceLine(
             theme,
@@ -246,7 +253,10 @@ class _CloudBanner extends StatelessWidget {
           ),
           if (verim.message != null) ...[
             const SizedBox(height: AppSpacing.xs),
-            Text(verim.message!, style: theme.textTheme.bodySmall),
+            Text(
+              verim.message!,
+              style: theme.textTheme.bodySmall?.copyWith(color: mutedInk),
+            ),
           ],
           if (ready) ...[
             const SizedBox(height: AppSpacing.sm),

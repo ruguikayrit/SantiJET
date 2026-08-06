@@ -87,6 +87,12 @@ class _HomeTaskSummaryDialog extends StatelessWidget {
                   label: task.status.label,
                   color: taskStatusColor(task.status),
                 ),
+                if (task.category.trim().isNotEmpty)
+                  SJStatusBadge(
+                    label: task.category.trim(),
+                    color: AppColors.electricBlue,
+                    icon: Icons.category_outlined,
+                  ),
                 if (urgency.label.isNotEmpty)
                   SJStatusBadge(
                     label: urgency.label,

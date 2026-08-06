@@ -182,6 +182,14 @@ final routerProvider = Provider<GoRouter>((ref) {
                   child: const TeamsScreen(),
                 ),
               ),
+              GoRoute(
+                path: 'gorev-kategorileri',
+                parentNavigatorKey: _rootNavigatorKey,
+                pageBuilder: (context, state) => fadePage(
+                  key: state.pageKey,
+                  child: const TaskCategoriesScreen(),
+                ),
+              ),
             ],
           ),
         ],

@@ -12,6 +12,7 @@ class SiteTask extends Equatable {
     required this.projectId,
     required this.title,
     this.description = '',
+    this.category = '',
     this.assignee = '',
     this.assigneePersonId = '',
     this.assignerPersonId = '',
@@ -27,6 +28,9 @@ class SiteTask extends Equatable {
   final String projectId;
   final String title;
   final String description;
+
+  /// Kullanıcı tanımlı kategori (ör. Satın Alma, Saha, Ofis).
+  final String category;
 
   /// Atanan personel görünen adı (önbellek).
   final String assignee;
@@ -66,6 +70,7 @@ class SiteTask extends Equatable {
     String? projectId,
     String? title,
     String? description,
+    String? category,
     String? assignee,
     String? assigneePersonId,
     String? assignerPersonId,
@@ -81,6 +86,7 @@ class SiteTask extends Equatable {
       projectId: projectId ?? this.projectId,
       title: title ?? this.title,
       description: description ?? this.description,
+      category: category ?? this.category,
       assignee: assignee ?? this.assignee,
       assigneePersonId: assigneePersonId ?? this.assigneePersonId,
       assignerPersonId: assignerPersonId ?? this.assignerPersonId,
@@ -98,6 +104,7 @@ class SiteTask extends Equatable {
         'projectId': projectId,
         'title': title,
         'description': description,
+        'category': category,
         'assignee': assignee,
         'assigneePersonId': assigneePersonId,
         'assignerPersonId': assignerPersonId,
@@ -114,6 +121,7 @@ class SiteTask extends Equatable {
         projectId: json['projectId'] as String? ?? '',
         title: json['title'] as String? ?? '',
         description: json['description'] as String? ?? '',
+        category: json['category'] as String? ?? '',
         assignee: json['assignee'] as String? ?? '',
         assigneePersonId: json['assigneePersonId'] as String? ?? '',
         assignerPersonId: json['assignerPersonId'] as String? ?? '',
@@ -135,6 +143,7 @@ class SiteTask extends Equatable {
         projectId,
         title,
         description,
+        category,
         assignee,
         assigneePersonId,
         assignerPersonId,

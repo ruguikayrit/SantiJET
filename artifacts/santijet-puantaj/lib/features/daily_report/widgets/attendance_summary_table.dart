@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 
+import '../../../core/design_system/sj_card.dart';
 import '../../../core/theme/app_colors.dart';
 import '../../../core/theme/app_radii.dart';
 import '../../../core/theme/app_spacing.dart';
@@ -19,7 +20,14 @@ class AttendanceSummaryTable extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final theme = Theme.of(context);
+    final base = Theme.of(context);
+    // Kart yüzeyi her zaman cardSurface; mürekkep hibrit temalarda
+    // chrome Theme'den değil kart kontrastından alınır.
+    final theme = AppColors.useDarkCards
+        ? SJCard.darkContrastTheme(base)
+        : AppColors.isSantijetPro
+            ? SJCard.lightContrastTheme(base)
+            : base;
     final people = [...snapshot.people]..sort((a, b) {
       final byProfession = a.profession
           .toLowerCase()
@@ -31,7 +39,9 @@ class AttendanceSummaryTable extends StatelessWidget {
     });
     final border = theme.dividerColor.withValues(alpha: 0.55);
 
-    return Container(
+    return Theme(
+      data: theme,
+      child: Container(
       decoration: BoxDecoration(
         color: AppColors.cardSurface,
         borderRadius: AppRadii.md,
@@ -196,6 +206,7 @@ class AttendanceSummaryTable extends StatelessWidget {
           ),
         ],
       ),
+      ),
     );
   }
 
@@ -250,8 +261,8 @@ class _HeaderCell extends StatelessWidget {
           child: Text(
             label,
             textAlign: TextAlign.center,
-            style: const TextStyle(
-              color: Colors.black,
+            style: TextStyle(
+              color: AppColors.inkPrimary,
               fontWeight: FontWeight.w700,
               fontSize: 11,
               letterSpacing: 0.2,

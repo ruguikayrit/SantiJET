@@ -9,6 +9,7 @@ import 'package:image_picker/image_picker.dart';
 
 import '../../core/design_system/sj_card.dart';
 import '../../core/design_system/sj_empty_state.dart';
+import '../../core/design_system/sj_modal.dart';
 import '../../core/routing/app_routes.dart';
 import '../../core/theme/app_colors.dart';
 import '../../core/theme/app_radii.dart';
@@ -30,7 +31,7 @@ import 'widgets/daily_report_entry_page.dart';
 import 'widgets/daily_report_export_sections_sheet.dart';
 import 'widgets/weather_compact_card.dart';
 
-/// Kart içi metin stili — renk [SJCard] DefaultTextStyle / kart Theme'den gelir.
+/// Kart içi metin stili — chrome textTheme renklerini atar; kart mürekkebi kullanır.
 ///
 /// Chrome [ThemeData] stillerini karta taşımak hibrit temalarda
 /// (ŞantiJET / Pro) mürekkep çakışması yaratır.
@@ -46,7 +47,7 @@ TextStyle _cardInk(
     fontStyle: fontStyle ?? base?.fontStyle,
     height: base?.height,
     letterSpacing: base?.letterSpacing,
-    color: color,
+    color: color ?? AppColors.cardTextPrimary,
     decoration: TextDecoration.none,
   );
 }
@@ -533,10 +534,13 @@ class _DailyReportScreenState extends ConsumerState<DailyReportScreen> {
   }
 
   void _showPhotoSource() {
+    final sheetTheme = SJModal.sheetThemeOf(context);
     showModalBottomSheet<void>(
       context: context,
-      backgroundColor: AppColors.surfaceElevated,
-      builder: (ctx) => SafeArea(
+      backgroundColor: SJModal.sheetSurface,
+      builder: (ctx) => Theme(
+        data: sheetTheme,
+        child: SafeArea(
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
@@ -568,6 +572,7 @@ class _DailyReportScreenState extends ConsumerState<DailyReportScreen> {
                 ),
               ),
           ],
+        ),
         ),
       ),
     );
@@ -1054,10 +1059,13 @@ class _DailyReportScreenState extends ConsumerState<DailyReportScreen> {
   }
 
   void _showIrsaliyeSource() {
+    final sheetTheme = SJModal.sheetThemeOf(context);
     showModalBottomSheet<void>(
       context: context,
-      backgroundColor: AppColors.surfaceElevated,
-      builder: (ctx) => SafeArea(
+      backgroundColor: SJModal.sheetSurface,
+      builder: (ctx) => Theme(
+        data: sheetTheme,
+        child: SafeArea(
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
@@ -1087,6 +1095,7 @@ class _DailyReportScreenState extends ConsumerState<DailyReportScreen> {
               ),
             ),
           ],
+        ),
         ),
       ),
     );

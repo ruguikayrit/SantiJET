@@ -8,7 +8,6 @@ import 'package:image_picker/image_picker.dart';
 import '../../core/design_system/sj_card.dart';
 import '../../core/design_system/sj_empty_state.dart';
 import '../../core/routing/app_routes.dart';
-import '../../core/theme/app_colors.dart';
 import '../../core/theme/app_spacing.dart';
 import '../../data/providers/app_data_provider.dart';
 import '../../data/providers/production_provider.dart';
@@ -72,7 +71,7 @@ class ProjectsScreen extends ConsumerWidget {
                                 ? Icons.check_circle
                                 : Icons.apartment_outlined,
                             color: selected
-                                ? AppColors.electricBlueLight
+                                ? theme.colorScheme.primary
                                 : theme.colorScheme.onSurfaceVariant,
                           ),
                           const SizedBox(width: AppSpacing.sm),
@@ -106,7 +105,7 @@ class ProjectsScreen extends ConsumerWidget {
                                   Text(
                                     'Aktif proje',
                                     style: theme.textTheme.labelSmall?.copyWith(
-                                      color: AppColors.electricBlueLight,
+                                      color: theme.colorScheme.primary,
                                     ),
                                   ),
                               ],

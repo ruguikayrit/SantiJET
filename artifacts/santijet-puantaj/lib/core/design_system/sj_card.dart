@@ -70,6 +70,16 @@ class SJCard extends StatelessWidget {
       colorScheme: scheme,
       textTheme: forceInk(base.textTheme),
       primaryTextTheme: forceInk(base.primaryTextTheme),
+      // Kart içindeki alt yüzeyler (çip, sheet, dialog) kart paletini izler.
+      cardColor: AppColors.darkSurfaceElevated,
+      canvasColor: AppColors.darkSurfaceElevated,
+      cardTheme: base.cardTheme.copyWith(
+        color: AppColors.darkSurfaceElevated,
+        shape: RoundedRectangleBorder(
+          borderRadius: AppRadii.md,
+          side: const BorderSide(color: AppColors.darkBorder),
+        ),
+      ),
       iconTheme: const IconThemeData(color: onSecondary),
       primaryIconTheme: const IconThemeData(color: AppColors.electricBlueLight),
       dividerColor: AppColors.darkBorder,
@@ -126,9 +136,12 @@ class SJCard extends StatelessWidget {
     );
 
     TextTheme forceInk(TextTheme source) {
-      TextStyle? paint(TextStyle? style, Color color) =>
-          style?.copyWith(color: color);
-      return source.copyWith(
+      TextStyle paint(TextStyle? style, Color color) => (style ??
+              const TextStyle()).copyWith(
+            color: color,
+            decoration: TextDecoration.none,
+          );
+      return TextTheme(
         displayLarge: paint(source.displayLarge, onPrimary),
         displayMedium: paint(source.displayMedium, onPrimary),
         displaySmall: paint(source.displaySmall, onPrimary),
@@ -141,17 +154,32 @@ class SJCard extends StatelessWidget {
         bodyLarge: paint(source.bodyLarge, onSecondary),
         bodyMedium: paint(source.bodyMedium, onSecondary),
         bodySmall: paint(source.bodySmall, onMuted),
-        labelLarge: paint(source.labelLarge, onMuted),
+        labelLarge: paint(source.labelLarge, onPrimary),
         labelMedium: paint(source.labelMedium, onMuted),
         labelSmall: paint(source.labelSmall, onMuted),
       );
     }
 
-    return base.copyWith(
+    // Koyu chrome ThemeData üzerinde brightness flip mürekkebi ezebiliyor;
+    // açık kart için light seed üzerinden zorla.
+    final seeded = ThemeData(
+      useMaterial3: base.useMaterial3,
       brightness: Brightness.light,
       colorScheme: scheme,
+      fontFamily: base.textTheme.bodyMedium?.fontFamily,
+    );
+    return seeded.copyWith(
       textTheme: forceInk(base.textTheme),
       primaryTextTheme: forceInk(base.primaryTextTheme),
+      cardColor: AppColors.lightSurface,
+      canvasColor: AppColors.lightSurface,
+      cardTheme: base.cardTheme.copyWith(
+        color: AppColors.lightSurface,
+        shape: RoundedRectangleBorder(
+          borderRadius: AppRadii.md,
+          side: const BorderSide(color: AppColors.lightBorder),
+        ),
+      ),
       iconTheme: const IconThemeData(color: onSecondary),
       primaryIconTheme: const IconThemeData(color: AppColors.electricBlue),
       dividerColor: AppColors.lightBorder,

@@ -16,6 +16,8 @@ class PersonnelImportRow {
     required this.tc,
     required this.phone,
     required this.address,
+    required this.iban,
+    required this.bankName,
     required this.hireDate,
     required this.leaveDate,
   });
@@ -27,6 +29,8 @@ class PersonnelImportRow {
   final String tc;
   final String phone;
   final String address;
+  final String iban;
+  final String bankName;
   final String hireDate;
   final String leaveDate;
 
@@ -38,6 +42,8 @@ class PersonnelImportRow {
       tc.isEmpty &&
       phone.isEmpty &&
       address.isEmpty &&
+      iban.isEmpty &&
+      bankName.isEmpty &&
       hireDate.isEmpty &&
       leaveDate.isEmpty;
 
@@ -62,6 +68,8 @@ class PersonnelImportRow {
       tc: tc,
       phone: phone,
       address: address,
+      iban: iban.toUpperCase(),
+      bankName: bankName,
       hireDate: hireDate,
       leaveDate: leaveDate,
       active: !left,
@@ -79,6 +87,8 @@ class PersonnelImportSample {
     'TC No',
     'Telefon',
     'Adres',
+    'IBAN No',
+    'Banka adı',
     'İşe giriş',
     'İşten çıkış',
   ];
@@ -92,6 +102,8 @@ class PersonnelImportSample {
       '12345678901',
       '05321234567',
       'Ankara / Çankaya',
+      'TR330006100519786457841326',
+      'Ziraat Bankası',
       '2024-03-01',
       '',
     ],
@@ -103,6 +115,8 @@ class PersonnelImportSample {
       '10987654321',
       '05329876543',
       'Ankara / Yenimahalle',
+      '',
+      '',
       '2024-06-15',
       '2025-12-31',
     ],
@@ -117,6 +131,8 @@ enum PersonnelImportColumn {
   tc,
   phone,
   address,
+  iban,
+  bankName,
   hireDate,
   leaveDate,
 }
@@ -232,6 +248,8 @@ class PersonnelImportService {
         tc: _normalizeTc(cell(PersonnelImportColumn.tc)),
         phone: cell(PersonnelImportColumn.phone),
         address: cell(PersonnelImportColumn.address),
+        iban: _normalizeIban(cell(PersonnelImportColumn.iban)),
+        bankName: cell(PersonnelImportColumn.bankName),
         hireDate: _normalizeDate(cell(PersonnelImportColumn.hireDate)),
         leaveDate: _normalizeDate(cell(PersonnelImportColumn.leaveDate)),
       );
@@ -298,6 +316,8 @@ class PersonnelImportService {
       return PersonnelImportColumn.phone;
     }
     if (key.contains('adres')) return PersonnelImportColumn.address;
+    if (key.contains('iban')) return PersonnelImportColumn.iban;
+    if (key.contains('banka')) return PersonnelImportColumn.bankName;
     if (key.contains('isegiris') || key.contains('giristarih')) {
       return PersonnelImportColumn.hireDate;
     }
@@ -311,6 +331,10 @@ class PersonnelImportService {
 
   String _normalizeTc(String raw) {
     return raw.replaceAll(RegExp(r'\D'), '');
+  }
+
+  String _normalizeIban(String raw) {
+    return raw.replaceAll(RegExp(r'\s+'), '').toUpperCase();
   }
 
   String _normalizeDate(String raw) {

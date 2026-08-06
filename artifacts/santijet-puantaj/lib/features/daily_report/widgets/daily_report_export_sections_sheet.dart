@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../core/design_system/sj_button.dart';
+import '../../../core/design_system/sj_modal.dart';
 import '../../../core/theme/app_colors.dart';
 import '../../../core/theme/app_spacing.dart';
 import '../../../data/providers/daily_report_export_sections_provider.dart';
@@ -15,23 +16,28 @@ Future<DailyReportExportSections?> showDailyReportExportSectionsPicker(
   String? subtitle,
   String confirmLabel = 'PDF Oluştur',
 }) {
+  final sheetTheme = SJModal.sheetThemeOf(context);
+
   return showModalBottomSheet<DailyReportExportSections>(
     context: context,
     isScrollControlled: true,
     showDragHandle: true,
-    backgroundColor: AppColors.surfaceElevated,
-    builder: (ctx) => Padding(
-      padding: EdgeInsets.fromLTRB(
-        AppSpacing.md,
-        0,
-        AppSpacing.md,
-        MediaQuery.paddingOf(ctx).bottom + AppSpacing.md,
-      ),
-      child: _ExportSectionsPickerSheet(
-        title: title,
-        subtitle: subtitle,
-        confirmLabel: confirmLabel,
-        initial: ref.read(dailyReportExportSectionsProvider),
+    backgroundColor: SJModal.sheetSurface,
+    builder: (ctx) => Theme(
+      data: sheetTheme,
+      child: Padding(
+        padding: EdgeInsets.fromLTRB(
+          AppSpacing.md,
+          0,
+          AppSpacing.md,
+          MediaQuery.paddingOf(ctx).bottom + AppSpacing.md,
+        ),
+        child: _ExportSectionsPickerSheet(
+          title: title,
+          subtitle: subtitle,
+          confirmLabel: confirmLabel,
+          initial: ref.read(dailyReportExportSectionsProvider),
+        ),
       ),
     ),
   );

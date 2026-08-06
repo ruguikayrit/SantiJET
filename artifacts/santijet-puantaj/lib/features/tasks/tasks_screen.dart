@@ -4,6 +4,7 @@ import 'package:go_router/go_router.dart';
 
 import '../../core/design_system/sj_card.dart';
 import '../../core/design_system/sj_empty_state.dart';
+import '../../core/design_system/sj_modal.dart';
 import '../../core/routing/app_routes.dart';
 import '../../core/theme/app_colors.dart';
 import '../../core/theme/app_radii.dart';
@@ -12,6 +13,7 @@ import '../../core/utils/puantaj_date.dart';
 import '../../core/widgets/santijet_header.dart';
 import '../../data/providers/active_operator_provider.dart';
 import '../../data/providers/app_data_provider.dart';
+import '../../data/providers/catalog_provider.dart';
 import '../../data/providers/tasks_provider.dart';
 import '../../domain/entities/person.dart';
 import '../../domain/entities/site_task.dart';
@@ -29,6 +31,7 @@ class TasksScreen extends ConsumerStatefulWidget {
 
 class _TasksScreenState extends ConsumerState<TasksScreen> {
   TaskStatus? _filter;
+  String? _categoryFilter;
 
   Future<Person?> _pickPersonSheet({
     required List<Person> people,
@@ -37,14 +40,18 @@ class _TasksScreenState extends ConsumerState<TasksScreen> {
     String? selectedId,
     bool showDegreeHint = false,
   }) {
+    final sheetTheme = SJModal.sheetThemeOf(context);
+
     return showModalBottomSheet<Person>(
       context: context,
       isScrollControlled: true,
       showDragHandle: true,
-      backgroundColor: AppColors.surfaceElevated,
+      backgroundColor: SJModal.sheetSurface,
       builder: (ctx) {
-        final theme = Theme.of(ctx);
-        return SafeArea(
+        final theme = sheetTheme;
+        return Theme(
+          data: sheetTheme,
+          child: SafeArea(
           child: SizedBox(
             height: MediaQuery.sizeOf(ctx).height * 0.55,
             child: Column(
@@ -112,6 +119,7 @@ class _TasksScreenState extends ConsumerState<TasksScreen> {
               ],
             ),
           ),
+          ),
         );
       },
     );
@@ -177,6 +185,7 @@ class _TasksScreenState extends ConsumerState<TasksScreen> {
     var earliestStart = existing?.earliestStart ?? '';
     var latestDelivery = existing?.dueDate ?? '';
     var status = existing?.status ?? TaskStatus.todo;
+    var category = existing?.category.trim() ?? '';
     Person? assignee;
     if (existing != null) {
       for (final p in people) {
@@ -187,16 +196,20 @@ class _TasksScreenState extends ConsumerState<TasksScreen> {
       }
     }
 
+    final editorTheme = SJModal.sheetThemeOf(context);
+
     final saved = await showModalBottomSheet<bool>(
       context: context,
       isScrollControlled: true,
       showDragHandle: true,
-      backgroundColor: AppColors.surfaceElevated,
-      builder: (ctx) {
+      backgroundColor: SJModal.sheetSurface,
+      builder: (ctx) => Theme(
+        data: editorTheme,
+        child: Builder(builder: (ctx) {
         final bottom = MediaQuery.viewInsetsOf(ctx).bottom;
         return StatefulBuilder(
           builder: (ctx, setModal) {
-            final theme = Theme.of(ctx);
+            final theme = editorTheme;
             final canEditFields = existing == null || isAssigner;
 
             Future<void> pickAssignee() async {
@@ -232,6 +245,98 @@ class _TasksScreenState extends ConsumerState<TasksScreen> {
                 firstDate: start,
               );
               if (value != null) setModal(() => latestDelivery = value);
+            }
+
+            Future<void> pickCategory() async {
+              if (!canEditFields) return;
+              final categories = [
+                ...ref.read(taskCategoriesProvider),
+              ];
+              if (category.isNotEmpty &&
+                  !categories.any(
+                    (c) => c.toLowerCase() == category.toLowerCase(),
+                  )) {
+                categories.add(category);
+                categories.sort((a, b) => a.compareTo(b));
+              }
+              final picked = await showModalBottomSheet<String>(
+                context: ctx,
+                showDragHandle: true,
+                backgroundColor: SJModal.sheetSurface,
+                builder: (sheetCtx) {
+                  final sheetTheme = SJModal.sheetThemeOf(ctx);
+                  return Theme(
+                    data: sheetTheme,
+                    child: SafeArea(
+                      child: Column(
+                        mainAxisSize: MainAxisSize.min,
+                        crossAxisAlignment: CrossAxisAlignment.stretch,
+                        children: [
+                          Padding(
+                            padding: const EdgeInsets.fromLTRB(
+                              AppSpacing.md,
+                              0,
+                              AppSpacing.md,
+                              AppSpacing.sm,
+                            ),
+                            child: Text(
+                              'Kategori seçin',
+                              style: sheetTheme.textTheme.titleMedium?.copyWith(
+                                fontWeight: FontWeight.w700,
+                              ),
+                            ),
+                          ),
+                          Flexible(
+                            child: ListView(
+                              shrinkWrap: true,
+                              children: [
+                                ListTile(
+                                  title: const Text('Kategori yok'),
+                                  trailing: category.isEmpty
+                                      ? Icon(
+                                          Icons.check_circle,
+                                          color: sheetTheme.colorScheme.primary,
+                                        )
+                                      : null,
+                                  onTap: () => Navigator.pop(sheetCtx, ''),
+                                ),
+                                for (final c in categories)
+                                  ListTile(
+                                    title: Text(c),
+                                    trailing: c == category
+                                        ? Icon(
+                                            Icons.check_circle,
+                                            color:
+                                                sheetTheme.colorScheme.primary,
+                                          )
+                                        : null,
+                                    onTap: () => Navigator.pop(sheetCtx, c),
+                                  ),
+                                ListTile(
+                                  leading: Icon(
+                                    Icons.add,
+                                    color: sheetTheme.colorScheme.primary,
+                                  ),
+                                  title: const Text('Yeni kategori ekle'),
+                                  onTap: () async {
+                                    final created =
+                                        await _promptNewCategory(sheetCtx);
+                                    if (created == null) return;
+                                    if (sheetCtx.mounted) {
+                                      Navigator.pop(sheetCtx, created);
+                                    }
+                                  },
+                                ),
+                              ],
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  );
+                },
+              );
+              if (picked != null) setModal(() => category = picked);
             }
 
             return Padding(
@@ -274,6 +379,38 @@ class _TasksScreenState extends ConsumerState<TasksScreen> {
                       ),
                       maxLines: 3,
                       textCapitalization: TextCapitalization.sentences,
+                    ),
+                    const SizedBox(height: AppSpacing.sm),
+                    InputDecorator(
+                      decoration: const InputDecoration(
+                        labelText: 'Kategori',
+                      ),
+                      child: InkWell(
+                        onTap: canEditFields ? pickCategory : null,
+                        child: Padding(
+                          padding: const EdgeInsets.symmetric(vertical: 4),
+                          child: Row(
+                            children: [
+                              Expanded(
+                                child: Text(
+                                  category.isEmpty
+                                      ? 'Kategori seçin veya oluşturun'
+                                      : category,
+                                  style: theme.textTheme.bodyLarge?.copyWith(
+                                    color: category.isEmpty
+                                        ? theme.hintColor
+                                        : null,
+                                  ),
+                                ),
+                              ),
+                              Icon(
+                                Icons.expand_more,
+                                color: theme.colorScheme.onSurfaceVariant,
+                              ),
+                            ],
+                          ),
+                        ),
+                      ),
                     ),
                     const SizedBox(height: AppSpacing.sm),
                     InputDecorator(
@@ -391,7 +528,8 @@ class _TasksScreenState extends ConsumerState<TasksScreen> {
             );
           },
         );
-      },
+        }),
+      ),
     );
 
     final title = titleCtrl.text.trim();
@@ -407,10 +545,14 @@ class _TasksScreenState extends ConsumerState<TasksScreen> {
     }
 
     if (existing == null) {
+      if (category.isNotEmpty) {
+        ref.read(taskCategoriesProvider.notifier).add(category);
+      }
       ref.read(tasksProvider.notifier).add(
             projectId: project.id,
             title: title,
             description: description,
+            category: category,
             earliestStart: earliestStart,
             dueDate: latestDelivery,
             status: status,
@@ -418,10 +560,14 @@ class _TasksScreenState extends ConsumerState<TasksScreen> {
             assignee: assignee!,
           );
     } else if (isAssigner) {
+      if (category.isNotEmpty) {
+        ref.read(taskCategoriesProvider.notifier).add(category);
+      }
       ref.read(tasksProvider.notifier).upsert(
             existing.copyWith(
               title: title,
               description: description,
+              category: category,
               earliestStart: earliestStart,
               dueDate: latestDelivery,
               status: status,
@@ -440,6 +586,53 @@ class _TasksScreenState extends ConsumerState<TasksScreen> {
     }
   }
 
+  Future<String?> _promptNewCategory(BuildContext hostContext) async {
+    final ctrl = TextEditingController();
+    final sheetTheme = SJModal.sheetThemeOf(hostContext);
+    final result = await showDialog<String>(
+      context: hostContext,
+      builder: (ctx) => Theme(
+        data: sheetTheme,
+        child: AlertDialog(
+          backgroundColor: SJModal.sheetSurface,
+          title: const Text('Yeni kategori'),
+          content: TextField(
+            controller: ctrl,
+            autofocus: true,
+            textCapitalization: TextCapitalization.words,
+            decoration: const InputDecoration(
+              labelText: 'Kategori adı',
+              hintText: 'ör. Satın Alma, Saha, Ofis',
+            ),
+            onSubmitted: (v) {
+              final t = v.trim();
+              if (t.isNotEmpty) Navigator.pop(ctx, t);
+            },
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(ctx),
+              child: const Text('İptal'),
+            ),
+            FilledButton(
+              onPressed: () {
+                final t = ctrl.text.trim();
+                if (t.isEmpty) return;
+                Navigator.pop(ctx, t);
+              },
+              child: const Text('Ekle'),
+            ),
+          ],
+        ),
+      ),
+    );
+    ctrl.dispose();
+    final trimmed = result?.trim() ?? '';
+    if (trimmed.isEmpty) return null;
+    ref.read(taskCategoriesProvider.notifier).add(trimmed);
+    return trimmed;
+  }
+
   Color _statusColor(TaskStatus status) => switch (status) {
         TaskStatus.todo => AppColors.info,
         TaskStatus.doing => AppColors.warning,
@@ -452,9 +645,24 @@ class _TasksScreenState extends ConsumerState<TasksScreen> {
     final operator = ref.watch(activeOperatorProvider);
     final people = ref.watch(activePersonnelProvider);
     final tasks = ref.watch(visibleProjectTasksProvider);
-    final filtered = _filter == null
+    final catalogCategories = ref.watch(taskCategoriesProvider);
+    final usedCategories = {
+      for (final t in tasks)
+        if (t.category.trim().isNotEmpty) t.category.trim(),
+    };
+    final filterCategories = {
+      ...catalogCategories,
+      ...usedCategories,
+    }.toList()
+      ..sort((a, b) => a.compareTo(b));
+    final statusFiltered = _filter == null
         ? tasks
         : tasks.where((t) => t.status == _filter).toList();
+    final filtered = _categoryFilter == null
+        ? statusFiltered
+        : statusFiltered
+            .where((t) => t.category.trim() == _categoryFilter)
+            .toList();
     final canAssign =
         operator != null && RoleDegree.canAssignTasks(operator);
 
@@ -572,6 +780,45 @@ class _TasksScreenState extends ConsumerState<TasksScreen> {
                   ),
                 ),
               ),
+              if (filterCategories.isNotEmpty) ...[
+                const SizedBox(height: AppSpacing.xs),
+                Padding(
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: AppSpacing.md),
+                  child: SingleChildScrollView(
+                    scrollDirection: Axis.horizontal,
+                    child: Row(
+                      children: [
+                        FilterChip(
+                          avatar: Icon(
+                            Icons.category_outlined,
+                            size: 16,
+                            color: _categoryFilter == null
+                                ? null
+                                : Theme.of(context).colorScheme.onSurfaceVariant,
+                          ),
+                          label: const Text('Tüm kategoriler'),
+                          selected: _categoryFilter == null,
+                          onSelected: (_) =>
+                              setState(() => _categoryFilter = null),
+                        ),
+                        const SizedBox(width: AppSpacing.xs),
+                        for (final c in filterCategories) ...[
+                          FilterChip(
+                            label: Text(
+                              '$c (${tasks.where((t) => t.category.trim() == c).length})',
+                            ),
+                            selected: _categoryFilter == c,
+                            onSelected: (_) =>
+                                setState(() => _categoryFilter = c),
+                          ),
+                          const SizedBox(width: AppSpacing.xs),
+                        ],
+                      ],
+                    ),
+                  ),
+                ),
+              ],
               const SizedBox(height: AppSpacing.sm),
               Expanded(
                 child: filtered.isEmpty
@@ -581,7 +828,8 @@ class _TasksScreenState extends ConsumerState<TasksScreen> {
                             : 'Bu filtrede görev yok',
                         message: canAssign
                             ? 'Personele görev atayın. Atadığınız görevleri '
-                                'yalnızca siz ve atanan kişi görür.'
+                                'yalnızca siz ve atanan kişi görür. '
+                                'Kategori ve durum filtrelerini birlikte kullanabilirsiniz.'
                             : 'Size atanmış görev bulunmuyor.',
                         icon: Icons.task_alt_outlined,
                         actionLabel: canAssign ? 'Görev Ata' : null,
@@ -653,6 +901,35 @@ class _TasksScreenState extends ConsumerState<TasksScreen> {
                                         ),
                                       ],
                                     ),
+                                    if (task.category.trim().isNotEmpty) ...[
+                                      const SizedBox(height: 6),
+                                      Align(
+                                        alignment: Alignment.centerLeft,
+                                        child: Container(
+                                          padding: const EdgeInsets.symmetric(
+                                            horizontal: 8,
+                                            vertical: 3,
+                                          ),
+                                          decoration: BoxDecoration(
+                                            color: theme.colorScheme.primary
+                                                .withValues(alpha: 0.12),
+                                            borderRadius: AppRadii.sm,
+                                            border: Border.all(
+                                              color: theme.colorScheme.primary
+                                                  .withValues(alpha: 0.35),
+                                            ),
+                                          ),
+                                          child: Text(
+                                            task.category.trim(),
+                                            style: theme.textTheme.labelSmall
+                                                ?.copyWith(
+                                              color: theme.colorScheme.primary,
+                                              fontWeight: FontWeight.w700,
+                                            ),
+                                          ),
+                                        ),
+                                      ),
+                                    ],
                                     if (task.description.isNotEmpty) ...[
                                       const SizedBox(height: 6),
                                       Text(

@@ -340,7 +340,7 @@ class _HomeUrgentTaskTile extends StatelessWidget {
                 Text(
                   task.dueDate,
                   style: theme.textTheme.labelSmall?.copyWith(
-                    color: accent,
+                    color: AppColors.statusInkOnCard(accent),
                     fontWeight: FontWeight.w700,
                   ),
                 ),
@@ -550,7 +550,7 @@ class _MiniStat extends StatelessWidget {
                 child: Text(
                   value,
                   style: theme.textTheme.titleLarge?.copyWith(
-                    color: color,
+                    color: AppColors.statusInkOnCard(color),
                     fontWeight: FontWeight.w700,
                   ),
                   maxLines: 1,

@@ -23,6 +23,7 @@ class ManagementScreen extends ConsumerWidget {
     final peopleCount = ref.watch(projectPersonnelProvider).length;
     final professionCount = ref.watch(professionsProvider).length;
     final teamCount = ref.watch(teamsProvider).length;
+    final categoryCount = ref.watch(taskCategoriesProvider).length;
     final operator = ref.watch(activeOperatorProvider);
 
     String aktifSubtitle() {
@@ -81,6 +82,12 @@ class ManagementScreen extends ConsumerWidget {
             title: 'Ekipler',
             subtitle: '$teamCount ekip · manuel eklenebilir',
             onTap: () => context.push(AppRoutes.ekipler),
+          ),
+          _SettingsTile(
+            icon: Icons.category_outlined,
+            title: 'Görev kategorileri',
+            subtitle: '$categoryCount kategori · Satın Alma, Saha, Ofis…',
+            onTap: () => context.push(AppRoutes.gorevKategorileri),
           ),
         ],
       ),

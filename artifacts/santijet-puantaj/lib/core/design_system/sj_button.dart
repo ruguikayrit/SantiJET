@@ -32,6 +32,10 @@ class SJButton extends StatelessWidget {
   Widget build(BuildContext context) {
     final effectiveOnPressed = loading ? null : onPressed;
     final child = _buildChild();
+    // Zemin koyuysa (chrome veya koyu kart) açık mavi; açıkta marka mavisi.
+    final onDarkSurface = Theme.of(context).brightness == Brightness.dark;
+    final accent =
+        onDarkSurface ? AppColors.electricBlueLight : AppColors.electricBlue;
 
     final Widget button = switch (variant) {
       SJButtonVariant.primary => FilledButton(
@@ -47,14 +51,8 @@ class SJButton extends StatelessWidget {
       SJButtonVariant.secondary => OutlinedButton(
           onPressed: effectiveOnPressed,
           style: OutlinedButton.styleFrom(
-            foregroundColor: AppColors.useDarkCards
-                ? AppColors.electricBlueLight
-                : AppColors.electricBlue,
-            side: BorderSide(
-              color: AppColors.useDarkCards
-                  ? AppColors.electricBlueLight
-                  : AppColors.electricBlue,
-            ),
+            foregroundColor: accent,
+            side: BorderSide(color: accent),
             shape: RoundedRectangleBorder(borderRadius: AppRadii.md),
             padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 14),
           ),
@@ -63,9 +61,7 @@ class SJButton extends StatelessWidget {
       SJButtonVariant.ghost => TextButton(
           onPressed: effectiveOnPressed,
           style: TextButton.styleFrom(
-            foregroundColor: AppColors.useDarkCards
-                ? AppColors.electricBlueLight
-                : null,
+            foregroundColor: accent,
             shape: RoundedRectangleBorder(borderRadius: AppRadii.md),
             padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
           ),

@@ -5,6 +5,7 @@ import 'package:hive/hive.dart';
 
 import '../../core/theme/theme_mode_provider.dart';
 import '../../domain/catalogs/professions.dart';
+import '../../domain/catalogs/task_categories.dart';
 
 /// Meslek ve ekip katalogları — varsayılanlar + kullanıcının ekledikleri (Hive).
 class CatalogNotifier extends StateNotifier<List<String>> {
@@ -122,5 +123,14 @@ final teamsProvider =
     ref.watch(settingsBoxProvider),
     'catalog_teams',
     ProfessionCatalog.defaultTradeGroups,
+  );
+});
+
+final taskCategoriesProvider =
+    StateNotifierProvider<CatalogNotifier, List<String>>((ref) {
+  return CatalogNotifier(
+    ref.watch(settingsBoxProvider),
+    'catalog_task_categories',
+    TaskCategoryCatalog.defaults,
   );
 });

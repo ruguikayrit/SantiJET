@@ -509,9 +509,12 @@ class _CompanyHeader extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    final accent = AppColors.useDarkCards
+    // Chrome üzerinde: koyu iskelette açık mavi, açık iskelette marka mavisi.
+    final accent = AppColors.useDarkChrome
         ? AppColors.electricBlueLight
         : AppColors.electricBlue;
+    final headerBg = AppColors.surfaceElevated;
+    final countInk = AppColors.readableSecondaryOn(headerBg);
     return Material(
       color: Colors.transparent,
       child: InkWell(
@@ -527,7 +530,7 @@ class _CompanyHeader extends StatelessWidget {
             border: Border.all(
               color: theme.dividerColor.withValues(alpha: 0.5),
             ),
-            color: theme.colorScheme.surface.withValues(alpha: 0.35),
+            color: headerBg,
           ),
           child: Row(
             children: [
@@ -552,7 +555,7 @@ class _CompanyHeader extends StatelessWidget {
                     ? '$selectedInGroup / $count'
                     : '$count',
                 style: theme.textTheme.labelMedium?.copyWith(
-                  color: theme.colorScheme.onSurface.withValues(alpha: 0.7),
+                  color: countInk,
                 ),
               ),
               IconButton(
@@ -747,7 +750,7 @@ class _PersonnelImportPreviewSheet extends StatelessWidget {
               decoration: BoxDecoration(
                 border: Border.all(color: theme.dividerColor),
                 borderRadius: BorderRadius.circular(8),
-                color: AppColors.canvas,
+                color: AppColors.surfaceElevated,
               ),
               child: SingleChildScrollView(
                 scrollDirection: Axis.horizontal,
@@ -762,6 +765,9 @@ class _PersonnelImportPreviewSheet extends StatelessWidget {
                         label: Text(
                           h,
                           style: theme.textTheme.labelSmall?.copyWith(
+                            color: AppColors.readableOn(
+                              AppColors.surfaceElevated,
+                            ),
                             fontWeight: FontWeight.w700,
                           ),
                         ),
@@ -773,7 +779,14 @@ class _PersonnelImportPreviewSheet extends StatelessWidget {
                         cells: [
                           for (final cell in row)
                             DataCell(
-                              Text(cell, style: theme.textTheme.labelSmall),
+                              Text(
+                                cell,
+                                style: theme.textTheme.labelSmall?.copyWith(
+                                  color: AppColors.readableSecondaryOn(
+                                    AppColors.surfaceElevated,
+                                  ),
+                                ),
+                              ),
                             ),
                         ],
                       ),
@@ -903,6 +916,8 @@ class _PersonEditorSheetState extends ConsumerState<_PersonEditorSheet> {
   late final TextEditingController _company;
   late final TextEditingController _address;
   late final TextEditingController _tc;
+  late final TextEditingController _iban;
+  late final TextEditingController _bankName;
   late final TextEditingController _hireDate;
   late final TextEditingController _leaveDate;
   String _profession = '';
@@ -918,6 +933,8 @@ class _PersonEditorSheetState extends ConsumerState<_PersonEditorSheet> {
     _company = TextEditingController(text: e?.company ?? '');
     _address = TextEditingController(text: e?.address ?? '');
     _tc = TextEditingController(text: e?.tc ?? '');
+    _iban = TextEditingController(text: e?.iban ?? '');
+    _bankName = TextEditingController(text: e?.bankName ?? '');
     _hireDate = TextEditingController(text: e?.hireDate ?? '');
     _leaveDate = TextEditingController(text: e?.leaveDate ?? '');
     _profession = e?.profession ?? '';
@@ -932,6 +949,8 @@ class _PersonEditorSheetState extends ConsumerState<_PersonEditorSheet> {
     _company.dispose();
     _address.dispose();
     _tc.dispose();
+    _iban.dispose();
+    _bankName.dispose();
     _hireDate.dispose();
     _leaveDate.dispose();
     super.dispose();
@@ -1130,6 +1149,22 @@ class _PersonEditorSheetState extends ConsumerState<_PersonEditorSheet> {
             ),
             const SizedBox(height: AppSpacing.sm),
             TextField(
+              controller: _iban,
+              decoration: const InputDecoration(
+                labelText: 'IBAN No',
+                hintText: 'TR00 0000 0000 0000 0000 0000 00',
+              ),
+              textCapitalization: TextCapitalization.characters,
+              keyboardType: TextInputType.visiblePassword,
+            ),
+            const SizedBox(height: AppSpacing.sm),
+            TextField(
+              controller: _bankName,
+              decoration: const InputDecoration(labelText: 'Banka adı'),
+              textCapitalization: TextCapitalization.words,
+            ),
+            const SizedBox(height: AppSpacing.sm),
+            TextField(
               controller: _hireDate,
               decoration: const InputDecoration(
                 labelText: 'İşe giriş',
@@ -1166,6 +1201,8 @@ class _PersonEditorSheetState extends ConsumerState<_PersonEditorSheet> {
                     team: _team,
                     address: _address.text.trim(),
                     tc: _tc.text.trim(),
+                    iban: _iban.text.trim().toUpperCase(),
+                    bankName: _bankName.text.trim(),
                     hireDate: _hireDate.text.trim(),
                     leaveDate: _leaveDate.text.trim(),
                     active: _active,

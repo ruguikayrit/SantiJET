@@ -14,6 +14,8 @@ class Person extends Equatable {
     this.team = '',
     this.address = '',
     this.tc = '',
+    this.iban = '',
+    this.bankName = '',
     this.hireDate = '',
     this.leaveDate = '',
     this.active = true,
@@ -34,6 +36,12 @@ class Person extends Equatable {
   /// T.C. kimlik no (opsiyonel).
   final String tc;
 
+  /// IBAN (opsiyonel).
+  final String iban;
+
+  /// Banka adı (opsiyonel).
+  final String bankName;
+
   /// İşe giriş tarihi — yyyy-MM-dd.
   final String hireDate;
 
@@ -52,6 +60,8 @@ class Person extends Equatable {
     String? team,
     String? address,
     String? tc,
+    String? iban,
+    String? bankName,
     String? hireDate,
     String? leaveDate,
     bool? active,
@@ -66,6 +76,8 @@ class Person extends Equatable {
       team: team ?? this.team,
       address: address ?? this.address,
       tc: tc ?? this.tc,
+      iban: iban ?? this.iban,
+      bankName: bankName ?? this.bankName,
       hireDate: hireDate ?? this.hireDate,
       leaveDate: leaveDate ?? this.leaveDate,
       active: active ?? this.active,
@@ -82,6 +94,8 @@ class Person extends Equatable {
         'team': team,
         'address': address,
         'tc': tc,
+        'iban': iban,
+        'bankName': bankName,
         'hireDate': hireDate,
         'leaveDate': leaveDate,
         'active': active,
@@ -97,6 +111,8 @@ class Person extends Equatable {
         team: json['team'] as String? ?? '',
         address: json['address'] as String? ?? '',
         tc: json['tc'] as String? ?? '',
+        iban: json['iban'] as String? ?? '',
+        bankName: json['bankName'] as String? ?? '',
         hireDate: json['hireDate'] as String? ?? '',
         leaveDate: json['leaveDate'] as String? ?? '',
         active: json['active'] as bool? ?? true,
@@ -113,6 +129,8 @@ class Person extends Equatable {
         team,
         address,
         tc,
+        iban,
+        bankName,
         hireDate,
         leaveDate,
         active,

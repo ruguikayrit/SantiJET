@@ -16,6 +16,7 @@ abstract final class AppRoutes {
   static const projeler = '/ayarlar/projeler';
   static const meslekler = '/ayarlar/yonetim/meslekler';
   static const ekipler = '/ayarlar/yonetim/ekipler';
+  static const gorevKategorileri = '/ayarlar/yonetim/gorev-kategorileri';
   static const hakkinda = '/ayarlar/hakkinda';
 
   /// Eski yol — `/personel` rotasına yönlendirilir.

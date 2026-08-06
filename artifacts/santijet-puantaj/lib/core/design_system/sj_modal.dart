@@ -10,10 +10,57 @@ import 'sj_button.dart';
 /// Tutarlı başlık + içerik + aksiyon düzeniyle alt sayfa (bottom sheet) ve
 /// diyalog gösterir. Tüm ekranlar aynı modal dilini kullanır.
 abstract final class SJModal {
-  /// ŞantiJET'te koyu kart içinden açılan sheet'ler açık chrome temasına
-  /// döner — beyaz metin + açık zemin çakışmasını önler.
-  static ThemeData _sheetTheme(ThemeData parent) {
-    if (!AppColors.isSantijet) return parent;
+  /// Sheet/dialog yüzeyi — her zaman chrome paletini izler.
+  ///
+  /// Kart içinden açılan modallarda [Theme.of] kart kontrast temasını verir;
+  /// bu tema zemin ile mürekkebi eşleştirerek koyu-üzerine-koyu ve
+  /// açık-üzerine-açık çakışmasını tüm paletlerde engeller.
+  static Color get _surface =>
+      AppColors.useDarkChrome ? AppColors.darkSurfaceElevated : AppColors.lightSurface;
+
+  static ThemeData _sheetTheme(ThemeData parent) =>
+      AppColors.useDarkChrome ? _darkSheetTheme(parent) : _lightSheetTheme(parent);
+
+  /// Ham `showModalBottomSheet` / `showDialog` çağrıları için yüzey rengi.
+  static Color get sheetSurface => _surface;
+
+  /// Ham modal çağrılarında içeriği sarmalamak için tema.
+  static ThemeData sheetThemeOf(BuildContext context) =>
+      _sheetTheme(Theme.of(context));
+
+  static ThemeData _darkSheetTheme(ThemeData parent) {
+    return parent.copyWith(
+      brightness: Brightness.dark,
+      colorScheme: const ColorScheme.dark(
+        primary: AppColors.electricBlueLight,
+        onPrimary: AppColors.darkTextPrimary,
+        secondary: AppColors.electricBlueLight,
+        onSecondary: AppColors.darkTextPrimary,
+        surface: AppColors.darkSurfaceElevated,
+        onSurface: AppColors.darkTextPrimary,
+        onSurfaceVariant: AppColors.darkTextSecondary,
+        outline: AppColors.darkBorder,
+        error: AppColors.critical,
+        onError: AppColors.darkTextPrimary,
+      ),
+      scaffoldBackgroundColor: AppColors.darkSurfaceElevated,
+      canvasColor: AppColors.darkSurfaceElevated,
+      cardColor: AppColors.darkSurfaceElevated,
+      dividerColor: AppColors.darkBorder,
+      textTheme: parent.textTheme.apply(
+        bodyColor: AppColors.darkTextPrimary,
+        displayColor: AppColors.darkTextPrimary,
+      ),
+      primaryTextTheme: parent.primaryTextTheme.apply(
+        bodyColor: AppColors.darkTextPrimary,
+        displayColor: AppColors.darkTextPrimary,
+      ),
+      iconTheme: const IconThemeData(color: AppColors.darkTextSecondary),
+      unselectedWidgetColor: AppColors.darkTextMuted,
+    );
+  }
+
+  static ThemeData _lightSheetTheme(ThemeData parent) {
     return parent.copyWith(
       brightness: Brightness.light,
       colorScheme: const ColorScheme.light(
@@ -52,11 +99,8 @@ abstract final class SJModal {
     required Widget child,
     bool isScrollControlled = true,
   }) {
-    final parentTheme = Theme.of(context);
-    final theme = _sheetTheme(parentTheme);
-    final bg = AppColors.isSantijet
-        ? AppColors.lightSurface
-        : (parentTheme.cardTheme.color ?? parentTheme.colorScheme.surface);
+    final theme = _sheetTheme(Theme.of(context));
+    final bg = _surface;
 
     return showModalBottomSheet<T>(
       context: context,
@@ -116,17 +160,13 @@ abstract final class SJModal {
     String cancelLabel = 'İptal',
     bool destructive = false,
   }) async {
-    final parentTheme = Theme.of(context);
-    final theme = _sheetTheme(parentTheme);
+    final theme = _sheetTheme(Theme.of(context));
     final result = await showDialog<bool>(
       context: context,
       builder: (context) => Theme(
         data: theme,
         child: AlertDialog(
-          backgroundColor: AppColors.isSantijet
-              ? AppColors.lightSurface
-              : (parentTheme.cardTheme.color ??
-                  parentTheme.colorScheme.surface),
+          backgroundColor: _surface,
           shape: RoundedRectangleBorder(borderRadius: AppRadii.lg),
           title: Text(
             title,

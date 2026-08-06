@@ -78,7 +78,7 @@ class _ImalatHubScreenState extends ConsumerState<ImalatHubScreen> {
                             padding: const EdgeInsets.symmetric(vertical: 10),
                             decoration: BoxDecoration(
                               color: _tab == entry.$1
-                                  ? theme.colorScheme.secondary
+                                  ? AppColors.electricBlue
                                   : Colors.transparent,
                               borderRadius: AppRadii.md,
                             ),
@@ -87,7 +87,9 @@ class _ImalatHubScreenState extends ConsumerState<ImalatHubScreen> {
                               textAlign: TextAlign.center,
                               style: theme.textTheme.labelLarge?.copyWith(
                                 color: _tab == entry.$1
-                                    ? Colors.white
+                                    ? AppColors.readableOn(
+                                        AppColors.electricBlue,
+                                      )
                                     : theme.colorScheme.onSurfaceVariant,
                                 fontWeight: FontWeight.w600,
                               ),

@@ -9,6 +9,7 @@ import '../../core/theme/app_colors.dart';
 import '../../core/theme/app_spacing.dart';
 import '../../data/providers/catalog_provider.dart';
 import '../../domain/catalogs/professions.dart';
+import '../../domain/catalogs/task_categories.dart';
 
 /// Ayarlar → Meslek listesi (ekle / düzenle / sil).
 class ProfessionsScreen extends ConsumerWidget {
@@ -48,6 +49,28 @@ class TeamsScreen extends ConsumerWidget {
       onReset: () => ref
           .read(teamsProvider.notifier)
           .resetToDefaults(ProfessionCatalog.defaultTradeGroups),
+    );
+  }
+}
+
+/// Ayarlar → Görev kategorileri (ekle / düzenle / sil).
+class TaskCategoriesScreen extends ConsumerWidget {
+  const TaskCategoriesScreen({super.key});
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    return _CatalogManageScreen(
+      title: 'Görev kategorileri',
+      emptyMessage: 'Henüz kategori yok. Yeni kategori ekleyin.',
+      items: ref.watch(taskCategoriesProvider),
+      onAdd: (name) => ref.read(taskCategoriesProvider.notifier).add(name),
+      onRename: (oldName, newName) =>
+          ref.read(taskCategoriesProvider.notifier).rename(oldName, newName),
+      onRemove: (name) =>
+          ref.read(taskCategoriesProvider.notifier).remove(name),
+      onReset: () => ref
+          .read(taskCategoriesProvider.notifier)
+          .resetToDefaults(TaskCategoryCatalog.defaults),
     );
   }
 }
@@ -254,9 +277,14 @@ class _CatalogManageScreen extends StatelessWidget {
       final ok = onAdd(saved);
       if (!ok && context.mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('Bu ad zaten listede var.'),
+          SnackBar(
             backgroundColor: AppColors.warning,
+            content: Text(
+              'Bu ad zaten listede var.',
+              style: TextStyle(
+                color: AppColors.readableOn(AppColors.warning),
+              ),
+            ),
           ),
         );
       }
