@@ -436,41 +436,39 @@ class _DailyView extends StatelessWidget {
       children: [
         Row(
           children: [
+            IconButton(
+              onPressed: () =>
+                  onDateChanged(PuantajDate.shift(date, -1)),
+              visualDensity: VisualDensity.compact,
+              tooltip: 'Önceki gün',
+              icon: const Icon(Icons.chevron_left),
+            ),
             Expanded(
-              child: OutlinedButton(
-                onPressed: () => _pickDate(context),
-                style: OutlinedButton.styleFrom(
-                  visualDensity: VisualDensity.compact,
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: AppSpacing.sm,
-                    vertical: AppSpacing.xs,
+              child: InkWell(
+                onTap: () => _pickDate(context),
+                borderRadius: AppRadii.md,
+                child: Padding(
+                  padding: const EdgeInsets.symmetric(vertical: 8),
+                  child: Text(
+                    PuantajDate.withDayName(date),
+                    textAlign: TextAlign.center,
+                    maxLines: 1,
+                    softWrap: false,
+                    overflow: TextOverflow.ellipsis,
+                    style: theme.textTheme.titleMedium?.copyWith(
+                      fontWeight: FontWeight.w700,
+                    ),
                   ),
-                  tapTargetSize: MaterialTapTargetSize.shrinkWrap,
-                ),
-                child: Row(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    Icon(
-                      Icons.calendar_today,
-                      size: 15,
-                      color: theme.colorScheme.onSurfaceVariant,
-                    ),
-                    const SizedBox(width: AppSpacing.xs),
-                    Flexible(
-                      child: Text(
-                        PuantajDate.withDayName(date),
-                        maxLines: 1,
-                        softWrap: false,
-                        overflow: TextOverflow.ellipsis,
-                        style: theme.textTheme.labelLarge,
-                      ),
-                    ),
-                  ],
                 ),
               ),
             ),
-            const SizedBox(width: AppSpacing.xs),
+            IconButton(
+              onPressed: () =>
+                  onDateChanged(PuantajDate.shift(date, 1)),
+              visualDensity: VisualDensity.compact,
+              tooltip: 'Sonraki gün',
+              icon: const Icon(Icons.chevron_right),
+            ),
             Tooltip(
               message: 'Dünden kopyala',
               child: OutlinedButton.icon(

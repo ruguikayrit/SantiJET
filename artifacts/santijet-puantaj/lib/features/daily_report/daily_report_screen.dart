@@ -1460,8 +1460,11 @@ class _DailyReportScreenState extends ConsumerState<DailyReportScreen> {
                       child: Padding(
                         padding: const EdgeInsets.symmetric(vertical: 8),
                         child: Text(
-                          date,
+                          PuantajDate.withDayName(date),
                           textAlign: TextAlign.center,
+                          maxLines: 1,
+                          softWrap: false,
+                          overflow: TextOverflow.ellipsis,
                           style: theme.textTheme.titleMedium?.copyWith(
                             fontWeight: FontWeight.w700,
                           ),
