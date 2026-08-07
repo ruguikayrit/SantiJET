@@ -320,22 +320,16 @@ class _ElementQualityRow extends StatelessWidget {
     final pending = samples.where((s) => s.isPending).length;
 
     final Color accent;
-    final String resultLabel;
     if (samples.isEmpty) {
       accent = AppColors.cardTextMuted;
-      resultLabel = 'Kayıt yok';
     } else if (failCount > 0) {
       accent = AppColors.critical;
-      resultLabel = '$failCount uygunsuz';
     } else if (passCount > 0) {
       accent = AppColors.success;
-      resultLabel = '$passCount uygun';
     } else if (pending > 0) {
       accent = AppColors.partial;
-      resultLabel = '$pending bekliyor';
     } else {
       accent = AppColors.info;
-      resultLabel = '${samples.length} kayıt';
     }
 
     return Container(
@@ -348,53 +342,89 @@ class _ElementQualityRow extends StatelessWidget {
         borderRadius: AppRadii.sm,
         border: Border.all(color: accent.withValues(alpha: 0.25)),
       ),
-      child: Row(
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
-          Expanded(
-            flex: 3,
-            child: Text(
-              group.label,
-              style: theme.textTheme.labelMedium?.copyWith(
-                color: AppColors.cardTextPrimary,
-                fontWeight: FontWeight.w700,
-                height: 1.2,
+          Row(
+            children: [
+              Expanded(
+                flex: 3,
+                child: Text(
+                  group.label,
+                  style: theme.textTheme.labelMedium?.copyWith(
+                    color: AppColors.cardTextPrimary,
+                    fontWeight: FontWeight.w700,
+                    height: 1.2,
+                  ),
+                ),
               ),
-            ),
+              Expanded(
+                flex: 2,
+                child: Text(
+                  samples.isEmpty ? '—' : '${samples.length} rapor',
+                  style: theme.textTheme.labelSmall?.copyWith(
+                    color: AppColors.cardTextSecondary,
+                  ),
+                  textAlign: TextAlign.center,
+                ),
+              ),
+              Expanded(
+                flex: 3,
+                child: Text(
+                  avg == null ? '— MPa' : 'Ort. ${avg.toStringAsFixed(1)} MPa',
+                  style: theme.textTheme.labelMedium?.copyWith(
+                    color: accent,
+                    fontWeight: FontWeight.w700,
+                  ),
+                  textAlign: TextAlign.end,
+                ),
+              ),
+            ],
           ),
-          Expanded(
-            flex: 2,
-            child: Text(
-              samples.isEmpty ? '—' : '${samples.length} rapor',
+          const SizedBox(height: 4),
+          if (samples.isEmpty)
+            Text(
+              'Kayıt yok',
               style: theme.textTheme.labelSmall?.copyWith(
-                color: AppColors.cardTextSecondary,
+                color: AppColors.cardTextMuted,
               ),
-              textAlign: TextAlign.center,
+            )
+          else
+            Row(
+              children: [
+                Expanded(
+                  child: Text(
+                    '$passCount uygun',
+                    style: theme.textTheme.labelSmall?.copyWith(
+                      color: AppColors.success,
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+                ),
+                Expanded(
+                  child: Text(
+                    '$failCount uygunsuz',
+                    style: theme.textTheme.labelSmall?.copyWith(
+                      color: failCount > 0
+                          ? AppColors.critical
+                          : AppColors.cardTextSecondary,
+                      fontWeight: FontWeight.w600,
+                    ),
+                    textAlign: TextAlign.center,
+                  ),
+                ),
+                Expanded(
+                  child: Text(
+                    pending > 0 ? '$pending bekliyor' : '',
+                    style: theme.textTheme.labelSmall?.copyWith(
+                      color: AppColors.partial,
+                      fontWeight: FontWeight.w600,
+                    ),
+                    textAlign: TextAlign.end,
+                  ),
+                ),
+              ],
             ),
-          ),
-          Expanded(
-            flex: 3,
-            child: Text(
-              avg == null ? '— MPa' : 'Ort. ${avg.toStringAsFixed(1)} MPa',
-              style: theme.textTheme.labelMedium?.copyWith(
-                color: accent,
-                fontWeight: FontWeight.w700,
-              ),
-              textAlign: TextAlign.center,
-            ),
-          ),
-          Expanded(
-            flex: 2,
-            child: Text(
-              resultLabel,
-              style: theme.textTheme.labelSmall?.copyWith(
-                color: accent,
-                fontWeight: FontWeight.w600,
-              ),
-              textAlign: TextAlign.end,
-              maxLines: 1,
-              overflow: TextOverflow.ellipsis,
-            ),
-          ),
         ],
       ),
     );
