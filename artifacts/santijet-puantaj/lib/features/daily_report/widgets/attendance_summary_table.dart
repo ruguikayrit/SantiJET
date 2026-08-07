@@ -4,6 +4,7 @@ import '../../../core/design_system/sj_card.dart';
 import '../../../core/theme/app_colors.dart';
 import '../../../core/theme/app_radii.dart';
 import '../../../core/theme/app_spacing.dart';
+import '../../../core/utils/text_format.dart';
 import '../../../domain/entities/daily_report.dart';
 
 /// Demir çap/ton tablosu düzeninde puantaj personel özeti.
@@ -83,9 +84,11 @@ class AttendanceSummaryTable extends StatelessWidget {
                 itemCount: people.length,
                 itemBuilder: (context, index) {
                   final p = people[index];
-                  final meslek =
-                      p.profession.isNotEmpty ? p.profession : '—';
-                  final ekip = p.team.isNotEmpty ? p.team : '—';
+                  final meslek = p.profession.isNotEmpty
+                      ? titleCaseTr(p.profession)
+                      : '—';
+                  final ekip =
+                      p.team.isNotEmpty ? titleCaseTr(p.team) : '—';
                   final yv = p.yevmiye > 0 ? _num(p.yevmiye) : '—';
                   return Container(
                     padding: const EdgeInsets.symmetric(
@@ -100,7 +103,7 @@ class AttendanceSummaryTable extends StatelessWidget {
                         Expanded(
                           flex: 3,
                           child: Text(
-                            p.personName,
+                            titleCaseTr(p.personName),
                             style: theme.textTheme.bodySmall?.copyWith(
                               fontWeight: FontWeight.w600,
                             ),

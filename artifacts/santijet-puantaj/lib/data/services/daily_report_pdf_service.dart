@@ -5,8 +5,8 @@ import 'package:pdf/pdf.dart';
 import 'package:pdf/widgets.dart' as pw;
 import 'package:printing/printing.dart';
 
-import '../../core/constants/app_info.dart';
 import '../../core/utils/puantaj_date.dart';
+import '../../core/utils/text_format.dart';
 import '../../domain/entities/company_info.dart';
 import '../../domain/entities/daily_report.dart';
 import '../../domain/entities/project.dart';
@@ -124,7 +124,15 @@ class DailyReportPdfService {
     doc.addPage(
       pw.MultiPage(
         pageFormat: PdfPageFormat.a4,
-        margin: const pw.EdgeInsets.all(22),
+        margin: const pw.EdgeInsets.fromLTRB(22, 22, 22, 28),
+        footer: (ctx) => pw.Container(
+          alignment: pw.Alignment.centerRight,
+          margin: const pw.EdgeInsets.only(top: 6),
+          child: pw.Text(
+            '${ctx.pageNumber} / ${ctx.pagesCount}',
+            style: const pw.TextStyle(fontSize: 8, color: _muted),
+          ),
+        ),
         build: (ctx) {
           final widgets = <pw.Widget>[];
           for (var i = 0; i < sorted.length; i++) {
@@ -187,6 +195,18 @@ class DailyReportPdfService {
 
     void gap() => widgets.add(pw.SizedBox(height: 12));
 
+    /// Sayfa sonunda yalnız başlık kalmasını engeller.
+    void ensureSectionSpace([double min = 78]) {
+      widgets.add(pw.NewPage(freeSpace: min));
+    }
+
+    /// Başlık + içerik birlikte kalır; sığmazsa ikisi de sonraki sayfaya geçer.
+    void addCompactSection(String title, pw.Widget body, {double minSpace = 78}) {
+      gap();
+      ensureSectionSpace(minSpace);
+      widgets.add(_sectionBlock(title, body));
+    }
+
     if (sections.weather) {
       gap();
       widgets.add(_weatherLine(report.weather));
@@ -194,113 +214,169 @@ class DailyReportPdfService {
 
     if (sections.puantajCounts || sections.puantajNames) {
       gap();
-      widgets.add(_sectionTitle('PUANTAJ'));
-      widgets.add(pw.SizedBox(height: 6));
+      ensureSectionSpace(100);
+      final lead = <pw.Widget>[
+        _sectionTitle('PUANTAJ'),
+        pw.SizedBox(height: 6),
+      ];
       if (sections.puantajCounts) {
-        widgets.add(_attendanceSummary(snap));
+        lead.add(_attendanceSummary(snap));
       }
-      if (sections.puantajNames) {
+      if (sections.puantajNames &&
+          (snap == null || snap.people.isEmpty)) {
+        if (sections.puantajCounts) lead.add(pw.SizedBox(height: 6));
+        lead.add(
+          pw.Text(
+            'Personel listesi yok',
+            textAlign: pw.TextAlign.center,
+            style: const pw.TextStyle(fontSize: 9, color: _muted),
+          ),
+        );
+      }
+      widgets.add(
+        _KeepTogether(
+          child: pw.Column(
+            crossAxisAlignment: pw.CrossAxisAlignment.stretch,
+            children: lead,
+          ),
+        ),
+      );
+      if (sections.puantajNames &&
+          snap != null &&
+          snap.people.isNotEmpty) {
         if (sections.puantajCounts) widgets.add(pw.SizedBox(height: 6));
-        if (snap != null && snap.people.isNotEmpty) {
-          widgets.add(_personBreakdown(snap));
-        } else {
-          widgets.add(
-            pw.Text(
-              'Personel listesi yok',
-              textAlign: pw.TextAlign.center,
-              style: const pw.TextStyle(fontSize: 9, color: _muted),
-            ),
-          );
-        }
+        widgets.add(_personBreakdown(snap));
       }
     }
 
     if (sections.photos) {
       gap();
-      widgets.add(_sectionTitle('FOTOĞRAFLAR'));
-      widgets.add(pw.SizedBox(height: 6));
+      ensureSectionSpace(130);
       if (report.photos.isEmpty) {
         widgets.add(
-          pw.Text(
-            'Kayıt yok',
-            textAlign: pw.TextAlign.center,
-            style: const pw.TextStyle(fontSize: 9, color: _muted),
+          _sectionBlock(
+            'FOTOĞRAFLAR',
+            pw.Text(
+              'Kayıt yok',
+              textAlign: pw.TextAlign.center,
+              style: const pw.TextStyle(fontSize: 9, color: _muted),
+            ),
           ),
         );
       } else {
-        widgets.addAll(_photoWidgets(report.photosByWorkCategory, withCaptions: true));
+        final rows = _photoWidgets(
+          report.photosByWorkCategory,
+          withCaptions: true,
+        );
+        widgets.add(
+          _KeepTogether(
+            child: pw.Column(
+              crossAxisAlignment: pw.CrossAxisAlignment.stretch,
+              children: [
+                _sectionTitle('FOTOĞRAFLAR'),
+                pw.SizedBox(height: 6),
+                if (rows.isNotEmpty) rows.first,
+              ],
+            ),
+          ),
+        );
+        if (rows.length > 1) {
+          widgets.addAll(rows.skip(1));
+        }
       }
     }
 
     if (sections.workDone) {
       gap();
-      widgets.add(_sectionTitle('YAPILAN İŞLER'));
-      widgets.add(pw.SizedBox(height: 6));
-      widgets.addAll(_workCategoryBlocks(report));
+      ensureSectionSpace(90);
+      final blocks = _workCategoryBlocks(report);
+      widgets.add(
+        _KeepTogether(
+          child: pw.Column(
+            crossAxisAlignment: pw.CrossAxisAlignment.stretch,
+            children: [
+              _sectionTitle('YAPILAN İŞLER'),
+              pw.SizedBox(height: 6),
+              if (blocks.isNotEmpty) blocks.first,
+            ],
+          ),
+        ),
+      );
+      if (blocks.length > 1) {
+        widgets.addAll(blocks.skip(1));
+      }
     }
 
     if (sections.incomingMaterials) {
-      gap();
-      widgets.add(_sectionTitle('GELEN MALZEME'));
-      widgets.add(pw.SizedBox(height: 6));
-      widgets.add(
-        _materialTable(
+      _addTableSection(
+        widgets,
+        title: 'GELEN MALZEME',
+        table: _materialTable(
           report.incomingMaterials,
           advanced: true,
           kind: _MaterialKind.incoming,
         ),
+        isEmpty: report.incomingMaterials.isEmpty,
+        gap: gap,
+        ensureSpace: ensureSectionSpace,
       );
     }
 
     if (sections.outgoingMaterials) {
-      gap();
-      widgets.add(_sectionTitle('GİDEN MALZEME'));
-      widgets.add(pw.SizedBox(height: 6));
-      widgets.add(
-        _materialTable(
+      _addTableSection(
+        widgets,
+        title: 'GİDEN MALZEME',
+        table: _materialTable(
           report.outgoingMaterials,
           advanced: true,
           kind: _MaterialKind.outgoing,
         ),
+        isEmpty: report.outgoingMaterials.isEmpty,
+        gap: gap,
+        ensureSpace: ensureSectionSpace,
       );
     }
 
     if (sections.orderedMaterials) {
-      gap();
-      widgets.add(_sectionTitle('SİPARİŞ VERİLEN MALZEME'));
-      widgets.add(pw.SizedBox(height: 6));
-      widgets.add(
-        _materialTable(
+      _addTableSection(
+        widgets,
+        title: 'SİPARİŞ VERİLEN MALZEME',
+        table: _materialTable(
           report.orderedMaterials,
           advanced: true,
           kind: _MaterialKind.ordered,
         ),
+        isEmpty: report.orderedMaterials.isEmpty,
+        gap: gap,
+        ensureSpace: ensureSectionSpace,
       );
     }
 
     if (sections.machines) {
-      gap();
-      widgets.add(_sectionTitle('İŞ MAKİNESİ PUANTAJI'));
-      widgets.add(pw.SizedBox(height: 6));
-      widgets.add(
-        _machineTable(report.machines, advanced: true, vehicle: false),
+      _addTableSection(
+        widgets,
+        title: 'İŞ MAKİNESİ PUANTAJI',
+        table: _machineTable(report.machines, advanced: true, vehicle: false),
+        isEmpty: report.machines.isEmpty,
+        gap: gap,
+        ensureSpace: ensureSectionSpace,
       );
     }
 
     if (sections.vehicles) {
-      gap();
-      widgets.add(_sectionTitle('VASITA PUANTAJI'));
-      widgets.add(pw.SizedBox(height: 6));
-      widgets.add(
-        _machineTable(report.vehicles, advanced: true, vehicle: true),
+      _addTableSection(
+        widgets,
+        title: 'VASITA PUANTAJI',
+        table: _machineTable(report.vehicles, advanced: true, vehicle: true),
+        isEmpty: report.vehicles.isEmpty,
+        gap: gap,
+        ensureSpace: ensureSectionSpace,
       );
     }
 
     if (sections.nextDayPlan) {
-      gap();
-      widgets.add(_sectionTitle('ERTESİ GÜN PLANI'));
-      widgets.add(pw.SizedBox(height: 6));
-      widgets.add(
+      addCompactSection(
+        'ERTESİ GÜN PLANI',
         pw.Container(
           width: double.infinity,
           constraints: const pw.BoxConstraints(minHeight: 40),
@@ -321,15 +397,51 @@ class DailyReportPdfService {
             ),
           ),
         ),
+        minSpace: 90,
       );
     }
 
     if (sections.signatures) {
-      widgets.add(pw.SizedBox(height: 18));
-      widgets.add(_signatureBlock());
+      gap();
+      ensureSectionSpace(100);
+      widgets.add(_KeepTogether(child: _signatureBlock()));
     }
 
     return widgets;
+  }
+
+  /// Başlık + içerik tek parça; sayfa sığmazsa birlikte kayar.
+  pw.Widget _sectionBlock(String title, pw.Widget body) {
+    return _KeepTogether(
+      child: pw.Column(
+        crossAxisAlignment: pw.CrossAxisAlignment.stretch,
+        children: [
+          _sectionTitle(title),
+          pw.SizedBox(height: 6),
+          body,
+        ],
+      ),
+    );
+  }
+
+  /// Uzun tablolar sayfalar arası akabilir; başlık yalnız kalmaz (freeSpace).
+  void _addTableSection(
+    List<pw.Widget> widgets, {
+    required String title,
+    required pw.Widget table,
+    required bool isEmpty,
+    required void Function() gap,
+    required void Function([double]) ensureSpace,
+  }) {
+    gap();
+    ensureSpace(isEmpty ? 70 : 110);
+    if (isEmpty) {
+      widgets.add(_sectionBlock(title, table));
+      return;
+    }
+    widgets.add(_sectionTitle(title));
+    widgets.add(pw.SizedBox(height: 6));
+    widgets.add(table);
   }
 
   pw.Widget _docHeader({
@@ -571,9 +683,9 @@ class DailyReportPdfService {
       data: [
         for (final p in people)
           [
-            p.personName,
-            p.profession.isNotEmpty ? p.profession : '—',
-            p.team.isNotEmpty ? p.team : '—',
+            titleCaseTr(p.personName),
+            p.profession.isNotEmpty ? titleCaseTr(p.profession) : '—',
+            p.team.isNotEmpty ? titleCaseTr(p.team) : '—',
             p.status,
             _fmt(p.overtimeHours),
             _fmt(p.yevmiye),
@@ -597,45 +709,57 @@ class DailyReportPdfService {
     ];
     if (nonEmpty.isEmpty) {
       return [
-        pw.Text(
-          '—',
-          textAlign: pw.TextAlign.left,
-          style: const pw.TextStyle(fontSize: 10, color: _muted),
+        _KeepTogether(
+          child: pw.Text(
+            '—',
+            textAlign: pw.TextAlign.left,
+            style: const pw.TextStyle(fontSize: 10, color: _muted),
+          ),
         ),
       ];
     }
     return [
-      for (final e in nonEmpty) ...[
-        pw.Align(
-          alignment: pw.Alignment.centerLeft,
-          child: pw.Text(
-            e.$1,
-            textAlign: pw.TextAlign.left,
-            style: pw.TextStyle(
-              fontSize: 9,
-              fontWeight: pw.FontWeight.bold,
-              color: _blue,
-            ),
+      for (final e in nonEmpty)
+        _KeepTogether(
+          child: pw.Column(
+            crossAxisAlignment: pw.CrossAxisAlignment.stretch,
+            children: [
+              pw.Align(
+                alignment: pw.Alignment.centerLeft,
+                child: pw.Text(
+                  e.$1,
+                  textAlign: pw.TextAlign.left,
+                  style: pw.TextStyle(
+                    fontSize: 9,
+                    fontWeight: pw.FontWeight.bold,
+                    color: _blue,
+                  ),
+                ),
+              ),
+              pw.SizedBox(height: 3),
+              pw.Container(
+                width: double.infinity,
+                padding: const pw.EdgeInsets.all(8),
+                margin: const pw.EdgeInsets.only(bottom: 8),
+                alignment: pw.Alignment.centerLeft,
+                decoration: pw.BoxDecoration(
+                  border: pw.Border.all(color: _line, width: 0.7),
+                ),
+                child: pw.Text(
+                  truncateEach != null
+                      ? _truncate(e.$2.trim(), truncateEach)
+                      : e.$2.trim(),
+                  textAlign: pw.TextAlign.left,
+                  style: const pw.TextStyle(
+                    fontSize: 10,
+                    color: _ink,
+                    lineSpacing: 3,
+                  ),
+                ),
+              ),
+            ],
           ),
         ),
-        pw.SizedBox(height: 3),
-        pw.Container(
-          width: double.infinity,
-          padding: const pw.EdgeInsets.all(8),
-          margin: const pw.EdgeInsets.only(bottom: 8),
-          alignment: pw.Alignment.centerLeft,
-          decoration: pw.BoxDecoration(
-            border: pw.Border.all(color: _line, width: 0.7),
-          ),
-          child: pw.Text(
-            truncateEach != null
-                ? _truncate(e.$2.trim(), truncateEach)
-                : e.$2.trim(),
-            textAlign: pw.TextAlign.left,
-            style: const pw.TextStyle(fontSize: 10, color: _ink, lineSpacing: 3),
-          ),
-        ),
-      ],
     ];
   }
 
@@ -940,15 +1064,17 @@ class DailyReportPdfService {
     for (var i = 0; i < photos.length; i += 3) {
       final chunk = photos.skip(i).take(3).toList();
       out.add(
-        pw.Container(
-          margin: const pw.EdgeInsets.only(bottom: 10),
-          child: pw.Row(
-            crossAxisAlignment: pw.CrossAxisAlignment.start,
-            children: [
-              for (final p in chunk) cell(p, cellHeight: rowHeight),
-              for (var j = chunk.length; j < 3; j++)
-                pw.Expanded(child: pw.SizedBox()),
-            ],
+        _KeepTogether(
+          child: pw.Container(
+            margin: const pw.EdgeInsets.only(bottom: 10),
+            child: pw.Row(
+              crossAxisAlignment: pw.CrossAxisAlignment.start,
+              children: [
+                for (final p in chunk) cell(p, cellHeight: rowHeight),
+                for (var j = chunk.length; j < 3; j++)
+                  pw.Expanded(child: pw.SizedBox()),
+              ],
+            ),
           ),
         ),
       );
@@ -987,5 +1113,23 @@ class DailyReportPdfService {
 }
 
 enum _MaterialKind { incoming, outgoing, ordered }
+
+/// MultiPage içinde başlık+içerik gibi blokların bölünmesini engeller.
+/// Sığmazsa tamamı sonraki sayfaya kayar.
+class _KeepTogether extends pw.SingleChildWidget {
+  _KeepTogether({required pw.Widget child}) : super(child: child);
+
+  @override
+  bool get canSpan => false;
+
+  @override
+  bool get hasMoreWidgets => false;
+
+  @override
+  void paint(pw.Context context) {
+    super.paint(context);
+    paintChild(context);
+  }
+}
 
 final dailyReportPdfService = DailyReportPdfService();
