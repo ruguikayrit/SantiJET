@@ -3,7 +3,8 @@ import 'package:equatable/equatable.dart';
 /// Basınç dayanım raporunda yapısal eleman grubu.
 enum ConcreteElementGroup {
   temel('Temel'),
-  kolonPerde('Kolon & Perde'),
+  kolon('Kolon'),
+  perde('Perde'),
   doseme('Döşeme');
 
   const ConcreteElementGroup(this.label);
@@ -14,8 +15,11 @@ enum ConcreteElementGroup {
     final v = raw.trim().toLowerCase();
     return switch (v) {
       'temel' => ConcreteElementGroup.temel,
+      'kolon' => ConcreteElementGroup.kolon,
+      'perde' => ConcreteElementGroup.perde,
+      // Eski birleşik kayıtlar → Kolon olarak okunur.
       'kolon_perde' || 'kolon&perde' || 'kolonperde' =>
-        ConcreteElementGroup.kolonPerde,
+        ConcreteElementGroup.kolon,
       'doseme' || 'döşeme' => ConcreteElementGroup.doseme,
       _ => null,
     };
@@ -23,7 +27,8 @@ enum ConcreteElementGroup {
 
   String get storageValue => switch (this) {
         ConcreteElementGroup.temel => 'temel',
-        ConcreteElementGroup.kolonPerde => 'kolon_perde',
+        ConcreteElementGroup.kolon => 'kolon',
+        ConcreteElementGroup.perde => 'perde',
         ConcreteElementGroup.doseme => 'doseme',
       };
 }
@@ -51,7 +56,7 @@ class QualitySample extends Equatable {
   final String projectId;
   final String? pourRecordId;
 
-  /// Temel / Kolon & Perde / Döşeme.
+  /// Temel / Kolon / Perde / Döşeme.
   final ConcreteElementGroup elementGroup;
 
   /// Laboratuvar rapor numarası.

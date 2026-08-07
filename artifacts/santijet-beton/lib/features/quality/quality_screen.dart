@@ -4,6 +4,7 @@ import 'package:go_router/go_router.dart';
 
 import '../../core/design_system/sj_button.dart';
 import '../../core/design_system/sj_empty_state.dart';
+import '../../core/design_system/sj_filter_chips.dart';
 import '../../core/design_system/sj_list_item.dart';
 import '../../core/design_system/sj_modal.dart';
 import '../../core/design_system/sj_status_badge.dart';
@@ -16,14 +17,61 @@ import '../../data/services/quality_export_service.dart';
 import '../../domain/entities/project.dart';
 import '../../domain/entities/quality_sample.dart';
 
+enum _ElementFilter { all, temel, kolon, perde, doseme }
+
+enum _StatusFilter { all, compliant, nonCompliant, pending }
+
 /// Laboratuvar beton basınç dayanım rapor kayıtları.
-class QualityScreen extends ConsumerWidget {
+class QualityScreen extends ConsumerStatefulWidget {
   const QualityScreen({super.key});
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
+  ConsumerState<QualityScreen> createState() => _QualityScreenState();
+}
+
+class _QualityScreenState extends ConsumerState<QualityScreen> {
+  _ElementFilter _elementFilter = _ElementFilter.all;
+  _StatusFilter _statusFilter = _StatusFilter.all;
+
+  static const _elementLabels = [
+    'Tümü',
+    'Temel',
+    'Kolon',
+    'Perde',
+    'Döşeme',
+  ];
+
+  static const _statusLabels = [
+    'Tümü',
+    'Uygun',
+    'Uygunsuz',
+    'Sonuç bekleyen',
+  ];
+
+  List<QualitySample> _applyFilters(List<QualitySample> samples) {
+    return samples.where((s) {
+      final elementOk = switch (_elementFilter) {
+        _ElementFilter.all => true,
+        _ElementFilter.temel => s.elementGroup == ConcreteElementGroup.temel,
+        _ElementFilter.kolon => s.elementGroup == ConcreteElementGroup.kolon,
+        _ElementFilter.perde => s.elementGroup == ConcreteElementGroup.perde,
+        _ElementFilter.doseme => s.elementGroup == ConcreteElementGroup.doseme,
+      };
+      final statusOk = switch (_statusFilter) {
+        _StatusFilter.all => true,
+        _StatusFilter.compliant => s.isCompliant == true,
+        _StatusFilter.nonCompliant => s.isCompliant == false,
+        _StatusFilter.pending => s.isPending,
+      };
+      return elementOk && statusOk;
+    }).toList();
+  }
+
+  @override
+  Widget build(BuildContext context) {
     final project = ref.watch(activeProjectProvider);
     final samples = ref.watch(activeQualityProvider);
+    final filtered = _applyFilters(samples);
 
     return Scaffold(
       appBar: AppBar(
@@ -57,7 +105,7 @@ class QualityScreen extends ConsumerWidget {
                   title: 'Rapor yok',
                   message:
                       'Laboratuvar basınç dayanım raporundaki önemli alanları '
-                      'Temel / Kolon & Perde / Döşeme gruplarında kaydedin.',
+                      'Temel / Kolon / Perde / Döşeme gruplarında kaydedin.',
                   icon: Icons.science_outlined,
                   actionLabel: 'Rapor Ekle',
                   onAction: () => _openEditor(context, ref),
@@ -79,11 +127,13 @@ class QualityScreen extends ConsumerWidget {
                               label: 'PDF',
                               icon: Icons.picture_as_pdf_outlined,
                               variant: SJButtonVariant.secondary,
-                              onPressed: () => _exportPdf(
-                                context,
-                                project: project,
-                                samples: samples,
-                              ),
+                              onPressed: filtered.isEmpty
+                                  ? null
+                                  : () => _exportPdf(
+                                        context,
+                                        project: project,
+                                        samples: filtered,
+                                      ),
                             ),
                           ),
                           const SizedBox(width: AppSpacing.sm),
@@ -92,76 +142,125 @@ class QualityScreen extends ConsumerWidget {
                               label: 'Excel',
                               icon: Icons.table_chart_outlined,
                               variant: SJButtonVariant.secondary,
-                              onPressed: () => _exportExcel(
-                                context,
-                                project: project,
-                                samples: samples,
-                              ),
+                              onPressed: filtered.isEmpty
+                                  ? null
+                                  : () => _exportExcel(
+                                        context,
+                                        project: project,
+                                        samples: filtered,
+                                      ),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                    Padding(
+                      padding: const EdgeInsets.fromLTRB(
+                        AppSpacing.md,
+                        AppSpacing.sm,
+                        AppSpacing.md,
+                        0,
+                      ),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.stretch,
+                        children: [
+                          Text(
+                            'Yapısal eleman',
+                            style: Theme.of(context).textTheme.labelLarge,
+                          ),
+                          const SizedBox(height: AppSpacing.xs),
+                          SJFilterChips(
+                            labels: _elementLabels,
+                            selectedIndex: _elementFilter.index,
+                            onSelected: (i) => setState(
+                              () => _elementFilter = _ElementFilter.values[i],
+                            ),
+                          ),
+                          const SizedBox(height: AppSpacing.sm),
+                          Text(
+                            'Durum',
+                            style: Theme.of(context).textTheme.labelLarge,
+                          ),
+                          const SizedBox(height: AppSpacing.xs),
+                          SJFilterChips(
+                            labels: _statusLabels,
+                            selectedIndex: _statusFilter.index,
+                            onSelected: (i) => setState(
+                              () => _statusFilter = _StatusFilter.values[i],
                             ),
                           ),
                         ],
                       ),
                     ),
                     Expanded(
-                      child: ListView.separated(
-                        padding: const EdgeInsets.fromLTRB(
-                          AppSpacing.md,
-                          AppSpacing.sm,
-                          AppSpacing.md,
-                          88,
-                        ),
-                        itemCount: samples.length,
-                        separatorBuilder: (_, __) =>
-                            const SizedBox(height: AppSpacing.sm),
-                        itemBuilder: (context, index) {
-                          final s = samples[index];
-                          final strength = s.strengthMpa == null
-                              ? 'Sonuç bekleniyor'
-                              : 'Ort. ${s.strengthMpa!.toStringAsFixed(1)} MPa';
-                          final min = s.minStrengthMpa == null
-                              ? null
-                              : 'Min ${s.minStrengthMpa!.toStringAsFixed(1)} MPa';
-                          final compliance = switch (s.isCompliant) {
-                            true => 'Uygun',
-                            false => 'Uygunsuz',
-                            null => s.isPending ? 'Bekliyor' : 'Karar yok',
-                          };
-                          return SJListItem(
-                            title: s.sampleCode.isEmpty
-                                ? (s.labReportNo.isEmpty
-                                    ? s.elementGroup.label
-                                    : s.labReportNo)
-                                : s.sampleCode,
-                            subtitle: [
-                              '${s.elementGroup.label} · ${s.concreteClass}',
-                              '${s.sampleDate} · ${s.ageDays} gün · $strength',
-                              if (min != null) min,
-                              if (s.labReportNo.isNotEmpty)
-                                'Rapor: ${s.labReportNo}',
-                            ].join('\n'),
-                            leadingIcon: Icons.science_outlined,
-                            accentColor: switch (s.isCompliant) {
-                              true => AppColors.success,
-                              false => AppColors.critical,
-                              null => s.isPending
-                                  ? AppColors.partial
-                                  : AppColors.info,
-                            },
-                            trailing: SJStatusBadge(
-                              label: compliance,
-                              color: switch (s.isCompliant) {
-                                true => AppColors.success,
-                                false => AppColors.critical,
-                                null => s.isPending
-                                    ? AppColors.partial
-                                    : AppColors.info,
+                      child: filtered.isEmpty
+                          ? const SJEmptyState(
+                              title: 'Filtrede sonuç yok',
+                              message:
+                                  'Seçili yapısal eleman veya durum filtresine '
+                                  'uyan rapor bulunamadı.',
+                              icon: Icons.filter_alt_off_outlined,
+                            )
+                          : ListView.separated(
+                              padding: const EdgeInsets.fromLTRB(
+                                AppSpacing.md,
+                                AppSpacing.sm,
+                                AppSpacing.md,
+                                88,
+                              ),
+                              itemCount: filtered.length,
+                              separatorBuilder: (_, __) =>
+                                  const SizedBox(height: AppSpacing.sm),
+                              itemBuilder: (context, index) {
+                                final s = filtered[index];
+                                final strength = s.strengthMpa == null
+                                    ? 'Sonuç bekleniyor'
+                                    : 'Ort. ${s.strengthMpa!.toStringAsFixed(1)} MPa';
+                                final min = s.minStrengthMpa == null
+                                    ? null
+                                    : 'Min ${s.minStrengthMpa!.toStringAsFixed(1)} MPa';
+                                final compliance = switch (s.isCompliant) {
+                                  true => 'Uygun',
+                                  false => 'Uygunsuz',
+                                  null =>
+                                    s.isPending ? 'Bekliyor' : 'Karar yok',
+                                };
+                                return SJListItem(
+                                  title: s.sampleCode.isEmpty
+                                      ? (s.labReportNo.isEmpty
+                                          ? s.elementGroup.label
+                                          : s.labReportNo)
+                                      : s.sampleCode,
+                                  subtitle: [
+                                    '${s.elementGroup.label} · ${s.concreteClass}',
+                                    '${s.sampleDate} · ${s.ageDays} gün · $strength',
+                                    if (min != null) min,
+                                    if (s.labReportNo.isNotEmpty)
+                                      'Rapor: ${s.labReportNo}',
+                                  ].join('\n'),
+                                  leadingIcon: Icons.science_outlined,
+                                  accentColor: switch (s.isCompliant) {
+                                    true => AppColors.success,
+                                    false => AppColors.critical,
+                                    null => s.isPending
+                                        ? AppColors.partial
+                                        : AppColors.info,
+                                  },
+                                  trailing: SJStatusBadge(
+                                    label: compliance,
+                                    color: switch (s.isCompliant) {
+                                      true => AppColors.success,
+                                      false => AppColors.critical,
+                                      null => s.isPending
+                                          ? AppColors.partial
+                                          : AppColors.info,
+                                    },
+                                  ),
+                                  onTap: () =>
+                                      _openEditor(context, ref, existing: s),
+                                );
                               },
                             ),
-                            onTap: () =>
-                                _openEditor(context, ref, existing: s),
-                          );
-                        },
-                      ),
                     ),
                   ],
                 ),

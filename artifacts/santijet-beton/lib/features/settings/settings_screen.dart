@@ -137,7 +137,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
       title: 'Demo veriyi yükle',
       message:
           'Demo Şantiye projesi oluşturulur/güncellenir; keşif, döküm, '
-          'sipariş, metraj farkı ve basınç dayanım (Temel / Kolon & Perde / '
+          'sipariş, metraj farkı ve basınç dayanım (Temel / Kolon / Perde / '
           'Döşeme) örnekleri doldurulur. Aynı adlı demo projenin mevcut '
           'verileri yenilenir.',
       confirmLabel: 'Yükle',
@@ -170,9 +170,6 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
   Widget build(BuildContext context) {
     final themeMode = ref.watch(themeModeProvider);
     final project = ref.watch(activeProjectProvider);
-    final discoveryCount = ref.watch(activeDiscoveryProvider).length;
-    final pourCount = ref.watch(activePoursProvider).length;
-    final orderCount = ref.watch(activeOrdersProvider).length;
 
     return Scaffold(
       backgroundColor: AppColors.canvas,
@@ -187,17 +184,9 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
             onTap: () => context.push(AppRoutes.projeler),
           ),
           _SettingsTile(
-            icon: Icons.inventory_2_outlined,
-            title: 'Aktif proje özeti',
-            subtitle: project == null
-                ? 'Keşif, döküm, sipariş'
-                : '$discoveryCount keşif · $pourCount döküm · $orderCount sipariş',
-            onTap: () => context.go(AppRoutes.home),
-          ),
-          _SettingsTile(
             icon: Icons.science_outlined,
             title: 'Basınç dayanım raporları',
-            subtitle: 'Temel · Kolon & Perde · Döşeme laboratuvar kayıtları',
+            subtitle: 'Temel · Kolon · Perde · Döşeme laboratuvar kayıtları',
             onTap: () => context.push(AppRoutes.kalite),
           ),
           _SettingsTile(
