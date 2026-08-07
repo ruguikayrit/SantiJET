@@ -145,6 +145,16 @@ class _PuantajScreenState extends ConsumerState<PuantajScreen> {
 
     return Scaffold(
       backgroundColor: AppColors.canvas,
+      floatingActionButton: FloatingActionButton.extended(
+        onPressed: () => _openExportSheet(
+          context,
+          project: project,
+          people: people,
+          attendance: attendance,
+        ),
+        icon: const Icon(Icons.ios_share_outlined),
+        label: const Text('Puantajı Dışa Aktar'),
+      ),
       body: SafeArea(
         bottom: false,
         child: Column(
@@ -313,25 +323,6 @@ class _PuantajScreenState extends ConsumerState<PuantajScreen> {
                   statusOf: statusOf,
                 ),
               ),
-            Padding(
-              padding: const EdgeInsets.fromLTRB(
-                AppSpacing.md,
-                AppSpacing.sm,
-                AppSpacing.md,
-                AppSpacing.md,
-              ),
-              child: SJButton(
-                label: 'Puantaj Dışa Aktar',
-                icon: Icons.ios_share_outlined,
-                expanded: true,
-                onPressed: () => _openExportSheet(
-                  context,
-                  project: project,
-                  people: people,
-                  attendance: attendance,
-                ),
-              ),
-            ),
           ],
         ),
       ),
@@ -449,7 +440,7 @@ class _DailyView extends StatelessWidget {
               child: OutlinedButton.icon(
                 onPressed: () => _pickDate(context),
                 icon: const Icon(Icons.calendar_today, size: 16),
-                label: Text(date),
+                label: Text(PuantajDate.withDayName(date)),
               ),
             ),
             const SizedBox(width: AppSpacing.sm),

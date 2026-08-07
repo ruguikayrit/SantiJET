@@ -15,7 +15,7 @@ class SantijetHeader extends StatelessWidget {
     super.key,
     this.subtitle,
     this.showWordmark = false,
-    this.showNotification = true,
+    this.showNotification = false,
     this.showAvatar = true,
     this.avatarInitial,
   });
@@ -151,10 +151,6 @@ class _HeaderAvatarButton extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final resolved = (initial == null || initial!.trim().isEmpty)
-        ? 'SJ'
-        : initial!.trim();
-
     return Semantics(
       label: 'Ayarlar',
       button: true,
@@ -169,21 +165,12 @@ class _HeaderAvatarButton extends StatelessWidget {
             width: SantijetHeader.actionSize,
             height: SantijetHeader.actionSize,
           ),
-          icon: CircleAvatar(
-            radius: SantijetHeader.actionAvatarRadius,
-            backgroundColor: onDarkBand
-                ? AppColors.warning.withValues(alpha: 0.35)
-                : AppColors.warning.withValues(alpha: 0.3),
-            child: Text(
-              resolved,
-              style: AppTypography.titleMedium.copyWith(
-                color: onDarkBand ? Colors.white : AppColors.warning,
-                fontSize: AppTypography.scale *
-                    (resolved.length > 1 ? 11 : 14),
-                height: 1.0,
-                letterSpacing: resolved.length > 1 ? -0.4 : 0,
-              ),
-            ),
+          iconSize: SantijetHeader.actionIconSize,
+          icon: Icon(
+            Icons.settings_outlined,
+            color: onDarkBand
+                ? Colors.white.withValues(alpha: 0.88)
+                : AppColors.inkMutedFor(Theme.of(context).brightness),
           ),
         ),
       ),

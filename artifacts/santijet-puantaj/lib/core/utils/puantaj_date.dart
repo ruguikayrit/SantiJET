@@ -140,4 +140,10 @@ abstract final class PuantajDate {
     final d = parse(dateStr);
     return '${d.day} ${trMonths[d.month - 1]} ${d.year} ${trDaysLong[d.weekday - 1]}';
   }
+
+  /// Örn. `08.08.2026 Cumartesi`
+  static String withDayName(String dateStr) {
+    final d = parse(dateStr);
+    return '${format(d)} ${trDaysLong[d.weekday - 1]}';
+  }
 }
