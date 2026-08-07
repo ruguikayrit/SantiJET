@@ -437,17 +437,55 @@ class _DailyView extends StatelessWidget {
         Row(
           children: [
             Expanded(
-              child: OutlinedButton.icon(
+              child: OutlinedButton(
                 onPressed: () => _pickDate(context),
-                icon: const Icon(Icons.calendar_today, size: 16),
-                label: Text(PuantajDate.withDayName(date)),
+                style: OutlinedButton.styleFrom(
+                  visualDensity: VisualDensity.compact,
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: AppSpacing.sm,
+                    vertical: AppSpacing.xs,
+                  ),
+                  tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                ),
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Icon(
+                      Icons.calendar_today,
+                      size: 15,
+                      color: theme.colorScheme.onSurfaceVariant,
+                    ),
+                    const SizedBox(width: AppSpacing.xs),
+                    Flexible(
+                      child: Text(
+                        PuantajDate.withDayName(date),
+                        maxLines: 1,
+                        softWrap: false,
+                        overflow: TextOverflow.ellipsis,
+                        style: theme.textTheme.labelLarge,
+                      ),
+                    ),
+                  ],
+                ),
               ),
             ),
-            const SizedBox(width: AppSpacing.sm),
-            OutlinedButton.icon(
-              onPressed: onCopyYesterday,
-              icon: const Icon(Icons.copy, size: 16),
-              label: const Text('Dünden Kopyala'),
+            const SizedBox(width: AppSpacing.xs),
+            Tooltip(
+              message: 'Dünden kopyala',
+              child: OutlinedButton.icon(
+                onPressed: onCopyYesterday,
+                style: OutlinedButton.styleFrom(
+                  visualDensity: VisualDensity.compact,
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: AppSpacing.sm,
+                    vertical: AppSpacing.xs,
+                  ),
+                  tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                ),
+                icon: const Icon(Icons.copy, size: 15),
+                label: const Text('Dünden'),
+              ),
             ),
           ],
         ),
