@@ -6,7 +6,8 @@ void main() {
     expect(titleCaseTr('İSA ALKAN'), 'İsa Alkan');
     expect(titleCaseTr('DÜZ İŞÇİ'), 'Düz İşçi');
     expect(titleCaseTr('İNŞAAT İŞÇİSİ'), 'İnşaat İşçisi');
-    expect(titleCaseTr('ALÇI LEVHA UYG.'), 'Alçı Levha Uyg.');
+    expect(titleCaseTr('ALÇI LEVHA UYG. - USTA'), 'Alçı Levha Uyg. - Usta');
+    expect(titleCaseTr('Seramik/Fayans'), 'Seramik/Fayans');
     expect(titleCaseTr('  mehmet fatih  '), 'Mehmet Fatih');
   });
 }

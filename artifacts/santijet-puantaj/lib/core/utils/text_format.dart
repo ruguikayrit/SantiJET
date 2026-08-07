@@ -1,11 +1,16 @@
 /// Türkçe başlık biçimi: her kelimenin ilk harfi büyük, kalanı küçük.
 ///
 /// Büyük harfle girilmiş (`İSA ALKAN`) değerler `İsa Alkan` olur.
+/// Boşluk, `/`, `-` ve `·` ayraçları korunur.
 String titleCaseTr(String input) {
   final trimmed = input.trim();
   if (trimmed.isEmpty) return trimmed;
 
-  return trimmed.split(RegExp(r'\s+')).map(_titleWordTr).join(' ');
+  return trimmed.splitMapJoin(
+    RegExp(r'([\s/\-·]+)'),
+    onMatch: (m) => m.group(0)!,
+    onNonMatch: (part) => part.isEmpty ? part : _titleWordTr(part),
+  );
 }
 
 String _titleWordTr(String word) {

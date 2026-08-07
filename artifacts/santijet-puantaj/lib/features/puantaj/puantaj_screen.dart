@@ -11,6 +11,7 @@ import '../../core/theme/app_colors.dart';
 import '../../core/theme/app_radii.dart';
 import '../../core/theme/app_spacing.dart';
 import '../../core/utils/puantaj_date.dart';
+import '../../core/utils/text_format.dart';
 import '../../core/widgets/santijet_header.dart';
 import '../../data/providers/app_data_provider.dart';
 import '../../data/services/puantaj_export_service.dart';
@@ -727,8 +728,8 @@ class _PersonCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final meta = [
-      if (person.team.trim().isNotEmpty) person.team.trim(),
-      if (person.profession.trim().isNotEmpty) person.profession.trim(),
+      if (person.team.trim().isNotEmpty) titleCaseTr(person.team),
+      if (person.profession.trim().isNotEmpty) titleCaseTr(person.profession),
     ].join(' · ');
     final worked = status?.isWorkedDay ?? false;
     final baseHours = status?.hours ?? 0;
@@ -752,7 +753,10 @@ class _PersonCard extends StatelessWidget {
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        Text(person.name, style: theme.textTheme.titleMedium),
+                        Text(
+                          titleCaseTr(person.name),
+                          style: theme.textTheme.titleMedium,
+                        ),
                         if (meta.isNotEmpty)
                           Text(meta, style: theme.textTheme.bodySmall),
                       ],
@@ -1196,7 +1200,7 @@ class _CetvelView extends StatelessWidget {
             child: Padding(
               padding: const EdgeInsets.symmetric(vertical: 6, horizontal: 4),
               child: Text(
-                person.name,
+                titleCaseTr(person.name),
                 maxLines: 2,
                 overflow: TextOverflow.ellipsis,
                 style: theme.textTheme.bodySmall?.copyWith(
