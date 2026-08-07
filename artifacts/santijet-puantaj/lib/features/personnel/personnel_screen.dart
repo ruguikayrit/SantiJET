@@ -11,6 +11,7 @@ import '../../core/theme/app_colors.dart';
 import '../../core/theme/app_radii.dart';
 import '../../core/theme/app_spacing.dart';
 import '../../core/utils/id_gen.dart';
+import '../../core/utils/text_format.dart';
 import '../../core/widgets/santijet_header.dart';
 import '../../data/providers/app_data_provider.dart';
 import '../../data/providers/catalog_provider.dart';
@@ -606,8 +607,8 @@ class _PersonTile extends StatelessWidget {
   Widget build(BuildContext context) {
     final p = person;
     final meta = [
-      if (p.profession.isNotEmpty) p.profession,
-      if (p.team.isNotEmpty) p.team,
+      if (p.profession.isNotEmpty) titleCaseTr(p.profession),
+      if (p.team.isNotEmpty) titleCaseTr(p.team),
     ].join(' · ');
 
     return GestureDetector(
@@ -660,7 +661,7 @@ class _PersonTile extends StatelessWidget {
                     mainAxisSize: MainAxisSize.min,
                     children: [
                       Text(
-                        p.name,
+                        titleCaseTr(p.name),
                         maxLines: 1,
                         overflow: TextOverflow.ellipsis,
                         style: theme.textTheme.titleSmall?.copyWith(
@@ -856,12 +857,12 @@ class _PersonnelImportConfirmSheet extends StatelessWidget {
                   final r = rows[i];
                   return ListTile(
                     dense: true,
-                    title: Text(r.displayName),
+                    title: Text(titleCaseTr(r.displayName)),
                     subtitle: Text(
                       [
-                        if (r.company.isNotEmpty) r.company,
-                        if (r.profession.isNotEmpty) r.profession,
-                        if (r.team.isNotEmpty) r.team,
+                        if (r.company.isNotEmpty) titleCaseTr(r.company),
+                        if (r.profession.isNotEmpty) titleCaseTr(r.profession),
+                        if (r.team.isNotEmpty) titleCaseTr(r.team),
                         if (r.phone.isNotEmpty) r.phone,
                       ].join(' · '),
                       maxLines: 2,
