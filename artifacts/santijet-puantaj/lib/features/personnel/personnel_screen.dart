@@ -1295,6 +1295,7 @@ class _DatePickerField extends StatelessWidget {
         isEmpty: empty,
         decoration: InputDecoration(
           labelText: label,
+          hintText: emptyHint,
           suffixIcon: Row(
             mainAxisSize: MainAxisSize.min,
             children: [
@@ -1304,21 +1305,23 @@ class _DatePickerField extends StatelessWidget {
                   onPressed: onClear,
                   icon: const Icon(Icons.clear, size: 20),
                 ),
-              const Padding(
-                padding: EdgeInsets.only(right: 8),
-                child: Icon(Icons.calendar_today_outlined, size: 20),
+              IconButton(
+                tooltip: 'Takvim',
+                onPressed: onTap,
+                icon: const Icon(Icons.calendar_today_outlined, size: 20),
               ),
             ],
           ),
         ),
-        child: Text(
-          empty ? emptyHint : value,
-          style: theme.textTheme.bodyLarge?.copyWith(
-            color: empty
-                ? theme.colorScheme.onSurfaceVariant
-                : theme.colorScheme.onSurface,
-          ),
-        ),
+        // Boşken görünür metin yok — hintText kullanılır (etiket çakışmaz).
+        child: empty
+            ? const SizedBox(width: double.infinity, height: 24)
+            : Text(
+                value,
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+                style: theme.textTheme.bodyLarge,
+              ),
       ),
     );
   }
