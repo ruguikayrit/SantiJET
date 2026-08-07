@@ -13,6 +13,20 @@ String titleCaseTr(String input) {
   );
 }
 
+/// Cümle biçimi: yalnızca ilk harf büyük, kalanı küçük.
+///
+/// `CEPHE AKSESUAR` → `Cephe aksesuar`
+String sentenceCaseTr(String input) {
+  final trimmed = input.trim();
+  if (trimmed.isEmpty) return trimmed;
+  final lower = _lowerTr(trimmed);
+  final runes = lower.runes.toList();
+  if (runes.isEmpty) return lower;
+  final first = String.fromCharCode(runes.first);
+  final rest = String.fromCharCodes(runes.skip(1));
+  return '${_upperTr(first)}$rest';
+}
+
 String _titleWordTr(String word) {
   if (word.isEmpty) return word;
   final lower = _lowerTr(word);

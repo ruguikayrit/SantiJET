@@ -42,7 +42,6 @@ class _ImalatHubScreenState extends ConsumerState<ImalatHubScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final theme = Theme.of(context);
     return Scaffold(
       backgroundColor: AppColors.canvas,
       body: SafeArea(
@@ -58,47 +57,22 @@ class _ImalatHubScreenState extends ConsumerState<ImalatHubScreen> {
                 AppSpacing.md,
                 AppSpacing.sm,
               ),
-              child: DecoratedBox(
-                decoration: BoxDecoration(
-                  color: theme.cardTheme.color ?? theme.colorScheme.surface,
-                  borderRadius: AppRadii.md,
-                  border: Border.all(color: theme.dividerColor),
-                ),
-                child: Row(
-                  children: [
-                    for (final entry in const [
-                      (0, 'İmalat'),
-                      (1, 'Verim'),
-                    ])
-                      Expanded(
-                        child: InkWell(
-                          onTap: () => setState(() => _tab = entry.$1),
-                          borderRadius: AppRadii.md,
-                          child: Container(
-                            padding: const EdgeInsets.symmetric(vertical: 10),
-                            decoration: BoxDecoration(
-                              color: _tab == entry.$1
-                                  ? AppColors.electricBlue
-                                  : Colors.transparent,
-                              borderRadius: AppRadii.md,
-                            ),
-                            child: Text(
-                              entry.$2,
-                              textAlign: TextAlign.center,
-                              style: theme.textTheme.labelLarge?.copyWith(
-                                color: _tab == entry.$1
-                                    ? AppColors.readableOn(
-                                        AppColors.electricBlue,
-                                      )
-                                    : theme.colorScheme.onSurfaceVariant,
-                                fontWeight: FontWeight.w600,
-                              ),
-                            ),
-                          ),
-                        ),
+              child: Row(
+                children: [
+                  for (final entry in const [
+                    (0, 'İmalat'),
+                    (1, 'Verim'),
+                  ]) ...[
+                    if (entry.$1 > 0) const SizedBox(width: AppSpacing.sm),
+                    Expanded(
+                      child: _HubSegmentTab(
+                        label: entry.$2,
+                        selected: _tab == entry.$1,
+                        onTap: () => setState(() => _tab = entry.$1),
                       ),
+                    ),
                   ],
-                ),
+                ],
               ),
             ),
             Expanded(
@@ -111,6 +85,59 @@ class _ImalatHubScreenState extends ConsumerState<ImalatHubScreen> {
               ),
             ),
           ],
+        ),
+      ),
+    );
+  }
+}
+
+/// Faz satır başlıklarıyla aynı dil: yumuşak dolgu + kenarlık + renkli metin.
+class _HubSegmentTab extends StatelessWidget {
+  const _HubSegmentTab({
+    required this.label,
+    required this.selected,
+    required this.onTap,
+  });
+
+  final String label;
+  final bool selected;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final accent = AppColors.info;
+    final muted = theme.colorScheme.onSurfaceVariant;
+
+    return Material(
+      color: Colors.transparent,
+      child: InkWell(
+        onTap: onTap,
+        borderRadius: AppRadii.md,
+        child: AnimatedContainer(
+          duration: const Duration(milliseconds: 180),
+          curve: Curves.easeOut,
+          padding: const EdgeInsets.symmetric(vertical: 11),
+          decoration: BoxDecoration(
+            borderRadius: AppRadii.md,
+            color: selected
+                ? accent.withValues(alpha: 0.12)
+                : theme.colorScheme.surface.withValues(alpha: 0.55),
+            border: Border.all(
+              color: selected
+                  ? accent.withValues(alpha: 0.45)
+                  : theme.dividerColor.withValues(alpha: 0.7),
+              width: selected ? 1.25 : 1,
+            ),
+          ),
+          child: Text(
+            label,
+            textAlign: TextAlign.center,
+            style: theme.textTheme.labelLarge?.copyWith(
+              color: selected ? accent : muted,
+              fontWeight: selected ? FontWeight.w800 : FontWeight.w600,
+            ),
+          ),
         ),
       ),
     );

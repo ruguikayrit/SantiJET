@@ -280,30 +280,76 @@ class AttendanceSummaryChips extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-    Widget chip(String label, String value) => Expanded(
+    Widget chip({
+      required String label,
+      required String value,
+      required Color accent,
+    }) {
+      final ink = AppColors.statusInkOnCard(accent);
+      return Expanded(
+        child: Container(
+          margin: const EdgeInsets.symmetric(horizontal: 3),
+          padding: const EdgeInsets.symmetric(vertical: 10, horizontal: 6),
+          decoration: BoxDecoration(
+            color: accent.withValues(alpha: 0.14),
+            borderRadius: AppRadii.sm,
+            border: Border.all(color: accent.withValues(alpha: 0.35)),
+          ),
           child: Column(
             children: [
               Text(
                 value,
-                style: theme.textTheme.titleMedium?.copyWith(
-                  fontWeight: FontWeight.w700,
+                style: TextStyle(
+                  fontSize: 18,
+                  fontWeight: FontWeight.w800,
+                  height: 1.1,
+                  color: ink,
                 ),
               ),
-              Text(label, style: theme.textTheme.labelSmall),
+              const SizedBox(height: 2),
+              Text(
+                label,
+                textAlign: TextAlign.center,
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+                style: TextStyle(
+                  fontSize: 11,
+                  fontWeight: FontWeight.w600,
+                  height: 1.1,
+                  color: ink.withValues(alpha: 0.9),
+                ),
+              ),
             ],
           ),
-        );
+        ),
+      );
+    }
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
         Row(
           children: [
-            chip('Mevcut', '${snapshot.present}'),
-            chip('Yarım', '${snapshot.half}'),
-            chip('İzin', '${snapshot.leave}'),
-            chip('Yok', '${snapshot.absent}'),
+            chip(
+              label: 'Mevcut',
+              value: '${snapshot.present}',
+              accent: AppColors.success,
+            ),
+            chip(
+              label: 'Yarım',
+              value: '${snapshot.half}',
+              accent: AppColors.warning,
+            ),
+            chip(
+              label: 'İzin',
+              value: '${snapshot.leave}',
+              accent: AppColors.info,
+            ),
+            chip(
+              label: 'Yok',
+              value: '${snapshot.absent}',
+              accent: AppColors.critical,
+            ),
           ],
         ),
         const SizedBox(height: AppSpacing.sm),

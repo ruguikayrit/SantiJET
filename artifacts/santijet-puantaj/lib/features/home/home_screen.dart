@@ -10,6 +10,7 @@ import '../../core/theme/app_radii.dart';
 import '../../core/theme/app_spacing.dart';
 import '../../core/widgets/santijet_header.dart';
 import '../../core/utils/puantaj_date.dart';
+import '../../core/utils/text_format.dart';
 import '../../data/providers/app_data_provider.dart';
 import '../../data/providers/tasks_provider.dart';
 import '../../domain/entities/project.dart';
@@ -271,14 +272,6 @@ class _HomeUrgentTasksList extends StatelessWidget {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
-        Text(
-          'Teslim tarihine göre · ${tasks.length} görev',
-          style: theme.textTheme.labelMedium?.copyWith(
-            color: theme.colorScheme.onSurfaceVariant,
-            fontWeight: FontWeight.w600,
-          ),
-        ),
-        const SizedBox(height: AppSpacing.sm),
         for (var i = 0; i < tasks.length; i++) ...[
           if (i > 0) const SizedBox(height: AppSpacing.xs),
           _HomeUrgentTaskTile(task: tasks[i], today: today),
@@ -327,7 +320,7 @@ class _HomeUrgentTaskTile extends StatelessWidget {
               const SizedBox(width: AppSpacing.sm),
               Expanded(
                 child: Text(
-                  task.title,
+                  sentenceCaseTr(task.title),
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
                   style: theme.textTheme.titleSmall?.copyWith(

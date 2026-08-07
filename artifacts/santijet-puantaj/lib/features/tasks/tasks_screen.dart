@@ -10,6 +10,7 @@ import '../../core/theme/app_colors.dart';
 import '../../core/theme/app_radii.dart';
 import '../../core/theme/app_spacing.dart';
 import '../../core/utils/puantaj_date.dart';
+import '../../core/utils/text_format.dart';
 import '../../core/widgets/santijet_header.dart';
 import '../../data/providers/active_operator_provider.dart';
 import '../../data/providers/app_data_provider.dart';
@@ -48,77 +49,14 @@ class _TasksScreenState extends ConsumerState<TasksScreen> {
       showDragHandle: true,
       backgroundColor: SJModal.sheetSurface,
       builder: (ctx) {
-        final theme = sheetTheme;
         return Theme(
           data: sheetTheme,
-          child: SafeArea(
-          child: SizedBox(
-            height: MediaQuery.sizeOf(ctx).height * 0.55,
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.stretch,
-              children: [
-                Padding(
-                  padding: const EdgeInsets.fromLTRB(
-                    AppSpacing.md,
-                    0,
-                    AppSpacing.md,
-                    AppSpacing.sm,
-                  ),
-                  child: Text(title, style: theme.textTheme.headlineMedium),
-                ),
-                if (subtitle != null)
-                  Padding(
-                    padding:
-                        const EdgeInsets.symmetric(horizontal: AppSpacing.md),
-                    child: Text(subtitle, style: theme.textTheme.bodySmall),
-                  ),
-                if (subtitle != null) const SizedBox(height: AppSpacing.sm),
-                Expanded(
-                  child: ListView.separated(
-                    itemCount: people.length,
-                    separatorBuilder: (_, __) => const Divider(height: 1),
-                    itemBuilder: (context, index) {
-                      final p = people[index];
-                      final selected = p.id == selectedId;
-                      final degree = RoleDegree.forPerson(p);
-                      return ListTile(
-                        selected: selected,
-                        title: Text(p.name),
-                        subtitle: Text(
-                          [
-                            if (p.profession.isNotEmpty) p.profession,
-                            if (showDegreeHint)
-                              degree == RoleDegree.first
-                                  ? '1. derece · görev atayabilir'
-                                  : 'Atanan görevleri görür',
-                          ].join(' · '),
-                        ),
-                        trailing: selected
-                            ? Icon(
-                                Icons.check_circle,
-                                color: theme.colorScheme.primary,
-                              )
-                            : null,
-                        onTap: () => Navigator.pop(ctx, p),
-                      );
-                    },
-                  ),
-                ),
-                Padding(
-                  padding: const EdgeInsets.fromLTRB(
-                    AppSpacing.md,
-                    AppSpacing.sm,
-                    AppSpacing.md,
-                    AppSpacing.md,
-                  ),
-                  child: OutlinedButton(
-                    onPressed: () => Navigator.pop(ctx),
-                    child: const Text('İptal'),
-                  ),
-                ),
-              ],
-            ),
-          ),
+          child: _PersonPickSheet(
+            people: people,
+            title: title,
+            subtitle: subtitle,
+            selectedId: selectedId,
+            showDegreeHint: showDegreeHint,
           ),
         );
       },
@@ -357,8 +295,8 @@ class _TasksScreenState extends ConsumerState<TasksScreen> {
                     ),
                     const SizedBox(height: AppSpacing.sm),
                     Text(
-                      'Atayan: ${operator.name}'
-                      '${operator.profession.isNotEmpty ? ' · ${operator.profession}' : ''}',
+                      'Atayan: ${titleCaseTr(operator.name)}'
+                      '${operator.profession.isNotEmpty ? ' · ${titleCaseTr(operator.profession)}' : ''}',
                       style: theme.textTheme.labelMedium,
                     ),
                     const SizedBox(height: AppSpacing.md),
@@ -427,8 +365,8 @@ class _TasksScreenState extends ConsumerState<TasksScreen> {
                                 child: Text(
                                   assignee == null
                                       ? 'Personel seçin'
-                                      : '${assignee!.name}'
-                                          '${assignee!.profession.isNotEmpty ? ' · ${assignee!.profession}' : ''}',
+                                      : '${titleCaseTr(assignee!.name)}'
+                                          '${assignee!.profession.isNotEmpty ? ' · ${titleCaseTr(assignee!.profession)}' : ''}',
                                   style: theme.textTheme.bodyLarge?.copyWith(
                                     color: assignee == null
                                         ? theme.hintColor
@@ -1136,6 +1074,179 @@ class _StatusSelectButton extends StatelessWidget {
                 height: 1.1,
               ),
             ),
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+/// Personel seçim sheet'i — arama + title case liste.
+class _PersonPickSheet extends StatefulWidget {
+  const _PersonPickSheet({
+    required this.people,
+    required this.title,
+    this.subtitle,
+    this.selectedId,
+    this.showDegreeHint = false,
+  });
+
+  final List<Person> people;
+  final String title;
+  final String? subtitle;
+  final String? selectedId;
+  final bool showDegreeHint;
+
+  @override
+  State<_PersonPickSheet> createState() => _PersonPickSheetState();
+}
+
+class _PersonPickSheetState extends State<_PersonPickSheet> {
+  final _queryCtrl = TextEditingController();
+
+  @override
+  void dispose() {
+    _queryCtrl.dispose();
+    super.dispose();
+  }
+
+  static String _fold(String s) => s
+      .trim()
+      .toLowerCase()
+      .replaceAll('ı', 'i')
+      .replaceAll('İ', 'i')
+      .replaceAll('ğ', 'g')
+      .replaceAll('ü', 'u')
+      .replaceAll('ş', 's')
+      .replaceAll('ö', 'o')
+      .replaceAll('ç', 'c');
+
+  List<Person> get _filtered {
+    final q = _fold(_queryCtrl.text);
+    if (q.isEmpty) return widget.people;
+    return widget.people.where((p) {
+      final hay = _fold('${p.name} ${p.profession} ${p.team}');
+      return hay.contains(q);
+    }).toList();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final filtered = _filtered;
+    final bottomInset = MediaQuery.viewInsetsOf(context).bottom;
+
+    return SafeArea(
+      child: Padding(
+        padding: EdgeInsets.only(bottom: bottomInset),
+        child: SizedBox(
+          height: MediaQuery.sizeOf(context).height * 0.62,
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              Padding(
+                padding: const EdgeInsets.fromLTRB(
+                  AppSpacing.md,
+                  0,
+                  AppSpacing.md,
+                  AppSpacing.sm,
+                ),
+                child: Text(
+                  widget.title,
+                  style: theme.textTheme.headlineMedium,
+                ),
+              ),
+              if (widget.subtitle != null)
+                Padding(
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: AppSpacing.md),
+                  child: Text(
+                    widget.subtitle!,
+                    style: theme.textTheme.bodySmall,
+                  ),
+                ),
+              Padding(
+                padding: const EdgeInsets.fromLTRB(
+                  AppSpacing.md,
+                  AppSpacing.sm,
+                  AppSpacing.md,
+                  AppSpacing.sm,
+                ),
+                child: TextField(
+                  controller: _queryCtrl,
+                  textInputAction: TextInputAction.search,
+                  onChanged: (_) => setState(() {}),
+                  decoration: InputDecoration(
+                    hintText: 'Personel ara…',
+                    prefixIcon: const Icon(Icons.search),
+                    isDense: true,
+                    suffixIcon: _queryCtrl.text.isEmpty
+                        ? null
+                        : IconButton(
+                            tooltip: 'Temizle',
+                            onPressed: () {
+                              _queryCtrl.clear();
+                              setState(() {});
+                            },
+                            icon: const Icon(Icons.clear, size: 20),
+                          ),
+                  ),
+                ),
+              ),
+              Expanded(
+                child: filtered.isEmpty
+                    ? Center(
+                        child: Text(
+                          'Eşleşen personel yok',
+                          style: theme.textTheme.bodyMedium?.copyWith(
+                            color: theme.colorScheme.onSurfaceVariant,
+                          ),
+                        ),
+                      )
+                    : ListView.separated(
+                        itemCount: filtered.length,
+                        separatorBuilder: (_, __) => const Divider(height: 1),
+                        itemBuilder: (context, index) {
+                          final p = filtered[index];
+                          final selected = p.id == widget.selectedId;
+                          final degree = RoleDegree.forPerson(p);
+                          return ListTile(
+                            selected: selected,
+                            title: Text(titleCaseTr(p.name)),
+                            subtitle: Text(
+                              [
+                                if (p.profession.isNotEmpty)
+                                  titleCaseTr(p.profession),
+                                if (widget.showDegreeHint)
+                                  degree == RoleDegree.first
+                                      ? '1. derece · görev atayabilir'
+                                      : 'Atanan görevleri görür',
+                              ].join(' · '),
+                            ),
+                            trailing: selected
+                                ? Icon(
+                                    Icons.check_circle,
+                                    color: theme.colorScheme.primary,
+                                  )
+                                : null,
+                            onTap: () => Navigator.pop(context, p),
+                          );
+                        },
+                      ),
+              ),
+              Padding(
+                padding: const EdgeInsets.fromLTRB(
+                  AppSpacing.md,
+                  AppSpacing.sm,
+                  AppSpacing.md,
+                  AppSpacing.md,
+                ),
+                child: OutlinedButton(
+                  onPressed: () => Navigator.pop(context),
+                  child: const Text('İptal'),
+                ),
+              ),
+            ],
           ),
         ),
       ),

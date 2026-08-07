@@ -10,4 +10,13 @@ void main() {
     expect(titleCaseTr('Seramik/Fayans'), 'Seramik/Fayans');
     expect(titleCaseTr('  mehmet fatih  '), 'Mehmet Fatih');
   });
+
+  test('sentenceCaseTr: yalnızca ilk harfi büyütür', () {
+    expect(sentenceCaseTr('CEPHE AKSESUAR'), 'Cephe aksesuar');
+    expect(
+      sentenceCaseTr('HAVALANDIRMA VE ISI YALITIMI'),
+      'Havalandırma ve ısı yalıtımı',
+    );
+    expect(sentenceCaseTr('Trapez Sac'), 'Trapez sac');
+  });
 }
