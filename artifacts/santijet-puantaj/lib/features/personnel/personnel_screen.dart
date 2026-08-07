@@ -11,6 +11,7 @@ import '../../core/theme/app_colors.dart';
 import '../../core/theme/app_radii.dart';
 import '../../core/theme/app_spacing.dart';
 import '../../core/utils/id_gen.dart';
+import '../../core/utils/puantaj_date.dart';
 import '../../core/utils/text_format.dart';
 import '../../core/widgets/santijet_header.dart';
 import '../../data/providers/app_data_provider.dart';
@@ -919,8 +920,8 @@ class _PersonEditorSheetState extends ConsumerState<_PersonEditorSheet> {
   late final TextEditingController _tc;
   late final TextEditingController _iban;
   late final TextEditingController _bankName;
-  late final TextEditingController _hireDate;
-  late final TextEditingController _leaveDate;
+  String _hireDate = '';
+  String _leaveDate = '';
   String _profession = '';
   String _team = '';
   bool _active = true;
@@ -936,8 +937,8 @@ class _PersonEditorSheetState extends ConsumerState<_PersonEditorSheet> {
     _tc = TextEditingController(text: e?.tc ?? '');
     _iban = TextEditingController(text: e?.iban ?? '');
     _bankName = TextEditingController(text: e?.bankName ?? '');
-    _hireDate = TextEditingController(text: e?.hireDate ?? '');
-    _leaveDate = TextEditingController(text: e?.leaveDate ?? '');
+    _hireDate = e?.hireDate ?? '';
+    _leaveDate = e?.leaveDate ?? '';
     _profession = e?.profession ?? '';
     _team = e?.team ?? '';
     _active = e?.active ?? true;
@@ -952,9 +953,49 @@ class _PersonEditorSheetState extends ConsumerState<_PersonEditorSheet> {
     _tc.dispose();
     _iban.dispose();
     _bankName.dispose();
-    _hireDate.dispose();
-    _leaveDate.dispose();
     super.dispose();
+  }
+
+  static DateTime? _parseStoredDate(String raw) {
+    final s = raw.trim();
+    if (s.isEmpty) return null;
+    final iso = DateTime.tryParse(s);
+    if (iso != null) return DateTime(iso.year, iso.month, iso.day);
+    return PuantajDate.tryParse(s);
+  }
+
+  static String _storeDate(DateTime d) {
+    final mm = d.month.toString().padLeft(2, '0');
+    final dd = d.day.toString().padLeft(2, '0');
+    return '${d.year}-$mm-$dd';
+  }
+
+  static String _displayDate(String raw) {
+    final d = _parseStoredDate(raw);
+    return d == null ? '' : PuantajDate.format(d);
+  }
+
+  Future<void> _pickDate({required bool hire}) async {
+    final current = _parseStoredDate(hire ? _hireDate : _leaveDate);
+    final now = DateTime.now();
+    final picked = await showDatePicker(
+      context: context,
+      initialDate: current ?? now,
+      firstDate: DateTime(1990),
+      lastDate: DateTime(now.year + 5),
+      helpText: hire ? 'İşe giriş tarihi' : 'İşten çıkış tarihi',
+      cancelText: 'Vazgeç',
+      confirmText: 'Seç',
+      fieldLabelText: 'Tarih',
+    );
+    if (picked == null || !mounted) return;
+    setState(() {
+      if (hire) {
+        _hireDate = _storeDate(picked);
+      } else {
+        _leaveDate = _storeDate(picked);
+      }
+    });
   }
 
   List<String> _registeredCompanies() {
@@ -1165,20 +1206,24 @@ class _PersonEditorSheetState extends ConsumerState<_PersonEditorSheet> {
               textCapitalization: TextCapitalization.words,
             ),
             const SizedBox(height: AppSpacing.sm),
-            TextField(
-              controller: _hireDate,
-              decoration: const InputDecoration(
-                labelText: 'İşe giriş',
-                hintText: 'yyyy-MM-dd',
-              ),
+            _DatePickerField(
+              label: 'İşe giriş',
+              value: _displayDate(_hireDate),
+              emptyHint: 'Tarih seçin',
+              onTap: () => _pickDate(hire: true),
+              onClear: _hireDate.isEmpty
+                  ? null
+                  : () => setState(() => _hireDate = ''),
             ),
             const SizedBox(height: AppSpacing.sm),
-            TextField(
-              controller: _leaveDate,
-              decoration: const InputDecoration(
-                labelText: 'İşten çıkış',
-                hintText: 'yyyy-MM-dd',
-              ),
+            _DatePickerField(
+              label: 'İşten çıkış',
+              value: _displayDate(_leaveDate),
+              emptyHint: 'Tarih seçin (opsiyonel)',
+              onTap: () => _pickDate(hire: false),
+              onClear: _leaveDate.isEmpty
+                  ? null
+                  : () => setState(() => _leaveDate = ''),
             ),
             SwitchListTile(
               contentPadding: EdgeInsets.zero,
@@ -1204,8 +1249,8 @@ class _PersonEditorSheetState extends ConsumerState<_PersonEditorSheet> {
                     tc: _tc.text.trim(),
                     iban: _iban.text.trim().toUpperCase(),
                     bankName: _bankName.text.trim(),
-                    hireDate: _hireDate.text.trim(),
-                    leaveDate: _leaveDate.text.trim(),
+                    hireDate: _hireDate.trim(),
+                    leaveDate: _leaveDate.trim(),
                     active: _active,
                   ),
                 );
@@ -1217,6 +1262,62 @@ class _PersonEditorSheetState extends ConsumerState<_PersonEditorSheet> {
               child: const Text('İptal'),
             ),
           ],
+        ),
+      ),
+    );
+  }
+}
+
+/// Takvimden tarih seçimi — klavye ile yazım yok.
+class _DatePickerField extends StatelessWidget {
+  const _DatePickerField({
+    required this.label,
+    required this.value,
+    required this.emptyHint,
+    required this.onTap,
+    this.onClear,
+  });
+
+  final String label;
+  final String value;
+  final String emptyHint;
+  final VoidCallback onTap;
+  final VoidCallback? onClear;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final empty = value.isEmpty;
+    return InkWell(
+      onTap: onTap,
+      borderRadius: AppRadii.sm,
+      child: InputDecorator(
+        isEmpty: empty,
+        decoration: InputDecoration(
+          labelText: label,
+          suffixIcon: Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              if (onClear != null)
+                IconButton(
+                  tooltip: 'Temizle',
+                  onPressed: onClear,
+                  icon: const Icon(Icons.clear, size: 20),
+                ),
+              const Padding(
+                padding: EdgeInsets.only(right: 8),
+                child: Icon(Icons.calendar_today_outlined, size: 20),
+              ),
+            ],
+          ),
+        ),
+        child: Text(
+          empty ? emptyHint : value,
+          style: theme.textTheme.bodyLarge?.copyWith(
+            color: empty
+                ? theme.colorScheme.onSurfaceVariant
+                : theme.colorScheme.onSurface,
+          ),
         ),
       ),
     );
