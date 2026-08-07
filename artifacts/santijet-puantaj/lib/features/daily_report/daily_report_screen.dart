@@ -578,6 +578,148 @@ class _DailyReportScreenState extends ConsumerState<DailyReportScreen> {
     );
   }
 
+  /// Tam ekran not girişi — yapılan işler / planlı işler için.
+  Future<void> _editWorkNotes({
+    required String title,
+    required String hint,
+    required TextEditingController target,
+    List<String> syncedCaptions = const [],
+  }) async {
+    final ctrl = TextEditingController(text: target.text);
+    final focus = FocusNode();
+
+    void insertBullet() {
+      final text = ctrl.text;
+      final sel = ctrl.selection;
+      final start = sel.isValid ? sel.start : text.length;
+      final end = sel.isValid ? sel.end : text.length;
+      final atLineStart = start == 0 || text[start - 1] == '\n';
+      final insert = atLineStart ? '• ' : '\n• ';
+      final next = text.replaceRange(start, end, insert);
+      final caret = start + insert.length;
+      ctrl.value = TextEditingValue(
+        text: next,
+        selection: TextSelection.collapsed(offset: caret),
+      );
+      focus.requestFocus();
+    }
+
+    void appendSynced(String caption) {
+      final line = caption.trim();
+      if (line.isEmpty) return;
+      final text = ctrl.text.trimRight();
+      final next = text.isEmpty ? '• $line' : '$text\n• $line';
+      ctrl.value = TextEditingValue(
+        text: next,
+        selection: TextSelection.collapsed(offset: next.length),
+      );
+      focus.requestFocus();
+    }
+
+    final result = await showDailyReportEntryPage<String>(
+      context: context,
+      title: title,
+      scrollable: false,
+      saveLabel: 'Kaydet',
+      formBuilder: (ctx, setModal) {
+        final theme = Theme.of(ctx);
+        final lines = ctrl.text
+            .split('\n')
+            .where((l) => l.trim().isNotEmpty)
+            .length;
+        return Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            SingleChildScrollView(
+              scrollDirection: Axis.horizontal,
+              child: Row(
+                children: [
+                  ActionChip(
+                    avatar: const Icon(Icons.format_list_bulleted, size: 18),
+                    label: const Text('Madde ekle'),
+                    onPressed: () {
+                      insertBullet();
+                      setModal(() {});
+                    },
+                  ),
+                  const SizedBox(width: AppSpacing.xs),
+                  ActionChip(
+                    avatar: const Icon(Icons.backspace_outlined, size: 18),
+                    label: const Text('Temizle'),
+                    onPressed: () {
+                      ctrl.clear();
+                      setModal(() {});
+                      focus.requestFocus();
+                    },
+                  ),
+                ],
+              ),
+            ),
+            if (syncedCaptions.isNotEmpty) ...[
+              const SizedBox(height: AppSpacing.sm),
+              Text(
+                'Fotoğraf açıklamalarından ekle',
+                style: theme.textTheme.labelMedium?.copyWith(
+                  fontWeight: FontWeight.w700,
+                ),
+              ),
+              const SizedBox(height: AppSpacing.xs),
+              Wrap(
+                spacing: 6,
+                runSpacing: 6,
+                children: [
+                  for (final c in syncedCaptions)
+                    ActionChip(
+                      label: Text(
+                        c.length > 42 ? '${c.substring(0, 42)}…' : c,
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                      onPressed: () {
+                        appendSynced(c);
+                        setModal(() {});
+                      },
+                    ),
+                ],
+              ),
+            ],
+            const SizedBox(height: AppSpacing.sm),
+            Expanded(
+              child: TextField(
+                controller: ctrl,
+                focusNode: focus,
+                maxLines: null,
+                expands: true,
+                autofocus: true,
+                textAlignVertical: TextAlignVertical.top,
+                keyboardType: TextInputType.multiline,
+                textInputAction: TextInputAction.newline,
+                onChanged: (_) => setModal(() {}),
+                decoration: _dialogFieldDecoration(
+                  labelText: 'Notlar',
+                  hintText: hint,
+                  helperText:
+                      'Her satır bir madde olabilir. Kaydet ile onaylanır.',
+                ).copyWith(alignLabelWithHint: true),
+              ),
+            ),
+            const SizedBox(height: AppSpacing.xs),
+            Text(
+              lines == 0 ? 'Boş' : '$lines satır',
+              style: theme.textTheme.bodySmall?.copyWith(
+                color: theme.colorScheme.onSurfaceVariant,
+              ),
+            ),
+          ],
+        );
+      },
+      onSave: () => ctrl.text,
+    );
+    focus.dispose();
+    ctrl.dispose();
+    if (result == null || !mounted) return;
+    setState(() => target.text = result.trimRight());
+  }
+
   Future<void> _editCaption(DailyReportPhoto photo) async {
     final report = ref.read(activeDailyReportProvider);
     if (report == null) return;
@@ -1521,34 +1663,61 @@ class _DailyReportScreenState extends ConsumerState<DailyReportScreen> {
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.stretch,
                       children: [
-                        _WorkCategoryField(
+                        _WorkNotesTile(
                           label: 'İnşaat işleri',
-                          controller: _workConstructionCtrl,
-                          hint: 'İnşaat kapsamında yapılan işler…',
+                          text: _workConstructionCtrl.text,
+                          emptyHint: 'İnşaat kapsamında yapılan işler…',
                           syncedCaptions: report?.syncedCaptionsFor(
                                 PhotoWorkCategory.construction,
                               ) ??
                               const [],
+                          onEdit: () => _editWorkNotes(
+                            title: 'İnşaat işleri',
+                            hint: 'İnşaat kapsamında yapılan işler…',
+                            target: _workConstructionCtrl,
+                            syncedCaptions: report?.syncedCaptionsFor(
+                                  PhotoWorkCategory.construction,
+                                ) ??
+                                const [],
+                          ),
                         ),
                         const SizedBox(height: AppSpacing.sm),
-                        _WorkCategoryField(
+                        _WorkNotesTile(
                           label: 'Elektrik işleri',
-                          controller: _workElectricalCtrl,
-                          hint: 'Elektrik kapsamında yapılan işler…',
+                          text: _workElectricalCtrl.text,
+                          emptyHint: 'Elektrik kapsamında yapılan işler…',
                           syncedCaptions: report?.syncedCaptionsFor(
                                 PhotoWorkCategory.electrical,
                               ) ??
                               const [],
+                          onEdit: () => _editWorkNotes(
+                            title: 'Elektrik işleri',
+                            hint: 'Elektrik kapsamında yapılan işler…',
+                            target: _workElectricalCtrl,
+                            syncedCaptions: report?.syncedCaptionsFor(
+                                  PhotoWorkCategory.electrical,
+                                ) ??
+                                const [],
+                          ),
                         ),
                         const SizedBox(height: AppSpacing.sm),
-                        _WorkCategoryField(
+                        _WorkNotesTile(
                           label: 'Mekanik işler',
-                          controller: _workMechanicalCtrl,
-                          hint: 'Mekanik kapsamında yapılan işler…',
+                          text: _workMechanicalCtrl.text,
+                          emptyHint: 'Mekanik kapsamında yapılan işler…',
                           syncedCaptions: report?.syncedCaptionsFor(
                                 PhotoWorkCategory.mechanical,
                               ) ??
                               const [],
+                          onEdit: () => _editWorkNotes(
+                            title: 'Mekanik işler',
+                            hint: 'Mekanik kapsamında yapılan işler…',
+                            target: _workMechanicalCtrl,
+                            syncedCaptions: report?.syncedCaptionsFor(
+                                  PhotoWorkCategory.mechanical,
+                                ) ??
+                                const [],
+                          ),
                         ),
                       ],
                     ),
@@ -1876,10 +2045,15 @@ class _DailyReportScreenState extends ConsumerState<DailyReportScreen> {
                   _SectionCard(
                     title: 'Planlı işler listesi',
                     icon: Icons.event_note_outlined,
-                    child: _WorkCategoryField(
+                    child: _WorkNotesTile(
                       label: 'Planlanan işler',
-                      controller: _nextDayPlanCtrl,
-                      hint: 'Planlanan işler, ekipler, malzeme…',
+                      text: _nextDayPlanCtrl.text,
+                      emptyHint: 'Planlanan işler, ekipler, malzeme…',
+                      onEdit: () => _editWorkNotes(
+                        title: 'Planlı işler listesi',
+                        hint: 'Planlanan işler, ekipler, malzeme…',
+                        target: _nextDayPlanCtrl,
+                      ),
                     ),
                   ),
                 ],
@@ -1892,96 +2066,95 @@ class _DailyReportScreenState extends ConsumerState<DailyReportScreen> {
   }
 }
 
-class _WorkCategoryField extends StatefulWidget {
-  const _WorkCategoryField({
+class _WorkNotesTile extends StatelessWidget {
+  const _WorkNotesTile({
     required this.label,
-    required this.controller,
-    required this.hint,
+    required this.text,
+    required this.emptyHint,
+    required this.onEdit,
     this.syncedCaptions = const [],
   });
 
   final String label;
-  final TextEditingController controller;
-  final String hint;
+  final String text;
+  final String emptyHint;
+  final VoidCallback onEdit;
   final List<String> syncedCaptions;
-
-  @override
-  State<_WorkCategoryField> createState() => _WorkCategoryFieldState();
-}
-
-class _WorkCategoryFieldState extends State<_WorkCategoryField> {
-  final _focus = FocusNode();
-
-  @override
-  void initState() {
-    super.initState();
-    _focus.addListener(_onFocusChange);
-  }
-
-  void _onFocusChange() {
-    if (!_focus.hasFocus) return;
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      if (!mounted) return;
-      Scrollable.ensureVisible(
-        context,
-        alignment: 0.15,
-        duration: const Duration(milliseconds: 280),
-        curve: Curves.easeOutCubic,
-      );
-    });
-  }
-
-  @override
-  void dispose() {
-    _focus.removeListener(_onFocusChange);
-    _focus.dispose();
-    super.dispose();
-  }
 
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.stretch,
-      children: [
-        Text(
-          widget.label,
-          style: _cardInk(
-            theme.textTheme.labelLarge,
-            fontWeight: FontWeight.w700,
-          ),
-        ),
-        const SizedBox(height: AppSpacing.xs),
-        TextField(
-          controller: widget.controller,
-          focusNode: _focus,
-          maxLines: 3,
-          decoration: InputDecoration(
-            hintText: widget.hint,
-            border: const OutlineInputBorder(),
-            isDense: true,
-          ),
-        ),
-        if (widget.syncedCaptions.isNotEmpty) ...[
-          const SizedBox(height: AppSpacing.xs),
-          Text(
-            'Fotoğraflardan senkron',
-            style: _cardInk(
-              theme.textTheme.labelSmall,
-              color: theme.colorScheme.primary,
-              fontWeight: FontWeight.w700,
+    final trimmed = text.trim();
+    final empty = trimmed.isEmpty;
+    final preview = empty
+        ? emptyHint
+        : (trimmed.length > 220 ? '${trimmed.substring(0, 220)}…' : trimmed);
+
+    return Material(
+      color: AppColors.cardSurface,
+      borderRadius: AppRadii.md,
+      child: InkWell(
+        onTap: onEdit,
+        borderRadius: AppRadii.md,
+        child: Ink(
+          decoration: BoxDecoration(
+            borderRadius: AppRadii.md,
+            border: Border.all(
+              color: theme.colorScheme.outlineVariant.withValues(alpha: 0.7),
             ),
           ),
-          for (final c in widget.syncedCaptions)
-            Padding(
-              padding: const EdgeInsets.only(top: 2),
-              child: Text(
-                '• $c',
-                style: _cardInk(theme.textTheme.bodySmall),
-              ),
+          child: Padding(
+            padding: const EdgeInsets.fromLTRB(12, 10, 8, 10),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                Row(
+                  children: [
+                    Expanded(
+                      child: Text(
+                        label,
+                        style: _cardInk(
+                          theme.textTheme.labelLarge,
+                          fontWeight: FontWeight.w700,
+                        ),
+                      ),
+                    ),
+                    IconButton(
+                      tooltip: 'Düzenle',
+                      onPressed: onEdit,
+                      icon: const Icon(Icons.edit_note_outlined, size: 22),
+                      visualDensity: VisualDensity.compact,
+                    ),
+                  ],
+                ),
+                Text(
+                  preview,
+                  maxLines: 4,
+                  overflow: TextOverflow.ellipsis,
+                  style: _cardInk(
+                    theme.textTheme.bodyMedium,
+                    color: empty
+                        ? AppColors.cardTextSecondary
+                        : AppColors.cardTextPrimary,
+                    fontStyle: empty ? FontStyle.italic : null,
+                  ),
+                ),
+                if (syncedCaptions.isNotEmpty) ...[
+                  const SizedBox(height: AppSpacing.xs),
+                  Text(
+                    'Fotoğraflardan ${syncedCaptions.length} açıklama hazır',
+                    style: _cardInk(
+                      theme.textTheme.labelSmall,
+                      color: theme.colorScheme.primary,
+                      fontWeight: FontWeight.w700,
+                    ),
+                  ),
+                ],
+              ],
             ),
-        ],
-      ],
+          ),
+        ),
+      ),
     );
   }
 }
