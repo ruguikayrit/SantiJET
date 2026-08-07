@@ -5,6 +5,7 @@ import '../../../core/theme/app_colors.dart';
 import '../../../core/theme/app_radii.dart';
 import '../../../core/theme/app_spacing.dart';
 import '../../../core/utils/text_format.dart';
+import '../../../domain/daily_report/attendance_snapshot_builder.dart';
 import '../../../domain/entities/daily_report.dart';
 
 /// Demir çap/ton tablosu düzeninde puantaj personel özeti.
@@ -29,15 +30,8 @@ class AttendanceSummaryTable extends StatelessWidget {
         : AppColors.isSantijetPro
             ? SJCard.lightContrastTheme(base)
             : base;
-    final people = [...snapshot.people]..sort((a, b) {
-      final byProfession = a.profession
-          .toLowerCase()
-          .compareTo(b.profession.toLowerCase());
-      if (byProfession != 0) return byProfession;
-      final byTeam = a.team.toLowerCase().compareTo(b.team.toLowerCase());
-      if (byTeam != 0) return byTeam;
-      return a.personName.toLowerCase().compareTo(b.personName.toLowerCase());
-    });
+    final people = [...snapshot.people]
+      ..sort(AttendanceSnapshotBuilder.compareByRoleRank);
     final border = theme.dividerColor.withValues(alpha: 0.55);
 
     return Theme(

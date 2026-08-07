@@ -2,6 +2,7 @@ import '../entities/attendance.dart';
 import '../entities/daily_report.dart';
 import '../entities/person.dart';
 import '../enums/attendance_status.dart';
+import '../permissions/role_degree.dart';
 
 /// Proje + gün için canlı puantaj özeti üretir.
 abstract final class AttendanceSnapshotBuilder {
@@ -65,7 +66,7 @@ abstract final class AttendanceSnapshotBuilder {
           overtimeHours: a.overtimeHours,
           yevmiye: a.yevmiye,
         ),
-    ]..sort(_byProfessionTeamName);
+    ]..sort(compareByRoleRank);
 
     return DailyReportAttendanceSnapshot(
       present: present,
@@ -79,11 +80,14 @@ abstract final class AttendanceSnapshotBuilder {
     );
   }
 
-  /// Meslek → ekip → personel adı.
-  static int _byProfessionTeamName(
+  /// Meslek rütbesi → aynı rütbede meslek adı → ekip → personel adı.
+  static int compareByRoleRank(
     DailyReportAttendancePerson a,
     DailyReportAttendancePerson b,
   ) {
+    final byRank = RoleDegree.sortRank(a.profession)
+        .compareTo(RoleDegree.sortRank(b.profession));
+    if (byRank != 0) return byRank;
     final byProfession =
         _foldTr(a.profession).compareTo(_foldTr(b.profession));
     if (byProfession != 0) return byProfession;

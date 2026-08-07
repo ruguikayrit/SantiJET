@@ -1,3 +1,4 @@
+import '../catalogs/professions.dart';
 import '../entities/person.dart';
 
 /// Meslek → rol derecesi.
@@ -31,6 +32,51 @@ abstract final class RoleDegree {
       .replaceAll('ş', 's')
       .replaceAll('ö', 'o')
       .replaceAll('ç', 'c');
+
+  /// Puantaj / rapor sıralaması: düşük = daha yüksek rütbe.
+  ///
+  /// [ProfessionCatalog.defaultProfessions] sırası esas alınır;
+  /// katalog dışı meslekler anahtar kelime bandına düşer.
+  static int sortRank(String profession) {
+    final raw = profession.trim();
+    if (raw.isEmpty) return 9500;
+
+    final catalog = ProfessionCatalog.defaultProfessions;
+    final exact = catalog.indexOf(raw);
+    if (exact >= 0) return exact;
+
+    final fold = _fold(raw);
+    for (var i = 0; i < catalog.length; i++) {
+      if (_fold(catalog[i]) == fold) return i;
+    }
+
+    if (fold.contains('koordinator')) return 0;
+    if (fold.contains('mudur')) return 1;
+    if (fold.contains('sefi') ||
+        fold.endsWith(' sef') ||
+        fold.endsWith('sef') ||
+        fold.contains('sef ')) {
+      return 2;
+    }
+    if (fold.contains('muhendis')) return 4;
+    if (fold.contains('isg')) return 7;
+    if (fold.contains('senor')) return 8;
+    if (fold.contains('puantor')) return 9;
+    if (fold.contains('formen')) return 10;
+    if (fold.contains('usta') && !fold.contains('yardim')) return 12;
+    if (fold.contains('operator') || fold.contains('sofor')) return 14;
+    if (fold.contains('kantar') ||
+        fold.contains('depo') ||
+        fold.contains('ambar')) {
+      return 19;
+    }
+    if (fold.contains('kalfa')) return 21;
+    if (fold.contains('isci')) return 24;
+    if (fold.contains('bekci')) return 25;
+
+    // Bilinmeyen özel meslekler: katalogdan sonra, boştan önce.
+    return 8000;
+  }
 
   static int forProfession(String profession) {
     final raw = profession.trim();

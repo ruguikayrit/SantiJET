@@ -7,6 +7,7 @@ import 'package:printing/printing.dart';
 
 import '../../core/utils/puantaj_date.dart';
 import '../../core/utils/text_format.dart';
+import '../../domain/daily_report/attendance_snapshot_builder.dart';
 import '../../domain/entities/company_info.dart';
 import '../../domain/entities/daily_report.dart';
 import '../../domain/entities/project.dart';
@@ -662,15 +663,8 @@ class DailyReportPdfService {
   }
 
   pw.Widget _personBreakdown(DailyReportAttendanceSnapshot snap) {
-    final people = [...snap.people]..sort((a, b) {
-      final byProfession = a.profession
-          .toLowerCase()
-          .compareTo(b.profession.toLowerCase());
-      if (byProfession != 0) return byProfession;
-      final byTeam = a.team.toLowerCase().compareTo(b.team.toLowerCase());
-      if (byTeam != 0) return byTeam;
-      return a.personName.toLowerCase().compareTo(b.personName.toLowerCase());
-    });
+    final people = [...snap.people]
+      ..sort(AttendanceSnapshotBuilder.compareByRoleRank);
     return _centeredTable(
       headers: const [
         'Personel',

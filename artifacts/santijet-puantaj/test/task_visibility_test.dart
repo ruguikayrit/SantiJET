@@ -16,6 +16,27 @@ void main() {
         const Person(id: '2', projectId: 'p', name: 'B', profession: 'Saha Formeni'),
       ), isFalse);
     });
+
+    test('sortRank meslek rütbesine göre önem sırası verir', () {
+      expect(
+        RoleDegree.sortRank('Şantiye Şefi') <
+            RoleDegree.sortRank('Saha Formeni'),
+        isTrue,
+      );
+      expect(
+        RoleDegree.sortRank('Saha Mühendisi') <
+            RoleDegree.sortRank('Usta'),
+        isTrue,
+      );
+      expect(
+        RoleDegree.sortRank('Usta') < RoleDegree.sortRank('Saha Düz İşçi'),
+        isTrue,
+      );
+      expect(
+        RoleDegree.sortRank('Düz İşçi') < RoleDegree.sortRank(''),
+        isTrue,
+      );
+    });
   });
 
   group('SiteTask.isVisibleTo', () {
