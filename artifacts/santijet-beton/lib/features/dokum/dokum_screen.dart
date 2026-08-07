@@ -291,7 +291,7 @@ class _PourCard extends StatelessWidget {
                 children: [
                   Expanded(
                     child: _MiniStat(
-                      label: 'Plan',
+                      label: 'Sipariş',
                       value: plan == null
                           ? '—'
                           : BetonProgress.fmtM3(plan),
