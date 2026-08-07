@@ -40,7 +40,7 @@ class DailyReport extends Equatable {
   /// Mekanik işler (serbest metin).
   final String workMechanical;
 
-  /// Ertesi gün planı (serbest metin).
+  /// Planlı işler listesi (serbest metin).
   final String nextDayPlan;
 
   /// Özet / geriye dönük birleşik metin.

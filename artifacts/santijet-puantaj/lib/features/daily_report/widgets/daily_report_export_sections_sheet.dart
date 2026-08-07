@@ -232,8 +232,8 @@ class _ExportSectionsPickerSheetState
                   ),
                 ),
                 _sectionTile(
-                  title: 'Ertesi gün planı',
-                  subtitle: 'Yarın yapılacak işler',
+                  title: 'Planlı işler listesi',
+                  subtitle: 'Planlanan işler',
                   value: _sections.nextDayPlan,
                   onChanged: (v) => setState(
                     () => _sections = _sections.copyWith(nextDayPlan: v),

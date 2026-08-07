@@ -377,7 +377,7 @@ class DailyReportPdfService {
 
     if (sections.nextDayPlan) {
       addCompactSection(
-        'ERTESİ GÜN PLANI',
+        'PLANLI İŞLER LİSTESİ',
         pw.Container(
           width: double.infinity,
           constraints: const pw.BoxConstraints(minHeight: 40),

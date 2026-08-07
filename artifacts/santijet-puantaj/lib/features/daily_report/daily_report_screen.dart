@@ -1355,11 +1355,13 @@ class _DailyReportScreenState extends ConsumerState<DailyReportScreen> {
             ),
             Expanded(
               child: ListView(
-                padding: const EdgeInsets.fromLTRB(
+                keyboardDismissBehavior:
+                    ScrollViewKeyboardDismissBehavior.onDrag,
+                padding: EdgeInsets.fromLTRB(
                   AppSpacing.md,
                   AppSpacing.sm,
                   AppSpacing.md,
-                  AppSpacing.xl,
+                  AppSpacing.xl + MediaQuery.viewInsetsOf(context).bottom,
                 ),
                 children: [
                   WeatherCompactCard(
@@ -1872,12 +1874,12 @@ class _DailyReportScreenState extends ConsumerState<DailyReportScreen> {
                   ),
                   const SizedBox(height: AppSpacing.md),
                   _SectionCard(
-                    title: 'Ertesi gün planı',
+                    title: 'Planlı işler listesi',
                     icon: Icons.event_note_outlined,
                     child: _WorkCategoryField(
-                      label: 'Yarın yapılacak işler',
+                      label: 'Planlanan işler',
                       controller: _nextDayPlanCtrl,
-                      hint: 'Ertesi gün planlanan işler, ekipler, malzeme…',
+                      hint: 'Planlanan işler, ekipler, malzeme…',
                     ),
                   ),
                 ],
@@ -1890,7 +1892,7 @@ class _DailyReportScreenState extends ConsumerState<DailyReportScreen> {
   }
 }
 
-class _WorkCategoryField extends StatelessWidget {
+class _WorkCategoryField extends StatefulWidget {
   const _WorkCategoryField({
     required this.label,
     required this.controller,
@@ -1904,13 +1906,46 @@ class _WorkCategoryField extends StatelessWidget {
   final List<String> syncedCaptions;
 
   @override
+  State<_WorkCategoryField> createState() => _WorkCategoryFieldState();
+}
+
+class _WorkCategoryFieldState extends State<_WorkCategoryField> {
+  final _focus = FocusNode();
+
+  @override
+  void initState() {
+    super.initState();
+    _focus.addListener(_onFocusChange);
+  }
+
+  void _onFocusChange() {
+    if (!_focus.hasFocus) return;
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted) return;
+      Scrollable.ensureVisible(
+        context,
+        alignment: 0.15,
+        duration: const Duration(milliseconds: 280),
+        curve: Curves.easeOutCubic,
+      );
+    });
+  }
+
+  @override
+  void dispose() {
+    _focus.removeListener(_onFocusChange);
+    _focus.dispose();
+    super.dispose();
+  }
+
+  @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
         Text(
-          label,
+          widget.label,
           style: _cardInk(
             theme.textTheme.labelLarge,
             fontWeight: FontWeight.w700,
@@ -1918,15 +1953,16 @@ class _WorkCategoryField extends StatelessWidget {
         ),
         const SizedBox(height: AppSpacing.xs),
         TextField(
-          controller: controller,
+          controller: widget.controller,
+          focusNode: _focus,
           maxLines: 3,
           decoration: InputDecoration(
-            hintText: hint,
+            hintText: widget.hint,
             border: const OutlineInputBorder(),
             isDense: true,
           ),
         ),
-        if (syncedCaptions.isNotEmpty) ...[
+        if (widget.syncedCaptions.isNotEmpty) ...[
           const SizedBox(height: AppSpacing.xs),
           Text(
             'Fotoğraflardan senkron',
@@ -1936,7 +1972,7 @@ class _WorkCategoryField extends StatelessWidget {
               fontWeight: FontWeight.w700,
             ),
           ),
-          for (final c in syncedCaptions)
+          for (final c in widget.syncedCaptions)
             Padding(
               padding: const EdgeInsets.only(top: 2),
               child: Text(

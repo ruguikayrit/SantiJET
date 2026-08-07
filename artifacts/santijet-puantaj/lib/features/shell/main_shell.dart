@@ -45,32 +45,36 @@ class MainShell extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final themeMode = ref.watch(themeModeProvider);
     AppColors.applyPaletteFromMode(themeMode, Theme.of(context).brightness);
+    final keyboardOpen = MediaQuery.viewInsetsOf(context).bottom > 0;
 
     return PopScope(
       // Alt sekmeler arası tarayıcı/geçmiş kaydırmasıyla geri gitmeyi engelle.
       canPop: false,
       child: Scaffold(
         backgroundColor: AppColors.canvas,
-        resizeToAvoidBottomInset: false,
+        // Klavye açıkken gövde daralsın; aksi halde alt form alanları örtülür.
+        resizeToAvoidBottomInset: true,
         body: ThemeRebuildGate(child: navigationShell),
-        bottomNavigationBar: MediaQuery.removePadding(
-          context: context,
-          removeBottom: true,
-          child: SJBottomNavigation(
-            items: _items,
-            currentIndex: navigationShell.currentIndex,
-            onTap: (index) {
-              // Sekme değişimini tarayıcı geçmişine yazma → sağa/sola
-              // kaydırarak sekme geçişi oluşmasın.
-              Router.neglect(context, () {
-                navigationShell.goBranch(
-                  index,
-                  initialLocation: index == navigationShell.currentIndex,
-                );
-              });
-            },
-          ),
-        ),
+        bottomNavigationBar: keyboardOpen
+            ? null
+            : MediaQuery.removePadding(
+                context: context,
+                removeBottom: true,
+                child: SJBottomNavigation(
+                  items: _items,
+                  currentIndex: navigationShell.currentIndex,
+                  onTap: (index) {
+                    // Sekme değişimini tarayıcı geçmişine yazma → sağa/sola
+                    // kaydırarak sekme geçişi oluşmasın.
+                    Router.neglect(context, () {
+                      navigationShell.goBranch(
+                        index,
+                        initialLocation: index == navigationShell.currentIndex,
+                      );
+                    });
+                  },
+                ),
+              ),
       ),
     );
   }
