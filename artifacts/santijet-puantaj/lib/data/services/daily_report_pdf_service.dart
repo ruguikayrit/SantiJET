@@ -558,9 +558,14 @@ class DailyReportPdfService {
         '${w.temperatureC!.toStringAsFixed(0)}°C',
       if (w.nightTemperatureC != null)
         'Gece ${w.nightTemperatureC!.toStringAsFixed(0)}°C',
-      if (w.humidityPercent != null)
+      if (w.maxHumidityPercent != null)
+        'Max nem %${w.maxHumidityPercent!.toStringAsFixed(0)}'
+      else if (w.humidityPercent != null)
         'Nem %${w.humidityPercent!.toStringAsFixed(0)}',
-      if (w.windKmh != null) 'Rüzgar ${w.windKmh!.toStringAsFixed(0)} km/s',
+      if (w.windGustKmh != null)
+        'Ani rüzgar ${w.windGustKmh!.toStringAsFixed(0)} km/s'
+      else if (w.windKmh != null)
+        'Rüzgar ${w.windKmh!.toStringAsFixed(0)} km/s',
       if (w.locationLabel.isNotEmpty) w.locationLabel,
     ];
     return pw.Container(

@@ -45,8 +45,14 @@ class WeatherCompactCard extends StatelessWidget {
           '${weather!.temperatureC!.toStringAsFixed(0)}°',
         if (weather!.nightTemperatureC != null)
           'gece ${weather!.nightTemperatureC!.toStringAsFixed(0)}°',
-        if (weather!.humidityPercent != null)
-          '%${weather!.humidityPercent!.toStringAsFixed(0)}',
+        if (weather!.maxHumidityPercent != null)
+          'max nem %${weather!.maxHumidityPercent!.toStringAsFixed(0)}'
+        else if (weather!.humidityPercent != null)
+          'nem %${weather!.humidityPercent!.toStringAsFixed(0)}',
+        if (weather!.windGustKmh != null)
+          'ani ${weather!.windGustKmh!.toStringAsFixed(0)} km/s'
+        else if (weather!.windKmh != null)
+          'rüzgar ${weather!.windKmh!.toStringAsFixed(0)} km/s',
         if (weather!.description.isNotEmpty) weather!.description,
       ];
       summary = parts.isEmpty ? 'Veri yok' : parts.join(' · ');
@@ -116,7 +122,7 @@ class WeatherCompactCard extends StatelessWidget {
                         ),
                         Text(
                           summary,
-                          maxLines: 1,
+                          maxLines: 2,
                           overflow: TextOverflow.ellipsis,
                           style: theme.textTheme.bodySmall?.copyWith(
                             color: inkMuted,

@@ -303,8 +303,14 @@ class _DailyReportScreenState extends ConsumerState<DailyReportScreen> {
     final humidity = TextEditingController(
       text: current.humidityPercent?.toStringAsFixed(0) ?? '',
     );
+    final maxHumidity = TextEditingController(
+      text: current.maxHumidityPercent?.toStringAsFixed(0) ?? '',
+    );
     final wind = TextEditingController(
       text: current.windKmh?.toStringAsFixed(0) ?? '',
+    );
+    final gust = TextEditingController(
+      text: current.windGustKmh?.toStringAsFixed(0) ?? '',
     );
     final desc = TextEditingController(text: current.description);
     final location = TextEditingController(text: current.locationLabel);
@@ -357,11 +363,35 @@ class _DailyReportScreenState extends ConsumerState<DailyReportScreen> {
               const SizedBox(width: AppSpacing.sm),
               Expanded(
                 child: TextField(
+                  controller: maxHumidity,
+                  keyboardType:
+                      const TextInputType.numberWithOptions(decimal: true),
+                  decoration:
+                      _dialogFieldDecoration(labelText: 'Max nem (%)'),
+                ),
+              ),
+            ],
+          ),
+          _kDialogFieldGap,
+          Row(
+            children: [
+              Expanded(
+                child: TextField(
                   controller: wind,
                   keyboardType:
                       const TextInputType.numberWithOptions(decimal: true),
                   decoration:
                       _dialogFieldDecoration(labelText: 'Rüzgar (km/s)'),
+                ),
+              ),
+              const SizedBox(width: AppSpacing.sm),
+              Expanded(
+                child: TextField(
+                  controller: gust,
+                  keyboardType:
+                      const TextInputType.numberWithOptions(decimal: true),
+                  decoration:
+                      _dialogFieldDecoration(labelText: 'Ani rüzgar (km/s)'),
                 ),
               ),
             ],
@@ -382,7 +412,9 @@ class _DailyReportScreenState extends ConsumerState<DailyReportScreen> {
         temperatureC: parse(temp.text),
         nightTemperatureC: parse(night.text),
         humidityPercent: parse(humidity.text),
+        maxHumidityPercent: parse(maxHumidity.text),
         windKmh: parse(wind.text),
+        windGustKmh: parse(gust.text),
         description: desc.text.trim(),
         locationLabel: location.text.trim(),
         fetchedAt: DateTime.now(),
@@ -395,7 +427,9 @@ class _DailyReportScreenState extends ConsumerState<DailyReportScreen> {
     temp.dispose();
     night.dispose();
     humidity.dispose();
+    maxHumidity.dispose();
     wind.dispose();
+    gust.dispose();
     desc.dispose();
     location.dispose();
     if (result == null || !mounted) return;

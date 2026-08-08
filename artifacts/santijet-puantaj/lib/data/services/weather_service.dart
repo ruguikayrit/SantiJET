@@ -32,7 +32,6 @@ class WeatherService {
     final cached = await _fetchMgmCache(city);
     if (cached != null) return cached;
 
-    // Web’de canlı MGM denemesi (proxy / özel ortam için); CORS’ta başarısız olur.
     if (kIsWeb) {
       final live = await _fetchMgmLive(city);
       if (live != null) return live;
@@ -55,6 +54,11 @@ class WeatherService {
         '/web/tahminler/gunluk',
         {'istno': '${station.gunlukIstNo}'},
       );
+      final saatlikUri = Uri.https(
+        'servis.mgm.gov.tr',
+        '/web/tahminler/saatlik',
+        {'istno': '${station.saatlikIstNo}'},
+      );
 
       final sondurumRes = await _client
           .get(sondurumUri, headers: _mgmHeaders)
@@ -62,9 +66,16 @@ class WeatherService {
       if (sondurumRes.statusCode != 200) {
         throw Exception('sondurum HTTP ${sondurumRes.statusCode}');
       }
-      final gunlukRes = await _client
-          .get(gunlukUri, headers: _mgmHeaders)
-          .timeout(const Duration(seconds: 12));
+      final results = await Future.wait([
+        _client
+            .get(gunlukUri, headers: _mgmHeaders)
+            .timeout(const Duration(seconds: 12)),
+        _client
+            .get(saatlikUri, headers: _mgmHeaders)
+            .timeout(const Duration(seconds: 12)),
+      ]);
+      final gunlukRes = results[0];
+      final saatlikRes = results[1];
 
       final sondurumList = jsonDecode(sondurumRes.body);
       if (sondurumList is! List || sondurumList.isEmpty) {
@@ -80,6 +91,11 @@ class WeatherService {
         }
       }
 
+      double? gust;
+      if (saatlikRes.statusCode == 200) {
+        gust = _nearestGustKmh(jsonDecode(saatlikRes.body));
+      }
+
       final code = (s['hadiseKodu'] as String?)?.trim().isNotEmpty == true
           ? s['hadiseKodu'] as String
           : (g?['hadiseGun0'] as String? ?? '');
@@ -89,8 +105,11 @@ class WeatherService {
         nightTemperatureC:
             _mgmNum(g?['enDusukGun0']) ?? _mgmNum(g?['enDusukGun1']),
         humidityPercent: _mgmNum(s['nem']),
+        maxHumidityPercent:
+            _mgmNum(g?['enYuksekNemGun0']) ?? _mgmNum(g?['enYuksekNemGun1']),
         description: hadiseDescription(code),
         windKmh: _mgmNum(s['ruzgarHiz']),
+        windGustKmh: gust,
         locationLabel: city.name,
         fetchedAt: DateTime.now(),
         synced: true,
@@ -130,17 +149,20 @@ class WeatherService {
         if (body is! Map) continue;
         final cities = body['cities'];
         if (cities is! Map) continue;
-        final raw = cities[city.id] ?? cities[city.id.replaceFirst(RegExp(r'^0'), '')];
+        final raw =
+            cities[city.id] ?? cities[city.id.replaceFirst(RegExp(r'^0'), '')];
         if (raw is! Map) continue;
         final row = Map<String, dynamic>.from(raw);
         return DailyReportWeather(
           temperatureC: _mgmNum(row['temperatureC']),
           nightTemperatureC: _mgmNum(row['nightTemperatureC']),
           humidityPercent: _mgmNum(row['humidityPercent']),
+          maxHumidityPercent: _mgmNum(row['maxHumidityPercent']),
           description: (row['description'] as String?)?.trim().isNotEmpty == true
               ? row['description'] as String
               : hadiseDescription(row['hadiseKodu'] as String? ?? ''),
           windKmh: _mgmNum(row['windKmh']),
+          windGustKmh: _mgmNum(row['windGustKmh']),
           locationLabel: city.name,
           fetchedAt: DateTime.tryParse(body['updatedAt'] as String? ?? '') ??
               DateTime.now(),
@@ -161,8 +183,8 @@ class WeatherService {
         'latitude': city.lat.toString(),
         'longitude': city.lon.toString(),
         'current':
-            'temperature_2m,relative_humidity_2m,weather_code,wind_speed_10m',
-        'daily': 'temperature_2m_min',
+            'temperature_2m,relative_humidity_2m,weather_code,wind_speed_10m,wind_gusts_10m',
+        'daily': 'temperature_2m_min,relative_humidity_2m_max',
         'forecast_days': '1',
         'timezone': 'auto',
         'wind_speed_unit': 'kmh',
@@ -178,8 +200,11 @@ class WeatherService {
         nightTemperatureC: _dailyMin(body),
         humidityPercent:
             (current['relative_humidity_2m'] as num?)?.toDouble(),
-        description: wmoDescription((current['weather_code'] as num?)?.toInt() ?? 0),
+        maxHumidityPercent: _dailyFirst(body, 'relative_humidity_2m_max'),
+        description:
+            wmoDescription((current['weather_code'] as num?)?.toInt() ?? 0),
         windKmh: (current['wind_speed_10m'] as num?)?.toDouble(),
+        windGustKmh: (current['wind_gusts_10m'] as num?)?.toDouble(),
         locationLabel: city.name,
         fetchedAt: DateTime.now(),
         synced: true,
@@ -197,6 +222,35 @@ class WeatherService {
     }
   }
 
+  /// Saatlik tahminden en yakın dilimin maksimum rüzgarı (ani rüzgar).
+  static double? _nearestGustKmh(dynamic raw) {
+    if (raw is! List || raw.isEmpty) return null;
+    final block = raw.first;
+    if (block is! Map) return null;
+    final tahmin = block['tahmin'];
+    if (tahmin is! List || tahmin.isEmpty) return null;
+
+    final now = DateTime.now();
+    double? nearest;
+    Duration? nearestDiff;
+    double? dayMax;
+
+    for (final item in tahmin) {
+      if (item is! Map) continue;
+      final gust = _mgmNum(item['maksimumRuzgarHizi']);
+      if (gust == null) continue;
+      dayMax = dayMax == null ? gust : (gust > dayMax ? gust : dayMax);
+      final ts = DateTime.tryParse('${item['tarih']}');
+      if (ts == null) continue;
+      final diff = ts.difference(now).abs();
+      if (nearestDiff == null || diff < nearestDiff) {
+        nearestDiff = diff;
+        nearest = gust;
+      }
+    }
+    return nearest ?? dayMax;
+  }
+
   static double? _mgmNum(dynamic v) {
     if (v == null) return null;
     if (v is num) {
@@ -210,11 +264,15 @@ class WeatherService {
   }
 
   static double? _dailyMin(Map<String, dynamic> body) {
+    return _dailyFirst(body, 'temperature_2m_min');
+  }
+
+  static double? _dailyFirst(Map<String, dynamic> body, String key) {
     final daily = body['daily'];
     if (daily is! Map) return null;
-    final mins = daily['temperature_2m_min'];
-    if (mins is! List || mins.isEmpty) return null;
-    final first = mins.first;
+    final vals = daily[key];
+    if (vals is! List || vals.isEmpty) return null;
+    final first = vals.first;
     if (first is num) return first.toDouble();
     return null;
   }
@@ -227,7 +285,7 @@ class WeatherService {
       'A' => 'Açık',
       'AB' => 'Az bulutlu',
       'PB' => 'Parçalı bulutlu',
-      'CBS' => 'Çok bulutlu',
+      'CB' || 'CBS' => 'Çok bulutlu',
       'KAP' => 'Kapalı',
       'HY' => 'Hafif yağmurlu',
       'Y' || 'YAG' => 'Yağmurlu',

@@ -24,6 +24,7 @@ const HADISE = {
   A: 'Açık',
   AB: 'Az bulutlu',
   PB: 'Parçalı bulutlu',
+  CB: 'Çok bulutlu',
   CBS: 'Çok bulutlu',
   KAP: 'Kapalı',
   HY: 'Hafif yağmurlu',
@@ -96,6 +97,7 @@ async function loadStations() {
       by[p] = {
         merkezId: x.merkezId,
         gunlukIstNo: x.gunlukTahminIstNo,
+        saatlikIstNo: x.saatlikTahminIstNo || x.sondurumIstNo || x.merkezId,
         name: x.il,
       };
     }
@@ -107,17 +109,22 @@ function writeStationsDart(by) {
   const out = path.join(PUANTAJ, 'lib/domain/catalogs/mgm_stations.dart');
   const keys = Object.keys(by).sort();
   let body =
-    '/// MGM il merkezleri — plaka → merkezId / günlük tahmin istasyonu.\n' +
+    '/// MGM il merkezleri — plaka → merkez / günlük / saatlik istasyon.\n' +
     '/// Kaynak: servis.mgm.gov.tr/web/merkezler/iller\n' +
     'class MgmStation {\n' +
-    '  const MgmStation({required this.merkezId, required this.gunlukIstNo});\n' +
+    '  const MgmStation({\n' +
+    '    required this.merkezId,\n' +
+    '    required this.gunlukIstNo,\n' +
+    '    required this.saatlikIstNo,\n' +
+    '  });\n' +
     '  final int merkezId;\n' +
     '  final int gunlukIstNo;\n' +
+    '  final int saatlikIstNo;\n' +
     '}\n\n' +
     'const mgmStationsByPlate = <String, MgmStation>{\n';
   for (const k of keys) {
     body +=
-      `  '${k}': MgmStation(merkezId: ${by[k].merkezId}, gunlukIstNo: ${by[k].gunlukIstNo}),\n`;
+      `  '${k}': MgmStation(merkezId: ${by[k].merkezId}, gunlukIstNo: ${by[k].gunlukIstNo}, saatlikIstNo: ${by[k].saatlikIstNo}),\n`;
   }
   body += '};\n';
   fs.mkdirSync(path.dirname(out), { recursive: true });
@@ -126,20 +133,24 @@ function writeStationsDart(by) {
 }
 
 async function fetchCityWeather(station) {
-  const [sondurumRaw, gunlukRaw] = await Promise.all([
+  const [sondurumRaw, gunlukRaw, saatlikRaw] = await Promise.all([
     mgmGet(
       `https://servis.mgm.gov.tr/web/sondurumlar?merkezid=${station.merkezId}`,
     ),
     mgmGet(
       `https://servis.mgm.gov.tr/web/tahminler/gunluk?istno=${station.gunlukIstNo}`,
     ),
+    mgmGet(
+      `https://servis.mgm.gov.tr/web/tahminler/saatlik?istno=${station.saatlikIstNo}`,
+    ).catch(() => null),
   ]);
   const s = Array.isArray(sondurumRaw) ? sondurumRaw[0] : sondurumRaw;
   const g = Array.isArray(gunlukRaw) ? gunlukRaw[0] : gunlukRaw;
   if (!s) throw new Error(`sondurum empty ${station.merkezId}`);
 
-  const night =
-    num(g?.enDusukGun0) ?? num(g?.enDusukGun1) ?? null;
+  const night = num(g?.enDusukGun0) ?? num(g?.enDusukGun1) ?? null;
+  const maxHumidity =
+    num(g?.enYuksekNemGun0) ?? num(g?.enYuksekNemGun1) ?? null;
   const code = s.hadiseKodu ?? g?.hadiseGun0 ?? '';
 
   return {
@@ -147,11 +158,36 @@ async function fetchCityWeather(station) {
     temperatureC: num(s.sicaklik),
     nightTemperatureC: night,
     humidityPercent: num(s.nem),
+    maxHumidityPercent: maxHumidity,
     description: hadiseLabel(code),
     windKmh: num(s.ruzgarHiz),
+    windGustKmh: nearestGust(saatlikRaw),
     observedAt: s.veriZamani ?? null,
     hadiseKodu: code || null,
   };
+}
+
+function nearestGust(saatlikRaw) {
+  const block = Array.isArray(saatlikRaw) ? saatlikRaw[0] : saatlikRaw;
+  const tahmin = block?.tahmin;
+  if (!Array.isArray(tahmin) || tahmin.length === 0) return null;
+  const now = Date.now();
+  let nearest = null;
+  let nearestDiff = Number.POSITIVE_INFINITY;
+  let dayMax = null;
+  for (const t of tahmin) {
+    const gust = num(t.maksimumRuzgarHizi);
+    if (gust == null) continue;
+    dayMax = dayMax == null ? gust : Math.max(dayMax, gust);
+    const ts = Date.parse(t.tarih);
+    if (Number.isNaN(ts)) continue;
+    const diff = Math.abs(ts - now);
+    if (diff < nearestDiff) {
+      nearestDiff = diff;
+      nearest = gust;
+    }
+  }
+  return nearest ?? dayMax;
 }
 
 async function writeCache(by) {

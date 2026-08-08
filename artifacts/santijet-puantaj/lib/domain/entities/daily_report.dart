@@ -622,14 +622,16 @@ class DailyReportMachine extends Equatable {
       ];
 }
 
-/// Hava durumu bloğu — otomatik (Open-Meteo) veya manuel.
+/// Hava durumu bloğu — otomatik (MGM) veya manuel.
 class DailyReportWeather extends Equatable {
   const DailyReportWeather({
     this.temperatureC,
     this.nightTemperatureC,
     this.humidityPercent,
+    this.maxHumidityPercent,
     this.description = '',
     this.windKmh,
+    this.windGustKmh,
     this.locationLabel = '',
     this.fetchedAt,
     this.synced = true,
@@ -643,10 +645,18 @@ class DailyReportWeather extends Equatable {
   /// Gece (günlük minimum) sıcaklık (°C).
   final double? nightTemperatureC;
 
-  /// Bağıl nem (%).
+  /// Anlık bağıl nem (%).
   final double? humidityPercent;
+
+  /// Günlük maksimum bağıl nem (%).
+  final double? maxHumidityPercent;
   final String description;
+
+  /// Anlık rüzgar (km/s).
   final double? windKmh;
+
+  /// Ani rüzgar / maksimum rüzgar hızı (km/s).
+  final double? windGustKmh;
   final String locationLabel;
   final DateTime? fetchedAt;
   final bool synced;
@@ -674,8 +684,10 @@ class DailyReportWeather extends Equatable {
     double? temperatureC,
     double? nightTemperatureC,
     double? humidityPercent,
+    double? maxHumidityPercent,
     String? description,
     double? windKmh,
+    double? windGustKmh,
     String? locationLabel,
     DateTime? fetchedAt,
     bool? synced,
@@ -684,7 +696,9 @@ class DailyReportWeather extends Equatable {
     bool clearTemperature = false,
     bool clearNight = false,
     bool clearHumidity = false,
+    bool clearMaxHumidity = false,
     bool clearWind = false,
+    bool clearWindGust = false,
   }) {
     return DailyReportWeather(
       temperatureC:
@@ -693,8 +707,13 @@ class DailyReportWeather extends Equatable {
           clearNight ? null : (nightTemperatureC ?? this.nightTemperatureC),
       humidityPercent:
           clearHumidity ? null : (humidityPercent ?? this.humidityPercent),
+      maxHumidityPercent: clearMaxHumidity
+          ? null
+          : (maxHumidityPercent ?? this.maxHumidityPercent),
       description: description ?? this.description,
       windKmh: clearWind ? null : (windKmh ?? this.windKmh),
+      windGustKmh:
+          clearWindGust ? null : (windGustKmh ?? this.windGustKmh),
       locationLabel: locationLabel ?? this.locationLabel,
       fetchedAt: fetchedAt ?? this.fetchedAt,
       synced: synced ?? this.synced,
@@ -707,8 +726,10 @@ class DailyReportWeather extends Equatable {
         'temperatureC': temperatureC,
         'nightTemperatureC': nightTemperatureC,
         'humidityPercent': humidityPercent,
+        'maxHumidityPercent': maxHumidityPercent,
         'description': description,
         'windKmh': windKmh,
+        'windGustKmh': windGustKmh,
         'locationLabel': locationLabel,
         'fetchedAt': fetchedAt?.toIso8601String(),
         'synced': synced,
@@ -721,8 +742,10 @@ class DailyReportWeather extends Equatable {
         temperatureC: (json['temperatureC'] as num?)?.toDouble(),
         nightTemperatureC: (json['nightTemperatureC'] as num?)?.toDouble(),
         humidityPercent: (json['humidityPercent'] as num?)?.toDouble(),
+        maxHumidityPercent: (json['maxHumidityPercent'] as num?)?.toDouble(),
         description: json['description'] as String? ?? '',
         windKmh: (json['windKmh'] as num?)?.toDouble(),
+        windGustKmh: (json['windGustKmh'] as num?)?.toDouble(),
         locationLabel: json['locationLabel'] as String? ?? '',
         fetchedAt: json['fetchedAt'] != null
             ? DateTime.tryParse(json['fetchedAt'] as String)
@@ -737,8 +760,10 @@ class DailyReportWeather extends Equatable {
         temperatureC,
         nightTemperatureC,
         humidityPercent,
+        maxHumidityPercent,
         description,
         windKmh,
+        windGustKmh,
         locationLabel,
         fetchedAt,
         synced,
