@@ -1,11 +1,11 @@
 {
-    "name": "ŞantiJET BFA",
-    "short_name": "ŞantiJET BFA",
+    "name": "ŞantiJET Maliyet",
+    "short_name": "Maliyet",
     "start_url": ".",
     "display": "standalone",
     "background_color": "#05070A",
     "theme_color": "#05070A",
-    "description": "ŞantiJET Birim Fiyat Analizleri",
+    "description": "ŞantiJET Maliyet — birim fiyat analizi, keşif, metraj ve yaklaşık maliyet",
     "orientation": "portrait-primary",
     "prefer_related_applications": false,
     "icons": [

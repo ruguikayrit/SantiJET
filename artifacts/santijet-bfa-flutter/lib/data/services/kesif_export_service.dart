@@ -61,7 +61,7 @@ class KesifExportService {
         margin: const pw.EdgeInsets.all(28),
         theme: pw.ThemeData.withFont(base: font, bold: titleFont),
         build: (context) => [
-          pw.Text('METRAJ / KEŞİF CETVELİ',
+          pw.Text('ŞANTİJET MALİYET — METRAJ / KEŞİF CETVELİ',
               style: pw.TextStyle(font: titleFont, fontSize: 16),
               textAlign: pw.TextAlign.center),
           pw.SizedBox(height: 10),
@@ -102,7 +102,7 @@ class KesifExportService {
 
   Uint8List _buildExcel(KesifProject project) {
     final rows = <List<String>>[
-      ['METRAJ / KEŞİF CETVELİ'],
+      ['ŞantiJET Maliyet — METRAJ / KEŞİF CETVELİ'],
       ['Proje', project.ad],
       if (project.aciklama.trim().isNotEmpty) ['Açıklama', project.aciklama],
       ['Tarih', AppFormat.date(DateTime.tryParse(project.guncellemeTarihi) ?? DateTime.now())],

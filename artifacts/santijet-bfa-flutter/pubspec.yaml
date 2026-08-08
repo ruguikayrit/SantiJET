@@ -1,5 +1,5 @@
 name: santijet_bfa
-description: "ŞantiJET BFA — Birim Fiyat Analizleri (Flutter). ŞantiJET Demir referans mimarisiyle hizalı."
+description: "ŞantiJET Maliyet — birim fiyat analizi, keşif, metraj ve yaklaşık maliyet (Flutter). Klasör adı geçici: santijet-bfa-flutter."
 publish_to: 'none'
 version: 1.1.0+2
 

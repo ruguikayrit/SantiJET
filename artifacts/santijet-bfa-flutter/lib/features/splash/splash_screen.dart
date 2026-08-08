@@ -9,7 +9,7 @@ import '../../core/theme/app_spacing.dart';
 import '../../core/theme/app_theme.dart';
 import '../../core/theme/app_typography.dart';
 
-/// ŞantiJET BFA açılış ekranı — Demir/Beton/Puantaj splash ile birebir;
+/// ŞantiJET Maliyet açılış ekranı — Demir/Beton/Puantaj splash ile birebir;
 /// ürün adı [AppInfo.splashProductLabel].
 class SplashScreen extends StatefulWidget {
   const SplashScreen({super.key});
@@ -124,9 +124,8 @@ class _SplashScreenState extends State<SplashScreen>
                                     textAlign: TextAlign.center,
                                     style: AppTypography.displayLarge.copyWith(
                                       color: AppColors.electricBlue,
-                                      // Uzun ürün adı — kısa etiketlerdeki 6 yerine dar aralık.
-                                      letterSpacing: 1.5,
-                                      fontSize: 28,
+                                      // Kısa ürün adı — Demir/Beton letterSpacing.
+                                      letterSpacing: 4,
                                       shadows: const [
                                         Shadow(
                                           color: AppColors.electricBlueGlow,

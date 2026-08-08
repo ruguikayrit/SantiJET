@@ -83,7 +83,7 @@ void main() {
 
   testWidgets('liste analizleri ve sayıyı gösterir', (tester) async {
     await _pump(tester, const AnalizListScreen(modul: 'insaat'));
-    expect(find.text('İnşaat B.F.A.'), findsOneWidget);
+    expect(find.text('İnşaat Analizleri'), findsOneWidget);
     expect(find.text('2 analiz'), findsOneWidget);
     expect(find.text('Gazbeton duvar yapılması'), findsOneWidget);
   });

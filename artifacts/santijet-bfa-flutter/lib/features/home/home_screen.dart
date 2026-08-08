@@ -5,6 +5,7 @@ import 'package:go_router/go_router.dart';
 import '../../core/design_system/sj_card.dart';
 import '../../core/design_system/sj_empty_state.dart';
 import '../../core/design_system/sj_search_bar.dart';
+import '../../core/design_system/sj_stat_card.dart';
 import '../../core/routing/app_routes.dart';
 import '../../core/theme/app_colors.dart';
 import '../../core/theme/app_spacing.dart';
@@ -14,12 +15,13 @@ import '../../core/widgets/module_tile.dart';
 import '../../core/widgets/santijet_header.dart';
 import '../../data/providers/catalog_provider.dart';
 import '../../data/providers/favorites_provider.dart';
+import '../../data/providers/kesif_provider.dart';
 import '../../data/providers/recent_views_provider.dart';
 import '../../domain/entities/poz_analiz.dart';
 import '../../domain/enums/app_enums.dart';
 import '../ozel_analiz/new_analiz_module_sheet.dart';
 
-/// Ana sayfa — SantijetHeader + arama + modüller (Puantaj/Demir chrome deseni).
+/// Ana sayfa — özet kartları + hızlı aksiyonlar (ŞantiJET Maliyet).
 class HomeScreen extends ConsumerStatefulWidget {
   const HomeScreen({super.key});
 
@@ -48,7 +50,6 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
 
     return Scaffold(
       backgroundColor: AppColors.canvas,
-      // Shell alt nav üstünde kalsın; nested scaffold FAB alt çubuğu örtmesin.
       floatingActionButtonLocation: FloatingActionButtonLocation.endFloat,
       floatingActionButton: Padding(
         padding: const EdgeInsets.only(bottom: 8),
@@ -86,7 +87,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
     return CustomScrollView(
       slivers: [
         const SliverToBoxAdapter(
-          child: SantijetHeader(showWordmark: true, avatarInitial: 'BF'),
+          child: SantijetHeader(showWordmark: true, avatarInitial: 'M'),
         ),
         SliverToBoxAdapter(
           child: Padding(
@@ -97,7 +98,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
               AppSpacing.xs,
             ),
             child: Text(
-              '${AppFormat.integer(catalog.all.length)} birim fiyat analizi',
+              '${AppFormat.integer(catalog.all.length)} poz · analiz · keşif · YM',
               style: theme.textTheme.labelMedium?.copyWith(
                 color: AppColors.textMuted,
               ),
@@ -169,83 +170,141 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
   List<Widget> _dashboard(CatalogData catalog) {
     final favorites = ref.watch(favoritesProvider);
     final recentIds = ref.watch(recentViewsProvider);
+    final kesifler = ref.watch(kesifProvider);
     final recent = recentIds
         .map(catalog.byIdOrNull)
         .whereType<PozAnaliz>()
         .take(5)
         .toList();
-    final favList = favorites
-        .map(catalog.byIdOrNull)
-        .whereType<PozAnaliz>()
-        .take(5)
-        .toList();
+    final ymToplam =
+        kesifler.fold<double>(0, (sum, p) => sum + p.toplam);
+    final acikKesif = kesifler.take(3).toList();
 
     return [
-      _sectionTitle('Modüller'),
+      _sectionTitle('Özet'),
+      SliverPadding(
+        padding: const EdgeInsets.symmetric(horizontal: AppSpacing.md),
+        sliver: SliverToBoxAdapter(
+          child: Row(
+            children: [
+              Expanded(
+                child: SJStatCard(
+                  label: 'Açık Keşif',
+                  value: '${kesifler.length}',
+                  unit: '',
+                  accentColor: AppColors.moduleKesif,
+                  onTap: () => context.go(AppRoutes.kesif),
+                ),
+              ),
+              const SizedBox(width: AppSpacing.xs),
+              Expanded(
+                child: SJStatCard(
+                  label: 'YM Toplamı',
+                  value: AppFormat.currency(ymToplam),
+                  unit: '',
+                  accentColor: AppColors.electricBlue,
+                  onTap: () => context.go(AppRoutes.kesif),
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+      if (acikKesif.isNotEmpty) ...[
+        _sectionTitle('Açık Keşifler'),
+        SliverPadding(
+          padding: const EdgeInsets.symmetric(horizontal: AppSpacing.md),
+          sliver: SliverList.list(
+            children: [
+              for (final k in acikKesif) ...[
+                SJCard(
+                  onTap: () => context.push(AppRoutes.kesifDetay(k.id)),
+                  child: Row(
+                    children: [
+                      Icon(Icons.description, color: AppColors.moduleKesif),
+                      const SizedBox(width: AppSpacing.sm),
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              k.ad,
+                              style: Theme.of(context)
+                                  .textTheme
+                                  .titleMedium
+                                  ?.copyWith(color: AppColors.cardTextPrimary),
+                            ),
+                            Text(
+                              '${k.satirlar.length} satır · ${AppFormat.currency(k.toplam)}',
+                              style: Theme.of(context)
+                                  .textTheme
+                                  .bodySmall
+                                  ?.copyWith(color: AppColors.cardTextMuted),
+                            ),
+                          ],
+                        ),
+                      ),
+                      Icon(Icons.chevron_right, color: AppColors.cardTextMuted),
+                    ],
+                  ),
+                ),
+                const SizedBox(height: AppSpacing.xs),
+              ],
+            ],
+          ),
+        ),
+      ],
+      if (recent.isNotEmpty) ...[
+        _sectionTitle('Son Analizler'),
+        _analizSliverList(recent, favorites),
+      ],
+      _sectionTitle('Hızlı Aksiyonlar'),
       SliverPadding(
         padding: const EdgeInsets.symmetric(horizontal: AppSpacing.md),
         sliver: SliverList.list(children: [
           ModuleTile(
-            title: 'İnşaat B.F.A.',
-            subtitle: 'Birim Fiyat Analizleri',
-            icon: Icons.layers,
+            title: 'Analiz',
+            subtitle: 'Özel analiz · karşılaştır · katalog',
+            icon: Icons.analytics_outlined,
             accentColor: AppColors.moduleInsaat,
-            count: catalog.countFor(AnalizDiscipline.insaat),
-            onTap: () => context.push('${AppRoutes.pozlar}?modul=insaat'),
+            count: catalog.all.length,
+            onTap: () => context.go(AppRoutes.analiz),
           ),
           const SizedBox(height: AppSpacing.xs),
           ModuleTile(
-            title: 'Mekanik Tesisat B.F.A.',
-            subtitle: 'Birim Fiyat Analizleri',
-            icon: Icons.plumbing,
-            accentColor: AppColors.moduleMekanik,
-            count: catalog.countFor(AnalizDiscipline.mekanik),
-            onTap: () => context.push('${AppRoutes.pozlar}?modul=mekanik'),
+            title: 'Birim Fiyat',
+            subtitle: 'Poz fiyatı ara · keşife uygula',
+            icon: Icons.sell_outlined,
+            accentColor: AppColors.electricBlue,
+            count: catalog.countFor(AnalizDiscipline.insaat) +
+                catalog.countFor(AnalizDiscipline.mekanik) +
+                catalog.countFor(AnalizDiscipline.elektrik),
+            onTap: () => context.go(AppRoutes.birimFiyat),
           ),
           const SizedBox(height: AppSpacing.xs),
           ModuleTile(
-            title: 'Elektrik Tesisat B.F.A.',
-            subtitle: 'Birim Fiyat Analizleri',
-            icon: Icons.bolt,
-            accentColor: AppColors.moduleElektrik,
-            count: catalog.countFor(AnalizDiscipline.elektrik),
-            onTap: () => context.push('${AppRoutes.pozlar}?modul=elektrik'),
+            title: 'Keşif · Metraj · YM',
+            subtitle: 'Satır, miktar ve yaklaşık maliyet',
+            icon: Icons.description_outlined,
+            accentColor: AppColors.moduleKesif,
+            count: kesifler.length,
+            onTap: () => context.go(AppRoutes.kesif),
           ),
           const SizedBox(height: AppSpacing.xs),
           ModuleTile(
             title: 'Favoriler',
-            subtitle: 'Kaydettiğiniz analizler',
+            subtitle: 'Kaydettiğiniz pozlar',
             icon: Icons.star,
             accentColor: AppColors.moduleFavori,
             count: favorites.length,
             onTap: () => context.push('${AppRoutes.pozlar}?modul=favoriler'),
           ),
-        ]),
-      ),
-      if (recent.isNotEmpty) ...[
-        _sectionTitle('Son Görüntülenenler'),
-        _analizSliverList(recent, favorites),
-      ],
-      if (favList.isNotEmpty) ...[
-        _sectionTitle('Favoriler'),
-        _analizSliverList(favList, favorites),
-      ],
-      _sectionTitle('Hızlı Erişim'),
-      SliverPadding(
-        padding: const EdgeInsets.symmetric(horizontal: AppSpacing.md),
-        sliver: SliverList.list(children: [
-          _quickAccessTile(
-            icon: Icons.folder_open_outlined,
-            color: AppColors.moduleInsaat,
-            title: 'Analiz Kataloğu',
-            onTap: () => context.push(AppRoutes.analizKatalogu),
-          ),
           const SizedBox(height: AppSpacing.xs),
           _quickAccessTile(
-            icon: Icons.compare_arrows,
-            color: AppColors.moduleMekanik,
-            title: 'Analiz Karşılaştır',
-            onTap: () => context.push(AppRoutes.karsilastir),
+            icon: Icons.settings_outlined,
+            color: AppColors.textMuted,
+            title: 'Ayarlar',
+            onTap: () => context.push(AppRoutes.ayarlar),
           ),
         ]),
       ),

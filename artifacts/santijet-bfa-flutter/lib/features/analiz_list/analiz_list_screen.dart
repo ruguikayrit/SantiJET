@@ -57,11 +57,11 @@ class _AnalizListScreenState extends ConsumerState<AnalizListScreen> {
 
   String get _title {
     return switch (widget.modul) {
-      'insaat' => 'İnşaat B.F.A.',
-      'mekanik' => 'Mekanik Tesisat B.F.A.',
-      'elektrik' => 'Elektrik Tesisat B.F.A.',
+      'insaat' => 'İnşaat Analizleri',
+      'mekanik' => 'Mekanik Tesisat',
+      'elektrik' => 'Elektrik Tesisat',
       'favoriler' => 'Favoriler',
-      _ => 'Katalog',
+      _ => 'Birim Fiyat',
     };
   }
 

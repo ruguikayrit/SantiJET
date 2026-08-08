@@ -2,8 +2,10 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
+import '../../features/analiz/analiz_hub_screen.dart';
 import '../../features/analiz_detail/analiz_detail_screen.dart';
 import '../../features/analiz_list/analiz_list_screen.dart';
+import '../../features/birim_fiyat/birim_fiyat_screen.dart';
 import '../../features/design_gallery/design_gallery_screen.dart';
 import '../../features/home/home_screen.dart';
 import '../../features/karsilastir/karsilastir_screen.dart';
@@ -22,9 +24,8 @@ import 'page_transitions.dart';
 
 final _rootNavigatorKey = GlobalKey<NavigatorState>();
 
-/// Uygulama yönlendiricisi — Demir konvansiyonuyla `StatefulShellRoute` +
-/// kalıcı alt navigasyon. Sekmeler: Ana Sayfa, Katalog, Keşif, Ayarlar.
-/// Detay/ikincil ekranlar kök navigatörde tam ekran açılır (alt çubuğu kapatır).
+/// Kabuk: Ana Sayfa · Analiz · Birim Fiyat · Keşif.
+/// Ayarlar kök (tam ekran) rotadır.
 final routerProvider = Provider<GoRouter>((ref) {
   return GoRouter(
     navigatorKey: _rootNavigatorKey,
@@ -36,6 +37,11 @@ final routerProvider = Provider<GoRouter>((ref) {
           key: state.pageKey,
           child: const SplashScreen(),
         ),
+      ),
+      // Eski Katalog sekmesi → Birim Fiyat
+      GoRoute(
+        path: AppRoutes.katalog,
+        redirect: (_, __) => AppRoutes.birimFiyat,
       ),
       StatefulShellRoute.indexedStack(
         builder: (context, state, navigationShell) =>
@@ -53,10 +59,21 @@ final routerProvider = Provider<GoRouter>((ref) {
           StatefulShellBranch(
             routes: [
               GoRoute(
-                path: AppRoutes.katalog,
+                path: AppRoutes.analiz,
                 pageBuilder: (context, state) => fadePage(
                   key: state.pageKey,
-                  child: const AnalizListScreen(),
+                  child: const AnalizHubScreen(),
+                ),
+              ),
+            ],
+          ),
+          StatefulShellBranch(
+            routes: [
+              GoRoute(
+                path: AppRoutes.birimFiyat,
+                pageBuilder: (context, state) => fadePage(
+                  key: state.pageKey,
+                  child: const BirimFiyatScreen(),
                 ),
               ),
             ],
@@ -66,16 +83,9 @@ final routerProvider = Provider<GoRouter>((ref) {
               GoRoute(
                 path: AppRoutes.kesif,
                 pageBuilder: (context, state) => fadePage(
-                    key: state.pageKey, child: const KesifListScreen()),
-              ),
-            ],
-          ),
-          StatefulShellBranch(
-            routes: [
-              GoRoute(
-                path: AppRoutes.ayarlar,
-                pageBuilder: (context, state) =>
-                    fadePage(key: state.pageKey, child: const SettingsScreen()),
+                  key: state.pageKey,
+                  child: const KesifListScreen(),
+                ),
               ),
             ],
           ),
@@ -83,6 +93,14 @@ final routerProvider = Provider<GoRouter>((ref) {
       ),
 
       // ─── Kök (tam ekran) rotalar ───────────────────────────────────
+      GoRoute(
+        path: AppRoutes.ayarlar,
+        parentNavigatorKey: _rootNavigatorKey,
+        pageBuilder: (context, state) => fadeSlidePage(
+          key: state.pageKey,
+          child: const SettingsScreen(),
+        ),
+      ),
       GoRoute(
         path: AppRoutes.pozlar,
         parentNavigatorKey: _rootNavigatorKey,

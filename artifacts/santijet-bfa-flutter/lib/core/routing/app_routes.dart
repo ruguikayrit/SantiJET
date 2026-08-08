@@ -1,18 +1,22 @@
 /// Uygulama rota yolları — Demir konvansiyonuyla (abstract final class).
 ///
-/// React Native expo-router yapısının Flutter/go_router karşılığı.
-/// Alt navigasyon sekmeleri: home, katalog, kesif, ayarlar.
+/// Alt navigasyon: Ana Sayfa · Analiz · Birim Fiyat · Keşif.
+/// Ayarlar kök (tam ekran) rotadır — bottom tab değil.
 abstract final class AppRoutes {
   /// Ortak açılış ekranı (Demir/Beton/Puantaj ile aynı akış).
   static const splash = '/splash';
 
   // Alt navigasyon sekmeleri
   static const home = '/';
-  static const katalog = '/katalog';
+  static const analiz = '/analiz';
+  static const birimFiyat = '/birim-fiyat';
   static const kesif = '/kesif';
-  static const ayarlar = '/ayarlar';
+
+  /// Eski Katalog sekmesi — Birim Fiyat'a yönlendirilir.
+  static const katalog = '/katalog';
 
   // Kök (tam ekran) rotalar
+  static const ayarlar = '/ayarlar';
   static const pozlar = '/pozlar';
   static const pozDetayPattern = '/pozlar/:id';
   static String pozDetay(String id) => '/pozlar/$id';

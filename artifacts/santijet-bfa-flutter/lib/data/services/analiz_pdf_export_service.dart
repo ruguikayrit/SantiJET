@@ -53,7 +53,7 @@ class AnalizPdfExportService {
           ],
           pw.SizedBox(height: 18),
           pw.Text(
-            'ŞantiJET BFA bilgi amaçlıdır. Nihai doğrulama için güncel resmi yayınlar esas alınmalıdır.',
+            'ŞantiJET Maliyet bilgi amaçlıdır. Nihai doğrulama için güncel resmi yayınlar esas alınmalıdır.',
             style: const pw.TextStyle(fontSize: 8, color: PdfColors.grey600),
           ),
         ],
@@ -91,7 +91,7 @@ class AnalizPdfExportService {
               crossAxisAlignment: pw.CrossAxisAlignment.start,
               children: [
                 pw.Text(
-                  'ŞANTİJET BFA',
+                  'ŞANTİJET MALİYET',
                   style: pw.TextStyle(
                     color: PdfColors.white,
                     fontSize: 10,

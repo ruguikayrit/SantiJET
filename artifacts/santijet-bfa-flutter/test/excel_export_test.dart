@@ -43,7 +43,7 @@ void main() {
     expect(sheet, isNotNull);
 
     final xml = utf8.decode(sheet!.content as List<int>);
-    expect(xml, contains('ŞantiJET BFA'));
+    expect(xml, contains('ŞantiJET Maliyet'));
     expect(xml, contains('15.225.1009'));
     expect(xml, contains('Gazbeton duvar yapılması'));
   });

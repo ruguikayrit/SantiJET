@@ -6,12 +6,13 @@ import 'package:flutter/foundation.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:share_plus/share_plus.dart';
 
+import '../../core/constants/app_info.dart';
 import '../../domain/entities/kesif.dart';
 import '../../domain/entities/poz_analiz.dart';
 
 const backupVersion = 1;
 
-/// ŞantiJET BFA yedek dosyası.
+/// ŞantiJET Maliyet yedek dosyası (eski BFA kimlikleri okunmaya devam eder).
 class BfaBackup {
   const BfaBackup({
     required this.exportedAt,
@@ -31,7 +32,7 @@ class BfaBackup {
 
   Map<String, dynamic> toJson() => {
         'version': backupVersion,
-        'app': 'santijet-bfa-flutter',
+        'app': AppInfo.backupAppId,
         'exportedAt': exportedAt,
         'userAnalizleri': userAnalizleri.map((a) => a.toJson()).toList(),
         'favoriteIds': favoriteIds,
@@ -41,9 +42,13 @@ class BfaBackup {
       };
 
   factory BfaBackup.fromJson(Map<dynamic, dynamic> json) {
-    if (json['app'] != 'santijet-bfa-flutter' &&
-        json['app'] != 'santijet-bfa') {
-      throw const FormatException('Geçersiz ŞantiJET BFA yedek dosyası.');
+    final app = json['app'] as String?;
+    final allowed = {
+      AppInfo.backupAppId,
+      ...AppInfo.legacyBackupAppIds,
+    };
+    if (app == null || !allowed.contains(app)) {
+      throw const FormatException('Geçersiz ŞantiJET Maliyet yedek dosyası.');
     }
 
     List<T> parseList<T>(Object? value, T Function(Map<dynamic, dynamic>) f) {

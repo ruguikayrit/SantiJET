@@ -4,7 +4,7 @@ abstract final class OfficialSources {
   static const edition = 'ÇŞİDB YFK 2026 Yayınları';
   static const portalUrl = 'https://yfk.csb.gov.tr/birim-fiyatlar-100468';
   static const distributionNotice =
-      'ŞantiJET BFA resmi kurum yayınlarını yeniden dağıtmaz. Kaynak gösterimi amacıyla resmi yayın bağlantıları sunmaktadır.';
+      'ŞantiJET Maliyet resmi kurum yayınlarını yeniden dağıtmaz. Kaynak gösterimi amacıyla resmi yayın bağlantıları sunmaktadır.';
   static const verificationText =
       'Analiz, poz ve birim fiyat bilgilerinin nihai doğrulaması için ilgili kurumların güncel resmi yayınları esas alınmalıdır.';
 }

@@ -7,7 +7,8 @@ import '../../core/theme/app_colors.dart';
 import '../../core/theme/theme_mode_provider.dart';
 import '../../core/theme/theme_rebuild_gate.dart';
 
-/// Ana kabuk — kalıcı alt navigasyon + indexedStack (Puantaj/Demir deseni).
+/// Ana kabuk — 4 yüzey: Ana Sayfa · Analiz · Birim Fiyat · Keşif.
+/// Ayarlar bottom tab değil (header / Ana Sayfa'dan).
 class MainShell extends ConsumerWidget {
   const MainShell({required this.navigationShell, super.key});
 
@@ -20,19 +21,19 @@ class MainShell extends ConsumerWidget {
       label: 'Ana Sayfa',
     ),
     SJNavItem(
-      icon: Icons.menu_book_outlined,
-      activeIcon: Icons.menu_book,
-      label: 'Katalog',
+      icon: Icons.analytics_outlined,
+      activeIcon: Icons.analytics,
+      label: 'Analiz',
+    ),
+    SJNavItem(
+      icon: Icons.sell_outlined,
+      activeIcon: Icons.sell,
+      label: 'Birim Fiyat',
     ),
     SJNavItem(
       icon: Icons.description_outlined,
       activeIcon: Icons.description,
       label: 'Keşif',
-    ),
-    SJNavItem(
-      icon: Icons.settings_outlined,
-      activeIcon: Icons.settings,
-      label: 'Ayarlar',
     ),
   ];
 
@@ -41,9 +42,6 @@ class MainShell extends ConsumerWidget {
     final themeMode = ref.watch(themeModeProvider);
     AppColors.applyPaletteFromMode(themeMode, Theme.of(context).brightness);
 
-    // Nav'ı Column kardeşine al — nested Scaffold/FAB body üstüne taşsa bile
-    // bottomNavigationBar hit-test kayması olmasın (Puantaj ile aynı shell API,
-    // yerleşim web'de daha deterministik).
     return Scaffold(
       backgroundColor: AppColors.canvas,
       resizeToAvoidBottomInset: false,

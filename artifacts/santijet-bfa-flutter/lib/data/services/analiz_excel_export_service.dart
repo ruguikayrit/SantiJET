@@ -74,7 +74,7 @@ class AnalizExcelExportService {
   List<List<_Cell>> _buildRows(PozAnaliz analiz) {
     final hesap = AnalizHesap.hesapla(analiz);
     final rows = <List<_Cell>>[
-      [_Cell.text('ŞantiJET BFA — Birim Fiyat Analiz Raporu', style: 1)],
+      [_Cell.text('ŞantiJET Maliyet — Birim Fiyat Analiz Raporu', style: 1)],
       [_Cell.text('${analiz.pozNo} · ${analiz.analizAdi}')],
       [],
       [_Cell.text('Poz No', style: 2), _Cell.text(analiz.pozNo)],

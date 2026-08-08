@@ -15,7 +15,7 @@ abstract final class NewAnalizModuleSheet {
         mainAxisSize: MainAxisSize.min,
         children: [
           _Tile(
-            title: 'İnşaat B.F.A.',
+            title: 'İnşaat Analizleri',
             subtitle: 'İnşaat imalat analizi oluştur',
             icon: Icons.layers,
             color: AppColors.moduleInsaat,
@@ -23,7 +23,7 @@ abstract final class NewAnalizModuleSheet {
           ),
           const SizedBox(height: AppSpacing.xs),
           _Tile(
-            title: 'Mekanik Tesisat B.F.A.',
+            title: 'Mekanik Tesisat',
             subtitle: 'Mekanik tesisat analizi oluştur',
             icon: Icons.plumbing,
             color: AppColors.moduleMekanik,
@@ -31,7 +31,7 @@ abstract final class NewAnalizModuleSheet {
           ),
           const SizedBox(height: AppSpacing.xs),
           _Tile(
-            title: 'Elektrik Tesisat B.F.A.',
+            title: 'Elektrik Tesisat',
             subtitle: 'Elektrik tesisat analizi oluştur',
             icon: Icons.bolt,
             color: AppColors.moduleElektrik,

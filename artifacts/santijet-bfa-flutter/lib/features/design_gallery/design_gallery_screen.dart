@@ -58,8 +58,8 @@ class DesignGalleryScreen extends StatelessWidget {
         children: [
           _section('ModuleTile (Faz 4)'),
           ModuleTile(
-            title: 'İnşaat B.F.A.',
-            subtitle: 'Birim Fiyat Analizleri',
+            title: 'İnşaat Analizleri',
+            subtitle: 'Birim fiyat analizi',
             icon: Icons.layers,
             accentColor: AppColors.moduleInsaat,
             count: 1879,
@@ -67,8 +67,8 @@ class DesignGalleryScreen extends StatelessWidget {
           ),
           const SizedBox(height: AppSpacing.xs),
           ModuleTile(
-            title: 'Elektrik Tesisat B.F.A.',
-            subtitle: 'Birim Fiyat Analizleri',
+            title: 'Elektrik Tesisat',
+            subtitle: 'Birim fiyat analizi',
             icon: Icons.bolt,
             accentColor: AppColors.moduleElektrik,
             count: 5911,

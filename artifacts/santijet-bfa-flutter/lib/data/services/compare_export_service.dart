@@ -81,7 +81,7 @@ class CompareExportService {
         theme: pw.ThemeData.withFont(base: font, bold: titleFont),
         build: (context) => [
           pw.Text(
-            'ŞantiJET BFA — Analiz Karşılaştırması',
+            'ŞantiJET Maliyet — Analiz Karşılaştırması',
             style: pw.TextStyle(
               font: titleFont,
               fontSize: 16,
@@ -304,7 +304,7 @@ class CompareExportService {
 
   Uint8List _buildExcel(AnalizCompareResult compare) {
     final rows = <List<String>>[
-      ['ŞantiJET BFA — Analiz Karşılaştırması'],
+      ['ŞantiJET Maliyet — Analiz Karşılaştırması'],
       ['Tarih', AppFormat.date(DateTime.now())],
       [],
       ['Birim Fiyat Özeti', ...compare.analizler.map((a) => a.pozNo)],

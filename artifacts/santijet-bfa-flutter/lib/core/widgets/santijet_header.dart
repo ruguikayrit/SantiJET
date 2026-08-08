@@ -9,7 +9,7 @@ import '../theme/app_typography.dart';
 
 /// ŞantiJET marka başlığı — Demir `SantijetHeader` ile birebir metrikler.
 ///
-/// Ana sayfada wordmark + ürün adı ([AppInfo.productLabel] = PUANTAJ).
+/// Ana sayfada wordmark + ürün adı ([AppInfo.productLabel] = MALİYET).
 class SantijetHeader extends StatelessWidget {
   const SantijetHeader({
     super.key,
@@ -120,7 +120,7 @@ class _HeaderNotificationButton extends StatelessWidget {
         width: SantijetHeader.actionSize,
         height: SantijetHeader.actionSize,
         child: IconButton(
-          onPressed: () => context.go(AppRoutes.ayarlar),
+          onPressed: () => context.push(AppRoutes.ayarlar),
           padding: EdgeInsets.zero,
           visualDensity: VisualDensity.compact,
           constraints: const BoxConstraints.tightFor(
@@ -162,7 +162,7 @@ class _HeaderAvatarButton extends StatelessWidget {
         width: SantijetHeader.actionSize,
         height: SantijetHeader.actionSize,
         child: IconButton(
-          onPressed: () => context.go(AppRoutes.ayarlar),
+          onPressed: () => context.push(AppRoutes.ayarlar),
           padding: EdgeInsets.zero,
           visualDensity: VisualDensity.compact,
           constraints: const BoxConstraints.tightFor(

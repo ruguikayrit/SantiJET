@@ -2,7 +2,29 @@ import 'package:equatable/equatable.dart';
 
 import '../../core/utils/id_gen.dart';
 import '../calc/analiz_hesap.dart';
+import '../enums/app_enums.dart';
 import 'poz_analiz.dart';
+
+/// Keşif satırındaki birim fiyatın kaynağı.
+enum KesifFiyatKaynagi {
+  analiz,
+  katalog,
+  manuel;
+
+  String get label => switch (this) {
+        KesifFiyatKaynagi.analiz => 'Analiz',
+        KesifFiyatKaynagi.katalog => 'Katalog',
+        KesifFiyatKaynagi.manuel => 'Manuel',
+      };
+
+  static KesifFiyatKaynagi fromJson(String? raw) => switch (raw) {
+        'analiz' => KesifFiyatKaynagi.analiz,
+        'manuel' => KesifFiyatKaynagi.manuel,
+        _ => KesifFiyatKaynagi.katalog,
+      };
+
+  String get jsonValue => name;
+}
 
 /// Keşif satırı — React Native `KesifSatiri` arayüzünün karşılığı.
 class KesifSatiri extends Equatable {
@@ -15,6 +37,8 @@ class KesifSatiri extends Equatable {
     required this.birimFiyati,
     required this.miktar,
     required this.tutar,
+    this.fiyatKaynagi = KesifFiyatKaynagi.katalog,
+    this.metrajNotu = '',
   });
 
   final String id;
@@ -25,6 +49,8 @@ class KesifSatiri extends Equatable {
   final double birimFiyati;
   final double miktar;
   final double tutar;
+  final KesifFiyatKaynagi fiyatKaynagi;
+  final String metrajNotu;
 
   KesifSatiri copyWith({
     String? id,
@@ -35,6 +61,8 @@ class KesifSatiri extends Equatable {
     double? birimFiyati,
     double? miktar,
     double? tutar,
+    KesifFiyatKaynagi? fiyatKaynagi,
+    String? metrajNotu,
   }) {
     return KesifSatiri(
       id: id ?? this.id,
@@ -45,6 +73,8 @@ class KesifSatiri extends Equatable {
       birimFiyati: birimFiyati ?? this.birimFiyati,
       miktar: miktar ?? this.miktar,
       tutar: tutar ?? this.tutar,
+      fiyatKaynagi: fiyatKaynagi ?? this.fiyatKaynagi,
+      metrajNotu: metrajNotu ?? this.metrajNotu,
     );
   }
 
@@ -57,6 +87,8 @@ class KesifSatiri extends Equatable {
         'birimFiyati': birimFiyati,
         'miktar': miktar,
         'tutar': tutar,
+        'fiyatKaynagi': fiyatKaynagi.jsonValue,
+        'metrajNotu': metrajNotu,
       };
 
   factory KesifSatiri.fromJson(Map<dynamic, dynamic> json) {
@@ -71,12 +103,24 @@ class KesifSatiri extends Equatable {
       birimFiyati: birimFiyati,
       miktar: miktar,
       tutar: AnalizHesap.satirTutar(miktar, birimFiyati),
+      fiyatKaynagi: KesifFiyatKaynagi.fromJson(json['fiyatKaynagi'] as String?),
+      metrajNotu: json['metrajNotu'] as String? ?? '',
     );
   }
 
   @override
-  List<Object?> get props =>
-      [id, analizId, pozNo, analizAdi, olcuBirimi, birimFiyati, miktar, tutar];
+  List<Object?> get props => [
+        id,
+        analizId,
+        pozNo,
+        analizAdi,
+        olcuBirimi,
+        birimFiyati,
+        miktar,
+        tutar,
+        fiyatKaynagi,
+        metrajNotu,
+      ];
 }
 
 /// Keşif projesi — React Native `KesifProject` arayüzünün karşılığı.
@@ -98,6 +142,16 @@ class KesifProject extends Equatable {
   final String guncellemeTarihi;
 
   double get toplam => satirlar.fold<double>(0, (sum, row) => sum + row.tutar);
+
+  /// Yaklaşık maliyet — ölçü birimine göre kırılım.
+  Map<String, double> get toplamByOlcuBirimi {
+    final map = <String, double>{};
+    for (final s in satirlar) {
+      final key = s.olcuBirimi.trim().isEmpty ? 'Diğer' : s.olcuBirimi.trim();
+      map[key] = (map[key] ?? 0) + s.tutar;
+    }
+    return map;
+  }
 
   KesifProject copyWith({
     String? id,
@@ -155,6 +209,9 @@ KesifSatiri buildKesifSatiri(PozAnaliz analiz, double miktar) {
   final hesap = AnalizHesap.hesapla(analiz);
   final birimFiyati =
       hesap.birimFiyati > 0 ? hesap.birimFiyati : analiz.birimFiyati;
+  final kaynak = analiz.kaynakTip == KaynakTip.sistem
+      ? KesifFiyatKaynagi.katalog
+      : KesifFiyatKaynagi.analiz;
   return KesifSatiri(
     id: IdGen.make('ks'),
     analizId: analiz.id,
@@ -164,5 +221,6 @@ KesifSatiri buildKesifSatiri(PozAnaliz analiz, double miktar) {
     birimFiyati: birimFiyati,
     miktar: miktar.isFinite ? miktar : 0,
     tutar: AnalizHesap.satirTutar(miktar, birimFiyati),
+    fiyatKaynagi: kaynak,
   );
 }

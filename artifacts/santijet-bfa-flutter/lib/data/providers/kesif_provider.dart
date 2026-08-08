@@ -112,6 +112,52 @@ class KesifNotifier extends StateNotifier<List<KesifProject>> {
     _persist();
   }
 
+  void updateMetrajNotu(String projectId, String satirId, String notu) {
+    final now = DateTime.now().toIso8601String();
+    state = [
+      for (final p in state)
+        if (p.id == projectId)
+          p.copyWith(
+            satirlar: [
+              for (final s in p.satirlar)
+                if (s.id == satirId)
+                  s.copyWith(metrajNotu: notu.trim())
+                else
+                  s,
+            ],
+            guncellemeTarihi: now,
+          )
+        else
+          p,
+    ];
+    _persist();
+  }
+
+  void updateBirimFiyat(String projectId, String satirId, double birimFiyati) {
+    final now = DateTime.now().toIso8601String();
+    state = [
+      for (final p in state)
+        if (p.id == projectId)
+          p.copyWith(
+            satirlar: [
+              for (final s in p.satirlar)
+                if (s.id == satirId)
+                  s.copyWith(
+                    birimFiyati: birimFiyati,
+                    tutar: AnalizHesap.satirTutar(s.miktar, birimFiyati),
+                    fiyatKaynagi: KesifFiyatKaynagi.manuel,
+                  )
+                else
+                  s,
+            ],
+            guncellemeTarihi: now,
+          )
+        else
+          p,
+    ];
+    _persist();
+  }
+
   void removeSatir(String projectId, String satirId) {
     final now = DateTime.now().toIso8601String();
     state = [

@@ -15,6 +15,7 @@ class AnalizListItem extends StatelessWidget {
     this.isFavorite = false,
     this.onTap,
     this.onToggleFavorite,
+    this.trailing,
     super.key,
   });
 
@@ -22,6 +23,7 @@ class AnalizListItem extends StatelessWidget {
   final bool isFavorite;
   final VoidCallback? onTap;
   final VoidCallback? onToggleFavorite;
+  final Widget? trailing;
 
   @override
   Widget build(BuildContext context) {
@@ -89,6 +91,7 @@ class AnalizListItem extends StatelessWidget {
                   isFavorite: isFavorite,
                   onToggle: onToggleFavorite!,
                 ),
+              if (trailing != null) trailing!,
             ],
           );
         },

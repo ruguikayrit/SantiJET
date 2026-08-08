@@ -69,8 +69,8 @@ void main() {
     await tester.pump();
     await tester.pump(const Duration(milliseconds: 100));
 
-    expect(find.text('ŞantiJET BFA'), findsWidgets);
-    expect(find.text('Modüller'), findsOneWidget);
-    expect(find.text('İnşaat B.F.A.'), findsOneWidget);
+    expect(find.text('MALİYET'), findsWidgets);
+    expect(find.text('Özet'), findsOneWidget);
+    expect(find.text('Analiz'), findsWidgets);
   });
 }
