@@ -154,8 +154,14 @@ void main() {
     });
   });
 
-  group('WeatherService.wmoDescription', () {
-    test('bilinen kodlar', () {
+  group('WeatherService descriptions', () {
+    test('MGM hadise kodları', () {
+      expect(WeatherService.hadiseDescription('AB'), 'Az bulutlu');
+      expect(WeatherService.hadiseDescription('GSY'), contains('Gökgürültülü'));
+      expect(WeatherService.hadiseDescription(''), 'Değişken');
+    });
+
+    test('WMO yedek kodları', () {
       expect(WeatherService.wmoDescription(0), contains('güneşli'));
       expect(WeatherService.wmoDescription(61), contains('Yağmur'));
       expect(WeatherService.wmoDescription(999), 'Değişken');

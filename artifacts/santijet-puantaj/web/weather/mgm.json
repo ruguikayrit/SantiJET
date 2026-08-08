@@ -1,0 +1,816 @@
+{
+  "updatedAt": "2026-08-08T11:19:24.420Z",
+  "source": "mgm.gov.tr",
+  "cities": {
+    "10": {
+      "name": "Balıkesir",
+      "temperatureC": 34.5,
+      "nightTemperatureC": 20,
+      "humidityPercent": 40,
+      "description": "Açık",
+      "windKmh": 24.12,
+      "observedAt": "2026-08-08T11:14:00.000Z",
+      "hadiseKodu": "A"
+    },
+    "11": {
+      "name": "Bilecik",
+      "temperatureC": 31.5,
+      "nightTemperatureC": 18,
+      "humidityPercent": 33,
+      "description": "Az bulutlu",
+      "windKmh": 5.4,
+      "observedAt": "2026-08-08T11:14:00.000Z",
+      "hadiseKodu": "AB"
+    },
+    "12": {
+      "name": "Bingöl",
+      "temperatureC": 36.8,
+      "nightTemperatureC": 19,
+      "humidityPercent": 13,
+      "description": "Az bulutlu",
+      "windKmh": 4.680000000000001,
+      "observedAt": "2026-08-08T11:14:00.000Z",
+      "hadiseKodu": "AB"
+    },
+    "13": {
+      "name": "Bitlis",
+      "temperatureC": 29.5,
+      "nightTemperatureC": 17,
+      "humidityPercent": 23,
+      "description": "Açık",
+      "windKmh": 16.2,
+      "observedAt": "2026-08-08T11:14:00.000Z",
+      "hadiseKodu": "A"
+    },
+    "14": {
+      "name": "Bolu",
+      "temperatureC": 29.9,
+      "nightTemperatureC": 16,
+      "humidityPercent": 36,
+      "description": "Az bulutlu",
+      "windKmh": 9.360000000000001,
+      "observedAt": "2026-08-08T11:14:00.000Z",
+      "hadiseKodu": "AB"
+    },
+    "15": {
+      "name": "Burdur",
+      "temperatureC": 35.3,
+      "nightTemperatureC": 22,
+      "humidityPercent": 18,
+      "description": "Parçalı bulutlu",
+      "windKmh": 12.96,
+      "observedAt": "2026-08-08T11:14:00.000Z",
+      "hadiseKodu": "PB"
+    },
+    "16": {
+      "name": "Bursa",
+      "temperatureC": 32.4,
+      "nightTemperatureC": 21,
+      "humidityPercent": 38,
+      "description": "Az bulutlu",
+      "windKmh": 12.6,
+      "observedAt": "2026-08-08T11:14:00.000Z",
+      "hadiseKodu": "AB"
+    },
+    "17": {
+      "name": "Çanakkale",
+      "temperatureC": 34.7,
+      "nightTemperatureC": 23,
+      "humidityPercent": 31,
+      "description": "Açık",
+      "windKmh": 7.2,
+      "observedAt": "2026-08-08T11:14:00.000Z",
+      "hadiseKodu": "A"
+    },
+    "18": {
+      "name": "Çankırı",
+      "temperatureC": 32.9,
+      "nightTemperatureC": 18,
+      "humidityPercent": 38,
+      "description": "CB",
+      "windKmh": 11.520000000000001,
+      "observedAt": "2026-08-08T11:14:00.000Z",
+      "hadiseKodu": "CB"
+    },
+    "19": {
+      "name": "Çorum",
+      "temperatureC": 31.6,
+      "nightTemperatureC": 17,
+      "humidityPercent": 40,
+      "description": "Açık",
+      "windKmh": 6.12,
+      "observedAt": "2026-08-08T11:13:00.000Z",
+      "hadiseKodu": "A"
+    },
+    "20": {
+      "name": "Denizli",
+      "temperatureC": 36.4,
+      "nightTemperatureC": 25,
+      "humidityPercent": 36,
+      "description": "Açık",
+      "windKmh": 6.84,
+      "observedAt": "2026-08-08T11:14:00.000Z",
+      "hadiseKodu": "A"
+    },
+    "21": {
+      "name": "Diyarbakır",
+      "temperatureC": 40.3,
+      "nightTemperatureC": 20,
+      "humidityPercent": 25,
+      "description": "Açık",
+      "windKmh": 5.04,
+      "observedAt": "2026-08-08T11:14:00.000Z",
+      "hadiseKodu": "A"
+    },
+    "22": {
+      "name": "Edirne",
+      "temperatureC": 35.8,
+      "nightTemperatureC": 22,
+      "humidityPercent": 34,
+      "description": "Az bulutlu",
+      "windKmh": 10.08,
+      "observedAt": "2026-08-08T11:14:00.000Z",
+      "hadiseKodu": "AB"
+    },
+    "23": {
+      "name": "Elazığ",
+      "temperatureC": 38.5,
+      "nightTemperatureC": 20,
+      "humidityPercent": 9,
+      "description": "Açık",
+      "windKmh": 3.24,
+      "observedAt": "2026-08-08T11:11:00.000Z",
+      "hadiseKodu": "A"
+    },
+    "24": {
+      "name": "Erzincan",
+      "temperatureC": 35.2,
+      "nightTemperatureC": 20,
+      "humidityPercent": 17,
+      "description": "Açık",
+      "windKmh": 6.84,
+      "observedAt": "2026-08-08T11:14:00.000Z",
+      "hadiseKodu": "A"
+    },
+    "25": {
+      "name": "Erzurum",
+      "temperatureC": 27.4,
+      "nightTemperatureC": 16,
+      "humidityPercent": 30,
+      "description": "CB",
+      "windKmh": 7.2,
+      "observedAt": "2026-08-08T11:14:00.000Z",
+      "hadiseKodu": "CB"
+    },
+    "26": {
+      "name": "Eskişehir",
+      "temperatureC": 30.7,
+      "nightTemperatureC": 18,
+      "humidityPercent": 28,
+      "description": "Açık",
+      "windKmh": 6.48,
+      "observedAt": "2026-08-08T11:14:00.000Z",
+      "hadiseKodu": "A"
+    },
+    "27": {
+      "name": "Gaziantep",
+      "temperatureC": 38,
+      "nightTemperatureC": 24,
+      "humidityPercent": 13,
+      "description": "Açık",
+      "windKmh": 2.16,
+      "observedAt": "2026-08-08T11:14:00.000Z",
+      "hadiseKodu": "A"
+    },
+    "28": {
+      "name": "Giresun",
+      "temperatureC": 28.9,
+      "nightTemperatureC": 22,
+      "humidityPercent": 73,
+      "description": "CB",
+      "windKmh": 6.12,
+      "observedAt": "2026-08-08T11:14:00.000Z",
+      "hadiseKodu": "CB"
+    },
+    "29": {
+      "name": "Gümüşhane",
+      "temperatureC": 29.3,
+      "nightTemperatureC": 16,
+      "humidityPercent": 33,
+      "description": "CB",
+      "windKmh": 12.24,
+      "observedAt": "2026-08-08T11:14:00.000Z",
+      "hadiseKodu": "CB"
+    },
+    "30": {
+      "name": "Hakkari",
+      "temperatureC": 32.5,
+      "nightTemperatureC": 20,
+      "humidityPercent": 19,
+      "description": "Parçalı bulutlu",
+      "windKmh": 3.6,
+      "observedAt": "2026-08-08T11:14:00.000Z",
+      "hadiseKodu": "PB"
+    },
+    "31": {
+      "name": "Hatay",
+      "temperatureC": 31.4,
+      "nightTemperatureC": 25,
+      "humidityPercent": 60,
+      "description": "Açık",
+      "windKmh": 20.52,
+      "observedAt": "2026-08-08T11:14:00.000Z",
+      "hadiseKodu": "A"
+    },
+    "32": {
+      "name": "Isparta",
+      "temperatureC": 34.3,
+      "nightTemperatureC": 21,
+      "humidityPercent": 27,
+      "description": "CB",
+      "windKmh": 9.360000000000001,
+      "observedAt": "2026-08-08T11:14:00.000Z",
+      "hadiseKodu": "CB"
+    },
+    "33": {
+      "name": "Mersin",
+      "temperatureC": 32.8,
+      "nightTemperatureC": 28,
+      "humidityPercent": 65,
+      "description": "Açık",
+      "windKmh": 10.44,
+      "observedAt": "2026-08-08T11:14:00.000Z",
+      "hadiseKodu": "A"
+    },
+    "34": {
+      "name": "İstanbul",
+      "temperatureC": 30.7,
+      "nightTemperatureC": 23,
+      "humidityPercent": 53,
+      "description": "Parçalı bulutlu",
+      "windKmh": 19.44,
+      "observedAt": "2026-08-08T11:00:00.000Z",
+      "hadiseKodu": "PB"
+    },
+    "35": {
+      "name": "İzmir",
+      "temperatureC": 35.1,
+      "nightTemperatureC": 24,
+      "humidityPercent": 38,
+      "description": "Açık",
+      "windKmh": 18.720000000000002,
+      "observedAt": "2026-08-08T11:14:00.000Z",
+      "hadiseKodu": "A"
+    },
+    "36": {
+      "name": "Kars",
+      "temperatureC": 26.7,
+      "nightTemperatureC": 12,
+      "humidityPercent": 35,
+      "description": "Az bulutlu",
+      "windKmh": 11.879999999999999,
+      "observedAt": "2026-08-08T11:14:00.000Z",
+      "hadiseKodu": "AB"
+    },
+    "37": {
+      "name": "Kastamonu",
+      "temperatureC": 32,
+      "nightTemperatureC": 14,
+      "humidityPercent": 37,
+      "description": "Parçalı bulutlu",
+      "windKmh": 4.32,
+      "observedAt": "2026-08-08T11:14:00.000Z",
+      "hadiseKodu": "PB"
+    },
+    "38": {
+      "name": "Kayseri",
+      "temperatureC": 34.3,
+      "nightTemperatureC": 16,
+      "humidityPercent": 18,
+      "description": "Az bulutlu",
+      "windKmh": 5.760000000000001,
+      "observedAt": "2026-08-08T11:14:00.000Z",
+      "hadiseKodu": "AB"
+    },
+    "39": {
+      "name": "Kırklareli",
+      "temperatureC": 34.6,
+      "nightTemperatureC": 22,
+      "humidityPercent": 29,
+      "description": "Parçalı bulutlu",
+      "windKmh": 18.720000000000002,
+      "observedAt": "2026-08-08T11:13:00.000Z",
+      "hadiseKodu": "PB"
+    },
+    "40": {
+      "name": "Kırşehir",
+      "temperatureC": 31.7,
+      "nightTemperatureC": 18,
+      "humidityPercent": 23,
+      "description": "Parçalı bulutlu",
+      "windKmh": 7.5600000000000005,
+      "observedAt": "2026-08-08T11:14:00.000Z",
+      "hadiseKodu": "PB"
+    },
+    "41": {
+      "name": "Kocaeli",
+      "temperatureC": 33,
+      "nightTemperatureC": 22,
+      "humidityPercent": 63,
+      "description": "Az bulutlu",
+      "windKmh": 9.72,
+      "observedAt": "2026-08-08T11:14:00.000Z",
+      "hadiseKodu": "AB"
+    },
+    "42": {
+      "name": "Konya",
+      "temperatureC": 34,
+      "nightTemperatureC": 22,
+      "humidityPercent": 25,
+      "description": "Az bulutlu",
+      "windKmh": 4.680000000000001,
+      "observedAt": "2026-08-08T11:14:00.000Z",
+      "hadiseKodu": "AB"
+    },
+    "43": {
+      "name": "Kütahya",
+      "temperatureC": 29.4,
+      "nightTemperatureC": 16,
+      "humidityPercent": 38,
+      "description": "Açık",
+      "windKmh": 12.24,
+      "observedAt": "2026-08-08T11:14:00.000Z",
+      "hadiseKodu": "A"
+    },
+    "44": {
+      "name": "Malatya",
+      "temperatureC": 36.2,
+      "nightTemperatureC": 21,
+      "humidityPercent": 14,
+      "description": "Açık",
+      "windKmh": 7.920000000000001,
+      "observedAt": "2026-08-08T11:14:00.000Z",
+      "hadiseKodu": "A"
+    },
+    "45": {
+      "name": "Manisa",
+      "temperatureC": 35.7,
+      "nightTemperatureC": 23,
+      "humidityPercent": 36,
+      "description": "Açık",
+      "windKmh": 2.52,
+      "observedAt": "2026-08-08T11:14:00.000Z",
+      "hadiseKodu": "A"
+    },
+    "46": {
+      "name": "Kahramanmaraş",
+      "temperatureC": 38.7,
+      "nightTemperatureC": 23,
+      "humidityPercent": 24,
+      "description": "Açık",
+      "windKmh": 7.5600000000000005,
+      "observedAt": "2026-08-08T11:14:00.000Z",
+      "hadiseKodu": "A"
+    },
+    "47": {
+      "name": "Mardin",
+      "temperatureC": 36.7,
+      "nightTemperatureC": 27,
+      "humidityPercent": 14,
+      "description": "Açık",
+      "windKmh": 14.04,
+      "observedAt": "2026-08-08T11:14:00.000Z",
+      "hadiseKodu": "A"
+    },
+    "48": {
+      "name": "Muğla",
+      "temperatureC": 35.8,
+      "nightTemperatureC": 22,
+      "humidityPercent": 18,
+      "description": "Az bulutlu",
+      "windKmh": 3.9600000000000004,
+      "observedAt": "2026-08-08T11:14:00.000Z",
+      "hadiseKodu": "AB"
+    },
+    "49": {
+      "name": "Muş",
+      "temperatureC": 34.5,
+      "nightTemperatureC": 19,
+      "humidityPercent": 20,
+      "description": "Parçalı bulutlu",
+      "windKmh": 5.760000000000001,
+      "observedAt": "2026-08-08T11:14:00.000Z",
+      "hadiseKodu": "PB"
+    },
+    "50": {
+      "name": "Nevşehir",
+      "temperatureC": 30.5,
+      "nightTemperatureC": 18,
+      "humidityPercent": 22,
+      "description": "Parçalı bulutlu",
+      "windKmh": 4.680000000000001,
+      "observedAt": "2026-08-08T11:14:00.000Z",
+      "hadiseKodu": "PB"
+    },
+    "51": {
+      "name": "Niğde",
+      "temperatureC": 31.6,
+      "nightTemperatureC": 18,
+      "humidityPercent": 20,
+      "description": "Az bulutlu",
+      "windKmh": 14.4,
+      "observedAt": "2026-08-08T11:14:00.000Z",
+      "hadiseKodu": "AB"
+    },
+    "52": {
+      "name": "Ordu",
+      "temperatureC": 27.5,
+      "nightTemperatureC": 22,
+      "humidityPercent": 74,
+      "description": "Parçalı bulutlu",
+      "windKmh": 6.84,
+      "observedAt": "2026-08-08T11:14:00.000Z",
+      "hadiseKodu": "PB"
+    },
+    "53": {
+      "name": "Rize",
+      "temperatureC": 28.7,
+      "nightTemperatureC": 23,
+      "humidityPercent": 72,
+      "description": "CB",
+      "windKmh": 3.6,
+      "observedAt": "2026-08-08T11:14:00.000Z",
+      "hadiseKodu": "CB"
+    },
+    "54": {
+      "name": "Sakarya",
+      "temperatureC": 33.3,
+      "nightTemperatureC": 21,
+      "humidityPercent": 39,
+      "description": "Parçalı bulutlu",
+      "windKmh": 10.44,
+      "observedAt": "2026-08-08T11:14:00.000Z",
+      "hadiseKodu": "PB"
+    },
+    "55": {
+      "name": "Samsun",
+      "temperatureC": 29.6,
+      "nightTemperatureC": 22,
+      "humidityPercent": 57,
+      "description": "Az bulutlu",
+      "windKmh": 4.680000000000001,
+      "observedAt": "2026-08-08T11:14:00.000Z",
+      "hadiseKodu": "AB"
+    },
+    "56": {
+      "name": "Siirt",
+      "temperatureC": 38,
+      "nightTemperatureC": 24,
+      "humidityPercent": 17,
+      "description": "Açık",
+      "windKmh": 7.2,
+      "observedAt": "2026-08-08T11:14:00.000Z",
+      "hadiseKodu": "A"
+    },
+    "57": {
+      "name": "Sinop",
+      "temperatureC": 29.5,
+      "nightTemperatureC": 22,
+      "humidityPercent": 78,
+      "description": "Açık",
+      "windKmh": 19.08,
+      "observedAt": "2026-08-08T11:14:00.000Z",
+      "hadiseKodu": "A"
+    },
+    "58": {
+      "name": "Sivas",
+      "temperatureC": 32.3,
+      "nightTemperatureC": 14,
+      "humidityPercent": 18,
+      "description": "Açık",
+      "windKmh": 4.680000000000001,
+      "observedAt": "2026-08-08T11:14:00.000Z",
+      "hadiseKodu": "A"
+    },
+    "59": {
+      "name": "Tekirdağ",
+      "temperatureC": 28.9,
+      "nightTemperatureC": 23,
+      "humidityPercent": 62,
+      "description": "Parçalı bulutlu",
+      "windKmh": 12.6,
+      "observedAt": "2026-08-08T11:14:00.000Z",
+      "hadiseKodu": "PB"
+    },
+    "60": {
+      "name": "Tokat",
+      "temperatureC": 32.5,
+      "nightTemperatureC": 18,
+      "humidityPercent": 33,
+      "description": "Açık",
+      "windKmh": 17.28,
+      "observedAt": "2026-08-08T11:14:00.000Z",
+      "hadiseKodu": "A"
+    },
+    "61": {
+      "name": "Trabzon",
+      "temperatureC": 26.9,
+      "nightTemperatureC": 24,
+      "humidityPercent": 73,
+      "description": "CB",
+      "windKmh": 7.920000000000001,
+      "observedAt": "2026-08-08T11:12:00.000Z",
+      "hadiseKodu": "CB"
+    },
+    "62": {
+      "name": "Tunceli",
+      "temperatureC": 38,
+      "nightTemperatureC": 19,
+      "humidityPercent": 14,
+      "description": "Az bulutlu",
+      "windKmh": 6.12,
+      "observedAt": "2026-08-08T11:14:00.000Z",
+      "hadiseKodu": "AB"
+    },
+    "63": {
+      "name": "Şanlıurfa",
+      "temperatureC": 39.5,
+      "nightTemperatureC": 27,
+      "humidityPercent": 11,
+      "description": "Açık",
+      "windKmh": 8.28,
+      "observedAt": "2026-08-08T11:14:00.000Z",
+      "hadiseKodu": "A"
+    },
+    "64": {
+      "name": "Uşak",
+      "temperatureC": 32.3,
+      "nightTemperatureC": 18,
+      "humidityPercent": 35,
+      "description": "Az bulutlu",
+      "windKmh": 11.16,
+      "observedAt": "2026-08-08T11:13:00.000Z",
+      "hadiseKodu": "AB"
+    },
+    "65": {
+      "name": "Van",
+      "temperatureC": 31.8,
+      "nightTemperatureC": 15,
+      "humidityPercent": 24,
+      "description": "Açık",
+      "windKmh": 9.72,
+      "observedAt": "2026-08-08T11:14:00.000Z",
+      "hadiseKodu": "A"
+    },
+    "66": {
+      "name": "Yozgat",
+      "temperatureC": 28.7,
+      "nightTemperatureC": 16,
+      "humidityPercent": 29,
+      "description": "CB",
+      "windKmh": 5.4,
+      "observedAt": "2026-08-08T11:14:00.000Z",
+      "hadiseKodu": "CB"
+    },
+    "67": {
+      "name": "Zonguldak",
+      "temperatureC": 27.2,
+      "nightTemperatureC": 21,
+      "humidityPercent": 79,
+      "description": "Açık",
+      "windKmh": 9.360000000000001,
+      "observedAt": "2026-08-08T11:14:00.000Z",
+      "hadiseKodu": "A"
+    },
+    "68": {
+      "name": "Aksaray",
+      "temperatureC": 33.9,
+      "nightTemperatureC": 20,
+      "humidityPercent": 18,
+      "description": "Parçalı bulutlu",
+      "windKmh": 11.520000000000001,
+      "observedAt": "2026-08-08T11:14:00.000Z",
+      "hadiseKodu": "PB"
+    },
+    "69": {
+      "name": "Bayburt",
+      "temperatureC": 31.4,
+      "nightTemperatureC": 14,
+      "humidityPercent": 17,
+      "description": "CB",
+      "windKmh": 6.12,
+      "observedAt": "2026-08-08T11:14:00.000Z",
+      "hadiseKodu": "CB"
+    },
+    "70": {
+      "name": "Karaman",
+      "temperatureC": 33.3,
+      "nightTemperatureC": 19,
+      "humidityPercent": 15,
+      "description": "Az bulutlu",
+      "windKmh": 10.44,
+      "observedAt": "2026-08-08T11:14:00.000Z",
+      "hadiseKodu": "AB"
+    },
+    "71": {
+      "name": "Kırıkkale",
+      "temperatureC": 34.5,
+      "nightTemperatureC": 20,
+      "humidityPercent": 27,
+      "description": "Parçalı bulutlu",
+      "windKmh": 7.2,
+      "observedAt": "2026-08-08T11:14:00.000Z",
+      "hadiseKodu": "PB"
+    },
+    "72": {
+      "name": "Batman",
+      "temperatureC": 39.4,
+      "nightTemperatureC": 20,
+      "humidityPercent": 11,
+      "description": "Açık",
+      "windKmh": 16.92,
+      "observedAt": "2026-08-08T11:14:00.000Z",
+      "hadiseKodu": "A"
+    },
+    "73": {
+      "name": "Şırnak",
+      "temperatureC": 34.4,
+      "nightTemperatureC": 26,
+      "humidityPercent": 17,
+      "description": "Açık",
+      "windKmh": 5.4,
+      "observedAt": "2026-08-08T11:14:00.000Z",
+      "hadiseKodu": "A"
+    },
+    "74": {
+      "name": "Bartın",
+      "temperatureC": 31,
+      "nightTemperatureC": 19,
+      "humidityPercent": 70,
+      "description": "Açık",
+      "windKmh": 10.44,
+      "observedAt": "2026-08-08T11:14:00.000Z",
+      "hadiseKodu": "A"
+    },
+    "75": {
+      "name": "Ardahan",
+      "temperatureC": 27.7,
+      "nightTemperatureC": 11,
+      "humidityPercent": 39,
+      "description": "Az bulutlu",
+      "windKmh": 5.04,
+      "observedAt": "2026-08-08T11:14:00.000Z",
+      "hadiseKodu": "AB"
+    },
+    "76": {
+      "name": "Iğdır",
+      "temperatureC": 33.6,
+      "nightTemperatureC": 22,
+      "humidityPercent": 28,
+      "description": "Açık",
+      "windKmh": 5.4,
+      "observedAt": "2026-08-08T11:10:00.000Z",
+      "hadiseKodu": "A"
+    },
+    "77": {
+      "name": "Yalova",
+      "temperatureC": 29.1,
+      "nightTemperatureC": 22,
+      "humidityPercent": 65,
+      "description": "Açık",
+      "windKmh": 12.96,
+      "observedAt": "2026-08-08T11:14:00.000Z",
+      "hadiseKodu": "A"
+    },
+    "78": {
+      "name": "Karabük",
+      "temperatureC": 36.5,
+      "nightTemperatureC": 17,
+      "humidityPercent": 26,
+      "description": "Az bulutlu",
+      "windKmh": 12.6,
+      "observedAt": "2026-08-08T11:04:00.000Z",
+      "hadiseKodu": "AB"
+    },
+    "79": {
+      "name": "Kilis",
+      "temperatureC": 37,
+      "nightTemperatureC": 24,
+      "humidityPercent": 31,
+      "description": "Açık",
+      "windKmh": 15.48,
+      "observedAt": "2026-08-08T11:14:00.000Z",
+      "hadiseKodu": "A"
+    },
+    "80": {
+      "name": "Osmaniye",
+      "temperatureC": 33.8,
+      "nightTemperatureC": 25,
+      "humidityPercent": 56,
+      "description": "Açık",
+      "windKmh": 10.44,
+      "observedAt": "2026-08-08T11:14:00.000Z",
+      "hadiseKodu": "A"
+    },
+    "81": {
+      "name": "Düzce",
+      "temperatureC": 33.2,
+      "nightTemperatureC": 19,
+      "humidityPercent": 48,
+      "description": "Parçalı bulutlu",
+      "windKmh": 3.24,
+      "observedAt": "2026-08-08T11:14:00.000Z",
+      "hadiseKodu": "PB"
+    },
+    "01": {
+      "name": "Adana",
+      "temperatureC": 36,
+      "nightTemperatureC": 25,
+      "humidityPercent": 58,
+      "description": "Az bulutlu",
+      "windKmh": 11.520000000000001,
+      "observedAt": "2026-08-08T11:13:00.000Z",
+      "hadiseKodu": "AB"
+    },
+    "02": {
+      "name": "Adıyaman",
+      "temperatureC": 39,
+      "nightTemperatureC": 27,
+      "humidityPercent": 10,
+      "description": "Açık",
+      "windKmh": 3.6,
+      "observedAt": "2026-08-08T11:14:00.000Z",
+      "hadiseKodu": "A"
+    },
+    "03": {
+      "name": "Afyonkarahisar",
+      "temperatureC": 31.6,
+      "nightTemperatureC": 17,
+      "humidityPercent": 31,
+      "description": "Az bulutlu",
+      "windKmh": 8.28,
+      "observedAt": "2026-08-08T11:14:00.000Z",
+      "hadiseKodu": "AB"
+    },
+    "04": {
+      "name": "Ağrı",
+      "temperatureC": 31.1,
+      "nightTemperatureC": 16,
+      "humidityPercent": 30,
+      "description": "CB",
+      "windKmh": 6.12,
+      "observedAt": "2026-08-08T11:14:00.000Z",
+      "hadiseKodu": "CB"
+    },
+    "05": {
+      "name": "Amasya",
+      "temperatureC": 33.7,
+      "nightTemperatureC": 19,
+      "humidityPercent": 32,
+      "description": "Az bulutlu",
+      "windKmh": 5.04,
+      "observedAt": "2026-08-08T11:14:00.000Z",
+      "hadiseKodu": "AB"
+    },
+    "06": {
+      "name": "Ankara",
+      "temperatureC": 31.6,
+      "nightTemperatureC": 19,
+      "humidityPercent": 30,
+      "description": "Açık",
+      "windKmh": 14.76,
+      "observedAt": "2026-08-08T11:14:00.000Z",
+      "hadiseKodu": "A"
+    },
+    "07": {
+      "name": "Antalya",
+      "temperatureC": 30.6,
+      "nightTemperatureC": 26,
+      "humidityPercent": 82,
+      "description": "Açık",
+      "windKmh": 14.76,
+      "observedAt": "2026-08-08T11:13:00.000Z",
+      "hadiseKodu": "A"
+    },
+    "08": {
+      "name": "Artvin",
+      "temperatureC": 27,
+      "nightTemperatureC": 19,
+      "humidityPercent": 65,
+      "description": "CB",
+      "windKmh": 20.88,
+      "observedAt": "2026-08-08T11:14:00.000Z",
+      "hadiseKodu": "CB"
+    },
+    "09": {
+      "name": "Aydın",
+      "temperatureC": 37.6,
+      "nightTemperatureC": 24,
+      "humidityPercent": 33,
+      "description": "Açık",
+      "windKmh": 9,
+      "observedAt": "2026-08-08T11:14:00.000Z",
+      "hadiseKodu": "A"
+    }
+  }
+}

@@ -1,0 +1,45 @@
+name: Refresh MGM weather cache
+
+on:
+  schedule:
+    # Her 30 dakikada MGM önbelleğini güncelle (web staging CORS bypass).
+    - cron: '*/30 * * * *'
+  workflow_dispatch:
+
+concurrency:
+  group: refresh-mgm-weather
+  cancel-in-progress: true
+
+permissions:
+  contents: write
+
+jobs:
+  refresh:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout staging
+        uses: actions/checkout@v4
+        with:
+          ref: staging
+          token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Fetch MGM → data/mgm-weather/mgm.json
+        run: node .github/scripts/fetch-mgm-weather.mjs cache
+
+      - name: Commit cache only
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          # Yalnızca data/ — pages deploy path'lerini tetiklemez.
+          git add data/mgm-weather/mgm.json
+          if git diff --staged --quiet; then
+            echo "No weather changes."
+            exit 0
+          fi
+          git commit -m "chore(puantaj): MGM hava önbelleğini güncelle [skip ci]"
+          git push origin staging
