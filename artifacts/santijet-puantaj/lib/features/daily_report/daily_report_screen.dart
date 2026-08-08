@@ -1523,12 +1523,6 @@ class _DailyReportScreenState extends ConsumerState<DailyReportScreen> {
                     child: const Text('Bugün'),
                   ),
                   IconButton(
-                    tooltip: 'Dünden kopyala',
-                    onPressed: () =>
-                        _copyFromYesterday(kDailyReportCopyAllRepeatable),
-                    icon: const Icon(Icons.copy_outlined),
-                  ),
-                  IconButton(
                     tooltip: 'PDF dışa aktar',
                     onPressed: _openExportSheet,
                     icon: const Icon(Icons.ios_share_outlined),
