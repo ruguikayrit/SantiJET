@@ -689,10 +689,6 @@ class _DailyReportScreenState extends ConsumerState<DailyReportScreen> {
       saveLabel: 'Kaydet',
       formBuilder: (ctx, setModal) {
         final theme = Theme.of(ctx);
-        final lines = ctrl.text
-            .split('\n')
-            .where((l) => l.trim().isNotEmpty)
-            .length;
         return Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
@@ -759,20 +755,10 @@ class _DailyReportScreenState extends ConsumerState<DailyReportScreen> {
                 textAlignVertical: TextAlignVertical.top,
                 keyboardType: TextInputType.multiline,
                 textInputAction: TextInputAction.newline,
-                onChanged: (_) => setModal(() {}),
                 decoration: _dialogFieldDecoration(
                   labelText: 'Notlar',
                   hintText: hint,
-                  helperText:
-                      'Her satır bir madde olabilir. Kaydet ile onaylanır.',
                 ).copyWith(alignLabelWithHint: true),
-              ),
-            ),
-            const SizedBox(height: AppSpacing.xs),
-            Text(
-              lines == 0 ? 'Boş' : '$lines satır',
-              style: theme.textTheme.bodySmall?.copyWith(
-                color: theme.colorScheme.onSurfaceVariant,
               ),
             ),
           ],

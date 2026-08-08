@@ -250,6 +250,10 @@ class _ImalatScreenState extends ConsumerState<ImalatScreen> {
       _ImalatPhase.devamEden => AppColors.info,
       _ImalatPhase.tamamlanan => AppColors.success,
     };
+    // Başlık: nötr birincil mürekkep; durum rengi yalnızca zemin/ikon’da.
+    final titleColor = AppColors.useDarkCards
+        ? AppColors.cardTextPrimary
+        : AppColors.inkFor(theme.brightness);
     return Material(
       color: Colors.transparent,
       child: InkWell(
@@ -279,7 +283,7 @@ class _ImalatScreenState extends ConsumerState<ImalatScreen> {
                   phase.label,
                   style: theme.textTheme.titleSmall?.copyWith(
                     fontWeight: FontWeight.w800,
-                    color: accent,
+                    color: titleColor,
                   ),
                 ),
               ),
@@ -308,6 +312,10 @@ class _ImalatScreenState extends ConsumerState<ImalatScreen> {
     final accent = AppColors.useDarkCards
         ? AppColors.electricBlueLight
         : AppColors.electricBlue;
+    // Alt başlık: açık gri — faz başlığından net ayrılır.
+    final titleColor = AppColors.useDarkCards
+        ? AppColors.cardTextMuted
+        : AppColors.inkMutedFor(theme.brightness);
     return Material(
       color: Colors.transparent,
       child: InkWell(
@@ -335,15 +343,15 @@ class _ImalatScreenState extends ConsumerState<ImalatScreen> {
                 expanded
                     ? Icons.keyboard_arrow_down_rounded
                     : Icons.keyboard_arrow_right_rounded,
-                color: accent,
+                color: titleColor,
               ),
               const SizedBox(width: 4),
               Expanded(
                 child: Text(
                   team,
                   style: theme.textTheme.titleSmall?.copyWith(
-                    fontWeight: FontWeight.w800,
-                    color: accent,
+                    fontWeight: FontWeight.w700,
+                    color: titleColor,
                   ),
                 ),
               ),
@@ -1188,7 +1196,7 @@ class _ImalatDetailSheet extends ConsumerWidget {
                 'Kalan: ${_fmt(p.remainingQty)} ${p.unit}',
               ].join(' · '),
               style: theme.textTheme.labelMedium?.copyWith(
-                color: AppColors.electricBlue,
+                color: theme.colorScheme.onSurfaceVariant,
               ),
             ),
             const SizedBox(height: AppSpacing.sm),
