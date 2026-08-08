@@ -2,6 +2,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:santijet_puantaj/data/services/irsaliye_material_ocr.dart';
 import 'package:santijet_puantaj/data/services/weather_service.dart';
 import 'package:santijet_puantaj/domain/daily_report/attendance_snapshot_builder.dart';
+import 'package:santijet_puantaj/domain/daily_report/daily_report_copy.dart';
 import 'package:santijet_puantaj/domain/entities/attendance.dart';
 import 'package:santijet_puantaj/domain/entities/daily_report.dart';
 import 'package:santijet_puantaj/domain/entities/person.dart';
@@ -179,6 +180,103 @@ BİRİM FİYAT: 4.5
       expect(r.lines.first.quantity, '120');
       expect(r.lines.first.unit.toLowerCase(), 'kg');
       expect(r.lines.first.price, '4.5');
+    });
+  });
+
+  group('applyDailyReportCopyFromPrevious', () {
+    test('makine ve vasıtayı yeni id ile kopyalar; hava/foto dokunulmaz', () {
+      var seq = 0;
+      String makeId(String prefix) => '$prefix-${++seq}';
+
+      const source = DailyReport(
+        id: 'src',
+        projectId: 'p',
+        date: '07.08.2026',
+        workConstruction: 'Kazı',
+        nextDayPlan: 'Kalıp',
+        machines: [
+          DailyReportMachine(
+            id: 'mch-old',
+            name: 'Forklift',
+            company: 'SARAL',
+            hoursWorked: 2,
+          ),
+        ],
+        vehicles: [
+          DailyReportMachine(
+            id: 'veh-old',
+            name: 'Otomobil',
+            plateOrId: '06 DCR 205',
+          ),
+        ],
+        photos: [
+          DailyReportPhoto(
+            id: 'ph1',
+            dataBase64: 'x',
+            caption: 'eski',
+          ),
+        ],
+        weather: DailyReportWeather(
+          temperatureC: 30,
+          description: 'Açık',
+          synced: true,
+        ),
+      );
+      const target = DailyReport(
+        id: 'tgt',
+        projectId: 'p',
+        date: '08.08.2026',
+        workConstruction: 'eski metin',
+      );
+
+      final outcome = applyDailyReportCopyFromPrevious(
+        target: target,
+        source: source,
+        fields: {
+          DailyReportCopyField.machines,
+          DailyReportCopyField.vehicles,
+          DailyReportCopyField.workTexts,
+          DailyReportCopyField.nextDayPlan,
+        },
+        makeId: makeId,
+      );
+
+      expect(outcome.result.machines, 1);
+      expect(outcome.result.vehicles, 1);
+      expect(outcome.result.workTexts, isTrue);
+      expect(outcome.result.nextDayPlan, isTrue);
+      expect(outcome.report.machines.single.id, 'mch-1');
+      expect(outcome.report.machines.single.name, 'Forklift');
+      expect(outcome.report.vehicles.single.id, 'veh-2');
+      expect(outcome.report.workConstruction, 'Kazı');
+      expect(outcome.report.nextDayPlan, 'Kalıp');
+      expect(outcome.report.photos, isEmpty);
+      expect(outcome.report.weather, isNull);
+    });
+
+    test('kaynak boşsa hedef listeleri silmez', () {
+      const source = DailyReport(
+        id: 'src',
+        projectId: 'p',
+        date: '07.08.2026',
+      );
+      const target = DailyReport(
+        id: 'tgt',
+        projectId: 'p',
+        date: '08.08.2026',
+        machines: [
+          DailyReportMachine(id: 'keep', name: 'Vinç'),
+        ],
+      );
+
+      final outcome = applyDailyReportCopyFromPrevious(
+        target: target,
+        source: source,
+        fields: {DailyReportCopyField.machines},
+      );
+
+      expect(outcome.result.isEmpty, isTrue);
+      expect(outcome.report.machines.single.id, 'keep');
     });
   });
 }

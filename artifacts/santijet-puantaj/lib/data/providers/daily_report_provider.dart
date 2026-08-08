@@ -8,6 +8,7 @@ import '../../core/utils/id_gen.dart';
 import '../../core/utils/puantaj_date.dart';
 import '../../domain/catalogs/turkey_cities.dart';
 import '../../domain/daily_report/attendance_snapshot_builder.dart';
+import '../../domain/daily_report/daily_report_copy.dart';
 import '../../domain/entities/daily_report.dart';
 import '../services/weather_service.dart';
 import 'app_data_provider.dart';
@@ -108,6 +109,28 @@ class DailyReportsNotifier extends StateNotifier<List<DailyReport>> {
   void replaceAll(List<DailyReport> items) {
     state = List<DailyReport>.from(items);
     _persist();
+  }
+
+  /// Önceki günden seçili alanları kopyalar. Dönüş: kopya özeti.
+  DailyReportCopyResult copyFromPreviousDay({
+    required String projectId,
+    required String date,
+    required String previousDate,
+    required Set<DailyReportCopyField> fields,
+  }) {
+    if (fields.isEmpty) return const DailyReportCopyResult();
+    final source = find(projectId: projectId, date: previousDate);
+    if (source == null) return const DailyReportCopyResult();
+
+    final target = ensureDraft(projectId: projectId, date: date);
+    final outcome = applyDailyReportCopyFromPrevious(
+      target: target,
+      source: source,
+      fields: fields,
+    );
+    if (outcome.result.isEmpty) return outcome.result;
+    upsert(outcome.report);
+    return outcome.result;
   }
 }
 

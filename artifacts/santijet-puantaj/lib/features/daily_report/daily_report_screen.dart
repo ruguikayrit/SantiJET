@@ -24,6 +24,7 @@ import '../../data/providers/daily_report_provider.dart';
 import '../../data/services/daily_report_pdf_service.dart';
 import '../../data/services/irsaliye_material_ocr.dart';
 import '../../domain/catalogs/turkey_cities.dart';
+import '../../domain/daily_report/daily_report_copy.dart';
 import '../../domain/entities/daily_report.dart';
 import '../../domain/enums/photo_work_category.dart';
 import 'widgets/attendance_summary_table.dart';
@@ -170,6 +171,37 @@ class _DailyReportScreenState extends ConsumerState<DailyReportScreen> {
         if (mounted) setState(() => _weatherLoading = false);
       }
     }
+  }
+
+  void _hydrateTextControllers(DailyReport report) {
+    _hydrating = true;
+    _workConstructionCtrl.text = report.workConstruction;
+    _workElectricalCtrl.text = report.workElectrical;
+    _workMechanicalCtrl.text = report.workMechanical;
+    _nextDayPlanCtrl.text = report.nextDayPlan;
+    _hydrating = false;
+  }
+
+  void _copyFromYesterday(Set<DailyReportCopyField> fields) {
+    final project = ref.read(activeProjectProvider);
+    if (project == null) return;
+    final date = ref.read(dailyReportSelectedDateProvider);
+    final result = ref.read(dailyReportsProvider.notifier).copyFromPreviousDay(
+          projectId: project.id,
+          date: date,
+          previousDate: PuantajDate.shift(date, -1),
+          fields: fields,
+        );
+
+    if (result.workTexts || result.nextDayPlan) {
+      final updated = ref.read(activeDailyReportProvider);
+      if (updated != null) _hydrateTextControllers(updated);
+    }
+
+    if (!mounted) return;
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(content: Text(result.message)),
+    );
   }
 
   Future<void> _pickWeatherCity() async {
@@ -1491,6 +1523,12 @@ class _DailyReportScreenState extends ConsumerState<DailyReportScreen> {
                     child: const Text('Bugün'),
                   ),
                   IconButton(
+                    tooltip: 'Dünden kopyala',
+                    onPressed: () =>
+                        _copyFromYesterday(kDailyReportCopyAllRepeatable),
+                    icon: const Icon(Icons.copy_outlined),
+                  ),
+                  IconButton(
                     tooltip: 'PDF dışa aktar',
                     onPressed: _openExportSheet,
                     icon: const Icon(Icons.ios_share_outlined),
@@ -1663,6 +1701,13 @@ class _DailyReportScreenState extends ConsumerState<DailyReportScreen> {
                   _SectionCard(
                     title: 'Yapılan işler',
                     icon: Icons.checklist_outlined,
+                    trailing: IconButton(
+                      tooltip: 'Dünden kopyala',
+                      onPressed: () => _copyFromYesterday({
+                        DailyReportCopyField.workTexts,
+                      }),
+                      icon: const Icon(Icons.copy_outlined, size: 20),
+                    ),
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.stretch,
                       children: [
@@ -1910,6 +1955,9 @@ class _DailyReportScreenState extends ConsumerState<DailyReportScreen> {
                     icon: Icons.shopping_cart_outlined,
                     onAdd: () =>
                         _upsertMaterial(kind: _MaterialList.ordered),
+                    onCopyYesterday: () => _copyFromYesterday({
+                      DailyReportCopyField.orderedMaterials,
+                    }),
                     empty: 'Sipariş kaydı yok',
                     children: [
                       for (final m in report?.orderedMaterials ?? const [])
@@ -1939,6 +1987,9 @@ class _DailyReportScreenState extends ConsumerState<DailyReportScreen> {
                     title: 'İş makinesi puantajı',
                     icon: Icons.agriculture_outlined,
                     onAdd: () => _upsertMachine(),
+                    onCopyYesterday: () => _copyFromYesterday({
+                      DailyReportCopyField.machines,
+                    }),
                     empty: 'Makine kaydı yok',
                     children: [
                       for (final m in report?.machines ?? const [])
@@ -1993,6 +2044,9 @@ class _DailyReportScreenState extends ConsumerState<DailyReportScreen> {
                     title: 'Vasıta puantajı',
                     icon: Icons.directions_car_outlined,
                     onAdd: () => _upsertMachine(vehicle: true),
+                    onCopyYesterday: () => _copyFromYesterday({
+                      DailyReportCopyField.vehicles,
+                    }),
                     empty: 'Vasıta kaydı yok',
                     children: [
                       for (final m in report?.vehicles ?? const [])
@@ -2048,6 +2102,13 @@ class _DailyReportScreenState extends ConsumerState<DailyReportScreen> {
                   _SectionCard(
                     title: 'Planlı işler listesi',
                     icon: Icons.event_note_outlined,
+                    trailing: IconButton(
+                      tooltip: 'Dünden kopyala',
+                      onPressed: () => _copyFromYesterday({
+                        DailyReportCopyField.nextDayPlan,
+                      }),
+                      icon: const Icon(Icons.copy_outlined, size: 20),
+                    ),
                     child: _WorkNotesTile(
                       label: 'Planlanan işler',
                       text: _nextDayPlanCtrl.text,
@@ -2216,11 +2277,13 @@ class _ListSection extends StatelessWidget {
     required this.onAdd,
     required this.empty,
     required this.children,
+    this.onCopyYesterday,
   });
 
   final String title;
   final IconData icon;
   final VoidCallback onAdd;
+  final VoidCallback? onCopyYesterday;
   final String empty;
   final List<Widget> children;
 
@@ -2229,9 +2292,21 @@ class _ListSection extends StatelessWidget {
     return _SectionCard(
       title: title,
       icon: icon,
-      trailing: IconButton(
-        onPressed: onAdd,
-        icon: const Icon(Icons.add),
+      trailing: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          if (onCopyYesterday != null)
+            IconButton(
+              tooltip: 'Dünden kopyala',
+              onPressed: onCopyYesterday,
+              icon: const Icon(Icons.copy_outlined, size: 20),
+            ),
+          IconButton(
+            tooltip: 'Ekle',
+            onPressed: onAdd,
+            icon: const Icon(Icons.add),
+          ),
+        ],
       ),
       child: children.isEmpty
           ? Builder(
