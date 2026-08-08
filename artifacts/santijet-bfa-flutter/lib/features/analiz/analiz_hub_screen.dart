@@ -62,10 +62,7 @@ class AnalizHubScreen extends ConsumerWidget {
             return CustomScrollView(
               slivers: [
                 const SliverToBoxAdapter(
-                  child: SantijetHeader(
-                    subtitle: 'Analiz',
-                    avatarInitial: 'M',
-                  ),
+                  child: SantijetHeader(subtitle: 'Analiz'),
                 ),
                 SliverPadding(
                   padding: const EdgeInsets.fromLTRB(

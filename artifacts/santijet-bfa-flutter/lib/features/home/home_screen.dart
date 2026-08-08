@@ -11,17 +11,15 @@ import '../../core/theme/app_colors.dart';
 import '../../core/theme/app_spacing.dart';
 import '../../core/utils/app_format.dart';
 import '../../core/widgets/analiz_list_item.dart';
-import '../../core/widgets/module_tile.dart';
 import '../../core/widgets/santijet_header.dart';
 import '../../data/providers/catalog_provider.dart';
 import '../../data/providers/favorites_provider.dart';
 import '../../data/providers/kesif_provider.dart';
 import '../../data/providers/recent_views_provider.dart';
 import '../../domain/entities/poz_analiz.dart';
-import '../../domain/enums/app_enums.dart';
 import '../ozel_analiz/new_analiz_module_sheet.dart';
 
-/// Ana sayfa — özet kartları + hızlı aksiyonlar (ŞantiJET Maliyet).
+/// Ana sayfa — özet kartları + son analizler / açık keşifler (ŞantiJET Maliyet).
 class HomeScreen extends ConsumerStatefulWidget {
   const HomeScreen({super.key});
 
@@ -87,7 +85,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
     return CustomScrollView(
       slivers: [
         const SliverToBoxAdapter(
-          child: SantijetHeader(showWordmark: true, avatarInitial: 'M'),
+          child: SantijetHeader(showWordmark: true),
         ),
         SliverToBoxAdapter(
           child: Padding(
@@ -258,91 +256,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
         _sectionTitle('Son Analizler'),
         _analizSliverList(recent, favorites),
       ],
-      _sectionTitle('Hızlı Aksiyonlar'),
-      SliverPadding(
-        padding: const EdgeInsets.symmetric(horizontal: AppSpacing.md),
-        sliver: SliverList.list(children: [
-          ModuleTile(
-            title: 'Analiz',
-            subtitle: 'Özel analiz · karşılaştır · katalog',
-            icon: Icons.analytics_outlined,
-            accentColor: AppColors.moduleInsaat,
-            count: catalog.all.length,
-            onTap: () => context.go(AppRoutes.analiz),
-          ),
-          const SizedBox(height: AppSpacing.xs),
-          ModuleTile(
-            title: 'Birim Fiyat',
-            subtitle: 'Poz fiyatı ara · keşife uygula',
-            icon: Icons.sell_outlined,
-            accentColor: AppColors.electricBlue,
-            count: catalog.countFor(AnalizDiscipline.insaat) +
-                catalog.countFor(AnalizDiscipline.mekanik) +
-                catalog.countFor(AnalizDiscipline.elektrik),
-            onTap: () => context.go(AppRoutes.birimFiyat),
-          ),
-          const SizedBox(height: AppSpacing.xs),
-          ModuleTile(
-            title: 'Keşif · Metraj · YM',
-            subtitle: 'Satır, miktar ve yaklaşık maliyet',
-            icon: Icons.description_outlined,
-            accentColor: AppColors.moduleKesif,
-            count: kesifler.length,
-            onTap: () => context.go(AppRoutes.kesif),
-          ),
-          const SizedBox(height: AppSpacing.xs),
-          ModuleTile(
-            title: 'Favoriler',
-            subtitle: 'Kaydettiğiniz pozlar',
-            icon: Icons.star,
-            accentColor: AppColors.moduleFavori,
-            count: favorites.length,
-            onTap: () => context.push('${AppRoutes.pozlar}?modul=favoriler'),
-          ),
-          const SizedBox(height: AppSpacing.xs),
-          _quickAccessTile(
-            icon: Icons.settings_outlined,
-            color: AppColors.textMuted,
-            title: 'Ayarlar',
-            onTap: () => context.push(AppRoutes.ayarlar),
-          ),
-        ]),
-      ),
     ];
-  }
-
-  Widget _quickAccessTile({
-    required IconData icon,
-    required Color color,
-    required String title,
-    required VoidCallback onTap,
-  }) {
-    return SJCard(
-      onTap: onTap,
-      child: Builder(
-        builder: (context) {
-          final theme = Theme.of(context);
-          return Row(
-            children: [
-              Icon(icon, color: color),
-              const SizedBox(width: AppSpacing.sm),
-              Expanded(
-                child: Text(
-                  title,
-                  style: theme.textTheme.titleMedium?.copyWith(
-                    color: AppColors.cardTextPrimary,
-                  ),
-                ),
-              ),
-              Icon(
-                Icons.chevron_right,
-                color: AppColors.cardTextMuted,
-              ),
-            ],
-          );
-        },
-      ),
-    );
   }
 
   Widget _analizSliverList(List<PozAnaliz> list, Set<String> favorites) {

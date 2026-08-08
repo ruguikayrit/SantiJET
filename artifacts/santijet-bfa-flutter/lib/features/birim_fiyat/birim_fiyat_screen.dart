@@ -152,10 +152,7 @@ class _BirimFiyatScreenState extends ConsumerState<BirimFiyatScreen> {
             return CustomScrollView(
               slivers: [
                 const SliverToBoxAdapter(
-                  child: SantijetHeader(
-                    subtitle: 'Birim Fiyat',
-                    avatarInitial: 'M',
-                  ),
+                  child: SantijetHeader(subtitle: 'Birim Fiyat'),
                 ),
                 SliverPadding(
                   padding: const EdgeInsets.fromLTRB(

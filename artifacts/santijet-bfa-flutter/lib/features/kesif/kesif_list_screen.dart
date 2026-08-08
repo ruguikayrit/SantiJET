@@ -33,6 +33,11 @@ class KesifListScreen extends ConsumerWidget {
               onImported: (id) => context.push(AppRoutes.kesifDetay(id)),
             ),
           ),
+          IconButton(
+            tooltip: 'Ayarlar',
+            icon: const Icon(Icons.settings_outlined),
+            onPressed: () => context.push(AppRoutes.ayarlar),
+          ),
         ],
       ),
       floatingActionButton: FloatingActionButton(

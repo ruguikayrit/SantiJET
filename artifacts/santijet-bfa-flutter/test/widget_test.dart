@@ -71,6 +71,6 @@ void main() {
 
     expect(find.text('MALİYET'), findsWidgets);
     expect(find.text('Özet'), findsOneWidget);
-    expect(find.text('Analiz'), findsWidgets);
+    expect(find.byIcon(Icons.settings_outlined), findsOneWidget);
   });
 }
