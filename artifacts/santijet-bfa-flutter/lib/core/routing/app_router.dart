@@ -14,6 +14,7 @@ import '../../features/kesif/kesif_detail_screen.dart';
 import '../../features/kesif/kesif_list_screen.dart';
 import '../../features/legal/legal_document_screen.dart';
 import '../../features/legal/sources_screen.dart';
+import '../../features/metraj/metraj_screen.dart';
 import '../../features/ozel_analiz/analiz_editor_screen.dart';
 import '../../features/projects/join_project_screen.dart';
 import '../../features/projects/projects_screen.dart';
@@ -27,7 +28,7 @@ import 'page_transitions.dart';
 
 final _rootNavigatorKey = GlobalKey<NavigatorState>();
 
-/// Kabuk: Ana Sayfa · Analiz · Keşif · Yaklaşık Maliyet.
+/// Kabuk: Ana Sayfa · Analiz · Metraj · Keşif · Y.Maliyet.
 /// Ayarlar / Projelerim / Birim Fiyat kök (tam ekran) rotalardır.
 final routerProvider = Provider<GoRouter>((ref) {
   return GoRouter(
@@ -66,6 +67,17 @@ final routerProvider = Provider<GoRouter>((ref) {
                 pageBuilder: (context, state) => fadePage(
                   key: state.pageKey,
                   child: const AnalizHubScreen(),
+                ),
+              ),
+            ],
+          ),
+          StatefulShellBranch(
+            routes: [
+              GoRoute(
+                path: AppRoutes.metraj,
+                pageBuilder: (context, state) => fadePage(
+                  key: state.pageKey,
+                  child: const MetrajScreen(),
                 ),
               ),
             ],

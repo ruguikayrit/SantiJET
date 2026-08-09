@@ -1,6 +1,6 @@
 /// Uygulama rota yolları — Demir konvansiyonuyla (abstract final class).
 ///
-/// Alt navigasyon: Ana Sayfa · Analiz · Keşif · Yaklaşık Maliyet.
+/// Alt navigasyon: Ana Sayfa · Analiz · Metraj · Keşif · Y.Maliyet.
 /// Ayarlar ve Projelerim kök (tam ekran) rotalardır — bottom tab değil.
 abstract final class AppRoutes {
   /// Ortak açılış ekranı (Demir/Beton/Puantaj ile aynı akış).
@@ -9,6 +9,7 @@ abstract final class AppRoutes {
   // Alt navigasyon sekmeleri
   static const home = '/';
   static const analiz = '/analiz';
+  static const metraj = '/metraj';
   static const kesif = '/kesif';
   static const yaklasikMaliyet = '/yaklasik-maliyet';
 

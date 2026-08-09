@@ -7,7 +7,7 @@ import '../../core/theme/app_colors.dart';
 import '../../core/theme/theme_mode_provider.dart';
 import '../../core/theme/theme_rebuild_gate.dart';
 
-/// Ana kabuk — 4 yüzey: Ana Sayfa · Analiz · Keşif · Yaklaşık Maliyet.
+/// Ana kabuk — 5 yüzey: Ana Sayfa · Analiz · Metraj · Keşif · Y.Maliyet.
 /// Ayarlar / Projelerim bottom tab değil.
 class MainShell extends ConsumerWidget {
   const MainShell({required this.navigationShell, super.key});
@@ -26,6 +26,11 @@ class MainShell extends ConsumerWidget {
       label: 'Analiz',
     ),
     SJNavItem(
+      icon: Icons.straighten_outlined,
+      activeIcon: Icons.straighten,
+      label: 'Metraj',
+    ),
+    SJNavItem(
       icon: Icons.description_outlined,
       activeIcon: Icons.description,
       label: 'Keşif',
@@ -33,7 +38,7 @@ class MainShell extends ConsumerWidget {
     SJNavItem(
       icon: Icons.account_balance_wallet_outlined,
       activeIcon: Icons.account_balance_wallet,
-      label: 'Yaklaşık Maliyet',
+      label: 'Y.Maliyet',
     ),
   ];
 
