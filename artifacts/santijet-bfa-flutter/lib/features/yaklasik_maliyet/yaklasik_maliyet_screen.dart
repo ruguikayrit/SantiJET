@@ -9,9 +9,10 @@ import '../../core/theme/app_spacing.dart';
 import '../../core/utils/app_format.dart';
 import '../../data/providers/kesif_provider.dart';
 import '../../data/services/kesif_export_service.dart';
+import '../../domain/entities/kesif.dart';
 import '../export/export_format_sheet.dart';
 
-/// Yaklaşık Maliyet — aktif projenin maliyet özeti (Keşif'ten ayrı yüzey).
+/// Yaklaşık Maliyet — birim fiyatlar + tutar özeti.
 class YaklasikMaliyetScreen extends ConsumerWidget {
   const YaklasikMaliyetScreen({super.key});
 
@@ -130,13 +131,105 @@ class YaklasikMaliyetScreen extends ConsumerWidget {
             ],
             const SizedBox(height: AppSpacing.lg),
             Text(
-              '${kesif.satirlar.length} keşif satırı',
+              'Birim Fiyatlar',
+              style: theme.textTheme.titleLarge?.copyWith(
+                color: AppColors.textPrimary,
+              ),
+            ),
+            const SizedBox(height: 4),
+            Text(
+              'Poz · tanım · birim fiyat · metraj · tutar',
               style: theme.textTheme.bodySmall?.copyWith(
                 color: AppColors.textMuted,
               ),
             ),
+            const SizedBox(height: AppSpacing.sm),
+            if (kesif.satirlar.isEmpty)
+              SJCard(
+                child: Text(
+                  'Keşif satırı yok. Poz ekledikçe birim fiyatlar burada listelenir.',
+                  style: theme.textTheme.bodyMedium?.copyWith(
+                    color: AppColors.cardTextMuted,
+                  ),
+                ),
+              )
+            else
+              for (final satir in kesif.satirlar) ...[
+                _FiyatSatirCard(satir: satir),
+                const SizedBox(height: AppSpacing.xs),
+              ],
+            const SizedBox(height: AppSpacing.xl),
           ],
         ),
+      ),
+    );
+  }
+}
+
+class _FiyatSatirCard extends StatelessWidget {
+  const _FiyatSatirCard({required this.satir});
+
+  final KesifSatiri satir;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    return SJCard(
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            satir.pozNo,
+            style: theme.textTheme.labelMedium?.copyWith(
+              color: AppColors.moduleKesif,
+            ),
+          ),
+          Text(
+            satir.analizAdi,
+            style: theme.textTheme.titleMedium?.copyWith(
+              color: AppColors.cardTextPrimary,
+            ),
+            maxLines: 2,
+            overflow: TextOverflow.ellipsis,
+          ),
+          const SizedBox(height: AppSpacing.sm),
+          Row(
+            children: [
+              Expanded(
+                child: Text(
+                  'B.F. ${AppFormat.currency(satir.birimFiyati)} / ${satir.olcuBirimi}',
+                  style: theme.textTheme.bodyMedium?.copyWith(
+                    color: AppColors.cardTextSecondary,
+                  ),
+                ),
+              ),
+              Text(
+                '${AppFormat.decimal(satir.miktar)} ${satir.olcuBirimi}',
+                style: theme.textTheme.bodyMedium?.copyWith(
+                  color: AppColors.cardTextMuted,
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 4),
+          Row(
+            children: [
+              Text(
+                satir.fiyatKaynagi.label,
+                style: theme.textTheme.labelSmall?.copyWith(
+                  color: AppColors.cardTextMuted,
+                ),
+              ),
+              const Spacer(),
+              Text(
+                AppFormat.currency(satir.tutar),
+                style: theme.textTheme.titleMedium?.copyWith(
+                  color: AppColors.cardTextPrimary,
+                ),
+              ),
+            ],
+          ),
+        ],
       ),
     );
   }

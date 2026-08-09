@@ -111,7 +111,7 @@ class KesifListScreen extends ConsumerWidget {
                   ),
                   const SizedBox(height: 4),
                   Text(
-                    'Poz · tanım · birim fiyat kaynağı · miktar · tutar',
+                    'Poz · imalat tanımı · metraj',
                     style: theme.textTheme.bodySmall?.copyWith(
                       color: AppColors.textMuted,
                     ),
@@ -196,86 +196,65 @@ class _SatirCardState extends ConsumerState<_SatirCard> {
     final theme = Theme.of(context);
 
     return SJCard(
-      child: Column(
+      child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Row(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      satir.pozNo,
-                      style: theme.textTheme.labelMedium
-                          ?.copyWith(color: AppColors.moduleKesif),
-                    ),
-                    Text(
-                      satir.analizAdi,
-                      style: theme.textTheme.titleMedium?.copyWith(
-                        color: AppColors.cardTextPrimary,
-                      ),
-                      maxLines: 2,
-                      overflow: TextOverflow.ellipsis,
-                    ),
-                    const SizedBox(height: 4),
-                    Text(
-                      '${AppFormat.currency(satir.birimFiyati)} / ${satir.olcuBirimi} · ${satir.fiyatKaynagi.label}',
-                      style: theme.textTheme.bodySmall?.copyWith(
-                        color: AppColors.cardTextMuted,
-                      ),
-                    ),
-                  ],
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  satir.pozNo,
+                  style: theme.textTheme.labelMedium
+                      ?.copyWith(color: AppColors.moduleKesif),
                 ),
-              ),
-              SizedBox(
-                width: 92,
-                child: TextField(
-                  controller: _qtyController,
-                  keyboardType: const TextInputType.numberWithOptions(
-                    decimal: true,
-                  ),
-                  textAlign: TextAlign.right,
+                Text(
+                  satir.analizAdi,
                   style: theme.textTheme.titleMedium?.copyWith(
                     color: AppColors.cardTextPrimary,
                   ),
-                  onSubmitted: (raw) {
-                    final value = double.tryParse(
-                          raw.replaceAll('.', '').replaceAll(',', '.'),
-                        ) ??
-                        0;
-                    ref.read(kesifProvider.notifier).updateMiktar(
-                          widget.projectId,
-                          satir.id,
-                          value,
-                        );
-                  },
-                  decoration: InputDecoration(
-                    suffixText: satir.olcuBirimi,
-                    isDense: true,
-                  ),
+                  maxLines: 3,
+                  overflow: TextOverflow.ellipsis,
                 ),
+              ],
+            ),
+          ),
+          const SizedBox(width: AppSpacing.sm),
+          SizedBox(
+            width: 110,
+            child: TextField(
+              controller: _qtyController,
+              keyboardType: const TextInputType.numberWithOptions(
+                decimal: true,
               ),
-              const SizedBox(width: AppSpacing.xs),
-              SizedBox(
-                width: 88,
-                child: Text(
-                  AppFormat.currency(satir.tutar),
-                  style: theme.textTheme.titleMedium?.copyWith(
-                    color: AppColors.cardTextPrimary,
-                  ),
-                  textAlign: TextAlign.right,
-                ),
+              textAlign: TextAlign.right,
+              style: theme.textTheme.titleMedium?.copyWith(
+                color: AppColors.cardTextPrimary,
               ),
-              IconButton(
-                tooltip: 'Sil',
-                onPressed: () => ref
-                    .read(kesifProvider.notifier)
-                    .removeSatir(widget.projectId, satir.id),
-                icon: Icon(Icons.close, color: theme.colorScheme.error),
+              onSubmitted: (raw) {
+                final value = double.tryParse(
+                      raw.replaceAll('.', '').replaceAll(',', '.'),
+                    ) ??
+                    0;
+                ref.read(kesifProvider.notifier).updateMiktar(
+                      widget.projectId,
+                      satir.id,
+                      value,
+                    );
+              },
+              decoration: InputDecoration(
+                labelText: 'Metraj',
+                suffixText: satir.olcuBirimi,
+                isDense: true,
               ),
-            ],
+            ),
+          ),
+          IconButton(
+            tooltip: 'Sil',
+            onPressed: () => ref
+                .read(kesifProvider.notifier)
+                .removeSatir(widget.projectId, satir.id),
+            icon: Icon(Icons.close, color: theme.colorScheme.error),
           ),
         ],
       ),
