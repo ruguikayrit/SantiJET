@@ -6,7 +6,7 @@ Türkçe inşaat şantiye yönetim uygulaması. pnpm monorepo yapısında birden
 
 | Modül | Klasör | Açıklama |
 |-------|--------|----------|
-| **Maliyet (Flutter)** | `artifacts/santijet-bfa-flutter` | **Aktif** — ŞantiJET Maliyet (eski BFA; `/bfa/` path şimdilik) |
+| **Maliyet (Flutter)** | `artifacts/santijet-bfa-flutter` | **Aktif** — ŞantiJET Maliyet (`/maliyet/`) |
 | **BETON (Flutter)** | `artifacts/santijet-beton` | **Aktif** — Mevcut beton uygulaması (`/beton/`) |
 | B.F.A. (RN arşiv) | `artifacts/imalat-poz-analizleri` | Emekli — yalnızca referans |
 | Mobil uygulama | `artifacts/santiye-takip` | Expo / React Native — ana şantiye takip uygulaması |
@@ -45,7 +45,7 @@ Tarayıcıda: http://localhost:23301/neon/
 pnpm dev:bfa
 ```
 
-Tarayıcıda Flutter web oturumu açılır. Pages path: `/bfa/` (rename ayrı iş).
+Tarayıcıda Flutter web oturumu açılır. Pages path: `/maliyet/`.
 
 ### BETON — Mevcut beton uygulaması (Flutter)
 

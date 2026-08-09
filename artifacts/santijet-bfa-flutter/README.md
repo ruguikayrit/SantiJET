@@ -4,7 +4,7 @@
 Birim Fiyat Analizleri). Klasör adı şimdilik `santijet-bfa-flutter` (rename Faz 2).
 
 **Ürün kapsamı:** birim fiyat analizi · keşif · metraj · yaklaşık maliyet  
-**Pages path:** `/bfa/` (deploy path rename ayrı iş)
+**Pages path:** `/maliyet/` (eski `/bfa/` yönlendirilir)
 
 React Native sürümünden (`artifacts/imalat-poz-analizleri/`) **bağımsız** olarak,
 ŞantiJET Design System ve Flutter mimarisiyle geliştirilmektedir.
