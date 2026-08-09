@@ -38,10 +38,23 @@ fi
 
 pushd "${SOURCE_DIR}" >/dev/null
 flutter pub get
+
+DART_DEFINES=( "--dart-define=DEPLOY_CHANNEL=staging" )
+if [[ -n "${SUPABASE_URL:-}" && -n "${SUPABASE_ANON_KEY:-}" ]]; then
+  CLEAN_URL="${SUPABASE_URL%/}"
+  CLEAN_URL="${CLEAN_URL%/rest/v1}"
+  CLEAN_URL="${CLEAN_URL%/auth/v1}"
+  DART_DEFINES+=( "--dart-define=SUPABASE_URL=${CLEAN_URL}" )
+  DART_DEFINES+=( "--dart-define=SUPABASE_ANON_KEY=${SUPABASE_ANON_KEY}" )
+  echo "Puantaj build: Supabase dart-defines enabled"
+else
+  echo "::warning::SUPABASE_URL/ANON_KEY missing — Puantaj cloud join disabled in this build"
+fi
+
 flutter build web --release \
   --base-href "/${REPO_NAME}/puantaj/" \
   --pwa-strategy=none \
-  --dart-define=DEPLOY_CHANNEL=staging
+  "${DART_DEFINES[@]}"
 
 perl -i -0pe 's/_flutter\.loader\.load\(\{\s*serviceWorkerSettings:\s*\{[^}]+\}\s*\}\);/window.__SANTIJET_START_FLUTTER__&&window.__SANTIJET_START_FLUTTER__();/s' build/web/flutter_bootstrap.js
 perl -i -pe 's/_flutter\.loader\.load\(\{\}\);/window.__SANTIJET_START_FLUTTER__&&window.__SANTIJET_START_FLUTTER__();/g' build/web/flutter_bootstrap.js

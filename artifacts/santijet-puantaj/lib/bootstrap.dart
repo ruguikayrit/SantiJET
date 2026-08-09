@@ -5,12 +5,15 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:hive_flutter/hive_flutter.dart';
 
 import 'app.dart';
+import 'core/config/supabase_config.dart';
 import 'core/theme/theme_mode_provider.dart';
 import 'data/providers/app_data_provider.dart';
+import 'data/providers/collaboration_provider.dart';
 import 'data/providers/daily_report_provider.dart';
 import 'data/providers/production_provider.dart';
 import 'data/providers/tasks_provider.dart';
 import 'data/providers/verim_provider.dart';
+import 'data/remote/supabase_service.dart';
 
 /// Uygulama başlatma — Demir / BFA `bootstrap()` deseniyle hizalı.
 Future<void> bootstrap() async {
@@ -26,9 +29,16 @@ Future<void> bootstrap() async {
     Hive.openBox('kesif_cloud'),
     Hive.openBox('daily_reports'),
     Hive.openBox('tasks'),
+    Hive.openBox('project_members'),
   ]);
 
   _migratePersonnelToProjects(boxes[2], boxes[1], boxes[0]);
+
+  if (SupabaseConfig.isConfigured) {
+    // Arka planda; splash oturumu bekler.
+    // ignore: unawaited_futures
+    SupabaseService.initialize();
+  }
 
   runApp(
     ProviderScope(
@@ -42,6 +52,7 @@ Future<void> bootstrap() async {
         kesifCacheBoxProvider.overrideWithValue(boxes[6]),
         dailyReportsBoxProvider.overrideWithValue(boxes[7]),
         tasksBoxProvider.overrideWithValue(boxes[8]),
+        membersBoxProvider.overrideWithValue(boxes[9]),
       ],
       child: const SantijetPuantajApp(),
     ),

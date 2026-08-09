@@ -8,6 +8,7 @@ import '../../core/routing/app_routes.dart';
 import '../../core/theme/app_colors.dart';
 import '../../core/theme/app_radii.dart';
 import '../../core/theme/app_spacing.dart';
+import '../../core/widgets/project_permission_gate.dart';
 import '../../core/widgets/santijet_header.dart';
 import '../../core/utils/puantaj_date.dart';
 import '../../core/utils/text_format.dart';
@@ -146,6 +147,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                 child: ProjectSwitcher(),
               ),
             ),
+            const SliverToBoxAdapter(child: ReadOnlyBanner()),
             SliverPadding(
               padding: const EdgeInsets.fromLTRB(
                 AppSpacing.md,

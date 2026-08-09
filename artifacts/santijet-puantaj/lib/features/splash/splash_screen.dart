@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../core/animations/app_animations.dart';
@@ -8,16 +9,18 @@ import '../../core/theme/app_colors.dart';
 import '../../core/theme/app_spacing.dart';
 import '../../core/theme/app_theme.dart';
 import '../../core/theme/app_typography.dart';
+import '../../data/providers/auth_provider.dart';
+import '../../data/providers/collaboration_provider.dart';
 
 /// ŞantiJET Puantaj açılış ekranı — Demir splash ile birebir; ürün adı PUANTAJ.
-class SplashScreen extends StatefulWidget {
+class SplashScreen extends ConsumerStatefulWidget {
   const SplashScreen({super.key});
 
   @override
-  State<SplashScreen> createState() => _SplashScreenState();
+  ConsumerState<SplashScreen> createState() => _SplashScreenState();
 }
 
-class _SplashScreenState extends State<SplashScreen>
+class _SplashScreenState extends ConsumerState<SplashScreen>
     with SingleTickerProviderStateMixin {
   static const _wordmarkAspect = 895 / 150;
   static const _boltWordmarkGap = 28.0;
@@ -37,7 +40,16 @@ class _SplashScreenState extends State<SplashScreen>
   }
 
   Future<void> _bootstrap() async {
-    await Future<void>.delayed(const Duration(milliseconds: 1600));
+    final delay = Future<void>.delayed(const Duration(milliseconds: 1600));
+    try {
+      await ref.read(authProvider.notifier).restoreSession();
+      if (ref.read(authProvider).isAuthenticated) {
+        await ref.read(collaborationControllerProvider).pullMyProjects();
+      }
+    } catch (_) {
+      // Splash'ı offline devam ettir.
+    }
+    await delay;
     if (!mounted) return;
     context.go(AppRoutes.home);
   }

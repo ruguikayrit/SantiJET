@@ -14,6 +14,8 @@ abstract final class AppRoutes {
   static const firma = '/ayarlar/yonetim/firma';
   static const aktifKullanici = '/ayarlar/yonetim/aktif-kullanici';
   static const projeler = '/ayarlar/projeler';
+  static const projeKatil = '/ayarlar/projeler/katil';
+  static const auth = '/ayarlar/hesap';
   static const meslekler = '/ayarlar/yonetim/meslekler';
   static const ekipler = '/ayarlar/yonetim/ekipler';
   static const gorevKategorileri = '/ayarlar/yonetim/gorev-kategorileri';
@@ -21,4 +23,7 @@ abstract final class AppRoutes {
 
   /// Eski yol — `/personel` rotasına yönlendirilir.
   static const personelLegacy = '/ayarlar/yonetim/personel';
+
+  static String projeUyeler(String projectId) =>
+      '/ayarlar/projeler/$projectId/uyeler';
 }

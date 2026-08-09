@@ -1,0 +1,72 @@
+import 'package:flutter/foundation.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
+
+import '../../core/config/supabase_config.dart';
+
+abstract final class SupabaseService {
+  static bool _initialized = false;
+  static Future<bool>? _initFuture;
+  static String? _initError;
+
+  static bool get isConfigured => SupabaseConfig.isConfigured;
+
+  static bool get isReady => _initialized && isConfigured;
+
+  static String? get initError => _initError;
+
+  static SupabaseClient get client {
+    if (!_initialized) {
+      throw StateError('Supabase is not initialized');
+    }
+    return Supabase.instance.client;
+  }
+
+  static Future<bool> initialize() async {
+    if (!isConfigured || _initialized) return _initialized;
+    final existing = _initFuture;
+    if (existing != null) return existing;
+
+    _initFuture = _initializeOnce();
+    return _initFuture!;
+  }
+
+  static Future<bool> _initializeOnce() async {
+    try {
+      await Supabase.initialize(
+        url: SupabaseConfig.normalizedUrl,
+        publishableKey: SupabaseConfig.normalizedAnonKey,
+        authOptions: const FlutterAuthClientOptions(
+          authFlowType: AuthFlowType.pkce,
+        ),
+      ).timeout(const Duration(seconds: 5));
+      _initialized = true;
+      _initError = null;
+      return true;
+    } catch (e, stack) {
+      _initialized = false;
+      _initError = e.toString();
+      if (kDebugMode) {
+        debugPrint('Supabase initialize failed: $e\n$stack');
+      }
+      return false;
+    } finally {
+      _initFuture = null;
+    }
+  }
+
+  static Future<bool> waitUntilReady({
+    Duration timeout = const Duration(seconds: 15),
+  }) async {
+    if (!isConfigured) return false;
+    if (_initialized) return true;
+
+    final deadline = DateTime.now().add(timeout);
+    while (DateTime.now().isBefore(deadline)) {
+      if (_initialized) return true;
+      await initialize();
+      if (_initialized) return true;
+      await Future<void>.delayed(const Duration(milliseconds: 250));
+    }
+    return _initialized;
+  }
+}

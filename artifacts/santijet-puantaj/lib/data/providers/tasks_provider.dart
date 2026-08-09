@@ -165,6 +165,11 @@ class TasksNotifier extends StateNotifier<List<SiteTask>> {
     state = state.where((t) => t.projectId != projectId).toList();
     _persist();
   }
+
+  void replaceAll(List<SiteTask> items) {
+    state = List<SiteTask>.from(items);
+    _persist();
+  }
 }
 
 final tasksProvider =

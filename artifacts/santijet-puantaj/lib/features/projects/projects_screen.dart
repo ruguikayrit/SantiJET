@@ -9,10 +9,17 @@ import '../../core/design_system/sj_card.dart';
 import '../../core/design_system/sj_empty_state.dart';
 import '../../core/routing/app_routes.dart';
 import '../../core/theme/app_spacing.dart';
+import '../../core/utils/project_code_generator.dart';
 import '../../data/providers/app_data_provider.dart';
+import '../../data/providers/auth_provider.dart';
+import '../../data/providers/collaboration_provider.dart';
 import '../../data/providers/production_provider.dart';
 import '../../data/providers/tasks_provider.dart';
+import '../../data/remote/supabase_project_sync.dart';
+import '../../data/remote/supabase_service.dart';
 import '../../domain/entities/project.dart';
+import '../../domain/entities/project_member.dart';
+import '../../domain/enums/project_role.dart';
 
 /// Proje listesi, aktif proje seçimi, ekleme / silme.
 class ProjectsScreen extends ConsumerWidget {
@@ -22,6 +29,7 @@ class ProjectsScreen extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final projects = ref.watch(projectsProvider);
     final activeId = ref.watch(activeProjectIdProvider);
+    final auth = ref.watch(authProvider);
 
     return Scaffold(
       appBar: AppBar(
@@ -30,6 +38,43 @@ class ProjectsScreen extends ConsumerWidget {
           icon: const Icon(Icons.arrow_back),
           onPressed: () => context.go(AppRoutes.ayarlar),
         ),
+        actions: [
+          IconButton(
+            tooltip: auth.isAuthenticated ? 'Hesap' : 'Giriş',
+            icon: Icon(
+              auth.isAuthenticated
+                  ? Icons.account_circle
+                  : Icons.login_outlined,
+            ),
+            onPressed: () => context.push(AppRoutes.auth),
+          ),
+          IconButton(
+            tooltip: 'İş koduna katıl',
+            icon: const Icon(Icons.group_add_outlined),
+            onPressed: () => context.push(AppRoutes.projeKatil),
+          ),
+          if (auth.isAuthenticated)
+            IconButton(
+              tooltip: 'Buluttan çek',
+              icon: const Icon(Icons.cloud_sync_outlined),
+              onPressed: () async {
+                try {
+                  await ref
+                      .read(collaborationControllerProvider)
+                      .pullMyProjects();
+                  if (!context.mounted) return;
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    const SnackBar(content: Text('Projeler güncellendi')),
+                  );
+                } catch (e) {
+                  if (!context.mounted) return;
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    SnackBar(content: Text('Senkron hatası: $e')),
+                  );
+                }
+              },
+            ),
+        ],
       ),
       floatingActionButton: FloatingActionButton.extended(
         onPressed: () => _openEditor(context, ref),
@@ -39,7 +84,9 @@ class ProjectsScreen extends ConsumerWidget {
       body: projects.isEmpty
           ? SJEmptyState(
               title: 'Henüz proje yok',
-              message: 'Puantaj kayıtları proje kapsamında tutulur.',
+              message:
+                  'Puantaj kayıtları proje kapsamında tutulur. '
+                  'Yeni iş açın veya paylaşılan koda katılın.',
               icon: Icons.apartment_outlined,
               actionLabel: 'Proje Ekle',
               onAction: () => _openEditor(context, ref),
@@ -101,6 +148,13 @@ class ProjectsScreen extends ConsumerWidget {
                                   maxLines: 1,
                                   overflow: TextOverflow.ellipsis,
                                 ),
+                                if (p.isShared)
+                                  Text(
+                                    'Paylaşımlı iş',
+                                    style: theme.textTheme.labelSmall?.copyWith(
+                                      color: theme.colorScheme.tertiary,
+                                    ),
+                                  ),
                                 if (selected)
                                   Text(
                                     'Aktif proje',
@@ -109,6 +163,13 @@ class ProjectsScreen extends ConsumerWidget {
                                     ),
                                   ),
                               ],
+                            ),
+                          ),
+                          IconButton(
+                            tooltip: 'Ekip',
+                            icon: const Icon(Icons.groups_outlined),
+                            onPressed: () => context.push(
+                              AppRoutes.projeUyeler(p.id),
                             ),
                           ),
                           IconButton(
@@ -154,6 +215,9 @@ class ProjectsScreen extends ConsumerWidget {
                               ref
                                   .read(tasksProvider.notifier)
                                   .deleteForProject(p.id);
+                              ref
+                                  .read(projectMembersListProvider.notifier)
+                                  .deleteForProject(p.id);
                               ref.read(projectsProvider.notifier).delete(p.id);
                               if (activeId == p.id) {
                                 final remaining = ref.read(projectsProvider);
@@ -190,26 +254,108 @@ class ProjectsScreen extends ConsumerWidget {
     if (result == null) return;
 
     if (existing == null) {
-      final created = ref.read(projectsProvider.notifier).add(
-            name: result.name,
-            code: result.code,
-            company: result.company,
-            logoBase64: result.logoBase64,
-            logoMimeType: result.logoMimeType,
-          );
-      ref.read(activeProjectIdProvider.notifier).set(created.id);
+      await _createProject(context, ref, result);
     } else {
-      ref.read(projectsProvider.notifier).update(
-            existing.copyWith(
-              name: result.name,
-              code: result.code,
-              company: result.company,
-              logoBase64: result.logoBase64,
-              logoMimeType: result.logoMimeType,
-              clearLogo: result.logoBase64.isEmpty,
+      final updated = existing.copyWith(
+        name: result.name,
+        code: result.code,
+        company: result.company,
+        logoBase64: result.logoBase64,
+        logoMimeType: result.logoMimeType,
+        clearLogo: result.logoBase64.isEmpty,
+      );
+      ref.read(projectsProvider.notifier).update(updated);
+      if (updated.isShared && SupabaseService.isReady) {
+        try {
+          await ref.read(supabaseProjectSyncProvider).updateProject(updated);
+        } catch (_) {}
+      }
+    }
+  }
+
+  Future<void> _createProject(
+    BuildContext context,
+    WidgetRef ref,
+    _ProjectEditResult result,
+  ) async {
+    final auth = ref.read(authProvider);
+    final code = result.code.trim().isEmpty
+        ? ProjectCodeGenerator.generate()
+        : result.code.trim().toUpperCase();
+
+    if (auth.isAuthenticated && SupabaseService.isConfigured) {
+      try {
+        await SupabaseService.waitUntilReady();
+        if (SupabaseService.isReady) {
+          final cloud = await ref.read(supabaseProjectSyncProvider).createProject(
+                owner: auth.user!,
+                name: result.name,
+                company: result.company,
+                code: code,
+                logoBase64: result.logoBase64,
+                logoMimeType: result.logoMimeType,
+              );
+          ref.read(projectsProvider.notifier).upsert(cloud);
+          ref.read(projectMembersListProvider.notifier).upsert(
+                ProjectMember(
+                  projectId: cloud.id,
+                  userId: auth.user!.id,
+                  email: auth.user!.email,
+                  displayName: auth.user!.displayName,
+                  role: ProjectRole.owner,
+                  canEdit: true,
+                  joinedAt: DateTime.now(),
+                ),
+              );
+          ref.read(activeProjectIdProvider.notifier).set(cloud.id);
+          await ref
+              .read(collaborationControllerProvider)
+              .pushDomain(cloud.id);
+          if (context.mounted) {
+            ScaffoldMessenger.of(context).showSnackBar(
+              SnackBar(
+                content: Text('Paylaşımlı iş oluşturuldu. Kod: ${cloud.code}'),
+              ),
+            );
+          }
+          return;
+        }
+      } on ProjectException catch (e) {
+        if (context.mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(content: Text('${e.message} — yerel olarak kaydedildi')),
+          );
+        }
+      } catch (e) {
+        if (context.mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(content: Text('Bulut hatası: $e — yerel kayıt')),
+          );
+        }
+      }
+    }
+
+    final created = ref.read(projectsProvider.notifier).add(
+          name: result.name,
+          code: code,
+          company: result.company,
+          logoBase64: result.logoBase64,
+          logoMimeType: result.logoMimeType,
+        );
+    if (auth.user != null) {
+      ref.read(projectMembersListProvider.notifier).upsert(
+            ProjectMember(
+              projectId: created.id,
+              userId: auth.user!.id,
+              email: auth.user!.email,
+              displayName: auth.user!.displayName,
+              role: ProjectRole.owner,
+              canEdit: true,
+              joinedAt: DateTime.now(),
             ),
           );
     }
+    ref.read(activeProjectIdProvider.notifier).set(created.id);
   }
 }
 
@@ -409,7 +555,12 @@ class _ProjectEditorSheetState extends State<_ProjectEditorSheet> {
             const SizedBox(height: AppSpacing.sm),
             TextField(
               controller: _codeCtrl,
-              decoration: const InputDecoration(labelText: 'İşin kodu'),
+              decoration: const InputDecoration(
+                labelText: 'İşin kodu',
+                hintText: 'Boş bırakılırsa otomatik üretilir',
+                helperText: 'Ekip bu kodla aynı işe katılabilir',
+              ),
+              textCapitalization: TextCapitalization.characters,
             ),
             const SizedBox(height: AppSpacing.md),
             FilledButton(

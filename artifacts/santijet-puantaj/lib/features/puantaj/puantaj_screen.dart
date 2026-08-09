@@ -12,8 +12,10 @@ import '../../core/theme/app_radii.dart';
 import '../../core/theme/app_spacing.dart';
 import '../../core/utils/puantaj_date.dart';
 import '../../core/utils/text_format.dart';
+import '../../core/widgets/project_permission_gate.dart';
 import '../../core/widgets/santijet_header.dart';
 import '../../data/providers/app_data_provider.dart';
+import '../../data/providers/collaboration_provider.dart';
 import '../../data/services/puantaj_export_service.dart';
 import '../../data/services/puantaj_report_builder.dart';
 import '../../domain/entities/person.dart';
@@ -70,6 +72,15 @@ class _PuantajScreenState extends ConsumerState<PuantajScreen> {
     final people = ref.watch(activePersonnelProvider);
     final attendance = ref.watch(attendanceProvider);
     final notifier = ref.read(attendanceProvider.notifier);
+    final canEdit = ref.watch(canEditActiveProjectProvider);
+
+    void denyWrite() {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Bu işte yalnızca görüntüleme yetkiniz var'),
+        ),
+      );
+    }
 
     if (project == null) {
       return Scaffold(
@@ -160,6 +171,7 @@ class _PuantajScreenState extends ConsumerState<PuantajScreen> {
         child: Column(
           children: [
             const SantijetHeader(subtitle: 'Puantaj'),
+            const ReadOnlyBanner(),
             Padding(
               padding: const EdgeInsets.fromLTRB(
                 AppSpacing.md,
@@ -243,6 +255,7 @@ class _PuantajScreenState extends ConsumerState<PuantajScreen> {
                   },
                   onCloseNote: () => setState(() => _openNote = null),
                   onSaveNote: (person) {
+                    if (!canEdit) return denyWrite();
                     notifier.setNote(
                       projectId: project.id,
                       person: person,
@@ -252,6 +265,7 @@ class _PuantajScreenState extends ConsumerState<PuantajScreen> {
                     setState(() => _openNote = null);
                   },
                   onSetStatus: (person, status) {
+                    if (!canEdit) return denyWrite();
                     notifier.setStatus(
                       projectId: project.id,
                       person: person,
@@ -261,6 +275,7 @@ class _PuantajScreenState extends ConsumerState<PuantajScreen> {
                     setState(() => _openDropdown = null);
                   },
                   onSetOvertime: (person, hours) {
+                    if (!canEdit) return denyWrite();
                     notifier.setOvertime(
                       projectId: project.id,
                       person: person,
@@ -269,6 +284,7 @@ class _PuantajScreenState extends ConsumerState<PuantajScreen> {
                     );
                   },
                   onBulk: (status) {
+                    if (!canEdit) return denyWrite();
                     notifier.bulkSetStatus(
                       projectId: project.id,
                       people: people,
@@ -277,6 +293,7 @@ class _PuantajScreenState extends ConsumerState<PuantajScreen> {
                     );
                   },
                   onCopyYesterday: () {
+                    if (!canEdit) return denyWrite();
                     final copied = notifier.copyFromPreviousDay(
                       projectId: project.id,
                       people: people,

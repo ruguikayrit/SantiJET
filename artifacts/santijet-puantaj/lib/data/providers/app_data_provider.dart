@@ -84,19 +84,44 @@ class ProjectsNotifier extends StateNotifier<List<Project>> {
     String company = '',
     String logoBase64 = '',
     String logoMimeType = 'image/jpeg',
+    String? ownerId,
+    String? id,
   }) {
     final project = Project(
-      id: IdGen.make('prj'),
+      id: id ?? IdGen.make('prj'),
       name: name.trim(),
       code: code.trim(),
       company: company.trim(),
       logoBase64: logoBase64,
       logoMimeType: logoMimeType,
+      ownerId: ownerId,
       createdAt: DateTime.now(),
     );
     state = [...state, project];
     _persist();
     return project;
+  }
+
+  void upsert(Project project) {
+    final exists = state.any((p) => p.id == project.id);
+    if (exists) {
+      state = [
+        for (final p in state)
+          if (p.id == project.id) project else p,
+      ];
+    } else {
+      state = [...state, project];
+    }
+    _persist();
+  }
+
+  void mergeProjects(Iterable<Project> projects) {
+    final byId = {for (final p in state) p.id: p};
+    for (final p in projects) {
+      byId[p.id] = p;
+    }
+    state = byId.values.toList();
+    _persist();
   }
 
   void update(Project project) {

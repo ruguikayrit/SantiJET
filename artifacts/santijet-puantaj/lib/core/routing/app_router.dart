@@ -2,10 +2,13 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
+import '../../features/auth/auth_screen.dart';
 import '../../features/daily_report/daily_report_screen.dart';
 import '../../features/home/home_screen.dart';
 import '../../features/imalat/imalat_hub_screen.dart';
 import '../../features/personnel/personnel_screen.dart';
+import '../../features/projects/join_project_screen.dart';
+import '../../features/projects/project_members_screen.dart';
 import '../../features/projects/projects_screen.dart';
 import '../../features/puantaj/puantaj_screen.dart';
 import '../../features/settings/active_user_screen.dart';
@@ -127,12 +130,41 @@ final routerProvider = Provider<GoRouter>((ref) {
         ),
         routes: [
           GoRoute(
+            path: 'hesap',
+            parentNavigatorKey: _rootNavigatorKey,
+            pageBuilder: (context, state) => fadePage(
+              key: state.pageKey,
+              child: const AuthScreen(),
+            ),
+          ),
+          GoRoute(
             path: 'projeler',
             parentNavigatorKey: _rootNavigatorKey,
             pageBuilder: (context, state) => fadePage(
               key: state.pageKey,
               child: const ProjectsScreen(),
             ),
+            routes: [
+              GoRoute(
+                path: 'katil',
+                parentNavigatorKey: _rootNavigatorKey,
+                pageBuilder: (context, state) => fadePage(
+                  key: state.pageKey,
+                  child: const JoinProjectScreen(),
+                ),
+              ),
+              GoRoute(
+                path: ':projectId/uyeler',
+                parentNavigatorKey: _rootNavigatorKey,
+                pageBuilder: (context, state) {
+                  final id = state.pathParameters['projectId'] ?? '';
+                  return fadePage(
+                    key: state.pageKey,
+                    child: ProjectMembersScreen(projectId: id),
+                  );
+                },
+              ),
+            ],
           ),
           GoRoute(
             path: 'hakkinda',

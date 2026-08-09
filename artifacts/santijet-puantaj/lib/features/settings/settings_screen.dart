@@ -349,6 +349,18 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
             onTap: () => context.push(AppRoutes.projeler),
           ),
           _SettingsTile(
+            icon: Icons.group_add_outlined,
+            title: 'İş koduna katıl',
+            subtitle: 'Paylaşılan kod ile aynı şantiye verilerine eriş',
+            onTap: () => context.push(AppRoutes.projeKatil),
+          ),
+          _SettingsTile(
+            icon: Icons.account_circle_outlined,
+            title: 'Hesap',
+            subtitle: 'Bulut girişi — ekip paylaşımı için',
+            onTap: () => context.push(AppRoutes.auth),
+          ),
+          _SettingsTile(
             icon: Icons.manage_accounts_outlined,
             title: 'Yönetim',
             subtitle: project == null

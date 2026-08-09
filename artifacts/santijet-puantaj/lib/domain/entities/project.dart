@@ -1,6 +1,8 @@
 import 'package:equatable/equatable.dart';
 
 /// Proje — puantaj kayıtları proje kapsamında tutulur.
+///
+/// [ownerId] doluysa bulut/çok kullanıcılı iş; boşsa yalnızca yerel.
 class Project extends Equatable {
   const Project({
     required this.id,
@@ -9,6 +11,7 @@ class Project extends Equatable {
     this.company = '',
     this.logoBase64 = '',
     this.logoMimeType = 'image/jpeg',
+    this.ownerId,
     this.createdAt,
   });
 
@@ -20,9 +23,14 @@ class Project extends Equatable {
   /// Firma logosu (base64) — günlük rapor PDF ve Projelerim.
   final String logoBase64;
   final String logoMimeType;
+
+  /// Sahip kullanıcı id (Supabase auth). Yerel-only projelerde null.
+  final String? ownerId;
   final DateTime? createdAt;
 
   bool get hasLogo => logoBase64.trim().isNotEmpty;
+
+  bool get isShared => ownerId != null && ownerId!.isNotEmpty;
 
   Project copyWith({
     String? id,
@@ -31,8 +39,10 @@ class Project extends Equatable {
     String? company,
     String? logoBase64,
     String? logoMimeType,
+    String? ownerId,
     DateTime? createdAt,
     bool clearLogo = false,
+    bool clearOwnerId = false,
   }) {
     return Project(
       id: id ?? this.id,
@@ -43,6 +53,7 @@ class Project extends Equatable {
       logoMimeType: clearLogo
           ? 'image/jpeg'
           : (logoMimeType ?? this.logoMimeType),
+      ownerId: clearOwnerId ? null : (ownerId ?? this.ownerId),
       createdAt: createdAt ?? this.createdAt,
     );
   }
@@ -54,6 +65,7 @@ class Project extends Equatable {
         'company': company,
         'logoBase64': logoBase64,
         'logoMimeType': logoMimeType,
+        'ownerId': ownerId,
         'createdAt': createdAt?.toIso8601String(),
       };
 
@@ -64,12 +76,23 @@ class Project extends Equatable {
         company: json['company'] as String? ?? '',
         logoBase64: json['logoBase64'] as String? ?? '',
         logoMimeType: json['logoMimeType'] as String? ?? 'image/jpeg',
+        ownerId: json['ownerId'] as String? ?? json['owner_id'] as String?,
         createdAt: json['createdAt'] != null
             ? DateTime.tryParse(json['createdAt'] as String)
-            : null,
+            : (json['created_at'] != null
+                ? DateTime.tryParse(json['created_at'] as String)
+                : null),
       );
 
   @override
-  List<Object?> get props =>
-      [id, name, code, company, logoBase64, logoMimeType, createdAt];
+  List<Object?> get props => [
+        id,
+        name,
+        code,
+        company,
+        logoBase64,
+        logoMimeType,
+        ownerId,
+        createdAt,
+      ];
 }
