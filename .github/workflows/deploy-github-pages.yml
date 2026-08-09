@@ -105,6 +105,8 @@ jobs:
         id: puantaj_build
         env:
           GITHUB_REPOSITORY_NAME: ${{ github.event.repository.name }}
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+          SUPABASE_ANON_KEY: ${{ secrets.SUPABASE_ANON_KEY }}
         run: |
           # staging push'larında staging betiği öncelikli (main checkout üzerine yazar).
           if [ -f staging-src/.github/scripts/build-puantaj-pages.sh ]; then
