@@ -63,7 +63,8 @@ class QuotePdfService {
           ),
           pw.SizedBox(height: 4),
           pw.Text(
-            'Talep: ${request.title}',
+            'Talep: ${request.displayName}'
+            '${request.pozCode.isEmpty ? '' : ' · ${request.pozCode}'}',
             style: const pw.TextStyle(fontSize: 10),
           ),
           pw.SizedBox(height: 4),
@@ -72,7 +73,7 @@ class QuotePdfService {
             style: const pw.TextStyle(fontSize: 10),
           ),
           pw.SizedBox(height: 14),
-          _table(request.lines),
+          _table(_rowsFor(request)),
           pw.SizedBox(height: 16),
           pw.Text(
             'Not: Birim fiyat ve teslim süresi tedarikçi tarafından doldurulur. '
@@ -88,7 +89,28 @@ class QuotePdfService {
     return doc.save();
   }
 
-  pw.Widget _table(List<MaterialRequestLine> lines) {
+  List<({String poz, String name, String unit, double qty})> _rowsFor(
+    MaterialRequest request,
+  ) {
+    if (request.lines.isNotEmpty) {
+      return [
+        for (final l in request.lines)
+          (poz: l.pozNo, name: l.materialName, unit: l.birim, qty: l.miktar),
+      ];
+    }
+    return [
+      (
+        poz: request.pozCode,
+        name: request.displayName,
+        unit: request.unit,
+        qty: request.quantity,
+      ),
+    ];
+  }
+
+  pw.Widget _table(
+    List<({String poz, String name, String unit, double qty})> rows,
+  ) {
     const headers = [
       'Poz',
       'Malzeme',
@@ -134,13 +156,13 @@ class QuotePdfService {
         pw.TableRow(
           children: [for (final h in headers) cell(h, header: true)],
         ),
-        for (final line in lines)
+        for (final row in rows)
           pw.TableRow(
             children: [
-              cell(line.pozNo, header: false),
-              cell(line.materialName, header: false),
-              cell(line.birim, header: false),
-              cell(_fmtQty(line.miktar), header: false),
+              cell(row.poz, header: false),
+              cell(row.name, header: false),
+              cell(row.unit, header: false),
+              cell(_fmtQty(row.qty), header: false),
               cell('', header: false),
               cell('', header: false),
             ],

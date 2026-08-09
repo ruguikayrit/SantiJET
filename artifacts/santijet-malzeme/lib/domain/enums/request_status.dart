@@ -1,37 +1,33 @@
-/// Malzeme talep durumu — Demir `OrderStatus` deseni.
+import 'package:flutter/material.dart';
+
+/// Malzeme talep durumu — ŞantiJET Pro RN `MaterialRequest.status`.
 enum RequestStatus {
-  taslak('Taslak', 0xFF64748B),
-  teklifte('Teklifte', 0xFF0EA5E9),
-  siparis('Sipariş', 0xFF3B82F6),
-  kismi('Kısmi', 0xFFF59E0B),
-  kapandi('Kapandı', 0xFF10B981);
+  pending('Beklemede', 0xFFF59E0B),
+  approved('Onaylandı', 0xFF16A34A),
+  delivered('Teslim Edildi', 0xFF2563EB),
+  rejected('Reddedildi', 0xFFDC2626);
 
   const RequestStatus(this.label, this.colorValue);
 
   final String label;
   final int colorValue;
 
-  RequestStatus? get nextStatus => switch (this) {
-        RequestStatus.taslak => RequestStatus.teklifte,
-        RequestStatus.teklifte => RequestStatus.siparis,
-        RequestStatus.siparis => RequestStatus.kismi,
-        RequestStatus.kismi => RequestStatus.kapandi,
-        RequestStatus.kapandi => null,
-      };
-
-  String get actionLabel => switch (this) {
-        RequestStatus.taslak => 'Teklife Gönder',
-        RequestStatus.teklifte => 'Sipariş Ver',
-        RequestStatus.siparis => 'Teslim Al',
-        RequestStatus.kismi => 'Kapat',
-        RequestStatus.kapandi => '',
-      };
-
-  bool get canCancel =>
-      this == RequestStatus.taslak || this == RequestStatus.teklifte;
+  /// Soft badge background (RN REQUEST_STATUS.bg).
+  Color get badgeBg => Color(colorValue).withValues(alpha: 0.15);
 
   static RequestStatus? tryParse(String? raw) {
     if (raw == null || raw.isEmpty) return null;
+    // Eski seed değerleri → yeni modele map.
+    switch (raw) {
+      case 'taslak':
+      case 'teklifte':
+        return RequestStatus.pending;
+      case 'siparis':
+      case 'kismi':
+        return RequestStatus.approved;
+      case 'kapandi':
+        return RequestStatus.delivered;
+    }
     for (final v in RequestStatus.values) {
       if (v.name == raw) return v;
     }

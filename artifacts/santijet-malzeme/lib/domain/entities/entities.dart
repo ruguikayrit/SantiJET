@@ -28,5 +28,6 @@ export 'material_request_line.dart';
 export 'project.dart';
 export 'quote_line.dart';
 export 'quote_round.dart';
+export 'request_approvals.dart';
 export 'supplier_quote.dart';
 export 'tech_sheet.dart';

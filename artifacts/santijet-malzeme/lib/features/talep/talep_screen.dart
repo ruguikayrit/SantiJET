@@ -14,7 +14,7 @@ import '../../data/providers/app_data_provider.dart';
 import 'providers/requests_list_provider.dart';
 import 'widgets/request_card.dart';
 
-/// Talep listesi — Demir `OrdersScreen` kurgu + tasarım birebir.
+/// Talep — ŞantiJET Pro RN `malzeme` → Tab Talep kurgusu.
 class TalepScreen extends ConsumerStatefulWidget {
   const TalepScreen({super.key});
 
@@ -27,7 +27,8 @@ class _TalepScreenState extends ConsumerState<TalepScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final hasActiveProject = ref.watch(activeProjectProvider) != null;
+    final project = ref.watch(activeProjectProvider);
+    final hasActiveProject = project != null;
     final requests = ref.watch(filteredRequestsProvider);
     final filterLabels = ref.watch(requestFilterLabelsProvider);
     final rawFilterIndex = ref.watch(requestFilterProvider);
@@ -39,25 +40,37 @@ class _TalepScreenState extends ConsumerState<TalepScreen> {
       });
     }
     final allRequests = ref.watch(activeRequestsProvider);
+    final projects = ref.watch(projectsProvider);
 
-    final filtered = _searchQuery.isEmpty
+    String projectName(String id) {
+      for (final p in projects) {
+        if (p.id == id) return p.name;
+      }
+      return 'Proje';
+    }
+
+    final q = _searchQuery.trim().toLowerCase();
+    final filtered = q.isEmpty
         ? requests
         : requests
             .where(
               (r) =>
-                  r.title.toLowerCase().contains(_searchQuery.toLowerCase()) ||
-                  r.notes.toLowerCase().contains(_searchQuery.toLowerCase()) ||
-                  r.lines.any(
-                    (l) =>
-                        l.materialName
-                            .toLowerCase()
-                            .contains(_searchQuery.toLowerCase()) ||
-                        l.pozNo
-                            .toLowerCase()
-                            .contains(_searchQuery.toLowerCase()),
-                  ),
+                  r.displayName.toLowerCase().contains(q) ||
+                  r.requestedBy.toLowerCase().contains(q) ||
+                  r.category.toLowerCase().contains(q) ||
+                  r.pozCode.toLowerCase().contains(q) ||
+                  r.note.toLowerCase().contains(q),
             )
             .toList();
+
+    // Malzeme adı chip’leri (RN matFilters).
+    final nameCounts = <String, int>{};
+    for (final r in allRequests) {
+      final n = r.displayName;
+      if (n.isEmpty) continue;
+      nameCounts[n] = (nameCounts[n] ?? 0) + 1;
+    }
+    final nameKeys = nameCounts.keys.toList()..sort();
 
     return Scaffold(
       backgroundColor: AppColors.canvas,
@@ -69,7 +82,7 @@ class _TalepScreenState extends ConsumerState<TalepScreen> {
             Padding(
               padding: const EdgeInsets.symmetric(horizontal: AppSpacing.md),
               child: SJSearchBar(
-                hint: 'Talep no, malzeme, poz ara...',
+                hint: 'Malzeme, talep eden, poz ara...',
                 onChanged: (v) => setState(() => _searchQuery = v),
               ),
             ),
@@ -80,31 +93,56 @@ class _TalepScreenState extends ConsumerState<TalepScreen> {
               onSelected: (i) =>
                   ref.read(requestFilterProvider.notifier).state = i,
             ),
+            if (nameKeys.isNotEmpty) ...[
+              const SizedBox(height: 8),
+              SizedBox(
+                height: 36,
+                child: ListView(
+                  scrollDirection: Axis.horizontal,
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: AppSpacing.md,
+                  ),
+                  children: [
+                    _NameChip(
+                      label: 'Tümü (${allRequests.length})',
+                      selected: _searchQuery.isEmpty,
+                      onTap: () => setState(() => _searchQuery = ''),
+                    ),
+                    for (final name in nameKeys)
+                      Padding(
+                        padding: const EdgeInsets.only(left: 8),
+                        child: _NameChip(
+                          label: '$name (${nameCounts[name]})',
+                          selected: _searchQuery == name,
+                          onTap: () => setState(() => _searchQuery = name),
+                        ),
+                      ),
+                  ],
+                ),
+              ),
+            ],
             const SizedBox(height: 12),
           ],
           Expanded(
             child: !hasActiveProject
                 ? SJEmptyState(
-                    title: 'Proje Seçilmedi',
-                    message:
-                        'Talep görmek için bir proje seçin veya yeni proje oluşturun.',
+                    title: 'Önce proje ekleyin',
+                    message: 'Malzeme talebi için aktif bir proje gerekir.',
                     icon: Icons.apartment_outlined,
-                    actionLabel: 'Projeler',
+                    actionLabel: 'Projelere Git',
                     onAction: () => context.go(AppRoutes.projeler),
                   )
                 : filtered.isEmpty
                     ? SJEmptyState(
                         title: allRequests.isEmpty
-                            ? 'Talep Yok'
-                            : 'Arama Sonucu Yok',
+                            ? 'Malzeme talebi yok'
+                            : 'Arama sonucu yok',
                         message: allRequests.isEmpty
-                            ? 'Henüz talep oluşturulmadı. Yeni talep ekleyerek başlayın.'
-                            : 'Aramanızla eşleşen kayıt bulunamadı. Filtreleri değiştirin.',
-                        icon: allRequests.isEmpty
-                            ? Icons.receipt_long_outlined
-                            : Icons.manage_search_outlined,
+                            ? 'Yeni malzeme taleplerini buraya ekleyin'
+                            : 'Filtreleri değiştirin',
+                        icon: Icons.assignment_outlined,
                         actionLabel:
-                            allRequests.isEmpty ? 'Yeni Talep' : null,
+                            allRequests.isEmpty ? 'Talep Ekle' : null,
                         onAction: allRequests.isEmpty
                             ? () => context.go(AppRoutes.kesif)
                             : null,
@@ -118,7 +156,11 @@ class _TalepScreenState extends ConsumerState<TalepScreen> {
                         ),
                         itemCount: filtered.length,
                         itemBuilder: (context, index) {
-                          return RequestCard(request: filtered[index]);
+                          final r = filtered[index];
+                          return RequestCard(
+                            request: r,
+                            projectName: projectName(r.projectId),
+                          );
                         },
                       ),
           ),
@@ -126,10 +168,45 @@ class _TalepScreenState extends ConsumerState<TalepScreen> {
       ),
       floatingActionButton: hasActiveProject
           ? SJFab(
-              label: 'Yeni Talep',
+              label: 'Talep Ekle',
               onPressed: () => context.go(AppRoutes.kesif),
             )
           : null,
+    );
+  }
+}
+
+class _NameChip extends StatelessWidget {
+  const _NameChip({
+    required this.label,
+    required this.selected,
+    required this.onTap,
+  });
+
+  final String label;
+  final bool selected;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    return FilterChip(
+      label: Text(label, maxLines: 1, overflow: TextOverflow.ellipsis),
+      selected: selected,
+      onSelected: (_) => onTap(),
+      showCheckmark: false,
+      selectedColor: AppColors.electricBlue.withValues(alpha: 0.22),
+      backgroundColor: AppColors.surfaceElevated,
+      side: BorderSide(
+        color: selected ? AppColors.electricBlue : AppColors.border,
+      ),
+      labelStyle: TextStyle(
+        fontSize: 12,
+        fontWeight: FontWeight.w500,
+        color: selected ? AppColors.textPrimary : AppColors.textMuted,
+      ),
+      visualDensity: VisualDensity.compact,
+      materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
+      padding: const EdgeInsets.symmetric(horizontal: 10),
     );
   }
 }

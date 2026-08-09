@@ -193,8 +193,9 @@ final activeKesifProvider = Provider<KesifSnapshot?>((ref) {
 });
 
 class RequestsNotifier extends StateNotifier<List<MaterialRequest>> {
-  RequestsNotifier(this._box) : super(_load(_box));
+  RequestsNotifier(this._ref, this._box) : super(_load(_box));
 
+  final Ref _ref;
   final Box _box;
   static const _key = 'items';
 
@@ -218,23 +219,99 @@ class RequestsNotifier extends StateNotifier<List<MaterialRequest>> {
     _persist();
   }
 
-  void advanceStatus(String id) {
-    state = [
-      for (final r in state)
-        if (r.id == id)
-          r.copyWith(status: r.status.nextStatus ?? r.status)
-        else
-          r,
-    ];
-    _persist();
+  /// Pro RN: onay checkbox — 3’ü dolunca status=approved + auto Gelen.
+  void setApproval(
+    String id, {
+    bool? sef,
+    bool? mudur,
+    bool? satinAlma,
+  }) {
+    MaterialRequest? before;
+    for (final r in state) {
+      if (r.id == id) before = r;
+    }
+    if (before == null) return;
+
+    final approvals = before.approvals.copyWith(
+      sef: sef,
+      mudur: mudur,
+      satinAlma: satinAlma,
+    );
+    var after = before.copyWith(approvals: approvals);
+    final wasAll = before.approvals.allApproved;
+    final isAll = approvals.allApproved;
+
+    if (isAll && !wasAll) {
+      after = after.copyWith(
+        status: after.status == RequestStatus.delivered
+            ? RequestStatus.delivered
+            : RequestStatus.approved,
+      );
+      _ensureGelenFromRequest(after);
+    } else if (!isAll && wasAll) {
+      if (after.status == RequestStatus.approved) {
+        after = after.copyWith(status: RequestStatus.pending);
+      }
+      _removeAutoGelen(id);
+    }
+
+    update(after);
   }
 
-  void cancel(String id) {
-    state = [
-      for (final r in state)
-        if (r.id == id) r.copyWith(status: RequestStatus.kapandi) else r,
-    ];
-    _persist();
+  void markDelivered(String id, String receivedBy) {
+    final name = receivedBy.trim();
+    if (name.isEmpty) return;
+    update(
+      state.firstWhere((r) => r.id == id).copyWith(
+            status: RequestStatus.delivered,
+            receivedBy: name,
+          ),
+    );
+  }
+
+  void unmarkDelivered(String id) {
+    update(
+      state.firstWhere((r) => r.id == id).copyWith(
+            status: RequestStatus.approved,
+            receivedBy: '',
+          ),
+    );
+  }
+
+  void reject(String id) {
+    update(
+      state.firstWhere((r) => r.id == id).copyWith(
+            status: RequestStatus.rejected,
+          ),
+    );
+    _removeAutoGelen(id);
+  }
+
+  void _ensureGelenFromRequest(MaterialRequest req) {
+    final deliveries = _ref.read(deliveriesProvider);
+    if (deliveries.any((d) => d.materialRequestId == req.id)) return;
+    _ref.read(deliveriesProvider.notifier).upsert(
+          Delivery(
+            id: IdGen.make('dlv'),
+            projectId: req.projectId,
+            name: req.displayName,
+            category: req.category,
+            unit: req.unit,
+            quantity: req.quantity,
+            date: DateTime.now(),
+            materialRequestId: req.id,
+            pozCode: req.pozCode,
+            notes: 'Talepten otomatik oluşturuldu',
+          ),
+        );
+  }
+
+  void _removeAutoGelen(String requestId) {
+    final kept = _ref
+        .read(deliveriesProvider)
+        .where((d) => d.materialRequestId != requestId)
+        .toList();
+    _ref.read(deliveriesProvider.notifier).replaceAll(kept);
   }
 
   void replaceAll(List<MaterialRequest> items) {
@@ -250,7 +327,7 @@ class RequestsNotifier extends StateNotifier<List<MaterialRequest>> {
 
 final requestsProvider =
     StateNotifierProvider<RequestsNotifier, List<MaterialRequest>>((ref) {
-  return RequestsNotifier(ref.watch(requestsBoxProvider));
+  return RequestsNotifier(ref, ref.watch(requestsBoxProvider));
 });
 
 final activeRequestsProvider = Provider<List<MaterialRequest>>((ref) {
@@ -419,14 +496,14 @@ final homeKpisProvider = Provider<HomeKpis>((ref) {
   final library = ref.watch(libraryProvider);
 
   final open = requests
-      .where((r) => r.status != RequestStatus.kapandi)
-      .length;
-  final pending = requests
       .where(
         (r) =>
-            r.status == RequestStatus.siparis ||
-            r.status == RequestStatus.kismi,
+            r.status == RequestStatus.pending ||
+            r.status == RequestStatus.approved,
       )
+      .length;
+  final pending = requests
+      .where((r) => r.status == RequestStatus.approved)
       .length;
 
   return HomeKpis(

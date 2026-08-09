@@ -7,6 +7,7 @@ import '../../domain/enums/request_status.dart';
 import 'app_data_provider.dart';
 
 /// Ayarlar → Demo: Malzeme akışını test etmeye yetecek örnek veri.
+/// Pro RN `malzeme` kurgusu: tek kalem talep + 3 onay + talepten Gelen.
 class DemoSeedController {
   DemoSeedController(this._ref);
 
@@ -20,9 +21,9 @@ class DemoSeedController {
     _ref.read(activeProjectIdProvider.notifier).set(project.id);
 
     final kesif = _replaceKesif(project.id);
-    final request = _replaceRequests(project.id, kesif);
-    _replaceQuotes(project.id, request);
-    _replaceDeliveries(project.id, request);
+    final requests = _replaceRequests(project.id, kesif);
+    _replaceQuotes(project.id, requests);
+    _replaceDeliveries(project.id, requests);
     _replaceLibrary();
     return project;
   }
@@ -129,56 +130,130 @@ class DemoSeedController {
     return snapshot;
   }
 
-  MaterialRequest _replaceRequests(String projectId, KesifSnapshot kesif) {
+  List<MaterialRequest> _replaceRequests(
+    String projectId,
+    KesifSnapshot kesif,
+  ) {
     final kept = _ref
         .read(requestsProvider)
         .where((e) => e.projectId != projectId)
         .toList();
 
     final selected = kesif.lines.take(4).toList();
-    final lines = selected
-        .map(
-          (l) => MaterialRequestLine(
-            id: IdGen.make('rln'),
-            materialName:
-                l.materialHint.isNotEmpty ? l.materialHint : l.tanim,
-            birim: l.birim,
-            miktar: l.miktar,
-            kesifLineId: l.id,
-            pozNo: l.pozNo,
-          ),
-        )
-        .toList();
+    final now = DateTime.now();
+    final requests = <MaterialRequest>[
+      // Beklemede — kısmi onay
+      MaterialRequest(
+        id: IdGen.make('req'),
+        projectId: projectId,
+        name: selected[0].materialHint.isNotEmpty
+            ? selected[0].materialHint
+            : selected[0].tanim,
+        category: selected[0].altGrup,
+        unit: selected[0].birim,
+        quantity: selected[0].miktar,
+        requestDate: now.subtract(const Duration(days: 2)),
+        requestedBy: 'Ahmet Yılmaz',
+        status: RequestStatus.pending,
+        note: 'Blok A ıslak hacimler',
+        usageLocation: 'Blok A',
+        pozCode: selected[0].pozNo,
+        approvals: const RequestApprovals(sef: true),
+        kesifLineId: selected[0].id,
+        kesifSnapshotId: kesif.id,
+      ),
+      // Onaylandı — 3 onay → Teslim’de Gelen oluşur
+      MaterialRequest(
+        id: IdGen.make('req'),
+        projectId: projectId,
+        name: selected[1].materialHint.isNotEmpty
+            ? selected[1].materialHint
+            : selected[1].tanim,
+        category: selected[1].altGrup,
+        unit: selected[1].birim,
+        quantity: selected[1].miktar,
+        requestDate: now.subtract(const Duration(days: 5)),
+        requestedBy: 'Mehmet Kaya',
+        status: RequestStatus.approved,
+        note: 'Kat boyası partisi',
+        usageLocation: 'Blok B',
+        pozCode: selected[1].pozNo,
+        approvals: const RequestApprovals(
+          sef: true,
+          mudur: true,
+          satinAlma: true,
+        ),
+        kesifLineId: selected[1].id,
+        kesifSnapshotId: kesif.id,
+      ),
+      // Teslim edildi
+      MaterialRequest(
+        id: IdGen.make('req'),
+        projectId: projectId,
+        name: selected[2].tanim,
+        category: selected[2].altGrup,
+        unit: selected[2].birim,
+        quantity: selected[2].miktar,
+        requestDate: now.subtract(const Duration(days: 10)),
+        requestedBy: 'Ayşe Demir',
+        status: RequestStatus.delivered,
+        note: 'Cephe yalıtım',
+        usageLocation: 'Cephe',
+        pozCode: selected[2].pozNo,
+        approvals: const RequestApprovals(
+          sef: true,
+          mudur: true,
+          satinAlma: true,
+        ),
+        receivedBy: 'Saha Depo',
+        kesifLineId: selected[2].id,
+        kesifSnapshotId: kesif.id,
+      ),
+      // Reddedildi
+      MaterialRequest(
+        id: IdGen.make('req'),
+        projectId: projectId,
+        name: selected[3].tanim,
+        category: selected[3].altGrup,
+        unit: selected[3].birim,
+        quantity: selected[3].miktar,
+        requestDate: now.subtract(const Duration(days: 3)),
+        requestedBy: 'Can Öztürk',
+        status: RequestStatus.rejected,
+        note: 'Stoktan karşılanacak',
+        pozCode: selected[3].pozNo,
+        kesifLineId: selected[3].id,
+        kesifSnapshotId: kesif.id,
+      ),
+    ];
 
-    final request = MaterialRequest(
-      id: IdGen.make('req'),
-      projectId: projectId,
-      title: 'TLP-2026-0001',
-      kesifSnapshotId: kesif.id,
-      status: RequestStatus.taslak,
-      createdAt: DateTime.now(),
-      notes: 'Demo taslak talep — 2 sahte tedarikçi teklifiyle mukayese.',
-      lines: lines,
-    );
-
-    _ref.read(requestsProvider.notifier).replaceAll([...kept, request]);
-    return request;
+    _ref.read(requestsProvider.notifier).replaceAll([...kept, ...requests]);
+    return requests;
   }
 
-  void _replaceQuotes(String projectId, MaterialRequest request) {
+  void _replaceQuotes(String projectId, List<MaterialRequest> requests) {
     final kept = _ref
         .read(quotesProvider)
         .where((e) => e.projectId != projectId)
         .toList();
 
-    QuoteLine lineFor(MaterialRequestLine rl, double price) => QuoteLine(
+    final open = requests
+        .where((r) => r.status != RequestStatus.rejected)
+        .take(3)
+        .toList();
+    if (open.isEmpty) {
+      _ref.read(quotesProvider.notifier).replaceAll(kept);
+      return;
+    }
+
+    QuoteLine lineFor(MaterialRequest r, double price) => QuoteLine(
           id: IdGen.make('qln'),
-          requestLineId: rl.id,
-          quantity: rl.miktar,
+          requestLineId: r.id,
+          quantity: r.quantity,
           unitPrice: price,
-          pozNo: rl.pozNo,
-          materialName: rl.materialName,
-          birim: rl.birim,
+          pozNo: r.pozCode,
+          materialName: r.displayName,
+          birim: r.unit,
         );
 
     final a = SupplierQuote(
@@ -187,8 +262,8 @@ class DemoSeedController {
       paymentTermDays: 30,
       deliveryDays: 7,
       lines: [
-        for (var i = 0; i < request.lines.length; i++)
-          lineFor(request.lines[i], [48, 22, 95, 18][i % 4].toDouble()),
+        for (var i = 0; i < open.length; i++)
+          lineFor(open[i], [48, 22, 95, 18][i % 4].toDouble()),
       ],
     );
     final b = SupplierQuote(
@@ -197,15 +272,15 @@ class DemoSeedController {
       paymentTermDays: 45,
       deliveryDays: 10,
       lines: [
-        for (var i = 0; i < request.lines.length; i++)
-          lineFor(request.lines[i], [45, 24, 89, 19][i % 4].toDouble()),
+        for (var i = 0; i < open.length; i++)
+          lineFor(open[i], [45, 24, 89, 19][i % 4].toDouble()),
       ],
     );
 
     final round = QuoteRound(
       id: IdGen.make('qrd'),
       projectId: projectId,
-      requestId: request.id,
+      requestId: open.first.id,
       title: 'Teklif turu — demo',
       createdAt: DateTime.now(),
       quotes: [a, b],
@@ -214,43 +289,63 @@ class DemoSeedController {
     _ref.read(quotesProvider.notifier).replaceAll([...kept, round]);
   }
 
-  void _replaceDeliveries(String projectId, MaterialRequest request) {
+  void _replaceDeliveries(String projectId, List<MaterialRequest> requests) {
     final kept = _ref
         .read(deliveriesProvider)
         .where((e) => e.projectId != projectId)
         .toList();
 
-    if (request.lines.isEmpty) {
-      _ref.read(deliveriesProvider.notifier).replaceAll(kept);
-      return;
-    }
+    final deliveries = <Delivery>[];
 
-    final first = request.lines.first;
-    final delivery = Delivery(
-      id: IdGen.make('dlv'),
-      projectId: projectId,
-      date: DateTime.now().subtract(const Duration(days: 1)),
-      requestId: request.id,
-      irsaliyeNo: 'IRS-2026-0142',
-      supplierName: 'Anadolu Yapı Malzeme',
-      lines: [
-        DeliveryLine(
-          id: IdGen.make('dln'),
-          materialName: first.materialName,
-          birim: first.birim,
-          quantity: first.miktar * 0.4,
-          requestLineId: first.id,
-          kesifLineId: first.kesifLineId,
-          pozNo: first.pozNo,
-        ),
-      ],
+    // Manuel gelen (irsaliye)
+    deliveries.add(
+      Delivery(
+        id: IdGen.make('dlv'),
+        projectId: projectId,
+        name: 'Çimento CEM I 42.5',
+        category: 'Bağlayıcı',
+        unit: 'ton',
+        quantity: 24,
+        irsaliyeQty: 24,
+        date: DateTime.now().subtract(const Duration(days: 1)),
+        supplier: 'Anadolu Yapı Malzeme',
+        waybillNo: 'IRS-2026-0142',
+        kantarEnabled: true,
+      ),
     );
 
-    _ref.read(deliveriesProvider.notifier).replaceAll([...kept, delivery]);
+    // Onaylı talepler → Talepten Gelen
+    for (final r in requests) {
+      if (!r.approvals.allApproved) continue;
+      if (r.status == RequestStatus.rejected) continue;
+      deliveries.add(
+        Delivery(
+          id: IdGen.make('dlv'),
+          projectId: projectId,
+          name: r.displayName,
+          category: r.category,
+          unit: r.unit,
+          quantity: r.quantity,
+          irsaliyeQty: r.status == RequestStatus.delivered
+              ? r.quantity
+              : r.quantity * 0.6,
+          date: DateTime.now().subtract(const Duration(days: 2)),
+          supplier: 'Anadolu Yapı Malzeme',
+          waybillNo: 'IRS-TLP-${r.pozCode.replaceAll('.', '')}',
+          materialRequestId: r.id,
+          pozCode: r.pozCode,
+          notes: 'Talepten otomatik oluşturuldu',
+          kantarEnabled: false,
+        ),
+      );
+    }
+
+    _ref
+        .read(deliveriesProvider.notifier)
+        .replaceAll([...kept, ...deliveries]);
   }
 
   void _replaceLibrary() {
-    // Dosya yok — sadece placeholder metadata (Faz 3: dosya deposu).
     _ref.read(libraryProvider.notifier).replaceAll([
       TechSheet(
         id: IdGen.make('tds'),

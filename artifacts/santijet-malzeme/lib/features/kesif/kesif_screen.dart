@@ -193,30 +193,26 @@ class _KesifScreenState extends ConsumerState<KesifScreen> {
     final lines = kesif.lines.where((l) => _selected.contains(l.id)).toList();
     if (lines.isEmpty) return;
 
-    final year = DateTime.now().year;
-    final seq = (ref.read(requestsProvider).length + 1).toString().padLeft(4, '0');
-    final request = MaterialRequest(
-      id: IdGen.make('req'),
-      projectId: projectId,
-      title: 'TLP-$year-$seq',
-      kesifSnapshotId: kesif.id,
-      status: RequestStatus.taslak,
-      createdAt: DateTime.now(),
-      lines: [
-        for (final l in lines)
-          MaterialRequestLine(
-            id: IdGen.make('rln'),
-            materialName:
-                l.materialHint.isNotEmpty ? l.materialHint : l.tanim,
-            birim: l.birim,
-            miktar: l.miktar,
-            kesifLineId: l.id,
-            pozNo: l.pozNo,
-          ),
-      ],
-    );
+    final now = DateTime.now();
+    for (final l in lines) {
+      ref.read(requestsProvider.notifier).add(
+            MaterialRequest(
+              id: IdGen.make('req'),
+              projectId: projectId,
+              name: l.materialHint.isNotEmpty ? l.materialHint : l.tanim,
+              category: l.altGrup,
+              unit: l.birim,
+              quantity: l.miktar,
+              requestDate: now,
+              requestedBy: 'Saha',
+              status: RequestStatus.pending,
+              pozCode: l.pozNo,
+              kesifLineId: l.id,
+              kesifSnapshotId: kesif.id,
+            ),
+          );
+    }
 
-    ref.read(requestsProvider.notifier).add(request);
     setState(() => _selected.clear());
     context.go(AppRoutes.talep);
   }

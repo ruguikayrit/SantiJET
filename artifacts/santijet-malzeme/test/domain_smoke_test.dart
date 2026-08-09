@@ -1,4 +1,7 @@
 import 'package:flutter_test/flutter_test.dart';
+import 'package:santijet_malzeme/domain/entities/delivery.dart';
+import 'package:santijet_malzeme/domain/entities/material_request.dart';
+import 'package:santijet_malzeme/domain/entities/request_approvals.dart';
 import 'package:santijet_malzeme/domain/entities/kesif_line.dart';
 import 'package:santijet_malzeme/domain/entities/kesif_snapshot.dart';
 import 'package:santijet_malzeme/domain/enums/main_discipline.dart';
@@ -37,8 +40,98 @@ void main() {
     expect(tree[MainDiscipline.elektrik]!['Pano / kablo']!.first.pozNo, '2');
   });
 
-  test('RequestStatus labels', () {
-    expect(RequestStatus.teklifte.label, 'Teklifte');
-    expect(RequestStatus.tryParse('kismi'), RequestStatus.kismi);
+  test('RequestStatus RN labels and legacy parse', () {
+    expect(RequestStatus.pending.label, 'Beklemede');
+    expect(RequestStatus.approved.label, 'Onaylandı');
+    expect(RequestStatus.delivered.label, 'Teslim Edildi');
+    expect(RequestStatus.rejected.label, 'Reddedildi');
+    expect(RequestStatus.tryParse('taslak'), RequestStatus.pending);
+    expect(RequestStatus.tryParse('kismi'), RequestStatus.approved);
+    expect(RequestStatus.tryParse('kapandi'), RequestStatus.delivered);
+  });
+
+  test('3 approvals allApproved — Pro RN zinciri', () {
+    expect(const RequestApprovals().allApproved, isFalse);
+    expect(const RequestApprovals(sef: true, mudur: true).allApproved, isFalse);
+    expect(
+      const RequestApprovals(sef: true, mudur: true, satinAlma: true)
+          .allApproved,
+      isTrue,
+    );
+  });
+
+  test('MaterialRequest single-item JSON roundtrip + legacy lines', () {
+    final req = MaterialRequest(
+      id: 'r1',
+      projectId: 'p1',
+      name: 'İç cephe boyası',
+      category: 'Boyalar',
+      unit: 'm²',
+      quantity: 1800,
+      status: RequestStatus.pending,
+      approvals: const RequestApprovals(sef: true),
+      pozCode: 'Y.18.045',
+    );
+    final back = MaterialRequest.fromJson(req.toJson());
+    expect(back.displayName, 'İç cephe boyası');
+    expect(back.approvals.sef, isTrue);
+    expect(back.quantity, 1800);
+
+    final legacy = MaterialRequest.fromJson({
+      'id': 'r2',
+      'projectId': 'p1',
+      'title': 'TLP-OLD',
+      'status': 'teklifte',
+      'lines': [
+        {
+          'id': 'l1',
+          'materialName': 'XPS 5cm',
+          'birim': 'm²',
+          'miktar': 650,
+          'pozNo': 'Y.25.012',
+        },
+      ],
+    });
+    expect(legacy.displayName, 'TLP-OLD');
+    expect(legacy.status, RequestStatus.pending);
+    expect(legacy.unit, 'm²');
+    expect(legacy.quantity, 650);
+  });
+
+  test('Delivery fromRequest + legacy irsaliye JSON', () {
+    final d = Delivery(
+      id: 'd1',
+      projectId: 'p1',
+      name: 'Boyası',
+      unit: 'm²',
+      quantity: 1000,
+      date: DateTime(2026, 3, 1),
+      materialRequestId: 'r1',
+      irsaliyeQty: 900,
+      waybillNo: 'IRS-1',
+    );
+    expect(d.fromRequest, isTrue);
+    final back = Delivery.fromJson(d.toJson());
+    expect(back.materialRequestId, 'r1');
+    expect(back.irsaliyeQty, 900);
+
+    final legacy = Delivery.fromJson({
+      'id': 'd2',
+      'projectId': 'p1',
+      'date': '2026-03-01T00:00:00.000',
+      'irsaliyeNo': 'IRS-OLD',
+      'supplierName': 'Firma',
+      'lines': [
+        {
+          'materialName': 'Çimento',
+          'birim': 'ton',
+          'quantity': 24,
+        },
+      ],
+    });
+    expect(legacy.name, 'Çimento');
+    expect(legacy.waybillNo, 'IRS-OLD');
+    expect(legacy.supplier, 'Firma');
+    expect(legacy.fromRequest, isFalse);
   });
 }
