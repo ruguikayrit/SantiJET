@@ -17,7 +17,8 @@ import 'page_transitions.dart';
 
 final _rootNavigatorKey = GlobalKey<NavigatorState>();
 
-/// Alt sekmeler: Ana Sayfa, Keşif, Sipariş, Döküm, Ayarlar.
+/// Alt sekmeler: Ana Sayfa, Keşif, Sipariş, Döküm, Test.
+/// Ayarlar sağ üstten açılır (root navigator).
 final routerProvider = Provider<GoRouter>((ref) {
   return GoRouter(
     navigatorKey: _rootNavigatorKey,
@@ -29,6 +30,42 @@ final routerProvider = Provider<GoRouter>((ref) {
           key: state.pageKey,
           child: const SplashScreen(),
         ),
+      ),
+      GoRoute(
+        path: AppRoutes.ayarlar,
+        parentNavigatorKey: _rootNavigatorKey,
+        pageBuilder: (context, state) => fadePage(
+          key: state.pageKey,
+          child: const SettingsScreen(),
+        ),
+        routes: [
+          GoRoute(
+            path: 'projeler',
+            parentNavigatorKey: _rootNavigatorKey,
+            pageBuilder: (context, state) => fadePage(
+              key: state.pageKey,
+              child: const ProjectsScreen(),
+            ),
+            routes: [
+              GoRoute(
+                path: 'katil',
+                parentNavigatorKey: _rootNavigatorKey,
+                pageBuilder: (context, state) => fadePage(
+                  key: state.pageKey,
+                  child: const JoinProjectScreen(),
+                ),
+              ),
+            ],
+          ),
+          GoRoute(
+            path: 'hakkinda',
+            parentNavigatorKey: _rootNavigatorKey,
+            pageBuilder: (context, state) => fadePage(
+              key: state.pageKey,
+              child: const AboutScreen(),
+            ),
+          ),
+        ],
       ),
       StatefulShellRoute.indexedStack(
         builder: (context, state, navigationShell) =>
@@ -79,43 +116,11 @@ final routerProvider = Provider<GoRouter>((ref) {
           StatefulShellBranch(
             routes: [
               GoRoute(
-                path: AppRoutes.ayarlar,
+                path: AppRoutes.test,
                 pageBuilder: (context, state) => fadePage(
                   key: state.pageKey,
-                  child: const SettingsScreen(),
+                  child: const QualityScreen(),
                 ),
-                routes: [
-                  GoRoute(
-                    path: 'projeler',
-                    pageBuilder: (context, state) => fadePage(
-                      key: state.pageKey,
-                      child: const ProjectsScreen(),
-                    ),
-                    routes: [
-                      GoRoute(
-                        path: 'katil',
-                        pageBuilder: (context, state) => fadePage(
-                          key: state.pageKey,
-                          child: const JoinProjectScreen(),
-                        ),
-                      ),
-                    ],
-                  ),
-                  GoRoute(
-                    path: 'kalite',
-                    pageBuilder: (context, state) => fadePage(
-                      key: state.pageKey,
-                      child: const QualityScreen(),
-                    ),
-                  ),
-                  GoRoute(
-                    path: 'hakkinda',
-                    pageBuilder: (context, state) => fadePage(
-                      key: state.pageKey,
-                      child: const AboutScreen(),
-                    ),
-                  ),
-                ],
               ),
             ],
           ),

@@ -223,7 +223,7 @@ class HomeScreen extends ConsumerWidget {
                   _SummarySection(
                     title: 'Beton Numune',
                     icon: Icons.science_outlined,
-                    onTap: () => context.push(AppRoutes.kalite),
+                    onTap: () => context.go(AppRoutes.test),
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.stretch,
                       children: [

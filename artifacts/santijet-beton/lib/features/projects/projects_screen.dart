@@ -36,7 +36,13 @@ class _ProjectsScreenState extends ConsumerState<ProjectsScreen> {
         title: const Text('Projelerim'),
         leading: IconButton(
           icon: const Icon(Icons.arrow_back),
-          onPressed: () => context.go(AppRoutes.ayarlar),
+          onPressed: () {
+            if (context.canPop()) {
+              context.pop();
+            } else {
+              context.go(AppRoutes.ayarlar);
+            }
+          },
         ),
       ),
       body: ListView(

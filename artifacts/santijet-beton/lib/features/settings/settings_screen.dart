@@ -173,7 +173,19 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
 
     return Scaffold(
       backgroundColor: AppColors.canvas,
-      appBar: AppBar(title: const Text('Ayarlar')),
+      appBar: AppBar(
+        title: const Text('Ayarlar'),
+        leading: IconButton(
+          icon: const Icon(Icons.arrow_back),
+          onPressed: () {
+            if (context.canPop()) {
+              context.pop();
+            } else {
+              context.go(AppRoutes.home);
+            }
+          },
+        ),
+      ),
       body: ListView(
         padding: const EdgeInsets.all(AppSpacing.md),
         children: [
@@ -182,12 +194,6 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
             title: 'Projelerim',
             subtitle: project?.name ?? 'Proje seç veya oluştur',
             onTap: () => context.push(AppRoutes.projeler),
-          ),
-          _SettingsTile(
-            icon: Icons.science_outlined,
-            title: 'Basınç dayanım raporları',
-            subtitle: 'Temel · Kolon · Perde · Döşeme laboratuvar kayıtları',
-            onTap: () => context.push(AppRoutes.kalite),
           ),
           _SettingsTile(
             icon: Icons.dark_mode,

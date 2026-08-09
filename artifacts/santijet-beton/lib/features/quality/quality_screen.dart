@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:go_router/go_router.dart';
 
 import '../../core/design_system/sj_button.dart';
 import '../../core/design_system/sj_empty_state.dart';
@@ -8,10 +7,10 @@ import '../../core/design_system/sj_filter_chips.dart';
 import '../../core/design_system/sj_list_item.dart';
 import '../../core/design_system/sj_modal.dart';
 import '../../core/design_system/sj_status_badge.dart';
-import '../../core/routing/app_routes.dart';
 import '../../core/theme/app_colors.dart';
 import '../../core/theme/app_spacing.dart';
 import '../../core/utils/app_date.dart';
+import '../../core/widgets/santijet_header.dart';
 import '../../data/providers/app_data_provider.dart';
 import '../../data/services/quality_export_service.dart';
 import '../../domain/entities/project.dart';
@@ -74,19 +73,6 @@ class _QualityScreenState extends ConsumerState<QualityScreen> {
     final filtered = _applyFilters(samples);
 
     return Scaffold(
-      appBar: AppBar(
-        title: const Text('Basınç Dayanım Raporları'),
-        leading: IconButton(
-          icon: const Icon(Icons.arrow_back),
-          onPressed: () {
-            if (context.canPop()) {
-              context.pop();
-            } else {
-              context.go(AppRoutes.ayarlar);
-            }
-          },
-        ),
-      ),
       floatingActionButton: project == null
           ? null
           : FloatingActionButton.extended(
@@ -94,176 +80,199 @@ class _QualityScreenState extends ConsumerState<QualityScreen> {
               icon: const Icon(Icons.add),
               label: const Text('Rapor Ekle'),
             ),
-      body: project == null
-          ? const SJEmptyState(
-              title: 'Proje seçin',
-              message: 'Basınç dayanım raporları proje kapsamında tutulur.',
-              icon: Icons.apartment_outlined,
-            )
-          : samples.isEmpty
-              ? SJEmptyState(
-                  title: 'Rapor yok',
-                  message:
-                      'Laboratuvar basınç dayanım raporundaki önemli alanları '
-                      'Temel / Kolon / Perde / Döşeme gruplarında kaydedin.',
-                  icon: Icons.science_outlined,
-                  actionLabel: 'Rapor Ekle',
-                  onAction: () => _openEditor(context, ref),
-                )
-              : Column(
-                  crossAxisAlignment: CrossAxisAlignment.stretch,
-                  children: [
-                    Padding(
-                      padding: const EdgeInsets.fromLTRB(
-                        AppSpacing.md,
-                        AppSpacing.sm,
-                        AppSpacing.md,
-                        0,
-                      ),
-                      child: Row(
-                        children: [
-                          Expanded(
-                            child: SJButton(
-                              label: 'PDF',
-                              icon: Icons.picture_as_pdf_outlined,
-                              variant: SJButtonVariant.secondary,
-                              onPressed: filtered.isEmpty
-                                  ? null
-                                  : () => _exportPdf(
-                                        context,
-                                        project: project,
-                                        samples: filtered,
-                                      ),
-                            ),
-                          ),
-                          const SizedBox(width: AppSpacing.sm),
-                          Expanded(
-                            child: SJButton(
-                              label: 'Excel',
-                              icon: Icons.table_chart_outlined,
-                              variant: SJButtonVariant.secondary,
-                              onPressed: filtered.isEmpty
-                                  ? null
-                                  : () => _exportExcel(
-                                        context,
-                                        project: project,
-                                        samples: filtered,
-                                      ),
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-                    Padding(
-                      padding: const EdgeInsets.fromLTRB(
-                        AppSpacing.md,
-                        AppSpacing.sm,
-                        AppSpacing.md,
-                        0,
-                      ),
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.stretch,
-                        children: [
-                          Text(
-                            'Yapısal eleman',
-                            style: Theme.of(context).textTheme.labelLarge,
-                          ),
-                          const SizedBox(height: AppSpacing.xs),
-                          SJFilterChips(
-                            labels: _elementLabels,
-                            selectedIndex: _elementFilter.index,
-                            onSelected: (i) => setState(
-                              () => _elementFilter = _ElementFilter.values[i],
-                            ),
-                          ),
-                          const SizedBox(height: AppSpacing.sm),
-                          Text(
-                            'Durum',
-                            style: Theme.of(context).textTheme.labelLarge,
-                          ),
-                          const SizedBox(height: AppSpacing.xs),
-                          SJFilterChips(
-                            labels: _statusLabels,
-                            selectedIndex: _statusFilter.index,
-                            onSelected: (i) => setState(
-                              () => _statusFilter = _StatusFilter.values[i],
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-                    Expanded(
-                      child: filtered.isEmpty
-                          ? const SJEmptyState(
-                              title: 'Filtrede sonuç yok',
-                              message:
-                                  'Seçili yapısal eleman veya durum filtresine '
-                                  'uyan rapor bulunamadı.',
-                              icon: Icons.filter_alt_off_outlined,
-                            )
-                          : ListView.separated(
+      body: SafeArea(
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            const SantijetHeader(subtitle: 'Test', avatarInitial: 'SJ'),
+            Expanded(
+              child: project == null
+                  ? const SJEmptyState(
+                      title: 'Proje seçin',
+                      message:
+                          'Basınç dayanım raporları proje kapsamında tutulur.',
+                      icon: Icons.apartment_outlined,
+                    )
+                  : samples.isEmpty
+                      ? SJEmptyState(
+                          title: 'Rapor yok',
+                          message:
+                              'Laboratuvar basınç dayanım raporundaki önemli '
+                              'alanları Temel / Kolon / Perde / Döşeme '
+                              'gruplarında kaydedin.',
+                          icon: Icons.science_outlined,
+                          actionLabel: 'Rapor Ekle',
+                          onAction: () => _openEditor(context, ref),
+                        )
+                      : Column(
+                          crossAxisAlignment: CrossAxisAlignment.stretch,
+                          children: [
+                            Padding(
                               padding: const EdgeInsets.fromLTRB(
                                 AppSpacing.md,
                                 AppSpacing.sm,
                                 AppSpacing.md,
-                                88,
+                                0,
                               ),
-                              itemCount: filtered.length,
-                              separatorBuilder: (_, __) =>
-                                  const SizedBox(height: AppSpacing.sm),
-                              itemBuilder: (context, index) {
-                                final s = filtered[index];
-                                final strength = s.strengthMpa == null
-                                    ? 'Sonuç bekleniyor'
-                                    : 'Ort. ${s.strengthMpa!.toStringAsFixed(1)} MPa';
-                                final min = s.minStrengthMpa == null
-                                    ? null
-                                    : 'Min ${s.minStrengthMpa!.toStringAsFixed(1)} MPa';
-                                final compliance = switch (s.isCompliant) {
-                                  true => 'Uygun',
-                                  false => 'Uygunsuz',
-                                  null =>
-                                    s.isPending ? 'Bekliyor' : 'Karar yok',
-                                };
-                                return SJListItem(
-                                  title: s.sampleCode.isEmpty
-                                      ? (s.labReportNo.isEmpty
-                                          ? s.elementGroup.label
-                                          : s.labReportNo)
-                                      : s.sampleCode,
-                                  subtitle: [
-                                    '${s.elementGroup.label} · ${s.concreteClass}',
-                                    '${s.sampleDate} · ${s.ageDays} gün · $strength',
-                                    if (min != null) min,
-                                    if (s.labReportNo.isNotEmpty)
-                                      'Rapor: ${s.labReportNo}',
-                                  ].join('\n'),
-                                  leadingIcon: Icons.science_outlined,
-                                  accentColor: switch (s.isCompliant) {
-                                    true => AppColors.success,
-                                    false => AppColors.critical,
-                                    null => s.isPending
-                                        ? AppColors.partial
-                                        : AppColors.info,
-                                  },
-                                  trailing: SJStatusBadge(
-                                    label: compliance,
-                                    color: switch (s.isCompliant) {
-                                      true => AppColors.success,
-                                      false => AppColors.critical,
-                                      null => s.isPending
-                                          ? AppColors.partial
-                                          : AppColors.info,
-                                    },
+                              child: Row(
+                                children: [
+                                  Expanded(
+                                    child: SJButton(
+                                      label: 'PDF',
+                                      icon: Icons.picture_as_pdf_outlined,
+                                      variant: SJButtonVariant.secondary,
+                                      onPressed: filtered.isEmpty
+                                          ? null
+                                          : () => _exportPdf(
+                                                context,
+                                                project: project,
+                                                samples: filtered,
+                                              ),
+                                    ),
                                   ),
-                                  onTap: () =>
-                                      _openEditor(context, ref, existing: s),
-                                );
-                              },
+                                  const SizedBox(width: AppSpacing.sm),
+                                  Expanded(
+                                    child: SJButton(
+                                      label: 'Excel',
+                                      icon: Icons.table_chart_outlined,
+                                      variant: SJButtonVariant.secondary,
+                                      onPressed: filtered.isEmpty
+                                          ? null
+                                          : () => _exportExcel(
+                                                context,
+                                                project: project,
+                                                samples: filtered,
+                                              ),
+                                    ),
+                                  ),
+                                ],
+                              ),
                             ),
-                    ),
-                  ],
-                ),
+                            Padding(
+                              padding: const EdgeInsets.fromLTRB(
+                                AppSpacing.md,
+                                AppSpacing.sm,
+                                AppSpacing.md,
+                                0,
+                              ),
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.stretch,
+                                children: [
+                                  Text(
+                                    'Yapısal eleman',
+                                    style:
+                                        Theme.of(context).textTheme.labelLarge,
+                                  ),
+                                  const SizedBox(height: AppSpacing.xs),
+                                  SJFilterChips(
+                                    labels: _elementLabels,
+                                    selectedIndex: _elementFilter.index,
+                                    onSelected: (i) => setState(
+                                      () => _elementFilter =
+                                          _ElementFilter.values[i],
+                                    ),
+                                  ),
+                                  const SizedBox(height: AppSpacing.sm),
+                                  Text(
+                                    'Durum',
+                                    style:
+                                        Theme.of(context).textTheme.labelLarge,
+                                  ),
+                                  const SizedBox(height: AppSpacing.xs),
+                                  SJFilterChips(
+                                    labels: _statusLabels,
+                                    selectedIndex: _statusFilter.index,
+                                    onSelected: (i) => setState(
+                                      () => _statusFilter =
+                                          _StatusFilter.values[i],
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ),
+                            Expanded(
+                              child: filtered.isEmpty
+                                  ? const SJEmptyState(
+                                      title: 'Filtrede sonuç yok',
+                                      message:
+                                          'Seçili yapısal eleman veya durum '
+                                          'filtresine uyan rapor bulunamadı.',
+                                      icon: Icons.filter_alt_off_outlined,
+                                    )
+                                  : ListView.separated(
+                                      padding: const EdgeInsets.fromLTRB(
+                                        AppSpacing.md,
+                                        AppSpacing.sm,
+                                        AppSpacing.md,
+                                        88,
+                                      ),
+                                      itemCount: filtered.length,
+                                      separatorBuilder: (_, __) =>
+                                          const SizedBox(
+                                        height: AppSpacing.sm,
+                                      ),
+                                      itemBuilder: (context, index) {
+                                        final s = filtered[index];
+                                        final strength = s.strengthMpa == null
+                                            ? 'Sonuç bekleniyor'
+                                            : 'Ort. ${s.strengthMpa!.toStringAsFixed(1)} MPa';
+                                        final min = s.minStrengthMpa == null
+                                            ? null
+                                            : 'Min ${s.minStrengthMpa!.toStringAsFixed(1)} MPa';
+                                        final compliance =
+                                            switch (s.isCompliant) {
+                                          true => 'Uygun',
+                                          false => 'Uygunsuz',
+                                          null => s.isPending
+                                              ? 'Bekliyor'
+                                              : 'Karar yok',
+                                        };
+                                        return SJListItem(
+                                          title: s.sampleCode.isEmpty
+                                              ? (s.labReportNo.isEmpty
+                                                  ? s.elementGroup.label
+                                                  : s.labReportNo)
+                                              : s.sampleCode,
+                                          subtitle: [
+                                            '${s.elementGroup.label} · ${s.concreteClass}',
+                                            '${s.sampleDate} · ${s.ageDays} gün · $strength',
+                                            if (min != null) min,
+                                            if (s.labReportNo.isNotEmpty)
+                                              'Rapor: ${s.labReportNo}',
+                                          ].join('\n'),
+                                          leadingIcon: Icons.science_outlined,
+                                          accentColor: switch (s.isCompliant) {
+                                            true => AppColors.success,
+                                            false => AppColors.critical,
+                                            null => s.isPending
+                                                ? AppColors.partial
+                                                : AppColors.info,
+                                          },
+                                          trailing: SJStatusBadge(
+                                            label: compliance,
+                                            color: switch (s.isCompliant) {
+                                              true => AppColors.success,
+                                              false => AppColors.critical,
+                                              null => s.isPending
+                                                  ? AppColors.partial
+                                                  : AppColors.info,
+                                            },
+                                          ),
+                                          onTap: () => _openEditor(
+                                            context,
+                                            ref,
+                                            existing: s,
+                                          ),
+                                        );
+                                      },
+                                    ),
+                            ),
+                          ],
+                        ),
+            ),
+          ],
+        ),
+      ),
     );
   }
 
