@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
-import '../../core/design_system/sj_card.dart';
 import '../../core/design_system/sj_empty_state.dart';
 import '../../core/design_system/sj_stat_card.dart';
 import '../../core/routing/app_routes.dart';
@@ -127,72 +126,11 @@ class HomeScreen extends ConsumerWidget {
                       ),
                     ],
                   ),
-                  const SizedBox(height: AppSpacing.lg),
-                  SJCard(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          'Hızlı akış',
-                          style: AppTypography.titleMedium.copyWith(
-                            color: AppColors.textPrimary,
-                          ),
-                        ),
-                        const SizedBox(height: AppSpacing.xs),
-                        Text(
-                          'Keşif → talep → teklif PDF → mukayese → teslim. '
-                          'Teknik karar için kütüphanedeki TDS föylerini kullanın.',
-                          style: AppTypography.bodySmall.copyWith(
-                            color: AppColors.textSecondary,
-                          ),
-                        ),
-                        const SizedBox(height: AppSpacing.md),
-                        Wrap(
-                          spacing: AppSpacing.sm,
-                          runSpacing: AppSpacing.sm,
-                          children: [
-                            _QuickChip(
-                              label: 'Keşif / Gruplar',
-                              onTap: () => context.go(AppRoutes.kesif),
-                            ),
-                            _QuickChip(
-                              label: 'Talep & Teklif',
-                              onTap: () => context.go(AppRoutes.talep),
-                            ),
-                            _QuickChip(
-                              label: 'TDS Kütüphane',
-                              onTap: () => context.go(AppRoutes.kutuphane),
-                            ),
-                          ],
-                        ),
-                      ],
-                    ),
-                  ),
                 ]),
               ),
             ),
           ],
         ),
-      ),
-    );
-  }
-}
-
-class _QuickChip extends StatelessWidget {
-  const _QuickChip({required this.label, required this.onTap});
-
-  final String label;
-  final VoidCallback onTap;
-
-  @override
-  Widget build(BuildContext context) {
-    return ActionChip(
-      label: Text(label),
-      onPressed: onTap,
-      backgroundColor: AppColors.surfaceElevated,
-      side: BorderSide(color: AppColors.border),
-      labelStyle: AppTypography.labelMedium.copyWith(
-        color: AppColors.textPrimary,
       ),
     );
   }
