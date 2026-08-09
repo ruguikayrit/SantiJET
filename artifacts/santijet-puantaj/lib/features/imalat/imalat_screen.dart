@@ -260,24 +260,35 @@ class _ImalatScreenState extends ConsumerState<ImalatScreen> {
         borderRadius: AppRadii.md,
         onTap: onToggle,
         child: Container(
-          padding: const EdgeInsets.symmetric(
-            horizontal: AppSpacing.sm,
-            vertical: AppSpacing.sm,
+          padding: const EdgeInsets.fromLTRB(
+            AppSpacing.sm,
+            AppSpacing.sm,
+            AppSpacing.sm,
+            AppSpacing.sm,
           ),
           decoration: BoxDecoration(
             borderRadius: AppRadii.md,
-            border: Border.all(color: accent.withValues(alpha: 0.45)),
-            color: accent.withValues(alpha: 0.1),
+            color: theme.colorScheme.surface.withValues(alpha: 0.28),
           ),
           child: Row(
             children: [
+              Container(
+                width: 3,
+                height: 22,
+                decoration: BoxDecoration(
+                  color: accent,
+                  borderRadius: BorderRadius.circular(2),
+                ),
+              ),
+              const SizedBox(width: AppSpacing.sm),
               Icon(
                 expanded
                     ? Icons.keyboard_arrow_down_rounded
                     : Icons.keyboard_arrow_right_rounded,
                 color: accent,
+                size: 22,
               ),
-              const SizedBox(width: 4),
+              const SizedBox(width: 2),
               Expanded(
                 child: Text(
                   phase.label,

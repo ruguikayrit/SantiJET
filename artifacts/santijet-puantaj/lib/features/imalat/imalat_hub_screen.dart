@@ -57,22 +57,9 @@ class _ImalatHubScreenState extends ConsumerState<ImalatHubScreen> {
                 AppSpacing.md,
                 AppSpacing.sm,
               ),
-              child: Row(
-                children: [
-                  for (final entry in const [
-                    (0, 'İmalat'),
-                    (1, 'Verim'),
-                  ]) ...[
-                    if (entry.$1 > 0) const SizedBox(width: AppSpacing.sm),
-                    Expanded(
-                      child: _HubSegmentTab(
-                        label: entry.$2,
-                        selected: _tab == entry.$1,
-                        onTap: () => setState(() => _tab = entry.$1),
-                      ),
-                    ),
-                  ],
-                ],
+              child: _HubSegmentBar(
+                selectedIndex: _tab,
+                onChanged: (i) => setState(() => _tab = i),
               ),
             ),
             Expanded(
@@ -91,53 +78,75 @@ class _ImalatHubScreenState extends ConsumerState<ImalatHubScreen> {
   }
 }
 
-/// Faz satır başlıklarıyla aynı dil: yumuşak dolgu + kenarlık + renkli metin.
-class _HubSegmentTab extends StatelessWidget {
-  const _HubSegmentTab({
-    required this.label,
-    required this.selected,
-    required this.onTap,
+/// Ana seviye İmalat | Verim — tek hatlı segment; faz satırlarından ayrı dil.
+class _HubSegmentBar extends StatelessWidget {
+  const _HubSegmentBar({
+    required this.selectedIndex,
+    required this.onChanged,
   });
 
-  final String label;
-  final bool selected;
-  final VoidCallback onTap;
+  final int selectedIndex;
+  final ValueChanged<int> onChanged;
+
+  static const _labels = ['İmalat', 'Verim'];
 
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    final accent = AppColors.info;
-    final muted = theme.colorScheme.onSurfaceVariant;
+    final track = AppColors.useDarkCards
+        ? AppColors.cardSurfaceHighlight
+        : theme.colorScheme.surfaceContainerHighest.withValues(alpha: 0.65);
+    final selectedBg = AppColors.useDarkCards
+        ? AppColors.electricBlueLight
+        : AppColors.electricBlue;
+    final selectedFg = Colors.white;
+    final idleFg = AppColors.useDarkCards
+        ? AppColors.cardTextMuted
+        : AppColors.inkMutedFor(theme.brightness);
 
-    return Material(
-      color: Colors.transparent,
-      child: InkWell(
-        onTap: onTap,
+    return DecoratedBox(
+      decoration: BoxDecoration(
+        color: track,
         borderRadius: AppRadii.md,
-        child: AnimatedContainer(
-          duration: const Duration(milliseconds: 180),
-          curve: Curves.easeOut,
-          padding: const EdgeInsets.symmetric(vertical: 11),
-          decoration: BoxDecoration(
-            borderRadius: AppRadii.md,
-            color: selected
-                ? accent.withValues(alpha: 0.12)
-                : theme.colorScheme.surface.withValues(alpha: 0.55),
-            border: Border.all(
-              color: selected
-                  ? accent.withValues(alpha: 0.45)
-                  : theme.dividerColor.withValues(alpha: 0.7),
-              width: selected ? 1.25 : 1,
-            ),
-          ),
-          child: Text(
-            label,
-            textAlign: TextAlign.center,
-            style: theme.textTheme.labelLarge?.copyWith(
-              color: selected ? accent : muted,
-              fontWeight: selected ? FontWeight.w800 : FontWeight.w600,
-            ),
-          ),
+      ),
+      child: Padding(
+        padding: const EdgeInsets.all(3),
+        child: Row(
+          children: [
+            for (var i = 0; i < _labels.length; i++) ...[
+              if (i > 0) const SizedBox(width: 3),
+              Expanded(
+                child: Material(
+                  color: Colors.transparent,
+                  child: InkWell(
+                    onTap: () => onChanged(i),
+                    borderRadius: AppRadii.sm,
+                    child: AnimatedContainer(
+                      duration: const Duration(milliseconds: 180),
+                      curve: Curves.easeOut,
+                      padding: const EdgeInsets.symmetric(vertical: 10),
+                      decoration: BoxDecoration(
+                        borderRadius: AppRadii.sm,
+                        color: selectedIndex == i
+                            ? selectedBg
+                            : Colors.transparent,
+                      ),
+                      child: Text(
+                        _labels[i],
+                        textAlign: TextAlign.center,
+                        style: theme.textTheme.labelLarge?.copyWith(
+                          color: selectedIndex == i ? selectedFg : idleFg,
+                          fontWeight: selectedIndex == i
+                              ? FontWeight.w800
+                              : FontWeight.w600,
+                        ),
+                      ),
+                    ),
+                  ),
+                ),
+              ),
+            ],
+          ],
         ),
       ),
     );
