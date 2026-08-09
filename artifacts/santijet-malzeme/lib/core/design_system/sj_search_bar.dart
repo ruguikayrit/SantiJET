@@ -1,51 +1,40 @@
 import 'package:flutter/material.dart';
 
+import '../theme/app_colors.dart';
 import '../theme/app_radii.dart';
+import '../theme/app_typography.dart';
 
-/// ŞantiJET Design System — arama çubuğu.
-///
-/// ŞantiJET Demir `AppSearchBar` deseni: arama alanı + opsiyonel filtre butonu.
-/// Temizleme (clear) ikonu, controller ve değişim geri çağrısı destekler.
+/// ŞantiJET Design System — arama çubuğu (Demir `AppSearchBar` birebir).
 class SJSearchBar extends StatelessWidget {
   const SJSearchBar({
-    this.controller,
+    super.key,
     this.hint = 'Ara...',
     this.onChanged,
-    this.onClear,
     this.onFilterTap,
-    super.key,
   });
 
-  final TextEditingController? controller;
   final String hint;
   final ValueChanged<String>? onChanged;
-  final VoidCallback? onClear;
   final VoidCallback? onFilterTap;
 
   @override
   Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-    final hasText = (controller?.text ?? '').isNotEmpty;
-
     return Row(
       children: [
         Expanded(
           child: TextField(
-            controller: controller,
             onChanged: onChanged,
-            style: theme.textTheme.bodyMedium?.copyWith(
-              color: theme.colorScheme.onSurface,
+            style: AppTypography.bodyMedium.copyWith(
+              color: AppColors.textPrimary,
             ),
             decoration: InputDecoration(
               hintText: hint,
+              prefixIcon: Icon(
+                Icons.search,
+                color: AppColors.textMuted,
+                size: 20,
+              ),
               isDense: true,
-              prefixIcon: const Icon(Icons.search, size: 20),
-              suffixIcon: hasText && onClear != null
-                  ? IconButton(
-                      icon: const Icon(Icons.close, size: 18),
-                      onPressed: onClear,
-                    )
-                  : null,
             ),
           ),
         ),
@@ -53,10 +42,9 @@ class SJSearchBar extends StatelessWidget {
           const SizedBox(width: 8),
           IconButton(
             onPressed: onFilterTap,
-            icon: const Icon(Icons.tune),
+            icon: Icon(Icons.tune, color: AppColors.textMuted),
             style: IconButton.styleFrom(
-              backgroundColor:
-                  theme.cardTheme.color ?? theme.colorScheme.surface,
+              backgroundColor: AppColors.surfaceElevated,
               shape: RoundedRectangleBorder(borderRadius: AppRadii.md),
             ),
           ),

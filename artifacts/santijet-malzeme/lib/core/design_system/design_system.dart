@@ -7,6 +7,7 @@ export 'sj_bottom_navigation.dart';
 export 'sj_button.dart';
 export 'sj_card.dart';
 export 'sj_empty_state.dart';
+export 'sj_fab.dart';
 export 'sj_filter_chips.dart';
 export 'sj_input.dart';
 export 'sj_list_item.dart';

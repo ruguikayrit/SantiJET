@@ -193,10 +193,12 @@ class _KesifScreenState extends ConsumerState<KesifScreen> {
     final lines = kesif.lines.where((l) => _selected.contains(l.id)).toList();
     if (lines.isEmpty) return;
 
+    final year = DateTime.now().year;
+    final seq = (ref.read(requestsProvider).length + 1).toString().padLeft(4, '0');
     final request = MaterialRequest(
       id: IdGen.make('req'),
       projectId: projectId,
-      title: 'Talep — ${lines.length} kalem',
+      title: 'TLP-$year-$seq',
       kesifSnapshotId: kesif.id,
       status: RequestStatus.taslak,
       createdAt: DateTime.now(),

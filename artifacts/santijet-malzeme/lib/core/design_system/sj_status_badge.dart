@@ -1,26 +1,21 @@
 import 'package:flutter/material.dart';
 
 import '../theme/app_radii.dart';
+import '../theme/app_typography.dart';
 
-/// ŞantiJET Design System — durum/etiket rozeti.
-///
-/// ŞantiJET Demir `StatusBadge` deseni: yumuşak dolgu + kenarlık + renkli metin.
-/// BFA'da disiplin/kategori etiketleri için kullanılır.
+/// ŞantiJET Design System — durum rozeti (Demir `StatusBadge` birebir).
 class SJStatusBadge extends StatelessWidget {
   const SJStatusBadge({
+    super.key,
     required this.label,
     required this.color,
-    this.icon,
-    super.key,
   });
 
   final String label;
   final Color color;
-  final IconData? icon;
 
   @override
   Widget build(BuildContext context) {
-    final theme = Theme.of(context);
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
       decoration: BoxDecoration(
@@ -28,21 +23,12 @@ class SJStatusBadge extends StatelessWidget {
         borderRadius: AppRadii.full,
         border: Border.all(color: color.withValues(alpha: 0.4)),
       ),
-      child: Row(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          if (icon != null) ...[
-            Icon(icon, size: 12, color: color),
-            const SizedBox(width: 4),
-          ],
-          Text(
-            label,
-            style: theme.textTheme.labelMedium?.copyWith(
-              color: color,
-              fontWeight: FontWeight.w600,
-            ),
-          ),
-        ],
+      child: Text(
+        label,
+        style: AppTypography.labelMedium.copyWith(
+          color: color,
+          fontWeight: FontWeight.w600,
+        ),
       ),
     );
   }

@@ -218,6 +218,25 @@ class RequestsNotifier extends StateNotifier<List<MaterialRequest>> {
     _persist();
   }
 
+  void advanceStatus(String id) {
+    state = [
+      for (final r in state)
+        if (r.id == id)
+          r.copyWith(status: r.status.nextStatus ?? r.status)
+        else
+          r,
+    ];
+    _persist();
+  }
+
+  void cancel(String id) {
+    state = [
+      for (final r in state)
+        if (r.id == id) r.copyWith(status: RequestStatus.kapandi) else r,
+    ];
+    _persist();
+  }
+
   void replaceAll(List<MaterialRequest> items) {
     state = List<MaterialRequest>.from(items);
     _persist();

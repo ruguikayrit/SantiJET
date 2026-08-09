@@ -153,7 +153,7 @@ class DemoSeedController {
     final request = MaterialRequest(
       id: IdGen.make('req'),
       projectId: projectId,
-      title: 'Haftalık malzeme talebi #1',
+      title: 'TLP-2026-0001',
       kesifSnapshotId: kesif.id,
       status: RequestStatus.taslak,
       createdAt: DateTime.now(),
