@@ -1,6 +1,5 @@
 import 'dart:typed_data';
 
-import 'package:flutter/services.dart' show rootBundle;
 import 'package:pdf/pdf.dart';
 import 'package:pdf/widgets.dart' as pw;
 import 'package:printing/printing.dart';
@@ -17,10 +16,10 @@ import '../../domain/enums/app_enums.dart';
 /// maliyet özeti, notlar) birleştirilmiştir. PDF'ler A4 portrait üretilir.
 class AnalizPdfExportService {
   Future<Uint8List> buildBytes(PozAnaliz analiz) async {
-    final fontBytes = await rootBundle.load('assets/fonts/Inter-Variable.ttf');
-    final font = pw.Font.ttf(fontBytes);
-    final boldBytes = await rootBundle.load('assets/fonts/Rajdhani-Bold.ttf');
-    final titleFont = pw.Font.ttf(boldBytes);
+    // Noto Sans: ₺ glyph'i bold satırlarda da mevcut. (Eski tema bold'u
+    // Rajdhani idi; para özetlerinde tofu üretiyordu.)
+    final baseFont = await PdfGoogleFonts.notoSansRegular();
+    final boldFont = await PdfGoogleFonts.notoSansBold();
     final doc = pw.Document();
     final hesap = AnalizHesap.hesapla(analiz);
     final now = DateTime.now();
@@ -29,7 +28,7 @@ class AnalizPdfExportService {
       pw.MultiPage(
         pageFormat: PdfPageFormat.a4,
         margin: const pw.EdgeInsets.all(28),
-        theme: pw.ThemeData.withFont(base: font, bold: titleFont),
+        theme: pw.ThemeData.withFont(base: baseFont, bold: boldFont),
         build: (context) => [
           _header(analiz, now),
           pw.SizedBox(height: 14),

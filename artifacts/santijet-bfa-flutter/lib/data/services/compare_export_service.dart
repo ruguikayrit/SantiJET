@@ -67,10 +67,11 @@ class CompareExportService {
     AnalizCompareResult compare, {
     ComparePdfStyle style = ComparePdfStyle.colorFilled,
   }) async {
-    final fontBytes = await rootBundle.load('assets/fonts/Inter-Variable.ttf');
-    final font = pw.Font.ttf(fontBytes);
-    final boldBytes = await rootBundle.load('assets/fonts/Rajdhani-Bold.ttf');
-    final titleFont = pw.Font.ttf(boldBytes);
+    // Gövde Noto Sans: ₺ glyph'i bold satırlarda da mevcut.
+    final baseFont = await PdfGoogleFonts.notoSansRegular();
+    final boldFont = await PdfGoogleFonts.notoSansBold();
+    final titleBytes = await rootBundle.load('assets/fonts/Rajdhani-Bold.ttf');
+    final titleFont = pw.Font.ttf(titleBytes);
     final palette = _PdfPalette.forStyle(style);
     final doc = pw.Document();
 
@@ -78,7 +79,7 @@ class CompareExportService {
       pw.MultiPage(
         pageFormat: PdfPageFormat.a4.landscape,
         margin: const pw.EdgeInsets.all(24),
-        theme: pw.ThemeData.withFont(base: font, bold: titleFont),
+        theme: pw.ThemeData.withFont(base: baseFont, bold: boldFont),
         build: (context) => [
           pw.Text(
             'ŞantiJET Maliyet — Analiz Karşılaştırması',
