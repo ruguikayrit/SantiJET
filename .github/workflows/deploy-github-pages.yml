@@ -1,4 +1,4 @@
-name: Deploy ŞantiJET GitHub Pages (DEMİR + BFA + Puantaj + Beton + Staging)
+name: Deploy ŞantiJET GitHub Pages (DEMİR + BFA + Puantaj + Beton + Malzeme + Staging)
 
 on:
   push:
@@ -10,6 +10,7 @@ on:
       - 'artifacts/santijet-bfa-flutter/**'
       - 'artifacts/santijet-puantaj/**'
       - 'artifacts/santijet-beton/**'
+      - 'artifacts/santijet-malzeme/**'
       - '.github/workflows/deploy-github-pages.yml'
       - '.github/scripts/**'
   workflow_dispatch:
@@ -140,6 +141,28 @@ jobs:
             exit 1
           fi
 
+      - name: Setup Flutter (Malzeme)
+        uses: subosito/flutter-action@v2
+        with:
+          channel: stable
+          flutter-version: '3.27.4'
+          cache: true
+          cache-key: flutter-malzeme-3.27.4
+
+      - name: Build Malzeme web (staging preview)
+        id: malzeme_build
+        env:
+          GITHUB_REPOSITORY_NAME: ${{ github.event.repository.name }}
+        run: |
+          if [ -f staging-src/.github/scripts/build-malzeme-pages.sh ]; then
+            bash staging-src/.github/scripts/build-malzeme-pages.sh
+          elif [ -f .github/scripts/build-malzeme-pages.sh ]; then
+            bash .github/scripts/build-malzeme-pages.sh
+          else
+            echo "::error::build-malzeme-pages.sh missing on main and staging"
+            exit 1
+          fi
+
       - name: Verify site bundle
         run: |
           test -f site/index.html
@@ -158,6 +181,10 @@ jobs:
           fi
           if [ ! -f site/beton/index.html ]; then
             echo "::error::Beton bundle missing (site/beton/index.html). Refusing to deploy a broken /beton/."
+            exit 1
+          fi
+          if [ ! -f site/malzeme/index.html ]; then
+            echo "::error::Malzeme bundle missing (site/malzeme/index.html). Refusing to deploy a broken /malzeme/."
             exit 1
           fi
 
@@ -180,3 +207,4 @@ jobs:
           echo "BFA: https://${{ github.repository_owner }}.github.io/${{ github.event.repository.name }}/bfa/"
           echo "Puantaj staging: https://${{ github.repository_owner }}.github.io/${{ github.event.repository.name }}/puantaj/"
           echo "Beton staging: https://${{ github.repository_owner }}.github.io/${{ github.event.repository.name }}/beton/"
+          echo "Malzeme staging: https://${{ github.repository_owner }}.github.io/${{ github.event.repository.name }}/malzeme/"
