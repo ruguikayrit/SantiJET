@@ -151,7 +151,77 @@ class KesifNotifier extends StateNotifier<List<KesifProject>> {
                   s.copyWith(
                     miktar: miktar,
                     tutar: AnalizHesap.satirTutar(miktar, s.birimFiyati),
+                    // Manuel miktar cetvel kalemlerinin yerini alır.
+                    metrajKalemleri: const [],
                   )
+                else
+                  s,
+            ],
+            guncellemeTarihi: now,
+          )
+        else
+          p,
+    ];
+    _persist();
+  }
+
+  void upsertMetrajKalemi(
+    String projectId,
+    String satirId,
+    MetrajKalemi kalem,
+  ) {
+    final now = DateTime.now().toIso8601String();
+    final normalized = kalem.withHesap();
+    state = [
+      for (final p in state)
+        if (p.id == projectId)
+          p.copyWith(
+            satirlar: [
+              for (final s in p.satirlar)
+                if (s.id == satirId)
+                  _withKalem(s, normalized)
+                else
+                  s,
+            ],
+            guncellemeTarihi: now,
+          )
+        else
+          p,
+    ];
+    _persist();
+  }
+
+  static KesifSatiri _withKalem(KesifSatiri s, MetrajKalemi normalized) {
+    final exists = s.metrajKalemleri.any((k) => k.id == normalized.id);
+    final next = exists
+        ? [
+            for (final k in s.metrajKalemleri)
+              if (k.id == normalized.id) normalized else k,
+          ]
+        : [...s.metrajKalemleri, normalized];
+    return s.copyWith(metrajKalemleri: next).withMetrajRollup();
+  }
+
+  void removeMetrajKalemi(
+    String projectId,
+    String satirId,
+    String kalemId,
+  ) {
+    final now = DateTime.now().toIso8601String();
+    state = [
+      for (final p in state)
+        if (p.id == projectId)
+          p.copyWith(
+            satirlar: [
+              for (final s in p.satirlar)
+                if (s.id == satirId)
+                  s
+                      .copyWith(
+                        metrajKalemleri: s.metrajKalemleri
+                            .where((k) => k.id != kalemId)
+                            .toList(),
+                      )
+                      .withMetrajRollup()
                 else
                   s,
             ],

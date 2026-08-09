@@ -29,11 +29,33 @@ enum AnalizDiscipline {
         AnalizDiscipline.elektrik => 'Elektrik Tesisat',
       };
 
+  /// Keşif / metraj / YM bölüm başlıkları.
+  String get isBasligi => switch (this) {
+        AnalizDiscipline.insaat => 'İnşaat İşleri',
+        AnalizDiscipline.mekanik => 'Mekanik İşler',
+        AnalizDiscipline.elektrik => 'Elektrik İşleri',
+      };
+
+  static const List<AnalizDiscipline> kesifSirasi = [
+    AnalizDiscipline.insaat,
+    AnalizDiscipline.elektrik,
+    AnalizDiscipline.mekanik,
+  ];
+
   static AnalizDiscipline fromJson(String? value) => switch (value) {
         'mekanik' => AnalizDiscipline.mekanik,
         'elektrik' => AnalizDiscipline.elektrik,
         _ => AnalizDiscipline.insaat,
       };
+
+  /// Poz no önekine göre disiplin (35=elektrik, 25=mekanik, aksi inşaat).
+  static AnalizDiscipline fromPozNo(String pozNo) {
+    final digits = pozNo.replaceAll(RegExp(r'\D'), '');
+    final prefix = digits.length >= 2 ? digits.substring(0, 2) : '';
+    if (prefix == '35') return AnalizDiscipline.elektrik;
+    if (prefix == '25') return AnalizDiscipline.mekanik;
+    return AnalizDiscipline.insaat;
+  }
 }
 
 /// Analiz kalemi tipi.

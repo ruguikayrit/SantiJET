@@ -177,13 +177,8 @@ String normalizeImportPozNo(String pozNo) {
   return trimmed;
 }
 
-AnalizDiscipline inferDisciplineFromPoz(String pozNo) {
-  final digits = pozNo.replaceAll(RegExp(r'\D'), '');
-  final prefix = digits.length >= 2 ? digits.substring(0, 2) : '';
-  if (prefix == '35') return AnalizDiscipline.elektrik;
-  if (prefix == '25') return AnalizDiscipline.mekanik;
-  return AnalizDiscipline.insaat;
-}
+AnalizDiscipline inferDisciplineFromPoz(String pozNo) =>
+    AnalizDiscipline.fromPozNo(pozNo);
 
 String normalizeImportTanim(String tanim) =>
     TrSearch.normalize(tanim).replaceAll(RegExp(r'\s+'), ' ').trim();

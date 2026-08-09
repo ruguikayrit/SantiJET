@@ -7,10 +7,13 @@ import '../../core/routing/app_routes.dart';
 import '../../core/theme/app_colors.dart';
 import '../../core/theme/app_spacing.dart';
 import '../../core/utils/app_format.dart';
+import '../../core/utils/id_gen.dart';
 import '../../data/providers/kesif_provider.dart';
 import '../../domain/entities/kesif.dart';
+import '../../domain/enums/app_enums.dart';
+import '../kesif/widgets/discipline_section_header.dart';
 
-/// Metraj yüzeyi — aktif projenin ölçü notları ve miktarları.
+/// Metraj cetveli — boyut girdilerinden poza ait metraj hesaplanır.
 class MetrajScreen extends ConsumerWidget {
   const MetrajScreen({super.key});
 
@@ -23,7 +26,7 @@ class MetrajScreen extends ConsumerWidget {
       return Scaffold(
         backgroundColor: AppColors.canvas,
         appBar: AppBar(
-          title: const Text('Metraj'),
+          title: const Text('Metraj Cetveli'),
           actions: [
             IconButton(
               tooltip: 'Ayarlar',
@@ -43,11 +46,12 @@ class MetrajScreen extends ConsumerWidget {
     }
 
     final projectId = kesif.id;
+    final byDisc = kesif.satirlarByDiscipline;
 
     return Scaffold(
       backgroundColor: AppColors.canvas,
       appBar: AppBar(
-        title: const Text('Metraj'),
+        title: const Text('Metraj Cetveli'),
         actions: [
           IconButton(
             tooltip: 'Ayarlar',
@@ -69,24 +73,35 @@ class MetrajScreen extends ConsumerWidget {
             ),
             const SizedBox(height: 4),
             Text(
-              'Satıra bağlı ölçü notu ve miktar.',
+              'En, boy, yükseklik, alan veya çevre ile poza ait metrajı hesaplayın.',
               style: theme.textTheme.bodySmall?.copyWith(
                 color: AppColors.textMuted,
               ),
             ),
-            const SizedBox(height: AppSpacing.md),
             if (kesif.satirlar.isEmpty)
-              SJEmptyState(
-                title: 'Henüz poz yok',
-                message: 'Keşif sekmesinden poz ekledikçe metraj burada görünür.',
-                icon: Icons.straighten_outlined,
-                actionLabel: 'Keşif’e Git',
-                onAction: () => context.go(AppRoutes.kesif),
+              Padding(
+                padding: const EdgeInsets.only(top: AppSpacing.lg),
+                child: SJEmptyState(
+                  title: 'Henüz poz yok',
+                  message:
+                      'Keşif listesine poz ekledikçe metraj cetveli burada görünür.',
+                  icon: Icons.straighten_outlined,
+                  actionLabel: 'Keşif’e Git',
+                  onAction: () => context.go(AppRoutes.kesif),
+                ),
               )
             else
-              for (final satir in kesif.satirlar) ...[
-                _MetrajCard(projectId: projectId, satir: satir),
-                const SizedBox(height: AppSpacing.xs),
+              for (final d in AnalizDiscipline.kesifSirasi) ...[
+                if ((byDisc[d] ?? const []).isNotEmpty) ...[
+                  DisciplineSectionHeader(
+                    discipline: d,
+                    count: byDisc[d]!.length,
+                  ),
+                  for (final satir in byDisc[d]!) ...[
+                    _PozCetvelCard(projectId: projectId, satir: satir),
+                    const SizedBox(height: AppSpacing.xs),
+                  ],
+                ],
               ],
             const SizedBox(height: AppSpacing.xl),
           ],
@@ -96,99 +111,495 @@ class MetrajScreen extends ConsumerWidget {
   }
 }
 
-class _MetrajCard extends ConsumerStatefulWidget {
-  const _MetrajCard({required this.projectId, required this.satir});
+class _PozCetvelCard extends ConsumerWidget {
+  const _PozCetvelCard({required this.projectId, required this.satir});
 
   final String projectId;
   final KesifSatiri satir;
 
   @override
-  ConsumerState<_MetrajCard> createState() => _MetrajCardState();
+  Widget build(BuildContext context, WidgetRef ref) {
+    final theme = Theme.of(context);
+    final kalemler = satir.metrajKalemleri;
+    final total = satir.hesaplananMetraj;
+
+    return SJCard(
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      satir.pozNo,
+                      style: theme.textTheme.labelMedium?.copyWith(
+                        color: AppColors.moduleKesif,
+                      ),
+                    ),
+                    Text(
+                      satir.analizAdi,
+                      style: theme.textTheme.titleMedium?.copyWith(
+                        color: AppColors.cardTextPrimary,
+                      ),
+                      maxLines: 2,
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                  ],
+                ),
+              ),
+              Text(
+                '${AppFormat.decimal(total)} ${satir.olcuBirimi}',
+                style: theme.textTheme.titleMedium?.copyWith(
+                  color: AppColors.cardTextPrimary,
+                  fontWeight: FontWeight.w700,
+                ),
+              ),
+            ],
+          ),
+          if (kalemler.isEmpty) ...[
+            const SizedBox(height: AppSpacing.sm),
+            _ManuelMiktarField(projectId: projectId, satir: satir),
+          ] else ...[
+            const SizedBox(height: AppSpacing.sm),
+            for (final k in kalemler) ...[
+              _KalemRow(
+                projectId: projectId,
+                satirId: satir.id,
+                kalem: k,
+                birim: satir.olcuBirimi,
+              ),
+              const SizedBox(height: 4),
+            ],
+          ],
+          const SizedBox(height: AppSpacing.xs),
+          Align(
+            alignment: Alignment.centerRight,
+            child: TextButton.icon(
+              onPressed: () => _openKalemEditor(
+                context,
+                ref,
+                projectId: projectId,
+                satirId: satir.id,
+              ),
+              icon: const Icon(Icons.add, size: 18),
+              label: const Text('Cetvel satırı'),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
 }
 
-class _MetrajCardState extends ConsumerState<_MetrajCard> {
-  late final TextEditingController _noteController;
-  late final TextEditingController _qtyController;
+class _ManuelMiktarField extends ConsumerStatefulWidget {
+  const _ManuelMiktarField({required this.projectId, required this.satir});
+
+  final String projectId;
+  final KesifSatiri satir;
+
+  @override
+  ConsumerState<_ManuelMiktarField> createState() => _ManuelMiktarFieldState();
+}
+
+class _ManuelMiktarFieldState extends ConsumerState<_ManuelMiktarField> {
+  late final TextEditingController _controller;
 
   @override
   void initState() {
     super.initState();
-    _noteController = TextEditingController(text: widget.satir.metrajNotu);
-    _qtyController = TextEditingController(
+    _controller = TextEditingController(
       text: AppFormat.decimal(widget.satir.miktar, fractionDigits: 2),
     );
   }
 
   @override
-  void didUpdateWidget(covariant _MetrajCard oldWidget) {
+  void didUpdateWidget(covariant _ManuelMiktarField oldWidget) {
     super.didUpdateWidget(oldWidget);
-    if (oldWidget.satir.metrajNotu != widget.satir.metrajNotu) {
-      _noteController.text = widget.satir.metrajNotu;
-    }
     if (oldWidget.satir.miktar != widget.satir.miktar) {
-      _qtyController.text =
+      _controller.text =
           AppFormat.decimal(widget.satir.miktar, fractionDigits: 2);
     }
   }
 
   @override
   void dispose() {
-    _noteController.dispose();
-    _qtyController.dispose();
+    _controller.dispose();
     super.dispose();
   }
 
   @override
   Widget build(BuildContext context) {
+    return TextField(
+      controller: _controller,
+      keyboardType: const TextInputType.numberWithOptions(decimal: true),
+      decoration: InputDecoration(
+        labelText: 'Manuel miktar (${widget.satir.olcuBirimi})',
+        isDense: true,
+        helperText: 'Veya aşağıdan cetvel satırı ekleyin.',
+      ),
+      onSubmitted: (raw) {
+        final value = double.tryParse(raw.replaceAll(',', '.')) ?? 0;
+        ref.read(kesifProvider.notifier).updateMiktar(
+              widget.projectId,
+              widget.satir.id,
+              value,
+            );
+      },
+    );
+  }
+}
+
+class _KalemRow extends ConsumerWidget {
+  const _KalemRow({
+    required this.projectId,
+    required this.satirId,
+    required this.kalem,
+    required this.birim,
+  });
+
+  final String projectId;
+  final String satirId;
+  final MetrajKalemi kalem;
+  final String birim;
+
+  String get _ozet {
+    final tip = kalem.tip;
+    final dims = switch (tip) {
+      MetrajHesapTipi.enBoy =>
+        '${AppFormat.decimal(kalem.en)}×${AppFormat.decimal(kalem.boy)}',
+      MetrajHesapTipi.enBoyYukseklik =>
+        '${AppFormat.decimal(kalem.en)}×${AppFormat.decimal(kalem.boy)}×${AppFormat.decimal(kalem.yukseklik)}',
+      MetrajHesapTipi.alan => 'A=${AppFormat.decimal(kalem.alan)}',
+      MetrajHesapTipi.cevre => 'Ç=${AppFormat.decimal(kalem.cevre)}',
+      MetrajHesapTipi.manuel => 'manuel',
+    };
+    final adet = kalem.adet != 1
+        ? ' × ${AppFormat.decimal(kalem.adet, fractionDigits: 0)}'
+        : '';
+    final aciklama = kalem.aciklama.trim().isEmpty ? tip.label : kalem.aciklama;
+    return '$aciklama · $dims$adet';
+  }
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
     final theme = Theme.of(context);
-    final satir = widget.satir;
-    return SJCard(
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Text(
-            '${satir.pozNo} · ${satir.analizAdi}',
-            style: theme.textTheme.titleMedium?.copyWith(
-              color: AppColors.cardTextPrimary,
-            ),
-            maxLines: 1,
-            overflow: TextOverflow.ellipsis,
+    return Material(
+      color: AppColors.canvas.withValues(alpha: 0.6),
+      borderRadius: BorderRadius.circular(8),
+      child: InkWell(
+        borderRadius: BorderRadius.circular(8),
+        onTap: () => _openKalemEditor(
+          context,
+          ref,
+          projectId: projectId,
+          satirId: satirId,
+          existing: kalem,
+        ),
+        child: Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 6),
+          child: Row(
+            children: [
+              Expanded(
+                child: Text(
+                  _ozet,
+                  style: theme.textTheme.bodySmall?.copyWith(
+                    color: AppColors.cardTextSecondary,
+                  ),
+                  maxLines: 2,
+                  overflow: TextOverflow.ellipsis,
+                ),
+              ),
+              Text(
+                '${AppFormat.decimal(kalem.miktar)} $birim',
+                style: theme.textTheme.labelLarge?.copyWith(
+                  color: AppColors.cardTextPrimary,
+                ),
+              ),
+              IconButton(
+                tooltip: 'Sil',
+                visualDensity: VisualDensity.compact,
+                onPressed: () => ref
+                    .read(kesifProvider.notifier)
+                    .removeMetrajKalemi(projectId, satirId, kalem.id),
+                icon: Icon(
+                  Icons.close,
+                  size: 18,
+                  color: theme.colorScheme.error,
+                ),
+              ),
+            ],
           ),
-          const SizedBox(height: AppSpacing.sm),
-          TextField(
-            controller: _qtyController,
-            keyboardType: const TextInputType.numberWithOptions(decimal: true),
-            decoration: InputDecoration(
-              labelText: 'Miktar (${satir.olcuBirimi})',
-              isDense: true,
+        ),
+      ),
+    );
+  }
+}
+
+Future<void> _openKalemEditor(
+  BuildContext context,
+  WidgetRef ref, {
+  required String projectId,
+  required String satirId,
+  MetrajKalemi? existing,
+}) async {
+  final result = await showModalBottomSheet<MetrajKalemi>(
+    context: context,
+    isScrollControlled: true,
+    showDragHandle: true,
+    builder: (ctx) => _KalemEditorSheet(initial: existing),
+  );
+  if (result == null) return;
+  ref.read(kesifProvider.notifier).upsertMetrajKalemi(
+        projectId,
+        satirId,
+        result,
+      );
+}
+
+class _KalemEditorSheet extends StatefulWidget {
+  const _KalemEditorSheet({this.initial});
+
+  final MetrajKalemi? initial;
+
+  @override
+  State<_KalemEditorSheet> createState() => _KalemEditorSheetState();
+}
+
+class _KalemEditorSheetState extends State<_KalemEditorSheet> {
+  late MetrajHesapTipi _tip;
+  late final TextEditingController _aciklama;
+  late final TextEditingController _en;
+  late final TextEditingController _boy;
+  late final TextEditingController _yukseklik;
+  late final TextEditingController _alan;
+  late final TextEditingController _cevre;
+  late final TextEditingController _adet;
+  late final TextEditingController _manuel;
+
+  @override
+  void initState() {
+    super.initState();
+    final i = widget.initial;
+    _tip = i?.tip ?? MetrajHesapTipi.enBoy;
+    _aciklama = TextEditingController(text: i?.aciklama ?? '');
+    _en = TextEditingController(text: _num(i?.en));
+    _boy = TextEditingController(text: _num(i?.boy));
+    _yukseklik = TextEditingController(text: _num(i?.yukseklik));
+    _alan = TextEditingController(text: _num(i?.alan));
+    _cevre = TextEditingController(text: _num(i?.cevre));
+    _adet = TextEditingController(
+      text: i == null ? '1' : AppFormat.decimal(i.adet, fractionDigits: 0),
+    );
+    _manuel = TextEditingController(text: _num(i?.miktar));
+  }
+
+  String _num(double? v) {
+    if (v == null || v == 0) return '';
+    return AppFormat.decimal(v, fractionDigits: 3);
+  }
+
+  double _parse(TextEditingController c) =>
+      double.tryParse(c.text.replaceAll(',', '.')) ?? 0;
+
+  @override
+  void dispose() {
+    _aciklama.dispose();
+    _en.dispose();
+    _boy.dispose();
+    _yukseklik.dispose();
+    _alan.dispose();
+    _cevre.dispose();
+    _adet.dispose();
+    _manuel.dispose();
+    super.dispose();
+  }
+
+  double get _preview => MetrajKalemi.hesapla(
+        tip: _tip,
+        en: _parse(_en),
+        boy: _parse(_boy),
+        yukseklik: _parse(_yukseklik),
+        alan: _parse(_alan),
+        cevre: _parse(_cevre),
+        adet: _parse(_adet) <= 0 ? 1 : _parse(_adet),
+        manuelMiktar: _parse(_manuel),
+      );
+
+  void _save() {
+    final kalem = MetrajKalemi(
+      id: widget.initial?.id ?? IdGen.make('mk'),
+      aciklama: _aciklama.text.trim(),
+      tip: _tip,
+      en: _parse(_en),
+      boy: _parse(_boy),
+      yukseklik: _parse(_yukseklik),
+      alan: _parse(_alan),
+      cevre: _parse(_cevre),
+      adet: _parse(_adet) <= 0 ? 1 : _parse(_adet),
+      miktar: _preview,
+    ).withHesap(manuelMiktar: _parse(_manuel));
+    Navigator.of(context).pop(kalem);
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final bottom = MediaQuery.viewInsetsOf(context).bottom;
+    final theme = Theme.of(context);
+    return Padding(
+      padding: EdgeInsets.fromLTRB(
+        AppSpacing.md,
+        0,
+        AppSpacing.md,
+        AppSpacing.md + bottom,
+      ),
+      child: SingleChildScrollView(
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Text(
+              widget.initial == null ? 'Cetvel satırı ekle' : 'Cetvel satırını düzenle',
+              style: theme.textTheme.titleLarge,
             ),
-            onSubmitted: (raw) {
-              final value = double.tryParse(raw.replaceAll(',', '.')) ?? 0;
-              ref.read(kesifProvider.notifier).updateMiktar(
-                    widget.projectId,
-                    satir.id,
-                    value,
-                  );
-            },
-          ),
-          const SizedBox(height: AppSpacing.xs),
-          TextField(
-            controller: _noteController,
-            maxLines: 2,
-            decoration: const InputDecoration(
-              labelText: 'Ölçü notu',
-              hintText: 'Örn. 12×3.20 m döşeme',
-              isDense: true,
+            const SizedBox(height: AppSpacing.sm),
+            TextField(
+              controller: _aciklama,
+              decoration: const InputDecoration(
+                labelText: 'Açıklama',
+                hintText: 'Örn. Döşeme A-1',
+                isDense: true,
+              ),
             ),
-            onEditingComplete: () {
-              ref.read(kesifProvider.notifier).updateMetrajNotu(
-                    widget.projectId,
-                    satir.id,
-                    _noteController.text,
-                  );
-            },
-          ),
-        ],
+            const SizedBox(height: AppSpacing.sm),
+            DropdownButtonFormField<MetrajHesapTipi>(
+              value: _tip,
+              decoration: const InputDecoration(
+                labelText: 'Hesap tipi',
+                isDense: true,
+              ),
+              items: [
+                for (final t in MetrajHesapTipi.values)
+                  DropdownMenuItem(value: t, child: Text(t.label)),
+              ],
+              onChanged: (v) {
+                if (v == null) return;
+                setState(() => _tip = v);
+              },
+            ),
+            const SizedBox(height: AppSpacing.sm),
+            if (_tip == MetrajHesapTipi.manuel)
+              TextField(
+                controller: _manuel,
+                keyboardType:
+                    const TextInputType.numberWithOptions(decimal: true),
+                decoration: const InputDecoration(
+                  labelText: 'Miktar',
+                  isDense: true,
+                ),
+                onChanged: (_) => setState(() {}),
+              )
+            else ...[
+              if (_tip == MetrajHesapTipi.enBoy ||
+                  _tip == MetrajHesapTipi.enBoyYukseklik)
+                Row(
+                  children: [
+                    Expanded(
+                      child: TextField(
+                        controller: _en,
+                        keyboardType: const TextInputType.numberWithOptions(
+                          decimal: true,
+                        ),
+                        decoration: const InputDecoration(
+                          labelText: 'En',
+                          isDense: true,
+                        ),
+                        onChanged: (_) => setState(() {}),
+                      ),
+                    ),
+                    const SizedBox(width: AppSpacing.xs),
+                    Expanded(
+                      child: TextField(
+                        controller: _boy,
+                        keyboardType: const TextInputType.numberWithOptions(
+                          decimal: true,
+                        ),
+                        decoration: const InputDecoration(
+                          labelText: 'Boy',
+                          isDense: true,
+                        ),
+                        onChanged: (_) => setState(() {}),
+                      ),
+                    ),
+                    if (_tip == MetrajHesapTipi.enBoyYukseklik) ...[
+                      const SizedBox(width: AppSpacing.xs),
+                      Expanded(
+                        child: TextField(
+                          controller: _yukseklik,
+                          keyboardType: const TextInputType.numberWithOptions(
+                            decimal: true,
+                          ),
+                          decoration: const InputDecoration(
+                            labelText: 'Yükseklik',
+                            isDense: true,
+                          ),
+                          onChanged: (_) => setState(() {}),
+                        ),
+                      ),
+                    ],
+                  ],
+                ),
+              if (_tip == MetrajHesapTipi.alan)
+                TextField(
+                  controller: _alan,
+                  keyboardType:
+                      const TextInputType.numberWithOptions(decimal: true),
+                  decoration: const InputDecoration(
+                    labelText: 'Alan',
+                    isDense: true,
+                  ),
+                  onChanged: (_) => setState(() {}),
+                ),
+              if (_tip == MetrajHesapTipi.cevre)
+                TextField(
+                  controller: _cevre,
+                  keyboardType:
+                      const TextInputType.numberWithOptions(decimal: true),
+                  decoration: const InputDecoration(
+                    labelText: 'Çevre',
+                    isDense: true,
+                  ),
+                  onChanged: (_) => setState(() {}),
+                ),
+              const SizedBox(height: AppSpacing.sm),
+              TextField(
+                controller: _adet,
+                keyboardType:
+                    const TextInputType.numberWithOptions(decimal: true),
+                decoration: const InputDecoration(
+                  labelText: 'Adet',
+                  isDense: true,
+                ),
+                onChanged: (_) => setState(() {}),
+              ),
+            ],
+            const SizedBox(height: AppSpacing.md),
+            Text(
+              'Hesaplanan: ${AppFormat.decimal(_preview)}',
+              style: theme.textTheme.titleMedium?.copyWith(
+                color: AppColors.moduleKesif,
+              ),
+            ),
+            const SizedBox(height: AppSpacing.md),
+            FilledButton(
+              onPressed: _save,
+              child: const Text('Kaydet'),
+            ),
+          ],
+        ),
       ),
     );
   }

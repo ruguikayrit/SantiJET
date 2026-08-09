@@ -10,9 +10,11 @@ import '../../core/utils/app_format.dart';
 import '../../data/providers/kesif_provider.dart';
 import '../../data/services/kesif_export_service.dart';
 import '../../domain/entities/kesif.dart';
+import '../../domain/enums/app_enums.dart';
 import '../export/export_format_sheet.dart';
+import '../kesif/widgets/discipline_section_header.dart';
 
-/// Yaklaşık Maliyet — birim fiyatlar + tutar özeti.
+/// Yaklaşık Maliyet — birim fiyatlar + tutar özeti (3 ana başlık).
 class YaklasikMaliyetScreen extends ConsumerWidget {
   const YaklasikMaliyetScreen({super.key});
 
@@ -46,6 +48,7 @@ class YaklasikMaliyetScreen extends ConsumerWidget {
 
     final byUnit = kesif.toplamByOlcuBirimi.entries.toList()
       ..sort((a, b) => b.value.compareTo(a.value));
+    final byDisc = kesif.satirlarByDiscipline;
 
     return Scaffold(
       backgroundColor: AppColors.canvas,
@@ -143,20 +146,38 @@ class YaklasikMaliyetScreen extends ConsumerWidget {
                 color: AppColors.textMuted,
               ),
             ),
-            const SizedBox(height: AppSpacing.sm),
             if (kesif.satirlar.isEmpty)
-              SJCard(
-                child: Text(
-                  'Keşif satırı yok. Poz ekledikçe birim fiyatlar burada listelenir.',
-                  style: theme.textTheme.bodyMedium?.copyWith(
-                    color: AppColors.cardTextMuted,
+              Padding(
+                padding: const EdgeInsets.only(top: AppSpacing.sm),
+                child: SJCard(
+                  child: Text(
+                    'Keşif listesinde poz yok. Poz ekledikçe birim fiyatlar burada listelenir.',
+                    style: theme.textTheme.bodyMedium?.copyWith(
+                      color: AppColors.cardTextMuted,
+                    ),
                   ),
                 ),
               )
             else
-              for (final satir in kesif.satirlar) ...[
-                _FiyatSatirCard(satir: satir),
-                const SizedBox(height: AppSpacing.xs),
+              for (final d in AnalizDiscipline.kesifSirasi) ...[
+                if ((byDisc[d] ?? const []).isNotEmpty) ...[
+                  DisciplineSectionHeader(
+                    discipline: d,
+                    count: byDisc[d]!.length,
+                    trailing: Text(
+                      AppFormat.currency(
+                        byDisc[d]!.fold<double>(0, (s, r) => s + r.tutar),
+                      ),
+                      style: theme.textTheme.labelLarge?.copyWith(
+                        color: AppColors.moduleKesif,
+                      ),
+                    ),
+                  ),
+                  for (final satir in byDisc[d]!) ...[
+                    _FiyatSatirCard(satir: satir),
+                    const SizedBox(height: AppSpacing.xs),
+                  ],
+                ],
               ],
             const SizedBox(height: AppSpacing.xl),
           ],
@@ -174,6 +195,7 @@ class _FiyatSatirCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
+    final metraj = satir.hesaplananMetraj;
     return SJCard(
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -204,7 +226,7 @@ class _FiyatSatirCard extends StatelessWidget {
                 ),
               ),
               Text(
-                '${AppFormat.decimal(satir.miktar)} ${satir.olcuBirimi}',
+                '${AppFormat.decimal(metraj)} ${satir.olcuBirimi}',
                 style: theme.textTheme.bodyMedium?.copyWith(
                   color: AppColors.cardTextMuted,
                 ),
