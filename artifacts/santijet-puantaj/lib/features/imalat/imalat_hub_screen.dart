@@ -93,16 +93,13 @@ class _HubSegmentBar extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    final track = AppColors.useDarkCards
-        ? AppColors.cardSurfaceHighlight
-        : theme.colorScheme.surfaceContainerHighest.withValues(alpha: 0.65);
-    final selectedBg = AppColors.useDarkCards
+    // Chrome segment — hibrit kart paletine bağlanmaz.
+    final track = AppColors.surfaceHighlight;
+    final selectedBg = AppColors.useDarkChrome
         ? AppColors.electricBlueLight
         : AppColors.electricBlue;
-    final selectedFg = Colors.white;
-    final idleFg = AppColors.useDarkCards
-        ? AppColors.cardTextMuted
-        : AppColors.inkMutedFor(theme.brightness);
+    const selectedFg = Colors.white;
+    final idleFg = AppColors.textMuted;
 
     return DecoratedBox(
       decoration: BoxDecoration(

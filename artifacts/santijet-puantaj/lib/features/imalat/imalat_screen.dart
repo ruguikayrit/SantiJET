@@ -250,10 +250,11 @@ class _ImalatScreenState extends ConsumerState<ImalatScreen> {
       _ImalatPhase.devamEden => AppColors.info,
       _ImalatPhase.tamamlanan => AppColors.success,
     };
-    // Başlık: nötr birincil mürekkep; durum rengi yalnızca zemin/ikon’da.
-    final titleColor = AppColors.useDarkCards
-        ? AppColors.cardTextPrimary
-        : AppColors.inkFor(theme.brightness);
+    // Canvas/chrome üzerinde — kart mürekkebi (cardText*) kullanılmaz.
+    final headerBg = AppColors.surfaceElevated;
+    final titleColor = AppColors.textPrimary;
+    final countColor = AppColors.readableSecondaryOn(headerBg);
+    final rail = AppColors.statusInkOnChrome(accent);
     return Material(
       color: Colors.transparent,
       child: InkWell(
@@ -268,7 +269,8 @@ class _ImalatScreenState extends ConsumerState<ImalatScreen> {
           ),
           decoration: BoxDecoration(
             borderRadius: AppRadii.md,
-            color: theme.colorScheme.surface.withValues(alpha: 0.28),
+            color: headerBg,
+            border: Border.all(color: AppColors.border.withValues(alpha: 0.7)),
           ),
           child: Row(
             children: [
@@ -276,7 +278,7 @@ class _ImalatScreenState extends ConsumerState<ImalatScreen> {
                 width: 3,
                 height: 22,
                 decoration: BoxDecoration(
-                  color: accent,
+                  color: rail,
                   borderRadius: BorderRadius.circular(2),
                 ),
               ),
@@ -285,7 +287,7 @@ class _ImalatScreenState extends ConsumerState<ImalatScreen> {
                 expanded
                     ? Icons.keyboard_arrow_down_rounded
                     : Icons.keyboard_arrow_right_rounded,
-                color: accent,
+                color: rail,
                 size: 22,
               ),
               const SizedBox(width: 2),
@@ -301,7 +303,7 @@ class _ImalatScreenState extends ConsumerState<ImalatScreen> {
               Text(
                 '$count',
                 style: theme.textTheme.labelMedium?.copyWith(
-                  color: theme.colorScheme.onSurfaceVariant,
+                  color: countColor,
                   fontWeight: FontWeight.w700,
                 ),
               ),
@@ -320,13 +322,14 @@ class _ImalatScreenState extends ConsumerState<ImalatScreen> {
     required VoidCallback onToggle,
   }) {
     final theme = Theme.of(context);
-    final accent = AppColors.useDarkCards
+    final accent = AppColors.useDarkChrome
         ? AppColors.electricBlueLight
         : AppColors.electricBlue;
-    // Alt başlık: açık gri — faz başlığından net ayrılır.
-    final titleColor = AppColors.useDarkCards
-        ? AppColors.cardTextMuted
-        : AppColors.inkMutedFor(theme.brightness);
+    final headerBg = updatedToday
+        ? accent.withValues(alpha: AppColors.useDarkChrome ? 0.16 : 0.1)
+        : AppColors.surface;
+    final titleColor = AppColors.textSecondary;
+    final countColor = AppColors.readableMutedOn(headerBg);
     return Material(
       color: Colors.transparent,
       child: InkWell(
@@ -341,12 +344,10 @@ class _ImalatScreenState extends ConsumerState<ImalatScreen> {
             borderRadius: AppRadii.md,
             border: Border.all(
               color: updatedToday
-                  ? accent.withValues(alpha: 0.45)
-                  : theme.dividerColor.withValues(alpha: 0.5),
+                  ? accent.withValues(alpha: 0.4)
+                  : AppColors.border.withValues(alpha: 0.65),
             ),
-            color: updatedToday
-                ? accent.withValues(alpha: 0.08)
-                : theme.colorScheme.surface.withValues(alpha: 0.35),
+            color: headerBg,
           ),
           child: Row(
             children: [
@@ -372,7 +373,7 @@ class _ImalatScreenState extends ConsumerState<ImalatScreen> {
                   child: Text(
                     'Bugün',
                     style: theme.textTheme.labelSmall?.copyWith(
-                      color: accent,
+                      color: AppColors.statusInkOnChrome(accent),
                       fontWeight: FontWeight.w700,
                     ),
                   ),
@@ -380,7 +381,7 @@ class _ImalatScreenState extends ConsumerState<ImalatScreen> {
               Text(
                 '$count',
                 style: theme.textTheme.labelMedium?.copyWith(
-                  color: theme.colorScheme.onSurfaceVariant,
+                  color: countColor,
                   fontWeight: FontWeight.w700,
                 ),
               ),
@@ -1244,8 +1245,7 @@ class _ImalatDetailSheet extends ConsumerWidget {
                       itemBuilder: (context, i) {
                         final e = entries[i];
                         return Material(
-                          color: theme.colorScheme.surfaceContainerHighest
-                              .withValues(alpha: 0.5),
+                          color: AppColors.surfaceElevated,
                           borderRadius: AppRadii.sm,
                           child: InkWell(
                             borderRadius: AppRadii.sm,

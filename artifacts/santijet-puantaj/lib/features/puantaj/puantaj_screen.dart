@@ -1093,11 +1093,15 @@ class _CetvelView extends StatelessWidget {
                         horizontal: 8,
                         vertical: 6,
                       ),
-                      color: AppColors.electricBlue.withValues(alpha: 0.08),
+                      color: AppColors.surfaceElevated,
                       child: Text(
                         group.company,
                         style: theme.textTheme.labelMedium?.copyWith(
-                          color: AppColors.electricBlue,
+                          color: AppColors.statusInkOnChrome(
+                            AppColors.useDarkChrome
+                                ? AppColors.electricBlueLight
+                                : AppColors.electricBlue,
+                          ),
                           fontWeight: FontWeight.w700,
                         ),
                       ),
