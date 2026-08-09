@@ -109,23 +109,28 @@ class KesifExportService {
     }
     final pozWidth = (maxPozChars + 2).clamp(10, 28).toDouble();
 
-    // Stil: 0 varsayılan tek satır · 1 başlık · 2 Tanım (kaydır) · 3 vurgu
-    const sDefault = 0;
+    // Stil: 0 meta · 1 başlık · 2 Tanım · 3 vurgu · 4 veri (yatay+düşey orta)
+    const sMeta = 0;
     const sHeader = 1;
     const sWrap = 2;
     const sEmphasis = 3;
+    const sCenter = 4;
 
     final rows = <List<_KesifCell>>[
       [_KesifCell('ŞantiJET Maliyet — METRAJ / KEŞİF CETVELİ', style: sEmphasis)],
-      [_KesifCell('Proje', style: sHeader), _KesifCell(project.ad)],
+      [_KesifCell('Proje', style: sHeader), _KesifCell(project.ad, style: sMeta)],
       if (project.aciklama.trim().isNotEmpty)
-        [_KesifCell('Açıklama', style: sHeader), _KesifCell(project.aciklama)],
+        [
+          _KesifCell('Açıklama', style: sHeader),
+          _KesifCell(project.aciklama, style: sMeta),
+        ],
       [
         _KesifCell('Tarih', style: sHeader),
         _KesifCell(
           AppFormat.date(
             DateTime.tryParse(project.guncellemeTarihi) ?? DateTime.now(),
           ),
+          style: sMeta,
         ),
       ],
       [],
@@ -140,16 +145,16 @@ class KesifExportService {
       ],
       for (var i = 0; i < project.satirlar.length; i++)
         [
-          _KesifCell('${i + 1}', style: sDefault),
-          _KesifCell(project.satirlar[i].pozNo, style: sDefault),
+          _KesifCell('${i + 1}', style: sCenter),
+          _KesifCell(project.satirlar[i].pozNo, style: sCenter),
           _KesifCell(project.satirlar[i].analizAdi, style: sWrap),
-          _KesifCell(project.satirlar[i].olcuBirimi, style: sDefault),
+          _KesifCell(project.satirlar[i].olcuBirimi, style: sCenter),
           _KesifCell(AppFormat.decimal(project.satirlar[i].miktar),
-              style: sDefault),
+              style: sCenter),
           _KesifCell(AppFormat.currency(project.satirlar[i].birimFiyati),
-              style: sDefault),
+              style: sCenter),
           _KesifCell(AppFormat.currency(project.satirlar[i].tutar),
-              style: sDefault),
+              style: sCenter),
         ],
       [
         _KesifCell(''),
@@ -284,7 +289,7 @@ String _escKesif(String value) => value
     .replaceAll('"', '&quot;')
     .replaceAll("'", '&apos;');
 
-/// 0: tek satır · 1: başlık · 2: Tanım kaydır · 3: vurgu
+/// 0: meta · 1: başlık · 2: Tanım kaydır · 3: vurgu · 4: veri ortala
 const _kesifStylesXml =
     '<?xml version="1.0" encoding="UTF-8" standalone="yes"?>'
     '<styleSheet xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main">'
@@ -303,10 +308,10 @@ const _kesifStylesXml =
     '<top style="thin"/><bottom style="thin"/>'
     '</border>'
     '</borders>'
-    '<cellXfs count="4">'
-    // 0 — varsayılan: kaydırma kapalı (tek satır)
+    '<cellXfs count="5">'
+    // 0 — meta satırlar (sol)
     '<xf fontId="0" fillId="0" borderId="1" applyBorder="1" applyAlignment="1">'
-    '<alignment wrapText="0" vertical="center"/>'
+    '<alignment wrapText="0" vertical="center" horizontal="left"/>'
     '</xf>'
     // 1 — sütun başlığı
     '<xf fontId="1" fillId="0" borderId="1" applyFont="1" applyBorder="1" applyAlignment="1">'
@@ -314,11 +319,15 @@ const _kesifStylesXml =
     '</xf>'
     // 2 — Tanım: kaydırılabilir
     '<xf fontId="0" fillId="0" borderId="1" applyBorder="1" applyAlignment="1">'
-    '<alignment wrapText="1" vertical="top"/>'
+    '<alignment wrapText="1" vertical="top" horizontal="left"/>'
     '</xf>'
     // 3 — vurgu (toplam / başlık satırı)
     '<xf fontId="1" fillId="0" borderId="1" applyFont="1" applyBorder="1" applyAlignment="1">'
-    '<alignment wrapText="0" vertical="center"/>'
+    '<alignment wrapText="0" vertical="center" horizontal="center"/>'
+    '</xf>'
+    // 4 — sıra/poz/birim/miktar/fiyat/tutar: yatay + düşey orta
+    '<xf fontId="0" fillId="0" borderId="1" applyBorder="1" applyAlignment="1">'
+    '<alignment wrapText="0" vertical="center" horizontal="center"/>'
     '</xf>'
     '</cellXfs>'
     '</styleSheet>';
