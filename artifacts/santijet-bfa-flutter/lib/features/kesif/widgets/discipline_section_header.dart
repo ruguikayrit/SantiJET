@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
 
-import '../../core/theme/app_colors.dart';
-import '../../core/theme/app_spacing.dart';
-import '../../domain/enums/app_enums.dart';
+import '../../../core/theme/app_colors.dart';
+import '../../../core/theme/app_spacing.dart';
+import '../../../domain/enums/app_enums.dart';
 
 /// İnşaat / Elektrik / Mekanik bölüm başlığı.
 class DisciplineSectionHeader extends StatelessWidget {
