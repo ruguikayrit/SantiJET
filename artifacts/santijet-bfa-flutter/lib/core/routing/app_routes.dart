@@ -1,7 +1,7 @@
 /// Uygulama rota yolları — Demir konvansiyonuyla (abstract final class).
 ///
-/// Alt navigasyon: Ana Sayfa · Analiz · Birim Fiyat · Keşif.
-/// Ayarlar kök (tam ekran) rotadır — bottom tab değil.
+/// Alt navigasyon: Ana Sayfa · Analiz · Keşif · Yaklaşık Maliyet.
+/// Ayarlar ve Projelerim kök (tam ekran) rotalardır — bottom tab değil.
 abstract final class AppRoutes {
   /// Ortak açılış ekranı (Demir/Beton/Puantaj ile aynı akış).
   static const splash = '/splash';
@@ -9,14 +9,19 @@ abstract final class AppRoutes {
   // Alt navigasyon sekmeleri
   static const home = '/';
   static const analiz = '/analiz';
-  static const birimFiyat = '/birim-fiyat';
   static const kesif = '/kesif';
+  static const yaklasikMaliyet = '/yaklasik-maliyet';
+
+  /// Birim fiyat kataloğu — sekme değil, kök rota.
+  static const birimFiyat = '/birim-fiyat';
 
   /// Eski Katalog sekmesi — Birim Fiyat'a yönlendirilir.
   static const katalog = '/katalog';
 
   // Kök (tam ekran) rotalar
   static const ayarlar = '/ayarlar';
+  static const projeler = '/ayarlar/projeler';
+  static const joinProject = '/ayarlar/projeler/katil';
   static const pozlar = '/pozlar';
   static const pozDetayPattern = '/pozlar/:id';
   static String pozDetay(String id) => '/pozlar/$id';

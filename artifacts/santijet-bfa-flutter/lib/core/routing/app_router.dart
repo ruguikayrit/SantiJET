@@ -15,17 +15,20 @@ import '../../features/kesif/kesif_list_screen.dart';
 import '../../features/legal/legal_document_screen.dart';
 import '../../features/legal/sources_screen.dart';
 import '../../features/ozel_analiz/analiz_editor_screen.dart';
+import '../../features/projects/join_project_screen.dart';
+import '../../features/projects/projects_screen.dart';
 import '../../features/settings/settings_screen.dart';
 import '../../features/shell/main_shell.dart';
 import '../../features/splash/splash_screen.dart';
+import '../../features/yaklasik_maliyet/yaklasik_maliyet_screen.dart';
 import '../../domain/enums/app_enums.dart';
 import 'app_routes.dart';
 import 'page_transitions.dart';
 
 final _rootNavigatorKey = GlobalKey<NavigatorState>();
 
-/// Kabuk: Ana Sayfa · Analiz · Birim Fiyat · Keşif.
-/// Ayarlar kök (tam ekran) rotadır.
+/// Kabuk: Ana Sayfa · Analiz · Keşif · Yaklaşık Maliyet.
+/// Ayarlar / Projelerim / Birim Fiyat kök (tam ekran) rotalardır.
 final routerProvider = Provider<GoRouter>((ref) {
   return GoRouter(
     navigatorKey: _rootNavigatorKey,
@@ -38,7 +41,7 @@ final routerProvider = Provider<GoRouter>((ref) {
           child: const SplashScreen(),
         ),
       ),
-      // Eski Katalog sekmesi → Birim Fiyat
+      // Eski Katalog sekmesi → Birim Fiyat (kök)
       GoRoute(
         path: AppRoutes.katalog,
         redirect: (_, __) => AppRoutes.birimFiyat,
@@ -70,10 +73,10 @@ final routerProvider = Provider<GoRouter>((ref) {
           StatefulShellBranch(
             routes: [
               GoRoute(
-                path: AppRoutes.birimFiyat,
+                path: AppRoutes.kesif,
                 pageBuilder: (context, state) => fadePage(
                   key: state.pageKey,
-                  child: const BirimFiyatScreen(),
+                  child: const KesifListScreen(),
                 ),
               ),
             ],
@@ -81,10 +84,10 @@ final routerProvider = Provider<GoRouter>((ref) {
           StatefulShellBranch(
             routes: [
               GoRoute(
-                path: AppRoutes.kesif,
+                path: AppRoutes.yaklasikMaliyet,
                 pageBuilder: (context, state) => fadePage(
                   key: state.pageKey,
-                  child: const KesifListScreen(),
+                  child: const YaklasikMaliyetScreen(),
                 ),
               ),
             ],
@@ -99,6 +102,30 @@ final routerProvider = Provider<GoRouter>((ref) {
         pageBuilder: (context, state) => fadeSlidePage(
           key: state.pageKey,
           child: const SettingsScreen(),
+        ),
+      ),
+      GoRoute(
+        path: AppRoutes.projeler,
+        parentNavigatorKey: _rootNavigatorKey,
+        pageBuilder: (context, state) => fadeSlidePage(
+          key: state.pageKey,
+          child: const ProjectsScreen(),
+        ),
+      ),
+      GoRoute(
+        path: AppRoutes.joinProject,
+        parentNavigatorKey: _rootNavigatorKey,
+        pageBuilder: (context, state) => fadeSlidePage(
+          key: state.pageKey,
+          child: const JoinProjectScreen(),
+        ),
+      ),
+      GoRoute(
+        path: AppRoutes.birimFiyat,
+        parentNavigatorKey: _rootNavigatorKey,
+        pageBuilder: (context, state) => fadeSlidePage(
+          key: state.pageKey,
+          child: const BirimFiyatScreen(),
         ),
       ),
       GoRoute(

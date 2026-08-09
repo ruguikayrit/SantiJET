@@ -9,7 +9,6 @@ import '../../core/theme/app_colors.dart';
 import '../../core/theme/app_spacing.dart';
 import '../../core/utils/app_format.dart';
 import '../../core/widgets/analiz_list_item.dart';
-import '../../core/widgets/santijet_header.dart';
 import '../../data/providers/catalog_provider.dart';
 import '../../data/providers/favorites_provider.dart';
 import '../../data/providers/kesif_provider.dart';
@@ -44,44 +43,55 @@ class _BirimFiyatScreenState extends ConsumerState<BirimFiyatScreen> {
     if (projects.isEmpty) {
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Önce bir keşif projesi oluşturun.')),
+        const SnackBar(content: Text('Önce Projelerim’den bir proje oluşturun.')),
       );
-      context.go(AppRoutes.kesif);
+      context.push(AppRoutes.projeler);
       return;
     }
 
-    final projectId = await showModalBottomSheet<String>(
-      context: context,
-      backgroundColor: AppColors.surface,
-      builder: (ctx) => SafeArea(
-        child: ListView(
-          shrinkWrap: true,
-          children: [
-            Padding(
-              padding: const EdgeInsets.all(AppSpacing.md),
-              child: Text(
-                'Keşife fiyatı uygula',
-                style: Theme.of(ctx).textTheme.titleLarge?.copyWith(
-                      color: AppColors.textPrimary,
+    // Tek proje: doğrudan uygula. Birden fazla: seçtir (aktif üstte).
+    String? projectId = projects.length == 1 ? projects.first.id : null;
+    if (projectId == null) {
+      final active = ref.read(activeKesifProvider);
+      projectId = await showModalBottomSheet<String>(
+        context: context,
+        backgroundColor: AppColors.surface,
+        builder: (ctx) {
+          final ordered = [
+            if (active != null) active,
+            ...projects.where((p) => p.id != active?.id),
+          ];
+          return SafeArea(
+            child: ListView(
+              shrinkWrap: true,
+              children: [
+                Padding(
+                  padding: const EdgeInsets.all(AppSpacing.md),
+                  child: Text(
+                    'Keşife fiyatı uygula',
+                    style: Theme.of(ctx).textTheme.titleLarge?.copyWith(
+                          color: AppColors.textPrimary,
+                        ),
+                  ),
+                ),
+                for (final p in ordered)
+                  ListTile(
+                    title: Text(
+                      p.ad,
+                      style: TextStyle(color: AppColors.textPrimary),
                     ),
-              ),
+                    subtitle: Text(
+                      '${p.satirlar.length} satır · ${AppFormat.currency(p.toplam)}',
+                      style: TextStyle(color: AppColors.textMuted),
+                    ),
+                    onTap: () => Navigator.pop(ctx, p.id),
+                  ),
+              ],
             ),
-            for (final p in projects)
-              ListTile(
-                title: Text(
-                  p.ad,
-                  style: TextStyle(color: AppColors.textPrimary),
-                ),
-                subtitle: Text(
-                  '${p.satirlar.length} satır · ${AppFormat.currency(p.toplam)}',
-                  style: TextStyle(color: AppColors.textMuted),
-                ),
-                onTap: () => Navigator.pop(ctx, p.id),
-              ),
-          ],
-        ),
-      ),
-    );
+          );
+        },
+      );
+    }
     if (projectId == null || !mounted) return;
 
     final qtyController = TextEditingController(text: '1');
@@ -135,7 +145,21 @@ class _BirimFiyatScreenState extends ConsumerState<BirimFiyatScreen> {
 
     return Scaffold(
       backgroundColor: AppColors.canvas,
+      appBar: AppBar(
+        title: const Text('Birim Fiyat'),
+        leading: IconButton(
+          icon: const Icon(Icons.arrow_back),
+          onPressed: () {
+            if (context.canPop()) {
+              context.pop();
+            } else {
+              context.go(AppRoutes.home);
+            }
+          },
+        ),
+      ),
       body: SafeArea(
+        top: false,
         bottom: false,
         child: catalogAsync.when(
           loading: () => const Center(child: CircularProgressIndicator()),
@@ -151,13 +175,10 @@ class _BirimFiyatScreenState extends ConsumerState<BirimFiyatScreen> {
 
             return CustomScrollView(
               slivers: [
-                const SliverToBoxAdapter(
-                  child: SantijetHeader(subtitle: 'Birim Fiyat'),
-                ),
                 SliverPadding(
                   padding: const EdgeInsets.fromLTRB(
                     AppSpacing.md,
-                    0,
+                    AppSpacing.sm,
                     AppSpacing.md,
                     AppSpacing.xs,
                   ),

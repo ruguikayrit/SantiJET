@@ -229,6 +229,12 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
         padding: const EdgeInsets.all(AppSpacing.md),
         children: [
           _SettingsTile(
+            icon: Icons.folder_copy_outlined,
+            title: 'Projelerim',
+            subtitle: '${kesifProjects.length} proje',
+            onTap: () => context.push(AppRoutes.projeler),
+          ),
+          _SettingsTile(
             icon: Icons.dark_mode,
             title: 'Tema',
             subtitle: themeLabel(themeMode),
@@ -242,7 +248,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
                 : '${userAnalizleri.length} özel analiz · '
                     '${favoriteIds.length} favori · '
                     '${recentIds.length} son · '
-                    '${kesifProjects.length} keşif',
+                    '${kesifProjects.length} proje',
             onTap: () {
               if (!_busy) _showBackupDialog(context);
             },

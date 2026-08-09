@@ -1,14 +1,18 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:hive/hive.dart';
 
+import '../../core/theme/theme_mode_provider.dart';
 import '../../core/utils/id_gen.dart';
+import '../../core/utils/project_code_generator.dart';
 import '../../domain/calc/analiz_hesap.dart';
 import '../../domain/entities/kesif.dart';
 import '../../domain/entities/poz_analiz.dart';
 
 /// Keşif projeleri — Hive `kesif_projects` kutusunda kalıcıdır.
 class KesifNotifier extends StateNotifier<List<KesifProject>> {
-  KesifNotifier(this._box) : super(_read(_box));
+  KesifNotifier(this._box) : super(_read(_box)) {
+    _ensureProjectCodes();
+  }
 
   final Box _box;
   static const _key = 'items';
@@ -29,12 +33,47 @@ class KesifNotifier extends StateNotifier<List<KesifProject>> {
     _box.put(_key, state.map((p) => p.toJson()).toList());
   }
 
-  String createProject(String ad, {String aciklama = ''}) {
+  void _ensureProjectCodes() {
+    var changed = false;
+    final used = <String>{};
+    final next = <KesifProject>[];
+    for (final p in state) {
+      var kod = p.kod.trim().toUpperCase();
+      if (kod.isEmpty || used.contains(kod)) {
+        kod = _uniqueCode(used);
+        changed = true;
+      }
+      used.add(kod);
+      next.add(kod == p.kod ? p : p.copyWith(kod: kod));
+    }
+    if (changed) {
+      state = next;
+      _persist();
+    }
+  }
+
+  String _uniqueCode([Set<String>? used]) {
+    final taken = used ?? state.map((e) => e.kod.toUpperCase()).toSet();
+    for (var i = 0; i < 20; i++) {
+      final code = ProjectCodeGenerator.generate();
+      if (!taken.contains(code)) return code;
+    }
+    return ProjectCodeGenerator.generate();
+  }
+
+  String createProject(
+    String ad, {
+    String aciklama = '',
+    String konum = '',
+    String? kod,
+  }) {
     final now = DateTime.now().toIso8601String();
     final project = KesifProject(
       id: IdGen.make('kp'),
-      ad: ad.trim().isEmpty ? 'Yeni Keşif' : ad.trim(),
+      ad: ad.trim().isEmpty ? 'Yeni Proje' : ad.trim(),
       aciklama: aciklama.trim(),
+      konum: konum.trim(),
+      kod: (kod ?? _uniqueCode()).trim().toUpperCase(),
       satirlar: const [],
       olusturmaTarihi: now,
       guncellemeTarihi: now,
@@ -42,6 +81,18 @@ class KesifNotifier extends StateNotifier<List<KesifProject>> {
     state = [project, ...state];
     _persist();
     return project.id;
+  }
+
+  void updateProject(KesifProject project) {
+    final now = DateTime.now().toIso8601String();
+    state = [
+      for (final p in state)
+        if (p.id == project.id)
+          project.copyWith(guncellemeTarihi: now)
+        else
+          p,
+    ];
+    _persist();
   }
 
   KesifProject? byId(String id) {
@@ -205,3 +256,38 @@ final kesifBoxProvider = Provider<Box>(
 final kesifProvider = StateNotifierProvider<KesifNotifier, List<KesifProject>>(
   (ref) => KesifNotifier(ref.watch(kesifBoxProvider)),
 );
+
+/// Aktif proje (keşif) — Ayarlar kutusu + Projelerim.
+class ActiveKesifIdNotifier extends StateNotifier<String?> {
+  ActiveKesifIdNotifier(this._box) : super(_box.get(_key) as String?);
+
+  final Box _box;
+  static const _key = 'activeKesifId';
+
+  void set(String? id) {
+    state = id;
+    if (id == null || id.isEmpty) {
+      _box.delete(_key);
+    } else {
+      _box.put(_key, id);
+    }
+  }
+}
+
+final activeKesifIdProvider =
+    StateNotifierProvider<ActiveKesifIdNotifier, String?>(
+  (ref) => ActiveKesifIdNotifier(ref.watch(settingsBoxProvider)),
+);
+
+/// Aktif keşif projesi — id geçersizse listedeki ilk proje.
+final activeKesifProvider = Provider<KesifProject?>((ref) {
+  final list = ref.watch(kesifProvider);
+  if (list.isEmpty) return null;
+  final id = ref.watch(activeKesifIdProvider);
+  if (id != null) {
+    for (final p in list) {
+      if (p.id == id) return p;
+    }
+  }
+  return list.first;
+});

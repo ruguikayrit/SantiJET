@@ -8,29 +8,71 @@ import '../../core/theme/app_colors.dart';
 import '../../core/theme/app_spacing.dart';
 import '../../core/utils/app_format.dart';
 import '../../data/providers/kesif_provider.dart';
+import '../../data/services/kesif_export_service.dart';
+import '../../domain/entities/kesif.dart';
+import '../export/export_format_sheet.dart';
 import 'kesif_import_flow.dart';
+import 'kesif_poz_picker_sheet.dart';
 
-/// Keşif listesi — React Native `kesif/index` karşılığı.
+/// Keşif yüzeyi — aktif projenin satırları + metraj (YM ayrı sekmede).
 class KesifListScreen extends ConsumerWidget {
   const KesifListScreen({super.key});
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final projects = ref.watch(kesifProvider);
+    final kesif = ref.watch(activeKesifProvider);
     final theme = Theme.of(context);
+
+    if (kesif == null) {
+      return Scaffold(
+        backgroundColor: AppColors.canvas,
+        appBar: AppBar(
+          title: const Text('Keşif'),
+          actions: [
+            IconButton(
+              tooltip: 'Ayarlar',
+              icon: const Icon(Icons.settings_outlined),
+              onPressed: () => context.push(AppRoutes.ayarlar),
+            ),
+          ],
+        ),
+        body: SJEmptyState(
+          title: 'Aktif proje yok',
+          message: 'Keşif satırları için Projelerim’den bir proje seçin.',
+          icon: Icons.description_outlined,
+          actionLabel: 'Projelerim',
+          onAction: () => context.push(AppRoutes.projeler),
+        ),
+      );
+    }
+
+    final projectId = kesif.id;
 
     return Scaffold(
       backgroundColor: AppColors.canvas,
       appBar: AppBar(
-        title: const Text('Keşif'),
+        title: Text(kesif.ad),
         actions: [
+          IconButton(
+            tooltip: 'Dışa Aktar',
+            icon: const Icon(Icons.download_outlined),
+            onPressed: () async {
+              final format = await ExportFormatSheet.pick(context);
+              if (format == null || !context.mounted) return;
+              if (format == ExportFormat.pdf) {
+                await kesifExportService.sharePdf(kesif);
+              } else {
+                await kesifExportService.shareExcel(kesif);
+              }
+            },
+          ),
           IconButton(
             tooltip: 'Excel İçe Aktar',
             icon: const Icon(Icons.upload_file_outlined),
             onPressed: () => KesifImportFlow.run(
               context,
               ref,
-              onImported: (id) => context.push(AppRoutes.kesifDetay(id)),
+              projectId: projectId,
             ),
           ),
           IconButton(
@@ -40,85 +82,330 @@ class KesifListScreen extends ConsumerWidget {
           ),
         ],
       ),
-      floatingActionButton: FloatingActionButton(
-        onPressed: () => _create(context, ref),
-        child: const Icon(Icons.add),
+      floatingActionButton: FloatingActionButton.extended(
+        onPressed: () async {
+          final picked = await KesifPozPickerSheet.show(context);
+          if (picked == null) return;
+          ref.read(kesifProvider.notifier).addSatir(
+                projectId,
+                picked.analiz,
+                picked.miktar,
+              );
+        },
+        icon: const Icon(Icons.add),
+        label: const Text('Poz Ekle'),
       ),
       body: SafeArea(
         top: false,
-        child: projects.isEmpty
-            ? SJEmptyState(
-                title: 'Henüz keşif yok',
-                message: 'Yeni keşif oluşturup metraj cetveli hazırlayın.',
-                icon: Icons.description_outlined,
-                actionLabel: 'Yeni Keşif',
-                onAction: () => _create(context, ref),
-              )
-            : ListView.separated(
-                padding: const EdgeInsets.all(AppSpacing.md),
-                itemCount: projects.length,
-                separatorBuilder: (_, __) =>
-                    const SizedBox(height: AppSpacing.xs),
-                itemBuilder: (context, i) {
-                  final p = projects[i];
-                  return SJListItem(
-                    title: p.ad,
-                    subtitle: '${p.satirlar.length} poz · '
-                        '${DateTime.tryParse(p.guncellemeTarihi)?.toLocal().toString().split(' ').first ?? ''}',
-                    leadingIcon: Icons.description_outlined,
-                    accentColor: AppColors.moduleKesif,
-                    trailingText: AppFormat.currency(p.toplam),
-                    onTap: () => context.push(AppRoutes.kesifDetay(p.id)),
-                    trailing: IconButton(
-                      tooltip: 'Sil',
-                      icon: Icon(Icons.delete_outline,
-                          color: theme.colorScheme.error),
-                      onPressed: () => _delete(context, ref, p.id, p.ad),
+        child: CustomScrollView(
+          slivers: [
+            SliverPadding(
+              padding: const EdgeInsets.all(AppSpacing.md),
+              sliver: SliverList.list(
+                children: [
+                  Text(
+                    'Keşif Satırları',
+                    style: theme.textTheme.titleLarge?.copyWith(
+                      color: AppColors.textPrimary,
                     ),
-                  );
-                },
+                  ),
+                  const SizedBox(height: 4),
+                  Text(
+                    'Poz · tanım · birim fiyat kaynağı · miktar · tutar',
+                    style: theme.textTheme.bodySmall?.copyWith(
+                      color: AppColors.textMuted,
+                    ),
+                  ),
+                  const SizedBox(height: AppSpacing.sm),
+                  if (kesif.satirlar.isEmpty)
+                    SizedBox(
+                      height: 280,
+                      child: SJEmptyState(
+                        title: 'Henüz poz yok',
+                        message:
+                            'Poz Ekle ile katalogdan seçin veya Excel içe aktarın.',
+                        icon: Icons.add_circle_outline,
+                        actionLabel: 'Poz Ekle',
+                        onAction: () async {
+                          final picked =
+                              await KesifPozPickerSheet.show(context);
+                          if (picked == null) return;
+                          ref.read(kesifProvider.notifier).addSatir(
+                                projectId,
+                                picked.analiz,
+                                picked.miktar,
+                              );
+                        },
+                      ),
+                    )
+                  else
+                    for (final satir in kesif.satirlar) ...[
+                      _SatirCard(projectId: projectId, satir: satir),
+                      const SizedBox(height: AppSpacing.xs),
+                    ],
+                  const SizedBox(height: AppSpacing.lg),
+                  Text(
+                    'Metraj',
+                    style: theme.textTheme.titleLarge?.copyWith(
+                      color: AppColors.textPrimary,
+                    ),
+                  ),
+                  const SizedBox(height: 4),
+                  Text(
+                    'Satıra bağlı ölçü notu ve miktar.',
+                    style: theme.textTheme.bodySmall?.copyWith(
+                      color: AppColors.textMuted,
+                    ),
+                  ),
+                  const SizedBox(height: AppSpacing.sm),
+                  if (kesif.satirlar.isEmpty)
+                    SJCard(
+                      child: Text(
+                        'Poz eklendikçe metraj notları burada düzenlenir.',
+                        style: theme.textTheme.bodyMedium?.copyWith(
+                          color: AppColors.cardTextMuted,
+                        ),
+                      ),
+                    )
+                  else
+                    for (final satir in kesif.satirlar) ...[
+                      _MetrajCard(projectId: projectId, satir: satir),
+                      const SizedBox(height: AppSpacing.xs),
+                    ],
+                  const SizedBox(height: AppSpacing.xl * 2),
+                ],
               ),
+            ),
+          ],
+        ),
       ),
     );
   }
+}
 
-  Future<void> _create(BuildContext context, WidgetRef ref) async {
-    final controller = TextEditingController(text: 'Yeni Keşif');
-    final name = await SJModal.showSheet<String>(
-      context: context,
-      title: 'Yeni Keşif',
+class _SatirCard extends ConsumerStatefulWidget {
+  const _SatirCard({required this.projectId, required this.satir});
+
+  final String projectId;
+  final KesifSatiri satir;
+
+  @override
+  ConsumerState<_SatirCard> createState() => _SatirCardState();
+}
+
+class _SatirCardState extends ConsumerState<_SatirCard> {
+  late final TextEditingController _qtyController;
+
+  @override
+  void initState() {
+    super.initState();
+    _qtyController = TextEditingController(
+      text: AppFormat.decimal(widget.satir.miktar, fractionDigits: 2),
+    );
+  }
+
+  @override
+  void didUpdateWidget(covariant _SatirCard oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (oldWidget.satir.miktar != widget.satir.miktar) {
+      _qtyController.text =
+          AppFormat.decimal(widget.satir.miktar, fractionDigits: 2);
+    }
+  }
+
+  @override
+  void dispose() {
+    _qtyController.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final satir = widget.satir;
+    final theme = Theme.of(context);
+
+    return SJCard(
       child: Column(
-        mainAxisSize: MainAxisSize.min,
-        crossAxisAlignment: CrossAxisAlignment.stretch,
+        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          SJInput(controller: controller, label: 'Proje Adı'),
-          const SizedBox(height: AppSpacing.md),
-          SJButton(
-            label: 'Oluştur',
-            onPressed: () => Navigator.of(context).pop(controller.text),
+          Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      satir.pozNo,
+                      style: theme.textTheme.labelMedium
+                          ?.copyWith(color: AppColors.moduleKesif),
+                    ),
+                    Text(
+                      satir.analizAdi,
+                      style: theme.textTheme.titleMedium?.copyWith(
+                        color: AppColors.cardTextPrimary,
+                      ),
+                      maxLines: 2,
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                    const SizedBox(height: 4),
+                    Text(
+                      '${AppFormat.currency(satir.birimFiyati)} / ${satir.olcuBirimi} · ${satir.fiyatKaynagi.label}',
+                      style: theme.textTheme.bodySmall?.copyWith(
+                        color: AppColors.cardTextMuted,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              SizedBox(
+                width: 92,
+                child: TextField(
+                  controller: _qtyController,
+                  keyboardType: const TextInputType.numberWithOptions(
+                    decimal: true,
+                  ),
+                  textAlign: TextAlign.right,
+                  style: theme.textTheme.titleMedium?.copyWith(
+                    color: AppColors.cardTextPrimary,
+                  ),
+                  onSubmitted: (raw) {
+                    final value = double.tryParse(
+                          raw.replaceAll('.', '').replaceAll(',', '.'),
+                        ) ??
+                        0;
+                    ref.read(kesifProvider.notifier).updateMiktar(
+                          widget.projectId,
+                          satir.id,
+                          value,
+                        );
+                  },
+                  decoration: InputDecoration(
+                    suffixText: satir.olcuBirimi,
+                    isDense: true,
+                  ),
+                ),
+              ),
+              const SizedBox(width: AppSpacing.xs),
+              SizedBox(
+                width: 88,
+                child: Text(
+                  AppFormat.currency(satir.tutar),
+                  style: theme.textTheme.titleMedium?.copyWith(
+                    color: AppColors.cardTextPrimary,
+                  ),
+                  textAlign: TextAlign.right,
+                ),
+              ),
+              IconButton(
+                tooltip: 'Sil',
+                onPressed: () => ref
+                    .read(kesifProvider.notifier)
+                    .removeSatir(widget.projectId, satir.id),
+                icon: Icon(Icons.close, color: theme.colorScheme.error),
+              ),
+            ],
           ),
         ],
       ),
     );
-    controller.dispose();
-    if (name == null || name.trim().isEmpty || !context.mounted) return;
-    final id = ref.read(kesifProvider.notifier).createProject(name);
-    context.push(AppRoutes.kesifDetay(id));
+  }
+}
+
+class _MetrajCard extends ConsumerStatefulWidget {
+  const _MetrajCard({required this.projectId, required this.satir});
+
+  final String projectId;
+  final KesifSatiri satir;
+
+  @override
+  ConsumerState<_MetrajCard> createState() => _MetrajCardState();
+}
+
+class _MetrajCardState extends ConsumerState<_MetrajCard> {
+  late final TextEditingController _noteController;
+  late final TextEditingController _qtyController;
+
+  @override
+  void initState() {
+    super.initState();
+    _noteController = TextEditingController(text: widget.satir.metrajNotu);
+    _qtyController = TextEditingController(
+      text: AppFormat.decimal(widget.satir.miktar, fractionDigits: 2),
+    );
   }
 
-  Future<void> _delete(
-    BuildContext context,
-    WidgetRef ref,
-    String id,
-    String ad,
-  ) async {
-    final ok = await SJModal.confirm(
-      context: context,
-      title: 'Keşifi Sil',
-      message: '"$ad" projesi silinsin mi?',
-      confirmLabel: 'Sil',
-      destructive: true,
+  @override
+  void didUpdateWidget(covariant _MetrajCard oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (oldWidget.satir.metrajNotu != widget.satir.metrajNotu) {
+      _noteController.text = widget.satir.metrajNotu;
+    }
+    if (oldWidget.satir.miktar != widget.satir.miktar) {
+      _qtyController.text =
+          AppFormat.decimal(widget.satir.miktar, fractionDigits: 2);
+    }
+  }
+
+  @override
+  void dispose() {
+    _noteController.dispose();
+    _qtyController.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final satir = widget.satir;
+    return SJCard(
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            '${satir.pozNo} · ${satir.analizAdi}',
+            style: theme.textTheme.titleMedium?.copyWith(
+              color: AppColors.cardTextPrimary,
+            ),
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
+          ),
+          const SizedBox(height: AppSpacing.sm),
+          TextField(
+            controller: _qtyController,
+            keyboardType: const TextInputType.numberWithOptions(decimal: true),
+            decoration: InputDecoration(
+              labelText: 'Miktar (${satir.olcuBirimi})',
+              isDense: true,
+            ),
+            onSubmitted: (raw) {
+              final value = double.tryParse(raw.replaceAll(',', '.')) ?? 0;
+              ref.read(kesifProvider.notifier).updateMiktar(
+                    widget.projectId,
+                    satir.id,
+                    value,
+                  );
+            },
+          ),
+          const SizedBox(height: AppSpacing.xs),
+          TextField(
+            controller: _noteController,
+            maxLines: 2,
+            decoration: const InputDecoration(
+              labelText: 'Ölçü notu',
+              hintText: 'Örn. 12×3.20 m döşeme',
+              isDense: true,
+            ),
+            onEditingComplete: () {
+              ref.read(kesifProvider.notifier).updateMetrajNotu(
+                    widget.projectId,
+                    satir.id,
+                    _noteController.text,
+                  );
+            },
+          ),
+        ],
+      ),
     );
-    if (ok) ref.read(kesifProvider.notifier).deleteProject(id);
   }
 }

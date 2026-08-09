@@ -93,22 +93,6 @@ class AnalizHubScreen extends ConsumerWidget {
                       ),
                       const SizedBox(height: AppSpacing.xs),
                       _HubTile(
-                        icon: Icons.compare_arrows,
-                        color: AppColors.moduleMekanik,
-                        title: 'Analiz Karşılaştır',
-                        subtitle: 'Birden fazla analizi yan yana',
-                        onTap: () => context.push(AppRoutes.karsilastir),
-                      ),
-                      const SizedBox(height: AppSpacing.xs),
-                      _HubTile(
-                        icon: Icons.sell_outlined,
-                        color: AppColors.electricBlue,
-                        title: 'Birim Fiyat Kataloğu',
-                        subtitle: 'Resmi poz fiyatlarına git',
-                        onTap: () => context.go(AppRoutes.birimFiyat),
-                      ),
-                      const SizedBox(height: AppSpacing.xs),
-                      _HubTile(
                         icon: Icons.layers_outlined,
                         color: AppColors.moduleInsaat,
                         title: 'İnşaat Analizleri',
@@ -120,7 +104,7 @@ class AnalizHubScreen extends ConsumerWidget {
                       _HubTile(
                         icon: Icons.plumbing_outlined,
                         color: AppColors.moduleMekanik,
-                        title: 'Mekanik Tesisat',
+                        title: 'Mekanik Tesisat Analizleri',
                         onTap: () =>
                             context.push('${AppRoutes.pozlar}?modul=mekanik'),
                       ),
@@ -128,15 +112,23 @@ class AnalizHubScreen extends ConsumerWidget {
                       _HubTile(
                         icon: Icons.bolt_outlined,
                         color: AppColors.moduleElektrik,
-                        title: 'Elektrik Tesisat',
+                        title: 'Elektrik Analizleri',
                         onTap: () =>
                             context.push('${AppRoutes.pozlar}?modul=elektrik'),
                       ),
                       const SizedBox(height: AppSpacing.xs),
                       _HubTile(
+                        icon: Icons.compare_arrows,
+                        color: AppColors.moduleMekanik,
+                        title: 'Analiz Karşılaştır',
+                        subtitle: 'Birden fazla analizi yan yana',
+                        onTap: () => context.push(AppRoutes.karsilastir),
+                      ),
+                      const SizedBox(height: AppSpacing.xs),
+                      _HubTile(
                         icon: Icons.star_outline,
                         color: AppColors.moduleFavori,
-                        title: 'Favoriler',
+                        title: 'Favori Analizler',
                         subtitle: '${favorites.length} kayıt',
                         onTap: () =>
                             context.push('${AppRoutes.pozlar}?modul=favoriler'),

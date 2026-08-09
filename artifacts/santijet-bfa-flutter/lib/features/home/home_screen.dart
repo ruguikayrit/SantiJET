@@ -201,7 +201,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                   value: AppFormat.currency(ymToplam),
                   unit: '',
                   accentColor: AppColors.electricBlue,
-                  onTap: () => context.go(AppRoutes.kesif),
+                  onTap: () => context.go(AppRoutes.yaklasikMaliyet),
                 ),
               ),
             ],
@@ -209,14 +209,17 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
         ),
       ),
       if (acikKesif.isNotEmpty) ...[
-        _sectionTitle('Açık Keşifler'),
+        _sectionTitle('Açık Projeler'),
         SliverPadding(
           padding: const EdgeInsets.symmetric(horizontal: AppSpacing.md),
           sliver: SliverList.list(
             children: [
               for (final k in acikKesif) ...[
                 SJCard(
-                  onTap: () => context.push(AppRoutes.kesifDetay(k.id)),
+                  onTap: () {
+                    ref.read(activeKesifIdProvider.notifier).set(k.id);
+                    context.go(AppRoutes.kesif);
+                  },
                   child: Row(
                     children: [
                       Icon(Icons.description, color: AppColors.moduleKesif),

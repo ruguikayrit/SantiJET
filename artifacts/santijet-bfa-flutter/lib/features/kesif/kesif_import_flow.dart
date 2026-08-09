@@ -106,6 +106,7 @@ abstract final class KesifImportFlow {
       projectName = name.trim();
       targetProjectId =
           ref.read(kesifProvider.notifier).createProject(projectName, aciklama: parsed.projectAciklama ?? '');
+      ref.read(activeKesifIdProvider.notifier).set(targetProjectId);
     }
 
     ref.read(kesifProvider.notifier).importSatirlar(

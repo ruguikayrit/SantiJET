@@ -7,8 +7,8 @@ import '../../core/theme/app_colors.dart';
 import '../../core/theme/theme_mode_provider.dart';
 import '../../core/theme/theme_rebuild_gate.dart';
 
-/// Ana kabuk — 4 yüzey: Ana Sayfa · Analiz · Birim Fiyat · Keşif.
-/// Ayarlar bottom tab değil (header / Ana Sayfa'dan).
+/// Ana kabuk — 4 yüzey: Ana Sayfa · Analiz · Keşif · Yaklaşık Maliyet.
+/// Ayarlar / Projelerim bottom tab değil.
 class MainShell extends ConsumerWidget {
   const MainShell({required this.navigationShell, super.key});
 
@@ -26,14 +26,14 @@ class MainShell extends ConsumerWidget {
       label: 'Analiz',
     ),
     SJNavItem(
-      icon: Icons.sell_outlined,
-      activeIcon: Icons.sell,
-      label: 'Birim Fiyat',
-    ),
-    SJNavItem(
       icon: Icons.description_outlined,
       activeIcon: Icons.description,
       label: 'Keşif',
+    ),
+    SJNavItem(
+      icon: Icons.account_balance_wallet_outlined,
+      activeIcon: Icons.account_balance_wallet,
+      label: 'Yaklaşık Maliyet',
     ),
   ];
 
@@ -42,27 +42,37 @@ class MainShell extends ConsumerWidget {
     final themeMode = ref.watch(themeModeProvider);
     AppColors.applyPaletteFromMode(themeMode, Theme.of(context).brightness);
 
-    return Scaffold(
-      backgroundColor: AppColors.canvas,
-      resizeToAvoidBottomInset: false,
-      body: Column(
-        children: [
-          Expanded(
-            child: ThemeRebuildGate(child: navigationShell),
-          ),
-          MediaQuery.removePadding(
-            context: context,
-            removeBottom: true,
-            child: SJBottomNavigation(
-              items: _items,
-              currentIndex: navigationShell.currentIndex,
-              onTap: (index) => navigationShell.goBranch(
-                index,
-                initialLocation: index == navigationShell.currentIndex,
+    return PopScope(
+      // Alt sekmeler arası tarayıcı/geçmiş kaydırmasıyla geri gitmeyi engelle.
+      canPop: false,
+      child: Scaffold(
+        backgroundColor: AppColors.canvas,
+        resizeToAvoidBottomInset: false,
+        body: Column(
+          children: [
+            Expanded(
+              child: ThemeRebuildGate(child: navigationShell),
+            ),
+            MediaQuery.removePadding(
+              context: context,
+              removeBottom: true,
+              child: SJBottomNavigation(
+                items: _items,
+                currentIndex: navigationShell.currentIndex,
+                onTap: (index) {
+                  // Sekme değişimini tarayıcı geçmişine yazma → sağa/sola
+                  // kaydırarak sekme geçişi oluşmasın.
+                  Router.neglect(context, () {
+                    navigationShell.goBranch(
+                      index,
+                      initialLocation: index == navigationShell.currentIndex,
+                    );
+                  });
+                },
               ),
             ),
-          ),
-        ],
+          ],
+        ),
       ),
     );
   }

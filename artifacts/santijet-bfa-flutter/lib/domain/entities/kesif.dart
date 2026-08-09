@@ -124,6 +124,8 @@ class KesifSatiri extends Equatable {
 }
 
 /// Keşif projesi — React Native `KesifProject` arayüzünün karşılığı.
+///
+/// Projelerim kartlarında `kod` / `konum` Demir-Beton ile aynı kurguda kullanılır.
 class KesifProject extends Equatable {
   const KesifProject({
     required this.id,
@@ -132,6 +134,8 @@ class KesifProject extends Equatable {
     required this.satirlar,
     required this.olusturmaTarihi,
     required this.guncellemeTarihi,
+    this.kod = '',
+    this.konum = '',
   });
 
   final String id;
@@ -140,6 +144,8 @@ class KesifProject extends Equatable {
   final List<KesifSatiri> satirlar;
   final String olusturmaTarihi;
   final String guncellemeTarihi;
+  final String kod;
+  final String konum;
 
   double get toplam => satirlar.fold<double>(0, (sum, row) => sum + row.tutar);
 
@@ -160,6 +166,8 @@ class KesifProject extends Equatable {
     List<KesifSatiri>? satirlar,
     String? olusturmaTarihi,
     String? guncellemeTarihi,
+    String? kod,
+    String? konum,
   }) {
     return KesifProject(
       id: id ?? this.id,
@@ -168,6 +176,8 @@ class KesifProject extends Equatable {
       satirlar: satirlar ?? this.satirlar,
       olusturmaTarihi: olusturmaTarihi ?? this.olusturmaTarihi,
       guncellemeTarihi: guncellemeTarihi ?? this.guncellemeTarihi,
+      kod: kod ?? this.kod,
+      konum: konum ?? this.konum,
     );
   }
 
@@ -178,6 +188,8 @@ class KesifProject extends Equatable {
         'satirlar': satirlar.map((s) => s.toJson()).toList(),
         'olusturmaTarihi': olusturmaTarihi,
         'guncellemeTarihi': guncellemeTarihi,
+        'kod': kod,
+        'konum': konum,
       };
 
   factory KesifProject.fromJson(Map<dynamic, dynamic> json) {
@@ -197,12 +209,22 @@ class KesifProject extends Equatable {
           DateTime.now().toIso8601String(),
       guncellemeTarihi: json['guncellemeTarihi'] as String? ??
           DateTime.now().toIso8601String(),
+      kod: (json['kod'] as String? ?? '').trim().toUpperCase(),
+      konum: (json['konum'] as String? ?? '').trim(),
     );
   }
 
   @override
-  List<Object?> get props =>
-      [id, ad, aciklama, satirlar, olusturmaTarihi, guncellemeTarihi];
+  List<Object?> get props => [
+        id,
+        ad,
+        aciklama,
+        satirlar,
+        olusturmaTarihi,
+        guncellemeTarihi,
+        kod,
+        konum,
+      ];
 }
 
 KesifSatiri buildKesifSatiri(PozAnaliz analiz, double miktar) {
