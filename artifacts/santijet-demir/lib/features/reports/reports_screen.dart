@@ -8,7 +8,6 @@ import 'package:santijet_demir/core/theme/app_radii.dart';
 import 'package:santijet_demir/core/theme/app_spacing.dart';
 import 'package:santijet_demir/core/theme/app_typography.dart';
 import 'package:santijet_demir/core/widgets/app_components.dart';
-import 'package:santijet_demir/data/mock/mock_reports.dart';
 import 'package:santijet_demir/domain/entities/report.dart';
 import 'package:santijet_demir/features/reports/providers/reports_provider.dart';
 import 'package:santijet_demir/features/reports/report_dialogs.dart';
@@ -49,27 +48,6 @@ class ReportsScreen extends ConsumerWidget {
       body: ListView(
         padding: const EdgeInsets.all(AppSpacing.md),
         children: [
-          if (useDemoReports) ...[
-            Container(
-              width: double.infinity,
-              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
-              decoration: BoxDecoration(
-                color: AppColors.warning.withValues(alpha: 0.12),
-                borderRadius: AppRadii.md,
-                border: Border.all(
-                  color: AppColors.warning.withValues(alpha: 0.4),
-                ),
-              ),
-              child: Text(
-                'DEMO — 16 rapor örnek veri ile hazır. İndir / Önizle ile PDF açılır.',
-                style: AppTypography.bodySmall.copyWith(
-                  color: AppColors.warning,
-                  fontWeight: FontWeight.w600,
-                ),
-              ),
-            ),
-            const SizedBox(height: 12),
-          ],
           Text('Rapor Kategorileri', style: AppTypography.headlineMedium),
           const SizedBox(height: 12),
           GridView.builder(

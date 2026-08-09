@@ -16,7 +16,6 @@ import 'package:santijet_demir/core/widgets/summary_kpi_grid.dart';
 import 'package:santijet_demir/features/analysis/widgets/analysis_running_lock_overlay.dart';
 import 'package:santijet_demir/features/projects/providers/project_provider.dart';
 import 'package:santijet_demir/features/projects/widgets/project_switcher.dart';
-import 'package:santijet_demir/features/settings/providers/profile_provider.dart';
 import 'package:santijet_demir/features/settings/providers/settings_provider.dart';
 import 'package:santijet_demir/features/shell/dashboard_feed_provider.dart';
 import 'package:santijet_demir/features/shell/dashboard_summary_provider.dart';
@@ -74,18 +73,14 @@ class DashboardScreen extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final avatarInitial = ref.watch(profileInitialProvider);
     final hasActiveProject = ref.watch(activeProjectProvider) != null;
 
     return Scaffold(
       backgroundColor: AppColors.canvas,
       body: CustomScrollView(
           slivers: [
-            SliverToBoxAdapter(
-              child: SantijetHeader(
-                avatarInitial: avatarInitial,
-                showWordmark: true,
-              ),
+            const SliverToBoxAdapter(
+              child: SantijetHeader(showWordmark: true),
             ),
             const SliverToBoxAdapter(
               child: Padding(

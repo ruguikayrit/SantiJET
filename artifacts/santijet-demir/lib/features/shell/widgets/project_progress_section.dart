@@ -114,11 +114,6 @@ class _ProjectProgressSectionState
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Text('Proje İlerleme Durumu', style: AppTypography.headlineMedium),
-        const SizedBox(height: 4),
-        Text(
-          'Proje ilerleme = planlanan kullanım toplamı / keşif miktarı',
-          style: AppTypography.bodySmall,
-        ),
         const SizedBox(height: 10),
         const _PuantajProgressNudge(),
         const SizedBox(height: 10),

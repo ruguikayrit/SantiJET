@@ -584,7 +584,7 @@ class _TahvilFireAnalysisPanel extends StatelessWidget {
         _MatteGreenGradientButton(
           onPressed: enabled ? () => onStart() : null,
           icon: Icons.swap_horiz_outlined,
-          label: 'Fire Analizi Yap',
+          label: '(tahvil ile fire analizi yap)',
         ),
       ],
     );

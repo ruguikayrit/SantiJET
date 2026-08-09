@@ -1,19 +1,16 @@
 import 'package:flutter/material.dart';
-import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:santijet_demir/core/routing/app_routes.dart';
 import 'package:santijet_demir/core/theme/app_colors.dart';
 import 'package:santijet_demir/core/theme/app_spacing.dart';
 import 'package:santijet_demir/core/theme/app_typography.dart';
-import 'package:santijet_demir/features/settings/providers/profile_provider.dart';
-import 'package:santijet_demir/features/shell/dashboard_feed_provider.dart';
 
 class SantijetHeader extends StatelessWidget {
   const SantijetHeader({
     super.key,
     this.subtitle,
     this.showWordmark = false,
-    this.showNotification = true,
+    this.showNotification = false,
     this.showAvatar = true,
     this.avatarInitial,
   });
@@ -30,19 +27,19 @@ class SantijetHeader extends StatelessWidget {
   static const _pageTitleGap = 2.0;
   static const _pageTitleLift = 4.0;
 
-  /// Sağ aksiyon kümesi — en az 48px dokunma alanı (Material erişilebilirlik).
-  static const actionSize = 48.0;
+  /// Sağ aksiyon — diğer uygulamalarla aynı çark ikonu.
+  static const actionSize = 40.0;
   static const actionIconSize = 22.0;
-  static const actionAvatarRadius = 16.0;
-  static const actionGap = 4.0;
 
   /// Açık temada iç sayfa başlık bandı (ana sayfa hariç).
   static const pageHeaderBandColor = Color(0xFF05070A);
 
   final String? subtitle;
   final bool showWordmark;
+  /// Kullanılmıyor — API uyumu için tutuluyor; bildirim zili kaldırıldı.
   final bool showNotification;
   final bool showAvatar;
+  /// Kullanılmıyor — API uyumu için tutuluyor (çark ikonu avatar yerine).
   final String? avatarInitial;
 
   @override
@@ -55,180 +52,61 @@ class SantijetHeader extends StatelessWidget {
           AppSpacing.md,
           AppSpacing.sm,
         ),
-        child: _WordmarkHeader(
-          showNotification: showNotification,
-          showAvatar: showAvatar,
-          avatarInitial: avatarInitial,
-        ),
+        child: _WordmarkHeader(showAvatar: showAvatar),
       );
     }
 
     return _PageBrandHeader(
       subtitle: subtitle,
-      showNotification: showNotification,
       showAvatar: showAvatar,
-      avatarInitial: avatarInitial,
     );
   }
 }
 
 class _HeaderActions extends StatelessWidget {
   const _HeaderActions({
-    required this.showNotification,
     required this.showAvatar,
-    this.avatarInitial,
     this.onDarkBand = false,
   });
 
-  final bool showNotification;
   final bool showAvatar;
-  final String? avatarInitial;
   final bool onDarkBand;
 
   @override
   Widget build(BuildContext context) {
-    if (!showNotification && !showAvatar) return const SizedBox.shrink();
-
-    return Row(
-      mainAxisSize: MainAxisSize.min,
-      crossAxisAlignment: CrossAxisAlignment.center,
-      children: [
-        if (showNotification)
-          _HeaderNotificationButton(onDarkBand: onDarkBand),
-        if (showNotification && showAvatar)
-          const SizedBox(width: SantijetHeader.actionGap),
-        if (showAvatar)
-          _HeaderAvatarButton(
-            initial: avatarInitial,
-            onDarkBand: onDarkBand,
-          ),
-      ],
-    );
+    if (!showAvatar) return const SizedBox.shrink();
+    return _HeaderSettingsButton(onDarkBand: onDarkBand);
   }
 }
 
-class _HeaderNotificationButton extends ConsumerWidget {
-  const _HeaderNotificationButton({this.onDarkBand = false});
+/// Puantaj / Beton / BFA ile aynı — sağ üst ayarlar çarkı.
+class _HeaderSettingsButton extends StatelessWidget {
+  const _HeaderSettingsButton({this.onDarkBand = false});
 
   final bool onDarkBand;
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
-    final alerts = ref.watch(dashboardCriticalAlertsProvider);
-    final alertCount = alerts.length;
-
-    return Semantics(
-      label: alertCount > 0
-          ? '$alertCount kritik uyarı'
-          : 'Bildirimler, uyarı yok',
-      button: true,
-      child: SizedBox(
-        width: SantijetHeader.actionSize,
-        height: SantijetHeader.actionSize,
-        child: Stack(
-          clipBehavior: Clip.none,
-          children: [
-            Positioned.fill(
-              child: Material(
-                type: MaterialType.transparency,
-                child: InkWell(
-                  customBorder: const CircleBorder(),
-                  onTap: () {
-                    GoRouter.of(context).push(AppRoutes.notificationSettings);
-                  },
-                  child: Center(
-                    child: Icon(
-                      Icons.notifications_outlined,
-                      size: SantijetHeader.actionIconSize,
-                      color: onDarkBand
-                          ? Colors.white.withValues(alpha: 0.88)
-                          : AppColors.textSecondary,
-                    ),
-                  ),
-                ),
-              ),
-            ),
-            if (alertCount > 0)
-              Positioned(
-                right: 6,
-                top: 6,
-                child: IgnorePointer(
-                  child: ConstrainedBox(
-                    constraints: const BoxConstraints(minWidth: 16),
-                    child: Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 4),
-                      decoration: BoxDecoration(
-                        color: AppColors.critical,
-                        borderRadius: BorderRadius.circular(8),
-                      ),
-                      child: Text(
-                        '$alertCount',
-                        textAlign: TextAlign.center,
-                        style: const TextStyle(
-                          color: Colors.white,
-                          fontSize: 10,
-                          fontWeight: FontWeight.w700,
-                          height: 1.4,
-                        ),
-                      ),
-                    ),
-                  ),
-                ),
-              ),
-          ],
-        ),
-      ),
-    );
-  }
-}
-
-class _HeaderAvatarButton extends ConsumerWidget {
-  const _HeaderAvatarButton({
-    this.initial,
-    this.onDarkBand = false,
-  });
-
-  final String? initial;
-  final bool onDarkBand;
-
-  @override
-  Widget build(BuildContext context, WidgetRef ref) {
-    final resolvedInitial =
-        (initial == null || initial!.trim().isEmpty)
-            ? ref.watch(profileInitialProvider)
-            : initial!.trim();
-
+  Widget build(BuildContext context) {
     return Semantics(
       label: 'Ayarlar',
       button: true,
       child: SizedBox(
         width: SantijetHeader.actionSize,
         height: SantijetHeader.actionSize,
-        child: Material(
-          type: MaterialType.transparency,
-          child: InkWell(
-            customBorder: const CircleBorder(),
-            onTap: () {
-              GoRouter.of(context).push(AppRoutes.settings);
-            },
-            child: Center(
-              child: CircleAvatar(
-                radius: SantijetHeader.actionAvatarRadius,
-                backgroundColor: onDarkBand
-                    ? AppColors.warning.withValues(alpha: 0.35)
-                    : AppColors.warning.withValues(alpha: 0.3),
-                child: Text(
-                  resolvedInitial,
-                  style: AppTypography.titleMedium.copyWith(
-                    color: onDarkBand ? Colors.white : AppColors.warning,
-                    fontSize: AppTypography.scale *
-                        (resolvedInitial.length > 1 ? 11 : 14),
-                    height: 1.0,
-                    letterSpacing: resolvedInitial.length > 1 ? -0.4 : 0,
-                  ),
-                ),
-              ),
-            ),
+        child: IconButton(
+          onPressed: () => GoRouter.of(context).push(AppRoutes.settings),
+          padding: EdgeInsets.zero,
+          visualDensity: VisualDensity.compact,
+          constraints: const BoxConstraints.tightFor(
+            width: SantijetHeader.actionSize,
+            height: SantijetHeader.actionSize,
+          ),
+          iconSize: SantijetHeader.actionIconSize,
+          icon: Icon(
+            Icons.settings_outlined,
+            color: onDarkBand
+                ? Colors.white.withValues(alpha: 0.88)
+                : AppColors.textSecondary,
           ),
         ),
       ),
@@ -239,16 +117,12 @@ class _HeaderAvatarButton extends ConsumerWidget {
 /// Bolt + muted DEMİR etiketi + baskın sayfa adı — ana sayfa hariç.
 class _PageBrandHeader extends StatelessWidget {
   const _PageBrandHeader({
-    required this.showNotification,
     required this.showAvatar,
     this.subtitle,
-    this.avatarInitial,
   });
 
   final String? subtitle;
-  final bool showNotification;
   final bool showAvatar;
-  final String? avatarInitial;
 
   @override
   Widget build(BuildContext context) {
@@ -316,9 +190,7 @@ class _PageBrandHeader extends StatelessWidget {
             ),
           ),
           _HeaderActions(
-            showNotification: showNotification,
             showAvatar: showAvatar,
-            avatarInitial: avatarInitial,
             onDarkBand: onDarkBand,
           ),
         ],
@@ -336,15 +208,9 @@ class _PageBrandHeader extends StatelessWidget {
 }
 
 class _WordmarkHeader extends StatelessWidget {
-  const _WordmarkHeader({
-    required this.showNotification,
-    required this.showAvatar,
-    this.avatarInitial,
-  });
+  const _WordmarkHeader({required this.showAvatar});
 
-  final bool showNotification;
   final bool showAvatar;
-  final String? avatarInitial;
 
   @override
   Widget build(BuildContext context) {
@@ -374,13 +240,9 @@ class _WordmarkHeader extends StatelessWidget {
             ],
           ),
         ),
-        if (showNotification || showAvatar) ...[
+        if (showAvatar) ...[
           const SizedBox(width: SantijetHeader._homeBrandToActionsGap),
-          _HeaderActions(
-            showNotification: showNotification,
-            showAvatar: showAvatar,
-            avatarInitial: avatarInitial,
-          ),
+          _HeaderActions(showAvatar: showAvatar),
         ],
       ],
     );
