@@ -49,7 +49,7 @@ class _YaklasikMaliyetScreenState extends ConsumerState<YaklasikMaliyetScreen> {
           bottom: false,
           child: Column(
             children: [
-              const SantijetHeader(subtitle: 'Y.Maliyet'),
+              const SantijetHeader(subtitle: 'Yaklaşık Maliyet'),
               Expanded(
                 child: SJEmptyState(
                   title: 'Aktif proje yok',
@@ -76,7 +76,7 @@ class _YaklasikMaliyetScreenState extends ConsumerState<YaklasikMaliyetScreen> {
           slivers: [
             SliverToBoxAdapter(
               child: SantijetHeader(
-                subtitle: 'Y.Maliyet',
+                subtitle: 'Yaklaşık Maliyet',
                 actions: [
                   IconButton(
                     tooltip: 'Dışa Aktar',

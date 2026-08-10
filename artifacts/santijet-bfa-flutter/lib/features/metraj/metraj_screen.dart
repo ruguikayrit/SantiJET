@@ -314,11 +314,13 @@ class _KalemRow extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final theme = Theme.of(context);
+    final rowBg = AppColors.cardSurfaceHighlight;
+    final rowBorder = AppColors.cardBorder.withValues(alpha: 0.7);
+
     return Material(
-      color: AppColors.canvas.withValues(alpha: 0.6),
-      borderRadius: BorderRadius.circular(8),
+      color: Colors.transparent,
       child: InkWell(
-        borderRadius: BorderRadius.circular(8),
+        borderRadius: BorderRadius.circular(10),
         onTap: () => _openKalemEditor(
           context,
           ref,
@@ -326,44 +328,62 @@ class _KalemRow extends ConsumerWidget {
           satirId: satirId,
           existing: kalem,
         ),
-        child: Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 6),
-          child: Row(
-            children: [
-              Expanded(
-                child: Text(
-                  _ozet,
-                  style: theme.textTheme.bodySmall?.copyWith(
-                    color: AppColors.cardTextSecondary,
+        child: Ink(
+          decoration: BoxDecoration(
+            color: rowBg,
+            borderRadius: BorderRadius.circular(10),
+            border: Border.all(color: rowBorder),
+          ),
+          child: Padding(
+            padding: const EdgeInsets.fromLTRB(10, 8, 10, 8),
+            child: Row(
+              children: [
+                Container(
+                  width: 3,
+                  height: 28,
+                  decoration: BoxDecoration(
+                    color: AppColors.moduleKesif.withValues(alpha: 0.85),
+                    borderRadius: BorderRadius.circular(2),
                   ),
-                  maxLines: 2,
-                  overflow: TextOverflow.ellipsis,
                 ),
-              ),
-              Text(
-                '${AppFormat.decimal(kalem.miktar)} $birim',
-                style: theme.textTheme.labelLarge?.copyWith(
-                  color: AppColors.cardTextPrimary,
+                const SizedBox(width: 10),
+                Expanded(
+                  child: Text(
+                    _ozet,
+                    style: theme.textTheme.bodySmall?.copyWith(
+                      color: AppColors.cardTextSecondary,
+                      height: 1.3,
+                    ),
+                    maxLines: 2,
+                    overflow: TextOverflow.ellipsis,
+                  ),
                 ),
-              ),
-              IconButton(
-                tooltip: 'Sil',
-                visualDensity: VisualDensity.compact,
-                onPressed: () => ref
-                    .read(kesifProvider.notifier)
-                    .removeMetrajKalemi(projectId, satirId, kalem.id),
-                icon: Icon(
-                  Icons.close,
-                  size: 18,
-                  color: theme.colorScheme.error,
+                const SizedBox(width: 8),
+                Text(
+                  '${AppFormat.decimal(kalem.miktar)} $birim',
+                  style: theme.textTheme.labelLarge?.copyWith(
+                    color: AppColors.cardTextPrimary,
+                    fontWeight: FontWeight.w600,
+                  ),
                 ),
-              ),
-            ],
+              ],
+            ),
           ),
         ),
       ),
     );
   }
+}
+
+/// Cetvel düzenleyici sonucu — kaydet / sil / iptal.
+class _KalemSheetOutcome {
+  const _KalemSheetOutcome._({this.kalem, this.deleted = false});
+  const _KalemSheetOutcome.save(MetrajKalemi kalem)
+      : this._(kalem: kalem);
+  const _KalemSheetOutcome.delete() : this._(deleted: true);
+
+  final MetrajKalemi? kalem;
+  final bool deleted;
 }
 
 Future<void> _openKalemEditor(
@@ -373,17 +393,28 @@ Future<void> _openKalemEditor(
   required String satirId,
   MetrajKalemi? existing,
 }) async {
-  final result = await showModalBottomSheet<MetrajKalemi>(
+  final result = await showModalBottomSheet<_KalemSheetOutcome>(
     context: context,
     isScrollControlled: true,
     showDragHandle: true,
     builder: (ctx) => _KalemEditorSheet(initial: existing),
   );
   if (result == null) return;
+  if (result.deleted) {
+    if (existing == null) return;
+    ref.read(kesifProvider.notifier).removeMetrajKalemi(
+          projectId,
+          satirId,
+          existing.id,
+        );
+    return;
+  }
+  final kalem = result.kalem;
+  if (kalem == null) return;
   ref.read(kesifProvider.notifier).upsertMetrajKalemi(
         projectId,
         satirId,
-        result,
+        kalem,
       );
 }
 
@@ -469,13 +500,26 @@ class _KalemEditorSheetState extends State<_KalemEditorSheet> {
       adet: _parse(_adet) <= 0 ? 1 : _parse(_adet),
       miktar: _preview,
     ).withHesap(manuelMiktar: _parse(_manuel));
-    Navigator.of(context).pop(kalem);
+    Navigator.of(context).pop(_KalemSheetOutcome.save(kalem));
+  }
+
+  Future<void> _delete() async {
+    final ok = await SJModal.confirm(
+      context: context,
+      title: 'Cetvel satırını sil',
+      message: 'Bu satır listeden kaldırılsın mı?',
+      confirmLabel: 'Sil',
+      destructive: true,
+    );
+    if (!ok || !mounted) return;
+    Navigator.of(context).pop(const _KalemSheetOutcome.delete());
   }
 
   @override
   Widget build(BuildContext context) {
     final bottom = MediaQuery.viewInsetsOf(context).bottom;
     final theme = Theme.of(context);
+    final isEditing = widget.initial != null;
     return Padding(
       padding: EdgeInsets.fromLTRB(
         AppSpacing.md,
@@ -489,7 +533,7 @@ class _KalemEditorSheetState extends State<_KalemEditorSheet> {
           mainAxisSize: MainAxisSize.min,
           children: [
             Text(
-              widget.initial == null ? 'Cetvel satırı ekle' : 'Cetvel satırını düzenle',
+              isEditing ? 'Cetvel satırını düzenle' : 'Cetvel satırı ekle',
               style: theme.textTheme.titleLarge,
             ),
             const SizedBox(height: AppSpacing.sm),
@@ -621,9 +665,28 @@ class _KalemEditorSheetState extends State<_KalemEditorSheet> {
               ),
             ),
             const SizedBox(height: AppSpacing.md),
-            FilledButton(
-              onPressed: _save,
-              child: const Text('Kaydet'),
+            Row(
+              children: [
+                if (isEditing) ...[
+                  Expanded(
+                    child: SJButton(
+                      label: 'Sil',
+                      icon: Icons.delete_outline,
+                      variant: SJButtonVariant.destructive,
+                      onPressed: _delete,
+                    ),
+                  ),
+                  const SizedBox(width: AppSpacing.sm),
+                ],
+                Expanded(
+                  child: SJButton(
+                    label: 'Kaydet',
+                    icon: Icons.save_outlined,
+                    onPressed: _save,
+                    expanded: !isEditing,
+                  ),
+                ),
+              ],
             ),
           ],
         ),
