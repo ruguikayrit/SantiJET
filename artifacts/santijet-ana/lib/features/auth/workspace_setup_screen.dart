@@ -124,14 +124,20 @@ class _WorkspaceSetupScreenState extends ConsumerState<WorkspaceSetupScreen> {
   }
 
   Future<void> _handleSkip() async {
-    await ref.read(appStateProvider.notifier).setWorkspace(
-          WorkspaceInfo(
-            id: 'local',
-            inviteCode: 'LOCAL',
-            companyName: 'Yerel Kullanım',
-            apiUrl: _baseUrl,
-          ),
-        );
+    final notifier = ref.read(appStateProvider.notifier);
+    final state = ref.read(appStateProvider);
+    if (state.currentUserId == null) {
+      await notifier.startLocalSession(name: 'Kullanıcı');
+    } else {
+      await notifier.setWorkspace(
+        WorkspaceInfo(
+          id: 'local',
+          inviteCode: 'LOCAL',
+          companyName: 'Yerel Kullanım',
+          apiUrl: _baseUrl,
+        ),
+      );
+    }
     if (!mounted) return;
     context.go(AppRoutes.home);
   }

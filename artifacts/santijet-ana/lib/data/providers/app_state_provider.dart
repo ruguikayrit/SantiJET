@@ -380,6 +380,62 @@ class AppStateNotifier extends StateNotifier<AppState> {
     }
   }
 
+  /// Yerel oturum: workspace + kullanıcı + login tek atomik state güncellemesi.
+  /// Onboarding adımlarının router refresh ile sıfırlanmasını önler.
+  Future<String> startLocalSession({
+    String name = 'Kullanıcı',
+    String roleId = 'santiye-sefi',
+    String pin = '',
+    String? existingUserId,
+  }) async {
+    const ws = WorkspaceInfo(
+      id: 'local',
+      companyName: 'Yerel',
+      inviteCode: '',
+      apiUrl: '',
+    );
+    await _workspaceBox.put(_workspaceKey, jsonEncode(ws.toJson()));
+
+    var users = List<AppUser>.from(state.appUsers);
+    String userId;
+    if (existingUserId != null &&
+        users.any((u) => u.id == existingUserId)) {
+      userId = existingUserId;
+    } else {
+      final byName = users.where((u) => u.name == name).toList();
+      if (byName.isNotEmpty) {
+        userId = byName.first.id;
+      } else {
+        userId = _genId();
+        users = [
+          ...users,
+          AppUser(
+            id: userId,
+            name: name.trim().isEmpty ? 'Kullanıcı' : name.trim(),
+            roleId: roleId,
+            pin: pin.length == 4 ? pin : '',
+            profession: '',
+            phone: '',
+            address: '',
+            company: '',
+          ),
+        ];
+      }
+    }
+
+    _set(state.copyWith(
+      appUsers: users,
+      currentUserId: userId,
+      workspaceInfo: ws,
+    ));
+    return userId;
+  }
+
+  /// Mevcut kullanıcıyı yerel workspace ile oturum açtırır (tek yazım).
+  Future<void> completeLocalOnboarding(String userId) async {
+    await startLocalSession(existingUserId: userId);
+  }
+
   Future<void> pushToCloud() async {
     final ws = state.workspaceInfo;
     if (ws == null || ws.isLocal) return;

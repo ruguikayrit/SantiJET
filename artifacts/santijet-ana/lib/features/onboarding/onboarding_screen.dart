@@ -7,7 +7,6 @@ import '../../core/constants/app_info.dart';
 import '../../core/routing/app_routes.dart';
 import '../../data/providers/app_state_provider.dart';
 import '../../domain/models/app_user.dart';
-import '../../domain/models/workspace_info.dart';
 
 const _bg = Color(0xFF090D18);
 const _card = Color(0xFF111827);
@@ -54,6 +53,7 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
   String? _pinUserId;
   bool _pinError = false;
   String? _pendingLoginName;
+  String? _pendingUserId;
 
   @override
   void dispose() {
@@ -86,6 +86,15 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
     }
   }
 
+  Future<void> _quickStartLocal() async {
+    await ref.read(appStateProvider.notifier).startLocalSession(
+          name: 'Kullanıcı',
+          roleId: 'santiye-sefi',
+        );
+    if (!mounted) return;
+    context.go(AppRoutes.home);
+  }
+
   void _handleExistingUser(AppUser user) {
     if (user.pin.isNotEmpty) {
       setState(() {
@@ -95,7 +104,16 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
         _step = _Step.pinPrompt;
       });
     } else {
-      ref.read(appStateProvider.notifier).login(user.id);
+      // Workspace yoksa yerel oturum tamamla.
+      final ws = ref.read(appStateProvider).workspaceInfo;
+      if (ws == null) {
+        ref.read(appStateProvider.notifier).completeLocalOnboarding(user.id).then((_) {
+          if (mounted) context.go(AppRoutes.home);
+        });
+      } else {
+        ref.read(appStateProvider.notifier).login(user.id);
+        context.go(AppRoutes.home);
+      }
     }
   }
 
@@ -106,7 +124,15 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
     }
     if (user == null) return;
     if (_loginPinCtrl.text == user.pin) {
-      ref.read(appStateProvider.notifier).login(user.id);
+      final ws = ref.read(appStateProvider).workspaceInfo;
+      if (ws == null) {
+        ref.read(appStateProvider.notifier).completeLocalOnboarding(user.id).then((_) {
+          if (mounted) context.go(AppRoutes.home);
+        });
+      } else {
+        ref.read(appStateProvider.notifier).login(user.id);
+        context.go(AppRoutes.home);
+      }
     } else {
       setState(() {
         _pinError = true;
@@ -122,7 +148,7 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
       return;
     }
     final pin = _pinCtrl.text;
-    ref.read(appStateProvider.notifier).addAppUser(
+    final id = ref.read(appStateProvider.notifier).addAppUser(
           AppUser(
             id: '',
             name: name,
@@ -135,6 +161,7 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
           ),
         );
     _pendingLoginName = name;
+    _pendingUserId = id;
 
     final ws = ref.read(appStateProvider).workspaceInfo;
     if (ws == null) {
@@ -143,24 +170,33 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
         _step = _Step.workspaceChoice;
       });
     } else {
-      _completePendingLogin();
+      ref.read(appStateProvider.notifier).login(id);
+      context.go(AppRoutes.home);
     }
   }
 
   Future<void> _handleBireysel() async {
-    await ref.read(appStateProvider.notifier).setWorkspace(
-          const WorkspaceInfo(
-            id: 'local',
-            companyName: 'Yerel',
-            inviteCode: '',
-            apiUrl: '',
-          ),
-        );
-    _completePendingLogin();
+    final id = _pendingUserId;
+    if (id != null) {
+      await ref.read(appStateProvider.notifier).completeLocalOnboarding(id);
+    } else {
+      await ref.read(appStateProvider.notifier).startLocalSession(
+            name: _pendingLoginName ?? _nameCtrl.text.trim(),
+            roleId: _roleId,
+            pin: _pinCtrl.text,
+          );
+    }
+    if (!mounted) return;
+    context.go(AppRoutes.home);
   }
 
   void _handleEkip() {
-    _completePendingLogin();
+    final id = _pendingUserId;
+    if (id != null) {
+      ref.read(appStateProvider.notifier).login(id);
+    } else {
+      _completePendingLogin();
+    }
     if (mounted) context.go(AppRoutes.workspaceSetup);
   }
 
@@ -240,6 +276,53 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
           ),
         ),
         const SizedBox(height: 36),
+        // Tek dokunuşla içeri gir — staging / web için en güvenilir yol.
+        Material(
+          color: _orange,
+          borderRadius: BorderRadius.circular(14),
+          child: InkWell(
+            borderRadius: BorderRadius.circular(14),
+            onTap: _quickStartLocal,
+            child: const Padding(
+              padding: EdgeInsets.symmetric(vertical: 16, horizontal: 14),
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Icon(Icons.bolt_rounded, color: Colors.white, size: 22),
+                  SizedBox(width: 10),
+                  Text(
+                    'Hızlı Başla (Bireysel)',
+                    style: TextStyle(
+                      color: Colors.white,
+                      fontSize: 16,
+                      fontWeight: FontWeight.w700,
+                      fontFamily: 'Inter',
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ),
+        ),
+        const SizedBox(height: 16),
+        const Row(
+          children: [
+            Expanded(child: Divider(color: _border)),
+            Padding(
+              padding: EdgeInsets.symmetric(horizontal: 12),
+              child: Text(
+                'veya hesap ile',
+                style: TextStyle(
+                  color: Color(0xFF475569),
+                  fontSize: 13,
+                  fontFamily: 'Inter',
+                ),
+              ),
+            ),
+            Expanded(child: Divider(color: _border)),
+          ],
+        ),
+        const SizedBox(height: 16),
         _authBtn(
           leading: const Text(
             'G',
@@ -441,46 +524,49 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
       child: InkWell(
         borderRadius: BorderRadius.circular(14),
         onTap: onTap,
-        child: Container(
-          padding: const EdgeInsets.all(14),
+        // Web/CanvasKit'te dar hit-test alanlarını büyüt.
+        child: Ink(
           decoration: BoxDecoration(
             borderRadius: BorderRadius.circular(14),
             border: Border.all(
               color: primary ? const Color(0x66E85D04) : _border,
             ),
           ),
-          child: Row(
-            children: [
-              Container(
-                width: 38,
-                height: 38,
-                decoration: BoxDecoration(
-                  color: iconBg,
-                  borderRadius: BorderRadius.circular(10),
+          child: Padding(
+            padding: const EdgeInsets.all(14),
+            child: Row(
+              children: [
+                Container(
+                  width: 38,
+                  height: 38,
+                  decoration: BoxDecoration(
+                    color: iconBg,
+                    borderRadius: BorderRadius.circular(10),
+                  ),
+                  alignment: Alignment.center,
+                  child: leading,
                 ),
-                alignment: Alignment.center,
-                child: leading,
-              ),
-              const SizedBox(width: 12),
-              Expanded(
-                child: Text(
-                  label,
-                  style: TextStyle(
-                    color: primary
-                        ? const Color(0xFFF1F5F9)
-                        : const Color(0xFFCBD5E1),
-                    fontSize: 15,
-                    fontWeight: FontWeight.w600,
-                    fontFamily: 'Inter',
+                const SizedBox(width: 12),
+                Expanded(
+                  child: Text(
+                    label,
+                    style: TextStyle(
+                      color: primary
+                          ? const Color(0xFFF1F5F9)
+                          : const Color(0xFFCBD5E1),
+                      fontSize: 15,
+                      fontWeight: FontWeight.w600,
+                      fontFamily: 'Inter',
+                    ),
                   ),
                 ),
-              ),
-              Icon(
-                Icons.chevron_right,
-                size: 16,
-                color: primary ? _orange : const Color(0xFF64748B),
-              ),
-            ],
+                Icon(
+                  Icons.chevron_right,
+                  size: 16,
+                  color: primary ? _orange : const Color(0xFF64748B),
+                ),
+              ],
+            ),
           ),
         ),
       ),

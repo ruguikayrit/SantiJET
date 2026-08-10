@@ -40,9 +40,13 @@ final _rootKey = GlobalKey<NavigatorState>();
 
 final routerProvider = Provider<GoRouter>((ref) {
   final refresh = ValueNotifier<int>(0);
-  ref.listen(appStateProvider, (_, __) {
-    refresh.value++;
-  });
+  // Yalnızca auth kapısı alanları — her CRUD router'ı yenilemesin / onboarding state silinmesin.
+  ref.listen(
+    appStateProvider.select(
+      (s) => (s.loaded, s.currentUserId, s.workspaceInfo?.id),
+    ),
+    (_, __) => refresh.value++,
+  );
   ref.onDispose(refresh.dispose);
 
   return GoRouter(
@@ -67,7 +71,10 @@ final routerProvider = Provider<GoRouter>((ref) {
       final needsOnboarding =
           app.workspaceInfo == null || app.currentUserId == null;
 
-      if (loc == AppRoutes.splash) return null;
+      // Splash kendi navigasyonunu yapar; yüklendikten sonra burada tutma.
+      if (loc == AppRoutes.splash) {
+        return needsOnboarding ? AppRoutes.onboarding : AppRoutes.home;
+      }
 
       if (needsOnboarding) {
         if (public.contains(loc)) return null;
