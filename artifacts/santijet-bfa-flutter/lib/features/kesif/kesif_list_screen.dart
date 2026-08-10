@@ -186,11 +186,23 @@ class _SatirCard extends ConsumerWidget {
     await SJModal.showSheet<void>(
       context: context,
       title: satir.pozNo,
-      child: Text(
-        satir.analizAdi,
-        style: Theme.of(context).textTheme.bodyLarge?.copyWith(
-              color: AppColors.cardTextPrimary,
+      child: Builder(
+        builder: (sheetContext) {
+          final theme = Theme.of(sheetContext);
+          final maxH = MediaQuery.sizeOf(sheetContext).height * 0.55;
+          return ConstrainedBox(
+            constraints: BoxConstraints(maxHeight: maxH),
+            child: SingleChildScrollView(
+              child: Text(
+                satir.analizAdi,
+                style: theme.textTheme.bodyLarge?.copyWith(
+                  color: theme.colorScheme.onSurface,
+                  height: 1.45,
+                ),
+              ),
             ),
+          );
+        },
       ),
     );
   }
