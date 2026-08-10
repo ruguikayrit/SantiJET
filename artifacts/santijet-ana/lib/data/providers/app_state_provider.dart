@@ -253,7 +253,10 @@ class AppState {
     var roles = listOf('roles', Role.fromJson);
     if (roles.isEmpty ||
         !roles.any((r) => r.id == 'isveren') ||
-        !roles.any((r) => r.id == 'proje-muduru')) {
+        !roles.any((r) => r.id == 'proje-muduru') ||
+        !roles.any((r) =>
+            r.id == 'santiye-sefi' &&
+            r.permissions.values.any((p) => p != Permission.none))) {
       roles = Role.defaultRoles();
     }
 
@@ -371,14 +374,42 @@ class AppStateNotifier extends StateNotifier<AppState> {
     _set(state.copyWith(loaded: true));
   }
 
-  /// Staging önizleme: workspace + kullanıcıyı bellekte anında açar.
-  /// Hive yazımı arka planda; UI / router bloklanmaz.
+  /// Staging önizleme: workspace + kullanıcı + roller hazır olsun.
+  /// Orphan currentUserId / boş izinli roller modül ızgarasını boşaltıyordu.
   void ensureStagingSession({
     String name = 'Staging Kullanıcı',
     String roleId = 'santiye-sefi',
   }) {
-    if (state.workspaceInfo != null && state.currentUserId != null) return;
+    // Önizlemede her zaman varsayılan roller — Hive'daki bozuk izin tuzağını kır.
+    if (!_rolesHaveUsableAccess(state.roles, roleId)) {
+      state = state.copyWith(roles: Role.defaultRoles());
+    }
+
+    final user = state.currentAppUser;
+    Role? role;
+    if (user != null) {
+      for (final r in state.roles) {
+        if (r.id == user.roleId) {
+          role = r;
+          break;
+        }
+      }
+    }
+    final hasAccess = user != null &&
+        role != null &&
+        role.permissions.values.any((p) => p != Permission.none) &&
+        state.workspaceInfo != null;
+    if (hasAccess) return;
+
     applyLocalSessionSync(name: name, roleId: roleId);
+  }
+
+  bool _rolesHaveUsableAccess(List<Role> roles, String roleId) {
+    for (final r in roles) {
+      if (r.id != roleId) continue;
+      return r.permissions.values.any((p) => p != Permission.none);
+    }
+    return false;
   }
 
   void _persist() {
@@ -421,15 +452,29 @@ class AppStateNotifier extends StateNotifier<AppState> {
       apiUrl: '',
     );
 
+    // Rol listesi eksik/bozuksa varsayılanlar — aksi halde getPermission hep none.
+    var roles = state.roles;
+    if (roles.isEmpty || !_rolesHaveUsableAccess(roles, roleId)) {
+      roles = Role.defaultRoles();
+    }
+
     var users = List<AppUser>.from(state.appUsers);
     String userId;
     if (existingUserId != null &&
         users.any((u) => u.id == existingUserId)) {
       userId = existingUserId;
+      users = [
+        for (final u in users)
+          if (u.id == userId) u.copyWith(roleId: roleId) else u,
+      ];
     } else {
       final byName = users.where((u) => u.name == name).toList();
       if (byName.isNotEmpty) {
         userId = byName.first.id;
+        users = [
+          for (final u in users)
+            if (u.id == userId) u.copyWith(roleId: roleId) else u,
+        ];
       } else {
         userId = _genId();
         users = [
@@ -449,6 +494,7 @@ class AppStateNotifier extends StateNotifier<AppState> {
     }
 
     _set(state.copyWith(
+      roles: roles,
       appUsers: users,
       currentUserId: userId,
       workspaceInfo: ws,
