@@ -46,8 +46,6 @@ class YaklasikMaliyetScreen extends ConsumerWidget {
       );
     }
 
-    final byUnit = kesif.toplamByOlcuBirimi.entries.toList()
-      ..sort((a, b) => b.value.compareTo(a.value));
     final byDisc = kesif.satirlarByDiscipline;
 
     return Scaffold(
@@ -93,45 +91,6 @@ class YaklasikMaliyetScreen extends ConsumerWidget {
               unit: '',
               accentColor: AppColors.moduleKesif,
             ),
-            if (byUnit.isNotEmpty) ...[
-              const SizedBox(height: AppSpacing.md),
-              Text(
-                'Ölçü birimi kırılımı',
-                style: theme.textTheme.titleLarge?.copyWith(
-                  color: AppColors.textPrimary,
-                ),
-              ),
-              const SizedBox(height: AppSpacing.sm),
-              SJCard(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    for (final e in byUnit)
-                      Padding(
-                        padding: const EdgeInsets.symmetric(vertical: 4),
-                        child: Row(
-                          children: [
-                            Expanded(
-                              child: Text(
-                                e.key,
-                                style: theme.textTheme.bodyMedium?.copyWith(
-                                  color: AppColors.cardTextSecondary,
-                                ),
-                              ),
-                            ),
-                            Text(
-                              AppFormat.currency(e.value),
-                              style: theme.textTheme.titleMedium?.copyWith(
-                                color: AppColors.cardTextPrimary,
-                              ),
-                            ),
-                          ],
-                        ),
-                      ),
-                  ],
-                ),
-              ),
-            ],
             const SizedBox(height: AppSpacing.lg),
             Text(
               'Birim Fiyatlar',
@@ -198,6 +157,9 @@ class _FiyatSatirCard extends ConsumerStatefulWidget {
 }
 
 class _FiyatSatirCardState extends ConsumerState<_FiyatSatirCard> {
+  /// ~8 basamak + TR binlik/ondalık (ör. 12.345.678,90).
+  static const _bfFieldWidth = 118.0;
+
   late final TextEditingController _bfController;
 
   @override
@@ -265,56 +227,63 @@ class _FiyatSatirCardState extends ConsumerState<_FiyatSatirCard> {
           ),
           const SizedBox(height: AppSpacing.sm),
           Row(
-            crossAxisAlignment: CrossAxisAlignment.start,
+            crossAxisAlignment: CrossAxisAlignment.end,
             children: [
-              Expanded(
+              SizedBox(
+                width: _bfFieldWidth,
                 child: TextField(
                   controller: _bfController,
                   keyboardType: const TextInputType.numberWithOptions(
                     decimal: true,
                   ),
+                  textAlign: TextAlign.right,
                   style: theme.textTheme.titleMedium?.copyWith(
                     color: AppColors.cardTextPrimary,
                   ),
                   decoration: InputDecoration(
-                    labelText: 'Birim fiyat',
-                    suffixText: '₺ / ${satir.olcuBirimi}',
+                    labelText: 'B.F. ₺',
+                    helperText: '/ ${satir.olcuBirimi}',
                     isDense: true,
+                    contentPadding: const EdgeInsets.symmetric(
+                      horizontal: 8,
+                      vertical: 10,
+                    ),
                   ),
                   onEditingComplete: _commitBirimFiyat,
                   onSubmitted: (_) => _commitBirimFiyat(),
                 ),
               ),
               const SizedBox(width: AppSpacing.sm),
+              Expanded(
+                child: Padding(
+                  padding: const EdgeInsets.only(bottom: 22),
+                  child: Text(
+                    '${AppFormat.decimal(metraj)} ${satir.olcuBirimi}',
+                    style: theme.textTheme.bodyMedium?.copyWith(
+                      color: AppColors.cardTextMuted,
+                    ),
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                ),
+              ),
               Padding(
-                padding: const EdgeInsets.only(top: 12),
+                padding: const EdgeInsets.only(bottom: 22),
                 child: Text(
-                  '${AppFormat.decimal(metraj)} ${satir.olcuBirimi}',
-                  style: theme.textTheme.bodyMedium?.copyWith(
-                    color: AppColors.cardTextMuted,
+                  AppFormat.currency(satir.tutar),
+                  style: theme.textTheme.titleMedium?.copyWith(
+                    color: AppColors.cardTextPrimary,
+                    fontWeight: FontWeight.w700,
                   ),
                 ),
               ),
             ],
           ),
-          const SizedBox(height: 4),
-          Row(
-            children: [
-              Text(
-                satir.fiyatKaynagi.label,
-                style: theme.textTheme.labelSmall?.copyWith(
-                  color: AppColors.cardTextMuted,
-                ),
-              ),
-              const Spacer(),
-              Text(
-                AppFormat.currency(satir.tutar),
-                style: theme.textTheme.titleMedium?.copyWith(
-                  color: AppColors.cardTextPrimary,
-                  fontWeight: FontWeight.w700,
-                ),
-              ),
-            ],
+          Text(
+            satir.fiyatKaynagi.label,
+            style: theme.textTheme.labelSmall?.copyWith(
+              color: AppColors.cardTextMuted,
+            ),
           ),
         ],
       ),
