@@ -1,9 +1,19 @@
 #!/usr/bin/env bash
-# GitHub Pages — DEMİR production (main) + DEMİR önizleme (/demir/)
-# Kaynak: main checkout + staging-src (opsiyonel)
+# GitHub Pages — DEMİR production (main kök) + DEMİR önizleme (/demir/)
+#
+# Script main veya staging-src/.github/scripts altında olabilir; site/ her zaman
+# workspace köküne (main checkout) yazılır.
 set -euo pipefail
 
-ROOT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)"
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+REPO_CANDIDATE="$(cd "${SCRIPT_DIR}/../.." && pwd)"
+
+if [[ "$(basename "${REPO_CANDIDATE}")" == "staging-src" ]]; then
+  ROOT_DIR="$(cd "${REPO_CANDIDATE}/.." && pwd)"
+else
+  ROOT_DIR="${REPO_CANDIDATE}"
+fi
+
 SITE_DIR="${ROOT_DIR}/site"
 MAIN_SRC="${ROOT_DIR}"
 STAGING_SRC="${ROOT_DIR}/staging-src"
@@ -80,10 +90,27 @@ echo "Building production DEMİR from main..."
 build_demir_web "${MAIN_SRC}" "" "production"
 
 if [[ -d "${STAGING_SRC}/artifacts/santijet-demir" ]]; then
-  echo "Building DEMİR preview at /demir/ from staging..."
+  echo "Building DEMİR preview at /demir/..."
   build_demir_web "${STAGING_SRC}" "demir" "staging"
+  # Eski /staging/ bağlantıları /demir/ adresine yönlensin.
+  mkdir -p "${SITE_DIR}/staging"
+  cat > "${SITE_DIR}/staging/index.html" <<'EOF'
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+  <meta charset="utf-8">
+  <meta http-equiv="refresh" content="0;url=../demir/">
+  <title>ŞantiJET DEMİR</title>
+  <script>location.replace('../demir/' + location.search + location.hash);</script>
+</head>
+<body>
+  <p><a href="../demir/">ŞantiJET DEMİR</a></p>
+</body>
+</html>
+EOF
 else
-  echo "Staging source missing; skipping /demir/ preview."
+  echo "Staging source missing; skipping /demir preview."
 fi
 
 echo "DEMİR pages ready under ${SITE_DIR}"
+echo "URL: https://ruguikayrit.github.io/${REPO_NAME}/demir/"
