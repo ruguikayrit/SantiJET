@@ -12,15 +12,23 @@ import 'package:printing/printing.dart';
 import 'package:share_plus/share_plus.dart';
 
 import '../../core/utils/app_format.dart';
+import '../../domain/calc/analiz_hesap.dart';
 import '../../domain/entities/kesif.dart';
 
-/// Keşif / metraj cetveli dışa aktarma.
+/// Keşif / metraj / yaklaşık maliyet cetveli dışa aktarma.
 class KesifExportService {
-  Future<void> sharePdf(KesifProject project) async {
-    final bytes = await _buildPdf(project);
+  static const defaultPdfTitle = 'ŞANTİJET MALİYET — METRAJ / KEŞİF CETVELİ';
+  static const yaklasikMaliyetPdfTitle = 'YAKLAŞIK MALİYET CETVELİ';
+
+  Future<void> sharePdf(
+    KesifProject project, {
+    String title = defaultPdfTitle,
+    String filenamePrefix = 'kesif',
+  }) async {
+    final bytes = await _buildPdf(project, title: title);
     await Printing.sharePdf(
       bytes: bytes,
-      filename: 'kesif_${_safe(project.ad)}.pdf',
+      filename: '${filenamePrefix}_${_safe(project.ad)}.pdf',
     );
   }
 
@@ -48,7 +56,10 @@ class KesifExportService {
     await SharePlus.instance.share(ShareParams(files: [XFile(file.path)]));
   }
 
-  Future<Uint8List> _buildPdf(KesifProject project) async {
+  Future<Uint8List> _buildPdf(
+    KesifProject project, {
+    required String title,
+  }) async {
     // Gövde Noto Sans: ₺ glyph'i bold satırlarda da mevcut.
     final baseFont = await PdfGoogleFonts.notoSansRegular();
     final boldFont = await PdfGoogleFonts.notoSansBold();
@@ -56,40 +67,163 @@ class KesifExportService {
     final titleFont = pw.Font.ttf(titleBytes);
     final doc = pw.Document();
 
+    const headerStyle = pw.TextStyle(fontSize: 8, fontWeight: pw.FontWeight.bold);
+    const cellStyle = pw.TextStyle(fontSize: 8);
+    const cellPad = pw.EdgeInsets.symmetric(horizontal: 4, vertical: 3);
+
+    pw.Widget singleLineCell(
+      String text, {
+      pw.TextAlign align = pw.TextAlign.center,
+      bool bold = false,
+    }) {
+      return pw.Padding(
+        padding: cellPad,
+        child: pw.Text(
+          text,
+          style: bold
+              ? cellStyle.copyWith(fontWeight: pw.FontWeight.bold)
+              : cellStyle,
+          textAlign: align,
+          maxLines: 1,
+          softWrap: false,
+          overflow: pw.TextOverflow.visible,
+        ),
+      );
+    }
+
+    pw.Widget wrapCell(String text) {
+      return pw.Padding(
+        padding: cellPad,
+        child: pw.Text(
+          text,
+          style: cellStyle,
+          textAlign: pw.TextAlign.left,
+          // Tanım daralabilir; 2–4 satır kaydırma serbest.
+          softWrap: true,
+        ),
+      );
+    }
+
+    pw.Widget headerCell(String text) {
+      return pw.Padding(
+        padding: cellPad,
+        child: pw.Text(
+          text,
+          style: headerStyle,
+          textAlign: pw.TextAlign.center,
+          maxLines: 1,
+          softWrap: false,
+        ),
+      );
+    }
+
+    final tableRows = <pw.TableRow>[
+      pw.TableRow(
+        decoration: const pw.BoxDecoration(color: PdfColors.grey200),
+        children: [
+          headerCell('#'),
+          headerCell('Poz No'),
+          headerCell('Tanım'),
+          headerCell('Birim'),
+          headerCell('Miktar'),
+          headerCell('B.F.'),
+          headerCell('Tutar'),
+        ],
+      ),
+    ];
+
+    if (project.satirlar.isEmpty) {
+      tableRows.add(
+        pw.TableRow(
+          children: [
+            singleLineCell(''),
+            singleLineCell(''),
+            wrapCell('Henüz poz yok'),
+            singleLineCell(''),
+            singleLineCell(''),
+            singleLineCell(''),
+            singleLineCell(''),
+          ],
+        ),
+      );
+    } else {
+      for (var i = 0; i < project.satirlar.length; i++) {
+        final s = project.satirlar[i];
+        final miktar = s.hesaplananMetraj;
+        final tutar = AnalizHesap.satirTutar(miktar, s.birimFiyati);
+        tableRows.add(
+          pw.TableRow(
+            children: [
+              singleLineCell('${i + 1}'),
+              singleLineCell(s.pozNo),
+              wrapCell(s.analizAdi),
+              singleLineCell(
+                s.olcuBirimi.trim().isEmpty ? 'ad' : s.olcuBirimi.trim(),
+              ),
+              singleLineCell(AppFormat.decimal(miktar)),
+              singleLineCell(AppFormat.decimal(s.birimFiyati)),
+              singleLineCell(AppFormat.decimal(tutar)),
+            ],
+          ),
+        );
+      }
+    }
+
+    final genelToplam = project.satirlar.fold<double>(
+      0,
+      (sum, s) =>
+          sum + AnalizHesap.satirTutar(s.hesaplananMetraj, s.birimFiyati),
+    );
+
+    tableRows.add(
+      pw.TableRow(
+        children: [
+          singleLineCell(''),
+          singleLineCell(''),
+          wrapCell(''),
+          singleLineCell(''),
+          singleLineCell(''),
+          singleLineCell('GENEL TOPLAM', bold: true),
+          singleLineCell(AppFormat.decimal(genelToplam), bold: true),
+        ],
+      ),
+    );
+
     doc.addPage(
       pw.MultiPage(
         pageFormat: PdfPageFormat.a4,
         margin: const pw.EdgeInsets.all(28),
         theme: pw.ThemeData.withFont(base: baseFont, bold: boldFont),
         build: (context) => [
-          pw.Text('ŞANTİJET MALİYET — METRAJ / KEŞİF CETVELİ',
-              style: pw.TextStyle(font: titleFont, fontSize: 16),
-              textAlign: pw.TextAlign.center),
+          pw.Text(
+            title,
+            style: pw.TextStyle(font: titleFont, fontSize: 16),
+            textAlign: pw.TextAlign.center,
+          ),
           pw.SizedBox(height: 10),
           pw.Text('Proje: ${project.ad}'),
           if (project.aciklama.trim().isNotEmpty)
             pw.Text('Açıklama: ${project.aciklama}'),
-          pw.Text('Tarih: ${AppFormat.date(DateTime.tryParse(project.guncellemeTarihi) ?? DateTime.now())}'),
+          pw.Text(
+            'Tarih: ${AppFormat.date(DateTime.tryParse(project.guncellemeTarihi) ?? DateTime.now())}',
+          ),
           pw.Text('Poz Sayısı: ${project.satirlar.length}'),
           pw.SizedBox(height: 12),
-          pw.Table.fromTextArray(
-            headers: const ['#', 'Poz No', 'Tanım', 'Birim', 'Miktar', 'B.F.', 'Tutar'],
-            data: [
-              for (var i = 0; i < project.satirlar.length; i++)
-                [
-                  '${i + 1}',
-                  project.satirlar[i].pozNo,
-                  project.satirlar[i].analizAdi,
-                  project.satirlar[i].olcuBirimi,
-                  AppFormat.decimal(project.satirlar[i].miktar),
-                  AppFormat.decimal(project.satirlar[i].birimFiyati),
-                  AppFormat.decimal(project.satirlar[i].tutar),
-                ],
-              if (project.satirlar.isEmpty) ['', '', 'Henüz poz yok', '', '', '', ''],
-              ['', '', '', '', '', 'GENEL TOPLAM', AppFormat.decimal(project.toplam)],
-            ],
-            headerStyle: const pw.TextStyle(fontSize: 9),
-            cellStyle: const pw.TextStyle(fontSize: 8),
+          // Poz No / Birim / Miktar / B.F. / Tutar: içerik kadar genişlik (tek satır).
+          // Tanım: kalan alanı alır; daralır ve çok satıra kayar.
+          pw.Table(
+            border: pw.TableBorder.all(color: PdfColors.grey400, width: 0.5),
+            defaultVerticalAlignment: pw.TableCellVerticalAlignment.middle,
+            columnWidths: const {
+              0: pw.IntrinsicColumnWidth(),
+              1: pw.IntrinsicColumnWidth(),
+              2: pw.FlexColumnWidth(1),
+              3: pw.IntrinsicColumnWidth(),
+              4: pw.IntrinsicColumnWidth(),
+              5: pw.IntrinsicColumnWidth(),
+              6: pw.IntrinsicColumnWidth(),
+            },
+            children: tableRows,
           ),
         ],
       ),

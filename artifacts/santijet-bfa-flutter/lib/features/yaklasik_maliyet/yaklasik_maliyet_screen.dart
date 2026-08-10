@@ -31,7 +31,11 @@ class _YaklasikMaliyetScreenState extends ConsumerState<YaklasikMaliyetScreen> {
     final format = await ExportFormatSheet.pick(context);
     if (format == null || !mounted) return;
     if (format == ExportFormat.pdf) {
-      await kesifExportService.sharePdf(kesif);
+      await kesifExportService.sharePdf(
+        kesif,
+        title: KesifExportService.yaklasikMaliyetPdfTitle,
+        filenamePrefix: 'yaklasik_maliyet',
+      );
     } else {
       await kesifExportService.shareExcel(kesif);
     }
