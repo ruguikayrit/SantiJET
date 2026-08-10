@@ -17,7 +17,7 @@ import 'page_transitions.dart';
 
 final _rootNavigatorKey = GlobalKey<NavigatorState>();
 
-/// Alt sekmeler: Ana Sayfa, Keşif / Gruplar, Talep & Teklif, Teslim, Kütüphane.
+/// Alt sekmeler: Ana, Keşif Malzeme, Talep, Teslim, Kütüphane.
 /// Ayarlar sağ üstten açılır (root navigator).
 final routerProvider = Provider<GoRouter>((ref) {
   return GoRouter(

@@ -4,6 +4,7 @@ import '../../core/utils/id_gen.dart';
 import '../../domain/entities/entities.dart';
 import '../../domain/enums/main_discipline.dart';
 import '../../domain/enums/request_status.dart';
+import '../../domain/kesif/material_need_calculator.dart';
 import 'app_data_provider.dart';
 
 /// Ayarlar → Demo: Malzeme akışını test etmeye yetecek örnek veri.
@@ -21,6 +22,7 @@ class DemoSeedController {
     _ref.read(activeProjectIdProvider.notifier).set(project.id);
 
     final kesif = _replaceKesif(project.id);
+    _replaceUnitConsumptions(project.id, kesif);
     final requests = _replaceRequests(project.id, kesif);
     _replaceQuotes(project.id, requests);
     _replaceDeliveries(project.id, requests);
@@ -130,6 +132,112 @@ class DemoSeedController {
     return snapshot;
   }
 
+  void _replaceUnitConsumptions(String projectId, KesifSnapshot kesif) {
+    final kept = _ref
+        .read(unitConsumptionsProvider)
+        .where((e) => e.projectId != projectId)
+        .toList();
+
+    UnitConsumption forPoz({
+      required String pozNo,
+      required String materialName,
+      required String materialUnit,
+      required double rate,
+      required String kesifUnit,
+      String category = '',
+    }) =>
+        UnitConsumption(
+          id: IdGen.make('ucn'),
+          projectId: projectId,
+          materialName: materialName,
+          materialUnit: materialUnit,
+          rate: rate,
+          pozNo: pozNo,
+          kesifUnit: kesifUnit,
+          category: category,
+        );
+
+    final lines = {for (final l in kesif.lines) l.pozNo: l};
+    final items = <UnitConsumption>[
+      if (lines.containsKey('Y.19.001')) ...[
+        forPoz(
+          pozNo: 'Y.19.001',
+          materialName: 'Seramik yapıştırıcı C2TE',
+          materialUnit: 'kg',
+          rate: 5,
+          kesifUnit: 'm²',
+          category: 'Kaplama',
+        ),
+        forPoz(
+          pozNo: 'Y.19.001',
+          materialName: 'Seramik derz dolgu',
+          materialUnit: 'kg',
+          rate: 0.4,
+          kesifUnit: 'm²',
+          category: 'Kaplama',
+        ),
+      ],
+      if (lines.containsKey('Y.18.045'))
+        forPoz(
+          pozNo: 'Y.18.045',
+          materialName: 'İç cephe boyası',
+          materialUnit: 'lt',
+          rate: 0.18,
+          kesifUnit: 'm²',
+          category: 'Boyalar',
+        ),
+      if (lines.containsKey('Y.25.012'))
+        forPoz(
+          pozNo: 'Y.25.012',
+          materialName: 'XPS levha 5 cm',
+          materialUnit: 'm²',
+          rate: 1.05,
+          kesifUnit: 'm²',
+          category: 'Yalıtım',
+        ),
+      if (lines.containsKey('E.12.003'))
+        forPoz(
+          pozNo: 'E.12.003',
+          materialName: 'NYA kablo 3x2.5',
+          materialUnit: 'm',
+          rate: 1.08,
+          kesifUnit: 'm',
+          category: 'Kablo',
+        ),
+      if (lines.containsKey('E.08.021'))
+        forPoz(
+          pozNo: 'E.08.021',
+          materialName: 'LED panel 60x60',
+          materialUnit: 'ad',
+          rate: 1,
+          kesifUnit: 'ad',
+          category: 'Aydınlatma',
+        ),
+      if (lines.containsKey('M.04.010'))
+        forPoz(
+          pozNo: 'M.04.010',
+          materialName: 'PPR boru Ø25',
+          materialUnit: 'm',
+          rate: 1.05,
+          kesifUnit: 'm',
+          category: 'Sıhhi tesisat',
+        ),
+      if (lines.containsKey('M.11.002'))
+        forPoz(
+          pozNo: 'M.11.002',
+          materialName: 'Yangın dolabı + hortum',
+          materialUnit: 'ad',
+          rate: 1,
+          kesifUnit: 'ad',
+          category: 'Yangın',
+        ),
+    ];
+
+    _ref
+        .read(unitConsumptionsProvider.notifier)
+        .replaceAll([...kept, ...items]);
+  }
+
   List<MaterialRequest> _replaceRequests(
     String projectId,
     KesifSnapshot kesif,
@@ -139,92 +247,96 @@ class DemoSeedController {
         .where((e) => e.projectId != projectId)
         .toList();
 
-    final selected = kesif.lines.take(4).toList();
+    final consumptions = _ref
+        .read(unitConsumptionsProvider)
+        .where((e) => e.projectId == projectId)
+        .toList();
+    final needs = computeMaterialNeeds(
+      lines: kesif.lines,
+      consumptions: consumptions,
+    ).take(4).toList();
     final now = DateTime.now();
+
+    MaterialRequest reqFromNeed(
+      MaterialNeed n, {
+      required RequestStatus status,
+      RequestApprovals approvals = const RequestApprovals(),
+      String requestedBy = 'Saha',
+      String note = '',
+      String usageLocation = '',
+      String receivedBy = '',
+      int daysAgo = 0,
+    }) {
+      return MaterialRequest(
+        id: IdGen.make('req'),
+        projectId: projectId,
+        name: n.materialName,
+        category: n.consumption.category.isNotEmpty
+            ? n.consumption.category
+            : n.kesifLine.altGrup,
+        unit: n.materialUnit,
+        quantity: n.quantity,
+        requestDate: now.subtract(Duration(days: daysAgo)),
+        requestedBy: requestedBy,
+        status: status,
+        note: note,
+        usageLocation: usageLocation,
+        pozCode: n.pozNo,
+        approvals: approvals,
+        receivedBy: receivedBy,
+        kesifLineId: n.kesifLine.id,
+        kesifSnapshotId: kesif.id,
+      );
+    }
+
     final requests = <MaterialRequest>[
-      // Beklemede — kısmi onay
-      MaterialRequest(
-        id: IdGen.make('req'),
-        projectId: projectId,
-        name: selected[0].materialHint.isNotEmpty
-            ? selected[0].materialHint
-            : selected[0].tanim,
-        category: selected[0].altGrup,
-        unit: selected[0].birim,
-        quantity: selected[0].miktar,
-        requestDate: now.subtract(const Duration(days: 2)),
-        requestedBy: 'Ahmet Yılmaz',
-        status: RequestStatus.pending,
-        note: 'Blok A ıslak hacimler',
-        usageLocation: 'Blok A',
-        pozCode: selected[0].pozNo,
-        approvals: const RequestApprovals(sef: true),
-        kesifLineId: selected[0].id,
-        kesifSnapshotId: kesif.id,
-      ),
-      // Onaylandı — 3 onay → Teslim’de Gelen oluşur
-      MaterialRequest(
-        id: IdGen.make('req'),
-        projectId: projectId,
-        name: selected[1].materialHint.isNotEmpty
-            ? selected[1].materialHint
-            : selected[1].tanim,
-        category: selected[1].altGrup,
-        unit: selected[1].birim,
-        quantity: selected[1].miktar,
-        requestDate: now.subtract(const Duration(days: 5)),
-        requestedBy: 'Mehmet Kaya',
-        status: RequestStatus.approved,
-        note: 'Kat boyası partisi',
-        usageLocation: 'Blok B',
-        pozCode: selected[1].pozNo,
-        approvals: const RequestApprovals(
-          sef: true,
-          mudur: true,
-          satinAlma: true,
+      if (needs.isNotEmpty)
+        reqFromNeed(
+          needs[0],
+          status: RequestStatus.pending,
+          approvals: const RequestApprovals(sef: true),
+          requestedBy: 'Ahmet Yılmaz',
+          note: 'Blok A ıslak hacimler',
+          usageLocation: 'Blok A',
+          daysAgo: 2,
         ),
-        kesifLineId: selected[1].id,
-        kesifSnapshotId: kesif.id,
-      ),
-      // Teslim edildi
-      MaterialRequest(
-        id: IdGen.make('req'),
-        projectId: projectId,
-        name: selected[2].tanim,
-        category: selected[2].altGrup,
-        unit: selected[2].birim,
-        quantity: selected[2].miktar,
-        requestDate: now.subtract(const Duration(days: 10)),
-        requestedBy: 'Ayşe Demir',
-        status: RequestStatus.delivered,
-        note: 'Cephe yalıtım',
-        usageLocation: 'Cephe',
-        pozCode: selected[2].pozNo,
-        approvals: const RequestApprovals(
-          sef: true,
-          mudur: true,
-          satinAlma: true,
+      if (needs.length > 1)
+        reqFromNeed(
+          needs[1],
+          status: RequestStatus.approved,
+          approvals: const RequestApprovals(
+            sef: true,
+            mudur: true,
+            satinAlma: true,
+          ),
+          requestedBy: 'Mehmet Kaya',
+          note: 'Kat boyası partisi',
+          usageLocation: 'Blok B',
+          daysAgo: 5,
         ),
-        receivedBy: 'Saha Depo',
-        kesifLineId: selected[2].id,
-        kesifSnapshotId: kesif.id,
-      ),
-      // Reddedildi
-      MaterialRequest(
-        id: IdGen.make('req'),
-        projectId: projectId,
-        name: selected[3].tanim,
-        category: selected[3].altGrup,
-        unit: selected[3].birim,
-        quantity: selected[3].miktar,
-        requestDate: now.subtract(const Duration(days: 3)),
-        requestedBy: 'Can Öztürk',
-        status: RequestStatus.rejected,
-        note: 'Stoktan karşılanacak',
-        pozCode: selected[3].pozNo,
-        kesifLineId: selected[3].id,
-        kesifSnapshotId: kesif.id,
-      ),
+      if (needs.length > 2)
+        reqFromNeed(
+          needs[2],
+          status: RequestStatus.delivered,
+          approvals: const RequestApprovals(
+            sef: true,
+            mudur: true,
+            satinAlma: true,
+          ),
+          requestedBy: 'Ayşe Demir',
+          note: 'Cephe yalıtım',
+          usageLocation: 'Cephe',
+          receivedBy: 'Saha Depo',
+          daysAgo: 10,
+        ),
+      if (needs.length > 3)
+        reqFromNeed(
+          needs[3],
+          status: RequestStatus.rejected,
+          requestedBy: 'Can Öztürk',
+          note: 'Stoktan karşılanacak',
+          daysAgo: 3,
+        ),
     ];
 
     _ref.read(requestsProvider.notifier).replaceAll([...kept, ...requests]);

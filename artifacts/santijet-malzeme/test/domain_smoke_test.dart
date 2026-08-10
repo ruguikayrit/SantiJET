@@ -4,8 +4,10 @@ import 'package:santijet_malzeme/domain/entities/material_request.dart';
 import 'package:santijet_malzeme/domain/entities/request_approvals.dart';
 import 'package:santijet_malzeme/domain/entities/kesif_line.dart';
 import 'package:santijet_malzeme/domain/entities/kesif_snapshot.dart';
+import 'package:santijet_malzeme/domain/entities/unit_consumption.dart';
 import 'package:santijet_malzeme/domain/enums/main_discipline.dart';
 import 'package:santijet_malzeme/domain/enums/request_status.dart';
+import 'package:santijet_malzeme/domain/kesif/material_need_calculator.dart';
 
 void main() {
   test('KesifSnapshot groups by discipline and subgroup', () {
@@ -133,5 +135,45 @@ void main() {
     expect(legacy.waybillNo, 'IRS-OLD');
     expect(legacy.supplier, 'Firma');
     expect(legacy.fromRequest, isFalse);
+  });
+
+  test('metraj × birim sarfiyat = malzeme miktarı', () {
+    final lines = [
+      const KesifLine(
+        id: 'a',
+        pozNo: 'Y.19.001',
+        tanim: 'Seramik',
+        birim: 'm²',
+        miktar: 420,
+        anaGrup: MainDiscipline.insaat,
+      ),
+    ];
+    final consumptions = [
+      const UnitConsumption(
+        id: 'u1',
+        projectId: 'p1',
+        materialName: 'Yapıştırıcı C2TE',
+        materialUnit: 'kg',
+        rate: 5,
+        pozNo: 'Y.19.001',
+        kesifUnit: 'm²',
+      ),
+      const UnitConsumption(
+        id: 'u2',
+        projectId: 'p1',
+        materialName: 'Derz',
+        materialUnit: 'kg',
+        rate: 0.4,
+        pozNo: 'Y.19.001',
+        kesifUnit: 'm²',
+      ),
+    ];
+    final needs = computeMaterialNeeds(
+      lines: lines,
+      consumptions: consumptions,
+    );
+    expect(needs.length, 2);
+    expect(needs[0].quantity, 2100);
+    expect(needs[1].quantity, closeTo(168, 0.001));
   });
 }

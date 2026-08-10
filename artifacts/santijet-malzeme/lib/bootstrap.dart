@@ -19,6 +19,7 @@ Future<void> bootstrap() async {
     Hive.openBox('quotes'),
     Hive.openBox('deliveries'),
     Hive.openBox('library'),
+    Hive.openBox('unit_consumptions'),
   ]);
 
   runApp(
@@ -31,6 +32,7 @@ Future<void> bootstrap() async {
         quotesBoxProvider.overrideWithValue(boxes[4]),
         deliveriesBoxProvider.overrideWithValue(boxes[5]),
         libraryBoxProvider.overrideWithValue(boxes[6]),
+        unitConsumptionsBoxProvider.overrideWithValue(boxes[7]),
       ],
       child: const _SeedAndRun(child: SantijetMalzemeApp()),
     ),

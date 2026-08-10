@@ -5,9 +5,7 @@ import 'package:go_router/go_router.dart';
 import '../../core/design_system/sj_empty_state.dart';
 import '../../core/design_system/sj_stat_card.dart';
 import '../../core/routing/app_routes.dart';
-import '../../core/theme/app_colors.dart';
 import '../../core/theme/app_spacing.dart';
-import '../../core/theme/app_typography.dart';
 import '../../core/widgets/santijet_header.dart';
 import '../../data/providers/app_data_provider.dart';
 import '../projects/widgets/project_switcher.dart';
@@ -80,13 +78,6 @@ class HomeScreen extends ConsumerWidget {
               ),
               sliver: SliverList(
                 delegate: SliverChildListDelegate([
-                  Text(
-                    'Özet',
-                    style: AppTypography.titleMedium.copyWith(
-                      color: AppColors.textPrimary,
-                    ),
-                  ),
-                  const SizedBox(height: AppSpacing.sm),
                   Row(
                     children: [
                       Expanded(

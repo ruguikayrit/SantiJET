@@ -15,6 +15,7 @@
 /// | 10 | DeliveryLine |
 /// | 11 | TechSheet |
 /// | 12 | MaterialDecision |
+/// | 13 | UnitConsumption |
 library;
 
 export 'delivery.dart';
@@ -31,3 +32,4 @@ export 'quote_round.dart';
 export 'request_approvals.dart';
 export 'supplier_quote.dart';
 export 'tech_sheet.dart';
+export 'unit_consumption.dart';

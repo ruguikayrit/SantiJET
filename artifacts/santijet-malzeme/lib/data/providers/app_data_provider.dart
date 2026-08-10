@@ -32,6 +32,11 @@ final libraryBoxProvider = Provider<Box>(
   (ref) => throw UnimplementedError('libraryBoxProvider override edilmeli'),
 );
 
+final unitConsumptionsBoxProvider = Provider<Box>(
+  (ref) =>
+      throw UnimplementedError('unitConsumptionsBoxProvider override edilmeli'),
+);
+
 /// Aktif proje kimliği (Hive settings kutusu üzerinden).
 class ActiveProjectNotifier extends StateNotifier<String?> {
   ActiveProjectNotifier(this._settingsBox) : super(_read(_settingsBox));
@@ -474,6 +479,60 @@ final libraryProvider =
   return LibraryNotifier(ref.watch(libraryBoxProvider));
 });
 
+class UnitConsumptionsNotifier extends StateNotifier<List<UnitConsumption>> {
+  UnitConsumptionsNotifier(this._box) : super(_load(_box));
+
+  final Box _box;
+  static const _key = 'items';
+
+  static List<UnitConsumption> _load(Box box) =>
+      _readList(box, _key).map(UnitConsumption.fromJson).toList();
+
+  void _persist() =>
+      _writeList(_box, _key, state.map((e) => e.toJson()).toList());
+
+  void upsert(UnitConsumption item) {
+    final exists = state.any((e) => e.id == item.id);
+    state = exists
+        ? [
+            for (final e in state)
+              if (e.id == item.id) item else e,
+          ]
+        : [...state, item];
+    _persist();
+  }
+
+  void delete(String id) {
+    state = state.where((e) => e.id != id).toList();
+    _persist();
+  }
+
+  void replaceAll(List<UnitConsumption> items) {
+    state = List<UnitConsumption>.from(items);
+    _persist();
+  }
+
+  void clear() {
+    state = const [];
+    _persist();
+  }
+}
+
+final unitConsumptionsProvider =
+    StateNotifierProvider<UnitConsumptionsNotifier, List<UnitConsumption>>(
+        (ref) {
+  return UnitConsumptionsNotifier(ref.watch(unitConsumptionsBoxProvider));
+});
+
+final activeUnitConsumptionsProvider = Provider<List<UnitConsumption>>((ref) {
+  final project = ref.watch(activeProjectProvider);
+  if (project == null) return const [];
+  return ref
+      .watch(unitConsumptionsProvider)
+      .where((e) => e.projectId == project.id)
+      .toList();
+});
+
 /// Ana sayfa KPI özeti.
 class HomeKpis {
   const HomeKpis({
@@ -518,6 +577,7 @@ final homeKpisProvider = Provider<HomeKpis>((ref) {
 void clearAllMalzemeData(WidgetRef ref) {
   ref.read(projectsProvider.notifier).clear();
   ref.read(kesifProvider.notifier).clear();
+  ref.read(unitConsumptionsProvider.notifier).clear();
   ref.read(requestsProvider.notifier).clear();
   ref.read(quotesProvider.notifier).clear();
   ref.read(deliveriesProvider.notifier).clear();

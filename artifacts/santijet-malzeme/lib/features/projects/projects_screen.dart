@@ -272,6 +272,12 @@ class _ProjectsScreenState extends ConsumerState<ProjectsScreen> {
     ref.read(kesifProvider.notifier).replaceAll(
           ref.read(kesifProvider).where((e) => e.projectId != p.id).toList(),
         );
+    ref.read(unitConsumptionsProvider.notifier).replaceAll(
+          ref
+              .read(unitConsumptionsProvider)
+              .where((e) => e.projectId != p.id)
+              .toList(),
+        );
     ref.read(requestsProvider.notifier).replaceAll(
           ref
               .read(requestsProvider)

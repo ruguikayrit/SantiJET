@@ -9,7 +9,7 @@ Hive-only offline (MVP); Türkçe UI; ŞantiJET Beton / Puantaj görsel diliyle 
 | Sekme | Rol |
 |-------|-----|
 | **Ana** | KPI: açık talepler, bekleyen teslim, teklif turu, kütüphane |
-| **Keşif / Gruplar** | Keşif → İnşaat · Elektrik · Mekanik → alt başlık → poz; talebe ekle |
+| **Keşif Malzeme** | Birim sarfiyatlar × keşif metrajı → malzeme ihtiyacı; talebe ekle |
 | **Talep & Teklif** | Talep listesi, teklif PDF, firma teklifleri, fiyat mukayesesi |
 | **Teslim** | İrsaliye / teslim alma; talep–poz bağlama; karşılama progress |
 | **Kütüphane** | Malzeme teknik verileri + üretici TDS (metadata + dosya iskeleti) |
@@ -21,7 +21,8 @@ Ayarlar / projeler: header veya Ana üzerinden (bottom tab değil).
 | Entity | Not |
 |--------|-----|
 | `Project` | Proje bağlamı |
-| `KesifSnapshot` / `KesifLine` | `pozNo`, `kesifProjectId` (ileride Maliyet bağ), `anaGrup`, `altGrup` |
+| `KesifSnapshot` / `KesifLine` | `pozNo`, metraj; `kesifProjectId` (ileride Maliyet bağ) |
+| `UnitConsumption` | Birim sarfiyat (malzeme / 1 keşif birimi) |
 | `MaterialItem` | Katalog kartı |
 | `MaterialRequest` / `MaterialRequestLine` | Talep + durum: taslak \| teklifte \| siparis \| kismi \| kapandi |
 | `QuoteRound` / `SupplierQuote` / `QuoteLine` | Teklif turu, firma, birim fiyat |
@@ -29,7 +30,7 @@ Ayarlar / projeler: header veya Ana üzerinden (bottom tab değil).
 | `TechSheet` | TDS metadata (+ dosya path sonraki faz) |
 | `MaterialDecision` | Opsiyonel teknik karar |
 
-Hive kutuları (JSON-in-box): `settings`, `projects`, `kesif`, `requests`, `quotes`, `deliveries`, `library`.
+Hive kutuları (JSON-in-box): `settings`, `projects`, `kesif`, `unit_consumptions`, `requests`, `quotes`, `deliveries`, `library`.
 
 ## Sınırlar (çakışma yok)
 
