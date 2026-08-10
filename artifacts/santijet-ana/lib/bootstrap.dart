@@ -20,13 +20,18 @@ final workspaceBoxProvider = Provider<Box>((ref) {
 
 Future<void> bootstrap() async {
   WidgetsFlutterBinding.ensureInitialized();
-  await initializeDateFormatting('tr_TR');
+  try {
+    await initializeDateFormatting('tr_TR')
+        .timeout(const Duration(seconds: 3));
+  } catch (_) {
+    // Locale verisi gelmezse devam — tarih formatı fallback kullanır.
+  }
   await Hive.initFlutter();
   final boxes = await Future.wait([
     Hive.openBox('settings'),
     Hive.openBox('app_state'),
     Hive.openBox('workspace'),
-  ]);
+  ]).timeout(const Duration(seconds: 8));
 
   runApp(
     ProviderScope(

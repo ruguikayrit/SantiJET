@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
@@ -24,6 +25,8 @@ class _SplashScreenState extends ConsumerState<SplashScreen>
   static const _boltWordmarkGap = 28.0;
   static const _boltWordmarkGapReduced = _boltWordmarkGap * 0.3;
   static const _wordmarkAnchorCompensation = _boltWordmarkGap * 0.35;
+  static const _deployChannel =
+      String.fromEnvironment('DEPLOY_CHANNEL', defaultValue: '');
 
   late final AnimationController _loadingController;
   bool _navigated = false;
@@ -39,17 +42,36 @@ class _SplashScreenState extends ConsumerState<SplashScreen>
   }
 
   Future<void> _bootstrap() async {
-    final delay = Future<void>.delayed(const Duration(milliseconds: 1600));
-    // State yüklenene kadar bekle (max ~3s).
-    for (var i = 0; i < 30; i++) {
+    final delay = Future<void>.delayed(const Duration(milliseconds: 900));
+    for (var i = 0; i < 50; i++) {
       if (ref.read(appStateProvider).loaded) break;
       await Future<void>.delayed(const Duration(milliseconds: 100));
     }
     await delay;
     if (!mounted || _navigated) return;
     _navigated = true;
+
     final s = ref.read(appStateProvider);
-    if (s.workspaceInfo == null || s.currentUserId == null) {
+    final needsAuth = s.workspaceInfo == null || s.currentUserId == null;
+
+    // Staging önizlemede giriş ekranında takılmayı önle: otomatik yerel oturum.
+    if (needsAuth && _deployChannel == 'staging') {
+      try {
+        await ref.read(appStateProvider.notifier).startLocalSession(
+              name: 'Staging Kullanıcı',
+              roleId: 'santiye-sefi',
+            );
+      } catch (e, st) {
+        if (kDebugMode) {
+          debugPrint('Staging auto-login failed: $e\n$st');
+        }
+      }
+      if (!mounted) return;
+      context.go(AppRoutes.home);
+      return;
+    }
+
+    if (needsAuth) {
       context.go(AppRoutes.onboarding);
     } else {
       context.go(AppRoutes.home);

@@ -394,7 +394,6 @@ class AppStateNotifier extends StateNotifier<AppState> {
       inviteCode: '',
       apiUrl: '',
     );
-    await _workspaceBox.put(_workspaceKey, jsonEncode(ws.toJson()));
 
     var users = List<AppUser>.from(state.appUsers);
     String userId;
@@ -423,11 +422,19 @@ class AppStateNotifier extends StateNotifier<AppState> {
       }
     }
 
+    // Önce bellekte oturumu aç (UI bloklanmasın), Hive'ı timeout ile yaz.
     _set(state.copyWith(
       appUsers: users,
       currentUserId: userId,
       workspaceInfo: ws,
     ));
+    try {
+      await _workspaceBox
+          .put(_workspaceKey, jsonEncode(ws.toJson()))
+          .timeout(const Duration(seconds: 2));
+    } catch (_) {
+      // IndexedDB gecikmesi / kilit — oturum yine de açık kalsın.
+    }
     return userId;
   }
 

@@ -87,10 +87,18 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
   }
 
   Future<void> _quickStartLocal() async {
-    await ref.read(appStateProvider.notifier).startLocalSession(
-          name: 'Kullanıcı',
-          roleId: 'santiye-sefi',
-        );
+    try {
+      await ref.read(appStateProvider.notifier).startLocalSession(
+            name: 'Kullanıcı',
+            roleId: 'santiye-sefi',
+          );
+    } catch (e) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Oturum açılamadı: $e')),
+      );
+      return;
+    }
     if (!mounted) return;
     context.go(AppRoutes.home);
   }
