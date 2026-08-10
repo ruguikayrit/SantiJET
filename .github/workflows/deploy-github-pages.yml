@@ -1,4 +1,4 @@
-name: Deploy ŞantiJET GitHub Pages (DEMİR + Maliyet + Puantaj + Beton + Malzeme + Staging)
+name: Deploy ŞantiJET GitHub Pages (DEMİR + Maliyet + Puantaj + Beton + Malzeme + PRO + Staging)
 
 on:
   push:
@@ -11,6 +11,7 @@ on:
       - 'artifacts/santijet-puantaj/**'
       - 'artifacts/santijet-beton/**'
       - 'artifacts/santijet-malzeme/**'
+      - 'artifacts/santijet-ana/**'
       - '.github/workflows/deploy-github-pages.yml'
       - '.github/scripts/**'
   workflow_dispatch:
@@ -64,12 +65,17 @@ jobs:
         if: hashFiles('staging-src/artifacts/santijet-demir/scripts/setup-libredwg-web.sh') != ''
         run: bash staging-src/artifacts/santijet-demir/scripts/setup-libredwg-web.sh
 
-      - name: Build DEMİR (production + staging preview)
+      - name: Build DEMİR (production + /demir/ preview)
         env:
           GITHUB_REPOSITORY_NAME: ${{ github.event.repository.name }}
           SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
           SUPABASE_ANON_KEY: ${{ secrets.SUPABASE_ANON_KEY }}
-        run: bash .github/scripts/build-santijet-pages.sh
+        run: |
+          if [ -f staging-src/.github/scripts/build-santijet-pages.sh ]; then
+            bash staging-src/.github/scripts/build-santijet-pages.sh
+          else
+            bash .github/scripts/build-santijet-pages.sh
+          fi
 
       - name: Setup Flutter (Maliyet)
         uses: subosito/flutter-action@v2
@@ -164,11 +170,33 @@ jobs:
             exit 1
           fi
 
+      - name: Setup Flutter (PRO)
+        uses: subosito/flutter-action@v2
+        with:
+          channel: stable
+          flutter-version: '3.27.4'
+          cache: true
+          cache-key: flutter-pro-3.27.4
+
+      - name: Build PRO web (staging preview)
+        id: pro_build
+        env:
+          GITHUB_REPOSITORY_NAME: ${{ github.event.repository.name }}
+        run: |
+          if [ -f staging-src/.github/scripts/build-pro-pages.sh ]; then
+            bash staging-src/.github/scripts/build-pro-pages.sh
+          elif [ -f .github/scripts/build-pro-pages.sh ]; then
+            bash .github/scripts/build-pro-pages.sh
+          else
+            echo "::error::build-pro-pages.sh missing on main and staging"
+            exit 1
+          fi
+
       - name: Verify site bundle
         run: |
           test -f site/index.html
-          if [ ! -f site/staging/index.html ]; then
-            echo "::error::staging preview missing. Ensure staging branch exists and was checked out."
+          if [ ! -f site/demir/index.html ]; then
+            echo "::error::DEMİR preview missing (site/demir/index.html). Ensure staging branch exists and was checked out."
             exit 1
           fi
           if [ "${{ steps.maliyet_build.outcome }}" != "success" ]; then
@@ -188,6 +216,10 @@ jobs:
             echo "::error::Malzeme bundle missing (site/malzeme/index.html). Refusing to deploy a broken /malzeme/."
             exit 1
           fi
+          if [ ! -f site/pro/index.html ]; then
+            echo "::error::PRO bundle missing (site/pro/index.html). Refusing to deploy a broken /pro/."
+            exit 1
+          fi
 
       - name: Upload Pages artifact
         uses: actions/upload-pages-artifact@v3
@@ -204,8 +236,9 @@ jobs:
       - name: Published URLs
         run: |
           echo "Production DEMİR: https://${{ github.repository_owner }}.github.io/${{ github.event.repository.name }}/"
-          echo "Staging DEMİR: https://${{ github.repository_owner }}.github.io/${{ github.event.repository.name }}/staging/"
+          echo "DEMİR: https://${{ github.repository_owner }}.github.io/${{ github.event.repository.name }}/demir/"
           echo "Maliyet: https://${{ github.repository_owner }}.github.io/${{ github.event.repository.name }}/maliyet/"
-          echo "Puantaj staging: https://${{ github.repository_owner }}.github.io/${{ github.event.repository.name }}/puantaj/"
-          echo "Beton staging: https://${{ github.repository_owner }}.github.io/${{ github.event.repository.name }}/beton/"
-          echo "Malzeme staging: https://${{ github.repository_owner }}.github.io/${{ github.event.repository.name }}/malzeme/"
+          echo "Puantaj: https://${{ github.repository_owner }}.github.io/${{ github.event.repository.name }}/puantaj/"
+          echo "Beton: https://${{ github.repository_owner }}.github.io/${{ github.event.repository.name }}/beton/"
+          echo "Malzeme: https://${{ github.repository_owner }}.github.io/${{ github.event.repository.name }}/malzeme/"
+          echo "PRO staging: https://${{ github.repository_owner }}.github.io/${{ github.event.repository.name }}/pro/"

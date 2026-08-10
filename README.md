@@ -9,7 +9,8 @@ Türkçe inşaat şantiye yönetim uygulaması. pnpm monorepo yapısında birden
 | **Maliyet (Flutter)** | `artifacts/santijet-bfa-flutter` | **Aktif** — ŞantiJET Maliyet (`/maliyet/`) |
 | **BETON (Flutter)** | `artifacts/santijet-beton` | **Aktif** — Mevcut beton uygulaması (`/beton/`) |
 | B.F.A. (RN arşiv) | `artifacts/imalat-poz-analizleri` | Emekli — yalnızca referans |
-| Mobil uygulama | `artifacts/santiye-takip` | Expo / React Native — ana şantiye takip uygulaması |
+| Mobil uygulama (RN) | `artifacts/santiye-takip` | Expo / React Native — ana şantiye takip (korunur) |
+| **Ana / PRO (Flutter)** | `artifacts/santijet-ana` | **Aktif Flutter hub** — RN ile aynı kurgu, 16 modül |
 | Neon HUD | `artifacts/santijet-neon` | Vite web dashboard — neon temalı yönetici paneli |
 | Web sitesi | `artifacts/santijet-website` | Tanıtım / SaaS landing page |
 | API sunucusu | `artifacts/api-server` | Express API (AI asistan, workspace yönetimi) |
@@ -61,7 +62,17 @@ Pages: `/beton/`.
 pnpm dev:ipa:archive
 ```
 
-### Mobil uygulama (Expo web)
+### Ana / PRO — Flutter hub (aktif)
+
+```bash
+pnpm dev:ana
+```
+
+RN `santiye-takip` bozulmadan durur; Flutter karşılığı `artifacts/santijet-ana`.
+
+Staging: https://ruguikayrit.github.io/SantiJET/pro/
+
+### Mobil uygulama (Expo web — RN, korunur)
 
 ```bash
 pnpm dev:mobile-web
