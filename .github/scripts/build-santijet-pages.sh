@@ -1,5 +1,6 @@
 #!/usr/bin/env bash
-# GitHub Pages — DEMİR production (main) + DEMİR staging önizleme (/staging/)
+# GitHub Pages — DEMİR production (main) + DEMİR önizleme (/demir/)
+# Kaynak: main checkout + staging-src (opsiyonel)
 set -euo pipefail
 
 ROOT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)"
@@ -79,10 +80,10 @@ echo "Building production DEMİR from main..."
 build_demir_web "${MAIN_SRC}" "" "production"
 
 if [[ -d "${STAGING_SRC}/artifacts/santijet-demir" ]]; then
-  echo "Building staging DEMİR preview..."
-  build_demir_web "${STAGING_SRC}" "staging" "staging"
+  echo "Building DEMİR preview at /demir/ from staging..."
+  build_demir_web "${STAGING_SRC}" "demir" "staging"
 else
-  echo "Staging source missing; skipping /staging preview."
+  echo "Staging source missing; skipping /demir/ preview."
 fi
 
 echo "DEMİR pages ready under ${SITE_DIR}"

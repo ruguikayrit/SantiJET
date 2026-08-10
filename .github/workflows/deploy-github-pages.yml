@@ -197,6 +197,9 @@ jobs:
           test -f site/index.html
           if [ ! -f site/demir/index.html ]; then
             echo "::error::DEMİR preview missing (site/demir/index.html). Ensure staging branch exists and was checked out."
+            echo "::group::site tree"
+            find site -maxdepth 3 -type f -name 'index.html' | sort || true
+            echo "::endgroup::"
             exit 1
           fi
           if [ "${{ steps.maliyet_build.outcome }}" != "success" ]; then
@@ -218,8 +221,13 @@ jobs:
           fi
           if [ ! -f site/pro/index.html ]; then
             echo "::error::PRO bundle missing (site/pro/index.html). Refusing to deploy a broken /pro/."
+            echo "::group::site tree"
+            find site -maxdepth 3 -type f -name 'index.html' | sort || true
+            echo "::endgroup::"
             exit 1
           fi
+          echo "Site bundle OK:"
+          find site -maxdepth 3 -type f -name 'index.html' | sort
 
       - name: Upload Pages artifact
         uses: actions/upload-pages-artifact@v3
