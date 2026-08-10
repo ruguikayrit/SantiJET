@@ -321,7 +321,7 @@ class AppStateNotifier extends StateNotifier<AppState> {
         _workspaceBox = workspaceBox,
         _api = api ?? WorkspaceApi(),
         super(AppState()) {
-    _load();
+    _loadSync();
   }
 
   static const _deployChannel =
@@ -331,34 +331,42 @@ class AppStateNotifier extends StateNotifier<AppState> {
   final Box _workspaceBox;
   final WorkspaceApi _api;
 
-  Future<void> _load() async {
+  /// Senkron yükleme — ilk frame öncesi loaded/oturum hazır olsun.
+  void _loadSync() {
     AppState next = AppState(roles: Role.defaultRoles());
-    final raw = _appStateBox.get(_stateKey);
-    if (raw is String && raw.isNotEmpty) {
-      try {
-        final decoded = jsonDecode(raw);
-        if (decoded is Map) {
-          next = AppState.fromJson(Map<String, dynamic>.from(decoded));
-        }
-      } catch (_) {}
-    }
+    try {
+      final raw = _appStateBox.get(_stateKey);
+      if (raw is String && raw.isNotEmpty) {
+        try {
+          final decoded = jsonDecode(raw);
+          if (decoded is Map) {
+            next = AppState.fromJson(Map<String, dynamic>.from(decoded));
+          }
+        } catch (_) {}
+      }
 
-    WorkspaceInfo? ws;
-    final wsRaw = _workspaceBox.get(_workspaceKey);
-    if (wsRaw is String && wsRaw.isNotEmpty) {
-      try {
-        final decoded = jsonDecode(wsRaw);
-        if (decoded is Map) {
-          ws = WorkspaceInfo.fromJson(Map<String, dynamic>.from(decoded));
-        }
-      } catch (_) {}
-    }
+      WorkspaceInfo? ws;
+      final wsRaw = _workspaceBox.get(_workspaceKey);
+      if (wsRaw is String && wsRaw.isNotEmpty) {
+        try {
+          final decoded = jsonDecode(wsRaw);
+          if (decoded is Map) {
+            ws = WorkspaceInfo.fromJson(Map<String, dynamic>.from(decoded));
+          }
+        } catch (_) {}
+      }
 
-    // loaded=false iken staging oturumunu SENKRON hazırla (Hive beklemeden).
-    // Async await + router redirect yarışı onboarding'e düşürüyordu.
-    state = next.copyWith(loaded: false, workspaceInfo: ws);
-    if (_deployChannel == 'staging') {
-      ensureStagingSession();
+      state = next.copyWith(loaded: false, workspaceInfo: ws);
+      if (_deployChannel == 'staging') {
+        ensureStagingSession();
+      }
+    } catch (_) {
+      // Bozuk Hive / beklenmeyen hata — yine de staging oturumu dene.
+      if (_deployChannel == 'staging') {
+        try {
+          ensureStagingSession();
+        } catch (_) {}
+      }
     }
     _set(state.copyWith(loaded: true));
   }

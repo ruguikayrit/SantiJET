@@ -74,9 +74,8 @@ final routerProvider = Provider<GoRouter>((ref) {
       var needsOnboarding =
           app.workspaceInfo == null || app.currentUserId == null;
 
-      // Staging: asla giriş ekranında bırakma — oturumu senkron aç, ana sayfaya git.
-      if (needsOnboarding && _deployChannel == 'staging') {
-        ref.read(appStateProvider.notifier).ensureStagingSession();
+      // Staging önizleme: _loadSync oturumu açar. Redirect'te state yazma.
+      if (_deployChannel == 'staging') {
         needsOnboarding = false;
       }
 

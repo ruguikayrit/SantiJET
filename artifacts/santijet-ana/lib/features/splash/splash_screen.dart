@@ -41,7 +41,10 @@ class _SplashScreenState extends ConsumerState<SplashScreen>
   }
 
   Future<void> _bootstrap() async {
-    final delay = Future<void>.delayed(const Duration(milliseconds: 900));
+    // Staging: animasyonu kısalt, hemen ana sayfaya.
+    final delayMs = _deployChannel == 'staging' ? 400 : 900;
+    final delay = Future<void>.delayed(Duration(milliseconds: delayMs));
+
     for (var i = 0; i < 50; i++) {
       if (ref.read(appStateProvider).loaded) break;
       await Future<void>.delayed(const Duration(milliseconds: 100));
