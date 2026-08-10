@@ -354,18 +354,23 @@ class AppStateNotifier extends StateNotifier<AppState> {
       } catch (_) {}
     }
 
-    // loaded=false iken staging oturumunu hazırla; router splash'ta bekler.
+    // loaded=false iken staging oturumunu SENKRON hazırla (Hive beklemeden).
+    // Async await + router redirect yarışı onboarding'e düşürüyordu.
     state = next.copyWith(loaded: false, workspaceInfo: ws);
-    if (_deployChannel == 'staging' &&
-        (state.workspaceInfo == null || state.currentUserId == null)) {
-      try {
-        await startLocalSession(
-          name: 'Staging Kullanıcı',
-          roleId: 'santiye-sefi',
-        );
-      } catch (_) {}
+    if (_deployChannel == 'staging') {
+      ensureStagingSession();
     }
     _set(state.copyWith(loaded: true));
+  }
+
+  /// Staging önizleme: workspace + kullanıcıyı bellekte anında açar.
+  /// Hive yazımı arka planda; UI / router bloklanmaz.
+  void ensureStagingSession({
+    String name = 'Staging Kullanıcı',
+    String roleId = 'santiye-sefi',
+  }) {
+    if (state.workspaceInfo != null && state.currentUserId != null) return;
+    applyLocalSessionSync(name: name, roleId: roleId);
   }
 
   void _persist() {
@@ -394,14 +399,13 @@ class AppStateNotifier extends StateNotifier<AppState> {
     }
   }
 
-  /// Yerel oturum: workspace + kullanıcı + login tek atomik state güncellemesi.
-  /// Onboarding adımlarının router refresh ile sıfırlanmasını önler.
-  Future<String> startLocalSession({
+  /// Bellekte yerel oturum (senkron). Hive yazımı fire-and-forget.
+  String applyLocalSessionSync({
     String name = 'Kullanıcı',
     String roleId = 'santiye-sefi',
     String pin = '',
     String? existingUserId,
-  }) async {
+  }) {
     const ws = WorkspaceInfo(
       id: 'local',
       companyName: 'Yerel',
@@ -436,20 +440,30 @@ class AppStateNotifier extends StateNotifier<AppState> {
       }
     }
 
-    // Önce bellekte oturumu aç (UI bloklanmasın), Hive'ı timeout ile yaz.
     _set(state.copyWith(
       appUsers: users,
       currentUserId: userId,
       workspaceInfo: ws,
     ));
-    try {
-      await _workspaceBox
-          .put(_workspaceKey, jsonEncode(ws.toJson()))
-          .timeout(const Duration(seconds: 2));
-    } catch (_) {
-      // IndexedDB gecikmesi / kilit — oturum yine de açık kalsın.
-    }
+    // ignore: unawaited_futures
+    _workspaceBox.put(_workspaceKey, jsonEncode(ws.toJson())).then((_) {},
+        onError: (_) {});
     return userId;
+  }
+
+  /// Yerel oturum: workspace + kullanıcı + login tek atomik state güncellemesi.
+  Future<String> startLocalSession({
+    String name = 'Kullanıcı',
+    String roleId = 'santiye-sefi',
+    String pin = '',
+    String? existingUserId,
+  }) async {
+    return applyLocalSessionSync(
+      name: name,
+      roleId: roleId,
+      pin: pin,
+      existingUserId: existingUserId,
+    );
   }
 
   /// Mevcut kullanıcıyı yerel workspace ile oturum açtırır (tek yazım).

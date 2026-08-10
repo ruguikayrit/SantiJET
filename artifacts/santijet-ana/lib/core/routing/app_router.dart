@@ -38,6 +38,9 @@ import 'page_transitions.dart';
 
 final _rootKey = GlobalKey<NavigatorState>();
 
+const _deployChannel =
+    String.fromEnvironment('DEPLOY_CHANNEL', defaultValue: '');
+
 final routerProvider = Provider<GoRouter>((ref) {
   final refresh = ValueNotifier<int>(0);
   // Yalnızca auth kapısı alanları — her CRUD router'ı yenilemesin / onboarding state silinmesin.
@@ -68,8 +71,14 @@ final routerProvider = Provider<GoRouter>((ref) {
         return loc == AppRoutes.splash ? null : AppRoutes.splash;
       }
 
-      final needsOnboarding =
+      var needsOnboarding =
           app.workspaceInfo == null || app.currentUserId == null;
+
+      // Staging: asla giriş ekranında bırakma — oturumu senkron aç, ana sayfaya git.
+      if (needsOnboarding && _deployChannel == 'staging') {
+        ref.read(appStateProvider.notifier).ensureStagingSession();
+        needsOnboarding = false;
+      }
 
       // Splash kendi navigasyonunu yapar; yüklendikten sonra burada tutma.
       if (loc == AppRoutes.splash) {

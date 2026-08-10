@@ -1,4 +1,3 @@
-import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
@@ -51,26 +50,16 @@ class _SplashScreenState extends ConsumerState<SplashScreen>
     if (!mounted || _navigated) return;
     _navigated = true;
 
-    final s = ref.read(appStateProvider);
-    final needsAuth = s.workspaceInfo == null || s.currentUserId == null;
-
-    // Staging önizlemede giriş ekranında takılmayı önle: otomatik yerel oturum.
-    if (needsAuth && _deployChannel == 'staging') {
-      try {
-        await ref.read(appStateProvider.notifier).startLocalSession(
-              name: 'Staging Kullanıcı',
-              roleId: 'santiye-sefi',
-            );
-      } catch (e, st) {
-        if (kDebugMode) {
-          debugPrint('Staging auto-login failed: $e\n$st');
-        }
-      }
+    final notifier = ref.read(appStateProvider.notifier);
+    if (_deployChannel == 'staging') {
+      notifier.ensureStagingSession();
       if (!mounted) return;
       context.go(AppRoutes.home);
       return;
     }
 
+    final s = ref.read(appStateProvider);
+    final needsAuth = s.workspaceInfo == null || s.currentUserId == null;
     if (needsAuth) {
       context.go(AppRoutes.onboarding);
     } else {

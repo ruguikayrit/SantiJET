@@ -13,6 +13,9 @@ const _card = Color(0xFF111827);
 const _border = Color(0x12FFFFFF);
 const _orange = Color(0xFFE85D04);
 
+const _deployChannel =
+    String.fromEnvironment('DEPLOY_CHANNEL', defaultValue: '');
+
 const _roleColors = <String, Color>{
   'isveren': Color(0xFF7C3AED),
   'proje-muduru': Color(0xFFE85D04),
@@ -54,6 +57,19 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
   bool _pinError = false;
   String? _pendingLoginName;
   String? _pendingUserId;
+  bool _stagingAutoStarted = false;
+
+  @override
+  void initState() {
+    super.initState();
+    if (_deployChannel == 'staging') {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (!mounted || _stagingAutoStarted) return;
+        _stagingAutoStarted = true;
+        _quickStartLocal();
+      });
+    }
+  }
 
   @override
   void dispose() {
@@ -88,8 +104,8 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
 
   Future<void> _quickStartLocal() async {
     try {
-      await ref.read(appStateProvider.notifier).startLocalSession(
-            name: 'Kullanıcı',
+      ref.read(appStateProvider.notifier).applyLocalSessionSync(
+            name: _deployChannel == 'staging' ? 'Staging Kullanıcı' : 'Kullanıcı',
             roleId: 'santiye-sefi',
           );
     } catch (e) {
