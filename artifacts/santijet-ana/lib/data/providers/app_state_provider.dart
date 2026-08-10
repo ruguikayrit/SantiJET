@@ -324,6 +324,9 @@ class AppStateNotifier extends StateNotifier<AppState> {
     _load();
   }
 
+  static const _deployChannel =
+      String.fromEnvironment('DEPLOY_CHANNEL', defaultValue: '');
+
   final Box _appStateBox;
   final Box _workspaceBox;
   final WorkspaceApi _api;
@@ -351,7 +354,18 @@ class AppStateNotifier extends StateNotifier<AppState> {
       } catch (_) {}
     }
 
-    state = next.copyWith(loaded: true, workspaceInfo: ws);
+    // loaded=false iken staging oturumunu hazırla; router splash'ta bekler.
+    state = next.copyWith(loaded: false, workspaceInfo: ws);
+    if (_deployChannel == 'staging' &&
+        (state.workspaceInfo == null || state.currentUserId == null)) {
+      try {
+        await startLocalSession(
+          name: 'Staging Kullanıcı',
+          roleId: 'santiye-sefi',
+        );
+      } catch (_) {}
+    }
+    _set(state.copyWith(loaded: true));
   }
 
   void _persist() {
