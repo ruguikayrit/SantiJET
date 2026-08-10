@@ -17,7 +17,6 @@ import '../../data/providers/favorites_provider.dart';
 import '../../data/providers/kesif_provider.dart';
 import '../../data/providers/recent_views_provider.dart';
 import '../../domain/entities/poz_analiz.dart';
-import '../ozel_analiz/new_analiz_module_sheet.dart';
 
 /// Ana sayfa — özet kartları + son analizler / açık keşifler (ŞantiJET Maliyet).
 class HomeScreen extends ConsumerStatefulWidget {
@@ -48,21 +47,6 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
 
     return Scaffold(
       backgroundColor: AppColors.canvas,
-      floatingActionButtonLocation: FloatingActionButtonLocation.endFloat,
-      floatingActionButton: Padding(
-        padding: const EdgeInsets.only(bottom: 8),
-        child: FloatingActionButton.extended(
-          onPressed: () async {
-            final discipline = await NewAnalizModuleSheet.show(context);
-            if (discipline == null || !context.mounted) return;
-            context.push(
-              '${AppRoutes.analizYeni}?modul=${discipline.jsonValue}',
-            );
-          },
-          icon: const Icon(Icons.add),
-          label: const Text('Yeni Analiz'),
-        ),
-      ),
       body: SafeArea(
         bottom: false,
         child: catalogAsync.when(
