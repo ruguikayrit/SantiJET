@@ -91,13 +91,6 @@ class _MetrajScreenState extends ConsumerState<MetrajScreen> {
                       color: AppColors.textMuted,
                     ),
                   ),
-                  const SizedBox(height: 4),
-                  Text(
-                    'En, boy, yükseklik, alan veya çevre ile poza ait metrajı hesaplayın.',
-                    style: theme.textTheme.bodySmall?.copyWith(
-                      color: AppColors.textMuted,
-                    ),
-                  ),
                   if (kesif.satirlar.isEmpty)
                     Padding(
                       padding: const EdgeInsets.only(top: AppSpacing.lg),

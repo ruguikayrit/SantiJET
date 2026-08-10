@@ -1,39 +1,53 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
 
+import '../../core/design_system/sj_empty_state.dart';
+import '../../core/routing/app_routes.dart';
 import '../../core/theme/app_colors.dart';
 import '../../core/theme/app_spacing.dart';
 import '../../core/widgets/santijet_header.dart';
+import '../../data/providers/kesif_provider.dart';
+import '../projects/widgets/project_switcher.dart';
 
-/// Ana sayfa — geçici boş kabuk (özet / arama sonra şekillendirilecek).
+/// Ana sayfa — şantiye seçimi (özet içerik sonra eklenecek).
 class HomeScreen extends ConsumerWidget {
   const HomeScreen({super.key});
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final theme = Theme.of(context);
+    final project = ref.watch(activeKesifProvider);
+
     return Scaffold(
       backgroundColor: AppColors.canvas,
       body: SafeArea(
         bottom: false,
-        child: ListView(
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
             const SantijetHeader(showWordmark: true),
-            Padding(
-              padding: const EdgeInsets.fromLTRB(
+            const Padding(
+              padding: EdgeInsets.fromLTRB(
                 AppSpacing.md,
-                AppSpacing.xl,
+                0,
                 AppSpacing.md,
-                AppSpacing.md,
+                AppSpacing.sm,
               ),
-              child: Text(
-                'Ana sayfa içeriği yakında eklenecek.',
-                style: theme.textTheme.bodyMedium?.copyWith(
-                  color: AppColors.textMuted,
-                ),
-                textAlign: TextAlign.center,
-              ),
+              child: ProjectSwitcher(),
             ),
+            if (project == null)
+              Expanded(
+                child: SJEmptyState(
+                  title: 'Önce şantiye ekleyin',
+                  message:
+                      'Keşif, metraj ve yaklaşık maliyet için en az bir proje gerekli.',
+                  icon: Icons.apartment_outlined,
+                  actionLabel: 'Projelerim',
+                  onAction: () => context.push(AppRoutes.projeler),
+                ),
+              )
+            else
+              const Spacer(),
           ],
         ),
       ),
