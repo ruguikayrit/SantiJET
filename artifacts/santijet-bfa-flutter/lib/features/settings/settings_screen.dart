@@ -10,6 +10,7 @@ import '../../core/theme/app_colors.dart';
 import '../../core/theme/app_spacing.dart';
 import '../../core/theme/app_typography.dart';
 import '../../core/theme/theme_mode_provider.dart';
+import '../../data/providers/demo_seed_provider.dart';
 import '../../data/providers/favorites_provider.dart';
 import '../../data/providers/kesif_provider.dart';
 import '../../data/providers/recent_views_provider.dart';
@@ -214,6 +215,37 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
     }
   }
 
+  Future<void> _confirmLoadDemo(BuildContext context) async {
+    final ok = await SJModal.confirm(
+      context: context,
+      title: 'Demo veriyi yükle',
+      message:
+          'Demo Konut Şantiyesi oluşturulur/güncellenir; metraj cetveli, '
+          'keşif listesi ve yaklaşık maliyet örnek veriyle dolar.',
+      confirmLabel: 'Yükle',
+    );
+    if (!ok || !mounted) return;
+    setState(() => _busy = true);
+    try {
+      final project = await ref.read(demoSeedProvider).loadAll();
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(
+            'Demo yüklendi: ${project.ad}. Metraj / Keşif / Y.Maliyet sekmelerine bakın.',
+          ),
+        ),
+      );
+    } catch (e) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Demo yüklenemedi: $e')),
+      );
+    } finally {
+      if (mounted) setState(() => _busy = false);
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     final themeMode = ref.watch(themeModeProvider);
@@ -233,6 +265,16 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
             title: 'Projelerim',
             subtitle: '${kesifProjects.length} proje',
             onTap: () => context.push(AppRoutes.projeler),
+          ),
+          _SettingsTile(
+            icon: Icons.science_outlined,
+            title: 'Demo veriyi yükle',
+            subtitle: _busy
+                ? 'Yükleniyor…'
+                : 'Metraj · keşif · YM örnek proje',
+            onTap: () {
+              if (!_busy) _confirmLoadDemo(context);
+            },
           ),
           _SettingsTile(
             icon: Icons.dark_mode,

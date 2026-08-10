@@ -4,15 +4,13 @@ import 'package:hive_flutter/hive_flutter.dart';
 
 import 'app.dart';
 import 'core/theme/theme_mode_provider.dart';
+import 'data/providers/demo_seed_provider.dart';
 import 'data/providers/favorites_provider.dart';
 import 'data/providers/kesif_provider.dart';
 import 'data/providers/recent_views_provider.dart';
 import 'data/providers/user_analiz_provider.dart';
 
 /// Uygulama başlatma — Demir `bootstrap()` deseniyle hizalı.
-///
-/// Hive yerel kalıcılığı başlatılır (favoriler, son görüntülenenler, ayarlar,
-/// özel analizler/keşif Faz 9/12'de eklenecektir).
 Future<void> bootstrap() async {
   WidgetsFlutterBinding.ensureInitialized();
   await Hive.initFlutter();
@@ -33,7 +31,30 @@ Future<void> bootstrap() async {
         userAnalizBoxProvider.overrideWithValue(boxes[3]),
         kesifBoxProvider.overrideWithValue(boxes[4]),
       ],
-      child: const SantijetBfaApp(),
+      child: const _SeedAndRun(child: SantijetBfaApp()),
     ),
   );
+}
+
+/// İlk frame’de keşif boşsa demo veri tohumlar.
+class _SeedAndRun extends ConsumerStatefulWidget {
+  const _SeedAndRun({required this.child});
+
+  final Widget child;
+
+  @override
+  ConsumerState<_SeedAndRun> createState() => _SeedAndRunState();
+}
+
+class _SeedAndRunState extends ConsumerState<_SeedAndRun> {
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      seedDemoIfEmpty(ref);
+    });
+  }
+
+  @override
+  Widget build(BuildContext context) => widget.child;
 }

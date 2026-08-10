@@ -14,7 +14,7 @@ abstract final class AppInfo {
   static const String dataSourceLabel = 'ÇŞB YFK 2026';
   static const String dataUpdateLabel = 'Ocak 2026';
   static const String supportEmail = 'destek@santijet.com';
-  static const String version = '1.1.0';
+  static const String version = '1.2.0';
 
   /// Yeni yedek yazımlarında kullanılan uygulama kimliği.
   static const String backupAppId = 'santijet-maliyet';
