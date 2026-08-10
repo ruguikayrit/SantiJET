@@ -141,7 +141,7 @@ class YaklasikMaliyetScreen extends ConsumerWidget {
             ),
             const SizedBox(height: 4),
             Text(
-              'Poz · tanım · birim fiyat · metraj · tutar',
+              'Poz · tanım · birim fiyat (düzenlenebilir) · metraj · tutar',
               style: theme.textTheme.bodySmall?.copyWith(
                 color: AppColors.textMuted,
               ),
@@ -174,7 +174,7 @@ class YaklasikMaliyetScreen extends ConsumerWidget {
                     ),
                   ),
                   for (final satir in byDisc[d]!) ...[
-                    _FiyatSatirCard(satir: satir),
+                    _FiyatSatirCard(projectId: kesif.id, satir: satir),
                     const SizedBox(height: AppSpacing.xs),
                   ],
                 ],
@@ -187,14 +187,63 @@ class YaklasikMaliyetScreen extends ConsumerWidget {
   }
 }
 
-class _FiyatSatirCard extends StatelessWidget {
-  const _FiyatSatirCard({required this.satir});
+class _FiyatSatirCard extends ConsumerStatefulWidget {
+  const _FiyatSatirCard({required this.projectId, required this.satir});
 
+  final String projectId;
   final KesifSatiri satir;
+
+  @override
+  ConsumerState<_FiyatSatirCard> createState() => _FiyatSatirCardState();
+}
+
+class _FiyatSatirCardState extends ConsumerState<_FiyatSatirCard> {
+  late final TextEditingController _bfController;
+
+  @override
+  void initState() {
+    super.initState();
+    _bfController = TextEditingController(
+      text: AppFormat.decimal(widget.satir.birimFiyati, fractionDigits: 2),
+    );
+  }
+
+  @override
+  void didUpdateWidget(covariant _FiyatSatirCard oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (oldWidget.satir.birimFiyati != widget.satir.birimFiyati) {
+      final next =
+          AppFormat.decimal(widget.satir.birimFiyati, fractionDigits: 2);
+      if (_bfController.text != next) {
+        _bfController.text = next;
+      }
+    }
+  }
+
+  @override
+  void dispose() {
+    _bfController.dispose();
+    super.dispose();
+  }
+
+  void _commitBirimFiyat() {
+    final raw = _bfController.text
+        .replaceAll('₺', '')
+        .replaceAll(' ', '')
+        .replaceAll('.', '')
+        .replaceAll(',', '.');
+    final value = double.tryParse(raw) ?? 0;
+    ref.read(kesifProvider.notifier).updateBirimFiyat(
+          widget.projectId,
+          widget.satir.id,
+          value,
+        );
+  }
 
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
+    final satir = widget.satir;
     final metraj = satir.hesaplananMetraj;
     return SJCard(
       child: Column(
@@ -216,19 +265,34 @@ class _FiyatSatirCard extends StatelessWidget {
           ),
           const SizedBox(height: AppSpacing.sm),
           Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Expanded(
-                child: Text(
-                  'B.F. ${AppFormat.currency(satir.birimFiyati)} / ${satir.olcuBirimi}',
-                  style: theme.textTheme.bodyMedium?.copyWith(
-                    color: AppColors.cardTextSecondary,
+                child: TextField(
+                  controller: _bfController,
+                  keyboardType: const TextInputType.numberWithOptions(
+                    decimal: true,
                   ),
+                  style: theme.textTheme.titleMedium?.copyWith(
+                    color: AppColors.cardTextPrimary,
+                  ),
+                  decoration: InputDecoration(
+                    labelText: 'Birim fiyat',
+                    suffixText: '₺ / ${satir.olcuBirimi}',
+                    isDense: true,
+                  ),
+                  onEditingComplete: _commitBirimFiyat,
+                  onSubmitted: (_) => _commitBirimFiyat(),
                 ),
               ),
-              Text(
-                '${AppFormat.decimal(metraj)} ${satir.olcuBirimi}',
-                style: theme.textTheme.bodyMedium?.copyWith(
-                  color: AppColors.cardTextMuted,
+              const SizedBox(width: AppSpacing.sm),
+              Padding(
+                padding: const EdgeInsets.only(top: 12),
+                child: Text(
+                  '${AppFormat.decimal(metraj)} ${satir.olcuBirimi}',
+                  style: theme.textTheme.bodyMedium?.copyWith(
+                    color: AppColors.cardTextMuted,
+                  ),
                 ),
               ),
             ],
@@ -247,6 +311,7 @@ class _FiyatSatirCard extends StatelessWidget {
                 AppFormat.currency(satir.tutar),
                 style: theme.textTheme.titleMedium?.copyWith(
                   color: AppColors.cardTextPrimary,
+                  fontWeight: FontWeight.w700,
                 ),
               ),
             ],
