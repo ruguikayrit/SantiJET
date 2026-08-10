@@ -14,6 +14,7 @@ import '../../core/theme/app_typography.dart';
 import '../../core/utils/id_gen.dart';
 import '../../core/widgets/santijet_header.dart';
 import '../../data/providers/app_data_provider.dart';
+import '../../domain/catalogs/material_units.dart';
 import '../../domain/entities/entities.dart';
 import '../../domain/enums/main_discipline.dart';
 import '../../domain/enums/request_status.dart';
@@ -168,7 +169,6 @@ class _KesifScreenState extends ConsumerState<KesifScreen> {
     required UnitConsumption? existing,
   }) async {
     final nameCtrl = TextEditingController(text: existing?.materialName ?? '');
-    final unitCtrl = TextEditingController(text: existing?.materialUnit ?? 'kg');
     final rateCtrl = TextEditingController(
       text: existing == null
           ? ''
@@ -181,6 +181,8 @@ class _KesifScreenState extends ConsumerState<KesifScreen> {
     ];
     var pozNo = existing?.pozNo ??
         (pozOptions.isNotEmpty ? pozOptions.first : '');
+    var materialUnit =
+        MaterialUnits.dropdownValue(existing?.materialUnit) ?? 'KG';
     var kesifUnit = existing?.kesifUnit ?? '';
     if (kesifUnit.isEmpty && kesif != null && pozNo.isNotEmpty) {
       for (final l in kesif.lines) {
@@ -272,11 +274,26 @@ class _KesifScreenState extends ConsumerState<KesifScreen> {
                         ),
                         const SizedBox(width: 8),
                         Expanded(
-                          child: TextField(
-                            controller: unitCtrl,
+                          child: DropdownButtonFormField<String>(
+                            value: materialUnit,
                             decoration: const InputDecoration(
                               labelText: 'Malzeme birimi',
                             ),
+                            isExpanded: true,
+                            items: [
+                              for (final code in MaterialUnits.codes)
+                                DropdownMenuItem(
+                                  value: code,
+                                  child: Text(
+                                    MaterialUnits.labelOf(code),
+                                    overflow: TextOverflow.ellipsis,
+                                  ),
+                                ),
+                            ],
+                            onChanged: (v) {
+                              if (v == null) return;
+                              setSheet(() => materialUnit = v);
+                            },
                           ),
                         ),
                       ],
@@ -310,7 +327,7 @@ class _KesifScreenState extends ConsumerState<KesifScreen> {
       id: existing?.id ?? IdGen.make('ucn'),
       projectId: projectId,
       materialName: nameCtrl.text.trim(),
-      materialUnit: unitCtrl.text.trim(),
+      materialUnit: materialUnit,
       rate: rate,
       pozNo: pozNo.trim(),
       kesifUnit: kesifUnit,

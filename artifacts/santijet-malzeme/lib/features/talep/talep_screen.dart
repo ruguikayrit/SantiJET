@@ -10,6 +10,7 @@ import '../../core/routing/app_routes.dart';
 import '../../core/theme/app_colors.dart';
 import '../../core/theme/app_spacing.dart';
 import '../../core/widgets/santijet_header.dart';
+import '../../core/widgets/swipe_to_delete_row.dart';
 import '../../data/providers/app_data_provider.dart';
 import 'providers/requests_list_provider.dart';
 import 'widgets/request_card.dart';
@@ -157,9 +158,20 @@ class _TalepScreenState extends ConsumerState<TalepScreen> {
                         itemCount: filtered.length,
                         itemBuilder: (context, index) {
                           final r = filtered[index];
-                          return RequestCard(
-                            request: r,
-                            projectName: projectName(r.projectId),
+                          return SwipeToDeleteRow(
+                            itemKey: ValueKey('req-${r.id}'),
+                            title: 'Talebi sil',
+                            message:
+                                '"${r.displayName}" talebi silinsin mi?',
+                            onDelete: () async {
+                              ref
+                                  .read(requestsProvider.notifier)
+                                  .delete(r.id);
+                            },
+                            child: RequestCard(
+                              request: r,
+                              projectName: projectName(r.projectId),
+                            ),
                           );
                         },
                       ),

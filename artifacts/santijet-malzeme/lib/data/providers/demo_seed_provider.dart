@@ -163,7 +163,7 @@ class DemoSeedController {
         forPoz(
           pozNo: 'Y.19.001',
           materialName: 'Seramik yapıştırıcı C2TE',
-          materialUnit: 'kg',
+          materialUnit: 'KG',
           rate: 5,
           kesifUnit: 'm²',
           category: 'Kaplama',
@@ -171,7 +171,7 @@ class DemoSeedController {
         forPoz(
           pozNo: 'Y.19.001',
           materialName: 'Seramik derz dolgu',
-          materialUnit: 'kg',
+          materialUnit: 'KG',
           rate: 0.4,
           kesifUnit: 'm²',
           category: 'Kaplama',
@@ -181,7 +181,7 @@ class DemoSeedController {
         forPoz(
           pozNo: 'Y.18.045',
           materialName: 'İç cephe boyası',
-          materialUnit: 'lt',
+          materialUnit: 'LT',
           rate: 0.18,
           kesifUnit: 'm²',
           category: 'Boyalar',
@@ -190,7 +190,7 @@ class DemoSeedController {
         forPoz(
           pozNo: 'Y.25.012',
           materialName: 'XPS levha 5 cm',
-          materialUnit: 'm²',
+          materialUnit: 'M²',
           rate: 1.05,
           kesifUnit: 'm²',
           category: 'Yalıtım',
@@ -199,7 +199,7 @@ class DemoSeedController {
         forPoz(
           pozNo: 'E.12.003',
           materialName: 'NYA kablo 3x2.5',
-          materialUnit: 'm',
+          materialUnit: 'MT',
           rate: 1.08,
           kesifUnit: 'm',
           category: 'Kablo',
@@ -208,7 +208,7 @@ class DemoSeedController {
         forPoz(
           pozNo: 'E.08.021',
           materialName: 'LED panel 60x60',
-          materialUnit: 'ad',
+          materialUnit: 'ADET',
           rate: 1,
           kesifUnit: 'ad',
           category: 'Aydınlatma',
@@ -217,7 +217,7 @@ class DemoSeedController {
         forPoz(
           pozNo: 'M.04.010',
           materialName: 'PPR boru Ø25',
-          materialUnit: 'm',
+          materialUnit: 'MT',
           rate: 1.05,
           kesifUnit: 'm',
           category: 'Sıhhi tesisat',
@@ -226,7 +226,7 @@ class DemoSeedController {
         forPoz(
           pozNo: 'M.11.002',
           materialName: 'Yangın dolabı + hortum',
-          materialUnit: 'ad',
+          materialUnit: 'ADET',
           rate: 1,
           kesifUnit: 'ad',
           category: 'Yangın',

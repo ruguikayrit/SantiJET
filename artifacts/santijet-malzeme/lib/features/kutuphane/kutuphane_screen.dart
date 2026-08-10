@@ -11,6 +11,7 @@ import '../../core/theme/app_spacing.dart';
 import '../../core/theme/app_typography.dart';
 import '../../core/utils/id_gen.dart';
 import '../../core/widgets/santijet_header.dart';
+import '../../core/widgets/swipe_to_delete_row.dart';
 import '../../data/providers/app_data_provider.dart';
 import '../../domain/entities/tech_sheet.dart';
 
@@ -78,48 +79,60 @@ class _KutuphaneScreenState extends ConsumerState<KutuphaneScreen> {
                           const SizedBox(height: AppSpacing.sm),
                       itemBuilder: (context, index) {
                         final sheet = sheets[index];
-                        return SJCard(
-                          onTap: () => _openDetail(context, sheet),
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Text(
-                                sheet.productName,
-                                style: AppTypography.titleMedium.copyWith(
-                                  color: AppColors.textPrimary,
+                        return SwipeToDeleteRow(
+                          itemKey: ValueKey('tds-${sheet.id}'),
+                          bottomMargin: 0,
+                          title: 'Kayıt sil',
+                          message:
+                              '"${sheet.productName}" kütüphaneden silinsin mi?',
+                          onDelete: () async {
+                            ref
+                                .read(libraryProvider.notifier)
+                                .delete(sheet.id);
+                          },
+                          child: SJCard(
+                            onTap: () => _openDetail(context, sheet),
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Text(
+                                  sheet.productName,
+                                  style: AppTypography.titleMedium.copyWith(
+                                    color: AppColors.textPrimary,
+                                  ),
                                 ),
-                              ),
-                              const SizedBox(height: 2),
-                              Text(
-                                sheet.manufacturer,
-                                style: AppTypography.bodySmall.copyWith(
-                                  color: AppColors.textSecondary,
+                                const SizedBox(height: 2),
+                                Text(
+                                  sheet.manufacturer,
+                                  style: AppTypography.bodySmall.copyWith(
+                                    color: AppColors.textSecondary,
+                                  ),
                                 ),
-                              ),
-                              if (sheet.tags.isNotEmpty) ...[
-                                const SizedBox(height: AppSpacing.sm),
-                                Wrap(
-                                  spacing: 6,
-                                  runSpacing: 6,
-                                  children: [
-                                    for (final tag in sheet.tags)
-                                      Chip(
-                                        label: Text(tag),
-                                        visualDensity: VisualDensity.compact,
-                                        backgroundColor:
-                                            AppColors.surfaceElevated,
-                                        side: BorderSide(
-                                          color: AppColors.border,
+                                if (sheet.tags.isNotEmpty) ...[
+                                  const SizedBox(height: AppSpacing.sm),
+                                  Wrap(
+                                    spacing: 6,
+                                    runSpacing: 6,
+                                    children: [
+                                      for (final tag in sheet.tags)
+                                        Chip(
+                                          label: Text(tag),
+                                          visualDensity: VisualDensity.compact,
+                                          backgroundColor:
+                                              AppColors.surfaceElevated,
+                                          side: BorderSide(
+                                            color: AppColors.border,
+                                          ),
+                                          labelStyle:
+                                              AppTypography.labelSmall.copyWith(
+                                            color: AppColors.textSecondary,
+                                          ),
                                         ),
-                                        labelStyle:
-                                            AppTypography.labelSmall.copyWith(
-                                          color: AppColors.textSecondary,
-                                        ),
-                                      ),
-                                  ],
-                                ),
+                                    ],
+                                  ),
+                                ],
                               ],
-                            ],
+                            ),
                           ),
                         );
                       },

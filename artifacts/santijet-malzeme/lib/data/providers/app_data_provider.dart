@@ -224,6 +224,12 @@ class RequestsNotifier extends StateNotifier<List<MaterialRequest>> {
     _persist();
   }
 
+  void delete(String id) {
+    _removeAutoGelen(id);
+    state = state.where((r) => r.id != id).toList();
+    _persist();
+  }
+
   /// Pro RN: onay checkbox — 3’ü dolunca status=approved + auto Gelen.
   void setApproval(
     String id, {
@@ -460,6 +466,11 @@ class LibraryNotifier extends StateNotifier<List<TechSheet>> {
               if (e.id == sheet.id) sheet else e,
           ]
         : [...state, sheet];
+    _persist();
+  }
+
+  void delete(String id) {
+    state = state.where((e) => e.id != id).toList();
     _persist();
   }
 
