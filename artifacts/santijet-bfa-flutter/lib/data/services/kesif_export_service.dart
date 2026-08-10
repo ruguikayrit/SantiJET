@@ -161,8 +161,8 @@ class KesifExportService {
                 s.olcuBirimi.trim().isEmpty ? 'ad' : s.olcuBirimi.trim(),
               ),
               singleLineCell(AppFormat.decimal(miktar)),
-              singleLineCell(AppFormat.decimal(s.birimFiyati)),
-              singleLineCell(AppFormat.decimal(tutar)),
+              singleLineCell(AppFormat.currency(s.birimFiyati)),
+              singleLineCell(AppFormat.currency(tutar)),
             ],
           ),
         );
@@ -184,7 +184,7 @@ class KesifExportService {
           singleLineCell(''),
           singleLineCell(''),
           singleLineCell('GENEL TOPLAM', bold: true),
-          singleLineCell(AppFormat.decimal(genelToplam), bold: true),
+          singleLineCell(AppFormat.currency(genelToplam), bold: true),
         ],
       ),
     );
