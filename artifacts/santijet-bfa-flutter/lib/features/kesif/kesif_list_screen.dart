@@ -5,6 +5,7 @@ import 'package:go_router/go_router.dart';
 import '../../core/design_system/design_system.dart';
 import '../../core/routing/app_routes.dart';
 import '../../core/theme/app_colors.dart';
+import '../../core/theme/app_radii.dart';
 import '../../core/theme/app_spacing.dart';
 import '../../core/utils/app_format.dart';
 import '../../data/providers/kesif_provider.dart';
@@ -112,13 +113,6 @@ class KesifListScreen extends ConsumerWidget {
                       color: AppColors.textPrimary,
                     ),
                   ),
-                  const SizedBox(height: 4),
-                  Text(
-                    'Poz no · poz tanımı · metraj (metraj cetvelinden)',
-                    style: theme.textTheme.bodySmall?.copyWith(
-                      color: AppColors.textMuted,
-                    ),
-                  ),
                   if (kesif.satirlar.isEmpty)
                     SizedBox(
                       height: 280,
@@ -174,67 +168,87 @@ class _SatirCard extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final theme = Theme.of(context);
     final metraj = satir.hesaplananMetraj;
+    final birim = satir.olcuBirimi.trim().isEmpty ? 'ad' : satir.olcuBirimi.trim();
 
-    return SJCard(
-      child: Row(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  satir.pozNo,
-                  style: theme.textTheme.labelMedium
-                      ?.copyWith(color: AppColors.moduleKesif),
-                ),
-                Text(
-                  satir.analizAdi,
-                  style: theme.textTheme.titleMedium?.copyWith(
-                    color: AppColors.cardTextPrimary,
-                  ),
-                  maxLines: 3,
-                  overflow: TextOverflow.ellipsis,
-                ),
-                if (satir.metrajKalemleri.isNotEmpty) ...[
-                  const SizedBox(height: 4),
+    return Dismissible(
+      key: ValueKey(satir.id),
+      direction: DismissDirection.endToStart,
+      confirmDismiss: (_) async {
+        final ok = await SJModal.confirm(
+          context: context,
+          title: 'Satırı sil',
+          message: '${satir.pozNo} keşif listesinden kaldırılsın mı?',
+          confirmLabel: 'Sil',
+          destructive: true,
+        );
+        if (!ok) return false;
+        ref.read(kesifProvider.notifier).removeSatir(projectId, satir.id);
+        return true;
+      },
+      background: Container(
+        alignment: Alignment.centerRight,
+        padding: const EdgeInsets.only(right: 20),
+        decoration: BoxDecoration(
+          color: AppColors.critical.withValues(alpha: 0.15),
+          borderRadius: AppRadii.md,
+          border: Border.all(
+            color: AppColors.critical.withValues(alpha: 0.35),
+          ),
+        ),
+        child: const Row(
+          mainAxisAlignment: MainAxisAlignment.end,
+          children: [
+            Icon(Icons.delete_outline, color: AppColors.critical),
+            SizedBox(width: 8),
+            Text('Sil', style: TextStyle(color: AppColors.critical)),
+          ],
+        ),
+      ),
+      child: SJCard(
+        child: Row(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
                   Text(
-                    '${satir.metrajKalemleri.length} cetvel satırı',
-                    style: theme.textTheme.labelSmall?.copyWith(
-                      color: AppColors.cardTextMuted,
-                    ),
+                    satir.pozNo,
+                    style: theme.textTheme.labelMedium
+                        ?.copyWith(color: AppColors.moduleKesif),
                   ),
+                  Text(
+                    satir.analizAdi,
+                    style: theme.textTheme.titleMedium?.copyWith(
+                      color: AppColors.cardTextPrimary,
+                    ),
+                    maxLines: 3,
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                  if (satir.metrajKalemleri.isNotEmpty) ...[
+                    const SizedBox(height: 4),
+                    Text(
+                      '${satir.metrajKalemleri.length} cetvel satırı',
+                      style: theme.textTheme.labelSmall?.copyWith(
+                        color: AppColors.cardTextMuted,
+                      ),
+                    ),
+                  ],
                 ],
-              ],
+              ),
             ),
-          ),
-          const SizedBox(width: AppSpacing.sm),
-          Column(
-            crossAxisAlignment: CrossAxisAlignment.end,
-            children: [
-              Text(
-                AppFormat.decimal(metraj),
-                style: theme.textTheme.titleMedium?.copyWith(
-                  color: AppColors.cardTextPrimary,
-                  fontWeight: FontWeight.w700,
-                ),
+            const SizedBox(width: AppSpacing.sm),
+            Text(
+              '${AppFormat.decimal(metraj)} $birim',
+              style: theme.textTheme.titleMedium?.copyWith(
+                color: AppColors.cardTextPrimary,
+                fontWeight: FontWeight.w700,
               ),
-              Text(
-                satir.olcuBirimi,
-                style: theme.textTheme.labelSmall?.copyWith(
-                  color: AppColors.cardTextMuted,
-                ),
-              ),
-            ],
-          ),
-          IconButton(
-            tooltip: 'Sil',
-            onPressed: () => ref
-                .read(kesifProvider.notifier)
-                .removeSatir(projectId, satir.id),
-            icon: Icon(Icons.close, color: theme.colorScheme.error),
-          ),
-        ],
+              maxLines: 1,
+              softWrap: false,
+            ),
+          ],
+        ),
       ),
     );
   }

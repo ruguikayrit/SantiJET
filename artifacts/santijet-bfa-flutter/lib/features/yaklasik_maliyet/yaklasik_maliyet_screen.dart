@@ -93,16 +93,9 @@ class YaklasikMaliyetScreen extends ConsumerWidget {
             ),
             const SizedBox(height: AppSpacing.lg),
             Text(
-              'Birim Fiyatlar',
+              'Yaklaşık Maliyet Listesi',
               style: theme.textTheme.titleLarge?.copyWith(
                 color: AppColors.textPrimary,
-              ),
-            ),
-            const SizedBox(height: 4),
-            Text(
-              'Poz · tanım · birim fiyat (düzenlenebilir) · metraj · tutar',
-              style: theme.textTheme.bodySmall?.copyWith(
-                color: AppColors.textMuted,
               ),
             ),
             if (kesif.satirlar.isEmpty)
@@ -110,7 +103,7 @@ class YaklasikMaliyetScreen extends ConsumerWidget {
                 padding: const EdgeInsets.only(top: AppSpacing.sm),
                 child: SJCard(
                   child: Text(
-                    'Keşif listesinde poz yok. Poz ekledikçe birim fiyatlar burada listelenir.',
+                    'Keşif listesinde poz yok. Poz ekledikçe satırlar burada listelenir.',
                     style: theme.textTheme.bodyMedium?.copyWith(
                       color: AppColors.cardTextMuted,
                     ),
@@ -207,6 +200,8 @@ class _FiyatSatirCardState extends ConsumerState<_FiyatSatirCard> {
     final theme = Theme.of(context);
     final satir = widget.satir;
     final metraj = satir.hesaplananMetraj;
+    final birim = satir.olcuBirimi.trim().isEmpty ? 'ad' : satir.olcuBirimi.trim();
+
     return SJCard(
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -227,7 +222,7 @@ class _FiyatSatirCardState extends ConsumerState<_FiyatSatirCard> {
           ),
           const SizedBox(height: AppSpacing.sm),
           Row(
-            crossAxisAlignment: CrossAxisAlignment.end,
+            crossAxisAlignment: CrossAxisAlignment.center,
             children: [
               SizedBox(
                 width: _bfFieldWidth,
@@ -240,11 +235,10 @@ class _FiyatSatirCardState extends ConsumerState<_FiyatSatirCard> {
                   style: theme.textTheme.titleMedium?.copyWith(
                     color: AppColors.cardTextPrimary,
                   ),
-                  decoration: InputDecoration(
-                    labelText: 'B.F. ₺',
-                    helperText: '/ ${satir.olcuBirimi}',
+                  decoration: const InputDecoration(
+                    labelText: 'B.F.',
                     isDense: true,
-                    contentPadding: const EdgeInsets.symmetric(
+                    contentPadding: EdgeInsets.symmetric(
                       horizontal: 8,
                       vertical: 10,
                     ),
@@ -253,32 +247,36 @@ class _FiyatSatirCardState extends ConsumerState<_FiyatSatirCard> {
                   onSubmitted: (_) => _commitBirimFiyat(),
                 ),
               ),
-              const SizedBox(width: AppSpacing.sm),
-              Expanded(
-                child: Padding(
-                  padding: const EdgeInsets.only(bottom: 22),
-                  child: Text(
-                    '${AppFormat.decimal(metraj)} ${satir.olcuBirimi}',
-                    style: theme.textTheme.bodyMedium?.copyWith(
-                      color: AppColors.cardTextMuted,
-                    ),
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
-                  ),
+              const SizedBox(width: 6),
+              Text(
+                '₺/$birim',
+                style: theme.textTheme.labelLarge?.copyWith(
+                  color: AppColors.cardTextSecondary,
                 ),
               ),
-              Padding(
-                padding: const EdgeInsets.only(bottom: 22),
+              const SizedBox(width: AppSpacing.sm),
+              Expanded(
                 child: Text(
-                  AppFormat.currency(satir.tutar),
-                  style: theme.textTheme.titleMedium?.copyWith(
-                    color: AppColors.cardTextPrimary,
-                    fontWeight: FontWeight.w700,
+                  '${AppFormat.decimal(metraj)} $birim',
+                  style: theme.textTheme.bodyMedium?.copyWith(
+                    color: AppColors.cardTextMuted,
                   ),
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  textAlign: TextAlign.right,
+                ),
+              ),
+              const SizedBox(width: AppSpacing.sm),
+              Text(
+                AppFormat.currency(satir.tutar),
+                style: theme.textTheme.titleMedium?.copyWith(
+                  color: AppColors.cardTextPrimary,
+                  fontWeight: FontWeight.w700,
                 ),
               ),
             ],
           ),
+          const SizedBox(height: 4),
           Text(
             satir.fiyatKaynagi.label,
             style: theme.textTheme.labelSmall?.copyWith(
