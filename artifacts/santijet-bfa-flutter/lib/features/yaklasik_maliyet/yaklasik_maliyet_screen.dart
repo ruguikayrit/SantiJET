@@ -253,7 +253,6 @@ class _FiyatSatirCardState extends ConsumerState<_FiyatSatirCard> {
           ),
           const SizedBox(height: AppSpacing.sm),
           Row(
-            crossAxisAlignment: CrossAxisAlignment.center,
             children: [
               SizedBox(
                 width: _bfFieldWidth,
@@ -285,27 +284,18 @@ class _FiyatSatirCardState extends ConsumerState<_FiyatSatirCard> {
                   color: AppColors.cardTextSecondary,
                 ),
               ),
-              const SizedBox(width: AppSpacing.sm),
-              Expanded(
-                child: Text(
-                  '${AppFormat.decimal(metraj)} $birim',
-                  style: theme.textTheme.bodyMedium?.copyWith(
-                    color: AppColors.cardTextMuted,
-                  ),
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                  textAlign: TextAlign.right,
-                ),
-              ),
-              const SizedBox(width: AppSpacing.sm),
-              Text(
-                AppFormat.currency(satir.tutar),
-                style: theme.textTheme.titleMedium?.copyWith(
-                  color: AppColors.cardTextPrimary,
-                  fontWeight: FontWeight.w700,
-                ),
-              ),
             ],
+          ),
+          const SizedBox(height: AppSpacing.sm),
+          _MetricLine(
+            label: 'Metraj',
+            value: '${AppFormat.decimal(metraj)} $birim',
+          ),
+          const SizedBox(height: 4),
+          _MetricLine(
+            label: 'Tutar',
+            value: AppFormat.currency(satir.tutar),
+            emphasize: true,
           ),
           const SizedBox(height: 4),
           Text(
@@ -316,6 +306,52 @@ class _FiyatSatirCardState extends ConsumerState<_FiyatSatirCard> {
           ),
         ],
       ),
+    );
+  }
+}
+
+class _MetricLine extends StatelessWidget {
+  const _MetricLine({
+    required this.label,
+    required this.value,
+    this.emphasize = false,
+  });
+
+  final String label;
+  final String value;
+  final bool emphasize;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    return Row(
+      crossAxisAlignment: CrossAxisAlignment.baseline,
+      textBaseline: TextBaseline.alphabetic,
+      children: [
+        Text(
+          label,
+          style: theme.textTheme.labelMedium?.copyWith(
+            color: AppColors.cardTextMuted,
+          ),
+        ),
+        const SizedBox(width: AppSpacing.sm),
+        Expanded(
+          child: Text(
+            value,
+            style: emphasize
+                ? theme.textTheme.titleMedium?.copyWith(
+                    color: AppColors.cardTextPrimary,
+                    fontWeight: FontWeight.w700,
+                  )
+                : theme.textTheme.bodyMedium?.copyWith(
+                    color: AppColors.cardTextSecondary,
+                  ),
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
+            textAlign: TextAlign.right,
+          ),
+        ),
+      ],
     );
   }
 }

@@ -24,7 +24,6 @@ class AnalizHubScreen extends ConsumerWidget {
     final catalogAsync = ref.watch(catalogProvider);
     final favorites = ref.watch(favoritesProvider);
     final recentIds = ref.watch(recentViewsProvider);
-    final theme = Theme.of(context);
 
     return Scaffold(
       backgroundColor: AppColors.canvas,
@@ -67,21 +66,10 @@ class AnalizHubScreen extends ConsumerWidget {
                 SliverPadding(
                   padding: const EdgeInsets.fromLTRB(
                     AppSpacing.md,
-                    0,
-                    AppSpacing.md,
                     AppSpacing.xs,
+                    AppSpacing.md,
+                    0,
                   ),
-                  sliver: SliverToBoxAdapter(
-                    child: Text(
-                      'Birim fiyat analizi · karşılaştırma · katalog',
-                      style: theme.textTheme.labelMedium?.copyWith(
-                        color: AppColors.textMuted,
-                      ),
-                    ),
-                  ),
-                ),
-                SliverPadding(
-                  padding: const EdgeInsets.symmetric(horizontal: AppSpacing.md),
                   sliver: SliverList.list(
                     children: [
                       _HubTile(
