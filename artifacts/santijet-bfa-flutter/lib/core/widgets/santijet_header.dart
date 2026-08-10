@@ -18,6 +18,7 @@ class SantijetHeader extends StatelessWidget {
     this.showNotification = false,
     this.showAvatar = true,
     this.avatarInitial,
+    this.actions,
   });
 
   /// Ana sayfa ürün adı — wordmark altı (%50 büyütülmüş, Demir homeDemirScale).
@@ -43,6 +44,8 @@ class SantijetHeader extends StatelessWidget {
   final bool showNotification;
   final bool showAvatar;
   final String? avatarInitial;
+  /// Ayarlar çarkından önce gösterilen ek aksiyonlar (ör. dışa aktar).
+  final List<Widget>? actions;
 
   @override
   Widget build(BuildContext context) {
@@ -67,6 +70,7 @@ class SantijetHeader extends StatelessWidget {
       showNotification: showNotification,
       showAvatar: showAvatar,
       avatarInitial: avatarInitial,
+      actions: actions,
     );
   }
 }
@@ -185,12 +189,14 @@ class _PageBrandHeader extends StatelessWidget {
     required this.showAvatar,
     this.subtitle,
     this.avatarInitial,
+    this.actions,
   });
 
   final String? subtitle;
   final bool showNotification;
   final bool showAvatar;
   final String? avatarInitial;
+  final List<Widget>? actions;
 
   @override
   Widget build(BuildContext context) {
@@ -213,6 +219,10 @@ class _PageBrandHeader extends StatelessWidget {
       color: onDarkBand ? Colors.white : AppColors.textPrimary,
       height: 1.15,
     );
+
+    final actionColor = onDarkBand
+        ? Colors.white.withValues(alpha: 0.88)
+        : AppColors.inkMutedFor(Theme.of(context).brightness);
 
     final content = Padding(
       padding: const EdgeInsets.fromLTRB(
@@ -257,6 +267,17 @@ class _PageBrandHeader extends StatelessWidget {
               ],
             ),
           ),
+          if (actions != null)
+            for (final a in actions!) ...[
+              IconTheme(
+                data: IconThemeData(
+                  color: actionColor,
+                  size: SantijetHeader.actionIconSize,
+                ),
+                child: a,
+              ),
+              const SizedBox(width: SantijetHeader.actionGap),
+            ],
           _HeaderActions(
             showNotification: showNotification,
             showAvatar: showAvatar,

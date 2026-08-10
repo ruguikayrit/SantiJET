@@ -7,6 +7,7 @@ import '../../core/routing/app_routes.dart';
 import '../../core/theme/app_colors.dart';
 import '../../core/theme/app_spacing.dart';
 import '../../core/utils/app_format.dart';
+import '../../core/widgets/santijet_header.dart';
 import '../../data/providers/kesif_provider.dart';
 import '../../data/services/kesif_export_service.dart';
 import '../../domain/entities/kesif.dart';
@@ -15,33 +16,52 @@ import '../export/export_format_sheet.dart';
 import '../kesif/widgets/discipline_section_header.dart';
 
 /// Yaklaşık Maliyet — birim fiyatlar + tutar özeti (3 ana başlık).
-class YaklasikMaliyetScreen extends ConsumerWidget {
+class YaklasikMaliyetScreen extends ConsumerStatefulWidget {
   const YaklasikMaliyetScreen({super.key});
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
+  ConsumerState<YaklasikMaliyetScreen> createState() =>
+      _YaklasikMaliyetScreenState();
+}
+
+class _YaklasikMaliyetScreenState extends ConsumerState<YaklasikMaliyetScreen> {
+  final Set<AnalizDiscipline> _collapsed = {};
+
+  Future<void> _export(KesifProject kesif) async {
+    final format = await ExportFormatSheet.pick(context);
+    if (format == null || !mounted) return;
+    if (format == ExportFormat.pdf) {
+      await kesifExportService.sharePdf(kesif);
+    } else {
+      await kesifExportService.shareExcel(kesif);
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
     final kesif = ref.watch(activeKesifProvider);
     final theme = Theme.of(context);
 
     if (kesif == null) {
       return Scaffold(
         backgroundColor: AppColors.canvas,
-        appBar: AppBar(
-          title: const Text('Yaklaşık Maliyet'),
-          actions: [
-            IconButton(
-              tooltip: 'Ayarlar',
-              icon: const Icon(Icons.settings_outlined),
-              onPressed: () => context.push(AppRoutes.ayarlar),
-            ),
-          ],
-        ),
-        body: SJEmptyState(
-          title: 'Aktif proje yok',
-          message: 'Yaklaşık maliyet için Projelerim’den bir proje seçin.',
-          icon: Icons.account_balance_wallet_outlined,
-          actionLabel: 'Projelerim',
-          onAction: () => context.push(AppRoutes.projeler),
+        body: SafeArea(
+          bottom: false,
+          child: Column(
+            children: [
+              const SantijetHeader(subtitle: 'Y.Maliyet'),
+              Expanded(
+                child: SJEmptyState(
+                  title: 'Aktif proje yok',
+                  message:
+                      'Yaklaşık maliyet için Projelerim’den bir proje seçin.',
+                  icon: Icons.account_balance_wallet_outlined,
+                  actionLabel: 'Projelerim',
+                  onAction: () => context.push(AppRoutes.projeler),
+                ),
+              ),
+            ],
+          ),
         ),
       );
     }
@@ -50,88 +70,98 @@ class YaklasikMaliyetScreen extends ConsumerWidget {
 
     return Scaffold(
       backgroundColor: AppColors.canvas,
-      appBar: AppBar(
-        title: const Text('Yaklaşık Maliyet'),
-        actions: [
-          IconButton(
-            tooltip: 'Dışa Aktar',
-            icon: const Icon(Icons.download_outlined),
-            onPressed: () async {
-              final format = await ExportFormatSheet.pick(context);
-              if (format == null || !context.mounted) return;
-              if (format == ExportFormat.pdf) {
-                await kesifExportService.sharePdf(kesif);
-              } else {
-                await kesifExportService.shareExcel(kesif);
-              }
-            },
-          ),
-          IconButton(
-            tooltip: 'Ayarlar',
-            icon: const Icon(Icons.settings_outlined),
-            onPressed: () => context.push(AppRoutes.ayarlar),
-          ),
-        ],
-      ),
       body: SafeArea(
-        top: false,
-        child: ListView(
-          padding: const EdgeInsets.all(AppSpacing.md),
-          children: [
-            Text(
-              kesif.ad,
-              style: theme.textTheme.titleMedium?.copyWith(
-                color: AppColors.textMuted,
-              ),
-            ),
-            const SizedBox(height: AppSpacing.sm),
-            SJStatCard(
-              label: 'Genel Toplam',
-              value: AppFormat.currency(kesif.toplam),
-              unit: '',
-              accentColor: AppColors.moduleKesif,
-            ),
-            const SizedBox(height: AppSpacing.lg),
-            Text(
-              'Yaklaşık Maliyet Listesi',
-              style: theme.textTheme.titleLarge?.copyWith(
-                color: AppColors.textPrimary,
-              ),
-            ),
-            if (kesif.satirlar.isEmpty)
-              Padding(
-                padding: const EdgeInsets.only(top: AppSpacing.sm),
-                child: SJCard(
-                  child: Text(
-                    'Keşif listesinde poz yok. Poz ekledikçe satırlar burada listelenir.',
-                    style: theme.textTheme.bodyMedium?.copyWith(
-                      color: AppColors.cardTextMuted,
-                    ),
+        bottom: false,
+        child: CustomScrollView(
+          slivers: [
+            SliverToBoxAdapter(
+              child: SantijetHeader(
+                subtitle: 'Y.Maliyet',
+                actions: [
+                  IconButton(
+                    tooltip: 'Dışa Aktar',
+                    onPressed: () => _export(kesif),
+                    icon: const Icon(Icons.download_outlined),
                   ),
-                ),
-              )
-            else
-              for (final d in AnalizDiscipline.kesifSirasi) ...[
-                if ((byDisc[d] ?? const []).isNotEmpty) ...[
-                  DisciplineSectionHeader(
-                    discipline: d,
-                    count: byDisc[d]!.length,
-                    trailing: Text(
-                      AppFormat.currency(
-                        byDisc[d]!.fold<double>(0, (s, r) => s + r.tutar),
-                      ),
-                      style: theme.textTheme.labelLarge?.copyWith(
-                        color: AppColors.moduleKesif,
-                      ),
-                    ),
-                  ),
-                  for (final satir in byDisc[d]!) ...[
-                    _FiyatSatirCard(projectId: kesif.id, satir: satir),
-                    const SizedBox(height: AppSpacing.xs),
-                  ],
                 ],
-              ],
-            const SizedBox(height: AppSpacing.xl),
+              ),
+            ),
+            SliverPadding(
+              padding: const EdgeInsets.all(AppSpacing.md),
+              sliver: SliverList.list(
+                children: [
+                  Text(
+                    kesif.ad,
+                    style: theme.textTheme.titleMedium?.copyWith(
+                      color: AppColors.textMuted,
+                    ),
+                  ),
+                  const SizedBox(height: AppSpacing.sm),
+                  SJStatCard(
+                    label: 'Genel Toplam',
+                    value: AppFormat.currency(kesif.toplam),
+                    unit: '',
+                    accentColor: AppColors.moduleKesif,
+                  ),
+                  const SizedBox(height: AppSpacing.lg),
+                  Text(
+                    'Yaklaşık Maliyet Listesi',
+                    style: theme.textTheme.titleLarge?.copyWith(
+                      color: AppColors.textPrimary,
+                    ),
+                  ),
+                  if (kesif.satirlar.isEmpty)
+                    Padding(
+                      padding: const EdgeInsets.only(top: AppSpacing.sm),
+                      child: SJCard(
+                        child: Text(
+                          'Keşif listesinde poz yok. Poz ekledikçe satırlar burada listelenir.',
+                          style: theme.textTheme.bodyMedium?.copyWith(
+                            color: AppColors.cardTextMuted,
+                          ),
+                        ),
+                      ),
+                    )
+                  else
+                    for (final d in AnalizDiscipline.kesifSirasi) ...[
+                      if ((byDisc[d] ?? const []).isNotEmpty) ...[
+                        DisciplineSectionHeader(
+                          discipline: d,
+                          count: byDisc[d]!.length,
+                          expanded: !_collapsed.contains(d),
+                          onToggle: () {
+                            setState(() {
+                              if (_collapsed.contains(d)) {
+                                _collapsed.remove(d);
+                              } else {
+                                _collapsed.add(d);
+                              }
+                            });
+                          },
+                          trailing: Text(
+                            AppFormat.currency(
+                              byDisc[d]!
+                                  .fold<double>(0, (s, r) => s + r.tutar),
+                            ),
+                            style: theme.textTheme.labelLarge?.copyWith(
+                              color: AppColors.moduleKesif,
+                            ),
+                          ),
+                        ),
+                        if (!_collapsed.contains(d))
+                          for (final satir in byDisc[d]!) ...[
+                            _FiyatSatirCard(
+                              projectId: kesif.id,
+                              satir: satir,
+                            ),
+                            const SizedBox(height: AppSpacing.xs),
+                          ],
+                      ],
+                    ],
+                  const SizedBox(height: AppSpacing.xl),
+                ],
+              ),
+            ),
           ],
         ),
       ),
@@ -200,7 +230,8 @@ class _FiyatSatirCardState extends ConsumerState<_FiyatSatirCard> {
     final theme = Theme.of(context);
     final satir = widget.satir;
     final metraj = satir.hesaplananMetraj;
-    final birim = satir.olcuBirimi.trim().isEmpty ? 'ad' : satir.olcuBirimi.trim();
+    final birim =
+        satir.olcuBirimi.trim().isEmpty ? 'ad' : satir.olcuBirimi.trim();
 
     return SJCard(
       child: Column(

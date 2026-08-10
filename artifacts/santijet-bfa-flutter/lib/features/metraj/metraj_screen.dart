@@ -8,39 +8,58 @@ import '../../core/theme/app_colors.dart';
 import '../../core/theme/app_spacing.dart';
 import '../../core/utils/app_format.dart';
 import '../../core/utils/id_gen.dart';
+import '../../core/widgets/santijet_header.dart';
 import '../../data/providers/kesif_provider.dart';
 import '../../domain/entities/kesif.dart';
 import '../../domain/enums/app_enums.dart';
+import '../kesif/kesif_poz_picker_sheet.dart';
 import '../kesif/widgets/discipline_section_header.dart';
 
 /// Metraj cetveli — boyut girdilerinden poza ait metraj hesaplanır.
-class MetrajScreen extends ConsumerWidget {
+class MetrajScreen extends ConsumerStatefulWidget {
   const MetrajScreen({super.key});
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
+  ConsumerState<MetrajScreen> createState() => _MetrajScreenState();
+}
+
+class _MetrajScreenState extends ConsumerState<MetrajScreen> {
+  final Set<AnalizDiscipline> _collapsed = {};
+
+  Future<void> _addPoz(String projectId) async {
+    final picked = await KesifPozPickerSheet.show(context);
+    if (picked == null) return;
+    ref.read(kesifProvider.notifier).addSatir(
+          projectId,
+          picked.analiz,
+          picked.miktar,
+        );
+  }
+
+  @override
+  Widget build(BuildContext context) {
     final kesif = ref.watch(activeKesifProvider);
     final theme = Theme.of(context);
 
     if (kesif == null) {
       return Scaffold(
         backgroundColor: AppColors.canvas,
-        appBar: AppBar(
-          title: const Text('Metraj Cetveli'),
-          actions: [
-            IconButton(
-              tooltip: 'Ayarlar',
-              icon: const Icon(Icons.settings_outlined),
-              onPressed: () => context.push(AppRoutes.ayarlar),
-            ),
-          ],
-        ),
-        body: SJEmptyState(
-          title: 'Aktif proje yok',
-          message: 'Metraj için Projelerim’den bir proje seçin.',
-          icon: Icons.straighten_outlined,
-          actionLabel: 'Projelerim',
-          onAction: () => context.push(AppRoutes.projeler),
+        body: SafeArea(
+          bottom: false,
+          child: Column(
+            children: [
+              const SantijetHeader(subtitle: 'Metraj'),
+              Expanded(
+                child: SJEmptyState(
+                  title: 'Aktif proje yok',
+                  message: 'Metraj için Projelerim’den bir proje seçin.',
+                  icon: Icons.straighten_outlined,
+                  actionLabel: 'Projelerim',
+                  onAction: () => context.push(AppRoutes.projeler),
+                ),
+              ),
+            ],
+          ),
         ),
       );
     }
@@ -50,60 +69,75 @@ class MetrajScreen extends ConsumerWidget {
 
     return Scaffold(
       backgroundColor: AppColors.canvas,
-      appBar: AppBar(
-        title: const Text('Metraj Cetveli'),
-        actions: [
-          IconButton(
-            tooltip: 'Ayarlar',
-            icon: const Icon(Icons.settings_outlined),
-            onPressed: () => context.push(AppRoutes.ayarlar),
-          ),
-        ],
+      floatingActionButton: FloatingActionButton.extended(
+        onPressed: () => _addPoz(projectId),
+        icon: const Icon(Icons.add),
+        label: const Text('Poz Ekle'),
       ),
       body: SafeArea(
-        top: false,
-        child: ListView(
-          padding: const EdgeInsets.all(AppSpacing.md),
-          children: [
-            Text(
-              kesif.ad,
-              style: theme.textTheme.titleMedium?.copyWith(
-                color: AppColors.textMuted,
-              ),
+        bottom: false,
+        child: CustomScrollView(
+          slivers: [
+            const SliverToBoxAdapter(
+              child: SantijetHeader(subtitle: 'Metraj'),
             ),
-            const SizedBox(height: 4),
-            Text(
-              'En, boy, yükseklik, alan veya çevre ile poza ait metrajı hesaplayın.',
-              style: theme.textTheme.bodySmall?.copyWith(
-                color: AppColors.textMuted,
-              ),
-            ),
-            if (kesif.satirlar.isEmpty)
-              Padding(
-                padding: const EdgeInsets.only(top: AppSpacing.lg),
-                child: SJEmptyState(
-                  title: 'Henüz poz yok',
-                  message:
-                      'Keşif listesine poz ekledikçe metraj cetveli burada görünür.',
-                  icon: Icons.straighten_outlined,
-                  actionLabel: 'Keşif’e Git',
-                  onAction: () => context.go(AppRoutes.kesif),
-                ),
-              )
-            else
-              for (final d in AnalizDiscipline.kesifSirasi) ...[
-                if ((byDisc[d] ?? const []).isNotEmpty) ...[
-                  DisciplineSectionHeader(
-                    discipline: d,
-                    count: byDisc[d]!.length,
+            SliverPadding(
+              padding: const EdgeInsets.all(AppSpacing.md),
+              sliver: SliverList.list(
+                children: [
+                  Text(
+                    kesif.ad,
+                    style: theme.textTheme.titleMedium?.copyWith(
+                      color: AppColors.textMuted,
+                    ),
                   ),
-                  for (final satir in byDisc[d]!) ...[
-                    _PozCetvelCard(projectId: projectId, satir: satir),
-                    const SizedBox(height: AppSpacing.xs),
-                  ],
+                  const SizedBox(height: 4),
+                  Text(
+                    'En, boy, yükseklik, alan veya çevre ile poza ait metrajı hesaplayın.',
+                    style: theme.textTheme.bodySmall?.copyWith(
+                      color: AppColors.textMuted,
+                    ),
+                  ),
+                  if (kesif.satirlar.isEmpty)
+                    Padding(
+                      padding: const EdgeInsets.only(top: AppSpacing.lg),
+                      child: SJEmptyState(
+                        title: 'Henüz poz yok',
+                        message:
+                            'Poz Ekle ile katalogdan seçin; metraj cetveli burada doldurulur.',
+                        icon: Icons.straighten_outlined,
+                        actionLabel: 'Poz Ekle',
+                        onAction: () => _addPoz(projectId),
+                      ),
+                    )
+                  else
+                    for (final d in AnalizDiscipline.kesifSirasi) ...[
+                      if ((byDisc[d] ?? const []).isNotEmpty) ...[
+                        DisciplineSectionHeader(
+                          discipline: d,
+                          count: byDisc[d]!.length,
+                          expanded: !_collapsed.contains(d),
+                          onToggle: () {
+                            setState(() {
+                              if (_collapsed.contains(d)) {
+                                _collapsed.remove(d);
+                              } else {
+                                _collapsed.add(d);
+                              }
+                            });
+                          },
+                        ),
+                        if (!_collapsed.contains(d))
+                          for (final satir in byDisc[d]!) ...[
+                            _PozCetvelCard(projectId: projectId, satir: satir),
+                            const SizedBox(height: AppSpacing.xs),
+                          ],
+                      ],
+                    ],
+                  const SizedBox(height: AppSpacing.xl * 2),
                 ],
-              ],
-            const SizedBox(height: AppSpacing.xl),
+              ),
+            ),
           ],
         ),
       ),
