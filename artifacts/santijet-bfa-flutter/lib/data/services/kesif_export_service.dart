@@ -24,8 +24,14 @@ class KesifExportService {
     KesifProject project, {
     String title = defaultPdfTitle,
     String filenamePrefix = 'kesif',
+    /// Yaklaşık Maliyet: B.F. + Tutar. Keşif: yalnızca metraj sütunları.
+    bool includeFiyat = false,
   }) async {
-    final bytes = await _buildPdf(project, title: title);
+    final bytes = await _buildPdf(
+      project,
+      title: title,
+      includeFiyat: includeFiyat,
+    );
     await Printing.sharePdf(
       bytes: bytes,
       filename: '${filenamePrefix}_${_safe(project.ad)}.pdf',
@@ -59,6 +65,7 @@ class KesifExportService {
   Future<Uint8List> _buildPdf(
     KesifProject project, {
     required String title,
+    required bool includeFiyat,
   }) async {
     // Gövde Noto Sans: ₺ glyph'i bold satırlarda da mevcut.
     final baseFont = await PdfGoogleFonts.notoSansRegular();
@@ -117,18 +124,22 @@ class KesifExportService {
       );
     }
 
+    final headerChildren = <pw.Widget>[
+      headerCell('#'),
+      headerCell('Poz No'),
+      headerCell('Tanım'),
+      headerCell('Birim'),
+      headerCell('Miktar'),
+      if (includeFiyat) ...[
+        headerCell('B.F.'),
+        headerCell('Tutar'),
+      ],
+    ];
+
     final tableRows = <pw.TableRow>[
       pw.TableRow(
         decoration: const pw.BoxDecoration(color: PdfColors.grey200),
-        children: [
-          headerCell('#'),
-          headerCell('Poz No'),
-          headerCell('Tanım'),
-          headerCell('Birim'),
-          headerCell('Miktar'),
-          headerCell('B.F.'),
-          headerCell('Tutar'),
-        ],
+        children: headerChildren,
       ),
     ];
 
@@ -141,8 +152,10 @@ class KesifExportService {
             wrapCell('Henüz poz yok'),
             singleLineCell(''),
             singleLineCell(''),
-            singleLineCell(''),
-            singleLineCell(''),
+            if (includeFiyat) ...[
+              singleLineCell(''),
+              singleLineCell(''),
+            ],
           ],
         ),
       );
@@ -161,33 +174,48 @@ class KesifExportService {
                 s.olcuBirimi.trim().isEmpty ? 'ad' : s.olcuBirimi.trim(),
               ),
               singleLineCell(AppFormat.decimal(miktar)),
-              singleLineCell(AppFormat.currency(s.birimFiyati)),
-              singleLineCell(AppFormat.currency(tutar)),
+              if (includeFiyat) ...[
+                singleLineCell(AppFormat.currency(s.birimFiyati)),
+                singleLineCell(AppFormat.currency(tutar)),
+              ],
             ],
           ),
         );
       }
     }
 
-    final genelToplam = project.satirlar.fold<double>(
-      0,
-      (sum, s) =>
-          sum + AnalizHesap.satirTutar(s.hesaplananMetraj, s.birimFiyati),
-    );
+    if (includeFiyat) {
+      final genelToplam = project.satirlar.fold<double>(
+        0,
+        (sum, s) =>
+            sum + AnalizHesap.satirTutar(s.hesaplananMetraj, s.birimFiyati),
+      );
+      tableRows.add(
+        pw.TableRow(
+          children: [
+            singleLineCell(''),
+            singleLineCell(''),
+            wrapCell(''),
+            singleLineCell(''),
+            singleLineCell(''),
+            singleLineCell('GENEL TOPLAM', bold: true),
+            singleLineCell(AppFormat.currency(genelToplam), bold: true),
+          ],
+        ),
+      );
+    }
 
-    tableRows.add(
-      pw.TableRow(
-        children: [
-          singleLineCell(''),
-          singleLineCell(''),
-          wrapCell(''),
-          singleLineCell(''),
-          singleLineCell(''),
-          singleLineCell('GENEL TOPLAM', bold: true),
-          singleLineCell(AppFormat.currency(genelToplam), bold: true),
-        ],
-      ),
-    );
+    final columnWidths = <int, pw.TableColumnWidth>{
+      0: const pw.IntrinsicColumnWidth(),
+      1: const pw.IntrinsicColumnWidth(),
+      2: const pw.FlexColumnWidth(1),
+      3: const pw.IntrinsicColumnWidth(),
+      4: const pw.IntrinsicColumnWidth(),
+      if (includeFiyat) ...{
+        5: const pw.IntrinsicColumnWidth(),
+        6: const pw.IntrinsicColumnWidth(),
+      },
+    };
 
     doc.addPage(
       pw.MultiPage(
@@ -209,20 +237,12 @@ class KesifExportService {
           ),
           pw.Text('Poz Sayısı: ${project.satirlar.length}'),
           pw.SizedBox(height: 12),
-          // Poz No / Birim / Miktar / B.F. / Tutar: içerik kadar genişlik (tek satır).
+          // Poz No / Birim / Miktar [/ B.F. / Tutar]: içerik kadar genişlik (tek satır).
           // Tanım: kalan alanı alır; daralır ve çok satıra kayar.
           pw.Table(
             border: pw.TableBorder.all(color: PdfColors.grey400, width: 0.5),
             defaultVerticalAlignment: pw.TableCellVerticalAlignment.middle,
-            columnWidths: const {
-              0: pw.IntrinsicColumnWidth(),
-              1: pw.IntrinsicColumnWidth(),
-              2: pw.FlexColumnWidth(1),
-              3: pw.IntrinsicColumnWidth(),
-              4: pw.IntrinsicColumnWidth(),
-              5: pw.IntrinsicColumnWidth(),
-              6: pw.IntrinsicColumnWidth(),
-            },
+            columnWidths: columnWidths,
             children: tableRows,
           ),
         ],

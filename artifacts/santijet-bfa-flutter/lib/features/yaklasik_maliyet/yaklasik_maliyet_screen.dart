@@ -35,6 +35,7 @@ class _YaklasikMaliyetScreenState extends ConsumerState<YaklasikMaliyetScreen> {
         kesif,
         title: KesifExportService.yaklasikMaliyetPdfTitle,
         filenamePrefix: 'yaklasik_maliyet',
+        includeFiyat: true,
       );
     } else {
       await kesifExportService.shareExcel(kesif);
