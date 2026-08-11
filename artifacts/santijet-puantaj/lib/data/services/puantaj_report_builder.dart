@@ -1,4 +1,5 @@
 import '../../core/utils/puantaj_date.dart';
+import '../../domain/attendance/attendance_display.dart';
 import '../../domain/entities/attendance.dart';
 import '../../domain/entities/person.dart';
 import '../../domain/enums/attendance_status.dart';
@@ -70,6 +71,7 @@ class PuantajVisualPersonRow {
     this.yevmiye = '',
     this.note = '',
     this.totalLabel = '',
+    this.employmentDates = '',
   });
 
   final String name;
@@ -85,6 +87,9 @@ class PuantajVisualPersonRow {
   final String yevmiye;
   final String note;
   final String totalLabel;
+
+  /// Örn. `G:07.04.2026 · Ç:10.08.2026`
+  final String employmentDates;
 }
 
 /// Aktif proje puantajından günlük / haftalık / aylık rapor tablosu üretir.
@@ -146,6 +151,8 @@ abstract final class PuantajReportBuilder {
       'Personel',
       'Firma',
       'Ekip',
+      'Giriş',
+      'Çıkış',
       'Durum',
       'Saat',
       'Mesai',
@@ -164,39 +171,65 @@ abstract final class PuantajReportBuilder {
       final visualRows = <PuantajVisualPersonRow>[];
       for (final p in group.users) {
         final a = byPerson[p.id];
-        if (a == null) {
+        final status = AttendanceDisplay.resolve(
+          person: p,
+          date: date,
+          recorded: a?.status,
+        );
+        final emp = AttendanceDisplay.employmentDatesLabel(p);
+        final hireLabel = _employmentPart(p.hireDate);
+        final leaveLabel = _employmentPart(p.leaveDate);
+        if (status == null) {
           none++;
-          rows.add([p.name, group.company, p.team, '—', '', '', '', '']);
+          rows.add([
+            p.name,
+            group.company,
+            p.team,
+            hireLabel,
+            leaveLabel,
+            '—',
+            '',
+            '',
+            '',
+            '',
+          ]);
           visualRows.add(
             PuantajVisualPersonRow(
               name: p.name,
               statuses: const [null],
               team: p.team,
+              employmentDates: emp,
             ),
           );
           continue;
         }
-        counts[a.status] = (counts[a.status] ?? 0) + 1;
-        totalAg += a.yevmiye;
+        counts[status] = (counts[status] ?? 0) + 1;
+        final hours = a?.hours ?? status.hours;
+        final ot = a?.overtimeHours ?? 0;
+        final yev = a?.yevmiye ?? 0;
+        totalAg += yev;
         rows.add([
           p.name,
           group.company,
           p.team,
-          a.status.label,
-          a.hours.toString(),
-          _fmtNum(a.overtimeHours),
-          _fmtNum(a.yevmiye),
-          a.note,
+          hireLabel,
+          leaveLabel,
+          status.label,
+          hours.toString(),
+          _fmtNum(ot),
+          _fmtNum(yev),
+          a?.note ?? '',
         ]);
         visualRows.add(
           PuantajVisualPersonRow(
             name: p.name,
-            statuses: [a.status],
+            statuses: [status],
             team: p.team,
-            hours: a.hours.toString(),
-            overtime: _fmtNum(a.overtimeHours),
-            yevmiye: _fmtNum(a.yevmiye),
-            note: a.note,
+            hours: hours.toString(),
+            overtime: _fmtNum(ot),
+            yevmiye: _fmtNum(yev),
+            note: a?.note ?? '',
+            employmentDates: emp,
           ),
         );
       }
@@ -248,6 +281,8 @@ abstract final class PuantajReportBuilder {
       'Personel',
       'Firma',
       'Ekip',
+      'Giriş',
+      'Çıkış',
       ...dayHeaders,
       for (final s in AttendanceStatus.values) s.label,
       'Genel Toplam',
@@ -270,32 +305,42 @@ abstract final class PuantajReportBuilder {
         final rowStatusCounts = <AttendanceStatus, int>{
           for (final s in AttendanceStatus.values) s: 0,
         };
+        final emp = AttendanceDisplay.employmentDatesLabel(p);
+        final hireLabel = _employmentPart(p.hireDate);
+        final leaveLabel = _employmentPart(p.leaveDate);
         for (var di = 0; di < days.length; di++) {
           final d = days[di];
           final a = lookup['${p.id}|$d'];
-          if (a == null) {
+          final status = AttendanceDisplay.resolve(
+            person: p,
+            date: d,
+            recorded: a?.status,
+          );
+          if (status == null) {
             noneCells++;
             cells.add('');
             statuses.add(null);
           } else {
-            counts[a.status] = (counts[a.status] ?? 0) + 1;
-            rowStatusCounts[a.status] = (rowStatusCounts[a.status] ?? 0) + 1;
-            rowAg += a.yevmiye;
-            cells.add(a.status.short);
-            statuses.add(a.status);
-            if (a.status.isWorkedDay) {
+            counts[status] = (counts[status] ?? 0) + 1;
+            rowStatusCounts[status] = (rowStatusCounts[status] ?? 0) + 1;
+            rowAg += a?.yevmiye ?? 0;
+            cells.add(status.short);
+            statuses.add(status);
+            if (status.isWorkedDay) {
               footer[di]++;
             }
           }
         }
         totalAg += rowAg;
         final generalTotal = AttendanceStatus.values
-            .where((s) => s != AttendanceStatus.absent)
+            .where((s) => s.countsInGeneralTotal)
             .fold<int>(0, (sum, s) => sum + (rowStatusCounts[s] ?? 0));
         rows.add([
           p.name,
           group.company,
           p.team,
+          hireLabel,
+          leaveLabel,
           ...cells,
           for (final s in AttendanceStatus.values) '${rowStatusCounts[s] ?? 0}',
           '$generalTotal',
@@ -310,6 +355,7 @@ abstract final class PuantajReportBuilder {
             team: p.team,
             totalLabel: generalTotal > 0 ? '$generalTotal' : '–',
             yevmiye: _fmtNum(rowAg),
+            employmentDates: emp,
           ),
         );
       }
@@ -390,6 +436,14 @@ abstract final class PuantajReportBuilder {
   static String _monthDayHeader(String date) {
     final d = PuantajDate.parse(date);
     return d.day.toString().padLeft(2, '0');
+  }
+
+  static String _employmentPart(String raw) {
+    final d = Person.parseEmploymentDate(raw);
+    if (d == null) return '';
+    final dd = d.day.toString().padLeft(2, '0');
+    final mm = d.month.toString().padLeft(2, '0');
+    return '$dd.$mm.${d.year}';
   }
 
   static String _fmtNum(double v) {

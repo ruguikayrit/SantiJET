@@ -343,9 +343,10 @@ class PuantajExportService {
     }
     final generalTotal = statusTotals.asMap().entries.fold<int>(
           0,
-          (sum, entry) => entry.key == AttendanceStatus.absent.index
-              ? sum
-              : sum + entry.value,
+          (sum, entry) {
+            final status = AttendanceStatus.values[entry.key];
+            return status.countsInGeneralTotal ? sum + entry.value : sum;
+          },
         );
 
     return pw.Column(
@@ -374,6 +375,8 @@ class PuantajExportService {
                   switch (s) {
                     AttendanceStatus.present => 'Mevcut',
                     AttendanceStatus.half => 'Yarım',
+                    AttendanceStatus.giris => 'Giriş',
+                    AttendanceStatus.cikis => 'Çıkış',
                     AttendanceStatus.izinli => 'İzinli',
                     AttendanceStatus.raporlu => 'Raporlu',
                     AttendanceStatus.mazeret => 'Maz.',
@@ -427,10 +430,24 @@ class PuantajExportService {
                     width: nameW,
                     child: pw.Padding(
                       padding: const pw.EdgeInsets.symmetric(horizontal: 2),
-                      child: pw.Text(
-                        row.name,
-                        maxLines: 2,
-                        style: const pw.TextStyle(fontSize: 7, color: _ink),
+                      child: pw.Column(
+                        crossAxisAlignment: pw.CrossAxisAlignment.start,
+                        children: [
+                          pw.Text(
+                            row.name,
+                            maxLines: 2,
+                            style: const pw.TextStyle(fontSize: 7, color: _ink),
+                          ),
+                          if (row.employmentDates.isNotEmpty)
+                            pw.Text(
+                              row.employmentDates,
+                              maxLines: 1,
+                              style: const pw.TextStyle(
+                                fontSize: 5.5,
+                                color: _inkMuted,
+                              ),
+                            ),
+                        ],
                       ),
                     ),
                   ),
@@ -579,6 +596,14 @@ class PuantajExportService {
                             row.team,
                             style: const pw.TextStyle(
                               fontSize: 7,
+                              color: _inkMuted,
+                            ),
+                          ),
+                        if (row.employmentDates.isNotEmpty)
+                          pw.Text(
+                            row.employmentDates,
+                            style: const pw.TextStyle(
+                              fontSize: 6.5,
                               color: _inkMuted,
                             ),
                           ),

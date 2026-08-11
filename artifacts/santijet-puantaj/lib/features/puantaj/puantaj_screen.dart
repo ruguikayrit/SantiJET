@@ -18,10 +18,11 @@ import '../../data/providers/app_data_provider.dart';
 import '../../data/providers/collaboration_provider.dart';
 import '../../data/services/puantaj_export_service.dart';
 import '../../data/services/puantaj_report_builder.dart';
-import '../../domain/entities/person.dart';
-import '../../domain/enums/attendance_status.dart';
+import '../../domain/attendance/attendance_display.dart';
 import '../../domain/entities/attendance.dart';
+import '../../domain/entities/person.dart';
 import '../../domain/entities/project.dart';
+import '../../domain/enums/attendance_status.dart';
 
 enum _ViewMode { daily, weekly, monthly }
 
@@ -121,14 +122,27 @@ class _PuantajScreenState extends ConsumerState<PuantajScreen> {
       ..sort((a, b) => a.name.compareTo(b.name));
 
     AttendanceStatus? statusOf(String personId, String date) {
+      Person? person;
+      for (final p in allPersonnel) {
+        if (p.id == personId) {
+          person = p;
+          break;
+        }
+      }
+      AttendanceStatus? recorded;
       for (final a in attendance) {
         if (a.projectId == project.id &&
             a.personId == personId &&
             a.date == date) {
-          return a.status;
+          recorded = a.status;
+          break;
         }
       }
-      return null;
+      return AttendanceDisplay.resolve(
+        person: person,
+        date: date,
+        recorded: recorded,
+      );
     }
 
     String? noteOf(String personId) {
@@ -1213,6 +1227,8 @@ class _CetvelView extends StatelessWidget {
               switch (s) {
                 AttendanceStatus.present => 'Mevcut',
                 AttendanceStatus.half => 'Yarım',
+                AttendanceStatus.giris => 'Giriş',
+                AttendanceStatus.cikis => 'Çıkış',
                 AttendanceStatus.izinli => 'İzinli',
                 AttendanceStatus.raporlu => 'Raporlu',
                 AttendanceStatus.mazeret => 'Mazeret',
@@ -1255,7 +1271,7 @@ class _CetvelView extends StatelessWidget {
         s: statuses.where((value) => value == s).length,
     };
     final generalTotal = AttendanceStatus.values
-        .where((s) => s != AttendanceStatus.absent)
+        .where((s) => s.countsInGeneralTotal)
         .fold<int>(0, (sum, s) => sum + (statusCounts[s] ?? 0));
     return Container(
       decoration: BoxDecoration(
@@ -1267,13 +1283,29 @@ class _CetvelView extends StatelessWidget {
             width: nameW,
             child: Padding(
               padding: const EdgeInsets.symmetric(vertical: 6, horizontal: 4),
-              child: Text(
-                titleCaseTr(person.name),
-                maxLines: 2,
-                overflow: TextOverflow.ellipsis,
-                style: theme.textTheme.bodySmall?.copyWith(
-                  color: theme.colorScheme.onSurface,
-                ),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    titleCaseTr(person.name),
+                    maxLines: 2,
+                    overflow: TextOverflow.ellipsis,
+                    style: theme.textTheme.bodySmall?.copyWith(
+                      color: theme.colorScheme.onSurface,
+                    ),
+                  ),
+                  if (AttendanceDisplay.employmentDatesLabel(person)
+                      .isNotEmpty)
+                    Text(
+                      AttendanceDisplay.employmentDatesLabel(person),
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: theme.textTheme.labelSmall?.copyWith(
+                        color: theme.colorScheme.onSurfaceVariant,
+                        fontSize: 9,
+                      ),
+                    ),
+                ],
               ),
             ),
           ),
@@ -1302,8 +1334,7 @@ class _CetvelView extends StatelessWidget {
                 ),
               ),
             ),
-          for (final s in AttendanceStatus.values)
-            SizedBox(
+          for (final s in AttendanceStatus.values)            SizedBox(
               width: summaryW,
               child: Text(
                 '${statusCounts[s] ?? 0}',
@@ -1353,7 +1384,7 @@ class _CetvelView extends StatelessWidget {
         s: allStatuses.where((value) => value == s).length,
     };
     final generalTotal = AttendanceStatus.values
-        .where((s) => s != AttendanceStatus.absent)
+        .where((s) => s.countsInGeneralTotal)
         .fold<int>(0, (sum, s) => sum + (statusTotals[s] ?? 0));
     return Row(
       children: [

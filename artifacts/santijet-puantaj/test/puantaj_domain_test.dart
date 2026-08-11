@@ -3,6 +3,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:santijet_puantaj/core/utils/puantaj_date.dart';
 import 'package:santijet_puantaj/data/services/puantaj_backup_service.dart';
 import 'package:santijet_puantaj/data/services/puantaj_report_builder.dart';
+import 'package:santijet_puantaj/domain/attendance/attendance_display.dart';
 import 'package:santijet_puantaj/domain/entities/attendance.dart';
 import 'package:santijet_puantaj/domain/entities/person.dart';
 import 'package:santijet_puantaj/domain/entities/production.dart';
@@ -47,9 +48,55 @@ void main() {
       expect(AttendanceStatus.half.hours, 4);
       expect(AttendanceStatus.izinli.hours, 0);
       expect(AttendanceStatus.absent.hours, 0);
+      expect(AttendanceStatus.giris.hours, 0);
+      expect(AttendanceStatus.cikis.hours, 0);
       expect(AttendanceStatus.present.isWorkedDay, isTrue);
       expect(AttendanceStatus.half.isWorkedDay, isTrue);
       expect(AttendanceStatus.absent.isWorkedDay, isFalse);
+      expect(AttendanceStatus.giris.isEmploymentMarker, isTrue);
+      expect(AttendanceStatus.cikis.short, 'Ç');
+      expect(AttendanceStatus.giris.short, 'G');
+    });
+  });
+
+  group('AttendanceDisplay', () {
+    test('işe giriş / çıkış gününde G ve Ç', () {
+      const person = Person(
+        id: '1',
+        projectId: 'p',
+        name: 'Ali',
+        hireDate: '2026-08-01',
+        leaveDate: '2026-08-10',
+        active: true,
+      );
+      expect(
+        AttendanceDisplay.resolve(
+          person: person,
+          date: '01.08.2026',
+          recorded: AttendanceStatus.present,
+        ),
+        AttendanceStatus.giris,
+      );
+      expect(
+        AttendanceDisplay.resolve(
+          person: person,
+          date: '10.08.2026',
+          recorded: null,
+        ),
+        AttendanceStatus.cikis,
+      );
+      expect(
+        AttendanceDisplay.resolve(
+          person: person,
+          date: '05.08.2026',
+          recorded: AttendanceStatus.half,
+        ),
+        AttendanceStatus.half,
+      );
+      expect(
+        AttendanceDisplay.employmentDatesLabel(person),
+        'G:01.08.2026 · Ç:10.08.2026',
+      );
     });
   });
 

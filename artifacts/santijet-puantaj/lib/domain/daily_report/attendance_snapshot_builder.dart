@@ -39,6 +39,9 @@ abstract final class AttendanceSnapshotBuilder {
           leave++;
         case AttendanceStatus.absent:
           recordedAbsent++;
+        case AttendanceStatus.giris:
+        case AttendanceStatus.cikis:
+          break;
       }
       adamSaat += a.hours + a.overtimeHours;
       yevmiye += a.yevmiye;
