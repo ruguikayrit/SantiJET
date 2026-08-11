@@ -10,10 +10,10 @@ void main() {
       expect(RoleDegree.forProfession('Saha Formeni'), RoleDegree.field);
       expect(RoleDegree.forProfession('Makine Formeni'), RoleDegree.field);
       expect(RoleDegree.canAssignTasks(
-        const Person(id: '1', projectId: 'p', name: 'A', profession: 'Şantiye Şefi'),
+        Person(id: '1', projectId: 'p', name: 'A', profession: 'Şantiye Şefi'),
       ), isTrue);
       expect(RoleDegree.canAssignTasks(
-        const Person(id: '2', projectId: 'p', name: 'B', profession: 'Saha Formeni'),
+        Person(id: '2', projectId: 'p', name: 'B', profession: 'Saha Formeni'),
       ), isFalse);
     });
 
@@ -40,19 +40,19 @@ void main() {
   });
 
   group('SiteTask.isVisibleTo', () {
-    const muhendis = Person(
+    final muhendis = Person(
       id: 'm1',
       projectId: 'p',
       name: 'Ali',
       profession: 'Saha Mühendisi',
     );
-    const formen = Person(
+    final formen = Person(
       id: 'f1',
       projectId: 'p',
       name: 'Veli',
       profession: 'Saha Formeni',
     );
-    const usta = Person(
+    final usta = Person(
       id: 'u1',
       projectId: 'p',
       name: 'Can',

@@ -12,13 +12,13 @@ import 'package:santijet_puantaj/domain/enums/photo_work_category.dart';
 void main() {
   group('AttendanceSnapshotBuilder', () {
     test('mevcut / yarım / izin / yok ve adam-saat', () {
-      const people = [
+      final people = [
         Person(id: 'u1', projectId: 'p', name: 'Ali', team: 'A Ekibi'),
         Person(id: 'u2', projectId: 'p', name: 'Veli', team: 'B Ekibi'),
         Person(id: 'u3', projectId: 'p', name: 'Ayşe'),
         Person(id: 'u4', projectId: 'p', name: 'Can'),
       ];
-      const att = [
+      final att = [
         Attendance(
           id: 'a1',
           projectId: 'p',

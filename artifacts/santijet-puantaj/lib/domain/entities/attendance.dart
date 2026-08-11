@@ -1,13 +1,16 @@
 import 'package:equatable/equatable.dart';
 
+import '../../core/utils/text_format.dart';
 import '../enums/attendance_status.dart';
 
 /// Günlük personel puantaj kaydı — santiye-takip `Attendance` ile birebir.
 ///
 /// Mantıksal tekillik: `(projectId, personId, date)`.
 /// Yevmiye (adam-gün) = `(hours + overtimeHours) / 8`.
+///
+/// [personName] daima başlık biçiminde saklanır (bkz. [titleCaseTr]).
 class Attendance extends Equatable {
-  const Attendance({
+  const Attendance._({
     required this.id,
     required this.projectId,
     required this.personId,
@@ -18,6 +21,30 @@ class Attendance extends Equatable {
     this.overtimeHours = 0,
     this.note = '',
   });
+
+  factory Attendance({
+    required String id,
+    required String projectId,
+    required String personId,
+    required String personName,
+    required String date,
+    required AttendanceStatus status,
+    required int hours,
+    double overtimeHours = 0,
+    String note = '',
+  }) {
+    return Attendance._(
+      id: id,
+      projectId: projectId,
+      personId: personId,
+      personName: titleCaseTr(personName),
+      date: date,
+      status: status,
+      hours: hours,
+      overtimeHours: overtimeHours,
+      note: note,
+    );
+  }
 
   final String id;
   final String projectId;
@@ -80,7 +107,8 @@ class Attendance extends Equatable {
       id: json['id'] as String,
       projectId: json['projectId'] as String,
       personId: (json['personId'] ?? json['workerId']) as String,
-      personName: (json['personName'] ?? json['workerName']) as String? ?? '',
+      personName:
+          (json['personName'] ?? json['workerName']) as String? ?? '',
       date: json['date'] as String,
       status: status,
       hours: (json['hours'] as num?)?.toInt() ?? status.hours,

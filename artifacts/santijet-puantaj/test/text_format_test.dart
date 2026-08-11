@@ -1,5 +1,6 @@
 import 'package:flutter_test/flutter_test.dart';
 import 'package:santijet_puantaj/core/utils/text_format.dart';
+import 'package:santijet_puantaj/domain/entities/person.dart';
 
 void main() {
   test('titleCaseTr: Türkçe büyük harfleri başlık biçimine çevirir', () {
@@ -9,6 +10,19 @@ void main() {
     expect(titleCaseTr('ALÇI LEVHA UYG. - USTA'), 'Alçı Levha Uyg. - Usta');
     expect(titleCaseTr('Seramik/Fayans'), 'Seramik/Fayans');
     expect(titleCaseTr('  mehmet fatih  '), 'Mehmet Fatih');
+  });
+
+  test('Person.name: kayıtta daima başlık biçimi', () {
+    final p = Person(id: '1', projectId: 'p', name: 'İSA ALKAN');
+    expect(p.name, 'İsa Alkan');
+    expect(
+      Person.fromJson({
+        'id': '1',
+        'projectId': 'p',
+        'name': 'mehmet FATİH yılmaz',
+      }).name,
+      'Mehmet Fatih Yılmaz',
+    );
   });
 
   test('sentenceCaseTr: yalnızca ilk harfi büyütür', () {

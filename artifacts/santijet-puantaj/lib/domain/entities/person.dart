@@ -1,10 +1,15 @@
 import 'package:equatable/equatable.dart';
 
+import '../../core/utils/text_format.dart';
+
 /// Personel kaydı — her proje kendi personel listesine sahiptir.
 ///
 /// PIN / rol yetkilendirmesi sonraki fazda; şimdilik puantaj cetveli kaynağı.
+///
+/// [name] (Ad Soyad) daima başlık biçiminde saklanır: her kelimenin ilk harfi
+/// büyük, kalanı küçük (`İSA ALKAN` → `İsa Alkan`).
 class Person extends Equatable {
-  const Person({
+  const Person._({
     required this.id,
     required this.projectId,
     required this.name,
@@ -21,11 +26,46 @@ class Person extends Equatable {
     this.active = true,
   });
 
+  factory Person({
+    required String id,
+    required String projectId,
+    required String name,
+    String profession = '',
+    String phone = '',
+    String company = '',
+    String team = '',
+    String address = '',
+    String tc = '',
+    String iban = '',
+    String bankName = '',
+    String hireDate = '',
+    String leaveDate = '',
+    bool active = true,
+  }) {
+    return Person._(
+      id: id,
+      projectId: projectId,
+      name: titleCaseTr(name),
+      profession: profession,
+      phone: phone,
+      company: company,
+      team: team,
+      address: address,
+      tc: tc,
+      iban: iban,
+      bankName: bankName,
+      hireDate: hireDate,
+      leaveDate: leaveDate,
+      active: active,
+    );
+  }
+
   final String id;
 
   /// Personelin ait olduğu proje — projeler arası paylaşılmaz.
   final String projectId;
 
+  /// Ad Soyad — başlık biçimi (bkz. [titleCaseTr]).
   final String name;
   final String profession;
   final String phone;

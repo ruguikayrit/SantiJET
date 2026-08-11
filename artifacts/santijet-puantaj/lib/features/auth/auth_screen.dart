@@ -4,6 +4,7 @@ import 'package:go_router/go_router.dart';
 
 import '../../core/config/supabase_config.dart';
 import '../../core/theme/app_spacing.dart';
+import '../../core/utils/text_format.dart';
 import '../../data/providers/auth_provider.dart';
 import '../../data/remote/supabase_service.dart';
 
@@ -49,7 +50,7 @@ class _AuthScreenState extends ConsumerState<AuthScreen> {
         await auth.signUp(
           email: _emailCtrl.text,
           password: _passwordCtrl.text,
-          displayName: _nameCtrl.text,
+          displayName: titleCaseTr(_nameCtrl.text),
         );
       } else {
         await auth.signIn(

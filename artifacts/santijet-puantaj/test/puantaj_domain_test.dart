@@ -14,7 +14,7 @@ import 'dart:convert';
 
 void main() {
   group('Person.isActiveOn', () {
-    const base = Person(
+    final base = Person(
       id: '1',
       projectId: 'p1',
       name: 'Ali',
@@ -42,7 +42,7 @@ void main() {
     });
 
     test('örnek: 20 Temmuz çıkış — günlük/haftalık/aylık görünürlük', () {
-      const person = Person(
+      final person = Person(
         id: '1',
         projectId: 'p',
         name: 'Ali',
@@ -92,7 +92,7 @@ void main() {
 
   group('AttendanceDisplay', () {
     test('işe giriş / çıkış gününde G ve Ç', () {
-      const person = Person(
+      final person = Person(
         id: '1',
         projectId: 'p',
         name: 'Ali',
@@ -141,7 +141,7 @@ void main() {
 
   group('YevmiyeCalculator', () {
     test('mesai dahil adam-gün', () {
-      const a = Attendance(
+      final a = Attendance(
         id: '1',
         projectId: 'p',
         personId: 'u1',
@@ -156,12 +156,12 @@ void main() {
     });
 
     test('ekip toplamı yalnızca ekip üyelerinden', () {
-      const people = [
+      final people = [
         Person(id: 'u1', projectId: 'p', name: 'Ali', team: 'Demir'),
         Person(id: 'u2', projectId: 'p', name: 'Veli', team: 'Demir'),
         Person(id: 'u3', projectId: 'p', name: 'Ayşe', team: 'Kalıp'),
       ];
-      const att = [
+      final att = [
         Attendance(
           id: 'a1',
           projectId: 'p',
@@ -256,14 +256,22 @@ void main() {
 
   group('PuantajReportBuilder', () {
     test('haftalık durum sütunlarını ve yok hariç genel toplamı üretir', () {
-      const person = Person(
+      final person = Person(
         id: 'u1',
         projectId: 'p',
         name: 'Ali',
         company: 'Firma',
       );
       final days = PuantajDate.weekDays('05.08.2026');
-      final statuses = AttendanceStatus.values;
+      final statuses = [
+        AttendanceStatus.present,
+        AttendanceStatus.half,
+        AttendanceStatus.izinli,
+        AttendanceStatus.raporlu,
+        AttendanceStatus.mazeret,
+        AttendanceStatus.tatil,
+        AttendanceStatus.absent,
+      ];
       final attendance = [
         for (var i = 0; i < statuses.length; i++)
           Attendance(
@@ -280,17 +288,19 @@ void main() {
       final report = PuantajReportBuilder.build(
         projectName: 'Test',
         projectId: 'p',
-        people: const [person],
+        people: [person],
         attendance: attendance,
         period: PuantajReportPeriod.weekly,
         anchorDate: '05.08.2026',
       );
 
       expect(
-        report.headers.sublist(10),
+        report.headers.sublist(12),
         [
           'Mevcut',
           'Yarım Gün',
+          'Giriş',
+          'Çıkış',
           'İzinli',
           'Raporlu',
           'Mazeret',
@@ -299,9 +309,11 @@ void main() {
           'Genel Toplam',
         ],
       );
-      expect(report.rows.single.sublist(10), [
+      expect(report.rows.single.sublist(12), [
         '1',
         '1',
+        '0',
+        '0',
         '1',
         '1',
         '1',
@@ -311,7 +323,7 @@ void main() {
       ]);
       expect(
         report.visual.companies.single.rows.single.statusCounts,
-        [1, 1, 1, 1, 1, 1, 1],
+        [1, 1, 0, 0, 1, 1, 1, 1, 1],
       );
       expect(report.visual.companies.single.rows.single.totalLabel, '6');
     });

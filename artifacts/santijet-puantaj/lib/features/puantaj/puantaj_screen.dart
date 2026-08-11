@@ -6,6 +6,7 @@ import '../../core/design_system/sj_card.dart';
 import '../../core/design_system/sj_empty_state.dart';
 import '../../core/design_system/sj_button.dart';
 import '../../core/design_system/sj_modal.dart';
+import '../../core/design_system/sj_search_bar.dart';
 import '../../core/routing/app_routes.dart';
 import '../../core/theme/app_colors.dart';
 import '../../core/theme/app_radii.dart';
@@ -1479,6 +1480,9 @@ class _PuantajExportSheet extends StatefulWidget {
 class _PuantajExportSheetState extends State<_PuantajExportSheet> {
   late PuantajReportPeriod _period = widget.initialPeriod;
   late Set<String> _selectedPersonIds;
+  final _personSearchController = TextEditingController();
+  final _peopleTileController = ExpansionTileController();
+  String _personQuery = '';
   bool _busy = false;
   String? _error;
 
@@ -1486,6 +1490,12 @@ class _PuantajExportSheetState extends State<_PuantajExportSheet> {
   void initState() {
     super.initState();
     _selectedPersonIds = _eligiblePeople.map((p) => p.id).toSet();
+  }
+
+  @override
+  void dispose() {
+    _personSearchController.dispose();
+    super.dispose();
   }
 
   List<String> get _periodDays => PuantajDate.daysForReportPeriod(
@@ -1502,6 +1512,15 @@ class _PuantajExportSheetState extends State<_PuantajExportSheet> {
         .toList()
       ..sort((a, b) => a.name.compareTo(b.name));
     return list;
+  }
+
+  List<Person> get _filteredEligiblePeople {
+    final q = _foldTr(_personQuery.trim());
+    if (q.isEmpty) return _eligiblePeople;
+    return _eligiblePeople.where((p) {
+      final haystack = _foldTr('${p.name} ${p.profession} ${p.team}');
+      return haystack.contains(q);
+    }).toList();
   }
 
   /// Varsayılan: tüm uygun personel. Özel seçimde yalnızca işaretlenenler.
@@ -1535,6 +1554,44 @@ class _PuantajExportSheetState extends State<_PuantajExportSheet> {
     }
   }
 
+  static String _foldTr(String s) {
+    final b = StringBuffer();
+    for (final unit in s.runes) {
+      final c = String.fromCharCode(unit);
+      switch (c) {
+        case 'I':
+          b.write('ı');
+        case 'İ':
+          b.write('i');
+        case 'Ğ':
+          b.write('ğ');
+        case 'Ü':
+          b.write('ü');
+        case 'Ş':
+          b.write('ş');
+        case 'Ö':
+          b.write('ö');
+        case 'Ç':
+          b.write('ç');
+        default:
+          b.write(c.toLowerCase());
+      }
+    }
+    return b.toString();
+  }
+
+  void _onPersonSearchChanged(String value) {
+    setState(() => _personQuery = value);
+    if (value.trim().isNotEmpty) {
+      _peopleTileController.expand();
+    }
+  }
+
+  void _clearPersonSearch() {
+    _personSearchController.clear();
+    setState(() => _personQuery = '');
+  }
+
   void _setPeriod(PuantajReportPeriod period) {
     setState(() {
       _period = period;
@@ -1551,6 +1608,16 @@ class _PuantajExportSheetState extends State<_PuantajExportSheet> {
   void _selectAllPeople() {
     setState(() {
       _selectedPersonIds = _eligiblePeople.map((p) => p.id).toSet();
+      _error = null;
+    });
+  }
+
+  void _selectFilteredPeople() {
+    setState(() {
+      _selectedPersonIds = {
+        ..._selectedPersonIds,
+        ..._filteredEligiblePeople.map((p) => p.id),
+      };
       _error = null;
     });
   }
@@ -1622,6 +1689,8 @@ class _PuantajExportSheetState extends State<_PuantajExportSheet> {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final eligible = _eligiblePeople;
+    final filtered = _filteredEligiblePeople;
+    final hasQuery = _personQuery.trim().isNotEmpty;
     return Column(
       mainAxisSize: MainAxisSize.min,
       crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -1661,6 +1730,13 @@ class _PuantajExportSheetState extends State<_PuantajExportSheet> {
         const SizedBox(height: AppSpacing.md),
         Text('Personel', style: theme.textTheme.labelLarge),
         const SizedBox(height: AppSpacing.xs),
+        SJSearchBar(
+          controller: _personSearchController,
+          hint: 'Personel ara...',
+          onChanged: _busy ? null : _onPersonSearchChanged,
+          onClear: _busy ? null : _clearPersonSearch,
+        ),
+        const SizedBox(height: AppSpacing.xs),
         Material(
           color: theme.colorScheme.surface,
           shape: RoundedRectangleBorder(
@@ -1671,6 +1747,8 @@ class _PuantajExportSheetState extends State<_PuantajExportSheet> {
           child: Theme(
             data: theme.copyWith(dividerColor: Colors.transparent),
             child: ExpansionTile(
+              controller: _peopleTileController,
+              initiallyExpanded: true,
               tilePadding: const EdgeInsets.symmetric(horizontal: AppSpacing.sm),
               childrenPadding: EdgeInsets.zero,
               title: Text(
@@ -1708,12 +1786,20 @@ class _PuantajExportSheetState extends State<_PuantajExportSheet> {
                     padding: const EdgeInsets.symmetric(
                       horizontal: AppSpacing.xs,
                     ),
-                    child: Row(
+                    child: Wrap(
+                      spacing: AppSpacing.xs,
                       children: [
                         TextButton(
                           onPressed: _busy ? null : _selectAllPeople,
                           child: const Text('Tümünü seç'),
                         ),
+                        if (hasQuery)
+                          TextButton(
+                            onPressed: _busy || filtered.isEmpty
+                                ? null
+                                : _selectFilteredPeople,
+                            child: Text('Görünenleri seç (${filtered.length})'),
+                          ),
                         TextButton(
                           onPressed: _busy ? null : _clearPeople,
                           child: const Text('Temizle'),
@@ -1721,37 +1807,54 @@ class _PuantajExportSheetState extends State<_PuantajExportSheet> {
                       ],
                     ),
                   ),
-                  ConstrainedBox(
-                    constraints: BoxConstraints(
-                      maxHeight: MediaQuery.sizeOf(context).height * 0.28,
-                    ),
-                    child: ListView.builder(
-                      shrinkWrap: true,
-                      itemCount: eligible.length,
-                      itemBuilder: (context, index) {
-                        final person = eligible[index];
-                        final checked =
-                            _selectedPersonIds.contains(person.id);
-                        final subtitle = person.profession.trim().isEmpty
-                            ? null
-                            : person.profession;
-                        return CheckboxListTile(
-                          dense: true,
-                          contentPadding: const EdgeInsets.symmetric(
-                            horizontal: AppSpacing.sm,
-                          ),
-                          controlAffinity: ListTileControlAffinity.leading,
-                          value: checked,
-                          onChanged: _busy
+                  if (filtered.isEmpty)
+                    Padding(
+                      padding: const EdgeInsets.fromLTRB(
+                        AppSpacing.sm,
+                        0,
+                        AppSpacing.sm,
+                        AppSpacing.sm,
+                      ),
+                      child: Text(
+                        'Eşleşen personel yok.',
+                        style: theme.textTheme.bodySmall?.copyWith(
+                          color: theme.colorScheme.onSurfaceVariant,
+                        ),
+                      ),
+                    )
+                  else
+                    ConstrainedBox(
+                      constraints: BoxConstraints(
+                        maxHeight: MediaQuery.sizeOf(context).height * 0.28,
+                      ),
+                      child: ListView.builder(
+                        shrinkWrap: true,
+                        itemCount: filtered.length,
+                        itemBuilder: (context, index) {
+                          final person = filtered[index];
+                          final checked =
+                              _selectedPersonIds.contains(person.id);
+                          final subtitle = person.profession.trim().isEmpty
                               ? null
-                              : (v) =>
-                                  _togglePerson(person.id, v ?? false),
-                          title: Text(person.name),
-                          subtitle: subtitle == null ? null : Text(subtitle),
-                        );
-                      },
+                              : person.profession;
+                          return CheckboxListTile(
+                            dense: true,
+                            contentPadding: const EdgeInsets.symmetric(
+                              horizontal: AppSpacing.sm,
+                            ),
+                            controlAffinity: ListTileControlAffinity.leading,
+                            value: checked,
+                            onChanged: _busy
+                                ? null
+                                : (v) =>
+                                    _togglePerson(person.id, v ?? false),
+                            title: Text(person.name),
+                            subtitle:
+                                subtitle == null ? null : Text(subtitle),
+                          );
+                        },
+                      ),
                     ),
-                  ),
                 ],
               ],
             ),

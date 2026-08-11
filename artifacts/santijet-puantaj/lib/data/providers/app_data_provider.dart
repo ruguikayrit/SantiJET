@@ -162,7 +162,10 @@ final activeProjectProvider = Provider<Project?>((ref) {
 });
 
 class PersonnelNotifier extends StateNotifier<List<Person>> {
-  PersonnelNotifier(this._box) : super(_load(_box));
+  PersonnelNotifier(this._box) : super(_load(_box)) {
+    // Eski ALL-CAPS kayıtları diskte de başlık biçimine çek.
+    _persistIfNamesNormalized();
+  }
 
   final Box _box;
   static const _key = 'items';
@@ -172,6 +175,20 @@ class PersonnelNotifier extends StateNotifier<List<Person>> {
 
   void _persist() =>
       _writeList(_box, _key, state.map((e) => e.toJson()).toList());
+
+  void _persistIfNamesNormalized() {
+    final raw = _readList(_box, _key);
+    if (raw.isEmpty) return;
+    var dirty = false;
+    for (var i = 0; i < raw.length && i < state.length; i++) {
+      final stored = raw[i]['name'] as String? ?? '';
+      if (stored != state[i].name) {
+        dirty = true;
+        break;
+      }
+    }
+    if (dirty) _persist();
+  }
 
   List<Person> get active => state.where((p) => p.active).toList();
 
@@ -283,7 +300,9 @@ final personnelForDateProvider =
 });
 
 class AttendanceNotifier extends StateNotifier<List<Attendance>> {
-  AttendanceNotifier(this._box) : super(_load(_box));
+  AttendanceNotifier(this._box) : super(_load(_box)) {
+    _persistIfNamesNormalized();
+  }
 
   final Box _box;
   static const _key = 'items';
@@ -293,6 +312,20 @@ class AttendanceNotifier extends StateNotifier<List<Attendance>> {
 
   void _persist() =>
       _writeList(_box, _key, state.map((e) => e.toJson()).toList());
+
+  void _persistIfNamesNormalized() {
+    final raw = _readList(_box, _key);
+    if (raw.isEmpty) return;
+    var dirty = false;
+    for (var i = 0; i < raw.length && i < state.length; i++) {
+      final stored = (raw[i]['personName'] ?? raw[i]['workerName']) as String? ?? '';
+      if (stored != state[i].personName) {
+        dirty = true;
+        break;
+      }
+    }
+    if (dirty) _persist();
+  }
 
   Attendance? find({
     required String projectId,

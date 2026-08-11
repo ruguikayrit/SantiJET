@@ -1,5 +1,6 @@
 import 'package:equatable/equatable.dart';
 
+import '../../core/utils/text_format.dart';
 import '../enums/photo_work_category.dart';
 
 /// Günlük saha raporu — proje + takvim günü başına tek kayıt (upsert).
@@ -773,7 +774,7 @@ class DailyReportWeather extends Equatable {
 }
 
 class DailyReportAttendancePerson extends Equatable {
-  const DailyReportAttendancePerson({
+  const DailyReportAttendancePerson._({
     required this.personId,
     required this.personName,
     required this.status,
@@ -783,6 +784,28 @@ class DailyReportAttendancePerson extends Equatable {
     this.overtimeHours = 0,
     this.yevmiye = 0,
   });
+
+  factory DailyReportAttendancePerson({
+    required String personId,
+    required String personName,
+    required String status,
+    required int hours,
+    String team = '',
+    String profession = '',
+    double overtimeHours = 0,
+    double yevmiye = 0,
+  }) {
+    return DailyReportAttendancePerson._(
+      personId: personId,
+      personName: titleCaseTr(personName),
+      status: status,
+      hours: hours,
+      team: team,
+      profession: profession,
+      overtimeHours: overtimeHours,
+      yevmiye: yevmiye,
+    );
+  }
 
   final String personId;
   final String personName;
