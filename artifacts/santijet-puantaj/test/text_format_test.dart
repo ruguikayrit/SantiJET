@@ -25,6 +25,20 @@ void main() {
     );
   });
 
+  test('Person meslek/ekip/firma başlık biçimi', () {
+    final p = Person(
+      id: '1',
+      projectId: 'p',
+      name: 'Ali',
+      profession: 'İNŞAAT İŞÇİSİ',
+      team: 'DEMİR',
+      company: 'BSD İNŞAAT',
+    );
+    expect(p.profession, 'İnşaat İşçisi');
+    expect(p.team, 'Demir');
+    expect(p.company, 'Bsd İnşaat');
+  });
+
   test('sentenceCaseTr: yalnızca ilk harfi büyütür', () {
     expect(sentenceCaseTr('CEPHE AKSESUAR'), 'Cephe aksesuar');
     expect(

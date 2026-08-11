@@ -4,10 +4,13 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:hive/hive.dart';
 
 import '../../core/theme/theme_mode_provider.dart';
+import '../../core/utils/text_format.dart';
 import '../../domain/catalogs/professions.dart';
 import '../../domain/catalogs/task_categories.dart';
 
 /// Meslek ve ekip katalogları — varsayılanlar + kullanıcının ekledikleri (Hive).
+///
+/// Kayıtlar daima başlık biçiminde tutulur (bkz. [titleCaseTr]).
 class CatalogNotifier extends StateNotifier<List<String>> {
   CatalogNotifier(this._box, this._key, List<String> defaults)
       : super(_load(_box, _key, defaults));
@@ -18,6 +21,19 @@ class CatalogNotifier extends StateNotifier<List<String>> {
   static const _legacyAlciAsma = 'Alçı / Asma Tavan';
   static const _alciSiva = 'Alçı Sıva';
   static const _asmaTavan = 'Asma Tavan';
+
+  static List<String> _normalizeList(Iterable<String> raw) {
+    final seen = <String>{};
+    final out = <String>[];
+    for (final e in raw) {
+      final t = titleCaseTr(e);
+      if (t.isEmpty) continue;
+      final key = t.toLowerCase();
+      if (seen.add(key)) out.add(t);
+    }
+    out.sort((a, b) => a.compareTo(b));
+    return out;
+  }
 
   static List<String> _load(Box box, String key, List<String> defaults) {
     final raw = box.get(key);
@@ -33,15 +49,16 @@ class CatalogNotifier extends StateNotifier<List<String>> {
             final migrated = key == 'catalog_teams'
                 ? _migrateAlciAsmaTeams(list)
                 : list;
-            if (migrated != list) {
-              box.put(key, jsonEncode(migrated));
+            final normalized = _normalizeList(migrated);
+            if (jsonEncode(normalized) != jsonEncode(migrated)) {
+              box.put(key, jsonEncode(normalized));
             }
-            return migrated;
+            return normalized;
           }
         }
       } catch (_) {}
     }
-    return List<String>.from(defaults);
+    return _normalizeList(defaults);
   }
 
   /// Eski birleşik ekip adını ayrı ekiple değiştirir.
@@ -64,7 +81,7 @@ class CatalogNotifier extends StateNotifier<List<String>> {
   void _persist() => _box.put(_key, jsonEncode(state));
 
   bool add(String name) {
-    final trimmed = name.trim();
+    final trimmed = titleCaseTr(name);
     if (trimmed.isEmpty) return false;
     final exists = state.any((e) => e.toLowerCase() == trimmed.toLowerCase());
     if (exists) return false;
@@ -74,7 +91,7 @@ class CatalogNotifier extends StateNotifier<List<String>> {
   }
 
   bool rename(String oldName, String newName) {
-    final trimmed = newName.trim();
+    final trimmed = titleCaseTr(newName);
     if (trimmed.isEmpty) return false;
     final idx = state.indexOf(oldName);
     if (idx < 0) return false;
@@ -96,15 +113,12 @@ class CatalogNotifier extends StateNotifier<List<String>> {
   }
 
   void resetToDefaults(List<String> defaults) {
-    state = List<String>.from(defaults);
+    state = _normalizeList(defaults);
     _persist();
   }
 
   void replaceAll(List<String> items) {
-    state = [
-      for (final e in items)
-        if (e.trim().isNotEmpty) e.trim(),
-    ]..sort((a, b) => a.compareTo(b));
+    state = _normalizeList(items);
     _persist();
   }
 }

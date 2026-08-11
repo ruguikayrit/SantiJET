@@ -181,8 +181,12 @@ class PersonnelNotifier extends StateNotifier<List<Person>> {
     if (raw.isEmpty) return;
     var dirty = false;
     for (var i = 0; i < raw.length && i < state.length; i++) {
-      final stored = raw[i]['name'] as String? ?? '';
-      if (stored != state[i].name) {
+      final stored = raw[i];
+      final person = state[i];
+      if ((stored['name'] as String? ?? '') != person.name ||
+          (stored['profession'] as String? ?? '') != person.profession ||
+          (stored['company'] as String? ?? '') != person.company ||
+          (stored['team'] as String? ?? '') != person.team) {
         dirty = true;
         break;
       }

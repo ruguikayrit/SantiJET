@@ -904,7 +904,6 @@ class _PersonEditorSheet extends ConsumerStatefulWidget {
 class _PersonEditorSheetState extends ConsumerState<_PersonEditorSheet> {
   late final TextEditingController _name;
   late final TextEditingController _phone;
-  late final TextEditingController _company;
   late final TextEditingController _address;
   late final TextEditingController _tc;
   late final TextEditingController _iban;
@@ -913,6 +912,7 @@ class _PersonEditorSheetState extends ConsumerState<_PersonEditorSheet> {
   String _leaveDate = '';
   String _profession = '';
   String _team = '';
+  String _company = '';
 
   @override
   void initState() {
@@ -920,7 +920,6 @@ class _PersonEditorSheetState extends ConsumerState<_PersonEditorSheet> {
     final e = widget.existing;
     _name = TextEditingController(text: e?.name ?? '');
     _phone = TextEditingController(text: e?.phone ?? '');
-    _company = TextEditingController(text: e?.company ?? '');
     _address = TextEditingController(text: e?.address ?? '');
     _tc = TextEditingController(text: e?.tc ?? '');
     _iban = TextEditingController(text: e?.iban ?? '');
@@ -929,13 +928,13 @@ class _PersonEditorSheetState extends ConsumerState<_PersonEditorSheet> {
     _leaveDate = e?.leaveDate ?? '';
     _profession = e?.profession ?? '';
     _team = e?.team ?? '';
+    _company = e?.company ?? '';
   }
 
   @override
   void dispose() {
     _name.dispose();
     _phone.dispose();
-    _company.dispose();
     _address.dispose();
     _tc.dispose();
     _iban.dispose();
@@ -985,6 +984,19 @@ class _PersonEditorSheetState extends ConsumerState<_PersonEditorSheet> {
     });
   }
 
+  List<String> _titleCasedOptions(Iterable<String> raw) {
+    final seen = <String>{};
+    final out = <String>[];
+    for (final e in raw) {
+      final t = titleCaseTr(e);
+      if (t.isEmpty) continue;
+      final key = t.toLowerCase();
+      if (seen.add(key)) out.add(t);
+    }
+    out.sort((a, b) => a.compareTo(b));
+    return out;
+  }
+
   List<String> _registeredCompanies() {
     final names = <String>{};
     final companyInfo = ref.read(companyInfoProvider).name.trim();
@@ -997,90 +1009,106 @@ class _PersonEditorSheetState extends ConsumerState<_PersonEditorSheet> {
       final c = p.company.trim();
       if (c.isNotEmpty) names.add(c);
     }
-    final list = names.toList()
-      ..sort((a, b) => a.toLowerCase().compareTo(b.toLowerCase()));
-    return list;
+    return _titleCasedOptions(names);
   }
 
-  Future<void> _pickCompany() async {
-    final companies = _registeredCompanies();
+  Future<void> _pickOption({
+    required String title,
+    required String emptyMessage,
+    required List<String> options,
+    required String current,
+    required ValueChanged<String> onSelected,
+  }) async {
     final selected = await showModalBottomSheet<String>(
       context: context,
       showDragHandle: true,
+      backgroundColor: Theme.of(context).colorScheme.surface,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+      ),
       builder: (ctx) {
         final theme = Theme.of(ctx);
+        final currentNorm = titleCaseTr(current);
         return SafeArea(
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            crossAxisAlignment: CrossAxisAlignment.stretch,
-            children: [
-              Padding(
-                padding: const EdgeInsets.fromLTRB(
-                  AppSpacing.md,
-                  0,
-                  AppSpacing.md,
-                  AppSpacing.sm,
-                ),
-                child: Text(
-                  'Kayıtlı firmalar',
+          child: Padding(
+            padding: const EdgeInsets.fromLTRB(
+              AppSpacing.md,
+              0,
+              AppSpacing.md,
+              AppSpacing.md,
+            ),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                Text(
+                  title,
                   style: theme.textTheme.titleMedium?.copyWith(
                     fontWeight: FontWeight.w700,
                   ),
                 ),
-              ),
-              if (companies.isEmpty)
-                Padding(
-                  padding: const EdgeInsets.all(AppSpacing.md),
-                  child: Text(
-                    'Henüz kayıtlı firma yok.\n'
-                    'Ayarlar → Yönetim → Firma Bilgileri veya proje firma adından eklenir.',
-                    style: theme.textTheme.bodyMedium,
+                const SizedBox(height: AppSpacing.sm),
+                if (options.isEmpty)
+                  Padding(
+                    padding: const EdgeInsets.symmetric(vertical: AppSpacing.lg),
+                    child: Text(
+                      emptyMessage,
+                      style: theme.textTheme.bodyMedium?.copyWith(
+                        color: theme.colorScheme.onSurfaceVariant,
+                      ),
+                    ),
+                  )
+                else
+                  ConstrainedBox(
+                    constraints: BoxConstraints(
+                      maxHeight: MediaQuery.sizeOf(ctx).height * 0.42,
+                    ),
+                    child: ListView.separated(
+                      shrinkWrap: true,
+                      itemCount: options.length,
+                      separatorBuilder: (_, __) => Divider(
+                        height: 1,
+                        color: theme.dividerColor.withValues(alpha: 0.35),
+                      ),
+                      itemBuilder: (context, i) {
+                        final name = options[i];
+                        final isSelected = name == currentNorm;
+                        return ListTile(
+                          contentPadding: EdgeInsets.zero,
+                          title: Text(
+                            name,
+                            style: theme.textTheme.bodyLarge?.copyWith(
+                              fontWeight:
+                                  isSelected ? FontWeight.w600 : FontWeight.w400,
+                            ),
+                          ),
+                          trailing: isSelected
+                              ? Icon(
+                                  Icons.check_rounded,
+                                  color: theme.colorScheme.primary,
+                                )
+                              : null,
+                          onTap: () => Navigator.pop(ctx, name),
+                        );
+                      },
+                    ),
                   ),
-                )
-              else
-                ConstrainedBox(
-                  constraints: BoxConstraints(
-                    maxHeight: MediaQuery.sizeOf(ctx).height * 0.45,
-                  ),
-                  child: ListView.separated(
-                    shrinkWrap: true,
-                    itemCount: companies.length,
-                    separatorBuilder: (_, __) => const Divider(height: 1),
-                    itemBuilder: (context, i) {
-                      final name = companies[i];
-                      final selected = _company.text.trim() == name;
-                      return ListTile(
-                        title: Text(name),
-                        trailing: selected
-                            ? Icon(
-                                Icons.check,
-                                color: theme.colorScheme.primary,
-                              )
-                            : null,
-                        onTap: () => Navigator.pop(ctx, name),
-                      );
-                    },
+                const SizedBox(height: AppSpacing.sm),
+                Align(
+                  alignment: Alignment.centerLeft,
+                  child: TextButton(
+                    onPressed: () => Navigator.pop(ctx, ''),
+                    child: const Text('Temizle'),
                   ),
                 ),
-              Padding(
-                padding: const EdgeInsets.fromLTRB(
-                  AppSpacing.md,
-                  AppSpacing.sm,
-                  AppSpacing.md,
-                  AppSpacing.md,
-                ),
-                child: TextButton(
-                  onPressed: () => Navigator.pop(ctx, ''),
-                  child: const Text('Temizle'),
-                ),
-              ),
-            ],
+              ],
+            ),
           ),
         );
       },
     );
     if (!mounted || selected == null) return;
-    setState(() => _company.text = selected);
+    onSelected(selected);
   }
 
   @override
@@ -1091,15 +1119,19 @@ class _PersonEditorSheetState extends ConsumerState<_PersonEditorSheet> {
     ref.watch(companyInfoProvider);
     ref.watch(projectsProvider);
     ref.watch(personnelProvider);
-    final professionItems = [
+
+    final professionItems = _titleCasedOptions([
       ...professions,
-      if (_profession.isNotEmpty && !professions.contains(_profession))
-        _profession,
-    ];
-    final teamItems = [
+      if (_profession.isNotEmpty) _profession,
+    ]);
+    final teamItems = _titleCasedOptions([
       ...teams,
-      if (_team.isNotEmpty && !teams.contains(_team)) _team,
-    ];
+      if (_team.isNotEmpty) _team,
+    ]);
+    final companyItems = _titleCasedOptions([
+      ..._registeredCompanies(),
+      if (_company.isNotEmpty) _company,
+    ]);
 
     return Padding(
       padding: EdgeInsets.fromLTRB(
@@ -1123,41 +1155,53 @@ class _PersonEditorSheetState extends ConsumerState<_PersonEditorSheet> {
               textCapitalization: TextCapitalization.words,
             ),
             const SizedBox(height: AppSpacing.sm),
-            DropdownButtonFormField<String>(
-              value: _profession.isEmpty ? null : _profession,
-              decoration: const InputDecoration(
-                labelText: 'Meslek',
-                helperText: 'Listeyi Ayarlar → Meslekler’den düzenleyin',
+            _OptionSelectField(
+              label: 'Meslek',
+              value: _profession,
+              emptyHint: 'Listeden seçin',
+              onTap: () => _pickOption(
+                title: 'Meslek seç',
+                emptyMessage:
+                    'Henüz meslek yok.\nAyarlar → Meslekler’den ekleyin.',
+                options: professionItems,
+                current: _profession,
+                onSelected: (v) => setState(() => _profession = v),
               ),
-              items: [
-                for (final p in professionItems)
-                  DropdownMenuItem(value: p, child: Text(p)),
-              ],
-              onChanged: (v) => setState(() => _profession = v ?? ''),
+              onClear: _profession.isEmpty
+                  ? null
+                  : () => setState(() => _profession = ''),
             ),
             const SizedBox(height: AppSpacing.sm),
-            DropdownButtonFormField<String>(
-              value: _team.isEmpty ? null : _team,
-              decoration: const InputDecoration(
-                labelText: 'Ekip',
-                helperText: 'Listeyi Ayarlar → Ekipler’den düzenleyin',
+            _OptionSelectField(
+              label: 'Ekip',
+              value: _team,
+              emptyHint: 'Listeden seçin',
+              onTap: () => _pickOption(
+                title: 'Ekip seç',
+                emptyMessage: 'Henüz ekip yok.\nAyarlar → Ekipler’den ekleyin.',
+                options: teamItems,
+                current: _team,
+                onSelected: (v) => setState(() => _team = v),
               ),
-              items: [
-                for (final t in teamItems)
-                  DropdownMenuItem(value: t, child: Text(t)),
-              ],
-              onChanged: (v) => setState(() => _team = v ?? ''),
+              onClear: _team.isEmpty ? null : () => setState(() => _team = ''),
             ),
             const SizedBox(height: AppSpacing.sm),
-            TextField(
-              controller: _company,
-              readOnly: true,
-              onTap: _pickCompany,
-              decoration: const InputDecoration(
-                labelText: 'Firma',
-                hintText: 'Kayıtlı firmadan seçin',
-                suffixIcon: Icon(Icons.arrow_drop_down),
+            _OptionSelectField(
+              label: 'Firma',
+              value: _company,
+              emptyHint: 'Listeden seçin',
+              onTap: () => _pickOption(
+                title: 'Firma seç',
+                emptyMessage:
+                    'Henüz kayıtlı firma yok.\n'
+                    'Ayarlar → Yönetim → Firma Bilgileri veya proje firma adından eklenir.',
+                options: companyItems,
+                current: _company,
+                onSelected: (v) => setState(() => _company = v),
               ),
+              onClear: _company.isEmpty
+                  ? null
+                  : () => setState(() => _company = ''),
             ),
             const SizedBox(height: AppSpacing.sm),
             TextField(
@@ -1216,33 +1260,96 @@ class _PersonEditorSheetState extends ConsumerState<_PersonEditorSheet> {
               onPressed: () {
                 final name = _name.text.trim();
                 if (name.isEmpty) return;
-                Navigator.pop(
-                  context,
-                  Person(
-                    id: widget.existing?.id ?? IdGen.make('per'),
-                    projectId: widget.existing?.projectId ?? widget.projectId,
-                    name: name,
-                    profession: _profession,
-                    phone: _phone.text.trim(),
-                    company: _company.text.trim(),
-                    team: _team,
-                    address: _address.text.trim(),
-                    tc: _tc.text.trim(),
-                    iban: _iban.text.trim().toUpperCase(),
-                    bankName: _bankName.text.trim(),
-                    hireDate: _hireDate.trim(),
-                    leaveDate: _leaveDate.trim(),
-                    active: true,
-                  ),
+                final person = Person(
+                  id: widget.existing?.id ?? IdGen.make('per'),
+                  projectId: widget.existing?.projectId ?? widget.projectId,
+                  name: name,
+                  profession: _profession,
+                  phone: _phone.text.trim(),
+                  company: _company,
+                  team: _team,
+                  address: _address.text.trim(),
+                  tc: _tc.text.trim(),
+                  iban: _iban.text.trim().toUpperCase(),
+                  bankName: _bankName.text.trim(),
+                  hireDate: _hireDate.trim(),
+                  leaveDate: _leaveDate.trim(),
+                  active: true,
                 );
+                if (person.profession.isNotEmpty) {
+                  ref.read(professionsProvider.notifier).add(person.profession);
+                }
+                if (person.team.isNotEmpty) {
+                  ref.read(teamsProvider.notifier).add(person.team);
+                }
+                Navigator.pop(context, person);
               },
               child: const Text('Kaydet'),
-            ),            TextButton(
+            ),
+            TextButton(
               onPressed: () => Navigator.pop(context),
               child: const Text('İptal'),
             ),
           ],
         ),
+      ),
+    );
+  }
+}
+
+/// Meslek / ekip / firma seçimi — sade açılır liste alanı.
+class _OptionSelectField extends StatelessWidget {
+  const _OptionSelectField({
+    required this.label,
+    required this.value,
+    required this.emptyHint,
+    required this.onTap,
+    this.onClear,
+  });
+
+  final String label;
+  final String value;
+  final String emptyHint;
+  final VoidCallback onTap;
+  final VoidCallback? onClear;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final empty = value.trim().isEmpty;
+    return InkWell(
+      onTap: onTap,
+      borderRadius: AppRadii.sm,
+      child: InputDecorator(
+        isEmpty: empty,
+        decoration: InputDecoration(
+          labelText: label,
+          hintText: emptyHint,
+          suffixIcon: Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              if (onClear != null)
+                IconButton(
+                  tooltip: 'Temizle',
+                  onPressed: onClear,
+                  icon: const Icon(Icons.clear, size: 20),
+                ),
+              IconButton(
+                tooltip: 'Seç',
+                onPressed: onTap,
+                icon: const Icon(Icons.expand_more_rounded, size: 22),
+              ),
+            ],
+          ),
+        ),
+        child: empty
+            ? const SizedBox(width: double.infinity, height: 24)
+            : Text(
+                value,
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+                style: theme.textTheme.bodyLarge,
+              ),
       ),
     );
   }

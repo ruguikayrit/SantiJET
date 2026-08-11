@@ -46,10 +46,10 @@ class Person extends Equatable {
       id: id,
       projectId: projectId,
       name: titleCaseTr(name),
-      profession: profession,
+      profession: titleCaseTr(profession),
       phone: phone,
-      company: company,
-      team: team,
+      company: titleCaseTr(company),
+      team: titleCaseTr(team),
       address: address,
       tc: tc,
       iban: iban,
@@ -67,9 +67,15 @@ class Person extends Equatable {
 
   /// Ad Soyad — başlık biçimi (bkz. [titleCaseTr]).
   final String name;
+
+  /// Meslek — başlık biçimi.
   final String profession;
   final String phone;
+
+  /// Firma — başlık biçimi.
   final String company;
+
+  /// Ekip — başlık biçimi.
   final String team;
   final String address;
 
