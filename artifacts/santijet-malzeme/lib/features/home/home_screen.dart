@@ -10,7 +10,7 @@ import '../../core/widgets/santijet_header.dart';
 import '../../data/providers/app_data_provider.dart';
 import '../projects/widgets/project_switcher.dart';
 
-/// Ana sayfa — açık talep, teslim, teklif turu, kütüphane KPI.
+/// Ana sayfa — onay ve teslim odaklı özet kartları.
 class HomeScreen extends ConsumerWidget {
   const HomeScreen({super.key});
 
@@ -39,7 +39,7 @@ class HomeScreen extends ConsumerWidget {
                 child: SJEmptyState(
                   title: 'Önce proje ekleyin',
                   message:
-                      'Malzeme talebi ve teklif takibi için en az bir proje gerekli.',
+                      'Malzeme talebi ve teslim takibi için en az bir proje gerekli.',
                   icon: Icons.apartment_outlined,
                   actionLabel: 'Projelere Git',
                   onAction: () => context.go(AppRoutes.projeler),
@@ -82,17 +82,17 @@ class HomeScreen extends ConsumerWidget {
                     children: [
                       Expanded(
                         child: SJStatCard(
-                          label: 'Açık talep',
-                          value: '${kpis.openRequests}',
+                          label: 'Bekleyen onay',
+                          value: '${kpis.pendingApprovals}',
                           onTap: () => context.go(AppRoutes.talep),
                         ),
                       ),
                       const SizedBox(width: AppSpacing.sm),
                       Expanded(
                         child: SJStatCard(
-                          label: 'Bekleyen teslim',
-                          value: '${kpis.pendingDeliveries}',
-                          onTap: () => context.go(AppRoutes.teslim),
+                          label: 'Onaylandı',
+                          value: '${kpis.approved}',
+                          onTap: () => context.go(AppRoutes.talep),
                         ),
                       ),
                     ],
@@ -102,17 +102,17 @@ class HomeScreen extends ConsumerWidget {
                     children: [
                       Expanded(
                         child: SJStatCard(
-                          label: 'Teklif turu',
-                          value: '${kpis.quoteRounds}',
-                          onTap: () => context.go(AppRoutes.talep),
+                          label: 'Gelen',
+                          value: '${kpis.incoming}',
+                          onTap: () => context.go(AppRoutes.teslim),
                         ),
                       ),
                       const SizedBox(width: AppSpacing.sm),
                       Expanded(
                         child: SJStatCard(
-                          label: 'Kütüphane',
-                          value: '${kpis.libraryCount}',
-                          onTap: () => context.go(AppRoutes.kutuphane),
+                          label: 'Teslim edildi',
+                          value: '${kpis.delivered}',
+                          onTap: () => context.go(AppRoutes.talep),
                         ),
                       ),
                     ],

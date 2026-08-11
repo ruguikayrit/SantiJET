@@ -8,7 +8,7 @@ Hive-only offline (MVP); Türkçe UI; ŞantiJET Beton / Puantaj görsel diliyle 
 
 | Sekme | Rol |
 |-------|-----|
-| **Ana** | KPI: açık talepler, bekleyen teslim, teklif turu, kütüphane |
+| **Ana** | KPI: bekleyen onay, onaylandı, gelen, teslim edildi |
 | **Keşif Malzeme** | Birim sarfiyatlar × keşif metrajı → malzeme ihtiyacı; talebe ekle |
 | **Talep & Teklif** | Talep listesi, teklif PDF, firma teklifleri, fiyat mukayesesi |
 | **Teslim** | İrsaliye / teslim alma; talep–poz bağlama; karşılama progress |

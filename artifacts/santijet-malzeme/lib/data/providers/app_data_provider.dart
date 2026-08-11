@@ -544,43 +544,40 @@ final activeUnitConsumptionsProvider = Provider<List<UnitConsumption>>((ref) {
       .toList();
 });
 
-/// Ana sayfa KPI özeti.
+/// Ana sayfa KPI özeti — saha için onay / teslim odaklı.
 class HomeKpis {
   const HomeKpis({
-    required this.openRequests,
-    required this.pendingDeliveries,
-    required this.quoteRounds,
-    required this.libraryCount,
+    required this.pendingApprovals,
+    required this.approved,
+    required this.incoming,
+    required this.delivered,
   });
 
-  final int openRequests;
-  final int pendingDeliveries;
-  final int quoteRounds;
-  final int libraryCount;
+  /// Onay zinciri tamamlanmamış talepler.
+  final int pendingApprovals;
+
+  /// Onaylı, teslim bekleyen talepler.
+  final int approved;
+
+  /// Gelen / irsaliye kayıtları.
+  final int incoming;
+
+  /// Teslim alındı işaretli talepler.
+  final int delivered;
 }
 
 final homeKpisProvider = Provider<HomeKpis>((ref) {
   final requests = ref.watch(activeRequestsProvider);
   final deliveries = ref.watch(activeDeliveriesProvider);
-  final rounds = ref.watch(activeQuoteRoundsProvider);
-  final library = ref.watch(libraryProvider);
-
-  final open = requests
-      .where(
-        (r) =>
-            r.status == RequestStatus.pending ||
-            r.status == RequestStatus.approved,
-      )
-      .length;
-  final pending = requests
-      .where((r) => r.status == RequestStatus.approved)
-      .length;
 
   return HomeKpis(
-    openRequests: open,
-    pendingDeliveries: pending > 0 ? pending : deliveries.length,
-    quoteRounds: rounds.length,
-    libraryCount: library.length,
+    pendingApprovals:
+        requests.where((r) => r.status == RequestStatus.pending).length,
+    approved:
+        requests.where((r) => r.status == RequestStatus.approved).length,
+    incoming: deliveries.length,
+    delivered:
+        requests.where((r) => r.status == RequestStatus.delivered).length,
   );
 });
 
