@@ -12,6 +12,35 @@ import 'package:santijet_puantaj/domain/yevmiye/yevmiye_calculator.dart';
 import 'dart:convert';
 
 void main() {
+  group('Person.isActiveOn', () {
+    const base = Person(
+      id: '1',
+      projectId: 'p1',
+      name: 'Ali',
+      hireDate: '2026-04-01',
+      leaveDate: '2026-08-10',
+      active: true,
+    );
+
+    test('çıkış günü dahil aktif', () {
+      expect(base.isActiveOn('10.08.2026'), isTrue);
+      expect(base.isActiveOn('2026-08-10'), isTrue);
+    });
+
+    test('çıkıştan sonraki gün pasif', () {
+      expect(base.isActiveOn('11.08.2026'), isFalse);
+      expect(base.isActiveOn('2026-08-11'), isFalse);
+    });
+
+    test('girişten önce pasif', () {
+      expect(base.isActiveOn('31.03.2026'), isFalse);
+    });
+
+    test('manuel pasif her günü kapatır', () {
+      expect(base.copyWith(active: false).isActiveOn('05.08.2026'), isFalse);
+    });
+  });
+
   group('AttendanceStatus', () {
     test('saat kuralları santiye-takip ile aynı', () {
       expect(AttendanceStatus.present.hours, 8);

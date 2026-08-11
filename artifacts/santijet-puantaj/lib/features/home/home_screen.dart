@@ -78,11 +78,10 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
   @override
   Widget build(BuildContext context) {
     final project = ref.watch(activeProjectProvider);
-    final people = ref.watch(activePersonnelProvider);
+    final today = PuantajDate.today();
+    final people = ref.watch(personnelForDateProvider(today));
     final attendance = ref.watch(attendanceProvider);
     final urgentTasks = ref.watch(upcomingUrgentTasksProvider);
-    final today = PuantajDate.today();
-
     if (project == null) {
       return Scaffold(
         body: SafeArea(

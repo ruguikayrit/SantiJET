@@ -69,7 +69,6 @@ class _PuantajScreenState extends ConsumerState<PuantajScreen> {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final project = ref.watch(activeProjectProvider);
-    final people = ref.watch(activePersonnelProvider);
     final attendance = ref.watch(attendanceProvider);
     final notifier = ref.read(attendanceProvider.notifier);
     final canEdit = ref.watch(canEditActiveProjectProvider);
@@ -105,6 +104,21 @@ class _PuantajScreenState extends ConsumerState<PuantajScreen> {
         ),
       );
     }
+
+    final rangeDays = switch (_mode) {
+      _ViewMode.daily => <String>[_date],
+      _ViewMode.weekly => PuantajDate.weekDays(_date),
+      _ViewMode.monthly => PuantajDate.monthDays(_date),
+    };
+    final allPersonnel = ref.watch(personnelProvider);
+    final people = allPersonnel
+        .where(
+          (p) =>
+              p.projectId == project.id &&
+              rangeDays.any(p.isActiveOn),
+        )
+        .toList()
+      ..sort((a, b) => a.name.compareTo(b.name));
 
     AttendanceStatus? statusOf(String personId, String date) {
       for (final a in attendance) {
@@ -266,6 +280,7 @@ class _PuantajScreenState extends ConsumerState<PuantajScreen> {
                   },
                   onSetStatus: (person, status) {
                     if (!canEdit) return denyWrite();
+                    if (!person.isActiveOn(_date)) return;
                     notifier.setStatus(
                       projectId: project.id,
                       person: person,
@@ -276,6 +291,7 @@ class _PuantajScreenState extends ConsumerState<PuantajScreen> {
                   },
                   onSetOvertime: (person, hours) {
                     if (!canEdit) return denyWrite();
+                    if (!person.isActiveOn(_date)) return;
                     notifier.setOvertime(
                       projectId: project.id,
                       person: person,
@@ -285,18 +301,22 @@ class _PuantajScreenState extends ConsumerState<PuantajScreen> {
                   },
                   onBulk: (status) {
                     if (!canEdit) return denyWrite();
+                    final eligible =
+                        people.where((p) => p.isActiveOn(_date)).toList();
                     notifier.bulkSetStatus(
                       projectId: project.id,
-                      people: people,
+                      people: eligible,
                       date: _date,
                       status: status,
                     );
                   },
                   onCopyYesterday: () {
                     if (!canEdit) return denyWrite();
+                    final eligible =
+                        people.where((p) => p.isActiveOn(_date)).toList();
                     final copied = notifier.copyFromPreviousDay(
                       projectId: project.id,
-                      people: people,
+                      people: eligible,
                       date: _date,
                       previousDate: PuantajDate.shift(_date, -1),
                     );

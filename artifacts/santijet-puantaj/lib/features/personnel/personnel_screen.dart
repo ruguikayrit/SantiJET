@@ -994,6 +994,12 @@ class _PersonEditorSheetState extends ConsumerState<_PersonEditorSheet> {
         _hireDate = _storeDate(picked);
       } else {
         _leaveDate = _storeDate(picked);
+        final now = DateTime.now();
+        final today = DateTime(now.year, now.month, now.day);
+        final leaveDay = DateTime(picked.year, picked.month, picked.day);
+        if (leaveDay.isBefore(today)) {
+          _active = false;
+        }
       }
     });
   }
@@ -1235,6 +1241,14 @@ class _PersonEditorSheetState extends ConsumerState<_PersonEditorSheet> {
               onPressed: () {
                 final name = _name.text.trim();
                 if (name.isEmpty) return;
+                final leave = _leaveDate.trim();
+                final leaveDay = Person.parseEmploymentDate(leave);
+                final now = DateTime.now();
+                final today = DateTime(now.year, now.month, now.day);
+                // Çıkış gününden sonraki takvim günlerinde otomatik pasif.
+                final active = leaveDay != null && leaveDay.isBefore(today)
+                    ? false
+                    : _active;
                 Navigator.pop(
                   context,
                   Person(
@@ -1250,8 +1264,8 @@ class _PersonEditorSheetState extends ConsumerState<_PersonEditorSheet> {
                     iban: _iban.text.trim().toUpperCase(),
                     bankName: _bankName.text.trim(),
                     hireDate: _hireDate.trim(),
-                    leaveDate: _leaveDate.trim(),
-                    active: _active,
+                    leaveDate: leave,
+                    active: active,
                   ),
                 );
               },

@@ -162,7 +162,7 @@ final liveAttendanceSnapshotProvider =
   if (project == null) return null;
   final date = ref.watch(dailyReportSelectedDateProvider);
   final attendance = ref.watch(attendanceProvider);
-  final people = ref.watch(activePersonnelProvider);
+  final people = ref.watch(personnelForDateProvider(date));
   return AttendanceSnapshotBuilder.build(
     projectId: project.id,
     date: date,
@@ -268,7 +268,10 @@ DailyReport syncAttendanceIntoReport(WidgetRef ref, DailyReport report) {
     projectId: report.projectId,
     date: report.date,
     attendance: ref.read(attendanceProvider),
-    activePeople: ref.read(activePersonnelProvider),
+    activePeople: ref
+        .read(personnelProvider)
+        .where((p) => p.projectId == report.projectId && p.isActiveOn(report.date))
+        .toList(),
   );
   return ref.read(dailyReportsProvider.notifier).upsert(
         report.copyWith(attendanceSnapshot: snap),

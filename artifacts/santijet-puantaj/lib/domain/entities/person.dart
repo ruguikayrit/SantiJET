@@ -50,6 +50,42 @@ class Person extends Equatable {
 
   final bool active;
 
+  /// İşe giriş / çıkış tarihini ISO (`yyyy-MM-dd`) veya `dd.MM.yyyy` olarak çözümler.
+  static DateTime? parseEmploymentDate(String? raw) {
+    final s = raw?.trim() ?? '';
+    if (s.isEmpty) return null;
+    final iso = DateTime.tryParse(s);
+    if (iso != null) return DateTime(iso.year, iso.month, iso.day);
+    final parts = s.split('.');
+    if (parts.length != 3) return null;
+    final day = int.tryParse(parts[0]);
+    final month = int.tryParse(parts[1]);
+    final year = int.tryParse(parts[2]);
+    if (day == null || month == null || year == null) return null;
+    if (month < 1 || month > 12 || day < 1 || day > 31) return null;
+    final d = DateTime(year, month, day);
+    if (d.year != year || d.month != month || d.day != day) return null;
+    return d;
+  }
+
+  /// [date] — puantaj günü (`dd.MM.yyyy` veya ISO).
+  ///
+  /// Manuel pasif (`active == false`) veya işten çıkıştan sonraki günlerde false.
+  /// Çıkış günü dahil aktiftir; sonraki günlerden itibaren listede görünmez.
+  bool isActiveOn(String date) {
+    if (!active) return false;
+    final day = parseEmploymentDate(date);
+    if (day == null) return true;
+
+    final hire = parseEmploymentDate(hireDate);
+    if (hire != null && day.isBefore(hire)) return false;
+
+    final leave = parseEmploymentDate(leaveDate);
+    if (leave != null && day.isAfter(leave)) return false;
+
+    return true;
+  }
+
   Person copyWith({
     String? id,
     String? projectId,

@@ -258,12 +258,27 @@ final projectPersonnelProvider = Provider<List<Person>>((ref) {
 });
 
 /// Aktif projedeki aktif personel — Puantaj / İmalat / Ana sayfa.
+///
+/// İşten çıkış tarihi geçmiş personel [isActiveOn] ile günlük listelerde
+/// ayrıca elenir; bu provider yalnızca manuel `active` bayrağına bakar.
 final activePersonnelProvider = Provider<List<Person>>((ref) {
   final project = ref.watch(activeProjectProvider);
   final all = ref.watch(personnelProvider);
   if (project == null) return const [];
   return all
       .where((p) => p.active && p.projectId == project.id)
+      .toList()
+    ..sort((a, b) => a.name.compareTo(b.name));
+});
+
+/// Belirli bir günde puantajda gösterilecek personel (çıkış tarihi sonrası hariç).
+final personnelForDateProvider =
+    Provider.family<List<Person>, String>((ref, date) {
+  final project = ref.watch(activeProjectProvider);
+  final all = ref.watch(personnelProvider);
+  if (project == null) return const [];
+  return all
+      .where((p) => p.projectId == project.id && p.isActiveOn(date))
       .toList()
     ..sort((a, b) => a.name.compareTo(b.name));
 });
