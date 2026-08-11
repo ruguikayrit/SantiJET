@@ -772,6 +772,66 @@ class _DailyReportScreenState extends ConsumerState<DailyReportScreen> {
     setState(() => target.text = result.trimRight());
   }
 
+  void _openFullscreenPhoto(String dataBase64) {
+    late final Uint8List bytes;
+    try {
+      bytes = base64Decode(dataBase64);
+    } catch (_) {
+      return;
+    }
+    Navigator.of(context).push(
+      PageRouteBuilder<void>(
+        opaque: false,
+        barrierColor: Colors.black.withValues(alpha: 0.92),
+        pageBuilder: (context, animation, secondaryAnimation) {
+          return FadeTransition(
+            opacity: animation,
+            child: Scaffold(
+              backgroundColor: Colors.transparent,
+              body: SafeArea(
+                child: Stack(
+                  fit: StackFit.expand,
+                  children: [
+                    GestureDetector(
+                      onTap: () => Navigator.of(context).pop(),
+                      child: InteractiveViewer(
+                        minScale: 0.8,
+                        maxScale: 5,
+                        child: Center(
+                          child: Image.memory(
+                            bytes,
+                            fit: BoxFit.contain,
+                            errorBuilder: (_, __, ___) => const Icon(
+                              Icons.broken_image,
+                              color: Colors.white70,
+                              size: 64,
+                            ),
+                          ),
+                        ),
+                      ),
+                    ),
+                    Positioned(
+                      top: 8,
+                      right: 8,
+                      child: IconButton(
+                        style: IconButton.styleFrom(
+                          backgroundColor: Colors.black54,
+                          foregroundColor: Colors.white,
+                        ),
+                        onPressed: () => Navigator.of(context).pop(),
+                        icon: const Icon(Icons.close),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+          );
+        },
+      ),
+    );
+  }
+
   Future<void> _editCaption(DailyReportPhoto photo) async {
     final report = ref.read(activeDailyReportProvider);
     if (report == null) return;
@@ -1620,20 +1680,29 @@ class _DailyReportScreenState extends ConsumerState<DailyReportScreen> {
                                       crossAxisAlignment:
                                           CrossAxisAlignment.start,
                                       children: [
-                                        ClipRRect(
-                                          borderRadius: AppRadii.sm,
-                                          child: Image.memory(
-                                            base64Decode(photo.dataBase64),
-                                            width: 72,
-                                            height: 72,
-                                            fit: BoxFit.cover,
-                                            errorBuilder: (_, __, ___) =>
-                                                Container(
-                                              width: 72,
-                                              height: 72,
-                                              color: theme.dividerColor,
-                                              child: const Icon(
-                                                Icons.broken_image,
+                                        Material(
+                                          color: Colors.transparent,
+                                          child: InkWell(
+                                            onTap: () => _openFullscreenPhoto(
+                                              photo.dataBase64,
+                                            ),
+                                            borderRadius: AppRadii.sm,
+                                            child: ClipRRect(
+                                              borderRadius: AppRadii.sm,
+                                              child: Image.memory(
+                                                base64Decode(photo.dataBase64),
+                                                width: 72,
+                                                height: 72,
+                                                fit: BoxFit.cover,
+                                                errorBuilder: (_, __, ___) =>
+                                                    Container(
+                                                  width: 72,
+                                                  height: 72,
+                                                  color: theme.dividerColor,
+                                                  child: const Icon(
+                                                    Icons.broken_image,
+                                                  ),
+                                                ),
                                               ),
                                             ),
                                           ),
@@ -1837,19 +1906,29 @@ class _DailyReportScreenState extends ConsumerState<DailyReportScreen> {
                                 final ph = report.irsaliyePhotos[i];
                                 return Stack(
                                   children: [
-                                    ClipRRect(
-                                      borderRadius: AppRadii.sm,
-                                      child: Image.memory(
-                                        base64Decode(ph.dataBase64),
-                                        width: 72,
-                                        height: 72,
-                                        fit: BoxFit.cover,
-                                        errorBuilder: (_, __, ___) =>
-                                            Container(
-                                          width: 72,
-                                          height: 72,
-                                          color: theme.dividerColor,
-                                          child: const Icon(Icons.broken_image),
+                                    Material(
+                                      color: Colors.transparent,
+                                      child: InkWell(
+                                        onTap: () =>
+                                            _openFullscreenPhoto(ph.dataBase64),
+                                        borderRadius: AppRadii.sm,
+                                        child: ClipRRect(
+                                          borderRadius: AppRadii.sm,
+                                          child: Image.memory(
+                                            base64Decode(ph.dataBase64),
+                                            width: 72,
+                                            height: 72,
+                                            fit: BoxFit.cover,
+                                            errorBuilder: (_, __, ___) =>
+                                                Container(
+                                              width: 72,
+                                              height: 72,
+                                              color: theme.dividerColor,
+                                              child: const Icon(
+                                                Icons.broken_image,
+                                              ),
+                                            ),
+                                          ),
                                         ),
                                       ),
                                     ),
