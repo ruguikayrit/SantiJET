@@ -123,20 +123,6 @@ class PuantajExportService {
             _matrixTable(report.visual)
           else
             _dailyTable(report.visual),
-          pw.SizedBox(height: 12),
-          for (final line in report.summaryLines) ...[
-            pw.Text(
-              line,
-              style: pw.TextStyle(
-                fontSize: 8,
-                fontWeight: line.startsWith('Özet')
-                    ? pw.FontWeight.bold
-                    : pw.FontWeight.normal,
-                color: _ink,
-              ),
-            ),
-            pw.SizedBox(height: 3),
-          ],
         ],
       ),
     );
@@ -438,9 +424,9 @@ class PuantajExportService {
                             maxLines: 2,
                             style: const pw.TextStyle(fontSize: 7, color: _ink),
                           ),
-                          if (row.employmentDates.isNotEmpty)
+                          for (final line in row.employmentDateLines)
                             pw.Text(
-                              row.employmentDates,
+                              line,
                               maxLines: 1,
                               style: const pw.TextStyle(
                                 fontSize: 5.5,
@@ -599,9 +585,9 @@ class PuantajExportService {
                               color: _inkMuted,
                             ),
                           ),
-                        if (row.employmentDates.isNotEmpty)
+                        for (final line in row.employmentDateLines)
                           pw.Text(
-                            row.employmentDates,
+                            line,
                             style: const pw.TextStyle(
                               fontSize: 6.5,
                               color: _inkMuted,
@@ -656,10 +642,6 @@ class PuantajExportService {
     sheet.appendRow(report.headers.map(TextCellValue.new).toList());
     for (final row in report.rows) {
       sheet.appendRow(row.map(TextCellValue.new).toList());
-    }
-    sheet.appendRow([TextCellValue('')]);
-    for (final line in report.summaryLines) {
-      sheet.appendRow([TextCellValue(line)]);
     }
 
     return excel.encode()!;

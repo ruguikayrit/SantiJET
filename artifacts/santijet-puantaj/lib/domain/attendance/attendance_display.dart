@@ -31,18 +31,24 @@ abstract final class AttendanceDisplay {
     return recorded;
   }
 
-  /// PDF / ekran için `G:dd.MM.yyyy · Ç:dd.MM.yyyy` (boş alanlar atlanır).
-  static String employmentDatesLabel(Person person) {
+  /// İşe giriş satırı — örn. `Giriş: 07.04.2026` (yoksa boş).
+  static String hireDateLine(Person person) {
     final hire = Person.parseEmploymentDate(person.hireDate);
+    return hire == null ? '' : 'Giriş: ${_fmt(hire)}';
+  }
+
+  /// İşten çıkış satırı — örn. `Çıkış: 20.07.2026` (yoksa boş).
+  static String leaveDateLine(Person person) {
     final leave = Person.parseEmploymentDate(person.leaveDate);
-    final parts = <String>[];
-    if (hire != null) {
-      parts.add('G:${_fmt(hire)}');
-    }
-    if (leave != null) {
-      parts.add('Ç:${_fmt(leave)}');
-    }
-    return parts.join(' · ');
+    return leave == null ? '' : 'Çıkış: ${_fmt(leave)}';
+  }
+
+  /// İsim altı satırlar: giriş, ardından çıkış (boş olanlar atlanır).
+  static List<String> employmentDateLines(Person person) {
+    return [
+      for (final line in [hireDateLine(person), leaveDateLine(person)])
+        if (line.isNotEmpty) line,
+    ];
   }
 
   static String _fmt(DateTime d) {

@@ -125,8 +125,16 @@ void main() {
         AttendanceStatus.half,
       );
       expect(
-        AttendanceDisplay.employmentDatesLabel(person),
-        'G:01.08.2026 · Ç:10.08.2026',
+        AttendanceDisplay.hireDateLine(person),
+        'Giriş: 01.08.2026',
+      );
+      expect(
+        AttendanceDisplay.leaveDateLine(person),
+        'Çıkış: 10.08.2026',
+      );
+      expect(
+        AttendanceDisplay.employmentDateLines(person),
+        ['Giriş: 01.08.2026', 'Çıkış: 10.08.2026'],
       );
     });
   });

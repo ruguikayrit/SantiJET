@@ -837,6 +837,14 @@ class _PersonCard extends StatelessWidget {
                           titleCaseTr(person.name),
                           style: theme.textTheme.titleMedium,
                         ),
+                        for (final line
+                            in AttendanceDisplay.employmentDateLines(person))
+                          Text(
+                            line,
+                            style: theme.textTheme.labelSmall?.copyWith(
+                              color: theme.colorScheme.onSurfaceVariant,
+                            ),
+                          ),
                         if (meta.isNotEmpty)
                           Text(meta, style: theme.textTheme.bodySmall),
                       ],
@@ -1296,10 +1304,10 @@ class _CetvelView extends StatelessWidget {
                       color: theme.colorScheme.onSurface,
                     ),
                   ),
-                  if (AttendanceDisplay.employmentDatesLabel(person)
-                      .isNotEmpty)
+                  for (final line
+                      in AttendanceDisplay.employmentDateLines(person))
                     Text(
-                      AttendanceDisplay.employmentDatesLabel(person),
+                      line,
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
                       style: theme.textTheme.labelSmall?.copyWith(

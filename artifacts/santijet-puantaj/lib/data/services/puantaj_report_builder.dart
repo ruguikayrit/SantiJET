@@ -71,7 +71,8 @@ class PuantajVisualPersonRow {
     this.yevmiye = '',
     this.note = '',
     this.totalLabel = '',
-    this.employmentDates = '',
+    this.hireDateLine = '',
+    this.leaveDateLine = '',
   });
 
   final String name;
@@ -88,8 +89,16 @@ class PuantajVisualPersonRow {
   final String note;
   final String totalLabel;
 
-  /// Örn. `G:07.04.2026 · Ç:10.08.2026`
-  final String employmentDates;
+  /// Örn. `Giriş: 07.04.2026`
+  final String hireDateLine;
+
+  /// Örn. `Çıkış: 20.07.2026`
+  final String leaveDateLine;
+
+  List<String> get employmentDateLines => [
+        if (hireDateLine.isNotEmpty) hireDateLine,
+        if (leaveDateLine.isNotEmpty) leaveDateLine,
+      ];
 }
 
 /// Aktif proje puantajından günlük / haftalık / aylık rapor tablosu üretir.
@@ -176,7 +185,8 @@ abstract final class PuantajReportBuilder {
           date: date,
           recorded: a?.status,
         );
-        final emp = AttendanceDisplay.employmentDatesLabel(p);
+        final hireLine = AttendanceDisplay.hireDateLine(p);
+        final leaveLine = AttendanceDisplay.leaveDateLine(p);
         final hireLabel = _employmentPart(p.hireDate);
         final leaveLabel = _employmentPart(p.leaveDate);
         if (status == null) {
@@ -198,7 +208,8 @@ abstract final class PuantajReportBuilder {
               name: p.name,
               statuses: const [null],
               team: p.team,
-              employmentDates: emp,
+              hireDateLine: hireLine,
+              leaveDateLine: leaveLine,
             ),
           );
           continue;
@@ -229,7 +240,8 @@ abstract final class PuantajReportBuilder {
             overtime: _fmtNum(ot),
             yevmiye: _fmtNum(yev),
             note: a?.note ?? '',
-            employmentDates: emp,
+            hireDateLine: hireLine,
+            leaveDateLine: leaveLine,
           ),
         );
       }
@@ -305,7 +317,8 @@ abstract final class PuantajReportBuilder {
         final rowStatusCounts = <AttendanceStatus, int>{
           for (final s in AttendanceStatus.values) s: 0,
         };
-        final emp = AttendanceDisplay.employmentDatesLabel(p);
+        final hireLine = AttendanceDisplay.hireDateLine(p);
+        final leaveLine = AttendanceDisplay.leaveDateLine(p);
         final hireLabel = _employmentPart(p.hireDate);
         final leaveLabel = _employmentPart(p.leaveDate);
         for (var di = 0; di < days.length; di++) {
@@ -355,7 +368,8 @@ abstract final class PuantajReportBuilder {
             team: p.team,
             totalLabel: generalTotal > 0 ? '$generalTotal' : '–',
             yevmiye: _fmtNum(rowAg),
-            employmentDates: emp,
+            hireDateLine: hireLine,
+            leaveDateLine: leaveLine,
           ),
         );
       }
