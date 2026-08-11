@@ -544,38 +544,32 @@ final activeUnitConsumptionsProvider = Provider<List<UnitConsumption>>((ref) {
       .toList();
 });
 
-/// Ana sayfa KPI özeti — saha için onay / teslim odaklı.
+/// Ana sayfa KPI özeti — onay akışı (3 kart).
 class HomeKpis {
   const HomeKpis({
     required this.pendingApprovals,
     required this.approved,
-    required this.incoming,
     required this.delivered,
   });
 
-  /// Onay zinciri tamamlanmamış talepler.
+  /// Onay Bekleyen.
   final int pendingApprovals;
 
-  /// Onaylı, teslim bekleyen talepler.
+  /// Onaylandı.
   final int approved;
 
-  /// Gelen / irsaliye kayıtları.
-  final int incoming;
-
-  /// Teslim alındı işaretli talepler.
+  /// Teslim Edildi.
   final int delivered;
 }
 
 final homeKpisProvider = Provider<HomeKpis>((ref) {
   final requests = ref.watch(activeRequestsProvider);
-  final deliveries = ref.watch(activeDeliveriesProvider);
 
   return HomeKpis(
     pendingApprovals:
         requests.where((r) => r.status == RequestStatus.pending).length,
     approved:
         requests.where((r) => r.status == RequestStatus.approved).length,
-    incoming: deliveries.length,
     delivered:
         requests.where((r) => r.status == RequestStatus.delivered).length,
   );

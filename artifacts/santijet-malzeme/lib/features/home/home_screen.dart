@@ -10,7 +10,7 @@ import '../../core/widgets/santijet_header.dart';
 import '../../data/providers/app_data_provider.dart';
 import '../projects/widgets/project_switcher.dart';
 
-/// Ana sayfa — onay ve teslim odaklı özet kartları.
+/// Ana sayfa — Onay Bekleyen · Onaylandı · Teslim Edildi (yan yana).
 class HomeScreen extends ConsumerWidget {
   const HomeScreen({super.key});
 
@@ -76,48 +76,35 @@ class HomeScreen extends ConsumerWidget {
                 AppSpacing.md,
                 AppSpacing.xxl,
               ),
-              sliver: SliverList(
-                delegate: SliverChildListDelegate([
-                  Row(
-                    children: [
-                      Expanded(
-                        child: SJStatCard(
-                          label: 'Bekleyen onay',
-                          value: '${kpis.pendingApprovals}',
-                          onTap: () => context.go(AppRoutes.talep),
-                        ),
+              sliver: SliverToBoxAdapter(
+                child: Row(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Expanded(
+                      child: SJStatCard(
+                        label: 'Onay Bekleyen',
+                        value: '${kpis.pendingApprovals}',
+                        onTap: () => context.go(AppRoutes.talep),
                       ),
-                      const SizedBox(width: AppSpacing.sm),
-                      Expanded(
-                        child: SJStatCard(
-                          label: 'Onaylandı',
-                          value: '${kpis.approved}',
-                          onTap: () => context.go(AppRoutes.talep),
-                        ),
+                    ),
+                    const SizedBox(width: AppSpacing.sm),
+                    Expanded(
+                      child: SJStatCard(
+                        label: 'Onaylandı',
+                        value: '${kpis.approved}',
+                        onTap: () => context.go(AppRoutes.talep),
                       ),
-                    ],
-                  ),
-                  const SizedBox(height: AppSpacing.sm),
-                  Row(
-                    children: [
-                      Expanded(
-                        child: SJStatCard(
-                          label: 'Gelen',
-                          value: '${kpis.incoming}',
-                          onTap: () => context.go(AppRoutes.teslim),
-                        ),
+                    ),
+                    const SizedBox(width: AppSpacing.sm),
+                    Expanded(
+                      child: SJStatCard(
+                        label: 'Teslim Edildi',
+                        value: '${kpis.delivered}',
+                        onTap: () => context.go(AppRoutes.talep),
                       ),
-                      const SizedBox(width: AppSpacing.sm),
-                      Expanded(
-                        child: SJStatCard(
-                          label: 'Teslim edildi',
-                          value: '${kpis.delivered}',
-                          onTap: () => context.go(AppRoutes.talep),
-                        ),
-                      ),
-                    ],
-                  ),
-                ]),
+                    ),
+                  ],
+                ),
               ),
             ),
           ],

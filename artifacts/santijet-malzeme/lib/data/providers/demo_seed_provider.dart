@@ -144,6 +144,7 @@ class DemoSeedController {
       required String materialUnit,
       required double rate,
       required String kesifUnit,
+      required MainDiscipline anaGrup,
       String category = '',
     }) =>
         UnitConsumption(
@@ -155,6 +156,7 @@ class DemoSeedController {
           pozNo: pozNo,
           kesifUnit: kesifUnit,
           category: category,
+          anaGrup: anaGrup,
         );
 
     final lines = {for (final l in kesif.lines) l.pozNo: l};
@@ -167,6 +169,7 @@ class DemoSeedController {
           rate: 5,
           kesifUnit: 'm²',
           category: 'Kaplama',
+          anaGrup: lines['Y.19.001']!.anaGrup,
         ),
         forPoz(
           pozNo: 'Y.19.001',
@@ -175,6 +178,7 @@ class DemoSeedController {
           rate: 0.4,
           kesifUnit: 'm²',
           category: 'Kaplama',
+          anaGrup: lines['Y.19.001']!.anaGrup,
         ),
       ],
       if (lines.containsKey('Y.18.045'))
@@ -185,6 +189,7 @@ class DemoSeedController {
           rate: 0.18,
           kesifUnit: 'm²',
           category: 'Boyalar',
+          anaGrup: lines['Y.18.045']!.anaGrup,
         ),
       if (lines.containsKey('Y.25.012'))
         forPoz(
@@ -194,6 +199,7 @@ class DemoSeedController {
           rate: 1.05,
           kesifUnit: 'm²',
           category: 'Yalıtım',
+          anaGrup: lines['Y.25.012']!.anaGrup,
         ),
       if (lines.containsKey('E.12.003'))
         forPoz(
@@ -203,6 +209,7 @@ class DemoSeedController {
           rate: 1.08,
           kesifUnit: 'm',
           category: 'Kablo',
+          anaGrup: lines['E.12.003']!.anaGrup,
         ),
       if (lines.containsKey('E.08.021'))
         forPoz(
@@ -212,6 +219,7 @@ class DemoSeedController {
           rate: 1,
           kesifUnit: 'ad',
           category: 'Aydınlatma',
+          anaGrup: lines['E.08.021']!.anaGrup,
         ),
       if (lines.containsKey('M.04.010'))
         forPoz(
@@ -221,6 +229,7 @@ class DemoSeedController {
           rate: 1.05,
           kesifUnit: 'm',
           category: 'Sıhhi tesisat',
+          anaGrup: lines['M.04.010']!.anaGrup,
         ),
       if (lines.containsKey('M.11.002'))
         forPoz(
@@ -230,6 +239,7 @@ class DemoSeedController {
           rate: 1,
           kesifUnit: 'ad',
           category: 'Yangın',
+          anaGrup: lines['M.11.002']!.anaGrup,
         ),
     ];
 

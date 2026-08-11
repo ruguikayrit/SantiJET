@@ -1,5 +1,7 @@
 import 'package:equatable/equatable.dart';
 
+import '../enums/main_discipline.dart';
+
 /// Hive typeId plan: 13
 /// Birim sarfiyat — 1 birim keşif işi için gereken malzeme miktarı.
 ///
@@ -15,6 +17,7 @@ class UnitConsumption extends Equatable {
     this.kesifUnit = '',
     this.category = '',
     this.notes = '',
+    this.anaGrup = MainDiscipline.insaat,
   });
 
   final String id;
@@ -38,6 +41,9 @@ class UnitConsumption extends Equatable {
   final String category;
   final String notes;
 
+  /// İnşaat / Elektrik / Mekanik gruplama.
+  final MainDiscipline anaGrup;
+
   UnitConsumption copyWith({
     String? id,
     String? projectId,
@@ -48,6 +54,7 @@ class UnitConsumption extends Equatable {
     String? kesifUnit,
     String? category,
     String? notes,
+    MainDiscipline? anaGrup,
   }) {
     return UnitConsumption(
       id: id ?? this.id,
@@ -59,6 +66,7 @@ class UnitConsumption extends Equatable {
       kesifUnit: kesifUnit ?? this.kesifUnit,
       category: category ?? this.category,
       notes: notes ?? this.notes,
+      anaGrup: anaGrup ?? this.anaGrup,
     );
   }
 
@@ -72,6 +80,7 @@ class UnitConsumption extends Equatable {
         'kesifUnit': kesifUnit,
         'category': category,
         'notes': notes,
+        'anaGrup': anaGrup.name,
       };
 
   factory UnitConsumption.fromJson(Map<String, dynamic> json) =>
@@ -85,6 +94,8 @@ class UnitConsumption extends Equatable {
         kesifUnit: json['kesifUnit'] as String? ?? '',
         category: json['category'] as String? ?? '',
         notes: json['notes'] as String? ?? '',
+        anaGrup: MainDiscipline.tryParse(json['anaGrup'] as String?) ??
+            MainDiscipline.insaat,
       );
 
   @override
@@ -98,5 +109,6 @@ class UnitConsumption extends Equatable {
         kesifUnit,
         category,
         notes,
+        anaGrup,
       ];
 }

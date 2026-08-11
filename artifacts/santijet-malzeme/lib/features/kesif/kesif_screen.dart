@@ -20,6 +20,7 @@ import '../../domain/enums/main_discipline.dart';
 import '../../domain/enums/request_status.dart';
 import '../../domain/kesif/material_need_calculator.dart';
 import '../projects/widgets/project_switcher.dart';
+import 'partial_order_sheet.dart';
 
 /// Keşif Malzeme — birim sarfiyatlar × keşif metrajı → malzeme ihtiyacı.
 class KesifScreen extends ConsumerStatefulWidget {
@@ -183,11 +184,13 @@ class _KesifScreenState extends ConsumerState<KesifScreen> {
         (pozOptions.isNotEmpty ? pozOptions.first : '');
     var materialUnit =
         MaterialUnits.dropdownValue(existing?.materialUnit) ?? 'KG';
+    var anaGrup = existing?.anaGrup ?? MainDiscipline.insaat;
     var kesifUnit = existing?.kesifUnit ?? '';
-    if (kesifUnit.isEmpty && kesif != null && pozNo.isNotEmpty) {
+    if (kesif != null && pozNo.isNotEmpty) {
       for (final l in kesif.lines) {
         if (l.pozNo == pozNo) {
-          kesifUnit = l.birim;
+          kesifUnit = kesifUnit.isEmpty ? l.birim : kesifUnit;
+          if (existing == null) anaGrup = l.anaGrup;
           break;
         }
       }
@@ -243,6 +246,7 @@ class _KesifScreenState extends ConsumerState<KesifScreen> {
                               for (final l in kesif.lines) {
                                 if (l.pozNo == v) {
                                   kesifUnit = l.birim;
+                                  anaGrup = l.anaGrup;
                                   break;
                                 }
                               }
@@ -252,6 +256,25 @@ class _KesifScreenState extends ConsumerState<KesifScreen> {
                       ),
                       const SizedBox(height: AppSpacing.sm),
                     ],
+                    Text(
+                      'Disiplin',
+                      style: AppTypography.labelMedium.copyWith(
+                        color: AppColors.textSecondary,
+                      ),
+                    ),
+                    const SizedBox(height: 6),
+                    DropdownButtonFormField<MainDiscipline>(
+                      value: anaGrup,
+                      items: [
+                        for (final d in MainDiscipline.values)
+                          DropdownMenuItem(value: d, child: Text(d.label)),
+                      ],
+                      onChanged: (v) {
+                        if (v == null) return;
+                        setSheet(() => anaGrup = v);
+                      },
+                    ),
+                    const SizedBox(height: AppSpacing.sm),
                     TextField(
                       controller: nameCtrl,
                       decoration: const InputDecoration(labelText: 'Malzeme'),
@@ -333,20 +356,37 @@ class _KesifScreenState extends ConsumerState<KesifScreen> {
       kesifUnit: kesifUnit,
       category: existing?.category ?? '',
       notes: existing?.notes ?? '',
+      anaGrup: anaGrup,
     );
     ref.read(unitConsumptionsProvider.notifier).upsert(item);
   }
 
-  void _addNeedsToRequest({
+  Future<void> _addNeedsToRequest({
     required List<MaterialNeed> needs,
     required KesifSnapshot kesif,
     required String projectId,
-  }) {
+  }) async {
     final selected = needs.where((n) => _selectedNeeds.contains(n.id)).toList();
     if (selected.isEmpty) return;
 
+    final qtyByNeed = await showModalBottomSheet<Map<String, double>>(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: AppColors.surfaceElevated,
+      builder: (ctx) => PartialOrderSheet(needs: selected),
+    );
+    if (qtyByNeed == null || !mounted) return;
+
     final now = DateTime.now();
     for (final n in selected) {
+      final qty = qtyByNeed[n.id];
+      if (qty == null || qty <= 0) continue;
+      final pct = n.quantity > 0
+          ? ((qty / n.quantity) * 100).clamp(0, 999)
+          : 100.0;
+      final pctLabel = pct == pct.roundToDouble()
+          ? pct.toInt().toString()
+          : pct.toStringAsFixed(0);
       ref.read(requestsProvider.notifier).add(
             MaterialRequest(
               id: IdGen.make('req'),
@@ -356,12 +396,14 @@ class _KesifScreenState extends ConsumerState<KesifScreen> {
                   ? n.consumption.category
                   : n.kesifLine.altGrup,
               unit: n.materialUnit,
-              quantity: n.quantity,
+              quantity: qty,
               requestDate: now,
               requestedBy: 'Saha',
               status: RequestStatus.pending,
               note:
-                  '${n.pozNo} · metraj ${_fmt(n.metraj)} ${n.kesifLine.birim}'
+                  '${n.pozNo} · %$pctLabel sipariş'
+                  ' (${_fmt(qty)} / ${_fmt(n.quantity)} ${n.materialUnit})'
+                  ' · metraj ${_fmt(n.metraj)} ${n.kesifLine.birim}'
                   ' × ${_fmt(n.rate)}',
               pozCode: n.pozNo,
               kesifLineId: n.kesifLine.id,
@@ -371,6 +413,7 @@ class _KesifScreenState extends ConsumerState<KesifScreen> {
     }
 
     setState(() => _selectedNeeds.clear());
+    if (!mounted) return;
     context.go(AppRoutes.talep);
   }
 
@@ -395,6 +438,15 @@ class _BirimSarfiyatlarPane extends StatelessWidget {
   final ValueChanged<UnitConsumption> onEdit;
   final ValueChanged<UnitConsumption> onDelete;
 
+  MainDiscipline _disciplineOf(UnitConsumption c) {
+    if (kesif != null && c.pozNo.isNotEmpty) {
+      for (final l in kesif!.lines) {
+        if (l.pozNo == c.pozNo) return l.anaGrup;
+      }
+    }
+    return c.anaGrup;
+  }
+
   @override
   Widget build(BuildContext context) {
     if (consumptions.isEmpty) {
@@ -417,64 +469,80 @@ class _BirimSarfiyatlarPane extends StatelessWidget {
       return poz;
     }
 
-    return ListView.builder(
+    final grouped = <MainDiscipline, List<UnitConsumption>>{};
+    for (final c in consumptions) {
+      grouped.putIfAbsent(_disciplineOf(c), () => []).add(c);
+    }
+    final order =
+        MainDiscipline.values.where((d) => grouped.containsKey(d)).toList();
+
+    return ListView(
       padding: EdgeInsets.fromLTRB(
         AppSpacing.md,
         0,
         AppSpacing.md,
         SJFab.scrollClearanceOf(context),
       ),
-      itemCount: consumptions.length,
-      itemBuilder: (context, index) {
-        final c = consumptions[index];
-        return Padding(
-          padding: const EdgeInsets.only(bottom: AppSpacing.xs),
-          child: SJCard(
-            onTap: () => onEdit(c),
-            child: Row(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        c.materialName,
-                        style: AppTypography.titleMedium.copyWith(
-                          color: AppColors.textPrimary,
-                        ),
-                      ),
-                      const SizedBox(height: 2),
-                      if (c.pozNo.isNotEmpty)
-                        Text(
-                          pozLabel(c.pozNo),
-                          style: AppTypography.bodySmall.copyWith(
-                            color: AppColors.textSecondary,
-                          ),
-                          maxLines: 2,
-                          overflow: TextOverflow.ellipsis,
-                        ),
-                      const SizedBox(height: 4),
-                      Text(
-                        '${_fmt(c.rate)} ${c.materialUnit}'
-                        '${c.kesifUnit.isEmpty ? '' : ' / 1 ${c.kesifUnit}'}',
-                        style: AppTypography.labelLarge.copyWith(
-                          color: AppColors.electricBlueLight,
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-                IconButton(
-                  tooltip: 'Sil',
-                  onPressed: () => onDelete(c),
-                  icon: const Icon(Icons.delete_outline, size: 20),
-                ),
-              ],
+      children: [
+        for (final discipline in order) ...[
+          Text(
+            discipline.label,
+            style: AppTypography.titleMedium.copyWith(
+              color: AppColors.electricBlueLight,
             ),
           ),
-        );
-      },
+          const SizedBox(height: AppSpacing.xs),
+          for (final c in grouped[discipline]!)
+            Padding(
+              padding: const EdgeInsets.only(bottom: AppSpacing.xs),
+              child: SJCard(
+                onTap: () => onEdit(c),
+                child: Row(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            c.materialName,
+                            style: AppTypography.titleMedium.copyWith(
+                              color: AppColors.textPrimary,
+                            ),
+                          ),
+                          const SizedBox(height: 2),
+                          if (c.pozNo.isNotEmpty)
+                            Text(
+                              pozLabel(c.pozNo),
+                              style: AppTypography.bodySmall.copyWith(
+                                color: AppColors.textSecondary,
+                              ),
+                              maxLines: 2,
+                              overflow: TextOverflow.ellipsis,
+                            ),
+                          const SizedBox(height: 4),
+                          Text(
+                            '${_fmt(c.rate)} ${c.materialUnit}'
+                            '${c.kesifUnit.isEmpty ? '' : ' / 1 ${c.kesifUnit}'}',
+                            style: AppTypography.labelLarge.copyWith(
+                              color: AppColors.electricBlueLight,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                    IconButton(
+                      tooltip: 'Sil',
+                      onPressed: () => onDelete(c),
+                      icon: const Icon(Icons.delete_outline, size: 20),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+          const SizedBox(height: AppSpacing.md),
+        ],
+      ],
     );
   }
 
