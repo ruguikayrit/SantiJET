@@ -1478,8 +1478,15 @@ class _PuantajExportSheet extends StatefulWidget {
 
 class _PuantajExportSheetState extends State<_PuantajExportSheet> {
   late PuantajReportPeriod _period = widget.initialPeriod;
+  late Set<String> _selectedPersonIds;
   bool _busy = false;
   String? _error;
+
+  @override
+  void initState() {
+    super.initState();
+    _selectedPersonIds = _eligiblePeople.map((p) => p.id).toSet();
+  }
 
   List<String> get _periodDays => PuantajDate.daysForReportPeriod(
         anchorDate: widget.anchorDate,
@@ -1489,12 +1496,32 @@ class _PuantajExportSheetState extends State<_PuantajExportSheet> {
 
   /// PDF/Excel ile ekran aynı kural:
   /// günlük/haftalık → çıkış gününe kadar; aylık → çıkış yaptığı ay.
-  List<Person> get _exportPeople {
+  List<Person> get _eligiblePeople {
     final list = widget.allProjectPeople
         .where((p) => p.wasEmployedInPeriod(_periodDays))
         .toList()
       ..sort((a, b) => a.name.compareTo(b.name));
     return list;
+  }
+
+  /// Varsayılan: tüm uygun personel. Özel seçimde yalnızca işaretlenenler.
+  List<Person> get _exportPeople {
+    final selected = _selectedPersonIds;
+    return _eligiblePeople.where((p) => selected.contains(p.id)).toList();
+  }
+
+  bool get _allSelected {
+    final eligible = _eligiblePeople;
+    return eligible.isNotEmpty &&
+        eligible.every((p) => _selectedPersonIds.contains(p.id));
+  }
+
+  String get _personSelectionLabel {
+    final total = _eligiblePeople.length;
+    final count = _exportPeople.length;
+    if (total == 0) return 'Personel yok';
+    if (_allSelected) return 'Tümü ($total kişi)';
+    return '$count / $total kişi seçili';
   }
 
   String get _rangeHint {
@@ -1508,8 +1535,50 @@ class _PuantajExportSheetState extends State<_PuantajExportSheet> {
     }
   }
 
+  void _setPeriod(PuantajReportPeriod period) {
+    setState(() {
+      _period = period;
+      final available = _eligiblePeople.map((p) => p.id).toSet();
+      _selectedPersonIds = _selectedPersonIds.intersection(available);
+      // Dönem değişince uygun kimse kalmazsa yine tümünü seç.
+      if (_selectedPersonIds.isEmpty) {
+        _selectedPersonIds = available;
+      }
+      _error = null;
+    });
+  }
+
+  void _selectAllPeople() {
+    setState(() {
+      _selectedPersonIds = _eligiblePeople.map((p) => p.id).toSet();
+      _error = null;
+    });
+  }
+
+  void _clearPeople() {
+    setState(() {
+      _selectedPersonIds = {};
+      _error = null;
+    });
+  }
+
+  void _togglePerson(String id, bool selected) {
+    setState(() {
+      if (selected) {
+        _selectedPersonIds.add(id);
+      } else {
+        _selectedPersonIds.remove(id);
+      }
+      _error = null;
+    });
+  }
+
   Future<void> _export({required bool pdf}) async {
     if (_busy) return;
+    if (_exportPeople.isEmpty) {
+      setState(() => _error = 'En az bir personel seçin.');
+      return;
+    }
     setState(() {
       _busy = true;
       _error = null;
@@ -1552,6 +1621,7 @@ class _PuantajExportSheetState extends State<_PuantajExportSheet> {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
+    final eligible = _eligiblePeople;
     return Column(
       mainAxisSize: MainAxisSize.min,
       crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -1586,8 +1656,106 @@ class _PuantajExportSheetState extends State<_PuantajExportSheet> {
             ),
           ],
           selected: {_period},
-          onSelectionChanged:
-              _busy ? null : (s) => setState(() => _period = s.first),
+          onSelectionChanged: _busy ? null : (s) => _setPeriod(s.first),
+        ),
+        const SizedBox(height: AppSpacing.md),
+        Text('Personel', style: theme.textTheme.labelLarge),
+        const SizedBox(height: AppSpacing.xs),
+        Material(
+          color: theme.colorScheme.surface,
+          shape: RoundedRectangleBorder(
+            borderRadius: AppRadii.md,
+            side: BorderSide(color: theme.dividerColor),
+          ),
+          clipBehavior: Clip.antiAlias,
+          child: Theme(
+            data: theme.copyWith(dividerColor: Colors.transparent),
+            child: ExpansionTile(
+              tilePadding: const EdgeInsets.symmetric(horizontal: AppSpacing.sm),
+              childrenPadding: EdgeInsets.zero,
+              title: Text(
+                _personSelectionLabel,
+                style: theme.textTheme.bodyMedium?.copyWith(
+                  fontWeight: FontWeight.w600,
+                ),
+              ),
+              subtitle: Text(
+                _allSelected
+                    ? 'Standart: tüm personel'
+                    : 'Özel seçim: yalnızca işaretlenenler',
+                style: theme.textTheme.labelSmall?.copyWith(
+                  color: theme.colorScheme.onSurfaceVariant,
+                ),
+              ),
+              children: [
+                if (eligible.isEmpty)
+                  Padding(
+                    padding: const EdgeInsets.fromLTRB(
+                      AppSpacing.sm,
+                      0,
+                      AppSpacing.sm,
+                      AppSpacing.sm,
+                    ),
+                    child: Text(
+                      'Bu dönemde çıktıya uygun personel yok.',
+                      style: theme.textTheme.bodySmall?.copyWith(
+                        color: theme.colorScheme.onSurfaceVariant,
+                      ),
+                    ),
+                  )
+                else ...[
+                  Padding(
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: AppSpacing.xs,
+                    ),
+                    child: Row(
+                      children: [
+                        TextButton(
+                          onPressed: _busy ? null : _selectAllPeople,
+                          child: const Text('Tümünü seç'),
+                        ),
+                        TextButton(
+                          onPressed: _busy ? null : _clearPeople,
+                          child: const Text('Temizle'),
+                        ),
+                      ],
+                    ),
+                  ),
+                  ConstrainedBox(
+                    constraints: BoxConstraints(
+                      maxHeight: MediaQuery.sizeOf(context).height * 0.28,
+                    ),
+                    child: ListView.builder(
+                      shrinkWrap: true,
+                      itemCount: eligible.length,
+                      itemBuilder: (context, index) {
+                        final person = eligible[index];
+                        final checked =
+                            _selectedPersonIds.contains(person.id);
+                        final subtitle = person.profession.trim().isEmpty
+                            ? null
+                            : person.profession;
+                        return CheckboxListTile(
+                          dense: true,
+                          contentPadding: const EdgeInsets.symmetric(
+                            horizontal: AppSpacing.sm,
+                          ),
+                          controlAffinity: ListTileControlAffinity.leading,
+                          value: checked,
+                          onChanged: _busy
+                              ? null
+                              : (v) =>
+                                  _togglePerson(person.id, v ?? false),
+                          title: Text(person.name),
+                          subtitle: subtitle == null ? null : Text(subtitle),
+                        );
+                      },
+                    ),
+                  ),
+                ],
+              ],
+            ),
+          ),
         ),
         const SizedBox(height: AppSpacing.md),
         Text('Format', style: theme.textTheme.labelLarge),
