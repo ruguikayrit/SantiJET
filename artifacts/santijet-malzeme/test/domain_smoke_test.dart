@@ -176,4 +176,61 @@ void main() {
     expect(needs[0].quantity, 2100);
     expect(needs[1].quantity, closeTo(168, 0.001));
   });
+
+  test('kısmi talep sonrası kalan miktar doğru hesaplanır', () {
+    final need = MaterialNeed(
+      id: 'u1|a',
+      kesifLine: const KesifLine(
+        id: 'a',
+        pozNo: 'Y.19.001',
+        tanim: 'Seramik',
+        birim: 'm²',
+        miktar: 420,
+        anaGrup: MainDiscipline.insaat,
+      ),
+      consumption: const UnitConsumption(
+        id: 'u1',
+        projectId: 'p1',
+        materialName: 'Yapıştırıcı C2TE',
+        materialUnit: 'KG',
+        rate: 5,
+        pozNo: 'Y.19.001',
+      ),
+      quantity: 2100,
+    );
+
+    final requests = [
+      MaterialRequest(
+        id: 'r1',
+        projectId: 'p1',
+        name: 'Yapıştırıcı C2TE',
+        unit: 'KG',
+        quantity: 525, // %25
+        kesifLineId: 'a',
+        unitConsumptionId: 'u1',
+        status: RequestStatus.delivered,
+      ),
+      MaterialRequest(
+        id: 'r2',
+        projectId: 'p1',
+        name: 'Yapıştırıcı C2TE',
+        unit: 'KG',
+        quantity: 100,
+        kesifLineId: 'a',
+        unitConsumptionId: 'u1',
+        status: RequestStatus.rejected,
+      ),
+    ];
+
+    final bal = computeMaterialNeedBalances(
+      needs: [need],
+      requests: requests,
+    ).single;
+    expect(bal.orderedQty, 525);
+    expect(bal.remainingQty, 1575);
+    expect(bal.isFullyOrdered, isFalse);
+
+    // %25 of remaining = 393.75
+    expect(bal.remainingQty * 0.25, closeTo(393.75, 0.001));
+  });
 }

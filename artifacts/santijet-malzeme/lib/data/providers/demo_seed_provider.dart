@@ -296,6 +296,7 @@ class DemoSeedController {
         receivedBy: receivedBy,
         kesifLineId: n.kesifLine.id,
         kesifSnapshotId: kesif.id,
+        unitConsumptionId: n.consumption.id,
       );
     }
 
@@ -306,10 +307,10 @@ class DemoSeedController {
           status: RequestStatus.pending,
           approvals: const RequestApprovals(sef: true),
           requestedBy: 'Ahmet Yılmaz',
-          note: 'Blok A ıslak hacimler',
+          note: 'Blok A ıslak hacimler — kısmi %25 demo',
           usageLocation: 'Blok A',
           daysAgo: 2,
-        ),
+        ).copyWith(quantity: needs[0].quantity * 0.25),
       if (needs.length > 1)
         reqFromNeed(
           needs[1],

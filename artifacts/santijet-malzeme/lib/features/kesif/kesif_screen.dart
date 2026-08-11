@@ -13,6 +13,7 @@ import '../../core/theme/app_spacing.dart';
 import '../../core/theme/app_typography.dart';
 import '../../core/utils/id_gen.dart';
 import '../../core/widgets/santijet_header.dart';
+import '../../core/widgets/swipe_to_delete_row.dart';
 import '../../data/providers/app_data_provider.dart';
 import '../../domain/catalogs/material_units.dart';
 import '../../domain/entities/entities.dart';
@@ -68,6 +69,12 @@ class _KesifScreenState extends ConsumerState<KesifScreen> {
             lines: kesif.lines,
             consumptions: consumptions,
           );
+    final requests = ref.watch(activeRequestsProvider);
+    final balances = computeMaterialNeedBalances(
+      needs: needs,
+      requests: requests,
+    );
+    final balanceById = {for (final b in balances) b.need.id: b};
 
     return Scaffold(
       body: SafeArea(
@@ -96,7 +103,7 @@ class _KesifScreenState extends ConsumerState<KesifScreen> {
                       kesif: kesif,
                       onAdd: () => _openAddSarfiyat(project.id, kesif),
                       onEdit: (c) => _openEditSarfiyat(c, kesif),
-                      onDelete: (c) {
+                      onDelete: (c) async {
                         ref
                             .read(unitConsumptionsProvider.notifier)
                             .delete(c.id);
@@ -105,8 +112,11 @@ class _KesifScreenState extends ConsumerState<KesifScreen> {
                   : _KesifListesiPane(
                       kesif: kesif,
                       needs: needs,
+                      balanceById: balanceById,
                       selected: _selectedNeeds,
                       onToggle: (id) {
+                        final bal = balanceById[id];
+                        if (bal != null && bal.isFullyOrdered) return;
                         setState(() {
                           if (_selectedNeeds.contains(id)) {
                             _selectedNeeds.remove(id);
@@ -126,7 +136,7 @@ class _KesifScreenState extends ConsumerState<KesifScreen> {
                     label: 'Talebe ekle (${_selectedNeeds.length})',
                     expanded: true,
                     onPressed: () => _addNeedsToRequest(
-                      needs: needs,
+                      balances: balances,
                       kesif: kesif,
                       projectId: project.id,
                     ),
@@ -362,31 +372,47 @@ class _KesifScreenState extends ConsumerState<KesifScreen> {
   }
 
   Future<void> _addNeedsToRequest({
-    required List<MaterialNeed> needs,
+    required List<MaterialNeedBalance> balances,
     required KesifSnapshot kesif,
     required String projectId,
   }) async {
-    final selected = needs.where((n) => _selectedNeeds.contains(n.id)).toList();
+    final selected = balances
+        .where((b) => _selectedNeeds.contains(b.need.id))
+        .toList();
     if (selected.isEmpty) return;
+
+    final orderable = selected.where((b) => !b.isFullyOrdered).toList();
+    if (orderable.isEmpty) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Seçilen malzemelerin tamamı daha önce talep edildi.'),
+        ),
+      );
+      return;
+    }
 
     final qtyByNeed = await showModalBottomSheet<Map<String, double>>(
       context: context,
       isScrollControlled: true,
       backgroundColor: AppColors.surfaceElevated,
-      builder: (ctx) => PartialOrderSheet(needs: selected),
+      builder: (ctx) => PartialOrderSheet(balances: orderable),
     );
     if (qtyByNeed == null || !mounted) return;
 
     final now = DateTime.now();
-    for (final n in selected) {
+    for (final b in orderable) {
+      final n = b.need;
       final qty = qtyByNeed[n.id];
       if (qty == null || qty <= 0) continue;
-      final pct = n.quantity > 0
-          ? ((qty / n.quantity) * 100).clamp(0, 999)
+      final capped = qty > b.remainingQty ? b.remainingQty : qty;
+      if (capped <= 0) continue;
+      final pctOfRemaining = b.remainingQty > 0
+          ? ((capped / b.remainingQty) * 100)
           : 100.0;
-      final pctLabel = pct == pct.roundToDouble()
-          ? pct.toInt().toString()
-          : pct.toStringAsFixed(0);
+      final pctLabel = pctOfRemaining == pctOfRemaining.roundToDouble()
+          ? pctOfRemaining.toInt().toString()
+          : pctOfRemaining.toStringAsFixed(0);
       ref.read(requestsProvider.notifier).add(
             MaterialRequest(
               id: IdGen.make('req'),
@@ -396,18 +422,19 @@ class _KesifScreenState extends ConsumerState<KesifScreen> {
                   ? n.consumption.category
                   : n.kesifLine.altGrup,
               unit: n.materialUnit,
-              quantity: qty,
+              quantity: capped,
               requestDate: now,
               requestedBy: 'Saha',
               status: RequestStatus.pending,
               note:
-                  '${n.pozNo} · %$pctLabel sipariş'
-                  ' (${_fmt(qty)} / ${_fmt(n.quantity)} ${n.materialUnit})'
-                  ' · metraj ${_fmt(n.metraj)} ${n.kesifLine.birim}'
-                  ' × ${_fmt(n.rate)}',
+                  '${n.pozNo} · kalanın %$pctLabel\'i'
+                  ' (${_fmt(capped)} / ${_fmt(b.remainingQty)} kalan'
+                  ' · toplam ${_fmt(b.fullQty)}'
+                  ' · önce ${_fmt(b.orderedQty)})',
               pozCode: n.pozNo,
               kesifLineId: n.kesifLine.id,
               kesifSnapshotId: kesif.id,
+              unitConsumptionId: n.consumption.id,
             ),
           );
     }
@@ -436,7 +463,7 @@ class _BirimSarfiyatlarPane extends StatelessWidget {
   final KesifSnapshot? kesif;
   final VoidCallback onAdd;
   final ValueChanged<UnitConsumption> onEdit;
-  final ValueChanged<UnitConsumption> onDelete;
+  final Future<void> Function(UnitConsumption) onDelete;
 
   MainDiscipline _disciplineOf(UnitConsumption c) {
     if (kesif != null && c.pozNo.isNotEmpty) {
@@ -493,50 +520,45 @@ class _BirimSarfiyatlarPane extends StatelessWidget {
           ),
           const SizedBox(height: AppSpacing.xs),
           for (final c in grouped[discipline]!)
-            Padding(
-              padding: const EdgeInsets.only(bottom: AppSpacing.xs),
-              child: SJCard(
-                onTap: () => onEdit(c),
-                child: Row(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Expanded(
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text(
-                            c.materialName,
-                            style: AppTypography.titleMedium.copyWith(
-                              color: AppColors.textPrimary,
-                            ),
-                          ),
-                          const SizedBox(height: 2),
-                          if (c.pozNo.isNotEmpty)
-                            Text(
-                              pozLabel(c.pozNo),
-                              style: AppTypography.bodySmall.copyWith(
-                                color: AppColors.textSecondary,
-                              ),
-                              maxLines: 2,
-                              overflow: TextOverflow.ellipsis,
-                            ),
-                          const SizedBox(height: 4),
-                          Text(
-                            '${_fmt(c.rate)} ${c.materialUnit}'
-                            '${c.kesifUnit.isEmpty ? '' : ' / 1 ${c.kesifUnit}'}',
-                            style: AppTypography.labelLarge.copyWith(
-                              color: AppColors.electricBlueLight,
-                            ),
-                          ),
-                        ],
+            SwipeToDeleteRow(
+              itemKey: ValueKey('ucn-${c.id}'),
+              bottomMargin: 4,
+              title: 'Sarfiyatı sil',
+              message: '"${c.materialName}" birim sarfiyatı silinsin mi?',
+              onDelete: () => onDelete(c),
+              child: Padding(
+                padding: const EdgeInsets.only(bottom: AppSpacing.xs),
+                child: SJCard(
+                  onTap: () => onEdit(c),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        c.materialName,
+                        style: AppTypography.titleMedium.copyWith(
+                          color: AppColors.textPrimary,
+                        ),
                       ),
-                    ),
-                    IconButton(
-                      tooltip: 'Sil',
-                      onPressed: () => onDelete(c),
-                      icon: const Icon(Icons.delete_outline, size: 20),
-                    ),
-                  ],
+                      const SizedBox(height: 2),
+                      if (c.pozNo.isNotEmpty)
+                        Text(
+                          pozLabel(c.pozNo),
+                          style: AppTypography.bodySmall.copyWith(
+                            color: AppColors.textSecondary,
+                          ),
+                          maxLines: 2,
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                      const SizedBox(height: 4),
+                      Text(
+                        '${_fmt(c.rate)} ${c.materialUnit}'
+                        '${c.kesifUnit.isEmpty ? '' : ' / 1 ${c.kesifUnit}'}',
+                        style: AppTypography.labelLarge.copyWith(
+                          color: AppColors.electricBlueLight,
+                        ),
+                      ),
+                    ],
+                  ),
                 ),
               ),
             ),
@@ -556,12 +578,14 @@ class _KesifListesiPane extends StatelessWidget {
   const _KesifListesiPane({
     required this.kesif,
     required this.needs,
+    required this.balanceById,
     required this.selected,
     required this.onToggle,
   });
 
   final KesifSnapshot? kesif;
   final List<MaterialNeed> needs;
+  final Map<String, MaterialNeedBalance> balanceById;
   final Set<String> selected;
   final ValueChanged<String> onToggle;
 
@@ -634,6 +658,7 @@ class _KesifListesiPane extends StatelessWidget {
               for (final need in needsByLine[line.id] ?? const <MaterialNeed>[])
                 _NeedTile(
                   need: need,
+                  balance: balanceById[need.id],
                   selected: selected.contains(need.id),
                   onToggle: () => onToggle(need.id),
                 ),
@@ -701,49 +726,71 @@ class _KesifMetrajCard extends StatelessWidget {
 class _NeedTile extends StatelessWidget {
   const _NeedTile({
     required this.need,
+    required this.balance,
     required this.selected,
     required this.onToggle,
   });
 
   final MaterialNeed need;
+  final MaterialNeedBalance? balance;
   final bool selected;
   final VoidCallback onToggle;
 
   @override
   Widget build(BuildContext context) {
+    final bal = balance;
+    final done = bal?.isFullyOrdered ?? false;
+    final remaining = bal?.remainingQty ?? need.quantity;
+    final ordered = bal?.orderedQty ?? 0;
+
     return Padding(
       padding: const EdgeInsets.only(
         left: AppSpacing.sm,
         bottom: AppSpacing.xs,
       ),
-      child: SJCard(
-        onTap: onToggle,
-        child: Row(
-          children: [
-            Checkbox(value: selected, onChanged: (_) => onToggle()),
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    need.materialName,
-                    style: AppTypography.bodyMedium.copyWith(
-                      color: AppColors.textPrimary,
-                    ),
-                  ),
-                  const SizedBox(height: 2),
-                  Text(
-                    '${_fmt(need.metraj)} ${need.kesifLine.birim}'
-                    ' × ${_fmt(need.rate)}'
-                    ' = ${_fmt(need.quantity)} ${need.materialUnit}',
-                    style: AppTypography.bodySmall.copyWith(
-                      color: AppColors.textSecondary,
-                    ),
-                  ),
-                ],
+      child: Opacity(
+        opacity: done ? 0.55 : 1,
+        child: SJCard(
+          onTap: done ? null : onToggle,
+          child: Row(
+            children: [
+              Checkbox(
+                value: selected && !done,
+                onChanged: done ? null : (_) => onToggle(),
               ),
-            ),
-          ],
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      need.materialName,
+                      style: AppTypography.bodyMedium.copyWith(
+                        color: AppColors.textPrimary,
+                      ),
+                    ),
+                    const SizedBox(height: 2),
+                    Text(
+                      'Toplam ${_fmt(need.quantity)} ${need.materialUnit}'
+                      ' · talep ${_fmt(ordered)}'
+                      ' · kalan ${_fmt(remaining)}',
+                      style: AppTypography.bodySmall.copyWith(
+                        color: done
+                            ? AppColors.electricBlueLight
+                            : AppColors.textSecondary,
+                      ),
+                    ),
+                    if (done)
+                      Text(
+                        'Tamamı talep edildi',
+                        style: AppTypography.labelSmall.copyWith(
+                          color: AppColors.electricBlueLight,
+                        ),
+                      ),
+                  ],
+                ),
+              ),
+            ],
+          ),
         ),
       ),
     );

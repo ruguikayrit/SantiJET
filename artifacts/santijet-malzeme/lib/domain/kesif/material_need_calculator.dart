@@ -1,5 +1,7 @@
 import '../entities/kesif_line.dart';
+import '../entities/material_request.dart';
 import '../entities/unit_consumption.dart';
+import '../enums/request_status.dart';
 
 /// Keşif metrajı × birim sarfiyat → malzeme ihtiyacı.
 class MaterialNeed {
@@ -15,7 +17,7 @@ class MaterialNeed {
   final KesifLine kesifLine;
   final UnitConsumption consumption;
 
-  /// Hesaplanan malzeme miktarı.
+  /// Hesaplanan toplam malzeme ihtiyacı.
   final double quantity;
 
   String get materialName => consumption.materialName;
@@ -23,6 +25,29 @@ class MaterialNeed {
   double get metraj => kesifLine.miktar;
   double get rate => consumption.rate;
   String get pozNo => kesifLine.pozNo;
+}
+
+/// Toplam ihtiyaç − mevcut talepler = kalan sipariş penceresi.
+class MaterialNeedBalance {
+  const MaterialNeedBalance({
+    required this.need,
+    required this.orderedQty,
+  });
+
+  final MaterialNeed need;
+  final double orderedQty;
+
+  double get fullQty => need.quantity;
+
+  double get remainingQty {
+    final r = fullQty - orderedQty;
+    return r < 0 ? 0 : r;
+  }
+
+  bool get isFullyOrdered => remainingQty <= 1e-9;
+
+  double get orderedPercentOfFull =>
+      fullQty <= 0 ? 0 : (orderedQty / fullQty * 100).clamp(0, 100);
 }
 
 /// Poz eşleşmesiyle ihtiyaç listesi üretir.
@@ -52,4 +77,47 @@ List<MaterialNeed> computeMaterialNeeds({
     }
   }
   return needs;
+}
+
+bool requestMatchesNeed(MaterialRequest request, MaterialNeed need) {
+  if (request.status == RequestStatus.rejected) return false;
+
+  final ucId = request.unitConsumptionId;
+  if (ucId != null && ucId.isNotEmpty) {
+    if (ucId != need.consumption.id) return false;
+    if (request.kesifLineId != null &&
+        request.kesifLineId!.isNotEmpty &&
+        request.kesifLineId != need.kesifLine.id) {
+      return false;
+    }
+    return true;
+  }
+
+  if (request.kesifLineId != need.kesifLine.id) return false;
+  return request.displayName.trim().toLowerCase() ==
+      need.materialName.trim().toLowerCase();
+}
+
+double orderedQuantityForNeed(
+  MaterialNeed need,
+  Iterable<MaterialRequest> requests,
+) {
+  var sum = 0.0;
+  for (final r in requests) {
+    if (requestMatchesNeed(r, need)) sum += r.quantity;
+  }
+  return sum;
+}
+
+List<MaterialNeedBalance> computeMaterialNeedBalances({
+  required List<MaterialNeed> needs,
+  required List<MaterialRequest> requests,
+}) {
+  return [
+    for (final n in needs)
+      MaterialNeedBalance(
+        need: n,
+        orderedQty: orderedQuantityForNeed(n, requests),
+      ),
+  ];
 }

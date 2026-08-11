@@ -23,6 +23,7 @@ class MaterialRequest extends Equatable {
     this.receivedBy = '',
     this.kesifLineId,
     this.kesifSnapshotId,
+    this.unitConsumptionId,
     /// Geriye dönük PDF/çoklu satır; kart UI RN tek kalem kullanır.
     this.lines = const [],
     /// Eski alan — [name] ile senkron (JSON uyumu).
@@ -45,6 +46,9 @@ class MaterialRequest extends Equatable {
   final String receivedBy;
   final String? kesifLineId;
   final String? kesifSnapshotId;
+
+  /// Birim sarfiyat kimliği — kısmi sipariş kalan hesabı için.
+  final String? unitConsumptionId;
   final List<MaterialRequestLine> lines;
   final String title;
 
@@ -67,6 +71,7 @@ class MaterialRequest extends Equatable {
     String? receivedBy,
     String? kesifLineId,
     String? kesifSnapshotId,
+    String? unitConsumptionId,
     List<MaterialRequestLine>? lines,
     String? title,
   }) {
@@ -87,6 +92,7 @@ class MaterialRequest extends Equatable {
       receivedBy: receivedBy ?? this.receivedBy,
       kesifLineId: kesifLineId ?? this.kesifLineId,
       kesifSnapshotId: kesifSnapshotId ?? this.kesifSnapshotId,
+      unitConsumptionId: unitConsumptionId ?? this.unitConsumptionId,
       lines: lines ?? this.lines,
       title: title ?? this.title,
     );
@@ -109,6 +115,7 @@ class MaterialRequest extends Equatable {
         'receivedBy': receivedBy,
         'kesifLineId': kesifLineId,
         'kesifSnapshotId': kesifSnapshotId,
+        'unitConsumptionId': unitConsumptionId,
         'lines': lines.map((e) => e.toJson()).toList(),
         'title': title.isNotEmpty ? title : name,
       };
@@ -157,6 +164,7 @@ class MaterialRequest extends Equatable {
       receivedBy: json['receivedBy'] as String? ?? '',
       kesifLineId: json['kesifLineId'] as String? ?? first?.kesifLineId,
       kesifSnapshotId: json['kesifSnapshotId'] as String?,
+      unitConsumptionId: json['unitConsumptionId'] as String?,
       lines: lines,
       title: legacyTitle,
     );
@@ -180,6 +188,7 @@ class MaterialRequest extends Equatable {
         receivedBy,
         kesifLineId,
         kesifSnapshotId,
+        unitConsumptionId,
         lines,
       ];
 }
