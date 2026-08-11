@@ -10,7 +10,6 @@ abstract final class YevmiyeCalculator {
   static List<String> teamNames(List<Person> people) {
     final set = <String>{};
     for (final p in people) {
-      if (!p.active) continue;
       final t = p.team.trim();
       if (t.isNotEmpty) set.add(t);
     }
@@ -31,7 +30,7 @@ abstract final class YevmiyeCalculator {
 
     final memberIds = <String>{
       for (final p in people)
-        if (p.active && p.team.trim() == team) p.id,
+        if (p.team.trim() == team) p.id,
     };
     if (memberIds.isEmpty) return 0;
 
@@ -45,11 +44,9 @@ abstract final class YevmiyeCalculator {
     return sum;
   }
 
-  /// Ekipteki kişi sayısı (aktif personel).
+  /// Ekipteki kişi sayısı.
   static int teamHeadcount(List<Person> people, String teamName) {
     final team = teamName.trim();
-    return people
-        .where((p) => p.active && p.team.trim() == team)
-        .length;
+    return people.where((p) => p.team.trim() == team).length;
   }
 }

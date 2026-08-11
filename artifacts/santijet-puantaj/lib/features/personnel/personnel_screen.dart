@@ -684,17 +684,6 @@ class _PersonTile extends StatelessWidget {
                     ],
                   ),
                 ),
-                if (!p.active)
-                  Padding(
-                    padding: const EdgeInsets.only(right: AppSpacing.xxs),
-                    child: Text(
-                      'Pasif',
-                      style: theme.textTheme.labelSmall?.copyWith(
-                        color: theme.colorScheme.error,
-                        height: 1,
-                      ),
-                    ),
-                  ),
                 if (!selectionMode)
                   IconButton(
                     icon: const Icon(Icons.delete_outline, size: 20),
@@ -924,7 +913,6 @@ class _PersonEditorSheetState extends ConsumerState<_PersonEditorSheet> {
   String _leaveDate = '';
   String _profession = '';
   String _team = '';
-  bool _active = true;
 
   @override
   void initState() {
@@ -941,7 +929,6 @@ class _PersonEditorSheetState extends ConsumerState<_PersonEditorSheet> {
     _leaveDate = e?.leaveDate ?? '';
     _profession = e?.profession ?? '';
     _team = e?.team ?? '';
-    _active = e?.active ?? true;
   }
 
   @override
@@ -994,12 +981,6 @@ class _PersonEditorSheetState extends ConsumerState<_PersonEditorSheet> {
         _hireDate = _storeDate(picked);
       } else {
         _leaveDate = _storeDate(picked);
-        final now = DateTime.now();
-        final today = DateTime(now.year, now.month, now.day);
-        final leaveDay = DateTime(picked.year, picked.month, picked.day);
-        if (leaveDay.isBefore(today)) {
-          _active = false;
-        }
       }
     });
   }
@@ -1231,24 +1212,10 @@ class _PersonEditorSheetState extends ConsumerState<_PersonEditorSheet> {
                   ? null
                   : () => setState(() => _leaveDate = ''),
             ),
-            SwitchListTile(
-              contentPadding: EdgeInsets.zero,
-              title: const Text('Aktif'),
-              value: _active,
-              onChanged: (v) => setState(() => _active = v),
-            ),
             FilledButton(
               onPressed: () {
                 final name = _name.text.trim();
                 if (name.isEmpty) return;
-                final leave = _leaveDate.trim();
-                final leaveDay = Person.parseEmploymentDate(leave);
-                final now = DateTime.now();
-                final today = DateTime(now.year, now.month, now.day);
-                // Çıkış gününden sonraki takvim günlerinde otomatik pasif.
-                final active = leaveDay != null && leaveDay.isBefore(today)
-                    ? false
-                    : _active;
                 Navigator.pop(
                   context,
                   Person(
@@ -1264,14 +1231,13 @@ class _PersonEditorSheetState extends ConsumerState<_PersonEditorSheet> {
                     iban: _iban.text.trim().toUpperCase(),
                     bankName: _bankName.text.trim(),
                     hireDate: _hireDate.trim(),
-                    leaveDate: leave,
-                    active: active,
+                    leaveDate: _leaveDate.trim(),
+                    active: true,
                   ),
                 );
               },
               child: const Text('Kaydet'),
-            ),
-            TextButton(
+            ),            TextButton(
               onPressed: () => Navigator.pop(context),
               child: const Text('İptal'),
             ),

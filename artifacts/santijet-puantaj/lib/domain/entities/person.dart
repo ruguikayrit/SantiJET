@@ -70,10 +70,9 @@ class Person extends Equatable {
 
   /// [date] — puantaj günü (`dd.MM.yyyy` veya ISO).
   ///
-  /// Manuel pasif (`active == false`) veya işten çıkıştan sonraki günlerde false.
-  /// Çıkış günü dahil aktiftir; sonraki günlerden itibaren listede görünmez.
+  /// İşe giriş–çıkış takvimine göre: çıkış günü dahil çalışıyor sayılır;
+  /// çıkıştan sonraki günlerde false. Manuel `active` bayrağı kullanılmaz.
   bool isActiveOn(String date) {
-    if (!active) return false;
     final day = parseEmploymentDate(date);
     if (day == null) return true;
 
@@ -85,6 +84,14 @@ class Person extends Equatable {
 
     return true;
   }
+
+  /// Rapor/seçim döneminde listelensin mi?
+  ///
+  /// - Günlük: yalnızca o gün istihdamdaysa (çıkış günü dahil, sonrası hayır)
+  /// - Haftalık: haftada çıkış gününe kadar en az bir gün varsa
+  /// - Aylık: çıkış yaptığı ay (veya çalıştığı ay) günlerinden en az biri varsa
+  bool wasEmployedInPeriod(Iterable<String> dates) =>
+      dates.any(isActiveOn);
 
   Person copyWith({
     String? id,

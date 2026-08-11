@@ -146,4 +146,18 @@ abstract final class PuantajDate {
     final d = parse(dateStr);
     return '${format(d)} ${trDaysLong[d.weekday - 1]}';
   }
+
+  /// Günlük / haftalık / aylık rapor ve seçim aralığının günleri.
+  ///
+  /// Kurgu: çıkış günü dahil istihdam; çıkıştan sonraki günler hariç.
+  /// Aylıkta çıkış yapılan ayın günleri → o ay listesinde görünür.
+  static List<String> daysForReportPeriod({
+    required String anchorDate,
+    required bool daily,
+    required bool weekly,
+  }) {
+    if (daily) return [anchorDate];
+    if (weekly) return weekDays(anchorDate);
+    return monthDays(anchorDate);
+  }
 }

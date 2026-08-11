@@ -106,17 +106,17 @@ class _PuantajScreenState extends ConsumerState<PuantajScreen> {
       );
     }
 
-    final rangeDays = switch (_mode) {
-      _ViewMode.daily => <String>[_date],
-      _ViewMode.weekly => PuantajDate.weekDays(_date),
-      _ViewMode.monthly => PuantajDate.monthDays(_date),
-    };
+    final rangeDays = PuantajDate.daysForReportPeriod(
+      anchorDate: _date,
+      daily: _mode == _ViewMode.daily,
+      weekly: _mode == _ViewMode.weekly,
+    );
     final allPersonnel = ref.watch(personnelProvider);
     final people = allPersonnel
         .where(
           (p) =>
               p.projectId == project.id &&
-              rangeDays.any(p.isActiveOn),
+              p.wasEmployedInPeriod(rangeDays),
         )
         .toList()
       ..sort((a, b) => a.name.compareTo(b.name));
@@ -188,7 +188,9 @@ class _PuantajScreenState extends ConsumerState<PuantajScreen> {
         onPressed: () => _openExportSheet(
           context,
           project: project,
-          people: people,
+          allProjectPeople: allPersonnel
+              .where((p) => p.projectId == project.id)
+              .toList(),
           attendance: attendance,
         ),
         icon: const Icon(Icons.ios_share_outlined),
@@ -383,7 +385,7 @@ class _PuantajScreenState extends ConsumerState<PuantajScreen> {
   Future<void> _openExportSheet(
     BuildContext context, {
     required Project project,
-    required List<Person> people,
+    required List<Person> allProjectPeople,
     required List<Attendance> attendance,
   }) {
     final initial = switch (_mode) {
@@ -396,7 +398,7 @@ class _PuantajScreenState extends ConsumerState<PuantajScreen> {
       title: 'Puantaj dışa aktar',
       child: _PuantajExportSheet(
         project: project,
-        people: people,
+        allProjectPeople: allProjectPeople,
         attendance: attendance,
         anchorDate: _date,
         initialPeriod: initial,
@@ -1450,14 +1452,14 @@ class _CetvelView extends StatelessWidget {
 class _PuantajExportSheet extends StatefulWidget {
   const _PuantajExportSheet({
     required this.project,
-    required this.people,
+    required this.allProjectPeople,
     required this.attendance,
     required this.anchorDate,
     required this.initialPeriod,
   });
 
   final Project project;
-  final List<Person> people;
+  final List<Person> allProjectPeople;
   final List<Attendance> attendance;
   final String anchorDate;
   final PuantajReportPeriod initialPeriod;
@@ -1470,6 +1472,22 @@ class _PuantajExportSheetState extends State<_PuantajExportSheet> {
   late PuantajReportPeriod _period = widget.initialPeriod;
   bool _busy = false;
   String? _error;
+
+  List<String> get _periodDays => PuantajDate.daysForReportPeriod(
+        anchorDate: widget.anchorDate,
+        daily: _period == PuantajReportPeriod.daily,
+        weekly: _period == PuantajReportPeriod.weekly,
+      );
+
+  /// PDF/Excel ile ekran aynı kural:
+  /// günlük/haftalık → çıkış gününe kadar; aylık → çıkış yaptığı ay.
+  List<Person> get _exportPeople {
+    final list = widget.allProjectPeople
+        .where((p) => p.wasEmployedInPeriod(_periodDays))
+        .toList()
+      ..sort((a, b) => a.name.compareTo(b.name));
+    return list;
+  }
 
   String get _rangeHint {
     switch (_period) {
@@ -1492,7 +1510,7 @@ class _PuantajExportSheetState extends State<_PuantajExportSheet> {
       final report = PuantajReportBuilder.build(
         projectName: widget.project.name,
         projectId: widget.project.id,
-        people: widget.people,
+        people: _exportPeople,
         attendance: widget.attendance,
         period: _period,
         anchorDate: widget.anchorDate,

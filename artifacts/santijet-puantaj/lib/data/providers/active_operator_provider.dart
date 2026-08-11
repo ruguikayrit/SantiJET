@@ -2,6 +2,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:hive/hive.dart';
 
 import '../../core/theme/theme_mode_provider.dart';
+import '../../core/utils/puantaj_date.dart';
 import '../../domain/entities/person.dart';
 import 'app_data_provider.dart';
 
@@ -44,7 +45,11 @@ final activeOperatorProvider = Provider<Person?>((ref) {
   final people = ref.watch(personnelProvider);
   if (id == null || project == null) return null;
   for (final p in people) {
-    if (p.id == id && p.projectId == project.id && p.active) return p;
+    if (p.id == id &&
+        p.projectId == project.id &&
+        p.isActiveOn(PuantajDate.today())) {
+      return p;
+    }
   }
   return null;
 });

@@ -57,7 +57,6 @@ class PersonnelImportRow {
   }
 
   Person toPerson(String projectId) {
-    final left = leaveDate.trim().isNotEmpty;
     return Person(
       id: IdGen.make('per'),
       projectId: projectId,
@@ -72,7 +71,7 @@ class PersonnelImportRow {
       bankName: bankName,
       hireDate: hireDate,
       leaveDate: leaveDate,
-      active: !left,
+      active: true,
     );
   }
 }

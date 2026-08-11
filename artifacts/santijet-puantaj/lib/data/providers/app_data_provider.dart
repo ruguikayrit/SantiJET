@@ -5,6 +5,7 @@ import 'package:hive/hive.dart';
 
 import '../../core/theme/theme_mode_provider.dart';
 import '../../core/utils/id_gen.dart';
+import '../../core/utils/puantaj_date.dart';
 import '../../domain/entities/attendance.dart';
 import '../../domain/entities/person.dart';
 import '../../domain/entities/project.dart';
@@ -257,21 +258,19 @@ final projectPersonnelProvider = Provider<List<Person>>((ref) {
     ..sort((a, b) => a.name.compareTo(b.name));
 });
 
-/// Aktif projedeki aktif personel — Puantaj / İmalat / Ana sayfa.
-///
-/// İşten çıkış tarihi geçmiş personel [isActiveOn] ile günlük listelerde
-/// ayrıca elenir; bu provider yalnızca manuel `active` bayrağına bakar.
+/// Bugün istihdamda olan personel — İmalat / görev / aktif kullanıcı.
 final activePersonnelProvider = Provider<List<Person>>((ref) {
   final project = ref.watch(activeProjectProvider);
   final all = ref.watch(personnelProvider);
   if (project == null) return const [];
+  final today = PuantajDate.today();
   return all
-      .where((p) => p.active && p.projectId == project.id)
+      .where((p) => p.projectId == project.id && p.isActiveOn(today))
       .toList()
     ..sort((a, b) => a.name.compareTo(b.name));
 });
 
-/// Belirli bir günde puantajda gösterilecek personel (çıkış tarihi sonrası hariç).
+/// Belirli bir günde uygulama seçim listesinde gösterilecek personel.
 final personnelForDateProvider =
     Provider.family<List<Person>, String>((ref, date) {
   final project = ref.watch(activeProjectProvider);

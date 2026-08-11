@@ -37,8 +37,39 @@ void main() {
       expect(base.isActiveOn('31.03.2026'), isFalse);
     });
 
-    test('manuel pasif her günü kapatır', () {
-      expect(base.copyWith(active: false).isActiveOn('05.08.2026'), isFalse);
+    test('manuel active bayrağı istihdamı etkilemez', () {
+      expect(base.copyWith(active: false).isActiveOn('05.08.2026'), isTrue);
+    });
+
+    test('örnek: 20 Temmuz çıkış — günlük/haftalık/aylık görünürlük', () {
+      const person = Person(
+        id: '1',
+        projectId: 'p',
+        name: 'Ali',
+        hireDate: '2026-07-01',
+        leaveDate: '2026-07-20',
+        active: true,
+      );
+
+      // Günlük: çıkış gününe kadar
+      expect(person.isActiveOn('20.07.2026'), isTrue);
+      expect(person.isActiveOn('21.07.2026'), isFalse);
+
+      // Haftalık: çıkış gününü içeren hafta evet; tamamen sonrası hayır
+      final weekWithLeave = PuantajDate.weekDays('20.07.2026');
+      expect(person.wasEmployedInPeriod(weekWithLeave), isTrue);
+      final weekAfter = PuantajDate.weekDays('27.07.2026');
+      expect(person.wasEmployedInPeriod(weekAfter), isFalse);
+
+      // Aylık: çıkış yaptığı ay (Temmuz) evet; Ağustos hayır
+      expect(
+        person.wasEmployedInPeriod(PuantajDate.monthDays('15.07.2026')),
+        isTrue,
+      );
+      expect(
+        person.wasEmployedInPeriod(PuantajDate.monthDays('01.08.2026')),
+        isFalse,
+      );
     });
   });
 
