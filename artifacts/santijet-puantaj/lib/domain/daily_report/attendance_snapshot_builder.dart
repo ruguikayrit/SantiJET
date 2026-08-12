@@ -13,8 +13,14 @@ abstract final class AttendanceSnapshotBuilder {
     required List<Person> activePeople,
     DateTime? capturedAt,
   }) {
+    final activeIds = {for (final p in activePeople) p.id};
     final day = attendance
-        .where((a) => a.projectId == projectId && a.date == date)
+        .where(
+          (a) =>
+              a.projectId == projectId &&
+              a.date == date &&
+              activeIds.contains(a.personId),
+        )
         .toList();
 
     var present = 0;

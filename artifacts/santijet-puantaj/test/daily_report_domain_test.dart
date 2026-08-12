@@ -68,6 +68,58 @@ void main() {
         'A Ekibi',
       );
     });
+
+    test('çıkış tarihinden sonra rapor gününde personel listelenmez', () {
+      final activePeople = [
+        Person(
+          id: 'u1',
+          projectId: 'p',
+          name: 'Ali',
+          hireDate: '2026-01-01',
+          leaveDate: '2026-08-10',
+        ),
+        Person(
+          id: 'u2',
+          projectId: 'p',
+          name: 'Veli',
+          hireDate: '2026-01-01',
+        ),
+      ];
+      final att = [
+        Attendance(
+          id: 'a1',
+          projectId: 'p',
+          personId: 'u1',
+          personName: 'Ali',
+          date: '11.08.2026',
+          status: AttendanceStatus.present,
+          hours: 8,
+        ),
+        Attendance(
+          id: 'a2',
+          projectId: 'p',
+          personId: 'u2',
+          personName: 'Veli',
+          date: '11.08.2026',
+          status: AttendanceStatus.present,
+          hours: 8,
+        ),
+      ];
+
+      final snap = AttendanceSnapshotBuilder.build(
+        projectId: 'p',
+        date: '11.08.2026',
+        attendance: att,
+        activePeople: activePeople
+            .where((p) => p.isActiveOn('11.08.2026'))
+            .toList(),
+      );
+
+      expect(snap.people.length, 1);
+      expect(snap.people.single.personId, 'u2');
+      expect(snap.present, 1);
+      expect(snap.absent, 0);
+    });
   });
 
   group('DailyReport JSON', () {
