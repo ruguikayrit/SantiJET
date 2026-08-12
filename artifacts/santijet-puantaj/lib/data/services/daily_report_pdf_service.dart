@@ -616,8 +616,8 @@ class DailyReportPdfService {
     }
     final boxes = <pw.Widget>[
       for (final s in AttendanceStatus.values)
-        _statBox(s.short, '${snap.countOf(s)}'),
-      _statBox('Top', '${snap.people.length}'),
+        _statBox(s.label, '${snap.countOf(s)}'),
+      _statBox('Toplam', '${snap.people.length}'),
       _statBox('Toplam P.', '${snap.generalTotal}'),
     ];
     return pw.Column(
@@ -641,7 +641,7 @@ class DailyReportPdfService {
     return pw.Expanded(
       child: pw.Container(
         margin: const pw.EdgeInsets.only(right: 4),
-        padding: const pw.EdgeInsets.symmetric(vertical: 5),
+        padding: const pw.EdgeInsets.symmetric(vertical: 5, horizontal: 2),
         decoration: pw.BoxDecoration(
           border: pw.Border.all(color: _line, width: 0.6),
         ),
@@ -657,7 +657,9 @@ class DailyReportPdfService {
             ),
             pw.Text(
               label,
-              style: const pw.TextStyle(fontSize: 7, color: _muted),
+              textAlign: pw.TextAlign.center,
+              maxLines: 2,
+              style: const pw.TextStyle(fontSize: 6.5, color: _muted),
             ),
           ],
         ),
