@@ -27,7 +27,9 @@ class KesifListScreen extends ConsumerStatefulWidget {
 }
 
 class _KesifListScreenState extends ConsumerState<KesifListScreen> {
-  final Set<AnalizDiscipline> _collapsed = {};
+  final Set<AnalizDiscipline> _collapsed = {
+    ...AnalizDiscipline.kesifSirasi,
+  };
 
   Future<void> _addPoz(String projectId) async {
     final picked = await KesifPozPickerSheet.show(context);

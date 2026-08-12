@@ -25,7 +25,9 @@ class YaklasikMaliyetScreen extends ConsumerStatefulWidget {
 }
 
 class _YaklasikMaliyetScreenState extends ConsumerState<YaklasikMaliyetScreen> {
-  final Set<AnalizDiscipline> _collapsed = {};
+  final Set<AnalizDiscipline> _collapsed = {
+    ...AnalizDiscipline.kesifSirasi,
+  };
 
   Future<void> _export(KesifProject kesif) async {
     final format = await ExportFormatSheet.pick(context);

@@ -24,7 +24,9 @@ class MetrajScreen extends ConsumerStatefulWidget {
 }
 
 class _MetrajScreenState extends ConsumerState<MetrajScreen> {
-  final Set<AnalizDiscipline> _collapsed = {};
+  final Set<AnalizDiscipline> _collapsed = {
+    ...AnalizDiscipline.kesifSirasi,
+  };
 
   Future<void> _addPoz(String projectId) async {
     final picked = await KesifPozPickerSheet.show(context);
