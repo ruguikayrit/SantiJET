@@ -42,6 +42,7 @@ abstract final class AttendanceSnapshotBuilder {
         case AttendanceStatus.raporlu:
         case AttendanceStatus.mazeret:
         case AttendanceStatus.tatil:
+        case AttendanceStatus.haftaTatili:
           leave++;
         case AttendanceStatus.absent:
           recordedAbsent++;

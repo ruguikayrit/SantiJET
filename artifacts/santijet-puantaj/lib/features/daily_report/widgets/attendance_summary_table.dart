@@ -211,7 +211,10 @@ class AttendanceSummaryTable extends StatelessWidget {
     final s = status.toLowerCase();
     if (s.contains('mevcut')) return AppColors.success;
     if (s.contains('yarım')) return AppColors.warning;
-    if (s.contains('izin') || s.contains('rapor') || s.contains('mazeret')) {
+    if (s.contains('izin') ||
+        s.contains('rapor') ||
+        s.contains('mazeret') ||
+        s.contains('tatil')) {
       return AppColors.info;
     }
     if (s.contains('yok')) return AppColors.critical;

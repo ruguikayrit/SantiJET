@@ -305,6 +305,7 @@ void main() {
           'Raporlu',
           'Mazeret',
           'Res. Tatil',
+          'Hafta Tatili',
           'Yok',
           'Genel Toplam',
         ],
@@ -318,12 +319,13 @@ void main() {
         '1',
         '1',
         '1',
+        '0',
         '1',
         '6',
       ]);
       expect(
         report.visual.companies.single.rows.single.statusCounts,
-        [1, 1, 0, 0, 1, 1, 1, 1, 1],
+        [1, 1, 0, 0, 1, 1, 1, 1, 0, 1],
       );
       expect(report.visual.companies.single.rows.single.totalLabel, '6');
     });

@@ -367,6 +367,7 @@ class PuantajExportService {
                     AttendanceStatus.raporlu => 'Raporlu',
                     AttendanceStatus.mazeret => 'Maz.',
                     AttendanceStatus.tatil => 'Res.\nTatil',
+                    AttendanceStatus.haftaTatili => 'HT',
                     AttendanceStatus.absent => 'Yok',
                   },
                   textAlign: pw.TextAlign.center,

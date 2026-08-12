@@ -1244,6 +1244,7 @@ class _CetvelView extends StatelessWidget {
                 AttendanceStatus.raporlu => 'Raporlu',
                 AttendanceStatus.mazeret => 'Mazeret',
                 AttendanceStatus.tatil => 'Res.\nTatil',
+                AttendanceStatus.haftaTatili => 'Hafta\nTatili',
                 AttendanceStatus.absent => 'Yok',
               },
               textAlign: TextAlign.center,
