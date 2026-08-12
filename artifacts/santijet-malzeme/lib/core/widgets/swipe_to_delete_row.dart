@@ -26,56 +26,63 @@ class SwipeToDeleteRow extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    if (!enabled) return child;
+    if (!enabled) {
+      return SizedBox(width: double.infinity, child: child);
+    }
 
-    return Dismissible(
-      key: itemKey,
-      direction: DismissDirection.endToStart,
-      confirmDismiss: (_) async {
-        final confirmed = await showDialog<bool>(
-          context: context,
-          builder: (context) => AlertDialog(
-            backgroundColor: AppColors.surfaceElevated,
-            title: Text(title),
-            content: Text(message),
-            actions: [
-              TextButton(
-                onPressed: () => Navigator.of(context).pop(false),
-                child: const Text('İptal'),
-              ),
-              FilledButton(
-                style: FilledButton.styleFrom(
-                  backgroundColor: AppColors.critical,
+    return SizedBox(
+      width: double.infinity,
+      child: Dismissible(
+        key: itemKey,
+        direction: DismissDirection.endToStart,
+        confirmDismiss: (_) async {
+          final confirmed = await showDialog<bool>(
+            context: context,
+            builder: (context) => AlertDialog(
+              backgroundColor: AppColors.surfaceElevated,
+              title: Text(title),
+              content: Text(message),
+              actions: [
+                TextButton(
+                  onPressed: () => Navigator.of(context).pop(false),
+                  child: const Text('İptal'),
                 ),
-                onPressed: () => Navigator.of(context).pop(true),
-                child: const Text('Sil'),
-              ),
+                FilledButton(
+                  style: FilledButton.styleFrom(
+                    backgroundColor: AppColors.critical,
+                  ),
+                  onPressed: () => Navigator.of(context).pop(true),
+                  child: const Text('Sil'),
+                ),
+              ],
+            ),
+          );
+          if (confirmed != true) return false;
+          await onDelete();
+          return true;
+        },
+        background: Container(
+          alignment: Alignment.centerRight,
+          padding: const EdgeInsets.only(right: 20),
+          margin: EdgeInsets.only(bottom: bottomMargin),
+          decoration: BoxDecoration(
+            color: AppColors.critical.withValues(alpha: 0.15),
+            borderRadius: AppRadii.md,
+            border: Border.all(
+              color: AppColors.critical.withValues(alpha: 0.35),
+            ),
+          ),
+          child: const Row(
+            mainAxisAlignment: MainAxisAlignment.end,
+            children: [
+              Icon(Icons.delete_outline, color: AppColors.critical),
+              SizedBox(width: 8),
+              Text('Sil', style: TextStyle(color: AppColors.critical)),
             ],
           ),
-        );
-        if (confirmed != true) return false;
-        await onDelete();
-        return true;
-      },
-      background: Container(
-        alignment: Alignment.centerRight,
-        padding: const EdgeInsets.only(right: 20),
-        margin: EdgeInsets.only(bottom: bottomMargin),
-        decoration: BoxDecoration(
-          color: AppColors.critical.withValues(alpha: 0.15),
-          borderRadius: AppRadii.md,
-          border: Border.all(color: AppColors.critical.withValues(alpha: 0.35)),
         ),
-        child: const Row(
-          mainAxisAlignment: MainAxisAlignment.end,
-          children: [
-            Icon(Icons.delete_outline, color: AppColors.critical),
-            SizedBox(width: 8),
-            Text('Sil', style: TextStyle(color: AppColors.critical)),
-          ],
-        ),
+        child: child,
       ),
-      child: child,
     );
   }
 }

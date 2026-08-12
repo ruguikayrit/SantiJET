@@ -270,14 +270,19 @@ class SJCard extends StatelessWidget {
       child: content,
     );
 
-    if (onTap == null) return decorated;
+    if (onTap == null) {
+      return SizedBox(width: double.infinity, child: decorated);
+    }
 
-    return Material(
-      color: Colors.transparent,
-      child: InkWell(
-        onTap: onTap,
-        borderRadius: AppRadii.md,
-        child: decorated,
+    return SizedBox(
+      width: double.infinity,
+      child: Material(
+        color: Colors.transparent,
+        child: InkWell(
+          onTap: onTap,
+          borderRadius: AppRadii.md,
+          child: decorated,
+        ),
       ),
     );
   }
