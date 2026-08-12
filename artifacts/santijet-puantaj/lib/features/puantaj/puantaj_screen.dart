@@ -1243,7 +1243,7 @@ class _CetvelView extends StatelessWidget {
                 AttendanceStatus.izinli => 'İzinli',
                 AttendanceStatus.raporlu => 'Raporlu',
                 AttendanceStatus.mazeret => 'Mazeret',
-                AttendanceStatus.tatil => 'Res.\nTatil',
+                AttendanceStatus.tatil => 'Resmi\nTatil',
                 AttendanceStatus.haftaTatili => 'Hafta\nTatili',
                 AttendanceStatus.absent => 'Yok',
               },

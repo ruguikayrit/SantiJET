@@ -1,17 +1,20 @@
 import 'package:flutter/material.dart';
 
 /// Günlük puantaj durumu — santiye-takip `Attendance.status` ile birebir.
+///
+/// Sıra: Giriş → Çıkış → Mevcut → Yarım → Yok → İzinli → Raporlu →
+/// Mazeret → Hafta Tatili → Resmi Tatil.
 enum AttendanceStatus {
-  present('present', 'Mevcut', 'M', 8, Color(0xFF16A34A)),
-  half('half', 'Yarım Gün', 'Y', 4, Color(0xFFD97706)),
   giris('giris', 'Giriş', 'G', 0, Color(0xFF2563EB)),
   cikis('cikis', 'Çıkış', 'Ç', 0, Color(0xFF7C3AED)),
+  present('present', 'Mevcut', 'M', 8, Color(0xFF16A34A)),
+  half('half', 'Yarım Gün', 'Y', 4, Color(0xFFD97706)),
+  absent('absent', 'Yok', 'X', 0, Color(0xFFDC2626)),
   izinli('izinli', 'İzinli', 'İ', 0, Color(0xFF0EA5E9)),
   raporlu('raporlu', 'Raporlu', 'R', 0, Color(0xFF8B5CF6)),
   mazeret('mazeret', 'Mazeret', 'Mz', 0, Color(0xFFF59E0B)),
-  tatil('tatil', 'Res. Tatil', 'T', 0, Color(0xFF64748B)),
   haftaTatili('hafta_tatili', 'Hafta Tatili', 'HT', 0, Color(0xFF0D9488)),
-  absent('absent', 'Yok', 'X', 0, Color(0xFFDC2626));
+  tatil('tatil', 'Resmi Tatil', 'T', 0, Color(0xFF64748B));
 
   const AttendanceStatus(
     this.jsonValue,
