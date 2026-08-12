@@ -1482,9 +1482,12 @@ class _PuantajExportSheetState extends State<_PuantajExportSheet> {
   late Set<String> _selectedPersonIds;
   final _personSearchController = TextEditingController();
   final _peopleTileController = ExpansionTileController();
+  final _teamsTileController = ExpansionTileController();
   String _personQuery = '';
   bool _busy = false;
   String? _error;
+
+  static const _noTeamKey = '__no_team__';
 
   @override
   void initState() {
@@ -1514,6 +1517,46 @@ class _PuantajExportSheetState extends State<_PuantajExportSheet> {
     return list;
   }
 
+  String _teamKeyOf(Person p) {
+    final t = p.team.trim();
+    return t.isEmpty ? _noTeamKey : t;
+  }
+
+  String _teamLabel(String key) =>
+      key == _noTeamKey ? 'Ekipsiz' : titleCaseTr(key);
+
+  /// Dönemdeki uygun personelden türetilen ekip listesi.
+  List<String> get _eligibleTeams {
+    final keys = <String>{};
+    for (final p in _eligiblePeople) {
+      keys.add(_teamKeyOf(p));
+    }
+    final list = keys.toList()
+      ..sort((a, b) {
+        if (a == _noTeamKey) return 1;
+        if (b == _noTeamKey) return -1;
+        return a.compareTo(b);
+      });
+    return list;
+  }
+
+  List<Person> _peopleInTeam(String teamKey) =>
+      _eligiblePeople.where((p) => _teamKeyOf(p) == teamKey).toList();
+
+  bool _isTeamFullySelected(String teamKey) {
+    final members = _peopleInTeam(teamKey);
+    return members.isNotEmpty &&
+        members.every((p) => _selectedPersonIds.contains(p.id));
+  }
+
+  bool _isTeamPartiallySelected(String teamKey) {
+    final members = _peopleInTeam(teamKey);
+    if (members.isEmpty) return false;
+    final selected =
+        members.where((p) => _selectedPersonIds.contains(p.id)).length;
+    return selected > 0 && selected < members.length;
+  }
+
   List<Person> get _filteredEligiblePeople {
     final q = _foldTr(_personQuery.trim());
     if (q.isEmpty) return _eligiblePeople;
@@ -1541,6 +1584,17 @@ class _PuantajExportSheetState extends State<_PuantajExportSheet> {
     if (total == 0) return 'Personel yok';
     if (_allSelected) return 'Tümü ($total kişi)';
     return '$count / $total kişi seçili';
+  }
+
+  String get _teamSelectionLabel {
+    final teams = _eligibleTeams;
+    if (teams.isEmpty) return 'Ekip yok';
+    final full = teams.where(_isTeamFullySelected).length;
+    if (full == teams.length && _allSelected) {
+      return 'Tüm ekipler (${teams.length})';
+    }
+    if (full == 0) return 'Ekip seçilmedi';
+    return '$full / ${teams.length} ekip';
   }
 
   String get _rangeHint {
@@ -1640,6 +1694,25 @@ class _PuantajExportSheetState extends State<_PuantajExportSheet> {
     });
   }
 
+  void _toggleTeam(String teamKey, bool selected) {
+    final memberIds = _peopleInTeam(teamKey).map((p) => p.id);
+    setState(() {
+      if (selected) {
+        _selectedPersonIds.addAll(memberIds);
+      } else {
+        _selectedPersonIds.removeAll(memberIds);
+      }
+      _error = null;
+    });
+  }
+
+  void _selectOnlyTeam(String teamKey) {
+    setState(() {
+      _selectedPersonIds = _peopleInTeam(teamKey).map((p) => p.id).toSet();
+      _error = null;
+    });
+  }
+
   Future<void> _export({required bool pdf}) async {
     if (_busy) return;
     if (_exportPeople.isEmpty) {
@@ -1690,6 +1763,7 @@ class _PuantajExportSheetState extends State<_PuantajExportSheet> {
     final theme = Theme.of(context);
     final eligible = _eligiblePeople;
     final filtered = _filteredEligiblePeople;
+    final teams = _eligibleTeams;
     final hasQuery = _personQuery.trim().isNotEmpty;
     return Column(
       mainAxisSize: MainAxisSize.min,
@@ -1748,7 +1822,7 @@ class _PuantajExportSheetState extends State<_PuantajExportSheet> {
             data: theme.copyWith(dividerColor: Colors.transparent),
             child: ExpansionTile(
               controller: _peopleTileController,
-              initiallyExpanded: true,
+              initiallyExpanded: false,
               tilePadding: const EdgeInsets.symmetric(horizontal: AppSpacing.sm),
               childrenPadding: EdgeInsets.zero,
               title: Text(
@@ -1834,9 +1908,13 @@ class _PuantajExportSheetState extends State<_PuantajExportSheet> {
                           final person = filtered[index];
                           final checked =
                               _selectedPersonIds.contains(person.id);
-                          final subtitle = person.profession.trim().isEmpty
-                              ? null
-                              : person.profession;
+                          final parts = <String>[
+                            if (person.profession.trim().isNotEmpty)
+                              person.profession,
+                            if (person.team.trim().isNotEmpty) person.team,
+                          ];
+                          final subtitle =
+                              parts.isEmpty ? null : parts.join(' · ');
                           return CheckboxListTile(
                             dense: true,
                             contentPadding: const EdgeInsets.symmetric(
@@ -1855,6 +1933,115 @@ class _PuantajExportSheetState extends State<_PuantajExportSheet> {
                         },
                       ),
                     ),
+                ],
+              ],
+            ),
+          ),
+        ),
+        const SizedBox(height: AppSpacing.md),
+        Text('Ekip', style: theme.textTheme.labelLarge),
+        const SizedBox(height: AppSpacing.xs),
+        Material(
+          color: theme.colorScheme.surface,
+          shape: RoundedRectangleBorder(
+            borderRadius: AppRadii.md,
+            side: BorderSide(color: theme.dividerColor),
+          ),
+          clipBehavior: Clip.antiAlias,
+          child: Theme(
+            data: theme.copyWith(dividerColor: Colors.transparent),
+            child: ExpansionTile(
+              controller: _teamsTileController,
+              initiallyExpanded: true,
+              tilePadding: const EdgeInsets.symmetric(horizontal: AppSpacing.sm),
+              childrenPadding: EdgeInsets.zero,
+              title: Text(
+                _teamSelectionLabel,
+                style: theme.textTheme.bodyMedium?.copyWith(
+                  fontWeight: FontWeight.w600,
+                ),
+              ),
+              subtitle: Text(
+                'Ekip seçerek yalnızca o ekibin puantajını alın',
+                style: theme.textTheme.labelSmall?.copyWith(
+                  color: theme.colorScheme.onSurfaceVariant,
+                ),
+              ),
+              children: [
+                if (teams.isEmpty)
+                  Padding(
+                    padding: const EdgeInsets.fromLTRB(
+                      AppSpacing.sm,
+                      0,
+                      AppSpacing.sm,
+                      AppSpacing.sm,
+                    ),
+                    child: Text(
+                      'Bu dönemde ekip kaydı yok.',
+                      style: theme.textTheme.bodySmall?.copyWith(
+                        color: theme.colorScheme.onSurfaceVariant,
+                      ),
+                    ),
+                  )
+                else ...[
+                  Padding(
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: AppSpacing.xs,
+                    ),
+                    child: Wrap(
+                      spacing: AppSpacing.xs,
+                      children: [
+                        TextButton(
+                          onPressed: _busy ? null : _selectAllPeople,
+                          child: const Text('Tüm ekipler'),
+                        ),
+                        TextButton(
+                          onPressed: _busy ? null : _clearPeople,
+                          child: const Text('Temizle'),
+                        ),
+                      ],
+                    ),
+                  ),
+                  ConstrainedBox(
+                    constraints: BoxConstraints(
+                      maxHeight: MediaQuery.sizeOf(context).height * 0.28,
+                    ),
+                    child: ListView.builder(
+                      shrinkWrap: true,
+                      itemCount: teams.length,
+                      itemBuilder: (context, index) {
+                        final teamKey = teams[index];
+                        final members = _peopleInTeam(teamKey);
+                        final fully = _isTeamFullySelected(teamKey);
+                        final partial = _isTeamPartiallySelected(teamKey);
+                        return CheckboxListTile(
+                          dense: true,
+                          contentPadding: const EdgeInsets.symmetric(
+                            horizontal: AppSpacing.sm,
+                          ),
+                          controlAffinity: ListTileControlAffinity.leading,
+                          tristate: true,
+                          value: fully
+                              ? true
+                              : (partial ? null : false),
+                          onChanged: _busy
+                              ? null
+                              : (v) => _toggleTeam(
+                                    teamKey,
+                                    v ?? false,
+                                  ),
+                          title: Text(_teamLabel(teamKey)),
+                          subtitle: Text('${members.length} kişi'),
+                          secondary: TextButton(
+                            onPressed: _busy
+                                ? null
+                                : () => _selectOnlyTeam(teamKey),
+                            child: const Text('Yalnız'),
+                          ),
+                        );
+                      },
+                    ),
+                  ),
                 ],
               ],
             ),
