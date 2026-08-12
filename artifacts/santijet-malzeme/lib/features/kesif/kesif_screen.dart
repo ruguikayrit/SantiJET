@@ -450,7 +450,7 @@ class _KesifScreenState extends ConsumerState<KesifScreen> {
   }
 }
 
-class _BirimSarfiyatlarPane extends StatelessWidget {
+class _BirimSarfiyatlarPane extends StatefulWidget {
   const _BirimSarfiyatlarPane({
     required this.consumptions,
     required this.kesif,
@@ -465,9 +465,17 @@ class _BirimSarfiyatlarPane extends StatelessWidget {
   final ValueChanged<UnitConsumption> onEdit;
   final Future<void> Function(UnitConsumption) onDelete;
 
+  @override
+  State<_BirimSarfiyatlarPane> createState() => _BirimSarfiyatlarPaneState();
+}
+
+class _BirimSarfiyatlarPaneState extends State<_BirimSarfiyatlarPane> {
+  /// Kapalı disiplinler; listede yoksa açık.
+  final Set<MainDiscipline> _collapsed = {};
+
   MainDiscipline _disciplineOf(UnitConsumption c) {
-    if (kesif != null && c.pozNo.isNotEmpty) {
-      for (final l in kesif!.lines) {
+    if (widget.kesif != null && c.pozNo.isNotEmpty) {
+      for (final l in widget.kesif!.lines) {
         if (l.pozNo == c.pozNo) return l.anaGrup;
       }
     }
@@ -476,7 +484,7 @@ class _BirimSarfiyatlarPane extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    if (consumptions.isEmpty) {
+    if (widget.consumptions.isEmpty) {
       return SJEmptyState(
         title: 'Birim sarfiyat yok',
         message:
@@ -484,20 +492,20 @@ class _BirimSarfiyatlarPane extends StatelessWidget {
             'Keşif metrajı ile çarpılarak malzeme miktarı hesaplanır.',
         icon: Icons.science_outlined,
         actionLabel: 'Sarfiyat Ekle',
-        onAction: onAdd,
+        onAction: widget.onAdd,
       );
     }
 
     String pozLabel(String poz) {
-      if (kesif == null) return poz;
-      for (final l in kesif!.lines) {
+      if (widget.kesif == null) return poz;
+      for (final l in widget.kesif!.lines) {
         if (l.pozNo == poz) return '${l.pozNo} · ${l.tanim}';
       }
       return poz;
     }
 
     final grouped = <MainDiscipline, List<UnitConsumption>>{};
-    for (final c in consumptions) {
+    for (final c in widget.consumptions) {
       grouped.putIfAbsent(_disciplineOf(c), () => []).add(c);
     }
     final order =
@@ -512,56 +520,66 @@ class _BirimSarfiyatlarPane extends StatelessWidget {
       ),
       children: [
         for (final discipline in order) ...[
-          Text(
-            discipline.label,
-            style: AppTypography.titleMedium.copyWith(
-              color: AppColors.electricBlueLight,
-            ),
+          _DisciplineHeader(
+            label: discipline.label,
+            count: grouped[discipline]!.length,
+            expanded: !_collapsed.contains(discipline),
+            onToggle: () {
+              setState(() {
+                if (_collapsed.contains(discipline)) {
+                  _collapsed.remove(discipline);
+                } else {
+                  _collapsed.add(discipline);
+                }
+              });
+            },
           ),
-          const SizedBox(height: AppSpacing.xs),
-          for (final c in grouped[discipline]!)
-            SwipeToDeleteRow(
-              itemKey: ValueKey('ucn-${c.id}'),
-              bottomMargin: 4,
-              title: 'Sarfiyatı sil',
-              message: '"${c.materialName}" birim sarfiyatı silinsin mi?',
-              onDelete: () => onDelete(c),
-              child: Padding(
-                padding: const EdgeInsets.only(bottom: AppSpacing.xs),
-                child: SJCard(
-                  onTap: () => onEdit(c),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        c.materialName,
-                        style: AppTypography.titleMedium.copyWith(
-                          color: AppColors.textPrimary,
-                        ),
-                      ),
-                      const SizedBox(height: 2),
-                      if (c.pozNo.isNotEmpty)
+          if (!_collapsed.contains(discipline)) ...[
+            const SizedBox(height: AppSpacing.xs),
+            for (final c in grouped[discipline]!)
+              SwipeToDeleteRow(
+                itemKey: ValueKey('ucn-${c.id}'),
+                bottomMargin: 4,
+                title: 'Sarfiyatı sil',
+                message: '"${c.materialName}" birim sarfiyatı silinsin mi?',
+                onDelete: () => widget.onDelete(c),
+                child: Padding(
+                  padding: const EdgeInsets.only(bottom: AppSpacing.xs),
+                  child: SJCard(
+                    onTap: () => widget.onEdit(c),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
                         Text(
-                          pozLabel(c.pozNo),
-                          style: AppTypography.bodySmall.copyWith(
-                            color: AppColors.textSecondary,
+                          c.materialName,
+                          style: AppTypography.titleMedium.copyWith(
+                            color: AppColors.textPrimary,
                           ),
-                          maxLines: 2,
-                          overflow: TextOverflow.ellipsis,
                         ),
-                      const SizedBox(height: 4),
-                      Text(
-                        '${_fmt(c.rate)} ${c.materialUnit}'
-                        '${c.kesifUnit.isEmpty ? '' : ' / 1 ${c.kesifUnit}'}',
-                        style: AppTypography.labelLarge.copyWith(
-                          color: AppColors.electricBlueLight,
+                        const SizedBox(height: 2),
+                        if (c.pozNo.isNotEmpty)
+                          Text(
+                            pozLabel(c.pozNo),
+                            style: AppTypography.bodySmall.copyWith(
+                              color: AppColors.textSecondary,
+                            ),
+                            maxLines: 2,
+                            overflow: TextOverflow.ellipsis,
+                          ),
+                        const SizedBox(height: 4),
+                        Text(
+                          '${_fmt(c.rate)} ${c.materialUnit}'
+                          '${c.kesifUnit.isEmpty ? '' : ' / 1 ${c.kesifUnit}'}',
+                          style: AppTypography.labelLarge.copyWith(
+                            color: AppColors.electricBlueLight,
+                          ),
                         ),
-                      ),
-                    ],
+                      ],
+                    ),
                   ),
                 ),
               ),
-            ),
+          ],
           const SizedBox(height: AppSpacing.md),
         ],
       ],
@@ -571,6 +589,58 @@ class _BirimSarfiyatlarPane extends StatelessWidget {
   static String _fmt(double v) {
     if (v == v.roundToDouble()) return v.toInt().toString();
     return v.toStringAsFixed(2);
+  }
+}
+
+class _DisciplineHeader extends StatelessWidget {
+  const _DisciplineHeader({
+    required this.label,
+    required this.count,
+    required this.expanded,
+    required this.onToggle,
+  });
+
+  final String label;
+  final int count;
+  final bool expanded;
+  final VoidCallback onToggle;
+
+  @override
+  Widget build(BuildContext context) {
+    return Material(
+      color: Colors.transparent,
+      child: InkWell(
+        onTap: onToggle,
+        borderRadius: BorderRadius.circular(8),
+        child: Padding(
+          padding: const EdgeInsets.symmetric(vertical: 6),
+          child: Row(
+            children: [
+              Expanded(
+                child: Text(
+                  label,
+                  style: AppTypography.titleMedium.copyWith(
+                    color: AppColors.electricBlueLight,
+                  ),
+                ),
+              ),
+              Text(
+                '$count',
+                style: AppTypography.labelMedium.copyWith(
+                  color: AppColors.textMuted,
+                ),
+              ),
+              const SizedBox(width: 4),
+              Icon(
+                expanded ? Icons.expand_less : Icons.expand_more,
+                color: AppColors.electricBlueLight,
+                size: 22,
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
   }
 }
 
