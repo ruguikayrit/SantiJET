@@ -878,7 +878,10 @@ class _TasksScreenState extends ConsumerState<TasksScreen> {
                                       style: theme.textTheme.labelSmall,
                                     ),
                                     if (task.earliestStart.isNotEmpty ||
-                                        task.dueDate.isNotEmpty) ...[
+                                        task.dueDate.isNotEmpty ||
+                                        task.actualDeliveryDate
+                                            .trim()
+                                            .isNotEmpty) ...[
                                       const SizedBox(height: 6),
                                       Wrap(
                                         spacing: AppSpacing.sm,
@@ -895,6 +898,14 @@ class _TasksScreenState extends ConsumerState<TasksScreen> {
                                               label:
                                                   'Teslimat ${task.dueDate}',
                                               color: AppColors.critical,
+                                            ),
+                                          if (task.actualDeliveryDate
+                                              .trim()
+                                              .isNotEmpty)
+                                            _DateChip(
+                                              label:
+                                                  'Gerçek ${task.actualDeliveryDate}',
+                                              color: AppColors.success,
                                             ),
                                         ],
                                       ),

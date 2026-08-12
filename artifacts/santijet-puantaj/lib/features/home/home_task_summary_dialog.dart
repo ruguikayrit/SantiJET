@@ -1,9 +1,12 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../core/design_system/sj_status_badge.dart';
 import '../../core/theme/app_colors.dart';
 import '../../core/theme/app_radii.dart';
 import '../../core/theme/app_spacing.dart';
+import '../../core/utils/puantaj_date.dart';
+import '../../data/providers/tasks_provider.dart';
 import '../../domain/entities/site_task.dart';
 import '../../domain/enums/task_status.dart';
 
@@ -57,19 +60,36 @@ Future<void> showHomeTaskSummaryDialog(
   final today = DateTime(now.year, now.month, now.day);
   return showDialog<void>(
     context: context,
-    builder: (ctx) => _HomeTaskSummaryDialog(task: task, today: today),
+    builder: (ctx) => _HomeTaskSummaryDialog(
+      taskId: task.id,
+      initialTask: task,
+      today: today,
+    ),
   );
 }
 
-class _HomeTaskSummaryDialog extends StatelessWidget {
-  const _HomeTaskSummaryDialog({required this.task, required this.today});
+class _HomeTaskSummaryDialog extends ConsumerWidget {
+  const _HomeTaskSummaryDialog({
+    required this.taskId,
+    required this.initialTask,
+    required this.today,
+  });
 
-  final SiteTask task;
+  final String taskId;
+  final SiteTask initialTask;
   final DateTime today;
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
     final theme = Theme.of(context);
+    final tasks = ref.watch(tasksProvider);
+    var task = initialTask;
+    for (final t in tasks) {
+      if (t.id == taskId) {
+        task = t;
+        break;
+      }
+    }
     final urgency = TaskUrgency.of(task, today);
 
     return AlertDialog(
@@ -93,12 +113,51 @@ class _HomeTaskSummaryDialog extends StatelessWidget {
                     color: AppColors.electricBlue,
                     icon: Icons.category_outlined,
                   ),
-                if (urgency.label.isNotEmpty)
+                if (task.status != TaskStatus.done && urgency.label.isNotEmpty)
                   SJStatusBadge(
                     label: urgency.label,
                     color: urgency.color,
                     icon: Icons.schedule,
                   ),
+              ],
+            ),
+            const SizedBox(height: AppSpacing.md),
+            Text(
+              'Görev aksiyonu',
+              style: theme.textTheme.labelMedium?.copyWith(
+                color: theme.colorScheme.onSurfaceVariant,
+                fontWeight: FontWeight.w700,
+              ),
+            ),
+            const SizedBox(height: AppSpacing.xs),
+            Row(
+              children: [
+                for (final s in TaskStatus.values) ...[
+                  Expanded(
+                    child: _StatusActionButton(
+                      label: s.label,
+                      selected: task.status == s,
+                      color: taskStatusColor(s),
+                      onTap: () {
+                        ref.read(tasksProvider.notifier).setStatus(task.id, s);
+                        if (s == TaskStatus.done && context.mounted) {
+                          final delivery = task.actualDeliveryDate.trim().isNotEmpty
+                              ? task.actualDeliveryDate.trim()
+                              : PuantajDate.today();
+                          Navigator.of(context).pop();
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            SnackBar(
+                              content: Text(
+                                'Görev tamamlandı · Gerçek teslim: $delivery',
+                              ),
+                            ),
+                          );
+                        }
+                      },
+                    ),
+                  ),
+                  if (s != TaskStatus.done) const SizedBox(width: 6),
+                ],
               ],
             ),
             const SizedBox(height: AppSpacing.md),
@@ -112,6 +171,13 @@ class _HomeTaskSummaryDialog extends StatelessWidget {
               label: 'En geç teslim',
               value: task.dueDate,
             ),
+            if (task.status == TaskStatus.done ||
+                task.actualDeliveryDate.trim().isNotEmpty)
+              _SummaryRow(
+                icon: Icons.task_alt_outlined,
+                label: 'Gerçek teslim',
+                value: task.actualDeliveryDate,
+              ),
             _SummaryRow(
               icon: Icons.person_outline,
               label: 'Atanan',
@@ -143,6 +209,55 @@ class _HomeTaskSummaryDialog extends StatelessWidget {
           child: const Text('Kapat'),
         ),
       ],
+    );
+  }
+}
+
+class _StatusActionButton extends StatelessWidget {
+  const _StatusActionButton({
+    required this.label,
+    required this.selected,
+    required this.color,
+    required this.onTap,
+  });
+
+  final String label;
+  final bool selected;
+  final Color color;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    final ink = AppColors.statusInkOnCard(color);
+    return Material(
+      color: selected ? color.withValues(alpha: 0.22) : color.withValues(alpha: 0.08),
+      borderRadius: AppRadii.sm,
+      child: InkWell(
+        onTap: onTap,
+        borderRadius: AppRadii.sm,
+        child: Container(
+          padding: const EdgeInsets.symmetric(vertical: 10, horizontal: 4),
+          decoration: BoxDecoration(
+            borderRadius: AppRadii.sm,
+            border: Border.all(
+              color: selected ? color : color.withValues(alpha: 0.35),
+              width: selected ? 1.5 : 1,
+            ),
+          ),
+          child: Text(
+            label,
+            textAlign: TextAlign.center,
+            maxLines: 2,
+            overflow: TextOverflow.ellipsis,
+            style: TextStyle(
+              fontSize: 11,
+              fontWeight: selected ? FontWeight.w800 : FontWeight.w600,
+              color: ink,
+              height: 1.15,
+            ),
+          ),
+        ),
+      ),
     );
   }
 }

@@ -19,6 +19,7 @@ class SiteTask extends Equatable {
     this.assignerName = '',
     this.earliestStart = '',
     this.dueDate = '',
+    this.actualDeliveryDate = '',
     this.status = TaskStatus.todo,
     this.createdAt,
     this.updatedAt,
@@ -49,12 +50,17 @@ class SiteTask extends Equatable {
 
   /// En geç teslimat — TR `dd.MM.yyyy` (eski ad: dueDate).
   final String dueDate;
+
+  /// Gerçek teslim tarihi — tamamlanınca kaydedilir (TR `dd.MM.yyyy`).
+  final String actualDeliveryDate;
   final TaskStatus status;
   final DateTime? createdAt;
   final DateTime? updatedAt;
 
   DateTime? get earliestStartDate => PuantajDate.tryParse(earliestStart);
   DateTime? get latestDeliveryDate => PuantajDate.tryParse(dueDate);
+  DateTime? get actualDeliveryDateTime =>
+      PuantajDate.tryParse(actualDeliveryDate);
 
   /// Görüntüleyen yalnızca atayan veya atanan ise görür.
   /// Eski kayıtlarda id yoksa yalnızca 1. derece görür (yeniden atama için).
@@ -77,6 +83,7 @@ class SiteTask extends Equatable {
     String? assignerName,
     String? earliestStart,
     String? dueDate,
+    String? actualDeliveryDate,
     TaskStatus? status,
     DateTime? createdAt,
     DateTime? updatedAt,
@@ -93,6 +100,7 @@ class SiteTask extends Equatable {
       assignerName: assignerName ?? this.assignerName,
       earliestStart: earliestStart ?? this.earliestStart,
       dueDate: dueDate ?? this.dueDate,
+      actualDeliveryDate: actualDeliveryDate ?? this.actualDeliveryDate,
       status: status ?? this.status,
       createdAt: createdAt ?? this.createdAt,
       updatedAt: updatedAt ?? this.updatedAt,
@@ -111,6 +119,7 @@ class SiteTask extends Equatable {
         'assignerName': assignerName,
         'earliestStart': earliestStart,
         'dueDate': dueDate,
+        'actualDeliveryDate': actualDeliveryDate,
         'status': status.storage,
         'createdAt': createdAt?.toIso8601String(),
         'updatedAt': updatedAt?.toIso8601String(),
@@ -128,6 +137,7 @@ class SiteTask extends Equatable {
         assignerName: json['assignerName'] as String? ?? '',
         earliestStart: json['earliestStart'] as String? ?? '',
         dueDate: json['dueDate'] as String? ?? '',
+        actualDeliveryDate: json['actualDeliveryDate'] as String? ?? '',
         status: TaskStatus.fromStorage(json['status'] as String?),
         createdAt: json['createdAt'] != null
             ? DateTime.tryParse(json['createdAt'] as String)
@@ -150,6 +160,7 @@ class SiteTask extends Equatable {
         assignerName,
         earliestStart,
         dueDate,
+        actualDeliveryDate,
         status,
         createdAt,
         updatedAt,

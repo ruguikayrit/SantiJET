@@ -4,6 +4,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:hive/hive.dart';
 
 import '../../core/utils/id_gen.dart';
+import '../../core/utils/puantaj_date.dart';
 import '../../domain/entities/person.dart';
 import '../../domain/entities/site_task.dart';
 import '../../domain/enums/task_status.dart';
@@ -48,6 +49,20 @@ class TasksNotifier extends StateNotifier<List<SiteTask>> {
   void _persist() =>
       _writeList(_box, _key, state.map((e) => e.toJson()).toList());
 
+  /// Tamamlanınca gerçek teslim tarihi yazar; diğer durumlarda temizler.
+  static SiteTask applyStatus(SiteTask task, TaskStatus status) {
+    final actual = status == TaskStatus.done
+        ? (task.actualDeliveryDate.trim().isNotEmpty
+            ? task.actualDeliveryDate.trim()
+            : PuantajDate.today())
+        : '';
+    return task.copyWith(
+      status: status,
+      actualDeliveryDate: actual,
+      updatedAt: DateTime.now(),
+    );
+  }
+
   SiteTask add({
     required String projectId,
     required String title,
@@ -63,7 +78,7 @@ class TasksNotifier extends StateNotifier<List<SiteTask>> {
       throw StateError('Yalnızca 1. derece roller görev atayabilir.');
     }
     final now = DateTime.now();
-    final task = SiteTask(
+    var task = SiteTask(
       id: IdGen.make('tsk'),
       projectId: projectId,
       title: title.trim(),
@@ -79,6 +94,7 @@ class TasksNotifier extends StateNotifier<List<SiteTask>> {
       createdAt: now,
       updatedAt: now,
     );
+    task = applyStatus(task, status);
     state = [...state, task];
     _persist();
     return task;
@@ -86,8 +102,20 @@ class TasksNotifier extends StateNotifier<List<SiteTask>> {
 
   SiteTask upsert(SiteTask task) {
     final now = DateTime.now();
-    final next = task.copyWith(updatedAt: now);
-    final idx = state.indexWhere((t) => t.id == next.id);
+    final idx = state.indexWhere((t) => t.id == task.id);
+    final prev = idx >= 0 ? state[idx] : null;
+    var next = task.copyWith(updatedAt: now);
+    if (next.status == TaskStatus.done) {
+      final existing = next.actualDeliveryDate.trim().isNotEmpty
+          ? next.actualDeliveryDate.trim()
+          : (prev?.actualDeliveryDate.trim() ?? '');
+      next = next.copyWith(
+        actualDeliveryDate:
+            existing.isNotEmpty ? existing : PuantajDate.today(),
+      );
+    } else {
+      next = next.copyWith(actualDeliveryDate: '');
+    }
     if (idx >= 0) {
       state = [
         for (var i = 0; i < state.length; i++)
@@ -105,10 +133,7 @@ class TasksNotifier extends StateNotifier<List<SiteTask>> {
     if (idx < 0) return;
     state = [
       for (var i = 0; i < state.length; i++)
-        if (i == idx)
-          state[i].copyWith(status: status, updatedAt: DateTime.now())
-        else
-          state[i],
+        if (i == idx) applyStatus(state[i], status) else state[i],
     ];
     _persist();
   }

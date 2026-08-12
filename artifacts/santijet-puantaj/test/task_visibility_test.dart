@@ -1,6 +1,9 @@
 import 'package:flutter_test/flutter_test.dart';
+import 'package:santijet_puantaj/core/utils/puantaj_date.dart';
+import 'package:santijet_puantaj/data/providers/tasks_provider.dart';
 import 'package:santijet_puantaj/domain/entities/person.dart';
 import 'package:santijet_puantaj/domain/entities/site_task.dart';
+import 'package:santijet_puantaj/domain/enums/task_status.dart';
 import 'package:santijet_puantaj/domain/permissions/role_degree.dart';
 
 void main() {
@@ -72,6 +75,30 @@ void main() {
       expect(task.isVisibleTo(muhendis), isTrue);
       expect(task.isVisibleTo(usta), isTrue);
       expect(task.isVisibleTo(formen), isFalse);
+    });
+  });
+
+  group('TasksNotifier.applyStatus', () {
+    test('tamamlanınca gerçek teslim tarihi yazar', () {
+      const task = SiteTask(
+        id: 't1',
+        projectId: 'p',
+        title: 'WC aksesuar',
+        status: TaskStatus.todo,
+      );
+      final done = TasksNotifier.applyStatus(task, TaskStatus.done);
+      expect(done.status, TaskStatus.done);
+      expect(done.actualDeliveryDate, PuantajDate.today());
+
+      final again = TasksNotifier.applyStatus(
+        done.copyWith(actualDeliveryDate: '10.08.2026'),
+        TaskStatus.done,
+      );
+      expect(again.actualDeliveryDate, '10.08.2026');
+
+      final reopen = TasksNotifier.applyStatus(again, TaskStatus.todo);
+      expect(reopen.status, TaskStatus.todo);
+      expect(reopen.actualDeliveryDate, isEmpty);
     });
   });
 }
