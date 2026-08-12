@@ -1,5 +1,6 @@
 import 'dart:convert';
 
+import 'package:flutter/foundation.dart';
 import 'package:flutter/services.dart' show rootBundle;
 
 import '../../domain/entities/poz_analiz.dart';
@@ -16,23 +17,19 @@ class CatalogLocalDataSource {
     AnalizDiscipline.elektrik: 'assets/data/resmi-elektrik-analizleri.json',
   };
 
+  /// Web'de UI'yi kilitlememek için her N kayıtta event loop'a bırakılır.
+  static const _webYieldEvery = 400;
+
   Future<List<PozAnaliz>> loadDiscipline(AnalizDiscipline discipline) async {
     final path = _assetByDiscipline[discipline]!;
     final raw = await rootBundle.loadString(path);
-    final decoded = json.decode(raw);
-    if (decoded is! List) return const [];
+    final args = _CatalogParseArgs(raw, discipline.jsonValue);
 
-    return decoded
-        .whereType<Map<dynamic, dynamic>>()
-        .map((m) {
-          final analiz = PozAnaliz.fromJson(m);
-          // Resmi kayıtlar dosya kaynağına göre disiplinle etiketlenir.
-          return analiz.discipline == null
-              ? analiz.copyWith(discipline: discipline)
-              : analiz;
-        })
-        .where((a) => a.id.isNotEmpty)
-        .toList();
+    if (kIsWeb) {
+      return _parseDisciplineJsonChunked(args);
+    }
+    // Mobil/desktop: JSON parse arka plan izolatında.
+    return compute(_parseDisciplineJsonSync, args);
   }
 
   Future<Map<AnalizDiscipline, List<PozAnaliz>>> loadAll() async {
@@ -43,4 +40,55 @@ class CatalogLocalDataSource {
     );
     return Map.fromEntries(entries);
   }
+}
+
+class _CatalogParseArgs {
+  const _CatalogParseArgs(this.raw, this.disciplineKey);
+
+  final String raw;
+  final String disciplineKey;
+}
+
+List<PozAnaliz> _parseDisciplineJsonSync(_CatalogParseArgs args) {
+  final decoded = json.decode(args.raw);
+  if (decoded is! List) return const [];
+  final discipline = AnalizDiscipline.fromJson(args.disciplineKey);
+  final out = <PozAnaliz>[];
+  for (final item in decoded) {
+    if (item is! Map) continue;
+    final analiz = PozAnaliz.fromJson(Map<dynamic, dynamic>.from(item));
+    if (analiz.id.isEmpty) continue;
+    out.add(
+      analiz.discipline == null
+          ? analiz.copyWith(discipline: discipline)
+          : analiz,
+    );
+  }
+  return out;
+}
+
+Future<List<PozAnaliz>> _parseDisciplineJsonChunked(
+  _CatalogParseArgs args,
+) async {
+  final decoded = json.decode(args.raw);
+  if (decoded is! List) return const [];
+  final discipline = AnalizDiscipline.fromJson(args.disciplineKey);
+  final out = <PozAnaliz>[];
+  for (var i = 0; i < decoded.length; i++) {
+    final item = decoded[i];
+    if (item is Map) {
+      final analiz = PozAnaliz.fromJson(Map<dynamic, dynamic>.from(item));
+      if (analiz.id.isNotEmpty) {
+        out.add(
+          analiz.discipline == null
+              ? analiz.copyWith(discipline: discipline)
+              : analiz,
+        );
+      }
+    }
+    if (i > 0 && i % CatalogLocalDataSource._webYieldEvery == 0) {
+      await Future<void>.delayed(Duration.zero);
+    }
+  }
+  return out;
 }

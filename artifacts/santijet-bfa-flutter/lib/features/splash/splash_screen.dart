@@ -1,4 +1,7 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../core/animations/app_animations.dart';
@@ -8,17 +11,18 @@ import '../../core/theme/app_colors.dart';
 import '../../core/theme/app_spacing.dart';
 import '../../core/theme/app_theme.dart';
 import '../../core/theme/app_typography.dart';
+import '../../data/providers/catalog_provider.dart';
 
 /// ŞantiJET Maliyet açılış ekranı — Demir/Beton/Puantaj splash ile birebir;
 /// ürün adı [AppInfo.splashProductLabel].
-class SplashScreen extends StatefulWidget {
+class SplashScreen extends ConsumerStatefulWidget {
   const SplashScreen({super.key});
 
   @override
-  State<SplashScreen> createState() => _SplashScreenState();
+  ConsumerState<SplashScreen> createState() => _SplashScreenState();
 }
 
-class _SplashScreenState extends State<SplashScreen>
+class _SplashScreenState extends ConsumerState<SplashScreen>
     with SingleTickerProviderStateMixin {
   static const _wordmarkAspect = 895 / 150;
   static const _boltWordmarkGap = 28.0;
@@ -38,6 +42,14 @@ class _SplashScreenState extends State<SplashScreen>
   }
 
   Future<void> _bootstrap() async {
+    // Resmi katalogu splash sırasında arka planda ısıt — Analiz ilk açılışı
+    // gecikmesin. Splash süresini uzatma.
+    unawaited(
+      ref.read(officialCatalogProvider.future).then(
+            (_) {},
+            onError: (_, __) {},
+          ),
+    );
     await Future<void>.delayed(const Duration(milliseconds: 1600));
     if (!mounted) return;
     context.go(AppRoutes.home);

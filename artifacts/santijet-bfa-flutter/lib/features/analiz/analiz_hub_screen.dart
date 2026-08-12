@@ -16,6 +16,9 @@ import '../../domain/enums/app_enums.dart';
 import '../ozel_analiz/new_analiz_module_sheet.dart';
 
 /// Analiz yüzeyi — özel analiz, karşılaştırma ve katalog girişleri.
+///
+/// Menü kutuları katalog yüklenmeden çizilir; son/özel listeler katalog
+/// hazır olunca eklenir (ilk açılışta tam ekran spinner yok).
 class AnalizHubScreen extends ConsumerWidget {
   const AnalizHubScreen({super.key});
 
@@ -24,6 +27,21 @@ class AnalizHubScreen extends ConsumerWidget {
     final catalogAsync = ref.watch(catalogProvider);
     final favorites = ref.watch(favoritesProvider);
     final recentIds = ref.watch(recentViewsProvider);
+
+    final catalog = catalogAsync.asData?.value;
+    final recent = catalog == null
+        ? const <PozAnaliz>[]
+        : recentIds
+            .map(catalog.byIdOrNull)
+            .whereType<PozAnaliz>()
+            .take(8)
+            .toList();
+    final ozel = catalog == null
+        ? const <PozAnaliz>[]
+        : catalog.all
+            .where((a) => a.kaynakTip != KaynakTip.sistem)
+            .take(8)
+            .toList();
 
     return Scaffold(
       backgroundColor: AppColors.canvas,
@@ -44,96 +62,93 @@ class AnalizHubScreen extends ConsumerWidget {
       ),
       body: SafeArea(
         bottom: false,
-        child: catalogAsync.when(
-          loading: () => const Center(child: CircularProgressIndicator()),
-          error: (e, _) => Center(child: Text('$e')),
-          data: (catalog) {
-            final recent = recentIds
-                .map(catalog.byIdOrNull)
-                .whereType<PozAnaliz>()
-                .take(8)
-                .toList();
-            final ozel = catalog.all
-                .where((a) => a.kaynakTip != KaynakTip.sistem)
-                .take(8)
-                .toList();
-
-            return CustomScrollView(
-              slivers: [
-                const SliverToBoxAdapter(
-                  child: SantijetHeader(subtitle: 'Analiz'),
-                ),
-                SliverPadding(
-                  padding: const EdgeInsets.fromLTRB(
-                    AppSpacing.md,
-                    AppSpacing.xs,
-                    AppSpacing.md,
-                    0,
+        child: CustomScrollView(
+          slivers: [
+            const SliverToBoxAdapter(
+              child: SantijetHeader(subtitle: 'Analiz'),
+            ),
+            SliverPadding(
+              padding: const EdgeInsets.fromLTRB(
+                AppSpacing.md,
+                AppSpacing.xs,
+                AppSpacing.md,
+                0,
+              ),
+              sliver: SliverList.list(
+                children: [
+                  _HubTile(
+                    icon: Icons.folder_open_outlined,
+                    color: AppColors.moduleInsaat,
+                    title: 'Analiz Kataloğu',
+                    onTap: () => context.push(AppRoutes.analizKatalogu),
                   ),
-                  sliver: SliverList.list(
-                    children: [
-                      _HubTile(
-                        icon: Icons.folder_open_outlined,
-                        color: AppColors.moduleInsaat,
-                        title: 'Analiz Kataloğu',
-                        onTap: () => context.push(AppRoutes.analizKatalogu),
-                      ),
-                      const SizedBox(height: AppSpacing.xs),
-                      _HubTile(
-                        icon: Icons.layers_outlined,
-                        color: AppColors.moduleInsaat,
-                        title: 'İnşaat Analizleri',
-                        onTap: () =>
-                            context.push('${AppRoutes.pozlar}?modul=insaat'),
-                      ),
-                      const SizedBox(height: AppSpacing.xs),
-                      _HubTile(
-                        icon: Icons.plumbing_outlined,
-                        color: AppColors.moduleMekanik,
-                        title: 'Mekanik Tesisat Analizleri',
-                        onTap: () =>
-                            context.push('${AppRoutes.pozlar}?modul=mekanik'),
-                      ),
-                      const SizedBox(height: AppSpacing.xs),
-                      _HubTile(
-                        icon: Icons.bolt_outlined,
-                        color: AppColors.moduleElektrik,
-                        title: 'Elektrik Analizleri',
-                        onTap: () =>
-                            context.push('${AppRoutes.pozlar}?modul=elektrik'),
-                      ),
-                      const SizedBox(height: AppSpacing.xs),
-                      _HubTile(
-                        icon: Icons.compare_arrows,
-                        color: AppColors.moduleMekanik,
-                        title: 'Analiz Karşılaştır',
-                        subtitle: 'Birden fazla analizi yan yana',
-                        onTap: () => context.push(AppRoutes.karsilastir),
-                      ),
-                      const SizedBox(height: AppSpacing.xs),
-                      _HubTile(
-                        icon: Icons.star_outline,
-                        color: AppColors.moduleFavori,
-                        title: 'Favori Analizler',
-                        subtitle: '${favorites.length} kayıt',
-                        onTap: () =>
-                            context.push('${AppRoutes.pozlar}?modul=favoriler'),
-                      ),
-                    ],
+                  const SizedBox(height: AppSpacing.xs),
+                  _HubTile(
+                    icon: Icons.layers_outlined,
+                    color: AppColors.moduleInsaat,
+                    title: 'İnşaat Analizleri',
+                    onTap: () =>
+                        context.push('${AppRoutes.pozlar}?modul=insaat'),
+                  ),
+                  const SizedBox(height: AppSpacing.xs),
+                  _HubTile(
+                    icon: Icons.plumbing_outlined,
+                    color: AppColors.moduleMekanik,
+                    title: 'Mekanik Tesisat Analizleri',
+                    onTap: () =>
+                        context.push('${AppRoutes.pozlar}?modul=mekanik'),
+                  ),
+                  const SizedBox(height: AppSpacing.xs),
+                  _HubTile(
+                    icon: Icons.bolt_outlined,
+                    color: AppColors.moduleElektrik,
+                    title: 'Elektrik Analizleri',
+                    onTap: () =>
+                        context.push('${AppRoutes.pozlar}?modul=elektrik'),
+                  ),
+                  const SizedBox(height: AppSpacing.xs),
+                  _HubTile(
+                    icon: Icons.compare_arrows,
+                    color: AppColors.moduleMekanik,
+                    title: 'Analiz Karşılaştır',
+                    subtitle: 'Birden fazla analizi yan yana',
+                    onTap: () => context.push(AppRoutes.karsilastir),
+                  ),
+                  const SizedBox(height: AppSpacing.xs),
+                  _HubTile(
+                    icon: Icons.star_outline,
+                    color: AppColors.moduleFavori,
+                    title: 'Favori Analizler',
+                    subtitle: '${favorites.length} kayıt',
+                    onTap: () =>
+                        context.push('${AppRoutes.pozlar}?modul=favoriler'),
+                  ),
+                ],
+              ),
+            ),
+            if (catalogAsync.isLoading && catalog == null)
+              const SliverToBoxAdapter(
+                child: Padding(
+                  padding: EdgeInsets.all(AppSpacing.lg),
+                  child: Center(
+                    child: SizedBox(
+                      width: 22,
+                      height: 22,
+                      child: CircularProgressIndicator(strokeWidth: 2),
+                    ),
                   ),
                 ),
-                if (ozel.isNotEmpty) ...[
-                  _section('Özel Analizlerim'),
-                  _list(ozel, favorites, ref, context),
-                ],
-                if (recent.isNotEmpty) ...[
-                  _section('Son Görüntülenenler'),
-                  _list(recent, favorites, ref, context),
-                ],
-                const SliverToBoxAdapter(child: SizedBox(height: 88)),
-              ],
-            );
-          },
+              ),
+            if (ozel.isNotEmpty) ...[
+              _section('Özel Analizlerim'),
+              _list(ozel, favorites, ref, context),
+            ],
+            if (recent.isNotEmpty) ...[
+              _section('Son Görüntülenenler'),
+              _list(recent, favorites, ref, context),
+            ],
+            const SliverToBoxAdapter(child: SizedBox(height: 88)),
+          ],
         ),
       ),
     );

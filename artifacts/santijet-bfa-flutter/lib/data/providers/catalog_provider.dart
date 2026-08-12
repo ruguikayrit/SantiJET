@@ -98,6 +98,7 @@ final catalogDataSourceProvider = Provider<CatalogLocalDataSource>(
 );
 
 /// Resmi katalog (13.436 kayıt) — assets'ten bir kez yüklenir.
+/// Splash sırasında ısıtılır; Analiz hub menüsü bu Future'ı beklemez.
 final officialCatalogProvider = FutureProvider<CatalogData>((ref) async {
   final ds = ref.watch(catalogDataSourceProvider);
   final byDiscipline = await ds.loadAll();
