@@ -680,13 +680,13 @@ class _TasksScreenState extends ConsumerState<TasksScreen> {
             if (operator == null)
               Expanded(
                 child: SJEmptyState(
-                  title: 'Aktif kullanıcı yok',
+                  title: 'Oturum gerekli',
                   message:
-                      'Görev yetkisi Ayarlar → Yönetim → Aktif kullanıcı '
-                      'üzerinden belirlenir.',
-                  icon: Icons.manage_accounts_outlined,
-                  actionLabel: 'Aktif kullanıcı',
-                  onAction: () => context.push(AppRoutes.aktifKullanici),
+                      'Görev yetkisi giriş yapan hesaba göre belirlenir. '
+                      'Devam etmek için Hesap üzerinden oturum açın.',
+                  icon: Icons.account_circle_outlined,
+                  actionLabel: 'Hesap',
+                  onAction: () => context.push(AppRoutes.auth),
                 ),
               )
             else ...[

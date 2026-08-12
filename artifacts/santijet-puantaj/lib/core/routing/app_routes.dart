@@ -12,7 +12,6 @@ abstract final class AppRoutes {
   static const ayarlar = '/ayarlar';
   static const yonetim = '/ayarlar/yonetim';
   static const firma = '/ayarlar/yonetim/firma';
-  static const aktifKullanici = '/ayarlar/yonetim/aktif-kullanici';
   static const projeler = '/ayarlar/projeler';
   static const projeKatil = '/ayarlar/projeler/katil';
   static const auth = '/ayarlar/hesap';

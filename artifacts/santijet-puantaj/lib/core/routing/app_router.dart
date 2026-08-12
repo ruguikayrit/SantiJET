@@ -11,7 +11,6 @@ import '../../features/projects/join_project_screen.dart';
 import '../../features/projects/project_members_screen.dart';
 import '../../features/projects/projects_screen.dart';
 import '../../features/puantaj/puantaj_screen.dart';
-import '../../features/settings/active_user_screen.dart';
 import '../../features/settings/catalog_screens.dart';
 import '../../features/settings/company_settings_screen.dart';
 import '../../features/settings/management_screen.dart';
@@ -188,14 +187,6 @@ final routerProvider = Provider<GoRouter>((ref) {
                 pageBuilder: (context, state) => fadePage(
                   key: state.pageKey,
                   child: const CompanySettingsScreen(),
-                ),
-              ),
-              GoRoute(
-                path: 'aktif-kullanici',
-                parentNavigatorKey: _rootNavigatorKey,
-                pageBuilder: (context, state) => fadePage(
-                  key: state.pageKey,
-                  child: const ActiveUserScreen(),
                 ),
               ),
               GoRoute(

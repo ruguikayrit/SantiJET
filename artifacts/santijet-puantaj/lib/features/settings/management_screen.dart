@@ -6,11 +6,9 @@ import '../../core/design_system/sj_card.dart';
 import '../../core/routing/app_routes.dart';
 import '../../core/theme/app_colors.dart';
 import '../../core/theme/app_spacing.dart';
-import '../../data/providers/active_operator_provider.dart';
 import '../../data/providers/app_data_provider.dart';
 import '../../data/providers/catalog_provider.dart';
 import '../../data/providers/company_provider.dart';
-import '../../domain/permissions/role_degree.dart';
 
 /// Firma / Personel / Meslekler / Ekipler yönetimi — Ayarlar alt sayfası.
 class ManagementScreen extends ConsumerWidget {
@@ -24,18 +22,6 @@ class ManagementScreen extends ConsumerWidget {
     final professionCount = ref.watch(professionsProvider).length;
     final teamCount = ref.watch(teamsProvider).length;
     final categoryCount = ref.watch(taskCategoriesProvider).length;
-    final operator = ref.watch(activeOperatorProvider);
-
-    String aktifSubtitle() {
-      if (active == null) return 'Önce proje seçin';
-      if (operator == null) return 'Bu cihazda kim çalışıyor?';
-      final degree = RoleDegree.isFirstDegree(operator)
-          ? '1. derece'
-          : 'saha';
-      return '${operator.name}'
-          '${operator.profession.isNotEmpty ? ' · ${operator.profession}' : ''}'
-          ' · $degree';
-    }
 
     return Scaffold(
       backgroundColor: AppColors.canvas,
@@ -49,12 +35,6 @@ class ManagementScreen extends ConsumerWidget {
       body: ListView(
         padding: const EdgeInsets.all(AppSpacing.md),
         children: [
-          _SettingsTile(
-            icon: Icons.badge_outlined,
-            title: 'Aktif kullanıcı',
-            subtitle: aktifSubtitle(),
-            onTap: () => context.push(AppRoutes.aktifKullanici),
-          ),
           _SettingsTile(
             icon: Icons.business_outlined,
             title: 'Firma Bilgileri',

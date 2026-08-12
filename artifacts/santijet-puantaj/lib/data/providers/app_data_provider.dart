@@ -279,7 +279,7 @@ final projectPersonnelProvider = Provider<List<Person>>((ref) {
     ..sort((a, b) => a.name.compareTo(b.name));
 });
 
-/// Bugün istihdamda olan personel — İmalat / görev / aktif kullanıcı.
+/// Bugün istihdamda olan personel — İmalat / görev.
 final activePersonnelProvider = Provider<List<Person>>((ref) {
   final project = ref.watch(activeProjectProvider);
   final all = ref.watch(personnelProvider);
