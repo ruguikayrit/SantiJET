@@ -378,7 +378,7 @@ class _GelenCard extends StatelessWidget {
                     vertical: 8,
                   ),
                   decoration: BoxDecoration(
-                    color: AppColors.surfaceElevated,
+                    color: AppColors.cardInsetSurface,
                     borderRadius: BorderRadius.circular(10),
                   ),
                   child: Row(
@@ -388,17 +388,14 @@ class _GelenCard extends StatelessWidget {
                     children: [
                       Text(
                         _fmt(delivery.quantity),
-                        style: AppTypography.titleMedium.copyWith(
-                          color: AppColors.cardTextPrimary,
+                        style: AppTypography.cardTitleMedium.copyWith(
                           fontWeight: FontWeight.w700,
                         ),
                       ),
                       const SizedBox(width: 4),
                       Text(
                         delivery.unit,
-                        style: AppTypography.labelSmall.copyWith(
-                          color: AppColors.cardTextMuted,
-                        ),
+                        style: AppTypography.cardLabelSmall,
                       ),
                     ],
                   ),

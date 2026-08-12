@@ -82,21 +82,21 @@ class _RequestCardState extends ConsumerState<RequestCard> {
                     Text(
                       widget.projectName,
                       style: AppTypography.labelMedium.copyWith(
-                        color: AppColors.electricBlueLight,
+                        color: AppColors.statusInkOnCard(
+                          AppColors.electricBlueLight,
+                        ),
                       ),
                     ),
                     const SizedBox(height: 2),
                     Text(
                       item.displayName,
-                      style: AppTypography.titleMedium.copyWith(
-                        color: AppColors.cardTextPrimary,
-                      ),
+                      style: AppTypography.cardTitleMedium,
                     ),
                     if (item.category.isNotEmpty) ...[
                       const SizedBox(height: 2),
                       Text(
                         item.category,
-                        style: AppTypography.bodySmall.copyWith(
+                        style: AppTypography.cardLabelSmall.copyWith(
                           color: AppColors.cardTextMuted,
                         ),
                       ),
@@ -114,7 +114,7 @@ class _RequestCardState extends ConsumerState<RequestCard> {
                 child: Text(
                   st.label,
                   style: AppTypography.labelMedium.copyWith(
-                    color: statusColor,
+                    color: AppColors.statusInkOnCard(statusColor),
                     fontWeight: FontWeight.w600,
                   ),
                 ),
@@ -230,7 +230,7 @@ class _RequestCardState extends ConsumerState<RequestCard> {
                         hintText: 'Teslim Alan Ad Soyad',
                         isDense: true,
                         filled: true,
-                        fillColor: AppColors.surfaceElevated,
+                        fillColor: AppColors.cardInsetSurface,
                       ),
                     ),
                   ],
@@ -320,10 +320,11 @@ class _InfoBox extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    // Kart içi inset — chrome surfaceElevated + cardText* hibritte çakışır.
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
       decoration: BoxDecoration(
-        color: AppColors.surfaceElevated,
+        color: AppColors.cardInsetSurface,
         borderRadius: AppRadii.sm,
       ),
       child: Column(
@@ -331,15 +332,14 @@ class _InfoBox extends StatelessWidget {
         children: [
           Text(
             label,
-            style: AppTypography.labelSmall.copyWith(
-              color: AppColors.cardTextMuted,
-            ),
+            style: AppTypography.cardLabelSmall,
           ),
           const SizedBox(height: 2),
           Text(
             value,
-            style: AppTypography.labelLarge.copyWith(
+            style: AppTypography.cardLabelLarge.copyWith(
               color: valueColor ?? AppColors.cardTextPrimary,
+              fontWeight: FontWeight.w600,
             ),
           ),
         ],

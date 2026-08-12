@@ -214,7 +214,7 @@ class _NameChip extends StatelessWidget {
       labelStyle: TextStyle(
         fontSize: 12,
         fontWeight: FontWeight.w500,
-        color: selected ? AppColors.textPrimary : AppColors.textMuted,
+        color: selected ? AppColors.textPrimary : AppColors.textSecondary,
       ),
       visualDensity: VisualDensity.compact,
       materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,

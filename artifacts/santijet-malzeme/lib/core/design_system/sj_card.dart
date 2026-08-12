@@ -8,7 +8,15 @@ import '../theme/app_spacing.dart';
 ///
 /// ŞantiJET: koyu kart + açık mürekkep.
 /// ŞantiJET Pro: açık (light) kart + koyu mürekkep — koyu zemin üzerinde.
-/// Kart içinde [Theme.of] kullanırken mutlaka [Builder] ile kart context'ini alın.
+///
+/// Kart içinde **chrome** mürekkep kullanmayın (`AppColors.textPrimary` /
+/// `AppTypography.titleMedium` varsayılan rengi). Bunun yerine:
+/// - [AppTypography.cardTitleMedium] / [AppTypography.onCard]
+/// - [AppColors.cardTextPrimary] / [AppColors.statusInkOnCard]
+/// - kart içi inset yüzey: [AppColors.cardInsetSurface] (chrome
+///   `surfaceElevated` değil)
+///
+/// [Theme.of] kullanırken mutlaka [Builder] ile kart context'ini alın.
 class SJCard extends StatelessWidget {
   const SJCard({
     required this.child,

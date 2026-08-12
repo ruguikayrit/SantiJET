@@ -1,0 +1,37 @@
+---
+description: ŞantiJET Malzeme hibrit tema mürekkep kuralları (chrome vs card)
+globs: artifacts/santijet-malzeme/**/*.dart
+alwaysApply: false
+---
+
+# Malzeme — chrome vs kart mürekkebi
+
+ŞantiJET hibrit paletleri chrome (iskelet) ve kart yüzeylerini ayırır:
+
+| Palet | Chrome | Kartlar |
+|-------|--------|---------|
+| `santijet` | açık | koyu |
+| `santijet_pro` (varsayılan) | koyu | açık |
+
+## Kurallar
+
+1. **Sayfa / header / sheet / chrome chip** → `AppColors.text*` veya `AppTypography.*` (chrome).
+2. **`SJCard` içi metin** → `AppTypography.cardTitleMedium` / `cardBody*` / `onCard(...)` veya `AppColors.cardText*`.
+3. **Kart içi inset kutu / chip / TextField fill** → `AppColors.cardInsetSurface` + `cardText*`. Asla `surfaceElevated` + `cardText*` (hibritte beyaz-üzerine-beyaz / koyu-üzerine-koyu).
+4. **Kart üzerinde mavi/vurgu** → `AppColors.statusInkOnCard(...)`. Chrome üzerinde → `statusInkOnChrome`.
+5. **FAB / filled primary** → etiket rengi beyaz veya `inkless`; `AppTypography.labelLarge` tek başına kullanma (chrome secondary rengi FAB’ı ezer).
+6. Referans doğru kullanım: `request_card.dart`, `sj_list_item.dart`, `sj_stat_card.dart`.
+
+## Yapma
+
+```dart
+// YANLIŞ — SJCard içinde chrome mürekkep
+Text(title, style: AppTypography.titleMedium.copyWith(color: AppColors.textPrimary));
+Container(color: AppColors.surfaceElevated, child: Text(..., color: AppColors.cardTextPrimary));
+```
+
+```dart
+// DOĞRU
+Text(title, style: AppTypography.cardTitleMedium);
+Container(color: AppColors.cardInsetSurface, child: Text(..., style: AppTypography.cardLabelLarge));
+```

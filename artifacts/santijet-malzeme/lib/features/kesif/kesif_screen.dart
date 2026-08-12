@@ -552,17 +552,13 @@ class _BirimSarfiyatlarPaneState extends State<_BirimSarfiyatlarPane> {
                       children: [
                         Text(
                           c.materialName,
-                          style: AppTypography.titleMedium.copyWith(
-                            color: AppColors.textPrimary,
-                          ),
+                          style: AppTypography.cardTitleMedium,
                         ),
                         const SizedBox(height: 2),
                         if (c.pozNo.isNotEmpty)
                           Text(
                             pozLabel(c.pozNo),
-                            style: AppTypography.bodySmall.copyWith(
-                              color: AppColors.textSecondary,
-                            ),
+                            style: AppTypography.cardBodySmall,
                             maxLines: 2,
                             overflow: TextOverflow.ellipsis,
                           ),
@@ -570,8 +566,10 @@ class _BirimSarfiyatlarPaneState extends State<_BirimSarfiyatlarPane> {
                         Text(
                           '${_fmt(c.rate)} ${c.materialUnit}'
                           '${c.kesifUnit.isEmpty ? '' : ' / 1 ${c.kesifUnit}'}',
-                          style: AppTypography.labelLarge.copyWith(
-                            color: AppColors.electricBlueLight,
+                          style: AppTypography.cardLabelLarge.copyWith(
+                            color: AppColors.statusInkOnCard(
+                              AppColors.electricBlueLight,
+                            ),
                           ),
                         ),
                       ],
@@ -769,16 +767,15 @@ class _KesifMetrajCard extends StatelessWidget {
           children: [
             Text(
               '${line.pozNo} · ${line.tanim}',
-              style: AppTypography.bodyMedium.copyWith(
-                color: AppColors.textPrimary,
+              style: AppTypography.cardBodyMedium.copyWith(
                 fontWeight: FontWeight.w600,
               ),
             ),
             const SizedBox(height: 2),
             Text(
               'Metraj: ${_fmt(line.miktar)} ${line.birim}',
-              style: AppTypography.labelLarge.copyWith(
-                color: AppColors.electricBlueLight,
+              style: AppTypography.cardLabelLarge.copyWith(
+                color: AppColors.statusInkOnCard(AppColors.electricBlueLight),
               ),
             ),
           ],
@@ -834,26 +831,28 @@ class _NeedTile extends StatelessWidget {
                   children: [
                     Text(
                       need.materialName,
-                      style: AppTypography.bodyMedium.copyWith(
-                        color: AppColors.textPrimary,
-                      ),
+                      style: AppTypography.cardBodyMedium,
                     ),
                     const SizedBox(height: 2),
                     Text(
                       'Toplam ${_fmt(need.quantity)} ${need.materialUnit}'
                       ' · talep ${_fmt(ordered)}'
                       ' · kalan ${_fmt(remaining)}',
-                      style: AppTypography.bodySmall.copyWith(
+                      style: AppTypography.cardBodySmall.copyWith(
                         color: done
-                            ? AppColors.electricBlueLight
-                            : AppColors.textSecondary,
+                            ? AppColors.statusInkOnCard(
+                                AppColors.electricBlueLight,
+                              )
+                            : AppColors.cardTextSecondary,
                       ),
                     ),
                     if (done)
                       Text(
                         'Tamamı talep edildi',
-                        style: AppTypography.labelSmall.copyWith(
-                          color: AppColors.electricBlueLight,
+                        style: AppTypography.cardLabelSmall.copyWith(
+                          color: AppColors.statusInkOnCard(
+                            AppColors.electricBlueLight,
+                          ),
                         ),
                       ),
                   ],

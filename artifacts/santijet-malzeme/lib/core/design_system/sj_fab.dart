@@ -32,12 +32,18 @@ class SJFab extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    // AppTypography.* chrome mürekkebi taşır; FAB foreground (beyaz) ezilmesin.
+    final labelStyle = AppTypography.labelLarge.copyWith(
+      color: Colors.white,
+      fontWeight: FontWeight.w600,
+    );
+
     final Widget fab;
     if (extended) {
       fab = FloatingActionButton.extended(
         onPressed: onPressed,
         icon: const Icon(Icons.add),
-        label: Text(label, style: AppTypography.labelLarge),
+        label: Text(label, style: labelStyle),
       );
     } else {
       fab = FloatingActionButton(

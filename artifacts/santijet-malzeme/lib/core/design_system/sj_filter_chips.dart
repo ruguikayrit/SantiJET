@@ -54,6 +54,9 @@ class _FilterChipItem extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    // Chrome mürekkebi — canvas/chip zemini ile aynı palet (kart text* değil).
+    final ink = selected ? AppColors.textPrimary : AppColors.textSecondary;
+
     return FilterChip(
       label: Text(
         label,
@@ -63,7 +66,7 @@ class _FilterChipItem extends StatelessWidget {
       selected: selected,
       onSelected: (_) => onSelected(),
       labelStyle: AppTypography.labelMedium.copyWith(
-        color: selected ? AppColors.textPrimary : AppColors.textMuted,
+        color: ink,
         fontWeight: selected ? FontWeight.w600 : FontWeight.w500,
       ),
       backgroundColor: AppColors.surfaceElevated,

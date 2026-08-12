@@ -5,9 +5,10 @@ import 'app_colors.dart';
 /// ŞantiJET tipografi — Demir ile aynı ölçek / aile / renkler.
 ///
 /// Varsayılan renkler **chrome** mürekkebidir ([AppColors.textPrimary]).
-/// [SJCard] / hibrit özet kartlarında mutlaka [AppColors.cardTextPrimary]
-/// (veya kart Theme'i) ile override edin — aksi halde Pro/ŞantiJET'te
-/// başlıklar zemine karışır.
+/// [SJCard] / hibrit özet kartlarında [cardTitleMedium] / [onCard] kullanın
+/// veya [AppColors.cardTextPrimary] ile override edin.
+/// Aksi halde ŞantiJET / Pro hibritlerinde koyu-üzerine-koyu veya
+/// açık-üzerine-açık çakışma oluşur.
 ///
 /// Fontlar uygulamada paketlenmiştir (Inter + Rajdhani).
 abstract final class AppTypography {
@@ -143,5 +144,45 @@ abstract final class AppTypography {
         fontWeight: FontWeight.w600,
         height: 1.1,
         letterSpacing: 0.04,
+      );
+
+  // —— Kart mürekkebi (hibrit güvenli) ——
+  // Chrome stillerini [SJCard] içinde doğrudan kullanmayın.
+
+  static TextStyle get cardTitleMedium =>
+      titleMedium.copyWith(color: AppColors.cardTextPrimary);
+
+  static TextStyle get cardBodyMedium =>
+      bodyMedium.copyWith(color: AppColors.cardTextPrimary);
+
+  static TextStyle get cardBodySmall =>
+      bodySmall.copyWith(color: AppColors.cardTextSecondary);
+
+  static TextStyle get cardLabelLarge =>
+      labelLarge.copyWith(color: AppColors.cardTextPrimary);
+
+  static TextStyle get cardLabelMedium =>
+      labelMedium.copyWith(color: AppColors.cardTextMuted);
+
+  static TextStyle get cardLabelSmall =>
+      labelSmall.copyWith(color: AppColors.cardTextMuted);
+
+  /// Mevcut stilin rengini kart mürekkebine çevirir.
+  static TextStyle onCard(
+    TextStyle style, {
+    Color? color,
+  }) =>
+      style.copyWith(color: color ?? AppColors.cardTextPrimary);
+
+  /// Renk bırakır — [Theme]/[DefaultTextStyle] / FAB foreground için.
+  /// Not: [TextStyle.copyWith(color: null)] rengi silmez; yeni stil kurulur.
+  static TextStyle inkless(TextStyle style) => TextStyle(
+        fontFamily: style.fontFamily,
+        fontSize: style.fontSize,
+        fontWeight: style.fontWeight,
+        fontStyle: style.fontStyle,
+        height: style.height,
+        letterSpacing: style.letterSpacing,
+        decoration: style.decoration,
       );
 }

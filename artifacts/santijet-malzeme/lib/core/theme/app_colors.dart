@@ -165,6 +165,24 @@ abstract final class AppColors {
     return luminance < 0.45 ? darkTextMuted : lightTextMuted;
   }
 
+  /// Durum / vurgu rengini metin mürekkebi olarak kullanırken:
+  /// açık yüzeylerde rengi koyulaştırır (kontrast), koyu yüzeyde bırakır.
+  static Color statusInk(Color status, {required Color surface}) {
+    if (surface.computeLuminance() < 0.45) return status;
+    return Color.lerp(status, lightTextPrimary, 0.42) ?? status;
+  }
+
+  /// Kart yüzeyi üzerinde durum / vurgu mürekkebi.
+  static Color statusInkOnCard(Color status) =>
+      statusInk(status, surface: cardSurface);
+
+  /// Chrome / canvas üzerinde durum / vurgu mürekkebi.
+  static Color statusInkOnChrome(Color status) =>
+      statusInk(status, surface: canvas);
+
+  /// Kart içi iç kutu / chip yüzeyi — chrome [surfaceElevated] kullanmayın.
+  static Color get cardInsetSurface => cardSurfaceHighlight;
+
   static List<BoxShadow> get cardElevation {
     if (useDarkCards) {
       return [

@@ -97,16 +97,12 @@ class _KutuphaneScreenState extends ConsumerState<KutuphaneScreen> {
                               children: [
                                 Text(
                                   sheet.productName,
-                                  style: AppTypography.titleMedium.copyWith(
-                                    color: AppColors.textPrimary,
-                                  ),
+                                  style: AppTypography.cardTitleMedium,
                                 ),
                                 const SizedBox(height: 2),
                                 Text(
                                   sheet.manufacturer,
-                                  style: AppTypography.bodySmall.copyWith(
-                                    color: AppColors.textSecondary,
-                                  ),
+                                  style: AppTypography.cardBodySmall,
                                 ),
                                 if (sheet.tags.isNotEmpty) ...[
                                   const SizedBox(height: AppSpacing.sm),
@@ -119,13 +115,14 @@ class _KutuphaneScreenState extends ConsumerState<KutuphaneScreen> {
                                           label: Text(tag),
                                           visualDensity: VisualDensity.compact,
                                           backgroundColor:
-                                              AppColors.surfaceElevated,
+                                              AppColors.cardInsetSurface,
                                           side: BorderSide(
-                                            color: AppColors.border,
+                                            color: AppColors.cardBorder,
                                           ),
                                           labelStyle:
-                                              AppTypography.labelSmall.copyWith(
-                                            color: AppColors.textSecondary,
+                                              AppTypography.cardLabelSmall
+                                                  .copyWith(
+                                            color: AppColors.cardTextSecondary,
                                           ),
                                         ),
                                     ],
