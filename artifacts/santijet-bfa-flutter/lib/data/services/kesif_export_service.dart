@@ -18,7 +18,7 @@ import '../../domain/enums/app_enums.dart';
 
 /// Keşif / metraj / yaklaşık maliyet cetveli dışa aktarma.
 class KesifExportService {
-  static const defaultPdfTitle = 'ŞANTİJET MALİYET — METRAJ / KEŞİF CETVELİ';
+  static const defaultPdfTitle = 'METRAJ / KEŞİF CETVELİ';
   static const yaklasikMaliyetPdfTitle = 'YAKLAŞIK MALİYET CETVELİ';
 
   Future<void> sharePdf(
