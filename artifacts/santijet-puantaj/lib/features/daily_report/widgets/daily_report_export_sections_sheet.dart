@@ -190,6 +190,14 @@ class _ExportSectionsPickerSheetState
                   ),
                 ),
                 _sectionTile(
+                  title: 'Planlı işler listesi',
+                  subtitle: 'Planlanan işler',
+                  value: _sections.nextDayPlan,
+                  onChanged: (v) => setState(
+                    () => _sections = _sections.copyWith(nextDayPlan: v),
+                  ),
+                ),
+                _sectionTile(
                   title: 'Gelen malzeme',
                   subtitle: 'Tedarik kayıtları',
                   value: _sections.incomingMaterials,
@@ -229,14 +237,6 @@ class _ExportSectionsPickerSheetState
                   value: _sections.vehicles,
                   onChanged: (v) => setState(
                     () => _sections = _sections.copyWith(vehicles: v),
-                  ),
-                ),
-                _sectionTile(
-                  title: 'Planlı işler listesi',
-                  subtitle: 'Planlanan işler',
-                  value: _sections.nextDayPlan,
-                  onChanged: (v) => setState(
-                    () => _sections = _sections.copyWith(nextDayPlan: v),
                   ),
                 ),
                 _sectionTile(

@@ -308,6 +308,33 @@ class DailyReportPdfService {
       }
     }
 
+    if (sections.nextDayPlan) {
+      addCompactSection(
+        'PLANLI İŞLER LİSTESİ',
+        pw.Container(
+          width: double.infinity,
+          constraints: const pw.BoxConstraints(minHeight: 40),
+          padding: const pw.EdgeInsets.all(8),
+          alignment: pw.Alignment.centerLeft,
+          decoration: pw.BoxDecoration(
+            border: pw.Border.all(color: _line, width: 0.7),
+          ),
+          child: pw.Text(
+            report.nextDayPlan.trim().isEmpty
+                ? '—'
+                : report.nextDayPlan.trim(),
+            textAlign: pw.TextAlign.left,
+            style: pw.TextStyle(
+              fontSize: 10,
+              color: report.nextDayPlan.trim().isEmpty ? _muted : _ink,
+              lineSpacing: 3,
+            ),
+          ),
+        ),
+        minSpace: 90,
+      );
+    }
+
     if (sections.incomingMaterials) {
       _addTableSection(
         widgets,
@@ -372,33 +399,6 @@ class DailyReportPdfService {
         isEmpty: report.vehicles.isEmpty,
         gap: gap,
         ensureSpace: ensureSectionSpace,
-      );
-    }
-
-    if (sections.nextDayPlan) {
-      addCompactSection(
-        'PLANLI İŞLER LİSTESİ',
-        pw.Container(
-          width: double.infinity,
-          constraints: const pw.BoxConstraints(minHeight: 40),
-          padding: const pw.EdgeInsets.all(8),
-          alignment: pw.Alignment.centerLeft,
-          decoration: pw.BoxDecoration(
-            border: pw.Border.all(color: _line, width: 0.7),
-          ),
-          child: pw.Text(
-            report.nextDayPlan.trim().isEmpty
-                ? '—'
-                : report.nextDayPlan.trim(),
-            textAlign: pw.TextAlign.left,
-            style: pw.TextStyle(
-              fontSize: 10,
-              color: report.nextDayPlan.trim().isEmpty ? _muted : _ink,
-              lineSpacing: 3,
-            ),
-          ),
-        ),
-        minSpace: 90,
       );
     }
 

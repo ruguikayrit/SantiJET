@@ -1855,6 +1855,28 @@ class _DailyReportScreenState extends ConsumerState<DailyReportScreen> {
                   ),
                   const SizedBox(height: AppSpacing.md),
                   _SectionCard(
+                    title: 'Planlı işler listesi',
+                    icon: Icons.event_note_outlined,
+                    trailing: IconButton(
+                      tooltip: 'Dünden kopyala',
+                      onPressed: () => _copyFromYesterday({
+                        DailyReportCopyField.nextDayPlan,
+                      }),
+                      icon: const Icon(Icons.copy_outlined, size: 20),
+                    ),
+                    child: _WorkNotesTile(
+                      label: 'Planlanan işler',
+                      text: _nextDayPlanCtrl.text,
+                      emptyHint: 'Planlanan işler, ekipler, malzeme…',
+                      onEdit: () => _editWorkNotes(
+                        title: 'Planlı işler listesi',
+                        hint: 'Planlanan işler, ekipler, malzeme…',
+                        target: _nextDayPlanCtrl,
+                      ),
+                    ),
+                  ),
+                  const SizedBox(height: AppSpacing.md),
+                  _SectionCard(
                     title: 'Gelen malzeme',
                     icon: Icons.local_shipping_outlined,
                     trailing: Row(
@@ -2190,28 +2212,6 @@ class _DailyReportScreenState extends ConsumerState<DailyReportScreen> {
                           ),
                         ),
                     ],
-                  ),
-                  const SizedBox(height: AppSpacing.md),
-                  _SectionCard(
-                    title: 'Planlı işler listesi',
-                    icon: Icons.event_note_outlined,
-                    trailing: IconButton(
-                      tooltip: 'Dünden kopyala',
-                      onPressed: () => _copyFromYesterday({
-                        DailyReportCopyField.nextDayPlan,
-                      }),
-                      icon: const Icon(Icons.copy_outlined, size: 20),
-                    ),
-                    child: _WorkNotesTile(
-                      label: 'Planlanan işler',
-                      text: _nextDayPlanCtrl.text,
-                      emptyHint: 'Planlanan işler, ekipler, malzeme…',
-                      onEdit: () => _editWorkNotes(
-                        title: 'Planlı işler listesi',
-                        hint: 'Planlanan işler, ekipler, malzeme…',
-                        target: _nextDayPlanCtrl,
-                      ),
-                    ),
                   ),
                 ],
               ),
