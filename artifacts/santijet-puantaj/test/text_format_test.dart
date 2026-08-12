@@ -1,5 +1,6 @@
 import 'package:flutter_test/flutter_test.dart';
 import 'package:santijet_puantaj/core/utils/text_format.dart';
+import 'package:santijet_puantaj/domain/entities/daily_report.dart';
 import 'package:santijet_puantaj/domain/entities/person.dart';
 
 void main() {
@@ -46,5 +47,29 @@ void main() {
       'Havalandırma ve ısı yalıtımı',
     );
     expect(sentenceCaseTr('Trapez Sac'), 'Trapez sac');
+    expect(sentenceCaseTr('çatıda yalıtım tamamlandı'), 'Çatıda yalıtım tamamlandı');
+    expect(sentenceCaseTr('i'), 'İ');
+    expect(sentenceCaseTr('• çatıda yalıtım'), '• Çatıda yalıtım');
+  });
+
+  test('DailyReportPhoto.caption: kayıtta cümle biçimi', () {
+    final photo = DailyReportPhoto(
+      id: 'ph1',
+      dataBase64: 'YWJj',
+      caption: 'çatıda yalıtım işleri tamamlandı',
+    );
+    expect(photo.caption, 'Çatıda yalıtım işleri tamamlandı');
+    expect(
+      photo.copyWith(caption: 'BOYA KAPORTA GİRİŞİ').caption,
+      'Boya kaporta girişi',
+    );
+    expect(
+      DailyReportPhoto.fromJson({
+        'id': 'ph2',
+        'dataBase64': 'YWJj',
+        'caption': '  elektrik pano montajı  ',
+      }).caption,
+      'Elektrik pano montajı',
+    );
   });
 }

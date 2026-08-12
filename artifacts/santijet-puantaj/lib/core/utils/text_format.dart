@@ -13,8 +13,9 @@ String titleCaseTr(String input) {
   );
 }
 
-/// Cümle biçimi: yalnızca ilk harf büyük, kalanı küçük.
+/// Cümle biçimi: ilk harfi büyük, kalanı küçük (Türkçe I/İ kuralları).
 ///
+/// Baştaki madde işareti / noktalama atlanır: `• çatıda iş` → `• Çatıda iş`
 /// `CEPHE AKSESUAR` → `Cephe aksesuar`
 String sentenceCaseTr(String input) {
   final trimmed = input.trim();
@@ -22,9 +23,24 @@ String sentenceCaseTr(String input) {
   final lower = _lowerTr(trimmed);
   final runes = lower.runes.toList();
   if (runes.isEmpty) return lower;
-  final first = String.fromCharCode(runes.first);
-  final rest = String.fromCharCodes(runes.skip(1));
-  return '${_upperTr(first)}$rest';
+
+  var i = 0;
+  while (i < runes.length && !_isLetterRune(runes[i])) {
+    i++;
+  }
+  if (i >= runes.length) return lower;
+
+  final before = String.fromCharCodes(runes.take(i));
+  final first = String.fromCharCode(runes[i]);
+  final rest = String.fromCharCodes(runes.skip(i + 1));
+  return '$before${_upperTr(first)}$rest';
+}
+
+bool _isLetterRune(int rune) {
+  final c = String.fromCharCode(rune);
+  final lower = _lowerTr(c);
+  if (RegExp(r'[a-z]').hasMatch(lower)) return true;
+  return lower != _upperTr(lower);
 }
 
 String _titleWordTr(String word) {

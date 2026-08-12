@@ -59,14 +59,64 @@ void main() {
       expect(snap.present, 1);
       expect(snap.half, 1);
       expect(snap.leave, 1);
-      expect(snap.absent, 1); // Can kayıtsız
+      expect(snap.absent, 0);
+      expect(snap.unrecorded, 1); // Can kayıtsız
+      expect(snap.countOf(AttendanceStatus.present), 1);
       expect(snap.totalAdamSaat, 14); // 8+2+4
       expect(snap.totalYevmiye, 1.75); // 1.25 + 0.5
-      expect(snap.people.length, 3);
+      expect(snap.people.length, 4);
       expect(
         snap.people.firstWhere((p) => p.personId == 'u1').team,
         'A Ekibi',
       );
+      expect(
+        snap.people.firstWhere((p) => p.personId == 'u4').status,
+        'Girilmedi',
+      );
+    });
+
+    test('işe giriş günü Giriş olarak sayılır, Yok sayılmaz', () {
+      final people = [
+        Person(
+          id: 'u1',
+          projectId: 'p',
+          name: 'Ali',
+          hireDate: '04.08.2026',
+        ),
+        Person(
+          id: 'u2',
+          projectId: 'p',
+          name: 'Veli',
+          hireDate: '2026-01-01',
+        ),
+      ];
+      final att = [
+        Attendance(
+          id: 'a2',
+          projectId: 'p',
+          personId: 'u2',
+          personName: 'Veli',
+          date: '04.08.2026',
+          status: AttendanceStatus.present,
+          hours: 8,
+        ),
+      ];
+
+      final snap = AttendanceSnapshotBuilder.build(
+        projectId: 'p',
+        date: '04.08.2026',
+        attendance: att,
+        activePeople: people,
+      );
+
+      expect(snap.countOf(AttendanceStatus.giris), 1);
+      expect(snap.absent, 0);
+      expect(snap.unrecorded, 0);
+      expect(
+        snap.people.firstWhere((p) => p.personId == 'u1').status,
+        'Giriş',
+      );
+      expect(snap.people.length, 2);
     });
 
     test('çıkış tarihinden sonra rapor gününde personel listelenmez', () {
@@ -131,7 +181,7 @@ void main() {
         workConstruction: 'Kazı',
         workElectrical: 'Pano bağlantısı',
         workMechanical: 'Klima altyapı',
-        photos: const [
+        photos: [
           DailyReportPhoto(
             id: 'ph1',
             dataBase64: 'YWJj',
@@ -189,7 +239,7 @@ void main() {
         'date': '04.08.2026',
         'workConstruction': 'İNŞAAT İŞLERİ:\nKazı\nBatı cephe',
         'photos': [
-          const DailyReportPhoto(
+          DailyReportPhoto(
             id: 'ph1',
             dataBase64: 'YWJj',
             caption: 'Batı cephe',
@@ -211,7 +261,7 @@ void main() {
         projectId: 'p',
         date: '04.08.2026',
         workConstruction: 'Kazı',
-        photos: const [
+        photos: [
           DailyReportPhoto(
             id: 'ph1',
             dataBase64: 'YWJj',
@@ -283,13 +333,13 @@ BİRİM FİYAT: 4.5
       var seq = 0;
       String makeId(String prefix) => '$prefix-${++seq}';
 
-      const source = DailyReport(
+      final source = DailyReport(
         id: 'src',
         projectId: 'p',
         date: '07.08.2026',
         workConstruction: 'Kazı',
         nextDayPlan: 'Kalıp',
-        machines: [
+        machines: const [
           DailyReportMachine(
             id: 'mch-old',
             name: 'Forklift',
@@ -297,7 +347,7 @@ BİRİM FİYAT: 4.5
             hoursWorked: 2,
           ),
         ],
-        vehicles: [
+        vehicles: const [
           DailyReportMachine(
             id: 'veh-old',
             name: 'Otomobil',
@@ -311,7 +361,7 @@ BİRİM FİYAT: 4.5
             caption: 'eski',
           ),
         ],
-        weather: DailyReportWeather(
+        weather: const DailyReportWeather(
           temperatureC: 30,
           description: 'Açık',
           synced: true,

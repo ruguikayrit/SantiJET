@@ -11,6 +11,7 @@ import '../../domain/daily_report/attendance_snapshot_builder.dart';
 import '../../domain/entities/company_info.dart';
 import '../../domain/entities/daily_report.dart';
 import '../../domain/entities/project.dart';
+import '../../domain/enums/attendance_status.dart';
 import 'daily_report_export_sections.dart';
 import 'report_file_access_stub.dart'
     if (dart.library.html) 'report_file_access_web.dart'
@@ -613,21 +614,18 @@ class DailyReportPdfService {
         style: const pw.TextStyle(fontSize: 9, color: _muted),
       );
     }
+    final boxes = <pw.Widget>[
+      for (final s in AttendanceStatus.values)
+        _statBox(s.short, '${snap.countOf(s)}'),
+      _statBox('Top', '${snap.people.length}'),
+      _statBox('Toplam P.', '${snap.generalTotal}'),
+    ];
     return pw.Column(
       crossAxisAlignment: pw.CrossAxisAlignment.center,
       children: [
-        pw.Row(
-          children: [
-            _statBox('Mevcut', '${snap.present}'),
-            _statBox('Yarım', '${snap.half}'),
-            _statBox('İzin', '${snap.leave}'),
-            _statBox('Yok', '${snap.absent}'),
-            _statBox(
-              'Toplam P.',
-              '${snap.present + snap.half + snap.leave}',
-            ),
-          ],
-        ),
+        pw.Row(children: boxes.take(6).toList()),
+        pw.SizedBox(height: 4),
+        pw.Row(children: boxes.skip(6).toList()),
         pw.SizedBox(height: 4),
         pw.Text(
           'Adam-saat: ${_fmt(snap.totalAdamSaat)} · '

@@ -1,6 +1,7 @@
 import 'package:equatable/equatable.dart';
 
 import '../../core/utils/text_format.dart';
+import '../enums/attendance_status.dart';
 import '../enums/photo_work_category.dart';
 
 /// Günlük saha raporu — proje + takvim günü başına tek kayıt (upsert).
@@ -365,15 +366,16 @@ class DailyReport extends Equatable {
 /// Fotoğraf — Hive’da base64; web + mobil ortak (dosya yolu yok).
 ///
 /// Açıklama kuralı: **önerilen**. Boş kayda izin var; UI uyarı gösterir.
+/// Dolu açıklamalar kayıtta cümle biçiminde tutulur (bkz. [sentenceCaseTr]).
 class DailyReportPhoto extends Equatable {
-  const DailyReportPhoto({
+  DailyReportPhoto({
     required this.id,
     required this.dataBase64,
-    this.caption = '',
+    String caption = '',
     this.workCategory = PhotoWorkCategory.none,
     this.mimeType = 'image/jpeg',
     this.createdAt,
-  });
+  }) : caption = sentenceCaseTr(caption);
 
   final String id;
   final String dataBase64;
@@ -862,6 +864,8 @@ class DailyReportAttendanceSnapshot extends Equatable {
     this.half = 0,
     this.leave = 0,
     this.absent = 0,
+    this.unrecorded = 0,
+    this.statusCounts = const {},
     this.totalAdamSaat = 0,
     this.totalYevmiye = 0,
     this.people = const [],
@@ -872,16 +876,45 @@ class DailyReportAttendanceSnapshot extends Equatable {
   final int half;
   final int leave;
   final int absent;
+
+  /// Puantajı henüz girilmemiş (durum yok) kişi sayısı.
+  final int unrecorded;
+
+  /// [AttendanceStatus.jsonValue] → adet.
+  final Map<String, int> statusCounts;
   final double totalAdamSaat;
   final double totalYevmiye;
   final List<DailyReportAttendancePerson> people;
   final DateTime? capturedAt;
+
+  int countOf(AttendanceStatus status) =>
+      statusCounts[status.jsonValue] ?? _legacyCount(status);
+
+  int _legacyCount(AttendanceStatus status) => switch (status) {
+        AttendanceStatus.present => present,
+        AttendanceStatus.half => half,
+        AttendanceStatus.absent => absent,
+        AttendanceStatus.izinli ||
+        AttendanceStatus.raporlu ||
+        AttendanceStatus.mazeret ||
+        AttendanceStatus.tatil ||
+        AttendanceStatus.haftaTatili =>
+          statusCounts.isEmpty ? leave : (statusCounts[status.jsonValue] ?? 0),
+        _ => statusCounts[status.jsonValue] ?? 0,
+      };
+
+  /// Genel toplam — yok / giriş / çıkış hariç (puantaj cetveli ile aynı).
+  int get generalTotal => AttendanceStatus.values
+      .where((s) => s.countsInGeneralTotal)
+      .fold(0, (sum, s) => sum + countOf(s));
 
   Map<String, dynamic> toJson() => {
         'present': present,
         'half': half,
         'leave': leave,
         'absent': absent,
+        'unrecorded': unrecorded,
+        'statusCounts': statusCounts,
         'totalAdamSaat': totalAdamSaat,
         'totalYevmiye': totalYevmiye,
         'people': people.map((e) => e.toJson()).toList(),
@@ -900,11 +933,20 @@ class DailyReportAttendanceSnapshot extends Equatable {
         );
       }
     }
+    final rawCounts = json['statusCounts'];
+    final statusCounts = <String, int>{};
+    if (rawCounts is Map) {
+      for (final e in rawCounts.entries) {
+        statusCounts['${e.key}'] = (e.value as num?)?.toInt() ?? 0;
+      }
+    }
     return DailyReportAttendanceSnapshot(
       present: (json['present'] as num?)?.toInt() ?? 0,
       half: (json['half'] as num?)?.toInt() ?? 0,
       leave: (json['leave'] as num?)?.toInt() ?? 0,
       absent: (json['absent'] as num?)?.toInt() ?? 0,
+      unrecorded: (json['unrecorded'] as num?)?.toInt() ?? 0,
+      statusCounts: statusCounts,
       totalAdamSaat: (json['totalAdamSaat'] as num?)?.toDouble() ?? 0,
       totalYevmiye: (json['totalYevmiye'] as num?)?.toDouble() ?? 0,
       people: people,
@@ -920,6 +962,8 @@ class DailyReportAttendanceSnapshot extends Equatable {
         half,
         leave,
         absent,
+        unrecorded,
+        statusCounts,
         totalAdamSaat,
         totalYevmiye,
         people,

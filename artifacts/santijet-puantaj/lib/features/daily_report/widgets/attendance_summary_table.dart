@@ -7,6 +7,7 @@ import '../../../core/theme/app_spacing.dart';
 import '../../../core/utils/text_format.dart';
 import '../../../domain/daily_report/attendance_snapshot_builder.dart';
 import '../../../domain/entities/daily_report.dart';
+import '../../../domain/enums/attendance_status.dart';
 
 /// Demir çap/ton tablosu düzeninde puantaj personel özeti.
 class AttendanceSummaryTable extends StatelessWidget {
@@ -37,186 +38,184 @@ class AttendanceSummaryTable extends StatelessWidget {
     return Theme(
       data: theme,
       child: Container(
-      decoration: BoxDecoration(
-        color: AppColors.cardSurface,
-        borderRadius: AppRadii.md,
-        border: Border.all(color: border),
-      ),
-      clipBehavior: Clip.antiAlias,
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.stretch,
-        children: [
-          const Padding(
-            padding: EdgeInsets.fromLTRB(8, 6, 8, 4),
-            child: _HeaderRow(
-              cells: [
-                _HeaderCell('PERSONEL', flex: 3),
-                _HeaderCell('MESLEK', flex: 2),
-                _HeaderCell('EKİP', flex: 2),
-                _HeaderCell('DURUM', flex: 2),
-                _HeaderCell('YV', flex: 1),
-              ],
-            ),
-          ),
-          if (people.isEmpty)
-            Padding(
-              padding: const EdgeInsets.fromLTRB(12, 8, 12, 12),
-              child: Text(
-                'Bu gün için personel satırı yok',
-                textAlign: TextAlign.center,
-                style: theme.textTheme.bodySmall?.copyWith(
-                  color: theme.colorScheme.onSurfaceVariant,
-                ),
-              ),
-            )
-          else
-            ConstrainedBox(
-              constraints: const BoxConstraints(maxHeight: 280),
-              child: ListView.builder(
-                shrinkWrap: true,
-                padding: EdgeInsets.zero,
-                itemCount: people.length,
-                itemBuilder: (context, index) {
-                  final p = people[index];
-                  final meslek = p.profession.isNotEmpty
-                      ? titleCaseTr(p.profession)
-                      : '—';
-                  final ekip =
-                      p.team.isNotEmpty ? titleCaseTr(p.team) : '—';
-                  final yv = p.yevmiye > 0 ? _num(p.yevmiye) : '—';
-                  return Container(
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 10,
-                      vertical: 9,
-                    ),
-                    decoration: BoxDecoration(
-                      border: Border(bottom: BorderSide(color: border)),
-                    ),
-                    child: Row(
-                      children: [
-                        Expanded(
-                          flex: 3,
-                          child: Text(
-                            titleCaseTr(p.personName),
-                            style: theme.textTheme.bodySmall?.copyWith(
-                              fontWeight: FontWeight.w600,
-                            ),
-                            maxLines: 2,
-                            overflow: TextOverflow.ellipsis,
-                          ),
-                        ),
-                        Expanded(
-                          flex: 2,
-                          child: Text(
-                            meslek,
-                            textAlign: TextAlign.center,
-                            style: theme.textTheme.labelSmall,
-                            maxLines: 2,
-                            overflow: TextOverflow.ellipsis,
-                          ),
-                        ),
-                        Expanded(
-                          flex: 2,
-                          child: Text(
-                            ekip,
-                            textAlign: TextAlign.center,
-                            style: theme.textTheme.labelSmall,
-                            maxLines: 2,
-                            overflow: TextOverflow.ellipsis,
-                          ),
-                        ),
-                        Expanded(
-                          flex: 2,
-                          child: Text(
-                            p.status,
-                            textAlign: TextAlign.center,
-                            style: theme.textTheme.labelSmall?.copyWith(
-                              fontWeight: FontWeight.w700,
-                              color: _statusColor(p.status),
-                            ),
-                            maxLines: 1,
-                            overflow: TextOverflow.ellipsis,
-                          ),
-                        ),
-                        Expanded(
-                          flex: 1,
-                          child: Text(
-                            yv,
-                            textAlign: TextAlign.center,
-                            style: theme.textTheme.labelSmall?.copyWith(
-                              fontWeight: FontWeight.w700,
-                            ),
-                          ),
-                        ),
-                      ],
-                    ),
-                  );
-                },
+        decoration: BoxDecoration(
+          color: AppColors.cardSurface,
+          borderRadius: AppRadii.md,
+          border: Border.all(color: border),
+        ),
+        clipBehavior: Clip.antiAlias,
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            const Padding(
+              padding: EdgeInsets.fromLTRB(8, 6, 8, 4),
+              child: _HeaderRow(
+                cells: [
+                  _HeaderCell('PERSONEL', flex: 3),
+                  _HeaderCell('MESLEK', flex: 2),
+                  _HeaderCell('EKİP', flex: 2),
+                  _HeaderCell('DURUM', flex: 2),
+                  _HeaderCell('YV', flex: 1),
+                ],
               ),
             ),
-          Container(
-            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 11),
-            color: AppColors.success.withValues(alpha: 0.08),
-            child: Row(
-              children: [
-                Expanded(
-                  flex: 3,
-                  child: Text(
-                    'TOPLAM',
-                    style: theme.textTheme.labelLarge?.copyWith(
-                      fontWeight: FontWeight.w800,
+            if (people.isEmpty)
+              Padding(
+                padding: const EdgeInsets.fromLTRB(12, 8, 12, 12),
+                child: Text(
+                  'Bu gün için personel satırı yok',
+                  textAlign: TextAlign.center,
+                  style: theme.textTheme.bodySmall?.copyWith(
+                    color: theme.colorScheme.onSurfaceVariant,
+                  ),
+                ),
+              )
+            else
+              ConstrainedBox(
+                constraints: const BoxConstraints(maxHeight: 280),
+                child: ListView.builder(
+                  shrinkWrap: true,
+                  padding: EdgeInsets.zero,
+                  itemCount: people.length,
+                  itemBuilder: (context, index) {
+                    final p = people[index];
+                    final meslek = p.profession.isNotEmpty
+                        ? titleCaseTr(p.profession)
+                        : '—';
+                    final ekip =
+                        p.team.isNotEmpty ? titleCaseTr(p.team) : '—';
+                    final yv = p.yevmiye > 0 ? _num(p.yevmiye) : '—';
+                    return Container(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 10,
+                        vertical: 9,
+                      ),
+                      decoration: BoxDecoration(
+                        border: Border(bottom: BorderSide(color: border)),
+                      ),
+                      child: Row(
+                        children: [
+                          Expanded(
+                            flex: 3,
+                            child: Text(
+                              titleCaseTr(p.personName),
+                              style: theme.textTheme.bodySmall?.copyWith(
+                                fontWeight: FontWeight.w600,
+                              ),
+                              maxLines: 2,
+                              overflow: TextOverflow.ellipsis,
+                            ),
+                          ),
+                          Expanded(
+                            flex: 2,
+                            child: Text(
+                              meslek,
+                              textAlign: TextAlign.center,
+                              style: theme.textTheme.labelSmall,
+                              maxLines: 2,
+                              overflow: TextOverflow.ellipsis,
+                            ),
+                          ),
+                          Expanded(
+                            flex: 2,
+                            child: Text(
+                              ekip,
+                              textAlign: TextAlign.center,
+                              style: theme.textTheme.labelSmall,
+                              maxLines: 2,
+                              overflow: TextOverflow.ellipsis,
+                            ),
+                          ),
+                          Expanded(
+                            flex: 2,
+                            child: Text(
+                              p.status,
+                              textAlign: TextAlign.center,
+                              style: theme.textTheme.labelSmall?.copyWith(
+                                fontWeight: FontWeight.w700,
+                                color: _statusColor(p.status),
+                              ),
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                            ),
+                          ),
+                          Expanded(
+                            flex: 1,
+                            child: Text(
+                              yv,
+                              textAlign: TextAlign.center,
+                              style: theme.textTheme.labelSmall?.copyWith(
+                                fontWeight: FontWeight.w700,
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
+                    );
+                  },
+                ),
+              ),
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 11),
+              color: AppColors.success.withValues(alpha: 0.08),
+              child: Row(
+                children: [
+                  Expanded(
+                    flex: 3,
+                    child: Text(
+                      'TOPLAM',
+                      style: theme.textTheme.labelLarge?.copyWith(
+                        fontWeight: FontWeight.w800,
+                      ),
                     ),
                   ),
-                ),
-                Expanded(
-                  flex: 2,
-                  child: Text(
-                    '${people.length} kişi',
-                    textAlign: TextAlign.center,
-                    style: theme.textTheme.labelSmall,
-                  ),
-                ),
-                const Expanded(flex: 2, child: SizedBox.shrink()),
-                Expanded(
-                  flex: 2,
-                  child: Text(
-                    '${_num(snapshot.totalAdamSaat, maxFrac: 1)} as',
-                    textAlign: TextAlign.center,
-                    style: theme.textTheme.labelSmall?.copyWith(
-                      fontWeight: FontWeight.w700,
+                  Expanded(
+                    flex: 2,
+                    child: Text(
+                      '${people.length} kişi',
+                      textAlign: TextAlign.center,
+                      style: theme.textTheme.labelSmall,
                     ),
                   ),
-                ),
-                Expanded(
-                  flex: 1,
-                  child: Text(
-                    _num(snapshot.totalYevmiye),
-                    textAlign: TextAlign.center,
-                    style: theme.textTheme.labelLarge?.copyWith(
-                      fontWeight: FontWeight.w800,
-                      color: AppColors.success,
+                  const Expanded(flex: 2, child: SizedBox.shrink()),
+                  Expanded(
+                    flex: 2,
+                    child: Text(
+                      '${_num(snapshot.totalAdamSaat, maxFrac: 1)} as',
+                      textAlign: TextAlign.center,
+                      style: theme.textTheme.labelSmall?.copyWith(
+                        fontWeight: FontWeight.w700,
+                      ),
                     ),
                   ),
-                ),
-              ],
+                  Expanded(
+                    flex: 1,
+                    child: Text(
+                      _num(snapshot.totalYevmiye),
+                      textAlign: TextAlign.center,
+                      style: theme.textTheme.labelLarge?.copyWith(
+                        fontWeight: FontWeight.w800,
+                        color: AppColors.success,
+                      ),
+                    ),
+                  ),
+                ],
+              ),
             ),
-          ),
-        ],
-      ),
+          ],
+        ),
       ),
     );
   }
 
   Color? _statusColor(String status) {
+    for (final s in AttendanceStatus.values) {
+      if (s.label.toLowerCase() == status.toLowerCase()) return s.color;
+    }
     final s = status.toLowerCase();
+    if (s.contains('girilmedi')) return AppColors.inkSecondary;
     if (s.contains('mevcut')) return AppColors.success;
     if (s.contains('yarım')) return AppColors.warning;
-    if (s.contains('izin') ||
-        s.contains('rapor') ||
-        s.contains('mazeret') ||
-        s.contains('tatil')) {
-      return AppColors.info;
-    }
     if (s.contains('yok')) return AppColors.critical;
     return null;
   }
@@ -275,7 +274,7 @@ class _HeaderCell extends StatelessWidget {
   }
 }
 
-/// Özet chip satırı — tablonun üstünde.
+/// Özet chip satırı — tablonun üstünde (puantaj durumlarının tamamı).
 class AttendanceSummaryChips extends StatelessWidget {
   const AttendanceSummaryChips({super.key, required this.snapshot});
 
@@ -289,41 +288,40 @@ class AttendanceSummaryChips extends StatelessWidget {
       required Color accent,
     }) {
       final ink = AppColors.statusInkOnCard(accent);
-      return Expanded(
-        child: Container(
-          margin: const EdgeInsets.symmetric(horizontal: 3),
-          padding: const EdgeInsets.symmetric(vertical: 10, horizontal: 6),
-          decoration: BoxDecoration(
-            color: accent.withValues(alpha: 0.14),
-            borderRadius: AppRadii.sm,
-            border: Border.all(color: accent.withValues(alpha: 0.35)),
-          ),
-          child: Column(
-            children: [
-              Text(
-                value,
-                style: TextStyle(
-                  fontSize: 18,
-                  fontWeight: FontWeight.w800,
-                  height: 1.1,
-                  color: ink,
-                ),
+      return Container(
+        constraints: const BoxConstraints(minWidth: 52),
+        margin: const EdgeInsets.symmetric(horizontal: 3),
+        padding: const EdgeInsets.symmetric(vertical: 10, horizontal: 6),
+        decoration: BoxDecoration(
+          color: accent.withValues(alpha: 0.14),
+          borderRadius: AppRadii.sm,
+          border: Border.all(color: accent.withValues(alpha: 0.35)),
+        ),
+        child: Column(
+          children: [
+            Text(
+              value,
+              style: TextStyle(
+                fontSize: 16,
+                fontWeight: FontWeight.w800,
+                height: 1.1,
+                color: ink,
               ),
-              const SizedBox(height: 2),
-              Text(
-                label,
-                textAlign: TextAlign.center,
-                maxLines: 1,
-                overflow: TextOverflow.ellipsis,
-                style: TextStyle(
-                  fontSize: 11,
-                  fontWeight: FontWeight.w600,
-                  height: 1.1,
-                  color: ink.withValues(alpha: 0.9),
-                ),
+            ),
+            const SizedBox(height: 2),
+            Text(
+              label,
+              textAlign: TextAlign.center,
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+              style: TextStyle(
+                fontSize: 10,
+                fontWeight: FontWeight.w600,
+                height: 1.1,
+                color: ink.withValues(alpha: 0.9),
               ),
-            ],
-          ),
+            ),
+          ],
         ),
       );
     }
@@ -331,29 +329,29 @@ class AttendanceSummaryChips extends StatelessWidget {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
-        Row(
-          children: [
-            chip(
-              label: 'Mevcut',
-              value: '${snapshot.present}',
-              accent: AppColors.success,
-            ),
-            chip(
-              label: 'Yarım',
-              value: '${snapshot.half}',
-              accent: AppColors.warning,
-            ),
-            chip(
-              label: 'İzin',
-              value: '${snapshot.leave}',
-              accent: AppColors.info,
-            ),
-            chip(
-              label: 'Yok',
-              value: '${snapshot.absent}',
-              accent: AppColors.critical,
-            ),
-          ],
+        SingleChildScrollView(
+          scrollDirection: Axis.horizontal,
+          child: Row(
+            children: [
+              for (final s in AttendanceStatus.values)
+                chip(
+                  label: s.short,
+                  value: '${snapshot.countOf(s)}',
+                  accent: s.color,
+                ),
+              chip(
+                label: 'Top',
+                value: '${snapshot.people.length}',
+                accent: AppColors.inkSecondary,
+              ),
+              if (snapshot.unrecorded > 0)
+                chip(
+                  label: '–',
+                  value: '${snapshot.unrecorded}',
+                  accent: AppColors.inkSecondary,
+                ),
+            ],
+          ),
         ),
         const SizedBox(height: AppSpacing.sm),
         AttendanceSummaryTable(snapshot: snapshot),

@@ -1,10 +1,11 @@
+import '../attendance/attendance_display.dart';
 import '../entities/attendance.dart';
 import '../entities/daily_report.dart';
 import '../entities/person.dart';
 import '../enums/attendance_status.dart';
 import '../permissions/role_degree.dart';
 
-/// Proje + gün için canlı puantaj özeti üretir.
+/// Proje + gün için canlı puantaj özeti üretir (puantaj ekranı ile aynı durum kuralları).
 abstract final class AttendanceSnapshotBuilder {
   static DailyReportAttendanceSnapshot build({
     required String projectId,
@@ -13,76 +14,81 @@ abstract final class AttendanceSnapshotBuilder {
     required List<Person> activePeople,
     DateTime? capturedAt,
   }) {
-    final activeIds = {for (final p in activePeople) p.id};
-    final day = attendance
-        .where(
-          (a) =>
-              a.projectId == projectId &&
-              a.date == date &&
-              activeIds.contains(a.personId),
-        )
-        .toList();
-
-    var present = 0;
-    var half = 0;
-    var leave = 0;
-    var recordedAbsent = 0;
-    var adamSaat = 0.0;
-    var yevmiye = 0.0;
-
     final byPerson = <String, Attendance>{};
-    for (final a in day) {
-      byPerson[a.personId] = a;
-      switch (a.status) {
-        case AttendanceStatus.present:
-          present++;
-        case AttendanceStatus.half:
-          half++;
-        case AttendanceStatus.izinli:
-        case AttendanceStatus.raporlu:
-        case AttendanceStatus.mazeret:
-        case AttendanceStatus.tatil:
-        case AttendanceStatus.haftaTatili:
-          leave++;
-        case AttendanceStatus.absent:
-          recordedAbsent++;
-        case AttendanceStatus.giris:
-        case AttendanceStatus.cikis:
-          break;
+    for (final a in attendance) {
+      if (a.projectId == projectId && a.date == date) {
+        byPerson[a.personId] = a;
       }
-      adamSaat += a.hours + a.overtimeHours;
-      yevmiye += a.yevmiye;
     }
 
-    // Kaydı olmayan aktif personel → yok sayılır.
-    final unrecorded =
-        activePeople.where((p) => !byPerson.containsKey(p.id)).length;
-    final absent = recordedAbsent + unrecorded;
-
-    final metaById = {
-      for (final p in activePeople)
-        p.id: (team: p.team.trim(), profession: p.profession.trim()),
+    final counts = <AttendanceStatus, int>{
+      for (final s in AttendanceStatus.values) s: 0,
     };
+    var unrecorded = 0;
+    var adamSaat = 0.0;
+    var yevmiye = 0.0;
+    final people = <DailyReportAttendancePerson>[];
 
-    final people = [
-      for (final a in day)
+    for (final p in activePeople) {
+      final a = byPerson[p.id];
+      final status = AttendanceDisplay.resolve(
+        person: p,
+        date: date,
+        recorded: a?.status,
+      );
+
+      if (status == null) {
+        unrecorded++;
+        people.add(
+          DailyReportAttendancePerson(
+            personId: p.id,
+            personName: p.name,
+            team: p.team.trim(),
+            profession: p.profession.trim(),
+            status: 'Girilmedi',
+            hours: 0,
+          ),
+        );
+        continue;
+      }
+
+      counts[status] = (counts[status] ?? 0) + 1;
+      final hours = a?.hours ?? status.hours;
+      final overtime = a?.overtimeHours ?? 0.0;
+      adamSaat += hours + overtime;
+      yevmiye += (hours + overtime) / 8.0;
+
+      people.add(
         DailyReportAttendancePerson(
-          personId: a.personId,
-          personName: a.personName,
-          team: metaById[a.personId]?.team ?? '',
-          profession: metaById[a.personId]?.profession ?? '',
-          status: a.status.label,
-          hours: a.hours,
-          overtimeHours: a.overtimeHours,
-          yevmiye: a.yevmiye,
+          personId: p.id,
+          personName: p.name,
+          team: p.team.trim(),
+          profession: p.profession.trim(),
+          status: status.label,
+          hours: hours,
+          overtimeHours: overtime,
+          yevmiye: (hours + overtime) / 8.0,
         ),
-    ]..sort(compareByRoleRank);
+      );
+    }
+
+    people.sort(compareByRoleRank);
+
+    final leave = (counts[AttendanceStatus.izinli] ?? 0) +
+        (counts[AttendanceStatus.raporlu] ?? 0) +
+        (counts[AttendanceStatus.mazeret] ?? 0) +
+        (counts[AttendanceStatus.tatil] ?? 0) +
+        (counts[AttendanceStatus.haftaTatili] ?? 0);
 
     return DailyReportAttendanceSnapshot(
-      present: present,
-      half: half,
+      present: counts[AttendanceStatus.present] ?? 0,
+      half: counts[AttendanceStatus.half] ?? 0,
       leave: leave,
-      absent: absent,
+      absent: counts[AttendanceStatus.absent] ?? 0,
+      unrecorded: unrecorded,
+      statusCounts: {
+        for (final s in AttendanceStatus.values) s.jsonValue: counts[s] ?? 0,
+      },
       totalAdamSaat: adamSaat,
       totalYevmiye: yevmiye,
       people: people,
