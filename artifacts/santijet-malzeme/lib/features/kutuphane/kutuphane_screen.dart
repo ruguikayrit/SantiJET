@@ -5,6 +5,7 @@ import 'package:image_picker/image_picker.dart';
 import '../../core/design_system/sj_button.dart';
 import '../../core/design_system/sj_card.dart';
 import '../../core/design_system/sj_empty_state.dart';
+import '../../core/design_system/sj_fab.dart';
 import '../../core/design_system/sj_input.dart';
 import '../../core/theme/app_colors.dart';
 import '../../core/theme/app_spacing.dart';
@@ -40,22 +41,14 @@ class _KutuphaneScreenState extends ConsumerState<KutuphaneScreen> {
                 AppSpacing.md,
                 AppSpacing.sm,
               ),
-              child: Row(
-                children: [
-                  Expanded(
-                    child: Text(
-                      'Teknik föyler (TDS)',
-                      style: AppTypography.titleMedium.copyWith(
-                        color: AppColors.textPrimary,
-                      ),
-                    ),
+              child: Align(
+                alignment: Alignment.centerLeft,
+                child: Text(
+                  'Teknik föyler (TDS)',
+                  style: AppTypography.titleMedium.copyWith(
+                    color: AppColors.textPrimary,
                   ),
-                  SJButton(
-                    label: 'Ekle',
-                    icon: Icons.add,
-                    onPressed: () => _openAddSheet(context),
-                  ),
-                ],
+                ),
               ),
             ),
             Expanded(
@@ -68,11 +61,11 @@ class _KutuphaneScreenState extends ConsumerState<KutuphaneScreen> {
                       icon: Icons.menu_book_outlined,
                     )
                   : ListView.separated(
-                      padding: const EdgeInsets.fromLTRB(
+                      padding: EdgeInsets.fromLTRB(
                         AppSpacing.md,
                         0,
                         AppSpacing.md,
-                        AppSpacing.xxl,
+                        SJFab.scrollClearanceOf(context),
                       ),
                       itemCount: sheets.length,
                       separatorBuilder: (_, __) =>
@@ -137,6 +130,10 @@ class _KutuphaneScreenState extends ConsumerState<KutuphaneScreen> {
             ),
           ],
         ),
+      ),
+      floatingActionButton: SJFab(
+        label: 'TDS Ekle',
+        onPressed: () => _openAddSheet(context),
       ),
     );
   }
