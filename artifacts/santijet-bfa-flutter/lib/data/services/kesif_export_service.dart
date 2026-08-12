@@ -14,6 +14,7 @@ import 'package:share_plus/share_plus.dart';
 import '../../core/utils/app_format.dart';
 import '../../domain/calc/analiz_hesap.dart';
 import '../../domain/entities/kesif.dart';
+import '../../domain/enums/app_enums.dart';
 
 /// Keşif / metraj / yaklaşık maliyet cetveli dışa aktarma.
 class KesifExportService {
@@ -136,12 +137,58 @@ class KesifExportService {
       ],
     ];
 
-    final tableRows = <pw.TableRow>[
-      pw.TableRow(
-        decoration: const pw.BoxDecoration(color: PdfColors.grey200),
-        children: headerChildren,
-      ),
-    ];
+    final headerRow = pw.TableRow(
+      decoration: const pw.BoxDecoration(color: PdfColors.grey200),
+      children: headerChildren,
+    );
+
+    pw.TableRow sectionRow(String title) {
+      return pw.TableRow(
+        decoration: const pw.BoxDecoration(color: PdfColors.grey300),
+        children: [
+          singleLineCell(''),
+          singleLineCell(''),
+          pw.Padding(
+            padding: cellPad,
+            child: pw.Text(
+              title,
+              style: headerStyle.copyWith(fontSize: 9),
+              textAlign: pw.TextAlign.left,
+              maxLines: 1,
+              softWrap: false,
+            ),
+          ),
+          singleLineCell(''),
+          singleLineCell(''),
+          if (includeFiyat) ...[
+            singleLineCell(''),
+            singleLineCell(''),
+          ],
+        ],
+      );
+    }
+
+    pw.TableRow dataRow(int index, KesifSatiri s) {
+      final miktar = s.hesaplananMetraj;
+      final tutar = AnalizHesap.satirTutar(miktar, s.birimFiyati);
+      return pw.TableRow(
+        children: [
+          singleLineCell('$index'),
+          singleLineCell(s.pozNo),
+          wrapCell(s.analizAdi),
+          singleLineCell(
+            s.olcuBirimi.trim().isEmpty ? 'ad' : s.olcuBirimi.trim(),
+          ),
+          singleLineCell(AppFormat.decimal(miktar)),
+          if (includeFiyat) ...[
+            singleLineCell(AppFormat.currency(s.birimFiyati)),
+            singleLineCell(AppFormat.currency(tutar)),
+          ],
+        ],
+      );
+    }
+
+    final tableRows = <pw.TableRow>[headerRow];
 
     if (project.satirlar.isEmpty) {
       tableRows.add(
@@ -160,27 +207,16 @@ class KesifExportService {
         ),
       );
     } else {
-      for (var i = 0; i < project.satirlar.length; i++) {
-        final s = project.satirlar[i];
-        final miktar = s.hesaplananMetraj;
-        final tutar = AnalizHesap.satirTutar(miktar, s.birimFiyati);
-        tableRows.add(
-          pw.TableRow(
-            children: [
-              singleLineCell('${i + 1}'),
-              singleLineCell(s.pozNo),
-              wrapCell(s.analizAdi),
-              singleLineCell(
-                s.olcuBirimi.trim().isEmpty ? 'ad' : s.olcuBirimi.trim(),
-              ),
-              singleLineCell(AppFormat.decimal(miktar)),
-              if (includeFiyat) ...[
-                singleLineCell(AppFormat.currency(s.birimFiyati)),
-                singleLineCell(AppFormat.currency(tutar)),
-              ],
-            ],
-          ),
-        );
+      final byDisc = project.satirlarByDiscipline;
+      var index = 0;
+      for (final d in AnalizDiscipline.kesifSirasi) {
+        final list = byDisc[d] ?? const <KesifSatiri>[];
+        if (list.isEmpty) continue;
+        tableRows.add(sectionRow(d.isBasligi));
+        for (final s in list) {
+          index++;
+          tableRows.add(dataRow(index, s));
+        }
       }
     }
 
