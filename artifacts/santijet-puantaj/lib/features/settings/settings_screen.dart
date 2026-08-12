@@ -343,10 +343,10 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
         padding: const EdgeInsets.all(AppSpacing.md),
         children: [
           _SettingsTile(
-            icon: Icons.folder_copy,
-            title: 'Projelerim',
-            subtitle: project?.name ?? 'Proje seç veya oluştur',
-            onTap: () => context.push(AppRoutes.projeler),
+            icon: Icons.account_circle_outlined,
+            title: 'Hesap',
+            subtitle: 'Bulut girişi — ekip paylaşımı için',
+            onTap: () => context.push(AppRoutes.auth),
           ),
           _SettingsTile(
             icon: Icons.group_add_outlined,
@@ -355,10 +355,10 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
             onTap: () => context.push(AppRoutes.projeKatil),
           ),
           _SettingsTile(
-            icon: Icons.account_circle_outlined,
-            title: 'Hesap',
-            subtitle: 'Bulut girişi — ekip paylaşımı için',
-            onTap: () => context.push(AppRoutes.auth),
+            icon: Icons.folder_copy,
+            title: 'Projelerim',
+            subtitle: project?.name ?? 'Proje seç veya oluştur',
+            onTap: () => context.push(AppRoutes.projeler),
           ),
           _SettingsTile(
             icon: Icons.manage_accounts_outlined,
