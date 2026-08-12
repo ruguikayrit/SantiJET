@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
@@ -33,6 +35,67 @@ class TasksScreen extends ConsumerStatefulWidget {
 class _TasksScreenState extends ConsumerState<TasksScreen> {
   TaskStatus? _filter;
   String? _categoryFilter;
+  final _listScrollController = ScrollController();
+
+  /// Tamamlandı seçilince 2 sn yerinde tutulan görevler.
+  final Set<String> _pinnedDoneIds = {};
+  final Map<String, Timer> _pinTimers = {};
+
+  @override
+  void dispose() {
+    for (final t in _pinTimers.values) {
+      t.cancel();
+    }
+    _listScrollController.dispose();
+    super.dispose();
+  }
+
+  void _setTaskStatus(String id, TaskStatus status) {
+    ref.read(tasksProvider.notifier).setStatus(id, status);
+    _pinTimers[id]?.cancel();
+    _pinTimers.remove(id);
+    if (status == TaskStatus.done) {
+      setState(() => _pinnedDoneIds.add(id));
+      _pinTimers[id] = Timer(const Duration(seconds: 2), () {
+        if (!mounted) return;
+        setState(() => _pinnedDoneIds.remove(id));
+        _pinTimers.remove(id);
+        WidgetsBinding.instance.addPostFrameCallback((_) {
+          if (!mounted || !_listScrollController.hasClients) return;
+          _listScrollController.animateTo(
+            _listScrollController.position.maxScrollExtent,
+            duration: const Duration(milliseconds: 350),
+            curve: Curves.easeOut,
+          );
+        });
+      });
+    } else {
+      setState(() => _pinnedDoneIds.remove(id));
+    }
+  }
+
+  int _displayRank(SiteTask t) {
+    if (_pinnedDoneIds.contains(t.id) && t.status == TaskStatus.done) {
+      // Aktif bölümde kalır; 2 sn sonra alta iner.
+      return 1;
+    }
+    return switch (t.status) {
+      TaskStatus.todo => 0,
+      TaskStatus.doing => 1,
+      TaskStatus.done => 2,
+    };
+  }
+
+  List<SiteTask> _orderedTasks(List<SiteTask> tasks) {
+    final list = [...tasks];
+    list.sort((a, b) {
+      final byRank = _displayRank(a).compareTo(_displayRank(b));
+      if (byRank != 0) return byRank;
+      return (b.updatedAt ?? b.createdAt ?? DateTime(1970))
+          .compareTo(a.updatedAt ?? a.createdAt ?? DateTime(1970));
+    });
+    return list;
+  }
 
   Future<Person?> _pickPersonSheet({
     required List<Person> people,
@@ -520,7 +583,7 @@ class _TasksScreenState extends ConsumerState<TasksScreen> {
             ),
           );
     } else {
-      ref.read(tasksProvider.notifier).setStatus(existing.id, status);
+      _setTaskStatus(existing.id, status);
     }
   }
 
@@ -595,12 +658,22 @@ class _TasksScreenState extends ConsumerState<TasksScreen> {
       ..sort((a, b) => a.compareTo(b));
     final statusFiltered = _filter == null
         ? tasks
-        : tasks.where((t) => t.status == _filter).toList();
-    final filtered = _categoryFilter == null
+        : tasks.where((t) {
+            if (t.status == _filter) return true;
+            // Tamamlanırken 2 sn görünür kalsın (aktif filtrelerde).
+            if (_filter != TaskStatus.done &&
+                _pinnedDoneIds.contains(t.id) &&
+                t.status == TaskStatus.done) {
+              return true;
+            }
+            return false;
+          }).toList();
+    final categoryFiltered = _categoryFilter == null
         ? statusFiltered
         : statusFiltered
             .where((t) => t.category.trim() == _categoryFilter)
             .toList();
+    final filtered = _orderedTasks(categoryFiltered);
     final canAssign =
         operator != null && RoleDegree.canAssignTasks(operator);
 
@@ -798,6 +871,7 @@ class _TasksScreenState extends ConsumerState<TasksScreen> {
                             : null,
                       )
                     : ListView.separated(
+                        controller: _listScrollController,
                         padding: const EdgeInsets.fromLTRB(
                           AppSpacing.md,
                           AppSpacing.xs,
@@ -919,9 +993,8 @@ class _TasksScreenState extends ConsumerState<TasksScreen> {
                                               label: s.label,
                                               selected: task.status == s,
                                               color: _statusColor(s),
-                                              onTap: () => ref
-                                                  .read(tasksProvider.notifier)
-                                                  .setStatus(task.id, s),
+                                              onTap: () =>
+                                                  _setTaskStatus(task.id, s),
                                             ),
                                           ),
                                           if (s != TaskStatus.done)

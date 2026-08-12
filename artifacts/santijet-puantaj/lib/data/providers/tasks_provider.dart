@@ -215,6 +215,7 @@ final visibleProjectTasksProvider = Provider<List<SiteTask>>((ref) {
       )
       .toList()
     ..sort((a, b) {
+      // Yapılacak → Devam → Tamamlandı (tamamlananlar en altta).
       final byStatus = a.status.index.compareTo(b.status.index);
       if (byStatus != 0) return byStatus;
       return (b.updatedAt ?? b.createdAt ?? DateTime(1970))
