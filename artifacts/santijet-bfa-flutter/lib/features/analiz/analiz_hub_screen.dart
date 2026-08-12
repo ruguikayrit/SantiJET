@@ -76,7 +76,6 @@ class AnalizHubScreen extends ConsumerWidget {
                         icon: Icons.folder_open_outlined,
                         color: AppColors.moduleInsaat,
                         title: 'Analiz Kataloğu',
-                        subtitle: 'Kategori ve disiplin indexi',
                         onTap: () => context.push(AppRoutes.analizKatalogu),
                       ),
                       const SizedBox(height: AppSpacing.xs),
@@ -84,7 +83,6 @@ class AnalizHubScreen extends ConsumerWidget {
                         icon: Icons.layers_outlined,
                         color: AppColors.moduleInsaat,
                         title: 'İnşaat Analizleri',
-                        subtitle: 'Disiplin listesi',
                         onTap: () =>
                             context.push('${AppRoutes.pozlar}?modul=insaat'),
                       ),
