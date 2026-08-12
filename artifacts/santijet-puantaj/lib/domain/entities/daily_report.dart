@@ -81,16 +81,19 @@ class DailyReport extends Equatable {
         PhotoWorkCategory.none => '',
       }.trim();
 
-  /// Manuel metinde zaten yazılmayan foto açıklamaları.
+  /// Manuel metinde zaten yazılmayan foto açıklamaları (mükerrer yok).
   List<String> syncedCaptionsFor(PhotoWorkCategory category) {
-    final manualKeys = {
+    final seen = {
       for (final line in manualWorkFor(category).split('\n'))
         if (_lineKey(line).isNotEmpty) _lineKey(line),
     };
-    return [
-      for (final c in photoCaptionsFor(category))
-        if (!manualKeys.contains(_lineKey(c))) c,
-    ];
+    final out = <String>[];
+    for (final c in photoCaptionsFor(category)) {
+      final key = _lineKey(c);
+      if (key.isEmpty || !seen.add(key)) continue;
+      out.add(c);
+    }
+    return out;
   }
 
   /// Manuel metin + ilgili kategorideki foto açıklamaları.

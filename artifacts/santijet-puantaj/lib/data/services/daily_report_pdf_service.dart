@@ -322,7 +322,7 @@ class DailyReportPdfService {
           child: pw.Text(
             report.nextDayPlan.trim().isEmpty
                 ? '—'
-                : report.nextDayPlan.trim(),
+                : _formatBulletedLines(report.nextDayPlan.trim()),
             textAlign: pw.TextAlign.left,
             style: pw.TextStyle(
               fontSize: 10,
@@ -672,6 +672,7 @@ class DailyReportPdfService {
       ..sort(AttendanceSnapshotBuilder.compareByRoleRank);
     return _centeredTable(
       headers: const [
+        'No',
         'Personel',
         'Meslek',
         'Ekip',
@@ -680,14 +681,17 @@ class DailyReportPdfService {
         'Yevmiye',
       ],
       data: [
-        for (final p in people)
+        for (var i = 0; i < people.length; i++)
           [
-            titleCaseTr(p.personName),
-            p.profession.isNotEmpty ? titleCaseTr(p.profession) : '—',
-            p.team.isNotEmpty ? titleCaseTr(p.team) : '—',
-            p.status,
-            _fmt(p.overtimeHours),
-            _fmt(p.yevmiye),
+            '${i + 1}',
+            titleCaseTr(people[i].personName),
+            people[i].profession.isNotEmpty
+                ? titleCaseTr(people[i].profession)
+                : '—',
+            people[i].team.isNotEmpty ? titleCaseTr(people[i].team) : '—',
+            people[i].status,
+            _fmt(people[i].overtimeHours),
+            _fmt(people[i].yevmiye),
           ],
       ],
     );
@@ -746,8 +750,8 @@ class DailyReportPdfService {
                 ),
                 child: pw.Text(
                   truncateEach != null
-                      ? _truncate(e.$2.trim(), truncateEach)
-                      : e.$2.trim(),
+                      ? _truncate(_formatBulletedLines(e.$2.trim()), truncateEach)
+                      : _formatBulletedLines(e.$2.trim()),
                   textAlign: pw.TextAlign.left,
                   style: const pw.TextStyle(
                     fontSize: 10,
@@ -1103,6 +1107,21 @@ class DailyReportPdfService {
   String _fmt(double v) {
     if (v == v.roundToDouble()) return v.toStringAsFixed(0);
     return v.toStringAsFixed(1);
+  }
+
+  /// Her satırın başına madde işareti ekler; aynı cümleyi bir kez yazar.
+  String _formatBulletedLines(String text) {
+    final out = <String>[];
+    final seen = <String>{};
+    for (final raw in text.split('\n')) {
+      final line =
+          raw.trim().replaceFirst(RegExp(r'^[•\-*]+\s*'), '').trim();
+      if (line.isEmpty) continue;
+      final key = line.replaceAll(RegExp(r'\s+'), ' ').toLowerCase();
+      if (!seen.add(key)) continue;
+      out.add('• $line');
+    }
+    return out.isEmpty ? text.trim() : out.join('\n');
   }
 
   String _truncate(String s, int max) {

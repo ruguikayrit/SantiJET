@@ -204,6 +204,43 @@ void main() {
       );
       expect(restored.effectiveWorkConstruction, 'Kazı\nBatı cephe');
     });
+
+    test('aynı foto açıklaması bir kez senkronlanır', () {
+      final report = DailyReport(
+        id: 'dr4',
+        projectId: 'p',
+        date: '04.08.2026',
+        workConstruction: 'Kazı',
+        photos: const [
+          DailyReportPhoto(
+            id: 'ph1',
+            dataBase64: 'YWJj',
+            caption: 'Çatıda yalıtım işleri tamamlandı',
+            workCategory: PhotoWorkCategory.construction,
+          ),
+          DailyReportPhoto(
+            id: 'ph2',
+            dataBase64: 'YWJj',
+            caption: '• Çatıda yalıtım işleri tamamlandı',
+            workCategory: PhotoWorkCategory.construction,
+          ),
+          DailyReportPhoto(
+            id: 'ph3',
+            dataBase64: 'YWJj',
+            caption: 'Çatıda yalıtım işleri tamamlandı',
+            workCategory: PhotoWorkCategory.construction,
+          ),
+        ],
+      );
+      expect(
+        report.syncedCaptionsFor(PhotoWorkCategory.construction),
+        ['Çatıda yalıtım işleri tamamlandı'],
+      );
+      expect(
+        report.effectiveWorkConstruction,
+        'Kazı\nÇatıda yalıtım işleri tamamlandı',
+      );
+    });
   });
 
   group('WeatherService descriptions', () {
