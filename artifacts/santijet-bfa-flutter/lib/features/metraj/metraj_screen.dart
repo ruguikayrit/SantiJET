@@ -399,7 +399,11 @@ Future<void> _openKalemEditor(
     context: context,
     isScrollControlled: true,
     showDragHandle: true,
-    builder: (ctx) => _KalemEditorSheet(initial: existing),
+    useSafeArea: false,
+    builder: (ctx) => Padding(
+      padding: EdgeInsets.only(top: MediaQuery.viewPaddingOf(ctx).top),
+      child: _KalemEditorSheet(initial: existing),
+    ),
   );
   if (result == null) return;
   if (result.deleted) {
@@ -519,15 +523,17 @@ class _KalemEditorSheetState extends State<_KalemEditorSheet> {
 
   @override
   Widget build(BuildContext context) {
-    final bottom = MediaQuery.viewInsetsOf(context).bottom;
     final theme = Theme.of(context);
     final isEditing = widget.initial != null;
+    // Web/PWA: visualViewport zaten klavyeyi düşürür; viewInsets eklemek
+    // Kaydet ile klavye arasında boş beyaz alan bırakır.
+    final safeBottom = MediaQuery.viewPaddingOf(context).bottom;
     return Padding(
       padding: EdgeInsets.fromLTRB(
         AppSpacing.md,
         0,
         AppSpacing.md,
-        AppSpacing.md + bottom,
+        AppSpacing.sm + safeBottom,
       ),
       child: SingleChildScrollView(
         child: Column(
