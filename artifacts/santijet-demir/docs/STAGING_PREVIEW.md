@@ -10,6 +10,7 @@ Canlı siteyi riske atmadan DEMİR değişikliklerini önizlemek için `staging`
 | **Staging önizleme** | https://ruguikayrit.github.io/SantiJET/staging/ |
 | **BFA** | https://ruguikayrit.github.io/SantiJET/bfa/ |
 | **Puantaj staging** | https://ruguikayrit.github.io/SantiJET/puantaj/ |
+| **Mühendis staging** | https://ruguikayrit.github.io/SantiJET/muhendis/ |
 
 Staging sürümünde üstte turuncu **STAGING ÖNİZLEME** bandı görünür.
 

@@ -64,6 +64,12 @@ flutter test
 flutter run -d chrome   # veya: pnpm dev:muhendis
 ```
 
+## Staging önizleme
+
+https://ruguikayrit.github.io/SantiJET/muhendis/
+
+Deploy: `.github/scripts/build-muhendis-pages.sh` → GitHub Pages (`deploy-github-pages.yml`).
+
 ## Bilinçli sınırlar (v1)
 
 - Sh = 0 (tam penetrasyonlu küt kaynak, mafsal kolon yüzünde)

@@ -33,6 +33,23 @@ flutter run -d chrome
 pnpm dev:muhendis
 ```
 
+## Staging önizleme
+
+| Ortam | URL |
+|-------|-----|
+| **Mühendis staging** | https://ruguikayrit.github.io/SantiJET/muhendis/ |
+| DEMİR staging | https://ruguikayrit.github.io/SantiJET/staging/ |
+| BFA | https://ruguikayrit.github.io/SantiJET/bfa/ |
+
+Üstte turuncu **STAGING ÖNİZLEME** bandı görünür.
+
+```bash
+# staging branch'e push → /muhendis/ ~3–5 dk içinde güncellenir
+git push origin staging
+```
+
+Manuel: Actions → **Deploy ŞantiJET GitHub Pages** → **Run workflow**.
+
 ## Test
 
 ```bash
