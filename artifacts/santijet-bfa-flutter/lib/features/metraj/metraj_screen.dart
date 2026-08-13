@@ -5,6 +5,7 @@ import 'package:go_router/go_router.dart';
 import '../../core/design_system/design_system.dart';
 import '../../core/routing/app_routes.dart';
 import '../../core/theme/app_colors.dart';
+import '../../core/theme/app_radii.dart';
 import '../../core/theme/app_spacing.dart';
 import '../../core/utils/app_format.dart';
 import '../../core/utils/id_gen.dart';
@@ -152,73 +153,108 @@ class _PozCetvelCard extends ConsumerWidget {
     final kalemler = satir.metrajKalemleri;
     final total = satir.hesaplananMetraj;
 
-    return SJCard(
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      satir.pozNo,
-                      style: theme.textTheme.labelMedium?.copyWith(
-                        color: AppColors.moduleKesif,
-                      ),
-                    ),
-                    Text(
-                      satir.analizAdi,
-                      style: theme.textTheme.titleMedium?.copyWith(
-                        color: AppColors.cardTextPrimary,
-                      ),
-                      maxLines: 2,
-                      overflow: TextOverflow.ellipsis,
-                    ),
-                  ],
-                ),
-              ),
-              Text(
-                '${AppFormat.decimal(total)} ${satir.olcuBirimi}',
-                style: theme.textTheme.titleMedium?.copyWith(
-                  color: AppColors.cardTextPrimary,
-                  fontWeight: FontWeight.w700,
-                ),
-              ),
-            ],
+    return Dismissible(
+      key: ValueKey(satir.id),
+      direction: DismissDirection.endToStart,
+      confirmDismiss: (_) async {
+        final ok = await SJModal.confirm(
+          context: context,
+          title: 'Pozu sil',
+          message: '${satir.pozNo} metraj listesinden kaldırılsın mı?',
+          confirmLabel: 'Sil',
+          destructive: true,
+        );
+        if (!ok) return false;
+        ref.read(kesifProvider.notifier).removeSatir(projectId, satir.id);
+        return true;
+      },
+      background: Container(
+        alignment: Alignment.centerRight,
+        padding: const EdgeInsets.only(right: 20),
+        decoration: BoxDecoration(
+          color: AppColors.critical.withValues(alpha: 0.15),
+          borderRadius: AppRadii.md,
+          border: Border.all(
+            color: AppColors.critical.withValues(alpha: 0.35),
           ),
-          if (kalemler.isEmpty) ...[
-            const SizedBox(height: AppSpacing.sm),
-            _ManuelMiktarField(projectId: projectId, satir: satir),
-          ] else ...[
-            const SizedBox(height: AppSpacing.sm),
-            for (final k in kalemler) ...[
-              _KalemRow(
-                projectId: projectId,
-                satirId: satir.id,
-                kalem: k,
-                birim: satir.olcuBirimi,
-              ),
-              const SizedBox(height: 4),
-            ],
+        ),
+        child: const Row(
+          mainAxisAlignment: MainAxisAlignment.end,
+          children: [
+            Icon(Icons.delete_outline, color: AppColors.critical),
+            SizedBox(width: 8),
+            Text('Sil', style: TextStyle(color: AppColors.critical)),
           ],
-          const SizedBox(height: AppSpacing.xs),
-          Align(
-            alignment: Alignment.centerRight,
-            child: TextButton.icon(
-              onPressed: () => _openKalemEditor(
-                context,
-                ref,
-                projectId: projectId,
-                satirId: satir.id,
-              ),
-              icon: const Icon(Icons.add, size: 18),
-              label: const Text('Cetvel satırı'),
+        ),
+      ),
+      child: SJCard(
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        satir.pozNo,
+                        style: theme.textTheme.labelMedium?.copyWith(
+                          color: AppColors.moduleKesif,
+                        ),
+                      ),
+                      Text(
+                        satir.analizAdi,
+                        style: theme.textTheme.titleMedium?.copyWith(
+                          color: AppColors.cardTextPrimary,
+                        ),
+                        maxLines: 2,
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                    ],
+                  ),
+                ),
+                Text(
+                  '${AppFormat.decimal(total)} ${satir.olcuBirimi}',
+                  style: theme.textTheme.titleMedium?.copyWith(
+                    color: AppColors.cardTextPrimary,
+                    fontWeight: FontWeight.w700,
+                  ),
+                ),
+              ],
             ),
-          ),
-        ],
+            if (kalemler.isEmpty) ...[
+              const SizedBox(height: AppSpacing.sm),
+              _ManuelMiktarField(projectId: projectId, satir: satir),
+            ] else ...[
+              const SizedBox(height: AppSpacing.sm),
+              for (final k in kalemler) ...[
+                _KalemRow(
+                  projectId: projectId,
+                  satirId: satir.id,
+                  kalem: k,
+                  birim: satir.olcuBirimi,
+                ),
+                const SizedBox(height: 4),
+              ],
+            ],
+            const SizedBox(height: AppSpacing.xs),
+            Align(
+              alignment: Alignment.centerRight,
+              child: TextButton.icon(
+                onPressed: () => _openKalemEditor(
+                  context,
+                  ref,
+                  projectId: projectId,
+                  satirId: satir.id,
+                ),
+                icon: const Icon(Icons.add, size: 18),
+                label: const Text('Cetvel satırı'),
+              ),
+            ),
+          ],
+        ),
       ),
     );
   }
