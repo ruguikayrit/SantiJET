@@ -1,4 +1,4 @@
-name: Deploy ŞantiJET GitHub Pages (DEMİR + BFA + Puantaj + Beton + Mühendis + Staging)
+name: Deploy ŞantiJET GitHub Pages (DEMİR + Maliyet + Puantaj + Beton + Malzeme + PRO + Mühendis + Staging)
 
 on:
   push:
@@ -10,6 +10,8 @@ on:
       - 'artifacts/santijet-bfa-flutter/**'
       - 'artifacts/santijet-puantaj/**'
       - 'artifacts/santijet-beton/**'
+      - 'artifacts/santijet-malzeme/**'
+      - 'artifacts/santijet-ana/**'
       - 'artifacts/santijet-muhendis/**'
       - '.github/workflows/deploy-github-pages.yml'
       - '.github/scripts/**'
@@ -64,34 +66,40 @@ jobs:
         if: hashFiles('staging-src/artifacts/santijet-demir/scripts/setup-libredwg-web.sh') != ''
         run: bash staging-src/artifacts/santijet-demir/scripts/setup-libredwg-web.sh
 
-      - name: Build DEMİR (production + staging preview)
+      - name: Build DEMİR (production + /demir/ preview)
         env:
           GITHUB_REPOSITORY_NAME: ${{ github.event.repository.name }}
           SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
           SUPABASE_ANON_KEY: ${{ secrets.SUPABASE_ANON_KEY }}
-        run: bash .github/scripts/build-santijet-pages.sh
+        run: |
+          if [ -f staging-src/.github/scripts/build-santijet-pages.sh ]; then
+            bash staging-src/.github/scripts/build-santijet-pages.sh
+          else
+            bash .github/scripts/build-santijet-pages.sh
+          fi
 
-      - name: Setup Flutter (BFA)
+      - name: Setup Flutter (Maliyet)
         uses: subosito/flutter-action@v2
         with:
           channel: stable
           flutter-version: '3.44.3'
           cache: true
-          cache-key: flutter-bfa-3.44.3
+          cache-key: flutter-maliyet-3.44.3
 
-      - name: Build BFA web
-        id: bfa_build
+      - name: Build Maliyet web
+        id: maliyet_build
         continue-on-error: true
         env:
           GITHUB_REPOSITORY_NAME: ${{ github.event.repository.name }}
         run: |
           # staging push'larında staging betiği + kaynak öncelikli.
+          # Script adı geçici: build-bfa-pages.sh (çıktı: /maliyet/)
           if [ -f staging-src/.github/scripts/build-bfa-pages.sh ]; then
             bash staging-src/.github/scripts/build-bfa-pages.sh
           elif [ -f .github/scripts/build-bfa-pages.sh ]; then
             bash .github/scripts/build-bfa-pages.sh
           else
-            echo "::warning::build-bfa-pages.sh missing; skipping /bfa/."
+            echo "::warning::build-bfa-pages.sh missing; skipping /maliyet/."
           fi
 
       - name: Setup Flutter (Puantaj)
@@ -106,6 +114,8 @@ jobs:
         id: puantaj_build
         env:
           GITHUB_REPOSITORY_NAME: ${{ github.event.repository.name }}
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+          SUPABASE_ANON_KEY: ${{ secrets.SUPABASE_ANON_KEY }}
         run: |
           # staging push'larında staging betiği öncelikli (main checkout üzerine yazar).
           if [ -f staging-src/.github/scripts/build-puantaj-pages.sh ]; then
@@ -139,6 +149,50 @@ jobs:
             exit 1
           fi
 
+      - name: Setup Flutter (Malzeme)
+        uses: subosito/flutter-action@v2
+        with:
+          channel: stable
+          flutter-version: '3.27.4'
+          cache: true
+          cache-key: flutter-malzeme-3.27.4
+
+      - name: Build Malzeme web (staging preview)
+        id: malzeme_build
+        env:
+          GITHUB_REPOSITORY_NAME: ${{ github.event.repository.name }}
+        run: |
+          if [ -f staging-src/.github/scripts/build-malzeme-pages.sh ]; then
+            bash staging-src/.github/scripts/build-malzeme-pages.sh
+          elif [ -f .github/scripts/build-malzeme-pages.sh ]; then
+            bash .github/scripts/build-malzeme-pages.sh
+          else
+            echo "::error::build-malzeme-pages.sh missing on main and staging"
+            exit 1
+          fi
+
+      - name: Setup Flutter (PRO)
+        uses: subosito/flutter-action@v2
+        with:
+          channel: stable
+          flutter-version: '3.27.4'
+          cache: true
+          cache-key: flutter-pro-3.27.4
+
+      - name: Build PRO web (staging preview)
+        id: pro_build
+        env:
+          GITHUB_REPOSITORY_NAME: ${{ github.event.repository.name }}
+        run: |
+          if [ -f staging-src/.github/scripts/build-pro-pages.sh ]; then
+            bash staging-src/.github/scripts/build-pro-pages.sh
+          elif [ -f .github/scripts/build-pro-pages.sh ]; then
+            bash .github/scripts/build-pro-pages.sh
+          else
+            echo "::error::build-pro-pages.sh missing on main and staging"
+            exit 1
+          fi
+
       - name: Setup Flutter (Mühendis)
         uses: subosito/flutter-action@v2
         with:
@@ -164,14 +218,17 @@ jobs:
       - name: Verify site bundle
         run: |
           test -f site/index.html
-          if [ ! -f site/staging/index.html ]; then
-            echo "::error::staging preview missing. Ensure staging branch exists and was checked out."
+          if [ ! -f site/demir/index.html ]; then
+            echo "::error::DEMİR preview missing (site/demir/index.html). Ensure staging branch exists and was checked out."
+            echo "::group::site tree"
+            find site -maxdepth 3 -type f -name 'index.html' | sort || true
+            echo "::endgroup::"
             exit 1
           fi
-          if [ "${{ steps.bfa_build.outcome }}" != "success" ]; then
-            echo "::warning::BFA build failed; /bfa/ may be unavailable in this deploy."
-          elif [ ! -f site/bfa/index.html ]; then
-            echo "::warning::BFA bundle missing after build step."
+          if [ "${{ steps.maliyet_build.outcome }}" != "success" ]; then
+            echo "::warning::Maliyet build failed; /maliyet/ may be unavailable in this deploy."
+          elif [ ! -f site/maliyet/index.html ]; then
+            echo "::warning::Maliyet bundle missing after build step."
           fi
           if [ ! -f site/puantaj/index.html ]; then
             echo "::error::Puantaj bundle missing (site/puantaj/index.html). Refusing to deploy a broken /puantaj/."
@@ -181,10 +238,23 @@ jobs:
             echo "::error::Beton bundle missing (site/beton/index.html). Refusing to deploy a broken /beton/."
             exit 1
           fi
+          if [ ! -f site/malzeme/index.html ]; then
+            echo "::error::Malzeme bundle missing (site/malzeme/index.html). Refusing to deploy a broken /malzeme/."
+            exit 1
+          fi
+          if [ ! -f site/pro/index.html ]; then
+            echo "::error::PRO bundle missing (site/pro/index.html). Refusing to deploy a broken /pro/."
+            echo "::group::site tree"
+            find site -maxdepth 3 -type f -name 'index.html' | sort || true
+            echo "::endgroup::"
+            exit 1
+          fi
           if [ ! -f site/muhendis/index.html ]; then
             echo "::error::Mühendis bundle missing (site/muhendis/index.html). Refusing to deploy a broken /muhendis/."
             exit 1
           fi
+          echo "Site bundle OK:"
+          find site -maxdepth 3 -type f -name 'index.html' | sort
 
       - name: Upload Pages artifact
         uses: actions/upload-pages-artifact@v3
@@ -194,12 +264,17 @@ jobs:
       - name: Deploy to GitHub Pages
         id: deployment
         uses: actions/deploy-pages@v4
+        with:
+          # Büyük site paketinde Pages status reporting 10 dk'yı aşabiliyor.
+          timeout: 1800000
 
       - name: Published URLs
         run: |
           echo "Production DEMİR: https://${{ github.repository_owner }}.github.io/${{ github.event.repository.name }}/"
-          echo "Staging DEMİR: https://${{ github.repository_owner }}.github.io/${{ github.event.repository.name }}/staging/"
-          echo "BFA: https://${{ github.repository_owner }}.github.io/${{ github.event.repository.name }}/bfa/"
-          echo "Puantaj staging: https://${{ github.repository_owner }}.github.io/${{ github.event.repository.name }}/puantaj/"
-          echo "Beton staging: https://${{ github.repository_owner }}.github.io/${{ github.event.repository.name }}/beton/"
+          echo "DEMİR: https://${{ github.repository_owner }}.github.io/${{ github.event.repository.name }}/demir/"
+          echo "Maliyet: https://${{ github.repository_owner }}.github.io/${{ github.event.repository.name }}/maliyet/"
+          echo "Puantaj: https://${{ github.repository_owner }}.github.io/${{ github.event.repository.name }}/puantaj/"
+          echo "Beton: https://${{ github.repository_owner }}.github.io/${{ github.event.repository.name }}/beton/"
+          echo "Malzeme: https://${{ github.repository_owner }}.github.io/${{ github.event.repository.name }}/malzeme/"
+          echo "PRO staging: https://${{ github.repository_owner }}.github.io/${{ github.event.repository.name }}/pro/"
           echo "Mühendis staging: https://${{ github.repository_owner }}.github.io/${{ github.event.repository.name }}/muhendis/"
