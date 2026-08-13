@@ -1526,9 +1526,11 @@ class _PuantajExportSheetState extends State<_PuantajExportSheet> {
   late PuantajReportPeriod _period = widget.initialPeriod;
   late Set<String> _selectedPersonIds;
   final _personSearchController = TextEditingController();
+  final _teamSearchController = TextEditingController();
   final _peopleTileController = ExpansionTileController();
   final _teamsTileController = ExpansionTileController();
   String _personQuery = '';
+  String _teamQuery = '';
   bool _busy = false;
   String? _error;
 
@@ -1543,6 +1545,7 @@ class _PuantajExportSheetState extends State<_PuantajExportSheet> {
   @override
   void dispose() {
     _personSearchController.dispose();
+    _teamSearchController.dispose();
     super.dispose();
   }
 
@@ -1583,6 +1586,14 @@ class _PuantajExportSheetState extends State<_PuantajExportSheet> {
         return a.compareTo(b);
       });
     return list;
+  }
+
+  List<String> get _filteredEligibleTeams {
+    final q = _foldTr(_teamQuery.trim());
+    if (q.isEmpty) return _eligibleTeams;
+    return _eligibleTeams.where((key) {
+      return _foldTr(_teamLabel(key)).contains(q);
+    }).toList();
   }
 
   List<Person> _peopleInTeam(String teamKey) =>
@@ -1691,6 +1702,18 @@ class _PuantajExportSheetState extends State<_PuantajExportSheet> {
     setState(() => _personQuery = '');
   }
 
+  void _onTeamSearchChanged(String value) {
+    setState(() => _teamQuery = value);
+    if (value.trim().isNotEmpty) {
+      _teamsTileController.expand();
+    }
+  }
+
+  void _clearTeamSearch() {
+    _teamSearchController.clear();
+    setState(() => _teamQuery = '');
+  }
+
   void _setPeriod(PuantajReportPeriod period) {
     setState(() {
       _period = period;
@@ -1758,6 +1781,17 @@ class _PuantajExportSheetState extends State<_PuantajExportSheet> {
     });
   }
 
+  void _selectFilteredTeams() {
+    final ids = <String>{};
+    for (final key in _filteredEligibleTeams) {
+      ids.addAll(_peopleInTeam(key).map((p) => p.id));
+    }
+    setState(() {
+      _selectedPersonIds = {..._selectedPersonIds, ...ids};
+      _error = null;
+    });
+  }
+
   Future<void> _export({required bool pdf}) async {
     if (_busy) return;
     if (_exportPeople.isEmpty) {
@@ -1809,7 +1843,9 @@ class _PuantajExportSheetState extends State<_PuantajExportSheet> {
     final eligible = _eligiblePeople;
     final filtered = _filteredEligiblePeople;
     final teams = _eligibleTeams;
+    final filteredTeams = _filteredEligibleTeams;
     final hasQuery = _personQuery.trim().isNotEmpty;
+    final hasTeamQuery = _teamQuery.trim().isNotEmpty;
     return Column(
       mainAxisSize: MainAxisSize.min,
       crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -1986,6 +2022,13 @@ class _PuantajExportSheetState extends State<_PuantajExportSheet> {
         const SizedBox(height: AppSpacing.md),
         Text('Ekip', style: theme.textTheme.labelLarge),
         const SizedBox(height: AppSpacing.xs),
+        SJSearchBar(
+          controller: _teamSearchController,
+          hint: 'Ekip ara...',
+          onChanged: _busy ? null : _onTeamSearchChanged,
+          onClear: _busy ? null : _clearTeamSearch,
+        ),
+        const SizedBox(height: AppSpacing.xs),
         Material(
           color: theme.colorScheme.surface,
           shape: RoundedRectangleBorder(
@@ -1997,7 +2040,7 @@ class _PuantajExportSheetState extends State<_PuantajExportSheet> {
             data: theme.copyWith(dividerColor: Colors.transparent),
             child: ExpansionTile(
               controller: _teamsTileController,
-              initiallyExpanded: true,
+              initiallyExpanded: false,
               tilePadding: const EdgeInsets.symmetric(horizontal: AppSpacing.sm),
               childrenPadding: EdgeInsets.zero,
               title: Text(
@@ -2040,6 +2083,15 @@ class _PuantajExportSheetState extends State<_PuantajExportSheet> {
                           onPressed: _busy ? null : _selectAllPeople,
                           child: const Text('Tüm ekipler'),
                         ),
+                        if (hasTeamQuery)
+                          TextButton(
+                            onPressed: _busy || filteredTeams.isEmpty
+                                ? null
+                                : _selectFilteredTeams,
+                            child: Text(
+                              'Görünenleri seç (${filteredTeams.length})',
+                            ),
+                          ),
                         TextButton(
                           onPressed: _busy ? null : _clearPeople,
                           child: const Text('Temizle'),
@@ -2047,46 +2099,62 @@ class _PuantajExportSheetState extends State<_PuantajExportSheet> {
                       ],
                     ),
                   ),
-                  ConstrainedBox(
-                    constraints: BoxConstraints(
-                      maxHeight: MediaQuery.sizeOf(context).height * 0.28,
-                    ),
-                    child: ListView.builder(
-                      shrinkWrap: true,
-                      itemCount: teams.length,
-                      itemBuilder: (context, index) {
-                        final teamKey = teams[index];
-                        final members = _peopleInTeam(teamKey);
-                        final fully = _isTeamFullySelected(teamKey);
-                        final partial = _isTeamPartiallySelected(teamKey);
-                        return CheckboxListTile(
-                          dense: true,
-                          contentPadding: const EdgeInsets.symmetric(
-                            horizontal: AppSpacing.sm,
-                          ),
-                          controlAffinity: ListTileControlAffinity.leading,
-                          tristate: true,
-                          value: fully
-                              ? true
-                              : (partial ? null : false),
-                          onChanged: _busy
-                              ? null
-                              : (v) => _toggleTeam(
-                                    teamKey,
-                                    v ?? false,
-                                  ),
-                          title: Text(_teamLabel(teamKey)),
-                          subtitle: Text('${members.length} kişi'),
-                          secondary: TextButton(
-                            onPressed: _busy
+                  if (filteredTeams.isEmpty)
+                    Padding(
+                      padding: const EdgeInsets.fromLTRB(
+                        AppSpacing.sm,
+                        0,
+                        AppSpacing.sm,
+                        AppSpacing.sm,
+                      ),
+                      child: Text(
+                        'Eşleşen ekip yok.',
+                        style: theme.textTheme.bodySmall?.copyWith(
+                          color: theme.colorScheme.onSurfaceVariant,
+                        ),
+                      ),
+                    )
+                  else
+                    ConstrainedBox(
+                      constraints: BoxConstraints(
+                        maxHeight: MediaQuery.sizeOf(context).height * 0.28,
+                      ),
+                      child: ListView.builder(
+                        shrinkWrap: true,
+                        itemCount: filteredTeams.length,
+                        itemBuilder: (context, index) {
+                          final teamKey = filteredTeams[index];
+                          final members = _peopleInTeam(teamKey);
+                          final fully = _isTeamFullySelected(teamKey);
+                          final partial = _isTeamPartiallySelected(teamKey);
+                          return CheckboxListTile(
+                            dense: true,
+                            contentPadding: const EdgeInsets.symmetric(
+                              horizontal: AppSpacing.sm,
+                            ),
+                            controlAffinity: ListTileControlAffinity.leading,
+                            tristate: true,
+                            value: fully
+                                ? true
+                                : (partial ? null : false),
+                            onChanged: _busy
                                 ? null
-                                : () => _selectOnlyTeam(teamKey),
-                            child: const Text('Yalnız'),
-                          ),
-                        );
-                      },
+                                : (v) => _toggleTeam(
+                                      teamKey,
+                                      v ?? false,
+                                    ),
+                            title: Text(_teamLabel(teamKey)),
+                            subtitle: Text('${members.length} kişi'),
+                            secondary: TextButton(
+                              onPressed: _busy
+                                  ? null
+                                  : () => _selectOnlyTeam(teamKey),
+                              child: const Text('Yalnız'),
+                            ),
+                          );
+                        },
+                      ),
                     ),
-                  ),
                 ],
               ],
             ),
