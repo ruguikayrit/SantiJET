@@ -17,6 +17,7 @@ import '../export/export_format_sheet.dart';
 import 'kesif_import_flow.dart';
 import 'kesif_poz_picker_sheet.dart';
 import 'widgets/discipline_section_header.dart';
+import 'widgets/metrajsiz_poz_warning.dart';
 
 /// Keşif listesi — poz · tanım · hesaplanan metraj (3 ana başlık).
 class KesifListScreen extends ConsumerStatefulWidget {
@@ -32,13 +33,9 @@ class _KesifListScreenState extends ConsumerState<KesifListScreen> {
   };
 
   Future<void> _addPoz(String projectId) async {
-    final picked = await KesifPozPickerSheet.show(context);
-    if (picked == null) return;
-    ref.read(kesifProvider.notifier).addSatir(
-          projectId,
-          picked.analiz,
-          picked.miktar,
-        );
+    final analiz = await KesifPozPickerSheet.show(context);
+    if (analiz == null) return;
+    ref.read(kesifProvider.notifier).addSatir(projectId, analiz, 0);
   }
 
   Future<void> _export(KesifProject kesif) async {
@@ -81,6 +78,8 @@ class _KesifListScreenState extends ConsumerState<KesifListScreen> {
 
     final projectId = kesif.id;
     final byDisc = kesif.satirlarByDiscipline;
+    final metrajsizCount =
+        kesif.satirlar.where((s) => s.hesaplananMetraj <= 0).length;
 
     return Scaffold(
       backgroundColor: AppColors.canvas,
@@ -124,6 +123,7 @@ class _KesifListScreenState extends ConsumerState<KesifListScreen> {
                       color: AppColors.textMuted,
                     ),
                   ),
+                  MetrajsizPozWarning(count: metrajsizCount),
                   const SizedBox(height: AppSpacing.sm),
                   Text(
                     'Keşif Listesi',

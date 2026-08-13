@@ -5,21 +5,18 @@ import '../../core/design_system/design_system.dart';
 import '../../core/theme/app_colors.dart';
 import '../../core/theme/app_spacing.dart';
 import '../../core/widgets/analiz_list_item.dart';
-import '../../core/widgets/metraj_input.dart';
 import '../../data/providers/catalog_provider.dart';
 import '../../domain/entities/poz_analiz.dart';
 
-/// Katalogdan poz seçip miktar girerek keşife ekleme.
+/// Katalogdan poz seçerek keşife ekleme (metraj sonra Metraj sayfasında girilir).
 abstract final class KesifPozPickerSheet {
-  static Future<({PozAnaliz analiz, double miktar})?> show(
-    BuildContext context,
-  ) {
+  static Future<PozAnaliz?> show(BuildContext context) {
     final parentTheme = Theme.of(context);
     final bg = AppColors.isSantijet
         ? AppColors.lightSurface
         : (parentTheme.cardTheme.color ?? parentTheme.colorScheme.surface);
 
-    return showModalBottomSheet<({PozAnaliz analiz, double miktar})>(
+    return showModalBottomSheet<PozAnaliz>(
       context: context,
       isScrollControlled: true,
       useSafeArea: true,
@@ -61,8 +58,6 @@ class _KesifPozPickerSheet extends ConsumerStatefulWidget {
 class _KesifPozPickerSheetState extends ConsumerState<_KesifPozPickerSheet> {
   final _searchController = TextEditingController();
   String _query = '';
-  PozAnaliz? _selected;
-  double _miktar = 1;
 
   @override
   void dispose() {
@@ -98,89 +93,64 @@ class _KesifPozPickerSheetState extends ConsumerState<_KesifPozPickerSheet> {
             ),
           ),
           Text(
-            _selected == null ? 'Poz Seç' : 'Miktar Gir',
+            'Poz Seç',
             style: theme.textTheme.titleLarge?.copyWith(
               color: theme.colorScheme.onSurface,
               fontWeight: FontWeight.w700,
             ),
           ),
+          const SizedBox(height: AppSpacing.xxs),
+          Text(
+            'Seçilen poz metrajsız eklenir; miktar Metraj sayfasından girilir.',
+            style: theme.textTheme.bodySmall?.copyWith(
+              color: theme.colorScheme.onSurfaceVariant,
+            ),
+          ),
           const SizedBox(height: AppSpacing.sm),
-          if (_selected == null) ...[
-            SJSearchBar(
-              controller: _searchController,
-              hint: 'Poz no veya analiz ara...',
-              onChanged: (v) => setState(() => _query = v),
-              onClear: () {
-                _searchController.clear();
-                setState(() => _query = '');
+          SJSearchBar(
+            controller: _searchController,
+            hint: 'Poz no veya analiz ara...',
+            onChanged: (v) => setState(() => _query = v),
+            onClear: () {
+              _searchController.clear();
+              setState(() => _query = '');
+            },
+          ),
+          const SizedBox(height: AppSpacing.sm),
+          SizedBox(
+            height: MediaQuery.sizeOf(context).height * 0.55,
+            child: catalogAsync.when(
+              loading: () =>
+                  const Center(child: CircularProgressIndicator()),
+              error: (e, _) => SJEmptyState(
+                title: 'Katalog yüklenemedi',
+                message: '$e',
+                icon: Icons.error_outline,
+              ),
+              data: (catalog) {
+                final results = catalog.search(_query, limit: 40);
+                if (results.isEmpty) {
+                  return const SJEmptyState(
+                    title: 'Sonuç yok',
+                    message: 'Farklı bir poz no deneyin.',
+                    icon: Icons.search_off,
+                  );
+                }
+                return ListView.separated(
+                  itemCount: results.length,
+                  separatorBuilder: (_, __) =>
+                      const SizedBox(height: AppSpacing.xs),
+                  itemBuilder: (context, i) {
+                    final a = results[i];
+                    return AnalizListItem(
+                      analiz: a,
+                      onTap: () => Navigator.of(context).pop(a),
+                    );
+                  },
+                );
               },
             ),
-            const SizedBox(height: AppSpacing.sm),
-            SizedBox(
-              height: MediaQuery.sizeOf(context).height * 0.5,
-              child: catalogAsync.when(
-                loading: () =>
-                    const Center(child: CircularProgressIndicator()),
-                error: (e, _) => SJEmptyState(
-                  title: 'Katalog yüklenemedi',
-                  message: '$e',
-                  icon: Icons.error_outline,
-                ),
-                data: (catalog) {
-                  final results = catalog.search(_query, limit: 40);
-                  if (results.isEmpty) {
-                    return const SJEmptyState(
-                      title: 'Sonuç yok',
-                      message: 'Farklı bir poz no deneyin.',
-                      icon: Icons.search_off,
-                    );
-                  }
-                  return ListView.separated(
-                    itemCount: results.length,
-                    separatorBuilder: (_, __) =>
-                        const SizedBox(height: AppSpacing.xs),
-                    itemBuilder: (context, i) {
-                      final a = results[i];
-                      return AnalizListItem(
-                        analiz: a,
-                        onTap: () => setState(() => _selected = a),
-                      );
-                    },
-                  );
-                },
-              ),
-            ),
-          ] else ...[
-            AnalizListItem(analiz: _selected!),
-            const SizedBox(height: AppSpacing.sm),
-            MetrajInput(
-              birimFiyati: _selected!.birimFiyati,
-              olcuBirimi: _selected!.olcuBirimi,
-              initialMiktar: _miktar,
-              onChanged: (v) => _miktar = v,
-            ),
-            const SizedBox(height: AppSpacing.md),
-            Row(
-              children: [
-                Expanded(
-                  child: SJButton(
-                    label: 'Geri',
-                    variant: SJButtonVariant.secondary,
-                    onPressed: () => setState(() => _selected = null),
-                  ),
-                ),
-                const SizedBox(width: AppSpacing.sm),
-                Expanded(
-                  child: SJButton(
-                    label: 'Ekle',
-                    onPressed: () => Navigator.of(context).pop(
-                      (analiz: _selected!, miktar: _miktar),
-                    ),
-                  ),
-                ),
-              ],
-            ),
-          ],
+          ),
         ],
       ),
     );

@@ -14,6 +14,7 @@ import '../../domain/entities/kesif.dart';
 import '../../domain/enums/app_enums.dart';
 import '../kesif/kesif_poz_picker_sheet.dart';
 import '../kesif/widgets/discipline_section_header.dart';
+import '../kesif/widgets/metrajsiz_poz_warning.dart';
 
 /// Metraj cetveli — boyut girdilerinden poza ait metraj hesaplanır.
 class MetrajScreen extends ConsumerStatefulWidget {
@@ -29,13 +30,9 @@ class _MetrajScreenState extends ConsumerState<MetrajScreen> {
   };
 
   Future<void> _addPoz(String projectId) async {
-    final picked = await KesifPozPickerSheet.show(context);
-    if (picked == null) return;
-    ref.read(kesifProvider.notifier).addSatir(
-          projectId,
-          picked.analiz,
-          picked.miktar,
-        );
+    final analiz = await KesifPozPickerSheet.show(context);
+    if (analiz == null) return;
+    ref.read(kesifProvider.notifier).addSatir(projectId, analiz, 0);
   }
 
   @override
@@ -68,6 +65,8 @@ class _MetrajScreenState extends ConsumerState<MetrajScreen> {
 
     final projectId = kesif.id;
     final byDisc = kesif.satirlarByDiscipline;
+    final metrajsizCount =
+        kesif.satirlar.where((s) => s.hesaplananMetraj <= 0).length;
 
     return Scaffold(
       backgroundColor: AppColors.canvas,
@@ -93,6 +92,7 @@ class _MetrajScreenState extends ConsumerState<MetrajScreen> {
                       color: AppColors.textMuted,
                     ),
                   ),
+                  MetrajsizPozWarning(count: metrajsizCount),
                   if (kesif.satirlar.isEmpty)
                     Padding(
                       padding: const EdgeInsets.only(top: AppSpacing.lg),
