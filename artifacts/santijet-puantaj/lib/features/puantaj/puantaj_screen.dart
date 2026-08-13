@@ -24,6 +24,7 @@ import '../../domain/entities/attendance.dart';
 import '../../domain/entities/person.dart';
 import '../../domain/entities/project.dart';
 import '../../domain/enums/attendance_status.dart';
+import '../personnel/personnel_screen.dart';
 
 enum _ViewMode { daily, weekly, monthly }
 
@@ -347,6 +348,12 @@ class _PuantajScreenState extends ConsumerState<PuantajScreen> {
                       ),
                     );
                   },
+                  onPersonTap: (person) => openPersonEditor(
+                    context,
+                    ref,
+                    projectId: project.id,
+                    existing: person,
+                  ),
                 ),
               )
             else
@@ -375,6 +382,12 @@ class _PuantajScreenState extends ConsumerState<PuantajScreen> {
                   people: people,
                   grouped: _grouped(people),
                   statusOf: statusOf,
+                  onPersonTap: (person) => openPersonEditor(
+                    context,
+                    ref,
+                    projectId: project.id,
+                    existing: person,
+                  ),
                 ),
               ),
           ],
@@ -431,6 +444,7 @@ class _DailyView extends StatelessWidget {
     required this.onSetOvertime,
     required this.onBulk,
     required this.onCopyYesterday,
+    required this.onPersonTap,
   });
 
   final String date;
@@ -454,6 +468,7 @@ class _DailyView extends StatelessWidget {
   final void Function(Person, double) onSetOvertime;
   final ValueChanged<AttendanceStatus> onBulk;
   final VoidCallback onCopyYesterday;
+  final ValueChanged<Person> onPersonTap;
 
   Future<void> _pickDate(BuildContext context) async {
     final initial = PuantajDate.parse(date);
@@ -692,6 +707,7 @@ class _DailyView extends StatelessWidget {
                 onSaveNote: () => onSaveNote(person),
                 onSetStatus: (s) => onSetStatus(person, s),
                 onSetOvertime: (h) => onSetOvertime(person, h),
+                onPersonTap: () => onPersonTap(person),
               ),
             ),
           const SizedBox(height: AppSpacing.sm),
@@ -790,6 +806,7 @@ class _PersonCard extends StatelessWidget {
     required this.onSaveNote,
     required this.onSetStatus,
     required this.onSetOvertime,
+    required this.onPersonTap,
   });
 
   final Person person;
@@ -805,6 +822,7 @@ class _PersonCard extends StatelessWidget {
   final VoidCallback onSaveNote;
   final ValueChanged<AttendanceStatus> onSetStatus;
   final ValueChanged<double> onSetOvertime;
+  final VoidCallback onPersonTap;
 
   @override
   Widget build(BuildContext context) {
@@ -831,24 +849,39 @@ class _PersonCard extends StatelessWidget {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          titleCaseTr(person.name),
-                          style: theme.textTheme.titleMedium,
-                        ),
-                        for (final line
-                            in AttendanceDisplay.employmentDateLines(person))
-                          Text(
-                            line,
-                            style: theme.textTheme.labelSmall?.copyWith(
-                              color: theme.colorScheme.onSurfaceVariant,
+                    child: InkWell(
+                      onTap: onPersonTap,
+                      borderRadius: AppRadii.sm,
+                      child: Padding(
+                        padding: const EdgeInsets.only(right: 4, bottom: 2),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              titleCaseTr(person.name),
+                              style: theme.textTheme.titleMedium?.copyWith(
+                                color: theme.colorScheme.primary,
+                                decoration: TextDecoration.underline,
+                                decorationColor:
+                                    theme.colorScheme.primary.withValues(
+                                  alpha: 0.35,
+                                ),
+                              ),
                             ),
-                          ),
-                        if (meta.isNotEmpty)
-                          Text(meta, style: theme.textTheme.bodySmall),
-                      ],
+                            for (final line
+                                in AttendanceDisplay.employmentDateLines(
+                                    person))
+                              Text(
+                                line,
+                                style: theme.textTheme.labelSmall?.copyWith(
+                                  color: theme.colorScheme.onSurfaceVariant,
+                                ),
+                              ),
+                            if (meta.isNotEmpty)
+                              Text(meta, style: theme.textTheme.bodySmall),
+                          ],
+                        ),
+                      ),
                     ),
                   ),
                   IconButton(
@@ -1034,6 +1067,7 @@ class _CetvelView extends StatelessWidget {
     required this.people,
     required this.grouped,
     required this.statusOf,
+    required this.onPersonTap,
   });
 
   final _ViewMode mode;
@@ -1043,6 +1077,7 @@ class _CetvelView extends StatelessWidget {
   final List<Person> people;
   final List<({String company, List<Person> users})> grouped;
   final AttendanceStatus? Function(String personId, String date) statusOf;
+  final ValueChanged<Person> onPersonTap;
 
   @override
   Widget build(BuildContext context) {
@@ -1178,6 +1213,7 @@ class _CetvelView extends StatelessWidget {
                         summaryW,
                         totalW,
                         statusOf,
+                        onPersonTap,
                       ),
                   ],
                   _totalsFooter(
@@ -1276,6 +1312,7 @@ class _CetvelView extends StatelessWidget {
     double summaryW,
     double totalW,
     AttendanceStatus? Function(String, String) statusOf,
+    ValueChanged<Person> onPersonTap,
   ) {
     final statuses = [for (final d in days) statusOf(person.id, d)];
     final statusCounts = <AttendanceStatus, int>{
@@ -1293,31 +1330,38 @@ class _CetvelView extends StatelessWidget {
         children: [
           SizedBox(
             width: nameW,
-            child: Padding(
-              padding: const EdgeInsets.symmetric(vertical: 6, horizontal: 4),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    titleCaseTr(person.name),
-                    maxLines: 2,
-                    overflow: TextOverflow.ellipsis,
-                    style: theme.textTheme.bodySmall?.copyWith(
-                      color: theme.colorScheme.onSurface,
-                    ),
-                  ),
-                  for (final line
-                      in AttendanceDisplay.employmentDateLines(person))
+            child: InkWell(
+              onTap: () => onPersonTap(person),
+              child: Padding(
+                padding: const EdgeInsets.symmetric(vertical: 6, horizontal: 4),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
                     Text(
-                      line,
-                      maxLines: 1,
+                      titleCaseTr(person.name),
+                      maxLines: 2,
                       overflow: TextOverflow.ellipsis,
-                      style: theme.textTheme.labelSmall?.copyWith(
-                        color: theme.colorScheme.onSurfaceVariant,
-                        fontSize: 9,
+                      style: theme.textTheme.bodySmall?.copyWith(
+                        color: theme.colorScheme.primary,
+                        fontWeight: FontWeight.w600,
+                        decoration: TextDecoration.underline,
+                        decorationColor:
+                            theme.colorScheme.primary.withValues(alpha: 0.35),
                       ),
                     ),
-                ],
+                    for (final line
+                        in AttendanceDisplay.employmentDateLines(person))
+                      Text(
+                        line,
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: theme.textTheme.labelSmall?.copyWith(
+                          color: theme.colorScheme.onSurfaceVariant,
+                          fontSize: 9,
+                        ),
+                      ),
+                  ],
+                ),
               ),
             ),
           ),

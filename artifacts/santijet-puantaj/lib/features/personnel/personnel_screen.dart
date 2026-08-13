@@ -469,23 +469,37 @@ class _PersonnelScreenState extends ConsumerState<PersonnelScreen> {
     WidgetRef ref, {
     required String projectId,
     Person? existing,
-  }) async {
-    final result = await showModalBottomSheet<Person>(
-      context: context,
-      isScrollControlled: true,
-      showDragHandle: true,
-      builder: (ctx) => _PersonEditorSheet(
+  }) =>
+      openPersonEditor(
+        context,
+        ref,
         projectId: projectId,
         existing: existing,
-      ),
-    );
-    if (result == null) return;
-    final notifier = ref.read(personnelProvider.notifier);
-    if (existing == null) {
-      notifier.add(result);
-    } else {
-      notifier.update(result);
-    }
+      );
+}
+
+/// Personel bilgi / düzenleme sayfasını açar (puantaj vb. yerlerden).
+Future<void> openPersonEditor(
+  BuildContext context,
+  WidgetRef ref, {
+  required String projectId,
+  Person? existing,
+}) async {
+  final result = await showModalBottomSheet<Person>(
+    context: context,
+    isScrollControlled: true,
+    showDragHandle: true,
+    builder: (ctx) => _PersonEditorSheet(
+      projectId: projectId,
+      existing: existing,
+    ),
+  );
+  if (result == null) return;
+  final notifier = ref.read(personnelProvider.notifier);
+  if (existing == null) {
+    notifier.add(result);
+  } else {
+    notifier.update(result);
   }
 }
 
@@ -1145,7 +1159,7 @@ class _PersonEditorSheetState extends ConsumerState<_PersonEditorSheet> {
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
             Text(
-              widget.existing == null ? 'Yeni personel' : 'Personeli düzenle',
+              widget.existing == null ? 'Yeni personel' : 'Personel bilgisi',
               style: Theme.of(context).textTheme.headlineMedium,
             ),
             const SizedBox(height: AppSpacing.md),
