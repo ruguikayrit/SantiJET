@@ -8,6 +8,7 @@ Türkçe inşaat şantiye yönetim uygulaması. pnpm monorepo yapısında birden
 |-------|--------|----------|
 | **Maliyet (Flutter)** | `artifacts/santijet-bfa-flutter` | **Aktif** — ŞantiJET Maliyet (`/maliyet/`) |
 | **BETON (Flutter)** | `artifacts/santijet-beton` | **Aktif** — Mevcut beton uygulaması (`/beton/`) |
+| **Mühendis (Flutter)** | `artifacts/santijet-muhendis` | **Aktif** — TBDY-2018 çelik birleşim hesabı |
 | B.F.A. (RN arşiv) | `artifacts/imalat-poz-analizleri` | Emekli — yalnızca referans |
 | Mobil uygulama (RN) | `artifacts/santiye-takip` | Expo / React Native — ana şantiye takip (korunur) |
 | **Ana / PRO (Flutter)** | `artifacts/santijet-ana` | **Aktif Flutter hub** — RN ile aynı kurgu, 16 modül |
@@ -55,6 +56,14 @@ pnpm dev:beton
 ```
 
 Pages: `/beton/`.
+
+### Mühendis — TBDY-2018 birleşim hesabı (Flutter)
+
+```bash
+pnpm dev:muhendis
+```
+
+Agent brief: [`AGENT_BRIEF.md`](./AGENT_BRIEF.md).
 
 ### B.F.A. — RN arşiv (emekli, yalnızca referans)
 
@@ -145,6 +154,7 @@ CI: `.github/workflows/bfa-ci.yml` (push/PR) ve Pages deploy öncesi otomatik ç
 ├── artifacts/          # Uygulama modülleri
 │   ├── santijet-bfa-flutter/  # B.F.A. Flutter (aktif)
 │   ├── santijet-beton/        # BETON Flutter (/beton/)
+│   ├── santijet-muhendis/     # Mühendis — TBDY-2018 birleşim
 │   ├── imalat-poz-analizleri/ # B.F.A. RN (arşiv)
 │   ├── santiye-takip/  # Expo mobil uygulama
 │   ├── santijet-neon/  # Neon HUD web paneli
