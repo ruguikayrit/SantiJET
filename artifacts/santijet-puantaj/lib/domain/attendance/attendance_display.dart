@@ -1,9 +1,11 @@
+import '../../core/utils/puantaj_date.dart';
 import '../entities/person.dart';
 import '../enums/attendance_status.dart';
 
 /// Kayıtlı puantaj + personel giriş/çıkış tarihinden görünen durum.
 abstract final class AttendanceDisplay {
-  /// İşten çıkış günü → Ç, işe giriş günü → G; aksi halde kayıtlı durum.
+  /// İşten çıkış günü → Ç, işe giriş günü → G;
+  /// kayıt yoksa Pazar → HT; aksi halde kayıtlı durum.
   static AttendanceStatus? resolve({
     required Person? person,
     required String date,
@@ -28,7 +30,15 @@ abstract final class AttendanceDisplay {
         }
       }
     }
-    return recorded;
+    if (recorded != null) return recorded;
+    if (_isSunday(date)) return AttendanceStatus.haftaTatili;
+    return null;
+  }
+
+  /// Pazar günü (hafta tatili varsayılanı).
+  static bool _isSunday(String date) {
+    final day = PuantajDate.tryParse(date) ?? Person.parseEmploymentDate(date);
+    return day != null && day.weekday == DateTime.sunday;
   }
 
   /// İşe giriş satırı — örn. `Giriş: 07.04.2026` (yoksa boş).

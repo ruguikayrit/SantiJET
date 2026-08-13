@@ -78,8 +78,7 @@ class _ImalatScreenState extends ConsumerState<ImalatScreen> {
     final key = 'phase:${phase.name}';
     if (_manualExpand.contains(key)) return true;
     if (_manualCollapse.contains(key)) return false;
-    // Tamamlanan varsayılan kapalı; diğerleri açık.
-    return phase != _ImalatPhase.tamamlanan;
+    return false;
   }
 
   void _togglePhase(_ImalatPhase phase, bool currentlyExpanded) {
@@ -98,8 +97,7 @@ class _ImalatScreenState extends ConsumerState<ImalatScreen> {
   bool _isTeamExpanded(String teamKey, bool updatedToday) {
     if (_manualExpand.contains(teamKey)) return true;
     if (_manualCollapse.contains(teamKey)) return false;
-    // Varsayılan: kapalı; yalnızca bugün güncellenen ekip açık.
-    return updatedToday;
+    return false;
   }
 
   void _toggleTeam(String teamKey, bool currentlyExpanded) {

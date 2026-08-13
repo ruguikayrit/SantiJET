@@ -137,6 +137,49 @@ void main() {
         ['Giriş: 01.08.2026', 'Çıkış: 10.08.2026'],
       );
     });
+
+    test('kayıtsız Pazar günü otomatik HT; manuel kayıt öncelikli', () {
+      final person = Person(
+        id: '1',
+        projectId: 'p',
+        name: 'Ali',
+        hireDate: '2026-01-01',
+      );
+      // 02.08.2026 ve 09.08.2026 Pazar
+      expect(
+        AttendanceDisplay.resolve(
+          person: person,
+          date: '02.08.2026',
+          recorded: null,
+        ),
+        AttendanceStatus.haftaTatili,
+      );
+      expect(
+        AttendanceDisplay.resolve(
+          person: person,
+          date: '09.08.2026',
+          recorded: null,
+        ),
+        AttendanceStatus.haftaTatili,
+      );
+      expect(
+        AttendanceDisplay.resolve(
+          person: person,
+          date: '02.08.2026',
+          recorded: AttendanceStatus.present,
+        ),
+        AttendanceStatus.present,
+      );
+      // 05.08.2026 Çarşamba — kayıt yoksa boş
+      expect(
+        AttendanceDisplay.resolve(
+          person: person,
+          date: '05.08.2026',
+          recorded: null,
+        ),
+        isNull,
+      );
+    });
   });
 
   group('YevmiyeCalculator', () {
