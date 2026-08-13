@@ -399,11 +399,7 @@ Future<void> _openKalemEditor(
     context: context,
     isScrollControlled: true,
     showDragHandle: true,
-    useSafeArea: false,
-    builder: (ctx) => Padding(
-      padding: EdgeInsets.only(top: MediaQuery.viewPaddingOf(ctx).top),
-      child: _KalemEditorSheet(initial: existing),
-    ),
+    builder: (ctx) => _KalemEditorSheet(initial: existing),
   );
   if (result == null) return;
   if (result.deleted) {
@@ -525,178 +521,210 @@ class _KalemEditorSheetState extends State<_KalemEditorSheet> {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final isEditing = widget.initial != null;
-    // Web/PWA: visualViewport zaten klavyeyi düşürür; viewInsets eklemek
-    // Kaydet ile klavye arasında boş beyaz alan bırakır.
-    final safeBottom = MediaQuery.viewPaddingOf(context).bottom;
-    return Padding(
-      padding: EdgeInsets.fromLTRB(
-        AppSpacing.md,
-        0,
-        AppSpacing.md,
-        AppSpacing.sm + safeBottom,
-      ),
-      child: SingleChildScrollView(
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.stretch,
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Text(
-              isEditing ? 'Cetvel satırını düzenle' : 'Cetvel satırı ekle',
-              style: theme.textTheme.titleLarge,
-            ),
-            const SizedBox(height: AppSpacing.sm),
-            TextField(
-              controller: _aciklama,
-              decoration: const InputDecoration(
-                labelText: 'Açıklama',
-                hintText: 'Örn. Döşeme A-1',
-                isDense: true,
-              ),
-            ),
-            const SizedBox(height: AppSpacing.sm),
-            DropdownButtonFormField<MetrajHesapTipi>(
-              value: _tip,
-              decoration: const InputDecoration(
-                labelText: 'Hesap tipi',
-                isDense: true,
-              ),
-              items: [
-                for (final t in MetrajHesapTipi.values)
-                  DropdownMenuItem(value: t, child: Text(t.label)),
-              ],
-              onChanged: (v) {
-                if (v == null) return;
-                setState(() => _tip = v);
-              },
-            ),
-            const SizedBox(height: AppSpacing.sm),
-            if (_tip == MetrajHesapTipi.manuel)
-              TextField(
-                controller: _manuel,
-                keyboardType:
-                    const TextInputType.numberWithOptions(decimal: true),
-                decoration: const InputDecoration(
-                  labelText: 'Miktar',
-                  isDense: true,
+    final mq = MediaQuery.of(context);
+    final keyboard = mq.viewInsets.bottom;
+    // Klavye üstünde kalan alan; sheet bunu aşmaz, gerekirse kayar.
+    final maxHeight =
+        ((mq.size.height - keyboard - mq.padding.top) * 0.92).clamp(
+      240.0,
+      mq.size.height,
+    );
+
+    // viewInsets ile sheet'i kaldır; heightFactor:1 sayesinde beyaz boşluk
+    // oluşmaz (padding sheet gövdesini şişirmez, tüm paneli yukarı iter).
+    return AnimatedPadding(
+      duration: const Duration(milliseconds: 120),
+      curve: Curves.easeOut,
+      padding: EdgeInsets.only(bottom: keyboard),
+      child: Align(
+        alignment: Alignment.bottomCenter,
+        heightFactor: 1,
+        child: ConstrainedBox(
+          constraints: BoxConstraints(maxHeight: maxHeight),
+          child: Material(
+            color: Colors.transparent,
+            child: SafeArea(
+              top: false,
+              child: ListView(
+                shrinkWrap: true,
+                keyboardDismissBehavior:
+                    ScrollViewKeyboardDismissBehavior.onDrag,
+                padding: const EdgeInsets.fromLTRB(
+                  AppSpacing.md,
+                  0,
+                  AppSpacing.md,
+                  AppSpacing.sm,
                 ),
-                onChanged: (_) => setState(() {}),
-              )
-            else ...[
-              if (_tip == MetrajHesapTipi.enBoy ||
-                  _tip == MetrajHesapTipi.enBoyYukseklik)
-                Row(
-                  children: [
-                    Expanded(
-                      child: TextField(
-                        controller: _en,
+                children: [
+                  Text(
+                    isEditing
+                        ? 'Cetvel satırını düzenle'
+                        : 'Cetvel satırı ekle',
+                    style: theme.textTheme.titleLarge,
+                  ),
+                  const SizedBox(height: AppSpacing.sm),
+                  TextField(
+                    controller: _aciklama,
+                    decoration: const InputDecoration(
+                      labelText: 'Açıklama',
+                      hintText: 'Örn. Döşeme A-1',
+                      isDense: true,
+                    ),
+                  ),
+                  const SizedBox(height: AppSpacing.sm),
+                  DropdownButtonFormField<MetrajHesapTipi>(
+                    value: _tip,
+                    decoration: const InputDecoration(
+                      labelText: 'Hesap tipi',
+                      isDense: true,
+                    ),
+                    items: [
+                      for (final t in MetrajHesapTipi.values)
+                        DropdownMenuItem(value: t, child: Text(t.label)),
+                    ],
+                    onChanged: (v) {
+                      if (v == null) return;
+                      setState(() => _tip = v);
+                    },
+                  ),
+                  const SizedBox(height: AppSpacing.sm),
+                  if (_tip == MetrajHesapTipi.manuel)
+                    TextField(
+                      controller: _manuel,
+                      keyboardType: const TextInputType.numberWithOptions(
+                        decimal: true,
+                      ),
+                      decoration: const InputDecoration(
+                        labelText: 'Miktar',
+                        isDense: true,
+                      ),
+                      onChanged: (_) => setState(() {}),
+                    )
+                  else ...[
+                    if (_tip == MetrajHesapTipi.enBoy ||
+                        _tip == MetrajHesapTipi.enBoyYukseklik)
+                      Row(
+                        children: [
+                          Expanded(
+                            child: TextField(
+                              controller: _en,
+                              keyboardType:
+                                  const TextInputType.numberWithOptions(
+                                decimal: true,
+                              ),
+                              decoration: const InputDecoration(
+                                labelText: 'En',
+                                isDense: true,
+                              ),
+                              onChanged: (_) => setState(() {}),
+                            ),
+                          ),
+                          const SizedBox(width: AppSpacing.xs),
+                          Expanded(
+                            child: TextField(
+                              controller: _boy,
+                              keyboardType:
+                                  const TextInputType.numberWithOptions(
+                                decimal: true,
+                              ),
+                              decoration: const InputDecoration(
+                                labelText: 'Boy',
+                                isDense: true,
+                              ),
+                              onChanged: (_) => setState(() {}),
+                            ),
+                          ),
+                          if (_tip == MetrajHesapTipi.enBoyYukseklik) ...[
+                            const SizedBox(width: AppSpacing.xs),
+                            Expanded(
+                              child: TextField(
+                                controller: _yukseklik,
+                                keyboardType:
+                                    const TextInputType.numberWithOptions(
+                                  decimal: true,
+                                ),
+                                decoration: const InputDecoration(
+                                  labelText: 'Yükseklik',
+                                  isDense: true,
+                                ),
+                                onChanged: (_) => setState(() {}),
+                              ),
+                            ),
+                          ],
+                        ],
+                      ),
+                    if (_tip == MetrajHesapTipi.alan)
+                      TextField(
+                        controller: _alan,
                         keyboardType: const TextInputType.numberWithOptions(
                           decimal: true,
                         ),
                         decoration: const InputDecoration(
-                          labelText: 'En',
+                          labelText: 'Alan',
                           isDense: true,
                         ),
                         onChanged: (_) => setState(() {}),
                       ),
-                    ),
-                    const SizedBox(width: AppSpacing.xs),
-                    Expanded(
-                      child: TextField(
-                        controller: _boy,
+                    if (_tip == MetrajHesapTipi.cevre)
+                      TextField(
+                        controller: _cevre,
                         keyboardType: const TextInputType.numberWithOptions(
                           decimal: true,
                         ),
                         decoration: const InputDecoration(
-                          labelText: 'Boy',
+                          labelText: 'Çevre',
                           isDense: true,
                         ),
                         onChanged: (_) => setState(() {}),
                       ),
+                    const SizedBox(height: AppSpacing.sm),
+                    TextField(
+                      controller: _adet,
+                      keyboardType: const TextInputType.numberWithOptions(
+                        decimal: true,
+                      ),
+                      decoration: const InputDecoration(
+                        labelText: 'Adet',
+                        isDense: true,
+                      ),
+                      onChanged: (_) => setState(() {}),
                     ),
-                    if (_tip == MetrajHesapTipi.enBoyYukseklik) ...[
-                      const SizedBox(width: AppSpacing.xs),
+                  ],
+                  const SizedBox(height: AppSpacing.md),
+                  Text(
+                    'Hesaplanan: ${AppFormat.decimal(_preview)}',
+                    style: theme.textTheme.titleMedium?.copyWith(
+                      color: AppColors.moduleKesif,
+                    ),
+                  ),
+                  const SizedBox(height: AppSpacing.md),
+                  Row(
+                    children: [
+                      if (isEditing) ...[
+                        Expanded(
+                          child: SJButton(
+                            label: 'Sil',
+                            icon: Icons.delete_outline,
+                            variant: SJButtonVariant.destructive,
+                            onPressed: _delete,
+                          ),
+                        ),
+                        const SizedBox(width: AppSpacing.sm),
+                      ],
                       Expanded(
-                        child: TextField(
-                          controller: _yukseklik,
-                          keyboardType: const TextInputType.numberWithOptions(
-                            decimal: true,
-                          ),
-                          decoration: const InputDecoration(
-                            labelText: 'Yükseklik',
-                            isDense: true,
-                          ),
-                          onChanged: (_) => setState(() {}),
+                        child: SJButton(
+                          label: 'Kaydet',
+                          icon: Icons.save_outlined,
+                          onPressed: _save,
+                          expanded: !isEditing,
                         ),
                       ),
                     ],
-                  ],
-                ),
-              if (_tip == MetrajHesapTipi.alan)
-                TextField(
-                  controller: _alan,
-                  keyboardType:
-                      const TextInputType.numberWithOptions(decimal: true),
-                  decoration: const InputDecoration(
-                    labelText: 'Alan',
-                    isDense: true,
                   ),
-                  onChanged: (_) => setState(() {}),
-                ),
-              if (_tip == MetrajHesapTipi.cevre)
-                TextField(
-                  controller: _cevre,
-                  keyboardType:
-                      const TextInputType.numberWithOptions(decimal: true),
-                  decoration: const InputDecoration(
-                    labelText: 'Çevre',
-                    isDense: true,
-                  ),
-                  onChanged: (_) => setState(() {}),
-                ),
-              const SizedBox(height: AppSpacing.sm),
-              TextField(
-                controller: _adet,
-                keyboardType:
-                    const TextInputType.numberWithOptions(decimal: true),
-                decoration: const InputDecoration(
-                  labelText: 'Adet',
-                  isDense: true,
-                ),
-                onChanged: (_) => setState(() {}),
-              ),
-            ],
-            const SizedBox(height: AppSpacing.md),
-            Text(
-              'Hesaplanan: ${AppFormat.decimal(_preview)}',
-              style: theme.textTheme.titleMedium?.copyWith(
-                color: AppColors.moduleKesif,
-              ),
-            ),
-            const SizedBox(height: AppSpacing.md),
-            Row(
-              children: [
-                if (isEditing) ...[
-                  Expanded(
-                    child: SJButton(
-                      label: 'Sil',
-                      icon: Icons.delete_outline,
-                      variant: SJButtonVariant.destructive,
-                      onPressed: _delete,
-                    ),
-                  ),
-                  const SizedBox(width: AppSpacing.sm),
                 ],
-                Expanded(
-                  child: SJButton(
-                    label: 'Kaydet',
-                    icon: Icons.save_outlined,
-                    onPressed: _save,
-                    expanded: !isEditing,
-                  ),
-                ),
-              ],
+              ),
             ),
-          ],
+          ),
         ),
       ),
     );
