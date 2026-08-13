@@ -642,7 +642,7 @@ class _DisciplineHeader extends StatelessWidget {
   }
 }
 
-class _KesifListesiPane extends StatelessWidget {
+class _KesifListesiPane extends StatefulWidget {
   const _KesifListesiPane({
     required this.kesif,
     required this.needs,
@@ -658,8 +658,17 @@ class _KesifListesiPane extends StatelessWidget {
   final ValueChanged<String> onToggle;
 
   @override
+  State<_KesifListesiPane> createState() => _KesifListesiPaneState();
+}
+
+class _KesifListesiPaneState extends State<_KesifListesiPane> {
+  /// Varsayılan: tüm disiplinler kapalı; açılanlar bu sette.
+  final Set<MainDiscipline> _expanded = {};
+
+  @override
   Widget build(BuildContext context) {
-    if (kesif == null || kesif!.lines.isEmpty) {
+    final kesif = widget.kesif;
+    if (kesif == null || kesif.lines.isEmpty) {
       return const SJEmptyState(
         title: 'Keşif listesi yok',
         message:
@@ -669,11 +678,11 @@ class _KesifListesiPane extends StatelessWidget {
       );
     }
 
-    final tree = kesif!.groupedTree();
+    final tree = kesif.groupedTree();
     final disciplineOrder =
         MainDiscipline.values.where((d) => tree.containsKey(d)).toList();
     final needsByLine = <String, List<MaterialNeed>>{};
-    for (final n in needs) {
+    for (final n in widget.needs) {
       needsByLine.putIfAbsent(n.kesifLine.id, () => []).add(n);
     }
 
@@ -686,7 +695,7 @@ class _KesifListesiPane extends StatelessWidget {
       ),
       children: [
         Text(
-          kesif!.name,
+          kesif.name,
           style: AppTypography.titleMedium.copyWith(
             color: AppColors.textPrimary,
           ),
@@ -700,49 +709,69 @@ class _KesifListesiPane extends StatelessWidget {
         ),
         const SizedBox(height: AppSpacing.md),
         for (final discipline in disciplineOrder) ...[
-          Text(
-            discipline.label,
-            style: AppTypography.titleMedium.copyWith(
-              color: AppColors.electricBlueLight,
-            ),
+          Builder(
+            builder: (context) {
+              final lines = tree[discipline]!.values.fold<int>(
+                0,
+                (sum, group) => sum + group.length,
+              );
+              final expanded = _expanded.contains(discipline);
+              return _DisciplineHeader(
+                label: discipline.label,
+                count: lines,
+                expanded: expanded,
+                onToggle: () {
+                  setState(() {
+                    if (expanded) {
+                      _expanded.remove(discipline);
+                    } else {
+                      _expanded.add(discipline);
+                    }
+                  });
+                },
+              );
+            },
           ),
-          const SizedBox(height: AppSpacing.xs),
-          for (final entry in tree[discipline]!.entries) ...[
-            Padding(
-              padding: const EdgeInsets.only(
-                left: AppSpacing.sm,
-                top: AppSpacing.sm,
-                bottom: AppSpacing.xs,
-              ),
-              child: Text(
-                entry.key.isEmpty ? 'Genel' : entry.key,
-                style: AppTypography.labelLarge.copyWith(
-                  color: AppColors.textSecondary,
+          if (_expanded.contains(discipline)) ...[
+            const SizedBox(height: AppSpacing.xs),
+            for (final entry in tree[discipline]!.entries) ...[
+              Padding(
+                padding: const EdgeInsets.only(
+                  left: AppSpacing.sm,
+                  top: AppSpacing.sm,
+                  bottom: AppSpacing.xs,
                 ),
-              ),
-            ),
-            for (final line in entry.value) ...[
-              _KesifMetrajCard(line: line),
-              for (final need in needsByLine[line.id] ?? const <MaterialNeed>[])
-                _NeedTile(
-                  need: need,
-                  balance: balanceById[need.id],
-                  selected: selected.contains(need.id),
-                  onToggle: () => onToggle(need.id),
-                ),
-              if ((needsByLine[line.id] ?? const []).isEmpty)
-                Padding(
-                  padding: const EdgeInsets.only(
-                    left: AppSpacing.md,
-                    bottom: AppSpacing.sm,
+                child: Text(
+                  entry.key.isEmpty ? 'Genel' : entry.key,
+                  style: AppTypography.labelLarge.copyWith(
+                    color: AppColors.textSecondary,
                   ),
-                  child: Text(
-                    'Bu poz için birim sarfiyat tanımlı değil',
-                    style: AppTypography.bodySmall.copyWith(
-                      color: AppColors.textMuted,
+                ),
+              ),
+              for (final line in entry.value) ...[
+                _KesifMetrajCard(line: line),
+                for (final need
+                    in needsByLine[line.id] ?? const <MaterialNeed>[])
+                  _NeedTile(
+                    need: need,
+                    balance: widget.balanceById[need.id],
+                    selected: widget.selected.contains(need.id),
+                    onToggle: () => widget.onToggle(need.id),
+                  ),
+                if ((needsByLine[line.id] ?? const []).isEmpty)
+                  Padding(
+                    padding: const EdgeInsets.only(
+                      left: AppSpacing.md,
+                      bottom: AppSpacing.sm,
+                    ),
+                    child: Text(
+                      'Bu poz için birim sarfiyat tanımlı değil',
+                      style: AppTypography.bodySmall.copyWith(
+                        color: AppColors.textMuted,
+                      ),
                     ),
                   ),
-                ),
+              ],
             ],
           ],
           const SizedBox(height: AppSpacing.md),
