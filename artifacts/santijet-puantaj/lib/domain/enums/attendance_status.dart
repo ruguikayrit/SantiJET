@@ -14,7 +14,7 @@ enum AttendanceStatus {
   raporlu('raporlu', 'Raporlu', 'R', 0, Color(0xFF8B5CF6)),
   mazeret('mazeret', 'Mazeret', 'Mz', 0, Color(0xFFF59E0B)),
   haftaTatili('hafta_tatili', 'Hafta Tatili', 'HT', 0, Color(0xFF0D9488)),
-  tatil('tatil', 'Resmi Tatil', 'T', 0, Color(0xFF64748B));
+  tatil('tatil', 'Resmi Tatil', 'RT', 0, Color(0xFF64748B));
 
   const AttendanceStatus(
     this.jsonValue,
