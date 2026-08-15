@@ -1,0 +1,22 @@
+---
+description: ŞantiJET Beton hibrit tema — chrome vs kart mürekkebi
+globs: artifacts/santijet-beton/**/*.dart
+alwaysApply: false
+---
+
+# Beton — chrome vs kart mürekkebi
+
+Hibrit paletler chrome (iskelet) ile kart yüzeyini ayırır. `AppTypography.*` varsayılanı chrome mürekkebidir; `SJCard` içinde kullanınca ŞantiJET Pro’da yazı kaybolur.
+
+1. Header / nav / AppBar / sheet chrome → `AppColors.text*` / `AppTypography.*`.
+2. `SJCard` içi → `AppColors.cardText*` veya `AppTypography.card*`.
+3. Kart içi inset / TextField fill → `AppColors.cardInsetSurface` + `cardText*`. `surfaceElevated` + `cardText*` yasak.
+4. GeceJET / ŞantiJET Pro: `ThemeRebuildGate` paleti ezmesin; kartlar palet yüzeyini korusun.
+
+```dart
+// YANLIŞ
+Text(title, style: AppTypography.titleMedium); // SJCard içinde chrome
+
+// DOĞRU
+Text(title, style: AppTypography.cardTitleMedium);
+```

@@ -1,0 +1,19 @@
+---
+description: ŞantiJET Beton kabuk, nav ve ayarlar — geri alma.
+globs: artifacts/santijet-beton/**
+alwaysApply: false
+---
+
+# Beton kabuk (kilitli UX)
+
+Alt nav sırası: **Ana Sayfa · Keşif · Sipariş · Döküm · Test**. Ayarlar navda yok.
+
+- Test = `QualityScreen`, rota `/test` (`AppRoutes.kalite` alias).
+- Ayarlar = `/ayarlar`, **root navigator**; sağ üst `SantijetHeader` dişli ikonu.
+- Bildirim zili yok: `showNotification` varsayılan `false`. Açma.
+- Ayarlar listesi: Projelerim, Tema, Demo veriyi yükle, Hakkında, Tüm Verileri Sil.
+- Listeden **çıkarılmış** (geri ekleme): Basınç dayanım raporları, Aktif proje özeti.
+- Sekmeler arası yatay kaydırma kapalı (`popGestureEnabled: false`, `Router.neglect`, `PopScope`).
+- Ana sayfa proje seçici: bottom sheet; Projelerim sayfasına yönlendirme.
+
+Kaynak: `lib/core/routing/app_router.dart`, `main_shell.dart`, `santijet_header.dart`. Ürün özeti: `artifacts/santijet-beton/README.md`.
