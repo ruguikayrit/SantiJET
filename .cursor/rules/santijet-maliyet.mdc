@@ -1,0 +1,83 @@
+---
+description: ŞantiJET Maliyet kilitli UX — geri alma.
+globs: artifacts/santijet-bfa-flutter/**
+alwaysApply: false
+---
+
+# ŞantiJET Maliyet (kilitli UX)
+
+Klasör adı `artifacts/santijet-bfa-flutter` (paket `santijet_bfa`).
+Staging/Pages: `/maliyet/` → https://ruguikayrit.github.io/SantiJET/maliyet/
+Eski `/bfa/` yönlendirmesi korunur. Yeniden adlandırma kullanıcı istemeden yapılmaz.
+
+Bu kural sohbet silinse bile geri alınamaz ürün kararlarını kilitler.
+
+## Kabuk
+
+Alt nav (5): **Ana Sayfa · Analiz · Metraj · Keşif · Y.Maliyet**.
+Ayarlar navda yok (`SantijetHeader` dişli → `/ayarlar`).
+Nav etiketi **Y.Maliyet** kalır; sayfa başlığı uzun: **Yaklaşık Maliyet**.
+
+## Ana Sayfa
+
+Şantiye seçici (`ProjectSwitcher`) vardır. “Yeni Analiz” FAB ve doldurulmuş
+özet ızgarası yok. Yardım metni yok.
+
+## Analiz
+
+Hub menüsü katalog yüklenmesini **beklemez** (tam ekran spinner yok).
+Splash’te `officialCatalogProvider` prefetch. Parse: native `compute`, web
+parçalı.
+
+Yardım satırı yok: “Birim fiyat analizi · karşılaştırma · katalog”.
+**Analiz Kataloğu** ve **İnşaat Analizleri** alt başlık (subtitle) almaz.
+
+## Metraj / Keşif / YM — ortak
+
+İnşaat / Elektrik / Mekanik başlıkları **açılır-kapanır** ve varsayılan
+**kapalı** (`_collapsed = {...kesifSirasi}`). Açık başlatma geri getirme.
+
+Poz ekle: katalogdan seç → **metraj 0** ile ekle. “Miktar Gir” adımı yok.
+Metrajı 0 olan poz varsa sayfa başında `MetrajsizPozWarning`.
+
+Poz satırı **sağdan sola kaydırarak sil** (`Dismissible` + onay). Liste X’i yok.
+
+## Metraj cetvel satırı
+
+Satır sonundaki **X sil** yok. Silme yalnızca “Cetvel satırını düzenle”
+sheet’inde **Kaydet** yanındaki **Sil**.
+
+Sheet klavyenin **üstüne** oturur (`AnimatedPadding` + `heightFactor: 1`).
+Ne boş beyaz şerit ne klavye-üstü örtme.
+
+## Keşif
+
+Satır tıklanınca tam tanım sheet’i **okunur mürekkep** (`onSurface`);
+`cardTextPrimary` (koyu kart beyazı) açık sheet’te kullanılmaz.
+
+## PDF
+
+| Kaynak | Başlık | B.F. / Tutar |
+|--------|--------|----------------|
+| Keşif | `METRAJ / KEŞİF CETVELİ` | **yok** |
+| YM | `YAKLAŞIK MALİYET CETVELİ` | **var**, `AppFormat.currency` |
+
+Poz No / Birim / Miktar / (B.F.) / (Tutar) **tek satır**. Daralan sütun
+yalnız **Tanım** (2–4 satır). Grup başlıkları: İnşaat İşleri · Elektrik
+İşleri · Mekanik İşler.
+
+YM ekran kartında metraj ve tutar **ayrı satır** (üst üste binmesin).
+
+## Ayarlar
+
+Geri tuşu **her zaman** görünür. `canPop` → `pop`, değilse `go(home)`.
+Projelerim: `canPop` → `pop`, değilse `go(ayarlar)`. `go('/ayarlar')` ile
+stack silinip geri kaybolmasın.
+
+## Deploy
+
+Yalnız `artifacts/santijet-bfa-flutter/**` (+ bu kural / README).
+Kullanıcı `deploy et` deyince `staging` push + `web/index.html` `APP_VERSION`
+arttır.
+
+Ürün özeti: `artifacts/santijet-bfa-flutter/README.md`.

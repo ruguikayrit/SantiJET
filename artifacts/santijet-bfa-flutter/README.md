@@ -9,16 +9,33 @@ Birim Fiyat Analizleri). Klasör adı şimdilik `santijet-bfa-flutter` (rename F
 React Native sürümünden (`artifacts/imalat-poz-analizleri/`) **bağımsız** olarak,
 ŞantiJET Design System ve Flutter mimarisiyle geliştirilmektedir.
 
-## Kabuk (4 yüzey)
+## Kabuk (5 yüzey)
+
+Ayarlar bottom tab değildir (`SantijetHeader` dişli).
 
 | Tab | İçerik |
 |-----|--------|
-| Ana Sayfa | Özet kartları, son analizler, açık keşifler, YM, hızlı aksiyonlar |
-| Analiz | Özel analiz, karşılaştırma, katalog girişleri |
-| Birim Fiyat | Poz arama, katalog fiyatı, keşife uygula |
-| Keşif | Satırlar + **Metraj** + **YM** (ayrı tab değil) |
+| Ana Sayfa | Şantiye seçici (`ProjectSwitcher`); özet ızgarası / Yeni Analiz FAB yok |
+| Analiz | Katalog / disiplin / karşılaştır / favori girişleri (hub katalogu beklemez) |
+| Metraj | Cetvel; poz metrajsız eklenir; disiplin başlıkları varsayılan kapalı |
+| Keşif | Poz · tanım · metraj; kaydırarak sil; PDF’de fiyat sütunu yok |
+| Y.Maliyet | Sayfa başlığı **Yaklaşık Maliyet**; B.F. düzenlenir; PDF’de fiyat var |
 
-Ayarlar bottom tab değildir (header / Ana Sayfa).
+Kilitli UX (geri alma): `.cursor/rules/santijet-maliyet.mdc`
+
+### Metraj / Keşif / YM
+
+- Poz Ekle miktar adımı yok (miktar 0). Metrajsız poz uyarısı sayfa başında.
+- Poz satırı sağdan sola kaydırılarak silinir.
+- Cetvel satırında X yok; silme düzenleme sheet’inde Kaydet yanında.
+- PDF grupları: İnşaat İşleri · Elektrik İşleri · Mekanik İşler.
+- Keşif PDF başlığı `METRAJ / KEŞİF CETVELİ`; YM `YAKLAŞIK MALİYET CETVELİ`.
+
+## Deploy
+
+`staging` dalına yalnız bu klasör (+ kural / bu README). Canlı:
+https://ruguikayrit.github.io/SantiJET/maliyet/  
+Deploy’da `web/index.html` içindeki `APP_VERSION` artırılır.
 
 ## Yedek / migration
 
