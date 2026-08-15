@@ -7,7 +7,7 @@ Canlı siteyi riske atmadan DEMİR değişikliklerini önizlemek için `staging`
 | Ortam | URL |
 |---|---|
 | **Canlı (production)** | https://ruguikayrit.github.io/SantiJET/ |
-| **Staging önizleme** | https://ruguikayrit.github.io/SantiJET/staging/ |
+| **DEMİR önizleme** | https://ruguikayrit.github.io/SantiJET/demir/ |
 | **Maliyet** | https://ruguikayrit.github.io/SantiJET/maliyet/ |
 | **Puantaj staging** | https://ruguikayrit.github.io/SantiJET/puantaj/ |
 | **Beton staging** | https://ruguikayrit.github.io/SantiJET/beton/ |
@@ -31,7 +31,7 @@ git merge main          # veya doğrudan staging'de geliştir
 git add .
 git commit -m "..."
 git push origin staging
-# → 3-5 dk sonra /staging/ güncellenir
+# → 3-5 dk sonra /demir/ güncellenir
 
 # 3) Canlıya al (hazır olunca)
 git checkout main
@@ -44,12 +44,12 @@ git push origin main
 
 | Branch | Ne zaman push? | Sonuç |
 |---|---|---|
-| `staging` | Geliştirme / test / önizleme | Yalnızca `/staging/` güncellenir; canlı kök URL `main`'deki kodu gösterir |
-| `main` | Onaylanmış, saha için hazır sürüm | Canlı site + `/staging/` (staging branch'ten) + BFA yeniden yayınlanır |
+| `staging` | Geliştirme / test / önizleme | `/demir/` güncellenir; canlı kök URL `main`'deki kodu gösterir |
+| `main` | Onaylanmış, saha için hazır sürüm | Canlı site + `/demir/` (staging branch'ten) + diğer uygulamalar yeniden yayınlanır |
 
 ## GitHub Actions
 
-- `deploy-github-pages.yml` — `main` veya `staging` push → production + `/staging/` + BFA (BFA hata verirse yine de DEMİR deploy edilir)
+- `deploy-github-pages.yml` — `main` veya `staging` push → production + `/demir/` + diğer uygulamalar (Maliyet hata verirse yine de DEMİR deploy edilir)
 
 ### Staging URL 404 alırsanız
 
@@ -58,7 +58,7 @@ git push origin main
 3. **Settings → Environments → github-pages → Deployment branches** bölümünde `staging` branch'ine izin verin (veya kısıtlamayı kaldırın). Aksi halde `staging` push deploy'u anında reddedilir.
 4. Alternatif: Actions → `Deploy ŞantiJET GitHub Pages` → **Run workflow** (manuel, `main` üzerinden çalışır; en güncel `staging` branch'ini okur).
 
-`deploy-santijet-demir-web.yml` yalnızca manuel acil durum içindir; normal akışta kullanmayın (BFA ve `/staging/` klasörünü ezebilir).
+`deploy-santijet-demir-web.yml` yalnızca manuel acil durum içindir; normal akışta kullanmayın (diğer uygulamalar ve `/demir/` klasörünü ezebilir).
 
 ## Yerel geliştirme vs staging deploy
 
@@ -66,4 +66,4 @@ git push origin main
 - **Staging deploy:** gerçek cihazda (iPhone Safari vb.) test için
 - **Main deploy:** kullanıcıların gördüğü canlı sürüm
 
-`deploy-santijet-demir-web.yml` yalnızca manuel acil durum içindir; normal akışta kullanmayın (BFA ve staging'i ezebilir).
+`deploy-santijet-demir-web.yml` yalnızca manuel acil durum içindir; normal akışta kullanmayın (diğer uygulamalar ve `/demir/` klasörünü ezebilir).
