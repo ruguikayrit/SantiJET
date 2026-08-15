@@ -1,0 +1,18 @@
+---
+description: ŞantiJET ürünlerini karıştırma; Beton kabuğu kilitli.
+alwaysApply: true
+---
+
+# Ürün ayrımı
+
+Bu monorepoda her Flutter ürünü ayrıdır. İstenmeyen `artifacts/santijet-*` ağacına dokunma ve commit etme.
+
+## Beton — zarar verme
+
+ŞantiJET Beton kabuğu kilitlidir (sohbet gerekmez):
+
+- Alt nav: Ana Sayfa · Keşif · Sipariş · Döküm · Test. Ayarlar navda yok.
+- Ayarlar sağ üst dişli. Bildirim zili yok.
+- Test sayfasını kaldırma; basınç raporlarını Ayarlar listesine geri koyma.
+
+Beton işinde ayrıntı: `artifacts/santijet-beton/AGENTS.md` ve `.cursor/rules/santijet-beton.mdc`.

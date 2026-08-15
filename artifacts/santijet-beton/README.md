@@ -4,6 +4,8 @@
 
 Hive-only offline; Türkçe UI; ŞantiJET Demir / Puantaj görsel dili.
 
+Yeni agent / yeni bilgisayar: [`AGENTS.md`](./AGENTS.md) bağlayıcıdır.
+
 ## Kabuk (kilitli)
 
 Bu düzen bilerek kilitlidir. Sohbet geçmişi olmadan da geri alınmamalıdır.
