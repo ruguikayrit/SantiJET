@@ -1,0 +1,56 @@
+---
+description: ŞantiJET Malzeme kilitli UX — geri alma.
+globs: artifacts/santijet-malzeme/**
+alwaysApply: false
+---
+
+# ŞantiJET Malzeme (kilitli UX)
+
+Klasör `artifacts/santijet-malzeme`. Staging: `/malzeme/`
+(https://ruguikayrit.github.io/SantiJET/malzeme/).
+
+Tema mürekkebi ayrı kural: `santijet-malzeme-theme-ink.mdc`.
+
+## Alt nav
+
+Sıra: **Ana · Keşif · Talep · Teslim · Kütüphane**. Ayarlar navda yok
+(`SantijetHeader` dişli → `/ayarlar`).
+
+## Ana
+
+KPI **yan yana üç kart**: Onay Bekleyen · Onaylandı · Teslim Edildi.
+Teklif turu / Gelen / “Özet” başlığı yok.
+
+## Keşif Malzeme
+
+İki sekme: **Birim Sarfiyatlar** · **Keşif Listesi**.
+
+Disiplin başlıkları (İnşaat / Elektrik / Mekanik) **açılır-kapanır**
+(`_DisciplineHeader`: dokun + adet + chevron). Düz `Text` başlık geri getirme.
+
+| Sekme | Varsayılan |
+|-------|------------|
+| Birim Sarfiyatlar | gruplar **açık** (`_collapsed` boş) |
+| Keşif Listesi | gruplar **kapalı** (`_expanded` boş) |
+
+Keşif Listesi miktarı = keşif metrajı × birim sarfiyat. Kısmi sipariş kalan
+üzerinden. Sarfiyat satırında swipe-delete (çöp ikonu yok). Kartlar tam genişlik.
+
+FAB: Birim Sarfiyatlar’da **+ Sarfiyat Ekle**.
+
+## Talep / Teslim
+
+Talep kartı `cardText*` + inset kutular `cardInsetSurface` (chrome
+`surfaceElevated` + `cardText*` hibritte çakışır). FAB sağ alt.
+
+## Kütüphane (TDS)
+
+Üst satırda **+ Ekle** butonu yok. Sağ alt **SJFab** (`TDS Ekle`) —
+Keşif/Talep/Teslim ile aynı. Liste `SJFab.scrollClearanceOf` ile boşluk bırakır.
+
+## Deploy
+
+Yalnız `artifacts/santijet-malzeme/**` (+ bu kural / README) commitlenir.
+Kullanıcı `deploy et` deyince `staging` push.
+
+Ürün özeti: `artifacts/santijet-malzeme/README.md`.

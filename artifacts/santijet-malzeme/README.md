@@ -12,9 +12,17 @@ Hive-only offline (MVP); Türkçe UI; ŞantiJET Beton / Puantaj görsel diliyle 
 | **Keşif Malzeme** | Birim sarfiyatlar × keşif metrajı → malzeme ihtiyacı; talebe ekle |
 | **Talep & Teklif** | Talep listesi, teklif PDF, firma teklifleri, fiyat mukayesesi |
 | **Teslim** | İrsaliye / teslim alma; talep–poz bağlama; karşılama progress |
-| **Kütüphane** | Malzeme teknik verileri + üretici TDS (metadata + dosya iskeleti) |
+| **Kütüphane** | Teknik föyler (TDS); ekleme sağ alt FAB |
 
-Ayarlar / projeler: header veya Ana üzerinden (bottom tab değil).
+Ayarlar / projeler: header dişli ikonu (bottom tab değil).
+
+## Kilitli UX (geri alma)
+
+- **Keşif → Birim Sarfiyatlar:** İnşaat / Elektrik / Mekanik başlıkları açılır-kapanır; **varsayılan açık**.
+- **Keşif → Keşif Listesi:** aynı disiplin başlıkları açılır-kapanır; **varsayılan kapalı**.
+- **Kütüphane:** üstte Ekle yok; sağ alt **TDS Ekle** FAB (`SJFab`).
+- **Tema:** hibrit chrome/kart mürekkebi ayır. Kart içi `cardText*` / `cardInsetSurface` / `statusInkOnCard`. Ayrıntı: `.cursor/rules/santijet-malzeme-theme-ink.mdc`.
+- Ürün kuralı: `.cursor/rules/santijet-malzeme.mdc`.
 
 ## Domain özeti
 
@@ -63,4 +71,4 @@ https://ruguikayrit.github.io/SantiJET/malzeme/
 - [ ] **Faz 2:** talep↔teslim miktar motoru + mukayese tamamı
 - [ ] **Faz 3:** TDS dosya deposu + arama
 - [ ] **Faz 4:** Maliyet/BFA keşif import
-- [ ] **Faz 5:** staging Pages `/malzeme/`
+- [x] **Faz 5:** staging Pages `/malzeme/`
