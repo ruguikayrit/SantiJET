@@ -37,11 +37,15 @@ export interface ThemeColors {
   darkNavy: string;
 }
 
+/** Ana sayfa kart düzeni — özel endüstriyel temalar. */
+export type ThemeLayout = "default" | "hivis" | "steel";
+
 export interface ThemeDefinition {
   id: string;
   name: string;
   description: string;
   isDark: boolean;
+  layout?: ThemeLayout;
   preview: { bg: string; primary: string; secondary: string };
   colors: ThemeColors;
 }
@@ -270,6 +274,118 @@ const hivis: ThemeColors = {
   darkNavy: "#0c0a09",
 };
 
+const hivisOrange: ThemeColors = {
+  text: "#14110f",
+  tint: "#ff6b00",
+  background: "#fff1e6",
+  foreground: "#14110f",
+  card: "#ff6b00",
+  cardForeground: "#14110f",
+  primary: "#14110f",
+  primaryForeground: "#ff6b00",
+  secondary: "#14110f",
+  secondaryForeground: "#ff6b00",
+  muted: "#ffd8b5",
+  mutedForeground: "#5c4030",
+  accent: "#ff8500",
+  accentForeground: "#14110f",
+  destructive: "#b91c1c",
+  destructiveForeground: "#ffffff",
+  success: "#15803d",
+  successForeground: "#ffffff",
+  warning: "#c2410c",
+  warningForeground: "#ffffff",
+  border: "#14110f",
+  input: "#ffd8b5",
+  orange: "#ff6b00",
+  navy: "#14110f",
+  darkNavy: "#0a0908",
+};
+
+const hivisLime: ThemeColors = {
+  text: "#0f140a",
+  tint: "#a3e635",
+  background: "#ecfccb",
+  foreground: "#0f140a",
+  card: "#a3e635",
+  cardForeground: "#0f140a",
+  primary: "#0f140a",
+  primaryForeground: "#a3e635",
+  secondary: "#0f140a",
+  secondaryForeground: "#a3e635",
+  muted: "#d9f99d",
+  mutedForeground: "#3f4a2e",
+  accent: "#84cc16",
+  accentForeground: "#0f140a",
+  destructive: "#b91c1c",
+  destructiveForeground: "#ffffff",
+  success: "#15803d",
+  successForeground: "#ffffff",
+  warning: "#ca8a04",
+  warningForeground: "#0f140a",
+  border: "#0f140a",
+  input: "#d9f99d",
+  orange: "#84cc16",
+  navy: "#0f140a",
+  darkNavy: "#050704",
+};
+
+const steelCopper: ThemeColors = {
+  text: "#f5e6d8",
+  tint: "#e07a3a",
+  background: "#1a1410",
+  foreground: "#f5e6d8",
+  card: "#2a211c",
+  cardForeground: "#f5e6d8",
+  primary: "#e07a3a",
+  primaryForeground: "#1a1410",
+  secondary: "#2a211c",
+  secondaryForeground: "#f5e6d8",
+  muted: "#2a211c",
+  mutedForeground: "#b8a090",
+  accent: "#38bdf8",
+  accentForeground: "#1a1410",
+  destructive: "#ef4444",
+  destructiveForeground: "#ffffff",
+  success: "#34d399",
+  successForeground: "#ffffff",
+  warning: "#e07a3a",
+  warningForeground: "#1a1410",
+  border: "#4a3a30",
+  input: "#4a3a30",
+  orange: "#e07a3a",
+  navy: "#1a1410",
+  darkNavy: "#0d0a08",
+};
+
+const steelBlueprint: ThemeColors = {
+  text: "#dbeafe",
+  tint: "#22d3ee",
+  background: "#071525",
+  foreground: "#dbeafe",
+  card: "#0f2740",
+  cardForeground: "#dbeafe",
+  primary: "#22d3ee",
+  primaryForeground: "#071525",
+  secondary: "#0f2740",
+  secondaryForeground: "#dbeafe",
+  muted: "#0f2740",
+  mutedForeground: "#7dd3fc",
+  accent: "#38bdf8",
+  accentForeground: "#071525",
+  destructive: "#f87171",
+  destructiveForeground: "#ffffff",
+  success: "#34d399",
+  successForeground: "#ffffff",
+  warning: "#fbbf24",
+  warningForeground: "#071525",
+  border: "#1e3a5f",
+  input: "#1e3a5f",
+  orange: "#22d3ee",
+  navy: "#071525",
+  darkNavy: "#030b14",
+};
+
 export const THEMES: ThemeDefinition[] = [
   {
     id: "klasik",
@@ -324,16 +440,54 @@ export const THEMES: ThemeDefinition[] = [
     name: "Hi-Vis İSG",
     description: "Sarı/siyah iş güvenliği modu",
     isDark: false,
+    layout: "hivis",
     preview: { bg: "#fef3c7", primary: "#1c1917", secondary: "#facc15" },
     colors: hivis,
+  },
+  {
+    id: "hivis-orange",
+    name: "Turuncu İSG",
+    description: "Turuncu/siyah şantiye bariyer dili",
+    isDark: false,
+    layout: "hivis",
+    preview: { bg: "#fff1e6", primary: "#14110f", secondary: "#ff6b00" },
+    colors: hivisOrange,
+  },
+  {
+    id: "hivis-lime",
+    name: "Lime İSG",
+    description: "Lime yeşil yüksek görünürlük",
+    isDark: false,
+    layout: "hivis",
+    preview: { bg: "#ecfccb", primary: "#0f140a", secondary: "#a3e635" },
+    colors: hivisLime,
   },
   {
     id: "steel",
     name: "Steel & Concrete",
     description: "Koyu lacivert, renkli kart şeritleri",
     isDark: true,
+    layout: "steel",
     preview: { bg: "#0f172a", primary: "#f59e0b", secondary: "#1e293b" },
     colors: steel,
+  },
+  {
+    id: "steel-copper",
+    name: "Bakır & Beton",
+    description: "Koyu beton, bakır/pas şeritler",
+    isDark: true,
+    layout: "steel",
+    preview: { bg: "#1a1410", primary: "#e07a3a", secondary: "#2a211c" },
+    colors: steelCopper,
+  },
+  {
+    id: "steel-blueprint",
+    name: "Blueprint",
+    description: "Çizim masası mavisi, siyan vurgu",
+    isDark: true,
+    layout: "steel",
+    preview: { bg: "#071525", primary: "#22d3ee", secondary: "#0f2740" },
+    colors: steelBlueprint,
   },
 ];
 

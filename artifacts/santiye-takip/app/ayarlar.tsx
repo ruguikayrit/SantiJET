@@ -1,6 +1,6 @@
 import { Feather } from "@expo/vector-icons";
 import { useRouter } from "expo-router";
-import React from "react";
+import React, { useState } from "react";
 import {
   Platform,
   ScrollView,
@@ -11,6 +11,7 @@ import {
 } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
+import AccountSheet from "@/components/AccountSheet";
 import { useApp } from "@/context/AppContext";
 import { useI18n } from "@/context/I18nContext";
 import { useColors } from "@/hooks/useColors";
@@ -27,10 +28,11 @@ export default function AyarlarScreen() {
   const colors = useColors();
   const router = useRouter();
   const { t } = useI18n();
-  const { currentRole } = useApp();
+  const { currentRole, currentAppUser } = useApp();
   const isAdmin = currentRole?.isAdmin === true;
   const insets = useSafeAreaInsets();
   const topPad = Platform.OS === "web" ? 16 : insets.top;
+  const [accountVisible, setAccountVisible] = useState(false);
 
   const general: Row[] = [
     {
@@ -158,6 +160,32 @@ export default function AyarlarScreen() {
       <ScrollView
         contentContainerStyle={[styles.scroll, { paddingBottom: insets.bottom + 24 }]}
       >
+        <TouchableOpacity
+          style={[
+            styles.row,
+            {
+              backgroundColor: colors.card,
+              borderColor: colors.secondary + "40",
+              marginBottom: 20,
+            },
+          ]}
+          onPress={() => setAccountVisible(true)}
+          activeOpacity={0.85}
+        >
+          <View style={[styles.accountAvatar, { backgroundColor: "#ea580c" }]}>
+            <Text style={styles.accountAvatarText}>
+              {currentAppUser ? currentAppUser.name.charAt(0).toUpperCase() : "U"}
+            </Text>
+          </View>
+          <View style={{ flex: 1 }}>
+            <Text style={[styles.title, { color: colors.foreground }]}>Hesabım</Text>
+            <Text style={[styles.sub, { color: colors.mutedForeground }]} numberOfLines={1}>
+              {currentAppUser?.name ?? "Profil ve oturum"}
+            </Text>
+          </View>
+          <Feather name="chevron-right" size={18} color={colors.mutedForeground} />
+        </TouchableOpacity>
+
         <Text style={[styles.section, { color: colors.foreground }]}>
           {t("settings.general")}
         </Text>
@@ -191,6 +219,8 @@ export default function AyarlarScreen() {
           </>
         ) : null}
       </ScrollView>
+
+      <AccountSheet visible={accountVisible} onClose={() => setAccountVisible(false)} />
     </View>
   );
 }
@@ -240,6 +270,18 @@ const styles = StyleSheet.create({
     borderRadius: 20,
     alignItems: "center",
     justifyContent: "center",
+  },
+  accountAvatar: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  accountAvatarText: {
+    color: "#fff",
+    fontSize: 16,
+    fontFamily: "Inter_700Bold",
   },
   title: { fontSize: 15, fontFamily: "Inter_600SemiBold" },
   sub: { fontSize: 12, fontFamily: "Inter_400Regular", marginTop: 2 },

@@ -26,9 +26,8 @@ import Animated, {
 } from "react-native-reanimated";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
-import BottomSheet from "@/components/BottomSheet";
+import HomeBrandMark from "@/components/HomeBrandMark";
 import PrimaryButton from "@/components/PrimaryButton";
-import { SantijetLogo } from "@/components/SantijetLogo";
 import SmartSearch from "@/components/SmartSearch";
 import { PageKey, Permission, useApp } from "@/context/AppContext";
 import { useI18n } from "@/context/I18nContext";
@@ -95,10 +94,6 @@ const SECTION_NUM: Record<string, string> = {
   "butce": "13", "taseron": "14", "kullanicilar": "15", "dosyalar": "16",
 };
 
-const HIVIS_YELLOW = "#facc15";
-const HIVIS_BG = "#fef3c7";
-const HIVIS_BLACK = "#1c1917";
-
 const TILE_COLORS_KEY = "santiye-tile-colors-v1";
 
 type TileColorMode = "accent" | "fill";
@@ -129,9 +124,19 @@ function fillBorder(hex: string) {
   return `rgba(${r},${g},${b},0.35)`;
 }
 
-function HazardStripe({ height = 8, segments = 28 }: { height?: number; segments?: number }) {
+function HazardStripe({
+  height = 8,
+  segments = 28,
+  accent,
+  ink,
+}: {
+  height?: number;
+  segments?: number;
+  accent: string;
+  ink: string;
+}) {
   return (
-    <View style={{ height, backgroundColor: HIVIS_YELLOW, overflow: "hidden", flexDirection: "row" }}>
+    <View style={{ height, backgroundColor: accent, overflow: "hidden", flexDirection: "row" }}>
       {Array.from({ length: segments }).map((_, i) => (
         <View
           key={i}
@@ -139,7 +144,7 @@ function HazardStripe({ height = 8, segments = 28 }: { height?: number; segments
             width: 14,
             height: height * 3,
             marginTop: -height,
-            backgroundColor: i % 2 === 0 ? HIVIS_BLACK : "transparent",
+            backgroundColor: i % 2 === 0 ? ink : "transparent",
             transform: [{ skewX: "-30deg" }],
             marginLeft: -3,
           }}
@@ -151,24 +156,24 @@ function HazardStripe({ height = 8, segments = 28 }: { height?: number; segments
 
 export default function HomeScreen() {
   const colors = useColors();
-  const { themeId } = useTheme();
-  const isHiVis = themeId === "hivis";
-  const isSteel = themeId === "steel";
+  const { theme } = useTheme();
+  const isHiVis = theme.layout === "hivis";
+  const isSteel = theme.layout === "steel";
+  const hiVisAccent = colors.card;
+  const hiVisInk = colors.primary;
   const router = useRouter();
   const app = useApp();
   const { t } = useI18n();
   const insets = useSafeAreaInsets();
   const topPad = Platform.OS === "web" ? 67 : insets.top;
 
-  const { currentRole, currentAppUser, logout, workspaceInfo, syncStatus, pushToCloud, pullFromCloud, setWorkspace } = app;
+  const { currentRole, currentAppUser, workspaceInfo, syncStatus, pushToCloud, pullFromCloud } = app;
   const isAdmin = currentRole?.isAdmin === true;
 
   // Tarih
   const today = new Date();
   const dateStr = today.toLocaleDateString("tr-TR", { day: "numeric", month: "long", year: "numeric" });
   const dayStr = today.toLocaleDateString("tr-TR", { weekday: "long" });
-
-  const [profileVisible, setProfileVisible] = useState(false);
 
   function getPermission(key: PageKey): Permission {
     if (!currentRole) return "none";
@@ -268,27 +273,18 @@ export default function HomeScreen() {
           HEADER
       ───────────────────────────────────────────────────── */}
       <View style={[styles.appHeader, { backgroundColor: colors.secondary, paddingTop: topPad + 8 }]}>
-        <TouchableOpacity
-          onPress={() => router.push("/ayarlar" as any)}
-          style={styles.headerMenuBtn}
-          hitSlop={10}
-        >
-          <Feather name="menu" size={22} color="#cbd5e1" />
-        </TouchableOpacity>
-
-        <View style={styles.headerLogoArea}>
-          <SantijetLogo iconHeight={34} />
-          <Text style={styles.headerSubtitle}>OPERASYON YÖNETİMİ</Text>
-        </View>
+        <HomeBrandMark />
 
         <View style={styles.headerRight}>
           <View style={styles.headerBellWrap}>
             <Feather name="bell" size={20} color="#94a3b8" />
           </View>
-          <TouchableOpacity onPress={() => setProfileVisible(true)} activeOpacity={0.8} style={styles.headerAvatar}>
-            <Text style={styles.headerAvatarText}>
-              {currentAppUser ? currentAppUser.name.charAt(0).toUpperCase() : "U"}
-            </Text>
+          <TouchableOpacity
+            onPress={() => router.push("/ayarlar" as any)}
+            style={styles.headerMenuBtn}
+            hitSlop={10}
+          >
+            <Feather name="menu" size={22} color="#cbd5e1" />
           </TouchableOpacity>
         </View>
       </View>
@@ -338,17 +334,29 @@ export default function HomeScreen() {
         <SmartSearch topInset={insets.bottom} />
 
         {isHiVis ? (
-          <View style={styles.hiVisBanner}>
+          <View style={[styles.hiVisBanner, { backgroundColor: hiVisAccent }]}>
             <View style={styles.hiVisBannerRow}>
-              <Feather name="alert-triangle" size={12} color={HIVIS_BLACK} />
-              <Text style={styles.hiVisBannerText}>HI-VIS · İSG MODU</Text>
+              <Feather name="alert-triangle" size={12} color={hiVisInk} />
+              <Text style={[styles.hiVisBannerText, { color: hiVisInk }]}>
+                {theme.id === "hivis-orange"
+                  ? "TURUNCU · İSG MODU"
+                  : theme.id === "hivis-lime"
+                    ? "LIME · İSG MODU"
+                    : "HI-VIS · İSG MODU"}
+              </Text>
             </View>
-            <HazardStripe height={8} />
+            <HazardStripe height={8} accent={hiVisAccent} ink={hiVisInk} />
           </View>
         ) : null}
 
         {isSteel ? (
-          <Text style={styles.steelBanner}>{t("home.steel.banner")}</Text>
+          <Text style={[styles.steelBanner, { color: colors.mutedForeground }]}>
+            {theme.id === "steel-copper"
+              ? "BAKIR & BETON"
+              : theme.id === "steel-blueprint"
+                ? "BLUEPRINT"
+                : t("home.steel.banner")}
+          </Text>
         ) : null}
 
         <DraggableGrid
@@ -362,58 +370,57 @@ export default function HomeScreen() {
             if (isHiVis) {
               return (
                 <View style={styles.hiVisTileWrap}>
-                  <View style={styles.hiVisTileShadow} />
-                  <View style={styles.hiVisTileInner}>
-                    <View style={styles.hiVisHeader}>
-                      <Feather name="alert-triangle" size={9} color={HIVIS_YELLOW} />
-                      <Text style={styles.hiVisDikkat}>DİKKAT</Text>
+                  <View style={[styles.hiVisTileShadow, { backgroundColor: hiVisInk }]} />
+                  <View style={[styles.hiVisTileInner, { backgroundColor: hiVisAccent, borderColor: hiVisInk }]}>
+                    <View style={[styles.hiVisHeader, { backgroundColor: hiVisInk }]}>
+                      <Feather name="alert-triangle" size={9} color={hiVisAccent} />
+                      <Text style={[styles.hiVisDikkat, { color: hiVisAccent }]}>DİKKAT</Text>
                       <View style={{ flex: 1 }} />
-                      <Text style={styles.hiVisCode}>{s.code}</Text>
+                      <Text style={[styles.hiVisCode, { color: hiVisAccent }]}>{s.code}</Text>
                     </View>
                     <View style={styles.hiVisBody}>
                       <View style={styles.hiVisHeadRow}>
-                        <View style={styles.hiVisIconBox}>
-                          <Feather name={s.icon as any} size={20} color={HIVIS_YELLOW} />
+                        <View style={[styles.hiVisIconBox, { backgroundColor: hiVisInk }]}>
+                          <Feather name={s.icon as any} size={20} color={hiVisAccent} />
                         </View>
-                        <Text style={styles.hiVisCount} numberOfLines={1}>{s.count(app)}</Text>
+                        <Text style={[styles.hiVisCount, { color: hiVisInk }]} numberOfLines={1}>{s.count(app)}</Text>
                       </View>
-                      <Text style={styles.hiVisLabel} numberOfLines={2}>{t(`menu.${s.key}`)}</Text>
+                      <Text style={[styles.hiVisLabel, { color: hiVisInk }]} numberOfLines={2}>{t(`menu.${s.key}`)}</Text>
                       {perm === "view" ? (
-                        <View style={styles.hiVisViewBadge}>
-                          <Feather name="eye" size={9} color={HIVIS_YELLOW} />
-                          <Text style={styles.hiVisViewText}>{t("home.tile.readonly")}</Text>
+                        <View style={[styles.hiVisViewBadge, { backgroundColor: hiVisInk }]}>
+                          <Feather name="eye" size={9} color={hiVisAccent} />
+                          <Text style={[styles.hiVisViewText, { color: hiVisAccent }]}>{t("home.tile.readonly")}</Text>
                         </View>
                       ) : null}
                     </View>
-                    <HazardStripe height={6} segments={20} />
+                    <HazardStripe height={6} segments={20} accent={hiVisAccent} ink={hiVisInk} />
                   </View>
                 </View>
               );
             }
 
-            // ── Steel tema ───────────────────────────────────────
             if (isSteel) {
               const idx = visibleSections.indexOf(s) + 1;
               return (
-                <View style={styles.steelTileWrap}>
+                <View style={[styles.steelTileWrap, { backgroundColor: colors.card, borderColor: colors.border }]}>
                   <View style={[styles.steelAccent, { backgroundColor: s.color }]} />
                   <View style={styles.steelHead}>
                     <View style={[styles.steelIcon, { backgroundColor: s.color + "22", borderColor: s.color + "55" }]}>
                       <Feather name={s.icon as any} size={18} color={s.color} />
                     </View>
-                    <Text style={styles.steelNum}>#{String(idx).padStart(2, "0")}</Text>
+                    <Text style={[styles.steelNum, { color: colors.mutedForeground }]}>#{String(idx).padStart(2, "0")}</Text>
                   </View>
-                  <Text style={styles.steelLabel} numberOfLines={2}>{t(`menu.${s.key}`).toUpperCase()}</Text>
+                  <Text style={[styles.steelLabel, { color: colors.foreground }]} numberOfLines={2}>{t(`menu.${s.key}`).toUpperCase()}</Text>
                   <View style={styles.steelCountRow}>
-                    <Text style={styles.steelCount} numberOfLines={1}>{s.count(app)}</Text>
-                    <Text style={styles.steelSub} numberOfLines={1}>
+                    <Text style={[styles.steelCount, { color: colors.foreground }]} numberOfLines={1}>{s.count(app)}</Text>
+                    <Text style={[styles.steelSub, { color: colors.mutedForeground }]} numberOfLines={1}>
                       {perm === "view" ? t("home.tile.readonly") : t(`home.steel.sub.${s.key}`)}
                     </Text>
                   </View>
-                  <View style={styles.steelDivider} />
+                  <View style={[styles.steelDivider, { backgroundColor: colors.border }]} />
                   <View style={styles.steelFootRow}>
-                    <Text style={styles.steelOpen}>{t("home.steel.open")}</Text>
-                    <Feather name="chevron-right" size={12} color="#64748b" />
+                    <Text style={[styles.steelOpen, { color: colors.mutedForeground }]}>{t("home.steel.open")}</Text>
+                    <Feather name="chevron-right" size={12} color={colors.mutedForeground} />
                   </View>
                 </View>
               );
@@ -523,159 +530,6 @@ export default function HomeScreen() {
         </TouchableOpacity>
 
       </ScrollView>
-
-      {/* ── Profil Paneli ── */}
-      <BottomSheet
-        visible={profileVisible}
-        onClose={() => setProfileVisible(false)}
-        title="Hesabım"
-      >
-        {currentAppUser && (() => {
-          const roleColor = (() => {
-            const rMap: Record<string, string> = {
-              "isveren": "#7c3aed", "proje-muduru": "#e85d04",
-              "santiye-sefi": "#dc2626", "saha-muhendisi": "#16a34a",
-              "teknik-ofis-muhendisi": "#0ea5e9", "isg-birimi": "#f59e0b",
-              "taseron": "#64748b", "satin-alma-birimi": "#0891b2",
-              "muhasebe-birimi": "#059669", "ik-birimi": "#8b5cf6",
-              "diger-kullanicilar": "#94a3b8",
-            };
-            return rMap[currentAppUser.roleId] ?? "#6b7280";
-          })();
-
-          return (
-            <View style={styles.profileBody}>
-              {/* Avatar + isim */}
-              <View style={styles.profileHero}>
-                <View style={[styles.profileAvatar, { backgroundColor: roleColor }]}>
-                  <Text style={styles.profileAvatarText}>
-                    {currentAppUser.name.charAt(0).toUpperCase()}
-                  </Text>
-                </View>
-                <View style={{ flex: 1, gap: 4 }}>
-                  <Text style={[styles.profileName, { color: colors.foreground }]}>
-                    {currentAppUser.name}
-                  </Text>
-                  <View style={[styles.profileRolePill, { backgroundColor: roleColor + "22" }]}>
-                    <Text style={[styles.profileRolePillText, { color: roleColor }]}>
-                      {currentRole?.name ?? currentAppUser.roleId}
-                    </Text>
-                    {currentRole?.isAdmin && (
-                      <View style={styles.profileAdminDot}>
-                        <Feather name="shield" size={10} color={roleColor} />
-                      </View>
-                    )}
-                  </View>
-                </View>
-              </View>
-
-              {/* Bilgi satırları */}
-              <View style={[styles.profileInfoCard, { backgroundColor: colors.muted, borderColor: colors.border }]}>
-                {currentAppUser.profession ? (
-                  <View style={styles.profileRow}>
-                    <Feather name="briefcase" size={14} color={colors.mutedForeground} />
-                    <Text style={[styles.profileRowLabel, { color: colors.mutedForeground }]}>Meslek</Text>
-                    <Text style={[styles.profileRowVal, { color: colors.foreground }]} numberOfLines={1}>
-                      {currentAppUser.profession}
-                    </Text>
-                  </View>
-                ) : null}
-                {currentAppUser.team ? (
-                  <View style={styles.profileRow}>
-                    <Feather name="users" size={14} color={colors.mutedForeground} />
-                    <Text style={[styles.profileRowLabel, { color: colors.mutedForeground }]}>Grup</Text>
-                    <Text style={[styles.profileRowVal, { color: colors.foreground }]} numberOfLines={1}>
-                      {currentAppUser.team}
-                    </Text>
-                  </View>
-                ) : null}
-                {currentAppUser.company ? (
-                  <View style={styles.profileRow}>
-                    <Feather name="layers" size={14} color={colors.mutedForeground} />
-                    <Text style={[styles.profileRowLabel, { color: colors.mutedForeground }]}>Firma</Text>
-                    <Text style={[styles.profileRowVal, { color: colors.foreground }]} numberOfLines={1}>
-                      {currentAppUser.company}
-                    </Text>
-                  </View>
-                ) : null}
-                {currentAppUser.phone ? (
-                  <View style={styles.profileRow}>
-                    <Feather name="phone" size={14} color={colors.mutedForeground} />
-                    <Text style={[styles.profileRowLabel, { color: colors.mutedForeground }]}>Telefon</Text>
-                    <Text style={[styles.profileRowVal, { color: colors.foreground }]} numberOfLines={1}>
-                      {currentAppUser.phone}
-                    </Text>
-                  </View>
-                ) : null}
-                {currentAppUser.address ? (
-                  <View style={styles.profileRow}>
-                    <Feather name="map-pin" size={14} color={colors.mutedForeground} />
-                    <Text style={[styles.profileRowLabel, { color: colors.mutedForeground }]}>Adres</Text>
-                    <Text style={[styles.profileRowVal, { color: colors.foreground }]} numberOfLines={2}>
-                      {currentAppUser.address}
-                    </Text>
-                  </View>
-                ) : null}
-              </View>
-
-              {/* Kullanıcılar sayfasına git */}
-              <TouchableOpacity
-                style={[styles.profileNavBtn, { backgroundColor: colors.card, borderColor: colors.border }]}
-                activeOpacity={0.85}
-                onPress={() => { setProfileVisible(false); router.push("/kullanicilar" as any); }}
-              >
-                <View style={[styles.profileNavIcon, { backgroundColor: "#ede9fe" }]}>
-                  <Feather name="shield" size={18} color="#7c3aed" />
-                </View>
-                <View style={{ flex: 1 }}>
-                  <Text style={[styles.profileNavLabel, { color: colors.foreground }]}>Kullanıcı Yönetimi</Text>
-                  <Text style={[styles.profileNavSub, { color: colors.mutedForeground }]}>
-                    Tüm kullanıcıları ve rolleri görüntüle
-                  </Text>
-                </View>
-                <Feather name="chevron-right" size={16} color={colors.mutedForeground} />
-              </TouchableOpacity>
-
-              {/* Şirket Koduna Bağlan — sadece yerel oturumdayken görünür */}
-              {(!workspaceInfo || workspaceInfo.id === "local") && (
-                <TouchableOpacity
-                  style={[styles.profileConnectBtn, { borderColor: "#e85d04" }]}
-                  activeOpacity={0.85}
-                  onPress={() => { setProfileVisible(false); router.push("/workspace-setup" as any); }}
-                >
-                  <Feather name="link" size={18} color="#e85d04" />
-                  <Text style={styles.profileConnectText}>Şirket Kodu ile Bağlan</Text>
-                </TouchableOpacity>
-              )}
-
-              {/* Yerel Oturuma Geri Dön — sadece bulut çalışma alanındayken görünür */}
-              {workspaceInfo && workspaceInfo.id !== "local" && (
-                <TouchableOpacity
-                  style={[styles.profileLocalBtn, { borderColor: "#0ea5e9" }]}
-                  activeOpacity={0.85}
-                  onPress={() => {
-                    setProfileVisible(false);
-                    setWorkspace({ id: "local", company_name: "Yerel", invite_code: "", api_url: "" });
-                  }}
-                >
-                  <Feather name="home" size={18} color="#0ea5e9" />
-                  <Text style={styles.profileLocalText}>Yerel Oturuma Geri Dön</Text>
-                </TouchableOpacity>
-              )}
-
-              {/* Oturumu Kapat */}
-              <TouchableOpacity
-                style={[styles.profileLogoutBtn, { borderColor: "#dc2626" }]}
-                activeOpacity={0.85}
-                onPress={() => { setProfileVisible(false); logout(); }}
-              >
-                <Feather name="log-out" size={18} color="#dc2626" />
-                <Text style={styles.profileLogoutText}>Oturumu Kapat</Text>
-              </TouchableOpacity>
-            </View>
-          );
-        })()}
-      </BottomSheet>
 
       {/* ── Kart Renk Seçici Modal ── */}
       <Modal visible={cpKey !== null} transparent animationType="fade" onRequestClose={() => setCpKey(null)}>
@@ -982,29 +836,18 @@ const styles = StyleSheet.create({
     alignItems: "center",
     paddingHorizontal: 16,
     paddingBottom: 12,
-    gap: 12,
+    gap: 8,
   },
   headerMenuBtn: {
-    width: 36,
-    height: 36,
+    width: 40,
+    height: 40,
     justifyContent: "center",
     alignItems: "center",
-  },
-  headerLogoArea: {
-    flex: 1,
-    alignItems: "center",
-    gap: 2,
-  },
-  headerSubtitle: {
-    color: "#4a6080",
-    fontSize: 8,
-    fontFamily: "Inter_700Bold",
-    letterSpacing: 2,
   },
   headerRight: {
     flexDirection: "row",
     alignItems: "center",
-    gap: 10,
+    gap: 2,
   },
   headerBellWrap: {
     width: 36,
@@ -1013,19 +856,6 @@ const styles = StyleSheet.create({
     backgroundColor: "rgba(255,255,255,0.06)",
     justifyContent: "center",
     alignItems: "center",
-  },
-  headerAvatar: {
-    width: 36,
-    height: 36,
-    borderRadius: 18,
-    backgroundColor: "#ea580c",
-    justifyContent: "center",
-    alignItems: "center",
-  },
-  headerAvatarText: {
-    color: "#fff",
-    fontSize: 16,
-    fontFamily: "Inter_700Bold",
   },
 
   // ── Welcome Card ─────────────────────────────────────────────────
@@ -1219,22 +1049,22 @@ const styles = StyleSheet.create({
   viewBadgeText: { fontSize: 9, fontFamily: "Inter_600SemiBold", color: "#0ea5e9" },
 
   // ── Hi-Vis Tile ───────────────────────────────────────────────────
-  hiVisBanner: { marginBottom: 12, gap: 6 },
-  hiVisBannerRow: { flexDirection: "row", alignItems: "center", gap: 6, paddingHorizontal: 4 },
-  hiVisBannerText: { fontSize: 10, fontFamily: "Inter_700Bold", color: HIVIS_BLACK, letterSpacing: 2.5 },
+  hiVisBanner: { marginBottom: 12, gap: 6, borderRadius: 6, overflow: "hidden", paddingTop: 8 },
+  hiVisBannerRow: { flexDirection: "row", alignItems: "center", gap: 6, paddingHorizontal: 8, paddingBottom: 6 },
+  hiVisBannerText: { fontSize: 10, fontFamily: "Inter_700Bold", letterSpacing: 2.5 },
   hiVisTileWrap: { flex: 1, position: "relative" },
-  hiVisTileShadow: { position: "absolute", left: 4, top: 4, right: -4, bottom: -4, backgroundColor: HIVIS_BLACK, borderRadius: 6 },
-  hiVisTileInner: { flex: 1, backgroundColor: HIVIS_YELLOW, borderColor: HIVIS_BLACK, borderWidth: 2, borderRadius: 6, overflow: "hidden" },
-  hiVisHeader: { flexDirection: "row", alignItems: "center", gap: 4, backgroundColor: HIVIS_BLACK, paddingHorizontal: 8, paddingVertical: 4 },
-  hiVisDikkat: { fontSize: 9, fontFamily: "Inter_700Bold", color: HIVIS_YELLOW, letterSpacing: 1.5 },
-  hiVisCode: { fontSize: 9, fontFamily: "Inter_700Bold", color: HIVIS_YELLOW, letterSpacing: 0.5 },
+  hiVisTileShadow: { position: "absolute", left: 4, top: 4, right: -4, bottom: -4, borderRadius: 6 },
+  hiVisTileInner: { flex: 1, borderWidth: 2, borderRadius: 6, overflow: "hidden" },
+  hiVisHeader: { flexDirection: "row", alignItems: "center", gap: 4, paddingHorizontal: 8, paddingVertical: 4 },
+  hiVisDikkat: { fontSize: 9, fontFamily: "Inter_700Bold", letterSpacing: 1.5 },
+  hiVisCode: { fontSize: 9, fontFamily: "Inter_700Bold", letterSpacing: 0.5 },
   hiVisBody: { padding: 12, gap: 8 },
   hiVisHeadRow: { flexDirection: "row", alignItems: "flex-start", justifyContent: "space-between" },
-  hiVisIconBox: { width: 38, height: 38, borderRadius: 6, backgroundColor: HIVIS_BLACK, alignItems: "center", justifyContent: "center" },
-  hiVisCount: { fontSize: 26, lineHeight: 28, fontFamily: "Inter_700Bold", color: HIVIS_BLACK },
-  hiVisLabel: { fontSize: 13, fontFamily: "Inter_700Bold", color: HIVIS_BLACK, letterSpacing: 0.8 },
-  hiVisViewBadge: { flexDirection: "row", alignItems: "center", gap: 3, alignSelf: "flex-start", backgroundColor: HIVIS_BLACK, paddingHorizontal: 6, paddingVertical: 2, borderRadius: 3 },
-  hiVisViewText: { fontSize: 9, fontFamily: "Inter_600SemiBold", color: HIVIS_YELLOW },
+  hiVisIconBox: { width: 38, height: 38, borderRadius: 6, alignItems: "center", justifyContent: "center" },
+  hiVisCount: { fontSize: 26, lineHeight: 28, fontFamily: "Inter_700Bold" },
+  hiVisLabel: { fontSize: 13, fontFamily: "Inter_700Bold", letterSpacing: 0.8 },
+  hiVisViewBadge: { flexDirection: "row", alignItems: "center", gap: 3, alignSelf: "flex-start", paddingHorizontal: 6, paddingVertical: 2, borderRadius: 3 },
+  hiVisViewText: { fontSize: 9, fontFamily: "Inter_600SemiBold" },
 
   // ── Steel Tile ────────────────────────────────────────────────────
   steelBanner: { fontSize: 10, fontFamily: "Inter_700Bold", color: "#94a3b8", letterSpacing: 2, paddingHorizontal: 4, marginBottom: 12 },
@@ -1298,28 +1128,4 @@ const styles = StyleSheet.create({
   cpResetTxt: { fontSize: 13, fontFamily: "Inter_600SemiBold" },
   cpApplyBtn: { flex: 2, flexDirection: "row", alignItems: "center", justifyContent: "center", gap: 6, borderRadius: 12, paddingVertical: 12 },
   cpApplyTxt: { fontSize: 13, fontFamily: "Inter_600SemiBold", color: "#fff" },
-
-  // ── Profil Paneli ─────────────────────────────────────────────────
-  profileBody: { gap: 12 },
-  profileHero: { flexDirection: "row", alignItems: "center", gap: 14, paddingBottom: 4 },
-  profileAvatar: { width: 56, height: 56, borderRadius: 28, justifyContent: "center", alignItems: "center" },
-  profileAvatarText: { color: "#fff", fontSize: 24, fontFamily: "Inter_700Bold" },
-  profileName: { fontSize: 18, fontFamily: "Inter_700Bold" },
-  profileRolePill: { flexDirection: "row", alignItems: "center", alignSelf: "flex-start", paddingHorizontal: 8, paddingVertical: 3, borderRadius: 8, gap: 4 },
-  profileRolePillText: { fontSize: 12, fontFamily: "Inter_600SemiBold" },
-  profileAdminDot: {},
-  profileInfoCard: { borderRadius: 12, borderWidth: 1, overflow: "hidden" },
-  profileRow: { flexDirection: "row", alignItems: "center", gap: 8, paddingHorizontal: 12, paddingVertical: 10, borderBottomWidth: StyleSheet.hairlineWidth, borderBottomColor: "rgba(0,0,0,0.06)" },
-  profileRowLabel: { fontSize: 12, fontFamily: "Inter_500Medium", width: 60 },
-  profileRowVal: { flex: 1, fontSize: 13, fontFamily: "Inter_600SemiBold" },
-  profileNavBtn: { flexDirection: "row", alignItems: "center", gap: 12, padding: 14, borderRadius: 12, borderWidth: 1 },
-  profileNavIcon: { width: 40, height: 40, borderRadius: 10, justifyContent: "center", alignItems: "center" },
-  profileNavLabel: { fontSize: 14, fontFamily: "Inter_600SemiBold" },
-  profileNavSub: { fontSize: 12, fontFamily: "Inter_400Regular", marginTop: 1 },
-  profileConnectBtn: { flexDirection: "row", alignItems: "center", justifyContent: "center", gap: 10, paddingVertical: 14, borderRadius: 12, borderWidth: 1.5, backgroundColor: "#fff7ed", marginTop: 4 },
-  profileConnectText: { fontSize: 15, fontFamily: "Inter_700Bold", color: "#e85d04" },
-  profileLocalBtn: { flexDirection: "row", alignItems: "center", justifyContent: "center", gap: 10, paddingVertical: 14, borderRadius: 12, borderWidth: 1.5, backgroundColor: "#e0f2fe", marginTop: 4 },
-  profileLocalText: { fontSize: 15, fontFamily: "Inter_700Bold", color: "#0ea5e9" },
-  profileLogoutBtn: { flexDirection: "row", alignItems: "center", justifyContent: "center", gap: 10, paddingVertical: 14, borderRadius: 12, borderWidth: 1.5, backgroundColor: "#fee2e2", marginTop: 4 },
-  profileLogoutText: { fontSize: 15, fontFamily: "Inter_700Bold", color: "#dc2626" },
 });

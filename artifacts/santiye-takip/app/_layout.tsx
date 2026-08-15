@@ -15,7 +15,6 @@ import { SafeAreaProvider } from "react-native-safe-area-context";
 import { ErrorBoundary } from "@/components/ErrorBoundary";
 import SplashScreenView from "@/components/SplashScreenView";
 import WebFrame from "@/components/WebFrame";
-import { PasswordGate } from "@/components/PasswordGate";
 import { AppProvider, useApp } from "@/context/AppContext";
 import { ThemeProvider } from "@/context/ThemeContext";
 import { I18nProvider } from "@/context/I18nContext";
@@ -97,6 +96,7 @@ export default function RootLayout() {
     Inter_500Medium,
     Inter_600SemiBold,
     Inter_700Bold,
+    "Rajdhani-Bold": require("../assets/fonts/Rajdhani-Bold.ttf"),
   });
   const [showSplash, setShowSplash] = useState(true);
 
@@ -113,20 +113,18 @@ export default function RootLayout() {
       <ThemeProvider>
         <I18nProvider>
           <ErrorBoundary>
-            <PasswordGate>
-              <QueryClientProvider client={queryClient}>
-                <GestureHandlerRootView style={{ flex: 1 }}>
-                  <WebFrame>
-                    <AppProvider>
-                      <RootLayoutNav />
-                    </AppProvider>
-                  </WebFrame>
-                  {showSplash && (
-                    <SplashScreenView onFinish={() => setShowSplash(false)} />
-                  )}
-                </GestureHandlerRootView>
-              </QueryClientProvider>
-            </PasswordGate>
+            <QueryClientProvider client={queryClient}>
+              <GestureHandlerRootView style={{ flex: 1 }}>
+                <WebFrame>
+                  <AppProvider>
+                    <RootLayoutNav />
+                  </AppProvider>
+                </WebFrame>
+                {showSplash && (
+                  <SplashScreenView onFinish={() => setShowSplash(false)} />
+                )}
+              </GestureHandlerRootView>
+            </QueryClientProvider>
           </ErrorBoundary>
         </I18nProvider>
       </ThemeProvider>

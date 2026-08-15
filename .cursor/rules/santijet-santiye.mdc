@@ -1,0 +1,23 @@
+---
+description: ŞantiJET Expo RN hub kilitli — splash PRO, header, parola, temalar.
+globs: artifacts/santiye-takip/**
+alwaysApply: false
+---
+
+# ŞantiJET RN hub (kilitli UX)
+
+Klasör `artifacts/santiye-takip`. Bağlayıcı özet: `artifacts/santiye-takip/AGENTS.md`.
+Flutter PRO (`santijet-ana`) dokunulmaz.
+
+## Geri alma
+
+- `PasswordGate` yok.
+- Splash: bolt + wordmark + **PRO**; arka plan çizgisi yok.
+- Ana sayfa: sol `HomeBrandMark` (ŞantiJET + PRO); sağda zil + en sonda menü; avatar yok.
+- Hesabım Ayarlar’ın ilk satırı.
+- Hi-Vis ailesi ve Steel ailesi (`layout`) kalır.
+- `fix-expo-router-stub.js` posix göreli import.
+
+## Deploy / commit
+
+Yalnız `artifacts/santiye-takip/**` (+ bu kural / AGENTS.md). `expo-qr.png` commit etme.

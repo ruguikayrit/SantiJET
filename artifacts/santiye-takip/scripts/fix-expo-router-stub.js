@@ -52,7 +52,12 @@ fs.writeFileSync(stubPkg, JSON.stringify({
   types: typesRelPath,
 }, null, 2));
 
-fs.writeFileSync(stubEntry, `import '${realEntry}';\n`);
+// Metro treats `\` as escape sequences; always emit a relative POSIX import.
+let entryImport = path.relative(stubDir, realEntry).split(path.sep).join('/');
+if (!entryImport.startsWith('.')) {
+  entryImport = `./${entryImport}`;
+}
+fs.writeFileSync(stubEntry, `import '${entryImport}';\n`);
 
 console.log('[fix-expo-router-stub] Stub created at', stubDir);
-console.log('[fix-expo-router-stub] -> entry:', realEntry);
+console.log('[fix-expo-router-stub] -> entry:', entryImport);

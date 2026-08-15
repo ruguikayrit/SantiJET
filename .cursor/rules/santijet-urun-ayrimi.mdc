@@ -28,6 +28,16 @@ DEMİR işinde ayrıntı: `artifacts/santijet-demir/AGENTS.md` ve `.cursor/rules
 
 Beton işinde ayrıntı: `artifacts/santijet-beton/AGENTS.md` ve `.cursor/rules/santijet-beton.mdc`.
 
+## RN hub — zarar verme
+
+Expo ana uygulama (`artifacts/santiye-takip`) kilitlidir (sohbet gerekmez):
+
+- Splash ürün adı **PRO**; ızgara yok. Açılış parolası yok.
+- Ana sayfa sol: wordmark + PRO. Sağ: zil, en sonda hamburger. Avatar header’da yok; Hesabım Ayarlar’ın başında.
+- Flutter PRO (`santijet-ana`) içine kopyalama; `PasswordGate` geri koyma.
+
+RN işinde ayrıntı: `artifacts/santiye-takip/AGENTS.md` ve `.cursor/rules/santijet-santiye.mdc`.
+
 ## PRO — zarar verme
 
 ŞantiJET PRO (`artifacts/santijet-ana`, `/pro/`) kilitlidir (sohbet gerekmez):

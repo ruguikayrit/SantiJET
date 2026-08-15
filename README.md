@@ -11,7 +11,7 @@ Türkçe inşaat şantiye yönetim uygulaması. pnpm monorepo yapısında birden
 | **BETON (Flutter)** | `artifacts/santijet-beton` | **Aktif** — Mevcut beton uygulaması (`/beton/`) |
 | **Mühendis (Flutter)** | `artifacts/santijet-muhendis` | **Aktif** — TBDY-2018 çelik birleşim hesabı |
 | B.F.A. (RN arşiv) | `artifacts/imalat-poz-analizleri` | Emekli — yalnızca referans |
-| Mobil uygulama (RN) | `artifacts/santiye-takip` | Expo / React Native — ana şantiye takip (korunur) |
+| Mobil uygulama (RN) | `artifacts/santiye-takip` | Expo — ana şantiye takip, splash **PRO** (korunur) |
 | **Ana / PRO (Flutter)** | `artifacts/santijet-ana` | **Aktif Flutter hub** — RN ile aynı kurgu, 16 modül |
 | Neon HUD | `artifacts/santijet-neon` | Vite web dashboard — neon temalı yönetici paneli |
 | Web sitesi | `artifacts/santijet-website` | Tanıtım / SaaS landing page |
@@ -107,6 +107,8 @@ pnpm dev:mobile:tunnel
 ```
 
 Expo Go ile QR kodu tarayın.
+
+Yeni agent: [`artifacts/santiye-takip/AGENTS.md`](./artifacts/santiye-takip/AGENTS.md) bağlayıcıdır. Flutter PRO (`santijet-ana`) ayrıdır.
 
 ### Mobil uygulama (Expo — yerel ağ)
 
