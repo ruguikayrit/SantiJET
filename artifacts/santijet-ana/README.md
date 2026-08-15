@@ -27,8 +27,10 @@ flutter run -d chrome
 
 Flutter SDK: `C:\Users\Pc\flutter-sdk` (PATH’e ekli değilse tam yol kullanın).
 
-Yeni agent: [`AGENTS.md`](./AGENTS.md) bağlayıcıdır. Beton (`santijet-beton`) ayrı üründür; PRO işi oraya taşınmaz.
+Yeni agent: [`AGENTS.md`](./AGENTS.md) bağlayıcıdır (sohbet silinse de). Beton (`santijet-beton`) ayrı üründür; PRO işi oraya taşınmaz. RN `santiye-takip` dokunulmaz.
 
 ## Staging (GitHub Pages)
 
 https://ruguikayrit.github.io/SantiJET/pro/
+
+Kaynak `staging`; `.github/scripts/build-pro-pages.sh` (`DEPLOY_CHANNEL=staging`). Banner `flutter-view` kaydırmaz. Davranış değişince `web/index.html` `APP_VERSION` artır. Concurrency iptal ederse `gh workflow run deploy-github-pages.yml --ref staging`.

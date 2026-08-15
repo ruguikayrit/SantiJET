@@ -1,5 +1,5 @@
 ---
-description: ŞantiJET ürünlerini karıştırma; Beton kabuğu kilitli.
+description: ŞantiJET ürünlerini karıştırma; Beton ve PRO kabuğu kilitli.
 alwaysApply: true
 ---
 
@@ -17,8 +17,16 @@ Bu monorepoda her Flutter ürünü ayrıdır. İstenmeyen `artifacts/santijet-*`
 
 Beton işinde ayrıntı: `artifacts/santijet-beton/AGENTS.md` ve `.cursor/rules/santijet-beton.mdc`.
 
+## PRO — zarar verme
+
+ŞantiJET PRO (`artifacts/santijet-ana`, `/pro/`) kilitlidir (sohbet gerekmez):
+
+- Staging’de splash/onboarding takılması ve boş modül ızgarası **düzeltilmiş hali** korunur: senkron `_loadSync`, `ensureStagingSession`, redirect’te state yazma yok, `flutter-view` `top:28px` yok.
+- RN `santiye-takip` dosyalarına dokunma.
+- PRO işini Beton’a kopyalama.
+
+PRO işinde ayrıntı: `artifacts/santijet-ana/AGENTS.md` ve `.cursor/rules/santijet-ana.mdc`.
+
 ## PRO ≠ Beton
 
 `artifacts/santijet-ana` (ŞantiJET PRO, Pages `/pro/`) ayrı üründür. PRO sohbeti, splash, staging otomatik oturum, onboarding atlama veya 16 modüllü hub **asla** `artifacts/santijet-beton` içine kopyalanmaz, orada “düzeltilmez” veya oraya uygulanmaz.
-
-PRO işinde ayrıntı: `artifacts/santijet-ana/AGENTS.md`.

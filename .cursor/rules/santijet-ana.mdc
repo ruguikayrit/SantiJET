@@ -1,24 +1,26 @@
 ---
-description: ŞantiJET PRO (santijet-ana) — Beton’a karışmaz; staging oturum kilitli.
+description: ŞantiJET PRO kilitli — splash/oturum/modül geri alma; Beton ve RN yok.
 globs: artifacts/santijet-ana/**
 alwaysApply: false
 ---
 
-# ŞantiJET PRO (kilitli)
+# ŞantiJET PRO (kilitli UX)
 
-Klasör `artifacts/santijet-ana`. Staging: `/pro/` → https://ruguikayrit.github.io/SantiJET/pro/
-Ürün özeti: `artifacts/santijet-ana/AGENTS.md`. RN `santiye-takip` dokunulmaz.
+Klasör `artifacts/santijet-ana`. Staging `/pro/` → https://ruguikayrit.github.io/SantiJET/pro/
+Bağlayıcı özet: `artifacts/santijet-ana/AGENTS.md`. RN `santiye-takip` dokunulmaz.
 
-## Beton yok
+## Başka ürüne yok
 
-Bu ürünün splash/staging-auto-login/onboarding/16-modül hub’ını `artifacts/santijet-beton` içine taşıma.
+Splash, staging auto-login, onboarding atlama, 16 modül hub → `santijet-beton` veya RN’e kopyalanmaz.
 
-## Staging
+## Geri alma
 
-`DEPLOY_CHANNEL=staging`: senkron `_loadSync` + `ensureStagingSession`. Redirect’te state yazma.
-Modüller `getPermission != none` ile filtrelenir; staging’de `santiye-sefi` + `Role.defaultRoles()` hazır olmalı.
-`flutter-view` `top:28px` kaydırma yok.
+- `_loadSync` senkron kalsın. Async Hive/oturum await ile splash’ta kilitlenme geri gelmesin.
+- Redirect’te `ensureStagingSession` / state mutate yok. Staging `needsOnboarding = false`.
+- `ensureStagingSession`: orphan user veya boş izin → `Role.defaultRoles()` + `applyLocalSessionSync` (`santiye-sefi`).
+- `flutter-view` `top:28px` yok. Banner `pointer-events:none`.
+- Deploy’da `APP_VERSION` bump; `DEPLOY_CHANNEL=staging`.
 
 ## Deploy
 
-Yalnız `artifacts/santijet-ana/**` (+ bu kural / AGENTS.md). `web/index.html` `APP_VERSION` bump.
+Yalnız `artifacts/santijet-ana/**` (+ bu kural / AGENTS.md / `build-pro-pages.sh`).
