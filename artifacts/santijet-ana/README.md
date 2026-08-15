@@ -27,6 +27,8 @@ flutter run -d chrome
 
 Flutter SDK: `C:\Users\Pc\flutter-sdk` (PATH’e ekli değilse tam yol kullanın).
 
+Yeni agent: [`AGENTS.md`](./AGENTS.md) bağlayıcıdır. Beton (`santijet-beton`) ayrı üründür; PRO işi oraya taşınmaz.
+
 ## Staging (GitHub Pages)
 
 https://ruguikayrit.github.io/SantiJET/pro/

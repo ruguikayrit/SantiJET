@@ -1,0 +1,24 @@
+---
+description: ŞantiJET PRO (santijet-ana) — Beton’a karışmaz; staging oturum kilitli.
+globs: artifacts/santijet-ana/**
+alwaysApply: false
+---
+
+# ŞantiJET PRO (kilitli)
+
+Klasör `artifacts/santijet-ana`. Staging: `/pro/` → https://ruguikayrit.github.io/SantiJET/pro/
+Ürün özeti: `artifacts/santijet-ana/AGENTS.md`. RN `santiye-takip` dokunulmaz.
+
+## Beton yok
+
+Bu ürünün splash/staging-auto-login/onboarding/16-modül hub’ını `artifacts/santijet-beton` içine taşıma.
+
+## Staging
+
+`DEPLOY_CHANNEL=staging`: senkron `_loadSync` + `ensureStagingSession`. Redirect’te state yazma.
+Modüller `getPermission != none` ile filtrelenir; staging’de `santiye-sefi` + `Role.defaultRoles()` hazır olmalı.
+`flutter-view` `top:28px` kaydırma yok.
+
+## Deploy
+
+Yalnız `artifacts/santijet-ana/**` (+ bu kural / AGENTS.md). `web/index.html` `APP_VERSION` bump.
