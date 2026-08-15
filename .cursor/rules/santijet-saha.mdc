@@ -1,0 +1,27 @@
+---
+description: ŞantiJET SAHA (Puantaj) kilitli UX — geri alma.
+globs: artifacts/santijet-puantaj/**
+alwaysApply: false
+---
+
+# ŞantiJET SAHA (kilitli UX)
+
+Klasör `artifacts/santijet-puantaj`; kullanıcı adı **ŞantiJET SAHA**. Staging: `/puantaj/`.
+
+## Puantajı dışa aktar (`_PuantajExportSheet`)
+
+- **Personel** ve **Ekip** `ExpansionTile` **varsayılan kapalı** (`initiallyExpanded: false`). Açma.
+- **Ekip** başlığının hemen altında **Ekip ara…** satırı (`SJSearchBar`) durur. Kaldırma.
+- Arama doluyken ilgili liste açılsın; eşleşenlere **Görünenleri seç**.
+
+## Puantaj durumları
+
+Sıra ve kısaltma: Giriş(G) → Çıkış(Ç) → Mevcut(M) → Yarım(Y) → Yok(X) → İzinli(İ) → Raporlu(R) → Mazeret(Mz) → Hafta Tatili(HT) → Resmi Tatil(**RT**, T değil).
+
+Kayıt yoksa pazar günü otomatik **HT**; manuel durum ezebilir.
+
+## İmalat
+
+Faz ve ekip başlıkları **varsayılan kapalı**.
+
+Ürün özeti: `artifacts/santijet-puantaj/README.md`.

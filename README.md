@@ -6,6 +6,7 @@ Türkçe inşaat şantiye yönetim uygulaması. pnpm monorepo yapısında birden
 
 | Modül | Klasör | Açıklama |
 |-------|--------|----------|
+| **SAHA (Flutter)** | `artifacts/santijet-puantaj` | **Aktif** — ŞantiJET SAHA / puantaj (`/puantaj/`) |
 | **Maliyet (Flutter)** | `artifacts/santijet-bfa-flutter` | **Aktif** — ŞantiJET Maliyet (`/maliyet/`) |
 | **BETON (Flutter)** | `artifacts/santijet-beton` | **Aktif** — Mevcut beton uygulaması (`/beton/`) |
 | **Mühendis (Flutter)** | `artifacts/santijet-muhendis` | **Aktif** — TBDY-2018 çelik birleşim hesabı |
@@ -48,6 +49,16 @@ pnpm dev:bfa
 ```
 
 Tarayıcıda Flutter web oturumu açılır. Pages path: `/maliyet/`.
+
+### SAHA — Puantaj & saha (Flutter)
+
+```bash
+cd artifacts/santijet-puantaj
+flutter pub get
+flutter run
+```
+
+Staging: https://ruguikayrit.github.io/SantiJET/puantaj/
 
 ### BETON — Mevcut beton uygulaması (Flutter)
 
@@ -152,6 +163,7 @@ CI: `.github/workflows/bfa-ci.yml` (push/PR) ve Pages deploy öncesi otomatik ç
 
 ```
 ├── artifacts/          # Uygulama modülleri
+│   ├── santijet-puantaj/      # SAHA Flutter (/puantaj/)
 │   ├── santijet-bfa-flutter/  # B.F.A. Flutter (aktif)
 │   ├── santijet-beton/        # BETON Flutter (/beton/)
 │   ├── santijet-muhendis/     # Mühendis — TBDY-2018 birleşim

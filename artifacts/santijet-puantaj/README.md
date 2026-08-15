@@ -47,11 +47,26 @@ Offline-first; bulut senkron bu fazda zorunlu değil.
 
 ## Puantaj durumları
 
+Sıra kilitli: Giriş → Çıkış → Mevcut → Yarım → Yok → İzinli → Raporlu → Mazeret → Hafta Tatili → Resmi Tatil.
+
 | Durum | Kısa | Saat |
 |-------|------|------|
+| Giriş | G | 0 |
+| Çıkış | Ç | 0 |
 | Mevcut | M | 8 |
 | Yarım Gün | Y | 4 |
-| İzinli / Raporlu / Mazeret / Res. Tatil / Yok | İ R Mz T X | 0 |
+| Yok | X | 0 |
+| İzinli | İ | 0 |
+| Raporlu | R | 0 |
+| Mazeret | Mz | 0 |
+| Hafta Tatili | HT | 0 |
+| Resmi Tatil | RT | 0 |
+
+Kayıt yoksa pazar günü otomatik HT (manuel durum ezer).
+
+## Puantajı dışa aktar
+
+Personel ve Ekip listeleri **varsayılan kapalı**. Ekip başlığının altında **Ekip ara…** satırı durur.
 
 ## Mimari
 
