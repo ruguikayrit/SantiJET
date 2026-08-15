@@ -16,3 +16,9 @@ Bu monorepoda her Flutter ürünü ayrıdır. İstenmeyen `artifacts/santijet-*`
 - Test sayfasını kaldırma; basınç raporlarını Ayarlar listesine geri koyma.
 
 Beton işinde ayrıntı: `artifacts/santijet-beton/AGENTS.md` ve `.cursor/rules/santijet-beton.mdc`.
+
+## PRO ≠ Beton
+
+`artifacts/santijet-ana` (ŞantiJET PRO, Pages `/pro/`) ayrı üründür. PRO sohbeti, splash, staging otomatik oturum, onboarding atlama veya 16 modüllü hub **asla** `artifacts/santijet-beton` içine kopyalanmaz, orada “düzeltilmez” veya oraya uygulanmaz.
+
+PRO işinde ayrıntı: `artifacts/santijet-ana/AGENTS.md`.

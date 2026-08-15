@@ -4,7 +4,7 @@
 
 Hive-only offline; Türkçe UI; ŞantiJET Demir / Puantaj görsel dili.
 
-Yeni agent / yeni bilgisayar: [`AGENTS.md`](./AGENTS.md) bağlayıcıdır.
+Yeni agent / yeni bilgisayar: [`AGENTS.md`](./AGENTS.md) bağlayıcıdır. ŞantiJET PRO (`santijet-ana`) sohbeti veya splash/oturum işi bu ürüne taşınmaz.
 
 ## Kabuk (kilitli)
 

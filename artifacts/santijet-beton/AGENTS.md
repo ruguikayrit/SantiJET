@@ -2,7 +2,15 @@
 
 Bu dosya sohbet geçmişinin yerine geçer. Beton işinde bağlayıcıdır.
 
-Kapsam: yalnızca `artifacts/santijet-beton/**`. Demir, Puantaj, Maliyet, Malzeme, Mühendis veya başka ürüne dokunma.
+Kapsam: yalnızca `artifacts/santijet-beton/**`. Demir, Puantaj, Maliyet, Malzeme, Mühendis, **PRO (`santijet-ana`)** veya başka ürüne dokunma.
+
+## PRO’dan kopyalama yok
+
+ŞantiJET PRO (`artifacts/santijet-ana`, `/pro/`) işi Beton’a taşınmaz:
+
+- Staging otomatik oturum, onboarding atlama, splash skip
+- 16 modüllü hub, “Hızlı Başla”
+- PRO splash / bildirim zili / Ayarlar alt nav
 
 ## Kabuk (kilitli — geri alma)
 
