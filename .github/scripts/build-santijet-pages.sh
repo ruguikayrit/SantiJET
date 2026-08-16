@@ -76,11 +76,8 @@ build_demir_web() {
   perl -i -0pe 's/_flutter\.loader\.load\(\{\s*serviceWorkerSettings:\s*\{[^}]+\}\s*\}\);/window.__SANTIJET_START_FLUTTER__&&window.__SANTIJET_START_FLUTTER__();/s' build/web/flutter_bootstrap.js
   perl -i -pe 's/_flutter\.loader\.load\(\{\}\);/window.__SANTIJET_START_FLUTTER__&&window.__SANTIJET_START_FLUTTER__();/g' build/web/flutter_bootstrap.js
 
-  if [[ "${channel_label}" == "staging" ]]; then
-    # Banner flutter-view ÜSTÜNE bindirilmez: üst inset + pointer-events none.
-    # Aksi halde iOS Safari'de header bildirim/ayar dokunuşları yutulur.
-    perl -i -pe 's|<body>|<body><div id="santijet-staging-banner" style="position:fixed;top:0;left:0;right:0;height:28px;z-index:99999;background:#f59e0b;color:#111827;text-align:center;font:600 12px/28px system-ui,sans-serif;pointer-events:none;">STAGING ÖNİZLEME — canlı sürüm değil</div><style>flutter-view,flt-glass-pane{top:28px!important;height:calc(var(--app-height,100dvh) - 28px)!important;min-height:0!important;}</style>|' build/web/index.html
-  fi
+  # Staging’de turuncu #santijet-staging-banner, 28px spacer ve
+  # flutter-view / flt-glass-pane { top:28px } enjekte etme. Header dişlisini bozar.
 
   cp -r build/web/. "${output_dir}/"
   popd >/dev/null

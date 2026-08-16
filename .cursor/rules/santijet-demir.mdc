@@ -14,5 +14,5 @@ Kapsam: `artifacts/santijet-demir/**`. Başka ürüne dokunma. Özet: `artifacts
 - Anasayfaya Günlük Brifing / Tahmin kartı ve ilerleme formül satırını geri koyma.
 - Ayarlara Proje Bilgileri / Dokunma Titreşimi geri koyma.
 - Fire butonu: `(tahvil ile fire analizi yap)`. Raporlar DEMO bandını açma.
-- `AppMediaQuery` `padding.bottom = 0`; nav yalnız `viewPadding`. Staging bandı `pointer-events:none`; DEMİR’de `flutter-view` üst 28px kaydırma **kalır**.
+- `AppMediaQuery` `padding.bottom = 0`; nav yalnız `viewPadding`. Turuncu STAGING şeridi, 28px spacer ve `flutter-view` `top:28px` yok; geri koyma.
 - Dal `staging`. Mesaj `feat(demir):` / `fix(demir):` / `docs(demir):`.

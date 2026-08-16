@@ -15,7 +15,7 @@ Canlı siteyi riske atmadan DEMİR değişikliklerini önizlemek için `staging`
 | **PRO staging** | https://ruguikayrit.github.io/SantiJET/pro/ |
 | **Mühendis staging** | https://ruguikayrit.github.io/SantiJET/muhendis/ |
 
-Staging sürümünde üstte turuncu **STAGING ÖNİZLEME** bandı görünür.
+DEMİR önizlemesinde turuncu **STAGING ÖNİZLEME** şeridi yok.
 
 ## Günlük akış
 

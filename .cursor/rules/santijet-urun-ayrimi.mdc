@@ -14,6 +14,7 @@ Bu monorepoda her Flutter ürünü ayrıdır. İstenmeyen `artifacts/santijet-*`
 - Alt nav: Ana Sayfa · Sipariş · Gelen Demir · Saha Sayım · Analiz. Ayarlar navda yok.
 - Ayarlar sağ üst dişli. Bildirim zili ve baş harf avatarı yok.
 - Önizleme URL: `/demir/` — uygulamayı `/staging/` altına geri koyma.
+- Turuncu STAGING ÖNİZLEME şeridi ve `flutter-view { top:28px }` kaydırması yok; geri koyma.
 - Anasayfa formül satırı, DEMO rapor bandı, brifing/tahmin kartı, Ayarlar’da Proje Bilgileri / Dokunma Titreşimi geri gelmez.
 
 DEMİR işinde ayrıntı: `artifacts/santijet-demir/AGENTS.md` ve `.cursor/rules/santijet-demir.mdc`.
@@ -54,4 +55,4 @@ PRO işinde ayrıntı: `artifacts/santijet-ana/AGENTS.md` ve `.cursor/rules/sant
 
 ## PRO ≠ DEMİR
 
-`artifacts/santijet-ana` (ŞantiJET PRO, Pages `/pro/`) ayrı üründür. PRO splash/oturum/hub işi `artifacts/santijet-demir` içine kopyalanmaz. DEMİR `flutter-view { top:28px }` kaydırmasını PRO kuralına göre silme.
+`artifacts/santijet-ana` (ŞantiJET PRO, Pages `/pro/`) ayrı üründür. PRO splash/oturum/hub işi `artifacts/santijet-demir` içine kopyalanmaz. DEMİR Pages önizlemesinde turuncu STAGING şeridi ve `flutter-view { top:28px }` yoktur; başka üründen geri koyma.

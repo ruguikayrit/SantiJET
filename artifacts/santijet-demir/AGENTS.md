@@ -37,7 +37,7 @@ Kaynak: `lib/core/widgets/santijet_header.dart`, `lib/features/shell/main_shell.
 ## Web / ölü alan / dokunuş (kilitli)
 
 - `AppMediaQuery`: `padding.bottom = 0`. Alt nav inset = yalnız `MediaQuery.viewPadding` (yapay iOS +34 yok).
-- Staging HTML bandı: `pointer-events:none`. DEMİR’de `flutter-view` / `flt-glass-pane` `top:28px` + yükseklik kısaltma **kalır** (header çarkının tıklanması için). PRO’daki “flutter-view kaydırma yok” kuralını Demir’e uygulama.
+- Turuncu **STAGING ÖNİZLEME** HTML şeridi yok (`#santijet-staging-banner`). 28px spacer ve `flutter-view` / `flt-glass-pane { top:28px }` kaydırması yok. `build-santijet-pages.sh` bunları enjekte etmez. Geri koyma — header dişli dokunuşunu bozar. `--dart-define=DEPLOY_CHANNEL=staging` kalır.
 - `/demir/` yayınla. Eski `/staging/` yalnızca `/demir/` yönlendirmesi. Canlı kökü Demir önizleme ile değiştirme.
 - Deploy’da `web/index.html` `APP_VERSION` bump.
 
