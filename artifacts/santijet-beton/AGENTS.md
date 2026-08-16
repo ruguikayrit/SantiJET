@@ -23,7 +23,7 @@ Alt nav: **Ana Sayfa · Keşif · Sipariş · Döküm · Test**
 - Listeden çıkarılmış: Basınç dayanım raporları, Aktif proje özeti.
 - Sekmeler arası yatay kaydırma kapalı (`popGestureEnabled: false`, `Router.neglect`, `PopScope`).
 - Ana sayfa proje seçici: bottom sheet. Projelerim’e yönlendirme.
-- Döküm kartı etiketi: Sipariş (eski “Plan” değil).
+- Döküm kartı hacim kutuları: Planlanan döküm / Gerçekleşen döküm (eski “Sipariş” / “Dökülen” değil; “Plan” da değil).
 - Sipariş listesinde tekrarlayan “Siparişler” başlığı yok.
 
 Kaynak: `lib/core/routing/app_router.dart`, `app_routes.dart`, `lib/features/shell/main_shell.dart`, `lib/core/widgets/santijet_header.dart`.

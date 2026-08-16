@@ -291,7 +291,7 @@ class _PourCard extends StatelessWidget {
                 children: [
                   Expanded(
                     child: _MiniStat(
-                      label: 'Sipariş',
+                      label: 'Planlanan döküm',
                       value: plan == null
                           ? '—'
                           : BetonProgress.fmtM3(plan),
@@ -302,7 +302,7 @@ class _PourCard extends StatelessWidget {
                   const SizedBox(width: AppSpacing.xs),
                   Expanded(
                     child: _MiniStat(
-                      label: 'Dökülen',
+                      label: 'Gerçekleşen döküm',
                       value: BetonProgress.fmtM3(poured),
                       color: AppColors.success,
                     ),
@@ -358,7 +358,10 @@ class _MiniStat extends StatelessWidget {
             label,
             style: theme.textTheme.labelSmall?.copyWith(
               color: AppColors.cardTextMuted,
+              height: 1.15,
             ),
+            maxLines: 2,
+            overflow: TextOverflow.ellipsis,
           ),
           const SizedBox(height: 4),
           Row(

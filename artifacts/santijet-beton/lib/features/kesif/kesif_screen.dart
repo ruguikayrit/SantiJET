@@ -322,7 +322,7 @@ class _OverallProgressCard extends StatelessWidget {
                   const SizedBox(width: AppSpacing.xs),
                   Expanded(
                     child: _MiniStat(
-                      label: 'Dökülen',
+                      label: 'Gerçekleşen döküm',
                       value: BetonProgress.fmtM3(progress.poured),
                       color: AppColors.success,
                     ),
@@ -425,11 +425,13 @@ class _ElementProgressTile extends StatelessWidget {
                   ),
                   Expanded(
                     child: Text(
-                      'Dökülen ${BetonProgress.fmtM3(row.pouredM3)} m³',
+                      'Gerçekleşen döküm ${BetonProgress.fmtM3(row.pouredM3)} m³',
                       style: theme.textTheme.bodySmall?.copyWith(
                         color: AppColors.cardTextSecondary,
                       ),
                       textAlign: TextAlign.center,
+                      maxLines: 2,
+                      overflow: TextOverflow.ellipsis,
                     ),
                   ),
                   Expanded(
@@ -485,7 +487,12 @@ class _MiniStat extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text(label, style: theme.textTheme.labelSmall),
+          Text(
+            label,
+            style: theme.textTheme.labelSmall,
+            maxLines: 2,
+            overflow: TextOverflow.ellipsis,
+          ),
           const SizedBox(height: 4),
           Row(
             crossAxisAlignment: CrossAxisAlignment.end,

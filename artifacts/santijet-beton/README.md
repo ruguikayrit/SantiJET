@@ -20,7 +20,7 @@ Bu düzen bilerek kilitlidir. Sohbet geçmişi olmadan da geri alınmamalıdır.
 
 Ayarlar listesi yalnızca: Projelerim, Tema, Demo veriyi yükle, Hakkında, Tüm Verileri Sil. **Basınç dayanım raporları** ve **Aktif proje özeti** bu listede durmaz.
 
-Ana sayfa proje seçici: Puantaj gibi bottom sheet (Projelerim’e gitmez). Döküm kartı etiketi **Sipariş** (eski “Plan” değil). Sipariş listesinde tekrarlayan “Siparişler” başlığı yok.
+Ana sayfa proje seçici: Puantaj gibi bottom sheet (Projelerim’e gitmez). Döküm kartı hacim kutuları **Planlanan döküm** / **Gerçekleşen döküm** (eski “Sipariş” / “Dökülen” değil). Sipariş listesinde tekrarlayan “Siparişler” başlığı yok.
 
 ## Test (basınç)
 

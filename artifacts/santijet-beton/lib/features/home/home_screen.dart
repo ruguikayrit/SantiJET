@@ -100,7 +100,7 @@ class HomeScreen extends ConsumerWidget {
                       children: [
                         Expanded(
                           child: _MiniStat(
-                            label: 'Dökülen',
+                            label: 'Gerçekleşen döküm',
                             value: BetonProgress.fmtM3(todayPoured),
                             unit: 'm³',
                             color: AppColors.success,
@@ -109,7 +109,7 @@ class HomeScreen extends ConsumerWidget {
                         const SizedBox(width: AppSpacing.xs),
                         Expanded(
                           child: _MiniStat(
-                            label: 'Planlı sipariş',
+                            label: 'Planlanan döküm',
                             value: BetonProgress.fmtM3(todayOrdered),
                             unit: 'm³',
                             color: AppColors.info,
@@ -152,7 +152,7 @@ class HomeScreen extends ConsumerWidget {
                             const SizedBox(width: AppSpacing.xs),
                             Expanded(
                               child: _MiniStat(
-                                label: 'Dökülen',
+                                label: 'Gerçekleşen döküm',
                                 value: BetonProgress.fmtM3(progress.poured),
                                 unit: 'm³',
                                 color: AppColors.success,
@@ -186,7 +186,7 @@ class HomeScreen extends ConsumerWidget {
                           children: [
                             Expanded(
                               child: _MiniStat(
-                                label: 'Planlı sipariş',
+                                label: 'Planlanan döküm',
                                 value: BetonProgress.fmtM3(progress.ordered),
                                 unit: 'm³',
                                 color: AppColors.info,
@@ -195,7 +195,7 @@ class HomeScreen extends ConsumerWidget {
                             const SizedBox(width: AppSpacing.xs),
                             Expanded(
                               child: _MiniStat(
-                                label: 'Gerçekleşen',
+                                label: 'Gerçekleşen döküm',
                                 value: BetonProgress.fmtM3(progress.poured),
                                 unit: 'm³',
                                 color: AppColors.success,
@@ -530,7 +530,7 @@ class _MiniStat extends StatelessWidget {
               height: 1.15,
               fontSize: 10,
             ),
-            maxLines: 1,
+            maxLines: 2,
             overflow: TextOverflow.ellipsis,
           ),
           const SizedBox(height: 2),
