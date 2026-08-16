@@ -1541,6 +1541,11 @@ class _DailyReportScreenState extends ConsumerState<DailyReportScreen> {
 
     return Scaffold(
       backgroundColor: AppColors.canvas,
+      floatingActionButton: FloatingActionButton.extended(
+        onPressed: _openExportSheet,
+        icon: const Icon(Icons.ios_share_outlined),
+        label: const Text('Rapor AL'),
+      ),
       body: SafeArea(
         bottom: false,
         child: Column(
@@ -1602,11 +1607,6 @@ class _DailyReportScreenState extends ConsumerState<DailyReportScreen> {
                     },
                     child: const Text('Bugün'),
                   ),
-                  IconButton(
-                    tooltip: 'PDF dışa aktar',
-                    onPressed: _openExportSheet,
-                    icon: const Icon(Icons.ios_share_outlined),
-                  ),
                 ],
               ),
             ),
@@ -1618,7 +1618,7 @@ class _DailyReportScreenState extends ConsumerState<DailyReportScreen> {
                   AppSpacing.md,
                   AppSpacing.sm,
                   AppSpacing.md,
-                  AppSpacing.xl + MediaQuery.viewInsetsOf(context).bottom,
+                  88 + MediaQuery.viewInsetsOf(context).bottom,
                 ),
                 children: [
                   WeatherCompactCard(
