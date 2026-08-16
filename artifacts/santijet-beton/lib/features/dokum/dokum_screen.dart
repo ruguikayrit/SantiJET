@@ -287,38 +287,41 @@ class _PourCard extends StatelessWidget {
                   ),
                 ),
               const SizedBox(height: AppSpacing.sm),
-              Row(
-                children: [
-                  Expanded(
-                    child: _MiniStat(
-                      label: 'Planlanan döküm',
-                      value: plan == null
-                          ? '—'
-                          : BetonProgress.fmtM3(plan),
-                      color: AppColors.info,
-                      showUnit: plan != null,
+              IntrinsicHeight(
+                child: Row(
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                  children: [
+                    Expanded(
+                      child: _MiniStat(
+                        label: 'Planlanan döküm',
+                        value: plan == null
+                            ? '—'
+                            : BetonProgress.fmtM3(plan),
+                        color: AppColors.info,
+                        showUnit: plan != null,
+                      ),
                     ),
-                  ),
-                  const SizedBox(width: AppSpacing.xs),
-                  Expanded(
-                    child: _MiniStat(
-                      label: 'Gerçekleşen döküm',
-                      value: BetonProgress.fmtM3(poured),
-                      color: AppColors.success,
+                    const SizedBox(width: AppSpacing.xs),
+                    Expanded(
+                      child: _MiniStat(
+                        label: 'Gerçekleşen döküm',
+                        value: BetonProgress.fmtM3(poured),
+                        color: AppColors.success,
+                      ),
                     ),
-                  ),
-                  const SizedBox(width: AppSpacing.xs),
-                  Expanded(
-                    child: _MiniStat(
-                      label: 'Fark',
-                      value: gap == null
-                          ? '—'
-                          : '${gap >= 0 ? '+' : ''}${BetonProgress.fmtM3(gap)}',
-                      color: gapColor,
-                      showUnit: gap != null,
+                    const SizedBox(width: AppSpacing.xs),
+                    Expanded(
+                      child: _MiniStat(
+                        label: 'Fark',
+                        value: gap == null
+                            ? '—'
+                            : '${gap >= 0 ? '+' : ''}${BetonProgress.fmtM3(gap)}',
+                        color: gapColor,
+                        showUnit: gap != null,
+                      ),
                     ),
-                  ),
-                ],
+                  ],
+                ),
               ),
             ],
           );
@@ -345,6 +348,7 @@ class _MiniStat extends StatelessWidget {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     return Container(
+      width: double.infinity,
       padding: const EdgeInsets.all(AppSpacing.sm),
       decoration: BoxDecoration(
         color: color.withValues(alpha: 0.08),
