@@ -8,6 +8,8 @@ alwaysApply: false
 
 Klasör `artifacts/santijet-puantaj`; kullanıcı adı **ŞantiJET SAHA**. Staging: `/puantaj/`.
 
+Turuncu **STAGING ÖNİZLEME** şeridi yok: `build-puantaj-pages.sh` `#santijet-staging-banner`, 28px spacer veya `flutter-view { top:28px }` basmaz. `--dart-define=DEPLOY_CHANNEL=staging` kalır. Geri koyma.
+
 ## Puantaj AL (`_PuantajExportSheet`)
 
 Sağ alt FAB metni ve sheet başlığı **Puantaj AL**. Eski “Puantajı Dışa Aktar” geri gelmez.
