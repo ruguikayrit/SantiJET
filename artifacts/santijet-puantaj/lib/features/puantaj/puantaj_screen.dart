@@ -196,7 +196,7 @@ class _PuantajScreenState extends ConsumerState<PuantajScreen> {
           attendance: attendance,
         ),
         icon: const Icon(Icons.ios_share_outlined),
-        label: const Text('Puantajı Dışa Aktar'),
+        label: const Text('Puantaj AL'),
       ),
       body: SafeArea(
         bottom: false,
@@ -409,7 +409,7 @@ class _PuantajScreenState extends ConsumerState<PuantajScreen> {
     };
     return SJModal.showSheet(
       context: context,
-      title: 'Puantaj dışa aktar',
+      title: 'Puantaj AL',
       child: _PuantajExportSheet(
         project: project,
         allProjectPeople: allProjectPeople,

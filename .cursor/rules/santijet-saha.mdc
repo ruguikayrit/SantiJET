@@ -8,7 +8,9 @@ alwaysApply: false
 
 Klasör `artifacts/santijet-puantaj`; kullanıcı adı **ŞantiJET SAHA**. Staging: `/puantaj/`.
 
-## Puantajı dışa aktar (`_PuantajExportSheet`)
+## Puantaj AL (`_PuantajExportSheet`)
+
+Sağ alt FAB metni ve sheet başlığı **Puantaj AL**. Eski “Puantajı Dışa Aktar” geri gelmez.
 
 - **Personel** ve **Ekip** `ExpansionTile` **varsayılan kapalı** (`initiallyExpanded: false`). Açma.
 - **Ekip** başlığının hemen altında **Ekip ara…** satırı (`SJSearchBar`) durur. Kaldırma.
