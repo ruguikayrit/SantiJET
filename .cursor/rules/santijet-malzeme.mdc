@@ -48,6 +48,11 @@ Talep kartı `cardText*` + inset kutular `cardInsetSurface` (chrome
 Üst satırda **+ Ekle** butonu yok. Sağ alt **SJFab** (`TDS Ekle`) —
 Keşif/Talep/Teslim ile aynı. Liste `SJFab.scrollClearanceOf` ile boşluk bırakır.
 
+## Hive
+
+Kutu adları `malzeme_` önekli (`MalzemeHive`). Çıplak `settings` / `projects`
+açma — GitHub Pages origin’de Beton/Puantaj ile karışır.
+
 ## Deploy
 
 Yalnız `artifacts/santijet-malzeme/**` (+ bu kural / README) commitlenir.

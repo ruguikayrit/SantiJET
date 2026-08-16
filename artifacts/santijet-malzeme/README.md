@@ -38,7 +38,7 @@ Ayarlar / projeler: header dişli ikonu (bottom tab değil).
 | `TechSheet` | TDS metadata (+ dosya path sonraki faz) |
 | `MaterialDecision` | Opsiyonel teknik karar |
 
-Hive kutuları (JSON-in-box): `settings`, `projects`, `kesif`, `unit_consumptions`, `requests`, `quotes`, `deliveries`, `library`.
+Hive kutuları (JSON-in-box, `malzeme_` önekli — Pages origin’de Beton/Puantaj ile karışmasın): `malzeme_settings`, `malzeme_projects`, `malzeme_kesif`, `malzeme_unit_consumptions`, `malzeme_requests`, `malzeme_quotes`, `malzeme_deliveries`, `malzeme_library`.
 
 ## Sınırlar (çakışma yok)
 

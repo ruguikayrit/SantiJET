@@ -40,7 +40,7 @@ String themeLabel(String mode) => switch (mode) {
       _ => 'Sistem',
     };
 
-/// Hive `settings` kutusu — bootstrap'ta açılır ve override edilir.
+/// Hive `malzeme_settings` kutusu — bootstrap'ta açılır ve override edilir.
 final settingsBoxProvider = Provider<Box>(
   (ref) => throw UnimplementedError('settingsBoxProvider override edilmeli'),
 );
