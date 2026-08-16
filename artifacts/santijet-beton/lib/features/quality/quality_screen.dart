@@ -73,13 +73,6 @@ class _QualityScreenState extends ConsumerState<QualityScreen> {
     final filtered = _applyFilters(samples);
 
     return Scaffold(
-      floatingActionButton: project == null
-          ? null
-          : FloatingActionButton.extended(
-              onPressed: () => _openEditor(context, ref),
-              icon: const Icon(Icons.add),
-              label: const Text('Rapor Ekle'),
-            ),
       body: SafeArea(
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -94,60 +87,17 @@ class _QualityScreenState extends ConsumerState<QualityScreen> {
                       icon: Icons.apartment_outlined,
                     )
                   : samples.isEmpty
-                      ? SJEmptyState(
+                      ? const SJEmptyState(
                           title: 'Rapor yok',
                           message:
                               'Laboratuvar basınç dayanım raporundaki önemli '
                               'alanları Temel / Kolon / Perde / Döşeme '
                               'gruplarında kaydedin.',
                           icon: Icons.science_outlined,
-                          actionLabel: 'Rapor Ekle',
-                          onAction: () => _openEditor(context, ref),
                         )
                       : Column(
                           crossAxisAlignment: CrossAxisAlignment.stretch,
                           children: [
-                            Padding(
-                              padding: const EdgeInsets.fromLTRB(
-                                AppSpacing.md,
-                                AppSpacing.sm,
-                                AppSpacing.md,
-                                0,
-                              ),
-                              child: Row(
-                                children: [
-                                  Expanded(
-                                    child: SJButton(
-                                      label: 'PDF',
-                                      icon: Icons.picture_as_pdf_outlined,
-                                      variant: SJButtonVariant.secondary,
-                                      onPressed: filtered.isEmpty
-                                          ? null
-                                          : () => _exportPdf(
-                                                context,
-                                                project: project,
-                                                samples: filtered,
-                                              ),
-                                    ),
-                                  ),
-                                  const SizedBox(width: AppSpacing.sm),
-                                  Expanded(
-                                    child: SJButton(
-                                      label: 'Excel',
-                                      icon: Icons.table_chart_outlined,
-                                      variant: SJButtonVariant.secondary,
-                                      onPressed: filtered.isEmpty
-                                          ? null
-                                          : () => _exportExcel(
-                                                context,
-                                                project: project,
-                                                samples: filtered,
-                                              ),
-                                    ),
-                                  ),
-                                ],
-                              ),
-                            ),
                             Padding(
                               padding: const EdgeInsets.fromLTRB(
                                 AppSpacing.md,
@@ -204,7 +154,7 @@ class _QualityScreenState extends ConsumerState<QualityScreen> {
                                         AppSpacing.md,
                                         AppSpacing.sm,
                                         AppSpacing.md,
-                                        88,
+                                        AppSpacing.md,
                                       ),
                                       itemCount: filtered.length,
                                       separatorBuilder: (_, __) =>
@@ -270,10 +220,93 @@ class _QualityScreenState extends ConsumerState<QualityScreen> {
                           ],
                         ),
             ),
+            if (project != null)
+              _bottomActions(project: project, filtered: filtered),
           ],
         ),
       ),
     );
+  }
+
+  Widget _bottomActions({
+    required Project project,
+    required List<QualitySample> filtered,
+  }) {
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(
+        AppSpacing.md,
+        AppSpacing.sm,
+        AppSpacing.md,
+        AppSpacing.sm,
+      ),
+      child: Row(
+        children: [
+          Expanded(
+            child: FloatingActionButton.extended(
+              heroTag: 'test-rapor-al',
+              onPressed: filtered.isEmpty
+                  ? null
+                  : () => _raporAl(
+                        context,
+                        project: project,
+                        samples: filtered,
+                      ),
+              icon: const Icon(Icons.ios_share_outlined),
+              label: const Text('Rapor Al'),
+            ),
+          ),
+          const SizedBox(width: AppSpacing.sm),
+          Expanded(
+            child: FloatingActionButton.extended(
+              heroTag: 'test-rapor-ekle',
+              onPressed: () => _openEditor(context, ref),
+              icon: const Icon(Icons.add),
+              label: const Text('Rapor Ekle'),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Future<void> _raporAl(
+    BuildContext context, {
+    required Project project,
+    required List<QualitySample> samples,
+  }) async {
+    final choice = await SJModal.showSheet<String>(
+      context: context,
+      title: 'Rapor Al',
+      child: Builder(
+        builder: (sheetContext) {
+          return Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              SJButton(
+                label: 'PDF',
+                icon: Icons.picture_as_pdf_outlined,
+                expanded: true,
+                onPressed: () => Navigator.pop(sheetContext, 'pdf'),
+              ),
+              const SizedBox(height: AppSpacing.sm),
+              SJButton(
+                label: 'Excel',
+                icon: Icons.table_chart_outlined,
+                variant: SJButtonVariant.secondary,
+                expanded: true,
+                onPressed: () => Navigator.pop(sheetContext, 'excel'),
+              ),
+            ],
+          );
+        },
+      ),
+    );
+    if (!context.mounted || choice == null) return;
+    if (choice == 'pdf') {
+      await _exportPdf(context, project: project, samples: samples);
+    } else if (choice == 'excel') {
+      await _exportExcel(context, project: project, samples: samples);
+    }
   }
 
   Future<void> _exportPdf(
