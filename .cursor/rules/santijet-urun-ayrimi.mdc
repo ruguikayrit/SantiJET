@@ -56,3 +56,7 @@ PRO işinde ayrıntı: `artifacts/santijet-ana/AGENTS.md` ve `.cursor/rules/sant
 ## PRO ≠ DEMİR
 
 `artifacts/santijet-ana` (ŞantiJET PRO, Pages `/pro/`) ayrı üründür. PRO splash/oturum/hub işi `artifacts/santijet-demir` içine kopyalanmaz. DEMİR Pages önizlemesinde turuncu STAGING şeridi ve `flutter-view { top:28px }` yoktur; başka üründen geri koyma.
+
+## DEMİR ≠ TAHVİL
+
+`artifacts/santijet-tahvil` (ŞantiJET Tahvil, Pages `/tahvil/`) ayrı üründür. DEMİR sipariş/saha-sayım kabuğu Tahvil’e kopyalanmaz. Tahvil hesabı DEMİR analiz ekranına geri taşınmaz.

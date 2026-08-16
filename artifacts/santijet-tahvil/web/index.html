@@ -1,0 +1,248 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+  <base href="$FLUTTER_BASE_HREF">
+
+  <meta charset="UTF-8">
+  <meta content="IE=Edge" http-equiv="X-UA-Compatible">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+  <meta name="description" content="ŞantiJET Tahvil — demir tahvil hesabı, tek fiyat, abonelik yok">
+  <meta name="theme-color" content="#05070A">
+
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="apple-mobile-web-app-title" content="ŞantiJET Tahvil">
+  <link rel="apple-touch-icon" href="icons/Icon-192.png">
+  <link rel="icon" type="image/png" href="favicon.png"/>
+
+  <title>ŞantiJET Tahvil</title>
+  <link rel="manifest" href="manifest.json?v=2">
+
+  <style>
+    html {
+      height: 100%;
+      height: -webkit-fill-available;
+      height: 100dvh;
+      height: var(--app-height, 100dvh);
+      touch-action: manipulation;
+      background-color: #05070A;
+    }
+    body {
+      height: 100%;
+      height: -webkit-fill-available;
+      height: 100dvh;
+      height: var(--app-height, 100dvh);
+      margin: 0;
+      padding: 0;
+      overflow: hidden;
+      background-color: #05070A;
+      touch-action: manipulation;
+      overscroll-behavior: none;
+      -webkit-touch-callout: none;
+      -webkit-user-select: none;
+      user-select: none;
+    }
+    flutter-view, flt-glass-pane {
+      display: block;
+      position: fixed;
+      inset: 0;
+      width: 100%;
+      height: 100%;
+      height: 100dvh;
+      height: var(--app-height, 100dvh);
+      min-height: 100dvh;
+      touch-action: manipulation;
+      background-color: #05070A;
+    }
+    #santijet-loading {
+      position: fixed;
+      inset: 0;
+      z-index: 999999;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      background: #05070A;
+      color: #6B7280;
+      font-family: system-ui, -apple-system, sans-serif;
+      font-size: 14px;
+      text-align: center;
+      padding: 24px;
+    }
+  </style>
+  <script>
+    (function () {
+      var root = document.documentElement;
+      function setAppHeight() {
+        var h = (window.visualViewport && window.visualViewport.height) ||
+          window.innerHeight ||
+          (root && root.clientHeight) ||
+          0;
+        if (h > 0) root.style.setProperty('--app-height', h + 'px');
+      }
+      setAppHeight();
+      window.addEventListener('resize', setAppHeight);
+      window.addEventListener('orientationchange', setAppHeight);
+      if (window.visualViewport) {
+        window.visualViewport.addEventListener('resize', setAppHeight);
+        window.visualViewport.addEventListener('scroll', setAppHeight);
+      }
+      window.addEventListener('flutter-first-frame', function () {
+        setAppHeight();
+        setTimeout(setAppHeight, 300);
+      }, { once: true });
+    })();
+  </script>
+  <script>
+    (function () {
+      var APP_VERSION = '2';
+      var isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent) ||
+        (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
+      var isStandalone = window.navigator.standalone === true ||
+        (window.matchMedia && window.matchMedia('(display-mode: standalone)').matches);
+
+      function clearAppCaches() {
+        var tasks = [Promise.resolve()];
+        if ('caches' in window) {
+          tasks.push(
+            caches.keys().then(function (keys) {
+              return Promise.all(keys.map(function (key) { return caches.delete(key); }));
+            })
+          );
+        }
+        if ('serviceWorker' in navigator) {
+          tasks.push(
+            navigator.serviceWorker.getRegistrations().then(function (regs) {
+              return Promise.all(regs.map(function (reg) { return reg.unregister(); }));
+            })
+          );
+        }
+        return Promise.all(tasks);
+      }
+
+      window.santijetHardReload = function () {
+        clearAppCaches().finally(function () {
+          try {
+            localStorage.setItem('santijet_tahvil_app_version', APP_VERSION);
+          } catch (e) {}
+          location.reload();
+        });
+      };
+
+      window.__SANTIJET_START_FLUTTER__ = function () {
+        var version = window.__SANTIJET_APP_VERSION__ || APP_VERSION;
+        if (window._flutter && _flutter.buildConfig && _flutter.buildConfig.builds) {
+          _flutter.buildConfig.builds.forEach(function (build) {
+            if (!build.mainJsPath) return;
+            var base = build.mainJsPath.split('?')[0];
+            build.mainJsPath = base + '?v=' + version;
+          });
+        }
+        _flutter.loader.load({});
+      };
+
+      function showSlowLoadHelp() {
+        var el = document.getElementById('santijet-loading');
+        if (!el || !el.parentNode || isFlutterMounted()) return;
+        el.innerHTML =
+          'Yükleme uzun sürüyor…<br>' +
+          '<span style="font-size:12px;margin-top:8px;display:block;line-height:1.45;">' +
+          'Önbellek temizleyip yeniden deneyin. Sorun sürerse kısayolu silip Safari\'den tekrar Ana Ekrana Ekleyin.' +
+          '</span>' +
+          '<button type="button" onclick="window.santijetHardReload()" ' +
+          'style="margin-top:16px;padding:10px 18px;border:none;border-radius:8px;' +
+          'background:#0055FF;color:#fff;font-size:14px;">Önbelleği Temizle</button>';
+      }
+
+      function hideLoadingOverlay() {
+        var el = document.getElementById('santijet-loading');
+        if (el) el.remove();
+      }
+
+      function isFlutterMounted() {
+        try {
+          if (document.querySelector('flutter-view')) return true;
+          if (document.querySelector('flt-glass-pane')) return true;
+          if (document.querySelector('flt-scene-host')) return true;
+          return !!document.querySelector('canvas');
+        } catch (e) {
+          return false;
+        }
+      }
+
+      function watchFlutterMount() {
+        if (isFlutterMounted()) {
+          hideLoadingOverlay();
+          return;
+        }
+        var flutterObserver = new MutationObserver(function () {
+          if (isFlutterMounted()) {
+            hideLoadingOverlay();
+            flutterObserver.disconnect();
+          }
+        });
+        flutterObserver.observe(document.documentElement, {
+          childList: true,
+          subtree: true,
+        });
+        var attempts = 0;
+        var poll = window.setInterval(function () {
+          attempts += 1;
+          if (isFlutterMounted()) {
+            hideLoadingOverlay();
+            window.clearInterval(poll);
+            flutterObserver.disconnect();
+          } else if (attempts >= 120) {
+            window.clearInterval(poll);
+          }
+        }, 500);
+      }
+
+      window.addEventListener('flutter-first-frame', hideLoadingOverlay, { once: true });
+      if (document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded', watchFlutterMount);
+      } else {
+        watchFlutterMount();
+      }
+      setTimeout(showSlowLoadHelp, 20000);
+
+      var storedVersion = localStorage.getItem('santijet_tahvil_app_version');
+      var sessionReloadKey = 'santijet_tahvil_reload_' + APP_VERSION;
+      if (storedVersion !== APP_VERSION && storedVersion !== null &&
+          !sessionStorage.getItem(sessionReloadKey)) {
+        localStorage.setItem('santijet_tahvil_app_version', APP_VERSION);
+        sessionStorage.setItem(sessionReloadKey, '1');
+        clearAppCaches().finally(function () { location.reload(); });
+      } else {
+        localStorage.setItem('santijet_tahvil_app_version', APP_VERSION);
+      }
+
+      if (isIOS && isStandalone) {
+        var resetScroll = function () {
+          window.scrollTo(0, 0);
+          document.documentElement.scrollTop = 0;
+          document.body.scrollTop = 0;
+        };
+        window.addEventListener('scroll', resetScroll, { passive: true });
+        if (window.visualViewport) {
+          window.visualViewport.addEventListener('resize', resetScroll);
+        }
+      }
+
+      window.__SANTIJET_APP_VERSION__ = APP_VERSION;
+    })();
+  </script>
+</head>
+<body>
+  <div id="santijet-loading">ŞantiJET Tahvil yükleniyor…</div>
+  <script>
+    (function () {
+      var version = window.__SANTIJET_APP_VERSION__ || Date.now();
+      var boot = document.createElement('script');
+      boot.src = 'flutter_bootstrap.js?v=' + version;
+      boot.async = true;
+      document.body.appendChild(boot);
+    })();
+  </script>
+</body>
+</html>

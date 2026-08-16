@@ -26,6 +26,8 @@
     "dev:ana:web": "cd artifacts/santijet-ana && flutter run -d chrome",
     "dev:muhendis": "cd artifacts/santijet-muhendis && flutter run -d chrome",
     "dev:muhendis:web": "cd artifacts/santijet-muhendis && flutter run -d chrome",
+    "dev:tahvil": "cd artifacts/santijet-tahvil && flutter run -d chrome",
+    "dev:tahvil:web": "cd artifacts/santijet-tahvil && flutter run -d chrome",
     "dev:mockup": "PORT=8081 BASE_PATH=/__mockup pnpm --filter @workspace/mockup-sandbox run dev"
   },
   "private": true,

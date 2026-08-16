@@ -1,0 +1,21 @@
+---
+description: ŞantiJET Tahvil — ayrı ürün, DEMİR’e karıştırma.
+globs: artifacts/santijet-tahvil/**
+alwaysApply: false
+---
+
+# ŞantiJET Tahvil
+
+Klasör `artifacts/santijet-tahvil`. Staging: `/tahvil/`
+(https://ruguikayrit.github.io/SantiJET/tahvil/).
+
+Özet: `artifacts/santijet-tahvil/AGENTS.md`.
+
+- Alt nav: **Hesap · Tablo · Kayıtlar**. Ayarlar navda yok
+  (`SantijetHeader` dişli → `/ayarlar`).
+- Bildirim zili ve avatar yok.
+- Abonelik / hesap / bulut yok. Hive `tahvil_` önekli.
+- DEMİR fire analizi veya sipariş ekranını kopyalama. Tahvil hesabını
+  DEMİR / Beton / PRO içine taşıma.
+
+Deploy: kullanıcı `deploy et` deyince `staging` push.

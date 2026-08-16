@@ -13,6 +13,7 @@ on:
       - 'artifacts/santijet-malzeme/**'
       - 'artifacts/santijet-ana/**'
       - 'artifacts/santijet-muhendis/**'
+      - 'artifacts/santijet-tahvil/**'
       - '.github/workflows/deploy-github-pages.yml'
       - '.github/scripts/**'
   workflow_dispatch:
@@ -215,6 +216,28 @@ jobs:
             exit 1
           fi
 
+      - name: Setup Flutter (Tahvil)
+        uses: subosito/flutter-action@v2
+        with:
+          channel: stable
+          flutter-version: '3.44.3'
+          cache: true
+          cache-key: flutter-tahvil-3.44.3
+
+      - name: Build Tahvil web (staging preview)
+        id: tahvil_build
+        env:
+          GITHUB_REPOSITORY_NAME: ${{ github.event.repository.name }}
+        run: |
+          if [ -f staging-src/.github/scripts/build-tahvil-pages.sh ]; then
+            bash staging-src/.github/scripts/build-tahvil-pages.sh
+          elif [ -f .github/scripts/build-tahvil-pages.sh ]; then
+            bash .github/scripts/build-tahvil-pages.sh
+          else
+            echo "::error::build-tahvil-pages.sh missing on main and staging"
+            exit 1
+          fi
+
       - name: Verify site bundle
         run: |
           test -f site/index.html
@@ -253,6 +276,9 @@ jobs:
             echo "::error::Mühendis bundle missing (site/muhendis/index.html). Refusing to deploy a broken /muhendis/."
             exit 1
           fi
+          if [ ! -f site/tahvil/index.html ]; then
+            echo "::warning::Tahvil bundle missing (site/tahvil/index.html)."
+          fi
           echo "Site bundle OK:"
           find site -maxdepth 3 -type f -name 'index.html' | sort
 
@@ -278,3 +304,4 @@ jobs:
           echo "Malzeme: https://${{ github.repository_owner }}.github.io/${{ github.event.repository.name }}/malzeme/"
           echo "PRO staging: https://${{ github.repository_owner }}.github.io/${{ github.event.repository.name }}/pro/"
           echo "Mühendis staging: https://${{ github.repository_owner }}.github.io/${{ github.event.repository.name }}/muhendis/"
+          echo "Tahvil staging: https://${{ github.repository_owner }}.github.io/${{ github.event.repository.name }}/tahvil/"

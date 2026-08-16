@@ -10,6 +10,7 @@ Türkçe inşaat şantiye yönetim uygulaması. pnpm monorepo yapısında birden
 | **Maliyet (Flutter)** | `artifacts/santijet-bfa-flutter` | **Aktif** — ŞantiJET Maliyet (`/maliyet/`) |
 | **BETON (Flutter)** | `artifacts/santijet-beton` | **Aktif** — Mevcut beton uygulaması (`/beton/`) |
 | **Mühendis (Flutter)** | `artifacts/santijet-muhendis` | **Aktif** — TBDY-2018 çelik birleşim hesabı |
+| **Tahvil (Flutter)** | `artifacts/santijet-tahvil` | **Aktif** — ŞantiJET Tahvil (`/tahvil/`), tek fiyat |
 | B.F.A. (RN arşiv) | `artifacts/imalat-poz-analizleri` | Emekli — yalnızca referans |
 | Mobil uygulama (RN) | `artifacts/santiye-takip` | Expo — ana şantiye takip, splash **PRO** (korunur) |
 | **Ana / PRO (Flutter)** | `artifacts/santijet-ana` | **Aktif Flutter hub** — RN ile aynı kurgu, 16 modül |
@@ -75,6 +76,14 @@ pnpm dev:muhendis
 ```
 
 Agent brief: [`AGENT_BRIEF.md`](./AGENT_BRIEF.md).
+
+### Tahvil — demir tahvil hesabı (Flutter)
+
+```bash
+pnpm dev:tahvil
+```
+
+Tek fiyat, abonelik yok. Staging: https://ruguikayrit.github.io/SantiJET/tahvil/
 
 ### B.F.A. — RN arşiv (emekli, yalnızca referans)
 
