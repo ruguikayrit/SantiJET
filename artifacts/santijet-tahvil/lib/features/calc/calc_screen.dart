@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
-import '../../core/constants/app_info.dart';
 import '../../core/design_system/sj_button.dart';
 import '../../core/design_system/sj_card.dart';
 import '../../core/design_system/sj_status_badge.dart';
@@ -15,7 +14,6 @@ import '../../data/rebar_weight.dart';
 import '../../data/records_store.dart';
 import '../../domain/tahvil_calculator.dart';
 import '../../domain/tahvil_record.dart';
-import '../../domain/tahvil_rules.dart';
 
 /// Saha tahvil hesaplayıcısı — canlı sonuç, tek dokunuşla kayıt.
 class CalcScreen extends ConsumerStatefulWidget {
@@ -99,17 +97,8 @@ class _CalcScreenState extends ConsumerState<CalcScreen> {
             const SantijetHeader(showWordmark: true),
             Expanded(
               child: ListView(
-                padding: const EdgeInsets.fromLTRB(16, 4, 16, 32),
+                padding: const EdgeInsets.fromLTRB(16, 8, 16, 32),
                 children: [
-                  Text(
-                    AppInfo.tagline,
-                    style: AppTypography.bodySmall.copyWith(
-                      color: AppColors.textSecondary,
-                    ),
-                  ),
-                  const SizedBox(height: AppSpacing.sm),
-                  _RuleStrip(),
-                  const SizedBox(height: AppSpacing.md),
                   _KindHeadings(
                     selected: _kind,
                     onChanged: (value) => setState(() => _kind = value),
@@ -168,32 +157,6 @@ class _CalcScreenState extends ConsumerState<CalcScreen> {
               ),
             ),
           ],
-        ),
-      ),
-    );
-  }
-}
-
-class _RuleStrip extends StatelessWidget {
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
-      decoration: BoxDecoration(
-        color: AppColors.surface,
-        borderRadius: AppRadii.sm,
-        border: Border.all(
-          color: AppColors.electricBlue.withValues(alpha: 0.22),
-        ),
-      ),
-      child: Text(
-        '±$tahvilMaxDiameterDiffMm mm çap  ·  kesit ≥ proje  ·  '
-        'fazla ≤ %${(tahvilMaxAreaDeviationRatio * 100).toStringAsFixed(0)}  ·  '
-        'aralık ≤ ${tahvilMaxSpacingCm.toStringAsFixed(0)} cm',
-        style: AppTypography.labelSmall.copyWith(
-          color: AppColors.textSecondary,
-          letterSpacing: 0.1,
-          height: 1.35,
         ),
       ),
     );
