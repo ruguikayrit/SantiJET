@@ -87,7 +87,6 @@ class SettingsScreen extends ConsumerWidget {
                       ('santijet', 'ŞantiJET'),
                       ('light', 'Açık'),
                       ('dark', 'Koyu'),
-                      ('system', 'Sistem'),
                     ])
                       _ThemeChip(
                         label: option.$2,
@@ -113,7 +112,7 @@ class SettingsScreen extends ConsumerWidget {
                   '• Hedef kesit proje kesitine eşit veya büyük\n'
                   '• Fazla kesit en fazla %${(tahvilMaxAreaDeviationRatio * 100).toStringAsFixed(0)}\n'
                   '• Donatı aralığı en fazla ${tahvilMaxSpacingCm.toStringAsFixed(0)} cm\n'
-                  '• Standart çaplar: Ø8–Ø32',
+                  '• Standart çaplar: Ø8–Ø50',
                   style: AppTypography.cardBodyMedium.copyWith(height: 1.45),
                 ),
               ],

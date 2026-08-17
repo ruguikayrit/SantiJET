@@ -1,6 +1,8 @@
 /// Türkiye'de yaygın demir ağırlık formülü: kg/m = d² / 162.
 abstract final class RebarWeight {
-  static const standardDiameters = [8, 10, 12, 14, 16, 18, 20, 22, 25, 28, 32];
+  static const standardDiameters = [
+    8, 10, 12, 14, 16, 18, 20, 22, 25, 28, 32, 36, 40, 50,
+  ];
 
   static bool isStandard(int diameterMm) =>
       standardDiameters.contains(diameterMm);

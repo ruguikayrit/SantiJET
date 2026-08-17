@@ -26,28 +26,39 @@ class CalcScreen extends ConsumerStatefulWidget {
 }
 
 class _CalcScreenState extends ConsumerState<CalcScreen> {
-  TahvilCalculatorBasis _basis = TahvilCalculatorBasis.spacing;
+  TahvilBarKind _kind = TahvilBarKind.one;
+  TahvilMeasure _measure = TahvilMeasure.spacing;
 
-  int _sourceDiameter = 16;
-  int _sourceDiameterB = 12;
+  int _oneDiameter = 16;
+  int _twoDiameterA = 16;
+  int _twoDiameterB = 12;
 
-  late final TextEditingController _spacingCtrl;
-  late final TextEditingController _quantityCtrl;
-  late final TextEditingController _quantityBCtrl;
+  late final TextEditingController _oneSpacingCtrl;
+  late final TextEditingController _oneQuantityCtrl;
+  late final TextEditingController _twoSpacingACtrl;
+  late final TextEditingController _twoSpacingBCtrl;
+  late final TextEditingController _twoQuantityACtrl;
+  late final TextEditingController _twoQuantityBCtrl;
 
   @override
   void initState() {
     super.initState();
-    _spacingCtrl = TextEditingController(text: '15');
-    _quantityCtrl = TextEditingController(text: '10');
-    _quantityBCtrl = TextEditingController(text: '8');
+    _oneSpacingCtrl = TextEditingController(text: '15');
+    _oneQuantityCtrl = TextEditingController(text: '10');
+    _twoSpacingACtrl = TextEditingController(text: '15');
+    _twoSpacingBCtrl = TextEditingController(text: '20');
+    _twoQuantityACtrl = TextEditingController(text: '10');
+    _twoQuantityBCtrl = TextEditingController(text: '8');
   }
 
   @override
   void dispose() {
-    _spacingCtrl.dispose();
-    _quantityCtrl.dispose();
-    _quantityBCtrl.dispose();
+    _oneSpacingCtrl.dispose();
+    _oneQuantityCtrl.dispose();
+    _twoSpacingACtrl.dispose();
+    _twoSpacingBCtrl.dispose();
+    _twoQuantityACtrl.dispose();
+    _twoQuantityBCtrl.dispose();
     super.dispose();
   }
 
@@ -61,7 +72,7 @@ class _CalcScreenState extends ConsumerState<CalcScreen> {
     final record = TahvilRecord(
       id: DateTime.now().millisecondsSinceEpoch.toString(),
       createdAt: DateTime.now(),
-      basis: _basis.label,
+      basis: '${_kind.label} · ${_measure.label}',
       summary: summary,
       detail: detail,
       isAllowed: allowed,
@@ -99,37 +110,56 @@ class _CalcScreenState extends ConsumerState<CalcScreen> {
                   const SizedBox(height: AppSpacing.sm),
                   _RuleStrip(),
                   const SizedBox(height: AppSpacing.md),
-                  _ModeBar(
-                    selected: _basis,
-                    onChanged: (value) => setState(() => _basis = value),
+                  _KindHeadings(
+                    selected: _kind,
+                    onChanged: (value) => setState(() => _kind = value),
+                  ),
+                  const SizedBox(height: AppSpacing.sm),
+                  _MeasureBar(
+                    selected: _measure,
+                    onChanged: (value) => setState(() => _measure = value),
                   ),
                   const SizedBox(height: AppSpacing.md),
-                  switch (_basis) {
-                    TahvilCalculatorBasis.spacing => _SpacingPanel(
-                        diameter: _sourceDiameter,
-                        spacingCtrl: _spacingCtrl,
-                        onDiameter: (d) =>
-                            setState(() => _sourceDiameter = d),
+                  switch ((_kind, _measure)) {
+                    (TahvilBarKind.one, TahvilMeasure.spacing) =>
+                      _SpacingPanel(
+                        diameter: _oneDiameter,
+                        spacingCtrl: _oneSpacingCtrl,
+                        onDiameter: (d) => setState(() => _oneDiameter = d),
                         onChanged: _refresh,
                         onSave: _save,
                       ),
-                    TahvilCalculatorBasis.quantity => _QuantityPanel(
-                        diameter: _sourceDiameter,
-                        quantityCtrl: _quantityCtrl,
-                        onDiameter: (d) =>
-                            setState(() => _sourceDiameter = d),
+                    (TahvilBarKind.one, TahvilMeasure.quantity) =>
+                      _QuantityPanel(
+                        diameter: _oneDiameter,
+                        quantityCtrl: _oneQuantityCtrl,
+                        onDiameter: (d) => setState(() => _oneDiameter = d),
                         onChanged: _refresh,
                         onSave: _save,
                       ),
-                    TahvilCalculatorBasis.dual => _DualPanel(
-                        diameterA: _sourceDiameter,
-                        diameterB: _sourceDiameterB,
-                        quantityACtrl: _quantityCtrl,
-                        quantityBCtrl: _quantityBCtrl,
+                    (TahvilBarKind.two, TahvilMeasure.spacing) =>
+                      _DualSpacingPanel(
+                        diameterA: _twoDiameterA,
+                        diameterB: _twoDiameterB,
+                        spacingACtrl: _twoSpacingACtrl,
+                        spacingBCtrl: _twoSpacingBCtrl,
                         onDiameterA: (d) =>
-                            setState(() => _sourceDiameter = d),
+                            setState(() => _twoDiameterA = d),
                         onDiameterB: (d) =>
-                            setState(() => _sourceDiameterB = d),
+                            setState(() => _twoDiameterB = d),
+                        onChanged: _refresh,
+                        onSave: _save,
+                      ),
+                    (TahvilBarKind.two, TahvilMeasure.quantity) =>
+                      _DualPanel(
+                        diameterA: _twoDiameterA,
+                        diameterB: _twoDiameterB,
+                        quantityACtrl: _twoQuantityACtrl,
+                        quantityBCtrl: _twoQuantityBCtrl,
+                        onDiameterA: (d) =>
+                            setState(() => _twoDiameterA = d),
+                        onDiameterB: (d) =>
+                            setState(() => _twoDiameterB = d),
                         onChanged: _refresh,
                         onSave: _save,
                       ),
@@ -170,11 +200,61 @@ class _RuleStrip extends StatelessWidget {
   }
 }
 
-class _ModeBar extends StatelessWidget {
-  const _ModeBar({required this.selected, required this.onChanged});
+class _KindHeadings extends StatelessWidget {
+  const _KindHeadings({required this.selected, required this.onChanged});
 
-  final TahvilCalculatorBasis selected;
-  final ValueChanged<TahvilCalculatorBasis> onChanged;
+  final TahvilBarKind selected;
+  final ValueChanged<TahvilBarKind> onChanged;
+
+  @override
+  Widget build(BuildContext context) {
+    return Row(
+      children: [
+        for (final kind in TahvilBarKind.values)
+          Expanded(
+            child: GestureDetector(
+              behavior: HitTestBehavior.opaque,
+              onTap: () => onChanged(kind),
+              child: Padding(
+                padding: const EdgeInsets.only(bottom: 2),
+                child: Column(
+                  children: [
+                    Text(
+                      kind.label,
+                      textAlign: TextAlign.center,
+                      style: AppTypography.headlineMedium.copyWith(
+                        color: selected == kind
+                            ? AppColors.textPrimary
+                            : AppColors.textSecondary,
+                        fontWeight: FontWeight.w800,
+                      ),
+                    ),
+                    const SizedBox(height: 8),
+                    AnimatedContainer(
+                      duration: const Duration(milliseconds: 180),
+                      height: 3,
+                      decoration: BoxDecoration(
+                        color: selected == kind
+                            ? AppColors.electricBlue
+                            : Colors.transparent,
+                        borderRadius: AppRadii.xs,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+          ),
+      ],
+    );
+  }
+}
+
+class _MeasureBar extends StatelessWidget {
+  const _MeasureBar({required this.selected, required this.onChanged});
+
+  final TahvilMeasure selected;
+  final ValueChanged<TahvilMeasure> onChanged;
 
   @override
   Widget build(BuildContext context) {
@@ -187,25 +267,25 @@ class _ModeBar extends StatelessWidget {
       ),
       child: Row(
         children: [
-          for (final mode in TahvilCalculatorBasis.values)
+          for (final measure in TahvilMeasure.values)
             Expanded(
               child: GestureDetector(
                 behavior: HitTestBehavior.opaque,
-                onTap: () => onChanged(mode),
+                onTap: () => onChanged(measure),
                 child: AnimatedContainer(
                   duration: const Duration(milliseconds: 180),
                   padding: const EdgeInsets.symmetric(vertical: 10),
                   decoration: BoxDecoration(
-                    color: selected == mode
+                    color: selected == measure
                         ? AppColors.electricBlue
                         : Colors.transparent,
                     borderRadius: AppRadii.xs,
                   ),
                   child: Text(
-                    mode.label,
+                    measure.label,
                     textAlign: TextAlign.center,
                     style: AppTypography.labelLarge.copyWith(
-                      color: selected == mode
+                      color: selected == measure
                           ? Colors.white
                           : AppColors.textSecondary,
                       fontWeight: FontWeight.w700,
@@ -410,6 +490,122 @@ class _QuantityPanel extends StatelessWidget {
   }
 }
 
+class _DualSpacingPanel extends StatelessWidget {
+  const _DualSpacingPanel({
+    required this.diameterA,
+    required this.diameterB,
+    required this.spacingACtrl,
+    required this.spacingBCtrl,
+    required this.onDiameterA,
+    required this.onDiameterB,
+    required this.onChanged,
+    required this.onSave,
+  });
+
+  final int diameterA;
+  final int diameterB;
+  final TextEditingController spacingACtrl;
+  final TextEditingController spacingBCtrl;
+  final ValueChanged<int> onDiameterA;
+  final ValueChanged<int> onDiameterB;
+  final VoidCallback onChanged;
+  final _SaveFn onSave;
+
+  @override
+  Widget build(BuildContext context) {
+    final spacingA = double.tryParse(spacingACtrl.text.replaceAll(',', '.'));
+    final spacingB = double.tryParse(spacingBCtrl.text.replaceAll(',', '.'));
+    final suggestions =
+        spacingA != null && spacingA > 0 && spacingB != null && spacingB > 0
+            ? computeDualSpacingTahvilSuggestions(
+                sourceDiameterA: diameterA,
+                sourceSpacingMmA: spacingA * 10,
+                sourceDiameterB: diameterB,
+                sourceSpacingMmB: spacingB * 10,
+              )
+            : const <TahvilDualSpacingSuggestion>[];
+    final allowedDual = suggestions.where((s) => s.isAllowed);
+    final recommended = allowedDual.isEmpty ? null : allowedDual.first;
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        _InputCard(
+          title: '1. donatı',
+          child: Column(
+            children: [
+              _DiameterChips(selected: diameterA, onSelected: onDiameterA),
+              const SizedBox(height: AppSpacing.md),
+              _YellowField(
+                label: 'Aralık (cm)',
+                controller: spacingACtrl,
+                onChanged: (_) => onChanged(),
+              ),
+            ],
+          ),
+        ),
+        const SizedBox(height: AppSpacing.sm),
+        _InputCard(
+          title: '2. donatı',
+          child: Column(
+            children: [
+              _DiameterChips(selected: diameterB, onSelected: onDiameterB),
+              const SizedBox(height: AppSpacing.md),
+              _YellowField(
+                label: 'Aralık (cm)',
+                controller: spacingBCtrl,
+                onChanged: (_) => onChanged(),
+              ),
+            ],
+          ),
+        ),
+        const SizedBox(height: AppSpacing.md),
+        if (recommended != null)
+          _HeroResult(
+            fromLabel: '${recommended.legA.label.split(' → ').first} · '
+                '${recommended.legB.label.split(' → ').first}',
+            toLabel: recommended.summary,
+            meta:
+                'As ${formatAreaMm2(recommended.sourceAsPerMeterMm2)} → '
+                '${formatAreaMm2(recommended.targetAsPerMeterMm2)} mm²/m',
+            allowed: true,
+            onSave: () => onSave(
+              summary: recommended.summary,
+              detail:
+                  '2 çeşit aralık · As ${formatAreaMm2(recommended.sourceAsPerMeterMm2)} → '
+                  '${formatAreaMm2(recommended.targetAsPerMeterMm2)} mm²/m',
+              allowed: true,
+            ),
+          )
+        else
+          const _NeedInputCard(
+            text:
+                'İki donatı çapını ve aralığını girin — birlikte tahvil önerilir.',
+          ),
+        if (suggestions.isNotEmpty) ...[
+          const SizedBox(height: AppSpacing.md),
+          Text(
+            'Öneriler',
+            style: AppTypography.titleMedium.copyWith(
+              color: AppColors.textPrimary,
+            ),
+          ),
+          const SizedBox(height: AppSpacing.sm),
+          for (final item in suggestions)
+            _ResultTile(
+              title: item.summary,
+              subtitle: item.isAllowed
+                  ? 'Sapma %${item.areaDeviationPercent.toStringAsFixed(1)}'
+                  : 'Kural dışı veya fazla kesit',
+              allowed: item.isAllowed,
+              adequate: item.isAdequate,
+            ),
+        ],
+      ],
+    );
+  }
+}
+
 class _DualPanel extends StatelessWidget {
   const _DualPanel({
     required this.diameterA,
@@ -450,7 +646,7 @@ class _DualPanel extends StatelessWidget {
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
         _InputCard(
-          title: '1. çeşit',
+          title: '1. donatı',
           child: Column(
             children: [
               _DiameterChips(selected: diameterA, onSelected: onDiameterA),
@@ -466,7 +662,7 @@ class _DualPanel extends StatelessWidget {
         ),
         const SizedBox(height: AppSpacing.sm),
         _InputCard(
-          title: '2. çeşit',
+          title: '2. donatı',
           child: Column(
             children: [
               _DiameterChips(selected: diameterB, onSelected: onDiameterB),

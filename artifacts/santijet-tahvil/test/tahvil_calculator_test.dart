@@ -83,4 +83,38 @@ void main() {
       );
     });
   });
+
+  group('diameters to Ø50', () {
+    test('allows ±4 mm pairs on large bars', () {
+      expect(isTahvilDiameterAllowed(32, 36), isTrue);
+      expect(isTahvilDiameterAllowed(36, 40), isTrue);
+      expect(isTahvilDiameterAllowed(50, 40), isFalse);
+    });
+
+    test('spacing tahvil includes Ø36–Ø50 as targets', () {
+      final results = computeSpacingTahvilResults(
+        sourceDiameter: 32,
+        sourceSpacingMm: 200,
+      );
+      expect(results.any((r) => r.targetDiameter == 36), isTrue);
+      expect(results.any((r) => r.targetDiameter == 40), isTrue);
+      expect(results.any((r) => r.targetDiameter == 50), isTrue);
+    });
+  });
+
+  group('dual spacing tahvil', () {
+    test('skips the unchanged-unchanged pair', () {
+      final suggestions = computeDualSpacingTahvilSuggestions(
+        sourceDiameterA: 16,
+        sourceSpacingMmA: 150,
+        sourceDiameterB: 12,
+        sourceSpacingMmB: 200,
+      );
+      expect(suggestions, isNotEmpty);
+      expect(
+        suggestions.any((s) => s.legA.isUnchanged && s.legB.isUnchanged),
+        isFalse,
+      );
+    });
+  });
 }

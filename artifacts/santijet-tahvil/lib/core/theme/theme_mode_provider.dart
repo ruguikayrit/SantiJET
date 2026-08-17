@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:hive/hive.dart';
 
-/// Aktif tema: `light` / `dark` / `santijet` / `santijet_pro` / `system`.
+/// Aktif tema: `light` / `dark` / `santijet` / `santijet_pro`.
 class ThemeModeNotifier extends StateNotifier<String> {
   ThemeModeNotifier(this._box) : super(_read(_box));
 
@@ -13,31 +13,32 @@ class ThemeModeNotifier extends StateNotifier<String> {
     final raw = box.get(_key) as String?;
     final normalized = raw == 'gecejet' ? 'santijet_pro' : raw;
     return switch (normalized) {
-      'light' || 'dark' || 'santijet' || 'santijet_pro' || 'system' =>
-        normalized!,
+      'light' || 'dark' || 'santijet' || 'santijet_pro' => normalized!,
       _ => 'santijet_pro',
     };
   }
 
   Future<void> setThemeMode(String mode) async {
-    state = mode;
-    await _box.put(_key, mode);
+    final next = switch (mode) {
+      'light' || 'dark' || 'santijet' || 'santijet_pro' => mode,
+      _ => 'santijet_pro',
+    };
+    state = next;
+    await _box.put(_key, next);
   }
 }
 
 /// ŞantiJET açık chrome; ŞantiJET Pro koyu chrome; kartlar [AppColors.cardSurface].
 ThemeMode themeModeFromSettings(String mode) => switch (mode) {
       'light' || 'santijet' => ThemeMode.light,
-      'dark' || 'santijet_pro' => ThemeMode.dark,
-      _ => ThemeMode.system,
+      _ => ThemeMode.dark,
     };
 
 String themeLabel(String mode) => switch (mode) {
       'light' => 'Açık',
       'dark' => 'Koyu',
       'santijet' => 'ŞantiJET',
-      'santijet_pro' => 'ŞantiJET Pro',
-      _ => 'Sistem',
+      _ => 'ŞantiJET Pro',
     };
 
 /// Hive `settings` kutusu — bootstrap'ta açılır ve override edilir.

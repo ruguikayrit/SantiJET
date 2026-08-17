@@ -3,12 +3,19 @@ import 'dart:math' as math;
 import '../data/rebar_weight.dart';
 import 'tahvil_rules.dart';
 
-enum TahvilCalculatorBasis {
-  spacing('Aralık'),
-  quantity('Adet'),
-  dual('2 çeşit');
+enum TahvilBarKind {
+  one('1 çeşit'),
+  two('2 çeşit');
 
-  const TahvilCalculatorBasis(this.label);
+  const TahvilBarKind(this.label);
+  final String label;
+}
+
+enum TahvilMeasure {
+  spacing('Aralık'),
+  quantity('Adet');
+
+  const TahvilMeasure(this.label);
   final String label;
 }
 
@@ -450,6 +457,178 @@ List<TahvilDualSuggestion> computeDualQuantityTahvilSuggestions({
           ),
           sourceAreaMm2: sourceAreaMm2,
           targetAreaMm2: targetAreaMm2,
+          areaDeviationPercent: areaCompliance.excessDeviationPercent ?? 0,
+          isAdequate: isAdequate,
+          isOptimal: isOptimal,
+        ),
+      );
+    }
+  }
+
+  suggestions.sort((a, b) {
+    if (a.isOptimal != b.isOptimal) return a.isOptimal ? -1 : 1;
+    if (a.isAdequate != b.isAdequate) return a.isAdequate ? -1 : 1;
+    return a.areaDeviationPercent.compareTo(b.areaDeviationPercent);
+  });
+
+  if (suggestions.length <= maxSuggestions) return suggestions;
+  return suggestions.sublist(0, maxSuggestions);
+}
+
+class TahvilDualSpacingLeg {
+  const TahvilDualSpacingLeg({
+    required this.sourceDiameter,
+    required this.sourceSpacingMm,
+    required this.targetDiameter,
+    required this.targetSpacingMm,
+  });
+
+  final int sourceDiameter;
+  final double sourceSpacingMm;
+  final int targetDiameter;
+  final double targetSpacingMm;
+
+  bool get isUnchanged =>
+      sourceDiameter == targetDiameter &&
+      (sourceSpacingMm - targetSpacingMm).abs() < 1e-6;
+
+  String get label => isUnchanged
+      ? 'Ø$sourceDiameter / ${formatCm(sourceSpacingMm / 10)} cm (aynı)'
+      : 'Ø$sourceDiameter / ${formatCm(sourceSpacingMm / 10)} cm → '
+          'Ø$targetDiameter / ${formatCm(targetSpacingMm / 10)} cm';
+}
+
+class TahvilDualSpacingSuggestion {
+  const TahvilDualSpacingSuggestion({
+    required this.id,
+    required this.legA,
+    required this.legB,
+    required this.sourceAsPerMeterMm2,
+    required this.targetAsPerMeterMm2,
+    required this.areaDeviationPercent,
+    required this.isAdequate,
+    required this.isOptimal,
+  });
+
+  final String id;
+  final TahvilDualSpacingLeg legA;
+  final TahvilDualSpacingLeg legB;
+  final double sourceAsPerMeterMm2;
+  final double targetAsPerMeterMm2;
+  final double areaDeviationPercent;
+  final bool isAdequate;
+  final bool isOptimal;
+
+  bool get isAllowed => isOptimal;
+
+  String get summary => '${legA.label} · ${legB.label}';
+}
+
+class _DualSpacingLegOption {
+  const _DualSpacingLegOption({
+    required this.targetDiameter,
+    required this.targetSpacingMm,
+    required this.isUnchanged,
+    this.isAllowed = true,
+  });
+
+  final int targetDiameter;
+  final double targetSpacingMm;
+  final bool isUnchanged;
+  final bool isAllowed;
+}
+
+List<_DualSpacingLegOption> _dualSpacingLegOptions({
+  required int sourceDiameter,
+  required double sourceSpacingMm,
+}) {
+  final options = <_DualSpacingLegOption>[
+    _DualSpacingLegOption(
+      targetDiameter: sourceDiameter,
+      targetSpacingMm: sourceSpacingMm,
+      isUnchanged: true,
+    ),
+  ];
+
+  for (final result in computeSpacingTahvilResults(
+    sourceDiameter: sourceDiameter,
+    sourceSpacingMm: sourceSpacingMm,
+  )) {
+    options.add(
+      _DualSpacingLegOption(
+        targetDiameter: result.targetDiameter,
+        targetSpacingMm: result.resultingSpacingMm,
+        isUnchanged: false,
+        isAllowed: result.isAllowed,
+      ),
+    );
+  }
+
+  return options;
+}
+
+List<TahvilDualSpacingSuggestion> computeDualSpacingTahvilSuggestions({
+  required int sourceDiameterA,
+  required double sourceSpacingMmA,
+  required int sourceDiameterB,
+  required double sourceSpacingMmB,
+  int maxSuggestions = 8,
+}) {
+  if (sourceDiameterA <= 0 ||
+      sourceDiameterB <= 0 ||
+      sourceSpacingMmA <= 0 ||
+      sourceSpacingMmB <= 0) {
+    return const [];
+  }
+
+  final optionsA = _dualSpacingLegOptions(
+    sourceDiameter: sourceDiameterA,
+    sourceSpacingMm: sourceSpacingMmA,
+  );
+  final optionsB = _dualSpacingLegOptions(
+    sourceDiameter: sourceDiameterB,
+    sourceSpacingMm: sourceSpacingMmB,
+  );
+
+  final sourceAs = computeAsPerMeterMm2(sourceDiameterA, sourceSpacingMmA) +
+      computeAsPerMeterMm2(sourceDiameterB, sourceSpacingMmB);
+  final suggestions = <TahvilDualSpacingSuggestion>[];
+
+  for (final optA in optionsA) {
+    for (final optB in optionsB) {
+      if (optA.isUnchanged && optB.isUnchanged) continue;
+
+      final targetAs =
+          computeAsPerMeterMm2(optA.targetDiameter, optA.targetSpacingMm) +
+              computeAsPerMeterMm2(optB.targetDiameter, optB.targetSpacingMm);
+      final areaCompliance = evaluateTahvilAreaCompliance(
+        sourceAreaMm2: sourceAs,
+        targetAreaMm2: targetAs,
+      );
+      final legRuleOk =
+          (optA.isUnchanged || optA.isAllowed) &&
+          (optB.isUnchanged || optB.isAllowed);
+      final isAdequate = legRuleOk && areaCompliance.isAdequate;
+      final isOptimal = legRuleOk && areaCompliance.isOptimal;
+
+      suggestions.add(
+        TahvilDualSpacingSuggestion(
+          id: '${optA.targetDiameter}-${optA.targetSpacingMm}_'
+              '${optB.targetDiameter}-${optB.targetSpacingMm}',
+          legA: TahvilDualSpacingLeg(
+            sourceDiameter: sourceDiameterA,
+            sourceSpacingMm: sourceSpacingMmA,
+            targetDiameter: optA.targetDiameter,
+            targetSpacingMm: optA.targetSpacingMm,
+          ),
+          legB: TahvilDualSpacingLeg(
+            sourceDiameter: sourceDiameterB,
+            sourceSpacingMm: sourceSpacingMmB,
+            targetDiameter: optB.targetDiameter,
+            targetSpacingMm: optB.targetSpacingMm,
+          ),
+          sourceAsPerMeterMm2: sourceAs,
+          targetAsPerMeterMm2: targetAs,
           areaDeviationPercent: areaCompliance.excessDeviationPercent ?? 0,
           isAdequate: isAdequate,
           isOptimal: isOptimal,

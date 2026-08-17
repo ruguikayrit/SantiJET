@@ -27,7 +27,7 @@ DEMİR tahvil motoru ile aynı saha kuralları; kopyala-yapıştır başka ürü
 - Hedef As ≥ proje As
 - Fazla kesit ≤ %5
 - Aralık ≤ 25 cm
-- Standart çap: 8, 10, 12, 14, 16, 18, 20, 22, 25, 28, 32
+- Standart çap: 8, 10, 12, 14, 16, 18, 20, 22, 25, 28, 32, 36, 40, 50
 
 ## Git / deploy
 
