@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:share_plus/share_plus.dart';
 import 'package:url_launcher/url_launcher.dart';
 
 import '../../core/constants/app_info.dart';
@@ -12,6 +11,7 @@ import '../../core/theme/app_colors.dart';
 import '../../core/theme/app_radii.dart';
 import '../../core/theme/app_spacing.dart';
 import '../../core/utils/app_date.dart';
+import '../../core/utils/whatsapp_phone.dart';
 import '../../core/widgets/santijet_header.dart';
 import '../../data/providers/app_data_provider.dart';
 import '../../domain/beton_progress.dart';
@@ -121,26 +121,28 @@ class ProgramScreen extends ConsumerWidget {
       if (order.notes.isNotEmpty) 'Not: ${order.notes}',
     ];
     final text = lines.join('\n');
+    final digits = WhatsAppPhone.toWaMeDigits(project.whatsappNumber);
+    if (digits == null) {
+      if (!context.mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text(
+            'Önce projeye sipariş WhatsApp numarası ekleyin '
+            '(Ayarlar → Projelerim → düzenle).',
+          ),
+        ),
+      );
+      return;
+    }
 
     var shared = false;
     try {
-      final uri = Uri.parse(
-        'https://wa.me/?text=${Uri.encodeComponent(text)}',
-      );
+      final uri = WhatsAppPhone.chatUri(digits: digits, text: text);
       if (await canLaunchUrl(uri)) {
         shared = await launchUrl(uri, mode: LaunchMode.externalApplication);
       }
     } catch (_) {
       shared = false;
-    }
-
-    if (!shared) {
-      try {
-        await Share.share(text, subject: 'ŞantiJET Beton Sipariş');
-        shared = true;
-      } catch (_) {
-        shared = false;
-      }
     }
 
     if (shared) {
@@ -152,8 +154,8 @@ class ProgramScreen extends ConsumerWidget {
       SnackBar(
         content: Text(
           shared
-              ? 'Sipariş paylaşıldı'
-              : 'Paylaşım açılamadı — metni kopyalayın',
+              ? 'Sipariş WhatsApp sohbetine gönderildi — Gönder’e basın'
+              : 'WhatsApp açılamadı',
         ),
       ),
     );

@@ -96,12 +96,18 @@ class ProjectsNotifier extends StateNotifier<List<Project>> {
   void _persist() =>
       _writeList(_box, _key, state.map((e) => e.toJson()).toList());
 
-  Project add({required String name, String code = '', String company = ''}) {
+  Project add({
+    required String name,
+    String code = '',
+    String company = '',
+    String whatsappNumber = '',
+  }) {
     final project = Project(
       id: IdGen.make('prj'),
       name: name.trim(),
       code: code.trim(),
       company: company.trim(),
+      whatsappNumber: whatsappNumber.trim(),
       createdAt: DateTime.now(),
     );
     state = [...state, project];

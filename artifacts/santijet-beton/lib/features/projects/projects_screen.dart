@@ -124,26 +124,38 @@ class _ProjectsScreenState extends ConsumerState<ProjectsScreen> {
     final messenger = ScaffoldMessenger.of(context);
     final nameCtrl = TextEditingController();
     final locationCtrl = TextEditingController(text: 'İstanbul');
+    final waCtrl = TextEditingController();
 
     final created = await showDialog<bool>(
       context: context,
       builder: (ctx) => AlertDialog(
         backgroundColor: AppColors.surfaceElevated,
         title: const Text('Yeni Proje'),
-        content: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            TextField(
-              controller: nameCtrl,
-              autofocus: true,
-              decoration: const InputDecoration(labelText: 'Proje Adı'),
-            ),
-            const SizedBox(height: 8),
-            TextField(
-              controller: locationCtrl,
-              decoration: const InputDecoration(labelText: 'Konum'),
-            ),
-          ],
+        content: SingleChildScrollView(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              TextField(
+                controller: nameCtrl,
+                autofocus: true,
+                decoration: const InputDecoration(labelText: 'Proje Adı'),
+              ),
+              const SizedBox(height: 8),
+              TextField(
+                controller: locationCtrl,
+                decoration: const InputDecoration(labelText: 'Konum'),
+              ),
+              const SizedBox(height: 8),
+              TextField(
+                controller: waCtrl,
+                keyboardType: TextInputType.phone,
+                decoration: const InputDecoration(
+                  labelText: 'Sipariş WhatsApp numarası',
+                  hintText: '05xx xxx xx xx',
+                ),
+              ),
+            ],
+          ),
         ),
         actions: [
           TextButton(
@@ -160,8 +172,10 @@ class _ProjectsScreenState extends ConsumerState<ProjectsScreen> {
 
     final name = nameCtrl.text.trim();
     final location = locationCtrl.text.trim();
+    final whatsappNumber = waCtrl.text.trim();
     nameCtrl.dispose();
     locationCtrl.dispose();
+    waCtrl.dispose();
 
     if (created != true || !context.mounted) return;
     if (name.isEmpty) {
@@ -176,6 +190,7 @@ class _ProjectsScreenState extends ConsumerState<ProjectsScreen> {
           name: name,
           code: code,
           company: location,
+          whatsappNumber: whatsappNumber,
         );
     ref.read(activeProjectIdProvider.notifier).set(project.id);
     messenger.showSnackBar(
@@ -199,32 +214,44 @@ class _ProjectsScreenState extends ConsumerState<ProjectsScreen> {
     final nameCtrl = TextEditingController(text: existing.name);
     final locationCtrl = TextEditingController(text: existing.company);
     final codeCtrl = TextEditingController(text: existing.code);
+    final waCtrl = TextEditingController(text: existing.whatsappNumber);
 
     final saved = await showDialog<bool>(
       context: context,
       builder: (ctx) => AlertDialog(
         backgroundColor: AppColors.surfaceElevated,
         title: const Text('Projeyi düzenle'),
-        content: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            TextField(
-              controller: nameCtrl,
-              autofocus: true,
-              decoration: const InputDecoration(labelText: 'Proje Adı'),
-            ),
-            const SizedBox(height: 8),
-            TextField(
-              controller: locationCtrl,
-              decoration: const InputDecoration(labelText: 'Konum'),
-            ),
-            const SizedBox(height: 8),
-            TextField(
-              controller: codeCtrl,
-              textCapitalization: TextCapitalization.characters,
-              decoration: const InputDecoration(labelText: 'Proje Kodu'),
-            ),
-          ],
+        content: SingleChildScrollView(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              TextField(
+                controller: nameCtrl,
+                autofocus: true,
+                decoration: const InputDecoration(labelText: 'Proje Adı'),
+              ),
+              const SizedBox(height: 8),
+              TextField(
+                controller: locationCtrl,
+                decoration: const InputDecoration(labelText: 'Konum'),
+              ),
+              const SizedBox(height: 8),
+              TextField(
+                controller: codeCtrl,
+                textCapitalization: TextCapitalization.characters,
+                decoration: const InputDecoration(labelText: 'Proje Kodu'),
+              ),
+              const SizedBox(height: 8),
+              TextField(
+                controller: waCtrl,
+                keyboardType: TextInputType.phone,
+                decoration: const InputDecoration(
+                  labelText: 'Sipariş WhatsApp numarası',
+                  hintText: '05xx xxx xx xx',
+                ),
+              ),
+            ],
+          ),
         ),
         actions: [
           TextButton(
@@ -245,14 +272,21 @@ class _ProjectsScreenState extends ConsumerState<ProjectsScreen> {
     final name = nameCtrl.text.trim();
     final location = locationCtrl.text.trim();
     final code = codeCtrl.text.trim().toUpperCase();
+    final whatsappNumber = waCtrl.text.trim();
     nameCtrl.dispose();
     locationCtrl.dispose();
     codeCtrl.dispose();
+    waCtrl.dispose();
 
     if (saved != true || !context.mounted) return;
 
     ref.read(projectsProvider.notifier).update(
-          existing.copyWith(name: name, company: location, code: code),
+          existing.copyWith(
+            name: name,
+            company: location,
+            code: code,
+            whatsappNumber: whatsappNumber,
+          ),
         );
   }
 
