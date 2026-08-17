@@ -41,7 +41,7 @@ pnpm dev:muhendis
 | DEMİR staging | https://ruguikayrit.github.io/SantiJET/staging/ |
 | BFA | https://ruguikayrit.github.io/SantiJET/bfa/ |
 
-Üstte turuncu **STAGING ÖNİZLEME** bandı görünür.
+Turuncu **STAGING ÖNİZLEME** şeridi yok (`#santijet-staging-banner`); 28px spacer ve `flutter-view { top:28px }` kaydırması yok — Demir / Tahvil ile aynı kurgu. `--dart-define=DEPLOY_CHANNEL=staging` kalır.
 
 ```bash
 # staging branch'e push → /muhendis/ ~3–5 dk içinde güncellenir
