@@ -13,6 +13,7 @@ import '../../domain/entities/concrete_pour.dart';
 import '../../domain/entities/metraj_variance_note.dart';
 import '../../domain/entities/mixer_entry.dart';
 import '../../domain/entities/project.dart';
+import '../../domain/entities/whatsapp_recipient.dart';
 import '../../domain/entities/quality_sample.dart';
 
 final projectsBoxProvider = Provider<Box>(
@@ -100,14 +101,14 @@ class ProjectsNotifier extends StateNotifier<List<Project>> {
     required String name,
     String code = '',
     String company = '',
-    String whatsappNumber = '',
+    List<WhatsAppRecipient> whatsappRecipients = const [],
   }) {
     final project = Project(
       id: IdGen.make('prj'),
       name: name.trim(),
       code: code.trim(),
       company: company.trim(),
-      whatsappNumber: whatsappNumber.trim(),
+      whatsappRecipients: whatsappRecipients,
       createdAt: DateTime.now(),
     );
     state = [...state, project];

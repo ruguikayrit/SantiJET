@@ -20,4 +20,26 @@ abstract final class WhatsAppPhone {
       'https://wa.me/$digits?text=${Uri.encodeComponent(text)}',
     );
   }
+
+  /// Geçerli numaraları sırayı koruyarak tekilleştirir.
+  static List<String> uniqueDigits(Iterable<String> rawNumbers) {
+    return uniqueRecipients(
+      rawNumbers.map((raw) => (name: '', number: raw)),
+    ).map((e) => e.number).toList();
+  }
+
+  /// Geçerli alıcıları sırayı koruyarak tekilleştirir; `number` wa.me rakamıdır.
+  static List<({String name, String number})> uniqueRecipients(
+    Iterable<({String name, String number})> items,
+  ) {
+    final seen = <String>{};
+    final out = <({String name, String number})>[];
+    for (final item in items) {
+      final digits = toWaMeDigits(item.number);
+      if (digits == null || seen.contains(digits)) continue;
+      seen.add(digits);
+      out.add((name: item.name.trim(), number: digits));
+    }
+    return out;
+  }
 }

@@ -96,39 +96,42 @@ class HomeScreen extends ConsumerWidget {
                     title: 'Bugünkü Döküm',
                     icon: Icons.local_shipping_outlined,
                     onTap: () => context.go(AppRoutes.dokum),
-                    child: Row(
-                      children: [
-                        Expanded(
-                          child: _MiniStat(
-                            label: 'Gerçekleşen döküm',
-                            value: BetonProgress.fmtM3(todayPoured),
-                            unit: 'm³',
-                            color: AppColors.success,
-                          ),
-                        ),
-                        const SizedBox(width: AppSpacing.xs),
-                        Expanded(
-                          child: _MiniStat(
-                            label: 'Planlanan döküm',
-                            value: BetonProgress.fmtM3(todayOrdered),
-                            unit: 'm³',
-                            color: AppColors.info,
-                          ),
-                        ),
-                        const SizedBox(width: AppSpacing.xs),
-                        Expanded(
-                          child: _MiniStat(
-                            label: 'Fark',
-                            value: BetonProgress.fmtM3(
-                              todayPoured - todayOrdered,
+                    child: IntrinsicHeight(
+                      child: Row(
+                        crossAxisAlignment: CrossAxisAlignment.stretch,
+                        children: [
+                          Expanded(
+                            child: _MiniStat(
+                              label: 'Gerçekleşen döküm',
+                              value: BetonProgress.fmtM3(todayPoured),
+                              unit: 'm³',
+                              color: AppColors.success,
                             ),
-                            unit: 'm³',
-                            color: (todayPoured - todayOrdered).abs() < 0.01
-                                ? AppColors.success
-                                : AppColors.warning,
                           ),
-                        ),
-                      ],
+                          const SizedBox(width: AppSpacing.xs),
+                          Expanded(
+                            child: _MiniStat(
+                              label: 'Planlanan döküm',
+                              value: BetonProgress.fmtM3(todayOrdered),
+                              unit: 'm³',
+                              color: AppColors.info,
+                            ),
+                          ),
+                          const SizedBox(width: AppSpacing.xs),
+                          Expanded(
+                            child: _MiniStat(
+                              label: 'Fark',
+                              value: BetonProgress.fmtM3(
+                                todayPoured - todayOrdered,
+                              ),
+                              unit: 'm³',
+                              color: (todayPoured - todayOrdered).abs() < 0.01
+                                  ? AppColors.success
+                                  : AppColors.warning,
+                            ),
+                          ),
+                        ],
+                      ),
                     ),
                   ),
                   const SizedBox(height: AppSpacing.sm),
@@ -139,35 +142,38 @@ class HomeScreen extends ConsumerWidget {
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.stretch,
                       children: [
-                        Row(
-                          children: [
-                            Expanded(
-                              child: _MiniStat(
-                                label: 'Keşif',
-                                value: BetonProgress.fmtM3(progress.planned),
-                                unit: 'm³',
-                                color: AppColors.electricBlue,
+                        IntrinsicHeight(
+                          child: Row(
+                            crossAxisAlignment: CrossAxisAlignment.stretch,
+                            children: [
+                              Expanded(
+                                child: _MiniStat(
+                                  label: 'Keşif',
+                                  value: BetonProgress.fmtM3(progress.planned),
+                                  unit: 'm³',
+                                  color: AppColors.electricBlue,
+                                ),
                               ),
-                            ),
-                            const SizedBox(width: AppSpacing.xs),
-                            Expanded(
-                              child: _MiniStat(
-                                label: 'Gerçekleşen döküm',
-                                value: BetonProgress.fmtM3(progress.poured),
-                                unit: 'm³',
-                                color: AppColors.success,
+                              const SizedBox(width: AppSpacing.xs),
+                              Expanded(
+                                child: _MiniStat(
+                                  label: 'Gerçekleşen döküm',
+                                  value: BetonProgress.fmtM3(progress.poured),
+                                  unit: 'm³',
+                                  color: AppColors.success,
+                                ),
                               ),
-                            ),
-                            const SizedBox(width: AppSpacing.xs),
-                            Expanded(
-                              child: _MiniStat(
-                                label: 'Kalan',
-                                value: BetonProgress.fmtM3(progress.remaining),
-                                unit: 'm³',
-                                color: AppColors.warning,
+                              const SizedBox(width: AppSpacing.xs),
+                              Expanded(
+                                child: _MiniStat(
+                                  label: 'Kalan',
+                                  value: BetonProgress.fmtM3(progress.remaining),
+                                  unit: 'm³',
+                                  color: AppColors.warning,
+                                ),
                               ),
-                            ),
-                          ],
+                            ],
+                          ),
                         ),
                         const SizedBox(height: AppSpacing.xs),
                         _ProgressBar(pct: progress.progressPct),
@@ -176,47 +182,45 @@ class HomeScreen extends ConsumerWidget {
                   ),
                   const SizedBox(height: AppSpacing.sm),
                   _SummarySection(
-                    title: 'Sipariş · Gerçekleşen',
+                    title: 'Planlanan ve Gerçekleşen',
                     icon: Icons.calendar_month_outlined,
                     onTap: () => context.go(AppRoutes.program),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.stretch,
-                      children: [
-                        Row(
-                          children: [
-                            Expanded(
-                              child: _MiniStat(
-                                label: 'Planlanan döküm',
-                                value: BetonProgress.fmtM3(progress.ordered),
-                                unit: 'm³',
-                                color: AppColors.info,
-                              ),
+                    child: IntrinsicHeight(
+                      child: Row(
+                        crossAxisAlignment: CrossAxisAlignment.stretch,
+                        children: [
+                          Expanded(
+                            child: _MiniStat(
+                              label: 'Planlanan döküm',
+                              value: BetonProgress.fmtM3(progress.ordered),
+                              unit: 'm³',
+                              color: AppColors.info,
                             ),
-                            const SizedBox(width: AppSpacing.xs),
-                            Expanded(
-                              child: _MiniStat(
-                                label: 'Gerçekleşen döküm',
-                                value: BetonProgress.fmtM3(progress.poured),
-                                unit: 'm³',
-                                color: AppColors.success,
-                              ),
+                          ),
+                          const SizedBox(width: AppSpacing.xs),
+                          Expanded(
+                            child: _MiniStat(
+                              label: 'Gerçekleşen döküm',
+                              value: BetonProgress.fmtM3(progress.poured),
+                              unit: 'm³',
+                              color: AppColors.success,
                             ),
-                            const SizedBox(width: AppSpacing.xs),
-                            Expanded(
-                              child: _MiniStat(
-                                label: 'Sipariş farkı',
-                                value: BetonProgress.fmtM3(progress.orderGap),
-                                unit: 'm³',
-                                color: progress.orderGap.abs() < 0.01
-                                    ? AppColors.success
-                                    : progress.orderGap > 0
-                                        ? AppColors.warning
-                                        : AppColors.critical,
-                              ),
+                          ),
+                          const SizedBox(width: AppSpacing.xs),
+                          Expanded(
+                            child: _MiniStat(
+                              label: 'Fark',
+                              value: BetonProgress.fmtM3(progress.orderGap),
+                              unit: 'm³',
+                              color: progress.orderGap.abs() < 0.01
+                                  ? AppColors.success
+                                  : progress.orderGap > 0
+                                      ? AppColors.warning
+                                      : AppColors.critical,
                             ),
-                          ],
-                        ),
-                      ],
+                          ),
+                        ],
+                      ),
                     ),
                   ),
                   const SizedBox(height: AppSpacing.sm),
@@ -510,6 +514,7 @@ class _MiniStat extends StatelessWidget {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     return Container(
+      width: double.infinity,
       padding: const EdgeInsets.symmetric(
         horizontal: AppSpacing.xs,
         vertical: 8,
@@ -520,7 +525,6 @@ class _MiniStat extends StatelessWidget {
         border: Border.all(color: color.withValues(alpha: 0.25)),
       ),
       child: Column(
-        mainAxisSize: MainAxisSize.min,
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Text(

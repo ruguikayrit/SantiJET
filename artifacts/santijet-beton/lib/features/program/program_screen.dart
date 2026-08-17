@@ -121,13 +121,17 @@ class ProgramScreen extends ConsumerWidget {
       if (order.notes.isNotEmpty) 'Not: ${order.notes}',
     ];
     final text = lines.join('\n');
-    final digits = WhatsAppPhone.toWaMeDigits(project.whatsappNumber);
-    if (digits == null) {
+    final recipients = WhatsAppPhone.uniqueRecipients(
+      project.whatsappRecipients.map(
+        (e) => (name: e.name, number: e.number),
+      ),
+    );
+    if (recipients.isEmpty) {
       if (!context.mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
           content: Text(
-            'Önce projeye sipariş WhatsApp numarası ekleyin '
+            'Önce projeye sipariş WhatsApp alıcısı ekleyin '
             '(Ayarlar → Projelerim → düzenle).',
           ),
         ),
@@ -135,17 +139,39 @@ class ProgramScreen extends ConsumerWidget {
       return;
     }
 
-    var shared = false;
-    try {
-      final uri = WhatsAppPhone.chatUri(digits: digits, text: text);
-      if (await canLaunchUrl(uri)) {
-        shared = await launchUrl(uri, mode: LaunchMode.externalApplication);
+    var opened = 0;
+    for (var i = 0; i < recipients.length; i++) {
+      try {
+        final uri = WhatsAppPhone.chatUri(
+          digits: recipients[i].number,
+          text: text,
+        );
+        if (await canLaunchUrl(uri)) {
+          final ok =
+              await launchUrl(uri, mode: LaunchMode.externalApplication);
+          if (ok) opened++;
+        }
+      } catch (_) {}
+
+      if (i < recipients.length - 1) {
+        if (!context.mounted) break;
+        final next = recipients[i + 1];
+        final go = await SJModal.confirm(
+          context: context,
+          title: 'Sonraki alıcı (${i + 2}/${recipients.length})',
+          message: next.name.isEmpty
+              ? 'WhatsApp’ta Gönder’e basın. Devam edince aynı sipariş '
+                  'sıradaki numaraya açılır.'
+              : 'WhatsApp’ta Gönder’e basın. Devam edince aynı sipariş '
+                  '${next.name} kişisine açılır.',
+          confirmLabel: 'Sonrakini aç',
+          cancelLabel: 'Durdur',
+        );
+        if (!go) break;
       }
-    } catch (_) {
-      shared = false;
     }
 
-    if (shared) {
+    if (opened > 0) {
       ref.read(ordersProvider.notifier).markShared(order.id);
     }
 
@@ -153,9 +179,11 @@ class ProgramScreen extends ConsumerWidget {
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
         content: Text(
-          shared
-              ? 'Sipariş WhatsApp sohbetine gönderildi — Gönder’e basın'
-              : 'WhatsApp açılamadı',
+          opened == 0
+              ? 'WhatsApp açılamadı'
+              : opened == 1
+                  ? 'Sipariş WhatsApp sohbetine gönderildi — Gönder’e basın'
+                  : '$opened WhatsApp sohbeti açıldı — her birinde Gönder’e basın',
         ),
       ),
     );

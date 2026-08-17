@@ -24,7 +24,9 @@ Alt nav: **Ana Sayfa · Keşif · Sipariş · Döküm · Test**
 - Sekmeler arası yatay kaydırma kapalı (`popGestureEnabled: false`, `Router.neglect`, `PopScope`).
 - Ana sayfa proje seçici: bottom sheet. Projelerim’e yönlendirme.
 - Döküm kartı hacim kutuları: Planlanan döküm / Gerçekleşen döküm (eski “Sipariş” / “Dökülen” değil; “Plan” da değil).
+- Ana sayfa özet kutuları aynı satırda eşit yükseklik (en yükseğe göre). Üçüncü kart başlığı: Planlanan ve Gerçekleşen; kutusu: Fark (eski “Sipariş · Gerçekleşen” / “Sipariş farkı” değil).
 - Sipariş listesinde tekrarlayan “Siparişler” başlığı yok.
+- Sipariş paylaşımı: projede birden fazla WhatsApp alıcısı; paylaşınca aynı metin hepsine. Kişi seçici yok. Eski tek numara listeye taşınır.
 
 Kaynak: `lib/core/routing/app_router.dart`, `app_routes.dart`, `lib/features/shell/main_shell.dart`, `lib/core/widgets/santijet_header.dart`.
 

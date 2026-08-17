@@ -12,6 +12,7 @@ import '../../core/theme/app_typography.dart';
 import '../../core/utils/project_code_generator.dart';
 import '../../data/providers/app_data_provider.dart';
 import '../../domain/entities/project.dart';
+import '../../domain/entities/whatsapp_recipient.dart';
 
 /// Projelerim — Demir `ProjectListScreen` ile aynı kurgu ve kart tasarımı.
 class ProjectsScreen extends ConsumerStatefulWidget {
@@ -122,63 +123,15 @@ class _ProjectsScreenState extends ConsumerState<ProjectsScreen> {
 
   Future<void> _createProject(BuildContext context) async {
     final messenger = ScaffoldMessenger.of(context);
-    final nameCtrl = TextEditingController();
-    final locationCtrl = TextEditingController(text: 'İstanbul');
-    final waCtrl = TextEditingController();
-
-    final created = await showDialog<bool>(
-      context: context,
-      builder: (ctx) => AlertDialog(
-        backgroundColor: AppColors.surfaceElevated,
-        title: const Text('Yeni Proje'),
-        content: SingleChildScrollView(
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              TextField(
-                controller: nameCtrl,
-                autofocus: true,
-                decoration: const InputDecoration(labelText: 'Proje Adı'),
-              ),
-              const SizedBox(height: 8),
-              TextField(
-                controller: locationCtrl,
-                decoration: const InputDecoration(labelText: 'Konum'),
-              ),
-              const SizedBox(height: 8),
-              TextField(
-                controller: waCtrl,
-                keyboardType: TextInputType.phone,
-                decoration: const InputDecoration(
-                  labelText: 'Sipariş WhatsApp numarası',
-                  hintText: '05xx xxx xx xx',
-                ),
-              ),
-            ],
-          ),
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(ctx, false),
-            child: const Text('İptal'),
-          ),
-          FilledButton(
-            onPressed: () => Navigator.pop(ctx, true),
-            child: const Text('Oluştur'),
-          ),
-        ],
-      ),
+    final result = await _ProjectEditorDialog.show(
+      context,
+      title: 'Yeni Proje',
+      location: 'İstanbul',
+      showCode: false,
     );
 
-    final name = nameCtrl.text.trim();
-    final location = locationCtrl.text.trim();
-    final whatsappNumber = waCtrl.text.trim();
-    nameCtrl.dispose();
-    locationCtrl.dispose();
-    waCtrl.dispose();
-
-    if (created != true || !context.mounted) return;
-    if (name.isEmpty) {
+    if (result == null || !context.mounted) return;
+    if (result.name.isEmpty) {
       messenger.showSnackBar(
         const SnackBar(content: Text('Proje adı gerekli')),
       );
@@ -187,10 +140,10 @@ class _ProjectsScreenState extends ConsumerState<ProjectsScreen> {
 
     final code = _uniqueCode(ref.read(projectsProvider));
     final project = ref.read(projectsProvider.notifier).add(
-          name: name,
+          name: result.name,
           code: code,
-          company: location,
-          whatsappNumber: whatsappNumber,
+          company: result.location,
+          whatsappRecipients: result.recipients,
         );
     ref.read(activeProjectIdProvider.notifier).set(project.id);
     messenger.showSnackBar(
@@ -211,81 +164,25 @@ class _ProjectsScreenState extends ConsumerState<ProjectsScreen> {
     BuildContext context, {
     required Project existing,
   }) async {
-    final nameCtrl = TextEditingController(text: existing.name);
-    final locationCtrl = TextEditingController(text: existing.company);
-    final codeCtrl = TextEditingController(text: existing.code);
-    final waCtrl = TextEditingController(text: existing.whatsappNumber);
-
-    final saved = await showDialog<bool>(
-      context: context,
-      builder: (ctx) => AlertDialog(
-        backgroundColor: AppColors.surfaceElevated,
-        title: const Text('Projeyi düzenle'),
-        content: SingleChildScrollView(
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              TextField(
-                controller: nameCtrl,
-                autofocus: true,
-                decoration: const InputDecoration(labelText: 'Proje Adı'),
-              ),
-              const SizedBox(height: 8),
-              TextField(
-                controller: locationCtrl,
-                decoration: const InputDecoration(labelText: 'Konum'),
-              ),
-              const SizedBox(height: 8),
-              TextField(
-                controller: codeCtrl,
-                textCapitalization: TextCapitalization.characters,
-                decoration: const InputDecoration(labelText: 'Proje Kodu'),
-              ),
-              const SizedBox(height: 8),
-              TextField(
-                controller: waCtrl,
-                keyboardType: TextInputType.phone,
-                decoration: const InputDecoration(
-                  labelText: 'Sipariş WhatsApp numarası',
-                  hintText: '05xx xxx xx xx',
-                ),
-              ),
-            ],
-          ),
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(ctx, false),
-            child: const Text('İptal'),
-          ),
-          FilledButton(
-            onPressed: () {
-              if (nameCtrl.text.trim().isEmpty) return;
-              Navigator.pop(ctx, true);
-            },
-            child: const Text('Kaydet'),
-          ),
-        ],
-      ),
+    final result = await _ProjectEditorDialog.show(
+      context,
+      title: 'Projeyi düzenle',
+      name: existing.name,
+      location: existing.company,
+      code: existing.code,
+      recipients: existing.whatsappRecipients,
+      showCode: true,
+      confirmLabel: 'Kaydet',
     );
 
-    final name = nameCtrl.text.trim();
-    final location = locationCtrl.text.trim();
-    final code = codeCtrl.text.trim().toUpperCase();
-    final whatsappNumber = waCtrl.text.trim();
-    nameCtrl.dispose();
-    locationCtrl.dispose();
-    codeCtrl.dispose();
-    waCtrl.dispose();
-
-    if (saved != true || !context.mounted) return;
+    if (result == null || !context.mounted) return;
 
     ref.read(projectsProvider.notifier).update(
           existing.copyWith(
-            name: name,
-            company: location,
-            code: code,
-            whatsappNumber: whatsappNumber,
+            name: result.name,
+            company: result.location,
+            code: result.code,
+            whatsappRecipients: result.recipients,
           ),
         );
   }
@@ -438,6 +335,249 @@ class _ProjectCard extends StatelessWidget {
           ),
         ),
       ),
+    );
+  }
+}
+
+class _ProjectEditorResult {
+  const _ProjectEditorResult({
+    required this.name,
+    required this.location,
+    required this.code,
+    required this.recipients,
+  });
+
+  final String name;
+  final String location;
+  final String code;
+  final List<WhatsAppRecipient> recipients;
+}
+
+class _WaDraft {
+  _WaDraft({String name = '', String number = ''})
+      : name = TextEditingController(text: name),
+        number = TextEditingController(text: number);
+
+  final TextEditingController name;
+  final TextEditingController number;
+
+  void dispose() {
+    name.dispose();
+    number.dispose();
+  }
+}
+
+class _ProjectEditorDialog extends StatefulWidget {
+  const _ProjectEditorDialog({
+    required this.title,
+    required this.confirmLabel,
+    required this.showCode,
+    required this.initialName,
+    required this.initialLocation,
+    required this.initialCode,
+    required this.initialRecipients,
+  });
+
+  final String title;
+  final String confirmLabel;
+  final bool showCode;
+  final String initialName;
+  final String initialLocation;
+  final String initialCode;
+  final List<WhatsAppRecipient> initialRecipients;
+
+  static Future<_ProjectEditorResult?> show(
+    BuildContext context, {
+    required String title,
+    String name = '',
+    String location = '',
+    String code = '',
+    List<WhatsAppRecipient> recipients = const [],
+    bool showCode = false,
+    String confirmLabel = 'Oluştur',
+  }) {
+    return showDialog<_ProjectEditorResult>(
+      context: context,
+      builder: (ctx) => _ProjectEditorDialog(
+        title: title,
+        confirmLabel: confirmLabel,
+        showCode: showCode,
+        initialName: name,
+        initialLocation: location,
+        initialCode: code,
+        initialRecipients: recipients,
+      ),
+    );
+  }
+
+  @override
+  State<_ProjectEditorDialog> createState() => _ProjectEditorDialogState();
+}
+
+class _ProjectEditorDialogState extends State<_ProjectEditorDialog> {
+  late final TextEditingController _nameCtrl;
+  late final TextEditingController _locationCtrl;
+  late final TextEditingController _codeCtrl;
+  late final List<_WaDraft> _waRows;
+
+  @override
+  void initState() {
+    super.initState();
+    _nameCtrl = TextEditingController(text: widget.initialName);
+    _locationCtrl = TextEditingController(text: widget.initialLocation);
+    _codeCtrl = TextEditingController(text: widget.initialCode);
+    _waRows = [
+      if (widget.initialRecipients.isEmpty) _WaDraft(),
+      for (final r in widget.initialRecipients)
+        _WaDraft(name: r.name, number: r.number),
+    ];
+  }
+
+  @override
+  void dispose() {
+    _nameCtrl.dispose();
+    _locationCtrl.dispose();
+    _codeCtrl.dispose();
+    for (final row in _waRows) {
+      row.dispose();
+    }
+    super.dispose();
+  }
+
+  List<WhatsAppRecipient> _collectRecipients() {
+    final out = <WhatsAppRecipient>[];
+    for (final row in _waRows) {
+      final number = row.number.text.trim();
+      if (number.isEmpty) continue;
+      out.add(
+        WhatsAppRecipient(name: row.name.text.trim(), number: number),
+      );
+    }
+    return out;
+  }
+
+  Widget _waRecipientRow(int i) {
+    return Row(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Expanded(
+          child: Column(
+            children: [
+              TextField(
+                controller: _waRows[i].name,
+                decoration: const InputDecoration(
+                  labelText: 'Kim (isteğe bağlı)',
+                  hintText: 'Sevkiyatçı',
+                ),
+              ),
+              const SizedBox(height: 6),
+              TextField(
+                controller: _waRows[i].number,
+                keyboardType: TextInputType.phone,
+                decoration: const InputDecoration(
+                  labelText: 'WhatsApp numarası',
+                  hintText: '05xx xxx xx xx',
+                ),
+              ),
+            ],
+          ),
+        ),
+        IconButton(
+          tooltip: 'Kaldır',
+          onPressed: _waRows.length <= 1
+              ? null
+              : () {
+                  setState(() {
+                    _waRows.removeAt(i).dispose();
+                  });
+                },
+          icon: const Icon(Icons.remove_circle_outline),
+        ),
+      ],
+    );
+  }
+
+  void _submit() {
+    if (_nameCtrl.text.trim().isEmpty) return;
+    Navigator.pop(
+      context,
+      _ProjectEditorResult(
+        name: _nameCtrl.text.trim(),
+        location: _locationCtrl.text.trim(),
+        code: _codeCtrl.text.trim().toUpperCase(),
+        recipients: _collectRecipients(),
+      ),
+    );
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return AlertDialog(
+      backgroundColor: AppColors.surfaceElevated,
+      title: Text(widget.title),
+      content: SingleChildScrollView(
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            TextField(
+              controller: _nameCtrl,
+              autofocus: true,
+              decoration: const InputDecoration(labelText: 'Proje Adı'),
+            ),
+            const SizedBox(height: 8),
+            TextField(
+              controller: _locationCtrl,
+              decoration: const InputDecoration(labelText: 'Konum'),
+            ),
+            if (widget.showCode) ...[
+              const SizedBox(height: 8),
+              TextField(
+                controller: _codeCtrl,
+                textCapitalization: TextCapitalization.characters,
+                decoration: const InputDecoration(labelText: 'Proje Kodu'),
+              ),
+            ],
+            const SizedBox(height: 16),
+            Text(
+              'Sipariş WhatsApp alıcıları',
+              style: AppTypography.labelLarge.copyWith(
+                color: AppColors.textSecondary,
+              ),
+            ),
+            const SizedBox(height: 4),
+            Text(
+              'Sevkiyatçı, saha mühendisi… Aynı sipariş hepsine gider.',
+              style: AppTypography.bodySmall.copyWith(
+                color: AppColors.textMuted,
+              ),
+            ),
+            const SizedBox(height: 8),
+            for (var i = 0; i < _waRows.length; i++) ...[
+              if (i > 0) const SizedBox(height: 8),
+              _waRecipientRow(i),
+            ],
+            Align(
+              alignment: Alignment.centerLeft,
+              child: TextButton.icon(
+                onPressed: () => setState(() => _waRows.add(_WaDraft())),
+                icon: const Icon(Icons.add),
+                label: const Text('Numara ekle'),
+              ),
+            ),
+          ],
+        ),
+      ),
+      actions: [
+        TextButton(
+          onPressed: () => Navigator.pop(context),
+          child: const Text('İptal'),
+        ),
+        FilledButton(
+          onPressed: _submit,
+          child: Text(widget.confirmLabel),
+        ),
+      ],
     );
   }
 }

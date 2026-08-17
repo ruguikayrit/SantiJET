@@ -1,5 +1,7 @@
 import 'package:equatable/equatable.dart';
 
+import 'whatsapp_recipient.dart';
+
 /// Proje — beton kayıtları proje kapsamında tutulur.
 class Project extends Equatable {
   const Project({
@@ -7,7 +9,7 @@ class Project extends Equatable {
     required this.name,
     this.code = '',
     this.company = '',
-    this.whatsappNumber = '',
+    this.whatsappRecipients = const [],
     this.createdAt,
   });
 
@@ -15,8 +17,8 @@ class Project extends Equatable {
   final String name;
   final String code;
   final String company;
-  /// Sipariş paylaşımının gideceği WhatsApp (santral / tedarikçi).
-  final String whatsappNumber;
+  /// Sipariş paylaşımının gideceği WhatsApp alıcıları.
+  final List<WhatsAppRecipient> whatsappRecipients;
   final DateTime? createdAt;
 
   Project copyWith({
@@ -24,7 +26,7 @@ class Project extends Equatable {
     String? name,
     String? code,
     String? company,
-    String? whatsappNumber,
+    List<WhatsAppRecipient>? whatsappRecipients,
     DateTime? createdAt,
   }) {
     return Project(
@@ -32,7 +34,7 @@ class Project extends Equatable {
       name: name ?? this.name,
       code: code ?? this.code,
       company: company ?? this.company,
-      whatsappNumber: whatsappNumber ?? this.whatsappNumber,
+      whatsappRecipients: whatsappRecipients ?? this.whatsappRecipients,
       createdAt: createdAt ?? this.createdAt,
     );
   }
@@ -42,22 +44,41 @@ class Project extends Equatable {
         'name': name,
         'code': code,
         'company': company,
-        'whatsappNumber': whatsappNumber,
+        'whatsappRecipients':
+            whatsappRecipients.map((e) => e.toJson()).toList(),
         'createdAt': createdAt?.toIso8601String(),
       };
 
-  factory Project.fromJson(Map<String, dynamic> json) => Project(
-        id: json['id'] as String,
-        name: json['name'] as String? ?? '',
-        code: json['code'] as String? ?? '',
-        company: json['company'] as String? ?? '',
-        whatsappNumber: json['whatsappNumber'] as String? ?? '',
-        createdAt: json['createdAt'] != null
-            ? DateTime.tryParse(json['createdAt'] as String)
-            : null,
-      );
+  factory Project.fromJson(Map<String, dynamic> json) {
+    final fromList = json['whatsappRecipients'];
+    final legacy = (json['whatsappNumber'] as String? ?? '').trim();
+    final recipients = <WhatsAppRecipient>[];
+    if (fromList is List) {
+      for (final e in fromList) {
+        if (e is Map<String, dynamic>) {
+          recipients.add(WhatsAppRecipient.fromJson(e));
+        } else if (e is Map) {
+          recipients.add(
+            WhatsAppRecipient.fromJson(Map<String, dynamic>.from(e)),
+          );
+        }
+      }
+    } else if (legacy.isNotEmpty) {
+      recipients.add(WhatsAppRecipient(number: legacy));
+    }
+    return Project(
+      id: json['id'] as String,
+      name: json['name'] as String? ?? '',
+      code: json['code'] as String? ?? '',
+      company: json['company'] as String? ?? '',
+      whatsappRecipients: recipients,
+      createdAt: json['createdAt'] != null
+          ? DateTime.tryParse(json['createdAt'] as String)
+          : null,
+    );
+  }
 
   @override
   List<Object?> get props =>
-      [id, name, code, company, whatsappNumber, createdAt];
+      [id, name, code, company, whatsappRecipients, createdAt];
 }
