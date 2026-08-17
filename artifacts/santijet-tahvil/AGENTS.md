@@ -6,6 +6,8 @@ Kapsam: yalnızca `artifacts/santijet-tahvil/**` (+ bu brief, `.cursor/rules/san
 
 Staging: https://ruguikayrit.github.io/SantiJET/tahvil/
 
+Turuncu **STAGING ÖNİZLEME** şeridi yok: `build-tahvil-pages.sh` `#santijet-staging-banner`, 28px spacer veya `flutter-view { top:28px }` basmaz. `--dart-define=DEPLOY_CHANNEL=staging` kalır. Geri koyma.
+
 ## Ürün
 
 Demir tahvilini **sade, hızlı, profesyonel** hesaplayan ayrı uygulama.
