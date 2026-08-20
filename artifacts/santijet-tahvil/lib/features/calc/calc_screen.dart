@@ -14,6 +14,7 @@ import '../../data/rebar_weight.dart';
 import '../../data/records_store.dart';
 import '../../domain/tahvil_calculator.dart';
 import '../../domain/tahvil_record.dart';
+import '../../domain/tahvil_rules.dart';
 
 /// Saha tahvil hesaplayıcısı — canlı sonuç, tek dokunuşla kayıt.
 class CalcScreen extends ConsumerStatefulWidget {
