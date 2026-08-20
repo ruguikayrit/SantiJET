@@ -484,6 +484,7 @@ class _DailyView extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
+    final isToday = date == PuantajDate.today();
 
     if (people.isEmpty) {
       return SJEmptyState(
@@ -518,15 +519,29 @@ class _DailyView extends StatelessWidget {
                 borderRadius: AppRadii.md,
                 child: Padding(
                   padding: const EdgeInsets.symmetric(vertical: 8),
-                  child: Text(
-                    PuantajDate.withDayName(date),
-                    textAlign: TextAlign.center,
-                    maxLines: 1,
-                    softWrap: false,
-                    overflow: TextOverflow.ellipsis,
-                    style: theme.textTheme.titleMedium?.copyWith(
-                      fontWeight: FontWeight.w700,
-                    ),
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      if (isToday)
+                        Text(
+                          'Bugün',
+                          textAlign: TextAlign.center,
+                          style: theme.textTheme.labelMedium?.copyWith(
+                            color: AppColors.electricBlue,
+                            fontWeight: FontWeight.w700,
+                          ),
+                        ),
+                      Text(
+                        PuantajDate.withDayName(date),
+                        textAlign: TextAlign.center,
+                        maxLines: 1,
+                        softWrap: false,
+                        overflow: TextOverflow.ellipsis,
+                        style: theme.textTheme.titleMedium?.copyWith(
+                          fontWeight: FontWeight.w700,
+                        ),
+                      ),
+                    ],
                   ),
                 ),
               ),
