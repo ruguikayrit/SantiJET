@@ -7,16 +7,22 @@ import '../../core/theme/app_typography.dart';
 import '../../core/widgets/santijet_header.dart';
 import '../../data/rebar_weight.dart';
 import '../../domain/tahvil_calculator.dart';
-import '../../domain/tahvil_rules.dart';
 
-/// Demir birim ağırlık + 100 cm’de donatı alanı (cm²) tabloları.
+/// Demir birim ağırlık + 100 cm’de cm² donatı kesiti tabloları.
 class TeknikScreen extends StatelessWidget {
   const TeknikScreen({super.key});
 
   static const _barLengthM = 12.0;
 
-  /// Saha / proje pratğinde yaygın aralıklar (cm).
-  static const _spacingsCm = [10.0, 12.5, 15.0, 20.0, 25.0];
+  /// Görsel referans tablosu: çubuk çapları (mm).
+  static const _sectionDiametersMm = [
+    6, 7, 8, 10, 12, 14, 16, 18, 20, 22, 24,
+  ];
+
+  /// Görsel referans tablosu: çubuk aralığı 7–20 cm, 0,5 cm adım.
+  static final _sectionSpacingsCm = [
+    for (var i = 0; i <= 26; i++) 7.0 + i * 0.5,
+  ];
 
   @override
   Widget build(BuildContext context) {
@@ -69,15 +75,14 @@ class TeknikScreen extends StatelessWidget {
                   ),
                   const SizedBox(height: AppSpacing.lg),
                   Text(
-                    '100 cm’de donatı alanı',
+                    '100 cm’de cm² donatı kesiti',
                     style: AppTypography.headlineMedium.copyWith(
                       color: AppColors.textPrimary,
                     ),
                   ),
                   const SizedBox(height: 4),
                   Text(
-                    'As (cm²) — 100 cm şerit genişliğinde. '
-                    'Aralık ≤ ${tahvilMaxSpacingCm.toStringAsFixed(0)} cm.',
+                    'Satır: çubuk aralığı (cm)  ·  Sütun: çubuk çapı (mm)',
                     style: AppTypography.bodySmall.copyWith(
                       color: AppColors.textSecondary,
                     ),
@@ -87,9 +92,9 @@ class TeknikScreen extends StatelessWidget {
                     padding: EdgeInsets.zero,
                     child: SingleChildScrollView(
                       scrollDirection: Axis.horizontal,
-                      child: _AsPerMeterTable(
-                        diameters: RebarWeight.standardDiameters,
-                        spacingsCm: _spacingsCm,
+                      child: _SectionAreaTable(
+                        diametersMm: _sectionDiametersMm,
+                        spacingsCm: _sectionSpacingsCm,
                       ),
                     ),
                   ),
@@ -194,7 +199,7 @@ class _WeightRow extends StatelessWidget {
   }
 }
 
-/// As (cm²) = π·d² / (4·s)  — d mm, s cm; 100 cm şerit.
+/// As (cm²) = π·d² / (4·s) — d mm, s cm; 100 cm şerit.
 double asCm2Per100Cm({
   required int diameterMm,
   required double spacingCm,
@@ -203,27 +208,36 @@ double asCm2Per100Cm({
   return computeAsPerMeterMm2(diameterMm, spacingCm * 10) / 100;
 }
 
-class _AsPerMeterTable extends StatelessWidget {
-  const _AsPerMeterTable({
-    required this.diameters,
+/// Görseldeki matris: satır = aralık (cm), sütun = çap (mm).
+class _SectionAreaTable extends StatelessWidget {
+  const _SectionAreaTable({
+    required this.diametersMm,
     required this.spacingsCm,
   });
 
-  final List<int> diameters;
+  final List<int> diametersMm;
   final List<double> spacingsCm;
 
-  static const _diameterColW = 56.0;
-  static const _spacingColW = 64.0;
+  static const _spacingColW = 52.0;
+  static const _valueColW = 52.0;
+  static const _rowPadV = 7.0;
 
   @override
   Widget build(BuildContext context) {
-    final headerStyle = AppTypography.cardLabelMedium.copyWith(
+    final headerStyle = AppTypography.cardLabelSmall.copyWith(
       color: AppColors.cardTextSecondary,
       fontWeight: FontWeight.w700,
     );
-    final valueStyle = AppTypography.cardTitleMedium;
-    final tableWidth =
-        _diameterColW + spacingsCm.length * _spacingColW;
+    final cornerStyle = AppTypography.cardLabelSmall.copyWith(
+      color: AppColors.cardTextSecondary,
+      fontWeight: FontWeight.w600,
+      height: 1.2,
+    );
+    final valueStyle = AppTypography.cardLabelLarge.copyWith(
+      color: AppColors.cardTextPrimary,
+      fontWeight: FontWeight.w600,
+    );
+    final tableWidth = _spacingColW + diametersMm.length * _valueColW;
 
     return SizedBox(
       width: tableWidth,
@@ -231,31 +245,35 @@ class _AsPerMeterTable extends StatelessWidget {
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
           Container(
-            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 10),
+            padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 8),
             decoration: BoxDecoration(
               color: AppColors.cardInsetSurface,
               borderRadius:
                   const BorderRadius.vertical(top: Radius.circular(12)),
             ),
             child: Row(
+              crossAxisAlignment: CrossAxisAlignment.end,
               children: [
                 SizedBox(
-                  width: _diameterColW,
-                  child: Text('Çap', style: headerStyle),
+                  width: _spacingColW,
+                  child: Text(
+                    'Aralık\n(cm)',
+                    style: cornerStyle,
+                  ),
                 ),
-                for (final s in spacingsCm)
+                for (final d in diametersMm)
                   SizedBox(
-                    width: _spacingColW,
+                    width: _valueColW,
                     child: Text(
-                      _formatSpacingCm(s),
+                      '$d',
                       style: headerStyle,
-                      textAlign: TextAlign.right,
+                      textAlign: TextAlign.center,
                     ),
                   ),
               ],
             ),
           ),
-          for (var i = 0; i < diameters.length; i++) ...[
+          for (var i = 0; i < spacingsCm.length; i++) ...[
             if (i > 0)
               Divider(
                 height: 1,
@@ -263,23 +281,29 @@ class _AsPerMeterTable extends StatelessWidget {
                 color: AppColors.cardBorder,
               ),
             Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 11),
+              padding: const EdgeInsets.symmetric(
+                horizontal: 4,
+                vertical: _rowPadV,
+              ),
               child: Row(
                 children: [
                   SizedBox(
-                    width: _diameterColW,
-                    child: Text('Ø${diameters[i]}', style: valueStyle),
+                    width: _spacingColW,
+                    child: Text(
+                      _formatSpacingCm(spacingsCm[i]),
+                      style: valueStyle,
+                    ),
                   ),
-                  for (final s in spacingsCm)
+                  for (final d in diametersMm)
                     SizedBox(
-                      width: _spacingColW,
+                      width: _valueColW,
                       child: Text(
                         asCm2Per100Cm(
-                          diameterMm: diameters[i],
-                          spacingCm: s,
+                          diameterMm: d,
+                          spacingCm: spacingsCm[i],
                         ).toStringAsFixed(2),
                         style: valueStyle,
-                        textAlign: TextAlign.right,
+                        textAlign: TextAlign.center,
                       ),
                     ),
                 ],
