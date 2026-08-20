@@ -1538,6 +1538,7 @@ class _DailyReportScreenState extends ConsumerState<DailyReportScreen> {
 
     final theme = Theme.of(context);
     final weather = report?.weather;
+    final isToday = date == PuantajDate.today();
 
     return Scaffold(
       backgroundColor: AppColors.canvas,
@@ -1576,15 +1577,29 @@ class _DailyReportScreenState extends ConsumerState<DailyReportScreen> {
                       borderRadius: AppRadii.md,
                       child: Padding(
                         padding: const EdgeInsets.symmetric(vertical: 8),
-                        child: Text(
-                          PuantajDate.withDayName(date),
-                          textAlign: TextAlign.center,
-                          maxLines: 1,
-                          softWrap: false,
-                          overflow: TextOverflow.ellipsis,
-                          style: theme.textTheme.titleMedium?.copyWith(
-                            fontWeight: FontWeight.w700,
-                          ),
+                        child: Column(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            if (isToday)
+                              Text(
+                                'Bugün',
+                                textAlign: TextAlign.center,
+                                style: theme.textTheme.labelMedium?.copyWith(
+                                  color: AppColors.electricBlue,
+                                  fontWeight: FontWeight.w700,
+                                ),
+                              ),
+                            Text(
+                              PuantajDate.withDayName(date),
+                              textAlign: TextAlign.center,
+                              maxLines: 1,
+                              softWrap: false,
+                              overflow: TextOverflow.ellipsis,
+                              style: theme.textTheme.titleMedium?.copyWith(
+                                fontWeight: FontWeight.w700,
+                              ),
+                            ),
+                          ],
                         ),
                       ),
                     ),
@@ -1598,15 +1613,17 @@ class _DailyReportScreenState extends ConsumerState<DailyReportScreen> {
                     },
                     icon: const Icon(Icons.chevron_right),
                   ),
-                  TextButton(
-                    onPressed: () {
-                      ref.read(dailyReportSelectedDateProvider.notifier).state =
-                          PuantajDate.today();
-                      _bootstrapped = false;
-                      _boundKey = null;
-                    },
-                    child: const Text('Bugün'),
-                  ),
+                  if (!isToday)
+                    TextButton(
+                      onPressed: () {
+                        ref
+                            .read(dailyReportSelectedDateProvider.notifier)
+                            .state = PuantajDate.today();
+                        _bootstrapped = false;
+                        _boundKey = null;
+                      },
+                      child: const Text('Bugün'),
+                    ),
                 ],
               ),
             ),
