@@ -7,7 +7,7 @@ import '../../features/records/records_screen.dart';
 import '../../features/settings/settings_screen.dart';
 import '../../features/shell/main_shell.dart';
 import '../../features/splash/splash_screen.dart';
-import '../../features/table/table_screen.dart';
+import '../../features/teknik/teknik_screen.dart';
 import 'app_routes.dart';
 import 'page_transitions.dart';
 
@@ -52,10 +52,10 @@ final routerProvider = Provider<GoRouter>((ref) {
           StatefulShellBranch(
             routes: [
               GoRoute(
-                path: AppRoutes.table,
+                path: AppRoutes.teknik,
                 pageBuilder: (context, state) => fadePage(
                   key: state.pageKey,
-                  child: const TableScreen(),
+                  child: const TeknikScreen(),
                 ),
               ),
             ],

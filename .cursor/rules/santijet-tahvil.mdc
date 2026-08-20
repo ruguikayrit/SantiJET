@@ -13,8 +13,8 @@ Klasör `artifacts/santijet-tahvil`. Staging: `/tahvil/`
 
 Turuncu **STAGING ÖNİZLEME** şeridi yok: `build-tahvil-pages.sh` `#santijet-staging-banner`, 28px spacer veya `flutter-view { top:28px }` basmaz. `--dart-define=DEPLOY_CHANNEL=staging` kalır. Geri koyma.
 
-- Alt nav: **Hesap · Tablo · Kayıtlar**. Ayarlar navda yok
-  (`SantijetHeader` dişli → `/ayarlar`).
+- Alt nav: **Hesap · Teknik · Kayıtlar**. Ayarlar navda yok
+  (`SantijetHeader` dişli → `/ayarlar`). Teknik: birim ağırlık tablosu.
 - Bildirim zili ve avatar yok.
 - Abonelik / hesap / bulut yok. Hive `tahvil_` önekli.
 - DEMİR fire analizi veya sipariş ekranını kopyalama. Tahvil hesabını

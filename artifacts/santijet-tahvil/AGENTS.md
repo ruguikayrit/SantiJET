@@ -14,7 +14,8 @@ Demir tahvilini **sade, hızlı, profesyonel** hesaplayan ayrı uygulama.
 
 - Tek fiyat. **Abonelik yok.** Hesap / bulut oturumu yok.
 - Hive kutuları `tahvil_` önekli (`TahvilHive`). Çıplak `settings` açma.
-- Alt nav: **Hesap · Tablo · Kayıtlar**. Ayarlar navda yok (sağ üst dişli).
+- Alt nav: **Hesap · Teknik · Kayıtlar**. Ayarlar navda yok (sağ üst dişli).
+- Teknik: demir birim ağırlık tablosu (kg/m = d² / 162).
 - Bildirim zili ve avatar yok.
 
 Kaynak: `lib/features/shell/main_shell.dart`, `lib/core/widgets/santijet_header.dart`.

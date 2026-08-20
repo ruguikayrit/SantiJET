@@ -20,9 +20,9 @@ class MainShell extends ConsumerWidget {
       label: 'Hesap',
     ),
     SJNavItem(
-      icon: Icons.grid_view_outlined,
-      activeIcon: Icons.grid_view,
-      label: 'Tablo',
+      icon: Icons.straighten_outlined,
+      activeIcon: Icons.straighten,
+      label: 'Teknik',
     ),
     SJNavItem(
       icon: Icons.bookmark_border,
