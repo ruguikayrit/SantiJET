@@ -22,6 +22,12 @@ Sağ alt FAB metni ve sheet başlığı **Puantaj AL**. Eski “Puantajı Dışa
 
 Günlük Puantaj’ta **Sigortasız ekipler** bölümü: yalnız **ekip adı** + **çalışan sayısı**. Personel ad-soyad yok. `Puantaj AL` FAB’ına dokunma.
 
+## Sigortalı Personel + çıktı türleri
+
+- Kayıtlı personel **Sigortalı Personel** başlığı altında; `Person.company` = **sigorta ettiren firma**.
+- Puantaj AL: **İsim puantajı** (kişisel cetvel) | **Ekip puantajı** (firma + ekip + sayı).
+- Ekip sayısı: Mevcut + Yarım + Giriş + Çıkış. Sigortasız ayrı bölüm.
+
 ## Puantaj durumları
 
 Sıra ve kısaltma: Giriş(G) → Çıkış(Ç) → Mevcut(M) → Yarım(Y) → Yok(X) → İzinli(İ) → Raporlu(R) → Mazeret(Mz) → Hafta Tatili(HT) → Resmi Tatil(**RT**, T değil).

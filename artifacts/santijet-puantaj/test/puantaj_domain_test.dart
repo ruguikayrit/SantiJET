@@ -8,6 +8,7 @@ import 'package:santijet_puantaj/domain/entities/attendance.dart';
 import 'package:santijet_puantaj/domain/entities/person.dart';
 import 'package:santijet_puantaj/domain/entities/production.dart';
 import 'package:santijet_puantaj/domain/entities/production_day_entry.dart';
+import 'package:santijet_puantaj/domain/entities/uninsured_team_entry.dart';
 import 'package:santijet_puantaj/domain/enums/attendance_status.dart';
 import 'package:santijet_puantaj/domain/yevmiye/yevmiye_calculator.dart';
 import 'dart:convert';
@@ -84,6 +85,11 @@ void main() {
       expect(AttendanceStatus.present.isWorkedDay, isTrue);
       expect(AttendanceStatus.half.isWorkedDay, isTrue);
       expect(AttendanceStatus.absent.isWorkedDay, isFalse);
+      expect(AttendanceStatus.giris.countsInTeamHeadcount, isTrue);
+      expect(AttendanceStatus.cikis.countsInTeamHeadcount, isTrue);
+      expect(AttendanceStatus.present.countsInTeamHeadcount, isTrue);
+      expect(AttendanceStatus.half.countsInTeamHeadcount, isTrue);
+      expect(AttendanceStatus.absent.countsInTeamHeadcount, isFalse);
       expect(AttendanceStatus.giris.isEmploymentMarker, isTrue);
       expect(AttendanceStatus.cikis.short, 'Ç');
       expect(AttendanceStatus.giris.short, 'G');
@@ -371,6 +377,83 @@ void main() {
         [0, 0, 1, 1, 1, 1, 1, 1, 0, 1],
       );
       expect(report.visual.companies.single.rows.single.totalLabel, '6');
+    });
+
+    test('ekip günlük: M/Y/G/Ç sayılır, sigortasız ayrı satır', () {
+      final a = Person(
+        id: '1',
+        projectId: 'p',
+        name: 'Burhan Alkan',
+        company: 'Bsd İnşaat',
+        team: 'Alçısıva',
+      );
+      final b = Person(
+        id: '2',
+        projectId: 'p',
+        name: 'Ali',
+        company: 'Bsd İnşaat',
+        team: 'Alçısıva',
+      );
+      final c = Person(
+        id: '3',
+        projectId: 'p',
+        name: 'Veli',
+        company: 'Bsd İnşaat',
+        team: 'Alçısıva',
+      );
+      final attendance = [
+        Attendance(
+          id: 'a1',
+          projectId: 'p',
+          personId: a.id,
+          personName: a.name,
+          date: '16.08.2026',
+          status: AttendanceStatus.present,
+          hours: 8,
+        ),
+        Attendance(
+          id: 'a2',
+          projectId: 'p',
+          personId: b.id,
+          personName: b.name,
+          date: '16.08.2026',
+          status: AttendanceStatus.giris,
+          hours: 0,
+        ),
+        Attendance(
+          id: 'a3',
+          projectId: 'p',
+          personId: c.id,
+          personName: c.name,
+          date: '16.08.2026',
+          status: AttendanceStatus.absent,
+          hours: 0,
+        ),
+      ];
+      final report = PuantajReportBuilder.build(
+        projectName: 'MOA',
+        projectId: 'p',
+        people: [a, b, c],
+        attendance: attendance,
+        period: PuantajReportPeriod.daily,
+        anchorDate: '16.08.2026',
+        layout: PuantajExportLayout.ekip,
+        uninsuredTeams: [
+          UninsuredTeamEntry(
+            id: 's1',
+            projectId: 'p',
+            date: '16.08.2026',
+            teamName: 'Kalıp',
+            workerCount: 4,
+          ),
+        ],
+      );
+
+      expect(report.plainTable, isTrue);
+      expect(report.rows, [
+        ['Sigortalı', 'Bsd İnşaat', 'Alçısıva', '2'],
+        ['Sigortasız', '—', 'Kalıp', '4'],
+      ]);
     });
   });
 

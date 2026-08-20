@@ -409,6 +409,10 @@ class _PuantajScreenState extends ConsumerState<PuantajScreen> {
       _ViewMode.weekly => PuantajReportPeriod.weekly,
       _ViewMode.monthly => PuantajReportPeriod.monthly,
     };
+    final uninsured = ref
+        .read(uninsuredTeamsProvider)
+        .where((e) => e.projectId == project.id)
+        .toList();
     return SJModal.showSheet(
       context: context,
       title: 'Puantaj AL',
@@ -416,6 +420,7 @@ class _PuantajScreenState extends ConsumerState<PuantajScreen> {
         project: project,
         allProjectPeople: allProjectPeople,
         attendance: attendance,
+        uninsuredTeams: uninsured,
         anchorDate: _date,
         initialPeriod: initial,
       ),
@@ -564,17 +569,36 @@ class _DailyView extends StatelessWidget {
               ),
           ],
         ),
-        _UninsuredTeamsSection(date: date),
         if (people.isEmpty) ...[
           const SizedBox(height: AppSpacing.md),
+          Row(
+            children: [
+              Container(
+                width: 3,
+                height: 16,
+                color: AppColors.electricBlue,
+              ),
+              const SizedBox(width: AppSpacing.xs),
+              Expanded(
+                child: Text(
+                  'Sigortalı Personel',
+                  style: theme.textTheme.titleMedium?.copyWith(
+                    fontWeight: FontWeight.w700,
+                  ),
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: AppSpacing.sm),
           SJEmptyState(
             title: 'Kayıtlı personel yok',
             message: 'Personel yönetiminden ekip üyesi ekleyin. '
-                'Sigortasız ekipleri yukarıdan ekleyebilirsiniz.',
+                'Sigortasız ekipleri aşağıdan ekleyebilirsiniz.',
             icon: Icons.groups_outlined,
             actionLabel: 'Personel',
             onAction: () => context.push(AppRoutes.personel),
           ),
+          _UninsuredTeamsSection(date: date),
         ] else ...[
         if (missing > 0) ...[
           const SizedBox(height: AppSpacing.sm),
@@ -688,26 +712,73 @@ class _DailyView extends StatelessWidget {
           ],
         ),
         const SizedBox(height: AppSpacing.md),
+        Row(
+          children: [
+            Container(
+              width: 3,
+              height: 16,
+              color: AppColors.electricBlue,
+            ),
+            const SizedBox(width: AppSpacing.xs),
+            Icon(
+              Icons.verified_user_outlined,
+              size: 14,
+              color: theme.colorScheme.primary,
+            ),
+            const SizedBox(width: AppSpacing.xs),
+            Expanded(
+              child: Text(
+                'Sigortalı Personel',
+                style: theme.textTheme.titleMedium?.copyWith(
+                  fontWeight: FontWeight.w700,
+                ),
+              ),
+            ),
+            Text(
+              '${people.length} kişi',
+              style: theme.textTheme.labelSmall,
+            ),
+          ],
+        ),
+        const SizedBox(height: AppSpacing.sm),
         for (final group in grouped) ...[
-          Row(
-            children: [
-              Container(
-                width: 3,
-                height: 16,
-                color: AppColors.electricBlue,
+          Padding(
+            padding: const EdgeInsets.only(left: AppSpacing.sm),
+            child: Row(
+              children: [
+                Icon(
+                  Icons.apartment_outlined,
+                  size: 14,
+                  color: theme.colorScheme.primary,
+                ),
+                const SizedBox(width: AppSpacing.xs),
+                Expanded(
+                  child: Text(
+                    group.company,
+                    style: theme.textTheme.titleSmall?.copyWith(
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+                ),
+                Text(
+                  '${group.users.length} kişi',
+                  style: theme.textTheme.labelSmall,
+                ),
+              ],
+            ),
+          ),
+          Padding(
+            padding: const EdgeInsets.only(
+              left: AppSpacing.sm,
+              bottom: AppSpacing.xs,
+              top: 2,
+            ),
+            child: Text(
+              'Sigorta ettiren firma',
+              style: theme.textTheme.labelSmall?.copyWith(
+                color: theme.colorScheme.onSurfaceVariant,
               ),
-              const SizedBox(width: AppSpacing.xs),
-              Icon(Icons.work_outline,
-                  size: 14, color: theme.colorScheme.primary),
-              const SizedBox(width: AppSpacing.xs),
-              Expanded(
-                child: Text(group.company, style: theme.textTheme.titleMedium),
-              ),
-              Text(
-                '${group.users.length} kişi',
-                style: theme.textTheme.labelSmall,
-              ),
-            ],
+            ),
           ),
           const SizedBox(height: AppSpacing.sm),
           for (final person in group.users)
@@ -732,6 +803,7 @@ class _DailyView extends StatelessWidget {
             ),
           const SizedBox(height: AppSpacing.sm),
         ],
+        _UninsuredTeamsSection(date: date),
         ],
       ],
     );
@@ -1779,6 +1851,7 @@ class _PuantajExportSheet extends StatefulWidget {
     required this.project,
     required this.allProjectPeople,
     required this.attendance,
+    required this.uninsuredTeams,
     required this.anchorDate,
     required this.initialPeriod,
   });
@@ -1786,6 +1859,7 @@ class _PuantajExportSheet extends StatefulWidget {
   final Project project;
   final List<Person> allProjectPeople;
   final List<Attendance> attendance;
+  final List<UninsuredTeamEntry> uninsuredTeams;
   final String anchorDate;
   final PuantajReportPeriod initialPeriod;
 
@@ -1795,6 +1869,7 @@ class _PuantajExportSheet extends StatefulWidget {
 
 class _PuantajExportSheetState extends State<_PuantajExportSheet> {
   late PuantajReportPeriod _period = widget.initialPeriod;
+  late PuantajExportLayout _layout = PuantajExportLayout.isim;
   late Set<String> _selectedPersonIds;
   final _personSearchController = TextEditingController();
   final _teamSearchController = TextEditingController();
@@ -2065,8 +2140,17 @@ class _PuantajExportSheetState extends State<_PuantajExportSheet> {
 
   Future<void> _export({required bool pdf}) async {
     if (_busy) return;
-    if (_exportPeople.isEmpty) {
+    final hasUninsured = widget.uninsuredTeams.any(
+      (e) => _periodDays.contains(e.date),
+    );
+    if (_layout == PuantajExportLayout.isim && _exportPeople.isEmpty) {
       setState(() => _error = 'En az bir personel seçin.');
+      return;
+    }
+    if (_layout == PuantajExportLayout.ekip &&
+        _exportPeople.isEmpty &&
+        !hasUninsured) {
+      setState(() => _error = 'Dışa aktarılacak ekip veya sigortasız kayıt yok.');
       return;
     }
     setState(() {
@@ -2081,6 +2165,8 @@ class _PuantajExportSheetState extends State<_PuantajExportSheet> {
         attendance: widget.attendance,
         period: _period,
         anchorDate: widget.anchorDate,
+        layout: _layout,
+        uninsuredTeams: widget.uninsuredTeams,
       );
       if (pdf) {
         await puantajExportService.exportPdf(
@@ -2153,6 +2239,43 @@ class _PuantajExportSheetState extends State<_PuantajExportSheet> {
           selected: {_period},
           onSelectionChanged: _busy ? null : (s) => _setPeriod(s.first),
         ),
+        const SizedBox(height: AppSpacing.md),
+        Text('Çıktı türü', style: theme.textTheme.labelLarge),
+        const SizedBox(height: AppSpacing.xs),
+        SegmentedButton<PuantajExportLayout>(
+          style: SegmentedButton.styleFrom(
+            foregroundColor: theme.colorScheme.onSurfaceVariant,
+            selectedForegroundColor: theme.colorScheme.onSecondary,
+            selectedBackgroundColor: theme.colorScheme.secondary,
+          ),
+          segments: const [
+            ButtonSegment(
+              value: PuantajExportLayout.isim,
+              label: Text('İsim puantajı'),
+            ),
+            ButtonSegment(
+              value: PuantajExportLayout.ekip,
+              label: Text('Ekip puantajı'),
+            ),
+          ],
+          selected: {_layout},
+          onSelectionChanged: _busy
+              ? null
+              : (s) => setState(() {
+                    _layout = s.first;
+                    _error = null;
+                  }),
+        ),
+        if (_layout == PuantajExportLayout.ekip) ...[
+          const SizedBox(height: AppSpacing.xs),
+          Text(
+            'Ekip çıktısı: sigorta ettiren firma + ekip + sayı '
+            '(Mevcut, Yarım, Giriş, Çıkış). Sigortasız ayrı bölümde.',
+            style: theme.textTheme.bodySmall?.copyWith(
+              color: theme.colorScheme.onSurfaceVariant,
+            ),
+          ),
+        ],
         const SizedBox(height: AppSpacing.md),
         Text('Personel', style: theme.textTheme.labelLarge),
         const SizedBox(height: AppSpacing.xs),

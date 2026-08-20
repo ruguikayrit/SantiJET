@@ -117,12 +117,24 @@ class PuantajExportService {
             style: const pw.TextStyle(fontSize: 8, color: _inkMuted),
           ),
           pw.SizedBox(height: 10),
-          _legend(),
-          pw.SizedBox(height: 10),
-          if (report.visual.isMatrix)
+          if (!report.plainTable) ...[
+            _legend(),
+            pw.SizedBox(height: 10),
+          ],
+          if (report.plainTable)
+            _plainTable(report)
+          else if (report.visual.isMatrix)
             _matrixTable(report.visual)
           else
             _dailyTable(report.visual),
+          if (report.plainTable && report.summaryLines.isNotEmpty) ...[
+            pw.SizedBox(height: 10),
+            for (final line in report.summaryLines)
+              pw.Text(
+                line,
+                style: const pw.TextStyle(fontSize: 8, color: _inkMuted),
+              ),
+          ],
         ],
       ),
     );
@@ -624,6 +636,60 @@ class PuantajExportService {
             ),
           pw.SizedBox(height: 8),
         ],
+      ],
+    );
+  }
+
+  pw.Widget _plainTable(PuantajReportData report) {
+    final headers = report.headers;
+    final colCount = headers.length;
+    if (colCount == 0) return pw.SizedBox();
+
+    pw.Widget cell(
+      String text, {
+      bool header = false,
+      bool first = false,
+    }) {
+      return pw.Container(
+        padding: const pw.EdgeInsets.symmetric(horizontal: 4, vertical: 3),
+        alignment: first ? pw.Alignment.centerLeft : pw.Alignment.center,
+        child: pw.Text(
+          text,
+          style: pw.TextStyle(
+            fontSize: header ? 8 : 7.5,
+            fontWeight: header ? pw.FontWeight.bold : pw.FontWeight.normal,
+            color: header ? _electricBlue : _ink,
+          ),
+        ),
+      );
+    }
+
+    return pw.Table(
+      border: pw.TableBorder.all(color: _rowBorder, width: 0.5),
+      columnWidths: {
+        for (var i = 0; i < colCount; i++)
+          i: i < 3
+              ? const pw.FlexColumnWidth(2.2)
+              : const pw.FlexColumnWidth(1),
+      },
+      children: [
+        pw.TableRow(
+          decoration: const pw.BoxDecoration(color: _electricBlueSoft),
+          children: [
+            for (var i = 0; i < headers.length; i++)
+              cell(headers[i], header: true, first: i == 0),
+          ],
+        ),
+        for (final row in report.rows)
+          pw.TableRow(
+            children: [
+              for (var i = 0; i < colCount; i++)
+                cell(
+                  i < row.length ? row[i] : '',
+                  first: i == 0,
+                ),
+            ],
+          ),
       ],
     );
   }

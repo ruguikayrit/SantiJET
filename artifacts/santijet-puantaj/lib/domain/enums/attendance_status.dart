@@ -33,6 +33,15 @@ enum AttendanceStatus {
   bool get isWorkedDay =>
       this == AttendanceStatus.present || this == AttendanceStatus.half;
 
+  /// Ekip puantajı baş sayısı — Mevcut, Yarım, Giriş, Çıkış.
+  ///
+  /// Giriş/çıkış o gün çalışılmış sayılır (yevmiye saatine etki etmez).
+  bool get countsInTeamHeadcount =>
+      this == AttendanceStatus.present ||
+      this == AttendanceStatus.half ||
+      this == AttendanceStatus.giris ||
+      this == AttendanceStatus.cikis;
+
   /// Cetvel “Genel Toplam” — yok / giriş / çıkış hariç.
   bool get countsInGeneralTotal =>
       this != AttendanceStatus.absent &&
