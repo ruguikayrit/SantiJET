@@ -90,12 +90,9 @@ class TeknikScreen extends StatelessWidget {
                   const SizedBox(height: AppSpacing.md),
                   SJCard(
                     padding: EdgeInsets.zero,
-                    child: SingleChildScrollView(
-                      scrollDirection: Axis.horizontal,
-                      child: _SectionAreaTable(
-                        diametersMm: _sectionDiametersMm,
-                        spacingsCm: _sectionSpacingsCm,
-                      ),
+                    child: _SectionAreaTable(
+                      diametersMm: _sectionDiametersMm,
+                      spacingsCm: _sectionSpacingsCm,
                     ),
                   ),
                 ],
@@ -209,6 +206,7 @@ double asCm2Per100Cm({
 }
 
 /// Görseldeki matris: satır = aralık (cm), sütun = çap (mm).
+/// Sol aralık sütunu yatay kaydırmada sabit kalır.
 class _SectionAreaTable extends StatelessWidget {
   const _SectionAreaTable({
     required this.diametersMm,
@@ -218,9 +216,10 @@ class _SectionAreaTable extends StatelessWidget {
   final List<int> diametersMm;
   final List<double> spacingsCm;
 
-  static const _spacingColW = 52.0;
+  static const _spacingColW = 56.0;
   static const _valueColW = 52.0;
-  static const _rowPadV = 7.0;
+  static const _headerH = 44.0;
+  static const _rowH = 34.0;
 
   @override
   Widget build(BuildContext context) {
@@ -237,81 +236,128 @@ class _SectionAreaTable extends StatelessWidget {
       color: AppColors.cardTextPrimary,
       fontWeight: FontWeight.w600,
     );
-    final tableWidth = _spacingColW + diametersMm.length * _valueColW;
+    final scrollWidth = diametersMm.length * _valueColW;
 
-    return SizedBox(
-      width: tableWidth,
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.stretch,
-        children: [
-          Container(
-            padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 8),
-            decoration: BoxDecoration(
-              color: AppColors.cardInsetSurface,
-              borderRadius:
-                  const BorderRadius.vertical(top: Radius.circular(12)),
-            ),
-            child: Row(
-              crossAxisAlignment: CrossAxisAlignment.end,
+    return Row(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        DecoratedBox(
+          decoration: BoxDecoration(
+            color: AppColors.cardSurface,
+            borderRadius:
+                const BorderRadius.only(topLeft: Radius.circular(12)),
+            boxShadow: [
+              BoxShadow(
+                color: Colors.black.withValues(alpha: 0.12),
+                blurRadius: 4,
+                offset: const Offset(2, 0),
+              ),
+            ],
+          ),
+          child: SizedBox(
+            width: _spacingColW,
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
-                SizedBox(
-                  width: _spacingColW,
-                  child: Text(
-                    'Aralık\n(cm)',
-                    style: cornerStyle,
-                  ),
-                ),
-                for (final d in diametersMm)
-                  SizedBox(
-                    width: _valueColW,
-                    child: Text(
-                      '$d',
-                      style: headerStyle,
-                      textAlign: TextAlign.center,
+                Container(
+                  height: _headerH,
+                  alignment: Alignment.centerLeft,
+                  padding: const EdgeInsets.symmetric(horizontal: 8),
+                  decoration: BoxDecoration(
+                    color: AppColors.cardInsetSurface,
+                    borderRadius: const BorderRadius.only(
+                      topLeft: Radius.circular(12),
                     ),
                   ),
+                  child: Text('Aralık\n(cm)', style: cornerStyle),
+                ),
+                for (var i = 0; i < spacingsCm.length; i++) ...[
+                  if (i > 0)
+                    Divider(
+                      height: 1,
+                      thickness: 1,
+                      color: AppColors.cardBorder,
+                    ),
+                  SizedBox(
+                    height: _rowH,
+                    child: Align(
+                      alignment: Alignment.centerLeft,
+                      child: Padding(
+                        padding: const EdgeInsets.symmetric(horizontal: 8),
+                        child: Text(
+                          _formatSpacingCm(spacingsCm[i]),
+                          style: valueStyle,
+                        ),
+                      ),
+                    ),
+                  ),
+                ],
               ],
             ),
           ),
-          for (var i = 0; i < spacingsCm.length; i++) ...[
-            if (i > 0)
-              Divider(
-                height: 1,
-                thickness: 1,
-                color: AppColors.cardBorder,
-              ),
-            Padding(
-              padding: const EdgeInsets.symmetric(
-                horizontal: 4,
-                vertical: _rowPadV,
-              ),
-              child: Row(
+        ),
+        Expanded(
+          child: SingleChildScrollView(
+            scrollDirection: Axis.horizontal,
+            child: SizedBox(
+              width: scrollWidth,
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: [
-                  SizedBox(
-                    width: _spacingColW,
-                    child: Text(
-                      _formatSpacingCm(spacingsCm[i]),
-                      style: valueStyle,
-                    ),
-                  ),
-                  for (final d in diametersMm)
-                    SizedBox(
-                      width: _valueColW,
-                      child: Text(
-                        asCm2Per100Cm(
-                          diameterMm: d,
-                          spacingCm: spacingsCm[i],
-                        ).toStringAsFixed(2),
-                        style: valueStyle,
-                        textAlign: TextAlign.center,
+                  Container(
+                    height: _headerH,
+                    decoration: BoxDecoration(
+                      color: AppColors.cardInsetSurface,
+                      borderRadius: const BorderRadius.only(
+                        topRight: Radius.circular(12),
                       ),
                     ),
+                    child: Row(
+                      children: [
+                        for (final d in diametersMm)
+                          SizedBox(
+                            width: _valueColW,
+                            child: Center(
+                              child: Text('$d', style: headerStyle),
+                            ),
+                          ),
+                      ],
+                    ),
+                  ),
+                  for (var i = 0; i < spacingsCm.length; i++) ...[
+                    if (i > 0)
+                      Divider(
+                        height: 1,
+                        thickness: 1,
+                        color: AppColors.cardBorder,
+                      ),
+                    SizedBox(
+                      height: _rowH,
+                      child: Row(
+                        children: [
+                          for (final d in diametersMm)
+                            SizedBox(
+                              width: _valueColW,
+                              child: Center(
+                                child: Text(
+                                  asCm2Per100Cm(
+                                    diameterMm: d,
+                                    spacingCm: spacingsCm[i],
+                                  ).toStringAsFixed(2),
+                                  style: valueStyle,
+                                ),
+                              ),
+                            ),
+                        ],
+                      ),
+                    ),
+                  ],
                 ],
               ),
             ),
-          ],
-        ],
-      ),
+          ),
+        ),
+      ],
     );
   }
 
