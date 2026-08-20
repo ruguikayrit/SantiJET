@@ -17,12 +17,14 @@ import '../../core/widgets/project_permission_gate.dart';
 import '../../core/widgets/santijet_header.dart';
 import '../../data/providers/app_data_provider.dart';
 import '../../data/providers/collaboration_provider.dart';
+import '../../data/providers/uninsured_teams_provider.dart';
 import '../../data/services/puantaj_export_service.dart';
 import '../../data/services/puantaj_report_builder.dart';
 import '../../domain/attendance/attendance_display.dart';
 import '../../domain/entities/attendance.dart';
 import '../../domain/entities/person.dart';
 import '../../domain/entities/project.dart';
+import '../../domain/entities/uninsured_team_entry.dart';
 import '../../domain/enums/attendance_status.dart';
 import '../personnel/personnel_screen.dart';
 
@@ -486,16 +488,6 @@ class _DailyView extends StatelessWidget {
     final theme = Theme.of(context);
     final isToday = date == PuantajDate.today();
 
-    if (people.isEmpty) {
-      return SJEmptyState(
-        title: 'Kayıtlı personel yok',
-        message: 'Personel yönetiminden ekip üyesi ekleyin.',
-        icon: Icons.groups_outlined,
-        actionLabel: 'Personel',
-        onAction: () => context.push(AppRoutes.personel),
-      );
-    }
-
     return ListView(
       padding: const EdgeInsets.fromLTRB(
         AppSpacing.md,
@@ -553,24 +545,37 @@ class _DailyView extends StatelessWidget {
               tooltip: 'Sonraki gün',
               icon: const Icon(Icons.chevron_right),
             ),
-            Tooltip(
-              message: 'Dünden kopyala',
-              child: OutlinedButton.icon(
-                onPressed: onCopyYesterday,
-                style: OutlinedButton.styleFrom(
-                  visualDensity: VisualDensity.compact,
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: AppSpacing.sm,
-                    vertical: AppSpacing.xs,
+            if (people.isNotEmpty)
+              Tooltip(
+                message: 'Dünden kopyala',
+                child: OutlinedButton.icon(
+                  onPressed: onCopyYesterday,
+                  style: OutlinedButton.styleFrom(
+                    visualDensity: VisualDensity.compact,
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: AppSpacing.sm,
+                      vertical: AppSpacing.xs,
+                    ),
+                    tapTargetSize: MaterialTapTargetSize.shrinkWrap,
                   ),
-                  tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                  icon: const Icon(Icons.copy, size: 15),
+                  label: const Text('Dünden'),
                 ),
-                icon: const Icon(Icons.copy, size: 15),
-                label: const Text('Dünden'),
               ),
-            ),
           ],
         ),
+        _UninsuredTeamsSection(date: date),
+        if (people.isEmpty) ...[
+          const SizedBox(height: AppSpacing.md),
+          SJEmptyState(
+            title: 'Kayıtlı personel yok',
+            message: 'Personel yönetiminden ekip üyesi ekleyin. '
+                'Sigortasız ekipleri yukarıdan ekleyebilirsiniz.',
+            icon: Icons.groups_outlined,
+            actionLabel: 'Personel',
+            onAction: () => context.push(AppRoutes.personel),
+          ),
+        ] else ...[
         if (missing > 0) ...[
           const SizedBox(height: AppSpacing.sm),
           Container(
@@ -726,6 +731,257 @@ class _DailyView extends StatelessWidget {
               ),
             ),
           const SizedBox(height: AppSpacing.sm),
+        ],
+        ],
+      ],
+    );
+  }
+}
+
+/// Sigortasız ekip — yalnız ekip adı + çalışan sayısı (personel adı yok).
+class _UninsuredTeamsSection extends ConsumerWidget {
+  const _UninsuredTeamsSection({required this.date});
+
+  final String date;
+
+  Future<void> _openEditor(
+    BuildContext context,
+    WidgetRef ref, {
+    required String projectId,
+    UninsuredTeamEntry? existing,
+  }) async {
+    final nameCtrl = TextEditingController(text: existing?.teamName ?? '');
+    final countCtrl = TextEditingController(
+      text: existing == null ? '' : '${existing.workerCount}',
+    );
+    final formKey = GlobalKey<FormState>();
+
+    final saved = await SJModal.showSheet<bool>(
+      context: context,
+      title: existing == null ? 'Sigortasız ekip ekle' : 'Sigortasız ekibi düzenle',
+      child: Form(
+        key: formKey,
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            Text(
+              'Personel adı girilmez. Yalnız ekip adı ve çalışan sayısı.',
+              style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                    color: Theme.of(context).colorScheme.onSurfaceVariant,
+                  ),
+            ),
+            const SizedBox(height: AppSpacing.md),
+            TextFormField(
+              controller: nameCtrl,
+              textCapitalization: TextCapitalization.words,
+              decoration: const InputDecoration(
+                labelText: 'Ekip adı *',
+                hintText: 'Örn. Kalıp ekibi',
+              ),
+              validator: (v) {
+                if (v == null || v.trim().isEmpty) return 'Ekip adı gerekli';
+                return null;
+              },
+            ),
+            const SizedBox(height: AppSpacing.sm),
+            TextFormField(
+              controller: countCtrl,
+              keyboardType: TextInputType.number,
+              decoration: const InputDecoration(
+                labelText: 'Çalışan sayısı *',
+                hintText: 'Örn. 8',
+              ),
+              validator: (v) {
+                final n = int.tryParse((v ?? '').trim());
+                if (n == null || n <= 0) return '1 veya daha fazla girin';
+                return null;
+              },
+            ),
+            const SizedBox(height: AppSpacing.md),
+            SJButton(
+              label: existing == null ? 'Ekle' : 'Kaydet',
+              onPressed: () {
+                if (!(formKey.currentState?.validate() ?? false)) return;
+                Navigator.of(context).pop(true);
+              },
+            ),
+          ],
+        ),
+      ),
+    );
+
+    final name = nameCtrl.text;
+    final countText = countCtrl.text;
+    nameCtrl.dispose();
+    countCtrl.dispose();
+    if (saved != true) return;
+
+    final count = int.tryParse(countText.trim()) ?? 0;
+    final notifier = ref.read(uninsuredTeamsProvider.notifier);
+    if (existing != null) {
+      notifier.upsert(
+        existing.copyWith(teamName: name, workerCount: count),
+      );
+    } else {
+      notifier.add(
+        projectId: projectId,
+        date: date,
+        teamName: name,
+        workerCount: count,
+      );
+    }
+  }
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final theme = Theme.of(context);
+    final project = ref.watch(activeProjectProvider);
+    if (project == null) return const SizedBox.shrink();
+
+    final canEdit = ref.watch(canEditActiveProjectProvider);
+    final entries = ref
+        .watch(uninsuredTeamsProvider)
+        .where((e) => e.projectId == project.id && e.date == date)
+        .toList()
+      ..sort((a, b) => a.teamName.compareTo(b.teamName));
+    final totalWorkers =
+        entries.fold<int>(0, (sum, e) => sum + e.workerCount);
+
+    void denyWrite() {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Bu işte yalnızca görüntüleme yetkiniz var'),
+        ),
+      );
+    }
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        const SizedBox(height: AppSpacing.md),
+        Row(
+          children: [
+            Container(
+              width: 3,
+              height: 16,
+              color: AppColors.electricBlue,
+            ),
+            const SizedBox(width: AppSpacing.xs),
+            Icon(
+              Icons.groups_outlined,
+              size: 14,
+              color: theme.colorScheme.primary,
+            ),
+            const SizedBox(width: AppSpacing.xs),
+            Expanded(
+              child: Text(
+                'Sigortasız ekipler',
+                style: theme.textTheme.titleMedium,
+              ),
+            ),
+            if (entries.isNotEmpty)
+              Text(
+                '$totalWorkers kişi',
+                style: theme.textTheme.labelSmall,
+              ),
+            const SizedBox(width: AppSpacing.xs),
+            OutlinedButton.icon(
+              onPressed: () {
+                if (!canEdit) return denyWrite();
+                _openEditor(context, ref, projectId: project.id);
+              },
+              style: OutlinedButton.styleFrom(
+                visualDensity: VisualDensity.compact,
+                padding: const EdgeInsets.symmetric(
+                  horizontal: AppSpacing.sm,
+                  vertical: AppSpacing.xs,
+                ),
+                tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+              ),
+              icon: const Icon(Icons.add, size: 15),
+              label: const Text('Ekip ekle'),
+            ),
+          ],
+        ),
+        if (entries.isEmpty) ...[
+          const SizedBox(height: AppSpacing.sm),
+          Text(
+            'Ad-soyad girmeden ekip adı ve çalışan sayısı ekleyin.',
+            style: theme.textTheme.bodySmall?.copyWith(
+              color: theme.colorScheme.onSurfaceVariant,
+            ),
+          ),
+        ] else ...[
+          const SizedBox(height: AppSpacing.sm),
+          for (final entry in entries)
+            Padding(
+              padding: const EdgeInsets.only(bottom: AppSpacing.sm),
+              child: SJCard(
+                child: Row(
+                  children: [
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            entry.teamName,
+                            style: theme.textTheme.titleSmall?.copyWith(
+                              fontWeight: FontWeight.w700,
+                            ),
+                          ),
+                          const SizedBox(height: 2),
+                          Text(
+                            '${entry.workerCount} çalışan',
+                            style: theme.textTheme.bodySmall?.copyWith(
+                              color: theme.colorScheme.onSurfaceVariant,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                    IconButton(
+                      tooltip: 'Düzenle',
+                      visualDensity: VisualDensity.compact,
+                      onPressed: () {
+                        if (!canEdit) return denyWrite();
+                        _openEditor(
+                          context,
+                          ref,
+                          projectId: project.id,
+                          existing: entry,
+                        );
+                      },
+                      icon: const Icon(Icons.edit_outlined, size: 18),
+                    ),
+                    IconButton(
+                      tooltip: 'Sil',
+                      visualDensity: VisualDensity.compact,
+                      onPressed: () async {
+                        if (!canEdit) return denyWrite();
+                        final ok = await SJModal.confirm(
+                          context: context,
+                          title: 'Ekibi sil',
+                          message:
+                              '${entry.teamName} (${entry.workerCount} çalışan) silinsin mi?',
+                          confirmLabel: 'Sil',
+                          destructive: true,
+                        );
+                        if (!ok) return;
+                        ref
+                            .read(uninsuredTeamsProvider.notifier)
+                            .remove(entry.id);
+                      },
+                      icon: Icon(
+                        Icons.delete_outline,
+                        size: 18,
+                        color: theme.colorScheme.error,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ),
         ],
       ],
     );

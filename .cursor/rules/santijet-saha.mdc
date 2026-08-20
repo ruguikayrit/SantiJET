@@ -18,6 +18,10 @@ Sağ alt FAB metni ve sheet başlığı **Puantaj AL**. Eski “Puantajı Dışa
 - **Ekip** başlığının hemen altında **Ekip ara…** satırı (`SJSearchBar`) durur. Kaldırma.
 - Arama doluyken ilgili liste açılsın; eşleşenlere **Görünenleri seç**.
 
+## Sigortasız ekipler
+
+Günlük Puantaj’ta **Sigortasız ekipler** bölümü: yalnız **ekip adı** + **çalışan sayısı**. Personel ad-soyad yok. `Puantaj AL` FAB’ına dokunma.
+
 ## Puantaj durumları
 
 Sıra ve kısaltma: Giriş(G) → Çıkış(Ç) → Mevcut(M) → Yarım(Y) → Yok(X) → İzinli(İ) → Raporlu(R) → Mazeret(Mz) → Hafta Tatili(HT) → Resmi Tatil(**RT**, T değil).

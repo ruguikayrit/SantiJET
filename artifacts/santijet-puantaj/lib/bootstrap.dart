@@ -12,6 +12,7 @@ import 'data/providers/collaboration_provider.dart';
 import 'data/providers/daily_report_provider.dart';
 import 'data/providers/production_provider.dart';
 import 'data/providers/tasks_provider.dart';
+import 'data/providers/uninsured_teams_provider.dart';
 import 'data/providers/verim_provider.dart';
 import 'data/remote/supabase_service.dart';
 
@@ -30,6 +31,7 @@ Future<void> bootstrap() async {
     Hive.openBox('daily_reports'),
     Hive.openBox('tasks'),
     Hive.openBox('project_members'),
+    Hive.openBox('uninsured_teams'),
   ]);
 
   _migratePersonnelToProjects(boxes[2], boxes[1], boxes[0]);
@@ -53,6 +55,7 @@ Future<void> bootstrap() async {
         dailyReportsBoxProvider.overrideWithValue(boxes[7]),
         tasksBoxProvider.overrideWithValue(boxes[8]),
         membersBoxProvider.overrideWithValue(boxes[9]),
+        uninsuredTeamsBoxProvider.overrideWithValue(boxes[10]),
       ],
       child: const SantijetPuantajApp(),
     ),
