@@ -20,7 +20,8 @@ Sağ alt FAB metni ve sheet başlığı **Puantaj AL**. Eski “Puantajı Dışa
 
 ## Günlük Puantaj — Personel / Ekip
 
-- **Personel** başlığı: personel listesindeki tüm kayıtlı kişiler; firma gruplama + durum girişi aynı.
+- **Personel** / firma / ekip / **Ekip** başlıkları **açılır-kapanır** (`_ExpandableSection`).
+- **Personel** hiyerarşisi: Personel → **firma** (Sigorta ettiren firma) → **ekip adı** → kişiler.
 - **Ekip** başlığı: yalnız **ekip adı** (Ayarlar → Ekipler açılır listesi) + **çalışan sayısı**. Serbest metin ekip adı yok.
 - Eski “Sigortalı Personel” / “Sigortasız ekipler” başlıkları geri gelmez.
 

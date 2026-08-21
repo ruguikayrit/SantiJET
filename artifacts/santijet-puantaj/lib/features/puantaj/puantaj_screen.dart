@@ -29,6 +29,24 @@ import '../../domain/entities/uninsured_team_entry.dart';
 import '../../domain/enums/attendance_status.dart';
 import '../personnel/personnel_screen.dart';
 
+
+List<({String team, List<Person> users})> _teamsOf(List<Person> users) {
+  final map = <String, List<Person>>{};
+  for (final u in users) {
+    final key = u.team.trim();
+    map.putIfAbsent(key, () => []).add(u);
+  }
+  final keys = map.keys.toList()
+    ..sort((a, b) {
+      if (a.isEmpty && b.isNotEmpty) return 1;
+      if (a.isNotEmpty && b.isEmpty) return -1;
+      return a.compareTo(b);
+    });
+  return keys
+      .map((k) => (team: k.isEmpty ? 'Ekipsiz' : k, users: map[k]!))
+      .toList();
+}
+
 enum _ViewMode { daily, weekly, monthly }
 
 /// Ana puantaj ekranı — santiye-takip `puantaj.tsx` kurgusu.
@@ -572,32 +590,25 @@ class _DailyView extends StatelessWidget {
         ),
         if (people.isEmpty) ...[
           const SizedBox(height: AppSpacing.md),
-          Row(
-            children: [
-              Container(
-                width: 3,
-                height: 16,
-                color: AppColors.electricBlue,
+          _ExpandableSection(
+            leadingBar: true,
+            title: Text(
+              'Personel',
+              style: theme.textTheme.titleMedium?.copyWith(
+                fontWeight: FontWeight.w700,
               ),
-              const SizedBox(width: AppSpacing.xs),
-              Expanded(
-                child: Text(
-                  'Personel',
-                  style: theme.textTheme.titleMedium?.copyWith(
-                    fontWeight: FontWeight.w700,
-                  ),
-                ),
+            ),
+            children: [
+              const SizedBox(height: AppSpacing.sm),
+              SJEmptyState(
+                title: 'Kayıtlı personel yok',
+                message: 'Personel yönetiminden ekip üyesi ekleyin. '
+                    'Ekip başlığı altından çalışan sayısı girebilirsiniz.',
+                icon: Icons.groups_outlined,
+                actionLabel: 'Personel',
+                onAction: () => context.push(AppRoutes.personel),
               ),
             ],
-          ),
-          const SizedBox(height: AppSpacing.sm),
-          SJEmptyState(
-            title: 'Kayıtlı personel yok',
-            message: 'Personel yönetiminden ekip üyesi ekleyin. '
-                'Ekip başlığı altından çalışan sayısı girebilirsiniz.',
-            icon: Icons.groups_outlined,
-            actionLabel: 'Personel',
-            onAction: () => context.push(AppRoutes.personel),
           ),
           _DayTeamsSection(date: date),
         ] else ...[
@@ -713,93 +724,200 @@ class _DailyView extends StatelessWidget {
           ],
         ),
         const SizedBox(height: AppSpacing.md),
-        Row(
+        _ExpandableSection(
+          leadingBar: true,
+          title: Text(
+            'Personel',
+            style: theme.textTheme.titleMedium?.copyWith(
+              fontWeight: FontWeight.w700,
+            ),
+          ),
+          trailing: Text(
+            '${people.length} kişi',
+            style: theme.textTheme.labelSmall,
+          ),
           children: [
-            Container(
-              width: 3,
-              height: 16,
-              color: AppColors.electricBlue,
-            ),
-            const SizedBox(width: AppSpacing.xs),
-            Expanded(
-              child: Text(
-                'Personel',
-                style: theme.textTheme.titleMedium?.copyWith(
-                  fontWeight: FontWeight.w700,
-                ),
-              ),
-            ),
-            Text(
-              '${people.length} kişi',
-              style: theme.textTheme.labelSmall,
-            ),
-          ],
-        ),
-        const SizedBox(height: AppSpacing.sm),
-        for (final group in grouped) ...[
-          Padding(
-            padding: const EdgeInsets.only(left: AppSpacing.sm),
-            child: Row(
-              children: [
-                Icon(
-                  Icons.apartment_outlined,
-                  size: 14,
-                  color: theme.colorScheme.primary,
-                ),
-                const SizedBox(width: AppSpacing.xs),
-                Expanded(
-                  child: Text(
-                    group.company,
-                    style: theme.textTheme.titleSmall?.copyWith(
-                      fontWeight: FontWeight.w600,
+            for (final group in grouped)
+              _ExpandableSection(
+                indent: AppSpacing.sm,
+                title: Row(
+                  children: [
+                    Icon(
+                      Icons.apartment_outlined,
+                      size: 14,
+                      color: theme.colorScheme.primary,
                     ),
+                    const SizedBox(width: AppSpacing.xs),
+                    Expanded(
+                      child: Text(
+                        group.company,
+                        style: theme.textTheme.titleSmall?.copyWith(
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+                subtitle: Text(
+                  'Sigorta ettiren firma',
+                  style: theme.textTheme.labelSmall?.copyWith(
+                    color: theme.colorScheme.onSurfaceVariant,
                   ),
                 ),
-                Text(
+                trailing: Text(
                   '${group.users.length} kişi',
                   style: theme.textTheme.labelSmall,
+                ),
+                children: [
+                  for (final teamGroup in _teamsOf(group.users))
+                    _ExpandableSection(
+                      indent: AppSpacing.md,
+                      title: Row(
+                        children: [
+                          Icon(
+                            Icons.groups_outlined,
+                            size: 14,
+                            color: theme.colorScheme.primary,
+                          ),
+                          const SizedBox(width: AppSpacing.xs),
+                          Expanded(
+                            child: Text(
+                              teamGroup.team,
+                              style: theme.textTheme.titleSmall?.copyWith(
+                                fontWeight: FontWeight.w600,
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
+                      subtitle: Text(
+                        'Ekip',
+                        style: theme.textTheme.labelSmall?.copyWith(
+                          color: theme.colorScheme.onSurfaceVariant,
+                        ),
+                      ),
+                      trailing: Text(
+                        '${teamGroup.users.length} kişi',
+                        style: theme.textTheme.labelSmall,
+                      ),
+                      children: [
+                        const SizedBox(height: AppSpacing.sm),
+                        for (final person in teamGroup.users)
+                          Padding(
+                            padding:
+                                const EdgeInsets.only(bottom: AppSpacing.sm),
+                            child: _PersonCard(
+                              person: person,
+                              status: statusOf(person.id),
+                              note: noteOf(person.id),
+                              overtimeHours: overtimeOf(person.id),
+                              dropdownOpen: openDropdown == person.id,
+                              noteOpen: openNote == person.id,
+                              noteController: noteController,
+                              onToggleDropdown: () =>
+                                  onToggleDropdown(person.id),
+                              onOpenNote: () => onOpenNote(person),
+                              onCloseNote: onCloseNote,
+                              onSaveNote: () => onSaveNote(person),
+                              onSetStatus: (s) => onSetStatus(person, s),
+                              onSetOvertime: (h) => onSetOvertime(person, h),
+                              onPersonTap: () => onPersonTap(person),
+                            ),
+                          ),
+                      ],
+                    ),
+                ],
+              ),
+          ],
+        ),
+        _DayTeamsSection(date: date),
+        ],
+      ],
+    );
+  }
+}
+
+
+/// Açılır/kapanır bölüm başlığı — günlük puantaj hiyerarşisi.
+class _ExpandableSection extends StatefulWidget {
+  const _ExpandableSection({
+    required this.title,
+    required this.children,
+    this.subtitle,
+    this.trailing,
+    this.leadingBar = false,
+    this.indent = 0,
+  });
+
+  final Widget title;
+  final Widget? subtitle;
+  final Widget? trailing;
+  final List<Widget> children;
+  final bool leadingBar;
+  final double indent;
+
+  @override
+  State<_ExpandableSection> createState() => _ExpandableSectionState();
+}
+
+class _ExpandableSectionState extends State<_ExpandableSection> {
+  bool _expanded = true;
+
+  @override
+  Widget build(BuildContext context) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        InkWell(
+          onTap: () => setState(() => _expanded = !_expanded),
+          borderRadius: AppRadii.sm,
+          child: Padding(
+            padding: EdgeInsets.only(
+              left: widget.indent,
+              top: AppSpacing.xs,
+              bottom: AppSpacing.xs,
+            ),
+            child: Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                if (widget.leadingBar) ...[
+                  Container(
+                    width: 3,
+                    height: 16,
+                    margin: const EdgeInsets.only(top: 2),
+                    color: AppColors.electricBlue,
+                  ),
+                  const SizedBox(width: AppSpacing.xs),
+                ],
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      widget.title,
+                      if (widget.subtitle != null) ...[
+                        const SizedBox(height: 2),
+                        widget.subtitle!,
+                      ],
+                    ],
+                  ),
+                ),
+                if (widget.trailing != null) ...[
+                  const SizedBox(width: AppSpacing.xs),
+                  Padding(
+                    padding: const EdgeInsets.only(top: 2),
+                    child: widget.trailing!,
+                  ),
+                ],
+                Icon(
+                  _expanded ? Icons.expand_less : Icons.expand_more,
+                  size: 20,
+                  color: Theme.of(context).colorScheme.onSurfaceVariant,
                 ),
               ],
             ),
           ),
-          Padding(
-            padding: const EdgeInsets.only(
-              left: AppSpacing.sm,
-              bottom: AppSpacing.xs,
-              top: 2,
-            ),
-            child: Text(
-              'Sigorta ettiren firma',
-              style: theme.textTheme.labelSmall?.copyWith(
-                color: theme.colorScheme.onSurfaceVariant,
-              ),
-            ),
-          ),
-          const SizedBox(height: AppSpacing.sm),
-          for (final person in group.users)
-            Padding(
-              padding: const EdgeInsets.only(bottom: AppSpacing.sm),
-              child: _PersonCard(
-                person: person,
-                status: statusOf(person.id),
-                note: noteOf(person.id),
-                overtimeHours: overtimeOf(person.id),
-                dropdownOpen: openDropdown == person.id,
-                noteOpen: openNote == person.id,
-                noteController: noteController,
-                onToggleDropdown: () => onToggleDropdown(person.id),
-                onOpenNote: () => onOpenNote(person),
-                onCloseNote: onCloseNote,
-                onSaveNote: () => onSaveNote(person),
-                onSetStatus: (s) => onSetStatus(person, s),
-                onSetOvertime: (h) => onSetOvertime(person, h),
-                onPersonTap: () => onPersonTap(person),
-              ),
-            ),
-          const SizedBox(height: AppSpacing.sm),
-        ],
-        _DayTeamsSection(date: date),
-        ],
+        ),
+        if (_expanded) ...widget.children,
       ],
     );
   }
@@ -975,56 +1093,7 @@ class _DayTeamsSection extends ConsumerWidget {
       );
     }
 
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.stretch,
-      children: [
-        const SizedBox(height: AppSpacing.md),
-        Row(
-          children: [
-            Container(
-              width: 3,
-              height: 16,
-              color: AppColors.electricBlue,
-            ),
-            const SizedBox(width: AppSpacing.xs),
-            Expanded(
-              child: Text(
-                'Ekip',
-                style: theme.textTheme.titleMedium?.copyWith(
-                  fontWeight: FontWeight.w700,
-                ),
-              ),
-            ),
-            if (entries.isNotEmpty)
-              Text(
-                '$totalWorkers kişi',
-                style: theme.textTheme.labelSmall,
-              ),
-            const SizedBox(width: AppSpacing.xs),
-            OutlinedButton.icon(
-              onPressed: () {
-                if (!canEdit) return denyWrite();
-                _openEditor(
-                  context,
-                  ref,
-                  projectId: project.id,
-                  catalogTeams: catalogTeams,
-                  usedTeamNames: usedTeamNames,
-                );
-              },
-              style: OutlinedButton.styleFrom(
-                visualDensity: VisualDensity.compact,
-                padding: const EdgeInsets.symmetric(
-                  horizontal: AppSpacing.sm,
-                  vertical: AppSpacing.xs,
-                ),
-                tapTargetSize: MaterialTapTargetSize.shrinkWrap,
-              ),
-              icon: const Icon(Icons.add, size: 15),
-              label: const Text('Ekip ekle'),
-            ),
-          ],
-        ),
+    final bodyChildren = <Widget>[
         if (entries.isEmpty) ...[
           const SizedBox(height: AppSpacing.sm),
           Text(
@@ -1118,12 +1187,60 @@ class _DayTeamsSection extends ConsumerWidget {
               ),
             ),
         ],
+      ];
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        const SizedBox(height: AppSpacing.md),
+        _ExpandableSection(
+          leadingBar: true,
+          title: Text(
+            'Ekip',
+            style: theme.textTheme.titleMedium?.copyWith(
+              fontWeight: FontWeight.w700,
+            ),
+          ),
+          trailing: Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              if (entries.isNotEmpty)
+                Text(
+                  '$totalWorkers kişi',
+                  style: theme.textTheme.labelSmall,
+                ),
+              const SizedBox(width: AppSpacing.xs),
+              OutlinedButton.icon(
+                onPressed: () {
+                  if (!canEdit) return denyWrite();
+                  _openEditor(
+                    context,
+                    ref,
+                    projectId: project.id,
+                    catalogTeams: catalogTeams,
+                    usedTeamNames: usedTeamNames,
+                  );
+                },
+                style: OutlinedButton.styleFrom(
+                  visualDensity: VisualDensity.compact,
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: AppSpacing.sm,
+                    vertical: AppSpacing.xs,
+                  ),
+                  tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                ),
+                icon: const Icon(Icons.add, size: 15),
+                label: const Text('Ekip ekle'),
+              ),
+            ],
+          ),
+          children: bodyChildren,
+        ),
       ],
     );
   }
 }
 
-/// Özet rozeti — kısa kod (M, Y…) varsayılan; tıklanınca tam ad (Mevcut…).
 class _SumChip extends StatefulWidget {
   const _SumChip({
     required this.count,
@@ -1589,39 +1706,69 @@ class _CetvelView extends StatelessWidget {
                     totalW,
                     today,
                   ),
-                  for (final group in grouped) ...[
-                    Container(
-                      width: tableW,
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: 8,
-                        vertical: 6,
-                      ),
-                      color: AppColors.surfaceElevated,
-                      child: Text(
-                        group.company,
-                        style: theme.textTheme.labelMedium?.copyWith(
-                          color: AppColors.statusInkOnChrome(
-                            AppColors.useDarkChrome
-                                ? AppColors.electricBlueLight
-                                : AppColors.electricBlue,
+                  for (final group in grouped)
+                    _ExpandableSection(
+                      title: SizedBox(
+                        width: tableW,
+                        child: Text(
+                          group.company,
+                          style: theme.textTheme.labelMedium?.copyWith(
+                            color: AppColors.statusInkOnChrome(
+                              AppColors.useDarkChrome
+                                  ? AppColors.electricBlueLight
+                                  : AppColors.electricBlue,
+                            ),
+                            fontWeight: FontWeight.w700,
                           ),
-                          fontWeight: FontWeight.w700,
                         ),
                       ),
-                    ),
-                    for (final person in group.users)
-                      _cetvelRow(
-                        theme,
-                        person,
-                        days,
-                        cellW,
-                        nameW,
-                        summaryW,
-                        totalW,
-                        statusOf,
-                        onPersonTap,
+                      subtitle: Text(
+                        'Sigorta ettiren firma',
+                        style: theme.textTheme.labelSmall?.copyWith(
+                          color: theme.colorScheme.onSurfaceVariant,
+                        ),
                       ),
-                  ],
+                      trailing: Text(
+                        '${group.users.length} kişi',
+                        style: theme.textTheme.labelSmall,
+                      ),
+                      children: [
+                        for (final teamGroup in _teamsOf(group.users))
+                          _ExpandableSection(
+                            indent: AppSpacing.sm,
+                            title: Text(
+                              teamGroup.team,
+                              style: theme.textTheme.labelMedium?.copyWith(
+                                fontWeight: FontWeight.w600,
+                              ),
+                            ),
+                            subtitle: Text(
+                              'Ekip',
+                              style: theme.textTheme.labelSmall?.copyWith(
+                                color: theme.colorScheme.onSurfaceVariant,
+                              ),
+                            ),
+                            trailing: Text(
+                              '${teamGroup.users.length} kişi',
+                              style: theme.textTheme.labelSmall,
+                            ),
+                            children: [
+                              for (final person in teamGroup.users)
+                                _cetvelRow(
+                                  theme,
+                                  person,
+                                  days,
+                                  cellW,
+                                  nameW,
+                                  summaryW,
+                                  totalW,
+                                  statusOf,
+                                  onPersonTap,
+                                ),
+                            ],
+                          ),
+                      ],
+                    ),
                   _totalsFooter(
                     theme,
                     people,
