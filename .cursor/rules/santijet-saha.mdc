@@ -25,7 +25,7 @@ Günlük Puantaj’ta **Sigortasız ekipler** bölümü: yalnız **ekip adı** +
 ## Sigortalı Personel + çıktı türleri
 
 - Kayıtlı personel **Sigortalı Personel** başlığı altında; `Person.company` = **sigorta ettiren firma**.
-- Puantaj AL: **İsim puantajı** (kişisel cetvel) | **Ekip puantajı** (firma + ekip + sayı).
+- Puantaj AL: **Personel puantajı** (kişisel cetvel) | **Ekip puantajı** (firma + ekip + sayı).
 - Ekip sayısı: Mevcut + Yarım + Giriş + Çıkış. Sigortasız ayrı bölüm.
 
 ## Puantaj durumları

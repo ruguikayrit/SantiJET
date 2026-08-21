@@ -2251,7 +2251,7 @@ class _PuantajExportSheetState extends State<_PuantajExportSheet> {
           segments: const [
             ButtonSegment(
               value: PuantajExportLayout.isim,
-              label: Text('İsim puantajı'),
+              label: Text('Personel puantajı'),
             ),
             ButtonSegment(
               value: PuantajExportLayout.ekip,
