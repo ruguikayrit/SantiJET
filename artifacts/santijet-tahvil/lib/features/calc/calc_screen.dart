@@ -270,6 +270,119 @@ typedef _SaveFn = Future<void> Function({
   required bool allowed,
 });
 
+double _areaExcessPercent(double sourceAs, double targetAs) {
+  if (sourceAs <= 0) return double.infinity;
+  return ((targetAs - sourceAs) / sourceAs) * 100;
+}
+
+List<TahvilSpacingResult> _allowedSpacingAscending(
+  List<TahvilSpacingResult> results,
+) {
+  final allowed = results.where((r) => r.isAllowed).toList()
+    ..sort((a, b) => a.targetDiameter.compareTo(b.targetDiameter));
+  return allowed;
+}
+
+TahvilSpacingResult? _optimalSpacing(
+  List<TahvilSpacingResult> allowed,
+  int sourceDiameter,
+) {
+  if (allowed.isEmpty) return null;
+  final ranked = [...allowed]..sort((a, b) {
+      final excess = _areaExcessPercent(
+        a.sourceAsPerMeterMm2,
+        a.targetAsPerMeterMm2,
+      ).compareTo(
+        _areaExcessPercent(b.sourceAsPerMeterMm2, b.targetAsPerMeterMm2),
+      );
+      if (excess != 0) return excess;
+      return (sourceDiameter - a.targetDiameter)
+          .abs()
+          .compareTo((sourceDiameter - b.targetDiameter).abs());
+    });
+  return ranked.first;
+}
+
+List<TahvilSingleQuantityResult> _allowedQuantityAscending(
+  List<TahvilSingleQuantityResult> results,
+) {
+  final allowed = results.where((r) => r.isAllowed).toList()
+    ..sort((a, b) => a.targetDiameter.compareTo(b.targetDiameter));
+  return allowed;
+}
+
+TahvilSingleQuantityResult? _optimalQuantity(
+  List<TahvilSingleQuantityResult> allowed,
+  int sourceDiameter,
+) {
+  if (allowed.isEmpty) return null;
+  final ranked = [...allowed]..sort((a, b) {
+      final excess =
+          a.areaDeviationPercent.compareTo(b.areaDeviationPercent);
+      if (excess != 0) return excess;
+      return (sourceDiameter - a.targetDiameter)
+          .abs()
+          .compareTo((sourceDiameter - b.targetDiameter).abs());
+    });
+  return ranked.first;
+}
+
+List<TahvilDualSpacingSuggestion> _allowedDualSpacingAscending(
+  List<TahvilDualSpacingSuggestion> suggestions,
+) {
+  final allowed = suggestions.where((s) => s.isAllowed).toList()
+    ..sort((a, b) {
+      final byA =
+          a.legA.targetDiameter.compareTo(b.legA.targetDiameter);
+      if (byA != 0) return byA;
+      return a.legB.targetDiameter.compareTo(b.legB.targetDiameter);
+    });
+  return allowed;
+}
+
+TahvilDualSpacingSuggestion? _optimalDualSpacing(
+  List<TahvilDualSpacingSuggestion> allowed,
+) {
+  if (allowed.isEmpty) return null;
+  final ranked = [...allowed]
+    ..sort((a, b) => a.areaDeviationPercent.compareTo(b.areaDeviationPercent));
+  return ranked.first;
+}
+
+List<TahvilDualSuggestion> _allowedDualQuantityAscending(
+  List<TahvilDualSuggestion> suggestions,
+) {
+  final allowed = suggestions.where((s) => s.isAllowed).toList()
+    ..sort((a, b) {
+      final byA =
+          a.legA.targetDiameter.compareTo(b.legA.targetDiameter);
+      if (byA != 0) return byA;
+      return a.legB.targetDiameter.compareTo(b.legB.targetDiameter);
+    });
+  return allowed;
+}
+
+TahvilDualSuggestion? _optimalDualQuantity(
+  List<TahvilDualSuggestion> allowed,
+) {
+  if (allowed.isEmpty) return null;
+  final ranked = [...allowed]
+    ..sort((a, b) => a.areaDeviationPercent.compareTo(b.areaDeviationPercent));
+  return ranked.first;
+}
+
+class _SuggestionsHeader extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) {
+    return Text(
+      'Tüm öneriler',
+      style: AppTypography.titleMedium.copyWith(
+        color: AppColors.textPrimary,
+      ),
+    );
+  }
+}
+
 class _SpacingPanel extends StatelessWidget {
   const _SpacingPanel({
     required this.diameter,
@@ -294,8 +407,8 @@ class _SpacingPanel extends StatelessWidget {
             sourceSpacingMm: spacingCm * 10,
           )
         : const <TahvilSpacingResult>[];
-    final allowed = results.where((r) => r.isAllowed).toList();
-    final recommended = allowed.isEmpty ? null : allowed.first;
+    final allowed = _allowedSpacingAscending(results);
+    final recommended = _optimalSpacing(allowed, diameter);
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -339,20 +452,18 @@ class _SpacingPanel extends StatelessWidget {
           const _NeedInputCard(
             text: 'Çap seçin, aralığı yazın — uygun tahvil anında çıkar.',
           ),
-        if (results.isNotEmpty) ...[
+        if (allowed.isNotEmpty) ...[
           const SizedBox(height: AppSpacing.md),
-          Text('Tüm çaplar', style: AppTypography.titleMedium.copyWith(
-            color: AppColors.textPrimary,
-          )),
+          _SuggestionsHeader(),
           const SizedBox(height: AppSpacing.sm),
-          for (final result in results)
+          for (final result in allowed)
             _ResultTile(
               title:
                   'Ø${result.targetDiameter} / ${formatCm(result.resultingSpacingCm)} cm',
-              subtitle: result.rejectReason ??
+              subtitle:
                   'As ${formatAreaMm2(result.targetAsPerMeterMm2)} mm²/m',
-              allowed: result.isAllowed,
-              adequate: result.isAdequate,
+              allowed: true,
+              adequate: true,
             ),
         ],
       ],
@@ -384,8 +495,8 @@ class _QuantityPanel extends StatelessWidget {
             sourceQuantity: quantity,
           )
         : const <TahvilSingleQuantityResult>[];
-    final allowed = results.where((r) => r.isAllowed).toList();
-    final recommended = allowed.isEmpty ? null : allowed.first;
+    final allowed = _allowedQuantityAscending(results);
+    final recommended = _optimalQuantity(allowed, diameter);
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -434,19 +545,17 @@ class _QuantityPanel extends StatelessWidget {
           const _NeedInputCard(
             text: 'Çap ve adet girin — eşdeğer adet hemen hesaplanır.',
           ),
-        if (results.isNotEmpty) ...[
+        if (allowed.isNotEmpty) ...[
           const SizedBox(height: AppSpacing.md),
-          Text('Tüm çaplar', style: AppTypography.titleMedium.copyWith(
-            color: AppColors.textPrimary,
-          )),
+          _SuggestionsHeader(),
           const SizedBox(height: AppSpacing.sm),
-          for (final result in results)
+          for (final result in allowed)
             _ResultTile(
               title: '${result.equivalentQuantity}×Ø${result.targetDiameter}',
-              subtitle: result.rejectReason ??
+              subtitle:
                   'Sapma %${result.areaDeviationPercent.toStringAsFixed(1)}',
-              allowed: result.isAllowed,
-              adequate: result.isAdequate,
+              allowed: true,
+              adequate: true,
             ),
         ],
       ],
@@ -488,8 +597,8 @@ class _DualSpacingPanel extends StatelessWidget {
                 sourceSpacingMmB: spacingB * 10,
               )
             : const <TahvilDualSpacingSuggestion>[];
-    final allowedDual = suggestions.where((s) => s.isAllowed);
-    final recommended = allowedDual.isEmpty ? null : allowedDual.first;
+    final allowed = _allowedDualSpacingAscending(suggestions);
+    final recommended = _optimalDualSpacing(allowed);
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -546,23 +655,17 @@ class _DualSpacingPanel extends StatelessWidget {
             text:
                 'İki donatı çapını ve aralığını girin — birlikte tahvil önerilir.',
           ),
-        if (suggestions.isNotEmpty) ...[
+        if (allowed.isNotEmpty) ...[
           const SizedBox(height: AppSpacing.md),
-          Text(
-            'Öneriler',
-            style: AppTypography.titleMedium.copyWith(
-              color: AppColors.textPrimary,
-            ),
-          ),
+          _SuggestionsHeader(),
           const SizedBox(height: AppSpacing.sm),
-          for (final item in suggestions)
+          for (final item in allowed)
             _ResultTile(
               title: item.summary,
-              subtitle: item.isAllowed
-                  ? 'Sapma %${item.areaDeviationPercent.toStringAsFixed(1)}'
-                  : 'Kural dışı veya fazla kesit',
-              allowed: item.isAllowed,
-              adequate: item.isAdequate,
+              subtitle:
+                  'Sapma %${item.areaDeviationPercent.toStringAsFixed(1)}',
+              allowed: true,
+              adequate: true,
             ),
         ],
       ],
@@ -603,8 +706,8 @@ class _DualPanel extends StatelessWidget {
             sourceDiameterB: diameterB,
           )
         : const <TahvilDualSuggestion>[];
-    final allowedDual = suggestions.where((s) => s.isAllowed);
-    final recommended = allowedDual.isEmpty ? null : allowedDual.first;
+    final allowed = _allowedDualQuantityAscending(suggestions);
+    final recommended = _optimalDualQuantity(allowed);
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -661,20 +764,17 @@ class _DualPanel extends StatelessWidget {
           const _NeedInputCard(
             text: 'İki çeşit donatıyı girin — birlikte tahvil önerilir.',
           ),
-        if (suggestions.isNotEmpty) ...[
+        if (allowed.isNotEmpty) ...[
           const SizedBox(height: AppSpacing.md),
-          Text('Öneriler', style: AppTypography.titleMedium.copyWith(
-            color: AppColors.textPrimary,
-          )),
+          _SuggestionsHeader(),
           const SizedBox(height: AppSpacing.sm),
-          for (final item in suggestions)
+          for (final item in allowed)
             _ResultTile(
               title: item.summary,
-              subtitle: item.isAllowed
-                  ? 'Sapma %${item.areaDeviationPercent.toStringAsFixed(1)}'
-                  : 'Kural dışı veya fazla kesit',
-              allowed: item.isAllowed,
-              adequate: item.isAdequate,
+              subtitle:
+                  'Sapma %${item.areaDeviationPercent.toStringAsFixed(1)}',
+              allowed: true,
+              adequate: true,
             ),
         ],
       ],
