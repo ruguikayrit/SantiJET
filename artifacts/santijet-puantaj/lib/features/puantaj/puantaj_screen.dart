@@ -16,6 +16,7 @@ import '../../core/utils/text_format.dart';
 import '../../core/widgets/project_permission_gate.dart';
 import '../../core/widgets/santijet_header.dart';
 import '../../data/providers/app_data_provider.dart';
+import '../../data/providers/catalog_provider.dart';
 import '../../data/providers/collaboration_provider.dart';
 import '../../data/providers/uninsured_teams_provider.dart';
 import '../../data/services/puantaj_export_service.dart';
@@ -581,7 +582,7 @@ class _DailyView extends StatelessWidget {
               const SizedBox(width: AppSpacing.xs),
               Expanded(
                 child: Text(
-                  'Sigortalı Personel',
+                  'Personel',
                   style: theme.textTheme.titleMedium?.copyWith(
                     fontWeight: FontWeight.w700,
                   ),
@@ -593,12 +594,12 @@ class _DailyView extends StatelessWidget {
           SJEmptyState(
             title: 'Kayıtlı personel yok',
             message: 'Personel yönetiminden ekip üyesi ekleyin. '
-                'Sigortasız ekipleri aşağıdan ekleyebilirsiniz.',
+                'Ekip başlığı altından çalışan sayısı girebilirsiniz.',
             icon: Icons.groups_outlined,
             actionLabel: 'Personel',
             onAction: () => context.push(AppRoutes.personel),
           ),
-          _UninsuredTeamsSection(date: date),
+          _DayTeamsSection(date: date),
         ] else ...[
         if (missing > 0) ...[
           const SizedBox(height: AppSpacing.sm),
@@ -720,15 +721,9 @@ class _DailyView extends StatelessWidget {
               color: AppColors.electricBlue,
             ),
             const SizedBox(width: AppSpacing.xs),
-            Icon(
-              Icons.verified_user_outlined,
-              size: 14,
-              color: theme.colorScheme.primary,
-            ),
-            const SizedBox(width: AppSpacing.xs),
             Expanded(
               child: Text(
-                'Sigortalı Personel',
+                'Personel',
                 style: theme.textTheme.titleMedium?.copyWith(
                   fontWeight: FontWeight.w700,
                 ),
@@ -803,16 +798,16 @@ class _DailyView extends StatelessWidget {
             ),
           const SizedBox(height: AppSpacing.sm),
         ],
-        _UninsuredTeamsSection(date: date),
+        _DayTeamsSection(date: date),
         ],
       ],
     );
   }
 }
 
-/// Sigortasız ekip — yalnız ekip adı + çalışan sayısı (personel adı yok).
-class _UninsuredTeamsSection extends ConsumerWidget {
-  const _UninsuredTeamsSection({required this.date});
+/// Günlük ekip — katalogdan ekip adı + çalışan sayısı (personel adı yok).
+class _DayTeamsSection extends ConsumerWidget {
+  const _DayTeamsSection({required this.date});
 
   final String date;
 
@@ -820,9 +815,49 @@ class _UninsuredTeamsSection extends ConsumerWidget {
     BuildContext context,
     WidgetRef ref, {
     required String projectId,
+    required List<String> catalogTeams,
+    required Set<String> usedTeamNames,
     UninsuredTeamEntry? existing,
   }) async {
-    final nameCtrl = TextEditingController(text: existing?.teamName ?? '');
+    final available = <String>{
+      ...catalogTeams,
+      if (existing != null && existing.teamName.trim().isNotEmpty)
+        existing.teamName,
+    }.toList()
+      ..sort((a, b) => a.toLowerCase().compareTo(b.toLowerCase()));
+
+    final selectable = available
+        .where(
+          (t) =>
+              existing?.teamName == t ||
+              !usedTeamNames.contains(t),
+        )
+        .toList();
+
+    if (selectable.isEmpty) {
+      if (!context.mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(
+            catalogTeams.isEmpty
+                ? 'Önce Ayarlar → Ekipler’den ekip tanımlayın.'
+                : 'Bu gün için seçilebilecek ekip kalmadı.',
+          ),
+          action: catalogTeams.isEmpty
+              ? SnackBarAction(
+                  label: 'Ekipler',
+                  onPressed: () => context.push(AppRoutes.ekipler),
+                )
+              : null,
+        ),
+      );
+      return;
+    }
+
+    String? selectedTeam = existing?.teamName;
+    if (selectedTeam == null || !selectable.contains(selectedTeam)) {
+      selectedTeam = selectable.first;
+    }
     final countCtrl = TextEditingController(
       text: existing == null ? '' : '${existing.workerCount}',
     );
@@ -830,76 +865,86 @@ class _UninsuredTeamsSection extends ConsumerWidget {
 
     final saved = await SJModal.showSheet<bool>(
       context: context,
-      title: existing == null ? 'Sigortasız ekip ekle' : 'Sigortasız ekibi düzenle',
-      child: Form(
-        key: formKey,
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.stretch,
-          children: [
-            Text(
-              'Personel adı girilmez. Yalnız ekip adı ve çalışan sayısı.',
-              style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                    color: Theme.of(context).colorScheme.onSurfaceVariant,
+      title: existing == null ? 'Ekip ekle' : 'Ekibi düzenle',
+      child: StatefulBuilder(
+        builder: (context, setModalState) {
+          return Form(
+            key: formKey,
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                Text(
+                  'Ayarlar’daki ekiplerden seçin; çalışan sayısını girin.',
+                  style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                        color: Theme.of(context).colorScheme.onSurfaceVariant,
+                      ),
+                ),
+                const SizedBox(height: AppSpacing.md),
+                DropdownButtonFormField<String>(
+                  value: selectedTeam,
+                  isExpanded: true,
+                  decoration: const InputDecoration(labelText: 'Ekip *'),
+                  items: [
+                    for (final t in selectable)
+                      DropdownMenuItem(value: t, child: Text(t)),
+                  ],
+                  onChanged: (v) {
+                    if (v == null) return;
+                    setModalState(() => selectedTeam = v);
+                  },
+                  validator: (v) {
+                    if (v == null || v.trim().isEmpty) {
+                      return 'Ekip seçin';
+                    }
+                    return null;
+                  },
+                ),
+                const SizedBox(height: AppSpacing.sm),
+                TextFormField(
+                  controller: countCtrl,
+                  keyboardType: TextInputType.number,
+                  decoration: const InputDecoration(
+                    labelText: 'Çalışan sayısı *',
+                    hintText: 'Örn. 8',
                   ),
+                  validator: (v) {
+                    final n = int.tryParse((v ?? '').trim());
+                    if (n == null || n <= 0) return '1 veya daha fazla girin';
+                    return null;
+                  },
+                ),
+                const SizedBox(height: AppSpacing.md),
+                SJButton(
+                  label: existing == null ? 'Ekle' : 'Kaydet',
+                  onPressed: () {
+                    if (!(formKey.currentState?.validate() ?? false)) return;
+                    Navigator.of(context).pop(true);
+                  },
+                ),
+              ],
             ),
-            const SizedBox(height: AppSpacing.md),
-            TextFormField(
-              controller: nameCtrl,
-              textCapitalization: TextCapitalization.words,
-              decoration: const InputDecoration(
-                labelText: 'Ekip adı *',
-                hintText: 'Örn. Kalıp ekibi',
-              ),
-              validator: (v) {
-                if (v == null || v.trim().isEmpty) return 'Ekip adı gerekli';
-                return null;
-              },
-            ),
-            const SizedBox(height: AppSpacing.sm),
-            TextFormField(
-              controller: countCtrl,
-              keyboardType: TextInputType.number,
-              decoration: const InputDecoration(
-                labelText: 'Çalışan sayısı *',
-                hintText: 'Örn. 8',
-              ),
-              validator: (v) {
-                final n = int.tryParse((v ?? '').trim());
-                if (n == null || n <= 0) return '1 veya daha fazla girin';
-                return null;
-              },
-            ),
-            const SizedBox(height: AppSpacing.md),
-            SJButton(
-              label: existing == null ? 'Ekle' : 'Kaydet',
-              onPressed: () {
-                if (!(formKey.currentState?.validate() ?? false)) return;
-                Navigator.of(context).pop(true);
-              },
-            ),
-          ],
-        ),
+          );
+        },
       ),
     );
 
-    final name = nameCtrl.text;
+    final teamName = selectedTeam;
     final countText = countCtrl.text;
-    nameCtrl.dispose();
     countCtrl.dispose();
-    if (saved != true) return;
+    if (saved != true || teamName == null || teamName.trim().isEmpty) return;
 
     final count = int.tryParse(countText.trim()) ?? 0;
     final notifier = ref.read(uninsuredTeamsProvider.notifier);
     if (existing != null) {
       notifier.upsert(
-        existing.copyWith(teamName: name, workerCount: count),
+        existing.copyWith(teamName: teamName, workerCount: count),
       );
     } else {
       notifier.add(
         projectId: projectId,
         date: date,
-        teamName: name,
+        teamName: teamName,
         workerCount: count,
       );
     }
@@ -912,11 +957,13 @@ class _UninsuredTeamsSection extends ConsumerWidget {
     if (project == null) return const SizedBox.shrink();
 
     final canEdit = ref.watch(canEditActiveProjectProvider);
+    final catalogTeams = ref.watch(teamsProvider);
     final entries = ref
         .watch(uninsuredTeamsProvider)
         .where((e) => e.projectId == project.id && e.date == date)
         .toList()
       ..sort((a, b) => a.teamName.compareTo(b.teamName));
+    final usedTeamNames = entries.map((e) => e.teamName).toSet();
     final totalWorkers =
         entries.fold<int>(0, (sum, e) => sum + e.workerCount);
 
@@ -940,16 +987,12 @@ class _UninsuredTeamsSection extends ConsumerWidget {
               color: AppColors.electricBlue,
             ),
             const SizedBox(width: AppSpacing.xs),
-            Icon(
-              Icons.groups_outlined,
-              size: 14,
-              color: theme.colorScheme.primary,
-            ),
-            const SizedBox(width: AppSpacing.xs),
             Expanded(
               child: Text(
-                'Sigortasız ekipler',
-                style: theme.textTheme.titleMedium,
+                'Ekip',
+                style: theme.textTheme.titleMedium?.copyWith(
+                  fontWeight: FontWeight.w700,
+                ),
               ),
             ),
             if (entries.isNotEmpty)
@@ -961,7 +1004,13 @@ class _UninsuredTeamsSection extends ConsumerWidget {
             OutlinedButton.icon(
               onPressed: () {
                 if (!canEdit) return denyWrite();
-                _openEditor(context, ref, projectId: project.id);
+                _openEditor(
+                  context,
+                  ref,
+                  projectId: project.id,
+                  catalogTeams: catalogTeams,
+                  usedTeamNames: usedTeamNames,
+                );
               },
               style: OutlinedButton.styleFrom(
                 visualDensity: VisualDensity.compact,
@@ -979,11 +1028,23 @@ class _UninsuredTeamsSection extends ConsumerWidget {
         if (entries.isEmpty) ...[
           const SizedBox(height: AppSpacing.sm),
           Text(
-            'Ad-soyad girmeden ekip adı ve çalışan sayısı ekleyin.',
+            catalogTeams.isEmpty
+                ? 'Ayarlar → Ekipler’de ekip tanımlayın; ardından çalışan sayısı ekleyin.'
+                : 'Açılır listeden ekip seçip çalışan sayısı girin.',
             style: theme.textTheme.bodySmall?.copyWith(
               color: theme.colorScheme.onSurfaceVariant,
             ),
           ),
+          if (catalogTeams.isEmpty) ...[
+            const SizedBox(height: AppSpacing.sm),
+            Align(
+              alignment: Alignment.centerLeft,
+              child: TextButton(
+                onPressed: () => context.push(AppRoutes.ekipler),
+                child: const Text('Ekiplere git'),
+              ),
+            ),
+          ],
         ] else ...[
           const SizedBox(height: AppSpacing.sm),
           for (final entry in entries)
@@ -1021,6 +1082,8 @@ class _UninsuredTeamsSection extends ConsumerWidget {
                           context,
                           ref,
                           projectId: project.id,
+                          catalogTeams: catalogTeams,
+                          usedTeamNames: usedTeamNames,
                           existing: entry,
                         );
                       },
@@ -2150,7 +2213,7 @@ class _PuantajExportSheetState extends State<_PuantajExportSheet> {
     if (_layout == PuantajExportLayout.ekip &&
         _exportPeople.isEmpty &&
         !hasUninsured) {
-      setState(() => _error = 'Dışa aktarılacak ekip veya sigortasız kayıt yok.');
+      setState(() => _error = 'Dışa aktarılacak ekip kaydı yok.');
       return;
     }
     setState(() {
@@ -2269,8 +2332,9 @@ class _PuantajExportSheetState extends State<_PuantajExportSheet> {
         if (_layout == PuantajExportLayout.ekip) ...[
           const SizedBox(height: AppSpacing.xs),
           Text(
-            'Ekip çıktısı: sigorta ettiren firma + ekip + sayı '
-            '(Mevcut, Yarım, Giriş, Çıkış). Sigortasız ayrı bölümde.',
+            'Ekip çıktısı: firma + ekip + sayı '
+            '(Mevcut, Yarım, Giriş, Çıkış). '
+            'Ekip başlığı kayıtları ayrı satırda.',
             style: theme.textTheme.bodySmall?.copyWith(
               color: theme.colorScheme.onSurfaceVariant,
             ),

@@ -379,7 +379,7 @@ void main() {
       expect(report.visual.companies.single.rows.single.totalLabel, '6');
     });
 
-    test('ekip günlük: M/Y/G/Ç sayılır, sigortasız ayrı satır', () {
+    test('ekip günlük: M/Y/G/Ç sayılır, ekip başlığı ayrı satır', () {
       final a = Person(
         id: '1',
         projectId: 'p',
@@ -451,8 +451,8 @@ void main() {
 
       expect(report.plainTable, isTrue);
       expect(report.rows, [
-        ['Sigortalı', 'Bsd İnşaat', 'Alçısıva', '2'],
-        ['Sigortasız', '—', 'Kalıp', '4'],
+        ['Personel', 'Bsd İnşaat', 'Alçısıva', '2'],
+        ['Ekip', '—', 'Kalıp', '4'],
       ]);
     });
   });

@@ -2,7 +2,7 @@ import 'package:equatable/equatable.dart';
 
 import '../../core/utils/text_format.dart';
 
-/// Sigortasız (ad-soyadsız) ekip — günlük baş sayısı kaydı.
+/// Günlük ekip baş sayısı — katalog ekip adı + çalışan sayısı.
 ///
 /// Personel satırı yoktur; yalnız [teamName] + [workerCount].
 /// Mantıksal kapsam: `(projectId, date)`.

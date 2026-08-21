@@ -9,10 +9,10 @@ enum PuantajReportPeriod { daily, weekly, monthly }
 
 /// Puantaj AL çıktı türü.
 enum PuantajExportLayout {
-  /// Sigortalı kişiler satır satır (mevcut cetvel).
+  /// Kayıtlı personel satır satır (mevcut cetvel).
   isim,
 
-  /// Sigorta ettiren firma + ekip + çalışan sayısı.
+  /// Firma + ekip + çalışan sayısı; Ekip başlığı kayıtları ayrı.
   ekip,
 }
 
@@ -173,7 +173,7 @@ abstract final class PuantajReportBuilder {
     };
   }
 
-  /// Firma + ekip + çalışan sayısı (M/Y/G/Ç); sigortasız ayrı bölüm.
+  /// Firma + ekip + çalışan sayısı (M/Y/G/Ç); Ekip başlığı ayrı bölüm.
   static PuantajReportData buildEkip({
     required String projectName,
     required String projectId,
@@ -271,7 +271,7 @@ abstract final class PuantajReportBuilder {
     for (final key in insuredKeys) {
       final n = insuredGroups[key]!;
       insuredTotal += n;
-      rows.add(['Sigortalı', key.$1, key.$2, '$n']);
+      rows.add(['Personel', key.$1, key.$2, '$n']);
     }
 
     var uninsuredTotal = 0;
@@ -279,7 +279,7 @@ abstract final class PuantajReportBuilder {
       ..sort((a, b) => a.teamName.compareTo(b.teamName));
     for (final e in dayUninsured) {
       uninsuredTotal += e.workerCount;
-      rows.add(['Sigortasız', '—', e.teamName, '${e.workerCount}']);
+      rows.add(['Ekip', '—', e.teamName, '${e.workerCount}']);
     }
 
     return PuantajReportData(
@@ -288,8 +288,8 @@ abstract final class PuantajReportBuilder {
       headers: headers,
       rows: rows,
       summaryLines: [
-        'Sigortalı toplam: $insuredTotal kişi',
-        'Sigortasız toplam: $uninsuredTotal kişi',
+        'Personel toplam: $insuredTotal kişi',
+        'Ekip toplam: $uninsuredTotal kişi',
         'Genel toplam: ${insuredTotal + uninsuredTotal} kişi',
         'Sayım: Mevcut, Yarım, Giriş, Çıkış',
       ],
@@ -374,7 +374,7 @@ abstract final class PuantajReportBuilder {
       if (rowSum == 0) continue;
       grandInsured += rowSum;
       rows.add([
-        'Sigortalı',
+        'Personel',
         key.$1,
         key.$2,
         ...dayCounts.map((e) => '$e'),
@@ -395,7 +395,7 @@ abstract final class PuantajReportBuilder {
       if (rowSum == 0) continue;
       grandUninsured += rowSum;
       rows.add([
-        'Sigortasız',
+        'Ekip',
         '—',
         name,
         ...dayCounts.map((e) => '$e'),
@@ -409,8 +409,8 @@ abstract final class PuantajReportBuilder {
       headers: headers,
       rows: rows,
       summaryLines: [
-        'Sigortalı gün-kişi toplamı: $grandInsured',
-        'Sigortasız gün-kişi toplamı: $grandUninsured',
+        'Personel gün-kişi toplamı: $grandInsured',
+        'Ekip gün-kişi toplamı: $grandUninsured',
         'Sayım: Mevcut, Yarım, Giriş, Çıkış',
       ],
       landscape: true,
