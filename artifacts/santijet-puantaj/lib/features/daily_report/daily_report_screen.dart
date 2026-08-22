@@ -30,7 +30,11 @@ import '../../domain/enums/photo_work_category.dart';
 import 'widgets/attendance_summary_table.dart';
 import 'widgets/daily_report_entry_page.dart';
 import 'widgets/daily_report_export_sections_sheet.dart';
+import 'widgets/monthly_report_view.dart';
 import 'widgets/weather_compact_card.dart';
+import 'widgets/weekly_report_view.dart';
+
+enum _ReportViewMode { daily, weekly, monthly }
 
 /// Kart içi metin stili — chrome textTheme renklerini atar; kart mürekkebi kullanır.
 ///
@@ -90,6 +94,7 @@ class _DailyReportScreenState extends ConsumerState<DailyReportScreen> {
   String? _boundKey;
   Timer? _autosaveTimer;
   bool _hydrating = false;
+  _ReportViewMode _viewMode = _ReportViewMode.daily;
 
   @override
   void initState() {
@@ -1500,6 +1505,68 @@ class _DailyReportScreenState extends ConsumerState<DailyReportScreen> {
     }
   }
 
+  void _openDailyDate(String date) {
+    ref.read(dailyReportSelectedDateProvider.notifier).state = date;
+    _bootstrapped = false;
+    _boundKey = null;
+    setState(() => _viewMode = _ReportViewMode.daily);
+  }
+
+  Widget _reportModeTabs(ThemeData theme) {
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(
+        AppSpacing.md,
+        AppSpacing.afterHeader,
+        AppSpacing.md,
+        AppSpacing.sm,
+      ),
+      child: DecoratedBox(
+        decoration: BoxDecoration(
+          color: theme.cardTheme.color ?? theme.colorScheme.surface,
+          borderRadius: AppRadii.md,
+          border: Border.all(color: theme.dividerColor),
+        ),
+        child: Row(
+          children: [
+            for (final m in _ReportViewMode.values)
+              Expanded(
+                child: InkWell(
+                  onTap: () => setState(() => _viewMode = m),
+                  borderRadius: AppRadii.md,
+                  child: Container(
+                    padding: const EdgeInsets.symmetric(vertical: 10),
+                    decoration: BoxDecoration(
+                      color: _viewMode == m
+                          ? theme.colorScheme.secondary
+                          : Colors.transparent,
+                      borderRadius: AppRadii.md,
+                    ),
+                    child: Text(
+                      switch (m) {
+                        _ReportViewMode.daily => 'Günlük rapor',
+                        _ReportViewMode.weekly => 'Haftalık rapor',
+                        _ReportViewMode.monthly => 'Aylık rapor',
+                      },
+                      textAlign: TextAlign.center,
+                      maxLines: 2,
+                      overflow: TextOverflow.ellipsis,
+                      style: theme.textTheme.labelLarge?.copyWith(
+                        color: _viewMode == m
+                            ? theme.colorScheme.onSecondary
+                            : theme.colorScheme.onSurfaceVariant,
+                        fontWeight: FontWeight.w600,
+                        fontSize: 12,
+                      ),
+                    ),
+                  ),
+                ),
+              ),
+          ],
+        ),
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     final project = ref.watch(activeProjectProvider);
@@ -1507,7 +1574,7 @@ class _DailyReportScreenState extends ConsumerState<DailyReportScreen> {
     final report = ref.watch(activeDailyReportProvider);
     final snap = ref.watch(liveAttendanceSnapshotProvider);
 
-    if (project != null) {
+    if (project != null && _viewMode == _ReportViewMode.daily) {
       WidgetsBinding.instance.addPostFrameCallback((_) {
         if (mounted) _ensureAndHydrate();
       });
@@ -1520,7 +1587,7 @@ class _DailyReportScreenState extends ConsumerState<DailyReportScreen> {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
-              const SantijetHeader(subtitle: 'Günlük Rapor'),
+              const SantijetHeader(subtitle: 'Rapor'),
               Expanded(
                 child: SJEmptyState(
                   title: 'Önce proje ekleyin',
@@ -1542,21 +1609,25 @@ class _DailyReportScreenState extends ConsumerState<DailyReportScreen> {
 
     return Scaffold(
       backgroundColor: AppColors.canvas,
-      floatingActionButton: FloatingActionButton.extended(
-        onPressed: _openExportSheet,
-        icon: const Icon(Icons.ios_share_outlined),
-        label: const Text('Rapor AL'),
-      ),
+      floatingActionButton: _viewMode == _ReportViewMode.daily
+          ? FloatingActionButton.extended(
+              onPressed: _openExportSheet,
+              icon: const Icon(Icons.ios_share_outlined),
+              label: const Text('Rapor AL'),
+            )
+          : null,
       body: SafeArea(
         bottom: false,
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
-            const SantijetHeader(subtitle: 'Günlük Rapor'),
+            const SantijetHeader(subtitle: 'Rapor'),
+            _reportModeTabs(theme),
+            if (_viewMode == _ReportViewMode.daily) ...[
             Padding(
               padding: const EdgeInsets.fromLTRB(
                 AppSpacing.md,
-                AppSpacing.afterHeader,
+                0,
                 AppSpacing.md,
                 0,
               ),
@@ -2233,6 +2304,30 @@ class _DailyReportScreenState extends ConsumerState<DailyReportScreen> {
                 ],
               ),
             ),
+            ] else if (_viewMode == _ReportViewMode.weekly)
+              Expanded(
+                child: WeeklyReportView(
+                  projectId: project.id,
+                  anchorDate: date,
+                  onAnchorChanged: (d) {
+                    ref.read(dailyReportSelectedDateProvider.notifier).state =
+                        d;
+                  },
+                  onOpenDaily: _openDailyDate,
+                ),
+              )
+            else
+              Expanded(
+                child: MonthlyReportView(
+                  projectId: project.id,
+                  anchorDate: date,
+                  onAnchorChanged: (d) {
+                    ref.read(dailyReportSelectedDateProvider.notifier).state =
+                        d;
+                  },
+                  onOpenDaily: _openDailyDate,
+                ),
+              ),
           ],
         ),
       ),

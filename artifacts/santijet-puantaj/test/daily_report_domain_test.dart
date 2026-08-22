@@ -4,6 +4,7 @@ import 'package:santijet_puantaj/data/services/weather_service.dart';
 import 'package:santijet_puantaj/domain/daily_report/attendance_snapshot_builder.dart';
 import 'package:santijet_puantaj/domain/daily_report/daily_report_copy.dart';
 import 'package:santijet_puantaj/domain/entities/attendance.dart';
+import 'package:santijet_puantaj/domain/daily_report/period_report_aggregator.dart';
 import 'package:santijet_puantaj/domain/entities/daily_report.dart';
 import 'package:santijet_puantaj/domain/entities/person.dart';
 import 'package:santijet_puantaj/domain/enums/attendance_status.dart';
@@ -422,6 +423,71 @@ BİRİM FİYAT: 4.5
 
       expect(outcome.result.isEmpty, isTrue);
       expect(outcome.report.machines.single.id, 'keep');
+    });
+  });
+
+  group('PeriodReportAggregator', () {
+    test('haftalık özet günlük kayıtlardan türetilir', () {
+      final reports = [
+        DailyReport(
+          id: 'r1',
+          projectId: 'p',
+          date: '04.08.2026',
+          photos: [
+            DailyReportPhoto(id: 'ph1', dataBase64: 'abc'),
+          ],
+          workConstruction: 'Kolon',
+        ),
+        DailyReport(
+          id: 'r2',
+          projectId: 'p',
+          date: '05.08.2026',
+          incomingMaterials: [
+            DailyReportMaterial(id: 'm1', name: 'Demir'),
+          ],
+        ),
+      ];
+
+      final week = PeriodReportAggregator.buildWeekly(
+        anchorDate: '06.08.2026',
+        reports: reports,
+        projectId: 'p',
+      );
+
+      expect(week.days.length, 7);
+      expect(week.filledDayCount, 2);
+      expect(week.totalPhotos, 1);
+      expect(week.totalIncoming, 1);
+      expect(week.days[3].date, '06.08.2026');
+      expect(week.days[3].hasContent, isFalse);
+    });
+
+    test('aylık özet haftalara bölünür', () {
+      final reports = [
+        DailyReport(
+          id: 'r1',
+          projectId: 'p',
+          date: '01.08.2026',
+          workConstruction: 'Temel',
+        ),
+        DailyReport(
+          id: 'r2',
+          projectId: 'p',
+          date: '15.08.2026',
+          workElectrical: 'Kablo',
+        ),
+      ];
+
+      final month = PeriodReportAggregator.buildMonthly(
+        anchorDate: '15.08.2026',
+        reports: reports,
+        projectId: 'p',
+      );
+
+      expect(month.monthDays.length, 31);
+      expect(month.filledDayCount, 2);
+      expect(month.weeks.length, greaterThanOrEqualTo(4));
+      expect(month.totalAdamSaat, 0);
     });
   });
 }
