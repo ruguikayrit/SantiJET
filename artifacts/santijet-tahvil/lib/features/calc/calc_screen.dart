@@ -457,13 +457,14 @@ class _SpacingPanel extends StatelessWidget {
           _SuggestionsHeader(),
           const SizedBox(height: AppSpacing.sm),
           for (final result in allowed)
-            _ResultTile(
-              title:
+            _SuggestionLineTile(
+              sourceLine: 'Ø$diameter / ${formatCm(spacingCm!)} cm',
+              sourceAs:
+                  'As ${formatAreaMm2(result.sourceAsPerMeterMm2)} mm²/m',
+              targetLine:
                   'Ø${result.targetDiameter} / ${formatCm(result.resultingSpacingCm)} cm',
-              subtitle:
+              targetAs:
                   'As ${formatAreaMm2(result.targetAsPerMeterMm2)} mm²/m',
-              allowed: true,
-              adequate: true,
             ),
         ],
       ],
@@ -550,12 +551,12 @@ class _QuantityPanel extends StatelessWidget {
           _SuggestionsHeader(),
           const SizedBox(height: AppSpacing.sm),
           for (final result in allowed)
-            _ResultTile(
-              title: '${result.equivalentQuantity}×Ø${result.targetDiameter}',
-              subtitle:
-                  'Sapma %${result.areaDeviationPercent.toStringAsFixed(1)}',
-              allowed: true,
-              adequate: true,
+            _SuggestionLineTile(
+              sourceLine: '$quantity×Ø$diameter',
+              sourceAs: 'As ${formatAreaMm2(result.sourceAreaMm2)} mm²',
+              targetLine:
+                  '${result.equivalentQuantity}×Ø${result.targetDiameter}',
+              targetAs: 'As ${formatAreaMm2(result.targetAreaMm2)} mm²',
             ),
         ],
       ],
@@ -662,12 +663,17 @@ class _DualSpacingPanel extends StatelessWidget {
           _SuggestionsHeader(),
           const SizedBox(height: AppSpacing.sm),
           for (final item in allowed)
-            _ResultTile(
-              title: item.summary,
-              subtitle:
-                  'Sapma %${item.areaDeviationPercent.toStringAsFixed(1)}',
-              allowed: true,
-              adequate: true,
+            _SuggestionLineTile(
+              sourceLine:
+                  '${_spacingLegSource(item.legA)} · '
+                  '${_spacingLegSource(item.legB)}',
+              sourceAs:
+                  'As ${formatAreaMm2(item.sourceAsPerMeterMm2)} mm²/m',
+              targetLine:
+                  '${_spacingLegTarget(item.legA)} · '
+                  '${_spacingLegTarget(item.legB)}',
+              targetAs:
+                  'As ${formatAreaMm2(item.targetAsPerMeterMm2)} mm²/m',
             ),
         ],
       ],
@@ -774,12 +780,15 @@ class _DualPanel extends StatelessWidget {
           _SuggestionsHeader(),
           const SizedBox(height: AppSpacing.sm),
           for (final item in allowed)
-            _ResultTile(
-              title: item.summary,
-              subtitle:
-                  'Sapma %${item.areaDeviationPercent.toStringAsFixed(1)}',
-              allowed: true,
-              adequate: true,
+            _SuggestionLineTile(
+              sourceLine:
+                  '${item.legA.sourceQuantity}×Ø${item.legA.sourceDiameter} · '
+                  '${item.legB.sourceQuantity}×Ø${item.legB.sourceDiameter}',
+              sourceAs: 'As ${formatAreaMm2(item.sourceAreaMm2)} mm²',
+              targetLine:
+                  '${item.legA.targetQuantity}×Ø${item.legA.targetDiameter} · '
+                  '${item.legB.targetQuantity}×Ø${item.legB.targetDiameter}',
+              targetAs: 'As ${formatAreaMm2(item.targetAreaMm2)} mm²',
             ),
         ],
       ],
@@ -923,6 +932,73 @@ class _DualHeroRow extends StatelessWidget {
   }
 }
 
+class _SuggestionLineTile extends StatelessWidget {
+  const _SuggestionLineTile({
+    required this.sourceLine,
+    required this.sourceAs,
+    required this.targetLine,
+    required this.targetAs,
+  });
+
+  final String sourceLine;
+  final String sourceAs;
+  final String targetLine;
+  final String targetAs;
+
+  @override
+  Widget build(BuildContext context) {
+    final blue = AppColors.statusInkOnCard(AppColors.electricBlue);
+    final green = AppColors.statusInkOnCard(AppColors.success);
+    final asStyle = AppTypography.cardBodySmall.copyWith(
+      color: AppColors.cardTextSecondary,
+    );
+
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 8),
+      child: SJCard(
+        accentColor: AppColors.success,
+        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+        child: Row(
+          children: [
+            Expanded(
+              child: Text.rich(
+                TextSpan(
+                  children: [
+                    TextSpan(
+                      text: sourceLine,
+                      style: AppTypography.onCard(
+                        AppTypography.cardTitleMedium,
+                        color: blue,
+                      ),
+                    ),
+                    TextSpan(text: '  ', style: asStyle),
+                    TextSpan(text: sourceAs, style: asStyle),
+                    TextSpan(
+                      text: '  →  ',
+                      style: AppTypography.cardBodySmall.copyWith(
+                        color: AppColors.cardTextMuted,
+                      ),
+                    ),
+                    TextSpan(
+                      text: targetLine,
+                      style: AppTypography.onCard(
+                        AppTypography.cardTitleMedium,
+                        color: green,
+                      ),
+                    ),
+                    TextSpan(text: '  ', style: asStyle),
+                    TextSpan(text: targetAs, style: asStyle),
+                  ],
+                ),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
 class _HeroResult extends StatelessWidget {
   const _HeroResult({
     required this.fromLabel,
@@ -984,58 +1060,6 @@ class _HeroResult extends StatelessWidget {
             expanded: true,
           ),
         ],
-      ),
-    );
-  }
-}
-
-class _ResultTile extends StatelessWidget {
-  const _ResultTile({
-    required this.title,
-    required this.subtitle,
-    required this.allowed,
-    required this.adequate,
-  });
-
-  final String title;
-  final String subtitle;
-  final bool allowed;
-  final bool adequate;
-
-  @override
-  Widget build(BuildContext context) {
-    final color = allowed
-        ? AppColors.success
-        : adequate
-            ? AppColors.warning
-            : AppColors.critical;
-    return Padding(
-      padding: const EdgeInsets.only(bottom: 8),
-      child: SJCard(
-        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
-        child: Row(
-          children: [
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(title, style: AppTypography.cardTitleMedium),
-                  const SizedBox(height: 2),
-                  Text(subtitle, style: AppTypography.cardBodySmall),
-                ],
-              ),
-            ),
-            const SizedBox(width: 8),
-            SJStatusBadge(
-              label: allowed
-                  ? 'UYGUN'
-                  : adequate
-                      ? 'FAZLA'
-                      : 'HAYIR',
-              color: color,
-            ),
-          ],
-        ),
       ),
     );
   }
