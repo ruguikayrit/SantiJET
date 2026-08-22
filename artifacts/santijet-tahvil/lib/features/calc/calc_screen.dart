@@ -634,14 +634,16 @@ class _DualSpacingPanel extends StatelessWidget {
         ),
         const SizedBox(height: AppSpacing.md),
         if (recommended != null)
-          _HeroResult(
-            fromLabel: '${recommended.legA.label.split(' → ').first} · '
-                '${recommended.legB.label.split(' → ').first}',
-            toLabel: recommended.summary,
-            meta:
-                'As ${formatAreaMm2(recommended.sourceAsPerMeterMm2)} → '
-                '${formatAreaMm2(recommended.targetAsPerMeterMm2)} mm²/m',
-            allowed: true,
+          _DualHeroResult(
+            sourceLine:
+                '${_spacingLegSource(recommended.legA)} · '
+                '${_spacingLegSource(recommended.legB)}',
+            sourceAs: recommended.sourceAsPerMeterMm2,
+            targetLine:
+                '${_spacingLegTarget(recommended.legA)} · '
+                '${_spacingLegTarget(recommended.legB)}',
+            targetAs: recommended.targetAsPerMeterMm2,
+            asUnit: 'mm²/m',
             onSave: () => onSave(
               summary: recommended.summary,
               detail:
@@ -745,13 +747,16 @@ class _DualPanel extends StatelessWidget {
         ),
         const SizedBox(height: AppSpacing.md),
         if (recommended != null)
-          _HeroResult(
-            fromLabel: recommended.legA.label.split(' → ').first,
-            toLabel: recommended.summary,
-            meta:
-                'As ${formatAreaMm2(recommended.sourceAreaMm2)} → '
-                '${formatAreaMm2(recommended.targetAreaMm2)} mm²',
-            allowed: true,
+          _DualHeroResult(
+            sourceLine:
+                '${recommended.legA.sourceQuantity}×Ø${recommended.legA.sourceDiameter} · '
+                '${recommended.legB.sourceQuantity}×Ø${recommended.legB.sourceDiameter}',
+            sourceAs: recommended.sourceAreaMm2,
+            targetLine:
+                '${recommended.legA.targetQuantity}×Ø${recommended.legA.targetDiameter} · '
+                '${recommended.legB.targetQuantity}×Ø${recommended.legB.targetDiameter}',
+            targetAs: recommended.targetAreaMm2,
+            asUnit: 'mm²',
             onSave: () => onSave(
               summary: recommended.summary,
               detail:
@@ -816,6 +821,108 @@ class _NeedInputCard extends StatelessWidget {
   }
 }
 
+String _spacingLegSource(TahvilDualSpacingLeg leg) =>
+    'Ø${leg.sourceDiameter} / ${formatCm(leg.sourceSpacingMm / 10)} cm';
+
+String _spacingLegTarget(TahvilDualSpacingLeg leg) =>
+    'Ø${leg.targetDiameter} / ${formatCm(leg.targetSpacingMm / 10)} cm';
+
+class _DualHeroResult extends StatelessWidget {
+  const _DualHeroResult({
+    required this.sourceLine,
+    required this.sourceAs,
+    required this.targetLine,
+    required this.targetAs,
+    required this.asUnit,
+    required this.onSave,
+  });
+
+  final String sourceLine;
+  final double sourceAs;
+  final String targetLine;
+  final double targetAs;
+  final String asUnit;
+  final VoidCallback onSave;
+
+  @override
+  Widget build(BuildContext context) {
+    return SJCard(
+      accentColor: AppColors.success,
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          Row(
+            children: [
+              Text('Önerilen tahvil', style: AppTypography.cardLabelMedium),
+              const Spacer(),
+              SJStatusBadge(
+                label: 'Optimum Uygunluk',
+                color: AppColors.success,
+              ),
+            ],
+          ),
+          const SizedBox(height: AppSpacing.sm),
+          _DualHeroRow(
+            donatiLine: sourceLine,
+            asLabel: 'As ${formatAreaMm2(sourceAs)} $asUnit',
+            color: AppColors.statusInkOnCard(AppColors.electricBlue),
+          ),
+          const SizedBox(height: AppSpacing.sm),
+          _DualHeroRow(
+            donatiLine: targetLine,
+            asLabel: 'As ${formatAreaMm2(targetAs)} $asUnit',
+            color: AppColors.statusInkOnCard(AppColors.success),
+          ),
+          const SizedBox(height: AppSpacing.md),
+          SJButton(
+            label: 'Kaydet',
+            icon: Icons.bookmark_add_outlined,
+            onPressed: onSave,
+            expanded: true,
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _DualHeroRow extends StatelessWidget {
+  const _DualHeroRow({
+    required this.donatiLine,
+    required this.asLabel,
+    required this.color,
+  });
+
+  final String donatiLine;
+  final String asLabel;
+  final Color color;
+
+  @override
+  Widget build(BuildContext context) {
+    return Row(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Expanded(
+          child: Text(
+            donatiLine,
+            style: AppTypography.onCard(
+              AppTypography.cardTitleMedium,
+              color: color,
+            ),
+          ),
+        ),
+        const SizedBox(width: 8),
+        Text(
+          asLabel,
+          style: AppTypography.cardBodySmall.copyWith(
+            color: AppColors.cardTextSecondary,
+          ),
+        ),
+      ],
+    );
+  }
+}
+
 class _HeroResult extends StatelessWidget {
   const _HeroResult({
     required this.fromLabel,
@@ -843,7 +950,7 @@ class _HeroResult extends StatelessWidget {
               Text('Önerilen tahvil', style: AppTypography.cardLabelMedium),
               const Spacer(),
               SJStatusBadge(
-                label: allowed ? 'UYGUN' : 'UYGUN DEĞİL',
+                label: allowed ? 'Optimum Uygunluk' : 'UYGUN DEĞİL',
                 color: allowed ? AppColors.success : AppColors.critical,
               ),
             ],
