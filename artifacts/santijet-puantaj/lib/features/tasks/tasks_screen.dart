@@ -1,8 +1,11 @@
 import 'dart:async';
+import 'dart:convert';
 
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import 'package:image_picker/image_picker.dart';
 
 import '../../core/design_system/sj_card.dart';
 import '../../core/design_system/sj_empty_state.dart';
@@ -13,6 +16,7 @@ import '../../core/theme/app_radii.dart';
 import '../../core/theme/app_spacing.dart';
 import '../../core/utils/puantaj_date.dart';
 import '../../core/utils/text_format.dart';
+import '../../core/utils/id_gen.dart';
 import '../../core/widgets/santijet_header.dart';
 import '../../data/providers/active_operator_provider.dart';
 import '../../data/providers/app_data_provider.dart';
@@ -187,6 +191,9 @@ class _TasksScreenState extends ConsumerState<TasksScreen> {
     var latestDelivery = existing?.dueDate ?? '';
     var status = existing?.status ?? TaskStatus.todo;
     var category = existing?.category.trim() ?? '';
+    var photos = List<TaskPhoto>.from(existing?.photos ?? const []);
+    const maxPhotos = 5;
+    final picker = ImagePicker();
     Person? assignee;
     if (existing != null) {
       for (final p in people) {
@@ -382,6 +389,238 @@ class _TasksScreenState extends ConsumerState<TasksScreen> {
                       textCapitalization: TextCapitalization.sentences,
                     ),
                     const SizedBox(height: AppSpacing.sm),
+                    Text('Fotoğraf', style: theme.textTheme.labelLarge),
+                    const SizedBox(height: AppSpacing.xs),
+                    if (photos.isNotEmpty)
+                      SizedBox(
+                        height: 88,
+                        child: ListView.separated(
+                          scrollDirection: Axis.horizontal,
+                          itemCount: photos.length,
+                          separatorBuilder: (_, __) =>
+                              const SizedBox(width: AppSpacing.sm),
+                          itemBuilder: (_, i) {
+                            final photo = photos[i];
+                            Widget image;
+                            try {
+                              image = Image.memory(
+                                base64Decode(photo.dataBase64),
+                                fit: BoxFit.cover,
+                                width: 88,
+                                height: 88,
+                              );
+                            } catch (_) {
+                              image = ColoredBox(
+                                color: theme.colorScheme.surfaceContainerHighest,
+                                child: const Icon(Icons.broken_image_outlined),
+                              );
+                            }
+                            return Stack(
+                              children: [
+                                ClipRRect(
+                                  borderRadius: AppRadii.sm,
+                                  child: SizedBox(
+                                    width: 88,
+                                    height: 88,
+                                    child: image,
+                                  ),
+                                ),
+                                if (canEditFields)
+                                  Positioned(
+                                    top: 2,
+                                    right: 2,
+                                    child: Material(
+                                      color: Colors.black54,
+                                      shape: const CircleBorder(),
+                                      child: InkWell(
+                                        customBorder: const CircleBorder(),
+                                        onTap: () => setModal(
+                                          () => photos = [
+                                            for (var j = 0;
+                                                j < photos.length;
+                                                j++)
+                                              if (j != i) photos[j],
+                                          ],
+                                        ),
+                                        child: const Padding(
+                                          padding: EdgeInsets.all(4),
+                                          child: Icon(
+                                            Icons.close,
+                                            size: 14,
+                                            color: Colors.white,
+                                          ),
+                                        ),
+                                      ),
+                                    ),
+                                  ),
+                              ],
+                            );
+                          },
+                        ),
+                      ),
+                    if (photos.isNotEmpty)
+                      const SizedBox(height: AppSpacing.sm),
+                    if (canEditFields)
+                      Row(
+                        children: [
+                          Expanded(
+                            child: OutlinedButton.icon(
+                              onPressed: photos.length >= maxPhotos
+                                  ? null
+                                  : () async {
+                                      try {
+                                        final files =
+                                            await picker.pickMultiImage(
+                                          maxWidth: 1280,
+                                          imageQuality: 72,
+                                        );
+                                        if (files.isEmpty) return;
+                                        final added = <TaskPhoto>[];
+                                        var skipped = 0;
+                                        for (final file in files) {
+                                          if (photos.length + added.length >=
+                                              maxPhotos) {
+                                            break;
+                                          }
+                                          try {
+                                            final bytes =
+                                                await file.readAsBytes();
+                                            if (bytes.length >
+                                                2 * 1024 * 1024) {
+                                              skipped++;
+                                              continue;
+                                            }
+                                            added.add(
+                                              TaskPhoto(
+                                                id: IdGen.make('tph'),
+                                                dataBase64:
+                                                    base64Encode(bytes),
+                                                mimeType: file.mimeType ??
+                                                    'image/jpeg',
+                                                createdAt: DateTime.now(),
+                                              ),
+                                            );
+                                          } catch (_) {}
+                                        }
+                                        if (added.isEmpty) {
+                                          if (!ctx.mounted) return;
+                                          ScaffoldMessenger.of(ctx)
+                                              .showSnackBar(
+                                            SnackBar(
+                                              content: Text(
+                                                skipped > 0
+                                                    ? 'Seçilen fotoğraflar çok büyük (en fazla ~2 MB)'
+                                                    : 'Foto eklenemedi',
+                                              ),
+                                            ),
+                                          );
+                                          return;
+                                        }
+                                        setModal(
+                                          () => photos = [...photos, ...added],
+                                        );
+                                        if (skipped > 0 && ctx.mounted) {
+                                          ScaffoldMessenger.of(ctx)
+                                              .showSnackBar(
+                                            SnackBar(
+                                              content: Text(
+                                                '$skipped foto boyuttan atlandı',
+                                              ),
+                                            ),
+                                          );
+                                        }
+                                      } catch (e) {
+                                        if (!ctx.mounted) return;
+                                        ScaffoldMessenger.of(ctx).showSnackBar(
+                                          SnackBar(
+                                            content:
+                                                Text('Foto eklenemedi: $e'),
+                                          ),
+                                        );
+                                      }
+                                    },
+                              icon: const Icon(
+                                Icons.photo_library_outlined,
+                                size: 18,
+                              ),
+                              label: const Text('Galeriden'),
+                            ),
+                          ),
+                          if (!kIsWeb) ...[
+                            const SizedBox(width: AppSpacing.sm),
+                            Expanded(
+                              child: OutlinedButton.icon(
+                                onPressed: photos.length >= maxPhotos
+                                    ? null
+                                    : () async {
+                                        try {
+                                          final file = await picker.pickImage(
+                                            source: ImageSource.camera,
+                                            maxWidth: 1280,
+                                            imageQuality: 72,
+                                          );
+                                          if (file == null) return;
+                                          final bytes =
+                                              await file.readAsBytes();
+                                          if (bytes.length >
+                                              2 * 1024 * 1024) {
+                                            if (!ctx.mounted) return;
+                                            ScaffoldMessenger.of(ctx)
+                                                .showSnackBar(
+                                              const SnackBar(
+                                                content: Text(
+                                                  'Fotoğraf çok büyük (en fazla ~2 MB)',
+                                                ),
+                                              ),
+                                            );
+                                            return;
+                                          }
+                                          setModal(
+                                            () => photos = [
+                                              ...photos,
+                                              TaskPhoto(
+                                                id: IdGen.make('tph'),
+                                                dataBase64:
+                                                    base64Encode(bytes),
+                                                mimeType: file.mimeType ??
+                                                    'image/jpeg',
+                                                createdAt: DateTime.now(),
+                                              ),
+                                            ],
+                                          );
+                                        } catch (e) {
+                                          if (!ctx.mounted) return;
+                                          ScaffoldMessenger.of(ctx)
+                                              .showSnackBar(
+                                            SnackBar(
+                                              content: Text(
+                                                'Foto çekilemedi: $e',
+                                              ),
+                                            ),
+                                          );
+                                        }
+                                      },
+                                icon: const Icon(
+                                  Icons.photo_camera_outlined,
+                                  size: 18,
+                                ),
+                                label: const Text('Çek'),
+                              ),
+                            ),
+                          ],
+                        ],
+                      ),
+                    if (canEditFields && photos.length >= maxPhotos)
+                      Padding(
+                        padding: const EdgeInsets.only(top: 4),
+                        child: Text(
+                          'En fazla $maxPhotos fotoğraf eklenebilir.',
+                          style: theme.textTheme.labelSmall?.copyWith(
+                            color: theme.colorScheme.onSurfaceVariant,
+                          ),
+                        ),
+                      ),
+                    const SizedBox(height: AppSpacing.sm),
                     InputDecorator(
                       decoration: const InputDecoration(
                         labelText: 'Kategori',
@@ -559,6 +798,7 @@ class _TasksScreenState extends ConsumerState<TasksScreen> {
             status: status,
             assigner: operator,
             assignee: assignee!,
+            photos: photos,
           );
     } else if (isAssigner) {
       if (category.isNotEmpty) {
@@ -572,6 +812,7 @@ class _TasksScreenState extends ConsumerState<TasksScreen> {
               earliestStart: earliestStart,
               dueDate: latestDelivery,
               status: status,
+              photos: photos,
               assignee: assignee!.name,
               assigneePersonId: assignee!.id,
               assignerPersonId: existing.assignerPersonId.isEmpty
@@ -939,6 +1180,36 @@ class _TasksScreenState extends ConsumerState<TasksScreen> {
                                       Text(
                                         task.description,
                                         style: theme.textTheme.bodyMedium,
+                                      ),
+                                    ],
+                                    if (task.photos.isNotEmpty) ...[
+                                      const SizedBox(height: 8),
+                                      SizedBox(
+                                        height: 64,
+                                        child: ListView.separated(
+                                          scrollDirection: Axis.horizontal,
+                                          itemCount: task.photos.length,
+                                          separatorBuilder: (_, __) =>
+                                              const SizedBox(width: 6),
+                                          itemBuilder: (_, i) {
+                                            final photo = task.photos[i];
+                                            try {
+                                              return ClipRRect(
+                                                borderRadius: AppRadii.sm,
+                                                child: Image.memory(
+                                                  base64Decode(
+                                                    photo.dataBase64,
+                                                  ),
+                                                  width: 64,
+                                                  height: 64,
+                                                  fit: BoxFit.cover,
+                                                ),
+                                              );
+                                            } catch (_) {
+                                              return const SizedBox.shrink();
+                                            }
+                                          },
+                                        ),
                                       ),
                                     ],
                                     const SizedBox(height: 8),

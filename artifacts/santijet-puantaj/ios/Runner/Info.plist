@@ -9,9 +9,9 @@
 	<key>CFBundleDisplayName</key>
 	<string>ŞantiJET SAHA</string>
 	<key>NSCameraUsageDescription</key>
-	<string>Günlük saha raporu fotoğrafları için kamera erişimi gerekir.</string>
+	<string>Saha raporu ve görev fotoğrafları için kamera erişimi gerekir.</string>
 	<key>NSPhotoLibraryUsageDescription</key>
-	<string>Günlük saha raporu fotoğrafları için galeri erişimi gerekir.</string>
+	<string>Saha raporu ve görev fotoğrafları için galeri erişimi gerekir.</string>
 	<key>CFBundleExecutable</key>
 	<string>$(EXECUTABLE_NAME)</string>
 	<key>CFBundleIdentifier</key>

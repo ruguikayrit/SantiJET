@@ -73,6 +73,7 @@ class TasksNotifier extends StateNotifier<List<SiteTask>> {
     String earliestStart = '',
     String dueDate = '',
     TaskStatus status = TaskStatus.todo,
+    List<TaskPhoto> photos = const [],
   }) {
     if (!RoleDegree.canAssignTasks(assigner)) {
       throw StateError('Yalnızca 1. derece roller görev atayabilir.');
@@ -91,6 +92,7 @@ class TasksNotifier extends StateNotifier<List<SiteTask>> {
       earliestStart: earliestStart.trim(),
       dueDate: dueDate.trim(),
       status: status,
+      photos: List<TaskPhoto>.from(photos),
       createdAt: now,
       updatedAt: now,
     );
