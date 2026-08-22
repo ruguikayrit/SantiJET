@@ -447,7 +447,7 @@ class _PuantajScreenState extends ConsumerState<PuantajScreen> {
   }
 }
 
-class _DailyView extends StatelessWidget {
+class _DailyView extends StatefulWidget {
   const _DailyView({
     required this.date,
     required this.onDateChanged,
@@ -496,21 +496,90 @@ class _DailyView extends StatelessWidget {
   final VoidCallback onCopyYesterday;
   final ValueChanged<Person> onPersonTap;
 
+  @override
+  State<_DailyView> createState() => _DailyViewState();
+}
+
+class _DailyViewState extends State<_DailyView> {
+  bool _l1Personel = false;
+  bool _l1Ekip = false;
+  final Map<String, bool> _l2Companies = {};
+  final Map<String, bool> _l3Teams = {};
+
+  @override
+  void didUpdateWidget(covariant _DailyView oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (oldWidget.date != widget.date) {
+      _l1Personel = false;
+      _l1Ekip = false;
+      _l2Companies.clear();
+      _l3Teams.clear();
+    }
+  }
+
+  String _teamKey(String company, String team) => '$company|$team';
+
+  bool _companyExpanded(String company) => _l2Companies[company] ?? false;
+
+  bool _teamExpanded(String company, String team) =>
+      _l3Teams[_teamKey(company, team)] ?? false;
+
+  void _toggleLevel1() {
+    final open = !(_l1Personel && _l1Ekip);
+    setState(() {
+      _l1Personel = open;
+      _l1Ekip = open;
+    });
+  }
+
+  void _toggleLevel2() {
+    final companies = widget.grouped.map((g) => g.company).toList();
+    if (companies.isEmpty) return;
+    final anyClosed = companies.any((c) => !(_l2Companies[c] ?? false));
+    setState(() {
+      for (final c in companies) {
+        _l2Companies[c] = anyClosed;
+      }
+    });
+  }
+
+  void _toggleLevel3() {
+    final keys = <String>[];
+    for (final g in widget.grouped) {
+      for (final t in _teamsOf(g.users)) {
+        keys.add(_teamKey(g.company, t.team));
+      }
+    }
+    if (keys.isEmpty) return;
+    final anyClosed = keys.any((k) => !(_l3Teams[k] ?? false));
+    setState(() {
+      for (final k in keys) {
+        _l3Teams[k] = anyClosed;
+      }
+    });
+  }
+
   Future<void> _pickDate(BuildContext context) async {
-    final initial = PuantajDate.parse(date);
+    final initial = PuantajDate.parse(widget.date);
     final picked = await showDatePicker(
       context: context,
       initialDate: initial,
       firstDate: DateTime(2020),
       lastDate: DateTime(2100),
     );
-    if (picked != null) onDateChanged(PuantajDate.format(picked));
+    if (picked != null) widget.onDateChanged(PuantajDate.format(picked));
   }
 
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    final isToday = date == PuantajDate.today();
+    final isToday = widget.date == PuantajDate.today();
+    final people = widget.people;
+    final grouped = widget.grouped;
+    final date = widget.date;
+    final missing = widget.missing;
+    final counts = widget.counts;
+    final none = widget.none;
 
     return ListView(
       padding: const EdgeInsets.fromLTRB(
@@ -524,7 +593,7 @@ class _DailyView extends StatelessWidget {
           children: [
             IconButton(
               onPressed: () =>
-                  onDateChanged(PuantajDate.shift(date, -1)),
+                  widget.onDateChanged(PuantajDate.shift(date, -1)),
               visualDensity: VisualDensity.compact,
               tooltip: 'Önceki gün',
               icon: const Icon(Icons.chevron_left),
@@ -564,7 +633,7 @@ class _DailyView extends StatelessWidget {
             ),
             IconButton(
               onPressed: () =>
-                  onDateChanged(PuantajDate.shift(date, 1)),
+                  widget.onDateChanged(PuantajDate.shift(date, 1)),
               visualDensity: VisualDensity.compact,
               tooltip: 'Sonraki gün',
               icon: const Icon(Icons.chevron_right),
@@ -573,7 +642,7 @@ class _DailyView extends StatelessWidget {
               Tooltip(
                 message: 'Dünden kopyala',
                 child: OutlinedButton.icon(
-                  onPressed: onCopyYesterday,
+                  onPressed: widget.onCopyYesterday,
                   style: OutlinedButton.styleFrom(
                     visualDensity: VisualDensity.compact,
                     padding: const EdgeInsets.symmetric(
@@ -590,8 +659,17 @@ class _DailyView extends StatelessWidget {
         ),
         if (people.isEmpty) ...[
           const SizedBox(height: AppSpacing.md),
+          _PuantajKirilimToolbar(
+            onLevel1: _toggleLevel1,
+            onLevel2: _toggleLevel2,
+            onLevel3: _toggleLevel3,
+            level2Enabled: false,
+            level3Enabled: false,
+          ),
           _ExpandableSection(
             leadingBar: true,
+            expanded: _l1Personel,
+            onExpandedChanged: (v) => setState(() => _l1Personel = v),
             title: Text(
               'Personel',
               style: theme.textTheme.titleMedium?.copyWith(
@@ -610,7 +688,11 @@ class _DailyView extends StatelessWidget {
               ),
             ],
           ),
-          _DayTeamsSection(date: date),
+          _DayTeamsSection(
+            date: date,
+            expanded: _l1Ekip,
+            onExpandedChanged: (v) => setState(() => _l1Ekip = v),
+          ),
         ] else ...[
         if (missing > 0) ...[
           const SizedBox(height: AppSpacing.sm),
@@ -682,7 +764,7 @@ class _DailyView extends StatelessWidget {
           children: [
             Expanded(
               child: OutlinedButton.icon(
-                onPressed: () => onBulk(AttendanceStatus.present),
+                onPressed: () => widget.onBulk(AttendanceStatus.present),
                 icon: Icon(
                   Icons.check_circle,
                   size: 16,
@@ -703,7 +785,7 @@ class _DailyView extends StatelessWidget {
             const SizedBox(width: AppSpacing.sm),
             Expanded(
               child: OutlinedButton.icon(
-                onPressed: () => onBulk(AttendanceStatus.absent),
+                onPressed: () => widget.onBulk(AttendanceStatus.absent),
                 icon: Icon(
                   Icons.cancel,
                   size: 16,
@@ -724,8 +806,15 @@ class _DailyView extends StatelessWidget {
           ],
         ),
         const SizedBox(height: AppSpacing.md),
+        _PuantajKirilimToolbar(
+          onLevel1: _toggleLevel1,
+          onLevel2: _toggleLevel2,
+          onLevel3: _toggleLevel3,
+        ),
         _ExpandableSection(
           leadingBar: true,
+          expanded: _l1Personel,
+          onExpandedChanged: (v) => setState(() => _l1Personel = v),
           title: Text(
             'Personel',
             style: theme.textTheme.titleMedium?.copyWith(
@@ -740,6 +829,10 @@ class _DailyView extends StatelessWidget {
             for (final group in grouped)
               _ExpandableSection(
                 indent: AppSpacing.sm,
+                expanded: _companyExpanded(group.company),
+                onExpandedChanged: (v) => setState(
+                  () => _l2Companies[group.company] = v,
+                ),
                 title: Row(
                   children: [
                     Icon(
@@ -772,6 +865,11 @@ class _DailyView extends StatelessWidget {
                   for (final teamGroup in _teamsOf(group.users))
                     _ExpandableSection(
                       indent: AppSpacing.md,
+                      expanded: _teamExpanded(group.company, teamGroup.team),
+                      onExpandedChanged: (v) => setState(
+                        () => _l3Teams[_teamKey(group.company, teamGroup.team)] =
+                            v,
+                      ),
                       title: Row(
                         children: [
                           Icon(
@@ -808,20 +906,22 @@ class _DailyView extends StatelessWidget {
                                 const EdgeInsets.only(bottom: AppSpacing.sm),
                             child: _PersonCard(
                               person: person,
-                              status: statusOf(person.id),
-                              note: noteOf(person.id),
-                              overtimeHours: overtimeOf(person.id),
-                              dropdownOpen: openDropdown == person.id,
-                              noteOpen: openNote == person.id,
-                              noteController: noteController,
+                              status: widget.statusOf(person.id),
+                              note: widget.noteOf(person.id),
+                              overtimeHours: widget.overtimeOf(person.id),
+                              dropdownOpen: widget.openDropdown == person.id,
+                              noteOpen: widget.openNote == person.id,
+                              noteController: widget.noteController,
                               onToggleDropdown: () =>
-                                  onToggleDropdown(person.id),
-                              onOpenNote: () => onOpenNote(person),
-                              onCloseNote: onCloseNote,
-                              onSaveNote: () => onSaveNote(person),
-                              onSetStatus: (s) => onSetStatus(person, s),
-                              onSetOvertime: (h) => onSetOvertime(person, h),
-                              onPersonTap: () => onPersonTap(person),
+                                  widget.onToggleDropdown(person.id),
+                              onOpenNote: () => widget.onOpenNote(person),
+                              onCloseNote: widget.onCloseNote,
+                              onSaveNote: () => widget.onSaveNote(person),
+                              onSetStatus: (s) =>
+                                  widget.onSetStatus(person, s),
+                              onSetOvertime: (h) =>
+                                  widget.onSetOvertime(person, h),
+                              onPersonTap: () => widget.onPersonTap(person),
                             ),
                           ),
                       ],
@@ -830,7 +930,11 @@ class _DailyView extends StatelessWidget {
               ),
           ],
         ),
-        _DayTeamsSection(date: date),
+        _DayTeamsSection(
+          date: date,
+          expanded: _l1Ekip,
+          onExpandedChanged: (v) => setState(() => _l1Ekip = v),
+        ),
         ],
       ],
     );
@@ -847,6 +951,9 @@ class _ExpandableSection extends StatefulWidget {
     this.trailing,
     this.leadingBar = false,
     this.indent = 0,
+    this.expanded,
+    this.onExpandedChanged,
+    this.initiallyExpanded = false,
   });
 
   final Widget title;
@@ -855,13 +962,35 @@ class _ExpandableSection extends StatefulWidget {
   final List<Widget> children;
   final bool leadingBar;
   final double indent;
+  final bool? expanded;
+  final ValueChanged<bool>? onExpandedChanged;
+  final bool initiallyExpanded;
 
   @override
   State<_ExpandableSection> createState() => _ExpandableSectionState();
 }
 
 class _ExpandableSectionState extends State<_ExpandableSection> {
-  bool _expanded = true;
+  late bool _internalExpanded = widget.initiallyExpanded;
+
+  bool get _isExpanded => widget.expanded ?? _internalExpanded;
+
+  void _toggle() {
+    if (widget.expanded != null && widget.onExpandedChanged != null) {
+      widget.onExpandedChanged!(!widget.expanded!);
+    } else {
+      setState(() => _internalExpanded = !_internalExpanded);
+    }
+  }
+
+  @override
+  void didUpdateWidget(covariant _ExpandableSection oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (widget.expanded == null &&
+        oldWidget.initiallyExpanded != widget.initiallyExpanded) {
+      _internalExpanded = widget.initiallyExpanded;
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -869,7 +998,7 @@ class _ExpandableSectionState extends State<_ExpandableSection> {
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
         InkWell(
-          onTap: () => setState(() => _expanded = !_expanded),
+          onTap: _toggle,
           borderRadius: AppRadii.sm,
           child: Padding(
             padding: EdgeInsets.only(
@@ -909,7 +1038,7 @@ class _ExpandableSectionState extends State<_ExpandableSection> {
                   ),
                 ],
                 Icon(
-                  _expanded ? Icons.expand_less : Icons.expand_more,
+                  _isExpanded ? Icons.expand_less : Icons.expand_more,
                   size: 20,
                   color: Theme.of(context).colorScheme.onSurfaceVariant,
                 ),
@@ -917,17 +1046,100 @@ class _ExpandableSectionState extends State<_ExpandableSection> {
             ),
           ),
         ),
-        if (_expanded) ...widget.children,
+        if (_isExpanded) ...widget.children,
       ],
+    );
+  }
+}
+
+/// 1–3. kırılım toplu aç/kapa (Personel/Ekip · firma · ekip listesi).
+class _PuantajKirilimToolbar extends StatelessWidget {
+  const _PuantajKirilimToolbar({
+    required this.onLevel1,
+    required this.onLevel2,
+    required this.onLevel3,
+    this.level2Enabled = true,
+    this.level3Enabled = true,
+  });
+
+  final VoidCallback onLevel1;
+  final VoidCallback onLevel2;
+  final VoidCallback onLevel3;
+  final bool level2Enabled;
+  final bool level3Enabled;
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.only(bottom: AppSpacing.sm),
+      child: Wrap(
+        spacing: AppSpacing.xs,
+        runSpacing: AppSpacing.xs,
+        children: [
+          _KirilimChip(
+            label: '1 · Personel / Ekip',
+            onPressed: onLevel1,
+          ),
+          _KirilimChip(
+            label: '2 · Firma',
+            onPressed: onLevel2,
+            enabled: level2Enabled,
+          ),
+          _KirilimChip(
+            label: '3 · Ekip listesi',
+            onPressed: onLevel3,
+            enabled: level3Enabled,
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _KirilimChip extends StatelessWidget {
+  const _KirilimChip({
+    required this.label,
+    required this.onPressed,
+    this.enabled = true,
+  });
+
+  final String label;
+  final VoidCallback onPressed;
+  final bool enabled;
+
+  @override
+  Widget build(BuildContext context) {
+    return OutlinedButton(
+      onPressed: enabled ? onPressed : null,
+      style: OutlinedButton.styleFrom(
+        visualDensity: VisualDensity.compact,
+        padding: const EdgeInsets.symmetric(
+          horizontal: AppSpacing.sm,
+          vertical: AppSpacing.xs,
+        ),
+        tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+      ),
+      child: Text(
+        label,
+        style: Theme.of(context).textTheme.labelSmall?.copyWith(
+              fontWeight: FontWeight.w600,
+            ),
+      ),
     );
   }
 }
 
 /// Günlük ekip — katalogdan ekip adı + çalışan sayısı (personel adı yok).
 class _DayTeamsSection extends ConsumerWidget {
-  const _DayTeamsSection({required this.date});
+  const _DayTeamsSection({
+    required this.date,
+    required this.expanded,
+    required this.onExpandedChanged,
+  });
 
   final String date;
+  final bool expanded;
+  final ValueChanged<bool> onExpandedChanged;
 
   Future<void> _openEditor(
     BuildContext context,
@@ -1195,6 +1407,8 @@ class _DayTeamsSection extends ConsumerWidget {
         const SizedBox(height: AppSpacing.md),
         _ExpandableSection(
           leadingBar: true,
+          expanded: expanded,
+          onExpandedChanged: onExpandedChanged,
           title: Text(
             'Ekip',
             style: theme.textTheme.titleMedium?.copyWith(

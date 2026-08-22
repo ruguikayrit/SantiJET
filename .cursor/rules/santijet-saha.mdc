@@ -20,7 +20,8 @@ Sağ alt FAB metni ve sheet başlığı **Puantaj AL**. Eski “Puantajı Dışa
 
 ## Günlük Puantaj — Personel / Ekip
 
-- **Personel** / firma / ekip / **Ekip** başlıkları **açılır-kapanır** (`_ExpandableSection`).
+- **Personel** / firma / ekip / **Ekip** başlıkları **açılır-kapanır** (`_ExpandableSection`); **varsayılan kapalı**.
+- Üstte 3 kademeli toplu aç/kapa: **1 · Personel / Ekip** | **2 · Firma** | **3 · Ekip listesi** (`_PuantajKirilimToolbar`). Kapatma.
 - **Personel** hiyerarşisi: Personel → **firma** (Sigorta ettiren firma) → **ekip adı** → kişiler.
 - **Ekip** başlığı: yalnız **ekip adı** (Ayarlar → Ekipler açılır listesi) + **çalışan sayısı**. Serbest metin ekip adı yok.
 - Eski “Sigortalı Personel” / “Sigortasız ekipler” başlıkları geri gelmez.
