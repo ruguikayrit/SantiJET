@@ -430,14 +430,13 @@ class _SpacingPanel extends StatelessWidget {
         ),
         const SizedBox(height: AppSpacing.md),
         if (recommended != null)
-          _HeroResult(
-            fromLabel: 'Ø$diameter / ${formatCm(spacingCm!)} cm',
-            toLabel:
+          _DualHeroResult(
+            sourceLine: 'Ø$diameter / ${formatCm(spacingCm!)} cm',
+            sourceAs: recommended.sourceAsPerMeterMm2,
+            targetLine:
                 'Ø${recommended.targetDiameter} / ${formatCm(recommended.resultingSpacingCm)} cm',
-            meta:
-                'As ${formatAreaMm2(recommended.sourceAsPerMeterMm2)} → '
-                '${formatAreaMm2(recommended.targetAsPerMeterMm2)} mm²/m',
-            allowed: true,
+            targetAs: recommended.targetAsPerMeterMm2,
+            asUnit: 'mm²/m',
             onSave: () => onSave(
               summary:
                   'Ø$diameter/${formatCm(spacingCm)} cm → '
@@ -520,22 +519,19 @@ class _QuantityPanel extends StatelessWidget {
         ),
         const SizedBox(height: AppSpacing.md),
         if (recommended != null)
-          _HeroResult(
-            fromLabel: '$quantity×Ø$diameter',
-            toLabel: '${recommended.equivalentQuantity}×Ø${recommended.targetDiameter}',
-            meta: formatCrossSectionComparison(
-              fromDiameter: diameter,
-              fromQuantity: quantity!,
-              toDiameter: recommended.targetDiameter,
-              toQuantity: recommended.equivalentQuantity,
-            ),
-            allowed: true,
+          _DualHeroResult(
+            sourceLine: '$quantity×Ø$diameter',
+            sourceAs: recommended.sourceAreaMm2,
+            targetLine:
+                '${recommended.equivalentQuantity}×Ø${recommended.targetDiameter}',
+            targetAs: recommended.targetAreaMm2,
+            asUnit: 'mm²',
             onSave: () => onSave(
               summary:
                   '$quantity×Ø$diameter → ${recommended.equivalentQuantity}×Ø${recommended.targetDiameter}',
               detail: formatCrossSectionComparison(
                 fromDiameter: diameter,
-                fromQuantity: quantity,
+                fromQuantity: quantity!,
                 toDiameter: recommended.targetDiameter,
                 toQuantity: recommended.equivalentQuantity,
               ),
@@ -994,72 +990,6 @@ class _SuggestionLineTile extends StatelessWidget {
             ),
           ],
         ),
-      ),
-    );
-  }
-}
-
-class _HeroResult extends StatelessWidget {
-  const _HeroResult({
-    required this.fromLabel,
-    required this.toLabel,
-    required this.meta,
-    required this.allowed,
-    required this.onSave,
-  });
-
-  final String fromLabel;
-  final String toLabel;
-  final String meta;
-  final bool allowed;
-  final VoidCallback onSave;
-
-  @override
-  Widget build(BuildContext context) {
-    return SJCard(
-      accentColor: allowed ? AppColors.success : AppColors.critical,
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.stretch,
-        children: [
-          Row(
-            children: [
-              Text('Önerilen tahvil', style: AppTypography.cardLabelMedium),
-              const Spacer(),
-              SJStatusBadge(
-                label: allowed ? 'Optimum Uygunluk' : 'UYGUN DEĞİL',
-                color: allowed ? AppColors.success : AppColors.critical,
-              ),
-            ],
-          ),
-          const SizedBox(height: AppSpacing.sm),
-          Text(
-            fromLabel,
-            style: AppTypography.cardBodySmall,
-          ),
-          const SizedBox(height: 4),
-          Icon(
-            Icons.south,
-            size: 18,
-            color: AppColors.statusInkOnCard(AppColors.electricBlueLight),
-          ),
-          const SizedBox(height: 4),
-          Text(
-            toLabel,
-            style: AppTypography.onCard(
-              AppTypography.kpiValue,
-              color: AppColors.statusInkOnCard(AppColors.electricBlue),
-            ),
-          ),
-          const SizedBox(height: AppSpacing.xs),
-          Text(meta, style: AppTypography.cardBodySmall),
-          const SizedBox(height: AppSpacing.md),
-          SJButton(
-            label: 'Kaydet',
-            icon: Icons.bookmark_add_outlined,
-            onPressed: onSave,
-            expanded: true,
-          ),
-        ],
       ),
     );
   }
