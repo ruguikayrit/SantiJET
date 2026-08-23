@@ -2,14 +2,13 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
-import '../../core/design_system/sj_button.dart';
 import '../../core/design_system/sj_card.dart';
-import '../../core/design_system/sj_status_badge.dart';
 import '../../core/theme/app_colors.dart';
 import '../../core/theme/app_radii.dart';
 import '../../core/theme/app_spacing.dart';
 import '../../core/theme/app_typography.dart';
 import '../../core/widgets/santijet_header.dart';
+import '../../core/widgets/tahvil_hero_card.dart';
 import '../../data/rebar_weight.dart';
 import '../../data/records_store.dart';
 import '../../domain/tahvil_calculator.dart';
@@ -67,6 +66,11 @@ class _CalcScreenState extends ConsumerState<CalcScreen> {
     required String summary,
     required String detail,
     required bool allowed,
+    required String sourceLine,
+    required String targetLine,
+    required double sourceAs,
+    required double targetAs,
+    required String asUnit,
   }) async {
     final record = TahvilRecord(
       id: DateTime.now().millisecondsSinceEpoch.toString(),
@@ -75,6 +79,11 @@ class _CalcScreenState extends ConsumerState<CalcScreen> {
       summary: summary,
       detail: detail,
       isAllowed: allowed,
+      sourceLine: sourceLine,
+      targetLine: targetLine,
+      sourceAs: sourceAs,
+      targetAs: targetAs,
+      asUnit: asUnit,
     );
     await ref.read(tahvilRecordsProvider.notifier).add(record);
     if (!mounted) return;
@@ -268,6 +277,11 @@ typedef _SaveFn = Future<void> Function({
   required String summary,
   required String detail,
   required bool allowed,
+  required String sourceLine,
+  required String targetLine,
+  required double sourceAs,
+  required double targetAs,
+  required String asUnit,
 });
 
 double _areaExcessPercent(double sourceAs, double targetAs) {
@@ -430,7 +444,7 @@ class _SpacingPanel extends StatelessWidget {
         ),
         const SizedBox(height: AppSpacing.md),
         if (recommended != null)
-          _DualHeroResult(
+          TahvilHeroSaveCard(
             sourceLine: 'Ø$diameter / ${formatCm(spacingCm!)} cm',
             sourceAs: recommended.sourceAsPerMeterMm2,
             targetLine:
@@ -441,19 +455,29 @@ class _SpacingPanel extends StatelessWidget {
               spacingMm: recommended.resultingSpacingMm,
             ),
             asUnit: 'mm²/m',
-            onSave: () => onSave(
-              summary:
-                  'Ø$diameter/${formatCm(spacingCm)} cm → '
-                  'Ø${recommended.targetDiameter}/'
-                  '${formatCm(displayTargetSpacingCm(recommended.resultingSpacingMm))} cm',
-              detail:
-                  'Aralık tahvili · As ${formatAreaMm2(recommended.sourceAsPerMeterMm2)} → '
-                  '${formatAreaMm2(displayTargetAsPerMeterMm2(
-                    diameterMm: recommended.targetDiameter,
-                    spacingMm: recommended.resultingSpacingMm,
-                  ))} mm²/m',
-              allowed: true,
-            ),
+            onSave: () {
+              final targetSpacing =
+                  formatCm(displayTargetSpacingCm(recommended.resultingSpacingMm));
+              final targetAs = displayTargetAsPerMeterMm2(
+                diameterMm: recommended.targetDiameter,
+                spacingMm: recommended.resultingSpacingMm,
+              );
+              onSave(
+                summary:
+                    'Ø$diameter/${formatCm(spacingCm)} cm → '
+                    'Ø${recommended.targetDiameter}/$targetSpacing cm',
+                detail:
+                    'Aralık tahvili · As ${formatAreaMm2(recommended.sourceAsPerMeterMm2)} → '
+                    '${formatAreaMm2(targetAs)} mm²/m',
+                allowed: true,
+                sourceLine: 'Ø$diameter / ${formatCm(spacingCm)} cm',
+                targetLine:
+                    'Ø${recommended.targetDiameter} / $targetSpacing cm',
+                sourceAs: recommended.sourceAsPerMeterMm2,
+                targetAs: targetAs,
+                asUnit: 'mm²/m',
+              );
+            },
           )
         else
           const _NeedInputCard(
@@ -531,7 +555,7 @@ class _QuantityPanel extends StatelessWidget {
         ),
         const SizedBox(height: AppSpacing.md),
         if (recommended != null)
-          _DualHeroResult(
+          TahvilHeroSaveCard(
             sourceLine: '$quantity×Ø$diameter',
             sourceAs: recommended.sourceAreaMm2,
             targetLine:
@@ -548,6 +572,12 @@ class _QuantityPanel extends StatelessWidget {
                 toQuantity: recommended.equivalentQuantity,
               ),
               allowed: true,
+              sourceLine: '$quantity×Ø$diameter',
+              targetLine:
+                  '${recommended.equivalentQuantity}×Ø${recommended.targetDiameter}',
+              sourceAs: recommended.sourceAreaMm2,
+              targetAs: recommended.targetAreaMm2,
+              asUnit: 'mm²',
             ),
           )
         else
@@ -643,7 +673,7 @@ class _DualSpacingPanel extends StatelessWidget {
         ),
         const SizedBox(height: AppSpacing.md),
         if (recommended != null)
-          _DualHeroResult(
+          TahvilHeroSaveCard(
             sourceLine:
                 '${_spacingLegSource(recommended.legA)} · '
                 '${_spacingLegSource(recommended.legB)}',
@@ -656,16 +686,28 @@ class _DualSpacingPanel extends StatelessWidget {
               legB: recommended.legB,
             ),
             asUnit: 'mm²/m',
-            onSave: () => onSave(
-              summary: recommended.summary,
-              detail:
-                  '2 çeşit aralık · As ${formatAreaMm2(recommended.sourceAsPerMeterMm2)} → '
-                  '${formatAreaMm2(displayDualSpacingTargetAsPerMeterMm2(
-                    legA: recommended.legA,
-                    legB: recommended.legB,
-                  ))} mm²/m',
-              allowed: true,
-            ),
+            onSave: () {
+              final targetAs = displayDualSpacingTargetAsPerMeterMm2(
+                legA: recommended.legA,
+                legB: recommended.legB,
+              );
+              onSave(
+                summary: recommended.summary,
+                detail:
+                    '2 çeşit aralık · As ${formatAreaMm2(recommended.sourceAsPerMeterMm2)} → '
+                    '${formatAreaMm2(targetAs)} mm²/m',
+                allowed: true,
+                sourceLine:
+                    '${_spacingLegSource(recommended.legA)} · '
+                    '${_spacingLegSource(recommended.legB)}',
+                targetLine:
+                    '${_spacingLegTarget(recommended.legA)} · '
+                    '${_spacingLegTarget(recommended.legB)}',
+                sourceAs: recommended.sourceAsPerMeterMm2,
+                targetAs: targetAs,
+                asUnit: 'mm²/m',
+              );
+            },
           )
         else
           const _NeedInputCard(
@@ -770,7 +812,7 @@ class _DualPanel extends StatelessWidget {
         ),
         const SizedBox(height: AppSpacing.md),
         if (recommended != null)
-          _DualHeroResult(
+          TahvilHeroSaveCard(
             sourceLine:
                 '${recommended.legA.sourceQuantity}×Ø${recommended.legA.sourceDiameter} · '
                 '${recommended.legB.sourceQuantity}×Ø${recommended.legB.sourceDiameter}',
@@ -786,6 +828,15 @@ class _DualPanel extends StatelessWidget {
                   '2 çeşit · As ${formatAreaMm2(recommended.sourceAreaMm2)} → '
                   '${formatAreaMm2(recommended.targetAreaMm2)} mm²',
               allowed: true,
+              sourceLine:
+                  '${recommended.legA.sourceQuantity}×Ø${recommended.legA.sourceDiameter} · '
+                  '${recommended.legB.sourceQuantity}×Ø${recommended.legB.sourceDiameter}',
+              targetLine:
+                  '${recommended.legA.targetQuantity}×Ø${recommended.legA.targetDiameter} · '
+                  '${recommended.legB.targetQuantity}×Ø${recommended.legB.targetDiameter}',
+              sourceAs: recommended.sourceAreaMm2,
+              targetAs: recommended.targetAreaMm2,
+              asUnit: 'mm²',
             ),
           )
         else
@@ -854,103 +905,6 @@ String _spacingLegTarget(TahvilDualSpacingLeg leg) =>
     'Ø${leg.targetDiameter} / '
     '${formatCm(displayTargetSpacingCm(leg.targetSpacingMm))} cm';
 
-class _DualHeroResult extends StatelessWidget {
-  const _DualHeroResult({
-    required this.sourceLine,
-    required this.sourceAs,
-    required this.targetLine,
-    required this.targetAs,
-    required this.asUnit,
-    required this.onSave,
-  });
-
-  final String sourceLine;
-  final double sourceAs;
-  final String targetLine;
-  final double targetAs;
-  final String asUnit;
-  final VoidCallback onSave;
-
-  @override
-  Widget build(BuildContext context) {
-    return SJCard(
-      accentColor: AppColors.success,
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.stretch,
-        children: [
-          Row(
-            children: [
-              Text('Önerilen tahvil', style: AppTypography.cardLabelMedium),
-              const Spacer(),
-              SJStatusBadge(
-                label: 'Optimum Uygunluk',
-                color: AppColors.success,
-              ),
-            ],
-          ),
-          const SizedBox(height: AppSpacing.sm),
-          _DualHeroRow(
-            donatiLine: sourceLine,
-            asLabel: 'As ${formatAreaMm2(sourceAs)} $asUnit',
-            color: AppColors.statusInkOnCard(AppColors.electricBlue),
-          ),
-          const SizedBox(height: AppSpacing.sm),
-          _DualHeroRow(
-            donatiLine: targetLine,
-            asLabel: 'As ${formatAreaMm2(targetAs)} $asUnit',
-            color: AppColors.statusInkOnCard(AppColors.success),
-          ),
-          const SizedBox(height: AppSpacing.md),
-          SJButton(
-            label: 'Kaydet',
-            icon: Icons.bookmark_add_outlined,
-            onPressed: onSave,
-            expanded: true,
-          ),
-        ],
-      ),
-    );
-  }
-}
-
-class _DualHeroRow extends StatelessWidget {
-  const _DualHeroRow({
-    required this.donatiLine,
-    required this.asLabel,
-    required this.color,
-  });
-
-  final String donatiLine;
-  final String asLabel;
-  final Color color;
-
-  @override
-  Widget build(BuildContext context) {
-    return Row(
-      crossAxisAlignment: CrossAxisAlignment.center,
-      children: [
-        Expanded(
-          child: Text(
-            donatiLine,
-            style: AppTypography.onCard(
-              AppTypography.cardTitleMedium,
-              color: color,
-            ),
-          ),
-        ),
-        const SizedBox(width: 8),
-        Text(
-          asLabel,
-          softWrap: false,
-          style: AppTypography.cardBodySmall.copyWith(
-            color: AppColors.cardTextSecondary,
-          ),
-        ),
-      ],
-    );
-  }
-}
-
 class _SuggestionLineTile extends StatelessWidget {
   const _SuggestionLineTile({
     required this.sourceLine,
@@ -974,13 +928,13 @@ class _SuggestionLineTile extends StatelessWidget {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
-            _DualHeroRow(
+            TahvilHeroRow(
               donatiLine: sourceLine,
               asLabel: sourceAs,
               color: AppColors.statusInkOnCard(AppColors.electricBlue),
             ),
             const SizedBox(height: AppSpacing.sm),
-            _DualHeroRow(
+            TahvilHeroRow(
               donatiLine: targetLine,
               asLabel: targetAs,
               color: AppColors.statusInkOnCard(AppColors.success),

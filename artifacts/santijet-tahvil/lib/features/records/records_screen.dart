@@ -2,15 +2,14 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
 
-import '../../core/design_system/sj_card.dart';
-import '../../core/design_system/sj_empty_state.dart';
-import '../../core/design_system/sj_status_badge.dart';
 import '../../core/theme/app_colors.dart';
-import '../../core/theme/app_spacing.dart';
 import '../../core/theme/app_typography.dart';
 import '../../core/widgets/santijet_header.dart';
+import '../../core/widgets/tahvil_hero_card.dart';
+import '../../core/design_system/sj_empty_state.dart';
 import '../../data/records_store.dart';
 import '../../domain/tahvil_record.dart';
+import '../../domain/tahvil_record_display.dart';
 
 /// Yerel kayıtlar — hesap, cihazda kalır.
 class RecordsScreen extends ConsumerWidget {
@@ -86,29 +85,19 @@ class _RecordCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return SJCard(
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
-            children: [
-              Text(record.basis, style: AppTypography.cardLabelMedium),
-              const Spacer(),
-              SJStatusBadge(
-                label: record.isAllowed ? 'UYGUN' : 'HAYIR',
-                color:
-                    record.isAllowed ? AppColors.success : AppColors.critical,
-              ),
-            ],
-          ),
-          const SizedBox(height: AppSpacing.sm),
-          Text(record.summary, style: AppTypography.cardTitleMedium),
-          const SizedBox(height: 4),
-          Text(record.detail, style: AppTypography.cardBodySmall),
-          const SizedBox(height: AppSpacing.sm),
-          Text(dateLabel, style: AppTypography.cardLabelSmall),
-        ],
-      ),
+    final display = TahvilRecordDisplay.from(record);
+
+    return TahvilHeroCard(
+      title: display.headerLabel,
+      badgeLabel: display.isAllowed ? 'Optimum Uygunluk' : 'HAYIR',
+      badgeColor:
+          display.isAllowed ? AppColors.success : AppColors.critical,
+      sourceLine: display.sourceLine,
+      sourceAs: display.sourceAs,
+      targetLine: display.targetLine,
+      targetAs: display.targetAs,
+      asUnit: display.asUnit,
+      footer: Text(dateLabel, style: AppTypography.cardLabelSmall),
     );
   }
 }

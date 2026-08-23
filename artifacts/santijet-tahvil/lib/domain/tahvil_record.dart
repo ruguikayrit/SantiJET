@@ -6,6 +6,11 @@ class TahvilRecord {
     required this.summary,
     required this.detail,
     required this.isAllowed,
+    this.sourceLine,
+    this.targetLine,
+    this.sourceAs,
+    this.targetAs,
+    this.asUnit,
   });
 
   final String id;
@@ -14,6 +19,17 @@ class TahvilRecord {
   final String summary;
   final String detail;
   final bool isAllowed;
+  final String? sourceLine;
+  final String? targetLine;
+  final double? sourceAs;
+  final double? targetAs;
+  final String? asUnit;
+
+  bool get hasStructuredDisplay =>
+      sourceLine != null &&
+      targetLine != null &&
+      sourceAs != null &&
+      targetAs != null;
 
   Map<String, dynamic> toJson() => {
         'id': id,
@@ -22,6 +38,11 @@ class TahvilRecord {
         'summary': summary,
         'detail': detail,
         'isAllowed': isAllowed,
+        if (sourceLine != null) 'sourceLine': sourceLine,
+        if (targetLine != null) 'targetLine': targetLine,
+        if (sourceAs != null) 'sourceAs': sourceAs,
+        if (targetAs != null) 'targetAs': targetAs,
+        if (asUnit != null) 'asUnit': asUnit,
       };
 
   factory TahvilRecord.fromJson(Map<dynamic, dynamic> json) {
@@ -33,6 +54,11 @@ class TahvilRecord {
       summary: json['summary'] as String? ?? '',
       detail: json['detail'] as String? ?? '',
       isAllowed: json['isAllowed'] as bool? ?? false,
+      sourceLine: json['sourceLine'] as String?,
+      targetLine: json['targetLine'] as String?,
+      sourceAs: (json['sourceAs'] as num?)?.toDouble(),
+      targetAs: (json['targetAs'] as num?)?.toDouble(),
+      asUnit: json['asUnit'] as String?,
     );
   }
 }
