@@ -17,6 +17,7 @@ import '../../core/theme/app_spacing.dart';
 import '../../core/utils/puantaj_date.dart';
 import '../../core/utils/text_format.dart';
 import '../../core/utils/id_gen.dart';
+import '../../core/widgets/annotated_photo_viewer.dart';
 import '../../core/widgets/santijet_header.dart';
 import '../../data/providers/active_operator_provider.dart';
 import '../../data/providers/app_data_provider.dart';
@@ -88,6 +89,43 @@ class _TasksScreenState extends ConsumerState<TasksScreen> {
       TaskStatus.doing => 1,
       TaskStatus.done => 2,
     };
+  }
+
+  Future<void> _openTaskPhoto({
+    required SiteTask task,
+    required TaskPhoto photo,
+    required bool canAnnotate,
+  }) async {
+    late final Uint8List bytes;
+    try {
+      bytes = base64Decode(photo.dataBase64);
+    } catch (_) {
+      return;
+    }
+
+    await openAnnotatedPhotoViewer(
+      context,
+      imageBytes: bytes,
+      onSave: canAnnotate
+          ? (annotated) async {
+              final nextPhotos = [
+                for (final p in task.photos)
+                  if (p.id == photo.id)
+                    TaskPhoto(
+                      id: p.id,
+                      dataBase64: base64Encode(annotated),
+                      mimeType: 'image/png',
+                      createdAt: p.createdAt,
+                    )
+                  else
+                    p,
+              ];
+              ref.read(tasksProvider.notifier).upsert(
+                    task.copyWith(photos: nextPhotos),
+                  );
+            }
+          : null,
+    );
   }
 
   List<SiteTask> _orderedTasks(List<SiteTask> tasks) {
@@ -417,12 +455,52 @@ class _TasksScreenState extends ConsumerState<TasksScreen> {
                             }
                             return Stack(
                               children: [
-                                ClipRRect(
-                                  borderRadius: AppRadii.sm,
-                                  child: SizedBox(
-                                    width: 88,
-                                    height: 88,
-                                    child: image,
+                                Material(
+                                  color: Colors.transparent,
+                                  child: InkWell(
+                                    borderRadius: AppRadii.sm,
+                                    onTap: () async {
+                                      late final Uint8List bytes;
+                                      try {
+                                        bytes = base64Decode(photo.dataBase64);
+                                      } catch (_) {
+                                        return;
+                                      }
+                                      await openAnnotatedPhotoViewer(
+                                        ctx,
+                                        imageBytes: bytes,
+                                        onSave: canEditFields
+                                            ? (annotated) async {
+                                                final updated = TaskPhoto(
+                                                  id: photo.id,
+                                                  dataBase64:
+                                                      base64Encode(annotated),
+                                                  mimeType: 'image/png',
+                                                  createdAt: photo.createdAt,
+                                                );
+                                                setModal(() {
+                                                  photos = [
+                                                    for (var j = 0;
+                                                        j < photos.length;
+                                                        j++)
+                                                      if (j == i)
+                                                        updated
+                                                      else
+                                                        photos[j],
+                                                  ];
+                                                });
+                                              }
+                                            : null,
+                                      );
+                                    },
+                                    child: ClipRRect(
+                                      borderRadius: AppRadii.sm,
+                                      child: SizedBox(
+                                        width: 88,
+                                        height: 88,
+                                        child: image,
+                                      ),
+                                    ),
                                   ),
                                 ),
                                 if (canEditFields)
@@ -1194,15 +1272,30 @@ class _TasksScreenState extends ConsumerState<TasksScreen> {
                                           itemBuilder: (_, i) {
                                             final photo = task.photos[i];
                                             try {
-                                              return ClipRRect(
-                                                borderRadius: AppRadii.sm,
-                                                child: Image.memory(
-                                                  base64Decode(
-                                                    photo.dataBase64,
+                                              final bytes = base64Decode(
+                                                photo.dataBase64,
+                                              );
+                                              final canAnnotate = iAmAssigner ||
+                                                  task.assigneePersonId ==
+                                                      operator.id;
+                                              return Material(
+                                                color: Colors.transparent,
+                                                child: InkWell(
+                                                  borderRadius: AppRadii.sm,
+                                                  onTap: () => _openTaskPhoto(
+                                                    task: task,
+                                                    photo: photo,
+                                                    canAnnotate: canAnnotate,
                                                   ),
-                                                  width: 64,
-                                                  height: 64,
-                                                  fit: BoxFit.cover,
+                                                  child: ClipRRect(
+                                                    borderRadius: AppRadii.sm,
+                                                    child: Image.memory(
+                                                      bytes,
+                                                      width: 64,
+                                                      height: 64,
+                                                      fit: BoxFit.cover,
+                                                    ),
+                                                  ),
                                                 ),
                                               );
                                             } catch (_) {
