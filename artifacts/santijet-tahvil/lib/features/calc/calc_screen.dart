@@ -434,16 +434,24 @@ class _SpacingPanel extends StatelessWidget {
             sourceLine: 'Ø$diameter / ${formatCm(spacingCm!)} cm',
             sourceAs: recommended.sourceAsPerMeterMm2,
             targetLine:
-                'Ø${recommended.targetDiameter} / ${formatCm(recommended.resultingSpacingCm)} cm',
-            targetAs: recommended.targetAsPerMeterMm2,
+                'Ø${recommended.targetDiameter} / '
+                '${formatCm(displayTargetSpacingCm(recommended.resultingSpacingMm))} cm',
+            targetAs: displayTargetAsPerMeterMm2(
+              diameterMm: recommended.targetDiameter,
+              spacingMm: recommended.resultingSpacingMm,
+            ),
             asUnit: 'mm²/m',
             onSave: () => onSave(
               summary:
                   'Ø$diameter/${formatCm(spacingCm)} cm → '
-                  'Ø${recommended.targetDiameter}/${formatCm(recommended.resultingSpacingCm)} cm',
+                  'Ø${recommended.targetDiameter}/'
+                  '${formatCm(displayTargetSpacingCm(recommended.resultingSpacingMm))} cm',
               detail:
                   'Aralık tahvili · As ${formatAreaMm2(recommended.sourceAsPerMeterMm2)} → '
-                  '${formatAreaMm2(recommended.targetAsPerMeterMm2)} mm²/m',
+                  '${formatAreaMm2(displayTargetAsPerMeterMm2(
+                    diameterMm: recommended.targetDiameter,
+                    spacingMm: recommended.resultingSpacingMm,
+                  ))} mm²/m',
               allowed: true,
             ),
           )
@@ -461,9 +469,13 @@ class _SpacingPanel extends StatelessWidget {
               sourceAs:
                   'As ${formatAreaMm2(result.sourceAsPerMeterMm2)} mm²/m',
               targetLine:
-                  'Ø${result.targetDiameter} / ${formatCm(result.resultingSpacingCm)} cm',
+                  'Ø${result.targetDiameter} / '
+                  '${formatCm(displayTargetSpacingCm(result.resultingSpacingMm))} cm',
               targetAs:
-                  'As ${formatAreaMm2(result.targetAsPerMeterMm2)} mm²/m',
+                  'As ${formatAreaMm2(displayTargetAsPerMeterMm2(
+                    diameterMm: result.targetDiameter,
+                    spacingMm: result.resultingSpacingMm,
+                  ))} mm²/m',
             ),
         ],
       ],
@@ -639,13 +651,19 @@ class _DualSpacingPanel extends StatelessWidget {
             targetLine:
                 '${_spacingLegTarget(recommended.legA)} · '
                 '${_spacingLegTarget(recommended.legB)}',
-            targetAs: recommended.targetAsPerMeterMm2,
+            targetAs: displayDualSpacingTargetAsPerMeterMm2(
+              legA: recommended.legA,
+              legB: recommended.legB,
+            ),
             asUnit: 'mm²/m',
             onSave: () => onSave(
               summary: recommended.summary,
               detail:
                   '2 çeşit aralık · As ${formatAreaMm2(recommended.sourceAsPerMeterMm2)} → '
-                  '${formatAreaMm2(recommended.targetAsPerMeterMm2)} mm²/m',
+                  '${formatAreaMm2(displayDualSpacingTargetAsPerMeterMm2(
+                    legA: recommended.legA,
+                    legB: recommended.legB,
+                  ))} mm²/m',
               allowed: true,
             ),
           )
@@ -669,7 +687,10 @@ class _DualSpacingPanel extends StatelessWidget {
                   '${_spacingLegTarget(item.legA)} · '
                   '${_spacingLegTarget(item.legB)}',
               targetAs:
-                  'As ${formatAreaMm2(item.targetAsPerMeterMm2)} mm²/m',
+                  'As ${formatAreaMm2(displayDualSpacingTargetAsPerMeterMm2(
+                    legA: item.legA,
+                    legB: item.legB,
+                  ))} mm²/m',
             ),
         ],
       ],
@@ -830,7 +851,8 @@ String _spacingLegSource(TahvilDualSpacingLeg leg) =>
     'Ø${leg.sourceDiameter} / ${formatCm(leg.sourceSpacingMm / 10)} cm';
 
 String _spacingLegTarget(TahvilDualSpacingLeg leg) =>
-    'Ø${leg.targetDiameter} / ${formatCm(leg.targetSpacingMm / 10)} cm';
+    'Ø${leg.targetDiameter} / '
+    '${formatCm(displayTargetSpacingCm(leg.targetSpacingMm))} cm';
 
 class _DualHeroResult extends StatelessWidget {
   const _DualHeroResult({

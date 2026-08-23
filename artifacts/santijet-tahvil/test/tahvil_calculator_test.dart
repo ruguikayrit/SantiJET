@@ -117,4 +117,30 @@ void main() {
       );
     });
   });
+
+  group('display spacing rounding', () {
+    test('floors to 0,5 cm steps', () {
+      expect(floorSpacingCmToHalfStep(8.9), 8.5);
+      expect(floorSpacingCmToHalfStep(8.4), 8.0);
+      expect(floorSpacingCmToHalfStep(13.9), 13.5);
+      expect(floorSpacingCmToHalfStep(15.0), 15.0);
+    });
+
+    test('rounded spacing yields As at least source for allowed rows', () {
+      final results = computeSpacingTahvilResults(
+        sourceDiameter: 16,
+        sourceSpacingMm: 150,
+      ).where((r) => r.isAllowed);
+      for (final row in results) {
+        final displayAs = displayTargetAsPerMeterMm2(
+          diameterMm: row.targetDiameter,
+          spacingMm: row.resultingSpacingMm,
+        );
+        expect(
+          displayAs + 1e-6,
+          greaterThanOrEqualTo(row.sourceAsPerMeterMm2),
+        );
+      }
+    });
+  });
 }

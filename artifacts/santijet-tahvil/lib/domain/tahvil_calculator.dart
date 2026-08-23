@@ -495,7 +495,7 @@ class TahvilDualSpacingLeg {
   String get label => isUnchanged
       ? 'Ø$sourceDiameter / ${formatCm(sourceSpacingMm / 10)} cm (aynı)'
       : 'Ø$sourceDiameter / ${formatCm(sourceSpacingMm / 10)} cm → '
-          'Ø$targetDiameter / ${formatCm(targetSpacingMm / 10)} cm';
+          'Ø$targetDiameter / ${formatCm(displayTargetSpacingCm(targetSpacingMm))} cm';
 }
 
 class TahvilDualSpacingSuggestion {
@@ -648,6 +648,39 @@ List<TahvilDualSpacingSuggestion> computeDualSpacingTahvilSuggestions({
 }
 
 String formatAreaMm2(double areaMm2) => areaMm2.toStringAsFixed(1);
+
+/// Tahvil öneri aralığını 0,5 cm adımla aşağı yuvarlar (8,9 cm → 8,5 cm).
+double floorSpacingCmToHalfStep(double spacingCm) {
+  if (spacingCm <= 0) return spacingCm;
+  return (spacingCm * 2).floor() / 2;
+}
+
+/// Görüntüleme için yuvarlanmış hedef aralık (cm).
+double displayTargetSpacingCm(double spacingMm) =>
+    floorSpacingCmToHalfStep(spacingMm / 10);
+
+/// Yuvarlanmış aralıkla yeniden hesaplanan hedef As (mm²/m).
+double displayTargetAsPerMeterMm2({
+  required int diameterMm,
+  required double spacingMm,
+}) =>
+    computeAsPerMeterMm2(
+      diameterMm,
+      displayTargetSpacingCm(spacingMm) * 10,
+    );
+
+double displayDualSpacingTargetAsPerMeterMm2({
+  required TahvilDualSpacingLeg legA,
+  required TahvilDualSpacingLeg legB,
+}) =>
+    displayTargetAsPerMeterMm2(
+      diameterMm: legA.targetDiameter,
+      spacingMm: legA.targetSpacingMm,
+    ) +
+    displayTargetAsPerMeterMm2(
+      diameterMm: legB.targetDiameter,
+      spacingMm: legB.targetSpacingMm,
+    );
 
 String formatCm(double cm) {
   if ((cm - cm.roundToDouble()).abs() < 0.05) return '${cm.round()}';
