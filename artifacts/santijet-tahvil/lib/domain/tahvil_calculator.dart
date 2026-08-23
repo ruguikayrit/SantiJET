@@ -649,6 +649,108 @@ List<TahvilDualSpacingSuggestion> computeDualSpacingTahvilSuggestions({
 
 String formatAreaMm2(double areaMm2) => areaMm2.toStringAsFixed(1);
 
+/// Hedef As − kaynak As (uygun önerilerde hedef ≥ kaynak).
+double tahvilTargetAsGap(double sourceAs, double targetAs) => targetAs - sourceAs;
+
+double _spacingDisplayAsGap(TahvilSpacingResult result) =>
+    tahvilTargetAsGap(
+      result.sourceAsPerMeterMm2,
+      displayTargetAsPerMeterMm2(
+        diameterMm: result.targetDiameter,
+        spacingMm: result.resultingSpacingMm,
+      ),
+    );
+
+double _dualSpacingDisplayAsGap(TahvilDualSpacingSuggestion suggestion) =>
+    tahvilTargetAsGap(
+      suggestion.sourceAsPerMeterMm2,
+      displayDualSpacingTargetAsPerMeterMm2(
+        legA: suggestion.legA,
+        legB: suggestion.legB,
+      ),
+    );
+
+/// Özet kart: hedef As kaynak As'a en yakın uygun aralık tahvili.
+TahvilSpacingResult? pickClosestSpacingTahvilResult(
+  List<TahvilSpacingResult> allowed, {
+  int? sourceDiameter,
+}) {
+  if (allowed.isEmpty) return null;
+  TahvilSpacingResult best = allowed.first;
+  var bestGap = _spacingDisplayAsGap(best);
+  for (final result in allowed.skip(1)) {
+    final gap = _spacingDisplayAsGap(result);
+    final cmp = gap.compareTo(bestGap);
+    if (cmp < 0) {
+      best = result;
+      bestGap = gap;
+    } else if (cmp == 0 && sourceDiameter != null) {
+      final bestD = (sourceDiameter - best.targetDiameter).abs();
+      final nextD = (sourceDiameter - result.targetDiameter).abs();
+      if (nextD < bestD) best = result;
+    }
+  }
+  return best;
+}
+
+/// Özet kart: hedef As kaynak As'a en yakın uygun adet tahvili.
+TahvilSingleQuantityResult? pickClosestQuantityTahvilResult(
+  List<TahvilSingleQuantityResult> allowed, {
+  int? sourceDiameter,
+}) {
+  if (allowed.isEmpty) return null;
+  TahvilSingleQuantityResult best = allowed.first;
+  var bestGap = tahvilTargetAsGap(best.sourceAreaMm2, best.targetAreaMm2);
+  for (final result in allowed.skip(1)) {
+    final gap = tahvilTargetAsGap(result.sourceAreaMm2, result.targetAreaMm2);
+    final cmp = gap.compareTo(bestGap);
+    if (cmp < 0) {
+      best = result;
+      bestGap = gap;
+    } else if (cmp == 0 && sourceDiameter != null) {
+      final bestD = (sourceDiameter - best.targetDiameter).abs();
+      final nextD = (sourceDiameter - result.targetDiameter).abs();
+      if (nextD < bestD) best = result;
+    }
+  }
+  return best;
+}
+
+/// Özet kart: hedef As kaynak As'a en yakın uygun 2 çeşit aralık tahvili.
+TahvilDualSpacingSuggestion? pickClosestDualSpacingTahvilSuggestion(
+  List<TahvilDualSpacingSuggestion> allowed,
+) {
+  if (allowed.isEmpty) return null;
+  TahvilDualSpacingSuggestion best = allowed.first;
+  var bestGap = _dualSpacingDisplayAsGap(best);
+  for (final suggestion in allowed.skip(1)) {
+    final gap = _dualSpacingDisplayAsGap(suggestion);
+    if (gap.compareTo(bestGap) < 0) {
+      best = suggestion;
+      bestGap = gap;
+    }
+  }
+  return best;
+}
+
+/// Özet kart: hedef As kaynak As'a en yakın uygun 2 çeşit adet tahvili.
+TahvilDualSuggestion? pickClosestDualQuantityTahvilSuggestion(
+  List<TahvilDualSuggestion> allowed,
+) {
+  if (allowed.isEmpty) return null;
+  TahvilDualSuggestion best = allowed.first;
+  var bestGap = tahvilTargetAsGap(best.sourceAreaMm2, best.targetAreaMm2);
+  for (final suggestion in allowed.skip(1)) {
+    final gap =
+        tahvilTargetAsGap(suggestion.sourceAreaMm2, suggestion.targetAreaMm2);
+    if (gap.compareTo(bestGap) < 0) {
+      best = suggestion;
+      bestGap = gap;
+    }
+  }
+  return best;
+}
+
 /// Tahvil öneri aralığını 0,5 cm adımla aşağı yuvarlar (8,9 cm → 8,5 cm).
 double floorSpacingCmToHalfStep(double spacingCm) {
   if (spacingCm <= 0) return spacingCm;

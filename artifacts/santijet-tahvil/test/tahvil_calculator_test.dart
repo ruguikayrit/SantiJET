@@ -118,6 +118,73 @@ void main() {
     });
   });
 
+  group('pick closest As for summary card', () {
+    test('pickClosestQuantityTahvilResult chooses min As gap', () {
+      final closer = TahvilSingleQuantityResult(
+        targetDiameter: 12,
+        equivalentQuantity: 10,
+        sourceAreaMm2: 2500,
+        targetAreaMm2: 2510,
+        isAllowed: true,
+        isAdequate: true,
+        areaDeviationPercent: 0.4,
+      );
+      final farther = TahvilSingleQuantityResult(
+        targetDiameter: 10,
+        equivalentQuantity: 14,
+        sourceAreaMm2: 2500,
+        targetAreaMm2: 2600,
+        isAllowed: true,
+        isAdequate: true,
+        areaDeviationPercent: 4,
+      );
+      final picked = pickClosestQuantityTahvilResult([farther, closer]);
+      expect(picked?.targetAreaMm2, 2510);
+    });
+
+    test('pickClosestDualQuantityTahvilSuggestion chooses min As gap', () {
+      final leg = TahvilDualConversionLeg(
+        sourceQuantity: 4,
+        sourceDiameter: 14,
+        targetQuantity: 8,
+        targetDiameter: 10,
+      );
+      final closer = TahvilDualSuggestion(
+        id: 'a',
+        legA: leg,
+        legB: TahvilDualConversionLeg(
+          sourceQuantity: 6,
+          sourceDiameter: 20,
+          targetQuantity: 6,
+          targetDiameter: 20,
+        ),
+        sourceAreaMm2: 2500,
+        targetAreaMm2: 2513,
+        areaDeviationPercent: 0.5,
+        isAdequate: true,
+        isOptimal: true,
+      );
+      final farther = TahvilDualSuggestion(
+        id: 'b',
+        legA: leg,
+        legB: TahvilDualConversionLeg(
+          sourceQuantity: 6,
+          sourceDiameter: 20,
+          targetQuantity: 6,
+          targetDiameter: 20,
+        ),
+        sourceAreaMm2: 2500,
+        targetAreaMm2: 2700,
+        areaDeviationPercent: 8,
+        isAdequate: true,
+        isOptimal: true,
+      );
+      final picked =
+          pickClosestDualQuantityTahvilSuggestion([farther, closer]);
+      expect(picked?.targetAreaMm2, 2513);
+    });
+  });
+
   group('display spacing rounding', () {
     test('floors to 0,5 cm steps', () {
       expect(floorSpacingCmToHalfStep(8.9), 8.5);

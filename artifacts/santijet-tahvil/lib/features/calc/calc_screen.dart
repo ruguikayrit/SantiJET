@@ -284,11 +284,6 @@ typedef _SaveFn = Future<void> Function({
   required String asUnit,
 });
 
-double _areaExcessPercent(double sourceAs, double targetAs) {
-  if (sourceAs <= 0) return double.infinity;
-  return ((targetAs - sourceAs) / sourceAs) * 100;
-}
-
 List<TahvilSpacingResult> _allowedSpacingAscending(
   List<TahvilSpacingResult> results,
 ) {
@@ -297,48 +292,12 @@ List<TahvilSpacingResult> _allowedSpacingAscending(
   return allowed;
 }
 
-TahvilSpacingResult? _optimalSpacing(
-  List<TahvilSpacingResult> allowed,
-  int sourceDiameter,
-) {
-  if (allowed.isEmpty) return null;
-  final ranked = [...allowed]..sort((a, b) {
-      final excess = _areaExcessPercent(
-        a.sourceAsPerMeterMm2,
-        a.targetAsPerMeterMm2,
-      ).compareTo(
-        _areaExcessPercent(b.sourceAsPerMeterMm2, b.targetAsPerMeterMm2),
-      );
-      if (excess != 0) return excess;
-      return (sourceDiameter - a.targetDiameter)
-          .abs()
-          .compareTo((sourceDiameter - b.targetDiameter).abs());
-    });
-  return ranked.first;
-}
-
 List<TahvilSingleQuantityResult> _allowedQuantityAscending(
   List<TahvilSingleQuantityResult> results,
 ) {
   final allowed = results.where((r) => r.isAllowed).toList()
     ..sort((a, b) => a.targetDiameter.compareTo(b.targetDiameter));
   return allowed;
-}
-
-TahvilSingleQuantityResult? _optimalQuantity(
-  List<TahvilSingleQuantityResult> allowed,
-  int sourceDiameter,
-) {
-  if (allowed.isEmpty) return null;
-  final ranked = [...allowed]..sort((a, b) {
-      final excess =
-          a.areaDeviationPercent.compareTo(b.areaDeviationPercent);
-      if (excess != 0) return excess;
-      return (sourceDiameter - a.targetDiameter)
-          .abs()
-          .compareTo((sourceDiameter - b.targetDiameter).abs());
-    });
-  return ranked.first;
 }
 
 List<TahvilDualSpacingSuggestion> _allowedDualSpacingAscending(
@@ -354,15 +313,6 @@ List<TahvilDualSpacingSuggestion> _allowedDualSpacingAscending(
   return allowed;
 }
 
-TahvilDualSpacingSuggestion? _optimalDualSpacing(
-  List<TahvilDualSpacingSuggestion> allowed,
-) {
-  if (allowed.isEmpty) return null;
-  final ranked = [...allowed]
-    ..sort((a, b) => a.areaDeviationPercent.compareTo(b.areaDeviationPercent));
-  return ranked.first;
-}
-
 List<TahvilDualSuggestion> _allowedDualQuantityAscending(
   List<TahvilDualSuggestion> suggestions,
 ) {
@@ -374,15 +324,6 @@ List<TahvilDualSuggestion> _allowedDualQuantityAscending(
       return a.legB.targetDiameter.compareTo(b.legB.targetDiameter);
     });
   return allowed;
-}
-
-TahvilDualSuggestion? _optimalDualQuantity(
-  List<TahvilDualSuggestion> allowed,
-) {
-  if (allowed.isEmpty) return null;
-  final ranked = [...allowed]
-    ..sort((a, b) => a.areaDeviationPercent.compareTo(b.areaDeviationPercent));
-  return ranked.first;
 }
 
 class _SuggestionsHeader extends StatelessWidget {
@@ -422,7 +363,8 @@ class _SpacingPanel extends StatelessWidget {
           )
         : const <TahvilSpacingResult>[];
     final allowed = _allowedSpacingAscending(results);
-    final recommended = _optimalSpacing(allowed, diameter);
+    final recommended =
+        pickClosestSpacingTahvilResult(allowed, sourceDiameter: diameter);
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -532,7 +474,8 @@ class _QuantityPanel extends StatelessWidget {
           )
         : const <TahvilSingleQuantityResult>[];
     final allowed = _allowedQuantityAscending(results);
-    final recommended = _optimalQuantity(allowed, diameter);
+    final recommended =
+        pickClosestQuantityTahvilResult(allowed, sourceDiameter: diameter);
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -637,7 +580,7 @@ class _DualSpacingPanel extends StatelessWidget {
               )
             : const <TahvilDualSpacingSuggestion>[];
     final allowed = _allowedDualSpacingAscending(suggestions);
-    final recommended = _optimalDualSpacing(allowed);
+    final recommended = pickClosestDualSpacingTahvilSuggestion(allowed);
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -774,7 +717,7 @@ class _DualPanel extends StatelessWidget {
           )
         : const <TahvilDualSuggestion>[];
     final allowed = _allowedDualQuantityAscending(suggestions);
-    final recommended = _optimalDualQuantity(allowed);
+    final recommended = pickClosestDualQuantityTahvilSuggestion(allowed);
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
