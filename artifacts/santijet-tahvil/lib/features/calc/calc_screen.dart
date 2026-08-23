@@ -905,7 +905,7 @@ class _DualHeroRow extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Row(
-      crossAxisAlignment: CrossAxisAlignment.start,
+      crossAxisAlignment: CrossAxisAlignment.center,
       children: [
         Expanded(
           child: Text(
@@ -919,6 +919,7 @@ class _DualHeroRow extends StatelessWidget {
         const SizedBox(width: 8),
         Text(
           asLabel,
+          softWrap: false,
           style: AppTypography.cardBodySmall.copyWith(
             color: AppColors.cardTextSecondary,
           ),
@@ -943,50 +944,24 @@ class _SuggestionLineTile extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final blue = AppColors.statusInkOnCard(AppColors.electricBlue);
-    final green = AppColors.statusInkOnCard(AppColors.success);
-    final asStyle = AppTypography.cardBodySmall.copyWith(
-      color: AppColors.cardTextSecondary,
-    );
-
     return Padding(
       padding: const EdgeInsets.only(bottom: 8),
       child: SJCard(
         accentColor: AppColors.success,
         padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
-        child: Row(
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
-            Expanded(
-              child: Text.rich(
-                TextSpan(
-                  children: [
-                    TextSpan(
-                      text: sourceLine,
-                      style: AppTypography.onCard(
-                        AppTypography.cardTitleMedium,
-                        color: blue,
-                      ),
-                    ),
-                    TextSpan(text: '  ', style: asStyle),
-                    TextSpan(text: sourceAs, style: asStyle),
-                    TextSpan(
-                      text: '  →  ',
-                      style: AppTypography.cardBodySmall.copyWith(
-                        color: AppColors.cardTextMuted,
-                      ),
-                    ),
-                    TextSpan(
-                      text: targetLine,
-                      style: AppTypography.onCard(
-                        AppTypography.cardTitleMedium,
-                        color: green,
-                      ),
-                    ),
-                    TextSpan(text: '  ', style: asStyle),
-                    TextSpan(text: targetAs, style: asStyle),
-                  ],
-                ),
-              ),
+            _DualHeroRow(
+              donatiLine: sourceLine,
+              asLabel: sourceAs,
+              color: AppColors.statusInkOnCard(AppColors.electricBlue),
+            ),
+            const SizedBox(height: AppSpacing.sm),
+            _DualHeroRow(
+              donatiLine: targetLine,
+              asLabel: targetAs,
+              color: AppColors.statusInkOnCard(AppColors.success),
             ),
           ],
         ),
