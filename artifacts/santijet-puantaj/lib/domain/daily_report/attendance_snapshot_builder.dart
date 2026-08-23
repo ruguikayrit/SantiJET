@@ -2,6 +2,7 @@ import '../attendance/attendance_display.dart';
 import '../entities/attendance.dart';
 import '../entities/daily_report.dart';
 import '../entities/person.dart';
+import '../entities/uninsured_team_entry.dart';
 import '../enums/attendance_status.dart';
 import '../permissions/role_degree.dart';
 
@@ -12,6 +13,7 @@ abstract final class AttendanceSnapshotBuilder {
     required String date,
     required List<Attendance> attendance,
     required List<Person> activePeople,
+    List<UninsuredTeamEntry> teams = const [],
     DateTime? capturedAt,
   }) {
     final byPerson = <String, Attendance>{};
@@ -80,6 +82,18 @@ abstract final class AttendanceSnapshotBuilder {
         (counts[AttendanceStatus.tatil] ?? 0) +
         (counts[AttendanceStatus.haftaTatili] ?? 0);
 
+    final teamRows = <DailyReportAttendanceTeam>[
+      for (final e in teams)
+        if (e.projectId == projectId && e.date == date && e.workerCount > 0)
+          DailyReportAttendanceTeam(
+            teamId: e.id,
+            teamName: e.teamName,
+            workerCount: e.workerCount,
+          ),
+    ]..sort(
+        (a, b) => a.teamName.toLowerCase().compareTo(b.teamName.toLowerCase()),
+      );
+
     return DailyReportAttendanceSnapshot(
       present: counts[AttendanceStatus.present] ?? 0,
       half: counts[AttendanceStatus.half] ?? 0,
@@ -92,6 +106,7 @@ abstract final class AttendanceSnapshotBuilder {
       totalAdamSaat: adamSaat,
       totalYevmiye: yevmiye,
       people: people,
+      teams: teamRows,
       capturedAt: capturedAt ?? DateTime.now(),
     );
   }

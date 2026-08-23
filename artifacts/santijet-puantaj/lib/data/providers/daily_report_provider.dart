@@ -12,6 +12,7 @@ import '../../domain/daily_report/daily_report_copy.dart';
 import '../../domain/entities/daily_report.dart';
 import '../services/weather_service.dart';
 import 'app_data_provider.dart';
+import 'uninsured_teams_provider.dart';
 
 final dailyReportsBoxProvider = Provider<Box>(
   (ref) =>
@@ -163,11 +164,13 @@ final liveAttendanceSnapshotProvider =
   final date = ref.watch(dailyReportSelectedDateProvider);
   final attendance = ref.watch(attendanceProvider);
   final people = ref.watch(personnelForDateProvider(date));
+  final teams = ref.watch(uninsuredTeamsProvider);
   return AttendanceSnapshotBuilder.build(
     projectId: project.id,
     date: date,
     attendance: attendance,
     activePeople: people,
+    teams: teams,
   );
 });
 
@@ -272,6 +275,7 @@ DailyReport syncAttendanceIntoReport(WidgetRef ref, DailyReport report) {
         .read(personnelProvider)
         .where((p) => p.projectId == report.projectId && p.isActiveOn(report.date))
         .toList(),
+    teams: ref.read(uninsuredTeamsProvider),
   );
   return ref.read(dailyReportsProvider.notifier).upsert(
         report.copyWith(attendanceSnapshot: snap),

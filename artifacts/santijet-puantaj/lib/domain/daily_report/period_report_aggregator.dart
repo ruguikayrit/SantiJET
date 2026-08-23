@@ -25,7 +25,8 @@ class DailyReportDaySummary {
         r.vehicles.isNotEmpty ||
         r.nextDayPlan.trim().isNotEmpty ||
         r.weather != null ||
-        (r.attendanceSnapshot?.people.isNotEmpty ?? false);
+        (r.attendanceSnapshot?.people.isNotEmpty ?? false) ||
+        (r.attendanceSnapshot?.teams.isNotEmpty ?? false);
   }
 
   int get photoCount => report?.photos.length ?? 0;
@@ -51,6 +52,7 @@ class DailyReportDaySummary {
   double get adamSaat => report?.attendanceSnapshot?.totalAdamSaat ?? 0;
   double get yevmiye => report?.attendanceSnapshot?.totalYevmiye ?? 0;
   int get presentCount => report?.attendanceSnapshot?.present ?? 0;
+  int get teamWorkers => report?.attendanceSnapshot?.totalTeamWorkers ?? 0;
 }
 
 /// Pazartesi–Pazar haftası — günlük özetlerden türetilir.

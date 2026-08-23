@@ -340,9 +340,14 @@ class AttendanceSummaryChips extends StatelessWidget {
                   accent: s.color,
                 ),
               chip(
-                label: 'Top',
+                label: 'Per',
                 value: '${snapshot.people.length}',
                 accent: AppColors.inkSecondary,
+              ),
+              chip(
+                label: 'Ekip',
+                value: '${snapshot.totalTeamWorkers}',
+                accent: AppColors.electricBlue,
               ),
               if (snapshot.unrecorded > 0)
                 chip(
@@ -354,8 +359,147 @@ class AttendanceSummaryChips extends StatelessWidget {
           ),
         ),
         const SizedBox(height: AppSpacing.sm),
+        Text(
+          'Personel',
+          style: Theme.of(context).textTheme.titleSmall?.copyWith(
+                fontWeight: FontWeight.w700,
+              ),
+        ),
+        const SizedBox(height: AppSpacing.xs),
         AttendanceSummaryTable(snapshot: snapshot),
+        const SizedBox(height: AppSpacing.md),
+        Text(
+          'Ekip',
+          style: Theme.of(context).textTheme.titleSmall?.copyWith(
+                fontWeight: FontWeight.w700,
+              ),
+        ),
+        const SizedBox(height: AppSpacing.xs),
+        _TeamSummaryTable(snapshot: snapshot),
       ],
+    );
+  }
+}
+
+/// Ekip adı + çalışan sayısı tablosu.
+class _TeamSummaryTable extends StatelessWidget {
+  const _TeamSummaryTable({required this.snapshot});
+
+  final DailyReportAttendanceSnapshot snapshot;
+
+  @override
+  Widget build(BuildContext context) {
+    final base = Theme.of(context);
+    final theme = AppColors.useDarkCards
+        ? SJCard.darkContrastTheme(base)
+        : AppColors.isSantijetPro
+            ? SJCard.lightContrastTheme(base)
+            : base;
+    final teams = [...snapshot.teams]
+      ..sort((a, b) => a.teamName.toLowerCase().compareTo(b.teamName.toLowerCase()));
+    final border = theme.dividerColor.withValues(alpha: 0.55);
+
+    return Theme(
+      data: theme,
+      child: Container(
+        decoration: BoxDecoration(
+          color: AppColors.cardSurface,
+          borderRadius: AppRadii.md,
+          border: Border.all(color: border),
+        ),
+        clipBehavior: Clip.antiAlias,
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            const Padding(
+              padding: EdgeInsets.fromLTRB(8, 6, 8, 4),
+              child: _HeaderRow(
+                cells: [
+                  _HeaderCell('EKİP', flex: 4),
+                  _HeaderCell('ÇALIŞAN', flex: 2),
+                ],
+              ),
+            ),
+            if (teams.isEmpty)
+              Padding(
+                padding: const EdgeInsets.fromLTRB(12, 8, 12, 12),
+                child: Text(
+                  'Bu gün için ekip kaydı yok',
+                  textAlign: TextAlign.center,
+                  style: theme.textTheme.bodySmall?.copyWith(
+                    color: theme.colorScheme.onSurfaceVariant,
+                  ),
+                ),
+              )
+            else ...[
+              for (final t in teams)
+                Container(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 10,
+                    vertical: 9,
+                  ),
+                  decoration: BoxDecoration(
+                    border: Border(bottom: BorderSide(color: border)),
+                  ),
+                  child: Row(
+                    children: [
+                      Expanded(
+                        flex: 4,
+                        child: Text(
+                          titleCaseTr(t.teamName),
+                          style: theme.textTheme.bodySmall?.copyWith(
+                            fontWeight: FontWeight.w600,
+                          ),
+                          maxLines: 2,
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                      ),
+                      Expanded(
+                        flex: 2,
+                        child: Text(
+                          '${t.workerCount}',
+                          textAlign: TextAlign.center,
+                          style: theme.textTheme.labelMedium?.copyWith(
+                            fontWeight: FontWeight.w700,
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              Container(
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 10,
+                  vertical: 8,
+                ),
+                child: Row(
+                  children: [
+                    Expanded(
+                      flex: 4,
+                      child: Text(
+                        'Toplam',
+                        style: theme.textTheme.labelMedium?.copyWith(
+                          fontWeight: FontWeight.w700,
+                        ),
+                      ),
+                    ),
+                    Expanded(
+                      flex: 2,
+                      child: Text(
+                        '${snapshot.totalTeamWorkers}',
+                        textAlign: TextAlign.center,
+                        style: theme.textTheme.labelMedium?.copyWith(
+                          fontWeight: FontWeight.w800,
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ],
+        ),
+      ),
     );
   }
 }

@@ -857,6 +857,48 @@ class DailyReportAttendancePerson extends Equatable {
       ];
 }
 
+
+/// Günlük rapora gömülen ekip puantaj satırı (ad + çalışan sayısı).
+class DailyReportAttendanceTeam extends Equatable {
+  const DailyReportAttendanceTeam._({
+    required this.teamId,
+    required this.teamName,
+    required this.workerCount,
+  });
+
+  factory DailyReportAttendanceTeam({
+    required String teamId,
+    required String teamName,
+    required int workerCount,
+  }) {
+    return DailyReportAttendanceTeam._(
+      teamId: teamId,
+      teamName: titleCaseTr(teamName),
+      workerCount: workerCount < 0 ? 0 : workerCount,
+    );
+  }
+
+  final String teamId;
+  final String teamName;
+  final int workerCount;
+
+  Map<String, dynamic> toJson() => {
+        'teamId': teamId,
+        'teamName': teamName,
+        'workerCount': workerCount,
+      };
+
+  factory DailyReportAttendanceTeam.fromJson(Map<String, dynamic> json) =>
+      DailyReportAttendanceTeam(
+        teamId: json['teamId'] as String? ?? '',
+        teamName: json['teamName'] as String? ?? '',
+        workerCount: (json['workerCount'] as num?)?.toInt() ?? 0,
+      );
+
+  @override
+  List<Object?> get props => [teamId, teamName, workerCount];
+}
+
 /// Aynı proje + gün puantaj özeti (bağlamsal snapshot).
 class DailyReportAttendanceSnapshot extends Equatable {
   const DailyReportAttendanceSnapshot({
@@ -869,6 +911,7 @@ class DailyReportAttendanceSnapshot extends Equatable {
     this.totalAdamSaat = 0,
     this.totalYevmiye = 0,
     this.people = const [],
+    this.teams = const [],
     this.capturedAt,
   });
 
@@ -885,7 +928,13 @@ class DailyReportAttendanceSnapshot extends Equatable {
   final double totalAdamSaat;
   final double totalYevmiye;
   final List<DailyReportAttendancePerson> people;
+
+  /// Ekip başlığı kayıtları (ekip adı + çalışan sayısı).
+  final List<DailyReportAttendanceTeam> teams;
   final DateTime? capturedAt;
+
+  int get totalTeamWorkers =>
+      teams.fold<int>(0, (sum, t) => sum + t.workerCount);
 
   int countOf(AttendanceStatus status) =>
       statusCounts[status.jsonValue] ?? _legacyCount(status);
@@ -918,6 +967,7 @@ class DailyReportAttendanceSnapshot extends Equatable {
         'totalAdamSaat': totalAdamSaat,
         'totalYevmiye': totalYevmiye,
         'people': people.map((e) => e.toJson()).toList(),
+        'teams': teams.map((e) => e.toJson()).toList(),
         'capturedAt': capturedAt?.toIso8601String(),
       };
 
@@ -940,6 +990,19 @@ class DailyReportAttendanceSnapshot extends Equatable {
         statusCounts['${e.key}'] = (e.value as num?)?.toInt() ?? 0;
       }
     }
+    final rawTeams = json['teams'];
+    final teams = <DailyReportAttendanceTeam>[];
+    if (rawTeams is List) {
+      for (final e in rawTeams) {
+        if (e is Map) {
+          teams.add(
+            DailyReportAttendanceTeam.fromJson(
+              Map<String, dynamic>.from(e),
+            ),
+          );
+        }
+      }
+    }
     return DailyReportAttendanceSnapshot(
       present: (json['present'] as num?)?.toInt() ?? 0,
       half: (json['half'] as num?)?.toInt() ?? 0,
@@ -950,6 +1013,7 @@ class DailyReportAttendanceSnapshot extends Equatable {
       totalAdamSaat: (json['totalAdamSaat'] as num?)?.toDouble() ?? 0,
       totalYevmiye: (json['totalYevmiye'] as num?)?.toDouble() ?? 0,
       people: people,
+      teams: teams,
       capturedAt: json['capturedAt'] != null
           ? DateTime.tryParse(json['capturedAt'] as String)
           : null,
@@ -967,6 +1031,7 @@ class DailyReportAttendanceSnapshot extends Equatable {
         totalAdamSaat,
         totalYevmiye,
         people,
+        teams,
         capturedAt,
       ];
 }

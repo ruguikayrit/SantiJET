@@ -225,11 +225,12 @@ class DailyReportPdfService {
         lead.add(_attendanceSummary(snap));
       }
       if (sections.puantajNames &&
-          (snap == null || snap.people.isEmpty)) {
+          (snap == null ||
+              (snap.people.isEmpty && snap.teams.isEmpty))) {
         if (sections.puantajCounts) lead.add(pw.SizedBox(height: 6));
         lead.add(
           pw.Text(
-            'Personel listesi yok',
+            'Personel / ekip listesi yok',
             textAlign: pw.TextAlign.center,
             style: const pw.TextStyle(fontSize: 9, color: _muted),
           ),
@@ -243,11 +244,19 @@ class DailyReportPdfService {
           ),
         ),
       );
-      if (sections.puantajNames &&
-          snap != null &&
-          snap.people.isNotEmpty) {
-        if (sections.puantajCounts) widgets.add(pw.SizedBox(height: 6));
-        widgets.add(_personBreakdown(snap));
+      if (sections.puantajNames && snap != null) {
+        if (snap.people.isNotEmpty) {
+          if (sections.puantajCounts) widgets.add(pw.SizedBox(height: 6));
+          widgets.add(_subTitle('Personel'));
+          widgets.add(pw.SizedBox(height: 4));
+          widgets.add(_personBreakdown(snap));
+        }
+        if (snap.teams.isNotEmpty) {
+          widgets.add(pw.SizedBox(height: 8));
+          widgets.add(_subTitle('Ekip'));
+          widgets.add(pw.SizedBox(height: 4));
+          widgets.add(_teamBreakdown(snap));
+        }
       }
     }
 
@@ -629,7 +638,8 @@ class DailyReportPdfService {
         pw.SizedBox(height: 4),
         pw.Text(
           'Adam-saat: ${_fmt(snap.totalAdamSaat)} · '
-          'Yevmiye: ${_fmt(snap.totalYevmiye)}',
+          'Yevmiye: ${_fmt(snap.totalYevmiye)}'
+          '${snap.totalTeamWorkers > 0 ? ' · Ekip: ${snap.totalTeamWorkers} kişi' : ''}',
           textAlign: pw.TextAlign.center,
           style: const pw.TextStyle(fontSize: 9, color: _muted),
         ),
@@ -696,6 +706,38 @@ class DailyReportPdfService {
       ],
     );
   }
+
+  pw.Widget _subTitle(String text) {
+    return pw.Align(
+      alignment: pw.Alignment.centerLeft,
+      child: pw.Text(
+        text,
+        style: pw.TextStyle(
+          fontSize: 9,
+          fontWeight: pw.FontWeight.bold,
+          color: _ink,
+        ),
+      ),
+    );
+  }
+
+  pw.Widget _teamBreakdown(DailyReportAttendanceSnapshot snap) {
+    final teams = [...snap.teams]
+      ..sort((a, b) => a.teamName.toLowerCase().compareTo(b.teamName.toLowerCase()));
+    return _centeredTable(
+      headers: const ['No', 'Ekip', 'Çalışan'],
+      data: [
+        for (var i = 0; i < teams.length; i++)
+          [
+            '${i + 1}',
+            titleCaseTr(teams[i].teamName),
+            '${teams[i].workerCount}',
+          ],
+        ['', 'Toplam', '${snap.totalTeamWorkers}'],
+      ],
+    );
+  }
+
 
   List<pw.Widget> _workCategoryBlocks(
     DailyReport report, {

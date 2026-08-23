@@ -257,7 +257,9 @@ class _DaySummaryTileState extends State<DaySummaryTile> {
                     _metricRow(
                       theme,
                       'Puantaj',
-                      '${s.presentCount} mevcut · ${_num(s.yevmiye)} yv',
+                      '${s.presentCount} mevcut · '
+                      '${s.teamWorkers} ekip · '
+                      '${_num(s.yevmiye)} yv',
                     ),
                     const SizedBox(height: AppSpacing.sm),
                     Align(

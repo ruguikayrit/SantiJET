@@ -21,7 +21,7 @@ Sağ alt FAB metni ve sheet başlığı **Puantaj AL**. Eski “Puantajı Dışa
 ## Günlük Puantaj — Personel / Ekip
 
 - **Personel** / firma / ekip / **Ekip** başlıkları **açılır-kapanır** (`_ExpandableSection`); **varsayılan kapalı**.
-- Üstte 3 kademeli toplu aç/kapa: **1 · Personel / Ekip** | **2 · Firma** | **3 · Ekip listesi** (`_PuantajKirilimToolbar`). Kapatma.
+- Üstte **Liste görünümü** derinlik seçici (`_PuantajKirilimBar`): **Kapalı · Bölüm · Firma · Kişi** — Günlük/Haftalık sekmesi düzeni. Eski numaralı chip/butonları geri koyma.
 - **Personel** hiyerarşisi: Personel → **firma** (Sigorta ettiren firma) → **ekip adı** → kişiler.
 - **Ekip** başlığı: yalnız **ekip adı** (Ayarlar → Ekipler açılır listesi) + **çalışan sayısı**. Serbest metin ekip adı yok.
 - Eski “Sigortalı Personel” / “Sigortasız ekipler” başlıkları geri gelmez.
@@ -48,6 +48,7 @@ Kayıt yoksa pazar günü otomatik **HT**; manuel durum ezebilir.
 - **Haftalık rapor**: günlük kayıtlardan türetilmiş haftalık özet + gün kırılımı.
 - **Aylık rapor**: ay içi haftalardan türetilmiş özet; ay dışı günler soluk.
 - Gün satırından **Günlük raporu aç** ile günlük sekmeye geçilir.
+- Puantaj özeti **Personel** + **Ekip** gösterir (ekip: ad + çalışan sayısı). Haftalık/aylık ve PDF aynı kurguda. Kapatma / yalnız personele düşürme.
 
 ## İmalat
 

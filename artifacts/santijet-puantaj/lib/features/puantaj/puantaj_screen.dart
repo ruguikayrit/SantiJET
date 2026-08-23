@@ -524,37 +524,40 @@ class _DailyViewState extends State<_DailyView> {
   bool _teamExpanded(String company, String team) =>
       _l3Teams[_teamKey(company, team)] ?? false;
 
-  void _toggleLevel1() {
-    final open = !(_l1Personel && _l1Ekip);
-    setState(() {
-      _l1Personel = open;
-      _l1Ekip = open;
-    });
-  }
-
-  void _toggleLevel2() {
+  /// 0 kapalı · 1 bölüm · 2 firma · 3 kişi.
+  int _kirilimDepth() {
+    if (!_l1Personel && !_l1Ekip) return 0;
     final companies = widget.grouped.map((g) => g.company).toList();
-    if (companies.isEmpty) return;
-    final anyClosed = companies.any((c) => !(_l2Companies[c] ?? false));
-    setState(() {
-      for (final c in companies) {
-        _l2Companies[c] = anyClosed;
-      }
-    });
-  }
-
-  void _toggleLevel3() {
+    if (companies.isEmpty) return 1;
+    final allL2 = companies.every((c) => _l2Companies[c] ?? false);
+    if (!allL2) return 1;
     final keys = <String>[];
     for (final g in widget.grouped) {
       for (final t in _teamsOf(g.users)) {
         keys.add(_teamKey(g.company, t.team));
       }
     }
-    if (keys.isEmpty) return;
-    final anyClosed = keys.any((k) => !(_l3Teams[k] ?? false));
+    if (keys.isEmpty) return 2;
+    final allL3 = keys.every((k) => _l3Teams[k] ?? false);
+    return allL3 ? 3 : 2;
+  }
+
+  void _setKirilimDepth(int depth) {
+    final companies = widget.grouped.map((g) => g.company).toList();
+    final keys = <String>[];
+    for (final g in widget.grouped) {
+      for (final t in _teamsOf(g.users)) {
+        keys.add(_teamKey(g.company, t.team));
+      }
+    }
     setState(() {
+      _l1Personel = depth >= 1;
+      _l1Ekip = depth >= 1;
+      for (final c in companies) {
+        _l2Companies[c] = depth >= 2;
+      }
       for (final k in keys) {
-        _l3Teams[k] = anyClosed;
+        _l3Teams[k] = depth >= 3;
       }
     });
   }
@@ -659,12 +662,10 @@ class _DailyViewState extends State<_DailyView> {
         ),
         if (people.isEmpty) ...[
           const SizedBox(height: AppSpacing.md),
-          _PuantajKirilimToolbar(
-            onLevel1: _toggleLevel1,
-            onLevel2: _toggleLevel2,
-            onLevel3: _toggleLevel3,
-            level2Enabled: false,
-            level3Enabled: false,
+          _PuantajKirilimBar(
+            depth: _kirilimDepth(),
+            maxDepth: 1,
+            onDepthChanged: _setKirilimDepth,
           ),
           _ExpandableSection(
             leadingBar: true,
@@ -806,10 +807,10 @@ class _DailyViewState extends State<_DailyView> {
           ],
         ),
         const SizedBox(height: AppSpacing.md),
-        _PuantajKirilimToolbar(
-          onLevel1: _toggleLevel1,
-          onLevel2: _toggleLevel2,
-          onLevel3: _toggleLevel3,
+        _PuantajKirilimBar(
+          depth: _kirilimDepth(),
+          maxDepth: 3,
+          onDepthChanged: _setKirilimDepth,
         ),
         _ExpandableSection(
           leadingBar: true,
@@ -1052,43 +1053,57 @@ class _ExpandableSectionState extends State<_ExpandableSection> {
   }
 }
 
-/// 1–3. kırılım toplu aç/kapa (Personel/Ekip · firma · ekip listesi).
-class _PuantajKirilimToolbar extends StatelessWidget {
-  const _PuantajKirilimToolbar({
-    required this.onLevel1,
-    required this.onLevel2,
-    required this.onLevel3,
-    this.level2Enabled = true,
-    this.level3Enabled = true,
+/// Liste derinliği — Personel/Ekip · firma · ekip · kişi (Günlük sekmesi düzeni).
+class _PuantajKirilimBar extends StatelessWidget {
+  const _PuantajKirilimBar({
+    required this.depth,
+    required this.maxDepth,
+    required this.onDepthChanged,
   });
 
-  final VoidCallback onLevel1;
-  final VoidCallback onLevel2;
-  final VoidCallback onLevel3;
-  final bool level2Enabled;
-  final bool level3Enabled;
+  final int depth;
+  final int maxDepth;
+  final ValueChanged<int> onDepthChanged;
+
+  static const _labels = ['Kapalı', 'Bölüm', 'Firma', 'Kişi'];
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final surface = theme.cardTheme.color ?? theme.colorScheme.surface;
+
     return Padding(
       padding: const EdgeInsets.only(bottom: AppSpacing.sm),
-      child: Wrap(
-        spacing: AppSpacing.xs,
-        runSpacing: AppSpacing.xs,
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
-          _KirilimChip(
-            label: '1 · Personel / Ekip',
-            onPressed: onLevel1,
+          Text(
+            'Liste görünümü',
+            style: theme.textTheme.labelMedium?.copyWith(
+              color: theme.colorScheme.onSurfaceVariant,
+              fontWeight: FontWeight.w600,
+            ),
           ),
-          _KirilimChip(
-            label: '2 · Firma',
-            onPressed: onLevel2,
-            enabled: level2Enabled,
-          ),
-          _KirilimChip(
-            label: '3 · Ekip listesi',
-            onPressed: onLevel3,
-            enabled: level3Enabled,
+          const SizedBox(height: AppSpacing.xs),
+          DecoratedBox(
+            decoration: BoxDecoration(
+              color: surface,
+              borderRadius: AppRadii.md,
+              border: Border.all(color: theme.dividerColor),
+            ),
+            child: Row(
+              children: [
+                for (var i = 0; i < 4; i++)
+                  Expanded(
+                    child: _KirilimDepthSegment(
+                      label: _labels[i],
+                      selected: depth == i,
+                      enabled: i <= maxDepth,
+                      onTap: () => onDepthChanged(i),
+                    ),
+                  ),
+              ],
+            ),
           ),
         ],
       ),
@@ -1096,34 +1111,48 @@ class _PuantajKirilimToolbar extends StatelessWidget {
   }
 }
 
-class _KirilimChip extends StatelessWidget {
-  const _KirilimChip({
+class _KirilimDepthSegment extends StatelessWidget {
+  const _KirilimDepthSegment({
     required this.label,
-    required this.onPressed,
-    this.enabled = true,
+    required this.selected,
+    required this.enabled,
+    required this.onTap,
   });
 
   final String label;
-  final VoidCallback onPressed;
+  final bool selected;
   final bool enabled;
+  final VoidCallback onTap;
 
   @override
   Widget build(BuildContext context) {
-    return OutlinedButton(
-      onPressed: enabled ? onPressed : null,
-      style: OutlinedButton.styleFrom(
-        visualDensity: VisualDensity.compact,
-        padding: const EdgeInsets.symmetric(
-          horizontal: AppSpacing.sm,
-          vertical: AppSpacing.xs,
+    final theme = Theme.of(context);
+    final fg = enabled
+        ? (selected
+            ? theme.colorScheme.onSecondary
+            : theme.colorScheme.onSurfaceVariant)
+        : theme.colorScheme.onSurfaceVariant.withValues(alpha: 0.38);
+
+    return InkWell(
+      onTap: enabled ? onTap : null,
+      borderRadius: AppRadii.md,
+      child: Container(
+        padding: const EdgeInsets.symmetric(vertical: 10),
+        decoration: BoxDecoration(
+          color: selected && enabled ? theme.colorScheme.secondary : null,
+          borderRadius: AppRadii.md,
         ),
-        tapTargetSize: MaterialTapTargetSize.shrinkWrap,
-      ),
-      child: Text(
-        label,
-        style: Theme.of(context).textTheme.labelSmall?.copyWith(
-              fontWeight: FontWeight.w600,
-            ),
+        child: Text(
+          label,
+          textAlign: TextAlign.center,
+          maxLines: 1,
+          overflow: TextOverflow.ellipsis,
+          style: theme.textTheme.labelLarge?.copyWith(
+            color: fg,
+            fontWeight: selected && enabled ? FontWeight.w700 : FontWeight.w600,
+            fontSize: 12,
+          ),
+        ),
       ),
     );
   }
