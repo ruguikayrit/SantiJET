@@ -25,7 +25,9 @@ import '../../data/services/daily_report_pdf_service.dart';
 import '../../data/services/irsaliye_material_ocr.dart';
 import '../../domain/catalogs/turkey_cities.dart';
 import '../../domain/daily_report/daily_report_copy.dart';
+import '../../domain/daily_report/period_report_aggregator.dart';
 import '../../domain/entities/daily_report.dart';
+import '../../domain/entities/project.dart';
 import '../../domain/enums/photo_work_category.dart';
 import 'widgets/attendance_summary_table.dart';
 import 'widgets/daily_report_entry_page.dart';
@@ -474,8 +476,18 @@ class _DailyReportScreenState extends ConsumerState<DailyReportScreen> {
 
   Future<void> _openExportSheet() async {
     final project = ref.read(activeProjectProvider);
+    if (project == null) return;
+
+    if (_viewMode == _ReportViewMode.daily) {
+      await _exportDailyPdf(project);
+      return;
+    }
+    await _exportPeriodPdf(project);
+  }
+
+  Future<void> _exportDailyPdf(Project project) async {
     final report = _persistDraftForExport();
-    if (project == null || report == null) return;
+    if (report == null) return;
     final snap = ref.read(liveAttendanceSnapshotProvider);
     final company = ref.read(companyInfoProvider);
 
@@ -500,6 +512,87 @@ class _DailyReportScreenState extends ConsumerState<DailyReportScreen> {
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text('PDF rapor dışa aktarıldı')),
+      );
+    } catch (e) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('PDF oluşturulamadı: $e')),
+      );
+    }
+  }
+
+  /// Haftalık / aylık: dönemdeki dolu günleri tek PDF’te birleştirir.
+  Future<void> _exportPeriodPdf(Project project) async {
+    final anchor = ref.read(dailyReportSelectedDateProvider);
+    final dates = _viewMode == _ReportViewMode.weekly
+        ? PuantajDate.weekDays(anchor)
+        : PuantajDate.monthDays(anchor);
+    final periodLabel = _viewMode == _ReportViewMode.weekly
+        ? PuantajDate.weekLabel(dates)
+        : PuantajDate.monthLabel(anchor);
+
+    final all = ref.read(dailyReportsProvider);
+    final filledDates = <String>[
+      for (final d in dates)
+        if (PeriodReportAggregator.summarize(
+          date: d,
+          reports: all,
+          projectId: project.id,
+        ).hasContent)
+          d,
+    ];
+    if (filledDates.isEmpty) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(
+            _viewMode == _ReportViewMode.weekly
+                ? 'Bu haftada dışa aktarılacak günlük rapor yok'
+                : 'Bu ayda dışa aktarılacak günlük rapor yok',
+          ),
+        ),
+      );
+      return;
+    }
+
+    final sections = await showDailyReportExportSectionsPicker(
+      context,
+      ref,
+      title: 'PDF Rapor Dışa Aktar',
+      subtitle: '${project.name} · $periodLabel · ${filledDates.length} gün',
+    );
+    if (sections == null || !mounted) return;
+
+    ref.read(dailyReportExportSectionsProvider.notifier).save(sections);
+
+    try {
+      final notifier = ref.read(dailyReportsProvider.notifier);
+      final reports = <DailyReport>[];
+      final snaps = <DailyReportAttendanceSnapshot?>[];
+      for (final d in filledDates) {
+        var report = notifier.ensureDraft(
+          projectId: project.id,
+          date: d,
+        );
+        report = syncAttendanceIntoReport(ref, report);
+        reports.add(report);
+        snaps.add(report.attendanceSnapshot);
+      }
+      final company = ref.read(companyInfoProvider);
+      await dailyReportPdfService.exportMany(
+        reports: reports,
+        project: project,
+        company: company,
+        sections: sections,
+        liveSnapshots: snaps,
+      );
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(
+            'PDF rapor dışa aktarıldı (${filledDates.length} gün)',
+          ),
+        ),
       );
     } catch (e) {
       if (!mounted) return;
@@ -1609,13 +1702,11 @@ class _DailyReportScreenState extends ConsumerState<DailyReportScreen> {
 
     return Scaffold(
       backgroundColor: AppColors.canvas,
-      floatingActionButton: _viewMode == _ReportViewMode.daily
-          ? FloatingActionButton.extended(
-              onPressed: _openExportSheet,
-              icon: const Icon(Icons.ios_share_outlined),
-              label: const Text('Rapor AL'),
-            )
-          : null,
+      floatingActionButton: FloatingActionButton.extended(
+        onPressed: _openExportSheet,
+        icon: const Icon(Icons.ios_share_outlined),
+        label: const Text('Rapor AL'),
+      ),
       body: SafeArea(
         bottom: false,
         child: Column(

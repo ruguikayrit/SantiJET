@@ -39,7 +39,7 @@ Kayıt yoksa pazar günü otomatik **HT**; manuel durum ezebilir.
 
 ## Günlük Rapor — dışa aktar
 
-Üst tarih satırında paylaş/dışa aktar ikonu **yok**. Sağ altta Görevler’deki gibi `FloatingActionButton.extended`, metin **Rapor AL**; `_openExportSheet` aynı. Geri koyma. FAB yalnız **Günlük rapor** sekmesinde.
+Üst tarih satırında paylaş/dışa aktar ikonu **yok**. Sağ altta Görevler’deki gibi `FloatingActionButton.extended`, metin **Rapor AL**; `_openExportSheet` aynı. Geri koyma. FAB **Günlük / Haftalık / Aylık** sekmelerinde görünür (haftalık/aylık: dönemdeki dolu günleri tek PDF).
 
 ## Rapor — Günlük / Haftalık / Aylık
 
