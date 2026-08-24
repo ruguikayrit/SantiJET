@@ -531,7 +531,7 @@ class _DailyViewState extends State<_DailyView> {
   bool _teamExpanded(String company, String team) =>
       _l3Teams[_teamKey(company, team)] ?? false;
 
-  /// 0 kapalı · 1 bölüm · 2 firma · 3 kişi.
+  /// 0 kapalı · 1 firma · 2 ekip · 3 personel.
   int _kirilimDepth() {
     if (!_l1Personel && !_l1Ekip) return 0;
     final companies = widget.grouped.map((g) => g.company).toList();
@@ -835,7 +835,7 @@ class _DailyViewState extends State<_DailyView> {
             ),
           ),
           trailing: Text(
-            '${people.length} kişi',
+            '${people.length} personel',
             style: theme.textTheme.labelSmall,
           ),
           children: [
@@ -871,7 +871,7 @@ class _DailyViewState extends State<_DailyView> {
                   ),
                 ),
                 trailing: Text(
-                  '${group.users.length} kişi',
+                  '${group.users.length} personel',
                   style: theme.textTheme.labelSmall,
                 ),
                 children: [
@@ -908,7 +908,7 @@ class _DailyViewState extends State<_DailyView> {
                         ),
                       ),
                       trailing: Text(
-                        '${teamGroup.users.length} kişi',
+                        '${teamGroup.users.length} personel',
                         style: theme.textTheme.labelSmall,
                       ),
                       children: [
@@ -1107,7 +1107,7 @@ class _ExpandableSectionState extends State<_ExpandableSection> {
   }
 }
 
-/// Liste derinliği — Personel/Ekip · firma · ekip · kişi (Günlük sekmesi düzeni).
+/// Liste derinliği — Kapalı · Firma · Ekip · Personel (Günlük sekmesi düzeni).
 class _PuantajKirilimBar extends StatelessWidget {
   const _PuantajKirilimBar({
     required this.depth,
@@ -1119,7 +1119,7 @@ class _PuantajKirilimBar extends StatelessWidget {
   final int maxDepth;
   final ValueChanged<int> onDepthChanged;
 
-  static const _labels = ['Kapalı', 'Bölüm', 'Firma', 'Kişi'];
+  static const _labels = ['Kapalı', 'Firma', 'Ekip', 'Personel'];
 
   @override
   Widget build(BuildContext context) {
@@ -1503,7 +1503,7 @@ class _DayTeamsSection extends ConsumerWidget {
             children: [
               if (entries.isNotEmpty)
                 Text(
-                  '$totalWorkers kişi',
+                  '$totalWorkers personel',
                   style: theme.textTheme.labelSmall,
                 ),
               const SizedBox(width: AppSpacing.xs),
@@ -2056,7 +2056,7 @@ class _CetvelView extends StatelessWidget {
                         ),
                       ),
                       trailing: Text(
-                        '${group.users.length} kişi',
+                        '${group.users.length} personel',
                         style: theme.textTheme.labelSmall,
                       ),
                       children: [
@@ -2076,7 +2076,7 @@ class _CetvelView extends StatelessWidget {
                               ),
                             ),
                             trailing: Text(
-                              '${teamGroup.users.length} kişi',
+                              '${teamGroup.users.length} personel',
                               style: theme.textTheme.labelSmall,
                             ),
                             children: [
@@ -2523,8 +2523,8 @@ class _PuantajExportSheetState extends State<_PuantajExportSheet> {
     final total = _eligiblePeople.length;
     final count = _exportPeople.length;
     if (total == 0) return 'Personel yok';
-    if (_allSelected) return 'Tümü ($total kişi)';
-    return '$count / $total kişi seçili';
+    if (_allSelected) return 'Tümü ($total personel)';
+    return '$count / $total personel seçili';
   }
 
   String get _teamSelectionLabel {
@@ -3101,7 +3101,7 @@ class _PuantajExportSheetState extends State<_PuantajExportSheet> {
                                       v ?? false,
                                     ),
                             title: Text(_teamLabel(teamKey)),
-                            subtitle: Text('${members.length} kişi'),
+                            subtitle: Text('${members.length} personel'),
                             secondary: TextButton(
                               onPressed: _busy
                                   ? null

@@ -17,6 +17,7 @@ import '../../data/providers/tasks_provider.dart';
 import '../../domain/entities/project.dart';
 import '../../domain/entities/site_task.dart';
 import '../../domain/enums/attendance_status.dart';
+import '../../domain/enums/task_status.dart';
 import '../projects/widgets/project_switcher.dart';
 import 'home_daily_report_pdf_sheet.dart';
 import 'home_task_summary_dialog.dart';
@@ -82,6 +83,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
     final people = ref.watch(personnelForDateProvider(today));
     final attendance = ref.watch(attendanceProvider);
     final urgentTasks = ref.watch(upcomingUrgentTasksProvider);
+    final projectTasks = ref.watch(visibleProjectTasksProvider);
     if (project == null) {
       return Scaffold(
         body: SafeArea(
@@ -127,6 +129,13 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
     final absent = (people.length - present - half).clamp(0, people.length);
     final overtimeHours =
         todayRecords.fold<double>(0, (sum, a) => sum + a.overtimeHours);
+
+    final todoCount =
+        projectTasks.where((t) => t.status == TaskStatus.todo).length;
+    final doingCount =
+        projectTasks.where((t) => t.status == TaskStatus.doing).length;
+    final doneCount =
+        projectTasks.where((t) => t.status == TaskStatus.done).length;
 
     return Scaffold(
       body: SafeArea(
@@ -235,7 +244,40 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                     title: 'Acil görevler',
                     icon: Icons.assignment_late_outlined,
                     onTap: () => context.go(AppRoutes.gorevler),
-                    child: _HomeUrgentTasksList(tasks: urgentTasks),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.stretch,
+                      children: [
+                        Row(
+                          children: [
+                            Expanded(
+                              child: _MiniStat(
+                                label: TaskStatus.todo.label,
+                                value: '$todoCount',
+                                color: AppColors.info,
+                              ),
+                            ),
+                            const SizedBox(width: AppSpacing.xs),
+                            Expanded(
+                              child: _MiniStat(
+                                label: TaskStatus.doing.label,
+                                value: '$doingCount',
+                                color: AppColors.warning,
+                              ),
+                            ),
+                            const SizedBox(width: AppSpacing.xs),
+                            Expanded(
+                              child: _MiniStat(
+                                label: TaskStatus.done.label,
+                                value: '$doneCount',
+                                color: AppColors.success,
+                              ),
+                            ),
+                          ],
+                        ),
+                        const SizedBox(height: AppSpacing.sm),
+                        _HomeUrgentTasksList(tasks: urgentTasks),
+                      ],
+                    ),
                   ),
                 ]),
               ),
