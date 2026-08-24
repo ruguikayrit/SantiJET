@@ -15,6 +15,8 @@ import '../../data/providers/auth_provider.dart';
 import '../../data/providers/collaboration_provider.dart';
 import '../../data/providers/production_provider.dart';
 import '../../data/providers/tasks_provider.dart';
+import '../../data/providers/uninsured_teams_provider.dart';
+import '../../data/providers/yevmiyeli_is_provider.dart';
 import '../../data/remote/supabase_project_sync.dart';
 import '../../data/remote/supabase_service.dart';
 import '../../domain/entities/project.dart';
@@ -203,6 +205,12 @@ class ProjectsScreen extends ConsumerWidget {
                                 ),
                               );
                               if (ok != true) return;
+                              ref
+                                  .read(uninsuredTeamsProvider.notifier)
+                                  .deleteForProject(p.id);
+                              ref
+                                  .read(yevmiyeliIsProvider.notifier)
+                                  .deleteForProject(p.id);
                               ref
                                   .read(attendanceProvider.notifier)
                                   .deleteForProject(p.id);

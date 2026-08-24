@@ -28,8 +28,9 @@ Sağ alt FAB metni ve sheet başlığı **Puantaj AL**. Eski “Puantajı Dışa
 
 ## Çıktı türleri
 
-- Puantaj AL: **Personel puantajı** (kişisel cetvel) | **Ekip puantajı** (firma + ekip + sayı).
+- Puantaj AL: **Personel** | **Ekip** | **Yevmiyeli** (taşeron parça iş tablosu).
 - Ekip sayısı: Mevcut + Yarım + Giriş + Çıkış. Ekip başlığı kayıtları ayrı satır.
+- **Yevmiyeli işler**: personel kartından veya günlük tablodan; taşeron + meslek/ekip + iş tanımı + manuel yevmiye (0,5 adım). Puantaj saat÷8 yevmiyesinden ayrıdır.
 
 ## Puantaj durumları
 

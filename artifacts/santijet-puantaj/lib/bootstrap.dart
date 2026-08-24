@@ -14,6 +14,7 @@ import 'data/providers/production_provider.dart';
 import 'data/providers/tasks_provider.dart';
 import 'data/providers/uninsured_teams_provider.dart';
 import 'data/providers/verim_provider.dart';
+import 'data/providers/yevmiyeli_is_provider.dart';
 import 'data/remote/supabase_service.dart';
 
 /// Uygulama başlatma — Demir / BFA `bootstrap()` deseniyle hizalı.
@@ -32,6 +33,7 @@ Future<void> bootstrap() async {
     Hive.openBox('tasks'),
     Hive.openBox('project_members'),
     Hive.openBox('uninsured_teams'),
+    Hive.openBox('yevmiyeli_is'),
   ]);
 
   _migratePersonnelToProjects(boxes[2], boxes[1], boxes[0]);
@@ -56,6 +58,7 @@ Future<void> bootstrap() async {
         tasksBoxProvider.overrideWithValue(boxes[8]),
         membersBoxProvider.overrideWithValue(boxes[9]),
         uninsuredTeamsBoxProvider.overrideWithValue(boxes[10]),
+        yevmiyeliIsBoxProvider.overrideWithValue(boxes[11]),
       ],
       child: const SantijetPuantajApp(),
     ),

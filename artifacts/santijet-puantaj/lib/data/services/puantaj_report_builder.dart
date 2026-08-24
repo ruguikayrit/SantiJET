@@ -3,6 +3,7 @@ import '../../domain/attendance/attendance_display.dart';
 import '../../domain/entities/attendance.dart';
 import '../../domain/entities/person.dart';
 import '../../domain/entities/uninsured_team_entry.dart';
+import '../../domain/entities/yevmiyeli_is_kaydi.dart';
 import '../../domain/enums/attendance_status.dart';
 
 enum PuantajReportPeriod { daily, weekly, monthly }
@@ -14,6 +15,9 @@ enum PuantajExportLayout {
 
   /// Firma + ekip + çalışan sayısı; Ekip başlığı kayıtları ayrı.
   ekip,
+
+  /// Taşeron yevmiyeli parça iş tablosu.
+  yevmiyeli,
 }
 
 /// Excel / düz tablo için satır verisi + PDF görsel modeli.
@@ -126,7 +130,17 @@ abstract final class PuantajReportBuilder {
     required String anchorDate,
     PuantajExportLayout layout = PuantajExportLayout.isim,
     List<UninsuredTeamEntry> uninsuredTeams = const [],
+    List<YevmiyeliIsKaydi> yevmiyeliEntries = const [],
   }) {
+    if (layout == PuantajExportLayout.yevmiyeli) {
+      return buildYevmiyeli(
+        projectName: projectName,
+        projectId: projectId,
+        period: period,
+        anchorDate: anchorDate,
+        entries: yevmiyeliEntries,
+      );
+    }
     if (layout == PuantajExportLayout.ekip) {
       return buildEkip(
         projectName: projectName,
@@ -171,6 +185,132 @@ abstract final class PuantajReportBuilder {
           dayHeader: _monthDayHeader,
         ),
     };
+  }
+
+  /// Yevmiyeli iş tablosu — taşeron / meslek / iş tanımı / manuel yevmiye.
+  static PuantajReportData buildYevmiyeli({
+    required String projectName,
+    required String projectId,
+    required PuantajReportPeriod period,
+    required String anchorDate,
+    List<YevmiyeliIsKaydi> entries = const [],
+  }) {
+    final days = PuantajDate.daysForReportPeriod(
+      anchorDate: anchorDate,
+      daily: period == PuantajReportPeriod.daily,
+      weekly: period == PuantajReportPeriod.weekly,
+    );
+    final daySet = days.toSet();
+    final filtered = entries
+        .where((e) => e.projectId == projectId && daySet.contains(e.date))
+        .toList()
+      ..sort((a, b) {
+        final byDate = a.date.compareTo(b.date);
+        if (byDate != 0) return byDate;
+        final byCo = a.company.compareTo(b.company);
+        if (byCo != 0) return byCo;
+        return a.personName.compareTo(b.personName);
+      });
+
+    final periodLabel = switch (period) {
+      PuantajReportPeriod.daily => 'Günlük',
+      PuantajReportPeriod.weekly => 'Haftalık',
+      PuantajReportPeriod.monthly => 'Aylık',
+    };
+    final rangeLabel = switch (period) {
+      PuantajReportPeriod.daily => anchorDate,
+      PuantajReportPeriod.weekly =>
+        PuantajDate.weekLabel(PuantajDate.weekDays(anchorDate)),
+      PuantajReportPeriod.monthly => PuantajDate.monthLabel(anchorDate),
+    };
+    final fileStem = switch (period) {
+      PuantajReportPeriod.daily => 'yevmiyeli-gunluk-${_fileDate(anchorDate)}',
+      PuantajReportPeriod.weekly =>
+        'yevmiyeli-haftalik-${_fileDate(anchorDate)}',
+      PuantajReportPeriod.monthly =>
+        'yevmiyeli-aylik-${_fileMonth(anchorDate)}',
+    };
+
+    String fmtYv(double v) =>
+        v == v.roundToDouble() ? v.toStringAsFixed(0) : v.toStringAsFixed(1);
+
+    final headers = period == PuantajReportPeriod.daily
+        ? [
+            '#',
+            'Ad Soyad',
+            'Taşeron',
+            'Meslek',
+            'Ekip',
+            'İş tanımı',
+            'Yevmiye',
+          ]
+        : [
+            '#',
+            'Tarih',
+            'Ad Soyad',
+            'Taşeron',
+            'Meslek',
+            'Ekip',
+            'İş tanımı',
+            'Yevmiye',
+          ];
+
+    final rows = <List<String>>[];
+    var total = 0.0;
+    final byCompany = <String, double>{};
+    for (var i = 0; i < filtered.length; i++) {
+      final e = filtered[i];
+      total += e.yevmiyeCount;
+      final co = e.company.isEmpty ? 'Diğer' : e.company;
+      byCompany[co] = (byCompany[co] ?? 0) + e.yevmiyeCount;
+      if (period == PuantajReportPeriod.daily) {
+        rows.add([
+          '${i + 1}',
+          e.personName,
+          e.company,
+          e.profession,
+          e.team,
+          e.workDescription,
+          fmtYv(e.yevmiyeCount),
+        ]);
+      } else {
+        rows.add([
+          '${i + 1}',
+          e.date,
+          e.personName,
+          e.company,
+          e.profession,
+          e.team,
+          e.workDescription,
+          fmtYv(e.yevmiyeCount),
+        ]);
+      }
+    }
+
+    final companyLines = byCompany.entries.toList()
+      ..sort((a, b) => b.value.compareTo(a.value));
+    final summary = <String>[
+      'Kayıt: ${filtered.length}',
+      'Toplam yevmiye: ${fmtYv(total)}',
+      for (final c in companyLines)
+        '${c.key}: ${fmtYv(c.value)} yv',
+    ];
+
+    return PuantajReportData(
+      title: 'Yevmiyeli İşler — $periodLabel',
+      subtitle: '$projectName · $rangeLabel',
+      headers: headers,
+      rows: rows,
+      summaryLines: summary,
+      landscape: period != PuantajReportPeriod.daily,
+      fileStem: fileStem,
+      visual: const PuantajReportVisual(
+        isMatrix: false,
+        dayHeaders: [],
+        companies: [],
+      ),
+      plainTable: true,
+    );
   }
 
   /// Firma + ekip + çalışan sayısı (M/Y/G/Ç); Ekip başlığı ayrı bölüm.

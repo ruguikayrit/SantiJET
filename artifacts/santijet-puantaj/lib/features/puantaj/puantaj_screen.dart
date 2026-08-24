@@ -19,6 +19,7 @@ import '../../data/providers/app_data_provider.dart';
 import '../../data/providers/catalog_provider.dart';
 import '../../data/providers/collaboration_provider.dart';
 import '../../data/providers/uninsured_teams_provider.dart';
+import '../../data/providers/yevmiyeli_is_provider.dart';
 import '../../data/services/puantaj_export_service.dart';
 import '../../data/services/puantaj_report_builder.dart';
 import '../../domain/attendance/attendance_display.dart';
@@ -26,9 +27,10 @@ import '../../domain/entities/attendance.dart';
 import '../../domain/entities/person.dart';
 import '../../domain/entities/project.dart';
 import '../../domain/entities/uninsured_team_entry.dart';
+import '../../domain/entities/yevmiyeli_is_kaydi.dart';
 import '../../domain/enums/attendance_status.dart';
 import '../personnel/personnel_screen.dart';
-
+import 'widgets/yevmiyeli_is_widgets.dart';
 
 List<({String team, List<Person> users})> _teamsOf(List<Person> users) {
   final map = <String, List<Person>>{};
@@ -432,6 +434,10 @@ class _PuantajScreenState extends ConsumerState<PuantajScreen> {
         .read(uninsuredTeamsProvider)
         .where((e) => e.projectId == project.id)
         .toList();
+    final yevmiyeli = ref
+        .read(yevmiyeliIsProvider)
+        .where((e) => e.projectId == project.id)
+        .toList();
     return SJModal.showSheet(
       context: context,
       title: 'Puantaj AL',
@@ -440,6 +446,7 @@ class _PuantajScreenState extends ConsumerState<PuantajScreen> {
         allProjectPeople: allProjectPeople,
         attendance: attendance,
         uninsuredTeams: uninsured,
+        yevmiyeliEntries: yevmiyeli,
         anchorDate: _date,
         initialPeriod: initial,
       ),
@@ -694,6 +701,11 @@ class _DailyViewState extends State<_DailyView> {
             expanded: _l1Ekip,
             onExpandedChanged: (v) => setState(() => _l1Ekip = v),
           ),
+          const SizedBox(height: AppSpacing.md),
+          DayYevmiyeliSection(
+            date: date,
+            people: widget.people,
+          ),
         ] else ...[
         if (missing > 0) ...[
           const SizedBox(height: AppSpacing.sm),
@@ -905,24 +917,61 @@ class _DailyViewState extends State<_DailyView> {
                           Padding(
                             padding:
                                 const EdgeInsets.only(bottom: AppSpacing.sm),
-                            child: _PersonCard(
-                              person: person,
-                              status: widget.statusOf(person.id),
-                              note: widget.noteOf(person.id),
-                              overtimeHours: widget.overtimeOf(person.id),
-                              dropdownOpen: widget.openDropdown == person.id,
-                              noteOpen: widget.openNote == person.id,
-                              noteController: widget.noteController,
-                              onToggleDropdown: () =>
-                                  widget.onToggleDropdown(person.id),
-                              onOpenNote: () => widget.onOpenNote(person),
-                              onCloseNote: widget.onCloseNote,
-                              onSaveNote: () => widget.onSaveNote(person),
-                              onSetStatus: (s) =>
-                                  widget.onSetStatus(person, s),
-                              onSetOvertime: (h) =>
-                                  widget.onSetOvertime(person, h),
-                              onPersonTap: () => widget.onPersonTap(person),
+                            child: Consumer(
+                              builder: (context, ref, _) {
+                                final project =
+                                    ref.watch(activeProjectProvider);
+                                final entries = ref.watch(yevmiyeliIsProvider);
+                                final personEntries = project == null
+                                    ? const <YevmiyeliIsKaydi>[]
+                                    : entries
+                                        .where(
+                                          (e) =>
+                                              e.projectId == project.id &&
+                                              e.date == date &&
+                                              e.personId == person.id,
+                                        )
+                                        .toList();
+                                final yvTotal = personEntries.fold<double>(
+                                  0,
+                                  (s, e) => s + e.yevmiyeCount,
+                                );
+                                return _PersonCard(
+                                  person: person,
+                                  status: widget.statusOf(person.id),
+                                  note: widget.noteOf(person.id),
+                                  overtimeHours: widget.overtimeOf(person.id),
+                                  dropdownOpen:
+                                      widget.openDropdown == person.id,
+                                  noteOpen: widget.openNote == person.id,
+                                  noteController: widget.noteController,
+                                  yevmiyeIsTotal: yvTotal,
+                                  onYevmiyeliTap: project == null
+                                      ? null
+                                      : () => openYevmiyeliIsEditor(
+                                            context,
+                                            ref,
+                                            projectId: project.id,
+                                            date: date,
+                                            people: widget.people,
+                                            initialPerson: person,
+                                            existing: personEntries.length == 1
+                                                ? personEntries.first
+                                                : null,
+                                          ),
+                                  onToggleDropdown: () =>
+                                      widget.onToggleDropdown(person.id),
+                                  onOpenNote: () => widget.onOpenNote(person),
+                                  onCloseNote: widget.onCloseNote,
+                                  onSaveNote: () => widget.onSaveNote(person),
+                                  onSetStatus: (s) =>
+                                      widget.onSetStatus(person, s),
+                                  onSetOvertime: (h) =>
+                                      widget.onSetOvertime(person, h),
+                                  onPersonTap: () =>
+                                      widget.onPersonTap(person),
+                                );
+                              },
                             ),
                           ),
                       ],
@@ -935,6 +984,11 @@ class _DailyViewState extends State<_DailyView> {
           date: date,
           expanded: _l1Ekip,
           onExpandedChanged: (v) => setState(() => _l1Ekip = v),
+        ),
+        const SizedBox(height: AppSpacing.md),
+        DayYevmiyeliSection(
+          date: date,
+          people: widget.people,
         ),
         ],
       ],
@@ -1573,6 +1627,8 @@ class _PersonCard extends StatelessWidget {
     required this.onSetStatus,
     required this.onSetOvertime,
     required this.onPersonTap,
+    this.yevmiyeIsTotal = 0,
+    this.onYevmiyeliTap,
   });
 
   final Person person;
@@ -1589,6 +1645,8 @@ class _PersonCard extends StatelessWidget {
   final ValueChanged<AttendanceStatus> onSetStatus;
   final ValueChanged<double> onSetOvertime;
   final VoidCallback onPersonTap;
+  final double yevmiyeIsTotal;
+  final VoidCallback? onYevmiyeliTap;
 
   @override
   Widget build(BuildContext context) {
@@ -1750,6 +1808,31 @@ class _PersonCard extends StatelessWidget {
                   ],
                 ),
               ],
+              if (onYevmiyeliTap != null) ...[
+                const SizedBox(height: AppSpacing.xs),
+                Align(
+                  alignment: Alignment.centerRight,
+                  child: TextButton.icon(
+                    onPressed: onYevmiyeliTap,
+                    icon: Icon(
+                      yevmiyeIsTotal > 0
+                          ? Icons.handyman
+                          : Icons.handyman_outlined,
+                      size: 16,
+                    ),
+                    label: Text(
+                      yevmiyeIsTotal > 0
+                          ? 'Yevmiye iş · ${formatYevmiyeCount(yevmiyeIsTotal)} yv'
+                          : 'Yevmiyeli iş',
+                    ),
+                    style: TextButton.styleFrom(
+                      foregroundColor: AppColors.electricBlue,
+                      visualDensity: VisualDensity.compact,
+                      padding: const EdgeInsets.symmetric(horizontal: 8),
+                    ),
+                  ),
+                ),
+              ],
               if (note != null && !noteOpen) ...[
                 const SizedBox(height: AppSpacing.xs),
                 Row(
@@ -1896,6 +1979,7 @@ class _CetvelView extends StatelessWidget {
             ],
           ),
         ),
+        PeriodYevmiyeliSummary(dates: days),
         Padding(
           padding: const EdgeInsets.symmetric(horizontal: AppSpacing.md),
           child: Wrap(
@@ -2305,6 +2389,7 @@ class _PuantajExportSheet extends StatefulWidget {
     required this.allProjectPeople,
     required this.attendance,
     required this.uninsuredTeams,
+    required this.yevmiyeliEntries,
     required this.anchorDate,
     required this.initialPeriod,
   });
@@ -2313,6 +2398,7 @@ class _PuantajExportSheet extends StatefulWidget {
   final List<Person> allProjectPeople;
   final List<Attendance> attendance;
   final List<UninsuredTeamEntry> uninsuredTeams;
+  final List<YevmiyeliIsKaydi> yevmiyeliEntries;
   final String anchorDate;
   final PuantajReportPeriod initialPeriod;
 
@@ -2596,6 +2682,9 @@ class _PuantajExportSheetState extends State<_PuantajExportSheet> {
     final hasUninsured = widget.uninsuredTeams.any(
       (e) => _periodDays.contains(e.date),
     );
+    final hasYevmiyeli = widget.yevmiyeliEntries.any(
+      (e) => _periodDays.contains(e.date),
+    );
     if (_layout == PuantajExportLayout.isim && _exportPeople.isEmpty) {
       setState(() => _error = 'En az bir personel seçin.');
       return;
@@ -2604,6 +2693,10 @@ class _PuantajExportSheetState extends State<_PuantajExportSheet> {
         _exportPeople.isEmpty &&
         !hasUninsured) {
       setState(() => _error = 'Dışa aktarılacak ekip kaydı yok.');
+      return;
+    }
+    if (_layout == PuantajExportLayout.yevmiyeli && !hasYevmiyeli) {
+      setState(() => _error = 'Bu dönemde yevmiyeli iş kaydı yok.');
       return;
     }
     setState(() {
@@ -2620,6 +2713,7 @@ class _PuantajExportSheetState extends State<_PuantajExportSheet> {
         anchorDate: widget.anchorDate,
         layout: _layout,
         uninsuredTeams: widget.uninsuredTeams,
+        yevmiyeliEntries: widget.yevmiyeliEntries,
       );
       if (pdf) {
         await puantajExportService.exportPdf(
@@ -2704,11 +2798,15 @@ class _PuantajExportSheetState extends State<_PuantajExportSheet> {
           segments: const [
             ButtonSegment(
               value: PuantajExportLayout.isim,
-              label: Text('Personel puantajı'),
+              label: Text('Personel'),
             ),
             ButtonSegment(
               value: PuantajExportLayout.ekip,
-              label: Text('Ekip puantajı'),
+              label: Text('Ekip'),
+            ),
+            ButtonSegment(
+              value: PuantajExportLayout.yevmiyeli,
+              label: Text('Yevmiyeli'),
             ),
           ],
           selected: {_layout},
@@ -2730,6 +2828,17 @@ class _PuantajExportSheetState extends State<_PuantajExportSheet> {
             ),
           ),
         ],
+        if (_layout == PuantajExportLayout.yevmiyeli) ...[
+          const SizedBox(height: AppSpacing.xs),
+          Text(
+            'Yevmiyeli iş tablosu: taşeron, meslek, ekip, iş tanımı '
+            've manuel yevmiye adedi.',
+            style: theme.textTheme.bodySmall?.copyWith(
+              color: theme.colorScheme.onSurfaceVariant,
+            ),
+          ),
+        ],
+        if (_layout != PuantajExportLayout.yevmiyeli) ...[
         const SizedBox(height: AppSpacing.md),
         Text('Personel', style: theme.textTheme.labelLarge),
         const SizedBox(height: AppSpacing.xs),
@@ -3008,6 +3117,7 @@ class _PuantajExportSheetState extends State<_PuantajExportSheet> {
             ),
           ),
         ),
+        ], // personel/ekip seçimi — yevmiyeli çıktıda gizlenir
         const SizedBox(height: AppSpacing.md),
         Text('Format', style: theme.textTheme.labelLarge),
         const SizedBox(height: AppSpacing.sm),
