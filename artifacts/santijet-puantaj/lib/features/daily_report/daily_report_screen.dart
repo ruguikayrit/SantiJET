@@ -21,11 +21,14 @@ import '../../data/providers/app_data_provider.dart';
 import '../../data/providers/company_provider.dart';
 import '../../data/providers/daily_report_export_sections_provider.dart';
 import '../../data/providers/daily_report_provider.dart';
+import '../../data/providers/period_site_report_provider.dart';
 import '../../data/services/daily_report_pdf_service.dart';
+import '../../data/services/period_site_report_builder.dart';
+import '../../data/services/period_site_report_export_service.dart';
+import '../../data/services/puantaj_report_builder.dart';
 import '../../data/services/irsaliye_material_ocr.dart';
 import '../../domain/catalogs/turkey_cities.dart';
 import '../../domain/daily_report/daily_report_copy.dart';
-import '../../domain/daily_report/period_report_aggregator.dart';
 import '../../domain/entities/daily_report.dart';
 import '../../domain/entities/project.dart';
 import '../../domain/enums/photo_work_category.dart';
@@ -482,7 +485,95 @@ class _DailyReportScreenState extends ConsumerState<DailyReportScreen> {
       await _exportDailyPdf(project);
       return;
     }
-    await _exportPeriodPdf(project);
+    await _exportPeriodReport(project);
+  }
+
+  PeriodSiteReportData? _buildPeriodSiteReport(Project project) {
+    final anchor = ref.read(dailyReportSelectedDateProvider);
+    final period = switch (_viewMode) {
+      _ReportViewMode.weekly => PuantajReportPeriod.weekly,
+      _ReportViewMode.monthly => PuantajReportPeriod.monthly,
+      _ReportViewMode.daily => PuantajReportPeriod.daily,
+    };
+    return ref.read(
+      periodSiteReportProvider((
+        projectId: project.id,
+        anchorDate: anchor,
+        period: period,
+      )),
+    );
+  }
+
+  Future<void> _exportPeriodReport(Project project) async {
+    final report = _buildPeriodSiteReport(project);
+    if (report == null) return;
+
+    final periodLabel = report.periodLabel;
+    final choice = await SJModal.showSheet<String>(
+      context: context,
+      title: 'Rapor AL',
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          Text(
+            '${project.name} · ${report.rangeLabel}',
+            style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                  color: Theme.of(context).colorScheme.onSurfaceVariant,
+                ),
+          ),
+          const SizedBox(height: AppSpacing.sm),
+          Text(
+            '$periodLabel rapor: personel + ekip puantajı, imalat ve verim.',
+            style: Theme.of(context).textTheme.bodySmall,
+          ),
+          const SizedBox(height: AppSpacing.md),
+          FilledButton.icon(
+            onPressed: () => Navigator.pop(context, 'pdf'),
+            icon: const Icon(Icons.picture_as_pdf_outlined),
+            label: const Text('PDF'),
+          ),
+          const SizedBox(height: AppSpacing.sm),
+          OutlinedButton.icon(
+            onPressed: () => Navigator.pop(context, 'excel'),
+            icon: const Icon(Icons.table_chart_outlined),
+            label: const Text('Excel'),
+          ),
+        ],
+      ),
+    );
+    if (choice == null || !mounted) return;
+
+    final company = ref.read(companyInfoProvider);
+    try {
+      if (choice == 'pdf') {
+        await periodSiteReportExportService.exportPdf(
+          report,
+          projectName: project.name,
+          companyName: company.name,
+        );
+      } else {
+        await periodSiteReportExportService.exportExcel(
+          report,
+          projectName: project.name,
+        );
+      }
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(
+            choice == 'pdf'
+                ? '$periodLabel PDF dışa aktarıldı'
+                : '$periodLabel Excel dışa aktarıldı',
+          ),
+        ),
+      );
+    } catch (e) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Dışa aktarılamadı: $e')),
+      );
+    }
   }
 
   Future<void> _exportDailyPdf(Project project) async {
@@ -512,87 +603,6 @@ class _DailyReportScreenState extends ConsumerState<DailyReportScreen> {
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text('PDF rapor dışa aktarıldı')),
-      );
-    } catch (e) {
-      if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('PDF oluşturulamadı: $e')),
-      );
-    }
-  }
-
-  /// Haftalık / aylık: dönemdeki dolu günleri tek PDF’te birleştirir.
-  Future<void> _exportPeriodPdf(Project project) async {
-    final anchor = ref.read(dailyReportSelectedDateProvider);
-    final dates = _viewMode == _ReportViewMode.weekly
-        ? PuantajDate.weekDays(anchor)
-        : PuantajDate.monthDays(anchor);
-    final periodLabel = _viewMode == _ReportViewMode.weekly
-        ? PuantajDate.weekLabel(dates)
-        : PuantajDate.monthLabel(anchor);
-
-    final all = ref.read(dailyReportsProvider);
-    final filledDates = <String>[
-      for (final d in dates)
-        if (PeriodReportAggregator.summarize(
-          date: d,
-          reports: all,
-          projectId: project.id,
-        ).hasContent)
-          d,
-    ];
-    if (filledDates.isEmpty) {
-      if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text(
-            _viewMode == _ReportViewMode.weekly
-                ? 'Bu haftada dışa aktarılacak günlük rapor yok'
-                : 'Bu ayda dışa aktarılacak günlük rapor yok',
-          ),
-        ),
-      );
-      return;
-    }
-
-    final sections = await showDailyReportExportSectionsPicker(
-      context,
-      ref,
-      title: 'PDF Rapor Dışa Aktar',
-      subtitle: '${project.name} · $periodLabel · ${filledDates.length} gün',
-    );
-    if (sections == null || !mounted) return;
-
-    ref.read(dailyReportExportSectionsProvider.notifier).save(sections);
-
-    try {
-      final notifier = ref.read(dailyReportsProvider.notifier);
-      final reports = <DailyReport>[];
-      final snaps = <DailyReportAttendanceSnapshot?>[];
-      for (final d in filledDates) {
-        var report = notifier.ensureDraft(
-          projectId: project.id,
-          date: d,
-        );
-        report = syncAttendanceIntoReport(ref, report);
-        reports.add(report);
-        snaps.add(report.attendanceSnapshot);
-      }
-      final company = ref.read(companyInfoProvider);
-      await dailyReportPdfService.exportMany(
-        reports: reports,
-        project: project,
-        company: company,
-        sections: sections,
-        liveSnapshots: snaps,
-      );
-      if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text(
-            'PDF rapor dışa aktarıldı (${filledDates.length} gün)',
-          ),
-        ),
       );
     } catch (e) {
       if (!mounted) return;

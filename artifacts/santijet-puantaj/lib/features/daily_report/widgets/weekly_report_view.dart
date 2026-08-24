@@ -2,14 +2,14 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../core/design_system/sj_card.dart';
-import '../../../core/design_system/sj_empty_state.dart';
 import '../../../core/theme/app_spacing.dart';
 import '../../../core/utils/puantaj_date.dart';
-import '../../../data/providers/daily_report_provider.dart';
-import '../../../domain/daily_report/period_report_aggregator.dart';
+import '../../../data/providers/period_site_report_provider.dart';
+import '../../../data/services/puantaj_report_builder.dart';
 import 'period_report_shared.dart';
+import 'period_report_site_sections.dart';
 
-/// Haftalık rapor — günlük kayıtlardan türetilmiş özet.
+/// Haftalık rapor — puantaj + imalat + verim (Puantaj AL ile aynı kaynaklar).
 class WeeklyReportView extends ConsumerWidget {
   const WeeklyReportView({
     required this.projectId,
@@ -26,35 +26,17 @@ class WeeklyReportView extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final reports = ref.watch(dailyReportsProvider);
-    final summary = PeriodReportAggregator.buildWeekly(
-      anchorDate: anchorDate,
-      reports: reports,
-      projectId: projectId,
+    final siteReport = ref.watch(
+      periodSiteReportProvider((
+        projectId: projectId,
+        anchorDate: anchorDate,
+        period: PuantajReportPeriod.weekly,
+      )),
     );
     final isCurrentWeek =
         PuantajDate.weekDays(anchorDate).contains(PuantajDate.today());
-
-    if (summary.filledDayCount == 0) {
-      return Column(
-        children: [
-          PeriodNavigator(
-            label: summary.label,
-            subtitle: isCurrentWeek ? 'Bu hafta' : null,
-            onPrevious: () => onAnchorChanged(PuantajDate.shift(anchorDate, -7)),
-            onNext: () => onAnchorChanged(PuantajDate.shift(anchorDate, 7)),
-          ),
-          const Expanded(
-            child: SJEmptyState(
-              title: 'Bu haftada rapor yok',
-              message:
-                  'Günlük rapor girdikçe haftalık özet burada görünür.',
-              icon: Icons.calendar_view_week_outlined,
-            ),
-          ),
-        ],
-      );
-    }
+    final rangeLabel = siteReport?.rangeLabel ??
+        PuantajDate.weekLabel(PuantajDate.weekDays(anchorDate));
 
     return ListView(
       padding: const EdgeInsets.fromLTRB(
@@ -65,7 +47,7 @@ class WeeklyReportView extends ConsumerWidget {
       ),
       children: [
         PeriodNavigator(
-          label: summary.label,
+          label: rangeLabel,
           subtitle: isCurrentWeek ? 'Bu hafta' : null,
           onPrevious: () => onAnchorChanged(PuantajDate.shift(anchorDate, -7)),
           onNext: () => onAnchorChanged(PuantajDate.shift(anchorDate, 7)),
@@ -73,37 +55,24 @@ class WeeklyReportView extends ConsumerWidget {
         const SizedBox(height: AppSpacing.md),
         SJCard(
           child: Text(
-            'Haftalık özet günlük rapor kayıtlarından türetilir. '
-            'Gün satırına dokunarak detayı açın; günlük rapora geçebilirsiniz.',
+            'Haftalık özet: personel ve ekip puantajı (Puantaj sekmesi), '
+            'yapılan işler (İmalat), verim (İş Programı + Keşif). '
+            'Rapor AL ile PDF veya Excel dışa aktarın.',
             style: Theme.of(context).textTheme.bodySmall?.copyWith(
                   color: Theme.of(context).colorScheme.onSurfaceVariant,
                 ),
           ),
         ),
         const SizedBox(height: AppSpacing.md),
-        PeriodSummaryStats(
-          filledDays: summary.filledDayCount,
-          totalDays: summary.days.length,
-          photos: summary.totalPhotos,
-          incoming: summary.totalIncoming,
-          adamSaat: summary.totalAdamSaat,
-          yevmiye: summary.totalYevmiye,
-        ),
-        const SizedBox(height: AppSpacing.md),
-        Text(
-          'Günler',
-          style: Theme.of(context).textTheme.titleSmall?.copyWith(
-                fontWeight: FontWeight.w700,
-              ),
-        ),
-        const SizedBox(height: AppSpacing.sm),
-        for (final day in summary.days) ...[
-          DaySummaryTile(
-            summary: day,
-            onOpenDaily: onOpenDaily,
+        if (siteReport != null)
+          PeriodSiteReportSections(report: siteReport)
+        else
+          SJCard(
+            child: Text(
+              'Proje seçili değil veya rapor yüklenemedi.',
+              style: Theme.of(context).textTheme.bodyMedium,
+            ),
           ),
-          const SizedBox(height: AppSpacing.sm),
-        ],
       ],
     );
   }
