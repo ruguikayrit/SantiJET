@@ -155,6 +155,11 @@ class YevmiyeliIsNotifier extends StateNotifier<List<YevmiyeliIsKaydi>> {
     state = state.where((e) => e.projectId != projectId).toList();
     _persist();
   }
+
+  void replaceAll(List<YevmiyeliIsKaydi> items) {
+    state = List<YevmiyeliIsKaydi>.from(items);
+    _persist();
+  }
 }
 
 final yevmiyeliIsProvider =

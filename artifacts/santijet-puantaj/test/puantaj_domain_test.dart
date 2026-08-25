@@ -458,7 +458,7 @@ void main() {
   });
 
   group('PuantajBackupPayload', () {
-    test('parse geçerli yedek', () {
+    test('parse geçerli yedek v1', () {
       final raw = jsonEncode({
         'format': puantajBackupFormatId,
         'version': 1,
@@ -476,6 +476,34 @@ void main() {
       expect(payload.projects.length, 1);
       expect(payload.projects.first['name'], 'Site A');
       expect(payload.teams, ['Demir']);
+      expect(payload.tasks, isEmpty);
+    });
+
+    test('parse geçerli yedek v2 — tüm alanlar', () {
+      final raw = jsonEncode({
+        'format': puantajBackupFormatId,
+        'version': 2,
+        'exportedAt': '2026-07-27T12:00:00.000',
+        'projects': [
+          {'id': 'p1', 'name': 'Site A'},
+        ],
+        'personnel': [],
+        'attendance': [],
+        'productions': [],
+        'professions': ['Usta'],
+        'teams': ['Demir'],
+        'tasks': [
+          {'id': 't1', 'projectId': 'p1', 'title': 'Görev'},
+        ],
+        'dailyReports': [],
+        'yevmiyeliIs': [],
+        'uninsuredTeams': [],
+        'taskCategories': ['Saha'],
+      });
+      final payload = PuantajBackupPayload.parse(raw);
+      expect(payload.version, 2);
+      expect(payload.tasks.length, 1);
+      expect(payload.taskCategories, ['Saha']);
     });
 
     test('yanlış format reddedilir', () {

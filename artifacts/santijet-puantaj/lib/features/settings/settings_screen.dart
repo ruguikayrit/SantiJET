@@ -13,8 +13,12 @@ import '../../data/providers/backup_provider.dart';
 import '../../data/providers/catalog_provider.dart';
 import '../../data/providers/company_provider.dart';
 import '../../data/providers/demo_seed_provider.dart';
+import '../../data/providers/daily_report_provider.dart';
 import '../../data/providers/production_provider.dart';
+import '../../data/providers/tasks_provider.dart';
+import '../../data/providers/uninsured_teams_provider.dart';
 import '../../data/providers/verim_provider.dart';
+import '../../data/providers/yevmiyeli_is_provider.dart';
 import '../../data/services/puantaj_backup_service.dart';
 import '../../domain/catalogs/professions.dart';
 import '../../domain/catalogs/task_categories.dart';
@@ -104,8 +108,9 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
               ),
               const SizedBox(height: 8),
               Text(
-                'Tüm projeler, personel, puantaj, imalat ve katalogları '
-                'JSON dosyası olarak dışa / içe aktarın.',
+                'Tüm uygulama verisi tek JSON dosyasında yedeklenir: proje, '
+                'personel, puantaj, sigortasız ekip, imalat, verim, görev, '
+                'günlük rapor, yevmiyeli iş, kataloglar ve firma bilgisi.',
                 style: sheetTheme.textTheme.bodySmall,
               ),
               const SizedBox(height: 16),
@@ -173,8 +178,8 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
         backgroundColor: SJModal.sheetSurface,
         title: const Text('Verileri İçe Aktar'),
         content: const Text(
-          'Seçilen yedek dosyası mevcut proje, personel, puantaj ve '
-          'imalat verilerinin üzerine yazılacak. Devam edilsin mi?',
+          'Seçilen yedek dosyası mevcut tüm uygulama verisinin üzerine '
+          'yazılacak. Devam edilsin mi?',
         ),
         actions: [
           TextButton(
@@ -206,7 +211,9 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
         SnackBar(
           content: Text(
             'Yedek yüklendi · ${payload.projects.length} proje · '
-            '${payload.personnel.length} personel',
+            '${payload.personnel.length} personel · '
+            '${payload.tasks.length} görev · '
+            '${payload.dailyReports.length} rapor',
           ),
         ),
       );
@@ -235,8 +242,8 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
         backgroundColor: SJModal.sheetSurface,
         title: const Text('Tüm Verileri Sil'),
         content: const Text(
-          'Projeler, personel, puantaj, imalat ve kataloglar silinir. '
-          'Bu işlem geri alınamaz. Devam edilsin mi?',
+          'Projeler, personel, puantaj, imalat, görev, rapor, yevmiyeli '
+          'iş ve kataloglar silinir. Bu işlem geri alınamaz. Devam edilsin mi?',
         ),
         actions: [
           TextButton(
@@ -262,6 +269,10 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
     ref.read(attendanceProvider.notifier).replaceAll([]);
     ref.read(productionProvider.notifier).replaceAll([]);
     ref.read(productionProvider.notifier).clearAllYearlyChartDemoFlags();
+    ref.read(tasksProvider.notifier).replaceAll([]);
+    ref.read(dailyReportsProvider.notifier).replaceAll([]);
+    ref.read(yevmiyeliIsProvider.notifier).replaceAll([]);
+    ref.read(uninsuredTeamsProvider.notifier).replaceAll([]);
     ref
         .read(professionsProvider.notifier)
         .resetToDefaults(ProfessionCatalog.defaultProfessions);

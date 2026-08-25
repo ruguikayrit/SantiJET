@@ -98,6 +98,11 @@ class UninsuredTeamsNotifier extends StateNotifier<List<UninsuredTeamEntry>> {
     state = state.where((e) => e.projectId != projectId).toList();
     _persist();
   }
+
+  void replaceAll(List<UninsuredTeamEntry> items) {
+    state = List<UninsuredTeamEntry>.from(items);
+    _persist();
+  }
 }
 
 final uninsuredTeamsProvider =

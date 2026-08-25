@@ -5,7 +5,7 @@ import 'backup_file_access_stub.dart'
     if (dart.library.io) 'backup_file_access_io.dart' as file_access;
 
 const puantajBackupFormatId = 'santijet-puantaj-backup';
-const puantajBackupVersion = 1;
+const puantajBackupVersion = 2;
 
 class PuantajBackupException implements Exception {
   PuantajBackupException(this.message);
@@ -29,6 +29,15 @@ class PuantajBackupPayload {
     this.activeProjectId,
     this.workSchedule,
     this.kesif,
+    this.tasks = const [],
+    this.dailyReports = const [],
+    this.yevmiyeliIs = const [],
+    this.uninsuredTeams = const [],
+    this.taskCategories = const [],
+    this.companyInfo,
+    this.dailyReportExportSections,
+    this.workSchedulesByProject = const {},
+    this.kesifByProject = const {},
   });
 
   final int version;
@@ -42,6 +51,15 @@ class PuantajBackupPayload {
   final String? activeProjectId;
   final Map<String, dynamic>? workSchedule;
   final Map<String, dynamic>? kesif;
+  final List<Map<String, dynamic>> tasks;
+  final List<Map<String, dynamic>> dailyReports;
+  final List<Map<String, dynamic>> yevmiyeliIs;
+  final List<Map<String, dynamic>> uninsuredTeams;
+  final List<String> taskCategories;
+  final Map<String, dynamic>? companyInfo;
+  final Map<String, dynamic>? dailyReportExportSections;
+  final Map<String, Map<String, dynamic>> workSchedulesByProject;
+  final Map<String, Map<String, dynamic>> kesifByProject;
 
   Map<String, dynamic> toJson() => {
         'format': puantajBackupFormatId,
@@ -56,6 +74,17 @@ class PuantajBackupPayload {
         'teams': teams,
         if (workSchedule != null) 'workSchedule': workSchedule,
         if (kesif != null) 'kesif': kesif,
+        'tasks': tasks,
+        'dailyReports': dailyReports,
+        'yevmiyeliIs': yevmiyeliIs,
+        'uninsuredTeams': uninsuredTeams,
+        'taskCategories': taskCategories,
+        if (companyInfo != null) 'companyInfo': companyInfo,
+        if (dailyReportExportSections != null)
+          'dailyReportExportSections': dailyReportExportSections,
+        if (workSchedulesByProject.isNotEmpty)
+          'workSchedulesByProject': workSchedulesByProject,
+        if (kesifByProject.isNotEmpty) 'kesifByProject': kesifByProject,
       };
 
   String toJsonString() =>
@@ -96,6 +125,20 @@ class PuantajBackupPayload {
     final exportedAtRaw = json['exportedAt'] as String?;
     final workRaw = json['workSchedule'];
     final kesifRaw = json['kesif'];
+    final companyRaw = json['companyInfo'];
+    final sectionsRaw = json['dailyReportExportSections'];
+
+    Map<String, Map<String, dynamic>> mapOfMaps(String key) {
+      final raw = json[key];
+      if (raw is! Map) return const {};
+      final out = <String, Map<String, dynamic>>{};
+      raw.forEach((k, v) {
+        if (v is Map) {
+          out[k.toString()] = Map<String, dynamic>.from(v);
+        }
+      });
+      return out;
+    }
 
     return PuantajBackupPayload(
       version: version,
@@ -113,6 +156,18 @@ class PuantajBackupPayload {
           ? Map<String, dynamic>.from(workRaw)
           : null,
       kesif: kesifRaw is Map ? Map<String, dynamic>.from(kesifRaw) : null,
+      tasks: listOfMaps('tasks'),
+      dailyReports: listOfMaps('dailyReports'),
+      yevmiyeliIs: listOfMaps('yevmiyeliIs'),
+      uninsuredTeams: listOfMaps('uninsuredTeams'),
+      taskCategories: listOfStrings('taskCategories'),
+      companyInfo:
+          companyRaw is Map ? Map<String, dynamic>.from(companyRaw) : null,
+      dailyReportExportSections: sectionsRaw is Map
+          ? Map<String, dynamic>.from(sectionsRaw)
+          : null,
+      workSchedulesByProject: mapOfMaps('workSchedulesByProject'),
+      kesifByProject: mapOfMaps('kesifByProject'),
     );
   }
 
