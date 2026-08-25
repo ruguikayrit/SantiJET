@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../core/utils/puantaj_date.dart';
 import '../../core/utils/text_format.dart';
 import '../../domain/entities/person.dart';
+import '../../domain/permissions/role_degree.dart';
 import 'app_data_provider.dart';
 import 'auth_provider.dart';
 import 'collaboration_provider.dart';
@@ -38,13 +39,27 @@ String _foldName(String raw) {
 ///
 /// Önce aktif projedeki personelde Ad Soyad eşleşmesi aranır; yoksa üyelik
 /// yetkisine göre sentetik personel kaydı üretilir (görev görünürlüğü / atama).
+/// Oturum yoksa (yerel demo) projedeki 1. derece personel kullanılır.
 final activeOperatorProvider = Provider<Person?>((ref) {
   final user = ref.watch(authProvider).user;
   final project = ref.watch(activeProjectProvider);
-  if (user == null || project == null) return null;
+  if (project == null) return null;
 
   final today = PuantajDate.today();
   final people = ref.watch(personnelProvider);
+
+  if (user == null) {
+    for (final p in people) {
+      if (p.projectId != project.id) continue;
+      if (!p.isActiveOn(today)) continue;
+      if (RoleDegree.isFirstDegree(p)) return p;
+    }
+    for (final p in people) {
+      if (p.projectId == project.id && p.isActiveOn(today)) return p;
+    }
+    return null;
+  }
+
   final nameKey = _foldName(user.displayName);
 
   if (nameKey.isNotEmpty) {

@@ -74,18 +74,32 @@ class KesifCloudService {
           id: 'ks-demo-1',
           imalatId: 'im-1',
           imalatName: 'Kolon demiri',
-          plannedQty: 12,
+          plannedQty: 20,
           unit: 'ton',
           notes: projectName == null
-              ? 'Keşif demo verisi'
-              : '$projectName — Keşif demo',
+              ? 'Keşif demo — kolon demiri'
+              : '$projectName — Kolon demiri keşfi',
         ),
         KesifItem(
           id: 'ks-demo-2',
           imalatId: 'im-2',
           imalatName: 'Kiriş demiri',
-          plannedQty: 8,
+          plannedQty: 15,
           unit: 'ton',
+        ),
+        KesifItem(
+          id: 'ks-demo-3',
+          imalatId: 'im-3',
+          imalatName: 'Temel demiri',
+          plannedQty: 40,
+          unit: 'ton',
+        ),
+        KesifItem(
+          id: 'ks-demo-4',
+          imalatId: 'im-4',
+          imalatName: 'Alçı sıva',
+          plannedQty: 850,
+          unit: 'm²',
         ),
       ],
     );

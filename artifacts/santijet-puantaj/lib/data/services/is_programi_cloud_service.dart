@@ -93,8 +93,8 @@ class IsProgramiCloudService {
           endDate: iso(end),
           plannedWorkerCount: 6,
           notes: projectName == null
-              ? 'İş Programı demo verisi (süre / iş gücü)'
-              : '$projectName — İş Programı demo',
+              ? 'İş Programı demo — kolon demiri'
+              : '$projectName — Kolon demiri programı',
         ),
         WorkScheduleItem(
           id: 'ws-demo-2',
@@ -103,6 +103,22 @@ class IsProgramiCloudService {
           startDate: iso(start),
           endDate: iso(end),
           plannedWorkerCount: 4,
+        ),
+        WorkScheduleItem(
+          id: 'ws-demo-3',
+          imalatId: 'im-3',
+          imalatName: 'Temel demiri',
+          startDate: iso(start),
+          endDate: iso(end),
+          plannedWorkerCount: 8,
+        ),
+        WorkScheduleItem(
+          id: 'ws-demo-4',
+          imalatId: 'im-4',
+          imalatName: 'Alçı sıva',
+          startDate: iso(start),
+          endDate: iso(end),
+          plannedWorkerCount: 5,
         ),
       ],
     );

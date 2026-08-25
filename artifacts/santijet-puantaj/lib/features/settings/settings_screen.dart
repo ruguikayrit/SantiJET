@@ -286,9 +286,9 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
       context: context,
       title: 'Demo veriyi yükle',
       message:
-          'Demo Şantiye projesi oluşturulur/güncellenir; personel, puantaj, '
-          'imalat, İş Programı (süre) ve Keşif (metraj) demo planı doldurulur. '
-          'Aynı adlı demo projenin mevcut verileri yenilenir.',
+          'Demo Şantiye sıfırlanır ve yeniden kurulur: personel, puantaj, '
+          'sigortasız ekip, imalat, verim (İş Programı + Keşif), görevler '
+          '(Satın Alma / Saha / Ofis / Görüşme), günlük raporlar ve yevmiyeli işler.',
       confirmLabel: 'Yükle',
     );
     if (!ok || !mounted) return;
@@ -301,8 +301,8 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
       ScaffoldMessenger.of(this.context).showSnackBar(
         SnackBar(
           content: Text(
-            'Demo yüklendi: ${project.name}. Ana sayfa / Puantaj / '
-            'İmalat / Verim üzerinden test edebilirsiniz.',
+            'Demo yüklendi: ${project.name}. Ana sayfa, Puantaj, İmalat, '
+            'Verim, Görevler ve Rapor modüllerini test edebilirsiniz.',
           ),
         ),
       );
