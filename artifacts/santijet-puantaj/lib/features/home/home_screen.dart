@@ -14,10 +14,10 @@ import '../../core/utils/puantaj_date.dart';
 import '../../core/utils/text_format.dart';
 import '../../data/providers/app_data_provider.dart';
 import '../../data/providers/tasks_provider.dart';
+import '../../domain/catalogs/task_categories.dart';
 import '../../domain/entities/project.dart';
 import '../../domain/entities/site_task.dart';
 import '../../domain/enums/attendance_status.dart';
-import '../../domain/enums/task_status.dart';
 import '../projects/widgets/project_switcher.dart';
 import 'home_daily_report_pdf_sheet.dart';
 import 'home_task_summary_dialog.dart';
@@ -83,7 +83,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
     final people = ref.watch(personnelForDateProvider(today));
     final attendance = ref.watch(attendanceProvider);
     final urgentTasks = ref.watch(upcomingUrgentTasksProvider);
-    final projectTasks = ref.watch(visibleProjectTasksProvider);
+    final urgentByCategory = ref.watch(urgentTaskCategorySummariesProvider);
     if (project == null) {
       return Scaffold(
         body: SafeArea(
@@ -129,13 +129,6 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
     final absent = (people.length - present - half).clamp(0, people.length);
     final overtimeHours =
         todayRecords.fold<double>(0, (sum, a) => sum + a.overtimeHours);
-
-    final todoCount =
-        projectTasks.where((t) => t.status == TaskStatus.todo).length;
-    final doingCount =
-        projectTasks.where((t) => t.status == TaskStatus.doing).length;
-    final doneCount =
-        projectTasks.where((t) => t.status == TaskStatus.done).length;
 
     return Scaffold(
       body: SafeArea(
@@ -244,39 +237,9 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                     title: 'Acil görevler',
                     icon: Icons.assignment_late_outlined,
                     onTap: () => context.go(AppRoutes.gorevler),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.stretch,
-                      children: [
-                        Row(
-                          children: [
-                            Expanded(
-                              child: _MiniStat(
-                                label: TaskStatus.todo.label,
-                                value: '$todoCount',
-                                color: AppColors.info,
-                              ),
-                            ),
-                            const SizedBox(width: AppSpacing.xs),
-                            Expanded(
-                              child: _MiniStat(
-                                label: TaskStatus.doing.label,
-                                value: '$doingCount',
-                                color: AppColors.warning,
-                              ),
-                            ),
-                            const SizedBox(width: AppSpacing.xs),
-                            Expanded(
-                              child: _MiniStat(
-                                label: TaskStatus.done.label,
-                                value: '$doneCount',
-                                color: AppColors.success,
-                              ),
-                            ),
-                          ],
-                        ),
-                        const SizedBox(height: AppSpacing.sm),
-                        _HomeUrgentTasksList(tasks: urgentTasks),
-                      ],
+                    child: _HomeUrgentTasksSection(
+                      tasks: urgentTasks,
+                      categorySummaries: urgentByCategory,
                     ),
                   ),
                 ]),
@@ -294,17 +257,111 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
   }
 }
 
-class _HomeUrgentTasksList extends StatelessWidget {
-  const _HomeUrgentTasksList({required this.tasks});
+class _HomeUrgentTasksSection extends StatefulWidget {
+  const _HomeUrgentTasksSection({
+    required this.tasks,
+    required this.categorySummaries,
+  });
 
   final List<SiteTask> tasks;
+  final List<UrgentTaskCategorySummary> categorySummaries;
+
+  @override
+  State<_HomeUrgentTasksSection> createState() => _HomeUrgentTasksSectionState();
+}
+
+class _HomeUrgentTasksSectionState extends State<_HomeUrgentTasksSection> {
+  String? _selectedCategory;
+
+  String _categoryKey(SiteTask task) {
+    return task.category.trim().isEmpty
+        ? TaskCategoryCatalog.uncategorized
+        : task.category.trim();
+  }
+
+  List<SiteTask> get _filteredTasks {
+    if (_selectedCategory == null) return widget.tasks;
+    return widget.tasks
+        .where((t) => _categoryKey(t) == _selectedCategory)
+        .toList();
+  }
+
+  @override
+  void didUpdateWidget(covariant _HomeUrgentTasksSection oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (_selectedCategory != null &&
+        !widget.categorySummaries
+            .any((s) => s.category == _selectedCategory)) {
+      _selectedCategory = null;
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        if (widget.categorySummaries.isNotEmpty) ...[
+          LayoutBuilder(
+            builder: (context, constraints) {
+              const spacing = AppSpacing.xs;
+              final columns = constraints.maxWidth >= 520 ? 3 : 2;
+              final itemWidth =
+                  (constraints.maxWidth - spacing * (columns - 1)) / columns;
+              return Wrap(
+                spacing: spacing,
+                runSpacing: spacing,
+                children: [
+                  for (final summary in widget.categorySummaries)
+                    SizedBox(
+                      width: itemWidth,
+                      child: _MiniStat(
+                        label: summary.category,
+                        value: '${summary.count}',
+                        color: TaskCategoryCatalog.accentFor(summary.category),
+                        selected: _selectedCategory == summary.category,
+                        onTap: () {
+                          setState(() {
+                            _selectedCategory =
+                                _selectedCategory == summary.category
+                                    ? null
+                                    : summary.category;
+                          });
+                        },
+                      ),
+                    ),
+                ],
+              );
+            },
+          ),
+          const SizedBox(height: AppSpacing.sm),
+        ],
+        _HomeUrgentTasksList(
+          tasks: _filteredTasks,
+          filteredByCategory: _selectedCategory,
+        ),
+      ],
+    );
+  }
+}
+
+class _HomeUrgentTasksList extends StatelessWidget {
+  const _HomeUrgentTasksList({
+    required this.tasks,
+    this.filteredByCategory,
+  });
+
+  final List<SiteTask> tasks;
+  final String? filteredByCategory;
 
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     if (tasks.isEmpty) {
       return Text(
-        '1 hafta içinde teslim tarihi olan açık görev yok.',
+        filteredByCategory == null
+            ? '1 hafta içinde teslim tarihi olan açık görev yok.'
+            : 'Bu grupta acil görev yok.',
         style: theme.textTheme.bodyMedium,
       );
     }
@@ -558,26 +615,38 @@ class _MiniStat extends StatelessWidget {
     required this.label,
     required this.value,
     required this.color,
+    this.selected = false,
+    this.onTap,
   });
 
   final String label;
   final String value;
   final Color color;
+  final bool selected;
+  final VoidCallback? onTap;
 
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    return Container(
+    final child = Container(
       padding: const EdgeInsets.all(AppSpacing.sm),
       decoration: BoxDecoration(
-        color: color.withValues(alpha: 0.08),
+        color: color.withValues(alpha: selected ? 0.16 : 0.08),
         borderRadius: AppRadii.sm,
-        border: Border.all(color: color.withValues(alpha: 0.25)),
+        border: Border.all(
+          color: color.withValues(alpha: selected ? 0.55 : 0.25),
+          width: selected ? 1.5 : 1,
+        ),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text(label, style: theme.textTheme.labelSmall),
+          Text(
+            label,
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
+            style: theme.textTheme.labelSmall,
+          ),
           const SizedBox(height: 4),
           Row(
             crossAxisAlignment: CrossAxisAlignment.end,
@@ -596,6 +665,16 @@ class _MiniStat extends StatelessWidget {
             ],
           ),
         ],
+      ),
+    );
+
+    if (onTap == null) return child;
+    return Material(
+      color: Colors.transparent,
+      child: InkWell(
+        onTap: onTap,
+        borderRadius: AppRadii.sm,
+        child: child,
       ),
     );
   }

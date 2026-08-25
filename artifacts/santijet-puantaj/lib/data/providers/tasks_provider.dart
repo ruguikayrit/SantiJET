@@ -5,12 +5,14 @@ import 'package:hive/hive.dart';
 
 import '../../core/utils/id_gen.dart';
 import '../../core/utils/puantaj_date.dart';
+import '../../domain/catalogs/task_categories.dart';
 import '../../domain/entities/person.dart';
 import '../../domain/entities/site_task.dart';
 import '../../domain/enums/task_status.dart';
 import '../../domain/permissions/role_degree.dart';
 import 'active_operator_provider.dart';
 import 'app_data_provider.dart';
+import 'catalog_provider.dart';
 
 final tasksBoxProvider = Provider<Box>(
   (ref) => throw UnimplementedError('tasksBoxProvider override edilmeli'),
@@ -249,4 +251,34 @@ final upcomingUrgentTasksProvider = Provider<List<SiteTask>>((ref) {
       return a.title.toLowerCase().compareTo(b.title.toLowerCase());
     });
   return list;
+});
+
+/// Acil görevler — kategori başına adet (katalog sırası + özel kategoriler).
+typedef UrgentTaskCategorySummary = ({String category, int count});
+
+final urgentTaskCategorySummariesProvider =
+    Provider<List<UrgentTaskCategorySummary>>((ref) {
+  final urgent = ref.watch(upcomingUrgentTasksProvider);
+  final catalog = ref.watch(taskCategoriesProvider);
+
+  final counts = <String, int>{};
+  for (final t in urgent) {
+    final cat = t.category.trim().isEmpty
+        ? TaskCategoryCatalog.uncategorized
+        : t.category.trim();
+    counts[cat] = (counts[cat] ?? 0) + 1;
+  }
+  if (counts.isEmpty) return const [];
+
+  final ordered = <UrgentTaskCategorySummary>[];
+  for (final c in catalog) {
+    final n = counts.remove(c);
+    if (n != null) ordered.add((category: c, count: n));
+  }
+  final rest = counts.entries.toList()
+    ..sort((a, b) => a.key.compareTo(b.key));
+  for (final e in rest) {
+    ordered.add((category: e.key, count: e.value));
+  }
+  return ordered;
 });
