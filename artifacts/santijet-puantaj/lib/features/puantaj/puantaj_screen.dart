@@ -1970,12 +1970,9 @@ class _CetvelView extends StatelessWidget {
         : PuantajDate.monthLabel(date);
     final cellW = mode == _ViewMode.weekly ? 36.0 : 26.0;
     const nameW = 88.0;
-    const summaryW = 48.0;
     const totalW = 56.0;
-    final tableW = nameW +
-        days.length * cellW +
-        AttendanceStatus.values.length * summaryW +
-        totalW;
+    // Durum özet sütunları (Mevcut/Giriş/…) yalnızca PDF’te; uygulama cetvelinde yok.
+    final tableW = nameW + days.length * cellW + totalW;
     final today = PuantajDate.today();
 
     if (people.isEmpty) {
@@ -2060,12 +2057,12 @@ class _CetvelView extends StatelessWidget {
                     days,
                     cellW,
                     nameW,
-                    summaryW,
                     totalW,
                     today,
                   ),
                   for (final group in grouped)
                     _ExpandableSection(
+                      initiallyExpanded: true,
                       title: SizedBox(
                         width: tableW,
                         child: Text(
@@ -2093,6 +2090,7 @@ class _CetvelView extends StatelessWidget {
                       children: [
                         for (final teamGroup in _teamsOf(group.users))
                           _ExpandableSection(
+                            initiallyExpanded: true,
                             indent: AppSpacing.sm,
                             title: Text(
                               teamGroup.team,
@@ -2118,7 +2116,6 @@ class _CetvelView extends StatelessWidget {
                                   days,
                                   cellW,
                                   nameW,
-                                  summaryW,
                                   totalW,
                                   statusOf,
                                   onPersonTap,
@@ -2133,7 +2130,6 @@ class _CetvelView extends StatelessWidget {
                     days,
                     cellW,
                     nameW,
-                    summaryW,
                     totalW,
                     statusOf,
                   ),
@@ -2151,7 +2147,6 @@ class _CetvelView extends StatelessWidget {
     List<String> days,
     double cellW,
     double nameW,
-    double summaryW,
     double totalW,
     String today,
   ) {
@@ -2178,30 +2173,6 @@ class _CetvelView extends StatelessWidget {
               ),
             ),
           ),
-        for (final s in AttendanceStatus.values)
-          SizedBox(
-            width: summaryW,
-            child: Text(
-              switch (s) {
-                AttendanceStatus.present => 'Mevcut',
-                AttendanceStatus.half => 'Yarım',
-                AttendanceStatus.giris => 'Giriş',
-                AttendanceStatus.cikis => 'Çıkış',
-                AttendanceStatus.izinli => 'İzinli',
-                AttendanceStatus.raporlu => 'Raporlu',
-                AttendanceStatus.mazeret => 'Mazeret',
-                AttendanceStatus.tatil => 'Resmi\nTatil',
-                AttendanceStatus.haftaTatili => 'Hafta\nTatili',
-                AttendanceStatus.absent => 'Yok',
-              },
-              textAlign: TextAlign.center,
-              style: theme.textTheme.labelSmall?.copyWith(
-                color: AppColors.statusInkOnChrome(s.color),
-                fontWeight: FontWeight.w700,
-                fontSize: 9,
-              ),
-            ),
-          ),
         SizedBox(
           width: totalW,
           child: Text(
@@ -2220,19 +2191,12 @@ class _CetvelView extends StatelessWidget {
     List<String> days,
     double cellW,
     double nameW,
-    double summaryW,
     double totalW,
     AttendanceStatus? Function(String, String) statusOf,
     ValueChanged<Person> onPersonTap,
   ) {
     final statuses = [for (final d in days) statusOf(person.id, d)];
-    final statusCounts = <AttendanceStatus, int>{
-      for (final s in AttendanceStatus.values)
-        s: statuses.where((value) => value == s).length,
-    };
-    final generalTotal = AttendanceStatus.values
-        .where((s) => s.countsInGeneralTotal)
-        .fold<int>(0, (sum, s) => sum + (statusCounts[s] ?? 0));
+    final generalTotal = statuses.where((s) => s?.countsInGeneralTotal ?? false).length;
     return Container(
       decoration: BoxDecoration(
         border: Border(bottom: BorderSide(color: theme.dividerColor)),
@@ -2301,17 +2265,6 @@ class _CetvelView extends StatelessWidget {
                 ),
               ),
             ),
-          for (final s in AttendanceStatus.values)            SizedBox(
-              width: summaryW,
-              child: Text(
-                '${statusCounts[s] ?? 0}',
-                textAlign: TextAlign.center,
-                style: theme.textTheme.labelMedium?.copyWith(
-                  color: AppColors.statusInkOnChrome(s.color),
-                  fontWeight: FontWeight.w700,
-                ),
-              ),
-            ),
           SizedBox(
             width: totalW,
             child: Text(
@@ -2338,7 +2291,6 @@ class _CetvelView extends StatelessWidget {
     List<String> days,
     double cellW,
     double nameW,
-    double summaryW,
     double totalW,
     AttendanceStatus? Function(String, String) statusOf,
   ) {
@@ -2346,13 +2298,8 @@ class _CetvelView extends StatelessWidget {
       for (final p in people)
         for (final d in days) statusOf(p.id, d),
     ];
-    final statusTotals = <AttendanceStatus, int>{
-      for (final s in AttendanceStatus.values)
-        s: allStatuses.where((value) => value == s).length,
-    };
-    final generalTotal = AttendanceStatus.values
-        .where((s) => s.countsInGeneralTotal)
-        .fold<int>(0, (sum, s) => sum + (statusTotals[s] ?? 0));
+    final generalTotal =
+        allStatuses.where((s) => s?.countsInGeneralTotal ?? false).length;
     return Row(
       children: [
         SizedBox(
@@ -2380,18 +2327,6 @@ class _CetvelView extends StatelessWidget {
                 color: AppColors.statusInkOnChrome(
                   AttendanceStatus.present.color,
                 ),
-                fontWeight: FontWeight.w700,
-              ),
-            ),
-          ),
-        for (final s in AttendanceStatus.values)
-          SizedBox(
-            width: summaryW,
-            child: Text(
-              '${statusTotals[s] ?? 0}',
-              textAlign: TextAlign.center,
-              style: theme.textTheme.labelMedium?.copyWith(
-                color: AppColors.statusInkOnChrome(s.color),
                 fontWeight: FontWeight.w700,
               ),
             ),
