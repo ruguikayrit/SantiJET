@@ -148,7 +148,7 @@ class _HomeTaskSummaryDialog extends ConsumerWidget {
                           ScaffoldMessenger.of(context).showSnackBar(
                             SnackBar(
                               content: Text(
-                                'Görev tamamlandı · Gerçek teslim: $delivery',
+                                'Görev tamamlandı · Gerçekleşen bitiş: $delivery',
                               ),
                             ),
                           );
@@ -168,14 +168,14 @@ class _HomeTaskSummaryDialog extends ConsumerWidget {
             ),
             _SummaryRow(
               icon: Icons.flag_outlined,
-              label: 'En geç teslim',
+              label: 'Planlanan bitiş',
               value: task.dueDate,
             ),
             if (task.status == TaskStatus.done ||
                 task.actualDeliveryDate.trim().isNotEmpty)
               _SummaryRow(
                 icon: Icons.task_alt_outlined,
-                label: 'Gerçek teslim',
+                label: 'Gerçekleşen bitiş',
                 value: task.actualDeliveryDate,
               ),
             _SummaryRow(

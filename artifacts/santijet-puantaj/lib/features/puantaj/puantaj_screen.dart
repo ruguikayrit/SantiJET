@@ -865,7 +865,7 @@ class _DailyViewState extends State<_DailyView> {
                   ],
                 ),
                 subtitle: Text(
-                  'Sigorta ettiren firma',
+                  'Firma Adı',
                   style: theme.textTheme.labelSmall?.copyWith(
                     color: theme.colorScheme.onSurfaceVariant,
                   ),
@@ -2078,7 +2078,7 @@ class _CetvelView extends StatelessWidget {
                         ),
                       ),
                       subtitle: Text(
-                        'Sigorta ettiren firma',
+                        'Firma Adı',
                         style: theme.textTheme.labelSmall?.copyWith(
                           color: theme.colorScheme.onSurfaceVariant,
                         ),
@@ -2786,9 +2786,8 @@ class _PuantajExportSheetState extends State<_PuantajExportSheet> {
         if (_layout == PuantajExportLayout.ekip) ...[
           const SizedBox(height: AppSpacing.xs),
           Text(
-            'Ekip çıktısı: firma + ekip + sayı '
-            '(Mevcut, Yarım, Giriş, Çıkış). '
-            'Ekip başlığı kayıtları ayrı satırda.',
+            'Ekip çıktısı: Firma Adı + Ekip Adı + Toplam çalışan sayısı '
+            '(Mevcut, Yarım, Giriş, Çıkış ve ekip kayıtları).',
             style: theme.textTheme.bodySmall?.copyWith(
               color: theme.colorScheme.onSurfaceVariant,
             ),

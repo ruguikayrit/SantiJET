@@ -145,7 +145,7 @@ Future<void> openYevmiyeliIsEditor(
                 textCapitalization: TextCapitalization.words,
                 decoration: const InputDecoration(
                   labelText: 'Taşeron firma *',
-                  hintText: 'Sigorta ettiren / taşeron',
+                  hintText: 'Firma Adı / taşeron',
                 ),
                 validator: (v) {
                   if ((v ?? '').trim().isEmpty) return 'Firma zorunlu';

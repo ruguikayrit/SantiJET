@@ -83,10 +83,10 @@ class SiteTask extends Equatable {
   /// En erken başlangıç — TR `dd.MM.yyyy`.
   final String earliestStart;
 
-  /// En geç teslimat — TR `dd.MM.yyyy` (eski ad: dueDate).
+  /// En geç planlanan bitiş — TR `dd.MM.yyyy` (eski ad: dueDate).
   final String dueDate;
 
-  /// Gerçek teslim tarihi — tamamlanınca kaydedilir (TR `dd.MM.yyyy`).
+  /// Gerçekleşen bitiş tarihi — tamamlanınca kaydedilir (TR `dd.MM.yyyy`).
   final String actualDeliveryDate;
   final TaskStatus status;
 

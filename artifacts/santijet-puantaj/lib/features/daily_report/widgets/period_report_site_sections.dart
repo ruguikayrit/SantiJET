@@ -33,18 +33,20 @@ class PeriodSiteReportSections extends StatelessWidget {
         ),
         const SizedBox(height: AppSpacing.sm),
         _PuantajMatrixSection(data: report.personelPuantaj),
+        _SummaryLines(lines: report.personelPuantaj.summaryLines),
         const SizedBox(height: AppSpacing.md),
         _SectionTitle(
           icon: Icons.groups_outlined,
           title: 'Ekip puantajı',
-          subtitle: 'Firma + ekip + çalışan sayısı',
+          subtitle: 'Firma Adı · Ekip Adı · Toplam çalışan sayısı',
         ),
         const SizedBox(height: AppSpacing.sm),
-        _PlainTableSection(
-          headers: report.ekipPuantaj.headers,
-          rows: report.ekipPuantaj.rows,
+        _PuantajMatrixSection(
+          data: report.ekipPuantaj,
           emptyMessage: 'Bu dönemde ekip puantaj kaydı yok.',
+          totalColumnLabel: 'Toplam çalışan sayısı',
         ),
+        _SummaryLines(lines: report.ekipPuantaj.summaryLines),
         const SizedBox(height: AppSpacing.md),
         _SectionTitle(
           icon: Icons.construction_outlined,
@@ -110,10 +112,47 @@ class _SectionTitle extends StatelessWidget {
   }
 }
 
+class _SummaryLines extends StatelessWidget {
+  const _SummaryLines({required this.lines});
+
+  final List<String> lines;
+
+  @override
+  Widget build(BuildContext context) {
+    if (lines.isEmpty) return const SizedBox.shrink();
+    final theme = Theme.of(context);
+    return Padding(
+      padding: const EdgeInsets.only(top: AppSpacing.sm),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          for (final line in lines)
+            Padding(
+              padding: const EdgeInsets.only(bottom: 2),
+              child: Text(
+                line,
+                style: theme.textTheme.labelMedium?.copyWith(
+                  color: theme.colorScheme.onSurfaceVariant,
+                  fontWeight: FontWeight.w600,
+                ),
+              ),
+            ),
+        ],
+      ),
+    );
+  }
+}
+
 class _PuantajMatrixSection extends StatelessWidget {
-  const _PuantajMatrixSection({required this.data});
+  const _PuantajMatrixSection({
+    required this.data,
+    this.emptyMessage = 'Personel puantaj kaydı yok.',
+    this.totalColumnLabel = 'Top.',
+  });
 
   final PuantajReportData data;
+  final String emptyMessage;
+  final String totalColumnLabel;
 
   @override
   Widget build(BuildContext context) {
@@ -122,12 +161,14 @@ class _PuantajMatrixSection extends StatelessWidget {
       return _PlainTableSection(
         headers: data.headers,
         rows: data.rows,
-        emptyMessage: 'Personel puantaj kaydı yok.',
+        emptyMessage: emptyMessage,
       );
     }
 
     final theme = Theme.of(context);
     final dayHeaders = visual.dayHeaders;
+    final nameW = visual.firstColumnLabel.length > 8 ? 132.0 : 120.0;
+    final totalW = totalColumnLabel.length > 6 ? 120.0 : 44.0;
 
     return SJCard(
       padding: const EdgeInsets.all(AppSpacing.sm),
@@ -138,10 +179,9 @@ class _PuantajMatrixSection extends StatelessWidget {
           children: [
             Row(
               children: [
-                _headCell(theme, 'Personel', width: 120),
-                for (final h in dayHeaders)
-                  _headCell(theme, h, width: 36),
-                _headCell(theme, 'Top.', width: 44),
+                _headCell(theme, visual.firstColumnLabel, width: nameW),
+                for (final h in dayHeaders) _headCell(theme, h, width: 36),
+                _headCell(theme, totalColumnLabel, width: totalW),
               ],
             ),
             for (final company in visual.companies) ...[
@@ -158,10 +198,24 @@ class _PuantajMatrixSection extends StatelessWidget {
               for (final row in company.rows)
                 Row(
                   children: [
-                    _bodyCell(theme, row.name, width: 120),
-                    for (var i = 0; i < row.statuses.length; i++)
-                      _statusCell(theme, row.statuses[i], width: 36),
-                    _bodyCell(theme, row.totalLabel, width: 44, center: true),
+                    _bodyCell(theme, row.name, width: nameW),
+                    if (row.usesDayLabels)
+                      for (var i = 0; i < dayHeaders.length; i++)
+                        _bodyCell(
+                          theme,
+                          i < row.dayLabels.length ? row.dayLabels[i] : '',
+                          width: 36,
+                          center: true,
+                        )
+                    else
+                      for (var i = 0; i < row.statuses.length; i++)
+                        _statusCell(theme, row.statuses[i], width: 36),
+                    _bodyCell(
+                      theme,
+                      row.totalLabel,
+                      width: totalW,
+                      center: true,
+                    ),
                   ],
                 ),
             ],

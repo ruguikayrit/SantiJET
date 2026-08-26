@@ -106,10 +106,26 @@ class PeriodSiteReportExportService {
             report.personelPuantaj.headers,
             report.personelPuantaj.rows,
           ),
+          if (report.personelPuantaj.summaryLines.isNotEmpty) ...[
+            pw.SizedBox(height: 4),
+            for (final line in report.personelPuantaj.summaryLines)
+              pw.Text(
+                line,
+                style: const pw.TextStyle(fontSize: 8, color: _inkMuted),
+              ),
+          ],
           pw.SizedBox(height: 12),
           _pdfSectionTitle('Ekip puantajı'),
           pw.SizedBox(height: 6),
           _pdfTable(report.ekipPuantaj.headers, report.ekipPuantaj.rows),
+          if (report.ekipPuantaj.summaryLines.isNotEmpty) ...[
+            pw.SizedBox(height: 4),
+            for (final line in report.ekipPuantaj.summaryLines)
+              pw.Text(
+                line,
+                style: const pw.TextStyle(fontSize: 8, color: _inkMuted),
+              ),
+          ],
           pw.SizedBox(height: 12),
           _pdfSectionTitle('Yapılan işler (İmalat)'),
           pw.SizedBox(height: 6),
@@ -224,6 +240,10 @@ class PeriodSiteReportExportService {
         ['Aralık', report.rangeLabel],
         ['İmalat kalemi', '${report.imalatRows.length}'],
         ['Verim satırı', '${report.verimRows.length}'],
+        for (final line in report.personelPuantaj.summaryLines)
+          ['Personel puantaj', line],
+        for (final line in report.ekipPuantaj.summaryLines)
+          ['Ekip puantaj', line],
       ],
     );
     _writeSheet(

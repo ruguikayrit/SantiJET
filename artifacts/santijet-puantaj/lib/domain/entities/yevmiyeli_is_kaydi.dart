@@ -63,7 +63,7 @@ class YevmiyeliIsKaydi extends Equatable {
   final String personId;
   final String personName;
 
-  /// Taşeron / sigorta ettiren firma.
+  /// Firma Adı / taşeron.
   final String company;
   final String profession;
   final String team;

@@ -8,7 +8,7 @@ import '../../../core/theme/app_spacing.dart';
 import '../../../core/utils/puantaj_date.dart';
 import '../../../domain/entities/site_task.dart';
 
-/// Açılır ay takvimi — yeşil: en erken başlangıç, kırmızı: en geç teslimat.
+/// Açılır ay takvimi — yeşil: başlangıç, kırmızı: planlanan bitiş.
 class TaskCalendarPanel extends StatefulWidget {
   const TaskCalendarPanel({
     super.key,
@@ -109,7 +109,8 @@ class _TaskCalendarPanelState extends State<TaskCalendarPanel> {
                         if (t.assignee.isNotEmpty) 'Atanan: ${t.assignee}',
                         if (t.earliestStart.isNotEmpty)
                           'Başlangıç ${t.earliestStart}',
-                        if (t.dueDate.isNotEmpty) 'Teslimat ${t.dueDate}',
+                        if (t.dueDate.isNotEmpty)
+                          'Planlanan bitiş ${t.dueDate}',
                       ].join(' · '),
                     ),
                   ),
@@ -178,7 +179,7 @@ class _TaskCalendarPanelState extends State<TaskCalendarPanel> {
                           Text(
                             _expanded
                                 ? label
-                                : 'Yeşil başlangıç · kırmızı teslimat',
+                                : 'Yeşil başlangıç · kırmızı planlanan bitiş',
                             style: theme.textTheme.labelSmall,
                           ),
                         ],
@@ -259,7 +260,7 @@ class _TaskCalendarPanelState extends State<TaskCalendarPanel> {
                         const SizedBox(width: AppSpacing.md),
                         _LegendDot(
                           color: AppColors.critical,
-                          label: 'Teslimat',
+                          label: 'Planlanan bitiş',
                         ),
                       ],
                     ),

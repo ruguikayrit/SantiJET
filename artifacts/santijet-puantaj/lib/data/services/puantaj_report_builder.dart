@@ -13,7 +13,7 @@ enum PuantajExportLayout {
   /// Kayıtlı personel satır satır (mevcut cetvel).
   isim,
 
-  /// Firma + ekip + çalışan sayısı; Ekip başlığı kayıtları ayrı.
+  /// Firma Adı + Ekip Adı + toplam çalışan sayısı.
   ekip,
 
   /// Taşeron yevmiyeli parça iş tablosu.
@@ -56,6 +56,7 @@ class PuantajReportVisual {
     required this.dayHeaders,
     required this.companies,
     this.footerPresentCounts = const [],
+    this.firstColumnLabel = 'Personel',
   });
 
   final bool isMatrix;
@@ -66,6 +67,9 @@ class PuantajReportVisual {
 
   /// Matris altı “Mevcut” satırı (gün başına çalışılan kişi).
   final List<int> footerPresentCounts;
+
+  /// Matris ilk sütun başlığı (`Personel` / `Ekip Adı`).
+  final String firstColumnLabel;
 }
 
 class PuantajVisualCompany {
@@ -83,6 +87,7 @@ class PuantajVisualPersonRow {
     required this.name,
     required this.statuses,
     this.statusCounts = const [],
+    this.dayLabels = const [],
     this.team = '',
     this.hours = '',
     this.overtime = '',
@@ -100,6 +105,9 @@ class PuantajVisualPersonRow {
 
   /// Matris özet sütunları; [AttendanceStatus.values] sırasındadır.
   final List<int> statusCounts;
+
+  /// Ekip puantajı: gün başına çalışan sayısı metni (doluysa rozet yerine bu).
+  final List<String> dayLabels;
   final String team;
   final String hours;
   final String overtime;
@@ -117,6 +125,8 @@ class PuantajVisualPersonRow {
         if (hireDateLine.isNotEmpty) hireDateLine,
         if (leaveDateLine.isNotEmpty) leaveDateLine,
       ];
+
+  bool get usesDayLabels => dayLabels.isNotEmpty;
 }
 
 /// Aktif proje puantajından günlük / haftalık / aylık rapor tablosu üretir.
@@ -313,7 +323,7 @@ abstract final class PuantajReportBuilder {
     );
   }
 
-  /// Firma + ekip + çalışan sayısı (M/Y/G/Ç); Ekip başlığı ayrı bölüm.
+  /// Firma Adı + Ekip Adı + çalışan sayısı (M/Y/G/Ç); personel cetveli düzeni.
   static PuantajReportData buildEkip({
     required String projectName,
     required String projectId,
@@ -336,14 +346,18 @@ abstract final class PuantajReportBuilder {
         .toList(growable: false);
 
     return switch (period) {
-      PuantajReportPeriod.daily => _ekipDaily(
+      PuantajReportPeriod.daily => _ekipTable(
           projectName: projectName,
           people: people,
           attendance: projectAtt,
           uninsured: projectUninsured,
-          date: anchorDate,
+          days: [anchorDate],
+          periodLabel: 'Günlük',
+          rangeLabel: anchorDate,
+          fileStem: 'ekip-gunluk-${_fileDate(anchorDate)}',
+          landscape: false,
         ),
-      PuantajReportPeriod.weekly => _ekipMatrix(
+      PuantajReportPeriod.weekly => _ekipTable(
           projectName: projectName,
           people: people,
           attendance: projectAtt,
@@ -352,9 +366,9 @@ abstract final class PuantajReportBuilder {
           periodLabel: 'Haftalık',
           rangeLabel: PuantajDate.weekLabel(days),
           fileStem: 'ekip-haftalik-${_fileDate(anchorDate)}',
-          dayHeader: _weekDayHeader,
+          landscape: true,
         ),
-      PuantajReportPeriod.monthly => _ekipMatrix(
+      PuantajReportPeriod.monthly => _ekipTable(
           projectName: projectName,
           people: people,
           attendance: projectAtt,
@@ -363,93 +377,25 @@ abstract final class PuantajReportBuilder {
           periodLabel: 'Aylık',
           rangeLabel: PuantajDate.monthLabel(anchorDate),
           fileStem: 'ekip-aylik-${_fileMonth(anchorDate)}',
-          dayHeader: _monthDayHeader,
+          landscape: true,
         ),
     };
   }
 
-  static PuantajReportData _ekipDaily({
-    required String projectName,
-    required List<Person> people,
-    required List<Attendance> attendance,
-    required List<UninsuredTeamEntry> uninsured,
-    required String date,
-  }) {
-    final byPerson = <String, Attendance>{};
-    for (final a in attendance) {
-      if (a.date == date) byPerson[a.personId] = a;
-    }
-
-    final insuredGroups = <(String, String), int>{};
-    for (final p in people) {
-      final recorded = byPerson[p.id];
-      final status = AttendanceDisplay.resolve(
-        person: p,
-        date: date,
-        recorded: recorded?.status,
-      );
-      if (status == null || !status.countsInTeamHeadcount) continue;
-      final company = p.company.trim().isEmpty ? 'Diğer' : p.company.trim();
-      final team = p.team.trim().isEmpty ? 'Ekipsiz' : p.team.trim();
-      final key = (company, team);
-      insuredGroups[key] = (insuredGroups[key] ?? 0) + 1;
-    }
-
-    final headers = [
-      'Bölüm',
-      'Sigorta ettiren firma',
-      'Ekip',
-      'Çalışan sayısı',
-    ];
-    final rows = <List<String>>[];
-    var insuredTotal = 0;
-    final insuredKeys = insuredGroups.keys.toList()
-      ..sort((a, b) {
-        final c = a.$1.compareTo(b.$1);
-        return c != 0 ? c : a.$2.compareTo(b.$2);
-      });
-    for (final key in insuredKeys) {
-      final n = insuredGroups[key]!;
-      insuredTotal += n;
-      rows.add(['Personel', key.$1, key.$2, '$n']);
-    }
-
-    var uninsuredTotal = 0;
-    final dayUninsured = uninsured.where((e) => e.date == date).toList()
-      ..sort((a, b) {
-        final byCompany = a.company.compareTo(b.company);
-        return byCompany != 0 ? byCompany : a.teamName.compareTo(b.teamName);
-      });
-    for (final e in dayUninsured) {
-      uninsuredTotal += e.workerCount;
-      final company =
-          e.company.trim().isEmpty ? '—' : e.company.trim();
-      rows.add(['Ekip', company, e.teamName, '${e.workerCount}']);
-    }
-
-    return PuantajReportData(
-      title: 'Ekip Puantajı — Günlük',
-      subtitle: '$projectName · $date',
-      headers: headers,
-      rows: rows,
-      summaryLines: [
-        'Personel toplam: $insuredTotal kişi',
-        'Ekip toplam: $uninsuredTotal kişi',
-        'Genel toplam: ${insuredTotal + uninsuredTotal} kişi',
-        'Sayım: Mevcut, Yarım, Giriş, Çıkış',
-      ],
-      landscape: false,
-      fileStem: 'ekip-gunluk-${_fileDate(date)}',
-      visual: const PuantajReportVisual(
-        isMatrix: false,
-        dayHeaders: [],
-        companies: [],
-      ),
-      plainTable: true,
-    );
+  static String _ekipCompanyLabel(String raw) {
+    final t = raw.trim();
+    if (t.isEmpty) return 'Diğer';
+    return t;
   }
 
-  static PuantajReportData _ekipMatrix({
+  static String _ekipTeamLabel(String raw) {
+    final t = raw.trim();
+    if (t.isEmpty) return 'Ekipsiz';
+    return t;
+  }
+
+  /// Firma Adı + Ekip Adı + toplam çalışan sayısı; personel gibi firma bandı.
+  static PuantajReportData _ekipTable({
     required String projectName,
     required List<Person> people,
     required List<Attendance> attendance,
@@ -458,107 +404,80 @@ abstract final class PuantajReportBuilder {
     required String periodLabel,
     required String rangeLabel,
     required String fileStem,
-    required String Function(String date) dayHeader,
+    required bool landscape,
   }) {
     final lookup = <String, Attendance>{};
     for (final a in attendance) {
       lookup['${a.personId}|${a.date}'] = a;
     }
 
-    final dayHeaders = [for (final d in days) dayHeader(d)];
-    final teamKeys = <(String, String)>{};
-    for (final p in people) {
-      final company = p.company.trim().isEmpty ? 'Diğer' : p.company.trim();
-      final team = p.team.trim().isEmpty ? 'Ekipsiz' : p.team.trim();
-      teamKeys.add((company, team));
+    /// Firma Adı → Ekip Adı → dönem toplam çalışan (gün-kişi)
+    final totals = <String, Map<String, int>>{};
+
+    void addCount(String company, String team, int n) {
+      if (n <= 0) return;
+      final byTeam = totals.putIfAbsent(company, () => {});
+      byTeam[team] = (byTeam[team] ?? 0) + n;
     }
-    final sortedTeams = teamKeys.toList()
+
+    for (final d in days) {
+      for (final p in people) {
+        final a = lookup['${p.id}|$d'];
+        final status = AttendanceDisplay.resolve(
+          person: p,
+          date: d,
+          recorded: a?.status,
+        );
+        if (status == null || !status.countsInTeamHeadcount) continue;
+        addCount(
+          _ekipCompanyLabel(p.company),
+          _ekipTeamLabel(p.team),
+          1,
+        );
+      }
+      for (final e in uninsured.where((e) => e.date == d)) {
+        addCount(
+          _ekipCompanyLabel(e.company),
+          _ekipTeamLabel(e.teamName),
+          e.workerCount,
+        );
+      }
+    }
+
+    final companyNames = totals.keys.toList()
       ..sort((a, b) {
-        final c = a.$1.compareTo(b.$1);
-        return c != 0 ? c : a.$2.compareTo(b.$2);
+        if (a == 'Diğer' && b != 'Diğer') return 1;
+        if (a != 'Diğer' && b == 'Diğer') return -1;
+        return a.compareTo(b);
       });
 
-    final uninsuredKeys = <(String, String)>{
-      for (final e in uninsured)
-        (
-          e.company.trim().isEmpty ? '—' : e.company.trim(),
-          e.teamName,
-        ),
-    }.toList()
-      ..sort((a, b) {
-        final c = a.$1.compareTo(b.$1);
-        return c != 0 ? c : a.$2.compareTo(b.$2);
-      });
-
-    final headers = [
-      'Bölüm',
-      'Sigorta ettiren firma',
-      'Ekip',
-      ...dayHeaders,
-      'Toplam',
-    ];
+    const headers = ['Firma Adı', 'Ekip Adı', 'Toplam çalışan sayısı'];
     final rows = <List<String>>[];
-    var grandInsured = 0;
-    var grandUninsured = 0;
+    final visualCompanies = <PuantajVisualCompany>[];
+    var grandTotal = 0;
+    final singleDay = days.length == 1;
 
-    for (final key in sortedTeams) {
-      final members = people.where((p) {
-        final company = p.company.trim().isEmpty ? 'Diğer' : p.company.trim();
-        final team = p.team.trim().isEmpty ? 'Ekipsiz' : p.team.trim();
-        return company == key.$1 && team == key.$2;
-      }).toList();
-      final dayCounts = <int>[];
-      var rowSum = 0;
-      for (final d in days) {
-        var n = 0;
-        for (final p in members) {
-          final a = lookup['${p.id}|$d'];
-          final status = AttendanceDisplay.resolve(
-            person: p,
-            date: d,
-            recorded: a?.status,
-          );
-          if (status != null && status.countsInTeamHeadcount) n++;
-        }
-        dayCounts.add(n);
-        rowSum += n;
+    for (final company in companyNames) {
+      final teams = totals[company]!.keys.toList()..sort();
+      final visualRows = <PuantajVisualPersonRow>[];
+      for (final team in teams) {
+        final rowSum = totals[company]![team]!;
+        if (rowSum == 0) continue;
+        grandTotal += rowSum;
+        rows.add([company, team, '$rowSum']);
+        visualRows.add(
+          PuantajVisualPersonRow(
+            name: team,
+            statuses: const [],
+            totalLabel: '$rowSum',
+          ),
+        );
       }
-      if (rowSum == 0) continue;
-      grandInsured += rowSum;
-      rows.add([
-        'Personel',
-        key.$1,
-        key.$2,
-        ...dayCounts.map((e) => '$e'),
-        '$rowSum',
-      ]);
-    }
-
-    for (final key in uninsuredKeys) {
-      final dayCounts = <int>[];
-      var rowSum = 0;
-      for (final d in days) {
-        final n = uninsured
-            .where((e) {
-              final company =
-                  e.company.trim().isEmpty ? '—' : e.company.trim();
-              return e.date == d &&
-                  company == key.$1 &&
-                  e.teamName == key.$2;
-            })
-            .fold<int>(0, (s, e) => s + e.workerCount);
-        dayCounts.add(n);
-        rowSum += n;
+      if (visualRows.isNotEmpty) {
+        visualCompanies.add(
+          PuantajVisualCompany(name: company, rows: visualRows),
+        );
       }
-      if (rowSum == 0) continue;
-      grandUninsured += rowSum;
-      rows.add([
-        'Ekip',
-        key.$1,
-        key.$2,
-        ...dayCounts.map((e) => '$e'),
-        '$rowSum',
-      ]);
     }
 
     return PuantajReportData(
@@ -567,16 +486,19 @@ abstract final class PuantajReportBuilder {
       headers: headers,
       rows: rows,
       summaryLines: [
-        'Personel gün-kişi toplamı: $grandInsured',
-        'Ekip gün-kişi toplamı: $grandUninsured',
-        'Sayım: Mevcut, Yarım, Giriş, Çıkış',
+        if (singleDay)
+          'Genel toplam: $grandTotal kişi'
+        else
+          'Genel toplam: $grandTotal gün-kişi',
+        'Sayım: Mevcut, Yarım, Giriş, Çıkış (ekip kaydı çalışan sayısı dahil)',
       ],
-      landscape: true,
+      landscape: landscape,
       fileStem: fileStem,
       visual: PuantajReportVisual(
-        isMatrix: false,
-        dayHeaders: dayHeaders,
-        companies: const [],
+        isMatrix: true,
+        dayHeaders: const [],
+        companies: visualCompanies,
+        firstColumnLabel: 'Ekip Adı',
       ),
       plainTable: true,
     );

@@ -40,7 +40,7 @@ class UninsuredTeamEntry extends Equatable {
   /// TR tarih: `dd.MM.yyyy`
   final String date;
 
-  /// Sigorta ettiren / taşeron firma adı.
+  /// Firma Adı (taşeron).
   final String company;
   final String teamName;
   final int workerCount;

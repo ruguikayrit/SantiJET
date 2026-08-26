@@ -379,7 +379,7 @@ void main() {
       expect(report.visual.companies.single.rows.single.totalLabel, '6');
     });
 
-    test('ekip günlük: M/Y/G/Ç sayılır, ekip başlığı ayrı satır', () {
+    test('ekip günlük: Firma Adı + Ekip Adı + toplam; M/Y/G/Ç sayılır', () {
       final a = Person(
         id: '1',
         projectId: 'p',
@@ -451,10 +451,17 @@ void main() {
       );
 
       expect(report.plainTable, isTrue);
-      expect(report.rows, [
-        ['Personel', 'Bsd İnşaat', 'Alçısıva', '2'],
-        ['Ekip', 'Demo Taşeron', 'Kalıp', '4'],
+      expect(report.headers, [
+        'Firma Adı',
+        'Ekip Adı',
+        'Toplam çalışan sayısı',
       ]);
+      expect(report.rows, [
+        ['Bsd İnşaat', 'Alçısıva', '2'],
+        ['Demo Taşeron', 'Kalıp', '4'],
+      ]);
+      expect(report.visual.isMatrix, isTrue);
+      expect(report.visual.firstColumnLabel, 'Ekip Adı');
     });
   });
 

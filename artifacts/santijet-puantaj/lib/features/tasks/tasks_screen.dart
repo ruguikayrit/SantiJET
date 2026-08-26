@@ -286,7 +286,7 @@ class _TasksScreenState extends ConsumerState<TasksScreen> {
               final start = PuantajDate.tryParse(earliestStart);
               final value = await _pickDateField(
                 hostContext: ctx,
-                label: 'En geç teslimat',
+                label: 'Planlanan bitiş',
                 current: latestDelivery,
                 firstDate: start,
               );
@@ -791,7 +791,7 @@ class _TasksScreenState extends ConsumerState<TasksScreen> {
                             icon: const Icon(Icons.flag_outlined, size: 18),
                             label: Text(
                               latestDelivery.isEmpty
-                                  ? 'En geç teslimat'
+                                  ? 'Planlanan bitiş'
                                   : latestDelivery,
                               overflow: TextOverflow.ellipsis,
                             ),
@@ -829,7 +829,7 @@ class _TasksScreenState extends ConsumerState<TasksScreen> {
                           ScaffoldMessenger.of(ctx).showSnackBar(
                             const SnackBar(
                               content: Text(
-                                'En erken başlangıç ve en geç teslimat '
+                                'En erken başlangıç ve planlanan bitiş '
                                 'tarihlerini seçin.',
                               ),
                             ),
@@ -1334,7 +1334,7 @@ class _TasksScreenState extends ConsumerState<TasksScreen> {
                                           if (task.dueDate.isNotEmpty)
                                             _DateChip(
                                               label:
-                                                  'Teslimat ${task.dueDate}',
+                                                  'Planlanan bitiş ${task.dueDate}',
                                               color: AppColors.critical,
                                             ),
                                           if (task.actualDeliveryDate
@@ -1342,7 +1342,7 @@ class _TasksScreenState extends ConsumerState<TasksScreen> {
                                               .isNotEmpty)
                                             _DateChip(
                                               label:
-                                                  'Gerçek ${task.actualDeliveryDate}',
+                                                  'Gerçekleşen bitiş ${task.actualDeliveryDate}',
                                               color: AppColors.success,
                                             ),
                                         ],
