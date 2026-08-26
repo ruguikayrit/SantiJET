@@ -1271,6 +1271,9 @@ class _DayTeamsSection extends ConsumerWidget {
     if (selectedTeam == null || !selectable.contains(selectedTeam)) {
       selectedTeam = selectable.first;
     }
+    final companyCtrl = TextEditingController(
+      text: existing?.company ?? '',
+    );
     final countCtrl = TextEditingController(
       text: existing == null ? '' : '${existing.workerCount}',
     );
@@ -1288,12 +1291,26 @@ class _DayTeamsSection extends ConsumerWidget {
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
                 Text(
-                  'Ayarlar’daki ekiplerden seçin; çalışan sayısını girin.',
+                  'Firma adını yazın; Ayarlar’daki ekiplerden seçip '
+                  'çalışan sayısını girin.',
                   style: Theme.of(context).textTheme.bodySmall?.copyWith(
                         color: Theme.of(context).colorScheme.onSurfaceVariant,
                       ),
                 ),
                 const SizedBox(height: AppSpacing.md),
+                TextFormField(
+                  controller: companyCtrl,
+                  textCapitalization: TextCapitalization.words,
+                  decoration: const InputDecoration(
+                    labelText: 'Firma *',
+                    hintText: 'Örn. Demo Taşeron',
+                  ),
+                  validator: (v) {
+                    if ((v ?? '').trim().isEmpty) return 'Firma adı girin';
+                    return null;
+                  },
+                ),
+                const SizedBox(height: AppSpacing.sm),
                 DropdownButtonFormField<String>(
                   value: selectedTeam,
                   isExpanded: true,
@@ -1343,15 +1360,22 @@ class _DayTeamsSection extends ConsumerWidget {
     );
 
     final teamName = selectedTeam;
+    final companyText = companyCtrl.text;
     final countText = countCtrl.text;
+    companyCtrl.dispose();
     countCtrl.dispose();
     if (saved != true || teamName == null || teamName.trim().isEmpty) return;
 
     final count = int.tryParse(countText.trim()) ?? 0;
+    final company = companyText.trim();
     final notifier = ref.read(uninsuredTeamsProvider.notifier);
     if (existing != null) {
       notifier.upsert(
-        existing.copyWith(teamName: teamName, workerCount: count),
+        existing.copyWith(
+          teamName: teamName,
+          workerCount: count,
+          company: company,
+        ),
       );
     } else {
       notifier.add(
@@ -1359,6 +1383,7 @@ class _DayTeamsSection extends ConsumerWidget {
         date: date,
         teamName: teamName,
         workerCount: count,
+        company: company,
       );
     }
   }
@@ -1375,7 +1400,10 @@ class _DayTeamsSection extends ConsumerWidget {
         .watch(uninsuredTeamsProvider)
         .where((e) => e.projectId == project.id && e.date == date)
         .toList()
-      ..sort((a, b) => a.teamName.compareTo(b.teamName));
+      ..sort((a, b) {
+        final byCompany = a.company.compareTo(b.company);
+        return byCompany != 0 ? byCompany : a.teamName.compareTo(b.teamName);
+      });
     final usedTeamNames = entries.map((e) => e.teamName).toSet();
     final totalWorkers =
         entries.fold<int>(0, (sum, e) => sum + e.workerCount);
@@ -1429,7 +1457,9 @@ class _DayTeamsSection extends ConsumerWidget {
                           ),
                           const SizedBox(height: 2),
                           Text(
-                            '${entry.workerCount} çalışan',
+                            entry.company.trim().isEmpty
+                                ? '${entry.workerCount} çalışan'
+                                : '${entry.company} · ${entry.workerCount} çalışan',
                             style: theme.textTheme.bodySmall?.copyWith(
                               color: theme.colorScheme.onSurfaceVariant,
                             ),
@@ -1461,8 +1491,9 @@ class _DayTeamsSection extends ConsumerWidget {
                         final ok = await SJModal.confirm(
                           context: context,
                           title: 'Ekibi sil',
-                          message:
-                              '${entry.teamName} (${entry.workerCount} çalışan) silinsin mi?',
+                          message: entry.company.trim().isEmpty
+                              ? '${entry.teamName} (${entry.workerCount} çalışan) silinsin mi?'
+                              : '${entry.company} · ${entry.teamName} (${entry.workerCount} çalışan) silinsin mi?',
                           confirmLabel: 'Sil',
                           destructive: true,
                         );

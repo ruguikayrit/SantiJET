@@ -246,6 +246,27 @@ class PersonnelNotifier extends StateNotifier<List<Person>> {
     _persist();
   }
 
+  /// Katalog ekip adı değişince personel kayıtlarını günceller.
+  int reassignTeam(String from, String to) {
+    final oldName = from.trim();
+    final newName = to.trim();
+    if (oldName.isEmpty || newName.isEmpty) return 0;
+    final oldKey = oldName.toLowerCase();
+    var count = 0;
+    state = [
+      for (final p in state)
+        if (p.team.trim().toLowerCase() == oldKey)
+          () {
+            count++;
+            return p.copyWith(team: newName);
+          }()
+        else
+          p,
+    ];
+    if (count > 0) _persist();
+    return count;
+  }
+
   /// Eski (projectId'siz) kayıtları verilen projeye bağlar.
   int migrateOrphansToProject(String projectId) {
     if (projectId.isEmpty) return 0;

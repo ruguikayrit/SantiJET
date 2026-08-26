@@ -59,7 +59,11 @@ class UninsuredTeamsNotifier extends StateNotifier<List<UninsuredTeamEntry>> {
     final count = entry.workerCount;
     if (name.isEmpty || count <= 0) return;
 
-    final cleaned = entry.copyWith(teamName: name, workerCount: count);
+    final cleaned = entry.copyWith(
+      teamName: name,
+      workerCount: count,
+      company: entry.company.trim(),
+    );
     final i = state.indexWhere((e) => e.id == cleaned.id);
     if (i >= 0) {
       state = [
@@ -77,6 +81,7 @@ class UninsuredTeamsNotifier extends StateNotifier<List<UninsuredTeamEntry>> {
     required String date,
     required String teamName,
     required int workerCount,
+    String company = '',
   }) {
     upsert(
       UninsuredTeamEntry(
@@ -85,6 +90,7 @@ class UninsuredTeamsNotifier extends StateNotifier<List<UninsuredTeamEntry>> {
         date: date,
         teamName: teamName,
         workerCount: workerCount,
+        company: company,
       ),
     );
   }
@@ -102,6 +108,27 @@ class UninsuredTeamsNotifier extends StateNotifier<List<UninsuredTeamEntry>> {
   void replaceAll(List<UninsuredTeamEntry> items) {
     state = List<UninsuredTeamEntry>.from(items);
     _persist();
+  }
+
+  /// Katalog ekip adı değişince günlük ekip kayıtlarını günceller.
+  int reassignTeamName(String from, String to) {
+    final oldName = from.trim();
+    final newName = to.trim();
+    if (oldName.isEmpty || newName.isEmpty) return 0;
+    final oldKey = oldName.toLowerCase();
+    var count = 0;
+    state = [
+      for (final e in state)
+        if (e.teamName.trim().toLowerCase() == oldKey)
+          () {
+            count++;
+            return e.copyWith(teamName: newName);
+          }()
+        else
+          e,
+    ];
+    if (count > 0) _persist();
+    return count;
   }
 }
 

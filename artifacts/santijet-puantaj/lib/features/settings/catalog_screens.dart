@@ -7,10 +7,18 @@ import '../../core/design_system/sj_empty_state.dart';
 import '../../core/routing/app_routes.dart';
 import '../../core/theme/app_colors.dart';
 import '../../core/theme/app_spacing.dart';
+import '../../data/providers/app_data_provider.dart';
 import '../../data/providers/catalog_provider.dart';
+import '../../data/providers/production_provider.dart';
 import '../../data/providers/tasks_provider.dart';
+import '../../data/providers/uninsured_teams_provider.dart';
+import '../../data/providers/yevmiyeli_is_provider.dart';
 import '../../domain/catalogs/professions.dart';
 import '../../domain/catalogs/task_categories.dart';
+import '../../domain/entities/person.dart';
+import '../../domain/entities/production.dart';
+import '../../domain/entities/uninsured_team_entry.dart';
+import '../../domain/entities/yevmiyeli_is_kaydi.dart';
 
 /// Ayarlar → Meslek listesi (ekle / düzenle / sil).
 class ProfessionsScreen extends ConsumerWidget {
@@ -35,23 +43,97 @@ class ProfessionsScreen extends ConsumerWidget {
 }
 
 /// Ayarlar → Ekip listesi (ekle / düzenle / sil).
+///
+/// Personel, imalat, günlük ekip veya yevmiyeli kayıtta kullanılan ekipler
+/// silinemez; yalnızca adı düzenlenebilir.
 class TeamsScreen extends ConsumerWidget {
   const TeamsScreen({super.key});
 
+  static int countUsage({
+    required String name,
+    required List<Person> people,
+    required List<Production> productions,
+    required List<UninsuredTeamEntry> uninsured,
+    required List<YevmiyeliIsKaydi> yevmiyeli,
+  }) {
+    final key = name.trim().toLowerCase();
+    if (key.isEmpty) return 0;
+    var n = 0;
+    for (final p in people) {
+      if (p.team.trim().toLowerCase() == key) n++;
+    }
+    for (final p in productions) {
+      if (p.teamName.trim().toLowerCase() == key) n++;
+    }
+    for (final e in uninsured) {
+      if (e.teamName.trim().toLowerCase() == key) n++;
+    }
+    for (final e in yevmiyeli) {
+      if (e.team.trim().toLowerCase() == key) n++;
+    }
+    return n;
+  }
+
   @override
   Widget build(BuildContext context, WidgetRef ref) {
+    final people = ref.watch(personnelProvider);
+    final productions = ref.watch(productionProvider);
+    final uninsured = ref.watch(uninsuredTeamsProvider);
+    final yevmiyeli = ref.watch(yevmiyeliIsProvider);
+
+    int usedOf(String name) => countUsage(
+          name: name,
+          people: people,
+          productions: productions,
+          uninsured: uninsured,
+          yevmiyeli: yevmiyeli,
+        );
+
     return _CatalogManageScreen(
       title: 'Ekipler',
       emptyMessage: 'Henüz ekip yok. Yeni ekip ekleyin.',
       itemNoun: 'ekip',
       items: ref.watch(teamsProvider),
+      usageCount: usedOf,
+      usageLabel: (name, used) => used == 0
+          ? 'Kullanılmıyor — silinebilir'
+          : '$used kayıtta kullanılıyor — yalnızca ad düzenlenebilir',
+      blockDeleteWhenUsed: true,
+      deleteBlockedMessage: (name) =>
+          '"$name" ekibi personel, imalat, günlük ekip veya '
+          'yevmiyeli kayıtta kullanıldığı için silinemez. '
+          'İsterseniz yalnızca adını düzenleyebilirsiniz.',
       onAdd: (name) => ref.read(teamsProvider.notifier).add(name),
-      onRename: (oldName, newName) =>
-          ref.read(teamsProvider.notifier).rename(oldName, newName),
-      onRemove: (name) => ref.read(teamsProvider.notifier).remove(name),
-      onReset: () => ref
-          .read(teamsProvider.notifier)
-          .resetToDefaults(ProfessionCatalog.defaultTradeGroups),
+      onRename: (oldName, newName) {
+        final ok = ref.read(teamsProvider.notifier).rename(oldName, newName);
+        if (ok) {
+          ref.read(personnelProvider.notifier).reassignTeam(oldName, newName);
+          ref
+              .read(productionProvider.notifier)
+              .reassignTeamName(oldName, newName);
+          ref
+              .read(uninsuredTeamsProvider.notifier)
+              .reassignTeamName(oldName, newName);
+          ref.read(yevmiyeliIsProvider.notifier).reassignTeam(oldName, newName);
+        }
+        return ok;
+      },
+      onRemove: (name) {
+        if (usedOf(name) > 0) return;
+        ref.read(teamsProvider.notifier).remove(name);
+      },
+      onReset: () {
+        final used = <String>{
+          for (final name in ref.read(teamsProvider))
+            if (usedOf(name) > 0) name,
+        };
+        ref
+            .read(teamsProvider.notifier)
+            .resetToDefaults(ProfessionCatalog.defaultTradeGroups);
+        for (final name in used) {
+          ref.read(teamsProvider.notifier).add(name);
+        }
+      },
     );
   }
 }
@@ -70,6 +152,9 @@ class TaskCategoriesScreen extends ConsumerWidget {
       items: ref.watch(taskCategoriesProvider),
       usageCount: (name) =>
           tasks.where((t) => t.category.trim() == name).length,
+      usageLabel: (name, used) => used == 0
+          ? 'Görevde kullanılmıyor'
+          : '$used görevde',
       onAdd: (name) => ref.read(taskCategoriesProvider.notifier).add(name),
       onRename: (oldName, newName) {
         final ok =
@@ -110,6 +195,9 @@ class _CatalogManageScreen extends StatelessWidget {
     required this.onRemove,
     required this.onReset,
     this.usageCount,
+    this.usageLabel,
+    this.blockDeleteWhenUsed = false,
+    this.deleteBlockedMessage,
     this.itemNoun = 'öğe',
   });
 
@@ -122,6 +210,9 @@ class _CatalogManageScreen extends StatelessWidget {
   final void Function(String name) onRemove;
   final VoidCallback onReset;
   final int Function(String name)? usageCount;
+  final String Function(String name, int used)? usageLabel;
+  final bool blockDeleteWhenUsed;
+  final String Function(String name)? deleteBlockedMessage;
 
   @override
   Widget build(BuildContext context) {
@@ -148,8 +239,12 @@ class _CatalogManageScreen extends StatelessWidget {
                 builder: (ctx) => AlertDialog(
                   title: const Text('Varsayılan liste'),
                   content: Text(
-                    '$title listesi varsayılanlara sıfırlansın mı? '
-                    'Manuel ekledikleriniz silinir.',
+                    blockDeleteWhenUsed
+                        ? '$title listesi varsayılanlara sıfırlansın mı? '
+                            'Kullanılan öğeler korunur; diğer manuel '
+                            'eklemeler silinir.'
+                        : '$title listesi varsayılanlara sıfırlansın mı? '
+                            'Manuel ekledikleriniz silinir.',
                   ),
                   actions: [
                     TextButton(
@@ -194,6 +289,7 @@ class _CatalogManageScreen extends StatelessWidget {
               itemBuilder: (context, i) {
                 final name = items[i];
                 final used = usageCount?.call(name) ?? 0;
+                final deleteBlocked = blockDeleteWhenUsed && used > 0;
                 return SJCard(
                   onTap: () => _openEditor(context, existing: name),
                   padding: const EdgeInsets.fromLTRB(
@@ -206,7 +302,7 @@ class _CatalogManageScreen extends StatelessWidget {
                     builder: (context) {
                       final theme = Theme.of(context);
                       return SizedBox(
-                        height: 48,
+                        height: usageCount != null ? 56 : 48,
                         child: Row(
                           children: [
                             Expanded(
@@ -222,12 +318,19 @@ class _CatalogManageScreen extends StatelessWidget {
                                   ),
                                   if (usageCount != null)
                                     Text(
-                                      used == 0
-                                          ? 'Görevde kullanılmıyor'
-                                          : '$used görevde',
-                                      style: theme.textTheme.labelSmall?.copyWith(
-                                        color: theme.colorScheme.onSurfaceVariant,
+                                      usageLabel?.call(name, used) ??
+                                          (used == 0
+                                              ? 'Kullanılmıyor'
+                                              : '$used kayıtta'),
+                                      style: theme.textTheme.labelSmall
+                                          ?.copyWith(
+                                        color: deleteBlocked
+                                            ? theme.colorScheme.primary
+                                            : theme
+                                                .colorScheme.onSurfaceVariant,
                                       ),
+                                      maxLines: 1,
+                                      overflow: TextOverflow.ellipsis,
                                     ),
                                 ],
                               ),
@@ -249,41 +352,29 @@ class _CatalogManageScreen extends StatelessWidget {
                                   _openEditor(context, existing: name),
                             ),
                             IconButton(
-                              icon: const Icon(Icons.delete_outline, size: 20),
-                              tooltip: 'Sil',
+                              icon: Icon(
+                                Icons.delete_outline,
+                                size: 20,
+                                color: deleteBlocked
+                                    ? theme.colorScheme.onSurface
+                                        .withValues(alpha: 0.28)
+                                    : theme.colorScheme.error,
+                              ),
+                              tooltip: deleteBlocked
+                                  ? 'Kullanıldığı için silinemez'
+                                  : 'Sil',
                               visualDensity: VisualDensity.compact,
                               constraints: const BoxConstraints(
                                 minWidth: 36,
                                 minHeight: 36,
                               ),
                               padding: EdgeInsets.zero,
-                              onPressed: () async {
-                                final ok = await showDialog<bool>(
-                                  context: context,
-                                  builder: (ctx) => AlertDialog(
-                                    title: Text('$itemNoun sil'),
-                                    content: Text(
-                                      used > 0
-                                          ? '"$name" silinsin mi?\n'
-                                              '$used görevdeki $itemNoun temizlenecek.'
-                                          : '"$name" silinsin mi?',
-                                    ),
-                                    actions: [
-                                      TextButton(
-                                        onPressed: () =>
-                                            Navigator.pop(ctx, false),
-                                        child: const Text('Vazgeç'),
-                                      ),
-                                      FilledButton(
-                                        onPressed: () =>
-                                            Navigator.pop(ctx, true),
-                                        child: const Text('Sil'),
-                                      ),
-                                    ],
-                                  ),
-                                );
-                                if (ok == true) onRemove(name);
-                              },
+                              onPressed: () => _onDeletePressed(
+                                context,
+                                name: name,
+                                used: used,
+                                deleteBlocked: deleteBlocked,
+                              ),
                             ),
                           ],
                         ),
@@ -296,8 +387,61 @@ class _CatalogManageScreen extends StatelessWidget {
     );
   }
 
+  Future<void> _onDeletePressed(
+    BuildContext context, {
+    required String name,
+    required int used,
+    required bool deleteBlocked,
+  }) async {
+    if (deleteBlocked) {
+      await showDialog<void>(
+        context: context,
+        builder: (ctx) => AlertDialog(
+          title: Text('$itemNoun silinemez'),
+          content: Text(
+            deleteBlockedMessage?.call(name) ??
+                '"$name" kullanıldığı için silinemez.',
+          ),
+          actions: [
+            FilledButton(
+              onPressed: () => Navigator.pop(ctx),
+              child: const Text('Tamam'),
+            ),
+          ],
+        ),
+      );
+      return;
+    }
+
+    final ok = await showDialog<bool>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: Text('$itemNoun sil'),
+        content: Text(
+          used > 0 && !blockDeleteWhenUsed
+              ? '"$name" silinsin mi?\n'
+                  '$used görevdeki $itemNoun temizlenecek.'
+              : '"$name" silinsin mi?',
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(ctx, false),
+            child: const Text('Vazgeç'),
+          ),
+          FilledButton(
+            onPressed: () => Navigator.pop(ctx, true),
+            child: const Text('Sil'),
+          ),
+        ],
+      ),
+    );
+    if (ok == true) onRemove(name);
+  }
+
   Future<void> _openEditor(BuildContext context, {String? existing}) async {
     final controller = TextEditingController(text: existing ?? '');
+    final used =
+        existing == null ? 0 : (usageCount?.call(existing) ?? 0);
     final saved = await showModalBottomSheet<String>(
       context: context,
       isScrollControlled: true,
@@ -318,6 +462,18 @@ class _CatalogManageScreen extends StatelessWidget {
                 existing == null ? 'Yeni $itemNoun' : '$itemNoun düzenle',
                 style: Theme.of(ctx).textTheme.titleLarge,
               ),
+              if (existing != null &&
+                  blockDeleteWhenUsed &&
+                  used > 0) ...[
+                const SizedBox(height: AppSpacing.sm),
+                Text(
+                  'Bu $itemNoun kullanılıyor. Yalnızca ad düzenlenebilir; '
+                  'silinemez.',
+                  style: Theme.of(ctx).textTheme.bodySmall?.copyWith(
+                        color: Theme.of(ctx).colorScheme.onSurfaceVariant,
+                      ),
+                ),
+              ],
               const SizedBox(height: AppSpacing.md),
               TextField(
                 controller: controller,

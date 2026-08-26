@@ -253,6 +253,7 @@ class DemoSeedController {
         date: date,
         teamName: 'Dış Demir Ekibi',
         workerCount: 4 + dates.indexOf(date),
+        company: 'Demo Taşeron',
       );
       if (dates.indexOf(date).isEven) {
         teams.add(
@@ -260,6 +261,7 @@ class DemoSeedController {
           date: date,
           teamName: 'Boyama Ekibi',
           workerCount: 3,
+          company: 'Boya Taşeron',
         );
       }
     }

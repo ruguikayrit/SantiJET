@@ -160,6 +160,27 @@ class YevmiyeliIsNotifier extends StateNotifier<List<YevmiyeliIsKaydi>> {
     state = List<YevmiyeliIsKaydi>.from(items);
     _persist();
   }
+
+  /// Katalog ekip adı değişince yevmiyeli kayıtlarını günceller.
+  int reassignTeam(String from, String to) {
+    final oldName = from.trim();
+    final newName = to.trim();
+    if (oldName.isEmpty || newName.isEmpty) return 0;
+    final oldKey = oldName.toLowerCase();
+    var count = 0;
+    state = [
+      for (final e in state)
+        if (e.team.trim().toLowerCase() == oldKey)
+          () {
+            count++;
+            return e.copyWith(team: newName);
+          }()
+        else
+          e,
+    ];
+    if (count > 0) _persist();
+    return count;
+  }
 }
 
 final yevmiyeliIsProvider =

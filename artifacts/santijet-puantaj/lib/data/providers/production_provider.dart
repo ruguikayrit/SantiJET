@@ -122,6 +122,27 @@ class ProductionNotifier extends StateNotifier<List<Production>> {
     _persist();
   }
 
+  /// Katalog ekip adı değişince imalat kayıtlarını günceller.
+  int reassignTeamName(String from, String to) {
+    final oldName = from.trim();
+    final newName = to.trim();
+    if (oldName.isEmpty || newName.isEmpty) return 0;
+    final oldKey = oldName.toLowerCase();
+    var count = 0;
+    state = [
+      for (final p in state)
+        if (p.teamName.trim().toLowerCase() == oldKey)
+          () {
+            count++;
+            return p.copyWith(teamName: newName);
+          }()
+        else
+          p,
+    ];
+    if (count > 0) _persist();
+    return count;
+  }
+
   /// Yıllık verim grafiği incelemesi için örnek imalat (iş günü × ~1 yıl).
   /// Id `prd_chart_demo_year_*` — inceledikten sonra İmalat’tan silin.
   /// Bir kez oluşturulur; silindikten sonra otomatik yeniden eklenmez.

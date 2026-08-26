@@ -445,6 +445,7 @@ void main() {
             date: '16.08.2026',
             teamName: 'Kalıp',
             workerCount: 4,
+            company: 'Demo Taşeron',
           ),
         ],
       );
@@ -452,7 +453,7 @@ void main() {
       expect(report.plainTable, isTrue);
       expect(report.rows, [
         ['Personel', 'Bsd İnşaat', 'Alçısıva', '2'],
-        ['Ekip', '—', 'Kalıp', '4'],
+        ['Ekip', 'Demo Taşeron', 'Kalıp', '4'],
       ]);
     });
   });

@@ -416,10 +416,15 @@ abstract final class PuantajReportBuilder {
 
     var uninsuredTotal = 0;
     final dayUninsured = uninsured.where((e) => e.date == date).toList()
-      ..sort((a, b) => a.teamName.compareTo(b.teamName));
+      ..sort((a, b) {
+        final byCompany = a.company.compareTo(b.company);
+        return byCompany != 0 ? byCompany : a.teamName.compareTo(b.teamName);
+      });
     for (final e in dayUninsured) {
       uninsuredTotal += e.workerCount;
-      rows.add(['Ekip', '—', e.teamName, '${e.workerCount}']);
+      final company =
+          e.company.trim().isEmpty ? '—' : e.company.trim();
+      rows.add(['Ekip', company, e.teamName, '${e.workerCount}']);
     }
 
     return PuantajReportData(
@@ -473,10 +478,17 @@ abstract final class PuantajReportBuilder {
         return c != 0 ? c : a.$2.compareTo(b.$2);
       });
 
-    final uninsuredNames = <String>{
-      for (final e in uninsured) e.teamName,
+    final uninsuredKeys = <(String, String)>{
+      for (final e in uninsured)
+        (
+          e.company.trim().isEmpty ? '—' : e.company.trim(),
+          e.teamName,
+        ),
     }.toList()
-      ..sort();
+      ..sort((a, b) {
+        final c = a.$1.compareTo(b.$1);
+        return c != 0 ? c : a.$2.compareTo(b.$2);
+      });
 
     final headers = [
       'Bölüm',
@@ -522,12 +534,18 @@ abstract final class PuantajReportBuilder {
       ]);
     }
 
-    for (final name in uninsuredNames) {
+    for (final key in uninsuredKeys) {
       final dayCounts = <int>[];
       var rowSum = 0;
       for (final d in days) {
         final n = uninsured
-            .where((e) => e.date == d && e.teamName == name)
+            .where((e) {
+              final company =
+                  e.company.trim().isEmpty ? '—' : e.company.trim();
+              return e.date == d &&
+                  company == key.$1 &&
+                  e.teamName == key.$2;
+            })
             .fold<int>(0, (s, e) => s + e.workerCount);
         dayCounts.add(n);
         rowSum += n;
@@ -536,8 +554,8 @@ abstract final class PuantajReportBuilder {
       grandUninsured += rowSum;
       rows.add([
         'Ekip',
-        '—',
-        name,
+        key.$1,
+        key.$2,
         ...dayCounts.map((e) => '$e'),
         '$rowSum',
       ]);
