@@ -1,5 +1,8 @@
 import '../../core/utils/puantaj_date.dart';
+import '../../domain/attendance/attendance_display.dart';
+import '../../domain/daily_report/attendance_snapshot_builder.dart';
 import '../../domain/entities/attendance.dart';
+import '../../domain/entities/daily_report.dart';
 import '../../domain/entities/person.dart';
 import '../../domain/entities/production.dart';
 import '../../domain/entities/production_day_entry.dart';
@@ -53,13 +56,71 @@ class PeriodVerimRow {
   final double? unitEfficiency;
 }
 
+/// Haftalık / aylık personel özeti — günlük rapor formatı (DURUM yok).
+class PeriodPersonelSummaryRow {
+  const PeriodPersonelSummaryRow({
+    required this.personId,
+    required this.personName,
+    required this.profession,
+    required this.team,
+    required this.yevmiye,
+    required this.adamSaat,
+  });
+
+  final String personId;
+  final String personName;
+  final String profession;
+  final String team;
+  final double yevmiye;
+  final double adamSaat;
+}
+
+class PeriodPersonelSummary {
+  const PeriodPersonelSummary({
+    required this.subtitle,
+    required this.rows,
+    required this.totalYevmiye,
+    required this.totalAdamSaat,
+    required this.summaryLines,
+  });
+
+  final String subtitle;
+  final List<PeriodPersonelSummaryRow> rows;
+  final double totalYevmiye;
+  final double totalAdamSaat;
+  final List<String> summaryLines;
+
+  static const headers = [
+    'Personel',
+    'Meslek',
+    'Ekip',
+    'YV',
+  ];
+
+  List<List<String>> get exportRows => [
+        for (final r in rows)
+          [
+            r.personName,
+            r.profession.isEmpty ? '—' : r.profession,
+            r.team.isEmpty ? '—' : r.team,
+            _fmtYv(r.yevmiye),
+          ],
+      ];
+
+  static String _fmtYv(double v) {
+    if (v <= 0) return '—';
+    if (v == v.roundToDouble()) return v.toStringAsFixed(0);
+    return v.toStringAsFixed(2).replaceFirst(RegExp(r'\.?0+$'), '');
+  }
+}
+
 /// Haftalık / aylık saha raporu — puantaj + imalat + verim.
 class PeriodSiteReportData {
   const PeriodSiteReportData({
     required this.periodLabel,
     required this.rangeLabel,
     required this.days,
-    required this.personelPuantaj,
+    required this.personelSummary,
     required this.ekipPuantaj,
     required this.imalatRows,
     required this.verimRows,
@@ -69,7 +130,7 @@ class PeriodSiteReportData {
   final String periodLabel;
   final String rangeLabel;
   final List<String> days;
-  final PuantajReportData personelPuantaj;
+  final PeriodPersonelSummary personelSummary;
   final PuantajReportData ekipPuantaj;
   final List<PeriodImalatRow> imalatRows;
   final List<PeriodVerimRow> verimRows;
@@ -116,18 +177,16 @@ abstract final class PeriodSiteReportBuilder {
 
     final eligible = people
         .where((p) => p.projectId == projectId && p.wasEmployedInPeriod(days))
-        .toList()
-      ..sort((a, b) => a.name.compareTo(b.name));
+        .toList();
 
-    final personelPuantaj = PuantajReportBuilder.build(
+    final personelSummary = _buildPersonelSummary(
       projectName: projectName,
-      projectId: projectId,
+      rangeLabel: rangeLabel,
       people: eligible,
-      attendance: attendance,
-      period: period,
-      anchorDate: anchorDate,
-      layout: PuantajExportLayout.isim,
-      uninsuredTeams: uninsuredTeams,
+      attendance: attendance
+          .where((a) => a.projectId == projectId && daySet.contains(a.date))
+          .toList(),
+      days: days,
     );
 
     final ekipPuantaj = PuantajReportBuilder.build(
@@ -226,11 +285,96 @@ abstract final class PeriodSiteReportBuilder {
       periodLabel: periodLabel,
       rangeLabel: rangeLabel,
       days: days,
-      personelPuantaj: personelPuantaj,
+      personelSummary: personelSummary,
       ekipPuantaj: ekipPuantaj,
       imalatRows: imalatRows,
       verimRows: verimRows,
       fileStem: fileStem,
+    );
+  }
+
+  /// Günlük rapor personel özeti gibi; dönem YV toplamı, DURUM yok.
+  static PeriodPersonelSummary _buildPersonelSummary({
+    required String projectName,
+    required String rangeLabel,
+    required List<Person> people,
+    required List<Attendance> attendance,
+    required List<String> days,
+  }) {
+    final lookup = <String, Attendance>{};
+    for (final a in attendance) {
+      lookup['${a.personId}|${a.date}'] = a;
+    }
+
+    final rows = <PeriodPersonelSummaryRow>[];
+    var totalYv = 0.0;
+    var totalAs = 0.0;
+
+    for (final p in people) {
+      var yevmiye = 0.0;
+      var adamSaat = 0.0;
+      for (final d in days) {
+        final a = lookup['${p.id}|$d'];
+        final status = AttendanceDisplay.resolve(
+          person: p,
+          date: d,
+          recorded: a?.status,
+        );
+        if (status == null) continue;
+        final hours = (a?.hours ?? status.hours).toDouble();
+        final overtime = a?.overtimeHours ?? 0.0;
+        adamSaat += hours + overtime;
+        yevmiye += (hours + overtime) / 8.0;
+      }
+      rows.add(
+        PeriodPersonelSummaryRow(
+          personId: p.id,
+          personName: p.name,
+          profession: p.profession.trim(),
+          team: p.team.trim(),
+          yevmiye: yevmiye,
+          adamSaat: adamSaat,
+        ),
+      );
+      totalYv += yevmiye;
+      totalAs += adamSaat;
+    }
+
+    rows.sort(
+      (a, b) => AttendanceSnapshotBuilder.compareByRoleRank(
+        DailyReportAttendancePerson(
+          personId: a.personId,
+          personName: a.personName,
+          profession: a.profession,
+          team: a.team,
+          status: '',
+          hours: 0,
+        ),
+        DailyReportAttendancePerson(
+          personId: b.personId,
+          personName: b.personName,
+          profession: b.profession,
+          team: b.team,
+          status: '',
+          hours: 0,
+        ),
+      ),
+    );
+
+    String fmt(double v) {
+      if (v == v.roundToDouble()) return v.toStringAsFixed(0);
+      return v.toStringAsFixed(1);
+    }
+
+    return PeriodPersonelSummary(
+      subtitle: '$projectName · $rangeLabel',
+      rows: rows,
+      totalYevmiye: totalYv,
+      totalAdamSaat: totalAs,
+      summaryLines: [
+        'Özet — ${rows.length} personel · Toplam adam-saat: ${fmt(totalAs)} · '
+            'Toplam YV: ${PeriodPersonelSummary._fmtYv(totalYv)}',
+      ],
     );
   }
 

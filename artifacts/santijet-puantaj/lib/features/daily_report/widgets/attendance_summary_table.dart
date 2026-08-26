@@ -5,6 +5,7 @@ import '../../../core/theme/app_colors.dart';
 import '../../../core/theme/app_radii.dart';
 import '../../../core/theme/app_spacing.dart';
 import '../../../core/utils/text_format.dart';
+import '../../../data/services/period_site_report_builder.dart';
 import '../../../domain/daily_report/attendance_snapshot_builder.dart';
 import '../../../domain/entities/daily_report.dart';
 import '../../../domain/enums/attendance_status.dart';
@@ -496,6 +497,285 @@ class _TeamSummaryTable extends StatelessWidget {
                   ],
                 ),
               ),
+            ],
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+String _summaryNum(double v, {int maxFrac = 2}) {
+  if (v <= 0) return '—';
+  if (v == v.roundToDouble()) return v.toStringAsFixed(0);
+  final s = v.toStringAsFixed(maxFrac);
+  return s.replaceFirst(RegExp(r'\.?0+$'), '');
+}
+
+/// Haftalık / aylık personel özeti — günlük tablo formatı, DURUM yok (4 sütun).
+class PeriodPersonnelSummaryTable extends StatelessWidget {
+  const PeriodPersonnelSummaryTable({super.key, required this.summary});
+
+  final PeriodPersonelSummary summary;
+
+  @override
+  Widget build(BuildContext context) {
+    final base = Theme.of(context);
+    final theme = AppColors.useDarkCards
+        ? SJCard.darkContrastTheme(base)
+        : AppColors.isSantijetPro
+            ? SJCard.lightContrastTheme(base)
+            : base;
+    final rows = summary.rows;
+    final border = theme.dividerColor.withValues(alpha: 0.55);
+
+    return Theme(
+      data: theme,
+      child: Container(
+        decoration: BoxDecoration(
+          color: AppColors.cardSurface,
+          borderRadius: AppRadii.md,
+          border: Border.all(color: border),
+        ),
+        clipBehavior: Clip.antiAlias,
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            const Padding(
+              padding: EdgeInsets.fromLTRB(8, 6, 8, 4),
+              child: _HeaderRow(
+                cells: [
+                  _HeaderCell('PERSONEL', flex: 3),
+                  _HeaderCell('MESLEK', flex: 2),
+                  _HeaderCell('EKİP', flex: 2),
+                  _HeaderCell('YV', flex: 1),
+                ],
+              ),
+            ),
+            if (rows.isEmpty)
+              Padding(
+                padding: const EdgeInsets.fromLTRB(12, 8, 12, 12),
+                child: Text(
+                  'Bu dönemde personel satırı yok',
+                  textAlign: TextAlign.center,
+                  style: theme.textTheme.bodySmall?.copyWith(
+                    color: theme.colorScheme.onSurfaceVariant,
+                  ),
+                ),
+              )
+            else
+              ConstrainedBox(
+                constraints: const BoxConstraints(maxHeight: 320),
+                child: ListView.builder(
+                  shrinkWrap: true,
+                  padding: EdgeInsets.zero,
+                  itemCount: rows.length,
+                  itemBuilder: (context, index) {
+                    final p = rows[index];
+                    final meslek = p.profession.isNotEmpty
+                        ? titleCaseTr(p.profession)
+                        : '—';
+                    final ekip =
+                        p.team.isNotEmpty ? titleCaseTr(p.team) : '—';
+                    return Container(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 10,
+                        vertical: 9,
+                      ),
+                      decoration: BoxDecoration(
+                        border: Border(bottom: BorderSide(color: border)),
+                      ),
+                      child: Row(
+                        children: [
+                          Expanded(
+                            flex: 3,
+                            child: Text(
+                              titleCaseTr(p.personName),
+                              style: theme.textTheme.bodySmall?.copyWith(
+                                fontWeight: FontWeight.w600,
+                              ),
+                              maxLines: 2,
+                              overflow: TextOverflow.ellipsis,
+                            ),
+                          ),
+                          Expanded(
+                            flex: 2,
+                            child: Text(
+                              meslek,
+                              textAlign: TextAlign.center,
+                              style: theme.textTheme.labelSmall,
+                              maxLines: 2,
+                              overflow: TextOverflow.ellipsis,
+                            ),
+                          ),
+                          Expanded(
+                            flex: 2,
+                            child: Text(
+                              ekip,
+                              textAlign: TextAlign.center,
+                              style: theme.textTheme.labelSmall,
+                              maxLines: 2,
+                              overflow: TextOverflow.ellipsis,
+                            ),
+                          ),
+                          Expanded(
+                            flex: 1,
+                            child: Text(
+                              _summaryNum(p.yevmiye),
+                              textAlign: TextAlign.center,
+                              style: theme.textTheme.labelSmall?.copyWith(
+                                fontWeight: FontWeight.w700,
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
+                    );
+                  },
+                ),
+              ),
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 11),
+              color: AppColors.success.withValues(alpha: 0.08),
+              child: Row(
+                children: [
+                  Expanded(
+                    flex: 3,
+                    child: Text(
+                      'TOPLAM',
+                      style: theme.textTheme.labelLarge?.copyWith(
+                        fontWeight: FontWeight.w800,
+                      ),
+                    ),
+                  ),
+                  Expanded(
+                    flex: 2,
+                    child: Text(
+                      '${rows.length} kişi',
+                      textAlign: TextAlign.center,
+                      style: theme.textTheme.labelSmall,
+                    ),
+                  ),
+                  Expanded(
+                    flex: 2,
+                    child: Text(
+                      '${_summaryNum(summary.totalAdamSaat, maxFrac: 1)} as',
+                      textAlign: TextAlign.center,
+                      style: theme.textTheme.labelSmall?.copyWith(
+                        fontWeight: FontWeight.w700,
+                      ),
+                    ),
+                  ),
+                  Expanded(
+                    flex: 1,
+                    child: Text(
+                      _summaryNum(summary.totalYevmiye),
+                      textAlign: TextAlign.center,
+                      style: theme.textTheme.labelLarge?.copyWith(
+                        fontWeight: FontWeight.w800,
+                        color: AppColors.success,
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+/// Haftalık / aylık ekip özeti — günlük tablo dilinde 5 sütun.
+class PeriodTeamSummaryTable extends StatelessWidget {
+  const PeriodTeamSummaryTable({
+    super.key,
+    required this.headers,
+    required this.rows,
+  });
+
+  final List<String> headers;
+  final List<List<String>> rows;
+
+  @override
+  Widget build(BuildContext context) {
+    final base = Theme.of(context);
+    final theme = AppColors.useDarkCards
+        ? SJCard.darkContrastTheme(base)
+        : AppColors.isSantijetPro
+            ? SJCard.lightContrastTheme(base)
+            : base;
+    final border = theme.dividerColor.withValues(alpha: 0.55);
+    final labelHeaders = [
+      for (final h in headers) h.toUpperCase(),
+    ];
+
+    return Theme(
+      data: theme,
+      child: Container(
+        decoration: BoxDecoration(
+          color: AppColors.cardSurface,
+          borderRadius: AppRadii.md,
+          border: Border.all(color: border),
+        ),
+        clipBehavior: Clip.antiAlias,
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            Padding(
+              padding: const EdgeInsets.fromLTRB(8, 6, 8, 4),
+              child: _HeaderRow(
+                cells: [
+                  for (var i = 0; i < labelHeaders.length; i++)
+                    _HeaderCell(
+                      labelHeaders[i],
+                      flex: i < 2 ? 3 : 2,
+                    ),
+                ],
+              ),
+            ),
+            if (rows.isEmpty)
+              Padding(
+                padding: const EdgeInsets.fromLTRB(12, 8, 12, 12),
+                child: Text(
+                  'Bu dönemde ekip puantaj kaydı yok',
+                  textAlign: TextAlign.center,
+                  style: theme.textTheme.bodySmall?.copyWith(
+                    color: theme.colorScheme.onSurfaceVariant,
+                  ),
+                ),
+              )
+            else ...[
+              for (final row in rows)
+                Container(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 10,
+                    vertical: 9,
+                  ),
+                  decoration: BoxDecoration(
+                    border: Border(bottom: BorderSide(color: border)),
+                  ),
+                  child: Row(
+                    children: [
+                      for (var i = 0; i < headers.length; i++)
+                        Expanded(
+                          flex: i < 2 ? 3 : 2,
+                          child: Text(
+                            i < row.length ? row[i] : '—',
+                            textAlign:
+                                i < 2 ? TextAlign.start : TextAlign.center,
+                            style: theme.textTheme.labelSmall?.copyWith(
+                              fontWeight:
+                                  i < 2 ? FontWeight.w600 : FontWeight.w700,
+                            ),
+                            maxLines: 2,
+                            overflow: TextOverflow.ellipsis,
+                          ),
+                        ),
+                    ],
+                  ),
+                ),
             ],
           ],
         ),

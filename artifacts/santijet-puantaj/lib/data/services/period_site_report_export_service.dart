@@ -103,12 +103,12 @@ class PeriodSiteReportExportService {
           _pdfSectionTitle('Personel puantajı'),
           pw.SizedBox(height: 6),
           _pdfTable(
-            report.personelPuantaj.headers,
-            report.personelPuantaj.rows,
+            PeriodPersonelSummary.headers,
+            report.personelSummary.exportRows,
           ),
-          if (report.personelPuantaj.summaryLines.isNotEmpty) ...[
+          if (report.personelSummary.summaryLines.isNotEmpty) ...[
             pw.SizedBox(height: 4),
-            for (final line in report.personelPuantaj.summaryLines)
+            for (final line in report.personelSummary.summaryLines)
               pw.Text(
                 line,
                 style: const pw.TextStyle(fontSize: 8, color: _inkMuted),
@@ -240,7 +240,7 @@ class PeriodSiteReportExportService {
         ['Aralık', report.rangeLabel],
         ['İmalat kalemi', '${report.imalatRows.length}'],
         ['Verim satırı', '${report.verimRows.length}'],
-        for (final line in report.personelPuantaj.summaryLines)
+        for (final line in report.personelSummary.summaryLines)
           ['Personel puantaj', line],
         for (final line in report.ekipPuantaj.summaryLines)
           ['Ekip puantaj', line],
@@ -249,8 +249,8 @@ class PeriodSiteReportExportService {
     _writeSheet(
       excel,
       'Personel',
-      report.personelPuantaj.headers,
-      report.personelPuantaj.rows,
+      PeriodPersonelSummary.headers,
+      report.personelSummary.exportRows,
     );
     _writeSheet(
       excel,

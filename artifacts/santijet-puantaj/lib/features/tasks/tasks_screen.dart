@@ -1113,59 +1113,39 @@ class _TasksScreenState extends ConsumerState<TasksScreen> {
               const SizedBox(height: AppSpacing.xs),
               Padding(
                 padding: const EdgeInsets.symmetric(horizontal: AppSpacing.md),
-                child: Row(
-                  children: [
-                    Expanded(
-                      child: SingleChildScrollView(
-                        scrollDirection: Axis.horizontal,
-                        child: Row(
-                          children: [
-                            FilterChip(
-                              avatar: Icon(
-                                Icons.category_outlined,
-                                size: 16,
-                                color: _categoryFilter == null
-                                    ? null
-                                    : Theme.of(context)
-                                        .colorScheme
-                                        .onSurfaceVariant,
-                              ),
-                              label: const Text('Tüm kategoriler'),
-                              selected: _categoryFilter == null,
-                              onSelected: (_) =>
-                                  setState(() => _categoryFilter = null),
-                            ),
-                            const SizedBox(width: AppSpacing.xs),
-                            for (final c in filterCategories) ...[
-                              FilterChip(
-                                label: Text(
-                                  '$c (${tasks.where((t) => t.category.trim() == c).length})',
-                                ),
-                                selected: _categoryFilter == c,
-                                onSelected: (_) =>
-                                    setState(() => _categoryFilter = c),
-                              ),
-                              const SizedBox(width: AppSpacing.xs),
-                            ],
-                          ],
+                child: SingleChildScrollView(
+                  scrollDirection: Axis.horizontal,
+                  child: Row(
+                    children: [
+                      FilterChip(
+                        avatar: Icon(
+                          Icons.category_outlined,
+                          size: 16,
+                          color: _categoryFilter == null
+                              ? null
+                              : Theme.of(context)
+                                  .colorScheme
+                                  .onSurfaceVariant,
                         ),
+                        label: const Text('Tüm kategoriler'),
+                        selected: _categoryFilter == null,
+                        onSelected: (_) =>
+                            setState(() => _categoryFilter = null),
                       ),
-                    ),
-                    IconButton(
-                      tooltip: 'Kategorileri yönet',
-                      visualDensity: VisualDensity.compact,
-                      onPressed: () async {
-                        await context.push(AppRoutes.gorevKategorileri);
-                        if (!mounted) return;
-                        final cats = ref.read(taskCategoriesProvider);
-                        if (_categoryFilter != null &&
-                            !cats.contains(_categoryFilter)) {
-                          setState(() => _categoryFilter = null);
-                        }
-                      },
-                      icon: const Icon(Icons.tune_outlined, size: 20),
-                    ),
-                  ],
+                      const SizedBox(width: AppSpacing.xs),
+                      for (final c in filterCategories) ...[
+                        FilterChip(
+                          label: Text(
+                            '$c (${tasks.where((t) => t.category.trim() == c).length})',
+                          ),
+                          selected: _categoryFilter == c,
+                          onSelected: (_) =>
+                              setState(() => _categoryFilter = c),
+                        ),
+                        const SizedBox(width: AppSpacing.xs),
+                      ],
+                    ],
+                  ),
                 ),
               ),
               const SizedBox(height: AppSpacing.sm),
