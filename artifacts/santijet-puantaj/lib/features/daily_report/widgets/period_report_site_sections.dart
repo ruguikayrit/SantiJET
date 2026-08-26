@@ -38,13 +38,14 @@ class PeriodSiteReportSections extends StatelessWidget {
         _SectionTitle(
           icon: Icons.groups_outlined,
           title: 'Ekip puantajı',
-          subtitle: 'Firma Adı · Ekip Adı · Toplam çalışan sayısı',
+          subtitle:
+              'Firma Adı · Ekip Adı · Toplam çalışan · Çalışılan gün · Ortalama',
         ),
         const SizedBox(height: AppSpacing.sm),
-        _PuantajMatrixSection(
-          data: report.ekipPuantaj,
+        _PlainTableSection(
+          headers: report.ekipPuantaj.headers,
+          rows: report.ekipPuantaj.rows,
           emptyMessage: 'Bu dönemde ekip puantaj kaydı yok.',
-          totalColumnLabel: 'Toplam çalışan sayısı',
         ),
         _SummaryLines(lines: report.ekipPuantaj.summaryLines),
         const SizedBox(height: AppSpacing.md),
@@ -144,15 +145,9 @@ class _SummaryLines extends StatelessWidget {
 }
 
 class _PuantajMatrixSection extends StatelessWidget {
-  const _PuantajMatrixSection({
-    required this.data,
-    this.emptyMessage = 'Personel puantaj kaydı yok.',
-    this.totalColumnLabel = 'Top.',
-  });
+  const _PuantajMatrixSection({required this.data});
 
   final PuantajReportData data;
-  final String emptyMessage;
-  final String totalColumnLabel;
 
   @override
   Widget build(BuildContext context) {
@@ -161,14 +156,13 @@ class _PuantajMatrixSection extends StatelessWidget {
       return _PlainTableSection(
         headers: data.headers,
         rows: data.rows,
-        emptyMessage: emptyMessage,
+        emptyMessage: 'Personel puantaj kaydı yok.',
       );
     }
 
     final theme = Theme.of(context);
     final dayHeaders = visual.dayHeaders;
     final nameW = visual.firstColumnLabel.length > 8 ? 132.0 : 120.0;
-    final totalW = totalColumnLabel.length > 6 ? 120.0 : 44.0;
 
     return SJCard(
       padding: const EdgeInsets.all(AppSpacing.sm),
@@ -181,7 +175,7 @@ class _PuantajMatrixSection extends StatelessWidget {
               children: [
                 _headCell(theme, visual.firstColumnLabel, width: nameW),
                 for (final h in dayHeaders) _headCell(theme, h, width: 36),
-                _headCell(theme, totalColumnLabel, width: totalW),
+                _headCell(theme, 'Top.', width: 44),
               ],
             ),
             for (final company in visual.companies) ...[
@@ -213,7 +207,7 @@ class _PuantajMatrixSection extends StatelessWidget {
                     _bodyCell(
                       theme,
                       row.totalLabel,
-                      width: totalW,
+                      width: 44,
                       center: true,
                     ),
                   ],

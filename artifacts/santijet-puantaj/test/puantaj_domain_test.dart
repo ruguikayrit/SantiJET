@@ -455,13 +455,13 @@ void main() {
         'Firma Adı',
         'Ekip Adı',
         'Toplam çalışan sayısı',
+        'Toplam çalışılan gün sayısı',
+        'Ortalama çalışan sayısı',
       ]);
       expect(report.rows, [
-        ['Bsd İnşaat', 'Alçısıva', '2'],
-        ['Demo Taşeron', 'Kalıp', '4'],
+        ['Bsd İnşaat', 'Alçısıva', '2', '1', '2'],
+        ['Demo Taşeron', 'Kalıp', '4', '1', '4'],
       ]);
-      expect(report.visual.isMatrix, isTrue);
-      expect(report.visual.firstColumnLabel, 'Ekip Adı');
     });
   });
 

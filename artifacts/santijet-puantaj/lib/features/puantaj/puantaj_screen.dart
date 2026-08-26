@@ -2786,7 +2786,8 @@ class _PuantajExportSheetState extends State<_PuantajExportSheet> {
         if (_layout == PuantajExportLayout.ekip) ...[
           const SizedBox(height: AppSpacing.xs),
           Text(
-            'Ekip çıktısı: Firma Adı + Ekip Adı + Toplam çalışan sayısı '
+            'Ekip çıktısı: Firma Adı, Ekip Adı, toplam çalışan, '
+            'çalışılan gün ve ortalama çalışan sayısı '
             '(Mevcut, Yarım, Giriş, Çıkış ve ekip kayıtları).',
             style: theme.textTheme.bodySmall?.copyWith(
               color: theme.colorScheme.onSurfaceVariant,
