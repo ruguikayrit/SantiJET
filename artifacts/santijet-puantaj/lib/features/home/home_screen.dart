@@ -305,7 +305,7 @@ class _HomeUrgentTasksSectionState extends State<_HomeUrgentTasksSection> {
           LayoutBuilder(
             builder: (context, constraints) {
               const spacing = AppSpacing.xs;
-              final columns = constraints.maxWidth >= 520 ? 3 : 2;
+              const columns = 3;
               final itemWidth =
                   (constraints.maxWidth - spacing * (columns - 1)) / columns;
               return Wrap(
