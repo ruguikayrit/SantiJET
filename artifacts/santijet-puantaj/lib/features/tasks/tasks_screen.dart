@@ -26,6 +26,7 @@ import '../../data/providers/tasks_provider.dart';
 import '../../domain/entities/person.dart';
 import '../../domain/entities/site_task.dart';
 import '../../domain/enums/task_status.dart';
+import '../../domain/catalogs/task_tags.dart';
 import '../../domain/permissions/role_degree.dart';
 import 'widgets/task_calendar_panel.dart';
 
@@ -40,6 +41,7 @@ class TasksScreen extends ConsumerStatefulWidget {
 class _TasksScreenState extends ConsumerState<TasksScreen> {
   TaskStatus? _filter;
   String? _categoryFilter;
+  String? _tagFilter;
   final _listScrollController = ScrollController();
 
   /// Tamamlandı seçilince 2 sn yerinde tutulan görevler.
@@ -229,6 +231,7 @@ class _TasksScreenState extends ConsumerState<TasksScreen> {
     var latestDelivery = existing?.dueDate ?? '';
     var status = existing?.status ?? TaskStatus.todo;
     var category = existing?.category.trim() ?? '';
+    var tag = TaskTagCatalog.normalize(existing?.tag ?? '');
     var photos = List<TaskPhoto>.from(existing?.photos ?? const []);
     const maxPhotos = 5;
     final picker = ImagePicker();
@@ -699,6 +702,30 @@ class _TasksScreenState extends ConsumerState<TasksScreen> {
                         ),
                       ),
                     const SizedBox(height: AppSpacing.sm),
+                    Text('Etiket', style: theme.textTheme.labelLarge),
+                    const SizedBox(height: AppSpacing.xs),
+                    Wrap(
+                      spacing: AppSpacing.xs,
+                      runSpacing: AppSpacing.xs,
+                      children: [
+                        ChoiceChip(
+                          label: const Text('Etiket yok'),
+                          selected: tag.isEmpty,
+                          onSelected: canEditFields
+                              ? (_) => setModal(() => tag = '')
+                              : null,
+                        ),
+                        for (final t in TaskTagCatalog.all)
+                          ChoiceChip(
+                            label: Text(t),
+                            selected: tag == t,
+                            onSelected: canEditFields
+                                ? (_) => setModal(() => tag = t)
+                                : null,
+                          ),
+                      ],
+                    ),
+                    const SizedBox(height: AppSpacing.sm),
                     InputDecorator(
                       decoration: const InputDecoration(
                         labelText: 'Kategori',
@@ -871,6 +898,7 @@ class _TasksScreenState extends ConsumerState<TasksScreen> {
             title: title,
             description: description,
             category: category,
+            tag: tag,
             earliestStart: earliestStart,
             dueDate: latestDelivery,
             status: status,
@@ -887,6 +915,7 @@ class _TasksScreenState extends ConsumerState<TasksScreen> {
               title: title,
               description: description,
               category: category,
+              tag: tag,
               earliestStart: earliestStart,
               dueDate: latestDelivery,
               status: status,
@@ -992,7 +1021,12 @@ class _TasksScreenState extends ConsumerState<TasksScreen> {
         : statusFiltered
             .where((t) => t.category.trim() == _categoryFilter)
             .toList();
-    final filtered = _orderedTasks(categoryFiltered);
+    final tagFiltered = _tagFilter == null
+        ? categoryFiltered
+        : categoryFiltered
+            .where((t) => TaskTagCatalog.normalize(t.tag) == _tagFilter)
+            .toList();
+    final filtered = _orderedTasks(tagFiltered);
     final canAssign =
         operator != null && RoleDegree.canAssignTasks(operator);
 
@@ -1119,6 +1153,43 @@ class _TasksScreenState extends ConsumerState<TasksScreen> {
                     children: [
                       FilterChip(
                         avatar: Icon(
+                          Icons.label_outline,
+                          size: 16,
+                          color: _tagFilter == null
+                              ? null
+                              : Theme.of(context)
+                                  .colorScheme
+                                  .onSurfaceVariant,
+                        ),
+                        label: const Text('Tüm etiketler'),
+                        selected: _tagFilter == null,
+                        onSelected: (_) => setState(() => _tagFilter = null),
+                      ),
+                      const SizedBox(width: AppSpacing.xs),
+                      for (final t in TaskTagCatalog.all) ...[
+                        FilterChip(
+                          label: Text(
+                            '${TaskTagCatalog.cardLabel(t)} '
+                            '(${tasks.where((task) => TaskTagCatalog.normalize(task.tag) == t).length})',
+                          ),
+                          selected: _tagFilter == t,
+                          onSelected: (_) => setState(() => _tagFilter = t),
+                        ),
+                        const SizedBox(width: AppSpacing.xs),
+                      ],
+                    ],
+                  ),
+                ),
+              ),
+              const SizedBox(height: AppSpacing.xs),
+              Padding(
+                padding: const EdgeInsets.symmetric(horizontal: AppSpacing.md),
+                child: SingleChildScrollView(
+                  scrollDirection: Axis.horizontal,
+                  child: Row(
+                    children: [
+                      FilterChip(
+                        avatar: Icon(
                           Icons.category_outlined,
                           size: 16,
                           color: _categoryFilter == null
@@ -1158,7 +1229,7 @@ class _TasksScreenState extends ConsumerState<TasksScreen> {
                         message: canAssign
                             ? 'Personele görev atayın. Atadığınız görevleri '
                                 'yalnızca siz ve atanan kişi görür. '
-                                'Kategori ve durum filtrelerini birlikte kullanabilirsiniz.'
+                                'Kategori, etiket ve durum filtrelerini birlikte kullanabilirsiniz.'
                             : 'Size atanmış görev bulunmuyor.',
                         icon: Icons.task_alt_outlined,
                         actionLabel: canAssign ? 'Görev Ata' : null,
@@ -1204,33 +1275,50 @@ class _TasksScreenState extends ConsumerState<TasksScreen> {
                                                 : null,
                                       ),
                                     ),
-                                    if (task.category.trim().isNotEmpty) ...[
+                                    if (task.category.trim().isNotEmpty ||
+                                        TaskTagCatalog.normalize(task.tag)
+                                            .isNotEmpty) ...[
                                       const SizedBox(height: 6),
-                                      Align(
-                                        alignment: Alignment.centerLeft,
-                                        child: Container(
-                                          padding: const EdgeInsets.symmetric(
-                                            horizontal: 8,
-                                            vertical: 3,
-                                          ),
-                                          decoration: BoxDecoration(
-                                            color: theme.colorScheme.primary
-                                                .withValues(alpha: 0.12),
-                                            borderRadius: AppRadii.sm,
-                                            border: Border.all(
-                                              color: theme.colorScheme.primary
-                                                  .withValues(alpha: 0.35),
+                                      Wrap(
+                                        spacing: 6,
+                                        runSpacing: 4,
+                                        children: [
+                                          if (TaskTagCatalog.normalize(task.tag)
+                                              .isNotEmpty)
+                                            _TaskTagBadge(
+                                              tag: TaskTagCatalog.normalize(
+                                                task.tag,
+                                              ),
                                             ),
-                                          ),
-                                          child: Text(
-                                            task.category.trim(),
-                                            style: theme.textTheme.labelSmall
-                                                ?.copyWith(
-                                              color: theme.colorScheme.primary,
-                                              fontWeight: FontWeight.w700,
+                                          if (task.category.trim().isNotEmpty)
+                                            Container(
+                                              padding:
+                                                  const EdgeInsets.symmetric(
+                                                horizontal: 8,
+                                                vertical: 3,
+                                              ),
+                                              decoration: BoxDecoration(
+                                                color: theme.colorScheme.primary
+                                                    .withValues(alpha: 0.12),
+                                                borderRadius: AppRadii.sm,
+                                                border: Border.all(
+                                                  color: theme
+                                                      .colorScheme.primary
+                                                      .withValues(alpha: 0.35),
+                                                ),
+                                              ),
+                                              child: Text(
+                                                task.category.trim(),
+                                                style: theme
+                                                    .textTheme.labelSmall
+                                                    ?.copyWith(
+                                                  color: theme
+                                                      .colorScheme.primary,
+                                                  fontWeight: FontWeight.w700,
+                                                ),
+                                              ),
                                             ),
-                                          ),
-                                        ),
+                                        ],
                                       ),
                                     ],
                                     if (task.description.isNotEmpty) ...[
@@ -1309,7 +1397,7 @@ class _TasksScreenState extends ConsumerState<TasksScreen> {
                                             _DateChip(
                                               label:
                                                   'Başlangıç ${task.earliestStart}',
-                                              color: AppColors.success,
+                                              color: AppColors.electricBlue,
                                             ),
                                           if (task.dueDate.isNotEmpty)
                                             _DateChip(
@@ -1677,6 +1765,33 @@ class _PersonPickSheetState extends State<_PersonPickSheet> {
             ],
           ),
         ),
+      ),
+    );
+  }
+}
+
+class _TaskTagBadge extends StatelessWidget {
+  const _TaskTagBadge({required this.tag});
+
+  final String tag;
+
+  @override
+  Widget build(BuildContext context) {
+    final accent = TaskTagCatalog.accentFor(tag);
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+      decoration: BoxDecoration(
+        color: accent.withValues(alpha: 0.14),
+        borderRadius: AppRadii.sm,
+        border: Border.all(color: accent.withValues(alpha: 0.45)),
+      ),
+      child: Text(
+        TaskTagCatalog.cardLabel(tag),
+        style: Theme.of(context).textTheme.labelSmall?.copyWith(
+              color: AppColors.statusInkOnCard(accent),
+              fontWeight: FontWeight.w800,
+              letterSpacing: 0.3,
+            ),
       ),
     );
   }

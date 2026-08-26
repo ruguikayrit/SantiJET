@@ -1247,29 +1247,31 @@ class _DayTeamsSection extends ConsumerWidget {
         )
         .toList();
 
-    if (selectable.isEmpty) {
+    if (selectable.isEmpty && catalogTeams.isNotEmpty) {
       if (!context.mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text(
-            catalogTeams.isEmpty
-                ? 'Önce Ayarlar → Ekipler’den ekip tanımlayın.'
-                : 'Bu gün için seçilebilecek ekip kalmadı.',
-          ),
-          action: catalogTeams.isEmpty
-              ? SnackBarAction(
-                  label: 'Ekipler',
-                  onPressed: () => context.push(AppRoutes.ekipler),
-                )
-              : null,
+        const SnackBar(
+          content: Text('Bu gün için seçilebilecek ekip kalmadı.'),
         ),
       );
       return;
     }
 
+    var modalTeams = <String>[...available];
     String? selectedTeam = existing?.teamName;
-    if (selectedTeam == null || !selectable.contains(selectedTeam)) {
-      selectedTeam = selectable.first;
+    if (selectedTeam != null &&
+        !modalTeams.any((t) => t.toLowerCase() == selectedTeam!.toLowerCase())) {
+      modalTeams.add(selectedTeam);
+      modalTeams.sort((a, b) => a.toLowerCase().compareTo(b.toLowerCase()));
+    }
+    if (selectedTeam == null ||
+        (usedTeamNames.contains(selectedTeam) && existing?.teamName != selectedTeam)) {
+      final pickable = modalTeams
+          .where(
+            (t) => existing?.teamName == t || !usedTeamNames.contains(t),
+          )
+          .toList();
+      selectedTeam = pickable.isNotEmpty ? pickable.first : null;
     }
     final companyCtrl = TextEditingController(
       text: existing?.company ?? '',
@@ -1291,8 +1293,7 @@ class _DayTeamsSection extends ConsumerWidget {
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
                 Text(
-                  'Firma adını yazın; Ayarlar’daki ekiplerden seçip '
-                  'çalışan sayısını girin.',
+                  'Firma adını yazın; listeden ekip seçin veya yeni ekip ekleyin.',
                   style: Theme.of(context).textTheme.bodySmall?.copyWith(
                         color: Theme.of(context).colorScheme.onSurfaceVariant,
                       ),
@@ -1311,24 +1312,78 @@ class _DayTeamsSection extends ConsumerWidget {
                   },
                 ),
                 const SizedBox(height: AppSpacing.sm),
-                DropdownButtonFormField<String>(
-                  value: selectedTeam,
-                  isExpanded: true,
-                  decoration: const InputDecoration(labelText: 'Ekip *'),
-                  items: [
-                    for (final t in selectable)
-                      DropdownMenuItem(value: t, child: Text(t)),
-                  ],
-                  onChanged: (v) {
-                    if (v == null) return;
-                    setModalState(() => selectedTeam = v);
+                Builder(
+                  builder: (context) {
+                    final pickable = modalTeams
+                        .where(
+                          (t) =>
+                              existing?.teamName == t ||
+                              !usedTeamNames.contains(t),
+                        )
+                        .toList();
+                    final value = selectedTeam != null &&
+                            pickable.any(
+                              (t) =>
+                                  t.toLowerCase() ==
+                                  selectedTeam!.toLowerCase(),
+                            )
+                        ? pickable.firstWhere(
+                            (t) =>
+                                t.toLowerCase() ==
+                                selectedTeam!.toLowerCase(),
+                          )
+                        : null;
+                    return DropdownButtonFormField<String>(
+                      value: value,
+                      isExpanded: true,
+                      decoration: const InputDecoration(labelText: 'Ekip *'),
+                      items: [
+                        for (final t in pickable)
+                          DropdownMenuItem(value: t, child: Text(t)),
+                      ],
+                      onChanged: pickable.isEmpty
+                          ? null
+                          : (v) {
+                              if (v == null) return;
+                              setModalState(() => selectedTeam = v);
+                            },
+                      validator: (v) {
+                        if (v == null || v.trim().isEmpty) {
+                          return 'Ekip seçin veya yeni ekip ekleyin';
+                        }
+                        return null;
+                      },
+                    );
                   },
-                  validator: (v) {
-                    if (v == null || v.trim().isEmpty) {
-                      return 'Ekip seçin';
-                    }
-                    return null;
-                  },
+                ),
+                const SizedBox(height: AppSpacing.xs),
+                Align(
+                  alignment: Alignment.centerLeft,
+                  child: TextButton.icon(
+                    onPressed: () async {
+                      final name = await _promptNewTeamName(context);
+                      if (name == null) return;
+                      ref.read(teamsProvider.notifier).add(name);
+                      setModalState(() {
+                        final exists = modalTeams.any(
+                          (t) => t.toLowerCase() == name.toLowerCase(),
+                        );
+                        if (!exists) {
+                          modalTeams = [...modalTeams, name]
+                            ..sort(
+                              (a, b) =>
+                                  a.toLowerCase().compareTo(b.toLowerCase()),
+                            );
+                        }
+                        if (existing?.teamName == name ||
+                            !usedTeamNames.contains(name)) {
+                          selectedTeam = name;
+                        }
+                      });
+                    },
+                    icon: const Icon(Icons.add, size: 18),
+                    label: const Text('Yeni ekip ekle'),
+                  ),
                 ),
                 const SizedBox(height: AppSpacing.sm),
                 TextFormField(
@@ -1366,6 +1421,8 @@ class _DayTeamsSection extends ConsumerWidget {
     countCtrl.dispose();
     if (saved != true || teamName == null || teamName.trim().isEmpty) return;
 
+    ref.read(teamsProvider.notifier).add(teamName.trim());
+
     final count = int.tryParse(countText.trim()) ?? 0;
     final company = companyText.trim();
     final notifier = ref.read(uninsuredTeamsProvider.notifier);
@@ -1386,6 +1443,44 @@ class _DayTeamsSection extends ConsumerWidget {
         company: company,
       );
     }
+  }
+
+  Future<String?> _promptNewTeamName(BuildContext context) async {
+    final ctrl = TextEditingController();
+    final sheetTheme = SJModal.sheetThemeOf(context);
+    final result = await showDialog<String>(
+      context: context,
+      builder: (ctx) => Theme(
+        data: sheetTheme,
+        child: AlertDialog(
+          backgroundColor: SJModal.sheetSurface,
+          title: const Text('Yeni ekip'),
+          content: TextField(
+            controller: ctrl,
+            autofocus: true,
+            textCapitalization: TextCapitalization.words,
+            decoration: const InputDecoration(
+              labelText: 'Ekip adı *',
+              hintText: 'Örn. Alçı Levha Uyg.',
+            ),
+            onSubmitted: (_) => Navigator.pop(ctx, ctrl.text),
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(ctx),
+              child: const Text('İptal'),
+            ),
+            FilledButton(
+              onPressed: () => Navigator.pop(ctx, ctrl.text),
+              child: const Text('Ekle'),
+            ),
+          ],
+        ),
+      ),
+    );
+    ctrl.dispose();
+    final trimmed = titleCaseTr(result?.trim() ?? '');
+    return trimmed.isEmpty ? null : trimmed;
   }
 
   @override
@@ -1421,22 +1516,12 @@ class _DayTeamsSection extends ConsumerWidget {
           const SizedBox(height: AppSpacing.sm),
           Text(
             catalogTeams.isEmpty
-                ? 'Ayarlar → Ekipler’de ekip tanımlayın; ardından çalışan sayısı ekleyin.'
+                ? 'Ekip ekle ile yeni ekip tanımlayıp çalışan sayısı girin.'
                 : 'Açılır listeden ekip seçip çalışan sayısı girin.',
             style: theme.textTheme.bodySmall?.copyWith(
               color: theme.colorScheme.onSurfaceVariant,
             ),
           ),
-          if (catalogTeams.isEmpty) ...[
-            const SizedBox(height: AppSpacing.sm),
-            Align(
-              alignment: Alignment.centerLeft,
-              child: TextButton(
-                onPressed: () => context.push(AppRoutes.ekipler),
-                child: const Text('Ekiplere git'),
-              ),
-            ),
-          ],
         ] else ...[
           const SizedBox(height: AppSpacing.sm),
           for (final entry in entries)

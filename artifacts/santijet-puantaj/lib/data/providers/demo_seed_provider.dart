@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../core/utils/id_gen.dart';
 import '../../core/utils/puantaj_date.dart';
 import '../../domain/catalogs/task_categories.dart';
+import '../../domain/catalogs/task_tags.dart';
 import '../../domain/entities/company_info.dart';
 import '../../domain/entities/daily_report.dart';
 import '../../domain/entities/person.dart';
@@ -509,6 +510,7 @@ class DemoSeedController {
     const taskSpecs = <({
       String title,
       String category,
+      String tag,
       String assigneeName,
       int dueOffset,
       TaskStatus status,
@@ -517,6 +519,7 @@ class DemoSeedController {
       (
         title: 'Epoksi malzemesi siparişi',
         category: 'Satın Alma',
+        tag: TaskTagCatalog.insaat,
         assigneeName: 'Sinan Çakır',
         dueOffset: 2,
         status: TaskStatus.todo,
@@ -525,6 +528,7 @@ class DemoSeedController {
       (
         title: 'Havalandırma kanalı tedarik',
         category: 'Satın Alma',
+        tag: TaskTagCatalog.mekanik,
         assigneeName: 'Murat Elektrik',
         dueOffset: 5,
         status: TaskStatus.todo,
@@ -533,6 +537,7 @@ class DemoSeedController {
       (
         title: 'Epoksi öncesi duvar hazırlık',
         category: 'Saha',
+        tag: TaskTagCatalog.insaat,
         assigneeName: 'Can Demir',
         dueOffset: 0,
         status: TaskStatus.doing,
@@ -541,6 +546,7 @@ class DemoSeedController {
       (
         title: 'Liftlerin zımpara ve boyası',
         category: 'Saha',
+        tag: TaskTagCatalog.insaat,
         assigneeName: 'Burak Yılmaz',
         dueOffset: -1,
         status: TaskStatus.todo,
@@ -549,6 +555,7 @@ class DemoSeedController {
       (
         title: '25 cm rulo uygulama',
         category: 'Saha',
+        tag: TaskTagCatalog.insaat,
         assigneeName: 'Emre Kaya',
         dueOffset: 1,
         status: TaskStatus.todo,
@@ -557,6 +564,7 @@ class DemoSeedController {
       (
         title: 'Haftalık ilerleme raporu',
         category: 'Ofis',
+        tag: '',
         assigneeName: 'Sinan Çakır',
         dueOffset: 4,
         status: TaskStatus.todo,
@@ -565,6 +573,7 @@ class DemoSeedController {
       (
         title: 'Alt yüklenici koordinasyon',
         category: 'Görüşme',
+        tag: '',
         assigneeName: 'Uğur Tiryaki',
         dueOffset: 6,
         status: TaskStatus.todo,
@@ -573,6 +582,7 @@ class DemoSeedController {
       (
         title: 'Havalandırma tesisatı montaj',
         category: 'Saha',
+        tag: TaskTagCatalog.mekanik,
         assigneeName: 'Murat Elektrik',
         dueOffset: 7,
         status: TaskStatus.todo,
@@ -581,10 +591,20 @@ class DemoSeedController {
       (
         title: 'Temel kalıp sökümü',
         category: 'Saha',
+        tag: TaskTagCatalog.insaat,
         assigneeName: 'Can Demir',
         dueOffset: -3,
         status: TaskStatus.done,
         description: '[DEMO] Tamamlanan örnek görev.',
+      ),
+      (
+        title: 'Zemin kat aydınlatma tesisatı',
+        category: 'Saha',
+        tag: TaskTagCatalog.elektrik,
+        assigneeName: 'Murat Elektrik',
+        dueOffset: 3,
+        status: TaskStatus.todo,
+        description: 'Bodrum koridor armatür ve hat çekimi.',
       ),
     ];
 
@@ -598,6 +618,7 @@ class DemoSeedController {
         assignee: assignee,
         description: spec.description,
         category: spec.category,
+        tag: spec.tag,
         dueDate: _day(spec.dueOffset),
         status: spec.status,
       );

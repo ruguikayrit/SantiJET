@@ -7,6 +7,7 @@ import '../../core/theme/app_radii.dart';
 import '../../core/theme/app_spacing.dart';
 import '../../core/utils/puantaj_date.dart';
 import '../../data/providers/tasks_provider.dart';
+import '../../domain/catalogs/task_tags.dart';
 import '../../domain/entities/site_task.dart';
 import '../../domain/enums/task_status.dart';
 
@@ -112,6 +113,12 @@ class _HomeTaskSummaryDialog extends ConsumerWidget {
                     label: task.category.trim(),
                     color: AppColors.electricBlue,
                     icon: Icons.category_outlined,
+                  ),
+                if (TaskTagCatalog.normalize(task.tag).isNotEmpty)
+                  SJStatusBadge(
+                    label: TaskTagCatalog.cardLabel(task.tag),
+                    color: TaskTagCatalog.accentFor(task.tag),
+                    icon: Icons.label_outline,
                   ),
                 if (task.status != TaskStatus.done && urgency.label.isNotEmpty)
                   SJStatusBadge(

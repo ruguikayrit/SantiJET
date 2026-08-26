@@ -15,6 +15,7 @@ import '../../core/utils/text_format.dart';
 import '../../data/providers/app_data_provider.dart';
 import '../../data/providers/tasks_provider.dart';
 import '../../domain/catalogs/task_categories.dart';
+import '../../domain/catalogs/task_tags.dart';
 import '../../domain/entities/project.dart';
 import '../../domain/entities/site_task.dart';
 import '../../domain/enums/attendance_status.dart';
@@ -84,6 +85,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
     final attendance = ref.watch(attendanceProvider);
     final urgentTasks = ref.watch(upcomingUrgentTasksProvider);
     final urgentByCategory = ref.watch(urgentTaskCategorySummariesProvider);
+    final urgentByTag = ref.watch(urgentTaskTagSummariesProvider);
     if (project == null) {
       return Scaffold(
         body: SafeArea(
@@ -240,6 +242,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                     child: _HomeUrgentTasksSection(
                       tasks: urgentTasks,
                       categorySummaries: urgentByCategory,
+                      tagSummaries: urgentByTag,
                     ),
                   ),
                 ]),
@@ -261,10 +264,12 @@ class _HomeUrgentTasksSection extends StatefulWidget {
   const _HomeUrgentTasksSection({
     required this.tasks,
     required this.categorySummaries,
+    required this.tagSummaries,
   });
 
   final List<SiteTask> tasks;
   final List<UrgentTaskCategorySummary> categorySummaries;
+  final List<UrgentTaskTagSummary> tagSummaries;
 
   @override
   State<_HomeUrgentTasksSection> createState() => _HomeUrgentTasksSectionState();
@@ -272,6 +277,7 @@ class _HomeUrgentTasksSection extends StatefulWidget {
 
 class _HomeUrgentTasksSectionState extends State<_HomeUrgentTasksSection> {
   String? _selectedCategory;
+  String? _selectedTag;
 
   String _categoryKey(SiteTask task) {
     return task.category.trim().isEmpty
@@ -280,8 +286,14 @@ class _HomeUrgentTasksSectionState extends State<_HomeUrgentTasksSection> {
   }
 
   List<SiteTask> get _filteredTasks {
-    if (_selectedCategory == null) return widget.tasks;
-    return widget.tasks
+    var list = widget.tasks;
+    if (_selectedTag != null) {
+      list = list
+          .where((t) => TaskTagCatalog.normalize(t.tag) == _selectedTag)
+          .toList();
+    }
+    if (_selectedCategory == null) return list;
+    return list
         .where((t) => _categoryKey(t) == _selectedCategory)
         .toList();
   }
@@ -294,6 +306,10 @@ class _HomeUrgentTasksSectionState extends State<_HomeUrgentTasksSection> {
             .any((s) => s.category == _selectedCategory)) {
       _selectedCategory = null;
     }
+    if (_selectedTag != null &&
+        !widget.tagSummaries.any((s) => s.tag == _selectedTag)) {
+      _selectedTag = null;
+    }
   }
 
   @override
@@ -301,7 +317,39 @@ class _HomeUrgentTasksSectionState extends State<_HomeUrgentTasksSection> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
+        LayoutBuilder(
+          builder: (context, constraints) {
+            const spacing = AppSpacing.xs;
+            const columns = 3;
+            final itemWidth =
+                (constraints.maxWidth - spacing * (columns - 1)) / columns;
+            return Wrap(
+              spacing: spacing,
+              runSpacing: spacing,
+              children: [
+                for (final summary in widget.tagSummaries)
+                  SizedBox(
+                    width: itemWidth,
+                    child: _MiniStat(
+                      label: TaskTagCatalog.cardLabel(summary.tag),
+                      value: '${summary.count}',
+                      color: TaskTagCatalog.accentFor(summary.tag),
+                      selected: _selectedTag == summary.tag,
+                      onTap: () {
+                        setState(() {
+                          _selectedTag = _selectedTag == summary.tag
+                              ? null
+                              : summary.tag;
+                        });
+                      },
+                    ),
+                  ),
+              ],
+            );
+          },
+        ),
         if (widget.categorySummaries.isNotEmpty) ...[
+          const SizedBox(height: AppSpacing.sm),
           LayoutBuilder(
             builder: (context, constraints) {
               const spacing = AppSpacing.xs;
@@ -334,11 +382,12 @@ class _HomeUrgentTasksSectionState extends State<_HomeUrgentTasksSection> {
               );
             },
           ),
-          const SizedBox(height: AppSpacing.sm),
         ],
+        const SizedBox(height: AppSpacing.sm),
         _HomeUrgentTasksList(
           tasks: _filteredTasks,
           filteredByCategory: _selectedCategory,
+          filteredByTag: _selectedTag,
         ),
       ],
     );
@@ -349,19 +398,21 @@ class _HomeUrgentTasksList extends StatelessWidget {
   const _HomeUrgentTasksList({
     required this.tasks,
     this.filteredByCategory,
+    this.filteredByTag,
   });
 
   final List<SiteTask> tasks;
   final String? filteredByCategory;
+  final String? filteredByTag;
 
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     if (tasks.isEmpty) {
       return Text(
-        filteredByCategory == null
+        filteredByCategory == null && filteredByTag == null
             ? '1 hafta içinde teslim tarihi olan açık görev yok.'
-            : 'Bu grupta acil görev yok.',
+            : 'Bu filtrede acil görev yok.',
         style: theme.textTheme.bodyMedium,
       );
     }

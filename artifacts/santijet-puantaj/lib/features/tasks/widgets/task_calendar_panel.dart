@@ -8,7 +8,7 @@ import '../../../core/theme/app_spacing.dart';
 import '../../../core/utils/puantaj_date.dart';
 import '../../../domain/entities/site_task.dart';
 
-/// Açılır ay takvimi — yeşil: başlangıç, kırmızı: planlanan bitiş.
+/// Açılır ay takvimi — mavi: başlangıç, kırmızı: planlanan bitiş.
 class TaskCalendarPanel extends StatefulWidget {
   const TaskCalendarPanel({
     super.key,
@@ -179,7 +179,7 @@ class _TaskCalendarPanelState extends State<TaskCalendarPanel> {
                           Text(
                             _expanded
                                 ? label
-                                : 'Yeşil başlangıç · kırmızı planlanan bitiş',
+                                : 'Mavi başlangıç · kırmızı planlanan bitiş',
                             style: theme.textTheme.labelSmall,
                           ),
                         ],
@@ -256,7 +256,7 @@ class _TaskCalendarPanelState extends State<TaskCalendarPanel> {
                     const SizedBox(height: AppSpacing.sm),
                     Row(
                       children: [
-                        _LegendDot(color: AppColors.success, label: 'Başlangıç'),
+                        _LegendDot(color: AppColors.electricBlue, label: 'Başlangıç'),
                         const SizedBox(width: AppSpacing.md),
                         _LegendDot(
                           color: AppColors.critical,
@@ -391,7 +391,7 @@ class _DayCell extends StatelessWidget {
     if (isStart && isDue) {
       bg = null; // özel boyama
     } else if (isStart) {
-      bg = AppColors.success.withValues(alpha: 0.35);
+      bg = AppColors.electricBlue.withValues(alpha: 0.35);
     } else if (isDue) {
       bg = AppColors.critical.withValues(alpha: 0.35);
     }
@@ -413,7 +413,7 @@ class _DayCell extends StatelessWidget {
                       Expanded(
                         child: Container(
                           decoration: BoxDecoration(
-                            color: AppColors.success.withValues(alpha: 0.4),
+                            color: AppColors.electricBlue.withValues(alpha: 0.4),
                             borderRadius: const BorderRadius.horizontal(
                               left: Radius.circular(8),
                             ),

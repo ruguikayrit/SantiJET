@@ -6,6 +6,7 @@ import 'package:hive/hive.dart';
 import '../../core/utils/id_gen.dart';
 import '../../core/utils/puantaj_date.dart';
 import '../../domain/catalogs/task_categories.dart';
+import '../../domain/catalogs/task_tags.dart';
 import '../../domain/entities/person.dart';
 import '../../domain/entities/site_task.dart';
 import '../../domain/enums/task_status.dart';
@@ -72,6 +73,7 @@ class TasksNotifier extends StateNotifier<List<SiteTask>> {
     required Person assignee,
     String description = '',
     String category = '',
+    String tag = '',
     String earliestStart = '',
     String dueDate = '',
     TaskStatus status = TaskStatus.todo,
@@ -87,6 +89,7 @@ class TasksNotifier extends StateNotifier<List<SiteTask>> {
       title: title.trim(),
       description: description.trim(),
       category: category.trim(),
+      tag: TaskTagCatalog.normalize(tag),
       assignee: assignee.name.trim(),
       assigneePersonId: assignee.id,
       assignerPersonId: assigner.id,
@@ -281,4 +284,22 @@ final urgentTaskCategorySummariesProvider =
     ordered.add((category: e.key, count: e.value));
   }
   return ordered;
+});
+
+/// Acil görevler — disiplin etiketi başına adet (İnşaat / Elektrik / Mekanik).
+typedef UrgentTaskTagSummary = ({String tag, int count});
+
+final urgentTaskTagSummariesProvider =
+    Provider<List<UrgentTaskTagSummary>>((ref) {
+  final urgent = ref.watch(upcomingUrgentTasksProvider);
+  final counts = {for (final t in TaskTagCatalog.all) t: 0};
+  for (final task in urgent) {
+    final tag = TaskTagCatalog.normalize(task.tag);
+    if (tag.isNotEmpty && counts.containsKey(tag)) {
+      counts[tag] = counts[tag]! + 1;
+    }
+  }
+  return [
+    for (final tag in TaskTagCatalog.all) (tag: tag, count: counts[tag]!),
+  ];
 });

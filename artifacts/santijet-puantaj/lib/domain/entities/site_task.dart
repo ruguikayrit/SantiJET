@@ -47,6 +47,7 @@ class SiteTask extends Equatable {
     required this.title,
     this.description = '',
     this.category = '',
+    this.tag = '',
     this.assignee = '',
     this.assigneePersonId = '',
     this.assignerPersonId = '',
@@ -67,6 +68,9 @@ class SiteTask extends Equatable {
 
   /// Kullanıcı tanımlı kategori (ör. Satın Alma, Saha, Ofis).
   final String category;
+
+  /// Disiplin etiketi — İnşaat, Elektrik veya Mekanik.
+  final String tag;
 
   /// Atanan personel görünen adı (önbellek).
   final String assignee;
@@ -116,6 +120,7 @@ class SiteTask extends Equatable {
     String? title,
     String? description,
     String? category,
+    String? tag,
     String? assignee,
     String? assigneePersonId,
     String? assignerPersonId,
@@ -134,6 +139,7 @@ class SiteTask extends Equatable {
       title: title ?? this.title,
       description: description ?? this.description,
       category: category ?? this.category,
+      tag: tag ?? this.tag,
       assignee: assignee ?? this.assignee,
       assigneePersonId: assigneePersonId ?? this.assigneePersonId,
       assignerPersonId: assignerPersonId ?? this.assignerPersonId,
@@ -154,6 +160,7 @@ class SiteTask extends Equatable {
         'title': title,
         'description': description,
         'category': category,
+        'tag': tag,
         'assignee': assignee,
         'assigneePersonId': assigneePersonId,
         'assignerPersonId': assignerPersonId,
@@ -183,6 +190,7 @@ class SiteTask extends Equatable {
       title: json['title'] as String? ?? '',
       description: json['description'] as String? ?? '',
       category: json['category'] as String? ?? '',
+      tag: json['tag'] as String? ?? '',
       assignee: json['assignee'] as String? ?? '',
       assigneePersonId: json['assigneePersonId'] as String? ?? '',
       assignerPersonId: json['assignerPersonId'] as String? ?? '',
@@ -208,6 +216,7 @@ class SiteTask extends Equatable {
         title,
         description,
         category,
+        tag,
         assignee,
         assigneePersonId,
         assignerPersonId,
