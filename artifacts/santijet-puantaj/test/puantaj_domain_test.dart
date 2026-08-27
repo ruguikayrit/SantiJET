@@ -452,11 +452,11 @@ void main() {
 
       expect(report.plainTable, isTrue);
       expect(report.headers, [
-        'Firma Adı',
-        'Ekip Adı',
-        'Toplam çalışan sayısı',
-        'Toplam çalışılan gün sayısı',
-        'Ortalama çalışan sayısı',
+        'Firma\nAdı',
+        'Ekip\nAdı',
+        'Adam.gün\n/gün',
+        'Çalışılan\ngün',
+        'Ortalama\nçalışan',
       ]);
       expect(report.rows, [
         ['Bsd İnşaat', 'Alçısıva', '2', '1', '2'],

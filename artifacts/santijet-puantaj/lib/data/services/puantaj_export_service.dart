@@ -677,7 +677,11 @@ class PuantajExportService {
           decoration: const pw.BoxDecoration(color: _electricBlueSoft),
           children: [
             for (var i = 0; i < headers.length; i++)
-              cell(headers[i], header: true, first: i == 0),
+              cell(
+                headers[i].replaceAll('\n', ' '),
+                header: true,
+                first: i == 0,
+              ),
           ],
         ),
         for (final row in report.rows)
@@ -706,7 +710,11 @@ class PuantajExportService {
     );
     sheet.appendRow([TextCellValue(report.subtitle)]);
     sheet.appendRow([TextCellValue('')]);
-    sheet.appendRow(report.headers.map(TextCellValue.new).toList());
+    sheet.appendRow(
+      report.headers
+          .map((h) => TextCellValue(h.replaceAll('\n', ' ')))
+          .toList(),
+    );
     for (final row in report.rows) {
       sheet.appendRow(row.map(TextCellValue.new).toList());
     }

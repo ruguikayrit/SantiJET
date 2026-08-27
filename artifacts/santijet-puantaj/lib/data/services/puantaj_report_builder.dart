@@ -352,6 +352,7 @@ abstract final class PuantajReportBuilder {
           attendance: projectAtt,
           uninsured: projectUninsured,
           days: [anchorDate],
+          period: period,
           periodLabel: 'Günlük',
           rangeLabel: anchorDate,
           fileStem: 'ekip-gunluk-${_fileDate(anchorDate)}',
@@ -363,6 +364,7 @@ abstract final class PuantajReportBuilder {
           attendance: projectAtt,
           uninsured: projectUninsured,
           days: days,
+          period: period,
           periodLabel: 'Haftalık',
           rangeLabel: PuantajDate.weekLabel(days),
           fileStem: 'ekip-haftalik-${_fileDate(anchorDate)}',
@@ -374,6 +376,7 @@ abstract final class PuantajReportBuilder {
           attendance: projectAtt,
           uninsured: projectUninsured,
           days: days,
+          period: period,
           periodLabel: 'Aylık',
           rangeLabel: PuantajDate.monthLabel(anchorDate),
           fileStem: 'ekip-aylik-${_fileMonth(anchorDate)}',
@@ -394,13 +397,19 @@ abstract final class PuantajReportBuilder {
     return t;
   }
 
-  /// Firma Adı + Ekip Adı + toplam / gün / ortalama çalışan.
+  /// Firma · Ekip · adam.gün · çalışılan gün · ortalama çalışan.
+  ///
+  /// - Toplam çalışan (= adam.gün/hafta veya /ay): dönemde ekibin harcadığı
+  ///   toplam adam.gün.
+  /// - Çalışılan gün: ekibin iş için çalıştığı gün sayısı.
+  /// - Ortalama: adam.gün / çalışılan gün.
   static PuantajReportData _ekipTable({
     required String projectName,
     required List<Person> people,
     required List<Attendance> attendance,
     required List<UninsuredTeamEntry> uninsured,
     required List<String> days,
+    required PuantajReportPeriod period,
     required String periodLabel,
     required String rangeLabel,
     required String fileStem,
@@ -413,14 +422,11 @@ abstract final class PuantajReportBuilder {
 
     /// Firma Adı → Ekip Adı → gün baş sayıları
     final dailyCounts = <String, Map<String, List<int>>>{};
-    /// Firma Adı → Ekip Adı → dönemde sayılan benzersiz personel
-    final uniquePeople = <String, Map<String, Set<String>>>{};
 
     void ensureTeam(String company, String team) {
       dailyCounts
           .putIfAbsent(company, () => {})
           .putIfAbsent(team, () => List<int>.filled(days.length, 0));
-      uniquePeople.putIfAbsent(company, () => {}).putIfAbsent(team, () => {});
     }
 
     void addDaily(String company, String team, int dayIndex, int n) {
@@ -442,7 +448,6 @@ abstract final class PuantajReportBuilder {
         final company = _ekipCompanyLabel(p.company);
         final team = _ekipTeamLabel(p.team);
         addDaily(company, team, di, 1);
-        uniquePeople[company]![team]!.add(p.id);
       }
       for (final e in uninsured.where((e) => e.date == d)) {
         addDaily(
@@ -461,16 +466,20 @@ abstract final class PuantajReportBuilder {
         return a.compareTo(b);
       });
 
-    const headers = [
-      'Firma Adı',
-      'Ekip Adı',
-      'Toplam çalışan sayısı',
-      'Toplam çalışılan gün sayısı',
-      'Ortalama çalışan sayısı',
+    final adamGunHeader = switch (period) {
+      PuantajReportPeriod.daily => 'Adam.gün\n/gün',
+      PuantajReportPeriod.weekly => 'Adam.gün\n/hafta',
+      PuantajReportPeriod.monthly => 'Adam.gün\n/ay',
+    };
+    final headers = [
+      'Firma\nAdı',
+      'Ekip\nAdı',
+      adamGunHeader,
+      'Çalışılan\ngün',
+      'Ortalama\nçalışan',
     ];
     final rows = <List<String>>[];
     var grandPersonDays = 0;
-    var grandWorkers = 0;
     var grandDaysWorked = 0;
 
     String fmtAvg(double v) =>
@@ -480,24 +489,22 @@ abstract final class PuantajReportBuilder {
       final teams = dailyCounts[company]!.keys.toList()..sort();
       for (final team in teams) {
         final counts = dailyCounts[company]![team]!;
+        // Toplam çalışan = dönemde harcanan toplam adam.gün.
         final personDays = counts.fold<int>(0, (s, n) => s + n);
         if (personDays == 0) continue;
 
+        // Çalışma olan gün sayısı.
         final daysWorked = counts.where((n) => n > 0).length;
-        final unique = uniquePeople[company]?[team]?.length ?? 0;
-        // Benzersiz personel veya günlük tepe baş sayısı (ekip kaydı).
-        final peak = counts.fold<int>(0, (m, n) => n > m ? n : m);
-        final totalWorkers = unique > peak ? unique : peak;
+        // Ortalama = adam.gün / çalışılan gün.
         final avg = daysWorked > 0 ? personDays / daysWorked : 0.0;
 
         grandPersonDays += personDays;
-        grandWorkers += totalWorkers;
         grandDaysWorked += daysWorked;
 
         rows.add([
           company,
           team,
-          '$totalWorkers',
+          '$personDays',
           '$daysWorked',
           fmtAvg(avg),
         ]);
@@ -511,13 +518,13 @@ abstract final class PuantajReportBuilder {
       headers: headers,
       rows: rows,
       summaryLines: [
-        'Toplam çalışan: $grandWorkers',
         if (singleDay)
           'Genel toplam: $grandPersonDays kişi'
         else ...[
+          'Toplam adam.gün: $grandPersonDays',
           'Toplam çalışılan gün (satır toplamı): $grandDaysWorked',
-          'Gün-kişi toplamı: $grandPersonDays',
         ],
+        'Ortalama = adam.gün ÷ çalışılan gün',
         'Sayım: Mevcut, Yarım, Giriş, Çıkış (ekip kaydı çalışan sayısı dahil)',
       ],
       landscape: landscape,

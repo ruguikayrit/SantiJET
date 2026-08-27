@@ -207,8 +207,11 @@ class PeriodSiteReportExportService {
         style: const pw.TextStyle(fontSize: 9, color: _inkMuted),
       );
     }
+    final flatHeaders = [
+      for (final h in headers) h.replaceAll('\n', ' '),
+    ];
     return pw.TableHelper.fromTextArray(
-      headers: headers,
+      headers: flatHeaders,
       data: rows,
       headerStyle: pw.TextStyle(
         fontWeight: pw.FontWeight.bold,
@@ -326,7 +329,7 @@ class PeriodSiteReportExportService {
     for (var c = 0; c < headers.length; c++) {
       sheet
           .cell(CellIndex.indexByColumnRow(columnIndex: c, rowIndex: 0))
-          .value = TextCellValue(headers[c]);
+          .value = TextCellValue(headers[c].replaceAll('\n', ' '));
     }
     for (var r = 0; r < rows.length; r++) {
       for (var c = 0; c < rows[r].length; c++) {

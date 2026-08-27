@@ -853,14 +853,23 @@ class _DailyViewState extends State<_DailyView> {
                     Icon(
                       Icons.apartment_outlined,
                       size: 14,
-                      color: theme.colorScheme.primary,
+                      color: AppColors.statusInkOnChrome(
+                        AppColors.useDarkChrome
+                            ? AppColors.electricBlueLight
+                            : AppColors.electricBlue,
+                      ),
                     ),
                     const SizedBox(width: AppSpacing.xs),
                     Expanded(
                       child: Text(
                         group.company,
                         style: theme.textTheme.titleSmall?.copyWith(
-                          fontWeight: FontWeight.w600,
+                          color: AppColors.statusInkOnChrome(
+                            AppColors.useDarkChrome
+                                ? AppColors.electricBlueLight
+                                : AppColors.electricBlue,
+                          ),
+                          fontWeight: FontWeight.w700,
                         ),
                       ),
                     ),
@@ -869,7 +878,11 @@ class _DailyViewState extends State<_DailyView> {
                 subtitle: Text(
                   'Firma Adı',
                   style: theme.textTheme.labelSmall?.copyWith(
-                    color: theme.colorScheme.onSurfaceVariant,
+                    color: AppColors.statusInkOnChrome(
+                      AppColors.useDarkChrome
+                          ? AppColors.electricBlueLight
+                          : AppColors.electricBlue,
+                    ).withValues(alpha: 0.75),
                   ),
                 ),
                 trailing: Text(
@@ -890,13 +903,18 @@ class _DailyViewState extends State<_DailyView> {
                           Icon(
                             Icons.groups_outlined,
                             size: 14,
-                            color: theme.colorScheme.primary,
+                            color: AppColors.statusInkOnChrome(
+                              AppColors.warning,
+                            ),
                           ),
                           const SizedBox(width: AppSpacing.xs),
                           Expanded(
                             child: Text(
                               teamGroup.team,
                               style: theme.textTheme.titleSmall?.copyWith(
+                                color: AppColors.statusInkOnChrome(
+                                  AppColors.warning,
+                                ),
                                 fontWeight: FontWeight.w600,
                               ),
                             ),
@@ -906,7 +924,9 @@ class _DailyViewState extends State<_DailyView> {
                       subtitle: Text(
                         'Ekip',
                         style: theme.textTheme.labelSmall?.copyWith(
-                          color: theme.colorScheme.onSurfaceVariant,
+                          color: AppColors.statusInkOnChrome(
+                            AppColors.warning,
+                          ).withValues(alpha: 0.75),
                         ),
                       ),
                       trailing: Text(
@@ -2271,7 +2291,11 @@ class _CetvelView extends ConsumerWidget {
                           subtitle: Text(
                             'Firma Adı',
                             style: theme.textTheme.labelSmall?.copyWith(
-                              color: theme.colorScheme.onSurfaceVariant,
+                              color: AppColors.statusInkOnChrome(
+                                AppColors.useDarkChrome
+                                    ? AppColors.electricBlueLight
+                                    : AppColors.electricBlue,
+                              ).withValues(alpha: 0.75),
                             ),
                           ),
                           trailing: Text(
@@ -2286,13 +2310,18 @@ class _CetvelView extends ConsumerWidget {
                                 title: Text(
                                   teamGroup.team,
                                   style: theme.textTheme.labelMedium?.copyWith(
+                                    color: AppColors.statusInkOnChrome(
+                                      AppColors.warning,
+                                    ),
                                     fontWeight: FontWeight.w600,
                                   ),
                                 ),
                                 subtitle: Text(
                                   'Ekip',
                                   style: theme.textTheme.labelSmall?.copyWith(
-                                    color: theme.colorScheme.onSurfaceVariant,
+                                    color: AppColors.statusInkOnChrome(
+                                      AppColors.warning,
+                                    ).withValues(alpha: 0.75),
                                   ),
                                 ),
                                 trailing: Text(
@@ -2339,11 +2368,11 @@ class _CetvelView extends ConsumerWidget {
               PeriodTeamSummaryTable(
                 headers: ekipReport?.headers ??
                     const [
-                      'Firma Adı',
-                      'Ekip Adı',
-                      'Toplam çalışan sayısı',
-                      'Toplam çalışılan gün sayısı',
-                      'Ortalama çalışan sayısı',
+                      'Firma\nAdı',
+                      'Ekip\nAdı',
+                      'Adam.gün\n/hafta',
+                      'Çalışılan\ngün',
+                      'Ortalama\nçalışan',
                     ],
                 rows: ekipReport?.rows ?? const [],
               ),

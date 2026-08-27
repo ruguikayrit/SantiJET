@@ -256,18 +256,18 @@ class _HeaderCell extends StatelessWidget {
         border: Border.all(color: AppColors.electricBlue),
       ),
       child: Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 6),
+        padding: const EdgeInsets.symmetric(horizontal: 2, vertical: 5),
         child: Text(
           label,
           textAlign: TextAlign.center,
-          maxLines: 1,
+          maxLines: 2,
           overflow: TextOverflow.ellipsis,
           style: const TextStyle(
             color: AppColors.inkPrimary,
             fontWeight: FontWeight.w700,
-            fontSize: 10,
-            letterSpacing: 0.15,
-            height: 1.1,
+            fontSize: 9,
+            letterSpacing: 0.1,
+            height: 1.15,
           ),
         ),
       ),
@@ -712,6 +712,8 @@ class PeriodTeamSummaryTable extends StatelessWidget {
     final labelHeaders = [
       for (final h in headers) h.toUpperCase(),
     ];
+    // 5 sütun telefon genişliğinde eşit paylaşım.
+    final flexes = List<int>.filled(headers.length, 2);
 
     return Theme(
       data: theme,
@@ -726,13 +728,13 @@ class PeriodTeamSummaryTable extends StatelessWidget {
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
             Padding(
-              padding: const EdgeInsets.fromLTRB(8, 6, 8, 4),
+              padding: const EdgeInsets.fromLTRB(6, 6, 6, 4),
               child: _HeaderRow(
                 cells: [
                   for (var i = 0; i < labelHeaders.length; i++)
                     _HeaderCell(
                       labelHeaders[i],
-                      flex: i < 2 ? 3 : 2,
+                      flex: flexes[i],
                     ),
                 ],
               ),
@@ -752,22 +754,24 @@ class PeriodTeamSummaryTable extends StatelessWidget {
               for (final row in rows)
                 Container(
                   padding: const EdgeInsets.symmetric(
-                    horizontal: 10,
-                    vertical: 9,
+                    horizontal: 6,
+                    vertical: 8,
                   ),
                   decoration: BoxDecoration(
                     border: Border(bottom: BorderSide(color: border)),
                   ),
                   child: Row(
                     children: [
-                      for (var i = 0; i < headers.length; i++)
+                      for (var i = 0; i < headers.length; i++) ...[
+                        if (i > 0) const SizedBox(width: 4),
                         Expanded(
-                          flex: i < 2 ? 3 : 2,
+                          flex: flexes[i],
                           child: Text(
                             i < row.length ? row[i] : '—',
                             textAlign:
                                 i < 2 ? TextAlign.start : TextAlign.center,
                             style: theme.textTheme.labelSmall?.copyWith(
+                              fontSize: 11,
                               fontWeight:
                                   i < 2 ? FontWeight.w600 : FontWeight.w700,
                             ),
@@ -775,6 +779,7 @@ class PeriodTeamSummaryTable extends StatelessWidget {
                             overflow: TextOverflow.ellipsis,
                           ),
                         ),
+                      ],
                     ],
                   ),
                 ),
