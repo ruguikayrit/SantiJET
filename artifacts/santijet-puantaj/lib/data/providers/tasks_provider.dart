@@ -155,11 +155,12 @@ class TasksNotifier extends StateNotifier<List<SiteTask>> {
     final oldName = from.trim();
     final newName = to.trim();
     if (oldName.isEmpty || newName.isEmpty || oldName == newName) return 0;
+    final oldKey = oldName.toLowerCase();
     final now = DateTime.now();
     var count = 0;
     final next = <SiteTask>[];
     for (final t in state) {
-      if (t.category.trim() == oldName) {
+      if (t.category.trim().toLowerCase() == oldKey) {
         next.add(t.copyWith(category: newName, updatedAt: now));
         count++;
       } else {

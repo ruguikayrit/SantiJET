@@ -181,6 +181,27 @@ class YevmiyeliIsNotifier extends StateNotifier<List<YevmiyeliIsKaydi>> {
     if (count > 0) _persist();
     return count;
   }
+
+  /// Katalog meslek adı değişince yevmiyeli kayıtlarını günceller.
+  int reassignProfession(String from, String to) {
+    final oldName = from.trim();
+    final newName = to.trim();
+    if (oldName.isEmpty || newName.isEmpty) return 0;
+    final oldKey = oldName.toLowerCase();
+    var count = 0;
+    state = [
+      for (final e in state)
+        if (e.profession.trim().toLowerCase() == oldKey)
+          () {
+            count++;
+            return e.copyWith(profession: newName);
+          }()
+        else
+          e,
+    ];
+    if (count > 0) _persist();
+    return count;
+  }
 }
 
 final yevmiyeliIsProvider =

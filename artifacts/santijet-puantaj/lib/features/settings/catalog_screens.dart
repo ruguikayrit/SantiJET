@@ -17,27 +17,89 @@ import '../../domain/catalogs/professions.dart';
 import '../../domain/catalogs/task_categories.dart';
 import '../../domain/entities/person.dart';
 import '../../domain/entities/production.dart';
+import '../../domain/entities/site_task.dart';
 import '../../domain/entities/uninsured_team_entry.dart';
 import '../../domain/entities/yevmiyeli_is_kaydi.dart';
 
 /// Ayarlar → Meslek listesi (ekle / düzenle / sil).
+///
+/// Personel veya yevmiyeli kayıtta kullanılan meslekler silinemez;
+/// yalnızca adı düzenlenebilir.
 class ProfessionsScreen extends ConsumerWidget {
   const ProfessionsScreen({super.key});
 
+  static int countUsage({
+    required String name,
+    required List<Person> people,
+    required List<YevmiyeliIsKaydi> yevmiyeli,
+  }) {
+    final key = name.trim().toLowerCase();
+    if (key.isEmpty) return 0;
+    var n = 0;
+    for (final p in people) {
+      if (p.profession.trim().toLowerCase() == key) n++;
+    }
+    for (final e in yevmiyeli) {
+      if (e.profession.trim().toLowerCase() == key) n++;
+    }
+    return n;
+  }
+
   @override
   Widget build(BuildContext context, WidgetRef ref) {
+    final people = ref.watch(personnelProvider);
+    final yevmiyeli = ref.watch(yevmiyeliIsProvider);
+
+    int usedOf(String name) => countUsage(
+          name: name,
+          people: people,
+          yevmiyeli: yevmiyeli,
+        );
+
     return _CatalogManageScreen(
       title: 'Meslekler',
       emptyMessage: 'Henüz meslek yok. Yeni meslek ekleyin.',
       itemNoun: 'meslek',
       items: ref.watch(professionsProvider),
+      usageCount: usedOf,
+      usageLabel: (name, used) => used == 0
+          ? 'Kullanılmıyor — silinebilir'
+          : '$used kayıtta kullanılıyor — yalnızca ad düzenlenebilir',
+      blockDeleteWhenUsed: true,
+      deleteBlockedMessage: (name) =>
+          '"$name" mesleği personel veya yevmiyeli kayıtta '
+          'kullanıldığı için silinemez. '
+          'İsterseniz yalnızca adını düzenleyebilirsiniz.',
       onAdd: (name) => ref.read(professionsProvider.notifier).add(name),
-      onRename: (oldName, newName) =>
-          ref.read(professionsProvider.notifier).rename(oldName, newName),
-      onRemove: (name) => ref.read(professionsProvider.notifier).remove(name),
-      onReset: () => ref
-          .read(professionsProvider.notifier)
-          .resetToDefaults(ProfessionCatalog.defaultProfessions),
+      onRename: (oldName, newName) {
+        final ok =
+            ref.read(professionsProvider.notifier).rename(oldName, newName);
+        if (ok) {
+          ref
+              .read(personnelProvider.notifier)
+              .reassignProfession(oldName, newName);
+          ref
+              .read(yevmiyeliIsProvider.notifier)
+              .reassignProfession(oldName, newName);
+        }
+        return ok;
+      },
+      onRemove: (name) {
+        if (usedOf(name) > 0) return;
+        ref.read(professionsProvider.notifier).remove(name);
+      },
+      onReset: () {
+        final used = <String>{
+          for (final name in ref.read(professionsProvider))
+            if (usedOf(name) > 0) name,
+        };
+        ref
+            .read(professionsProvider.notifier)
+            .resetToDefaults(ProfessionCatalog.defaultProfessions);
+        for (final name in used) {
+          ref.read(professionsProvider.notifier).add(name);
+        }
+      },
     );
   }
 }
@@ -139,22 +201,43 @@ class TeamsScreen extends ConsumerWidget {
 }
 
 /// Ayarlar / Görevler → Görev kategorileri (ekle / düzenle / sil).
+///
+/// Görev kaydında kullanılan kategoriler silinemez; yalnızca adı düzenlenebilir.
 class TaskCategoriesScreen extends ConsumerWidget {
   const TaskCategoriesScreen({super.key});
+
+  static int countUsage({
+    required String name,
+    required List<SiteTask> tasks,
+  }) {
+    final key = name.trim().toLowerCase();
+    if (key.isEmpty) return 0;
+    var n = 0;
+    for (final t in tasks) {
+      if (t.category.trim().toLowerCase() == key) n++;
+    }
+    return n;
+  }
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final tasks = ref.watch(tasksProvider);
+
+    int usedOf(String name) => countUsage(name: name, tasks: tasks);
+
     return _CatalogManageScreen(
       title: 'Görev kategorileri',
       emptyMessage: 'Henüz kategori yok. Yeni kategori ekleyin.',
       itemNoun: 'kategori',
       items: ref.watch(taskCategoriesProvider),
-      usageCount: (name) =>
-          tasks.where((t) => t.category.trim() == name).length,
+      usageCount: usedOf,
       usageLabel: (name, used) => used == 0
-          ? 'Görevde kullanılmıyor'
-          : '$used görevde',
+          ? 'Kullanılmıyor — silinebilir'
+          : '$used görevde kullanılıyor — yalnızca ad düzenlenebilir',
+      blockDeleteWhenUsed: true,
+      deleteBlockedMessage: (name) =>
+          '"$name" kategorisi görev kaydında kullanıldığı için silinemez. '
+          'İsterseniz yalnızca adını düzenleyebilirsiniz.',
       onAdd: (name) => ref.read(taskCategoriesProvider.notifier).add(name),
       onRename: (oldName, newName) {
         final ok =
@@ -165,20 +248,19 @@ class TaskCategoriesScreen extends ConsumerWidget {
         return ok;
       },
       onRemove: (name) {
+        if (usedOf(name) > 0) return;
         ref.read(taskCategoriesProvider.notifier).remove(name);
-        ref.read(tasksProvider.notifier).clearCategory(name);
       },
       onReset: () {
-        final defaults = TaskCategoryCatalog.defaults;
-        final removed = ref
-            .read(taskCategoriesProvider)
-            .where((c) => !defaults.contains(c))
-            .toList();
+        final used = <String>{
+          for (final name in ref.read(taskCategoriesProvider))
+            if (usedOf(name) > 0) name,
+        };
         ref
             .read(taskCategoriesProvider.notifier)
-            .resetToDefaults(defaults);
-        for (final name in removed) {
-          ref.read(tasksProvider.notifier).clearCategory(name);
+            .resetToDefaults(TaskCategoryCatalog.defaults);
+        for (final name in used) {
+          ref.read(taskCategoriesProvider.notifier).add(name);
         }
       },
     );

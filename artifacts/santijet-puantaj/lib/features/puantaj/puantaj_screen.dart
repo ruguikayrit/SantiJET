@@ -18,6 +18,7 @@ import '../../core/widgets/santijet_header.dart';
 import '../../data/providers/app_data_provider.dart';
 import '../../data/providers/catalog_provider.dart';
 import '../../data/providers/collaboration_provider.dart';
+import '../../data/providers/company_provider.dart';
 import '../../data/providers/uninsured_teams_provider.dart';
 import '../../data/providers/yevmiyeli_is_provider.dart';
 import '../../data/services/puantaj_export_service.dart';
@@ -1265,7 +1266,8 @@ class _DayTeamsSection extends ConsumerWidget {
       modalTeams.sort((a, b) => a.toLowerCase().compareTo(b.toLowerCase()));
     }
     if (selectedTeam == null ||
-        (usedTeamNames.contains(selectedTeam) && existing?.teamName != selectedTeam)) {
+        (usedTeamNames.contains(selectedTeam) &&
+            existing?.teamName != selectedTeam)) {
       final pickable = modalTeams
           .where(
             (t) => existing?.teamName == t || !usedTeamNames.contains(t),
@@ -1273,9 +1275,60 @@ class _DayTeamsSection extends ConsumerWidget {
           .toList();
       selectedTeam = pickable.isNotEmpty ? pickable.first : null;
     }
-    final companyCtrl = TextEditingController(
-      text: existing?.company ?? '',
-    );
+
+    List<String> registeredCompanies() {
+      final names = <String>{};
+      final companyInfo = ref.read(companyInfoProvider).name.trim();
+      if (companyInfo.isNotEmpty) names.add(titleCaseTr(companyInfo));
+      for (final p in ref.read(projectsProvider)) {
+        final c = p.company.trim();
+        if (c.isNotEmpty) names.add(titleCaseTr(c));
+      }
+      for (final p in ref.read(personnelProvider)) {
+        final c = p.company.trim();
+        if (c.isNotEmpty) names.add(titleCaseTr(c));
+      }
+      for (final e in ref.read(uninsuredTeamsProvider)) {
+        final c = e.company.trim();
+        if (c.isNotEmpty) names.add(titleCaseTr(c));
+      }
+      final existingCompany = existing?.company.trim() ?? '';
+      if (existingCompany.isNotEmpty) {
+        names.add(titleCaseTr(existingCompany));
+      }
+      final list = names.toList()
+        ..sort((a, b) => a.toLowerCase().compareTo(b.toLowerCase()));
+      return list;
+    }
+
+    var companyOptions = registeredCompanies();
+    if (companyOptions.isEmpty) {
+      if (!context.mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: const Text(
+            'Kayıtlı firma yok. Önce personel veya proje firma adı ekleyin.',
+          ),
+          action: SnackBarAction(
+            label: 'Personel',
+            onPressed: () => context.push(AppRoutes.personel),
+          ),
+        ),
+      );
+      return;
+    }
+
+    String? selectedCompany;
+    final existingCompany = titleCaseTr(existing?.company.trim() ?? '');
+    if (existingCompany.isNotEmpty) {
+      selectedCompany = companyOptions.firstWhere(
+        (c) => c.toLowerCase() == existingCompany.toLowerCase(),
+        orElse: () => companyOptions.first,
+      );
+    } else {
+      selectedCompany = companyOptions.first;
+    }
+
     final countCtrl = TextEditingController(
       text: existing == null ? '' : '${existing.workerCount}',
     );
@@ -1293,21 +1346,28 @@ class _DayTeamsSection extends ConsumerWidget {
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
                 Text(
-                  'Firma adını yazın; listeden ekip seçin veya yeni ekip ekleyin.',
+                  'Kayıtlı firmadan seçin; listeden ekip seçin veya yeni ekip ekleyin.',
                   style: Theme.of(context).textTheme.bodySmall?.copyWith(
                         color: Theme.of(context).colorScheme.onSurfaceVariant,
                       ),
                 ),
                 const SizedBox(height: AppSpacing.md),
-                TextFormField(
-                  controller: companyCtrl,
-                  textCapitalization: TextCapitalization.words,
-                  decoration: const InputDecoration(
-                    labelText: 'Firma *',
-                    hintText: 'Örn. Demo Taşeron',
-                  ),
+                DropdownButtonFormField<String>(
+                  value: selectedCompany,
+                  isExpanded: true,
+                  decoration: const InputDecoration(labelText: 'Firma Adı *'),
+                  items: [
+                    for (final c in companyOptions)
+                      DropdownMenuItem(value: c, child: Text(c)),
+                  ],
+                  onChanged: (v) {
+                    if (v == null) return;
+                    setModalState(() => selectedCompany = v);
+                  },
                   validator: (v) {
-                    if ((v ?? '').trim().isEmpty) return 'Firma adı girin';
+                    if (v == null || v.trim().isEmpty) {
+                      return 'Firma seçin';
+                    }
                     return null;
                   },
                 ),
@@ -1415,11 +1475,11 @@ class _DayTeamsSection extends ConsumerWidget {
     );
 
     final teamName = selectedTeam;
-    final companyText = companyCtrl.text;
+    final companyText = selectedCompany ?? '';
     final countText = countCtrl.text;
-    companyCtrl.dispose();
     countCtrl.dispose();
     if (saved != true || teamName == null || teamName.trim().isEmpty) return;
+    if (companyText.trim().isEmpty) return;
 
     ref.read(teamsProvider.notifier).add(teamName.trim());
 

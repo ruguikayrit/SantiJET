@@ -267,6 +267,27 @@ class PersonnelNotifier extends StateNotifier<List<Person>> {
     return count;
   }
 
+  /// Katalog meslek adı değişince personel kayıtlarını günceller.
+  int reassignProfession(String from, String to) {
+    final oldName = from.trim();
+    final newName = to.trim();
+    if (oldName.isEmpty || newName.isEmpty) return 0;
+    final oldKey = oldName.toLowerCase();
+    var count = 0;
+    state = [
+      for (final p in state)
+        if (p.profession.trim().toLowerCase() == oldKey)
+          () {
+            count++;
+            return p.copyWith(profession: newName);
+          }()
+        else
+          p,
+    ];
+    if (count > 0) _persist();
+    return count;
+  }
+
   /// Eski (projectId'siz) kayıtları verilen projeye bağlar.
   int migrateOrphansToProject(String projectId) {
     if (projectId.isEmpty) return 0;
