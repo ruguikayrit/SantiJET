@@ -30,6 +30,7 @@ import '../../domain/entities/project.dart';
 import '../../domain/entities/uninsured_team_entry.dart';
 import '../../domain/entities/yevmiyeli_is_kaydi.dart';
 import '../../domain/enums/attendance_status.dart';
+import '../daily_report/widgets/attendance_summary_table.dart';
 import '../personnel/personnel_screen.dart';
 import 'widgets/yevmiyeli_is_widgets.dart';
 
@@ -2083,7 +2084,7 @@ class _PersonCard extends StatelessWidget {
   }
 }
 
-class _CetvelView extends StatelessWidget {
+class _CetvelView extends ConsumerWidget {
   const _CetvelView({
     required this.mode,
     required this.date,
@@ -2105,8 +2106,9 @@ class _CetvelView extends StatelessWidget {
   final ValueChanged<Person> onPersonTap;
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
     final theme = Theme.of(context);
+    final project = ref.watch(activeProjectProvider);
     final days = mode == _ViewMode.weekly
         ? PuantajDate.weekDays(date)
         : PuantajDate.monthDays(date);
@@ -2119,8 +2121,40 @@ class _CetvelView extends StatelessWidget {
     // Durum özet sütunları (Mevcut/Giriş/…) yalnızca PDF’te; uygulama cetvelinde yok.
     final tableW = nameW + days.length * cellW + totalW;
     final today = PuantajDate.today();
+    final period = mode == _ViewMode.weekly
+        ? PuantajReportPeriod.weekly
+        : PuantajReportPeriod.monthly;
+    final daySet = days.toSet();
+    final uninsured = ref.watch(uninsuredTeamsProvider);
+    final yevmiyeliEntries = project == null
+        ? const <YevmiyeliIsKaydi>[]
+        : (ref
+            .watch(yevmiyeliIsProvider)
+            .where((e) => e.projectId == project.id && daySet.contains(e.date))
+            .toList()
+          ..sort((a, b) {
+            final byDate = a.date.compareTo(b.date);
+            if (byDate != 0) return byDate;
+            return a.personName.compareTo(b.personName);
+          }));
+    final ekipReport = project == null
+        ? null
+        : PuantajReportBuilder.build(
+            projectName: project.name,
+            projectId: project.id,
+            people: people,
+            attendance: ref.watch(attendanceProvider),
+            period: period,
+            anchorDate: date,
+            layout: PuantajExportLayout.ekip,
+            uninsuredTeams: uninsured,
+          );
+    String fmtYv(double v) =>
+        v == v.roundToDouble() ? v.toStringAsFixed(0) : v.toStringAsFixed(1);
 
-    if (people.isEmpty) {
+    if (people.isEmpty &&
+        (ekipReport == null || ekipReport.rows.isEmpty) &&
+        yevmiyeliEntries.isEmpty) {
       return const SJEmptyState(
         title: 'Kayıtlı personel yok',
         message: 'Personel yönetiminden ekip üyesi ekleyin.',
@@ -2152,7 +2186,6 @@ class _CetvelView extends StatelessWidget {
             ],
           ),
         ),
-        PeriodYevmiyeliSummary(dates: days),
         Padding(
           padding: const EdgeInsets.symmetric(horizontal: AppSpacing.md),
           child: Wrap(
@@ -2189,98 +2222,185 @@ class _CetvelView extends StatelessWidget {
         ),
         const SizedBox(height: AppSpacing.sm),
         Expanded(
-          child: SingleChildScrollView(
-            padding: const EdgeInsets.only(bottom: AppSpacing.xxl),
-            child: SingleChildScrollView(
-              scrollDirection: Axis.horizontal,
-              padding: const EdgeInsets.symmetric(horizontal: AppSpacing.md),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  _cetvelHeader(
-                    theme,
-                    days,
-                    cellW,
-                    nameW,
-                    totalW,
-                    today,
-                  ),
-                  for (final group in grouped)
-                    _ExpandableSection(
-                      initiallyExpanded: true,
-                      title: SizedBox(
-                        width: tableW,
-                        child: Text(
-                          group.company,
-                          style: theme.textTheme.labelMedium?.copyWith(
-                            color: AppColors.statusInkOnChrome(
-                              AppColors.useDarkChrome
-                                  ? AppColors.electricBlueLight
-                                  : AppColors.electricBlue,
-                            ),
-                            fontWeight: FontWeight.w700,
-                          ),
-                        ),
-                      ),
-                      subtitle: Text(
-                        'Firma Adı',
-                        style: theme.textTheme.labelSmall?.copyWith(
-                          color: theme.colorScheme.onSurfaceVariant,
-                        ),
-                      ),
-                      trailing: Text(
-                        '${group.users.length} personel',
-                        style: theme.textTheme.labelSmall,
-                      ),
-                      children: [
-                        for (final teamGroup in _teamsOf(group.users))
-                          _ExpandableSection(
-                            initiallyExpanded: true,
-                            indent: AppSpacing.sm,
-                            title: Text(
-                              teamGroup.team,
-                              style: theme.textTheme.labelMedium?.copyWith(
-                                fontWeight: FontWeight.w600,
-                              ),
-                            ),
-                            subtitle: Text(
-                              'Ekip',
-                              style: theme.textTheme.labelSmall?.copyWith(
-                                color: theme.colorScheme.onSurfaceVariant,
-                              ),
-                            ),
-                            trailing: Text(
-                              '${teamGroup.users.length} personel',
-                              style: theme.textTheme.labelSmall,
-                            ),
-                            children: [
-                              for (final person in teamGroup.users)
-                                _cetvelRow(
-                                  theme,
-                                  person,
-                                  days,
-                                  cellW,
-                                  nameW,
-                                  totalW,
-                                  statusOf,
-                                  onPersonTap,
-                                ),
-                            ],
-                          ),
-                      ],
-                    ),
-                  _totalsFooter(
-                    theme,
-                    people,
-                    days,
-                    cellW,
-                    nameW,
-                    totalW,
-                    statusOf,
-                  ),
-                ],
-              ),
+          child: ListView(
+            padding: const EdgeInsets.fromLTRB(
+              AppSpacing.md,
+              0,
+              AppSpacing.md,
+              AppSpacing.xxl,
             ),
+            children: [
+              if (people.isNotEmpty) ...[
+                Text(
+                  'Personel puantajı',
+                  style: theme.textTheme.titleSmall?.copyWith(
+                    fontWeight: FontWeight.w700,
+                  ),
+                ),
+                const SizedBox(height: AppSpacing.xs),
+                SingleChildScrollView(
+                  scrollDirection: Axis.horizontal,
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      _cetvelHeader(
+                        theme,
+                        days,
+                        cellW,
+                        nameW,
+                        totalW,
+                        today,
+                      ),
+                      for (final group in grouped)
+                        _ExpandableSection(
+                          initiallyExpanded: true,
+                          title: SizedBox(
+                            width: tableW,
+                            child: Text(
+                              group.company,
+                              style: theme.textTheme.labelMedium?.copyWith(
+                                color: AppColors.statusInkOnChrome(
+                                  AppColors.useDarkChrome
+                                      ? AppColors.electricBlueLight
+                                      : AppColors.electricBlue,
+                                ),
+                                fontWeight: FontWeight.w700,
+                              ),
+                            ),
+                          ),
+                          subtitle: Text(
+                            'Firma Adı',
+                            style: theme.textTheme.labelSmall?.copyWith(
+                              color: theme.colorScheme.onSurfaceVariant,
+                            ),
+                          ),
+                          trailing: Text(
+                            '${group.users.length} personel',
+                            style: theme.textTheme.labelSmall,
+                          ),
+                          children: [
+                            for (final teamGroup in _teamsOf(group.users))
+                              _ExpandableSection(
+                                initiallyExpanded: true,
+                                indent: AppSpacing.sm,
+                                title: Text(
+                                  teamGroup.team,
+                                  style: theme.textTheme.labelMedium?.copyWith(
+                                    fontWeight: FontWeight.w600,
+                                  ),
+                                ),
+                                subtitle: Text(
+                                  'Ekip',
+                                  style: theme.textTheme.labelSmall?.copyWith(
+                                    color: theme.colorScheme.onSurfaceVariant,
+                                  ),
+                                ),
+                                trailing: Text(
+                                  '${teamGroup.users.length} personel',
+                                  style: theme.textTheme.labelSmall,
+                                ),
+                                children: [
+                                  for (final person in teamGroup.users)
+                                    _cetvelRow(
+                                      theme,
+                                      person,
+                                      days,
+                                      cellW,
+                                      nameW,
+                                      totalW,
+                                      statusOf,
+                                      onPersonTap,
+                                    ),
+                                ],
+                              ),
+                          ],
+                        ),
+                      _totalsFooter(
+                        theme,
+                        people,
+                        days,
+                        cellW,
+                        nameW,
+                        totalW,
+                        statusOf,
+                      ),
+                    ],
+                  ),
+                ),
+                const SizedBox(height: AppSpacing.md),
+              ],
+              Text(
+                'Ekip puantajı',
+                style: theme.textTheme.titleSmall?.copyWith(
+                  fontWeight: FontWeight.w700,
+                ),
+              ),
+              const SizedBox(height: AppSpacing.xs),
+              PeriodTeamSummaryTable(
+                headers: ekipReport?.headers ??
+                    const [
+                      'Firma Adı',
+                      'Ekip Adı',
+                      'Toplam çalışan sayısı',
+                      'Toplam çalışılan gün sayısı',
+                      'Ortalama çalışan sayısı',
+                    ],
+                rows: ekipReport?.rows ?? const [],
+              ),
+              if (ekipReport != null &&
+                  ekipReport.summaryLines.isNotEmpty) ...[
+                const SizedBox(height: AppSpacing.xs),
+                for (final line in ekipReport.summaryLines)
+                  Text(
+                    line,
+                    style: theme.textTheme.labelSmall?.copyWith(
+                      color: theme.colorScheme.onSurfaceVariant,
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+              ],
+              const SizedBox(height: AppSpacing.md),
+              Text(
+                'Yevmiyeli işler',
+                style: theme.textTheme.titleSmall?.copyWith(
+                  fontWeight: FontWeight.w700,
+                ),
+              ),
+              const SizedBox(height: AppSpacing.xs),
+              PeriodTeamSummaryTable(
+                headers: const [
+                  'Tarih',
+                  'Ad Soyad',
+                  'Firma Adı',
+                  'Meslek',
+                  'Ekip',
+                  'YV',
+                ],
+                rows: [
+                  for (final e in yevmiyeliEntries)
+                    [
+                      e.date,
+                      e.personName.isEmpty ? '—' : e.personName,
+                      e.company.isEmpty ? '—' : e.company,
+                      e.profession.isEmpty ? '—' : e.profession,
+                      e.team.isEmpty ? '—' : e.team,
+                      fmtYv(e.yevmiyeCount),
+                    ],
+                ],
+                emptyMessage: 'Bu dönemde yevmiyeli iş kaydı yok',
+              ),
+              if (yevmiyeliEntries.isNotEmpty) ...[
+                const SizedBox(height: AppSpacing.xs),
+                Text(
+                  'Kayıt: ${yevmiyeliEntries.length} · Toplam yevmiye: '
+                  '${fmtYv(yevmiyeliEntries.fold<double>(0, (s, e) => s + e.yevmiyeCount))}',
+                  style: theme.textTheme.labelSmall?.copyWith(
+                    color: theme.colorScheme.onSurfaceVariant,
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+              ],
+            ],
           ),
         ),
       ],

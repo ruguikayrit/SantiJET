@@ -693,10 +693,12 @@ class PeriodTeamSummaryTable extends StatelessWidget {
     super.key,
     required this.headers,
     required this.rows,
+    this.emptyMessage = 'Bu dönemde ekip puantaj kaydı yok',
   });
 
   final List<String> headers;
   final List<List<String>> rows;
+  final String emptyMessage;
 
   @override
   Widget build(BuildContext context) {
@@ -739,7 +741,7 @@ class PeriodTeamSummaryTable extends StatelessWidget {
               Padding(
                 padding: const EdgeInsets.fromLTRB(12, 8, 12, 12),
                 child: Text(
-                  'Bu dönemde ekip puantaj kaydı yok',
+                  emptyMessage,
                   textAlign: TextAlign.center,
                   style: theme.textTheme.bodySmall?.copyWith(
                     color: theme.colorScheme.onSurfaceVariant,
