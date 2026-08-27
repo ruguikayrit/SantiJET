@@ -89,10 +89,14 @@ abstract final class AttendanceSnapshotBuilder {
             teamId: e.id,
             teamName: e.teamName,
             workerCount: e.workerCount,
+            company: e.company,
           ),
-    ]..sort(
-        (a, b) => a.teamName.toLowerCase().compareTo(b.teamName.toLowerCase()),
-      );
+    ]..sort((a, b) {
+        final byCompany =
+            a.company.toLowerCase().compareTo(b.company.toLowerCase());
+        if (byCompany != 0) return byCompany;
+        return a.teamName.toLowerCase().compareTo(b.teamName.toLowerCase());
+      });
 
     return DailyReportAttendanceSnapshot(
       present: counts[AttendanceStatus.present] ?? 0,

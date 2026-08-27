@@ -37,7 +37,7 @@ class PeriodSiteReportSections extends StatelessWidget {
           icon: Icons.groups_outlined,
           title: 'Ekip puantajı',
           subtitle:
-              'Adam.gün · Çalışılan gün · Ortalama (= adam.gün ÷ çalışılan gün)',
+              'Adam.gün · Çalışılan gün · Günlük ortalama adam',
         ),
         const SizedBox(height: AppSpacing.sm),
         PeriodTeamSummaryTable(

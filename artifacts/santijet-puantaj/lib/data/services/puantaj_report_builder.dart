@@ -466,18 +466,29 @@ abstract final class PuantajReportBuilder {
         return a.compareTo(b);
       });
 
-    final adamGunHeader = switch (period) {
-      PuantajReportPeriod.daily => 'Adam.gün\n/gün',
-      PuantajReportPeriod.weekly => 'Adam.gün\n/hafta',
-      PuantajReportPeriod.monthly => 'Adam.gün\n/ay',
+    final headers = switch (period) {
+      PuantajReportPeriod.daily => const [
+          'Firma\nAdı',
+          'Ekip\nAdı',
+          'Adam.gün\n/gün',
+          'Çalışılan\ngün',
+          'Ortalama\nçalışan',
+        ],
+      PuantajReportPeriod.weekly => const [
+          'Firma\nAdı',
+          'Ekip\nAdı',
+          'Haftalık\nadam.gün',
+          'Haftalık\nçalışılan gün',
+          'Günlük\nortalama adam',
+        ],
+      PuantajReportPeriod.monthly => const [
+          'Firma\nAdı',
+          'Ekip\nAdı',
+          'Aylık\nadam.gün',
+          'Aylık\nçalışılan gün',
+          'Günlük\nortalama adam',
+        ],
     };
-    final headers = [
-      'Firma\nAdı',
-      'Ekip\nAdı',
-      adamGunHeader,
-      'Çalışılan\ngün',
-      'Ortalama\nçalışan',
-    ];
     final rows = <List<String>>[];
     var grandPersonDays = 0;
     var grandDaysWorked = 0;
@@ -489,13 +500,13 @@ abstract final class PuantajReportBuilder {
       final teams = dailyCounts[company]!.keys.toList()..sort();
       for (final team in teams) {
         final counts = dailyCounts[company]![team]!;
-        // Toplam çalışan = dönemde harcanan toplam adam.gün.
+        // Adam.gün = dönemde harcanan toplam adam.gün.
         final personDays = counts.fold<int>(0, (s, n) => s + n);
         if (personDays == 0) continue;
 
         // Çalışma olan gün sayısı.
         final daysWorked = counts.where((n) => n > 0).length;
-        // Ortalama = adam.gün / çalışılan gün.
+        // Günlük ortalama adam = adam.gün / çalışılan gün.
         final avg = daysWorked > 0 ? personDays / daysWorked : 0.0;
 
         grandPersonDays += personDays;
@@ -524,7 +535,7 @@ abstract final class PuantajReportBuilder {
           'Toplam adam.gün: $grandPersonDays',
           'Toplam çalışılan gün (satır toplamı): $grandDaysWorked',
         ],
-        'Ortalama = adam.gün ÷ çalışılan gün',
+        'Ortalama = adam.gün ÷ çalışılan gün (= günlük ortalama adam)',
         'Sayım: Mevcut, Yarım, Giriş, Çıkış (ekip kaydı çalışan sayısı dahil)',
       ],
       landscape: landscape,

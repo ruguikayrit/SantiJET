@@ -858,34 +858,39 @@ class DailyReportAttendancePerson extends Equatable {
 }
 
 
-/// Günlük rapora gömülen ekip puantaj satırı (ad + çalışan sayısı).
+/// Günlük rapora gömülen ekip puantaj satırı (firma + ekip + günlük çalışan).
 class DailyReportAttendanceTeam extends Equatable {
   const DailyReportAttendanceTeam._({
     required this.teamId,
     required this.teamName,
     required this.workerCount,
+    this.company = '',
   });
 
   factory DailyReportAttendanceTeam({
     required String teamId,
     required String teamName,
     required int workerCount,
+    String company = '',
   }) {
     return DailyReportAttendanceTeam._(
       teamId: teamId,
       teamName: titleCaseTr(teamName),
       workerCount: workerCount < 0 ? 0 : workerCount,
+      company: titleCaseTr(company),
     );
   }
 
   final String teamId;
   final String teamName;
   final int workerCount;
+  final String company;
 
   Map<String, dynamic> toJson() => {
         'teamId': teamId,
         'teamName': teamName,
         'workerCount': workerCount,
+        'company': company,
       };
 
   factory DailyReportAttendanceTeam.fromJson(Map<String, dynamic> json) =>
@@ -893,10 +898,11 @@ class DailyReportAttendanceTeam extends Equatable {
         teamId: json['teamId'] as String? ?? '',
         teamName: json['teamName'] as String? ?? '',
         workerCount: (json['workerCount'] as num?)?.toInt() ?? 0,
+        company: json['company'] as String? ?? '',
       );
 
   @override
-  List<Object?> get props => [teamId, teamName, workerCount];
+  List<Object?> get props => [teamId, teamName, workerCount, company];
 }
 
 /// Aynı proje + gün puantaj özeti (bağlamsal snapshot).

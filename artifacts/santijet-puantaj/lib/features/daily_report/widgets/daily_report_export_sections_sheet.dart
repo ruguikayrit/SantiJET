@@ -168,7 +168,7 @@ class _ExportSectionsPickerSheetState
                 ),
                 _sectionTile(
                   title: 'Puantaj — isimler',
-                  subtitle: 'Personel listesi + ekip adı / çalışan sayısı',
+                  subtitle: 'Personel listesi + firma / ekip / günlük çalışan',
                   value: _sections.puantajNames,
                   onChanged: (v) => setState(
                     () => _sections = _sections.copyWith(puantajNames: v),

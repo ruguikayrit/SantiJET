@@ -382,7 +382,7 @@ class AttendanceSummaryChips extends StatelessWidget {
   }
 }
 
-/// Ekip adı + çalışan sayısı tablosu.
+/// Firma adı + ekip adı + günlük çalışan tablosu.
 class _TeamSummaryTable extends StatelessWidget {
   const _TeamSummaryTable({required this.snapshot});
 
@@ -397,7 +397,12 @@ class _TeamSummaryTable extends StatelessWidget {
             ? SJCard.lightContrastTheme(base)
             : base;
     final teams = [...snapshot.teams]
-      ..sort((a, b) => a.teamName.toLowerCase().compareTo(b.teamName.toLowerCase()));
+      ..sort((a, b) {
+        final byCompany =
+            a.company.toLowerCase().compareTo(b.company.toLowerCase());
+        if (byCompany != 0) return byCompany;
+        return a.teamName.toLowerCase().compareTo(b.teamName.toLowerCase());
+      });
     final border = theme.dividerColor.withValues(alpha: 0.55);
 
     return Theme(
@@ -416,8 +421,9 @@ class _TeamSummaryTable extends StatelessWidget {
               padding: EdgeInsets.fromLTRB(8, 6, 8, 4),
               child: _HeaderRow(
                 cells: [
-                  _HeaderCell('EKİP', flex: 4),
-                  _HeaderCell('ÇALIŞAN', flex: 2),
+                  _HeaderCell('FİRMA ADI', flex: 3),
+                  _HeaderCell('EKİP ADI', flex: 3),
+                  _HeaderCell('GÜNLÜK\nÇALIŞAN', flex: 2),
                 ],
               ),
             ),
@@ -445,7 +451,20 @@ class _TeamSummaryTable extends StatelessWidget {
                   child: Row(
                     children: [
                       Expanded(
-                        flex: 4,
+                        flex: 3,
+                        child: Text(
+                          t.company.isNotEmpty
+                              ? titleCaseTr(t.company)
+                              : '—',
+                          style: theme.textTheme.bodySmall?.copyWith(
+                            fontWeight: FontWeight.w600,
+                          ),
+                          maxLines: 2,
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                      ),
+                      Expanded(
+                        flex: 3,
                         child: Text(
                           titleCaseTr(t.teamName),
                           style: theme.textTheme.bodySmall?.copyWith(
@@ -475,8 +494,9 @@ class _TeamSummaryTable extends StatelessWidget {
                 ),
                 child: Row(
                   children: [
+                    const Expanded(flex: 3, child: SizedBox.shrink()),
                     Expanded(
-                      flex: 4,
+                      flex: 3,
                       child: Text(
                         'Toplam',
                         style: theme.textTheme.labelMedium?.copyWith(

@@ -2370,9 +2370,9 @@ class _CetvelView extends ConsumerWidget {
                     const [
                       'Firma\nAdı',
                       'Ekip\nAdı',
-                      'Adam.gün\n/hafta',
-                      'Çalışılan\ngün',
-                      'Ortalama\nçalışan',
+                      'Haftalık\nadam.gün',
+                      'Haftalık\nçalışılan gün',
+                      'Günlük\nortalama adam',
                     ],
                 rows: ekipReport?.rows ?? const [],
               ),

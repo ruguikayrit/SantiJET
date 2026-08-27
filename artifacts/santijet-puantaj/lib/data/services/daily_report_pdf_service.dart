@@ -723,17 +723,25 @@ class DailyReportPdfService {
 
   pw.Widget _teamBreakdown(DailyReportAttendanceSnapshot snap) {
     final teams = [...snap.teams]
-      ..sort((a, b) => a.teamName.toLowerCase().compareTo(b.teamName.toLowerCase()));
+      ..sort((a, b) {
+        final byCompany =
+            a.company.toLowerCase().compareTo(b.company.toLowerCase());
+        if (byCompany != 0) return byCompany;
+        return a.teamName.toLowerCase().compareTo(b.teamName.toLowerCase());
+      });
     return _centeredTable(
-      headers: const ['No', 'Ekip', 'Çalışan'],
+      headers: const ['No', 'Firma Adı', 'Ekip Adı', 'Günlük Çalışan'],
       data: [
         for (var i = 0; i < teams.length; i++)
           [
             '${i + 1}',
+            teams[i].company.isNotEmpty
+                ? titleCaseTr(teams[i].company)
+                : '—',
             titleCaseTr(teams[i].teamName),
             '${teams[i].workerCount}',
           ],
-        ['', 'Toplam', '${snap.totalTeamWorkers}'],
+        ['', '', 'Toplam', '${snap.totalTeamWorkers}'],
       ],
     );
   }
