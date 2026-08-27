@@ -22,6 +22,7 @@ import '../../data/remote/supabase_service.dart';
 import '../../domain/entities/project.dart';
 import '../../domain/entities/project_member.dart';
 import '../../domain/enums/project_role.dart';
+import 'widgets/project_company_logo.dart';
 
 /// Proje listesi, aktif proje seçimi, ekleme / silme.
 class ProjectsScreen extends ConsumerWidget {
@@ -115,21 +116,12 @@ class ProjectsScreen extends ConsumerWidget {
                       final theme = Theme.of(context);
                       return Row(
                         children: [
-                          Icon(
-                            selected
-                                ? Icons.check_circle
-                                : Icons.apartment_outlined,
-                            color: selected
-                                ? theme.colorScheme.primary
-                                : theme.colorScheme.onSurfaceVariant,
-                          ),
+                          ProjectCompanyLogo(project: p),
                           const SizedBox(width: AppSpacing.sm),
                           Expanded(
                             child: Column(
                               crossAxisAlignment: CrossAxisAlignment.start,
                               children: [
-                                _CompanyLogoAvatar(project: p),
-                                const SizedBox(height: AppSpacing.xs),
                                 Text(
                                   p.company.isEmpty
                                       ? 'Firma adı yok'
@@ -167,6 +159,11 @@ class ProjectsScreen extends ConsumerWidget {
                               ],
                             ),
                           ),
+                          if (selected)
+                            Icon(
+                              Icons.check_circle,
+                              color: theme.colorScheme.primary,
+                            ),
                           IconButton(
                             tooltip: 'Ekip',
                             icon: const Icon(Icons.groups_outlined),
@@ -591,55 +588,5 @@ class _ProjectEditorSheetState extends State<_ProjectEditorSheet> {
         ),
       ),
     );
-  }
-}
-
-class _CompanyLogoAvatar extends StatelessWidget {
-  const _CompanyLogoAvatar({required this.project});
-
-  final Project project;
-
-  @override
-  Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-    if (!project.hasLogo) {
-      return Container(
-        width: 40,
-        height: 40,
-        alignment: Alignment.center,
-        decoration: BoxDecoration(
-          color: theme.colorScheme.surfaceContainerHighest,
-          borderRadius: BorderRadius.circular(8),
-        ),
-        child: Icon(
-          Icons.business_outlined,
-          size: 20,
-          color: theme.colorScheme.onSurfaceVariant,
-        ),
-      );
-    }
-    try {
-      final bytes = base64Decode(project.logoBase64);
-      return ClipRRect(
-        borderRadius: BorderRadius.circular(8),
-        child: Image.memory(
-          bytes,
-          width: 40,
-          height: 40,
-          fit: BoxFit.contain,
-          errorBuilder: (_, __, ___) => Icon(
-            Icons.broken_image_outlined,
-            size: 20,
-            color: theme.colorScheme.onSurfaceVariant,
-          ),
-        ),
-      );
-    } catch (_) {
-      return Icon(
-        Icons.broken_image_outlined,
-        size: 20,
-        color: theme.colorScheme.onSurfaceVariant,
-      );
-    }
   }
 }

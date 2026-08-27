@@ -8,6 +8,7 @@ import '../../../core/theme/app_spacing.dart';
 import '../../../core/theme/app_typography.dart';
 import '../../../data/providers/app_data_provider.dart';
 import '../../../domain/entities/project.dart';
+import 'project_company_logo.dart';
 
 /// Aktif proje kartı — tıklanınca mevcut işler arasında seçim (sayfa açılmaz).
 class ProjectSwitcher extends ConsumerWidget {
@@ -148,12 +149,10 @@ class ProjectSwitcher extends ConsumerWidget {
               child: Row(
                 crossAxisAlignment: CrossAxisAlignment.center,
                 children: [
-                  Icon(
-                    Icons.apartment,
-                    size: 20,
-                    color: AppColors.useDarkChrome
-                        ? AppColors.electricBlueLight
-                        : AppColors.electricBlue,
+                  ProjectCompanyLogo(
+                    project: project,
+                    size: 36,
+                    iconSize: 20,
                   ),
                   const SizedBox(width: 10),
                   Expanded(
@@ -243,6 +242,12 @@ class _ProjectOptionTile extends StatelessWidget {
           ),
           child: Row(
             children: [
+              ProjectCompanyLogo(
+                project: project,
+                size: 36,
+                iconSize: 18,
+              ),
+              const SizedBox(width: AppSpacing.sm),
               Expanded(
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
