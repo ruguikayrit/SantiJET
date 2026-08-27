@@ -304,7 +304,6 @@ class DayYevmiyeliSection extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final theme = Theme.of(context);
     final project = ref.watch(activeProjectProvider);
     if (project == null) return const SizedBox.shrink();
 
@@ -320,102 +319,104 @@ class DayYevmiyeliSection extends ConsumerWidget {
     final total =
         entries.fold<double>(0, (sum, e) => sum + e.yevmiyeCount);
 
-    return SJCard(
+    return SJCard.builder(
       padding: EdgeInsets.zero,
-      child: Theme(
-        data: theme.copyWith(dividerColor: Colors.transparent),
-        child: ExpansionTile(
-          initiallyExpanded: initiallyExpanded && entries.isNotEmpty,
-          tilePadding: const EdgeInsets.symmetric(horizontal: AppSpacing.md),
-          childrenPadding: const EdgeInsets.fromLTRB(
-            AppSpacing.md,
-            0,
-            AppSpacing.md,
-            AppSpacing.md,
-          ),
-          leading: Icon(
-            Icons.handyman_outlined,
-            color: theme.colorScheme.primary,
-          ),
-          title: Text(
-            'Yevmiyeli işler',
-            style: theme.textTheme.titleSmall?.copyWith(
-              fontWeight: FontWeight.w700,
+      builder: (context, cardTheme) {
+        return Theme(
+          data: cardTheme.copyWith(dividerColor: Colors.transparent),
+          child: ExpansionTile(
+            initiallyExpanded: initiallyExpanded && entries.isNotEmpty,
+            tilePadding: const EdgeInsets.symmetric(horizontal: AppSpacing.md),
+            childrenPadding: const EdgeInsets.fromLTRB(
+              AppSpacing.md,
+              0,
+              AppSpacing.md,
+              AppSpacing.md,
             ),
-          ),
-          subtitle: Text(
-            entries.isEmpty
-                ? 'Kayıt yok'
-                : '${entries.length} kayıt · ${formatYevmiyeCount(total)} yv',
-            style: theme.textTheme.labelSmall?.copyWith(
-              color: theme.colorScheme.onSurfaceVariant,
+            leading: Icon(
+              Icons.handyman_outlined,
+              color: cardTheme.colorScheme.primary,
             ),
-          ),
-          trailing: IconButton(
-            tooltip: 'Yevmiyeli iş ekle',
-            onPressed: () => openYevmiyeliIsEditor(
-              context,
-              ref,
-              projectId: project.id,
-              date: date,
-              people: people,
+            title: Text(
+              'Yevmiyeli işler',
+              style: cardTheme.textTheme.titleSmall?.copyWith(
+                fontWeight: FontWeight.w700,
+              ),
             ),
-            icon: const Icon(Icons.add_circle_outline),
-          ),
-          children: [
-            if (entries.isEmpty)
-              Padding(
-                padding: const EdgeInsets.only(bottom: AppSpacing.sm),
-                child: Text(
-                  'Taşeronun parça iş için verdiği adamları buraya kaydedin. '
-                  'Personel kartından da ekleyebilirsiniz.',
-                  style: theme.textTheme.bodySmall?.copyWith(
-                    color: theme.colorScheme.onSurfaceVariant,
-                  ),
-                ),
-              )
-            else
-              Column(
-                children: [
-                  for (var i = 0; i < entries.length; i++) ...[
-                    if (i > 0) const Divider(height: 1),
-                    _YevmiyeliRow(
-                      index: i + 1,
-                      entry: entries[i],
-                      onTap: () => openYevmiyeliIsEditor(
-                        context,
-                        ref,
-                        projectId: project.id,
-                        date: date,
-                        people: people,
-                        existing: entries[i],
-                      ),
+            subtitle: Text(
+              entries.isEmpty
+                  ? 'Kayıt yok'
+                  : '${entries.length} kayıt · ${formatYevmiyeCount(total)} yv',
+              style: cardTheme.textTheme.labelSmall?.copyWith(
+                color: cardTheme.colorScheme.onSurfaceVariant,
+              ),
+            ),
+            trailing: IconButton(
+              tooltip: 'Yevmiyeli iş ekle',
+              onPressed: () => openYevmiyeliIsEditor(
+                context,
+                ref,
+                projectId: project.id,
+                date: date,
+                people: people,
+              ),
+              icon: const Icon(Icons.add_circle_outline),
+            ),
+            children: [
+              if (entries.isEmpty)
+                Padding(
+                  padding: const EdgeInsets.only(bottom: AppSpacing.sm),
+                  child: Text(
+                    'Taşeronun parça iş için verdiği adamları buraya kaydedin. '
+                    'Personel kartından da ekleyebilirsiniz.',
+                    style: cardTheme.textTheme.bodySmall?.copyWith(
+                      color: cardTheme.colorScheme.onSurfaceVariant,
                     ),
-                  ],
-                  const Divider(height: 16),
-                  Row(
-                    children: [
-                      Text(
-                        'Günlük toplam',
-                        style: theme.textTheme.labelLarge?.copyWith(
-                          fontWeight: FontWeight.w700,
-                        ),
-                      ),
-                      const Spacer(),
-                      Text(
-                        '${formatYevmiyeCount(total)} yv',
-                        style: theme.textTheme.labelLarge?.copyWith(
-                          color: AppColors.electricBlue,
-                          fontWeight: FontWeight.w800,
+                  ),
+                )
+              else
+                Column(
+                  children: [
+                    for (var i = 0; i < entries.length; i++) ...[
+                      if (i > 0) const Divider(height: 1),
+                      _YevmiyeliRow(
+                        index: i + 1,
+                        entry: entries[i],
+                        onTap: () => openYevmiyeliIsEditor(
+                          context,
+                          ref,
+                          projectId: project.id,
+                          date: date,
+                          people: people,
+                          existing: entries[i],
                         ),
                       ),
                     ],
-                  ),
-                ],
-              ),
-          ],
-        ),
-      ),
+                    const Divider(height: 16),
+                    Row(
+                      children: [
+                        Text(
+                          'Günlük toplam',
+                          style: cardTheme.textTheme.labelLarge?.copyWith(
+                            fontWeight: FontWeight.w700,
+                          ),
+                        ),
+                        const Spacer(),
+                        Text(
+                          '${formatYevmiyeCount(total)} yv',
+                          style: cardTheme.textTheme.labelLarge?.copyWith(
+                            color: AppColors.electricBlue,
+                            fontWeight: FontWeight.w800,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ],
+                ),
+            ],
+          ),
+        );
+      },
     );
   }
 }
@@ -519,7 +520,6 @@ class PeriodYevmiyeliSummary extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final theme = Theme.of(context);
     final project = ref.watch(activeProjectProvider);
     if (project == null) return const SizedBox.shrink();
 
@@ -549,51 +549,59 @@ class PeriodYevmiyeliSummary extends ConsumerWidget {
         AppSpacing.md,
         AppSpacing.sm,
       ),
-      child: SJCard(
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.stretch,
-          children: [
-            Row(
-              children: [
-                Icon(Icons.handyman_outlined, color: theme.colorScheme.primary),
-                const SizedBox(width: AppSpacing.sm),
-                Expanded(
-                  child: Text(
-                    'Yevmiyeli işler',
-                    style: theme.textTheme.titleSmall?.copyWith(
+      child: SJCard.builder(
+        builder: (context, cardTheme) {
+          return Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              Row(
+                children: [
+                  Icon(
+                    Icons.handyman_outlined,
+                    color: cardTheme.colorScheme.primary,
+                  ),
+                  const SizedBox(width: AppSpacing.sm),
+                  Expanded(
+                    child: Text(
+                      'Yevmiyeli işler',
+                      style: cardTheme.textTheme.titleSmall?.copyWith(
+                        fontWeight: FontWeight.w700,
+                      ),
+                    ),
+                  ),
+                  Text(
+                    '${entries.length} kayıt · ${formatYevmiyeCount(total)} yv',
+                    style: cardTheme.textTheme.labelMedium?.copyWith(
+                      color: AppColors.electricBlue,
                       fontWeight: FontWeight.w700,
                     ),
                   ),
-                ),
-                Text(
-                  '${entries.length} kayıt · ${formatYevmiyeCount(total)} yv',
-                  style: theme.textTheme.labelMedium?.copyWith(
-                    color: AppColors.electricBlue,
-                    fontWeight: FontWeight.w700,
+                ],
+              ),
+              const SizedBox(height: AppSpacing.sm),
+              for (final c in companies.take(6))
+                Padding(
+                  padding: const EdgeInsets.only(bottom: 4),
+                  child: Row(
+                    children: [
+                      Expanded(
+                        child: Text(
+                          c.key,
+                          style: cardTheme.textTheme.bodySmall,
+                        ),
+                      ),
+                      Text(
+                        '${formatYevmiyeCount(c.value)} yv',
+                        style: cardTheme.textTheme.labelSmall?.copyWith(
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
+                    ],
                   ),
                 ),
-              ],
-            ),
-            const SizedBox(height: AppSpacing.sm),
-            for (final c in companies.take(6))
-              Padding(
-                padding: const EdgeInsets.only(bottom: 4),
-                child: Row(
-                  children: [
-                    Expanded(
-                      child: Text(c.key, style: theme.textTheme.bodySmall),
-                    ),
-                    Text(
-                      '${formatYevmiyeCount(c.value)} yv',
-                      style: theme.textTheme.labelSmall?.copyWith(
-                        fontWeight: FontWeight.w600,
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-          ],
-        ),
+            ],
+          );
+        },
       ),
     );
   }

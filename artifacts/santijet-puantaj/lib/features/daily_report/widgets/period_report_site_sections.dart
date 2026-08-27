@@ -149,12 +149,12 @@ class _ImalatTableSection extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     if (rows.isEmpty) {
-      return SJCard(
-        child: Text(
+      return SJCard.builder(
+        builder: (context, theme) => Text(
           'Bu dönemde imalat kaydı yok. İmalat sekmesinden günlük giriş yapın.',
-          style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                color: Theme.of(context).colorScheme.onSurfaceVariant,
-              ),
+          style: theme.textTheme.bodyMedium?.copyWith(
+            color: theme.colorScheme.onSurfaceVariant,
+          ),
         ),
       );
     }
@@ -206,12 +206,12 @@ class _VerimTableSection extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     if (rows.isEmpty) {
-      return SJCard(
-        child: Text(
+      return SJCard.builder(
+        builder: (context, theme) => Text(
           'Verim için İş Programı + Keşif bulut verisi ve dönemde imalat kaydı gerekir.',
-          style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                color: Theme.of(context).colorScheme.onSurfaceVariant,
-              ),
+          style: theme.textTheme.bodyMedium?.copyWith(
+            color: theme.colorScheme.onSurfaceVariant,
+          ),
         ),
       );
     }

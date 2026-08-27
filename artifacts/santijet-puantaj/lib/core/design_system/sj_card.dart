@@ -8,7 +8,11 @@ import '../theme/app_spacing.dart';
 ///
 /// ŞantiJET: koyu kart + açık mürekkep.
 /// ŞantiJET Pro: açık (light) kart + koyu mürekkep — koyu zemin üzerinde.
-/// Kart içinde [Theme.of] kullanırken mutlaka [Builder] ile kart context'ini alın.
+///
+/// **Önemli:** Kart içinde `Theme.of` / `textTheme` kullanırken dış `build`
+/// context’ini kapatmayın. Dış tema chrome mürekkebidir; kart yüzeyiyle
+/// çakışır (beyaz üstüne beyaz / koyu üstüne koyu). Ya [Builder] kullanın
+/// ya da [SJCard.builder] ile kart temasına bağlı kalın.
 class SJCard extends StatelessWidget {
   const SJCard({
     required this.child,
@@ -19,11 +23,62 @@ class SJCard extends StatelessWidget {
     super.key,
   });
 
+  /// Kart kontrast temasını alan builder — dış Theme kapanmasını engeller.
+  factory SJCard.builder({
+    Key? key,
+    required Widget Function(BuildContext context, ThemeData theme) builder,
+    VoidCallback? onTap,
+    EdgeInsetsGeometry padding = const EdgeInsets.all(AppSpacing.md),
+    Color? accentColor,
+    bool selected = false,
+  }) {
+    return SJCard(
+      key: key,
+      onTap: onTap,
+      padding: padding,
+      accentColor: accentColor,
+      selected: selected,
+      child: Builder(
+        builder: (context) => builder(context, Theme.of(context)),
+      ),
+    );
+  }
+
   final Widget child;
   final VoidCallback? onTap;
   final EdgeInsetsGeometry padding;
   final Color? accentColor;
   final bool selected;
+
+  static TextTheme _forceInk(
+    TextTheme source, {
+    required Color onPrimary,
+    required Color onSecondary,
+    required Color onMuted,
+  }) {
+    TextStyle paint(TextStyle? style, Color color) =>
+        (style ?? const TextStyle()).copyWith(
+          color: color,
+          decoration: TextDecoration.none,
+        );
+    return TextTheme(
+      displayLarge: paint(source.displayLarge, onPrimary),
+      displayMedium: paint(source.displayMedium, onPrimary),
+      displaySmall: paint(source.displaySmall, onPrimary),
+      headlineLarge: paint(source.headlineLarge, onPrimary),
+      headlineMedium: paint(source.headlineMedium, onPrimary),
+      headlineSmall: paint(source.headlineSmall, onPrimary),
+      titleLarge: paint(source.titleLarge, onPrimary),
+      titleMedium: paint(source.titleMedium, onPrimary),
+      titleSmall: paint(source.titleSmall, onPrimary),
+      bodyLarge: paint(source.bodyLarge, onSecondary),
+      bodyMedium: paint(source.bodyMedium, onSecondary),
+      bodySmall: paint(source.bodySmall, onMuted),
+      labelLarge: paint(source.labelLarge, onPrimary),
+      labelMedium: paint(source.labelMedium, onMuted),
+      labelSmall: paint(source.labelSmall, onMuted),
+    );
+  }
 
   /// Koyu kart (ŞantiJET / koyu) — açık mürekkep zorlanır.
   static ThemeData darkContrastTheme(ThemeData base) {
@@ -42,35 +97,23 @@ class SJCard extends StatelessWidget {
       onSurfaceVariant: onSecondary,
       outline: AppColors.darkBorderSubtle,
     );
-
-    TextTheme forceInk(TextTheme source) {
-      TextStyle? paint(TextStyle? style, Color color) =>
-          style?.copyWith(color: color);
-      return source.copyWith(
-        displayLarge: paint(source.displayLarge, onPrimary),
-        displayMedium: paint(source.displayMedium, onPrimary),
-        displaySmall: paint(source.displaySmall, onPrimary),
-        headlineLarge: paint(source.headlineLarge, onPrimary),
-        headlineMedium: paint(source.headlineMedium, onPrimary),
-        headlineSmall: paint(source.headlineSmall, onPrimary),
-        titleLarge: paint(source.titleLarge, onPrimary),
-        titleMedium: paint(source.titleMedium, onPrimary),
-        titleSmall: paint(source.titleSmall, onPrimary),
-        bodyLarge: paint(source.bodyLarge, onSecondary),
-        bodyMedium: paint(source.bodyMedium, onSecondary),
-        bodySmall: paint(source.bodySmall, onMuted),
-        labelLarge: paint(source.labelLarge, onMuted),
-        labelMedium: paint(source.labelMedium, onMuted),
-        labelSmall: paint(source.labelSmall, onMuted),
-      );
-    }
+    final ink = _forceInk(
+      base.textTheme,
+      onPrimary: onPrimary,
+      onSecondary: onSecondary,
+      onMuted: onMuted,
+    );
 
     return base.copyWith(
       brightness: Brightness.dark,
       colorScheme: scheme,
-      textTheme: forceInk(base.textTheme),
-      primaryTextTheme: forceInk(base.primaryTextTheme),
-      // Kart içindeki alt yüzeyler (çip, sheet, dialog) kart paletini izler.
+      textTheme: ink,
+      primaryTextTheme: _forceInk(
+        base.primaryTextTheme,
+        onPrimary: onPrimary,
+        onSecondary: onSecondary,
+        onMuted: onMuted,
+      ),
       cardColor: AppColors.darkSurfaceElevated,
       canvasColor: AppColors.darkSurfaceElevated,
       cardTheme: base.cardTheme.copyWith(
@@ -82,6 +125,9 @@ class SJCard extends StatelessWidget {
       ),
       iconTheme: const IconThemeData(color: onSecondary),
       primaryIconTheme: const IconThemeData(color: AppColors.electricBlueLight),
+      iconButtonTheme: IconButtonThemeData(
+        style: IconButton.styleFrom(foregroundColor: onSecondary),
+      ),
       dividerColor: AppColors.darkBorder,
       disabledColor: onMuted,
       hintColor: onMuted,
@@ -100,6 +146,12 @@ class SJCard extends StatelessWidget {
       listTileTheme: const ListTileThemeData(
         iconColor: onSecondary,
         textColor: onPrimary,
+      ),
+      expansionTileTheme: const ExpansionTileThemeData(
+        iconColor: onSecondary,
+        collapsedIconColor: onSecondary,
+        textColor: onPrimary,
+        collapsedTextColor: onPrimary,
       ),
       inputDecorationTheme: base.inputDecorationTheme.copyWith(
         fillColor: AppColors.darkSurface,
@@ -135,31 +187,6 @@ class SJCard extends StatelessWidget {
       outline: AppColors.lightBorder,
     );
 
-    TextTheme forceInk(TextTheme source) {
-      TextStyle paint(TextStyle? style, Color color) => (style ??
-              const TextStyle()).copyWith(
-            color: color,
-            decoration: TextDecoration.none,
-          );
-      return TextTheme(
-        displayLarge: paint(source.displayLarge, onPrimary),
-        displayMedium: paint(source.displayMedium, onPrimary),
-        displaySmall: paint(source.displaySmall, onPrimary),
-        headlineLarge: paint(source.headlineLarge, onPrimary),
-        headlineMedium: paint(source.headlineMedium, onPrimary),
-        headlineSmall: paint(source.headlineSmall, onPrimary),
-        titleLarge: paint(source.titleLarge, onPrimary),
-        titleMedium: paint(source.titleMedium, onPrimary),
-        titleSmall: paint(source.titleSmall, onPrimary),
-        bodyLarge: paint(source.bodyLarge, onSecondary),
-        bodyMedium: paint(source.bodyMedium, onSecondary),
-        bodySmall: paint(source.bodySmall, onMuted),
-        labelLarge: paint(source.labelLarge, onPrimary),
-        labelMedium: paint(source.labelMedium, onMuted),
-        labelSmall: paint(source.labelSmall, onMuted),
-      );
-    }
-
     // Koyu chrome ThemeData üzerinde brightness flip mürekkebi ezebiliyor;
     // açık kart için light seed üzerinden zorla.
     final seeded = ThemeData(
@@ -168,9 +195,20 @@ class SJCard extends StatelessWidget {
       colorScheme: scheme,
       fontFamily: base.textTheme.bodyMedium?.fontFamily,
     );
+    final ink = _forceInk(
+      base.textTheme,
+      onPrimary: onPrimary,
+      onSecondary: onSecondary,
+      onMuted: onMuted,
+    );
     return seeded.copyWith(
-      textTheme: forceInk(base.textTheme),
-      primaryTextTheme: forceInk(base.primaryTextTheme),
+      textTheme: ink,
+      primaryTextTheme: _forceInk(
+        base.primaryTextTheme,
+        onPrimary: onPrimary,
+        onSecondary: onSecondary,
+        onMuted: onMuted,
+      ),
       cardColor: AppColors.lightSurface,
       canvasColor: AppColors.lightSurface,
       cardTheme: base.cardTheme.copyWith(
@@ -182,6 +220,9 @@ class SJCard extends StatelessWidget {
       ),
       iconTheme: const IconThemeData(color: onSecondary),
       primaryIconTheme: const IconThemeData(color: AppColors.electricBlue),
+      iconButtonTheme: IconButtonThemeData(
+        style: IconButton.styleFrom(foregroundColor: onSecondary),
+      ),
       dividerColor: AppColors.lightBorder,
       disabledColor: onMuted,
       hintColor: onMuted,
@@ -201,6 +242,12 @@ class SJCard extends StatelessWidget {
         iconColor: onSecondary,
         textColor: onPrimary,
       ),
+      expansionTileTheme: const ExpansionTileThemeData(
+        iconColor: onSecondary,
+        collapsedIconColor: onSecondary,
+        textColor: onPrimary,
+        collapsedTextColor: onPrimary,
+      ),
       inputDecorationTheme: base.inputDecorationTheme.copyWith(
         fillColor: AppColors.lightSurfaceElevated,
         hintStyle: base.textTheme.bodyMedium?.copyWith(color: onMuted),
@@ -219,6 +266,13 @@ class SJCard extends StatelessWidget {
 
   /// Geriye dönük: koyu kontrast teması.
   static ThemeData contrastTheme(ThemeData base) => darkContrastTheme(base);
+
+  /// Aktif palete göre kart kontrast teması.
+  static ThemeData cardContrastTheme(ThemeData base) {
+    if (AppColors.isSantijetPro) return lightContrastTheme(base);
+    if (AppColors.useDarkCards) return darkContrastTheme(base);
+    return base;
+  }
 
   @override
   Widget build(BuildContext context) {

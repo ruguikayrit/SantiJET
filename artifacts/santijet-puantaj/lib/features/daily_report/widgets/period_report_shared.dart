@@ -166,116 +166,117 @@ class _DaySummaryTileState extends State<DaySummaryTile> {
 
   @override
   Widget build(BuildContext context) {
-    final theme = Theme.of(context);
     final s = widget.summary;
     final opacity = widget.inMonth ? 1.0 : 0.55;
 
     return Opacity(
       opacity: opacity,
-      child: SJCard(
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.stretch,
-          children: [
-            InkWell(
-              onTap: () => setState(() => _expanded = !_expanded),
-              borderRadius: AppRadii.md,
-              child: Padding(
-                padding: const EdgeInsets.symmetric(
-                  vertical: AppSpacing.xs,
-                ),
-                child: Row(
-                  children: [
-                    Expanded(
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text(
-                            PuantajDate.withDayName(s.date),
-                            style: theme.textTheme.titleSmall?.copyWith(
-                              fontWeight: FontWeight.w700,
+      child: SJCard.builder(
+        builder: (context, theme) {
+          return Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              InkWell(
+                onTap: () => setState(() => _expanded = !_expanded),
+                borderRadius: AppRadii.md,
+                child: Padding(
+                  padding: const EdgeInsets.symmetric(
+                    vertical: AppSpacing.xs,
+                  ),
+                  child: Row(
+                    children: [
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              PuantajDate.withDayName(s.date),
+                              style: theme.textTheme.titleSmall?.copyWith(
+                                fontWeight: FontWeight.w700,
+                              ),
                             ),
-                          ),
-                          const SizedBox(height: 2),
-                          Text(
-                            s.hasContent
-                                ? '${s.photoCount} foto · ${s.incomingCount} malzeme · ${_num(s.adamSaat)} sa'
-                                : 'Kayıt yok',
-                            style: theme.textTheme.bodySmall?.copyWith(
-                              color: theme.colorScheme.onSurfaceVariant,
+                            const SizedBox(height: 2),
+                            Text(
+                              s.hasContent
+                                  ? '${s.photoCount} foto · ${s.incomingCount} malzeme · ${_num(s.adamSaat)} sa'
+                                  : 'Kayıt yok',
+                              style: theme.textTheme.bodySmall?.copyWith(
+                                color: theme.colorScheme.onSurfaceVariant,
+                              ),
                             ),
-                          ),
-                        ],
-                      ),
-                    ),
-                    Container(
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: 8,
-                        vertical: 4,
-                      ),
-                      decoration: BoxDecoration(
-                        color: s.hasContent
-                            ? AppColors.success.withValues(alpha: 0.15)
-                            : theme.colorScheme.surfaceContainerHighest,
-                        borderRadius: AppRadii.sm,
-                      ),
-                      child: Text(
-                        s.hasContent ? 'Dolu' : 'Boş',
-                        style: theme.textTheme.labelSmall?.copyWith(
-                          color: s.hasContent
-                              ? AppColors.success
-                              : theme.colorScheme.onSurfaceVariant,
-                          fontWeight: FontWeight.w700,
+                          ],
                         ),
                       ),
-                    ),
-                    Icon(
-                      _expanded ? Icons.expand_less : Icons.expand_more,
-                      color: theme.colorScheme.onSurfaceVariant,
-                    ),
-                  ],
-                ),
-              ),
-            ),
-            if (_expanded) ...[
-              const Divider(height: 1),
-              Padding(
-                padding: const EdgeInsets.only(top: AppSpacing.sm),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.stretch,
-                  children: [
-                    _metricRow(theme, 'Fotoğraf', '${s.photoCount}'),
-                    _metricRow(
-                      theme,
-                      'Malzeme (gelen)',
-                      '${s.incomingCount}',
-                    ),
-                    _metricRow(
-                      theme,
-                      'Makine / vasıta',
-                      '${s.machineCount} · ${_num(s.machineHours)} sa',
-                    ),
-                    _metricRow(
-                      theme,
-                      'Puantaj',
-                      '${s.presentCount} mevcut · '
-                      '${s.teamWorkers} ekip · '
-                      '${_num(s.yevmiye)} yv',
-                    ),
-                    const SizedBox(height: AppSpacing.sm),
-                    Align(
-                      alignment: Alignment.centerRight,
-                      child: TextButton.icon(
-                        onPressed: () => widget.onOpenDaily(s.date),
-                        icon: const Icon(Icons.open_in_new, size: 16),
-                        label: const Text('Günlük raporu aç'),
+                      Container(
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 8,
+                          vertical: 4,
+                        ),
+                        decoration: BoxDecoration(
+                          color: s.hasContent
+                              ? AppColors.success.withValues(alpha: 0.15)
+                              : theme.colorScheme.surfaceContainerHighest,
+                          borderRadius: AppRadii.sm,
+                        ),
+                        child: Text(
+                          s.hasContent ? 'Dolu' : 'Boş',
+                          style: theme.textTheme.labelSmall?.copyWith(
+                            color: s.hasContent
+                                ? AppColors.success
+                                : theme.colorScheme.onSurfaceVariant,
+                            fontWeight: FontWeight.w700,
+                          ),
+                        ),
                       ),
-                    ),
-                  ],
+                      Icon(
+                        _expanded ? Icons.expand_less : Icons.expand_more,
+                        color: theme.colorScheme.onSurfaceVariant,
+                      ),
+                    ],
+                  ),
                 ),
               ),
+              if (_expanded) ...[
+                const Divider(height: 1),
+                Padding(
+                  padding: const EdgeInsets.only(top: AppSpacing.sm),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.stretch,
+                    children: [
+                      _metricRow(theme, 'Fotoğraf', '${s.photoCount}'),
+                      _metricRow(
+                        theme,
+                        'Malzeme (gelen)',
+                        '${s.incomingCount}',
+                      ),
+                      _metricRow(
+                        theme,
+                        'Makine / vasıta',
+                        '${s.machineCount} · ${_num(s.machineHours)} sa',
+                      ),
+                      _metricRow(
+                        theme,
+                        'Puantaj',
+                        '${s.presentCount} mevcut · '
+                        '${s.teamWorkers} ekip · '
+                        '${_num(s.yevmiye)} yv',
+                      ),
+                      const SizedBox(height: AppSpacing.sm),
+                      Align(
+                        alignment: Alignment.centerRight,
+                        child: TextButton.icon(
+                          onPressed: () => widget.onOpenDaily(s.date),
+                          icon: const Icon(Icons.open_in_new, size: 16),
+                          label: const Text('Günlük raporu aç'),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ],
             ],
-          ],
-        ),
+          );
+        },
       ),
     );
   }

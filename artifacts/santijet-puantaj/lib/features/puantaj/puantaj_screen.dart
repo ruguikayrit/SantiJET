@@ -1608,74 +1608,76 @@ class _DayTeamsSection extends ConsumerWidget {
           for (final entry in entries)
             Padding(
               padding: const EdgeInsets.only(bottom: AppSpacing.sm),
-              child: SJCard(
-                child: Row(
-                  children: [
-                    Expanded(
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text(
-                            entry.teamName,
-                            style: theme.textTheme.titleSmall?.copyWith(
-                              fontWeight: FontWeight.w700,
+              child: SJCard.builder(
+                builder: (context, cardTheme) {
+                  return Row(
+                    children: [
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              entry.teamName,
+                              style: cardTheme.textTheme.titleSmall?.copyWith(
+                                fontWeight: FontWeight.w700,
+                              ),
                             ),
-                          ),
-                          const SizedBox(height: 2),
-                          Text(
-                            entry.company.trim().isEmpty
-                                ? '${entry.workerCount} çalışan'
-                                : '${entry.company} · ${entry.workerCount} çalışan',
-                            style: theme.textTheme.bodySmall?.copyWith(
-                              color: theme.colorScheme.onSurfaceVariant,
+                            const SizedBox(height: 2),
+                            Text(
+                              entry.company.trim().isEmpty
+                                  ? '${entry.workerCount} çalışan'
+                                  : '${entry.company} · ${entry.workerCount} çalışan',
+                              style: cardTheme.textTheme.bodySmall?.copyWith(
+                                color: cardTheme.colorScheme.onSurfaceVariant,
+                              ),
                             ),
-                          ),
-                        ],
+                          ],
+                        ),
                       ),
-                    ),
-                    IconButton(
-                      tooltip: 'Düzenle',
-                      visualDensity: VisualDensity.compact,
-                      onPressed: () {
-                        if (!canEdit) return denyWrite();
-                        _openEditor(
-                          context,
-                          ref,
-                          projectId: project.id,
-                          catalogTeams: catalogTeams,
-                          usedTeamNames: usedTeamNames,
-                          existing: entry,
-                        );
-                      },
-                      icon: const Icon(Icons.edit_outlined, size: 18),
-                    ),
-                    IconButton(
-                      tooltip: 'Sil',
-                      visualDensity: VisualDensity.compact,
-                      onPressed: () async {
-                        if (!canEdit) return denyWrite();
-                        final ok = await SJModal.confirm(
-                          context: context,
-                          title: 'Ekibi sil',
-                          message: entry.company.trim().isEmpty
-                              ? '${entry.teamName} (${entry.workerCount} çalışan) silinsin mi?'
-                              : '${entry.company} · ${entry.teamName} (${entry.workerCount} çalışan) silinsin mi?',
-                          confirmLabel: 'Sil',
-                          destructive: true,
-                        );
-                        if (!ok) return;
-                        ref
-                            .read(uninsuredTeamsProvider.notifier)
-                            .remove(entry.id);
-                      },
-                      icon: Icon(
-                        Icons.delete_outline,
-                        size: 18,
-                        color: theme.colorScheme.error,
+                      IconButton(
+                        tooltip: 'Düzenle',
+                        visualDensity: VisualDensity.compact,
+                        onPressed: () {
+                          if (!canEdit) return denyWrite();
+                          _openEditor(
+                            context,
+                            ref,
+                            projectId: project.id,
+                            catalogTeams: catalogTeams,
+                            usedTeamNames: usedTeamNames,
+                            existing: entry,
+                          );
+                        },
+                        icon: const Icon(Icons.edit_outlined, size: 18),
                       ),
-                    ),
-                  ],
-                ),
+                      IconButton(
+                        tooltip: 'Sil',
+                        visualDensity: VisualDensity.compact,
+                        onPressed: () async {
+                          if (!canEdit) return denyWrite();
+                          final ok = await SJModal.confirm(
+                            context: context,
+                            title: 'Ekibi sil',
+                            message: entry.company.trim().isEmpty
+                                ? '${entry.teamName} (${entry.workerCount} çalışan) silinsin mi?'
+                                : '${entry.company} · ${entry.teamName} (${entry.workerCount} çalışan) silinsin mi?',
+                            confirmLabel: 'Sil',
+                            destructive: true,
+                          );
+                          if (!ok) return;
+                          ref
+                              .read(uninsuredTeamsProvider.notifier)
+                              .remove(entry.id);
+                        },
+                        icon: Icon(
+                          Icons.delete_outline,
+                          size: 18,
+                          color: cardTheme.colorScheme.error,
+                        ),
+                      ),
+                    ],
+                  );
+                },
               ),
             ),
         ],

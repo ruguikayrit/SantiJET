@@ -53,24 +53,24 @@ class WeeklyReportView extends ConsumerWidget {
           onNext: () => onAnchorChanged(PuantajDate.shift(anchorDate, 7)),
         ),
         const SizedBox(height: AppSpacing.md),
-        SJCard(
-          child: Text(
+        SJCard.builder(
+          builder: (context, theme) => Text(
             'Haftalık özet: personel ve ekip puantajı (Puantaj sekmesi), '
             'yapılan işler (İmalat), verim (İş Programı + Keşif). '
             'Rapor AL ile PDF veya Excel dışa aktarın.',
-            style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                  color: Theme.of(context).colorScheme.onSurfaceVariant,
-                ),
+            style: theme.textTheme.bodySmall?.copyWith(
+              color: theme.colorScheme.onSurfaceVariant,
+            ),
           ),
         ),
         const SizedBox(height: AppSpacing.md),
         if (siteReport != null)
           PeriodSiteReportSections(report: siteReport)
         else
-          SJCard(
-            child: Text(
+          SJCard.builder(
+            builder: (context, theme) => Text(
               'Proje seçili değil veya rapor yüklenemedi.',
-              style: Theme.of(context).textTheme.bodyMedium,
+              style: theme.textTheme.bodyMedium,
             ),
           ),
       ],
