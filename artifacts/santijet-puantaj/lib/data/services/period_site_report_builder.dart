@@ -260,7 +260,10 @@ abstract final class PeriodSiteReportBuilder {
             plannedAg > 0 &&
             periodLabor > 0 &&
             periodQty > 0) {
-          efficiency = (periodQty / plannedQty) / (periodLabor / plannedAg);
+          // (dönem metraj / dönem AG) / (plan metraj / plan AG)
+          final periodRate = periodQty / periodLabor;
+          final planRate = plannedQty / plannedAg;
+          efficiency = periodRate / planRate;
         }
 
         if (periodQty <= 0 && periodLabor <= 0 && plannedAg <= 0) continue;

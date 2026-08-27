@@ -692,11 +692,25 @@ class _MiniStat extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text(
-            label,
-            maxLines: 1,
-            overflow: TextOverflow.ellipsis,
-            style: theme.textTheme.labelSmall,
+          Row(
+            children: [
+              Expanded(
+                child: Text(
+                  label,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: theme.textTheme.labelSmall,
+                ),
+              ),
+              if (selected) ...[
+                const SizedBox(width: 2),
+                Icon(
+                  Icons.check_circle,
+                  size: 14,
+                  color: AppColors.statusInkOnCard(color),
+                ),
+              ],
+            ],
           ),
           const SizedBox(height: 4),
           Row(

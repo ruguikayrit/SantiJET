@@ -143,7 +143,7 @@ class VerimScreen extends ConsumerWidget {
                       const SizedBox(height: AppSpacing.xs),
                       Text(
                         'Süre ← İş Programı · Metraj ← Keşif\n'
-                        'Birim verim = (metraj oranı) ÷ (adam-gün oranı)',
+                        'Birim verim = (dönem metraj / dönem AG) ÷ (plan metraj / plan AG)',
                         style: theme.textTheme.bodySmall,
                       ),
                       const SizedBox(height: AppSpacing.sm),

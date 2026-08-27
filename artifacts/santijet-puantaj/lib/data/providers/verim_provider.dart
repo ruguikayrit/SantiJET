@@ -112,16 +112,16 @@ class VerimRow {
       (kesif?.unit.trim().isNotEmpty == true) ? kesif!.unit : item.unit;
 
   /// Birim verim =
-  /// (gerçek metraj / plan metraj) / (gerçek adam-gün / plan adam-gün).
+  /// (gerçek metraj / gerçek adam-gün) / (plan metraj / plan adam-gün).
   double? get unitEfficiency {
     final pQty = plannedQty;
     final pAg = plannedWorkerDays;
     if (pQty == null || pQty <= 0) return null;
     if (pAg <= 0 || actualWorkerDays <= 0) return null;
-    final qtyRatio = actualQty / pQty;
-    final laborRatio = actualWorkerDays / pAg;
-    if (laborRatio <= 0) return null;
-    return qtyRatio / laborRatio;
+    final actualRate = actualQty / actualWorkerDays;
+    final planRate = pQty / pAg;
+    if (planRate <= 0) return null;
+    return actualRate / planRate;
   }
 }
 
@@ -399,10 +399,11 @@ class TeamVerimSummary {
   double? get unitEfficiency {
     if (plannedQty <= 0 || plannedWorkerDays <= 0) return null;
     if (actualWorkerDays <= 0) return null;
-    final qtyRatio = actualQty / plannedQty;
-    final laborRatio = actualWorkerDays / plannedWorkerDays;
-    if (laborRatio <= 0) return null;
-    return qtyRatio / laborRatio;
+    // (gerçek metraj / gerçek AG) / (plan metraj / plan AG)
+    final actualRate = actualQty / actualWorkerDays;
+    final planRate = plannedQty / plannedWorkerDays;
+    if (planRate <= 0) return null;
+    return actualRate / planRate;
   }
 }
 
