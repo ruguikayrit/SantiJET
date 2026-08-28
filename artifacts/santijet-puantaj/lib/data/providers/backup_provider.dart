@@ -18,10 +18,10 @@ import 'catalog_provider.dart';
 import 'company_provider.dart';
 import 'daily_report_export_sections_provider.dart';
 import 'daily_report_provider.dart';
+import 'plan_cloud_sync_provider.dart';
 import 'production_provider.dart';
 import 'tasks_provider.dart';
 import 'uninsured_teams_provider.dart';
-import 'verim_provider.dart';
 import 'yevmiyeli_is_provider.dart';
 
 final puantajBackupControllerProvider =
@@ -37,7 +37,6 @@ class PuantajBackupController {
   Future<void> exportAll() async {
     final projects = _ref.read(projectsProvider);
     final activeId = _ref.read(activeProjectIdProvider);
-    final verim = _ref.read(verimProvider);
     final scheduleService = _ref.read(isProgramiCloudServiceProvider);
     final kesifService = _ref.read(kesifCloudServiceProvider);
 
@@ -78,8 +77,12 @@ class PuantajBackupController {
           _ref.read(uninsuredTeamsProvider).map((e) => e.toJson()).toList(),
       companyInfo: company.isEmpty ? null : company.toJson(),
       dailyReportExportSections: exportSections.toJson(),
-      workSchedule: verim.schedule?.toJson(),
-      kesif: verim.kesif?.toJson(),
+      workSchedule: activeId != null
+          ? scheduleService.cachedFor(activeId)?.toJson()
+          : null,
+      kesif: activeId != null
+          ? kesifService.cachedFor(activeId)?.toJson()
+          : null,
       workSchedulesByProject: workSchedulesByProject,
       kesifByProject: kesifByProject,
     );
@@ -210,7 +213,5 @@ class PuantajBackupController {
     } else if (payload.kesif != null) {
       cacheKesif(payload.kesif!);
     }
-
-    _ref.read(verimProvider.notifier).reloadForActiveProject();
   }
 }

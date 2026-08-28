@@ -17,7 +17,7 @@ import '../../data/providers/daily_report_provider.dart';
 import '../../data/providers/production_provider.dart';
 import '../../data/providers/tasks_provider.dart';
 import '../../data/providers/uninsured_teams_provider.dart';
-import '../../data/providers/verim_provider.dart';
+import '../../data/providers/plan_cloud_sync_provider.dart';
 import '../../data/providers/yevmiyeli_is_provider.dart';
 import '../../data/services/puantaj_backup_service.dart';
 import '../../domain/catalogs/professions.dart';
@@ -283,7 +283,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
         .read(taskCategoriesProvider.notifier)
         .resetToDefaults(TaskCategoryCatalog.defaults);
     ref.read(activeProjectIdProvider.notifier).set(null);
-    ref.read(verimProvider.notifier).clear();
+    ref.read(planCloudSyncControllerProvider).clearAllCaches();
     ref.read(companyInfoProvider.notifier).clear();
 
     if (!mounted) return;
@@ -298,7 +298,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
       title: 'Demo veriyi yükle',
       message:
           'Demo Şantiye sıfırlanır ve yeniden kurulur: personel, puantaj, '
-          'sigortasız ekip, imalat, verim (İş Programı + Keşif), görevler '
+          'sigortasız ekip, imalat (plan bulutu İmalat formunda), görevler '
           '(Satın Alma / Saha / Ofis / Görüşme), günlük raporlar ve yevmiyeli işler.',
       confirmLabel: 'Yükle',
     );

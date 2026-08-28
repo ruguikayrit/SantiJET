@@ -16,10 +16,10 @@ import 'app_data_provider.dart';
 import 'catalog_provider.dart';
 import 'company_provider.dart';
 import 'daily_report_provider.dart';
+import 'plan_cloud_sync_provider.dart';
 import 'production_provider.dart';
 import 'tasks_provider.dart';
 import 'uninsured_teams_provider.dart';
-import 'verim_provider.dart';
 import 'yevmiyeli_is_provider.dart';
 
 /// Ayarlar → Demo: puantaj, imalat, verim, görev, rapor ve yevmiyeli dahil
@@ -52,7 +52,10 @@ class DemoSeedController {
     _replaceYevmiyeli(projectId: project.id, people: people);
     _replaceTasks(projectId: project.id, people: people);
     _ref.read(productionProvider.notifier).seedYearlyChartDemo(project.id);
-    await _ref.read(verimProvider.notifier).syncFromCloud(demoFallback: true);
+    await _ref.read(planCloudSyncControllerProvider).syncDemoForProject(
+          projectId: project.id,
+          projectName: project.name,
+        );
     return project;
   }
 
@@ -72,9 +75,7 @@ class DemoSeedController {
     _ref.read(dailyReportsProvider.notifier).deleteForProject(projectId);
     _ref.read(yevmiyeliIsProvider.notifier).deleteForProject(projectId);
     _ref.read(uninsuredTeamsProvider.notifier).deleteForProject(projectId);
-    _ref.read(isProgramiCloudServiceProvider).clearCache(projectId);
-    _ref.read(kesifCloudServiceProvider).clearCache(projectId);
-    _ref.read(verimProvider.notifier).clear();
+    _ref.read(planCloudSyncControllerProvider).clearProjectCaches(projectId);
   }
 
   Project _ensureProject() {

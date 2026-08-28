@@ -56,7 +56,7 @@ class WeeklyReportView extends ConsumerWidget {
         SJCard.builder(
           builder: (context, theme) => Text(
             'Haftalık özet: personel ve ekip puantajı (Puantaj sekmesi), '
-            'yapılan işler (İmalat), verim (İş Programı + Keşif). '
+            'yapılan işler (İmalat), verim (İmalat plan/gerçekleşen). '
             'Rapor AL ile PDF veya Excel dışa aktarın.',
             style: theme.textTheme.bodySmall?.copyWith(
               color: theme.colorScheme.onSurfaceVariant,

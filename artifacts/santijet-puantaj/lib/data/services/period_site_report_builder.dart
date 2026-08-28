@@ -5,6 +5,7 @@ import '../../domain/entities/attendance.dart';
 import '../../domain/entities/daily_report.dart';
 import '../../domain/entities/person.dart';
 import '../../domain/entities/production.dart';
+import '../../domain/models/production_metrics.dart';
 import '../../domain/entities/uninsured_team_entry.dart';
 import '../../domain/entities/yevmiyeli_is_kaydi.dart';
 import 'puantaj_report_builder.dart';
@@ -250,14 +251,13 @@ abstract final class PeriodSiteReportBuilder {
       final plannedQty = p.plannedQty > 0 ? p.plannedQty : null;
 
       double? efficiency;
-      if (plannedQty != null &&
-          plannedQty > 0 &&
-          plannedAg > 0 &&
-          periodLabor > 0 &&
-          periodQty > 0) {
-        final periodRate = periodQty / periodLabor;
-        final planRate = plannedQty / plannedAg;
-        efficiency = periodRate / planRate;
+      if (plannedQty != null) {
+        efficiency = ProductionMetrics.computeUnitEfficiency(
+          plannedQty: plannedQty,
+          plannedWorkerDays: plannedAg,
+          actualQty: periodQty,
+          actualWorkerDays: periodLabor,
+        );
       }
 
       if (periodQty <= 0 &&

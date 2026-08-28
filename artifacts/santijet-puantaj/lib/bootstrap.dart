@@ -13,7 +13,7 @@ import 'data/providers/daily_report_provider.dart';
 import 'data/providers/production_provider.dart';
 import 'data/providers/tasks_provider.dart';
 import 'data/providers/uninsured_teams_provider.dart';
-import 'data/providers/verim_provider.dart';
+import 'data/providers/plan_cloud_sync_provider.dart';
 import 'data/providers/yevmiyeli_is_provider.dart';
 import 'data/remote/supabase_service.dart';
 

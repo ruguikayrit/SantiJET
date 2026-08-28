@@ -6,8 +6,8 @@ import '../../core/design_system/sj_card.dart';
 import '../../core/design_system/sj_empty_state.dart';
 import '../../core/routing/app_routes.dart';
 import '../../core/theme/app_colors.dart';
-import '../../core/theme/app_radii.dart';
 import '../../core/theme/app_spacing.dart';
+import '../../core/widgets/production_triple_progress.dart';
 import '../../core/widgets/santijet_header.dart';
 import '../../data/providers/app_data_provider.dart';
 import '../../data/providers/verim_provider.dart';
@@ -24,6 +24,7 @@ class VerimScreen extends ConsumerWidget {
     final theme = Theme.of(context);
     final project = ref.watch(activeProjectProvider);
     final rows = ref.watch(verimRowsProvider);
+    final teamSummaries = ref.watch(teamVerimSummariesProvider);
 
     if (project == null) {
       final empty = SJEmptyState(
@@ -53,8 +54,8 @@ class VerimScreen extends ConsumerWidget {
         ? SJEmptyState(
             title: 'Henüz imalat yok',
             message:
-                'Verim, İmalat sekmesindeki planlanan ve gerçekleşen '
-                'değerlerden hesaplanır. Önce imalat tanımlayın.',
+                'Verim, İmalat sekmesindeki metraj · süre · adam-gün '
+                'plan/gerçekleşen değerlerinden hesaplanır.',
             icon: Icons.speed_outlined,
             actionLabel: 'İmalat',
             onAction: () => context.go(AppRoutes.imalat),
@@ -73,12 +74,19 @@ class VerimScreen extends ConsumerWidget {
               ),
               const SizedBox(height: AppSpacing.xs),
               Text(
-                'Plan ← İmalat (miktar · gün · iş gücü)\n'
-                'Gerçek ← günlük imalat kayıtları\n'
-                'Birim verim = (gerçek metraj / gerçek AG) ÷ (plan metraj / plan AG)',
+                'Mavi çubuklar: tamamlanma (metraj · süre · AG)\n'
+                'Yeşil rozet: birim verim — (gerçek metraj / gerçek AG) ÷ (plan metraj / plan AG)',
                 style: theme.textTheme.bodySmall,
               ),
+              if (teamSummaries.length > 1) ...[
+                const SizedBox(height: AppSpacing.md),
+                Text('Ekip özeti', style: theme.textTheme.titleSmall),
+                const SizedBox(height: AppSpacing.sm),
+                _TeamVerimSummaryStrip(summaries: teamSummaries),
+              ],
               const SizedBox(height: AppSpacing.md),
+              Text('İmalat satırları', style: theme.textTheme.titleSmall),
+              const SizedBox(height: AppSpacing.sm),
               for (final row in rows) ...[
                 _VerimRowCard(row: row),
                 const SizedBox(height: AppSpacing.sm),
@@ -103,6 +111,84 @@ class VerimScreen extends ConsumerWidget {
   }
 }
 
+class _TeamVerimSummaryStrip extends StatelessWidget {
+  const _TeamVerimSummaryStrip({required this.summaries});
+
+  final List<TeamVerimSummary> summaries;
+
+  @override
+  Widget build(BuildContext context) {
+    return SizedBox(
+      height: 108,
+      child: ListView.separated(
+        scrollDirection: Axis.horizontal,
+        itemCount: summaries.length,
+        separatorBuilder: (_, __) => const SizedBox(width: AppSpacing.sm),
+        itemBuilder: (context, i) {
+          final s = summaries[i];
+          final efficiency = s.unitEfficiency;
+          final theme = Theme.of(context);
+
+          return SizedBox(
+            width: 168,
+            child: SJCard(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    s.teamName,
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: theme.textTheme.titleSmall?.copyWith(
+                      fontWeight: FontWeight.w700,
+                    ),
+                  ),
+                  const SizedBox(height: 4),
+                  Text(
+                    '${s.planLineCount} imalat',
+                    style: theme.textTheme.labelSmall,
+                  ),
+                  const Spacer(),
+                  if (efficiency != null)
+                    Row(
+                      children: [
+                        UnitEfficiencyBadge(
+                          efficiency: efficiency,
+                          compact: true,
+                        ),
+                        const Spacer(),
+                        Text(
+                          '${_fmt(s.actualQty)} / ${_fmt(s.plannedQty)}',
+                          style: theme.textTheme.labelSmall,
+                        ),
+                      ],
+                    )
+                  else
+                    Text(
+                      'Verim için plan + kayıt gerekli',
+                      style: theme.textTheme.labelSmall?.copyWith(
+                        color: AppColors.warning,
+                      ),
+                    ),
+                  if (efficiency != null) ...[
+                    const SizedBox(height: 6),
+                    UnitEfficiencyBar(efficiency: efficiency, height: 4),
+                  ],
+                ],
+              ),
+            ),
+          );
+        },
+      ),
+    );
+  }
+
+  static String _fmt(double v) {
+    if (v == v.roundToDouble()) return v.toStringAsFixed(0);
+    return v.toStringAsFixed(1);
+  }
+}
+
 class _VerimRowCard extends StatelessWidget {
   const _VerimRowCard({required this.row});
 
@@ -110,9 +196,8 @@ class _VerimRowCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final primary = row.unitEfficiency;
-    final color = _pctColor(primary);
-    final plannedQty = row.plannedQty;
+    final metrics = row.metrics;
+    final efficiency = row.unitEfficiency;
 
     return SJCard(
       child: Builder(
@@ -129,25 +214,12 @@ class _VerimRowCard extends StatelessWidget {
                       style: theme.textTheme.titleMedium,
                     ),
                   ),
-                  if (primary != null)
-                    Container(
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: 10,
-                        vertical: 4,
-                      ),
-                      decoration: BoxDecoration(
-                        color: color.withValues(alpha: 0.15),
-                        borderRadius: AppRadii.full,
-                        border: Border.all(color: color.withValues(alpha: 0.4)),
-                      ),
-                      child: Text(
-                        '%${(primary * 100).toStringAsFixed(0)}',
-                        style: theme.textTheme.labelMedium?.copyWith(
-                          color: color,
-                          fontWeight: FontWeight.w700,
-                        ),
-                      ),
-                    ),
+                  UnitEfficiencyBadge(
+                    efficiency: efficiency,
+                    missingLabel: metrics.canComputeEfficiency
+                        ? 'Kayıt bekleniyor'
+                        : 'Plan eksik',
+                  ),
                 ],
               ),
               if (row.locationLabel.isNotEmpty ||
@@ -162,82 +234,15 @@ class _VerimRowCard extends StatelessWidget {
                 ),
               ],
               const SizedBox(height: AppSpacing.sm),
-              _metric(
-                theme,
-                label: 'İş gücü',
-                planned: _fmt(row.plannedWorkerDays),
-                actual: _fmt(row.actualWorkerDays),
-                unit: 'adam-gün',
-              ),
-              if (plannedQty != null) ...[
-                const SizedBox(height: AppSpacing.xs),
-                _metric(
-                  theme,
-                  label: 'Miktar',
-                  planned: _fmt(plannedQty),
-                  actual: _fmt(row.actualQty),
-                  unit: row.unit,
-                ),
-              ] else ...[
-                const SizedBox(height: AppSpacing.xs),
-                Text(
-                  'Plan metraj girilmemiş',
-                  style: theme.textTheme.labelSmall?.copyWith(
-                    color: AppColors.warning,
-                  ),
-                ),
-              ],
-              if (primary != null) ...[
+              ProductionTripleProgress(metrics: metrics),
+              if (efficiency != null) ...[
                 const SizedBox(height: AppSpacing.sm),
-                ClipRRect(
-                  borderRadius: BorderRadius.circular(4),
-                  child: LinearProgressIndicator(
-                    value: primary.clamp(0.0, 1.0),
-                    minHeight: 6,
-                    backgroundColor: color.withValues(alpha: 0.15),
-                    color: color,
-                  ),
-                ),
+                UnitEfficiencyBar(efficiency: efficiency),
               ],
             ],
           );
         },
       ),
     );
-  }
-
-  Widget _metric(
-    ThemeData theme, {
-    required String label,
-    required String planned,
-    required String actual,
-    required String unit,
-  }) {
-    return Row(
-      children: [
-        SizedBox(
-          width: 72,
-          child: Text(label, style: theme.textTheme.labelMedium),
-        ),
-        Expanded(
-          child: Text(
-            'Plan $planned  ·  Gerçek $actual ${unit.trim()}',
-            style: theme.textTheme.bodySmall,
-          ),
-        ),
-      ],
-    );
-  }
-
-  static String _fmt(double v) {
-    if (v == v.roundToDouble()) return v.toStringAsFixed(0);
-    return v.toStringAsFixed(1);
-  }
-
-  Color _pctColor(double? ratio) {
-    if (ratio == null) return AppColors.cardTextMuted;
-    if (ratio >= 0.8) return AppColors.success;
-    if (ratio >= 0.5) return AppColors.warning;
-    return AppColors.critical;
   }
 }

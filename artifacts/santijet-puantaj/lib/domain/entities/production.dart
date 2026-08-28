@@ -1,5 +1,6 @@
 import 'package:equatable/equatable.dart';
 
+import '../models/production_metrics.dart';
 import 'production_day_entry.dart';
 
 /// İmalat işi — planlanan keşif miktarına %100 ulaşana kadar günlük kayıtlar.
@@ -78,6 +79,12 @@ class Production extends Equatable {
     if (plannedDays > 0) return plannedLabor * plannedDays;
     return plannedLabor;
   }
+
+  /// Metraj · süre · adam-gün + birim verim — İmalat / Verim ortak kaynak.
+  ProductionMetrics get metrics => ProductionMetrics(this);
+
+  /// Adam-gün tüketim yüzdesi: gerçekleşen AG / plan AG.
+  double get laborProgressPct => metrics.labor.progressPct;
 
   /// Son günlük kayıt tarihi (sıralama için).
   String get latestDate {
