@@ -34,6 +34,18 @@ enum _ImalatPhase {
         _ImalatPhase.devamEden => 'Devam eden imalatlar',
         _ImalatPhase.tamamlanan => 'Tamamlanan imalatlar',
       };
+
+  String get shortLabel => switch (this) {
+        _ImalatPhase.bekleyen => 'Bekleyen',
+        _ImalatPhase.devamEden => 'Devam eden',
+        _ImalatPhase.tamamlanan => 'Tamamlanan',
+      };
+
+  Color get accent => switch (this) {
+        _ImalatPhase.bekleyen => AppColors.warning,
+        _ImalatPhase.devamEden => AppColors.info,
+        _ImalatPhase.tamamlanan => AppColors.success,
+      };
 }
 
 /// İmalat — iş tanımı + %100'e kadar günlük usta/düz kayıtları.
@@ -48,10 +60,13 @@ class ImalatScreen extends ConsumerStatefulWidget {
 }
 
 class _ImalatScreenState extends ConsumerState<ImalatScreen> {
-  /// Kullanıcının elle açtığı durum / ekip başlıkları.
+  /// Seçili imalat durumu — acil görev filtre kartları gibi.
+  _ImalatPhase _selectedPhase = _ImalatPhase.devamEden;
+
+  /// Kullanıcının elle açtığı ekip başlıkları.
   final Set<String> _manualExpand = {};
 
-  /// Kullanıcının elle kapattığı durum / ekip başlıkları.
+  /// Kullanıcının elle kapattığı ekip başlıkları.
   final Set<String> _manualCollapse = {};
 
   static String _teamKey(Production p) {
@@ -72,26 +87,6 @@ class _ImalatScreenState extends ConsumerState<ImalatScreen> {
     if (p.isComplete) return _ImalatPhase.tamamlanan;
     if (p.dailyEntries.isEmpty) return _ImalatPhase.bekleyen;
     return _ImalatPhase.devamEden;
-  }
-
-  bool _isPhaseExpanded(_ImalatPhase phase) {
-    final key = 'phase:${phase.name}';
-    if (_manualExpand.contains(key)) return true;
-    if (_manualCollapse.contains(key)) return false;
-    return false;
-  }
-
-  void _togglePhase(_ImalatPhase phase, bool currentlyExpanded) {
-    final key = 'phase:${phase.name}';
-    setState(() {
-      if (currentlyExpanded) {
-        _manualExpand.remove(key);
-        _manualCollapse.add(key);
-      } else {
-        _manualCollapse.remove(key);
-        _manualExpand.add(key);
-      }
-    });
   }
 
   bool _isTeamExpanded(String teamKey, bool updatedToday) {
@@ -236,79 +231,77 @@ class _ImalatScreenState extends ConsumerState<ImalatScreen> {
     );
   }
 
-  Widget _phaseHeader({
+  Widget _phaseFilterBar(Map<_ImalatPhase, List<Production>> byPhase) {
+    return Row(
+      children: [
+        for (var i = 0; i < _ImalatPhase.values.length; i++) ...[
+          if (i > 0) const SizedBox(width: AppSpacing.xs),
+          Expanded(
+            child: _ImalatPhaseFilterCard(
+              label: _ImalatPhase.values[i].shortLabel,
+              value: '${byPhase[_ImalatPhase.values[i]]!.length}',
+              color: _ImalatPhase.values[i].accent,
+              selected: _selectedPhase == _ImalatPhase.values[i],
+              onTap: () =>
+                  setState(() => _selectedPhase = _ImalatPhase.values[i]),
+            ),
+          ),
+        ],
+      ],
+    );
+  }
+
+  Widget _phaseContent({
     required _ImalatPhase phase,
-    required int count,
-    required bool expanded,
-    required VoidCallback onToggle,
+    required List<Production> phaseItems,
   }) {
-    final theme = Theme.of(context);
-    final accent = switch (phase) {
-      _ImalatPhase.bekleyen => AppColors.warning,
-      _ImalatPhase.devamEden => AppColors.info,
-      _ImalatPhase.tamamlanan => AppColors.success,
-    };
-    // Canvas/chrome üzerinde — kart mürekkebi (cardText*) kullanılmaz.
-    final headerBg = AppColors.surfaceElevated;
-    final titleColor = AppColors.textPrimary;
-    final countColor = AppColors.readableSecondaryOn(headerBg);
-    final rail = AppColors.statusInkOnChrome(accent);
-    return Material(
-      color: Colors.transparent,
-      child: InkWell(
-        borderRadius: AppRadii.md,
-        onTap: onToggle,
-        child: Container(
-          padding: const EdgeInsets.fromLTRB(
-            AppSpacing.sm,
-            AppSpacing.sm,
-            AppSpacing.sm,
-            AppSpacing.sm,
-          ),
-          decoration: BoxDecoration(
-            borderRadius: AppRadii.md,
-            color: headerBg,
-            border: Border.all(color: AppColors.border.withValues(alpha: 0.7)),
-          ),
-          child: Row(
-            children: [
-              Container(
-                width: 3,
-                height: 22,
-                decoration: BoxDecoration(
-                  color: rail,
-                  borderRadius: BorderRadius.circular(2),
-                ),
+    final teamGroups = _groupByTeam(phaseItems);
+    if (phaseItems.isEmpty) {
+      return Padding(
+        padding: const EdgeInsets.only(top: AppSpacing.sm),
+        child: Text(
+          'Bu grupta imalat yok',
+          style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                color: Theme.of(context).colorScheme.onSurfaceVariant,
               ),
-              const SizedBox(width: AppSpacing.sm),
-              Icon(
-                expanded
-                    ? Icons.keyboard_arrow_down_rounded
-                    : Icons.keyboard_arrow_right_rounded,
-                color: rail,
-                size: 22,
-              ),
-              const SizedBox(width: 2),
-              Expanded(
-                child: Text(
-                  phase.label,
-                  style: theme.textTheme.titleSmall?.copyWith(
-                    fontWeight: FontWeight.w800,
-                    color: titleColor,
-                  ),
-                ),
-              ),
-              Text(
-                '$count',
-                style: theme.textTheme.labelMedium?.copyWith(
-                  color: countColor,
-                  fontWeight: FontWeight.w700,
-                ),
-              ),
-            ],
-          ),
         ),
-      ),
+      );
+    }
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        const SizedBox(height: AppSpacing.sm),
+        for (var gi = 0; gi < teamGroups.length; gi++) ...[
+          if (gi > 0) const SizedBox(height: AppSpacing.sm),
+          Builder(
+            builder: (context) {
+              final g = teamGroups[gi];
+              final teamKey = '${phase.name}|${g.team}';
+              final expanded = _isTeamExpanded(teamKey, g.updatedToday);
+              return Column(
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: [
+                  _teamHeader(
+                    team: g.team,
+                    count: g.items.length,
+                    expanded: expanded,
+                    updatedToday: g.updatedToday,
+                    onToggle: () => _toggleTeam(teamKey, expanded),
+                  ),
+                  if (expanded) ...[
+                    const SizedBox(height: AppSpacing.sm),
+                    for (var i = 0; i < g.items.length; i++) ...[
+                      if (i > 0) const SizedBox(height: AppSpacing.sm),
+                      _productionCard(g.items[i]),
+                    ],
+                  ],
+                ],
+              );
+            },
+          ),
+        ],
+      ],
     );
   }
 
@@ -479,105 +472,11 @@ class _ImalatScreenState extends ConsumerState<ImalatScreen> {
                         88,
                       ),
                       children: [
-                        for (var pi = 0;
-                            pi < _ImalatPhase.values.length;
-                            pi++) ...[
-                          if (pi > 0) const SizedBox(height: AppSpacing.md),
-                          Builder(
-                            builder: (context) {
-                              final phase = _ImalatPhase.values[pi];
-                              final phaseItems = byPhase[phase]!;
-                              final phaseExpanded = _isPhaseExpanded(phase);
-                              final teamGroups = _groupByTeam(phaseItems);
-                              return Column(
-                                crossAxisAlignment: CrossAxisAlignment.stretch,
-                                children: [
-                                  _phaseHeader(
-                                    phase: phase,
-                                    count: phaseItems.length,
-                                    expanded: phaseExpanded,
-                                    onToggle: () =>
-                                        _togglePhase(phase, phaseExpanded),
-                                  ),
-                                  if (phaseExpanded) ...[
-                                    if (phaseItems.isEmpty)
-                                      Padding(
-                                        padding: const EdgeInsets.fromLTRB(
-                                          AppSpacing.sm,
-                                          AppSpacing.sm,
-                                          AppSpacing.sm,
-                                          0,
-                                        ),
-                                        child: Text(
-                                          'Bu grupta imalat yok',
-                                          style: Theme.of(context)
-                                              .textTheme
-                                              .bodySmall
-                                              ?.copyWith(
-                                                color: Theme.of(context)
-                                                    .colorScheme
-                                                    .onSurfaceVariant,
-                                              ),
-                                        ),
-                                      )
-                                    else ...[
-                                      const SizedBox(height: AppSpacing.sm),
-                                      for (var gi = 0;
-                                          gi < teamGroups.length;
-                                          gi++) ...[
-                                        if (gi > 0)
-                                          const SizedBox(height: AppSpacing.sm),
-                                        Builder(
-                                          builder: (context) {
-                                            final g = teamGroups[gi];
-                                            final teamKey =
-                                                '${phase.name}|${g.team}';
-                                            final expanded = _isTeamExpanded(
-                                              teamKey,
-                                              g.updatedToday,
-                                            );
-                                            return Column(
-                                              crossAxisAlignment:
-                                                  CrossAxisAlignment.stretch,
-                                              children: [
-                                                _teamHeader(
-                                                  team: g.team,
-                                                  count: g.items.length,
-                                                  expanded: expanded,
-                                                  updatedToday: g.updatedToday,
-                                                  onToggle: () => _toggleTeam(
-                                                    teamKey,
-                                                    expanded,
-                                                  ),
-                                                ),
-                                                if (expanded) ...[
-                                                  const SizedBox(
-                                                    height: AppSpacing.sm,
-                                                  ),
-                                                  for (var i = 0;
-                                                      i < g.items.length;
-                                                      i++) ...[
-                                                    if (i > 0)
-                                                      const SizedBox(
-                                                        height: AppSpacing.sm,
-                                                      ),
-                                                    _productionCard(
-                                                      g.items[i],
-                                                    ),
-                                                  ],
-                                                ],
-                                              ],
-                                            );
-                                          },
-                                        ),
-                                      ],
-                                    ],
-                                  ],
-                                ],
-                              );
-                            },
-                          ),
-                        ],
+                        _phaseFilterBar(byPhase),
+                        _phaseContent(
+                          phase: _selectedPhase,
+                          phaseItems: byPhase[_selectedPhase]!,
+                        ),
                       ],
                     ),
             ),
@@ -1646,6 +1545,81 @@ class _ProgressLine extends StatelessWidget {
           ),
         ),
       ],
+    );
+  }
+}
+
+/// Ana sayfa acil görev filtre kartları ile aynı dil.
+class _ImalatPhaseFilterCard extends StatelessWidget {
+  const _ImalatPhaseFilterCard({
+    required this.label,
+    required this.value,
+    required this.color,
+    required this.selected,
+    required this.onTap,
+  });
+
+  final String label;
+  final String value;
+  final Color color;
+  final bool selected;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    return Material(
+      color: Colors.transparent,
+      child: InkWell(
+        onTap: onTap,
+        borderRadius: AppRadii.sm,
+        child: Container(
+          padding: const EdgeInsets.all(AppSpacing.sm),
+          decoration: BoxDecoration(
+            color: color.withValues(alpha: selected ? 0.16 : 0.08),
+            borderRadius: AppRadii.sm,
+            border: Border.all(
+              color: color.withValues(alpha: selected ? 0.55 : 0.25),
+              width: selected ? 1.5 : 1,
+            ),
+          ),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Row(
+                children: [
+                  Expanded(
+                    child: Text(
+                      label,
+                      maxLines: 2,
+                      overflow: TextOverflow.ellipsis,
+                      style: theme.textTheme.labelSmall,
+                    ),
+                  ),
+                  if (selected) ...[
+                    const SizedBox(width: 2),
+                    Icon(
+                      Icons.check_circle,
+                      size: 14,
+                      color: AppColors.statusInkOnCard(color),
+                    ),
+                  ],
+                ],
+              ),
+              const SizedBox(height: 4),
+              Text(
+                value,
+                style: theme.textTheme.titleLarge?.copyWith(
+                  color: AppColors.statusInkOnCard(color),
+                  fontWeight: FontWeight.w700,
+                ),
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+              ),
+            ],
+          ),
+        ),
+      ),
     );
   }
 }

@@ -6,6 +6,7 @@ import 'app_data_provider.dart';
 import 'production_provider.dart';
 import 'uninsured_teams_provider.dart';
 import 'verim_provider.dart';
+import 'yevmiyeli_is_provider.dart';
 
 /// Haftalık / aylık birleşik rapor anahtarı.
 typedef PeriodSiteReportKey = ({
@@ -22,6 +23,7 @@ final periodSiteReportProvider =
   final people = ref.watch(personnelProvider);
   final attendance = ref.watch(attendanceProvider);
   final uninsured = ref.watch(uninsuredTeamsProvider);
+  final yevmiyeli = ref.watch(yevmiyeliIsProvider);
   final productions = ref.watch(productionProvider);
   final verim = ref.watch(verimProvider);
 
@@ -31,6 +33,7 @@ final periodSiteReportProvider =
     people: people,
     attendance: attendance,
     uninsuredTeams: uninsured,
+    yevmiyeliEntries: yevmiyeli,
     productions: productions,
     verim: verim,
     period: key.period,

@@ -43,8 +43,23 @@ class PeriodSiteReportSections extends StatelessWidget {
         PeriodTeamSummaryTable(
           headers: report.ekipPuantaj.headers,
           rows: report.ekipPuantaj.rows,
+          sumColumnIndexes: report.ekipPuantaj.sumColumnIndexes,
         ),
         _SummaryLines(lines: report.ekipPuantaj.summaryLines),
+        const SizedBox(height: AppSpacing.md),
+        _SectionTitle(
+          icon: Icons.handyman_outlined,
+          title: 'Yevmiyeli işler',
+          subtitle: 'Tarih · Ad Soyad · Firma · Meslek · Ekip · Yevmiye',
+        ),
+        const SizedBox(height: AppSpacing.sm),
+        PeriodTeamSummaryTable(
+          headers: report.yevmiyeli.headers,
+          rows: report.yevmiyeli.rows,
+          emptyMessage: 'Bu dönemde yevmiyeli iş kaydı yok',
+          sumColumnIndexes: report.yevmiyeli.sumColumnIndexes,
+        ),
+        _SummaryLines(lines: report.yevmiyeli.summaryLines),
         const SizedBox(height: AppSpacing.md),
         _SectionTitle(
           icon: Icons.construction_outlined,

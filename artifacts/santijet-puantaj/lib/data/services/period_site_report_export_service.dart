@@ -117,10 +117,25 @@ class PeriodSiteReportExportService {
           pw.SizedBox(height: 12),
           _pdfSectionTitle('Ekip puantajı'),
           pw.SizedBox(height: 6),
-          _pdfTable(report.ekipPuantaj.headers, report.ekipPuantaj.rows),
+          _pdfTable(
+            report.ekipPuantaj.headers,
+            report.ekipPuantaj.rowsWithTotals,
+          ),
           if (report.ekipPuantaj.summaryLines.isNotEmpty) ...[
             pw.SizedBox(height: 4),
             for (final line in report.ekipPuantaj.summaryLines)
+              pw.Text(
+                line,
+                style: const pw.TextStyle(fontSize: 8, color: _inkMuted),
+              ),
+          ],
+          pw.SizedBox(height: 12),
+          _pdfSectionTitle('Yevmiyeli işler'),
+          pw.SizedBox(height: 6),
+          _pdfTable(report.yevmiyeli.headers, report.yevmiyeli.rowsWithTotals),
+          if (report.yevmiyeli.summaryLines.isNotEmpty) ...[
+            pw.SizedBox(height: 4),
+            for (final line in report.yevmiyeli.summaryLines)
               pw.Text(
                 line,
                 style: const pw.TextStyle(fontSize: 8, color: _inkMuted),
@@ -247,6 +262,8 @@ class PeriodSiteReportExportService {
           ['Personel puantaj', line],
         for (final line in report.ekipPuantaj.summaryLines)
           ['Ekip puantaj', line],
+        for (final line in report.yevmiyeli.summaryLines)
+          ['Yevmiyeli', line],
       ],
     );
     _writeSheet(
@@ -259,7 +276,13 @@ class PeriodSiteReportExportService {
       excel,
       'Ekip',
       report.ekipPuantaj.headers,
-      report.ekipPuantaj.rows,
+      report.ekipPuantaj.rowsWithTotals,
+    );
+    _writeSheet(
+      excel,
+      'Yevmiyeli',
+      report.yevmiyeli.headers,
+      report.yevmiyeli.rowsWithTotals,
     );
     _writeSheet(
       excel,

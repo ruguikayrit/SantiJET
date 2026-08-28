@@ -32,6 +32,7 @@ class PuantajReportData {
     required this.fileStem,
     required this.visual,
     this.plainTable = false,
+    this.sumColumnIndexes = const {},
   });
 
   final String title;
@@ -47,6 +48,34 @@ class PuantajReportData {
 
   /// Ekip puantajı gibi düz tablo PDF (firma bandı / rozet yok).
   final bool plainTable;
+
+  /// Alt toplam satırında toplanacak sütun indeksleri.
+  final Set<int> sumColumnIndexes;
+
+  /// Satırlar + (varsa) Toplam satırı — ekran, PDF ve Excel ortak.
+  List<List<String>> get rowsWithTotals {
+    if (rows.isEmpty || sumColumnIndexes.isEmpty) return rows;
+    final total = List<String>.filled(headers.length, '');
+    if (headers.isNotEmpty) total[0] = 'Toplam';
+    for (final i in sumColumnIndexes) {
+      if (i < 0 || i >= headers.length) continue;
+      total[i] = formatNumericColumnSum(rows, i);
+    }
+    return [...rows, total];
+  }
+}
+
+String formatNumericColumnSum(List<List<String>> rows, int columnIndex) {
+  var sum = 0.0;
+  for (final row in rows) {
+    if (columnIndex >= row.length) continue;
+    final t = row[columnIndex].trim().replaceAll(',', '.').replaceAll('—', '');
+    if (t.isEmpty || t == '-') continue;
+    final n = double.tryParse(t);
+    if (n != null) sum += n;
+  }
+  if (sum == sum.roundToDouble()) return sum.toStringAsFixed(0);
+  return sum.toStringAsFixed(1);
 }
 
 /// PDF’de renkli rozet + firma bandı için yapılandırılmış veri.
@@ -320,6 +349,7 @@ abstract final class PuantajReportBuilder {
         companies: [],
       ),
       plainTable: true,
+      sumColumnIndexes: {headers.length - 1},
     );
   }
 
@@ -546,6 +576,7 @@ abstract final class PuantajReportBuilder {
         companies: [],
       ),
       plainTable: true,
+      sumColumnIndexes: const {2},
     );
   }
 

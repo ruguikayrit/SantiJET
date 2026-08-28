@@ -2377,6 +2377,7 @@ class _CetvelView extends ConsumerWidget {
                       'Günlük\nortalama adam',
                     ],
                 rows: ekipReport?.rows ?? const [],
+                sumColumnIndexes: ekipReport?.sumColumnIndexes ?? const {2},
               ),
               if (ekipReport != null &&
                   ekipReport.summaryLines.isNotEmpty) ...[
@@ -2419,6 +2420,7 @@ class _CetvelView extends ConsumerWidget {
                     ],
                 ],
                 emptyMessage: 'Bu dönemde yevmiyeli iş kaydı yok',
+                sumColumnIndexes: const {5},
               ),
               if (yevmiyeliEntries.isNotEmpty) ...[
                 const SizedBox(height: AppSpacing.xs),

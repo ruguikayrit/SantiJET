@@ -6,6 +6,7 @@ import '../../../core/theme/app_radii.dart';
 import '../../../core/theme/app_spacing.dart';
 import '../../../core/utils/text_format.dart';
 import '../../../data/services/period_site_report_builder.dart';
+import '../../../data/services/puantaj_report_builder.dart';
 import '../../../domain/daily_report/attendance_snapshot_builder.dart';
 import '../../../domain/entities/daily_report.dart';
 import '../../../domain/enums/attendance_status.dart';
@@ -714,11 +715,17 @@ class PeriodTeamSummaryTable extends StatelessWidget {
     required this.headers,
     required this.rows,
     this.emptyMessage = 'Bu dönemde ekip puantaj kaydı yok',
+    this.sumColumnIndexes = const {},
+    this.totalLabel = 'Toplam',
   });
 
   final List<String> headers;
   final List<List<String>> rows;
   final String emptyMessage;
+
+  /// Bu sütun indekslerinin sayısal toplamı alt satırda gösterilir.
+  final Set<int> sumColumnIndexes;
+  final String totalLabel;
 
   @override
   Widget build(BuildContext context) {
@@ -803,10 +810,58 @@ class PeriodTeamSummaryTable extends StatelessWidget {
                     ],
                   ),
                 ),
+              if (sumColumnIndexes.isNotEmpty)
+                Container(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 6,
+                    vertical: 10,
+                  ),
+                  color: AppColors.success.withValues(alpha: 0.08),
+                  child: Row(
+                    children: [
+                      for (var i = 0; i < headers.length; i++) ...[
+                        if (i > 0) const SizedBox(width: 4),
+                        Expanded(
+                          flex: flexes[i],
+                          child: Text(
+                            _totalCell(
+                              columnIndex: i,
+                              rows: rows,
+                              sumColumnIndexes: sumColumnIndexes,
+                              totalLabel: totalLabel,
+                            ),
+                            textAlign:
+                                i < 2 ? TextAlign.start : TextAlign.center,
+                            style: theme.textTheme.labelSmall?.copyWith(
+                              fontSize: 11,
+                              fontWeight: FontWeight.w800,
+                              color: sumColumnIndexes.contains(i)
+                                  ? AppColors.success
+                                  : null,
+                            ),
+                            maxLines: 2,
+                            overflow: TextOverflow.ellipsis,
+                          ),
+                        ),
+                      ],
+                    ],
+                  ),
+                ),
             ],
           ],
         ),
       ),
     );
+  }
+
+  static String _totalCell({
+    required int columnIndex,
+    required List<List<String>> rows,
+    required Set<int> sumColumnIndexes,
+    required String totalLabel,
+  }) {
+    if (columnIndex == 0) return totalLabel;
+    if (!sumColumnIndexes.contains(columnIndex)) return '';
+    return formatNumericColumnSum(rows, columnIndex);
   }
 }

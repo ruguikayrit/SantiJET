@@ -684,7 +684,7 @@ class PuantajExportService {
               ),
           ],
         ),
-        for (final row in report.rows)
+        for (final row in report.rowsWithTotals)
           pw.TableRow(
             children: [
               for (var i = 0; i < colCount; i++)
@@ -715,7 +715,7 @@ class PuantajExportService {
           .map((h) => TextCellValue(h.replaceAll('\n', ' ')))
           .toList(),
     );
-    for (final row in report.rows) {
+    for (final row in report.rowsWithTotals) {
       sheet.appendRow(row.map(TextCellValue.new).toList());
     }
 

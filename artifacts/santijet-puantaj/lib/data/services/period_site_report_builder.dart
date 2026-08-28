@@ -7,6 +7,7 @@ import '../../domain/entities/person.dart';
 import '../../domain/entities/production.dart';
 import '../../domain/entities/production_day_entry.dart';
 import '../../domain/entities/uninsured_team_entry.dart';
+import '../../domain/entities/yevmiyeli_is_kaydi.dart';
 import '../providers/verim_provider.dart';
 import 'puantaj_report_builder.dart';
 
@@ -122,6 +123,7 @@ class PeriodSiteReportData {
     required this.days,
     required this.personelSummary,
     required this.ekipPuantaj,
+    required this.yevmiyeli,
     required this.imalatRows,
     required this.verimRows,
     required this.fileStem,
@@ -132,6 +134,7 @@ class PeriodSiteReportData {
   final List<String> days;
   final PeriodPersonelSummary personelSummary;
   final PuantajReportData ekipPuantaj;
+  final PuantajReportData yevmiyeli;
   final List<PeriodImalatRow> imalatRows;
   final List<PeriodVerimRow> verimRows;
   final String fileStem;
@@ -147,6 +150,7 @@ abstract final class PeriodSiteReportBuilder {
     required List<Person> people,
     required List<Attendance> attendance,
     required List<UninsuredTeamEntry> uninsuredTeams,
+    List<YevmiyeliIsKaydi> yevmiyeliEntries = const [],
     required List<Production> productions,
     required VerimState verim,
     required PuantajReportPeriod period,
@@ -198,6 +202,14 @@ abstract final class PeriodSiteReportBuilder {
       anchorDate: anchorDate,
       layout: PuantajExportLayout.ekip,
       uninsuredTeams: uninsuredTeams,
+    );
+
+    final yevmiyeli = PuantajReportBuilder.buildYevmiyeli(
+      projectName: projectName,
+      projectId: projectId,
+      period: period,
+      anchorDate: anchorDate,
+      entries: yevmiyeliEntries,
     );
 
     final projectProductions = productions
@@ -290,6 +302,7 @@ abstract final class PeriodSiteReportBuilder {
       days: days,
       personelSummary: personelSummary,
       ekipPuantaj: ekipPuantaj,
+      yevmiyeli: yevmiyeli,
       imalatRows: imalatRows,
       verimRows: verimRows,
       fileStem: fileStem,
