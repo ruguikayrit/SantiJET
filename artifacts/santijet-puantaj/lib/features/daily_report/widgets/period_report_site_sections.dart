@@ -72,7 +72,7 @@ class PeriodSiteReportSections extends StatelessWidget {
         _SectionTitle(
           icon: Icons.speed_outlined,
           title: 'Verim',
-          subtitle: 'Plan: İş Programı + Keşif · Gerçekleşen: İmalat kayıtları',
+          subtitle: 'Plan + gerçekleşen: İmalat sekmesi',
         ),
         const SizedBox(height: AppSpacing.sm),
         _VerimTableSection(rows: report.verimRows),
@@ -223,7 +223,7 @@ class _VerimTableSection extends StatelessWidget {
     if (rows.isEmpty) {
       return SJCard.builder(
         builder: (context, theme) => Text(
-          'Verim için İş Programı + Keşif bulut verisi ve dönemde imalat kaydı gerekir.',
+          'Verim için İmalat sekmesinde planlanan değerler ve dönemde günlük kayıt gerekir.',
           style: theme.textTheme.bodyMedium?.copyWith(
             color: theme.colorScheme.onSurfaceVariant,
           ),

@@ -298,6 +298,7 @@ class DemoSeedController {
         unit: 'ton',
         plannedQty: 20,
         plannedDays: 7,
+        plannedLabor: 6,
         note: '[DEMO] Kolon demiri',
         dailyEntries: [
           entry(12, qty: 4),
@@ -318,6 +319,7 @@ class DemoSeedController {
         unit: 'ton',
         plannedQty: 15,
         plannedDays: 10,
+        plannedLabor: 4,
         note: '[DEMO] Kiriş demiri',
         dailyEntries: [
           entry(10, qty: 2),
@@ -337,6 +339,7 @@ class DemoSeedController {
         unit: 'ton',
         plannedQty: 40,
         plannedDays: 14,
+        plannedLabor: 8,
         note: '[DEMO] Temel demiri',
         dailyEntries: [
           entry(14, qty: 6),
@@ -357,6 +360,7 @@ class DemoSeedController {
         unit: 'm²',
         plannedQty: 850,
         plannedDays: 12,
+        plannedLabor: 5,
         note: '[DEMO] Alçı sıva',
         dailyEntries: [
           entry(6, qty: 120, usta: 2, duz: 3),

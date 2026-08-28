@@ -3,6 +3,7 @@ import 'package:hive/hive.dart';
 
 import '../../core/utils/puantaj_date.dart';
 import '../../domain/entities/kesif_plan.dart';
+import '../../domain/entities/production.dart';
 import '../../domain/entities/work_schedule_plan.dart';
 import '../services/is_programi_cloud_service.dart';
 import '../services/kesif_cloud_service.dart';
@@ -74,42 +75,30 @@ class VerimState {
   }
 }
 
-/// Tek bir imalat satırı için plan vs gerçekleşen iş gücü / miktar.
+/// Tek bir imalat satırı için plan vs gerçekleşen (İmalat sekmesi kaynaklı).
 class VerimRow {
-  const VerimRow({
-    required this.item,
-    this.kesif,
-    required this.actualWorkerDays,
-    required this.actualQty,
-  });
+  const VerimRow({required this.production});
 
-  /// İş Programı satırı — süre / plan iş gücü.
-  final WorkScheduleItem item;
+  final Production production;
 
-  /// Keşif satırı — plan metraj (yoksa verim hesaplanamaz).
-  final KesifItem? kesif;
+  String get imalatName => production.name;
+  String get unit => production.unit;
+  String get teamName =>
+      production.teamName.trim().isEmpty ? 'Diğer' : production.teamName.trim();
+  String get locationLabel => production.locationLabel;
 
-  final double actualWorkerDays;
-  final double actualQty;
+  /// Planlanan adam-gün — iş gücü × gün.
+  double get plannedWorkerDays => production.plannedWorkerDays;
 
-  /// Planlanan adam-gün: planlanan kişi × süre (gün) — İş Programı.
-  double get plannedWorkerDays {
-    final workers = (item.plannedWorkerCount ?? 0).toDouble();
-    if (workers <= 0) return 0;
-    final days = item.durationDays;
-    if (days != null && days > 0) return workers * days;
-    return workers;
-  }
-
-  /// Plan metraj — Keşif.
+  /// Plan metraj — imalat formundaki planlanan miktar.
   double? get plannedQty {
-    final q = kesif?.plannedQty;
-    if (q != null && q > 0) return q;
+    final q = production.plannedQty;
+    if (q > 0) return q;
     return null;
   }
 
-  String? get unit =>
-      (kesif?.unit.trim().isNotEmpty == true) ? kesif!.unit : item.unit;
+  double get actualWorkerDays => production.actualLaborDays;
+  double get actualQty => production.completedQty;
 
   /// Birim verim =
   /// (gerçek metraj / gerçek adam-gün) / (plan metraj / plan adam-gün).
@@ -310,60 +299,19 @@ final verimProvider =
   return notifier;
 });
 
-/// Plan: süre/iş gücü ← İş Programı, metraj ← Keşif.
-/// Gerçekleşen ← yerel puantaj + imalat.
+/// Plan + gerçekleşen ← İmalat sekmesi (planlanan miktar / gün / iş gücü + günlük kayıtlar).
 final verimRowsProvider = Provider<List<VerimRow>>((ref) {
-  final verim = ref.watch(verimProvider);
-  final schedule = verim.schedule;
-  final kesif = verim.kesif;
   final project = ref.watch(activeProjectProvider);
-  if (schedule == null ||
-      project == null ||
-      schedule.items.isEmpty ||
-      kesif == null ||
-      kesif.items.isEmpty) {
-    return const [];
-  }
+  if (project == null) return const [];
 
-  final attendance = ref.watch(attendanceProvider);
-  final productions = ref.watch(productionProvider);
-
-  final projectAtt = attendance.where((a) => a.projectId == project.id);
-  final totalWorkerDays =
-      projectAtt.fold<double>(0, (sum, a) => sum + a.yevmiye);
-
-  final plannedAgSum = schedule.items.fold<double>(0, (s, i) {
-    final workers = (i.plannedWorkerCount ?? 0).toDouble();
-    if (workers <= 0) return s;
-    final days = i.durationDays;
-    return s + (days != null && days > 0 ? workers * days : workers);
-  });
+  final productions = ref
+      .watch(productionProvider)
+      .where((p) => p.projectId == project.id)
+      .toList()
+    ..sort((a, b) => a.name.toLowerCase().compareTo(b.name.toLowerCase()));
 
   return [
-    for (final item in schedule.items)
-      () {
-        final workers = (item.plannedWorkerCount ?? 0).toDouble();
-        final days = item.durationDays;
-        final plannedAg = workers <= 0
-            ? 0.0
-            : (days != null && days > 0 ? workers * days : workers);
-        final share = plannedAgSum > 0
-            ? plannedAg / plannedAgSum
-            : (1 / schedule.items.length);
-        final nameLower = item.imalatName.toLowerCase();
-        final token = nameLower.split(RegExp(r'\s+')).first;
-        final qty = productions
-            .where((p) =>
-                p.projectId == project.id &&
-                p.name.toLowerCase().contains(token))
-            .fold<double>(0, (s, p) => s + p.completedQty);
-        return VerimRow(
-          item: item,
-          kesif: matchKesifItem(kesif.items, item),
-          actualWorkerDays: totalWorkerDays * share,
-          actualQty: qty,
-        );
-      }(),
+    for (final p in productions) VerimRow(production: p),
   ];
 });
 
@@ -411,23 +359,6 @@ final teamVerimSummariesProvider = Provider<List<TeamVerimSummary>>((ref) {
   final rows = ref.watch(verimRowsProvider);
   if (rows.isEmpty) return const [];
 
-  final productions = ref.watch(activeProductionProvider);
-
-  String resolveTeam(WorkScheduleItem item) {
-    final nameLower = item.imalatName.toLowerCase().trim();
-    if (nameLower.isEmpty) return 'Diğer';
-    final token = nameLower.split(RegExp(r'\s+')).first;
-    for (final p in productions) {
-      final pName = p.name.toLowerCase().trim();
-      if (pName.isEmpty) continue;
-      if (pName.contains(token) || nameLower.contains(pName.split(' ').first)) {
-        final t = p.teamName.trim();
-        return t.isEmpty ? 'Diğer' : t;
-      }
-    }
-    return 'Diğer';
-  }
-
   final plannedAgByTeam = <String, double>{};
   final actualAgByTeam = <String, double>{};
   final plannedQtyByTeam = <String, double>{};
@@ -435,7 +366,7 @@ final teamVerimSummariesProvider = Provider<List<TeamVerimSummary>>((ref) {
   final linesByTeam = <String, int>{};
 
   for (final row in rows) {
-    final team = resolveTeam(row.item);
+    final team = row.teamName;
     plannedAgByTeam[team] =
         (plannedAgByTeam[team] ?? 0) + row.plannedWorkerDays;
     actualAgByTeam[team] =

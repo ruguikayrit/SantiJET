@@ -5,7 +5,6 @@ import '../services/puantaj_report_builder.dart';
 import 'app_data_provider.dart';
 import 'production_provider.dart';
 import 'uninsured_teams_provider.dart';
-import 'verim_provider.dart';
 import 'yevmiyeli_is_provider.dart';
 
 /// Haftalık / aylık birleşik rapor anahtarı.
@@ -25,7 +24,6 @@ final periodSiteReportProvider =
   final uninsured = ref.watch(uninsuredTeamsProvider);
   final yevmiyeli = ref.watch(yevmiyeliIsProvider);
   final productions = ref.watch(productionProvider);
-  final verim = ref.watch(verimProvider);
 
   return PeriodSiteReportBuilder.build(
     projectId: project.id,
@@ -35,7 +33,6 @@ final periodSiteReportProvider =
     uninsuredTeams: uninsured,
     yevmiyeliEntries: yevmiyeli,
     productions: productions,
-    verim: verim,
     period: key.period,
     anchorDate: key.anchorDate,
   );

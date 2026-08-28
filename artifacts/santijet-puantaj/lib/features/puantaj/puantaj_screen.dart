@@ -1597,7 +1597,7 @@ class _DayTeamsSection extends ConsumerWidget {
           const SizedBox(height: AppSpacing.sm),
           Text(
             catalogTeams.isEmpty
-                ? 'Ekip ekle ile yeni ekip tanımlayıp çalışan sayısı girin.'
+                ? 'Yeni ekip tanımlayıp çalışan sayısı girin.'
                 : 'Açılır listeden ekip seçip çalışan sayısı girin.',
             style: theme.textTheme.bodySmall?.copyWith(
               color: theme.colorScheme.onSurfaceVariant,
@@ -1683,6 +1683,17 @@ class _DayTeamsSection extends ConsumerWidget {
         ],
       ];
 
+    void openAdd() {
+      if (!canEdit) return denyWrite();
+      _openEditor(
+        context,
+        ref,
+        projectId: project.id,
+        catalogTeams: catalogTeams,
+        usedTeamNames: usedTeamNames,
+      );
+    }
+
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
@@ -1705,28 +1716,16 @@ class _DayTeamsSection extends ConsumerWidget {
                   '$totalWorkers personel',
                   style: theme.textTheme.labelSmall,
                 ),
-              const SizedBox(width: AppSpacing.xs),
-              OutlinedButton.icon(
-                onPressed: () {
-                  if (!canEdit) return denyWrite();
-                  _openEditor(
-                    context,
-                    ref,
-                    projectId: project.id,
-                    catalogTeams: catalogTeams,
-                    usedTeamNames: usedTeamNames,
-                  );
-                },
-                style: OutlinedButton.styleFrom(
-                  visualDensity: VisualDensity.compact,
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: AppSpacing.sm,
-                    vertical: AppSpacing.xs,
-                  ),
-                  tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+              IconButton(
+                tooltip: 'Ekip ekle',
+                visualDensity: VisualDensity.compact,
+                padding: EdgeInsets.zero,
+                constraints: const BoxConstraints(
+                  minWidth: 36,
+                  minHeight: 36,
                 ),
-                icon: const Icon(Icons.add, size: 15),
-                label: const Text('Ekip ekle'),
+                onPressed: openAdd,
+                icon: const Icon(Icons.add_circle_outline, size: 22),
               ),
             ],
           ),

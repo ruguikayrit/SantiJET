@@ -644,6 +644,7 @@ class _ImalatJobSheetState extends ConsumerState<_ImalatJobSheet> {
   late final TextEditingController _name;
   late final TextEditingController _planned;
   late final TextEditingController _plannedDays;
+  late final TextEditingController _plannedLabor;
   late final TextEditingController _note;
   String? _team;
   late String _unit;
@@ -667,6 +668,9 @@ class _ImalatJobSheetState extends ConsumerState<_ImalatJobSheet> {
     _plannedDays = TextEditingController(
       text: e == null || e.plannedDays <= 0 ? '' : '${e.plannedDays}',
     );
+    _plannedLabor = TextEditingController(
+      text: e == null || e.plannedLabor <= 0 ? '' : _num(e.plannedLabor),
+    );
     _note = TextEditingController(text: e?.note ?? '');
     _team = e?.teamName.trim().isNotEmpty == true
         ? e!.teamName.trim()
@@ -680,6 +684,7 @@ class _ImalatJobSheetState extends ConsumerState<_ImalatJobSheet> {
     _name.dispose();
     _planned.dispose();
     _plannedDays.dispose();
+    _plannedLabor.dispose();
     _note.dispose();
     super.dispose();
   }
@@ -800,6 +805,11 @@ class _ImalatJobSheetState extends ConsumerState<_ImalatJobSheet> {
           );
         } else {
           parts.add('İş Programı’nda tarih yok');
+        }
+        final workers = scheduleMatch.plannedWorkerCount;
+        if (workers != null && workers > 0) {
+          _plannedLabor.text = '$workers';
+          parts.add('iş gücü $workers kişi');
         }
       } else {
         parts.add('İş Programı eşleşmedi');
@@ -960,6 +970,16 @@ class _ImalatJobSheetState extends ConsumerState<_ImalatJobSheet> {
               keyboardType: TextInputType.number,
             ),
             const SizedBox(height: AppSpacing.sm),
+            TextField(
+              controller: _plannedLabor,
+              decoration: const InputDecoration(
+                labelText: 'Planlanan iş gücü',
+                hintText: 'Örn. 8',
+                suffixText: 'kişi',
+              ),
+              keyboardType: const TextInputType.numberWithOptions(decimal: true),
+            ),
+            const SizedBox(height: AppSpacing.sm),
             OutlinedButton.icon(
               onPressed: _pullingDays ? null : _pullPlannedDaysFromSchedule,
               icon: _pullingDays
@@ -1027,6 +1047,8 @@ class _ImalatJobSheetState extends ConsumerState<_ImalatJobSheet> {
                             double.tryParse(_planned.text.trim()) ?? 0,
                         plannedDays:
                             int.tryParse(_plannedDays.text.trim()) ?? 0,
+                        plannedLabor:
+                            double.tryParse(_plannedLabor.text.trim()) ?? 0,
                         note: _note.text.trim(),
                         dailyEntries: widget.existing?.dailyEntries ?? [],
                       ),

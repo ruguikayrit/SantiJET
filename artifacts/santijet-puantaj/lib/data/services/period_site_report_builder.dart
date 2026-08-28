@@ -5,10 +5,8 @@ import '../../domain/entities/attendance.dart';
 import '../../domain/entities/daily_report.dart';
 import '../../domain/entities/person.dart';
 import '../../domain/entities/production.dart';
-import '../../domain/entities/production_day_entry.dart';
 import '../../domain/entities/uninsured_team_entry.dart';
 import '../../domain/entities/yevmiyeli_is_kaydi.dart';
-import '../providers/verim_provider.dart';
 import 'puantaj_report_builder.dart';
 
 /// İmalat — dönem içi gerçekleşen (İmalat sekmesi kaynakları).
@@ -152,7 +150,6 @@ abstract final class PeriodSiteReportBuilder {
     required List<UninsuredTeamEntry> uninsuredTeams,
     List<YevmiyeliIsKaydi> yevmiyeliEntries = const [],
     required List<Production> productions,
-    required VerimState verim,
     required PuantajReportPeriod period,
     required String anchorDate,
   }) {
@@ -242,58 +239,45 @@ abstract final class PeriodSiteReportBuilder {
     }
 
     final verimRows = <PeriodVerimRow>[];
-    final schedule = verim.schedule;
-    final kesif = verim.kesif;
-    if (schedule != null &&
-        kesif != null &&
-        schedule.items.isNotEmpty &&
-        kesif.items.isNotEmpty) {
-      for (final item in schedule.items) {
-        final kesifItem = matchKesifItem(kesif.items, item);
-        final prod = _matchProduction(projectProductions, item.imalatName);
-        final periodEntries = prod == null
-            ? const <ProductionDayEntry>[]
-            : prod.dailyEntries.where((e) => daySet.contains(e.date)).toList();
-        final periodQty =
-            periodEntries.fold<double>(0, (s, e) => s + e.completedQty);
-        final periodLabor =
-            periodEntries.fold<double>(0, (s, e) => s + e.laborDays);
+    for (final p in projectProductions) {
+      final periodEntries =
+          p.dailyEntries.where((e) => daySet.contains(e.date)).toList();
+      final periodQty =
+          periodEntries.fold<double>(0, (s, e) => s + e.completedQty);
+      final periodLabor =
+          periodEntries.fold<double>(0, (s, e) => s + e.laborDays);
+      final plannedAg = p.plannedWorkerDays;
+      final plannedQty = p.plannedQty > 0 ? p.plannedQty : null;
 
-        final workers = (item.plannedWorkerCount ?? 0).toDouble();
-        final duration = item.durationDays;
-        final plannedAg = workers <= 0
-            ? 0.0
-            : (duration != null && duration > 0 ? workers * duration : workers);
-        final plannedQty = kesifItem?.plannedQty;
-
-        double? efficiency;
-        if (plannedQty != null &&
-            plannedQty > 0 &&
-            plannedAg > 0 &&
-            periodLabor > 0 &&
-            periodQty > 0) {
-          // (dönem metraj / dönem AG) / (plan metraj / plan AG)
-          final periodRate = periodQty / periodLabor;
-          final planRate = plannedQty / plannedAg;
-          efficiency = periodRate / planRate;
-        }
-
-        if (periodQty <= 0 && periodLabor <= 0 && plannedAg <= 0) continue;
-
-        verimRows.add(
-          PeriodVerimRow(
-            imalatName: item.imalatName,
-            unit: (kesifItem?.unit.trim().isNotEmpty == true)
-                ? kesifItem!.unit
-                : item.unit,
-            plannedWorkerDays: plannedAg,
-            periodActualWorkerDays: periodLabor,
-            plannedQty: plannedQty,
-            periodActualQty: periodQty,
-            unitEfficiency: efficiency,
-          ),
-        );
+      double? efficiency;
+      if (plannedQty != null &&
+          plannedQty > 0 &&
+          plannedAg > 0 &&
+          periodLabor > 0 &&
+          periodQty > 0) {
+        final periodRate = periodQty / periodLabor;
+        final planRate = plannedQty / plannedAg;
+        efficiency = periodRate / planRate;
       }
+
+      if (periodQty <= 0 &&
+          periodLabor <= 0 &&
+          plannedAg <= 0 &&
+          (plannedQty == null || plannedQty <= 0)) {
+        continue;
+      }
+
+      verimRows.add(
+        PeriodVerimRow(
+          imalatName: p.name,
+          unit: p.unit,
+          plannedWorkerDays: plannedAg,
+          periodActualWorkerDays: periodLabor,
+          plannedQty: plannedQty,
+          periodActualQty: periodQty,
+          unitEfficiency: efficiency,
+        ),
+      );
     }
 
     return PeriodSiteReportData(
@@ -392,22 +376,6 @@ abstract final class PeriodSiteReportBuilder {
             'Toplam YV: ${PeriodPersonelSummary._fmtYv(totalYv)}',
       ],
     );
-  }
-
-  static Production? _matchProduction(
-    List<Production> items,
-    String imalatName,
-  ) {
-    final target = imalatName.toLowerCase().trim();
-    if (target.isEmpty) return null;
-    for (final p in items) {
-      if (p.name.toLowerCase().trim() == target) return p;
-    }
-    final token = target.split(RegExp(r'\s+')).first;
-    for (final p in items) {
-      if (p.name.toLowerCase().contains(token)) return p;
-    }
-    return null;
   }
 
   static String _fileDate(String date) {

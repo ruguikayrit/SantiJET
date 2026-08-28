@@ -14,6 +14,7 @@ class Production extends Equatable {
     this.unit = 'adet',
     this.plannedQty = 0,
     this.plannedDays = 0,
+    this.plannedLabor = 0,
     this.note = '',
     this.dailyEntries = const [],
   });
@@ -38,8 +39,11 @@ class Production extends Equatable {
   /// Planlanan keşif miktarı.
   final double plannedQty;
 
-  /// Planlanan gün sayısı (manuel veya İş Programı bulutundan).
+  /// Planlanan gün sayısı.
   final int plannedDays;
+
+  /// Planlanan iş gücü (kişi).
+  final double plannedLabor;
 
   final String note;
 
@@ -63,6 +67,17 @@ class Production extends Equatable {
 
   double get duzIsciCount =>
       dailyEntries.fold<double>(0, (s, e) => s + e.duzIsciCount);
+
+  /// Gerçekleşen adam-gün (usta + düz işçi toplamı).
+  double get actualLaborDays =>
+      dailyEntries.fold<double>(0, (s, e) => s + e.laborDays);
+
+  /// Planlanan adam-gün: iş gücü × gün (gün yoksa yalnız iş gücü).
+  double get plannedWorkerDays {
+    if (plannedLabor <= 0) return 0;
+    if (plannedDays > 0) return plannedLabor * plannedDays;
+    return plannedLabor;
+  }
 
   /// Son günlük kayıt tarihi (sıralama için).
   String get latestDate {
@@ -123,6 +138,7 @@ class Production extends Equatable {
     String? unit,
     double? plannedQty,
     int? plannedDays,
+    double? plannedLabor,
     String? note,
     List<ProductionDayEntry>? dailyEntries,
   }) {
@@ -136,6 +152,7 @@ class Production extends Equatable {
       unit: unit ?? this.unit,
       plannedQty: plannedQty ?? this.plannedQty,
       plannedDays: plannedDays ?? this.plannedDays,
+      plannedLabor: plannedLabor ?? this.plannedLabor,
       note: note ?? this.note,
       dailyEntries: dailyEntries ?? this.dailyEntries,
     );
@@ -151,6 +168,7 @@ class Production extends Equatable {
         'unit': unit,
         'plannedQty': plannedQty,
         'plannedDays': plannedDays,
+        'plannedLabor': plannedLabor,
         'note': note,
         'dailyEntries': dailyEntries.map((e) => e.toJson()).toList(),
       };
@@ -196,6 +214,7 @@ class Production extends Equatable {
       unit: json['unit'] as String? ?? 'adet',
       plannedQty: (json['plannedQty'] as num?)?.toDouble() ?? 0,
       plannedDays: (json['plannedDays'] as num?)?.toInt() ?? 0,
+      plannedLabor: (json['plannedLabor'] as num?)?.toDouble() ?? 0,
       note: json['note'] as String? ?? '',
       dailyEntries: entries,
     );
@@ -212,6 +231,7 @@ class Production extends Equatable {
         unit,
         plannedQty,
         plannedDays,
+        plannedLabor,
         note,
         dailyEntries,
       ];
