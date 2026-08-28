@@ -7,6 +7,7 @@ import '../../core/design_system/sj_button.dart';
 import '../../core/design_system/sj_card.dart';
 import '../../core/design_system/sj_empty_state.dart';
 import '../../core/routing/app_routes.dart';
+import '../../core/theme/app_layout.dart';
 import '../../core/theme/app_colors.dart';
 import '../../core/theme/app_radii.dart';
 import '../../core/theme/app_spacing.dart';
@@ -294,11 +295,9 @@ class _PersonnelScreenState extends ConsumerState<PersonnelScreen> {
                           _openEditor(context, ref, projectId: project.id),
                     )
                   : ListView.builder(
-                      padding: const EdgeInsets.fromLTRB(
-                        AppSpacing.md,
-                        AppSpacing.sm,
-                        AppSpacing.md,
-                        88,
+                      padding: AppLayout.scrollPadding(
+                        top: AppSpacing.sm,
+                        clearFab: true,
                       ),
                       itemCount: groups.length,
                       itemBuilder: (context, gi) {

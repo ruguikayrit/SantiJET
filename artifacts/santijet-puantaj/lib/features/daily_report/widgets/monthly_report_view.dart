@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../core/design_system/sj_card.dart';
+import '../../../core/theme/app_layout.dart';
 import '../../../core/theme/app_spacing.dart';
 import '../../../core/utils/puantaj_date.dart';
 import '../../../data/providers/period_site_report_provider.dart';
@@ -40,12 +41,7 @@ class MonthlyReportView extends ConsumerWidget {
         siteReport?.rangeLabel ?? PuantajDate.monthLabel(anchorDate);
 
     return ListView(
-      padding: const EdgeInsets.fromLTRB(
-        AppSpacing.md,
-        0,
-        AppSpacing.md,
-        AppSpacing.xxl,
-      ),
+      padding: AppLayout.scrollPadding(clearFab: true),
       children: [
         PeriodNavigator(
           label: rangeLabel,

@@ -6,6 +6,7 @@ import '../../core/design_system/sj_card.dart';
 import '../../core/design_system/sj_empty_state.dart';
 import '../../core/routing/app_routes.dart';
 import '../../core/theme/app_colors.dart';
+import '../../core/theme/app_layout.dart';
 import '../../core/theme/app_spacing.dart';
 import '../../data/providers/app_data_provider.dart';
 import '../../data/providers/catalog_provider.dart';
@@ -359,11 +360,9 @@ class _CatalogManageScreen extends StatelessWidget {
               onAction: () => _openEditor(context),
             )
           : ListView.separated(
-              padding: const EdgeInsets.fromLTRB(
-                AppSpacing.md,
-                AppSpacing.afterHeader,
-                AppSpacing.md,
-                88,
+              padding: AppLayout.scrollPadding(
+                top: AppSpacing.afterHeader,
+                clearFab: true,
               ),
               itemCount: items.length,
               separatorBuilder: (_, __) =>

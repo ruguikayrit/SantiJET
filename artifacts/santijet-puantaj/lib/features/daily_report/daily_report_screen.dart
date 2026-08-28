@@ -11,6 +11,7 @@ import '../../core/design_system/sj_card.dart';
 import '../../core/design_system/sj_empty_state.dart';
 import '../../core/design_system/sj_modal.dart';
 import '../../core/routing/app_routes.dart';
+import '../../core/theme/app_layout.dart';
 import '../../core/theme/app_colors.dart';
 import '../../core/theme/app_radii.dart';
 import '../../core/theme/app_spacing.dart';
@@ -1803,11 +1804,10 @@ class _DailyReportScreenState extends ConsumerState<DailyReportScreen> {
               child: ListView(
                 keyboardDismissBehavior:
                     ScrollViewKeyboardDismissBehavior.onDrag,
-                padding: EdgeInsets.fromLTRB(
-                  AppSpacing.md,
-                  AppSpacing.sm,
-                  AppSpacing.md,
-                  88 + MediaQuery.viewInsetsOf(context).bottom,
+                padding: AppLayout.scrollPadding(
+                  top: AppSpacing.sm,
+                  clearFab: true,
+                  extraBottom: MediaQuery.viewInsetsOf(context).bottom,
                 ),
                 children: [
                   WeatherCompactCard(

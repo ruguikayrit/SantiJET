@@ -11,6 +11,7 @@ import '../../core/design_system/sj_card.dart';
 import '../../core/design_system/sj_empty_state.dart';
 import '../../core/design_system/sj_modal.dart';
 import '../../core/routing/app_routes.dart';
+import '../../core/theme/app_layout.dart';
 import '../../core/theme/app_colors.dart';
 import '../../core/theme/app_radii.dart';
 import '../../core/theme/app_spacing.dart';
@@ -1242,11 +1243,9 @@ class _TasksScreenState extends ConsumerState<TasksScreen> {
                       )
                     : ListView.separated(
                         controller: _listScrollController,
-                        padding: const EdgeInsets.fromLTRB(
-                          AppSpacing.md,
-                          AppSpacing.xs,
-                          AppSpacing.md,
-                          100,
+                        padding: AppLayout.scrollPadding(
+                          top: AppSpacing.xs,
+                          clearFab: true,
                         ),
                         itemCount: filtered.length,
                         separatorBuilder: (_, __) =>
