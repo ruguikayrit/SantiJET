@@ -2369,18 +2369,6 @@ class _CetvelView extends ConsumerWidget {
                 rows: ekipReport?.rows ?? const [],
                 sumColumnIndexes: ekipReport?.sumColumnIndexes ?? const {2},
               ),
-              if (ekipReport != null &&
-                  ekipReport.summaryLines.isNotEmpty) ...[
-                const SizedBox(height: AppSpacing.xs),
-                for (final line in ekipReport.summaryLines)
-                  Text(
-                    line,
-                    style: theme.textTheme.labelSmall?.copyWith(
-                      color: theme.colorScheme.onSurfaceVariant,
-                      fontWeight: FontWeight.w600,
-                    ),
-                  ),
-              ],
               const SizedBox(height: AppSpacing.md),
               Text(
                 'Yevmiyeli işler',

@@ -13,7 +13,9 @@ class DailyReport extends Equatable {
     this.workConstruction = '',
     this.workElectrical = '',
     this.workMechanical = '',
-    this.nextDayPlan = '',
+    this.planConstruction = '',
+    this.planElectrical = '',
+    this.planMechanical = '',
     this.photos = const [],
     this.irsaliyePhotos = const [],
     this.incomingMaterials = const [],
@@ -42,8 +44,36 @@ class DailyReport extends Equatable {
   /// Mekanik işler (serbest metin).
   final String workMechanical;
 
-  /// Planlı işler listesi (serbest metin).
-  final String nextDayPlan;
+  /// İnşaat planlı işler (serbest metin).
+  final String planConstruction;
+
+  /// Elektrik planlı işler (serbest metin).
+  final String planElectrical;
+
+  /// Mekanik planlı işler (serbest metin).
+  final String planMechanical;
+
+  /// Planlı işler — geriye dönük birleşik metin.
+  String get nextDayPlan => _combinedPlan();
+
+  String _combinedPlan() {
+    final parts = <String>[];
+    void add(String title, String body) {
+      final t = body.trim();
+      if (t.isEmpty) return;
+      parts.add('$title:\n$t');
+    }
+
+    add('İNŞAAT İŞLERİ', planConstruction);
+    add('ELEKTRİK İŞLERİ', planElectrical);
+    add('MEKANİK İŞLER', planMechanical);
+    return parts.join('\n\n');
+  }
+
+  bool get hasPlanEntries =>
+      planConstruction.trim().isNotEmpty ||
+      planElectrical.trim().isNotEmpty ||
+      planMechanical.trim().isNotEmpty;
 
   /// Özet / geriye dönük birleşik metin.
   String get workDone => _combinedWork(withPhotoCaptions: true);
@@ -172,7 +202,9 @@ class DailyReport extends Equatable {
     String? workConstruction,
     String? workElectrical,
     String? workMechanical,
-    String? nextDayPlan,
+    String? planConstruction,
+    String? planElectrical,
+    String? planMechanical,
     List<DailyReportPhoto>? photos,
     List<DailyReportPhoto>? irsaliyePhotos,
     List<DailyReportMaterial>? incomingMaterials,
@@ -194,7 +226,9 @@ class DailyReport extends Equatable {
       workConstruction: workConstruction ?? this.workConstruction,
       workElectrical: workElectrical ?? this.workElectrical,
       workMechanical: workMechanical ?? this.workMechanical,
-      nextDayPlan: nextDayPlan ?? this.nextDayPlan,
+      planConstruction: planConstruction ?? this.planConstruction,
+      planElectrical: planElectrical ?? this.planElectrical,
+      planMechanical: planMechanical ?? this.planMechanical,
       photos: photos ?? this.photos,
       irsaliyePhotos: irsaliyePhotos ?? this.irsaliyePhotos,
       incomingMaterials: incomingMaterials ?? this.incomingMaterials,
@@ -218,6 +252,9 @@ class DailyReport extends Equatable {
         'workConstruction': workConstruction,
         'workElectrical': workElectrical,
         'workMechanical': workMechanical,
+        'planConstruction': planConstruction,
+        'planElectrical': planElectrical,
+        'planMechanical': planMechanical,
         'nextDayPlan': nextDayPlan,
         // Geriye dönük yedek alanı — foto açıklamaları hariç, aksi halde
         // tekrar okunurken manuel alana kopyalanıp mükerrer satır oluşuyor.
@@ -281,12 +318,22 @@ class DailyReport extends Equatable {
     var construction = json['workConstruction'] as String? ?? '';
     var electrical = json['workElectrical'] as String? ?? '';
     var mechanical = json['workMechanical'] as String? ?? '';
+    var planConstruction = json['planConstruction'] as String? ?? '';
+    var planElectrical = json['planElectrical'] as String? ?? '';
+    var planMechanical = json['planMechanical'] as String? ?? '';
     final legacy = json['workDone'] as String? ?? '';
     if (construction.isEmpty &&
         electrical.isEmpty &&
         mechanical.isEmpty &&
         legacy.trim().isNotEmpty) {
       construction = legacy;
+    }
+    final legacyPlan = json['nextDayPlan'] as String? ?? '';
+    if (planConstruction.isEmpty &&
+        planElectrical.isEmpty &&
+        planMechanical.isEmpty &&
+        legacyPlan.trim().isNotEmpty) {
+      planConstruction = legacyPlan;
     }
 
     final captionKeys = <String>{
@@ -304,7 +351,9 @@ class DailyReport extends Equatable {
       workConstruction: construction,
       workElectrical: electrical,
       workMechanical: mechanical,
-      nextDayPlan: json['nextDayPlan'] as String? ?? '',
+      planConstruction: planConstruction,
+      planElectrical: planElectrical,
+      planMechanical: planMechanical,
       photos: photos,
       irsaliyePhotos:
           asMaps(json['irsaliyePhotos']).map(DailyReportPhoto.fromJson).toList(),
@@ -348,7 +397,9 @@ class DailyReport extends Equatable {
         workConstruction,
         workElectrical,
         workMechanical,
-        nextDayPlan,
+        planConstruction,
+        planElectrical,
+        planMechanical,
         photos,
         irsaliyePhotos,
         incomingMaterials,

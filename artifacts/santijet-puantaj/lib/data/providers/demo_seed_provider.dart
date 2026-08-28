@@ -444,9 +444,10 @@ class DemoSeedController {
           workElectrical:
               'Zemin kat aydınlatma kablo çekimi (${i + 1}. hat).',
           workMechanical: i.isEven ? 'Havalandırma kanalı montajına başlandı.' : '',
-          nextDayPlan:
-              'Demir ekibi kolon imalatına devam · Kalıp ekibi alçı sıva · '
-              'Mekanik kanal devam.',
+          planConstruction:
+              'Demir ekibi kolon imalatına devam · Kalıp ekibi alçı sıva.',
+          planElectrical: i.isOdd ? 'Zemin kat aydınlatma devam.' : '',
+          planMechanical: i.isEven ? 'Mekanik kanal devam.' : '',
           incomingMaterials: [
             DailyReportMaterial(
               id: IdGen.make('mat'),

@@ -31,13 +31,10 @@ class PeriodSiteReportSections extends StatelessWidget {
         ),
         const SizedBox(height: AppSpacing.sm),
         PeriodPersonnelSummaryTable(summary: report.personelSummary),
-        _SummaryLines(lines: report.personelSummary.summaryLines),
         const SizedBox(height: AppSpacing.md),
         _SectionTitle(
           icon: Icons.groups_outlined,
           title: 'Ekip puantajı',
-          subtitle:
-              'Adam.gün · Çalışılan gün · Günlük ortalama adam',
         ),
         const SizedBox(height: AppSpacing.sm),
         PeriodTeamSummaryTable(
@@ -45,12 +42,10 @@ class PeriodSiteReportSections extends StatelessWidget {
           rows: report.ekipPuantaj.rows,
           sumColumnIndexes: report.ekipPuantaj.sumColumnIndexes,
         ),
-        _SummaryLines(lines: report.ekipPuantaj.summaryLines),
         const SizedBox(height: AppSpacing.md),
         _SectionTitle(
           icon: Icons.handyman_outlined,
           title: 'Yevmiyeli işler',
-          subtitle: 'Tarih · Ad Soyad · Firma · Meslek · Ekip · Yevmiye',
         ),
         const SizedBox(height: AppSpacing.sm),
         PeriodTeamSummaryTable(
@@ -59,12 +54,10 @@ class PeriodSiteReportSections extends StatelessWidget {
           emptyMessage: 'Bu dönemde yevmiyeli iş kaydı yok',
           sumColumnIndexes: report.yevmiyeli.sumColumnIndexes,
         ),
-        _SummaryLines(lines: report.yevmiyeli.summaryLines),
         const SizedBox(height: AppSpacing.md),
         _SectionTitle(
           icon: Icons.construction_outlined,
           title: 'Yapılan işler (İmalat)',
-          subtitle: 'İmalat sekmesi — dönem gerçekleşen',
         ),
         const SizedBox(height: AppSpacing.sm),
         _ImalatTableSection(rows: report.imalatRows),
@@ -72,7 +65,6 @@ class PeriodSiteReportSections extends StatelessWidget {
         _SectionTitle(
           icon: Icons.speed_outlined,
           title: 'Verim',
-          subtitle: 'Plan + gerçekleşen: İmalat sekmesi',
         ),
         const SizedBox(height: AppSpacing.sm),
         _VerimTableSection(rows: report.verimRows),
@@ -121,37 +113,6 @@ class _SectionTitle extends StatelessWidget {
           ),
         ),
       ],
-    );
-  }
-}
-
-class _SummaryLines extends StatelessWidget {
-  const _SummaryLines({required this.lines});
-
-  final List<String> lines;
-
-  @override
-  Widget build(BuildContext context) {
-    if (lines.isEmpty) return const SizedBox.shrink();
-    final theme = Theme.of(context);
-    return Padding(
-      padding: const EdgeInsets.only(top: AppSpacing.sm),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          for (final line in lines)
-            Padding(
-              padding: const EdgeInsets.only(bottom: 2),
-              child: Text(
-                line,
-                style: theme.textTheme.labelMedium?.copyWith(
-                  color: theme.colorScheme.onSurfaceVariant,
-                  fontWeight: FontWeight.w600,
-                ),
-              ),
-            ),
-        ],
-      ),
     );
   }
 }

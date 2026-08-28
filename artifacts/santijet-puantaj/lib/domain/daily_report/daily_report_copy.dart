@@ -113,9 +113,16 @@ DailyReportCopyOutcome applyDailyReportCopyFromPrevious({
   }
 
   if (fields.contains(DailyReportCopyField.nextDayPlan)) {
-    if (source.nextDayPlan.trim().isNotEmpty) {
+    final has = source.planConstruction.trim().isNotEmpty ||
+        source.planElectrical.trim().isNotEmpty ||
+        source.planMechanical.trim().isNotEmpty;
+    if (has) {
       nextDayPlan = true;
-      next = next.copyWith(nextDayPlan: source.nextDayPlan);
+      next = next.copyWith(
+        planConstruction: source.planConstruction,
+        planElectrical: source.planElectrical,
+        planMechanical: source.planMechanical,
+      );
     }
   }
 

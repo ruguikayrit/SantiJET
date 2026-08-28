@@ -202,13 +202,6 @@ class DailyReportPdfService {
       widgets.add(pw.NewPage(freeSpace: min));
     }
 
-    /// Başlık + içerik birlikte kalır; sığmazsa ikisi de sonraki sayfaya geçer.
-    void addCompactSection(String title, pw.Widget body, {double minSpace = 78}) {
-      gap();
-      ensureSectionSpace(minSpace);
-      widgets.add(_sectionBlock(title, body));
-    }
-
     if (sections.weather) {
       gap();
       widgets.add(_weatherLine(report.weather));
@@ -319,30 +312,24 @@ class DailyReportPdfService {
     }
 
     if (sections.nextDayPlan) {
-      addCompactSection(
-        'PLANLI İŞLER LİSTESİ',
-        pw.Container(
-          width: double.infinity,
-          constraints: const pw.BoxConstraints(minHeight: 40),
-          padding: const pw.EdgeInsets.all(8),
-          alignment: pw.Alignment.centerLeft,
-          decoration: pw.BoxDecoration(
-            border: pw.Border.all(color: _line, width: 0.7),
-          ),
-          child: pw.Text(
-            report.nextDayPlan.trim().isEmpty
-                ? '—'
-                : _formatBulletedLines(report.nextDayPlan.trim()),
-            textAlign: pw.TextAlign.left,
-            style: pw.TextStyle(
-              fontSize: 10,
-              color: report.nextDayPlan.trim().isEmpty ? _muted : _ink,
-              lineSpacing: 3,
-            ),
+      gap();
+      ensureSectionSpace(90);
+      final blocks = _planCategoryBlocks(report);
+      widgets.add(
+        _KeepTogether(
+          child: pw.Column(
+            crossAxisAlignment: pw.CrossAxisAlignment.stretch,
+            children: [
+              _sectionTitle('PLANLI İŞLER LİSTESİ'),
+              pw.SizedBox(height: 6),
+              if (blocks.isNotEmpty) blocks.first,
+            ],
           ),
         ),
-        minSpace: 90,
       );
+      if (blocks.length > 1) {
+        widgets.addAll(blocks.skip(1));
+      }
     }
 
     if (sections.incomingMaterials) {
@@ -751,11 +738,34 @@ class DailyReportPdfService {
     DailyReport report, {
     int? truncateEach,
   }) {
-    final entries = <(String, String)>[
-      ('İNŞAAT İŞLERİ', report.effectiveWorkConstruction),
-      ('ELEKTRİK İŞLERİ', report.effectiveWorkElectrical),
-      ('MEKANİK İŞLER', report.effectiveWorkMechanical),
-    ];
+    return _textCategoryBlocks(
+      [
+        ('İNŞAAT İŞLERİ', report.effectiveWorkConstruction),
+        ('ELEKTRİK İŞLERİ', report.effectiveWorkElectrical),
+        ('MEKANİK İŞLER', report.effectiveWorkMechanical),
+      ],
+      truncateEach: truncateEach,
+    );
+  }
+
+  List<pw.Widget> _planCategoryBlocks(
+    DailyReport report, {
+    int? truncateEach,
+  }) {
+    return _textCategoryBlocks(
+      [
+        ('İNŞAAT İŞLERİ', report.planConstruction),
+        ('ELEKTRİK İŞLERİ', report.planElectrical),
+        ('MEKANİK İŞLER', report.planMechanical),
+      ],
+      truncateEach: truncateEach,
+    );
+  }
+
+  List<pw.Widget> _textCategoryBlocks(
+    List<(String, String)> entries, {
+    int? truncateEach,
+  }) {
     final nonEmpty = [
       for (final e in entries)
         if (e.$2.trim().isNotEmpty) e,

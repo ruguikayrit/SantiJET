@@ -521,7 +521,6 @@ abstract final class PuantajReportBuilder {
     };
     final rows = <List<String>>[];
     var grandPersonDays = 0;
-    var grandDaysWorked = 0;
 
     String fmtAvg(double v) =>
         v == v.roundToDouble() ? v.toStringAsFixed(0) : v.toStringAsFixed(1);
@@ -540,7 +539,6 @@ abstract final class PuantajReportBuilder {
         final avg = daysWorked > 0 ? personDays / daysWorked : 0.0;
 
         grandPersonDays += personDays;
-        grandDaysWorked += daysWorked;
 
         rows.add([
           company,
@@ -558,16 +556,9 @@ abstract final class PuantajReportBuilder {
       subtitle: '$projectName · $rangeLabel',
       headers: headers,
       rows: rows,
-      summaryLines: [
-        if (singleDay)
-          'Genel toplam: $grandPersonDays kişi'
-        else ...[
-          'Toplam adam.gün: $grandPersonDays',
-          'Toplam çalışılan gün (satır toplamı): $grandDaysWorked',
-        ],
-        'Ortalama = adam.gün ÷ çalışılan gün (= günlük ortalama adam)',
-        'Sayım: Mevcut, Yarım, Giriş, Çıkış (ekip kaydı çalışan sayısı dahil)',
-      ],
+      summaryLines: singleDay
+          ? ['Genel toplam: $grandPersonDays kişi']
+          : const [],
       landscape: landscape,
       fileStem: fileStem,
       visual: const PuantajReportVisual(

@@ -23,7 +23,7 @@ class DailyReportDaySummary {
         r.orderedMaterials.isNotEmpty ||
         r.machines.isNotEmpty ||
         r.vehicles.isNotEmpty ||
-        r.nextDayPlan.trim().isNotEmpty ||
+        r.hasPlanEntries ||
         r.weather != null ||
         (r.attendanceSnapshot?.people.isNotEmpty ?? false) ||
         (r.attendanceSnapshot?.teams.isNotEmpty ?? false);

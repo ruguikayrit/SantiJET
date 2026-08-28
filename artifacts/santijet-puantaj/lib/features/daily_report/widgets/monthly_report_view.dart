@@ -56,17 +56,6 @@ class MonthlyReportView extends ConsumerWidget {
           },
         ),
         const SizedBox(height: AppSpacing.md),
-        SJCard.builder(
-          builder: (context, theme) => Text(
-            'Aylık özet: personel ve ekip puantajı (Puantaj sekmesi), '
-            'yapılan işler (İmalat), verim (İmalat plan/gerçekleşen). '
-            'Rapor AL ile PDF veya Excel dışa aktarın.',
-            style: theme.textTheme.bodySmall?.copyWith(
-              color: theme.colorScheme.onSurfaceVariant,
-            ),
-          ),
-        ),
-        const SizedBox(height: AppSpacing.md),
         if (siteReport != null)
           PeriodSiteReportSections(report: siteReport)
         else

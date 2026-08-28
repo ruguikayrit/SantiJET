@@ -339,7 +339,7 @@ BİRİM FİYAT: 4.5
         projectId: 'p',
         date: '07.08.2026',
         workConstruction: 'Kazı',
-        nextDayPlan: 'Kalıp',
+        planConstruction: 'Kalıp',
         machines: const [
           DailyReportMachine(
             id: 'mch-old',
@@ -395,7 +395,7 @@ BİRİM FİYAT: 4.5
       expect(outcome.report.machines.single.name, 'Forklift');
       expect(outcome.report.vehicles.single.id, 'veh-2');
       expect(outcome.report.workConstruction, 'Kazı');
-      expect(outcome.report.nextDayPlan, 'Kalıp');
+      expect(outcome.report.planConstruction, 'Kalıp');
       expect(outcome.report.photos, isEmpty);
       expect(outcome.report.weather, isNull);
     });

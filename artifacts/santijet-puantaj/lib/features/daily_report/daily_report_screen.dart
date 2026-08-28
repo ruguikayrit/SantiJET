@@ -92,7 +92,9 @@ class _DailyReportScreenState extends ConsumerState<DailyReportScreen> {
   final _workConstructionCtrl = TextEditingController();
   final _workElectricalCtrl = TextEditingController();
   final _workMechanicalCtrl = TextEditingController();
-  final _nextDayPlanCtrl = TextEditingController();
+  final _planConstructionCtrl = TextEditingController();
+  final _planElectricalCtrl = TextEditingController();
+  final _planMechanicalCtrl = TextEditingController();
   final _picker = ImagePicker();
   bool _weatherLoading = false;
   bool _irsaliyeBusy = false;
@@ -108,7 +110,9 @@ class _DailyReportScreenState extends ConsumerState<DailyReportScreen> {
     _workConstructionCtrl.addListener(_scheduleAutosave);
     _workElectricalCtrl.addListener(_scheduleAutosave);
     _workMechanicalCtrl.addListener(_scheduleAutosave);
-    _nextDayPlanCtrl.addListener(_scheduleAutosave);
+    _planConstructionCtrl.addListener(_scheduleAutosave);
+    _planElectricalCtrl.addListener(_scheduleAutosave);
+    _planMechanicalCtrl.addListener(_scheduleAutosave);
   }
 
   @override
@@ -117,11 +121,15 @@ class _DailyReportScreenState extends ConsumerState<DailyReportScreen> {
     _workConstructionCtrl.removeListener(_scheduleAutosave);
     _workElectricalCtrl.removeListener(_scheduleAutosave);
     _workMechanicalCtrl.removeListener(_scheduleAutosave);
-    _nextDayPlanCtrl.removeListener(_scheduleAutosave);
+    _planConstructionCtrl.removeListener(_scheduleAutosave);
+    _planElectricalCtrl.removeListener(_scheduleAutosave);
+    _planMechanicalCtrl.removeListener(_scheduleAutosave);
     _workConstructionCtrl.dispose();
     _workElectricalCtrl.dispose();
     _workMechanicalCtrl.dispose();
-    _nextDayPlanCtrl.dispose();
+    _planConstructionCtrl.dispose();
+    _planElectricalCtrl.dispose();
+    _planMechanicalCtrl.dispose();
     super.dispose();
   }
 
@@ -138,7 +146,9 @@ class _DailyReportScreenState extends ConsumerState<DailyReportScreen> {
       workConstruction: _workConstructionCtrl.text.trim(),
       workElectrical: _workElectricalCtrl.text.trim(),
       workMechanical: _workMechanicalCtrl.text.trim(),
-      nextDayPlan: _nextDayPlanCtrl.text.trim(),
+      planConstruction: _planConstructionCtrl.text.trim(),
+      planElectrical: _planElectricalCtrl.text.trim(),
+      planMechanical: _planMechanicalCtrl.text.trim(),
     );
     ref.read(dailyReportsProvider.notifier).upsert(next);
   }
@@ -158,7 +168,9 @@ class _DailyReportScreenState extends ConsumerState<DailyReportScreen> {
     _workConstructionCtrl.text = report.workConstruction;
     _workElectricalCtrl.text = report.workElectrical;
     _workMechanicalCtrl.text = report.workMechanical;
-    _nextDayPlanCtrl.text = report.nextDayPlan;
+    _planConstructionCtrl.text = report.planConstruction;
+    _planElectricalCtrl.text = report.planElectrical;
+    _planMechanicalCtrl.text = report.planMechanical;
     _hydrating = false;
     _boundKey = key;
     _bootstrapped = true;
@@ -189,7 +201,9 @@ class _DailyReportScreenState extends ConsumerState<DailyReportScreen> {
     _workConstructionCtrl.text = report.workConstruction;
     _workElectricalCtrl.text = report.workElectrical;
     _workMechanicalCtrl.text = report.workMechanical;
-    _nextDayPlanCtrl.text = report.nextDayPlan;
+    _planConstructionCtrl.text = report.planConstruction;
+    _planElectricalCtrl.text = report.planElectrical;
+    _planMechanicalCtrl.text = report.planMechanical;
     _hydrating = false;
   }
 
@@ -471,7 +485,9 @@ class _DailyReportScreenState extends ConsumerState<DailyReportScreen> {
       workConstruction: _workConstructionCtrl.text.trim(),
       workElectrical: _workElectricalCtrl.text.trim(),
       workMechanical: _workMechanicalCtrl.text.trim(),
-      nextDayPlan: _nextDayPlanCtrl.text.trim(),
+      planConstruction: _planConstructionCtrl.text.trim(),
+      planElectrical: _planElectricalCtrl.text.trim(),
+      planMechanical: _planMechanicalCtrl.text.trim(),
     );
     next = syncAttendanceIntoReport(ref, next);
     ref.read(dailyReportsProvider.notifier).upsert(next);
@@ -2053,15 +2069,42 @@ class _DailyReportScreenState extends ConsumerState<DailyReportScreen> {
                       }),
                       icon: const Icon(Icons.copy_outlined, size: 20),
                     ),
-                    child: _WorkNotesTile(
-                      label: 'Planlanan işler',
-                      text: _nextDayPlanCtrl.text,
-                      emptyHint: 'Planlanan işler, ekipler, malzeme…',
-                      onEdit: () => _editWorkNotes(
-                        title: 'Planlı işler listesi',
-                        hint: 'Planlanan işler, ekipler, malzeme…',
-                        target: _nextDayPlanCtrl,
-                      ),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.stretch,
+                      children: [
+                        _WorkNotesTile(
+                          label: 'İnşaat işleri',
+                          text: _planConstructionCtrl.text,
+                          emptyHint: 'İnşaat kapsamında planlanan işler…',
+                          onEdit: () => _editWorkNotes(
+                            title: 'İnşaat işleri',
+                            hint: 'İnşaat kapsamında planlanan işler…',
+                            target: _planConstructionCtrl,
+                          ),
+                        ),
+                        const SizedBox(height: AppSpacing.sm),
+                        _WorkNotesTile(
+                          label: 'Elektrik işleri',
+                          text: _planElectricalCtrl.text,
+                          emptyHint: 'Elektrik kapsamında planlanan işler…',
+                          onEdit: () => _editWorkNotes(
+                            title: 'Elektrik işleri',
+                            hint: 'Elektrik kapsamında planlanan işler…',
+                            target: _planElectricalCtrl,
+                          ),
+                        ),
+                        const SizedBox(height: AppSpacing.sm),
+                        _WorkNotesTile(
+                          label: 'Mekanik işler',
+                          text: _planMechanicalCtrl.text,
+                          emptyHint: 'Mekanik kapsamında planlanan işler…',
+                          onEdit: () => _editWorkNotes(
+                            title: 'Mekanik işler',
+                            hint: 'Mekanik kapsamında planlanan işler…',
+                            target: _planMechanicalCtrl,
+                          ),
+                        ),
+                      ],
                     ),
                   ),
                   const SizedBox(height: AppSpacing.md),
