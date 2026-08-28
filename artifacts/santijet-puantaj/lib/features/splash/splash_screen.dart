@@ -9,6 +9,7 @@ import '../../core/theme/app_colors.dart';
 import '../../core/theme/app_spacing.dart';
 import '../../core/theme/app_theme.dart';
 import '../../core/theme/app_typography.dart';
+import '../../data/providers/demo_intro_provider.dart';
 import '../../data/providers/auth_provider.dart';
 import '../../data/providers/collaboration_provider.dart';
 
@@ -51,7 +52,12 @@ class _SplashScreenState extends ConsumerState<SplashScreen>
     }
     await delay;
     if (!mounted) return;
-    context.go(AppRoutes.home);
+    final introDone = ref.read(demoIntroProvider).introCompleted;
+    if (!introDone) {
+      context.go(AppRoutes.demoIntro);
+    } else {
+      context.go(AppRoutes.home);
+    }
   }
 
   @override

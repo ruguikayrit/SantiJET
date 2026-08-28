@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../features/auth/auth_screen.dart';
+import '../../features/demo/demo_intro_screen.dart';
 import '../../features/daily_report/daily_report_screen.dart';
 import '../../features/home/home_screen.dart';
 import '../../features/imalat/imalat_hub_screen.dart';
@@ -46,6 +47,13 @@ final routerProvider = Provider<GoRouter>((ref) {
         pageBuilder: (context, state) => fadePage(
           key: state.pageKey,
           child: const SplashScreen(),
+        ),
+      ),
+      GoRoute(
+        path: AppRoutes.demoIntro,
+        pageBuilder: (context, state) => fadePage(
+          key: state.pageKey,
+          child: const DemoIntroScreen(),
         ),
       ),
       StatefulShellRoute.indexedStack(

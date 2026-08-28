@@ -22,6 +22,7 @@ import '../../domain/enums/attendance_status.dart';
 import '../projects/widgets/project_switcher.dart';
 import 'home_daily_report_pdf_sheet.dart';
 import 'home_task_summary_dialog.dart';
+import '../demo/demo_guide_banner.dart';
 import '../daily_report/widgets/daily_report_export_sections_sheet.dart';
 import '../../data/providers/daily_report_export_sections_provider.dart';
 
@@ -151,6 +152,17 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
               ),
             ),
             const SliverToBoxAdapter(child: ReadOnlyBanner()),
+            const SliverToBoxAdapter(
+              child: Padding(
+                padding: EdgeInsets.fromLTRB(
+                  AppSpacing.md,
+                  AppSpacing.sm,
+                  AppSpacing.md,
+                  0,
+                ),
+                child: DemoGuideBanner(),
+              ),
+            ),
             SliverPadding(
               padding: const EdgeInsets.fromLTRB(
                 AppSpacing.md,

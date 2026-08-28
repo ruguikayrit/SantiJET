@@ -11,7 +11,9 @@ import '../../domain/entities/production.dart';
 import '../../domain/entities/production_day_entry.dart';
 import '../../domain/entities/project.dart';
 import '../../domain/enums/attendance_status.dart';
+import '../../domain/enums/photo_work_category.dart';
 import '../../domain/enums/task_status.dart';
+import '../../domain/daily_report/attendance_snapshot_builder.dart';
 import 'app_data_provider.dart';
 import 'catalog_provider.dart';
 import 'company_provider.dart';
@@ -56,8 +58,14 @@ class DemoSeedController {
           projectId: project.id,
           projectName: project.name,
         );
+    _seedTodayAttendanceShowcase(project: project, people: people);
+    _syncReportSnapshots(projectId: project.id);
     return project;
   }
+
+  /// 1×1 şeffaf PNG — rapor foto örneği (base64).
+  static const demoPhotoBase64 =
+      'iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mP8z8BQDwAEhQGAhKmMIQAAAABJRU5ErkJggg==';
 
   Project? _findDemoProject() {
     for (final p in _ref.read(projectsProvider)) {
@@ -219,10 +227,16 @@ class DemoSeedController {
       final date = dates[di];
       for (var pi = 0; pi < people.length; pi++) {
         final person = people[pi];
-        final status = switch ((di + pi) % 8) {
-          0 || 1 || 2 || 3 || 4 => AttendanceStatus.present,
-          5 => AttendanceStatus.half,
+        final status = switch ((di + pi) % 12) {
+          0 || 1 || 2 => AttendanceStatus.present,
+          3 => AttendanceStatus.half,
+          4 => AttendanceStatus.giris,
+          5 => AttendanceStatus.cikis,
           6 => AttendanceStatus.izinli,
+          7 => AttendanceStatus.raporlu,
+          8 => AttendanceStatus.mazeret,
+          9 => AttendanceStatus.haftaTatili,
+          10 => AttendanceStatus.tatil,
           _ => AttendanceStatus.absent,
         };
         if (status == AttendanceStatus.absent) continue;
@@ -369,16 +383,53 @@ class DemoSeedController {
         ],
       ),
     );
+    production.add(
+      Production(
+        id: '',
+        projectId: projectId,
+        name: 'Perde Betonu',
+        floor: 'Bodrum Kat',
+        section: 'Perde A',
+        teamName: 'Demo Ekip',
+        unit: 'm³',
+        plannedQty: 180,
+        plannedDays: 5,
+        plannedLabor: 10,
+        note: '[DEMO] Bekleyen — henüz günlük kayıt yok',
+        dailyEntries: const [],
+      ),
+    );
+    production.add(
+      Production(
+        id: '',
+        projectId: projectId,
+        name: 'Asansör Boşluğu Kalıbı',
+        floor: 'Zemin Kat',
+        section: 'Çekirdek',
+        teamName: 'Kalıp',
+        unit: 'm²',
+        plannedQty: 120,
+        plannedDays: 4,
+        plannedLabor: 6,
+        note: '[DEMO] Tamamlanan imalat',
+        dailyEntries: [
+          entry(8, qty: 40, usta: 3, duz: 2),
+          entry(5, qty: 35, usta: 3, duz: 2),
+          entry(2, qty: 45, usta: 2, duz: 3),
+        ],
+      ),
+    );
   }
 
   void _replaceDailyReports({required String projectId}) {
     final reports = _ref.read(dailyReportsProvider.notifier);
     reports.deleteForProject(projectId);
 
-    final dates = _recentWeekdays(count: 6);
+    final dates = _recentWeekdays(count: 8);
     for (var i = 0; i < dates.length; i++) {
       final date = dates[i];
       final now = DateTime.now();
+      final photoId = IdGen.make('pho');
       reports.upsert(
         DailyReport(
           id: IdGen.make('drp'),
@@ -394,7 +445,8 @@ class DemoSeedController {
               'Zemin kat aydınlatma kablo çekimi (${i + 1}. hat).',
           workMechanical: i.isEven ? 'Havalandırma kanalı montajına başlandı.' : '',
           nextDayPlan:
-              'Demir ekibi kolon imalatına devam · Kalıp ekibi alçı sıva.',
+              'Demir ekibi kolon imalatına devam · Kalıp ekibi alçı sıva · '
+              'Mekanik kanal devam.',
           incomingMaterials: [
             DailyReportMaterial(
               id: IdGen.make('mat'),
@@ -414,6 +466,18 @@ class DemoSeedController {
                 supplyDate: date,
               ),
           ],
+          outgoingMaterials: [
+            if (i >= 2)
+              DailyReportMaterial(
+                id: IdGen.make('out'),
+                name: 'Kırık beton moloz',
+                quantity: '${6 + i}',
+                unit: 'm³',
+                supplierOrOrder: 'Saha sevkiyat',
+                supplyDate: date,
+                note: 'Hafriyat alanına',
+              ),
+          ],
           orderedMaterials: [
             DailyReportMaterial(
               id: IdGen.make('ord'),
@@ -431,12 +495,124 @@ class DemoSeedController {
               name: 'Mini vinç',
               workDescription: 'Demir montaj desteği',
               hoursWorked: (6 + i).toDouble(),
+              company: 'Demo Vinç',
+              operatorName: 'Operatör A.',
             ),
           ],
+          vehicles: [
+            if (i.isEven)
+              DailyReportMachine(
+                id: IdGen.make('veh'),
+                name: 'Kamyonet',
+                type: 'Vasıta',
+                plateOrId: '34 DEMO ${10 + i}',
+                hoursWorked: 4 + i.toDouble(),
+                workDescription: 'Malzeme sevkiyatı',
+                operatorName: 'Sürücü B.',
+              ),
+          ],
+          photos: i >= dates.length - 2
+              ? [
+                  DailyReportPhoto(
+                    id: photoId,
+                    dataBase64: demoPhotoBase64,
+                    caption: 'Kolon demiri montaj görüntüsü',
+                    workCategory: PhotoWorkCategory.construction,
+                    createdAt: now,
+                  ),
+                  DailyReportPhoto(
+                    id: IdGen.make('pho'),
+                    dataBase64: demoPhotoBase64,
+                    caption: 'Kablo hattı çekim alanı',
+                    workCategory: PhotoWorkCategory.electrical,
+                    createdAt: now,
+                  ),
+                ]
+              : const [],
+          weather: DailyReportWeather(
+            temperatureC: 24 + i.toDouble(),
+            nightTemperatureC: 16 + i.toDouble(),
+            humidityPercent: (55 + i * 2).toDouble(),
+            maxHumidityPercent: (70 + i).toDouble(),
+            description: switch (i % 3) {
+              0 => 'Az bulutlu',
+              1 => 'Parçalı bulutlu',
+              _ => 'Açık',
+            },
+            windKmh: (12 + i * 2).toDouble(),
+            windGustKmh: (18 + i * 2).toDouble(),
+            locationLabel: 'Demo Şantiye · İstanbul',
+            fetchedAt: now,
+            synced: true,
+            isManual: false,
+          ),
           createdAt: now,
           updatedAt: now,
         ),
       );
+    }
+  }
+
+  void _seedTodayAttendanceShowcase({
+    required Project project,
+    required List<Person> people,
+  }) {
+    if (people.isEmpty) return;
+    final today = PuantajDate.today();
+    final attendance = _ref.read(attendanceProvider.notifier);
+    final statuses = [
+      AttendanceStatus.present,
+      AttendanceStatus.present,
+      AttendanceStatus.half,
+      AttendanceStatus.giris,
+      AttendanceStatus.raporlu,
+      AttendanceStatus.izinli,
+      AttendanceStatus.mazeret,
+      AttendanceStatus.present,
+      AttendanceStatus.half,
+      AttendanceStatus.cikis,
+    ];
+    for (var i = 0; i < people.length; i++) {
+      attendance.setStatus(
+        projectId: project.id,
+        person: people[i],
+        date: today,
+        status: statuses[i % statuses.length],
+      );
+      if (statuses[i % statuses.length] == AttendanceStatus.present) {
+        attendance.setOvertime(
+          projectId: project.id,
+          person: people[i],
+          date: today,
+          overtimeHours: 1.5,
+        );
+      }
+    }
+  }
+
+  void _syncReportSnapshots({required String projectId}) {
+    final reports = _ref
+        .read(dailyReportsProvider)
+        .where((r) => r.projectId == projectId)
+        .toList();
+    final people = _ref
+        .read(personnelProvider)
+        .where((p) => p.projectId == projectId)
+        .toList();
+    final attendance = _ref.read(attendanceProvider);
+    final teams = _ref.read(uninsuredTeamsProvider);
+    final notifier = _ref.read(dailyReportsProvider.notifier);
+
+    for (final report in reports) {
+      final snap = AttendanceSnapshotBuilder.build(
+        projectId: projectId,
+        date: report.date,
+        attendance: attendance,
+        activePeople:
+            people.where((p) => p.isActiveOn(report.date)).toList(),
+        teams: teams,
+      );
+      notifier.upsert(report.copyWith(attendanceSnapshot: snap));
     }
   }
 

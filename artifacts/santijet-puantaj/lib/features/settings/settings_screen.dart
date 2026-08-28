@@ -12,6 +12,7 @@ import '../../data/providers/app_data_provider.dart';
 import '../../data/providers/backup_provider.dart';
 import '../../data/providers/catalog_provider.dart';
 import '../../data/providers/company_provider.dart';
+import '../../data/providers/demo_intro_provider.dart';
 import '../../data/providers/demo_seed_provider.dart';
 import '../../data/providers/daily_report_provider.dart';
 import '../../data/providers/production_provider.dart';
@@ -284,6 +285,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
         .resetToDefaults(TaskCategoryCatalog.defaults);
     ref.read(activeProjectIdProvider.notifier).set(null);
     ref.read(planCloudSyncControllerProvider).clearAllCaches();
+    ref.read(demoIntroProvider.notifier).resetIntroForReplay();
     ref.read(companyInfoProvider.notifier).clear();
 
     if (!mounted) return;
@@ -308,12 +310,13 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
     try {
       final project =
           await ref.read(demoSeedControllerProvider).loadAll();
+      ref.read(demoIntroProvider.notifier).completeIntro(showGuide: true);
       if (!mounted) return;
       ScaffoldMessenger.of(this.context).showSnackBar(
         SnackBar(
           content: Text(
-            'Demo yüklendi: ${project.name}. Ana sayfa, Puantaj, İmalat, '
-            'Verim, Görevler ve Rapor modüllerini test edebilirsiniz.',
+            'Demo yüklendi: ${project.name}. Ana sayfadaki rehberden '
+            'modülleri gezebilirsiniz.',
           ),
         ),
       );
@@ -393,11 +396,17 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
             onTap: () => _showBackupDialog(context),
           ),
           _SettingsTile(
+            icon: Icons.play_circle_outline,
+            title: 'Uygulama tanıtımı',
+            subtitle: 'Modülleri anlatan kısa tur · demo yükleme',
+            onTap: () => context.push(AppRoutes.demoIntro),
+          ),
+          _SettingsTile(
             icon: Icons.science_outlined,
             title: 'Demo veriyi yükle',
             subtitle: _busy
                 ? 'Yükleniyor…'
-                : 'Proje, personel, puantaj, imalat ve verim örneği',
+                : 'Tüm modülleri kapsayan Demo Şantiye örneği',
             onTap: () {
               if (!_busy) _confirmLoadDemo(context);
             },
