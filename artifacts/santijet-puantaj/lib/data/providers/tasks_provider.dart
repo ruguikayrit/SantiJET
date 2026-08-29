@@ -72,8 +72,8 @@ class TasksNotifier extends StateNotifier<List<SiteTask>> {
     required Person assigner,
     required Person assignee,
     String description = '',
-    String category = '',
-    String tag = '',
+    required String category,
+    required String tag,
     String earliestStart = '',
     String dueDate = '',
     TaskStatus status = TaskStatus.todo,
@@ -82,14 +82,22 @@ class TasksNotifier extends StateNotifier<List<SiteTask>> {
     if (!RoleDegree.canAssignTasks(assigner)) {
       throw StateError('Yalnızca 1. derece roller görev atayabilir.');
     }
+    final cat = category.trim();
+    final normalizedTag = TaskTagCatalog.normalize(tag);
+    if (cat.isEmpty) {
+      throw ArgumentError('Görev kategorisi zorunludur.');
+    }
+    if (normalizedTag.isEmpty || !TaskTagCatalog.isKnown(normalizedTag)) {
+      throw ArgumentError('Görev etiketi zorunludur (İnşaat / Elektrik / Mekanik).');
+    }
     final now = DateTime.now();
     var task = SiteTask(
       id: IdGen.make('tsk'),
       projectId: projectId,
       title: title.trim(),
       description: description.trim(),
-      category: category.trim(),
-      tag: TaskTagCatalog.normalize(tag),
+      category: cat,
+      tag: normalizedTag,
       assignee: assignee.name.trim(),
       assigneePersonId: assignee.id,
       assignerPersonId: assigner.id,
@@ -108,10 +116,22 @@ class TasksNotifier extends StateNotifier<List<SiteTask>> {
   }
 
   SiteTask upsert(SiteTask task) {
+    final cat = task.category.trim();
+    final normalizedTag = TaskTagCatalog.normalize(task.tag);
+    if (cat.isEmpty) {
+      throw ArgumentError('Görev kategorisi zorunludur.');
+    }
+    if (normalizedTag.isEmpty || !TaskTagCatalog.isKnown(normalizedTag)) {
+      throw ArgumentError('Görev etiketi zorunludur (İnşaat / Elektrik / Mekanik).');
+    }
     final now = DateTime.now();
     final idx = state.indexWhere((t) => t.id == task.id);
     final prev = idx >= 0 ? state[idx] : null;
-    var next = task.copyWith(updatedAt: now);
+    var next = task.copyWith(
+      category: cat,
+      tag: normalizedTag,
+      updatedAt: now,
+    );
     if (next.status == TaskStatus.done) {
       final existing = next.actualDeliveryDate.trim().isNotEmpty
           ? next.actualDeliveryDate.trim()
@@ -182,7 +202,8 @@ class TasksNotifier extends StateNotifier<List<SiteTask>> {
     final next = <SiteTask>[];
     for (final t in state) {
       if (t.category.trim() == target) {
-        next.add(t.copyWith(category: '', updatedAt: now));
+        // Kategori zorunlu — silinince varsayılan Saha'ya taşınır.
+        next.add(t.copyWith(category: 'Saha', updatedAt: now));
         count++;
       } else {
         next.add(t);

@@ -62,9 +62,9 @@ class _DemoIntroScreenState extends ConsumerState<DemoIntroScreen> {
       icon: Icons.task_alt_outlined,
       title: 'Görevler — disiplin etiketli saha işleri',
       body:
-          'İnşaat, Elektrik, Mekanik etiketleri; Bugün / Yarın hızlı tarih. '
-          'Ana sayfada acil görev kartına dokunun, liste açılsın. '
-          'Görev AL ile yalnızca İnşaat görevlerini PDF/Excel alın.',
+          'Her görevde kategori ve etiket zorunlu (İnşaat / Elektrik / Mekanik). '
+          'Başlangıç ve bitiş tarihi seçilir; Bugün / Yarın kısayolu var. '
+          'Ana sayfada acil kartına dokunun. Görev AL ile etiket filtreli PDF/Excel.',
       accent: AppColors.partial,
     ),
     _IntroPageData(

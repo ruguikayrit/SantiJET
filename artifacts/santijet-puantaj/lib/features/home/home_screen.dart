@@ -86,7 +86,6 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
     final attendance = ref.watch(attendanceProvider);
     final urgentTasks = ref.watch(upcomingUrgentTasksProvider);
     final urgentByCategory = ref.watch(urgentTaskCategorySummariesProvider);
-    final urgentByTag = ref.watch(urgentTaskTagSummariesProvider);
     if (project == null) {
       return Scaffold(
         body: SafeArea(
@@ -254,7 +253,6 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                     child: _HomeUrgentTasksSection(
                       tasks: urgentTasks,
                       categorySummaries: urgentByCategory,
-                      tagSummaries: urgentByTag,
                     ),
                   ),
                 ]),
@@ -276,12 +274,10 @@ class _HomeUrgentTasksSection extends StatefulWidget {
   const _HomeUrgentTasksSection({
     required this.tasks,
     required this.categorySummaries,
-    required this.tagSummaries,
   });
 
   final List<SiteTask> tasks;
   final List<UrgentTaskCategorySummary> categorySummaries;
-  final List<UrgentTaskTagSummary> tagSummaries;
 
   @override
   State<_HomeUrgentTasksSection> createState() => _HomeUrgentTasksSectionState();
@@ -297,6 +293,21 @@ class _HomeUrgentTasksSectionState extends State<_HomeUrgentTasksSection> {
         : task.category.trim();
   }
 
+  /// Karşı boyuttaki seçime göre süzülmüş havuz (liste + çapraz sayımlar).
+  List<SiteTask> _poolForTags() {
+    if (_selectedCategory == null) return widget.tasks;
+    return widget.tasks
+        .where((t) => _categoryKey(t) == _selectedCategory)
+        .toList();
+  }
+
+  List<SiteTask> _poolForCategories() {
+    if (_selectedTag == null) return widget.tasks;
+    return widget.tasks
+        .where((t) => TaskTagCatalog.normalize(t.tag) == _selectedTag)
+        .toList();
+  }
+
   List<SiteTask> get _filteredTasks {
     var list = widget.tasks;
     if (_selectedTag != null) {
@@ -310,22 +321,58 @@ class _HomeUrgentTasksSectionState extends State<_HomeUrgentTasksSection> {
         .toList();
   }
 
+  /// Etiket kartları: kategori seçiliyse yalnız o kategorideki adetler.
+  List<UrgentTaskTagSummary> get _displayTagSummaries {
+    final pool = _poolForTags();
+    final counts = {for (final t in TaskTagCatalog.all) t: 0};
+    for (final task in pool) {
+      final tag = TaskTagCatalog.normalize(task.tag);
+      if (counts.containsKey(tag)) {
+        counts[tag] = counts[tag]! + 1;
+      }
+    }
+    return [
+      for (final tag in TaskTagCatalog.all) (tag: tag, count: counts[tag]!),
+    ];
+  }
+
+  /// Kategori kartları: etiket seçiliyse yalnız o etiketteki adetler (0 dahil).
+  List<UrgentTaskCategorySummary> get _displayCategorySummaries {
+    final pool = _poolForCategories();
+    final counts = <String, int>{};
+    for (final t in pool) {
+      final cat = _categoryKey(t);
+      counts[cat] = (counts[cat] ?? 0) + 1;
+    }
+    // Kart sırası sabit kalsın; seçim sonrası 0 olanlar da görünsün.
+    return [
+      for (final summary in widget.categorySummaries)
+        (category: summary.category, count: counts[summary.category] ?? 0),
+    ];
+  }
+
   @override
   void didUpdateWidget(covariant _HomeUrgentTasksSection oldWidget) {
     super.didUpdateWidget(oldWidget);
+    // Seçim yalnızca o kategori/etiket acil listeden tamamen düşerse sıfırlanır
+    // (çapraz filtrede 0 olması seçimi kaldırmaz).
     if (_selectedCategory != null &&
-        !widget.categorySummaries
-            .any((s) => s.category == _selectedCategory)) {
+        !widget.tasks.any((t) => _categoryKey(t) == _selectedCategory)) {
       _selectedCategory = null;
     }
     if (_selectedTag != null &&
-        !widget.tagSummaries.any((s) => s.tag == _selectedTag)) {
+        !widget.tasks.any(
+          (t) => TaskTagCatalog.normalize(t.tag) == _selectedTag,
+        )) {
       _selectedTag = null;
     }
   }
 
   @override
   Widget build(BuildContext context) {
+    final tagSummaries = _displayTagSummaries;
+    final categorySummaries = _displayCategorySummaries;
+
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
@@ -339,7 +386,7 @@ class _HomeUrgentTasksSectionState extends State<_HomeUrgentTasksSection> {
               spacing: spacing,
               runSpacing: spacing,
               children: [
-                for (final summary in widget.tagSummaries)
+                for (final summary in tagSummaries)
                   SizedBox(
                     width: itemWidth,
                     child: _MiniStat(
@@ -360,7 +407,7 @@ class _HomeUrgentTasksSectionState extends State<_HomeUrgentTasksSection> {
             );
           },
         ),
-        if (widget.categorySummaries.isNotEmpty) ...[
+        if (categorySummaries.isNotEmpty) ...[
           const SizedBox(height: AppSpacing.sm),
           LayoutBuilder(
             builder: (context, constraints) {
@@ -372,7 +419,7 @@ class _HomeUrgentTasksSectionState extends State<_HomeUrgentTasksSection> {
                 spacing: spacing,
                 runSpacing: spacing,
                 children: [
-                  for (final summary in widget.categorySummaries)
+                  for (final summary in categorySummaries)
                     SizedBox(
                       width: itemWidth,
                       child: _MiniStat(

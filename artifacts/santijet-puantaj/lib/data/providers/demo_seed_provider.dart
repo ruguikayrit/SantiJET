@@ -10,6 +10,7 @@ import '../../domain/entities/person.dart';
 import '../../domain/entities/production.dart';
 import '../../domain/entities/production_day_entry.dart';
 import '../../domain/entities/project.dart';
+import '../../domain/entities/site_task.dart';
 import '../../domain/enums/attendance_status.dart';
 import '../../domain/enums/photo_work_category.dart';
 import '../../domain/enums/task_status.dart';
@@ -115,6 +116,7 @@ class DemoSeedController {
       'Demo Ekip',
       'Kalıp',
       'Mekanik',
+      'Elektrik',
       'Ofis',
     ]) {
       teams.add(t);
@@ -192,8 +194,14 @@ class DemoSeedController {
       (
         name: 'Murat Elektrik',
         profession: 'Elektrik Usta',
-        team: 'Mekanik',
+        team: 'Elektrik',
         company: 'Elektrik Taşeron',
+      ),
+      (
+        name: 'Serkan Mekanik',
+        profession: 'Mekanik Usta',
+        team: 'Mekanik',
+        company: 'Mekanik Taşeron',
       ),
     ];
 
@@ -262,7 +270,7 @@ class DemoSeedController {
     final teams = _ref.read(uninsuredTeamsProvider.notifier);
     teams.deleteForProject(projectId);
 
-    final dates = _recentWeekdays(count: 5);
+    final dates = _recentWeekdays(count: 8);
     for (final date in dates) {
       teams.add(
         projectId: projectId,
@@ -395,8 +403,12 @@ class DemoSeedController {
         plannedQty: 180,
         plannedDays: 5,
         plannedLabor: 10,
-        note: '[DEMO] Bekleyen — henüz günlük kayıt yok',
-        dailyEntries: const [],
+        note: '[DEMO] Perde betonu dökümü',
+        dailyEntries: [
+          entry(4, qty: 45, usta: 4, duz: 4),
+          entry(2, qty: 50, usta: 4, duz: 5),
+          entry(0, qty: 35, usta: 3, duz: 4),
+        ],
       ),
     );
     production.add(
@@ -416,6 +428,46 @@ class DemoSeedController {
           entry(8, qty: 40, usta: 3, duz: 2),
           entry(5, qty: 35, usta: 3, duz: 2),
           entry(2, qty: 45, usta: 2, duz: 3),
+        ],
+      ),
+    );
+    production.add(
+      Production(
+        id: '',
+        projectId: projectId,
+        name: 'Aydınlatma Hattı',
+        floor: 'Zemin Kat',
+        section: 'Koridor',
+        teamName: 'Elektrik',
+        unit: 'm',
+        plannedQty: 420,
+        plannedDays: 8,
+        plannedLabor: 3,
+        note: '[DEMO] Elektrik imalat',
+        dailyEntries: [
+          entry(5, qty: 80, usta: 1, duz: 1),
+          entry(2, qty: 95, usta: 1, duz: 2),
+          entry(0, qty: 60, usta: 1, duz: 1),
+        ],
+      ),
+    );
+    production.add(
+      Production(
+        id: '',
+        projectId: projectId,
+        name: 'Havalandırma Kanalı',
+        floor: 'Bodrum Kat',
+        section: 'Teknik Galeri',
+        teamName: 'Mekanik',
+        unit: 'm',
+        plannedQty: 260,
+        plannedDays: 9,
+        plannedLabor: 4,
+        note: '[DEMO] Mekanik imalat',
+        dailyEntries: [
+          entry(6, qty: 40, usta: 2, duz: 1),
+          entry(3, qty: 55, usta: 2, duz: 2),
+          entry(1, qty: 35, usta: 1, duz: 2),
         ],
       ),
     );
@@ -443,7 +495,9 @@ class DemoSeedController {
           },
           workElectrical:
               'Zemin kat aydınlatma kablo çekimi (${i + 1}. hat).',
-          workMechanical: i.isEven ? 'Havalandırma kanalı montajına başlandı.' : '',
+          workMechanical: i.isEven
+              ? 'Havalandırma kanalı montajına başlandı.'
+              : 'SPRİ kanal askı montajı devam ediyor.',
           planConstruction: switch (i % 3) {
             0 =>
               'Kolon demiri bağlama devam.\nKalıp ekibi perde hazırlığı.',
@@ -477,16 +531,15 @@ class DemoSeedController {
               ),
           ],
           outgoingMaterials: [
-            if (i >= 2)
-              DailyReportMaterial(
-                id: IdGen.make('out'),
-                name: 'Kırık beton moloz',
-                quantity: '${6 + i}',
-                unit: 'm³',
-                supplierOrOrder: 'Saha sevkiyat',
-                supplyDate: date,
-                note: 'Hafriyat alanına',
-              ),
+            DailyReportMaterial(
+              id: IdGen.make('out'),
+              name: 'Kırık beton moloz',
+              quantity: '${6 + i}',
+              unit: 'm³',
+              supplierOrOrder: 'Saha sevkiyat',
+              supplyDate: date,
+              note: 'Hafriyat alanına',
+            ),
           ],
           orderedMaterials: [
             DailyReportMaterial(
@@ -510,35 +563,40 @@ class DemoSeedController {
             ),
           ],
           vehicles: [
+            DailyReportMachine(
+              id: IdGen.make('veh'),
+              name: 'Kamyonet',
+              type: 'Vasıta',
+              plateOrId: '34 DEMO ${10 + i}',
+              hoursWorked: 4 + i.toDouble(),
+              workDescription: 'Malzeme sevkiyatı',
+              operatorName: 'Sürücü B.',
+            ),
+          ],
+          photos: [
+            DailyReportPhoto(
+              id: photoId,
+              dataBase64: demoPhotoBase64,
+              caption: 'Kolon demiri montaj görüntüsü',
+              workCategory: PhotoWorkCategory.construction,
+              createdAt: now,
+            ),
+            DailyReportPhoto(
+              id: IdGen.make('pho'),
+              dataBase64: demoPhotoBase64,
+              caption: 'Kablo hattı çekim alanı',
+              workCategory: PhotoWorkCategory.electrical,
+              createdAt: now,
+            ),
             if (i.isEven)
-              DailyReportMachine(
-                id: IdGen.make('veh'),
-                name: 'Kamyonet',
-                type: 'Vasıta',
-                plateOrId: '34 DEMO ${10 + i}',
-                hoursWorked: 4 + i.toDouble(),
-                workDescription: 'Malzeme sevkiyatı',
-                operatorName: 'Sürücü B.',
+              DailyReportPhoto(
+                id: IdGen.make('pho'),
+                dataBase64: demoPhotoBase64,
+                caption: 'Havalandırma kanal montajı',
+                workCategory: PhotoWorkCategory.mechanical,
+                createdAt: now,
               ),
           ],
-          photos: i >= dates.length - 2
-              ? [
-                  DailyReportPhoto(
-                    id: photoId,
-                    dataBase64: demoPhotoBase64,
-                    caption: 'Kolon demiri montaj görüntüsü',
-                    workCategory: PhotoWorkCategory.construction,
-                    createdAt: now,
-                  ),
-                  DailyReportPhoto(
-                    id: IdGen.make('pho'),
-                    dataBase64: demoPhotoBase64,
-                    caption: 'Kablo hattı çekim alanı',
-                    workCategory: PhotoWorkCategory.electrical,
-                    createdAt: now,
-                  ),
-                ]
-              : const [],
           weather: DailyReportWeather(
             temperatureC: 24 + i.toDouble(),
             nightTemperatureC: 16 + i.toDouble(),
@@ -665,6 +723,30 @@ class DemoSeedController {
         work: 'Malzeme taşıma ve saha düzeni',
         yevmiye: 1.5,
       ),
+      (
+        person: byName('Ali İşçi'),
+        day: 2,
+        work: 'Demir sevk boşaltma',
+        yevmiye: 1.0,
+      ),
+      (
+        person: byName('Mehmet Çırak'),
+        day: 4,
+        work: 'Şantiye içi taşıma',
+        yevmiye: 0.5,
+      ),
+      (
+        person: byName('Can Demir'),
+        day: 5,
+        work: 'Perde kalıp destek',
+        yevmiye: 1.0,
+      ),
+      (
+        person: byName('Hasan Öz'),
+        day: 6,
+        work: 'Moloz yükleme',
+        yevmiye: 1.0,
+      ),
     ];
 
     for (final s in specs) {
@@ -707,6 +789,7 @@ class DemoSeedController {
       int dueOffset,
       TaskStatus status,
       String description,
+      bool withPhoto,
     })>[
       (
         title: 'Epoksi malzemesi siparişi',
@@ -717,16 +800,18 @@ class DemoSeedController {
         dueOffset: 2,
         status: TaskStatus.todo,
         description: 'Zemin kat epoksi için 120 kg set.',
+        withPhoto: false,
       ),
       (
         title: 'Havalandırma kanalı tedarik',
         category: 'Satın Alma',
         tag: TaskTagCatalog.mekanik,
-        assigneeName: 'Murat Elektrik',
+        assigneeName: 'Serkan Mekanik',
         startOffset: 1,
         dueOffset: 5,
         status: TaskStatus.todo,
         description: 'Mekanik taşeron için SPIR kanal.',
+        withPhoto: false,
       ),
       (
         title: 'Epoksi öncesi duvar hazırlık',
@@ -737,6 +822,7 @@ class DemoSeedController {
         dueOffset: 0,
         status: TaskStatus.doing,
         description: 'Yüzey zımpara ve astar kontrolü.',
+        withPhoto: true,
       ),
       (
         title: 'Liftlerin zımpara ve boyası',
@@ -747,6 +833,7 @@ class DemoSeedController {
         dueOffset: -1,
         status: TaskStatus.todo,
         description: 'Asansör kabini yüzey hazırlığı.',
+        withPhoto: false,
       ),
       (
         title: '25 cm rulo uygulama',
@@ -757,6 +844,7 @@ class DemoSeedController {
         dueOffset: 1,
         status: TaskStatus.todo,
         description: 'Çatı izolasyon rulo serimi.',
+        withPhoto: false,
       ),
       (
         title: 'A blok temel demiri teslim',
@@ -767,6 +855,7 @@ class DemoSeedController {
         dueOffset: 1,
         status: TaskStatus.todo,
         description: 'Nervürlü demir Ø16 sevk kabulü.',
+        withPhoto: false,
       ),
       (
         title: 'Kolon demiri bağlama kontrolü',
@@ -777,46 +866,51 @@ class DemoSeedController {
         dueOffset: 3,
         status: TaskStatus.todo,
         description: 'Bodrum 1. kısım bağlama denetimi.',
+        withPhoto: false,
       ),
       (
         title: 'Haftalık ilerleme raporu',
         category: 'Ofis',
-        tag: '',
+        tag: TaskTagCatalog.insaat,
         assigneeName: 'Sinan Çakır',
         startOffset: 2,
         dueOffset: 4,
         status: TaskStatus.todo,
         description: 'İşverene haftalık PDF gönderimi.',
+        withPhoto: false,
       ),
       (
         title: 'Alt yüklenici koordinasyon',
         category: 'Görüşme',
-        tag: '',
+        tag: TaskTagCatalog.insaat,
         assigneeName: 'Uğur Tiryaki',
         startOffset: 3,
         dueOffset: 6,
         status: TaskStatus.todo,
         description: 'Demo Taşeron ile plan uyumu.',
+        withPhoto: false,
       ),
       (
         title: 'Havalandırma tesisatı montaj',
         category: 'Saha',
         tag: TaskTagCatalog.mekanik,
-        assigneeName: 'Murat Elektrik',
+        assigneeName: 'Serkan Mekanik',
         startOffset: 2,
         dueOffset: 7,
         status: TaskStatus.todo,
         description: 'Bodrum kanal bağlantıları.',
+        withPhoto: false,
       ),
       (
         title: 'Klima santrali bağlantı',
         category: 'Saha',
         tag: TaskTagCatalog.mekanik,
-        assigneeName: 'Murat Elektrik',
+        assigneeName: 'Serkan Mekanik',
         startOffset: 4,
         dueOffset: 8,
         status: TaskStatus.todo,
         description: 'Çatı ünite elektrik-mekanik entegrasyon.',
+        withPhoto: false,
       ),
       (
         title: 'Temel kalıp sökümü',
@@ -827,6 +921,7 @@ class DemoSeedController {
         dueOffset: -3,
         status: TaskStatus.done,
         description: '[DEMO] Tamamlanan örnek görev.',
+        withPhoto: true,
       ),
       (
         title: 'Zemin kat aydınlatma tesisatı',
@@ -837,6 +932,7 @@ class DemoSeedController {
         dueOffset: 3,
         status: TaskStatus.todo,
         description: 'Bodrum koridor armatür ve hat çekimi.',
+        withPhoto: false,
       ),
       (
         title: 'Pano topraklama ölçümü',
@@ -847,12 +943,23 @@ class DemoSeedController {
         dueOffset: 2,
         status: TaskStatus.doing,
         description: 'Ana dağıtım panosu toprak direnci.',
+        withPhoto: true,
       ),
     ];
 
     for (final spec in taskSpecs) {
       final assignee = byName(spec.assigneeName);
       if (assignee == null) continue;
+      final photos = spec.withPhoto
+          ? [
+              TaskPhoto(
+                id: IdGen.make('tph'),
+                dataBase64: demoPhotoBase64,
+                mimeType: 'image/png',
+                createdAt: DateTime.now(),
+              ),
+            ]
+          : const <TaskPhoto>[];
       tasks.add(
         projectId: projectId,
         title: spec.title,
@@ -864,6 +971,7 @@ class DemoSeedController {
         earliestStart: _day(spec.startOffset),
         dueDate: _day(spec.dueOffset),
         status: spec.status,
+        photos: photos,
       );
     }
   }

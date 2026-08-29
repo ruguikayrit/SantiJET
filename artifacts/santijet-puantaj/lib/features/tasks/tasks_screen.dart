@@ -234,7 +234,13 @@ class _TasksScreenState extends ConsumerState<TasksScreen> {
     var latestDelivery = existing?.dueDate ?? '';
     var status = existing?.status ?? TaskStatus.todo;
     var category = existing?.category.trim() ?? '';
-    var tag = TaskTagCatalog.normalize(existing?.tag ?? '');
+    var tag = TaskTagCatalog.normalize(
+      existing?.tag ?? TaskTagCatalog.insaat,
+    );
+    if (existing == null && category.isEmpty) {
+      category = 'Saha';
+    }
+    if (tag.isEmpty) tag = TaskTagCatalog.insaat;
     var photos = List<TaskPhoto>.from(existing?.photos ?? const []);
     const maxPhotos = 5;
     final picker = ImagePicker();
@@ -705,26 +711,21 @@ class _TasksScreenState extends ConsumerState<TasksScreen> {
                         ),
                       ),
                     const SizedBox(height: AppSpacing.sm),
-                    Text('Etiket', style: theme.textTheme.labelLarge),
+                    Text('Etiket *', style: theme.textTheme.labelLarge),
                     const SizedBox(height: AppSpacing.xs),
                     SingleChildScrollView(
                       scrollDirection: Axis.horizontal,
                       child: Row(
                         children: [
-                          ChoiceChip(
-                            label: const Text('Etiket yok'),
-                            selected: tag.isEmpty,
-                            onSelected: canEditFields
-                                ? (_) => setModal(() => tag = '')
-                                : null,
-                          ),
-                          for (final t in TaskTagCatalog.all) ...[
-                            const SizedBox(width: AppSpacing.xs),
+                          for (var i = 0; i < TaskTagCatalog.all.length; i++) ...[
+                            if (i > 0) const SizedBox(width: AppSpacing.xs),
                             ChoiceChip(
-                              label: Text(t),
-                              selected: tag == t,
+                              label: Text(TaskTagCatalog.all[i]),
+                              selected: tag == TaskTagCatalog.all[i],
                               onSelected: canEditFields
-                                  ? (_) => setModal(() => tag = t)
+                                  ? (_) => setModal(
+                                        () => tag = TaskTagCatalog.all[i],
+                                      )
                                   : null,
                             ),
                           ],
@@ -734,7 +735,7 @@ class _TasksScreenState extends ConsumerState<TasksScreen> {
                     const SizedBox(height: AppSpacing.sm),
                     InputDecorator(
                       decoration: const InputDecoration(
-                        labelText: 'Kategori',
+                        labelText: 'Kategori *',
                       ),
                       child: InkWell(
                         onTap: canEditFields ? pickCategory : null,
@@ -992,6 +993,24 @@ class _TasksScreenState extends ConsumerState<TasksScreen> {
                       onPressed: () {
                         if (titleCtrl.text.trim().isEmpty) return;
                         if (assignee == null) return;
+                        if (tag.isEmpty || !TaskTagCatalog.isKnown(tag)) {
+                          ScaffoldMessenger.of(ctx).showSnackBar(
+                            const SnackBar(
+                              content: Text(
+                                'Etiket seçin (İnşaat / Elektrik / Mekanik).',
+                              ),
+                            ),
+                          );
+                          return;
+                        }
+                        if (category.trim().isEmpty) {
+                          ScaffoldMessenger.of(ctx).showSnackBar(
+                            const SnackBar(
+                              content: Text('Kategori seçin veya oluşturun.'),
+                            ),
+                          );
+                          return;
+                        }
                         if (earliestStart.isEmpty || latestDelivery.isEmpty) {
                           ScaffoldMessenger.of(ctx).showSnackBar(
                             const SnackBar(
@@ -1024,15 +1043,16 @@ class _TasksScreenState extends ConsumerState<TasksScreen> {
     if (saved != true ||
         title.isEmpty ||
         assignee == null ||
+        category.trim().isEmpty ||
+        tag.isEmpty ||
+        !TaskTagCatalog.isKnown(tag) ||
         earliestStart.isEmpty ||
         latestDelivery.isEmpty) {
       return;
     }
 
     if (existing == null) {
-      if (category.isNotEmpty) {
-        ref.read(taskCategoriesProvider.notifier).add(category);
-      }
+      ref.read(taskCategoriesProvider.notifier).add(category);
       ref.read(tasksProvider.notifier).add(
             projectId: project.id,
             title: title,
@@ -1047,9 +1067,7 @@ class _TasksScreenState extends ConsumerState<TasksScreen> {
             photos: photos,
           );
     } else if (isAssigner) {
-      if (category.isNotEmpty) {
-        ref.read(taskCategoriesProvider.notifier).add(category);
-      }
+      ref.read(taskCategoriesProvider.notifier).add(category);
       ref.read(tasksProvider.notifier).upsert(
             existing.copyWith(
               title: title,
