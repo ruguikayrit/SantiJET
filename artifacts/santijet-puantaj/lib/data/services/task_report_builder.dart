@@ -33,8 +33,10 @@ abstract final class TaskReportBuilder {
     'Etiket',
     'Kategori',
     'Atanan',
-    'Başlangıç',
+    'Planlanan başlangıç',
+    'Gerçekleşen başlangıç',
     'Planlanan bitiş',
+    'Gerçekleşen bitiş',
     'Durum',
     'Açıklama',
   ];
@@ -102,7 +104,13 @@ abstract final class TaskReportBuilder {
               ? '—'
               : titleCaseTr(list[i].assignee),
           list[i].earliestStart.isEmpty ? '—' : list[i].earliestStart,
+          list[i].actualStartDate.trim().isEmpty
+              ? '—'
+              : list[i].actualStartDate.trim(),
           list[i].dueDate.isEmpty ? '—' : list[i].dueDate,
+          list[i].actualDeliveryDate.trim().isEmpty
+              ? '—'
+              : list[i].actualDeliveryDate.trim(),
           list[i].status.label,
           list[i].description.trim().isEmpty
               ? '—'
