@@ -276,22 +276,22 @@ abstract final class PuantajReportBuilder {
     final headers = period == PuantajReportPeriod.daily
         ? [
             '#',
-            'Ad Soyad',
+            'Ad\nSoyad',
             'Taşeron',
             'Meslek',
             'Ekip',
-            'İş tanımı',
-            'Yevmiye',
+            'İş\ntanımı',
+            'YV',
           ]
         : [
             '#',
             'Tarih',
-            'Ad Soyad',
+            'Ad\nSoyad',
             'Taşeron',
             'Meslek',
             'Ekip',
-            'İş tanımı',
-            'Yevmiye',
+            'İş\ntanımı',
+            'YV',
           ];
 
     final rows = <List<String>>[];
@@ -500,23 +500,23 @@ abstract final class PuantajReportBuilder {
       PuantajReportPeriod.daily => const [
           'Firma\nAdı',
           'Ekip\nAdı',
-          'Adam.gün\n/gün',
+          'Adam\ngün',
           'Çalışılan\ngün',
-          'Ortalama\nçalışan',
+          'Ort.\nadam',
         ],
       PuantajReportPeriod.weekly => const [
           'Firma\nAdı',
           'Ekip\nAdı',
-          'Haftalık\nadam.gün',
-          'Haftalık\nçalışılan gün',
-          'Günlük\nortalama adam',
+          'Adam\ngün',
+          'Çalışılan\ngün',
+          'Ort.\nadam',
         ],
       PuantajReportPeriod.monthly => const [
           'Firma\nAdı',
           'Ekip\nAdı',
-          'Aylık\nadam.gün',
-          'Aylık\nçalışılan gün',
-          'Günlük\nortalama adam',
+          'Adam\ngün',
+          'Çalışılan\ngün',
+          'Ort.\nadam',
         ],
     };
     final rows = <List<String>>[];

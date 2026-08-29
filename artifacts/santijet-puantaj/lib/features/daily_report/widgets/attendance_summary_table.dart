@@ -708,7 +708,7 @@ class PeriodPersonnelSummaryTable extends StatelessWidget {
   }
 }
 
-/// Haftalık / aylık ekip özeti — günlük tablo dilinde 5 sütun.
+/// Haftalık / aylık ekip ve yevmiyeli özet tablosu.
 class PeriodTeamSummaryTable extends StatelessWidget {
   const PeriodTeamSummaryTable({
     super.key,
@@ -727,6 +727,36 @@ class PeriodTeamSummaryTable extends StatelessWidget {
   final Set<int> sumColumnIndexes;
   final String totalLabel;
 
+  static List<int> _flexesFor(List<String> headers) {
+    final n = headers.length;
+    if (n == 0) return const [];
+    // Ekip puantajı (5): isim sütunları geniş, sayılar dengeli.
+    if (n == 5) return const [3, 3, 2, 2, 2];
+    // Yevmiyeli (6–8): kimlik geniş, kısa kodlar dar.
+    return [
+      for (var i = 0; i < n; i++)
+        if (i == 0 && headers[i].replaceAll('\n', '').trim() == '#')
+          1
+        else if (headers[i].toUpperCase().contains('YV') ||
+            headers[i].toUpperCase().contains('YEVMİYE'))
+          1
+        else if (headers[i].toUpperCase().contains('TARİH') ||
+            headers[i].toUpperCase().contains('EKİP') ||
+            headers[i].toUpperCase().contains('MESLEK'))
+          2
+        else
+          3,
+    ];
+  }
+
+  static String _displayHeader(String raw) {
+    return raw
+        .split('\n')
+        .map((line) => line.trim().toUpperCase())
+        .where((line) => line.isNotEmpty)
+        .join('\n');
+  }
+
   @override
   Widget build(BuildContext context) {
     final base = Theme.of(context);
@@ -736,11 +766,10 @@ class PeriodTeamSummaryTable extends StatelessWidget {
             ? SJCard.lightContrastTheme(base)
             : base;
     final border = theme.dividerColor.withValues(alpha: 0.55);
-    final labelHeaders = [
-      for (final h in headers) h.toUpperCase(),
-    ];
-    // 5 sütun telefon genişliğinde eşit paylaşım.
-    final flexes = List<int>.filled(headers.length, 2);
+    final flexes = _flexesFor(headers);
+    final labelHeaders = [for (final h in headers) _displayHeader(h)];
+    final needsScroll = headers.length >= 6;
+    final minTableWidth = needsScroll ? headers.length * 76.0 : 0.0;
 
     return Theme(
       data: theme,
@@ -751,105 +780,39 @@ class PeriodTeamSummaryTable extends StatelessWidget {
           border: Border.all(color: border),
         ),
         clipBehavior: Clip.antiAlias,
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.stretch,
-          children: [
-            Padding(
-              padding: const EdgeInsets.fromLTRB(6, 6, 6, 4),
-              child: _HeaderRow(
-                cells: [
-                  for (var i = 0; i < labelHeaders.length; i++)
-                    _HeaderCell(
-                      labelHeaders[i],
-                      flex: flexes[i],
+        child: needsScroll
+            ? LayoutBuilder(
+                builder: (context, constraints) {
+                  final w = constraints.maxWidth > minTableWidth
+                      ? constraints.maxWidth
+                      : minTableWidth;
+                  return SingleChildScrollView(
+                    scrollDirection: Axis.horizontal,
+                    child: _PeriodTableBody(
+                      width: w,
+                      headers: labelHeaders,
+                      flexes: flexes,
+                      rows: rows,
+                      emptyMessage: emptyMessage,
+                      sumColumnIndexes: sumColumnIndexes,
+                      totalLabel: totalLabel,
+                      border: border,
+                      theme: theme,
                     ),
-                ],
-              ),
-            ),
-            if (rows.isEmpty)
-              Padding(
-                padding: const EdgeInsets.fromLTRB(12, 8, 12, 12),
-                child: Text(
-                  emptyMessage,
-                  textAlign: TextAlign.center,
-                  style: theme.textTheme.bodySmall?.copyWith(
-                    color: theme.colorScheme.onSurfaceVariant,
-                  ),
-                ),
+                  );
+                },
               )
-            else ...[
-              for (final row in rows)
-                Container(
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 6,
-                    vertical: 8,
-                  ),
-                  decoration: BoxDecoration(
-                    border: Border(bottom: BorderSide(color: border)),
-                  ),
-                  child: Row(
-                    children: [
-                      for (var i = 0; i < headers.length; i++) ...[
-                        if (i > 0) const SizedBox(width: 4),
-                        Expanded(
-                          flex: flexes[i],
-                          child: Text(
-                            i < row.length ? row[i] : '—',
-                            textAlign:
-                                i < 2 ? TextAlign.start : TextAlign.center,
-                            style: theme.textTheme.labelSmall?.copyWith(
-                              fontSize: 11,
-                              fontWeight:
-                                  i < 2 ? FontWeight.w600 : FontWeight.w700,
-                            ),
-                            maxLines: 2,
-                            overflow: TextOverflow.ellipsis,
-                          ),
-                        ),
-                      ],
-                    ],
-                  ),
-                ),
-              if (sumColumnIndexes.isNotEmpty)
-                Container(
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 6,
-                    vertical: 10,
-                  ),
-                  color: AppColors.success.withValues(alpha: 0.08),
-                  child: Row(
-                    children: [
-                      for (var i = 0; i < headers.length; i++) ...[
-                        if (i > 0) const SizedBox(width: 4),
-                        Expanded(
-                          flex: flexes[i],
-                          child: Text(
-                            _totalCell(
-                              columnIndex: i,
-                              rows: rows,
-                              sumColumnIndexes: sumColumnIndexes,
-                              totalLabel: totalLabel,
-                            ),
-                            textAlign:
-                                i < 2 ? TextAlign.start : TextAlign.center,
-                            style: theme.textTheme.labelSmall?.copyWith(
-                              fontSize: 11,
-                              fontWeight: FontWeight.w800,
-                              color: sumColumnIndexes.contains(i)
-                                  ? AppColors.success
-                                  : null,
-                            ),
-                            maxLines: 2,
-                            overflow: TextOverflow.ellipsis,
-                          ),
-                        ),
-                      ],
-                    ],
-                  ),
-                ),
-            ],
-          ],
-        ),
+            : _PeriodTableBody(
+                width: null,
+                headers: labelHeaders,
+                flexes: flexes,
+                rows: rows,
+                emptyMessage: emptyMessage,
+                sumColumnIndexes: sumColumnIndexes,
+                totalLabel: totalLabel,
+                border: border,
+                theme: theme,
+              ),
       ),
     );
   }
@@ -863,5 +826,172 @@ class PeriodTeamSummaryTable extends StatelessWidget {
     if (columnIndex == 0) return totalLabel;
     if (!sumColumnIndexes.contains(columnIndex)) return '';
     return formatNumericColumnSum(rows, columnIndex);
+  }
+}
+
+/// Dönem tablosu gövdesi — başlık bandı + satırlar.
+class _PeriodTableBody extends StatelessWidget {
+  const _PeriodTableBody({
+    required this.width,
+    required this.headers,
+    required this.flexes,
+    required this.rows,
+    required this.emptyMessage,
+    required this.sumColumnIndexes,
+    required this.totalLabel,
+    required this.border,
+    required this.theme,
+  });
+
+  final double? width;
+  final List<String> headers;
+  final List<int> flexes;
+  final List<List<String>> rows;
+  final String emptyMessage;
+  final Set<int> sumColumnIndexes;
+  final String totalLabel;
+  final Color border;
+  final ThemeData theme;
+
+  @override
+  Widget build(BuildContext context) {
+    final body = Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        Container(
+          padding: const EdgeInsets.fromLTRB(6, 8, 6, 6),
+          decoration: BoxDecoration(
+            color: AppColors.electricBlue.withValues(alpha: 0.08),
+            border: Border(bottom: BorderSide(color: border)),
+          ),
+          child: IntrinsicHeight(
+            child: Row(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                for (var i = 0; i < headers.length; i++) ...[
+                  if (i > 0) const SizedBox(width: 4),
+                  Expanded(
+                    flex: flexes[i],
+                    child: _PeriodHeaderBadge(label: headers[i]),
+                  ),
+                ],
+              ],
+            ),
+          ),
+        ),
+        if (rows.isEmpty)
+          Padding(
+            padding: const EdgeInsets.fromLTRB(12, 8, 12, 12),
+            child: Text(
+              emptyMessage,
+              textAlign: TextAlign.center,
+              style: theme.textTheme.bodySmall?.copyWith(
+                color: theme.colorScheme.onSurfaceVariant,
+              ),
+            ),
+          )
+        else ...[
+          for (final row in rows)
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 8),
+              decoration: BoxDecoration(
+                border: Border(bottom: BorderSide(color: border)),
+              ),
+              child: Row(
+                children: [
+                  for (var i = 0; i < headers.length; i++) ...[
+                    if (i > 0) const SizedBox(width: 4),
+                    Expanded(
+                      flex: flexes[i],
+                      child: Text(
+                        i < row.length ? row[i] : '—',
+                        textAlign: i < 2 ? TextAlign.start : TextAlign.center,
+                        style: theme.textTheme.labelSmall?.copyWith(
+                          fontSize: 11,
+                          fontWeight: i < 2 ? FontWeight.w600 : FontWeight.w700,
+                        ),
+                        maxLines: 2,
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                    ),
+                  ],
+                ],
+              ),
+            ),
+          if (sumColumnIndexes.isNotEmpty)
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 10),
+              color: AppColors.success.withValues(alpha: 0.08),
+              child: Row(
+                children: [
+                  for (var i = 0; i < headers.length; i++) ...[
+                    if (i > 0) const SizedBox(width: 4),
+                    Expanded(
+                      flex: flexes[i],
+                      child: Text(
+                        PeriodTeamSummaryTable._totalCell(
+                          columnIndex: i,
+                          rows: rows,
+                          sumColumnIndexes: sumColumnIndexes,
+                          totalLabel: totalLabel,
+                        ),
+                        textAlign: i < 2 ? TextAlign.start : TextAlign.center,
+                        style: theme.textTheme.labelSmall?.copyWith(
+                          fontSize: 11,
+                          fontWeight: FontWeight.w800,
+                          color: sumColumnIndexes.contains(i)
+                              ? AppColors.success
+                              : null,
+                        ),
+                        maxLines: 2,
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                    ),
+                  ],
+                ],
+              ),
+            ),
+        ],
+      ],
+    );
+
+    if (width == null) return body;
+    return SizedBox(width: width, child: body);
+  }
+}
+
+/// Dönem tablosu başlık rozeti — çok satırlı, eşit yükseklik.
+class _PeriodHeaderBadge extends StatelessWidget {
+  const _PeriodHeaderBadge({required this.label});
+
+  final String label;
+
+  @override
+  Widget build(BuildContext context) {
+    return DecoratedBox(
+      decoration: BoxDecoration(
+        color: AppColors.electricBlueLight,
+        borderRadius: AppRadii.xs,
+        border: Border.all(color: AppColors.electricBlue),
+      ),
+      child: Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 8),
+        child: Center(
+          child: Text(
+            label,
+            textAlign: TextAlign.center,
+            maxLines: 3,
+            overflow: TextOverflow.ellipsis,
+            style: const TextStyle(
+              color: AppColors.inkPrimary,
+              fontWeight: FontWeight.w800,
+              fontSize: 10,
+              letterSpacing: 0.15,
+              height: 1.2,
+            ),
+          ),
+        ),
+      ),
+    );
   }
 }

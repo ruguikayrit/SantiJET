@@ -10,7 +10,7 @@ Color completionColorForPct(double pct) {
   if (pct >= 100) return AppColors.success;
   if (pct >= 66) return AppColors.info;
   if (pct >= 33) return AppColors.electricBlueLight;
-  return AppColors.textMuted;
+  return AppColors.cardTextMuted;
 }
 
 /// Birim verim oranı (1.0 = plan) — yeşil / amber / kırmızı skala.
@@ -145,12 +145,14 @@ class UnitEfficiencyBadge extends StatelessWidget {
       return Text(
         missingLabel!,
         style: theme.textTheme.labelSmall?.copyWith(
-          color: AppColors.warning,
+          color: AppColors.statusInkOnCard(AppColors.warning),
         ),
       );
     }
 
-    final color = efficiencyColorForRatio(efficiency);
+    final color = AppColors.statusInkOnCard(
+      efficiencyColorForRatio(efficiency),
+    );
     final label = compact ? 'Verim' : 'Birim verim';
 
     return Container(

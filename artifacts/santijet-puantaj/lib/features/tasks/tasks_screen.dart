@@ -25,11 +25,13 @@ import '../../data/providers/app_data_provider.dart';
 import '../../data/providers/catalog_provider.dart';
 import '../../data/providers/tasks_provider.dart';
 import '../../domain/entities/person.dart';
+import '../../domain/entities/project.dart';
 import '../../domain/entities/site_task.dart';
 import '../../domain/enums/task_status.dart';
 import '../../domain/catalogs/task_tags.dart';
 import '../../domain/permissions/role_degree.dart';
 import 'widgets/task_calendar_panel.dart';
+import 'widgets/task_export_sheet.dart';
 
 /// Saha görevleri — atayan (1. derece) + atanan görür.
 class TasksScreen extends ConsumerStatefulWidget {
@@ -705,26 +707,29 @@ class _TasksScreenState extends ConsumerState<TasksScreen> {
                     const SizedBox(height: AppSpacing.sm),
                     Text('Etiket', style: theme.textTheme.labelLarge),
                     const SizedBox(height: AppSpacing.xs),
-                    Wrap(
-                      spacing: AppSpacing.xs,
-                      runSpacing: AppSpacing.xs,
-                      children: [
-                        ChoiceChip(
-                          label: const Text('Etiket yok'),
-                          selected: tag.isEmpty,
-                          onSelected: canEditFields
-                              ? (_) => setModal(() => tag = '')
-                              : null,
-                        ),
-                        for (final t in TaskTagCatalog.all)
+                    SingleChildScrollView(
+                      scrollDirection: Axis.horizontal,
+                      child: Row(
+                        children: [
                           ChoiceChip(
-                            label: Text(t),
-                            selected: tag == t,
+                            label: const Text('Etiket yok'),
+                            selected: tag.isEmpty,
                             onSelected: canEditFields
-                                ? (_) => setModal(() => tag = t)
+                                ? (_) => setModal(() => tag = '')
                                 : null,
                           ),
-                      ],
+                          for (final t in TaskTagCatalog.all) ...[
+                            const SizedBox(width: AppSpacing.xs),
+                            ChoiceChip(
+                              label: Text(t),
+                              selected: tag == t,
+                              onSelected: canEditFields
+                                  ? (_) => setModal(() => tag = t)
+                                  : null,
+                            ),
+                          ],
+                        ],
+                      ),
                     ),
                     const SizedBox(height: AppSpacing.sm),
                     InputDecorator(
@@ -793,43 +798,177 @@ class _TasksScreenState extends ConsumerState<TasksScreen> {
                     ),
                     const SizedBox(height: AppSpacing.sm),
                     Row(
+                      crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         Expanded(
-                          child: OutlinedButton.icon(
-                            onPressed: canEditFields ? pickStart : null,
-                            icon: const Icon(Icons.play_arrow_rounded, size: 18),
-                            label: Text(
-                              earliestStart.isEmpty
-                                  ? 'En erken başlangıç'
-                                  : earliestStart,
-                              overflow: TextOverflow.ellipsis,
-                            ),
-                            style: OutlinedButton.styleFrom(
-                              foregroundColor: AppColors.success,
-                              side: BorderSide(
-                                color: AppColors.success.withValues(alpha: 0.6),
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.stretch,
+                            children: [
+                              OutlinedButton.icon(
+                                onPressed: canEditFields ? pickStart : null,
+                                icon: const Icon(
+                                  Icons.play_arrow_rounded,
+                                  size: 18,
+                                ),
+                                label: Text(
+                                  earliestStart.isEmpty
+                                      ? 'En erken başlangıç'
+                                      : earliestStart,
+                                  overflow: TextOverflow.ellipsis,
+                                ),
+                                style: OutlinedButton.styleFrom(
+                                  foregroundColor: AppColors.success,
+                                  side: BorderSide(
+                                    color: AppColors.success
+                                        .withValues(alpha: 0.6),
+                                  ),
+                                ),
                               ),
-                            ),
+                              const SizedBox(height: AppSpacing.xs),
+                              Row(
+                                children: [
+                                  Expanded(
+                                    child: _TaskDateQuickChip(
+                                      label: 'Bugün',
+                                      color: AppColors.success,
+                                      selected: earliestStart ==
+                                          PuantajDate.today(),
+                                      onTap: canEditFields
+                                          ? () => setModal(() {
+                                                final d = PuantajDate.today();
+                                                earliestStart = d;
+                                                final due = PuantajDate
+                                                    .tryParse(latestDelivery);
+                                                final start =
+                                                    PuantajDate.tryParse(d);
+                                                if (due != null &&
+                                                    start != null &&
+                                                    start.isAfter(due)) {
+                                                  latestDelivery = d;
+                                                }
+                                              })
+                                          : null,
+                                    ),
+                                  ),
+                                  const SizedBox(width: AppSpacing.xs),
+                                  Expanded(
+                                    child: _TaskDateQuickChip(
+                                      label: 'Yarın',
+                                      color: AppColors.success,
+                                      selected: earliestStart ==
+                                          PuantajDate.shift(
+                                            PuantajDate.today(),
+                                            1,
+                                          ),
+                                      onTap: canEditFields
+                                          ? () => setModal(() {
+                                                final d = PuantajDate.shift(
+                                                  PuantajDate.today(),
+                                                  1,
+                                                );
+                                                earliestStart = d;
+                                                final due = PuantajDate
+                                                    .tryParse(latestDelivery);
+                                                final start =
+                                                    PuantajDate.tryParse(d);
+                                                if (due != null &&
+                                                    start != null &&
+                                                    start.isAfter(due)) {
+                                                  latestDelivery = d;
+                                                }
+                                              })
+                                          : null,
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ],
                           ),
                         ),
                         const SizedBox(width: AppSpacing.sm),
                         Expanded(
-                          child: OutlinedButton.icon(
-                            onPressed: canEditFields ? pickDue : null,
-                            icon: const Icon(Icons.flag_outlined, size: 18),
-                            label: Text(
-                              latestDelivery.isEmpty
-                                  ? 'Planlanan bitiş'
-                                  : latestDelivery,
-                              overflow: TextOverflow.ellipsis,
-                            ),
-                            style: OutlinedButton.styleFrom(
-                              foregroundColor: AppColors.critical,
-                              side: BorderSide(
-                                color:
-                                    AppColors.critical.withValues(alpha: 0.6),
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.stretch,
+                            children: [
+                              OutlinedButton.icon(
+                                onPressed: canEditFields ? pickDue : null,
+                                icon: const Icon(
+                                  Icons.flag_outlined,
+                                  size: 18,
+                                ),
+                                label: Text(
+                                  latestDelivery.isEmpty
+                                      ? 'Planlanan bitiş'
+                                      : latestDelivery,
+                                  overflow: TextOverflow.ellipsis,
+                                ),
+                                style: OutlinedButton.styleFrom(
+                                  foregroundColor: AppColors.critical,
+                                  side: BorderSide(
+                                    color: AppColors.critical
+                                        .withValues(alpha: 0.6),
+                                  ),
+                                ),
                               ),
-                            ),
+                              const SizedBox(height: AppSpacing.xs),
+                              Row(
+                                children: [
+                                  Expanded(
+                                    child: _TaskDateQuickChip(
+                                      label: 'Bugün',
+                                      color: AppColors.critical,
+                                      selected: latestDelivery ==
+                                          PuantajDate.today(),
+                                      onTap: canEditFields
+                                          ? () => setModal(() {
+                                                final d = PuantajDate.today();
+                                                latestDelivery = d;
+                                                final start = PuantajDate
+                                                    .tryParse(earliestStart);
+                                                final due =
+                                                    PuantajDate.tryParse(d);
+                                                if (start != null &&
+                                                    due != null &&
+                                                    due.isBefore(start)) {
+                                                  earliestStart = d;
+                                                }
+                                              })
+                                          : null,
+                                    ),
+                                  ),
+                                  const SizedBox(width: AppSpacing.xs),
+                                  Expanded(
+                                    child: _TaskDateQuickChip(
+                                      label: 'Yarın',
+                                      color: AppColors.critical,
+                                      selected: latestDelivery ==
+                                          PuantajDate.shift(
+                                            PuantajDate.today(),
+                                            1,
+                                          ),
+                                      onTap: canEditFields
+                                          ? () => setModal(() {
+                                                final d = PuantajDate.shift(
+                                                  PuantajDate.today(),
+                                                  1,
+                                                );
+                                                latestDelivery = d;
+                                                final start = PuantajDate
+                                                    .tryParse(earliestStart);
+                                                final due =
+                                                    PuantajDate.tryParse(d);
+                                                if (start != null &&
+                                                    due != null &&
+                                                    due.isBefore(start)) {
+                                                  earliestStart = d;
+                                                }
+                                              })
+                                          : null,
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ],
                           ),
                         ),
                       ],
@@ -989,6 +1128,21 @@ class _TasksScreenState extends ConsumerState<TasksScreen> {
         TaskStatus.done => AppColors.success,
       };
 
+  Future<void> _openExportSheet({
+    required Project project,
+    required List<SiteTask> tasks,
+  }) {
+    return SJModal.showSheet(
+      context: context,
+      title: 'Görev AL',
+      child: TaskExportSheet(
+        projectName: project.name,
+        tasks: tasks,
+        initialTag: _tagFilter ?? TaskTagCatalog.insaat,
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     final project = ref.watch(activeProjectProvider);
@@ -1080,9 +1234,23 @@ class _TasksScreenState extends ConsumerState<TasksScreen> {
 
     return Scaffold(
       backgroundColor: AppColors.canvas,
-      floatingActionButton: operator == null
-          ? null
-          : FloatingActionButton.extended(
+      floatingActionButton: Column(
+        mainAxisSize: MainAxisSize.min,
+        crossAxisAlignment: CrossAxisAlignment.end,
+        children: [
+          FloatingActionButton.extended(
+            heroTag: 'task_export',
+            onPressed: () => _openExportSheet(
+              project: project,
+              tasks: tasks,
+            ),
+            icon: const Icon(Icons.ios_share_outlined),
+            label: const Text('Görev AL'),
+          ),
+          if (operator != null) ...[
+            const SizedBox(height: AppSpacing.sm),
+            FloatingActionButton.extended(
+              heroTag: 'task_assign',
               onPressed: canAssign
                   ? () => _openEditor(operator: operator, people: people)
                   : () {
@@ -1098,6 +1266,9 @@ class _TasksScreenState extends ConsumerState<TasksScreen> {
               icon: const Icon(Icons.add_task_outlined),
               label: const Text('Görev Ata'),
             ),
+          ],
+        ],
+      ),
       body: SafeArea(
         bottom: false,
         child: Column(
@@ -1246,6 +1417,7 @@ class _TasksScreenState extends ConsumerState<TasksScreen> {
                         padding: AppLayout.scrollPadding(
                           top: AppSpacing.xs,
                           clearFab: true,
+                          extraBottom: 72,
                         ),
                         itemCount: filtered.length,
                         separatorBuilder: (_, __) =>
@@ -1762,6 +1934,57 @@ class _PersonPickSheetState extends State<_PersonPickSheet> {
                 ),
               ),
             ],
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class _TaskDateQuickChip extends StatelessWidget {
+  const _TaskDateQuickChip({
+    required this.label,
+    required this.color,
+    required this.selected,
+    this.onTap,
+  });
+
+  final String label;
+  final Color color;
+  final bool selected;
+  final VoidCallback? onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final enabled = onTap != null;
+    return Material(
+      color: Colors.transparent,
+      child: InkWell(
+        onTap: onTap,
+        borderRadius: AppRadii.sm,
+        child: Container(
+          alignment: Alignment.center,
+          padding: const EdgeInsets.symmetric(vertical: 6),
+          decoration: BoxDecoration(
+            color: selected
+                ? color.withValues(alpha: 0.18)
+                : color.withValues(alpha: enabled ? 0.08 : 0.04),
+            borderRadius: AppRadii.sm,
+            border: Border.all(
+              color: color.withValues(
+                alpha: selected ? 0.7 : (enabled ? 0.4 : 0.2),
+              ),
+            ),
+          ),
+          child: Text(
+            label,
+            style: theme.textTheme.labelSmall?.copyWith(
+              color: enabled
+                  ? color
+                  : theme.colorScheme.onSurfaceVariant,
+              fontWeight: FontWeight.w700,
+            ),
           ),
         ),
       ),

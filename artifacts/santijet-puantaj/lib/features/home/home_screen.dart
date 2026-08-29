@@ -395,12 +395,14 @@ class _HomeUrgentTasksSectionState extends State<_HomeUrgentTasksSection> {
             },
           ),
         ],
-        const SizedBox(height: AppSpacing.sm),
-        _HomeUrgentTasksList(
-          tasks: _filteredTasks,
-          filteredByCategory: _selectedCategory,
-          filteredByTag: _selectedTag,
-        ),
+        if (_selectedTag != null || _selectedCategory != null) ...[
+          const SizedBox(height: AppSpacing.sm),
+          _HomeUrgentTasksList(
+            tasks: _filteredTasks,
+            filteredByCategory: _selectedCategory,
+            filteredByTag: _selectedTag,
+          ),
+        ],
       ],
     );
   }

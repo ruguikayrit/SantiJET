@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../../../core/design_system/sj_card.dart';
+import '../../../core/theme/app_radii.dart';
 import '../../../core/theme/app_spacing.dart';
 import '../../../data/services/period_site_report_builder.dart';
 import 'attendance_summary_table.dart';
@@ -11,6 +12,8 @@ String _fmtNum(double v) {
 }
 
 /// Haftalık / aylık rapor — puantaj + imalat + verim bölümleri.
+///
+/// Tüm alt başlıklar açılır-kapanır; varsayılan kapalı.
 class PeriodSiteReportSections extends StatelessWidget {
   const PeriodSiteReportSections({
     required this.report,
@@ -24,94 +27,120 @@ class PeriodSiteReportSections extends StatelessWidget {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
-        _SectionTitle(
+        _CollapsibleSection(
           icon: Icons.fact_check_outlined,
           title: 'Personel puantajı',
           subtitle: report.personelSummary.subtitle,
+          child: PeriodPersonnelSummaryTable(summary: report.personelSummary),
         ),
-        const SizedBox(height: AppSpacing.sm),
-        PeriodPersonnelSummaryTable(summary: report.personelSummary),
         const SizedBox(height: AppSpacing.md),
-        _SectionTitle(
+        _CollapsibleSection(
           icon: Icons.groups_outlined,
           title: 'Ekip puantajı',
-        ),
-        const SizedBox(height: AppSpacing.sm),
-        PeriodTeamSummaryTable(
-          headers: report.ekipPuantaj.headers,
-          rows: report.ekipPuantaj.rows,
-          sumColumnIndexes: report.ekipPuantaj.sumColumnIndexes,
+          child: PeriodTeamSummaryTable(
+            headers: report.ekipPuantaj.headers,
+            rows: report.ekipPuantaj.rows,
+            sumColumnIndexes: report.ekipPuantaj.sumColumnIndexes,
+          ),
         ),
         const SizedBox(height: AppSpacing.md),
-        _SectionTitle(
+        _CollapsibleSection(
           icon: Icons.handyman_outlined,
           title: 'Yevmiyeli işler',
-        ),
-        const SizedBox(height: AppSpacing.sm),
-        PeriodTeamSummaryTable(
-          headers: report.yevmiyeli.headers,
-          rows: report.yevmiyeli.rows,
-          emptyMessage: 'Bu dönemde yevmiyeli iş kaydı yok',
-          sumColumnIndexes: report.yevmiyeli.sumColumnIndexes,
+          child: PeriodTeamSummaryTable(
+            headers: report.yevmiyeli.headers,
+            rows: report.yevmiyeli.rows,
+            emptyMessage: 'Bu dönemde yevmiyeli iş kaydı yok',
+            sumColumnIndexes: report.yevmiyeli.sumColumnIndexes,
+          ),
         ),
         const SizedBox(height: AppSpacing.md),
-        _SectionTitle(
+        _CollapsibleSection(
           icon: Icons.construction_outlined,
           title: 'Yapılan işler (İmalat)',
+          child: _ImalatTableSection(rows: report.imalatRows),
         ),
-        const SizedBox(height: AppSpacing.sm),
-        _ImalatTableSection(rows: report.imalatRows),
         const SizedBox(height: AppSpacing.md),
-        _SectionTitle(
+        _CollapsibleSection(
           icon: Icons.speed_outlined,
           title: 'Verim',
+          child: _VerimTableSection(rows: report.verimRows),
         ),
-        const SizedBox(height: AppSpacing.sm),
-        _VerimTableSection(rows: report.verimRows),
       ],
     );
   }
 }
 
-class _SectionTitle extends StatelessWidget {
-  const _SectionTitle({
+class _CollapsibleSection extends StatefulWidget {
+  const _CollapsibleSection({
     required this.icon,
     required this.title,
+    required this.child,
     this.subtitle,
   });
 
   final IconData icon;
   final String title;
   final String? subtitle;
+  final Widget child;
+
+  @override
+  State<_CollapsibleSection> createState() => _CollapsibleSectionState();
+}
+
+class _CollapsibleSectionState extends State<_CollapsibleSection> {
+  bool _expanded = false;
 
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    return Row(
-      crossAxisAlignment: CrossAxisAlignment.start,
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
-        Icon(icon, size: 20, color: theme.colorScheme.primary),
-        const SizedBox(width: AppSpacing.sm),
-        Expanded(
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(
-                title,
-                style: theme.textTheme.titleSmall?.copyWith(
-                  fontWeight: FontWeight.w700,
-                ),
-              ),
-              if (subtitle != null && subtitle!.isNotEmpty)
-                Text(
-                  subtitle!,
-                  style: theme.textTheme.labelSmall?.copyWith(
-                    color: theme.colorScheme.onSurfaceVariant,
+        InkWell(
+          onTap: () => setState(() => _expanded = !_expanded),
+          borderRadius: AppRadii.sm,
+          child: Padding(
+            padding: const EdgeInsets.symmetric(vertical: AppSpacing.xs),
+            child: Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Icon(widget.icon, size: 20, color: theme.colorScheme.primary),
+                const SizedBox(width: AppSpacing.sm),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        widget.title,
+                        style: theme.textTheme.titleSmall?.copyWith(
+                          fontWeight: FontWeight.w700,
+                        ),
+                      ),
+                      if (widget.subtitle != null &&
+                          widget.subtitle!.isNotEmpty)
+                        Text(
+                          widget.subtitle!,
+                          style: theme.textTheme.labelSmall?.copyWith(
+                            color: theme.colorScheme.onSurfaceVariant,
+                          ),
+                        ),
+                    ],
                   ),
                 ),
-            ],
+                Icon(
+                  _expanded ? Icons.expand_less : Icons.expand_more,
+                  size: 20,
+                  color: theme.colorScheme.onSurfaceVariant,
+                ),
+              ],
+            ),
           ),
         ),
+        if (_expanded) ...[
+          const SizedBox(height: AppSpacing.sm),
+          widget.child,
+        ],
       ],
     );
   }

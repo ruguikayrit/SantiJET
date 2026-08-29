@@ -52,65 +52,69 @@ class DemoGuideBanner extends ConsumerWidget {
     final intro = ref.watch(demoIntroProvider);
     if (!intro.guideVisible) return const SizedBox.shrink();
 
-    final theme = Theme.of(context);
     final project = ref.watch(activeProjectProvider);
     final isDemo = project?.name == DemoSeedController.demoProjectName;
 
-    return SJCard(
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.stretch,
-        children: [
-          Row(
-            children: [
-              Icon(Icons.explore_outlined, color: AppColors.info, size: 22),
-              const SizedBox(width: AppSpacing.sm),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      isDemo ? 'Demo turu — nereden başlasam?' : 'Modül rehberi',
-                      style: theme.textTheme.titleSmall?.copyWith(
-                        fontWeight: FontWeight.w700,
+    return SJCard.builder(
+      builder: (context, theme) {
+        return Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            Row(
+              children: [
+                Icon(Icons.explore_outlined, color: AppColors.info, size: 22),
+                const SizedBox(width: AppSpacing.sm),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        isDemo
+                            ? 'Demo turu — nereden başlasam?'
+                            : 'Modül rehberi',
+                        style: theme.textTheme.titleSmall?.copyWith(
+                          fontWeight: FontWeight.w700,
+                        ),
                       ),
-                    ),
-                    Text(
-                      'Her karta dokunarak örnek verilerle modülü gezin.',
-                      style: theme.textTheme.labelSmall,
-                    ),
-                  ],
+                      Text(
+                        'Her karta dokunarak örnek verilerle modülü gezin.',
+                        style: theme.textTheme.labelSmall,
+                      ),
+                    ],
+                  ),
                 ),
-              ),
-              IconButton(
-                tooltip: 'Rehberi kapat',
-                onPressed: () =>
-                    ref.read(demoIntroProvider.notifier).dismissGuide(),
-                icon: const Icon(Icons.close, size: 20),
-              ),
-            ],
-          ),
-          const SizedBox(height: AppSpacing.sm),
-          Wrap(
-            spacing: AppSpacing.xs,
-            runSpacing: AppSpacing.xs,
-            children: [
-              for (final step in _steps)
-                ActionChip(
-                  avatar: Icon(step.icon, size: 16),
-                  label: Text(step.title),
-                  onPressed: () => context.go(step.route),
+                IconButton(
+                  tooltip: 'Rehberi kapat',
+                  onPressed: () =>
+                      ref.read(demoIntroProvider.notifier).dismissGuide(),
+                  icon: const Icon(Icons.close, size: 20),
                 ),
-            ],
-          ),
-          const SizedBox(height: AppSpacing.xs),
-          Text(
-            'İpucu: İmalat formunda “Buluttan al” demo İş Programı + Keşif planını doldurur.',
-            style: theme.textTheme.labelSmall?.copyWith(
-              color: AppColors.cardTextMuted,
+              ],
             ),
-          ),
-        ],
-      ),
+            const SizedBox(height: AppSpacing.sm),
+            Wrap(
+              spacing: AppSpacing.xs,
+              runSpacing: AppSpacing.xs,
+              children: [
+                for (final step in _steps)
+                  ActionChip(
+                    avatar: Icon(step.icon, size: 16),
+                    label: Text(step.title),
+                    onPressed: () => context.go(step.route),
+                  ),
+              ],
+            ),
+            const SizedBox(height: AppSpacing.xs),
+            Text(
+              'İpucu: Görev AL ile İnşaat etiketli saha görevlerini PDF/Excel '
+              'alın. Haftalık raporda bölüm başlıklarına dokunarak açın.',
+              style: theme.textTheme.labelSmall?.copyWith(
+                color: AppColors.cardTextMuted,
+              ),
+            ),
+          ],
+        );
+      },
     );
   }
 }

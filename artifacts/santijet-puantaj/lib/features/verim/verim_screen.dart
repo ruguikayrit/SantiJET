@@ -127,55 +127,56 @@ class _TeamVerimSummaryStrip extends StatelessWidget {
         itemBuilder: (context, i) {
           final s = summaries[i];
           final efficiency = s.unitEfficiency;
-          final theme = Theme.of(context);
 
           return SizedBox(
             width: 168,
-            child: SJCard(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    s.teamName,
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
-                    style: theme.textTheme.titleSmall?.copyWith(
-                      fontWeight: FontWeight.w700,
-                    ),
-                  ),
-                  const SizedBox(height: 4),
-                  Text(
-                    '${s.planLineCount} imalat',
-                    style: theme.textTheme.labelSmall,
-                  ),
-                  const Spacer(),
-                  if (efficiency != null)
-                    Row(
-                      children: [
-                        UnitEfficiencyBadge(
-                          efficiency: efficiency,
-                          compact: true,
-                        ),
-                        const Spacer(),
-                        Text(
-                          '${_fmt(s.actualQty)} / ${_fmt(s.plannedQty)}',
-                          style: theme.textTheme.labelSmall,
-                        ),
-                      ],
-                    )
-                  else
+            child: SJCard.builder(
+              builder: (context, theme) {
+                return Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
                     Text(
-                      'Verim için plan + kayıt gerekli',
-                      style: theme.textTheme.labelSmall?.copyWith(
-                        color: AppColors.warning,
+                      s.teamName,
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: theme.textTheme.titleSmall?.copyWith(
+                        fontWeight: FontWeight.w700,
                       ),
                     ),
-                  if (efficiency != null) ...[
-                    const SizedBox(height: 6),
-                    UnitEfficiencyBar(efficiency: efficiency, height: 4),
+                    const SizedBox(height: 4),
+                    Text(
+                      '${s.planLineCount} imalat',
+                      style: theme.textTheme.labelSmall,
+                    ),
+                    const Spacer(),
+                    if (efficiency != null)
+                      Row(
+                        children: [
+                          UnitEfficiencyBadge(
+                            efficiency: efficiency,
+                            compact: true,
+                          ),
+                          const Spacer(),
+                          Text(
+                            '${_fmt(s.actualQty)} / ${_fmt(s.plannedQty)}',
+                            style: theme.textTheme.labelSmall,
+                          ),
+                        ],
+                      )
+                    else
+                      Text(
+                        'Verim için plan + kayıt gerekli',
+                        style: theme.textTheme.labelSmall?.copyWith(
+                          color: AppColors.statusInkOnCard(AppColors.warning),
+                        ),
+                      ),
+                    if (efficiency != null) ...[
+                      const SizedBox(height: 6),
+                      UnitEfficiencyBar(efficiency: efficiency, height: 4),
+                    ],
                   ],
-                ],
-              ),
+                );
+              },
             ),
           );
         },

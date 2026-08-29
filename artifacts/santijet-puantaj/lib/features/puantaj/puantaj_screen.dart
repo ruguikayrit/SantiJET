@@ -872,7 +872,7 @@ class _DailyViewState extends State<_DailyView> {
                   ],
                 ),
                 subtitle: Text(
-                  'Firma Adı',
+                  '${group.users.length} Personel',
                   style: theme.textTheme.labelSmall?.copyWith(
                     color: AppColors.statusInkOnChrome(
                       AppColors.useDarkChrome
@@ -880,10 +880,6 @@ class _DailyViewState extends State<_DailyView> {
                           : AppColors.electricBlue,
                     ).withValues(alpha: 0.75),
                   ),
-                ),
-                trailing: Text(
-                  '${group.users.length} personel',
-                  style: theme.textTheme.labelSmall,
                 ),
                 children: [
                   for (final teamGroup in _teamsOf(group.users))
@@ -1704,8 +1700,9 @@ class _DayTeamsSection extends ConsumerWidget {
               fontWeight: FontWeight.w700,
             ),
           ),
-          trailing: Row(
+          trailing: Column(
             mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.end,
             children: [
               if (entries.isNotEmpty)
                 Text(
@@ -1878,12 +1875,13 @@ class _PersonCard extends StatelessWidget {
                             Text(
                               titleCaseTr(person.name),
                               style: theme.textTheme.titleMedium?.copyWith(
-                                color: theme.colorScheme.primary,
+                                color: AppColors.statusInkOnCard(
+                                  AppColors.partial,
+                                ),
                                 decoration: TextDecoration.underline,
                                 decorationColor:
-                                    theme.colorScheme.primary.withValues(
-                                  alpha: 0.35,
-                                ),
+                                    AppColors.statusInkOnCard(AppColors.partial)
+                                        .withValues(alpha: 0.35),
                               ),
                             ),
                             for (final line
@@ -2281,7 +2279,7 @@ class _CetvelView extends ConsumerWidget {
                             ),
                           ),
                           subtitle: Text(
-                            'Firma Adı',
+                            '${group.users.length} Personel',
                             style: theme.textTheme.labelSmall?.copyWith(
                               color: AppColors.statusInkOnChrome(
                                 AppColors.useDarkChrome
@@ -2289,10 +2287,6 @@ class _CetvelView extends ConsumerWidget {
                                     : AppColors.electricBlue,
                               ).withValues(alpha: 0.75),
                             ),
-                          ),
-                          trailing: Text(
-                            '${group.users.length} personel',
-                            style: theme.textTheme.labelSmall,
                           ),
                           children: [
                             for (final teamGroup in _teamsOf(group.users))
@@ -2362,9 +2356,9 @@ class _CetvelView extends ConsumerWidget {
                     const [
                       'Firma\nAdı',
                       'Ekip\nAdı',
-                      'Haftalık\nadam.gün',
-                      'Haftalık\nçalışılan gün',
-                      'Günlük\nortalama adam',
+                      'Adam\ngün',
+                      'Çalışılan\ngün',
+                      'Ort.\nadam',
                     ],
                 rows: ekipReport?.rows ?? const [],
                 sumColumnIndexes: ekipReport?.sumColumnIndexes ?? const {2},
@@ -2380,8 +2374,8 @@ class _CetvelView extends ConsumerWidget {
               PeriodTeamSummaryTable(
                 headers: const [
                   'Tarih',
-                  'Ad Soyad',
-                  'Firma Adı',
+                  'Ad\nSoyad',
+                  'Firma\nAdı',
                   'Meslek',
                   'Ekip',
                   'YV',
@@ -2493,11 +2487,14 @@ class _CetvelView extends ConsumerWidget {
                       maxLines: 2,
                       overflow: TextOverflow.ellipsis,
                       style: theme.textTheme.bodySmall?.copyWith(
-                        color: theme.colorScheme.primary,
+                        color: AppColors.statusInkOnChrome(
+                          AppColors.partial,
+                        ),
                         fontWeight: FontWeight.w600,
                         decoration: TextDecoration.underline,
-                        decorationColor:
-                            theme.colorScheme.primary.withValues(alpha: 0.35),
+                        decorationColor: AppColors.statusInkOnChrome(
+                          AppColors.partial,
+                        ).withValues(alpha: 0.35),
                       ),
                     ),
                     for (final line

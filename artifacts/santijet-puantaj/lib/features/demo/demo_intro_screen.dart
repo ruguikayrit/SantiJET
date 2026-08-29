@@ -27,45 +27,53 @@ class _DemoIntroScreenState extends ConsumerState<DemoIntroScreen> {
       icon: Icons.apartment_outlined,
       title: 'Şantiyeyi tek uygulamada yönetin',
       body:
-          'ŞantiJET SAHA; personel puantajı, imalat takibi, verim analizi, '
-          'günlük saha raporu ve görevleri bir arada tutar. İnternetsiz '
-          'çalışır; veriler cihazınızda kalır.',
+          'ŞantiJET SAHA; personel puantajı, imalat–verim, günlük rapor ve '
+          'görevleri bir arada tutar. İnternetsiz çalışır; veriler '
+          'cihazınızda kalır.',
       accent: AppColors.electricBlue,
     ),
     _IntroPageData(
       icon: Icons.fact_check_outlined,
       title: 'Puantaj — kim sahadaydı?',
       body:
-          'Kayıtlı personel için Mevcut / Yarım / İzinli / Raporlu gibi '
-          'durumlar. Sigortasız ekip ve yevmiyeli işçi tabloları. '
-          'Haftalık ve aylık cetvel + PDF dışa aktarım.',
+          'Personel ve ekip cetveli; yevmiyeli işler. Haftalık / aylık '
+          'özet tabloları. Puantaj AL ile PDF veya Excel alın.',
       accent: AppColors.info,
     ),
     _IntroPageData(
       icon: Icons.construction_outlined,
-      title: 'İmalat & Verim — ne kadar ilerledik?',
+      title: 'İmalat & Verim — ilerleme ve verim',
       body:
-          'Her imalat için plan metraj, süre ve iş gücü girin; günlük '
-          'kayıtlarla gerçekleşeni takip edin. Metraj · süre · adam-gün '
-          'üçlü bar ve birim verim yüzdesi otomatik hesaplanır.',
+          'Plan metraj · süre · iş gücü ile günlük gerçekleşen. Üçlü '
+          'ilerleme çubuğu, birim verim rozeti ve ekip özeti kartları '
+          'otomatik hesaplanır.',
       accent: AppColors.success,
     ),
     _IntroPageData(
       icon: Icons.description_outlined,
-      title: 'Rapor & Görevler — saha ile ofis aynı sayfada',
+      title: 'Rapor — günlük, haftalık, aylık',
       body:
-          'Günlük raporda hava, fotoğraf, malzeme, makine ve puantaj '
-          'özeti. Görevler Satın Alma / Saha / Ofis kategorilerinde; '
-          'acil işler ana sayfada öne çıkar.',
+          'Günlükte yapılan ve planlı işler İnşaat / Elektrik / Mekanik '
+          'olarak ayrılır. Haftalık ve aylıkta bölümler kapalı gelir; '
+          'dokununca açılır. Rapor AL ile dışa aktarın.',
       accent: AppColors.warning,
+    ),
+    _IntroPageData(
+      icon: Icons.task_alt_outlined,
+      title: 'Görevler — disiplin etiketli saha işleri',
+      body:
+          'İnşaat, Elektrik, Mekanik etiketleri; Bugün / Yarın hızlı tarih. '
+          'Ana sayfada acil görev kartına dokunun, liste açılsın. '
+          'Görev AL ile yalnızca İnşaat görevlerini PDF/Excel alın.',
+      accent: AppColors.partial,
     ),
     _IntroPageData(
       icon: Icons.science_outlined,
       title: 'Demo ile keşfedin',
       body:
-          '“Demo Şantiye” projesi tüm modülleri doldurulmuş halde açılır: '
-          '10 personel, 4 imalat, 6 günlük rapor, görevler ve plan bulutu. '
-          'Ana sayfadaki rehber kartından modüllere geçebilirsiniz.',
+          '“Demo Şantiye” tüm modülleri doldurur: personel, imalat, '
+          'puantaj, günlük rapor, yevmiyeli ve etiketli görevler. '
+          'Ana sayfa rehberinden modüllere geçin.',
       accent: AppColors.electricBlueLight,
     ),
   ];
