@@ -370,12 +370,22 @@ class _HomeUrgentTasksSectionState extends State<_HomeUrgentTasksSection> {
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
     final tagSummaries = _displayTagSummaries;
     final categorySummaries = _displayCategorySummaries;
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
+        Text(
+          'Etiket',
+          style: theme.textTheme.labelSmall?.copyWith(
+            color: theme.colorScheme.onSurfaceVariant,
+            fontWeight: FontWeight.w600,
+            letterSpacing: 0.4,
+          ),
+        ),
+        const SizedBox(height: AppSpacing.xs),
         LayoutBuilder(
           builder: (context, constraints) {
             const spacing = AppSpacing.xs;
@@ -389,9 +399,9 @@ class _HomeUrgentTasksSectionState extends State<_HomeUrgentTasksSection> {
                 for (final summary in tagSummaries)
                   SizedBox(
                     width: itemWidth,
-                    child: _MiniStat(
+                    child: _UrgentTagFilter(
                       label: TaskTagCatalog.cardLabel(summary.tag),
-                      value: '${summary.count}',
+                      count: summary.count,
                       color: TaskTagCatalog.accentFor(summary.tag),
                       selected: _selectedTag == summary.tag,
                       onTap: () {
@@ -408,38 +418,36 @@ class _HomeUrgentTasksSectionState extends State<_HomeUrgentTasksSection> {
           },
         ),
         if (categorySummaries.isNotEmpty) ...[
-          const SizedBox(height: AppSpacing.sm),
-          LayoutBuilder(
-            builder: (context, constraints) {
-              const spacing = AppSpacing.xs;
-              const columns = 3;
-              final itemWidth =
-                  (constraints.maxWidth - spacing * (columns - 1)) / columns;
-              return Wrap(
-                spacing: spacing,
-                runSpacing: spacing,
-                children: [
-                  for (final summary in categorySummaries)
-                    SizedBox(
-                      width: itemWidth,
-                      child: _MiniStat(
-                        label: summary.category,
-                        value: '${summary.count}',
-                        color: TaskCategoryCatalog.accentFor(summary.category),
-                        selected: _selectedCategory == summary.category,
-                        onTap: () {
-                          setState(() {
-                            _selectedCategory =
-                                _selectedCategory == summary.category
-                                    ? null
-                                    : summary.category;
-                          });
-                        },
-                      ),
-                    ),
-                ],
-              );
-            },
+          const SizedBox(height: AppSpacing.md),
+          Text(
+            'Kategori',
+            style: theme.textTheme.labelSmall?.copyWith(
+              color: theme.colorScheme.onSurfaceVariant,
+              fontWeight: FontWeight.w600,
+              letterSpacing: 0.4,
+            ),
+          ),
+          const SizedBox(height: AppSpacing.xs),
+          Wrap(
+            spacing: AppSpacing.xs,
+            runSpacing: AppSpacing.xs,
+            children: [
+              for (final summary in categorySummaries)
+                _UrgentCategoryFilter(
+                  label: summary.category,
+                  count: summary.count,
+                  color: TaskCategoryCatalog.accentFor(summary.category),
+                  selected: _selectedCategory == summary.category,
+                  onTap: () {
+                    setState(() {
+                      _selectedCategory =
+                          _selectedCategory == summary.category
+                              ? null
+                              : summary.category;
+                    });
+                  },
+                ),
+            ],
           ),
         ],
         if (_selectedTag != null || _selectedCategory != null) ...[
@@ -717,6 +725,178 @@ class _SummarySection extends StatelessWidget {
             ],
           );
         },
+      ),
+    );
+  }
+}
+
+class _UrgentTagFilter extends StatelessWidget {
+  const _UrgentTagFilter({
+    required this.label,
+    required this.count,
+    required this.color,
+    required this.selected,
+    required this.onTap,
+  });
+
+  final String label;
+  final int count;
+  final Color color;
+  final bool selected;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final ink = AppColors.statusInkOnCard(color);
+
+    return Material(
+      color: Colors.transparent,
+      child: InkWell(
+        onTap: onTap,
+        borderRadius: AppRadii.sm,
+        child: AnimatedContainer(
+          duration: const Duration(milliseconds: 160),
+          padding: const EdgeInsets.fromLTRB(10, 10, 10, 8),
+          decoration: BoxDecoration(
+            color: color.withValues(alpha: selected ? 0.22 : 0.12),
+            borderRadius: AppRadii.sm,
+            border: Border.all(
+              color: color.withValues(alpha: selected ? 0.85 : 0.35),
+              width: selected ? 2 : 1,
+            ),
+          ),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Row(
+                children: [
+                  Container(
+                    width: 8,
+                    height: 8,
+                    decoration: BoxDecoration(
+                      color: color,
+                      shape: BoxShape.circle,
+                    ),
+                  ),
+                  const SizedBox(width: 6),
+                  Expanded(
+                    child: Text(
+                      label,
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: theme.textTheme.labelSmall?.copyWith(
+                        color: ink,
+                        fontWeight: FontWeight.w800,
+                        letterSpacing: 0.6,
+                      ),
+                    ),
+                  ),
+                  if (selected)
+                    Icon(Icons.check_rounded, size: 14, color: ink),
+                ],
+              ),
+              const SizedBox(height: 6),
+              Text(
+                '$count',
+                style: theme.textTheme.headlineSmall?.copyWith(
+                  color: ink,
+                  fontWeight: FontWeight.w800,
+                  height: 1,
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+/// Kategori — yatay chip; etiket kartlarından ayrılır (outline + rozet).
+class _UrgentCategoryFilter extends StatelessWidget {
+  const _UrgentCategoryFilter({
+    required this.label,
+    required this.count,
+    required this.color,
+    required this.selected,
+    required this.onTap,
+  });
+
+  final String label;
+  final int count;
+  final Color color;
+  final bool selected;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final surface = selected
+        ? color.withValues(alpha: 0.14)
+        : theme.colorScheme.surfaceContainerHighest.withValues(alpha: 0.55);
+    final border = selected
+        ? color.withValues(alpha: 0.7)
+        : theme.colorScheme.outlineVariant.withValues(alpha: 0.7);
+    final labelColor = selected
+        ? AppColors.statusInkOnCard(color)
+        : theme.colorScheme.onSurface;
+
+    return Material(
+      color: Colors.transparent,
+      child: InkWell(
+        onTap: onTap,
+        borderRadius: BorderRadius.circular(20),
+        child: AnimatedContainer(
+          duration: const Duration(milliseconds: 160),
+          padding: const EdgeInsets.fromLTRB(12, 7, 8, 7),
+          decoration: BoxDecoration(
+            color: surface,
+            borderRadius: BorderRadius.circular(20),
+            border: Border.all(
+              color: border,
+              width: selected ? 1.5 : 1,
+            ),
+          ),
+          child: Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              ConstrainedBox(
+                constraints: const BoxConstraints(maxWidth: 120),
+                child: Text(
+                  label,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: theme.textTheme.labelLarge?.copyWith(
+                    color: labelColor,
+                    fontWeight: selected ? FontWeight.w700 : FontWeight.w500,
+                  ),
+                ),
+              ),
+              const SizedBox(width: 8),
+              Container(
+                constraints: const BoxConstraints(minWidth: 22),
+                padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 2),
+                decoration: BoxDecoration(
+                  color: selected
+                      ? color.withValues(alpha: 0.85)
+                      : theme.colorScheme.onSurface.withValues(alpha: 0.08),
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                alignment: Alignment.center,
+                child: Text(
+                  '$count',
+                  style: theme.textTheme.labelMedium?.copyWith(
+                    color: selected
+                        ? AppColors.readableOn(color)
+                        : theme.colorScheme.onSurfaceVariant,
+                    fontWeight: FontWeight.w800,
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ),
       ),
     );
   }
