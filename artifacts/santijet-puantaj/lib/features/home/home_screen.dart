@@ -315,10 +315,15 @@ class _HomeUrgentTasksSectionState extends State<_HomeUrgentTasksSection> {
           .where((t) => TaskTagCatalog.normalize(t.tag) == _selectedTag)
           .toList();
     }
-    if (_selectedCategory == null) return list;
-    return list
-        .where((t) => _categoryKey(t) == _selectedCategory)
-        .toList();
+    if (_selectedCategory != null) {
+      list = list
+          .where((t) => _categoryKey(t) == _selectedCategory)
+          .toList();
+    }
+    list = [...list]..sort(
+        (a, b) => a.title.toLowerCase().compareTo(b.title.toLowerCase()),
+      );
+    return list;
   }
 
   /// Etiket kartları: kategori seçiliyse yalnız o kategorideki adetler.
@@ -370,86 +375,90 @@ class _HomeUrgentTasksSectionState extends State<_HomeUrgentTasksSection> {
 
   @override
   Widget build(BuildContext context) {
-    final theme = Theme.of(context);
     final tagSummaries = _displayTagSummaries;
     final categorySummaries = _displayCategorySummaries;
+    final selectedTagSummary = tagSummaries.where((s) => s.tag == _selectedTag);
+    final tagCount = _selectedTag == null
+        ? widget.tasks.length
+        : (selectedTagSummary.isEmpty ? 0 : selectedTagSummary.first.count);
+    final selectedCatSummary =
+        categorySummaries.where((s) => s.category == _selectedCategory);
+    final catCount =
+        selectedCatSummary.isEmpty ? 0 : selectedCatSummary.first.count;
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
-        Text(
-          'Etiket',
-          style: theme.textTheme.labelSmall?.copyWith(
-            color: theme.colorScheme.onSurfaceVariant,
-            fontWeight: FontWeight.w600,
-            letterSpacing: 0.4,
-          ),
-        ),
-        const SizedBox(height: AppSpacing.xs),
-        LayoutBuilder(
-          builder: (context, constraints) {
-            const spacing = AppSpacing.xs;
-            const columns = 3;
-            final itemWidth =
-                (constraints.maxWidth - spacing * (columns - 1)) / columns;
-            return Wrap(
-              spacing: spacing,
-              runSpacing: spacing,
-              children: [
-                for (final summary in tagSummaries)
-                  SizedBox(
-                    width: itemWidth,
-                    child: _UrgentTagFilter(
-                      label: TaskTagCatalog.cardLabel(summary.tag),
-                      count: summary.count,
-                      color: TaskTagCatalog.accentFor(summary.tag),
-                      selected: _selectedTag == summary.tag,
-                      onTap: () {
-                        setState(() {
-                          _selectedTag = _selectedTag == summary.tag
-                              ? null
-                              : summary.tag;
-                        });
-                      },
+        Row(
+          children: [
+            Expanded(
+              child: _HomeFilterMenu<String?>(
+                caption: 'Etiket',
+                valueLabel: _selectedTag == null
+                    ? 'Tümü'
+                    : '${TaskTagCatalog.cardLabel(_selectedTag!)} ($tagCount)',
+                accent: _selectedTag == null
+                    ? null
+                    : TaskTagCatalog.accentFor(_selectedTag!),
+                selected: _selectedTag,
+                items: [
+                  (value: null, label: 'Tüm etiketler'),
+                  for (final s in tagSummaries)
+                    (
+                      value: s.tag,
+                      label:
+                          '${TaskTagCatalog.cardLabel(s.tag)} (${s.count})',
                     ),
-                  ),
-              ],
-            );
-          },
-        ),
-        if (categorySummaries.isNotEmpty) ...[
-          const SizedBox(height: AppSpacing.md),
-          Text(
-            'Kategori',
-            style: theme.textTheme.labelSmall?.copyWith(
-              color: theme.colorScheme.onSurfaceVariant,
-              fontWeight: FontWeight.w600,
-              letterSpacing: 0.4,
+                ],
+                onSelected: (v) => setState(() => _selectedTag = v),
+              ),
             ),
-          ),
-          const SizedBox(height: AppSpacing.xs),
-          Wrap(
-            spacing: AppSpacing.xs,
-            runSpacing: AppSpacing.xs,
-            children: [
-              for (final summary in categorySummaries)
-                _UrgentCategoryFilter(
-                  label: summary.category,
-                  count: summary.count,
-                  color: TaskCategoryCatalog.accentFor(summary.category),
-                  selected: _selectedCategory == summary.category,
-                  onTap: () {
+            const SizedBox(width: AppSpacing.xs),
+            Expanded(
+              child: _HomeFilterMenu<String?>(
+                caption: 'Kategori',
+                valueLabel: _selectedCategory == null
+                    ? 'Tümü'
+                    : '$_selectedCategory ($catCount)',
+                accent: _selectedCategory == null
+                    ? null
+                    : TaskCategoryCatalog.accentFor(_selectedCategory!),
+                selected: _selectedCategory,
+                items: [
+                  (value: null, label: 'Tüm kategoriler'),
+                  for (final s in categorySummaries)
+                    (
+                      value: s.category,
+                      label: '${s.category} (${s.count})',
+                    ),
+                ],
+                onSelected: (v) => setState(() => _selectedCategory = v),
+              ),
+            ),
+            const SizedBox(width: AppSpacing.xs),
+            Expanded(
+              child: _HomeFilterMenu<String>(
+                caption: 'Seçim',
+                valueLabel:
+                    (_selectedTag == null && _selectedCategory == null)
+                        ? 'Yok'
+                        : 'Filtreli',
+                selected: 'keep',
+                items: const [
+                  (value: 'clear', label: 'Filtreleri temizle'),
+                ],
+                onSelected: (v) {
+                  if (v == 'clear') {
                     setState(() {
-                      _selectedCategory =
-                          _selectedCategory == summary.category
-                              ? null
-                              : summary.category;
+                      _selectedTag = null;
+                      _selectedCategory = null;
                     });
-                  },
-                ),
-            ],
-          ),
-        ],
+                  }
+                },
+              ),
+            ),
+          ],
+        ),
         if (_selectedTag != null || _selectedCategory != null) ...[
           const SizedBox(height: AppSpacing.sm),
           _HomeUrgentTasksList(
@@ -459,6 +468,99 @@ class _HomeUrgentTasksSectionState extends State<_HomeUrgentTasksSection> {
           ),
         ],
       ],
+    );
+  }
+}
+
+class _HomeFilterMenu<T> extends StatelessWidget {
+  const _HomeFilterMenu({
+    required this.caption,
+    required this.valueLabel,
+    required this.items,
+    required this.selected,
+    required this.onSelected,
+    this.accent,
+  });
+
+  final String caption;
+  final String valueLabel;
+  final List<({T value, String label})> items;
+  final T selected;
+  final ValueChanged<T> onSelected;
+  final Color? accent;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final hasAccent = accent != null;
+    return PopupMenuButton<T>(
+      padding: EdgeInsets.zero,
+      offset: const Offset(0, 40),
+      onSelected: onSelected,
+      itemBuilder: (ctx) => [
+        for (final item in items)
+          PopupMenuItem<T>(
+            value: item.value,
+            child: Row(
+              children: [
+                Expanded(child: Text(item.label)),
+                if (item.value == selected)
+                  Icon(Icons.check, size: 16, color: theme.colorScheme.primary),
+              ],
+            ),
+          ),
+      ],
+      child: Container(
+        padding: const EdgeInsets.fromLTRB(8, 6, 6, 6),
+        decoration: BoxDecoration(
+          color: hasAccent
+              ? accent!.withValues(alpha: 0.12)
+              : theme.colorScheme.surfaceContainerHighest.withValues(alpha: 0.5),
+          borderRadius: AppRadii.sm,
+          border: Border.all(
+            color: (accent ?? theme.colorScheme.outlineVariant)
+                .withValues(alpha: hasAccent ? 0.85 : 0.55),
+            width: hasAccent ? 1.5 : 1,
+          ),
+        ),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Text(
+              caption,
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+              style: theme.textTheme.labelSmall?.copyWith(
+                color: theme.colorScheme.onSurfaceVariant,
+                fontWeight: FontWeight.w600,
+                fontSize: 10,
+              ),
+            ),
+            const SizedBox(height: 2),
+            Row(
+              children: [
+                Expanded(
+                  child: Text(
+                    valueLabel,
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: theme.textTheme.labelMedium?.copyWith(
+                      fontWeight: FontWeight.w700,
+                      color: accent ?? theme.colorScheme.onSurface,
+                    ),
+                  ),
+                ),
+                Icon(
+                  Icons.expand_more,
+                  size: 18,
+                  color: theme.colorScheme.onSurfaceVariant,
+                ),
+              ],
+            ),
+          ],
+        ),
+      ),
     );
   }
 }
@@ -725,183 +827,6 @@ class _SummarySection extends StatelessWidget {
             ],
           );
         },
-      ),
-    );
-  }
-}
-
-class _UrgentTagFilter extends StatelessWidget {
-  const _UrgentTagFilter({
-    required this.label,
-    required this.count,
-    required this.color,
-    required this.selected,
-    required this.onTap,
-  });
-
-  final String label;
-  final int count;
-  final Color color;
-  final bool selected;
-  final VoidCallback onTap;
-
-  @override
-  Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-    // Seçili: etiket rengi dolgu + okunaklı mürekkep.
-    // Seçili değil: dolgusuz; kenarlık / yazı / sayı o etiketin kendi rengi.
-    final ink = selected ? AppColors.readableOn(color) : color;
-
-    return Material(
-      color: Colors.transparent,
-      child: InkWell(
-        onTap: onTap,
-        borderRadius: AppRadii.sm,
-        child: AnimatedContainer(
-          duration: const Duration(milliseconds: 160),
-          padding: const EdgeInsets.fromLTRB(10, 10, 10, 8),
-          decoration: BoxDecoration(
-            color: selected ? color : Colors.transparent,
-            borderRadius: AppRadii.sm,
-            border: Border.all(
-              color: color,
-              width: selected ? 2 : 1.5,
-            ),
-          ),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Row(
-                children: [
-                  Container(
-                    width: 8,
-                    height: 8,
-                    decoration: BoxDecoration(
-                      color: selected ? ink : color,
-                      shape: BoxShape.circle,
-                      border: selected
-                          ? null
-                          : Border.all(color: color, width: 1.5),
-                    ),
-                  ),
-                  const SizedBox(width: 6),
-                  Expanded(
-                    child: Text(
-                      label,
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
-                      style: theme.textTheme.labelSmall?.copyWith(
-                        color: ink,
-                        fontWeight: FontWeight.w800,
-                        letterSpacing: 0.6,
-                      ),
-                    ),
-                  ),
-                  if (selected)
-                    Icon(Icons.check_rounded, size: 14, color: ink),
-                ],
-              ),
-              const SizedBox(height: 6),
-              Text(
-                '$count',
-                style: theme.textTheme.headlineSmall?.copyWith(
-                  color: ink,
-                  fontWeight: FontWeight.w800,
-                  height: 1,
-                ),
-              ),
-            ],
-          ),
-        ),
-      ),
-    );
-  }
-}
-
-/// Kategori — yatay chip; etiket kartlarından ayrılır (outline + rozet).
-class _UrgentCategoryFilter extends StatelessWidget {
-  const _UrgentCategoryFilter({
-    required this.label,
-    required this.count,
-    required this.color,
-    required this.selected,
-    required this.onTap,
-  });
-
-  final String label;
-  final int count;
-  final Color color;
-  final bool selected;
-  final VoidCallback onTap;
-
-  @override
-  Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-    final surface = selected
-        ? color.withValues(alpha: 0.14)
-        : theme.colorScheme.surfaceContainerHighest.withValues(alpha: 0.55);
-    final border = selected
-        ? color.withValues(alpha: 0.7)
-        : theme.colorScheme.outlineVariant.withValues(alpha: 0.7);
-    final labelColor = selected
-        ? AppColors.statusInkOnCard(color)
-        : theme.colorScheme.onSurface;
-
-    return Material(
-      color: Colors.transparent,
-      child: InkWell(
-        onTap: onTap,
-        borderRadius: BorderRadius.circular(20),
-        child: AnimatedContainer(
-          duration: const Duration(milliseconds: 160),
-          padding: const EdgeInsets.fromLTRB(12, 7, 8, 7),
-          decoration: BoxDecoration(
-            color: surface,
-            borderRadius: BorderRadius.circular(20),
-            border: Border.all(
-              color: border,
-              width: selected ? 1.5 : 1,
-            ),
-          ),
-          child: Row(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              ConstrainedBox(
-                constraints: const BoxConstraints(maxWidth: 120),
-                child: Text(
-                  label,
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                  style: theme.textTheme.labelLarge?.copyWith(
-                    color: labelColor,
-                    fontWeight: selected ? FontWeight.w700 : FontWeight.w500,
-                  ),
-                ),
-              ),
-              const SizedBox(width: 8),
-              Container(
-                constraints: const BoxConstraints(minWidth: 22),
-                padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 2),
-                decoration: BoxDecoration(
-                  color: selected
-                      ? color.withValues(alpha: 0.85)
-                      : theme.colorScheme.onSurface.withValues(alpha: 0.08),
-                  borderRadius: BorderRadius.circular(12),
-                ),
-                alignment: Alignment.center,
-                child: Text(
-                  '$count',
-                  style: theme.textTheme.labelMedium?.copyWith(
-                    color: selected
-                        ? AppColors.readableOn(color)
-                        : theme.colorScheme.onSurfaceVariant,
-                    fontWeight: FontWeight.w800,
-                  ),
-                ),
-              ),
-            ],
-          ),
-        ),
       ),
     );
   }

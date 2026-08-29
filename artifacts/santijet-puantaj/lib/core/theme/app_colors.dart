@@ -220,7 +220,8 @@ abstract final class AppColors {
 
   /// BFA ailesi modül vurguları (ürün uyumu).
   static const moduleInsaat = Color(0xFFF59E0B);
-  static const moduleMekanik = Color(0xFF0EA5E9);
+  /// Mekanik — gök mavisi yerine mor; birincil mavi ile karışmasın.
+  static const moduleMekanik = Color(0xFF9333EA);
   static const moduleElektrik = Color(0xFF10B981);
   static const moduleFavori = Color(0xFFEAB308);
   static const moduleKesif = Color(0xFFA855F7);

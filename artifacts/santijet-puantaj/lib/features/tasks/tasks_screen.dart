@@ -194,10 +194,14 @@ class _TasksScreenState extends ConsumerState<TasksScreen> {
   List<SiteTask> _orderedTasks(List<SiteTask> tasks) {
     final list = [...tasks];
     list.sort((a, b) {
-      final byRank = _displayRank(a).compareTo(_displayRank(b));
-      if (byRank != 0) return byRank;
-      return (b.updatedAt ?? b.createdAt ?? DateTime(1970))
-          .compareTo(a.updatedAt ?? a.createdAt ?? DateTime(1970));
+      // Tamamlanan pin: kısa süre aynı blokta kalsın, sonra alfabetik.
+      final ra = _displayRank(a);
+      final rb = _displayRank(b);
+      if (ra != rb &&
+          (_pinnedDoneIds.contains(a.id) || _pinnedDoneIds.contains(b.id))) {
+        return ra.compareTo(rb);
+      }
+      return a.title.toLowerCase().compareTo(b.title.toLowerCase());
     });
     return list;
   }
@@ -1354,103 +1358,76 @@ class _TasksScreenState extends ConsumerState<TasksScreen> {
               const SizedBox(height: AppSpacing.sm),
               Padding(
                 padding: const EdgeInsets.symmetric(horizontal: AppSpacing.md),
-                child: SingleChildScrollView(
-                  scrollDirection: Axis.horizontal,
-                  child: Row(
-                    children: [
-                      FilterChip(
-                        label: Text('Tümü (${tasks.length})'),
-                        selected: _filter == null,
-                        onSelected: (_) => setState(() => _filter = null),
-                      ),
-                      const SizedBox(width: AppSpacing.xs),
-                      for (final s in TaskStatus.values) ...[
-                        FilterChip(
-                          label: Text(
-                            '${s.label} (${tasks.where((t) => t.status == s).length})',
+                child: Row(
+                  children: [
+                    Expanded(
+                      child: _TaskFilterDropdown<TaskStatus?>(
+                        caption: 'Durum',
+                        valueLabel: _filter == null
+                            ? 'Tümü (${tasks.length})'
+                            : '${_filter!.shortLabel} (${tasks.where((t) => t.status == _filter).length})',
+                        items: [
+                          (
+                            value: null,
+                            label: 'Tümü (${tasks.length})',
                           ),
-                          selected: _filter == s,
-                          onSelected: (_) => setState(() => _filter = s),
-                        ),
-                        const SizedBox(width: AppSpacing.xs),
-                      ],
-                    ],
-                  ),
-                ),
-              ),
-              const SizedBox(height: AppSpacing.xs),
-              Padding(
-                padding: const EdgeInsets.symmetric(horizontal: AppSpacing.md),
-                child: SingleChildScrollView(
-                  scrollDirection: Axis.horizontal,
-                  child: Row(
-                    children: [
-                      FilterChip(
-                        avatar: Icon(
-                          Icons.label_outline,
-                          size: 16,
-                          color: _tagFilter == null
-                              ? null
-                              : Theme.of(context)
-                                  .colorScheme
-                                  .onSurfaceVariant,
-                        ),
-                        label: const Text('Tüm etiketler'),
-                        selected: _tagFilter == null,
-                        onSelected: (_) => setState(() => _tagFilter = null),
+                          for (final s in TaskStatus.values)
+                            (
+                              value: s,
+                              label:
+                                  '${s.label} (${tasks.where((t) => t.status == s).length})',
+                            ),
+                        ],
+                        selected: _filter,
+                        onSelected: (v) => setState(() => _filter = v),
                       ),
-                      const SizedBox(width: AppSpacing.xs),
-                      for (final t in TaskTagCatalog.all) ...[
-                        FilterChip(
-                          label: Text(
-                            '${TaskTagCatalog.cardLabel(t)} '
-                            '(${tasks.where((task) => TaskTagCatalog.normalize(task.tag) == t).length})',
-                          ),
-                          selected: _tagFilter == t,
-                          onSelected: (_) => setState(() => _tagFilter = t),
-                        ),
-                        const SizedBox(width: AppSpacing.xs),
-                      ],
-                    ],
-                  ),
-                ),
-              ),
-              const SizedBox(height: AppSpacing.xs),
-              Padding(
-                padding: const EdgeInsets.symmetric(horizontal: AppSpacing.md),
-                child: SingleChildScrollView(
-                  scrollDirection: Axis.horizontal,
-                  child: Row(
-                    children: [
-                      FilterChip(
-                        avatar: Icon(
-                          Icons.category_outlined,
-                          size: 16,
-                          color: _categoryFilter == null
-                              ? null
-                              : Theme.of(context)
-                                  .colorScheme
-                                  .onSurfaceVariant,
-                        ),
-                        label: const Text('Tüm kategoriler'),
-                        selected: _categoryFilter == null,
-                        onSelected: (_) =>
-                            setState(() => _categoryFilter = null),
+                    ),
+                    const SizedBox(width: AppSpacing.xs),
+                    Expanded(
+                      child: _TaskFilterDropdown<String?>(
+                        caption: 'Etiket',
+                        valueLabel: _tagFilter == null
+                            ? 'Tümü'
+                            : '${TaskTagCatalog.cardLabel(_tagFilter!)} '
+                                '(${tasks.where((t) => TaskTagCatalog.normalize(t.tag) == _tagFilter).length})',
+                        accent: _tagFilter == null
+                            ? null
+                            : TaskTagCatalog.accentFor(_tagFilter!),
+                        items: [
+                          (value: null, label: 'Tüm etiketler'),
+                          for (final t in TaskTagCatalog.all)
+                            (
+                              value: t,
+                              label:
+                                  '${TaskTagCatalog.cardLabel(t)} (${tasks.where((task) => TaskTagCatalog.normalize(task.tag) == t).length})',
+                            ),
+                        ],
+                        selected: _tagFilter,
+                        onSelected: (v) => setState(() => _tagFilter = v),
                       ),
-                      const SizedBox(width: AppSpacing.xs),
-                      for (final c in filterCategories) ...[
-                        FilterChip(
-                          label: Text(
-                            '$c (${tasks.where((t) => t.category.trim() == c).length})',
-                          ),
-                          selected: _categoryFilter == c,
-                          onSelected: (_) =>
-                              setState(() => _categoryFilter = c),
-                        ),
-                        const SizedBox(width: AppSpacing.xs),
-                      ],
-                    ],
-                  ),
+                    ),
+                    const SizedBox(width: AppSpacing.xs),
+                    Expanded(
+                      child: _TaskFilterDropdown<String?>(
+                        caption: 'Kategori',
+                        valueLabel: _categoryFilter == null
+                            ? 'Tümü'
+                            : '$_categoryFilter (${tasks.where((t) => t.category.trim() == _categoryFilter).length})',
+                        items: [
+                          (value: null, label: 'Tüm kategoriler'),
+                          for (final c in filterCategories)
+                            (
+                              value: c,
+                              label:
+                                  '$c (${tasks.where((t) => t.category.trim() == c).length})',
+                            ),
+                        ],
+                        selected: _categoryFilter,
+                        onSelected: (v) =>
+                            setState(() => _categoryFilter = v),
+                      ),
+                    ),
+                  ],
                 ),
               ),
               const SizedBox(height: AppSpacing.sm),
@@ -1871,6 +1848,108 @@ class _TasksScreenState extends ConsumerState<TasksScreen> {
                       ),
               ),
             ],
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+/// Tek satırda yan yana açılır filtre (Durum / Etiket / Kategori).
+class _TaskFilterDropdown<T> extends StatelessWidget {
+  const _TaskFilterDropdown({
+    required this.caption,
+    required this.valueLabel,
+    required this.items,
+    required this.selected,
+    required this.onSelected,
+    this.accent,
+  });
+
+  final String caption;
+  final String valueLabel;
+  final List<({T value, String label})> items;
+  final T selected;
+  final ValueChanged<T> onSelected;
+  final Color? accent;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final hasSelection = selected != null;
+    final borderColor = accent ??
+        (hasSelection
+            ? theme.colorScheme.primary
+            : theme.colorScheme.outlineVariant);
+
+    return PopupMenuButton<T>(
+      padding: EdgeInsets.zero,
+      offset: const Offset(0, 40),
+      onSelected: onSelected,
+      itemBuilder: (ctx) => [
+        for (final item in items)
+          PopupMenuItem<T>(
+            value: item.value,
+            child: Row(
+              children: [
+                Expanded(child: Text(item.label)),
+                if (item.value == selected)
+                  Icon(
+                    Icons.check,
+                    size: 16,
+                    color: theme.colorScheme.primary,
+                  ),
+              ],
+            ),
+          ),
+      ],
+      child: Container(
+        padding: const EdgeInsets.fromLTRB(8, 6, 6, 6),
+        decoration: BoxDecoration(
+          color: hasSelection && accent != null
+              ? accent!.withValues(alpha: 0.12)
+              : theme.colorScheme.surfaceContainerHighest.withValues(alpha: 0.5),
+          borderRadius: AppRadii.sm,
+          border: Border.all(
+            color: borderColor.withValues(alpha: hasSelection ? 0.85 : 0.55),
+            width: hasSelection ? 1.5 : 1,
+          ),
+        ),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Text(
+              caption,
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+              style: theme.textTheme.labelSmall?.copyWith(
+                color: theme.colorScheme.onSurfaceVariant,
+                fontWeight: FontWeight.w600,
+                fontSize: 10,
+              ),
+            ),
+            const SizedBox(height: 2),
+            Row(
+              children: [
+                Expanded(
+                  child: Text(
+                    valueLabel,
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: theme.textTheme.labelMedium?.copyWith(
+                      fontWeight: FontWeight.w700,
+                      color: accent ?? theme.colorScheme.onSurface,
+                    ),
+                  ),
+                ),
+                Icon(
+                  Icons.expand_more,
+                  size: 18,
+                  color: theme.colorScheme.onSurfaceVariant,
+                ),
+              ],
+            ),
           ],
         ),
       ),
