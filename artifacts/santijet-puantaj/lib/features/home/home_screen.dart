@@ -748,7 +748,9 @@ class _UrgentTagFilter extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    final ink = AppColors.statusInkOnCard(color);
+    // Seçili: etiket rengi dolgu + okunaklı mürekkep.
+    // Seçili değil: dolgusuz; kenarlık / yazı / sayı o etiketin kendi rengi.
+    final ink = selected ? AppColors.readableOn(color) : color;
 
     return Material(
       color: Colors.transparent,
@@ -759,11 +761,11 @@ class _UrgentTagFilter extends StatelessWidget {
           duration: const Duration(milliseconds: 160),
           padding: const EdgeInsets.fromLTRB(10, 10, 10, 8),
           decoration: BoxDecoration(
-            color: color.withValues(alpha: selected ? 0.22 : 0.12),
+            color: selected ? color : Colors.transparent,
             borderRadius: AppRadii.sm,
             border: Border.all(
-              color: color.withValues(alpha: selected ? 0.85 : 0.35),
-              width: selected ? 2 : 1,
+              color: color,
+              width: selected ? 2 : 1.5,
             ),
           ),
           child: Column(
@@ -775,8 +777,11 @@ class _UrgentTagFilter extends StatelessWidget {
                     width: 8,
                     height: 8,
                     decoration: BoxDecoration(
-                      color: color,
+                      color: selected ? ink : color,
                       shape: BoxShape.circle,
+                      border: selected
+                          ? null
+                          : Border.all(color: color, width: 1.5),
                     ),
                   ),
                   const SizedBox(width: 6),
