@@ -30,7 +30,6 @@ class PeriodSiteReportSections extends StatelessWidget {
         _CollapsibleSection(
           icon: Icons.fact_check_outlined,
           title: 'Personel puantajı',
-          subtitle: report.personelSummary.subtitle,
           child: PeriodPersonnelSummaryTable(summary: report.personelSummary),
         ),
         const SizedBox(height: AppSpacing.md),
