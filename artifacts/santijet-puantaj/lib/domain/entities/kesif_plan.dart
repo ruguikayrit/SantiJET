@@ -45,13 +45,13 @@ class KesifItem extends Equatable {
       [id, imalatId, imalatName, plannedQty, unit, notes];
 }
 
-/// Aktif proje için Keşif bulut anlık görüntüsü.
+/// Aktif proje için Keşif plan anlık görüntüsü (dosya / demo).
 class KesifSnapshot extends Equatable {
   const KesifSnapshot({
     required this.projectId,
     required this.updatedAt,
     required this.items,
-    this.source = 'kesif_cloud',
+    this.source = 'kesif_file',
   });
 
   final String projectId;
@@ -82,7 +82,7 @@ class KesifSnapshot extends Equatable {
       projectId: json['projectId'] as String? ?? '',
       updatedAt: DateTime.tryParse(json['updatedAt'] as String? ?? '') ??
           DateTime.now(),
-      source: json['source'] as String? ?? 'kesif_cloud',
+      source: json['source'] as String? ?? 'kesif_file',
       items: items,
     );
   }

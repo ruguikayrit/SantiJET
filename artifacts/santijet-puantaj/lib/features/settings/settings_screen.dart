@@ -23,6 +23,7 @@ import '../../data/providers/yevmiyeli_is_provider.dart';
 import '../../data/services/puantaj_backup_service.dart';
 import '../../domain/catalogs/professions.dart';
 import '../../domain/catalogs/task_categories.dart';
+import '../../domain/entities/santijet_plan_pack.dart';
 import '../../core/design_system/sj_modal.dart';
 
 /// Ayarlar — Demir ile aynı kart/tile düzeni; Puantaj kapsamına indirgenmiş.
@@ -294,13 +295,156 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
     );
   }
 
+  Future<void> _importPlanPack() async {
+    if (_busy) return;
+    final project = ref.read(activeProjectProvider);
+    if (project == null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Önce bir proje seçin veya oluşturun.')),
+      );
+      return;
+    }
+
+    setState(() => _busy = true);
+    try {
+      final ctrl = ref.read(planCloudSyncControllerProvider);
+      final result = await ctrl.importPackForProject(project);
+      if (!mounted) return;
+      if (result == null) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('İçe aktarma iptal edildi')),
+        );
+        return;
+      }
+      final pack = result.pack;
+      if (pack.projectCode.isNotEmpty &&
+          project.code.trim().isNotEmpty &&
+          pack.projectCode.trim().toLowerCase() !=
+              project.code.trim().toLowerCase()) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(
+              'Uyarı: paket proje kodu (${pack.projectCode}) aktif '
+              'projeden (${project.code}) farklı; yine de yüklendi.',
+            ),
+          ),
+        );
+      }
+      final kesifN = result.kesif?.items.length ??
+          ctrl.cachedKesif(project.id)?.items.length ??
+          0;
+      final progN = result.schedule?.items.length ??
+          ctrl.cachedSchedule(project.id)?.items.length ??
+          0;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(
+            'Plan paketi yüklendi · keşif $kesifN · program $progN satır. '
+            'İmalat formunda “Dosyadan / önbellekten al” ile alanlara uygula.',
+          ),
+        ),
+      );
+    } on SantijetPlanPackException catch (e) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(e.message)),
+      );
+    } catch (e) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Plan paketi hatası: $e')),
+      );
+    } finally {
+      if (mounted) setState(() => _busy = false);
+    }
+  }
+
+  Future<void> _exportSamplePlanPack() async {
+    if (_busy) return;
+    final project = ref.read(activeProjectProvider);
+    if (project == null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Önce bir proje seçin.')),
+      );
+      return;
+    }
+    setState(() => _busy = true);
+    try {
+      await ref.read(planPackServiceProvider).exportSampleCombined(
+            projectId: project.id,
+            projectCode: project.code,
+            projectName: project.name,
+          );
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Örnek plan paketi indirildi')),
+      );
+    } on SantijetPlanPackException catch (e) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(e.message)),
+      );
+    } catch (e) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Dışa aktarma hatası: $e')),
+      );
+    } finally {
+      if (mounted) setState(() => _busy = false);
+    }
+  }
+
+  void _showPlanPackDialog(BuildContext context) {
+    final sheetTheme = SJModal.sheetThemeOf(context);
+    showModalBottomSheet<void>(
+      context: context,
+      backgroundColor: SJModal.sheetSurface,
+      builder: (ctx) => Theme(
+        data: sheetTheme,
+        child: SafeArea(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              ListTile(
+                leading: const Icon(Icons.file_open_outlined),
+                title: const Text('Plan dosyası içe aktar'),
+                subtitle: const Text(
+                  'Keşif / iş programı / birleşik JSON',
+                ),
+                onTap: _busy
+                    ? null
+                    : () {
+                        Navigator.pop(ctx);
+                        _importPlanPack();
+                      },
+              ),
+              ListTile(
+                leading: const Icon(Icons.download_outlined),
+                title: const Text('Örnek paket indir'),
+                subtitle: const Text(
+                  'Şema testi — demo keşif + program',
+                ),
+                onTap: _busy
+                    ? null
+                    : () {
+                        Navigator.pop(ctx);
+                        _exportSamplePlanPack();
+                      },
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
   Future<void> _confirmLoadDemo(BuildContext context) async {
     final ok = await SJModal.confirm(
       context: context,
       title: 'Demo veriyi yükle',
       message:
           'Demo Şantiye sıfırlanır ve yeniden kurulur: personel, puantaj, '
-          'sigortasız ekip, imalat (plan bulutu İmalat formunda), görevler '
+          'sigortasız ekip, imalat (örnek plan önbelleği), görevler '
           '(Satın Alma / Saha / Ofis / Görüşme), günlük raporlar ve yevmiyeli işler.',
       confirmLabel: 'Yükle',
     );
@@ -394,6 +538,16 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
             title: 'Yedekleme & Geri Yükleme',
             subtitle: 'Verileri JSON olarak dışa/içe aktar',
             onTap: () => _showBackupDialog(context),
+          ),
+          _SettingsTile(
+            icon: Icons.sync_alt_outlined,
+            title: 'Plan dosyası (Keşif / İş Programı)',
+            subtitle: _busy
+                ? 'İşleniyor…'
+                : 'Offline paket içe aktar · örnek paket indir',
+            onTap: () {
+              if (!_busy) _showPlanPackDialog(context);
+            },
           ),
           _SettingsTile(
             icon: Icons.play_circle_outline,

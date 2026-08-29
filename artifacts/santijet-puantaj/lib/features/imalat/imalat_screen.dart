@@ -17,12 +17,10 @@ import '../../data/providers/app_data_provider.dart';
 import '../../data/providers/catalog_provider.dart';
 import '../../data/providers/plan_cloud_sync_provider.dart';
 import '../../data/providers/production_provider.dart';
-import '../../data/services/is_programi_cloud_service.dart';
-import '../../data/services/kesif_cloud_service.dart';
-import '../../domain/entities/kesif_plan.dart';
+import '../../data/services/plan_item_matcher.dart';
 import '../../domain/entities/production.dart';
 import '../../domain/entities/production_day_entry.dart';
-import '../../domain/entities/work_schedule_plan.dart';
+import '../../domain/entities/santijet_plan_pack.dart';
 import '../../domain/catalogs/imalat_units.dart';
 import '../../domain/yevmiye/yevmiye_calculator.dart';
 
@@ -655,6 +653,7 @@ class _ImalatJobSheetState extends ConsumerState<_ImalatJobSheet> {
   late String _unit;
   bool _pullingDays = false;
   String? _scheduleHint;
+  bool _overwritePlanFields = false;
 
   @override
   void initState() {
@@ -699,44 +698,21 @@ class _ImalatJobSheetState extends ConsumerState<_ImalatJobSheet> {
     return v.toStringAsFixed(1);
   }
 
-  static String _norm(String s) => s
-      .trim()
-      .toLowerCase()
-      .replaceAll(RegExp(r'\s+'), ' ');
+  double get _currentQty =>
+      double.tryParse(_planned.text.replaceAll(',', '.')) ?? 0;
+  int get _currentDays => int.tryParse(_plannedDays.text.trim()) ?? 0;
+  double get _currentLabor =>
+      double.tryParse(_plannedLabor.text.replaceAll(',', '.')) ?? 0;
 
-  WorkScheduleItem? _matchSchedule(List<WorkScheduleItem> items, String name) {
-    final target = _norm(name);
-    if (target.isEmpty) return null;
-    for (final item in items) {
-      if (_norm(item.imalatName) == target) return item;
-    }
-    for (final item in items) {
-      final n = _norm(item.imalatName);
-      if (n.contains(target) || target.contains(n)) return item;
-    }
-    return null;
-  }
-
-  KesifItem? _matchKesif(List<KesifItem> items, String name) {
-    final target = _norm(name);
-    if (target.isEmpty) return null;
-    for (final item in items) {
-      if (_norm(item.imalatName) == target) return item;
-    }
-    for (final item in items) {
-      final n = _norm(item.imalatName);
-      if (n.contains(target) || target.contains(n)) return item;
-    }
-    return null;
-  }
-
-  /// Süre ← İş Programı, plan metraj ← Keşif.
+  /// Süre ← İş Programı, plan metraj ← Keşif (önbellek veya dosya).
   Future<void> _pullPlannedDaysFromSchedule() async {
     final name = _name.text.trim();
     if (name.isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
-          content: Text('Önce imalat adını girin; eşleştirme ada göre yapılır.'),
+          content: Text(
+            'Önce imalat adını girin; eşleştirme id veya ada göre yapılır.',
+          ),
         ),
       );
       return;
@@ -749,104 +725,85 @@ class _ImalatJobSheetState extends ConsumerState<_ImalatJobSheet> {
 
     try {
       final project = ref.read(activeProjectProvider);
-      final scheduleSvc = ref.read(isProgramiCloudServiceProvider);
-      final kesifSvc = ref.read(kesifCloudServiceProvider);
+      final ctrl = ref.read(planCloudSyncControllerProvider);
+      var scheduleSnap = ctrl.cachedSchedule(widget.projectId);
+      var kesifSnap = ctrl.cachedKesif(widget.projectId);
+      var fromFilePick = false;
 
-      WorkScheduleSnapshot scheduleSnap;
-      KesifSnapshot kesifSnap;
-      var fromDemo = false;
+      final needFile = (scheduleSnap == null || scheduleSnap.items.isEmpty) &&
+          (kesifSnap == null || kesifSnap.items.isEmpty);
 
-      try {
-        scheduleSnap = await scheduleSvc.sync(
-          projectId: widget.projectId,
-          projectCode: project?.code,
-          projectName: project?.name,
-        );
-      } on IsProgramiCloudException {
-        final cached = scheduleSvc.cachedFor(widget.projectId);
-        if (cached != null && cached.items.isNotEmpty) {
-          scheduleSnap = cached;
-        } else {
-          scheduleSnap = await scheduleSvc.syncDemo(
-            projectId: widget.projectId,
-            projectName: project?.name,
-          );
-          fromDemo = true;
+      if (needFile) {
+        if (project == null) {
+          throw SantijetPlanPackException('Aktif proje yok.');
         }
-      }
-
-      try {
-        kesifSnap = await kesifSvc.sync(
-          projectId: widget.projectId,
-          projectCode: project?.code,
-          projectName: project?.name,
-        );
-      } on KesifCloudException {
-        final cached = kesifSvc.cachedFor(widget.projectId);
-        if (cached != null && cached.items.isNotEmpty) {
-          kesifSnap = cached;
-        } else {
-          kesifSnap = await kesifSvc.syncDemo(
-            projectId: widget.projectId,
-            projectName: project?.name,
+        final imported = await ctrl.importPackForProject(project);
+        if (imported == null) {
+          if (!mounted) return;
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(content: Text('Dosya seçimi iptal edildi')),
           );
-          fromDemo = true;
+          return;
         }
+        fromFilePick = true;
+        scheduleSnap = imported.schedule ?? ctrl.cachedSchedule(widget.projectId);
+        kesifSnap = imported.kesif ?? ctrl.cachedKesif(widget.projectId);
       }
 
       if (!mounted) return;
 
-      final scheduleMatch = _matchSchedule(scheduleSnap.items, name);
-      final kesifMatch = _matchKesif(kesifSnap.items, name);
-      final parts = <String>[];
+      final scheduleMatch = matchScheduleItem(
+        scheduleSnap?.items ?? const [],
+        name: name,
+      );
+      final kesifMatch = matchKesifItem(
+        kesifSnap?.items ?? const [],
+        name: name,
+      );
 
-      if (scheduleMatch != null) {
-        final days = scheduleMatch.durationDays;
-        if (days != null && days > 0) {
-          _plannedDays.text = '$days';
-          parts.add(
-            'süre $days gün'
-            '${scheduleMatch.startDate != null && scheduleMatch.endDate != null ? ' (${scheduleMatch.startDate} → ${scheduleMatch.endDate})' : ''}',
-          );
-        } else {
-          parts.add('İş Programı’nda tarih yok');
-        }
-        final workers = scheduleMatch.plannedWorkerCount;
-        if (workers != null && workers > 0) {
-          _plannedLabor.text = '$workers';
-          parts.add('iş gücü $workers kişi');
-        }
-      } else {
-        parts.add('İş Programı eşleşmedi');
+      final mode = _overwritePlanFields
+          ? PlanFieldApplyMode.overwrite
+          : PlanFieldApplyMode.fillEmpty;
+      final applied = applyPlanToForm(
+        mode: mode,
+        currentQty: _currentQty,
+        currentUnit: _unit,
+        currentDays: _currentDays,
+        currentLabor: _currentLabor,
+        kesif: kesifMatch,
+        schedule: scheduleMatch,
+      );
+
+      if (applied.plannedDays != null) {
+        _plannedDays.text = '${applied.plannedDays}';
+      }
+      if (applied.plannedLabor != null) {
+        _plannedLabor.text = _num(applied.plannedLabor!);
+      }
+      if (applied.plannedQty != null) {
+        _planned.text = _num(applied.plannedQty!);
+      }
+      if (applied.unit != null && applied.unit!.isNotEmpty) {
+        _unit = applied.unit!;
       }
 
-      if (kesifMatch != null && kesifMatch.plannedQty > 0) {
-        _planned.text = _num(kesifMatch.plannedQty);
-        parts.add(
-          'metraj ${_num(kesifMatch.plannedQty)} ${kesifMatch.unit}',
-        );
-      } else {
-        parts.add('Keşif metraj eşleşmedi');
-      }
-
-      final prefix = fromDemo ? 'Demo buluttan' : 'Buluttan';
+      final prefix = fromFilePick ? 'Dosyadan' : 'Önbellekten';
       setState(() {
-        if (kesifMatch != null &&
-            kesifMatch.unit.trim().isNotEmpty &&
-            (_unit.trim().isEmpty ||
-                _unit == ImalatUnitCatalog.defaultUnit)) {
-          _unit = kesifMatch.unit.trim();
-        }
-        _scheduleHint = '$prefix: ${parts.join(' · ')}.';
+        _scheduleHint = '$prefix: ${applied.parts.join(' · ')}.';
       });
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text(_scheduleHint!)),
+      );
+    } on SantijetPlanPackException catch (e) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(e.message)),
       );
     } catch (_) {
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
-          content: Text('İş Programı / Keşif verisi alınamadı.'),
+          content: Text('İş Programı / Keşif dosyası okunamadı.'),
         ),
       );
     } finally {
@@ -889,8 +846,9 @@ class _ImalatJobSheetState extends ConsumerState<_ImalatJobSheet> {
               Padding(
                 padding: const EdgeInsets.only(top: AppSpacing.xs),
                 child: Text(
-                  'Plan metraj (Keşif) ve gün (İş Programı) girin veya '
-                  'buluttan çekin; günlük kayıtları sonradan ekleyin.',
+                  'Plan metraj (Keşif) ve gün/iş gücü (İş Programı) elle '
+                  'girilir veya JSON dosyasından alınır; günlük kayıtlar '
+                  'sonradan eklenir.',
                   style: theme.textTheme.bodySmall,
                 ),
               ),
@@ -993,12 +951,25 @@ class _ImalatJobSheetState extends ConsumerState<_ImalatJobSheet> {
                       height: 18,
                       child: CircularProgressIndicator(strokeWidth: 2),
                     )
-                  : const Icon(Icons.cloud_download_outlined, size: 20),
+                  : const Icon(Icons.file_open_outlined, size: 20),
               label: Text(
                 _pullingDays
-                    ? 'Buluttan alınıyor…'
-                    : 'Buluttan al (süre: İş Programı · metraj: Keşif)',
+                    ? 'Plan alınıyor…'
+                    : 'Dosyadan / önbellekten al (Keşif + İş Programı)',
               ),
+            ),
+            CheckboxListTile(
+              contentPadding: EdgeInsets.zero,
+              dense: true,
+              value: _overwritePlanFields,
+              onChanged: _pullingDays
+                  ? null
+                  : (v) => setState(() => _overwritePlanFields = v ?? false),
+              title: Text(
+                'Dolu plan alanlarını üzerine yaz',
+                style: theme.textTheme.bodySmall,
+              ),
+              controlAffinity: ListTileControlAffinity.leading,
             ),
             if (_scheduleHint != null) ...[
               const SizedBox(height: 6),

@@ -4,10 +4,9 @@ import 'package:hive/hive.dart';
 
 import '../../domain/entities/work_schedule_plan.dart';
 
-/// İş Programı uygulamasından bulut üzerinden iş programı çeker.
+/// İş Programı uygulamasından süre / iş gücü — dosya paketi veya demo önbelleği.
 ///
-/// Verimde planlanan süre / iş gücü bu kaynaktan gelir.
-/// Plan metraj Keşif bulutundan (`KesifCloudService`) gelir.
+/// Plan metraj Keşif paketinden (`KesifCloudService`) gelir.
 class IsProgramiCloudException implements Exception {
   IsProgramiCloudException(this.message);
   final String message;
@@ -45,28 +44,21 @@ class IsProgramiCloudService {
     _cacheBox.delete('$_cachePrefix$projectId');
   }
 
-  /// Buluttan senkronize eder; başarıda önbelleğe yazar.
-  ///
-  /// Gerçek API bağlandığında HTTP gövdesi buraya gelir;
-  /// Verim UI ve önbellek sözleşmesi aynı kalır.
+  /// Önbellekten döner; yoksa dosya içe aktarma gerekir.
   Future<WorkScheduleSnapshot> sync({
     required String projectId,
     String? projectCode,
     String? projectName,
   }) async {
-    await Future<void>.delayed(const Duration(milliseconds: 700));
-
-    // TODO: İş Programı bulut API — GET /work-schedule?projectId=…
-    // final remote = await http.get(...); final snap = ...; _saveCache(snap);
+    final cached = cachedFor(projectId);
+    if (cached != null && cached.items.isNotEmpty) return cached;
     throw IsProgramiCloudException(
-      'İş Programı bulut bağlantısı henüz yapılandırılmadı. '
-      'Verim hesabı için İş Programı uygulamasında iş programının '
-      'buluta kaydedilmesi ve senkronun etkin olması gerekir.',
+      'İş programı yok. Ayarlar’dan veya imalat formundan '
+      'iş programı / plan JSON dosyasını içe aktarın.',
     );
   }
 
-  /// Geliştirme / staging: örnek bulut yanıtını önbelleğe yazar.
-  /// Üretimde kaldırılacak veya feature-flag ile kilitlenecek.
+  /// Geliştirme / staging: örnek programı önbelleğe yazar.
   Future<WorkScheduleSnapshot> syncDemo({
     required String projectId,
     String? projectName,
@@ -83,7 +75,7 @@ class IsProgramiCloudService {
     final snap = WorkScheduleSnapshot(
       projectId: projectId,
       updatedAt: DateTime.now(),
-      source: 'is_programi_cloud_demo',
+      source: 'program_file_demo',
       items: [
         WorkScheduleItem(
           id: 'ws-demo-1',

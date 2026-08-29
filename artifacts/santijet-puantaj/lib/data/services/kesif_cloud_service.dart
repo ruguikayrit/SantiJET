@@ -4,7 +4,7 @@ import 'package:hive/hive.dart';
 
 import '../../domain/entities/kesif_plan.dart';
 
-/// Keşif uygulamasından bulut üzerinden plan metraj çeker.
+/// Keşif uygulamasından plan metraj — dosya paketi veya demo önbelleği.
 ///
 /// Verimde planlanan miktar yalnızca bu kaynaktan gelir.
 class KesifCloudException implements Exception {
@@ -43,19 +43,17 @@ class KesifCloudService {
     _cacheBox.delete('$_cachePrefix$projectId');
   }
 
-  /// Buluttan senkronize eder; başarıda önbelleğe yazar.
+  /// Önbellekten döner; yoksa dosya içe aktarma gerekir.
   Future<KesifSnapshot> sync({
     required String projectId,
     String? projectCode,
     String? projectName,
   }) async {
-    await Future<void>.delayed(const Duration(milliseconds: 700));
-
-    // TODO: Keşif bulut API — GET /kesif?projectId=…
+    final cached = cachedFor(projectId);
+    if (cached != null && cached.items.isNotEmpty) return cached;
     throw KesifCloudException(
-      'Keşif bulut bağlantısı henüz yapılandırılmadı. '
-      'Plan metraj için Keşif uygulamasında keşfin buluta '
-      'kaydedilmesi ve senkronun etkin olması gerekir.',
+      'Keşif planı yok. Ayarlar’dan veya imalat formundan '
+      'keşif / plan JSON dosyasını içe aktarın.',
     );
   }
 
@@ -68,7 +66,7 @@ class KesifCloudService {
     final snap = KesifSnapshot(
       projectId: projectId,
       updatedAt: DateTime.now(),
-      source: 'kesif_cloud_demo',
+      source: 'kesif_file_demo',
       items: [
         KesifItem(
           id: 'ks-demo-1',

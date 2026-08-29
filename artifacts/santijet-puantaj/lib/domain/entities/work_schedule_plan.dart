@@ -1,9 +1,9 @@
 import 'package:equatable/equatable.dart';
 
-/// İş Programı bulutundan gelen imalat satırı (Demir `WorkScheduleImalat` hizası).
+/// İş Programı paketinden / önbellekten gelen imalat satırı.
 ///
 /// Süre ve plan iş gücü burada; plan metraj Keşif (`KesifItem`) tarafındadır.
-/// [plannedQty] eski önbellek uyumu için okunur, Verim yeni kurguyla Keşif’ten alır.
+/// [plannedQty] eski paket uyumu için okunur, Verim yeni kurguyla Keşif’ten alır.
 class WorkScheduleItem extends Equatable {
   const WorkScheduleItem({
     required this.id,
@@ -11,6 +11,7 @@ class WorkScheduleItem extends Equatable {
     this.imalatId = '',
     this.startDate,
     this.endDate,
+    this.plannedDays,
     this.plannedWorkerCount,
     this.plannedQty,
     this.unit,
@@ -22,6 +23,9 @@ class WorkScheduleItem extends Equatable {
   final String imalatName;
   final String? startDate; // yyyy-MM-dd
   final String? endDate;
+
+  /// Pakette açık gün sayısı (yoksa [durationDays] tarihlerden hesaplanır).
+  final int? plannedDays;
   final int? plannedWorkerCount;
 
   /// Eski senkron uyumu — yeni kurgu plan metrajı Keşif’ten alır.
@@ -29,8 +33,9 @@ class WorkScheduleItem extends Equatable {
   final String? unit;
   final String? notes;
 
-  /// Başlangıç–bitiş dahil planlanan takvim günü (Demir `durationDays` hizası).
+  /// Planlanan takvim günü: açık [plannedDays] veya başlangıç–bitiş dahil.
   int? get durationDays {
+    if (plannedDays != null && plannedDays! > 0) return plannedDays;
     final start = _parseDay(startDate);
     final end = _parseDay(endDate);
     if (start == null || end == null) return null;
@@ -49,6 +54,7 @@ class WorkScheduleItem extends Equatable {
         'imalatName': imalatName,
         if (startDate != null) 'startDate': startDate,
         if (endDate != null) 'endDate': endDate,
+        if (plannedDays != null) 'plannedDays': plannedDays,
         if (plannedWorkerCount != null)
           'plannedWorkerCount': plannedWorkerCount,
         if (plannedQty != null) 'plannedQty': plannedQty,
@@ -70,6 +76,7 @@ class WorkScheduleItem extends Equatable {
       imalatName: json['imalatName'] as String? ?? '',
       startDate: day(json['startDate']),
       endDate: day(json['endDate']),
+      plannedDays: (json['plannedDays'] as num?)?.toInt(),
       plannedWorkerCount: (json['plannedWorkerCount'] as num?)?.toInt(),
       plannedQty: (json['plannedQty'] as num?)?.toDouble(),
       unit: json['unit'] as String?,
@@ -84,6 +91,7 @@ class WorkScheduleItem extends Equatable {
         imalatName,
         startDate,
         endDate,
+        plannedDays,
         plannedWorkerCount,
         plannedQty,
         unit,
@@ -91,13 +99,13 @@ class WorkScheduleItem extends Equatable {
       ];
 }
 
-/// Aktif proje için İş Programı bulut anlık görüntüsü.
+/// Aktif proje için İş Programı anlık görüntüsü (dosya / demo).
 class WorkScheduleSnapshot extends Equatable {
   const WorkScheduleSnapshot({
     required this.projectId,
     required this.updatedAt,
     required this.items,
-    this.source = 'is_programi_cloud',
+    this.source = 'program_file',
   });
 
   final String projectId;
@@ -128,7 +136,7 @@ class WorkScheduleSnapshot extends Equatable {
       projectId: json['projectId'] as String? ?? '',
       updatedAt: DateTime.tryParse(json['updatedAt'] as String? ?? '') ??
           DateTime.now(),
-      source: json['source'] as String? ?? 'is_programi_cloud',
+      source: json['source'] as String? ?? 'program_file',
       items: items,
     );
   }

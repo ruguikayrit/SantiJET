@@ -3,11 +3,13 @@ import 'package:hive/hive.dart';
 
 import '../../domain/entities/kesif_plan.dart';
 import '../../domain/entities/project.dart';
+import '../../domain/entities/santijet_plan_pack.dart';
 import '../../domain/entities/work_schedule_plan.dart';
 import '../services/is_programi_cloud_service.dart';
 import '../services/kesif_cloud_service.dart';
+import '../services/plan_pack_service.dart';
 
-/// İş Programı + Keşif önbellek kutuları — yalnızca İmalat “Buluttan al” için.
+/// İş Programı + Keşif önbellek kutuları — dosya içe aktarma / demo.
 final workScheduleCacheBoxProvider = Provider<Box>(
   (ref) =>
       throw UnimplementedError('workScheduleCacheBoxProvider override edilmeli'),
@@ -25,12 +27,19 @@ final kesifCloudServiceProvider = Provider<KesifCloudService>((ref) {
   return KesifCloudService(ref.watch(kesifCacheBoxProvider));
 });
 
+final planPackServiceProvider = Provider<PlanPackService>((ref) {
+  return PlanPackService(
+    kesif: ref.watch(kesifCloudServiceProvider),
+    schedule: ref.watch(isProgramiCloudServiceProvider),
+  );
+});
+
 final planCloudSyncControllerProvider =
     Provider<PlanCloudSyncController>((ref) {
   return PlanCloudSyncController(ref);
 });
 
-/// Plan bulutu — Verim’den bağımsız; İmalat formu “Buluttan al” ve demo önbelleği.
+/// Plan önbelleği — dosya paketi ve demo; İmalat formunda “Dosyadan al”.
 class PlanCloudSyncController {
   PlanCloudSyncController(this._ref);
 
@@ -40,6 +49,8 @@ class PlanCloudSyncController {
       _ref.read(isProgramiCloudServiceProvider);
 
   KesifCloudService get _kesif => _ref.read(kesifCloudServiceProvider);
+
+  PlanPackService get packService => _ref.read(planPackServiceProvider);
 
   WorkScheduleSnapshot? cachedSchedule(String projectId) =>
       _schedule.cachedFor(projectId);
@@ -63,7 +74,7 @@ class PlanCloudSyncController {
     }
   }
 
-  /// Demo / staging: İş Programı + Keşif örneğini önbelleğe yazar.
+  /// Demo: örnek Keşif + İş Programı önbelleğe yazar.
   Future<void> syncDemoForProject({
     required String projectId,
     String? projectName,
@@ -76,6 +87,21 @@ class PlanCloudSyncController {
       projectId: projectId,
       projectName: projectName,
     );
+  }
+
+  /// Dosya seç → parse → aktif projeye önbellek. [null] = iptal.
+  Future<({
+    SantijetPlanPack pack,
+    KesifSnapshot? kesif,
+    WorkScheduleSnapshot? schedule,
+  })?> importPackForProject(Project project) async {
+    final pack = await packService.pickAndParse();
+    if (pack == null) return null;
+    final applied = packService.applyToCache(
+      pack: pack,
+      localProjectId: project.id,
+    );
+    return (pack: pack, kesif: applied.kesif, schedule: applied.schedule);
   }
 
   Future<({WorkScheduleSnapshot? schedule, KesifSnapshot? kesif})> syncForProject(
@@ -94,29 +120,9 @@ class PlanCloudSyncController {
       return (schedule: schedule, kesif: kesif);
     }
 
-    WorkScheduleSnapshot? schedule;
-    KesifSnapshot? kesif;
-
-    try {
-      schedule = await _schedule.sync(
-        projectId: project.id,
-        projectCode: project.code,
-        projectName: project.name,
-      );
-    } on IsProgramiCloudException {
-      schedule = _schedule.cachedFor(project.id);
-    }
-
-    try {
-      kesif = await _kesif.sync(
-        projectId: project.id,
-        projectCode: project.code,
-        projectName: project.name,
-      );
-    } on KesifCloudException {
-      kesif = _kesif.cachedFor(project.id);
-    }
-
-    return (schedule: schedule, kesif: kesif);
+    return (
+      schedule: _schedule.cachedFor(project.id),
+      kesif: _kesif.cachedFor(project.id),
+    );
   }
 }
