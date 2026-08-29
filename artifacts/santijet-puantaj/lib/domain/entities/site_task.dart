@@ -54,8 +54,12 @@ class SiteTask extends Equatable {
     this.assignerName = '',
     this.earliestStart = '',
     this.dueDate = '',
+    this.actualStartDate = '',
     this.actualDeliveryDate = '',
     this.status = TaskStatus.todo,
+    this.pendingStatusRaw = '',
+    this.pendingActualStartDate = '',
+    this.pendingActualDeliveryDate = '',
     this.photos = const [],
     this.createdAt,
     this.updatedAt,
@@ -84,15 +88,23 @@ class SiteTask extends Equatable {
   /// Atayan görünen adı (önbellek).
   final String assignerName;
 
-  /// En erken başlangıç — TR `dd.MM.yyyy`.
+  /// Planlanan başlangıç — TR `dd.MM.yyyy`.
   final String earliestStart;
 
-  /// En geç planlanan bitiş — TR `dd.MM.yyyy` (eski ad: dueDate).
+  /// Planlanan bitiş — TR `dd.MM.yyyy`.
   final String dueDate;
 
-  /// Gerçekleşen bitiş tarihi — tamamlanınca kaydedilir (TR `dd.MM.yyyy`).
+  /// Gerçekleşen başlangıç — Başlandı işaretlenince (TR `dd.MM.yyyy`).
+  final String actualStartDate;
+
+  /// Gerçekleşen bitiş — tamamlanınca (TR `dd.MM.yyyy`).
   final String actualDeliveryDate;
   final TaskStatus status;
+
+  /// Atananın onay bekleyen durum değişikliği (`''` = yok).
+  final String pendingStatusRaw;
+  final String pendingActualStartDate;
+  final String pendingActualDeliveryDate;
 
   /// Görev atanırken eklenen fotoğraflar.
   final List<TaskPhoto> photos;
@@ -100,19 +112,31 @@ class SiteTask extends Equatable {
   final DateTime? createdAt;
   final DateTime? updatedAt;
 
+  TaskStatus? get pendingStatus => pendingStatusRaw.trim().isEmpty
+      ? null
+      : TaskStatus.fromStorage(pendingStatusRaw);
+
+  bool get hasPendingStatusChange => pendingStatus != null;
+
   DateTime? get earliestStartDate => PuantajDate.tryParse(earliestStart);
   DateTime? get latestDeliveryDate => PuantajDate.tryParse(dueDate);
+  DateTime? get actualStartDateTime => PuantajDate.tryParse(actualStartDate);
   DateTime? get actualDeliveryDateTime =>
       PuantajDate.tryParse(actualDeliveryDate);
 
   /// Görüntüleyen yalnızca atayan veya atanan ise görür.
-  /// Eski kayıtlarda id yoksa yalnızca 1. derece görür (yeniden atama için).
   bool isVisibleTo(Person viewer) {
     if (assigneePersonId.isNotEmpty || assignerPersonId.isNotEmpty) {
       return viewer.id == assigneePersonId || viewer.id == assignerPersonId;
     }
     return RoleDegree.isFirstDegree(viewer);
   }
+
+  bool isAssigner(Person person) =>
+      assignerPersonId.isNotEmpty && person.id == assignerPersonId;
+
+  bool isAssignee(Person person) =>
+      assigneePersonId.isNotEmpty && person.id == assigneePersonId;
 
   SiteTask copyWith({
     String? id,
@@ -127,8 +151,12 @@ class SiteTask extends Equatable {
     String? assignerName,
     String? earliestStart,
     String? dueDate,
+    String? actualStartDate,
     String? actualDeliveryDate,
     TaskStatus? status,
+    String? pendingStatusRaw,
+    String? pendingActualStartDate,
+    String? pendingActualDeliveryDate,
     List<TaskPhoto>? photos,
     DateTime? createdAt,
     DateTime? updatedAt,
@@ -146,13 +174,25 @@ class SiteTask extends Equatable {
       assignerName: assignerName ?? this.assignerName,
       earliestStart: earliestStart ?? this.earliestStart,
       dueDate: dueDate ?? this.dueDate,
+      actualStartDate: actualStartDate ?? this.actualStartDate,
       actualDeliveryDate: actualDeliveryDate ?? this.actualDeliveryDate,
       status: status ?? this.status,
+      pendingStatusRaw: pendingStatusRaw ?? this.pendingStatusRaw,
+      pendingActualStartDate:
+          pendingActualStartDate ?? this.pendingActualStartDate,
+      pendingActualDeliveryDate:
+          pendingActualDeliveryDate ?? this.pendingActualDeliveryDate,
       photos: photos ?? this.photos,
       createdAt: createdAt ?? this.createdAt,
       updatedAt: updatedAt ?? this.updatedAt,
     );
   }
+
+  SiteTask clearPending() => copyWith(
+        pendingStatusRaw: '',
+        pendingActualStartDate: '',
+        pendingActualDeliveryDate: '',
+      );
 
   Map<String, dynamic> toJson() => {
         'id': id,
@@ -167,8 +207,14 @@ class SiteTask extends Equatable {
         'assignerName': assignerName,
         'earliestStart': earliestStart,
         'dueDate': dueDate,
+        'actualStartDate': actualStartDate,
         'actualDeliveryDate': actualDeliveryDate,
         'status': status.storage,
+        if (pendingStatusRaw.isNotEmpty) 'pendingStatus': pendingStatusRaw,
+        if (pendingActualStartDate.isNotEmpty)
+          'pendingActualStartDate': pendingActualStartDate,
+        if (pendingActualDeliveryDate.isNotEmpty)
+          'pendingActualDeliveryDate': pendingActualDeliveryDate,
         'photos': photos.map((p) => p.toJson()).toList(),
         'createdAt': createdAt?.toIso8601String(),
         'updatedAt': updatedAt?.toIso8601String(),
@@ -197,8 +243,13 @@ class SiteTask extends Equatable {
       assignerName: json['assignerName'] as String? ?? '',
       earliestStart: json['earliestStart'] as String? ?? '',
       dueDate: json['dueDate'] as String? ?? '',
+      actualStartDate: json['actualStartDate'] as String? ?? '',
       actualDeliveryDate: json['actualDeliveryDate'] as String? ?? '',
       status: TaskStatus.fromStorage(json['status'] as String?),
+      pendingStatusRaw: json['pendingStatus'] as String? ?? '',
+      pendingActualStartDate: json['pendingActualStartDate'] as String? ?? '',
+      pendingActualDeliveryDate:
+          json['pendingActualDeliveryDate'] as String? ?? '',
       photos: photos,
       createdAt: json['createdAt'] != null
           ? DateTime.tryParse(json['createdAt'] as String)
@@ -223,8 +274,12 @@ class SiteTask extends Equatable {
         assignerName,
         earliestStart,
         dueDate,
+        actualStartDate,
         actualDeliveryDate,
         status,
+        pendingStatusRaw,
+        pendingActualStartDate,
+        pendingActualDeliveryDate,
         photos,
         createdAt,
         updatedAt,

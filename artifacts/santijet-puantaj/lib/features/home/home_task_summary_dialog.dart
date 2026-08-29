@@ -5,11 +5,12 @@ import '../../core/design_system/sj_status_badge.dart';
 import '../../core/theme/app_colors.dart';
 import '../../core/theme/app_radii.dart';
 import '../../core/theme/app_spacing.dart';
-import '../../core/utils/puantaj_date.dart';
+import '../../data/providers/active_operator_provider.dart';
 import '../../data/providers/tasks_provider.dart';
 import '../../domain/catalogs/task_tags.dart';
 import '../../domain/entities/site_task.dart';
 import '../../domain/enums/task_status.dart';
+import '../tasks/widgets/task_actual_date_sheet.dart';
 
 /// Teslim tarihine göre aciliyet rengi ve etiketi.
 class TaskUrgency {
@@ -48,6 +49,7 @@ class TaskUrgency {
 
 Color taskStatusColor(TaskStatus status) => switch (status) {
       TaskStatus.todo => AppColors.info,
+      TaskStatus.started => AppColors.partial,
       TaskStatus.doing => AppColors.warning,
       TaskStatus.done => AppColors.success,
     };
@@ -79,6 +81,70 @@ class _HomeTaskSummaryDialog extends ConsumerWidget {
   final String taskId;
   final SiteTask initialTask;
   final DateTime today;
+
+  Future<void> _onStatus(
+    BuildContext context,
+    WidgetRef ref,
+    SiteTask task,
+    TaskStatus status,
+  ) async {
+    final operator = ref.read(activeOperatorProvider);
+    if (operator == null) return;
+    if (!TaskStatusRules.canTransition(task.status, status)) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text(
+            'Bu geçiş yapılamaz. Sıra: Yapılacak → Başlandı → '
+            'Devam ediyor → Tamamlandı.',
+          ),
+        ),
+      );
+      return;
+    }
+    String? actualStart;
+    String? actualDelivery;
+    if (TaskStatusRules.needsActualDate(status)) {
+      final picked = await showTaskActualDateSheet(
+        context,
+        forStatus: status,
+      );
+      if (picked == null || !context.mounted) return;
+      if (status == TaskStatus.started) {
+        actualStart = picked;
+      } else {
+        actualDelivery = picked;
+      }
+    }
+    final result = ref.read(tasksProvider.notifier).applyOrRequestStatus(
+          id: task.id,
+          status: status,
+          actor: operator,
+          actualStartDate: actualStart,
+          actualDeliveryDate: actualDelivery,
+        );
+    if (!context.mounted) return;
+    if (result == 'pending') {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Durum değişikliği atayana onay için gönderildi.'),
+        ),
+      );
+    } else if (result == 'applied' && status == TaskStatus.done) {
+      Navigator.of(context).pop();
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(
+            'Görev tamamlandı · Gerçekleşen bitiş: '
+            '${actualDelivery ?? task.actualDeliveryDate}',
+          ),
+        ),
+      );
+    } else if (result == 'rejected') {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Durum güncellenemedi.')),
+      );
+    }
+  }
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -137,40 +203,28 @@ class _HomeTaskSummaryDialog extends ConsumerWidget {
               ),
             ),
             const SizedBox(height: AppSpacing.xs),
-            Row(
+            Wrap(
+              spacing: 6,
+              runSpacing: 6,
               children: [
-                for (final s in TaskStatus.values) ...[
-                  Expanded(
+                for (final s in TaskStatus.values)
+                  SizedBox(
+                    width: 120,
                     child: _StatusActionButton(
-                      label: s.label,
+                      label: s.shortLabel,
                       selected: task.status == s,
                       color: taskStatusColor(s),
-                      onTap: () {
-                        ref.read(tasksProvider.notifier).setStatus(task.id, s);
-                        if (s == TaskStatus.done && context.mounted) {
-                          final delivery = task.actualDeliveryDate.trim().isNotEmpty
-                              ? task.actualDeliveryDate.trim()
-                              : PuantajDate.today();
-                          Navigator.of(context).pop();
-                          ScaffoldMessenger.of(context).showSnackBar(
-                            SnackBar(
-                              content: Text(
-                                'Görev tamamlandı · Gerçekleşen bitiş: $delivery',
-                              ),
-                            ),
-                          );
-                        }
-                      },
+                      enabled: task.status == s ||
+                          TaskStatusRules.canTransition(task.status, s),
+                      onTap: () => _onStatus(context, ref, task, s),
                     ),
                   ),
-                  if (s != TaskStatus.done) const SizedBox(width: 6),
-                ],
               ],
             ),
             const SizedBox(height: AppSpacing.md),
             _SummaryRow(
               icon: Icons.event_available_outlined,
-              label: 'En erken başlangıç',
+              label: 'Planlanan başlangıç',
               value: task.earliestStart,
             ),
             _SummaryRow(
@@ -178,6 +232,12 @@ class _HomeTaskSummaryDialog extends ConsumerWidget {
               label: 'Planlanan bitiş',
               value: task.dueDate,
             ),
+            if (task.actualStartDate.trim().isNotEmpty)
+              _SummaryRow(
+                icon: Icons.play_circle_outline,
+                label: 'Gerçekleşen başlangıç',
+                value: task.actualStartDate,
+              ),
             if (task.status == TaskStatus.done ||
                 task.actualDeliveryDate.trim().isNotEmpty)
               _SummaryRow(
@@ -198,73 +258,19 @@ class _HomeTaskSummaryDialog extends ConsumerWidget {
             if (task.description.trim().isNotEmpty) ...[
               const SizedBox(height: AppSpacing.sm),
               Text(
-                'Açıklama',
-                style: theme.textTheme.labelMedium?.copyWith(
-                  color: theme.colorScheme.onSurfaceVariant,
-                  fontWeight: FontWeight.w700,
-                ),
+                task.description.trim(),
+                style: theme.textTheme.bodyMedium,
               ),
-              const SizedBox(height: 2),
-              Text(task.description.trim(), style: theme.textTheme.bodyMedium),
             ],
           ],
         ),
       ),
       actions: [
         TextButton(
-          onPressed: () => Navigator.of(context).pop(),
+          onPressed: () => Navigator.pop(context),
           child: const Text('Kapat'),
         ),
       ],
-    );
-  }
-}
-
-class _StatusActionButton extends StatelessWidget {
-  const _StatusActionButton({
-    required this.label,
-    required this.selected,
-    required this.color,
-    required this.onTap,
-  });
-
-  final String label;
-  final bool selected;
-  final Color color;
-  final VoidCallback onTap;
-
-  @override
-  Widget build(BuildContext context) {
-    final ink = AppColors.statusInkOnCard(color);
-    return Material(
-      color: selected ? color.withValues(alpha: 0.22) : color.withValues(alpha: 0.08),
-      borderRadius: AppRadii.sm,
-      child: InkWell(
-        onTap: onTap,
-        borderRadius: AppRadii.sm,
-        child: Container(
-          padding: const EdgeInsets.symmetric(vertical: 10, horizontal: 4),
-          decoration: BoxDecoration(
-            borderRadius: AppRadii.sm,
-            border: Border.all(
-              color: selected ? color : color.withValues(alpha: 0.35),
-              width: selected ? 1.5 : 1,
-            ),
-          ),
-          child: Text(
-            label,
-            textAlign: TextAlign.center,
-            maxLines: 2,
-            overflow: TextOverflow.ellipsis,
-            style: TextStyle(
-              fontSize: 11,
-              fontWeight: selected ? FontWeight.w800 : FontWeight.w600,
-              color: ink,
-              height: 1.15,
-            ),
-          ),
-        ),
-      ),
     );
   }
 }
@@ -283,14 +289,14 @@ class _SummaryRow extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    final text = value.trim().isEmpty ? '—' : value.trim();
+    if (value.trim().isEmpty) return const SizedBox.shrink();
     return Padding(
       padding: const EdgeInsets.only(bottom: AppSpacing.xs),
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Icon(icon, size: 16, color: theme.colorScheme.onSurfaceVariant),
-          const SizedBox(width: AppSpacing.xs),
+          Icon(icon, size: 18, color: theme.colorScheme.onSurfaceVariant),
+          const SizedBox(width: AppSpacing.sm),
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
@@ -301,11 +307,67 @@ class _SummaryRow extends StatelessWidget {
                     color: theme.colorScheme.onSurfaceVariant,
                   ),
                 ),
-                Text(text, style: theme.textTheme.bodyMedium),
+                Text(value, style: theme.textTheme.bodyMedium),
               ],
             ),
           ),
         ],
+      ),
+    );
+  }
+}
+
+class _StatusActionButton extends StatelessWidget {
+  const _StatusActionButton({
+    required this.label,
+    required this.selected,
+    required this.color,
+    required this.onTap,
+    this.enabled = true,
+  });
+
+  final String label;
+  final bool selected;
+  final Color color;
+  final VoidCallback onTap;
+  final bool enabled;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final ink = !enabled
+        ? theme.disabledColor
+        : selected
+            ? AppColors.readableOn(color)
+            : theme.colorScheme.onSurfaceVariant;
+    return Opacity(
+      opacity: enabled ? 1 : 0.45,
+      child: Material(
+        color: selected ? color : Colors.transparent,
+        borderRadius: AppRadii.sm,
+        child: InkWell(
+          onTap: enabled ? onTap : null,
+          borderRadius: AppRadii.sm,
+          child: Container(
+            alignment: Alignment.center,
+            padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 4),
+            decoration: BoxDecoration(
+              borderRadius: AppRadii.sm,
+              border: Border.all(
+                color: selected ? color : color.withValues(alpha: 0.4),
+              ),
+            ),
+            child: Text(
+              label,
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+              style: theme.textTheme.labelSmall?.copyWith(
+                color: ink,
+                fontWeight: FontWeight.w700,
+              ),
+            ),
+          ),
+        ),
       ),
     );
   }

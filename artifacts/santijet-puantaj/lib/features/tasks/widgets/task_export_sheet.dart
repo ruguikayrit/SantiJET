@@ -141,6 +141,7 @@ class _TaskExportSheetState extends State<TaskExportSheet> {
           segments: const [
             ButtonSegment(value: 'all', label: Text('Tümü')),
             ButtonSegment(value: 'todo', label: Text('Yapılacak')),
+            ButtonSegment(value: 'started', label: Text('Başlandı')),
             ButtonSegment(value: 'doing', label: Text('Devam')),
             ButtonSegment(value: 'done', label: Text('Bitti')),
           ],
@@ -152,6 +153,7 @@ class _TaskExportSheetState extends State<TaskExportSheet> {
                   setState(() {
                     _status = switch (v) {
                       'todo' => TaskStatus.todo,
+                      'started' => TaskStatus.started,
                       'doing' => TaskStatus.doing,
                       'done' => TaskStatus.done,
                       _ => null,

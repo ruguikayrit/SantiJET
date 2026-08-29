@@ -443,9 +443,9 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
       context: context,
       title: 'Demo veriyi yükle',
       message:
-          'Demo Şantiye sıfırlanır ve yeniden kurulur: personel, puantaj, '
-          'sigortasız ekip, imalat (örnek plan önbelleği), görevler '
-          '(Satın Alma / Saha / Ofis / Görüşme), günlük raporlar ve yevmiyeli işler.',
+          'Demo Şantiye sıfırlanır: personel, puantaj, imalat/verim, plan '
+          'önbelleği, tüm görev durumları (Başlandı/Devam/Bitti + onay bekleyen), '
+          'acil çapraz filtre, rapor ve yevmiyeli.',
       confirmLabel: 'Yükle',
     );
     if (!ok || !mounted) return;

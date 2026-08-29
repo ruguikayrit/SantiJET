@@ -30,6 +30,7 @@ import '../../domain/entities/site_task.dart';
 import '../../domain/enums/task_status.dart';
 import '../../domain/catalogs/task_tags.dart';
 import '../../domain/permissions/role_degree.dart';
+import 'widgets/task_actual_date_sheet.dart';
 import 'widgets/task_calendar_panel.dart';
 import 'widgets/task_export_sheet.dart';
 
@@ -60,16 +61,73 @@ class _TasksScreenState extends ConsumerState<TasksScreen> {
     super.dispose();
   }
 
-  void _setTaskStatus(String id, TaskStatus status) {
-    ref.read(tasksProvider.notifier).setStatus(id, status);
-    _pinTimers[id]?.cancel();
-    _pinTimers.remove(id);
+  Future<void> _changeTaskStatus(SiteTask task, TaskStatus status) async {
+    final operator = ref.read(activeOperatorProvider);
+    if (operator == null) return;
+    if (task.status == status) return;
+    if (!TaskStatusRules.canTransition(task.status, status)) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(
+            'Bu geçiş yapılamaz. Sıra: Yapılacak → Başlandı → '
+            'Devam ediyor → Tamamlandı.',
+          ),
+        ),
+      );
+      return;
+    }
+
+    String? actualStart;
+    String? actualDelivery;
+    if (TaskStatusRules.needsActualDate(status)) {
+      final picked = await showTaskActualDateSheet(
+        context,
+        forStatus: status,
+      );
+      if (picked == null || !mounted) return;
+      if (status == TaskStatus.started) {
+        actualStart = picked;
+      } else {
+        actualDelivery = picked;
+      }
+    }
+
+    final result = ref.read(tasksProvider.notifier).applyOrRequestStatus(
+          id: task.id,
+          status: status,
+          actor: operator,
+          actualStartDate: actualStart,
+          actualDeliveryDate: actualDelivery,
+        );
+
+    if (!mounted) return;
+    if (result == 'rejected') {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Durum güncellenemedi.')),
+      );
+      return;
+    }
+    if (result == 'pending') {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(
+            'Durum değişikliği atayana onay için gönderildi'
+            '${task.assignerName.isNotEmpty ? ' (${task.assignerName})' : ''}.',
+          ),
+        ),
+      );
+      return;
+    }
+
+    _pinTimers[task.id]?.cancel();
+    _pinTimers.remove(task.id);
     if (status == TaskStatus.done) {
-      setState(() => _pinnedDoneIds.add(id));
-      _pinTimers[id] = Timer(const Duration(seconds: 2), () {
+      setState(() => _pinnedDoneIds.add(task.id));
+      _pinTimers[task.id] = Timer(const Duration(seconds: 2), () {
         if (!mounted) return;
-        setState(() => _pinnedDoneIds.remove(id));
-        _pinTimers.remove(id);
+        setState(() => _pinnedDoneIds.remove(task.id));
+        _pinTimers.remove(task.id);
         WidgetsBinding.instance.addPostFrameCallback((_) {
           if (!mounted || !_listScrollController.hasClients) return;
           _listScrollController.animateTo(
@@ -80,19 +138,19 @@ class _TasksScreenState extends ConsumerState<TasksScreen> {
         });
       });
     } else {
-      setState(() => _pinnedDoneIds.remove(id));
+      setState(() => _pinnedDoneIds.remove(task.id));
     }
   }
 
   int _displayRank(SiteTask t) {
     if (_pinnedDoneIds.contains(t.id) && t.status == TaskStatus.done) {
-      // Aktif bölümde kalır; 2 sn sonra alta iner.
       return 1;
     }
     return switch (t.status) {
       TaskStatus.todo => 0,
-      TaskStatus.doing => 1,
-      TaskStatus.done => 2,
+      TaskStatus.started => 1,
+      TaskStatus.doing => 2,
+      TaskStatus.done => 3,
     };
   }
 
@@ -232,7 +290,6 @@ class _TasksScreenState extends ConsumerState<TasksScreen> {
     final descCtrl = TextEditingController(text: existing?.description ?? '');
     var earliestStart = existing?.earliestStart ?? '';
     var latestDelivery = existing?.dueDate ?? '';
-    var status = existing?.status ?? TaskStatus.todo;
     var category = existing?.category.trim() ?? '';
     var tag = TaskTagCatalog.normalize(
       existing?.tag ?? TaskTagCatalog.insaat,
@@ -286,7 +343,7 @@ class _TasksScreenState extends ConsumerState<TasksScreen> {
               final due = PuantajDate.tryParse(latestDelivery);
               final value = await _pickDateField(
                 hostContext: ctx,
-                label: 'En erken başlangıç',
+                label: 'Planlanan başlangıç',
                 current: earliestStart,
                 lastDate: due,
               );
@@ -813,7 +870,7 @@ class _TasksScreenState extends ConsumerState<TasksScreen> {
                                 ),
                                 label: Text(
                                   earliestStart.isEmpty
-                                      ? 'En erken başlangıç'
+                                      ? 'Planlanan başlangıç'
                                       : earliestStart,
                                   overflow: TextOverflow.ellipsis,
                                 ),
@@ -974,20 +1031,6 @@ class _TasksScreenState extends ConsumerState<TasksScreen> {
                         ),
                       ],
                     ),
-                    const SizedBox(height: AppSpacing.sm),
-                    Text('Durum', style: theme.textTheme.labelLarge),
-                    const SizedBox(height: AppSpacing.xs),
-                    Wrap(
-                      spacing: AppSpacing.xs,
-                      children: [
-                        for (final s in TaskStatus.values)
-                          ChoiceChip(
-                            label: Text(s.label),
-                            selected: status == s,
-                            onSelected: (_) => setModal(() => status = s),
-                          ),
-                      ],
-                    ),
                     const SizedBox(height: AppSpacing.md),
                     FilledButton(
                       onPressed: () {
@@ -1015,7 +1058,7 @@ class _TasksScreenState extends ConsumerState<TasksScreen> {
                           ScaffoldMessenger.of(ctx).showSnackBar(
                             const SnackBar(
                               content: Text(
-                                'En erken başlangıç ve planlanan bitiş '
+                                'Planlanan başlangıç ve bitiş '
                                 'tarihlerini seçin.',
                               ),
                             ),
@@ -1061,7 +1104,6 @@ class _TasksScreenState extends ConsumerState<TasksScreen> {
             tag: tag,
             earliestStart: earliestStart,
             dueDate: latestDelivery,
-            status: status,
             assigner: operator,
             assignee: assignee!,
             photos: photos,
@@ -1076,7 +1118,6 @@ class _TasksScreenState extends ConsumerState<TasksScreen> {
               tag: tag,
               earliestStart: earliestStart,
               dueDate: latestDelivery,
-              status: status,
               photos: photos,
               assignee: assignee!.name,
               assigneePersonId: assignee!.id,
@@ -1089,7 +1130,9 @@ class _TasksScreenState extends ConsumerState<TasksScreen> {
             ),
           );
     } else {
-      _setTaskStatus(existing.id, status);
+      ref.read(tasksProvider.notifier).upsert(
+            existing.copyWith(photos: photos),
+          );
     }
   }
 
@@ -1142,6 +1185,7 @@ class _TasksScreenState extends ConsumerState<TasksScreen> {
 
   Color _statusColor(TaskStatus status) => switch (status) {
         TaskStatus.todo => AppColors.info,
+        TaskStatus.started => AppColors.partial,
         TaskStatus.doing => AppColors.warning,
         TaskStatus.done => AppColors.success,
       };
@@ -1574,6 +1618,7 @@ class _TasksScreenState extends ConsumerState<TasksScreen> {
                                     ),
                                     if (task.earliestStart.isNotEmpty ||
                                         task.dueDate.isNotEmpty ||
+                                        task.actualStartDate.trim().isNotEmpty ||
                                         task.actualDeliveryDate
                                             .trim()
                                             .isNotEmpty) ...[
@@ -1585,7 +1630,7 @@ class _TasksScreenState extends ConsumerState<TasksScreen> {
                                           if (task.earliestStart.isNotEmpty)
                                             _DateChip(
                                               label:
-                                                  'Başlangıç ${task.earliestStart}',
+                                                  'Planlanan başlangıç ${task.earliestStart}',
                                               color: AppColors.electricBlue,
                                             ),
                                           if (task.dueDate.isNotEmpty)
@@ -1593,6 +1638,14 @@ class _TasksScreenState extends ConsumerState<TasksScreen> {
                                               label:
                                                   'Planlanan bitiş ${task.dueDate}',
                                               color: AppColors.critical,
+                                            ),
+                                          if (task.actualStartDate
+                                              .trim()
+                                              .isNotEmpty)
+                                            _DateChip(
+                                              label:
+                                                  'Gerçekleşen başlangıç ${task.actualStartDate}',
+                                              color: AppColors.partial,
                                             ),
                                           if (task.actualDeliveryDate
                                               .trim()
@@ -1605,22 +1658,142 @@ class _TasksScreenState extends ConsumerState<TasksScreen> {
                                         ],
                                       ),
                                     ],
+                                    if (task.hasPendingStatusChange) ...[
+                                      const SizedBox(height: AppSpacing.sm),
+                                      Container(
+                                        width: double.infinity,
+                                        padding: const EdgeInsets.all(
+                                          AppSpacing.sm,
+                                        ),
+                                        decoration: BoxDecoration(
+                                          color: AppColors.warning
+                                              .withValues(alpha: 0.12),
+                                          borderRadius: AppRadii.sm,
+                                          border: Border.all(
+                                            color: AppColors.warning
+                                                .withValues(alpha: 0.4),
+                                          ),
+                                        ),
+                                        child: Column(
+                                          crossAxisAlignment:
+                                              CrossAxisAlignment.stretch,
+                                          children: [
+                                            Text(
+                                              iAmAssigner
+                                                  ? 'Onay bekleyen durum: ${task.pendingStatus!.label}'
+                                                  : 'Durum değişikliği onay bekliyor: ${task.pendingStatus!.label}',
+                                              style: theme.textTheme.labelMedium
+                                                  ?.copyWith(
+                                                fontWeight: FontWeight.w700,
+                                              ),
+                                            ),
+                                            if (iAmAssigner) ...[
+                                              const SizedBox(height: 6),
+                                              Row(
+                                                children: [
+                                                  Expanded(
+                                                    child: OutlinedButton(
+                                                      onPressed: () {
+                                                        ref
+                                                            .read(
+                                                              tasksProvider
+                                                                  .notifier,
+                                                            )
+                                                            .rejectPending(
+                                                              id: task.id,
+                                                              actor: operator,
+                                                            );
+                                                      },
+                                                      child: const Text('Reddet'),
+                                                    ),
+                                                  ),
+                                                  const SizedBox(width: 8),
+                                                  Expanded(
+                                                    child: FilledButton(
+                                                      onPressed: () {
+                                                        final pending =
+                                                            task.pendingStatus;
+                                                        final ok = ref
+                                                            .read(
+                                                              tasksProvider
+                                                                  .notifier,
+                                                            )
+                                                            .approvePending(
+                                                              id: task.id,
+                                                              actor: operator,
+                                                            );
+                                                        if (ok &&
+                                                            pending ==
+                                                                TaskStatus
+                                                                    .done) {
+                                                          setState(
+                                                            () =>
+                                                                _pinnedDoneIds
+                                                                    .add(
+                                                              task.id,
+                                                            ),
+                                                          );
+                                                          _pinTimers[task.id]
+                                                              ?.cancel();
+                                                          _pinTimers[task.id] =
+                                                              Timer(
+                                                            const Duration(
+                                                              seconds: 2,
+                                                            ),
+                                                            () {
+                                                              if (!mounted) {
+                                                                return;
+                                                              }
+                                                              setState(
+                                                                () =>
+                                                                    _pinnedDoneIds
+                                                                        .remove(
+                                                                  task.id,
+                                                                ),
+                                                              );
+                                                              _pinTimers
+                                                                  .remove(
+                                                                task.id,
+                                                              );
+                                                            },
+                                                          );
+                                                        }
+                                                      },
+                                                      child: const Text('Onayla'),
+                                                    ),
+                                                  ),
+                                                ],
+                                              ),
+                                            ],
+                                          ],
+                                        ),
+                                      ),
+                                    ],
                                     const SizedBox(height: AppSpacing.sm),
-                                    Row(
+                                    Wrap(
+                                      spacing: 6,
+                                      runSpacing: 6,
                                       children: [
-                                        for (final s in TaskStatus.values) ...[
-                                          Expanded(
+                                        for (final s in TaskStatus.values)
+                                          SizedBox(
+                                            width: (MediaQuery.sizeOf(context)
+                                                        .width -
+                                                    AppSpacing.md * 4 -
+                                                    6) /
+                                                2,
                                             child: _StatusSelectButton(
-                                              label: s.label,
+                                              label: s.shortLabel,
                                               selected: task.status == s,
                                               color: _statusColor(s),
+                                              enabled: task.status == s ||
+                                                  TaskStatusRules.canTransition(
+                                                    task.status,
+                                                    s,
+                                                  ),
                                               onTap: () =>
-                                                  _setTaskStatus(task.id, s),
+                                                  _changeTaskStatus(task, s),
                                             ),
                                           ),
-                                          if (s != TaskStatus.done)
-                                            const SizedBox(width: 6),
-                                        ],
                                       ],
                                     ),
                                     const SizedBox(height: AppSpacing.xs),
@@ -1738,45 +1911,53 @@ class _StatusSelectButton extends StatelessWidget {
     required this.selected,
     required this.color,
     required this.onTap,
+    this.enabled = true,
   });
 
   final String label;
   final bool selected;
   final Color color;
   final VoidCallback onTap;
+  final bool enabled;
 
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    final ink = selected
-        ? AppColors.readableOn(color)
-        : theme.colorScheme.onSurfaceVariant;
-    return Material(
-      color: selected ? color : Colors.transparent,
-      borderRadius: AppRadii.sm,
-      child: InkWell(
-        onTap: onTap,
+    final ink = !enabled
+        ? theme.disabledColor
+        : selected
+            ? AppColors.readableOn(color)
+            : theme.colorScheme.onSurfaceVariant;
+    return Opacity(
+      opacity: enabled ? 1 : 0.45,
+      child: Material(
+        color: selected ? color : Colors.transparent,
         borderRadius: AppRadii.sm,
-        child: Container(
-          alignment: Alignment.center,
-          padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 2),
-          decoration: BoxDecoration(
-            borderRadius: AppRadii.sm,
-            border: Border.all(
-              color: selected ? color : theme.dividerColor,
-              width: selected ? 1.5 : 1,
+        child: InkWell(
+          onTap: enabled ? onTap : null,
+          borderRadius: AppRadii.sm,
+          child: Container(
+            alignment: Alignment.center,
+            padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 2),
+            decoration: BoxDecoration(
+              borderRadius: AppRadii.sm,
+              border: Border.all(
+                color: selected
+                    ? color
+                    : (enabled ? color.withValues(alpha: 0.45) : theme.dividerColor),
+                width: selected ? 1.5 : 1,
+              ),
             ),
-          ),
-          child: FittedBox(
-            fit: BoxFit.scaleDown,
-            child: Text(
-              label,
-              maxLines: 1,
-              textAlign: TextAlign.center,
-              style: theme.textTheme.labelSmall?.copyWith(
-                color: ink,
-                fontWeight: FontWeight.w700,
-                height: 1.1,
+            child: FittedBox(
+              fit: BoxFit.scaleDown,
+              child: Text(
+                label,
+                maxLines: 1,
+                textAlign: TextAlign.center,
+                style: theme.textTheme.labelSmall?.copyWith(
+                  color: ink,
+                  fontWeight: selected ? FontWeight.w800 : FontWeight.w600,
+                ),
               ),
             ),
           ),

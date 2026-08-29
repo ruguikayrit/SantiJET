@@ -40,30 +40,110 @@ void _writeList(Box box, String key, List<Map<String, dynamic>> items) {
   box.put(key, jsonEncode(items));
 }
 
+DateTime _today() {
+  final n = DateTime.now();
+  return DateTime(n.year, n.month, n.day);
+}
+
+bool _isBeforeToday(String dateTr) {
+  final d = PuantajDate.tryParse(dateTr);
+  if (d == null) return false;
+  final day = DateTime(d.year, d.month, d.day);
+  return day.isBefore(_today());
+}
+
 class TasksNotifier extends StateNotifier<List<SiteTask>> {
-  TasksNotifier(this._box) : super(_load(_box));
+  TasksNotifier(this._box) : super(_loadAndPromote(_box));
 
   final Box _box;
   static const _key = 'items';
 
-  static List<SiteTask> _load(Box box) =>
-      _readList(box, _key).map(SiteTask.fromJson).toList();
+  static List<SiteTask> _loadAndPromote(Box box) {
+    final loaded =
+        _readList(box, _key).map(SiteTask.fromJson).toList(growable: false);
+    final promoted = _promoteStartedTasks(loaded);
+    final changed = promoted.length != loaded.length ||
+        List.generate(loaded.length, (i) => loaded[i] != promoted[i])
+            .any((e) => e);
+    if (changed) {
+      _writeList(box, _key, promoted.map((e) => e.toJson()).toList());
+    }
+    return List<SiteTask>.from(promoted);
+  }
+
+  /// Başlandı + gerçekleşen başlangıç dünden önceyse → Devam ediyor.
+  static List<SiteTask> _promoteStartedTasks(List<SiteTask> items) {
+    final now = DateTime.now();
+    return [
+      for (final t in items)
+        if (t.status == TaskStatus.started &&
+            (t.actualStartDate.trim().isEmpty ||
+                _isBeforeToday(t.actualStartDate)))
+          t.copyWith(
+            status: TaskStatus.doing,
+            updatedAt: now,
+          )
+        else
+          t,
+    ];
+  }
 
   void _persist() =>
       _writeList(_box, _key, state.map((e) => e.toJson()).toList());
 
-  /// Tamamlanınca gerçek teslim tarihi yazar; diğer durumlarda temizler.
-  static SiteTask applyStatus(SiteTask task, TaskStatus status) {
-    final actual = status == TaskStatus.done
-        ? (task.actualDeliveryDate.trim().isNotEmpty
-            ? task.actualDeliveryDate.trim()
-            : PuantajDate.today())
-        : '';
-    return task.copyWith(
-      status: status,
-      actualDeliveryDate: actual,
-      updatedAt: DateTime.now(),
-    );
+  void _replace(String id, SiteTask next) {
+    state = [
+      for (final t in state)
+        if (t.id == id) next else t,
+    ];
+    _persist();
+  }
+
+  /// Durum + gerçekleşen tarihleri uygular; onay kuyruğunu temizler.
+  static SiteTask applyStatusChange(
+    SiteTask task, {
+    required TaskStatus status,
+    String? actualStartDate,
+    String? actualDeliveryDate,
+  }) {
+    final now = DateTime.now();
+    var next = task.clearPending().copyWith(
+          status: status,
+          updatedAt: now,
+        );
+
+    if (status == TaskStatus.todo) {
+      next = next.copyWith(
+        actualStartDate: '',
+        actualDeliveryDate: '',
+      );
+    } else if (status == TaskStatus.started) {
+      final start = (actualStartDate ?? '').trim().isNotEmpty
+          ? actualStartDate!.trim()
+          : PuantajDate.today();
+      next = next.copyWith(
+        actualStartDate: start,
+        actualDeliveryDate: '',
+      );
+      if (_isBeforeToday(start)) {
+        next = next.copyWith(status: TaskStatus.doing);
+      }
+    } else if (status == TaskStatus.doing) {
+      next = next.copyWith(actualDeliveryDate: '');
+      // Başlangıç yoksa bugünü yaz (manuel Devam — nadir; sıra started→doing).
+      if (next.actualStartDate.trim().isEmpty) {
+        next = next.copyWith(actualStartDate: PuantajDate.today());
+      }
+    } else if (status == TaskStatus.done) {
+      final end = (actualDeliveryDate ?? '').trim().isNotEmpty
+          ? actualDeliveryDate!.trim()
+          : PuantajDate.today();
+      next = next.copyWith(actualDeliveryDate: end);
+      if (next.actualStartDate.trim().isEmpty) {
+        next = next.copyWith(actualStartDate: end);
+      }
+    }
+    return next;
   }
 
   SiteTask add({
@@ -76,7 +156,6 @@ class TasksNotifier extends StateNotifier<List<SiteTask>> {
     required String tag,
     String earliestStart = '',
     String dueDate = '',
-    TaskStatus status = TaskStatus.todo,
     List<TaskPhoto> photos = const [],
   }) {
     if (!RoleDegree.canAssignTasks(assigner)) {
@@ -91,7 +170,7 @@ class TasksNotifier extends StateNotifier<List<SiteTask>> {
       throw ArgumentError('Görev etiketi zorunludur (İnşaat / Elektrik / Mekanik).');
     }
     final now = DateTime.now();
-    var task = SiteTask(
+    final task = SiteTask(
       id: IdGen.make('tsk'),
       projectId: projectId,
       title: title.trim(),
@@ -104,12 +183,11 @@ class TasksNotifier extends StateNotifier<List<SiteTask>> {
       assignerName: assigner.name.trim(),
       earliestStart: earliestStart.trim(),
       dueDate: dueDate.trim(),
-      status: status,
+      status: TaskStatus.todo,
       photos: List<TaskPhoto>.from(photos),
       createdAt: now,
       updatedAt: now,
     );
-    task = applyStatus(task, status);
     state = [...state, task];
     _persist();
     return task;
@@ -126,23 +204,11 @@ class TasksNotifier extends StateNotifier<List<SiteTask>> {
     }
     final now = DateTime.now();
     final idx = state.indexWhere((t) => t.id == task.id);
-    final prev = idx >= 0 ? state[idx] : null;
-    var next = task.copyWith(
+    final next = task.copyWith(
       category: cat,
       tag: normalizedTag,
       updatedAt: now,
     );
-    if (next.status == TaskStatus.done) {
-      final existing = next.actualDeliveryDate.trim().isNotEmpty
-          ? next.actualDeliveryDate.trim()
-          : (prev?.actualDeliveryDate.trim() ?? '');
-      next = next.copyWith(
-        actualDeliveryDate:
-            existing.isNotEmpty ? existing : PuantajDate.today(),
-      );
-    } else {
-      next = next.copyWith(actualDeliveryDate: '');
-    }
     if (idx >= 0) {
       state = [
         for (var i = 0; i < state.length; i++)
@@ -155,14 +221,95 @@ class TasksNotifier extends StateNotifier<List<SiteTask>> {
     return next;
   }
 
+  /// Atayan: doğrudan uygular. Atanan: onay kuyruğuna yazar.
+  /// Dönüş: `applied` | `pending` | `rejected` (geçiş yasak / tarih yok).
+  String applyOrRequestStatus({
+    required String id,
+    required TaskStatus status,
+    required Person actor,
+    String? actualStartDate,
+    String? actualDeliveryDate,
+  }) {
+    final idx = state.indexWhere((t) => t.id == id);
+    if (idx < 0) return 'rejected';
+    final task = state[idx];
+    if (!TaskStatusRules.canTransition(task.status, status)) {
+      return 'rejected';
+    }
+    if (TaskStatusRules.needsActualDate(status)) {
+      final date = status == TaskStatus.started
+          ? (actualStartDate ?? '').trim()
+          : (actualDeliveryDate ?? '').trim();
+      if (date.isEmpty) return 'rejected';
+    }
+
+    final isAssigner = task.isAssigner(actor);
+    final isAssignee = task.isAssignee(actor);
+    if (!isAssigner && !isAssignee) return 'rejected';
+
+    if (isAssigner) {
+      _replace(
+        id,
+        applyStatusChange(
+          task,
+          status: status,
+          actualStartDate: actualStartDate,
+          actualDeliveryDate: actualDeliveryDate,
+        ),
+      );
+      return 'applied';
+    }
+
+    // Yalnız atanan → onay bekler.
+    final pending = task.copyWith(
+      pendingStatusRaw: status.storage,
+      pendingActualStartDate: (actualStartDate ?? '').trim(),
+      pendingActualDeliveryDate: (actualDeliveryDate ?? '').trim(),
+      updatedAt: DateTime.now(),
+    );
+    _replace(id, pending);
+    return 'pending';
+  }
+
+  bool approvePending({required String id, required Person actor}) {
+    final idx = state.indexWhere((t) => t.id == id);
+    if (idx < 0) return false;
+    final task = state[idx];
+    if (!task.isAssigner(actor)) return false;
+    final pending = task.pendingStatus;
+    if (pending == null) return false;
+    if (!TaskStatusRules.canTransition(task.status, pending)) {
+      _replace(id, task.clearPending());
+      return false;
+    }
+    _replace(
+      id,
+      applyStatusChange(
+        task,
+        status: pending,
+        actualStartDate: task.pendingActualStartDate,
+        actualDeliveryDate: task.pendingActualDeliveryDate,
+      ),
+    );
+    return true;
+  }
+
+  bool rejectPending({required String id, required Person actor}) {
+    final idx = state.indexWhere((t) => t.id == id);
+    if (idx < 0) return false;
+    final task = state[idx];
+    if (!task.isAssigner(actor)) return false;
+    if (!task.hasPendingStatusChange) return false;
+    _replace(id, task.clearPending().copyWith(updatedAt: DateTime.now()));
+    return true;
+  }
+
+  @Deprecated('applyOrRequestStatus kullanın')
   void setStatus(String id, TaskStatus status) {
     final idx = state.indexWhere((t) => t.id == id);
     if (idx < 0) return;
-    state = [
-      for (var i = 0; i < state.length; i++)
-        if (i == idx) applyStatus(state[i], status) else state[i],
-    ];
-    _persist();
+    if (!TaskStatusRules.canTransition(state[idx].status, status)) return;
+    _replace(id, applyStatusChange(state[idx], status: status));
   }
 
   void delete(String id) {
@@ -170,7 +317,6 @@ class TasksNotifier extends StateNotifier<List<SiteTask>> {
     _persist();
   }
 
-  /// Katalog yeniden adlandırıldığında görevlerdeki kategori etiketini günceller.
   int reassignCategory(String from, String to) {
     final oldName = from.trim();
     final newName = to.trim();
@@ -193,7 +339,6 @@ class TasksNotifier extends StateNotifier<List<SiteTask>> {
     return count;
   }
 
-  /// Katalogdan silinen kategoriyi görevlerden temizler.
   int clearCategory(String name) {
     final target = name.trim();
     if (target.isEmpty) return 0;
@@ -202,7 +347,6 @@ class TasksNotifier extends StateNotifier<List<SiteTask>> {
     final next = <SiteTask>[];
     for (final t in state) {
       if (t.category.trim() == target) {
-        // Kategori zorunlu — silinince varsayılan Saha'ya taşınır.
         next.add(t.copyWith(category: 'Saha', updatedAt: now));
         count++;
       } else {
@@ -221,7 +365,7 @@ class TasksNotifier extends StateNotifier<List<SiteTask>> {
   }
 
   void replaceAll(List<SiteTask> items) {
-    state = List<SiteTask>.from(items);
+    state = _promoteStartedTasks(List<SiteTask>.from(items));
     _persist();
   }
 }
@@ -231,7 +375,6 @@ final tasksProvider =
   return TasksNotifier(ref.watch(tasksBoxProvider));
 });
 
-/// Aktif operatörün görebileceği görevler (atanan veya atayan).
 final visibleProjectTasksProvider = Provider<List<SiteTask>>((ref) {
   final project = ref.watch(activeProjectProvider);
   final operator = ref.watch(activeOperatorProvider);
@@ -244,7 +387,6 @@ final visibleProjectTasksProvider = Provider<List<SiteTask>>((ref) {
       )
       .toList()
     ..sort((a, b) {
-      // Yapılacak → Devam → Tamamlandı (tamamlananlar en altta).
       final byStatus = a.status.index.compareTo(b.status.index);
       if (byStatus != 0) return byStatus;
       return (b.updatedAt ?? b.createdAt ?? DateTime(1970))
@@ -253,7 +395,6 @@ final visibleProjectTasksProvider = Provider<List<SiteTask>>((ref) {
   return list;
 });
 
-/// Ana sayfa — teslimatı 7 gün içinde (veya gecikmiş) açık görevler, aciliyet sırası.
 final upcomingUrgentTasksProvider = Provider<List<SiteTask>>((ref) {
   final tasks = ref.watch(visibleProjectTasksProvider);
   final now = DateTime.now();
@@ -278,7 +419,6 @@ final upcomingUrgentTasksProvider = Provider<List<SiteTask>>((ref) {
   return list;
 });
 
-/// Acil görevler — kategori başına adet (katalog sırası + özel kategoriler).
 typedef UrgentTaskCategorySummary = ({String category, int count});
 
 final urgentTaskCategorySummariesProvider =
@@ -308,7 +448,6 @@ final urgentTaskCategorySummariesProvider =
   return ordered;
 });
 
-/// Acil görevler — disiplin etiketi başına adet (İnşaat / Elektrik / Mekanik).
 typedef UrgentTaskTagSummary = ({String tag, int count});
 
 final urgentTaskTagSummariesProvider =

@@ -106,8 +106,9 @@ class DemoGuideBanner extends ConsumerWidget {
             ),
             const SizedBox(height: AppSpacing.xs),
             Text(
-              'İpucu: Görev AL ile İnşaat etiketli saha görevlerini PDF/Excel '
-              'alın. Haftalık raporda bölüm başlıklarına dokunarak açın.',
+              'İpucu: Acil görevde etiket↔kategori çapraz filtre. Görevlerde '
+              'Başlandı/Bitti tarih seçin; atayan olarak onay bekleyen satırı '
+              'görün. Ayarlar → Plan dosyası ile örnek paket indirin.',
               style: theme.textTheme.labelSmall?.copyWith(
                 color: AppColors.cardTextMuted,
               ),

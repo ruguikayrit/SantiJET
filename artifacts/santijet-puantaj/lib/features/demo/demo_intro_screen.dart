@@ -62,18 +62,18 @@ class _DemoIntroScreenState extends ConsumerState<DemoIntroScreen> {
       icon: Icons.task_alt_outlined,
       title: 'Görevler — disiplin etiketli saha işleri',
       body:
-          'Her görevde kategori ve etiket zorunlu (İnşaat / Elektrik / Mekanik). '
-          'Başlangıç ve bitiş tarihi seçilir; Bugün / Yarın kısayolu var. '
-          'Ana sayfada acil kartına dokunun. Görev AL ile etiket filtreli PDF/Excel.',
+          'Kategori + etiket zorunlu. Durum kartta: Yapılacak → Başlandı → '
+          'Devam → Tamamlandı. Başlandı/Bitti için Dün·Bugün·Özel tarih. '
+          'Atanan değişikliği atayana onay gider. Acil kartlar çapraz filtreli.',
       accent: AppColors.partial,
     ),
     _IntroPageData(
       icon: Icons.science_outlined,
       title: 'Demo ile keşfedin',
       body:
-          '“Demo Şantiye” tüm modülleri doldurur: personel, imalat, '
-          'puantaj, günlük rapor, yevmiyeli ve etiketli görevler. '
-          'Ana sayfa rehberinden modüllere geçin.',
+          '“Demo Şantiye” tümünü doldurur: puantaj, imalat/verim, rapor, '
+          'yevmiyeli, plan önbelleği (Ayarlar’dan örnek paket), görev durumları '
+          've onay bekleyen örnek. Ana sayfa rehberinden gezinin.',
       accent: AppColors.electricBlueLight,
     ),
   ];

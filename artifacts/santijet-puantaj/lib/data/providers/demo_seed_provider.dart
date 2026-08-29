@@ -790,6 +790,8 @@ class DemoSeedController {
       TaskStatus status,
       String description,
       bool withPhoto,
+      /// Atanan onay bekleyen durum isteği (yalnızca status=todo iken).
+      bool pendingStarted,
     })>[
       (
         title: 'Epoksi malzemesi siparişi',
@@ -801,6 +803,7 @@ class DemoSeedController {
         status: TaskStatus.todo,
         description: 'Zemin kat epoksi için 120 kg set.',
         withPhoto: false,
+        pendingStarted: false,
       ),
       (
         title: 'Havalandırma kanalı tedarik',
@@ -812,6 +815,7 @@ class DemoSeedController {
         status: TaskStatus.todo,
         description: 'Mekanik taşeron için SPIR kanal.',
         withPhoto: false,
+        pendingStarted: true,
       ),
       (
         title: 'Epoksi öncesi duvar hazırlık',
@@ -820,9 +824,10 @@ class DemoSeedController {
         assigneeName: 'Can Demir',
         startOffset: -1,
         dueOffset: 0,
-        status: TaskStatus.doing,
-        description: 'Yüzey zımpara ve astar kontrolü.',
+        status: TaskStatus.started,
+        description: 'Bugün başlandı — ertesi gün otomatik Devam olur.',
         withPhoto: true,
+        pendingStarted: false,
       ),
       (
         title: 'Liftlerin zımpara ve boyası',
@@ -832,8 +837,9 @@ class DemoSeedController {
         startOffset: -2,
         dueOffset: -1,
         status: TaskStatus.todo,
-        description: 'Asansör kabini yüzey hazırlığı.',
+        description: 'Asansör kabini yüzey hazırlığı · gecikmiş acil.',
         withPhoto: false,
+        pendingStarted: false,
       ),
       (
         title: '25 cm rulo uygulama',
@@ -845,6 +851,7 @@ class DemoSeedController {
         status: TaskStatus.todo,
         description: 'Çatı izolasyon rulo serimi.',
         withPhoto: false,
+        pendingStarted: false,
       ),
       (
         title: 'A blok temel demiri teslim',
@@ -856,6 +863,7 @@ class DemoSeedController {
         status: TaskStatus.todo,
         description: 'Nervürlü demir Ø16 sevk kabulü.',
         withPhoto: false,
+        pendingStarted: false,
       ),
       (
         title: 'Kolon demiri bağlama kontrolü',
@@ -867,6 +875,7 @@ class DemoSeedController {
         status: TaskStatus.todo,
         description: 'Bodrum 1. kısım bağlama denetimi.',
         withPhoto: false,
+        pendingStarted: false,
       ),
       (
         title: 'Haftalık ilerleme raporu',
@@ -878,39 +887,43 @@ class DemoSeedController {
         status: TaskStatus.todo,
         description: 'İşverene haftalık PDF gönderimi.',
         withPhoto: false,
+        pendingStarted: false,
       ),
       (
         title: 'Alt yüklenici koordinasyon',
         category: 'Görüşme',
         tag: TaskTagCatalog.insaat,
         assigneeName: 'Uğur Tiryaki',
-        startOffset: 3,
-        dueOffset: 6,
+        startOffset: 0,
+        dueOffset: 2,
         status: TaskStatus.todo,
         description: 'Demo Taşeron ile plan uyumu.',
         withPhoto: false,
+        pendingStarted: false,
       ),
       (
         title: 'Havalandırma tesisatı montaj',
         category: 'Saha',
         tag: TaskTagCatalog.mekanik,
         assigneeName: 'Serkan Mekanik',
-        startOffset: 2,
-        dueOffset: 7,
-        status: TaskStatus.todo,
-        description: 'Bodrum kanal bağlantıları.',
+        startOffset: -1,
+        dueOffset: 2,
+        status: TaskStatus.doing,
+        description: 'Dün başlandı → Devam ediyor (otomatik geçiş örneği).',
         withPhoto: false,
+        pendingStarted: false,
       ),
       (
         title: 'Klima santrali bağlantı',
         category: 'Saha',
         tag: TaskTagCatalog.mekanik,
         assigneeName: 'Serkan Mekanik',
-        startOffset: 4,
-        dueOffset: 8,
+        startOffset: 0,
+        dueOffset: 4,
         status: TaskStatus.todo,
         description: 'Çatı ünite elektrik-mekanik entegrasyon.',
         withPhoto: false,
+        pendingStarted: false,
       ),
       (
         title: 'Temel kalıp sökümü',
@@ -920,30 +933,57 @@ class DemoSeedController {
         startOffset: -5,
         dueOffset: -3,
         status: TaskStatus.done,
-        description: '[DEMO] Tamamlanan örnek görev.',
+        description: '[DEMO] Tamamlanan — gerçekleşen başlangıç/bitiş dolu.',
         withPhoto: true,
+        pendingStarted: false,
       ),
       (
         title: 'Zemin kat aydınlatma tesisatı',
         category: 'Saha',
         tag: TaskTagCatalog.elektrik,
         assigneeName: 'Murat Elektrik',
-        startOffset: 1,
-        dueOffset: 3,
+        startOffset: 0,
+        dueOffset: 2,
         status: TaskStatus.todo,
         description: 'Bodrum koridor armatür ve hat çekimi.',
         withPhoto: false,
+        pendingStarted: false,
       ),
       (
         title: 'Pano topraklama ölçümü',
         category: 'Saha',
         tag: TaskTagCatalog.elektrik,
         assigneeName: 'Murat Elektrik',
-        startOffset: 0,
-        dueOffset: 2,
+        startOffset: -1,
+        dueOffset: 1,
         status: TaskStatus.doing,
-        description: 'Ana dağıtım panosu toprak direnci.',
+        description: 'Ana dağıtım panosu toprak direnci · Devam ediyor.',
         withPhoto: true,
+        pendingStarted: false,
+      ),
+      (
+        title: 'Trafo odası kablo çekimi',
+        category: 'Saha',
+        tag: TaskTagCatalog.elektrik,
+        assigneeName: 'Murat Elektrik',
+        startOffset: 0,
+        dueOffset: 3,
+        status: TaskStatus.started,
+        description: 'Bugün başlandı — kartta Başlandı vurgusu.',
+        withPhoto: false,
+        pendingStarted: false,
+      ),
+      (
+        title: 'SPRİ kanal askı kontrolü',
+        category: 'Ofis',
+        tag: TaskTagCatalog.mekanik,
+        assigneeName: 'Sinan Çakır',
+        startOffset: 0,
+        dueOffset: 1,
+        status: TaskStatus.todo,
+        description: 'Ofis kategorisi + Mekanik etiket acil örneği.',
+        withPhoto: false,
+        pendingStarted: false,
       ),
     ];
 
@@ -960,7 +1000,7 @@ class DemoSeedController {
               ),
             ]
           : const <TaskPhoto>[];
-      tasks.add(
+      final created = tasks.add(
         projectId: projectId,
         title: spec.title,
         assigner: assigner,
@@ -970,9 +1010,45 @@ class DemoSeedController {
         tag: spec.tag,
         earliestStart: _day(spec.startOffset),
         dueDate: _day(spec.dueOffset),
-        status: spec.status,
         photos: photos,
       );
+      if (spec.pendingStarted && assignee.id != assigner.id) {
+        tasks.applyOrRequestStatus(
+          id: created.id,
+          status: TaskStatus.started,
+          actor: assignee,
+          actualStartDate: _day(0),
+        );
+        continue;
+      }
+      if (spec.status == TaskStatus.todo) continue;
+      if (spec.status == TaskStatus.started) {
+        tasks.applyOrRequestStatus(
+          id: created.id,
+          status: TaskStatus.started,
+          actor: assigner,
+          actualStartDate: _day(0),
+        );
+      } else if (spec.status == TaskStatus.doing) {
+        final withStart = TasksNotifier.applyStatusChange(
+          created,
+          status: TaskStatus.started,
+          actualStartDate: _day(-1),
+        );
+        tasks.upsert(withStart.copyWith(status: TaskStatus.doing));
+      } else if (spec.status == TaskStatus.done) {
+        final started = TasksNotifier.applyStatusChange(
+          created,
+          status: TaskStatus.started,
+          actualStartDate: _day(spec.dueOffset - 2),
+        );
+        final done = TasksNotifier.applyStatusChange(
+          started,
+          status: TaskStatus.done,
+          actualDeliveryDate: _day(spec.dueOffset),
+        );
+        tasks.upsert(done);
+      }
     }
   }
 
