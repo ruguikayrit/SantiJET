@@ -732,12 +732,12 @@ class _SummarySection extends StatelessWidget {
   }
 }
 
-/// Ana sayfa acil etiketleri — canlı modül renginin soft / pastel tonu.
+/// Ana sayfa acil etiketleri — soft pastel (2 kademe daha canlı).
 Color _softUrgentTagAccent(Color accent) {
   final hsl = HSLColor.fromColor(accent);
   return hsl
-      .withSaturation((hsl.saturation * 0.48).clamp(0.28, 0.58))
-      .withLightness((hsl.lightness * 0.28 + 0.58).clamp(0.52, 0.70))
+      .withSaturation((hsl.saturation * 0.76).clamp(0.40, 0.78))
+      .withLightness((hsl.lightness * 0.45 + 0.38).clamp(0.42, 0.62))
       .toColor();
 }
 
@@ -761,7 +761,7 @@ class _UrgentTagFilter extends StatelessWidget {
     final theme = Theme.of(context);
     // Soft ton: seçili = pastel dolgu + aynı mürekkep; seçili değil = outline.
     final ink = color;
-    final fill = selected ? color.withValues(alpha: 0.22) : Colors.transparent;
+    final fill = selected ? color.withValues(alpha: 0.28) : Colors.transparent;
 
     return Material(
       color: Colors.transparent,
