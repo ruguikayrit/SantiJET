@@ -290,7 +290,7 @@ Future<void> openYevmiyeliIsEditor(
 }
 
 /// Günlük puantaj — Yevmiyeli işler tablosu.
-class DayYevmiyeliSection extends ConsumerWidget {
+class DayYevmiyeliSection extends ConsumerStatefulWidget {
   const DayYevmiyeliSection({
     super.key,
     required this.date,
@@ -303,13 +303,30 @@ class DayYevmiyeliSection extends ConsumerWidget {
   final bool initiallyExpanded;
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
+  ConsumerState<DayYevmiyeliSection> createState() =>
+      _DayYevmiyeliSectionState();
+}
+
+class _DayYevmiyeliSectionState extends ConsumerState<DayYevmiyeliSection> {
+  /// null → henüz kullanıcı dokunmadı; başlangıç kayıt durumuna göre.
+  bool? _expandedOverride;
+
+  @override
+  void didUpdateWidget(covariant DayYevmiyeliSection oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (oldWidget.date != widget.date) {
+      _expandedOverride = null;
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
     final project = ref.watch(activeProjectProvider);
     if (project == null) return const SizedBox.shrink();
 
     final entries = ref
         .watch(yevmiyeliIsProvider)
-        .where((e) => e.projectId == project.id && e.date == date)
+        .where((e) => e.projectId == project.id && e.date == widget.date)
         .toList()
       ..sort((a, b) {
         final c = a.company.compareTo(b.company);
@@ -319,13 +336,18 @@ class DayYevmiyeliSection extends ConsumerWidget {
     final total =
         entries.fold<double>(0, (sum, e) => sum + e.yevmiyeCount);
 
+    final initiallyOpen = widget.initiallyExpanded && entries.isNotEmpty;
+    final expanded = _expandedOverride ?? initiallyOpen;
+
     return SJCard.builder(
       padding: EdgeInsets.zero,
       builder: (context, cardTheme) {
         return Theme(
           data: cardTheme.copyWith(dividerColor: Colors.transparent),
           child: ExpansionTile(
-            initiallyExpanded: initiallyExpanded && entries.isNotEmpty,
+            key: ValueKey('yevmiyeli-${widget.date}-$initiallyOpen'),
+            initiallyExpanded: initiallyOpen,
+            onExpansionChanged: (v) => setState(() => _expandedOverride = v),
             tilePadding: const EdgeInsets.symmetric(horizontal: AppSpacing.md),
             childrenPadding: const EdgeInsets.fromLTRB(
               AppSpacing.md,
@@ -351,16 +373,27 @@ class DayYevmiyeliSection extends ConsumerWidget {
                 color: cardTheme.colorScheme.onSurfaceVariant,
               ),
             ),
-            trailing: IconButton(
-              tooltip: 'Yevmiyeli iş ekle',
-              onPressed: () => openYevmiyeliIsEditor(
-                context,
-                ref,
-                projectId: project.id,
-                date: date,
-                people: people,
-              ),
-              icon: const Icon(Icons.add_circle_outline),
+            trailing: Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                if (expanded)
+                  IconButton(
+                    tooltip: 'Yevmiyeli iş ekle',
+                    visualDensity: VisualDensity.compact,
+                    onPressed: () => openYevmiyeliIsEditor(
+                      context,
+                      ref,
+                      projectId: project.id,
+                      date: widget.date,
+                      people: widget.people,
+                    ),
+                    icon: const Icon(Icons.add_circle_outline),
+                  ),
+                Icon(
+                  expanded ? Icons.expand_less : Icons.expand_more,
+                  color: cardTheme.colorScheme.onSurfaceVariant,
+                ),
+              ],
             ),
             children: [
               if (entries.isEmpty)
@@ -386,8 +419,8 @@ class DayYevmiyeliSection extends ConsumerWidget {
                           context,
                           ref,
                           projectId: project.id,
-                          date: date,
-                          people: people,
+                          date: widget.date,
+                          people: widget.people,
                           existing: entries[i],
                         ),
                       ),

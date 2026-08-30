@@ -1709,17 +1709,18 @@ class _DayTeamsSection extends ConsumerWidget {
                   '$totalWorkers personel',
                   style: theme.textTheme.labelSmall,
                 ),
-              IconButton(
-                tooltip: 'Ekip ekle',
-                visualDensity: VisualDensity.compact,
-                padding: EdgeInsets.zero,
-                constraints: const BoxConstraints(
-                  minWidth: 36,
-                  minHeight: 36,
+              if (expanded)
+                IconButton(
+                  tooltip: 'Ekip ekle',
+                  visualDensity: VisualDensity.compact,
+                  padding: EdgeInsets.zero,
+                  constraints: const BoxConstraints(
+                    minWidth: 36,
+                    minHeight: 36,
+                  ),
+                  onPressed: openAdd,
+                  icon: const Icon(Icons.add_circle_outline, size: 22),
                 ),
-                onPressed: openAdd,
-                icon: const Icon(Icons.add_circle_outline, size: 22),
-              ),
             ],
           ),
           children: bodyChildren,

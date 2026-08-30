@@ -18,6 +18,7 @@ class SantijetHeader extends StatelessWidget {
     this.showNotification = false,
     this.showAvatar = true,
     this.avatarInitial,
+    this.actionsBeforeSettings,
   });
 
   /// Ana sayfa ürün adı — wordmark altı (%50 büyütülmüş, Demir homeDemirScale).
@@ -44,6 +45,9 @@ class SantijetHeader extends StatelessWidget {
   final bool showAvatar;
   final String? avatarInitial;
 
+  /// Ayarlar (dişli) soluna eklenen aksiyonlar — ör. çıktı / indirme.
+  final List<Widget>? actionsBeforeSettings;
+
   @override
   Widget build(BuildContext context) {
     if (showWordmark) {
@@ -58,6 +62,7 @@ class SantijetHeader extends StatelessWidget {
           showNotification: showNotification,
           showAvatar: showAvatar,
           avatarInitial: avatarInitial,
+          actionsBeforeSettings: actionsBeforeSettings,
         ),
       );
     }
@@ -67,6 +72,7 @@ class SantijetHeader extends StatelessWidget {
       showNotification: showNotification,
       showAvatar: showAvatar,
       avatarInitial: avatarInitial,
+      actionsBeforeSettings: actionsBeforeSettings,
     );
   }
 }
@@ -77,21 +83,32 @@ class _HeaderActions extends StatelessWidget {
     required this.showAvatar,
     this.avatarInitial,
     this.onDarkBand = false,
+    this.actionsBeforeSettings,
   });
 
   final bool showNotification;
   final bool showAvatar;
   final String? avatarInitial;
   final bool onDarkBand;
+  final List<Widget>? actionsBeforeSettings;
 
   @override
   Widget build(BuildContext context) {
-    if (!showNotification && !showAvatar) return const SizedBox.shrink();
+    final leading = actionsBeforeSettings ?? const <Widget>[];
+    if (!showNotification && !showAvatar && leading.isEmpty) {
+      return const SizedBox.shrink();
+    }
 
     return Row(
       mainAxisSize: MainAxisSize.min,
       crossAxisAlignment: CrossAxisAlignment.center,
       children: [
+        for (var i = 0; i < leading.length; i++) ...[
+          if (i > 0) const SizedBox(width: SantijetHeader.actionGap),
+          leading[i],
+        ],
+        if (leading.isNotEmpty && (showNotification || showAvatar))
+          const SizedBox(width: SantijetHeader.actionGap),
         if (showNotification)
           _HeaderNotificationButton(onDarkBand: onDarkBand),
         if (showNotification && showAvatar)
@@ -102,6 +119,54 @@ class _HeaderActions extends StatelessWidget {
             onDarkBand: onDarkBand,
           ),
       ],
+    );
+  }
+}
+
+/// Sağ üst çıktı / indirme — ayarlar dişlisinin solunda kullanılır.
+class SantijetHeaderDownloadButton extends StatelessWidget {
+  const SantijetHeaderDownloadButton({
+    required this.onPressed,
+    this.tooltip = 'Çıktı al',
+    this.onDarkBand = false,
+    super.key,
+  });
+
+  final VoidCallback onPressed;
+  final String tooltip;
+  final bool onDarkBand;
+
+  @override
+  Widget build(BuildContext context) {
+    // Sayfa başlığı siyah şerit / koyu chrome → açık ikon (ayarlar dişlisi ile aynı).
+    final lightIcon = onDarkBand ||
+        Theme.of(context).brightness == Brightness.light ||
+        AppColors.useDarkChrome;
+    final iconColor = lightIcon
+        ? Colors.white.withValues(alpha: 0.88)
+        : AppColors.inkMutedFor(Theme.of(context).brightness);
+
+    return Semantics(
+      label: tooltip,
+      button: true,
+      child: Tooltip(
+        message: tooltip,
+        child: SizedBox(
+          width: SantijetHeader.actionSize,
+          height: SantijetHeader.actionSize,
+          child: IconButton(
+            onPressed: onPressed,
+            padding: EdgeInsets.zero,
+            visualDensity: VisualDensity.compact,
+            constraints: const BoxConstraints.tightFor(
+              width: SantijetHeader.actionSize,
+              height: SantijetHeader.actionSize,
+            ),
+            iconSize: SantijetHeader.actionIconSize,
+            icon: Icon(Icons.download_outlined, color: iconColor),
+          ),
+        ),
+      ),
     );
   }
 }
@@ -184,12 +249,14 @@ class _PageBrandHeader extends StatelessWidget {
     required this.showAvatar,
     this.subtitle,
     this.avatarInitial,
+    this.actionsBeforeSettings,
   });
 
   final String? subtitle;
   final bool showNotification;
   final bool showAvatar;
   final String? avatarInitial;
+  final List<Widget>? actionsBeforeSettings;
 
   @override
   Widget build(BuildContext context) {
@@ -265,6 +332,7 @@ class _PageBrandHeader extends StatelessWidget {
             showAvatar: showAvatar,
             avatarInitial: avatarInitial,
             onDarkBand: onDarkChrome,
+            actionsBeforeSettings: actionsBeforeSettings,
           ),
         ],
       ),
@@ -284,17 +352,22 @@ class _WordmarkHeader extends StatelessWidget {
     required this.showNotification,
     required this.showAvatar,
     this.avatarInitial,
+    this.actionsBeforeSettings,
   });
 
   final bool showNotification;
   final bool showAvatar;
   final String? avatarInitial;
+  final List<Widget>? actionsBeforeSettings;
 
   @override
   Widget build(BuildContext context) {
     final wordmarkHeight = _BrandTitleMetrics.wordmarkHeightOf(context);
     final productIndent = _BrandTitleMetrics.productIndentOf(context);
     final ink = AppColors.inkFor(Theme.of(context).brightness);
+    final hasActions = showNotification ||
+        showAvatar ||
+        (actionsBeforeSettings?.isNotEmpty ?? false);
 
     return Row(
       crossAxisAlignment: CrossAxisAlignment.center,
@@ -322,12 +395,13 @@ class _WordmarkHeader extends StatelessWidget {
             ],
           ),
         ),
-        if (showNotification || showAvatar) ...[
+        if (hasActions) ...[
           const SizedBox(width: SantijetHeader._homeBrandToActionsGap),
           _HeaderActions(
             showNotification: showNotification,
             showAvatar: showAvatar,
             avatarInitial: avatarInitial,
+            actionsBeforeSettings: actionsBeforeSettings,
           ),
         ],
       ],

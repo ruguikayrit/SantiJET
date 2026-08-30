@@ -402,7 +402,9 @@ class _HomeUrgentTasksSectionState extends State<_HomeUrgentTasksSection> {
                     child: _UrgentTagFilter(
                       label: TaskTagCatalog.cardLabel(summary.tag),
                       count: summary.count,
-                      color: TaskTagCatalog.accentFor(summary.tag),
+                      color: _softUrgentTagAccent(
+                        TaskTagCatalog.accentFor(summary.tag),
+                      ),
                       selected: _selectedTag == summary.tag,
                       onTap: () {
                         setState(() {
@@ -730,6 +732,15 @@ class _SummarySection extends StatelessWidget {
   }
 }
 
+/// Ana sayfa acil etiketleri — canlı modül renginin soft / pastel tonu.
+Color _softUrgentTagAccent(Color accent) {
+  final hsl = HSLColor.fromColor(accent);
+  return hsl
+      .withSaturation((hsl.saturation * 0.48).clamp(0.28, 0.58))
+      .withLightness((hsl.lightness * 0.28 + 0.58).clamp(0.52, 0.70))
+      .toColor();
+}
+
 class _UrgentTagFilter extends StatelessWidget {
   const _UrgentTagFilter({
     required this.label,
@@ -748,9 +759,9 @@ class _UrgentTagFilter extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    // Seçili: etiket rengi dolgu + okunaklı mürekkep.
-    // Seçili değil: dolgusuz; kenarlık / yazı / sayı o etiketin kendi rengi.
-    final ink = selected ? AppColors.readableOn(color) : color;
+    // Soft ton: seçili = pastel dolgu + aynı mürekkep; seçili değil = outline.
+    final ink = color;
+    final fill = selected ? color.withValues(alpha: 0.22) : Colors.transparent;
 
     return Material(
       color: Colors.transparent,
@@ -761,11 +772,11 @@ class _UrgentTagFilter extends StatelessWidget {
           duration: const Duration(milliseconds: 160),
           padding: const EdgeInsets.fromLTRB(10, 10, 10, 8),
           decoration: BoxDecoration(
-            color: selected ? color : Colors.transparent,
+            color: fill,
             borderRadius: AppRadii.sm,
             border: Border.all(
-              color: color,
-              width: selected ? 2 : 1.5,
+              color: color.withValues(alpha: selected ? 0.9 : 0.7),
+              width: selected ? 1.5 : 1.25,
             ),
           ),
           child: Column(
@@ -777,11 +788,9 @@ class _UrgentTagFilter extends StatelessWidget {
                     width: 8,
                     height: 8,
                     decoration: BoxDecoration(
-                      color: selected ? ink : color,
+                      color: selected ? ink : Colors.transparent,
                       shape: BoxShape.circle,
-                      border: selected
-                          ? null
-                          : Border.all(color: color, width: 1.5),
+                      border: Border.all(color: ink, width: 1.5),
                     ),
                   ),
                   const SizedBox(width: 6),

@@ -1300,22 +1300,9 @@ class _TasksScreenState extends ConsumerState<TasksScreen> {
 
     return Scaffold(
       backgroundColor: AppColors.canvas,
-      floatingActionButton: Column(
-        mainAxisSize: MainAxisSize.min,
-        crossAxisAlignment: CrossAxisAlignment.end,
-        children: [
-          FloatingActionButton.extended(
-            heroTag: 'task_export',
-            onPressed: () => _openExportSheet(
-              project: project,
-              tasks: tasks,
-            ),
-            icon: const Icon(Icons.ios_share_outlined),
-            label: const Text('Görev AL'),
-          ),
-          if (operator != null) ...[
-            const SizedBox(height: AppSpacing.sm),
-            FloatingActionButton.extended(
+      floatingActionButton: operator == null
+          ? null
+          : FloatingActionButton.extended(
               heroTag: 'task_assign',
               onPressed: canAssign
                   ? () => _openEditor(operator: operator, people: people)
@@ -1332,15 +1319,23 @@ class _TasksScreenState extends ConsumerState<TasksScreen> {
               icon: const Icon(Icons.add_task_outlined),
               label: const Text('Görev Ata'),
             ),
-          ],
-        ],
-      ),
       body: SafeArea(
         bottom: false,
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
-            const SantijetHeader(subtitle: 'Görevler'),
+            SantijetHeader(
+              subtitle: 'Görevler',
+              actionsBeforeSettings: [
+                SantijetHeaderDownloadButton(
+                  tooltip: 'Görev AL',
+                  onPressed: () => _openExportSheet(
+                    project: project,
+                    tasks: tasks,
+                  ),
+                ),
+              ],
+            ),
             if (operator == null)
               Expanded(
                 child: SJEmptyState(
