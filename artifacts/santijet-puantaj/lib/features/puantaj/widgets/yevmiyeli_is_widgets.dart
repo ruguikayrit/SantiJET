@@ -365,14 +365,6 @@ class _DayYevmiyeliSectionState extends ConsumerState<DayYevmiyeliSection> {
                 fontWeight: FontWeight.w700,
               ),
             ),
-            subtitle: Text(
-              entries.isEmpty
-                  ? 'Kayıt yok'
-                  : '${entries.length} kayıt · ${formatYevmiyeCount(total)} yv',
-              style: cardTheme.textTheme.labelSmall?.copyWith(
-                color: cardTheme.colorScheme.onSurfaceVariant,
-              ),
-            ),
             trailing: Icon(
               expanded ? Icons.expand_less : Icons.expand_more,
               color: cardTheme.colorScheme.onSurfaceVariant,

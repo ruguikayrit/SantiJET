@@ -68,23 +68,12 @@ class VerimScreen extends ConsumerWidget {
               AppSpacing.xxl,
             ),
             children: [
-              Text(
-                'İmalat bazlı verim',
-                style: theme.textTheme.titleMedium,
-              ),
-              const SizedBox(height: AppSpacing.xs),
-              Text(
-                'Mavi çubuklar: tamamlanma (metraj · süre · AG)\n'
-                'Yeşil rozet: birim verim — (gerçek metraj / gerçek AG) ÷ (plan metraj / plan AG)',
-                style: theme.textTheme.bodySmall,
-              ),
               if (teamSummaries.length > 1) ...[
-                const SizedBox(height: AppSpacing.md),
                 Text('Ekip özeti', style: theme.textTheme.titleSmall),
                 const SizedBox(height: AppSpacing.sm),
                 _TeamVerimSummaryStrip(summaries: teamSummaries),
+                const SizedBox(height: AppSpacing.md),
               ],
-              const SizedBox(height: AppSpacing.md),
               Text('İmalat satırları', style: theme.textTheme.titleSmall),
               const SizedBox(height: AppSpacing.sm),
               for (final row in rows) ...[
