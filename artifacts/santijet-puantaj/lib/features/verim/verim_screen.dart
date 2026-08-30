@@ -236,10 +236,6 @@ class _VerimRowCard extends StatelessWidget {
               ],
               const SizedBox(height: AppSpacing.sm),
               ProductionTripleProgress(metrics: metrics),
-              if (efficiency != null) ...[
-                const SizedBox(height: AppSpacing.sm),
-                UnitEfficiencyBar(efficiency: efficiency),
-              ],
             ],
           );
         },
