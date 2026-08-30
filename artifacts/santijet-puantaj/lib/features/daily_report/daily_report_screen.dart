@@ -1708,17 +1708,20 @@ class _DailyReportScreenState extends ConsumerState<DailyReportScreen> {
 
     return Scaffold(
       backgroundColor: AppColors.canvas,
-      floatingActionButton: FloatingActionButton.extended(
-        onPressed: _openExportSheet,
-        icon: const Icon(Icons.ios_share_outlined),
-        label: const Text('Rapor AL'),
-      ),
       body: SafeArea(
         bottom: false,
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
-            const SantijetHeader(subtitle: 'Rapor'),
+            SantijetHeader(
+              subtitle: 'Rapor',
+              actionsBeforeSettings: [
+                SantijetHeaderDownloadButton(
+                  tooltip: 'Rapor AL',
+                  onPressed: _openExportSheet,
+                ),
+              ],
+            ),
             _reportModeTabs(theme),
             if (_viewMode == _ReportViewMode.daily) ...[
             Padding(
