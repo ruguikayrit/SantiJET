@@ -230,13 +230,16 @@ class _HeaderRow extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Row(
-      children: [
-        for (var i = 0; i < cells.length; i++) ...[
-          if (i > 0) const SizedBox(width: 4),
-          Expanded(flex: cells[i].flex, child: cells[i]),
+    return IntrinsicHeight(
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          for (var i = 0; i < cells.length; i++) ...[
+            if (i > 0) const SizedBox(width: 4),
+            Expanded(flex: cells[i].flex, child: cells[i]),
+          ],
         ],
-      ],
+      ),
     );
   }
 }
@@ -258,17 +261,19 @@ class _HeaderCell extends StatelessWidget {
       ),
       child: Padding(
         padding: const EdgeInsets.symmetric(horizontal: 2, vertical: 5),
-        child: Text(
-          label,
-          textAlign: TextAlign.center,
-          maxLines: 2,
-          overflow: TextOverflow.ellipsis,
-          style: const TextStyle(
-            color: AppColors.inkPrimary,
-            fontWeight: FontWeight.w700,
-            fontSize: 9,
-            letterSpacing: 0.1,
-            height: 1.15,
+        child: Center(
+          child: Text(
+            label,
+            textAlign: TextAlign.center,
+            maxLines: 2,
+            overflow: TextOverflow.ellipsis,
+            style: const TextStyle(
+              color: AppColors.inkPrimary,
+              fontWeight: FontWeight.w700,
+              fontSize: 9,
+              letterSpacing: 0.1,
+              height: 1.15,
+            ),
           ),
         ),
       ),
@@ -276,7 +281,40 @@ class _HeaderCell extends StatelessWidget {
   }
 }
 
-/// Özet chip satırı — tablonun üstünde (puantaj durumlarının tamamı).
+/// Günlük rapor ekranı — Personel + Ekip tabloları (durum chip özeti yok).
+class AttendanceSummaryTables extends StatelessWidget {
+  const AttendanceSummaryTables({super.key, required this.snapshot});
+
+  final DailyReportAttendanceSnapshot snapshot;
+
+  @override
+  Widget build(BuildContext context) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        Text(
+          'Personel',
+          style: Theme.of(context).textTheme.titleSmall?.copyWith(
+                fontWeight: FontWeight.w700,
+              ),
+        ),
+        const SizedBox(height: AppSpacing.xs),
+        AttendanceSummaryTable(snapshot: snapshot),
+        const SizedBox(height: AppSpacing.md),
+        Text(
+          'Ekip',
+          style: Theme.of(context).textTheme.titleSmall?.copyWith(
+                fontWeight: FontWeight.w700,
+              ),
+        ),
+        const SizedBox(height: AppSpacing.xs),
+        _TeamSummaryTable(snapshot: snapshot),
+      ],
+    );
+  }
+}
+
+/// PDF / ekran dışı kullanım — durum chip satırı + tablolar.
 class AttendanceSummaryChips extends StatelessWidget {
   const AttendanceSummaryChips({super.key, required this.snapshot});
 
@@ -361,23 +399,7 @@ class AttendanceSummaryChips extends StatelessWidget {
           ),
         ),
         const SizedBox(height: AppSpacing.sm),
-        Text(
-          'Personel',
-          style: Theme.of(context).textTheme.titleSmall?.copyWith(
-                fontWeight: FontWeight.w700,
-              ),
-        ),
-        const SizedBox(height: AppSpacing.xs),
-        AttendanceSummaryTable(snapshot: snapshot),
-        const SizedBox(height: AppSpacing.md),
-        Text(
-          'Ekip',
-          style: Theme.of(context).textTheme.titleSmall?.copyWith(
-                fontWeight: FontWeight.w700,
-              ),
-        ),
-        const SizedBox(height: AppSpacing.xs),
-        _TeamSummaryTable(snapshot: snapshot),
+        AttendanceSummaryTables(snapshot: snapshot),
       ],
     );
   }
@@ -422,8 +444,8 @@ class _TeamSummaryTable extends StatelessWidget {
               padding: EdgeInsets.fromLTRB(8, 6, 8, 4),
               child: _HeaderRow(
                 cells: [
-                  _HeaderCell('FİRMA ADI', flex: 3),
-                  _HeaderCell('EKİP ADI', flex: 3),
+                  _HeaderCell('FİRMA\nADI', flex: 3),
+                  _HeaderCell('EKİP\nADI', flex: 3),
                   _HeaderCell('GÜNLÜK\nÇALIŞAN', flex: 2),
                 ],
               ),

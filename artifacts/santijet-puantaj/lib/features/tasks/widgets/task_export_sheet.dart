@@ -100,14 +100,7 @@ class _TaskExportSheetState extends State<TaskExportSheet> {
           ),
         ),
         const SizedBox(height: AppSpacing.md),
-        Text('Etiket (disiplin)', style: theme.textTheme.labelLarge),
-        const SizedBox(height: AppSpacing.xs),
-        Text(
-          'Örnek: yalnızca İnşaat saha görevlerini seçip PDF veya Excel alın.',
-          style: theme.textTheme.bodySmall?.copyWith(
-            color: theme.colorScheme.onSurfaceVariant,
-          ),
-        ),
+        Text('Etiket', style: theme.textTheme.labelLarge),
         const SizedBox(height: AppSpacing.sm),
         Wrap(
           spacing: AppSpacing.xs,
@@ -138,13 +131,34 @@ class _TaskExportSheetState extends State<TaskExportSheet> {
             foregroundColor: theme.colorScheme.onSurfaceVariant,
             selectedForegroundColor: theme.colorScheme.onSecondary,
             selectedBackgroundColor: theme.colorScheme.secondary,
+            textStyle: theme.textTheme.labelLarge?.copyWith(
+              fontSize: (theme.textTheme.labelLarge?.fontSize ?? 14) - 2,
+              height: 1.1,
+            ),
+            visualDensity: VisualDensity.compact,
+            padding: const EdgeInsets.symmetric(horizontal: 6),
           ),
-          segments: const [
-            ButtonSegment(value: 'all', label: Text('Tümü')),
-            ButtonSegment(value: 'todo', label: Text('Yapılacak')),
-            ButtonSegment(value: 'started', label: Text('Başlandı')),
-            ButtonSegment(value: 'doing', label: Text('Devam')),
-            ButtonSegment(value: 'done', label: Text('Bitti')),
+          segments: [
+            ButtonSegment(
+              value: 'all',
+              label: Text('Tümü', style: _statusSegStyle(theme), maxLines: 1),
+            ),
+            ButtonSegment(
+              value: 'todo',
+              label: Text('Yapılacak', style: _statusSegStyle(theme), maxLines: 1),
+            ),
+            ButtonSegment(
+              value: 'started',
+              label: Text('Başlandı', style: _statusSegStyle(theme), maxLines: 1),
+            ),
+            ButtonSegment(
+              value: 'doing',
+              label: Text('Devam', style: _statusSegStyle(theme), maxLines: 1),
+            ),
+            ButtonSegment(
+              value: 'done',
+              label: Text('Bitti', style: _statusSegStyle(theme), maxLines: 1),
+            ),
           ],
           selected: {_status == null ? 'all' : _status!.name},
           onSelectionChanged: _busy
@@ -202,6 +216,14 @@ class _TaskExportSheetState extends State<TaskExportSheet> {
       ],
     );
   }
+}
+
+TextStyle? _statusSegStyle(ThemeData theme) {
+  final base = theme.textTheme.labelLarge;
+  return base?.copyWith(
+    fontSize: (base.fontSize ?? 14) - 2,
+    height: 1.1,
+  );
 }
 
 class _TagChoice extends StatelessWidget {

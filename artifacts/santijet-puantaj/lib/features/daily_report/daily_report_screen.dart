@@ -22,6 +22,7 @@ import '../../data/providers/app_data_provider.dart';
 import '../../data/providers/company_provider.dart';
 import '../../data/providers/daily_report_export_sections_provider.dart';
 import '../../data/providers/daily_report_provider.dart';
+import '../../data/providers/period_site_report_export_sections_provider.dart';
 import '../../data/providers/period_site_report_provider.dart';
 import '../../data/services/daily_report_pdf_service.dart';
 import '../../data/services/period_site_report_builder.dart';
@@ -37,6 +38,7 @@ import 'widgets/attendance_summary_table.dart';
 import 'widgets/daily_report_entry_page.dart';
 import 'widgets/daily_report_export_sections_sheet.dart';
 import 'widgets/monthly_report_view.dart';
+import 'widgets/period_report_export_sections_sheet.dart';
 import 'widgets/weather_compact_card.dart';
 import 'widgets/weekly_report_view.dart';
 
@@ -526,60 +528,37 @@ class _DailyReportScreenState extends ConsumerState<DailyReportScreen> {
     if (report == null) return;
 
     final periodLabel = report.periodLabel;
-    final choice = await SJModal.showSheet<String>(
-      context: context,
+    final choice = await showPeriodReportExportSectionsPicker(
+      context,
+      ref,
       title: 'Rapor AL',
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        crossAxisAlignment: CrossAxisAlignment.stretch,
-        children: [
-          Text(
-            '${project.name} · ${report.rangeLabel}',
-            style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                  color: Theme.of(context).colorScheme.onSurfaceVariant,
-                ),
-          ),
-          const SizedBox(height: AppSpacing.sm),
-          Text(
-            '$periodLabel rapor: personel + ekip puantajı, imalat ve verim.',
-            style: Theme.of(context).textTheme.bodySmall,
-          ),
-          const SizedBox(height: AppSpacing.md),
-          FilledButton.icon(
-            onPressed: () => Navigator.pop(context, 'pdf'),
-            icon: const Icon(Icons.picture_as_pdf_outlined),
-            label: const Text('PDF'),
-          ),
-          const SizedBox(height: AppSpacing.sm),
-          OutlinedButton.icon(
-            onPressed: () => Navigator.pop(context, 'excel'),
-            icon: const Icon(Icons.table_chart_outlined),
-            label: const Text('Excel'),
-          ),
-        ],
-      ),
+      subtitle: '${project.name} · ${report.rangeLabel}',
     );
     if (choice == null || !mounted) return;
 
+    ref.read(periodSiteReportExportSectionsProvider.notifier).save(choice.sections);
+
     final company = ref.read(companyInfoProvider);
     try {
-      if (choice == 'pdf') {
+      if (choice.pdf) {
         await periodSiteReportExportService.exportPdf(
           report,
           projectName: project.name,
           companyName: company.name,
+          sections: choice.sections,
         );
       } else {
         await periodSiteReportExportService.exportExcel(
           report,
           projectName: project.name,
+          sections: choice.sections,
         );
       }
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: Text(
-            choice == 'pdf'
+            choice.pdf
                 ? '$periodLabel PDF dışa aktarıldı'
                 : '$periodLabel Excel dışa aktarıldı',
           ),
@@ -1835,24 +1814,10 @@ class _DailyReportScreenState extends ConsumerState<DailyReportScreen> {
                     onEdit: _editManualWeather,
                     onRefresh: () => _refreshWeather(),
                   ),
-                  const SizedBox(height: AppSpacing.md),
-                  _SectionCard(
-                    title: 'Puantaj özeti',
-                    icon: Icons.fact_check_outlined,
-                    trailing: TextButton(
-                      onPressed: () {
-                        final r = ref.read(activeDailyReportProvider);
-                        if (r != null) syncAttendanceIntoReport(ref, r);
-                      },
-                      child: const Text('Yenile'),
-                    ),
-                    child: snap == null
-                        ? Text(
-                            'Puantaj verisi yok',
-                            style: _cardInk(theme.textTheme.bodyMedium),
-                          )
-                        : AttendanceSummaryChips(snapshot: snap),
-                  ),
+                  if (snap != null) ...[
+                    const SizedBox(height: AppSpacing.md),
+                    AttendanceSummaryTables(snapshot: snap),
+                  ],
                   const SizedBox(height: AppSpacing.md),
                   _SectionCard(
                     title: 'Fotoğraflar',

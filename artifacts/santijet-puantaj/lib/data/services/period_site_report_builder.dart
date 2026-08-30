@@ -8,6 +8,7 @@ import '../../domain/entities/production.dart';
 import '../../domain/models/production_metrics.dart';
 import '../../domain/entities/uninsured_team_entry.dart';
 import '../../domain/entities/yevmiyeli_is_kaydi.dart';
+import '../../domain/enums/attendance_status.dart';
 import 'puantaj_report_builder.dart';
 
 /// İmalat — dönem içi gerçekleşen (İmalat sekmesi kaynakları).
@@ -114,12 +115,56 @@ class PeriodPersonelSummary {
   }
 }
 
+/// Dönem puantaj özeti — günlük PDF’deki durum kutularının dönem toplamı.
+class PeriodPuantajOzet {
+  const PeriodPuantajOzet({
+    required this.statusCounts,
+    required this.personnelCount,
+    required this.unrecorded,
+    required this.totalAdamSaat,
+    required this.totalYevmiye,
+    required this.totalTeamWorkers,
+  });
+
+  /// Her durum için kişi-gün adedi.
+  final Map<AttendanceStatus, int> statusCounts;
+  final int personnelCount;
+  final int unrecorded;
+  final double totalAdamSaat;
+  final double totalYevmiye;
+  final int totalTeamWorkers;
+
+  int countOf(AttendanceStatus s) => statusCounts[s] ?? 0;
+
+  List<List<String>> get exportRows => [
+        for (final s in AttendanceStatus.values)
+          [s.label, '${countOf(s)}'],
+        ['Personel', '$personnelCount'],
+        if (unrecorded > 0) ['Girilmedi', '$unrecorded'],
+        ['Adam-saat', fmtNum(totalAdamSaat)],
+        ['Yevmiye', fmtYv(totalYevmiye)],
+        if (totalTeamWorkers > 0) ['Ekip çalışan', '$totalTeamWorkers'],
+      ];
+
+  static String fmtNum(double v) {
+    if (v == v.roundToDouble()) return v.toStringAsFixed(0);
+    return v.toStringAsFixed(1);
+  }
+
+  static String fmtYv(double v) {
+    if (v <= 0) return '0';
+    if (v == v.roundToDouble()) return v.toStringAsFixed(0);
+    return v.toStringAsFixed(2).replaceFirst(RegExp(r'\.?0+$'), '');
+  }
+}
+
 /// Haftalık / aylık saha raporu — puantaj + imalat + verim.
 class PeriodSiteReportData {
   const PeriodSiteReportData({
     required this.periodLabel,
     required this.rangeLabel,
     required this.days,
+    required this.puantajOzet,
     required this.personelSummary,
     required this.ekipPuantaj,
     required this.yevmiyeli,
@@ -131,6 +176,7 @@ class PeriodSiteReportData {
   final String periodLabel;
   final String rangeLabel;
   final List<String> days;
+  final PeriodPuantajOzet puantajOzet;
   final PeriodPersonelSummary personelSummary;
   final PuantajReportData ekipPuantaj;
   final PuantajReportData yevmiyeli;
@@ -189,6 +235,21 @@ abstract final class PeriodSiteReportBuilder {
           .where((a) => a.projectId == projectId && daySet.contains(a.date))
           .toList(),
       days: days,
+    );
+
+    final periodAttendance = attendance
+        .where((a) => a.projectId == projectId && daySet.contains(a.date))
+        .toList();
+
+    final puantajOzet = _buildPuantajOzet(
+      people: eligible,
+      attendance: periodAttendance,
+      days: days,
+      totalAdamSaat: personelSummary.totalAdamSaat,
+      totalYevmiye: personelSummary.totalYevmiye,
+      totalTeamWorkers: uninsuredTeams
+          .where((e) => e.projectId == projectId && daySet.contains(e.date))
+          .fold<int>(0, (s, e) => s + e.workerCount),
     );
 
     final ekipPuantaj = PuantajReportBuilder.build(
@@ -284,12 +345,52 @@ abstract final class PeriodSiteReportBuilder {
       periodLabel: periodLabel,
       rangeLabel: rangeLabel,
       days: days,
+      puantajOzet: puantajOzet,
       personelSummary: personelSummary,
       ekipPuantaj: ekipPuantaj,
       yevmiyeli: yevmiyeli,
       imalatRows: imalatRows,
       verimRows: verimRows,
       fileStem: fileStem,
+    );
+  }
+
+  static PeriodPuantajOzet _buildPuantajOzet({
+    required List<Person> people,
+    required List<Attendance> attendance,
+    required List<String> days,
+    required double totalAdamSaat,
+    required double totalYevmiye,
+    required int totalTeamWorkers,
+  }) {
+    final lookup = <String, Attendance>{};
+    for (final a in attendance) {
+      lookup['${a.personId}|${a.date}'] = a;
+    }
+    final counts = {for (final s in AttendanceStatus.values) s: 0};
+    var unrecorded = 0;
+    for (final p in people) {
+      for (final d in days) {
+        final a = lookup['${p.id}|$d'];
+        final status = AttendanceDisplay.resolve(
+          person: p,
+          date: d,
+          recorded: a?.status,
+        );
+        if (status == null) {
+          unrecorded++;
+        } else {
+          counts[status] = counts[status]! + 1;
+        }
+      }
+    }
+    return PeriodPuantajOzet(
+      statusCounts: counts,
+      personnelCount: people.length,
+      unrecorded: unrecorded,
+      totalAdamSaat: totalAdamSaat,
+      totalYevmiye: totalYevmiye,
+      totalTeamWorkers: totalTeamWorkers,
     );
   }
 
