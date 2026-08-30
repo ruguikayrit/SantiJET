@@ -32,7 +32,7 @@ class MainShell extends ConsumerWidget {
     SJNavItem(
       icon: Icons.task_alt_outlined,
       activeIcon: Icons.task_alt,
-      label: 'Görevler',
+      label: 'Görev',
     ),
     SJNavItem(
       icon: Icons.edit_note_outlined,

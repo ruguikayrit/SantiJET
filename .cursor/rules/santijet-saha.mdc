@@ -12,7 +12,7 @@ Turuncu **STAGING ÖNİZLEME** şeridi yok: `build-puantaj-pages.sh` `#santijet-
 
 ## Puantaj AL (`_PuantajExportSheet`)
 
-Sağ üstte ayarlar yanında indirme ikonu (**Puantaj AL**); sheet başlığı aynı. Eski “Puantajı Dışa Aktar” ve sağ alt **Puantaj AL** FAB geri gelmez. Sağ alt FAB: **Veri ekle** (Personel / Ekip / Yevmiyeli).
+Sağ üstte ayarlar yanında indirme ikonu (**Puantaj AL**); sheet başlığı aynı. Eski “Puantajı Dışa Aktar” ve sağ alt **Puantaj AL** FAB geri gelmez. Sağ alt FAB: **Veri ekle** (Personel / Ekip / Yevmiyeli). Ekip / Yevmiyeli başlığındaki **+** geri gelmez.
 
 - **Personel** ve **Ekip** `ExpansionTile` **varsayılan kapalı** (`initiallyExpanded: false`). Açma.
 - **Ekip** başlığının hemen altında **Ekip ara…** satırı (`SJSearchBar`) durur. Kaldırma.
@@ -50,6 +50,10 @@ Kayıt yoksa pazar günü otomatik **HT**; manuel durum ezebilir.
 - **Aylık rapor**: ay içi haftalardan türetilmiş özet; ay dışı günler soluk.
 - Gün satırından **Günlük raporu aç** ile günlük sekmeye geçilir.
 - Puantaj özeti **Personel** + **Ekip** gösterir (ekip: ad + çalışan sayısı). Haftalık/aylık ve PDF aynı kurguda. Kapatma / yalnız personele düşürme.
+
+## İmalat / Verim AL
+
+Hub header’da ayarlar yanında indirme ikonu; sekme İmalat → **İmalat AL**, Verim → **Verim AL**. Sheet: PDF · Excel. Geri koyma / FAB’a taşıma.
 
 ## İmalat
 

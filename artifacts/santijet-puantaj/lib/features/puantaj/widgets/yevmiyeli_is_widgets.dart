@@ -373,27 +373,9 @@ class _DayYevmiyeliSectionState extends ConsumerState<DayYevmiyeliSection> {
                 color: cardTheme.colorScheme.onSurfaceVariant,
               ),
             ),
-            trailing: Row(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                if (expanded)
-                  IconButton(
-                    tooltip: 'Yevmiyeli iş ekle',
-                    visualDensity: VisualDensity.compact,
-                    onPressed: () => openYevmiyeliIsEditor(
-                      context,
-                      ref,
-                      projectId: project.id,
-                      date: widget.date,
-                      people: widget.people,
-                    ),
-                    icon: const Icon(Icons.add_circle_outline),
-                  ),
-                Icon(
-                  expanded ? Icons.expand_less : Icons.expand_more,
-                  color: cardTheme.colorScheme.onSurfaceVariant,
-                ),
-              ],
+            trailing: Icon(
+              expanded ? Icons.expand_less : Icons.expand_more,
+              color: cardTheme.colorScheme.onSurfaceVariant,
             ),
             children: [
               if (entries.isEmpty)

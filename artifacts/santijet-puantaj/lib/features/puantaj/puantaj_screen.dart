@@ -1776,17 +1776,6 @@ class _DayTeamsSection extends ConsumerWidget {
         ],
       ];
 
-    void openAdd() {
-      if (!canEdit) return denyWrite();
-      _openEditor(
-        context,
-        ref,
-        projectId: project.id,
-        catalogTeams: catalogTeams,
-        usedTeamNames: usedTeamNames,
-      );
-    }
-
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
@@ -1801,29 +1790,12 @@ class _DayTeamsSection extends ConsumerWidget {
               fontWeight: FontWeight.w700,
             ),
           ),
-          trailing: Column(
-            mainAxisSize: MainAxisSize.min,
-            crossAxisAlignment: CrossAxisAlignment.end,
-            children: [
-              if (entries.isNotEmpty)
-                Text(
+          trailing: entries.isEmpty
+              ? null
+              : Text(
                   '$totalWorkers personel',
                   style: theme.textTheme.labelSmall,
                 ),
-              if (expanded)
-                IconButton(
-                  tooltip: 'Ekip ekle',
-                  visualDensity: VisualDensity.compact,
-                  padding: EdgeInsets.zero,
-                  constraints: const BoxConstraints(
-                    minWidth: 36,
-                    minHeight: 36,
-                  ),
-                  onPressed: openAdd,
-                  icon: const Icon(Icons.add_circle_outline, size: 22),
-                ),
-            ],
-          ),
           children: bodyChildren,
         ),
       ],

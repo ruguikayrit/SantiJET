@@ -2,12 +2,17 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
+import '../../core/design_system/sj_modal.dart';
 import '../../core/theme/app_colors.dart';
 import '../../core/theme/app_radii.dart';
 import '../../core/theme/app_spacing.dart';
 import '../../core/widgets/santijet_header.dart';
+import '../../data/providers/app_data_provider.dart';
+import '../../data/providers/production_provider.dart';
+import '../../data/services/production_report_builder.dart';
 import '../verim/verim_screen.dart';
 import 'imalat_screen.dart';
+import 'widgets/production_export_sheet.dart';
 
 /// İmalat hub — alt nav’da tek sekme; içinde İmalat | Verim segmenti.
 class ImalatHubScreen extends ConsumerStatefulWidget {
@@ -40,8 +45,37 @@ class _ImalatHubScreenState extends ConsumerState<ImalatHubScreen> {
     }
   }
 
+  Future<void> _openExportSheet() async {
+    final project = ref.read(activeProjectProvider);
+    if (project == null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Önce proje seçin.')),
+      );
+      return;
+    }
+    final productions = ref
+        .read(productionProvider)
+        .where((p) => p.projectId == project.id)
+        .toList();
+    final kind = _tab == 0
+        ? ProductionExportKind.imalat
+        : ProductionExportKind.verim;
+    final title = kind == ProductionExportKind.imalat ? 'İmalat AL' : 'Verim AL';
+
+    await SJModal.showSheet(
+      context: context,
+      title: title,
+      child: ProductionExportSheet(
+        projectName: project.name,
+        productions: productions,
+        kind: kind,
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
+    final isImalat = _tab == 0;
     return Scaffold(
       backgroundColor: AppColors.canvas,
       body: SafeArea(
@@ -49,7 +83,15 @@ class _ImalatHubScreenState extends ConsumerState<ImalatHubScreen> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
-            SantijetHeader(subtitle: _tab == 0 ? 'İmalat' : 'Verim'),
+            SantijetHeader(
+              subtitle: isImalat ? 'İmalat' : 'Verim',
+              actionsBeforeSettings: [
+                SantijetHeaderDownloadButton(
+                  tooltip: isImalat ? 'İmalat AL' : 'Verim AL',
+                  onPressed: _openExportSheet,
+                ),
+              ],
+            ),
             Padding(
               padding: const EdgeInsets.fromLTRB(
                 AppSpacing.md,

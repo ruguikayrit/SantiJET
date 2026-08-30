@@ -31,7 +31,7 @@ class DemoGuideBanner extends ConsumerWidget {
       icon: Icons.speed_outlined,
     ),
     (
-      title: 'Görevler',
+      title: 'Görev',
       route: AppRoutes.gorevler,
       icon: Icons.task_alt_outlined,
     ),

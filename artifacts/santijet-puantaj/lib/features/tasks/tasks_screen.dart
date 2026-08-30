@@ -1258,7 +1258,7 @@ class _TasksScreenState extends ConsumerState<TasksScreen> {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
-              const SantijetHeader(subtitle: 'Görevler'),
+              const SantijetHeader(subtitle: 'Görev'),
               Expanded(
                 child: SJEmptyState(
                   title: 'Önce proje ekleyin',
@@ -1281,7 +1281,7 @@ class _TasksScreenState extends ConsumerState<TasksScreen> {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
-              const SantijetHeader(subtitle: 'Görevler'),
+              const SantijetHeader(subtitle: 'Görev'),
               Expanded(
                 child: SJEmptyState(
                   title: 'Personel yok',
@@ -1325,7 +1325,7 @@ class _TasksScreenState extends ConsumerState<TasksScreen> {
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
             SantijetHeader(
-              subtitle: 'Görevler',
+              subtitle: 'Görev',
               actionsBeforeSettings: [
                 SantijetHeaderDownloadButton(
                   tooltip: 'Görev AL',
