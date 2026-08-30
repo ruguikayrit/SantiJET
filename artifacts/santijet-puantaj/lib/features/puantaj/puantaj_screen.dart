@@ -213,22 +213,34 @@ class _PuantajScreenState extends ConsumerState<PuantajScreen> {
     return Scaffold(
       backgroundColor: AppColors.canvas,
       floatingActionButton: FloatingActionButton.extended(
-        onPressed: () => _openExportSheet(
+        onPressed: () => _openVeriEkleSheet(
           context,
           project: project,
-          allProjectPeople: allPersonnel
-              .where((p) => p.projectId == project.id)
-              .toList(),
-          attendance: attendance,
+          people: people,
         ),
-        icon: const Icon(Icons.ios_share_outlined),
-        label: const Text('Puantaj AL'),
+        icon: const Icon(Icons.add),
+        label: const Text('Veri ekle'),
       ),
       body: SafeArea(
         bottom: false,
         child: Column(
           children: [
-            const SantijetHeader(subtitle: 'Puantaj'),
+            SantijetHeader(
+              subtitle: 'Puantaj',
+              actionsBeforeSettings: [
+                SantijetHeaderDownloadButton(
+                  tooltip: 'Puantaj AL',
+                  onPressed: () => _openExportSheet(
+                    context,
+                    project: project,
+                    allProjectPeople: allPersonnel
+                        .where((p) => p.projectId == project.id)
+                        .toList(),
+                    attendance: attendance,
+                  ),
+                ),
+              ],
+            ),
             const ReadOnlyBanner(),
             Padding(
               padding: const EdgeInsets.fromLTRB(
@@ -418,6 +430,95 @@ class _PuantajScreenState extends ConsumerState<PuantajScreen> {
               ),
           ],
         ),
+      ),
+    );
+  }
+
+  Future<void> _openVeriEkleSheet(
+    BuildContext context, {
+    required Project project,
+    required List<Person> people,
+  }) {
+    final canEdit = ref.read(canEditActiveProjectProvider);
+    final theme = Theme.of(context);
+
+    return SJModal.showSheet(
+      context: context,
+      title: 'Veri ekle',
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          ListTile(
+            contentPadding: EdgeInsets.zero,
+            leading: Icon(
+              Icons.person_add_outlined,
+              color: theme.colorScheme.primary,
+            ),
+            title: const Text('Personel'),
+            subtitle: const Text('Kayıtlı personel yönetimi'),
+            onTap: () {
+              Navigator.of(context).pop();
+              context.push(AppRoutes.personel);
+            },
+          ),
+          ListTile(
+            contentPadding: EdgeInsets.zero,
+            leading: Icon(
+              Icons.groups_outlined,
+              color: theme.colorScheme.primary,
+            ),
+            title: const Text('Ekip'),
+            subtitle: const Text('Ekip adı + çalışan sayısı'),
+            onTap: () async {
+              Navigator.of(context).pop();
+              if (!canEdit) {
+                ScaffoldMessenger.of(context).showSnackBar(
+                  const SnackBar(
+                    content: Text('Bu işte yalnızca görüntüleme yetkiniz var'),
+                  ),
+                );
+                return;
+              }
+              final catalogTeams = ref.read(teamsProvider);
+              final used = ref
+                  .read(uninsuredTeamsProvider)
+                  .where((e) => e.projectId == project.id && e.date == _date)
+                  .map((e) => e.teamName)
+                  .toSet();
+              await _DayTeamsSection(
+                date: _date,
+                expanded: true,
+                onExpandedChanged: (_) {},
+              )._openEditor(
+                context,
+                ref,
+                projectId: project.id,
+                catalogTeams: catalogTeams,
+                usedTeamNames: used,
+              );
+            },
+          ),
+          ListTile(
+            contentPadding: EdgeInsets.zero,
+            leading: Icon(
+              Icons.handyman_outlined,
+              color: theme.colorScheme.primary,
+            ),
+            title: const Text('Yevmiyeli iş'),
+            subtitle: const Text('Taşeron parça iş kaydı'),
+            onTap: () {
+              Navigator.of(context).pop();
+              openYevmiyeliIsEditor(
+                context,
+                ref,
+                projectId: project.id,
+                date: _date,
+                people: people,
+              );
+            },
+          ),
+        ],
       ),
     );
   }

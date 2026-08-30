@@ -12,7 +12,7 @@ Turuncu **STAGING ÖNİZLEME** şeridi yok: `build-puantaj-pages.sh` `#santijet-
 
 ## Puantaj AL (`_PuantajExportSheet`)
 
-Sağ alt FAB metni ve sheet başlığı **Puantaj AL**. Eski “Puantajı Dışa Aktar” geri gelmez.
+Sağ üstte ayarlar yanında indirme ikonu (**Puantaj AL**); sheet başlığı aynı. Eski “Puantajı Dışa Aktar” ve sağ alt **Puantaj AL** FAB geri gelmez. Sağ alt FAB: **Veri ekle** (Personel / Ekip / Yevmiyeli).
 
 - **Personel** ve **Ekip** `ExpansionTile` **varsayılan kapalı** (`initiallyExpanded: false`). Açma.
 - **Ekip** başlığının hemen altında **Ekip ara…** satırı (`SJSearchBar`) durur. Kaldırma.
