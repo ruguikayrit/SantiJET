@@ -133,6 +133,7 @@ class _TaskExportSheetState extends State<TaskExportSheet> {
         Text('Durum', style: theme.textTheme.labelLarge),
         const SizedBox(height: AppSpacing.xs),
         SegmentedButton<String>(
+          showSelectedIcon: false,
           style: SegmentedButton.styleFrom(
             foregroundColor: theme.colorScheme.onSurfaceVariant,
             selectedForegroundColor: theme.colorScheme.onSecondary,
@@ -236,21 +237,12 @@ class _TagChoice extends StatelessWidget {
               width: selected ? 1.5 : 1,
             ),
           ),
-          child: Row(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              if (selected) ...[
-                Icon(Icons.check, size: 16, color: color),
-                const SizedBox(width: 4),
-              ],
-              Text(
-                label,
-                style: theme.textTheme.labelMedium?.copyWith(
-                  color: color,
-                  fontWeight: FontWeight.w800,
-                ),
-              ),
-            ],
+          child: Text(
+            label,
+            style: theme.textTheme.labelMedium?.copyWith(
+              color: color,
+              fontWeight: FontWeight.w800,
+            ),
           ),
         ),
       ),
