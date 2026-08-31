@@ -223,6 +223,15 @@ class AttendanceSummaryTable extends StatelessWidget {
   }
 }
 
+/// Mavi çerçeveli tablo başlığı — günlük + dönem tablolarında ortak mürekkep.
+const _tableHeaderLabelStyle = TextStyle(
+  color: AppColors.inkPrimary,
+  fontWeight: FontWeight.w700,
+  fontSize: 8,
+  letterSpacing: 0.1,
+  height: 1.1,
+);
+
 class _HeaderRow extends StatelessWidget {
   const _HeaderRow({required this.cells});
 
@@ -260,20 +269,14 @@ class _HeaderCell extends StatelessWidget {
         border: Border.all(color: AppColors.electricBlue),
       ),
       child: Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 2, vertical: 5),
+        padding: const EdgeInsets.symmetric(horizontal: 3, vertical: 5),
         child: Center(
           child: Text(
             label,
             textAlign: TextAlign.center,
             maxLines: 2,
             overflow: TextOverflow.ellipsis,
-            style: const TextStyle(
-              color: AppColors.inkPrimary,
-              fontWeight: FontWeight.w700,
-              fontSize: 9,
-              letterSpacing: 0.1,
-              height: 1.15,
-            ),
+            style: _tableHeaderLabelStyle,
           ),
         ),
       ),
@@ -1078,20 +1081,14 @@ class _PeriodHeaderBadge extends StatelessWidget {
         border: Border.all(color: AppColors.electricBlue),
       ),
       child: Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 8),
+        padding: const EdgeInsets.symmetric(horizontal: 3, vertical: 5),
         child: Center(
           child: Text(
             label,
             textAlign: TextAlign.center,
-            maxLines: 3,
+            maxLines: 2,
             overflow: TextOverflow.ellipsis,
-            style: const TextStyle(
-              color: AppColors.inkPrimary,
-              fontWeight: FontWeight.w800,
-              fontSize: 10,
-              letterSpacing: 0.15,
-              height: 1.2,
-            ),
+            style: _tableHeaderLabelStyle,
           ),
         ),
       ),
