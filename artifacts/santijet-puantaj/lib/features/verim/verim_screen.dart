@@ -193,45 +193,46 @@ class _VerimNamePercentCard extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final theme = Theme.of(context);
     final efficiency = row.unitEfficiency;
 
-    return SJCard(
+    return SJCard.builder(
       onTap: () => openImalatProductionDetail(
         context,
         ref,
         productionId: row.production.id,
       ),
-      child: Row(
-        children: [
-          Expanded(
-            child: Text(
-              row.imalatName.trim().isEmpty
-                  ? 'İmalat'
-                  : row.imalatName.trim(),
-              style: theme.textTheme.titleMedium,
+      builder: (context, theme) {
+        return Row(
+          children: [
+            Expanded(
+              child: Text(
+                row.imalatName.trim().isEmpty
+                    ? 'İmalat'
+                    : row.imalatName.trim(),
+                style: theme.textTheme.titleMedium,
+              ),
             ),
-          ),
-          const SizedBox(width: AppSpacing.sm),
-          if (efficiency != null)
-            Text(
-              '%${(efficiency * 100).toStringAsFixed(0)}',
-              style: theme.textTheme.titleMedium?.copyWith(
-                fontWeight: FontWeight.w700,
-                color: AppColors.statusInkOnCard(
-                  efficiencyColorForRatio(efficiency),
+            const SizedBox(width: AppSpacing.sm),
+            if (efficiency != null)
+              Text(
+                '%${(efficiency * 100).toStringAsFixed(0)}',
+                style: theme.textTheme.titleMedium?.copyWith(
+                  fontWeight: FontWeight.w700,
+                  color: AppColors.statusInkOnCard(
+                    efficiencyColorForRatio(efficiency),
+                  ),
+                ),
+              )
+            else
+              Text(
+                '—',
+                style: theme.textTheme.titleMedium?.copyWith(
+                  color: theme.colorScheme.onSurfaceVariant,
                 ),
               ),
-            )
-          else
-            Text(
-              '—',
-              style: theme.textTheme.titleMedium?.copyWith(
-                color: theme.colorScheme.onSurfaceVariant,
-              ),
-            ),
-        ],
-      ),
+          ],
+        );
+      },
     );
   }
 }
