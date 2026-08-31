@@ -289,17 +289,21 @@ Future<void> openYevmiyeliIsEditor(
   }
 }
 
-/// Günlük puantaj — Yevmiyeli işler tablosu.
+/// Günlük puantaj — Yevmiyeli işler (Personel / Ekip ile aynı açılır başlık).
 class DayYevmiyeliSection extends ConsumerStatefulWidget {
   const DayYevmiyeliSection({
     super.key,
     required this.date,
     required this.people,
+    this.expanded,
+    this.onExpandedChanged,
     this.initiallyExpanded = true,
   });
 
   final String date;
   final List<Person> people;
+  final bool? expanded;
+  final ValueChanged<bool>? onExpandedChanged;
   final bool initiallyExpanded;
 
   @override
@@ -308,19 +312,32 @@ class DayYevmiyeliSection extends ConsumerStatefulWidget {
 }
 
 class _DayYevmiyeliSectionState extends ConsumerState<DayYevmiyeliSection> {
-  /// null → henüz kullanıcı dokunmadı; başlangıç kayıt durumuna göre.
-  bool? _expandedOverride;
+  late bool _internalExpanded = widget.initiallyExpanded;
+
+  bool get _isExpanded => widget.expanded ?? _internalExpanded;
+
+  void _toggle() {
+    if (widget.expanded != null && widget.onExpandedChanged != null) {
+      widget.onExpandedChanged!(!widget.expanded!);
+      return;
+    }
+    setState(() => _internalExpanded = !_internalExpanded);
+  }
 
   @override
   void didUpdateWidget(covariant DayYevmiyeliSection oldWidget) {
     super.didUpdateWidget(oldWidget);
     if (oldWidget.date != widget.date) {
-      _expandedOverride = null;
+      _internalExpanded = widget.initiallyExpanded;
+    } else if (widget.expanded == null &&
+        oldWidget.initiallyExpanded != widget.initiallyExpanded) {
+      _internalExpanded = widget.initiallyExpanded;
     }
   }
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
     final project = ref.watch(activeProjectProvider);
     if (project == null) return const SizedBox.shrink();
 
@@ -336,94 +353,103 @@ class _DayYevmiyeliSectionState extends ConsumerState<DayYevmiyeliSection> {
     final total =
         entries.fold<double>(0, (sum, e) => sum + e.yevmiyeCount);
 
-    final initiallyOpen = widget.initiallyExpanded && entries.isNotEmpty;
-    final expanded = _expandedOverride ?? initiallyOpen;
-
-    return SJCard.builder(
-      padding: EdgeInsets.zero,
-      builder: (context, cardTheme) {
-        return Theme(
-          data: cardTheme.copyWith(dividerColor: Colors.transparent),
-          child: ExpansionTile(
-            key: ValueKey('yevmiyeli-${widget.date}-$initiallyOpen'),
-            initiallyExpanded: initiallyOpen,
-            onExpansionChanged: (v) => setState(() => _expandedOverride = v),
-            tilePadding: const EdgeInsets.symmetric(horizontal: AppSpacing.md),
-            childrenPadding: const EdgeInsets.fromLTRB(
-              AppSpacing.md,
-              0,
-              AppSpacing.md,
-              AppSpacing.md,
-            ),
-            leading: Icon(
-              Icons.handyman_outlined,
-              color: cardTheme.colorScheme.primary,
-            ),
-            title: Text(
-              'Yevmiyeli işler',
-              style: cardTheme.textTheme.titleSmall?.copyWith(
-                fontWeight: FontWeight.w700,
-              ),
-            ),
-            trailing: Icon(
-              expanded ? Icons.expand_less : Icons.expand_more,
-              color: cardTheme.colorScheme.onSurfaceVariant,
-            ),
-            children: [
-              if (entries.isEmpty)
-                Padding(
-                  padding: const EdgeInsets.only(bottom: AppSpacing.sm),
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        const SizedBox(height: AppSpacing.md),
+        InkWell(
+          onTap: _toggle,
+          borderRadius: AppRadii.sm,
+          child: Padding(
+            padding: const EdgeInsets.symmetric(vertical: AppSpacing.xs),
+            child: Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Container(
+                  width: 3,
+                  height: 16,
+                  margin: const EdgeInsets.only(top: 2),
+                  color: AppColors.electricBlue,
+                ),
+                const SizedBox(width: AppSpacing.xs),
+                Expanded(
                   child: Text(
-                    'Taşeronun parça iş için verdiği adamları buraya kaydedin. '
-                    'Personel kartından da ekleyebilirsiniz.',
-                    style: cardTheme.textTheme.bodySmall?.copyWith(
-                      color: cardTheme.colorScheme.onSurfaceVariant,
+                    'Yevmiyeli işler',
+                    style: theme.textTheme.titleMedium?.copyWith(
+                      fontWeight: FontWeight.w700,
                     ),
                   ),
-                )
-              else
-                Column(
+                ),
+                if (entries.isNotEmpty) ...[
+                  const SizedBox(width: AppSpacing.xs),
+                  Padding(
+                    padding: const EdgeInsets.only(top: 2),
+                    child: Text(
+                      '${entries.length} kayıt',
+                      style: theme.textTheme.labelSmall,
+                    ),
+                  ),
+                ],
+                Icon(
+                  _isExpanded ? Icons.expand_less : Icons.expand_more,
+                  size: 20,
+                  color: theme.colorScheme.onSurfaceVariant,
+                ),
+              ],
+            ),
+          ),
+        ),
+        if (_isExpanded) ...[
+          const SizedBox(height: AppSpacing.sm),
+          if (entries.isEmpty)
+            Text(
+              'Taşeronun parça iş için verdiği adamları buraya kaydedin. '
+              'Personel kartından da ekleyebilirsiniz.',
+              style: theme.textTheme.bodySmall?.copyWith(
+                color: theme.colorScheme.onSurfaceVariant,
+              ),
+            )
+          else
+            Column(
+              children: [
+                for (var i = 0; i < entries.length; i++) ...[
+                  if (i > 0) const Divider(height: 1),
+                  _YevmiyeliRow(
+                    index: i + 1,
+                    entry: entries[i],
+                    onTap: () => openYevmiyeliIsEditor(
+                      context,
+                      ref,
+                      projectId: project.id,
+                      date: widget.date,
+                      people: widget.people,
+                      existing: entries[i],
+                    ),
+                  ),
+                ],
+                const Divider(height: 16),
+                Row(
                   children: [
-                    for (var i = 0; i < entries.length; i++) ...[
-                      if (i > 0) const Divider(height: 1),
-                      _YevmiyeliRow(
-                        index: i + 1,
-                        entry: entries[i],
-                        onTap: () => openYevmiyeliIsEditor(
-                          context,
-                          ref,
-                          projectId: project.id,
-                          date: widget.date,
-                          people: widget.people,
-                          existing: entries[i],
-                        ),
+                    Text(
+                      'Günlük toplam',
+                      style: theme.textTheme.labelLarge?.copyWith(
+                        fontWeight: FontWeight.w700,
                       ),
-                    ],
-                    const Divider(height: 16),
-                    Row(
-                      children: [
-                        Text(
-                          'Günlük toplam',
-                          style: cardTheme.textTheme.labelLarge?.copyWith(
-                            fontWeight: FontWeight.w700,
-                          ),
-                        ),
-                        const Spacer(),
-                        Text(
-                          '${formatYevmiyeCount(total)} yv',
-                          style: cardTheme.textTheme.labelLarge?.copyWith(
-                            color: AppColors.electricBlue,
-                            fontWeight: FontWeight.w800,
-                          ),
-                        ),
-                      ],
+                    ),
+                    const Spacer(),
+                    Text(
+                      '${formatYevmiyeCount(total)} yv',
+                      style: theme.textTheme.labelLarge?.copyWith(
+                        color: AppColors.electricBlue,
+                        fontWeight: FontWeight.w800,
+                      ),
                     ),
                   ],
                 ),
-            ],
-          ),
-        );
-      },
+              ],
+            ),
+        ],
+      ],
     );
   }
 }

@@ -614,6 +614,7 @@ class _DailyView extends StatefulWidget {
 class _DailyViewState extends State<_DailyView> {
   bool _l1Personel = false;
   bool _l1Ekip = false;
+  bool _l1Yevmiyeli = false;
   final Map<String, bool> _l2Companies = {};
   final Map<String, bool> _l3Teams = {};
 
@@ -623,6 +624,7 @@ class _DailyViewState extends State<_DailyView> {
     if (oldWidget.date != widget.date) {
       _l1Personel = false;
       _l1Ekip = false;
+      _l1Yevmiyeli = false;
       _l2Companies.clear();
       _l3Teams.clear();
     }
@@ -800,10 +802,11 @@ class _DailyViewState extends State<_DailyView> {
             expanded: _l1Ekip,
             onExpandedChanged: (v) => setState(() => _l1Ekip = v),
           ),
-          const SizedBox(height: AppSpacing.md),
           DayYevmiyeliSection(
             date: date,
             people: widget.people,
+            expanded: _l1Yevmiyeli,
+            onExpandedChanged: (v) => setState(() => _l1Yevmiyeli = v),
           ),
         ] else ...[
         if (missing > 0) ...[
@@ -1100,10 +1103,11 @@ class _DailyViewState extends State<_DailyView> {
           expanded: _l1Ekip,
           onExpandedChanged: (v) => setState(() => _l1Ekip = v),
         ),
-        const SizedBox(height: AppSpacing.md),
         DayYevmiyeliSection(
           date: date,
           people: widget.people,
+          expanded: _l1Yevmiyeli,
+          onExpandedChanged: (v) => setState(() => _l1Yevmiyeli = v),
         ),
         ],
       ],
