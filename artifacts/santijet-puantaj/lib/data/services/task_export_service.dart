@@ -140,15 +140,15 @@ class TaskExportService {
   }
 
   List<pw.Widget> _photoRows(List<TaskPhoto> photos) {
-    const perRow = 3;
-    const cellHeight = 110.0;
+    const perRow = 4;
+    const cellHeight = 78.0;
     final out = <pw.Widget>[];
 
     for (var i = 0; i < photos.length; i += perRow) {
       final chunk = photos.skip(i).take(perRow).toList();
       out.add(
         pw.Padding(
-          padding: const pw.EdgeInsets.only(bottom: 8),
+          padding: const pw.EdgeInsets.only(bottom: 6),
           child: pw.Row(
             crossAxisAlignment: pw.CrossAxisAlignment.start,
             children: [
@@ -175,13 +175,13 @@ class TaskExportService {
     }
 
     return pw.Container(
-      margin: const pw.EdgeInsets.symmetric(horizontal: 3),
+      margin: const pw.EdgeInsets.symmetric(horizontal: 2),
       child: img != null
           ? pw.Container(
               height: height,
               alignment: pw.Alignment.center,
               decoration: pw.BoxDecoration(
-                border: pw.Border.all(color: _border, width: 0.6),
+                border: pw.Border.all(color: _border, width: 0.5),
               ),
               child: pw.Image(
                 img,
@@ -194,7 +194,7 @@ class TaskExportService {
               alignment: pw.Alignment.center,
               child: pw.Text(
                 'Yüklenemedi',
-                style: const pw.TextStyle(fontSize: 8, color: _inkMuted),
+                style: const pw.TextStyle(fontSize: 7, color: _inkMuted),
               ),
             ),
     );
