@@ -490,6 +490,9 @@ class _PuantajScreenState extends ConsumerState<PuantajScreen> {
                 date: _date,
                 expanded: true,
                 onExpandedChanged: (_) {},
+                companyExpanded: (_) => false,
+                onCompanyExpandedChanged: (_, __) {},
+                onCompaniesSeen: (_) {},
               )._openEditor(
                 context,
                 ref,
@@ -617,6 +620,12 @@ class _DailyViewState extends State<_DailyView> {
   bool _l1Yevmiyeli = false;
   final Map<String, bool> _l2Companies = {};
   final Map<String, bool> _l3Teams = {};
+  /// Ekip bölümü — firma alt başlıkları (ekip filtresinde açılır).
+  final Map<String, bool> _ekipCompanies = {};
+  /// Yevmiyeli — firma alt başlıkları (personel filtresinde açılır).
+  final Map<String, bool> _yevmiyeliCompanies = {};
+  /// Son kırılım çubuğu seçimi — yeni firma anahtarlarına uygulanır.
+  int _appliedDepth = 0;
 
   @override
   void didUpdateWidget(covariant _DailyView oldWidget) {
@@ -627,6 +636,9 @@ class _DailyViewState extends State<_DailyView> {
       _l1Yevmiyeli = false;
       _l2Companies.clear();
       _l3Teams.clear();
+      _ekipCompanies.clear();
+      _yevmiyeliCompanies.clear();
+      _appliedDepth = 0;
     }
   }
 
@@ -637,22 +649,52 @@ class _DailyViewState extends State<_DailyView> {
   bool _teamExpanded(String company, String team) =>
       _l3Teams[_teamKey(company, team)] ?? false;
 
+  bool _ekipCompanyExpanded(String company) =>
+      _ekipCompanies[company] ?? false;
+
+  bool _yevmiyeliCompanyExpanded(String company) =>
+      _yevmiyeliCompanies[company] ?? false;
+
   /// 0 kapalı · 1 firma · 2 ekip · 3 personel.
   int _kirilimDepth() {
-    if (!_l1Personel && !_l1Ekip) return 0;
+    if (!_l1Personel && !_l1Ekip && !_l1Yevmiyeli) return 0;
+
     final companies = widget.grouped.map((g) => g.company).toList();
-    if (companies.isEmpty) return 1;
-    final allL2 = companies.every((c) => _l2Companies[c] ?? false);
-    if (!allL2) return 1;
-    final keys = <String>[];
-    for (final g in widget.grouped) {
-      for (final t in _teamsOf(g.users)) {
-        keys.add(_teamKey(g.company, t.team));
+    if (companies.isNotEmpty) {
+      final allL2 = companies.every((c) => _l2Companies[c] ?? false);
+      if (!allL2) return 1;
+      final keys = <String>[];
+      for (final g in widget.grouped) {
+        for (final t in _teamsOf(g.users)) {
+          keys.add(_teamKey(g.company, t.team));
+        }
       }
+      if (keys.isEmpty) {
+        // Personel ekip yoksa yevmiyeli personel derinliğini baz al.
+        final yKeys = _yevmiyeliCompanies.keys.toList();
+        if (yKeys.isEmpty) return 2;
+        final allY = yKeys.every((c) => _yevmiyeliCompanies[c] ?? false);
+        return allY ? 3 : 2;
+      }
+      final allL3 = keys.every((k) => _l3Teams[k] ?? false);
+      return allL3 ? 3 : 2;
     }
-    if (keys.isEmpty) return 2;
-    final allL3 = keys.every((k) => _l3Teams[k] ?? false);
-    return allL3 ? 3 : 2;
+
+    // Personel yok: Ekip firma → ekip; Yevmiyeli firma → personel.
+    final ekipKeys = _ekipCompanies.keys.toList();
+    final yKeys = _yevmiyeliCompanies.keys.toList();
+    if (ekipKeys.isNotEmpty) {
+      final allEkip = ekipKeys.every((c) => _ekipCompanies[c] ?? false);
+      if (!allEkip) return 1;
+    } else if (yKeys.isNotEmpty) {
+      final anyYOpen = yKeys.any((c) => _yevmiyeliCompanies[c] ?? false);
+      if (!anyYOpen) return 1;
+    } else {
+      return 1;
+    }
+    if (yKeys.isEmpty) return 2;
+    final allY = yKeys.every((c) => _yevmiyeliCompanies[c] ?? false);
+    return allY ? 3 : 2;
   }
 
   void _setKirilimDepth(int depth) {
@@ -664,15 +706,55 @@ class _DailyViewState extends State<_DailyView> {
       }
     }
     setState(() {
+      _appliedDepth = depth;
       _l1Personel = depth >= 1;
       _l1Ekip = depth >= 1;
-      for (final c in companies) {
+      _l1Yevmiyeli = depth >= 1;
+      for (final c in {...companies, ..._l2Companies.keys}) {
         _l2Companies[c] = depth >= 2;
       }
-      for (final k in keys) {
+      for (final k in {...keys, ..._l3Teams.keys}) {
         _l3Teams[k] = depth >= 3;
       }
+      // Ekip firma altları — ekip filtresinde açılır (personel etkilemez).
+      for (final c in _ekipCompanies.keys.toList()) {
+        _ekipCompanies[c] = depth >= 2;
+      }
+      // Yevmiyeli firma altları — personel filtresinde açılır (ekip etkilemez).
+      for (final c in _yevmiyeliCompanies.keys.toList()) {
+        _yevmiyeliCompanies[c] = depth >= 3;
+      }
     });
+  }
+
+  void _ensureEkipCompanies(Iterable<String> companies) {
+    var changed = false;
+    for (final c in companies) {
+      if (!_ekipCompanies.containsKey(c)) {
+        _ekipCompanies[c] = _appliedDepth >= 2;
+        changed = true;
+      }
+    }
+    if (changed) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (mounted) setState(() {});
+      });
+    }
+  }
+
+  void _ensureYevmiyeliCompanies(Iterable<String> companies) {
+    var changed = false;
+    for (final c in companies) {
+      if (!_yevmiyeliCompanies.containsKey(c)) {
+        _yevmiyeliCompanies[c] = _appliedDepth >= 3;
+        changed = true;
+      }
+    }
+    if (changed) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (mounted) setState(() {});
+      });
+    }
   }
 
   Future<void> _pickDate(BuildContext context) async {
@@ -772,7 +854,7 @@ class _DailyViewState extends State<_DailyView> {
           const SizedBox(height: AppSpacing.md),
           _PuantajKirilimBar(
             depth: _kirilimDepth(),
-            maxDepth: 1,
+            maxDepth: 3,
             onDepthChanged: _setKirilimDepth,
           ),
           _ExpandableSection(
@@ -801,12 +883,22 @@ class _DailyViewState extends State<_DailyView> {
             date: date,
             expanded: _l1Ekip,
             onExpandedChanged: (v) => setState(() => _l1Ekip = v),
+            companyExpanded: _ekipCompanyExpanded,
+            onCompanyExpandedChanged: (company, v) => setState(() {
+              _ekipCompanies[company] = v;
+            }),
+            onCompaniesSeen: _ensureEkipCompanies,
           ),
           DayYevmiyeliSection(
             date: date,
             people: widget.people,
             expanded: _l1Yevmiyeli,
             onExpandedChanged: (v) => setState(() => _l1Yevmiyeli = v),
+            companyExpanded: _yevmiyeliCompanyExpanded,
+            onCompanyExpandedChanged: (company, v) => setState(() {
+              _yevmiyeliCompanies[company] = v;
+            }),
+            onCompaniesSeen: _ensureYevmiyeliCompanies,
           ),
         ] else ...[
         if (missing > 0) ...[
@@ -1102,12 +1194,22 @@ class _DailyViewState extends State<_DailyView> {
           date: date,
           expanded: _l1Ekip,
           onExpandedChanged: (v) => setState(() => _l1Ekip = v),
+          companyExpanded: _ekipCompanyExpanded,
+          onCompanyExpandedChanged: (company, v) => setState(() {
+            _ekipCompanies[company] = v;
+          }),
+          onCompaniesSeen: _ensureEkipCompanies,
         ),
         DayYevmiyeliSection(
           date: date,
           people: widget.people,
           expanded: _l1Yevmiyeli,
           onExpandedChanged: (v) => setState(() => _l1Yevmiyeli = v),
+          companyExpanded: _yevmiyeliCompanyExpanded,
+          onCompanyExpandedChanged: (company, v) => setState(() {
+            _yevmiyeliCompanies[company] = v;
+          }),
+          onCompaniesSeen: _ensureYevmiyeliCompanies,
         ),
         ],
       ],
@@ -1337,11 +1439,17 @@ class _DayTeamsSection extends ConsumerWidget {
     required this.date,
     required this.expanded,
     required this.onExpandedChanged,
+    required this.companyExpanded,
+    required this.onCompanyExpandedChanged,
+    required this.onCompaniesSeen,
   });
 
   final String date;
   final bool expanded;
   final ValueChanged<bool> onExpandedChanged;
+  final bool Function(String company) companyExpanded;
+  final void Function(String company, bool expanded) onCompanyExpandedChanged;
+  final void Function(Iterable<String> companies) onCompaniesSeen;
 
   Future<void> _openEditor(
     BuildContext context,
@@ -1681,6 +1789,21 @@ class _DayTeamsSection extends ConsumerWidget {
     final totalWorkers =
         entries.fold<int>(0, (sum, e) => sum + e.workerCount);
 
+    final byCompany = <String, List<UninsuredTeamEntry>>{};
+    for (final e in entries) {
+      final key = e.company.trim();
+      byCompany.putIfAbsent(key, () => []).add(e);
+    }
+    final companyKeys = byCompany.keys.toList()
+      ..sort((a, b) {
+        if (a.isEmpty) return 1;
+        if (b.isEmpty) return -1;
+        return a.toLowerCase().compareTo(b.toLowerCase());
+      });
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      onCompaniesSeen(companyKeys);
+    });
+
     void denyWrite() {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
@@ -1689,96 +1812,135 @@ class _DayTeamsSection extends ConsumerWidget {
       );
     }
 
-    final bodyChildren = <Widget>[
-        if (entries.isEmpty) ...[
-          const SizedBox(height: AppSpacing.sm),
-          Text(
-            catalogTeams.isEmpty
-                ? 'Yeni ekip tanımlayıp çalışan sayısı girin.'
-                : 'Açılır listeden ekip seçip çalışan sayısı girin.',
-            style: theme.textTheme.bodySmall?.copyWith(
-              color: theme.colorScheme.onSurfaceVariant,
-            ),
-          ),
-        ] else ...[
-          const SizedBox(height: AppSpacing.sm),
-          for (final entry in entries)
-            Padding(
-              padding: const EdgeInsets.only(bottom: AppSpacing.sm),
-              child: SJCard.builder(
-                builder: (context, cardTheme) {
-                  return Row(
+    Widget teamCard(UninsuredTeamEntry entry) {
+      return Padding(
+        padding: const EdgeInsets.only(bottom: AppSpacing.sm),
+        child: SJCard.builder(
+          builder: (context, cardTheme) {
+            return Row(
+              children: [
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Expanded(
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Text(
-                              entry.teamName,
-                              style: cardTheme.textTheme.titleSmall?.copyWith(
-                                fontWeight: FontWeight.w700,
-                              ),
-                            ),
-                            const SizedBox(height: 2),
-                            Text(
-                              entry.company.trim().isEmpty
-                                  ? '${entry.workerCount} çalışan'
-                                  : '${entry.company} · ${entry.workerCount} çalışan',
-                              style: cardTheme.textTheme.bodySmall?.copyWith(
-                                color: cardTheme.colorScheme.onSurfaceVariant,
-                              ),
-                            ),
-                          ],
+                      Text(
+                        entry.teamName,
+                        style: cardTheme.textTheme.titleSmall?.copyWith(
+                          fontWeight: FontWeight.w700,
                         ),
                       ),
-                      IconButton(
-                        tooltip: 'Düzenle',
-                        visualDensity: VisualDensity.compact,
-                        onPressed: () {
-                          if (!canEdit) return denyWrite();
-                          _openEditor(
-                            context,
-                            ref,
-                            projectId: project.id,
-                            catalogTeams: catalogTeams,
-                            usedTeamNames: usedTeamNames,
-                            existing: entry,
-                          );
-                        },
-                        icon: const Icon(Icons.edit_outlined, size: 18),
-                      ),
-                      IconButton(
-                        tooltip: 'Sil',
-                        visualDensity: VisualDensity.compact,
-                        onPressed: () async {
-                          if (!canEdit) return denyWrite();
-                          final ok = await SJModal.confirm(
-                            context: context,
-                            title: 'Ekibi sil',
-                            message: entry.company.trim().isEmpty
-                                ? '${entry.teamName} (${entry.workerCount} çalışan) silinsin mi?'
-                                : '${entry.company} · ${entry.teamName} (${entry.workerCount} çalışan) silinsin mi?',
-                            confirmLabel: 'Sil',
-                            destructive: true,
-                          );
-                          if (!ok) return;
-                          ref
-                              .read(uninsuredTeamsProvider.notifier)
-                              .remove(entry.id);
-                        },
-                        icon: Icon(
-                          Icons.delete_outline,
-                          size: 18,
-                          color: cardTheme.colorScheme.error,
+                      const SizedBox(height: 2),
+                      Text(
+                        '${entry.workerCount} çalışan',
+                        style: cardTheme.textTheme.bodySmall?.copyWith(
+                          color: cardTheme.colorScheme.onSurfaceVariant,
                         ),
                       ),
                     ],
-                  );
-                },
-              ),
+                  ),
+                ),
+                IconButton(
+                  tooltip: 'Düzenle',
+                  visualDensity: VisualDensity.compact,
+                  onPressed: () {
+                    if (!canEdit) return denyWrite();
+                    _openEditor(
+                      context,
+                      ref,
+                      projectId: project.id,
+                      catalogTeams: catalogTeams,
+                      usedTeamNames: usedTeamNames,
+                      existing: entry,
+                    );
+                  },
+                  icon: const Icon(Icons.edit_outlined, size: 18),
+                ),
+                IconButton(
+                  tooltip: 'Sil',
+                  visualDensity: VisualDensity.compact,
+                  onPressed: () async {
+                    if (!canEdit) return denyWrite();
+                    final ok = await SJModal.confirm(
+                      context: context,
+                      title: 'Ekibi sil',
+                      message: entry.company.trim().isEmpty
+                          ? '${entry.teamName} (${entry.workerCount} çalışan) silinsin mi?'
+                          : '${entry.company} · ${entry.teamName} (${entry.workerCount} çalışan) silinsin mi?',
+                      confirmLabel: 'Sil',
+                      destructive: true,
+                    );
+                    if (!ok) return;
+                    ref.read(uninsuredTeamsProvider.notifier).remove(entry.id);
+                  },
+                  icon: Icon(
+                    Icons.delete_outline,
+                    size: 18,
+                    color: Theme.of(context).colorScheme.error,
+                  ),
+                ),
+              ],
+            );
+          },
+        ),
+      );
+    }
+
+    final bodyChildren = <Widget>[
+      if (entries.isEmpty) ...[
+        const SizedBox(height: AppSpacing.sm),
+        Text(
+          catalogTeams.isEmpty
+              ? 'Yeni ekip tanımlayıp çalışan sayısı girin.'
+              : 'Açılır listeden ekip seçip çalışan sayısı girin.',
+          style: theme.textTheme.bodySmall?.copyWith(
+            color: theme.colorScheme.onSurfaceVariant,
+          ),
+        ),
+      ] else ...[
+        const SizedBox(height: AppSpacing.sm),
+        for (final company in companyKeys)
+          _ExpandableSection(
+            indent: AppSpacing.sm,
+            expanded: companyExpanded(company),
+            onExpandedChanged: (v) => onCompanyExpandedChanged(company, v),
+            title: Row(
+              children: [
+                Icon(
+                  Icons.apartment_outlined,
+                  size: 14,
+                  color: AppColors.statusInkOnChrome(
+                    AppColors.useDarkChrome
+                        ? AppColors.electricBlueLight
+                        : AppColors.electricBlue,
+                  ),
+                ),
+                const SizedBox(width: AppSpacing.xs),
+                Expanded(
+                  child: Text(
+                    company.isEmpty ? 'Firma seçilmedi' : company,
+                    style: theme.textTheme.titleSmall?.copyWith(
+                      color: AppColors.statusInkOnChrome(
+                        AppColors.useDarkChrome
+                            ? AppColors.electricBlueLight
+                            : AppColors.electricBlue,
+                      ),
+                      fontWeight: FontWeight.w700,
+                    ),
+                  ),
+                ),
+              ],
             ),
-        ],
-      ];
+            trailing: Text(
+              '${byCompany[company]!.fold<int>(0, (s, e) => s + e.workerCount)} personel',
+              style: theme.textTheme.labelSmall,
+            ),
+            children: [
+              const SizedBox(height: AppSpacing.sm),
+              for (final entry in byCompany[company]!) teamCard(entry),
+            ],
+          ),
+      ],
+    ];
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,

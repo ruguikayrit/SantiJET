@@ -290,6 +290,8 @@ Future<void> openYevmiyeliIsEditor(
 }
 
 /// Günlük puantaj — Yevmiyeli işler (Personel / Ekip ile aynı açılır başlık).
+///
+/// Firma alt başlıkları personel filtresinde açılır; ekip filtresi etkilemez.
 class DayYevmiyeliSection extends ConsumerStatefulWidget {
   const DayYevmiyeliSection({
     super.key,
@@ -298,6 +300,11 @@ class DayYevmiyeliSection extends ConsumerStatefulWidget {
     this.expanded,
     this.onExpandedChanged,
     this.initiallyExpanded = true,
+    this.companyExpanded,
+    this.onCompanyExpandedChanged,
+    this.onCompaniesSeen,
+    /// Günlük rapor kartı içine gömülünce dış başlık çizilmez.
+    this.headerless = false,
   });
 
   final String date;
@@ -305,6 +312,10 @@ class DayYevmiyeliSection extends ConsumerStatefulWidget {
   final bool? expanded;
   final ValueChanged<bool>? onExpandedChanged;
   final bool initiallyExpanded;
+  final bool Function(String company)? companyExpanded;
+  final void Function(String company, bool expanded)? onCompanyExpandedChanged;
+  final void Function(Iterable<String> companies)? onCompaniesSeen;
+  final bool headerless;
 
   @override
   ConsumerState<DayYevmiyeliSection> createState() =>
@@ -313,8 +324,25 @@ class DayYevmiyeliSection extends ConsumerStatefulWidget {
 
 class _DayYevmiyeliSectionState extends ConsumerState<DayYevmiyeliSection> {
   late bool _internalExpanded = widget.initiallyExpanded;
+  final Map<String, bool> _localCompanies = {};
 
-  bool get _isExpanded => widget.expanded ?? _internalExpanded;
+  bool get _isExpanded =>
+      widget.headerless || (widget.expanded ?? _internalExpanded);
+
+  bool _isCompanyExpanded(String company) {
+    if (widget.companyExpanded != null) {
+      return widget.companyExpanded!(company);
+    }
+    return _localCompanies[company] ?? false;
+  }
+
+  void _setCompanyExpanded(String company, bool value) {
+    if (widget.onCompanyExpandedChanged != null) {
+      widget.onCompanyExpandedChanged!(company, value);
+      return;
+    }
+    setState(() => _localCompanies[company] = value);
+  }
 
   void _toggle() {
     if (widget.expanded != null && widget.onExpandedChanged != null) {
@@ -329,6 +357,7 @@ class _DayYevmiyeliSectionState extends ConsumerState<DayYevmiyeliSection> {
     super.didUpdateWidget(oldWidget);
     if (oldWidget.date != widget.date) {
       _internalExpanded = widget.initiallyExpanded;
+      _localCompanies.clear();
     } else if (widget.expanded == null &&
         oldWidget.initiallyExpanded != widget.initiallyExpanded) {
       _internalExpanded = widget.initiallyExpanded;
@@ -353,54 +382,80 @@ class _DayYevmiyeliSectionState extends ConsumerState<DayYevmiyeliSection> {
     final total =
         entries.fold<double>(0, (sum, e) => sum + e.yevmiyeCount);
 
+    final byCompany = <String, List<YevmiyeliIsKaydi>>{};
+    for (final e in entries) {
+      final key = e.company.trim();
+      byCompany.putIfAbsent(key, () => []).add(e);
+    }
+    final companyKeys = byCompany.keys.toList()
+      ..sort((a, b) {
+        if (a.isEmpty) return 1;
+        if (b.isEmpty) return -1;
+        return a.toLowerCase().compareTo(b.toLowerCase());
+      });
+    final onSeen = widget.onCompaniesSeen;
+    if (onSeen != null && companyKeys.isNotEmpty) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        onSeen(companyKeys);
+      });
+    }
+
+    final firmAccent = AppColors.statusInkOnChrome(
+      AppColors.useDarkChrome
+          ? AppColors.electricBlueLight
+          : AppColors.electricBlue,
+    );
+
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
-        const SizedBox(height: AppSpacing.md),
-        InkWell(
-          onTap: _toggle,
-          borderRadius: AppRadii.sm,
-          child: Padding(
-            padding: const EdgeInsets.symmetric(vertical: AppSpacing.xs),
-            child: Row(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Container(
-                  width: 3,
-                  height: 16,
-                  margin: const EdgeInsets.only(top: 2),
-                  color: AppColors.electricBlue,
-                ),
-                const SizedBox(width: AppSpacing.xs),
-                Expanded(
-                  child: Text(
-                    'Yevmiyeli işler',
-                    style: theme.textTheme.titleMedium?.copyWith(
-                      fontWeight: FontWeight.w700,
+        if (!widget.headerless) ...[
+          const SizedBox(height: AppSpacing.md),
+          InkWell(
+            onTap: _toggle,
+            borderRadius: AppRadii.sm,
+            child: Padding(
+              padding: const EdgeInsets.symmetric(vertical: AppSpacing.xs),
+              child: Row(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Container(
+                    width: 3,
+                    height: 16,
+                    margin: const EdgeInsets.only(top: 2),
+                    color: AppColors.electricBlue,
+                  ),
+                  const SizedBox(width: AppSpacing.xs),
+                  Expanded(
+                    child: Text(
+                      'Yevmiyeli işler',
+                      style: theme.textTheme.titleMedium?.copyWith(
+                        fontWeight: FontWeight.w700,
+                      ),
                     ),
                   ),
-                ),
-                if (entries.isNotEmpty) ...[
-                  const SizedBox(width: AppSpacing.xs),
-                  Padding(
-                    padding: const EdgeInsets.only(top: 2),
-                    child: Text(
-                      '${entries.length} kayıt',
-                      style: theme.textTheme.labelSmall,
+                  if (entries.isNotEmpty) ...[
+                    const SizedBox(width: AppSpacing.xs),
+                    Padding(
+                      padding: const EdgeInsets.only(top: 2),
+                      child: Text(
+                        '${entries.length} kayıt',
+                        style: theme.textTheme.labelSmall,
+                      ),
                     ),
+                  ],
+                  Icon(
+                    _isExpanded ? Icons.expand_less : Icons.expand_more,
+                    size: 20,
+                    color: theme.colorScheme.onSurfaceVariant,
                   ),
                 ],
-                Icon(
-                  _isExpanded ? Icons.expand_less : Icons.expand_more,
-                  size: 20,
-                  color: theme.colorScheme.onSurfaceVariant,
-                ),
-              ],
+              ),
             ),
           ),
-        ),
+        ],
         if (_isExpanded) ...[
-          const SizedBox(height: AppSpacing.sm),
+          if (!widget.headerless) const SizedBox(height: AppSpacing.sm),
           if (entries.isEmpty)
             Text(
               'Taşeronun parça iş için verdiği adamları buraya kaydedin. '
@@ -409,45 +464,134 @@ class _DayYevmiyeliSectionState extends ConsumerState<DayYevmiyeliSection> {
                 color: theme.colorScheme.onSurfaceVariant,
               ),
             )
-          else
-            Column(
+          else if (widget.headerless) ...[
+            for (var i = 0; i < entries.length; i++) ...[
+              if (i > 0) const Divider(height: 1),
+              _YevmiyeliRow(
+                index: i + 1,
+                entry: entries[i],
+                onTap: () => openYevmiyeliIsEditor(
+                  context,
+                  ref,
+                  projectId: project.id,
+                  date: widget.date,
+                  people: widget.people,
+                  existing: entries[i],
+                ),
+              ),
+            ],
+            const Divider(height: 16),
+            Row(
               children: [
-                for (var i = 0; i < entries.length; i++) ...[
-                  if (i > 0) const Divider(height: 1),
-                  _YevmiyeliRow(
-                    index: i + 1,
-                    entry: entries[i],
-                    onTap: () => openYevmiyeliIsEditor(
-                      context,
-                      ref,
-                      projectId: project.id,
-                      date: widget.date,
-                      people: widget.people,
-                      existing: entries[i],
-                    ),
+                Text(
+                  'Günlük toplam',
+                  style: theme.textTheme.labelLarge?.copyWith(
+                    fontWeight: FontWeight.w700,
                   ),
-                ],
-                const Divider(height: 16),
-                Row(
-                  children: [
-                    Text(
-                      'Günlük toplam',
-                      style: theme.textTheme.labelLarge?.copyWith(
-                        fontWeight: FontWeight.w700,
-                      ),
-                    ),
-                    const Spacer(),
-                    Text(
-                      '${formatYevmiyeCount(total)} yv',
-                      style: theme.textTheme.labelLarge?.copyWith(
-                        color: AppColors.electricBlue,
-                        fontWeight: FontWeight.w800,
-                      ),
-                    ),
-                  ],
+                ),
+                const Spacer(),
+                Text(
+                  '${formatYevmiyeCount(total)} yv',
+                  style: theme.textTheme.labelLarge?.copyWith(
+                    color: AppColors.electricBlue,
+                    fontWeight: FontWeight.w800,
+                  ),
                 ),
               ],
             ),
+          ]
+          else ...[
+            for (final company in companyKeys) ...[
+              InkWell(
+                onTap: () => _setCompanyExpanded(
+                  company,
+                  !_isCompanyExpanded(company),
+                ),
+                borderRadius: AppRadii.sm,
+                child: Padding(
+                  padding: const EdgeInsets.only(
+                    left: AppSpacing.sm,
+                    top: AppSpacing.xs,
+                    bottom: AppSpacing.xs,
+                  ),
+                  child: Row(
+                    children: [
+                      Icon(
+                        Icons.apartment_outlined,
+                        size: 14,
+                        color: firmAccent,
+                      ),
+                      const SizedBox(width: AppSpacing.xs),
+                      Expanded(
+                        child: Text(
+                          company.isEmpty ? 'Firma seçilmedi' : company,
+                          style: theme.textTheme.titleSmall?.copyWith(
+                            color: firmAccent,
+                            fontWeight: FontWeight.w700,
+                          ),
+                        ),
+                      ),
+                      Text(
+                        '${byCompany[company]!.length} kayıt',
+                        style: theme.textTheme.labelSmall,
+                      ),
+                      Icon(
+                        _isCompanyExpanded(company)
+                            ? Icons.expand_less
+                            : Icons.expand_more,
+                        size: 20,
+                        color: theme.colorScheme.onSurfaceVariant,
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+              if (_isCompanyExpanded(company))
+                Padding(
+                  padding: const EdgeInsets.only(left: AppSpacing.md),
+                  child: Column(
+                    children: [
+                      for (var i = 0;
+                          i < byCompany[company]!.length;
+                          i++) ...[
+                        if (i > 0) const Divider(height: 1),
+                        _YevmiyeliRow(
+                          index: i + 1,
+                          entry: byCompany[company]![i],
+                          onTap: () => openYevmiyeliIsEditor(
+                            context,
+                            ref,
+                            projectId: project.id,
+                            date: widget.date,
+                            people: widget.people,
+                            existing: byCompany[company]![i],
+                          ),
+                        ),
+                      ],
+                    ],
+                  ),
+                ),
+            ],
+            const Divider(height: 16),
+            Row(
+              children: [
+                Text(
+                  'Günlük toplam',
+                  style: theme.textTheme.labelLarge?.copyWith(
+                    fontWeight: FontWeight.w700,
+                  ),
+                ),
+                const Spacer(),
+                Text(
+                  '${formatYevmiyeCount(total)} yv',
+                  style: theme.textTheme.labelLarge?.copyWith(
+                    color: AppColors.electricBlue,
+                    fontWeight: FontWeight.w800,
+                  ),
+                ),
+              ],
+            ),
+          ],
         ],
       ],
     );

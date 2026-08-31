@@ -1829,10 +1829,29 @@ class _DailyReportScreenState extends ConsumerState<DailyReportScreen> {
                     AttendanceSummaryTables(snapshot: snap),
                   ],
                   const SizedBox(height: AppSpacing.md),
-                  DayYevmiyeliSection(
-                    date: date,
-                    people: ref.watch(personnelForDateProvider(date)),
-                    initiallyExpanded: false,
+                  _SectionCard(
+                    title: 'Yevmiyeli işler',
+                    icon: Icons.handyman_outlined,
+                    trailing: IconButton(
+                      tooltip: 'Ekle',
+                      onPressed: () {
+                        final project = ref.read(activeProjectProvider);
+                        if (project == null) return;
+                        openYevmiyeliIsEditor(
+                          context,
+                          ref,
+                          projectId: project.id,
+                          date: date,
+                          people: ref.read(personnelForDateProvider(date)),
+                        );
+                      },
+                      icon: const Icon(Icons.add),
+                    ),
+                    child: DayYevmiyeliSection(
+                      date: date,
+                      people: ref.watch(personnelForDateProvider(date)),
+                      headerless: true,
+                    ),
                   ),
                   const SizedBox(height: AppSpacing.md),
                   _SectionCard(
