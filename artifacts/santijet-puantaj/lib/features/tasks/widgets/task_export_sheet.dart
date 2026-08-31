@@ -22,7 +22,7 @@ class TaskExportSheet extends StatefulWidget {
   final String projectName;
   final List<SiteTask> tasks;
 
-  /// null = tüm etiketler; verilmezse İnşaat seçili açılır.
+  /// null = tüm etiketler (varsayılan).
   final String? initialTag;
 
   @override
@@ -30,7 +30,7 @@ class TaskExportSheet extends StatefulWidget {
 }
 
 class _TaskExportSheetState extends State<TaskExportSheet> {
-  late String? _tag = widget.initialTag ?? TaskTagCatalog.insaat;
+  late String? _tag = widget.initialTag;
   TaskStatus? _status;
   bool _busy = false;
   String? _error;

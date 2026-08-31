@@ -1204,7 +1204,7 @@ class _TasksScreenState extends ConsumerState<TasksScreen> {
       child: TaskExportSheet(
         projectName: project.name,
         tasks: tasks,
-        initialTag: _tagFilter ?? TaskTagCatalog.insaat,
+        initialTag: _tagFilter,
       ),
     );
   }
