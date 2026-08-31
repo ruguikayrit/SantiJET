@@ -212,7 +212,11 @@ class TaskExportService {
       color: _blue,
       lineSpacing: 1.5,
     );
-    // Widget başlık: \\n satırları ortalanmış kalsın.
+    // Ortalanacak sütunlar: #, Etiket, Kategori, Atanan, tarihler, Durum.
+    const centeredCols = {0, 2, 3, 4, 5, 6, 7, 8, 9};
+    final cellAlignments = {
+      for (final c in centeredCols) c: pw.Alignment.center,
+    };
     final headerWidgets = <pw.Widget>[
       for (final h in headers)
         pw.Text(
@@ -234,23 +238,24 @@ class TaskExportService {
       headerDecoration: const pw.BoxDecoration(color: _headerBg),
       cellStyle: const pw.TextStyle(fontSize: 8, color: _ink),
       cellAlignment: pw.Alignment.centerLeft,
+      cellAlignments: cellAlignments,
       headerAlignment: pw.Alignment.center,
       border: pw.TableBorder.all(color: _border, width: 0.5),
       cellPadding: const pw.EdgeInsets.symmetric(horizontal: 3, vertical: 4),
       headerPadding: const pw.EdgeInsets.symmetric(horizontal: 2, vertical: 5),
       columnWidths: {
-        0: const pw.FixedColumnWidth(18),
-        1: const pw.FlexColumnWidth(1.6),
-        2: const pw.FixedColumnWidth(42),
-        3: const pw.FlexColumnWidth(1.0),
-        4: const pw.FlexColumnWidth(1.1),
-        5: const pw.FixedColumnWidth(46),
-        6: const pw.FixedColumnWidth(50),
-        7: const pw.FixedColumnWidth(42),
-        8: const pw.FixedColumnWidth(50),
-        9: const pw.FixedColumnWidth(46),
-        // Açıklama — kalan alanın büyük kısmı.
-        10: const pw.FlexColumnWidth(3.4),
+        0: const pw.FixedColumnWidth(22),
+        1: const pw.FlexColumnWidth(1.5),
+        2: const pw.FixedColumnWidth(50),
+        3: const pw.FlexColumnWidth(0.95),
+        4: const pw.FlexColumnWidth(1.05),
+        // dd.MM.yyyy tek satırda kalsın.
+        5: const pw.FixedColumnWidth(58),
+        6: const pw.FixedColumnWidth(58),
+        7: const pw.FixedColumnWidth(58),
+        8: const pw.FixedColumnWidth(58),
+        9: const pw.FixedColumnWidth(50),
+        10: const pw.FlexColumnWidth(3.2),
       },
     );
   }
@@ -278,12 +283,12 @@ class TaskExportService {
       11, // Etiket
       14, // Kategori
       16, // Atanan
-      12, // Planlanan Başlangıç
-      13, // Gerçekleşen Başlangıç
-      11, // Planlanan Bitiş
-      13, // Gerçekleşen Bitiş
+      14, // Planlanan Başlangıç (dd.MM.yyyy)
+      14, // Gerçekleşen Başlangıç
+      14, // Planlanan Bitiş
+      14, // Gerçekleşen Bitiş
       12, // Durum
-      48, // Açıklama (maksimum)
+      48, // Açıklama
     ];
     for (var c = 0; c < excelColWidths.length; c++) {
       sheet.setColumnWidth(c, excelColWidths[c]);
@@ -303,6 +308,11 @@ class TaskExportService {
       cell.value = TextCellValue(report.headers[c]);
       cell.cellStyle = headerStyle;
     }
+    final centeredCellStyle = CellStyle(
+      horizontalAlign: HorizontalAlign.Center,
+      verticalAlign: VerticalAlign.Center,
+    );
+    const centeredCols = {0, 2, 3, 4, 5, 6, 7, 8, 9};
     for (var r = 0; r < report.rows.length; r++) {
       final row = report.rows[r];
       for (var c = 0; c < report.headers.length; c++) {
@@ -315,6 +325,8 @@ class TaskExportService {
         cell.value = TextCellValue(c < row.length ? row[c] : '');
         if (c == 10) {
           cell.cellStyle = CellStyle(textWrapping: TextWrapping.WrapText);
+        } else if (centeredCols.contains(c)) {
+          cell.cellStyle = centeredCellStyle;
         }
       }
     }
