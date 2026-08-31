@@ -122,21 +122,34 @@ class TaskExportService {
 
     for (var g = 0; g < groups.length; g++) {
       final group = groups[g];
+      final rows = _photoRows(group.photos);
+      final firstRow = rows.isEmpty ? null : rows.first;
+      final restRows = rows.length > 1 ? rows.sublist(1) : const <pw.Widget>[];
+
+      // Başlık yalnız kalmasın: başlık + ilk foto satırı birlikte.
+      out.add(pw.NewPage(freeSpace: 120));
       out.add(
-        pw.Padding(
-          padding: const pw.EdgeInsets.only(bottom: 4),
-          child: pw.Text(
-            '#${group.index}  ${group.title}',
-            style: pw.TextStyle(
-              fontSize: 9,
-              fontWeight: pw.FontWeight.bold,
-              color: _ink,
-            ),
+        _KeepTogether(
+          child: pw.Column(
+            crossAxisAlignment: pw.CrossAxisAlignment.stretch,
+            children: [
+              pw.Padding(
+                padding: const pw.EdgeInsets.only(bottom: 4),
+                child: pw.Text(
+                  '#${group.index}  ${group.title}',
+                  style: pw.TextStyle(
+                    fontSize: 9,
+                    fontWeight: pw.FontWeight.bold,
+                    color: _ink,
+                  ),
+                ),
+              ),
+              if (firstRow != null) firstRow,
+            ],
           ),
         ),
       );
-      out.addAll(_photoRows(group.photos));
-      // Madde (görev) fotoğrafları arası yatay ayırıcı.
+      out.addAll(restRows);
       out.add(pw.SizedBox(height: 8));
       out.add(pw.Container(height: 0.9, color: _border));
       out.add(pw.SizedBox(height: g < groups.length - 1 ? 10 : 4));
@@ -398,3 +411,20 @@ class TaskExportService {
 }
 
 final taskExportService = TaskExportService();
+
+/// MultiPage içinde başlık+foto bloğunun bölünmesini engeller.
+class _KeepTogether extends pw.SingleChildWidget {
+  _KeepTogether({required pw.Widget child}) : super(child: child);
+
+  @override
+  bool get canSpan => false;
+
+  @override
+  bool get hasMoreWidgets => false;
+
+  @override
+  void paint(pw.Context context) {
+    super.paint(context);
+    paintChild(context);
+  }
+}
