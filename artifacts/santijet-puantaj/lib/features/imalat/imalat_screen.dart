@@ -189,11 +189,6 @@ class _ImalatScreenState extends ConsumerState<ImalatScreen> {
                     SJStatusBadge(
                       label: 'Tamamlandı',
                       color: AppColors.success,
-                    )
-                  else if (p.metrics.unitEfficiency != null)
-                    UnitEfficiencyBadge(
-                      efficiency: p.metrics.unitEfficiency,
-                      compact: true,
                     ),
                 ],
               ),
