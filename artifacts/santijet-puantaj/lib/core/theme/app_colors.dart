@@ -222,7 +222,8 @@ abstract final class AppColors {
   static const moduleInsaat = Color(0xFFF59E0B);
   /// Mekanik — gök mavisi yerine mor; birincil mavi ile karışmasın.
   static const moduleMekanik = Color(0xFF9333EA);
-  static const moduleElektrik = Color(0xFF10B981);
+  /// Elektrik — mavi (yeşil success ile karışmasın).
+  static const moduleElektrik = electricBlueLight;
   static const moduleFavori = Color(0xFFEAB308);
   static const moduleKesif = Color(0xFFA855F7);
   static const moduleKatalog = Color(0xFF10B981);
