@@ -11,6 +11,7 @@ import 'report_file_access_stub.dart'
     if (dart.library.html) 'report_file_access_web.dart'
     if (dart.library.io) 'report_file_access_io.dart' as file_access;
 import 'task_report_builder.dart';
+import 'xlsx_image_embedder.dart';
 
 /// Saha görevlerini PDF / Excel olarak üretir ve paylaşır.
 class TaskExportService {
@@ -46,7 +47,7 @@ class TaskExportService {
     final bytes = _buildExcelBytes(report);
     await file_access.downloadBytesFile(
       fileName: 'santijet-${report.fileStem}.xlsx',
-      bytes: bytes,
+      bytes: Uint8List.fromList(bytes),
       mimeType:
           'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
       shareText: report.title,
@@ -243,31 +244,109 @@ class TaskExportService {
   List<int> _buildExcelBytes(TaskReportData report) {
     final excel = Excel.createExcel();
     excel.delete('Sheet1');
+
+    // —— Görevler tablosu (PDF ile aynı kolonlar) ——
     final sheet = excel['Görevler'];
+    sheet
+        .cell(CellIndex.indexByColumnRow(columnIndex: 0, rowIndex: 0))
+        .value = TextCellValue(report.title);
+    sheet
+        .cell(CellIndex.indexByColumnRow(columnIndex: 0, rowIndex: 1))
+        .value = TextCellValue(
+      '${report.subtitle} · ${report.taskCount} görev',
+    );
+
+    const headerRow = 3;
     for (var c = 0; c < report.headers.length; c++) {
       sheet
-          .cell(CellIndex.indexByColumnRow(columnIndex: c, rowIndex: 0))
+          .cell(
+            CellIndex.indexByColumnRow(columnIndex: c, rowIndex: headerRow),
+          )
           .value = TextCellValue(report.headers[c].replaceAll('\n', ' '));
     }
     for (var r = 0; r < report.rows.length; r++) {
       final row = report.rows[r];
       for (var c = 0; c < report.headers.length; c++) {
         sheet
-            .cell(CellIndex.indexByColumnRow(columnIndex: c, rowIndex: r + 1))
+            .cell(
+              CellIndex.indexByColumnRow(
+                columnIndex: c,
+                rowIndex: headerRow + 1 + r,
+              ),
+            )
             .value = TextCellValue(c < row.length ? row[c] : '');
       }
     }
-    sheet
-        .cell(
-          CellIndex.indexByColumnRow(
-            columnIndex: 0,
-            rowIndex: report.rows.length + 2,
-          ),
-        )
+
+    // —— Fotoğraflar sekmesi (PDF: satırda 4 görsel) ——
+    const photosSheetName = 'Fotoğraflar';
+    final photosSheet = excel[photosSheetName];
+    photosSheet
+        .cell(CellIndex.indexByColumnRow(columnIndex: 0, rowIndex: 0))
+        .value = TextCellValue('FOTOĞRAFLAR');
+    photosSheet
+        .cell(CellIndex.indexByColumnRow(columnIndex: 0, rowIndex: 1))
         .value = TextCellValue(
-      '${report.title} · ${report.subtitle} · ${report.taskCount} görev',
+      report.photoGroups.isEmpty
+          ? 'Bu filtrede fotoğraf yok.'
+          : '${report.photoGroups.length} görev · satırda 4 fotoğraf',
     );
-    return excel.encode()!;
+
+    for (var c = 0; c < 4; c++) {
+      photosSheet.setColumnWidth(c, 18);
+    }
+
+    final placements = <XlsxImagePlacement>[];
+    var row = 3;
+    for (final group in report.photoGroups) {
+      photosSheet
+          .cell(CellIndex.indexByColumnRow(columnIndex: 0, rowIndex: row))
+          .value = TextCellValue('#${group.index}  ${group.title}');
+      row++;
+
+      var col = 0;
+      for (final photo in group.photos) {
+        Uint8List? bytes;
+        try {
+          if (photo.dataBase64.trim().isNotEmpty) {
+            bytes = base64Decode(photo.dataBase64);
+          }
+        } catch (_) {
+          bytes = null;
+        }
+        if (bytes == null || bytes.isEmpty) {
+          photosSheet
+              .cell(
+                CellIndex.indexByColumnRow(columnIndex: col, rowIndex: row),
+              )
+              .value = TextCellValue('(yüklenemedi)');
+        } else {
+          placements.add(
+            XlsxImagePlacement(row: row, column: col, bytes: bytes),
+          );
+          photosSheet.setRowHeight(row, 72);
+        }
+        col++;
+        if (col >= 4) {
+          col = 0;
+          row++;
+        }
+      }
+      if (col != 0) row++;
+      row++; // görevler arası boşluk
+    }
+
+    final encoded = excel.encode();
+    if (encoded == null) return const [];
+    if (placements.isEmpty) return encoded;
+
+    return embedImagesInXlsx(
+      xlsxBytes: encoded,
+      sheetName: photosSheetName,
+      placements: placements,
+      imageWidthPx: 120,
+      imageHeightPx: 90,
+    );
   }
 }
 
