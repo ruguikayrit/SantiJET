@@ -18,6 +18,7 @@ import '../../core/theme/app_spacing.dart';
 import '../../core/utils/puantaj_date.dart';
 import '../../core/utils/text_format.dart';
 import '../../core/utils/id_gen.dart';
+import '../../core/utils/image_rotate.dart';
 import '../../core/widgets/annotated_photo_viewer.dart';
 import '../../core/widgets/santijet_header.dart';
 import '../../data/providers/active_operator_provider.dart';
@@ -597,6 +598,55 @@ class _TasksScreenState extends ConsumerState<TasksScreen> {
                                           padding: EdgeInsets.all(4),
                                           child: Icon(
                                             Icons.close,
+                                            size: 14,
+                                            color: Colors.white,
+                                          ),
+                                        ),
+                                      ),
+                                    ),
+                                  ),
+                                if (canEditFields)
+                                  Positioned(
+                                    bottom: 2,
+                                    left: 2,
+                                    child: Material(
+                                      color: Colors.black54,
+                                      shape: const CircleBorder(),
+                                      child: InkWell(
+                                        customBorder: const CircleBorder(),
+                                        onTap: () async {
+                                          late final Uint8List bytes;
+                                          try {
+                                            bytes =
+                                                base64Decode(photo.dataBase64);
+                                          } catch (_) {
+                                            return;
+                                          }
+                                          final rotated =
+                                              await rotateImageBytesCw90(bytes);
+                                          if (rotated == null) return;
+                                          final updated = TaskPhoto(
+                                            id: photo.id,
+                                            dataBase64: base64Encode(rotated),
+                                            mimeType: 'image/png',
+                                            createdAt: photo.createdAt,
+                                          );
+                                          setModal(() {
+                                            photos = [
+                                              for (var j = 0;
+                                                  j < photos.length;
+                                                  j++)
+                                                if (j == i)
+                                                  updated
+                                                else
+                                                  photos[j],
+                                            ];
+                                          });
+                                        },
+                                        child: const Padding(
+                                          padding: EdgeInsets.all(4),
+                                          child: Icon(
+                                            Icons.rotate_90_degrees_cw,
                                             size: 14,
                                             color: Colors.white,
                                           ),

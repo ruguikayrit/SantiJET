@@ -6,6 +6,7 @@ import 'package:flutter/material.dart';
 import '../theme/app_colors.dart';
 import '../theme/app_radii.dart';
 import '../theme/app_spacing.dart';
+import '../utils/image_rotate.dart';
 
 enum _PhotoTool { view, draw, text }
 
@@ -58,6 +59,7 @@ class _AnnotatedPhotoViewerPageState extends State<AnnotatedPhotoViewerPage> {
   Color _color = const Color(0xFFE53935);
   bool _dirty = false;
   bool _saving = false;
+  bool _rotating = false;
 
   static const _palette = [
     Color(0xFFE53935),
@@ -68,10 +70,22 @@ class _AnnotatedPhotoViewerPageState extends State<AnnotatedPhotoViewerPage> {
     Colors.black,
   ];
 
+  bool get _isLandscape {
+    final img = _decoded;
+    if (img == null) return true;
+    return img.width >= img.height;
+  }
+
   @override
   void initState() {
     super.initState();
     _decodeImage();
+  }
+
+  @override
+  void dispose() {
+    _decoded?.dispose();
+    super.dispose();
   }
 
   Future<void> _decodeImage() async {
@@ -152,6 +166,57 @@ class _AnnotatedPhotoViewerPageState extends State<AnnotatedPhotoViewerPage> {
       _labels.add(_TextLabel(position: norm, text: text, color: _color));
       _dirty = true;
     });
+  }
+
+  Future<void> _rotateCw90() async {
+    final image = _decoded;
+    if (image == null || _rotating || _saving) return;
+    setState(() => _rotating = true);
+    try {
+      final next = await rotateUiImageCw90(image);
+      final remappedStrokes = [
+        for (final s in _strokes)
+          _NormStroke(
+            points: [
+              for (final p in s.points) Offset(1 - p.dy, p.dx),
+            ],
+            color: s.color,
+            strokeWidth: s.strokeWidth,
+          ),
+      ];
+      final remappedLabels = [
+        for (final l in _labels)
+          _TextLabel(
+            position: Offset(1 - l.position.dy, l.position.dx),
+            text: l.text,
+            color: l.color,
+          ),
+      ];
+      if (!mounted) {
+        next.dispose();
+        return;
+      }
+      setState(() {
+        _decoded?.dispose();
+        _decoded = next;
+        _strokes
+          ..clear()
+          ..addAll(remappedStrokes);
+        _labels
+          ..clear()
+          ..addAll(remappedLabels);
+        _activeStroke = null;
+        _dirty = true;
+      });
+    } finally {
+      if (mounted) setState(() => _rotating = false);
+    }
+  }
+
+  Future<void> _setOrientation({required bool landscape}) async {
+    if (_decoded == null || _rotating) return;
+    if (landscape == _isLandscape) return;
+    await _rotateCw90();
   }
 
   Future<void> _save() async {
@@ -263,7 +328,9 @@ class _AnnotatedPhotoViewerPageState extends State<AnnotatedPhotoViewerPage> {
                           ? 'Çizim modu'
                           : _tool == _PhotoTool.text
                               ? 'Not modu — dokunun'
-                              : 'Yakınlaştırmak için sürükleyin',
+                              : canEdit
+                                  ? 'Yön: ${_isLandscape ? 'Yatay' : 'Dikey'} · sürükleyerek yakınlaştırın'
+                                  : 'Yakınlaştırmak için sürükleyin',
                       textAlign: TextAlign.center,
                       style: Theme.of(context).textTheme.labelMedium?.copyWith(
                             color: Colors.white70,
@@ -273,7 +340,7 @@ class _AnnotatedPhotoViewerPageState extends State<AnnotatedPhotoViewerPage> {
                   if (canSave)
                     FilledButton.tonal(
                       onPressed:
-                          _saving || !_dirty ? null : () => _save(),
+                          _saving || _rotating || !_dirty ? null : () => _save(),
                       style: FilledButton.styleFrom(
                         foregroundColor: Colors.white,
                         backgroundColor: AppColors.electricBlue,
@@ -402,6 +469,56 @@ class _AnnotatedPhotoViewerPageState extends State<AnnotatedPhotoViewerPage> {
                         children: [
                           Row(
                             children: [
+                              Text(
+                                'Yönelim',
+                                style: Theme.of(context)
+                                    .textTheme
+                                    .labelSmall
+                                    ?.copyWith(color: Colors.white54),
+                              ),
+                              const SizedBox(width: AppSpacing.sm),
+                              _orientChip(
+                                label: 'Yatay',
+                                icon: Icons.stay_current_landscape,
+                                selected: _isLandscape,
+                                onTap: _rotating || _saving
+                                    ? null
+                                    : () => _setOrientation(landscape: true),
+                              ),
+                              const SizedBox(width: AppSpacing.xs),
+                              _orientChip(
+                                label: 'Dikey',
+                                icon: Icons.stay_current_portrait,
+                                selected: !_isLandscape,
+                                onTap: _rotating || _saving
+                                    ? null
+                                    : () => _setOrientation(landscape: false),
+                              ),
+                              const Spacer(),
+                              IconButton(
+                                tooltip: '90° döndür',
+                                onPressed: _rotating || _saving
+                                    ? null
+                                    : _rotateCw90,
+                                icon: _rotating
+                                    ? const SizedBox(
+                                        width: 18,
+                                        height: 18,
+                                        child: CircularProgressIndicator(
+                                          strokeWidth: 2,
+                                          color: Colors.white54,
+                                        ),
+                                      )
+                                    : const Icon(
+                                        Icons.rotate_90_degrees_cw,
+                                        color: Colors.white70,
+                                      ),
+                              ),
+                            ],
+                          ),
+                          const SizedBox(height: AppSpacing.sm),
+                          Row(
+                            children: [
                               _toolChip(
                                 tool: _PhotoTool.view,
                                 icon: Icons.pan_tool_alt_outlined,
@@ -510,6 +627,42 @@ class _AnnotatedPhotoViewerPageState extends State<AnnotatedPhotoViewerPage> {
                   fontWeight:
                       selected ? FontWeight.w700 : FontWeight.w500,
                   fontSize: 13,
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _orientChip({
+    required String label,
+    required IconData icon,
+    required bool selected,
+    VoidCallback? onTap,
+  }) {
+    return Material(
+      color: selected
+          ? AppColors.electricBlue.withValues(alpha: 0.35)
+          : Colors.white.withValues(alpha: 0.08),
+      borderRadius: AppRadii.sm,
+      child: InkWell(
+        borderRadius: AppRadii.sm,
+        onTap: onTap,
+        child: Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
+          child: Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Icon(icon, size: 16, color: Colors.white),
+              const SizedBox(width: 6),
+              Text(
+                label,
+                style: const TextStyle(
+                  color: Colors.white,
+                  fontWeight: FontWeight.w700,
+                  fontSize: 12,
                 ),
               ),
             ],
