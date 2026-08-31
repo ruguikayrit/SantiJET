@@ -10,6 +10,7 @@ import 'package:image_picker/image_picker.dart';
 import '../../core/design_system/sj_card.dart';
 import '../../core/design_system/sj_empty_state.dart';
 import '../../core/design_system/sj_modal.dart';
+import '../../core/design_system/sj_search_bar.dart';
 import '../../core/routing/app_routes.dart';
 import '../../core/theme/app_layout.dart';
 import '../../core/theme/app_colors.dart';
@@ -47,6 +48,8 @@ class _TasksScreenState extends ConsumerState<TasksScreen> {
   TaskStatus? _filter;
   String? _categoryFilter;
   String? _tagFilter;
+  String _searchQuery = '';
+  final _searchController = TextEditingController();
   final _listScrollController = ScrollController();
 
   /// Tamamlandı seçilince 2 sn yerinde tutulan görevler.
@@ -58,8 +61,57 @@ class _TasksScreenState extends ConsumerState<TasksScreen> {
     for (final t in _pinTimers.values) {
       t.cancel();
     }
+    _searchController.dispose();
     _listScrollController.dispose();
     super.dispose();
+  }
+
+  static String _foldTr(String s) {
+    final b = StringBuffer();
+    for (final unit in s.runes) {
+      final c = String.fromCharCode(unit);
+      switch (c) {
+        case 'I':
+          b.write('ı');
+        case 'İ':
+          b.write('i');
+        case 'Ğ':
+          b.write('ğ');
+        case 'Ü':
+          b.write('ü');
+        case 'Ş':
+          b.write('ş');
+        case 'Ö':
+          b.write('ö');
+        case 'Ç':
+          b.write('ç');
+        default:
+          b.write(c.toLowerCase());
+      }
+    }
+    return b.toString();
+  }
+
+  bool _matchesSearch(SiteTask task, String query) {
+    if (query.isEmpty) return true;
+    final haystack = _foldTr(
+      [
+        task.title,
+        task.description,
+        task.category,
+        task.tag,
+        TaskTagCatalog.cardLabel(task.tag),
+        task.assignee,
+        task.assignerName,
+        task.status.label,
+        task.status.shortLabel,
+        task.earliestStart,
+        task.dueDate,
+        task.actualStartDate,
+        task.actualDeliveryDate,
+      ].join(' '),
+    );
+    return haystack.contains(query);
   }
 
   Future<void> _changeTaskStatus(SiteTask task, TaskStatus status) async {
@@ -1297,7 +1349,11 @@ class _TasksScreenState extends ConsumerState<TasksScreen> {
         : categoryFiltered
             .where((t) => TaskTagCatalog.normalize(t.tag) == _tagFilter)
             .toList();
-    final filtered = _orderedTasks(tagFiltered);
+    final searchQ = _foldTr(_searchQuery.trim());
+    final searchFiltered = searchQ.isEmpty
+        ? tagFiltered
+        : tagFiltered.where((t) => _matchesSearch(t, searchQ)).toList();
+    final filtered = _orderedTasks(searchFiltered);
     final canAssign =
         operator != null && RoleDegree.canAssignTasks(operator);
 
@@ -1403,6 +1459,19 @@ class _TasksScreenState extends ConsumerState<TasksScreen> {
               const SizedBox(height: AppSpacing.sm),
               Padding(
                 padding: const EdgeInsets.symmetric(horizontal: AppSpacing.md),
+                child: SJSearchBar(
+                  controller: _searchController,
+                  hint: 'Görev ara…',
+                  onChanged: (v) => setState(() => _searchQuery = v),
+                  onClear: () => setState(() {
+                    _searchController.clear();
+                    _searchQuery = '';
+                  }),
+                ),
+              ),
+              const SizedBox(height: AppSpacing.sm),
+              Padding(
+                padding: const EdgeInsets.symmetric(horizontal: AppSpacing.md),
                 child: Row(
                   children: [
                     Expanded(
@@ -1481,20 +1550,33 @@ class _TasksScreenState extends ConsumerState<TasksScreen> {
                     ? SJEmptyState(
                         title: tasks.isEmpty
                             ? 'Görünür görev yok'
-                            : 'Bu filtrede görev yok',
-                        message: canAssign
-                            ? 'Personele görev atayın. Atadığınız görevleri '
-                                'yalnızca siz ve atanan kişi görür. '
-                                'Kategori, etiket ve durum filtrelerini birlikte kullanabilirsiniz.'
-                            : 'Size atanmış görev bulunmuyor.',
-                        icon: Icons.task_alt_outlined,
-                        actionLabel: canAssign ? 'Görev Ekle' : null,
-                        onAction: canAssign
-                            ? () => _openEditor(
-                                  operator: operator,
-                                  people: people,
-                                )
-                            : null,
+                            : searchQ.isNotEmpty
+                                ? 'Aramayla eşleşen görev yok'
+                                : 'Bu filtrede görev yok',
+                        message: searchQ.isNotEmpty
+                            ? 'Farklı bir kelime deneyin veya aramayı temizleyin.'
+                            : canAssign
+                                ? 'Personele görev atayın. Atadığınız görevleri '
+                                    'yalnızca siz ve atanan kişi görür. '
+                                    'Kategori, etiket ve durum filtrelerini birlikte kullanabilirsiniz.'
+                                : 'Size atanmış görev bulunmuyor.',
+                        icon: searchQ.isNotEmpty
+                            ? Icons.search_off_outlined
+                            : Icons.task_alt_outlined,
+                        actionLabel: searchQ.isNotEmpty
+                            ? 'Aramayı temizle'
+                            : (canAssign ? 'Görev Ekle' : null),
+                        onAction: searchQ.isNotEmpty
+                            ? () => setState(() {
+                                  _searchController.clear();
+                                  _searchQuery = '';
+                                })
+                            : canAssign
+                                ? () => _openEditor(
+                                      operator: operator,
+                                      people: people,
+                                    )
+                                : null,
                       )
                     : ListView.separated(
                         controller: _listScrollController,
