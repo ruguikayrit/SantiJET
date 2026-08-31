@@ -38,7 +38,6 @@ import 'widgets/attendance_summary_table.dart';
 import 'widgets/daily_report_entry_page.dart';
 import 'widgets/daily_report_export_sections_sheet.dart';
 import 'widgets/monthly_report_view.dart';
-import '../puantaj/widgets/yevmiyeli_is_widgets.dart';
 import '../../data/providers/yevmiyeli_is_provider.dart';
 import 'widgets/period_report_export_sections_sheet.dart';
 import 'widgets/weather_compact_card.dart';
@@ -1829,29 +1828,36 @@ class _DailyReportScreenState extends ConsumerState<DailyReportScreen> {
                     AttendanceSummaryTables(snapshot: snap),
                   ],
                   const SizedBox(height: AppSpacing.md),
-                  _SectionCard(
-                    title: 'Yevmiyeli işler',
-                    icon: Icons.handyman_outlined,
-                    trailing: IconButton(
-                      tooltip: 'Ekle',
-                      onPressed: () {
-                        final project = ref.read(activeProjectProvider);
-                        if (project == null) return;
-                        openYevmiyeliIsEditor(
-                          context,
-                          ref,
-                          projectId: project.id,
-                          date: date,
-                          people: ref.read(personnelForDateProvider(date)),
-                        );
-                      },
-                      icon: const Icon(Icons.add),
-                    ),
-                    child: DayYevmiyeliSection(
-                      date: date,
-                      people: ref.watch(personnelForDateProvider(date)),
-                      headerless: true,
-                    ),
+                  Builder(
+                    builder: (context) {
+                      final project = ref.watch(activeProjectProvider);
+                      if (project == null) return const SizedBox.shrink();
+                      final entries = ref
+                          .watch(yevmiyeliIsProvider)
+                          .where(
+                            (e) =>
+                                e.projectId == project.id && e.date == date,
+                          )
+                          .toList();
+                      final data = PuantajReportBuilder.buildYevmiyeli(
+                        projectName: project.name,
+                        projectId: project.id,
+                        period: PuantajReportPeriod.daily,
+                        anchorDate: date,
+                        entries: entries,
+                      );
+                      return DailyReportCollapsibleSection(
+                        icon: Icons.handyman_outlined,
+                        title: 'Yevmiyeli işler',
+                        child: PeriodTeamSummaryTable(
+                          headers: data.headers,
+                          rows: data.rows,
+                          emptyMessage:
+                              'Bu gün için yevmiyeli iş kaydı yok',
+                          sumColumnIndexes: data.sumColumnIndexes,
+                        ),
+                      );
+                    },
                   ),
                   const SizedBox(height: AppSpacing.md),
                   _SectionCard(
