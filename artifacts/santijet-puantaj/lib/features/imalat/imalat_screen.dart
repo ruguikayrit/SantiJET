@@ -23,7 +23,7 @@ import '../../domain/entities/production_day_entry.dart';
 import '../../domain/entities/santijet_plan_pack.dart';
 import '../../domain/catalogs/imalat_units.dart';
 import '../../domain/yevmiye/yevmiye_calculator.dart';
-import 'widgets/production_chart_panel.dart';
+import 'widgets/production_performance_chart.dart';
 
 enum _ImalatPhase {
   bekleyen,
@@ -215,6 +215,10 @@ class _ImalatScreenState extends ConsumerState<ImalatScreen> {
               ),
               const SizedBox(height: AppSpacing.sm),
               ProductionTripleProgress(metrics: p.metrics),
+              if (p.dailyEntries.isNotEmpty) ...[
+                const SizedBox(height: AppSpacing.sm),
+                ProductionPerformanceChart(production: p),
+              ],
               if (!p.isComplete) ...[
                 const SizedBox(height: AppSpacing.sm),
                 Align(
@@ -476,8 +480,6 @@ class _ImalatScreenState extends ConsumerState<ImalatScreen> {
                         clearFab: true,
                       ),
                       children: [
-                        ProductionChartPanel.imalat(productions: items),
-                        const SizedBox(height: AppSpacing.md),
                         _phaseFilterBar(byPhase),
                         _phaseContent(
                           phase: _selectedPhase,
@@ -513,31 +515,13 @@ class _ImalatScreenState extends ConsumerState<ImalatScreen> {
     required String projectId,
     required List<String> teams,
     Production? existing,
-  }) async {
-    await showModalBottomSheet<void>(
-      context: context,
-      isScrollControlled: true,
-      showDragHandle: true,
-      builder: (ctx) => _ImalatJobSheet(
-        projectId: projectId,
-        teams: teams,
-        existing: existing,
-        onDelete: existing == null
-            ? null
-            : () {
-                ref.read(productionProvider.notifier).delete(existing.id);
-                Navigator.pop(ctx);
-              },
-        onSave: (draft) {
-          final notifier = ref.read(productionProvider.notifier);
-          if (existing == null) {
-            notifier.add(draft);
-          } else {
-            notifier.update(draft);
-          }
-          Navigator.pop(ctx);
-        },
-      ),
+  }) {
+    return openImalatJobEditor(
+      context,
+      ref,
+      projectId: projectId,
+      teams: teams,
+      existing: existing,
     );
   }
 
@@ -545,40 +529,11 @@ class _ImalatScreenState extends ConsumerState<ImalatScreen> {
     BuildContext context,
     WidgetRef ref, {
     required Production production,
-  }) async {
-    await showModalBottomSheet<void>(
-      context: context,
-      isScrollControlled: true,
-      showDragHandle: true,
-      isDismissible: true,
-      builder: (ctx) => _ImalatDetailSheet(
-        productionId: production.id,
-        onEditJob: () {
-          Navigator.pop(ctx);
-          final teams = {
-            ...ref.read(teamsProvider),
-            ...YevmiyeCalculator.teamNames(ref.read(activePersonnelProvider)),
-          }.toList()
-            ..sort();
-          _openJobEditor(
-            context,
-            ref,
-            projectId: production.projectId,
-            teams: teams,
-            existing: ref.read(productionProvider)
-                .where((p) => p.id == production.id)
-                .firstOrNull,
-          );
-        },
-        onAddDay: () {
-          final current = ref.read(productionProvider)
-              .where((p) => p.id == production.id)
-              .firstOrNull;
-          if (current != null) {
-            _openDayEntry(context, ref, production: current);
-          }
-        },
-      ),
+  }) {
+    return openImalatProductionDetail(
+      context,
+      ref,
+      productionId: production.id,
     );
   }
 
@@ -587,41 +542,141 @@ class _ImalatScreenState extends ConsumerState<ImalatScreen> {
     WidgetRef ref, {
     required Production production,
     ProductionDayEntry? existing,
-  }) async {
-    if (production.isComplete && existing == null) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Bu imalat %100 tamamlandı.')),
-      );
-      return;
-    }
-
-    await showModalBottomSheet<void>(
-      context: context,
-      isScrollControlled: true,
-      showDragHandle: true,
-      builder: (ctx) => _ImalatDayEntrySheet(
-        production: production,
-        existing: existing,
-        onDelete: existing == null
-            ? null
-            : () {
-                ref
-                    .read(productionProvider.notifier)
-                    .deleteDayEntry(production.id, existing.id);
-                Navigator.pop(ctx);
-              },
-        onSave: (entry) {
-          final notifier = ref.read(productionProvider.notifier);
-          if (existing == null) {
-            notifier.addDayEntry(production.id, entry);
-          } else {
-            notifier.updateDayEntry(production.id, entry);
-          }
-          Navigator.pop(ctx);
-        },
-      ),
+  }) {
+    return openImalatDayEntry(
+      context,
+      ref,
+      production: production,
+      existing: existing,
     );
   }
+}
+
+/// Verim vb. ekranlardan aynı imalat detay kartını açar.
+Future<void> openImalatProductionDetail(
+  BuildContext context,
+  WidgetRef ref, {
+  required String productionId,
+}) async {
+  final seed = ref
+      .read(productionProvider)
+      .where((p) => p.id == productionId)
+      .firstOrNull;
+  if (seed == null) return;
+
+  await showModalBottomSheet<void>(
+    context: context,
+    isScrollControlled: true,
+    showDragHandle: true,
+    isDismissible: true,
+    builder: (ctx) => _ImalatDetailSheet(
+      productionId: productionId,
+      onEditJob: () {
+        Navigator.pop(ctx);
+        final current = ref
+                .read(productionProvider)
+                .where((p) => p.id == productionId)
+                .firstOrNull ??
+            seed;
+        final teams = {
+          ...ref.read(teamsProvider),
+          ...YevmiyeCalculator.teamNames(ref.read(activePersonnelProvider)),
+        }.toList()
+          ..sort();
+        openImalatJobEditor(
+          context,
+          ref,
+          projectId: current.projectId,
+          teams: teams,
+          existing: current,
+        );
+      },
+      onAddDay: () {
+        final current = ref
+            .read(productionProvider)
+            .where((p) => p.id == productionId)
+            .firstOrNull;
+        if (current != null) {
+          openImalatDayEntry(context, ref, production: current);
+        }
+      },
+    ),
+  );
+}
+
+Future<void> openImalatJobEditor(
+  BuildContext context,
+  WidgetRef ref, {
+  required String projectId,
+  required List<String> teams,
+  Production? existing,
+}) async {
+  await showModalBottomSheet<void>(
+    context: context,
+    isScrollControlled: true,
+    showDragHandle: true,
+    builder: (ctx) => _ImalatJobSheet(
+      projectId: projectId,
+      teams: teams,
+      existing: existing,
+      onDelete: existing == null
+          ? null
+          : () {
+              ref.read(productionProvider.notifier).delete(existing.id);
+              Navigator.pop(ctx);
+            },
+      onSave: (draft) {
+        final notifier = ref.read(productionProvider.notifier);
+        if (existing == null) {
+          notifier.add(draft);
+        } else {
+          notifier.update(draft);
+        }
+        Navigator.pop(ctx);
+      },
+    ),
+  );
+}
+
+Future<void> openImalatDayEntry(
+  BuildContext context,
+  WidgetRef ref, {
+  required Production production,
+  ProductionDayEntry? existing,
+}) async {
+  if (production.isComplete && existing == null) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(content: Text('Bu imalat %100 tamamlandı.')),
+    );
+    return;
+  }
+
+  await showModalBottomSheet<void>(
+    context: context,
+    isScrollControlled: true,
+    showDragHandle: true,
+    builder: (ctx) => _ImalatDayEntrySheet(
+      production: production,
+      existing: existing,
+      onDelete: existing == null
+          ? null
+          : () {
+              ref
+                  .read(productionProvider.notifier)
+                  .deleteDayEntry(production.id, existing.id);
+              Navigator.pop(ctx);
+            },
+      onSave: (entry) {
+        final notifier = ref.read(productionProvider.notifier);
+        if (existing == null) {
+          notifier.addDayEntry(production.id, entry);
+        } else {
+          notifier.updateDayEntry(production.id, entry);
+        }
+        Navigator.pop(ctx);
+      },
+    ),
+  );
 }
 
 /// İmalat iş tanımı — ad, ekip, plan miktarı / gün (günlük kayıt ayrı).
