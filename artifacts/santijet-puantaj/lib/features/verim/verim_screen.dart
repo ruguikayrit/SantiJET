@@ -11,6 +11,7 @@ import '../../core/widgets/production_triple_progress.dart';
 import '../../core/widgets/santijet_header.dart';
 import '../../data/providers/app_data_provider.dart';
 import '../../data/providers/verim_provider.dart';
+import '../imalat/widgets/production_chart_panel.dart';
 
 /// Verim — plan + gerçekleşen tamamen İmalat sekmesinden.
 class VerimScreen extends ConsumerWidget {
@@ -68,6 +69,11 @@ class VerimScreen extends ConsumerWidget {
               AppSpacing.xxl,
             ),
             children: [
+              ProductionChartPanel.verim(
+                verimRows: rows,
+                teamSummaries: teamSummaries,
+              ),
+              const SizedBox(height: AppSpacing.md),
               if (teamSummaries.length > 1) ...[
                 Text('Ekip özeti', style: theme.textTheme.titleSmall),
                 const SizedBox(height: AppSpacing.sm),

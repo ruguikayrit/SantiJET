@@ -23,6 +23,7 @@ import '../../domain/entities/production_day_entry.dart';
 import '../../domain/entities/santijet_plan_pack.dart';
 import '../../domain/catalogs/imalat_units.dart';
 import '../../domain/yevmiye/yevmiye_calculator.dart';
+import 'widgets/production_chart_panel.dart';
 
 enum _ImalatPhase {
   bekleyen,
@@ -475,6 +476,8 @@ class _ImalatScreenState extends ConsumerState<ImalatScreen> {
                         clearFab: true,
                       ),
                       children: [
+                        ProductionChartPanel.imalat(productions: items),
+                        const SizedBox(height: AppSpacing.md),
                         _phaseFilterBar(byPhase),
                         _phaseContent(
                           phase: _selectedPhase,
