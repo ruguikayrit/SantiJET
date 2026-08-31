@@ -80,7 +80,6 @@ class _PeriodExportSectionsPickerSheetState
 
   Widget _sectionTile({
     required String title,
-    required String subtitle,
     required bool value,
     required ValueChanged<bool> onChanged,
   }) {
@@ -88,7 +87,6 @@ class _PeriodExportSectionsPickerSheetState
       contentPadding: EdgeInsets.zero,
       dense: true,
       title: Text(title),
-      subtitle: Text(subtitle),
       value: value,
       onChanged: (v) => onChanged(v ?? false),
       controlAffinity: ListTileControlAffinity.leading,
@@ -161,7 +159,6 @@ class _PeriodExportSectionsPickerSheetState
               children: [
                 _sectionTile(
                   title: 'Puantaj özeti',
-                  subtitle: 'Durum sayıları · adam-saat · yevmiye',
                   value: _sections.puantajCounts,
                   onChanged: (v) => setState(
                     () => _sections = _sections.copyWith(puantajCounts: v),
@@ -169,7 +166,6 @@ class _PeriodExportSectionsPickerSheetState
                 ),
                 _sectionTile(
                   title: 'Personel puantajı',
-                  subtitle: 'Personel · meslek · ekip · YV',
                   value: _sections.personel,
                   onChanged: (v) => setState(
                     () => _sections = _sections.copyWith(personel: v),
@@ -177,14 +173,12 @@ class _PeriodExportSectionsPickerSheetState
                 ),
                 _sectionTile(
                   title: 'Ekip puantajı',
-                  subtitle: 'Firma · ekip · günlük çalışan',
                   value: _sections.ekip,
                   onChanged: (v) =>
                       setState(() => _sections = _sections.copyWith(ekip: v)),
                 ),
                 _sectionTile(
                   title: 'Yevmiyeli işler',
-                  subtitle: 'Taşeron parça iş tablosu',
                   value: _sections.yevmiyeli,
                   onChanged: (v) => setState(
                     () => _sections = _sections.copyWith(yevmiyeli: v),
@@ -192,7 +186,6 @@ class _PeriodExportSectionsPickerSheetState
                 ),
                 _sectionTile(
                   title: 'Yapılan işler (İmalat)',
-                  subtitle: 'Dönem metraj · adam-gün · ilerleme',
                   value: _sections.imalat,
                   onChanged: (v) => setState(
                     () => _sections = _sections.copyWith(imalat: v),
@@ -200,7 +193,6 @@ class _PeriodExportSectionsPickerSheetState
                 ),
                 _sectionTile(
                   title: 'Verim',
-                  subtitle: 'Plan / dönem karşılaştırması',
                   value: _sections.verim,
                   onChanged: (v) => setState(
                     () => _sections = _sections.copyWith(verim: v),

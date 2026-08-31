@@ -42,16 +42,17 @@ class TaskReportData {
 
 /// Görünür saha görevlerinden PDF/Excel satırları üretir.
 abstract final class TaskReportBuilder {
+  /// PDF/Excel sütun başlıkları — her kelime Title Case; uzunlar 2 satır.
   static const headers = [
     '#',
     'Başlık',
     'Etiket',
     'Kategori',
     'Atanan',
-    'Planlanan başlangıç',
-    'Gerçekleşen başlangıç',
-    'Planlanan bitiş',
-    'Gerçekleşen bitiş',
+    'Planlanan\nBaşlangıç',
+    'Gerçekleşen\nBaşlangıç',
+    'Planlanan\nBitiş',
+    'Gerçekleşen\nBitiş',
     'Durum',
     'Açıklama',
   ];

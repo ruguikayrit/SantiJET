@@ -74,7 +74,6 @@ class _ExportSectionsPickerSheetState
 
   Widget _sectionTile({
     required String title,
-    required String subtitle,
     required bool value,
     required ValueChanged<bool> onChanged,
   }) {
@@ -82,7 +81,6 @@ class _ExportSectionsPickerSheetState
       contentPadding: EdgeInsets.zero,
       dense: true,
       title: Text(title),
-      subtitle: Text(subtitle),
       value: value,
       onChanged: (v) => onChanged(v ?? false),
       controlAffinity: ListTileControlAffinity.leading,
@@ -153,14 +151,12 @@ class _ExportSectionsPickerSheetState
               children: [
                 _sectionTile(
                   title: 'Hava durumu',
-                  subtitle: 'Sıcaklık, nem, rüzgar',
                   value: _sections.weather,
                   onChanged: (v) =>
                       setState(() => _sections = _sections.copyWith(weather: v)),
                 ),
                 _sectionTile(
                   title: 'Puantaj özeti',
-                  subtitle: 'Durum sayıları · adam-saat · yevmiye',
                   value: _sections.puantajCounts,
                   onChanged: (v) => setState(
                     () => _sections = _sections.copyWith(puantajCounts: v),
@@ -168,7 +164,6 @@ class _ExportSectionsPickerSheetState
                 ),
                 _sectionTile(
                   title: 'Personel puantajı',
-                  subtitle: 'Personel · meslek · ekip · YV',
                   value: _sections.personel,
                   onChanged: (v) => setState(
                     () => _sections = _sections.copyWith(personel: v),
@@ -176,14 +171,12 @@ class _ExportSectionsPickerSheetState
                 ),
                 _sectionTile(
                   title: 'Ekip puantajı',
-                  subtitle: 'Firma · ekip · günlük çalışan',
                   value: _sections.ekip,
                   onChanged: (v) =>
                       setState(() => _sections = _sections.copyWith(ekip: v)),
                 ),
                 _sectionTile(
                   title: 'Yevmiyeli işler',
-                  subtitle: 'Taşeron parça iş tablosu',
                   value: _sections.yevmiyeli,
                   onChanged: (v) => setState(
                     () => _sections = _sections.copyWith(yevmiyeli: v),
@@ -191,14 +184,12 @@ class _ExportSectionsPickerSheetState
                 ),
                 _sectionTile(
                   title: 'Fotoğraflar',
-                  subtitle: 'Açıklamalı saha fotoğrafları',
                   value: _sections.photos,
                   onChanged: (v) =>
                       setState(() => _sections = _sections.copyWith(photos: v)),
                 ),
                 _sectionTile(
                   title: 'Yapılan işler',
-                  subtitle: 'İnşaat / elektrik / mekanik',
                   value: _sections.workDone,
                   onChanged: (v) => setState(
                     () => _sections = _sections.copyWith(workDone: v),
@@ -206,7 +197,6 @@ class _ExportSectionsPickerSheetState
                 ),
                 _sectionTile(
                   title: 'Planlı işler listesi',
-                  subtitle: 'Planlanan işler',
                   value: _sections.nextDayPlan,
                   onChanged: (v) => setState(
                     () => _sections = _sections.copyWith(nextDayPlan: v),
@@ -214,7 +204,6 @@ class _ExportSectionsPickerSheetState
                 ),
                 _sectionTile(
                   title: 'Gelen malzeme',
-                  subtitle: 'Tedarik kayıtları',
                   value: _sections.incomingMaterials,
                   onChanged: (v) => setState(
                     () =>
@@ -223,7 +212,6 @@ class _ExportSectionsPickerSheetState
                 ),
                 _sectionTile(
                   title: 'Giden malzeme',
-                  subtitle: 'Gönderim kayıtları',
                   value: _sections.outgoingMaterials,
                   onChanged: (v) => setState(
                     () =>
@@ -232,7 +220,6 @@ class _ExportSectionsPickerSheetState
                 ),
                 _sectionTile(
                   title: 'Sipariş verilen malzeme',
-                  subtitle: 'Sipariş ve satın alma onayı',
                   value: _sections.orderedMaterials,
                   onChanged: (v) => setState(
                     () => _sections = _sections.copyWith(orderedMaterials: v),
@@ -240,7 +227,6 @@ class _ExportSectionsPickerSheetState
                 ),
                 _sectionTile(
                   title: 'İş makinesi puantajı',
-                  subtitle: 'Makine, firma, saat',
                   value: _sections.machines,
                   onChanged: (v) => setState(
                     () => _sections = _sections.copyWith(machines: v),
@@ -248,7 +234,6 @@ class _ExportSectionsPickerSheetState
                 ),
                 _sectionTile(
                   title: 'Vasıta puantajı',
-                  subtitle: 'Marka/model, şoför, saat',
                   value: _sections.vehicles,
                   onChanged: (v) => setState(
                     () => _sections = _sections.copyWith(vehicles: v),
@@ -256,7 +241,6 @@ class _ExportSectionsPickerSheetState
                 ),
                 _sectionTile(
                   title: 'İmza alanları',
-                  subtitle: 'Dolduran / inceleyen / onay',
                   value: _sections.signatures,
                   onChanged: (v) => setState(
                     () => _sections = _sections.copyWith(signatures: v),

@@ -119,7 +119,8 @@ class TaskExportService {
       pw.SizedBox(height: 10),
     ];
 
-    for (final group in groups) {
+    for (var g = 0; g < groups.length; g++) {
+      final group = groups[g];
       out.add(
         pw.Padding(
           padding: const pw.EdgeInsets.only(bottom: 4),
@@ -134,7 +135,10 @@ class TaskExportService {
         ),
       );
       out.addAll(_photoRows(group.photos));
-      out.add(pw.SizedBox(height: 10));
+      // Madde (görev) fotoğrafları arası yatay ayırıcı.
+      out.add(pw.SizedBox(height: 8));
+      out.add(pw.Container(height: 0.9, color: _border));
+      out.add(pw.SizedBox(height: g < groups.length - 1 ? 10 : 4));
     }
 
     return out;
@@ -202,41 +206,51 @@ class TaskExportService {
   }
 
   pw.Widget _table(List<String> headers, List<List<String>> rows) {
-    final flatHeaders = [
-      for (final h in headers) h.replaceAll('\n', ' '),
+    final headerStyle = pw.TextStyle(
+      fontSize: 7.5,
+      fontWeight: pw.FontWeight.bold,
+      color: _blue,
+      lineSpacing: 1.5,
+    );
+    // Widget başlık: \\n satırları ortalanmış kalsın.
+    final headerWidgets = <pw.Widget>[
+      for (final h in headers)
+        pw.Text(
+          h,
+          textAlign: pw.TextAlign.center,
+          style: headerStyle,
+        ),
     ];
     return pw.TableHelper.fromTextArray(
-      headers: flatHeaders,
+      headers: headerWidgets,
       data: [
         for (final row in rows)
           [
-            for (var i = 0; i < flatHeaders.length; i++)
+            for (var i = 0; i < headers.length; i++)
               i < row.length ? row[i] : '',
           ],
       ],
-      headerStyle: pw.TextStyle(
-        fontSize: 8,
-        fontWeight: pw.FontWeight.bold,
-        color: _blue,
-      ),
+      headerStyle: headerStyle,
       headerDecoration: const pw.BoxDecoration(color: _headerBg),
       cellStyle: const pw.TextStyle(fontSize: 8, color: _ink),
       cellAlignment: pw.Alignment.centerLeft,
       headerAlignment: pw.Alignment.center,
       border: pw.TableBorder.all(color: _border, width: 0.5),
-      cellPadding: const pw.EdgeInsets.symmetric(horizontal: 4, vertical: 4),
+      cellPadding: const pw.EdgeInsets.symmetric(horizontal: 3, vertical: 4),
+      headerPadding: const pw.EdgeInsets.symmetric(horizontal: 2, vertical: 5),
       columnWidths: {
-        0: const pw.FixedColumnWidth(20),
-        1: const pw.FlexColumnWidth(2.2),
-        2: const pw.FixedColumnWidth(48),
-        3: const pw.FlexColumnWidth(1.1),
-        4: const pw.FlexColumnWidth(1.3),
-        5: const pw.FixedColumnWidth(54),
-        6: const pw.FixedColumnWidth(54),
-        7: const pw.FixedColumnWidth(54),
-        8: const pw.FixedColumnWidth(54),
-        9: const pw.FixedColumnWidth(54),
-        10: const pw.FlexColumnWidth(1.8),
+        0: const pw.FixedColumnWidth(18),
+        1: const pw.FlexColumnWidth(1.6),
+        2: const pw.FixedColumnWidth(42),
+        3: const pw.FlexColumnWidth(1.0),
+        4: const pw.FlexColumnWidth(1.1),
+        5: const pw.FixedColumnWidth(46),
+        6: const pw.FixedColumnWidth(50),
+        7: const pw.FixedColumnWidth(42),
+        8: const pw.FixedColumnWidth(50),
+        9: const pw.FixedColumnWidth(46),
+        // Açıklama — kalan alanın büyük kısmı.
+        10: const pw.FlexColumnWidth(3.4),
       },
     );
   }
@@ -257,24 +271,51 @@ class TaskExportService {
     );
 
     const headerRow = 3;
+    // Sütun genişlikleri: tarih kolonları dar (2 satır başlık), Açıklama max.
+    const excelColWidths = <double>[
+      4, // #
+      22, // Başlık
+      11, // Etiket
+      14, // Kategori
+      16, // Atanan
+      12, // Planlanan Başlangıç
+      13, // Gerçekleşen Başlangıç
+      11, // Planlanan Bitiş
+      13, // Gerçekleşen Bitiş
+      12, // Durum
+      48, // Açıklama (maksimum)
+    ];
+    for (var c = 0; c < excelColWidths.length; c++) {
+      sheet.setColumnWidth(c, excelColWidths[c]);
+    }
+    sheet.setRowHeight(headerRow, 32);
+
+    final headerStyle = CellStyle(
+      bold: true,
+      horizontalAlign: HorizontalAlign.Center,
+      verticalAlign: VerticalAlign.Center,
+      textWrapping: TextWrapping.WrapText,
+    );
     for (var c = 0; c < report.headers.length; c++) {
-      sheet
-          .cell(
-            CellIndex.indexByColumnRow(columnIndex: c, rowIndex: headerRow),
-          )
-          .value = TextCellValue(report.headers[c].replaceAll('\n', ' '));
+      final cell = sheet.cell(
+        CellIndex.indexByColumnRow(columnIndex: c, rowIndex: headerRow),
+      );
+      cell.value = TextCellValue(report.headers[c]);
+      cell.cellStyle = headerStyle;
     }
     for (var r = 0; r < report.rows.length; r++) {
       final row = report.rows[r];
       for (var c = 0; c < report.headers.length; c++) {
-        sheet
-            .cell(
-              CellIndex.indexByColumnRow(
-                columnIndex: c,
-                rowIndex: headerRow + 1 + r,
-              ),
-            )
-            .value = TextCellValue(c < row.length ? row[c] : '');
+        final cell = sheet.cell(
+          CellIndex.indexByColumnRow(
+            columnIndex: c,
+            rowIndex: headerRow + 1 + r,
+          ),
+        );
+        cell.value = TextCellValue(c < row.length ? row[c] : '');
+        if (c == 10) {
+          cell.cellStyle = CellStyle(textWrapping: TextWrapping.WrapText);
+        }
       }
     }
 
