@@ -4,6 +4,19 @@ import '../../domain/catalogs/task_tags.dart';
 import '../../domain/entities/site_task.dart';
 import '../../domain/enums/task_status.dart';
 
+/// PDF’te listenin altında gösterilecek görev fotoğraf grubu.
+class TaskReportPhotoGroup {
+  const TaskReportPhotoGroup({
+    required this.index,
+    required this.title,
+    required this.photos,
+  });
+
+  final int index;
+  final String title;
+  final List<TaskPhoto> photos;
+}
+
 /// Görev dışa aktarma — etiket / durum filtresi.
 class TaskReportData {
   const TaskReportData({
@@ -14,6 +27,7 @@ class TaskReportData {
     required this.fileStem,
     required this.tagLabel,
     required this.taskCount,
+    this.photoGroups = const [],
   });
 
   final String title;
@@ -23,6 +37,7 @@ class TaskReportData {
   final String fileStem;
   final String tagLabel;
   final int taskCount;
+  final List<TaskReportPhotoGroup> photoGroups;
 }
 
 /// Görünür saha görevlerinden PDF/Excel satırları üretir.
@@ -118,6 +133,19 @@ abstract final class TaskReportBuilder {
         ],
     ];
 
+    final photoGroups = <TaskReportPhotoGroup>[
+      for (var i = 0; i < list.length; i++)
+        if (list[i].photos.any((p) => p.dataBase64.trim().isNotEmpty))
+          TaskReportPhotoGroup(
+            index: i + 1,
+            title: sentenceCaseTr(list[i].title),
+            photos: [
+              for (final p in list[i].photos)
+                if (p.dataBase64.trim().isNotEmpty) p,
+            ],
+          ),
+    ];
+
     return TaskReportData(
       title: 'Saha Görevleri — $tagLabel',
       subtitle: '$projectName · $statusLabel · $today',
@@ -126,6 +154,7 @@ abstract final class TaskReportBuilder {
       fileStem: 'gorev-$stemTag-${today.replaceAll('.', '')}',
       tagLabel: tagLabel,
       taskCount: list.length,
+      photoGroups: photoGroups,
     );
   }
 }

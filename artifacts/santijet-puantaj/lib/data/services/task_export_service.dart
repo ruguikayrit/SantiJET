@@ -1,3 +1,4 @@
+import 'dart:convert';
 import 'dart:typed_data';
 
 import 'package:excel/excel.dart';
@@ -5,6 +6,7 @@ import 'package:pdf/pdf.dart';
 import 'package:pdf/widgets.dart' as pw;
 import 'package:printing/printing.dart';
 
+import '../../domain/entities/site_task.dart';
 import 'report_file_access_stub.dart'
     if (dart.library.html) 'report_file_access_web.dart'
     if (dart.library.io) 'report_file_access_io.dart' as file_access;
@@ -90,11 +92,112 @@ class TaskExportService {
             )
           else
             _table(report.headers, report.rows),
+          ..._photoSection(report.photoGroups),
         ],
       ),
     );
 
     return doc.save();
+  }
+
+  List<pw.Widget> _photoSection(List<TaskReportPhotoGroup> groups) {
+    if (groups.isEmpty) return const [];
+
+    final out = <pw.Widget>[
+      pw.SizedBox(height: 18),
+      pw.Text(
+        'FOTOĞRAFLAR',
+        style: pw.TextStyle(
+          fontSize: 11,
+          fontWeight: pw.FontWeight.bold,
+          color: _blue,
+        ),
+      ),
+      pw.SizedBox(height: 2),
+      pw.Container(height: 0.8, color: _border),
+      pw.SizedBox(height: 10),
+    ];
+
+    for (final group in groups) {
+      out.add(
+        pw.Padding(
+          padding: const pw.EdgeInsets.only(bottom: 4),
+          child: pw.Text(
+            '#${group.index}  ${group.title}',
+            style: pw.TextStyle(
+              fontSize: 9,
+              fontWeight: pw.FontWeight.bold,
+              color: _ink,
+            ),
+          ),
+        ),
+      );
+      out.addAll(_photoRows(group.photos));
+      out.add(pw.SizedBox(height: 10));
+    }
+
+    return out;
+  }
+
+  List<pw.Widget> _photoRows(List<TaskPhoto> photos) {
+    const perRow = 3;
+    const cellHeight = 110.0;
+    final out = <pw.Widget>[];
+
+    for (var i = 0; i < photos.length; i += perRow) {
+      final chunk = photos.skip(i).take(perRow).toList();
+      out.add(
+        pw.Padding(
+          padding: const pw.EdgeInsets.only(bottom: 8),
+          child: pw.Row(
+            crossAxisAlignment: pw.CrossAxisAlignment.start,
+            children: [
+              for (final photo in chunk)
+                pw.Expanded(child: _photoCell(photo, cellHeight)),
+              for (var pad = chunk.length; pad < perRow; pad++)
+                pw.Expanded(child: pw.SizedBox()),
+            ],
+          ),
+        ),
+      );
+    }
+    return out;
+  }
+
+  pw.Widget _photoCell(TaskPhoto photo, double height) {
+    pw.MemoryImage? img;
+    try {
+      if (photo.dataBase64.isNotEmpty) {
+        img = pw.MemoryImage(base64Decode(photo.dataBase64));
+      }
+    } catch (_) {
+      img = null;
+    }
+
+    return pw.Container(
+      margin: const pw.EdgeInsets.symmetric(horizontal: 3),
+      child: img != null
+          ? pw.Container(
+              height: height,
+              alignment: pw.Alignment.center,
+              decoration: pw.BoxDecoration(
+                border: pw.Border.all(color: _border, width: 0.6),
+              ),
+              child: pw.Image(
+                img,
+                height: height - 2,
+                fit: pw.BoxFit.contain,
+              ),
+            )
+          : pw.Container(
+              height: height * 0.35,
+              alignment: pw.Alignment.center,
+              child: pw.Text(
+                'Yüklenemedi',
+                style: const pw.TextStyle(fontSize: 8, color: _inkMuted),
+              ),
+            ),
+    );
   }
 
   pw.Widget _table(List<String> headers, List<List<String>> rows) {
