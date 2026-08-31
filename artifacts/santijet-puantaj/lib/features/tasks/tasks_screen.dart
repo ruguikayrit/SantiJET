@@ -1317,7 +1317,7 @@ class _TasksScreenState extends ConsumerState<TasksScreen> {
                       );
                     },
               icon: const Icon(Icons.add_task_outlined),
-              label: const Text('Görev Ata'),
+              label: const Text('Görev Ekle'),
             ),
       body: SafeArea(
         bottom: false,
@@ -1438,7 +1438,7 @@ class _TasksScreenState extends ConsumerState<TasksScreen> {
                                 'Kategori, etiket ve durum filtrelerini birlikte kullanabilirsiniz.'
                             : 'Size atanmış görev bulunmuyor.',
                         icon: Icons.task_alt_outlined,
-                        actionLabel: canAssign ? 'Görev Ata' : null,
+                        actionLabel: canAssign ? 'Görev Ekle' : null,
                         onAction: canAssign
                             ? () => _openEditor(
                                   operator: operator,
