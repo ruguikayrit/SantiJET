@@ -342,54 +342,55 @@ class _DailyReportCollapsibleSectionState
 
   @override
   Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-    return SJCard(
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.stretch,
-        children: [
-          Row(
-            children: [
-              Expanded(
-                child: InkWell(
-                  onTap: () => setState(() => _expanded = !_expanded),
-                  borderRadius: AppRadii.sm,
-                  child: Padding(
-                    padding: const EdgeInsets.symmetric(vertical: 2),
-                    child: Row(
-                      children: [
-                        Icon(
-                          widget.icon,
-                          size: 20,
-                          color: theme.colorScheme.secondary,
-                        ),
-                        const SizedBox(width: AppSpacing.sm),
-                        Expanded(
-                          child: Text(
-                            widget.title,
-                            style: theme.textTheme.titleSmall?.copyWith(
-                              fontWeight: FontWeight.w700,
+    return SJCard.builder(
+      builder: (context, theme) {
+        return Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            Row(
+              children: [
+                Expanded(
+                  child: InkWell(
+                    onTap: () => setState(() => _expanded = !_expanded),
+                    borderRadius: AppRadii.sm,
+                    child: Padding(
+                      padding: const EdgeInsets.symmetric(vertical: 2),
+                      child: Row(
+                        children: [
+                          Icon(
+                            widget.icon,
+                            size: 20,
+                            color: theme.colorScheme.primary,
+                          ),
+                          const SizedBox(width: AppSpacing.sm),
+                          Expanded(
+                            child: Text(
+                              widget.title,
+                              style: theme.textTheme.titleSmall?.copyWith(
+                                fontWeight: FontWeight.w700,
+                              ),
                             ),
                           ),
-                        ),
-                        Icon(
-                          _expanded ? Icons.expand_less : Icons.expand_more,
-                          size: 20,
-                          color: theme.colorScheme.onSurfaceVariant,
-                        ),
-                      ],
+                          Icon(
+                            _expanded ? Icons.expand_less : Icons.expand_more,
+                            size: 20,
+                            color: theme.colorScheme.onSurfaceVariant,
+                          ),
+                        ],
+                      ),
                     ),
                   ),
                 ),
-              ),
-              if (widget.trailing != null) widget.trailing!,
+                if (widget.trailing != null) widget.trailing!,
+              ],
+            ),
+            if (_expanded) ...[
+              const SizedBox(height: AppSpacing.sm),
+              widget.child,
             ],
-          ),
-          if (_expanded) ...[
-            const SizedBox(height: AppSpacing.sm),
-            widget.child,
           ],
-        ],
-      ),
+        );
+      },
     );
   }
 }

@@ -7,6 +7,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:image_picker/image_picker.dart';
 
+import '../../core/design_system/sj_card.dart';
 import '../../core/design_system/sj_empty_state.dart';
 import '../../core/design_system/sj_modal.dart';
 import '../../core/routing/app_routes.dart';
@@ -2476,77 +2477,89 @@ class _WorkNotesTile extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final theme = Theme.of(context);
     final trimmed = text.trim();
     final empty = trimmed.isEmpty;
     final preview = empty
         ? emptyHint
         : (trimmed.length > 220 ? '${trimmed.substring(0, 220)}…' : trimmed);
 
-    return Material(
-      color: AppColors.cardSurface,
-      borderRadius: AppRadii.md,
-      child: InkWell(
-        onTap: onEdit,
-        borderRadius: AppRadii.md,
-        child: Ink(
-          decoration: BoxDecoration(
+    // Kart yüzeyi: chrome Theme kapanmasın — mürekkep cardText* / kart teması.
+    return Theme(
+      data: SJCard.cardContrastTheme(Theme.of(context)),
+      child: Builder(
+        builder: (context) {
+          final theme = Theme.of(context);
+          return Material(
+            color: AppColors.cardSurface,
             borderRadius: AppRadii.md,
-            border: Border.all(
-              color: theme.colorScheme.outlineVariant.withValues(alpha: 0.7),
-            ),
-          ),
-          child: Padding(
-            padding: const EdgeInsets.fromLTRB(12, 10, 8, 10),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.stretch,
-              children: [
-                Row(
-                  children: [
-                    Expanded(
-                      child: Text(
-                        label,
+            child: InkWell(
+              onTap: onEdit,
+              borderRadius: AppRadii.md,
+              child: Ink(
+                decoration: BoxDecoration(
+                  borderRadius: AppRadii.md,
+                  border: Border.all(
+                    color: AppColors.cardBorder.withValues(alpha: 0.7),
+                  ),
+                ),
+                child: Padding(
+                  padding: const EdgeInsets.fromLTRB(12, 10, 8, 10),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.stretch,
+                    children: [
+                      Row(
+                        children: [
+                          Expanded(
+                            child: Text(
+                              label,
+                              style: _cardInk(
+                                theme.textTheme.labelLarge,
+                                fontWeight: FontWeight.w700,
+                              ),
+                            ),
+                          ),
+                          IconButton(
+                            tooltip: 'Düzenle',
+                            onPressed: onEdit,
+                            icon: Icon(
+                              Icons.edit_note_outlined,
+                              size: 22,
+                              color: theme.colorScheme.onSurfaceVariant,
+                            ),
+                            visualDensity: VisualDensity.compact,
+                          ),
+                        ],
+                      ),
+                      Text(
+                        preview,
+                        maxLines: 4,
+                        overflow: TextOverflow.ellipsis,
                         style: _cardInk(
-                          theme.textTheme.labelLarge,
-                          fontWeight: FontWeight.w700,
+                          theme.textTheme.bodyMedium,
+                          color: empty
+                              ? AppColors.cardTextSecondary
+                              : AppColors.cardTextPrimary,
+                          fontStyle: empty ? FontStyle.italic : null,
                         ),
                       ),
-                    ),
-                    IconButton(
-                      tooltip: 'Düzenle',
-                      onPressed: onEdit,
-                      icon: const Icon(Icons.edit_note_outlined, size: 22),
-                      visualDensity: VisualDensity.compact,
-                    ),
-                  ],
-                ),
-                Text(
-                  preview,
-                  maxLines: 4,
-                  overflow: TextOverflow.ellipsis,
-                  style: _cardInk(
-                    theme.textTheme.bodyMedium,
-                    color: empty
-                        ? AppColors.cardTextSecondary
-                        : AppColors.cardTextPrimary,
-                    fontStyle: empty ? FontStyle.italic : null,
+                      if (syncedCaptions.isNotEmpty) ...[
+                        const SizedBox(height: AppSpacing.xs),
+                        Text(
+                          'Fotoğraflardan ${syncedCaptions.length} açıklama hazır',
+                          style: _cardInk(
+                            theme.textTheme.labelSmall,
+                            color: theme.colorScheme.primary,
+                            fontWeight: FontWeight.w700,
+                          ),
+                        ),
+                      ],
+                    ],
                   ),
                 ),
-                if (syncedCaptions.isNotEmpty) ...[
-                  const SizedBox(height: AppSpacing.xs),
-                  Text(
-                    'Fotoğraflardan ${syncedCaptions.length} açıklama hazır',
-                    style: _cardInk(
-                      theme.textTheme.labelSmall,
-                      color: theme.colorScheme.primary,
-                      fontWeight: FontWeight.w700,
-                    ),
-                  ),
-                ],
-              ],
+              ),
             ),
-          ),
-        ),
+          );
+        },
       ),
     );
   }
