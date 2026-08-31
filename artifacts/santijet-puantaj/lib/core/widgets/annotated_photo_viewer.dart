@@ -74,11 +74,15 @@ class AnnotatedPhotoViewerPage extends StatefulWidget {
     required this.imageBytes,
     this.onSave,
     this.startInDrawMode = false,
+    this.onRevertPrevious,
   });
 
   final Uint8List imageBytes;
   final Future<void> Function(Uint8List annotatedBytes)? onSave;
   final bool startInDrawMode;
+
+  /// Son kaydedilmiş düzenlemeyi geri alır (düzenleme öncesi kopya varsa).
+  final Future<void> Function()? onRevertPrevious;
 
   @override
   State<AnnotatedPhotoViewerPage> createState() =>
@@ -107,7 +111,10 @@ class _AnnotatedPhotoViewerPageState extends State<AnnotatedPhotoViewerPage> {
 
   static const _strokeOptions = [2.0, 4.0, 7.0];
 
+  bool _reverting = false;
+
   bool get _canEdit => widget.onSave != null;
+  bool get _canRevertPrevious => widget.onRevertPrevious != null;
 
   bool get _isLandscape {
     final img = _decoded;
@@ -258,6 +265,43 @@ class _AnnotatedPhotoViewerPageState extends State<AnnotatedPhotoViewerPage> {
     if (_decoded == null || _rotating) return;
     if (landscape == _isLandscape) return;
     await _rotateCw90();
+  }
+
+  Future<void> _revertPrevious() async {
+    final revert = widget.onRevertPrevious;
+    if (revert == null || _reverting || _saving) return;
+    final ok = await showDialog<bool>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: const Text('Değişiklikleri geri al'),
+        content: const Text(
+          'Son düzenleme iptal edilecek ve fotoğraf önceki haline dönecek.',
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(ctx, false),
+            child: const Text('Vazgeç'),
+          ),
+          FilledButton(
+            onPressed: () => Navigator.pop(ctx, true),
+            style: FilledButton.styleFrom(
+              backgroundColor: AppColors.critical,
+              foregroundColor: Colors.white,
+            ),
+            child: const Text('Geri al'),
+          ),
+        ],
+      ),
+    );
+    if (ok != true || !mounted) return;
+    setState(() => _reverting = true);
+    try {
+      await revert();
+      if (!mounted) return;
+      Navigator.of(context).pop();
+    } finally {
+      if (mounted) setState(() => _reverting = false);
+    }
   }
 
   Future<void> _save() async {
@@ -423,6 +467,26 @@ class _AnnotatedPhotoViewerPageState extends State<AnnotatedPhotoViewerPage> {
                           ),
                     ),
                   ),
+                  if (_canRevertPrevious)
+                    IconButton(
+                      tooltip: 'Değişiklikleri geri al',
+                      onPressed: _saving || _reverting || _rotating
+                          ? null
+                          : _revertPrevious,
+                      icon: _reverting
+                          ? const SizedBox(
+                              width: 18,
+                              height: 18,
+                              child: CircularProgressIndicator(
+                                strokeWidth: 2,
+                                color: Colors.white54,
+                              ),
+                            )
+                          : const Icon(
+                              Icons.history,
+                              color: Color(0xFFFF8A80),
+                            ),
+                    ),
                   if (canSave)
                     FilledButton.tonal(
                       onPressed:
@@ -442,7 +506,7 @@ class _AnnotatedPhotoViewerPageState extends State<AnnotatedPhotoViewerPage> {
                             )
                           : const Text('Kaydet'),
                     )
-                  else
+                  else if (!_canRevertPrevious)
                     const SizedBox(width: 48),
                 ],
               ),
@@ -987,6 +1051,7 @@ Future<void> openAnnotatedPhotoViewer(
   BuildContext context, {
   required Uint8List imageBytes,
   Future<void> Function(Uint8List annotatedBytes)? onSave,
+  Future<void> Function()? onRevertPrevious,
   bool startInDrawMode = false,
 }) {
   return Navigator.of(context).push<void>(
@@ -999,6 +1064,7 @@ Future<void> openAnnotatedPhotoViewer(
           child: AnnotatedPhotoViewerPage(
             imageBytes: imageBytes,
             onSave: onSave,
+            onRevertPrevious: onRevertPrevious,
             startInDrawMode: startInDrawMode,
           ),
         );

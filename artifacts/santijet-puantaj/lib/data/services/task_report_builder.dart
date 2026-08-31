@@ -3,6 +3,7 @@ import '../../core/utils/text_format.dart';
 import '../../domain/catalogs/task_tags.dart';
 import '../../domain/entities/site_task.dart';
 import '../../domain/enums/task_status.dart';
+import 'task_export_options.dart';
 
 /// PDF’te listenin altında gösterilecek görev fotoğraf grubu.
 class TaskReportPhotoGroup {
@@ -17,12 +18,13 @@ class TaskReportPhotoGroup {
   final List<TaskPhoto> photos;
 }
 
-/// Görev dışa aktarma — etiket / durum filtresi.
+/// Görev dışa aktarma — etiket / durum / sütun filtresi.
 class TaskReportData {
   const TaskReportData({
     required this.title,
     required this.subtitle,
     required this.headers,
+    required this.columns,
     required this.rows,
     required this.fileStem,
     required this.tagLabel,
@@ -33,6 +35,7 @@ class TaskReportData {
   final String title;
   final String subtitle;
   final List<String> headers;
+  final List<TaskExportColumn> columns;
   final List<List<String>> rows;
   final String fileStem;
   final String tagLabel;
@@ -42,21 +45,6 @@ class TaskReportData {
 
 /// Görünür saha görevlerinden PDF/Excel satırları üretir.
 abstract final class TaskReportBuilder {
-  /// PDF/Excel sütun başlıkları — her kelime Title Case; uzunlar 2 satır.
-  static const headers = [
-    '#',
-    'Başlık',
-    'Etiket',
-    'Kategori',
-    'Atanan',
-    'Planlanan\nBaşlangıç',
-    'Gerçekleşen\nBaşlangıç',
-    'Planlanan\nBitiş',
-    'Gerçekleşen\nBitiş',
-    'Durum',
-    'Açıklama',
-  ];
-
   /// [tagFilter] null → tüm etiketler; aksi halde katalog etiketi (ör. İnşaat).
   /// [statusFilter] null → tüm durumlar.
   static TaskReportData build({
@@ -64,7 +52,11 @@ abstract final class TaskReportBuilder {
     required List<SiteTask> tasks,
     String? tagFilter,
     TaskStatus? statusFilter,
+    TaskExportOptions? options,
   }) {
+    final opts = options ?? TaskExportOptions.all();
+    final columns = opts.orderedColumns;
+
     final tag = tagFilter == null || tagFilter.isEmpty
         ? null
         : TaskTagCatalog.normalize(tagFilter);
@@ -105,57 +97,69 @@ abstract final class TaskReportBuilder {
             _ => 'etiket',
           };
 
+    final headers = [for (final c in columns) c.header];
     final rows = <List<String>>[
       for (var i = 0; i < list.length; i++)
         [
-          '${i + 1}',
-          sentenceCaseTr(list[i].title),
-          list[i].tag.trim().isEmpty
-              ? '—'
-              : TaskTagCatalog.cardLabel(list[i].tag),
-          list[i].category.trim().isEmpty
-              ? '—'
-              : titleCaseTr(list[i].category),
-          list[i].assignee.trim().isEmpty
-              ? '—'
-              : titleCaseTr(list[i].assignee),
-          list[i].earliestStart.isEmpty ? '—' : list[i].earliestStart,
-          list[i].actualStartDate.trim().isEmpty
-              ? '—'
-              : list[i].actualStartDate.trim(),
-          list[i].dueDate.isEmpty ? '—' : list[i].dueDate,
-          list[i].actualDeliveryDate.trim().isEmpty
-              ? '—'
-              : list[i].actualDeliveryDate.trim(),
-          list[i].status.label,
-          list[i].description.trim().isEmpty
-              ? '—'
-              : list[i].description.trim(),
+          for (final c in columns) _cellValue(list[i], c, i + 1),
         ],
     ];
 
-    final photoGroups = <TaskReportPhotoGroup>[
-      for (var i = 0; i < list.length; i++)
-        if (list[i].photos.any((p) => p.dataBase64.trim().isNotEmpty))
-          TaskReportPhotoGroup(
-            index: i + 1,
-            title: sentenceCaseTr(list[i].title),
-            photos: [
-              for (final p in list[i].photos)
-                if (p.dataBase64.trim().isNotEmpty) p,
-            ],
-          ),
-    ];
+    final photoGroups = !opts.includePhotos
+        ? const <TaskReportPhotoGroup>[]
+        : <TaskReportPhotoGroup>[
+            for (var i = 0; i < list.length; i++)
+              if (list[i].photos.any((p) => p.dataBase64.trim().isNotEmpty))
+                TaskReportPhotoGroup(
+                  index: i + 1,
+                  title: sentenceCaseTr(list[i].title),
+                  photos: [
+                    for (final p in list[i].photos)
+                      if (p.dataBase64.trim().isNotEmpty) p,
+                  ],
+                ),
+          ];
 
     return TaskReportData(
       title: 'Saha Görevleri — $tagLabel',
       subtitle: '$projectName · $statusLabel · $today',
       headers: headers,
+      columns: columns,
       rows: rows,
       fileStem: 'gorev-$stemTag-${today.replaceAll('.', '')}',
       tagLabel: tagLabel,
       taskCount: list.length,
       photoGroups: photoGroups,
     );
+  }
+
+  static String _cellValue(SiteTask task, TaskExportColumn column, int index) {
+    return switch (column) {
+      TaskExportColumn.number => '$index',
+      TaskExportColumn.title => sentenceCaseTr(task.title),
+      TaskExportColumn.tag => task.tag.trim().isEmpty
+          ? '—'
+          : TaskTagCatalog.cardLabel(task.tag),
+      TaskExportColumn.category => task.category.trim().isEmpty
+          ? '—'
+          : titleCaseTr(task.category),
+      TaskExportColumn.assignee => task.assignee.trim().isEmpty
+          ? '—'
+          : titleCaseTr(task.assignee),
+      TaskExportColumn.plannedStart =>
+        task.earliestStart.isEmpty ? '—' : task.earliestStart,
+      TaskExportColumn.actualStart => task.actualStartDate.trim().isEmpty
+          ? '—'
+          : task.actualStartDate.trim(),
+      TaskExportColumn.plannedEnd =>
+        task.dueDate.isEmpty ? '—' : task.dueDate,
+      TaskExportColumn.actualEnd => task.actualDeliveryDate.trim().isEmpty
+          ? '—'
+          : task.actualDeliveryDate.trim(),
+      TaskExportColumn.status => task.status.label,
+      TaskExportColumn.description => task.description.trim().isEmpty
+          ? '—'
+          : task.description.trim(),
+    };
   }
 }

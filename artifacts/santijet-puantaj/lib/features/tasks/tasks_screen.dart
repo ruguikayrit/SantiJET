@@ -7,6 +7,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:image_picker/image_picker.dart';
 
+import '../../core/design_system/sj_button.dart';
 import '../../core/design_system/sj_card.dart';
 import '../../core/design_system/sj_empty_state.dart';
 import '../../core/design_system/sj_modal.dart';
@@ -219,26 +220,53 @@ class _TasksScreenState extends ConsumerState<TasksScreen> {
       return;
     }
 
+    SiteTask latestTask() {
+      for (final t in ref.read(tasksProvider)) {
+        if (t.id == task.id) return t;
+      }
+      return task;
+    }
+
+    TaskPhoto photoOf(SiteTask source) {
+      for (final p in source.photos) {
+        if (p.id == photo.id) return p;
+      }
+      return photo;
+    }
+
     await openAnnotatedPhotoViewer(
       context,
       imageBytes: bytes,
       startInDrawMode: canAnnotate,
+      onRevertPrevious: canAnnotate && photo.canRevertEdit
+          ? () async {
+              final source = latestTask();
+              final current = photoOf(source);
+              if (!current.canRevertEdit) return;
+              ref.read(tasksProvider.notifier).upsert(
+                    source.copyWith(
+                      photos: [
+                        for (final p in source.photos)
+                          if (p.id == photo.id) p.revertEdit() else p,
+                      ],
+                    ),
+                  );
+            }
+          : null,
       onSave: canAnnotate
           ? (annotated) async {
-              final nextPhotos = [
-                for (final p in task.photos)
-                  if (p.id == photo.id)
-                    TaskPhoto(
-                      id: p.id,
-                      dataBase64: base64Encode(annotated),
-                      mimeType: 'image/png',
-                      createdAt: p.createdAt,
-                    )
-                  else
-                    p,
-              ];
+              final source = latestTask();
+              final current = photoOf(source);
               ref.read(tasksProvider.notifier).upsert(
-                    task.copyWith(photos: nextPhotos),
+                    source.copyWith(
+                      photos: [
+                        for (final p in source.photos)
+                          if (p.id == photo.id)
+                            current.withEditedBase64(base64Encode(annotated))
+                          else
+                            p,
+                      ],
+                    ),
                   );
             }
           : null,
@@ -597,14 +625,27 @@ class _TasksScreenState extends ConsumerState<TasksScreen> {
                                         ctx,
                                         imageBytes: bytes,
                                         startInDrawMode: canEditFields,
+                                        onRevertPrevious: canEditFields &&
+                                                photo.canRevertEdit
+                                            ? () async {
+                                                setModal(() {
+                                                  photos = [
+                                                    for (var j = 0;
+                                                        j < photos.length;
+                                                        j++)
+                                                      if (j == i)
+                                                        photos[j].revertEdit()
+                                                      else
+                                                        photos[j],
+                                                  ];
+                                                });
+                                              }
+                                            : null,
                                         onSave: canEditFields
                                             ? (annotated) async {
-                                                final updated = TaskPhoto(
-                                                  id: photo.id,
-                                                  dataBase64:
-                                                      base64Encode(annotated),
-                                                  mimeType: 'image/png',
-                                                  createdAt: photo.createdAt,
+                                                final updated =
+                                                    photo.withEditedBase64(
+                                                  base64Encode(annotated),
                                                 );
                                                 setModal(() {
                                                   photos = [
@@ -697,11 +738,9 @@ class _TasksScreenState extends ConsumerState<TasksScreen> {
                                           final rotated =
                                               await rotateImageBytesCw90(bytes);
                                           if (rotated == null) return;
-                                          final updated = TaskPhoto(
-                                            id: photo.id,
-                                            dataBase64: base64Encode(rotated),
-                                            mimeType: 'image/png',
-                                            createdAt: photo.createdAt,
+                                          final updated =
+                                              photo.withEditedBase64(
+                                            base64Encode(rotated),
                                           );
                                           setModal(() {
                                             photos = [
@@ -719,6 +758,38 @@ class _TasksScreenState extends ConsumerState<TasksScreen> {
                                           padding: EdgeInsets.all(4),
                                           child: Icon(
                                             Icons.rotate_90_degrees_cw,
+                                            size: 14,
+                                            color: Colors.white,
+                                          ),
+                                        ),
+                                      ),
+                                    ),
+                                  ),
+                                if (canEditFields && photo.canRevertEdit)
+                                  Positioned(
+                                    top: 2,
+                                    left: 2,
+                                    child: Material(
+                                      color: AppColors.critical
+                                          .withValues(alpha: 0.92),
+                                      shape: const CircleBorder(),
+                                      child: InkWell(
+                                        customBorder: const CircleBorder(),
+                                        onTap: () => setModal(() {
+                                          photos = [
+                                            for (var j = 0;
+                                                j < photos.length;
+                                                j++)
+                                              if (j == i)
+                                                photos[j].revertEdit()
+                                              else
+                                                photos[j],
+                                          ];
+                                        }),
+                                        child: const Padding(
+                                          padding: EdgeInsets.all(4),
+                                          child: Icon(
+                                            Icons.history,
                                             size: 14,
                                             color: Colors.white,
                                           ),
@@ -1158,42 +1229,63 @@ class _TasksScreenState extends ConsumerState<TasksScreen> {
                       ],
                     ),
                     const SizedBox(height: AppSpacing.md),
-                    FilledButton(
-                      onPressed: () {
-                        if (titleCtrl.text.trim().isEmpty) return;
-                        if (assignee == null) return;
-                        if (tag.isEmpty || !TaskTagCatalog.isKnown(tag)) {
-                          ScaffoldMessenger.of(ctx).showSnackBar(
-                            const SnackBar(
-                              content: Text(
-                                'Etiket seçin (İnşaat / Elektrik / Mekanik).',
-                              ),
-                            ),
-                          );
-                          return;
-                        }
-                        if (category.trim().isEmpty) {
-                          ScaffoldMessenger.of(ctx).showSnackBar(
-                            const SnackBar(
-                              content: Text('Kategori seçin veya oluşturun.'),
-                            ),
-                          );
-                          return;
-                        }
-                        if (earliestStart.isEmpty || latestDelivery.isEmpty) {
-                          ScaffoldMessenger.of(ctx).showSnackBar(
-                            const SnackBar(
-                              content: Text(
-                                'Planlanan başlangıç ve bitiş '
-                                'tarihlerini seçin.',
-                              ),
-                            ),
-                          );
-                          return;
-                        }
-                        Navigator.pop(ctx, true);
-                      },
-                      child: const Text('Kaydet'),
+                    Row(
+                      children: [
+                        Expanded(
+                          child: SJButton(
+                            label: 'İptal',
+                            variant: SJButtonVariant.destructive,
+                            expanded: true,
+                            onPressed: () => Navigator.pop(ctx),
+                          ),
+                        ),
+                        const SizedBox(width: AppSpacing.sm),
+                        Expanded(
+                          child: SJButton(
+                            label: 'Kaydet',
+                            expanded: true,
+                            onPressed: () {
+                              if (titleCtrl.text.trim().isEmpty) return;
+                              if (assignee == null) return;
+                              if (tag.isEmpty ||
+                                  !TaskTagCatalog.isKnown(tag)) {
+                                ScaffoldMessenger.of(ctx).showSnackBar(
+                                  const SnackBar(
+                                    content: Text(
+                                      'Etiket seçin '
+                                      '(İnşaat / Elektrik / Mekanik).',
+                                    ),
+                                  ),
+                                );
+                                return;
+                              }
+                              if (category.trim().isEmpty) {
+                                ScaffoldMessenger.of(ctx).showSnackBar(
+                                  const SnackBar(
+                                    content: Text(
+                                      'Kategori seçin veya oluşturun.',
+                                    ),
+                                  ),
+                                );
+                                return;
+                              }
+                              if (earliestStart.isEmpty ||
+                                  latestDelivery.isEmpty) {
+                                ScaffoldMessenger.of(ctx).showSnackBar(
+                                  const SnackBar(
+                                    content: Text(
+                                      'Planlanan başlangıç ve bitiş '
+                                      'tarihlerini seçin.',
+                                    ),
+                                  ),
+                                );
+                                return;
+                              }
+                              Navigator.pop(ctx, true);
+                            },
+                          ),
+                        ),
+                      ],
                     ),
                   ],
                 ),
@@ -1744,6 +1836,59 @@ class _TasksScreenState extends ConsumerState<TasksScreen> {
                                                             Icons.brush_outlined,
                                                             size: 12,
                                                             color: Colors.white,
+                                                          ),
+                                                        ),
+                                                      ),
+                                                    ),
+                                                  if (canAnnotate &&
+                                                      photo.canRevertEdit)
+                                                    Positioned(
+                                                      left: 2,
+                                                      top: 2,
+                                                      child: Material(
+                                                        color: AppColors
+                                                            .critical
+                                                            .withValues(
+                                                          alpha: 0.92,
+                                                        ),
+                                                        shape:
+                                                            const CircleBorder(),
+                                                        child: InkWell(
+                                                          customBorder:
+                                                              const CircleBorder(),
+                                                          onTap: () {
+                                                            ref
+                                                                .read(
+                                                                  tasksProvider
+                                                                      .notifier,
+                                                                )
+                                                                .upsert(
+                                                              task.copyWith(
+                                                                photos: [
+                                                                  for (final p
+                                                                      in task
+                                                                          .photos)
+                                                                    if (p.id ==
+                                                                        photo
+                                                                            .id)
+                                                                      p.revertEdit()
+                                                                    else
+                                                                      p,
+                                                                ],
+                                                              ),
+                                                            );
+                                                          },
+                                                          child: const Padding(
+                                                            padding:
+                                                                EdgeInsets.all(
+                                                              3,
+                                                            ),
+                                                            child: Icon(
+                                                              Icons.history,
+                                                              size: 12,
+                                                              color:
+                                                                  Colors.white,
+                                                            ),
                                                           ),
                                                         ),
                                                       ),

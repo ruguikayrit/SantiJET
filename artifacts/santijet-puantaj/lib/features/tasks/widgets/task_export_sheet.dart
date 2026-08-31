@@ -1,17 +1,20 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../core/design_system/sj_button.dart';
 import '../../../core/theme/app_colors.dart';
 import '../../../core/theme/app_radii.dart';
 import '../../../core/theme/app_spacing.dart';
+import '../../../data/providers/task_export_options_provider.dart';
+import '../../../data/services/task_export_options.dart';
 import '../../../data/services/task_export_service.dart';
 import '../../../data/services/task_report_builder.dart';
 import '../../../domain/catalogs/task_tags.dart';
 import '../../../domain/entities/site_task.dart';
 import '../../../domain/enums/task_status.dart';
 
-/// Puantaj AL ile aynı kurgu — etiket filtresi + PDF / Excel.
-class TaskExportSheet extends StatefulWidget {
+/// Görev AL — etiket / durum / sütun / fotoğraf + PDF / Excel.
+class TaskExportSheet extends ConsumerStatefulWidget {
   const TaskExportSheet({
     required this.projectName,
     required this.tasks,
@@ -26,14 +29,21 @@ class TaskExportSheet extends StatefulWidget {
   final String? initialTag;
 
   @override
-  State<TaskExportSheet> createState() => _TaskExportSheetState();
+  ConsumerState<TaskExportSheet> createState() => _TaskExportSheetState();
 }
 
-class _TaskExportSheetState extends State<TaskExportSheet> {
+class _TaskExportSheetState extends ConsumerState<TaskExportSheet> {
   late String? _tag = widget.initialTag;
   TaskStatus? _status;
+  late TaskExportOptions _options;
   bool _busy = false;
   String? _error;
+
+  @override
+  void initState() {
+    super.initState();
+    _options = ref.read(taskExportOptionsProvider);
+  }
 
   int get _previewCount {
     return TaskReportBuilder.build(
@@ -41,15 +51,21 @@ class _TaskExportSheetState extends State<TaskExportSheet> {
       tasks: widget.tasks,
       tagFilter: _tag,
       statusFilter: _status,
+      options: _options,
     ).taskCount;
   }
 
   Future<void> _export({required bool pdf}) async {
+    if (!_options.hasAnyColumn) {
+      setState(() => _error = 'En az bir sütun seçin.');
+      return;
+    }
     final report = TaskReportBuilder.build(
       projectName: widget.projectName,
       tasks: widget.tasks,
       tagFilter: _tag,
       statusFilter: _status,
+      options: _options,
     );
     if (report.taskCount == 0) {
       setState(() {
@@ -62,6 +78,7 @@ class _TaskExportSheetState extends State<TaskExportSheet> {
       _error = null;
     });
     try {
+      ref.read(taskExportOptionsProvider.notifier).save(_options);
       if (pdf) {
         await taskExportService.exportPdf(report);
       } else {
@@ -96,6 +113,13 @@ class _TaskExportSheetState extends State<TaskExportSheet> {
         Text(
           '${widget.projectName} · $count görev',
           style: theme.textTheme.bodyMedium?.copyWith(
+            color: theme.colorScheme.onSurfaceVariant,
+          ),
+        ),
+        const SizedBox(height: AppSpacing.xs),
+        Text(
+          'Son seçimler hatırlanır.',
+          style: theme.textTheme.labelMedium?.copyWith(
             color: theme.colorScheme.onSurfaceVariant,
           ),
         ),
@@ -145,11 +169,13 @@ class _TaskExportSheetState extends State<TaskExportSheet> {
             ),
             ButtonSegment(
               value: 'todo',
-              label: Text('Yapılacak', style: _statusSegStyle(theme), maxLines: 1),
+              label:
+                  Text('Yapılacak', style: _statusSegStyle(theme), maxLines: 1),
             ),
             ButtonSegment(
               value: 'started',
-              label: Text('Başlandı', style: _statusSegStyle(theme), maxLines: 1),
+              label:
+                  Text('Başlandı', style: _statusSegStyle(theme), maxLines: 1),
             ),
             ButtonSegment(
               value: 'doing',
@@ -176,6 +202,71 @@ class _TaskExportSheetState extends State<TaskExportSheet> {
                     _error = null;
                   });
                 },
+        ),
+        const SizedBox(height: AppSpacing.md),
+        Row(
+          children: [
+            Expanded(
+              child: Text('Sütunlar', style: theme.textTheme.labelLarge),
+            ),
+            TextButton(
+              onPressed: _busy
+                  ? null
+                  : () => setState(() {
+                        _options = TaskExportOptions.all()
+                            .copyWith(includePhotos: _options.includePhotos);
+                        _error = null;
+                      }),
+              child: const Text('Tümü'),
+            ),
+            TextButton(
+              onPressed: _busy
+                  ? null
+                  : () => setState(() {
+                        _options = _options.copyWith(columns: {});
+                        _error = null;
+                      }),
+              child: const Text('Temizle'),
+            ),
+          ],
+        ),
+        ConstrainedBox(
+          constraints: BoxConstraints(
+            maxHeight: MediaQuery.sizeOf(context).height * 0.28,
+          ),
+          child: ListView(
+            shrinkWrap: true,
+            children: [
+              for (final column in TaskExportColumn.all)
+                CheckboxListTile(
+                  contentPadding: EdgeInsets.zero,
+                  dense: true,
+                  title: Text(column.label),
+                  value: _options.columns.contains(column),
+                  onChanged: _busy
+                      ? null
+                      : (v) => setState(() {
+                            _options =
+                                _options.toggleColumn(column, v ?? false);
+                            _error = null;
+                          }),
+                  controlAffinity: ListTileControlAffinity.leading,
+                ),
+            ],
+          ),
+        ),
+        CheckboxListTile(
+          contentPadding: EdgeInsets.zero,
+          dense: true,
+          title: const Text('Fotoğraflar'),
+          value: _options.includePhotos,
+          onChanged: _busy
+              ? null
+              : (v) => setState(() {
+                    _options = _options.copyWith(includePhotos: v ?? false);
+                    _error = null;
+                  }),
+          controlAffinity: ListTileControlAffinity.leading,
         ),
         const SizedBox(height: AppSpacing.md),
         Text('Format', style: theme.textTheme.labelLarge),

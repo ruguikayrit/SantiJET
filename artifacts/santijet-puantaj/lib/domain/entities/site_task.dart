@@ -12,6 +12,8 @@ class TaskPhoto extends Equatable {
     required this.dataBase64,
     this.mimeType = 'image/jpeg',
     this.createdAt,
+    this.previousDataBase64,
+    this.previousMimeType,
   });
 
   final String id;
@@ -19,11 +21,46 @@ class TaskPhoto extends Equatable {
   final String mimeType;
   final DateTime? createdAt;
 
+  /// Son düzenlemeden önceki görüntü — geri alma için.
+  final String? previousDataBase64;
+  final String? previousMimeType;
+
+  bool get canRevertEdit =>
+      previousDataBase64 != null && previousDataBase64!.trim().isNotEmpty;
+
+  /// Düzenlenmiş görüntüyü kaydeder; mevcut hali geri alma için saklar.
+  TaskPhoto withEditedBase64(
+    String editedBase64, {
+    String mimeType = 'image/png',
+  }) {
+    return TaskPhoto(
+      id: id,
+      dataBase64: editedBase64,
+      mimeType: mimeType,
+      createdAt: createdAt,
+      previousDataBase64: dataBase64,
+      previousMimeType: this.mimeType,
+    );
+  }
+
+  /// Son düzenlemeyi geri alır (tek seviye).
+  TaskPhoto revertEdit() {
+    if (!canRevertEdit) return this;
+    return TaskPhoto(
+      id: id,
+      dataBase64: previousDataBase64!,
+      mimeType: previousMimeType ?? 'image/jpeg',
+      createdAt: createdAt,
+    );
+  }
+
   Map<String, dynamic> toJson() => {
         'id': id,
         'dataBase64': dataBase64,
         'mimeType': mimeType,
         'createdAt': createdAt?.toIso8601String(),
+        if (previousDataBase64 != null) 'previousDataBase64': previousDataBase64,
+        if (previousMimeType != null) 'previousMimeType': previousMimeType,
       };
 
   factory TaskPhoto.fromJson(Map<String, dynamic> json) => TaskPhoto(
@@ -33,10 +70,19 @@ class TaskPhoto extends Equatable {
         createdAt: json['createdAt'] != null
             ? DateTime.tryParse(json['createdAt'] as String)
             : null,
+        previousDataBase64: json['previousDataBase64'] as String?,
+        previousMimeType: json['previousMimeType'] as String?,
       );
 
   @override
-  List<Object?> get props => [id, dataBase64, mimeType, createdAt];
+  List<Object?> get props => [
+        id,
+        dataBase64,
+        mimeType,
+        createdAt,
+        previousDataBase64,
+        previousMimeType,
+      ];
 }
 
 /// Proje kapsamındaki saha görevi — atayan + atanan görünür.

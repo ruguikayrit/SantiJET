@@ -10,6 +10,7 @@ import '../../domain/entities/site_task.dart';
 import 'report_file_access_stub.dart'
     if (dart.library.html) 'report_file_access_web.dart'
     if (dart.library.io) 'report_file_access_io.dart' as file_access;
+import 'task_export_options.dart';
 import 'task_report_builder.dart';
 import 'xlsx_image_embedder.dart';
 
@@ -92,7 +93,7 @@ class TaskExportService {
               style: const pw.TextStyle(fontSize: 11, color: _inkMuted),
             )
           else
-            _table(report.headers, report.rows),
+            _table(report.headers, report.rows, report.columns),
           ..._photoSection(report.photoGroups),
         ],
       ),
@@ -205,17 +206,20 @@ class TaskExportService {
     );
   }
 
-  pw.Widget _table(List<String> headers, List<List<String>> rows) {
+  pw.Widget _table(
+    List<String> headers,
+    List<List<String>> rows,
+    List<TaskExportColumn> columns,
+  ) {
     final headerStyle = pw.TextStyle(
       fontSize: 7.5,
       fontWeight: pw.FontWeight.bold,
       color: _blue,
       lineSpacing: 1.5,
     );
-    // Ortalanacak sütunlar: #, Etiket, Kategori, Atanan, tarihler, Durum.
-    const centeredCols = {0, 2, 3, 4, 5, 6, 7, 8, 9};
-    final cellAlignments = {
-      for (final c in centeredCols) c: pw.Alignment.center,
+    final cellAlignments = <int, pw.Alignment>{
+      for (var i = 0; i < columns.length; i++)
+        if (columns[i].centerAlign) i: pw.Alignment.center,
     };
     final headerWidgets = <pw.Widget>[
       for (final h in headers)
@@ -244,20 +248,24 @@ class TaskExportService {
       cellPadding: const pw.EdgeInsets.symmetric(horizontal: 3, vertical: 4),
       headerPadding: const pw.EdgeInsets.symmetric(horizontal: 2, vertical: 5),
       columnWidths: {
-        0: const pw.FixedColumnWidth(22),
-        1: const pw.FlexColumnWidth(1.5),
-        2: const pw.FixedColumnWidth(50),
-        3: const pw.FlexColumnWidth(0.95),
-        4: const pw.FlexColumnWidth(1.05),
-        // dd.MM.yyyy tek satırda kalsın.
-        5: const pw.FixedColumnWidth(58),
-        6: const pw.FixedColumnWidth(58),
-        7: const pw.FixedColumnWidth(58),
-        8: const pw.FixedColumnWidth(58),
-        9: const pw.FixedColumnWidth(50),
-        10: const pw.FlexColumnWidth(3.2),
+        for (var i = 0; i < columns.length; i++)
+          i: _pdfColumnWidth(columns[i]),
       },
     );
+  }
+
+  pw.TableColumnWidth _pdfColumnWidth(TaskExportColumn column) {
+    return switch (column.widthKind) {
+      'number' => const pw.FixedColumnWidth(22),
+      'title' => const pw.FlexColumnWidth(1.5),
+      'tag' => const pw.FixedColumnWidth(50),
+      'category' => const pw.FlexColumnWidth(0.95),
+      'assignee' => const pw.FlexColumnWidth(1.05),
+      'date' => const pw.FixedColumnWidth(58),
+      'status' => const pw.FixedColumnWidth(50),
+      'description' => const pw.FlexColumnWidth(3.2),
+      _ => const pw.FlexColumnWidth(1),
+    };
   }
 
   List<int> _buildExcelBytes(TaskReportData report) {
@@ -276,22 +284,8 @@ class TaskExportService {
     );
 
     const headerRow = 3;
-    // Sütun genişlikleri: tarih kolonları dar (2 satır başlık), Açıklama max.
-    const excelColWidths = <double>[
-      4, // #
-      22, // Başlık
-      11, // Etiket
-      14, // Kategori
-      16, // Atanan
-      14, // Planlanan Başlangıç (dd.MM.yyyy)
-      14, // Gerçekleşen Başlangıç
-      14, // Planlanan Bitiş
-      14, // Gerçekleşen Bitiş
-      12, // Durum
-      48, // Açıklama
-    ];
-    for (var c = 0; c < excelColWidths.length; c++) {
-      sheet.setColumnWidth(c, excelColWidths[c]);
+    for (var c = 0; c < report.columns.length; c++) {
+      sheet.setColumnWidth(c, report.columns[c].excelWidth);
     }
     sheet.setRowHeight(headerRow, 32);
 
@@ -312,7 +306,7 @@ class TaskExportService {
       horizontalAlign: HorizontalAlign.Center,
       verticalAlign: VerticalAlign.Center,
     );
-    const centeredCols = {0, 2, 3, 4, 5, 6, 7, 8, 9};
+    final wrapStyle = CellStyle(textWrapping: TextWrapping.WrapText);
     for (var r = 0; r < report.rows.length; r++) {
       final row = report.rows[r];
       for (var c = 0; c < report.headers.length; c++) {
@@ -323,70 +317,70 @@ class TaskExportService {
           ),
         );
         cell.value = TextCellValue(c < row.length ? row[c] : '');
-        if (c == 10) {
-          cell.cellStyle = CellStyle(textWrapping: TextWrapping.WrapText);
-        } else if (centeredCols.contains(c)) {
+        final col = c < report.columns.length ? report.columns[c] : null;
+        if (col == TaskExportColumn.description) {
+          cell.cellStyle = wrapStyle;
+        } else if (col != null && col.centerAlign) {
           cell.cellStyle = centeredCellStyle;
         }
       }
     }
 
-    // —— Fotoğraflar sekmesi (PDF: satırda 4 görsel) ——
-    const photosSheetName = 'Fotoğraflar';
-    final photosSheet = excel[photosSheetName];
-    photosSheet
-        .cell(CellIndex.indexByColumnRow(columnIndex: 0, rowIndex: 0))
-        .value = TextCellValue('FOTOĞRAFLAR');
-    photosSheet
-        .cell(CellIndex.indexByColumnRow(columnIndex: 0, rowIndex: 1))
-        .value = TextCellValue(
-      report.photoGroups.isEmpty
-          ? 'Bu filtrede fotoğraf yok.'
-          : '${report.photoGroups.length} görev · satırda 4 fotoğraf',
-    );
-
-    for (var c = 0; c < 4; c++) {
-      photosSheet.setColumnWidth(c, 18);
-    }
-
     final placements = <XlsxImagePlacement>[];
-    var row = 3;
-    for (final group in report.photoGroups) {
+    const photosSheetName = 'Fotoğraflar';
+    if (report.photoGroups.isNotEmpty) {
+      final photosSheet = excel[photosSheetName];
       photosSheet
-          .cell(CellIndex.indexByColumnRow(columnIndex: 0, rowIndex: row))
-          .value = TextCellValue('#${group.index}  ${group.title}');
-      row++;
+          .cell(CellIndex.indexByColumnRow(columnIndex: 0, rowIndex: 0))
+          .value = TextCellValue('FOTOĞRAFLAR');
+      photosSheet
+          .cell(CellIndex.indexByColumnRow(columnIndex: 0, rowIndex: 1))
+          .value = TextCellValue(
+        '${report.photoGroups.length} görev · satırda 4 fotoğraf',
+      );
 
-      var col = 0;
-      for (final photo in group.photos) {
-        Uint8List? bytes;
-        try {
-          if (photo.dataBase64.trim().isNotEmpty) {
-            bytes = base64Decode(photo.dataBase64);
-          }
-        } catch (_) {
-          bytes = null;
-        }
-        if (bytes == null || bytes.isEmpty) {
-          photosSheet
-              .cell(
-                CellIndex.indexByColumnRow(columnIndex: col, rowIndex: row),
-              )
-              .value = TextCellValue('(yüklenemedi)');
-        } else {
-          placements.add(
-            XlsxImagePlacement(row: row, column: col, bytes: bytes),
-          );
-          photosSheet.setRowHeight(row, 72);
-        }
-        col++;
-        if (col >= 4) {
-          col = 0;
-          row++;
-        }
+      for (var c = 0; c < 4; c++) {
+        photosSheet.setColumnWidth(c, 18);
       }
-      if (col != 0) row++;
-      row++; // görevler arası boşluk
+
+      var row = 3;
+      for (final group in report.photoGroups) {
+        photosSheet
+            .cell(CellIndex.indexByColumnRow(columnIndex: 0, rowIndex: row))
+            .value = TextCellValue('#${group.index}  ${group.title}');
+        row++;
+
+        var col = 0;
+        for (final photo in group.photos) {
+          Uint8List? bytes;
+          try {
+            if (photo.dataBase64.trim().isNotEmpty) {
+              bytes = base64Decode(photo.dataBase64);
+            }
+          } catch (_) {
+            bytes = null;
+          }
+          if (bytes == null || bytes.isEmpty) {
+            photosSheet
+                .cell(
+                  CellIndex.indexByColumnRow(columnIndex: col, rowIndex: row),
+                )
+                .value = TextCellValue('(yüklenemedi)');
+          } else {
+            placements.add(
+              XlsxImagePlacement(row: row, column: col, bytes: bytes),
+            );
+            photosSheet.setRowHeight(row, 72);
+          }
+          col++;
+          if (col >= 4) {
+            col = 0;
+            row++;
+          }
+        }
+        if (col != 0) row++;
+        row++;
+      }
     }
 
     final encoded = excel.encode();
