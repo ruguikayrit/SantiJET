@@ -297,48 +297,24 @@ class ProductionChartPanel extends ConsumerWidget {
                 ),
               )
             else ...[
-              SizedBox(
-                height: kind == ProductionChartKind.horizontalBar
-                    ? (48.0 * slices.length).clamp(120, 240)
-                    : 200,
-                child: switch (kind) {
-                  ProductionChartKind.pie => _PieChart(slices: slices),
-                  ProductionChartKind.bar => _BarChart(
-                      slices: slices,
-                      unitHint: unitHint,
-                    ),
-                  ProductionChartKind.horizontalBar => _HorizontalBarChart(
-                      slices: slices,
-                      unitHint: unitHint,
-                    ),
-                },
-              ),
-              const SizedBox(height: AppSpacing.sm),
-              Wrap(
-                spacing: AppSpacing.sm,
-                runSpacing: 6,
-                children: [
-                  for (final s in slices.take(8))
-                    Row(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        Container(
-                          width: 10,
-                          height: 10,
-                          decoration: BoxDecoration(
-                            color: s.color,
-                            borderRadius: AppRadii.xs,
-                          ),
-                        ),
-                        const SizedBox(width: 4),
-                        Text(
-                          '${_short(s.label)} · ${_fmt(s.value)}',
-                          style: theme.textTheme.labelSmall,
-                        ),
-                      ],
-                    ),
-                ],
-              ),
+              if (kind == ProductionChartKind.horizontalBar)
+                _HorizontalBarChart(
+                  slices: slices,
+                  unitHint: unitHint,
+                )
+              else
+                SizedBox(
+                  height: 200,
+                  child: switch (kind) {
+                    ProductionChartKind.pie => _PieChart(slices: slices),
+                    ProductionChartKind.bar => _BarChart(
+                        slices: slices,
+                        unitHint: unitHint,
+                      ),
+                    ProductionChartKind.horizontalBar =>
+                      const SizedBox.shrink(),
+                  },
+                ),
             ],
           ],
         );
@@ -350,12 +326,6 @@ class ProductionChartPanel extends ConsumerWidget {
     if (v == v.roundToDouble()) return v.toStringAsFixed(0);
     return v.toStringAsFixed(1);
   }
-
-  static String _short(String s) {
-    final t = s.trim();
-    if (t.length <= 18) return t;
-    return '${t.substring(0, 16)}…';
-  }
 }
 
 class _PieChart extends StatelessWidget {
@@ -365,25 +335,41 @@ class _PieChart extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
     final total = slices.fold<double>(0, (s, e) => s + e.value);
     if (total <= 0) return const SizedBox.shrink();
 
     return PieChart(
       PieChartData(
         sectionsSpace: 2,
-        centerSpaceRadius: 36,
+        centerSpaceRadius: 32,
         sections: [
           for (final s in slices)
             PieChartSectionData(
               value: s.value,
               color: s.color,
-              radius: 48,
+              radius: 46,
               title: '${((s.value / total) * 100).round()}%',
               titleStyle: const TextStyle(
                 fontSize: 11,
                 fontWeight: FontWeight.w700,
                 color: Colors.white,
               ),
+              badgeWidget: ConstrainedBox(
+                constraints: const BoxConstraints(maxWidth: 88),
+                child: Text(
+                  s.label.trim(),
+                  textAlign: TextAlign.center,
+                  softWrap: true,
+                  style: theme.textTheme.labelSmall?.copyWith(
+                    fontWeight: FontWeight.w700,
+                    color: theme.colorScheme.onSurface,
+                    fontSize: 9,
+                    height: 1.15,
+                  ),
+                ),
+              ),
+              badgePositionPercentageOffset: 1.35,
             ),
         ],
       ),
@@ -440,8 +426,11 @@ class _BarChart extends StatelessWidget {
                 return Padding(
                   padding: const EdgeInsets.only(top: 4),
                   child: Text(
-                    ProductionChartPanel._short(slices[i].label),
+                    slices[i].label.trim(),
                     style: Theme.of(context).textTheme.labelSmall,
+                    textAlign: TextAlign.center,
+                    maxLines: 2,
+                    softWrap: true,
                   ),
                 );
               },
@@ -502,20 +491,23 @@ class _HorizontalBarChart extends StatelessWidget {
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
             Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Expanded(
                   child: Text(
-                    ProductionChartPanel._short(s.label),
+                    s.label.trim(),
                     style: theme.textTheme.labelMedium?.copyWith(
                       fontWeight: FontWeight.w600,
                     ),
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
+                    softWrap: true,
                   ),
                 ),
+                const SizedBox(width: AppSpacing.sm),
                 Text(
                   '${ProductionChartPanel._fmt(s.value)} $unitHint',
-                  style: theme.textTheme.labelSmall,
+                  style: theme.textTheme.labelSmall?.copyWith(
+                    fontWeight: FontWeight.w700,
+                  ),
                 ),
               ],
             ),
