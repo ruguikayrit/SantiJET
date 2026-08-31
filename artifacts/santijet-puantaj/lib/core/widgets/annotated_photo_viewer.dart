@@ -1,3 +1,4 @@
+import 'dart:math' as math;
 import 'dart:typed_data';
 import 'dart:ui' as ui;
 
@@ -8,42 +9,76 @@ import '../theme/app_radii.dart';
 import '../theme/app_spacing.dart';
 import '../utils/image_rotate.dart';
 
-enum _PhotoTool { view, draw, text }
+enum _PhotoTool { view, draw, line, arrow, rect, circle, text }
 
-class _NormStroke {
-  _NormStroke({
-    required this.points,
+enum _AnnotationKind { freehand, line, arrow, rect, circle, text }
+
+class _Annotation {
+  const _Annotation({
+    required this.kind,
     required this.color,
     required this.strokeWidth,
+    this.points,
+    this.start,
+    this.end,
+    this.text,
+    this.position,
   });
 
-  final List<Offset> points;
+  final _AnnotationKind kind;
   final Color color;
   final double strokeWidth;
+  final List<Offset>? points;
+  final Offset? start;
+  final Offset? end;
+  final String? text;
+  final Offset? position;
+
+  _Annotation rotatedCw90() {
+    Offset rot(Offset p) => Offset(1 - p.dy, p.dx);
+    switch (kind) {
+      case _AnnotationKind.freehand:
+        return _Annotation(
+          kind: kind,
+          color: color,
+          strokeWidth: strokeWidth,
+          points: [for (final p in points!) rot(p)],
+        );
+      case _AnnotationKind.line:
+      case _AnnotationKind.arrow:
+      case _AnnotationKind.rect:
+      case _AnnotationKind.circle:
+        return _Annotation(
+          kind: kind,
+          color: color,
+          strokeWidth: strokeWidth,
+          start: rot(start!),
+          end: rot(end!),
+        );
+      case _AnnotationKind.text:
+        return _Annotation(
+          kind: kind,
+          color: color,
+          strokeWidth: strokeWidth,
+          text: text,
+          position: rot(position!),
+        );
+    }
+  }
 }
 
-class _TextLabel {
-  _TextLabel({
-    required this.position,
-    required this.text,
-    required this.color,
-  });
-
-  final Offset position;
-  final String text;
-  final Color color;
-}
-
-/// Tam ekran fotoğraf görüntüleyici — çizim ve metin notu.
+/// Tam ekran fotoğraf düzenleyici — çizim, işaretleme, not.
 class AnnotatedPhotoViewerPage extends StatefulWidget {
   const AnnotatedPhotoViewerPage({
     super.key,
     required this.imageBytes,
     this.onSave,
+    this.startInDrawMode = false,
   });
 
   final Uint8List imageBytes;
   final Future<void> Function(Uint8List annotatedBytes)? onSave;
+  final bool startInDrawMode;
 
   @override
   State<AnnotatedPhotoViewerPage> createState() =>
@@ -52,11 +87,11 @@ class AnnotatedPhotoViewerPage extends StatefulWidget {
 
 class _AnnotatedPhotoViewerPageState extends State<AnnotatedPhotoViewerPage> {
   ui.Image? _decoded;
-  _PhotoTool _tool = _PhotoTool.view;
-  final List<_NormStroke> _strokes = [];
-  final List<_TextLabel> _labels = [];
-  _NormStroke? _activeStroke;
+  late _PhotoTool _tool;
+  final List<_Annotation> _annotations = [];
+  _Annotation? _draft;
   Color _color = const Color(0xFFE53935);
+  double _strokeWidth = 4;
   bool _dirty = false;
   bool _saving = false;
   bool _rotating = false;
@@ -70,15 +105,34 @@ class _AnnotatedPhotoViewerPageState extends State<AnnotatedPhotoViewerPage> {
     Colors.black,
   ];
 
+  static const _strokeOptions = [2.0, 4.0, 7.0];
+
+  bool get _canEdit => widget.onSave != null;
+
   bool get _isLandscape {
     final img = _decoded;
     if (img == null) return true;
     return img.width >= img.height;
   }
 
+  String get _toolHint => switch (_tool) {
+        _PhotoTool.view => _canEdit
+            ? 'Yakınlaştırmak için sürükleyin'
+            : 'Yakınlaştırmak için sürükleyin',
+        _PhotoTool.draw => 'Parmağınızla çizin',
+        _PhotoTool.line => 'Başlangıç ve bitiş noktasına sürükleyin',
+        _PhotoTool.arrow => 'Ok yönü için sürükleyin',
+        _PhotoTool.rect => 'Kutu köşelerini sürükleyin',
+        _PhotoTool.circle => 'Daire alanını sürükleyin',
+        _PhotoTool.text => 'Not eklemek için dokunun',
+      };
+
   @override
   void initState() {
     super.initState();
+    _tool = widget.startInDrawMode && _canEdit
+        ? _PhotoTool.draw
+        : _PhotoTool.view;
     _decodeImage();
   }
 
@@ -118,19 +172,20 @@ class _AnnotatedPhotoViewerPageState extends State<AnnotatedPhotoViewerPage> {
   }
 
   void _undo() {
-    if (_labels.isNotEmpty) {
-      setState(() {
-        _labels.removeLast();
-        _dirty = _strokes.isNotEmpty || _labels.isNotEmpty;
-      });
-      return;
-    }
-    if (_strokes.isNotEmpty) {
-      setState(() {
-        _strokes.removeLast();
-        _dirty = _strokes.isNotEmpty || _labels.isNotEmpty;
-      });
-    }
+    if (_annotations.isEmpty) return;
+    setState(() {
+      _annotations.removeLast();
+      _dirty = _annotations.isNotEmpty;
+    });
+  }
+
+  void _clearAll() {
+    if (_annotations.isEmpty) return;
+    setState(() {
+      _annotations.clear();
+      _draft = null;
+      _dirty = false;
+    });
   }
 
   Future<void> _addTextAt(Offset norm) async {
@@ -144,9 +199,7 @@ class _AnnotatedPhotoViewerPageState extends State<AnnotatedPhotoViewerPage> {
           autofocus: true,
           maxLines: 3,
           textCapitalization: TextCapitalization.sentences,
-          decoration: const InputDecoration(
-            hintText: 'Kısa not yazın…',
-          ),
+          decoration: const InputDecoration(hintText: 'Kısa not…'),
         ),
         actions: [
           TextButton(
@@ -163,7 +216,15 @@ class _AnnotatedPhotoViewerPageState extends State<AnnotatedPhotoViewerPage> {
     ctrl.dispose();
     if (text == null || text.isEmpty) return;
     setState(() {
-      _labels.add(_TextLabel(position: norm, text: text, color: _color));
+      _annotations.add(
+        _Annotation(
+          kind: _AnnotationKind.text,
+          color: _color,
+          strokeWidth: _strokeWidth,
+          text: text,
+          position: norm,
+        ),
+      );
       _dirty = true;
     });
   }
@@ -174,24 +235,7 @@ class _AnnotatedPhotoViewerPageState extends State<AnnotatedPhotoViewerPage> {
     setState(() => _rotating = true);
     try {
       final next = await rotateUiImageCw90(image);
-      final remappedStrokes = [
-        for (final s in _strokes)
-          _NormStroke(
-            points: [
-              for (final p in s.points) Offset(1 - p.dy, p.dx),
-            ],
-            color: s.color,
-            strokeWidth: s.strokeWidth,
-          ),
-      ];
-      final remappedLabels = [
-        for (final l in _labels)
-          _TextLabel(
-            position: Offset(1 - l.position.dy, l.position.dx),
-            text: l.text,
-            color: l.color,
-          ),
-      ];
+      final remapped = _annotations.map((a) => a.rotatedCw90()).toList();
       if (!mounted) {
         next.dispose();
         return;
@@ -199,14 +243,11 @@ class _AnnotatedPhotoViewerPageState extends State<AnnotatedPhotoViewerPage> {
       setState(() {
         _decoded?.dispose();
         _decoded = next;
-        _strokes
+        _annotations
           ..clear()
-          ..addAll(remappedStrokes);
-        _labels
-          ..clear()
-          ..addAll(remappedLabels);
-        _activeStroke = null;
-        _dirty = true;
+          ..addAll(remapped);
+        _draft = null;
+        _dirty = _annotations.isNotEmpty;
       });
     } finally {
       if (mounted) setState(() => _rotating = false);
@@ -248,62 +289,111 @@ class _AnnotatedPhotoViewerPageState extends State<AnnotatedPhotoViewerPage> {
     canvas.drawImage(image, Offset.zero, Paint());
 
     final scale = image.width / 360.0;
-
-    for (final stroke in _strokes) {
-      if (stroke.points.isEmpty) continue;
-      final paint = Paint()
-        ..color = stroke.color
-        ..strokeWidth = stroke.strokeWidth * scale
-        ..style = PaintingStyle.stroke
-        ..strokeCap = StrokeCap.round
-        ..strokeJoin = StrokeJoin.round;
-      final path = Path();
-      final first = stroke.points.first;
-      path.moveTo(first.dx * image.width, first.dy * image.height);
-      for (var i = 1; i < stroke.points.length; i++) {
-        final p = stroke.points[i];
-        path.lineTo(p.dx * image.width, p.dy * image.height);
-      }
-      canvas.drawPath(path, paint);
-    }
-
-    for (final label in _labels) {
-      final painter = TextPainter(
-        text: TextSpan(
-          text: label.text,
-          style: TextStyle(
-            color: label.color,
-            fontSize: 16 * scale,
-            fontWeight: FontWeight.w700,
-            shadows: const [
-              Shadow(color: Colors.black54, blurRadius: 2),
-            ],
-          ),
-        ),
-        textDirection: TextDirection.ltr,
-      );
-      painter.layout(maxWidth: image.width.toDouble() * 0.9);
-      painter.paint(
+    for (final a in _annotations) {
+      _AnnotationPainter.drawOnCanvas(
         canvas,
-        Offset(
-          label.position.dx * image.width,
-          label.position.dy * image.height,
-        ),
+        a,
+        normToPixel: (norm) =>
+            Offset(norm.dx * image.width, norm.dy * image.height),
+        strokeScale: scale,
+        labelFontSize: 16 * scale,
       );
     }
 
     final picture = recorder.endRecording();
     final rendered = await picture.toImage(image.width, image.height);
-    final data =
-        await rendered.toByteData(format: ui.ImageByteFormat.png);
+    final data = await rendered.toByteData(format: ui.ImageByteFormat.png);
+    rendered.dispose();
     if (data == null) return null;
     return data.buffer.asUint8List();
   }
 
+  void _onPointerDown(Offset local, Rect rect) {
+    final norm = _normFromLocal(local, rect);
+    if (norm == null) return;
+
+    if (_tool == _PhotoTool.text) {
+      _addTextAt(norm);
+      return;
+    }
+    if (_tool == _PhotoTool.draw) {
+      setState(() {
+        _draft = _Annotation(
+          kind: _AnnotationKind.freehand,
+          color: _color,
+          strokeWidth: _strokeWidth,
+          points: [norm],
+        );
+      });
+      return;
+    }
+    if (_tool == _PhotoTool.line ||
+        _tool == _PhotoTool.arrow ||
+        _tool == _PhotoTool.rect ||
+        _tool == _PhotoTool.circle) {
+      final kind = switch (_tool) {
+        _PhotoTool.line => _AnnotationKind.line,
+        _PhotoTool.arrow => _AnnotationKind.arrow,
+        _PhotoTool.rect => _AnnotationKind.rect,
+        _PhotoTool.circle => _AnnotationKind.circle,
+        _ => _AnnotationKind.line,
+      };
+      setState(() {
+        _draft = _Annotation(
+          kind: kind,
+          color: _color,
+          strokeWidth: _strokeWidth,
+          start: norm,
+          end: norm,
+        );
+      });
+    }
+  }
+
+  void _onPointerMove(Offset local, Rect rect) {
+    final norm = _normFromLocal(local, rect);
+    if (norm == null || _draft == null) return;
+
+    setState(() {
+      if (_draft!.kind == _AnnotationKind.freehand) {
+        _draft!.points!.add(norm);
+      } else {
+        _draft = _Annotation(
+          kind: _draft!.kind,
+          color: _draft!.color,
+          strokeWidth: _draft!.strokeWidth,
+          start: _draft!.start,
+          end: norm,
+        );
+      }
+    });
+  }
+
+  void _onPointerUp() {
+    final draft = _draft;
+    if (draft == null) return;
+
+    setState(() {
+      _draft = null;
+      if (draft.kind == _AnnotationKind.freehand) {
+        if (draft.points!.length >= 2) {
+          _annotations.add(draft);
+          _dirty = true;
+        }
+        return;
+      }
+      final start = draft.start!;
+      final end = draft.end!;
+      if ((start - end).distance > 0.008) {
+        _annotations.add(draft);
+        _dirty = true;
+      }
+    });
+  }
+
   @override
   Widget build(BuildContext context) {
-    final canSave = widget.onSave != null;
-    final canEdit = canSave;
+    final canSave = _canEdit;
 
     return Scaffold(
       backgroundColor: Colors.black,
@@ -324,14 +414,10 @@ class _AnnotatedPhotoViewerPageState extends State<AnnotatedPhotoViewerPage> {
                   ),
                   Expanded(
                     child: Text(
-                      _tool == _PhotoTool.draw
-                          ? 'Çizim modu'
-                          : _tool == _PhotoTool.text
-                              ? 'Not modu — dokunun'
-                              : canEdit
-                                  ? 'Yön: ${_isLandscape ? 'Yatay' : 'Dikey'} · sürükleyerek yakınlaştırın'
-                                  : 'Yakınlaştırmak için sürükleyin',
+                      _toolHint,
                       textAlign: TextAlign.center,
+                      maxLines: 2,
+                      overflow: TextOverflow.ellipsis,
                       style: Theme.of(context).textTheme.labelMedium?.copyWith(
                             color: Colors.white70,
                           ),
@@ -340,7 +426,7 @@ class _AnnotatedPhotoViewerPageState extends State<AnnotatedPhotoViewerPage> {
                   if (canSave)
                     FilledButton.tonal(
                       onPressed:
-                          _saving || _rotating || !_dirty ? null : () => _save(),
+                          _saving || _rotating || !_dirty ? null : _save,
                       style: FilledButton.styleFrom(
                         foregroundColor: Colors.white,
                         backgroundColor: AppColors.electricBlue,
@@ -385,54 +471,20 @@ class _AnnotatedPhotoViewerPageState extends State<AnnotatedPhotoViewerPage> {
                               painter: _PhotoCanvasPainter(
                                 image: _decoded!,
                                 rect: rect,
-                                strokes: _strokes,
-                                activeStroke: _activeStroke,
-                                labels: _labels,
+                                annotations: _annotations,
+                                draft: _draft,
                                 localFromNorm: _localFromNorm,
                               ),
                             ),
                             if (_tool != _PhotoTool.view)
                               Listener(
                                 behavior: HitTestBehavior.translucent,
-                                onPointerDown: (e) {
-                                  final norm =
-                                      _normFromLocal(e.localPosition, rect);
-                                  if (norm == null) return;
-                                  if (_tool == _PhotoTool.text) {
-                                    _addTextAt(norm);
-                                    return;
-                                  }
-                                  setState(() {
-                                    _activeStroke = _NormStroke(
-                                      points: [norm],
-                                      color: _color,
-                                      strokeWidth: 3,
-                                    );
-                                  });
-                                },
-                                onPointerMove: (e) {
-                                  if (_tool != _PhotoTool.draw ||
-                                      _activeStroke == null) {
-                                    return;
-                                  }
-                                  final norm =
-                                      _normFromLocal(e.localPosition, rect);
-                                  if (norm == null) return;
-                                  setState(() {
-                                    _activeStroke!.points.add(norm);
-                                  });
-                                },
-                                onPointerUp: (_) {
-                                  if (_tool != _PhotoTool.draw ||
-                                      _activeStroke == null) {
-                                    return;
-                                  }
-                                  setState(() {
-                                    _strokes.add(_activeStroke!);
-                                    _activeStroke = null;
-                                    _dirty = true;
-                                  });
-                                },
+                                onPointerDown: (e) =>
+                                    _onPointerDown(e.localPosition, rect),
+                                onPointerMove: (e) =>
+                                    _onPointerMove(e.localPosition, rect),
+                                onPointerUp: (_) => _onPointerUp(),
+                                onPointerCancel: (_) => _onPointerUp(),
                               ),
                           ],
                         );
@@ -449,147 +501,201 @@ class _AnnotatedPhotoViewerPageState extends State<AnnotatedPhotoViewerPage> {
                       },
                     ),
             ),
-            DecoratedBox(
-              decoration: BoxDecoration(
-                color: Colors.black.withValues(alpha: 0.85),
-                border: Border(
-                  top: BorderSide(color: Colors.white.withValues(alpha: 0.12)),
+            if (canSave)
+              DecoratedBox(
+                decoration: BoxDecoration(
+                  color: Colors.black.withValues(alpha: 0.9),
+                  border: Border(
+                    top: BorderSide(
+                      color: Colors.white.withValues(alpha: 0.12),
+                    ),
+                  ),
                 ),
-              ),
-              child: canEdit
-                  ? Padding(
-                      padding: const EdgeInsets.fromLTRB(
-                        AppSpacing.md,
-                        AppSpacing.sm,
-                        AppSpacing.md,
-                        AppSpacing.sm,
+                child: Padding(
+                  padding: const EdgeInsets.fromLTRB(
+                    AppSpacing.sm,
+                    AppSpacing.sm,
+                    AppSpacing.sm,
+                    AppSpacing.sm,
+                  ),
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      SingleChildScrollView(
+                        scrollDirection: Axis.horizontal,
+                        child: Row(
+                          children: [
+                            _toolChip(
+                              tool: _PhotoTool.view,
+                              icon: Icons.zoom_out_map,
+                              label: 'Görüntü',
+                            ),
+                            const SizedBox(width: 6),
+                            _toolChip(
+                              tool: _PhotoTool.draw,
+                              icon: Icons.draw_outlined,
+                              label: 'Kalem',
+                            ),
+                            const SizedBox(width: 6),
+                            _toolChip(
+                              tool: _PhotoTool.line,
+                              icon: Icons.horizontal_rule,
+                              label: 'Çizgi',
+                            ),
+                            const SizedBox(width: 6),
+                            _toolChip(
+                              tool: _PhotoTool.arrow,
+                              icon: Icons.north_east,
+                              label: 'Ok',
+                            ),
+                            const SizedBox(width: 6),
+                            _toolChip(
+                              tool: _PhotoTool.rect,
+                              icon: Icons.crop_square,
+                              label: 'Kutu',
+                            ),
+                            const SizedBox(width: 6),
+                            _toolChip(
+                              tool: _PhotoTool.circle,
+                              icon: Icons.circle_outlined,
+                              label: 'Daire',
+                            ),
+                            const SizedBox(width: 6),
+                            _toolChip(
+                              tool: _PhotoTool.text,
+                              icon: Icons.sticky_note_2_outlined,
+                              label: 'Not',
+                            ),
+                          ],
+                        ),
                       ),
-                      child: Column(
-                        mainAxisSize: MainAxisSize.min,
+                      const SizedBox(height: AppSpacing.sm),
+                      Row(
                         children: [
-                          Row(
-                            children: [
-                              Text(
-                                'Yönelim',
-                                style: Theme.of(context)
-                                    .textTheme
-                                    .labelSmall
-                                    ?.copyWith(color: Colors.white54),
-                              ),
-                              const SizedBox(width: AppSpacing.sm),
-                              _orientChip(
-                                label: 'Yatay',
-                                icon: Icons.stay_current_landscape,
-                                selected: _isLandscape,
-                                onTap: _rotating || _saving
-                                    ? null
-                                    : () => _setOrientation(landscape: true),
-                              ),
-                              const SizedBox(width: AppSpacing.xs),
-                              _orientChip(
-                                label: 'Dikey',
-                                icon: Icons.stay_current_portrait,
-                                selected: !_isLandscape,
-                                onTap: _rotating || _saving
-                                    ? null
-                                    : () => _setOrientation(landscape: false),
-                              ),
-                              const Spacer(),
-                              IconButton(
-                                tooltip: '90° döndür',
-                                onPressed: _rotating || _saving
-                                    ? null
-                                    : _rotateCw90,
-                                icon: _rotating
-                                    ? const SizedBox(
-                                        width: 18,
-                                        height: 18,
-                                        child: CircularProgressIndicator(
-                                          strokeWidth: 2,
-                                          color: Colors.white54,
-                                        ),
-                                      )
-                                    : const Icon(
-                                        Icons.rotate_90_degrees_cw,
-                                        color: Colors.white70,
-                                      ),
-                              ),
-                            ],
-                          ),
-                          const SizedBox(height: AppSpacing.sm),
-                          Row(
-                            children: [
-                              _toolChip(
-                                tool: _PhotoTool.view,
-                                icon: Icons.pan_tool_alt_outlined,
-                                label: 'Görüntü',
-                              ),
-                              const SizedBox(width: AppSpacing.xs),
-                              _toolChip(
-                                tool: _PhotoTool.draw,
-                                icon: Icons.draw_outlined,
-                                label: 'Çiz',
-                              ),
-                              const SizedBox(width: AppSpacing.xs),
-                              _toolChip(
-                                tool: _PhotoTool.text,
-                                icon: Icons.sticky_note_2_outlined,
-                                label: 'Not',
-                              ),
-                              const Spacer(),
-                              IconButton(
-                                tooltip: 'Geri al',
-                                onPressed:
-                                    (_strokes.isEmpty && _labels.isEmpty)
-                                        ? null
-                                        : _undo,
-                                icon:
-                                    const Icon(Icons.undo, color: Colors.white70),
-                              ),
-                            ],
-                          ),
-                          const SizedBox(height: AppSpacing.sm),
-                          Row(
-                            children: [
-                              Text(
-                                'Renk',
-                                style: Theme.of(context)
-                                    .textTheme
-                                    .labelSmall
-                                    ?.copyWith(
-                                      color: Colors.white54,
-                                    ),
-                              ),
-                              const SizedBox(width: AppSpacing.sm),
-                              for (final c in _palette)
-                                Padding(
-                                  padding: const EdgeInsets.only(right: 8),
-                                  child: GestureDetector(
-                                    onTap: () => setState(() => _color = c),
-                                    child: Container(
-                                      width: 28,
-                                      height: 28,
-                                      decoration: BoxDecoration(
-                                        color: c,
-                                        shape: BoxShape.circle,
-                                        border: Border.all(
-                                          color: _color == c
-                                              ? AppColors.electricBlue
-                                              : Colors.white30,
-                                          width: _color == c ? 2.5 : 1,
-                                        ),
-                                      ),
+                          for (final c in _palette)
+                            Padding(
+                              padding: const EdgeInsets.only(right: 8),
+                              child: GestureDetector(
+                                onTap: () => setState(() => _color = c),
+                                child: Container(
+                                  width: 26,
+                                  height: 26,
+                                  decoration: BoxDecoration(
+                                    color: c,
+                                    shape: BoxShape.circle,
+                                    border: Border.all(
+                                      color: _color == c
+                                          ? AppColors.electricBlue
+                                          : Colors.white30,
+                                      width: _color == c ? 2.5 : 1,
                                     ),
                                   ),
                                 ),
-                            ],
+                              ),
+                            ),
+                          const SizedBox(width: AppSpacing.sm),
+                          Text(
+                            'Kalınlık',
+                            style: Theme.of(context)
+                                .textTheme
+                                .labelSmall
+                                ?.copyWith(color: Colors.white54),
+                          ),
+                          const SizedBox(width: 6),
+                          for (final w in _strokeOptions)
+                            Padding(
+                              padding: const EdgeInsets.only(right: 6),
+                              child: _strokeChip(w),
+                            ),
+                          const Spacer(),
+                          IconButton(
+                            tooltip: 'Geri al',
+                            onPressed:
+                                _annotations.isEmpty ? null : _undo,
+                            icon: const Icon(Icons.undo, color: Colors.white70),
+                          ),
+                          IconButton(
+                            tooltip: 'Temizle',
+                            onPressed:
+                                _annotations.isEmpty ? null : _clearAll,
+                            icon: const Icon(
+                              Icons.delete_outline,
+                              color: Colors.white70,
+                            ),
                           ),
                         ],
                       ),
-                    )
-                  : const SizedBox.shrink(),
-            ),
+                      const SizedBox(height: AppSpacing.xs),
+                      Row(
+                        children: [
+                          _orientChip(
+                            label: 'Yatay',
+                            icon: Icons.stay_current_landscape,
+                            selected: _isLandscape,
+                            onTap: _rotating || _saving
+                                ? null
+                                : () => _setOrientation(landscape: true),
+                          ),
+                          const SizedBox(width: 6),
+                          _orientChip(
+                            label: 'Dikey',
+                            icon: Icons.stay_current_portrait,
+                            selected: !_isLandscape,
+                            onTap: _rotating || _saving
+                                ? null
+                                : () => _setOrientation(landscape: false),
+                          ),
+                          const Spacer(),
+                          IconButton(
+                            tooltip: '90° döndür',
+                            onPressed:
+                                _rotating || _saving ? null : _rotateCw90,
+                            icon: _rotating
+                                ? const SizedBox(
+                                    width: 18,
+                                    height: 18,
+                                    child: CircularProgressIndicator(
+                                      strokeWidth: 2,
+                                      color: Colors.white54,
+                                    ),
+                                  )
+                                : const Icon(
+                                    Icons.rotate_90_degrees_cw,
+                                    color: Colors.white70,
+                                  ),
+                          ),
+                        ],
+                      ),
+                    ],
+                  ),
+                ),
+              ),
           ],
+        ),
+      ),
+    );
+  }
+
+  Widget _strokeChip(double width) {
+    final selected = _strokeWidth == width;
+    return Material(
+      color: selected
+          ? AppColors.electricBlue.withValues(alpha: 0.3)
+          : Colors.white.withValues(alpha: 0.08),
+      borderRadius: AppRadii.sm,
+      child: InkWell(
+        borderRadius: AppRadii.sm,
+        onTap: () => setState(() => _strokeWidth = width),
+        child: Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 6),
+          child: Container(
+            width: 22,
+            height: width.clamp(2, 8),
+            decoration: BoxDecoration(
+              color: selected ? Colors.white : Colors.white70,
+              borderRadius: BorderRadius.circular(width),
+            ),
+          ),
         ),
       ),
     );
@@ -603,12 +709,15 @@ class _AnnotatedPhotoViewerPageState extends State<AnnotatedPhotoViewerPage> {
     final selected = _tool == tool;
     return Material(
       color: selected
-          ? AppColors.electricBlue.withValues(alpha: 0.25)
+          ? AppColors.electricBlue.withValues(alpha: 0.28)
           : Colors.white.withValues(alpha: 0.08),
       borderRadius: AppRadii.sm,
       child: InkWell(
         borderRadius: AppRadii.sm,
-        onTap: () => setState(() => _tool = tool),
+        onTap: () => setState(() {
+          _tool = tool;
+          _draft = null;
+        }),
         child: Padding(
           padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
           child: Row(
@@ -619,14 +728,13 @@ class _AnnotatedPhotoViewerPageState extends State<AnnotatedPhotoViewerPage> {
                 size: 18,
                 color: selected ? AppColors.electricBlue : Colors.white70,
               ),
-              const SizedBox(width: 6),
+              const SizedBox(width: 5),
               Text(
                 label,
                 style: TextStyle(
                   color: selected ? Colors.white : Colors.white70,
-                  fontWeight:
-                      selected ? FontWeight.w700 : FontWeight.w500,
-                  fontSize: 13,
+                  fontWeight: selected ? FontWeight.w700 : FontWeight.w500,
+                  fontSize: 12,
                 ),
               ),
             ],
@@ -651,12 +759,12 @@ class _AnnotatedPhotoViewerPageState extends State<AnnotatedPhotoViewerPage> {
         borderRadius: AppRadii.sm,
         onTap: onTap,
         child: Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
+          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 7),
           child: Row(
             mainAxisSize: MainAxisSize.min,
             children: [
               Icon(icon, size: 16, color: Colors.white),
-              const SizedBox(width: 6),
+              const SizedBox(width: 5),
               Text(
                 label,
                 style: const TextStyle(
@@ -673,21 +781,165 @@ class _AnnotatedPhotoViewerPageState extends State<AnnotatedPhotoViewerPage> {
   }
 }
 
+class _AnnotationPainter {
+  static void drawOnCanvas(
+    Canvas canvas,
+    _Annotation a, {
+    required Offset Function(Offset norm) normToPixel,
+    required double strokeScale,
+    required double labelFontSize,
+  }) {
+    switch (a.kind) {
+      case _AnnotationKind.freehand:
+        _drawFreehand(canvas, a, normToPixel, strokeScale);
+      case _AnnotationKind.line:
+        _drawLine(canvas, a, normToPixel, strokeScale, arrow: false);
+      case _AnnotationKind.arrow:
+        _drawLine(canvas, a, normToPixel, strokeScale, arrow: true);
+      case _AnnotationKind.rect:
+        _drawRect(canvas, a, normToPixel, strokeScale);
+      case _AnnotationKind.circle:
+        _drawCircle(canvas, a, normToPixel, strokeScale);
+      case _AnnotationKind.text:
+        _drawText(canvas, a, normToPixel, labelFontSize);
+    }
+  }
+
+  static Paint _strokePaint(_Annotation a, double scale) {
+    return Paint()
+      ..color = a.color
+      ..strokeWidth = a.strokeWidth * scale
+      ..style = PaintingStyle.stroke
+      ..strokeCap = StrokeCap.round
+      ..strokeJoin = StrokeJoin.round;
+  }
+
+  static void _drawFreehand(
+    Canvas canvas,
+    _Annotation a,
+    Offset Function(Offset norm) normToPixel,
+    double scale,
+  ) {
+    final points = a.points;
+    if (points == null || points.length < 2) return;
+    final paint = _strokePaint(a, scale);
+    final path = Path();
+    final first = normToPixel(points.first);
+    path.moveTo(first.dx, first.dy);
+    for (var i = 1; i < points.length; i++) {
+      final p = normToPixel(points[i]);
+      path.lineTo(p.dx, p.dy);
+    }
+    canvas.drawPath(path, paint);
+  }
+
+  static void _drawLine(
+    Canvas canvas,
+    _Annotation a,
+    Offset Function(Offset norm) normToPixel,
+    double scale, {
+    required bool arrow,
+  }) {
+    final start = a.start;
+    final end = a.end;
+    if (start == null || end == null) return;
+    final p0 = normToPixel(start);
+    final p1 = normToPixel(end);
+    final paint = _strokePaint(a, scale);
+    canvas.drawLine(p0, p1, paint);
+    if (arrow) {
+      _drawArrowHead(canvas, p0, p1, paint);
+    }
+  }
+
+  static void _drawArrowHead(Canvas canvas, Offset start, Offset end, Paint paint) {
+    final angle = math.atan2(end.dy - start.dy, end.dx - start.dx);
+    final size = paint.strokeWidth * 2.8;
+    final path = Path()
+      ..moveTo(end.dx, end.dy)
+      ..lineTo(
+        end.dx - size * math.cos(angle - math.pi / 6),
+        end.dy - size * math.sin(angle - math.pi / 6),
+      )
+      ..lineTo(
+        end.dx - size * math.cos(angle + math.pi / 6),
+        end.dy - size * math.sin(angle + math.pi / 6),
+      )
+      ..close();
+    canvas.drawPath(
+      path,
+      paint..style = PaintingStyle.fill,
+    );
+  }
+
+  static void _drawRect(
+    Canvas canvas,
+    _Annotation a,
+    Offset Function(Offset norm) normToPixel,
+    double scale,
+  ) {
+    final start = a.start;
+    final end = a.end;
+    if (start == null || end == null) return;
+    final p0 = normToPixel(start);
+    final p1 = normToPixel(end);
+    canvas.drawRect(Rect.fromPoints(p0, p1), _strokePaint(a, scale));
+  }
+
+  static void _drawCircle(
+    Canvas canvas,
+    _Annotation a,
+    Offset Function(Offset norm) normToPixel,
+    double scale,
+  ) {
+    final start = a.start;
+    final end = a.end;
+    if (start == null || end == null) return;
+    final p0 = normToPixel(start);
+    final p1 = normToPixel(end);
+    canvas.drawOval(Rect.fromPoints(p0, p1), _strokePaint(a, scale));
+  }
+
+  static void _drawText(
+    Canvas canvas,
+    _Annotation a,
+    Offset Function(Offset norm) normToPixel,
+    double fontSize,
+  ) {
+    final position = a.position;
+    final text = a.text;
+    if (position == null || text == null || text.isEmpty) return;
+    final origin = normToPixel(position);
+    final painter = TextPainter(
+      text: TextSpan(
+        text: text,
+        style: TextStyle(
+          color: a.color,
+          fontSize: fontSize,
+          fontWeight: FontWeight.w700,
+          shadows: const [Shadow(color: Colors.black54, blurRadius: 2)],
+        ),
+      ),
+      textDirection: TextDirection.ltr,
+    );
+    painter.layout();
+    painter.paint(canvas, origin);
+  }
+}
+
 class _PhotoCanvasPainter extends CustomPainter {
   _PhotoCanvasPainter({
     required this.image,
     required this.rect,
-    required this.strokes,
-    required this.activeStroke,
-    required this.labels,
+    required this.annotations,
+    required this.draft,
     required this.localFromNorm,
   });
 
   final ui.Image image;
   final Rect rect;
-  final List<_NormStroke> strokes;
-  final _NormStroke? activeStroke;
-  final List<_TextLabel> labels;
+  final List<_Annotation> annotations;
+  final _Annotation? draft;
   final Offset Function(Offset norm, Rect rect) localFromNorm;
 
   @override
@@ -704,49 +956,25 @@ class _PhotoCanvasPainter extends CustomPainter {
       Paint(),
     );
 
-    void drawStroke(_NormStroke stroke) {
-      if (stroke.points.isEmpty) return;
-      final paint = Paint()
-        ..color = stroke.color
-        ..strokeWidth = stroke.strokeWidth
-        ..style = PaintingStyle.stroke
-        ..strokeCap = StrokeCap.round
-        ..strokeJoin = StrokeJoin.round;
-      final path = Path();
-      final first = localFromNorm(stroke.points.first, rect);
-      path.moveTo(first.dx, first.dy);
-      for (var i = 1; i < stroke.points.length; i++) {
-        final p = localFromNorm(stroke.points[i], rect);
-        path.lineTo(p.dx, p.dy);
-      }
-      canvas.drawPath(path, paint);
-    }
+    Offset normToPixel(Offset norm) => localFromNorm(norm, rect);
 
-    for (final stroke in strokes) {
-      drawStroke(stroke);
-    }
-    if (activeStroke != null) {
-      drawStroke(activeStroke!);
-    }
-
-    for (final label in labels) {
-      final origin = localFromNorm(label.position, rect);
-      final painter = TextPainter(
-        text: TextSpan(
-          text: label.text,
-          style: TextStyle(
-            color: label.color,
-            fontSize: 14,
-            fontWeight: FontWeight.w700,
-            shadows: const [
-              Shadow(color: Colors.black54, blurRadius: 2),
-            ],
-          ),
-        ),
-        textDirection: TextDirection.ltr,
+    for (final a in annotations) {
+      _AnnotationPainter.drawOnCanvas(
+        canvas,
+        a,
+        normToPixel: normToPixel,
+        strokeScale: 1,
+        labelFontSize: 14,
       );
-      painter.layout(maxWidth: rect.width * 0.9);
-      painter.paint(canvas, origin);
+    }
+    if (draft != null) {
+      _AnnotationPainter.drawOnCanvas(
+        canvas,
+        draft!,
+        normToPixel: normToPixel,
+        strokeScale: 1,
+        labelFontSize: 14,
+      );
     }
   }
 
@@ -754,11 +982,12 @@ class _PhotoCanvasPainter extends CustomPainter {
   bool shouldRepaint(covariant _PhotoCanvasPainter oldDelegate) => true;
 }
 
-/// Görev / rapor fotoğrafları için tam ekran açıcı.
+/// Görev fotoğrafları için tam ekran düzenleyici.
 Future<void> openAnnotatedPhotoViewer(
   BuildContext context, {
   required Uint8List imageBytes,
   Future<void> Function(Uint8List annotatedBytes)? onSave,
+  bool startInDrawMode = false,
 }) {
   return Navigator.of(context).push<void>(
     PageRouteBuilder<void>(
@@ -770,6 +999,7 @@ Future<void> openAnnotatedPhotoViewer(
           child: AnnotatedPhotoViewerPage(
             imageBytes: imageBytes,
             onSave: onSave,
+            startInDrawMode: startInDrawMode,
           ),
         );
       },

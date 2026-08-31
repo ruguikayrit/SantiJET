@@ -222,6 +222,7 @@ class _TasksScreenState extends ConsumerState<TasksScreen> {
     await openAnnotatedPhotoViewer(
       context,
       imageBytes: bytes,
+      startInDrawMode: canAnnotate,
       onSave: canAnnotate
           ? (annotated) async {
               final nextPhotos = [
@@ -595,6 +596,7 @@ class _TasksScreenState extends ConsumerState<TasksScreen> {
                                       await openAnnotatedPhotoViewer(
                                         ctx,
                                         imageBytes: bytes,
+                                        startInDrawMode: canEditFields,
                                         onSave: canEditFields
                                             ? (annotated) async {
                                                 final updated = TaskPhoto(
@@ -653,6 +655,24 @@ class _TasksScreenState extends ConsumerState<TasksScreen> {
                                             size: 14,
                                             color: Colors.white,
                                           ),
+                                        ),
+                                      ),
+                                    ),
+                                  ),
+                                if (canEditFields)
+                                  Positioned(
+                                    bottom: 2,
+                                    right: 2,
+                                    child: Material(
+                                      color: AppColors.electricBlue
+                                          .withValues(alpha: 0.92),
+                                      borderRadius: AppRadii.xs,
+                                      child: const Padding(
+                                        padding: EdgeInsets.all(4),
+                                        child: Icon(
+                                          Icons.brush_outlined,
+                                          size: 12,
+                                          color: Colors.white,
                                         ),
                                       ),
                                     ),
@@ -1683,25 +1703,52 @@ class _TasksScreenState extends ConsumerState<TasksScreen> {
                                               final canAnnotate = iAmAssigner ||
                                                   task.assigneePersonId ==
                                                       operator.id;
-                                              return Material(
-                                                color: Colors.transparent,
-                                                child: InkWell(
-                                                  borderRadius: AppRadii.sm,
-                                                  onTap: () => _openTaskPhoto(
-                                                    task: task,
-                                                    photo: photo,
-                                                    canAnnotate: canAnnotate,
-                                                  ),
-                                                  child: ClipRRect(
-                                                    borderRadius: AppRadii.sm,
-                                                    child: Image.memory(
-                                                      bytes,
-                                                      width: 64,
-                                                      height: 64,
-                                                      fit: BoxFit.cover,
+                                              return Stack(
+                                                children: [
+                                                  Material(
+                                                    color: Colors.transparent,
+                                                    child: InkWell(
+                                                      borderRadius: AppRadii.sm,
+                                                      onTap: () => _openTaskPhoto(
+                                                        task: task,
+                                                        photo: photo,
+                                                        canAnnotate: canAnnotate,
+                                                      ),
+                                                      child: ClipRRect(
+                                                        borderRadius: AppRadii.sm,
+                                                        child: Image.memory(
+                                                          bytes,
+                                                          width: 64,
+                                                          height: 64,
+                                                          fit: BoxFit.cover,
+                                                        ),
+                                                      ),
                                                     ),
                                                   ),
-                                                ),
+                                                  if (canAnnotate)
+                                                    Positioned(
+                                                      right: 2,
+                                                      bottom: 2,
+                                                      child: Material(
+                                                        color: AppColors
+                                                            .electricBlue
+                                                            .withValues(
+                                                          alpha: 0.92,
+                                                        ),
+                                                        borderRadius:
+                                                            AppRadii.xs,
+                                                        child: const Padding(
+                                                          padding:
+                                                              EdgeInsets.all(3),
+                                                          child: Icon(
+                                                            Icons.brush_outlined,
+                                                            size: 12,
+                                                            color: Colors.white,
+                                                          ),
+                                                        ),
+                                                      ),
+                                                    ),
+                                                ],
                                               );
                                             } catch (_) {
                                               return const SizedBox.shrink();
