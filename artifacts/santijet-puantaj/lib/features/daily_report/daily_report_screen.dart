@@ -7,7 +7,6 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:image_picker/image_picker.dart';
 
-import '../../core/design_system/sj_card.dart';
 import '../../core/design_system/sj_empty_state.dart';
 import '../../core/design_system/sj_modal.dart';
 import '../../core/routing/app_routes.dart';
@@ -38,6 +37,8 @@ import 'widgets/attendance_summary_table.dart';
 import 'widgets/daily_report_entry_page.dart';
 import 'widgets/daily_report_export_sections_sheet.dart';
 import 'widgets/monthly_report_view.dart';
+import '../puantaj/widgets/yevmiyeli_is_widgets.dart';
+import '../../data/providers/yevmiyeli_is_provider.dart';
 import 'widgets/period_report_export_sections_sheet.dart';
 import 'widgets/weather_compact_card.dart';
 import 'widgets/weekly_report_view.dart';
@@ -577,6 +578,10 @@ class _DailyReportScreenState extends ConsumerState<DailyReportScreen> {
     if (report == null) return;
     final snap = ref.read(liveAttendanceSnapshotProvider);
     final company = ref.read(companyInfoProvider);
+    final yevmiyeli = ref
+        .read(yevmiyeliIsProvider)
+        .where((e) => e.projectId == project.id)
+        .toList();
 
     final sections = await showDailyReportExportSectionsPicker(
       context,
@@ -595,6 +600,7 @@ class _DailyReportScreenState extends ConsumerState<DailyReportScreen> {
         company: company,
         sections: sections,
         liveSnapshot: snap,
+        yevmiyeliEntries: yevmiyeli,
       );
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
@@ -1822,6 +1828,12 @@ class _DailyReportScreenState extends ConsumerState<DailyReportScreen> {
                     AttendanceSummaryTables(snapshot: snap),
                   ],
                   const SizedBox(height: AppSpacing.md),
+                  DayYevmiyeliSection(
+                    date: date,
+                    people: ref.watch(personnelForDateProvider(date)),
+                    initiallyExpanded: false,
+                  ),
+                  const SizedBox(height: AppSpacing.md),
                   _SectionCard(
                     title: 'Fotoğraflar',
                     icon: Icons.photo_camera_outlined,
@@ -2555,34 +2567,11 @@ class _SectionCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return SJCard(
-      child: Builder(
-        builder: (context) {
-          final t = Theme.of(context);
-          return Column(
-            crossAxisAlignment: CrossAxisAlignment.stretch,
-            children: [
-              Row(
-                children: [
-                  Icon(icon, size: 20, color: t.colorScheme.secondary),
-                  const SizedBox(width: AppSpacing.sm),
-                  Expanded(
-                    child: Text(
-                      title,
-                      style: t.textTheme.titleSmall?.copyWith(
-                        fontWeight: FontWeight.w700,
-                      ),
-                    ),
-                  ),
-                  if (trailing != null) trailing!,
-                ],
-              ),
-              const SizedBox(height: AppSpacing.sm),
-              child,
-            ],
-          );
-        },
-      ),
+    return DailyReportCollapsibleSection(
+      icon: icon,
+      title: title,
+      trailing: trailing,
+      child: child,
     );
   }
 }

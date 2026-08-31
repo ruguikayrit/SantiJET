@@ -42,6 +42,8 @@ Kayıt yoksa pazar günü otomatik **HT**; manuel durum ezebilir.
 
 Üst tarih satırında paylaş/dışa aktar ikonu **yok**. Sağ üstte ayarlar yanında indirme ikonu (**Rapor AL**); sheet aynı. Sağ alt **Rapor AL** FAB geri gelmez. İndirme **Günlük / Haftalık / Aylık** sekmelerinde görünür (haftalık/aylık: dönemdeki dolu günleri tek PDF).
 
+Günlük ekran: **Personel puantajı** · **Ekip puantajı** · **Yevmiyeli işler** + diğer başlıklar **açılır-kapanır** (varsayılan kapalı). Çıktı seçiminde **Puantaj sayılar / isimler** yok; yerine **Puantaj özeti · Personel puantajı · Ekip puantajı · Yevmiyeli işler**.
+
 ## Rapor — Günlük / Haftalık / Aylık
 
 - Üstte yan yana: **Günlük rapor** | **Haftalık rapor** | **Aylık rapor** (puantaj sekmesi düzeni).

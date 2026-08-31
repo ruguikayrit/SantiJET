@@ -159,19 +159,34 @@ class _ExportSectionsPickerSheetState
                       setState(() => _sections = _sections.copyWith(weather: v)),
                 ),
                 _sectionTile(
-                  title: 'Puantaj — sayılar',
-                  subtitle: 'Mevcut / yarım / izin / yok özeti',
+                  title: 'Puantaj özeti',
+                  subtitle: 'Durum sayıları · adam-saat · yevmiye',
                   value: _sections.puantajCounts,
                   onChanged: (v) => setState(
                     () => _sections = _sections.copyWith(puantajCounts: v),
                   ),
                 ),
                 _sectionTile(
-                  title: 'Puantaj — isimler',
-                  subtitle: 'Personel listesi + firma / ekip / günlük çalışan',
-                  value: _sections.puantajNames,
+                  title: 'Personel puantajı',
+                  subtitle: 'Personel · meslek · ekip · YV',
+                  value: _sections.personel,
                   onChanged: (v) => setState(
-                    () => _sections = _sections.copyWith(puantajNames: v),
+                    () => _sections = _sections.copyWith(personel: v),
+                  ),
+                ),
+                _sectionTile(
+                  title: 'Ekip puantajı',
+                  subtitle: 'Firma · ekip · günlük çalışan',
+                  value: _sections.ekip,
+                  onChanged: (v) =>
+                      setState(() => _sections = _sections.copyWith(ekip: v)),
+                ),
+                _sectionTile(
+                  title: 'Yevmiyeli işler',
+                  subtitle: 'Taşeron parça iş tablosu',
+                  value: _sections.yevmiyeli,
+                  onChanged: (v) => setState(
+                    () => _sections = _sections.copyWith(yevmiyeli: v),
                   ),
                 ),
                 _sectionTile(

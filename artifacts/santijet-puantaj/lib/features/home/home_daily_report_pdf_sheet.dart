@@ -9,6 +9,7 @@ import '../../core/utils/puantaj_date.dart';
 import '../../data/providers/company_provider.dart';
 import '../../data/providers/daily_report_export_sections_provider.dart';
 import '../../data/providers/daily_report_provider.dart';
+import '../../data/providers/yevmiyeli_is_provider.dart';
 import '../../data/services/daily_report_export_sections.dart';
 import '../../data/services/daily_report_pdf_service.dart';
 import '../../domain/entities/daily_report.dart';
@@ -48,12 +49,17 @@ Future<void> exportHomeDailyReportPdf(
   }
 
   final company = ref.read(companyInfoProvider);
+  final yevmiyeli = ref
+      .read(yevmiyeliIsProvider)
+      .where((e) => e.projectId == project.id)
+      .toList();
   await dailyReportPdfService.exportMany(
     reports: reports,
     project: project,
     company: company,
     sections: sections,
     liveSnapshots: snaps,
+    yevmiyeliEntries: yevmiyeli,
   );
 }
 

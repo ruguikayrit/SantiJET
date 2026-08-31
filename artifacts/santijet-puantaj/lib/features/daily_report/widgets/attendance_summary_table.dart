@@ -281,7 +281,7 @@ class _HeaderCell extends StatelessWidget {
   }
 }
 
-/// Günlük rapor ekranı — Personel + Ekip tabloları (durum chip özeti yok).
+/// Günlük rapor ekranı — Personel / Ekip puantajı (açılır-kapanır).
 class AttendanceSummaryTables extends StatelessWidget {
   const AttendanceSummaryTables({super.key, required this.snapshot});
 
@@ -292,24 +292,104 @@ class AttendanceSummaryTables extends StatelessWidget {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
-        Text(
-          'Personel',
-          style: Theme.of(context).textTheme.titleSmall?.copyWith(
-                fontWeight: FontWeight.w700,
-              ),
+        DailyReportCollapsibleSection(
+          icon: Icons.badge_outlined,
+          title: 'Personel puantajı',
+          child: AttendanceSummaryTable(snapshot: snapshot),
         ),
-        const SizedBox(height: AppSpacing.xs),
-        AttendanceSummaryTable(snapshot: snapshot),
         const SizedBox(height: AppSpacing.md),
-        Text(
-          'Ekip',
-          style: Theme.of(context).textTheme.titleSmall?.copyWith(
-                fontWeight: FontWeight.w700,
-              ),
+        DailyReportCollapsibleSection(
+          icon: Icons.groups_outlined,
+          title: 'Ekip puantajı',
+          child: _TeamSummaryTable(snapshot: snapshot),
         ),
-        const SizedBox(height: AppSpacing.xs),
-        _TeamSummaryTable(snapshot: snapshot),
       ],
+    );
+  }
+}
+
+/// Günlük rapor — başlık aç/kapa (varsayılan kapalı).
+class DailyReportCollapsibleSection extends StatefulWidget {
+  const DailyReportCollapsibleSection({
+    required this.icon,
+    required this.title,
+    required this.child,
+    this.trailing,
+    this.initiallyExpanded = false,
+    super.key,
+  });
+
+  final IconData icon;
+  final String title;
+  final Widget child;
+  final Widget? trailing;
+  final bool initiallyExpanded;
+
+  @override
+  State<DailyReportCollapsibleSection> createState() =>
+      _DailyReportCollapsibleSectionState();
+}
+
+class _DailyReportCollapsibleSectionState
+    extends State<DailyReportCollapsibleSection> {
+  late bool _expanded;
+
+  @override
+  void initState() {
+    super.initState();
+    _expanded = widget.initiallyExpanded;
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    return SJCard(
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          Row(
+            children: [
+              Expanded(
+                child: InkWell(
+                  onTap: () => setState(() => _expanded = !_expanded),
+                  borderRadius: AppRadii.sm,
+                  child: Padding(
+                    padding: const EdgeInsets.symmetric(vertical: 2),
+                    child: Row(
+                      children: [
+                        Icon(
+                          widget.icon,
+                          size: 20,
+                          color: theme.colorScheme.secondary,
+                        ),
+                        const SizedBox(width: AppSpacing.sm),
+                        Expanded(
+                          child: Text(
+                            widget.title,
+                            style: theme.textTheme.titleSmall?.copyWith(
+                              fontWeight: FontWeight.w700,
+                            ),
+                          ),
+                        ),
+                        Icon(
+                          _expanded ? Icons.expand_less : Icons.expand_more,
+                          size: 20,
+                          color: theme.colorScheme.onSurfaceVariant,
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+              ),
+              if (widget.trailing != null) widget.trailing!,
+            ],
+          ),
+          if (_expanded) ...[
+            const SizedBox(height: AppSpacing.sm),
+            widget.child,
+          ],
+        ],
+      ),
     );
   }
 }

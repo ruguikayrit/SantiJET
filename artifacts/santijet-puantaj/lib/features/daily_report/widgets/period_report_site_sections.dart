@@ -1,8 +1,10 @@
 import 'package:flutter/material.dart';
 
 import '../../../core/design_system/sj_card.dart';
+import '../../../core/theme/app_colors.dart';
 import '../../../core/theme/app_radii.dart';
 import '../../../core/theme/app_spacing.dart';
+import '../../../core/widgets/production_triple_progress.dart';
 import '../../../data/services/period_site_report_builder.dart';
 import 'attendance_summary_table.dart';
 
@@ -75,12 +77,10 @@ class _CollapsibleSection extends StatefulWidget {
     required this.icon,
     required this.title,
     required this.child,
-    this.subtitle,
   });
 
   final IconData icon;
   final String title;
-  final String? subtitle;
   final Widget child;
 
   @override
@@ -107,24 +107,11 @@ class _CollapsibleSectionState extends State<_CollapsibleSection> {
                 Icon(widget.icon, size: 20, color: theme.colorScheme.primary),
                 const SizedBox(width: AppSpacing.sm),
                 Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        widget.title,
-                        style: theme.textTheme.titleSmall?.copyWith(
-                          fontWeight: FontWeight.w700,
-                        ),
-                      ),
-                      if (widget.subtitle != null &&
-                          widget.subtitle!.isNotEmpty)
-                        Text(
-                          widget.subtitle!,
-                          style: theme.textTheme.labelSmall?.copyWith(
-                            color: theme.colorScheme.onSurfaceVariant,
-                          ),
-                        ),
-                    ],
+                  child: Text(
+                    widget.title,
+                    style: theme.textTheme.titleSmall?.copyWith(
+                      fontWeight: FontWeight.w700,
+                    ),
                   ),
                 ),
                 Icon(
@@ -163,41 +150,116 @@ class _ImalatTableSection extends StatelessWidget {
       );
     }
 
-    return SJCard(
-      padding: EdgeInsets.zero,
-      child: SingleChildScrollView(
-        scrollDirection: Axis.horizontal,
-        child: DataTable(
-          headingRowHeight: 36,
-          columns: const [
-            DataColumn(label: Text('İmalat')),
-            DataColumn(label: Text('Konum')),
-            DataColumn(label: Text('Ekip')),
-            DataColumn(label: Text('Dönem')),
-            DataColumn(label: Text('Birim')),
-            DataColumn(label: Text('Adam-gün')),
-            DataColumn(label: Text('Kümülatif')),
-            DataColumn(label: Text('Plan')),
-            DataColumn(label: Text('%')),
-          ],
-          rows: [
-            for (final r in rows)
-              DataRow(
-                cells: [
-                  DataCell(Text(r.name)),
-                  DataCell(Text(r.location.isEmpty ? '—' : r.location)),
-                  DataCell(Text(r.teamName.isEmpty ? '—' : r.teamName)),
-                  DataCell(Text('${_fmtNum(r.periodQty)} ${r.unit}')),
-                  DataCell(Text(r.unit)),
-                  DataCell(Text(_fmtNum(r.periodLaborDays))),
-                  DataCell(Text('${_fmtNum(r.totalQty)} ${r.unit}')),
-                  DataCell(Text('${_fmtNum(r.plannedQty)} ${r.unit}')),
-                  DataCell(Text('${r.progressPct.toStringAsFixed(0)}%')),
-                ],
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        for (var i = 0; i < rows.length; i++) ...[
+          if (i > 0) const SizedBox(height: AppSpacing.sm),
+          _ImalatPeriodCard(row: rows[i]),
+        ],
+      ],
+    );
+  }
+}
+
+class _ImalatPeriodCard extends StatelessWidget {
+  const _ImalatPeriodCard({required this.row});
+
+  final PeriodImalatRow row;
+
+  @override
+  Widget build(BuildContext context) {
+    final pct = row.progressPct.clamp(0, 999).toDouble();
+    final barColor = completionColorForPct(pct);
+    final meta = [
+      if (row.location.trim().isNotEmpty) row.location.trim(),
+      if (row.teamName.trim().isNotEmpty) row.teamName.trim(),
+      if (row.unit.trim().isNotEmpty) row.unit.trim(),
+    ].join(' · ');
+
+    return SJCard.builder(
+      builder: (context, theme) {
+        return Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        row.name,
+                        style: theme.textTheme.titleSmall?.copyWith(
+                          fontWeight: FontWeight.w700,
+                        ),
+                      ),
+                      if (meta.isNotEmpty) ...[
+                        const SizedBox(height: 2),
+                        Text(
+                          meta,
+                          style: theme.textTheme.labelSmall?.copyWith(
+                            color: theme.colorScheme.onSurfaceVariant,
+                          ),
+                        ),
+                      ],
+                    ],
+                  ),
+                ),
+                const SizedBox(width: AppSpacing.sm),
+                _PctBadge(pct: pct, color: barColor),
+              ],
+            ),
+            const SizedBox(height: AppSpacing.sm),
+            ClipRRect(
+              borderRadius: AppRadii.xs,
+              child: LinearProgressIndicator(
+                value: (pct / 100).clamp(0.0, 1.0),
+                minHeight: 6,
+                backgroundColor: barColor.withValues(alpha: 0.14),
+                color: barColor,
               ),
+            ),
+            const SizedBox(height: AppSpacing.sm),
+            Row(
+              children: [
+                Expanded(
+                  child: _MetricTile(
+                    label: 'Dönem',
+                    value: '${_fmtNum(row.periodQty)} ${row.unit}'.trim(),
+                  ),
+                ),
+                const SizedBox(width: AppSpacing.xs),
+                Expanded(
+                  child: _MetricTile(
+                    label: 'Adam-gün',
+                    value: _fmtNum(row.periodLaborDays),
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: AppSpacing.xs),
+            Row(
+              children: [
+                Expanded(
+                  child: _MetricTile(
+                    label: 'Kümülatif',
+                    value: '${_fmtNum(row.totalQty)} ${row.unit}'.trim(),
+                  ),
+                ),
+                const SizedBox(width: AppSpacing.xs),
+                Expanded(
+                  child: _MetricTile(
+                    label: 'Plan',
+                    value: '${_fmtNum(row.plannedQty)} ${row.unit}'.trim(),
+                  ),
+                ),
+              ],
+            ),
           ],
-        ),
-      ),
+        );
+      },
     );
   }
 }
@@ -220,44 +282,167 @@ class _VerimTableSection extends StatelessWidget {
       );
     }
 
-    return SJCard(
-      padding: EdgeInsets.zero,
-      child: SingleChildScrollView(
-        scrollDirection: Axis.horizontal,
-        child: DataTable(
-          headingRowHeight: 36,
-          columns: const [
-            DataColumn(label: Text('İmalat')),
-            DataColumn(label: Text('Plan AG')),
-            DataColumn(label: Text('Dönem AG')),
-            DataColumn(label: Text('Plan metraj')),
-            DataColumn(label: Text('Dönem metraj')),
-            DataColumn(label: Text('Verim')),
-          ],
-          rows: [
-            for (final r in rows)
-              DataRow(
-                cells: [
-                  DataCell(Text(r.imalatName)),
-                  DataCell(Text(_fmtNum(r.plannedWorkerDays))),
-                  DataCell(Text(_fmtNum(r.periodActualWorkerDays))),
-                  DataCell(Text(
-                    r.plannedQty != null
-                        ? '${_fmtNum(r.plannedQty!)} ${r.unit ?? ''}'
-                        : '—',
-                  )),
-                  DataCell(Text(
-                    '${_fmtNum(r.periodActualQty)} ${r.unit ?? ''}',
-                  )),
-                  DataCell(Text(
-                    r.unitEfficiency != null
-                        ? '%${(r.unitEfficiency! * 100).toStringAsFixed(0)}'
-                        : '—',
-                  )),
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        for (var i = 0; i < rows.length; i++) ...[
+          if (i > 0) const SizedBox(height: AppSpacing.sm),
+          _VerimPeriodCard(row: rows[i]),
+        ],
+      ],
+    );
+  }
+}
+
+class _VerimPeriodCard extends StatelessWidget {
+  const _VerimPeriodCard({required this.row});
+
+  final PeriodVerimRow row;
+
+  @override
+  Widget build(BuildContext context) {
+    final unit = (row.unit ?? '').trim();
+    final efficiency = row.unitEfficiency;
+
+    return SJCard.builder(
+      builder: (context, theme) {
+        return Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Expanded(
+                  child: Text(
+                    row.imalatName,
+                    style: theme.textTheme.titleSmall?.copyWith(
+                      fontWeight: FontWeight.w700,
+                    ),
+                  ),
+                ),
+                if (efficiency != null) ...[
+                  const SizedBox(width: AppSpacing.sm),
+                  UnitEfficiencyBadge(efficiency: efficiency, compact: true),
                 ],
-              ),
+              ],
+            ),
+            if (efficiency != null) ...[
+              const SizedBox(height: AppSpacing.sm),
+              UnitEfficiencyBar(efficiency: efficiency, height: 5),
+            ],
+            const SizedBox(height: AppSpacing.sm),
+            Row(
+              children: [
+                Expanded(
+                  child: _MetricTile(
+                    label: 'Plan AG',
+                    value: _fmtNum(row.plannedWorkerDays),
+                  ),
+                ),
+                const SizedBox(width: AppSpacing.xs),
+                Expanded(
+                  child: _MetricTile(
+                    label: 'Dönem AG',
+                    value: _fmtNum(row.periodActualWorkerDays),
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: AppSpacing.xs),
+            Row(
+              children: [
+                Expanded(
+                  child: _MetricTile(
+                    label: 'Plan metraj',
+                    value: row.plannedQty != null
+                        ? '${_fmtNum(row.plannedQty!)}${unit.isEmpty ? '' : ' $unit'}'
+                        : '—',
+                  ),
+                ),
+                const SizedBox(width: AppSpacing.xs),
+                Expanded(
+                  child: _MetricTile(
+                    label: 'Dönem metraj',
+                    value:
+                        '${_fmtNum(row.periodActualQty)}${unit.isEmpty ? '' : ' $unit'}',
+                  ),
+                ),
+              ],
+            ),
           ],
+        );
+      },
+    );
+  }
+}
+
+class _PctBadge extends StatelessWidget {
+  const _PctBadge({required this.pct, required this.color});
+
+  final double pct;
+  final Color color;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+      decoration: BoxDecoration(
+        color: color.withValues(alpha: 0.14),
+        borderRadius: AppRadii.sm,
+        border: Border.all(color: color.withValues(alpha: 0.35)),
+      ),
+      child: Text(
+        '%${pct.toStringAsFixed(0)}',
+        style: TextStyle(
+          fontSize: 12,
+          fontWeight: FontWeight.w800,
+          color: AppColors.statusInkOnCard(color),
         ),
+      ),
+    );
+  }
+}
+
+class _MetricTile extends StatelessWidget {
+  const _MetricTile({required this.label, required this.value});
+
+  final String label;
+  final String value;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
+      decoration: BoxDecoration(
+        color: AppColors.electricBlue.withValues(alpha: 0.06),
+        borderRadius: AppRadii.sm,
+        border: Border.all(
+          color: theme.dividerColor.withValues(alpha: 0.45),
+        ),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            label.toUpperCase(),
+            style: theme.textTheme.labelSmall?.copyWith(
+              fontSize: 10,
+              fontWeight: FontWeight.w600,
+              letterSpacing: 0.3,
+              color: theme.colorScheme.onSurfaceVariant,
+            ),
+          ),
+          const SizedBox(height: 2),
+          Text(
+            value,
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
+            style: theme.textTheme.labelLarge?.copyWith(
+              fontWeight: FontWeight.w800,
+            ),
+          ),
+        ],
       ),
     );
   }

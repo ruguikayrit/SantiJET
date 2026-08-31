@@ -3,7 +3,9 @@ class DailyReportExportSections {
   const DailyReportExportSections({
     this.weather = true,
     this.puantajCounts = true,
-    this.puantajNames = true,
+    this.personel = true,
+    this.ekip = true,
+    this.yevmiyeli = true,
     this.photos = true,
     this.workDone = true,
     this.incomingMaterials = true,
@@ -22,7 +24,9 @@ class DailyReportExportSections {
   factory DailyReportExportSections.none() => const DailyReportExportSections(
         weather: false,
         puantajCounts: false,
-        puantajNames: false,
+        personel: false,
+        ekip: false,
+        yevmiyeli: false,
         photos: false,
         workDone: false,
         incomingMaterials: false,
@@ -35,8 +39,11 @@ class DailyReportExportSections {
       );
 
   final bool weather;
+  /// Durum sayıları · adam-saat · yevmiye (eski “Puantaj — sayılar”).
   final bool puantajCounts;
-  final bool puantajNames;
+  final bool personel;
+  final bool ekip;
+  final bool yevmiyeli;
   final bool photos;
   final bool workDone;
   final bool incomingMaterials;
@@ -50,7 +57,9 @@ class DailyReportExportSections {
   bool get hasAny =>
       weather ||
       puantajCounts ||
-      puantajNames ||
+      personel ||
+      ekip ||
+      yevmiyeli ||
       photos ||
       workDone ||
       incomingMaterials ||
@@ -64,7 +73,9 @@ class DailyReportExportSections {
   DailyReportExportSections copyWith({
     bool? weather,
     bool? puantajCounts,
-    bool? puantajNames,
+    bool? personel,
+    bool? ekip,
+    bool? yevmiyeli,
     bool? photos,
     bool? workDone,
     bool? incomingMaterials,
@@ -78,7 +89,9 @@ class DailyReportExportSections {
     return DailyReportExportSections(
       weather: weather ?? this.weather,
       puantajCounts: puantajCounts ?? this.puantajCounts,
-      puantajNames: puantajNames ?? this.puantajNames,
+      personel: personel ?? this.personel,
+      ekip: ekip ?? this.ekip,
+      yevmiyeli: yevmiyeli ?? this.yevmiyeli,
       photos: photos ?? this.photos,
       workDone: workDone ?? this.workDone,
       incomingMaterials: incomingMaterials ?? this.incomingMaterials,
@@ -94,7 +107,9 @@ class DailyReportExportSections {
   Map<String, dynamic> toJson() => {
         'weather': weather,
         'puantajCounts': puantajCounts,
-        'puantajNames': puantajNames,
+        'personel': personel,
+        'ekip': ekip,
+        'yevmiyeli': yevmiyeli,
         'photos': photos,
         'workDone': workDone,
         'incomingMaterials': incomingMaterials,
@@ -107,16 +122,23 @@ class DailyReportExportSections {
       };
 
   factory DailyReportExportSections.fromJson(Map<String, dynamic> json) {
-    bool flag(String key, {bool fallback = true}) {
+    bool flag(String key, {bool? fallback}) {
       final v = json[key];
       if (v is bool) return v;
-      return fallback;
+      if (fallback != null) return fallback;
+      return true;
     }
+
+    // Eski “Puantaj — isimler” → personel + ekip.
+    final legacyNames = json['puantajNames'];
+    final namesFallback = legacyNames is bool ? legacyNames : true;
 
     return DailyReportExportSections(
       weather: flag('weather'),
       puantajCounts: flag('puantajCounts'),
-      puantajNames: flag('puantajNames'),
+      personel: flag('personel', fallback: namesFallback),
+      ekip: flag('ekip', fallback: namesFallback),
+      yevmiyeli: flag('yevmiyeli'),
       photos: flag('photos'),
       workDone: flag('workDone'),
       incomingMaterials: flag('incomingMaterials'),

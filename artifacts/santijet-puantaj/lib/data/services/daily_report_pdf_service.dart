@@ -12,6 +12,7 @@ import '../../domain/entities/company_info.dart';
 import '../../domain/entities/daily_report.dart';
 import '../../domain/entities/project.dart';
 import '../../domain/enums/attendance_status.dart';
+import '../../domain/entities/yevmiyeli_is_kaydi.dart';
 import 'daily_report_export_sections.dart';
 import 'report_file_access_stub.dart'
     if (dart.library.html) 'report_file_access_web.dart'
@@ -41,6 +42,7 @@ class DailyReportPdfService {
     required CompanyInfo company,
     required DailyReportExportSections sections,
     DailyReportAttendanceSnapshot? liveSnapshot,
+    List<YevmiyeliIsKaydi> yevmiyeliEntries = const [],
   }) async {
     await exportMany(
       reports: [report],
@@ -48,6 +50,7 @@ class DailyReportPdfService {
       company: company,
       sections: sections,
       liveSnapshots: liveSnapshot == null ? null : [liveSnapshot],
+      yevmiyeliEntries: yevmiyeliEntries,
     );
   }
 
@@ -58,6 +61,7 @@ class DailyReportPdfService {
     required CompanyInfo company,
     required DailyReportExportSections sections,
     List<DailyReportAttendanceSnapshot?>? liveSnapshots,
+    List<YevmiyeliIsKaydi> yevmiyeliEntries = const [],
   }) async {
     if (reports.isEmpty) {
       throw ArgumentError('En az bir günlük rapor gerekli');
@@ -68,6 +72,7 @@ class DailyReportPdfService {
       company: company,
       sections: sections,
       liveSnapshots: liveSnapshots,
+      yevmiyeliEntries: yevmiyeliEntries,
     );
     final sorted = _sorted(reports);
     final stem = sorted.length == 1
@@ -90,6 +95,7 @@ class DailyReportPdfService {
     required CompanyInfo company,
     required DailyReportExportSections sections,
     DailyReportAttendanceSnapshot? liveSnapshot,
+    List<YevmiyeliIsKaydi> yevmiyeliEntries = const [],
   }) {
     return buildBytesMany(
       reports: [report],
@@ -97,6 +103,7 @@ class DailyReportPdfService {
       company: company,
       sections: sections,
       liveSnapshots: liveSnapshot == null ? null : [liveSnapshot],
+      yevmiyeliEntries: yevmiyeliEntries,
     );
   }
 
@@ -106,6 +113,7 @@ class DailyReportPdfService {
     required CompanyInfo company,
     required DailyReportExportSections sections,
     List<DailyReportAttendanceSnapshot?>? liveSnapshots,
+    List<YevmiyeliIsKaydi> yevmiyeliEntries = const [],
   }) async {
     final theme = await _theme();
     final doc = pw.Document(theme: theme);
@@ -142,6 +150,11 @@ class DailyReportPdfService {
             final report = sorted[i];
             final snap =
                 byDateSnap[report.date] ?? report.attendanceSnapshot;
+            final dayYevmiyeli = yevmiyeliEntries
+                .where(
+                  (e) => e.projectId == project.id && e.date == report.date,
+                )
+                .toList();
             widgets.addAll(
               _body(
                 report: report,
@@ -149,6 +162,7 @@ class DailyReportPdfService {
                 contractor: contractor,
                 snap: snap,
                 sections: sections,
+                yevmiyeliEntries: dayYevmiyeli,
                 multiDay: sorted.length > 1,
                 dayIndex: i + 1,
                 dayCount: sorted.length,
@@ -180,6 +194,7 @@ class DailyReportPdfService {
     required String contractor,
     required DailyReportAttendanceSnapshot? snap,
     required DailyReportExportSections sections,
+    List<YevmiyeliIsKaydi> yevmiyeliEntries = const [],
     bool multiDay = false,
     int dayIndex = 1,
     int dayCount = 1,
@@ -207,50 +222,98 @@ class DailyReportPdfService {
       widgets.add(_weatherLine(report.weather));
     }
 
-    if (sections.puantajCounts || sections.puantajNames) {
+    if (sections.puantajCounts) {
       gap();
       ensureSectionSpace(100);
-      final lead = <pw.Widget>[
-        _sectionTitle('PUANTAJ'),
-        pw.SizedBox(height: 6),
-      ];
-      if (sections.puantajCounts) {
-        lead.add(_attendanceSummary(snap));
-      }
-      if (sections.puantajNames &&
-          (snap == null ||
-              (snap.people.isEmpty && snap.teams.isEmpty))) {
-        if (sections.puantajCounts) lead.add(pw.SizedBox(height: 6));
-        lead.add(
-          pw.Text(
-            'Personel / ekip listesi yok',
-            textAlign: pw.TextAlign.center,
-            style: const pw.TextStyle(fontSize: 9, color: _muted),
-          ),
-        );
-      }
       widgets.add(
         _KeepTogether(
           child: pw.Column(
             crossAxisAlignment: pw.CrossAxisAlignment.stretch,
-            children: lead,
+            children: [
+              _sectionTitle('PUANTAJ ÖZETİ'),
+              pw.SizedBox(height: 6),
+              _attendanceSummary(snap),
+            ],
           ),
         ),
       );
-      if (sections.puantajNames && snap != null) {
-        if (snap.people.isNotEmpty) {
-          if (sections.puantajCounts) widgets.add(pw.SizedBox(height: 6));
-          widgets.add(_subTitle('Personel'));
-          widgets.add(pw.SizedBox(height: 4));
-          widgets.add(_personBreakdown(snap));
-        }
-        if (snap.teams.isNotEmpty) {
-          widgets.add(pw.SizedBox(height: 8));
-          widgets.add(_subTitle('Ekip'));
-          widgets.add(pw.SizedBox(height: 4));
-          widgets.add(_teamBreakdown(snap));
-        }
+    }
+
+    if (sections.personel) {
+      gap();
+      ensureSectionSpace(90);
+      if (snap == null || snap.people.isEmpty) {
+        widgets.add(
+          _sectionBlock(
+            'PERSONEL PUANTAJI',
+            pw.Text(
+              'Personel kaydı yok',
+              textAlign: pw.TextAlign.center,
+              style: const pw.TextStyle(fontSize: 9, color: _muted),
+            ),
+          ),
+        );
+      } else {
+        widgets.add(
+          _KeepTogether(
+            child: pw.Column(
+              crossAxisAlignment: pw.CrossAxisAlignment.stretch,
+              children: [
+                _sectionTitle('PERSONEL PUANTAJI'),
+                pw.SizedBox(height: 4),
+                _personBreakdown(snap),
+              ],
+            ),
+          ),
+        );
       }
+    }
+
+    if (sections.ekip) {
+      gap();
+      ensureSectionSpace(90);
+      if (snap == null || snap.teams.isEmpty) {
+        widgets.add(
+          _sectionBlock(
+            'EKİP PUANTAJI',
+            pw.Text(
+              'Ekip kaydı yok',
+              textAlign: pw.TextAlign.center,
+              style: const pw.TextStyle(fontSize: 9, color: _muted),
+            ),
+          ),
+        );
+      } else {
+        widgets.add(
+          _KeepTogether(
+            child: pw.Column(
+              crossAxisAlignment: pw.CrossAxisAlignment.stretch,
+              children: [
+                _sectionTitle('EKİP PUANTAJI'),
+                pw.SizedBox(height: 4),
+                _teamBreakdown(snap),
+              ],
+            ),
+          ),
+        );
+      }
+    }
+
+    if (sections.yevmiyeli) {
+      gap();
+      ensureSectionSpace(90);
+      widgets.add(
+        _KeepTogether(
+          child: pw.Column(
+            crossAxisAlignment: pw.CrossAxisAlignment.stretch,
+            children: [
+              _sectionTitle('YEVMİYELİ İŞLER'),
+              pw.SizedBox(height: 4),
+              _yevmiyeliBreakdown(yevmiyeliEntries),
+            ],
+          ),
+        ),
+      );
     }
 
     if (sections.photos) {
@@ -694,20 +757,6 @@ class DailyReportPdfService {
     );
   }
 
-  pw.Widget _subTitle(String text) {
-    return pw.Align(
-      alignment: pw.Alignment.centerLeft,
-      child: pw.Text(
-        text,
-        style: pw.TextStyle(
-          fontSize: 9,
-          fontWeight: pw.FontWeight.bold,
-          color: _ink,
-        ),
-      ),
-    );
-  }
-
   pw.Widget _teamBreakdown(DailyReportAttendanceSnapshot snap) {
     final teams = [...snap.teams]
       ..sort((a, b) {
@@ -733,6 +782,48 @@ class DailyReportPdfService {
     );
   }
 
+  pw.Widget _yevmiyeliBreakdown(List<YevmiyeliIsKaydi> entries) {
+    if (entries.isEmpty) {
+      return pw.Text(
+        'Yevmiyeli iş kaydı yok',
+        textAlign: pw.TextAlign.center,
+        style: const pw.TextStyle(fontSize: 9, color: _muted),
+      );
+    }
+    final sorted = [...entries]
+      ..sort((a, b) {
+        final byCo = a.company.compareTo(b.company);
+        if (byCo != 0) return byCo;
+        return a.personName.compareTo(b.personName);
+      });
+    final total = sorted.fold<double>(0, (s, e) => s + e.yevmiyeCount);
+    return _centeredTable(
+      headers: const [
+        'No',
+        'Ad Soyad',
+        'Taşeron',
+        'Meslek',
+        'Ekip',
+        'İş tanımı',
+        'YV',
+      ],
+      data: [
+        for (var i = 0; i < sorted.length; i++)
+          [
+            '${i + 1}',
+            sorted[i].personName,
+            sorted[i].company.isNotEmpty ? sorted[i].company : '—',
+            sorted[i].profession.isNotEmpty ? sorted[i].profession : '—',
+            sorted[i].team.isNotEmpty ? sorted[i].team : '—',
+            sorted[i].workDescription.isNotEmpty
+                ? sorted[i].workDescription
+                : '—',
+            _fmt(sorted[i].yevmiyeCount),
+          ],
+        ['', '', '', '', '', 'Toplam', _fmt(total)],
+      ],
+    );
+  }
 
   List<pw.Widget> _workCategoryBlocks(
     DailyReport report, {
