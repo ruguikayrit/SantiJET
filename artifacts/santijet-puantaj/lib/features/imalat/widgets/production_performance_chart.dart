@@ -15,7 +15,7 @@ import '../../../domain/entities/production.dart';
 /// Mantık (değişmez):
 /// - Çubuk = seçilen periyottaki gerçekleşen metraj
 /// - Plan = aynı periyot için beklenen metraj (günlük tempo × gün sayısı)
-class ProductionPerformanceChart extends ConsumerWidget {
+class ProductionPerformanceChart extends ConsumerStatefulWidget {
   const ProductionPerformanceChart({
     required this.production,
     super.key,
@@ -24,6 +24,42 @@ class ProductionPerformanceChart extends ConsumerWidget {
 
   final Production production;
   final double height;
+
+  static const visibleBucketCount = 12;
+
+  @override
+  ConsumerState<ProductionPerformanceChart> createState() =>
+      _ProductionPerformanceChartState();
+}
+
+class _ProductionPerformanceChartState
+    extends ConsumerState<ProductionPerformanceChart> {
+  final ScrollController _scrollController = ScrollController();
+  ProductionPerformancePeriod? _lastPeriod;
+  int _lastBucketCount = 0;
+  String? _lastProductionId;
+
+  @override
+  void dispose() {
+    _scrollController.dispose();
+    super.dispose();
+  }
+
+  void _scrollToEndIfNeeded(int bucketCount, ProductionPerformancePeriod period) {
+    if (bucketCount <= ProductionPerformanceChart.visibleBucketCount) return;
+    if (widget.production.id != _lastProductionId) {
+      _lastProductionId = widget.production.id;
+      _lastPeriod = null;
+      _lastBucketCount = 0;
+    }
+    if (_lastPeriod == period && _lastBucketCount == bucketCount) return;
+    _lastPeriod = period;
+    _lastBucketCount = bucketCount;
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!_scrollController.hasClients) return;
+      _scrollController.jumpTo(_scrollController.position.maxScrollExtent);
+    });
+  }
 
   static String _fmt(double v) {
     if (v == v.roundToDouble()) return v.toStringAsFixed(0);
@@ -113,15 +149,18 @@ class ProductionPerformanceChart extends ConsumerWidget {
   }
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
+  Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final options = ref.watch(productionPerformanceChartOptionsProvider);
-    final buckets = _buckets(production, options.period);
+    final buckets = _buckets(widget.production, options.period);
     if (buckets.isEmpty) return const SizedBox.shrink();
 
-    final unit = production.unit.trim().isEmpty ? '' : production.unit.trim();
-    final planQty = production.plannedQty;
-    final planDays = production.plannedDays;
+    _scrollToEndIfNeeded(buckets.length, options.period);
+
+    final unit =
+        widget.production.unit.trim().isEmpty ? '' : widget.production.unit.trim();
+    final planQty = widget.production.plannedQty;
+    final planDays = widget.production.plannedDays;
     final hasPlan = planQty > 0 && planDays > 0;
     final dailyPlan = hasPlan ? planQty / planDays : 0.0;
 
@@ -238,21 +277,88 @@ class ProductionPerformanceChart extends ConsumerWidget {
           ),
         ),
         const SizedBox(height: AppSpacing.sm),
-        SizedBox(
-          height: height,
-          child: BarChart(
-            _chartData(
-              theme: theme,
-              buckets: buckets,
-              top: top,
-              unit: unit,
-              hasPlan: hasPlan,
-              dailyPlan: dailyPlan,
+        LayoutBuilder(
+          builder: (context, constraints) {
+            final viewportW = constraints.maxWidth - 30;
+            final scrollable = buckets.length >
+                ProductionPerformanceChart.visibleBucketCount;
+            final slotW = scrollable
+                ? viewportW / ProductionPerformanceChart.visibleBucketCount
+                : viewportW / buckets.length;
+            final chartW = scrollable ? slotW * buckets.length : viewportW;
+            final barWidth = _barWidth(
+              slotW: slotW,
               style: options.style,
-              period: options.period,
+              hasPlan: hasPlan,
+            );
+
+            return Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                SizedBox(
+                  width: 30,
+                  height: widget.height,
+                  child: Column(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    crossAxisAlignment: CrossAxisAlignment.end,
+                    children: [
+                      Text(
+                        _fmt(top),
+                        style: theme.textTheme.labelSmall?.copyWith(fontSize: 10),
+                      ),
+                      Text(
+                        _fmt(top / 2),
+                        style: theme.textTheme.labelSmall?.copyWith(fontSize: 10),
+                      ),
+                      Text(
+                        '0',
+                        style: theme.textTheme.labelSmall?.copyWith(fontSize: 10),
+                      ),
+                    ],
+                  ),
+                ),
+                Expanded(
+                  child: SingleChildScrollView(
+                    controller: _scrollController,
+                    scrollDirection: Axis.horizontal,
+                    physics: scrollable
+                        ? const BouncingScrollPhysics()
+                        : const NeverScrollableScrollPhysics(),
+                    child: SizedBox(
+                      width: chartW,
+                      height: widget.height,
+                      child: BarChart(
+                        _chartData(
+                          theme: theme,
+                          buckets: buckets,
+                          top: top,
+                          unit: unit,
+                          hasPlan: hasPlan,
+                          dailyPlan: dailyPlan,
+                          style: options.style,
+                          period: options.period,
+                          barWidth: barWidth,
+                          groupsSpace: scrollable ? 6 : (buckets.length <= 4 ? 16 : 8),
+                          showLeftTitles: false,
+                        ),
+                      ),
+                    ),
+                  ),
+                ),
+              ],
+            );
+          },
+        ),
+        if (buckets.length > ProductionPerformanceChart.visibleBucketCount) ...[
+          const SizedBox(height: 4),
+          Text(
+            'Daha eski ${options.period.label.toLowerCase()} kayıtları için grafiği kaydırın',
+            style: theme.textTheme.labelSmall?.copyWith(
+              color: theme.colorScheme.onSurfaceVariant,
+              fontStyle: FontStyle.italic,
             ),
           ),
-        ),
+        ],
         const SizedBox(height: AppSpacing.xs),
         Text(
           hasPlan
@@ -270,6 +376,16 @@ class ProductionPerformanceChart extends ConsumerWidget {
         ),
       ],
     );
+  }
+
+  static double _barWidth({
+    required double slotW,
+    required ProductionPerformanceStyle style,
+    required bool hasPlan,
+  }) {
+    final pair = style == ProductionPerformanceStyle.compare && hasPlan;
+    final usable = slotW - (pair ? 12 : 8);
+    return pair ? (usable / 2).clamp(6.0, 14.0) : usable.clamp(8.0, 18.0);
   }
 
   static String _hintText(
@@ -306,11 +422,10 @@ class ProductionPerformanceChart extends ConsumerWidget {
     required double dailyPlan,
     required ProductionPerformanceStyle style,
     required ProductionPerformancePeriod period,
+    required double barWidth,
+    required double groupsSpace,
+    bool showLeftTitles = true,
   }) {
-    final barWidth = buckets.length <= 4
-        ? 16.0
-        : (buckets.length <= 8 ? 11.0 : 8.0);
-
     Color actualColor(_PeriodBucket b) {
       if (!hasPlan || b.planned <= 0) return AppColors.electricBlue;
       return b.actual + 0.0001 >= b.planned
@@ -321,8 +436,8 @@ class ProductionPerformanceChart extends ConsumerWidget {
     return BarChartData(
       maxY: top,
       minY: 0,
-      alignment: BarChartAlignment.spaceAround,
-      groupsSpace: buckets.length <= 4 ? 16 : 8,
+      alignment: BarChartAlignment.spaceBetween,
+      groupsSpace: groupsSpace,
       barTouchData: BarTouchData(
         enabled: true,
         touchTooltipData: BarTouchTooltipData(
@@ -398,10 +513,11 @@ class ProductionPerformanceChart extends ConsumerWidget {
         rightTitles: const AxisTitles(sideTitles: SideTitles(showTitles: false)),
         leftTitles: AxisTitles(
           sideTitles: SideTitles(
-            showTitles: true,
+            showTitles: showLeftTitles,
             reservedSize: 30,
             interval: top / 2,
             getTitlesWidget: (v, meta) {
+              if (!showLeftTitles) return const SizedBox.shrink();
               if ((v - meta.min).abs() < 0.001 ||
                   (v - meta.max).abs() < 0.001 ||
                   (v - top / 2).abs() < top * 0.05) {
@@ -423,17 +539,12 @@ class ProductionPerformanceChart extends ConsumerWidget {
               if (i < 0 || i >= buckets.length) {
                 return const SizedBox.shrink();
               }
-              if (buckets.length > 6 &&
-                  i != 0 &&
-                  i != buckets.length - 1 &&
-                  i % ((buckets.length / 3).ceil()) != 0) {
-                return const SizedBox.shrink();
-              }
               return Padding(
                 padding: const EdgeInsets.only(top: 4),
                 child: Text(
                   buckets[i].label,
                   style: theme.textTheme.labelSmall?.copyWith(fontSize: 10),
+                  textAlign: TextAlign.center,
                 ),
               );
             },

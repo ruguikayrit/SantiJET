@@ -26,7 +26,7 @@ enum ProductionPerformanceStyle {
 class ProductionPerformanceChartOptions {
   const ProductionPerformanceChartOptions({
     this.period = ProductionPerformancePeriod.daily,
-    this.style = ProductionPerformanceStyle.classic,
+    this.style = ProductionPerformanceStyle.compare,
   });
 
   final ProductionPerformancePeriod period;
@@ -59,7 +59,7 @@ class ProductionPerformanceChartOptions {
       for (final s in ProductionPerformanceStyle.values) {
         if (s.name == name) return s;
       }
-      return ProductionPerformanceStyle.classic;
+      return ProductionPerformanceStyle.compare;
     }
 
     return ProductionPerformanceChartOptions(
