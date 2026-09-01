@@ -162,7 +162,6 @@ class _ProductionPerformanceChartState
     final planQty = widget.production.plannedQty;
     final planDays = widget.production.plannedDays;
     final hasPlan = planQty > 0 && planDays > 0;
-    final dailyPlan = hasPlan ? planQty / planDays : 0.0;
 
     final totalActual = buckets.fold<double>(0, (s, b) => s + b.actual);
     final avgActual = totalActual / buckets.length;
@@ -172,23 +171,10 @@ class _ProductionPerformanceChartState
         : buckets.fold<double>(0, (s, b) => s + b.planned) / buckets.length;
 
     final maxBar = buckets.fold<double>(0, (m, b) {
-      final v = options.style == ProductionPerformanceStyle.compare
-          ? (b.actual > b.planned ? b.actual : b.planned)
-          : b.actual;
+      final v = hasPlan && b.planned > b.actual ? b.planned : b.actual;
       return v > m ? v : m;
     });
-    final refLine = options.period == ProductionPerformancePeriod.daily &&
-            hasPlan &&
-            options.style != ProductionPerformanceStyle.compare
-        ? dailyPlan
-        : 0.0;
-    final maxY = [
-      maxBar,
-      refLine,
-      for (final b in buckets)
-        if (options.style != ProductionPerformanceStyle.compare && hasPlan)
-          b.planned,
-    ].fold<double>(0, (m, v) => v > m ? v : m);
+    final maxY = maxBar;
     final top = maxY <= 0 ? 1.0 : maxY * 1.22;
 
     String? paceLabel;
@@ -258,20 +244,11 @@ class _ProductionPerformanceChartState
                     .read(productionPerformanceChartOptionsProvider.notifier)
                     .save(options.copyWith(period: p)),
               ),
-            for (final s in ProductionPerformanceStyle.values)
-              FilterChip(
-                label: Text(s.label),
-                selected: options.style == s,
-                visualDensity: VisualDensity.compact,
-                onSelected: (_) => ref
-                    .read(productionPerformanceChartOptionsProvider.notifier)
-                    .save(options.copyWith(style: s)),
-              ),
           ],
         ),
         const SizedBox(height: 4),
         Text(
-          _hintText(options, hasPlan, dailyPlan, unit, periodUnit),
+          _hintText(hasPlan, unit, periodUnit),
           style: theme.textTheme.labelSmall?.copyWith(
             color: theme.colorScheme.onSurfaceVariant,
           ),
@@ -286,11 +263,7 @@ class _ProductionPerformanceChartState
                 ? viewportW / ProductionPerformanceChart.visibleBucketCount
                 : viewportW / buckets.length;
             final chartW = scrollable ? slotW * buckets.length : viewportW;
-            final barWidth = _barWidth(
-              slotW: slotW,
-              style: options.style,
-              hasPlan: hasPlan,
-            );
+            final barWidth = _barWidth(slotW: slotW, hasPlan: hasPlan);
 
             return Row(
               crossAxisAlignment: CrossAxisAlignment.start,
@@ -334,9 +307,6 @@ class _ProductionPerformanceChartState
                           top: top,
                           unit: unit,
                           hasPlan: hasPlan,
-                          dailyPlan: dailyPlan,
-                          style: options.style,
-                          period: options.period,
                           barWidth: barWidth,
                           groupsSpace: scrollable ? 6 : (buckets.length <= 4 ? 16 : 8),
                           showLeftTitles: false,
@@ -380,37 +350,17 @@ class _ProductionPerformanceChartState
 
   static double _barWidth({
     required double slotW,
-    required ProductionPerformanceStyle style,
     required bool hasPlan,
   }) {
-    final pair = style == ProductionPerformanceStyle.compare && hasPlan;
-    final usable = slotW - (pair ? 12 : 8);
-    return pair ? (usable / 2).clamp(6.0, 14.0) : usable.clamp(8.0, 18.0);
+    final usable = slotW - (hasPlan ? 12 : 8);
+    return hasPlan ? (usable / 2).clamp(6.0, 14.0) : usable.clamp(8.0, 18.0);
   }
 
-  static String _hintText(
-    ProductionPerformanceChartOptions options,
-    bool hasPlan,
-    double dailyPlan,
-    String unit,
-    String periodUnit,
-  ) {
-    final u = unit.isEmpty ? '' : ' $unit';
+  static String _hintText(bool hasPlan, String unit, String periodUnit) {
     if (!hasPlan) {
       return 'Çubuk: $periodUnit gerçekleşen metraj';
     }
-    return switch (options.style) {
-      ProductionPerformanceStyle.compare =>
-        'Mavi: gerçekleşen · turuncu: plan ($periodUnit)',
-      ProductionPerformanceStyle.minimal =>
-        'Çubuk: gerçekleşen · ince çizgi: plan',
-      ProductionPerformanceStyle.classic =>
-        switch (options.period) {
-          ProductionPerformancePeriod.daily =>
-            'Çubuk: gerçekleşen · çizgi: plan temposu (${_fmt(dailyPlan)}$u/gün)',
-          _ => 'Çubuk: gerçekleşen · arka plan: plan ($periodUnit)',
-        },
-    };
+    return 'Mavi: gerçekleşen · turuncu: plan ($periodUnit)';
   }
 
   static BarChartData _chartData({
@@ -419,9 +369,6 @@ class _ProductionPerformanceChartState
     required double top,
     required String unit,
     required bool hasPlan,
-    required double dailyPlan,
-    required ProductionPerformanceStyle style,
-    required ProductionPerformancePeriod period,
     required double barWidth,
     required double groupsSpace,
     bool showLeftTitles = true,
@@ -451,10 +398,7 @@ class _ProductionPerformanceChartState
             final planLine = hasPlan && b.planned > 0
                 ? '\nPlan: ${_fmt(b.planned)}${unit.isEmpty ? '' : ' $unit'}'
                 : '';
-            final kind = style == ProductionPerformanceStyle.compare &&
-                    rodIndex == 1
-                ? 'Plan'
-                : 'Gerçek';
+            final kind = hasPlan && rodIndex == 1 ? 'Plan' : 'Gerçek';
             return BarTooltipItem(
               '${b.tooltipTitle}\n$kind: $qtyLine$planLine',
               TextStyle(
@@ -468,46 +412,15 @@ class _ProductionPerformanceChartState
         ),
       ),
       gridData: FlGridData(
-        show: style != ProductionPerformanceStyle.minimal,
+        show: true,
         drawVerticalLine: false,
         horizontalInterval: top / 4,
         getDrawingHorizontalLine: (_) => FlLine(
-          color: theme.colorScheme.outlineVariant.withValues(
-            alpha: style == ProductionPerformanceStyle.minimal ? 0.25 : 0.4,
-          ),
-          strokeWidth: style == ProductionPerformanceStyle.minimal ? 0.5 : 1,
+          color: theme.colorScheme.outlineVariant.withValues(alpha: 0.4),
+          strokeWidth: 1,
         ),
       ),
       borderData: FlBorderData(show: false),
-      extraLinesData: hasPlan &&
-              period == ProductionPerformancePeriod.daily &&
-              style != ProductionPerformanceStyle.compare
-          ? ExtraLinesData(
-              horizontalLines: [
-                HorizontalLine(
-                  y: dailyPlan,
-                  color: style == ProductionPerformanceStyle.minimal
-                      ? AppColors.warning.withValues(alpha: 0.55)
-                      : AppColors.warning,
-                  strokeWidth: style == ProductionPerformanceStyle.minimal ? 1 : 1.5,
-                  dashArray: style == ProductionPerformanceStyle.minimal
-                      ? const [3, 3]
-                      : const [6, 4],
-                  label: HorizontalLineLabel(
-                    show: style != ProductionPerformanceStyle.minimal,
-                    alignment: Alignment.topRight,
-                    padding: const EdgeInsets.only(right: 4, bottom: 2),
-                    style: theme.textTheme.labelSmall?.copyWith(
-                      color: AppColors.warning,
-                      fontWeight: FontWeight.w700,
-                      fontSize: 10,
-                    ),
-                    labelResolver: (_) => 'Plan',
-                  ),
-                ),
-              ],
-            )
-          : null,
       titlesData: FlTitlesData(
         topTitles: const AxisTitles(sideTitles: SideTitles(showTitles: false)),
         rightTitles: const AxisTitles(sideTitles: SideTitles(showTitles: false)),
@@ -557,12 +470,8 @@ class _ProductionPerformanceChartState
             index: i,
             bucket: buckets[i],
             barWidth: barWidth,
-            top: top,
-            style: style,
-            period: period,
             hasPlan: hasPlan,
             actualColor: actualColor(buckets[i]),
-            theme: theme,
           ),
       ],
     );
@@ -572,14 +481,10 @@ class _ProductionPerformanceChartState
     required int index,
     required _PeriodBucket bucket,
     required double barWidth,
-    required double top,
-    required ProductionPerformanceStyle style,
-    required ProductionPerformancePeriod period,
     required bool hasPlan,
     required Color actualColor,
-    required ThemeData theme,
   }) {
-    if (style == ProductionPerformanceStyle.compare && hasPlan) {
+    if (hasPlan) {
       return BarChartGroupData(
         x: index,
         barsSpace: 4,
@@ -600,43 +505,14 @@ class _ProductionPerformanceChartState
       );
     }
 
-    final radius = style == ProductionPerformanceStyle.minimal ? 2.0 : 4.0;
-    final planGhost = hasPlan &&
-        bucket.planned > 0 &&
-        period != ProductionPerformancePeriod.daily &&
-        style != ProductionPerformanceStyle.compare;
-
     return BarChartGroupData(
       x: index,
       barRods: [
         BarChartRodData(
           toY: bucket.actual,
           width: barWidth,
-          borderRadius: BorderRadius.vertical(top: Radius.circular(radius)),
-          color: style == ProductionPerformanceStyle.minimal
-              ? actualColor.withValues(alpha: 0.88)
-              : actualColor,
-          gradient: style == ProductionPerformanceStyle.classic
-              ? LinearGradient(
-                  begin: Alignment.bottomCenter,
-                  end: Alignment.topCenter,
-                  colors: [
-                    actualColor.withValues(alpha: 0.85),
-                    actualColor,
-                  ],
-                )
-              : null,
-          backDrawRodData: BackgroundBarChartRodData(
-            show: planGhost ||
-                (style == ProductionPerformanceStyle.classic &&
-                    period == ProductionPerformancePeriod.daily),
-            toY: planGhost ? bucket.planned : top,
-            color: planGhost
-                ? AppColors.warning.withValues(
-                    alpha: style == ProductionPerformanceStyle.minimal ? 0.12 : 0.2,
-                  )
-                : theme.colorScheme.outlineVariant.withValues(alpha: 0.12),
-          ),
+          borderRadius: const BorderRadius.vertical(top: Radius.circular(3)),
+          color: actualColor,
         ),
       ],
     );
