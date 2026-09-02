@@ -54,7 +54,7 @@ class ManagementScreen extends ConsumerWidget {
           _SettingsTile(
             icon: Icons.work_outline,
             title: 'Meslekler',
-            subtitle: '$professionCount meslek · manuel eklenebilir',
+            subtitle: '$professionCount meslek · SGK gruplu katalog',
             onTap: () => context.push(AppRoutes.meslekler),
           ),
           _SettingsTile(

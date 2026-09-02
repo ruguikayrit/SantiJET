@@ -8,6 +8,7 @@ import '../../core/routing/app_routes.dart';
 import '../../core/theme/app_colors.dart';
 import '../../core/theme/app_layout.dart';
 import '../../core/theme/app_spacing.dart';
+import '../../core/utils/text_format.dart';
 import '../../data/providers/app_data_provider.dart';
 import '../../data/providers/catalog_provider.dart';
 import '../../data/providers/production_provider.dart';
@@ -26,7 +27,8 @@ import '../../domain/entities/yevmiyeli_is_kaydi.dart';
 ///
 /// Personel veya yevmiyeli kayıtta kullanılan meslekler silinemez;
 /// yalnızca adı düzenlenebilir.
-class ProfessionsScreen extends ConsumerWidget {
+/// Liste SGK inşaat meslek gruplarına göre bölümler halinde gösterilir.
+class ProfessionsScreen extends ConsumerStatefulWidget {
   const ProfessionsScreen({super.key});
 
   static int countUsage({
@@ -47,11 +49,44 @@ class ProfessionsScreen extends ConsumerWidget {
   }
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
+  ConsumerState<ProfessionsScreen> createState() => _ProfessionsScreenState();
+}
+
+class _ProfessionsScreenState extends ConsumerState<ProfessionsScreen> {
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted) return;
+      _migrateLegacyProfessionNames(ref);
+    });
+  }
+
+  void _migrateLegacyProfessionNames(WidgetRef ref) {
+    final people = ref.read(personnelProvider);
+    final personnel = ref.read(personnelProvider.notifier);
+    final yevmiyeli = ref.read(yevmiyeliIsProvider.notifier);
+    final professions = ref.read(professionsProvider.notifier);
+    final seen = <String>{};
+    for (final p in people) {
+      final old = p.profession.trim();
+      if (old.isEmpty) continue;
+      final next = titleCaseTr(ProfessionCatalog.resolveLegacyName(old));
+      if (next.isEmpty || next.toLowerCase() == old.toLowerCase()) continue;
+      final key = '$old→$next'.toLowerCase();
+      if (!seen.add(key)) continue;
+      personnel.reassignProfession(old, next);
+      yevmiyeli.reassignProfession(old, next);
+      professions.add(next);
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
     final people = ref.watch(personnelProvider);
     final yevmiyeli = ref.watch(yevmiyeliIsProvider);
 
-    int usedOf(String name) => countUsage(
+    int usedOf(String name) => ProfessionsScreen.countUsage(
           name: name,
           people: people,
           yevmiyeli: yevmiyeli,
@@ -62,6 +97,7 @@ class ProfessionsScreen extends ConsumerWidget {
       emptyMessage: 'Henüz meslek yok. Yeni meslek ekleyin.',
       itemNoun: 'meslek',
       items: ref.watch(professionsProvider),
+      groupBySgk: true,
       usageCount: usedOf,
       usageLabel: (name, used) => used == 0
           ? 'Kullanılmıyor — silinebilir'
@@ -100,6 +136,7 @@ class ProfessionsScreen extends ConsumerWidget {
         for (final name in used) {
           ref.read(professionsProvider.notifier).add(name);
         }
+        _migrateLegacyProfessionNames(ref);
       },
     );
   }
@@ -282,6 +319,7 @@ class _CatalogManageScreen extends StatelessWidget {
     this.blockDeleteWhenUsed = false,
     this.deleteBlockedMessage,
     this.itemNoun = 'öğe',
+    this.groupBySgk = false,
   });
 
   final String title;
@@ -296,9 +334,16 @@ class _CatalogManageScreen extends StatelessWidget {
   final String Function(String name, int used)? usageLabel;
   final bool blockDeleteWhenUsed;
   final String Function(String name)? deleteBlockedMessage;
+  final bool groupBySgk;
 
   @override
   Widget build(BuildContext context) {
+    final sections = groupBySgk
+        ? ProfessionCatalog.groupItems(items)
+        : <({String groupName, String sgkHint, List<String> items})>[
+            (groupName: '', sgkHint: '', items: items),
+          ];
+
     return Scaffold(
       appBar: AppBar(
         title: Text(title),
@@ -359,111 +404,77 @@ class _CatalogManageScreen extends StatelessWidget {
               actionLabel: 'Ekle',
               onAction: () => _openEditor(context),
             )
-          : ListView.separated(
+          : ListView(
               padding: AppLayout.scrollPadding(
                 top: AppSpacing.afterHeader,
                 clearFab: true,
               ),
-              itemCount: items.length,
-              separatorBuilder: (_, __) =>
-                  const SizedBox(height: AppSpacing.xs),
-              itemBuilder: (context, i) {
-                final name = items[i];
-                final used = usageCount?.call(name) ?? 0;
-                final deleteBlocked = blockDeleteWhenUsed && used > 0;
-                return SJCard(
-                  onTap: () => _openEditor(context, existing: name),
-                  padding: const EdgeInsets.fromLTRB(
-                    AppSpacing.md,
-                    AppSpacing.xs,
-                    AppSpacing.xs,
-                    AppSpacing.xs,
+              children: [
+                if (groupBySgk)
+                  Padding(
+                    padding: const EdgeInsets.only(bottom: AppSpacing.md),
+                    child: Text(
+                      'SGK / İŞKUR inşaat meslek sınıflarına göre gruplandı. '
+                      'Manuel eklenenler «Diğer» bölümünde görünür.',
+                      style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                            color: Theme.of(context)
+                                .colorScheme
+                                .onSurfaceVariant,
+                          ),
+                    ),
                   ),
-                  child: Builder(
-                    builder: (context) {
-                      final theme = Theme.of(context);
-                      return SizedBox(
-                        height: usageCount != null ? 56 : 48,
-                        child: Row(
-                          children: [
-                            Expanded(
-                              child: Column(
-                                mainAxisAlignment: MainAxisAlignment.center,
-                                crossAxisAlignment: CrossAxisAlignment.start,
-                                children: [
-                                  Text(
-                                    name,
-                                    style: theme.textTheme.titleSmall,
-                                    maxLines: 1,
-                                    overflow: TextOverflow.ellipsis,
+                for (final section in sections) ...[
+                  if (section.groupName.isNotEmpty) ...[
+                    Padding(
+                      padding: const EdgeInsets.only(
+                        top: AppSpacing.sm,
+                        bottom: AppSpacing.xs,
+                      ),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            section.groupName,
+                            style: Theme.of(context)
+                                .textTheme
+                                .titleSmall
+                                ?.copyWith(fontWeight: FontWeight.w700),
+                          ),
+                          if (section.sgkHint.isNotEmpty)
+                            Text(
+                              section.sgkHint,
+                              style: Theme.of(context)
+                                  .textTheme
+                                  .labelSmall
+                                  ?.copyWith(
+                                    color: Theme.of(context)
+                                        .colorScheme
+                                        .onSurfaceVariant,
                                   ),
-                                  if (usageCount != null)
-                                    Text(
-                                      usageLabel?.call(name, used) ??
-                                          (used == 0
-                                              ? 'Kullanılmıyor'
-                                              : '$used kayıtta'),
-                                      style: theme.textTheme.labelSmall
-                                          ?.copyWith(
-                                        color: deleteBlocked
-                                            ? theme.colorScheme.primary
-                                            : theme
-                                                .colorScheme.onSurfaceVariant,
-                                      ),
-                                      maxLines: 1,
-                                      overflow: TextOverflow.ellipsis,
-                                    ),
-                                ],
-                              ),
                             ),
-                            IconButton(
-                              icon: Icon(
-                                Icons.edit_outlined,
-                                size: 20,
-                                color: theme.colorScheme.onSurfaceVariant,
-                              ),
-                              tooltip: 'Düzenle',
-                              visualDensity: VisualDensity.compact,
-                              constraints: const BoxConstraints(
-                                minWidth: 36,
-                                minHeight: 36,
-                              ),
-                              padding: EdgeInsets.zero,
-                              onPressed: () =>
-                                  _openEditor(context, existing: name),
-                            ),
-                            IconButton(
-                              icon: Icon(
-                                Icons.delete_outline,
-                                size: 20,
-                                color: deleteBlocked
-                                    ? theme.colorScheme.onSurface
-                                        .withValues(alpha: 0.28)
-                                    : theme.colorScheme.error,
-                              ),
-                              tooltip: deleteBlocked
-                                  ? 'Kullanıldığı için silinemez'
-                                  : 'Sil',
-                              visualDensity: VisualDensity.compact,
-                              constraints: const BoxConstraints(
-                                minWidth: 36,
-                                minHeight: 36,
-                              ),
-                              padding: EdgeInsets.zero,
-                              onPressed: () => _onDeletePressed(
-                                context,
-                                name: name,
-                                used: used,
-                                deleteBlocked: deleteBlocked,
-                              ),
-                            ),
-                          ],
-                        ),
-                      );
-                    },
-                  ),
-                );
-              },
+                        ],
+                      ),
+                    ),
+                  ],
+                  for (final name in section.items) ...[
+                    _CatalogItemCard(
+                      name: name,
+                      used: usageCount?.call(name) ?? 0,
+                      usageLabel: usageLabel,
+                      blockDeleteWhenUsed: blockDeleteWhenUsed,
+                      onEdit: () => _openEditor(context, existing: name),
+                      onDelete: () => _onDeletePressed(
+                        context,
+                        name: name,
+                        used: usageCount?.call(name) ?? 0,
+                        deleteBlocked: blockDeleteWhenUsed &&
+                            (usageCount?.call(name) ?? 0) > 0,
+                      ),
+                    ),
+                    const SizedBox(height: AppSpacing.xs),
+                  ],
+                ],
+              ],
             ),
     );
   }
@@ -615,5 +626,103 @@ class _CatalogManageScreen extends StatelessWidget {
         );
       }
     }
+  }
+}
+
+class _CatalogItemCard extends StatelessWidget {
+  const _CatalogItemCard({
+    required this.name,
+    required this.used,
+    required this.blockDeleteWhenUsed,
+    required this.onEdit,
+    required this.onDelete,
+    this.usageLabel,
+  });
+
+  final String name;
+  final int used;
+  final bool blockDeleteWhenUsed;
+  final VoidCallback onEdit;
+  final VoidCallback onDelete;
+  final String Function(String name, int used)? usageLabel;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final deleteBlocked = blockDeleteWhenUsed && used > 0;
+    return SJCard(
+      onTap: onEdit,
+      padding: const EdgeInsets.fromLTRB(
+        AppSpacing.md,
+        AppSpacing.xs,
+        AppSpacing.xs,
+        AppSpacing.xs,
+      ),
+      child: SizedBox(
+        height: usageLabel != null ? 56 : 48,
+        child: Row(
+          children: [
+            Expanded(
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    name,
+                    style: theme.textTheme.titleSmall,
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                  if (usageLabel != null)
+                    Text(
+                      usageLabel!(name, used),
+                      style: theme.textTheme.labelSmall?.copyWith(
+                        color: deleteBlocked
+                            ? theme.colorScheme.primary
+                            : theme.colorScheme.onSurfaceVariant,
+                      ),
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                ],
+              ),
+            ),
+            IconButton(
+              icon: Icon(
+                Icons.edit_outlined,
+                size: 20,
+                color: theme.colorScheme.onSurfaceVariant,
+              ),
+              tooltip: 'Düzenle',
+              visualDensity: VisualDensity.compact,
+              constraints: const BoxConstraints(
+                minWidth: 36,
+                minHeight: 36,
+              ),
+              padding: EdgeInsets.zero,
+              onPressed: onEdit,
+            ),
+            IconButton(
+              icon: Icon(
+                Icons.delete_outline,
+                size: 20,
+                color: deleteBlocked
+                    ? theme.colorScheme.onSurface.withValues(alpha: 0.28)
+                    : theme.colorScheme.error,
+              ),
+              tooltip:
+                  deleteBlocked ? 'Kullanıldığı için silinemez' : 'Sil',
+              visualDensity: VisualDensity.compact,
+              constraints: const BoxConstraints(
+                minWidth: 36,
+                minHeight: 36,
+              ),
+              padding: EdgeInsets.zero,
+              onPressed: onDelete,
+            ),
+          ],
+        ),
+      ),
+    );
   }
 }

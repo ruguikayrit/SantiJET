@@ -151,13 +151,13 @@ class DemoSeedController {
       ),
       (
         name: 'Ahmet Usta',
-        profession: 'Demirci Usta',
+        profession: 'Betonarme Demircisi',
         team: 'Demir',
         company: 'Tiryaki İnşaat',
       ),
       (
         name: 'Mehmet Çırak',
-        profession: 'Demirci',
+        profession: 'Betonarme Demircisi',
         team: 'Demir',
         company: 'Tiryaki İnşaat',
       ),
@@ -169,7 +169,7 @@ class DemoSeedController {
       ),
       (
         name: 'Can Demir',
-        profession: 'Kalıpçı Usta',
+        profession: 'Kalıpçı',
         team: 'Demo Ekip',
         company: 'Demo Taşeron',
       ),
@@ -181,7 +181,7 @@ class DemoSeedController {
       ),
       (
         name: 'Emre Kaya',
-        profession: 'Saha Düz İşçi',
+        profession: 'İnşaat İşçisi',
         team: 'Kalıp',
         company: 'Demo Taşeron',
       ),
@@ -193,13 +193,13 @@ class DemoSeedController {
       ),
       (
         name: 'Murat Elektrik',
-        profession: 'Elektrik Usta',
+        profession: 'Elektrikçi',
         team: 'Elektrik',
         company: 'Elektrik Taşeron',
       ),
       (
         name: 'Serkan Mekanik',
-        profession: 'Mekanik Usta',
+        profession: 'Havalandırma Tesisatçısı',
         team: 'Mekanik',
         company: 'Mekanik Taşeron',
       ),

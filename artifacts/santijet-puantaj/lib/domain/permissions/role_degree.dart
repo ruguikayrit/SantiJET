@@ -10,16 +10,19 @@ abstract final class RoleDegree {
   static const first = 1;
   static const field = 2;
 
-  /// Açık 1. derece meslekler.
+  /// Açık 1. derece meslekler (yönetim / teknik / İSG).
   static const firstDegreeProfessions = <String>{
     'Proje Koordinatörü',
     'Proje Müdürü',
     'Şantiye Şefi',
+    'İnşaat Mühendisi',
     'Saha Mühendisi',
     'Teknik Ofis Mühendisi',
     'Harita Mühendisi',
     'Jeoloji Mühendisi',
+    'Mimar',
     'İSG Uzmanı',
+    'İSG Teknikeri',
   };
 
   static String _fold(String raw) => raw
@@ -58,21 +61,22 @@ abstract final class RoleDegree {
         fold.contains('sef ')) {
       return 2;
     }
-    if (fold.contains('muhendis')) return 4;
-    if (fold.contains('isg')) return 7;
-    if (fold.contains('senor')) return 8;
-    if (fold.contains('puantor')) return 9;
-    if (fold.contains('formen')) return 10;
-    if (fold.contains('usta') && !fold.contains('yardim')) return 12;
-    if (fold.contains('operator') || fold.contains('sofor')) return 14;
+    if (fold.contains('mimar')) return 8;
+    if (fold.contains('muhendis')) return 3;
+    if (fold.contains('isg')) return 9;
+    if (fold.contains('senor')) return 12;
+    if (fold.contains('puantor')) return 11;
+    if (fold.contains('formen')) return 15;
+    if (fold.contains('usta') && !fold.contains('yardim')) return 17;
+    if (fold.contains('operator') || fold.contains('sofor')) return 55;
     if (fold.contains('kantar') ||
         fold.contains('depo') ||
         fold.contains('ambar')) {
-      return 19;
+      return 62;
     }
-    if (fold.contains('kalfa')) return 21;
-    if (fold.contains('isci')) return 24;
-    if (fold.contains('bekci')) return 25;
+    if (fold.contains('kalfa')) return 18;
+    if (fold.contains('isci') || fold.contains('beden')) return 70;
+    if (fold.contains('bekci') || fold.contains('guvenlik')) return 65;
 
     // Bilinmeyen özel meslekler: katalogdan sonra, boştan önce.
     return 8000;
@@ -99,17 +103,30 @@ abstract final class RoleDegree {
         p.contains('senor') ||
         p.contains('depo') ||
         p.contains('ambar') ||
-        p.contains('kantar')) {
+        p.contains('kantar') ||
+        p.contains('duvarci') ||
+        p.contains('kalip') ||
+        p.contains('demirci') ||
+        p.contains('beton') ||
+        p.contains('sivaci') ||
+        p.contains('boyaci') ||
+        p.contains('elektrik') ||
+        p.contains('tesisat') ||
+        p.contains('kaynak') ||
+        p.contains('guvenlik') ||
+        p.contains('hafriyat') ||
+        p.contains('beden')) {
       return field;
     }
 
-    // Mühendis / müdür / şef / koordinatör → 1. derece
+    // Mühendis / müdür / şef / koordinatör / mimar / İSG → 1. derece
     if (p.contains('muhendis') ||
         p.contains('mudur') ||
         p.contains('sefi') ||
         p.contains('sef ') ||
         p.endsWith('sef') ||
         p.contains('koordinator') ||
+        p.contains('mimar') ||
         p.contains('isg')) {
       return first;
     }

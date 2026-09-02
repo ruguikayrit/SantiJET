@@ -35,6 +35,33 @@ class CatalogNotifier extends StateNotifier<List<String>> {
     return out;
   }
 
+  /// Meslekler: SGK grup sırası + manuel ekler sonda (alfabetik değil).
+  static List<String> _normalizeProfessions(Iterable<String> raw) {
+    final seen = <String>{};
+    final customs = <String>[];
+    for (final e in raw) {
+      final resolved = titleCaseTr(ProfessionCatalog.resolveLegacyName(e));
+      if (resolved.isEmpty) continue;
+      if (!seen.add(resolved.toLowerCase())) continue;
+      customs.add(resolved);
+    }
+
+    final defaults = ProfessionCatalog.defaultProfessions;
+    final defaultKeys = {
+      for (final d in defaults) d.toLowerCase(),
+    };
+    final out = <String>[
+      for (final d in defaults) d,
+    ];
+    seen
+      ..clear()
+      ..addAll(defaultKeys);
+    for (final c in customs) {
+      if (seen.add(c.toLowerCase())) out.add(c);
+    }
+    return out;
+  }
+
   static List<String> _load(Box box, String key, List<String> defaults) {
     final raw = box.get(key);
     if (raw is String && raw.isNotEmpty) {
@@ -49,7 +76,9 @@ class CatalogNotifier extends StateNotifier<List<String>> {
             final migrated = key == 'catalog_teams'
                 ? _migrateAlciAsmaTeams(list)
                 : list;
-            final normalized = _normalizeList(migrated);
+            final normalized = key == 'catalog_professions'
+                ? _normalizeProfessions(migrated)
+                : _normalizeList(migrated);
             if (jsonEncode(normalized) != jsonEncode(migrated)) {
               box.put(key, jsonEncode(normalized));
             }
@@ -58,7 +87,9 @@ class CatalogNotifier extends StateNotifier<List<String>> {
         }
       } catch (_) {}
     }
-    return _normalizeList(defaults);
+    return key == 'catalog_professions'
+        ? _normalizeProfessions(defaults)
+        : _normalizeList(defaults);
   }
 
   /// Eski birleşik ekip adını ayrı ekiple değiştirir.
@@ -80,18 +111,28 @@ class CatalogNotifier extends StateNotifier<List<String>> {
 
   void _persist() => _box.put(_key, jsonEncode(state));
 
+  bool get _isProfessions => _key == 'catalog_professions';
+
+  List<String> _normalize(Iterable<String> raw) => _isProfessions
+      ? _normalizeProfessions(raw)
+      : _normalizeList(raw);
+
   bool add(String name) {
-    final trimmed = titleCaseTr(name);
+    final trimmed = titleCaseTr(
+      _isProfessions ? ProfessionCatalog.resolveLegacyName(name) : name,
+    );
     if (trimmed.isEmpty) return false;
     final exists = state.any((e) => e.toLowerCase() == trimmed.toLowerCase());
     if (exists) return false;
-    state = [...state, trimmed]..sort((a, b) => a.compareTo(b));
+    state = _normalize([...state, trimmed]);
     _persist();
     return true;
   }
 
   bool rename(String oldName, String newName) {
-    final trimmed = titleCaseTr(newName);
+    final trimmed = titleCaseTr(
+      _isProfessions ? ProfessionCatalog.resolveLegacyName(newName) : newName,
+    );
     if (trimmed.isEmpty) return false;
     final idx = state.indexOf(oldName);
     if (idx < 0) return false;
@@ -101,8 +142,7 @@ class CatalogNotifier extends StateNotifier<List<String>> {
     if (exists) return false;
     final next = [...state];
     next[idx] = trimmed;
-    next.sort((a, b) => a.compareTo(b));
-    state = next;
+    state = _normalize(next);
     _persist();
     return true;
   }
@@ -113,12 +153,12 @@ class CatalogNotifier extends StateNotifier<List<String>> {
   }
 
   void resetToDefaults(List<String> defaults) {
-    state = _normalizeList(defaults);
+    state = _normalize(defaults);
     _persist();
   }
 
   void replaceAll(List<String> items) {
-    state = _normalizeList(items);
+    state = _normalize(items);
     _persist();
   }
 }

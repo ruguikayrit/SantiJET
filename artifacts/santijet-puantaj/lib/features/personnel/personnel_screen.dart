@@ -19,6 +19,7 @@ import '../../data/providers/app_data_provider.dart';
 import '../../data/providers/catalog_provider.dart';
 import '../../data/providers/company_provider.dart';
 import '../../data/services/personnel_import_service.dart';
+import '../../domain/catalogs/professions.dart';
 import '../../domain/entities/person.dart';
 
 /// Personel listesi — aktif projeye özel; firmaya göre gruplu.
@@ -1025,6 +1026,132 @@ class _PersonEditorSheetState extends ConsumerState<_PersonEditorSheet> {
     return _titleCasedOptions(names);
   }
 
+  Future<void> _pickProfessionOption({
+    required String current,
+    required List<String> options,
+    required ValueChanged<String> onSelected,
+  }) async {
+    final sections = ProfessionCatalog.groupItems(options);
+    final selected = await showModalBottomSheet<String>(
+      context: context,
+      showDragHandle: true,
+      backgroundColor: Theme.of(context).colorScheme.surface,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+      ),
+      builder: (ctx) {
+        final theme = Theme.of(ctx);
+        final currentNorm = titleCaseTr(current);
+        return SafeArea(
+          child: Padding(
+            padding: const EdgeInsets.fromLTRB(
+              AppSpacing.md,
+              0,
+              AppSpacing.md,
+              AppSpacing.md,
+            ),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                Text(
+                  'Meslek seç',
+                  style: theme.textTheme.titleMedium?.copyWith(
+                    fontWeight: FontWeight.w700,
+                  ),
+                ),
+                Text(
+                  'SGK inşaat meslek grupları',
+                  style: theme.textTheme.labelSmall?.copyWith(
+                    color: theme.colorScheme.onSurfaceVariant,
+                  ),
+                ),
+                const SizedBox(height: AppSpacing.sm),
+                if (options.isEmpty)
+                  Padding(
+                    padding: const EdgeInsets.symmetric(vertical: AppSpacing.lg),
+                    child: Text(
+                      'Henüz meslek yok.\nAyarlar → Meslekler’den ekleyin.',
+                      style: theme.textTheme.bodyMedium?.copyWith(
+                        color: theme.colorScheme.onSurfaceVariant,
+                      ),
+                    ),
+                  )
+                else
+                  ConstrainedBox(
+                    constraints: BoxConstraints(
+                      maxHeight: MediaQuery.sizeOf(ctx).height * 0.55,
+                    ),
+                    child: ListView(
+                      shrinkWrap: true,
+                      children: [
+                        for (final section in sections) ...[
+                          Padding(
+                            padding: const EdgeInsets.only(
+                              top: AppSpacing.sm,
+                              bottom: AppSpacing.xs,
+                            ),
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Text(
+                                  section.groupName,
+                                  style: theme.textTheme.titleSmall?.copyWith(
+                                    fontWeight: FontWeight.w700,
+                                  ),
+                                ),
+                                if (section.sgkHint.isNotEmpty)
+                                  Text(
+                                    section.sgkHint,
+                                    style: theme.textTheme.labelSmall?.copyWith(
+                                      color: theme.colorScheme.onSurfaceVariant,
+                                    ),
+                                  ),
+                              ],
+                            ),
+                          ),
+                          for (final name in section.items)
+                            ListTile(
+                              contentPadding: EdgeInsets.zero,
+                              dense: true,
+                              title: Text(
+                                name,
+                                style: theme.textTheme.bodyLarge?.copyWith(
+                                  fontWeight: name == currentNorm
+                                      ? FontWeight.w600
+                                      : FontWeight.w400,
+                                ),
+                              ),
+                              trailing: name == currentNorm
+                                  ? Icon(
+                                      Icons.check_rounded,
+                                      color: theme.colorScheme.primary,
+                                    )
+                                  : null,
+                              onTap: () => Navigator.pop(ctx, name),
+                            ),
+                        ],
+                      ],
+                    ),
+                  ),
+                const SizedBox(height: AppSpacing.sm),
+                Align(
+                  alignment: Alignment.centerLeft,
+                  child: TextButton(
+                    onPressed: () => Navigator.pop(ctx, ''),
+                    child: const Text('Temizle'),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        );
+      },
+    );
+    if (!mounted || selected == null) return;
+    onSelected(selected);
+  }
+
   Future<void> _pickOption({
     required String title,
     required String emptyMessage,
@@ -1172,12 +1299,9 @@ class _PersonEditorSheetState extends ConsumerState<_PersonEditorSheet> {
               label: 'Meslek',
               value: _profession,
               emptyHint: 'Listeden seçin',
-              onTap: () => _pickOption(
-                title: 'Meslek seç',
-                emptyMessage:
-                    'Henüz meslek yok.\nAyarlar → Meslekler’den ekleyin.',
-                options: professionItems,
+              onTap: () => _pickProfessionOption(
                 current: _profession,
+                options: professionItems,
                 onSelected: (v) => setState(() => _profession = v),
               ),
               onClear: _profession.isEmpty
