@@ -1995,13 +1995,9 @@ class _DailyReportScreenState extends ConsumerState<DailyReportScreen> {
                   _SectionCard(
                     title: 'Yapılan işler',
                     icon: Icons.checklist_outlined,
-                    trailing: IconButton(
-                      tooltip: 'Dünden kopyala',
-                      onPressed: () => _copyFromYesterday({
-                        DailyReportCopyField.workTexts,
-                      }),
-                      icon: const Icon(Icons.copy_outlined, size: 20),
-                    ),
+                    onCopyYesterday: () => _copyFromYesterday({
+                      DailyReportCopyField.workTexts,
+                    }),
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.stretch,
                       children: [
@@ -2068,13 +2064,9 @@ class _DailyReportScreenState extends ConsumerState<DailyReportScreen> {
                   _SectionCard(
                     title: 'Planlı işler listesi',
                     icon: Icons.event_note_outlined,
-                    trailing: IconButton(
-                      tooltip: 'Dünden kopyala',
-                      onPressed: () => _copyFromYesterday({
-                        DailyReportCopyField.nextDayPlan,
-                      }),
-                      icon: const Icon(Icons.copy_outlined, size: 20),
-                    ),
+                    onCopyYesterday: () => _copyFromYesterday({
+                      DailyReportCopyField.nextDayPlan,
+                    }),
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.stretch,
                       children: [
@@ -2596,12 +2588,14 @@ class _SectionCard extends StatelessWidget {
     required this.icon,
     required this.child,
     this.trailing,
+    this.onCopyYesterday,
   });
 
   final String title;
   final IconData icon;
   final Widget child;
   final Widget? trailing;
+  final VoidCallback? onCopyYesterday;
 
   @override
   Widget build(BuildContext context) {
@@ -2609,6 +2603,7 @@ class _SectionCard extends StatelessWidget {
       icon: icon,
       title: title,
       trailing: trailing,
+      onCopyYesterday: onCopyYesterday,
       child: child,
     );
   }
@@ -2636,21 +2631,11 @@ class _ListSection extends StatelessWidget {
     return _SectionCard(
       title: title,
       icon: icon,
-      trailing: Row(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          if (onCopyYesterday != null)
-            IconButton(
-              tooltip: 'Dünden kopyala',
-              onPressed: onCopyYesterday,
-              icon: const Icon(Icons.copy_outlined, size: 20),
-            ),
-          IconButton(
-            tooltip: 'Ekle',
-            onPressed: onAdd,
-            icon: const Icon(Icons.add),
-          ),
-        ],
+      onCopyYesterday: onCopyYesterday,
+      trailing: IconButton(
+        tooltip: 'Ekle',
+        onPressed: onAdd,
+        icon: const Icon(Icons.add),
       ),
       child: children.isEmpty
           ? Builder(

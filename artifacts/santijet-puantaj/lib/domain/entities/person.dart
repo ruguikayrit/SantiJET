@@ -96,6 +96,15 @@ class Person extends Equatable {
 
   final bool active;
 
+  /// Puantaj veya ISO tarihini depolama biçimine (`yyyy-MM-dd`) çevirir.
+  static String toEmploymentStorage(String date) {
+    final d = parseEmploymentDate(date);
+    if (d == null) return '';
+    final mm = d.month.toString().padLeft(2, '0');
+    final dd = d.day.toString().padLeft(2, '0');
+    return '${d.year}-$mm-$dd';
+  }
+
   /// İşe giriş / çıkış tarihini ISO (`yyyy-MM-dd`) veya `dd.MM.yyyy` olarak çözümler.
   static DateTime? parseEmploymentDate(String? raw) {
     final s = raw?.trim() ?? '';

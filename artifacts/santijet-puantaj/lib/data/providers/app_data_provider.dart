@@ -224,6 +224,42 @@ class PersonnelNotifier extends StateNotifier<List<Person>> {
     _persist();
   }
 
+  /// Puantajda Çıkış seçildiğinde işten çıkış tarihini senkronize eder;
+  /// aynı günde başka duruma geçilirse eşleşen çıkış tarihini temizler.
+  void syncLeaveDateFromAttendance({
+    required String personId,
+    required String date,
+    required AttendanceStatus status,
+  }) {
+    Person? person;
+    for (final p in state) {
+      if (p.id == personId) {
+        person = p;
+        break;
+      }
+    }
+    if (person == null) return;
+
+    final day = Person.parseEmploymentDate(date);
+    if (day == null) return;
+
+    if (status == AttendanceStatus.cikis) {
+      final stored = Person.toEmploymentStorage(date);
+      if (person.leaveDate != stored) {
+        update(person.copyWith(leaveDate: stored));
+      }
+      return;
+    }
+
+    final leave = Person.parseEmploymentDate(person.leaveDate);
+    if (leave != null &&
+        leave.year == day.year &&
+        leave.month == day.month &&
+        leave.day == day.day) {
+      update(person.copyWith(leaveDate: ''));
+    }
+  }
+
   void delete(String id) {
     state = state.where((p) => p.id != id).toList();
     _persist();

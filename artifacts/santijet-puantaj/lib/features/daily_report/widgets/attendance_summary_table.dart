@@ -312,12 +312,16 @@ class AttendanceSummaryTables extends StatelessWidget {
 }
 
 /// Günlük rapor — başlık aç/kapa (varsayılan kapalı).
+///
+/// [onCopyYesterday] verilirse kart sağdan sola kaydırılarak
+/// «Dünden kopyala» tetiklenir (kart silinmez).
 class DailyReportCollapsibleSection extends StatefulWidget {
   const DailyReportCollapsibleSection({
     required this.icon,
     required this.title,
     required this.child,
     this.trailing,
+    this.onCopyYesterday,
     this.initiallyExpanded = false,
     super.key,
   });
@@ -326,6 +330,7 @@ class DailyReportCollapsibleSection extends StatefulWidget {
   final String title;
   final Widget child;
   final Widget? trailing;
+  final VoidCallback? onCopyYesterday;
   final bool initiallyExpanded;
 
   @override
@@ -343,57 +348,103 @@ class _DailyReportCollapsibleSectionState
     _expanded = widget.initiallyExpanded;
   }
 
-  @override
-  Widget build(BuildContext context) {
-    return SJCard.builder(
-      builder: (context, theme) {
-        return Column(
-          crossAxisAlignment: CrossAxisAlignment.stretch,
+  Widget _cardBody(ThemeData theme) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        Row(
           children: [
-            Row(
-              children: [
-                Expanded(
-                  child: InkWell(
-                    onTap: () => setState(() => _expanded = !_expanded),
-                    borderRadius: AppRadii.sm,
-                    child: Padding(
-                      padding: const EdgeInsets.symmetric(vertical: 2),
-                      child: Row(
-                        children: [
-                          Icon(
-                            widget.icon,
-                            size: 20,
-                            color: theme.colorScheme.primary,
-                          ),
-                          const SizedBox(width: AppSpacing.sm),
-                          Expanded(
-                            child: Text(
-                              widget.title,
-                              style: theme.textTheme.titleSmall?.copyWith(
-                                fontWeight: FontWeight.w700,
-                              ),
-                            ),
-                          ),
-                          Icon(
-                            _expanded ? Icons.expand_less : Icons.expand_more,
-                            size: 20,
-                            color: theme.colorScheme.onSurfaceVariant,
-                          ),
-                        ],
+            Expanded(
+              child: InkWell(
+                onTap: () => setState(() => _expanded = !_expanded),
+                borderRadius: AppRadii.sm,
+                child: Padding(
+                  padding: const EdgeInsets.symmetric(vertical: 2),
+                  child: Row(
+                    children: [
+                      Icon(
+                        widget.icon,
+                        size: 20,
+                        color: theme.colorScheme.primary,
                       ),
-                    ),
+                      const SizedBox(width: AppSpacing.sm),
+                      Expanded(
+                        child: Text(
+                          widget.title,
+                          style: theme.textTheme.titleSmall?.copyWith(
+                            fontWeight: FontWeight.w700,
+                          ),
+                        ),
+                      ),
+                      Icon(
+                        _expanded ? Icons.expand_less : Icons.expand_more,
+                        size: 20,
+                        color: theme.colorScheme.onSurfaceVariant,
+                      ),
+                    ],
                   ),
                 ),
-                if (widget.trailing != null) widget.trailing!,
-              ],
+              ),
             ),
-            if (_expanded) ...[
-              const SizedBox(height: AppSpacing.sm),
-              widget.child,
-            ],
+            if (widget.trailing != null) widget.trailing!,
           ],
-        );
+        ),
+        if (_expanded) ...[
+          const SizedBox(height: AppSpacing.sm),
+          widget.child,
+        ],
+      ],
+    );
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final card = SJCard.builder(
+      builder: (context, theme) => _cardBody(theme),
+    );
+
+    final onCopy = widget.onCopyYesterday;
+    if (onCopy == null) return card;
+
+    return Dismissible(
+      key: ValueKey('daily-report-copy-${widget.title}'),
+      direction: DismissDirection.endToStart,
+      confirmDismiss: (_) async {
+        onCopy();
+        return false;
       },
+      background: const SizedBox.shrink(),
+      secondaryBackground: ClipRRect(
+        borderRadius: AppRadii.md,
+        child: const ColoredBox(
+          color: AppColors.electricBlue,
+          child: Align(
+            alignment: Alignment.centerRight,
+            child: Padding(
+              padding: EdgeInsets.symmetric(horizontal: AppSpacing.md),
+              child: Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Icon(
+                    Icons.copy_outlined,
+                    color: Colors.white,
+                    size: 20,
+                  ),
+                  SizedBox(width: AppSpacing.sm),
+                  Text(
+                    'Dünden kopyala',
+                    style: TextStyle(
+                      color: Colors.white,
+                      fontWeight: FontWeight.w700,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ),
+        ),
+      ),
+      child: card,
     );
   }
 }

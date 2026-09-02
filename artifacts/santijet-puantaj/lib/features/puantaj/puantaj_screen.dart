@@ -343,6 +343,11 @@ class _PuantajScreenState extends ConsumerState<PuantajScreen> {
                       date: _date,
                       status: status,
                     );
+                    ref.read(personnelProvider.notifier).syncLeaveDateFromAttendance(
+                          personId: person.id,
+                          date: _date,
+                          status: status,
+                        );
                     setState(() => _openDropdown = null);
                   },
                   onSetOvertime: (person, hours) {
@@ -365,6 +370,14 @@ class _PuantajScreenState extends ConsumerState<PuantajScreen> {
                       date: _date,
                       status: status,
                     );
+                    final personnel = ref.read(personnelProvider.notifier);
+                    for (final person in eligible) {
+                      personnel.syncLeaveDateFromAttendance(
+                        personId: person.id,
+                        date: _date,
+                        status: status,
+                      );
+                    }
                   },
                   onCopyYesterday: () {
                     if (!canEdit) return denyWrite();

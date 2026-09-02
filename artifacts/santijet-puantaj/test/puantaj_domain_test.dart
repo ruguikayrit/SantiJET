@@ -72,6 +72,17 @@ void main() {
         isFalse,
       );
     });
+
+    test('toEmploymentStorage puantaj tarihini ISO depolamaya çevirir', () {
+      expect(
+        Person.toEmploymentStorage('20.07.2026'),
+        '2026-07-20',
+      );
+      expect(
+        Person.toEmploymentStorage('2026-07-20'),
+        '2026-07-20',
+      );
+    });
   });
 
   group('AttendanceStatus', () {
