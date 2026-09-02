@@ -9,10 +9,12 @@ import 'package:santijet_demir/core/theme/app_radii.dart';
 import 'package:santijet_demir/core/theme/app_typography.dart';
 import 'package:santijet_demir/core/widgets/app_bottom_nav_bar.dart';
 import 'package:santijet_demir/domain/entities/rebar_metraj.dart';
+import 'package:santijet_demir/domain/entities/survey.dart';
 import 'package:santijet_demir/features/analysis/cutting_bending_calculator.dart';
 import 'package:santijet_demir/features/analysis/providers/cutting_bending_provider.dart';
 import 'package:santijet_demir/features/projects/providers/project_provider.dart';
 import 'package:santijet_demir/features/rebar_metraj/providers/rebar_metraj_storage_provider.dart';
+import 'package:santijet_demir/features/survey/providers/survey_provider.dart';
 
 Future<void> approveMetrajRecordForAnalysis(
   BuildContext context,
@@ -39,7 +41,8 @@ Future<void> approveMetrajRecordForAnalysis(
   );
 }
 
-Future<void> showPreProductionAnalysisImportSheet(
+/// Analiz: imalat listesinden CAD metrajı bağlı kayıtları aktarır.
+Future<void> showImalatAnalysisImportSheet(
   BuildContext context,
   WidgetRef ref,
 ) async {
@@ -48,28 +51,38 @@ Future<void> showPreProductionAnalysisImportSheet(
     return;
   }
 
+  final imalats = ref.read(surveyProjectProvider).imalats;
   final records = ref.read(savedRebarMetrajProvider);
-  final approved =
-      records.where((record) => record.isApprovedForAnalysis).toList();
+
+  final options = <_ImalatImportOption>[];
+  for (final imalat in imalats) {
+    final linked = records
+        .where((record) => record.surveyImalatId == imalat.id)
+        .toList();
+    options.add(_ImalatImportOption(imalat: imalat, linkedRecords: linked));
+  }
+
+  final importable = options.where((o) => o.hasPieceData).toList();
 
   if (!context.mounted) return;
 
-  if (approved.isEmpty) {
+  if (importable.isEmpty) {
     ScaffoldMessenger.of(context).showAppSnackBar(
       const SnackBar(
         content: Text(
-          'Onaylı ön imalat kaydı yok. Keşif → Ön İmalat sekmesinden onay verin.',
+          'İmalata bağlı CAD metrajı yok. '
+          'Otomatik Metraj’dan imalata gönderin.',
         ),
       ),
     );
-    context.push(AppRoutes.surveyMetrajRecords);
+    context.push(AppRoutes.surveyMetraj);
     return;
   }
 
   final selected = await Navigator.of(context).push<List<SavedRebarMetraj>>(
     MaterialPageRoute(
       fullscreenDialog: true,
-      builder: (context) => _PreProductionImportPage(records: approved),
+      builder: (context) => _ImalatImportPage(options: importable),
     ),
   );
 
@@ -77,7 +90,7 @@ Future<void> showPreProductionAnalysisImportSheet(
 
   var merge = false;
   if (selected.length > 1) {
-    final mergeChoice = await _askMergePreProductionRecords(
+    final mergeChoice = await _askMergeImalatRecords(
       context,
       selected.length,
     );
@@ -93,7 +106,14 @@ Future<void> showPreProductionAnalysisImportSheet(
   );
 }
 
-Future<bool?> _askMergePreProductionRecords(
+/// Geriye dönük alias — Analiz artık imalattan veri alır.
+Future<void> showPreProductionAnalysisImportSheet(
+  BuildContext context,
+  WidgetRef ref,
+) =>
+    showImalatAnalysisImportSheet(context, ref);
+
+Future<bool?> _askMergeImalatRecords(
   BuildContext context,
   int recordCount,
 ) {
@@ -130,19 +150,6 @@ Future<void> _importMetrajRecordsToAnalysis(
   if (ref.read(activeProjectIdProvider) == null) {
     if (context.mounted) {
       context.push(AppRoutes.projects);
-    }
-    return;
-  }
-
-  final unapproved =
-      records.where((record) => !record.isApprovedForAnalysis).toList();
-  if (unapproved.isNotEmpty) {
-    if (context.mounted) {
-      ScaffoldMessenger.of(context).showAppSnackBar(
-        const SnackBar(
-          content: Text('Yalnızca onaylı ön imalat kayıtları aktarılabilir.'),
-        ),
-      );
     }
     return;
   }
@@ -185,7 +192,7 @@ Future<void> _importMetrajRecordsToAnalysis(
 
   final title = records.length == 1
       ? records.first.displayTitle
-      : '${records.length} ön imalat birleşik';
+      : '${records.length} imalat birleşik';
 
   final batch = buildCuttingBendingBatchFromResults(
     title: title,
@@ -212,23 +219,41 @@ Future<void> _importMetrajRecordsToAnalysis(
   );
 }
 
-class _PreProductionImportPage extends StatefulWidget {
-  const _PreProductionImportPage({required this.records});
+class _ImalatImportOption {
+  const _ImalatImportOption({
+    required this.imalat,
+    required this.linkedRecords,
+  });
 
-  final List<SavedRebarMetraj> records;
+  final SurveyImalat imalat;
+  final List<SavedRebarMetraj> linkedRecords;
 
-  @override
-  State<_PreProductionImportPage> createState() =>
-      _PreProductionImportPageState();
+  bool get hasPieceData => linkedRecords.any(
+        (record) => record.result.textDetails.any((d) => d.included),
+      );
+
+  double get linkedTonnage =>
+      linkedRecords.fold<double>(0, (sum, r) => sum + r.result.totalTonnage);
 }
 
-class _PreProductionImportPageState extends State<_PreProductionImportPage> {
+class _ImalatImportPage extends StatefulWidget {
+  const _ImalatImportPage({required this.options});
+
+  final List<_ImalatImportOption> options;
+
+  @override
+  State<_ImalatImportPage> createState() => _ImalatImportPageState();
+}
+
+class _ImalatImportPageState extends State<_ImalatImportPage> {
   final _selectedIds = <String>{};
 
   void _confirmSelection() {
-    final selected = widget.records
-        .where((record) => _selectedIds.contains(record.id))
-        .toList();
+    final selected = <SavedRebarMetraj>[];
+    for (final option in widget.options) {
+      if (!_selectedIds.contains(option.imalat.id)) continue;
+      selected.addAll(option.linkedRecords);
+    }
     Navigator.pop(context, selected);
   }
 
@@ -250,12 +275,12 @@ class _PreProductionImportPageState extends State<_PreProductionImportPage> {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text(
-                    'Ön İmalattan Veri Al',
+                    'İmalattan Veri Al',
                     style: AppTypography.headlineMedium,
                   ),
                   const SizedBox(height: 6),
                   Text(
-                    'Analiz onayı verilmiş kayıtları Hesap ve Analiz\'e aktarın.',
+                    'CAD metrajı bağlı imalatları Hesap ve Analiz’e aktarın.',
                     style: AppTypography.bodySmall.copyWith(
                       color: AppColors.textMuted,
                     ),
@@ -267,80 +292,80 @@ class _PreProductionImportPageState extends State<_PreProductionImportPage> {
           Expanded(
             child: ListView.separated(
               padding: const EdgeInsets.fromLTRB(16, 8, 16, 16),
-              itemCount: widget.records.length,
+              itemCount: widget.options.length,
               separatorBuilder: (_, __) => const SizedBox(height: 8),
               itemBuilder: (context, index) {
-                  final record = widget.records[index];
-                  final selected = _selectedIds.contains(record.id);
-                  return Material(
-                    color: Colors.transparent,
-                    child: InkWell(
-                      onTap: () {
-                        setState(() {
-                          if (selected) {
-                            _selectedIds.remove(record.id);
-                          } else {
-                            _selectedIds.add(record.id);
-                          }
-                        });
-                      },
-                      borderRadius: AppRadii.sm,
-                      child: Container(
-                        padding: const EdgeInsets.all(12),
-                        decoration: BoxDecoration(
-                          color: AppColors.surfaceElevated,
-                          borderRadius: AppRadii.sm,
-                          border: Border.all(
-                            color: selected
-                                ? AppColors.electricBlueLight
-                                : AppColors.border,
-                          ),
-                        ),
-                        child: Row(
-                          children: [
-                            AppAnimatedCheckbox(
-                              value: selected,
-                              onChanged: (_) {
-                                setState(() {
-                                  if (selected) {
-                                    _selectedIds.remove(record.id);
-                                  } else {
-                                    _selectedIds.add(record.id);
-                                  }
-                                });
-                              },
-                            ),
-                            Expanded(
-                              child: Column(
-                                crossAxisAlignment: CrossAxisAlignment.start,
-                                children: [
-                                  Text(
-                                    record.displayTitle,
-                                    style: AppTypography.titleMedium,
-                                    maxLines: 1,
-                                    overflow: TextOverflow.ellipsis,
-                                  ),
-                                  const SizedBox(height: 4),
-                                  Text(
-                                    '${record.result.totalBarCount} çubuk · '
-                                    '${record.result.totalTonnage.toStringAsFixed(2)} t',
-                                    style: AppTypography.bodySmall.copyWith(
-                                      color: AppColors.textMuted,
-                                    ),
-                                  ),
-                                ],
-                              ),
-                            ),
-                          ],
+                final option = widget.options[index];
+                final selected = _selectedIds.contains(option.imalat.id);
+                return Material(
+                  color: Colors.transparent,
+                  child: InkWell(
+                    onTap: () {
+                      setState(() {
+                        if (selected) {
+                          _selectedIds.remove(option.imalat.id);
+                        } else {
+                          _selectedIds.add(option.imalat.id);
+                        }
+                      });
+                    },
+                    borderRadius: AppRadii.sm,
+                    child: Container(
+                      padding: const EdgeInsets.all(12),
+                      decoration: BoxDecoration(
+                        color: AppColors.surfaceElevated,
+                        borderRadius: AppRadii.sm,
+                        border: Border.all(
+                          color: selected
+                              ? AppColors.electricBlueLight
+                              : AppColors.border,
                         ),
                       ),
+                      child: Row(
+                        children: [
+                          AppAnimatedCheckbox(
+                            value: selected,
+                            onChanged: (_) {
+                              setState(() {
+                                if (selected) {
+                                  _selectedIds.remove(option.imalat.id);
+                                } else {
+                                  _selectedIds.add(option.imalat.id);
+                                }
+                              });
+                            },
+                          ),
+                          Expanded(
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Text(
+                                  option.imalat.name,
+                                  style: AppTypography.titleMedium,
+                                  maxLines: 1,
+                                  overflow: TextOverflow.ellipsis,
+                                ),
+                                const SizedBox(height: 4),
+                                Text(
+                                  '${option.linkedRecords.length} CAD kayıt · '
+                                  '${option.linkedTonnage.toStringAsFixed(2)} t',
+                                  style: AppTypography.bodySmall.copyWith(
+                                    color: AppColors.textMuted,
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                        ],
+                      ),
                     ),
-                  );
+                  ),
+                );
               },
             ),
           ),
           Container(
-            padding: EdgeInsets.fromLTRB(16, 12, 16, 12 + navBarInset),
+            padding: EdgeInsets.fromLTRB(16, 8, 16, navBarInset),
             decoration: BoxDecoration(
               color: AppColors.surfaceElevated,
               border: Border(top: BorderSide(color: AppColors.border)),
@@ -359,20 +384,21 @@ class _PreProductionImportPageState extends State<_PreProductionImportPage> {
                           Colors.white.withValues(alpha: 0.72),
                       elevation: 0,
                       minimumSize: const Size.fromHeight(48),
+                      padding: const EdgeInsets.symmetric(horizontal: 8),
                       shape: RoundedRectangleBorder(
                         borderRadius: AppRadii.sm,
                       ),
                     ),
                     child: Text(
                       'İptal',
-                      style: AppTypography.labelMedium.copyWith(
+                      style: AppTypography.titleLarge.copyWith(
                         color: Colors.white,
-                        fontWeight: FontWeight.w600,
+                        fontWeight: FontWeight.w700,
                       ),
                     ),
                   ),
                 ),
-                const SizedBox(width: 12),
+                const SizedBox(width: 4),
                 Expanded(
                   child: FilledButton(
                     onPressed: hasSelection ? _confirmSelection : null,
@@ -385,6 +411,7 @@ class _PreProductionImportPageState extends State<_PreProductionImportPage> {
                           Colors.white.withValues(alpha: 0.72),
                       elevation: 0,
                       minimumSize: const Size.fromHeight(48),
+                      padding: const EdgeInsets.symmetric(horizontal: 8),
                       shape: RoundedRectangleBorder(
                         borderRadius: AppRadii.sm,
                       ),
@@ -393,9 +420,9 @@ class _PreProductionImportPageState extends State<_PreProductionImportPage> {
                       hasSelection
                           ? 'Onayla (${_selectedIds.length})'
                           : 'Onayla',
-                      style: AppTypography.labelMedium.copyWith(
+                      style: AppTypography.titleLarge.copyWith(
                         color: Colors.white,
-                        fontWeight: FontWeight.w600,
+                        fontWeight: FontWeight.w700,
                       ),
                     ),
                   ),

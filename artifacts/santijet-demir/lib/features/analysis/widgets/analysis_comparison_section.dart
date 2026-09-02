@@ -51,7 +51,7 @@ class _AnalysisComparisonSectionState
         const SizedBox(height: 4),
         const AppDescriptionLines([
           'Kaynak ile revize veriyi karşılaştırın.',
-          'İsterseniz strateji sonuçlarını da inceleyin.',
+          'Minimum fire kesim sonuçlarını inceleyin.',
         ]),
         const SizedBox(height: 12),
         _ComparisonOptionBar(
@@ -72,7 +72,13 @@ class _AnalysisComparisonSectionState
               ),
             AnalysisComparisonKind.strategyFire => _StrategyFireComparisonPanel(
                 key: const ValueKey('strategy-fire'),
-                rows: strategyRows,
+                rows: strategyRows
+                    .where(
+                      (row) =>
+                          row.strategy ==
+                          FireReductionStrategy.lengthMatchOnly,
+                    )
+                    .toList(),
                 hasAnyData: hasStrategyData,
               ),
           },
@@ -104,7 +110,7 @@ class _ComparisonOptionBar extends StatelessWidget {
     ),
     (
       kind: AnalysisComparisonKind.strategyFire,
-      label: 'Strateji Fire & Kazanç',
+      label: 'Minimum Fire Kazancı',
       icon: Icons.insights_outlined,
     ),
   ];

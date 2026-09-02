@@ -56,7 +56,6 @@ class _AnalysisFireSummaryPanelState
           rawWastePercent: 0,
         );
     final comparison = ref.watch(analysisComparisonProvider);
-    final tahvilPreview = ref.watch(tahvilFirePreviewProvider);
     final progress = ref.watch(optimumFireAnalysisProgressProvider);
     final analysisError = ref.watch(optimumFireAnalysisErrorProvider);
     final progressForBatch = progress.appliesTo(batch.id);
@@ -204,7 +203,7 @@ class _AnalysisFireSummaryPanelState
                                   active: _expandedDetail ==
                                       FireSummaryDetailKind.plannedFire,
                                   child: KpiCard(
-                                    label: 'Tahvil Fire',
+                                    label: 'Kesim Fire',
                                     value: summary.isPlannedReady
                                         ? AppFormat.tonnage(
                                             summary.plannedWasteTonnage!,
@@ -296,21 +295,12 @@ class _AnalysisFireSummaryPanelState
                     _AnalysisErrorBanner(message: analysisError),
                   ] else if (!isRunning) ...[
                     if (!batch.isOptimized) ...[
-                      if (tahvilPreview != null) ...[
-                        if (tahvilPreview.hasSavings) ...[
-                          const SizedBox(height: 14),
-                          _TahvilSavingsWarningBanner(preview: tahvilPreview),
-                        ] else ...[
-                          const SizedBox(height: 14),
-                          _TahvilNoBenefitBanner(preview: tahvilPreview),
-                        ],
-                      ],
                       const SizedBox(height: 14),
-                      _TahvilFireAnalysisPanel(
+                      _MinimumFireAnalysisPanel(
                         enabled: batch.pieceLines.isNotEmpty,
-                        onStart: () => _confirmAndRunTahvilAnalysis(
-                          context,
-                          tahvilPreview,
+                        onStart: () => confirmAndRunFireAnalysis(
+                          context: context,
+                          ref: ref,
                         ),
                       ),
                       const SizedBox(height: 12),
@@ -336,69 +326,50 @@ class _AnalysisFireSummaryPanelState
     if (percent <= 4) return AppColors.warning;
     return AppColors.critical;
   }
-
-  Future<void> _confirmAndRunTahvilAnalysis(
-    BuildContext context,
-    TahvilFirePreview? preview,
-  ) async {
-    if (preview == null || !preview.hasSavings) {
-      await showDialog<void>(
-        context: context,
-        builder: (dialogContext) => AlertDialog(
-          title: const Text('Fire Analizi'),
-          content: Text(
-            preview == null
-                ? 'Bu proje için uygulanabilir tahvil bulunamadı.\n'
-                    'Fire analizi yalnızca fire oranını düşüren tahvil '
-                    'uygulandığında çalışır.'
-                : 'Tahvil fire oranını azaltmıyor '
-                    '(%${preview.baselineWastePercent.toStringAsFixed(1)} → '
-                    '%${preview.tahvilWastePercent.toStringAsFixed(1)}).\n'
-                    'Fire oranı düşmediği için tahvil uygulanmayacak.',
-          ),
-          actions: [
-            FilledButton(
-              onPressed: () => Navigator.of(dialogContext).pop(),
-              child: const Text('Tamam'),
-            ),
-          ],
-        ),
-      );
-      return;
-    }
-
-    final confirmed = await showDialog<bool>(
-      context: context,
-      builder: (dialogContext) {
-        return AlertDialog(
-          title: const Text('Fire Analizi'),
-          content: Text(
-            'Tahvil fire oranını '
-            '%${preview.savedWastePercent.toStringAsFixed(1)} puan '
-            '(${AppFormat.tonnage(preview.savedWasteTonnage)} t) azaltır.\n\n'
-            'Tahvilli fire analizini başlatmak istiyor musunuz?',
-          ),
-          actions: [
-            TextButton(
-              onPressed: () => Navigator.of(dialogContext).pop(false),
-              child: const Text('Vazgeç'),
-            ),
-            FilledButton(
-              onPressed: () => Navigator.of(dialogContext).pop(true),
-              child: const Text('Analizi Başlat'),
-            ),
-          ],
-        );
-      },
-    );
-
-    if (confirmed != true || !context.mounted) return;
-
-    await ref
-        .read(cuttingBendingBatchesProvider.notifier)
-        .runOptimumFireAnalysis();
-  }
 }
+
+/// DWG listesi / Fire özeti ortak giriş: minimum fire kesim analizi.
+Future<void> confirmAndRunFireAnalysis({
+  required BuildContext context,
+  required WidgetRef ref,
+}) async {
+  final confirmed = await showDialog<bool>(
+    context: context,
+    builder: (dialogContext) {
+      return AlertDialog(
+        title: const Text('Fire Analizi'),
+        content: const Text(
+          'Zayiatsız kesim planı ve minimum fire için aynı çapta boy '
+          'eşleştirme uygulanacak.\n\n'
+          'Fire analizini başlatmak istiyor musunuz?',
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(dialogContext).pop(false),
+            child: const Text('Vazgeç'),
+          ),
+          FilledButton(
+            onPressed: () => Navigator.of(dialogContext).pop(true),
+            child: const Text('Analizi Başlat'),
+          ),
+        ],
+      );
+    },
+  );
+
+  if (confirmed != true || !context.mounted) return;
+
+  await ref
+      .read(cuttingBendingBatchesProvider.notifier)
+      .runOptimumFireAnalysis();
+}
+
+/// Geriye dönük alias.
+Future<void> confirmAndRunTahvilFireAnalysis({
+  required BuildContext context,
+  required WidgetRef ref,
+}) =>
+    confirmAndRunFireAnalysis(context: context, ref: ref);
 
 class _ActiveKpiCard extends StatelessWidget {
   const _ActiveKpiCard({
@@ -433,134 +404,8 @@ class _ActiveKpiCard extends StatelessWidget {
   }
 }
 
-class _TahvilSavingsWarningBanner extends StatelessWidget {
-  const _TahvilSavingsWarningBanner({required this.preview});
-
-  final TahvilFirePreview preview;
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
-      decoration: BoxDecoration(
-        color: AppColors.warning.withValues(alpha: 0.1),
-        borderRadius: AppRadii.sm,
-        border: Border.all(
-          color: AppColors.warning.withValues(alpha: 0.4),
-        ),
-      ),
-      child: Row(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Container(
-            width: 36,
-            height: 36,
-            alignment: Alignment.center,
-            decoration: BoxDecoration(
-              color: AppColors.warning.withValues(alpha: 0.16),
-              shape: BoxShape.circle,
-            ),
-            child: const Icon(
-              Icons.info_outline,
-              color: AppColors.warning,
-              size: 20,
-            ),
-          ),
-          const SizedBox(width: 12),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  'Fire oranı tahvil ile azalabilir',
-                  style: AppTypography.titleMedium.copyWith(
-                    color: AppColors.warning,
-                  ),
-                ),
-                const SizedBox(height: 4),
-                Text(
-                  'Tahvil uygulanırsa fire oranı '
-                  '%${preview.savedWastePercent.toStringAsFixed(1)} puan '
-                  '(${AppFormat.tonnage(preview.savedWasteTonnage)} t) azalacak.',
-                  style: AppTypography.bodySmall.copyWith(
-                    color: AppColors.cardTextPrimary,
-                  ),
-                ),
-              ],
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-}
-
-class _TahvilNoBenefitBanner extends StatelessWidget {
-  const _TahvilNoBenefitBanner({required this.preview});
-
-  final TahvilFirePreview preview;
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
-      decoration: BoxDecoration(
-        color: AppColors.critical.withValues(alpha: 0.08),
-        borderRadius: AppRadii.sm,
-        border: Border.all(
-          color: AppColors.critical.withValues(alpha: 0.35),
-        ),
-      ),
-      child: Row(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Container(
-            width: 36,
-            height: 36,
-            alignment: Alignment.center,
-            decoration: BoxDecoration(
-              color: AppColors.critical.withValues(alpha: 0.14),
-              shape: BoxShape.circle,
-            ),
-            child: const Icon(
-              Icons.block_outlined,
-              color: AppColors.critical,
-              size: 20,
-            ),
-          ),
-          const SizedBox(width: 12),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  'Tahvil fire oranını azaltmıyor',
-                  style: AppTypography.titleMedium.copyWith(
-                    color: AppColors.critical,
-                  ),
-                ),
-                const SizedBox(height: 4),
-                AppDescriptionLines(
-                  [
-                    'Proje fire %${preview.baselineWastePercent.toStringAsFixed(1)} → '
-                        'tahvil sonrası %${preview.tahvilWastePercent.toStringAsFixed(1)}.',
-                    'Fire oranı düşmediği için tahvil uygulanmayacak.',
-                  ],
-                  style: AppTypography.bodySmall.copyWith(
-                    color: AppColors.cardTextPrimary,
-                  ),
-                ),
-              ],
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-}
-
-class _TahvilFireAnalysisPanel extends StatelessWidget {
-  const _TahvilFireAnalysisPanel({
+class _MinimumFireAnalysisPanel extends StatelessWidget {
+  const _MinimumFireAnalysisPanel({
     required this.enabled,
     required this.onStart,
   });
@@ -575,16 +420,16 @@ class _TahvilFireAnalysisPanel extends StatelessWidget {
       children: [
         const AppDescriptionLines(
           [
-            'Sadece kurallara göre çap değişikliği yapılır.',
-            'Donatıların uzunluklarında herhangi bir değişiklik yapılmaz.',
+            'Zayiatsız kesim planı ve minimum fire hedeflenir.',
+            'Çap değiştirilmez; yakın boylar eşleştirilerek stok kesimi yapılır.',
           ],
           textAlign: TextAlign.center,
         ),
         const SizedBox(height: 10),
         _MatteGreenGradientButton(
           onPressed: enabled ? () => onStart() : null,
-          icon: Icons.swap_horiz_outlined,
-          label: '(tahvil ile fire analizi yap)',
+          icon: Icons.content_cut_outlined,
+          label: 'Fire analizi yap',
         ),
       ],
     );

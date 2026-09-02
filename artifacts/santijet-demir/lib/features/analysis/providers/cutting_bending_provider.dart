@@ -188,7 +188,7 @@ class OptimumFireAnalysisProgress {
 
 final selectedFireReductionStrategyProvider =
     StateProvider<FireReductionStrategy>(
-  (ref) => FireReductionStrategy.tahvilOnly,
+  (ref) => FireReductionStrategy.lengthMatchOnly,
 );
 
 /// Proje fire'ı ile tahvil ön izlemesi (boy eşleştirme yok).
@@ -468,17 +468,13 @@ class CuttingBendingNotifier extends StateNotifier<CuttingBendingState> {
       );
 
       _ref.read(selectedFireReductionStrategyProvider.notifier).state =
-          FireReductionStrategy.tahvilOnly;
+          FireReductionStrategy.lengthMatchOnly;
 
       await Future<void>.delayed(const Duration(seconds: 4));
       final current = _ref.read(optimumFireAnalysisProgressProvider);
       if (current.batchId == batchId && current.isCompleted) {
         progressNotifier.state = OptimumFireAnalysisProgress.idle;
       }
-    } on analysis_calc.TahvilFireNotBeneficialException catch (error) {
-      progressNotifier.state = OptimumFireAnalysisProgress.idle;
-      _ref.read(optimumFireAnalysisErrorProvider.notifier).state =
-          error.toString();
     } catch (e) {
       progressNotifier.state = OptimumFireAnalysisProgress.idle;
       _ref.read(optimumFireAnalysisErrorProvider.notifier).state =
@@ -507,12 +503,14 @@ class CuttingBendingNotifier extends StateNotifier<CuttingBendingState> {
   }
 
   Future<void> selectAnalysisStrategy(FireReductionStrategy strategy) async {
-    _ref.read(selectedFireReductionStrategyProvider.notifier).state = strategy;
+    // Analiz yalnız minimum fire / zayiatsız kesim (boy eşleştirme).
+    const effective = FireReductionStrategy.lengthMatchOnly;
+    _ref.read(selectedFireReductionStrategyProvider.notifier).state = effective;
 
     final merged = _mergedBatchForScope();
     if (merged == null) return;
 
-    if (merged.optimizationStrategy == strategy && merged.isOptimized) {
+    if (merged.optimizationStrategy == effective && merged.isOptimized) {
       return;
     }
 
@@ -520,10 +518,10 @@ class CuttingBendingNotifier extends StateNotifier<CuttingBendingState> {
       _ref.read(selectedAnalysisBatchIdsProvider),
     );
 
-    if (merged.hasSavedOptimization(strategy)) {
+    if (merged.hasSavedOptimization(effective)) {
       final applied = analysis_calc.applyOptimizationSnapshot(
         merged,
-        merged.savedOptimizations[strategy]!,
+        merged.savedOptimizations[effective]!,
       );
       _ref.read(mergedAnalysisSessionProvider.notifier).state =
           MergedAnalysisSession(scopeKey: scopeKey, batch: applied);

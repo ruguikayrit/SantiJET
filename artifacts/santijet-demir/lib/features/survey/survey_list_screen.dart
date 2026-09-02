@@ -17,7 +17,6 @@ import 'package:santijet_demir/features/projects/providers/project_provider.dart
 import 'package:santijet_demir/features/settings/providers/backup_provider.dart';
 import 'package:santijet_demir/features/rebar_metraj/widgets/rebar_metraj_panel.dart';
 import 'package:santijet_demir/features/survey/providers/survey_provider.dart';
-import 'package:santijet_demir/features/survey/saved_metraj_list_tab.dart';
 import 'package:santijet_demir/features/survey/widgets/imalat_diameter_editor.dart';
 
 class SurveyListScreen extends ConsumerStatefulWidget {
@@ -29,7 +28,7 @@ class SurveyListScreen extends ConsumerStatefulWidget {
 
 class _SurveyListScreenState extends ConsumerState<SurveyListScreen>
     with SingleTickerProviderStateMixin {
-  static const _tabCount = 3;
+  static const _tabCount = 2;
   late final TabController _tabController;
   late final ScrollController _imalatListScrollController;
 
@@ -56,7 +55,8 @@ class _SurveyListScreenState extends ConsumerState<SurveyListScreen>
     final tab = GoRouterState.of(context).uri.queryParameters['tab'];
     final targetIndex = switch (tab) {
       'cad' || 'metraj' => 1,
-      'records' || 'kayit' => 2,
+      // Eski Ön İmalat / records → İmalat sekmesi
+      'records' || 'kayit' => 0,
       _ => null,
     };
     if (targetIndex != null && _tabController.index != targetIndex) {
@@ -159,10 +159,8 @@ class _SurveyListScreenState extends ConsumerState<SurveyListScreen>
     final tabIndex = ref.watch(surveyTabIndexProvider);
     final canEdit = ref.watch(canEditActiveProjectProvider);
     final screenBg = AppColors.canvas;
-    final screenWidth = MediaQuery.sizeOf(context).width;
-    final compactTabs = screenWidth < 420;
     final tabLabelStyle = AppTypography.labelMedium.copyWith(
-      fontSize: compactTabs ? 12 : 13,
+      fontSize: 13,
       height: 1.2,
     );
 
@@ -173,12 +171,11 @@ class _SurveyListScreenState extends ConsumerState<SurveyListScreen>
       appBar: appTabbedSubpageAppBar(
         context,
         backgroundColor: screenBg,
-        tabBarHeight: 52,
-        tabBar: _SurveyProportionalTabBar(
+        tabBarHeight: 60,
+        tabBar: _SurveyFramedTabBar(
           controller: _tabController,
           labelStyle: tabLabelStyle,
-          labels: const ['İmalat', 'Otomatik Metraj', 'Ön İmalat'],
-          flexes: const [1, 2, 1],
+          labels: const ['İmalat', 'Otomatik Metraj'],
         ),
       ),
       floatingActionButton: canEdit && tabIndex == 0
@@ -247,7 +244,6 @@ class _SurveyListScreenState extends ConsumerState<SurveyListScreen>
               ),
             ),
             const SizedBox.expand(child: RebarMetrajPanel()),
-            const SizedBox.expand(child: SavedMetrajListTab()),
           ],
         ),
       ),
@@ -593,100 +589,88 @@ class _BottomActions extends ConsumerWidget {
   }
 }
 
-class _SurveyProportionalTabBar extends StatelessWidget {
-  const _SurveyProportionalTabBar({
+class _SurveyFramedTabBar extends StatelessWidget {
+  const _SurveyFramedTabBar({
     required this.controller,
     required this.labels,
-    required this.flexes,
     required this.labelStyle,
   });
 
   final TabController controller;
   final List<String> labels;
-  final List<double> flexes;
   final TextStyle labelStyle;
 
   @override
   Widget build(BuildContext context) {
-    final totalFlex = flexes.fold<double>(0, (sum, flex) => sum + flex);
-
     return AnimatedBuilder(
       animation: controller,
       builder: (context, _) {
-        return Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Row(
-              children: List.generate(labels.length, (index) {
-                final selected = controller.index == index;
-                final flex = (flexes[index] * 10).round();
-                return Expanded(
-                  flex: flex,
-                  child: Material(
-                    color: Colors.transparent,
-                    child: InkWell(
-                      onTap: () => controller.animateTo(index),
-                      child: Padding(
-                        padding: const EdgeInsets.symmetric(
-                          horizontal: 4,
-                          vertical: 12,
-                        ),
-                        child: FittedBox(
-                          fit: BoxFit.scaleDown,
-                          child: Text(
-                            labels[index],
-                            style: labelStyle.copyWith(
-                              fontWeight:
-                                  selected ? FontWeight.w600 : FontWeight.w500,
-                              color: selected
-                                  ? AppColors.electricBlueLight
-                                  : AppColors.textMuted,
+        return Padding(
+          padding: const EdgeInsets.fromLTRB(12, 6, 12, 8),
+          child: DecoratedBox(
+            decoration: BoxDecoration(
+              color: AppColors.surfaceElevated,
+              borderRadius: AppRadii.md,
+              border: Border.all(color: AppColors.border),
+            ),
+            child: Padding(
+              padding: const EdgeInsets.all(4),
+              child: Row(
+                children: List.generate(labels.length, (index) {
+                  final selected = controller.index == index;
+                  return Expanded(
+                    child: Padding(
+                      padding: EdgeInsets.only(
+                        left: index == 0 ? 0 : 3,
+                        right: index == labels.length - 1 ? 0 : 3,
+                      ),
+                      child: Material(
+                        color: Colors.transparent,
+                        child: InkWell(
+                          onTap: () => controller.animateTo(index),
+                          borderRadius: AppRadii.sm,
+                          child: AnimatedContainer(
+                            duration: const Duration(milliseconds: 180),
+                            curve: Curves.easeOut,
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 8,
+                              vertical: 10,
                             ),
-                            textAlign: TextAlign.center,
-                            maxLines: 1,
+                            decoration: BoxDecoration(
+                              color: selected
+                                  ? AppColors.electricBlue.withValues(alpha: 0.14)
+                                  : Colors.transparent,
+                              borderRadius: AppRadii.sm,
+                              border: Border.all(
+                                color: selected
+                                    ? AppColors.electricBlueLight
+                                    : AppColors.borderSubtle,
+                                width: selected ? 1.4 : 1,
+                              ),
+                            ),
+                            child: Text(
+                              labels[index],
+                              style: labelStyle.copyWith(
+                                fontWeight: selected
+                                    ? FontWeight.w700
+                                    : FontWeight.w500,
+                                color: selected
+                                    ? AppColors.electricBlueLight
+                                    : AppColors.textMuted,
+                              ),
+                              textAlign: TextAlign.center,
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                            ),
                           ),
                         ),
                       ),
                     ),
-                  ),
-                );
-              }),
+                  );
+                }),
+              ),
             ),
-            LayoutBuilder(
-              builder: (context, constraints) {
-                final width = constraints.maxWidth;
-                var offset = 0.0;
-                for (var i = 0; i < controller.index; i++) {
-                  offset += width * flexes[i] / totalFlex;
-                }
-                final indicatorWidth =
-                    width * flexes[controller.index] / totalFlex;
-                return SizedBox(
-                  height: 4,
-                  child: Stack(
-                    clipBehavior: Clip.none,
-                    children: [
-                      Positioned(
-                        left: 0,
-                        right: 0,
-                        bottom: 0,
-                        child: Divider(height: 1, color: AppColors.border),
-                      ),
-                      Positioned(
-                        left: offset,
-                        bottom: 0,
-                        width: indicatorWidth,
-                        child: Container(
-                          height: 3,
-                          color: AppColors.electricBlueLight,
-                        ),
-                      ),
-                    ],
-                  ),
-                );
-              },
-            ),
-          ],
+          ),
         );
       },
     );

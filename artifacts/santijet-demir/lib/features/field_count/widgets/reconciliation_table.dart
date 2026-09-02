@@ -274,7 +274,12 @@ class ReconciliationTable extends StatelessWidget {
       verticalAlignment: TableCellVerticalAlignment.middle,
       child: Padding(
         padding: const EdgeInsets.all(3),
-        child: AppTableHeaderBadge(line1, line2: line2, align: align),
+        child: AppTableHeaderBadge(
+          line1,
+          line2: line2,
+          align: align,
+          fontSize: 11,
+        ),
       ),
     );
   }

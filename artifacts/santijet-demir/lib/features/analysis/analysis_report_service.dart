@@ -161,15 +161,9 @@ class AnalysisReportService {
     if (batch.isOptimized) {
       values.addAll([
         (
-          'Uzunluk eşleştirme grupları',
+          'Boy eşleştirme grupları',
           AppFormat.integer(
             batch.lengthMatches.where((group) => group.approved).length,
-          ),
-        ),
-        (
-          'Onaylı tahvil grupları',
-          AppFormat.integer(
-            batch.tahvilGroups.where((group) => group.approved).length,
           ),
         ),
         (
@@ -319,7 +313,7 @@ class AnalysisReportService {
 
   PdfReportSection _buildLengthMatchSection(List<LengthMatchChange> changes) {
     return PdfReportSection(
-      title: 'Uzunluk Eşleştirme Değişiklikleri',
+      title: 'Boy Eşleştirme Değişiklikleri',
       headers: const ['ÇAP', 'Önce (m)', 'Sonra (m)', 'Δ (cm)', 'Adet'],
       rows: changes
           .map(

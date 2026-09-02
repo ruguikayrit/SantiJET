@@ -16,22 +16,65 @@ Future<void> saveMetrajResultToPreProduction(
   WidgetRef ref,
   RebarMetrajResult result,
 ) async {
-  final title = await showSaveMetrajNameDialog(context, result);
-  if (title == null || !context.mounted) return;
-
-  final saved = await ref
-      .read(savedRebarMetrajProvider.notifier)
-      .saveCurrentResult(result, title: title);
-  if (!context.mounted || saved == null) return;
-
-  ref.read(surveyTabIndexProvider.notifier).state = 2;
-
-  ScaffoldMessenger.of(context).showAppSnackBar(
-    SnackBar(content: Text('"$title" Ön İmalat listesine kaydedildi.')),
-  );
+  await sendMetrajResultToImalat(context, ref, result);
 }
 
-/// Otomatik metraj sonucu — yalnızca ön imalat listesine kaydet.
+/// Otomatik metraj sonucunu kaydedip imalat listesine aktarır.
+Future<void> sendMetrajResultToImalat(
+  BuildContext context,
+  WidgetRef ref,
+  RebarMetrajResult result,
+) async {
+  final canEdit = ref.read(canEditActiveProjectProvider);
+  if (!canEdit) {
+    ScaffoldMessenger.of(context).showAppSnackBar(
+      const SnackBar(
+        content: Text('İmalata göndermek için düzenleme yetkisi gerekir.'),
+      ),
+    );
+    return;
+  }
+
+  final savedRecords = ref.read(savedRebarMetrajProvider);
+  SavedRebarMetraj? existing;
+  for (final record in savedRecords) {
+    if (record.result.fileName == result.fileName &&
+        record.result.parsedAt == result.parsedAt &&
+        record.result.totalTonnage == result.totalTonnage) {
+      existing = record;
+      break;
+    }
+  }
+
+  if (existing?.surveyImalatId != null) {
+    ref.read(surveyTabIndexProvider.notifier).state = 0;
+    if (context.mounted) {
+      ScaffoldMessenger.of(context).showAppSnackBar(
+        SnackBar(
+          content: Text(
+            '"${existing!.displayTitle}" zaten '
+            '"${existing.surveyImalatName}" imalatında.',
+          ),
+        ),
+      );
+    }
+    return;
+  }
+
+  SavedRebarMetraj? record = existing;
+  if (record == null) {
+    final title = await showSaveMetrajNameDialog(context, result);
+    if (title == null || !context.mounted) return;
+    record = await ref
+        .read(savedRebarMetrajProvider.notifier)
+        .saveCurrentResult(result, title: title);
+    if (!context.mounted || record == null) return;
+  }
+
+  await sendMetrajRecordToSurvey(context, ref, record);
+}
+
+/// Otomatik metraj sonucu — imalat listesine kaydet / gönder.
 class MetrajResultActions extends ConsumerWidget {
   const MetrajResultActions({super.key, required this.result});
 
@@ -41,12 +84,16 @@ class MetrajResultActions extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final projectId = ref.watch(activeProjectIdProvider);
     final savedRecords = ref.watch(savedRebarMetrajProvider);
-    final isSaved = savedRecords.any(
-      (record) =>
-          record.result.fileName == result.fileName &&
+    SavedRebarMetraj? matching;
+    for (final record in savedRecords) {
+      if (record.result.fileName == result.fileName &&
           record.result.parsedAt == result.parsedAt &&
-          record.result.totalTonnage == result.totalTonnage,
-    );
+          record.result.totalTonnage == result.totalTonnage) {
+        matching = record;
+        break;
+      }
+    }
+    final linkedToImalat = matching?.surveyImalatId != null;
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -64,27 +111,25 @@ class MetrajResultActions extends ConsumerWidget {
           child: FilledButton.icon(
             onPressed: projectId == null
                 ? () => context.push(AppRoutes.projects)
-                : isSaved
-                    ? () => ref.read(surveyTabIndexProvider.notifier).state = 2
-                    : () => _saveResult(context, ref),
-            icon: Icon(isSaved ? Icons.check_circle : Icons.save),
-            label: Text(isSaved ? 'Ön İmalat\'ta Gör' : 'Metraj Kaydet'),
+                : linkedToImalat
+                    ? () => ref.read(surveyTabIndexProvider.notifier).state = 0
+                    : () => sendMetrajResultToImalat(context, ref, result),
+            icon: Icon(linkedToImalat ? Icons.check_circle : Icons.send),
+            label: Text(
+              linkedToImalat ? 'İmalatta Gör' : 'İmalata Gönder',
+            ),
           ),
         ),
-        if (isSaved && projectId != null)
+        if (linkedToImalat && projectId != null)
           Padding(
             padding: const EdgeInsets.only(top: 8),
             child: Text(
-              'Kayıt Ön İmalat listesinde. İmalata göndermek için oradan devam edin.',
+              'Kayıt imalat listesine aktarıldı.',
               style: AppTypography.bodySmall.copyWith(color: AppColors.success),
             ),
           ),
       ],
     );
-  }
-
-  Future<void> _saveResult(BuildContext context, WidgetRef ref) async {
-    await saveMetrajResultToPreProduction(context, ref, result);
   }
 }
 
@@ -353,7 +398,7 @@ class _BulkSendMetrajDialogState extends State<_BulkSendMetrajDialog> {
             contentPadding: EdgeInsets.zero,
             title: const Text('Her kayıt ayrı imalat'),
             subtitle:
-                const Text('Her ön imalat kaydı kendi adıyla imalat olur'),
+                const Text('Her metraj kaydı kendi adıyla imalat olur'),
             value: false,
             groupValue: _merged,
             onChanged: (value) => setState(() => _merged = value!),

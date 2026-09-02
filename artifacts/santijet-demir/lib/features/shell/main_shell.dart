@@ -88,7 +88,12 @@ class DashboardScreen extends ConsumerWidget {
             ),
             const SliverToBoxAdapter(
               child: Padding(
-                padding: EdgeInsets.fromLTRB(AppSpacing.md, 0, AppSpacing.md, 8),
+                padding: EdgeInsets.fromLTRB(
+                  AppSpacing.md,
+                  AppSpacing.md,
+                  AppSpacing.md,
+                  AppSpacing.sm,
+                ),
                 child: ProjectSwitcher(),
               ),
             ),

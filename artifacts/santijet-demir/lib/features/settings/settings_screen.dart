@@ -14,6 +14,7 @@ import 'package:santijet_demir/domain/enums/corporate_role.dart';
 import 'package:santijet_demir/domain/enums/membership_type.dart';
 import 'package:santijet_demir/features/auth/providers/app_lock_provider.dart';
 import 'package:santijet_demir/features/auth/providers/auth_provider.dart';
+import 'package:santijet_demir/features/demo/demo_seed_provider.dart';
 import 'package:santijet_demir/features/projects/providers/project_provider.dart';
 import 'package:santijet_demir/features/settings/providers/profile_provider.dart';
 import 'package:santijet_demir/features/settings/providers/backup_provider.dart';
@@ -106,6 +107,7 @@ class SettingsScreen extends ConsumerWidget {
             subtitle: 'Proje verilerini JSON olarak dışa/içe aktar',
             onTap: () => _showBackupDialog(context, ref),
           ),
+          const _DemoLoadSettingsTile(),
           _SettingsTile(
             icon: Icons.info_outline,
             title: 'Hakkında',
@@ -772,6 +774,79 @@ class SettingsScreen extends ConsumerWidget {
       newController.dispose();
       confirmController.dispose();
     });
+  }
+}
+
+class _DemoLoadSettingsTile extends ConsumerStatefulWidget {
+  const _DemoLoadSettingsTile();
+
+  @override
+  ConsumerState<_DemoLoadSettingsTile> createState() =>
+      _DemoLoadSettingsTileState();
+}
+
+class _DemoLoadSettingsTileState extends ConsumerState<_DemoLoadSettingsTile> {
+  bool _busy = false;
+
+  Future<void> _confirmAndLoad() async {
+    if (_busy) return;
+
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: const Text('Demo veriyi yükle'),
+        content: const Text(
+          'Demo Şantiye sıfırlanıp yeniden doldurulur: keşif (imalat), '
+          'sipariş, gelen demir, saha sayım ve CAD metraj. '
+          'Aktif proje Demo Şantiye olur. Devam edilsin mi?',
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(ctx, false),
+            child: const Text('İptal'),
+          ),
+          FilledButton(
+            onPressed: () => Navigator.pop(ctx, true),
+            child: const Text('Yükle'),
+          ),
+        ],
+      ),
+    );
+
+    if (confirmed != true || !mounted) return;
+
+    setState(() => _busy = true);
+    try {
+      final project =
+          await ref.read(demoSeedControllerProvider).loadAll();
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showAppSnackBar(
+        SnackBar(
+          content: Text(
+            'Demo yüklendi: ${project.name}. Ana Sayfa ve sekmelerden test edin.',
+          ),
+        ),
+      );
+    } catch (e) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showAppSnackBar(
+        SnackBar(content: Text('Demo yüklenemedi: $e')),
+      );
+    } finally {
+      if (mounted) setState(() => _busy = false);
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return _SettingsTile(
+      icon: Icons.dataset_outlined,
+      title: 'Demo veriyi yükle',
+      subtitle: _busy
+          ? 'Yükleniyor…'
+          : 'Keşif, sipariş, teslimat, sayım ve metraj örneği',
+      onTap: _busy ? () {} : _confirmAndLoad,
+    );
   }
 }
 

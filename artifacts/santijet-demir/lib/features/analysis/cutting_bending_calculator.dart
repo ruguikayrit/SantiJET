@@ -1550,7 +1550,9 @@ List<StrategyFireComparison> computeStrategyFireComparisons(
     ),
   );
 
-  return FireReductionStrategy.values.map((strategy) {
+  return [
+    FireReductionStrategy.lengthMatchOnly,
+  ].map((strategy) {
     final saved = batch.savedOptimizations[strategy];
     final isActive =
         batch.isOptimized && batch.optimizationStrategy == strategy;
@@ -1849,15 +1851,7 @@ AnalysisComparison computeAnalysisComparison(CuttingBendingBatch batch) {
   );
 }
 
-/// Tahvil ile fire azaltma hattını çalıştırır (boy eşleştirme uygulanmaz).
-class TahvilFireNotBeneficialException implements Exception {
-  const TahvilFireNotBeneficialException();
-
-  @override
-  String toString() =>
-      'Tahvil fire oranını azaltmıyor; tahvil uygulanmadı.';
-}
-
+/// Minimum fire / zayiatsız kesim hattını çalıştırır (tahvil uygulanmaz).
 Future<CuttingBendingBatch> runOptimumFireAnalysis(
   CuttingBendingBatch batch, {
   required FireReductionStrategy strategy,
@@ -1867,33 +1861,49 @@ Future<CuttingBendingBatch> runOptimumFireAnalysis(
     await onProgress?.call(percent, stepLabel);
   }
 
-  const effectiveStrategy = FireReductionStrategy.tahvilOnly;
+  const effectiveStrategy = FireReductionStrategy.lengthMatchOnly;
 
-  await report(10, 'Proje fire özeti hazırlanıyor...');
+  await report(8, 'Ham fire özeti hazırlanıyor...');
   await _yieldToEventLoop();
 
-  final sourceGroups = batch.tahvilGroups.isNotEmpty
-      ? batch.tahvilGroups
-      : computeTahvilGroups(batch.pieceLines);
-  final tahvilState = selectBeneficialTahvilGroups(
-    pieceLines: batch.pieceLines,
-    groups: sourceGroups,
-  );
+  // Tahvil kapalı — gruplar bilgi amaçlı kalabilir ama onaylanmaz.
+  final tahvilState = (batch.tahvilGroups.isNotEmpty
+          ? batch.tahvilGroups
+          : computeTahvilGroups(batch.pieceLines))
+      .map((group) => group.copyWith(approved: false))
+      .toList();
 
-  if (!tahvilState.any((group) => group.approved)) {
-    throw const TahvilFireNotBeneficialException();
+  await report(25, 'Yakın boylar minimum fire için eşleştiriliyor...');
+  await _yieldToEventLoop();
+
+  var lengthMatches = computeLengthMatchGroups(batch.pieceLines);
+  for (var i = 0; i < lengthMatches.length; i++) {
+    final group = lengthMatches[i];
+    final selected = group.members.length <= 1
+        ? group.members.first.lengthM
+        : await pickOptimalLengthForGroup(
+            group,
+            batch.pieceLines,
+            lengthMatches,
+          );
+    lengthMatches[i] = group.copyWith(
+      approved: true,
+      selectedLengthM: selected,
+    );
+    if (i % 2 == 1) {
+      final progress = 25 + ((i + 1) * 35 / lengthMatches.length).round();
+      await report(progress.clamp(25, 60), 'Boy eşleştirme optimize ediliyor...');
+      await _yieldToEventLoop();
+    }
   }
 
-  await report(35, 'Fire oranını düşüren tahvil grupları seçiliyor...');
-  await _yieldToEventLoop();
-
-  await report(65, 'Tahvilli kesim planı oluşturuluyor...');
+  await report(70, 'Zayiatsız kesim planı oluşturuluyor...');
   await _yieldToEventLoop();
 
   final result = await syncBatchLengthMatchDerivativesAsync(
     batch.copyWith(
       tahvilGroups: tahvilState,
-      lengthMatches: const [],
+      lengthMatches: lengthMatches,
       lengthMatchTolerancePercent:
           CuttingBendingBatch.defaultLengthMatchTolerancePercent,
       optimizationStrategy: effectiveStrategy,

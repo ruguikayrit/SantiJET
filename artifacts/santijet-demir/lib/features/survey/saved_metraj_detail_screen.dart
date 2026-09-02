@@ -37,7 +37,7 @@ class SavedMetrajDetailScreen extends ConsumerWidget {
       return Scaffold(
         backgroundColor: AppColors.canvas,
         primary: false,
-        appBar: appSubpageTitleAppBar(context, title: 'Ön İmalat'),
+        appBar: appSubpageTitleAppBar(context, title: 'Metraj Kaydı'),
         body: const Center(child: Text('Kayıt bulunamadı')),
       );
     }
@@ -53,7 +53,7 @@ class SavedMetrajDetailScreen extends ConsumerWidget {
       primary: false,
       appBar: appSubpageTitleAppBar(
         context,
-        title: 'Ön İmalat',
+        title: 'Metraj Kaydı',
         subtitle: record.displayTitle,
       ),
       body: ListView(

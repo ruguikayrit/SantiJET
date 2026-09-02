@@ -367,12 +367,17 @@ class _ResultSummaryBarState extends ConsumerState<_ResultSummaryBar> {
   Widget build(BuildContext context) {
     final projectId = ref.watch(activeProjectIdProvider);
     final savedRecords = ref.watch(savedRebarMetrajProvider);
-    final isSaved = savedRecords.any(
-      (record) =>
-          record.result.fileName == result.fileName &&
+    SavedRebarMetraj? matching;
+    for (final record in savedRecords) {
+      if (record.result.fileName == result.fileName &&
           record.result.parsedAt == result.parsedAt &&
-          record.result.totalTonnage == result.totalTonnage,
-    );
+          record.result.totalTonnage == result.totalTonnage) {
+        matching = record;
+        break;
+      }
+    }
+    final isSaved = matching != null;
+    final linkedToImalat = matching?.surveyImalatId != null;
     final tonnageLabel = AppFormat.tonnage(result.totalTonnage);
 
     return Container(
@@ -501,11 +506,11 @@ class _ResultSummaryBarState extends ConsumerState<_ResultSummaryBar> {
                   FilledButton.icon(
                     onPressed: projectId == null
                         ? () => context.push(AppRoutes.projects)
-                        : isSaved
+                        : linkedToImalat
                             ? () =>
                                 ref.read(surveyTabIndexProvider.notifier).state =
-                                    2
-                            : () => saveMetrajResultToPreProduction(
+                                    0
+                            : () => sendMetrajResultToImalat(
                                   context,
                                   ref,
                                   result,
@@ -513,7 +518,7 @@ class _ResultSummaryBarState extends ConsumerState<_ResultSummaryBar> {
                     icon: Icon(
                       projectId == null
                           ? Icons.folder_open_outlined
-                          : isSaved
+                          : linkedToImalat
                               ? Icons.check_circle_outline
                               : Icons.send_outlined,
                       size: 18,
@@ -521,9 +526,9 @@ class _ResultSummaryBarState extends ConsumerState<_ResultSummaryBar> {
                     label: Text(
                       projectId == null
                           ? 'Proje Seç'
-                          : isSaved
-                              ? 'Ön İmalat\'ta Gör'
-                              : 'Ön İmalata Gönder',
+                          : linkedToImalat
+                              ? 'İmalatta Gör'
+                              : 'İmalata Gönder',
                     ),
                     style: FilledButton.styleFrom(
                       minimumSize: const Size.fromHeight(44),

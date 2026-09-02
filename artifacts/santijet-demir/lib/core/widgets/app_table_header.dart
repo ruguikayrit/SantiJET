@@ -62,7 +62,8 @@ class AppTableHeaderRow extends StatelessWidget {
 /// Single decorated header cell for use inside `Table` widgets, `Row`s with
 /// fixed-width columns, or anywhere a standalone blue header badge is needed.
 ///
-/// Tüm başlık pencereleri aynı sabit yükseklikte — tek/çift satır fark etmez.
+/// Çift satır başlıklarda sabit yükseklik; tek satırda daha sıkı çerçeve.
+/// Font boyutu değişmez.
 class AppTableHeaderBadge extends StatelessWidget {
   const AppTableHeaderBadge(
     this.label, {
@@ -70,6 +71,7 @@ class AppTableHeaderBadge extends StatelessWidget {
     this.line2,
     this.align = TextAlign.center,
     this.padding,
+    this.fontSize,
   });
 
   final String label;
@@ -77,18 +79,28 @@ class AppTableHeaderBadge extends StatelessWidget {
   final TextAlign align;
   final EdgeInsetsGeometry? padding;
 
-  /// Tek ve çift satır başlıklar için ortak çerçeve yüksekliği.
+  /// Varsayılan 12.5; daha küçük başlıklar için örn. 11.
+  final double? fontSize;
+
+  /// Çift satır (line2) başlık çerçeve yüksekliği.
   static const height = 48.0;
+
+  /// Tek satır başlık çerçeve yüksekliği — Fire özeti vb.
+  static const singleLineHeight = 30.0;
 
   /// Geriye dönük: eski [minHeight] kullanan çağrılar.
   static const minHeight = height;
 
-  static TextStyle get _textStyle => AppTypography.labelMedium.copyWith(
+  static const defaultFontSize = 12.5;
+
+  double get _frameHeight => line2 != null ? height : singleLineHeight;
+
+  TextStyle get _textStyle => AppTypography.labelMedium.copyWith(
         color: Colors.black,
         fontWeight: FontWeight.w700,
         height: 1.1,
         letterSpacing: 0.2,
-        fontSize: 12.5,
+        fontSize: fontSize ?? defaultFontSize,
       );
 
   @override
@@ -121,7 +133,7 @@ class AppTableHeaderBadge extends StatelessWidget {
     );
 
     return SizedBox(
-      height: height,
+      height: _frameHeight,
       width: double.infinity,
       child: DecoratedBox(
         decoration: BoxDecoration(

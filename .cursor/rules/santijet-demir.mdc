@@ -10,11 +10,15 @@ Kapsam: `artifacts/santijet-demir/**`. Başka ürüne dokunma. Özet: `artifacts
 
 - Alt nav: Ana Sayfa · Sipariş · Gelen Demir · Saha Sayım · Analiz. Ayarlar navda yok.
 - Alt nav Saha stilinde (`AppColors.surface` / border / electricBlue / textMuted, lift dışarıda). Tema renkleriyle boyama yok.
+- Ana sayfa proje seçici Saha ile aynı kurgu: logo kutusu + firma/iş/kod + tıklanınca **İş seçin** alt sayfa (sayfa açılmaz). Projeler listesine yönlendirmeyi geri koyma.
 - Ayarlar = sağ üst **dişli** (`Icons.settings_outlined`). Bildirim zili ve baş harf avatarı yok; `showNotification` varsayılan `false`.
 - Staging URL: https://ruguikayrit.github.io/SantiJET/demir/ — `/staging/` yoluna DEMİR uygulamasını geri koyma.
 - Anasayfaya Günlük Brifing / Tahmin kartı ve ilerleme formül satırını geri koyma.
 - Ayarlara Proje Bilgileri / Dokunma Titreşimi geri koyma.
+- Ayarlar’da **Demo veriyi yükle** (Yedekleme sonrası) kalır; Demo Şantiye seed’i.
 - Analiz’de **Tahvil Hesaplayıcı** yok; geri koyma.
-- Fire butonu: `(tahvil ile fire analizi yap)`. Raporlar DEMO bandını açma.
+- Keşif: yalnız **İmalat · Otomatik Metraj** (çerçeveli). Ön İmalat sekmesi yok. Analiz: **İmalattan Veri Al**.
+- Fire analizi tahvilsiz (minimum fire / zayiatsız kesim). Buton: **Fire analizi yap**. Tahvil banner/zorunluluk geri gelmez.
+- Raporlar DEMO bandını açma.
 - `AppMediaQuery` `padding.bottom = 0`; nav yalnız `viewPadding`. Turuncu STAGING şeridi, 28px spacer ve `flutter-view` `top:28px` yok; geri koyma.
 - Dal `staging`. Mesaj `feat(demir):` / `fix(demir):` / `docs(demir):`.

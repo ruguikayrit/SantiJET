@@ -8,6 +8,7 @@ import 'package:santijet_demir/core/theme/app_radii.dart';
 import 'package:santijet_demir/core/theme/app_typography.dart';
 import 'package:santijet_demir/domain/entities/cutting_bending.dart';
 import 'package:santijet_demir/features/analysis/providers/cutting_bending_provider.dart';
+import 'package:santijet_demir/features/analysis/widgets/analysis_fire_summary.dart';
 
 class AnalysisBatchListPanel extends ConsumerWidget {
   const AnalysisBatchListPanel({
@@ -31,6 +32,14 @@ class AnalysisBatchListPanel extends ConsumerWidget {
     final allSelected =
         batches.isNotEmpty && analysisScopeIds.length == batches.length;
     final scopeCount = analysisScopeIds.length;
+    final mergedBatch = ref.watch(mergedAnalysisBatchProvider);
+    final progress = ref.watch(optimumFireAnalysisProgressProvider);
+    final analysisRunning = progress.isRunning;
+    final fireAnalysisEnabled = analysisScopeIds.isNotEmpty &&
+        mergedBatch != null &&
+        mergedBatch.pieceLines.isNotEmpty &&
+        !mergedBatch.isOptimized &&
+        !analysisRunning;
 
     return Container(
       decoration: BoxDecoration(
@@ -47,7 +56,7 @@ class AnalysisBatchListPanel extends ConsumerWidget {
             child: FilledButton.icon(
               onPressed: onImportFromPreProduction,
               icon: const Icon(Icons.inventory_2_outlined, size: 18),
-              label: const Text('Ön İmalattan Veri Al'),
+              label: const Text('İmalattan Veri Al'),
               style: FilledButton.styleFrom(
                 minimumSize: const Size.fromHeight(44),
                 padding: const EdgeInsets.symmetric(horizontal: 16),
@@ -268,6 +277,28 @@ class AnalysisBatchListPanel extends ConsumerWidget {
                 ),
               );
             },
+          ),
+          Padding(
+            padding: const EdgeInsets.fromLTRB(14, 10, 14, 14),
+            child: FilledButton.icon(
+              onPressed: fireAnalysisEnabled
+                  ? () => confirmAndRunFireAnalysis(
+                        context: context,
+                        ref: ref,
+                      )
+                  : null,
+              icon: const Icon(Icons.local_fire_department_outlined, size: 18),
+              label: const Text('Fire analizi yap'),
+              style: FilledButton.styleFrom(
+                minimumSize: const Size.fromHeight(44),
+                padding: const EdgeInsets.symmetric(horizontal: 16),
+                backgroundColor: AppColors.electricBlue,
+                foregroundColor: Colors.white,
+                disabledBackgroundColor:
+                    AppColors.electricBlue.withValues(alpha: 0.35),
+                disabledForegroundColor: Colors.white70,
+              ),
+            ),
           ),
         ],
       ),

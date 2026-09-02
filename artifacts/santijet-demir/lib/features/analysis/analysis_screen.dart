@@ -68,8 +68,8 @@ class AnalysisScreen extends ConsumerWidget {
                 SliverToBoxAdapter(
                   child: ModuleEmptyState(
                     type: EmptyStateType.noAnalysis,
-                    actionLabel: 'Ön İmalattan Veri Al',
-                    onAction: () => showPreProductionAnalysisImportSheet(context, ref),
+                    actionLabel: 'İmalattan Veri Al',
+                    onAction: () => showImalatAnalysisImportSheet(context, ref),
                   ),
                 ),
               ] else ...[
@@ -90,7 +90,7 @@ class AnalysisScreen extends ConsumerWidget {
                     onDeleteSelected: (ids) =>
                         _confirmDeleteBatches(context, ref, ids),
                     onImportFromPreProduction: () =>
-                        showPreProductionAnalysisImportSheet(context, ref),
+                        showImalatAnalysisImportSheet(context, ref),
                   ),
                 ),
               ),

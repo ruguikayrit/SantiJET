@@ -156,7 +156,7 @@ ReportPayload? demoReportPayload(String reportId) {
         title: 'Hesap ve Analiz Raporu (DEMO)',
         headers: ['Alan', 'Değer'],
         rows: [
-          ['Kaynak', 'Ön İmalat · A Blok Kolon'],
+          ['Kaynak', 'İmalat · A Blok Kolon'],
           ['Ham tonaj', '64,85 t'],
           ['Ham fire', '7,90 t (%12,2)'],
           ['Plan fire', '4,10 t (%6,3)'],

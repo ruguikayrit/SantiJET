@@ -19,6 +19,7 @@ Alt nav: **Ana Sayfa · Sipariş · Gelen Demir · Saha Sayım · Analiz**
 - Bildirim zili yok. `showNotification` varsayılan `false`; açma. Avatar / baş harf butonu yok (çark kullan).
 - `PointerInterceptor` header çarkında yok (dokunuşu yutuyordu); alt navda web için kalır.
 - Alt nav: Saha (`santijet-puantaj`) stil / kurgu — `AppColors.surface` + üst kenarlık, lift dışarıda, `electricBlue` / `textMuted`, klavyede gizle, `Router.neglect`. Tema `dividerColor` / `onSurfaceVariant` ile boyama yok.
+- Ana sayfa proje seçici Saha ile aynı: logo kutusu + firma / iş adı / iş kodu; tıklanınca **İş seçin** alt sayfa (projeler listesine gitmez). Geri alma.
 - Ana sayfa wordmark header; iç sayfalar bolt + DEMİR + sayfa adı.
 - Shell body `SafeArea(bottom: false)` — üst inset status bar için.
 
@@ -29,11 +30,15 @@ Kaynak: `lib/core/widgets/santijet_header.dart`, `lib/features/shell/main_shell.
 - **Günlük Brifing** ve **Demir Tahmin Motoru** kartı anasayfada yok. Geri koyma.
 - **Proje İlerleme Durumu** altında formül satırı yok (`Proje ilerleme = planlanan kullanım toplamı / keşif miktarı`). Geri koyma.
 - Ayarlar listesinde **Proje Bilgileri** ve **Dokunma Titreşimi** yok. Geri koyma.
+- Ayarlar’da **Demo veriyi yükle** vardır (Yedekleme sonrası). Keşif / sipariş / teslimat / sayım / CAD metraj örneği; aktif proje **Demo Şantiye**. Kaldırma.
 
 ## Analiz / Rapor (kilitli)
 
 - Analiz ekranında **Tahvil Hesaplayıcı** kartı / bölümü yok. Geri koyma.
-- Fire özeti buton metni: `(tahvil ile fire analizi yap)`. Eski “Fire Analizi Yap”e dönme.
+- DWG analiz listesi kartının altında **Fire analizi yap** butonu vardır. Kaldırma.
+- Analiz veri kaynağı: **İmalattan Veri Al** (CAD metrajı imalata gönderilmiş kayıtlar). **Ön İmalat** sekmesi / “Ön İmalattan Veri Al” yok; geri koyma.
+- Keşif sekmeleri yalnız **İmalat · Otomatik Metraj** (çerçeveli başlık). Üçüncü **Ön İmalat** sekmesi yok.
+- Fire analizi **tahvilsiz**: zayiatsız kesim + minimum fire (boy eşleştirme + stok kesim). Tahvil banner / `(tahvil ile fire analizi yap)` / tahvil zorunluluğu yok. Buton: **Fire analizi yap**. KPI: **Kesim Fire**.
 - Raporlar listesinde turuncu **DEMO — 16 rapor…** bandı yok. Geri koyma. Demo PDF veri (`useDemoReports`) ayrı; bandı açmak demek değil.
 
 ## Web / ölü alan / dokunuş (kilitli)

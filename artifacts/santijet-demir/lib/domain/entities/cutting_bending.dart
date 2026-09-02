@@ -10,13 +10,15 @@ enum FireReductionStrategy {
 
   String get label => switch (this) {
         FireReductionStrategy.tahvilOnly => 'Sadece tahvil',
-        FireReductionStrategy.lengthMatchOnly => 'Sadece uzunluk eşleştirme',
+        FireReductionStrategy.lengthMatchOnly =>
+          'Minimum fire / zayiatsız kesim',
         FireReductionStrategy.both => 'Tahvil + uzunluk eşleştirme',
       };
 
   String get description => switch (this) {
         FireReductionStrategy.tahvilOnly => 'Farklı çaplarda yakın uzunluklar',
-        FireReductionStrategy.lengthMatchOnly => 'Aynı çapta yakın uzunluklar',
+        FireReductionStrategy.lengthMatchOnly =>
+          'Aynı çapta yakın boy eşleştirme ve stok kesim',
         FireReductionStrategy.both => 'Tahvil + uzunluk eşleştirme',
       };
 

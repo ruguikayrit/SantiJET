@@ -6,7 +6,6 @@ import 'package:santijet_demir/core/theme/app_radii.dart';
 import 'package:santijet_demir/core/theme/app_typography.dart';
 import 'package:santijet_demir/core/widgets/app_table_header.dart';
 import 'package:santijet_demir/domain/entities/cutting_bending.dart';
-import 'package:santijet_demir/features/analysis/cutting_bending_calculator.dart';
 import 'package:santijet_demir/features/analysis/providers/cutting_bending_provider.dart';
 import 'package:santijet_demir/features/analysis/widgets/analysis_fire_summary.dart';
 import 'package:santijet_demir/features/analysis/widgets/paginated_list_section.dart';
@@ -20,8 +19,7 @@ class AnalysisOptimizationResultsSection extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final strategy = batch.optimizationStrategy;
     final lengthChanges = ref.watch(analysisLengthMatchChangesProvider);
-    final approvedTahvil =
-        batch.tahvilGroups.where((group) => group.approved).toList();
+    final showLengthMatch = strategy == null || strategy.appliesLengthMatch;
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -46,7 +44,7 @@ class AnalysisOptimizationResultsSection extends ConsumerWidget {
                 const SizedBox(width: 8),
                 Expanded(
                   child: Text(
-                    'Uygulanan strateji: ${strategy.label}',
+                    'Uygulanan: ${strategy.label}',
                     style: AppTypography.bodyMedium.copyWith(
                       color: AppColors.electricBlueLight,
                     ),
@@ -57,12 +55,12 @@ class AnalysisOptimizationResultsSection extends ConsumerWidget {
           ),
           const SizedBox(height: 16),
         ],
-        if (strategy?.appliesLengthMatch ?? false) ...[
+        if (showLengthMatch) ...[
           AnalysisStepHeader(
             step: 1,
-            title: 'Uzunluk Eşleştirme',
+            title: 'Zayiatsız Boy Eşleştirme',
             subtitle:
-                'Aynı çapta ${CuttingBendingBatch.lengthMatchToleranceDescription} — otomatik',
+                'Aynı çapta ${CuttingBendingBatch.lengthMatchToleranceDescription} — minimum fire',
             complete: batch.lengthMatches.isNotEmpty ||
                 lengthChanges.isEmpty,
           ),
@@ -70,7 +68,7 @@ class AnalysisOptimizationResultsSection extends ConsumerWidget {
             Padding(
               padding: const EdgeInsets.symmetric(vertical: 8),
               child: Text(
-                'Uzunluk eşleştirme gerektiren satır bulunamadı.',
+                'Boy eşleştirme gerektiren satır bulunamadı.',
                 style: AppTypography.bodySmall.copyWith(
                   color: AppColors.textMuted,
                 ),
@@ -93,35 +91,10 @@ class AnalysisOptimizationResultsSection extends ConsumerWidget {
           Divider(height: 1, color: AppColors.border),
           const SizedBox(height: 16),
         ],
-        if (strategy?.appliesTahvil ?? false) ...[
-          AnalysisStepHeader(
-            step: strategy?.appliesLengthMatch ?? false ? 2 : 1,
-            title: 'Tahvil',
-            subtitle: 'Tahvil kurallarına uygun otomatik dönüşüm',
-            complete: approvedTahvil.isNotEmpty,
-          ),
-          if (approvedTahvil.isEmpty)
-            Padding(
-              padding: const EdgeInsets.symmetric(vertical: 8),
-              child: Text(
-                'Bu liste için uygulanabilir tahvil bulunamadı.',
-                style: AppTypography.bodySmall.copyWith(
-                  color: AppColors.textMuted,
-                ),
-              ),
-            )
-          else
-            ...approvedTahvil.map(
-              (group) => _ReadOnlyTahvilCard(group: group),
-            ),
-          const SizedBox(height: 20),
-          Divider(height: 1, color: AppColors.border),
-          const SizedBox(height: 16),
-        ],
         AnalysisStepHeader(
-          step: _reviseStep(strategy),
+          step: showLengthMatch ? 2 : 1,
           title: 'Revize Parça Listesi',
-          subtitle: 'Seçilen stratejiye göre güncellenmiş kesim listesi',
+          subtitle: 'Minimum fire kesim planına göre güncellenmiş liste',
           complete: batch.revisedPieceLines.isNotEmpty,
         ),
         batch.revisedPieceLines.isEmpty
@@ -137,14 +110,6 @@ class AnalysisOptimizationResultsSection extends ConsumerWidget {
             : _ReadOnlyPieceListTable(pieces: batch.revisedPieceLines),
       ],
     );
-  }
-
-  int _reviseStep(FireReductionStrategy? strategy) {
-    if (strategy == null) return 1;
-    var step = 1;
-    if (strategy.appliesLengthMatch) step++;
-    if (strategy.appliesTahvil) step++;
-    return step;
   }
 }
 
@@ -220,47 +185,6 @@ class _LengthMatchChangeRow extends StatelessWidget {
               textAlign: TextAlign.center,
             ),
           ),
-        ],
-      ),
-    );
-  }
-}
-
-class _ReadOnlyTahvilCard extends StatelessWidget {
-  const _ReadOnlyTahvilCard({required this.group});
-
-  final TahvilSuggestion group;
-
-  @override
-  Widget build(BuildContext context) {
-    final best = pickBestTahvilEquivalentForGroup(group);
-
-    return Container(
-      margin: const EdgeInsets.only(bottom: 8),
-      padding: const EdgeInsets.all(14),
-      decoration: BoxDecoration(
-        color: AppColors.warning.withValues(alpha: 0.08),
-        borderRadius: AppRadii.md,
-        border: Border.all(color: AppColors.warning.withValues(alpha: 0.35)),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Text(
-            'Uzunluk ${group.minLengthM.toStringAsFixed(2)}–${group.maxLengthM.toStringAsFixed(2)} m · '
-            'Ø${group.diameters.join(', Ø')}',
-            style: AppTypography.titleMedium,
-          ),
-          if (best != null) ...[
-            const SizedBox(height: 8),
-            Text(
-              'Ø${best.fromDiameter} ${AppFormat.integer(best.fromQuantity)} ad → '
-              'Ø${best.toDiameter} ${AppFormat.integer(best.equivalentQuantity)} ad',
-              style: AppTypography.bodySmall.copyWith(
-                color: AppColors.diameterColor(best.toDiameter),
-              ),
-            ),
-          ],
         ],
       ),
     );
