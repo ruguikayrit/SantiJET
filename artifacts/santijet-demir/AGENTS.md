@@ -31,6 +31,7 @@ Kaynak: `lib/core/widgets/santijet_header.dart`, `lib/features/shell/main_shell.
 
 ## Analiz / Rapor (kilitli)
 
+- Analiz ekranında **Tahvil Hesaplayıcı** kartı / bölümü yok. Geri koyma.
 - Fire özeti buton metni: `(tahvil ile fire analizi yap)`. Eski “Fire Analizi Yap”e dönme.
 - Raporlar listesinde turuncu **DEMO — 16 rapor…** bandı yok. Geri koyma. Demo PDF veri (`useDemoReports`) ayrı; bandı açmak demek değil.
 

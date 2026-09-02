@@ -15,8 +15,6 @@ import 'package:santijet_demir/features/analysis/providers/cutting_bending_provi
 import 'package:santijet_demir/features/projects/providers/project_provider.dart';
 import 'package:santijet_demir/features/analysis/widgets/analysis_batch_list_panel.dart';
 import 'package:santijet_demir/features/analysis/widgets/analysis_fire_summary.dart';
-import 'package:santijet_demir/features/analysis/widgets/collapsible_analysis_section.dart';
-import 'package:santijet_demir/features/analysis/widgets/tahvil_calculator_section.dart';
 import 'package:santijet_demir/features/rebar_metraj/widgets/metraj_cutting_actions.dart';
 
 class AnalysisScreen extends ConsumerWidget {
@@ -48,17 +46,6 @@ class AnalysisScreen extends ConsumerWidget {
                   ),
                   child: _ReportsQuickAccessBar(
                     onTap: () => context.push(AppRoutes.reports),
-                  ),
-                ),
-              ),
-              SliverPadding(
-                padding: const EdgeInsets.fromLTRB(AppSpacing.md, 0, AppSpacing.md, AppSpacing.sm),
-                sliver: SliverToBoxAdapter(
-                  child: CollapsibleAnalysisSection(
-                    sectionId: AnalysisSectionIds.tahvilCalculator,
-                    title: 'Tahvil Hesaplayıcı',
-                    headerAccentColor: AppColors.electricBlueLight,
-                    child: const TahvilCalculatorSection(hideHeader: true),
                   ),
                 ),
               ),

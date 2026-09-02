@@ -36,7 +36,6 @@ abstract final class AnalysisSectionIds {
   static const optimizationPipeline = 'analysis-optimization-pipeline';
   static const plannedCutting = 'analysis-planned-cutting';
   static const comparison = 'analysis-comparison';
-  static const tahvilCalculator = 'analysis-tahvil-calculator';
 
   // Geriye dönük — eski oturum durumları için.
   static const labels = 'analysis-labels';
