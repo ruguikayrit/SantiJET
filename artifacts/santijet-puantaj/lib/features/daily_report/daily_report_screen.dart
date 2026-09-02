@@ -1047,6 +1047,26 @@ class _DailyReportScreenState extends ConsumerState<DailyReportScreen> {
       formBuilder: (ctx, setModal) => Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
+          if (kind == _MaterialList.incoming) ...[
+            OutlinedButton.icon(
+              onPressed: _irsaliyeBusy
+                  ? null
+                  : () {
+                      Navigator.pop(ctx);
+                      WidgetsBinding.instance.addPostFrameCallback((_) {
+                        if (mounted) _showIrsaliyeSource();
+                      });
+                    },
+              icon: const Icon(Icons.receipt_long_outlined, size: 20),
+              label: const Text('İrsaliye fotoğrafı ekle'),
+              style: OutlinedButton.styleFrom(
+                padding: const EdgeInsets.symmetric(
+                  vertical: AppSpacing.sm,
+                ),
+              ),
+            ),
+            _kDialogFieldGap,
+          ],
           if (stockLike) ...[
             TextField(
               controller: supplyDate,
@@ -2109,31 +2129,12 @@ class _DailyReportScreenState extends ConsumerState<DailyReportScreen> {
                   _SectionCard(
                     title: 'Gelen malzeme',
                     icon: Icons.local_shipping_outlined,
-                    trailing: Row(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        IconButton(
-                          tooltip: 'İrsaliye fotoğrafı',
-                          onPressed:
-                              _irsaliyeBusy ? null : _showIrsaliyeSource,
-                          icon: _irsaliyeBusy
-                              ? const SizedBox(
-                                  width: 18,
-                                  height: 18,
-                                  child: CircularProgressIndicator(
-                                    strokeWidth: 2,
-                                  ),
-                                )
-                              : const Icon(Icons.receipt_long_outlined),
-                        ),
-                        IconButton(
-                          tooltip: 'Manuel ekle',
-                          onPressed: () => _upsertMaterial(
-                            kind: _MaterialList.incoming,
-                          ),
-                          icon: const Icon(Icons.add),
-                        ),
-                      ],
+                    trailing: IconButton(
+                      tooltip: 'Manuel ekle',
+                      onPressed: () => _upsertMaterial(
+                        kind: _MaterialList.incoming,
+                      ),
+                      icon: const Icon(Icons.add),
                     ),
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -2235,8 +2236,8 @@ class _DailyReportScreenState extends ConsumerState<DailyReportScreen> {
                         if ((report?.incomingMaterials.isEmpty ?? true))
                           Text(
                             'Gelen malzeme kaydı yok.\n'
-                            'İrsaliye fotoğrafı ekleyerek otomatik doldurun '
-                            'veya + ile manuel ekleyin.',
+                            '+ ile manuel ekleyin veya formda irsaliye '
+                            'fotoğrafı yükleyin.',
                             style: _cardInk(theme.textTheme.bodyMedium),
                           )
                         else
