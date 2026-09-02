@@ -781,6 +781,34 @@ class _DailyViewState extends State<_DailyView> {
     if (picked != null) widget.onDateChanged(PuantajDate.format(picked));
   }
 
+  List<Person> _peopleWithStatus(AttendanceStatus status) {
+    return widget.people
+        .where((p) => widget.statusOf(p.id) == status)
+        .toList()
+      ..sort((a, b) => a.name.compareTo(b.name));
+  }
+
+  List<Person> _peopleUnrecorded() {
+    return widget.people
+        .where((p) => widget.statusOf(p.id) == null)
+        .toList()
+      ..sort((a, b) => a.name.compareTo(b.name));
+  }
+
+  Future<void> _showStatusPeopleDialog(
+    BuildContext context, {
+    required String title,
+    required Color accent,
+    required List<Person> people,
+  }) {
+    return _PuantajStatusPeopleDialog.show(
+      context,
+      title: title,
+      accent: accent,
+      people: people,
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
@@ -956,15 +984,29 @@ class _DailyViewState extends State<_DailyView> {
                   child: _SumChip(
                     count: counts[s] ?? 0,
                     label: s.short,
-                    fullLabel: s.label,
                     color: s.color,
+                    onTap: (counts[s] ?? 0) > 0
+                        ? () => _showStatusPeopleDialog(
+                              context,
+                              title: s.label,
+                              accent: s.color,
+                              people: _peopleWithStatus(s),
+                            )
+                        : null,
                   ),
                 ),
               _SumChip(
                 count: people.length,
                 label: 'Top',
-                fullLabel: 'Toplam',
                 color: theme.colorScheme.onSurfaceVariant,
+                onTap: people.isNotEmpty
+                    ? () => _showStatusPeopleDialog(
+                          context,
+                          title: 'Toplam',
+                          accent: theme.colorScheme.onSurfaceVariant,
+                          people: people,
+                        )
+                    : null,
               ),
               if (none > 0)
                 Padding(
@@ -972,8 +1014,13 @@ class _DailyViewState extends State<_DailyView> {
                   child: _SumChip(
                     count: none,
                     label: '–',
-                    fullLabel: 'Girilmedi',
                     color: theme.colorScheme.onSurfaceVariant,
+                    onTap: () => _showStatusPeopleDialog(
+                      context,
+                      title: 'Girilmedi',
+                      accent: theme.colorScheme.onSurfaceVariant,
+                      people: _peopleUnrecorded(),
+                    ),
                   ),
                 ),
             ],
@@ -1982,56 +2029,41 @@ class _DayTeamsSection extends ConsumerWidget {
   }
 }
 
-class _SumChip extends StatefulWidget {
+class _SumChip extends StatelessWidget {
   const _SumChip({
     required this.count,
     required this.label,
     required this.color,
-    this.fullLabel,
+    this.onTap,
   });
 
   final int count;
   final String label;
-  final String? fullLabel;
   final Color color;
-
-  @override
-  State<_SumChip> createState() => _SumChipState();
-}
-
-class _SumChipState extends State<_SumChip> {
-  bool _expanded = false;
+  final VoidCallback? onTap;
 
   @override
   Widget build(BuildContext context) {
-    final color = widget.color;
-    final text = _expanded && widget.fullLabel != null
-        ? widget.fullLabel!
-        : widget.label;
+    final color = this.color;
+    final canTap = onTap != null && count > 0;
 
     return Material(
       color: Colors.transparent,
       child: InkWell(
-        onTap: widget.fullLabel == null
-            ? null
-            : () => setState(() => _expanded = !_expanded),
+        onTap: canTap ? onTap : null,
         borderRadius: AppRadii.sm,
-        child: AnimatedContainer(
-          duration: const Duration(milliseconds: 180),
-          curve: Curves.easeOut,
+        child: Container(
           padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
           decoration: BoxDecoration(
-            color: color.withValues(alpha: _expanded ? 0.2 : 0.12),
+            color: color.withValues(alpha: 0.12),
             borderRadius: AppRadii.sm,
-            border: Border.all(
-              color: color.withValues(alpha: _expanded ? 0.55 : 0.35),
-            ),
+            border: Border.all(color: color.withValues(alpha: 0.35)),
           ),
           child: Row(
             mainAxisSize: MainAxisSize.min,
             children: [
               Text(
-                '${widget.count}',
+                '$count',
                 style: TextStyle(
                   color: AppColors.statusInkOnChrome(color),
                   fontWeight: FontWeight.w700,
@@ -2040,17 +2072,147 @@ class _SumChipState extends State<_SumChip> {
               ),
               const SizedBox(width: 4),
               Text(
-                text,
+                label,
                 style: TextStyle(
                   color: AppColors.statusInkOnChrome(color),
                   fontSize: 11,
-                  fontWeight: _expanded ? FontWeight.w600 : FontWeight.w400,
+                  fontWeight: FontWeight.w400,
                 ),
               ),
             ],
           ),
         ),
       ),
+    );
+  }
+}
+
+/// Günlük puantaj özet kartına tıklanınca — durumdaki personel adları.
+abstract final class _PuantajStatusPeopleDialog {
+  static const _rowHeight = 40.0;
+  static const _headerHeight = 64.0;
+  static const _verticalPad = 12.0;
+
+  static Future<void> show(
+    BuildContext context, {
+    required String title,
+    required Color accent,
+    required List<Person> people,
+  }) {
+    if (people.isEmpty) return Future.value();
+
+    final sorted = [...people]..sort((a, b) => a.name.compareTo(b.name));
+    final sheetTheme = SJModal.sheetThemeOf(context);
+    final screenH = MediaQuery.sizeOf(context).height;
+    final maxDialogH = screenH * 0.55;
+    final listH = sorted.length * _rowHeight;
+    final totalH = (_headerHeight + listH + _verticalPad * 2)
+        .clamp(_headerHeight + _rowHeight + _verticalPad * 2, maxDialogH);
+
+    return showDialog<void>(
+      context: context,
+      barrierDismissible: true,
+      builder: (ctx) {
+        final theme = Theme.of(ctx);
+        final ink = AppColors.statusInkOnCard(accent);
+        return Theme(
+          data: sheetTheme,
+          child: Dialog(
+            backgroundColor: SJModal.sheetSurface,
+            insetPadding: const EdgeInsets.symmetric(horizontal: 28),
+            child: SizedBox(
+              width: 320,
+              height: totalH,
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: [
+                  Padding(
+                    padding: const EdgeInsets.fromLTRB(
+                      AppSpacing.md,
+                      AppSpacing.md,
+                      AppSpacing.xs,
+                      AppSpacing.sm,
+                    ),
+                    child: Row(
+                      children: [
+                        Container(
+                          width: 4,
+                          height: 36,
+                          decoration: BoxDecoration(
+                            color: accent,
+                            borderRadius: AppRadii.full,
+                          ),
+                        ),
+                        const SizedBox(width: AppSpacing.sm),
+                        Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(
+                                title,
+                                maxLines: 1,
+                                overflow: TextOverflow.ellipsis,
+                                style: theme.textTheme.titleMedium?.copyWith(
+                                  fontWeight: FontWeight.w700,
+                                ),
+                              ),
+                              Text(
+                                '${sorted.length} personel',
+                                style: theme.textTheme.labelSmall?.copyWith(
+                                  color: theme.colorScheme.onSurfaceVariant,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                        IconButton(
+                          visualDensity: VisualDensity.compact,
+                          tooltip: 'Kapat',
+                          onPressed: () => Navigator.pop(ctx),
+                          icon: const Icon(Icons.close, size: 20),
+                        ),
+                      ],
+                    ),
+                  ),
+                  Divider(
+                    height: 1,
+                    color: theme.dividerColor.withValues(alpha: 0.5),
+                  ),
+                  Expanded(
+                    child: ListView.builder(
+                      padding: const EdgeInsets.symmetric(
+                        vertical: _verticalPad,
+                      ),
+                      itemCount: sorted.length,
+                      itemExtent: _rowHeight,
+                      itemBuilder: (context, i) {
+                        final person = sorted[i];
+                        return Padding(
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: AppSpacing.md,
+                          ),
+                          child: Align(
+                            alignment: Alignment.centerLeft,
+                            child: Text(
+                              person.name,
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                              style: theme.textTheme.bodyLarge?.copyWith(
+                                fontWeight: FontWeight.w500,
+                                color: ink.withValues(alpha: 0.95),
+                              ),
+                            ),
+                          ),
+                        );
+                      },
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ),
+        );
+      },
     );
   }
 }
