@@ -17,9 +17,10 @@ Alt nav: **Ana Sayfa · Sipariş · Gelen Demir · Saha Sayım · Analiz**
 
 - Ayarlar alt navda yok. Sağ üst `SantijetHeader` **dişli** (`Icons.settings_outlined`) → `AppRoutes.settings`.
 - Bildirim zili yok. `showNotification` varsayılan `false`; açma. Avatar / baş harf butonu yok (çark kullan).
-- `PointerInterceptor` header çarkında yok (dokunuşu yutuyordu).
+- `PointerInterceptor` header çarkında yok (dokunuşu yutuyordu); alt navda web için kalır.
+- Alt nav: Saha (`santijet-puantaj`) stil / kurgu — `AppColors.surface` + üst kenarlık, lift dışarıda, `electricBlue` / `textMuted`, klavyede gizle, `Router.neglect`. Tema `dividerColor` / `onSurfaceVariant` ile boyama yok.
 - Ana sayfa wordmark header; iç sayfalar bolt + DEMİR + sayfa adı.
-- Shell body `SafeArea(bottom: false)` — üst inset status bar / staging bandı için.
+- Shell body `SafeArea(bottom: false)` — üst inset status bar için.
 
 Kaynak: `lib/core/widgets/santijet_header.dart`, `lib/features/shell/main_shell.dart`, `app_bottom_nav_bar.dart`.
 

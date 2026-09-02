@@ -34,16 +34,18 @@ class MainShell extends ConsumerWidget {
     final themeMode = ref.watch(appSettingsProvider.select((s) => s.themeMode));
     AppColors.applyPaletteFromMode(themeMode, Theme.of(context).brightness);
 
-    // Beton/Puantaj ile aynı iskelet: body = shell, nav = bottomNavigationBar.
+    // Saha ile aynı: klavye açıkken nav gizlenir; gövde daralsın.
+    final keyboardOpen = MediaQuery.viewInsetsOf(context).bottom > 0;
+
     // Stack yalnızca analiz kilidi için — nav yüksekliğini etkilemez.
     return Stack(
       fit: StackFit.expand,
       children: [
         Scaffold(
           backgroundColor: AppColors.canvas,
-          resizeToAvoidBottomInset: false,
-          // Üst SafeArea: bildirim/ayar butonları status bar & staging bandı
-          // altında kalıp tıklanamaz olmasın. Alt false: nav kendi inset'ini çizer.
+          resizeToAvoidBottomInset: true,
+          // Üst SafeArea: ayar dişlisi status bar altında kalmasın.
+          // Alt false: nav kendi viewPadding inset'ini çizer.
           body: SafeArea(
             bottom: false,
             child: Column(
@@ -54,11 +56,13 @@ class MainShell extends ConsumerWidget {
               ],
             ),
           ),
-          bottomNavigationBar: MediaQuery.removePadding(
-            context: context,
-            removeBottom: true,
-            child: AppBottomNavBar(navigationShell: navigationShell),
-          ),
+          bottomNavigationBar: keyboardOpen
+              ? null
+              : MediaQuery.removePadding(
+                  context: context,
+                  removeBottom: true,
+                  child: AppBottomNavBar(navigationShell: navigationShell),
+                ),
         ),
         const AnalysisRunningLockOverlay(),
       ],

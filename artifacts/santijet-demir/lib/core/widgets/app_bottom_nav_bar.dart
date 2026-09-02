@@ -5,11 +5,10 @@ import 'package:go_router/go_router.dart';
 import 'package:pointer_interceptor/pointer_interceptor.dart';
 import 'package:santijet_demir/core/theme/app_colors.dart';
 import 'package:santijet_demir/core/theme/app_spacing.dart';
-import 'package:santijet_demir/core/theme/app_typography.dart';
 import 'package:santijet_demir/domain/enums/app_enums.dart';
 import 'package:santijet_demir/features/auth/providers/membership_permission_provider.dart';
 
-/// Alt navigasyon sekmesi — Puantaj [SJNavItem] ile aynı sözleşme.
+/// Alt navigasyon sekmesi — Saha [SJNavItem] + Demir shell branch indeksi.
 class SJNavItem {
   const SJNavItem({
     required this.icon,
@@ -22,14 +21,14 @@ class SJNavItem {
   final IconData activeIcon;
   final String label;
 
-  /// go_router shell branch index ([BottomNavTab.index]).
+  /// go_router [StatefulNavigationShell] dalı ([BottomNavTab.index]).
   final int branchIndex;
 }
 
-/// ŞantiJET Design System — alt navigasyon.
+/// ŞantiJET DEMİR alt navigasyon — Saha `SJBottomNavigation` stil / kurgu.
 ///
-/// Puantaj `SJBottomNavigation` tasarım ve kodu birebir; Demir sekmeleri ve
-/// sayfa adları bağlanır.
+/// 52px ikon satırı, üst kenarlık, `AppColors.surface`, lift dışarıda (canvas),
+/// seçili `electricBlue` / pasif `textMuted`, ikon 22, etiket labelSmall.
 class SJBottomNavigation extends StatelessWidget {
   const SJBottomNavigation({
     required this.items,
@@ -40,7 +39,7 @@ class SJBottomNavigation extends StatelessWidget {
 
   static const _iconBarHeight = 52.0;
 
-  /// Alt kenardan hafif yukarı kaydırma — home indicator alanında daha dengeli duruş.
+  /// Alt kenardan hafif yukarı kaydırma — home indicator alanında dengeli duruş.
   static const bottomLift = AppSpacing.xs;
 
   final List<SJNavItem> items;
@@ -48,49 +47,46 @@ class SJBottomNavigation extends StatelessWidget {
   final ValueChanged<int> onTap;
 
   static double totalHeightOf(BuildContext context) {
-    // Puantaj/Beton ile aynı: yalnızca motor viewPadding — yapay +34 yok.
     final bottomInset = MediaQuery.viewPaddingOf(context).bottom;
     return _iconBarHeight + bottomInset + bottomLift;
   }
 
   @override
   Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-    final surface = theme.cardTheme.color ?? theme.colorScheme.surface;
-    // Puantaj/Beton ile aynı kaynak. Yapay iOS min inset ölü şerit üretir.
     final bottomInset = MediaQuery.viewPaddingOf(context).bottom;
 
-    // ColoredBox en dışta: bottomLift canvas rengi ile “ölü alan” oluşturmaz.
-    return ColoredBox(
-      color: surface,
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          DecoratedBox(
-            decoration: BoxDecoration(
-              border: Border(top: BorderSide(color: theme.dividerColor)),
-            ),
-            child: SizedBox(
-              height: _iconBarHeight,
-              width: double.infinity,
-              child: Row(
-                children: [
-                  for (var i = 0; i < items.length; i++)
-                    Expanded(
-                      child: _NavItemView(
-                        item: items[i],
-                        selected: items[i].branchIndex == currentIndex,
-                        onTap: () => onTap(items[i].branchIndex),
+    // Saha ile aynı ağaç: lift yüzey dışında → 8px şerit canvas rengi.
+    return Padding(
+      padding: const EdgeInsets.only(bottom: bottomLift),
+      child: ColoredBox(
+        color: AppColors.surface,
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            DecoratedBox(
+              decoration: BoxDecoration(
+                border: Border(top: BorderSide(color: AppColors.border)),
+              ),
+              child: SizedBox(
+                height: _iconBarHeight,
+                width: double.infinity,
+                child: Row(
+                  children: [
+                    for (var i = 0; i < items.length; i++)
+                      Expanded(
+                        child: _NavItemView(
+                          item: items[i],
+                          selected: items[i].branchIndex == currentIndex,
+                          onTap: () => onTap(items[i].branchIndex),
+                        ),
                       ),
-                    ),
-                ],
+                  ],
+                ),
               ),
             ),
-          ),
-          SizedBox(
-            height: bottomInset > 0 ? bottomInset + bottomLift : bottomLift,
-          ),
-        ],
+            if (bottomInset > 0) SizedBox(height: bottomInset),
+          ],
+        ),
       ),
     );
   }
@@ -110,8 +106,7 @@ class _NavItemView extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    final color =
-        selected ? AppColors.electricBlue : theme.colorScheme.onSurfaceVariant;
+    final color = selected ? AppColors.electricBlue : AppColors.textMuted;
 
     return InkWell(
       onTap: onTap,
@@ -135,9 +130,9 @@ class _NavItemView extends StatelessWidget {
   }
 }
 
-/// Demir kabuk bağlayıcısı — Puantaj nav’ını shell + yetki filtresiyle sarmalar.
+/// Demir kabuk bağlayıcısı — yetki filtresi + web PointerInterceptor.
 ///
-/// Geriye dönük API: [totalHeightOf] / sabitler FAB ve scroll boşlukları için.
+/// Geriye dönük API: [totalHeightOf] FAB / scroll boşlukları için.
 class AppBottomNavBar extends ConsumerWidget {
   const AppBottomNavBar({super.key, required this.navigationShell});
 
@@ -145,8 +140,6 @@ class AppBottomNavBar extends ConsumerWidget {
 
   static const iconBarHeight = 52.0;
   static const bottomLift = AppSpacing.xs;
-  static const bottomInset = 0.0;
-  static const totalHeight = iconBarHeight + bottomInset;
 
   static const _icons = [
     Icons.dashboard_outlined,
@@ -163,11 +156,6 @@ class AppBottomNavBar extends ConsumerWidget {
     Icons.inventory_2,
     Icons.analytics,
   ];
-
-  static double iconBarHeightOf(BuildContext context) => iconBarHeight;
-
-  static double bottomInsetOf(BuildContext context) =>
-      MediaQuery.viewPaddingOf(context).bottom;
 
   static double totalHeightOf(BuildContext context) =>
       SJBottomNavigation.totalHeightOf(context);
@@ -195,62 +183,19 @@ class AppBottomNavBar extends ConsumerWidget {
     final bar = SJBottomNavigation(
       items: items,
       currentIndex: current,
-      onTap: (branchIndex) => navigationShell.goBranch(
-        branchIndex,
-        initialLocation: branchIndex == navigationShell.currentIndex,
-      ),
+      onTap: (branchIndex) {
+        Router.neglect(context, () {
+          navigationShell.goBranch(
+            branchIndex,
+            initialLocation: branchIndex == navigationShell.currentIndex,
+          );
+        });
+      },
     );
 
     if (kIsWeb) {
       return PointerInterceptor(child: bar);
     }
     return bar;
-  }
-}
-
-class PlaceholderTabScreen extends StatelessWidget {
-  const PlaceholderTabScreen({
-    super.key,
-    required this.title,
-    required this.message,
-    required this.icon,
-  });
-
-  final String title;
-  final String message;
-  final IconData icon;
-
-  @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      backgroundColor: AppColors.canvas,
-      body: SafeArea(
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Padding(
-              padding: const EdgeInsets.all(16),
-              child: Text(title, style: AppTypography.headlineLarge),
-            ),
-            Expanded(
-              child: Center(
-                child: Column(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    Icon(icon, size: 72, color: AppColors.textMuted),
-                    const SizedBox(height: 16),
-                    Text(
-                      message,
-                      style: AppTypography.bodyMedium,
-                      textAlign: TextAlign.center,
-                    ),
-                  ],
-                ),
-              ),
-            ),
-          ],
-        ),
-      ),
-    );
   }
 }

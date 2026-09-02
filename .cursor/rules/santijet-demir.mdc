@@ -9,6 +9,7 @@ alwaysApply: false
 Kapsam: `artifacts/santijet-demir/**`. Başka ürüne dokunma. Özet: `artifacts/santijet-demir/AGENTS.md`.
 
 - Alt nav: Ana Sayfa · Sipariş · Gelen Demir · Saha Sayım · Analiz. Ayarlar navda yok.
+- Alt nav Saha stilinde (`AppColors.surface` / border / electricBlue / textMuted, lift dışarıda). Tema renkleriyle boyama yok.
 - Ayarlar = sağ üst **dişli** (`Icons.settings_outlined`). Bildirim zili ve baş harf avatarı yok; `showNotification` varsayılan `false`.
 - Staging URL: https://ruguikayrit.github.io/SantiJET/demir/ — `/staging/` yoluna DEMİR uygulamasını geri koyma.
 - Anasayfaya Günlük Brifing / Tahmin kartı ve ilerleme formül satırını geri koyma.
