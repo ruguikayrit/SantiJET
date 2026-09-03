@@ -466,7 +466,7 @@ class _DayYevmiyeliSectionState extends ConsumerState<DayYevmiyeliSection> {
             )
           else if (widget.headerless) ...[
             for (var i = 0; i < entries.length; i++) ...[
-              if (i > 0) const Divider(height: 1),
+              if (i > 0) const SizedBox(height: AppSpacing.sm),
               _YevmiyeliRow(
                 index: i + 1,
                 entry: entries[i],
@@ -480,7 +480,7 @@ class _DayYevmiyeliSectionState extends ConsumerState<DayYevmiyeliSection> {
                 ),
               ),
             ],
-            const Divider(height: 16),
+            const SizedBox(height: AppSpacing.sm),
             Row(
               children: [
                 Text(
@@ -554,7 +554,7 @@ class _DayYevmiyeliSectionState extends ConsumerState<DayYevmiyeliSection> {
                       for (var i = 0;
                           i < byCompany[company]!.length;
                           i++) ...[
-                        if (i > 0) const Divider(height: 1),
+                        if (i > 0) const SizedBox(height: AppSpacing.sm),
                         _YevmiyeliRow(
                           index: i + 1,
                           entry: byCompany[company]![i],
@@ -572,7 +572,7 @@ class _DayYevmiyeliSectionState extends ConsumerState<DayYevmiyeliSection> {
                   ),
                 ),
             ],
-            const Divider(height: 16),
+            const SizedBox(height: AppSpacing.sm),
             Row(
               children: [
                 Text(
@@ -611,18 +611,16 @@ class _YevmiyeliRow extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final theme = Theme.of(context);
     final meta = [
       if (entry.profession.isNotEmpty) entry.profession,
       if (entry.team.isNotEmpty) entry.team,
     ].join(' · ');
 
-    return InkWell(
+    return SJCard.builder(
       onTap: onTap,
-      borderRadius: AppRadii.sm,
-      child: Padding(
-        padding: const EdgeInsets.symmetric(vertical: AppSpacing.sm),
-        child: Row(
+      padding: const EdgeInsets.all(AppSpacing.sm),
+      builder: (context, theme) {
+        return Row(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             SizedBox(
@@ -674,14 +672,14 @@ class _YevmiyeliRow extends StatelessWidget {
               child: Text(
                 '${formatYevmiyeCount(entry.yevmiyeCount)} yv',
                 style: theme.textTheme.labelMedium?.copyWith(
-                  color: AppColors.electricBlue,
+                  color: AppColors.statusInkOnCard(AppColors.electricBlue),
                   fontWeight: FontWeight.w800,
                 ),
               ),
             ),
           ],
-        ),
-      ),
+        );
+      },
     );
   }
 }
