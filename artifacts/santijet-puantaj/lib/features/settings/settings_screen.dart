@@ -552,7 +552,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
           _SettingsTile(
             icon: Icons.play_circle_outline,
             title: 'Uygulama tanıtımı',
-            subtitle: 'Modülleri anlatan kısa tur · demo yükleme',
+            subtitle: 'Modüllerin ne işe yaradığı · örnek veri',
             onTap: () => context.push(AppRoutes.demoIntro),
           ),
           _SettingsTile(

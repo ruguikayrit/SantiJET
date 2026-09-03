@@ -70,14 +70,14 @@ class DemoGuideBanner extends ConsumerWidget {
                     children: [
                       Text(
                         isDemo
-                            ? 'Demo turu — nereden başlasam?'
-                            : 'Modül rehberi',
+                            ? 'Örnek proje yüklü — ekranlar'
+                            : 'Modül kısayolları',
                         style: theme.textTheme.titleSmall?.copyWith(
                           fontWeight: FontWeight.w700,
                         ),
                       ),
                       Text(
-                        'Her karta dokunarak örnek verilerle modülü gezin.',
+                        'Aşağıdaki kısayoldan ilgili sekmeye gidin.',
                         style: theme.textTheme.labelSmall,
                       ),
                     ],
@@ -106,9 +106,9 @@ class DemoGuideBanner extends ConsumerWidget {
             ),
             const SizedBox(height: AppSpacing.xs),
             Text(
-              'İpucu: Acil görevde etiket↔kategori çapraz filtre. Görevlerde '
-              'Başlandı/Bitti tarih seçin; atayan olarak onay bekleyen satırı '
-              'görün. Ayarlar → Plan dosyası ile örnek paket indirin.',
+              'Not: Görevde kategori ve etiket zorunlu. Atanan değişince '
+              'atayana onay satırı düşer. Plan / keşif paketi için '
+              'Ayarlar → Plan dosyası.',
               style: theme.textTheme.labelSmall?.copyWith(
                 color: AppColors.cardTextMuted,
               ),

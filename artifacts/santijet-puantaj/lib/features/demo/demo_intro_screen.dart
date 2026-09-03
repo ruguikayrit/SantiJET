@@ -25,55 +25,63 @@ class _DemoIntroScreenState extends ConsumerState<DemoIntroScreen> {
   static const _pages = <_IntroPageData>[
     _IntroPageData(
       icon: Icons.apartment_outlined,
-      title: 'Şantiyeyi tek uygulamada yönetin',
+      title: 'ŞantiJET SAHA ne işe yarar?',
       body:
-          'ŞantiJET SAHA; personel puantajı, imalat–verim, günlük rapor ve '
-          'görevleri bir arada tutar. İnternetsiz çalışır; veriler '
-          'cihazınızda kalır.',
+          'Saha puantajı, imalat kaydı, günlük şantiye raporu ve görev '
+          'takibini aynı projede tutar. Kayıtlar cihazda (Hive); ağ yokken '
+          'de çalışır. Bulut senkron bu sürümde zorunlu değil.',
       accent: AppColors.electricBlue,
     ),
     _IntroPageData(
       icon: Icons.fact_check_outlined,
-      title: 'Puantaj — kim sahadaydı?',
+      title: 'Puantaj',
       body:
-          'Personel ve ekip cetveli; yevmiyeli işler. Haftalık / aylık '
-          'özet tabloları. Puantaj AL ile PDF veya Excel alın.',
+          'Günlük cetvelde personel durumunu işaretlersiniz (G/Ç/M/Y/X…). '
+          'Çıkış, işten çıkış tarihini personel kartına yazar; ertesi gün '
+          'listeden düşer. Haftalık/aylıkta ekip adam-gün ve yevmiyeli '
+          'tabloları çıkar. Puantaj AL → PDF veya Excel.',
       accent: AppColors.info,
     ),
     _IntroPageData(
       icon: Icons.construction_outlined,
-      title: 'İmalat & Verim — ilerleme ve verim',
+      title: 'İmalat ve verim',
       body:
-          'Plan metraj · süre · iş gücü ile günlük gerçekleşen. Üçlü '
-          'ilerleme çubuğu, birim verim rozeti ve ekip özeti kartları '
-          'otomatik hesaplanır.',
+          'İşe plan metraj, süre ve iş gücü tanımlarsınız; her güne '
+          'gerçekleşen miktar ve adam girersiniz. Kartta plan–gerçek '
+          'karşılaştırması ve birim verim (ör. m²/adam-gün) hesaplanır. '
+          'Verim sekmesi işleri yüzdeye göre sıralar.',
       accent: AppColors.success,
     ),
     _IntroPageData(
       icon: Icons.description_outlined,
-      title: 'Rapor — günlük, haftalık, aylık',
+      title: 'Günlük / dönem raporu',
       body:
-          'Günlükte yapılan ve planlı işler İnşaat / Elektrik / Mekanik '
-          'olarak ayrılır. Haftalık ve aylıkta bölümler kapalı gelir; '
-          'dokununca açılır. Rapor AL ile dışa aktarın.',
+          'Rapor sekmesi o günün şantiye formudur: hava, puantaj özeti, '
+          'fotoğraf, yapılan–planlı iş (İnşaat / Elektrik / Mekanik), '
+          'gelen–giden–sipariş malzeme, makine ve vasıta. Gelen malzeme '
+          'için irsaliye fotoğrafı + OCR satır üretebilir. Haftalık ve '
+          'aylık görünümde bölümler kapalı; açınca dönem özeti. Rapor AL.',
       accent: AppColors.warning,
     ),
     _IntroPageData(
       icon: Icons.task_alt_outlined,
-      title: 'Görevler — disiplin etiketli saha işleri',
+      title: 'Görev',
       body:
-          'Kategori + etiket zorunlu. Durum kartta: Yapılacak → Başlandı → '
-          'Devam → Tamamlandı. Başlandı/Bitti için Dün·Bugün·Özel tarih. '
-          'Atanan değişikliği atayana onay gider. Acil kartlar çapraz filtreli.',
+          'Her görevde kategori ve etiket gerekir. Durum: Yapılacak → '
+          'Başlandı → Devam → Tamamlandı. Başlangıç / bitiş için Dün, '
+          'Bugün veya özel tarih. Atananı değiştirince atayana onay '
+          'düşer. 1. derece meslek (şef, mühendis…) görev atayabilir; '
+          'formen ve altı yalnızca kendine atananı görür.',
       accent: AppColors.partial,
     ),
     _IntroPageData(
       icon: Icons.science_outlined,
-      title: 'Demo ile keşfedin',
+      title: 'Örnek veri (demo)',
       body:
-          '“Demo Şantiye” tümünü doldurur: puantaj, imalat/verim, rapor, '
-          'yevmiyeli, plan önbelleği (Ayarlar’dan örnek paket), görev durumları '
-          've onay bekleyen örnek. Ana sayfa rehberinden gezinin.',
+          '“Demo Şantiye” projesi açılır: personel, birkaç günlük '
+          'puantaj, imalat satırları, rapor ve örnek görevler doldurulur. '
+          'Boş şantiye kurmadan ekranları dolaşmak içindir. Bitince '
+          'Ayarlar’dan silip kendi projenizi ekleyebilirsiniz.',
       accent: AppColors.electricBlueLight,
     ),
   ];
@@ -175,10 +183,10 @@ class _DemoIntroScreenState extends ConsumerState<DemoIntroScreen> {
                         const SizedBox(height: AppSpacing.md),
                         Text(
                           p.body,
-                          textAlign: TextAlign.center,
+                          textAlign: TextAlign.left,
                           style: theme.textTheme.bodyLarge?.copyWith(
                             color: theme.colorScheme.onSurfaceVariant,
-                            height: 1.45,
+                            height: 1.5,
                           ),
                         ),
                       ],
@@ -225,7 +233,9 @@ class _DemoIntroScreenState extends ConsumerState<DemoIntroScreen> {
                             )
                           : const Icon(Icons.play_arrow_rounded),
                       label: Text(
-                        _loading ? 'Demo hazırlanıyor…' : 'Demo ile keşfet',
+                        _loading
+                            ? 'Örnek veri yükleniyor…'
+                            : 'Örnek veriyi yükle',
                       ),
                     )
                   else
@@ -234,13 +244,13 @@ class _DemoIntroScreenState extends ConsumerState<DemoIntroScreen> {
                         duration: const Duration(milliseconds: 280),
                         curve: Curves.easeOut,
                       ),
-                      child: const Text('Devam'),
+                      child: const Text('Sonraki'),
                     ),
                   if (!isLast) ...[
                     const SizedBox(height: AppSpacing.sm),
                     TextButton(
                       onPressed: _startDemo,
-                      child: const Text('Doğrudan demo yükle'),
+                      child: const Text('Metni atla, örnek veriyi yükle'),
                     ),
                   ],
                 ],
